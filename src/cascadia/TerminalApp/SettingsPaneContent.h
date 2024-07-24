@@ -4,11 +4,10 @@
 #pragma once
 #include "winrt/TerminalApp.h"
 #include <LibraryResources.h>
-#include "BasicPaneEvents.h"
 
 namespace winrt::TerminalApp::implementation
 {
-    class SettingsPaneContent : public winrt::implements<SettingsPaneContent, IPaneContent>, public BasicPaneEvents
+    class SettingsPaneContent : public winrt::implements<SettingsPaneContent, IPaneContent>
     {
     public:
         SettingsPaneContent(winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings settings);
@@ -31,7 +30,14 @@ namespace winrt::TerminalApp::implementation
         Windows::Foundation::IReference<winrt::Windows::UI::Color> TabColor() const noexcept;
         winrt::Windows::UI::Xaml::Media::Brush BackgroundBrush();
 
-        // See BasicPaneEvents for most generic event definitions
+        til::typed_event<> ConnectionStateChanged;
+        til::typed_event<IPaneContent> CloseRequested;
+        til::typed_event<IPaneContent, winrt::TerminalApp::BellEventArgs> BellRequested;
+        til::typed_event<IPaneContent> TitleChanged;
+        til::typed_event<IPaneContent> TabColorChanged;
+        til::typed_event<IPaneContent> TaskbarProgressChanged;
+        til::typed_event<IPaneContent> ReadOnlyChanged;
+        til::typed_event<IPaneContent> FocusRequested;
 
     private:
         winrt::Microsoft::Terminal::Settings::Editor::MainPage _sui{ nullptr };

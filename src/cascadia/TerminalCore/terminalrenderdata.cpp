@@ -48,7 +48,7 @@ til::point Terminal::GetCursorPosition() const noexcept
 bool Terminal::IsCursorVisible() const noexcept
 {
     const auto& cursor = _activeBuffer().GetCursor();
-    return cursor.IsVisible();
+    return cursor.IsVisible() && !cursor.IsPopupShown();
 }
 
 bool Terminal::IsCursorOn() const noexcept

@@ -44,6 +44,7 @@ class ConptyOutputTests
         m_state = std::make_unique<CommonState>();
 
         m_state->InitEvents();
+        m_state->PrepareGlobalFont();
         m_state->PrepareGlobalInputBuffer();
         m_state->PrepareGlobalScreenBuffer(TerminalViewWidth, TerminalViewHeight, TerminalViewWidth, TerminalViewHeight);
 
@@ -53,6 +54,7 @@ class ConptyOutputTests
     TEST_CLASS_CLEANUP(ClassCleanup)
     {
         m_state->CleanupGlobalScreenBuffer();
+        m_state->CleanupGlobalFont();
         m_state->CleanupGlobalInputBuffer();
 
         m_state.release();

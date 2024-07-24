@@ -69,6 +69,9 @@
     <ClCompile Include="HistoryTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="CodepointWidthDetectorTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="TextBufferIteratorTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>

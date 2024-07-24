@@ -465,8 +465,7 @@ constexpr T saturate(auto val)
                                                               a->Element,
                                                               fill,
                                                               til::wrap_coord(a->WriteCoord),
-                                                              amountWritten,
-                                                              m->GetProcessHandle()->GetShimPolicy().IsPowershellExe());
+                                                              amountWritten);
         break;
     }
     case CONSOLE_REAL_UNICODE:

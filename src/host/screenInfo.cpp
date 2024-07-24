@@ -2,12 +2,23 @@
 // Licensed under the MIT license.
 
 #include "precomp.h"
-#include "screenInfo.hpp"
 
+#include "screenInfo.hpp"
+#include "dbcs.h"
 #include "output.h"
+#include "_output.h"
+#include "misc.h"
+#include "handle.h"
+
+#include <cmath>
 #include "../interactivity/inc/ServiceLocator.hpp"
-#include "../types/inc/CodepointWidthDetector.hpp"
+#include "../types/inc/Viewport.hpp"
+#include "../types/inc/GlyphWidth.hpp"
+#include "../terminal/parser/OutputStateMachineEngine.hpp"
+
 #include "../types/inc/convert.hpp"
+
+#pragma hdrstop
 
 using namespace Microsoft::Console;
 using namespace Microsoft::Console::Types;
@@ -152,7 +163,7 @@ Viewport SCREEN_INFORMATION::GetTerminalBufferSize() const
     auto v = _textBuffer->GetSize();
     if (gci.IsTerminalScrolling() && v.Height() > _virtualBottom)
     {
-        v = Viewport::FromDimensions({}, { v.Width(), _virtualBottom + 1 });
+        v = Viewport::FromDimensions({ 0, 0 }, v.Width(), _virtualBottom + 1);
     }
     return v;
 }
@@ -513,30 +524,15 @@ void SCREEN_INFORMATION::RefreshFontWithRenderer()
 {
     if (IsActiveScreenBuffer())
     {
-        auto& globals = ServiceLocator::LocateGlobals();
-        const auto& gci = globals.getConsoleInformation();
-
         // Hand the handle to our internal structure to the font change trigger in case it updates it based on what's appropriate.
-        if (globals.pRender != nullptr)
+        if (ServiceLocator::LocateGlobals().pRender != nullptr)
         {
-            globals.pRender->TriggerFontChange(globals.dpi, GetDesiredFont(), GetCurrentFont());
-        }
+            ServiceLocator::LocateGlobals().pRender->TriggerFontChange(ServiceLocator::LocateGlobals().dpi,
+                                                                       GetDesiredFont(),
+                                                                       GetCurrentFont());
 
-        TextMeasurementMode mode;
-        switch (gci.GetTextMeasurementMode())
-        {
-        case SettingsTextMeasurementMode::Wcswidth:
-            mode = TextMeasurementMode::Wcswidth;
-            break;
-        case SettingsTextMeasurementMode::Console:
-            mode = TextMeasurementMode::Console;
-            break;
-        default:
-            mode = TextMeasurementMode::Graphemes;
-            break;
+            NotifyGlyphWidthFontChanged();
         }
-
-        CodepointWidthDetector::Singleton().Reset(mode);
     }
 }
 
@@ -1041,11 +1037,6 @@ void SCREEN_INFORMATION::_InternalSetViewportSize(const til::size* const pcoordS
     const auto DeltaY = pcoordSize->height - _viewport.Height();
     const auto coordScreenBufferSize = GetBufferSize().Dimensions();
 
-    if (DeltaX == 0 && DeltaY == 0)
-    {
-        return;
-    }
-
     // do adjustments on a copy that's easily manipulated.
     auto srNewViewport = _viewport.ToInclusive();
 
@@ -1129,11 +1120,15 @@ void SCREEN_INFORMATION::_InternalSetViewportSize(const til::size* const pcoordS
             // If the new bottom is supposed to be before the final line of the buffer
             // Check to ensure that we don't hide the prompt by collapsing the window.
 
-            const auto coordValidEnd = _textBuffer->GetCursor().GetPosition();
+            // The final valid end position will be the coordinates of
+            // the last character displayed (including any characters
+            // in the input line)
+            til::point coordValidEnd;
+            Selection::Instance().GetValidAreaBoundaries(nullptr, &coordValidEnd);
 
             // If the bottom of the window when adjusted would be
             // above the final line of valid text...
-            if (sBottomProposed < coordValidEnd.y)
+            if (srNewViewport.bottom + DeltaY < coordValidEnd.y)
             {
                 // Adjust the top of the window instead of the bottom
                 // (so the lines slide upward)
@@ -1209,15 +1204,10 @@ void SCREEN_INFORMATION::_InternalSetViewportSize(const til::size* const pcoordS
     // till the start of the next frame. If any other text gets output before
     // that frame starts, there's a very real chance that it'll cause errors as
     // the engine tries to invalidate those regions.
-    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     if (gci.IsInVtIoMode() && ServiceLocator::LocateGlobals().pRender)
     {
         ServiceLocator::LocateGlobals().pRender->TriggerScroll();
-    }
-    if (gci.HasPendingCookedRead())
-    {
-        gci.CookedReadData().RedrawAfterResize();
-        MakeCurrentCursorVisible();
     }
 }
 
@@ -1471,6 +1461,13 @@ NT_CATCH_RETURN()
     {
         gci.CookedReadData().EraseBeforeResize();
     }
+    const auto cookedReadRestore = wil::scope_exit([]() {
+        auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        if (gci.HasPendingCookedRead())
+        {
+            gci.CookedReadData().RedrawAfterResize();
+        }
+    });
 
     const auto fWrapText = gci.GetWrapText();
     // GH#3493: Don't reflow the alt buffer.
@@ -2453,26 +2450,23 @@ void SCREEN_INFORMATION::UpdateBottom()
     _virtualBottom = _viewport.BottomInclusive();
 }
 
-// Returns the section of the text buffer that would be visible on the screen
-// if the user didn't scroll away vertically. It's essentially the same as
-// GetVtPageArea() but includes the horizontal scroll offset and window width.
+// Method Description:
+// - Returns the "virtual" Viewport - the viewport with its bottom at
+//      `_virtualBottom`. For VT operations, this is essentially the mutable
+//      section of the buffer.
+// Arguments:
+// - <none>
+// Return Value:
+// - the virtual terminal viewport
 Viewport SCREEN_INFORMATION::GetVirtualViewport() const noexcept
 {
     const auto newTop = _virtualBottom - _viewport.Height() + 1;
     return Viewport::FromDimensions({ _viewport.Left(), newTop }, _viewport.Dimensions());
 }
 
-// Returns the section of the text buffer that's addressable by VT sequences.
-Viewport SCREEN_INFORMATION::GetVtPageArea() const noexcept
-{
-    const auto viewportHeight = _viewport.Height();
-    const auto bufferWidth = _textBuffer->GetSize().Width();
-    const auto top = std::max(0, _virtualBottom - viewportHeight + 1);
-    return Viewport::FromExclusive({ 0, top, bufferWidth, top + viewportHeight });
-}
-
 // Method Description:
 // - Returns true if the character at the cursor's current position is wide.
+//   See IsGlyphFullWidth
 // Arguments:
 // - <none>
 // Return Value:

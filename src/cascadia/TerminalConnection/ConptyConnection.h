@@ -13,9 +13,16 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 {
     struct ConptyConnection : ConptyConnectionT<ConptyConnection>, BaseTerminalConnection<ConptyConnection>
     {
-        explicit ConptyConnection();
+        ConptyConnection(const HANDLE hSig,
+                         const HANDLE hIn,
+                         const HANDLE hOut,
+                         const HANDLE hRef,
+                         const HANDLE hServerProcess,
+                         const HANDLE hClientProcess,
+                         const TERMINAL_STARTUP_INFO& startupInfo);
+
+        ConptyConnection() noexcept = default;
         void Initialize(const Windows::Foundation::Collections::ValueSet& settings);
-        void InitializeFromHandoff(HANDLE* in, HANDLE* out, HANDLE signal, HANDLE reference, HANDLE server, HANDLE client, const TERMINAL_STARTUP_INFO* startupInfo);
 
         static winrt::fire_and_forget final_release(std::unique_ptr<ConptyConnection> connection);
 
@@ -54,15 +61,15 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
     private:
         static void closePseudoConsoleAsync(HPCON hPC) noexcept;
-        static HRESULT NewHandoff(HANDLE* in, HANDLE* out, HANDLE signal, HANDLE reference, HANDLE server, HANDLE client, const TERMINAL_STARTUP_INFO* startupInfo) noexcept;
+        static HRESULT NewHandoff(HANDLE in, HANDLE out, HANDLE signal, HANDLE ref, HANDLE server, HANDLE client, TERMINAL_STARTUP_INFO startupInfo) noexcept;
         static winrt::hstring _commandlineFromProcess(HANDLE process);
 
         HRESULT _LaunchAttachedClient() noexcept;
         void _indicateExitWithStatus(unsigned int status) noexcept;
         void _LastConPtyClientDisconnected() noexcept;
 
-        til::CoordType _rows = 120;
-        til::CoordType _cols = 30;
+        til::CoordType _rows{};
+        til::CoordType _cols{};
         uint64_t _initialParentHwnd{ 0 };
         hstring _commandline{};
         hstring _startingDirectory{};
@@ -80,7 +87,10 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         wil::unique_process_information _piClient;
         wil::unique_any<HPCON, decltype(closePseudoConsoleAsync), closePseudoConsoleAsync> _hPC;
 
-        DWORD _flags{ 0 };
+        til::u8state _u8State{};
+        std::wstring _u16Str{};
+        std::array<char, 4096> _buffer{};
+        bool _inheritCursor{ false };
 
         til::env _initialEnv{};
         guid _profileGuid{};

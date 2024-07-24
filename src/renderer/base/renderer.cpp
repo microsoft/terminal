@@ -274,7 +274,7 @@ void Renderer::TriggerRedraw(const Viewport& region)
 // - <none>
 void Renderer::TriggerRedraw(const til::point* const pcoord)
 {
-    TriggerRedraw(Viewport::FromDimensions(*pcoord, { 1, 1 })); // this will notify to paint if we need it.
+    TriggerRedraw(Viewport::FromCoord(*pcoord)); // this will notify to paint if we need it.
 }
 
 // Routine Description:
@@ -835,13 +835,6 @@ void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
 
             // Ask the helper to paint through this specific line.
             _PaintBufferOutputHelper(pEngine, it, screenPosition, lineWrapped);
-
-            // Paint any image content on top of the text.
-            const auto imageSlice = buffer.GetRowByOffset(row).GetImageSlice();
-            if (imageSlice) [[unlikely]]
-            {
-                LOG_IF_FAILED(pEngine->PaintImageSlice(*imageSlice, screenPosition.y, view.Left()));
-            }
         }
     }
 }
@@ -1191,9 +1184,8 @@ void Renderer::_invalidateCurrentCursor() const
 
     const auto lineRendition = _currentCursorOptions.lineRendition;
     const auto cursorWidth = _currentCursorOptions.fIsDoubleWidth ? 2 : 1;
-    const auto x = coord.x - _viewport.Left();
 
-    til::rect rect{ x, coord.y, x + cursorWidth, coord.y + 1 };
+    til::rect rect{ coord.x, coord.y, coord.x + cursorWidth, coord.y + 1 };
     rect = BufferToScreenLine(rect, lineRendition);
 
     if (view.TrimToViewport(&rect))

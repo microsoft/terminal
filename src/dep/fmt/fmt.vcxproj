@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <ProjectGuid>{6bae5851-50d5-4934-8d5e-30361a8a40f3}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>fmt</RootNamespace>
+    <ProjectName>fmt</ProjectName>
+    <TargetName>fmt</TargetName>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+  </PropertyGroup>
+  <Import Project="$(SolutionDir)src\common.build.pre.props" />
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <AdditionalIncludeDirectories>$(SolutionDir)\oss\fmt\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)oss/fmt/src/format.cc" />
+    <ClCompile Include="$(SolutionDir)oss/fmt/src/os.cc" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="$(SolutionDir)oss/fmt/include/fmt/chrono.h" />
+    <ClInclude Include="$(SolutionDir)oss/fmt/include/fmt/color.h" />
+    <ClInclude Include="$(SolutionDir)oss/fmt/include/fmt/compile.h" />
+    <ClInclude Include="$(SolutionDir)oss/fmt/include/fmt/core.h" />
+    <ClInclude Include="$(SolutionDir)oss/fmt/include/fmt/format-inl.h" />
+    <ClInclude Include="$(SolutionDir)oss/fmt/include/fmt/format.h" />
+    <ClInclude Include="$(SolutionDir)oss/fmt/include/fmt/locale.h" />
+    <ClInclude Include="$(SolutionDir)oss/fmt/include/fmt/os.h" />
+    <ClInclude Include="$(SolutionDir)oss/fmt/include/fmt/ostream.h" />
+    <ClInclude Include="$(SolutionDir)oss/fmt/include/fmt/posix.h" />
+    <ClInclude Include="$(SolutionDir)oss/fmt/include/fmt/printf.h" />
+    <ClInclude Include="$(SolutionDir)oss/fmt/include/fmt/ranges.h" />
+  </ItemGroup>
+  <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->
+  <Import Project="$(SolutionDir)src\common.build.post.props" />
+</Project>

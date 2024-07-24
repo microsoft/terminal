@@ -4,7 +4,6 @@
 #pragma once
 #include "TerminalPaneContent.g.h"
 #include "BellEventArgs.g.h"
-#include "BasicPaneEvents.h"
 
 namespace winrt::TerminalApp::implementation
 {
@@ -17,7 +16,7 @@ namespace winrt::TerminalApp::implementation
         til::property<bool> FlashTaskbar;
     };
 
-    struct TerminalPaneContent : TerminalPaneContentT<TerminalPaneContent>, BasicPaneEvents
+    struct TerminalPaneContent : TerminalPaneContentT<TerminalPaneContent>
     {
         TerminalPaneContent(const winrt::Microsoft::Terminal::Settings::Model::Profile& profile,
                             const TerminalApp::TerminalSettingsCache& cache,
@@ -52,8 +51,14 @@ namespace winrt::TerminalApp::implementation
         Windows::Foundation::Size GridUnitSize();
 
         til::typed_event<TerminalApp::TerminalPaneContent, winrt::Windows::Foundation::IInspectable> RestartTerminalRequested;
-
-        // See BasicPaneEvents for most generic event definitions
+        til::typed_event<> ConnectionStateChanged;
+        til::typed_event<IPaneContent> CloseRequested;
+        til::typed_event<IPaneContent, winrt::TerminalApp::BellEventArgs> BellRequested;
+        til::typed_event<IPaneContent> TitleChanged;
+        til::typed_event<IPaneContent> TabColorChanged;
+        til::typed_event<IPaneContent> TaskbarProgressChanged;
+        til::typed_event<IPaneContent> ReadOnlyChanged;
+        til::typed_event<IPaneContent> FocusRequested;
 
     private:
         winrt::Microsoft::Terminal::Control::TermControl _control{ nullptr };

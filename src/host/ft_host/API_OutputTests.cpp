@@ -159,16 +159,15 @@ void OutputTests::WriteConsoleOutputWOutsideBuffer()
     // Call the API and confirm results.
 
     //  move outside in X and Y directions
-    auto affected = region;
-    affected.Left += bufferSize.X;
-    affected.Right += bufferSize.X;
-    affected.Top += bufferSize.Y;
-    affected.Bottom += bufferSize.Y;
-    auto expected = affected;
-    expected.Right = expected.Left - 1;
-    expected.Bottom = expected.Top - 1;
+    auto shiftedRegion = region;
+    shiftedRegion.Left += bufferSize.X;
+    shiftedRegion.Right += bufferSize.X;
+    shiftedRegion.Top += bufferSize.Y;
+    shiftedRegion.Bottom += bufferSize.Y;
+
+    auto affected = shiftedRegion;
     VERIFY_WIN32_BOOL_SUCCEEDED(WriteConsoleOutputW(consoleOutputHandle, buffer.data(), regionDimensions, regionOrigin, &affected));
-    VERIFY_ARE_EQUAL(expected, affected);
+    VERIFY_ARE_EQUAL(shiftedRegion, affected);
 
     // Read the entire buffer back and validate that we didn't write anything anywhere
     const auto readBack = std::make_unique<CHAR_INFO[]>(sbiex.dwSize.X * sbiex.dwSize.Y);
@@ -364,6 +363,12 @@ void OutputTests::WriteConsoleOutputWNegativePositions()
             VERIFY_ARE_EQUAL(expectedItem, readItem);
         }
     }
+
+    // Set the region so the left will end up past the right
+    adjustedRegion = region;
+    adjustedRegion.Left = -(adjustedRegion.Right + 1);
+    affected = adjustedRegion;
+    VERIFY_WIN32_BOOL_FAILED(WriteConsoleOutputW(consoleOutputHandle, buffer.data(), regionDimensions, regionOrigin, &affected));
 }
 
 void OutputTests::WriteConsoleOutputCharacterWRunoff()

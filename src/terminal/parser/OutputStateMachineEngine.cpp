@@ -720,11 +720,6 @@ IStateMachineEngine::StringHandler OutputStateMachineEngine::ActionDcsDispatch(c
 
     switch (id)
     {
-    case DcsActionCodes::SIXEL_DefineImage:
-        handler = _dispatch->DefineSixelImage(parameters.at(0),
-                                              parameters.at(1),
-                                              parameters.at(2));
-        break;
     case DcsActionCodes::DECDLD_DownloadDRCS:
         handler = _dispatch->DownloadDRCS(parameters.at(0),
                                           parameters.at(1),
@@ -916,11 +911,6 @@ bool OutputStateMachineEngine::ActionOscDispatch(const size_t parameter, const s
     case OscActionCodes::VsCodeAction:
     {
         success = _dispatch->DoVsCodeAction(string);
-        break;
-    }
-    case OscActionCodes::WTAction:
-    {
-        success = _dispatch->DoWTAction(string);
         break;
     }
     default:

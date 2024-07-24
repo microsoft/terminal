@@ -3,11 +3,10 @@
 
 #pragma once
 #include "winrt/TerminalApp.h"
-#include "BasicPaneEvents.h"
 
 namespace winrt::TerminalApp::implementation
 {
-    class ScratchpadContent : public winrt::implements<ScratchpadContent, IPaneContent>, public BasicPaneEvents
+    class ScratchpadContent : public winrt::implements<ScratchpadContent, IPaneContent>
     {
     public:
         ScratchpadContent();
@@ -30,7 +29,14 @@ namespace winrt::TerminalApp::implementation
         Windows::Foundation::IReference<winrt::Windows::UI::Color> TabColor() const noexcept { return nullptr; }
         winrt::Windows::UI::Xaml::Media::Brush BackgroundBrush();
 
-        // See BasicPaneEvents for most generic event definitions
+        til::typed_event<> ConnectionStateChanged;
+        til::typed_event<IPaneContent> CloseRequested;
+        til::typed_event<IPaneContent, winrt::TerminalApp::BellEventArgs> BellRequested;
+        til::typed_event<IPaneContent> TitleChanged;
+        til::typed_event<IPaneContent> TabColorChanged;
+        til::typed_event<IPaneContent> TaskbarProgressChanged;
+        til::typed_event<IPaneContent> ReadOnlyChanged;
+        til::typed_event<IPaneContent> FocusRequested;
 
     private:
         winrt::Windows::UI::Xaml::Controls::Grid _root{ nullptr };

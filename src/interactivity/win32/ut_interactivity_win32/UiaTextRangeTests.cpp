@@ -340,6 +340,7 @@ class UiaTextRangeTests
         auto& gci = Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals().getConsoleInformation();
         // set up common state
         _state = new CommonState();
+        _state->PrepareGlobalFont();
         _state->PrepareGlobalScreenBuffer();
         _state->PrepareNewTextBufferInfo();
 
@@ -376,6 +377,7 @@ class UiaTextRangeTests
     {
         _state->CleanupNewTextBufferInfo();
         _state->CleanupGlobalScreenBuffer();
+        _state->CleanupGlobalFont();
         delete _state;
         delete _range;
 

@@ -18,7 +18,6 @@ Author(s):
 
 #include "MTSMSettings.h"
 
-#include "SettingsTheme.g.h"
 #include "ThemeColor.g.h"
 #include "WindowTheme.g.h"
 #include "TabRowTheme.g.h"
@@ -82,7 +81,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     };
 
     THEME_OBJECT(WindowTheme, MTSM_THEME_WINDOW_SETTINGS);
-    THEME_OBJECT(SettingsTheme, MTSM_THEME_SETTINGS_SETTINGS);
     THEME_OBJECT(TabRowTheme, MTSM_THEME_TABROW_SETTINGS);
     THEME_OBJECT(TabTheme, MTSM_THEME_TAB_SETTINGS);
 

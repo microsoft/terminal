@@ -301,12 +301,6 @@
     <value>選取輸出</value>
     <comment>The tooltip for a button for selecting all of a command's output</comment>
   </data>
-  <data name="QuickFixButton.ToolTipService.ToolTip" xml:space="preserve">
-    <value>快速修正</value>
-  </data>
-  <data name="QuickFixButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
-    <value>快速修正</value>
-  </data>
   <data name="SessionRestoreMessage" xml:space="preserve">
     <value>已還原</value>
     <comment>"Restored" as in "This content was restored"</comment>
@@ -322,13 +316,6 @@
   <data name="SearchRegexInvalid" xml:space="preserve">
     <value>無效</value>
     <comment>This brief message is displayed when a regular expression is invalid.</comment>
-  </data>
-  <data name="QuickFixAvailable" xml:space="preserve">
-    <value>可用的快速修正</value>
-    <comment>"Quick fix" is referencing the same feature as "QuickFixButton.ToolTipService.ToolTip".</comment>
-  </data>
-  <data name="QuickFixMenu.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
-    <value>快速修正</value>
   </data>
   <data name="PreviewTextAnnouncement" xml:space="preserve">
     <value>建議的輸入: {0}</value>

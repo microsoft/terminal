@@ -2519,6 +2519,7 @@
         },
         "keybindings": {
           "description": "A list of keychords bound to action IDs",
+          "deprecated": true,
           "items": {
             "$ref": "#/$defs/Keybinding"
           },

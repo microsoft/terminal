@@ -24,16 +24,21 @@ namespace Microsoft::Console
         VtInputThread(_In_ wil::unique_hfile hPipe, const bool inheritCursor);
 
         [[nodiscard]] HRESULT Start();
-        void WaitUntilDSR(DWORD timeout) const noexcept;
+        static DWORD WINAPI StaticVtInputThreadProc(_In_ LPVOID lpParameter);
+        bool DoReadInput();
+        void SetLookingForDSR(const bool looking) noexcept;
 
     private:
-        static DWORD WINAPI StaticVtInputThreadProc(_In_ LPVOID lpParameter);
         void _InputThread();
 
         wil::unique_hfile _hFile;
         wil::unique_handle _hThread;
-        DWORD _dwThreadId = 0;
+        DWORD _dwThreadId;
+
+        std::function<void(bool)> _pfnSetLookingForDSR;
 
         std::unique_ptr<Microsoft::Console::VirtualTerminal::StateMachine> _pInputStateMachine;
+        til::u8state _u8State;
+        std::wstring _wstr;
     };
 }

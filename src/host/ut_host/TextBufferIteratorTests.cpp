@@ -80,6 +80,7 @@ class TextBufferIteratorTests
     {
         m_state = new CommonState();
 
+        m_state->PrepareGlobalFont();
         m_state->PrepareGlobalScreenBuffer();
 
         return true;
@@ -88,6 +89,7 @@ class TextBufferIteratorTests
     TEST_CLASS_CLEANUP(ClassCleanup)
     {
         m_state->CleanupGlobalScreenBuffer();
+        m_state->CleanupGlobalFont();
 
         delete m_state;
 

@@ -292,11 +292,6 @@ void BackendD2D::_drawText(RenderingPayload& p)
             _drawTextResetLineRendition(row);
         }
 
-        if (row->bitmap.revision != 0)
-        {
-            _drawBitmap(p, row, y);
-        }
-
         if (p.invalidatedRows.contains(y))
         {
             dirtyTop = std::min(dirtyTop, row->dirtyTop);
@@ -633,14 +628,24 @@ void BackendD2D::_drawGridlineRow(const RenderingPayload& p, const ShapedRow* ro
         // it being simple to implement and robust against more peculiar fonts with unusually large/small descenders, etc.
         // We still need to ensure though that it doesn't clip out of the cellHeight at the bottom, which is why `position` has a min().
         const auto height = std::max(3.0f, duBottom + duHeight - duTop);
-        const auto position = std::min(duTop, cellHeight - height);
+        const auto position = std::min(duTop, cellHeight - height - duHeight);
 
         // The amplitude of the wave needs to account for the stroke width, so that the final height including
         // antialiasing isn't larger than our target `height`. That's why we calculate `(height - duHeight)`.
-        const auto center = cellCenter + position + 0.5f * height;
-        const auto top = center - (height - duHeight);
-        const auto bottom = center + (height - duHeight);
-        const auto step = roundf(0.5f * height);
+        //
+        // In other words, Direct2D draws strokes centered on the path. This also means that (for instance)
+        // for a line width of 1px, we need to ensure that the amplitude passes through the center of a pixel.
+        // Because once the path gets stroked, it'll occupy half a pixel on either side of the path.
+        // This results in a "crisp" look. That's why we do `round(amp + half) - half`.
+        const auto halfLineWidth = 0.5f * duHeight;
+        const auto amplitude = roundf((height - duHeight) * 0.5f + halfLineWidth) - halfLineWidth;
+        // While the amplitude needs to account for the stroke width, the vertical center of the wave needs
+        // to be at an integer pixel position of course. Otherwise, the wave won't be vertically symmetric.
+        const auto center = cellCenter + position + amplitude + halfLineWidth;
+
+        const auto top = center - 2.0f * amplitude;
+        const auto bottom = center + 2.0f * amplitude;
+        const auto step = 0.5f * height;
         const auto period = 4.0f * step;
 
         const auto from = r.from * scaledCellWidth;
@@ -748,39 +753,6 @@ void BackendD2D::_drawGridlineRow(const RenderingPayload& p, const ShapedRow* ro
             }
         }
     }
-}
-
-void BackendD2D::_drawBitmap(const RenderingPayload& p, const ShapedRow* row, u16 y) const
-{
-    const auto& b = row->bitmap;
-
-    // TODO: This could use some caching logic like BackendD3D.
-    const D2D1_SIZE_U size{
-        gsl::narrow_cast<UINT32>(b.sourceSize.x),
-        gsl::narrow_cast<UINT32>(b.sourceSize.y),
-    };
-    const D2D1_BITMAP_PROPERTIES bitmapProperties{
-        .pixelFormat = { DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED },
-        .dpiX = static_cast<f32>(p.s->font->dpi),
-        .dpiY = static_cast<f32>(p.s->font->dpi),
-    };
-    wil::com_ptr<ID2D1Bitmap> bitmap;
-    THROW_IF_FAILED(_renderTarget->CreateBitmap(size, b.source.data(), static_cast<UINT32>(b.sourceSize.x) * 4, &bitmapProperties, bitmap.addressof()));
-
-    const i32 cellWidth = p.s->font->cellSize.x;
-    const i32 cellHeight = p.s->font->cellSize.y;
-    const auto left = (b.targetOffset - p.scrollOffsetX) * cellWidth;
-    const auto right = left + b.targetWidth * cellWidth;
-    const auto top = y * cellHeight;
-    const auto bottom = left + cellHeight;
-
-    const D2D1_RECT_F rectF{
-        static_cast<f32>(left),
-        static_cast<f32>(top),
-        static_cast<f32>(right),
-        static_cast<f32>(bottom),
-    };
-    _renderTarget->DrawBitmap(bitmap.get(), &rectF, 1, D2D1_BITMAP_INTERPOLATION_MODE_LINEAR);
 }
 
 void BackendD2D::_drawCursorPart1(const RenderingPayload& p)
@@ -931,25 +903,23 @@ void BackendD2D::_drawSelection(const RenderingPayload& p)
 #if ATLAS_DEBUG_SHOW_DIRTY
 void BackendD2D::_debugShowDirty(const RenderingPayload& p)
 {
-    if (p.dirtyRectInPx.empty())
-    {
-        return;
-    }
-
     _presentRects[_presentRectsPos] = p.dirtyRectInPx;
     _presentRectsPos = (_presentRectsPos + 1) % std::size(_presentRects);
 
     for (size_t i = 0; i < std::size(_presentRects); ++i)
     {
         const auto& rect = _presentRects[(_presentRectsPos + i) % std::size(_presentRects)];
-        const D2D1_RECT_F rectF{
-            static_cast<f32>(rect.left),
-            static_cast<f32>(rect.top),
-            static_cast<f32>(rect.right),
-            static_cast<f32>(rect.bottom),
-        };
-        const auto color = til::colorbrewer::pastel1[i] | 0x1f000000;
-        _fillRectangle(rectF, color);
+        if (rect.non_empty())
+        {
+            const D2D1_RECT_F rectF{
+                static_cast<f32>(rect.left),
+                static_cast<f32>(rect.top),
+                static_cast<f32>(rect.right),
+                static_cast<f32>(rect.bottom),
+            };
+            const auto color = til::colorbrewer::pastel1[i] | 0x1f000000;
+            _fillRectangle(rectF, color);
+        }
     }
 }
 #endif
@@ -963,12 +933,9 @@ void BackendD2D::_debugDumpRenderTarget(const RenderingPayload& p)
         std::filesystem::create_directories(_dumpRenderTargetBasePath);
     }
 
-    wil::com_ptr<ID3D11Texture2D> buffer;
-    THROW_IF_FAILED(p.swapChain.swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), reinterpret_cast<void**>(buffer.addressof())));
-
     wchar_t path[MAX_PATH];
     swprintf_s(path, L"%s\\%u_%08zu.png", &_dumpRenderTargetBasePath[0], GetCurrentProcessId(), _dumpRenderTargetCounter);
-    WIC::SaveTextureToPNG(p.deviceContext.get(), buffer.get(), p.s->font->dpi, &path[0]);
+    SaveTextureToPNG(_deviceContext.get(), _swapChainManager.GetBuffer().get(), p.s->font->dpi, &path[0]);
     _dumpRenderTargetCounter++;
 }
 #endif

@@ -4,12 +4,10 @@
 #include "precomp.h"
 
 #include "adaptDispatch.hpp"
-#include "SixelParser.hpp"
-#include "../../inc/unicode.hpp"
 #include "../../renderer/base/renderer.hpp"
-#include "../../types/inc/CodepointWidthDetector.hpp"
-#include "../../types/inc/utils.hpp"
 #include "../../types/inc/Viewport.hpp"
+#include "../../types/inc/utils.hpp"
+#include "../../inc/unicode.hpp"
 #include "../parser/ascii.hpp"
 
 using namespace Microsoft::Console::Types;
@@ -616,8 +614,8 @@ void AdaptDispatch::_ScrollRectVertically(const Page& page, const til::rect& scr
             // requested buffer range one cell at a time.
             const auto srcOrigin = til::point{ scrollRect.left, top };
             const auto dstOrigin = til::point{ scrollRect.left, top + actualDelta };
-            const auto srcView = Viewport::FromDimensions(srcOrigin, { width, height });
-            const auto dstView = Viewport::FromDimensions(dstOrigin, { width, height });
+            const auto srcView = Viewport::FromDimensions(srcOrigin, width, height);
+            const auto dstView = Viewport::FromDimensions(dstOrigin, width, height);
             const auto walkDirection = Viewport::DetermineWalkDirection(srcView, dstView);
             auto srcPos = srcView.GetWalkOrigin(walkDirection);
             auto dstPos = dstView.GetWalkOrigin(walkDirection);
@@ -627,8 +625,6 @@ void AdaptDispatch::_ScrollRectVertically(const Page& page, const til::rect& scr
                 textBuffer.WriteLine(OutputCellIterator({ &current, 1 }), dstPos);
                 srcView.WalkInBounds(srcPos, walkDirection);
             } while (dstView.WalkInBounds(dstPos, walkDirection));
-            // Copy any image content in the affected area.
-            ImageSlice::CopyBlock(textBuffer, srcView.ToExclusive(), textBuffer, dstView.ToExclusive());
         }
     }
 
@@ -663,7 +659,7 @@ void AdaptDispatch::_ScrollRectHorizontally(const Page& page, const til::rect& s
         const auto height = scrollRect.height();
         const auto actualDelta = delta > 0 ? absoluteDelta : -absoluteDelta;
 
-        const auto source = Viewport::FromDimensions({ left, top }, { width, height });
+        const auto source = Viewport::FromDimensions({ left, top }, width, height);
         const auto target = Viewport::Offset(source, { actualDelta, 0 });
         const auto walkDirection = Viewport::DetermineWalkDirection(source, target);
         auto sourcePos = source.GetWalkOrigin(walkDirection);
@@ -679,8 +675,6 @@ void AdaptDispatch::_ScrollRectHorizontally(const Page& page, const til::rect& s
             next = OutputCell(*textBuffer.GetCellDataAt(sourcePos));
             textBuffer.WriteLine(OutputCellIterator({ &current, 1 }), targetPos);
         } while (target.WalkInBounds(targetPos, walkDirection));
-        // Copy any image content in the affected area.
-        ImageSlice::CopyBlock(textBuffer, source.ToExclusive(), textBuffer, target.ToExclusive());
     }
 
     // Columns revealed by the scroll are filled with standard erase attributes.
@@ -899,9 +893,7 @@ void AdaptDispatch::_SelectiveEraseRect(const Page& page, const til::rect& erase
                 {
                     // The text is cleared but the attributes are left as is.
                     rowBuffer.ClearCell(col);
-                    // Any image content also needs to be erased.
-                    ImageSlice::EraseCells(rowBuffer, col, col + 1);
-                    page.Buffer().TriggerRedraw(Viewport::FromDimensions({ col, row }, { 1, 1 }));
+                    page.Buffer().TriggerRedraw(Viewport::FromCoord({ col, row }));
                 }
             }
         }
@@ -1259,8 +1251,6 @@ bool AdaptDispatch::CopyRectangularArea(const VTInt top, const VTInt left, const
                 dst.Buffer().WriteLine(OutputCellIterator({ &current, 1 }), dstPos);
             }
         } while (dstView.WalkInBounds(dstPos, walkDirection));
-        // Copy any image content in the affected area.
-        ImageSlice::CopyBlock(src.Buffer(), srcView.ToExclusive(), dst.Buffer(), dstView.ToExclusive());
         _api.NotifyAccessibilityChange(dstRect);
     }
 
@@ -1539,7 +1529,6 @@ bool AdaptDispatch::DeviceAttributes()
     // extensions.
     //
     // 1 = 132 column mode (ConHost only)
-    // 4 = Sixel Graphics (ConHost only)
     // 6 = Selective erase
     // 7 = Soft fonts
     // 14 = 8-bit interface architecture
@@ -1557,7 +1546,7 @@ bool AdaptDispatch::DeviceAttributes()
     }
     else
     {
-        _api.ReturnResponse(L"\x1b[?61;1;4;6;7;14;21;22;23;24;28;32;42c");
+        _api.ReturnResponse(L"\x1b[?61;1;6;7;14;21;22;23;24;28;32;42c");
     }
     return true;
 }
@@ -2001,13 +1990,6 @@ bool AdaptDispatch::_ModeParamsHelper(const DispatchTypes::ModeParams param, con
             page.Buffer().ResetLineRenditionRange(page.Top(), page.Bottom());
         }
         return true;
-    case DispatchTypes::ModeParams::DECSDM_SixelDisplayMode:
-        _modes.set(Mode::SixelDisplay, enable);
-        if (_sixelParser)
-        {
-            _sixelParser->SetDisplayMode(enable);
-        }
-        return true;
     case DispatchTypes::ModeParams::DECECM_EraseColorMode:
         _modes.set(Mode::EraseColor, enable);
         return true;
@@ -2040,8 +2022,6 @@ bool AdaptDispatch::_ModeParamsHelper(const DispatchTypes::ModeParams param, con
     case DispatchTypes::ModeParams::XTERM_BracketedPasteMode:
         _api.SetSystemMode(ITerminalApi::Mode::BracketedPaste, enable);
         return !_api.IsConsolePty();
-    case DispatchTypes::ModeParams::GCM_GraphemeClusterMode:
-        return true;
     case DispatchTypes::ModeParams::W32IM_Win32InputMode:
         _terminalInput.SetInputMode(TerminalInput::Mode::Win32, enable);
         // ConPTY requests the Win32InputMode on startup and disables it on shutdown. When nesting ConPTY inside
@@ -2088,127 +2068,116 @@ bool AdaptDispatch::ResetMode(const DispatchTypes::ModeParams param)
 // - True if handled successfully. False otherwise.
 bool AdaptDispatch::RequestMode(const DispatchTypes::ModeParams param)
 {
-    static constexpr auto mapTemp = [](const bool b) { return b ? DispatchTypes::DECRPM_Enabled : DispatchTypes::DECRPM_Disabled; };
-    static constexpr auto mapPerm = [](const bool b) { return b ? DispatchTypes::DECRPM_PermanentlyEnabled : DispatchTypes::DECRPM_PermanentlyDisabled; };
-
-    VTInt state = DispatchTypes::DECRPM_Unsupported;
+    auto enabled = std::optional<bool>{};
 
     switch (param)
     {
     case DispatchTypes::ModeParams::IRM_InsertReplaceMode:
-        state = mapTemp(_modes.test(Mode::InsertReplace));
+        enabled = _modes.test(Mode::InsertReplace);
         break;
     case DispatchTypes::ModeParams::LNM_LineFeedNewLineMode:
         // VT apps expect that the system and input modes are the same, so if
         // they become out of sync, we just act as if LNM mode isn't supported.
         if (_api.GetSystemMode(ITerminalApi::Mode::LineFeed) == _terminalInput.GetInputMode(TerminalInput::Mode::LineFeed))
         {
-            state = mapTemp(_terminalInput.GetInputMode(TerminalInput::Mode::LineFeed));
+            enabled = _terminalInput.GetInputMode(TerminalInput::Mode::LineFeed);
         }
         break;
     case DispatchTypes::ModeParams::DECCKM_CursorKeysMode:
-        state = mapTemp(_terminalInput.GetInputMode(TerminalInput::Mode::CursorKey));
+        enabled = _terminalInput.GetInputMode(TerminalInput::Mode::CursorKey);
         break;
     case DispatchTypes::ModeParams::DECANM_AnsiMode:
-        state = mapTemp(_api.GetStateMachine().GetParserMode(StateMachine::Mode::Ansi));
+        enabled = _api.GetStateMachine().GetParserMode(StateMachine::Mode::Ansi);
         break;
     case DispatchTypes::ModeParams::DECCOLM_SetNumberOfColumns:
         // DECCOLM is not supported in conpty mode
         if (!_api.IsConsolePty())
         {
-            state = mapTemp(_modes.test(Mode::Column));
+            enabled = _modes.test(Mode::Column);
         }
         break;
     case DispatchTypes::ModeParams::DECSCNM_ScreenMode:
-        state = mapTemp(_renderSettings.GetRenderMode(RenderSettings::Mode::ScreenReversed));
+        enabled = _renderSettings.GetRenderMode(RenderSettings::Mode::ScreenReversed);
         break;
     case DispatchTypes::ModeParams::DECOM_OriginMode:
-        state = mapTemp(_modes.test(Mode::Origin));
+        enabled = _modes.test(Mode::Origin);
         break;
     case DispatchTypes::ModeParams::DECAWM_AutoWrapMode:
-        state = mapTemp(_api.GetSystemMode(ITerminalApi::Mode::AutoWrap));
+        enabled = _api.GetSystemMode(ITerminalApi::Mode::AutoWrap);
         break;
     case DispatchTypes::ModeParams::DECARM_AutoRepeatMode:
-        state = mapTemp(_terminalInput.GetInputMode(TerminalInput::Mode::AutoRepeat));
+        enabled = _terminalInput.GetInputMode(TerminalInput::Mode::AutoRepeat);
         break;
     case DispatchTypes::ModeParams::ATT610_StartCursorBlink:
-        state = mapTemp(_pages.ActivePage().Cursor().IsBlinkingAllowed());
+        enabled = _pages.ActivePage().Cursor().IsBlinkingAllowed();
         break;
     case DispatchTypes::ModeParams::DECTCEM_TextCursorEnableMode:
-        state = mapTemp(_pages.ActivePage().Cursor().IsVisible());
+        enabled = _pages.ActivePage().Cursor().IsVisible();
         break;
     case DispatchTypes::ModeParams::XTERM_EnableDECCOLMSupport:
         // DECCOLM is not supported in conpty mode
         if (!_api.IsConsolePty())
         {
-            state = mapTemp(_modes.test(Mode::AllowDECCOLM));
+            enabled = _modes.test(Mode::AllowDECCOLM);
         }
         break;
     case DispatchTypes::ModeParams::DECPCCM_PageCursorCouplingMode:
-        state = mapTemp(_modes.test(Mode::PageCursorCoupling));
+        enabled = _modes.test(Mode::PageCursorCoupling);
         break;
     case DispatchTypes::ModeParams::DECNKM_NumericKeypadMode:
-        state = mapTemp(_terminalInput.GetInputMode(TerminalInput::Mode::Keypad));
+        enabled = _terminalInput.GetInputMode(TerminalInput::Mode::Keypad);
         break;
     case DispatchTypes::ModeParams::DECBKM_BackarrowKeyMode:
-        state = mapTemp(_terminalInput.GetInputMode(TerminalInput::Mode::BackarrowKey));
+        enabled = _terminalInput.GetInputMode(TerminalInput::Mode::BackarrowKey);
         break;
     case DispatchTypes::ModeParams::DECLRMM_LeftRightMarginMode:
-        state = mapTemp(_modes.test(Mode::AllowDECSLRM));
-        break;
-    case DispatchTypes::ModeParams::DECSDM_SixelDisplayMode:
-        state = mapTemp(_modes.test(Mode::SixelDisplay));
+        enabled = _modes.test(Mode::AllowDECSLRM);
         break;
     case DispatchTypes::ModeParams::DECECM_EraseColorMode:
-        state = mapTemp(_modes.test(Mode::EraseColor));
+        enabled = _modes.test(Mode::EraseColor);
         break;
     case DispatchTypes::ModeParams::VT200_MOUSE_MODE:
-        state = mapTemp(_terminalInput.GetInputMode(TerminalInput::Mode::DefaultMouseTracking));
+        enabled = _terminalInput.GetInputMode(TerminalInput::Mode::DefaultMouseTracking);
         break;
     case DispatchTypes::ModeParams::BUTTON_EVENT_MOUSE_MODE:
-        state = mapTemp(_terminalInput.GetInputMode(TerminalInput::Mode::ButtonEventMouseTracking));
+        enabled = _terminalInput.GetInputMode(TerminalInput::Mode::ButtonEventMouseTracking);
         break;
     case DispatchTypes::ModeParams::ANY_EVENT_MOUSE_MODE:
-        state = mapTemp(_terminalInput.GetInputMode(TerminalInput::Mode::AnyEventMouseTracking));
+        enabled = _terminalInput.GetInputMode(TerminalInput::Mode::AnyEventMouseTracking);
         break;
     case DispatchTypes::ModeParams::UTF8_EXTENDED_MODE:
-        state = mapTemp(_terminalInput.GetInputMode(TerminalInput::Mode::Utf8MouseEncoding));
+        enabled = _terminalInput.GetInputMode(TerminalInput::Mode::Utf8MouseEncoding);
         break;
     case DispatchTypes::ModeParams::SGR_EXTENDED_MODE:
-        state = mapTemp(_terminalInput.GetInputMode(TerminalInput::Mode::SgrMouseEncoding));
+        enabled = _terminalInput.GetInputMode(TerminalInput::Mode::SgrMouseEncoding);
         break;
     case DispatchTypes::ModeParams::FOCUS_EVENT_MODE:
-        state = mapTemp(_terminalInput.GetInputMode(TerminalInput::Mode::FocusEvent));
+        enabled = _terminalInput.GetInputMode(TerminalInput::Mode::FocusEvent);
         break;
     case DispatchTypes::ModeParams::ALTERNATE_SCROLL:
-        state = mapTemp(_terminalInput.GetInputMode(TerminalInput::Mode::AlternateScroll));
+        enabled = _terminalInput.GetInputMode(TerminalInput::Mode::AlternateScroll);
         break;
     case DispatchTypes::ModeParams::ASB_AlternateScreenBuffer:
-        state = mapTemp(_usingAltBuffer);
+        enabled = _usingAltBuffer;
         break;
     case DispatchTypes::ModeParams::XTERM_BracketedPasteMode:
-        state = mapTemp(_api.GetSystemMode(ITerminalApi::Mode::BracketedPaste));
-        break;
-    case DispatchTypes::ModeParams::GCM_GraphemeClusterMode:
-        state = mapPerm(CodepointWidthDetector::Singleton().GetMode() == TextMeasurementMode::Graphemes);
+        enabled = _api.GetSystemMode(ITerminalApi::Mode::BracketedPaste);
         break;
     case DispatchTypes::ModeParams::W32IM_Win32InputMode:
-        state = mapTemp(_terminalInput.GetInputMode(TerminalInput::Mode::Win32));
+        enabled = _terminalInput.GetInputMode(TerminalInput::Mode::Win32);
         break;
     default:
+        enabled = std::nullopt;
         break;
     }
 
-    VTInt mode = param;
-    std::wstring_view prefix;
-
-    if (mode >= DispatchTypes::DECPrivateMode(0))
-    {
-        mode -= DispatchTypes::DECPrivateMode(0);
-        prefix = L"?";
-    }
-
-    _api.ReturnResponse(fmt::format(FMT_COMPILE(L"\x1b[{}{};{}$y"), prefix, mode, state));
+    // 1 indicates the mode is enabled, 2 it's disabled, and 0 it's unsupported
+    const auto state = enabled.has_value() ? (enabled.value() ? 1 : 2) : 0;
+    const auto isPrivate = param >= DispatchTypes::DECPrivateMode(0);
+    const auto prefix = isPrivate ? L"?" : L"";
+    const auto mode = isPrivate ? param - DispatchTypes::DECPrivateMode(0) : param;
+    const auto response = wil::str_printf<std::wstring>(L"\x1b[%s%d;%d$y", prefix, mode, state);
+    _api.ReturnResponse(response);
     return true;
 }
 
@@ -3172,12 +3141,6 @@ bool AdaptDispatch::SoftReset()
     _savedCursorState.at(0).TermOutput = _termOutput;
     _savedCursorState.at(1).TermOutput = _termOutput;
 
-    // Soft reset the Sixel parser if in use.
-    if (_sixelParser)
-    {
-        _sixelParser->SoftReset();
-    }
-
     return !_api.IsConsolePty();
 }
 
@@ -3214,9 +3177,6 @@ bool AdaptDispatch::HardReset()
 
     // Reset all page buffers.
     _pages.Reset();
-
-    // Reset the Sixel parser.
-    _sixelParser = nullptr;
 
     // Completely reset the TerminalOutput state.
     _termOutput = {};
@@ -3648,12 +3608,6 @@ bool AdaptDispatch::WindowManipulation(const DispatchTypes::WindowManipulationTy
     // Other Window Manipulation functions:
     //  MSFT:13271098 - QueryViewport
     //  MSFT:13271146 - QueryScreenSize
-
-    const auto reportSize = [&](const auto size) {
-        const auto reportType = function - 10;
-        _api.ReturnResponse(fmt::format(FMT_COMPILE(L"\033[{};{};{}t"), reportType, size.height, size.width));
-    };
-
     switch (function)
     {
     case DispatchTypes::WindowManipulationType::DeIconifyWindow:
@@ -3669,19 +3623,11 @@ bool AdaptDispatch::WindowManipulation(const DispatchTypes::WindowManipulationTy
         _api.ResizeWindow(parameter2.value_or(0), parameter1.value_or(0));
         return true;
     case DispatchTypes::WindowManipulationType::ReportTextSizeInCharacters:
-        reportSize(_pages.VisiblePage().Size());
+    {
+        const auto page = _pages.VisiblePage();
+        _api.ReturnResponse(fmt::format(FMT_COMPILE(L"\033[8;{};{}t"), page.Height(), page.Width()));
         return true;
-    case DispatchTypes::WindowManipulationType::ReportTextSizeInPixels:
-        // Prior to the existence of the character cell size query, Sixel applications
-        // that wanted to know the cell size would request the text area in pixels and
-        // divide that by the text area in characters. But for this to work, we need to
-        // return the virtual pixel size, as used in the Sixel graphics emulation, and
-        // not the physical pixel size (which should be of no concern to applications).
-        reportSize(_pages.VisiblePage().Size() * SixelParser::CellSizeForLevel());
-        return true;
-    case DispatchTypes::WindowManipulationType::ReportCharacterCellSize:
-        reportSize(SixelParser::CellSizeForLevel());
-        return true;
+    }
     default:
         return false;
     }
@@ -4036,76 +3982,6 @@ bool AdaptDispatch::DoVsCodeAction(const std::wstring_view string)
         return true;
     }
     return false;
-}
-
-// Method Description:
-// - Performs a Windows Terminal action
-// - Currently, the actions we support are:
-//   * CmdNotFound: A protocol for passing commands that the shell couldn't resolve
-//     to the terminal. The command is then shared with WinGet to see if it can
-//     find a package that provides that command, which is then displayed to the
-//     user.
-// - Not actually used in conhost
-// Arguments:
-// - string: contains the parameters that define which action we do
-// Return Value:
-// - false in conhost, true for the CmdNotFound action, otherwise false.
-bool AdaptDispatch::DoWTAction(const std::wstring_view string)
-{
-    // This is not implemented in conhost.
-    if (_api.IsConsolePty())
-    {
-        // Flush the frame manually to make sure this action happens at the right time.
-        _renderer->TriggerFlush(false);
-        return false;
-    }
-
-    const auto parts = Utils::SplitString(string, L';');
-
-    if (parts.size() < 1)
-    {
-        return false;
-    }
-
-    const auto action = til::at(parts, 0);
-
-    if (action == L"CmdNotFound")
-    {
-        // The structure of the message is as follows:
-        // `e]9001;
-        // 0:     CmdNotFound;
-        // 1:     $($cmdNotFound.missingCmd);
-        if (parts.size() >= 2)
-        {
-            const std::wstring_view missingCmd = til::at(parts, 1);
-            _api.SearchMissingCommand(missingCmd);
-        }
-
-        return true;
-    }
-    return false;
-}
-
-// Method Description:
-// - SIXEL - Defines an image transmitted in sixel format via the returned
-//   StringHandler function.
-// Arguments:
-// - macroParameter - Selects one a of set of predefined aspect ratios.
-// - backgroundSelect - Whether the background should be transparent or opaque.
-// - backgroundColor - The color number used for the background (VT240).
-// Return Value:
-// - a function to receive the pixel data or nullptr if parameters are invalid
-ITermDispatch::StringHandler AdaptDispatch::DefineSixelImage(const VTInt macroParameter,
-                                                             const DispatchTypes::SixelBackground backgroundSelect,
-                                                             const VTParameter backgroundColor)
-{
-    // The sixel parser is created on demand.
-    if (!_sixelParser)
-    {
-        _sixelParser = std::make_unique<SixelParser>(*this, _api.GetStateMachine());
-        _sixelParser->SetDisplayMode(_modes.test(Mode::SixelDisplay));
-    }
-    return _sixelParser->DefineImage(macroParameter, backgroundSelect, backgroundColor);
 }
 
 // Method Description:

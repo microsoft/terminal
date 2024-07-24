@@ -73,6 +73,7 @@ void ConsoleArgumentsTests::ArgSplittingTests()
                                     L"this is the commandline", // clientCommandLine,
                                     INVALID_HANDLE_VALUE,
                                     INVALID_HANDLE_VALUE,
+                                    L"", // vtMode
                                     0, // width
                                     0, // height
                                     false, // forceV1
@@ -94,6 +95,7 @@ void ConsoleArgumentsTests::ArgSplittingTests()
                                     L"\"this is the commandline\"", // clientCommandLine
                                     INVALID_HANDLE_VALUE,
                                     INVALID_HANDLE_VALUE,
+                                    L"", // vtMode
                                     0, // width
                                     0, // height
                                     false, // forceV1
@@ -115,6 +117,7 @@ void ConsoleArgumentsTests::ArgSplittingTests()
                                     L"\"--vtmode bar this is the commandline\"", // clientCommandLine
                                     INVALID_HANDLE_VALUE,
                                     INVALID_HANDLE_VALUE,
+                                    L"", // vtMode
                                     0, // width
                                     0, // height
                                     false, // forceV1
@@ -136,6 +139,7 @@ void ConsoleArgumentsTests::ArgSplittingTests()
                                     L"this is the commandline", // clientCommandLine
                                     INVALID_HANDLE_VALUE,
                                     INVALID_HANDLE_VALUE,
+                                    L"", // vtMode
                                     0, // width
                                     0, // height
                                     false, // forceV1
@@ -148,7 +152,7 @@ void ConsoleArgumentsTests::ArgSplittingTests()
                                     false), // runAsComServer
                    true); // successful parse?
 
-    commandline = L"conhost.exe --headless\tthis\tis\tthe\tcommandline";
+    commandline = L"conhost.exe --headless\t--vtmode\txterm\tthis\tis\tthe\tcommandline";
     ArgTestsRunner(L"#5\ttab\tdelimit",
                    commandline,
                    INVALID_HANDLE_VALUE,
@@ -157,6 +161,7 @@ void ConsoleArgumentsTests::ArgSplittingTests()
                                     L"this is the commandline", // clientCommandLine
                                     INVALID_HANDLE_VALUE,
                                     INVALID_HANDLE_VALUE,
+                                    L"xterm", // vtMode
                                     0, // width
                                     0, // height
                                     false, // forceV1
@@ -178,6 +183,7 @@ void ConsoleArgumentsTests::ArgSplittingTests()
                                     L"--headless\\ foo\\ --outpipe\\ bar\\ this\\ is\\ the\\ commandline", // clientCommandLine
                                     INVALID_HANDLE_VALUE,
                                     INVALID_HANDLE_VALUE,
+                                    L"", // vtMode
                                     0, // width
                                     0, // height
                                     false, // forceV1
@@ -199,6 +205,29 @@ void ConsoleArgumentsTests::ArgSplittingTests()
                                     L"--headless\\ foo\\ --outpipe\\ bar\\ this\\ is\\ the\\ commandline", // clientCommandLine
                                     INVALID_HANDLE_VALUE,
                                     INVALID_HANDLE_VALUE,
+                                    L"", // vtMode
+                                    0, // width
+                                    0, // height
+                                    false, // forceV1
+                                    false, // forceNoHandoff
+                                    false, // headless
+                                    true, // createServerHandle
+                                    0, // serverHandle
+                                    0, // signalHandle
+                                    false, // inheritCursor
+                                    false), // runAsComServer
+                   true); // successful parse?
+
+    commandline = L"conhost.exe --vtmode a\\\\\\\\\"b c\" d e";
+    ArgTestsRunner(L"#8 Combo of backslashes and quotes from msdn",
+                   commandline,
+                   INVALID_HANDLE_VALUE,
+                   INVALID_HANDLE_VALUE,
+                   ConsoleArguments(commandline,
+                                    L"d e", // clientCommandLine
+                                    INVALID_HANDLE_VALUE,
+                                    INVALID_HANDLE_VALUE,
+                                    L"a\\\\b c", // vtMode
                                     0, // width
                                     0, // height
                                     false, // forceV1
@@ -220,6 +249,7 @@ void ConsoleArgumentsTests::ArgSplittingTests()
                                     L"this is the commandline", // clientCommandLine
                                     INVALID_HANDLE_VALUE,
                                     INVALID_HANDLE_VALUE,
+                                    L"", // vtMode
                                     0, // width
                                     0, // height
                                     false, // forceV1
@@ -246,6 +276,7 @@ void ConsoleArgumentsTests::ClientCommandlineTests()
                                     L"foo", // clientCommandLine
                                     INVALID_HANDLE_VALUE,
                                     INVALID_HANDLE_VALUE,
+                                    L"", // vtMode
                                     0, // width
                                     0, // height
                                     false, // forceV1
@@ -267,6 +298,7 @@ void ConsoleArgumentsTests::ClientCommandlineTests()
                                     L"foo", // clientCommandLine
                                     INVALID_HANDLE_VALUE,
                                     INVALID_HANDLE_VALUE,
+                                    L"", // vtMode
                                     0, // width
                                     0, // height
                                     false, // forceV1
@@ -288,6 +320,7 @@ void ConsoleArgumentsTests::ClientCommandlineTests()
                                     L"foo -- bar", // clientCommandLine
                                     INVALID_HANDLE_VALUE,
                                     INVALID_HANDLE_VALUE,
+                                    L"", // vtMode
                                     0, // width
                                     0, // height
                                     false, // forceV1
@@ -300,7 +333,7 @@ void ConsoleArgumentsTests::ClientCommandlineTests()
                                     false), // runAsComServer
                    true); // successful parse?
 
-    commandline = L"conhost.exe foo -- bar";
+    commandline = L"conhost.exe --vtmode foo foo -- bar";
     ArgTestsRunner(L"#4 Check that a implicit commandline with other expected args is treated as a whole client commandline (2)",
                    commandline,
                    INVALID_HANDLE_VALUE,
@@ -309,6 +342,7 @@ void ConsoleArgumentsTests::ClientCommandlineTests()
                                     L"foo -- bar", // clientCommandLine
                                     INVALID_HANDLE_VALUE,
                                     INVALID_HANDLE_VALUE,
+                                    L"foo", // vtMode
                                     0, // width
                                     0, // height
                                     false, // forceV1
@@ -330,6 +364,7 @@ void ConsoleArgumentsTests::ClientCommandlineTests()
                                     L"console --vtmode foo foo -- bar", // clientCommandLine
                                     INVALID_HANDLE_VALUE,
                                     INVALID_HANDLE_VALUE,
+                                    L"", // vtMode
                                     0, // width
                                     0, // height
                                     false, // forceV1
@@ -351,6 +386,7 @@ void ConsoleArgumentsTests::ClientCommandlineTests()
                                     L"console --vtmode foo --outpipe foo -- bar", // clientCommandLine
                                     INVALID_HANDLE_VALUE,
                                     INVALID_HANDLE_VALUE,
+                                    L"", // vtMode
                                     0, // width
                                     0, // height
                                     false, // forceV1
@@ -363,7 +399,7 @@ void ConsoleArgumentsTests::ClientCommandlineTests()
                                     false), // runAsComServer
                    true); // successful parse?
 
-    commandline = L"conhost.exe -- --outpipe foo bar";
+    commandline = L"conhost.exe --vtmode foo -- --outpipe foo bar";
     ArgTestsRunner(L"#7 Check splitting vt pipes across the explicit commandline does not pull both pipe names out",
                    commandline,
                    INVALID_HANDLE_VALUE,
@@ -372,11 +408,34 @@ void ConsoleArgumentsTests::ClientCommandlineTests()
                                     L"--outpipe foo bar", // clientCommandLine
                                     INVALID_HANDLE_VALUE,
                                     INVALID_HANDLE_VALUE,
+                                    L"foo", // vtMode
                                     0, // width
                                     0, // height
                                     false, // forceV1
                                     false, // forceNoHandoff
                                     false, // headless
+                                    true, // createServerHandle
+                                    0, // serverHandle
+                                    0, // signalHandle
+                                    false, // inheritCursor
+                                    false), // runAsComServer
+                   true); // successful parse?
+
+    commandline = L"conhost.exe --vtmode -- --headless bar";
+    ArgTestsRunner(L"#8 Let -- be used as a value of a parameter",
+                   commandline,
+                   INVALID_HANDLE_VALUE,
+                   INVALID_HANDLE_VALUE,
+                   ConsoleArguments(commandline,
+                                    L"bar", // clientCommandLine
+                                    INVALID_HANDLE_VALUE,
+                                    INVALID_HANDLE_VALUE,
+                                    L"--", // vtMode
+                                    0, // width
+                                    0, // height
+                                    false, // forceV1
+                                    false, // forceNoHandoff
+                                    true, // headless
                                     true, // createServerHandle
                                     0, // serverHandle
                                     0, // signalHandle
@@ -393,6 +452,7 @@ void ConsoleArgumentsTests::ClientCommandlineTests()
                                     L"", // clientCommandLine
                                     INVALID_HANDLE_VALUE,
                                     INVALID_HANDLE_VALUE,
+                                    L"", // vtMode
                                     0, // width
                                     0, // height
                                     false, // forceV1
@@ -414,6 +474,7 @@ void ConsoleArgumentsTests::ClientCommandlineTests()
                                     L"", // clientCommandLine
                                     INVALID_HANDLE_VALUE,
                                     INVALID_HANDLE_VALUE,
+                                    L"", // vtMode
                                     0, // width
                                     0, // height
                                     false, // forceV1
@@ -440,6 +501,7 @@ void ConsoleArgumentsTests::LegacyFormatsTests()
                                     L"", // clientCommandLine
                                     INVALID_HANDLE_VALUE,
                                     INVALID_HANDLE_VALUE,
+                                    L"", // vtMode
                                     0, // width
                                     0, // height
                                     false, // forceV1
@@ -461,6 +523,7 @@ void ConsoleArgumentsTests::LegacyFormatsTests()
                                     L"", // clientCommandLine
                                     INVALID_HANDLE_VALUE,
                                     INVALID_HANDLE_VALUE,
+                                    L"", // vtMode
                                     0, // width
                                     0, // height
                                     false, // forceV1
@@ -482,6 +545,7 @@ void ConsoleArgumentsTests::LegacyFormatsTests()
                                     L"", // clientCommandLine
                                     INVALID_HANDLE_VALUE,
                                     INVALID_HANDLE_VALUE,
+                                    L"", // vtMode
                                     0, // width
                                     0, // height
                                     false, // forceV1
@@ -503,6 +567,7 @@ void ConsoleArgumentsTests::LegacyFormatsTests()
                                     L"", // clientCommandLine
                                     INVALID_HANDLE_VALUE,
                                     INVALID_HANDLE_VALUE,
+                                    L"", // vtMode
                                     0, // width
                                     0, // height
                                     false, // forceV1
@@ -524,6 +589,7 @@ void ConsoleArgumentsTests::LegacyFormatsTests()
                                     L"", // clientCommandLine
                                     INVALID_HANDLE_VALUE,
                                     INVALID_HANDLE_VALUE,
+                                    L"", // vtMode
                                     0, // width
                                     0, // height
                                     false, // forceV1
@@ -545,6 +611,7 @@ void ConsoleArgumentsTests::LegacyFormatsTests()
                                     L"", // clientCommandLine
                                     INVALID_HANDLE_VALUE,
                                     INVALID_HANDLE_VALUE,
+                                    L"", // vtMode
                                     0, // width
                                     0, // height
                                     false, // forceV1
@@ -566,6 +633,7 @@ void ConsoleArgumentsTests::LegacyFormatsTests()
                                     L"", // clientCommandLine
                                     INVALID_HANDLE_VALUE,
                                     INVALID_HANDLE_VALUE,
+                                    L"", // vtMode
                                     0, // width
                                     0, // height
                                     true, // forceV1
@@ -587,6 +655,7 @@ void ConsoleArgumentsTests::LegacyFormatsTests()
                                     L"", // clientCommandLine
                                     INVALID_HANDLE_VALUE,
                                     INVALID_HANDLE_VALUE,
+                                    L"", // vtMode
                                     0, // width
                                     0, // height
                                     true, // forceV1
@@ -608,6 +677,7 @@ void ConsoleArgumentsTests::LegacyFormatsTests()
                                     L"", // clientCommandLine
                                     INVALID_HANDLE_VALUE,
                                     INVALID_HANDLE_VALUE,
+                                    L"", // vtMode
                                     0, // width
                                     0, // height
                                     false, // forceV1
@@ -629,6 +699,7 @@ void ConsoleArgumentsTests::LegacyFormatsTests()
                                     L"", // clientCommandLine
                                     INVALID_HANDLE_VALUE,
                                     INVALID_HANDLE_VALUE,
+                                    L"", // vtMode
                                     0, // width
                                     0, // height
                                     false, // forceV1
@@ -679,6 +750,29 @@ void ConsoleArgumentsTests::CombineVtPipeHandleTests()
                                     L"", // clientCommandLine
                                     hInSample,
                                     hOutSample,
+                                    L"", // vtMode
+                                    0, // width
+                                    0, // height
+                                    false, // forceV1
+                                    false, // forceNoHandoff
+                                    false, // headless
+                                    true, // createServerHandle
+                                    0ul, // serverHandle
+                                    0, // signalHandle
+                                    false, // inheritCursor
+                                    false), // runAsComServer
+                   true); // successful parse?
+
+    commandline = L"conhost.exe --vtmode xterm-256color";
+    ArgTestsRunner(L"#2 Check that handles with mode is OK",
+                   commandline,
+                   hInSample,
+                   hOutSample,
+                   ConsoleArguments(commandline,
+                                    L"", // clientCommandLine
+                                    hInSample,
+                                    hOutSample,
+                                    L"xterm-256color", // vtMode
                                     0, // width
                                     0, // height
                                     false, // forceV1
@@ -715,6 +809,7 @@ void ConsoleArgumentsTests::InitialSizeTests()
                                     L"", // clientCommandLine
                                     INVALID_HANDLE_VALUE,
                                     INVALID_HANDLE_VALUE,
+                                    L"", // vtMode
                                     120, // width
                                     30, // height
                                     false, // forceV1
@@ -736,6 +831,7 @@ void ConsoleArgumentsTests::InitialSizeTests()
                                     L"", // clientCommandLine
                                     INVALID_HANDLE_VALUE,
                                     INVALID_HANDLE_VALUE,
+                                    L"", // vtMode
                                     120, // width
                                     0, // height
                                     false, // forceV1
@@ -757,6 +853,7 @@ void ConsoleArgumentsTests::InitialSizeTests()
                                     L"", // clientCommandLine
                                     INVALID_HANDLE_VALUE,
                                     INVALID_HANDLE_VALUE,
+                                    L"", // vtMode
                                     0, // width
                                     30, // height
                                     false, // forceV1
@@ -778,6 +875,7 @@ void ConsoleArgumentsTests::InitialSizeTests()
                                     L"", // clientCommandLine
                                     INVALID_HANDLE_VALUE,
                                     INVALID_HANDLE_VALUE,
+                                    L"", // vtMode
                                     0, // width
                                     0, // height
                                     false, // forceV1
@@ -799,6 +897,7 @@ void ConsoleArgumentsTests::InitialSizeTests()
                                     L"", // clientCommandLine
                                     INVALID_HANDLE_VALUE,
                                     INVALID_HANDLE_VALUE,
+                                    L"", // vtMode
                                     -1, // width
                                     0, // height
                                     false, // forceV1
@@ -820,6 +919,7 @@ void ConsoleArgumentsTests::InitialSizeTests()
                                     L"", // clientCommandLine
                                     INVALID_HANDLE_VALUE,
                                     INVALID_HANDLE_VALUE,
+                                    L"", // vtMode
                                     0, // width
                                     0, // height
                                     false, // forceV1
@@ -841,6 +941,7 @@ void ConsoleArgumentsTests::InitialSizeTests()
                                     L"", // clientCommandLine
                                     INVALID_HANDLE_VALUE,
                                     INVALID_HANDLE_VALUE,
+                                    L"", // vtMode
                                     0, // width
                                     0, // height
                                     false, // forceV1
@@ -862,6 +963,7 @@ void ConsoleArgumentsTests::InitialSizeTests()
                                     L"", // clientCommandLine
                                     INVALID_HANDLE_VALUE,
                                     INVALID_HANDLE_VALUE,
+                                    L"", // vtMode
                                     0, // width
                                     0, // height
                                     false, // forceV1
@@ -888,6 +990,7 @@ void ConsoleArgumentsTests::HeadlessArgTests()
                                     L"", // clientCommandLine
                                     INVALID_HANDLE_VALUE,
                                     INVALID_HANDLE_VALUE,
+                                    L"", // vtMode
                                     0, // width
                                     0, // height
                                     false, // forceV1
@@ -909,6 +1012,7 @@ void ConsoleArgumentsTests::HeadlessArgTests()
                                     L"", // clientCommandLine
                                     INVALID_HANDLE_VALUE,
                                     INVALID_HANDLE_VALUE,
+                                    L"", // vtMode
                                     0, // width
                                     0, // height
                                     false, // forceV1
@@ -930,6 +1034,7 @@ void ConsoleArgumentsTests::HeadlessArgTests()
                                     L"", // clientCommandLine
                                     INVALID_HANDLE_VALUE,
                                     INVALID_HANDLE_VALUE,
+                                    L"", // vtMode
                                     0, // width
                                     0, // height
                                     false, // forceV1
@@ -951,6 +1056,7 @@ void ConsoleArgumentsTests::HeadlessArgTests()
                                     L"foo.exe --headless", // clientCommandLine
                                     INVALID_HANDLE_VALUE,
                                     INVALID_HANDLE_VALUE,
+                                    L"", // vtMode
                                     0, // width
                                     0, // height
                                     false, // forceV1
@@ -981,6 +1087,7 @@ void ConsoleArgumentsTests::SignalHandleTests()
                                     L"",
                                     hInSample,
                                     hOutSample,
+                                    L"", // vtMode
                                     0, // width
                                     0, // height
                                     false, // forceV1
@@ -1002,6 +1109,7 @@ void ConsoleArgumentsTests::SignalHandleTests()
                                     L"",
                                     hInSample,
                                     hOutSample,
+                                    L"", // vtMode
                                     0, // width
                                     0, // height
                                     false, // forceV1
@@ -1023,6 +1131,7 @@ void ConsoleArgumentsTests::SignalHandleTests()
                                     L"",
                                     hInSample,
                                     hOutSample,
+                                    L"", // vtMode
                                     0, // width
                                     0, // height
                                     false, // forceV1
@@ -1053,6 +1162,7 @@ void ConsoleArgumentsTests::FeatureArgTests()
                                     L"",
                                     hInSample,
                                     hOutSample,
+                                    L"", // vtMode
                                     0, // width
                                     0, // height
                                     false, // forceV1
@@ -1073,6 +1183,7 @@ void ConsoleArgumentsTests::FeatureArgTests()
                                     L"",
                                     hInSample,
                                     hOutSample,
+                                    L"", // vtMode
                                     0, // width
                                     0, // height
                                     false, // forceV1
@@ -1094,6 +1205,7 @@ void ConsoleArgumentsTests::FeatureArgTests()
                                     L"",
                                     hInSample,
                                     hOutSample,
+                                    L"", // vtMode
                                     0, // width
                                     0, // height
                                     false, // forceV1
@@ -1115,6 +1227,7 @@ void ConsoleArgumentsTests::FeatureArgTests()
                                     L"",
                                     hInSample,
                                     hOutSample,
+                                    L"", // vtMode
                                     0, // width
                                     0, // height
                                     false, // forceV1
@@ -1136,6 +1249,7 @@ void ConsoleArgumentsTests::FeatureArgTests()
                                     L"",
                                     hInSample,
                                     hOutSample,
+                                    L"", // vtMode
                                     0, // width
                                     0, // height
                                     false, // forceV1
@@ -1157,6 +1271,7 @@ void ConsoleArgumentsTests::FeatureArgTests()
                                     L"",
                                     hInSample,
                                     hOutSample,
+                                    L"", // vtMode
                                     0, // width
                                     0, // height
                                     false, // forceV1

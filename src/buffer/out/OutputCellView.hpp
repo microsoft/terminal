@@ -25,7 +25,6 @@ Revision History:
 class OutputCellView
 {
 public:
-    OutputCellView() = default;
     OutputCellView(const std::wstring_view view,
                    const DbcsAttribute dbcsAttr,
                    const TextAttribute textAttr,

@@ -30,7 +30,6 @@ PRECOMPILED_INCLUDE     = ..\precomp.h
 
 SOURCES= \
     ..\cursor.cpp    \
-    ..\ImageSlice.cpp \
     ..\OutputCell.cpp \
     ..\OutputCellIterator.cpp \
     ..\OutputCellRect.cpp \
