@@ -80,6 +80,7 @@ uiatextrange
 und
 vsdevcmd
 westus
+winrtact
 workarounds
 wtconfig
 XBox
