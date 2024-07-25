@@ -3010,6 +3010,7 @@ namespace winrt::TerminalApp::implementation
         filter.Option(matchOption);
         filter.Value(query);
         findPackagesOptions.Filters().Append(filter);
+        findPackagesOptions.ResultLimit(20);
         FindPackagesResult findPackagesResult{ co_await catalog.FindPackagesAsync(findPackagesOptions) };
 
         co_return findPackagesResult.Matches();

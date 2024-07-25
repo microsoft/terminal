@@ -71,7 +71,7 @@ namespace winrt::TerminalApp::implementation
 
         WindowsPackageManagerFactory()
         {
-            if (::Microsoft::Console::Utils::IsRunningElevated() || true)
+            if (::Microsoft::Console::Utils::IsRunningElevated())
             {
                 _winrtactModule.reset(LoadLibraryExW(L"winrtact.dll", nullptr, LOAD_LIBRARY_SEARCH_SYSTEM32));
             }
@@ -80,7 +80,7 @@ namespace winrt::TerminalApp::implementation
         template<typename T>
         T CreateInstance(const guid& clsid, const guid& iid)
         {
-            if (::Microsoft::Console::Utils::IsRunningElevated() || true)
+            if (::Microsoft::Console::Utils::IsRunningElevated())
             {
                 winrt::com_ptr<::IUnknown> result{};
                 try
