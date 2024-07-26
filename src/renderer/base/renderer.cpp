@@ -1261,6 +1261,7 @@ void Renderer::_PaintCursor(_In_ IRenderEngine* const pEngine)
     RenderFrameInfo info;
     info.searchHighlights = _pData->GetSearchHighlights();
     info.searchHighlightFocused = _pData->GetSearchHighlightFocused();
+    info.selectionSpans = _pData->GetSelectionSpans();
     return pEngine->PrepareRenderInfo(std::move(info));
 }
 

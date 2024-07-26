@@ -46,9 +46,9 @@ namespace Microsoft::Console::Render
         virtual til::point GetTextBufferEndPosition() const noexcept = 0;
         virtual TextBuffer& GetTextBuffer() const noexcept = 0;
         virtual const FontInfo& GetFontInfo() const noexcept = 0;
-        virtual std::vector<Microsoft::Console::Types::Viewport> GetSelectionRects() noexcept = 0;
         virtual std::span<const til::point_span> GetSearchHighlights() const noexcept = 0;
         virtual const til::point_span* GetSearchHighlightFocused() const noexcept = 0;
+        virtual std::span<const til::point_span> GetSelectionSpans() const noexcept = 0;
         virtual void LockConsole() noexcept = 0;
         virtual void UnlockConsole() noexcept = 0;
 

@@ -25,7 +25,7 @@ public:
     TextBuffer& GetTextBuffer() const noexcept override;
     const FontInfo& GetFontInfo() const noexcept override;
 
-    std::vector<Microsoft::Console::Types::Viewport> GetSelectionRects() noexcept override;
+    std::span<const til::point_span> GetSelectionSpans() const noexcept override;
 
     void LockConsole() noexcept override;
     void UnlockConsole() noexcept override;
