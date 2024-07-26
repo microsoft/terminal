@@ -208,7 +208,7 @@ public:
     const std::vector<size_t> GetPatternId(const til::point location) const override;
 
     std::pair<COLORREF, COLORREF> GetAttributeColors(const TextAttribute& attr) const noexcept override;
-    std::vector<Microsoft::Console::Types::Viewport> GetSelectionRects() noexcept override;
+    std::span<const til::point_span> GetSelectionSpans() const noexcept override;
     std::span<const til::point_span> GetSearchHighlights() const noexcept override;
     const til::point_span* GetSearchHighlightFocused() const noexcept override;
     const bool IsSelectionActive() const noexcept override;
@@ -356,6 +356,9 @@ private:
     std::vector<til::point_span> _searchHighlights;
     size_t _searchHighlightFocused = 0;
 
+    mutable std::vector<til::point_span> _lastSelectionSpans;
+    mutable til::generation_t _lastSelectionGeneration{};
+
     CursorType _defaultCursorShape = CursorType::Legacy;
 
     til::enumset<Mode> _systemMode{ Mode::AutoWrap };
@@ -465,7 +468,6 @@ private:
 
 #pragma region TextSelection
     // These methods are defined in TerminalSelection.cpp
-    std::vector<til::inclusive_rect> _GetSelectionRects() const noexcept;
     std::vector<til::point_span> _GetSelectionSpans() const noexcept;
     std::pair<til::point, til::point> _PivotSelection(const til::point targetPos, bool& targetStart) const noexcept;
     std::pair<til::point, til::point> _ExpandSelectionAnchors(std::pair<til::point, til::point> anchors) const;
