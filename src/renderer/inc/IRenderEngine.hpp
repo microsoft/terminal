@@ -32,6 +32,7 @@ namespace Microsoft::Console::Render
     {
         std::span<const til::point_span> searchHighlights;
         const til::point_span* searchHighlightFocused;
+        std::span<const til::point_span> selectionSpans;
     };
 
     enum class GridLines
