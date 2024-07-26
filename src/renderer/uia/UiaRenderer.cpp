@@ -359,7 +359,7 @@ void UiaEngine::WaitUntilCanRender() noexcept
 //  - rect - Rectangle to invert or highlight to make the selection area
 // Return Value:
 // - S_FALSE
-[[nodiscard]] HRESULT UiaEngine::PaintSelection(const til::rect& /*rect*/) noexcept
+[[nodiscard]] HRESULT UiaEngine::PaintSelection(std::span<const til::rect> /*rects*/) noexcept
 {
     return S_FALSE;
 }

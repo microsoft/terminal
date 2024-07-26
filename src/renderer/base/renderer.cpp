@@ -1288,27 +1288,7 @@ void Renderer::_PaintCursor(_In_ IRenderEngine* const pEngine)
 // - <none>
 void Renderer::_PaintSelection(_In_ IRenderEngine* const pEngine)
 {
-    try
-    {
-        std::span<const til::rect> dirtyAreas;
-        LOG_IF_FAILED(pEngine->GetDirtyArea(dirtyAreas));
-
-        // Get selection rectangles
-        const auto rectangles = _GetSelectionRects();
-
-        std::vector<til::rect> dirtySearchRectangles;
-        for (auto& dirtyRect : dirtyAreas)
-        {
-            for (const auto& rect : rectangles)
-            {
-                if (const auto rectCopy = rect & dirtyRect)
-                {
-                    LOG_IF_FAILED(pEngine->PaintSelection(rectCopy));
-                }
-            }
-        }
-    }
-    CATCH_LOG();
+    LOG_IF_FAILED(pEngine->PaintSelection(_lastSelectionRectsByViewport));
 }
 
 // Routine Description:

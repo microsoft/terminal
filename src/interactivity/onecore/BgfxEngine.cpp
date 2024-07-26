@@ -145,7 +145,7 @@ CATCH_RETURN()
     return S_OK;
 }
 
-[[nodiscard]] HRESULT BgfxEngine::PaintSelection(const til::rect& /*rect*/) noexcept
+[[nodiscard]] HRESULT BgfxEngine::PaintSelection(std::span<const til::rect> /*rects*/) noexcept
 {
     return S_OK;
 }
