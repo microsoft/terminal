@@ -7,7 +7,7 @@
 using namespace Microsoft::Console;
 using namespace Microsoft::Console::Render;
 
-[[nodiscard]] HRESULT RenderEngineBase::InvalidateSelection(const std::vector<til::rect>& /*rectangles*/) noexcept
+[[nodiscard]] HRESULT RenderEngineBase::InvalidateSelection(std::span<const til::rect> /*selections*/) noexcept
 {
     return S_OK;
 }
