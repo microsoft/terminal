@@ -50,7 +50,7 @@ namespace Microsoft::Console::Render
                                               const bool trimLeft,
                                               const bool lineWrapped) noexcept override;
         [[nodiscard]] HRESULT PaintBufferGridLines(const GridLineSet lines, const COLORREF gridlineColor, const COLORREF underlineColor, const size_t cchLine, const til::point coordTarget) noexcept override;
-        [[nodiscard]] HRESULT PaintSelection(const til::rect& rect) noexcept override;
+        [[nodiscard]] HRESULT PaintSelection(std::span<const til::rect> rects) noexcept override;
 
         [[nodiscard]] HRESULT PaintCursor(const CursorOptions& options) noexcept override;
 
