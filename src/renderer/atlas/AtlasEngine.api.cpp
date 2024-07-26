@@ -7,6 +7,7 @@
 #include "Backend.h"
 #include "../../buffer/out/textBuffer.hpp"
 #include "../base/FontCache.h"
+#include "../../types/inc/ColorFix.hpp"
 
 // #### NOTE ####
 // If you see any code in here that contains "_r." you might be seeing a race condition.
@@ -423,12 +424,14 @@ void AtlasEngine::SetRetroTerminalEffect(bool enable) noexcept
     }
 }
 
-void AtlasEngine::SetSelectionBackground(const COLORREF color, const float alpha) noexcept
+void AtlasEngine::SetSelectionBackground(const COLORREF color, const float /*alpha*/) noexcept
 {
-    const u32 selectionColor = (color & 0xffffff) | gsl::narrow_cast<u32>(lrintf(alpha * 255.0f)) << 24;
+    const u32 selectionColor = (color & 0xffffff) | 0xff000000;
     if (_api.s->misc->selectionColor != selectionColor)
     {
-        _api.s.write()->misc.write()->selectionColor = selectionColor;
+        auto misc = _api.s.write()->misc.write();
+        misc->selectionColor = selectionColor;
+        misc->selectionForeground = 0xff000000 | ColorFix::GetPerceivableColor(color, color, 0.5f * 0.5f);
     }
 }
 

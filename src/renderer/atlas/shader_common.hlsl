@@ -16,7 +16,6 @@
 #define SHADING_TYPE_CURLY_LINE         7
 #define SHADING_TYPE_SOLID_LINE         8
 #define SHADING_TYPE_CURSOR             9
-#define SHADING_TYPE_SELECTION          10
 
 struct VSData
 {

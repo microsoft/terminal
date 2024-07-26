@@ -229,7 +229,6 @@ void BackendD3D::Render(RenderingPayload& p)
     _drawBackground(p);
     _drawCursorBackground(p);
     _drawText(p);
-    _drawSelection(p);
     _debugShowDirty(p);
     _flushQuads(p);
 
@@ -2246,45 +2245,6 @@ size_t BackendD3D::_drawCursorForegroundSlowPath(const CursorRect& c, size_t off
     target.color = color;
 
     return addedInstances;
-}
-
-void BackendD3D::_drawSelection(const RenderingPayload& p)
-{
-    u16 y = 0;
-    u16 lastFrom = 0;
-    u16 lastTo = 0;
-
-    for (const auto& row : p.rows)
-    {
-        if (row->selectionTo > row->selectionFrom)
-        {
-            // If the current selection line matches the previous one, we can just extend the previous quad downwards.
-            // The way this is implemented isn't very smart, but we also don't have very many rows to iterate through.
-            if (row->selectionFrom == lastFrom && row->selectionTo == lastTo)
-            {
-                _getLastQuad().size.y += p.s->font->cellSize.y;
-            }
-            else
-            {
-                _appendQuad() = {
-                    .shadingType = static_cast<u16>(ShadingType::Selection),
-                    .position = {
-                        static_cast<i16>(p.s->font->cellSize.x * row->selectionFrom),
-                        static_cast<i16>(p.s->font->cellSize.y * y),
-                    },
-                    .size = {
-                        static_cast<u16>(p.s->font->cellSize.x * (row->selectionTo - row->selectionFrom)),
-                        static_cast<u16>(p.s->font->cellSize.y),
-                    },
-                    .color = p.s->misc->selectionColor,
-                };
-                lastFrom = row->selectionFrom;
-                lastTo = row->selectionTo;
-            }
-        }
-
-        y++;
-    }
 }
 
 void BackendD3D::_debugShowDirty(const RenderingPayload& p)

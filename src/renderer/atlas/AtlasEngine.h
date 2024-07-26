@@ -171,6 +171,7 @@ namespace Microsoft::Console::Render::Atlas
             // These tracks the highlighted regions on the screen that are yet to be painted.
             std::span<const til::point_span> searchHighlights;
             std::span<const til::point_span> searchHighlightFocused;
+            std::span<const til::point_span> selectionSpans;
 
             // dirtyRect is a computed value based on invalidatedRows.
             til::rect dirtyRect;
