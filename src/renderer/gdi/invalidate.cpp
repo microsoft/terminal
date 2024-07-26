@@ -5,6 +5,7 @@
 
 #include "gdirenderer.hpp"
 #include "../../types/inc/Viewport.hpp"
+#include "../buffer/out/textBuffer.hpp"
 
 #pragma hdrstop
 
@@ -46,13 +47,12 @@ HRESULT GdiEngine::InvalidateScroll(const til::point* const pcoordDelta) noexcep
 // - rectangles - Vector of rectangles to draw, line by line
 // Return Value:
 // - HRESULT S_OK or GDI-based error code
-HRESULT GdiEngine::InvalidateSelection(const std::vector<til::rect>& rectangles) noexcept
+HRESULT GdiEngine::InvalidateSelection(std::span<const til::rect> selections) noexcept
 {
-    for (const auto& rect : rectangles)
+    for (auto&& rect : selections)
     {
         RETURN_IF_FAILED(Invalidate(&rect));
     }
-
     return S_OK;
 }
 
