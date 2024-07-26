@@ -51,6 +51,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                                                 std::vector<SettingsLoadWarnings>& warnings,
                                                 const OriginTag origin);
 
+        static winrt::com_ptr<Command> FromSnippetJson(const Json::Value& json);
+
         static void ExpandCommands(Windows::Foundation::Collections::IMap<winrt::hstring, Model::Command>& commands,
                                    Windows::Foundation::Collections::IVectorView<Model::Profile> profiles,
                                    Windows::Foundation::Collections::IVectorView<Model::ColorScheme> schemes);
