@@ -20,14 +20,14 @@ Selection& Selection::Instance()
     return *_instance;
 }
 
-void Selection::_RegenerateSelectionRects() const
+void Selection::_RegenerateSelectionSpans() const
 {
     if (_lastSelectionGeneration == _d.generation())
     {
         return;
     }
 
-    _lastSelectionRects.clear();
+    _lastSelectionSpans.clear();
 
     if (!_d->fSelectionVisible)
     {
@@ -44,23 +44,17 @@ void Selection::_RegenerateSelectionRects() const
     endSelectionAnchor.y = (_d->coordSelectionAnchor.y == _d->srSelectionRect.top) ? _d->srSelectionRect.bottom : _d->srSelectionRect.top;
 
     const auto blockSelection = !IsLineSelection();
-    auto rects = screenInfo.GetTextBuffer().GetTextRects(_d->coordSelectionAnchor, endSelectionAnchor, blockSelection, false);
-    _lastSelectionRects = std::move(rects);
+    _lastSelectionSpans = screenInfo.GetTextBuffer().GetTextSpans(_d->coordSelectionAnchor,
+                                                                  endSelectionAnchor,
+                                                                  blockSelection,
+                                                                  false);
     _lastSelectionGeneration = _d.generation();
 }
 
-// Routine Description:
-// - Determines the line-by-line selection rectangles based on global selection state.
-// Arguments:
-// - <none> - Uses internal state to know what area is selected already.
-// Return Value:
-// - Returns a vector where each til::inclusive_rect is one Row worth of the area to be selected.
-// - Returns empty vector if no rows are selected.
-// - Throws exceptions for out of memory issues
-std::vector<til::inclusive_rect> Selection::GetSelectionRects() const
+std::span<const til::point_span> Selection::GetSelectionSpans() const
 {
-    _RegenerateSelectionRects();
-    return _lastSelectionRects;
+    _RegenerateSelectionSpans();
+    return { _lastSelectionSpans.cbegin(), _lastSelectionSpans.cend() };
 }
 
 // Routine Description:
