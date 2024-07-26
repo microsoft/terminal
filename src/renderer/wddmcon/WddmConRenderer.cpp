@@ -181,11 +181,6 @@ CATCH_RETURN()
     return S_OK;
 }
 
-[[nodiscard]] HRESULT WddmConEngine::InvalidateSelection(const std::vector<til::rect>& /*rectangles*/) noexcept
-{
-    return S_OK;
-}
-
 [[nodiscard]] HRESULT WddmConEngine::InvalidateScroll(const til::point* const /*pcoordDelta*/) noexcept
 {
     return S_OK;

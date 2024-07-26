@@ -48,11 +48,6 @@ BgfxEngine::BgfxEngine(PVOID SharedViewBase, LONG DisplayHeight, LONG DisplayWid
     return S_OK;
 }
 
-[[nodiscard]] HRESULT BgfxEngine::InvalidateSelection(const std::vector<til::rect>& /*rectangles*/) noexcept
-{
-    return S_OK;
-}
-
 [[nodiscard]] HRESULT BgfxEngine::InvalidateScroll(const til::point* /*pcoordDelta*/) noexcept
 {
     return S_OK;
