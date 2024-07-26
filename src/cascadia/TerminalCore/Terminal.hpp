@@ -15,6 +15,7 @@
 #include "../../types/inc/GlyphWidth.hpp"
 #include "../../cascadia/terminalcore/ITerminalInput.hpp"
 
+#include <til/generational.h>
 #include <til/ticket_lock.h>
 #include <til/winrt.h>
 
@@ -381,14 +382,15 @@ private:
     // the pivot is the til::point that remains selected when you extend a selection in any direction
     //   this is particularly useful when a word selection is extended over its starting point
     //   see TerminalSelection.cpp for more information
-    struct SelectionAnchors
+    struct SelectionInfo
     {
         til::point start;
         til::point end;
         til::point pivot;
+        bool blockSelection = false;
+        bool active = false;
     };
-    std::optional<SelectionAnchors> _selection;
-    bool _blockSelection = false;
+    til::generational<SelectionInfo> _selection{};
     std::wstring _wordDelimiters;
     SelectionExpansion _multiClickSelectionMode = SelectionExpansion::Char;
     SelectionInteractionMode _selectionMode = SelectionInteractionMode::None;
@@ -473,6 +475,7 @@ private:
     void _MoveByWord(SelectionDirection direction, til::point& pos);
     void _MoveByViewport(SelectionDirection direction, til::point& pos) noexcept;
     void _MoveByBuffer(SelectionDirection direction, til::point& pos) noexcept;
+    void _SetSelectionEnd(SelectionInfo* selection, const til::point position, std::optional<SelectionExpansion> newExpansionMode = std::nullopt);
 #pragma endregion
 
 #ifdef UNIT_TESTING
