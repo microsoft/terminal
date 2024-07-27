@@ -42,7 +42,7 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    void SnippetsPaneContent::UpdateSettings(const CascadiaSettings& settings)
+    winrt::fire_and_forget SnippetsPaneContent::UpdateSettings(const CascadiaSettings& settings)
     {
         _settings = settings;
 
@@ -51,7 +51,9 @@ namespace winrt::TerminalApp::implementation
         // has typed, then relies on the suggestions UI to _also_ filter with that
         // string.
 
-        const auto tasks = _settings.GlobalSettings().ActionMap().FilterToSendInput(winrt::hstring{}); // IVector<Model::Command>
+        const auto tasks = co_await _settings.GlobalSettings().ActionMap().FilterToSnippets(winrt::hstring{}, winrt::hstring{}); // IVector<Model::Command>
+        co_await wil::resume_foreground(Dispatcher());
+
         _allTasks = winrt::single_threaded_observable_vector<TerminalApp::FilteredTask>();
         for (const auto& t : tasks)
         {

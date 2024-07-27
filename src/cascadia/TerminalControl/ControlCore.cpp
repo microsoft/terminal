@@ -2318,6 +2318,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return *context;
     }
 
+    winrt::hstring ControlCore::CurrentWorkingDirectory() const
+    {
+        return winrt::hstring{ _terminal->GetWorkingDirectory() };
+    }
+
     bool ControlCore::QuickFixesAvailable() const noexcept
     {
         return _cachedQuickFixes && _cachedQuickFixes.Size() > 0;
