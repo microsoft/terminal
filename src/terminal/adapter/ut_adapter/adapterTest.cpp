@@ -1942,6 +1942,55 @@ public:
         requestSetting(L"m");
         _testGetSet->ValidateInputEvent(L"\033P1$r0;38:2::12:34:56;48:2::65:43:21;58:2::128:222:45m\033\\");
 
+        Log::Comment(L"Requesting DECSCUSR style (blinking block).");
+        _testGetSet->PrepData();
+        _testGetSet->_textBuffer->GetCursor().SetBlinkingAllowed(true);
+        _testGetSet->_textBuffer->GetCursor().SetType(CursorType::FullBox);
+        requestSetting(L" q");
+        _testGetSet->ValidateInputEvent(L"\033P1$r1 q\033\\");
+
+        Log::Comment(L"Requesting DECSCUSR style (steady block).");
+        _testGetSet->PrepData();
+        _testGetSet->_textBuffer->GetCursor().SetBlinkingAllowed(false);
+        _testGetSet->_textBuffer->GetCursor().SetType(CursorType::FullBox);
+        requestSetting(L" q");
+        _testGetSet->ValidateInputEvent(L"\033P1$r2 q\033\\");
+
+        Log::Comment(L"Requesting DECSCUSR style (blinking underline).");
+        _testGetSet->PrepData();
+        _testGetSet->_textBuffer->GetCursor().SetBlinkingAllowed(true);
+        _testGetSet->_textBuffer->GetCursor().SetType(CursorType::Underscore);
+        requestSetting(L" q");
+        _testGetSet->ValidateInputEvent(L"\033P1$r3 q\033\\");
+
+        Log::Comment(L"Requesting DECSCUSR style (steady underline).");
+        _testGetSet->PrepData();
+        _testGetSet->_textBuffer->GetCursor().SetBlinkingAllowed(false);
+        _testGetSet->_textBuffer->GetCursor().SetType(CursorType::Underscore);
+        requestSetting(L" q");
+        _testGetSet->ValidateInputEvent(L"\033P1$r4 q\033\\");
+
+        Log::Comment(L"Requesting DECSCUSR style (blinking bar).");
+        _testGetSet->PrepData();
+        _testGetSet->_textBuffer->GetCursor().SetBlinkingAllowed(true);
+        _testGetSet->_textBuffer->GetCursor().SetType(CursorType::VerticalBar);
+        requestSetting(L" q");
+        _testGetSet->ValidateInputEvent(L"\033P1$r5 q\033\\");
+
+        Log::Comment(L"Requesting DECSCUSR style (steady bar).");
+        _testGetSet->PrepData();
+        _testGetSet->_textBuffer->GetCursor().SetBlinkingAllowed(false);
+        _testGetSet->_textBuffer->GetCursor().SetType(CursorType::VerticalBar);
+        requestSetting(L" q");
+        _testGetSet->ValidateInputEvent(L"\033P1$r6 q\033\\");
+
+        Log::Comment(L"Requesting DECSCUSR style (non-standard).");
+        _testGetSet->PrepData();
+        _testGetSet->_textBuffer->GetCursor().SetBlinkingAllowed(true);
+        _testGetSet->_textBuffer->GetCursor().SetType(CursorType::Legacy);
+        requestSetting(L" q");
+        _testGetSet->ValidateInputEvent(L"\033P1$r0 q\033\\");
+
         Log::Comment(L"Requesting DECSCA attributes (unprotected).");
         _testGetSet->PrepData();
         attribute = {};
