@@ -4259,6 +4259,9 @@ ITermDispatch::StringHandler AdaptDispatch::RequestSetting()
             case VTID("s"):
                 _ReportDECSLRMSetting();
                 break;
+            case VTID(" q"):
+                _ReportDECSCUSRSetting();
+                break;
             case VTID("\"q"):
                 _ReportDECSCASetting();
                 break;
@@ -4398,6 +4401,40 @@ void AdaptDispatch::_ReportDECSLRMSetting()
     // is a DECSLRM response, and ST ends the sequence.
     // VT origin is at 1,1 so we need to add 1 to these margins.
     _api.ReturnResponse(fmt::format(FMT_COMPILE(L"\033P1$r{};{}s\033\\"), marginLeft + 1, marginRight + 1));
+}
+
+// Method Description:
+// - Reports the DECSCUSR cursor style in response to a DECRQSS query.
+// Arguments:
+// - None
+// Return Value:
+// - None
+void AdaptDispatch::_ReportDECSCUSRSetting() const
+{
+    const auto& cursor = _pages.ActivePage().Cursor();
+    const auto blinking = cursor.IsBlinkingAllowed();
+    // A valid response always starts with DCS 1 $ r. This is followed by a
+    // number from 1 to 6 representing the cursor style. The ' q' indicates
+    // this is a DECSCUSR response, and ST ends the sequence.
+    switch (cursor.GetType())
+    {
+    case CursorType::FullBox:
+        _api.ReturnResponse(blinking ? L"\033P1$r1 q\033\\" : L"\033P1$r2 q\033\\");
+        break;
+    case CursorType::Underscore:
+        _api.ReturnResponse(blinking ? L"\033P1$r3 q\033\\" : L"\033P1$r4 q\033\\");
+        break;
+    case CursorType::VerticalBar:
+        _api.ReturnResponse(blinking ? L"\033P1$r5 q\033\\" : L"\033P1$r6 q\033\\");
+        break;
+    default:
+        // If we have a non-standard style, this is likely because it's the
+        // user's chosen default style, so we report a default value of 0.
+        // That way, if an application later tries to restore the cursor with
+        // the returned value, it should be reset to its original state.
+        _api.ReturnResponse(L"\033P1$r0 q\033\\");
+        break;
+    }
 }
 
 // Method Description:
