@@ -129,3 +129,4 @@
 ^XamlStyler\.json$
 ignore$
 Resources/(?!en)
+^\.vsconfig$
