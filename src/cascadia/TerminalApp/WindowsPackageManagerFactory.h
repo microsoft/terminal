@@ -71,7 +71,7 @@ namespace winrt::TerminalApp::implementation
 
         WindowsPackageManagerFactory()
         {
-            if (::Microsoft::Console::Utils::IsRunningElevated())
+            if (::Microsoft::Console::Utils::IsRunningElevated() || true)
             {
                 _winrtactModule.reset(LoadLibraryExW(L"winrtact.dll", nullptr, LOAD_LIBRARY_SEARCH_SYSTEM32));
             }
@@ -80,13 +80,11 @@ namespace winrt::TerminalApp::implementation
         template<typename T>
         T CreateInstance(const guid& clsid, const guid& iid)
         {
-            if (::Microsoft::Console::Utils::IsRunningElevated())
+            if (::Microsoft::Console::Utils::IsRunningElevated() || true)
             {
-                winrt::com_ptr<::IUnknown> result{};
+                winrt::com_ptr<typename winrt::default_interface<T>> result{};
                 try
                 {
-                    extern HRESULT WinGetServerManualActivation_CreateInstance(REFCLSID rclsid, REFIID riid, UINT32 flags, void** out);
-
                     auto createFn = reinterpret_cast<HRESULT (*)(REFCLSID, REFIID, UINT32, void**)>(GetProcAddress(_winrtactModule.get(), "WinGetServerManualActivation_CreateInstance"));
                     THROW_LAST_ERROR_IF(!createFn);
                     THROW_IF_FAILED(createFn(clsid, iid, 0, result.put_void()));
