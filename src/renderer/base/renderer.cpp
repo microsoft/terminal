@@ -435,8 +435,9 @@ bool Renderer::_CheckViewportAndScroll()
         auto coordCursor = _currentCursorOptions.coordCursor;
 
         // `coordCursor` was stored in viewport-relative while `view` is in absolute coordinates.
-        // --> Turn it back into the absolute coordinates with the help of the old viewport.
-        coordCursor.y += srOldViewport.top;
+        // --> Turn it back into the absolute coordinates with the help of the viewport.
+        // We have to use the new viewport, because _ScrollPreviousSelection adjusts the cursor position to match the new one.
+        coordCursor.y += srNewViewport.top;
 
         // Note that we allow the X coordinate to be outside the left border by 1 position,
         // because the cursor could still be visible if the focused character is double width.
@@ -837,7 +838,7 @@ void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
             _PaintBufferOutputHelper(pEngine, it, screenPosition, lineWrapped);
 
             // Paint any image content on top of the text.
-            const auto& imageSlice = buffer.GetRowByOffset(row).GetImageSlice();
+            const auto imageSlice = buffer.GetRowByOffset(row).GetImageSlice();
             if (imageSlice) [[unlikely]]
             {
                 LOG_IF_FAILED(pEngine->PaintImageSlice(*imageSlice, screenPosition.y, view.Left()));

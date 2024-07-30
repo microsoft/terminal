@@ -1087,15 +1087,6 @@ void CascadiaSettings::_refreshDefaultTerminals()
     _currentDefaultTerminal = std::move(result.second);
 }
 
-void CascadiaSettings::ExportFile(winrt::hstring path, winrt::hstring content)
-{
-    try
-    {
-        WriteUTF8FileAtomic({ path.c_str() }, til::u16u8(content));
-    }
-    CATCH_LOG();
-}
-
 void CascadiaSettings::_validateThemeExists()
 {
     const auto& themes{ _globals->Themes() };

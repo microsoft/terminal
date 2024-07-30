@@ -53,6 +53,7 @@ appium
 appletname
 applicationmodel
 APPLMODAL
+Applocal
 appmodel
 APPWINDOW
 APPXMANIFESTVERSION
@@ -143,6 +144,7 @@ bufferout
 buffersize
 buflen
 buildtransitive
+buildsystems
 burriter
 BValue
 bytebuffer
@@ -1205,6 +1207,7 @@ nouicompat
 nounihan
 NOYIELD
 NOZORDER
+NPFS
 nrcs
 NSTATUS
 ntapi

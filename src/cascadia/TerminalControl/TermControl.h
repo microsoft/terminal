@@ -116,6 +116,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void SelectCommand(const bool goUp);
         void SelectOutput(const bool goUp);
 
+        winrt::hstring CurrentWorkingDirectory() const;
 #pragma endregion
 
         void ScrollViewport(int viewTop);
@@ -182,6 +183,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void RawWriteString(const winrt::hstring& text);
 
         void ShowContextMenu();
+        bool OpenQuickFixMenu();
         void RefreshQuickFixMenu();
         void ClearQuickFix();
 
