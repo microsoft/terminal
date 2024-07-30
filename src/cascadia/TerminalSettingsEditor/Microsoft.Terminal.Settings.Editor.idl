@@ -103,14 +103,6 @@ namespace Microsoft.Terminal.Settings.Editor
         Single Value;
     }
 
-    runtimeclass FeatureKeyValuePair : Windows.UI.Xaml.Data.INotifyPropertyChanged
-    {
-        FeatureKeyValuePair(String featureKey, UInt32 featureValue, Windows.Foundation.Collections.IMap<String, UInt32> baseMap, Windows.Foundation.Collections.IMap<String, String> tagToNameMap);
-        String FeatureKey;
-        UInt32 FeatureValue;
-        Int32 FeatureIndex;
-    }
-
     runtimeclass AppearanceViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged
     {
         Boolean IsDefault;
