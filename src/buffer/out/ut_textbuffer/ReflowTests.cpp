@@ -589,13 +589,13 @@ namespace
                 TestBuffer{
                     { 2, 5 }, // reduce width aggressively
                     {
+                        { L"  ", true },
+                        { L"  ", true },
+                        { L"  ", true },
+                        { L"  ", true },
                         { L"  ", false },
-                        { L"  ", true },
-                        { L"  ", true },
-                        { L"  ", true },
-                        { L"  ", true },
                     },
-                    { 1, 0 },
+                    { 1, 4 },
                 },
             },
         },
