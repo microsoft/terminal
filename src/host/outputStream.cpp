@@ -52,25 +52,16 @@ StateMachine& ConhostInternalGetSet::GetStateMachine()
 }
 
 // Routine Description:
-// - Retrieves the text buffer for the active output buffer.
+// - Retrieves the text buffer and virtual viewport for the active output
+//   buffer. Also returns a flag indicating whether it's the main buffer.
 // Arguments:
 // - <none>
 // Return Value:
-// - a reference to the TextBuffer instance.
-TextBuffer& ConhostInternalGetSet::GetTextBuffer()
+// - a tuple with the buffer reference, viewport, and main buffer flag.
+ITerminalApi::BufferState ConhostInternalGetSet::GetBufferAndViewport()
 {
-    return _io.GetActiveOutputBuffer().GetTextBuffer();
-}
-
-// Routine Description:
-// - Retrieves the virtual viewport of the active output buffer.
-// Arguments:
-// - <none>
-// Return Value:
-// - the exclusive coordinates of the viewport.
-til::rect ConhostInternalGetSet::GetViewport() const
-{
-    return _io.GetActiveOutputBuffer().GetVirtualViewport().ToExclusive();
+    auto& info = _io.GetActiveOutputBuffer();
+    return { info.GetTextBuffer(), info.GetVirtualViewport().ToExclusive(), info.Next == nullptr };
 }
 
 // Routine Description:
@@ -330,7 +321,7 @@ bool ConhostInternalGetSet::ResizeWindow(const til::CoordType sColumns, const ti
     api->GetConsoleScreenBufferInfoExImpl(screenInfo, csbiex);
 
     const auto oldViewport = screenInfo.GetVirtualViewport();
-    auto newViewport = Viewport::FromDimensions(oldViewport.Origin(), sColumns, sRows);
+    auto newViewport = Viewport::FromDimensions(oldViewport.Origin(), { sColumns, sRows });
     // Always resize the width of the console
     csbiex.dwSize.X = gsl::narrow_cast<short>(sColumns);
     // Only set the screen buffer's height if it's currently less than
@@ -425,6 +416,10 @@ void ConhostInternalGetSet::NotifyBufferRotation(const int delta)
 }
 
 void ConhostInternalGetSet::InvokeCompletions(std::wstring_view /*menuJson*/, unsigned int /*replaceLength*/)
+{
+    // Not implemented for conhost.
+}
+void ConhostInternalGetSet::SearchMissingCommand(std::wstring_view /*missingCommand*/)
 {
     // Not implemented for conhost.
 }

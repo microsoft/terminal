@@ -173,6 +173,7 @@ namespace Microsoft.Terminal.Settings.Model
         Tasks = 0x1,
         CommandHistory = 0x2,
         DirectoryHistory = 0x4,
+        QuickFixes = 0x8,
         All = 0xffffffff,
     };
 
@@ -279,6 +280,8 @@ namespace Microsoft.Terminal.Settings.Model
 
     [default_interface] runtimeclass SendInputArgs : IActionArgs
     {
+        SendInputArgs(String input);
+
         String Input { get; };
     };
 
@@ -408,6 +411,15 @@ namespace Microsoft.Terminal.Settings.Model
         FindMatchDirection Direction { get; };
     };
 
+    [default_interface] runtimeclass SaveSnippetArgs : IActionArgs
+    {
+        SaveSnippetArgs();
+        SaveSnippetArgs(String Name, String Commandline, String KeyChord);
+        String Name;
+        String Commandline;
+        String KeyChord;
+    };
+
     [default_interface] runtimeclass NewWindowArgs : IActionArgs
     {
         NewWindowArgs(INewContentArgs contentArgs);
@@ -503,9 +515,8 @@ namespace Microsoft.Terminal.Settings.Model
         Boolean IsKeyChordExplicitlyUnbound(Microsoft.Terminal.Control.KeyChord keys);
 
         Command GetActionByKeyChord(Microsoft.Terminal.Control.KeyChord keys);
-
-        Microsoft.Terminal.Control.KeyChord GetKeyBindingForAction(ShortcutAction action);
-        [method_name("GetKeyBindingForActionWithArgs")] Microsoft.Terminal.Control.KeyChord GetKeyBindingForAction(ShortcutAction action, IActionArgs actionArgs);
+        Command GetActionByID(String cmdID);
+        Microsoft.Terminal.Control.KeyChord GetKeyBindingForAction(String cmdID);
 
         Windows.Foundation.Collections.IMapView<String, ActionAndArgs> AvailableActions { get; };
 
@@ -515,7 +526,7 @@ namespace Microsoft.Terminal.Settings.Model
 
         IVector<Command> ExpandedCommands { get; };
 
-        IVector<Command> FilterToSendInput(String CurrentCommandline);
+        Windows.Foundation.IAsyncOperation<IVector<Command> > FilterToSnippets(String CurrentCommandline, String CurrentWorkingDirectory);
     };
 
     [default_interface] runtimeclass ActionMap : IActionMapView
@@ -524,6 +535,7 @@ namespace Microsoft.Terminal.Settings.Model
         void DeleteKeyBinding(Microsoft.Terminal.Control.KeyChord keys);
 
         void RegisterKeyBinding(Microsoft.Terminal.Control.KeyChord keys, ActionAndArgs action);
+        void AddSendInputAction(String name, String input, Microsoft.Terminal.Control.KeyChord keys);
     }
 
     runtimeclass AppearanceConfig : [default] IAppearanceConfig {
@@ -576,8 +588,6 @@ namespace Microsoft.Terminal.Settings.Model
 
         static String ApplicationDisplayName { get; };
         static String ApplicationVersion { get; };
-
-        static void ExportFile(String path, String content);
 
         CascadiaSettings(String userJSON, String inboxJSON);
 
@@ -642,6 +652,7 @@ namespace Microsoft.Terminal.Settings.Model
         // When adding a new action, add them to AllShortcutActions.h!
         #define ON_ALL_ACTIONS(action) action,
         ALL_SHORTCUT_ACTIONS
+        INTERNAL_SHORTCUT_ACTIONS
         #undef ON_ALL_ACTIONS
     };
 
@@ -662,10 +673,10 @@ namespace Microsoft.Terminal.Settings.Model
 
         String Name { get; };
         String ID { get; };
+
+        String Description { get; };
+
         ActionAndArgs ActionAndArgs { get; };
-        Microsoft.Terminal.Control.KeyChord Keys { get; };
-        void RegisterKey(Microsoft.Terminal.Control.KeyChord keys);
-        String KeyChordText { get; };
 
         String IconPath;
 
@@ -673,7 +684,7 @@ namespace Microsoft.Terminal.Settings.Model
         Windows.Foundation.Collections.IMapView<String, Command> NestedCommands { get; };
 
         static IVector<Command> ParsePowerShellMenuComplete(String json, Int32 replaceLength);
-        static IVector<Command> HistoryToCommands(IVector<String> commandHistory, String commandline, Boolean directories);
+        static IVector<Command> HistoryToCommands(IVector<String> commandHistory, String commandline, Boolean directories, String iconPath);
 
     }
 
@@ -697,6 +708,7 @@ namespace Microsoft.Terminal.Settings.Model
         static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.Settings.Model.WindowingMode> WindowingMode { get; };
         static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.Core.MatchMode> MatchMode { get; };
         static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.Control.GraphicsAPI> GraphicsAPI { get; };
+        static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.Control.TextMeasurement> TextMeasurement { get; };
 
         // Profile Settings
         static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.Settings.Model.CloseOnExitMode> CloseOnExitMode { get; };
@@ -753,6 +765,7 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_SETTING(Microsoft.Terminal.Control.GraphicsAPI, GraphicsAPI);
         INHERITABLE_SETTING(Boolean, DisablePartialInvalidation);
         INHERITABLE_SETTING(Boolean, SoftwareRendering);
+        INHERITABLE_SETTING(Microsoft.Terminal.Control.TextMeasurement, TextMeasurement);
         INHERITABLE_SETTING(Boolean, UseBackgroundImageForWindow);
         INHERITABLE_SETTING(Boolean, ForceVTInput);
         INHERITABLE_SETTING(Boolean, DebugFeaturesEnabled);
@@ -869,7 +882,8 @@ namespace Microsoft.Terminal.Settings.Model
         Separator,
         Folder,
         RemainingProfiles,
-        MatchProfiles
+        MatchProfiles,
+        Action
     };
 
     unsealed runtimeclass NewTabMenuEntry
@@ -889,6 +903,13 @@ namespace Microsoft.Terminal.Settings.Model
 
         Profile Profile;
         Int32 ProfileIndex;
+    }
+
+    [default_interface] runtimeclass ActionEntry : NewTabMenuEntry
+    {
+        ActionEntry();
+
+        String ActionId;
     }
 
     enum FolderEntryInlining
@@ -1002,6 +1023,7 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_PROFILE_SETTING(Boolean, RepositionCursorWithMouse);
 
         INHERITABLE_PROFILE_SETTING(Boolean, ReloadEnvironmentVariables);
+        INHERITABLE_PROFILE_SETTING(Boolean, RainbowSuggestions);
 
     }
 
@@ -1130,6 +1152,11 @@ namespace Microsoft.Terminal.Settings.Model
         UInt8 UnfocusedTabOpacity { get; };
     }
 
+    runtimeclass SettingsTheme
+    {
+        Windows.UI.Xaml.ElementTheme RequestedTheme { get; };
+    }
+
     runtimeclass WindowTheme {
         Windows.UI.Xaml.ElementTheme RequestedTheme { get; };
         Boolean UseMica { get; };
@@ -1159,6 +1186,9 @@ namespace Microsoft.Terminal.Settings.Model
         // window.* Namespace
         WindowTheme Window { get; };
 
+        // settings.* Namespace
+        SettingsTheme Settings { get; };
+            
         // tabRow.* Namespace
         TabRowTheme TabRow { get; };
 

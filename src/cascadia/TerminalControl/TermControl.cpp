@@ -40,6 +40,9 @@ constexpr const auto UpdatePatternLocationsInterval = std::chrono::milliseconds(
 // The minimum delay between emitting warning bells
 constexpr const auto TerminalWarningBellInterval = std::chrono::milliseconds(1000);
 
+constexpr std::wstring_view StateNormal{ L"Normal" };
+constexpr std::wstring_view StateCollapsed{ L"Collapsed" };
+
 DEFINE_ENUM_FLAG_OPERATORS(winrt::Microsoft::Terminal::Control::CopyFormat);
 DEFINE_ENUM_FLAG_OPERATORS(winrt::Microsoft::Terminal::Control::MouseButtonState);
 
@@ -220,8 +223,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _revokers.CloseTerminalRequested = _core.CloseTerminalRequested(winrt::auto_revoke, { get_weak(), &TermControl::_bubbleCloseTerminalRequested });
         _revokers.CompletionsChanged = _core.CompletionsChanged(winrt::auto_revoke, { get_weak(), &TermControl::_bubbleCompletionsChanged });
         _revokers.RestartTerminalRequested = _core.RestartTerminalRequested(winrt::auto_revoke, { get_weak(), &TermControl::_bubbleRestartTerminalRequested });
+        _revokers.SearchMissingCommand = _core.SearchMissingCommand(winrt::auto_revoke, { get_weak(), &TermControl::_bubbleSearchMissingCommand });
 
         _revokers.PasteFromClipboard = _interactivity.PasteFromClipboard(winrt::auto_revoke, { get_weak(), &TermControl::_bubblePasteFromClipboard });
+
+        _revokers.RefreshQuickFixUI = _core.RefreshQuickFixUI(winrt::auto_revoke, [this](auto /*s*/, auto /*e*/) {
+            RefreshQuickFixMenu();
+        });
 
         // Initialize the terminal only once the swapchainpanel is loaded - that
         //      way, we'll be able to query the real pixel size it got on layout
@@ -332,6 +340,35 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 }
             }
         });
+        if constexpr (Feature_QuickFix::IsEnabled())
+        {
+            QuickFixMenu().Closed([weakThis = get_weak()](auto&&, auto&&) {
+                if (auto control{ weakThis.get() }; control && !control->_IsClosing())
+                {
+                    // Expand the quick fix button if it's collapsed (looks nicer)
+                    if (control->_quickFixButtonCollapsible)
+                    {
+                        VisualStateManager::GoToState(*control, StateCollapsed, false);
+                    }
+                }
+            });
+        }
+    }
+
+    void TermControl::_QuickFixButton_PointerEntered(const IInspectable& /*sender*/, const PointerRoutedEventArgs& /*e*/)
+    {
+        if (!_IsClosing() && _quickFixButtonCollapsible)
+        {
+            VisualStateManager::GoToState(*this, StateNormal, false);
+        }
+    }
+
+    void TermControl::_QuickFixButton_PointerExited(const IInspectable& /*sender*/, const PointerRoutedEventArgs& /*e*/)
+    {
+        if (!_IsClosing() && _quickFixButtonCollapsible)
+        {
+            VisualStateManager::GoToState(*this, StateCollapsed, false);
+        }
     }
 
     // Function Description:
@@ -493,7 +530,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 }
             }
 
-            if (_searchBox && _searchBox->Visibility() == Visibility::Visible)
+            if (_searchBox && _searchBox->IsOpen())
             {
                 const auto core = winrt::get_self<ControlCore>(_core);
                 const auto& searchMatches = core->SearchResultRows();
@@ -538,6 +575,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                     // but since code paths differ, extra work is required to ensure correctness.
                     if (!_core.HasMultiLineSelection())
                     {
+                        _core.SnapSearchResultToSelection(true);
                         const auto selectedLine{ _core.SelectedText(true) };
                         _searchBox->PopulateTextbox(selectedLine);
                     }
@@ -554,19 +592,20 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
+    // This is called when a Find Next/Previous Match action is triggered.
     void TermControl::SearchMatch(const bool goForward)
     {
         if (_IsClosing())
         {
             return;
         }
-        if (!_searchBox || _searchBox->Visibility() != Visibility::Visible)
+        if (!_searchBox || !_searchBox->IsOpen())
         {
             CreateSearchBoxControl();
         }
         else
         {
-            _handleSearchResults(_core.Search(_searchBox->Text(), goForward, _searchBox->CaseSensitive(), false));
+            _handleSearchResults(_core.Search(_searchBox->Text(), goForward, _searchBox->CaseSensitive(), _searchBox->RegularExpression(), false));
         }
     }
 
@@ -595,13 +634,17 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - <none>
     void TermControl::_Search(const winrt::hstring& text,
                               const bool goForward,
-                              const bool caseSensitive)
+                              const bool caseSensitive,
+                              const bool regularExpression)
     {
-        _handleSearchResults(_core.Search(text, goForward, caseSensitive, false));
+        if (_searchBox && _searchBox->IsOpen())
+        {
+            _handleSearchResults(_core.Search(text, goForward, caseSensitive, regularExpression, false));
+        }
     }
 
     // Method Description:
-    // - The handler for the "search criteria changed" event. Clears selection and initiates a new search.
+    // - The handler for the "search criteria changed" event. Initiates a new search.
     // Arguments:
     // - text: the text to search
     // - goForward: indicates whether the search should be performed forward (if set to true) or backward
@@ -610,11 +653,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - <none>
     void TermControl::_SearchChanged(const winrt::hstring& text,
                                      const bool goForward,
-                                     const bool caseSensitive)
+                                     const bool caseSensitive,
+                                     const bool regularExpression)
     {
-        if (_searchBox && _searchBox->Visibility() == Visibility::Visible)
+        if (_searchBox && _searchBox->IsOpen())
         {
-            _handleSearchResults(_core.Search(text, goForward, caseSensitive, false));
+            // We only want to update the search results based on the new text. Set
+            // `resetOnly` to true so we don't accidentally update the current match index.
+            const auto result = _core.Search(text, goForward, caseSensitive, regularExpression, true);
+            _handleSearchResults(result);
         }
     }
 
@@ -631,6 +678,19 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         _searchBox->Close();
         _core.ClearSearch();
+
+        // Clear search highlights scroll marks (by triggering an update after closing the search box)
+        if (_showMarksInScrollbar)
+        {
+            const auto scrollBar = ScrollBar();
+            ScrollBarUpdate update{
+                .newValue = scrollBar.Value(),
+                .newMaximum = scrollBar.Maximum(),
+                .newMinimum = scrollBar.Minimum(),
+                .newViewportSize = scrollBar.ViewportSize(),
+            };
+            _updateScrollBar->Run(update);
+        }
 
         // Set focus back to terminal control
         this->Focus(FocusState::Programmatic);
@@ -729,6 +789,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - <none>
     void TermControl::SendInput(const winrt::hstring& wstr)
     {
+        // Dismiss any previewed input.
+        PreviewInput(hstring{});
+
         // only broadcast if there's an actual listener. Saves the overhead of some object creation.
         if (StringSent)
         {
@@ -806,6 +869,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // When we hot reload the settings, the core will send us a scrollbar
         // update. If we enabled scrollbar marks, then great, when we handle
         // that message, we'll redraw them.
+
+        // update the position of the quick fix menu (in case we changed the padding)
+        RefreshQuickFixMenu();
     }
 
     // Method Description:
@@ -1055,8 +1121,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // MSFT 33353327: We're purposefully not using _initializedTerminal to ensure we're fully initialized.
         // Doing so makes us return nullptr when XAML requests an automation peer.
         // Instead, we need to give XAML an automation peer, then fix it later.
-        if (!_IsClosing())
+        if (!_IsClosing() && !_detached)
         {
+            // It's unexpected that interactivity is null even when we're not closing or in detached state.
+            THROW_HR_IF_NULL(E_UNEXPECTED, _interactivity);
+
             // create a custom automation peer with this code pattern:
             // (https://docs.microsoft.com/en-us/windows/uwp/design/accessibility/custom-automation-peers)
             if (const auto& interactivityAutoPeer{ _interactivity.OnCreateAutomationPeer() })
@@ -1133,17 +1202,27 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             message = winrt::hstring{ fmt::format(std::wstring_view{ RS_(L"PixelShaderNotFound") }, parameter) };
             break;
         case D2DERR_SHADER_COMPILE_FAILED:
-            message = winrt::hstring{ fmt::format(std::wstring_view{ RS_(L"PixelShaderCompileFailed") }) };
+            message = winrt::hstring{ fmt::format(std::wstring_view{ RS_(L"PixelShaderCompileFailed") }, parameter) };
             break;
         case DWRITE_E_NOFONT:
             message = winrt::hstring{ fmt::format(std::wstring_view{ RS_(L"RendererErrorFontNotFound") }, parameter) };
+            break;
+        case ATLAS_ENGINE_ERROR_MAC_TYPE:
+            message = RS_(L"RendererErrorMacType");
             break;
         default:
         {
             wchar_t buf[512];
             const auto len = FormatMessageW(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, nullptr, hr, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), &buf[0], ARRAYSIZE(buf), nullptr);
             const std::wstring_view msg{ &buf[0], len };
-            message = winrt::hstring{ fmt::format(std::wstring_view{ RS_(L"RendererErrorOther") }, hr, msg) };
+            std::wstring resourceString = RS_(L"RendererErrorOther").c_str();
+            //conditional message construction
+            std::wstring partialMessage = fmt::format(std::wstring_view{ resourceString }, hr, msg);
+            if (!parameter.empty())
+            {
+                fmt::format_to(std::back_inserter(partialMessage), LR"( "{0}")", parameter);
+            }
+            message = winrt::hstring{ partialMessage };
             break;
         }
         }
@@ -2308,6 +2387,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             _updateSelectionMarkers(nullptr, winrt::make<UpdateSelectionMarkersEventArgs>(false));
         }
+
+        RefreshQuickFixMenu();
     }
 
     hstring TermControl::Title()
@@ -3467,7 +3548,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                            const Control::FontSizeChangedArgs& args)
     {
         // scale the selection markers to be the size of a cell
-        auto scaleMarker = [args, dpiScale{ SwapChainPanel().CompositionScaleX() }](const Windows::UI::Xaml::Shapes::Path& shape) {
+        const auto dpiScale = SwapChainPanel().CompositionScaleX();
+        auto scaleMarker = [&args, &dpiScale](const Windows::UI::Xaml::Shapes::Path& shape) {
             // The selection markers were designed to be 5x14 in size,
             // so use those dimensions below for the scaling
             const auto scaleX = args.Width() / 5.0 / dpiScale;
@@ -3483,6 +3565,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         };
         scaleMarker(SelectionStartMarker());
         scaleMarker(SelectionEndMarker());
+
+        if (Feature_QuickFix::IsEnabled())
+        {
+            QuickFixButton().Height(args.Height() / dpiScale);
+            QuickFixIcon().FontSize(static_cast<double>(args.Width() / dpiScale));
+            RefreshQuickFixMenu();
+        }
     }
 
     void TermControl::_coreRaisedNotice(const IInspectable& /*sender*/,
@@ -3550,6 +3639,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         return _core.CommandHistory();
     }
+    winrt::hstring TermControl::CurrentWorkingDirectory() const
+    {
+        return _core.CurrentWorkingDirectory();
+    }
+
+    void TermControl::UpdateWinGetSuggestions(Windows::Foundation::Collections::IVector<hstring> suggestions)
+    {
+        get_self<ControlCore>(_core)->UpdateQuickFixes(suggestions);
+    }
 
     Core::Scheme TermControl::ColorScheme() const noexcept
     {
@@ -3590,7 +3688,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     void TermControl::_refreshSearch()
     {
-        if (!_searchBox || _searchBox->Visibility() != Visibility::Visible)
+        if (!_searchBox || !_searchBox->IsOpen())
         {
             return;
         }
@@ -3603,7 +3701,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         const auto goForward = _searchBox->GoForward();
         const auto caseSensitive = _searchBox->CaseSensitive();
-        _handleSearchResults(_core.Search(text, goForward, caseSensitive, true));
+        const auto regularExpression = _searchBox->RegularExpression();
+        _handleSearchResults(_core.Search(text, goForward, caseSensitive, regularExpression, true));
     }
 
     void TermControl::_handleSearchResults(SearchResults results)
@@ -3613,7 +3712,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             return;
         }
 
-        _searchBox->SetStatus(results.TotalMatches, results.CurrentMatch);
+        // Only show status when we have a search term
+        if (_searchBox->Text().empty())
+        {
+            _searchBox->ClearStatus();
+        }
+        else
+        {
+            _searchBox->SetStatus(results.TotalMatches, results.CurrentMatch, results.SearchRegexInvalid);
+        }
 
         if (results.SearchInvalidated)
         {
@@ -3653,6 +3760,23 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     uint64_t TermControl::OwningHwnd()
     {
         return _core.OwningHwnd();
+    }
+
+    void TermControl::PreviewInput(const winrt::hstring& text)
+    {
+        get_self<ControlCore>(_core)->PreviewInput(text);
+
+        if (!text.empty())
+        {
+            if (auto automationPeer{ FrameworkElementAutomationPeer::FromElement(*this) })
+            {
+                automationPeer.RaiseNotificationEvent(
+                    AutomationNotificationKind::ItemAdded,
+                    AutomationNotificationProcessing::All,
+                    winrt::hstring{ fmt::format(std::wstring_view{ RS_(L"PreviewTextAnnouncement") }, text) },
+                    L"PreviewTextAnnouncement" /* unique name for this group of notifications */);
+            }
+        }
     }
 
     void TermControl::AddMark(const Control::ScrollMark& mark)
@@ -3762,6 +3886,105 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         //   the cursor position
         cursorPos += til::point{ hasSelection ? 0 : 1, 1 };
         _showContextMenuAt(_toControlOrigin(cursorPos));
+    }
+
+    double TermControl::QuickFixButtonWidth()
+    {
+        const auto leftPadding = GetPadding().Left;
+        if (_quickFixButtonCollapsible)
+        {
+            const auto cellWidth = CharacterDimensions().Width;
+            if (leftPadding == 0)
+            {
+                return cellWidth;
+            }
+            return leftPadding + (cellWidth / 2.0);
+        }
+        return leftPadding;
+    }
+
+    double TermControl::QuickFixButtonCollapsedWidth()
+    {
+        return std::max(CharacterDimensions().Width * 2.0 / 3.0, GetPadding().Left);
+    }
+
+    bool TermControl::OpenQuickFixMenu()
+    {
+        if constexpr (Feature_QuickFix::IsEnabled())
+        {
+            if (_core.QuickFixesAvailable())
+            {
+                // Expand the quick fix button if it's collapsed (looks nicer)
+                if (_quickFixButtonCollapsible)
+                {
+                    VisualStateManager::GoToState(*this, StateNormal, false);
+                }
+                auto quickFixBtn = QuickFixButton();
+                quickFixBtn.Flyout().ShowAt(quickFixBtn);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    void TermControl::RefreshQuickFixMenu()
+    {
+        if (!Feature_QuickFix::IsEnabled())
+        {
+            return;
+        }
+
+        auto quickFixBtn = QuickFixButton();
+        if (!_core.QuickFixesAvailable())
+        {
+            quickFixBtn.Visibility(Visibility::Collapsed);
+            return;
+        }
+
+        // If the gutter is narrow, display the collapsed version
+        const auto& termPadding = GetPadding();
+
+        // Make sure to update _quickFixButtonCollapsible and QuickFix button widths BEFORE updating the VisualState
+        _quickFixButtonCollapsible = termPadding.Left < CharacterDimensions().Width;
+        PropertyChanged.raise(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"QuickFixButtonWidth" });
+        PropertyChanged.raise(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"QuickFixButtonCollapsedWidth" });
+        VisualStateManager::GoToState(*this, !_quickFixButtonCollapsible ? StateNormal : StateCollapsed, false);
+
+        const auto rd = get_self<ControlCore>(_core)->GetRenderData();
+        rd->LockConsole();
+        const auto viewportBufferPosition = rd->GetViewport();
+        const auto cursorBufferPosition = rd->GetCursorPosition();
+        rd->UnlockConsole();
+        if (cursorBufferPosition.y < viewportBufferPosition.Top() || cursorBufferPosition.y > viewportBufferPosition.BottomInclusive())
+        {
+            quickFixBtn.Visibility(Visibility::Collapsed);
+            return;
+        }
+
+        // draw the button in the gutter
+        const auto& cursorPosInDips = CursorPositionInDips();
+        Controls::Canvas::SetLeft(quickFixBtn, -termPadding.Left);
+        Controls::Canvas::SetTop(quickFixBtn, cursorPosInDips.Y - termPadding.Top);
+        quickFixBtn.Visibility(Visibility::Visible);
+
+        if (auto automationPeer{ FrameworkElementAutomationPeer::FromElement(*this) })
+        {
+            automationPeer.RaiseNotificationEvent(
+                AutomationNotificationKind::ItemAdded,
+                AutomationNotificationProcessing::ImportantMostRecent,
+                RS_(L"QuickFixAvailable"),
+                L"QuickFixAvailableAnnouncement" /* unique name for this group of notifications */);
+        }
+    }
+
+    void TermControl::_bubbleSearchMissingCommand(const IInspectable& /*sender*/, const Control::SearchMissingCommandEventArgs& args)
+    {
+        SearchMissingCommand.raise(*this, args);
+    }
+
+    void TermControl::ClearQuickFix()
+    {
+        _core.ClearQuickFix();
     }
 
     void TermControl::_PasteCommandHandler(const IInspectable& /*sender*/,

@@ -26,6 +26,9 @@
     </ClInclude>
     <ClInclude Include="SeparatorEntry.h">
     </ClInclude>
+    <ClInclude Include="ActionEntry.h">
+      <DependentUpon>NewTabMenuEntry.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="FolderEntry.h">
     </ClInclude>
     <ClInclude Include="ProfileEntry.h">
@@ -141,6 +144,9 @@
     </ClCompile>
     <ClCompile Include="SeparatorEntry.cpp">
     </ClCompile>
+    <ClCompile Include="ActionEntry.cpp">
+      <DependentUpon>NewTabMenuEntry.idl</DependentUpon>
+    </ClCompile>
     <ClCompile Include="FolderEntry.cpp">
     </ClCompile>
     <ClCompile Include="ProfileEntry.cpp">
@@ -156,11 +162,6 @@
     <ClCompile Include="VsSetupConfiguration.cpp" />
     <ClCompile Include="WslDistroGenerator.cpp" />
     <ClCompile Include="SshHostGenerator.cpp" />
-    <!-- You _NEED_ to include this file and the jsoncpp IncludePath (below) if
-    you want to use jsoncpp -->
-    <ClCompile Include="$(OpenConsoleDir)\dep\jsoncpp\jsoncpp.cpp">
-      <PrecompiledHeader>NotUsing</PrecompiledHeader>
-    </ClCompile>
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
   </ItemGroup>
   <!-- ========================= idl Files ======================== -->
@@ -241,7 +242,7 @@
   <ItemDefinitionGroup>
     <ClCompile>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>..;$(OpenConsoleDir)\dep\jsoncpp\json;%(AdditionalIncludeDirectories);</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..;%(AdditionalIncludeDirectories);</AdditionalIncludeDirectories>
       <!-- Manually disable unreachable code warning, because jconcpp has a ton of that. -->
       <DisableSpecificWarnings>4702;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>

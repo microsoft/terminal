@@ -38,7 +38,6 @@ class ClipboardTests
     {
         m_state = new CommonState();
 
-        m_state->PrepareGlobalFont();
         m_state->PrepareGlobalInputBuffer();
         m_state->PrepareGlobalScreenBuffer();
 
@@ -49,7 +48,6 @@ class ClipboardTests
     {
         m_state->CleanupGlobalInputBuffer();
         m_state->CleanupGlobalScreenBuffer();
-        m_state->CleanupGlobalFont();
 
         return true;
     }

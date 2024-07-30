@@ -111,6 +111,7 @@ namespace Microsoft::Console::Render
         til::pmr::bitmap _invalidMap;
 
         til::point _lastText;
+        til::point _lastCursorOrigin;
         til::point _scrollDelta;
 
         bool _clearedAllThisFrame;

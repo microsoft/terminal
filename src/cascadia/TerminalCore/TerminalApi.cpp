@@ -22,8 +22,9 @@ TRACELOGGING_DEFINE_PROVIDER(g_hCTerminalCoreProvider,
 
 void Terminal::ReturnResponse(const std::wstring_view response)
 {
-    if (_pfnWriteInput)
+    if (_pfnWriteInput && !response.empty())
     {
+        const auto suspension = _readWriteLock.suspend();
         _pfnWriteInput(response);
     }
 }
@@ -33,14 +34,9 @@ Microsoft::Console::VirtualTerminal::StateMachine& Terminal::GetStateMachine() n
     return *_stateMachine;
 }
 
-TextBuffer& Terminal::GetTextBuffer() noexcept
+ITerminalApi::BufferState Terminal::GetBufferAndViewport() noexcept
 {
-    return _activeBuffer();
-}
-
-til::rect Terminal::GetViewport() const noexcept
-{
-    return til::rect{ _GetMutableViewport().ToInclusive() };
+    return { _activeBuffer(), til::rect{ _GetMutableViewport().ToInclusive() }, !_inAltBuffer() };
 }
 
 void Terminal::SetViewportPosition(const til::point position) noexcept
@@ -334,6 +330,14 @@ void Terminal::InvokeCompletions(std::wstring_view menuJson, unsigned int replac
     if (_pfnCompletionsChanged)
     {
         _pfnCompletionsChanged(menuJson, replaceLength);
+    }
+}
+
+void Terminal::SearchMissingCommand(const std::wstring_view command)
+{
+    if (_pfnSearchMissingCommand)
+    {
+        _pfnSearchMissingCommand(command);
     }
 }
 

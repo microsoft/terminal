@@ -146,6 +146,8 @@ namespace winrt::TerminalApp::implementation
         winrt::hstring KeyboardServiceDisabledText();
 
         winrt::fire_and_forget IdentifyWindow();
+        void ActionSaved(winrt::hstring input, winrt::hstring name, winrt::hstring keyChord);
+        void ActionSaveFailed(winrt::hstring message);
         winrt::fire_and_forget RenameFailed();
         winrt::fire_and_forget ShowTerminalWorkingDirectory();
 
@@ -198,6 +200,10 @@ namespace winrt::TerminalApp::implementation
 
         WINRT_OBSERVABLE_PROPERTY(winrt::Windows::UI::Xaml::Media::Brush, TitlebarBrush, PropertyChanged.raise, nullptr);
         WINRT_OBSERVABLE_PROPERTY(winrt::Windows::UI::Xaml::Media::Brush, FrameBrush, PropertyChanged.raise, nullptr);
+
+        WINRT_OBSERVABLE_PROPERTY(winrt::hstring, SavedActionName, PropertyChanged.raise, L"");
+        WINRT_OBSERVABLE_PROPERTY(winrt::hstring, SavedActionKeyChord, PropertyChanged.raise, L"");
+        WINRT_OBSERVABLE_PROPERTY(winrt::hstring, SavedActionCommandLine, PropertyChanged.raise, L"");
 
     private:
         friend struct TerminalPageT<TerminalPage>; // for Xaml to bind events
@@ -258,6 +264,8 @@ namespace winrt::TerminalApp::implementation
         bool _isEmbeddingInboundListener{ false };
 
         std::shared_ptr<Toast> _windowIdToast{ nullptr };
+        std::shared_ptr<Toast> _actionSavedToast{ nullptr };
+        std::shared_ptr<Toast> _actionSaveFailedToast{ nullptr };
         std::shared_ptr<Toast> _windowRenameFailedToast{ nullptr };
         std::shared_ptr<Toast> _windowCwdToast{ nullptr };
 
@@ -300,6 +308,7 @@ namespace winrt::TerminalApp::implementation
         std::vector<winrt::Windows::UI::Xaml::Controls::MenuFlyoutItemBase> _CreateNewTabFlyoutItems(winrt::Windows::Foundation::Collections::IVector<Microsoft::Terminal::Settings::Model::NewTabMenuEntry> entries);
         winrt::Windows::UI::Xaml::Controls::IconElement _CreateNewTabFlyoutIcon(const winrt::hstring& icon);
         winrt::Windows::UI::Xaml::Controls::MenuFlyoutItem _CreateNewTabFlyoutProfile(const Microsoft::Terminal::Settings::Model::Profile profile, int profileIndex);
+        winrt::Windows::UI::Xaml::Controls::MenuFlyoutItem _CreateNewTabFlyoutAction(const winrt::hstring& actionId);
 
         void _OpenNewTabDropdown();
         HRESULT _OpenNewTab(const Microsoft::Terminal::Settings::Model::INewContentArgs& newContentArgs);
@@ -484,6 +493,7 @@ namespace winrt::TerminalApp::implementation
         void _RunRestorePreviews();
         void _PreviewColorScheme(const Microsoft::Terminal::Settings::Model::SetColorSchemeArgs& args);
         void _PreviewAdjustOpacity(const Microsoft::Terminal::Settings::Model::AdjustOpacityArgs& args);
+        void _PreviewSendInput(const Microsoft::Terminal::Settings::Model::SendInputArgs& args);
 
         winrt::Microsoft::Terminal::Settings::Model::ActionAndArgs _lastPreviewedAction{ nullptr };
         std::vector<std::function<void()>> _restorePreviewFuncs{};
@@ -520,6 +530,7 @@ namespace winrt::TerminalApp::implementation
         void _OpenSuggestions(const Microsoft::Terminal::Control::TermControl& sender, Windows::Foundation::Collections::IVector<winrt::Microsoft::Terminal::Settings::Model::Command> commandsCollection, winrt::TerminalApp::SuggestionsMode mode, winrt::hstring filterText);
 
         void _ShowWindowChangedHandler(const IInspectable sender, const winrt::Microsoft::Terminal::Control::ShowWindowArgs args);
+        winrt::fire_and_forget _SearchMissingCommandHandler(const IInspectable sender, const winrt::Microsoft::Terminal::Control::SearchMissingCommandEventArgs args);
 
         winrt::fire_and_forget _windowPropertyChanged(const IInspectable& sender, const winrt::Windows::UI::Xaml::Data::PropertyChangedEventArgs& args);
 
@@ -537,15 +548,20 @@ namespace winrt::TerminalApp::implementation
         void _sendDraggedTabToWindow(const winrt::hstring& windowId, const uint32_t tabIndex, std::optional<til::point> dragPoint);
 
         void _PopulateContextMenu(const Microsoft::Terminal::Control::TermControl& control, const Microsoft::UI::Xaml::Controls::CommandBarFlyout& sender, const bool withSelection);
+        void _PopulateQuickFixMenu(const Microsoft::Terminal::Control::TermControl& control, const Windows::UI::Xaml::Controls::MenuFlyout& sender);
         winrt::Windows::UI::Xaml::Controls::MenuFlyout _CreateRunAsAdminFlyout(int profileIndex);
 
         winrt::Microsoft::Terminal::Control::TermControl _senderOrActiveControl(const winrt::Windows::Foundation::IInspectable& sender);
         winrt::com_ptr<TerminalTab> _senderOrFocusedTab(const IInspectable& sender);
 
+        void _activePaneChanged(winrt::TerminalApp::TerminalTab tab, Windows::Foundation::IInspectable args);
+        winrt::fire_and_forget _doHandleSuggestions(Microsoft::Terminal::Settings::Model::SuggestionsArgs realArgs);
+
 #pragma region ActionHandlers
         // These are all defined in AppActionHandlers.cpp
 #define ON_ALL_ACTIONS(action) DECLARE_ACTION_HANDLER(action);
         ALL_SHORTCUT_ACTIONS
+        INTERNAL_SHORTCUT_ACTIONS
 #undef ON_ALL_ACTIONS
 #pragma endregion
 

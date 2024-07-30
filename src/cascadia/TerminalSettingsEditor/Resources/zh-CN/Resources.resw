@@ -342,6 +342,24 @@
     <value>启用后，终端将使用软件光栅 (WARP)。几乎在所有情况下都应禁用此设置。</value>
     <comment>{Locked="WARP"} WARP is the "Windows Advanced Rasterization Platform".</comment>
   </data>
+  <data name="Globals_TextMeasurement.Header" xml:space="preserve">
+    <value>文本度量模式</value>
+    <comment>This text is shown next to a list of choices.</comment>
+  </data>
+  <data name="Globals_TextMeasurement.HelpText" xml:space="preserve">
+    <value>这会更改传入文本分组到单元格中的方式。“Grapheme 群集”选项是执行此操作的最新式和 Unicode 正确的方法，而“wcswidth”是 UNIX 上的常见方法，“Windows 控制台”复制了它在 Windows 上的工作方式。更改此设置需要重启Windows 终端且仅适用于从其内部启动的应用程序。</value>
+  </data>
+  <data name="Globals_TextMeasurement_Graphemes.Text" xml:space="preserve">
+    <value>Grapheme 群集</value>
+    <comment>The default choice between multiple graphics APIs.</comment>
+  </data>
+  <data name="Globals_TextMeasurement_Wcswidth.Text" xml:space="preserve">
+    <value>wcswidth</value>
+    <comment>{Locked="wcswidth"}</comment>
+  </data>
+  <data name="Globals_TextMeasurement_Console.Text" xml:space="preserve">
+    <value>Windows 控制台</value>
+  </data>
   <data name="Globals_InitialCols.Text" xml:space="preserve">
     <value>列</value>
     <comment>Header for a control to choose the number of columns in the terminal's text grid.</comment>
@@ -895,6 +913,9 @@
     <value>字体</value>
     <comment>Name for a control to select the font for text in the app.</comment>
   </data>
+  <data name="Profile_FontFace.HelpText" xml:space="preserve">
+    <value>通过使用 ASCII 逗号分隔多个字体，可以使用这些字体。</value>
+  </data>
   <data name="Profile_FontSize.Header" xml:space="preserve">
     <value>字号</value>
     <comment>Header for a control to determine the size of the text in the app.</comment>
@@ -928,7 +949,7 @@
     <comment>The main label of a toggle. When enabled, certain characters (glyphs) are replaced with better looking ones.</comment>
   </data>
   <data name="Profile_EnableBuiltinGlyphs.HelpText" xml:space="preserve">
-    <value>启用后，终端将为块元素和制表符绘制自定义标志符号，而不是使用字体。仅当 GPU 加速可用时，此功能才有效。</value>
+    <value>启用后，终端会使用自定义字形来绘制块元素和框线绘图字符，而不是使用字体。</value>
     <comment>A longer description of the "Profile_EnableBuiltinGlyphs" toggle. "glyphs", "block element" and "box drawing characters" are technical terms from the Unicode specification.</comment>
   </data>
   <data name="Profile_EnableColorGlyphs.Header" xml:space="preserve">

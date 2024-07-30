@@ -15,9 +15,10 @@
 #include "dwrite.h"
 #include "wic.h"
 #include "../../types/inc/ColorFix.hpp"
+#include "../../types/inc/convert.hpp"
 
 #if ATLAS_DEBUG_SHOW_DIRTY || ATLAS_DEBUG_COLORIZE_GLYPH_ATLAS
-#include "colorbrewer.h"
+#include <til/colorbrewer.h>
 #endif
 
 TIL_FAST_MATH_BEGIN
@@ -37,6 +38,7 @@ TIL_FAST_MATH_BEGIN
 #pragma warning(disable : 26459) // You called an STL function '...' with a raw pointer parameter at position '...' that may be unsafe [...].
 #pragma warning(disable : 26481) // Don't use pointer arithmetic. Use span instead (bounds.1).
 #pragma warning(disable : 26482) // Only index into arrays using constant expressions (bounds.2).
+#pragma warning(disable : 26490) // Don't use reinterpret_cast (type.1).
 
 // Initializing large arrays can be very costly compared to how cheap some of these functions are.
 #define ALLOW_UNINITIALIZED_BEGIN _Pragma("warning(push)") _Pragma("warning(disable : 26494)")
@@ -184,6 +186,18 @@ BackendD3D::BackendD3D(const RenderingPayload& p)
 #endif
 }
 
+#pragma warning(suppress : 26432) // If you define or delete any default operation in the type '...', define or delete them all (c.21).
+BackendD3D::~BackendD3D()
+{
+    // In case an exception is thrown for some reason between BeginDraw() and EndDraw()
+    // we still technically need to call EndDraw() before releasing any resources.
+    if (_d2dBeganDrawing)
+    {
+#pragma warning(suppress : 26447) // The function is declared 'noexcept' but calls function '...' which may throw exceptions (f.6).
+        LOG_IF_FAILED(_d2dRenderTarget->EndDraw());
+    }
+}
+
 void BackendD3D::ReleaseResources() noexcept
 {
     _renderTargetView.reset();
@@ -283,20 +297,20 @@ void BackendD3D::_updateFontDependents(const RenderingPayload& p)
     // baseline of curlyline is at the middle of singly underline. When there's
     // limited space to draw a curlyline, we apply a limit on the peak height.
     {
-        const auto cellHeight = static_cast<f32>(font.cellSize.y);
-        const auto duTop = static_cast<f32>(font.doubleUnderline[0].position);
-        const auto duBottom = static_cast<f32>(font.doubleUnderline[1].position);
-        const auto duHeight = static_cast<f32>(font.doubleUnderline[0].height);
+        const int cellHeight = font.cellSize.y;
+        const int duTop = font.doubleUnderline[0].position;
+        const int duBottom = font.doubleUnderline[1].position;
+        const int duHeight = font.doubleUnderline[0].height;
 
         // This gives it the same position and height as our double-underline. There's no particular reason for that, apart from
         // it being simple to implement and robust against more peculiar fonts with unusually large/small descenders, etc.
-        // We still need to ensure though that it doesn't clip out of the cellHeight at the bottom.
-        const auto height = std::max(3.0f, duBottom + duHeight - duTop);
-        const auto top = std::min(duTop, floorf(cellHeight - height - duHeight));
+        // We still need to ensure though that it doesn't clip out of the cellHeight at the bottom, which is why `position` has a min().
+        const auto height = std::max(3, duBottom + duHeight - duTop);
+        const auto position = std::min(duTop, cellHeight - height);
 
         _curlyLineHalfHeight = height * 0.5f;
-        _curlyUnderline.position = gsl::narrow_cast<u16>(lrintf(top));
-        _curlyUnderline.height = gsl::narrow_cast<u16>(lrintf(height));
+        _curlyUnderline.position = gsl::narrow_cast<u16>(position);
+        _curlyUnderline.height = gsl::narrow_cast<u16>(height);
     }
 
     DWrite_GetRenderParams(p.dwriteFactory.get(), &_gamma, &_cleartypeEnhancedContrast, &_grayscaleEnhancedContrast, _textRenderingParams.put());
@@ -438,15 +452,21 @@ void BackendD3D::_recreateCustomShader(const RenderingPayload& p)
         {
             if (error)
             {
-                LOG_HR_MSG(hr, "%.*hs", static_cast<int>(error->GetBufferSize()), static_cast<char*>(error->GetBufferPointer()));
+                if (p.warningCallback)
+                {
+                    //to handle compile time errors
+                    const std::string_view errMsgStrView{ static_cast<const char*>(error->GetBufferPointer()), error->GetBufferSize() };
+                    const auto errMsgWstring = ConvertToW(CP_ACP, errMsgStrView);
+                    p.warningCallback(D2DERR_SHADER_COMPILE_FAILED, errMsgWstring);
+                }
             }
             else
             {
-                LOG_HR(hr);
-            }
-            if (p.warningCallback)
-            {
-                p.warningCallback(D2DERR_SHADER_COMPILE_FAILED, p.s->misc->customPixelShaderPath);
+                if (p.warningCallback)
+                {
+                    //to handle errors such as file not found, path not found, access denied
+                    p.warningCallback(hr, p.s->misc->customPixelShaderPath);
+                }
             }
         }
 
@@ -720,7 +740,7 @@ void BackendD3D::_d2dEndDrawing()
     }
 }
 
-void BackendD3D::_resetGlyphAtlas(const RenderingPayload& p)
+void BackendD3D::_resetGlyphAtlas(const RenderingPayload& p, u32 minWidth, u32 minHeight)
 {
     // The index returned by _BitScanReverse is undefined when the input is 0. We can simultaneously guard
     // against that and avoid unreasonably small textures, by clamping the min. texture size to `minArea`.
@@ -737,10 +757,8 @@ void BackendD3D::_resetGlyphAtlas(const RenderingPayload& p)
     // It's hard to say what the max. size of the cache should be. Optimally I think we should use as much
     // memory as is available, but the rendering code in this project is a big mess and so integrating
     // memory pressure feedback (RegisterVideoMemoryBudgetChangeNotificationEvent) is rather difficult.
-    // As an alternative I'm using 1.25x the size of the swap chain. The 1.25x is there to avoid situations, where
-    // we're locked into a state, where on every render pass we're starting with a half full atlas, drawing once,
-    // filling it with the remaining half and drawing again, requiring two rendering passes on each frame.
-    const auto maxAreaByFont = targetArea + targetArea / 4;
+    // As an alternative I'm using 2x the size of the swap chain. This fits a screen full of glyphs and sixels.
+    const auto maxAreaByFont = 2 * targetArea;
 
     auto area = std::min(maxAreaByFont, std::max(minAreaByFont, minAreaByGrowth));
     area = clamp(area, minArea, maxArea);
@@ -751,8 +769,21 @@ void BackendD3D::_resetGlyphAtlas(const RenderingPayload& p)
     // every time you resize the window by a pixel. Instead it only grows/shrinks by a factor of 2.
     unsigned long index;
     _BitScanReverse(&index, area - 1);
-    const auto u = static_cast<u16>(1u << ((index + 2) / 2));
-    const auto v = static_cast<u16>(1u << ((index + 1) / 2));
+    auto u = static_cast<u16>(1u << ((index + 2) / 2));
+    auto v = static_cast<u16>(1u << ((index + 1) / 2));
+
+    // However, if we're asked for a specific minimum size, round up the u/v to the next power of 2 of the given size.
+    // Because u/v cannot ever be less than sqrt(minArea), the _BitScanReverse() calls below cannot fail.
+    if (u < minWidth)
+    {
+        _BitScanReverse(&index, minWidth - 1);
+        u = 1u << (index + 1);
+    }
+    if (v < minHeight)
+    {
+        _BitScanReverse(&index, minHeight - 1);
+        v = 1u << (index + 1);
+    }
 
     if (u != _rectPacker.width || v != _rectPacker.height)
     {
@@ -776,6 +807,7 @@ void BackendD3D::_resetGlyphAtlas(const RenderingPayload& p)
     {
         glyphs.clear();
     }
+    _glyphAtlasBitmaps.clear();
 
     _d2dBeginDrawing();
     _d2dRenderTarget->Clear();
@@ -785,6 +817,13 @@ void BackendD3D::_resetGlyphAtlas(const RenderingPayload& p)
 
 void BackendD3D::_resizeGlyphAtlas(const RenderingPayload& p, const u16 u, const u16 v)
 {
+#if defined(_M_X64) || defined(_M_IX86)
+    static const auto faultyMacTypeVersion = _checkMacTypeVersion(p);
+#else
+    // The affected versions of MacType are unavailable on ARM.
+    static constexpr auto faultyMacTypeVersion = false;
+#endif
+
     _d2dRenderTarget.reset();
     _d2dRenderTarget4.reset();
     _glyphAtlas.reset();
@@ -830,9 +869,13 @@ void BackendD3D::_resizeGlyphAtlas(const RenderingPayload& p, const u16 u, const
         _d2dRenderTarget4->GetDevice(device.addressof());
 
         device->SetMaximumTextureMemory(0);
-        if (const auto device4 = device.try_query<ID2D1Device4>())
+
+        if (!faultyMacTypeVersion)
         {
-            device4->SetMaximumColorGlyphCacheMemory(0);
+            if (const auto device4 = device.try_query<ID2D1Device4>())
+            {
+                device4->SetMaximumColorGlyphCacheMemory(0);
+            }
         }
     }
 
@@ -845,6 +888,62 @@ void BackendD3D::_resizeGlyphAtlas(const RenderingPayload& p, const u16 u, const
     p.deviceContext->PSSetShaderResources(0, 2, &resources[0]);
 
     _rectPackerData = Buffer<stbrp_node>{ u };
+}
+
+// MacType is a popular 3rd party system to give the font rendering on Windows a softer look.
+// It's particularly popular in China. Unfortunately, it hooks ID2D1Device4 incorrectly:
+//   https://github.com/snowie2000/mactype/pull/938
+// This results in crashes. Not a lot of them, but enough to constantly show up.
+// The issue was fixed in the MacType v1.2023.5.31 release, the only one in 2023.
+//
+// Please feel free to remove this check in a few years.
+bool BackendD3D::_checkMacTypeVersion(const RenderingPayload& p)
+{
+#ifdef _WIN64
+    static constexpr auto name = L"MacType64.Core.dll";
+#else
+    static constexpr auto name = L"MacType.Core.dll";
+#endif
+
+    wil::unique_hmodule handle;
+    if (!GetModuleHandleExW(0, name, handle.addressof()))
+    {
+        return false;
+    }
+
+    const auto resource = FindResourceW(handle.get(), MAKEINTRESOURCE(VS_VERSION_INFO), RT_VERSION);
+    if (!resource)
+    {
+        return false;
+    }
+
+    const auto dataHandle = LoadResource(handle.get(), resource);
+    if (!dataHandle)
+    {
+        return false;
+    }
+
+    const auto data = LockResource(dataHandle);
+    if (!data)
+    {
+        return false;
+    }
+
+    VS_FIXEDFILEINFO* info;
+    UINT varLen = 0;
+    if (!VerQueryValueW(data, L"\\", reinterpret_cast<void**>(&info), &varLen))
+    {
+        return false;
+    }
+
+    const auto faulty = info->dwFileVersionMS < (1 << 16 | 2023);
+
+    if (faulty && p.warningCallback)
+    {
+        p.warningCallback(ATLAS_ENGINE_ERROR_MAC_TYPE, {});
+    }
+
+    return faulty;
 }
 
 BackendD3D::QuadInstance& BackendD3D::_getLastQuad() noexcept
@@ -982,12 +1081,13 @@ void BackendD3D::_uploadBackgroundBitmap(const RenderingPayload& p)
 
     auto src = std::bit_cast<const char*>(p.backgroundBitmap.data());
     const auto srcEnd = std::bit_cast<const char*>(p.backgroundBitmap.data() + p.backgroundBitmap.size());
+    const auto srcWidth = p.s->viewportCellCount.x * sizeof(u32);
     const auto srcStride = p.colorBitmapRowStride * sizeof(u32);
     auto dst = static_cast<char*>(mapped.pData);
 
     while (src < srcEnd)
     {
-        memcpy(dst, src, srcStride);
+        memcpy(dst, src, srcWidth);
         src += srcStride;
         dst += mapped.RowPitch;
     }
@@ -1000,7 +1100,7 @@ void BackendD3D::_drawText(RenderingPayload& p)
 {
     if (_fontChangedResetGlyphAtlas)
     {
-        _resetGlyphAtlas(p);
+        _resetGlyphAtlas(p, 0, 0);
     }
 
     til::CoordType dirtyTop = til::CoordTypeMax;
@@ -1099,6 +1199,11 @@ void BackendD3D::_drawText(RenderingPayload& p)
         if (!row->gridLineRanges.empty())
         {
             _drawGridlines(p, y);
+        }
+
+        if (row->bitmap.revision != 0)
+        {
+            _drawBitmap(p, row, y);
         }
 
         if (p.invalidatedRows.contains(y))
@@ -1497,7 +1602,19 @@ BackendD3D::AtlasGlyphEntry* BackendD3D::_drawBuiltinGlyph(const RenderingPayloa
     }
     else
     {
-        BuiltinGlyphs::DrawBuiltinGlyph(p.d2dFactory.get(), _d2dRenderTarget.get(), _brush.get(), r, glyphIndex);
+        // This code works in tandem with SHADING_TYPE_TEXT_BUILTIN_GLYPH in our pixel shader.
+        // Unless someone removed it, it should have a lengthy comment visually explaining
+        // what each of the 3 RGB components do. The short version is:
+        //   R: stretch the checkerboard pattern (Shape_Filled050) horizontally
+        //   G: invert the pixels
+        //   B: overrides the above and fills it
+        static constexpr D2D1_COLOR_F shadeColorMap[] = {
+            { 1, 0, 0, 1 }, // Shape_Filled025
+            { 0, 0, 0, 1 }, // Shape_Filled050
+            { 1, 1, 0, 1 }, // Shape_Filled075
+            { 1, 1, 1, 1 }, // Shape_Filled100
+        };
+        BuiltinGlyphs::DrawBuiltinGlyph(p.d2dFactory.get(), _d2dRenderTarget.get(), _brush.get(), shadeColorMap, r, glyphIndex);
         shadingType = ShadingType::TextBuiltinGlyph;
     }
 
@@ -1585,7 +1702,7 @@ void BackendD3D::_drawGlyphAtlasAllocate(const RenderingPayload& p, stbrp_rect& 
 
     _d2dEndDrawing();
     _flushQuads(p);
-    _resetGlyphAtlas(p);
+    _resetGlyphAtlas(p, rect.w, rect.h);
 
     if (!stbrp_pack_rects(&_rectPacker, &rect, 1))
     {
@@ -1749,6 +1866,58 @@ void BackendD3D::_drawGridlines(const RenderingPayload& p, u16 y)
             }
         }
     }
+}
+
+void BackendD3D::_drawBitmap(const RenderingPayload& p, const ShapedRow* row, u16 y)
+{
+    const auto& b = row->bitmap;
+    auto ab = _glyphAtlasBitmaps.lookup(b.revision);
+    if (!ab)
+    {
+        stbrp_rect rect{
+            .w = p.s->font->cellSize.x * b.targetWidth,
+            .h = p.s->font->cellSize.y,
+        };
+        _drawGlyphAtlasAllocate(p, rect);
+        _d2dBeginDrawing();
+
+        const D2D1_SIZE_U size{
+            static_cast<UINT32>(b.sourceSize.x),
+            static_cast<UINT32>(b.sourceSize.y),
+        };
+        const D2D1_BITMAP_PROPERTIES bitmapProperties{
+            .pixelFormat = { DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED },
+            .dpiX = static_cast<f32>(p.s->font->dpi),
+            .dpiY = static_cast<f32>(p.s->font->dpi),
+        };
+        wil::com_ptr<ID2D1Bitmap> bitmap;
+        THROW_IF_FAILED(_d2dRenderTarget->CreateBitmap(size, b.source.data(), static_cast<UINT32>(b.sourceSize.x) * 4, &bitmapProperties, bitmap.addressof()));
+
+        const D2D1_RECT_F rectF{
+            static_cast<f32>(rect.x),
+            static_cast<f32>(rect.y),
+            static_cast<f32>(rect.x + rect.w),
+            static_cast<f32>(rect.y + rect.h),
+        };
+        _d2dRenderTarget->DrawBitmap(bitmap.get(), &rectF, 1, D2D1_BITMAP_INTERPOLATION_MODE_LINEAR);
+
+        ab = _glyphAtlasBitmaps.insert(b.revision).first;
+        ab->size.x = static_cast<u16>(rect.w);
+        ab->size.y = static_cast<u16>(rect.h);
+        ab->texcoord.x = static_cast<u16>(rect.x);
+        ab->texcoord.y = static_cast<u16>(rect.y);
+    }
+
+    const auto left = p.s->font->cellSize.x * (b.targetOffset - p.scrollOffsetX);
+    const auto top = p.s->font->cellSize.y * y;
+
+    _appendQuad() = {
+        .shadingType = static_cast<u16>(ShadingType::TextPassthrough),
+        .renditionScale = { 1, 1 },
+        .position = { static_cast<i16>(left), static_cast<i16>(top) },
+        .size = ab->size,
+        .texcoord = ab->texcoord,
+    };
 }
 
 void BackendD3D::_drawCursorBackground(const RenderingPayload& p)
@@ -2121,27 +2290,29 @@ void BackendD3D::_drawSelection(const RenderingPayload& p)
 void BackendD3D::_debugShowDirty(const RenderingPayload& p)
 {
 #if ATLAS_DEBUG_SHOW_DIRTY
+    if (p.dirtyRectInPx.empty())
+    {
+        return;
+    }
+
     _presentRects[_presentRectsPos] = p.dirtyRectInPx;
     _presentRectsPos = (_presentRectsPos + 1) % std::size(_presentRects);
 
     for (size_t i = 0; i < std::size(_presentRects); ++i)
     {
         const auto& rect = _presentRects[(_presentRectsPos + i) % std::size(_presentRects)];
-        if (rect.non_empty())
-        {
-            _appendQuad() = {
-                .shadingType = ShadingType::Selection,
-                .position = {
-                    static_cast<i16>(rect.left),
-                    static_cast<i16>(rect.top),
-                },
-                .size = {
-                    static_cast<u16>(rect.right - rect.left),
-                    static_cast<u16>(rect.bottom - rect.top),
-                },
-                .color = colorbrewer::pastel1[i] | 0x1f000000,
-            };
-        }
+        _appendQuad() = {
+            .shadingType = static_cast<u16>(ShadingType::Selection),
+            .position = {
+                static_cast<i16>(rect.left),
+                static_cast<i16>(rect.top),
+            },
+            .size = {
+                static_cast<u16>(rect.right - rect.left),
+                static_cast<u16>(rect.bottom - rect.top),
+            },
+            .color = til::colorbrewer::pastel1[i] | 0x1f000000,
+        };
     }
 #endif
 }
@@ -2155,9 +2326,12 @@ void BackendD3D::_debugDumpRenderTarget(const RenderingPayload& p)
         std::filesystem::create_directories(_dumpRenderTargetBasePath);
     }
 
+    wil::com_ptr<ID3D11Texture2D> buffer;
+    THROW_IF_FAILED(p.swapChain.swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), reinterpret_cast<void**>(buffer.addressof())));
+
     wchar_t path[MAX_PATH];
     swprintf_s(path, L"%s\\%u_%08zu.png", &_dumpRenderTargetBasePath[0], GetCurrentProcessId(), _dumpRenderTargetCounter);
-    SaveTextureToPNG(p.deviceContext.get(), _swapChainManager.GetBuffer().get(), p.s->font->dpi, &path[0]);
+    WIC::SaveTextureToPNG(p.deviceContext.get(), buffer.get(), p.s->font->dpi, &path[0]);
     _dumpRenderTargetCounter++;
 #endif
 }

@@ -1279,6 +1279,31 @@
                                 </ToolTip>
                             </ToolTipService.ToolTip>
                         </Border>
+
+                        <Button x:Name="QuickFixButton"
+                                x:Uid="QuickFixButton"
+                                Width="{x:Bind QuickFixButtonWidth, Mode=OneWay}"
+                                Padding="0"
+                                HorizontalContentAlignment="Center"
+                                VerticalContentAlignment="Center"
+                                AllowFocusOnInteraction="False"
+                                CornerRadius="0,5,5,0"
+                                PointerEntered="_QuickFixButton_PointerEntered"
+                                PointerExited="_QuickFixButton_PointerExited"
+                                Style="{StaticResource AccentButtonStyle}"
+                                Visibility="Collapsed">
+                            <Button.Content>
+                                <FontIcon x:Name="QuickFixIcon"
+                                          HorizontalAlignment="Center"
+                                          VerticalAlignment="Center"
+                                          FontFamily="{ThemeResource SymbolThemeFontFamily}"
+                                          Glyph="&#xEA80;" />
+                            </Button.Content>
+                            <Button.Flyout>
+                                <MenuFlyout x:Name="QuickFixMenu"
+                                            x:Uid="QuickFixMenu" />
+                            </Button.Flyout>
+                        </Button>
                     </Canvas>
 
                     <Canvas x:Name="SelectionCanvas"
@@ -1353,6 +1378,18 @@
             </Border>
         </Grid>
 
+        <VisualStateManager.VisualStateGroups>
+            <VisualStateGroup x:Name="QuickFixButtonStates">
+                <VisualState x:Name="Normal" />
+                <VisualState x:Name="Collapsed">
+                    <VisualState.Setters>
+                        <Setter Target="QuickFixButton.Width" Value="{x:Bind QuickFixButtonCollapsedWidth, Mode=OneWay}" />
+                        <Setter Target="QuickFixButton.Background" Value="{ThemeResource SystemAccentColor}" />
+                        <Setter Target="QuickFixIcon.Visibility" Value="Collapsed" />
+                    </VisualState.Setters>
+                </VisualState>
+            </VisualStateGroup>
+        </VisualStateManager.VisualStateGroups>
     </Grid>
 
 </UserControl>

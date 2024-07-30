@@ -556,6 +556,12 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParamete
     case CsiActionCodes::SD_ScrollDown:
         success = _dispatch->ScrollDown(parameters.at(0));
         break;
+    case CsiActionCodes::NP_NextPage:
+        success = _dispatch->NextPage(parameters.at(0));
+        break;
+    case CsiActionCodes::PP_PrecedingPage:
+        success = _dispatch->PrecedingPage(parameters.at(0));
+        break;
     case CsiActionCodes::ANSISYSRC_CursorRestore:
         success = _dispatch->CursorRestoreState();
         break;
@@ -601,6 +607,15 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParamete
         }
         success = true;
         break;
+    case CsiActionCodes::PPA_PagePositionAbsolute:
+        success = _dispatch->PagePositionAbsolute(parameters.at(0));
+        break;
+    case CsiActionCodes::PPR_PagePositionRelative:
+        success = _dispatch->PagePositionRelative(parameters.at(0));
+        break;
+    case CsiActionCodes::PPB_PagePositionBack:
+        success = _dispatch->PagePositionBack(parameters.at(0));
+        break;
     case CsiActionCodes::DECSCUSR_SetCursorStyle:
         success = _dispatch->SetCursorStyle(parameters.at(0));
         break;
@@ -609,6 +624,9 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParamete
         break;
     case CsiActionCodes::DECSCA_SetCharacterProtectionAttribute:
         success = _dispatch->SetCharacterProtectionAttribute(parameters);
+        break;
+    case CsiActionCodes::DECRQDE_RequestDisplayedExtent:
+        success = _dispatch->RequestDisplayedExtent();
         break;
     case CsiActionCodes::XT_PushSgr:
     case CsiActionCodes::XT_PushSgrAlias:
@@ -702,6 +720,11 @@ IStateMachineEngine::StringHandler OutputStateMachineEngine::ActionDcsDispatch(c
 
     switch (id)
     {
+    case DcsActionCodes::SIXEL_DefineImage:
+        handler = _dispatch->DefineSixelImage(parameters.at(0),
+                                              parameters.at(1),
+                                              parameters.at(2));
+        break;
     case DcsActionCodes::DECDLD_DownloadDRCS:
         handler = _dispatch->DownloadDRCS(parameters.at(0),
                                           parameters.at(1),
@@ -893,6 +916,11 @@ bool OutputStateMachineEngine::ActionOscDispatch(const size_t parameter, const s
     case OscActionCodes::VsCodeAction:
     {
         success = _dispatch->DoVsCodeAction(string);
+        break;
+    }
+    case OscActionCodes::WTAction:
+    {
+        success = _dispatch->DoWTAction(string);
         break;
     }
     default:

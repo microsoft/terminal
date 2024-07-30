@@ -122,6 +122,8 @@ namespace Microsoft::Console::VirtualTerminal
             DCH_DeleteCharacter = VTID("P"),
             SU_ScrollUp = VTID("S"),
             SD_ScrollDown = VTID("T"),
+            NP_NextPage = VTID("U"),
+            PP_PrecedingPage = VTID("V"),
             DECST8C_SetTabEvery8Columns = VTID("?W"),
             ECH_EraseCharacters = VTID("X"),
             CBT_CursorBackTab = VTID("Z"),
@@ -147,9 +149,13 @@ namespace Microsoft::Console::VirtualTerminal
             DTTERM_WindowManipulation = VTID("t"), // NOTE: Overlaps with DECSLPP. Fix when/if implemented.
             ANSISYSRC_CursorRestore = VTID("u"),
             DECREQTPARM_RequestTerminalParameters = VTID("x"),
+            PPA_PagePositionAbsolute = VTID(" P"),
+            PPR_PagePositionRelative = VTID(" Q"),
+            PPB_PagePositionBack = VTID(" R"),
             DECSCUSR_SetCursorStyle = VTID(" q"),
             DECSTR_SoftReset = VTID("!p"),
             DECSCA_SetCharacterProtectionAttribute = VTID("\"q"),
+            DECRQDE_RequestDisplayedExtent = VTID("\"v"),
             XT_PushSgrAlias = VTID("#p"),
             XT_PopSgrAlias = VTID("#q"),
             XT_PushSgr = VTID("#{"),
@@ -176,6 +182,7 @@ namespace Microsoft::Console::VirtualTerminal
 
         enum DcsActionCodes : uint64_t
         {
+            SIXEL_DefineImage = VTID("q"),
             DECDLD_DownloadDRCS = VTID("{"),
             DECAUPSS_AssignUserPreferenceSupplementalSet = VTID("!u"),
             DECDMAC_DefineMacro = VTID("!z"),
@@ -223,6 +230,7 @@ namespace Microsoft::Console::VirtualTerminal
             FinalTermAction = 133,
             VsCodeAction = 633,
             ITerm2Action = 1337,
+            WTAction = 9001,
         };
 
         bool _GetOscSetColorTable(const std::wstring_view string,

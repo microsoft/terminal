@@ -501,11 +501,13 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::FindMatchDirecti
 
 JSON_FLAG_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::SuggestionsSource)
 {
-    static constexpr std::array<pair_type, 5> mappings = {
+    static constexpr std::array<pair_type, 7> mappings = {
         pair_type{ "none", AllClear },
         pair_type{ "tasks", ValueType::Tasks },
+        pair_type{ "snippets", ValueType::Tasks },
         pair_type{ "commandHistory", ValueType::CommandHistory },
         pair_type{ "directoryHistory", ValueType::DirectoryHistory },
+        pair_type{ "quickFix", ValueType::QuickFixes },
         pair_type{ "all", AllSet },
     };
 };
@@ -678,8 +680,9 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Control::ScrollToMarkDirection)
 // Possible NewTabMenuEntryType values
 JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::NewTabMenuEntryType)
 {
-    JSON_MAPPINGS(5) = {
+    JSON_MAPPINGS(6) = {
         pair_type{ "profile", ValueType::Profile },
+        pair_type{ "action", ValueType::Action },
         pair_type{ "separator", ValueType::Separator },
         pair_type{ "folder", ValueType::Folder },
         pair_type{ "remainingProfiles", ValueType::RemainingProfiles },
@@ -768,5 +771,14 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Control::GraphicsAPI)
         pair_type{ "automatic", ValueType::Automatic },
         pair_type{ "direct2d", ValueType::Direct2D },
         pair_type{ "direct3d11", ValueType::Direct3D11 },
+    };
+};
+
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Control::TextMeasurement)
+{
+    JSON_MAPPINGS(3) = {
+        pair_type{ "graphemes", ValueType::Graphemes },
+        pair_type{ "wcswidth", ValueType::Wcswidth },
+        pair_type{ "console", ValueType::Console },
     };
 };

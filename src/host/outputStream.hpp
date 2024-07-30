@@ -32,8 +32,7 @@ public:
     void ReturnResponse(const std::wstring_view response) override;
 
     Microsoft::Console::VirtualTerminal::StateMachine& GetStateMachine() override;
-    TextBuffer& GetTextBuffer() override;
-    til::rect GetViewport() const override;
+    BufferState GetBufferAndViewport() override;
     void SetViewportPosition(const til::point position) override;
 
     void SetTextAttributes(const TextAttribute& attrs) override;
@@ -70,6 +69,8 @@ public:
     void NotifyBufferRotation(const int delta) override;
 
     void InvokeCompletions(std::wstring_view menuJson, unsigned int replaceLength) override;
+
+    void SearchMissingCommand(std::wstring_view missingCommand) override;
 
 private:
     Microsoft::Console::IIoProvider& _io;

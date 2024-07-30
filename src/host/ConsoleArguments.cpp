@@ -7,7 +7,6 @@
 #include <shellapi.h>
 using namespace Microsoft::Console::Utils;
 
-const std::wstring_view ConsoleArguments::VT_MODE_ARG = L"--vtmode";
 const std::wstring_view ConsoleArguments::HEADLESS_ARG = L"--headless";
 const std::wstring_view ConsoleArguments::SERVER_HANDLE_ARG = L"--server";
 const std::wstring_view ConsoleArguments::SIGNAL_HANDLE_ARG = L"--signal";
@@ -23,6 +22,7 @@ const std::wstring_view ConsoleArguments::RESIZE_QUIRK = L"--resizeQuirk";
 const std::wstring_view ConsoleArguments::FEATURE_ARG = L"--feature";
 const std::wstring_view ConsoleArguments::FEATURE_PTY_ARG = L"pty";
 const std::wstring_view ConsoleArguments::COM_SERVER_ARG = L"-Embedding";
+static constexpr std::wstring_view GLYPH_WIDTH{ L"--textMeasurement" };
 // NOTE: Thinking about adding more commandline args that control conpty, for
 // the Terminal? Make sure you add them to the commandline in
 // ConsoleEstablishHandoff. We use that to initialize the ConsoleArguments for a
@@ -111,7 +111,6 @@ ConsoleArguments::ConsoleArguments(const std::wstring& commandline,
     _vtOutHandle(hStdOut)
 {
     _clientCommandline = L"";
-    _vtMode = L"";
     _headless = false;
     _runAsComServer = false;
     _createServerHandle = true;
@@ -137,7 +136,6 @@ ConsoleArguments& ConsoleArguments::operator=(const ConsoleArguments& other)
         _clientCommandline = other._clientCommandline;
         _vtInHandle = other._vtInHandle;
         _vtOutHandle = other._vtOutHandle;
-        _vtMode = other._vtMode;
         _headless = other._headless;
         _createServerHandle = other._createServerHandle;
         _serverHandle = other._serverHandle;
@@ -473,10 +471,6 @@ void ConsoleArguments::s_ConsumeArg(_Inout_ std::vector<std::wstring>& args, _In
             s_ConsumeArg(args, i);
             hr = S_OK;
         }
-        else if (arg == VT_MODE_ARG)
-        {
-            hr = s_GetArgumentValue(args, i, &_vtMode);
-        }
         else if (arg == WIDTH_ARG)
         {
             hr = s_GetArgumentValue(args, i, &_width);
@@ -506,6 +500,10 @@ void ConsoleArguments::s_ConsumeArg(_Inout_ std::vector<std::wstring>& args, _In
             _resizeQuirk = true;
             s_ConsumeArg(args, i);
             hr = S_OK;
+        }
+        else if (arg == GLYPH_WIDTH)
+        {
+            hr = s_GetArgumentValue(args, i, &_textMeasurement);
         }
         else if (arg == CLIENT_COMMANDLINE_ARG)
         {
@@ -625,9 +623,9 @@ std::wstring ConsoleArguments::GetClientCommandline() const
     return _clientCommandline;
 }
 
-std::wstring ConsoleArguments::GetVtMode() const
+const std::wstring& ConsoleArguments::GetTextMeasurement() const
 {
-    return _vtMode;
+    return _textMeasurement;
 }
 
 bool ConsoleArguments::GetForceV1() const

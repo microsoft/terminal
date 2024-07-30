@@ -58,6 +58,7 @@ filling in the last row, and updating the screen.
 #include "../buffer/out/textBufferTextIterator.hpp"
 
 struct URegularExpression;
+enum class SearchFlag : unsigned int;
 
 namespace Microsoft::Console::Render
 {
@@ -71,7 +72,7 @@ public:
                const TextAttribute defaultAttributes,
                const UINT cursorSize,
                const bool isActiveBuffer,
-               Microsoft::Console::Render::Renderer& renderer);
+               Microsoft::Console::Render::Renderer* renderer);
 
     TextBuffer(const TextBuffer&) = delete;
     TextBuffer(TextBuffer&&) = delete;
@@ -120,11 +121,6 @@ public:
                                  const std::optional<bool> setWrap = std::nullopt,
                                  const std::optional<til::CoordType> limitRight = std::nullopt);
 
-    void InsertCharacter(const wchar_t wch, const DbcsAttribute dbcsAttribute, const TextAttribute attr);
-    void InsertCharacter(const std::wstring_view chars, const DbcsAttribute dbcsAttribute, const TextAttribute attr);
-    void IncrementCursor();
-    void NewlineCursor();
-
     // Scroll needs access to this to quickly rotate around the buffer.
     void IncrementCircularBuffer(const TextAttribute& fillAttributes = {});
 
@@ -139,6 +135,7 @@ public:
     const Microsoft::Console::Types::Viewport GetSize() const noexcept;
 
     void ScrollRows(const til::CoordType firstRow, const til::CoordType size, const til::CoordType delta);
+    void CopyRow(const til::CoordType srcRow, const til::CoordType dstRow, TextBuffer& dstBuffer) const;
 
     til::CoordType TotalRowCount() const noexcept;
 
@@ -165,7 +162,7 @@ public:
     void SetAsActiveBuffer(const bool isActiveBuffer) noexcept;
     bool IsActiveBuffer() const noexcept;
 
-    Microsoft::Console::Render::Renderer& GetRenderer() noexcept;
+    Microsoft::Console::Render::Renderer* GetRenderer() noexcept;
 
     void NotifyPaintFrame() noexcept;
     void TriggerRedraw(const Microsoft::Console::Types::Viewport& viewport);
@@ -293,8 +290,8 @@ public:
 
     static void Reflow(TextBuffer& oldBuffer, TextBuffer& newBuffer, const Microsoft::Console::Types::Viewport* lastCharacterViewport = nullptr, PositionInformation* positionInfo = nullptr);
 
-    std::vector<til::point_span> SearchText(const std::wstring_view& needle, bool caseInsensitive) const;
-    std::vector<til::point_span> SearchText(const std::wstring_view& needle, bool caseInsensitive, til::CoordType rowBeg, til::CoordType rowEnd) const;
+    std::optional<std::vector<til::point_span>> SearchText(const std::wstring_view& needle, SearchFlag flags) const;
+    std::optional<std::vector<til::point_span>> SearchText(const std::wstring_view& needle, SearchFlag flags, til::CoordType rowBeg, til::CoordType rowEnd) const;
 
     // Mark handling
     std::vector<ScrollMark> GetMarkRows() const;
@@ -321,11 +318,6 @@ private:
     til::CoordType _estimateOffsetOfLastCommittedRow() const noexcept;
 
     void _SetFirstRowIndex(const til::CoordType FirstRowIndex) noexcept;
-    til::point _GetPreviousFromCursor() const;
-    void _SetWrapOnCurrentRow();
-    void _AdjustWrapOnCurrentRow(const bool fSet);
-    // Assist with maintaining proper buffer state for Double Byte character sequences
-    void _PrepareForDoubleByteSequence(const DbcsAttribute dbcsAttribute);
     void _ExpandTextRow(til::inclusive_rect& selectionRow) const;
     DelimiterClass _GetDelimiterClassAt(const til::point pos, const std::wstring_view wordDelimiters) const;
     til::point _GetWordStartForAccessibility(const til::point target, const std::wstring_view wordDelimiters) const;
@@ -342,7 +334,7 @@ private:
 
     static void _AppendRTFText(std::string& contentBuilder, const std::wstring_view& text);
 
-    Microsoft::Console::Render::Renderer& _renderer;
+    Microsoft::Console::Render::Renderer* _renderer = nullptr;
 
     std::unordered_map<uint16_t, std::wstring> _hyperlinkMap;
     std::unordered_map<std::wstring, uint16_t> _hyperlinkCustomIdMap;

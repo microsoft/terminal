@@ -131,8 +131,7 @@ public:
     // These methods are defined in TerminalApi.cpp
     void ReturnResponse(const std::wstring_view response) override;
     Microsoft::Console::VirtualTerminal::StateMachine& GetStateMachine() noexcept override;
-    TextBuffer& GetTextBuffer() noexcept override;
-    til::rect GetViewport() const noexcept override;
+    BufferState GetBufferAndViewport() noexcept override;
     void SetViewportPosition(const til::point position) noexcept override;
     void SetTextAttributes(const TextAttribute& attrs) noexcept override;
     void SetSystemMode(const Mode mode, const bool enabled) noexcept override;
@@ -157,6 +156,8 @@ public:
     void NotifyBufferRotation(const int delta) override;
 
     void InvokeCompletions(std::wstring_view menuJson, unsigned int replaceLength) override;
+
+    void SearchMissingCommand(const std::wstring_view command) override;
 
 #pragma endregion
 
@@ -230,6 +231,8 @@ public:
     void SetShowWindowCallback(std::function<void(bool)> pfn) noexcept;
     void SetPlayMidiNoteCallback(std::function<void(const int, const int, const std::chrono::microseconds)> pfn) noexcept;
     void CompletionsChangedCallback(std::function<void(std::wstring_view, unsigned int)> pfn) noexcept;
+    void SetSearchMissingCommandCallback(std::function<void(std::wstring_view)> pfn) noexcept;
+    void SetClearQuickFixCallback(std::function<void()> pfn) noexcept;
     void SetSearchHighlights(const std::vector<til::point_span>& highlights) noexcept;
     void SetSearchHighlightFocused(const size_t focusedIdx);
 
@@ -247,6 +250,7 @@ public:
     const size_t GetTaskbarProgress() const noexcept;
 
     void ColorSelection(const TextAttribute& attr, winrt::Microsoft::Terminal::Core::MatchMode matchMode);
+    void PreviewText(std::wstring_view input);
 
 #pragma region TextSelection
     // These methods are defined in TerminalSelection.cpp
@@ -339,6 +343,8 @@ private:
     std::function<void(bool)> _pfnShowWindowChanged;
     std::function<void(const int, const int, const std::chrono::microseconds)> _pfnPlayMidiNote;
     std::function<void(std::wstring_view, unsigned int)> _pfnCompletionsChanged;
+    std::function<void(std::wstring_view)> _pfnSearchMissingCommand;
+    std::function<void()> _pfnClearQuickFix;
 
     RenderSettings _renderSettings;
     std::unique_ptr<::Microsoft::Console::VirtualTerminal::StateMachine> _stateMachine;
@@ -360,6 +366,7 @@ private:
     bool _suppressApplicationTitle = false;
     bool _trimBlockSelection = false;
     bool _autoMarkPrompts = false;
+    bool _rainbowSuggestions = false;
 
     size_t _taskbarState = 0;
     size_t _taskbarProgress = 0;

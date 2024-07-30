@@ -34,14 +34,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void TextBoxKeyDown(const winrt::Windows::Foundation::IInspectable& /*sender*/, const winrt::Windows::UI::Xaml::Input::KeyRoutedEventArgs& e);
         void Open(std::function<void()> callback);
         void Close();
+        bool IsOpen();
 
         winrt::hstring Text();
         bool GoForward();
         bool CaseSensitive();
+        bool RegularExpression();
         void SetFocusOnTextbox();
         void PopulateTextbox(const winrt::hstring& text);
         bool ContainsFocus();
-        void SetStatus(int32_t totalMatches, int32_t currentMatch);
+        void SetStatus(int32_t totalMatches, int32_t currentMatch, bool searchRegexInvalid);
         void ClearStatus();
 
         void GoBackwardClicked(const winrt::Windows::Foundation::IInspectable& /*sender*/, const winrt::Windows::UI::Xaml::RoutedEventArgs& /*e*/);
@@ -50,6 +52,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         void TextBoxTextChanged(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::RoutedEventArgs const& e);
         void CaseSensitivityButtonClicked(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::RoutedEventArgs const& e);
+        void RegexButtonClicked(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::RoutedEventArgs const& e);
         void SearchBoxPointerPressedHandler(winrt::Windows::Foundation::IInspectable const& /*sender*/, winrt::Windows::UI::Xaml::Input::PointerRoutedEventArgs const& e);
         void SearchBoxPointerReleasedHandler(winrt::Windows::Foundation::IInspectable const& /*sender*/, winrt::Windows::UI::Xaml::Input::PointerRoutedEventArgs const& e);
 
