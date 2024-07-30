@@ -56,7 +56,7 @@ void VtInputThread::_InputThread()
 {
     const auto cleanup = wil::scope_exit([this]() {
         _hFile.reset();
-        ServiceLocator::LocateGlobals().getConsoleInformation().GetVtIoNoCheck()->SendCloseEvent();
+        ServiceLocator::LocateGlobals().getConsoleInformation().GetVtIo()->SendCloseEvent();
     });
 
     OVERLAPPED* overlapped = nullptr;

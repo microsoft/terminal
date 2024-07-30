@@ -2149,9 +2149,21 @@ void SCREEN_INFORMATION::SetViewport(const Viewport& newViewport,
 // - S_OK
 [[nodiscard]] HRESULT SCREEN_INFORMATION::ClearBuffer()
 {
-    _textBuffer->Reset();
+    // Rotate the buffer to bring the cursor row to the top of the viewport.
+    const auto cursorPos = _textBuffer->GetCursor().GetPosition();
+    for (auto i = 0; i < cursorPos.y; i++)
+    {
+        _textBuffer->IncrementCircularBuffer();
+    }
+
+    // Erase everything below that point.
+    RETURN_IF_FAILED(SetCursorPosition({ 0, 1 }, false));
+    auto& engine = reinterpret_cast<OutputStateMachineEngine&>(_stateMachine->Engine());
+    engine.Dispatch().EraseInDisplay(DispatchTypes::EraseType::ToEnd);
+
     // Restore the original cursor x offset, but now on the first row.
-    _textBuffer->GetCursor().SetYPosition(0);
+    RETURN_IF_FAILED(SetCursorPosition({ cursorPos.x, 0 }, false));
+
     _textBuffer->TriggerRedrawAll();
 
     return S_OK;

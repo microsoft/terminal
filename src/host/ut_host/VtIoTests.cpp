@@ -95,7 +95,7 @@ class ::Microsoft::Console::VirtualTerminal::VtIoTests
         commonState.PrepareGlobalScreenBuffer(8, 4, 8, 4);
 
         auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-        THROW_IF_FAILED(gci.GetVtIoNoCheck()->_Initialize(nullptr, tx.release(), nullptr));
+        THROW_IF_FAILED(gci.GetVtIo()->_Initialize(nullptr, tx.release(), nullptr));
 
         screenInfo = &gci.GetActiveOutputBuffer();
         return true;

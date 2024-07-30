@@ -347,5 +347,5 @@ void PtySignalInputThread::_DoSetWindowParent(const SetParentData& data)
 void PtySignalInputThread::_Shutdown()
 {
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    gci.GetVtIoNoCheck()->SendCloseEvent();
+    gci.GetVtIo()->SendCloseEvent();
 }

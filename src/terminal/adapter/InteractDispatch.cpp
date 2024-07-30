@@ -111,6 +111,8 @@ bool InteractDispatch::WindowManipulation(const DispatchTypes::WindowManipulatio
         _api.GetBufferAndViewport().buffer.TriggerRedrawAll();
         return true;
     case DispatchTypes::WindowManipulationType::ResizeWindowInCharacters:
+        // TODO:GH#1765 We should introduce a better `ResizeConpty` function to
+        // ConhostInternalGetSet, that specifically handles a conpty resize.
         _api.ResizeWindow(parameter2.value_or(0), parameter1.value_or(0));
         return true;
     default:

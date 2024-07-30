@@ -938,7 +938,7 @@ DWORD WINAPI ConsoleInputThreadProcWin32(LPVOID /*lpParameter*/)
         auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         if (gci.IsInVtIoMode())
         {
-            gci.GetVtIoNoCheck()->CreatePseudoWindow();
+            gci.GetVtIo()->CreatePseudoWindow();
         }
 
         // Register the pseudoconsole window as being owned by the root process.

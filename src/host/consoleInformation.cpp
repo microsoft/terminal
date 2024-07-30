@@ -118,7 +118,7 @@ ErrorExit2:
     return Status;
 }
 
-VtIo* CONSOLE_INFORMATION::GetVtIoNoCheck() noexcept
+VtIo* CONSOLE_INFORMATION::GetVtIo() noexcept
 {
     return &_vtIo;
 }

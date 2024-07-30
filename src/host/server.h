@@ -103,7 +103,7 @@ public:
     bool IsConsoleLocked() const noexcept;
     ULONG GetCSRecursionCount() const noexcept;
 
-    Microsoft::Console::VirtualTerminal::VtIo* GetVtIoNoCheck() noexcept;
+    Microsoft::Console::VirtualTerminal::VtIo* GetVtIo() noexcept;
     Microsoft::Console::VirtualTerminal::VtIo::Writer GetVtWriter() noexcept;
     Microsoft::Console::VirtualTerminal::VtIo::Writer GetVtWriterForBuffer(const SCREEN_INFORMATION* context) noexcept;
     bool IsInVtIoMode() const noexcept;
