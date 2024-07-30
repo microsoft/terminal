@@ -1237,6 +1237,7 @@ NUMSCROLL
 NUnit
 nupkg
 NVIDIA
+NVT
 OACR
 objbase
 ocolor
@@ -1411,6 +1412,7 @@ processenv
 processhost
 PROCESSINFOCLASS
 PRODEXT
+Productize
 PROPERTYID
 PROPERTYKEY
 propertyval
@@ -1818,6 +1820,7 @@ TITLEISLINKNAME
 TJson
 TLambda
 TLDP
+tldr
 TLEN
 TMAE
 TMPF
