@@ -1557,7 +1557,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 auto codepage = ansi ? acp : CP_OEMCP;
 
                 // Alt+Numpad inputs are always a single codepoint, be it UTF-32 or ANSI.
-                // Since DBCS code pages by defintion are >1 codepoint, we can't encode those.
+                // Since DBCS code pages by definition are >1 codepoint, we can't encode those.
                 // Traditionally, the OS uses the Latin1 or IBM code page instead.
                 if (acp == CP_JAPANESE ||
                     acp == CP_CHINESE_SIMPLIFIED ||
