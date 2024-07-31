@@ -158,7 +158,10 @@ namespace winrt::TerminalApp::implementation
         // Set this tab's icon to the icon from the content
         _UpdateTabIcon(*newTabImpl);
 
-        tabViewItem.PointerReleased({ this, &TerminalPage::_OnTabClick });
+        tabViewItem.PointerPressed({ this, &TerminalPage::_OnTabPointerPressed });
+        tabViewItem.PointerReleased({ this, &TerminalPage::_OnTabPointerReleased });
+        tabViewItem.PointerExited({ this, &TerminalPage::_OnTabPointerExited });
+        tabViewItem.PointerEntered({ this, &TerminalPage::_OnTabPointerEntered });
 
         // When the tab requests close, try to close it (prompt for approval, if required)
         newTabImpl->CloseRequested([weakTab, weakThis{ get_weak() }](auto&& /*s*/, auto&& /*e*/) {
@@ -875,19 +878,66 @@ namespace winrt::TerminalApp::implementation
     // Arguments:
     // - sender: the control that originated this event (TabViewItem)
     // - eventArgs: the event's constituent arguments
-    void TerminalPage::_OnTabClick(const IInspectable& sender, const Windows::UI::Xaml::Input::PointerRoutedEventArgs& eventArgs)
+    void TerminalPage::_OnTabPointerPressed(const IInspectable& sender, const Windows::UI::Xaml::Input::PointerRoutedEventArgs& eventArgs)
     {
-        if (eventArgs.GetCurrentPoint(*this).Properties().IsMiddleButtonPressed())
+        if (eventArgs.GetCurrentPoint(nullptr).Properties().IsMiddleButtonPressed())
         {
-            const auto tabViewItem = sender.try_as<MUX::Controls::TabViewItem>();
-            if (auto tab{ _GetTabByTabViewItem(tabViewItem) })
+            if (const auto tabViewItem{ sender.try_as<MUX::Controls::TabViewItem>() })
             {
-                _HandleCloseTabRequested(tab);
+                _tabPointerMiddleButtonPressed = tabViewItem.CapturePointer(eventArgs.Pointer());
+                _tabPointerMiddleButtonExited = false;
             }
             eventArgs.Handled(true);
         }
-        else if (eventArgs.GetCurrentPoint(*this).Properties().IsRightButtonPressed())
+    }
+
+    // Method Description:
+    // - Tracking pointer state for tab remove
+    // Arguments:
+    // - sender: the control that originated this event (TabViewItem)
+    // - eventArgs: the event's constituent arguments
+    void TerminalPage::_OnTabPointerReleased(const IInspectable& sender, const Windows::UI::Xaml::Input::PointerRoutedEventArgs& eventArgs)
+    {
+        if (_tabPointerMiddleButtonPressed && !eventArgs.GetCurrentPoint(nullptr).Properties().IsMiddleButtonPressed())
         {
+            _tabPointerMiddleButtonPressed = false;
+            if (const auto tabViewItem{ sender.try_as<MUX::Controls::TabViewItem>() })
+            {
+                tabViewItem.ReleasePointerCapture(eventArgs.Pointer());
+                auto tab = _GetTabByTabViewItem(tabViewItem);
+                if (!_tabPointerMiddleButtonExited && tab)
+                {
+                    _HandleCloseTabRequested(tab);
+                }
+            }
+            eventArgs.Handled(true);
+        }
+    }
+
+    // Method Description:
+    // - Tracking pointer state for tab remove
+    // Arguments:
+    // - sender: the control that originated this event (TabViewItem)
+    // - eventArgs: the event's constituent arguments
+    void TerminalPage::_OnTabPointerEntered(const IInspectable& /*sender*/, const Windows::UI::Xaml::Input::PointerRoutedEventArgs& eventArgs)
+    {
+        if (eventArgs.GetCurrentPoint(nullptr).Properties().IsMiddleButtonPressed())
+        {
+            _tabPointerMiddleButtonExited = false;
+            eventArgs.Handled(true);
+        }
+    }
+
+    // Method Description:
+    // - Tracking pointer state for tab remove
+    // Arguments:
+    // - sender: the control that originated this event (TabViewItem)
+    // - eventArgs: the event's constituent arguments
+    void TerminalPage::_OnTabPointerExited(const IInspectable& /*sender*/, const Windows::UI::Xaml::Input::PointerRoutedEventArgs& eventArgs)
+    {
+        if (eventArgs.GetCurrentPoint(nullptr).Properties().IsMiddleButtonPressed())
+        {
+            _tabPointerMiddleButtonExited = true;
             eventArgs.Handled(true);
         }
     }
