@@ -772,7 +772,7 @@ void BackendD2D::_drawBitmap(const RenderingPayload& p, const ShapedRow* row, u1
     const auto left = (b.targetOffset - p.scrollOffsetX) * cellWidth;
     const auto right = left + b.targetWidth * cellWidth;
     const auto top = y * cellHeight;
-    const auto bottom = left + cellHeight;
+    const auto bottom = top + cellHeight;
 
     const D2D1_RECT_F rectF{
         static_cast<f32>(left),
