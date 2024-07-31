@@ -2855,6 +2855,15 @@ void TextBuffer::Reflow(TextBuffer& oldBuffer, TextBuffer& newBuffer, const View
         }
     }
 
+    // The for loop right after this if condition will copy entire rows of attributes at a time.
+    // This assumes of course that the "write cursor" (newX, newY) is at the start of a row.
+    // If we didn't check for this, we may otherwise copy attributes from a later row into a previous one.
+    if (newX != 0)
+    {
+        newX = 0;
+        newY++;
+    }
+
     // Finish copying buffer attributes to remaining rows below the last
     // printable character. This is to fix the `color 2f` scenario, where you
     // change the buffer colors then resize and everything below the last
