@@ -176,14 +176,30 @@ void Profile::LayerJson(const Json::Value& json)
     JsonUtils::GetValueForKey(json, UpdatesKey, _Updates);
     JsonUtils::GetValueForKey(json, GuidKey, _Guid);
     JsonUtils::GetValueForKey(json, HiddenKey, _Hidden);
+    if (_Hidden.has_value())
+    {
+        _logSettingSet(HiddenKey, _Hidden.value());
+    }
     JsonUtils::GetValueForKey(json, SourceKey, _Source);
     JsonUtils::GetValueForKey(json, IconKey, _Icon);
+    if (_Icon.has_value())
+    {
+        _logSettingSet(IconKey, _Icon.value());
+    }
 
     // Padding was never specified as an integer, but it was a common working mistake.
     // Allow it to be permissive.
     JsonUtils::GetValueForKey(json, PaddingKey, _Padding, JsonUtils::OptionalConverter<hstring, JsonUtils::PermissiveStringConverter<std::wstring>>{});
+    if (_Padding.has_value())
+    {
+        _logSettingSet(PaddingKey, _Padding.value());
+    }
 
     JsonUtils::GetValueForKey(json, TabColorKey, _TabColor);
+    if (_TabColor.has_value())
+    {
+        _logSettingSet(TabColorKey, _TabColor.value());
+    }
 
     // Try to load some legacy keys, to migrate them.
     // Done _before_ the MTSM_PROFILE_SETTINGS, which have the updated keys.
@@ -191,8 +207,13 @@ void Profile::LayerJson(const Json::Value& json)
     JsonUtils::GetValueForKey(json, LegacyAutoMarkPromptsKey, _AutoMarkPrompts);
 
 #define PROFILE_SETTINGS_LAYER_JSON(type, name, jsonKey, ...) \
-    JsonUtils::GetValueForKey(json, jsonKey, _##name);
-
+    {                                                         \
+        JsonUtils::GetValueForKey(json, jsonKey, _##name);    \
+        if (_##name.has_value())                              \
+        {                                                     \
+            _logSettingSet(jsonKey, _##name.value());         \
+        }                                                     \
+    }                                                         \
     MTSM_PROFILE_SETTINGS(PROFILE_SETTINGS_LAYER_JSON)
 #undef PROFILE_SETTINGS_LAYER_JSON
 
@@ -517,4 +538,94 @@ std::wstring Profile::NormalizeCommandLine(LPCWSTR commandLine)
     }
 
     return normalized;
+}
+
+winrt::hstring _convertVal(const winrt::Microsoft::Terminal::Control::ScrollbarState& val)
+{
+    OutputDebugString(L"ScrollbarState\n");
+    JsonUtils::ConversionTrait<decltype(val)> converter{};
+    return winrt::to_hstring(converter.ToJson(val).asString());
+}
+
+winrt::hstring _convertVal(const winrt::Microsoft::Terminal::Control::TextAntialiasingMode& val)
+{
+    OutputDebugString(L"TextAntialiasingMode\n");
+    JsonUtils::ConversionTrait<decltype(val)> converter{};
+    return winrt::to_hstring(converter.ToJson(val).asString());
+}
+
+winrt::hstring _convertVal(const winrt::Microsoft::Terminal::Settings::Model::CloseOnExitMode& val)
+{
+    OutputDebugString(L"CloseOnExitMode\n");
+    JsonUtils::ConversionTrait<decltype(val)> converter{};
+    return winrt::to_hstring(converter.ToJson(val).asString());
+}
+
+winrt::hstring _convertVal(const winrt::Microsoft::Terminal::Settings::Model::BellStyle& val)
+{
+    OutputDebugString(L"BellStyle\n");
+    JsonUtils::ConversionTrait<decltype(val)> converter{};
+    return winrt::to_hstring(converter.ToJson(val).asString());
+}
+
+winrt::hstring _convertVal(const IEnvironmentVariableMap& /*val*/)
+{
+    // TODO CARLOS: we probably don't want this?
+    //   if we do, I can handle it similar to Vector<String>
+    OutputDebugString(L"IEnvironmentVariableMap\n");
+    return L"";
+}
+
+winrt::hstring _convertVal(const winrt::Windows::Foundation::Collections::IVector<winrt::hstring> val)
+{
+    OutputDebugString(L"vector<hstring>\n");
+
+    // convert and sort so we normalize results
+    std::vector<winrt::hstring> vec;
+    vec.reserve(val.Size());
+    val.GetMany(0, vec);
+    std::sort(vec.begin(), vec.end());
+
+    // consolidate into a single string
+    winrt::hstring result;
+    for (auto iter = vec.begin(); iter != vec.end(); iter++)
+    {
+        result = result + *iter;
+        if (iter + 1 != vec.end())
+        {
+            result = result + L", ";
+        }
+    }
+    return result;
+}
+
+winrt::hstring _convertVal(const std::optional<winrt::Microsoft::Terminal::Core::Color> val)
+{
+    // TODO CARLOS: test this one specifically
+    //  - std::nullopt -> "null"
+    //  - color -> something
+    OutputDebugString(L"optional<Color>\n");
+    JsonUtils::ConversionTrait<decltype(val)> converter{};
+    return winrt::to_hstring(converter.ToJson(val).asString());
+}
+
+winrt::hstring _convertVal(const winrt::guid& val)
+{
+    OutputDebugString(L"guid\n");
+    JsonUtils::ConversionTrait<decltype(val)> converter{};
+    return winrt::to_hstring(converter.ToJson(val).asString());
+}
+
+winrt::hstring _convertVal(auto& val)
+{
+    OutputDebugString(L"auto\n");
+    return winrt::to_hstring(val);
+}
+
+void Profile::_logSettingSet(std::string_view setting, auto& value)
+{
+    OutputDebugStringA(setting.data());
+    OutputDebugStringA(" - ");
+    std::wstring val{ _convertVal(value).c_str() };
+    _changeLog.insert_or_assign(setting, std::wstring_view{ val });
 }

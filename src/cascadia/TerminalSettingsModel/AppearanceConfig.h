@@ -52,5 +52,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     private:
         winrt::weak_ref<Profile> _sourceProfile;
+        std::map<std::string_view, std::wstring_view> _changeLog;
+
+        void _logSettingSet(std::string_view setting, auto& value);
+        void _logSettingValIfSet(const Json::Value& json, std::string_view setting);
     };
 }

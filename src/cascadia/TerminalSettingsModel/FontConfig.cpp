@@ -83,8 +83,14 @@ void FontConfig::LayerJson(const Json::Value& json)
     {
         // A font object is defined, use that
         const auto fontInfoJson = json[JsonKey(FontInfoKey)];
-#define FONT_SETTINGS_LAYER_JSON(type, name, jsonKey, ...) \
-    JsonUtils::GetValueForKey(fontInfoJson, jsonKey, _##name);
+#define FONT_SETTINGS_LAYER_JSON(type, name, jsonKey, ...)         \
+    {                                                              \
+        JsonUtils::GetValueForKey(fontInfoJson, jsonKey, _##name); \
+        if (_##name.has_value())                                   \
+        {                                                          \
+            _logSettingSet(jsonKey, _##name.value());              \
+        }                                                          \
+    }
         MTSM_FONT_SETTINGS(FONT_SETTINGS_LAYER_JSON)
 #undef FONT_SETTINGS_LAYER_JSON
     }
@@ -92,12 +98,67 @@ void FontConfig::LayerJson(const Json::Value& json)
     {
         // No font object is defined
         JsonUtils::GetValueForKey(json, LegacyFontFaceKey, _FontFace);
+        if (_FontFace.has_value())
+        {
+            _logSettingSet(LegacyFontFaceKey, _FontFace.value());
+        }
         JsonUtils::GetValueForKey(json, LegacyFontSizeKey, _FontSize);
+        if (_FontSize.has_value())
+        {
+            _logSettingSet(LegacyFontSizeKey, _FontSize.value());
+        }
         JsonUtils::GetValueForKey(json, LegacyFontWeightKey, _FontWeight);
+        if (_FontWeight.has_value())
+        {
+            _logSettingSet(LegacyFontWeightKey, _FontWeight.value());
+        }
     }
 }
 
 winrt::Microsoft::Terminal::Settings::Model::Profile FontConfig::SourceProfile()
 {
     return _sourceProfile.get();
+}
+
+winrt::hstring _convertVal(const winrt::Windows::UI::Text::FontWeight val)
+{
+    OutputDebugString(L"FontWeight\n");
+    JsonUtils::ConversionTrait<decltype(val)> converter{};
+    return winrt::to_hstring(converter.ToJson(val).asString());
+}
+
+void _logMap(const winrt::Windows::Foundation::Collections::IMap<winrt::hstring, float>& val, std::map<std::wstring_view, std::wstring_view>& log)
+{
+    for (const auto& [mapKey, mapVal] : val)
+    {
+        log.insert_or_assign(std::wstring_view{ mapKey.c_str() }, std::to_wstring(mapVal));
+    }
+}
+
+winrt::hstring _convertVal(auto& val)
+{
+    OutputDebugString(L"auto\n");
+    return winrt::to_hstring(val);
+}
+
+void FontConfig::_logSettingSet(std::string_view setting, winrt::Windows::Foundation::Collections::IMap<winrt::hstring, float>& value)
+{
+    OutputDebugStringA(setting.data());
+    OutputDebugStringA(" - ");
+    if (setting == "axes")
+    {
+        _logMap(value, _changeLogAxes);
+    }
+    else if (setting == "features")
+    {
+        _logMap(value, _changeLogFeatures);
+    }
+}
+
+void FontConfig::_logSettingSet(std::string_view setting, auto& value)
+{
+    OutputDebugStringA(setting.data());
+    OutputDebugStringA(" - ");
+    std::wstring val{ _convertVal(value).c_str() };
+    _changeLog.insert_or_assign(setting, std::wstring_view{ val });
 }

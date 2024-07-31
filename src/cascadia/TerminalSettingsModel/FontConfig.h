@@ -45,5 +45,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     private:
         winrt::weak_ref<Profile> _sourceProfile;
+        std::map<std::string_view, std::wstring_view> _changeLog;
+        std::map<std::wstring_view, std::wstring_view> _changeLogAxes;
+        std::map<std::wstring_view, std::wstring_view> _changeLogFeatures;
+
+        void _logSettingSet(std::string_view setting, winrt::Windows::Foundation::Collections::IMap<winrt::hstring, float>& value);
+        void _logSettingSet(std::string_view setting, auto& value);
     };
 }
