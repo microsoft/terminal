@@ -370,7 +370,7 @@ void WriteCharsVT(SCREEN_INFORMATION& screenInfo, const std::wstring_view& str)
 
             static constexpr std::array<std::string_view, 2> mapping{ {
                 { "\x1b[?1004h\x1b[?9001h" }, // RIS: Focus Event Mode + Win32 Input Mode
-                { "\033[?1004h" } // DECSET_FOCUS: Focus Event Mode
+                { "\x1b[?1004h" } // DECSET_FOCUS: Focus Event Mode
             } };
             static_assert(static_cast<size_t>(InjectionType::Count) == mapping.size(), "you need to update the mapping array");
 

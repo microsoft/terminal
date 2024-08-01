@@ -169,8 +169,8 @@ bool VtIo::IsUsingVt() const
         // this sequence, it'll just ignore it.
 
         writer.WriteUTF8(
-            "\033[?1004h" // Focus Event Mode
-            "\033[?9001h" // Win32 Input Mode
+            "\x1b[?1004h" // Focus Event Mode
+            "\x1b[?9001h" // Win32 Input Mode
         );
 
         // MSFT: 15813316
@@ -692,6 +692,20 @@ void VtIo::Writer::WriteASB(bool enabled) const
     char buf[] = "\x1b[?1049h";
     buf[std::size(buf) - 2] = enabled ? 'h' : 'l';
     _io->_back.append(&buf[0], std::size(buf) - 1);
+}
+
+void VtIo::Writer::WriteWindowVisibility(bool visible) const
+{
+    char buf[] = "\x1b[1t";
+    buf[2] = visible ? '1' : '2';
+    _io->_back.append(&buf[0], std::size(buf) - 1);
+}
+
+void VtIo::Writer::WriteWindowTitle(std::wstring_view title) const
+{
+    WriteUTF8("\x1b]0;");
+    WriteUTF16StripControlChars(title);
+    WriteUTF8("\x1b\\");
 }
 
 void VtIo::Writer::WriteAttributes(const TextAttribute& attributes) const

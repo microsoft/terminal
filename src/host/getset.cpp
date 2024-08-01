@@ -1631,9 +1631,7 @@ void ApiRoutines::GetConsoleDisplayModeImpl(ULONG& flags) noexcept
 
     if (auto writer = gci.GetVtWriter())
     {
-        writer.WriteUTF8("\x1b]0;");
-        writer.WriteUTF16StripControlChars(title);
-        writer.WriteUTF8("\x7");
+        writer.WriteWindowTitle(title);
         writer.Submit();
     }
 
