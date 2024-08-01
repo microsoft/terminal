@@ -82,7 +82,6 @@ namespace Microsoft::Console::VirtualTerminal
         virtual void PlayMidiNote(const int noteNumber, const int velocity, const std::chrono::microseconds duration) = 0;
 
         virtual bool ResizeWindow(const til::CoordType width, const til::CoordType height) = 0;
-        virtual bool IsConsolePty() const = 0;
 
         virtual void NotifyAccessibilityChange(const til::rect& changedRect) = 0;
         virtual void NotifyBufferRotation(const int delta) = 0;

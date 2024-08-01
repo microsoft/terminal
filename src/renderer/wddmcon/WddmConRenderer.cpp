@@ -196,12 +196,6 @@ CATCH_RETURN()
     return S_OK;
 }
 
-[[nodiscard]] HRESULT WddmConEngine::PrepareForTeardown(_Out_ bool* const pForcePaint) noexcept
-{
-    *pForcePaint = false;
-    return S_FALSE;
-}
-
 [[nodiscard]] HRESULT WddmConEngine::StartPaint() noexcept
 try
 {

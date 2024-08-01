@@ -17,7 +17,6 @@
 #include "../interactivity/inc/ServiceLocator.hpp"
 #include "../../inc/conattrs.hpp"
 #include "../../types/inc/Viewport.hpp"
-#include "../../renderer/vt/Xterm256Engine.hpp"
 
 #include "../../inc/TestUtils.h"
 
@@ -7931,11 +7930,9 @@ void ScreenBufferTests::TestReflowBiggerLongLineWithColor()
 void ScreenBufferTests::TestDeferredMainBufferResize()
 {
     BEGIN_TEST_METHOD_PROPERTIES()
-        TEST_METHOD_PROPERTY(L"Data:inConpty", L"{false, true}")
         TEST_METHOD_PROPERTY(L"Data:reEnterAltBuffer", L"{false, true}")
     END_TEST_METHOD_PROPERTIES();
 
-    INIT_TEST_PROPERTY(bool, inConpty, L"Should we pretend to be in conpty mode?");
     INIT_TEST_PROPERTY(bool, reEnterAltBuffer, L"Should we re-enter the alt buffer when we're already in it?");
 
     // A test for https://github.com/microsoft/terminal/pull/12719#discussion_r834860330
@@ -7945,31 +7942,6 @@ void ScreenBufferTests::TestDeferredMainBufferResize()
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     gci.LockConsole(); // Lock must be taken to manipulate buffer.
     auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
-
-    // HUGELY cribbed from ConptyRoundtripTests::MethodSetup. This fakes the
-    // console into thinking that it's in ConPTY mode. Yes, we need all this
-    // just to get gci.IsInVtIoMode() to return true. The screen buffer gates
-    // all sorts of internal checks on that.
-    //
-    // This could theoretically be a helper if other tests need it.
-    if (inConpty)
-    {
-        Log::Comment(L"Set up ConPTY");
-
-        auto& currentBuffer = gci.GetActiveOutputBuffer();
-        // Set up an xterm-256 renderer for conpty
-        wil::unique_hfile hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
-        auto initialViewport = currentBuffer.GetViewport();
-        auto vtRenderEngine = std::make_unique<Microsoft::Console::Render::Xterm256Engine>(std::move(hFile),
-                                                                                           initialViewport);
-        // We don't care about the output, so let it just drain to the void.
-        vtRenderEngine->SetTestCallback([](auto&&, auto&&) -> bool { return true; });
-        gci.GetActiveOutputBuffer().SetTerminalConnection(vtRenderEngine.get());
-        // Manually set the console into conpty mode. We're not actually going
-        // to set up the pipes for conpty, but we want the console to behave
-        // like it would in conpty mode.
-        ServiceLocator::LocateGlobals().EnableConptyModeForTests(std::move(vtRenderEngine));
-    }
 
     auto* siMain = &gci.GetActiveOutputBuffer();
     auto& stateMachine = siMain->GetStateMachine();

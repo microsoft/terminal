@@ -273,8 +273,6 @@ namespace ControlUnitTests
         // contents. ConPTY will handle the actual clearing of the buffer
         // contents. We can only ensure that the viewport moved when we did a
         // clear scrollback.
-        //
-        // The ConptyRoundtripTests test the actual clearing of the contents.
     }
     void ControlCoreTests::TestClearScreen()
     {
@@ -312,8 +310,6 @@ namespace ControlUnitTests
         // contents. ConPTY will handle the actual clearing of the buffer
         // contents. We can only ensure that the viewport moved when we did a
         // clear scrollback.
-        //
-        // The ConptyRoundtripTests test the actual clearing of the contents.
     }
     void ControlCoreTests::TestClearAll()
     {
@@ -351,8 +347,6 @@ namespace ControlUnitTests
         // contents. ConPTY will handle the actual clearing of the buffer
         // contents. We can only ensure that the viewport moved when we did a
         // clear scrollback.
-        //
-        // The ConptyRoundtripTests test the actual clearing of the contents.
     }
 
     void ControlCoreTests::TestReadEntireBuffer()

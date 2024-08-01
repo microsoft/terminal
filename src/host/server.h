@@ -103,7 +103,10 @@ public:
     bool IsConsoleLocked() const noexcept;
     ULONG GetCSRecursionCount() const noexcept;
 
-    Microsoft::Console::VirtualTerminal::VtIo* GetVtIo();
+    Microsoft::Console::VirtualTerminal::VtIo* GetVtIo() noexcept;
+    Microsoft::Console::VirtualTerminal::VtIo::Writer GetVtWriter() noexcept;
+    Microsoft::Console::VirtualTerminal::VtIo::Writer GetVtWriterForBuffer(const SCREEN_INFORMATION* context) noexcept;
+    bool IsInVtIoMode() const noexcept;
 
     SCREEN_INFORMATION& GetActiveOutputBuffer() override;
     const SCREEN_INFORMATION& GetActiveOutputBuffer() const override;
@@ -112,7 +115,6 @@ public:
 
     InputBuffer* const GetActiveInputBuffer() const override;
 
-    bool IsInVtIoMode() const;
     bool HasPendingCookedRead() const noexcept;
     bool HasPendingPopup() const noexcept;
     const COOKED_READ_DATA& CookedReadData() const noexcept;

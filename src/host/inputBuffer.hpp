@@ -15,7 +15,6 @@
 namespace Microsoft::Console::Render
 {
     class Renderer;
-    class VtEngine;
 }
 
 class InputBuffer final : public ConsoleObjectHeader

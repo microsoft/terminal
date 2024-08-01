@@ -27,7 +27,6 @@ namespace Microsoft::Console::Render::Atlas
         [[nodiscard]] bool RequiresContinuousRedraw() noexcept override;
         void WaitUntilCanRender() noexcept override;
         [[nodiscard]] HRESULT Present() noexcept override;
-        [[nodiscard]] HRESULT PrepareForTeardown(_Out_ bool* pForcePaint) noexcept override;
         [[nodiscard]] HRESULT ScrollFrame() noexcept override;
         [[nodiscard]] HRESULT Invalidate(const til::rect* psrRegion) noexcept override;
         [[nodiscard]] HRESULT InvalidateCursor(const til::rect* psrRegion) noexcept override;
@@ -36,7 +35,6 @@ namespace Microsoft::Console::Render::Atlas
         [[nodiscard]] HRESULT InvalidateHighlight(std::span<const til::point_span> highlights, const TextBuffer& buffer) noexcept override;
         [[nodiscard]] HRESULT InvalidateScroll(const til::point* pcoordDelta) noexcept override;
         [[nodiscard]] HRESULT InvalidateAll() noexcept override;
-        [[nodiscard]] HRESULT InvalidateFlush(_In_ const bool circled, _Out_ bool* const pForcePaint) noexcept override;
         [[nodiscard]] HRESULT InvalidateTitle(std::wstring_view proposedTitle) noexcept override;
         [[nodiscard]] HRESULT NotifyNewText(const std::wstring_view newText) noexcept override;
         [[nodiscard]] HRESULT PrepareRenderInfo(RenderFrameInfo info) noexcept override;
