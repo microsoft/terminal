@@ -154,6 +154,7 @@ namespace Microsoft::Console::VirtualTerminal
             DECRQM_PrivateRequestMode = VTID("?$p"),
             DECCARA_ChangeAttributesRectangularArea = VTID("$r"),
             DECRARA_ReverseAttributesRectangularArea = VTID("$t"),
+            DECRQTSR_RequestTerminalStateReport = VTID("$u"),
             DECCRA_CopyRectangularArea = VTID("$v"),
             DECRQPSR_RequestPresentationStateReport = VTID("$w"),
             DECFRA_FillRectangularArea = VTID("$x"),

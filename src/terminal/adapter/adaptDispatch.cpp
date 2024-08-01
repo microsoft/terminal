@@ -4166,6 +4166,27 @@ bool AdaptDispatch::InvokeMacro(const VTInt macroId)
     return true;
 }
 
+// Routine Description:
+// - DECRQTSR - Queries the state of the terminal. This can either be a terminal
+//   state report, generally covering all settable state in the terminal (with
+//   the exception of large data items), or a color table report.
+// Arguments:
+// - format - the format of the report being requested.
+// - formatOption - a format-specific option.
+// Return Value:
+// - True if handled successfully. False otherwise.
+bool AdaptDispatch::RequestTerminalStateReport(const DispatchTypes::ReportFormat format, const VTParameter formatOption)
+{
+    switch (format)
+    {
+    case DispatchTypes::ReportFormat::ColorTableReport:
+        _ReportColorTable(formatOption);
+        return true;
+    default:
+        return false;
+    }
+}
+
 // Method Description:
 // - DECRSTS - Restores the terminal state from a stream of data previously
 //   saved with a DECRQTSR query.
@@ -4182,6 +4203,16 @@ ITermDispatch::StringHandler AdaptDispatch::RestoreTerminalState(const DispatchT
     default:
         return nullptr;
     }
+}
+
+// Method Description:
+// - DECCTR - Returns the Color Table Report in response to a DECRQTSR query.
+// Arguments:
+// - colorModel - the color model to use in the report (1 = HLS, 2 = RGB).
+// Return Value:
+// - None
+void AdaptDispatch::_ReportColorTable(const DispatchTypes::ColorModel /*colorModel*/) const
+{
 }
 
 // Method Description:
