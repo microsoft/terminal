@@ -106,11 +106,6 @@ extends:
       - stage: Build
         displayName: Build
         dependsOn: []
-        variables:
-          # This was set by the parent build, but we need to override it to select a specific compiler version
-          - template: ./build/pipelines/templates-v2/variables-onebranch-config.yml@self
-            parameters:
-              containerVersion: 1.0.02566.28
         jobs:
           - template: ./build/pipelines/templates-v2/job-build-project.yml@self
             parameters:
