@@ -125,12 +125,18 @@ VtIo* CONSOLE_INFORMATION::GetVtIo() noexcept
 
 VtIo::Writer CONSOLE_INFORMATION::GetVtWriter() noexcept
 {
-    return _vtIo.IsUsingVt() ? _vtIo.GetWriter() : VtIo::Writer{};
+    // If we're not ConPTY, we return an empty writer, which indicates to the caller to do nothing.
+    const auto ok = _vtIo.IsUsingVt();
+    return VtIo::Writer{ ok ? &_vtIo : nullptr };
 }
 
 VtIo::Writer CONSOLE_INFORMATION::GetVtWriterForBuffer(const SCREEN_INFORMATION* context) noexcept
 {
-    return _vtIo.IsUsingVt() && (pCurrentScreenBuffer == context || pCurrentScreenBuffer == context->GetAltBuffer()) ? _vtIo.GetWriter() : VtIo::Writer{};
+    // If the given context is not the current screen buffer, we also return an empty writer.
+    // We check both for equality and the alt buffer, because we may switch between the main/alt
+    // buffer while processing the input and this method should return a valid writer in both cases.
+    const auto ok = _vtIo.IsUsingVt() && (pCurrentScreenBuffer == context || pCurrentScreenBuffer == context->GetAltBuffer());
+    return VtIo::Writer{ ok ? &_vtIo : nullptr };
 }
 
 bool CONSOLE_INFORMATION::IsInVtIoMode() const noexcept

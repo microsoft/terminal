@@ -161,7 +161,7 @@ bool VtIo::IsUsingVt() const
     }
 
     {
-        auto writer = GetWriter();
+        Writer writer{ this };
 
         // GH#4999 - Send a sequence to the connected terminal to request
         // win32-input-mode from them. This will enable the connected terminal to
@@ -359,15 +359,13 @@ void VtIo::FormatAttributes(std::wstring& target, const TextAttribute& attribute
     target.append(bufW, len);
 }
 
-VtIo::Writer VtIo::GetWriter() noexcept
-{
-    _corked += 1;
-    return Writer{ this };
-}
-
 VtIo::Writer::Writer(VtIo* io) noexcept :
     _io{ io }
 {
+    if (_io)
+    {
+        _io->_corked += 1;
+    }
 }
 
 VtIo::Writer::~Writer() noexcept
@@ -379,21 +377,6 @@ VtIo::Writer::~Writer() noexcept
         _io->_writerTainted = true;
         _io->_uncork();
     }
-}
-
-VtIo::Writer::Writer(Writer&& other) noexcept :
-    _io{ std::exchange(other._io, nullptr) }
-{
-}
-
-VtIo::Writer& VtIo::Writer::operator=(Writer&& other) noexcept
-{
-    if (this != &other)
-    {
-        this->~Writer();
-        _io = std::exchange(other._io, nullptr);
-    }
-    return *this;
 }
 
 VtIo::Writer::operator bool() const noexcept
@@ -538,11 +521,19 @@ void VtIo::Writer::WriteUTF16(std::wstring_view str) const
         THROW_HR_MSG(E_INVALIDARG, "string too large");
     }
 
+    // C++23's resize_and_overwrite is too valuable to not use.
+    // It reduce the CPU overhead by roughly half.
+#if !defined(_HAS_CXX23) || !_HAS_CXX23
+#define resize_and_overwrite _Resize_and_overwrite
+#endif
+
     // NOTE: Throwing inside resize_and_overwrite invokes undefined behavior.
-    _io->_back._Resize_and_overwrite(totalUTF8Cap, [&](char* buf, const size_t) noexcept {
+    _io->_back.resize_and_overwrite(totalUTF8Cap, [&](char* buf, const size_t) noexcept {
         const auto len = WideCharToMultiByte(CP_UTF8, 0, str.data(), gsl::narrow_cast<int>(incomingUTF16Len), buf + existingUTF8Len, gsl::narrow_cast<int>(incomingUTF8Cap), nullptr, nullptr);
         return existingUTF8Len + std::max(0, len);
     });
+
+#undef resize_and_overwrite
 }
 
 // When DISABLE_NEWLINE_AUTO_RETURN is not set (Bad! Don't do it!) we'll do newline translation for you.
@@ -637,6 +628,12 @@ void VtIo::Writer::WriteUCS2(wchar_t ch) const
 
 void VtIo::Writer::WriteUCS2StripControlChars(wchar_t ch) const
 {
+    // If any of the values in the buffer are C0 or C1 controls, we need to
+    // convert them to printable codepoints, otherwise they'll end up being
+    // evaluated as control characters by the receiving terminal. We use the
+    // DOS 437 code page for the C0 controls and DEL, and just a `?` for the
+    // C1 controls, since that's what you would most likely have seen in the
+    // legacy v1 console with raster fonts.
     if (ch < 0x20)
     {
         static constexpr wchar_t lut[] = {

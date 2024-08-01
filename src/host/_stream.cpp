@@ -347,6 +347,7 @@ void WriteCharsVT(SCREEN_INFORMATION& screenInfo, const std::wstring_view& str)
         const auto& injections = stateMachine.GetInjections();
         size_t offset = 0;
 
+        // DISABLE_NEWLINE_AUTO_RETURN not being set is equivalent to a LF -> CRLF translation.
         const auto write = [&](size_t beg, size_t end) {
             const auto chunk = til::safe_slice_abs(str, beg, end);
             if (WI_IsFlagSet(screenInfo.OutputMode, DISABLE_NEWLINE_AUTO_RETURN))
@@ -359,6 +360,9 @@ void WriteCharsVT(SCREEN_INFORMATION& screenInfo, const std::wstring_view& str)
             }
         };
 
+        // When we encounter something like a RIS (hard reset), we must re-enable
+        // modes that we rely on (like the Win32 Input Mode). To do this, the VT
+        // parser tells us the positions of any such relevant VT sequences.
         for (const auto& injection : injections)
         {
             write(offset, injection.offset);
@@ -368,6 +372,7 @@ void WriteCharsVT(SCREEN_INFORMATION& screenInfo, const std::wstring_view& str)
                 { "\x1b[?1004h\x1b[?9001h" }, // RIS: Focus Event Mode + Win32 Input Mode
                 { "\033[?1004h" } // DECSET_FOCUS: Focus Event Mode
             } };
+            static_assert(static_cast<size_t>(InjectionType::Count) == mapping.size(), "you need to update the mapping array");
 
             writer.WriteUTF8(mapping[static_cast<size_t>(injection.type)]);
         }

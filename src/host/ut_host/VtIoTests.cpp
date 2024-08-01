@@ -85,7 +85,6 @@ class ::Microsoft::Console::VirtualTerminal::VtIoTests
     TEST_CLASS_SETUP(ClassSetup)
     {
         wil::unique_hfile tx;
-        //std::tie(tx, rx) = createOverlappedPipe(16 * 1024);
         THROW_IF_WIN32_BOOL_FALSE(CreatePipe(rx.addressof(), tx.addressof(), nullptr, 16 * 1024));
 
         DWORD mode = PIPE_READMODE_BYTE | PIPE_NOWAIT;
