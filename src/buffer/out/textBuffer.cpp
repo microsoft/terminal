@@ -716,13 +716,6 @@ OutputCellIterator TextBuffer::WriteLine(const OutputCellIterator givenIt,
 // - true if we successfully incremented the buffer.
 void TextBuffer::IncrementCircularBuffer(const TextAttribute& fillAttributes)
 {
-    // FirstRow is at any given point in time the array index in the circular buffer that corresponds
-    // to the logical position 0 in the window (cursor coordinates and all other coordinates).
-    if (_isActiveBuffer && _renderer)
-    {
-        _renderer->TriggerFlush(true);
-    }
-
     // Prune hyperlinks to delete obsolete references
     _PruneHyperlinks();
 

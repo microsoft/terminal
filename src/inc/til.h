@@ -15,11 +15,11 @@
 #define _TIL_INLINEPREFIX __declspec(noinline) inline
 
 #include "til/at.h"
-#include "til/bitmap.h"
 #include "til/coalesce.h"
 #include "til/color.h"
 #include "til/enumset.h"
 #include "til/pmr.h"
+#include "til/rect.h"
 #include "til/string.h"
 #include "til/type_traits.h"
 #include "til/u8u16convert.h"

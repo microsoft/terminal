@@ -5,9 +5,10 @@
 
 #include "ConptyConnection.g.h"
 #include "BaseTerminalConnection.h"
-
 #include "ITerminalHandoff.h"
+
 #include <til/env.h>
+#include <til/ticket_lock.h>
 
 namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 {
@@ -74,11 +75,16 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         bool _receivedFirstByte{ false };
         std::chrono::high_resolution_clock::time_point _startTime{};
 
-        wil::unique_hfile _inPipe; // The pipe for writing input to
-        wil::unique_hfile _outPipe; // The pipe for reading output from
+        wil::unique_hfile _pipe;
         wil::unique_handle _hOutputThread;
         wil::unique_process_information _piClient;
         wil::unique_any<HPCON, decltype(closePseudoConsoleAsync), closePseudoConsoleAsync> _hPC;
+
+        til::ticket_lock _writeLock;
+        wil::unique_event _writeOverlappedEvent;
+        OVERLAPPED _writeOverlapped{};
+        std::string _writeBuffer;
+        bool _writePending = false;
 
         DWORD _flags{ 0 };
 

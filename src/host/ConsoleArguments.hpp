@@ -46,7 +46,6 @@ public:
 
     std::wstring GetOriginalCommandLine() const;
     std::wstring GetClientCommandline() const;
-    std::wstring GetVtMode() const;
     const std::wstring& GetTextMeasurement() const;
     bool GetForceV1() const;
     bool GetForceNoHandoff() const;
@@ -54,7 +53,6 @@ public:
     short GetWidth() const;
     short GetHeight() const;
     bool GetInheritCursor() const;
-    bool IsResizeQuirkEnabled() const;
 
 #ifdef UNIT_TESTING
     void EnableConptyModeForTests();
@@ -72,7 +70,6 @@ public:
     static const std::wstring_view WIDTH_ARG;
     static const std::wstring_view HEIGHT_ARG;
     static const std::wstring_view INHERIT_CURSOR_ARG;
-    static const std::wstring_view RESIZE_QUIRK;
     static const std::wstring_view FEATURE_ARG;
     static const std::wstring_view FEATURE_PTY_ARG;
     static const std::wstring_view COM_SERVER_ARG;
@@ -107,7 +104,6 @@ private:
         _serverHandle(serverHandle),
         _signalHandle(signalHandle),
         _inheritCursor(inheritCursor),
-        _resizeQuirk(false),
         _runAsComServer{ runAsComServer }
     {
     }
@@ -135,7 +131,6 @@ private:
     DWORD _serverHandle;
     DWORD _signalHandle;
     bool _inheritCursor;
-    bool _resizeQuirk{ false };
 
     [[nodiscard]] HRESULT _GetClientCommandline(_Inout_ std::vector<std::wstring>& args,
                                                 const size_t index,

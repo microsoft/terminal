@@ -21,6 +21,7 @@ Revision History:
 
 void WriteCharsLegacy(SCREEN_INFORMATION& screenInfo, const std::wstring_view& str, til::CoordType* psScrollY);
 void WriteCharsVT(SCREEN_INFORMATION& screenInfo, const std::wstring_view& str);
+void WriteClearScreen(SCREEN_INFORMATION& screenInfo);
 
 // NOTE: console lock must be held when calling this routine
 // String has been translated to unicode at this point.

@@ -47,7 +47,6 @@ namespace TerminalCoreUnitTests
 {
     class TerminalBufferTests;
     class TerminalApiTest;
-    class ConptyRoundtripTests;
     class ScrollTest;
 };
 #endif
@@ -150,7 +149,6 @@ public:
     void UseAlternateScreenBuffer(const TextAttribute& attrs) override;
     void UseMainScreenBuffer() override;
 
-    bool IsConsolePty() const noexcept override;
     bool IsVtInputEnabled() const noexcept override;
     void NotifyAccessibilityChange(const til::rect& changedRect) noexcept override;
     void NotifyBufferRotation(const int delta) override;
@@ -480,7 +478,6 @@ private:
 #ifdef UNIT_TESTING
     friend class TerminalCoreUnitTests::TerminalBufferTests;
     friend class TerminalCoreUnitTests::TerminalApiTest;
-    friend class TerminalCoreUnitTests::ConptyRoundtripTests;
     friend class TerminalCoreUnitTests::ScrollTest;
 #endif
 };

@@ -5,6 +5,7 @@
 #include "ConptyConnection.h"
 
 #include <conpty-static.h>
+#include <winmeta.h>
 
 #include "CTerminalHandoff.h"
 #include "LibraryResources.h"
@@ -31,29 +32,6 @@ static constexpr auto _errorFormat = L"{0} ({0:#010x})"sv;
 
 namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 {
-    // Function Description:
-    // - creates some basic anonymous pipes and passes them to CreatePseudoConsole
-    // Arguments:
-    // - size: The size of the conpty to create, in characters.
-    // - phInput: Receives the handle to the newly-created anonymous pipe for writing input to the conpty.
-    // - phOutput: Receives the handle to the newly-created anonymous pipe for reading the output of the conpty.
-    // - phPc: Receives a token value to identify this conpty
-#pragma warning(suppress : 26430) // This statement sufficiently checks the out parameters. Analyzer cannot find this.
-    static HRESULT _CreatePseudoConsoleAndPipes(const COORD size, const DWORD dwFlags, HANDLE* phInput, HANDLE* phOutput, HPCON* phPC) noexcept
-    {
-        RETURN_HR_IF(E_INVALIDARG, phPC == nullptr || phInput == nullptr || phOutput == nullptr);
-
-        wil::unique_hfile outPipeOurSide, outPipePseudoConsoleSide;
-        wil::unique_hfile inPipeOurSide, inPipePseudoConsoleSide;
-
-        RETURN_IF_WIN32_BOOL_FALSE(CreatePipe(&inPipePseudoConsoleSide, &inPipeOurSide, nullptr, 0));
-        RETURN_IF_WIN32_BOOL_FALSE(CreatePipe(&outPipeOurSide, &outPipePseudoConsoleSide, nullptr, 0));
-        RETURN_IF_FAILED(ConptyCreatePseudoConsole(size, inPipePseudoConsoleSide.get(), outPipePseudoConsoleSide.get(), dwFlags, phPC));
-        *phInput = inPipeOurSide.release();
-        *phOutput = outPipeOurSide.release();
-        return S_OK;
-    }
-
     // Function Description:
     // - launches the client application attached to the new pseudoconsole
     HRESULT ConptyConnection::_LaunchAttachedClient() noexcept
@@ -174,8 +152,11 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
     // Who decided that?
 #pragma warning(suppress : 26455) // Default constructor should not throw. Declare it 'noexcept' (f.6).
-    ConptyConnection::ConptyConnection()
+    ConptyConnection::ConptyConnection() :
+        _writeOverlappedEvent{ CreateEventExW(nullptr, nullptr, CREATE_EVENT_MANUAL_RESET, EVENT_ALL_ACCESS) }
     {
+        THROW_LAST_ERROR_IF(!_writeOverlappedEvent);
+        _writeOverlapped.hEvent = _writeOverlappedEvent.get();
     }
 
     // Function Description:
@@ -236,7 +217,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             _environment = settings.TryLookup(L"environment").try_as<Windows::Foundation::Collections::ValueSet>();
             _profileGuid = unbox_prop_or<winrt::guid>(settings, L"profileGuid", _profileGuid);
 
-            _flags = PSEUDOCONSOLE_RESIZE_QUIRK;
+            _flags = 0;
 
             // If we're using an existing buffer, we want the new connection
             // to reuse the existing cursor. When not setting this flag, the
@@ -310,10 +291,8 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
         _sessionId = Utils::CreateGuid();
 
-        wil::unique_hfile inPipePseudoConsoleSide;
-        wil::unique_hfile outPipePseudoConsoleSide;
-        THROW_IF_WIN32_BOOL_FALSE(CreatePipe(&inPipePseudoConsoleSide, &_inPipe, nullptr, 0));
-        THROW_IF_WIN32_BOOL_FALSE(CreatePipe(&_outPipe, &outPipePseudoConsoleSide, nullptr, 0));
+        auto pipe = Utils::CreateOverlappedPipe(PIPE_ACCESS_DUPLEX, 128 * 1024);
+        auto pipeClientClone = duplicateHandle(pipe.client.get());
 
         auto ownedSignal = duplicateHandle(signal);
         auto ownedReference = duplicateHandle(reference);
@@ -338,8 +317,9 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         }
         CATCH_LOG()
 
-        *in = inPipePseudoConsoleSide.release();
-        *out = outPipePseudoConsoleSide.release();
+        _pipe = std::move(pipe.server);
+        *in = pipe.client.release();
+        *out = pipeClientClone.release();
     }
 
     winrt::hstring ConptyConnection::Commandline() const
@@ -366,9 +346,11 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
         // If we do not have pipes already, then this is a fresh connection... not an inbound one that is a received
         // handoff from an already-started PTY process.
-        if (!_inPipe)
+        if (!_pipe)
         {
-            THROW_IF_FAILED(_CreatePseudoConsoleAndPipes(til::unwrap_coord_size(dimensions), _flags, &_inPipe, &_outPipe, &_hPC));
+            auto pipe = Utils::CreateOverlappedPipe(PIPE_ACCESS_DUPLEX, 128 * 1024);
+            THROW_IF_FAILED(ConptyCreatePseudoConsole(til::unwrap_coord_size(dimensions), pipe.client.get(), pipe.client.get(), _flags, &_hPC));
+            _pipe = std::move(pipe.server);
 
             if (_initialParentHwnd != 0)
             {
@@ -500,10 +482,44 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             return;
         }
 
-        // convert from UTF-16LE to UTF-8 as ConPty expects UTF-8
-        // TODO GH#3378 reconcile and unify UTF-8 converters
-        auto str = winrt::to_string(data);
-        LOG_IF_WIN32_BOOL_FALSE(WriteFile(_inPipe.get(), str.c_str(), (DWORD)str.length(), nullptr, nullptr));
+        // Ensure a linear and predictable write order, even across multiple threads.
+        // A ticket lock is the perfect fit for this as it acts as first-come-first-serve.
+        std::lock_guard guard{ _writeLock };
+
+        if (_writePending)
+        {
+            _writePending = false;
+
+            DWORD read;
+            if (!GetOverlappedResult(_pipe.get(), &_writeOverlapped, &read, TRUE))
+            {
+                // Not much we can do when the wait fails. This will kill the connection.
+                LOG_LAST_ERROR();
+                _hPC.reset();
+                return;
+            }
+        }
+
+        if (FAILED_LOG(til::u16u8(data, _writeBuffer)))
+        {
+            return;
+        }
+
+        if (!WriteFile(_pipe.get(), _writeBuffer.data(), gsl::narrow_cast<DWORD>(_writeBuffer.length()), nullptr, &_writeOverlapped))
+        {
+            switch (const auto gle = GetLastError())
+            {
+            case ERROR_BROKEN_PIPE:
+                _hPC.reset();
+                break;
+            case ERROR_IO_PENDING:
+                _writePending = true;
+                break;
+            default:
+                LOG_WIN32(gle);
+                break;
+            }
+        }
     }
 
     void ConptyConnection::Resize(uint32_t rows, uint32_t columns)
@@ -562,23 +578,17 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     {
         _transitionToState(ConnectionState::Closing);
 
-        // .reset()ing either of these two will signal ConPTY to send out a CTRL_CLOSE_EVENT to all attached clients.
-        // FYI: The other members of this class are concurrently read by the _hOutputThread
-        // thread running in the background and so they're not safe to be .reset().
+        // This will signal ConPTY to send out a CTRL_CLOSE_EVENT to all attached clients.
+        // Once they're all disconnected it'll close its half of the pipes.
         _hPC.reset();
-        _inPipe.reset();
 
         if (_hOutputThread)
         {
-            // Loop around `CancelSynchronousIo()` just in case the signal to shut down was missed.
-            // This may happen if we called `CancelSynchronousIo()` while not being stuck
-            // in `ReadFile()` and if OpenConsole refuses to exit in a timely manner.
+            // Loop around `CancelIoEx()` just in case the signal to shut down was missed.
             for (;;)
             {
-                // ConptyConnection::Close() blocks the UI thread, because `_TerminalOutputHandlers` might indirectly
-                // reference UI objects like `ControlCore`. CancelSynchronousIo() allows us to have the background
-                // thread exit as fast as possible by aborting any ongoing writes coming from OpenConsole.
-                CancelSynchronousIo(_hOutputThread.get());
+                // The output thread may be stuck waiting for the OVERLAPPED to be signaled.
+                CancelIoEx(_pipe.get(), nullptr);
 
                 // Waiting for the output thread to exit ensures that all pending TerminalOutput.raise()
                 // calls have returned and won't notify our caller (ControlCore) anymore. This ensures that
@@ -588,17 +598,15 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                 {
                     break;
                 }
-
-                LOG_LAST_ERROR();
             }
         }
 
-        // Now that the background thread is done, we can safely clean up the other system objects, without
-        // race conditions, or fear of deadlocking ourselves (e.g. by calling CloseHandle() on _outPipe).
-        _outPipe.reset();
         _hOutputThread.reset();
         _piClient.reset();
+        _pipe.reset();
 
+        // The output thread should have already transitioned us to Closed.
+        // This exists just in case there was no output thread.
         _transitionToState(ConnectionState::Closed);
     }
     CATCH_LOG()
@@ -645,72 +653,98 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             _LastConPtyClientDisconnected();
         });
 
+        const wil::unique_event overlappedEvent{ CreateEventExW(nullptr, nullptr, CREATE_EVENT_MANUAL_RESET, EVENT_ALL_ACCESS) };
+        OVERLAPPED overlapped{ .hEvent = overlappedEvent.get() };
+        bool overlappedPending = false;
         char buffer[128 * 1024];
         DWORD read = 0;
 
         til::u8state u8State;
         std::wstring wstr;
 
-        // process the data of the output pipe in a loop
-        while (true)
+        // If we use overlapped IO We want to queue ReadFile() calls before processing the
+        // string, because TerminalOutput.raise() may take a while (relatively speaking).
+        // That's why the loop looks a little weird as it starts a read, processes the
+        // previous string, and finally converts the previous read to the next string.
+        for (;;)
         {
-            const auto readFail{ !ReadFile(_outPipe.get(), &buffer[0], sizeof(buffer), &read, nullptr) };
-
-            // When we call CancelSynchronousIo() in Close() this is the branch that's taken and gets us out of here.
-            if (_isStateAtOrBeyond(ConnectionState::Closing))
+            // When we have a `wstr` that's ready for processing we must do so without blocking.
+            // Otherwise, whatever the user typed will be delayed until the next IO operation.
+            // With overlapped IO that's not a problem because the ReadFile() calls won't block.
+            if (!ReadFile(_pipe.get(), &buffer[0], sizeof(buffer), &read, &overlapped))
             {
-                return 0;
-            }
-
-            if (readFail) // reading failed (we must check this first, because read will also be 0.)
-            {
-                // EXIT POINT
-                const auto lastError = GetLastError();
-                if (lastError == ERROR_BROKEN_PIPE)
+                if (GetLastError() != ERROR_IO_PENDING)
                 {
-                    _LastConPtyClientDisconnected();
-                    return S_OK;
+                    break;
                 }
-                else
+                overlappedPending = true;
+            }
+
+            // wstr can be empty in two situations:
+            // * The previous call to til::u8u16 failed.
+            // * We're using overlapped IO, and it's the first iteration.
+            if (!wstr.empty())
+            {
+                if (!_receivedFirstByte)
                 {
-                    _indicateExitWithStatus(HRESULT_FROM_WIN32(lastError)); // print a message
-                    _transitionToState(ConnectionState::Failed);
-                    return gsl::narrow_cast<DWORD>(HRESULT_FROM_WIN32(lastError));
-                }
-            }
-
-            const auto result{ til::u8u16(std::string_view{ &buffer[0], read }, wstr, u8State) };
-            if (FAILED(result))
-            {
-                // EXIT POINT
-                _indicateExitWithStatus(result); // print a message
-                _transitionToState(ConnectionState::Failed);
-                return gsl::narrow_cast<DWORD>(result);
-            }
-
-            if (wstr.empty())
-            {
-                return 0;
-            }
-
-            if (!_receivedFirstByte)
-            {
-                const auto now = std::chrono::high_resolution_clock::now();
-                const std::chrono::duration<double> delta = now - _startTime;
+                    const auto now = std::chrono::high_resolution_clock::now();
+                    const std::chrono::duration<double> delta = now - _startTime;
 
 #pragma warning(suppress : 26477 26485 26494 26482 26446) // We don't control TraceLoggingWrite
-                TraceLoggingWrite(g_hTerminalConnectionProvider,
-                                  "ReceivedFirstByte",
-                                  TraceLoggingDescription("An event emitted when the connection receives the first byte"),
-                                  TraceLoggingGuid(_sessionId, "SessionGuid", "The WT_SESSION's GUID"),
-                                  TraceLoggingFloat64(delta.count(), "Duration"),
-                                  TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
-                                  TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
-                _receivedFirstByte = true;
+                    TraceLoggingWrite(g_hTerminalConnectionProvider,
+                                      "ReceivedFirstByte",
+                                      TraceLoggingDescription("An event emitted when the connection receives the first byte"),
+                                      TraceLoggingGuid(_sessionId, "SessionGuid", "The WT_SESSION's GUID"),
+                                      TraceLoggingFloat64(delta.count(), "Duration"),
+                                      TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+                                      TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
+                    _receivedFirstByte = true;
+                }
+
+                try
+                {
+                    TerminalOutput.raise(wstr);
+                }
+                CATCH_LOG();
             }
 
-            // Pass the output to our registered event handlers
-            TerminalOutput.raise(wstr);
+            // Here's the counterpart to the start of the loop. We processed whatever was in `wstr`,
+            // so blocking synchronously on the pipe is now possible.
+            // If we used overlapped IO, we need to wait for the ReadFile() to complete.
+            // If we didn't, we can now safely block on our ReadFile() call.
+            if (overlappedPending)
+            {
+                overlappedPending = false;
+                if (FAILED(Utils::GetOverlappedResultSameThread(&overlapped, &read)))
+                {
+                    break;
+                }
+            }
+
+            // winsock2 (WSA) handles of the \Device\Afd type are transparently compatible with
+            // ReadFile() and the WSARecv() documentations contains this important information:
+            // > For byte streams, zero bytes having been read [..] indicates graceful closure and that no more bytes will ever be read.
+            // --> Exit if we've read 0 bytes.
+            if (read == 0)
+            {
+                break;
+            }
+
+            if (_isStateAtOrBeyond(ConnectionState::Closing))
+            {
+                break;
+            }
+
+            TraceLoggingWrite(
+                g_hTerminalConnectionProvider,
+                "ReadFile",
+                TraceLoggingCountedUtf8String(&buffer[0], read, "buffer"),
+                TraceLoggingGuid(_sessionId, "session"),
+                TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+
+            // If we hit a parsing error, eat it. It's bad utf-8, we can't do anything with it.
+            FAILED_LOG(til::u8u16({ &buffer[0], gsl::narrow_cast<size_t>(read) }, wstr, u8State));
         }
 
         return 0;

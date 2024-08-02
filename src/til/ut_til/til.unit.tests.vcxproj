@@ -15,7 +15,6 @@
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="BaseTests.cpp" />
-    <ClCompile Include="BitmapTests.cpp" />
     <ClCompile Include="CoalesceTests.cpp" />
     <ClCompile Include="ColorTests.cpp" />
     <ClCompile Include="EnumSetTests.cpp" />
@@ -43,7 +42,6 @@
     <ClInclude Include="..\..\inc\til\at.h" />
     <ClInclude Include="..\..\inc\til\atomic.h" />
     <ClInclude Include="..\..\inc\til\bit.h" />
-    <ClInclude Include="..\..\inc\til\bitmap.h" />
     <ClInclude Include="..\..\inc\til\bytes.h" />
     <ClInclude Include="..\..\inc\til\coalesce.h" />
     <ClInclude Include="..\..\inc\til\color.h" />

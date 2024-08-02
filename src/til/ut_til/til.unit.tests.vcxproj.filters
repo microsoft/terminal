@@ -6,7 +6,6 @@
   <ItemGroup>
     <ClCompile Include="..\precomp.cpp" />
     <ClCompile Include="BaseTests.cpp" />
-    <ClCompile Include="BitmapTests.cpp" />
     <ClCompile Include="CoalesceTests.cpp" />
     <ClCompile Include="ColorTests.cpp" />
     <ClCompile Include="EnumSetTests.cpp" />
@@ -39,9 +38,6 @@
       <Filter>inc</Filter>
     </ClInclude>
     <ClInclude Include="..\..\inc\til\bit.h">
-      <Filter>inc</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\inc\til\bitmap.h">
       <Filter>inc</Filter>
     </ClInclude>
     <ClInclude Include="..\..\inc\til\coalesce.h">

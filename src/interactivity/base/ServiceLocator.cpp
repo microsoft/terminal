@@ -67,15 +67,6 @@ void ServiceLocator::RundownAndExit(const HRESULT hr)
         Sleep(INFINITE);
     }
 
-    // MSFT:15506250
-    // In VT I/O Mode, a client application might die before we've rendered
-    //      the last bit of text they've emitted. So give the VtRenderer one
-    //      last chance to paint before it is killed.
-    if (s_globals.pRender)
-    {
-        s_globals.pRender->TriggerTeardown();
-    }
-
     // MSFT:40226902 - HOTFIX shutdown on OneCore, by leaking the renderer, thereby
     // reducing the change for existing race conditions to turn into deadlocks.
 #ifndef NDEBUG

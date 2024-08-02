@@ -1200,20 +1200,7 @@ void SCREEN_INFORMATION::_InternalSetViewportSize(const til::size* const pcoordS
     _viewport = newViewport;
     Tracing::s_TraceWindowViewport(_viewport);
 
-    // In Conpty mode, call TriggerScroll here without params. By not providing
-    // params, the renderer will make sure to update the VtEngine with the
-    // updated viewport size. If we don't do this, the engine can get into a
-    // torn state on this frame.
-    //
-    // Without this statement, the engine won't be told about the new view size
-    // till the start of the next frame. If any other text gets output before
-    // that frame starts, there's a very real chance that it'll cause errors as
-    // the engine tries to invalidate those regions.
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    if (gci.IsInVtIoMode() && ServiceLocator::LocateGlobals().pRender)
-    {
-        ServiceLocator::LocateGlobals().pRender->TriggerScroll();
-    }
     if (gci.HasPendingCookedRead())
     {
         gci.CookedReadData().RedrawAfterResize();
@@ -1761,6 +1748,11 @@ const SCREEN_INFORMATION& SCREEN_INFORMATION::GetMainBuffer() const
     return *this;
 }
 
+const SCREEN_INFORMATION* SCREEN_INFORMATION::GetAltBuffer() const noexcept
+{
+    return _psiAlternateBuffer;
+}
+
 // Routine Description:
 // - Instantiates a new buffer to be used as an alternate buffer. This buffer
 //     does not have a driver handle associated with it and shares a state
@@ -1901,15 +1893,6 @@ void SCREEN_INFORMATION::_handleDeferredResize(SCREEN_INFORMATION& siMain)
             s_RemoveScreenBuffer(psiOldAltBuffer); // this will also delete the old alt buffer
         }
 
-        // GH#381: When we switch into the alt buffer:
-        //  * flush the current frame, to clear out anything that we prepared for this buffer.
-        //  * Emit a ?1049h/l to the remote side, to let them know that we've switched buffers.
-        if (gci.IsInVtIoMode() && ServiceLocator::LocateGlobals().pRender)
-        {
-            ServiceLocator::LocateGlobals().pRender->TriggerFlush(false);
-            LOG_IF_FAILED(gci.GetVtIo()->SwitchScreenBuffer(true));
-        }
-
         ::SetActiveScreenBuffer(*psiNewAltBuffer);
 
         // Kind of a hack until we have proper signal channels: If the client app wants window size events, send one for
@@ -1936,15 +1919,6 @@ void SCREEN_INFORMATION::UseMainScreenBuffer()
     if (psiMain != nullptr)
     {
         _handleDeferredResize(*psiMain);
-
-        // GH#381: When we switch into the main buffer:
-        //  * flush the current frame, to clear out anything that we prepared for this buffer.
-        //  * Emit a ?1049h/l to the remote side, to let them know that we've switched buffers.
-        if (gci.IsInVtIoMode() && ServiceLocator::LocateGlobals().pRender)
-        {
-            ServiceLocator::LocateGlobals().pRender->TriggerFlush(false);
-            LOG_IF_FAILED(gci.GetVtIo()->SwitchScreenBuffer(false));
-        }
 
         ::SetActiveScreenBuffer(*psiMain);
         psiMain->UpdateScrollBars(); // The alt had disabled scrollbars, re-enable them
@@ -1994,7 +1968,7 @@ bool SCREEN_INFORMATION::_IsAltBuffer() const
 // - true iff this buffer has a main buffer.
 bool SCREEN_INFORMATION::_IsInPtyMode() const
 {
-    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     return _IsAltBuffer() || gci.IsInVtIoMode();
 }
 
@@ -2084,8 +2058,6 @@ void SCREEN_INFORMATION::SetPopupAttributes(const TextAttribute& popupAttributes
 void SCREEN_INFORMATION::SetDefaultAttributes(const TextAttribute& attributes,
                                               const TextAttribute& popupAttributes)
 {
-    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-
     const auto oldPrimaryAttributes = GetAttributes();
     const auto oldPopupAttributes = GetPopupAttributes();
 
@@ -2101,10 +2073,7 @@ void SCREEN_INFORMATION::SetDefaultAttributes(const TextAttribute& attributes,
     // Force repaint of entire viewport, unless we're in conpty mode. In that
     // case, we don't really need to force a redraw of the entire screen just
     // because the text attributes changed.
-    if (!(gci.IsInVtIoMode()))
-    {
-        _textBuffer->TriggerRedrawAll();
-    }
+    _textBuffer->TriggerRedrawAll();
 
     // If we're an alt buffer, also update our main buffer.
     if (_psiMainBuffer)
@@ -2198,32 +2167,6 @@ void SCREEN_INFORMATION::SetViewport(const Viewport& newViewport,
     _textBuffer->TriggerRedrawAll();
 
     return S_OK;
-}
-
-// Method Description:
-// - Sets up the Output state machine to be in pty mode. Sequences it doesn't
-//      understand will be written to the pTtyConnection passed in here.
-// Arguments:
-// - pTtyConnection: This is a TerminalOutputConnection that we can write the
-//      sequence we didn't understand to.
-// Return Value:
-// - <none>
-void SCREEN_INFORMATION::SetTerminalConnection(_In_ VtEngine* const pTtyConnection)
-{
-    auto& engine = reinterpret_cast<OutputStateMachineEngine&>(_stateMachine->Engine());
-    if (pTtyConnection)
-    {
-        engine.SetTerminalConnection(pTtyConnection,
-                                     [&stateMachine = *_stateMachine]() -> bool {
-                                         ServiceLocator::LocateGlobals().pRender->NotifyPaintFrame();
-                                         return stateMachine.FlushToTerminal();
-                                     });
-    }
-    else
-    {
-        engine.SetTerminalConnection(nullptr,
-                                     nullptr);
-    }
 }
 
 // Routine Description:
