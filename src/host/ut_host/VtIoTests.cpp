@@ -141,7 +141,7 @@ class ::Microsoft::Console::VirtualTerminal::VtIoTests
 
         THROW_IF_FAILED(routines.SetConsoleTitleWImpl(
             L"foobar"));
-        expected = "\x1b]0;foobar\a";
+        expected = "\x1b]0;foobar\x1b\\";
         actual = readOutput();
         VERIFY_ARE_EQUAL(expected, actual);
 
@@ -149,7 +149,7 @@ class ::Microsoft::Console::VirtualTerminal::VtIoTests
             L"foo"
             "\u0001\u001f"
             "bar"));
-        expected = "\x1b]0;foo☺▼bar\a";
+        expected = "\x1b]0;foo☺▼bar\x1b\\";
         actual = readOutput();
         VERIFY_ARE_EQUAL(expected, actual);
 
@@ -158,7 +158,7 @@ class ::Microsoft::Console::VirtualTerminal::VtIoTests
             "\u0001\u001f"
             "bar"
             "\u007f\u009f"));
-        expected = "\x1b]0;foo☺▼bar⌂?\a";
+        expected = "\x1b]0;foo☺▼bar⌂?\x1b\\";
         actual = readOutput();
         VERIFY_ARE_EQUAL(expected, actual);
     }
@@ -332,21 +332,29 @@ class ::Microsoft::Console::VirtualTerminal::VtIoTests
 
     TEST_METHOD(FillConsoleOutputAttribute)
     {
-        setupInitialContents();
-
         size_t cellsModified = 0;
         std::string_view expected;
         std::string_view actual;
 
         // Writing nothing should produce nothing.
-        THROW_IF_FAILED(routines.FillConsoleOutputAttributeImpl(*screenInfo, red, 0, {}, cellsModified));
+        THROW_IF_FAILED(routines.FillConsoleOutputAttributeImpl(*screenInfo, red, 0, {}, cellsModified, false));
         expected = "";
         actual = readOutput();
         VERIFY_ARE_EQUAL(0u, cellsModified);
         VERIFY_ARE_EQUAL(expected, actual);
 
+        // PowerShell uses ScrollConsoleScreenBufferW + FillConsoleOutputCharacterW to
+        // clear the buffer contents and that gets translated to a clear screen sequence.
+        // We ignore FillConsoleOutputCharacterW in favor of ScrollConsoleScreenBufferW.
+        THROW_IF_FAILED(routines.FillConsoleOutputAttributeImpl(*screenInfo, FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED, 8 * 4, {}, cellsModified, true));
+        expected = "";
+        actual = readOutput();
+        VERIFY_ARE_EQUAL(expected, actual);
+
+        setupInitialContents();
+
         // Writing at the start of a line.
-        THROW_IF_FAILED(routines.FillConsoleOutputAttributeImpl(*screenInfo, red, 3, { 0, 0 }, cellsModified));
+        THROW_IF_FAILED(routines.FillConsoleOutputAttributeImpl(*screenInfo, red, 3, { 0, 0 }, cellsModified, false));
         expected =
             decsc() //
             cup(1, 1) sgr_red("ABa") //
@@ -356,7 +364,7 @@ class ::Microsoft::Console::VirtualTerminal::VtIoTests
         VERIFY_ARE_EQUAL(expected, actual);
 
         // Writing at the end of a line.
-        THROW_IF_FAILED(routines.FillConsoleOutputAttributeImpl(*screenInfo, red, 3, { 5, 0 }, cellsModified));
+        THROW_IF_FAILED(routines.FillConsoleOutputAttributeImpl(*screenInfo, red, 3, { 5, 0 }, cellsModified, false));
         expected =
             decsc() //
             cup(1, 6) sgr_red("Dcd") //
@@ -366,7 +374,7 @@ class ::Microsoft::Console::VirtualTerminal::VtIoTests
         VERIFY_ARE_EQUAL(expected, actual);
 
         // Writing across 2 lines.
-        THROW_IF_FAILED(routines.FillConsoleOutputAttributeImpl(*screenInfo, blu, 8, { 4, 1 }, cellsModified));
+        THROW_IF_FAILED(routines.FillConsoleOutputAttributeImpl(*screenInfo, blu, 8, { 4, 1 }, cellsModified, false));
         expected =
             decsc() //
             cup(2, 5) sgr_blu("GHgh") //
@@ -379,20 +387,27 @@ class ::Microsoft::Console::VirtualTerminal::VtIoTests
 
     TEST_METHOD(FillConsoleOutputCharacterW)
     {
-        setupInitialContents();
-
         size_t cellsModified = 0;
         std::string_view expected;
         std::string_view actual;
 
         // Writing nothing should produce nothing.
-        THROW_IF_FAILED(routines.FillConsoleOutputCharacterWImpl(*screenInfo, L'a', 0, {}, cellsModified));
+        THROW_IF_FAILED(routines.FillConsoleOutputCharacterWImpl(*screenInfo, L'a', 0, {}, cellsModified, false));
         expected = "";
         actual = readOutput();
         VERIFY_ARE_EQUAL(expected, actual);
 
+        // PowerShell uses ScrollConsoleScreenBufferW + FillConsoleOutputCharacterW to
+        // clear the buffer contents and that gets translated to a clear screen sequence.
+        THROW_IF_FAILED(routines.FillConsoleOutputCharacterWImpl(*screenInfo, L' ', 8 * 4, {}, cellsModified, true));
+        expected = "\x1b[H\x1b[2J\x1b[3J";
+        actual = readOutput();
+        VERIFY_ARE_EQUAL(expected, actual);
+
+        setupInitialContents();
+
         // Writing at the start of a line.
-        THROW_IF_FAILED(routines.FillConsoleOutputCharacterWImpl(*screenInfo, L'a', 3, { 0, 0 }, cellsModified));
+        THROW_IF_FAILED(routines.FillConsoleOutputCharacterWImpl(*screenInfo, L'a', 3, { 0, 0 }, cellsModified, false));
         expected =
             decsc() //
             cup(1, 1) sgr_red("aa") sgr_blu("a") //
@@ -401,7 +416,7 @@ class ::Microsoft::Console::VirtualTerminal::VtIoTests
         VERIFY_ARE_EQUAL(expected, actual);
 
         // Writing at the end of a line.
-        THROW_IF_FAILED(routines.FillConsoleOutputCharacterWImpl(*screenInfo, L'b', 3, { 5, 0 }, cellsModified));
+        THROW_IF_FAILED(routines.FillConsoleOutputCharacterWImpl(*screenInfo, L'b', 3, { 5, 0 }, cellsModified, false));
         expected =
             decsc() //
             cup(1, 6) sgr_red("b") sgr_blu("bb") //
@@ -410,7 +425,7 @@ class ::Microsoft::Console::VirtualTerminal::VtIoTests
         VERIFY_ARE_EQUAL(expected, actual);
 
         // Writing across 2 lines.
-        THROW_IF_FAILED(routines.FillConsoleOutputCharacterWImpl(*screenInfo, L'c', 8, { 4, 1 }, cellsModified));
+        THROW_IF_FAILED(routines.FillConsoleOutputCharacterWImpl(*screenInfo, L'c', 8, { 4, 1 }, cellsModified, false));
         expected =
             decsc() //
             cup(2, 5) sgr_red("cc") sgr_blu("cc") //
@@ -420,7 +435,7 @@ class ::Microsoft::Console::VirtualTerminal::VtIoTests
         VERIFY_ARE_EQUAL(expected, actual);
 
         // Writing 3 wide chars while intersecting the last column.
-        THROW_IF_FAILED(routines.FillConsoleOutputCharacterWImpl(*screenInfo, L'✨', 3, { 5, 1 }, cellsModified));
+        THROW_IF_FAILED(routines.FillConsoleOutputCharacterWImpl(*screenInfo, L'✨', 3, { 5, 1 }, cellsModified, false));
         expected =
             decsc() //
             cup(2, 6) sgr_red("✨") sgr_blu(" ") //
