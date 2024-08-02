@@ -915,7 +915,7 @@ Keymapping
 keyscan
 keystate
 keyups
-kickstart
+Kickstart
 KILLACTIVE
 KILLFOCUS
 kinda
