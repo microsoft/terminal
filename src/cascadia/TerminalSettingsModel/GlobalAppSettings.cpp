@@ -128,23 +128,16 @@ winrt::com_ptr<GlobalAppSettings> GlobalAppSettings::FromJson(const Json::Value&
 void GlobalAppSettings::LayerJson(const Json::Value& json, const OriginTag origin)
 {
     JsonUtils::GetValueForKey(json, DefaultProfileKey, _UnparsedDefaultProfile);
-    if (_UnparsedDefaultProfile.has_value())
-    {
-        _logSettingSet(DefaultProfileKey, _UnparsedDefaultProfile.value());
-    }
+
     // GH#8076 - when adding enum values to this key, we also changed it from
     // "useTabSwitcher" to "tabSwitcherMode". Continue supporting
     // "useTabSwitcher", but prefer "tabSwitcherMode"
     JsonUtils::GetValueForKey(json, LegacyUseTabSwitcherModeKey, _TabSwitcherMode);
 
 #define GLOBAL_SETTINGS_LAYER_JSON(type, name, jsonKey, ...) \
-    {                                                        \
-        JsonUtils::GetValueForKey(json, jsonKey, _##name);   \
-        if (_##name.has_value())                             \
-        {                                                    \
-            _logSettingSet(jsonKey, _##name.value());        \
-        }                                                    \
-    }
+    JsonUtils::GetValueForKey(json, jsonKey, _##name);       \
+    _logSettingIfSet(jsonKey, _##name.has_value());
+
     MTSM_GLOBAL_SETTINGS(GLOBAL_SETTINGS_LAYER_JSON)
 #undef GLOBAL_SETTINGS_LAYER_JSON
 
@@ -161,10 +154,11 @@ void GlobalAppSettings::LayerJson(const Json::Value& json, const OriginTag origi
     }
     LayerActionsFrom(json, origin, true);
 
+    // TODO CARLOS: validate this works
     JsonUtils::GetValueForKey(json, LegacyReloadEnvironmentVariablesKey, _legacyReloadEnvironmentVariables);
-    if (json.find(&*LegacyReloadEnvironmentVariablesKey.cbegin(), (&*LegacyReloadEnvironmentVariablesKey.cbegin()) + LegacyReloadEnvironmentVariablesKey.size()))
+    if (json[LegacyReloadEnvironmentVariablesKey.data()])
     {
-        _logSettingSet(LegacyReloadEnvironmentVariablesKey, _legacyReloadEnvironmentVariables);
+        _logSettingSet(LegacyReloadEnvironmentVariablesKey);
     }
 }
 
@@ -332,131 +326,78 @@ bool GlobalAppSettings::ShouldUsePersistedLayout() const
     return FirstWindowPreference() == FirstWindowPreference::PersistedWindowLayout && !IsolatedMode();
 }
 
-winrt::hstring _convertVal(const winrt::Microsoft::Terminal::Control::GraphicsAPI val)
+void GlobalAppSettings::_logSettingSet(std::string_view setting)
 {
-    OutputDebugString(L"GraphicsAPI\n");
-    JsonUtils::ConversionTrait<decltype(val)> converter{};
-    return winrt::to_hstring(converter.ToJson(val).asString());
-}
-
-winrt::hstring _convertVal(const winrt::Microsoft::Terminal::Control::TextMeasurement val)
-{
-    OutputDebugString(L"TextMeasurement\n");
-    JsonUtils::ConversionTrait<decltype(val)> converter{};
-    return winrt::to_hstring(converter.ToJson(val).asString());
-}
-
-winrt::hstring _convertVal(const winrt::Microsoft::Terminal::Settings::Model::NewTabPosition val)
-{
-    OutputDebugString(L"NewTabPos\n");
-    JsonUtils::ConversionTrait<decltype(val)> converter{};
-    return winrt::to_hstring(converter.ToJson(val).asString());
-}
-
-winrt::hstring _convertVal(const winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode val)
-{
-    OutputDebugString(L"TabViewWidthMode\n");
-    JsonUtils::ConversionTrait<decltype(val)> converter{};
-    return winrt::to_hstring(converter.ToJson(val).asString());
-}
-
-winrt::hstring _convertVal(const winrt::Microsoft::Terminal::Control::CopyFormat val)
-{
-    OutputDebugString(L"CopyFormat\n");
-    JsonUtils::ConversionTrait<decltype(val)> converter{};
-    return winrt::to_hstring(converter.ToJson(val).asString());
-}
-
-winrt::hstring _convertVal(const winrt::Microsoft::Terminal::Settings::Model::LaunchPosition val)
-{
-    OutputDebugString(L"LaunchPos\n");
-    JsonUtils::ConversionTrait<decltype(val)> converter{};
-    return winrt::to_hstring(converter.ToJson(val).asString());
-}
-
-winrt::hstring _convertVal(const winrt::Microsoft::Terminal::Settings::Model::FirstWindowPreference val)
-{
-    OutputDebugString(L"FirstWindowPref\n");
-    JsonUtils::ConversionTrait<decltype(val)> converter{};
-    return winrt::to_hstring(converter.ToJson(val).asString());
-}
-
-winrt::hstring _convertVal(const winrt::Microsoft::Terminal::Settings::Model::LaunchMode val)
-{
-    OutputDebugString(L"LaunchMode\n");
-    JsonUtils::ConversionTrait<decltype(val)> converter{};
-    return winrt::to_hstring(converter.ToJson(val).asString());
-}
-
-winrt::hstring _convertVal(const winrt::Microsoft::Terminal::Settings::Model::TabSwitcherMode val)
-{
-    OutputDebugString(L"TabSwitcherMode\n");
-    JsonUtils::ConversionTrait<decltype(val)> converter{};
-    return winrt::to_hstring(converter.ToJson(val).asString());
-}
-
-winrt::hstring _convertVal(const winrt::Microsoft::Terminal::Settings::Model::WindowingMode val)
-{
-    OutputDebugString(L"WindowingMode\n");
-    JsonUtils::ConversionTrait<decltype(val)> converter{};
-    return winrt::to_hstring(converter.ToJson(val).asString());
-}
-
-winrt::hstring _convertVal(const winrt::guid& val)
-{
-    OutputDebugString(L"guid\n");
-    JsonUtils::ConversionTrait<decltype(val)> converter{};
-    return winrt::to_hstring(converter.ToJson(val).asString());
-}
-
-winrt::hstring _convertVal(const winrt::Microsoft::Terminal::Settings::Model::ThemePair val)
-{
-    OutputDebugString(L"ThemePair\n");
-    // TODO CARLOS: no conversion trait
-    JsonUtils::ConversionTrait<decltype(val)> converter{};
-    return winrt::to_hstring(converter.ToJson(val).asString());
-}
-
-winrt::hstring _convertVal(const winrt::Windows::Foundation::Collections::IVector<winrt::hstring> val)
-{
-    OutputDebugString(L"vector<hstring>\n");
-
-    // convert and sort so we normalize results
-    std::vector<winrt::hstring> vec;
-    vec.reserve(val.Size());
-    val.GetMany(0, vec);
-    std::sort(vec.begin(), vec.end());
-
-    // consolidate into a single string
-    winrt::hstring result;
-    for (auto iter = vec.begin(); iter != vec.end(); iter++)
+    if (setting == "theme")
     {
-        result = result + *iter;
-        if (iter + 1 != vec.end())
+        if (_Theme.has_value())
         {
-            result = result + L", ";
+            // ThemePair always has a Dark/Light value,
+            // so we need to check if they were explicitly set
+            if (_Theme->DarkName() == _Theme->LightName())
+            {
+                _changeLog.insert(setting);
+            }
+            else
+            {
+                _changeLog.insert(std::string_view{ fmt::format(FMT_COMPILE("{}.{}"), setting, "dark") });
+                _changeLog.insert(std::string_view{ fmt::format(FMT_COMPILE("{}.{}"), setting, "light") });
+            }
         }
     }
-    return result;
+    else if (setting == "newTabMenu")
+    {
+        if (_NewTabMenu.has_value())
+        {
+            for (const auto& entry : *_NewTabMenu)
+            {
+                std::string entryType;
+                switch (entry.Type())
+                {
+                case NewTabMenuEntryType::Profile:
+                    entryType = "profile";
+                    break;
+                case NewTabMenuEntryType::Separator:
+                    entryType = "separator";
+                    break;
+                case NewTabMenuEntryType::Folder:
+                    entryType = "folder";
+                    break;
+                case NewTabMenuEntryType::RemainingProfiles:
+                    entryType = "remainingProfiles";
+                    break;
+                case NewTabMenuEntryType::MatchProfiles:
+                    entryType = "matchProfiles";
+                    break;
+                case NewTabMenuEntryType::Action:
+                    entryType = "action";
+                    break;
+                case NewTabMenuEntryType::Invalid:
+                    // ignore invalid 
+                    continue;
+                }
+                _changeLog.insert(std::string_view{ fmt::format(FMT_COMPILE("{}.{}"), setting, entryType) });
+            }
+        }
+    }
+    else
+    {
+        _changeLog.insert(setting);
+    }
 }
 
-winrt::hstring _convertVal(const winrt::Windows::Foundation::Collections::IVector<winrt::Microsoft::Terminal::Settings::Model::NewTabMenuEntry> /*value*/)
+void GlobalAppSettings::_logSettingIfSet(std::string_view setting, const bool isSet)
 {
-    OutputDebugString(L"vector<NewTabMenuEntry>\n");
-    // TODO CARLOS: what data do we even want to collect here?
-    return L"";
+    if (isSet)
+    {
+        _logSettingSet(setting);
+    }
 }
 
-winrt::hstring _convertVal(auto& val)
+void GlobalAppSettings::LogSettingChanges(std::set<std::string_view>& changes, std::string_view& context) const
 {
-    OutputDebugString(L"auto\n");
-    return winrt::to_hstring(val);
-}
-
-void GlobalAppSettings::_logSettingSet(std::string_view setting, auto& value)
-{
-    OutputDebugStringA(setting.data());
-    OutputDebugStringA(" - ");
-    std::wstring val{ _convertVal(value).c_str() };
-    _changeLog.insert_or_assign(setting, std::wstring_view{ val });
+    for (const auto& setting : _changeLog)
+    {
+        changes.emplace(fmt::format(FMT_COMPILE("{}.{}"), context, setting));
+    }
 }

@@ -90,55 +90,42 @@ Json::Value AppearanceConfig::ToJson() const
 void AppearanceConfig::LayerJson(const Json::Value& json)
 {
     JsonUtils::GetValueForKey(json, ForegroundKey, _Foreground);
-    if (_Foreground.has_value())
-    {
-        _logSettingSet(ForegroundKey, _Foreground.value());
-    }
+    _logSettingIfSet(ForegroundKey, _Foreground.has_value());
+
     JsonUtils::GetValueForKey(json, BackgroundKey, _Background);
-    if (_Background.has_value())
-    {
-        _logSettingSet(BackgroundKey, _Background.value());
-    }
+    _logSettingIfSet(BackgroundKey, _Background.has_value());
+
     JsonUtils::GetValueForKey(json, SelectionBackgroundKey, _SelectionBackground);
-    if (_SelectionBackground.has_value())
-    {
-        _logSettingSet(SelectionBackgroundKey, _SelectionBackground.value());
-    }
+    _logSettingIfSet(SelectionBackgroundKey, _SelectionBackground.has_value());
+
     JsonUtils::GetValueForKey(json, CursorColorKey, _CursorColor);
-    if (_CursorColor.has_value())
-    {
-        _logSettingSet(CursorColorKey, _CursorColor.value());
-    }
+    _logSettingIfSet(CursorColorKey, _CursorColor.has_value());
 
     JsonUtils::GetValueForKey(json, LegacyAcrylicTransparencyKey, _Opacity);
     JsonUtils::GetValueForKey(json, OpacityKey, _Opacity, JsonUtils::OptionalConverter<float, IntAsFloatPercentConversionTrait>{});
-    if (_Opacity.has_value())
-    {
-        _logSettingSet(OpacityKey, _Opacity.value());
-    }
+    _logSettingIfSet(OpacityKey, _Opacity.has_value());
 
-    // TODO CARLOS: how do we want to track this? Do we want to track the color scheme name?
     if (json["colorScheme"].isString())
     {
         // to make the UI happy, set ColorSchemeName.
         JsonUtils::GetValueForKey(json, ColorSchemeKey, _DarkColorSchemeName);
         _LightColorSchemeName = _DarkColorSchemeName;
+        _logSettingSet(ColorSchemeKey);
     }
     else if (json["colorScheme"].isObject())
     {
         // to make the UI happy, set ColorSchemeName to whatever the dark value is.
         JsonUtils::GetValueForKey(json["colorScheme"], "dark", _DarkColorSchemeName);
         JsonUtils::GetValueForKey(json["colorScheme"], "light", _LightColorSchemeName);
+
+        _logSettingSet("colorScheme.dark");
+        _logSettingSet("colorScheme.light");
     }
 
 #define APPEARANCE_SETTINGS_LAYER_JSON(type, name, jsonKey, ...) \
-    {                                                            \
-        JsonUtils::GetValueForKey(json, jsonKey, _##name);       \
-        if (_##name.has_value())                                 \
-        {                                                        \
-            _logSettingSet(jsonKey, _##name.value());            \
-        }                                                        \
-    }                                                            \
+    JsonUtils::GetValueForKey(json, jsonKey, _##name);           \
+    _logSettingIfSet(jsonKey, _##name.has_value());
+
     MTSM_APPEARANCE_SETTINGS(APPEARANCE_SETTINGS_LAYER_JSON)
 #undef APPEARANCE_SETTINGS_LAYER_JSON
 }
@@ -185,69 +172,23 @@ winrt::hstring AppearanceConfig::ExpandedBackgroundImagePath()
     }
 }
 
-winrt::hstring _convertVal(const winrt::Microsoft::Terminal::Core::CursorStyle val)
+void AppearanceConfig::_logSettingSet(std::string_view setting)
 {
-    OutputDebugString(L"CursorStyle\n");
-    JsonUtils::ConversionTrait<decltype(val)> converter{};
-    return winrt::to_hstring(converter.ToJson(val).asString());
+    _changeLog.emplace(setting);
 }
 
-winrt::hstring _convertVal(const winrt::Windows::UI::Xaml::Media::Stretch val)
+void AppearanceConfig::_logSettingIfSet(std::string_view setting, const bool isSet)
 {
-    OutputDebugString(L"BackgroundImageStretchMode\n");
-    JsonUtils::ConversionTrait<decltype(val)> converter{};
-    return winrt::to_hstring(converter.ToJson(val).asString());
-}
-
-winrt::hstring _convertVal(const winrt::Microsoft::Terminal::Settings::Model::ConvergedAlignment val)
-{
-    OutputDebugString(L"BackgroundImageAlignment\n");
-    JsonUtils::ConversionTrait<decltype(val)> converter{};
-    return winrt::to_hstring(converter.ToJson(val).asString());
-}
-
-winrt::hstring _convertVal(const winrt::Microsoft::Terminal::Settings::Model::IntenseStyle val)
-{
-    OutputDebugString(L"IntenseTextStyle\n");
-    JsonUtils::ConversionTrait<decltype(val)> converter{};
-    return winrt::to_hstring(converter.ToJson(val).asString());
-}
-
-winrt::hstring _convertVal(const winrt::Microsoft::Terminal::Core::AdjustTextMode val)
-{
-    OutputDebugString(L"AdjustIndistinguishableColors\n");
-    JsonUtils::ConversionTrait<decltype(val)> converter{};
-    return winrt::to_hstring(converter.ToJson(val).asString());
-}
-
-winrt::hstring _convertVal(const std::optional<winrt::Microsoft::Terminal::Core::Color> val)
-{
-    // TODO CARLOS: test this one specifically
-    //  - std::nullopt -> "null"
-    //  - color -> something
-    OutputDebugString(L"optional<Color>\n");
-    JsonUtils::ConversionTrait<decltype(val)> converter{};
-    return winrt::to_hstring(converter.ToJson(val).asString());
-}
-
-winrt::hstring _convertVal(auto& val)
-{
-    OutputDebugString(L"auto\n");
-    return winrt::to_hstring(val);
-}
-
-void AppearanceConfig::_logSettingSet(std::string_view setting, auto& value)
-{
-    OutputDebugStringA(setting.data());
-    OutputDebugStringA(" - ");
-    std::wstring val{ _convertVal(value).c_str() };
-    _changeLog.insert_or_assign(setting, std::wstring_view{ val });
-}
-
-void AppearanceConfig::_logSettingValIfSet(const Json::Value& json, std::string_view setting)
-{
-    if (auto found{ json.find(&*setting.cbegin(), (&*setting.cbegin()) + setting.size()) })
+    if (isSet)
     {
-        _changeLog.insert_or_assign(setting, std::wstring_view{ til::u8u16(found->asString()) });
+        _logSettingSet(setting);
+    }
+}
+
+void AppearanceConfig::LogSettingChanges(std::set<std::string_view>& changes, std::string_view& context) const
+{
+    for (const auto& setting : _changeLog)
+    {
+        changes.emplace(fmt::format(FMT_COMPILE("{}.{}"), context, setting));
     }
 }

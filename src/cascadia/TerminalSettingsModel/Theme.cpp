@@ -292,6 +292,37 @@ winrt::com_ptr<Theme> Theme::FromJson(const Json::Value& json)
     return result;
 }
 
+void Theme::LogSettingChanges(std::set<std::string_view>& changes, std::string_view& context)
+{
+#define GET_INNER_THEME_SETTING(type, name, jsonKey, ...) \
+    if (isSet)                                            \
+        changes.insert(fmt::format(FMT_COMPILE("{}.{}.{}"), context, outerJsonKey, jsonKey));
+
+#define GET_OUTER_THEME_SETTING(type, name, jsonKey, ...) \
+    const bool is##name##Set = _##name != nullptr;        \
+    std::string_view outer##name##JsonKey = jsonKey;
+
+    MTSM_THEME_SETTINGS(GET_OUTER_THEME_SETTING)
+
+    bool isSet = isWindowSet;
+    std::string_view outerJsonKey = outerWindowJsonKey;
+    MTSM_THEME_WINDOW_SETTINGS(GET_INNER_THEME_SETTING)
+
+    isSet = isSettingsSet;
+    outerJsonKey = outerSettingsJsonKey;
+    MTSM_THEME_SETTINGS_SETTINGS(GET_INNER_THEME_SETTING)
+
+    isSet = isTabRowSet;
+    outerJsonKey = outerTabRowJsonKey;
+    MTSM_THEME_TABROW_SETTINGS(GET_INNER_THEME_SETTING)
+
+    isSet = isTabSet;
+    outerJsonKey = outerTabJsonKey;
+    MTSM_THEME_TAB_SETTINGS(GET_INNER_THEME_SETTING)
+#undef GET_INNER_THEME_SETTING
+#undef GET_OUTER_THEME_SETTING
+}
+
 // Method Description:
 // - Create a new serialized JsonObject from an instance of this class
 // Arguments:

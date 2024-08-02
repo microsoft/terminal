@@ -35,6 +35,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         static winrt::com_ptr<FontConfig> CopyFontInfo(const FontConfig* source, winrt::weak_ref<Profile> sourceProfile);
         Json::Value ToJson() const;
         void LayerJson(const Json::Value& json);
+        void LogSettingChanges(std::set<std::string_view>& changes, std::string_view& context) const;
 
         Model::Profile SourceProfile();
 
@@ -45,11 +46,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     private:
         winrt::weak_ref<Profile> _sourceProfile;
-        std::map<std::string_view, std::wstring_view> _changeLog;
-        std::map<std::wstring_view, std::wstring_view> _changeLogAxes;
-        std::map<std::wstring_view, std::wstring_view> _changeLogFeatures;
+        std::set<std::string_view> _changeLog;
 
-        void _logSettingSet(std::string_view setting, winrt::Windows::Foundation::Collections::IMap<winrt::hstring, float>& value);
-        void _logSettingSet(std::string_view setting, auto& value);
+        void _logSettingSet(std::string_view setting);
+        void _logSettingIfSet(std::string_view setting, const bool isSet);
     };
 }

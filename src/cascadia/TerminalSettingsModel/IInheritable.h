@@ -199,9 +199,9 @@ public:                                                                         
     /* Overwrite the user set value */                                            \
     void name(const type& value)                                                  \
     {                                                                             \
-        if (name() != value)                                                      \
+        if (!_##name.has_value() || _##name.value() != value)                     \
         {                                                                         \
-            _logSettingSet(jsonKey, value);                                       \
+            _logSettingSet(jsonKey);                                              \
         }                                                                         \
         _##name = value;                                                          \
     }

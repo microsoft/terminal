@@ -176,30 +176,19 @@ void Profile::LayerJson(const Json::Value& json)
     JsonUtils::GetValueForKey(json, UpdatesKey, _Updates);
     JsonUtils::GetValueForKey(json, GuidKey, _Guid);
     JsonUtils::GetValueForKey(json, HiddenKey, _Hidden);
-    if (_Hidden.has_value())
-    {
-        _logSettingSet(HiddenKey, _Hidden.value());
-    }
+    _logSettingIfSet(HiddenKey, _Hidden.has_value());
+
     JsonUtils::GetValueForKey(json, SourceKey, _Source);
     JsonUtils::GetValueForKey(json, IconKey, _Icon);
-    if (_Icon.has_value())
-    {
-        _logSettingSet(IconKey, _Icon.value());
-    }
+    _logSettingIfSet(IconKey, _Icon.has_value());
 
     // Padding was never specified as an integer, but it was a common working mistake.
     // Allow it to be permissive.
     JsonUtils::GetValueForKey(json, PaddingKey, _Padding, JsonUtils::OptionalConverter<hstring, JsonUtils::PermissiveStringConverter<std::wstring>>{});
-    if (_Padding.has_value())
-    {
-        _logSettingSet(PaddingKey, _Padding.value());
-    }
+    _logSettingIfSet(PaddingKey, _Padding.has_value());
 
     JsonUtils::GetValueForKey(json, TabColorKey, _TabColor);
-    if (_TabColor.has_value())
-    {
-        _logSettingSet(TabColorKey, _TabColor.value());
-    }
+    _logSettingIfSet(TabColorKey, _TabColor.has_value());
 
     // Try to load some legacy keys, to migrate them.
     // Done _before_ the MTSM_PROFILE_SETTINGS, which have the updated keys.
@@ -207,13 +196,9 @@ void Profile::LayerJson(const Json::Value& json)
     JsonUtils::GetValueForKey(json, LegacyAutoMarkPromptsKey, _AutoMarkPrompts);
 
 #define PROFILE_SETTINGS_LAYER_JSON(type, name, jsonKey, ...) \
-    {                                                         \
-        JsonUtils::GetValueForKey(json, jsonKey, _##name);    \
-        if (_##name.has_value())                              \
-        {                                                     \
-            _logSettingSet(jsonKey, _##name.value());         \
-        }                                                     \
-    }                                                         \
+    JsonUtils::GetValueForKey(json, jsonKey, _##name);        \
+    _logSettingIfSet(jsonKey, _##name.has_value());
+
     MTSM_PROFILE_SETTINGS(PROFILE_SETTINGS_LAYER_JSON)
 #undef PROFILE_SETTINGS_LAYER_JSON
 
@@ -229,6 +214,8 @@ void Profile::LayerJson(const Json::Value& json)
 
         unfocusedAppearance->LayerJson(json[JsonKey(UnfocusedAppearanceKey)]);
         _UnfocusedAppearance = *unfocusedAppearance;
+
+        _logSettingSet(UnfocusedAppearanceKey);
     }
 }
 
@@ -540,92 +527,36 @@ std::wstring Profile::NormalizeCommandLine(LPCWSTR commandLine)
     return normalized;
 }
 
-winrt::hstring _convertVal(const winrt::Microsoft::Terminal::Control::ScrollbarState& val)
+void Profile::_logSettingSet(std::string_view setting)
 {
-    OutputDebugString(L"ScrollbarState\n");
-    JsonUtils::ConversionTrait<decltype(val)> converter{};
-    return winrt::to_hstring(converter.ToJson(val).asString());
+    _changeLog.insert(setting);
 }
 
-winrt::hstring _convertVal(const winrt::Microsoft::Terminal::Control::TextAntialiasingMode& val)
+void Profile::_logSettingIfSet(std::string_view setting, const bool isSet)
 {
-    OutputDebugString(L"TextAntialiasingMode\n");
-    JsonUtils::ConversionTrait<decltype(val)> converter{};
-    return winrt::to_hstring(converter.ToJson(val).asString());
-}
-
-winrt::hstring _convertVal(const winrt::Microsoft::Terminal::Settings::Model::CloseOnExitMode& val)
-{
-    OutputDebugString(L"CloseOnExitMode\n");
-    JsonUtils::ConversionTrait<decltype(val)> converter{};
-    return winrt::to_hstring(converter.ToJson(val).asString());
-}
-
-winrt::hstring _convertVal(const winrt::Microsoft::Terminal::Settings::Model::BellStyle& val)
-{
-    OutputDebugString(L"BellStyle\n");
-    JsonUtils::ConversionTrait<decltype(val)> converter{};
-    return winrt::to_hstring(converter.ToJson(val).asString());
-}
-
-winrt::hstring _convertVal(const IEnvironmentVariableMap& /*val*/)
-{
-    // TODO CARLOS: we probably don't want this?
-    //   if we do, I can handle it similar to Vector<String>
-    OutputDebugString(L"IEnvironmentVariableMap\n");
-    return L"";
-}
-
-winrt::hstring _convertVal(const winrt::Windows::Foundation::Collections::IVector<winrt::hstring> val)
-{
-    OutputDebugString(L"vector<hstring>\n");
-
-    // convert and sort so we normalize results
-    std::vector<winrt::hstring> vec;
-    vec.reserve(val.Size());
-    val.GetMany(0, vec);
-    std::sort(vec.begin(), vec.end());
-
-    // consolidate into a single string
-    winrt::hstring result;
-    for (auto iter = vec.begin(); iter != vec.end(); iter++)
+    if (isSet)
     {
-        result = result + *iter;
-        if (iter + 1 != vec.end())
-        {
-            result = result + L", ";
-        }
+        _logSettingSet(setting);
     }
-    return result;
 }
 
-winrt::hstring _convertVal(const std::optional<winrt::Microsoft::Terminal::Core::Color> val)
+void Profile::LogSettingChanges(std::set<std::string_view>& changes, std::string_view& context) const
 {
-    // TODO CARLOS: test this one specifically
-    //  - std::nullopt -> "null"
-    //  - color -> something
-    OutputDebugString(L"optional<Color>\n");
-    JsonUtils::ConversionTrait<decltype(val)> converter{};
-    return winrt::to_hstring(converter.ToJson(val).asString());
-}
+    for (const auto& setting : _changeLog)
+    {
+        changes.emplace(fmt::format(FMT_COMPILE("{}.{}"), context, setting));
+    }
 
-winrt::hstring _convertVal(const winrt::guid& val)
-{
-    OutputDebugString(L"guid\n");
-    JsonUtils::ConversionTrait<decltype(val)> converter{};
-    return winrt::to_hstring(converter.ToJson(val).asString());
-}
+    std::string_view fontContext{ fmt::format(FMT_COMPILE("{}.{}"), context, FontInfoKey) };
+    winrt::get_self<implementation::FontConfig>(_FontInfo)->LogSettingChanges(changes, fontContext);
 
-winrt::hstring _convertVal(auto& val)
-{
-    OutputDebugString(L"auto\n");
-    return winrt::to_hstring(val);
-}
-
-void Profile::_logSettingSet(std::string_view setting, auto& value)
-{
-    OutputDebugStringA(setting.data());
-    OutputDebugStringA(" - ");
-    std::wstring val{ _convertVal(value).c_str() };
-    _changeLog.insert_or_assign(setting, std::wstring_view{ val });
+    // We don't want to distinguish between "profile.defaultAppearance.*" and "profile.unfocusedAppearance.*" settings,
+    //   but we still want to aggregate all of the appearance settings from both appearances.
+    // Log them as "profile.appearance.*"
+    std::string_view appContext{ fmt::format(FMT_COMPILE("{}.{}"), context, "appearance") };
+    winrt::get_self<implementation::AppearanceConfig>(_DefaultAppearance)->LogSettingChanges(changes, appContext);
+    if (_UnfocusedAppearance)
+    {
+        winrt::get_self<implementation::AppearanceConfig>(*_UnfocusedAppearance)->LogSettingChanges(changes, appContext);
+    }
 }

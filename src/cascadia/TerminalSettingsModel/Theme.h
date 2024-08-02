@@ -79,6 +79,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         Json::Value ToJson();                  \
                                                \
         macro(THEME_SETTINGS_INITIALIZE);      \
+                                               \
+    private:                                   \
+        std::set<std::string_view> _changeLog; \
     };
 
     THEME_OBJECT(WindowTheme, MTSM_THEME_WINDOW_SETTINGS);
@@ -97,8 +100,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         hstring ToString();
 
         static com_ptr<Theme> FromJson(const Json::Value& json);
-        void LayerJson(const Json::Value& json);
         Json::Value ToJson() const;
+        void LogSettingChanges(std::set<std::string_view>& changes, std::string_view& context);
 
         winrt::Windows::UI::Xaml::ElementTheme RequestedTheme() const noexcept;
 

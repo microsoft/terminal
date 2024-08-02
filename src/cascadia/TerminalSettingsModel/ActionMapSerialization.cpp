@@ -78,7 +78,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             // Now check if this is a command block
             if (jsonBlock.isMember(JsonKey(CommandsKey)) || jsonBlock.isMember(JsonKey(ActionKey)))
             {
-                AddAction(*Command::FromJson(jsonBlock, warnings, origin), keys);
+                auto command = Command::FromJson(jsonBlock, warnings, origin);
+                command->LogSettingChanges(_changeLog);
+                AddAction(*command, keys);
 
                 if (jsonBlock.isMember(JsonKey(KeysKey)))
                 {
@@ -155,5 +157,13 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
 
         return keybindingsList;
+    }
+
+    void ActionMap::LogSettingChanges(std::set<std::string_view>& changes, std::string_view& context) const
+    {
+        for (const auto& setting : _changeLog)
+        {
+            changes.emplace(fmt::format(FMT_COMPILE("{}.{}"), context, setting));
+        }
     }
 }

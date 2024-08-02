@@ -83,35 +83,25 @@ void FontConfig::LayerJson(const Json::Value& json)
     {
         // A font object is defined, use that
         const auto fontInfoJson = json[JsonKey(FontInfoKey)];
-#define FONT_SETTINGS_LAYER_JSON(type, name, jsonKey, ...)         \
-    {                                                              \
-        JsonUtils::GetValueForKey(fontInfoJson, jsonKey, _##name); \
-        if (_##name.has_value())                                   \
-        {                                                          \
-            _logSettingSet(jsonKey, _##name.value());              \
-        }                                                          \
-    }
+#define FONT_SETTINGS_LAYER_JSON(type, name, jsonKey, ...)     \
+    JsonUtils::GetValueForKey(fontInfoJson, jsonKey, _##name); \
+    _logSettingIfSet(jsonKey, _##name.has_value());
+
         MTSM_FONT_SETTINGS(FONT_SETTINGS_LAYER_JSON)
 #undef FONT_SETTINGS_LAYER_JSON
     }
     else
     {
         // No font object is defined
+        // Log settings as if they were a part of the font object
         JsonUtils::GetValueForKey(json, LegacyFontFaceKey, _FontFace);
-        if (_FontFace.has_value())
-        {
-            _logSettingSet(LegacyFontFaceKey, _FontFace.value());
-        }
+        _logSettingIfSet("face", _FontFace.has_value());
+
         JsonUtils::GetValueForKey(json, LegacyFontSizeKey, _FontSize);
-        if (_FontSize.has_value())
-        {
-            _logSettingSet(LegacyFontSizeKey, _FontSize.value());
-        }
+        _logSettingIfSet("size", _FontSize.has_value());
+
         JsonUtils::GetValueForKey(json, LegacyFontWeightKey, _FontWeight);
-        if (_FontWeight.has_value())
-        {
-            _logSettingSet(LegacyFontWeightKey, _FontWeight.value());
-        }
+        _logSettingIfSet("weight", _FontWeight.has_value());
     }
 }
 
@@ -120,45 +110,40 @@ winrt::Microsoft::Terminal::Settings::Model::Profile FontConfig::SourceProfile()
     return _sourceProfile.get();
 }
 
-winrt::hstring _convertVal(const winrt::Windows::UI::Text::FontWeight val)
+void FontConfig::_logSettingSet(std::string_view setting)
 {
-    OutputDebugString(L"FontWeight\n");
-    JsonUtils::ConversionTrait<decltype(val)> converter{};
-    return winrt::to_hstring(converter.ToJson(val).asString());
-}
-
-void _logMap(const winrt::Windows::Foundation::Collections::IMap<winrt::hstring, float>& val, std::map<std::wstring_view, std::wstring_view>& log)
-{
-    for (const auto& [mapKey, mapVal] : val)
+    if (setting == "axes" && _FontAxes.has_value())
     {
-        log.insert_or_assign(std::wstring_view{ mapKey.c_str() }, std::to_wstring(mapVal));
+        for (const auto& [mapKey, _] : _FontAxes.value())
+        {
+            _changeLog.emplace(fmt::format(FMT_COMPILE("{}.{}"), setting, til::u16u8(mapKey)));
+        }
+    }
+    else if (setting == "features" && _FontFeatures.has_value())
+    {
+        for (const auto& [mapKey, _] : _FontFeatures.value())
+        {
+            _changeLog.emplace(fmt::format(FMT_COMPILE("{}.{}"), setting, til::u16u8(mapKey)));
+        }
+    }
+    else
+    {
+        _changeLog.emplace(setting);
     }
 }
 
-winrt::hstring _convertVal(auto& val)
+void FontConfig::_logSettingIfSet(std::string_view setting, const bool isSet)
 {
-    OutputDebugString(L"auto\n");
-    return winrt::to_hstring(val);
-}
-
-void FontConfig::_logSettingSet(std::string_view setting, winrt::Windows::Foundation::Collections::IMap<winrt::hstring, float>& value)
-{
-    OutputDebugStringA(setting.data());
-    OutputDebugStringA(" - ");
-    if (setting == "axes")
+    if (isSet)
     {
-        _logMap(value, _changeLogAxes);
-    }
-    else if (setting == "features")
-    {
-        _logMap(value, _changeLogFeatures);
+        _logSettingSet(setting);
     }
 }
 
-void FontConfig::_logSettingSet(std::string_view setting, auto& value)
+void FontConfig::LogSettingChanges(std::set<std::string_view>& changes, std::string_view& context) const
 {
-    OutputDebugStringA(setting.data());
-    OutputDebugStringA(" - ");
-    std::wstring val{ _convertVal(value).c_str() };
-    _changeLog.insert_or_assign(setting, std::wstring_view{ val });
+    for (const auto& setting : _changeLog)
+    {
+        changes.emplace(fmt::format(FMT_COMPILE("{}.{}"), context, setting));
+    }
 }
