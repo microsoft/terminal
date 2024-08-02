@@ -142,8 +142,8 @@ BTNFACE
 bufferout
 buffersize
 buflen
-buildtransitive
 buildsystems
+buildtransitive
 BValue
 bytebuffer
 cac
@@ -915,6 +915,7 @@ Keymapping
 keyscan
 keystate
 keyups
+kickstart
 KILLACTIVE
 KILLFOCUS
 kinda
