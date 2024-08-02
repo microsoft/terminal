@@ -66,47 +66,6 @@ void TextAttribute::SetLegacyDefaultAttributes(const WORD defaultAttributes) noe
 }
 
 // Routine Description:
-// Pursuant to GH#6807
-// This routine replaces VT colors from the 16-color set with the "default"
-// flag. It is intended to be used as part of the "VT Quirk" in
-// WriteConsole[AW].
-//
-// There is going to be a very long tail of applications that will
-// explicitly request VT SGR 40/37 when what they really want is to
-// SetConsoleTextAttribute() with a black background/white foreground.
-// Instead of making those applications look bad (and therefore making us
-// look bad, because we're releasing this as an update to something that
-// "looks good" already), we're introducing this compatibility hack. Before
-// the color reckoning in GH#6698 + GH#6506, *every* color was subject to
-// being spontaneously and erroneously turned into the default color. Now,
-// only the 16-color palette value that matches the active console
-// background color will be destroyed when the quirk is enabled.
-//
-// This is not intended to be a long-term solution. This comment will be
-// discovered in forty years(*) time and people will laugh at our hubris.
-//
-// *it doesn't matter when you're reading this, it will always be 40 years
-// from now.
-TextAttribute TextAttribute::StripErroneousVT16VersionsOfLegacyDefaults(const TextAttribute& attribute) noexcept
-{
-    const auto fg{ attribute.GetForeground() };
-    const auto bg{ attribute.GetBackground() };
-    auto copy{ attribute };
-    if (fg.IsIndex16() &&
-        attribute.IsIntense() == WI_IsFlagSet(s_ansiDefaultForeground, FOREGROUND_INTENSITY) &&
-        fg.GetIndex() == (s_ansiDefaultForeground & ~FOREGROUND_INTENSITY))
-    {
-        // We don't want to turn 1;37m into 39m (or even 1;39m), as this was meant to mimic a legacy color.
-        copy.SetDefaultForeground();
-    }
-    if (bg.IsIndex16() && bg.GetIndex() == s_ansiDefaultBackground)
-    {
-        copy.SetDefaultBackground();
-    }
-    return copy;
-}
-
-// Routine Description:
 // - Returns a WORD with legacy-style attributes for this textattribute.
 // Parameters:
 // - None

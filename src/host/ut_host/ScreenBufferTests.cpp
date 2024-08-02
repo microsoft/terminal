@@ -248,8 +248,6 @@ class ScreenBufferTests
     TEST_METHOD(DontChangeVirtualBottomWithMakeCursorVisible);
     TEST_METHOD(RetainHorizontalOffsetWhenMovingToBottom);
 
-    TEST_METHOD(TestWriteConsoleVTQuirkMode);
-
     TEST_METHOD(TestReflowEndOfLineColor);
     TEST_METHOD(TestReflowSmallerLongLineWithColor);
     TEST_METHOD(TestReflowBiggerLongLineWithColor);
@@ -2548,7 +2546,7 @@ void ScreenBufferTests::TestAltBufferVtDispatching()
         std::unique_ptr<WriteData> waiter;
         std::wstring seq = L"\x1b[5;6H";
         auto seqCb = 2 * seq.size();
-        VERIFY_SUCCEEDED(DoWriteConsole(&seq[0], &seqCb, mainBuffer, false, waiter));
+        VERIFY_SUCCEEDED(DoWriteConsole(&seq[0], &seqCb, mainBuffer, waiter));
 
         VERIFY_ARE_EQUAL(til::point(0, 0), mainCursor.GetPosition());
         // recall: vt coordinates are (row, column), 1-indexed
@@ -2563,14 +2561,14 @@ void ScreenBufferTests::TestAltBufferVtDispatching()
 
         seq = L"\x1b[48;2;255;0;255m";
         seqCb = 2 * seq.size();
-        VERIFY_SUCCEEDED(DoWriteConsole(&seq[0], &seqCb, mainBuffer, false, waiter));
+        VERIFY_SUCCEEDED(DoWriteConsole(&seq[0], &seqCb, mainBuffer, waiter));
 
         VERIFY_ARE_EQUAL(expectedDefaults, mainBuffer.GetAttributes());
         VERIFY_ARE_EQUAL(expectedRgb, alternate.GetAttributes());
 
         seq = L"X";
         seqCb = 2 * seq.size();
-        VERIFY_SUCCEEDED(DoWriteConsole(&seq[0], &seqCb, mainBuffer, false, waiter));
+        VERIFY_SUCCEEDED(DoWriteConsole(&seq[0], &seqCb, mainBuffer, waiter));
 
         VERIFY_ARE_EQUAL(til::point(0, 0), mainCursor.GetPosition());
         VERIFY_ARE_EQUAL(til::point(6, 4), altCursor.GetPosition());
@@ -7563,127 +7561,6 @@ void ScreenBufferTests::RetainHorizontalOffsetWhenMovingToBottom()
     Log::Comment(L"Verify Y offset has moved back and X is unchanged");
     VERIFY_ARE_EQUAL(initialOrigin.y, si.GetViewport().Top());
     VERIFY_ARE_EQUAL(initialOrigin.x, si.GetViewport().Left());
-}
-
-void ScreenBufferTests::TestWriteConsoleVTQuirkMode()
-{
-    BEGIN_TEST_METHOD_PROPERTIES()
-        TEST_METHOD_PROPERTY(L"Data:useQuirk", L"{false, true}")
-    END_TEST_METHOD_PROPERTIES()
-
-    bool useQuirk;
-    VERIFY_SUCCEEDED(TestData::TryGetValue(L"useQuirk", useQuirk), L"whether to enable the quirk");
-
-    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    gci.LockConsole(); // Lock must be taken to manipulate buffer.
-    auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
-
-    auto& mainBuffer = gci.GetActiveOutputBuffer();
-    auto& cursor = mainBuffer.GetTextBuffer().GetCursor();
-    // Make sure we're in VT mode
-    WI_SetFlag(mainBuffer.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
-
-    const TextAttribute defaultAttribute{};
-    // Make sure we're using the default attributes at the start of the test,
-    // Otherwise they could be polluted from a previous test.
-    mainBuffer.SetAttributes(defaultAttribute);
-
-    const auto verifyLastAttribute = [&](const TextAttribute& expected) {
-        const auto& row = mainBuffer.GetTextBuffer().GetRowByOffset(cursor.GetPosition().y);
-        auto iter{ row.AttrBegin() };
-        iter += cursor.GetPosition().x - 1;
-        VERIFY_ARE_EQUAL(expected, *iter);
-    };
-
-    std::unique_ptr<WriteData> waiter;
-
-    std::wstring seq{};
-    size_t seqCb{ 0 };
-
-    /* Write red on blue, verify that it comes through */
-    {
-        TextAttribute vtRedOnBlueAttribute{};
-        vtRedOnBlueAttribute.SetForeground(TextColor{ TextColor::DARK_RED, false });
-        vtRedOnBlueAttribute.SetBackground(TextColor{ TextColor::DARK_BLUE, false });
-
-        seq = L"\x1b[31;44m";
-        seqCb = 2 * seq.size();
-        VERIFY_SUCCEEDED(DoWriteConsole(&seq[0], &seqCb, mainBuffer, useQuirk, waiter));
-
-        VERIFY_ARE_EQUAL(vtRedOnBlueAttribute, mainBuffer.GetAttributes());
-
-        seq = L"X";
-        seqCb = 2 * seq.size();
-        VERIFY_SUCCEEDED(DoWriteConsole(&seq[0], &seqCb, mainBuffer, useQuirk, waiter));
-
-        verifyLastAttribute(vtRedOnBlueAttribute);
-    }
-
-    /* Write white on black, verify that it acts as expected for the quirk mode */
-    {
-        TextAttribute vtWhiteOnBlackAttribute{};
-        vtWhiteOnBlackAttribute.SetForeground(TextColor{ TextColor::DARK_WHITE, false });
-        vtWhiteOnBlackAttribute.SetBackground(TextColor{ TextColor::DARK_BLACK, false });
-
-        const auto quirkExpectedAttribute{ useQuirk ? defaultAttribute : vtWhiteOnBlackAttribute };
-
-        seq = L"\x1b[37;40m"; // the quirk should suppress this, turning it into "defaults"
-        seqCb = 2 * seq.size();
-        VERIFY_SUCCEEDED(DoWriteConsole(&seq[0], &seqCb, mainBuffer, useQuirk, waiter));
-
-        VERIFY_ARE_EQUAL(quirkExpectedAttribute, mainBuffer.GetAttributes());
-
-        seq = L"X";
-        seqCb = 2 * seq.size();
-        VERIFY_SUCCEEDED(DoWriteConsole(&seq[0], &seqCb, mainBuffer, useQuirk, waiter));
-
-        verifyLastAttribute(quirkExpectedAttribute);
-    }
-
-    /* Write bright white on black, verify that it acts as expected for the quirk mode */
-    {
-        TextAttribute vtBrightWhiteOnBlackAttribute{};
-        vtBrightWhiteOnBlackAttribute.SetForeground(TextColor{ TextColor::DARK_WHITE, false });
-        vtBrightWhiteOnBlackAttribute.SetBackground(TextColor{ TextColor::DARK_BLACK, false });
-        vtBrightWhiteOnBlackAttribute.SetIntense(true);
-
-        auto vtBrightWhiteOnDefaultAttribute{ vtBrightWhiteOnBlackAttribute }; // copy the above attribute
-        vtBrightWhiteOnDefaultAttribute.SetDefaultBackground();
-
-        const auto quirkExpectedAttribute{ useQuirk ? vtBrightWhiteOnDefaultAttribute : vtBrightWhiteOnBlackAttribute };
-
-        seq = L"\x1b[1;37;40m"; // the quirk should suppress black only, turning it into "default background"
-        seqCb = 2 * seq.size();
-        VERIFY_SUCCEEDED(DoWriteConsole(&seq[0], &seqCb, mainBuffer, useQuirk, waiter));
-
-        VERIFY_ARE_EQUAL(quirkExpectedAttribute, mainBuffer.GetAttributes());
-
-        seq = L"X";
-        seqCb = 2 * seq.size();
-        VERIFY_SUCCEEDED(DoWriteConsole(&seq[0], &seqCb, mainBuffer, useQuirk, waiter));
-
-        verifyLastAttribute(quirkExpectedAttribute);
-    }
-
-    /* Write a 256-color white on a 256-color black, make sure the quirk does not suppress it */
-    {
-        TextAttribute vtWhiteOnBlack256Attribute{};
-        vtWhiteOnBlack256Attribute.SetForeground(TextColor{ TextColor::DARK_WHITE, true });
-        vtWhiteOnBlack256Attribute.SetBackground(TextColor{ TextColor::DARK_BLACK, true });
-
-        // reset (disable intense from the last test) before setting both colors
-        seq = L"\x1b[m\x1b[38;5;7;48;5;0m"; // the quirk should *not* suppress this (!)
-        seqCb = 2 * seq.size();
-        VERIFY_SUCCEEDED(DoWriteConsole(&seq[0], &seqCb, mainBuffer, useQuirk, waiter));
-
-        VERIFY_ARE_EQUAL(vtWhiteOnBlack256Attribute, mainBuffer.GetAttributes());
-
-        seq = L"X";
-        seqCb = 2 * seq.size();
-        VERIFY_SUCCEEDED(DoWriteConsole(&seq[0], &seqCb, mainBuffer, useQuirk, waiter));
-
-        verifyLastAttribute(vtWhiteOnBlack256Attribute);
-    }
 }
 
 void ScreenBufferTests::TestReflowEndOfLineColor()

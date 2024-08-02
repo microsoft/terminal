@@ -406,7 +406,6 @@ void WriteClearScreen(SCREEN_INFORMATION& screenInfo)
 [[nodiscard]] NTSTATUS DoWriteConsole(_In_reads_bytes_(*pcbBuffer) PCWCHAR pwchBuffer,
                                       _Inout_ size_t* const pcbBuffer,
                                       SCREEN_INFORMATION& screenInfo,
-                                      bool requiresVtQuirk,
                                       std::unique_ptr<WriteData>& waiter)
 try
 {
@@ -416,20 +415,8 @@ try
         waiter = std::make_unique<WriteData>(screenInfo,
                                              pwchBuffer,
                                              *pcbBuffer,
-                                             gci.OutputCP,
-                                             requiresVtQuirk);
+                                             gci.OutputCP);
         return CONSOLE_STATUS_WAIT;
-    }
-
-    const auto restoreVtQuirk = wil::scope_exit([&]() {
-        if (requiresVtQuirk)
-        {
-            screenInfo.ResetIgnoreLegacyEquivalentVTAttributes();
-        }
-    });
-    if (requiresVtQuirk)
-    {
-        screenInfo.SetIgnoreLegacyEquivalentVTAttributes();
     }
 
     const std::wstring_view str{ pwchBuffer, *pcbBuffer / sizeof(WCHAR) };
@@ -464,7 +451,6 @@ NT_CATCH_RETURN()
 [[nodiscard]] HRESULT WriteConsoleWImplHelper(IConsoleOutputObject& context,
                                               const std::wstring_view buffer,
                                               size_t& read,
-                                              bool requiresVtQuirk,
                                               std::unique_ptr<WriteData>& waiter) noexcept
 {
     try
@@ -477,7 +463,7 @@ NT_CATCH_RETURN()
         size_t cbTextBufferLength;
         RETURN_IF_FAILED(SizeTMult(buffer.size(), sizeof(wchar_t), &cbTextBufferLength));
 
-        auto Status = DoWriteConsole(const_cast<wchar_t*>(buffer.data()), &cbTextBufferLength, context, requiresVtQuirk, waiter);
+        auto Status = DoWriteConsole(const_cast<wchar_t*>(buffer.data()), &cbTextBufferLength, context, waiter);
 
         // Convert back from bytes to characters for the resulting string length written.
         read = cbTextBufferLength / sizeof(wchar_t);
@@ -510,7 +496,6 @@ NT_CATCH_RETURN()
 [[nodiscard]] HRESULT ApiRoutines::WriteConsoleAImpl(IConsoleOutputObject& context,
                                                      const std::string_view buffer,
                                                      size_t& read,
-                                                     bool requiresVtQuirk,
                                                      std::unique_ptr<IWaitRoutine>& waiter) noexcept
 {
     try
@@ -622,7 +607,7 @@ NT_CATCH_RETURN()
 
         // Make the W version of the call
         size_t wcBufferWritten{};
-        const auto hr{ WriteConsoleWImplHelper(screenInfo, wstr, wcBufferWritten, requiresVtQuirk, writeDataWaiter) };
+        const auto hr{ WriteConsoleWImplHelper(screenInfo, wstr, wcBufferWritten, writeDataWaiter) };
 
         // If there is no waiter, process the byte count now.
         if (nullptr == writeDataWaiter.get())
@@ -700,7 +685,6 @@ NT_CATCH_RETURN()
 [[nodiscard]] HRESULT ApiRoutines::WriteConsoleWImpl(IConsoleOutputObject& context,
                                                      const std::wstring_view buffer,
                                                      size_t& read,
-                                                     bool requiresVtQuirk,
                                                      std::unique_ptr<IWaitRoutine>& waiter) noexcept
 {
     try
@@ -709,7 +693,7 @@ NT_CATCH_RETURN()
         auto unlock = wil::scope_exit([&] { UnlockConsole(); });
 
         std::unique_ptr<WriteData> writeDataWaiter;
-        RETURN_IF_FAILED(WriteConsoleWImplHelper(context.GetActiveBuffer(), buffer, read, requiresVtQuirk, writeDataWaiter));
+        RETURN_IF_FAILED(WriteConsoleWImplHelper(context.GetActiveBuffer(), buffer, read, writeDataWaiter));
 
         // Transfer specific waiter pointer into the generic interface wrapper.
         waiter.reset(writeDataWaiter.release());

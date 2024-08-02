@@ -241,19 +241,19 @@ class ::Microsoft::Console::VirtualTerminal::VtIoTests
         std::string_view expected;
         std::string_view actual;
 
-        THROW_IF_FAILED(routines.WriteConsoleWImpl(*screenInfo, L"", written, false, waiter));
+        THROW_IF_FAILED(routines.WriteConsoleWImpl(*screenInfo, L"", written, waiter));
         expected = "";
         actual = readOutput();
         VERIFY_ARE_EQUAL(expected, actual);
 
         // Force-wrap because we write up to the last column.
-        THROW_IF_FAILED(routines.WriteConsoleWImpl(*screenInfo, L"aaaaaaaa", written, false, waiter));
+        THROW_IF_FAILED(routines.WriteConsoleWImpl(*screenInfo, L"aaaaaaaa", written, waiter));
         expected = "aaaaaaaa\r\n";
         actual = readOutput();
         VERIFY_ARE_EQUAL(expected, actual);
 
         // Force-wrap because we write up to the last column, but this time with a tab.
-        THROW_IF_FAILED(routines.WriteConsoleWImpl(*screenInfo, L"a\t\r\nb", written, false, waiter));
+        THROW_IF_FAILED(routines.WriteConsoleWImpl(*screenInfo, L"a\t\r\nb", written, waiter));
         expected = "a\t\r\n\r\nb";
         actual = readOutput();
         VERIFY_ARE_EQUAL(expected, actual);
