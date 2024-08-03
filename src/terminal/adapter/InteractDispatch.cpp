@@ -65,18 +65,8 @@ bool InteractDispatch::WriteCtrlKey(const INPUT_RECORD& event)
 // - True.
 bool InteractDispatch::WriteString(const std::wstring_view string)
 {
-    if (!string.empty())
-    {
-        const auto codepage = _api.GetConsoleOutputCP();
-        InputEventQueue keyEvents;
-
-        for (const auto& wch : string)
-        {
-            CharToKeyEvents(wch, codepage, keyEvents);
-        }
-
-        WriteInput(keyEvents);
-    }
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    gci.GetActiveInputBuffer()->WriteString(string);
     return true;
 }
 
