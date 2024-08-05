@@ -276,6 +276,7 @@ namespace Microsoft::Console::VirtualTerminal
         void _ReportSGRSetting() const;
         void _ReportDECSTBMSetting();
         void _ReportDECSLRMSetting();
+        void _ReportDECSCUSRSetting() const;
         void _ReportDECSCASetting() const;
         void _ReportDECSACESetting() const;
         void _ReportDECACSetting(const VTInt itemNumber) const;
