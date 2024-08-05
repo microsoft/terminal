@@ -39,7 +39,7 @@
 
 // {fmt}, a C++20-compatible formatting library
 #pragma warning(push)
-#pragma warning(disable: 4702) // unreachable code
+#pragma warning(disable : 4702) // unreachable code
 #include <fmt/compile.h>
 #include <fmt/xchar.h>
 #pragma warning(pop)
