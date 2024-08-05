@@ -92,7 +92,7 @@ static int run(int argc, const wchar_t* argv[])
         siEx.StartupInfo.dwFlags = STARTF_USESTDHANDLES;
 
         char attrList[128];
-        size_t size = sizeof(attrList);
+        SIZE_T size = sizeof(attrList);
         siEx.lpAttributeList = reinterpret_cast<PPROC_THREAD_ATTRIBUTE_LIST>(&attrList[0]);
         THROW_IF_WIN32_BOOL_FALSE(InitializeProcThreadAttributeList(siEx.lpAttributeList, 1, 0, &size));
         THROW_IF_WIN32_BOOL_FALSE(UpdateProcThreadAttribute(siEx.lpAttributeList, 0, PROC_THREAD_ATTRIBUTE_PSEUDOCONSOLE, hPC, sizeof(HPCON), nullptr, nullptr));
