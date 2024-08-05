@@ -694,6 +694,10 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
 
 }
 
+#pragma warning(push)
+#pragma warning(disable : 26429) // Symbol 'in' is never tested for nullness, it can be marked as not_null (f.23).
+#pragma warning(disable : 26481) // Don't use pointer arithmetic. Use span instead (bounds.1).
+
 template<typename Char>
 struct fmt::formatter<Microsoft::Console::VirtualTerminal::VTID, Char>
 {
@@ -715,3 +719,5 @@ struct fmt::formatter<Microsoft::Console::VirtualTerminal::VTID, Char>
         return out;
     }
 };
+
+#pragma warning(pop)
