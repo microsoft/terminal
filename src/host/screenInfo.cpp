@@ -1687,23 +1687,23 @@ static constexpr bool IsInputKey(WORD vkey)
 
 void SCREEN_INFORMATION::MakeCursorVisible(til::point position)
 {
-    _makeLocationVisible(position, ViewportMovementMask::Vertical | ViewportMovementMask::Horizontal);
+    _makeLocationVisible(position, true, true);
 }
 
 void SCREEN_INFORMATION::SnapOnInput(const WORD vkey)
 {
     if (IsInputKey(vkey))
     {
-        _makeLocationVisible(_textBuffer->GetCursor().GetPosition(), ViewportMovementMask::Vertical);
+        _makeLocationVisible(_textBuffer->GetCursor().GetPosition(), true, false);
     }
 }
 
 void SCREEN_INFORMATION::SnapOnOutput()
 {
-    _makeLocationVisible(_textBuffer->GetCursor().GetPosition(), ViewportMovementMask::HorizontalCenter);
+    _makeLocationVisible(_textBuffer->GetCursor().GetPosition(), false, true);
 }
 
-void SCREEN_INFORMATION::_makeLocationVisible(til::point position, ViewportMovementMask movements)
+void SCREEN_INFORMATION::_makeLocationVisible(til::point position, bool vertical, bool horizontal)
 {
     const auto viewportOrigin = _viewport.Origin();
     const auto viewportSize = _viewport.Dimensions();
@@ -1714,35 +1714,16 @@ void SCREEN_INFORMATION::_makeLocationVisible(til::point position, ViewportMovem
     position.x = std::clamp(position.x, 0, bufferSize.width - 1);
     position.y = std::clamp(position.y, 0, bufferSize.height - 1);
 
-    if (WI_IsAnyFlagSet(movements, ViewportMovementMask::Vertical))
+    if (vertical)
     {
         origin.y = std::min(origin.y, position.y); // shift up if above
         origin.y = std::max(origin.y, position.y - (viewportSize.height - 1)); // shift down if below
     }
 
-    if (WI_IsAnyFlagSet(movements, ViewportMovementMask::Horizontal))
+    if (horizontal)
     {
         origin.x = std::min(origin.x, position.x); // shift left if left
         origin.x = std::max(origin.x, position.x - (viewportSize.width - 1)); // shift right if right
-    }
-
-    if (WI_IsAnyFlagSet(movements, ViewportMovementMask::HorizontalCenter))
-    {
-        // If the position is horizontally outside the viewport, snap the
-        // viewport to the nearest multiple of half the viewport width.
-        if (position.x < origin.x || position.x >= (origin.x + viewportSize.width))
-        {
-            const auto div = viewportSize.width / 2;
-            // We want our viewport to be centered around the position (= "half-width" offset).
-            // Since the origin is the left edge, we must subtract a half-width from the position.
-            origin.x = position.x - div;
-            // Round down to the nearest multiple of the viewport width.
-            // This also works if origin.x is negative, because the "modulo operator"
-            // is not a modulo operator, it's a remainder operator. The remainder of a
-            // negative number is negative and so origin.x cannot end up being less than 0.
-            origin.x -= origin.x % div;
-            origin.x = std::min(origin.x, bufferSize.width - viewportSize.width);
-        }
     }
 
     if (origin != viewportOrigin)

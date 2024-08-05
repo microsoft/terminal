@@ -167,6 +167,8 @@ void WriteCharsLegacy(SCREEN_INFORMATION& screenInfo, const std::wstring_view& t
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     auto writer = gci.GetVtWriterForBuffer(&screenInfo);
 
+    screenInfo.SnapOnOutput();
+
     // If we enter this if condition, then someone wrote text in VT mode and now switched to non-VT mode.
     // Since the Console APIs don't support delayed EOL wrapping, we need to first put the cursor back
     // to a position that the Console APIs expect (= not delayed).
@@ -342,6 +344,8 @@ void WriteCharsVT(SCREEN_INFORMATION& screenInfo, const std::wstring_view& str)
     // When switch between the main and alt-buffer SCREEN_INFORMATION::GetActiveBuffer()
     // may change, so get the VtIo reference now, just in case.
     auto writer = gci.GetVtWriterForBuffer(&screenInfo);
+
+    screenInfo.SnapOnOutput();
 
     stateMachine.ProcessString(str);
 
