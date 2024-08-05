@@ -734,4 +734,7 @@
   <data name="SaveSnippetNamePrefix" xml:space="preserve">
     <value>코드 조각 저장</value>
   </data>
+  <data name="QuickFixCommandKey" xml:space="preserve">
+    <value>빠른 수정 메뉴 열기</value>
+  </data>
 </root>

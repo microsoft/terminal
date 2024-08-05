@@ -17,7 +17,6 @@ ADDALIAS
 ADDREF
 ADDSTRING
 ADDTOOL
-AFew
 AFill
 AFX
 AHelper
@@ -66,7 +65,6 @@ ARRAYSIZE
 ARROWKEYS
 asan
 ASBSET
-asdfghjkl
 ASetting
 ASingle
 ASYNCDONTCARE
@@ -125,6 +123,7 @@ BKCOLOR
 BKGND
 Bksp
 Blt
+blu
 BLUESCROLL
 bmi
 BODGY
@@ -145,7 +144,6 @@ buffersize
 buflen
 buildtransitive
 buildsystems
-burriter
 BValue
 bytebuffer
 cac
@@ -210,7 +208,6 @@ cmw
 CNL
 cnn
 Codeflow
-codenav
 codepages
 codepath
 coinit
@@ -362,6 +359,7 @@ DBGFONTS
 DBGOUTPUT
 dbh
 dblclk
+Dcd
 DColor
 DCOLORVALUE
 dcommon
@@ -379,7 +377,7 @@ DECALN
 DECANM
 DECARM
 DECAUPSS
-DECAWM
+decawm
 DECBI
 DECBKM
 DECCARA
@@ -421,6 +419,7 @@ DECPCCM
 DECPCTERM
 DECPS
 DECRARA
+decrc
 DECRC
 DECREQTPARM
 DECRLM
@@ -436,6 +435,7 @@ DECRSPS
 decrst
 DECSACE
 DECSASD
+decsc
 DECSC
 DECSCA
 DECSCNM
@@ -475,7 +475,6 @@ DEFPUSHBUTTON
 defterm
 DELAYLOAD
 DELETEONRELEASE
-Delt
 depersist
 deprioritized
 deserializers
@@ -556,7 +555,6 @@ Efast
 efghijklmn
 EHsc
 EINS
-EJO
 ELEMENTNOTAVAILABLE
 EMPTYBOX
 enabledelayedexpansion
@@ -626,7 +624,6 @@ FINDDOWN
 FINDREGEX
 FINDSTRINGEXACT
 FINDUP
-FIter
 FITZPATRICK
 FIXEDFILEINFO
 Flg
@@ -723,6 +720,7 @@ GETWHEELSCROLLLINES
 Gfun
 gfx
 GGI
+GHgh
 GHIJK
 GHIJKL
 gitcheckin
@@ -948,7 +946,6 @@ LCONTROL
 LCTRL
 lcx
 LEFTALIGN
-libpopcnt
 libsancov
 libtickit
 licate
@@ -1046,7 +1043,6 @@ MAPBITMAP
 MAPVIRTUALKEY
 MAPVK
 MAXDIMENSTRING
-maxing
 MAXSHORT
 maxval
 maxversiontested
@@ -1237,6 +1233,7 @@ NUMSCROLL
 NUnit
 nupkg
 NVIDIA
+NVT
 OACR
 objbase
 ocolor
@@ -1411,6 +1408,7 @@ processenv
 processhost
 PROCESSINFOCLASS
 PRODEXT
+Productize
 PROPERTYID
 PROPERTYKEY
 propertyval
@@ -1504,7 +1502,6 @@ REGSTR
 RELBINPATH
 remoting
 renamer
-renderengine
 rendersize
 reparented
 reparenting
@@ -1818,6 +1815,7 @@ TITLEISLINKNAME
 TJson
 TLambda
 TLDP
+tldr
 TLEN
 TMAE
 TMPF
@@ -1844,7 +1842,6 @@ Trd
 TREX
 triaged
 triaging
-Tribool
 TRIMZEROHEADINGS
 trx
 tsa
@@ -1938,7 +1935,6 @@ uxtheme
 Vanara
 vararg
 vclib
-vcprintf
 vcxitems
 vectorize
 VERCTRL
@@ -1982,7 +1978,6 @@ vtio
 vtmode
 vtpipeterm
 vtpt
-vtrenderer
 VTRGB
 VTRGBTo
 vtseq
@@ -2004,6 +1999,7 @@ wcswidth
 wddm
 wddmcon
 WDDMCONSOLECONTEXT
+WDK
 wdm
 webpage
 websites
@@ -2071,7 +2067,6 @@ Winperf
 WInplace
 winres
 winrt
-wintelnet
 winternl
 winuser
 winuserp
@@ -2172,7 +2167,6 @@ XTWINOPS
 xunit
 xutr
 XVIRTUALSCREEN
-XWalk
 yact
 YCast
 YCENTER
@@ -2181,7 +2175,6 @@ YLimit
 YPan
 YSubstantial
 YVIRTUALSCREEN
-YWalk
 Zab
 zabcd
 Zabcdefghijklmn
@@ -2189,6 +2182,5 @@ Zabcdefghijklmnopqrstuvwxyz
 ZCmd
 ZCtrl
 ZWJs
-zxcvbnm
 ZYXWVU
 ZYXWVUTd

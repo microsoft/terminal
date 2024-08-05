@@ -33,6 +33,14 @@ ConhostInternalGetSet::ConhostInternalGetSet(_In_ IIoProvider& io) :
 // - <none>
 void ConhostInternalGetSet::ReturnResponse(const std::wstring_view response)
 {
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+
+    // ConPTY should not respond to requests. That's the job of the terminal.
+    if (gci.IsInVtIoMode())
+    {
+        return;
+    }
+
     // TODO GH#4954 During the input refactor we may want to add a "priority" input list
     // to make sure that "response" input is spooled directly into the application.
     // We switched this to an append (vs. a prepend) to fix GH#1637, a bug where two CPR
@@ -202,7 +210,7 @@ CursorType ConhostInternalGetSet::GetUserDefaultCursorStyle() const
 // - <none>
 void ConhostInternalGetSet::ShowWindow(bool showOrHide)
 {
-    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     const auto hwnd = gci.IsInVtIoMode() ? ServiceLocator::LocatePseudoWindow() : ServiceLocator::LocateConsoleWindow()->GetWindowHandle();
 
     // GH#13301 - When we send this ShowWindow message, if we send it to the
@@ -279,11 +287,17 @@ void ConhostInternalGetSet::SetWorkingDirectory(const std::wstring_view /*uri*/)
 // - true if successful. false otherwise.
 void ConhostInternalGetSet::PlayMidiNote(const int noteNumber, const int velocity, const std::chrono::microseconds duration)
 {
+    const auto window = ServiceLocator::LocateConsoleWindow();
+    if (!window)
+    {
+        return;
+    }
+
     // Unlock the console, so the UI doesn't hang while we're busy.
     UnlockConsole();
 
     // This call will block for the duration, unless shutdown early.
-    const auto windowHandle = ServiceLocator::LocateConsoleWindow()->GetWindowHandle();
+    const auto windowHandle = window->GetWindowHandle();
     auto& midiAudio = ServiceLocator::LocateGlobals().getConsoleInformation().GetMidiAudio();
     midiAudio.PlayNote(windowHandle, noteNumber, velocity, std::chrono::duration_cast<std::chrono::milliseconds>(duration));
 
@@ -332,11 +346,9 @@ bool ConhostInternalGetSet::ResizeWindow(const til::CoordType sColumns, const ti
     }
 
     // If the cursor row is now past the bottom of the viewport, we'll have to
-    // move the viewport down to bring it back into view. However, we don't want
-    // to do this in pty mode, because the conpty resize operation is dependent
-    // on the viewport *not* being adjusted.
+    // move the viewport down to bring it back into view.
     const auto cursorOverflow = csbiex.dwCursorPosition.Y - newViewport.BottomInclusive();
-    if (cursorOverflow > 0 && !IsConsolePty())
+    if (cursorOverflow > 0)
     {
         newViewport = Viewport::Offset(newViewport, { 0, cursorOverflow });
     }
@@ -351,17 +363,6 @@ bool ConhostInternalGetSet::ResizeWindow(const til::CoordType sColumns, const ti
     THROW_IF_FAILED(api->SetConsoleScreenBufferInfoExImpl(screenInfo, csbiex));
     THROW_IF_FAILED(api->SetConsoleWindowInfoImpl(screenInfo, true, sri));
     return true;
-}
-
-// Routine Description:
-// - Checks if the console host is acting as a pty.
-// Arguments:
-// - <none>
-// Return Value:
-// - true if we're in pty mode.
-bool ConhostInternalGetSet::IsConsolePty() const
-{
-    return ServiceLocator::LocateGlobals().getConsoleInformation().IsInVtIoMode();
 }
 
 // Routine Description:

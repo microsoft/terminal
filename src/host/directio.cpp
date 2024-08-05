@@ -598,6 +598,9 @@ CATCH_RETURN();
             return E_INVALIDARG;
         }
 
+        auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        auto writer = gci.GetVtWriterForBuffer(&context);
+
         for (til::CoordType y = clippedRectangle.Top(); y <= clippedRectangle.BottomInclusive(); y++)
         {
             const auto charInfos = buffer.subspan(totalOffset, width);
@@ -605,6 +608,11 @@ CATCH_RETURN();
 
             // Make the iterator and write to the target position.
             storageBuffer.Write(OutputCellIterator(charInfos), target);
+
+            if (writer)
+            {
+                writer.WriteInfos(target, charInfos);
+            }
 
             totalOffset += bufferStride;
         }
@@ -614,6 +622,11 @@ CATCH_RETURN();
 
         // Since we've managed to write part of the request, return the clamped part that we actually used.
         writtenRectangle = clippedRectangle;
+
+        if (writer)
+        {
+            writer.Submit();
+        }
 
         return S_OK;
     }
@@ -631,11 +644,22 @@ CATCH_RETURN();
     try
     {
         auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        auto writer = gci.GetVtWriterForBuffer(&context);
+
+        if (writer)
+        {
+            writer.BackupCursor();
+        }
 
         const auto codepage = gci.OutputCP;
         LOG_IF_FAILED(_ConvertCellsToWInplace(codepage, buffer, requestRectangle));
 
         RETURN_IF_FAILED(WriteConsoleOutputWImplHelper(context, buffer, requestRectangle.Width(), requestRectangle, writtenRectangle));
+
+        if (writer)
+        {
+            writer.Submit();
+        }
 
         return S_OK;
     }
@@ -652,6 +676,14 @@ CATCH_RETURN();
 
     try
     {
+        auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        auto writer = gci.GetVtWriterForBuffer(&context);
+
+        if (writer)
+        {
+            writer.BackupCursor();
+        }
+
         if (!context.GetActiveBuffer().GetCurrentFont().IsTrueTypeFont())
         {
             // For compatibility reasons, we must maintain the behavior that munges the data if we are writing while a raster font is enabled.
@@ -662,6 +694,11 @@ CATCH_RETURN();
         else
         {
             RETURN_IF_FAILED(WriteConsoleOutputWImplHelper(context, buffer, requestRectangle.Width(), requestRectangle, writtenRectangle));
+        }
+
+        if (writer)
+        {
+            writer.Submit();
         }
 
         return S_OK;

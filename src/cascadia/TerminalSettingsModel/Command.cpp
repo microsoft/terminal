@@ -286,6 +286,34 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return result;
     }
 
+    // This is substantially simpler than the normal FromJson. We just want to take something that looks like:
+    // {
+    //     "input": "bx",
+    //     "name": "Build project",
+    //     "description": "Build the project in the CWD"
+    // },
+    //
+    // and turn it into a sendInput action. No need to figure out what kind of
+    // action parser, or deal with nesting, or iterable commands or anything.
+    winrt::com_ptr<Command> Command::FromSnippetJson(const Json::Value& json)
+    {
+        auto result = winrt::make_self<Command>();
+        result->_Origin = OriginTag::Generated;
+
+        JsonUtils::GetValueForKey(json, IDKey, result->_ID);
+        JsonUtils::GetValueForKey(json, DescriptionKey, result->_Description);
+        JsonUtils::GetValueForKey(json, IconKey, result->_iconPath);
+        result->_name = _nameFromJson(json);
+
+        const auto action{ ShortcutAction::SendInput };
+        IActionArgs args{ nullptr };
+        std::vector<Microsoft::Terminal::Settings::Model::SettingsLoadWarnings> parseWarnings;
+        std::tie(args, parseWarnings) = SendInputArgs::FromJson(json);
+        result->_ActionAndArgs = winrt::make<implementation::ActionAndArgs>(action, args);
+
+        return result;
+    }
+
     // Function Description:
     // - Attempt to parse all the json objects in `json` into new Command
     //   objects, and add them to the map of commands.

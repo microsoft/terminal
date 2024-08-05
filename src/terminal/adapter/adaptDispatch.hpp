@@ -95,7 +95,7 @@ namespace Microsoft::Console::VirtualTerminal
         bool SetMode(const DispatchTypes::ModeParams param) override; // SM, DECSET
         bool ResetMode(const DispatchTypes::ModeParams param) override; // RM, DECRST
         bool RequestMode(const DispatchTypes::ModeParams param) override; // DECRQM
-        bool SetKeypadMode(const bool applicationMode) override; // DECKPAM, DECKPNM
+        bool SetKeypadMode(const bool applicationMode) noexcept override; // DECKPAM, DECKPNM
         bool SetAnsiMode(const bool ansiMode) override; // DECANM
         bool SetTopBottomScrollingMargins(const VTInt topMargin,
                                           const VTInt bottomMargin) override; // DECSTBM
@@ -265,7 +265,6 @@ namespace Microsoft::Console::VirtualTerminal
 
         void _SetColumnMode(const bool enable);
         void _SetAlternateScreenBufferMode(const bool enable);
-        bool _PassThroughInputModes();
         bool _ModeParamsHelper(const DispatchTypes::ModeParams param, const bool enable);
 
         void _ClearSingleTabStop();
@@ -285,9 +284,6 @@ namespace Microsoft::Console::VirtualTerminal
         StringHandler _RestoreCursorInformation();
         void _ReportTabStops();
         StringHandler _RestoreTabStops();
-
-        StringHandler _CreateDrcsPassthroughHandler(const DispatchTypes::CharsetSize charsetSize);
-        StringHandler _CreatePassthroughHandler();
 
         std::vector<uint8_t> _tabStopColumns;
         bool _initDefaultTabStops = true;

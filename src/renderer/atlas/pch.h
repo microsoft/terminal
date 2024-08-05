@@ -36,13 +36,6 @@
 #include <wil/stl.h>
 #include <wil/win32_helpers.h>
 
-// Dynamic Bitset (optional dependency on LibPopCnt for perf at bit counting)
-// Variable-size compressed-storage header-only bit flag storage library.
-#pragma warning(push)
-#pragma warning(disable : 4702) // unreachable code
-#include <dynamic_bitset.hpp>
-#pragma warning(pop)
-
 // Chromium Numerics (safe math)
 #pragma warning(push)
 #pragma warning(disable : 4100) // '...': unreferenced formal parameter
