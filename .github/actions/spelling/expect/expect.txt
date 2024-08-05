@@ -142,8 +142,8 @@ BTNFACE
 bufferout
 buffersize
 buflen
-buildtransitive
 buildsystems
+buildtransitive
 BValue
 bytebuffer
 cac
@@ -2140,6 +2140,7 @@ XBUTTONDOWN
 XBUTTONUP
 XCast
 XCENTER
+xchar
 xcopy
 XCount
 xdy
