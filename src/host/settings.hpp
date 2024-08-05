@@ -238,6 +238,6 @@ private:
     bool _fInterceptCopyPaste;
 
     bool _TerminalScrolling;
-    WCHAR _answerbackMessage[32];
+    WCHAR _answerbackMessage[32] = {};
     friend class RegistrySerialization;
 };
