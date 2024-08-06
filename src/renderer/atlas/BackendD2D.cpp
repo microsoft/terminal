@@ -140,6 +140,7 @@ void BackendD2D::_handleSettingsUpdate(const RenderingPayload& p)
         const D2D1_MATRIX_3X2_F transform{
             .m11 = static_cast<f32>(p.s->font->cellSize.x),
             .m22 = static_cast<f32>(p.s->font->cellSize.y),
+            /* Brushes are transformed relative to the render target, not the rect into which they are painted. */
             .dx = -static_cast<f32>(p.s->font->cellSize.x),
             .dy = -static_cast<f32>(p.s->font->cellSize.y),
         };
@@ -165,8 +166,8 @@ void BackendD2D::_handleSettingsUpdate(const RenderingPayload& p)
         THROW_IF_FAILED(_renderTarget->CreateBitmap(size, backgroundFill.get(), size.width * sizeof(u32), &props, _backgroundBitmap.put()));
         THROW_IF_FAILED(_renderTarget->CreateBitmapBrush(_backgroundBitmap.get(), _backgroundBrush.put()));
         _backgroundBrush->SetInterpolationMode(D2D1_BITMAP_INTERPOLATION_MODE_NEAREST_NEIGHBOR);
-        _backgroundBrush->SetExtendModeX(D2D1_EXTEND_MODE_MIRROR);
-        _backgroundBrush->SetExtendModeY(D2D1_EXTEND_MODE_MIRROR);
+        _backgroundBrush->SetExtendModeX(D2D1_EXTEND_MODE_CLAMP);
+        _backgroundBrush->SetExtendModeY(D2D1_EXTEND_MODE_CLAMP);
         _backgroundBrush->SetTransform(&transform);
         _backgroundBitmapGeneration = {};
     }
@@ -199,14 +200,8 @@ void BackendD2D::_drawBackground(const RenderingPayload& p)
     }
 
     // If the terminal was 120x30 cells and 1200x600 pixels large, this would draw the
-    // background by upscaling a 122x32 pixel bitmap to fill the entire render target,
-    // with some overhang on all four sides to paint the gutters.
-    const D2D1_RECT_F rect{
-        static_cast<f32>(-(p.s->font->cellSize.x)),
-        static_cast<f32>(-(p.s->font->cellSize.y)),
-        static_cast<f32>(p.s->targetSize.x + (2 * p.s->font->cellSize.x)),
-        static_cast<f32>(p.s->targetSize.y + (2 * p.s->font->cellSize.y))
-    };
+    // background by upscaling a 120x30 pixel bitmap to fill the entire render target.
+    const D2D1_RECT_F rect{ 0, 0, static_cast<f32>(p.s->targetSize.x), static_cast<f32>(p.s->targetSize.y) };
     _renderTarget->SetPrimitiveBlend(D2D1_PRIMITIVE_BLEND_COPY);
     _renderTarget->FillRectangle(&rect, _backgroundBrush.get());
     _renderTarget->SetPrimitiveBlend(D2D1_PRIMITIVE_BLEND_SOURCE_OVER);
