@@ -373,7 +373,7 @@ void GlobalAppSettings::_logSettingSet(std::string_view setting)
                     entryType = "action";
                     break;
                 case NewTabMenuEntryType::Invalid:
-                    // ignore invalid 
+                    // ignore invalid
                     continue;
                 }
                 _changeLog.insert(std::string_view{ fmt::format(FMT_COMPILE("{}.{}"), setting, entryType) });
