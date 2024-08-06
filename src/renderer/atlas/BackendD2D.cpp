@@ -160,7 +160,7 @@ void BackendD2D::_handleSettingsUpdate(const RenderingPayload& p)
 
          The translation in `transform` ensures that we render it off the top left of the render target.
         */
-        auto backgroundFill = std::make_unique_for_overwrite<u32[]>(static_cast<size_t>(size.width * size.height));
+        auto backgroundFill = std::make_unique_for_overwrite<u32[]>(static_cast<size_t>(size.width) * size.height);
         std::fill_n(backgroundFill.get(), size.width * size.height, u32ColorPremultiply(p.s->misc->backgroundColor));
 
         THROW_IF_FAILED(_renderTarget->CreateBitmap(size, backgroundFill.get(), size.width * sizeof(u32), &props, _backgroundBitmap.put()));
