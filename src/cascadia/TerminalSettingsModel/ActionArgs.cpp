@@ -116,7 +116,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         auto s = ss.str();
         if (s.empty())
         {
-            return L"";
+            return {};
         }
 
         // Chop off the last ", "
@@ -187,7 +187,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         auto s = ss.str();
         if (s.empty())
         {
-            return L"";
+            return {};
         }
 
         // Chop off the last " "
@@ -536,7 +536,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                             SchemeName().c_str())
             };
         }
-        return L"";
+        return {};
     }
 
     winrt::hstring SetTabColorArgs::GenerateName() const
@@ -579,7 +579,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                             Commandline().c_str())
             };
         }
-        return L"";
+        return {};
     }
 
     winrt::hstring CloseOtherTabsArgs::GenerateName() const
@@ -765,7 +765,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         case FindMatchDirection::Previous:
             return winrt::hstring{ RS_(L"FindPrevCommandKey") };
         }
-        return L"";
+        return {};
     }
 
     winrt::hstring NewWindowArgs::GenerateName() const
@@ -841,7 +841,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         // We couldn't parse a URL out of this. Return no string at all, so that
         // we don't even put this into the command palette.
-        return L"";
+        return {};
     }
 
     winrt::hstring GlobalSummonArgs::GenerateName() const
@@ -909,12 +909,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
 
         // Return the empty string - the Clear() should be one of these values
-        return winrt::hstring{ L"" };
+        return {};
     }
 
     winrt::hstring MultipleActionsArgs::GenerateName() const
     {
-        return L"";
+        return {};
     }
 
     winrt::hstring AdjustOpacityArgs::GenerateName() const
@@ -968,7 +968,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
             return winrt::hstring{ ss.str() };
         }
-        return L"";
+        return {};
     }
 
     static winrt::hstring _FormatColorString(const Control::SelectionColor& selectionColor)
@@ -1095,7 +1095,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         case SelectOutputDirection::Previous:
             return RS_(L"SelectOutputPreviousCommandKey");
         }
-        return L"";
+        return {};
     }
     winrt::hstring SelectCommandArgs::GenerateName() const
     {
@@ -1106,6 +1106,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         case SelectOutputDirection::Previous:
             return RS_(L"SelectCommandPreviousCommandKey");
         }
-        return L"";
+        return {};
     }
 }
