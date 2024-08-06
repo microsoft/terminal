@@ -643,7 +643,8 @@ void SettingsLoader::_parse(const OriginTag origin, const winrt::hstring& source
                     // versions of these themes overriding the built-in ones.
                     continue;
                 }
-                else
+
+                if (origin != OriginTag::InBox)
                 {
                     static std::string_view themesContext{ "themes" };
                     theme->LogSettingChanges(settings.themesChangeLog, themesContext);
@@ -1630,9 +1631,6 @@ void CascadiaSettings::LogSettingChanges(bool isJsonLoad) const
     // report changes
     for (const auto& change : changes)
     {
-        OutputDebugStringA(change.data());
-        OutputDebugStringA("\n");
-
         // A `isJsonLoad ? "JsonSettingsChanged" : "UISettingsChanged"`
         //   would be nice, but that apparently isn't allowed in the macro below.
         // Also, there's guidance to not send too much data all in one event,
