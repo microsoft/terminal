@@ -766,6 +766,10 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         RETURN_WIN32(ERROR_UNHANDLED_EXCEPTION);
     }
 
+    // Given a span of til::point_span, returns the sub-span of all point spans that
+    // cover the given rectangle. This function **DOES NOT** change any of the point_spans.
+    // It is therefore possible that you will get a point_span whose start and/or end
+    // are outside the rectangle.
     constexpr std::span<const til::point_span> point_span_subspan_within_rect(const std::span<const til::point_span>& pointSpan, const til::rect rect)
     {
         const auto beg = std::lower_bound(pointSpan.begin(), pointSpan.end(), rect.top, [](const auto& ps, const auto& drTop) { return ps.end.y < drTop; });
