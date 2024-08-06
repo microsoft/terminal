@@ -92,8 +92,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         const LaunchPosition newPos{ xCoordRef, _Settings.GlobalSettings().InitialPosition().Y };
         _Settings.GlobalSettings().InitialPosition(newPos);
         _NotifyChanges(L"LaunchParametersCurrentValue");
-
-        // TODO CARLOS: telemetry for InitialPos
     }
 
     void LaunchViewModel::InitialPosY(double yCoord)
@@ -107,8 +105,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         const LaunchPosition newPos{ _Settings.GlobalSettings().InitialPosition().X, yCoordRef };
         _Settings.GlobalSettings().InitialPosition(newPos);
         _NotifyChanges(L"LaunchParametersCurrentValue");
-
-        // TODO CARLOS: telemetry for InitialPos
     }
 
     void LaunchViewModel::UseDefaultLaunchPosition(bool useDefaultPosition)
@@ -120,7 +116,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             InitialPosY(NAN);
         }
         _NotifyChanges(L"UseDefaultLaunchPosition", L"LaunchParametersCurrentValue", L"InitialPosX", L"InitialPosY");
-        // TODO CARLOS: telemetry for InitialPos
     }
 
     bool LaunchViewModel::UseDefaultLaunchPosition()

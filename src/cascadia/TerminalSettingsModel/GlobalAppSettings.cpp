@@ -154,7 +154,6 @@ void GlobalAppSettings::LayerJson(const Json::Value& json, const OriginTag origi
     }
     LayerActionsFrom(json, origin, true);
 
-    // TODO CARLOS: validate this works
     JsonUtils::GetValueForKey(json, LegacyReloadEnvironmentVariablesKey, _legacyReloadEnvironmentVariables);
     if (json[LegacyReloadEnvironmentVariablesKey.data()])
     {
