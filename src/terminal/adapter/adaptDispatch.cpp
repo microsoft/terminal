@@ -4259,6 +4259,9 @@ ITermDispatch::StringHandler AdaptDispatch::RequestSetting()
             case VTID("s"):
                 _ReportDECSLRMSetting();
                 break;
+            case VTID(" q"):
+                _ReportDECSCUSRSetting();
+                break;
             case VTID("\"q"):
                 _ReportDECSCASetting();
                 break;
@@ -4376,20 +4379,12 @@ void AdaptDispatch::_ReportSGRSetting() const
 // - None
 void AdaptDispatch::_ReportDECSTBMSetting()
 {
-    using namespace std::string_view_literals;
-
-    // A valid response always starts with DCS 1 $ r.
-    fmt::basic_memory_buffer<wchar_t, 64> response;
-    response.append(L"\033P1$r"sv);
-
     const auto page = _pages.ActivePage();
     const auto [marginTop, marginBottom] = _GetVerticalMargins(page, false);
+    // A valid response always starts with DCS 1 $ r, the 'r' indicates this
+    // is a DECSTBM response, and ST ends the sequence.
     // VT origin is at 1,1 so we need to add 1 to these margins.
-    fmt::format_to(std::back_inserter(response), FMT_COMPILE(L"{};{}"), marginTop + 1, marginBottom + 1);
-
-    // The 'r' indicates this is an DECSTBM response, and ST ends the sequence.
-    response.append(L"r\033\\"sv);
-    _api.ReturnResponse({ response.data(), response.size() });
+    _api.ReturnResponse(fmt::format(FMT_COMPILE(L"\033P1$r{};{}r\033\\"), marginTop + 1, marginBottom + 1));
 }
 
 // Method Description:
@@ -4400,20 +4395,46 @@ void AdaptDispatch::_ReportDECSTBMSetting()
 // - None
 void AdaptDispatch::_ReportDECSLRMSetting()
 {
-    using namespace std::string_view_literals;
-
-    // A valid response always starts with DCS 1 $ r.
-    fmt::basic_memory_buffer<wchar_t, 64> response;
-    response.append(L"\033P1$r"sv);
-
     const auto pageWidth = _pages.ActivePage().Width();
     const auto [marginLeft, marginRight] = _GetHorizontalMargins(pageWidth);
+    // A valid response always starts with DCS 1 $ r, the 's' indicates this
+    // is a DECSLRM response, and ST ends the sequence.
     // VT origin is at 1,1 so we need to add 1 to these margins.
-    fmt::format_to(std::back_inserter(response), FMT_COMPILE(L"{};{}"), marginLeft + 1, marginRight + 1);
+    _api.ReturnResponse(fmt::format(FMT_COMPILE(L"\033P1$r{};{}s\033\\"), marginLeft + 1, marginRight + 1));
+}
 
-    // The 's' indicates this is an DECSLRM response, and ST ends the sequence.
-    response.append(L"s\033\\"sv);
-    _api.ReturnResponse({ response.data(), response.size() });
+// Method Description:
+// - Reports the DECSCUSR cursor style in response to a DECRQSS query.
+// Arguments:
+// - None
+// Return Value:
+// - None
+void AdaptDispatch::_ReportDECSCUSRSetting() const
+{
+    const auto& cursor = _pages.ActivePage().Cursor();
+    const auto blinking = cursor.IsBlinkingAllowed();
+    // A valid response always starts with DCS 1 $ r. This is followed by a
+    // number from 1 to 6 representing the cursor style. The ' q' indicates
+    // this is a DECSCUSR response, and ST ends the sequence.
+    switch (cursor.GetType())
+    {
+    case CursorType::FullBox:
+        _api.ReturnResponse(blinking ? L"\033P1$r1 q\033\\" : L"\033P1$r2 q\033\\");
+        break;
+    case CursorType::Underscore:
+        _api.ReturnResponse(blinking ? L"\033P1$r3 q\033\\" : L"\033P1$r4 q\033\\");
+        break;
+    case CursorType::VerticalBar:
+        _api.ReturnResponse(blinking ? L"\033P1$r5 q\033\\" : L"\033P1$r6 q\033\\");
+        break;
+    default:
+        // If we have a non-standard style, this is likely because it's the
+        // user's chosen default style, so we report a default value of 0.
+        // That way, if an application later tries to restore the cursor with
+        // the returned value, it should be reset to its original state.
+        _api.ReturnResponse(L"\033P1$r0 q\033\\");
+        break;
+    }
 }
 
 // Method Description:
@@ -4424,18 +4445,11 @@ void AdaptDispatch::_ReportDECSLRMSetting()
 // - None
 void AdaptDispatch::_ReportDECSCASetting() const
 {
-    using namespace std::string_view_literals;
-
-    // A valid response always starts with DCS 1 $ r.
-    fmt::basic_memory_buffer<wchar_t, 64> response;
-    response.append(L"\033P1$r"sv);
-
-    const auto& attr = _pages.ActivePage().Attributes();
-    response.append(attr.IsProtected() ? L"1"sv : L"0"sv);
-
-    // The '"q' indicates this is an DECSCA response, and ST ends the sequence.
-    response.append(L"\"q\033\\"sv);
-    _api.ReturnResponse({ response.data(), response.size() });
+    const auto isProtected = _pages.ActivePage().Attributes().IsProtected();
+    // A valid response always starts with DCS 1 $ r. This is followed by '1' if
+    // the protected attribute is set, or '0' if not. The '"q' indicates this is
+    // a DECSCA response, and ST ends the sequence.
+    _api.ReturnResponse(isProtected ? L"\033P1$r1\"q\033\\" : L"\033P1$r0\"q\033\\");
 }
 
 // Method Description:
@@ -4446,17 +4460,11 @@ void AdaptDispatch::_ReportDECSCASetting() const
 // - None
 void AdaptDispatch::_ReportDECSACESetting() const
 {
-    using namespace std::string_view_literals;
-
-    // A valid response always starts with DCS 1 $ r.
-    fmt::basic_memory_buffer<wchar_t, 64> response;
-    response.append(L"\033P1$r"sv);
-
-    response.append(_modes.test(Mode::RectangularChangeExtent) ? L"2"sv : L"1"sv);
-
-    // The '*x' indicates this is an DECSACE response, and ST ends the sequence.
-    response.append(L"*x\033\\"sv);
-    _api.ReturnResponse({ response.data(), response.size() });
+    const auto rectangularExtent = _modes.test(Mode::RectangularChangeExtent);
+    // A valid response always starts with DCS 1 $ r. This is followed by '2' if
+    // the extent is rectangular, or '1' if it's a stream. The '*x' indicates
+    // this is a DECSACE response, and ST ends the sequence.
+    _api.ReturnResponse(rectangularExtent ? L"\033P1$r2*x\033\\" : L"\033P1$r1*x\033\\");
 }
 
 // Method Description:
@@ -4467,8 +4475,6 @@ void AdaptDispatch::_ReportDECSACESetting() const
 // - None
 void AdaptDispatch::_ReportDECACSetting(const VTInt itemNumber) const
 {
-    using namespace std::string_view_literals;
-
     size_t fgIndex = 0;
     size_t bgIndex = 0;
     switch (static_cast<DispatchTypes::ColorItem>(itemNumber))
@@ -4485,16 +4491,9 @@ void AdaptDispatch::_ReportDECACSetting(const VTInt itemNumber) const
         _api.ReturnResponse(L"\033P0$r\033\\");
         return;
     }
-
-    // A valid response always starts with DCS 1 $ r.
-    fmt::basic_memory_buffer<wchar_t, 64> response;
-    response.append(L"\033P1$r"sv);
-
-    fmt::format_to(std::back_inserter(response), FMT_COMPILE(L"{};{};{}"), itemNumber, fgIndex, bgIndex);
-
-    // The ',|' indicates this is a DECAC response, and ST ends the sequence.
-    response.append(L",|\033\\"sv);
-    _api.ReturnResponse({ response.data(), response.size() });
+    // A valid response always starts with DCS 1 $ r, the ',|' indicates this
+    // is a DECAC response, and ST ends the sequence.
+    _api.ReturnResponse(fmt::format(FMT_COMPILE(L"\033P1$r{};{};{},|\033\\"), itemNumber, fgIndex, bgIndex));
 }
 
 // Routine Description:
