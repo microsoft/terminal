@@ -64,6 +64,7 @@ namespace Microsoft::Console::Render::Atlas
         til::generation_t _generation;
         til::generation_t _fontGeneration;
         til::generation_t _cursorGeneration;
+        til::generation_t _miscGeneration;
         u16x2 _viewportCellCount{};
 
 #if ATLAS_DEBUG_SHOW_DIRTY
