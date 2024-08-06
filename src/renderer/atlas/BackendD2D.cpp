@@ -80,6 +80,7 @@ void BackendD2D::_handleSettingsUpdate(const RenderingPayload& p)
     const auto renderTargetChanged = !_renderTarget;
     const auto fontChanged = _fontGeneration != p.s->font.generation();
     const auto cursorChanged = _cursorGeneration != p.s->cursor.generation();
+    const auto backgroundColorChanged = _miscGeneration != p.s->misc.generation();
     const auto cellCountChanged = _viewportCellCount != p.s->viewportCellCount;
 
     if (renderTargetChanged)
@@ -125,7 +126,7 @@ void BackendD2D::_handleSettingsUpdate(const RenderingPayload& p)
         _builtinGlyphsRenderTargetActive = false;
     }
 
-    if (renderTargetChanged || fontChanged || cellCountChanged)
+    if (renderTargetChanged || fontChanged || cellCountChanged || backgroundColorChanged)
     {
         const D2D1_BITMAP_PROPERTIES props{
             .pixelFormat = { DXGI_FORMAT_R8G8B8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED },
@@ -133,14 +134,35 @@ void BackendD2D::_handleSettingsUpdate(const RenderingPayload& p)
             .dpiY = static_cast<f32>(p.s->font->dpi),
         };
         const D2D1_SIZE_U size{
-            p.s->viewportCellCount.x,
-            p.s->viewportCellCount.y,
+            p.s->viewportCellCount.x + 2u,
+            p.s->viewportCellCount.y + 2u,
         };
         const D2D1_MATRIX_3X2_F transform{
             .m11 = static_cast<f32>(p.s->font->cellSize.x),
             .m22 = static_cast<f32>(p.s->font->cellSize.y),
+            .dx = -static_cast<f32>(p.s->font->cellSize.x),
+            .dy = -static_cast<f32>(p.s->font->cellSize.y),
         };
-        THROW_IF_FAILED(_renderTarget->CreateBitmap(size, nullptr, 0, &props, _backgroundBitmap.put()));
+
+        /*
+         We're allocating a bitmap that is one pixel wider on every side than the viewport so that we can fill in the gutter
+         with the background color. D2D doesn't have an equivalent to D3D11_TEXTURE_ADDRESS_BORDER, which we use in the D3D
+         backend to ensure the colors don't bleed off the edges.
+
+         XXXXXXXXXXXXXXXX <- background color
+         X+------------+X
+         X| viewport   |X
+         X|            |X
+         X|            |X
+         X+------------+X
+         XXXXXXXXXXXXXXXX
+
+         The translation in `transform` ensures that we render it off the top left of the render target.
+        */
+        auto backgroundFill = std::make_unique_for_overwrite<u32[]>(static_cast<size_t>(size.width * size.height));
+        std::fill_n(backgroundFill.get(), size.width * size.height, u32ColorPremultiply(p.s->misc->backgroundColor));
+
+        THROW_IF_FAILED(_renderTarget->CreateBitmap(size, backgroundFill.get(), size.width * sizeof(u32), &props, _backgroundBitmap.put()));
         THROW_IF_FAILED(_renderTarget->CreateBitmapBrush(_backgroundBitmap.get(), _backgroundBrush.put()));
         _backgroundBrush->SetInterpolationMode(D2D1_BITMAP_INTERPOLATION_MODE_NEAREST_NEIGHBOR);
         _backgroundBrush->SetExtendModeX(D2D1_EXTEND_MODE_MIRROR);
@@ -158,6 +180,7 @@ void BackendD2D::_handleSettingsUpdate(const RenderingPayload& p)
     _generation = p.s.generation();
     _fontGeneration = p.s->font.generation();
     _cursorGeneration = p.s->cursor.generation();
+    _miscGeneration = p.s->misc.generation();
     _viewportCellCount = p.s->viewportCellCount;
 }
 
@@ -165,13 +188,25 @@ void BackendD2D::_drawBackground(const RenderingPayload& p)
 {
     if (_backgroundBitmapGeneration != p.colorBitmapGenerations[0])
     {
-        THROW_IF_FAILED(_backgroundBitmap->CopyFromMemory(nullptr, p.backgroundBitmap.data(), gsl::narrow_cast<UINT32>(p.colorBitmapRowStride * sizeof(u32))));
+        const D2D1_RECT_U rect{
+            1u,
+            1u,
+            1u + p.s->viewportCellCount.x,
+            1u + p.s->viewportCellCount.y,
+        };
+        THROW_IF_FAILED(_backgroundBitmap->CopyFromMemory(&rect, p.backgroundBitmap.data(), gsl::narrow_cast<UINT32>(p.colorBitmapRowStride * sizeof(u32))));
         _backgroundBitmapGeneration = p.colorBitmapGenerations[0];
     }
 
     // If the terminal was 120x30 cells and 1200x600 pixels large, this would draw the
-    // background by upscaling a 120x30 pixel bitmap to fill the entire render target.
-    const D2D1_RECT_F rect{ 0, 0, static_cast<f32>(p.s->targetSize.x), static_cast<f32>(p.s->targetSize.y) };
+    // background by upscaling a 122x32 pixel bitmap to fill the entire render target,
+    // with some overhang on all four sides to paint the gutters.
+    const D2D1_RECT_F rect{
+        static_cast<f32>(-(p.s->font->cellSize.x)),
+        static_cast<f32>(-(p.s->font->cellSize.y)),
+        static_cast<f32>(p.s->targetSize.x + (2 * p.s->font->cellSize.x)),
+        static_cast<f32>(p.s->targetSize.y + (2 * p.s->font->cellSize.y))
+    };
     _renderTarget->SetPrimitiveBlend(D2D1_PRIMITIVE_BLEND_COPY);
     _renderTarget->FillRectangle(&rect, _backgroundBrush.get());
     _renderTarget->SetPrimitiveBlend(D2D1_PRIMITIVE_BLEND_SOURCE_OVER);
