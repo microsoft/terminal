@@ -227,7 +227,7 @@ class InputBufferTests
         inputBuffer.Write(MakeKeyEvent(true, 1, 0xD83D, 0, 0xD83D, 0));
         inputBuffer.Write(MakeKeyEvent(true, 1, 0xDC4D, 0, 0xDC4D, 0));
 
-        // Should not coalese despite otherwise matching perfectly.
+        // Should not coalesce despite otherwise matching perfectly.
         inputBuffer.Write(MakeKeyEvent(true, 1, 0xDC4D, 0, 0xDC4D, 0));
 
         // The events shouldn't be coalesced
