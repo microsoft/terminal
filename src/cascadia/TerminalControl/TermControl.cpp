@@ -584,6 +584,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 _searchBox->Open([weakThis = get_weak()]() {
                     if (const auto self = weakThis.get(); self && !self->_IsClosing())
                     {
+                        self->_searchScrollOffset = self->_calculateSearchScrollOffset();
                         self->_searchBox->SetFocusOnTextbox();
                         self->_refreshSearch();
                     }
@@ -605,7 +606,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
         else
         {
-            _handleSearchResults(_core.Search(_searchBox->Text(), goForward, _searchBox->CaseSensitive(), _searchBox->RegularExpression(), false));
+            const auto request = SearchRequest{ _searchBox->Text(), goForward, _searchBox->CaseSensitive(), _searchBox->RegularExpression(), false, _searchScrollOffset };
+            _handleSearchResults(_core.Search(request));
         }
     }
 
@@ -639,7 +641,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         if (_searchBox && _searchBox->IsOpen())
         {
-            _handleSearchResults(_core.Search(text, goForward, caseSensitive, regularExpression, false));
+            const auto request = SearchRequest{ text, goForward, caseSensitive, regularExpression, false, _searchScrollOffset };
+            _handleSearchResults(_core.Search(request));
         }
     }
 
@@ -660,7 +663,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             // We only want to update the search results based on the new text. Set
             // `resetOnly` to true so we don't accidentally update the current match index.
-            const auto result = _core.Search(text, goForward, caseSensitive, regularExpression, true);
+            const auto request = SearchRequest{ text, goForward, caseSensitive, regularExpression, true, _searchScrollOffset };
+            const auto result = _core.Search(request);
             _handleSearchResults(result);
         }
     }
@@ -3572,6 +3576,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             QuickFixIcon().FontSize(static_cast<double>(args.Width() / dpiScale));
             RefreshQuickFixMenu();
         }
+
+        _searchScrollOffset = _calculateSearchScrollOffset();
     }
 
     void TermControl::_coreRaisedNotice(const IInspectable& /*sender*/,
@@ -3702,7 +3708,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const auto goForward = _searchBox->GoForward();
         const auto caseSensitive = _searchBox->CaseSensitive();
         const auto regularExpression = _searchBox->RegularExpression();
-        _handleSearchResults(_core.Search(text, goForward, caseSensitive, regularExpression, true));
+        const auto request = SearchRequest{ text, goForward, caseSensitive, regularExpression, true, _calculateSearchScrollOffset() };
+        _handleSearchResults(_core.Search(request));
     }
 
     void TermControl::_handleSearchResults(SearchResults results)
@@ -3980,6 +3987,19 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void TermControl::_bubbleSearchMissingCommand(const IInspectable& /*sender*/, const Control::SearchMissingCommandEventArgs& args)
     {
         SearchMissingCommand.raise(*this, args);
+    }
+
+    til::CoordType TermControl::_calculateSearchScrollOffset() const
+    {
+        auto result = 0;
+        if (_searchBox)
+        {
+            const auto displayInfo = DisplayInformation::GetForCurrentView();
+            const auto scaleFactor = _core.FontSize().Height / displayInfo.RawPixelsPerViewPixel();
+            const auto searchBoxRows = _searchBox->ActualHeight() / scaleFactor;
+            result = static_cast<int32_t>(std::ceil(searchBoxRows));
+        }
+        return result;
     }
 
     void TermControl::ClearQuickFix()

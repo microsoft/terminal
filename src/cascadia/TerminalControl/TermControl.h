@@ -289,6 +289,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         bool _isBackgroundLight{ false };
         bool _detached{ false };
+        til::CoordType _searchScrollOffset = 0;
 
         Windows::Foundation::Collections::IObservableVector<Windows::UI::Xaml::Controls::ICommandBarElement> _originalPrimaryElements{ nullptr };
         Windows::Foundation::Collections::IObservableVector<Windows::UI::Xaml::Controls::ICommandBarElement> _originalSecondaryElements{ nullptr };
@@ -409,6 +410,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void _showContextMenuAt(const til::point& controlRelativePos);
 
         void _bubbleSearchMissingCommand(const IInspectable& sender, const Control::SearchMissingCommandEventArgs& args);
+        til::CoordType _calculateSearchScrollOffset() const;
 
         void _PasteCommandHandler(const IInspectable& sender, const IInspectable& args);
         void _CopyCommandHandler(const IInspectable& sender, const IInspectable& args);
