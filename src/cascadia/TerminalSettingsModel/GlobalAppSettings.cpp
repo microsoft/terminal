@@ -157,7 +157,7 @@ void GlobalAppSettings::LayerJson(const Json::Value& json, const OriginTag origi
     JsonUtils::GetValueForKey(json, LegacyReloadEnvironmentVariablesKey, _legacyReloadEnvironmentVariables);
     if (json[LegacyReloadEnvironmentVariablesKey.data()])
     {
-        _logSettingSet(LegacyReloadEnvironmentVariablesKey);
+        _logSettingSet(std::string{ LegacyReloadEnvironmentVariablesKey });
     }
 }
 
@@ -325,7 +325,7 @@ bool GlobalAppSettings::ShouldUsePersistedLayout() const
     return FirstWindowPreference() == FirstWindowPreference::PersistedWindowLayout && !IsolatedMode();
 }
 
-void GlobalAppSettings::_logSettingSet(std::string_view setting)
+void GlobalAppSettings::_logSettingSet(const std::string& setting)
 {
     if (setting == "theme")
     {
@@ -339,8 +339,8 @@ void GlobalAppSettings::_logSettingSet(std::string_view setting)
             }
             else
             {
-                _changeLog.insert(std::string_view{ fmt::format(FMT_COMPILE("{}.{}"), setting, "dark") });
-                _changeLog.insert(std::string_view{ fmt::format(FMT_COMPILE("{}.{}"), setting, "light") });
+                _changeLog.emplace(fmt::format(FMT_COMPILE("{}.{}"), setting, "dark"));
+                _changeLog.emplace(fmt::format(FMT_COMPILE("{}.{}"), setting, "light"));
             }
         }
     }
@@ -375,25 +375,25 @@ void GlobalAppSettings::_logSettingSet(std::string_view setting)
                     // ignore invalid
                     continue;
                 }
-                _changeLog.insert(std::string_view{ fmt::format(FMT_COMPILE("{}.{}"), setting, entryType) });
+                _changeLog.emplace(fmt::format(FMT_COMPILE("{}.{}"), setting, entryType));
             }
         }
     }
     else
     {
-        _changeLog.insert(setting);
+        _changeLog.emplace(setting);
     }
 }
 
-void GlobalAppSettings::_logSettingIfSet(std::string_view setting, const bool isSet)
+void GlobalAppSettings::_logSettingIfSet(const std::string& setting, const bool isSet)
 {
     if (isSet)
     {
-        _logSettingSet(setting);
+        _logSettingSet(std::string{ setting });
     }
 }
 
-void GlobalAppSettings::LogSettingChanges(std::set<std::string_view>& changes, std::string_view& context) const
+void GlobalAppSettings::LogSettingChanges(std::set<std::string>& changes, const std::string& context) const
 {
     for (const auto& setting : _changeLog)
     {

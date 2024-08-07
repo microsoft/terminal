@@ -742,29 +742,29 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return winrt::single_threaded_vector<Model::Command>(std::move(result));
     }
 
-    void Command::LogSettingChanges(std::set<std::string_view>& changes)
+    void Command::LogSettingChanges(std::set<std::string>& changes)
     {
         if (_IterateOn != ExpandCommandType::None)
         {
             switch (_IterateOn)
             {
             case ExpandCommandType::Profiles:
-                changes.insert(fmt::format(FMT_COMPILE("{}.{}"), IterateOnKey, "profiles"));
+                changes.insert(fmt::format(FMT_COMPILE("{}.{}"), std::string{ IterateOnKey }, "profiles"));
                 break;
             case ExpandCommandType::ColorSchemes:
-                changes.insert(fmt::format(FMT_COMPILE("{}.{}"), IterateOnKey, "schemes"));
+                changes.insert(fmt::format(FMT_COMPILE("{}.{}"), std::string{ IterateOnKey }, "schemes"));
                 break;
             }
         }
 
         if (!_Description.empty())
         {
-            changes.insert(fmt::format(FMT_COMPILE("{}"), DescriptionKey));
+            changes.insert(fmt::format(FMT_COMPILE("{}"), std::string{ DescriptionKey }));
         }
 
         if (IsNestedCommand())
         {
-            changes.insert(fmt::format(FMT_COMPILE("{}"), CommandsKey));
+            changes.insert(fmt::format(FMT_COMPILE("{}"), std::string{ CommandsKey }));
         }
         else
         {
@@ -782,7 +782,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 // - "command": { "action": "copy", "singleLine": true }                           --> "copy.singleLine"
                 // - "command": { "action": "copy", "singleLine": true, "dismissSelection": true } --> "copy.singleLine", "copy.dismissSelection"
 
-                std::string_view shortcutActionName{ json[JsonKey("action")].asString() };
+                const std::string shortcutActionName{ json[JsonKey("action")].asString() };
 
                 auto members = json.getMemberNames();
                 members.erase(std::remove_if(members.begin(), members.end(), [](const auto& member) { return member == "action"; }), members.end());

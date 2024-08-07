@@ -108,7 +108,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         void _FinalizeInheritance() override;
 
-        void LogSettingChanges(std::set<std::string_view>& changes, std::string_view& context) const;
+        void LogSettingChanges(std::set<std::string>& changes, const std::string& context) const;
 
         // Special fields
         hstring Icon() const;
@@ -142,15 +142,15 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         Model::FontConfig _FontInfo{ winrt::make<FontConfig>(weak_ref<Model::Profile>(*this)) };
 
         std::optional<winrt::hstring> _evaluatedIcon{ std::nullopt };
-        std::set<std::string_view> _changeLog;
+        std::set<std::string> _changeLog;
 
         static std::wstring EvaluateStartingDirectory(const std::wstring& directory);
 
         static guid _GenerateGuidForProfile(const std::wstring_view& name, const std::wstring_view& source) noexcept;
 
         winrt::hstring _evaluateIcon() const;
-        void _logSettingSet(std::string_view setting);
-        void _logSettingIfSet(std::string_view setting, const bool isSet);
+        void _logSettingSet(const std::string& setting);
+        void _logSettingIfSet(const std::string_view& setting, const bool isSet);
 
         friend class SettingsModelUnitTests::DeserializationTests;
         friend class SettingsModelUnitTests::ProfileTests;

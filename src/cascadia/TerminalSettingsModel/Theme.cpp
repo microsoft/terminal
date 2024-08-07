@@ -292,7 +292,7 @@ winrt::com_ptr<Theme> Theme::FromJson(const Json::Value& json)
     return result;
 }
 
-void Theme::LogSettingChanges(std::set<std::string_view>& changes, std::string_view& context)
+void Theme::LogSettingChanges(std::set<std::string>& changes, std::string& context)
 {
 #pragma warning(push)
 #pragma warning(disable : 5103) // pasting '{' and 'winrt' does not result in a valid preprocessing token

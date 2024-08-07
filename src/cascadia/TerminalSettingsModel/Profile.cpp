@@ -215,7 +215,7 @@ void Profile::LayerJson(const Json::Value& json)
         unfocusedAppearance->LayerJson(json[JsonKey(UnfocusedAppearanceKey)]);
         _UnfocusedAppearance = *unfocusedAppearance;
 
-        _logSettingSet(UnfocusedAppearanceKey);
+        _logSettingSet(std::string{ UnfocusedAppearanceKey });
     }
 }
 
@@ -527,33 +527,33 @@ std::wstring Profile::NormalizeCommandLine(LPCWSTR commandLine)
     return normalized;
 }
 
-void Profile::_logSettingSet(std::string_view setting)
+void Profile::_logSettingSet(const std::string& setting)
 {
-    _changeLog.insert(setting);
+    _changeLog.emplace(setting);
 }
 
-void Profile::_logSettingIfSet(std::string_view setting, const bool isSet)
+void Profile::_logSettingIfSet(const std::string_view& setting, const bool isSet)
 {
     if (isSet)
     {
-        _logSettingSet(setting);
+        _logSettingSet(std::string{ setting });
     }
 }
 
-void Profile::LogSettingChanges(std::set<std::string_view>& changes, std::string_view& context) const
+void Profile::LogSettingChanges(std::set<std::string>& changes, const std::string& context) const
 {
     for (const auto& setting : _changeLog)
     {
         changes.emplace(fmt::format(FMT_COMPILE("{}.{}"), context, setting));
     }
 
-    std::string_view fontContext{ fmt::format(FMT_COMPILE("{}.{}"), context, FontInfoKey) };
+    std::string fontContext{ fmt::format(FMT_COMPILE("{}.{}"), context, FontInfoKey) };
     winrt::get_self<implementation::FontConfig>(_FontInfo)->LogSettingChanges(changes, fontContext);
 
     // We don't want to distinguish between "profile.defaultAppearance.*" and "profile.unfocusedAppearance.*" settings,
     //   but we still want to aggregate all of the appearance settings from both appearances.
     // Log them as "profile.appearance.*"
-    std::string_view appContext{ fmt::format(FMT_COMPILE("{}.{}"), context, "appearance") };
+    std::string appContext{ fmt::format(FMT_COMPILE("{}.{}"), context, "appearance") };
     winrt::get_self<implementation::AppearanceConfig>(_DefaultAppearance)->LogSettingChanges(changes, appContext);
     if (_UnfocusedAppearance)
     {

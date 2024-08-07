@@ -31,7 +31,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         static winrt::com_ptr<AppearanceConfig> CopyAppearance(const AppearanceConfig* source, winrt::weak_ref<Profile> sourceProfile);
         Json::Value ToJson() const;
         void LayerJson(const Json::Value& json);
-        void LogSettingChanges(std::set<std::string_view>& changes, std::string_view& context) const;
+        void LogSettingChanges(std::set<std::string>& changes, const std::string& context) const;
 
         Model::Profile SourceProfile();
 
@@ -53,9 +53,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     private:
         winrt::weak_ref<Profile> _sourceProfile;
-        std::set<std::string_view> _changeLog;
+        std::set<std::string> _changeLog;
 
-        void _logSettingSet(std::string_view setting);
-        void _logSettingIfSet(std::string_view setting, const bool isSet);
+        void _logSettingSet(const std::string& setting);
+        void _logSettingIfSet(const std::string_view& setting, const bool isSet);
     };
 }

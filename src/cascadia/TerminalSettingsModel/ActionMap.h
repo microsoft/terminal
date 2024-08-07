@@ -73,7 +73,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         Json::Value ToJson() const;
         Json::Value KeyBindingsToJson() const;
         bool FixupsAppliedDuringLoad() const;
-        void LogSettingChanges(std::set<std::string_view>& changes, std::string_view& context) const;
+        void LogSettingChanges(std::set<std::string>& changes, const std::string& context) const;
 
         // modification
         bool RebindKeys(const Control::KeyChord& oldKeys, const Control::KeyChord& newKeys);
@@ -104,8 +104,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void _TryUpdateKeyChord(const Model::Command& cmd, const Control::KeyChord& keys);
 
         std::vector<Model::Command> _updateLocalSnippetCache(winrt::hstring currentWorkingDirectory);
-
-        void _logCommand(const Model::Command& cmd);
 
         Windows::Foundation::Collections::IMap<hstring, Model::ActionAndArgs> _AvailableActionsCache{ nullptr };
         Windows::Foundation::Collections::IMap<hstring, Model::Command> _NameMapCache{ nullptr };
@@ -141,7 +139,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         til::shared_mutex<std::unordered_map<hstring, std::vector<Model::Command>>> _cwdLocalSnippetsCache{};
 
-        std::set<std::string_view> _changeLog;
+        std::set<std::string> _changeLog;
 
         friend class SettingsModelUnitTests::KeyBindingsTests;
         friend class SettingsModelUnitTests::DeserializationTests;

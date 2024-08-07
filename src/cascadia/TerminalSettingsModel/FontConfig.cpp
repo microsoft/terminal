@@ -110,7 +110,7 @@ winrt::Microsoft::Terminal::Settings::Model::Profile FontConfig::SourceProfile()
     return _sourceProfile.get();
 }
 
-void FontConfig::_logSettingSet(std::string_view setting)
+void FontConfig::_logSettingSet(const std::string& setting)
 {
     if (setting == "axes" && _FontAxes.has_value())
     {
@@ -132,7 +132,7 @@ void FontConfig::_logSettingSet(std::string_view setting)
     }
 }
 
-void FontConfig::_logSettingIfSet(std::string_view setting, const bool isSet)
+void FontConfig::_logSettingIfSet(const std::string& setting, const bool isSet)
 {
     if (isSet)
     {
@@ -140,7 +140,7 @@ void FontConfig::_logSettingIfSet(std::string_view setting, const bool isSet)
     }
 }
 
-void FontConfig::LogSettingChanges(std::set<std::string_view>& changes, std::string_view& context) const
+void FontConfig::LogSettingChanges(std::set<std::string>& changes, const std::string& context) const
 {
     for (const auto& setting : _changeLog)
     {
