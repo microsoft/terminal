@@ -157,7 +157,7 @@ void GlobalAppSettings::LayerJson(const Json::Value& json, const OriginTag origi
     JsonUtils::GetValueForKey(json, LegacyReloadEnvironmentVariablesKey, _legacyReloadEnvironmentVariables);
     if (json[LegacyReloadEnvironmentVariablesKey.data()])
     {
-        _logSettingSet(std::string{ LegacyReloadEnvironmentVariablesKey });
+        _logSettingSet(LegacyReloadEnvironmentVariablesKey);
     }
 }
 
@@ -325,7 +325,7 @@ bool GlobalAppSettings::ShouldUsePersistedLayout() const
     return FirstWindowPreference() == FirstWindowPreference::PersistedWindowLayout && !IsolatedMode();
 }
 
-void GlobalAppSettings::_logSettingSet(const std::string& setting)
+void GlobalAppSettings::_logSettingSet(const std::string_view& setting)
 {
     if (setting == "theme")
     {
@@ -335,7 +335,7 @@ void GlobalAppSettings::_logSettingSet(const std::string& setting)
             // so we need to check if they were explicitly set
             if (_Theme->DarkName() == _Theme->LightName())
             {
-                _changeLog.insert(setting);
+                _changeLog.emplace(setting);
             }
             else
             {
@@ -385,15 +385,15 @@ void GlobalAppSettings::_logSettingSet(const std::string& setting)
     }
 }
 
-void GlobalAppSettings::_logSettingIfSet(const std::string& setting, const bool isSet)
+void GlobalAppSettings::_logSettingIfSet(const std::string_view& setting, const bool isSet)
 {
     if (isSet)
     {
-        _logSettingSet(std::string{ setting });
+        _logSettingSet(setting);
     }
 }
 
-void GlobalAppSettings::LogSettingChanges(std::set<std::string>& changes, const std::string& context) const
+void GlobalAppSettings::LogSettingChanges(std::set<std::string>& changes, const std::string_view& context) const
 {
     for (const auto& setting : _changeLog)
     {

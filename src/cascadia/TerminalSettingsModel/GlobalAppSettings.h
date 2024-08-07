@@ -72,7 +72,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         bool LegacyReloadEnvironmentVariables() const noexcept { return _legacyReloadEnvironmentVariables; }
 
-        void LogSettingChanges(std::set<std::string>& changes, const std::string& context) const;
+        void LogSettingChanges(std::set<std::string>& changes, const std::string_view& context) const;
 
         INHERITABLE_SETTING(Model::GlobalAppSettings, hstring, UnparsedDefaultProfile, L"");
 
@@ -97,7 +97,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         Windows::Foundation::Collections::IMap<winrt::hstring, Model::ColorScheme> _colorSchemes{ winrt::single_threaded_map<winrt::hstring, Model::ColorScheme>() };
         Windows::Foundation::Collections::IMap<winrt::hstring, Model::Theme> _themes{ winrt::single_threaded_map<winrt::hstring, Model::Theme>() };
 
-        void _logSettingSet(const std::string& setting);
-        void _logSettingIfSet(const std::string& setting, const bool isSet);
+        void _logSettingSet(const std::string_view& setting);
+        void _logSettingIfSet(const std::string_view& setting, const bool isSet);
     };
 }

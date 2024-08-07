@@ -159,7 +159,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return keybindingsList;
     }
 
-    void ActionMap::LogSettingChanges(std::set<std::string>& changes, const std::string& context) const
+    void ActionMap::LogSettingChanges(std::set<std::string>& changes, const std::string_view& context) const
     {
         for (const auto& setting : _changeLog)
         {

@@ -98,7 +98,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         static com_ptr<Theme> FromJson(const Json::Value& json);
         Json::Value ToJson() const;
-        void LogSettingChanges(std::set<std::string>& changes, std::string& context);
+        void LogSettingChanges(std::set<std::string>& changes, const std::string_view& context);
 
         winrt::Windows::UI::Xaml::ElementTheme RequestedTheme() const noexcept;
 

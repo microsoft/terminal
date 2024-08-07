@@ -73,7 +73,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         Json::Value ToJson() const;
         Json::Value KeyBindingsToJson() const;
         bool FixupsAppliedDuringLoad() const;
-        void LogSettingChanges(std::set<std::string>& changes, const std::string& context) const;
+        void LogSettingChanges(std::set<std::string>& changes, const std::string_view& context) const;
 
         // modification
         bool RebindKeys(const Control::KeyChord& oldKeys, const Control::KeyChord& newKeys);

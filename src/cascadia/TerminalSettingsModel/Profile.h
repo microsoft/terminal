@@ -108,7 +108,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         void _FinalizeInheritance() override;
 
-        void LogSettingChanges(std::set<std::string>& changes, const std::string& context) const;
+        void LogSettingChanges(std::set<std::string>& changes, const std::string_view& context) const;
 
         // Special fields
         hstring Icon() const;
@@ -149,7 +149,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         static guid _GenerateGuidForProfile(const std::wstring_view& name, const std::wstring_view& source) noexcept;
 
         winrt::hstring _evaluateIcon() const;
-        void _logSettingSet(const std::string& setting);
+        void _logSettingSet(const std::string_view& setting);
         void _logSettingIfSet(const std::string_view& setting, const bool isSet);
 
         friend class SettingsModelUnitTests::DeserializationTests;

@@ -749,22 +749,22 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             switch (_IterateOn)
             {
             case ExpandCommandType::Profiles:
-                changes.insert(fmt::format(FMT_COMPILE("{}.{}"), std::string{ IterateOnKey }, "profiles"));
+                changes.emplace(fmt::format(FMT_COMPILE("{}.{}"), IterateOnKey, "profiles"));
                 break;
             case ExpandCommandType::ColorSchemes:
-                changes.insert(fmt::format(FMT_COMPILE("{}.{}"), std::string{ IterateOnKey }, "schemes"));
+                changes.emplace(fmt::format(FMT_COMPILE("{}.{}"), IterateOnKey, "schemes"));
                 break;
             }
         }
 
         if (!_Description.empty())
         {
-            changes.insert(fmt::format(FMT_COMPILE("{}"), std::string{ DescriptionKey }));
+            changes.emplace(fmt::format(FMT_COMPILE("{}"), DescriptionKey));
         }
 
         if (IsNestedCommand())
         {
-            changes.insert(fmt::format(FMT_COMPILE("{}"), std::string{ CommandsKey }));
+            changes.emplace(fmt::format(FMT_COMPILE("{}"), CommandsKey));
         }
         else
         {
@@ -774,7 +774,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 // covers actions w/out args
                 // - "command": "unbound" --> "unbound"
                 // - "command": "copy"    --> "copy"
-                changes.insert(fmt::format(FMT_COMPILE("{}"), json.asString()));
+                changes.emplace(fmt::format(FMT_COMPILE("{}"), json.asString()));
             }
             else
             {
@@ -789,7 +789,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
                 for (const auto& actionArg : members)
                 {
-                    changes.insert(fmt::format(FMT_COMPILE("{}.{}"), shortcutActionName, actionArg));
+                    changes.emplace(fmt::format(FMT_COMPILE("{}.{}"), shortcutActionName, actionArg));
                 }
             }
         }

@@ -292,7 +292,7 @@ winrt::com_ptr<Theme> Theme::FromJson(const Json::Value& json)
     return result;
 }
 
-void Theme::LogSettingChanges(std::set<std::string>& changes, std::string& context)
+void Theme::LogSettingChanges(std::set<std::string>& changes, const std::string_view& context)
 {
 #pragma warning(push)
 #pragma warning(disable : 5103) // pasting '{' and 'winrt' does not result in a valid preprocessing token
@@ -305,7 +305,7 @@ void Theme::LogSettingChanges(std::set<std::string>& changes, std::string& conte
 
 #define LOG_IF_SET(type, name, jsonKey, ...) \
     if (obj.name() != type{##__VA_ARGS__ })  \
-        changes.insert(fmt::format(FMT_COMPILE("{}.{}.{}"), context, outerJsonKey, jsonKey));
+        changes.emplace(fmt::format(FMT_COMPILE("{}.{}.{}"), context, outerJsonKey, jsonKey));
 
     if (isWindowSet)
     {

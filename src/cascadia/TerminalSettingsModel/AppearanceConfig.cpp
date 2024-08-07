@@ -110,7 +110,7 @@ void AppearanceConfig::LayerJson(const Json::Value& json)
         // to make the UI happy, set ColorSchemeName.
         JsonUtils::GetValueForKey(json, ColorSchemeKey, _DarkColorSchemeName);
         _LightColorSchemeName = _DarkColorSchemeName;
-        _logSettingSet(std::string{ ColorSchemeKey });
+        _logSettingSet(ColorSchemeKey);
     }
     else if (json["colorScheme"].isObject())
     {
@@ -172,7 +172,7 @@ winrt::hstring AppearanceConfig::ExpandedBackgroundImagePath()
     }
 }
 
-void AppearanceConfig::_logSettingSet(const std::string& setting)
+void AppearanceConfig::_logSettingSet(const std::string_view& setting)
 {
     _changeLog.emplace(setting);
 }
@@ -185,7 +185,7 @@ void AppearanceConfig::_logSettingIfSet(const std::string_view& setting, const b
     }
 }
 
-void AppearanceConfig::LogSettingChanges(std::set<std::string>& changes, const std::string& context) const
+void AppearanceConfig::LogSettingChanges(std::set<std::string>& changes, const std::string_view& context) const
 {
     for (const auto& setting : _changeLog)
     {

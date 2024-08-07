@@ -1652,7 +1652,7 @@ void CascadiaSettings::LogSettingChanges(bool isJsonLoad) const
                               TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
         }
 #else
-        OutputDebugStringA(isJsonLoad ? "JsonSettingsChanged\n" : "UISettingsChanged\n");
+        OutputDebugStringA(isJsonLoad ? "JsonSettingsChanged - " : "UISettingsChanged - ");
         OutputDebugStringA(change.data());
         OutputDebugStringA("\n");
 #endif // !_DEBUG

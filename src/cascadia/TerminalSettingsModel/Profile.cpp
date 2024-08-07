@@ -215,7 +215,7 @@ void Profile::LayerJson(const Json::Value& json)
         unfocusedAppearance->LayerJson(json[JsonKey(UnfocusedAppearanceKey)]);
         _UnfocusedAppearance = *unfocusedAppearance;
 
-        _logSettingSet(std::string{ UnfocusedAppearanceKey });
+        _logSettingSet(UnfocusedAppearanceKey);
     }
 }
 
@@ -527,7 +527,7 @@ std::wstring Profile::NormalizeCommandLine(LPCWSTR commandLine)
     return normalized;
 }
 
-void Profile::_logSettingSet(const std::string& setting)
+void Profile::_logSettingSet(const std::string_view& setting)
 {
     _changeLog.emplace(setting);
 }
@@ -536,11 +536,11 @@ void Profile::_logSettingIfSet(const std::string_view& setting, const bool isSet
 {
     if (isSet)
     {
-        _logSettingSet(std::string{ setting });
+        _logSettingSet(setting);
     }
 }
 
-void Profile::LogSettingChanges(std::set<std::string>& changes, const std::string& context) const
+void Profile::LogSettingChanges(std::set<std::string>& changes, const std::string_view& context) const
 {
     for (const auto& setting : _changeLog)
     {
