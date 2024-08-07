@@ -359,6 +359,39 @@ void VtIo::FormatAttributes(std::wstring& target, const TextAttribute& attribute
     target.append(bufW, len);
 }
 
+wchar_t VtIo::SanitizeUCS2(wchar_t ch) noexcept
+{
+    // If any of the values in the buffer are C0 or C1 controls, we need to
+    // convert them to printable codepoints, otherwise they'll end up being
+    // evaluated as control characters by the receiving terminal. We use the
+    // DOS 437 code page for the C0 controls and DEL, and just a `?` for the
+    // C1 controls, since that's what you would most likely have seen in the
+    // legacy v1 console with raster fonts.
+    if (ch < 0x20)
+    {
+        static constexpr wchar_t lut[] = {
+            // clang-format off
+            L' ', L'☺', L'☻', L'♥', L'♦', L'♣', L'♠', L'•', L'◘', L'○', L'◙', L'♂', L'♀', L'♪', L'♫', L'☼',
+            L'►', L'◄', L'↕', L'‼', L'¶', L'§', L'▬', L'↨', L'↑', L'↓', L'→', L'←', L'∟', L'↔', L'▲', L'▼',
+            // clang-format on
+        };
+        ch = lut[ch];
+    }
+    else if (ch == 0x7F)
+    {
+        ch = L'⌂';
+    }
+    else if (ch > 0x7F && ch < 0xA0)
+    {
+        ch = L'?';
+    }
+    else if (til::is_surrogate(ch))
+    {
+        ch = UNICODE_REPLACEMENT;
+    }
+    return ch;
+}
+
 VtIo::Writer::Writer(VtIo* io) noexcept :
     _io{ io }
 {
@@ -592,7 +625,7 @@ void VtIo::Writer::WriteUTF16StripControlChars(std::wstring_view str) const
 
         for (it = begControlChars; it != end && IsControlCharacter(*it); ++it)
         {
-            WriteUCS2StripControlChars(*it);
+            WriteUCS2(SanitizeUCS2(*it));
         }
     }
 }
@@ -624,36 +657,6 @@ void VtIo::Writer::WriteUCS2(wchar_t ch) const
     }
 
     _io->_back.append(buf, len);
-}
-
-void VtIo::Writer::WriteUCS2StripControlChars(wchar_t ch) const
-{
-    // If any of the values in the buffer are C0 or C1 controls, we need to
-    // convert them to printable codepoints, otherwise they'll end up being
-    // evaluated as control characters by the receiving terminal. We use the
-    // DOS 437 code page for the C0 controls and DEL, and just a `?` for the
-    // C1 controls, since that's what you would most likely have seen in the
-    // legacy v1 console with raster fonts.
-    if (ch < 0x20)
-    {
-        static constexpr wchar_t lut[] = {
-            // clang-format off
-            L' ', L'☺', L'☻', L'♥', L'♦', L'♣', L'♠', L'•', L'◘', L'○', L'◙', L'♂', L'♀', L'♪', L'♫', L'☼',
-            L'►', L'◄', L'↕', L'‼', L'¶', L'§', L'▬', L'↨', L'↑', L'↓', L'→', L'←', L'∟', L'↔', L'▲', L'▼',
-            // clang-format on
-        };
-        ch = lut[ch];
-    }
-    else if (ch == 0x7F)
-    {
-        ch = L'⌂';
-    }
-    else if (ch > 0x7F && ch < 0xA0)
-    {
-        ch = L'?';
-    }
-
-    WriteUCS2(ch);
 }
 
 // CUP: Cursor Position

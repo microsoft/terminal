@@ -316,8 +316,8 @@ void ScrollRegion(SCREEN_INFORMATION& screenInfo,
                   const til::inclusive_rect scrollRectGiven,
                   const std::optional<til::inclusive_rect> clipRectGiven,
                   const til::point destinationOriginGiven,
-                  const wchar_t fillCharGiven,
-                  const TextAttribute fillAttrsGiven)
+                  wchar_t fillCharGiven,
+                  TextAttribute fillAttrsGiven)
 {
     // ------ 1. PREP SOURCE ------
     // Set up the source viewport.
@@ -357,16 +357,14 @@ void ScrollRegion(SCREEN_INFORMATION& screenInfo,
         return;
     }
 
-    // Determine the cell we will use to fill in any revealed/uncovered space.
-    // We generally use exactly what was given to us.
-    OutputCellIterator fillData(fillCharGiven, fillAttrsGiven);
-
     // However, if the character is null and we were given a null attribute (represented as legacy 0),
     // then we'll just fill with spaces and whatever the buffer's default colors are.
     if (fillCharGiven == UNICODE_NULL && fillAttrsGiven == TextAttribute{ 0 })
     {
-        fillData = OutputCellIterator(UNICODE_SPACE, screenInfo.GetAttributes());
-    }
+            fillAttrsGiven = screenInfo.GetAttributes();
+        }
+
+    fillCharGiven = Microsoft::Console::VirtualTerminal::VtIo::SanitizeUCS2(UNICODE_SPACE);
 
     // ------ 4. PREP TARGET ------
     // Now it's time to think about the target. We're only given the origin of the target
@@ -422,12 +420,13 @@ void ScrollRegion(SCREEN_INFORMATION& screenInfo,
     // So use the special subtraction function to get the viewports that fall
     // within the fill area but outside of the target area.
     const auto remaining = Viewport::Subtract(fill, target);
+    auto& textBuffer = screenInfo.GetTextBuffer();
 
     // Apply the fill data to each of the viewports we're given here.
     for (size_t i = 0; i < remaining.size(); i++)
     {
         const auto& view = remaining.at(i);
-        screenInfo.WriteRect(fillData, view);
+        textBuffer.FillRect(view.ToExclusive(), {&fillCharGiven, 1}, fillAttrsGiven);
 
         // If the region has image content it needs to be erased.
         ImageSlice::EraseBlock(screenInfo.GetTextBuffer(), view.ToExclusive());
