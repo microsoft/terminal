@@ -231,7 +231,7 @@ class InputBufferTests
         inputBuffer.Write(MakeKeyEvent(true, 1, 0xDC4D, 0, 0xDC4D, 0));
 
         // The events shouldn't be coalesced
-        VERIFY_ARE_EQUAL(inputBuffer.GetNumberOfReadyEvents(), 3);
+        VERIFY_ARE_EQUAL(3u, inputBuffer.GetNumberOfReadyEvents());
     }
 
     TEST_METHOD(CanFlushAllOutput)
