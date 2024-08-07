@@ -1998,6 +1998,7 @@ bool AdaptDispatch::_ModeParamsHelper(const DispatchTypes::ModeParams param, con
         return true;
     case DispatchTypes::ModeParams::FOCUS_EVENT_MODE:
         _terminalInput.SetInputMode(TerminalInput::Mode::FocusEvent, enable);
+        // ConPTY always wants to know about focus events, so let it know that it needs to re-enable this mode.
         _api.GetStateMachine().InjectSequence(InjectionType::DECSET_FOCUS);
         return true;
     case DispatchTypes::ModeParams::ALTERNATE_SCROLL:
@@ -3241,6 +3242,8 @@ bool AdaptDispatch::HardReset()
         _macroBuffer = nullptr;
     }
 
+    // A hard reset will disable all the modes that ConPTY relies on,
+    // so let it know that it needs to re-enable those modes.
     _api.GetStateMachine().InjectSequence(InjectionType::RIS);
     return true;
 }
@@ -3346,9 +3349,6 @@ bool AdaptDispatch::_EraseAll()
         _api.NotifyBufferRotation(delta);
         newPageTop -= delta;
         newPageBottom -= delta;
-        // We don't want to trigger a scroll in pty mode, because we're going to
-        // pass through the ED sequence anyway, and this will just result in the
-        // buffer being scrolled up by two pages instead of one.
         textBuffer.TriggerScroll({ 0, -delta });
     }
     // Move the viewport if necessary.

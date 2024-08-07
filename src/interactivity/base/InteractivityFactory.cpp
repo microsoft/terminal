@@ -499,9 +499,7 @@ void InteractivityFactory::_WritePseudoWindowCallback(bool showOrHide)
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     if (auto writer = gci.GetVtWriter())
     {
-        char buf[] = "\x1b[1t";
-        buf[2] = showOrHide ? '1' : '2';
-        writer.WriteUTF8(buf);
+        writer.WriteWindowVisibility(showOrHide);
         writer.Submit();
     }
 }

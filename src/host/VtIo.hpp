@@ -22,8 +22,8 @@ namespace Microsoft::Console::VirtualTerminal
 
             Writer(const Writer&) = delete;
             Writer& operator=(const Writer&) = delete;
-            Writer(Writer&& other) noexcept;
-            Writer& operator=(Writer&& other) noexcept;
+            Writer(Writer&& other) = delete;
+            Writer& operator=(Writer&& other) = delete;
 
             explicit operator bool() const noexcept;
 
@@ -41,6 +41,8 @@ namespace Microsoft::Console::VirtualTerminal
             void WriteSGR1006(bool enabled) const;
             void WriteDECAWM(bool enabled) const;
             void WriteASB(bool enabled) const;
+            void WriteWindowVisibility(bool visible) const;
+            void WriteWindowTitle(std::wstring_view title) const;
             void WriteAttributes(const TextAttribute& attributes) const;
             void WriteInfos(til::point target, std::span<const CHAR_INFO> infos) const;
 
@@ -60,12 +62,8 @@ namespace Microsoft::Console::VirtualTerminal
         bool IsUsingVt() const;
         [[nodiscard]] HRESULT StartIfNeeded();
 
-        [[nodiscard]] HRESULT SuppressResizeRepaint();
-        [[nodiscard]] HRESULT SetCursorPosition(const til::point coordCursor);
-        [[nodiscard]] HRESULT SwitchScreenBuffer(const bool useAltBuffer);
         void SendCloseEvent();
         void CreatePseudoWindow();
-        Writer GetWriter() noexcept;
 
     private:
         [[nodiscard]] HRESULT _Initialize(const HANDLE InHandle, const HANDLE OutHandle, _In_opt_ const HANDLE SignalHandle);
