@@ -2289,7 +2289,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 const auto trimmed = s.substr(0, strEnd + 1);
                 return winrt::hstring{ trimmed };
             }
-            return winrt::hstring{ L"" };
+            return {};
         };
 
         const auto currentCommand = _terminal->CurrentCommand();

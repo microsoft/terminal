@@ -213,9 +213,6 @@ public:
     FontInfoDesired& GetDesiredFont() noexcept;
     const FontInfoDesired& GetDesiredFont() const noexcept;
 
-    void SetIgnoreLegacyEquivalentVTAttributes() noexcept;
-    void ResetIgnoreLegacyEquivalentVTAttributes() noexcept;
-
     [[nodiscard]] NTSTATUS ResizeWithReflow(const til::size coordnewScreenSize);
     [[nodiscard]] NTSTATUS ResizeTraditional(const til::size coordNewScreenSize);
 
@@ -276,8 +273,6 @@ private:
     //  affected by the user scrolling the viewport, only when API calls cause
     //  the viewport to move (SetBufferInfo, WriteConsole, etc)
     til::CoordType _virtualBottom;
-
-    bool _ignoreLegacyEquivalentVTAttributes;
 
     std::optional<til::size> _deferredPtyResize{ std::nullopt };
 

@@ -1465,8 +1465,8 @@ namespace winrt::TerminalApp::implementation
         const auto source = realArgs.Source();
         std::vector<Command> commandsCollection;
         Control::CommandHistoryContext context{ nullptr };
-        winrt::hstring currentCommandline = L"";
-        winrt::hstring currentWorkingDirectory = L"";
+        winrt::hstring currentCommandline;
+        winrt::hstring currentWorkingDirectory;
 
         // If the user wanted to use the current commandline to filter results,
         //    OR they wanted command history (or some other source that
@@ -1496,7 +1496,7 @@ namespace winrt::TerminalApp::implementation
             context.QuickFixes() != nullptr)
         {
             // \ue74c --> OEM icon
-            const auto recentCommands = Command::HistoryToCommands(context.QuickFixes(), hstring{ L"" }, false, hstring{ L"\ue74c" });
+            const auto recentCommands = Command::HistoryToCommands(context.QuickFixes(), hstring{}, false, hstring{ L"\ue74c" });
             for (const auto& t : recentCommands)
             {
                 commandsCollection.push_back(t);
