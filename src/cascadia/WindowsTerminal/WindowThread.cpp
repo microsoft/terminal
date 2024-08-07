@@ -197,7 +197,7 @@ int WindowThread::_messagePump()
         {
             TraceLoggingWrite(
                 g_hWindowsTerminalProvider,
-                "InteractiveSession",
+                "SessionBecameInteractive",
                 TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
                 TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
             _loggedInteraction = true;
