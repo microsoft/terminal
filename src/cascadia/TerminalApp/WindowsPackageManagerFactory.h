@@ -13,66 +13,49 @@
 
 #pragma once
 
-#include "../../types/inc/utils.hpp"
-#include <combaseapi.h>
-#include <wil/result_macros.h>
-#include <wil/win32_helpers.h>
-#include <type_traits>
-
 #include <winrt/Microsoft.Management.Deployment.h>
 
 namespace winrt::TerminalApp::implementation
 {
-    class WindowsPackageManagerFactory
+    struct WindowsPackageManagerFactory
     {
     public:
-        static WindowsPackageManagerFactory& Instance()
+        static winrt::Microsoft::Management::Deployment::PackageManager CreatePackageManager()
         {
-            static WindowsPackageManagerFactory instance;
-            return instance;
+            return winrt::create_instance<winrt::Microsoft::Management::Deployment::PackageManager>(PackageManagerGuid, CLSCTX_ALL);
         }
 
-        // Delete copy constructor and assignment operator
-        WindowsPackageManagerFactory(const WindowsPackageManagerFactory&) = delete;
-        WindowsPackageManagerFactory& operator=(const WindowsPackageManagerFactory&) = delete;
-
-        winrt::Microsoft::Management::Deployment::PackageManager CreatePackageManager()
+        static winrt::Microsoft::Management::Deployment::FindPackagesOptions CreateFindPackagesOptions()
         {
-            static winrt::guid clsid{ "C53A4F16-787E-42A4-B304-29EFFB4BF597" };
-            return winrt::create_instance<winrt::Microsoft::Management::Deployment::PackageManager>(clsid, CLSCTX_ALL);
+            return winrt::create_instance<winrt::Microsoft::Management::Deployment::FindPackagesOptions>(FindPackageOptionsGuid, CLSCTX_ALL);
         }
 
-        winrt::Microsoft::Management::Deployment::FindPackagesOptions CreateFindPackagesOptions()
+        static winrt::Microsoft::Management::Deployment::CreateCompositePackageCatalogOptions CreateCreateCompositePackageCatalogOptions()
         {
-            static winrt::guid clsid{ "572DED96-9C60-4526-8F92-EE7D91D38C1A" };
-            return winrt::create_instance<winrt::Microsoft::Management::Deployment::FindPackagesOptions>(clsid, CLSCTX_ALL);
+            return winrt::create_instance<winrt::Microsoft::Management::Deployment::CreateCompositePackageCatalogOptions>(CreateCompositePackageCatalogOptionsGuid, CLSCTX_ALL);
         }
 
-        winrt::Microsoft::Management::Deployment::CreateCompositePackageCatalogOptions CreateCreateCompositePackageCatalogOptions()
+        static winrt::Microsoft::Management::Deployment::InstallOptions CreateInstallOptions()
         {
-            static winrt::guid clsid{ "526534B8-7E46-47C8-8416-B1685C327D37" };
-            return winrt::create_instance<winrt::Microsoft::Management::Deployment::CreateCompositePackageCatalogOptions>(clsid, CLSCTX_ALL);
+            return winrt::create_instance<winrt::Microsoft::Management::Deployment::InstallOptions>(InstallOptionsGuid, CLSCTX_ALL);
         }
 
-        winrt::Microsoft::Management::Deployment::InstallOptions CreateInstallOptions()
+        static winrt::Microsoft::Management::Deployment::UninstallOptions CreateUninstallOptions()
         {
-            static winrt::guid clsid{ "1095F097-EB96-453B-B4E6-1613637F3B14" };
-            return winrt::create_instance<winrt::Microsoft::Management::Deployment::InstallOptions>(clsid, CLSCTX_ALL);
+            return winrt::create_instance<winrt::Microsoft::Management::Deployment::UninstallOptions>(UninstallOptionsGuid, CLSCTX_ALL);
         }
 
-        winrt::Microsoft::Management::Deployment::UninstallOptions CreateUninstallOptions()
+        static winrt::Microsoft::Management::Deployment::PackageMatchFilter CreatePackageMatchFilter()
         {
-            static winrt::guid clsid{ "E1D9A11E-9F85-4D87-9C17-2B93143ADB8D" };
-            return winrt::create_instance<winrt::Microsoft::Management::Deployment::UninstallOptions>(clsid, CLSCTX_ALL);
-        }
-
-        winrt::Microsoft::Management::Deployment::PackageMatchFilter CreatePackageMatchFilter()
-        {
-            static winrt::guid clsid{ "D02C9DAF-99DC-429C-B503-4E504E4AB000" };
-            return winrt::create_instance<winrt::Microsoft::Management::Deployment::PackageMatchFilter>(clsid, CLSCTX_ALL);
+            return winrt::create_instance<winrt::Microsoft::Management::Deployment::PackageMatchFilter>(PackageMatchFilterGuid, CLSCTX_ALL);
         }
 
     private:
-        WindowsPackageManagerFactory() = default;
+        static constexpr winrt::guid PackageManagerGuid{ 0xC53A4F16, 0x787E, 0x42A4, { 0xB3, 0x04, 0x29, 0xEF, 0xFB, 0x4B, 0xF5, 0x97 } };
+        static constexpr winrt::guid FindPackageOptionsGuid{ 0x572DED96, 0x9C60, 0x4526, { 0x8F, 0x92, 0xEE, 0x7D, 0x91, 0xD3, 0x8C, 0x1A } };
+        static constexpr winrt::guid CreateCompositePackageCatalogOptionsGuid{ 0x526534B8, 0x7E46, 0x47C8, { 0x84, 0x16, 0xB1, 0x68, 0x5C, 0x32, 0x7D, 0x37 } };
+        static constexpr winrt::guid InstallOptionsGuid{ 0x1095F097, 0xEB96, 0x453B, { 0xB4, 0xE6, 0x16, 0x13, 0x63, 0x7F, 0x3B, 0x14 } };
+        static constexpr winrt::guid UninstallOptionsGuid{ 0xE1D9A11E, 0x9F85, 0x4D87, { 0x9C, 0x17, 0x2B, 0x93, 0x14, 0x3A, 0xDB, 0x8D } };
+        static constexpr winrt::guid PackageMatchFilterGuid{ 0xD02C9DAF, 0x99DC, 0x429C, { 0xB5, 0x03, 0x4E, 0x50, 0x4E, 0x4A, 0xB0, 0x00 } };
     };
 }

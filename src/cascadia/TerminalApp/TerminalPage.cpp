@@ -3004,8 +3004,8 @@ namespace winrt::TerminalApp::implementation
 
     Windows::Foundation::IAsyncOperation<IVectorView<MatchResult>> TerminalPage::_FindPackagesInCatalogAsync(PackageCatalog catalog, PackageMatchField field, PackageFieldMatchOption matchOption, hstring query)
     {
-        FindPackagesOptions findPackagesOptions = WindowsPackageManagerFactory::Instance().CreateFindPackagesOptions();
-        PackageMatchFilter filter = WindowsPackageManagerFactory::Instance().CreatePackageMatchFilter();
+        FindPackagesOptions findPackagesOptions = WindowsPackageManagerFactory::CreateFindPackagesOptions();
+        PackageMatchFilter filter = WindowsPackageManagerFactory::CreatePackageMatchFilter();
         filter.Field(field);
         filter.Option(matchOption);
         filter.Value(query);
@@ -3018,9 +3018,7 @@ namespace winrt::TerminalApp::implementation
 
     Windows::Foundation::IAsyncOperation<IVectorView<MatchResult>> TerminalPage::_FindPackageAsync(hstring query)
     {
-        co_await winrt::resume_background();
-
-        PackageManager packageManager = WindowsPackageManagerFactory::Instance().CreatePackageManager();
+        PackageManager packageManager = WindowsPackageManagerFactory::CreatePackageManager();
         PackageCatalogReference catalogRef{
             packageManager.GetPredefinedPackageCatalog(PredefinedPackageCatalog::OpenWindowsCatalog)
         };
