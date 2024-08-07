@@ -38,6 +38,7 @@ ANSISYS
 ANSISYSRC
 ANSISYSSC
 answerback
+ANSWERBACKMESSAGE
 antialiasing
 ANull
 anycpu

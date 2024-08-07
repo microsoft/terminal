@@ -147,6 +147,16 @@ bool ConhostInternalGetSet::GetSystemMode(const Mode mode) const
 }
 
 // Routine Description:
+// - Sends the configured answerback message in response to an ENQ query.
+// Return Value:
+// - <none>
+void ConhostInternalGetSet::ReturnAnswerback()
+{
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    ReturnResponse(gci.GetAnswerbackMessage());
+}
+
+// Routine Description:
 // - Sends a notify message to play the "SystemHand" sound event.
 // Return Value:
 // - <none>

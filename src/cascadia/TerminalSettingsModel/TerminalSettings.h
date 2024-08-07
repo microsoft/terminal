@@ -86,6 +86,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         INHERITABLE_SETTING(Model::TerminalSettings, bool, SnapOnInput, true);
         INHERITABLE_SETTING(Model::TerminalSettings, bool, AltGrAliasing, true);
+        INHERITABLE_SETTING(Model::TerminalSettings, hstring, AnswerbackMessage);
         INHERITABLE_SETTING(Model::TerminalSettings, til::color, CursorColor, DEFAULT_CURSOR_COLOR);
         INHERITABLE_SETTING(Model::TerminalSettings, Microsoft::Terminal::Core::CursorStyle, CursorShape, Core::CursorStyle::Vintage);
         INHERITABLE_SETTING(Model::TerminalSettings, uint32_t, CursorHeight, DEFAULT_CURSOR_HEIGHT);

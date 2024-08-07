@@ -135,6 +135,7 @@ public:
     void SetTextAttributes(const TextAttribute& attrs) noexcept override;
     void SetSystemMode(const Mode mode, const bool enabled) noexcept override;
     bool GetSystemMode(const Mode mode) const noexcept override;
+    void ReturnAnswerback() override;
     void WarningBell() override;
     void SetWindowTitle(const std::wstring_view title) override;
     CursorType GetUserDefaultCursorStyle() const noexcept override;
@@ -371,6 +372,7 @@ private:
 
     size_t _hyperlinkPatternId = 0;
 
+    std::wstring _answerbackMessage;
     std::wstring _workingDirectory;
 
     // This default fake font value is only used to check if the font is a raster font.
