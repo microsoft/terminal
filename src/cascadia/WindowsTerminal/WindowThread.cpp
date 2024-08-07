@@ -198,9 +198,7 @@ int WindowThread::_messagePump()
             TraceLoggingWrite(
                 g_hWindowsTerminalProvider,
                 "InteractiveSession",
-                TraceLoggingDescription("Emitted the first time a key is pressed"),
                 TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-                TraceLoggingKeyword(TIL_KEYWORD_TRACE),
                 TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
             _loggedInteraction = true;
         }
