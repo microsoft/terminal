@@ -239,6 +239,23 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         TsfDataProvider _tsfDataProvider{ this };
         winrt::com_ptr<SearchBoxControl> _searchBox;
 
+        enum class AltNumpadEncoding
+        {
+            OEM,
+            ANSI,
+            Unicode,
+        };
+        struct AltNumpadState
+        {
+            AltNumpadEncoding encoding = AltNumpadEncoding::OEM;
+            uint32_t accumulator = 0;
+            // Checking for accumulator != 0 to see if we have an ongoing Alt+Numpad composition is insufficient.
+            // The state can be active, while the accumulator is 0, if the user pressed Alt+Numpad0 which enabled
+            // the OEM encoding mode (= active), and then pressed Numpad0 again (= accumulator is still 0).
+            bool active = false;
+        };
+        AltNumpadState _altNumpadState;
+
         bool _closing{ false };
         bool _focused{ false };
         bool _initializedTerminal{ false };
@@ -361,6 +378,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void _UpdateAutoScroll(const Windows::Foundation::IInspectable& sender, const Windows::Foundation::IInspectable& e);
 
         void _KeyHandler(const Windows::UI::Xaml::Input::KeyRoutedEventArgs& e, const bool keyDown);
+        bool _KeyHandler(WORD vkey, WORD scanCode, ::Microsoft::Terminal::Core::ControlKeyStates modifiers, bool keyDown);
         static ::Microsoft::Terminal::Core::ControlKeyStates _GetPressedModifierKeys() noexcept;
         bool _TryHandleKeyBinding(const WORD vkey, const WORD scanCode, ::Microsoft::Terminal::Core::ControlKeyStates modifiers) const;
         static void _ClearKeyboardState(const WORD vkey, const WORD scanCode) noexcept;
