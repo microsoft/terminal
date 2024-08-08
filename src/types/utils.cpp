@@ -959,7 +959,7 @@ std::tuple<std::wstring, std::wstring> Utils::MangleStartingDirectoryForWSL(std:
                         break; // just bail out.
                     }
 
-                    if (!til::equals_insensitive_ascii(executablePath.parent_path().c_str(), systemDirectory))
+                    if (!til::equals_insensitive_ascii(executablePath.parent_path().native(), systemDirectory))
                     {
                         break; // it wasn't in system32!
                     }

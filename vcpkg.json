@@ -16,7 +16,7 @@
   "overrides": [
     {
       "name": "fmt",
-      "version": "7.1.3"
+      "version": "11.0.2"
     },
     {
       "name": "ms-gsl",
@@ -31,5 +31,5 @@
       "version": "2.4.2"
     }
   ],
-  "builtin-baseline": "2fd62b5d878104f4092af80533923bfe2bba2ee0"
+  "builtin-baseline": "fe1cde61e971d53c9687cf9a46308f8f55da19fa"
 }
