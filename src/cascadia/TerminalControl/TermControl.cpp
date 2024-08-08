@@ -584,6 +584,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 _searchBox->Open([weakThis = get_weak()]() {
                     if (const auto self = weakThis.get(); self && !self->_IsClosing())
                     {
+                        self->_searchScrollOffset = self->_calculateSearchScrollOffset();
                         self->_searchBox->SetFocusOnTextbox();
                         self->_refreshSearch();
                     }
@@ -605,7 +606,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
         else
         {
-            _handleSearchResults(_core.Search(_searchBox->Text(), goForward, _searchBox->CaseSensitive(), _searchBox->RegularExpression(), false));
+            const auto request = SearchRequest{ _searchBox->Text(), goForward, _searchBox->CaseSensitive(), _searchBox->RegularExpression(), false, _searchScrollOffset };
+            _handleSearchResults(_core.Search(request));
         }
     }
 
@@ -639,7 +641,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         if (_searchBox && _searchBox->IsOpen())
         {
-            _handleSearchResults(_core.Search(text, goForward, caseSensitive, regularExpression, false));
+            const auto request = SearchRequest{ text, goForward, caseSensitive, regularExpression, false, _searchScrollOffset };
+            _handleSearchResults(_core.Search(request));
         }
     }
 
@@ -660,7 +663,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             // We only want to update the search results based on the new text. Set
             // `resetOnly` to true so we don't accidentally update the current match index.
-            const auto result = _core.Search(text, goForward, caseSensitive, regularExpression, true);
+            const auto request = SearchRequest{ text, goForward, caseSensitive, regularExpression, true, _searchScrollOffset };
+            const auto result = _core.Search(request);
             _handleSearchResults(result);
         }
     }
@@ -1454,61 +1458,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - Whether the key was handled.
     bool TermControl::OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, const bool down)
     {
-        // Short-circuit isReadOnly check to avoid warning dialog
-        if (_core.IsInReadOnlyMode())
-        {
-            return false;
-        }
-
         const auto modifiers{ _GetPressedModifierKeys() };
-        auto handled = false;
-
-        if (vkey == VK_MENU && !down)
-        {
-            // Manually generate an Alt KeyUp event into the key bindings or terminal.
-            //   This is required as part of GH#6421.
-            (void)_TrySendKeyEvent(VK_MENU, scanCode, modifiers, false);
-            handled = true;
-        }
-        else if ((vkey == VK_F7 || vkey == VK_SPACE) && down)
-        {
-            // Manually generate an F7 event into the key bindings or terminal.
-            //   This is required as part of GH#638.
-            // Or do so for alt+space; only send to terminal when explicitly unbound
-            //  That is part of #GH7125
-            auto bindings{ _core.Settings().KeyBindings() };
-            auto isUnbound = false;
-            const KeyChord kc = {
-                modifiers.IsCtrlPressed(),
-                modifiers.IsAltPressed(),
-                modifiers.IsShiftPressed(),
-                modifiers.IsWinPressed(),
-                gsl::narrow_cast<WORD>(vkey),
-                0
-            };
-
-            if (bindings)
-            {
-                handled = bindings.TryKeyChord(kc);
-
-                if (!handled)
-                {
-                    isUnbound = bindings.IsKeyChordExplicitlyUnbound(kc);
-                }
-            }
-
-            const auto sendToTerminal = vkey == VK_F7 || (vkey == VK_SPACE && isUnbound);
-
-            if (!handled && sendToTerminal)
-            {
-                // _TrySendKeyEvent pretends it didn't handle F7 for some unknown reason.
-                (void)_TrySendKeyEvent(gsl::narrow_cast<WORD>(vkey), scanCode, modifiers, true);
-                // GH#6438: Note that we're _not_ sending the key up here - that'll
-                // get passed through XAML to our KeyUp handler normally.
-                handled = true;
-            }
-        }
-        return handled;
+        return _KeyHandler(gsl::narrow_cast<WORD>(vkey), gsl::narrow_cast<WORD>(scanCode), modifiers, down);
     }
 
     void TermControl::_KeyDownHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/,
@@ -1525,13 +1476,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     void TermControl::_KeyHandler(const Input::KeyRoutedEventArgs& e, const bool keyDown)
     {
-        // If the current focused element is a child element of searchbox,
-        // we do not send this event up to terminal
-        if (_searchBox && _searchBox->ContainsFocus())
-        {
-            return;
-        }
-
         const auto keyStatus = e.KeyStatus();
         const auto vkey = gsl::narrow_cast<WORD>(e.OriginalKey());
         const auto scanCode = gsl::narrow_cast<WORD>(keyStatus.ScanCode);
@@ -1542,6 +1486,18 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             modifiers |= ControlKeyStates::EnhancedKey;
         }
 
+        e.Handled(_KeyHandler(vkey, scanCode, modifiers, keyDown));
+    }
+
+    bool TermControl::_KeyHandler(WORD vkey, WORD scanCode, ControlKeyStates modifiers, bool keyDown)
+    {
+        // If the current focused element is a child element of searchbox,
+        // we do not send this event up to terminal
+        if (_searchBox && _searchBox->ContainsFocus())
+        {
+            return false;
+        }
+
         // GH#11076:
         // For some weird reason we sometimes receive a WM_KEYDOWN
         // message without vkey or scanCode if a user drags a tab.
@@ -1550,8 +1506,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // accidental insertion of invalid KeyChords into classes like ActionMap.
         if (!vkey && !scanCode)
         {
-            e.Handled(true);
-            return;
+            return true;
         }
 
         // Mark the event as handled and do nothing if we're closing, or the key
@@ -1564,26 +1519,151 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // about.
         if (_IsClosing() || vkey == VK_LWIN || vkey == VK_RWIN)
         {
-            e.Handled(true);
-            return;
+            return true;
         }
 
         // Short-circuit isReadOnly check to avoid warning dialog
         if (_core.IsInReadOnlyMode())
         {
-            e.Handled(!keyDown || _TryHandleKeyBinding(vkey, scanCode, modifiers));
-            return;
+            return !keyDown || _TryHandleKeyBinding(vkey, scanCode, modifiers);
         }
 
-        // Alt-Numpad# input will send us a character once the user releases
-        // Alt, so we should be ignoring the individual keydowns. The character
-        // will be sent through the TSFInputControl. See GH#1401 for more
-        // details
-        if (modifiers.IsAltPressed() && !modifiers.IsCtrlPressed() &&
-            (vkey >= VK_NUMPAD0 && vkey <= VK_NUMPAD9))
+        // Our custom TSF input control doesn't receive Alt+Numpad inputs,
+        // and we don't receive any via WM_CHAR as a xaml island app either.
+        // So, we simply implement our own Alt-Numpad handling here.
+        //
+        // This handles the case where the Alt key is released.
+        // We'll flush any ongoing composition in that case.
+        if (vkey == VK_MENU && !keyDown && _altNumpadState.active)
         {
-            e.Handled(true);
-            return;
+            auto& s = _altNumpadState;
+            auto encoding = s.encoding;
+            wchar_t buf[4]{};
+            size_t buf_len = 0;
+
+            if (encoding == AltNumpadEncoding::Unicode)
+            {
+                // UTF-32 -> UTF-16
+                if (s.accumulator <= 0xffff)
+                {
+                    buf[buf_len++] = static_cast<uint16_t>(s.accumulator);
+                }
+                else
+                {
+                    buf[buf_len++] = static_cast<uint16_t>((s.accumulator >> 10) + 0xd7c0);
+                    buf[buf_len++] = static_cast<uint16_t>((s.accumulator & 0x3ff) | 0xdc00);
+                }
+            }
+            else
+            {
+                const auto ansi = encoding == AltNumpadEncoding::ANSI;
+                const auto acp = GetACP();
+                auto codepage = ansi ? acp : CP_OEMCP;
+
+                // Alt+Numpad inputs are always a single codepoint, be it UTF-32 or ANSI.
+                // Since DBCS code pages by definition are >1 codepoint, we can't encode those.
+                // Traditionally, the OS uses the Latin1 or IBM code page instead.
+                if (acp == CP_JAPANESE ||
+                    acp == CP_CHINESE_SIMPLIFIED ||
+                    acp == CP_KOREAN ||
+                    acp == CP_CHINESE_TRADITIONAL ||
+                    acp == CP_UTF8)
+                {
+                    codepage = ansi ? 1252 : 437;
+                }
+
+                // The OS code seemed to also simply cut off the last byte in the accumulator.
+                const auto ch = gsl::narrow_cast<char>(s.accumulator & 0xff);
+                const auto len = MultiByteToWideChar(codepage, 0, &ch, 1, &buf[0], 2);
+                buf_len = gsl::narrow_cast<size_t>(std::max(0, len));
+            }
+
+            if (buf_len != 0)
+            {
+                // WinRT always needs null-terminated strings, because HSTRING is dumb.
+                // If it encounters a string that isn't, cppwinrt will abort().
+                // It should already be null-terminated, but let's make sure to not crash.
+                buf[buf_len] = L'\0';
+                _core.SendInput(std::wstring_view{ &buf[0], buf_len });
+            }
+
+            s = {};
+            return true;
+        }
+        // As a continuation of the above, this handles the key-down case.
+        if (modifiers.IsAltPressed())
+        {
+            // The OS code seems to reset the composition if shift is pressed, but I couldn't
+            // figure out how exactly it worked. We'll simply ignore any such inputs.
+            static constexpr DWORD permittedModifiers =
+                RIGHT_ALT_PRESSED |
+                LEFT_ALT_PRESSED |
+                NUMLOCK_ON |
+                SCROLLLOCK_ON |
+                CAPSLOCK_ON;
+
+            if (keyDown && (modifiers.Value() & ~permittedModifiers) == 0)
+            {
+                auto& s = _altNumpadState;
+
+                if (vkey == VK_ADD)
+                {
+                    // Alt '+' <number> is used to input Unicode code points.
+                    // Every time you press + it resets the entire state
+                    // in the original OS implementation as well.
+                    s.encoding = AltNumpadEncoding::Unicode;
+                    s.accumulator = 0;
+                    s.active = true;
+                }
+                else if (vkey == VK_NUMPAD0 && s.encoding == AltNumpadEncoding::OEM && s.accumulator == 0)
+                {
+                    // Alt '0' <number> is used to input ANSI code points.
+                    // Otherwise, they're OEM codepoints.
+                    s.encoding = AltNumpadEncoding::ANSI;
+                    s.active = true;
+                }
+                else
+                {
+                    // Otherwise, append the pressed key to the accumulator.
+                    const uint32_t base = s.encoding == AltNumpadEncoding::Unicode ? 16 : 10;
+                    uint32_t add = 0xffffff;
+
+                    if (vkey >= VK_NUMPAD0 && vkey <= VK_NUMPAD9)
+                    {
+                        add = vkey - VK_NUMPAD0;
+                    }
+                    else if (vkey >= 'A' && vkey <= 'F')
+                    {
+                        add = vkey - 'A' + 10;
+                    }
+
+                    // Pressing Alt + <not a number> should not activate the Alt+Numpad input, however.
+                    if (add < base)
+                    {
+                        s.accumulator = std::min(s.accumulator * base + add, 0x10FFFFu);
+                        s.active = true;
+                    }
+                }
+
+                // If someone pressed Alt + <not a number>, we'll skip the early
+                // return and send the Alt key combination as per usual.
+                if (s.active)
+                {
+                    return true;
+                }
+
+                // Unless I didn't code the above correctly, active == false should imply
+                // that _altNumpadState is in the (default constructed) base state.
+                assert(s.encoding == AltNumpadEncoding::OEM);
+                assert(s.accumulator == 0);
+            }
+        }
+        else if (_altNumpadState.active)
+        {
+            // If the user Alt+Tabbed in the middle of an Alt+Numpad sequence, we'll not receive a key-up event for
+            // the Alt key. There are several ways to detect this. Here, we simply check if the user typed another
+            // character, it's not an alt-up event, and we still have an ongoing composition.
+            _altNumpadState = {};
         }
 
         // GH#2235: Terminal::Settings hasn't been modified to differentiate
@@ -1599,20 +1679,18 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             keyDown &&
             _TryHandleKeyBinding(vkey, scanCode, modifiers))
         {
-            e.Handled(true);
-            return;
+            return true;
         }
 
         if (_TrySendKeyEvent(vkey, scanCode, modifiers, keyDown))
         {
-            e.Handled(true);
-            return;
+            return true;
         }
 
         // Manually prevent keyboard navigation with tab. We want to send tab to
         // the terminal, and we don't want to be able to escape focus of the
         // control with tab.
-        e.Handled(vkey == VK_TAB);
+        return vkey == VK_TAB;
     }
 
     // Method Description:
@@ -3572,6 +3650,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             QuickFixIcon().FontSize(static_cast<double>(args.Width() / dpiScale));
             RefreshQuickFixMenu();
         }
+
+        _searchScrollOffset = _calculateSearchScrollOffset();
     }
 
     void TermControl::_coreRaisedNotice(const IInspectable& /*sender*/,
@@ -3702,7 +3782,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const auto goForward = _searchBox->GoForward();
         const auto caseSensitive = _searchBox->CaseSensitive();
         const auto regularExpression = _searchBox->RegularExpression();
-        _handleSearchResults(_core.Search(text, goForward, caseSensitive, regularExpression, true));
+        const auto request = SearchRequest{ text, goForward, caseSensitive, regularExpression, true, _calculateSearchScrollOffset() };
+        _handleSearchResults(_core.Search(request));
     }
 
     void TermControl::_handleSearchResults(SearchResults results)
@@ -3980,6 +4061,19 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void TermControl::_bubbleSearchMissingCommand(const IInspectable& /*sender*/, const Control::SearchMissingCommandEventArgs& args)
     {
         SearchMissingCommand.raise(*this, args);
+    }
+
+    til::CoordType TermControl::_calculateSearchScrollOffset() const
+    {
+        auto result = 0;
+        if (_searchBox)
+        {
+            const auto displayInfo = DisplayInformation::GetForCurrentView();
+            const auto scaleFactor = _core.FontSize().Height / displayInfo.RawPixelsPerViewPixel();
+            const auto searchBoxRows = _searchBox->ActualHeight() / scaleFactor;
+            result = static_cast<int32_t>(std::ceil(searchBoxRows));
+        }
+        return result;
     }
 
     void TermControl::ClearQuickFix()

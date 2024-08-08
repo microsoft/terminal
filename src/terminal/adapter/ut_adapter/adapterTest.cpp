@@ -118,6 +118,11 @@ public:
         return _systemMode.test(mode);
     }
 
+    void ReturnAnswerback()
+    {
+        Log::Comment(L"ReturnAnswerback MOCK called...");
+    }
+
     void WarningBell() override
     {
         Log::Comment(L"WarningBell MOCK called...");
