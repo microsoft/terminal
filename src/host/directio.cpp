@@ -625,7 +625,7 @@ CATCH_RETURN();
             writer.BackupCursor();
         }
 
-            RETURN_IF_FAILED(WriteConsoleOutputWImplHelper(context, buffer, requestRectangle.Width(), requestRectangle, writtenRectangle));
+        RETURN_IF_FAILED(WriteConsoleOutputWImplHelper(context, buffer, requestRectangle.Width(), requestRectangle, writtenRectangle));
 
         if (writer)
         {
