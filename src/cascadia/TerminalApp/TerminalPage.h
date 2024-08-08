@@ -89,6 +89,12 @@ namespace winrt::TerminalApp::implementation
         til::property<winrt::Microsoft::Terminal::Settings::Model::LaunchPosition> Position;
     };
 
+    struct WinGetSearchParams
+    {
+        winrt::Microsoft::Management::Deployment::PackageMatchField Field;
+        winrt::Microsoft::Management::Deployment::PackageFieldMatchOption MatchOption;
+    };
+
     struct TerminalPage : TerminalPageT<TerminalPage>
     {
     public:
@@ -533,7 +539,6 @@ namespace winrt::TerminalApp::implementation
 
         void _ShowWindowChangedHandler(const IInspectable sender, const winrt::Microsoft::Terminal::Control::ShowWindowArgs args);
         Windows::Foundation::IAsyncAction _SearchMissingCommandHandler(const IInspectable sender, const winrt::Microsoft::Terminal::Control::SearchMissingCommandEventArgs args);
-        Windows::Foundation::IAsyncOperation<Windows::Foundation::Collections::IVectorView<winrt::Microsoft::Management::Deployment::MatchResult>> _FindPackagesInCatalogAsync(winrt::Microsoft::Management::Deployment::PackageCatalog catalog, winrt::Microsoft::Management::Deployment::PackageMatchField field, winrt::Microsoft::Management::Deployment::PackageFieldMatchOption matchOption, hstring query);
         Windows::Foundation::IAsyncOperation<Windows::Foundation::Collections::IVectorView<winrt::Microsoft::Management::Deployment::MatchResult>> _FindPackageAsync(hstring query);
 
         winrt::fire_and_forget _windowPropertyChanged(const IInspectable& sender, const winrt::Windows::UI::Xaml::Data::PropertyChangedEventArgs& args);

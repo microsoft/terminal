@@ -3002,44 +3002,49 @@ namespace winrt::TerminalApp::implementation
         ShowWindowChanged.raise(*this, args);
     }
 
-    Windows::Foundation::IAsyncOperation<IVectorView<MatchResult>> TerminalPage::_FindPackagesInCatalogAsync(PackageCatalog catalog, PackageMatchField field, PackageFieldMatchOption matchOption, hstring query)
-    {
-        FindPackagesOptions findPackagesOptions = WindowsPackageManagerFactory::CreateFindPackagesOptions();
-        PackageMatchFilter filter = WindowsPackageManagerFactory::CreatePackageMatchFilter();
-        filter.Field(field);
-        filter.Option(matchOption);
-        filter.Value(query);
-        findPackagesOptions.Filters().Append(filter);
-        findPackagesOptions.ResultLimit(20);
-        FindPackagesResult findPackagesResult{ co_await catalog.FindPackagesAsync(findPackagesOptions) };
-
-        co_return findPackagesResult.Matches();
-    }
-
     Windows::Foundation::IAsyncOperation<IVectorView<MatchResult>> TerminalPage::_FindPackageAsync(hstring query)
     {
-        PackageManager packageManager = WindowsPackageManagerFactory::CreatePackageManager();
+        const PackageManager packageManager = WindowsPackageManagerFactory::CreatePackageManager();
         PackageCatalogReference catalogRef{
             packageManager.GetPredefinedPackageCatalog(PredefinedPackageCatalog::OpenWindowsCatalog)
         };
-        ConnectResult connectResult = catalogRef.Connect();
-        if (connectResult.Status() != ConnectResultStatus::Ok)
-        {
-            co_return nullptr;
-        }
-        PackageCatalog catalog = connectResult.PackageCatalog();
+        catalogRef.PackageCatalogBackgroundUpdateInterval(std::chrono::hours(24));
 
-        auto pkgList = co_await _FindPackagesInCatalogAsync(catalog, PackageMatchField::Command, PackageFieldMatchOption::StartsWithCaseInsensitive, query);
-        if (pkgList.Size() > 0)
+        ConnectResult connectResult = catalogRef.Connect();
+        for (int retries = 0; connectResult.Status() != ConnectResultStatus::Ok && retries <= 3; ++retries)
         {
-            co_return pkgList;
+            if (retries == 3)
+            {
+                co_return nullptr;
+            }
+            connectResult = catalogRef.Connect();
         }
-        pkgList = co_await _FindPackagesInCatalogAsync(catalog, PackageMatchField::Name, PackageFieldMatchOption::ContainsCaseInsensitive, query);
-        if (pkgList.Size() > 0)
+
+        PackageCatalog catalog = connectResult.PackageCatalog();
+        static constexpr std::array<WinGetSearchParams, 3> searches{ { { .Field = PackageMatchField::Command, .MatchOption = PackageFieldMatchOption::StartsWithCaseInsensitive },
+                                                                       { .Field = PackageMatchField::Name, .MatchOption = PackageFieldMatchOption::ContainsCaseInsensitive },
+                                                                       { .Field = PackageMatchField::Moniker, .MatchOption = PackageFieldMatchOption::ContainsCaseInsensitive } } };
+
+        PackageMatchFilter filter = WindowsPackageManagerFactory::CreatePackageMatchFilter();
+        filter.Value(query);
+
+        FindPackagesOptions options = WindowsPackageManagerFactory::CreateFindPackagesOptions();
+        options.Filters().Append(filter);
+        options.ResultLimit(20);
+
+        IVectorView<MatchResult> pkgList;
+        for (const auto& search : searches)
         {
-            co_return pkgList;
+            filter.Field(search.Field);
+            filter.Option(search.MatchOption);
+
+            const auto result = co_await catalog.FindPackagesAsync(options);
+            pkgList = result.Matches();
+            if (pkgList.Size() > 0)
+            {
+                break;
+            }
         }
-        pkgList = co_await _FindPackagesInCatalogAsync(catalog, PackageMatchField::Moniker, PackageFieldMatchOption::ContainsCaseInsensitive, query);
         co_return pkgList;
     }
 
@@ -3052,23 +3057,19 @@ namespace winrt::TerminalApp::implementation
             co_return;
         }
 
-        auto pkgList = co_await _FindPackageAsync(args.MissingCommand());
-        for (int retries = 0; !pkgList && retries < 3; ++retries)
-        {
-            pkgList = co_await _FindPackageAsync(args.MissingCommand());
-        }
-
         // no packages were found, nothing to suggest
-        if (pkgList.Size() == 0)
+        const auto pkgList = co_await _FindPackageAsync(args.MissingCommand());
+        if (!pkgList || pkgList.Size() == 0)
         {
             co_return;
         }
 
         std::vector<hstring> suggestions;
         suggestions.reserve(pkgList.Size());
-        for (auto pkg : pkgList)
+        for (const auto pkg : pkgList)
         {
-            suggestions.emplace_back(fmt::format(FMT_COMPILE(L"winget install --id {}"), pkg.CatalogPackage().Id()));
+            // --id and --source ensure we don't collide with another package catalog
+            suggestions.emplace_back(fmt::format(FMT_COMPILE(L"winget install --id {} --source winget"), pkg.CatalogPackage().Id()));
         }
 
         co_await wil::resume_foreground(Dispatcher());
@@ -5084,6 +5085,7 @@ namespace winrt::TerminalApp::implementation
 
             item.Text(qf);
             item.Click(makeCallback(qf));
+            ToolTipService::SetToolTip(item, box_value(qf));
             menu.Items().Append(item);
         }
     }
