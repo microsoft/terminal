@@ -40,7 +40,7 @@ const TextAttribute& Page::Attributes() const noexcept
     return _buffer.GetCurrentAttributes();
 }
 
-void Page::SetAttributes(const TextAttribute& attr) const
+void Page::SetAttributes(const TextAttribute& attr) const noexcept
 {
     _buffer.SetCurrentAttributes(attr);
 }
