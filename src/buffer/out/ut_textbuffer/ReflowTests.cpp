@@ -7,7 +7,6 @@
 
 #include "../textBuffer.hpp"
 #include "../../renderer/inc/DummyRenderer.hpp"
-#include "../../types/inc/GlyphWidth.hpp"
 
 #include <IDataSource.h>
 

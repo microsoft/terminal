@@ -5,7 +5,6 @@
 
 #include "OutputCell.hpp"
 
-#include "../../types/inc/GlyphWidth.hpp"
 #include "../../types/inc/convert.hpp"
 #include "../../inc/conattrs.hpp"
 

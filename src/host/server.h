@@ -142,8 +142,6 @@ public:
 
     MidiAudio& GetMidiAudio();
 
-    CHAR_INFO AsCharInfo(const OutputCellView& cell) const noexcept;
-
     RenderData renderData;
 
 private:

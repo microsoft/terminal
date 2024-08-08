@@ -120,63 +120,6 @@ static void _CopyRectangle(SCREEN_INFORMATION& screenInfo,
 }
 
 // Routine Description:
-// - This routine reads a sequence of attributes from the screen buffer.
-// Arguments:
-// - screenInfo - reference to screen buffer information.
-// - coordRead - Screen buffer coordinate to begin reading from.
-// - amountToRead - the number of elements to read
-// Return Value:
-// - vector of attribute data
-std::vector<WORD> ReadOutputAttributes(const SCREEN_INFORMATION& screenInfo,
-                                       const til::point coordRead,
-                                       const size_t amountToRead)
-{
-    // Short circuit. If nothing to read, leave early.
-    if (amountToRead == 0)
-    {
-        return {};
-    }
-
-    // Short circuit, if reading out of bounds, leave early.
-    if (!screenInfo.GetBufferSize().IsInBounds(coordRead))
-    {
-        return {};
-    }
-
-    // Get iterator to the position we should start reading at.
-    auto it = screenInfo.GetCellDataAt(coordRead);
-    // Count up the number of cells we've attempted to read.
-    ULONG amountRead = 0;
-    // Prepare the return value string.
-    std::vector<WORD> retVal;
-    // Reserve the number of cells. If we have >U+FFFF, it will auto-grow later and that's OK.
-    retVal.reserve(amountToRead);
-
-    // While we haven't read enough cells yet and the iterator is still valid (hasn't reached end of buffer)
-    while (amountRead < amountToRead && it)
-    {
-        const auto legacyAttributes = it->TextAttr().GetLegacyAttributes();
-
-        // If the first thing we read is trailing, pad with a space.
-        // OR If the last thing we read is leading, pad with a space.
-        if ((amountRead == 0 && it->DbcsAttr() == DbcsAttribute::Trailing) ||
-            (amountRead == (amountToRead - 1) && it->DbcsAttr() == DbcsAttribute::Leading))
-        {
-            retVal.push_back(legacyAttributes);
-        }
-        else
-        {
-            retVal.push_back(legacyAttributes | GeneratePublicApiAttributeFormat(it->DbcsAttr()));
-        }
-
-        amountRead++;
-        it++;
-    }
-
-    return retVal;
-}
-
-// Routine Description:
 // - This routine reads a sequence of unicode characters from the screen buffer
 // Arguments:
 // - screenInfo - reference to screen buffer information.

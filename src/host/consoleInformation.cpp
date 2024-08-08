@@ -349,24 +349,3 @@ MidiAudio& CONSOLE_INFORMATION::GetMidiAudio()
 {
     return _midiAudio;
 }
-
-// Method Description:
-// - Generates a CHAR_INFO for this output cell, using the TextAttribute
-//      GetLegacyAttributes method to generate the legacy style attributes.
-// Arguments:
-// - cell: The cell to get the CHAR_INFO from
-// Return Value:
-// - a CHAR_INFO containing legacy information about the cell
-CHAR_INFO CONSOLE_INFORMATION::AsCharInfo(const OutputCellView& cell) const noexcept
-{
-    CHAR_INFO ci{ 0 };
-    ci.Char.UnicodeChar = Utf16ToUcs2(cell.Chars());
-
-    // If the current text attributes aren't legacy attributes, then
-    //    use gci to look up the correct legacy attributes to use
-    //    (for mapping RGB values to the nearest table value)
-    const auto& attr = cell.TextAttr();
-    ci.Attributes = attr.GetLegacyAttributes();
-    ci.Attributes |= GeneratePublicApiAttributeFormat(cell.DbcsAttr());
-    return ci;
-}

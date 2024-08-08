@@ -15,7 +15,6 @@
 #include "ApiRoutines.h"
 
 #include "../types/inc/convert.hpp"
-#include "../types/inc/GlyphWidth.hpp"
 #include "../types/inc/viewport.hpp"
 
 #include "../interactivity/inc/ServiceLocator.hpp"
@@ -413,56 +412,6 @@ CATCH_RETURN();
     CATCH_RETURN();
 }
 
-[[nodiscard]] static std::vector<CHAR_INFO> _ConvertCellsToMungedW(std::span<CHAR_INFO> buffer, const Viewport& rectangle)
-{
-    std::vector<CHAR_INFO> result;
-    result.reserve(buffer.size());
-
-    const auto size = rectangle.Dimensions();
-    auto bufferIter = buffer.begin();
-
-    for (til::CoordType i = 0; i < size.height; i++)
-    {
-        for (til::CoordType j = 0; j < size.width; j++)
-        {
-            // Prepare a candidate charinfo on the output side copying the colors but not the lead/trail information.
-            auto candidate = *bufferIter;
-            WI_ClearAllFlags(candidate.Attributes, COMMON_LVB_SBCSDBCS);
-
-            // If the glyph we're given is full width, it needs to take two cells.
-            if (IsGlyphFullWidth(candidate.Char.UnicodeChar))
-            {
-                // If we're not on the final cell of the row...
-                if (j < size.width - 1)
-                {
-                    // Mark that we're consuming two cells.
-                    j++;
-
-                    // Fill one cell with a copy of the color and character marked leading
-                    WI_SetFlag(candidate.Attributes, COMMON_LVB_LEADING_BYTE);
-                    result.push_back(candidate);
-
-                    // Fill a second cell with a copy of the color marked trailing and a padding character.
-                    WI_ClearFlag(candidate.Attributes, COMMON_LVB_LEADING_BYTE);
-                    WI_SetFlag(candidate.Attributes, COMMON_LVB_TRAILING_BYTE);
-                }
-                else
-                {
-                    // If we're on the final cell, this won't fit. Replace with a space.
-                    candidate.Char.UnicodeChar = UNICODE_SPACE;
-                }
-            }
-
-            // Push our candidate in.
-            result.push_back(candidate);
-
-            // Advance to read the next item.
-            ++bufferIter;
-        }
-    }
-    return result;
-}
-
 [[nodiscard]] HRESULT ReadConsoleOutputWImplHelper(const SCREEN_INFORMATION& context,
                                                    std::span<CHAR_INFO> targetBuffer,
                                                    const Viewport& requestRectangle,
@@ -470,8 +419,8 @@ CATCH_RETURN();
 {
     try
     {
-        const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-        auto& storageBuffer = context.GetActiveBuffer();
+        const auto& storageBuffer = context.GetActiveBuffer();
+        const auto& textBuffer = storageBuffer.GetTextBuffer();
         const auto storageRectangle = storageBuffer.GetBufferSize();
         const auto clippedRectangle = storageRectangle.Clamp(requestRectangle);
 
@@ -482,7 +431,6 @@ CATCH_RETURN();
         }
 
         const auto bufferStride = gsl::narrow_cast<size_t>(std::max(0, requestRectangle.Width()));
-        const auto width = gsl::narrow_cast<size_t>(clippedRectangle.Width());
         const auto offsetY = clippedRectangle.Top() - requestRectangle.Top();
         const auto offsetX = clippedRectangle.Left() - requestRectangle.Left();
         // We always write the intersection between the valid `storageRectangle` and the given `requestRectangle`.
@@ -498,12 +446,53 @@ CATCH_RETURN();
 
         for (til::CoordType y = clippedRectangle.Top(); y <= clippedRectangle.BottomInclusive(); y++)
         {
-            auto it = storageBuffer.GetCellDataAt({ clippedRectangle.Left(), y });
+            const auto& row = textBuffer.GetRowByOffset(y);
+            const auto& attributes = row.Attributes();
+            const auto left = row.AdjustToGlyphStart(clippedRectangle.Left());
+            const auto right = clippedRectangle.RightExclusive();
 
-            for (size_t i = 0; i < width; i++)
             {
-                targetBuffer[totalOffset + i] = gci.AsCharInfo(*it);
-                ++it;
+                const auto endOff = std::min<til::CoordType>(right, attributes.size());
+                const auto begOff = std::min<til::CoordType>(left, endOff);
+                const auto end = attributes.begin() + endOff;
+                auto it = attributes.begin() + begOff;
+                auto off = totalOffset;
+
+                for (; it != end; ++it, ++off)
+                {
+                    targetBuffer[off].Attributes = it->GetLegacyAttributes();
+                }
+            }
+
+            {
+                auto x = left;
+                auto off = totalOffset;
+
+                while (x < right)
+                {
+                    const auto next = row.NavigateToNext(x);
+                    const auto text = row.GetText(x, next);
+                    const auto wch = text.size() == 1 ? text.front() : UNICODE_REPLACEMENT;
+                    auto ci = &targetBuffer[off];
+
+                    ci->Char.UnicodeChar = wch;
+                    off += 1;
+                    x += 1;
+
+                    if (x < next)
+                    {
+                        ci->Attributes |= COMMON_LVB_LEADING_BYTE;
+
+                        do
+                        {
+                            ci = &targetBuffer[off];
+                            ci->Char.UnicodeChar = wch;
+                            ci->Attributes |= COMMON_LVB_TRAILING_BYTE;
+                            off += 1;
+                            x += 1;
+                        } while (x < next);
+                    }
+                }
             }
 
             totalOffset += bufferStride;
@@ -575,6 +564,7 @@ CATCH_RETURN();
         }
 
         auto& storageBuffer = context.GetActiveBuffer();
+        auto& textBuffer = storageBuffer.GetTextBuffer();
         const auto storageRectangle = storageBuffer.GetBufferSize();
         const auto clippedRectangle = storageRectangle.Clamp(requestRectangle);
 
@@ -600,18 +590,83 @@ CATCH_RETURN();
 
         auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         auto writer = gci.GetVtWriterForBuffer(&context);
+        std::wstring stringBuffer;
 
         for (til::CoordType y = clippedRectangle.Top(); y <= clippedRectangle.BottomInclusive(); y++)
         {
-            const auto charInfos = buffer.subspan(totalOffset, width);
-            const til::point target{ clippedRectangle.Left(), y };
+            const auto charInfos = til::safe_slice_len(buffer, totalOffset, width);
+            if (charInfos.empty())
+            {
+                continue;
+            }
 
-            // Make the iterator and write to the target position.
-            storageBuffer.Write(OutputCellIterator(charInfos), target);
+            auto left = clippedRectangle.Left();
 
             if (writer)
             {
-                writer.WriteInfos(target, charInfos);
+                writer.WriteCUP({ left, y });
+            }
+
+            for (size_t end = 0; end < charInfos.size();)
+            {
+                const auto attr = charInfos[end].Attributes;
+                const auto beg = end;
+
+                // Find the next attribute change in the given CHAR_INFOs.
+                while (++end < charInfos.size() && charInfos[end].Attributes == attr)
+                {
+                }
+
+                const auto infoRun = til::safe_slice_abs(charInfos, beg, end);
+                THROW_HR_IF(E_UNEXPECTED, infoRun.empty());
+
+                // Accumulate this run of CHAR_INFOs with identical attributes into a single string.
+                {
+                    stringBuffer.clear();
+                    stringBuffer.reserve(infoRun.size() * 2);
+
+                    if (WI_IsAnyFlagSet(infoRun.front().Attributes, COMMON_LVB_TRAILING_BYTE))
+                    {
+                        stringBuffer.push_back(L' ');
+                    }
+
+                    for (const auto& ci : infoRun)
+                    {
+                        if (WI_IsAnyFlagClear(ci.Attributes, COMMON_LVB_TRAILING_BYTE))
+                        {
+                            stringBuffer.push_back(Microsoft::Console::VirtualTerminal::VtIo::SanitizeUCS2(ci.Char.UnicodeChar));
+                        }
+                    }
+
+                    if (WI_IsAnyFlagSet(infoRun.back().Attributes, COMMON_LVB_LEADING_BYTE))
+                    {
+                        stringBuffer.back() = L' ';
+                    }
+                }
+
+                // Write the string into to the text buffer.
+                // If the character widths assigned by the application via COMMON_LVB_LEADING_BYTE/COMMON_LVB_TRAILING_BYTE
+                // don't match our idea of the character widths, we'll either pad it with whitespace or truncate it.
+                stringBuffer.append(infoRun.size(), L' ');
+
+                const auto right = gsl::narrow<til::CoordType>(left + infoRun.size());
+                const TextAttribute textAttr{ attr };
+                std::wstring_view text{ stringBuffer };
+                RowWriteState state{
+                    .text = text,
+                    .columnBegin = left,
+                    .columnLimit = right,
+                };
+                textBuffer.Replace(y, textAttr, state);
+
+                if (writer)
+                {
+                    text.remove_suffix(state.text.size());
+                    writer.WriteAttributes(textAttr);
+                    writer.WriteUTF16(text);
+                }
+
+                left = right;
             }
 
             totalOffset += bufferStride;
@@ -684,17 +739,7 @@ CATCH_RETURN();
             writer.BackupCursor();
         }
 
-        if (!context.GetActiveBuffer().GetCurrentFont().IsTrueTypeFont())
-        {
-            // For compatibility reasons, we must maintain the behavior that munges the data if we are writing while a raster font is enabled.
-            // This can be removed when raster font support is removed.
-            auto translated = _ConvertCellsToMungedW(buffer, requestRectangle);
-            RETURN_IF_FAILED(WriteConsoleOutputWImplHelper(context, translated, requestRectangle.Width(), requestRectangle, writtenRectangle));
-        }
-        else
-        {
-            RETURN_IF_FAILED(WriteConsoleOutputWImplHelper(context, buffer, requestRectangle.Width(), requestRectangle, writtenRectangle));
-        }
+        RETURN_IF_FAILED(WriteConsoleOutputWImplHelper(context, buffer, requestRectangle.Width(), requestRectangle, writtenRectangle));
 
         if (writer)
         {
@@ -718,10 +763,38 @@ CATCH_RETURN();
 
     try
     {
-        const auto attrs = ReadOutputAttributes(context.GetActiveBuffer(), origin, buffer.size());
-        std::copy(attrs.cbegin(), attrs.cend(), buffer.begin());
-        written = attrs.size();
+        const auto width = context.GetBufferSize().Width();
+        auto y = origin.y;
+        size_t read = 0;
 
+        til::small_vector<CHAR_INFO, 1024> infoBuffer{ gsl::narrow_cast<size_t>(width) };
+
+        while (read < buffer.size())
+        {
+            const auto beg = y == origin.y ? origin.x : 0;
+            const auto bufferRemaining = buffer.size() - read;
+            const auto columnsRemaining = gsl::narrow_cast<size_t>(width - beg);
+            const auto actualRemaining = gsl::narrow_cast<til::CoordType>(std::min(bufferRemaining, columnsRemaining));
+            const auto end = beg + actualRemaining;
+
+            const auto wantViewport = Viewport::FromInclusive({ beg, y, end, y });
+            Viewport actualViewport;
+            RETURN_IF_FAILED(ReadConsoleOutputWImplHelper(context, infoBuffer, wantViewport, actualViewport));
+
+            if (wantViewport != actualViewport)
+            {
+                break;
+            }
+
+            for (til::CoordType i = 0; i < actualRemaining; ++i)
+            {
+                buffer[read++] = infoBuffer[i].Attributes;
+            }
+
+            y += 1;
+        }
+
+        written = read;
         return S_OK;
     }
     CATCH_RETURN();

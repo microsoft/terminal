@@ -44,7 +44,6 @@ namespace Microsoft::Console::VirtualTerminal
             void WriteWindowVisibility(bool visible) const;
             void WriteWindowTitle(std::wstring_view title) const;
             void WriteAttributes(const TextAttribute& attributes) const;
-            void WriteInfos(til::point target, std::span<const CHAR_INFO> infos) const;
 
         private:
             VtIo* _io = nullptr;

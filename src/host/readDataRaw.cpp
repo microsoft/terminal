@@ -5,7 +5,6 @@
 #include "readDataRaw.hpp"
 #include "dbcs.h"
 #include "stream.h"
-#include "../types/inc/GlyphWidth.hpp"
 
 #include "../interactivity/inc/ServiceLocator.hpp"
 

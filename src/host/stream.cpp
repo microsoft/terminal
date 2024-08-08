@@ -12,7 +12,6 @@
 
 #include "ApiRoutines.h"
 
-#include "../types/inc/GlyphWidth.hpp"
 
 #include "../interactivity/inc/ServiceLocator.hpp"
 

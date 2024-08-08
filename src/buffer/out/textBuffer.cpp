@@ -374,22 +374,30 @@ TextBufferCellIterator TextBuffer::GetCellDataAt(const til::point at, const View
 // Given the character offset `position` in the `chars` string, this function returns the starting position of the next grapheme.
 // For instance, given a `chars` of L"x\uD83D\uDE42y" and a `position` of 1 it'll return 3.
 // GraphemePrev would do the exact inverse of this operation.
-size_t TextBuffer::GraphemeNext(const std::wstring_view& chars, size_t position) noexcept
+size_t TextBuffer::GraphemeNext(const std::wstring_view& chars, size_t position, til::CoordType* width) noexcept
 {
     auto& cwd = CodepointWidthDetector::Singleton();
 #pragma warning(suppress : 26481) // Don't use pointer arithmetic. Use span instead (bounds.1).
     GraphemeState state{ .beg = chars.data() + position };
     cwd.GraphemeNext(state, chars);
+    if (width)
+    {
+        *width = state.width;
+    }
     return position + state.len;
 }
 
 // It's the counterpart to GraphemeNext. See GraphemeNext.
-size_t TextBuffer::GraphemePrev(const std::wstring_view& chars, size_t position) noexcept
+size_t TextBuffer::GraphemePrev(const std::wstring_view& chars, size_t position, til::CoordType* width) noexcept
 {
     auto& cwd = CodepointWidthDetector::Singleton();
 #pragma warning(suppress : 26481) // Don't use pointer arithmetic. Use span instead (bounds.1).
     GraphemeState state{ .beg = chars.data() + position };
     cwd.GraphemePrev(state, chars);
+    if (width)
+    {
+        *width = state.width;
+    }
     return position - state.len;
 }
 

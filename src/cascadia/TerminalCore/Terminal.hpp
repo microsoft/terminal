@@ -12,7 +12,6 @@
 #include "../../terminal/parser/StateMachine.hpp"
 #include "../../terminal/input/terminalInput.hpp"
 #include "../../types/inc/Viewport.hpp"
-#include "../../types/inc/GlyphWidth.hpp"
 #include "../../cascadia/terminalcore/ITerminalInput.hpp"
 
 #include <til/ticket_lock.h>

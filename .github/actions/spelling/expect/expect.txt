@@ -1116,7 +1116,6 @@ msrc
 MSVCRTD
 MTSM
 Munged
-munges
 murmurhash
 muxes
 myapplet

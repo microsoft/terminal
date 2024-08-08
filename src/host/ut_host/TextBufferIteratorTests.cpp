@@ -305,8 +305,6 @@ class TextBufferIteratorTests
     TEST_METHOD(DifferenceOperatorText);
     TEST_METHOD(DifferenceOperatorCell);
 
-    TEST_METHOD(AsCharInfoCell);
-
     TEST_METHOD(DereferenceOperatorText);
     TEST_METHOD(DereferenceOperatorCell);
 
@@ -440,27 +438,6 @@ void TextBufferIteratorTests::DifferenceOperatorText()
 void TextBufferIteratorTests::DifferenceOperatorCell()
 {
     DifferenceOperatorTestHelper<TextBufferCellIterator>();
-}
-
-void TextBufferIteratorTests::AsCharInfoCell()
-{
-    m_state->FillTextBuffer();
-    const auto it = GetIterator<TextBufferCellIterator>();
-    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-
-    const auto& outputBuffer = gci.GetActiveOutputBuffer();
-
-    const auto& row = outputBuffer._textBuffer->GetRowByOffset(it._pos.y);
-
-    const auto wcharExpected = *row.GlyphAt(it._pos.x).begin();
-    const auto attrExpected = row.GetAttrByColumn(it._pos.x);
-
-    const auto cellActual = gci.AsCharInfo(*it);
-    const auto wcharActual = cellActual.Char.UnicodeChar;
-    const auto attrActual = it->TextAttr();
-
-    VERIFY_ARE_EQUAL(wcharExpected, wcharActual);
-    VERIFY_ARE_EQUAL(attrExpected, attrActual);
 }
 
 void TextBufferIteratorTests::DereferenceOperatorText()

@@ -26,10 +26,6 @@ void ScreenBufferSizeChange(const til::size coordNewSize);
 
 [[nodiscard]] NTSTATUS DoCreateScreenBuffer();
 
-std::vector<WORD> ReadOutputAttributes(const SCREEN_INFORMATION& screenInfo,
-                                       const til::point coordRead,
-                                       const size_t amountToRead);
-
 std::wstring ReadOutputStringW(const SCREEN_INFORMATION& screenInfo,
                                const til::point coordRead,
                                const size_t amountToRead);

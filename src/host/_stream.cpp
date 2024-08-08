@@ -17,7 +17,6 @@
 #include "VtIo.hpp"
 
 #include "../types/inc/convert.hpp"
-#include "../types/inc/GlyphWidth.hpp"
 #include "../types/inc/Viewport.hpp"
 
 #include "../interactivity/inc/ServiceLocator.hpp"

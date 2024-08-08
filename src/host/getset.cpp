@@ -503,16 +503,15 @@ void ApiRoutines::SetConsoleActiveScreenBufferImpl(SCREEN_INFORMATION& newContex
                 alt.SetViewportSize(&size);
             }
 
-            Viewport read;
             til::small_vector<CHAR_INFO, 1024> infos;
             infos.resize(area, CHAR_INFO{ L' ', FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED });
 
             const auto dumpScreenInfo = [&](SCREEN_INFORMATION& screenInfo) {
+                Viewport read;
                 THROW_IF_FAILED(ReadConsoleOutputWImpl(screenInfo, infos, viewport, read));
-                for (til::CoordType i = 0; i < size.height; i++)
-                {
-                    writer.WriteInfos({ 0, i }, { infos.begin() + i * size.width, static_cast<size_t>(size.width) });
-                }
+
+                Viewport write;
+                THROW_IF_FAILED(WriteConsoleOutputWImpl(screenInfo, infos, read, write));
 
                 writer.WriteCUP(screenInfo.GetTextBuffer().GetCursor().GetPosition());
                 writer.WriteAttributes(screenInfo.GetAttributes());

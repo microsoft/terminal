@@ -12,8 +12,9 @@
 
 #include "../interactivity/inc/ServiceLocator.hpp"
 #include "../types/inc/convert.hpp"
-#include "../types/inc/GlyphWidth.hpp"
 #include "../types/inc/Viewport.hpp"
+
+#include <til/unicode.h>
 
 using namespace Microsoft::Console::Types;
 using Microsoft::Console::Interactivity::ServiceLocator;
@@ -76,171 +77,166 @@ static FillConsoleResult FillConsoleImpl(SCREEN_INFORMATION& screenInfo, FillCon
 
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     auto& screenBuffer = screenInfo.GetActiveBuffer();
+    auto& textBuffer = screenBuffer.GetTextBuffer();
     const auto bufferSize = screenBuffer.GetBufferSize();
-    FillConsoleResult result;
 
     if (!bufferSize.IsInBounds(startingCoordinate))
     {
         return {};
     }
 
-    if (auto writer = gci.GetVtWriterForBuffer(&screenInfo))
+    auto writer = gci.GetVtWriterForBuffer(&screenInfo);
+    if (writer)
     {
         writer.BackupCursor();
-
-        const auto h = bufferSize.Height();
-        const auto w = bufferSize.Width();
-        auto y = startingCoordinate.y;
-        auto input = static_cast<const uint16_t*>(data);
-        size_t inputPos = 0;
-        til::small_vector<CHAR_INFO, 1024> infoBuffer;
-        Viewport unused;
-
-        infoBuffer.resize(gsl::narrow_cast<size_t>(w));
-
-        while (y < h && inputPos < lengthToWrite)
-        {
-            const auto beg = y == startingCoordinate.y ? startingCoordinate.x : 0;
-            const auto columnsAvailable = w - beg;
-            til::CoordType columns = 0;
-
-            const auto readViewport = Viewport::FromInclusive({ beg, y, w - 1, y });
-            THROW_IF_FAILED(ReadConsoleOutputWImplHelper(screenInfo, infoBuffer, readViewport, unused));
-
-            switch (mode)
-            {
-            case FillConsoleMode::WriteAttribute:
-                for (; columns < columnsAvailable && inputPos < lengthToWrite; ++columns, ++inputPos)
-                {
-                    infoBuffer[columns].Attributes = input[inputPos];
-                }
-                break;
-            case FillConsoleMode::FillAttribute:
-                for (const auto attr = input[0]; columns < columnsAvailable && inputPos < lengthToWrite; ++columns, ++inputPos)
-                {
-                    infoBuffer[columns].Attributes = attr;
-                }
-                break;
-            case FillConsoleMode::WriteCharacter:
-                for (; columns < columnsAvailable && inputPos < lengthToWrite; ++inputPos)
-                {
-                    const auto ch = input[inputPos];
-                    if (ch >= 0x80 && IsGlyphFullWidth(ch))
-                    {
-                        // If the wide glyph doesn't fit into the last column, pad it with whitespace.
-                        if ((columns + 1) >= columnsAvailable)
-                        {
-                            auto& lead = infoBuffer[columns++];
-                            lead.Char.UnicodeChar = L' ';
-                            lead.Attributes = lead.Attributes & ~(COMMON_LVB_LEADING_BYTE | COMMON_LVB_TRAILING_BYTE);
-                            break;
-                        }
-
-                        auto& lead = infoBuffer[columns++];
-                        lead.Char.UnicodeChar = ch;
-                        lead.Attributes = lead.Attributes & ~COMMON_LVB_TRAILING_BYTE | COMMON_LVB_LEADING_BYTE;
-
-                        auto& trail = infoBuffer[columns++];
-                        trail.Char.UnicodeChar = ch;
-                        trail.Attributes = trail.Attributes & ~COMMON_LVB_LEADING_BYTE | COMMON_LVB_TRAILING_BYTE;
-                    }
-                    else
-                    {
-                        auto& lead = infoBuffer[columns++];
-                        lead.Char.UnicodeChar = ch;
-                        lead.Attributes = lead.Attributes & ~(COMMON_LVB_LEADING_BYTE | COMMON_LVB_TRAILING_BYTE);
-                    }
-                }
-                break;
-            case FillConsoleMode::FillCharacter:
-                // Identical to WriteCharacter above, but with the if() and for() swapped.
-                if (const auto ch = input[0]; ch >= 0x80 && IsGlyphFullWidth(ch))
-                {
-                    for (; columns < columnsAvailable && inputPos < lengthToWrite; ++inputPos)
-                    {
-                        // If the wide glyph doesn't fit into the last column, pad it with whitespace.
-                        if ((columns + 1) >= columnsAvailable)
-                        {
-                            auto& lead = infoBuffer[columns++];
-                            lead.Char.UnicodeChar = L' ';
-                            lead.Attributes = lead.Attributes & ~(COMMON_LVB_LEADING_BYTE | COMMON_LVB_TRAILING_BYTE);
-                            break;
-                        }
-
-                        auto& lead = infoBuffer[columns++];
-                        lead.Char.UnicodeChar = ch;
-                        lead.Attributes = lead.Attributes & ~COMMON_LVB_TRAILING_BYTE | COMMON_LVB_LEADING_BYTE;
-
-                        auto& trail = infoBuffer[columns++];
-                        trail.Char.UnicodeChar = ch;
-                        trail.Attributes = trail.Attributes & ~COMMON_LVB_LEADING_BYTE | COMMON_LVB_TRAILING_BYTE;
-                    }
-                }
-                else
-                {
-                    for (; columns < columnsAvailable && inputPos < lengthToWrite; ++inputPos)
-                    {
-                        auto& lead = infoBuffer[columns++];
-                        lead.Char.UnicodeChar = ch;
-                        lead.Attributes = lead.Attributes & ~(COMMON_LVB_LEADING_BYTE | COMMON_LVB_TRAILING_BYTE);
-                    }
-                }
-                break;
-            }
-
-            const auto writeViewport = Viewport::FromInclusive({ beg, y, beg + columns - 1, y });
-            THROW_IF_FAILED(WriteConsoleOutputWImplHelper(screenInfo, infoBuffer, w, writeViewport, unused));
-
-            y += 1;
-            result.cellsModified += columns;
-        }
-
-        result.lengthRead = inputPos;
-
-        writer.Submit();
     }
-    else
-    {
-        // Technically we could always pass `data` as `uint16_t*`, because `wchar_t` is guaranteed to be 16 bits large.
-        // However, OutputCellIterator is terrifyingly unsafe code and so we don't do that.
-        //
-        // Constructing an OutputCellIterator with a `wchar_t` takes the `wchar_t` by reference, so that it can reference
-        // it in a `wstring_view` forever. That's of course really bad because passing a `const uint16_t&` to a
-        // `const wchar_t&` argument implicitly converts the types. To do so, the implicit conversion allocates a
-        // `wchar_t` value on the stack. The lifetime of that copy DOES NOT get extended beyond the constructor call.
-        // The result is that OutputCellIterator would read random data from the stack.
-        //
-        // Don't ever assume the lifetime of implicitly convertible types given by reference.
-        // Ironically that's a bug that cannot happen with C pointers. To no ones surprise, C keeps on winning.
-        auto attrs = static_cast<const uint16_t*>(data);
-        auto chars = static_cast<const wchar_t*>(data);
 
-        OutputCellIterator it;
+    FillConsoleResult result;
+    const auto h = bufferSize.Height();
+    const auto w = bufferSize.Width();
+    auto y = startingCoordinate.y;
+    auto input = static_cast<const uint16_t*>(data);
+    const std::wstring_view inputText{ (const wchar_t*)input, lengthToWrite };
+    size_t inputPos = 0;
+    til::small_vector<CHAR_INFO, 1024> infoBuffer;
+    Viewport unused;
+
+    infoBuffer.resize(gsl::narrow_cast<size_t>(w));
+
+    auto fillCharacter = UNICODE_REPLACEMENT;
+    til::CoordType fillCharacterWidth = 1;
+    if (mode == FillConsoleMode::FillCharacter)
+    {
+        wchar_t chars[3] = { L'a', inputText[0], L'a' };
+        std::wstring_view foobar{ &chars[0], 3 };
+        til::CoordType width = 1;
+        const auto stop1 = textBuffer.GraphemeNext(foobar, 0, nullptr);
+        const auto stop2 = textBuffer.GraphemeNext(foobar, stop1, &width);
+        if (stop1 == 1 && stop2 == 2 && !til::is_surrogate(foobar[1]))
+        {
+            fillCharacter = foobar[1];
+            fillCharacterWidth = width;
+        }
+    }
+
+    while (y < h && inputPos < lengthToWrite)
+    {
+        const auto beg = y == startingCoordinate.y ? startingCoordinate.x : 0;
+        const auto columnsAvailable = w - beg;
+        til::CoordType columns = 0;
+
+        const auto readViewport = Viewport::FromInclusive({ beg, y, w - 1, y });
+        THROW_IF_FAILED(ReadConsoleOutputWImplHelper(screenInfo, infoBuffer, readViewport, unused));
 
         switch (mode)
         {
         case FillConsoleMode::WriteAttribute:
-            it = OutputCellIterator({ attrs, lengthToWrite });
-            break;
-        case FillConsoleMode::WriteCharacter:
-            it = OutputCellIterator({ chars, lengthToWrite });
+            for (; columns < columnsAvailable && inputPos < lengthToWrite; ++columns, ++inputPos)
+            {
+                infoBuffer[columns].Attributes = input[inputPos];
+            }
             break;
         case FillConsoleMode::FillAttribute:
-            it = OutputCellIterator(TextAttribute(*attrs), lengthToWrite);
+            for (const auto attr = input[0]; columns < columnsAvailable && inputPos < lengthToWrite; ++columns, ++inputPos)
+            {
+                infoBuffer[columns].Attributes = attr;
+            }
+            break;
+        case FillConsoleMode::WriteCharacter:
+            for (; columns < columnsAvailable && inputPos < lengthToWrite; ++inputPos)
+            {
+                auto ch = input[inputPos];
+                auto next = inputPos + 1;
+                til::CoordType width = 1;
+
+                if (ch >= 0x80)
+                {
+                    next = textBuffer.GraphemeNext(inputText, inputPos, &width);
+                    if (next - inputPos != 1 || til::is_surrogate(ch))
+                    {
+                        ch = UNICODE_REPLACEMENT;
+                    }
+                }
+
+                if (width > 1)
+                {
+                    const auto columnEnd = columns + width;
+
+                    // If the wide glyph doesn't fit into the last column, pad it with whitespace.
+                    if (columnEnd > columnsAvailable)
+                    {
+                        auto& lead = infoBuffer[columns++];
+                        lead.Char.UnicodeChar = L' ';
+                        lead.Attributes = lead.Attributes & ~(COMMON_LVB_LEADING_BYTE | COMMON_LVB_TRAILING_BYTE);
+                        break;
+                    }
+
+                    auto& lead = infoBuffer[columns++];
+                    lead.Char.UnicodeChar = ch;
+                    lead.Attributes = lead.Attributes & ~COMMON_LVB_TRAILING_BYTE | COMMON_LVB_LEADING_BYTE;
+
+                    auto& trail = infoBuffer[columns++];
+                    trail.Char.UnicodeChar = ch;
+                    trail.Attributes = trail.Attributes & ~COMMON_LVB_LEADING_BYTE | COMMON_LVB_TRAILING_BYTE;
+                }
+                else
+                {
+                    auto& lead = infoBuffer[columns++];
+                    lead.Char.UnicodeChar = ch;
+                    lead.Attributes = lead.Attributes & ~(COMMON_LVB_LEADING_BYTE | COMMON_LVB_TRAILING_BYTE);
+                }
+            }
             break;
         case FillConsoleMode::FillCharacter:
-            it = OutputCellIterator(*chars, lengthToWrite);
+        {
+            // Identical to WriteCharacter above, but with the if() and for() swapped.
+            if (fillCharacterWidth > 1)
+            {
+                for (; columns < columnsAvailable && inputPos < lengthToWrite; ++inputPos)
+                {
+                    // If the wide glyph doesn't fit into the last column, pad it with whitespace.
+                    if ((columns + fillCharacterWidth) > columnsAvailable)
+                    {
+                        auto& lead = infoBuffer[columns++];
+                        lead.Char.UnicodeChar = L' ';
+                        lead.Attributes = lead.Attributes & ~(COMMON_LVB_LEADING_BYTE | COMMON_LVB_TRAILING_BYTE);
+                        break;
+                    }
+
+                    auto& lead = infoBuffer[columns++];
+                    lead.Char.UnicodeChar = fillCharacter;
+                    lead.Attributes = lead.Attributes & ~COMMON_LVB_TRAILING_BYTE | COMMON_LVB_LEADING_BYTE;
+
+                    auto& trail = infoBuffer[columns++];
+                    trail.Char.UnicodeChar = fillCharacter;
+                    trail.Attributes = trail.Attributes & ~COMMON_LVB_LEADING_BYTE | COMMON_LVB_TRAILING_BYTE;
+                }
+            }
+            else
+            {
+                for (; columns < columnsAvailable && inputPos < lengthToWrite; ++inputPos)
+                {
+                    auto& lead = infoBuffer[columns++];
+                    lead.Char.UnicodeChar = fillCharacter;
+                    lead.Attributes = lead.Attributes & ~(COMMON_LVB_LEADING_BYTE | COMMON_LVB_TRAILING_BYTE);
+                }
+            }
             break;
-        default:
-            __assume(false);
+        }
         }
 
-        const auto done = screenBuffer.Write(it, startingCoordinate, false);
-        result.lengthRead = done.GetInputDistance(it);
-        result.cellsModified = done.GetCellDistance(it);
+        const auto writeViewport = Viewport::FromInclusive({ beg, y, beg + columns - 1, y });
+        THROW_IF_FAILED(WriteConsoleOutputWImplHelper(screenInfo, infoBuffer, w, writeViewport, unused));
 
-        // If we've overwritten image content, it needs to be erased.
-        ImageSlice::EraseCells(screenInfo.GetTextBuffer(), startingCoordinate, result.cellsModified);
+        y += 1;
+        result.cellsModified += columns;
+    }
+
+    result.lengthRead = inputPos;
+
+    if (writer)
+    {
+        writer.Submit();
     }
 
     if (screenBuffer.HasAccessibilityEventing())
