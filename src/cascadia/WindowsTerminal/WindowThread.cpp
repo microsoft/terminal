@@ -6,6 +6,8 @@
 
 using namespace winrt::Microsoft::Terminal::Remoting;
 
+bool WindowThread::_loggedInteraction = false;
+
 WindowThread::WindowThread(winrt::TerminalApp::AppLogic logic,
                            winrt::Microsoft::Terminal::Remoting::WindowRequestedArgs args,
                            winrt::Microsoft::Terminal::Remoting::WindowManager manager,
@@ -189,6 +191,16 @@ int WindowThread::_messagePump()
         if (message.message == AppHost::WM_REFRIGERATE)
         {
             break;
+        }
+
+        if (!_loggedInteraction && (message.message == WM_KEYDOWN || message.message == WM_SYSKEYDOWN))
+        {
+            TraceLoggingWrite(
+                g_hWindowsTerminalProvider,
+                "SessionBecameInteractive",
+                TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
+            _loggedInteraction = true;
         }
 
         // GH#638 (Pressing F7 brings up both the history AND a caret browsing message)
