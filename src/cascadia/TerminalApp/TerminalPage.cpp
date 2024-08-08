@@ -3069,7 +3069,7 @@ namespace winrt::TerminalApp::implementation
         for (const auto pkg : pkgList)
         {
             // --id and --source ensure we don't collide with another package catalog
-            suggestions.emplace_back(fmt::format(FMT_COMPILE(L"winget install --id {} --source winget"), pkg.CatalogPackage().Id()));
+            suggestions.emplace_back(fmt::format(FMT_COMPILE(L"winget install --id {} -s winget"), pkg.CatalogPackage().Id()));
         }
 
         co_await wil::resume_foreground(Dispatcher());
