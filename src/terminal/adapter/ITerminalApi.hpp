@@ -52,8 +52,6 @@ namespace Microsoft::Console::VirtualTerminal
 
         virtual bool IsVtInputEnabled() const = 0;
 
-        virtual void SetTextAttributes(const TextAttribute& attrs) = 0;
-
         enum class Mode : size_t
         {
             AutoWrap,

@@ -555,7 +555,7 @@ bool AdaptDispatch::CursorRestoreState()
     }
 
     // Restore text attributes.
-    page.SetAttributes(savedCursorState.Attributes, &_api);
+    page.SetAttributes(savedCursorState.Attributes);
 
     // Restore designated character sets.
     _termOutput.RestoreFrom(savedCursorState.TermOutput);
