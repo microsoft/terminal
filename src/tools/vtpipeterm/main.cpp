@@ -82,6 +82,7 @@ static int run(int argc, const wchar_t* argv[])
 
     HPCON hPC = nullptr;
     THROW_IF_FAILED(ConptyCreatePseudoConsole(viewportSize, pipe.client.get(), pipe.client.get(), 0, &hPC));
+    pipe.client.reset();
 
     PROCESS_INFORMATION pi;
     {
