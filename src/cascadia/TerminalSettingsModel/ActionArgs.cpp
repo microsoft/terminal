@@ -475,6 +475,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             return RS_(L"OpenBothSettingsFilesCommandKey");
         case SettingsTarget::SettingsFile:
             return RS_(L"OpenSettingsCommandKey");
+        case SettingsTarget::SendInput:
+            return RS_(L"SettingFilePathSendInputCommandKey");
+        case SettingsTarget::FileExplorer:
+            return RS_(L"SettingsFileOpenInExplorerCommandKey");
+        case SettingsTarget::Clipboard:
+            return RS_(L"SettingsFilePathSendToClipboard");
         case SettingsTarget::SettingsUI:
         default:
             return RS_(L"OpenSettingsUICommandKey");
