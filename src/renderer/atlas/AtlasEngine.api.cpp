@@ -425,7 +425,7 @@ void AtlasEngine::SetRetroTerminalEffect(bool enable) noexcept
     }
 }
 
-void AtlasEngine::SetSelectionBackground(const COLORREF color, const float /*alpha*/) noexcept
+void AtlasEngine::SetSelectionBackground(const COLORREF color) noexcept
 {
     const u32 selectionColor = (color & 0xffffff) | 0xff000000;
     if (_api.s->misc->selectionColor != selectionColor)

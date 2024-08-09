@@ -71,11 +71,6 @@ namespace Microsoft.Terminal.Wpf
         public uint DefaultSelectionBackground;
 
         /// <summary>
-        /// The opacity alpha for the selection color of the terminal, must be between 1.0 and 0.0.
-        /// </summary>
-        public float SelectionBackgroundAlpha;
-
-        /// <summary>
         /// The style of cursor to use in the terminal.
         /// </summary>
         public CursorStyle CursorStyle;
