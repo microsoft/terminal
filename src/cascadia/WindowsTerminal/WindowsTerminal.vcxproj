@@ -20,6 +20,7 @@
     <TerminalCppWinrt>true</TerminalCppWinrt>
     <TerminalThemeHelpers>true</TerminalThemeHelpers>
     <TerminalMUX>true</TerminalMUX>
+    <TerminalWinGetInterop>true</TerminalWinGetInterop>
   </PropertyGroup>
 
   <Import Project="..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />

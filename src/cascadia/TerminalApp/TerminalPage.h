@@ -13,6 +13,8 @@
 #include "LaunchPositionRequest.g.h"
 #include "Toast.h"
 
+#include "WindowsPackageManagerFactory.h"
+
 #define DECLARE_ACTION_HANDLER(action) void _Handle##action(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
 
 namespace TerminalAppLocalTests
@@ -85,6 +87,12 @@ namespace winrt::TerminalApp::implementation
         LaunchPositionRequest() = default;
 
         til::property<winrt::Microsoft::Terminal::Settings::Model::LaunchPosition> Position;
+    };
+
+    struct WinGetSearchParams
+    {
+        winrt::Microsoft::Management::Deployment::PackageMatchField Field;
+        winrt::Microsoft::Management::Deployment::PackageFieldMatchOption MatchOption;
     };
 
     struct TerminalPage : TerminalPageT<TerminalPage>
@@ -530,7 +538,8 @@ namespace winrt::TerminalApp::implementation
         void _OpenSuggestions(const Microsoft::Terminal::Control::TermControl& sender, Windows::Foundation::Collections::IVector<winrt::Microsoft::Terminal::Settings::Model::Command> commandsCollection, winrt::TerminalApp::SuggestionsMode mode, winrt::hstring filterText);
 
         void _ShowWindowChangedHandler(const IInspectable sender, const winrt::Microsoft::Terminal::Control::ShowWindowArgs args);
-        winrt::fire_and_forget _SearchMissingCommandHandler(const IInspectable sender, const winrt::Microsoft::Terminal::Control::SearchMissingCommandEventArgs args);
+        Windows::Foundation::IAsyncAction _SearchMissingCommandHandler(const IInspectable sender, const winrt::Microsoft::Terminal::Control::SearchMissingCommandEventArgs args);
+        Windows::Foundation::IAsyncOperation<Windows::Foundation::Collections::IVectorView<winrt::Microsoft::Management::Deployment::MatchResult>> _FindPackageAsync(hstring query);
 
         winrt::fire_and_forget _windowPropertyChanged(const IInspectable& sender, const winrt::Windows::UI::Xaml::Data::PropertyChangedEventArgs& args);
 
