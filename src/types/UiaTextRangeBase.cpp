@@ -108,14 +108,11 @@ void UiaTextRangeBase::Initialize(_In_ const UiaPoint point)
     _TranslatePointFromScreen(clientPoint);
 
     // convert the point to screen buffer coordinates
+    _pData->LockConsole();
     const auto currentFontSize = _getScreenFontSize();
-    const auto viewport = [&]() {
-        _pData->LockConsole();
-        const auto unlock = wil::scope_exit([&]() noexcept {
-            _pData->UnlockConsole();
-        });
-        return _pData->GetViewport().ToInclusive();
-    }();
+    const auto viewport = _pData->GetViewport().ToInclusive();
+    _pData->UnlockConsole();
+
     _start = { clientPoint.x / currentFontSize.width + viewport.left,
                clientPoint.y / currentFontSize.height + viewport.top };
     _end = _start;
