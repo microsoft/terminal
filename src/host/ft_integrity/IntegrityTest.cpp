@@ -214,14 +214,14 @@ void IntegrityTest::_TestValidationHelper(const bool fIsBlockExpected,
     GetConsoleScreenBufferInfoEx(GetStdHandle(STD_OUTPUT_HANDLE),
                                  &csbiex);
 
-    LOG_OUTPUT(L"Buffer Size X:%d Y:%d", csbiex.dwSize.width, csbiex.dwSize.height);
+    LOG_OUTPUT(L"Buffer Size X:%d Y:%d", csbiex.dwSize.X, csbiex.dwSize.Y);
 
-    size_t cch = csbiex.dwSize.width;
+    size_t cch = csbiex.dwSize.X;
     wistd::unique_ptr<wchar_t[]> stringData = wil::make_unique_nothrow<wchar_t[]>(cch);
     THROW_IF_NULL_ALLOC(stringData);
 
     COORD coordRead = { 0 };
-    for (coordRead.y = 0; coordRead.y < 8; coordRead.y++)
+    for (coordRead.Y = 0; coordRead.Y < 8; coordRead.Y++)
     {
         ZeroMemory(stringData.get(), sizeof(wchar_t) * cch);
 
@@ -237,7 +237,7 @@ void IntegrityTest::_TestValidationHelper(const bool fIsBlockExpected,
         WEX::Common::String strActual;
 
         // At position 0, check the integrity.
-        if (coordRead.y == 0)
+        if (coordRead.Y == 0)
         {
             strExpected = pwszIntegrityExpected;
         }
@@ -246,11 +246,11 @@ void IntegrityTest::_TestValidationHelper(const bool fIsBlockExpected,
             // For the rest, check whether the API call worked.
             if (fIsBlockExpected)
             {
-                strExpected = _rgpwszExpectedFail[coordRead.y - 1];
+                strExpected = _rgpwszExpectedFail[coordRead.Y - 1];
             }
             else
             {
-                strExpected = _rgpwszExpectedSuccess[coordRead.y - 1];
+                strExpected = _rgpwszExpectedSuccess[coordRead.Y - 1];
             }
         }
         stringData[strExpected.GetLength()] = L'\0';
@@ -312,7 +312,7 @@ PCWSTR IntegrityTest::s_GetMyIntegrityLevel()
     DWORD dwIntegrityLevel = 0;
 
     // Get the Integrity level.
-    wistd::unique_ptr<TOKEN_MANDATORY_LABEL> tokenLabel;
+    wil::unique_tokeninfo_ptr<TOKEN_MANDATORY_LABEL> tokenLabel;
     THROW_IF_FAILED(wil::GetTokenInformationNoThrow(tokenLabel, GetCurrentProcessToken()));
 
     dwIntegrityLevel = *GetSidSubAuthority(tokenLabel->Label.Sid,

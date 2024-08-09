@@ -196,12 +196,6 @@ CATCH_RETURN()
     return S_OK;
 }
 
-[[nodiscard]] HRESULT WddmConEngine::PrepareForTeardown(_Out_ bool* const pForcePaint) noexcept
-{
-    *pForcePaint = false;
-    return S_FALSE;
-}
-
 [[nodiscard]] HRESULT WddmConEngine::StartPaint() noexcept
 try
 {
@@ -284,9 +278,10 @@ CATCH_RETURN()
     CATCH_RETURN();
 }
 
-[[nodiscard]] HRESULT WddmConEngine::PaintBufferGridLines(GridLineSet const /*lines*/,
-                                                          COLORREF const /*color*/,
-                                                          size_t const /*cchLine*/,
+[[nodiscard]] HRESULT WddmConEngine::PaintBufferGridLines(const GridLineSet /*lines*/,
+                                                          const COLORREF /*gridlineColor*/,
+                                                          const COLORREF /*underlineColor*/,
+                                                          const size_t /*cchLine*/,
                                                           const til::point /*coordTarget*/) noexcept
 {
     return S_OK;

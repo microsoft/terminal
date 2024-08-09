@@ -50,6 +50,7 @@ namespace winrt::Microsoft::TerminalApp::implementation
         void TerminalOutput(const winrt::event_token& token) noexcept { _wrappedConnection.TerminalOutput(token); };
         winrt::event_token StateChanged(const TypedEventHandler<ITerminalConnection, IInspectable>& handler) { return _wrappedConnection.StateChanged(handler); };
         void StateChanged(const winrt::event_token& token) noexcept { _wrappedConnection.StateChanged(token); };
+        winrt::guid SessionId() const noexcept { return {}; }
         ConnectionState State() const noexcept { return _wrappedConnection.State(); }
 
     private:
@@ -61,7 +62,7 @@ namespace winrt::Microsoft::TerminalApp::implementation
     {
         _outputRevoker = wrappedConnection.TerminalOutput(winrt::auto_revoke, { this, &DebugTapConnection::_OutputHandler });
         _stateChangedRevoker = wrappedConnection.StateChanged(winrt::auto_revoke, [this](auto&& /*s*/, auto&& /*e*/) {
-            _StateChangedHandlers(*this, nullptr);
+            StateChanged.raise(*this, nullptr);
         });
         _wrappedConnection = wrappedConnection;
     }
@@ -98,6 +99,15 @@ namespace winrt::Microsoft::TerminalApp::implementation
         _wrappedConnection = nullptr;
     }
 
+    guid DebugTapConnection::SessionId() const noexcept
+    {
+        if (const auto c = _wrappedConnection.get())
+        {
+            return c.SessionId();
+        }
+        return {};
+    }
+
     ConnectionState DebugTapConnection::State() const noexcept
     {
         if (auto strongConnection{ _wrappedConnection.get() })
@@ -117,7 +127,7 @@ namespace winrt::Microsoft::TerminalApp::implementation
         {
             output.insert(++lfPos, L"\r\n");
         }
-        _TerminalOutputHandlers(output);
+        TerminalOutput.raise(output);
     }
 
     // Called by the DebugInputTapConnection to print user input
@@ -125,7 +135,7 @@ namespace winrt::Microsoft::TerminalApp::implementation
     {
         auto clean{ til::visualize_control_codes(str) };
         auto formatted{ wil::str_printf<std::wstring>(L"\x1b[91m%ls\x1b[m", clean.data()) };
-        _TerminalOutputHandlers(formatted);
+        TerminalOutput.raise(formatted);
     }
 
     // Wire us up so that we can forward input through

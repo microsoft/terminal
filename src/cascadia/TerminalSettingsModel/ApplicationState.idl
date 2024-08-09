@@ -7,9 +7,10 @@ namespace Microsoft.Terminal.Settings.Model
 {
     enum InfoBarMessage
     {
-        CloseOnExitInfo = 0,
+        // We need a sentinel value to map deleted keys to, as we can't actually delete them (GH#16874)
+        IgnoredDeprecatedEntry = 0,
+        CloseOnExitInfo,
         KeyboardServiceWarning,
-        SetAsDefault,
     };
 
     runtimeclass WindowLayout
@@ -28,10 +29,10 @@ namespace Microsoft.Terminal.Settings.Model
     [default_interface] runtimeclass ApplicationState {
         static ApplicationState SharedInstance();
 
-        void Reload();
+        void Flush();
         void Reset();
 
-        Boolean IsStatePath(String filename);
+        void AppendPersistedWindowLayout(WindowLayout layout);
 
         String SettingsHash;
         Windows.Foundation.Collections.IVector<WindowLayout> PersistedWindowLayouts;

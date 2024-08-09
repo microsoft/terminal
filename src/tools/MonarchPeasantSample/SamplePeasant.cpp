@@ -45,7 +45,7 @@ namespace winrt::MonarchPeasantSample::implementation
 
     void Peasant::raiseActivatedEvent()
     {
-        _WindowActivatedHandlers(*this, nullptr);
+        WindowActivated.raise(*this, nullptr);
     }
 
 }

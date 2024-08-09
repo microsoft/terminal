@@ -16,9 +16,94 @@
 
 #include "../interactivity/inc/ServiceLocator.hpp"
 
-#pragma hdrstop
-
 using Microsoft::Console::Interactivity::ServiceLocator;
+
+static bool IsCommandLinePopupKey(const KEY_EVENT_RECORD& event)
+{
+    if (WI_AreAllFlagsClear(event.dwControlKeyState, RIGHT_ALT_PRESSED | LEFT_ALT_PRESSED | RIGHT_CTRL_PRESSED | LEFT_CTRL_PRESSED))
+    {
+        switch (event.wVirtualKeyCode)
+        {
+        case VK_ESCAPE:
+        case VK_PRIOR:
+        case VK_NEXT:
+        case VK_END:
+        case VK_HOME:
+        case VK_LEFT:
+        case VK_UP:
+        case VK_RIGHT:
+        case VK_DOWN:
+        case VK_F2:
+        case VK_F4:
+        case VK_F7:
+        case VK_F9:
+        case VK_DELETE:
+            return true;
+        default:
+            break;
+        }
+    }
+    return false;
+}
+
+static bool IsCommandLineEditingKey(const KEY_EVENT_RECORD& event)
+{
+    if (WI_AreAllFlagsClear(event.dwControlKeyState, RIGHT_ALT_PRESSED | LEFT_ALT_PRESSED | RIGHT_CTRL_PRESSED | LEFT_CTRL_PRESSED))
+    {
+        switch (event.wVirtualKeyCode)
+        {
+        case VK_ESCAPE:
+        case VK_PRIOR:
+        case VK_NEXT:
+        case VK_END:
+        case VK_HOME:
+        case VK_LEFT:
+        case VK_UP:
+        case VK_RIGHT:
+        case VK_DOWN:
+        case VK_INSERT:
+        case VK_DELETE:
+        case VK_F1:
+        case VK_F2:
+        case VK_F3:
+        case VK_F4:
+        case VK_F5:
+        case VK_F6:
+        case VK_F7:
+        case VK_F8:
+        case VK_F9:
+            return true;
+        default:
+            break;
+        }
+    }
+    if (WI_IsAnyFlagSet(event.dwControlKeyState, RIGHT_CTRL_PRESSED | LEFT_CTRL_PRESSED))
+    {
+        switch (event.wVirtualKeyCode)
+        {
+        case VK_END:
+        case VK_HOME:
+        case VK_LEFT:
+        case VK_RIGHT:
+            return true;
+        default:
+            break;
+        }
+    }
+    if (WI_IsAnyFlagSet(event.dwControlKeyState, RIGHT_ALT_PRESSED | LEFT_ALT_PRESSED))
+    {
+        switch (event.wVirtualKeyCode)
+        {
+        case VK_F7:
+        case VK_F10:
+            return true;
+        default:
+            break;
+        }
+    }
+
+    return false;
+}
 
 // Routine Description:
 // - This routine is used in stream input.  It gets input and filters it for unicode characters.
@@ -56,57 +141,50 @@ using Microsoft::Console::Interactivity::ServiceLocator;
         *pdwKeyState = 0;
     }
 
-    NTSTATUS Status;
     for (;;)
     {
-        std::unique_ptr<IInputEvent> inputEvent;
-        Status = pInputBuffer->Read(inputEvent,
-                                    false, // peek
-                                    Wait,
-                                    true, // unicode
-                                    true); // stream
-
+        InputEventQueue events;
+        const auto Status = pInputBuffer->Read(events, 1, false, Wait, true, true);
         if (FAILED_NTSTATUS(Status))
         {
             return Status;
         }
-        else if (inputEvent.get() == nullptr)
+        if (events.empty())
         {
-            FAIL_FAST_IF(Wait);
+            assert(!Wait);
             return STATUS_UNSUCCESSFUL;
         }
 
-        if (inputEvent->EventType() == InputEventType::KeyEvent)
+        const auto& Event = events[0];
+        if (Event.EventType == KEY_EVENT)
         {
-            auto keyEvent = std::unique_ptr<KeyEvent>(static_cast<KeyEvent*>(inputEvent.release()));
-
             auto commandLineEditKey = false;
             if (pCommandLineEditingKeys)
             {
-                commandLineEditKey = keyEvent->IsCommandLineEditingKey();
+                commandLineEditKey = IsCommandLineEditingKey(Event.Event.KeyEvent);
             }
             else if (pPopupKeys)
             {
-                commandLineEditKey = keyEvent->IsPopupKey();
+                commandLineEditKey = IsCommandLinePopupKey(Event.Event.KeyEvent);
             }
 
             if (pdwKeyState)
             {
-                *pdwKeyState = keyEvent->GetActiveModifierKeys();
+                *pdwKeyState = Event.Event.KeyEvent.dwControlKeyState;
             }
 
-            if (keyEvent->GetCharData() != 0 && !commandLineEditKey)
+            if (Event.Event.KeyEvent.uChar.UnicodeChar != 0 && !commandLineEditKey)
             {
                 // chars that are generated using alt + numpad
-                if (!keyEvent->IsKeyDown() && keyEvent->GetVirtualKeyCode() == VK_MENU)
+                if (!Event.Event.KeyEvent.bKeyDown && Event.Event.KeyEvent.wVirtualKeyCode == VK_MENU)
                 {
-                    if (keyEvent->IsAltNumpadSet())
+                    if (WI_IsFlagSet(Event.Event.KeyEvent.dwControlKeyState, ALTNUMPAD_BIT))
                     {
-                        if (HIBYTE(keyEvent->GetCharData()))
+                        if (HIBYTE(Event.Event.KeyEvent.uChar.UnicodeChar))
                         {
-                            char chT[2] = {
-                                static_cast<char>(HIBYTE(keyEvent->GetCharData())),
-                                static_cast<char>(LOBYTE(keyEvent->GetCharData())),
+                            const char chT[2] = {
+                                static_cast<char>(HIBYTE(Event.Event.KeyEvent.uChar.UnicodeChar)),
+                                static_cast<char>(LOBYTE(Event.Event.KeyEvent.uChar.UnicodeChar)),
                             };
                             *pwchOut = CharToWchar(chT, 2);
                         }
@@ -115,154 +193,57 @@ using Microsoft::Console::Interactivity::ServiceLocator;
                             // Because USER doesn't know our codepage,
                             // it gives us the raw OEM char and we
                             // convert it to a Unicode character.
-                            char chT = LOBYTE(keyEvent->GetCharData());
+                            char chT = LOBYTE(Event.Event.KeyEvent.uChar.UnicodeChar);
                             *pwchOut = CharToWchar(&chT, 1);
                         }
                     }
                     else
                     {
-                        *pwchOut = keyEvent->GetCharData();
+                        *pwchOut = Event.Event.KeyEvent.uChar.UnicodeChar;
                     }
                     return STATUS_SUCCESS;
                 }
+
                 // Ignore Escape and Newline chars
-                else if (keyEvent->IsKeyDown() &&
-                         (WI_IsFlagSet(pInputBuffer->InputMode, ENABLE_VIRTUAL_TERMINAL_INPUT) ||
-                          (keyEvent->GetVirtualKeyCode() != VK_ESCAPE &&
-                           keyEvent->GetCharData() != UNICODE_LINEFEED)))
+                if (Event.Event.KeyEvent.bKeyDown &&
+                    (WI_IsFlagSet(pInputBuffer->InputMode, ENABLE_VIRTUAL_TERMINAL_INPUT) ||
+                     (Event.Event.KeyEvent.wVirtualKeyCode != VK_ESCAPE &&
+                      Event.Event.KeyEvent.uChar.UnicodeChar != UNICODE_LINEFEED)))
                 {
-                    *pwchOut = keyEvent->GetCharData();
+                    *pwchOut = Event.Event.KeyEvent.uChar.UnicodeChar;
                     return STATUS_SUCCESS;
                 }
             }
 
-            if (keyEvent->IsKeyDown())
+            if (Event.Event.KeyEvent.bKeyDown)
             {
                 if (pCommandLineEditingKeys && commandLineEditKey)
                 {
                     *pCommandLineEditingKeys = true;
-                    *pwchOut = static_cast<wchar_t>(keyEvent->GetVirtualKeyCode());
+                    *pwchOut = static_cast<wchar_t>(Event.Event.KeyEvent.wVirtualKeyCode);
                     return STATUS_SUCCESS;
                 }
-                else if (pPopupKeys && commandLineEditKey)
+
+                if (pPopupKeys && commandLineEditKey)
                 {
                     *pPopupKeys = true;
-                    *pwchOut = static_cast<char>(keyEvent->GetVirtualKeyCode());
+                    *pwchOut = static_cast<char>(Event.Event.KeyEvent.wVirtualKeyCode);
                     return STATUS_SUCCESS;
                 }
-                else
+
+                const auto zeroKey = OneCoreSafeVkKeyScanW(0);
+
+                if (LOBYTE(zeroKey) == Event.Event.KeyEvent.wVirtualKeyCode &&
+                    WI_IsAnyFlagSet(Event.Event.KeyEvent.dwControlKeyState, ALT_PRESSED) == WI_IsFlagSet(zeroKey, 0x400) &&
+                    WI_IsAnyFlagSet(Event.Event.KeyEvent.dwControlKeyState, CTRL_PRESSED) == WI_IsFlagSet(zeroKey, 0x200) &&
+                    WI_IsAnyFlagSet(Event.Event.KeyEvent.dwControlKeyState, SHIFT_PRESSED) == WI_IsFlagSet(zeroKey, 0x100))
                 {
-                    const auto zeroVkeyData = OneCoreSafeVkKeyScanW(0);
-                    const auto zeroVKey = LOBYTE(zeroVkeyData);
-                    const auto zeroControlKeyState = HIBYTE(zeroVkeyData);
-
-                    try
-                    {
-                        // Convert real Windows NT modifier bit into bizarre Console bits
-                        auto consoleModKeyState = FromVkKeyScan(zeroControlKeyState);
-
-                        if (zeroVKey == keyEvent->GetVirtualKeyCode() &&
-                            keyEvent->DoActiveModifierKeysMatch(consoleModKeyState))
-                        {
-                            // This really is the character 0x0000
-                            *pwchOut = keyEvent->GetCharData();
-                            return STATUS_SUCCESS;
-                        }
-                    }
-                    catch (...)
-                    {
-                        LOG_HR(wil::ResultFromCaughtException());
-                    }
+                    // This really is the character 0x0000
+                    *pwchOut = Event.Event.KeyEvent.uChar.UnicodeChar;
+                    return STATUS_SUCCESS;
                 }
             }
         }
-    }
-}
-
-// Routine Description:
-// - This routine returns the total number of screen spaces the characters up to the specified character take up.
-til::CoordType RetrieveTotalNumberOfSpaces(const til::CoordType sOriginalCursorPositionX,
-                                           _In_reads_(ulCurrentPosition) const WCHAR* const pwchBuffer,
-                                           _In_ size_t ulCurrentPosition)
-{
-    auto XPosition = sOriginalCursorPositionX;
-    til::CoordType NumSpaces = 0;
-
-    for (size_t i = 0; i < ulCurrentPosition; i++)
-    {
-        const auto Char = pwchBuffer[i];
-
-        til::CoordType NumSpacesForChar;
-        if (Char == UNICODE_TAB)
-        {
-            NumSpacesForChar = NUMBER_OF_SPACES_IN_TAB(XPosition);
-        }
-        else if (IS_CONTROL_CHAR(Char))
-        {
-            NumSpacesForChar = 2;
-        }
-        else if (IsGlyphFullWidth(Char))
-        {
-            NumSpacesForChar = 2;
-        }
-        else
-        {
-            NumSpacesForChar = 1;
-        }
-        XPosition += NumSpacesForChar;
-        NumSpaces += NumSpacesForChar;
-    }
-
-    return NumSpaces;
-}
-
-// Routine Description:
-// - This routine returns the number of screen spaces the specified character takes up.
-til::CoordType RetrieveNumberOfSpaces(_In_ til::CoordType sOriginalCursorPositionX,
-                                      _In_reads_(ulCurrentPosition + 1) const WCHAR* const pwchBuffer,
-                                      _In_ size_t ulCurrentPosition)
-{
-    auto Char = pwchBuffer[ulCurrentPosition];
-    if (Char == UNICODE_TAB)
-    {
-        til::CoordType NumSpaces = 0;
-        auto XPosition = sOriginalCursorPositionX;
-
-        for (size_t i = 0; i <= ulCurrentPosition; i++)
-        {
-            Char = pwchBuffer[i];
-            if (Char == UNICODE_TAB)
-            {
-                NumSpaces = NUMBER_OF_SPACES_IN_TAB(XPosition);
-            }
-            else if (IS_CONTROL_CHAR(Char))
-            {
-                NumSpaces = 2;
-            }
-            else if (IsGlyphFullWidth(Char))
-            {
-                NumSpaces = 2;
-            }
-            else
-            {
-                NumSpaces = 1;
-            }
-            XPosition += NumSpaces;
-        }
-
-        return NumSpaces;
-    }
-    else if (IS_CONTROL_CHAR(Char))
-    {
-        return 2;
-    }
-    else if (IsGlyphFullWidth(Char))
-    {
-        return 2;
-    }
-    else
-    {
-        return 1;
     }
 }
 
@@ -354,7 +335,7 @@ NT_CATCH_RETURN()
                                             std::span<char> buffer,
                                             size_t& bytesRead,
                                             DWORD& controlKeyState,
-                                            const std::string_view initialData,
+                                            const std::wstring_view initialData,
                                             const DWORD ctrlWakeupMask,
                                             INPUT_READ_HANDLE_DATA& readHandleState,
                                             const std::wstring_view exeName,
@@ -380,7 +361,7 @@ NT_CATCH_RETURN()
 
         gci.SetCookedReadData(cookedReadData.get());
         bytesRead = buffer.size_bytes(); // This parameter on the way in is the size to read, on the way out, it will be updated to what is actually read.
-        if (CONSOLE_STATUS_WAIT == cookedReadData->Read(unicode, bytesRead, controlKeyState))
+        if (!cookedReadData->Read(unicode, bytesRead, controlKeyState))
         {
             // memory will be cleaned up by wait queue
             waiter.reset(cookedReadData.release());
@@ -492,7 +473,7 @@ NT_CATCH_RETURN()
                                      std::span<char> buffer,
                                      size_t& bytesRead,
                                      ULONG& controlKeyState,
-                                     const std::string_view initialData,
+                                     const std::wstring_view initialData,
                                      const DWORD ctrlWakeupMask,
                                      INPUT_READ_HANDLE_DATA& readHandleState,
                                      const std::wstring_view exeName,
@@ -552,60 +533,29 @@ NT_CATCH_RETURN()
     CATCH_RETURN();
 }
 
-[[nodiscard]] HRESULT ApiRoutines::ReadConsoleAImpl(IConsoleInputObject& context,
-                                                    std::span<char> buffer,
-                                                    size_t& written,
-                                                    std::unique_ptr<IWaitRoutine>& waiter,
-                                                    const std::string_view initialData,
-                                                    const std::wstring_view exeName,
-                                                    INPUT_READ_HANDLE_DATA& readHandleState,
-                                                    const HANDLE clientHandle,
-                                                    const DWORD controlWakeupMask,
-                                                    DWORD& controlKeyState) noexcept
+[[nodiscard]] HRESULT ApiRoutines::ReadConsoleImpl(IConsoleInputObject& context,
+                                                   std::span<char> buffer,
+                                                   size_t& written,
+                                                   std::unique_ptr<IWaitRoutine>& waiter,
+                                                   const std::wstring_view initialData,
+                                                   const std::wstring_view exeName,
+                                                   INPUT_READ_HANDLE_DATA& readHandleState,
+                                                   const bool IsUnicode,
+                                                   const HANDLE clientHandle,
+                                                   const DWORD controlWakeupMask,
+                                                   DWORD& controlKeyState) noexcept
 {
-    try
-    {
-        return HRESULT_FROM_NT(DoReadConsole(context,
-                                             clientHandle,
-                                             buffer,
-                                             written,
-                                             controlKeyState,
-                                             initialData,
-                                             controlWakeupMask,
-                                             readHandleState,
-                                             exeName,
-                                             false,
-                                             waiter));
-    }
-    CATCH_RETURN();
-}
-
-[[nodiscard]] HRESULT ApiRoutines::ReadConsoleWImpl(IConsoleInputObject& context,
-                                                    std::span<char> buffer,
-                                                    size_t& written,
-                                                    std::unique_ptr<IWaitRoutine>& waiter,
-                                                    const std::string_view initialData,
-                                                    const std::wstring_view exeName,
-                                                    INPUT_READ_HANDLE_DATA& readHandleState,
-                                                    const HANDLE clientHandle,
-                                                    const DWORD controlWakeupMask,
-                                                    DWORD& controlKeyState) noexcept
-{
-    try
-    {
-        return HRESULT_FROM_NT(DoReadConsole(context,
-                                             clientHandle,
-                                             buffer,
-                                             written,
-                                             controlKeyState,
-                                             initialData,
-                                             controlWakeupMask,
-                                             readHandleState,
-                                             exeName,
-                                             true,
-                                             waiter));
-    }
-    CATCH_RETURN();
+    return HRESULT_FROM_NT(DoReadConsole(context,
+                                         clientHandle,
+                                         buffer,
+                                         written,
+                                         controlKeyState,
+                                         initialData,
+                                         controlWakeupMask,
+                                         readHandleState,
+                                         exeName,
+                                         IsUnicode,
+                                         waiter));
 }
 
 void UnblockWriteConsole(const DWORD dwReason)

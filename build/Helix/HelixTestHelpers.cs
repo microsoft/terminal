@@ -20,32 +20,13 @@ namespace HelixTestHelpers
         public string Name { get; set; }
         public string SourceWttFile { get; set; }
         public bool Passed { get; set; }
+        public bool Skipped { get; set; }
         public bool CleanupPassed { get; set; }
         public TimeSpan ExecutionTime { get; set; }
         public string Details { get; set; }
 
         public List<string> Screenshots { get; private set; }
         public List<TestResult> RerunResults { get; private set; }
-
-        // Returns true if the test pass rate is sufficient to avoid being counted as a failure.
-        public bool PassedOrUnreliable(int requiredNumberOfPasses)
-        {
-            if(Passed)
-            {
-                return true;
-            }
-            else
-            {
-                if(RerunResults.Count == 1)
-                {
-                    return RerunResults[0].Passed;
-                }
-                else
-                {
-                    return RerunResults.Where(r => r.Passed).Count() >= requiredNumberOfPasses;
-                }
-            }
-        }
     }
     
     //
@@ -221,7 +202,9 @@ namespace HelixTestHelpers
                         testsExecuting--;
 
                         // If any inner test fails, we'll still fail the outer
-                        currentResult.Passed &= element.Attribute("Result").Value == "Pass";
+                        var value = element.Attribute("Result").Value;
+                        currentResult.Passed = value == "Pass";
+                        currentResult.Skipped = value == "Skipped";
 
                         // Only gather execution data if this is the outer test we ran initially
                         if (testsExecuting == 0)
@@ -498,7 +481,7 @@ namespace HelixTestHelpers
             return subResultsJsonByMethod;
         }
 
-        public void ConvertWttLogToXUnitLog(string wttInputPath, string wttSingleRerunInputPath, string wttMultipleRerunInputPath, string xunitOutputPath, int requiredPassRateThreshold)
+        public void ConvertWttLogToXUnitLog(string wttInputPath, string wttSingleRerunInputPath, string wttMultipleRerunInputPath, string xunitOutputPath)
         {
             TestPass testPass = TestPass.ParseTestWttFileWithReruns(wttInputPath, wttSingleRerunInputPath, wttMultipleRerunInputPath, cleanupFailuresAreRegressions: true, truncateTestNames: false);
             var results = testPass.TestResults;
@@ -510,8 +493,8 @@ namespace HelixTestHelpers
             // If the test failed sufficiently often enough for it to count as a failed test (determined by a property on the
             // Azure DevOps job), we'll later mark it as failed during test results processing.
 
-            int failedCount = results.Where(r => !r.PassedOrUnreliable(requiredPassRateThreshold)).Count();
-            int skippedCount = results.Where(r => !r.Passed && r.PassedOrUnreliable(requiredPassRateThreshold)).Count();
+            int failedCount = results.Where(r => !r.Passed).Count();
+            int skippedCount = results.Where(r => (!r.Passed && r.Skipped)).Count();
 
             var root = new XElement("assemblies");
 
@@ -557,12 +540,13 @@ namespace HelixTestHelpers
                 
                 string resultString = string.Empty;
                 
-                if (result.Passed)
+                if (result.Passed && !result.Skipped)
                 {
                     resultString = "Pass";
                 }
-                else if(result.PassedOrUnreliable(requiredPassRateThreshold))
+                else if (result.Skipped)
                 {
+
                     resultString = "Skip";
                 }
                 else
@@ -571,31 +555,25 @@ namespace HelixTestHelpers
                 }
 
                 
-                test.SetAttributeValue("result", resultString);
-
                 if (!result.Passed)
                 {
-                    // If a test failed, we'll have rerun it multiple times.
-                    // We'll save the subresults to a JSON text file that we'll upload to the helix results container -
-                    // this allows it to be as long as we want, whereas the reason field in Azure DevOps has a 4000 character limit.
-                    string subResultsFileName = methodName + "_subresults.json";
-                    string subResultsFilePath = Path.Combine(Path.GetDirectoryName(wttInputPath), subResultsFileName);
-					
-                    if (result.PassedOrUnreliable(requiredPassRateThreshold))
+                    if (result.Skipped)
                     {
                         var reason = new XElement("reason");
-                        reason.Add(new XCData(GetUploadedFileUrl(subResultsFileName, helixResultsContainerUri, helixResultsContainerRsas)));
+                        reason.Add(new XCData("Test skipped"));
                         test.Add(reason);
                     }
-                    else
-                    {
+                    else {
                         var failure = new XElement("failure");
                         var message = new XElement("message");
-						message.Add(new XCData(GetUploadedFileUrl(subResultsFileName, helixResultsContainerUri, helixResultsContainerRsas)));
+                        message.Add(new XCData("Test failed"));
                         failure.Add(message);
                         test.Add(failure);
                     }
                 }
+
+                test.SetAttributeValue("result", resultString);
+
                 collection.Add(test);
             }
 

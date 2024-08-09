@@ -7,11 +7,12 @@ namespace Microsoft.Terminal.Remoting
     runtimeclass CommandlineArgs
     {
         CommandlineArgs();
-        CommandlineArgs(String[] args, String cwd, UInt32 showWindowCommand);
+        CommandlineArgs(String[] args, String cwd, UInt32 showWindowCommand, String env);
 
         String[] Commandline { get; set; };
-        String CurrentDirectory();
+        String CurrentDirectory { get; };
         UInt32 ShowWindowCommand { get; };
+        String CurrentEnvironment { get; };
     };
 
     runtimeclass RenameRequestArgs
@@ -30,12 +31,6 @@ namespace Microsoft.Terminal.Remoting
         Guid DesktopID { get; };
         Windows.Foundation.DateTime ActivatedTime { get; };
     };
-
-    [default_interface] runtimeclass GetWindowLayoutArgs {
-        GetWindowLayoutArgs();
-        String WindowLayoutJson;
-        Windows.Foundation.IAsyncOperation<String> WindowLayoutJsonAsync;
-    }
 
     enum MonitorBehavior
     {
@@ -87,7 +82,6 @@ namespace Microsoft.Terminal.Remoting
         void RequestHideNotificationIcon();
         void RequestQuitAll();
         void Quit();
-        String GetWindowLayout();
 
         void AttachContentToWindow(AttachRequest request);
         void SendContent(RequestReceiveContentArgs args);
@@ -101,7 +95,6 @@ namespace Microsoft.Terminal.Remoting
 
         event Windows.Foundation.TypedEventHandler<Object, Object> ShowNotificationIconRequested;
         event Windows.Foundation.TypedEventHandler<Object, Object> HideNotificationIconRequested;
-        event Windows.Foundation.TypedEventHandler<Object, GetWindowLayoutArgs> GetWindowLayoutRequested;
         event Windows.Foundation.TypedEventHandler<Object, Object> QuitAllRequested;
         event Windows.Foundation.TypedEventHandler<Object, Object> QuitRequested;
 

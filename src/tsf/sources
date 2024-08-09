@@ -42,18 +42,10 @@ PRECOMPILED_PCH         = precomp.pch
 PRECOMPILED_OBJ         = precomp.obj
 
 SOURCES = \
-    contsf.cpp \
-    ConsoleTSF.cpp \
-    TfConvArea.cpp \
-    TfCatUtil.cpp \
-    TfDispAttr.cpp \
-    TfEditSession.cpp \
-    TfTxtevCb.cpp \
+    Handle.cpp \
+    Implementation.cpp \
 
 INCLUDES = \
     $(INCLUDES); \
     ..\inc; \
-    $(ONECORE_PRIV_SDK_INC_PATH); \
     $(MINWIN_INTERNAL_PRIV_SDK_INC_PATH_L); \
-    $(SDK_INC_PATH)\atl30; \
-    $(ONECORE_EXTERNAL_SDK_INC_PATH)\atl30; \

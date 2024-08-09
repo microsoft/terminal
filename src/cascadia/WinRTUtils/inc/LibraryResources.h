@@ -41,12 +41,12 @@ namespace Microsoft::Console::Utils
     };
 }
 
-#define USES_RESOURCE(x) ([]() {                                  \
-    static const ::Microsoft::Console::Utils::StaticResource res{ \
-        (x), __FILEW__, __LINE__                                  \
-    };                                                            \
-    __declspec(allocate(".util$res$m")) static auto pRes{ &res }; \
-    return pRes->resourceKey;                                     \
+#define USES_RESOURCE(x) ([]() {                                        \
+    static const ::Microsoft::Console::Utils::StaticResource res{       \
+        (x), __FILEW__, __LINE__                                        \
+    };                                                                  \
+    __declspec(allocate(".util$res$m")) static const auto pRes{ &res }; \
+    return pRes->resourceKey;                                           \
 }())
 #define RS_(x) GetLibraryResourceString(USES_RESOURCE(x))
 
@@ -69,3 +69,12 @@ namespace Microsoft::Console::Utils
 
 winrt::hstring GetLibraryResourceString(const std::wstring_view key);
 bool HasLibraryResourceWithName(const std::wstring_view key);
+
+#define RS_fmt(x, ...) RS_fmt_impl(USES_RESOURCE(x), __VA_ARGS__)
+
+template<typename... Args>
+std::wstring RS_fmt_impl(std::wstring_view key, Args&&... args)
+{
+    const auto format = GetLibraryResourceString(key);
+    return fmt::format(fmt::runtime(std::wstring_view{ format }), std::forward<Args>(args)...);
+}

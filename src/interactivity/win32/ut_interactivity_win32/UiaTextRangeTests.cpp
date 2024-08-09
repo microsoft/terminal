@@ -340,7 +340,6 @@ class UiaTextRangeTests
         auto& gci = Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals().getConsoleInformation();
         // set up common state
         _state = new CommonState();
-        _state->PrepareGlobalFont();
         _state->PrepareGlobalScreenBuffer();
         _state->PrepareNewTextBufferInfo();
 
@@ -361,7 +360,7 @@ class UiaTextRangeTests
         for (auto i = 0; i < _pTextBuffer->TotalRowCount() / 2; ++i)
         {
             const std::wstring_view glyph{ i % 2 == 0 ? L" " : L"X" };
-            auto& row = _pTextBuffer->GetRowByOffset(i);
+            auto& row = _pTextBuffer->GetMutableRowByOffset(i);
             const auto width = row.size();
 
             for (uint16_t x = 0; x < width; ++x)
@@ -377,7 +376,6 @@ class UiaTextRangeTests
     {
         _state->CleanupNewTextBufferInfo();
         _state->CleanupGlobalScreenBuffer();
-        _state->CleanupGlobalFont();
         delete _state;
         delete _range;
 
@@ -489,7 +487,7 @@ class UiaTextRangeTests
         // Let's start by filling the text buffer with something useful:
         for (auto i = 0; i < _pTextBuffer->TotalRowCount(); ++i)
         {
-            auto& row = _pTextBuffer->GetRowByOffset(i);
+            auto& row = _pTextBuffer->GetMutableRowByOffset(i);
             const auto width = row.size();
 
             for (uint16_t x = 0; x < width; ++x)
@@ -1648,26 +1646,20 @@ class UiaTextRangeTests
             Log::Comment(L"Test Underline");
 
             // Single underline
-            attr.SetUnderlined(true);
+            attr.SetUnderlineStyle(UnderlineStyle::SinglyUnderlined);
             updateBuffer(attr);
             VARIANT result;
             VERIFY_SUCCEEDED(utr->GetAttributeValue(UIA_UnderlineStyleAttributeId, &result));
             VERIFY_ARE_EQUAL(TextDecorationLineStyle_Single, result.lVal);
 
-            // Double underline (double supersedes single)
-            attr.SetDoublyUnderlined(true);
-            updateBuffer(attr);
-            VERIFY_SUCCEEDED(utr->GetAttributeValue(UIA_UnderlineStyleAttributeId, &result));
-            VERIFY_ARE_EQUAL(TextDecorationLineStyle_Double, result.lVal);
-
-            // Double underline (double on its own)
-            attr.SetUnderlined(false);
+            // Double underline (new style supersedes the old one)
+            attr.SetUnderlineStyle(UnderlineStyle::DoublyUnderlined);
             updateBuffer(attr);
             VERIFY_SUCCEEDED(utr->GetAttributeValue(UIA_UnderlineStyleAttributeId, &result));
             VERIFY_ARE_EQUAL(TextDecorationLineStyle_Double, result.lVal);
 
             // No underline
-            attr.SetDoublyUnderlined(false);
+            attr.SetUnderlineStyle(UnderlineStyle::NoUnderline);
             updateBuffer(attr);
             VERIFY_SUCCEEDED(utr->GetAttributeValue(UIA_UnderlineStyleAttributeId, &result));
             VERIFY_ARE_EQUAL(TextDecorationLineStyle_None, result.lVal);
@@ -1695,9 +1687,9 @@ class UiaTextRangeTests
             THROW_IF_FAILED(utr->ExpandToEnclosingUnit(TextUnit_Line));
 
             // set first cell as underlined, but second cell as not underlined
-            attr.SetUnderlined(true);
+            attr.SetUnderlineStyle(UnderlineStyle::SinglyUnderlined);
             _pTextBuffer->Write({ attr }, { 0, 0 });
-            attr.SetUnderlined(false);
+            attr.SetUnderlineStyle(UnderlineStyle::NoUnderline);
             _pTextBuffer->Write({ attr }, { 1, 0 });
 
             VERIFY_SUCCEEDED(utr->GetAttributeValue(UIA_UnderlineStyleAttributeId, &result));

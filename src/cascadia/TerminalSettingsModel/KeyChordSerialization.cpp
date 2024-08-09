@@ -123,8 +123,13 @@ static int32_t parseNumericCode(const std::wstring_view& str, const std::wstring
 // - a newly constructed KeyChord
 static KeyChord _fromString(std::wstring_view wstr)
 {
+    if (wstr.empty())
+    {
+        return nullptr;
+    }
+
     using nameToVkeyPair = std::pair<std::wstring_view, int32_t>;
-    static const til::static_map nameToVkey{
+    static constexpr til::static_map nameToVkey{
     // The above VKEY_NAME_PAIRS macro contains a list of key-binding names for each virtual key.
     // This god-awful macro inverts VKEY_NAME_PAIRS and creates a static map of key-binding names to virtual keys.
     // clang-format off
@@ -148,7 +153,7 @@ static KeyChord _fromString(std::wstring_view wstr)
 
     while (!wstr.empty())
     {
-        const auto part = til::prefix_split(wstr, L"+");
+        const auto part = til::prefix_split(wstr, L'+');
 
         if (til::equals_insensitive_ascii(part, CTRL_KEY))
         {
@@ -240,7 +245,7 @@ static KeyChord _fromString(std::wstring_view wstr)
 static std::wstring _toString(const KeyChord& chord)
 {
     using vkeyToNamePair = std::pair<int32_t, std::wstring_view>;
-    static const til::static_map vkeyToName{
+    static constexpr til::static_map vkeyToName{
     // The above VKEY_NAME_PAIRS macro contains a list of key-binding strings for each virtual key.
     // This macro picks the first (most preferred) name and creates a static map of virtual keys to key-binding names.
 #define GENERATOR(vkey, name1, ...) vkeyToNamePair{ vkey, name1 },

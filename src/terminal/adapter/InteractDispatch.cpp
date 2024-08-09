@@ -17,7 +17,6 @@
 #include "../../interactivity/inc/ServiceLocator.hpp"
 #include "../../interactivity/inc/EventSynthesis.hpp"
 #include "../../types/inc/Viewport.hpp"
-#include "../../inc/unicode.hpp"
 
 using namespace Microsoft::Console::Interactivity;
 using namespace Microsoft::Console::Types;
@@ -38,7 +37,7 @@ InteractDispatch::InteractDispatch() :
 // - inputEvents: a collection of IInputEvents
 // Return Value:
 // - True.
-bool InteractDispatch::WriteInput(std::deque<std::unique_ptr<IInputEvent>>& inputEvents)
+bool InteractDispatch::WriteInput(const std::span<const INPUT_RECORD>& inputEvents)
 {
     const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     gci.GetActiveInputBuffer()->Write(inputEvents);
@@ -52,17 +51,14 @@ bool InteractDispatch::WriteInput(std::deque<std::unique_ptr<IInputEvent>>& inpu
 //   client application.
 // Arguments:
 // - event: The key to send to the host.
-// Return Value:
-// - True.
-bool InteractDispatch::WriteCtrlKey(const KeyEvent& event)
+bool InteractDispatch::WriteCtrlKey(const INPUT_RECORD& event)
 {
     HandleGenericKeyEvent(event, false);
     return true;
 }
 
 // Method Description:
-// - Writes a string of input to the host. The string is converted to keystrokes
-//      that will faithfully represent the input by CharToKeyEvents.
+// - Writes a string of input to the host.
 // Arguments:
 // - string : a string to write to the console.
 // Return Value:
@@ -72,15 +68,11 @@ bool InteractDispatch::WriteString(const std::wstring_view string)
     if (!string.empty())
     {
         const auto codepage = _api.GetConsoleOutputCP();
-        std::deque<std::unique_ptr<IInputEvent>> keyEvents;
+        InputEventQueue keyEvents;
 
         for (const auto& wch : string)
         {
-            auto convertedEvents = CharToKeyEvents(wch, codepage);
-
-            std::move(convertedEvents.begin(),
-                      convertedEvents.end(),
-                      std::back_inserter(keyEvents));
+            CharToKeyEvents(wch, codepage, keyEvents);
         }
 
         WriteInput(keyEvents);
@@ -116,16 +108,12 @@ bool InteractDispatch::WindowManipulation(const DispatchTypes::WindowManipulatio
         _api.ShowWindow(false);
         return true;
     case DispatchTypes::WindowManipulationType::RefreshWindow:
-        _api.GetTextBuffer().TriggerRedrawAll();
+        _api.GetBufferAndViewport().buffer.TriggerRedrawAll();
         return true;
     case DispatchTypes::WindowManipulationType::ResizeWindowInCharacters:
         // TODO:GH#1765 We should introduce a better `ResizeConpty` function to
         // ConhostInternalGetSet, that specifically handles a conpty resize.
-        if (_api.ResizeWindow(parameter2.value_or(0), parameter1.value_or(0)))
-        {
-            auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-            THROW_IF_FAILED(gci.GetVtIo()->SuppressResizeRepaint());
-        }
+        _api.ResizeWindow(parameter2.value_or(0), parameter1.value_or(0));
         return true;
     default:
         return false;
@@ -143,7 +131,7 @@ bool InteractDispatch::WindowManipulation(const DispatchTypes::WindowManipulatio
 bool InteractDispatch::MoveCursor(const VTInt row, const VTInt col)
 {
     // First retrieve some information about the buffer
-    const auto viewport = _api.GetViewport();
+    const auto viewport = _api.GetBufferAndViewport().viewport;
 
     // In VT, the origin is 1,1. For our array, it's 0,0. So subtract 1.
     // Apply boundary tests to ensure the cursor isn't outside the viewport rectangle.
@@ -240,7 +228,7 @@ bool InteractDispatch::FocusChanged(const bool focused) const
 
         WI_UpdateFlag(gci.Flags, CONSOLE_HAS_FOCUS, shouldActuallyFocus);
         gci.ProcessHandleList.ModifyConsoleProcessFocus(shouldActuallyFocus);
-        gci.pInputBuffer->Write(std::make_unique<FocusEvent>(focused));
+        gci.pInputBuffer->WriteFocusEvent(focused);
     }
     // Does nothing outside of ConPTY. If there's a real HWND, then the HWND is solely in charge.
 

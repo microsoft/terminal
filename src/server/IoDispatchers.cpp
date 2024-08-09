@@ -5,24 +5,17 @@
 
 #include "IoDispatchers.h"
 
-#include "ApiSorter.h"
+#include <telemetry/ProjectTelemetry.h>
 
-#include "../host/conserv.h"
-#include "../host/conwinuserrefs.h"
+#include "ApiSorter.h"
+#include "IConsoleHandoff.h"
 #include "../host/directio.h"
 #include "../host/handle.h"
 #include "../host/srvinit.h"
-#include "../host/telemetry.hpp"
-
 #include "../interactivity/base/HostSignalInputThread.hpp"
 #include "../interactivity/inc/ServiceLocator.hpp"
 
-#include "../types/inc/utils.hpp"
-
-#include "IConsoleHandoff.h"
-
 using namespace Microsoft::Console::Interactivity;
-using namespace Microsoft::Console::Utils;
 
 // From ntstatus.h, which we cannot include without causing a bunch of other conflicts. So we just include the one code we need.
 //
@@ -413,7 +406,6 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleHandleConnectionRequest(_In_ PCONSOLE_API
 {
     auto& Globals = ServiceLocator::LocateGlobals();
     auto& gci = Globals.getConsoleInformation();
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::AttachConsole);
 
     ConsoleProcessHandle* ProcessData = nullptr;
     NTSTATUS Status;
@@ -562,8 +554,6 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleHandleConnectionRequest(_In_ PCONSOLE_API
 // - A pointer to the reply message.
 PCONSOLE_API_MSG IoDispatchers::ConsoleClientDisconnectRoutine(_In_ PCONSOLE_API_MSG pMessage)
 {
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::FreeConsole);
-
     const auto pProcessData = pMessage->GetProcessHandle();
 
     auto pNotifier = ServiceLocator::LocateAccessibilityNotifier();

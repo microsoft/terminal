@@ -30,11 +30,7 @@
     <ClCompile Include="DynamicProfileUtils.cpp">
       <Filter>profileGeneration</Filter>
     </ClCompile>
-    <ClCompile Include="$(OpenConsoleDir)\dep\jsoncpp\jsoncpp.cpp">
-      <Filter>json</Filter>
-    </ClCompile>
     <ClCompile Include="init.cpp" />
-    <ClCompile Include="IconPathConverter.cpp" />
     <ClCompile Include="DefaultTerminal.cpp" />
     <ClCompile Include="FileUtils.cpp" />
     <ClCompile Include="VisualStudioGenerator.cpp">
@@ -83,7 +79,6 @@
     </ClInclude>
     <ClInclude Include="IInheritable.h" />
     <ClInclude Include="MTSMSettings.h" />
-    <ClInclude Include="IconPathConverter.h" />
     <ClInclude Include="DefaultTerminal.h" />
     <ClInclude Include="FileUtils.h" />
     <ClInclude Include="HashUtils.h" />
@@ -113,7 +108,6 @@
     <Midl Include="CascadiaSettings.idl" />
     <Midl Include="KeyChordSerialization.idl" />
     <Midl Include="EnumMappings.idl" />
-    <Midl Include="IconPathConverter.idl" />
     <Midl Include="TerminalSettings.idl" />
     <Midl Include="AppearanceConfig.idl" />
     <Midl Include="IAppearanceConfig.idl" />

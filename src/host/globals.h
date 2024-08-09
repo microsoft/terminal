@@ -25,6 +25,7 @@ Revision History:
 #include "../propslib/DelegationConfig.hpp"
 #include "../renderer/base/Renderer.hpp"
 #include "../server/DeviceComm.h"
+#include "../tsf/Handle.h"
 #include "../server/ConDrvDeviceComm.h"
 
 #include <TraceLoggingProvider.h>
@@ -60,9 +61,8 @@ public:
     DWORD dwInputThreadId;
 
     std::vector<wchar_t> WordDelimiters;
-
     Microsoft::Console::Render::Renderer* pRender;
-
+    Microsoft::Console::TSF::Handle tsf;
     Microsoft::Console::Render::IFontDefaultList* pFontDefaultList;
 
     bool IsHeadless() const;
@@ -75,10 +75,6 @@ public:
     wil::unique_hfile handoffInboxConsoleHandle;
     wil::unique_threadpool_wait handoffInboxConsoleExitWait;
     bool defaultTerminalMarkerCheckRequired = false;
-
-#ifdef UNIT_TESTING
-    void EnableConptyModeForTests(std::unique_ptr<Microsoft::Console::Render::VtEngine> vtRenderEngine);
-#endif
 
 private:
     CONSOLE_INFORMATION ciConsoleInformation;

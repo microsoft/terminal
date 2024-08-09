@@ -18,16 +18,11 @@ Author(s):
 
 #pragma once
 
-#include "inc/viewport.hpp"
-#include "../buffer/out/textBuffer.hpp"
-#include "../renderer/inc/IRenderData.hpp"
-#include "unicode.hpp"
-#include "IUiaTraceable.h"
-
 #include <UIAutomationCore.h>
-#include <deque>
-#include <tuple>
-#include <wrl/implements.h>
+
+#include "IUiaTraceable.h"
+#include "unicode.hpp"
+#include "../buffer/out/search.h"
 
 #ifdef UNIT_TESTING
 class UiaTextRangeTests;
@@ -82,7 +77,7 @@ namespace Microsoft::Console::Types
         bool IsDegenerate() const noexcept;
 
         // ITextRangeProvider methods
-        virtual IFACEMETHODIMP Clone(_Outptr_result_maybenull_ ITextRangeProvider** ppRetVal) = 0;
+        IFACEMETHODIMP Clone(_Outptr_result_maybenull_ ITextRangeProvider** ppRetVal) override = 0;
         IFACEMETHODIMP Compare(_In_opt_ ITextRangeProvider* pRange, _Out_ BOOL* pRetVal) noexcept override;
         IFACEMETHODIMP CompareEndpoints(_In_ TextPatternRangeEndpoint endpoint,
                                         _In_ ITextRangeProvider* pTargetRange,
@@ -126,6 +121,7 @@ namespace Microsoft::Console::Types
         IRawElementProviderSimple* _pProvider{ nullptr };
 
         std::wstring _wordDelimiters{};
+        ::Search _searcher;
 
         virtual void _TranslatePointToScreen(til::point* clientPoint) const = 0;
         virtual void _TranslatePointFromScreen(til::point* screenPoint) const = 0;

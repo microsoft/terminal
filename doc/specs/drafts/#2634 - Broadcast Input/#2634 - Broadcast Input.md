@@ -290,7 +290,7 @@ though. **I recommend we ignore this for now, and leave this as a follow-up**.
 For reference, refer to the following from iTerm2:
 ![image](https://user-images.githubusercontent.com/2578976/64075757-fa971980-ccee-11e9-9e44-47aaf3bca76c.png)
 
-We don't have a menu bar like on MacOS, but we do have a tab context menu. We
+We don't have a menu bar like on macOS, but we do have a tab context menu. We
 could add these items as a nested entry under each tab. If we wanted to do this,
 we should also make sure to dynamically change the icon of the MenuItem to
 reflect the current broadcast state.

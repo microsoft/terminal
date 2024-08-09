@@ -4,6 +4,10 @@
 #include "pch.h"
 #include "WindowThread.h"
 
+using namespace winrt::Microsoft::Terminal::Remoting;
+
+bool WindowThread::_loggedInteraction = false;
+
 WindowThread::WindowThread(winrt::TerminalApp::AppLogic logic,
                            winrt::Microsoft::Terminal::Remoting::WindowRequestedArgs args,
                            winrt::Microsoft::Terminal::Remoting::WindowManager manager,
@@ -18,12 +22,18 @@ WindowThread::WindowThread(winrt::TerminalApp::AppLogic logic,
 
 void WindowThread::CreateHost()
 {
+    // Calling this while refrigerated won't work.
+    // * We can't re-initialize our winrt apartment.
+    // * AppHost::Initialize has to be done on the "UI" thread.
+    assert(_warmWindow == nullptr);
+
     // Start the AppHost HERE, on the actual thread we want XAML to run on
-    _host = std::make_unique<::AppHost>(_appLogic,
+    _host = std::make_shared<::AppHost>(_appLogic,
                                         _args,
                                         _manager,
                                         _peasant);
-    _host->UpdateSettingsRequested([this]() { _UpdateSettingsRequestedHandlers(); });
+
+    _UpdateSettingsRequestedToken = _host->UpdateSettingsRequested([this]() { UpdateSettingsRequested.raise(); });
 
     winrt::init_apartment(winrt::apartment_type::single_threaded);
 
@@ -40,9 +50,30 @@ int WindowThread::RunMessagePump()
     return exitCode;
 }
 
+void WindowThread::_pumpRemainingXamlMessages()
+{
+    MSG msg = {};
+    while (PeekMessageW(&msg, nullptr, 0, 0, PM_REMOVE))
+    {
+        ::DispatchMessageW(&msg);
+    }
+}
+
 void WindowThread::RundownForExit()
 {
-    _host = nullptr;
+    if (_host)
+    {
+        _host->UpdateSettingsRequested(_UpdateSettingsRequestedToken);
+        _host->Close();
+    }
+    if (_warmWindow)
+    {
+        // If we have a _warmWindow, we're a refrigerated thread without a
+        // AppHost in control of the window. Manually close the window
+        // ourselves, to free the DesktopWindowXamlSource.
+        _warmWindow->Close();
+    }
+
     // !! LOAD BEARING !!
     //
     // Make sure to finish pumping all the messages for our thread here. We
@@ -51,13 +82,82 @@ void WindowThread::RundownForExit()
     // exiting. So do that now. If you don't, then the last tab to close
     // will never actually destruct the last tab / TermControl / ControlCore
     // / renderer.
+    _pumpRemainingXamlMessages();
+}
+
+// Method Description:
+// - Check if we should keep this window alive, to try it's message loop again.
+//   If we were refrigerated for later, then this will block the thread on the
+//   _microwaveBuzzer. We'll sit there like that till the emperor decides if
+//   they want to re-use this window thread for a new window.
+// Return Value:
+// - true IFF we should enter this thread's message loop
+// INVARIANT: This must be called on our "ui thread", our window thread.
+bool WindowThread::KeepWarm()
+{
+    if (_host != nullptr)
     {
-        MSG msg = {};
-        while (PeekMessageW(&msg, nullptr, 0, 0, PM_REMOVE))
-        {
-            ::DispatchMessageW(&msg);
-        }
+        // We're currently hot
+        return true;
     }
+
+    // Even when the _host has been destroyed the HWND will continue receiving messages, in particular WM_DISPATCHNOTIFY at least once a second. This is important to Windows as it keeps your room warm.
+    MSG msg;
+    for (;;)
+    {
+        if (!GetMessageW(&msg, nullptr, 0, 0))
+        {
+            return false;
+        }
+        // We're using a single window message (WM_REFRIGERATE) to indicate both
+        // state transitions. In this case, the window is actually being woken up.
+        if (msg.message == AppHost::WM_REFRIGERATE)
+        {
+            _UpdateSettingsRequestedToken = _host->UpdateSettingsRequested([this]() { UpdateSettingsRequested.raise(); });
+            // Re-initialize the host here, on the window thread
+            _host->Initialize();
+            return true;
+        }
+        DispatchMessageW(&msg);
+    }
+}
+
+// Method Description:
+// - "Refrigerate" this thread for later reuse. This will refrigerate the window
+//   itself, and tear down our current app host. We'll save our window for
+//   later. We'll also pump out the existing message from XAML, before
+//   returning. After we return, the emperor will add us to the list of threads
+//   that can be re-used.
+void WindowThread::Refrigerate()
+{
+    _host->UpdateSettingsRequested(_UpdateSettingsRequestedToken);
+
+    // keep a reference to the HWND and DesktopWindowXamlSource alive.
+    _warmWindow = _host->Refrigerate();
+
+    // rundown remaining messages before destructing the app host
+    _pumpRemainingXamlMessages();
+    _host = nullptr;
+}
+
+// Method Description:
+// - "Reheat" this thread for reuse. We'll build a new AppHost, and pass in the
+//   existing window to it. We'll then wake up the thread stuck in KeepWarm().
+void WindowThread::Microwave(WindowRequestedArgs args, Peasant peasant)
+{
+    const auto hwnd = _warmWindow->GetInteropHandle();
+
+    _peasant = std::move(peasant);
+    _args = std::move(args);
+
+    _host = std::make_shared<AppHost>(_appLogic,
+                                      _args,
+                                      _manager,
+                                      _peasant,
+                                      std::move(_warmWindow));
+
+    // raise the signal to unblock KeepWarm and start the window message loop again.
+    PostMessageW(hwnd, AppHost::WM_REFRIGERATE, 0, 0);
 }
 
 winrt::TerminalApp::TerminalWindow WindowThread::Logic()
@@ -84,6 +184,25 @@ int WindowThread::_messagePump()
 
     while (GetMessageW(&message, nullptr, 0, 0))
     {
+        // We're using a single window message (WM_REFRIGERATE) to indicate both
+        // state transitions. In this case, the window is actually being refrigerated.
+        // This will break us out of our main message loop we'll eventually start
+        // the loop in WindowThread::KeepWarm to await a call to Microwave().
+        if (message.message == AppHost::WM_REFRIGERATE)
+        {
+            break;
+        }
+
+        if (!_loggedInteraction && (message.message == WM_KEYDOWN || message.message == WM_SYSKEYDOWN))
+        {
+            TraceLoggingWrite(
+                g_hWindowsTerminalProvider,
+                "SessionBecameInteractive",
+                TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
+            _loggedInteraction = true;
+        }
+
         // GH#638 (Pressing F7 brings up both the history AND a caret browsing message)
         // The Xaml input stack doesn't allow an application to suppress the "caret browsing"
         // dialog experience triggered when you press F7. Official recommendation from the Xaml
@@ -128,7 +247,8 @@ int WindowThread::_messagePump()
     }
     return 0;
 }
-winrt::Microsoft::Terminal::Remoting::Peasant WindowThread::Peasant()
+
+uint64_t WindowThread::PeasantID()
 {
-    return _peasant;
+    return _peasant.GetID();
 }

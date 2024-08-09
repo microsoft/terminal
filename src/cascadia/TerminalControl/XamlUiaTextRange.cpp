@@ -92,8 +92,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     winrt::Windows::Foundation::IInspectable XamlUiaTextRange::GetAttributeValue(int32_t textAttributeId) const
     {
         // Call the function off of the underlying UiaTextRange.
-        VARIANT result;
-        THROW_IF_FAILED(_uiaProvider->GetAttributeValue(textAttributeId, &result));
+        wil::unique_variant result;
+        THROW_IF_FAILED(_uiaProvider->GetAttributeValue(textAttributeId, result.addressof()));
 
         // Convert the resulting VARIANT into a format that is consumable by XAML.
         switch (result.vt)
@@ -189,9 +189,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     winrt::hstring XamlUiaTextRange::GetText(int32_t maxLength) const
     {
-        BSTR returnVal;
-        THROW_IF_FAILED(_uiaProvider->GetText(maxLength, &returnVal));
-        return winrt::to_hstring(returnVal);
+        wil::unique_bstr returnVal;
+        THROW_IF_FAILED(_uiaProvider->GetText(maxLength, returnVal.put()));
+        return winrt::hstring{ returnVal.get(), SysStringLen(returnVal.get()) };
     }
 
     int32_t XamlUiaTextRange::Move(XamlAutomation::TextUnit unit,
