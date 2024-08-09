@@ -292,6 +292,53 @@ winrt::com_ptr<Theme> Theme::FromJson(const Json::Value& json)
     return result;
 }
 
+void Theme::LogSettingChanges(std::set<std::string>& changes, const std::string_view& context)
+{
+#pragma warning(push)
+#pragma warning(disable : 5103) // pasting '{' and 'winrt' does not result in a valid preprocessing token
+
+#define GENERATE_SET_CHECK_AND_JSON_KEYS(type, name, jsonKey, ...) \
+    const bool is##name##Set = _##name != nullptr;                 \
+    std::string_view outer##name##JsonKey = jsonKey;
+
+    MTSM_THEME_SETTINGS(GENERATE_SET_CHECK_AND_JSON_KEYS)
+
+#define LOG_IF_SET(type, name, jsonKey, ...) \
+    if (obj.name() != type{##__VA_ARGS__ })  \
+        changes.emplace(fmt::format(FMT_COMPILE("{}.{}.{}"), context, outerJsonKey, jsonKey));
+
+    if (isWindowSet)
+    {
+        const auto obj = _Window;
+        const auto outerJsonKey = outerWindowJsonKey;
+        MTSM_THEME_WINDOW_SETTINGS(LOG_IF_SET)
+    }
+
+    if (isSettingsSet)
+    {
+        const auto obj = _Settings;
+        const auto outerJsonKey = outerSettingsJsonKey;
+        MTSM_THEME_SETTINGS_SETTINGS(LOG_IF_SET)
+    }
+
+    if (isTabRowSet)
+    {
+        const auto obj = _TabRow;
+        const auto outerJsonKey = outerTabRowJsonKey;
+        MTSM_THEME_TABROW_SETTINGS(LOG_IF_SET)
+    }
+
+    if (isTabSet)
+    {
+        const auto obj = _Tab;
+        const auto outerJsonKey = outerTabJsonKey;
+        MTSM_THEME_TAB_SETTINGS(LOG_IF_SET)
+    }
+#undef LOG_IF_SET
+#undef GENERATE_SET_CHECK_AND_JSON_KEYS
+#pragma warning(pop)
+}
+
 // Method Description:
 // - Create a new serialized JsonObject from an instance of this class
 // Arguments:
