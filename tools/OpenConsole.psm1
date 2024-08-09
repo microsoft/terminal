@@ -198,7 +198,7 @@ function Invoke-OpenConsoleTests()
         $OpenConsolePlatform = 'Win32'
     }
     $OpenConsolePath = "$root\bin\$OpenConsolePlatform\$Configuration\OpenConsole.exe"
-    $TaefExePath = "$root\packages\Microsoft.Taef.10.60.210621002\build\Binaries\$Platform\te.exe"
+    $TaefExePath = "$root\packages\Microsoft.Taef.10.93.240607003\build\Binaries\$Platform\te.exe"
     $BinDir = "$root\bin\$OpenConsolePlatform\$Configuration"
 
     [xml]$TestConfig = Get-Content "$root\tools\tests.xml"

@@ -116,7 +116,7 @@ shift
 goto :ARGS_LOOP
 
 :POST_ARGS_LOOP
-set TAEF=%OPENCON%\packages\Microsoft.Taef.10.60.210621002\build\Binaries\%ARCH%\TE.exe
+set TAEF=%OPENCON%\packages\Microsoft.Taef.10.93.240607003\build\Binaries\%ARCH%\TE.exe
 rem Set this envvar so setup won't repeat itself
 set OpenConBuild=true
 
