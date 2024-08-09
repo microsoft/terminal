@@ -39,15 +39,21 @@ ITerminalApi::BufferState Terminal::GetBufferAndViewport() noexcept
     return { _activeBuffer(), til::rect{ _GetMutableViewport().ToInclusive() }, !_inAltBuffer() };
 }
 
-void Terminal::SetViewportPosition(const til::point position) noexcept
+void Terminal::SetViewportPosition(til::point position) noexcept
 try
 {
     // The viewport is fixed at 0,0 for the alt buffer, so this is a no-op.
     if (!_inAltBuffer())
     {
+        const auto bufferSize = _mainBuffer->GetSize().Dimensions();
+        const auto viewSize = _GetMutableViewport().Dimensions();
+
+        // Ensure the given position is in bounds.
+        position.x = std::clamp(position.x, 0, bufferSize.width - viewSize.width);
+        position.y = std::clamp(position.y, 0, bufferSize.height - viewSize.height);
+
         const auto viewportDelta = position.y - _GetMutableViewport().Origin().y;
-        const auto dimensions = _GetMutableViewport().Dimensions();
-        _mutableViewport = Viewport::FromDimensions(position, dimensions);
+        _mutableViewport = Viewport::FromDimensions(position, viewSize);
         _PreserveUserScrollOffset(viewportDelta);
         _NotifyScrollEvent();
     }

@@ -1850,32 +1850,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
             if (read < sizeof(buffer))
             {
+                // Normally the cursor should already be at the start of the line, but let's be absolutely sure it is.
+                if (_terminal->GetCursorPosition().x != 0)
+                {
+                    _terminal->Write(L"\r\n");
+                }
+                _terminal->Write(message);
                 break;
             }
-        }
-
-        {
-            const auto lock = _terminal->LockForWriting();
-
-            // Normally the cursor should already be at the start of the line, but let's be absolutely sure it is.
-            if (_terminal->GetCursorPosition().x != 0)
-            {
-                _terminal->Write(L"\r\n");
-            }
-
-            _terminal->Write(message);
-
-            // Show 3 lines of scrollback to the user, so they know it's there. Otherwise, in particular with the well
-            // hidden touch scrollbars in WinUI 2 and later, there's no indication that there's something to scroll up to.
-            //
-            // We only show 3 lines because ConPTY doesn't know about our restored buffer contents initially,
-            // and so ReadConsole calls will return whitespace.
-            //
-            // We also avoid using actual newlines or similar here, because if we ever change our text buffer implementation
-            // to actually track the written contents, we don't want this to be part of the next buffer snapshot.
-            const auto cursorPosition = _terminal->GetCursorPosition();
-            const auto y = std::max(0, cursorPosition.y - 4);
-            _terminal->SetViewportPosition({ 0, y });
         }
     }
 
