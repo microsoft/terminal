@@ -59,7 +59,7 @@ class SelectionTests
     void VerifyGetSelectionRects_BoxMode()
     {
         const auto selectionRects = m_pSelection->GetSelectionRects();
-        const UINT cRectanglesExpected = m_pSelection->_srSelectionRect.bottom - m_pSelection->_srSelectionRect.top + 1;
+        const UINT cRectanglesExpected = m_pSelection->_d->srSelectionRect.bottom - m_pSelection->_d->srSelectionRect.top + 1;
 
         if (VERIFY_ARE_EQUAL(cRectanglesExpected, selectionRects.size()))
         {
@@ -68,61 +68,76 @@ class SelectionTests
                 // ensure each rectangle is exactly the width requested (block selection)
                 const auto psrRect = &selectionRects[iRect];
 
-                const auto sRectangleLineNumber = (til::CoordType)iRect + m_pSelection->_srSelectionRect.top;
+                const auto sRectangleLineNumber = (til::CoordType)iRect + m_pSelection->_d->srSelectionRect.top;
 
                 VERIFY_ARE_EQUAL(psrRect->top, sRectangleLineNumber);
                 VERIFY_ARE_EQUAL(psrRect->bottom, sRectangleLineNumber);
 
-                VERIFY_ARE_EQUAL(psrRect->left, m_pSelection->_srSelectionRect.left);
-                VERIFY_ARE_EQUAL(psrRect->right, m_pSelection->_srSelectionRect.right);
+                VERIFY_ARE_EQUAL(psrRect->left, m_pSelection->_d->srSelectionRect.left);
+                VERIFY_ARE_EQUAL(psrRect->right, m_pSelection->_d->srSelectionRect.right);
             }
         }
     }
 
     TEST_METHOD(TestGetSelectionRects_BoxMode)
     {
-        m_pSelection->_fSelectionVisible = true;
+        {
+            auto selection{ m_pSelection->_d.write() };
+            selection->fSelectionVisible = true;
 
-        // set selection region
-        m_pSelection->_srSelectionRect.top = 0;
-        m_pSelection->_srSelectionRect.bottom = 3;
-        m_pSelection->_srSelectionRect.left = 1;
-        m_pSelection->_srSelectionRect.right = 10;
+            // set selection region
+            selection->srSelectionRect.top = 0;
+            selection->srSelectionRect.bottom = 3;
+            selection->srSelectionRect.left = 1;
+            selection->srSelectionRect.right = 10;
 
-        // #1 top-left to bottom right selection first
-        m_pSelection->_coordSelectionAnchor.x = m_pSelection->_srSelectionRect.left;
-        m_pSelection->_coordSelectionAnchor.y = m_pSelection->_srSelectionRect.top;
+            // #1 top-left to bottom right selection first
+            selection->coordSelectionAnchor.x = selection->srSelectionRect.left;
+            selection->coordSelectionAnchor.y = selection->srSelectionRect.top;
 
-        // A. false/false for the selection modes should mean box selection
-        m_pSelection->_fLineSelection = false;
-        m_pSelection->_fUseAlternateSelection = false;
+            // A. false/false for the selection modes should mean box selection
+            selection->fLineSelection = false;
+            selection->fUseAlternateSelection = false;
 
-        VerifyGetSelectionRects_BoxMode();
+            VerifyGetSelectionRects_BoxMode();
+        }
 
-        // B. true/true for the selection modes should also mean box selection
-        m_pSelection->_fLineSelection = true;
-        m_pSelection->_fUseAlternateSelection = true;
+        {
+            auto selection{ m_pSelection->_d.write() };
+            // B. true/true for the selection modes should also mean box selection
+            selection->fLineSelection = true;
+            selection->fUseAlternateSelection = true;
 
-        VerifyGetSelectionRects_BoxMode();
+            VerifyGetSelectionRects_BoxMode();
+        }
 
-        // now try the other 3 configurations of box region.
-        // #2 top-right to bottom-left selection
-        m_pSelection->_coordSelectionAnchor.x = m_pSelection->_srSelectionRect.right;
-        m_pSelection->_coordSelectionAnchor.y = m_pSelection->_srSelectionRect.top;
+        {
+            auto selection{ m_pSelection->_d.write() };
+            // now try the other 3 configurations of box region.
+            // #2 top-right to bottom-left selection
+            selection->coordSelectionAnchor.x = selection->srSelectionRect.right;
+            selection->coordSelectionAnchor.y = selection->srSelectionRect.top;
 
-        VerifyGetSelectionRects_BoxMode();
+            VerifyGetSelectionRects_BoxMode();
+        }
 
-        // #3 bottom-left to top-right selection
-        m_pSelection->_coordSelectionAnchor.x = m_pSelection->_srSelectionRect.left;
-        m_pSelection->_coordSelectionAnchor.y = m_pSelection->_srSelectionRect.bottom;
+        {
+            auto selection{ m_pSelection->_d.write() };
+            // #3 bottom-left to top-right selection
+            selection->coordSelectionAnchor.x = selection->srSelectionRect.left;
+            selection->coordSelectionAnchor.y = selection->srSelectionRect.bottom;
 
-        VerifyGetSelectionRects_BoxMode();
+            VerifyGetSelectionRects_BoxMode();
+        }
 
-        // #4 bottom-right to top-left selection
-        m_pSelection->_coordSelectionAnchor.x = m_pSelection->_srSelectionRect.right;
-        m_pSelection->_coordSelectionAnchor.y = m_pSelection->_srSelectionRect.bottom;
+        {
+            auto selection{ m_pSelection->_d.write() };
+            // #4 bottom-right to top-left selection
+            selection->coordSelectionAnchor.x = selection->srSelectionRect.right;
+            selection->coordSelectionAnchor.y = selection->srSelectionRect.bottom;
 
-        VerifyGetSelectionRects_BoxMode();
+            VerifyGetSelectionRects_BoxMode();
+        }
     }
 
     void VerifyGetSelectionRects_LineMode()
@@ -130,7 +145,7 @@ class SelectionTests
         const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
         const auto selectionRects = m_pSelection->GetSelectionRects();
-        const UINT cRectanglesExpected = m_pSelection->_srSelectionRect.bottom - m_pSelection->_srSelectionRect.top + 1;
+        const UINT cRectanglesExpected = m_pSelection->_d->srSelectionRect.bottom - m_pSelection->_d->srSelectionRect.top + 1;
 
         if (VERIFY_ARE_EQUAL(cRectanglesExpected, selectionRects.size()))
         {
@@ -148,7 +163,7 @@ class SelectionTests
 
             if (fHaveOneLine)
             {
-                auto srSelectionRect = m_pSelection->_srSelectionRect;
+                auto srSelectionRect = m_pSelection->_d->srSelectionRect;
                 VERIFY_ARE_EQUAL(srSelectionRect.top, srSelectionRect.bottom);
 
                 const auto psrRect = &selectionRects[0];
@@ -167,7 +182,7 @@ class SelectionTests
                     // ensure each rectangle is exactly the width requested (block selection)
                     const auto psrRect = &selectionRects[iRect];
 
-                    const auto sRectangleLineNumber = (til::CoordType)iRect + m_pSelection->_srSelectionRect.top;
+                    const auto sRectangleLineNumber = (til::CoordType)iRect + m_pSelection->_d->srSelectionRect.top;
 
                     VERIFY_ARE_EQUAL(psrRect->top, sRectangleLineNumber);
                     VERIFY_ARE_EQUAL(psrRect->bottom, sRectangleLineNumber);
@@ -198,8 +213,8 @@ class SelectionTests
 
                 auto fRemoveRegion = false;
 
-                auto srSelectionRect = m_pSelection->_srSelectionRect;
-                auto coordAnchor = m_pSelection->_coordSelectionAnchor;
+                auto srSelectionRect = m_pSelection->_d->srSelectionRect;
+                auto coordAnchor = m_pSelection->_d->coordSelectionAnchor;
 
                 // if the anchor is in the top right or bottom left corner, we must have removed a region. otherwise, it stays as is.
                 if (coordAnchor.y == srSelectionRect.top && coordAnchor.x == srSelectionRect.right)
@@ -236,69 +251,90 @@ class SelectionTests
 
     TEST_METHOD(TestGetSelectionRects_LineMode)
     {
-        m_pSelection->_fSelectionVisible = true;
+        {
+            auto selection{ m_pSelection->_d.write() };
+            selection->fSelectionVisible = true;
 
-        // Part I: Multiple line selection
-        // set selection region
-        m_pSelection->_srSelectionRect.top = 0;
-        m_pSelection->_srSelectionRect.bottom = 3;
-        m_pSelection->_srSelectionRect.left = 1;
-        m_pSelection->_srSelectionRect.right = 10;
+            // Part I: Multiple line selection
+            // set selection region
+            selection->srSelectionRect.top = 0;
+            selection->srSelectionRect.bottom = 3;
+            selection->srSelectionRect.left = 1;
+            selection->srSelectionRect.right = 10;
 
-        // #1 top-left to bottom right selection first
-        m_pSelection->_coordSelectionAnchor.x = m_pSelection->_srSelectionRect.left;
-        m_pSelection->_coordSelectionAnchor.y = m_pSelection->_srSelectionRect.top;
+            // #1 top-left to bottom right selection first
+            selection->coordSelectionAnchor.x = selection->srSelectionRect.left;
+            selection->coordSelectionAnchor.y = selection->srSelectionRect.top;
 
-        // A. true/false for the selection modes should mean line selection
-        m_pSelection->_fLineSelection = true;
-        m_pSelection->_fUseAlternateSelection = false;
+            // A. true/false for the selection modes should mean line selection
+            selection->fLineSelection = true;
+            selection->fUseAlternateSelection = false;
 
-        VerifyGetSelectionRects_LineMode();
+            VerifyGetSelectionRects_LineMode();
+        }
 
-        // B. false/true for the selection modes should also mean line selection
-        m_pSelection->_fLineSelection = false;
-        m_pSelection->_fUseAlternateSelection = true;
+        {
+            auto selection{ m_pSelection->_d.write() };
+            // B. false/true for the selection modes should also mean line selection
+            selection->fLineSelection = false;
+            selection->fUseAlternateSelection = true;
 
-        VerifyGetSelectionRects_LineMode();
+            VerifyGetSelectionRects_LineMode();
+        }
 
-        // now try the other 3 configurations of box region.
-        // #2 top-right to bottom-left selection
-        m_pSelection->_coordSelectionAnchor.x = m_pSelection->_srSelectionRect.right;
-        m_pSelection->_coordSelectionAnchor.y = m_pSelection->_srSelectionRect.top;
+        {
+            auto selection{ m_pSelection->_d.write() };
+            // now try the other 3 configurations of box region.
+            // #2 top-right to bottom-left selection
+            selection->coordSelectionAnchor.x = selection->srSelectionRect.right;
+            selection->coordSelectionAnchor.y = selection->srSelectionRect.top;
 
-        VerifyGetSelectionRects_LineMode();
+            VerifyGetSelectionRects_LineMode();
+        }
 
-        // #3 bottom-left to top-right selection
-        m_pSelection->_coordSelectionAnchor.x = m_pSelection->_srSelectionRect.left;
-        m_pSelection->_coordSelectionAnchor.y = m_pSelection->_srSelectionRect.bottom;
+        {
+            auto selection{ m_pSelection->_d.write() };
+            // #3 bottom-left to top-right selection
+            selection->coordSelectionAnchor.x = selection->srSelectionRect.left;
+            selection->coordSelectionAnchor.y = selection->srSelectionRect.bottom;
 
-        VerifyGetSelectionRects_LineMode();
+            VerifyGetSelectionRects_LineMode();
+        }
 
-        // #4 bottom-right to top-left selection
-        m_pSelection->_coordSelectionAnchor.x = m_pSelection->_srSelectionRect.right;
-        m_pSelection->_coordSelectionAnchor.y = m_pSelection->_srSelectionRect.bottom;
+        {
+            auto selection{ m_pSelection->_d.write() };
+            // #4 bottom-right to top-left selection
+            selection->coordSelectionAnchor.x = selection->srSelectionRect.right;
+            selection->coordSelectionAnchor.y = selection->srSelectionRect.bottom;
 
-        VerifyGetSelectionRects_LineMode();
+            VerifyGetSelectionRects_LineMode();
+        }
 
-        // Part II: Single line selection
-        m_pSelection->_srSelectionRect.top = 2;
-        m_pSelection->_srSelectionRect.bottom = 2;
-        m_pSelection->_srSelectionRect.left = 1;
-        m_pSelection->_srSelectionRect.right = 10;
+        {
+            auto selection{ m_pSelection->_d.write() };
+            // Part II: Single line selection
+            selection->srSelectionRect.top = 2;
+            selection->srSelectionRect.bottom = 2;
+            selection->srSelectionRect.left = 1;
+            selection->srSelectionRect.right = 10;
 
-        // #1: left to right selection
-        m_pSelection->_coordSelectionAnchor.x = m_pSelection->_srSelectionRect.left;
-        VERIFY_IS_TRUE(m_pSelection->_srSelectionRect.bottom == m_pSelection->_srSelectionRect.top);
-        m_pSelection->_coordSelectionAnchor.y = m_pSelection->_srSelectionRect.bottom;
+            // #1: left to right selection
+            selection->coordSelectionAnchor.x = selection->srSelectionRect.left;
+            VERIFY_IS_TRUE(selection->srSelectionRect.bottom == selection->srSelectionRect.top);
+            selection->coordSelectionAnchor.y = selection->srSelectionRect.bottom;
 
-        VerifyGetSelectionRects_LineMode();
+            VerifyGetSelectionRects_LineMode();
+        }
 
-        // #2: right to left selection
-        m_pSelection->_coordSelectionAnchor.x = m_pSelection->_srSelectionRect.right;
-        VERIFY_IS_TRUE(m_pSelection->_srSelectionRect.bottom == m_pSelection->_srSelectionRect.top);
-        m_pSelection->_coordSelectionAnchor.y = m_pSelection->_srSelectionRect.top;
+        {
+            auto selection{ m_pSelection->_d.write() };
+            // #2: right to left selection
+            selection->coordSelectionAnchor.x = selection->srSelectionRect.right;
+            VERIFY_IS_TRUE(selection->srSelectionRect.bottom == selection->srSelectionRect.top);
+            selection->coordSelectionAnchor.y = selection->srSelectionRect.top;
 
-        VerifyGetSelectionRects_LineMode();
+            VerifyGetSelectionRects_LineMode();
+        }
     }
 
     void TestBisectSelectionDelta(til::CoordType sTargetX, til::CoordType sTargetY, til::CoordType sLength, til::CoordType sDeltaLeft, til::CoordType sDeltaRight)

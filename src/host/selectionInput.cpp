@@ -312,10 +312,10 @@ bool Selection::HandleKeyboardLineSelectionEvent(const INPUT_KEY_INFO* const pIn
     }
 
     // anchor is the first clicked position
-    const auto coordAnchor = _coordSelectionAnchor;
+    const auto coordAnchor = _d->coordSelectionAnchor;
 
     // rect covers the entire selection
-    const auto rectSelection = _srSelectionRect;
+    const auto rectSelection = _d->srSelectionRect;
 
     // the selection point is the other corner of the rectangle from the anchor that we're about to manipulate
     til::point coordSelPoint;
@@ -605,7 +605,7 @@ bool Selection::HandleKeyboardLineSelectionEvent(const INPUT_KEY_INFO* const pIn
 // - <none>
 void Selection::CheckAndSetAlternateSelection()
 {
-    _fUseAlternateSelection = !!(OneCoreSafeGetKeyState(VK_MENU) & KEY_PRESSED);
+    _d.write()->fUseAlternateSelection = !!(OneCoreSafeGetKeyState(VK_MENU) & KEY_PRESSED);
 }
 
 // Routine Description:
@@ -632,7 +632,7 @@ bool Selection::_HandleColorSelection(const INPUT_KEY_INFO* const pInputKeyInfo)
     // If it is line selection, we can assemble that across multiple lines to make a search term.
     // But if it is block selection and the selected area is > 1 line in height, ignore the shift because we can't search.
     // Also ignore if there is no current selection.
-    if ((fShiftPressed) && (!IsAreaSelected() || (!IsLineSelection() && (_srSelectionRect.top != _srSelectionRect.bottom))))
+    if ((fShiftPressed) && (!IsAreaSelected() || (!IsLineSelection() && (_d->srSelectionRect.top != _d->srSelectionRect.bottom))))
     {
         fShiftPressed = false;
     }
@@ -647,7 +647,7 @@ bool Selection::_HandleColorSelection(const INPUT_KEY_INFO* const pInputKeyInfo)
     auto& screenInfo = gci.GetActiveOutputBuffer();
 
     //  Clip the selection to within the console buffer
-    screenInfo.ClipToScreenBuffer(&_srSelectionRect);
+    screenInfo.ClipToScreenBuffer(&_d.write()->srSelectionRect);
 
     //  If ALT or CTRL are pressed,  then color the selected area.
     //  ALT+n => fg,  CTRL+n => bg
@@ -910,19 +910,20 @@ bool Selection::_HandleMarkModeSelectionNav(const INPUT_KEY_INFO* const pInputKe
         }
         else
         {
+            auto d{ _d.write() };
             // if the selection was not empty, reset the anchor
             if (IsAreaSelected())
             {
                 HideSelection();
-                _dwSelectionFlags &= ~CONSOLE_SELECTION_NOT_EMPTY;
-                _fUseAlternateSelection = false;
+                d->dwSelectionFlags &= ~CONSOLE_SELECTION_NOT_EMPTY;
+                d->fUseAlternateSelection = false;
             }
 
             cursor.SetHasMoved(true);
-            _coordSelectionAnchor = textBuffer.GetCursor().GetPosition();
-            ScreenInfo.MakeCursorVisible(_coordSelectionAnchor);
-            _srSelectionRect.left = _srSelectionRect.right = _coordSelectionAnchor.x;
-            _srSelectionRect.top = _srSelectionRect.bottom = _coordSelectionAnchor.y;
+            d->coordSelectionAnchor = textBuffer.GetCursor().GetPosition();
+            ScreenInfo.MakeCursorVisible(d->coordSelectionAnchor);
+            d->srSelectionRect.left = d->srSelectionRect.right = d->coordSelectionAnchor.x;
+            d->srSelectionRect.top = d->srSelectionRect.bottom = d->coordSelectionAnchor.y;
         }
         return true;
     }
@@ -986,7 +987,7 @@ void Selection::GetValidAreaBoundaries(_Out_opt_ til::point* const pcoordValidSt
     {
         if (IsInSelectingState() && IsKeyboardMarkSelection())
         {
-            coordEnd = _coordSavedCursorPosition;
+            coordEnd = _d->coordSavedCursorPosition;
         }
         else
         {
