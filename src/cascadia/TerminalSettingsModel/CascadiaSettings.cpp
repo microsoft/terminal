@@ -1061,6 +1061,11 @@ void CascadiaSettings::CurrentDefaultTerminal(const Model::DefaultTerminal& term
     _currentDefaultTerminal = terminal;
 }
 
+static winrt::event<Model::AzureOpenAISettingChangedHandler> _azureOpenAISettingChangedHandlers;
+
+winrt::event_token CascadiaSettings::AzureOpenAISettingChanged(const Model::AzureOpenAISettingChangedHandler& handler) { return _azureOpenAISettingChangedHandlers.add(handler); };
+void CascadiaSettings::AzureOpenAISettingChanged(const winrt::event_token& token) { _azureOpenAISettingChangedHandlers.remove(token); };
+
 winrt::hstring CascadiaSettings::AIEndpoint() noexcept
 {
     PasswordVault vault;
@@ -1100,6 +1105,7 @@ void CascadiaSettings::AIEndpoint(const winrt::hstring& endpoint) noexcept
         PasswordCredential newCredential{ PasswordVaultResourceName, PasswordVaultAIEndpoint, endpoint };
         vault.Add(newCredential);
     }
+    _azureOpenAISettingChangedHandlers();
 }
 
 winrt::hstring CascadiaSettings::AIKey() noexcept
@@ -1141,6 +1147,7 @@ void CascadiaSettings::AIKey(const winrt::hstring& key) noexcept
         PasswordCredential newCredential{ PasswordVaultResourceName, PasswordVaultAIKey, key };
         vault.Add(newCredential);
     }
+    _azureOpenAISettingChangedHandlers();
 }
 
 // This function is implicitly called by DefaultTerminals/CurrentDefaultTerminal().

@@ -1,0 +1,17 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+import "ILMProvider.idl";
+
+namespace Microsoft.Terminal.Query.Extension
+{
+    [default_interface] runtimeclass AzureLLMProvider : ILMProvider
+    {
+        AzureLLMProvider();
+    }
+
+    [default_interface] runtimeclass AzureResponse : IResponse
+    {
+        AzureResponse(String message, Boolean isError);
+    }
+}
