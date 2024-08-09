@@ -97,7 +97,7 @@ namespace winrt::TerminalApp::implementation
                 {
                     if (const auto& sendInput{ command.ActionAndArgs().Args().try_as<winrt::Microsoft::Terminal::Settings::Model::SendInputArgs>() })
                     {
-                        return winrt::hstring{ til::visualize_nonspace_control_codes(sendInput.Input().c_str()) };
+                        return winrt::hstring{ til::visualize_nonspace_control_codes(std::wstring{ sendInput.Input() }) };
                     }
                 }
             }

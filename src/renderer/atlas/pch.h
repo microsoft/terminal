@@ -6,16 +6,12 @@
 #define NOMINMAX
 #define WIN32_LEAN_AND_MEAN
 
-#include <array>
 #include <filesystem>
+#include <functional>
 #include <optional>
 #include <shared_mutex>
 #include <span>
-#include <sstream>
 #include <string_view>
-#include <thread>
-#include <unordered_map>
-#include <unordered_set>
 #include <vector>
 
 #include <d2d1_3.h>
@@ -32,9 +28,7 @@
 #include <gsl/pointers>
 #include <wil/com.h>
 #include <wil/filesystem.h>
-#include <wil/result_macros.h>
 #include <wil/stl.h>
-#include <wil/win32_helpers.h>
 
 // Chromium Numerics (safe math)
 #pragma warning(push)
@@ -44,8 +38,10 @@
 #pragma warning(pop)
 
 // {fmt}, a C++20-compatible formatting library
-#include <fmt/format.h>
+#pragma warning(push)
+#pragma warning(disable : 4702) // unreachable code
 #include <fmt/compile.h>
+#include <fmt/xchar.h>
+#pragma warning(pop)
 
 #include <til.h>
-#include <til/bit.h>

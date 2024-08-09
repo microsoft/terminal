@@ -845,7 +845,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 // UI easier.
 
                 const auto escapedInput = til::visualize_nonspace_control_codes(std::wstring{ inputString });
-                const auto name = fmt::format(std::wstring_view(RS_(L"SendInputCommandKey")), escapedInput);
+                const auto name = RS_fmt(L"SendInputCommandKey", escapedInput);
                 copy->Name(winrt::hstring{ name });
             }
 
@@ -923,13 +923,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         // This returns an empty string if we fail to load the file.
         std::filesystem::path localSnippetsPath{ std::wstring_view{ currentWorkingDirectory + L"\\.wt.json" } };
-        const auto localTasksFileContents = til::io::read_file_as_utf8_string_if_exists(localSnippetsPath);
-        if (!localTasksFileContents.has_value() || localTasksFileContents->empty())
+        const auto data = til::io::read_file_as_utf8_string_if_exists(localSnippetsPath);
+        if (data.empty())
         {
             return {};
         }
 
-        const auto& data = *localTasksFileContents;
         Json::Value root;
         std::string errs;
         const std::unique_ptr<Json::CharReader> reader{ Json::CharReaderBuilder{}.newCharReader() };

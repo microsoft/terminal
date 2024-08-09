@@ -910,10 +910,8 @@ namespace winrt::TerminalApp::implementation
 
         // Build the commandline to pass to wt for this set of NewTerminalArgs
         // `-w -1` will ensure a new window is created.
-        winrt::hstring cmdline{
-            fmt::format(L"-w -1 new-tab {}",
-                        terminalArgs.ToCommandline().c_str())
-        };
+        const auto commandline = terminalArgs.ToCommandline();
+        winrt::hstring cmdline{ fmt::format(FMT_COMPILE(L"-w -1 new-tab {}"), commandline) };
 
         // Build the args to ShellExecuteEx. We need to use ShellExecuteEx so we
         // can pass the SEE_MASK_NOASYNC flag. That flag allows us to safely
@@ -1107,14 +1105,14 @@ namespace winrt::TerminalApp::implementation
                 {
                     if (const auto& realArgs = args.ActionArgs().try_as<SearchForTextArgs>())
                     {
-                        queryUrl = realArgs.QueryUrl().c_str();
+                        queryUrl = std::wstring_view{ realArgs.QueryUrl() };
                     }
                 }
 
                 // use global default if query URL is unspecified
                 if (queryUrl.empty())
                 {
-                    queryUrl = _settings.GlobalSettings().SearchWebDefaultQueryUrl().c_str();
+                    queryUrl = std::wstring_view{ _settings.GlobalSettings().SearchWebDefaultQueryUrl() };
                 }
 
                 constexpr std::wstring_view queryToken{ L"%s" };
@@ -1448,8 +1446,8 @@ namespace winrt::TerminalApp::implementation
         const auto source = realArgs.Source();
         std::vector<Command> commandsCollection;
         Control::CommandHistoryContext context{ nullptr };
-        winrt::hstring currentCommandline = L"";
-        winrt::hstring currentWorkingDirectory = L"";
+        winrt::hstring currentCommandline;
+        winrt::hstring currentWorkingDirectory;
 
         // If the user wanted to use the current commandline to filter results,
         //    OR they wanted command history (or some other source that
@@ -1479,7 +1477,7 @@ namespace winrt::TerminalApp::implementation
             context.QuickFixes() != nullptr)
         {
             // \ue74c --> OEM icon
-            const auto recentCommands = Command::HistoryToCommands(context.QuickFixes(), hstring{ L"" }, false, hstring{ L"\ue74c" });
+            const auto recentCommands = Command::HistoryToCommands(context.QuickFixes(), hstring{}, false, hstring{ L"\ue74c" });
             for (const auto& t : recentCommands)
             {
                 commandsCollection.push_back(t);

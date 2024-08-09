@@ -239,7 +239,7 @@ void AppHost::_HandleSessionRestore(const bool startedForContent)
         // Create new windows for each of the other saved layouts.
         for (const auto size = layouts.Size(); startIdx < size; startIdx += 1)
         {
-            auto newWindowArgs = fmt::format(L"{0} -w new -s {1}", args.Commandline()[0], startIdx);
+            auto newWindowArgs = fmt::format(FMT_COMPILE(L"{} -w new -s {}"), args.Commandline()[0], startIdx);
 
             STARTUPINFO si;
             memset(&si, 0, sizeof(si));

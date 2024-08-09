@@ -237,8 +237,11 @@ void SettingsLoader::FindFragmentsAndMergeIntoUserSettings()
             {
                 try
                 {
-                    const auto content = til::io::read_file_as_utf8_string(fragmentExt.path());
-                    _parseFragment(source, content, fragmentSettings);
+                    const auto content = til::io::read_file_as_utf8_string_if_exists(fragmentExt.path());
+                    if (!content.empty())
+                    {
+                        _parseFragment(source, content, fragmentSettings);
+                    }
                 }
                 CATCH_LOG();
             }
@@ -553,12 +556,12 @@ void SettingsLoader::_rethrowSerializationExceptionWithLocationInfo(const JsonUt
     const auto [line, column] = _lineAndColumnFromPosition(settingsString, static_cast<size_t>(e.jsonValue.getOffsetStart()));
 
     fmt::memory_buffer msg;
-    fmt::format_to(msg, "* Line {}, Column {}", line, column);
+    fmt::format_to(std::back_inserter(msg), "* Line {}, Column {}", line, column);
     if (e.key)
     {
-        fmt::format_to(msg, " ({})", *e.key);
+        fmt::format_to(std::back_inserter(msg), " ({})", *e.key);
     }
-    fmt::format_to(msg, "\n  Have: {}\n  Expected: {}\0", jsonValueAsString, e.expectedType);
+    fmt::format_to(std::back_inserter(msg), "\n  Have: {}\n  Expected: {}\0", jsonValueAsString, e.expectedType);
 
     throw SettingsTypedDeserializationException{ msg.data() };
 }
@@ -934,7 +937,7 @@ Model::CascadiaSettings CascadiaSettings::LoadAll()
 try
 {
     FILETIME lastWriteTime{};
-    auto settingsString = til::io::read_file_as_utf8_string_if_exists(_settingsPath(), false, &lastWriteTime).value_or(std::string{});
+    auto settingsString = til::io::read_file_as_utf8_string_if_exists(_settingsPath(), false, &lastWriteTime);
     auto firstTimeSetup = settingsString.empty();
 
     // If it's the firstTimeSetup and a preview build, then try to
@@ -947,7 +950,7 @@ try
         {
             try
             {
-                settingsString = til::io::read_file_as_utf8_string_if_exists(_releaseSettingsPath()).value_or(std::string{});
+                settingsString = til::io::read_file_as_utf8_string_if_exists(_releaseSettingsPath());
                 releaseSettingExists = settingsString.empty() ? false : true;
             }
             catch (...)
@@ -1243,7 +1246,7 @@ winrt::hstring CascadiaSettings::_calculateHash(std::string_view settings, const
 {
     const auto fileHash = til::hash(settings);
     const ULARGE_INTEGER fileTime{ lastWriteTime.dwLowDateTime, lastWriteTime.dwHighDateTime };
-    const auto hash = fmt::format(L"{:016x}-{:016x}", fileHash, fileTime.QuadPart);
+    const auto hash = fmt::format(FMT_COMPILE(L"{:016x}-{:016x}"), fileHash, fileTime.QuadPart);
     return winrt::hstring{ hash };
 }
 

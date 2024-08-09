@@ -38,6 +38,7 @@ ANSISYS
 ANSISYSRC
 ANSISYSSC
 answerback
+ANSWERBACKMESSAGE
 antialiasing
 ANull
 anycpu
@@ -2141,6 +2142,7 @@ XBUTTONDOWN
 XBUTTONUP
 XCast
 XCENTER
+xchar
 xcopy
 XCount
 xdy

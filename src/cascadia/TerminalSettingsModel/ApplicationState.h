@@ -95,9 +95,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         Json::Value _toJsonWithBlob(Json::Value& root, FileSource parseSource) const noexcept;
 
-        std::optional<std::string> _readSharedContents() const;
+        std::string _readSharedContents() const;
         void _writeSharedContents(const std::string_view content) const;
-        std::optional<std::string> _readLocalContents() const;
+        std::string _readLocalContents() const;
         void _writeLocalContents(const std::string_view content) const;
     };
 }

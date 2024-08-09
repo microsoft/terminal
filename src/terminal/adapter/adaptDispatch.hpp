@@ -101,6 +101,7 @@ namespace Microsoft::Console::VirtualTerminal
                                           const VTInt bottomMargin) override; // DECSTBM
         bool SetLeftRightScrollingMargins(const VTInt leftMargin,
                                           const VTInt rightMargin) override; // DECSLRM
+        bool EnquireAnswerback() override; // ENQ
         bool WarningBell() override; // BEL
         bool CarriageReturn() override; // CR
         bool LineFeed(const DispatchTypes::LineFeedType lineFeedType) override; // IND, NEL, LF, FF, VT
@@ -276,6 +277,7 @@ namespace Microsoft::Console::VirtualTerminal
         void _ReportSGRSetting() const;
         void _ReportDECSTBMSetting();
         void _ReportDECSLRMSetting();
+        void _ReportDECSCUSRSetting() const;
         void _ReportDECSCASetting() const;
         void _ReportDECSACESetting() const;
         void _ReportDECACSetting(const VTInt itemNumber) const;
