@@ -35,8 +35,6 @@ public:
     BufferState GetBufferAndViewport() override;
     void SetViewportPosition(const til::point position) override;
 
-    void SetTextAttributes(const TextAttribute& attrs) override;
-
     void SetSystemMode(const Mode mode, const bool enabled) override;
     bool GetSystemMode(const Mode mode) const override;
 

@@ -83,8 +83,11 @@
 #include <intsafe.h>
 
 // {fmt}, a C++20-compatible formatting library
-#include <fmt/format.h>
+#pragma warning(push)
+#pragma warning(disable: 4702) // unreachable code
 #include <fmt/compile.h>
+#include <fmt/xchar.h>
+#pragma warning(pop)
 
 #define USE_INTERVAL_TREE_NAMESPACE
 #include <IntervalTree.h>

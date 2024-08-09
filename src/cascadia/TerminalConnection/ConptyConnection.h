@@ -60,6 +60,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
         HRESULT _LaunchAttachedClient() noexcept;
         void _indicateExitWithStatus(unsigned int status) noexcept;
+        static std::wstring _formatStatus(uint32_t status);
         void _LastConPtyClientDisconnected() noexcept;
 
         til::CoordType _rows = 120;

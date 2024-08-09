@@ -2321,7 +2321,7 @@ namespace winrt::TerminalApp::implementation
                         {
                             autoPeer.RaiseNotificationEvent(Automation::Peers::AutomationNotificationKind::ActionCompleted,
                                                             Automation::Peers::AutomationNotificationProcessing::ImportantMostRecent,
-                                                            fmt::format(std::wstring_view{ RS_(L"TerminalPage_PaneMovedAnnouncement_ExistingWindow2") }, windowId),
+                                                            RS_fmt(L"TerminalPage_PaneMovedAnnouncement_ExistingWindow2", windowId),
                                                             L"TerminalPageMovePaneToExistingWindow" /* unique name for this notification category */);
                         }
                     }
@@ -2356,7 +2356,7 @@ namespace winrt::TerminalApp::implementation
                 const auto tabTitle = targetTab->Title();
                 autoPeer.RaiseNotificationEvent(Automation::Peers::AutomationNotificationKind::ActionCompleted,
                                                 Automation::Peers::AutomationNotificationProcessing::ImportantMostRecent,
-                                                fmt::format(std::wstring_view{ RS_(L"TerminalPage_PaneMovedAnnouncement_ExistingTab") }, tabTitle),
+                                                RS_fmt(L"TerminalPage_PaneMovedAnnouncement_ExistingTab", tabTitle),
                                                 L"TerminalPageMovePaneToExistingTab" /* unique name for this notification category */);
             }
         }
@@ -2456,14 +2456,14 @@ namespace winrt::TerminalApp::implementation
                     {
                         autoPeer.RaiseNotificationEvent(Automation::Peers::AutomationNotificationKind::ActionCompleted,
                                                         Automation::Peers::AutomationNotificationProcessing::ImportantMostRecent,
-                                                        fmt::format(std::wstring_view{ RS_(L"TerminalPage_TabMovedAnnouncement_NewWindow") }, tabTitle),
+                                                        RS_fmt(L"TerminalPage_TabMovedAnnouncement_NewWindow", tabTitle),
                                                         L"TerminalPageMoveTabToNewWindow" /* unique name for this notification category */);
                     }
                     else
                     {
                         autoPeer.RaiseNotificationEvent(Automation::Peers::AutomationNotificationKind::ActionCompleted,
                                                         Automation::Peers::AutomationNotificationProcessing::ImportantMostRecent,
-                                                        fmt::format(std::wstring_view{ RS_(L"TerminalPage_TabMovedAnnouncement_Default") }, tabTitle, windowId),
+                                                        RS_fmt(L"TerminalPage_TabMovedAnnouncement_Default", tabTitle, windowId),
                                                         L"TerminalPageMoveTabToExistingWindow" /* unique name for this notification category */);
                     }
                 }
@@ -3004,7 +3004,7 @@ namespace winrt::TerminalApp::implementation
     {
         try
         {
-            auto parsed = winrt::Windows::Foundation::Uri(eventArgs.Uri().c_str());
+            auto parsed = winrt::Windows::Foundation::Uri(eventArgs.Uri());
             if (_IsUriSupported(parsed))
             {
                 ShellExecute(nullptr, L"open", eventArgs.Uri().c_str(), nullptr, nullptr, SW_SHOWNORMAL);
@@ -4349,8 +4349,8 @@ namespace winrt::TerminalApp::implementation
     winrt::hstring TerminalPage::KeyboardServiceDisabledText()
     {
         const auto serviceName{ _getTabletServiceName() };
-        const winrt::hstring text{ fmt::format(std::wstring_view(RS_(L"KeyboardServiceWarningText")), serviceName) };
-        return text;
+        const auto text{ RS_fmt(L"KeyboardServiceWarningText", serviceName) };
+        return winrt::hstring{ text };
     }
 
     // Method Description:
@@ -4640,7 +4640,7 @@ namespace winrt::TerminalApp::implementation
 
         // Build the commandline to pass to wt for this set of NewTerminalArgs
         auto cmdline{
-            fmt::format(L"new-tab {}", newTerminalArgs.ToCommandline().c_str())
+            fmt::format(FMT_COMPILE(L"new-tab {}"), newTerminalArgs.ToCommandline())
         };
 
         wil::unique_process_information pi;
@@ -5394,7 +5394,7 @@ namespace winrt::TerminalApp::implementation
         {
             // `this` is safe to use in here.
 
-            _sendDraggedTabToWindow(winrt::hstring{ fmt::format(L"{}", args.TargetWindow()) },
+            _sendDraggedTabToWindow(winrt::to_hstring(args.TargetWindow()),
                                     args.TabIndex(),
                                     std::nullopt);
         }

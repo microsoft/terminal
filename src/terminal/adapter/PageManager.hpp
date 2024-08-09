@@ -25,7 +25,7 @@ namespace Microsoft::Console::VirtualTerminal
         til::CoordType Number() const noexcept;
         Cursor& Cursor() const noexcept;
         const TextAttribute& Attributes() const noexcept;
-        void SetAttributes(const TextAttribute& attr, ITerminalApi* api = nullptr) const;
+        void SetAttributes(const TextAttribute& attr) const noexcept;
         til::size Size() const noexcept;
         til::CoordType Top() const noexcept;
         til::CoordType Bottom() const noexcept;

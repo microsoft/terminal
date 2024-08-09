@@ -88,18 +88,6 @@ void ConhostInternalGetSet::SetViewportPosition(const til::point position)
     info.UpdateBottom();
 }
 
-// Method Description:
-// - Sets the current TextAttribute of the active screen buffer. Text
-//   written to this buffer will be written with these attributes.
-// Arguments:
-// - attrs: The new TextAttribute to use
-// Return Value:
-// - <none>
-void ConhostInternalGetSet::SetTextAttributes(const TextAttribute& attrs)
-{
-    _io.GetActiveOutputBuffer().SetAttributes(attrs);
-}
-
 // Routine Description:
 // - Sets the state of one of the system modes.
 // Arguments:

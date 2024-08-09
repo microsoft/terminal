@@ -927,10 +927,8 @@ namespace winrt::TerminalApp::implementation
 
         // Build the commandline to pass to wt for this set of NewTerminalArgs
         // `-w -1` will ensure a new window is created.
-        winrt::hstring cmdline{
-            fmt::format(L"-w -1 new-tab {}",
-                        terminalArgs.ToCommandline().c_str())
-        };
+        const auto commandline = terminalArgs.ToCommandline();
+        winrt::hstring cmdline{ fmt::format(FMT_COMPILE(L"-w -1 new-tab {}"), commandline) };
 
         // Build the args to ShellExecuteEx. We need to use ShellExecuteEx so we
         // can pass the SEE_MASK_NOASYNC flag. That flag allows us to safely
@@ -1124,14 +1122,14 @@ namespace winrt::TerminalApp::implementation
                 {
                     if (const auto& realArgs = args.ActionArgs().try_as<SearchForTextArgs>())
                     {
-                        queryUrl = realArgs.QueryUrl().c_str();
+                        queryUrl = std::wstring_view{ realArgs.QueryUrl() };
                     }
                 }
 
                 // use global default if query URL is unspecified
                 if (queryUrl.empty())
                 {
-                    queryUrl = _settings.GlobalSettings().SearchWebDefaultQueryUrl().c_str();
+                    queryUrl = std::wstring_view{ _settings.GlobalSettings().SearchWebDefaultQueryUrl() };
                 }
 
                 constexpr std::wstring_view queryToken{ L"%s" };

@@ -20,7 +20,7 @@ Revision History:
 template<>
 struct fmt::formatter<winrt::hstring, wchar_t> : fmt::formatter<fmt::wstring_view, wchar_t>
 {
-    auto format(const winrt::hstring& str, auto& ctx)
+    auto format(const winrt::hstring& str, auto& ctx) const
     {
         return fmt::formatter<fmt::wstring_view, wchar_t>::format({ str.data(), str.size() }, ctx);
     }

@@ -54,11 +54,6 @@ try
 }
 CATCH_LOG()
 
-void Terminal::SetTextAttributes(const TextAttribute& attrs) noexcept
-{
-    _activeBuffer().SetCurrentAttributes(attrs);
-}
-
 void Terminal::SetSystemMode(const Mode mode, const bool enabled) noexcept
 {
     _assertLocked();
