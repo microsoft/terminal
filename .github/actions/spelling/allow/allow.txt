@@ -5,6 +5,7 @@ breadcrumbs
 ccmp
 ccon
 clickable
+cmark
 CMMI
 colorbrewer
 consvc
@@ -22,6 +23,7 @@ Emacspeak
 Fitt
 FTCS
 gantt
+gfm
 ghe
 gje
 godbolt

@@ -1235,6 +1235,10 @@ namespace winrt::TerminalApp::implementation
                 {
                     taskPane.SetLastActiveControl(termControl);
                 }
+                else if (const auto& taskPane{ p->GetContent().try_as<MarkdownPaneContent>() })
+                {
+                    taskPane.SetLastActiveControl(termControl);
+                }
             });
         }
     }

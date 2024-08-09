@@ -17,6 +17,7 @@
 #include "SettingsPaneContent.h"
 #include "ScratchpadContent.h"
 #include "SnippetsPaneContent.h"
+#include "MarkdownPaneContent.h"
 #include "TabRowControl.h"
 
 #include "TerminalPage.g.cpp"
@@ -3343,6 +3344,30 @@ namespace winrt::TerminalApp::implementation
             }
 
             content = *tasksContent;
+        }
+        else if (paneType == L"x-markdown")
+        {
+            if (Feature_MarkdownPane::IsEnabled())
+            {
+                const auto& markdownContent{ winrt::make_self<MarkdownPaneContent>(L"") };
+                markdownContent->UpdateSettings(_settings);
+                markdownContent->GetRoot().KeyDown({ this, &TerminalPage::_KeyDownHandler });
+
+                // This one doesn't use DispatchCommand, because we don't create
+                // Command's freely at runtime like we do with just plain old actions.
+                markdownContent->DispatchActionRequested([weak = get_weak()](const auto& sender, const auto& actionAndArgs) {
+                    if (const auto& page{ weak.get() })
+                    {
+                        page->_actionDispatch->DoAction(sender, actionAndArgs);
+                    }
+                });
+                if (const auto& termControl{ _GetActiveControl() })
+                {
+                    markdownContent->SetLastActiveControl(termControl);
+                }
+
+                content = *markdownContent;
+            }
         }
 
         assert(content);

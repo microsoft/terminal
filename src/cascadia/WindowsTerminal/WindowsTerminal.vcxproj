@@ -90,6 +90,7 @@
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalApp\dll\TerminalApp.vcxproj" />
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\Remoting\dll\Microsoft.Terminal.Remoting.vcxproj" />
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalSettingsEditor\Microsoft.Terminal.Settings.Editor.vcxproj" />
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\UIMarkdown\UIMarkdown.vcxproj" />
 
     <ProjectReference Include="$(OpenConsoleDir)src\types\lib\types.vcxproj" />
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\WinRTUtils\WinRTUtils.vcxproj">
