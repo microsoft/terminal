@@ -1686,24 +1686,6 @@ static constexpr bool IsInputKey(WORD vkey)
 
 void SCREEN_INFORMATION::MakeCursorVisible(til::point position)
 {
-    _makeLocationVisible(position, true, true);
-}
-
-void SCREEN_INFORMATION::SnapOnInput(const WORD vkey)
-{
-    if (IsInputKey(vkey))
-    {
-        _makeLocationVisible(_textBuffer->GetCursor().GetPosition(), true, false);
-    }
-}
-
-void SCREEN_INFORMATION::SnapOnOutput()
-{
-    _makeLocationVisible(_textBuffer->GetCursor().GetPosition(), false, true);
-}
-
-void SCREEN_INFORMATION::_makeLocationVisible(til::point position, bool vertical, bool horizontal)
-{
     const auto viewportOrigin = _viewport.Origin();
     const auto viewportSize = _viewport.Dimensions();
     const auto bufferSize = _textBuffer->GetSize().Dimensions();
@@ -1713,21 +1695,31 @@ void SCREEN_INFORMATION::_makeLocationVisible(til::point position, bool vertical
     position.x = std::clamp(position.x, 0, bufferSize.width - 1);
     position.y = std::clamp(position.y, 0, bufferSize.height - 1);
 
-    if (vertical)
-    {
-        origin.y = std::min(origin.y, position.y); // shift up if above
-        origin.y = std::max(origin.y, position.y - (viewportSize.height - 1)); // shift down if below
-    }
+    origin.y = std::min(origin.y, position.y); // shift up if above
+    origin.y = std::max(origin.y, position.y - (viewportSize.height - 1)); // shift down if below
 
-    if (horizontal)
-    {
-        origin.x = std::min(origin.x, position.x); // shift left if left
-        origin.x = std::max(origin.x, position.x - (viewportSize.width - 1)); // shift right if right
-    }
+    origin.x = std::min(origin.x, position.x); // shift left if left
+    origin.x = std::max(origin.x, position.x - (viewportSize.width - 1)); // shift right if right
 
     if (origin != viewportOrigin)
     {
         std::ignore = SetViewportOrigin(true, origin, false);
+    }
+}
+
+void SCREEN_INFORMATION::SnapOnInput(const WORD vkey)
+{
+    if (IsInputKey(vkey))
+    {
+        _makeCursorVisible();
+    }
+}
+
+void SCREEN_INFORMATION::_makeCursorVisible()
+{
+    if (_textBuffer->GetCursor().IsOn())
+    {
+        MakeCursorVisible(_textBuffer->GetCursor().GetPosition());
     }
 }
 

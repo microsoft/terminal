@@ -73,7 +73,16 @@ public:
     void MakeCurrentCursorVisible();
     void MakeCursorVisible(til::point position);
     void SnapOnInput(WORD vkey);
-    void SnapOnOutput();
+    auto SnapOnOutput()
+    {
+        const auto inBounds = _viewport.IsInBounds(_textBuffer->GetCursor().GetPosition());
+        return wil::scope_exit([this, inBounds]() {
+            if (inBounds)
+            {
+                _makeCursorVisible();
+            }
+        });
+    }
 
     void ClipToScreenBuffer(_Inout_ til::inclusive_rect* const psrClip) const;
 
@@ -233,7 +242,7 @@ private:
     void _CalculateViewportSize(const til::rect* const prcClientArea, _Out_ til::size* const pcoordSize);
     void _AdjustViewportSize(const til::rect* const prcClientNew, const til::rect* const prcClientOld, const til::size* const pcoordSize);
     void _InternalSetViewportSize(const til::size* pcoordSize, const bool fResizeFromTop, const bool fResizeFromLeft);
-    void _makeLocationVisible(til::point position, bool vertical, bool horizontal);
+    void _makeCursorVisible();
 
     static void s_CalculateScrollbarVisibility(const til::rect* const prcClientArea,
                                                const til::size* const pcoordBufferSize,
