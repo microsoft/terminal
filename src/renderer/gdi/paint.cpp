@@ -881,14 +881,16 @@ CATCH_RETURN();
 //  - rect - Rectangle to invert or highlight to make the selection area
 // Return Value:
 // - S_OK or suitable GDI HRESULT error.
-[[nodiscard]] HRESULT GdiEngine::PaintSelection(const til::rect& rect) noexcept
+[[nodiscard]] HRESULT GdiEngine::PaintSelection(std::span<const til::rect> rects) noexcept
 {
     LOG_IF_FAILED(_FlushBufferLines());
 
-    const auto pixelRect = rect.scale_up(_GetFontSize()).to_win32_rect();
+    for (auto&& rect : rects)
+    {
+        const auto pixelRect = rect.scale_up(_GetFontSize()).to_win32_rect();
 
-    RETURN_HR_IF(E_FAIL, !InvertRect(_hdcMemoryContext, &pixelRect));
-
+        RETURN_HR_IF(E_FAIL, !InvertRect(_hdcMemoryContext, &pixelRect));
+    }
     return S_OK;
 }
 

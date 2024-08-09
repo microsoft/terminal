@@ -321,9 +321,6 @@ void Clipboard::StoreSelectionToClipboard(const bool copyFormatting)
         return;
     }
 
-    // read selection area.
-    const auto selectionRects = selection.GetSelectionRects();
-
     const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     const auto& buffer = gci.GetActiveOutputBuffer().GetTextBuffer();
     const auto& renderSettings = gci.GetRenderSettings();

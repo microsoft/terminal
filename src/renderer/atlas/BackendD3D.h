@@ -76,7 +76,6 @@ namespace Microsoft::Console::Render::Atlas
             SolidLine,
 
             Cursor,
-            Selection,
 
             TextDrawingFirst = TextGrayscale,
             TextDrawingLast = SolidLine,

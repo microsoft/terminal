@@ -336,7 +336,6 @@ namespace ControlUnitTests
                                     true);
         Log::Comment(L"Verify that there's one selection");
         VERIFY_IS_TRUE(core->HasSelection());
-        VERIFY_ARE_EQUAL(1u, core->_terminal->GetSelectionRects().size());
 
         Log::Comment(L"Drag the mouse down a whole row");
         const til::point terminalPosition2{ 1, 1 };
@@ -349,7 +348,6 @@ namespace ControlUnitTests
                                     true);
         Log::Comment(L"Verify that there's now two selections (one on each row)");
         VERIFY_IS_TRUE(core->HasSelection());
-        VERIFY_ARE_EQUAL(2u, core->_terminal->GetSelectionRects().size());
 
         Log::Comment(L"Release the mouse");
         interactivity->PointerReleased(noMouseDown,
@@ -358,7 +356,6 @@ namespace ControlUnitTests
                                        cursorPosition2.to_core_point());
         Log::Comment(L"Verify that there's still two selections");
         VERIFY_IS_TRUE(core->HasSelection());
-        VERIFY_ARE_EQUAL(2u, core->_terminal->GetSelectionRects().size());
 
         Log::Comment(L"click outside the current selection");
         const til::point terminalPosition3{ 2, 2 };
@@ -370,7 +367,6 @@ namespace ControlUnitTests
                                       cursorPosition3.to_core_point());
         Log::Comment(L"Verify that there's now no selection");
         VERIFY_IS_FALSE(core->HasSelection());
-        VERIFY_ARE_EQUAL(0u, core->_terminal->GetSelectionRects().size());
 
         Log::Comment(L"Drag the mouse");
         const til::point terminalPosition4{ 3, 2 };
@@ -383,7 +379,6 @@ namespace ControlUnitTests
                                     true);
         Log::Comment(L"Verify that there's now one selection");
         VERIFY_IS_TRUE(core->HasSelection());
-        VERIFY_ARE_EQUAL(1u, core->_terminal->GetSelectionRects().size());
     }
 
     void ControlInteractivityTests::ScrollWithSelection()
@@ -438,7 +433,6 @@ namespace ControlUnitTests
                                     true);
         Log::Comment(L"Verify that there's one selection");
         VERIFY_IS_TRUE(core->HasSelection());
-        VERIFY_ARE_EQUAL(1u, core->_terminal->GetSelectionRects().size());
 
         Log::Comment(L"Verify the location of the selection");
         // The viewport is on row 21, so the selection will be on:
@@ -586,7 +580,6 @@ namespace ControlUnitTests
                                     true);
         Log::Comment(L"Verify that there's one selection");
         VERIFY_IS_TRUE(core->HasSelection());
-        VERIFY_ARE_EQUAL(1u, core->_terminal->GetSelectionRects().size());
 
         Log::Comment(L"Verify that it started on the first cell we clicked on, not the one we dragged to");
         til::point expectedAnchor{ 0, 0 };
@@ -631,7 +624,6 @@ namespace ControlUnitTests
                                     true);
         Log::Comment(L"Verify that there's one selection");
         VERIFY_IS_TRUE(core->HasSelection());
-        VERIFY_ARE_EQUAL(1u, core->_terminal->GetSelectionRects().size());
 
         Log::Comment(L"Verify that it started on the first cell we clicked on, not the one we dragged to");
         til::point expectedAnchor{ 0, 0 };
@@ -801,7 +793,6 @@ namespace ControlUnitTests
                                     true);
         Log::Comment(L"Verify that there's one selection");
         VERIFY_IS_TRUE(core->HasSelection());
-        VERIFY_ARE_EQUAL(1u, core->_terminal->GetSelectionRects().size());
 
         Log::Comment(L"Verify the location of the selection");
         // The viewport is on row (historySize + 5), so the selection will be on:
@@ -860,7 +851,6 @@ namespace ControlUnitTests
                                     cursorPosition0.to_core_point(),
                                     true);
         VERIFY_IS_TRUE(core->HasSelection());
-        VERIFY_ARE_EQUAL(1u, core->_terminal->GetSelectionRects().size());
         {
             const auto anchor{ core->_terminal->GetSelectionAnchor() };
             const auto end{ core->_terminal->GetSelectionEnd() };
@@ -885,7 +875,6 @@ namespace ControlUnitTests
                                     cursorPosition1.to_core_point(),
                                     true);
         VERIFY_IS_TRUE(core->HasSelection());
-        VERIFY_ARE_EQUAL(1u, core->_terminal->GetSelectionRects().size());
         {
             const auto anchor{ core->_terminal->GetSelectionAnchor() };
             const auto end{ core->_terminal->GetSelectionEnd() };
