@@ -1668,39 +1668,58 @@ void SCREEN_INFORMATION::SetCursorDBMode(const bool DoubleCursor)
     return STATUS_SUCCESS;
 }
 
-void SCREEN_INFORMATION::MakeCursorVisible(const til::point CursorPosition)
+static constexpr bool IsInputKey(WORD vkey)
 {
-    til::point WindowOrigin;
+    return vkey != VK_CONTROL &&
+           vkey != VK_LCONTROL &&
+           vkey != VK_RCONTROL &&
+           vkey != VK_MENU &&
+           vkey != VK_LMENU &&
+           vkey != VK_RMENU &&
+           vkey != VK_SHIFT &&
+           vkey != VK_LSHIFT &&
+           vkey != VK_RSHIFT &&
+           vkey != VK_LWIN &&
+           vkey != VK_RWIN &&
+           vkey != VK_SNAPSHOT;
+}
 
-    if (CursorPosition.x > _viewport.RightInclusive())
-    {
-        WindowOrigin.x = CursorPosition.x - _viewport.RightInclusive();
-    }
-    else if (CursorPosition.x < _viewport.Left())
-    {
-        WindowOrigin.x = CursorPosition.x - _viewport.Left();
-    }
-    else
-    {
-        WindowOrigin.x = 0;
-    }
+void SCREEN_INFORMATION::MakeCursorVisible(til::point position)
+{
+    const auto viewportOrigin = _viewport.Origin();
+    const auto viewportSize = _viewport.Dimensions();
+    const auto bufferSize = _textBuffer->GetSize().Dimensions();
+    auto origin = viewportOrigin;
 
-    if (CursorPosition.y > _viewport.BottomInclusive())
-    {
-        WindowOrigin.y = CursorPosition.y - _viewport.BottomInclusive();
-    }
-    else if (CursorPosition.y < _viewport.Top())
-    {
-        WindowOrigin.y = CursorPosition.y - _viewport.Top();
-    }
-    else
-    {
-        WindowOrigin.y = 0;
-    }
+    // Ensure the given position is in bounds.
+    position.x = std::clamp(position.x, 0, bufferSize.width - 1);
+    position.y = std::clamp(position.y, 0, bufferSize.height - 1);
 
-    if (WindowOrigin.x != 0 || WindowOrigin.y != 0)
+    origin.y = std::min(origin.y, position.y); // shift up if above
+    origin.y = std::max(origin.y, position.y - (viewportSize.height - 1)); // shift down if below
+
+    origin.x = std::min(origin.x, position.x); // shift left if left
+    origin.x = std::max(origin.x, position.x - (viewportSize.width - 1)); // shift right if right
+
+    if (origin != viewportOrigin)
     {
-        LOG_IF_FAILED(SetViewportOrigin(false, WindowOrigin, false));
+        std::ignore = SetViewportOrigin(true, origin, false);
+    }
+}
+
+void SCREEN_INFORMATION::SnapOnInput(const WORD vkey)
+{
+    if (IsInputKey(vkey))
+    {
+        _makeCursorVisible();
+    }
+}
+
+void SCREEN_INFORMATION::_makeCursorVisible()
+{
+    if (_textBuffer->GetCursor().IsOn())
+    {
+        MakeCursorVisible(_textBuffer->GetCursor().GetPosition());
     }
 }
 
