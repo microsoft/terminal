@@ -22,8 +22,6 @@ Revision History:
 
 bool CheckBisectStringA(_In_reads_bytes_(cbBuf) PCHAR pchBuf, _In_ DWORD cbBuf, const CPINFO* const pCPInfo);
 
-DWORD UnicodeRasterFontCellMungeOnRead(const std::span<CHAR_INFO> buffer);
-
 bool IsDBCSLeadByteConsole(const CHAR ch, const CPINFO* const pCPInfo);
 
 BYTE CodePageToCharSet(const UINT uiCodePage);

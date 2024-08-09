@@ -6,7 +6,6 @@
 #include "misc.h"
 
 #include "../types/inc/convert.hpp"
-#include "../types/inc/GlyphWidth.hpp"
 
 #include "../interactivity/inc/ServiceLocator.hpp"
 
@@ -45,56 +44,6 @@ bool CheckBisectStringA(_In_reads_bytes_(cbBuf) PCHAR pchBuf, _In_ DWORD cbBuf, 
     }
 
     return false;
-}
-
-// Routine Description:
-// - This routine removes the double copies of characters used when storing DBCS/Double-wide characters in the text buffer.
-// - It munges up Unicode cells that are about to be returned whenever there is DBCS data and a raster font is enabled.
-// - This function is ONLY FOR COMPATIBILITY PURPOSES. Please do not introduce new usages.
-// Arguments:
-// - buffer - The buffer to walk and fix
-// Return Value:
-// - The length of the final modified buffer.
-DWORD UnicodeRasterFontCellMungeOnRead(const std::span<CHAR_INFO> buffer)
-{
-    // Walk through the source CHAR_INFO and copy each to the destination.
-    // EXCEPT for trailing bytes (this will de-duplicate the leading/trailing byte double copies of the CHAR_INFOs as stored in the buffer).
-
-    // Set up indices used for arrays.
-    DWORD iDst = 0;
-
-    // Walk through every CHAR_INFO
-    for (DWORD iSrc = 0; iSrc < buffer.size(); iSrc++)
-    {
-        // If it's not a trailing byte, copy it straight over, stripping out the Leading/Trailing flags from the attributes field.
-        auto& src{ til::at(buffer, iSrc) };
-        if (!WI_IsFlagSet(src.Attributes, COMMON_LVB_TRAILING_BYTE))
-        {
-            auto& dst{ til::at(buffer, iDst) };
-            dst = src;
-            WI_ClearAllFlags(dst.Attributes, COMMON_LVB_SBCSDBCS);
-            iDst++;
-        }
-
-        // If it was a trailing byte, we'll just walk past it and keep going.
-    }
-
-    // Zero out the remaining part of the destination buffer that we didn't use.
-    const auto cchDstToClear = gsl::narrow<DWORD>(buffer.size()) - iDst;
-
-    if (cchDstToClear > 0)
-    {
-        const auto pciDstClearStart = buffer.data() + iDst;
-        ZeroMemory(pciDstClearStart, cchDstToClear * sizeof(CHAR_INFO));
-    }
-
-    // Add the additional length we just modified.
-    iDst += cchDstToClear;
-
-    // now that we're done, we should have copied, left alone, or cleared the entire length.
-    FAIL_FAST_IF(iDst != buffer.size());
-
-    return iDst;
 }
 
 // Routine Description:
