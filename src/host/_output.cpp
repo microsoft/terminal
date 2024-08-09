@@ -383,13 +383,7 @@ static FillConsoleResult FillConsoleImpl(SCREEN_INFORMATION& screenInfo, FillCon
         LockConsole();
         const auto unlock = wil::scope_exit([&] { UnlockConsole(); });
 
-        // GH#3126 - This is a shim for powershell's `Clear-Host` function. In
-        // the vintage console, `Clear-Host` is supposed to clear the entire
-        // buffer. In conpty however, there's no difference between the viewport
-        // and the entirety of the buffer. We're going to see if this API call
-        // exactly matched the way we expect powershell to call it. If it does,
-        // then let's manually emit a ^[[3J to the connected terminal, so that
-        // their entire buffer will be cleared as well.
+        // See FillConsoleOutputCharacterWImpl and its identical code.
         if (enablePowershellShim)
         {
             auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();

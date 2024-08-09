@@ -109,7 +109,7 @@ _TIL_INLINEPREFIX const std::wstring& GetWtExePath()
 // Method Description:
 // - Quotes and escapes the given string so that it can be used as a command-line arg.
 // - e.g. given `\";foo\` will return `"\\\"\;foo\\"` so that the caller can construct a command-line
-//   using something such as `fmt::format(L"wt --title {}", QuoteAndQuoteAndEscapeCommandlineArg(TabTitle()))`.
+//   using something such as `fmt::format(FMT_COMPILE(L"wt --title {}"), QuoteAndQuoteAndEscapeCommandlineArg(TabTitle()))`.
 // Arguments:
 // - arg - the command-line argument to quote and escape.
 // Return Value:

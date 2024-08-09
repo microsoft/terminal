@@ -41,8 +41,7 @@ SCREEN_INFORMATION::SCREEN_INFORMATION(
     _PopupAttributes{ popupAttributes },
     _virtualBottom{ 0 },
     _currentFont{ fontInfo },
-    _desiredFont{ fontInfo },
-    _ignoreLegacyEquivalentVTAttributes{ false }
+    _desiredFont{ fontInfo }
 {
     // Check if VT mode should be enabled by default. This can be true if
     // VirtualTerminalLevel is set to !=0 in the registry, or when conhost
@@ -2041,13 +2040,6 @@ const TextAttribute& SCREEN_INFORMATION::GetPopupAttributes() const noexcept
 // <none>
 void SCREEN_INFORMATION::SetAttributes(const TextAttribute& attributes)
 {
-    if (_ignoreLegacyEquivalentVTAttributes)
-    {
-        // See the comment on StripErroneousVT16VersionsOfLegacyDefaults for more info.
-        _textBuffer->SetCurrentAttributes(TextAttribute::StripErroneousVT16VersionsOfLegacyDefaults(attributes));
-        return;
-    }
-
     _textBuffer->SetCurrentAttributes(attributes);
 
     // If we're an alt buffer, DON'T propagate this setting up to the main buffer.
@@ -2492,18 +2484,4 @@ FontInfoDesired& SCREEN_INFORMATION::GetDesiredFont() noexcept
 const FontInfoDesired& SCREEN_INFORMATION::GetDesiredFont() const noexcept
 {
     return _desiredFont;
-}
-
-// Routine Description:
-// - Engages the legacy VT handling quirk; see TextAttribute::StripErroneousVT16VersionsOfLegacyDefaults
-void SCREEN_INFORMATION::SetIgnoreLegacyEquivalentVTAttributes() noexcept
-{
-    _ignoreLegacyEquivalentVTAttributes = true;
-}
-
-// Routine Description:
-// - Disengages the legacy VT handling quirk; see TextAttribute::StripErroneousVT16VersionsOfLegacyDefaults
-void SCREEN_INFORMATION::ResetIgnoreLegacyEquivalentVTAttributes() noexcept
-{
-    _ignoreLegacyEquivalentVTAttributes = false;
 }

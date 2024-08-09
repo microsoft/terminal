@@ -28,5 +28,4 @@ void WriteClearScreen(SCREEN_INFORMATION& screenInfo);
 [[nodiscard]] NTSTATUS DoWriteConsole(_In_reads_bytes_(pcbBuffer) const wchar_t* pwchBuffer,
                                       _Inout_ size_t* const pcbBuffer,
                                       SCREEN_INFORMATION& screenInfo,
-                                      bool requiresVtQuirk,
                                       std::unique_ptr<WriteData>& waiter);

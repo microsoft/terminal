@@ -765,6 +765,11 @@ void Settings::SetTerminalScrolling(const bool terminalScrollingEnabled) noexcep
     _TerminalScrolling = terminalScrollingEnabled;
 }
 
+std::wstring_view Settings::GetAnswerbackMessage() const noexcept
+{
+    return _answerbackMessage;
+}
+
 // Determines whether our primary renderer should be DirectX or GDI.
 // This is based on user preference and velocity hold back state.
 bool Settings::GetUseDx() const noexcept

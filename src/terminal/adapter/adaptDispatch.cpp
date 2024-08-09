@@ -555,7 +555,7 @@ bool AdaptDispatch::CursorRestoreState()
     }
 
     // Restore text attributes.
-    page.SetAttributes(savedCursorState.Attributes, &_api);
+    page.SetAttributes(savedCursorState.Attributes);
 
     // Restore designated character sets.
     _termOutput.RestoreFrom(savedCursorState.TermOutput);
@@ -1998,6 +1998,7 @@ bool AdaptDispatch::_ModeParamsHelper(const DispatchTypes::ModeParams param, con
         return true;
     case DispatchTypes::ModeParams::FOCUS_EVENT_MODE:
         _terminalInput.SetInputMode(TerminalInput::Mode::FocusEvent, enable);
+        // ConPTY always wants to know about focus events, so let it know that it needs to re-enable this mode.
         _api.GetStateMachine().InjectSequence(InjectionType::DECSET_FOCUS);
         return true;
     case DispatchTypes::ModeParams::ALTERNATE_SCROLL:
@@ -2472,6 +2473,18 @@ bool AdaptDispatch::SetLeftRightScrollingMargins(const VTInt leftMargin,
         // When DECSLRM isn't allowed, `CSI s` is interpreted as ANSISYSSC.
         CursorSaveState();
     }
+    return true;
+}
+
+// Routine Description:
+// - ENQ - Directs the terminal to send the answerback message.
+// Arguments:
+// - None
+// Return Value:
+// - True.
+bool AdaptDispatch::EnquireAnswerback()
+{
+    _api.ReturnAnswerback();
     return true;
 }
 
@@ -3241,6 +3254,8 @@ bool AdaptDispatch::HardReset()
         _macroBuffer = nullptr;
     }
 
+    // A hard reset will disable all the modes that ConPTY relies on,
+    // so let it know that it needs to re-enable those modes.
     _api.GetStateMachine().InjectSequence(InjectionType::RIS);
     return true;
 }
@@ -3346,9 +3361,6 @@ bool AdaptDispatch::_EraseAll()
         _api.NotifyBufferRotation(delta);
         newPageTop -= delta;
         newPageBottom -= delta;
-        // We don't want to trigger a scroll in pty mode, because we're going to
-        // pass through the ED sequence anyway, and this will just result in the
-        // buffer being scrolled up by two pages instead of one.
         textBuffer.TriggerScroll({ 0, -delta });
     }
     // Move the viewport if necessary.
@@ -4065,7 +4077,7 @@ bool AdaptDispatch::RequestUserPreferenceCharset()
 {
     const auto size = _termOutput.GetUserPreferenceCharsetSize();
     const auto id = _termOutput.GetUserPreferenceCharsetId();
-    _api.ReturnResponse(fmt::format(FMT_COMPILE(L"\033P{}!u{}\033\\"), (size == 96 ? 1 : 0), id.ToString()));
+    _api.ReturnResponse(fmt::format(FMT_COMPILE(L"\033P{}!u{}\033\\"), (size == 96 ? 1 : 0), id));
     return true;
 }
 
@@ -4620,10 +4632,10 @@ void AdaptDispatch::_ReportCursorInformation()
         leftSetNumber,
         rightSetNumber,
         charsetSizes,
-        charset0.ToString(),
-        charset1.ToString(),
-        charset2.ToString(),
-        charset3.ToString());
+        charset0,
+        charset1,
+        charset2,
+        charset3);
     _api.ReturnResponse({ response.data(), response.size() });
 }
 

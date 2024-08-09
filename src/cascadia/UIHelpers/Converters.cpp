@@ -52,7 +52,7 @@ namespace winrt::Microsoft::Terminal::UI::implementation
 
     winrt::hstring Converters::StringOrEmptyIfPlaceholder(const winrt::hstring& placeholder, const winrt::hstring& value)
     {
-        return placeholder == value ? L"" : value;
+        return placeholder == value ? winrt::hstring{} : value;
     }
 
     // Misc

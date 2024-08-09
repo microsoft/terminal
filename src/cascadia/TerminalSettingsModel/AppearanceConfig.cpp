@@ -148,7 +148,7 @@ winrt::hstring AppearanceConfig::ExpandedBackgroundImagePath()
         }
         else
         {
-            return winrt::hstring{ L"" };
+            return {};
         }
     }
     else

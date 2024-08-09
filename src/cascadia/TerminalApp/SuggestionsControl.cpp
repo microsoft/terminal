@@ -654,7 +654,7 @@ namespace winrt::TerminalApp::implementation
             automationPeer.RaiseNotificationEvent(
                 Automation::Peers::AutomationNotificationKind::ActionCompleted,
                 Automation::Peers::AutomationNotificationProcessing::CurrentThenMostRecent,
-                fmt::format(std::wstring_view{ RS_(L"SuggestionsControl_NestedCommandAnnouncement") }, ParentCommandName()),
+                RS_fmt(L"SuggestionsControl_NestedCommandAnnouncement", ParentCommandName()),
                 L"SuggestionsControlNestingLevelChanged" /* unique name for this notification category */);
         }
     }
@@ -810,7 +810,7 @@ namespace winrt::TerminalApp::implementation
                 Automation::Peers::AutomationNotificationKind::ActionCompleted,
                 Automation::Peers::AutomationNotificationProcessing::ImportantMostRecent,
                 currentNeedleHasResults ?
-                    winrt::hstring{ fmt::format(std::wstring_view{ RS_(L"SuggestionsControl_MatchesAvailable") }, _filteredActions.Size()) } :
+                    winrt::hstring{ RS_fmt(L"SuggestionsControl_MatchesAvailable", _filteredActions.Size()) } :
                     NoMatchesText(), // what to announce if results were found
                 L"SuggestionsControlResultAnnouncement" /* unique name for this group of notifications */);
         }

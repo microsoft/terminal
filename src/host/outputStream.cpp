@@ -88,18 +88,6 @@ void ConhostInternalGetSet::SetViewportPosition(const til::point position)
     info.UpdateBottom();
 }
 
-// Method Description:
-// - Sets the current TextAttribute of the active screen buffer. Text
-//   written to this buffer will be written with these attributes.
-// Arguments:
-// - attrs: The new TextAttribute to use
-// Return Value:
-// - <none>
-void ConhostInternalGetSet::SetTextAttributes(const TextAttribute& attrs)
-{
-    _io.GetActiveOutputBuffer().SetAttributes(attrs);
-}
-
 // Routine Description:
 // - Sets the state of one of the system modes.
 // Arguments:
@@ -144,6 +132,16 @@ bool ConhostInternalGetSet::GetSystemMode(const Mode mode) const
     default:
         THROW_HR(E_INVALIDARG);
     }
+}
+
+// Routine Description:
+// - Sends the configured answerback message in response to an ENQ query.
+// Return Value:
+// - <none>
+void ConhostInternalGetSet::ReturnAnswerback()
+{
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    ReturnResponse(gci.GetAnswerbackMessage());
 }
 
 // Routine Description:

@@ -52,8 +52,6 @@ namespace Microsoft::Console::VirtualTerminal
 
         virtual bool IsVtInputEnabled() const = 0;
 
-        virtual void SetTextAttributes(const TextAttribute& attrs) = 0;
-
         enum class Mode : size_t
         {
             AutoWrap,
@@ -64,6 +62,7 @@ namespace Microsoft::Console::VirtualTerminal
         virtual void SetSystemMode(const Mode mode, const bool enabled) = 0;
         virtual bool GetSystemMode(const Mode mode) const = 0;
 
+        virtual void ReturnAnswerback() = 0;
         virtual void WarningBell() = 0;
         virtual void SetWindowTitle(const std::wstring_view title) = 0;
         virtual void UseAlternateScreenBuffer(const TextAttribute& attrs) = 0;

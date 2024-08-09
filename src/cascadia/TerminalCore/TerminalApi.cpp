@@ -54,11 +54,6 @@ try
 }
 CATCH_LOG()
 
-void Terminal::SetTextAttributes(const TextAttribute& attrs) noexcept
-{
-    _activeBuffer().SetCurrentAttributes(attrs);
-}
-
 void Terminal::SetSystemMode(const Mode mode, const bool enabled) noexcept
 {
     _assertLocked();
@@ -69,6 +64,11 @@ bool Terminal::GetSystemMode(const Mode mode) const noexcept
 {
     _assertLocked();
     return _systemMode.test(mode);
+}
+
+void Terminal::ReturnAnswerback()
+{
+    ReturnResponse(_answerbackMessage);
 }
 
 void Terminal::WarningBell()

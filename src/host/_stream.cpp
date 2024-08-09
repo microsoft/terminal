@@ -354,6 +354,7 @@ void WriteCharsVT(SCREEN_INFORMATION& screenInfo, const std::wstring_view& str)
         const auto& injections = stateMachine.GetInjections();
         size_t offset = 0;
 
+        // DISABLE_NEWLINE_AUTO_RETURN not being set is equivalent to a LF -> CRLF translation.
         const auto write = [&](size_t beg, size_t end) {
             const auto chunk = til::safe_slice_abs(str, beg, end);
             if (WI_IsFlagSet(screenInfo.OutputMode, DISABLE_NEWLINE_AUTO_RETURN))
@@ -366,6 +367,9 @@ void WriteCharsVT(SCREEN_INFORMATION& screenInfo, const std::wstring_view& str)
             }
         };
 
+        // When we encounter something like a RIS (hard reset), we must re-enable
+        // modes that we rely on (like the Win32 Input Mode). To do this, the VT
+        // parser tells us the positions of any such relevant VT sequences.
         for (const auto& injection : injections)
         {
             write(offset, injection.offset);
@@ -373,8 +377,9 @@ void WriteCharsVT(SCREEN_INFORMATION& screenInfo, const std::wstring_view& str)
 
             static constexpr std::array<std::string_view, 2> mapping{ {
                 { "\x1b[?1004h\x1b[?9001h" }, // RIS: Focus Event Mode + Win32 Input Mode
-                { "\033[?1004h" } // DECSET_FOCUS: Focus Event Mode
+                { "\x1b[?1004h" } // DECSET_FOCUS: Focus Event Mode
             } };
+            static_assert(static_cast<size_t>(InjectionType::Count) == mapping.size(), "you need to update the mapping array");
 
             writer.WriteUTF8(mapping[static_cast<size_t>(injection.type)]);
         }
@@ -415,7 +420,6 @@ void WriteClearScreen(SCREEN_INFORMATION& screenInfo)
 [[nodiscard]] NTSTATUS DoWriteConsole(_In_reads_bytes_(*pcbBuffer) PCWCHAR pwchBuffer,
                                       _Inout_ size_t* const pcbBuffer,
                                       SCREEN_INFORMATION& screenInfo,
-                                      bool requiresVtQuirk,
                                       std::unique_ptr<WriteData>& waiter)
 try
 {
@@ -425,20 +429,8 @@ try
         waiter = std::make_unique<WriteData>(screenInfo,
                                              pwchBuffer,
                                              *pcbBuffer,
-                                             gci.OutputCP,
-                                             requiresVtQuirk);
+                                             gci.OutputCP);
         return CONSOLE_STATUS_WAIT;
-    }
-
-    const auto restoreVtQuirk = wil::scope_exit([&]() {
-        if (requiresVtQuirk)
-        {
-            screenInfo.ResetIgnoreLegacyEquivalentVTAttributes();
-        }
-    });
-    if (requiresVtQuirk)
-    {
-        screenInfo.SetIgnoreLegacyEquivalentVTAttributes();
     }
 
     const std::wstring_view str{ pwchBuffer, *pcbBuffer / sizeof(WCHAR) };
@@ -473,7 +465,6 @@ NT_CATCH_RETURN()
 [[nodiscard]] HRESULT WriteConsoleWImplHelper(IConsoleOutputObject& context,
                                               const std::wstring_view buffer,
                                               size_t& read,
-                                              bool requiresVtQuirk,
                                               std::unique_ptr<WriteData>& waiter) noexcept
 {
     try
@@ -486,7 +477,7 @@ NT_CATCH_RETURN()
         size_t cbTextBufferLength;
         RETURN_IF_FAILED(SizeTMult(buffer.size(), sizeof(wchar_t), &cbTextBufferLength));
 
-        auto Status = DoWriteConsole(const_cast<wchar_t*>(buffer.data()), &cbTextBufferLength, context, requiresVtQuirk, waiter);
+        auto Status = DoWriteConsole(const_cast<wchar_t*>(buffer.data()), &cbTextBufferLength, context, waiter);
 
         // Convert back from bytes to characters for the resulting string length written.
         read = cbTextBufferLength / sizeof(wchar_t);
@@ -519,7 +510,6 @@ NT_CATCH_RETURN()
 [[nodiscard]] HRESULT ApiRoutines::WriteConsoleAImpl(IConsoleOutputObject& context,
                                                      const std::string_view buffer,
                                                      size_t& read,
-                                                     bool requiresVtQuirk,
                                                      std::unique_ptr<IWaitRoutine>& waiter) noexcept
 {
     try
@@ -631,7 +621,7 @@ NT_CATCH_RETURN()
 
         // Make the W version of the call
         size_t wcBufferWritten{};
-        const auto hr{ WriteConsoleWImplHelper(screenInfo, wstr, wcBufferWritten, requiresVtQuirk, writeDataWaiter) };
+        const auto hr{ WriteConsoleWImplHelper(screenInfo, wstr, wcBufferWritten, writeDataWaiter) };
 
         // If there is no waiter, process the byte count now.
         if (nullptr == writeDataWaiter.get())
@@ -709,7 +699,6 @@ NT_CATCH_RETURN()
 [[nodiscard]] HRESULT ApiRoutines::WriteConsoleWImpl(IConsoleOutputObject& context,
                                                      const std::wstring_view buffer,
                                                      size_t& read,
-                                                     bool requiresVtQuirk,
                                                      std::unique_ptr<IWaitRoutine>& waiter) noexcept
 {
     try
@@ -718,7 +707,7 @@ NT_CATCH_RETURN()
         auto unlock = wil::scope_exit([&] { UnlockConsole(); });
 
         std::unique_ptr<WriteData> writeDataWaiter;
-        RETURN_IF_FAILED(WriteConsoleWImplHelper(context.GetActiveBuffer(), buffer, read, requiresVtQuirk, writeDataWaiter));
+        RETURN_IF_FAILED(WriteConsoleWImplHelper(context.GetActiveBuffer(), buffer, read, writeDataWaiter));
 
         // Transfer specific waiter pointer into the generic interface wrapper.
         waiter.reset(writeDataWaiter.release());

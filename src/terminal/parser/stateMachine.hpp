@@ -37,10 +37,15 @@ namespace Microsoft::Console::VirtualTerminal
     // the their indexes.
     static_assert(MAX_PARAMETER_COUNT * MAX_SUBPARAMETER_COUNT <= 256);
 
+    // When we encounter something like a RIS (hard reset), ConPTY must re-enable
+    // modes that it relies on (like the Win32 Input Mode). To do this, the VT
+    // parser tells it the positions of any such relevant VT sequences.
     enum class InjectionType : size_t
     {
         RIS,
         DECSET_FOCUS,
+
+        Count,
     };
 
     struct Injection
