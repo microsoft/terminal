@@ -159,6 +159,21 @@ void GlobalAppSettings::LayerJson(const Json::Value& json, const OriginTag origi
     {
         _logSettingSet(LegacyReloadEnvironmentVariablesKey);
     }
+
+    // Remove settings included in userDefaults
+    static constexpr std::array<std::pair<std::string_view, std::string_view>, 2> userDefaultSettings{ { { "copyOnSelect", "false" },
+                                                                                                         { "copyFormatting", "false" } } };
+    for (const auto& [setting, val] : userDefaultSettings)
+    {
+        if (const auto settingJson{ json.find(&*setting.cbegin(), (&*setting.cbegin()) + setting.size()) })
+        {
+            if (settingJson->asString() == val)
+            {
+                // false positive!
+                _changeLog.erase(std::string{ setting });
+            }
+        }
+    }
 }
 
 void GlobalAppSettings::LayerActionsFrom(const Json::Value& json, const OriginTag origin, const bool withKeybindings)
