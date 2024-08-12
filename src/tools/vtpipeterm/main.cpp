@@ -38,7 +38,7 @@ static COORD getViewportSize()
 {
     CONSOLE_SCREEN_BUFFER_INFOEX csbiex{ .cbSize = sizeof(csbiex) };
     THROW_IF_WIN32_BOOL_FALSE(GetConsoleScreenBufferInfoEx(GetStdHandle(STD_OUTPUT_HANDLE), &csbiex));
-    const SHORT w = csbiex.dwSize.Right - csbiex.dwSize.Left + 1;
+    const SHORT w = csbiex.dwSize.X;
     const SHORT h = csbiex.srWindow.Bottom - csbiex.srWindow.Top + 1;
     return { w, h };
 }
