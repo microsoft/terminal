@@ -622,7 +622,7 @@
         "reloadEnvironmentVariables": {
           "type": "boolean",
           "default": false,
-          "description": "When set to true, a new environment block will be generated when creating a new session. Otherwise, the session will instead inherit the variables the Terminal was started with."
+          "description": "When set to true, a new environment block will be generated when creating a new session. Otherwise, the session will inherit the variables the Terminal was started with."
         }
       },
       "type": "object"
