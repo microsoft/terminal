@@ -3050,7 +3050,7 @@ namespace winrt::TerminalApp::implementation
 
     Windows::Foundation::IAsyncAction TerminalPage::_SearchMissingCommandHandler(const IInspectable /*sender*/, const Microsoft::Terminal::Control::SearchMissingCommandEventArgs args)
     {
-        assert(!Dispatcher().HasThreadAccess());
+        co_await winrt::resume_background();
 
         if (!Feature_QuickFix::IsEnabled())
         {

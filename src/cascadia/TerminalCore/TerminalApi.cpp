@@ -337,7 +337,8 @@ void Terminal::SearchMissingCommand(const std::wstring_view command)
 {
     if (_pfnSearchMissingCommand)
     {
-        _pfnSearchMissingCommand(command);
+        const auto bufferRow = GetCursorPosition().y;
+        _pfnSearchMissingCommand(command, bufferRow);
     }
 }
 

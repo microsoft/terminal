@@ -216,10 +216,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     struct SearchMissingCommandEventArgs : public SearchMissingCommandEventArgsT<SearchMissingCommandEventArgs>
     {
     public:
-        SearchMissingCommandEventArgs(const winrt::hstring& missingCommand) :
-            MissingCommand(missingCommand) {}
+        SearchMissingCommandEventArgs(const winrt::hstring& missingCommand, const til::CoordType& bufferRow) :
+            MissingCommand(missingCommand),
+            BufferRow(bufferRow) {}
 
         til::property<winrt::hstring> MissingCommand;
+        til::property<til::CoordType> BufferRow;
     };
 }
 
