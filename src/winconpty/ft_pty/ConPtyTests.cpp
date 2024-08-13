@@ -363,6 +363,7 @@ void ConPtyTests::DiesOnClose()
 
     _ClosePseudoConsoleMembers(&pty);
 
+    WaitForSingleObject(hConPtyProcess.get(), 3000);
     GetExitCodeProcess(hConPtyProcess.get(), &dwExit);
     VERIFY_ARE_NOT_EQUAL(dwExit, (DWORD)STILL_ACTIVE);
 }
