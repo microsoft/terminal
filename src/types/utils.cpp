@@ -465,8 +465,8 @@ std::tuple<int, int, int> Utils::ColorToHLS(const til::color color) noexcept
     // This calculation is based on the RGB to HSL algorithm described in
     // Wikipedia: https://en.wikipedia.org/wiki/HSL_and_HSV#From_RGB
     // We start by calculating the maximum and minimum component values.
-    const auto maxComp = std::max(std::max(red, green), blue);
-    const auto minComp = std::min(std::min(red, green), blue);
+    const auto maxComp = std::max({ red, green, blue });
+    const auto minComp = std::min({ red, green, blue });
 
     // The chroma value is the range of those components.
     const auto chroma = maxComp - minComp;
