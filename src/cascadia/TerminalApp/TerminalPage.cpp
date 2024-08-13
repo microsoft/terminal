@@ -1742,6 +1742,8 @@ namespace winrt::TerminalApp::implementation
 
         term.SearchMissingCommand({ get_weak(), &TerminalPage::_SearchMissingCommandHandler });
 
+        term.WindowSizeChanged({ get_weak(), &TerminalPage::_WindowSizeChanged });
+
         // Don't even register for the event if the feature is compiled off.
         if constexpr (Feature_ShellCompletions::IsEnabled())
         {
@@ -3023,6 +3025,20 @@ namespace winrt::TerminalApp::implementation
         }
         term.UpdateWinGetSuggestions(single_threaded_vector<hstring>(std::move(suggestions)));
         term.RefreshQuickFixMenu();
+    }
+
+    winrt::fire_and_forget TerminalPage::_WindowSizeChanged(const IInspectable /*sender*/, const Microsoft::Terminal::Control::WindowSizeChangedEventArgs args)
+    {
+        co_await wil::resume_foreground(Dispatcher());
+
+        // Raise if:
+        // - Not in fullscreen
+        // - Only one tab exists
+        // - Only one pane exists
+        if (!_isFullscreen && NumberOfTabs() == 1 && _GetFocusedTabImpl()->GetLeafPaneCount() == 1)
+        {
+            WindowSizeChanged.raise(*this, args);
+        }
     }
 
     // Method Description:

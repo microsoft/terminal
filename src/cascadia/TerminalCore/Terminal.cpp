@@ -1132,6 +1132,11 @@ void Terminal::SetShowWindowCallback(std::function<void(bool)> pfn) noexcept
     _pfnShowWindowChanged.swap(pfn);
 }
 
+void Terminal::SetWindowSizeChangedCallback(std::function<void(int32_t, int32_t)> pfn) noexcept
+{
+    _pfnWindowSizeChanged.swap(pfn);
+}
+
 // Method Description:
 // - Allows setting a callback for playing MIDI notes.
 // Arguments:

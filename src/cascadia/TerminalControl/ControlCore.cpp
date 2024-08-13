@@ -134,6 +134,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         auto pfnClearQuickFix = [this] { ClearQuickFix(); };
         _terminal->SetClearQuickFixCallback(pfnClearQuickFix);
 
+        auto pfnWindowSizeChanged = [this](auto&& PH1, auto&& PH2) { _terminalWindowSizeChanged(std::forward<decltype(PH1)>(PH1), std::forward<decltype(PH2)>(PH2)); };
+        _terminal->SetWindowSizeChangedCallback(pfnWindowSizeChanged);
+
         // MSFT 33353327: Initialize the renderer in the ctor instead of Initialize().
         // We need the renderer to be ready to accept new engines before the SwapChainPanel is ready to go.
         // If we wait, a screen reader may try to get the AutomationPeer (aka the UIA Engine), and we won't be able to attach
@@ -1631,6 +1634,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const auto suspension = _terminal->SuspendLock();
         // This call will block for the duration, unless shutdown early.
         _midiAudio.PlayNote(reinterpret_cast<HWND>(_owningHwnd), noteNumber, velocity, std::chrono::duration_cast<std::chrono::milliseconds>(duration));
+    }
+
+    void ControlCore::_terminalWindowSizeChanged(int32_t width, int32_t height)
+    {
+        auto size = winrt::make<implementation::WindowSizeChangedEventArgs>(width, height);
+        WindowSizeChanged.raise(*this, size);
     }
 
     void ControlCore::_terminalSearchMissingCommand(std::wstring_view missingCommand)
