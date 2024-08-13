@@ -438,7 +438,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
         else
         {
-            _connection.WriteInput(wstr);
+            _connection.WriteInput(winrt_wstring_to_array_view(wstr));
         }
     }
 
@@ -2505,7 +2505,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             // _sendInputToConnection() asserts that we aren't in focus mode,
             // but window focus events are always fine to send.
-            _connection.WriteInput(*out);
+            _connection.WriteInput(winrt_wstring_to_array_view(*out));
         }
     }
 

@@ -249,9 +249,9 @@ namespace ControlUnitTests
                      L"(leaving the cursor afer 'Bar')");
         for (auto i = 0; i < 40; ++i)
         {
-            conn->WriteInput(L"Foo\r\n");
+            conn->WriteInput(winrt_wstring_to_array_view(L"Foo\r\n"));
         }
-        conn->WriteInput(L"Bar");
+        conn->WriteInput(winrt_wstring_to_array_view(L"Bar"));
 
         // We printed that 40 times, but the final \r\n bumped the view down one MORE row.
         Log::Comment(L"Check the buffer viewport before the clear");
@@ -286,9 +286,9 @@ namespace ControlUnitTests
                      L"(leaving the cursor afer 'Bar')");
         for (auto i = 0; i < 40; ++i)
         {
-            conn->WriteInput(L"Foo\r\n");
+            conn->WriteInput(winrt_wstring_to_array_view(L"Foo\r\n"));
         }
-        conn->WriteInput(L"Bar");
+        conn->WriteInput(winrt_wstring_to_array_view(L"Bar"));
 
         // We printed that 40 times, but the final \r\n bumped the view down one MORE row.
         Log::Comment(L"Check the buffer viewport before the clear");
@@ -323,9 +323,9 @@ namespace ControlUnitTests
                      L"(leaving the cursor afer 'Bar')");
         for (auto i = 0; i < 40; ++i)
         {
-            conn->WriteInput(L"Foo\r\n");
+            conn->WriteInput(winrt_wstring_to_array_view(L"Foo\r\n"));
         }
-        conn->WriteInput(L"Bar");
+        conn->WriteInput(winrt_wstring_to_array_view(L"Bar"));
 
         // We printed that 40 times, but the final \r\n bumped the view down one MORE row.
         Log::Comment(L"Check the buffer viewport before the clear");
@@ -358,25 +358,26 @@ namespace ControlUnitTests
         _standardInit(core);
 
         Log::Comment(L"Print some text");
-        conn->WriteInput(L"This is some text     \r\n");
-        conn->WriteInput(L"with varying amounts  \r\n");
-        conn->WriteInput(L"of whitespace         \r\n");
+        conn->WriteInput(winrt_wstring_to_array_view(L"This is some text     \r\n"));
+        conn->WriteInput(winrt_wstring_to_array_view(L"with varying amounts  \r\n"));
+        conn->WriteInput(winrt_wstring_to_array_view(L"of whitespace         \r\n"));
 
         Log::Comment(L"Check the buffer contents");
         VERIFY_ARE_EQUAL(L"This is some text\r\nwith varying amounts\r\nof whitespace\r\n",
                          core->ReadEntireBuffer());
     }
-    void _writePrompt(const winrt::com_ptr<MockConnection>& conn, const auto& path)
+
+    static void _writePrompt(const winrt::com_ptr<MockConnection>& conn, const std::wstring_view& path)
     {
-        conn->WriteInput(L"\x1b]133;D\x7");
-        conn->WriteInput(L"\x1b]133;A\x7");
-        conn->WriteInput(L"\x1b]9;9;");
-        conn->WriteInput(path);
-        conn->WriteInput(L"\x7");
-        conn->WriteInput(L"PWSH ");
-        conn->WriteInput(path);
-        conn->WriteInput(L"> ");
-        conn->WriteInput(L"\x1b]133;B\x7");
+        conn->WriteInput(winrt_wstring_to_array_view(L"\x1b]133;D\x7"));
+        conn->WriteInput(winrt_wstring_to_array_view(L"\x1b]133;A\x7"));
+        conn->WriteInput(winrt_wstring_to_array_view(L"\x1b]9;9;"));
+        conn->WriteInput(winrt_wstring_to_array_view(path));
+        conn->WriteInput(winrt_wstring_to_array_view(L"\x7"));
+        conn->WriteInput(winrt_wstring_to_array_view(L"PWSH "));
+        conn->WriteInput(winrt_wstring_to_array_view(path));
+        conn->WriteInput(winrt_wstring_to_array_view(L"> "));
+        conn->WriteInput(winrt_wstring_to_array_view(L"\x1b]133;B\x7"));
     }
 
     void ControlCoreTests::TestSelectCommandSimple()
@@ -390,13 +391,13 @@ namespace ControlUnitTests
         Log::Comment(L"Print some text");
 
         _writePrompt(conn, L"C:\\Windows");
-        conn->WriteInput(L"Foo-bar");
-        conn->WriteInput(L"\x1b]133;C\x7");
+        conn->WriteInput(winrt_wstring_to_array_view(L"Foo-bar"));
+        conn->WriteInput(winrt_wstring_to_array_view(L"\x1b]133;C\x7"));
 
-        conn->WriteInput(L"\r\n");
-        conn->WriteInput(L"This is some text     \r\n");
-        conn->WriteInput(L"with varying amounts  \r\n");
-        conn->WriteInput(L"of whitespace         \r\n");
+        conn->WriteInput(winrt_wstring_to_array_view(L"\r\n"));
+        conn->WriteInput(winrt_wstring_to_array_view(L"This is some text     \r\n"));
+        conn->WriteInput(winrt_wstring_to_array_view(L"with varying amounts  \r\n"));
+        conn->WriteInput(winrt_wstring_to_array_view(L"of whitespace         \r\n"));
 
         _writePrompt(conn, L"C:\\Windows");
 
@@ -422,8 +423,8 @@ namespace ControlUnitTests
         }
 
         core->_terminal->ClearSelection();
-        conn->WriteInput(L"Boo-far");
-        conn->WriteInput(L"\x1b]133;C\x7");
+        conn->WriteInput(winrt_wstring_to_array_view(L"Boo-far"));
+        conn->WriteInput(winrt_wstring_to_array_view(L"\x1b]133;C\x7"));
 
         VERIFY_IS_FALSE(core->HasSelection());
         {
@@ -473,13 +474,13 @@ namespace ControlUnitTests
         Log::Comment(L"Print some text");
 
         _writePrompt(conn, L"C:\\Windows");
-        conn->WriteInput(L"Foo-bar");
-        conn->WriteInput(L"\x1b]133;C\x7");
+        conn->WriteInput(winrt_wstring_to_array_view(L"Foo-bar"));
+        conn->WriteInput(winrt_wstring_to_array_view(L"\x1b]133;C\x7"));
 
-        conn->WriteInput(L"\r\n");
-        conn->WriteInput(L"This is some text     \r\n");
-        conn->WriteInput(L"with varying amounts  \r\n");
-        conn->WriteInput(L"of whitespace         \r\n");
+        conn->WriteInput(winrt_wstring_to_array_view(L"\r\n"));
+        conn->WriteInput(winrt_wstring_to_array_view(L"This is some text     \r\n"));
+        conn->WriteInput(winrt_wstring_to_array_view(L"with varying amounts  \r\n"));
+        conn->WriteInput(winrt_wstring_to_array_view(L"of whitespace         \r\n"));
 
         _writePrompt(conn, L"C:\\Windows");
 
@@ -515,13 +516,13 @@ namespace ControlUnitTests
         Log::Comment(L"Print some text");
 
         _writePrompt(conn, L"C:\\Windows");
-        conn->WriteInput(L"Foo-bar");
-        conn->WriteInput(L"\x1b]133;C\x7");
+        conn->WriteInput(winrt_wstring_to_array_view(L"Foo-bar"));
+        conn->WriteInput(winrt_wstring_to_array_view(L"\x1b]133;C\x7"));
 
-        conn->WriteInput(L"\r\n");
-        conn->WriteInput(L"This is some text     \r\n");
-        conn->WriteInput(L"with varying amounts  \r\n");
-        conn->WriteInput(L"of whitespace         \r\n");
+        conn->WriteInput(winrt_wstring_to_array_view(L"\r\n"));
+        conn->WriteInput(winrt_wstring_to_array_view(L"This is some text     \r\n"));
+        conn->WriteInput(winrt_wstring_to_array_view(L"with varying amounts  \r\n"));
+        conn->WriteInput(winrt_wstring_to_array_view(L"of whitespace         \r\n"));
 
         _writePrompt(conn, L"C:\\Windows");
 
@@ -535,7 +536,7 @@ namespace ControlUnitTests
         }
 
         Log::Comment(L"Write 'Bar' to the command...");
-        conn->WriteInput(L"Bar");
+        conn->WriteInput(winrt_wstring_to_array_view(L"Bar"));
         {
             auto historyContext{ core->CommandHistory() };
             // Bar shouldn't be in the history, it should be the current command
@@ -544,9 +545,9 @@ namespace ControlUnitTests
         }
 
         Log::Comment(L"then delete it");
-        conn->WriteInput(L"\b \b");
-        conn->WriteInput(L"\b \b");
-        conn->WriteInput(L"\b \b");
+        conn->WriteInput(winrt_wstring_to_array_view(L"\b \b"));
+        conn->WriteInput(winrt_wstring_to_array_view(L"\b \b"));
+        conn->WriteInput(winrt_wstring_to_array_view(L"\b \b"));
         {
             auto historyContext{ core->CommandHistory() };
             VERIFY_ARE_EQUAL(1u, historyContext.History().Size());
@@ -566,23 +567,23 @@ namespace ControlUnitTests
         Log::Comment(L"Print some text");
 
         _writePrompt(conn, L"C:\\Windows"); // row 0
-        conn->WriteInput(L"Foo-bar"); // row 0
-        conn->WriteInput(L"\x1b]133;C\x7");
+        conn->WriteInput(winrt_wstring_to_array_view(L"Foo-bar")); // row 0
+        conn->WriteInput(winrt_wstring_to_array_view(L"\x1b]133;C\x7"));
 
-        conn->WriteInput(L"\r\n");
-        conn->WriteInput(L"This is some text     \r\n"); // row 1
-        conn->WriteInput(L"with varying amounts  \r\n"); // row 2
-        conn->WriteInput(L"of whitespace         \r\n"); // row 3
+        conn->WriteInput(winrt_wstring_to_array_view(L"\r\n"));
+        conn->WriteInput(winrt_wstring_to_array_view(L"This is some text     \r\n")); // row 1
+        conn->WriteInput(winrt_wstring_to_array_view(L"with varying amounts  \r\n")); // row 2
+        conn->WriteInput(winrt_wstring_to_array_view(L"of whitespace         \r\n")); // row 3
 
         _writePrompt(conn, L"C:\\Windows"); // row 4
-        conn->WriteInput(L"gci");
-        conn->WriteInput(L"\x1b]133;C\x7");
-        conn->WriteInput(L"\r\n");
+        conn->WriteInput(winrt_wstring_to_array_view(L"gci"));
+        conn->WriteInput(winrt_wstring_to_array_view(L"\x1b]133;C\x7"));
+        conn->WriteInput(winrt_wstring_to_array_view(L"\r\n"));
 
         // enough to scroll
         for (auto i = 0; i < 30; i++) // row 5-34
         {
-            conn->WriteInput(L"-a--- 2/8/2024  9:47 README\r\n");
+            conn->WriteInput(winrt_wstring_to_array_view(L"-a--- 2/8/2024  9:47 README\r\n"));
         }
 
         _writePrompt(conn, L"C:\\Windows");
@@ -635,23 +636,23 @@ namespace ControlUnitTests
         Log::Comment(L"Print some text");
 
         _writePrompt(conn, L"C:\\Windows"); // row 0
-        conn->WriteInput(L"Foo-bar"); // row 0
-        conn->WriteInput(L"\x1b]133;C\x7");
+        conn->WriteInput(winrt_wstring_to_array_view(L"Foo-bar")); // row 0
+        conn->WriteInput(winrt_wstring_to_array_view(L"\x1b]133;C\x7"));
 
-        conn->WriteInput(L"\r\n");
-        conn->WriteInput(L"This is some text     \r\n"); // row 1
-        conn->WriteInput(L"with varying amounts  \r\n"); // row 2
-        conn->WriteInput(L"of whitespace         \r\n"); // row 3
+        conn->WriteInput(winrt_wstring_to_array_view(L"\r\n"));
+        conn->WriteInput(winrt_wstring_to_array_view(L"This is some text     \r\n")); // row 1
+        conn->WriteInput(winrt_wstring_to_array_view(L"with varying amounts  \r\n")); // row 2
+        conn->WriteInput(winrt_wstring_to_array_view(L"of whitespace         \r\n")); // row 3
 
         _writePrompt(conn, L"C:\\Windows"); // row 4
-        conn->WriteInput(L"gci");
-        conn->WriteInput(L"\x1b]133;C\x7");
-        conn->WriteInput(L"\r\n");
+        conn->WriteInput(winrt_wstring_to_array_view(L"gci"));
+        conn->WriteInput(winrt_wstring_to_array_view(L"\x1b]133;C\x7"));
+        conn->WriteInput(winrt_wstring_to_array_view(L"\r\n"));
 
         // enough to scroll
         for (auto i = 0; i < 30; i++) // row 5-35
         {
-            conn->WriteInput(L"-a--- 2/8/2024  9:47 README.md\r\n");
+            conn->WriteInput(winrt_wstring_to_array_view(L"-a--- 2/8/2024  9:47 README.md\r\n"));
         }
 
         _writePrompt(conn, L"C:\\Windows");
