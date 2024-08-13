@@ -118,8 +118,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                     for (const auto& [id, kbd] : userDefaultKbds)
                     {
                         const auto keyJson{ jsonBlock.find(&*KeysKey.cbegin(), (&*KeysKey.cbegin()) + KeysKey.size()) };
-                        OutputDebugString(idJson.data());
-                        OutputDebugStringA(keyJson->asString().data());
                         if (idJson == id && keyJson->asString() == kbd)
                         {
                             isUserDefaultKbd = true;

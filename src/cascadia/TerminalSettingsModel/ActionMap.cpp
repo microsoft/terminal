@@ -570,6 +570,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         const auto action = cmd.ActionAndArgs().Action();
         const auto id = action == ShortcutAction::Invalid ? hstring{} : cmd.ID();
         _KeyMap.insert_or_assign(keys, id);
+        _changeLog.emplace(KeysKey);
     }
 
     // Method Description:
