@@ -4222,21 +4222,24 @@ void AdaptDispatch::_ReportColorTable(const DispatchTypes::ColorModel colorModel
     const auto modelNumber = static_cast<int>(colorModel);
     for (size_t colorNumber = 0; colorNumber < TextColor::TABLE_SIZE; colorNumber++)
     {
-        response.append(colorNumber > 0 ? L"/"sv : L""sv);
-        const auto color = til::color(_renderSettings.GetColorTableEntry(colorNumber));
-        auto x = 0, y = 0, z = 0;
-        switch (colorModel)
+        const auto color = _renderSettings.GetColorTableEntry(colorNumber);
+        if (color != INVALID_COLOR)
         {
-        case DispatchTypes::ColorModel::HLS:
-            std::tie(x, y, z) = Utils::ColorToHLS(color);
-            break;
-        case DispatchTypes::ColorModel::RGB:
-            std::tie(x, y, z) = Utils::ColorToRGB100(color);
-            break;
-        default:
-            return;
+            response.append(colorNumber > 0 ? L"/"sv : L""sv);
+            auto x = 0, y = 0, z = 0;
+            switch (colorModel)
+            {
+            case DispatchTypes::ColorModel::HLS:
+                std::tie(x, y, z) = Utils::ColorToHLS(color);
+                break;
+            case DispatchTypes::ColorModel::RGB:
+                std::tie(x, y, z) = Utils::ColorToRGB100(color);
+                break;
+            default:
+                return;
+            }
+            fmt::format_to(std::back_inserter(response), FMT_COMPILE(L"{};{};{};{};{}"), colorNumber, modelNumber, x, y, z);
         }
-        fmt::format_to(std::back_inserter(response), FMT_COMPILE(L"{};{};{};{};{}"), colorNumber, modelNumber, x, y, z);
     }
 
     // An ST ends the sequence.
