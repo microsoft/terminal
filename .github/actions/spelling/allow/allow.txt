@@ -27,6 +27,7 @@ gje
 godbolt
 hyperlinking
 hyperlinks
+kbd
 kje
 libfuzzer
 liga
