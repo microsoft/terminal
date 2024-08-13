@@ -174,6 +174,7 @@ namespace Microsoft::Console::VirtualTerminal
                                   const DispatchTypes::MacroEncoding encoding) override; // DECDMAC
         bool InvokeMacro(const VTInt macroId) override; // DECINVM
 
+        bool RequestTerminalStateReport(const DispatchTypes::ReportFormat format, const VTParameter formatOption) override; // DECRQTSR
         StringHandler RestoreTerminalState(const DispatchTypes::ReportFormat format) override; // DECRSTS
 
         StringHandler RequestSetting() override; // DECRQSS
@@ -272,6 +273,7 @@ namespace Microsoft::Console::VirtualTerminal
         void _ClearAllTabStops() noexcept;
         void _InitTabStopsForWidth(const VTInt width);
 
+        void _ReportColorTable(const DispatchTypes::ColorModel colorModel) const;
         StringHandler _RestoreColorTable();
 
         void _ReportSGRSetting() const;

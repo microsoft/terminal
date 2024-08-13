@@ -171,6 +171,7 @@ public:
                                       const DispatchTypes::MacroEncoding encoding) = 0; // DECDMAC
     virtual bool InvokeMacro(const VTInt macroId) = 0; // DECINVM
 
+    virtual bool RequestTerminalStateReport(const DispatchTypes::ReportFormat format, const VTParameter formatOption) = 0; // DECRQTSR
     virtual StringHandler RestoreTerminalState(const DispatchTypes::ReportFormat format) = 0; // DECRSTS
 
     virtual StringHandler RequestSetting() = 0; // DECRQSS

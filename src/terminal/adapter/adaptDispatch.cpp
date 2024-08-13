@@ -4166,6 +4166,27 @@ bool AdaptDispatch::InvokeMacro(const VTInt macroId)
     return true;
 }
 
+// Routine Description:
+// - DECRQTSR - Queries the state of the terminal. This can either be a terminal
+//   state report, generally covering all settable state in the terminal (with
+//   the exception of large data items), or a color table report.
+// Arguments:
+// - format - the format of the report being requested.
+// - formatOption - a format-specific option.
+// Return Value:
+// - True if handled successfully. False otherwise.
+bool AdaptDispatch::RequestTerminalStateReport(const DispatchTypes::ReportFormat format, const VTParameter formatOption)
+{
+    switch (format)
+    {
+    case DispatchTypes::ReportFormat::ColorTableReport:
+        _ReportColorTable(formatOption);
+        return true;
+    default:
+        return false;
+    }
+}
+
 // Method Description:
 // - DECRSTS - Restores the terminal state from a stream of data previously
 //   saved with a DECRQTSR query.
@@ -4182,6 +4203,48 @@ ITermDispatch::StringHandler AdaptDispatch::RestoreTerminalState(const DispatchT
     default:
         return nullptr;
     }
+}
+
+// Method Description:
+// - DECCTR - Returns the Color Table Report in response to a DECRQTSR query.
+// Arguments:
+// - colorModel - the color model to use in the report (1 = HLS, 2 = RGB).
+// Return Value:
+// - None
+void AdaptDispatch::_ReportColorTable(const DispatchTypes::ColorModel colorModel) const
+{
+    using namespace std::string_view_literals;
+
+    // A valid response always starts with DCS 2 $ s.
+    fmt::basic_memory_buffer<wchar_t, TextColor::TABLE_SIZE * 18> response;
+    response.append(L"\033P2$s"sv);
+
+    const auto modelNumber = static_cast<int>(colorModel);
+    for (size_t colorNumber = 0; colorNumber < TextColor::TABLE_SIZE; colorNumber++)
+    {
+        const auto color = _renderSettings.GetColorTableEntry(colorNumber);
+        if (color != INVALID_COLOR)
+        {
+            response.append(colorNumber > 0 ? L"/"sv : L""sv);
+            auto x = 0, y = 0, z = 0;
+            switch (colorModel)
+            {
+            case DispatchTypes::ColorModel::HLS:
+                std::tie(x, y, z) = Utils::ColorToHLS(color);
+                break;
+            case DispatchTypes::ColorModel::RGB:
+                std::tie(x, y, z) = Utils::ColorToRGB100(color);
+                break;
+            default:
+                return;
+            }
+            fmt::format_to(std::back_inserter(response), FMT_COMPILE(L"{};{};{};{};{}"), colorNumber, modelNumber, x, y, z);
+        }
+    }
+
+    // An ST ends the sequence.
+    response.append(L"\033\\"sv);
+    _api.ReturnResponse({ response.data(), response.size() });
 }
 
 // Method Description:
