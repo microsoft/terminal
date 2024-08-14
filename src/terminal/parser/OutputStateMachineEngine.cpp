@@ -626,6 +626,9 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParamete
     case CsiActionCodes::DECCRA_CopyRectangularArea:
         success = _dispatch->CopyRectangularArea(parameters.at(0), parameters.at(1), parameters.at(2).value_or(0), parameters.at(3).value_or(0), parameters.at(4), parameters.at(5), parameters.at(6), parameters.at(7));
         break;
+    case CsiActionCodes::DECRQTSR_RequestTerminalStateReport:
+        success = _dispatch->RequestTerminalStateReport(parameters.at(0), parameters.at(1));
+        break;
     case CsiActionCodes::DECRQPSR_RequestPresentationStateReport:
         success = _dispatch->RequestPresentationStateReport(parameters.at(0));
         break;

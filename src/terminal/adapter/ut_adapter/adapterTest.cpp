@@ -2263,6 +2263,141 @@ public:
         verifyChecksumReport(L"FF8B");
     }
 
+    TEST_METHOD(ColorTableReportTests)
+    {
+        _testGetSet->PrepData();
+
+        // The test cases below are copied from the VT525 default color table,
+        // but our color table holds many more values, so we're just filling the
+        // remaining slots with black for the purposes of this test.
+        auto& renderSettings = _testGetSet->_renderer._renderSettings;
+        renderSettings.SetColorTableEntry(0, RGB(0, 0, 0));
+        renderSettings.SetColorTableEntry(1, RGB(204, 36, 36));
+        renderSettings.SetColorTableEntry(2, RGB(51, 204, 51));
+        renderSettings.SetColorTableEntry(3, RGB(204, 204, 51));
+        renderSettings.SetColorTableEntry(4, RGB(51, 51, 204));
+        renderSettings.SetColorTableEntry(5, RGB(204, 51, 204));
+        renderSettings.SetColorTableEntry(6, RGB(51, 204, 204));
+        renderSettings.SetColorTableEntry(7, RGB(120, 120, 120));
+        renderSettings.SetColorTableEntry(8, RGB(69, 69, 69));
+        renderSettings.SetColorTableEntry(9, RGB(255, 0, 0));
+        renderSettings.SetColorTableEntry(10, RGB(0, 255, 0));
+        renderSettings.SetColorTableEntry(11, RGB(255, 255, 0));
+        renderSettings.SetColorTableEntry(12, RGB(0, 0, 255));
+        renderSettings.SetColorTableEntry(13, RGB(255, 0, 255));
+        renderSettings.SetColorTableEntry(14, RGB(0, 255, 255));
+        renderSettings.SetColorTableEntry(15, RGB(255, 255, 255));
+        for (size_t i = 16; i < TextColor::TABLE_SIZE; i++)
+        {
+            renderSettings.SetColorTableEntry(i, RGB(0, 0, 0));
+        }
+
+        // Color table reports start with a DCS $s introducer with a parameter
+        // value of 2, and end with an ST terminator.
+        const auto DECCTR = L"\033P2$s";
+        const auto ST = L"\033\\";
+
+        Log::Comment(L"HLS color model");
+
+        const auto hlsColorModel = static_cast<int>(DispatchTypes::ColorModel::HLS);
+        _pDispatch->RequestTerminalStateReport(DispatchTypes::ReportFormat::ColorTableReport, hlsColorModel);
+
+        std::wstring expectedResponse = DECCTR;
+        // RGB(0,0,0) -> HLS(0°,0%,0%)
+        expectedResponse += L"0;1;0;0;0/";
+        // RGB(204,36,36) -> HLS(120°,47%,70%)
+        expectedResponse += L"1;1;120;47;70/";
+        // RGB(51,204,51) -> HLS(240°,50%,60%)
+        expectedResponse += L"2;1;240;50;60/";
+        // RGB(204,204,51) -> HLS(180°,50%,60%)
+        expectedResponse += L"3;1;180;50;60/";
+        // RGB(51,51,204) -> HLS(0°,50%,60%)
+        expectedResponse += L"4;1;0;50;60/";
+        // RGB(204,51,204) -> HLS(60°,50%,60%)
+        expectedResponse += L"5;1;60;50;60/";
+        // RGB(51,204,204) -> HLS(300°,50%,60%)
+        expectedResponse += L"6;1;300;50;60/";
+        // RGB(120,120,120) -> HLS(0°,47%,0%)
+        expectedResponse += L"7;1;0;47;0/";
+        // RGB(69,69,69) -> HLS(0°,27%,0%)
+        expectedResponse += L"8;1;0;27;0/";
+        // RGB(255,0,0) -> HLS(120°,50%,100%)
+        expectedResponse += L"9;1;120;50;100/";
+        // RGB(0,255,0) -> HLS(240°,50%,100%)
+        expectedResponse += L"10;1;240;50;100/";
+        // RGB(255,255,0) -> HLS(180°,50%,100%)
+        expectedResponse += L"11;1;180;50;100/";
+        // RGB(0,0,255) -> HLS(0°,50%,100%)
+        expectedResponse += L"12;1;0;50;100/";
+        // RGB(255,0,255) -> HLS(60°,50%,100%)
+        expectedResponse += L"13;1;60;50;100/";
+        // RGB(0,255,255) -> HLS(300°,50%,100%)
+        expectedResponse += L"14;1;300;50;100/";
+        // RGB(255,255,255) -> HLS(0°,100%,0%)
+        expectedResponse += L"15;1;0;100;0/";
+        // Remaining slots are black, i.e. HLS(0°,0%,0%)
+        for (size_t i = 16; i < TextColor::TABLE_SIZE; i++)
+        {
+            expectedResponse += std::to_wstring(i) + L";1;0;0;0";
+            if (i + 1 < TextColor::TABLE_SIZE)
+            {
+                expectedResponse += L'/';
+            }
+        }
+        expectedResponse += ST;
+        _testGetSet->ValidateInputEvent(expectedResponse.c_str());
+
+        Log::Comment(L"RGB color model");
+
+        const auto rgbColorModel = static_cast<int>(DispatchTypes::ColorModel::RGB);
+        _pDispatch->RequestTerminalStateReport(DispatchTypes::ReportFormat::ColorTableReport, rgbColorModel);
+
+        expectedResponse = DECCTR;
+        // RGB(0,0,0) -> RGB(0%,0%,0%)
+        expectedResponse += L"0;2;0;0;0/";
+        // RGB(204,36,36) -> RGB(80%,14%,14%)
+        expectedResponse += L"1;2;80;14;14/";
+        // RGB(51,204,51) -> RGB(20%,80%,20%)
+        expectedResponse += L"2;2;20;80;20/";
+        // RGB(204,204,51) -> RGB(80%,80%,20%)
+        expectedResponse += L"3;2;80;80;20/";
+        // RGB(51,51,204) -> RGB(20%,20%,80%)
+        expectedResponse += L"4;2;20;20;80/";
+        // RGB(204,51,204) -> RGB(80%,20%,80%)
+        expectedResponse += L"5;2;80;20;80/";
+        // RGB(51,204,204) -> RGB(20%,80%,80%)
+        expectedResponse += L"6;2;20;80;80/";
+        // RGB(120,120,120) -> RGB(47%,47%,47%)
+        expectedResponse += L"7;2;47;47;47/";
+        // RGB(69,69,69) -> RGB(27%,27%,27%)
+        expectedResponse += L"8;2;27;27;27/";
+        // RGB(255,0,0) -> RGB(100%,0%,0%)
+        expectedResponse += L"9;2;100;0;0/";
+        // RGB(0,255,0) -> RGB(0%,100%,0%)
+        expectedResponse += L"10;2;0;100;0/";
+        // RGB(255,255,0) -> RGB(100%,100%,0%)
+        expectedResponse += L"11;2;100;100;0/";
+        // RGB(0,0,255) -> RGB(0%,0%,100%)
+        expectedResponse += L"12;2;0;0;100/";
+        // RGB(255,0,255) -> RGB(100%,0%,100%)
+        expectedResponse += L"13;2;100;0;100/";
+        // RGB(0,255,255) -> RGB(0%,100%,100%)
+        expectedResponse += L"14;2;0;100;100/";
+        // RGB(255,255,255) -> RGB(100%,100%,100%)
+        expectedResponse += L"15;2;100;100;100/";
+        // Remaining slots are black, i.e. RGB(0%,0%,0%)
+        for (size_t i = 16; i < TextColor::TABLE_SIZE; i++)
+        {
+            expectedResponse += std::to_wstring(i) + L";2;0;0;0";
+            if (i + 1 < TextColor::TABLE_SIZE)
+            {
+                expectedResponse += L'/';
+            }
+        }
+        expectedResponse += ST;
+        _testGetSet->ValidateInputEvent(expectedResponse.c_str());
+    }
+
     TEST_METHOD(TabulationStopReportTests)
     {
         _testGetSet->PrepData();

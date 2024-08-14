@@ -274,7 +274,7 @@ OutputCellIterator& OutputCellIterator::operator++()
     }
     case Mode::CharInfo:
     {
-        // Walk forward by one because charinfos are just the legacy version of cells and prealigned to columns
+        // Walk forward by one because char infos are just the legacy version of cells and prealigned to columns
         _pos++;
         if (operator bool())
         {

@@ -329,7 +329,7 @@ Json::Value Profile::ToJson() const
     // Recall: Icon isn't actually a setting in the MTSM_PROFILE_SETTINGS. We
     // defined it manually in Profile, so make sure we only serialize the Icon
     // if the user actually changed it here.
-    JsonUtils::SetValueForKey(json, IconKey, (writeBasicSettings && HasIcon()) ? Icon() : _Icon);
+    JsonUtils::SetValueForKey(json, IconKey, _Icon);
 
     // PermissiveStringConverter is unnecessary for serialization
     JsonUtils::SetValueForKey(json, PaddingKey, _Padding);

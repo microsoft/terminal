@@ -374,6 +374,32 @@ til::color Utils::ColorFromRGB100(const int r, const int g, const int b) noexcep
     return { red, green, blue };
 }
 
+// Function Description:
+// - Returns the RGB percentage components of a given til::color value.
+// Arguments:
+// - color: the color being queried
+// Return Value:
+// - a tuple containing the three components
+std::tuple<int, int, int> Utils::ColorToRGB100(const til::color color) noexcept
+{
+    // The color class components are in the range 0 to 255, so we
+    // need to scale them by 100/255 to obtain percentage values. We
+    // can optimise this conversion with a pre-created lookup table.
+    static constexpr auto scale255To100 = [] {
+        std::array<int8_t, 256> lut{};
+        for (size_t i = 0; i < std::size(lut); i++)
+        {
+            lut.at(i) = gsl::narrow_cast<uint8_t>((i * 100 + 128) / 255);
+        }
+        return lut;
+    }();
+
+    const auto red = til::at(scale255To100, color.r);
+    const auto green = til::at(scale255To100, color.g);
+    const auto blue = til::at(scale255To100, color.b);
+    return { red, green, blue };
+}
+
 // Routine Description:
 // - Constructs a til::color value from HLS components.
 // Arguments:
@@ -422,6 +448,62 @@ til::color Utils::ColorFromHLS(const int h, const int l, const int s) noexcept
         return { comp3, comp1, comp2 }; // green to cyan
     else
         return { comp3, comp2, comp1 }; // cyan to blue
+}
+
+// Function Description:
+// - Returns the HLS components of a given til::color value.
+// Arguments:
+// - color: the color being queried
+// Return Value:
+// - a tuple containing the three components
+std::tuple<int, int, int> Utils::ColorToHLS(const til::color color) noexcept
+{
+    const auto red = color.r / 255.f;
+    const auto green = color.g / 255.f;
+    const auto blue = color.b / 255.f;
+
+    // This calculation is based on the RGB to HSL algorithm described in
+    // Wikipedia: https://en.wikipedia.org/wiki/HSL_and_HSV#From_RGB
+    // We start by calculating the maximum and minimum component values.
+    const auto maxComp = std::max({ red, green, blue });
+    const auto minComp = std::min({ red, green, blue });
+
+    // The chroma value is the range of those components.
+    const auto chroma = maxComp - minComp;
+
+    // And the luma is the middle of the range. But we're actually calculating
+    // double that value here to save on a division.
+    const auto luma2 = (maxComp + minComp);
+
+    // The saturation is half the chroma value divided by min(luma, 1-luma),
+    // but since the luma is already doubled, we can use the chroma as is.
+    const auto divisor = std::min(luma2, 2.f - luma2);
+    const auto sat = divisor > 0 ? chroma / divisor : 0.f;
+
+    // Finally we calculate the hue, which is represented by the angle of a
+    // vector to a point in a color hexagon with blue, magenta, red, yellow,
+    // green, and cyan at its corners. As noted above, the DEC standard has
+    // blue at 0°, red at 120°, and green at 240°, which is slightly different
+    // from the way that hue is typically mapped in modern color models.
+    auto hue = 0.f;
+    if (chroma != 0)
+    {
+        if (maxComp == red)
+            hue = (green - blue) / chroma + 2.f; // magenta to yellow
+        else if (maxComp == green)
+            hue = (blue - red) / chroma + 4.f; // yellow to cyan
+        else if (maxComp == blue)
+            hue = (red - green) / chroma + 6.f; // cyan to magenta
+    }
+
+    // The hue value calculated above is essentially a fractional offset from the
+    // six hexagon corners, so it has to be scaled by 60 to get the angle value.
+    // Luma and saturation are percentages so must be scaled by 100, but our luma
+    // value is already doubled, so only needs to be scaled by 50.
+    const auto h = static_cast<int>(hue * 60.f + 0.5f) % 360;
+    const auto l = static_cast<int>(luma2 * 50.f + 0.5f);
+    const auto s = static_cast<int>(sat * 100.f + 0.5f);
+    return { h, l, s };
 }
 
 // Routine Description:

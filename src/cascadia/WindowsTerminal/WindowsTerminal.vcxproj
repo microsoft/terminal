@@ -200,7 +200,7 @@
   </Target>
   <Target Name="_WTPrepareUnpackagedLayoutForRun" Inputs="@(DependencyPriFiles);@(DependencyExecutables)" Outputs="$(OutDir)\stamp" DependsOnTargets="_WTCalculateUnpackagedRunFiles">
     <Copy SourceFiles="@(DependencyExecutables)" DestinationFolder="$(OutDir)" UseHardlinksIfPossible="true" SkipUnchangedFiles="true" />
-    <Exec Command="pwsh.exe -c &quot;$(OpenConsoleDir)\build\scripts\Merge-PriFiles.ps1&quot; -Path &quot;@(DependencyPriFiles, '&quot;, &quot;')&quot; -OutputPath &quot;$(OutDir)resources.pri&quot;" />
+    <Exec Command="pwsh.exe -noprofile -c &quot;$(OpenConsoleDir)\build\scripts\Merge-PriFiles.ps1&quot; -Path &quot;@(DependencyPriFiles, '&quot;, &quot;')&quot; -OutputPath &quot;$(OutDir)resources.pri&quot;" />
     <Touch Files="$(OutDir)\stamp" AlwaysCreate="true" />
   </Target>
 

@@ -20,9 +20,6 @@
 #include "SshHostGenerator.h"
 #endif
 
-// userDefault.h is like the above, but with a default template for the user's settings.json.
-#include <LegacyProfileGeneratorNamespaces.h>
-
 #include "ApplicationState.h"
 #include "DefaultTerminal.h"
 #include "FileUtils.h"
@@ -465,6 +462,11 @@ bool SettingsLoader::FixupUserSettings()
         CommandlinePatch{ DEFAULT_WINDOWS_POWERSHELL_GUID, L"powershell.exe", L"%SystemRoot%\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" },
     };
 
+    static constexpr std::array iconsToClearFromVisualStudioProfiles{
+        std::wstring_view{ L"ms-appx:///ProfileIcons/{61c54bbd-c2c6-5271-96e7-009a87ff44bf}.png" },
+        std::wstring_view{ L"ms-appx:///ProfileIcons/{0caa0dad-35be-5f56-a8ff-afceeeaa6101}.png" },
+    };
+
     auto fixedUp = userSettings.fixupsAppliedDuringLoad;
     fixedUp = userSettings.globals->FixupsAppliedDuringLoad() || fixedUp;
 
@@ -473,28 +475,39 @@ bool SettingsLoader::FixupUserSettings()
     {
         fixedUp = RemapColorSchemeForProfile(profile) || fixedUp;
 
-        if (!profile->HasCommandline())
+        if (profile->HasCommandline())
         {
-            continue;
+            for (const auto& patch : commandlinePatches)
+            {
+                if (profile->Guid() == patch.guid && til::equals_insensitive_ascii(profile->Commandline(), patch.before))
+                {
+                    profile->ClearCommandline();
+
+                    // GH#12842:
+                    // With the commandline field on the user profile gone, it's actually unknown what
+                    // commandline it'll inherit, since a user profile can have multiple parents. We have to
+                    // make sure we restore the correct commandline in case we don't inherit the expected one.
+                    if (profile->Commandline() != patch.after)
+                    {
+                        profile->Commandline(winrt::hstring{ patch.after });
+                    }
+
+                    fixedUp = true;
+                    break;
+                }
+            }
         }
 
-        for (const auto& patch : commandlinePatches)
+        if (profile->HasIcon() && profile->HasSource() && profile->Source() == VisualStudioGenerator::Namespace)
         {
-            if (profile->Guid() == patch.guid && til::equals_insensitive_ascii(profile->Commandline(), patch.before))
+            for (auto&& icon : iconsToClearFromVisualStudioProfiles)
             {
-                profile->ClearCommandline();
-
-                // GH#12842:
-                // With the commandline field on the user profile gone, it's actually unknown what
-                // commandline it'll inherit, since a user profile can have multiple parents. We have to
-                // make sure we restore the correct commandline in case we don't inherit the expected one.
-                if (profile->Commandline() != patch.after)
+                if (profile->Icon() == icon)
                 {
-                    profile->Commandline(winrt::hstring{ patch.after });
+                    profile->ClearIcon();
+                    fixedUp = true;
+                    break;
                 }
-
-                fixedUp = true;
-                break;
             }
         }
     }
