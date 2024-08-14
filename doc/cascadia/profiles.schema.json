@@ -618,6 +618,11 @@
           "type": "boolean",
           "default": false,
           "description": "This will override the profile's `elevate` setting."
+        },
+        "reloadEnvironmentVariables": {
+          "type": "boolean",
+          "default": true,
+          "description": "When set to true, a new environment block will be generated when creating a new session. Otherwise, the session will inherit the variables the Terminal was started with."
         }
       },
       "type": "object"
