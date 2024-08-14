@@ -188,7 +188,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     // the user's input
     void AzureConnection::WriteInput(const winrt::array_view<const char16_t> buffer)
     {
-        _writeInput({ (const wchar_t*)buffer.data(), buffer.size() });
+        _writeInput(winrt_array_to_wstring_view(buffer));
     }
 
     void AzureConnection::_writeInput(const std::wstring_view data)
