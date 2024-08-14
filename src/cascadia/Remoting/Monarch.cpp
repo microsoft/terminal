@@ -165,12 +165,6 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             {
                 peasantSearch->second.Quit();
             }
-            else
-            {
-                // Somehow we don't have our own peasant, this should never happen.
-                // We are trying to quit anyways so just fail here.
-                assert(peasantSearch != _peasants.end());
-            }
         }
     }
 
