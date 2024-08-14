@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <til/flat_set.h>
+
 #include "Backend.h"
 #include "BuiltinGlyphs.h"
 
@@ -26,6 +28,7 @@ namespace Microsoft::Console::Render::Atlas
         ATLAS_ATTR_COLD void _drawTextResetLineRendition(const ShapedRow* row) const noexcept;
         ATLAS_ATTR_COLD f32r _getGlyphRunDesignBounds(const DWRITE_GLYPH_RUN& glyphRun, f32 baselineX, f32 baselineY);
         ATLAS_ATTR_COLD void _drawGridlineRow(const RenderingPayload& p, const ShapedRow* row, u16 y);
+        ATLAS_ATTR_COLD void _drawBitmap(const RenderingPayload& p, const ShapedRow* row, u16 y) const;
         void _drawCursorPart1(const RenderingPayload& p);
         void _drawCursorPart2(const RenderingPayload& p);
         static void _drawCursor(const RenderingPayload& p, ID2D1RenderTarget* renderTarget, D2D1_RECT_F rect, ID2D1Brush* brush) noexcept;
@@ -64,6 +67,7 @@ namespace Microsoft::Console::Render::Atlas
         til::generation_t _generation;
         til::generation_t _fontGeneration;
         til::generation_t _cursorGeneration;
+        til::generation_t _miscGeneration;
         u16x2 _viewportCellCount{};
 
 #if ATLAS_DEBUG_SHOW_DIRTY

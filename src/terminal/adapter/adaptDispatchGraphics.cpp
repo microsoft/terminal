@@ -425,7 +425,7 @@ bool AdaptDispatch::SetGraphicsRendition(const VTParameters options)
     const auto page = _pages.ActivePage();
     auto attr = page.Attributes();
     _ApplyGraphicsOptions(options, attr);
-    page.SetAttributes(attr, &_api);
+    page.SetAttributes(attr);
     return true;
 }
 
@@ -487,6 +487,6 @@ bool AdaptDispatch::PopGraphicsRendition()
 {
     const auto page = _pages.ActivePage();
     const auto& currentAttributes = page.Attributes();
-    page.SetAttributes(_sgrStack.Pop(currentAttributes), &_api);
+    page.SetAttributes(_sgrStack.Pop(currentAttributes));
     return true;
 }

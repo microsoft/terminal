@@ -15,6 +15,7 @@
 #include "../../types/inc/GlyphWidth.hpp"
 #include "../../cascadia/terminalcore/ITerminalInput.hpp"
 
+#include <til/generational.h>
 #include <til/ticket_lock.h>
 #include <til/winrt.h>
 
@@ -47,7 +48,6 @@ namespace TerminalCoreUnitTests
 {
     class TerminalBufferTests;
     class TerminalApiTest;
-    class ConptyRoundtripTests;
     class ScrollTest;
 };
 #endif
@@ -133,9 +133,9 @@ public:
     Microsoft::Console::VirtualTerminal::StateMachine& GetStateMachine() noexcept override;
     BufferState GetBufferAndViewport() noexcept override;
     void SetViewportPosition(const til::point position) noexcept override;
-    void SetTextAttributes(const TextAttribute& attrs) noexcept override;
     void SetSystemMode(const Mode mode, const bool enabled) noexcept override;
     bool GetSystemMode(const Mode mode) const noexcept override;
+    void ReturnAnswerback() override;
     void WarningBell() override;
     void SetWindowTitle(const std::wstring_view title) override;
     CursorType GetUserDefaultCursorStyle() const noexcept override;
@@ -150,7 +150,6 @@ public:
     void UseAlternateScreenBuffer(const TextAttribute& attrs) override;
     void UseMainScreenBuffer() override;
 
-    bool IsConsolePty() const noexcept override;
     bool IsVtInputEnabled() const noexcept override;
     void NotifyAccessibilityChange(const til::rect& changedRect) noexcept override;
     void NotifyBufferRotation(const int delta) override;
@@ -234,7 +233,7 @@ public:
     void SetSearchMissingCommandCallback(std::function<void(std::wstring_view)> pfn) noexcept;
     void SetClearQuickFixCallback(std::function<void()> pfn) noexcept;
     void SetSearchHighlights(const std::vector<til::point_span>& highlights) noexcept;
-    void SetSearchHighlightFocused(const size_t focusedIdx);
+    void SetSearchHighlightFocused(const size_t focusedIdx, til::CoordType searchScrollOffset);
 
     void BlinkCursor() noexcept;
     void SetCursorOn(const bool isOn) noexcept;
@@ -373,6 +372,7 @@ private:
 
     size_t _hyperlinkPatternId = 0;
 
+    std::wstring _answerbackMessage;
     std::wstring _workingDirectory;
 
     // This default fake font value is only used to check if the font is a raster font.
@@ -383,14 +383,15 @@ private:
     // the pivot is the til::point that remains selected when you extend a selection in any direction
     //   this is particularly useful when a word selection is extended over its starting point
     //   see TerminalSelection.cpp for more information
-    struct SelectionAnchors
+    struct SelectionInfo
     {
         til::point start;
         til::point end;
         til::point pivot;
+        bool blockSelection = false;
+        bool active = false;
     };
-    std::optional<SelectionAnchors> _selection;
-    bool _blockSelection = false;
+    til::generational<SelectionInfo> _selection{};
     std::wstring _wordDelimiters;
     SelectionExpansion _multiClickSelectionMode = SelectionExpansion::Char;
     SelectionInteractionMode _selectionMode = SelectionInteractionMode::None;
@@ -475,12 +476,12 @@ private:
     void _MoveByWord(SelectionDirection direction, til::point& pos);
     void _MoveByViewport(SelectionDirection direction, til::point& pos) noexcept;
     void _MoveByBuffer(SelectionDirection direction, til::point& pos) noexcept;
+    void _SetSelectionEnd(SelectionInfo* selection, const til::point position, std::optional<SelectionExpansion> newExpansionMode = std::nullopt);
 #pragma endregion
 
 #ifdef UNIT_TESTING
     friend class TerminalCoreUnitTests::TerminalBufferTests;
     friend class TerminalCoreUnitTests::TerminalApiTest;
-    friend class TerminalCoreUnitTests::ConptyRoundtripTests;
     friend class TerminalCoreUnitTests::ScrollTest;
 #endif
 };

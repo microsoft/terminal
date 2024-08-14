@@ -63,12 +63,6 @@ BgfxEngine::BgfxEngine(PVOID SharedViewBase, LONG DisplayHeight, LONG DisplayWid
     return S_OK;
 }
 
-[[nodiscard]] HRESULT BgfxEngine::PrepareForTeardown(_Out_ bool* const pForcePaint) noexcept
-{
-    *pForcePaint = false;
-    return S_FALSE;
-}
-
 [[nodiscard]] HRESULT BgfxEngine::StartPaint() noexcept
 {
     return S_OK;

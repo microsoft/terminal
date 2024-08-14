@@ -80,6 +80,7 @@ void BackendD2D::_handleSettingsUpdate(const RenderingPayload& p)
     const auto renderTargetChanged = !_renderTarget;
     const auto fontChanged = _fontGeneration != p.s->font.generation();
     const auto cursorChanged = _cursorGeneration != p.s->cursor.generation();
+    const auto backgroundColorChanged = _miscGeneration != p.s->misc.generation();
     const auto cellCountChanged = _viewportCellCount != p.s->viewportCellCount;
 
     if (renderTargetChanged)
@@ -125,7 +126,7 @@ void BackendD2D::_handleSettingsUpdate(const RenderingPayload& p)
         _builtinGlyphsRenderTargetActive = false;
     }
 
-    if (renderTargetChanged || fontChanged || cellCountChanged)
+    if (renderTargetChanged || fontChanged || cellCountChanged || backgroundColorChanged)
     {
         const D2D1_BITMAP_PROPERTIES props{
             .pixelFormat = { DXGI_FORMAT_R8G8B8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED },
@@ -133,18 +134,40 @@ void BackendD2D::_handleSettingsUpdate(const RenderingPayload& p)
             .dpiY = static_cast<f32>(p.s->font->dpi),
         };
         const D2D1_SIZE_U size{
-            p.s->viewportCellCount.x,
-            p.s->viewportCellCount.y,
+            p.s->viewportCellCount.x + 2u,
+            p.s->viewportCellCount.y + 2u,
         };
         const D2D1_MATRIX_3X2_F transform{
             .m11 = static_cast<f32>(p.s->font->cellSize.x),
             .m22 = static_cast<f32>(p.s->font->cellSize.y),
+            /* Brushes are transformed relative to the render target, not the rect into which they are painted. */
+            .dx = -static_cast<f32>(p.s->font->cellSize.x),
+            .dy = -static_cast<f32>(p.s->font->cellSize.y),
         };
-        THROW_IF_FAILED(_renderTarget->CreateBitmap(size, nullptr, 0, &props, _backgroundBitmap.put()));
+
+        /*
+         We're allocating a bitmap that is one pixel wider on every side than the viewport so that we can fill in the gutter
+         with the background color. D2D doesn't have an equivalent to D3D11_TEXTURE_ADDRESS_BORDER, which we use in the D3D
+         backend to ensure the colors don't bleed off the edges.
+
+         XXXXXXXXXXXXXXXX <- background color
+         X+------------+X
+         X| viewport   |X
+         X|            |X
+         X|            |X
+         X+------------+X
+         XXXXXXXXXXXXXXXX
+
+         The translation in `transform` ensures that we render it off the top left of the render target.
+        */
+        auto backgroundFill = std::make_unique_for_overwrite<u32[]>(static_cast<size_t>(size.width) * size.height);
+        std::fill_n(backgroundFill.get(), size.width * size.height, u32ColorPremultiply(p.s->misc->backgroundColor));
+
+        THROW_IF_FAILED(_renderTarget->CreateBitmap(size, backgroundFill.get(), size.width * sizeof(u32), &props, _backgroundBitmap.put()));
         THROW_IF_FAILED(_renderTarget->CreateBitmapBrush(_backgroundBitmap.get(), _backgroundBrush.put()));
         _backgroundBrush->SetInterpolationMode(D2D1_BITMAP_INTERPOLATION_MODE_NEAREST_NEIGHBOR);
-        _backgroundBrush->SetExtendModeX(D2D1_EXTEND_MODE_MIRROR);
-        _backgroundBrush->SetExtendModeY(D2D1_EXTEND_MODE_MIRROR);
+        _backgroundBrush->SetExtendModeX(D2D1_EXTEND_MODE_CLAMP);
+        _backgroundBrush->SetExtendModeY(D2D1_EXTEND_MODE_CLAMP);
         _backgroundBrush->SetTransform(&transform);
         _backgroundBitmapGeneration = {};
     }
@@ -158,6 +181,7 @@ void BackendD2D::_handleSettingsUpdate(const RenderingPayload& p)
     _generation = p.s.generation();
     _fontGeneration = p.s->font.generation();
     _cursorGeneration = p.s->cursor.generation();
+    _miscGeneration = p.s->misc.generation();
     _viewportCellCount = p.s->viewportCellCount;
 }
 
@@ -165,7 +189,13 @@ void BackendD2D::_drawBackground(const RenderingPayload& p)
 {
     if (_backgroundBitmapGeneration != p.colorBitmapGenerations[0])
     {
-        THROW_IF_FAILED(_backgroundBitmap->CopyFromMemory(nullptr, p.backgroundBitmap.data(), gsl::narrow_cast<UINT32>(p.colorBitmapRowStride * sizeof(u32))));
+        const D2D1_RECT_U rect{
+            1u,
+            1u,
+            1u + p.s->viewportCellCount.x,
+            1u + p.s->viewportCellCount.y,
+        };
+        THROW_IF_FAILED(_backgroundBitmap->CopyFromMemory(&rect, p.backgroundBitmap.data(), gsl::narrow_cast<UINT32>(p.colorBitmapRowStride * sizeof(u32))));
         _backgroundBitmapGeneration = p.colorBitmapGenerations[0];
     }
 
@@ -290,6 +320,11 @@ void BackendD2D::_drawText(RenderingPayload& p)
         if (row->lineRendition != LineRendition::SingleWidth)
         {
             _drawTextResetLineRendition(row);
+        }
+
+        if (row->bitmap.revision != 0)
+        {
+            _drawBitmap(p, row, y);
         }
 
         if (p.invalidatedRows.contains(y))
@@ -745,6 +780,39 @@ void BackendD2D::_drawGridlineRow(const RenderingPayload& p, const ShapedRow* ro
     }
 }
 
+void BackendD2D::_drawBitmap(const RenderingPayload& p, const ShapedRow* row, u16 y) const
+{
+    const auto& b = row->bitmap;
+
+    // TODO: This could use some caching logic like BackendD3D.
+    const D2D1_SIZE_U size{
+        gsl::narrow_cast<UINT32>(b.sourceSize.x),
+        gsl::narrow_cast<UINT32>(b.sourceSize.y),
+    };
+    const D2D1_BITMAP_PROPERTIES bitmapProperties{
+        .pixelFormat = { DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED },
+        .dpiX = static_cast<f32>(p.s->font->dpi),
+        .dpiY = static_cast<f32>(p.s->font->dpi),
+    };
+    wil::com_ptr<ID2D1Bitmap> bitmap;
+    THROW_IF_FAILED(_renderTarget->CreateBitmap(size, b.source.data(), static_cast<UINT32>(b.sourceSize.x) * 4, &bitmapProperties, bitmap.addressof()));
+
+    const i32 cellWidth = p.s->font->cellSize.x;
+    const i32 cellHeight = p.s->font->cellSize.y;
+    const auto left = (b.targetOffset - p.scrollOffsetX) * cellWidth;
+    const auto right = left + b.targetWidth * cellWidth;
+    const auto top = y * cellHeight;
+    const auto bottom = top + cellHeight;
+
+    const D2D1_RECT_F rectF{
+        static_cast<f32>(left),
+        static_cast<f32>(top),
+        static_cast<f32>(right),
+        static_cast<f32>(bottom),
+    };
+    _renderTarget->DrawBitmap(bitmap.get(), &rectF, 1, D2D1_BITMAP_INTERPOLATION_MODE_LINEAR);
+}
+
 void BackendD2D::_drawCursorPart1(const RenderingPayload& p)
 {
     if (p.cursorRect.empty())
@@ -893,23 +961,25 @@ void BackendD2D::_drawSelection(const RenderingPayload& p)
 #if ATLAS_DEBUG_SHOW_DIRTY
 void BackendD2D::_debugShowDirty(const RenderingPayload& p)
 {
+    if (p.dirtyRectInPx.empty())
+    {
+        return;
+    }
+
     _presentRects[_presentRectsPos] = p.dirtyRectInPx;
     _presentRectsPos = (_presentRectsPos + 1) % std::size(_presentRects);
 
     for (size_t i = 0; i < std::size(_presentRects); ++i)
     {
         const auto& rect = _presentRects[(_presentRectsPos + i) % std::size(_presentRects)];
-        if (rect.non_empty())
-        {
-            const D2D1_RECT_F rectF{
-                static_cast<f32>(rect.left),
-                static_cast<f32>(rect.top),
-                static_cast<f32>(rect.right),
-                static_cast<f32>(rect.bottom),
-            };
-            const auto color = til::colorbrewer::pastel1[i] | 0x1f000000;
-            _fillRectangle(rectF, color);
-        }
+        const D2D1_RECT_F rectF{
+            static_cast<f32>(rect.left),
+            static_cast<f32>(rect.top),
+            static_cast<f32>(rect.right),
+            static_cast<f32>(rect.bottom),
+        };
+        const auto color = til::colorbrewer::pastel1[i] | 0x1f000000;
+        _fillRectangle(rectF, color);
     }
 }
 #endif
@@ -923,9 +993,12 @@ void BackendD2D::_debugDumpRenderTarget(const RenderingPayload& p)
         std::filesystem::create_directories(_dumpRenderTargetBasePath);
     }
 
+    wil::com_ptr<ID3D11Texture2D> buffer;
+    THROW_IF_FAILED(p.swapChain.swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), reinterpret_cast<void**>(buffer.addressof())));
+
     wchar_t path[MAX_PATH];
     swprintf_s(path, L"%s\\%u_%08zu.png", &_dumpRenderTargetBasePath[0], GetCurrentProcessId(), _dumpRenderTargetCounter);
-    SaveTextureToPNG(_deviceContext.get(), _swapChainManager.GetBuffer().get(), p.s->font->dpi, &path[0]);
+    WIC::SaveTextureToPNG(p.deviceContext.get(), buffer.get(), p.s->font->dpi, &path[0]);
     _dumpRenderTargetCounter++;
 }
 #endif

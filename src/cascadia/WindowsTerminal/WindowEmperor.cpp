@@ -595,7 +595,7 @@ static winrt::fire_and_forget _createNewTerminalWindow(Settings::Model::GlobalSu
     // If we weren't given a name, then just use new to force the window to be
     // unnamed.
     winrt::hstring cmdline{
-        fmt::format(L"-w {}",
+        fmt::format(FMT_COMPILE(L"-w {}"),
                     args.Name().empty() ? L"new" :
                                           args.Name())
     };

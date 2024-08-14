@@ -18,7 +18,6 @@ const std::wstring_view ConsoleArguments::FILEPATH_LEADER_PREFIX = L"\\??\\";
 const std::wstring_view ConsoleArguments::WIDTH_ARG = L"--width";
 const std::wstring_view ConsoleArguments::HEIGHT_ARG = L"--height";
 const std::wstring_view ConsoleArguments::INHERIT_CURSOR_ARG = L"--inheritcursor";
-const std::wstring_view ConsoleArguments::RESIZE_QUIRK = L"--resizeQuirk";
 const std::wstring_view ConsoleArguments::FEATURE_ARG = L"--feature";
 const std::wstring_view ConsoleArguments::FEATURE_PTY_ARG = L"pty";
 const std::wstring_view ConsoleArguments::COM_SERVER_ARG = L"-Embedding";
@@ -495,12 +494,6 @@ void ConsoleArguments::s_ConsumeArg(_Inout_ std::vector<std::wstring>& args, _In
             s_ConsumeArg(args, i);
             hr = S_OK;
         }
-        else if (arg == RESIZE_QUIRK)
-        {
-            _resizeQuirk = true;
-            s_ConsumeArg(args, i);
-            hr = S_OK;
-        }
         else if (arg == GLYPH_WIDTH)
         {
             hr = s_GetArgumentValue(args, i, &_textMeasurement);
@@ -651,10 +644,6 @@ short ConsoleArguments::GetHeight() const
 bool ConsoleArguments::GetInheritCursor() const
 {
     return _inheritCursor;
-}
-bool ConsoleArguments::IsResizeQuirkEnabled() const
-{
-    return _resizeQuirk;
 }
 
 #ifdef UNIT_TESTING

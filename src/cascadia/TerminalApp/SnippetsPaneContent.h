@@ -17,7 +17,7 @@ namespace winrt::TerminalApp::implementation
 
         winrt::Windows::UI::Xaml::FrameworkElement GetRoot();
 
-        void UpdateSettings(const winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings& settings);
+        winrt::fire_and_forget UpdateSettings(const winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings& settings);
 
         winrt::Windows::Foundation::Size MinimumSize();
         void Focus(winrt::Windows::UI::Xaml::FocusState reason = winrt::Windows::UI::Xaml::FocusState::Programmatic);
@@ -97,7 +97,7 @@ namespace winrt::TerminalApp::implementation
                 {
                     if (const auto& sendInput{ command.ActionAndArgs().Args().try_as<winrt::Microsoft::Terminal::Settings::Model::SendInputArgs>() })
                     {
-                        return winrt::hstring{ til::visualize_nonspace_control_codes(sendInput.Input().c_str()) };
+                        return winrt::hstring{ til::visualize_nonspace_control_codes(std::wstring{ sendInput.Input() }) };
                     }
                 }
             }

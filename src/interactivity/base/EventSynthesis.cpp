@@ -127,11 +127,11 @@ void Microsoft::Console::Interactivity::SynthesizeNumpadEvents(const wchar_t wch
     char converted = 0;
     const auto result = WideCharToMultiByte(codepage, 0, &wch, 1, &converted, 1, nullptr, nullptr);
 
+    // alt keydown
+    keyEvents.push_back(SynthesizeKeyEvent(true, 1, VK_MENU, altScanCode, 0, LEFT_ALT_PRESSED));
+
     if (result == 1)
     {
-        // alt keydown
-        keyEvents.push_back(SynthesizeKeyEvent(true, 1, VK_MENU, altScanCode, 0, LEFT_ALT_PRESSED));
-
         // It is OK if the char is "signed -1", we want to interpret that as "unsigned 255" for the
         // "integer to character" conversion below with ::to_string, thus the static_cast.
         // Prime example is nonbreaking space U+00A0 will convert to OEM by codepage 437 to 0xFF which is -1 signed.
@@ -149,8 +149,8 @@ void Microsoft::Console::Interactivity::SynthesizeNumpadEvents(const wchar_t wch
             keyEvent.Event.KeyEvent.bKeyDown = FALSE;
             keyEvents.push_back(keyEvent);
         }
-
-        // alt keyup
-        keyEvents.push_back(SynthesizeKeyEvent(false, 1, VK_MENU, altScanCode, wch, 0));
     }
+
+    // alt keyup
+    keyEvents.push_back(SynthesizeKeyEvent(false, 1, VK_MENU, altScanCode, wch, 0));
 }

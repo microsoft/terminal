@@ -716,13 +716,6 @@ OutputCellIterator TextBuffer::WriteLine(const OutputCellIterator givenIt,
 // - true if we successfully incremented the buffer.
 void TextBuffer::IncrementCircularBuffer(const TextAttribute& fillAttributes)
 {
-    // FirstRow is at any given point in time the array index in the circular buffer that corresponds
-    // to the logical position 0 in the window (cursor coordinates and all other coordinates).
-    if (_isActiveBuffer && _renderer)
-    {
-        _renderer->TriggerFlush(true);
-    }
-
     // Prune hyperlinks to delete obsolete references
     _PruneHyperlinks();
 
@@ -918,7 +911,7 @@ void TextBuffer::SetCurrentLineRendition(const LineRendition lineRendition, cons
         // If the line rendition has changed, the row can no longer be wrapped.
         row.SetWrapForced(false);
         // And all image content on the row is removed.
-        row.GetMutableImageSlice().reset();
+        row.SetImageSlice(nullptr);
         // And if it's no longer single width, the right half of the row should be erased.
         if (lineRendition != LineRendition::SingleWidth)
         {
@@ -2853,6 +2846,15 @@ void TextBuffer::Reflow(TextBuffer& oldBuffer, TextBuffer& newBuffer, const View
             newX = 0;
             newY++;
         }
+    }
+
+    // The for loop right after this if condition will copy entire rows of attributes at a time.
+    // This assumes of course that the "write cursor" (newX, newY) is at the start of a row.
+    // If we didn't check for this, we may otherwise copy attributes from a later row into a previous one.
+    if (newX != 0)
+    {
+        newX = 0;
+        newY++;
     }
 
     // Finish copying buffer attributes to remaining rows below the last

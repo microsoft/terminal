@@ -28,7 +28,7 @@ namespace Microsoft::Console::VirtualTerminal
             return _value;
         }
 
-        constexpr const std::string_view ToString() const
+        constexpr const char* ToString() const
         {
             return &_string[0];
         }
@@ -693,3 +693,31 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
     constexpr VTInt s_sDECCOLMResetColumns = 80;
 
 }
+
+#pragma warning(push)
+#pragma warning(disable : 26429) // Symbol 'in' is never tested for nullness, it can be marked as not_null (f.23).
+#pragma warning(disable : 26481) // Don't use pointer arithmetic. Use span instead (bounds.1).
+
+template<typename Char>
+struct fmt::formatter<Microsoft::Console::VirtualTerminal::VTID, Char>
+{
+    constexpr auto parse(auto& ctx)
+    {
+        return ctx.begin();
+    }
+
+    constexpr auto format(const Microsoft::Console::VirtualTerminal::VTID& p, auto& ctx) const
+    {
+        auto in = p.ToString();
+        auto out = ctx.out();
+
+        for (; *in; ++in, ++out)
+        {
+            *out = *in;
+        }
+
+        return out;
+    }
+};
+
+#pragma warning(pop)

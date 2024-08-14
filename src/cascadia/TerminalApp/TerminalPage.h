@@ -153,8 +153,8 @@ namespace winrt::TerminalApp::implementation
 
         winrt::fire_and_forget ProcessStartupActions(Windows::Foundation::Collections::IVector<Microsoft::Terminal::Settings::Model::ActionAndArgs> actions,
                                                      const bool initial,
-                                                     const winrt::hstring cwd = L"",
-                                                     const winrt::hstring env = L"");
+                                                     const winrt::hstring cwd = winrt::hstring{},
+                                                     const winrt::hstring env = winrt::hstring{});
 
         TerminalApp::WindowProperties WindowProperties() const noexcept { return _WindowProperties; };
 
@@ -555,6 +555,7 @@ namespace winrt::TerminalApp::implementation
         winrt::com_ptr<TerminalTab> _senderOrFocusedTab(const IInspectable& sender);
 
         void _activePaneChanged(winrt::TerminalApp::TerminalTab tab, Windows::Foundation::IInspectable args);
+        winrt::fire_and_forget _doHandleSuggestions(Microsoft::Terminal::Settings::Model::SuggestionsArgs realArgs);
 
 #pragma region ActionHandlers
         // These are all defined in AppActionHandlers.cpp

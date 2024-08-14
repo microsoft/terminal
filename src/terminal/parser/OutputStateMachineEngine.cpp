@@ -4,11 +4,12 @@
 #include "precomp.h"
 #include "OutputStateMachineEngine.hpp"
 
+#include <conattrs.hpp>
+
 #include "ascii.hpp"
 #include "base64.hpp"
 #include "stateMachine.hpp"
 #include "../../types/inc/utils.hpp"
-#include "../renderer/vt/vtrenderer.hpp"
 
 using namespace Microsoft::Console;
 using namespace Microsoft::Console::VirtualTerminal;
@@ -16,8 +17,6 @@ using namespace Microsoft::Console::VirtualTerminal;
 // takes ownership of pDispatch
 OutputStateMachineEngine::OutputStateMachineEngine(std::unique_ptr<ITermDispatch> pDispatch) :
     _dispatch(std::move(pDispatch)),
-    _pfnFlushToTerminal(nullptr),
-    _pTtyConnection(nullptr),
     _lastPrintedChar(AsciiChars::NUL)
 {
     THROW_HR_IF_NULL(E_INVALIDARG, _dispatch.get());
@@ -50,18 +49,10 @@ bool OutputStateMachineEngine::ActionExecute(const wchar_t wch)
     switch (wch)
     {
     case AsciiChars::ENQ:
-        // GH#11946: At some point we may want to add support for the VT
-        // answerback feature, which requires responding to an ENQ control
-        // with a user-defined reply, but until then we just ignore it.
+        _dispatch->EnquireAnswerback();
         break;
     case AsciiChars::BEL:
         _dispatch->WarningBell();
-        // microsoft/terminal#2952
-        // If we're attached to a terminal, let's also pass the BEL through.
-        if (_pfnFlushToTerminal != nullptr)
-        {
-            _pfnFlushToTerminal();
-        }
         break;
     case AsciiChars::BS:
         _dispatch->CursorBackward(1);
@@ -183,18 +174,9 @@ bool OutputStateMachineEngine::ActionPrintString(const std::wstring_view string)
 // - flush - set to true if the string should be flushed immediately.
 // Return Value:
 // - true iff we successfully dispatched the sequence.
-bool OutputStateMachineEngine::ActionPassThroughString(const std::wstring_view string, const bool flush)
+bool OutputStateMachineEngine::ActionPassThroughString(const std::wstring_view /*string*/, const bool /*flush*/) noexcept
 {
-    auto success = true;
-    if (_pTtyConnection != nullptr)
-    {
-        const auto hr = _pTtyConnection->WriteTerminalW(string, flush);
-        LOG_IF_FAILED(hr);
-        success = SUCCEEDED(hr);
-    }
-    // If there's not a TTY connection, our previous behavior was to eat the string.
-
-    return success;
+    return true;
 }
 
 // Routine Description:
@@ -333,13 +315,6 @@ bool OutputStateMachineEngine::ActionEscDispatch(const VTID id)
             success = false;
             break;
         }
-    }
-
-    // If we were unable to process the string, and there's a TTY attached to us,
-    //      trigger the state machine to flush the string to the terminal.
-    if (_pfnFlushToTerminal != nullptr && !success)
-    {
-        success = _pfnFlushToTerminal();
     }
 
     _ClearLastChar();
@@ -651,6 +626,9 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParamete
     case CsiActionCodes::DECCRA_CopyRectangularArea:
         success = _dispatch->CopyRectangularArea(parameters.at(0), parameters.at(1), parameters.at(2).value_or(0), parameters.at(3).value_or(0), parameters.at(4), parameters.at(5), parameters.at(6), parameters.at(7));
         break;
+    case CsiActionCodes::DECRQTSR_RequestTerminalStateReport:
+        success = _dispatch->RequestTerminalStateReport(parameters.at(0), parameters.at(1));
+        break;
     case CsiActionCodes::DECRQPSR_RequestPresentationStateReport:
         success = _dispatch->RequestPresentationStateReport(parameters.at(0));
         break;
@@ -691,13 +669,6 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParamete
         // If no functions to call, overall dispatch was a failure.
         success = false;
         break;
-    }
-
-    // If we were unable to process the string, and there's a TTY attached to us,
-    //      trigger the state machine to flush the string to the terminal.
-    if (_pfnFlushToTerminal != nullptr && !success)
-    {
-        success = _pfnFlushToTerminal();
     }
 
     _ClearLastChar();
@@ -929,13 +900,6 @@ bool OutputStateMachineEngine::ActionOscDispatch(const size_t parameter, const s
         break;
     }
 
-    // If we were unable to process the string, and there's a TTY attached to us,
-    //      trigger the state machine to flush the string to the terminal.
-    if (_pfnFlushToTerminal != nullptr && !success)
-    {
-        success = _pfnFlushToTerminal();
-    }
-
     _ClearLastChar();
 
     return success;
@@ -1091,26 +1055,6 @@ bool OutputStateMachineEngine::_GetOscSetColor(const std::wstring_view string,
     rgbs.swap(newRgbs);
 
     return rgbs.size() > 0;
-}
-
-// Method Description:
-// - Sets us up to have another terminal acting as the tty instead of conhost.
-//      We'll set a couple members, and if they aren't null, when we get a
-//      sequence we don't understand, we'll pass it along to the terminal
-//      instead of eating it ourselves.
-// Arguments:
-// - pTtyConnection: This is a TerminalOutputConnection that we can write the
-//      sequence we didn't understand to.
-// - pfnFlushToTerminal: This is a callback to the underlying state machine to
-//      trigger it to call ActionPassThroughString with whatever sequence it's
-//      currently processing.
-// Return Value:
-// - <none>
-void OutputStateMachineEngine::SetTerminalConnection(Render::VtEngine* const pTtyConnection,
-                                                     std::function<bool()> pfnFlushToTerminal)
-{
-    this->_pTtyConnection = pTtyConnection;
-    this->_pfnFlushToTerminal = pfnFlushToTerminal;
 }
 
 // Routine Description:

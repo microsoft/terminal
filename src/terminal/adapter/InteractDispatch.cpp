@@ -113,11 +113,7 @@ bool InteractDispatch::WindowManipulation(const DispatchTypes::WindowManipulatio
     case DispatchTypes::WindowManipulationType::ResizeWindowInCharacters:
         // TODO:GH#1765 We should introduce a better `ResizeConpty` function to
         // ConhostInternalGetSet, that specifically handles a conpty resize.
-        if (_api.ResizeWindow(parameter2.value_or(0), parameter1.value_or(0)))
-        {
-            auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-            THROW_IF_FAILED(gci.GetVtIo()->SuppressResizeRepaint());
-        }
+        _api.ResizeWindow(parameter2.value_or(0), parameter1.value_or(0));
         return true;
     default:
         return false;

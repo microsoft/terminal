@@ -56,6 +56,7 @@ public:
     bool SetAnsiMode(const bool /*ansiMode*/) override { return false; } // DECANM
     bool SetTopBottomScrollingMargins(const VTInt /*topMargin*/, const VTInt /*bottomMargin*/) override { return false; } // DECSTBM
     bool SetLeftRightScrollingMargins(const VTInt /*leftMargin*/, const VTInt /*rightMargin*/) override { return false; } // DECSLRM
+    bool EnquireAnswerback() override { return false; } // ENQ
     bool WarningBell() override { return false; } // BEL
     bool CarriageReturn() override { return false; } // CR
     bool LineFeed(const DispatchTypes::LineFeedType /*lineFeedType*/) override { return false; } // IND, NEL, LF, FF, VT
@@ -163,6 +164,7 @@ public:
                               const DispatchTypes::MacroEncoding /*encoding*/) override { return nullptr; } // DECDMAC
     bool InvokeMacro(const VTInt /*macroId*/) override { return false; } // DECINVM
 
+    bool RequestTerminalStateReport(const DispatchTypes::ReportFormat /*format*/, const VTParameter /*formatOption*/) override { return false; } // DECRQTSR
     StringHandler RestoreTerminalState(const DispatchTypes::ReportFormat /*format*/) override { return nullptr; }; // DECRSTS
 
     StringHandler RequestSetting() override { return nullptr; }; // DECRQSS

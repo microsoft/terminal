@@ -129,7 +129,8 @@ try
     };
     _p.invalidatedRows = _api.invalidatedRows;
     _p.cursorRect = {};
-    _p.scrollOffset = _api.scrollOffset;
+    _p.scrollOffsetX = _api.viewportOffset.x;
+    _p.scrollDeltaY = _api.scrollOffset;
 
     // This if condition serves 2 purposes:
     // * By setting top/bottom to the full height we ensure that we call Present() without
@@ -148,7 +149,7 @@ try
     _p.MarkAllAsDirty();
 #endif
 
-    if (const auto offset = _p.scrollOffset)
+    if (const auto offset = _p.scrollDeltaY)
     {
         if (offset < 0)
         {
@@ -256,6 +257,14 @@ try
 {
     _flushBufferLine();
 
+    for (const auto r : _p.rows)
+    {
+        if (r->bitmap.revision != 0 && !r->bitmap.active)
+        {
+            r->bitmap = {};
+        }
+    }
+
     // PaintCursor() is only called when the cursor is visible, but we need to invalidate the cursor area
     // even if it isn't. Otherwise a transition from a visible to an invisible cursor wouldn't be rendered.
     if (const auto r = _api.invalidatedCursorArea; r.non_empty())
@@ -273,13 +282,6 @@ try
 }
 CATCH_RETURN()
 
-[[nodiscard]] HRESULT AtlasEngine::PrepareForTeardown(_Out_ bool* const pForcePaint) noexcept
-{
-    RETURN_HR_IF_NULL(E_INVALIDARG, pForcePaint);
-    *pForcePaint = false;
-    return S_OK;
-}
-
 [[nodiscard]] HRESULT AtlasEngine::ScrollFrame() noexcept
 {
     return S_OK;
@@ -289,8 +291,6 @@ CATCH_RETURN()
 {
     // remove the highlighted regions that falls outside of the dirty region
     {
-        const auto& highlights = info.searchHighlights;
-
         // get the buffer origin relative to the viewport, and use it to calculate
         // the dirty region to be relative to the buffer origin
         const til::CoordType offsetX = _api.viewportOffset.x;
@@ -298,9 +298,7 @@ CATCH_RETURN()
         const til::point bufferOrigin{ -offsetX, -offsetY };
         const auto dr = _api.dirtyRect.to_origin(bufferOrigin);
 
-        const auto hiBeg = std::lower_bound(highlights.begin(), highlights.end(), dr.top, [](const auto& ps, const auto& drTop) { return ps.end.y < drTop; });
-        const auto hiEnd = std::upper_bound(hiBeg, highlights.end(), dr.bottom, [](const auto& drBottom, const auto& ps) { return drBottom < ps.start.y; });
-        _api.searchHighlights = { hiBeg, hiEnd };
+        _api.searchHighlights = til::point_span_subspan_within_rect(info.searchHighlights, dr);
 
         // do the same for the focused search highlight
         if (info.searchHighlightFocused)
@@ -520,10 +518,49 @@ try
 }
 CATCH_RETURN()
 
-[[nodiscard]] HRESULT AtlasEngine::PaintImageSlice(const ImageSlice& /*imageSlice*/, const til::CoordType /*targetRow*/, const til::CoordType /*viewportLeft*/) noexcept
+[[nodiscard]] HRESULT AtlasEngine::PaintImageSlice(const ImageSlice& imageSlice, const til::CoordType targetRow, const til::CoordType viewportLeft) noexcept
+try
 {
-    return S_FALSE;
+    const auto y = clamp<til::CoordType>(targetRow, 0, _p.s->viewportCellCount.y - 1);
+    const auto row = _p.rows[y];
+    const auto revision = imageSlice.Revision();
+    const auto srcWidth = std::max(0, imageSlice.PixelWidth());
+    const auto srcCellSize = imageSlice.CellSize();
+    auto& b = row->bitmap;
+
+    // If this row's ImageSlice has changed we need to update our snapshot.
+    // Theoretically another _p.rows[y]->bitmap may have this particular revision already,
+    // but that can only happen if we're scrolling _and_ the entire viewport was invalidated.
+    if (b.revision != revision)
+    {
+        const auto srcHeight = std::max(0, srcCellSize.height);
+        const auto pixels = imageSlice.Pixels();
+        const auto expectedSize = gsl::narrow_cast<size_t>(srcWidth) * gsl::narrow_cast<size_t>(srcHeight);
+
+        // Sanity check.
+        if (pixels.size() != expectedSize)
+        {
+            assert(false);
+            return S_OK;
+        }
+
+        if (b.source.size() != pixels.size())
+        {
+            b.source = Buffer<u32, 32>{ pixels.size() };
+        }
+
+        memcpy(b.source.data(), pixels.data(), pixels.size_bytes());
+        b.revision = revision;
+        b.sourceSize.x = srcWidth;
+        b.sourceSize.y = srcHeight;
+    }
+
+    b.targetOffset = (imageSlice.ColumnOffset() - viewportLeft);
+    b.targetWidth = srcWidth / srcCellSize.width;
+    b.active = true;
+    return S_OK;
 }
+CATCH_RETURN()
 
 [[nodiscard]] HRESULT AtlasEngine::PaintSelection(const til::rect& rect) noexcept
 try
