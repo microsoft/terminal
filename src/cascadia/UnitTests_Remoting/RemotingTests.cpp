@@ -82,7 +82,6 @@ namespace RemotingUnitTests
         void Summon(const Remoting::SummonWindowBehavior& /*args*/) DIE;
         void RequestShowNotificationIcon() DIE;
         void RequestHideNotificationIcon() DIE;
-        void RequestQuitAll() DIE;
         void Quit() DIE;
         void AttachContentToWindow(Remoting::AttachRequest) DIE;
         void SendContent(winrt::Microsoft::Terminal::Remoting::RequestReceiveContentArgs) DIE;
@@ -94,7 +93,6 @@ namespace RemotingUnitTests
         til::typed_event<winrt::Windows::Foundation::IInspectable, Remoting::SummonWindowBehavior> SummonRequested;
         til::typed_event<> ShowNotificationIconRequested;
         til::typed_event<> HideNotificationIconRequested;
-        til::typed_event<> QuitAllRequested;
         til::typed_event<> QuitRequested;
         til::typed_event<winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::AttachRequest> AttachRequested;
         til::typed_event<winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::RequestReceiveContentArgs> SendContentRequested;
