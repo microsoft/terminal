@@ -230,7 +230,7 @@ namespace ControlUnitTests
                 expectedBufferHeight++;
             }
 
-            conn->WriteInput(L"Foo\r\n");
+            conn->WriteInput(winrt_wstring_to_array_view(L"Foo\r\n"));
         }
         // We printed that 40 times, but the final \r\n bumped the view down one MORE row.
         VERIFY_ARE_EQUAL(20, core->_terminal->GetViewport().Height());
@@ -398,7 +398,7 @@ namespace ControlUnitTests
         Log::Comment(L"Add some test to the terminal so we can scroll");
         for (auto i = 0; i < 40; ++i)
         {
-            conn->WriteInput(L"Foo\r\n");
+            conn->WriteInput(winrt_wstring_to_array_view(L"Foo\r\n"));
         }
         // We printed that 40 times, but the final \r\n bumped the view down one MORE row.
         VERIFY_ARE_EQUAL(20, core->_terminal->GetViewport().Height());
@@ -475,7 +475,7 @@ namespace ControlUnitTests
 
         for (auto i = 0; i < 40; ++i)
         {
-            conn->WriteInput(L"Foo\r\n");
+            conn->WriteInput(winrt_wstring_to_array_view(L"Foo\r\n"));
         }
         // We printed that 40 times, but the final \r\n bumped the view down one MORE row.
         VERIFY_ARE_EQUAL(20, core->_terminal->GetViewport().Height());
@@ -534,7 +534,7 @@ namespace ControlUnitTests
         interactivity->MouseWheel(modifiers, delta, mousePos, state); // 2/5
         VERIFY_ARE_EQUAL(21, core->ScrollOffset());
 
-        conn->WriteInput(L"Foo\r\n");
+        conn->WriteInput(winrt_wstring_to_array_view(L"Foo\r\n"));
         VERIFY_ARE_EQUAL(22, core->ScrollOffset());
         interactivity->MouseWheel(modifiers, delta, mousePos, state); // 1/5
         VERIFY_ARE_EQUAL(22, core->ScrollOffset());
@@ -699,7 +699,7 @@ namespace ControlUnitTests
                 expectedBufferHeight++;
             }
 
-            conn->WriteInput(L"Foo\r\n");
+            conn->WriteInput(winrt_wstring_to_array_view(L"Foo\r\n"));
         }
         // We printed that 40 times, but the final \r\n bumped the view down one MORE row.
         VERIFY_ARE_EQUAL(20, core->_terminal->GetViewport().Height());
@@ -721,7 +721,7 @@ namespace ControlUnitTests
         }
 
         // Enable VT mouse event tracking
-        conn->WriteInput(L"\x1b[?1003;1006h");
+        conn->WriteInput(winrt_wstring_to_array_view(L"\x1b[?1003;1006h"));
 
         // Mouse clicks in the inactive region (i.e. the top 10 rows in this case) should not register
         Log::Comment(L"Click on the terminal");
@@ -765,7 +765,7 @@ namespace ControlUnitTests
         // at the point where outputting more lines causes circular incrementing
         for (auto i = 0; i < settings->HistorySize() + core->ViewHeight(); ++i)
         {
-            conn->WriteInput(L"Foo\r\n");
+            conn->WriteInput(winrt_wstring_to_array_view(L"Foo\r\n"));
         }
         VERIFY_ARE_EQUAL(scrollbackLength, core->_terminal->GetScrollOffset());
 
@@ -811,7 +811,7 @@ namespace ControlUnitTests
         VERIFY_ARE_EQUAL(expectedAnchor, core->_terminal->GetSelectionEnd());
 
         Log::Comment(L"Output a line of text");
-        conn->WriteInput(L"Foo\r\n");
+        conn->WriteInput(winrt_wstring_to_array_view(L"Foo\r\n"));
 
         Log::Comment(L"Verify the location of the selection");
         // The selection should now be 1 row lower
@@ -829,7 +829,7 @@ namespace ControlUnitTests
         VERIFY_ARE_EQUAL(scrollbackLength - 1, core->_terminal->GetScrollOffset());
 
         Log::Comment(L"Output a line of text");
-        conn->WriteInput(L"Foo\r\n");
+        conn->WriteInput(winrt_wstring_to_array_view(L"Foo\r\n"));
 
         Log::Comment(L"Verify the location of the selection");
         // The selection should now be 1 row lower
@@ -875,7 +875,7 @@ namespace ControlUnitTests
         Log::Comment(L"Output a line ant move the mouse a little to update the selection, all at once");
         // Same as above. The viewport has moved, so the mouse is still over the
         // same character, even though it's at a new offset.
-        conn->WriteInput(L"Foo\r\n");
+        conn->WriteInput(winrt_wstring_to_array_view(L"Foo\r\n"));
         expectedAnchor.y -= 1;
         VERIFY_ARE_EQUAL(scrollbackLength - 3, core->_terminal->GetScrollOffset());
         interactivity->PointerMoved(leftMouseDown,
@@ -900,7 +900,7 @@ namespace ControlUnitTests
         // Output enough text for the selection to get pushed off the buffer
         for (auto i = 0; i < settings->HistorySize() + core->ViewHeight(); ++i)
         {
-            conn->WriteInput(L"Foo\r\n");
+            conn->WriteInput(winrt_wstring_to_array_view(L"Foo\r\n"));
         }
         // Verify that the selection got reset
         VERIFY_IS_FALSE(core->HasSelection());
@@ -954,7 +954,7 @@ namespace ControlUnitTests
         // Output enough text for view to start scrolling
         for (auto i = 0; i < core->ViewHeight() * 2; ++i)
         {
-            conn->WriteInput(L"Foo\r\n");
+            conn->WriteInput(winrt_wstring_to_array_view(L"Foo\r\n"));
         }
 
         // Start checking output
@@ -1018,7 +1018,7 @@ namespace ControlUnitTests
                                       modifiers,
                                       cursorPosition0.to_core_point());
         // Flush it out.
-        conn->WriteInput(L"sentinel");
+        conn->WriteInput(winrt_wstring_to_array_view(L"sentinel"));
         VERIFY_ARE_EQUAL(0u, expectedOutput.size(), L"Validate we drained all the expected output");
 
         // This is the part as mentioned in GH#12719

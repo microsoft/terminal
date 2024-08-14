@@ -473,8 +473,10 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     }
     CATCH_LOG()
 
-    void ConptyConnection::WriteInput(const hstring& data)
+    void ConptyConnection::WriteInput(const winrt::array_view<const char16_t> buffer)
     {
+        const auto data = winrt_array_to_wstring_view(buffer);
+
         if (!_isConnected())
         {
             return;
