@@ -71,7 +71,7 @@ HRESULT _ResizePseudoConsole(_In_ const PseudoConsole* const pPty, _In_ const CO
 HRESULT _ClearPseudoConsole(_In_ const PseudoConsole* const pPty);
 HRESULT _ShowHidePseudoConsole(_In_ const PseudoConsole* const pPty, const bool show);
 HRESULT _ReparentPseudoConsole(_In_ const PseudoConsole* const pPty, _In_ const HWND newParent);
-void _ClosePseudoConsoleMembers(_In_ PseudoConsole* pPty, _In_ DWORD dwMilliseconds);
+void _ClosePseudoConsoleMembers(_In_ PseudoConsole* pPty);
 
 HRESULT WINAPI ConptyCreatePseudoConsoleAsUser(_In_ HANDLE hToken,
                                                _In_ COORD size,

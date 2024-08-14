@@ -677,7 +677,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
     void ConptyConnection::closePseudoConsoleAsync(HPCON hPC) noexcept
     {
-        ::ConptyClosePseudoConsoleTimeout(hPC, 0);
+        ::ConptyClosePseudoConsole(hPC);
     }
 
     HRESULT ConptyConnection::NewHandoff(HANDLE in, HANDLE out, HANDLE signal, HANDLE ref, HANDLE server, HANDLE client, TERMINAL_STARTUP_INFO startupInfo) noexcept
