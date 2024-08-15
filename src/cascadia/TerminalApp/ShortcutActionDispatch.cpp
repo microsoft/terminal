@@ -19,6 +19,27 @@ using namespace winrt::TerminalApp;
 
 namespace winrt::TerminalApp::implementation
 {
+    std::wstring ExtractAction(const ActionAndArgs& actionAndArgs)
+    {
+        std::wstring id{ actionAndArgs.GenerateID() };
+        const auto segment1 = id.find(L'.');
+        const auto segment2 = id.find(L'.', segment1 + 1);
+        if (segment1 != std::wstring::npos)
+        {
+            if (segment2 != std::wstring::npos)
+            {
+                return id.substr(segment1 + 1, segment2 - segment1 - 1);
+            }
+            else
+            {
+                return id.substr(segment1 + 1);
+            }
+        }
+        // This shouldn't be possible.
+        // GenerateID() returns L"User.{}" unless it's invalid
+        return nullptr;
+    }
+
     // Method Description:
     // - Dispatch the appropriate event for the given ActionAndArgs. Constructs
     //   an ActionEventArgs to hold the IActionArgs payload for the event, and
@@ -49,7 +70,20 @@ namespace winrt::TerminalApp::implementation
         default:
             return false;
         }
-        return eventArgs.Handled();
+        const auto handled = eventArgs.Handled();
+
+        if (handled)
+        {
+            TraceLoggingWrite(
+                g_hTerminalAppProvider,
+                "ActionDispatched",
+                TraceLoggingDescription("Event emitted when an action was successfully performed"),
+                TraceLoggingValue(ExtractAction(actionAndArgs).data(), "Action"),
+                TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+                TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
+        }
+
+        return handled;
     }
 
     bool ShortcutActionDispatch::DoAction(const ActionAndArgs& actionAndArgs)
