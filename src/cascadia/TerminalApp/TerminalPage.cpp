@@ -3092,10 +3092,8 @@ namespace winrt::TerminalApp::implementation
         term.RefreshQuickFixMenu();
     }
 
-    winrt::fire_and_forget TerminalPage::_WindowSizeChanged(const IInspectable /*sender*/, const Microsoft::Terminal::Control::WindowSizeChangedEventArgs args)
+    void TerminalPage::_WindowSizeChanged(const IInspectable /*sender*/, const Microsoft::Terminal::Control::WindowSizeChangedEventArgs args)
     {
-        co_await wil::resume_foreground(Dispatcher());
-
         // Raise if:
         // - Not in fullscreen
         // - Only one tab exists

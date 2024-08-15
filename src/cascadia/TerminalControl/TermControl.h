@@ -438,7 +438,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void _showContextMenuAt(const til::point& controlRelativePos);
 
         void _bubbleSearchMissingCommand(const IInspectable& sender, const Control::SearchMissingCommandEventArgs& args);
-        winrt::fire_and_forget _bubbleWindowSizeChanged(const IInspectable& sender, const Control::WindowSizeChangedEventArgs args);
+        winrt::fire_and_forget _bubbleWindowSizeChanged(const IInspectable& sender, Control::WindowSizeChangedEventArgs args);
         til::CoordType _calculateSearchScrollOffset() const;
 
         void _PasteCommandHandler(const IInspectable& sender, const IInspectable& args);

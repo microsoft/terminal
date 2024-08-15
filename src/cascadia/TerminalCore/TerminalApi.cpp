@@ -106,7 +106,7 @@ bool Terminal::ResizeWindow(const til::CoordType width, const til::CoordType hei
     {
         return false;
     }
-    
+
     if (_pfnWindowSizeChanged)
     {
         _pfnWindowSizeChanged(width, height);
