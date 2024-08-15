@@ -165,10 +165,10 @@ void ConPtyTests::CreateConPtyNoPipes()
     VERIFY_FAILED(_CreatePseudoConsole(defaultSize, nullptr, nullptr, 0, &pcon));
 
     VERIFY_SUCCEEDED(_CreatePseudoConsole(defaultSize, nullptr, goodOut, 0, &pcon));
-    _ClosePseudoConsoleMembers(&pcon, INFINITE);
+    _ClosePseudoConsoleMembers(&pcon);
 
     VERIFY_SUCCEEDED(_CreatePseudoConsole(defaultSize, goodIn, nullptr, 0, &pcon));
-    _ClosePseudoConsoleMembers(&pcon, INFINITE);
+    _ClosePseudoConsoleMembers(&pcon);
 }
 
 void ConPtyTests::CreateConPtyBadSize()
@@ -212,7 +212,7 @@ void ConPtyTests::GoodCreate()
                              &pcon));
 
     auto closePty = wil::scope_exit([&] {
-        _ClosePseudoConsoleMembers(&pcon, INFINITE);
+        _ClosePseudoConsoleMembers(&pcon);
     });
 }
 
@@ -241,7 +241,7 @@ void ConPtyTests::GoodCreateMultiple()
                              0,
                              &pcon1));
     auto closePty1 = wil::scope_exit([&] {
-        _ClosePseudoConsoleMembers(&pcon1, INFINITE);
+        _ClosePseudoConsoleMembers(&pcon1);
     });
 
     VERIFY_SUCCEEDED(
@@ -251,7 +251,7 @@ void ConPtyTests::GoodCreateMultiple()
                              0,
                              &pcon2));
     auto closePty2 = wil::scope_exit([&] {
-        _ClosePseudoConsoleMembers(&pcon2, INFINITE);
+        _ClosePseudoConsoleMembers(&pcon2);
     });
 }
 
@@ -278,7 +278,7 @@ void ConPtyTests::SurvivesOnBreakOutput()
                              0,
                              &pty));
     auto closePty1 = wil::scope_exit([&] {
-        _ClosePseudoConsoleMembers(&pty, INFINITE);
+        _ClosePseudoConsoleMembers(&pty);
     });
 
     DWORD dwExit;
@@ -337,7 +337,7 @@ void ConPtyTests::DiesOnClose()
                              0,
                              &pty));
     auto closePty1 = wil::scope_exit([&] {
-        _ClosePseudoConsoleMembers(&pty, INFINITE);
+        _ClosePseudoConsoleMembers(&pty);
     });
 
     DWORD dwExit;
@@ -361,8 +361,9 @@ void ConPtyTests::DiesOnClose()
     Log::Comment(NoThrowString().Format(L"Sleep a bit to let the process attach"));
     Sleep(100);
 
-    _ClosePseudoConsoleMembers(&pty, INFINITE);
+    _ClosePseudoConsoleMembers(&pty);
 
+    WaitForSingleObject(hConPtyProcess.get(), 3000);
     GetExitCodeProcess(hConPtyProcess.get(), &dwExit);
     VERIFY_ARE_NOT_EQUAL(dwExit, (DWORD)STILL_ACTIVE);
 }

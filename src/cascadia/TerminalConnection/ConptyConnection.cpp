@@ -473,8 +473,10 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     }
     CATCH_LOG()
 
-    void ConptyConnection::WriteInput(const hstring& data)
+    void ConptyConnection::WriteInput(const winrt::array_view<const char16_t> buffer)
     {
+        const auto data = winrt_array_to_wstring_view(buffer);
+
         if (!_isConnected())
         {
             return;
@@ -755,7 +757,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
     void ConptyConnection::closePseudoConsoleAsync(HPCON hPC) noexcept
     {
-        ::ConptyClosePseudoConsoleTimeout(hPC, 0);
+        ::ConptyClosePseudoConsole(hPC);
     }
 
     HRESULT ConptyConnection::NewHandoff(HANDLE* in, HANDLE* out, HANDLE signal, HANDLE reference, HANDLE server, HANDLE client, const TERMINAL_STARTUP_INFO* startupInfo) noexcept
