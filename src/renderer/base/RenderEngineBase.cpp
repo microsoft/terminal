@@ -7,6 +7,11 @@
 using namespace Microsoft::Console;
 using namespace Microsoft::Console::Render;
 
+[[nodiscard]] HRESULT RenderEngineBase::InvalidateSelection(std::span<const til::rect> /*selections*/) noexcept
+{
+    return S_OK;
+}
+
 [[nodiscard]] HRESULT RenderEngineBase::InvalidateHighlight(std::span<const til::point_span> /*highlights*/, const TextBuffer& /*renditions*/) noexcept
 {
     return S_OK;

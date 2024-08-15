@@ -38,7 +38,6 @@ namespace
         HRESULT Invalidate(const til::rect* /*psrRegion*/) noexcept { return S_OK; }
         HRESULT InvalidateCursor(const til::rect* /*psrRegion*/) noexcept { return S_OK; }
         HRESULT InvalidateSystem(const til::rect* /*prcDirtyClient*/) noexcept { return S_OK; }
-        HRESULT InvalidateSelection(const std::vector<til::rect>& /*rectangles*/) noexcept { return S_OK; }
         HRESULT InvalidateScroll(const til::point* pcoordDelta) noexcept
         {
             _triggerScrollDelta = *pcoordDelta;

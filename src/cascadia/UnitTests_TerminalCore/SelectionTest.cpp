@@ -32,16 +32,17 @@ namespace TerminalCoreUnitTests
         // - expected: the expected value of the selection rect
         // Return Value:
         // - N/A
-        void ValidateSingleRowSelection(Terminal& term, const til::inclusive_rect& expected)
+        void ValidateLinearSelection(Terminal& term, const til::point start, const til::point end)
         {
             // Simulate renderer calling TriggerSelection and acquiring selection area
-            auto selectionRects = term.GetSelectionRects();
+            auto selectionSpans = term.GetSelectionSpans();
 
             // Validate selection area
-            VERIFY_ARE_EQUAL(selectionRects.size(), static_cast<size_t>(1));
-            auto selection = term.GetViewport().ConvertToOrigin(selectionRects[0]).ToInclusive();
+            VERIFY_ARE_EQUAL(selectionSpans.size(), static_cast<size_t>(1));
 
-            VERIFY_ARE_EQUAL(selection, expected);
+            auto& sp{ selectionSpans[0] };
+            VERIFY_ARE_EQUAL(start, sp.start, L"start");
+            VERIFY_ARE_EQUAL(end, sp.end, L"end");
         }
 
         TextBuffer& GetTextBuffer(Terminal& term)
@@ -59,7 +60,7 @@ namespace TerminalCoreUnitTests
             auto clickPos = til::point{ 5, 10 };
             term.SetSelectionAnchor(clickPos);
 
-            ValidateSingleRowSelection(term, { 5, 10, 5, 10 });
+            ValidateLinearSelection(term, { 5, 10 }, { 5, 10 });
         }
 
         TEST_METHOD(SelectArea)
@@ -79,36 +80,8 @@ namespace TerminalCoreUnitTests
             // Simulate move to (x,y) = (15,20)
             term.SetSelectionEnd({ 15, 20 });
 
-            // Simulate renderer calling TriggerSelection and acquiring selection area
-            auto selectionRects = term.GetSelectionRects();
-
             // Validate selection area
-            VERIFY_ARE_EQUAL(selectionRects.size(), static_cast<size_t>(11));
-
-            auto viewport = term.GetViewport();
-            auto rightBoundary = viewport.RightInclusive();
-            for (auto selectionRect : selectionRects)
-            {
-                auto selection = viewport.ConvertToOrigin(selectionRect).ToInclusive();
-
-                if (rowValue == 10)
-                {
-                    // Verify top line
-                    VERIFY_ARE_EQUAL(selection, til::inclusive_rect({ 5, 10, rightBoundary, 10 }));
-                }
-                else if (rowValue == 20)
-                {
-                    // Verify bottom line
-                    VERIFY_ARE_EQUAL(selection, til::inclusive_rect({ 0, 20, 15, 20 }));
-                }
-                else
-                {
-                    // Verify other lines (full)
-                    VERIFY_ARE_EQUAL(selection, til::inclusive_rect({ 0, rowValue, rightBoundary, rowValue }));
-                }
-
-                rowValue++;
-            }
+            ValidateLinearSelection(term, { 5, rowValue }, { 15, 20 });
         }
 
         TEST_METHOD(OverflowTests)
@@ -117,56 +90,56 @@ namespace TerminalCoreUnitTests
 
             // Test SetSelectionAnchor(til::point) and SetSelectionEnd(til::point)
             // Behavior: clamp coord to viewport.
-            auto ValidateSingleClickSelection = [&](til::CoordType scrollback, const til::inclusive_rect& expected) {
+            auto ValidateSingleClickSelection = [&](til::CoordType scrollback, const til::point start, const til::point end) {
                 Terminal term{ Terminal::TestDummyMarker{} };
                 DummyRenderer renderer{ &term };
                 term.Create({ 10, 10 }, scrollback, renderer);
 
                 // NOTE: SetSelectionEnd(til::point) is called within SetSelectionAnchor(til::point)
                 term.SetSelectionAnchor(maxCoord);
-                ValidateSingleRowSelection(term, expected);
+                ValidateLinearSelection(term, start, end);
             };
 
             // Test a Double Click Selection
             // Behavior: clamp coord to viewport.
             //           Then, do double click selection.
-            auto ValidateDoubleClickSelection = [&](til::CoordType scrollback, const til::inclusive_rect& expected) {
+            auto ValidateDoubleClickSelection = [&](til::CoordType scrollback, const til::point start, const til::point end) {
                 Terminal term{ Terminal::TestDummyMarker{} };
                 DummyRenderer renderer{ &term };
                 term.Create({ 10, 10 }, scrollback, renderer);
 
                 term.MultiClickSelection(maxCoord, Terminal::SelectionExpansion::Word);
-                ValidateSingleRowSelection(term, expected);
+                ValidateLinearSelection(term, start, end);
             };
 
             // Test a Triple Click Selection
             // Behavior: clamp coord to viewport.
             //           Then, do triple click selection.
-            auto ValidateTripleClickSelection = [&](til::CoordType scrollback, const til::inclusive_rect& expected) {
+            auto ValidateTripleClickSelection = [&](til::CoordType scrollback, const til::point start, const til::point end) {
                 Terminal term{ Terminal::TestDummyMarker{} };
                 DummyRenderer renderer{ &term };
                 term.Create({ 10, 10 }, scrollback, renderer);
 
                 term.MultiClickSelection(maxCoord, Terminal::SelectionExpansion::Line);
-                ValidateSingleRowSelection(term, expected);
+                ValidateLinearSelection(term, start, end);
             };
 
             // Test with no scrollback
             Log::Comment(L"Single click selection with NO scrollback value");
-            ValidateSingleClickSelection(0, { 9, 9, 9, 9 });
+            ValidateSingleClickSelection(0, { 9, 9 }, { 9, 9 });
             Log::Comment(L"Double click selection with NO scrollback value");
-            ValidateDoubleClickSelection(0, { 0, 9, 9, 9 });
+            ValidateDoubleClickSelection(0, { 0, 9 }, { 9, 9 });
             Log::Comment(L"Triple click selection with NO scrollback value");
-            ValidateTripleClickSelection(0, { 0, 9, 9, 9 });
+            ValidateTripleClickSelection(0, { 0, 9 }, { 9, 9 });
 
             // Test with max scrollback
             const til::CoordType expected_row = SHRT_MAX - 1;
             Log::Comment(L"Single click selection with MAXIMUM scrollback value");
-            ValidateSingleClickSelection(SHRT_MAX, { 9, expected_row, 9, expected_row });
+            ValidateSingleClickSelection(SHRT_MAX, { 9, expected_row }, { 9, expected_row });
             Log::Comment(L"Double click selection with MAXIMUM scrollback value");
-            ValidateDoubleClickSelection(SHRT_MAX, { 0, expected_row, 9, expected_row });
+            ValidateDoubleClickSelection(SHRT_MAX, { 0, expected_row }, { 9, expected_row });
             Log::Comment(L"Triple click selection with MAXIMUM scrollback value");
-            ValidateTripleClickSelection(SHRT_MAX, { 0, expected_row, 9, expected_row });
+            ValidateTripleClickSelection(SHRT_MAX, { 0, expected_row }, { 9, expected_row });
         }
 
         TEST_METHOD(SelectFromOutofBounds)
@@ -190,25 +163,25 @@ namespace TerminalCoreUnitTests
             // should clamp to right boundary
             term.SetSelectionAnchor({ 20, 5 });
             Log::Comment(L"Out of bounds: X-value too large");
-            ValidateSingleRowSelection(term, { rightBoundary, 5, rightBoundary, 5 });
+            ValidateLinearSelection(term, { rightBoundary, 5 }, { rightBoundary, 5 });
 
             // Case 2: Simulate click past left (x,y) = (-20,5)
             // should clamp to left boundary
             term.SetSelectionAnchor({ -20, 5 });
             Log::Comment(L"Out of bounds: X-value too negative");
-            ValidateSingleRowSelection(term, { leftBoundary, 5, leftBoundary, 5 });
+            ValidateLinearSelection(term, { leftBoundary, 5 }, { leftBoundary, 5 });
 
             // Case 3: Simulate click past top (x,y) = (5,-20)
             // should clamp to top boundary
             term.SetSelectionAnchor({ 5, -20 });
             Log::Comment(L"Out of bounds: Y-value too negative");
-            ValidateSingleRowSelection(term, { 5, topBoundary, 5, topBoundary });
+            ValidateLinearSelection(term, { 5, topBoundary }, { 5, topBoundary });
 
             // Case 4: Simulate click past bottom (x,y) = (5,20)
             // should clamp to bottom boundary
             term.SetSelectionAnchor({ 5, 20 });
             Log::Comment(L"Out of bounds: Y-value too large");
-            ValidateSingleRowSelection(term, { 5, bottomBoundary, 5, bottomBoundary });
+            ValidateLinearSelection(term, { 5, bottomBoundary }, { 5, bottomBoundary });
         }
 
         TEST_METHOD(SelectToOutOfBounds)
@@ -232,74 +205,22 @@ namespace TerminalCoreUnitTests
             // Case 1: Move out of right boundary
             Log::Comment(L"Out of bounds: X-value too large");
             term.SetSelectionEnd({ 20, 5 });
-            ValidateSingleRowSelection(term, til::inclusive_rect({ 5, 5, rightBoundary, 5 }));
+            ValidateLinearSelection(term, { 5, 5 }, { rightBoundary, 5 });
 
             // Case 2: Move out of left boundary
             Log::Comment(L"Out of bounds: X-value negative");
             term.SetSelectionEnd({ -20, 5 });
-            ValidateSingleRowSelection(term, { leftBoundary, 5, 5, 5 });
+            ValidateLinearSelection(term, { leftBoundary, 5 }, { 5, 5 });
 
             // Case 3: Move out of top boundary
             Log::Comment(L"Out of bounds: Y-value negative");
             term.SetSelectionEnd({ 5, -20 });
-            {
-                auto selectionRects = term.GetSelectionRects();
-
-                // Validate selection area
-                VERIFY_ARE_EQUAL(selectionRects.size(), static_cast<size_t>(6));
-                for (auto selectionRect : selectionRects)
-                {
-                    auto selection = viewport.ConvertToOrigin(selectionRect).ToInclusive();
-                    auto rowValue = selectionRect.BottomInclusive();
-
-                    if (rowValue == 0)
-                    {
-                        // Verify top line
-                        VERIFY_ARE_EQUAL(selection, til::inclusive_rect({ 5, rowValue, rightBoundary, rowValue }));
-                    }
-                    else if (rowValue == 5)
-                    {
-                        // Verify last line
-                        VERIFY_ARE_EQUAL(selection, til::inclusive_rect({ leftBoundary, rowValue, 5, rowValue }));
-                    }
-                    else
-                    {
-                        // Verify other lines (full)
-                        VERIFY_ARE_EQUAL(selection, til::inclusive_rect({ leftBoundary, rowValue, rightBoundary, rowValue }));
-                    }
-                }
-            }
+            ValidateLinearSelection(term, { 5, 0 }, { 5, 5 });
 
             // Case 4: Move out of bottom boundary
             Log::Comment(L"Out of bounds: Y-value too large");
             term.SetSelectionEnd({ 5, 20 });
-            {
-                auto selectionRects = term.GetSelectionRects();
-
-                // Validate selection area
-                VERIFY_ARE_EQUAL(selectionRects.size(), static_cast<size_t>(5));
-                for (auto selectionRect : selectionRects)
-                {
-                    auto selection = viewport.ConvertToOrigin(selectionRect).ToInclusive();
-                    auto rowValue = selectionRect.BottomInclusive();
-
-                    if (rowValue == 5)
-                    {
-                        // Verify top line
-                        VERIFY_ARE_EQUAL(selection, til::inclusive_rect({ 5, 5, rightBoundary, 5 }));
-                    }
-                    else if (rowValue == 9)
-                    {
-                        // Verify bottom line
-                        VERIFY_ARE_EQUAL(selection, til::inclusive_rect({ leftBoundary, rowValue, 5, rowValue }));
-                    }
-                    else
-                    {
-                        // Verify other lines (full)
-                        VERIFY_ARE_EQUAL(selection, til::inclusive_rect({ leftBoundary, rowValue, rightBoundary, rowValue }));
-                    }
-                }
-            }
+            ValidateLinearSelection(term, { 5, 5 }, { 5, 9 });
         }
 
         TEST_METHOD(SelectBoxArea)
@@ -321,19 +242,15 @@ namespace TerminalCoreUnitTests
             term.SetSelectionEnd({ 15, 20 });
 
             // Simulate renderer calling TriggerSelection and acquiring selection area
-            auto selectionRects = term.GetSelectionRects();
+            auto selectionSpans = term.GetSelectionSpans();
 
             // Validate selection area
-            VERIFY_ARE_EQUAL(selectionRects.size(), static_cast<size_t>(11));
+            VERIFY_ARE_EQUAL(selectionSpans.size(), static_cast<size_t>(11));
 
-            auto viewport = term.GetViewport();
-            for (auto selectionRect : selectionRects)
+            for (auto&& sp : selectionSpans)
             {
-                auto selection = viewport.ConvertToOrigin(selectionRect).ToInclusive();
-
-                // Verify all lines
-                VERIFY_ARE_EQUAL(selection, til::inclusive_rect({ 5, rowValue, 15, rowValue }));
-
+                VERIFY_ARE_EQUAL((til::point{ 5, rowValue }), sp.start);
+                VERIFY_ARE_EQUAL((til::point{ 15, rowValue }), sp.end);
                 rowValue++;
             }
         }
@@ -342,8 +259,12 @@ namespace TerminalCoreUnitTests
         {
             Terminal term{ Terminal::TestDummyMarker{} };
             DummyRenderer renderer{ &term };
-            til::CoordType scrollbackLines = 5;
-            term.Create({ 100, 100 }, scrollbackLines, renderer);
+            til::CoordType scrollbackLines = 100;
+            term.Create({ 120, 30 }, scrollbackLines, renderer);
+
+            const til::CoordType contentScrollLines = 15;
+            // Simulate a content-initiated scroll down by 15 lines
+            term.SetViewportPosition({ 0, contentScrollLines });
 
             // Used for two things:
             //    - click y-pos
@@ -356,36 +277,19 @@ namespace TerminalCoreUnitTests
             // Simulate move to (x,y) = (15,20)
             term.SetSelectionEnd({ 15, 20 });
 
-            // Simulate renderer calling TriggerSelection and acquiring selection area
-            auto selectionRects = term.GetSelectionRects();
+            ValidateLinearSelection(term, { 5, contentScrollLines + rowValue }, { 15, contentScrollLines + 20 });
 
-            // Validate selection area
-            VERIFY_ARE_EQUAL(selectionRects.size(), static_cast<size_t>(11));
+            const til::CoordType userScrollViewportTop = 10;
+            // Simulate a user-initiated scroll *up* to line 10 (NOTE: Not *up by 10 lines*)
+            term.UserScrollViewport(userScrollViewportTop);
 
-            auto viewport = term.GetViewport();
-            auto rightBoundary = viewport.RightInclusive();
-            for (auto selectionRect : selectionRects)
-            {
-                auto selection = viewport.ConvertToOrigin(selectionRect).ToInclusive();
+            // Simulate click at (x,y) = (5,10)
+            term.SetSelectionAnchor({ 5, rowValue });
 
-                if (rowValue == 10)
-                {
-                    // Verify top line
-                    VERIFY_ARE_EQUAL(selection, til::inclusive_rect({ 5, 10, rightBoundary, 10 }));
-                }
-                else if (rowValue == 20)
-                {
-                    // Verify bottom line
-                    VERIFY_ARE_EQUAL(selection, til::inclusive_rect({ 0, 20, 15, 20 }));
-                }
-                else
-                {
-                    // Verify other lines (full)
-                    VERIFY_ARE_EQUAL(selection, til::inclusive_rect({ 0, rowValue, rightBoundary, rowValue }));
-                }
+            // Simulate move to (x,y) = (15,20)
+            term.SetSelectionEnd({ 15, 20 });
 
-                rowValue++;
-            }
+            ValidateLinearSelection(term, { 5, userScrollViewportTop + rowValue }, { 15, userScrollViewportTop + 20 });
         }
 
         TEST_METHOD(SelectWideGlyph_Trailing)
@@ -408,7 +312,7 @@ namespace TerminalCoreUnitTests
 
             // Validate selection area
             // Selection should expand one to the left to get the leading half of the wide glyph
-            ValidateSingleRowSelection(term, { 4, 10, 5, 10 });
+            ValidateLinearSelection(term, { 4, 10 }, { 5, 10 });
         }
 
         TEST_METHOD(SelectWideGlyph_Leading)
@@ -431,7 +335,7 @@ namespace TerminalCoreUnitTests
 
             // Validate selection area
             // Selection should expand one to the left to get the leading half of the wide glyph
-            ValidateSingleRowSelection(term, { 4, 10, 5, 10 });
+            ValidateLinearSelection(term, { 4, 10 }, { 5, 10 });
         }
 
         TEST_METHOD(SelectWideGlyphsInBoxSelection)
@@ -460,29 +364,30 @@ namespace TerminalCoreUnitTests
             term.SetSelectionEnd({ 7, 12 });
 
             // Simulate renderer calling TriggerSelection and acquiring selection area
-            auto selectionRects = term.GetSelectionRects();
+            auto selectionSpans = term.GetSelectionSpans();
 
             // Validate selection area
-            VERIFY_ARE_EQUAL(selectionRects.size(), static_cast<size_t>(5));
+            VERIFY_ARE_EQUAL(selectionSpans.size(), static_cast<size_t>(5));
 
             auto viewport = term.GetViewport();
             til::CoordType rowValue = 8;
-            for (auto selectionRect : selectionRects)
+            for (auto&& sp : selectionSpans)
             {
-                auto selection = viewport.ConvertToOrigin(selectionRect).ToInclusive();
-
                 if (rowValue == 10)
                 {
-                    VERIFY_ARE_EQUAL(selection, til::inclusive_rect({ 4, rowValue, 7, rowValue }));
+                    VERIFY_ARE_EQUAL((til::point{ 4, rowValue }), sp.start);
+                    VERIFY_ARE_EQUAL((til::point{ 7, rowValue }), sp.end);
                 }
                 else if (rowValue == 11)
                 {
-                    VERIFY_ARE_EQUAL(selection, til::inclusive_rect({ 5, rowValue, 8, rowValue }));
+                    VERIFY_ARE_EQUAL((til::point{ 5, rowValue }), sp.start);
+                    VERIFY_ARE_EQUAL((til::point{ 8, rowValue }), sp.end);
                 }
                 else
                 {
                     // Verify all lines
-                    VERIFY_ARE_EQUAL(selection, til::inclusive_rect({ 5, rowValue, 7, rowValue }));
+                    VERIFY_ARE_EQUAL((til::point{ 5, rowValue }), sp.start);
+                    VERIFY_ARE_EQUAL((til::point{ 7, rowValue }), sp.end);
                 }
 
                 rowValue++;
@@ -509,7 +414,7 @@ namespace TerminalCoreUnitTests
             term.MultiClickSelection(clickPos, Terminal::SelectionExpansion::Word);
 
             // Validate selection area
-            ValidateSingleRowSelection(term, til::inclusive_rect{ 4, 10, gsl::narrow<til::CoordType>(4 + text.size() - 1), 10 });
+            ValidateLinearSelection(term, { 4, 10 }, { gsl::narrow<til::CoordType>(4 + text.size() - 1), 10 });
         }
 
         TEST_METHOD(DoubleClick_Delimiter)
@@ -526,11 +431,8 @@ namespace TerminalCoreUnitTests
             auto clickPos = til::point{ 5, 10 };
             term.MultiClickSelection(clickPos, Terminal::SelectionExpansion::Word);
 
-            // Simulate renderer calling TriggerSelection and acquiring selection area
-            auto selectionRects = term.GetSelectionRects();
-
             // Validate selection area
-            ValidateSingleRowSelection(term, til::inclusive_rect({ 0, 10, 99, 10 }));
+            ValidateLinearSelection(term, { 0, 10 }, { 99, 10 });
         }
 
         TEST_METHOD(DoubleClick_DelimiterClass)
@@ -558,7 +460,7 @@ namespace TerminalCoreUnitTests
             // ">" is in class 1
             // the white space to the right of the ">" is in class 0
             // Double-clicking the ">" should only highlight that cell
-            ValidateSingleRowSelection(term, til::inclusive_rect({ 15, 10, 15, 10 }));
+            ValidateLinearSelection(term, { 15, 10 }, { 15, 10 });
         }
 
         TEST_METHOD(DoubleClickDrag_Right)
@@ -587,7 +489,7 @@ namespace TerminalCoreUnitTests
             term.SetSelectionEnd({ 21, 10 });
 
             // Validate selection area
-            ValidateSingleRowSelection(term, til::inclusive_rect({ 4, 10, 32, 10 }));
+            ValidateLinearSelection(term, { 4, 10 }, { 32, 10 });
         }
 
         TEST_METHOD(DoubleClickDrag_Left)
@@ -616,7 +518,7 @@ namespace TerminalCoreUnitTests
             term.SetSelectionEnd({ 5, 10 });
 
             // Validate selection area
-            ValidateSingleRowSelection(term, til::inclusive_rect({ 4, 10, 32, 10 }));
+            ValidateLinearSelection(term, { 4, 10 }, { 32, 10 });
         }
 
         TEST_METHOD(TripleClick_GeneralCase)
@@ -630,7 +532,7 @@ namespace TerminalCoreUnitTests
             term.MultiClickSelection(clickPos, Terminal::SelectionExpansion::Line);
 
             // Validate selection area
-            ValidateSingleRowSelection(term, til::inclusive_rect({ 0, 10, 99, 10 }));
+            ValidateLinearSelection(term, { 0, 10 }, { 99, 10 });
         }
 
         TEST_METHOD(TripleClickDrag_Horizontal)
@@ -647,7 +549,7 @@ namespace TerminalCoreUnitTests
             term.SetSelectionEnd({ 7, 10 });
 
             // Validate selection area
-            ValidateSingleRowSelection(term, til::inclusive_rect({ 0, 10, 99, 10 }));
+            ValidateLinearSelection(term, { 0, 10 }, { 99, 10 });
         }
 
         TEST_METHOD(TripleClickDrag_Vertical)
@@ -663,19 +565,7 @@ namespace TerminalCoreUnitTests
             // Simulate move to (x,y) = (5,11)
             term.SetSelectionEnd({ 5, 11 });
 
-            // Simulate renderer calling TriggerSelection and acquiring selection area
-            auto selectionRects = term.GetSelectionRects();
-
-            // Validate selection area
-            VERIFY_ARE_EQUAL(selectionRects.size(), static_cast<size_t>(2));
-
-            // verify first selection rect
-            auto selection = term.GetViewport().ConvertToOrigin(selectionRects.at(0)).ToInclusive();
-            VERIFY_ARE_EQUAL(selection, til::inclusive_rect({ 0, 10, 99, 10 }));
-
-            // verify second selection rect
-            selection = term.GetViewport().ConvertToOrigin(selectionRects.at(1)).ToInclusive();
-            VERIFY_ARE_EQUAL(selection, til::inclusive_rect({ 0, 11, 99, 11 }));
+            ValidateLinearSelection(term, { 0, 10 }, { 99, 11 });
         }
 
         TEST_METHOD(ShiftClick)
@@ -699,7 +589,7 @@ namespace TerminalCoreUnitTests
                 term.MultiClickSelection({ 5, 10 }, Terminal::SelectionExpansion::Word);
 
                 // Validate selection area: "doubleClickMe" selected
-                ValidateSingleRowSelection(term, til::inclusive_rect({ 4, 10, 16, 10 }));
+                ValidateLinearSelection(term, { 4, 10 }, { 16, 10 });
             }
 
             // Step 2: Shift+Click to "dragThroughHere"
@@ -712,7 +602,7 @@ namespace TerminalCoreUnitTests
                 term.SetSelectionEnd({ 21, 10 }, Terminal::SelectionExpansion::Char);
 
                 // Validate selection area: "doubleClickMe drag" selected
-                ValidateSingleRowSelection(term, til::inclusive_rect({ 4, 10, 21, 10 }));
+                ValidateLinearSelection(term, { 4, 10 }, { 21, 10 });
             }
 
             // Step 3: Shift+Double-Click at "dragThroughHere"
@@ -725,7 +615,7 @@ namespace TerminalCoreUnitTests
                 term.SetSelectionEnd({ 21, 10 }, Terminal::SelectionExpansion::Word);
 
                 // Validate selection area: "doubleClickMe dragThroughHere" selected
-                ValidateSingleRowSelection(term, til::inclusive_rect({ 4, 10, 32, 10 }));
+                ValidateLinearSelection(term, { 4, 10 }, { 32, 10 });
             }
 
             // Step 4: Shift+Triple-Click at "dragThroughHere"
@@ -738,7 +628,7 @@ namespace TerminalCoreUnitTests
                 term.SetSelectionEnd({ 21, 10 }, Terminal::SelectionExpansion::Line);
 
                 // Validate selection area: "doubleClickMe dragThroughHere..." selected
-                ValidateSingleRowSelection(term, til::inclusive_rect({ 4, 10, 99, 10 }));
+                ValidateLinearSelection(term, { 4, 10 }, { 99, 10 });
             }
 
             // Step 5: Shift+Double-Click at "dragThroughHere"
@@ -751,7 +641,7 @@ namespace TerminalCoreUnitTests
                 term.SetSelectionEnd({ 21, 10 }, Terminal::SelectionExpansion::Word);
 
                 // Validate selection area: "doubleClickMe dragThroughHere" selected
-                ValidateSingleRowSelection(term, til::inclusive_rect({ 4, 10, 32, 10 }));
+                ValidateLinearSelection(term, { 4, 10 }, { 32, 10 });
             }
 
             // Step 6: Drag past "dragThroughHere"
@@ -765,7 +655,7 @@ namespace TerminalCoreUnitTests
                 term.SetSelectionEnd({ 35, 10 });
 
                 // Validate selection area: "doubleClickMe dragThroughHere..." selected
-                ValidateSingleRowSelection(term, til::inclusive_rect({ 4, 10, 99, 10 }));
+                ValidateLinearSelection(term, { 4, 10 }, { 99, 10 });
             }
 
             // Step 6: Drag back to "dragThroughHere"
@@ -778,7 +668,7 @@ namespace TerminalCoreUnitTests
                 term.SetSelectionEnd({ 21, 10 });
 
                 // Validate selection area: "doubleClickMe dragThroughHere" selected
-                ValidateSingleRowSelection(term, til::inclusive_rect({ 4, 10, 32, 10 }));
+                ValidateLinearSelection(term, { 4, 10 }, { 32, 10 });
             }
 
             // Step 7: Drag within "dragThroughHere"
@@ -791,7 +681,7 @@ namespace TerminalCoreUnitTests
                 term.SetSelectionEnd({ 25, 10 });
 
                 // Validate selection area: "doubleClickMe dragThroughHere" still selected
-                ValidateSingleRowSelection(term, til::inclusive_rect({ 4, 10, 32, 10 }));
+                ValidateLinearSelection(term, { 4, 10 }, { 32, 10 });
             }
         }
 
@@ -807,7 +697,7 @@ namespace TerminalCoreUnitTests
                 term.SelectNewRegion({ 10, 10 }, { 20, 10 });
 
                 // Validate selection area
-                ValidateSingleRowSelection(term, til::inclusive_rect({ 10, 10, 20, 10 }));
+                ValidateLinearSelection(term, { 10, 10 }, { 20, 10 });
             }
 
             // Step 2: Drag to (5,10)
@@ -816,7 +706,7 @@ namespace TerminalCoreUnitTests
 
                 // Validate selection area
                 // NOTE: Pivot should be (10, 10)
-                ValidateSingleRowSelection(term, til::inclusive_rect({ 5, 10, 10, 10 }));
+                ValidateLinearSelection(term, { 5, 10 }, { 10, 10 });
             }
 
             // Step 3: Drag back to (20,10)
@@ -825,7 +715,7 @@ namespace TerminalCoreUnitTests
 
                 // Validate selection area
                 // NOTE: Pivot should still be (10, 10)
-                ValidateSingleRowSelection(term, til::inclusive_rect({ 10, 10, 20, 10 }));
+                ValidateLinearSelection(term, { 10, 10 }, { 20, 10 });
             }
 
             // Step 4: Shift+Click at (5,10)
@@ -834,7 +724,7 @@ namespace TerminalCoreUnitTests
 
                 // Validate selection area
                 // NOTE: Pivot should still be (10, 10)
-                ValidateSingleRowSelection(term, til::inclusive_rect({ 5, 10, 10, 10 }));
+                ValidateLinearSelection(term, { 5, 10 }, { 10, 10 });
             }
 
             // Step 5: Shift+Click back at (20,10)
@@ -843,7 +733,7 @@ namespace TerminalCoreUnitTests
 
                 // Validate selection area
                 // NOTE: Pivot should still be (10, 10)
-                ValidateSingleRowSelection(term, til::inclusive_rect({ 10, 10, 20, 10 }));
+                ValidateLinearSelection(term, { 10, 10 }, { 20, 10 });
             }
         }
     };
