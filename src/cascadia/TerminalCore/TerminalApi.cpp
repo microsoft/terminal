@@ -97,9 +97,22 @@ CursorType Terminal::GetUserDefaultCursorStyle() const noexcept
     return _defaultCursorShape;
 }
 
-bool Terminal::ResizeWindow(const til::CoordType /*width*/, const til::CoordType /*height*/) noexcept
+bool Terminal::ResizeWindow(const til::CoordType width, const til::CoordType height) noexcept
 {
     // TODO: This will be needed to support various resizing sequences. See also GH#1860.
+    _assertLocked();
+
+    if (width <= 0 || height <= 0 || width > SHRT_MAX || height > SHRT_MAX)
+    {
+        return false;
+    }
+    
+    if (_pfnWindowSizeChanged)
+    {
+        _pfnWindowSizeChanged(width, height);
+        return true;
+    }
+
     return false;
 }
 

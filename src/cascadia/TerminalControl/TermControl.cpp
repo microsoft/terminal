@@ -224,7 +224,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _revokers.CompletionsChanged = _core.CompletionsChanged(winrt::auto_revoke, { get_weak(), &TermControl::_bubbleCompletionsChanged });
         _revokers.RestartTerminalRequested = _core.RestartTerminalRequested(winrt::auto_revoke, { get_weak(), &TermControl::_bubbleRestartTerminalRequested });
         _revokers.SearchMissingCommand = _core.SearchMissingCommand(winrt::auto_revoke, { get_weak(), &TermControl::_bubbleSearchMissingCommand });
-
+        _revokers.WindowSizeChanged = _core.WindowSizeChanged(winrt::auto_revoke, { get_weak(), &TermControl::_bubbleWindowSizeChanged });
+        
         _revokers.PasteFromClipboard = _interactivity.PasteFromClipboard(winrt::auto_revoke, { get_weak(), &TermControl::_bubblePasteFromClipboard });
 
         _revokers.RefreshQuickFixUI = _core.RefreshQuickFixUI(winrt::auto_revoke, [this](auto /*s*/, auto /*e*/) {
@@ -4088,6 +4089,19 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         SearchMissingCommand.raise(*this, args);
     }
 
+    winrt::fire_and_forget TermControl::_bubbleWindowSizeChanged(const IInspectable& /*sender*/, const Control::WindowSizeChangedEventArgs args)
+    {
+        co_await wil::resume_foreground(Dispatcher());
+
+        til::size cellSize{ args.Width(), args.Height() };
+        const auto scaleFactor = DisplayInformation::GetForCurrentView().RawPixelsPerViewPixel();
+        const auto dpi = ::base::saturated_cast<uint32_t>(USER_DEFAULT_SCREEN_DPI * scaleFactor);
+        const auto pixelSize = GetProposedDimensions(Settings(), dpi, cellSize.width, cellSize.height);
+
+        WindowSizeChanged.raise(*this, winrt::make<implementation::WindowSizeChangedEventArgs>(static_cast<int32_t>(pixelSize.Width),
+                                                                                               static_cast<int32_t>(pixelSize.Height)));
+    }
+    
     til::CoordType TermControl::_calculateSearchScrollOffset() const
     {
         auto result = 0;
