@@ -11,6 +11,8 @@
 #include "DWriteTextAnalysis.h"
 #include "../../interactivity/win32/CustomWindowMessages.h"
 
+#include "../types/inc/ColorFix.hpp"
+
 // #### NOTE ####
 // This file should only contain methods that are only accessed by the caller of Present() (the "Renderer" class).
 // Basically this file poses the "synchronization" point between the concurrently running
@@ -646,10 +648,21 @@ try
         _api.currentForeground = gsl::narrow_cast<u32>(fg);
         _api.attributes = attributes;
     }
-    else if (textAttributes.BackgroundIsDefault() && bg != _api.s->misc->backgroundColor)
+    else
     {
-        _api.s.write()->misc.write()->backgroundColor = bg;
-        _p.s.write()->misc.write()->backgroundColor = bg;
+        if (textAttributes.BackgroundIsDefault() && bg != _api.s->misc->backgroundColor)
+        {
+            _api.s.write()->misc.write()->backgroundColor = bg;
+            _p.s.write()->misc.write()->backgroundColor = bg;
+        }
+
+        if (textAttributes.GetForeground().IsDefault() && fg != _api.s->misc->foregroundColor)
+        {
+            auto misc = _api.s.write()->misc.write();
+            misc->foregroundColor = fg;
+            // Selection Foreground is based on the default foreground; it is also updated in SetSelectionColor
+            misc->selectionForeground = 0xff000000 | ColorFix::GetPerceivableColor(fg, misc->selectionColor, 0.5f * 0.5f);
+        }
     }
 
     return S_OK;
