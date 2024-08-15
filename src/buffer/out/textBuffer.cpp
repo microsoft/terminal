@@ -12,8 +12,8 @@
 #include "../types/inc/utils.hpp"
 #include "search.h"
 
-// Misdiagnosis in MSVC 17.11: Referencing global constants in the member initializer
-// list leads to this warning. Can probably be removed in the future.
+// BODGY: Misdiagnosis in MSVC 17.11: Referencing global constants in the member
+// initializer list leads to this warning. Can probably be removed in the future.
 #pragma warning(disable : 26493) // Don't use C-style casts (type.4).)
 
 using namespace Microsoft::Console;
