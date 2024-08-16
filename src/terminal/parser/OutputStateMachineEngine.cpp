@@ -804,6 +804,7 @@ bool OutputStateMachineEngine::ActionOscDispatch(const size_t parameter, const s
     case OscActionCodes::SetForegroundColor:
     case OscActionCodes::SetBackgroundColor:
     case OscActionCodes::SetCursorColor:
+    case OscActionCodes::SetHighlightColor:
     {
         std::vector<DWORD> colors;
         success = _GetOscSetColor(string, colors);
