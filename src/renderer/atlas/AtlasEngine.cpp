@@ -315,6 +315,15 @@ CATCH_RETURN()
         }
 
         _api.selectionSpans = til::point_span_subspan_within_rect(info.selectionSpans, dr);
+
+        u32 newSelectionColor{ static_cast<COLORREF>(info.selectionBackground) | 0xff000000 };
+        if (_api.s->misc->selectionColor != newSelectionColor)
+        {
+            auto misc = _api.s.write()->misc.write();
+            misc->selectionColor = newSelectionColor;
+            // Select a black or white foreground based on the perceptual lightness of the background.
+            misc->selectionForeground = ColorFix::GetLuminosity(newSelectionColor) < 0.5f ? 0xffffffff : 0xff000000;
+        }
     }
 
     return S_OK;
