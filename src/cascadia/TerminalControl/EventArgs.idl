@@ -135,7 +135,7 @@ namespace Microsoft.Terminal.Control
 
     runtimeclass WindowSizeChangedEventArgs
     {
-        Int32 Width { get; };
-        Int32 Height { get; };
+        Int32 Width;
+        Int32 Height;
     }
 }

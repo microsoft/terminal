@@ -144,6 +144,7 @@ namespace winrt::TerminalApp::implementation
         // Now that we know we can do XAML, build our page.
         _root = winrt::make_self<TerminalPage>(*_WindowProperties, _manager);
         _dialog = ContentDialog{};
+        _hwnd = hwnd;
 
         // Pass in information about the initial state of the window.
         // * If we were supposed to start from serialized "content", do that,
@@ -217,6 +218,7 @@ namespace winrt::TerminalApp::implementation
         _root->SetSettings(_settings, false); // We're on our UI thread right now, so this is safe
         _root->Loaded({ get_weak(), &TerminalWindow::_OnLoaded });
         _root->Initialized({ get_weak(), &TerminalWindow::_pageInitialized });
+        _root->WindowSizeChanged({ get_weak(), &TerminalWindow::_WindowSizeChanged });
         _root->Create();
 
         AppLogic::Current()->SettingsChanged({ get_weak(), &TerminalWindow::UpdateSettingsHandler });
@@ -1329,6 +1331,44 @@ namespace winrt::TerminalApp::implementation
             _root->HandoffToElevated(_settings);
             return;
         }
+    }
+
+    void TerminalWindow::_WindowSizeChanged(const IInspectable&, winrt::Microsoft::Terminal::Control::WindowSizeChangedEventArgs args)
+    {
+        til::size cellCount{ args.Width(), args.Height() };
+        const auto dpi = GetDpiForWindow(_hwnd);
+        const auto settings{ TerminalSettings::CreateWithNewTerminalArgs(_settings, nullptr, nullptr) };
+        auto pixelSize = TermControl::GetProposedDimensions(settings.DefaultSettings(), dpi, cellCount.width, cellCount.height);
+        const auto scale = static_cast<float>(dpi) / static_cast<float>(USER_DEFAULT_SCREEN_DPI);
+
+        if (!FocusMode())
+        {
+            if (!_settings.GlobalSettings().AlwaysShowTabs())
+            {
+                // Hide the title bar = off, Always show tabs = off.
+                static constexpr auto titlebarHeight = 10;
+                pixelSize.Height += (titlebarHeight)*scale;
+            }
+            else if (!_settings.GlobalSettings().ShowTabsInTitlebar())
+            {
+                // Hide the title bar = off, Always show tabs = on.
+                static constexpr auto titlebarAndTabBarHeight = 40;
+                pixelSize.Height += (titlebarAndTabBarHeight)*scale;
+            }
+            // Hide the title bar = on, Always show tabs = on.
+            // In this case, we don't add any height because
+            // NonClientIslandWindow::GetTotalNonClientExclusiveSize() gets
+            // called in AppHost::_resizeWindow and it already takes title bar
+            // height into account.  In other cases above
+            // IslandWindow::GetTotalNonClientExclusiveSize() is called, and it
+            // doesn't take the title bar height into account, so we have to do
+            // the calculation manually.
+        }
+
+        args.Width(static_cast<int32_t>(pixelSize.Width));
+        args.Height(static_cast<int32_t>(pixelSize.Height));
+
+        WindowSizeChanged.raise(*this, args);
     }
 
     winrt::hstring WindowProperties::WindowName() const noexcept
