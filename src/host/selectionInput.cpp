@@ -671,51 +671,35 @@ bool Selection::_HandleColorSelection(const INPUT_KEY_INFO* const pInputKeyInfo)
             selectionAttr.SetIndexedForeground256(colorIndex);
         }
 
-        // If shift was pressed as well, then this is actually a
-        // find-and-color request. Otherwise just color the selection.
+        const auto& textBuffer = gci.renderData.GetTextBuffer();
         if (fShiftPressed)
         {
-            try
+            // Search the selection and color *that*
+            const auto req = TextBuffer::CopyRequest::FromConfig(textBuffer,
+                                                                 til::point{ _d->srSelectionRect.left, _d->srSelectionRect.top },
+                                                                 til::point{ _d->srSelectionRect.right, _d->srSelectionRect.bottom },
+                                                                 true /* multi-line search doesn't make sense; concatenate all lines */,
+                                                                 false /* we filtered out block search above */,
+                                                                 true /* trim block selection */,
+                                                                 true);
+            const auto str = textBuffer.GetPlainText(req);
+            // Clear the selection and call the search / mark function.
+            ClearSelection();
+
+            const auto hits = textBuffer.SearchText(str, SearchFlag::CaseInsensitive).value_or(std::vector<til::point_span>{});
+            for (const auto& s : hits)
             {
-                const auto selectionRects = GetSelectionRects();
-                if (selectionRects.size() > 0)
-                {
-                    // Pull the selection out of the buffer to pass to the
-                    // search function. Clamp to max search string length.
-                    // We just copy the bytes out of the row buffer.
-
-                    std::wstring str;
-                    for (const auto& selectRect : selectionRects)
-                    {
-                        auto it = screenInfo.GetCellDataAt({ selectRect.left, selectRect.top });
-
-                        for (til::CoordType i = 0; i < (selectRect.right - selectRect.left + 1);)
-                        {
-                            str.append(it->Chars());
-                            i += it->Columns();
-                            it += it->Columns();
-                        }
-                    }
-
-                    // Clear the selection and call the search / mark function.
-                    ClearSelection();
-
-                    const auto& textBuffer = gci.renderData.GetTextBuffer();
-                    const auto hits = textBuffer.SearchText(str, SearchFlag::CaseInsensitive).value_or(std::vector<til::point_span>{});
-                    for (const auto& s : hits)
-                    {
-                        ColorSelection(s.start, s.end, selectionAttr);
-                    }
-                }
+                ColorSelection(s.start, s.end, selectionAttr);
             }
-            CATCH_LOG();
         }
         else
         {
-            const auto selectionRects = GetSelectionRects();
-            for (const auto& selectionRect : selectionRects)
+            const auto selection = GetSelectionSpans();
+            for (auto&& sp : selection)
             {
-                ColorSelection(selectionRect, selectionAttr);
+                sp.iterate_rows(textBuffer.GetSize().Width(), [&](til::CoordType row, til::CoordType beg, til::CoordType end) {
+                    ColorSelection({ beg, row, end, row }, selectionAttr);
+                });
             }
             ClearSelection();
         }

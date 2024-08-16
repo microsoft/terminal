@@ -65,7 +65,6 @@ RGBQUAD* ImageSlice::MutablePixels(const til::CoordType columnBegin, const til::
         _columnBegin = existingData ? std::min(_columnBegin, columnBegin) : columnBegin;
         _columnEnd = existingData ? std::max(_columnEnd, columnEnd) : columnEnd;
         _pixelWidth = (_columnEnd - _columnBegin) * _cellSize.width;
-        _pixelWidth = (_pixelWidth + 3) & ~3; // Renderer needs this as a multiple of 4
         const auto bufferSize = _pixelWidth * _cellSize.height;
         if (existingData)
         {

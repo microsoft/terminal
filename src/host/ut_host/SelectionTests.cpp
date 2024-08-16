@@ -56,30 +56,30 @@ class SelectionTests
         return true;
     }
 
-    void VerifyGetSelectionRects_BoxMode()
+    void VerifyGetSelectionSpans_BoxMode()
     {
-        const auto selectionRects = m_pSelection->GetSelectionRects();
+        const auto selectionSpans = m_pSelection->GetSelectionSpans();
         const UINT cRectanglesExpected = m_pSelection->_d->srSelectionRect.bottom - m_pSelection->_d->srSelectionRect.top + 1;
 
-        if (VERIFY_ARE_EQUAL(cRectanglesExpected, selectionRects.size()))
+        if (VERIFY_ARE_EQUAL(cRectanglesExpected, selectionSpans.size()))
         {
-            for (auto iRect = 0; iRect < gsl::narrow<int>(selectionRects.size()); iRect++)
+            for (auto iRect = 0; iRect < gsl::narrow<int>(selectionSpans.size()); iRect++)
             {
                 // ensure each rectangle is exactly the width requested (block selection)
-                const auto psrRect = &selectionRects[iRect];
+                const auto& span = selectionSpans[iRect];
 
                 const auto sRectangleLineNumber = (til::CoordType)iRect + m_pSelection->_d->srSelectionRect.top;
 
-                VERIFY_ARE_EQUAL(psrRect->top, sRectangleLineNumber);
-                VERIFY_ARE_EQUAL(psrRect->bottom, sRectangleLineNumber);
+                VERIFY_ARE_EQUAL(span.start.y, sRectangleLineNumber);
+                VERIFY_ARE_EQUAL(span.end.y, sRectangleLineNumber);
 
-                VERIFY_ARE_EQUAL(psrRect->left, m_pSelection->_d->srSelectionRect.left);
-                VERIFY_ARE_EQUAL(psrRect->right, m_pSelection->_d->srSelectionRect.right);
+                VERIFY_ARE_EQUAL(span.start.x, m_pSelection->_d->srSelectionRect.left);
+                VERIFY_ARE_EQUAL(span.end.x, m_pSelection->_d->srSelectionRect.right);
             }
         }
     }
 
-    TEST_METHOD(TestGetSelectionRects_BoxMode)
+    TEST_METHOD(TestGetSelectionSpans_BoxMode)
     {
         {
             auto selection{ m_pSelection->_d.write() };
@@ -99,7 +99,7 @@ class SelectionTests
             selection->fLineSelection = false;
             selection->fUseAlternateSelection = false;
 
-            VerifyGetSelectionRects_BoxMode();
+            VerifyGetSelectionSpans_BoxMode();
         }
 
         {
@@ -108,7 +108,7 @@ class SelectionTests
             selection->fLineSelection = true;
             selection->fUseAlternateSelection = true;
 
-            VerifyGetSelectionRects_BoxMode();
+            VerifyGetSelectionSpans_BoxMode();
         }
 
         {
@@ -118,7 +118,7 @@ class SelectionTests
             selection->coordSelectionAnchor.x = selection->srSelectionRect.right;
             selection->coordSelectionAnchor.y = selection->srSelectionRect.top;
 
-            VerifyGetSelectionRects_BoxMode();
+            VerifyGetSelectionSpans_BoxMode();
         }
 
         {
@@ -127,129 +127,35 @@ class SelectionTests
             selection->coordSelectionAnchor.x = selection->srSelectionRect.left;
             selection->coordSelectionAnchor.y = selection->srSelectionRect.bottom;
 
-            VerifyGetSelectionRects_BoxMode();
+            VerifyGetSelectionSpans_BoxMode();
         }
 
         {
             auto selection{ m_pSelection->_d.write() };
+
             // #4 bottom-right to top-left selection
             selection->coordSelectionAnchor.x = selection->srSelectionRect.right;
             selection->coordSelectionAnchor.y = selection->srSelectionRect.bottom;
 
-            VerifyGetSelectionRects_BoxMode();
+            VerifyGetSelectionSpans_BoxMode();
         }
     }
 
-    void VerifyGetSelectionRects_LineMode()
+    void VerifyGetSelectionSpans_LineMode(const til::point start, const til::point end)
     {
-        const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        const auto selectionSpans = m_pSelection->GetSelectionSpans();
 
-        const auto selectionRects = m_pSelection->GetSelectionRects();
-        const UINT cRectanglesExpected = m_pSelection->_d->srSelectionRect.bottom - m_pSelection->_d->srSelectionRect.top + 1;
-
-        if (VERIFY_ARE_EQUAL(cRectanglesExpected, selectionRects.size()))
+        if (VERIFY_ARE_EQUAL(1u, selectionSpans.size()))
         {
-            // RULES:
-            // 1. If we're only selection one line, select the entire region between the two rectangles.
-            //    Else if we're selecting multiple lines...
-            // 2. Extend all lines except the last line to the right edge of the screen
-            //    Extend all lines except the first line to the left edge of the screen
-            // 3. If our anchor is in the top-right or bottom-left corner of the rectangle...
-            //    The inside portion of our rectangle on the first and last lines is invalid.
-            //    Remove from selection (but preserve the anchors themselves).
-
-            // RULE #1: If 1 line, entire region selected.
-            auto fHaveOneLine = selectionRects.size() == 1;
-
-            if (fHaveOneLine)
-            {
-                auto srSelectionRect = m_pSelection->_d->srSelectionRect;
-                VERIFY_ARE_EQUAL(srSelectionRect.top, srSelectionRect.bottom);
-
-                const auto psrRect = &selectionRects[0];
-
-                VERIFY_ARE_EQUAL(psrRect->top, srSelectionRect.top);
-                VERIFY_ARE_EQUAL(psrRect->bottom, srSelectionRect.bottom);
-
-                VERIFY_ARE_EQUAL(psrRect->left, srSelectionRect.left);
-                VERIFY_ARE_EQUAL(psrRect->right, srSelectionRect.right);
-            }
-            else
-            {
-                // RULE #2 : Check extension to edges
-                for (UINT iRect = 0; iRect < selectionRects.size(); iRect++)
-                {
-                    // ensure each rectangle is exactly the width requested (block selection)
-                    const auto psrRect = &selectionRects[iRect];
-
-                    const auto sRectangleLineNumber = (til::CoordType)iRect + m_pSelection->_d->srSelectionRect.top;
-
-                    VERIFY_ARE_EQUAL(psrRect->top, sRectangleLineNumber);
-                    VERIFY_ARE_EQUAL(psrRect->bottom, sRectangleLineNumber);
-
-                    auto fIsFirstLine = iRect == 0;
-                    auto fIsLastLine = iRect == selectionRects.size() - 1;
-
-                    // for all lines except the last, the line should reach the right edge of the buffer
-                    if (!fIsLastLine)
-                    {
-                        // buffer size = 80, then selection goes 0 to 79. Thus X - 1.
-                        VERIFY_ARE_EQUAL(psrRect->right, gci.GetActiveOutputBuffer().GetTextBuffer().GetSize().RightInclusive());
-                    }
-
-                    // for all lines except the first, the line should reach the left edge of the buffer
-                    if (!fIsFirstLine)
-                    {
-                        VERIFY_ARE_EQUAL(psrRect->left, 0);
-                    }
-                }
-
-                // RULE #3: Check first and last line have invalid regions removed, if applicable
-                UINT iFirst = 0;
-                auto iLast = gsl::narrow<UINT>(selectionRects.size() - 1u);
-
-                const auto psrFirst = &selectionRects[iFirst];
-                const auto psrLast = &selectionRects[iLast];
-
-                auto fRemoveRegion = false;
-
-                auto srSelectionRect = m_pSelection->_d->srSelectionRect;
-                auto coordAnchor = m_pSelection->_d->coordSelectionAnchor;
-
-                // if the anchor is in the top right or bottom left corner, we must have removed a region. otherwise, it stays as is.
-                if (coordAnchor.y == srSelectionRect.top && coordAnchor.x == srSelectionRect.right)
-                {
-                    fRemoveRegion = true;
-                }
-                else if (coordAnchor.y == srSelectionRect.bottom && coordAnchor.x == srSelectionRect.left)
-                {
-                    fRemoveRegion = true;
-                }
-
-                // now check the first row's left based on removal
-                if (!fRemoveRegion)
-                {
-                    VERIFY_ARE_EQUAL(psrFirst->left, srSelectionRect.left);
-                }
-                else
-                {
-                    VERIFY_ARE_EQUAL(psrFirst->left, srSelectionRect.right);
-                }
-
-                // and the last row's right based on removal
-                if (!fRemoveRegion)
-                {
-                    VERIFY_ARE_EQUAL(psrLast->right, srSelectionRect.right);
-                }
-                else
-                {
-                    VERIFY_ARE_EQUAL(psrLast->right, srSelectionRect.left);
-                }
-            }
+            auto& span{ selectionSpans[0] };
+            VERIFY_ARE_EQUAL(start, span.start, L"start");
+            VERIFY_ARE_EQUAL(end, span.end, L"end");
         }
     }
 
-    TEST_METHOD(TestGetSelectionRects_LineMode)
+    // All of the logic tested herein is trying to determine where the selection
+    // must have started, given a rectangle and the point where the mouse was last seen.
+    TEST_METHOD(TestGetSelectionSpans_LineMode)
     {
         {
             auto selection{ m_pSelection->_d.write() };
@@ -262,6 +168,16 @@ class SelectionTests
             selection->srSelectionRect.left = 1;
             selection->srSelectionRect.right = 10;
 
+            /*
+                   |  RECT   |
+                   0123456789ABCDEF
+                --0+---------+
+                  1|         |
+                  2|         |
+                --3+---------+
+                  4
+            */
+
             // #1 top-left to bottom right selection first
             selection->coordSelectionAnchor.x = selection->srSelectionRect.left;
             selection->coordSelectionAnchor.y = selection->srSelectionRect.top;
@@ -270,7 +186,19 @@ class SelectionTests
             selection->fLineSelection = true;
             selection->fUseAlternateSelection = false;
 
-            VerifyGetSelectionRects_LineMode();
+            /*
+                Mouse at 0,0; therefore, the selection "begins" at 3,10
+                Selection extends to bottom right corner of rectangle
+
+                   |  RECT   |
+                   0123456789ABCDEF
+                --0*#########*#####
+                  1################
+                  2################
+                --3*#########*
+                  4
+            */
+            VerifyGetSelectionSpans_LineMode({ 1, 0 }, { 10, 3 });
         }
 
         {
@@ -279,7 +207,8 @@ class SelectionTests
             selection->fLineSelection = false;
             selection->fUseAlternateSelection = true;
 
-            VerifyGetSelectionRects_LineMode();
+            // Same as above.
+            VerifyGetSelectionSpans_LineMode({ 1, 0 }, { 10, 3 });
         }
 
         {
@@ -289,29 +218,69 @@ class SelectionTests
             selection->coordSelectionAnchor.x = selection->srSelectionRect.right;
             selection->coordSelectionAnchor.y = selection->srSelectionRect.top;
 
-            VerifyGetSelectionRects_LineMode();
+            /*
+                Mouse at 0,10; therefore, the selection must have started at 3,0
+                Selection does not include bottom-most line
+
+                   |  RECT   |
+                   0123456789ABCDEF
+                --0+         *#####
+                  1################
+                  2################
+                --3*         +
+                  4
+            */
+
+            VerifyGetSelectionSpans_LineMode({ 10, 0 }, { 1, 3 });
         }
 
         {
             auto selection{ m_pSelection->_d.write() };
+
             // #3 bottom-left to top-right selection
             selection->coordSelectionAnchor.x = selection->srSelectionRect.left;
             selection->coordSelectionAnchor.y = selection->srSelectionRect.bottom;
 
-            VerifyGetSelectionRects_LineMode();
+            /*
+                Mouse at 3,1; therefore, the selection must have started at 0,10
+                Selection extends from top right to bottom left
+
+                   |  RECT   |
+                   0123456789ABCDEF
+                --0+         *#####
+                  1################
+                  2################
+                --3*         +
+                  4
+            */
+            VerifyGetSelectionSpans_LineMode({ 10, 0 }, { 1, 3 });
         }
 
         {
             auto selection{ m_pSelection->_d.write() };
+
             // #4 bottom-right to top-left selection
             selection->coordSelectionAnchor.x = selection->srSelectionRect.right;
             selection->coordSelectionAnchor.y = selection->srSelectionRect.bottom;
 
-            VerifyGetSelectionRects_LineMode();
+            /*
+                Mouse at 3,10; therefore, the selection must have started at 0,0
+                Just like case #1, selection covers all lines and top left/bottom right of rect.
+
+                   |  RECT   |
+                   0123456789ABCDEF
+                --0*#########*#####
+                  1################
+                  2################
+                --3*#########*
+                  4
+            */
+            VerifyGetSelectionSpans_LineMode({ 1, 0 }, { 10, 3 });
         }
 
         {
             auto selection{ m_pSelection->_d.write() };
+
             // Part II: Single line selection
             selection->srSelectionRect.top = 2;
             selection->srSelectionRect.bottom = 2;
@@ -323,17 +292,18 @@ class SelectionTests
             VERIFY_IS_TRUE(selection->srSelectionRect.bottom == selection->srSelectionRect.top);
             selection->coordSelectionAnchor.y = selection->srSelectionRect.bottom;
 
-            VerifyGetSelectionRects_LineMode();
+            VerifyGetSelectionSpans_LineMode({ 1, 2 }, { 10, 2 });
         }
 
         {
             auto selection{ m_pSelection->_d.write() };
+
             // #2: right to left selection
             selection->coordSelectionAnchor.x = selection->srSelectionRect.right;
             VERIFY_IS_TRUE(selection->srSelectionRect.bottom == selection->srSelectionRect.top);
             selection->coordSelectionAnchor.y = selection->srSelectionRect.top;
 
-            VerifyGetSelectionRects_LineMode();
+            VerifyGetSelectionSpans_LineMode({ 1, 2 }, { 10, 2 });
         }
     }
 

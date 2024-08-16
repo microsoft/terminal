@@ -29,7 +29,7 @@ class Selection
 public:
     ~Selection() = default;
 
-    std::vector<til::inclusive_rect> GetSelectionRects() const;
+    std::span<const til::point_span> GetSelectionSpans() const;
 
     void ShowSelection();
     void HideSelection();
@@ -182,11 +182,11 @@ private:
     };
     til::generational<SelectionData> _d{};
 
-    mutable std::vector<til::inclusive_rect> _lastSelectionRects;
+    mutable std::vector<til::point_span> _lastSelectionSpans;
     mutable til::generation_t _lastSelectionGeneration;
 
     void _ExtendSelection(SelectionData* d, _In_ til::point coordBufferPos);
-    void _RegenerateSelectionRects() const;
+    void _RegenerateSelectionSpans() const;
 
 #ifdef UNIT_TESTING
     friend class SelectionTests;

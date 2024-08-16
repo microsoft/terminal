@@ -20,7 +20,6 @@ UiaEngine::UiaEngine(IUiaEventDispatcher* dispatcher) :
     _textBufferChanged{ false },
     _cursorChanged{ false },
     _isEnabled{ true },
-    _prevSelection{},
     _prevCursorRegion{},
     RenderEngineBase()
 {
@@ -110,40 +109,11 @@ CATCH_RETURN();
 // - rectangles - One or more rectangles describing character positions on the grid
 // Return Value:
 // - S_OK
-[[nodiscard]] HRESULT UiaEngine::InvalidateSelection(const std::vector<til::rect>& rectangles) noexcept
+[[nodiscard]] HRESULT UiaEngine::InvalidateSelection(std::span<const til::rect> /*rectangles*/) noexcept
 {
-    // early exit: different number of rows
-    if (_prevSelection.size() != rectangles.size())
-    {
-        try
-        {
-            _selectionChanged = true;
-            _prevSelection = rectangles;
-        }
-        CATCH_LOG_RETURN_HR(E_FAIL);
-        return S_OK;
-    }
-
-    for (size_t i = 0; i < rectangles.size(); i++)
-    {
-        try
-        {
-            const auto prevRect = _prevSelection.at(i);
-            const auto newRect = rectangles.at(i);
-
-            // if any value is different, selection has changed
-            if (prevRect.top != newRect.top || prevRect.right != newRect.right || prevRect.left != newRect.left || prevRect.bottom != newRect.bottom)
-            {
-                _selectionChanged = true;
-                _prevSelection = rectangles;
-                return S_OK;
-            }
-        }
-        CATCH_LOG_RETURN_HR(E_FAIL);
-    }
-
-    // assume selection has not changed
-    _selectionChanged = false;
+    // INVARIANT: Renderer checks the incoming selection spans and only calls InvalidateSelection
+    // if they have actually changed.
+    _selectionChanged = true;
     return S_OK;
 }
 

@@ -109,7 +109,6 @@ namespace Microsoft::Console::Render
         void _PaintCursor(_In_ IRenderEngine* const pEngine);
         [[nodiscard]] HRESULT _UpdateDrawingBrushes(_In_ IRenderEngine* const pEngine, const TextAttribute attr, const bool usingSoftFont, const bool isSettingDefaultBrushes);
         [[nodiscard]] HRESULT _PerformScrolling(_In_ IRenderEngine* const pEngine);
-        std::vector<til::rect> _GetSelectionRects() const;
         void _ScrollPreviousSelection(const til::point delta);
         [[nodiscard]] HRESULT _PaintTitle(IRenderEngine* const pEngine);
         bool _isInHoveredInterval(til::point coordTarget) const noexcept;
@@ -131,11 +130,14 @@ namespace Microsoft::Console::Render
         CursorOptions _currentCursorOptions;
         std::optional<CompositionCache> _compositionCache;
         std::vector<Cluster> _clusterBuffer;
-        std::vector<til::rect> _previousSelection;
         std::function<void()> _pfnBackgroundColorChanged;
         std::function<void()> _pfnFrameColorChanged;
         std::function<void()> _pfnRendererEnteredErrorState;
         bool _destructing = false;
         bool _forceUpdateViewport = false;
+
+        til::point_span _lastSelectionPaintSpan{};
+        size_t _lastSelectionPaintSize{};
+        std::vector<til::rect> _lastSelectionRectsByViewport{};
     };
 }
