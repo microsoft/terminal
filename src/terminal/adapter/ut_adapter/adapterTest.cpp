@@ -2398,6 +2398,98 @@ public:
         _testGetSet->ValidateInputEvent(expectedResponse.c_str());
     }
 
+    TEST_METHOD(XtermColorResourceReportTests)
+    {
+        _testGetSet->PrepData();
+
+        // The colors below use the same VT525 colors as the other color table report tests.
+        auto& renderSettings = _testGetSet->_renderer._renderSettings;
+        renderSettings.SetColorTableEntry(0, RGB(0, 0, 0));
+        renderSettings.SetColorTableEntry(1, RGB(204, 36, 36));
+        renderSettings.SetColorTableEntry(2, RGB(51, 204, 51));
+        renderSettings.SetColorTableEntry(3, RGB(204, 204, 51));
+        renderSettings.SetColorTableEntry(4, RGB(51, 51, 204));
+        renderSettings.SetColorTableEntry(5, RGB(204, 51, 204));
+        renderSettings.SetColorTableEntry(6, RGB(51, 204, 204));
+        renderSettings.SetColorTableEntry(7, RGB(120, 120, 120));
+        renderSettings.SetColorTableEntry(8, RGB(69, 69, 69));
+        renderSettings.SetColorTableEntry(9, RGB(255, 0, 0));
+        renderSettings.SetColorTableEntry(10, RGB(0, 255, 0));
+        renderSettings.SetColorTableEntry(11, RGB(255, 255, 0));
+        renderSettings.SetColorTableEntry(12, RGB(0, 0, 255));
+        renderSettings.SetColorTableEntry(13, RGB(255, 0, 255));
+        renderSettings.SetColorTableEntry(14, RGB(0, 255, 255));
+        renderSettings.SetColorTableEntry(15, RGB(255, 255, 255));
+
+        renderSettings.SetColorTableEntry(TextColor::DEFAULT_FOREGROUND, RGB(190, 190, 190));
+        renderSettings.SetColorTableEntry(TextColor::DEFAULT_BACKGROUND, RGB(12, 12, 12));
+        renderSettings.SetColorTableEntry(TextColor::CURSOR_COLOR, RGB(255, 0, 0));
+
+        // Color table reports start with a DCS $s introducer with a parameter
+        // value of 2, and end with an ST terminator.
+        const auto OSC = L"\033]";
+        const auto ST = L"\033\\";
+
+        // Foreground mapped to DARK_WHITE
+        _pDispatch->RequestXtermColorResource(DispatchTypes::XtermColorResource::Foreground);
+        std::wstring expectedResponse = OSC;
+        expectedResponse += L"10;rgb:7878/7878/7878";
+        expectedResponse += ST;
+        _testGetSet->ValidateInputEvent(expectedResponse.c_str());
+
+        // Foreground mapped to independent foreground color
+        renderSettings.SetColorAliasIndex(ColorAlias::DefaultForeground, TextColor::DEFAULT_FOREGROUND);
+        _pDispatch->RequestXtermColorResource(DispatchTypes::XtermColorResource::Foreground);
+        expectedResponse = OSC;
+        expectedResponse += L"10;rgb:bebe/bebe/bebe";
+        expectedResponse += ST;
+        _testGetSet->ValidateInputEvent(expectedResponse.c_str());
+
+        // Background mapped to DARK_BLACK
+        _pDispatch->RequestXtermColorResource(DispatchTypes::XtermColorResource::Background);
+        expectedResponse = OSC;
+        expectedResponse += L"11;rgb:0000/0000/0000";
+        expectedResponse += ST;
+        _testGetSet->ValidateInputEvent(expectedResponse.c_str());
+
+        // Background mapped to independent background color
+        renderSettings.SetColorAliasIndex(ColorAlias::DefaultBackground, TextColor::DEFAULT_BACKGROUND);
+        _pDispatch->RequestXtermColorResource(DispatchTypes::XtermColorResource::Background);
+        expectedResponse = OSC;
+        expectedResponse += L"11;rgb:0c0c/0c0c/0c0c";
+        expectedResponse += ST;
+        _testGetSet->ValidateInputEvent(expectedResponse.c_str());
+
+        // Foreground and Background mapped to different indices (e.g. via DECAC)
+        {
+            _testGetSet->_response.clear(); // manually clear (since we aren't issuing a call that will empty it)
+            auto retentionScope = _testGetSet->EnableInputRetentionInScope();
+            renderSettings.SetColorAliasIndex(ColorAlias::DefaultForeground, TextColor::DARK_RED);
+            renderSettings.SetColorAliasIndex(ColorAlias::DefaultBackground, TextColor::BRIGHT_GREEN);
+            _pDispatch->RequestXtermColorResource(DispatchTypes::XtermColorResource::Foreground);
+            _pDispatch->RequestXtermColorResource(DispatchTypes::XtermColorResource::Background);
+            expectedResponse = OSC;
+            expectedResponse += L"10;rgb:cccc/2424/2424";
+            expectedResponse += ST;
+            expectedResponse += OSC;
+            expectedResponse += L"11;rgb:0000/ffff/0000";
+            expectedResponse += ST;
+            _testGetSet->ValidateInputEvent(expectedResponse.c_str());
+        }
+
+        _pDispatch->RequestXtermColorResource(DispatchTypes::XtermColorResource::Cursor);
+        expectedResponse = OSC;
+        expectedResponse += L"12;rgb:ffff/0000/0000";
+        expectedResponse += ST;
+        _testGetSet->ValidateInputEvent(expectedResponse.c_str());
+
+        // Unsupported resource
+        _testGetSet->_response.clear(); // manually clear (since we aren't issuing a call that will empty it)
+        _pDispatch->RequestXtermColorResource(static_cast<DispatchTypes::XtermColorResource>(13));
+        expectedResponse = L"";
+        _testGetSet->ValidateInputEvent(expectedResponse.c_str());
+    }
+
     TEST_METHOD(TabulationStopReportTests)
     {
         _testGetSet->PrepData();

@@ -14,6 +14,8 @@
 using namespace Microsoft::Console;
 using namespace Microsoft::Console::VirtualTerminal;
 
+constexpr COLORREF COLOR_INQUIRY_COLOR = 0xfeffffff; // It's like INVALID_COLOR but special
+
 // takes ownership of pDispatch
 OutputStateMachineEngine::OutputStateMachineEngine(std::unique_ptr<ITermDispatch> pDispatch) :
     _dispatch(std::move(pDispatch)),
@@ -803,7 +805,11 @@ bool OutputStateMachineEngine::ActionOscDispatch(const size_t parameter, const s
             size_t resource = static_cast<size_t>(parameter);
             for (auto&& color : colors)
             {
-                if (color != INVALID_COLOR)
+                if (color == COLOR_INQUIRY_COLOR)
+                {
+                    success = success && _dispatch->RequestXtermColorResource(static_cast<DispatchTypes::XtermColorResource>(resource));
+                }
+                else if (color != INVALID_COLOR)
                 {
                     success = success && _dispatch->SetXtermColorResource(static_cast<DispatchTypes::XtermColorResource>(resource), color);
                 }
@@ -1006,6 +1012,8 @@ bool OutputStateMachineEngine::_ParseHyperlink(const std::wstring_view string,
 bool OutputStateMachineEngine::_GetOscSetColor(const std::wstring_view string,
                                                std::vector<DWORD>& rgbs) const
 {
+    using namespace std::string_view_literals;
+
     const auto parts = Utils::SplitString(string, L';');
     if (parts.size() < 1)
     {
@@ -1013,9 +1021,15 @@ bool OutputStateMachineEngine::_GetOscSetColor(const std::wstring_view string,
     }
 
     std::vector<DWORD> newRgbs;
-    for (size_t i = 0; i < parts.size(); i++)
+    for (auto&& part : parts)
     {
-        const auto colorOptional = Utils::ColorFromXTermColor(til::at(parts, i));
+        if (part == L"?"sv) [[unlikely]]
+        {
+            newRgbs.push_back(COLOR_INQUIRY_COLOR);
+            continue;
+        }
+
+        const auto colorOptional = Utils::ColorFromXTermColor(part);
         if (colorOptional.has_value())
         {
             newRgbs.push_back(colorOptional.value());

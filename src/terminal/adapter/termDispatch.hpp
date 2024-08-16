@@ -71,6 +71,7 @@ public:
     bool TabSet(const VTParameter /*setType*/) override { return false; } // DECST8C
     bool SetColorTableEntry(const size_t /*tableIndex*/, const DWORD /*color*/) override { return false; } // OSCColorTable, OSCDefaultForeground, OSCDefaultBackground, OSCSetCursorColor, OSCResetCursorColor
     bool SetXtermColorResource(const DispatchTypes::XtermColorResource /*resource*/, const DWORD /*color*/) override { return false; } // OSCDefaultForeground, OSCDefaultBackground, OSC TODO
+    bool RequestXtermColorResource(const DispatchTypes::XtermColorResource /*resource*/) override { return false; }
     bool AssignColor(const DispatchTypes::ColorItem /*item*/, const VTInt /*fgIndex*/, const VTInt /*bgIndex*/) override { return false; } // DECAC
 
     bool EraseInDisplay(const DispatchTypes::EraseType /* eraseType*/) override { return false; } // ED

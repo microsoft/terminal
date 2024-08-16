@@ -3526,6 +3526,41 @@ bool AdaptDispatch::SetXtermColorResource(const DispatchTypes::XtermColorResourc
 }
 
 // Method Description:
+// - Reports the value of one Xterm Color Resource, if it is set.
+// Return Value:
+// True if handled successfully. False otherwise.
+bool AdaptDispatch::RequestXtermColorResource(const DispatchTypes::XtermColorResource resource)
+{
+    assert(static_cast<size_t>(resource) >= 10);
+    const auto mappingIndex = static_cast<size_t>(resource) - 10;
+    if (mappingIndex >= std::size(XtermResourceColorTableMappings))
+    {
+        return false;
+    }
+
+    const auto& oscMapping = til::at(XtermResourceColorTableMappings, mappingIndex);
+    if (oscMapping.ColorTableIndex > 0)
+    {
+        size_t finalColorIndex = oscMapping.ColorTableIndex;
+
+        if (oscMapping.AliasIndex >= 0) [[unlikely]]
+        {
+            finalColorIndex = _renderSettings.GetColorAliasIndex(static_cast<ColorAlias>(oscMapping.AliasIndex));
+        }
+
+        const auto color = _renderSettings.GetColorTableEntry(finalColorIndex);
+        if (color != INVALID_COLOR)
+        {
+            const til::color c{ color };
+            // Scale values up to match xterm's 16-bit color report format.
+            _api.ReturnResponse(fmt::format(FMT_COMPILE(L"\033]{};rgb:{:04x}/{:04x}/{:04x}\033\\"), static_cast<size_t>(resource), c.r * 0x0101, c.g * 0x0101, c.b * 0x0101));
+        }
+    }
+
+    return true;
+}
+
+// Method Description:
 // DECAC - Assigns the foreground and background color indexes that should be
 //   used for a given aspect of the user interface.
 // Arguments:
