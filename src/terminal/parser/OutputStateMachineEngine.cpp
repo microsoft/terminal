@@ -800,40 +800,14 @@ bool OutputStateMachineEngine::ActionOscDispatch(const size_t parameter, const s
         success = _GetOscSetColor(string, colors);
         if (success)
         {
-            auto commandIndex = parameter;
-            size_t colorIndex = 0;
-
-            if (commandIndex == OscActionCodes::SetForegroundColor && colors.size() > colorIndex)
+            size_t resource = static_cast<size_t>(parameter);
+            for (auto&& color : colors)
             {
-                const auto color = til::at(colors, colorIndex);
                 if (color != INVALID_COLOR)
                 {
-                    success = success && _dispatch->SetDefaultForeground(color);
+                    success = success && _dispatch->SetXtermColorResource(static_cast<DispatchTypes::XtermColorResource>(resource), color);
                 }
-                commandIndex++;
-                colorIndex++;
-            }
-
-            if (commandIndex == OscActionCodes::SetBackgroundColor && colors.size() > colorIndex)
-            {
-                const auto color = til::at(colors, colorIndex);
-                if (color != INVALID_COLOR)
-                {
-                    success = success && _dispatch->SetDefaultBackground(color);
-                }
-                commandIndex++;
-                colorIndex++;
-            }
-
-            if (commandIndex == OscActionCodes::SetCursorColor && colors.size() > colorIndex)
-            {
-                const auto color = til::at(colors, colorIndex);
-                if (color != INVALID_COLOR)
-                {
-                    success = success && _dispatch->SetCursorColor(color);
-                }
-                commandIndex++;
-                colorIndex++;
+                resource++;
             }
         }
         break;
@@ -851,7 +825,7 @@ bool OutputStateMachineEngine::ActionOscDispatch(const size_t parameter, const s
     }
     case OscActionCodes::ResetCursorColor:
     {
-        success = _dispatch->SetCursorColor(INVALID_COLOR);
+        success = _dispatch->SetXtermColorResource(DispatchTypes::XtermColorResource::Cursor, INVALID_COLOR);
         break;
     }
     case OscActionCodes::Hyperlink:

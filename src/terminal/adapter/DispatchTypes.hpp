@@ -689,6 +689,13 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         TabulationStopReport = 2
     };
 
+    enum class XtermColorResource : VTInt
+    {
+        Foreground = 10,
+        Background = 11,
+        Cursor = 12,
+    };
+
     constexpr VTInt s_sDECCOLMSetColumns = 132;
     constexpr VTInt s_sDECCOLMResetColumns = 80;
 

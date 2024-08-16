@@ -18,6 +18,25 @@ using namespace Microsoft::Console::VirtualTerminal;
 
 static constexpr std::wstring_view whitespace{ L" " };
 
+struct XtermResourceColorTableEntry
+{
+    int ColorTableIndex;
+    int AliasIndex;
+};
+
+static constexpr XtermResourceColorTableEntry XtermResourceColorTableMappings[] = {
+    /* 10 */ { TextColor::DEFAULT_FOREGROUND, static_cast<int>(ColorAlias::DefaultForeground) },
+    /* 11 */ { TextColor::DEFAULT_BACKGROUND, static_cast<int>(ColorAlias::DefaultBackground) },
+    /* 12 */ { TextColor::CURSOR_COLOR, -1 },
+    /* 13 */ { -1, -1 },
+    /* 14 */ { -1, -1 },
+    /* 15 */ { -1, -1 },
+    /* 16 */ { -1, -1 },
+    /* 17 */ { -1, -1 },
+    /* 18 */ { -1, -1 },
+    /* 19 */ { -1, -1 },
+};
+
 AdaptDispatch::AdaptDispatch(ITerminalApi& api, Renderer* renderer, RenderSettings& renderSettings, TerminalInput& terminalInput) noexcept :
     _api{ api },
     _renderer{ renderer },
@@ -3439,18 +3458,6 @@ bool AdaptDispatch::SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle)
     return true;
 }
 
-// Method Description:
-// - Sets a single entry of the colortable to a new value
-// Arguments:
-// - tableIndex: The VT color table index
-// - dwColor: The new RGB color value to use.
-// Return Value:
-// True if handled successfully. False otherwise.
-bool AdaptDispatch::SetCursorColor(const COLORREF cursorColor)
-{
-    return SetColorTableEntry(TextColor::CURSOR_COLOR, cursorColor);
-}
-
 // Routine Description:
 // - OSC Copy to Clipboard
 // Arguments:
@@ -3492,27 +3499,30 @@ bool AdaptDispatch::SetColorTableEntry(const size_t tableIndex, const DWORD dwCo
 }
 
 // Method Description:
-// - Sets the default foreground color to a new value
-// Arguments:
-// - dwColor: The new RGB color value to use, as a COLORREF, format 0x00BBGGRR.
+// - Sets one Xterm Color Resource such as Default Foreground, Background, Cursor
 // Return Value:
 // True if handled successfully. False otherwise.
-bool AdaptDispatch::SetDefaultForeground(const DWORD dwColor)
+bool AdaptDispatch::SetXtermColorResource(const DispatchTypes::XtermColorResource resource, const DWORD color)
 {
-    _renderSettings.SetColorAliasIndex(ColorAlias::DefaultForeground, TextColor::DEFAULT_FOREGROUND);
-    return SetColorTableEntry(TextColor::DEFAULT_FOREGROUND, dwColor);
-}
+    assert(static_cast<size_t>(resource) >= 10);
+    const auto mappingIndex = static_cast<size_t>(resource) - 10;
+    if (mappingIndex >= std::size(XtermResourceColorTableMappings))
+    {
+        return false;
+    }
 
-// Method Description:
-// - Sets the default background color to a new value
-// Arguments:
-// - dwColor: The new RGB color value to use, as a COLORREF, format 0x00BBGGRR.
-// Return Value:
-// True if handled successfully. False otherwise.
-bool AdaptDispatch::SetDefaultBackground(const DWORD dwColor)
-{
-    _renderSettings.SetColorAliasIndex(ColorAlias::DefaultBackground, TextColor::DEFAULT_BACKGROUND);
-    return SetColorTableEntry(TextColor::DEFAULT_BACKGROUND, dwColor);
+    const auto& oscMapping = til::at(XtermResourceColorTableMappings, mappingIndex);
+    if (oscMapping.ColorTableIndex > 0)
+    {
+        if (oscMapping.AliasIndex >= 0) [[unlikely]]
+        {
+            // If this color change ... todo dustin
+            _renderSettings.SetColorAliasIndex(static_cast<ColorAlias>(oscMapping.AliasIndex), oscMapping.ColorTableIndex);
+        }
+        return SetColorTableEntry(oscMapping.ColorTableIndex, color);
+    }
+
+    return true;
 }
 
 // Method Description:

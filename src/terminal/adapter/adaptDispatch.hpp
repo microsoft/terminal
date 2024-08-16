@@ -126,14 +126,12 @@ namespace Microsoft::Console::VirtualTerminal
         bool HardReset() override; // RIS
         bool ScreenAlignmentPattern() override; // DECALN
         bool SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle) override; // DECSCUSR
-        bool SetCursorColor(const COLORREF cursorColor) override;
 
         bool SetClipboard(const wil::zwstring_view content) override; // OSCSetClipboard
 
         bool SetColorTableEntry(const size_t tableIndex,
                                 const DWORD color) override; // OSCColorTable
-        bool SetDefaultForeground(const DWORD color) override; // OSCDefaultForeground
-        bool SetDefaultBackground(const DWORD color) override; // OSCDefaultBackground
+        bool SetXtermColorResource(const DispatchTypes::XtermColorResource resource, const DWORD color) override; // OSCDefaultForeground, OSCDefaultBackground, OSCTODO
         bool AssignColor(const DispatchTypes::ColorItem item, const VTInt fgIndex, const VTInt bgIndex) override; // DECAC
 
         bool WindowManipulation(const DispatchTypes::WindowManipulationType function,

@@ -77,8 +77,7 @@ public:
     virtual bool TabClear(const DispatchTypes::TabClearType clearType) = 0; // TBC
     virtual bool TabSet(const VTParameter setType) = 0; // DECST8C
     virtual bool SetColorTableEntry(const size_t tableIndex, const DWORD color) = 0; // OSCColorTable
-    virtual bool SetDefaultForeground(const DWORD color) = 0; // OSCDefaultForeground
-    virtual bool SetDefaultBackground(const DWORD color) = 0; // OSCDefaultBackground
+    virtual bool SetXtermColorResource(const DispatchTypes::XtermColorResource resource, const DWORD color) = 0; // OSCDefaultForeground, OSCDefaultBackground, OSC TODO
     virtual bool AssignColor(const DispatchTypes::ColorItem item, const VTInt fgIndex, const VTInt bgIndex) = 0; // DECAC
 
     virtual bool EraseInDisplay(const DispatchTypes::EraseType eraseType) = 0; // ED
@@ -128,7 +127,6 @@ public:
     virtual bool ScreenAlignmentPattern() = 0; // DECALN
 
     virtual bool SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle) = 0; // DECSCUSR
-    virtual bool SetCursorColor(const COLORREF color) = 0; // OSCSetCursorColor, OSCResetCursorColor
 
     virtual bool SetClipboard(wil::zwstring_view content) = 0; // OSCSetClipboard
 
