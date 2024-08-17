@@ -552,6 +552,11 @@ bool InputStateMachineEngine::ActionIgnore() noexcept
 // - true if we handled the dispatch.
 bool InputStateMachineEngine::ActionOscDispatch(const size_t /*parameter*/, const std::wstring_view /*string*/) noexcept
 {
+    if (_pDispatch->IsVtInputEnabled() &&
+        _pfnFlushToInputQueue)
+    {
+        return _pfnFlushToInputQueue();
+    }
     return false;
 }
 
