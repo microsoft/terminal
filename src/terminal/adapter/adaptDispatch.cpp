@@ -3498,6 +3498,24 @@ bool AdaptDispatch::SetColorTableEntry(const size_t tableIndex, const DWORD dwCo
     return true;
 }
 
+bool AdaptDispatch::RequestColorTableEntry(const size_t tableIndex)
+{
+    if (tableIndex >= TextColor::TABLE_SIZE)
+    {
+        return false;
+    }
+
+    const auto color = _renderSettings.GetColorTableEntry(tableIndex);
+    if (color != INVALID_COLOR)
+    {
+        const til::color c{ color };
+        // Scale values up to match xterm's 16-bit color report format.
+        _api.ReturnResponse(fmt::format(FMT_COMPILE(L"\033]4;{};rgb:{:04x}/{:04x}/{:04x}\033\\"), tableIndex, c.r * 0x0101, c.g * 0x0101, c.b * 0x0101));
+    }
+
+    return true;
+}
+
 // Method Description:
 // - Sets one Xterm Color Resource such as Default Foreground, Background, Cursor
 // Return Value:

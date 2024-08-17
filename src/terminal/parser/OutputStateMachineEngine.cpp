@@ -790,7 +790,14 @@ bool OutputStateMachineEngine::ActionOscDispatch(const size_t parameter, const s
         {
             const auto tableIndex = til::at(tableIndexes, i);
             const auto rgb = til::at(colors, i);
-            success = success && _dispatch->SetColorTableEntry(tableIndex, rgb);
+            if (rgb == COLOR_INQUIRY_COLOR)
+            {
+                success = success && _dispatch->RequestColorTableEntry(tableIndex);
+            }
+            else
+            {
+                success = success && _dispatch->SetColorTableEntry(tableIndex, rgb);
+            }
         }
         break;
     }
@@ -918,6 +925,8 @@ bool OutputStateMachineEngine::_GetOscSetColorTable(const std::wstring_view stri
                                                     std::vector<size_t>& tableIndexes,
                                                     std::vector<DWORD>& rgbs) const
 {
+    using namespace std::string_view_literals;
+
     const auto parts = Utils::SplitString(string, L';');
     if (parts.size() < 2)
     {
@@ -929,13 +938,25 @@ bool OutputStateMachineEngine::_GetOscSetColorTable(const std::wstring_view stri
 
     for (size_t i = 0, j = 1; j < parts.size(); i += 2, j += 2)
     {
+        auto&& index = til::at(parts, i);
+        auto&& color = til::at(parts, j);
         unsigned int tableIndex = 0;
-        const auto indexSuccess = Utils::StringToUint(til::at(parts, i), tableIndex);
-        const auto colorOptional = Utils::ColorFromXTermColor(til::at(parts, j));
-        if (indexSuccess && colorOptional.has_value())
+        const auto indexSuccess = Utils::StringToUint(index, tableIndex);
+
+        if (indexSuccess)
         {
-            newTableIndexes.push_back(tableIndex);
-            newRgbs.push_back(colorOptional.value());
+            if (color == L"?"sv) [[unlikely]]
+            {
+                newTableIndexes.push_back(tableIndex);
+                newRgbs.push_back(COLOR_INQUIRY_COLOR);
+                continue;
+            }
+
+            if (const auto colorOptional = Utils::ColorFromXTermColor(color))
+            {
+                newTableIndexes.push_back(tableIndex);
+                newRgbs.push_back(colorOptional.value());
+            }
         }
     }
 
