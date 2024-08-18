@@ -550,7 +550,7 @@ bool InputStateMachineEngine::ActionIgnore() noexcept
 // - string - OSC string we've collected. NOT null terminated.
 // Return Value:
 // - true if we handled the dispatch.
-bool InputStateMachineEngine::ActionOscDispatch(const size_t /*parameter*/, const std::wstring_view /*string*/) noexcept
+bool InputStateMachineEngine::ActionOscDispatch(const size_t /*parameter*/, const std::wstring_view /*string*/)
 {
     if (_pDispatch->IsVtInputEnabled() &&
         _pfnFlushToInputQueue)
