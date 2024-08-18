@@ -1428,10 +1428,22 @@ public:
         return true;
     }
 
+    bool RequestColorTableEntry(const size_t tableIndex) noexcept override
+    {
+        _colorTableEntriesRequested.push_back(tableIndex);
+        return true;
+    }
+
     bool SetXtermColorResource(const size_t resource, const DWORD color) override
     {
         _xtermResourcesChanged.push_back(resource);
         _xtermResourceValues.push_back(color);
+        return true;
+    }
+
+    bool RequestXtermColorResource(const size_t resource) override
+    {
+        _xtermResourcesRequested.push_back(resource);
         return true;
     }
 
@@ -1513,7 +1525,9 @@ public:
     std::vector<DispatchTypes::TabClearType> _tabClearTypes;
     std::vector<size_t> _xtermResourcesChanged;
     std::vector<DWORD> _xtermResourceValues;
+    std::vector<size_t> _xtermResourcesRequested;
     bool _setColorTableEntry;
+    std::vector<size_t> _colorTableEntriesRequested;
     bool _hyperlinkMode;
     std::wstring _copyContent;
     std::wstring _uri;
@@ -3177,6 +3191,59 @@ class StateMachineExternalTest final
         VERIFY_ARE_EQUAL(RGB(0, 0, 0), pDispatch->_colorTable.at(16));
         VERIFY_ARE_EQUAL(RGB(0, 0, 0), pDispatch->_colorTable.at(64));
 
+        pDispatch->ClearState();
+    }
+
+    TEST_METHOD(TestOscXtermResourceReport)
+    {
+        auto dispatch = std::make_unique<StatefulDispatch>();
+        auto pDispatch = dispatch.get();
+        auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
+        StateMachine mach(std::move(engine));
+
+        mach.ProcessString(L"\033]10;?\033\\");
+        VERIFY_ARE_EQUAL(0u, pDispatch->_xtermResourcesChanged.size());
+        VERIFY_ARE_EQUAL(1u, pDispatch->_xtermResourcesRequested.size());
+        VERIFY_ARE_EQUAL(10u, pDispatch->_xtermResourcesRequested[0]);
+        pDispatch->ClearState();
+
+        // Two params, skip first
+        mach.ProcessString(L"\033]10;;?\033\\");
+        VERIFY_ARE_EQUAL(0u, pDispatch->_xtermResourcesChanged.size());
+        VERIFY_ARE_EQUAL(1u, pDispatch->_xtermResourcesRequested.size());
+        VERIFY_ARE_EQUAL(11u, pDispatch->_xtermResourcesRequested[0]);
+        pDispatch->ClearState();
+
+        // Two params, set first
+        mach.ProcessString(L"\033]10;rgb:11/22/33;?\033\\");
+        VERIFY_ARE_EQUAL(1u, pDispatch->_xtermResourcesChanged.size());
+        VERIFY_ARE_EQUAL(10u, pDispatch->_xtermResourcesChanged[0]);
+        VERIFY_ARE_EQUAL(RGB(0x11, 0x22, 0x33), pDispatch->_xtermResourceValues[0]);
+        VERIFY_ARE_EQUAL(1u, pDispatch->_xtermResourcesRequested.size());
+        VERIFY_ARE_EQUAL(11u, pDispatch->_xtermResourcesRequested[0]);
+        pDispatch->ClearState();
+
+        // Two params, set first, starting at 12
+        mach.ProcessString(L"\033]12;rgb:11/22/33;?\033\\");
+        VERIFY_ARE_EQUAL(1u, pDispatch->_xtermResourcesChanged.size());
+        VERIFY_ARE_EQUAL(12u, pDispatch->_xtermResourcesChanged[0]);
+        VERIFY_ARE_EQUAL(RGB(0x11, 0x22, 0x33), pDispatch->_xtermResourceValues[0]);
+        VERIFY_ARE_EQUAL(1u, pDispatch->_xtermResourcesRequested.size());
+        VERIFY_ARE_EQUAL(13u, pDispatch->_xtermResourcesRequested[0]);
+        pDispatch->ClearState();
+
+        // Request all 10
+        mach.ProcessString(L"\033]10;?;?;?;?;?;?;?;?;?;?\033\\");
+        VERIFY_ARE_EQUAL(0u, pDispatch->_xtermResourcesChanged.size());
+        std::vector<size_t> expected{ 10u, 11u, 12u, 13u, 14u, 15u, 16u, 17u, 18u, 19u };
+        VERIFY_ARE_EQUAL(expected, pDispatch->_xtermResourcesRequested);
+        pDispatch->ClearState();
+
+        // Request out of range
+        mach.ProcessString(L"\033]10;;?\033\\");
+        VERIFY_ARE_EQUAL(0u, pDispatch->_xtermResourcesChanged.size());
+        VERIFY_ARE_EQUAL(1u, pDispatch->_xtermResourcesRequested.size());
+        VERIFY_ARE_EQUAL(11u, pDispatch->_xtermResourcesRequested[0]);
         pDispatch->ClearState();
     }
 
