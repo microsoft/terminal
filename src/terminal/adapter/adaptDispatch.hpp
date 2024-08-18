@@ -130,10 +130,10 @@ namespace Microsoft::Console::VirtualTerminal
         bool SetClipboard(const wil::zwstring_view content) override; // OSCSetClipboard
 
         bool SetColorTableEntry(const size_t tableIndex,
-                                const DWORD color) override; // OSCColorTable
-        bool RequestColorTableEntry(const size_t tableIndex) override;
-        bool SetXtermColorResource(const size_t resource, const DWORD color) override; // OSCDefaultForeground, OSCDefaultBackground, OSCTODO
-        bool RequestXtermColorResource(const size_t resource) override;
+                                const DWORD color) override; // OSCSetColorTable
+        bool RequestColorTableEntry(const size_t tableIndex) override; // OSCGetColorTable
+        bool SetXtermColorResource(const size_t resource, const DWORD color) override; // OSCSetDefaultForeground, OSCSetDefaultBackground, OSCSetCursorColor, OSCResetCursorColor
+        bool RequestXtermColorResource(const size_t resource) override; // OSCGetDefaultForeground, OSCGetDefaultBackground, OSCGetCursorColor
         bool AssignColor(const DispatchTypes::ColorItem item, const VTInt fgIndex, const VTInt bgIndex) override; // DECAC
 
         bool WindowManipulation(const DispatchTypes::WindowManipulationType function,
