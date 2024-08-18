@@ -3520,10 +3520,10 @@ bool AdaptDispatch::RequestColorTableEntry(const size_t tableIndex)
 // - Sets one Xterm Color Resource such as Default Foreground, Background, Cursor
 // Return Value:
 // True if handled successfully. False otherwise.
-bool AdaptDispatch::SetXtermColorResource(const DispatchTypes::XtermColorResource resource, const DWORD color)
+bool AdaptDispatch::SetXtermColorResource(const size_t resource, const DWORD color)
 {
-    assert(static_cast<size_t>(resource) >= 10);
-    const auto mappingIndex = static_cast<size_t>(resource) - 10;
+    assert(resource >= 10);
+    const auto mappingIndex = resource - 10;
     if (mappingIndex >= std::size(XtermResourceColorTableMappings))
     {
         return false;
@@ -3547,10 +3547,10 @@ bool AdaptDispatch::SetXtermColorResource(const DispatchTypes::XtermColorResourc
 // - Reports the value of one Xterm Color Resource, if it is set.
 // Return Value:
 // True if handled successfully. False otherwise.
-bool AdaptDispatch::RequestXtermColorResource(const DispatchTypes::XtermColorResource resource)
+bool AdaptDispatch::RequestXtermColorResource(const size_t resource)
 {
-    assert(static_cast<size_t>(resource) >= 10);
-    const auto mappingIndex = static_cast<size_t>(resource) - 10;
+    assert(resource >= 10);
+    const auto mappingIndex = resource - 10;
     if (mappingIndex >= std::size(XtermResourceColorTableMappings))
     {
         return false;
@@ -3571,7 +3571,7 @@ bool AdaptDispatch::RequestXtermColorResource(const DispatchTypes::XtermColorRes
         {
             const til::color c{ color };
             // Scale values up to match xterm's 16-bit color report format.
-            _api.ReturnResponse(fmt::format(FMT_COMPILE(L"\033]{};rgb:{:04x}/{:04x}/{:04x}\033\\"), static_cast<size_t>(resource), c.r * 0x0101, c.g * 0x0101, c.b * 0x0101));
+            _api.ReturnResponse(fmt::format(FMT_COMPILE(L"\033]{};rgb:{:04x}/{:04x}/{:04x}\033\\"), resource, c.r * 0x0101, c.g * 0x0101, c.b * 0x0101));
         }
     }
 

@@ -2431,7 +2431,7 @@ public:
         const auto ST = L"\033\\";
 
         // Foreground mapped to DARK_WHITE
-        _pDispatch->RequestXtermColorResource(DispatchTypes::XtermColorResource::Foreground);
+        _pDispatch->RequestXtermColorResource(10);
         std::wstring expectedResponse = OSC;
         expectedResponse += L"10;rgb:7878/7878/7878";
         expectedResponse += ST;
@@ -2439,14 +2439,14 @@ public:
 
         // Foreground mapped to independent foreground color
         renderSettings.SetColorAliasIndex(ColorAlias::DefaultForeground, TextColor::DEFAULT_FOREGROUND);
-        _pDispatch->RequestXtermColorResource(DispatchTypes::XtermColorResource::Foreground);
+        _pDispatch->RequestXtermColorResource(10);
         expectedResponse = OSC;
         expectedResponse += L"10;rgb:bebe/bebe/bebe";
         expectedResponse += ST;
         _testGetSet->ValidateInputEvent(expectedResponse.c_str());
 
         // Background mapped to DARK_BLACK
-        _pDispatch->RequestXtermColorResource(DispatchTypes::XtermColorResource::Background);
+        _pDispatch->RequestXtermColorResource(11);
         expectedResponse = OSC;
         expectedResponse += L"11;rgb:0000/0000/0000";
         expectedResponse += ST;
@@ -2454,7 +2454,7 @@ public:
 
         // Background mapped to independent background color
         renderSettings.SetColorAliasIndex(ColorAlias::DefaultBackground, TextColor::DEFAULT_BACKGROUND);
-        _pDispatch->RequestXtermColorResource(DispatchTypes::XtermColorResource::Background);
+        _pDispatch->RequestXtermColorResource(11);
         expectedResponse = OSC;
         expectedResponse += L"11;rgb:0c0c/0c0c/0c0c";
         expectedResponse += ST;
@@ -2466,8 +2466,8 @@ public:
             auto retentionScope = _testGetSet->EnableInputRetentionInScope();
             renderSettings.SetColorAliasIndex(ColorAlias::DefaultForeground, TextColor::DARK_RED);
             renderSettings.SetColorAliasIndex(ColorAlias::DefaultBackground, TextColor::BRIGHT_GREEN);
-            _pDispatch->RequestXtermColorResource(DispatchTypes::XtermColorResource::Foreground);
-            _pDispatch->RequestXtermColorResource(DispatchTypes::XtermColorResource::Background);
+            _pDispatch->RequestXtermColorResource(10);
+            _pDispatch->RequestXtermColorResource(11);
             expectedResponse = OSC;
             expectedResponse += L"10;rgb:cccc/2424/2424";
             expectedResponse += ST;
@@ -2477,7 +2477,7 @@ public:
             _testGetSet->ValidateInputEvent(expectedResponse.c_str());
         }
 
-        _pDispatch->RequestXtermColorResource(DispatchTypes::XtermColorResource::Cursor);
+        _pDispatch->RequestXtermColorResource(12);
         expectedResponse = OSC;
         expectedResponse += L"12;rgb:ffff/0000/0000";
         expectedResponse += ST;
@@ -2485,7 +2485,7 @@ public:
 
         // Unsupported resource
         _testGetSet->_response.clear(); // manually clear (since we aren't issuing a call that will empty it)
-        _pDispatch->RequestXtermColorResource(static_cast<DispatchTypes::XtermColorResource>(13));
+        _pDispatch->RequestXtermColorResource(13);
         expectedResponse = L"";
         _testGetSet->ValidateInputEvent(expectedResponse.c_str());
     }

@@ -809,16 +809,16 @@ bool OutputStateMachineEngine::ActionOscDispatch(const size_t parameter, const s
         success = _GetOscSetColor(string, colors);
         if (success)
         {
-            size_t resource = static_cast<size_t>(parameter);
+            auto resource = parameter;
             for (auto&& color : colors)
             {
                 if (color == COLOR_INQUIRY_COLOR)
                 {
-                    success = success && _dispatch->RequestXtermColorResource(static_cast<DispatchTypes::XtermColorResource>(resource));
+                    success = success && _dispatch->RequestXtermColorResource(resource);
                 }
                 else if (color != INVALID_COLOR)
                 {
-                    success = success && _dispatch->SetXtermColorResource(static_cast<DispatchTypes::XtermColorResource>(resource), color);
+                    success = success && _dispatch->SetXtermColorResource(resource, color);
                 }
                 resource++;
             }
@@ -838,7 +838,8 @@ bool OutputStateMachineEngine::ActionOscDispatch(const size_t parameter, const s
     }
     case OscActionCodes::ResetCursorColor:
     {
-        success = _dispatch->SetXtermColorResource(DispatchTypes::XtermColorResource::Cursor, INVALID_COLOR);
+        /* The reset codes for xterm dynamic resources are the set codes + 100 */
+        success = _dispatch->SetXtermColorResource(parameter - 100u, INVALID_COLOR);
         break;
     }
     case OscActionCodes::Hyperlink:

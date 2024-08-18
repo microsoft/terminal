@@ -78,8 +78,8 @@ public:
     virtual bool TabSet(const VTParameter setType) = 0; // DECST8C
     virtual bool SetColorTableEntry(const size_t tableIndex, const DWORD color) = 0; // OSCColorTable
     virtual bool RequestColorTableEntry(const size_t tableIndex) = 0;
-    virtual bool SetXtermColorResource(const DispatchTypes::XtermColorResource resource, const DWORD color) = 0; // OSCDefaultForeground, OSCDefaultBackground, OSC TODO
-    virtual bool RequestXtermColorResource(const DispatchTypes::XtermColorResource resource) = 0;
+    virtual bool SetXtermColorResource(const size_t resource, const DWORD color) = 0; // OSCDefaultForeground, OSCDefaultBackground, OSC TODO
+    virtual bool RequestXtermColorResource(const size_t resource) = 0;
     virtual bool AssignColor(const DispatchTypes::ColorItem item, const VTInt fgIndex, const VTInt bgIndex) = 0; // DECAC
 
     virtual bool EraseInDisplay(const DispatchTypes::EraseType eraseType) = 0; // ED

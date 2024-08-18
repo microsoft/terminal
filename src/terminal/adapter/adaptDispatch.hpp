@@ -132,8 +132,8 @@ namespace Microsoft::Console::VirtualTerminal
         bool SetColorTableEntry(const size_t tableIndex,
                                 const DWORD color) override; // OSCColorTable
         bool RequestColorTableEntry(const size_t tableIndex) override;
-        bool SetXtermColorResource(const DispatchTypes::XtermColorResource resource, const DWORD color) override; // OSCDefaultForeground, OSCDefaultBackground, OSCTODO
-        bool RequestXtermColorResource(const DispatchTypes::XtermColorResource resource) override;
+        bool SetXtermColorResource(const size_t resource, const DWORD color) override; // OSCDefaultForeground, OSCDefaultBackground, OSCTODO
+        bool RequestXtermColorResource(const size_t resource) override;
         bool AssignColor(const DispatchTypes::ColorItem item, const VTInt fgIndex, const VTInt bgIndex) override; // DECAC
 
         bool WindowManipulation(const DispatchTypes::WindowManipulationType function,
