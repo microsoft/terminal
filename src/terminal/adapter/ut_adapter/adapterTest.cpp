@@ -2425,8 +2425,7 @@ public:
         renderSettings.SetColorTableEntry(TextColor::DEFAULT_BACKGROUND, RGB(12, 12, 12));
         renderSettings.SetColorTableEntry(TextColor::CURSOR_COLOR, RGB(255, 0, 0));
 
-        // Color table reports start with a DCS $s introducer with a parameter
-        // value of 2, and end with an ST terminator.
+        // Dynamic color reports begin with an OSC, a parameter matching the requested value, and end with ST.
         const auto OSC = L"\033]";
         const auto ST = L"\033\\";
 
@@ -2483,8 +2482,15 @@ public:
         expectedResponse += ST;
         _testGetSet->ValidateInputEvent(expectedResponse.c_str());
 
-        // Unsupported resource
+        // Resource set to unrepresentable color
         _testGetSet->_response.clear(); // manually clear (since we aren't issuing a call that will empty it)
+        renderSettings.SetColorTableEntry(TextColor::CURSOR_COLOR, INVALID_COLOR);
+        _pDispatch->RequestXtermColorResource(12);
+        expectedResponse = L"";
+        _testGetSet->ValidateInputEvent(expectedResponse.c_str());
+
+        // Unsupported resource - no mapped color
+        _testGetSet->_response.clear();
         _pDispatch->RequestXtermColorResource(13);
         expectedResponse = L"";
         _testGetSet->ValidateInputEvent(expectedResponse.c_str());
