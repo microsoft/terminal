@@ -3194,6 +3194,35 @@ class StateMachineExternalTest final
         pDispatch->ClearState();
     }
 
+    TEST_METHOD(TestOscGetColorTableEntry)
+    {
+        auto dispatch = std::make_unique<StatefulDispatch>();
+        auto pDispatch = dispatch.get();
+        auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
+        StateMachine mach(std::move(engine));
+
+        mach.ProcessString(L"\033]4;0;?;1;?;2;;3;?;4;?\033\\"); // Inquire about 0-4 skipping 2
+        VERIFY_ARE_EQUAL((std::vector<size_t>{ 0u, 1u, 3u, 4u }), pDispatch->_colorTableEntriesRequested);
+        pDispatch->ClearState();
+
+        mach.ProcessString(L"\033]4;0;rgb:00/00/00;1;rgb:00/00/01;2;?;3;rgb:00/00/03;4;rgb:00/00/04\033\\"); // Set 0-4, except 2 (inquire)
+        VERIFY_ARE_EQUAL(RGB(0, 0, 0), pDispatch->_colorTable.at(0));
+        VERIFY_ARE_EQUAL(RGB(0, 0, 1), pDispatch->_colorTable.at(1));
+        VERIFY_ARE_EQUAL(RGB(0, 0, 3), pDispatch->_colorTable.at(3));
+        VERIFY_ARE_EQUAL(RGB(0, 0, 4), pDispatch->_colorTable.at(4));
+        VERIFY_ARE_EQUAL(1u, pDispatch->_colorTableEntriesRequested.size()); // note: (1u, 2u) constructs a 1-length vector containing 2
+        VERIFY_ARE_EQUAL(2u, pDispatch->_colorTableEntriesRequested[0]);
+        pDispatch->ClearState();
+
+        pDispatch->_colorTable.at(3) = RGB(0xfe, 0xed, 0xfa);
+        mach.ProcessString(L"\033]4;0;rgb:f0/00/00;1;?;3\033\\"); // Set 0, inquire 1, truncated 3
+        VERIFY_ARE_EQUAL(RGB(0xf0, 0, 0), pDispatch->_colorTable.at(0));
+        VERIFY_ARE_EQUAL(RGB(0xfe, 0xed, 0xfa), pDispatch->_colorTable.at(3)); // unchanged from before ProcessString
+        VERIFY_ARE_EQUAL(1u, pDispatch->_colorTableEntriesRequested.size()); // note: (1u, 2u) constructs a 1-length vector containing 2
+        VERIFY_ARE_EQUAL(1u, pDispatch->_colorTableEntriesRequested[0]);
+        pDispatch->ClearState();
+    }
+
     TEST_METHOD(TestOscXtermResourceReport)
     {
         auto dispatch = std::make_unique<StatefulDispatch>();
