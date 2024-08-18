@@ -950,10 +950,8 @@ bool OutputStateMachineEngine::_GetOscSetColorTable(const std::wstring_view stri
             {
                 newTableIndexes.push_back(tableIndex);
                 newRgbs.push_back(COLOR_INQUIRY_COLOR);
-                continue;
             }
-
-            if (const auto colorOptional = Utils::ColorFromXTermColor(color))
+            else if (const auto colorOptional = Utils::ColorFromXTermColor(color))
             {
                 newTableIndexes.push_back(tableIndex);
                 newRgbs.push_back(colorOptional.value());
@@ -1050,9 +1048,7 @@ bool OutputStateMachineEngine::_GetOscSetColor(const std::wstring_view string,
             newRgbs.push_back(COLOR_INQUIRY_COLOR);
             continue;
         }
-
-        const auto colorOptional = Utils::ColorFromXTermColor(part);
-        if (colorOptional.has_value())
+        else if (const auto colorOptional = Utils::ColorFromXTermColor(part))
         {
             newRgbs.push_back(colorOptional.value());
         }
