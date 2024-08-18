@@ -24,7 +24,7 @@ struct XtermResourceColorTableEntry
     int AliasIndex;
 };
 
-static constexpr XtermResourceColorTableEntry XtermResourceColorTableMappings[] = {
+static constexpr std::array<XtermResourceColorTableEntry, 10> XtermResourceColorTableMappings{ {
     /* 10 */ { TextColor::DEFAULT_FOREGROUND, static_cast<int>(ColorAlias::DefaultForeground) },
     /* 11 */ { TextColor::DEFAULT_BACKGROUND, static_cast<int>(ColorAlias::DefaultBackground) },
     /* 12 */ { TextColor::CURSOR_COLOR, -1 },
@@ -35,7 +35,7 @@ static constexpr XtermResourceColorTableEntry XtermResourceColorTableMappings[] 
     /* 17 */ { -1, -1 },
     /* 18 */ { -1, -1 },
     /* 19 */ { -1, -1 },
-};
+} };
 
 AdaptDispatch::AdaptDispatch(ITerminalApi& api, Renderer* renderer, RenderSettings& renderSettings, TerminalInput& terminalInput) noexcept :
     _api{ api },
@@ -3524,17 +3524,12 @@ bool AdaptDispatch::SetXtermColorResource(const size_t resource, const DWORD col
 {
     assert(resource >= 10);
     const auto mappingIndex = resource - 10;
-    if (mappingIndex >= std::size(XtermResourceColorTableMappings))
-    {
-        return false;
-    }
-
-    const auto& oscMapping = til::at(XtermResourceColorTableMappings, mappingIndex);
+    const auto& oscMapping = XtermResourceColorTableMappings.at(mappingIndex);
     if (oscMapping.ColorTableIndex > 0)
     {
         if (oscMapping.AliasIndex >= 0) [[unlikely]]
         {
-            // If this color change ... todo dustin
+            // If this color change applies to an aliased color, point the alias at the new color
             _renderSettings.SetColorAliasIndex(static_cast<ColorAlias>(oscMapping.AliasIndex), oscMapping.ColorTableIndex);
         }
         return SetColorTableEntry(oscMapping.ColorTableIndex, color);
@@ -3551,12 +3546,7 @@ bool AdaptDispatch::RequestXtermColorResource(const size_t resource)
 {
     assert(resource >= 10);
     const auto mappingIndex = resource - 10;
-    if (mappingIndex >= std::size(XtermResourceColorTableMappings))
-    {
-        return false;
-    }
-
-    const auto& oscMapping = til::at(XtermResourceColorTableMappings, mappingIndex);
+    const auto& oscMapping = XtermResourceColorTableMappings.at(mappingIndex);
     if (oscMapping.ColorTableIndex > 0)
     {
         size_t finalColorIndex = oscMapping.ColorTableIndex;
