@@ -59,7 +59,7 @@ namespace winrt::TerminalApp::implementation
 
         Editing(false);
         PropertyChanged.raise(*this, WUX::Data::PropertyChangedEventArgs{ L"Editing" });
-        FileContents(til::u8u16(markdownContents));
+        FileContents(winrt::to_hstring(markdownContents));
         PropertyChanged.raise(*this, WUX::Data::PropertyChangedEventArgs{ L"FileContents" });
 
         _renderFileContents();

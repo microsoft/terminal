@@ -299,7 +299,7 @@ void MarkdownToXaml::_RenderNode(cmark_node* node, cmark_event_type ev_type)
     }
     case CMARK_NODE_TEXT:
     {
-        const auto text{ winrt::hstring{ til::u8u16(textFromLiteral(node)) } };
+        const auto text{ winrt::to_hstring(textFromLiteral(node)) };
 
         if (_currentImage)
         {
