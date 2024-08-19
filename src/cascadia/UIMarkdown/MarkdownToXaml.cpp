@@ -80,7 +80,7 @@ WUX::Documents::Paragraph MarkdownToXaml::_CurrentParagraph()
 {
     if (_lastParagraph == nullptr)
     {
-        _EndRun(); // sanity check
+        // _EndRun(); // sanity check
         _lastParagraph = WUX::Documents::Paragraph{};
         if (_indent > 0)
         {
@@ -121,8 +121,9 @@ WUX::Documents::Run MarkdownToXaml::_NewRun()
 {
     if (_lastRun == nullptr)
     {
-        _lastRun = WUX::Documents::Run{};
-        _CurrentSpan().Inlines().Append(_lastRun);
+        // _lastRun = WUX::Documents::Run{};
+        // _CurrentSpan().Inlines().Append(_lastRun);
+        return _CurrentRun();
     }
     else
     {
@@ -223,7 +224,7 @@ void MarkdownToXaml::_RenderNode(cmark_node* node, cmark_event_type ev_type)
         if (entering)
         {
             _EndParagraph();
-            _CurrentParagraph();
+            // _CurrentParagraph();
             _NewRun().Text(bullets[std::clamp(_indent - _blockQuoteDepth - 1, 0, 2)]);
         }
         break;
@@ -246,8 +247,11 @@ void MarkdownToXaml::_RenderNode(cmark_node* node, cmark_event_type ev_type)
         _EndParagraph();
 
         const auto codeHstring{ winrt::to_hstring(cmark_node_get_literal(node)) };
+        // The literal for a code node always includes the trailing newline.
+        // Trim that off.
+        std::wstring_view codeView{ codeHstring.c_str(), codeHstring.size() - 1 };
 
-        auto codeBlock = winrt::make<winrt::Microsoft::Terminal::UI::Markdown::implementation::CodeBlock>(codeHstring);
+        auto codeBlock = winrt::make<winrt::Microsoft::Terminal::UI::Markdown::implementation::CodeBlock>(winrt::hstring{ codeView });
         WUX::Documents::InlineUIContainer codeContainer{};
         codeContainer.Child(codeBlock);
         _CurrentParagraph().Inlines().Append(codeContainer);
