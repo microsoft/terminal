@@ -16,6 +16,58 @@ using namespace Microsoft::Console::VirtualTerminal;
 
 constexpr COLORREF COLOR_INQUIRY_COLOR = 0xfeffffff; // It's like INVALID_COLOR but special
 
+bool _GetOscSetColorTableStrided(const std::wstring_view string,
+                                 std::vector<size_t>& tableIndexes,
+                                 std::vector<DWORD>& rgbs,
+                                 size_t startIndex,
+                                 bool indexed)
+{
+    using namespace std::string_view_literals;
+
+    const auto parts = Utils::SplitString(string, L';');
+    if (parts.size() < (indexed ? 2 : 1))
+    {
+        return false;
+    }
+
+    std::vector<size_t> newTableIndexes;
+    std::vector<DWORD> newRgbs;
+
+    for (size_t i = 0; i < parts.size() - (indexed ? 1 : 0); ++i)
+    {
+        unsigned int tableIndex = gsl::narrow_cast<unsigned int>(startIndex + i);
+        if (indexed)
+        {
+            auto&& index = til::at(parts, i++);
+            const auto indexSuccess = Utils::StringToUint(index, tableIndex);
+            if (!indexSuccess)
+            {
+                // Index failed, skip the color too
+                ++i;
+                continue;
+            }
+        }
+
+        auto&& color = til::at(parts, i);
+
+        newTableIndexes.push_back(tableIndex);
+
+        if (color == L"?"sv) [[unlikely]]
+        {
+            newRgbs.push_back(COLOR_INQUIRY_COLOR);
+            continue;
+        }
+
+        const auto colorOptional = Utils::ColorFromXTermColor(color);
+        newRgbs.push_back(colorOptional.has_value() ? static_cast<DWORD>(*colorOptional) : INVALID_COLOR);
+    }
+
+    tableIndexes.swap(newTableIndexes);
+    rgbs.swap(newRgbs);
+
+    return tableIndexes.size() > 0 && rgbs.size() > 0;
+}
+
 // takes ownership of pDispatch
 OutputStateMachineEngine::OutputStateMachineEngine(std::unique_ptr<ITermDispatch> pDispatch) :
     _dispatch(std::move(pDispatch)),
@@ -758,7 +810,7 @@ bool OutputStateMachineEngine::ActionOscDispatch(const size_t parameter, const s
     {
         std::vector<size_t> tableIndexes;
         std::vector<DWORD> colors;
-        if (_GetOscSetColorTable(string, tableIndexes, colors))
+        if (_GetOscSetColorTableStrided(string, tableIndexes, colors, 0, true))
         {
             for (size_t i = 0; i < tableIndexes.size(); i++)
             {
@@ -768,7 +820,7 @@ bool OutputStateMachineEngine::ActionOscDispatch(const size_t parameter, const s
                 {
                     _dispatch->RequestColorTableEntry(tableIndex);
                 }
-                else
+                else if (rgb != INVALID_COLOR)
                 {
                     _dispatch->SetColorTableEntry(tableIndex, rgb);
                 }
@@ -781,19 +833,22 @@ bool OutputStateMachineEngine::ActionOscDispatch(const size_t parameter, const s
     case OscActionCodes::SetCursorColor:
     case OscActionCodes::SetHighlightColor:
     {
+        std::vector<size_t> tableIndexes;
         std::vector<DWORD> colors;
-        if (_GetOscSetColor(string, colors))
+        size_t resource = static_cast<size_t>(parameter);
+        if (_GetOscSetColorTableStrided(string, tableIndexes, colors, resource, false))
         {
-            auto resource = parameter;
-            for (auto&& color : colors)
+            for (size_t i = 0; i < tableIndexes.size(); i++)
             {
-                if (color == COLOR_INQUIRY_COLOR)
+                const auto tableIndex = til::at(tableIndexes, i);
+                const auto rgb = til::at(colors, i);
+                if (rgb == COLOR_INQUIRY_COLOR)
                 {
-                    _dispatch->RequestXtermColorResource(resource);
+                    _dispatch->RequestXtermColorResource(tableIndex);
                 }
-                else if (color != INVALID_COLOR)
+                else if (rgb != INVALID_COLOR)
                 {
-                    _dispatch->SetXtermColorResource(resource, color);
+                    _dispatch->SetXtermColorResource(tableIndex, color);
                 }
                 resource++;
             }
