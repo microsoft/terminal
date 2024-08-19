@@ -3500,11 +3500,6 @@ bool AdaptDispatch::SetColorTableEntry(const size_t tableIndex, const DWORD dwCo
 
 bool AdaptDispatch::RequestColorTableEntry(const size_t tableIndex)
 {
-    if (tableIndex >= TextColor::TABLE_SIZE)
-    {
-        return false;
-    }
-
     const auto color = _renderSettings.GetColorTableEntry(tableIndex);
     if (color != INVALID_COLOR)
     {
