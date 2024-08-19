@@ -101,32 +101,32 @@ WUX::Documents::Paragraph MarkdownToXaml::_CurrentParagraph()
 }
 WUX::Documents::Run MarkdownToXaml::_CurrentRun()
 {
-    if (_currentRun == nullptr)
+    if (_lastRun == nullptr)
     {
-        _currentRun = WUX::Documents::Run{};
-        _CurrentSpan().Inlines().Append(_currentRun);
+        _lastRun = WUX::Documents::Run{};
+        _CurrentSpan().Inlines().Append(_lastRun);
     }
-    return _currentRun;
+    return _lastRun;
 }
 WUX::Documents::Span MarkdownToXaml::_CurrentSpan()
 {
-    if (_currentSpan == nullptr)
+    if (_lastSpan == nullptr)
     {
-        _currentSpan = WUX::Documents::Span{};
-        _CurrentParagraph().Inlines().Append(_currentSpan);
+        _lastSpan = WUX::Documents::Span{};
+        _CurrentParagraph().Inlines().Append(_lastSpan);
     }
-    return _currentSpan;
+    return _lastSpan;
 }
 WUX::Documents::Run MarkdownToXaml::_NewRun()
 {
-    if (_currentRun == nullptr)
+    if (_lastRun == nullptr)
     {
-        _currentRun = WUX::Documents::Run{};
-        _CurrentSpan().Inlines().Append(_currentRun);
+        _lastRun = WUX::Documents::Run{};
+        _CurrentSpan().Inlines().Append(_lastRun);
     }
     else
     {
-        auto old{ _currentRun };
+        auto old{ _lastRun };
 
         WUX::Documents::Run newRun{};
 
@@ -134,19 +134,19 @@ WUX::Documents::Run MarkdownToXaml::_NewRun()
         newRun.FontWeight(old.FontWeight());
         newRun.FontStyle(old.FontStyle());
 
-        _currentRun = newRun;
-        _CurrentSpan().Inlines().Append(_currentRun);
+        _lastRun = newRun;
+        _CurrentSpan().Inlines().Append(_lastRun);
     }
-    return _currentRun;
+    return _lastRun;
 }
 void MarkdownToXaml::_EndRun()
 {
-    _currentRun = nullptr;
+    _lastRun = nullptr;
 }
 void MarkdownToXaml::_EndSpan()
 {
     _EndRun();
-    _currentSpan = nullptr;
+    _lastSpan = nullptr;
 }
 void MarkdownToXaml::_EndParagraph()
 {
@@ -301,10 +301,10 @@ void MarkdownToXaml::_RenderNode(cmark_node* node, cmark_event_type ev_type)
     {
         const auto text{ winrt::to_hstring(textFromLiteral(node)) };
 
-        if (_currentImage)
+        if (_lastImage)
         {
             // The tooltip for an image comes in as a CMARK_NODE_TEXT, so set that here.
-            WUX::Controls::ToolTipService::SetToolTip(_currentImage, box_value(text));
+            WUX::Controls::ToolTipService::SetToolTip(_lastImage, box_value(text));
         }
         else
         {
@@ -404,7 +404,7 @@ void MarkdownToXaml::_RenderNode(cmark_node* node, cmark_event_type ev_type)
             }
 
             _CurrentParagraph().Inlines().Append(a);
-            _currentSpan = a;
+            _lastSpan = a;
 
             // Similar to the header element, the actual text of the link
             // will later come through as a CMARK_NODE_TEXT
@@ -434,7 +434,7 @@ void MarkdownToXaml::_RenderNode(cmark_node* node, cmark_event_type ev_type)
                 imageBlock.Child(img);
 
                 _CurrentParagraph().Inlines().Append(imageBlock);
-                _currentImage = img;
+                _lastImage = img;
             }
             catch (...)
             {
@@ -443,7 +443,7 @@ void MarkdownToXaml::_RenderNode(cmark_node* node, cmark_event_type ev_type)
         else
         {
             _EndSpan();
-            _currentImage = nullptr;
+            _lastImage = nullptr;
         }
         break;
 
