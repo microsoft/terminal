@@ -1405,6 +1405,11 @@ PointTree Terminal::_getPatterns(til::CoordType beg, til::CoordType end) const
         LR"(\b(?:https?|ftp|file)://[-A-Za-z0-9+&@#/%?=~_|$!:,.;]*[A-Za-z0-9+&@#/%=~_|$])",
     };
 
+    if (!_detectURLs)
+    {
+        return {};
+    }
+
     auto text = ICU::UTextFromTextBuffer(_activeBuffer(), beg, end + 1);
     UErrorCode status = U_ZERO_ERROR;
     PointTree::interval_vector intervals;
