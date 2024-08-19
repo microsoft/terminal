@@ -884,7 +884,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     bool AppearanceViewModel::BackgroundImageSettingsVisible()
     {
-        return BackgroundImagePath() != L"";
+        return !BackgroundImagePath().empty();
     }
 
     void AppearanceViewModel::ClearColorScheme()

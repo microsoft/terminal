@@ -3,77 +3,99 @@
 
 #pragma once
 
-#include "../renderer/vt/vtrenderer.hpp"
 #include "VtInputThread.hpp"
 #include "PtySignalInputThread.hpp"
 
 class ConsoleArguments;
-
-namespace Microsoft::Console::Render
-{
-    class VtEngine;
-}
 
 namespace Microsoft::Console::VirtualTerminal
 {
     class VtIo
     {
     public:
+        struct Writer
+        {
+            Writer() = default;
+            Writer(VtIo* io) noexcept;
+
+            ~Writer() noexcept;
+
+            Writer(const Writer&) = delete;
+            Writer& operator=(const Writer&) = delete;
+            Writer(Writer&& other) = delete;
+            Writer& operator=(Writer&& other) = delete;
+
+            explicit operator bool() const noexcept;
+
+            void Submit();
+
+            void BackupCursor() const;
+            void WriteUTF8(std::string_view str) const;
+            void WriteUTF16(std::wstring_view str) const;
+            void WriteUTF16TranslateCRLF(std::wstring_view str) const;
+            void WriteUTF16StripControlChars(std::wstring_view str) const;
+            void WriteUCS2(wchar_t ch) const;
+            void WriteUCS2StripControlChars(wchar_t ch) const;
+            void WriteCUP(til::point position) const;
+            void WriteDECTCEM(bool enabled) const;
+            void WriteSGR1006(bool enabled) const;
+            void WriteDECAWM(bool enabled) const;
+            void WriteASB(bool enabled) const;
+            void WriteWindowVisibility(bool visible) const;
+            void WriteWindowTitle(std::wstring_view title) const;
+            void WriteAttributes(const TextAttribute& attributes) const;
+            void WriteInfos(til::point target, std::span<const CHAR_INFO> infos) const;
+
+        private:
+            VtIo* _io = nullptr;
+        };
+
+        friend struct Writer;
+
         static void FormatAttributes(std::string& target, const TextAttribute& attributes);
         static void FormatAttributes(std::wstring& target, const TextAttribute& attributes);
 
-        VtIo();
-
         [[nodiscard]] HRESULT Initialize(const ConsoleArguments* const pArgs);
-
         [[nodiscard]] HRESULT CreateAndStartSignalThread() noexcept;
         [[nodiscard]] HRESULT CreateIoHandlers() noexcept;
 
         bool IsUsingVt() const;
-
         [[nodiscard]] HRESULT StartIfNeeded();
 
-        [[nodiscard]] HRESULT SuppressResizeRepaint();
-        [[nodiscard]] HRESULT SetCursorPosition(const til::point coordCursor);
-        [[nodiscard]] HRESULT SwitchScreenBuffer(const bool useAltBuffer);
         void SendCloseEvent();
-
-        void CloseInput();
-        void CloseOutput();
-
-        void CorkRenderer(bool corked) const noexcept;
-
-#ifdef UNIT_TESTING
-        void EnableConptyModeForTests(std::unique_ptr<Microsoft::Console::Render::VtEngine> vtRenderEngine, const bool resizeQuirk = false);
-#endif
-
-        bool IsResizeQuirkEnabled() const;
-
-        [[nodiscard]] HRESULT ManuallyClearScrollback() const noexcept;
-        [[nodiscard]] HRESULT RequestMouseMode(bool enable) const noexcept;
-
         void CreatePseudoWindow();
-        void SetWindowVisibility(bool showOrHide) noexcept;
 
     private:
+        [[nodiscard]] HRESULT _Initialize(const HANDLE InHandle, const HANDLE OutHandle, _In_opt_ const HANDLE SignalHandle);
+
+        void _uncork();
+        void _flushNow();
+
         // After CreateIoHandlers is called, these will be invalid.
         wil::unique_hfile _hInput;
         wil::unique_hfile _hOutput;
         // After CreateAndStartSignalThread is called, this will be invalid.
         wil::unique_hfile _hSignal;
 
-        bool _initialized;
-
-        bool _lookingForCursorPosition;
-
-        bool _resizeQuirk{ false };
-        bool _closeEventSent{ false };
-
-        std::unique_ptr<Microsoft::Console::Render::VtEngine> _pVtRenderEngine;
         std::unique_ptr<Microsoft::Console::VtInputThread> _pVtInputThread;
         std::unique_ptr<Microsoft::Console::PtySignalInputThread> _pPtySignalInputThread;
 
-        [[nodiscard]] HRESULT _Initialize(const HANDLE InHandle, const HANDLE OutHandle, _In_opt_ const HANDLE SignalHandle);
+        // We use two buffers: A front and a back buffer. The front buffer is the one we're currently
+        // sending to the terminal (it's being "presented" = it's on the "front" & "visible").
+        // The back buffer is the one we're concurrently writing to.
+        std::string _front;
+        std::string _back;
+        OVERLAPPED* _overlapped = nullptr;
+        OVERLAPPED _overlappedBuf{};
+        wil::unique_event _overlappedEvent;
+        bool _overlappedPending = false;
+        bool _writerRestoreCursor = false;
+        bool _writerTainted = false;
+
+        bool _initialized = false;
+        bool _lookingForCursorPosition = false;
+        bool _closeEventSent = false;
+        int _corked = 0;
 
 #ifdef UNIT_TESTING
         friend class VtIoTests;

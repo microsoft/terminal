@@ -2,23 +2,19 @@
 // Licensed under the MIT license.
 
 #include "precomp.h"
-
 #include "getset.h"
 
-#include "_output.h"
-#include "_stream.h"
-#include "output.h"
-#include "dbcs.h"
+#include "ApiRoutines.h"
+#include "directio.h"
 #include "handle.h"
 #include "misc.h"
-#include "cmdline.h"
-
-#include "../types/inc/convert.hpp"
-#include "../types/inc/viewport.hpp"
-
-#include "ApiRoutines.h"
+#include "output.h"
+#include "_output.h"
+#include "_stream.h"
 
 #include "../interactivity/inc/ServiceLocator.hpp"
+#include "../types/inc/convert.hpp"
+#include "../types/inc/viewport.hpp"
 
 #pragma hdrstop
 
@@ -367,19 +363,27 @@ void ApiRoutines::GetNumberOfConsoleMouseButtonsImpl(ULONG& buttons) noexcept
             WI_ClearFlag(gci.Flags, CONSOLE_USE_PRIVATE_FLAGS);
         }
 
-        if (gci.IsInVtIoMode())
+        if (auto writer = gci.GetVtWriter())
         {
+            auto oldMode = context.InputMode;
+            auto newMode = mode;
+
             // Mouse input should be received when mouse mode is on and quick edit mode is off
             // (for more information regarding the quirks of mouse mode and why/how it relates
             //  to quick edit mode, see GH#9970)
             const auto newQuickEditMode{ WI_IsFlagSet(gci.Flags, CONSOLE_QUICK_EDIT_MODE) };
-            const auto oldMouseMode{ !oldQuickEditMode && WI_IsFlagSet(context.InputMode, ENABLE_MOUSE_INPUT) };
-            const auto newMouseMode{ !newQuickEditMode && WI_IsFlagSet(mode, ENABLE_MOUSE_INPUT) };
+            WI_ClearFlagIf(oldMode, ENABLE_MOUSE_INPUT, oldQuickEditMode);
+            WI_ClearFlagIf(newMode, ENABLE_MOUSE_INPUT, newQuickEditMode);
 
-            if (oldMouseMode != newMouseMode)
+            if (const auto diff = oldMode ^ newMode)
             {
-                LOG_IF_FAILED(gci.GetVtIo()->RequestMouseMode(newMouseMode));
+                if (WI_IsFlagSet(diff, ENABLE_MOUSE_INPUT))
+                {
+                    writer.WriteSGR1006(WI_IsFlagSet(newMode, ENABLE_MOUSE_INPUT));
+                }
             }
+
+            writer.Submit();
         }
 
         context.InputMode = mode;
@@ -416,7 +420,6 @@ void ApiRoutines::GetNumberOfConsoleMouseButtonsImpl(ULONG& buttons) noexcept
 {
     try
     {
-        auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         LockConsole();
         auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
@@ -426,6 +429,7 @@ void ApiRoutines::GetNumberOfConsoleMouseButtonsImpl(ULONG& buttons) noexcept
         auto& screenInfo = context.GetActiveBuffer();
         const auto dwOldMode = screenInfo.OutputMode;
         const auto dwNewMode = mode;
+        const auto diff = dwOldMode ^ dwNewMode;
 
         screenInfo.OutputMode = dwNewMode;
 
@@ -437,17 +441,24 @@ void ApiRoutines::GetNumberOfConsoleMouseButtonsImpl(ULONG& buttons) noexcept
             screenInfo.GetStateMachine().ResetState();
         }
 
-        // if we changed rendering modes then redraw the output buffer,
-        // but only do this if we're not in conpty mode.
-        if (!gci.IsInVtIoMode() &&
-            (WI_IsFlagSet(dwNewMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING) != WI_IsFlagSet(dwOldMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING) ||
-             WI_IsFlagSet(dwNewMode, ENABLE_LVB_GRID_WORLDWIDE) != WI_IsFlagSet(dwOldMode, ENABLE_LVB_GRID_WORLDWIDE)))
+        // if we changed rendering modes then redraw the output buffer.
+        if (WI_IsAnyFlagSet(diff, ENABLE_VIRTUAL_TERMINAL_PROCESSING | ENABLE_LVB_GRID_WORLDWIDE))
         {
-            auto* pRender = ServiceLocator::LocateGlobals().pRender;
-            if (pRender)
+            if (const auto pRender = ServiceLocator::LocateGlobals().pRender)
             {
                 pRender->TriggerRedrawAll();
             }
+        }
+
+        auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        if (auto writer = gci.GetVtWriterForBuffer(&context))
+        {
+            if (WI_IsFlagSet(diff, ENABLE_WRAP_AT_EOL_OUTPUT))
+            {
+                writer.WriteDECAWM(WI_IsFlagSet(dwNewMode, ENABLE_WRAP_AT_EOL_OUTPUT));
+            }
+
+            writer.Submit();
         }
 
         return S_OK;
@@ -465,6 +476,61 @@ void ApiRoutines::SetConsoleActiveScreenBufferImpl(SCREEN_INFORMATION& newContex
     {
         LockConsole();
         auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+
+        auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+
+        if (&newContext.GetActiveBuffer() == &gci.GetActiveOutputBuffer())
+        {
+            return;
+        }
+
+        if (auto writer = gci.GetVtWriter())
+        {
+            const auto viewport = gci.GetActiveOutputBuffer().GetBufferSize();
+            const auto size = viewport.Dimensions();
+            const auto area = static_cast<size_t>(viewport.Width() * viewport.Height());
+
+            auto& main = newContext.GetMainBuffer();
+            auto& alt = newContext.GetActiveBuffer();
+            const auto hasAltBuffer = &alt != &main;
+
+            // TODO GH#5094: This could use xterm's XTWINOPS "\e[8;<height>;<width>t" escape sequence here.
+            THROW_IF_NTSTATUS_FAILED(main.ResizeTraditional(size));
+            main.SetViewportSize(&size);
+            if (hasAltBuffer)
+            {
+                THROW_IF_NTSTATUS_FAILED(alt.ResizeTraditional(size));
+                alt.SetViewportSize(&size);
+            }
+
+            Viewport read;
+            til::small_vector<CHAR_INFO, 1024> infos;
+            infos.resize(area, CHAR_INFO{ L' ', FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED });
+
+            const auto dumpScreenInfo = [&](SCREEN_INFORMATION& screenInfo) {
+                THROW_IF_FAILED(ReadConsoleOutputWImpl(screenInfo, infos, viewport, read));
+                for (til::CoordType i = 0; i < size.height; i++)
+                {
+                    writer.WriteInfos({ 0, i }, { infos.begin() + i * size.width, static_cast<size_t>(size.width) });
+                }
+
+                writer.WriteCUP(screenInfo.GetTextBuffer().GetCursor().GetPosition());
+                writer.WriteAttributes(screenInfo.GetAttributes());
+                writer.WriteDECTCEM(screenInfo.GetTextBuffer().GetCursor().IsVisible());
+                writer.WriteDECAWM(WI_IsFlagSet(screenInfo.OutputMode, ENABLE_WRAP_AT_EOL_OUTPUT));
+            };
+
+            writer.WriteASB(false);
+            dumpScreenInfo(main);
+
+            if (hasAltBuffer)
+            {
+                writer.WriteASB(true);
+                dumpScreenInfo(alt);
+            }
+
+            writer.Submit();
+        }
 
         SetActiveScreenBuffer(newContext.GetActiveBuffer());
     }
@@ -565,6 +631,8 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
             cursor.SetPosition(clampedCursorPosition);
         }
 
+        // TODO GH#5094: This could use xterm's XTWINOPS "\e[8;<height>;<width>t" escape sequence here.
+
         return S_OK;
     }
     CATCH_RETURN();
@@ -621,7 +689,7 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
         // Only do this if we actually changed the value of the palette though -
         // this API gets called all the time to change all sorts of things, but
         // not necessarily the palette.
-        if (changedOneTableEntry && !gci.IsInVtIoMode())
+        if (changedOneTableEntry)
         {
             if (auto* pRender{ ServiceLocator::LocateGlobals().pRender })
             {
@@ -681,6 +749,8 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
             cursor.SetPosition(clampedCursorPosition);
         }
 
+        // TODO GH#5094: This could use xterm's XTWINOPS "\e[8;<height>;<width>t" escape sequence here.
+
         return S_OK;
     }
     CATCH_RETURN();
@@ -713,7 +783,11 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
 
         // MSFT: 15813316 - Try to use this SetCursorPosition call to inherit the cursor position.
         auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-        RETURN_IF_FAILED(gci.GetVtIo()->SetCursorPosition(position));
+        if (auto writer = gci.GetVtWriterForBuffer(&context))
+        {
+            writer.WriteCUP(position);
+            writer.Submit();
+        }
 
         RETURN_IF_NTSTATUS_FAILED(buffer.SetCursorPosition(position, true));
 
@@ -789,6 +863,13 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
 
         context.SetCursorInformation(size, isVisible);
 
+        auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        if (auto writer = gci.GetVtWriterForBuffer(&context))
+        {
+            writer.WriteDECTCEM(isVisible);
+            writer.Submit();
+        }
+
         return S_OK;
     }
     CATCH_RETURN();
@@ -854,14 +935,7 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
             context.PostUpdateWindowSize();
 
             // Use WriteToScreen to invalidate the viewport with the renderer.
-            // GH#3490 - If we're in conpty mode, don't invalidate the entire
-            // viewport. In conpty mode, the VtEngine will later decide what
-            // part of the buffer actually needs to be re-sent to the terminal.
-            if (!(g.getConsoleInformation().IsInVtIoMode() &&
-                  g.getConsoleInformation().GetVtIo()->IsResizeQuirkEnabled()))
-            {
-                WriteToScreen(context, context.GetViewport());
-            }
+            WriteToScreen(context, context.GetViewport());
         }
         return S_OK;
     }
@@ -913,8 +987,8 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
                                                                   const til::inclusive_rect& source,
                                                                   const til::point target,
                                                                   std::optional<til::inclusive_rect> clip,
-                                                                  const wchar_t fillCharacter,
-                                                                  const WORD fillAttribute,
+                                                                  wchar_t fillCharacter,
+                                                                  WORD fillAttribute,
                                                                   const bool enableCmdShim) noexcept
 {
     try
@@ -922,44 +996,73 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
         LockConsole();
         auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
-        auto& buffer = context.GetActiveBuffer();
-
-        TextAttribute useThisAttr(fillAttribute);
-        ScrollRegion(buffer, source, clip, target, fillCharacter, useThisAttr);
-
-        auto hr = S_OK;
-
-        // GH#3126 - This is a shim for cmd's `cls` function. In the
-        // legacy console, `cls` is supposed to clear the entire buffer. In
-        // conpty however, there's no difference between the viewport and the
-        // entirety of the buffer. We're going to see if this API call exactly
-        // matched the way we expect cmd to call it. If it does, then
-        // let's manually emit a ^[[3J to the connected terminal, so that their
-        // entire buffer will be cleared as well.
         auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-        if (enableCmdShim && gci.IsInVtIoMode())
+        if (auto writer = gci.GetVtWriterForBuffer(&context))
         {
-            const auto currentBufferDimensions = buffer.GetBufferSize().Dimensions();
-            const auto sourceIsWholeBuffer = (source.top == 0) &&
-                                             (source.left == 0) &&
-                                             (source.right == currentBufferDimensions.width) &&
-                                             (source.bottom == currentBufferDimensions.height);
-            const auto targetIsNegativeBufferHeight = (target.x == 0) &&
-                                                      (target.y == -currentBufferDimensions.height);
-            const auto noClipProvided = clip == std::nullopt;
-            const auto fillIsBlank = (fillCharacter == UNICODE_SPACE) &&
-                                     (fillAttribute == buffer.GetAttributes().GetLegacyAttributes());
+            auto& buffer = context.GetActiveBuffer();
 
-            if (sourceIsWholeBuffer && targetIsNegativeBufferHeight && noClipProvided && fillIsBlank)
+            // However, if the character is null and we were given a null attribute (represented as legacy 0),
+            // then we'll just fill with spaces and whatever the buffer's default colors are.
+            if (fillCharacter == UNICODE_NULL && fillAttribute == 0)
             {
-                // It's important that we flush the renderer at this point so we don't
-                // have any pending output rendered after the scrollback is cleared.
-                ServiceLocator::LocateGlobals().pRender->TriggerFlush(false);
-                hr = gci.GetVtIo()->ManuallyClearScrollback();
+                fillCharacter = UNICODE_SPACE;
+                fillAttribute = buffer.GetAttributes().GetLegacyAttributes();
             }
+
+            // GH#3126 - This is a shim for cmd's `cls` function. In the
+            // legacy console, `cls` is supposed to clear the entire buffer. In
+            // conpty however, there's no difference between the viewport and the
+            // entirety of the buffer. We're going to see if this API call exactly
+            // matched the way we expect cmd to call it. If it does, then
+            // let's manually emit a Full Reset (RIS).
+            const auto bufferSize = buffer.GetBufferSize();
+            if (enableCmdShim &&
+                source.left <= 0 && source.top <= 0 &&
+                source.right >= bufferSize.RightInclusive() && source.bottom >= bufferSize.BottomInclusive() &&
+                target.x == 0 && target.y <= -bufferSize.BottomExclusive() &&
+                !clip &&
+                fillCharacter == UNICODE_SPACE && fillAttribute == buffer.GetAttributes().GetLegacyAttributes())
+            {
+                WriteClearScreen(context);
+                writer.Submit();
+                return S_OK;
+            }
+
+            const auto clipViewport = clip ? Viewport::FromInclusive(*clip) : bufferSize;
+            const auto sourceViewport = Viewport::FromInclusive(source);
+            Viewport readViewport;
+            Viewport writtenViewport;
+
+            const auto w = std::max(0, sourceViewport.Width());
+            const auto h = std::max(0, sourceViewport.Height());
+            const auto a = static_cast<size_t>(w * h);
+            if (a == 0)
+            {
+                return S_OK;
+            }
+
+            til::small_vector<CHAR_INFO, 1024> backup;
+            til::small_vector<CHAR_INFO, 1024> fill;
+
+            backup.resize(a, CHAR_INFO{ fillCharacter, fillAttribute });
+            fill.resize(a, CHAR_INFO{ fillCharacter, fillAttribute });
+
+            writer.BackupCursor();
+
+            RETURN_IF_FAILED(ReadConsoleOutputWImplHelper(context, backup, sourceViewport, readViewport));
+            RETURN_IF_FAILED(WriteConsoleOutputWImplHelper(context, fill, w, sourceViewport.Clamp(clipViewport), writtenViewport));
+            RETURN_IF_FAILED(WriteConsoleOutputWImplHelper(context, backup, w, Viewport::FromDimensions(target, readViewport.Dimensions()).Clamp(clipViewport), writtenViewport));
+
+            writer.Submit();
+        }
+        else
+        {
+            auto& buffer = context.GetActiveBuffer();
+            TextAttribute useThisAttr(fillAttribute);
+            ScrollRegion(buffer, source, clip, target, fillCharacter, useThisAttr);
         }
 
-        return hr;
+        return S_OK;
     }
     CATCH_RETURN();
 }
@@ -983,6 +1086,13 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
 
         const TextAttribute attr{ attribute };
         context.SetAttributes(attr);
+
+        auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        if (auto writer = gci.GetVtWriterForBuffer(&context))
+        {
+            writer.WriteAttributes(attr);
+            writer.Submit();
+        }
 
         return S_OK;
     }
@@ -1103,7 +1213,6 @@ void ApiRoutines::GetConsoleWindowImpl(HWND& hwnd) noexcept
         LockConsole();
         auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
         const IConsoleWindow* pWindow = ServiceLocator::LocateConsoleWindow();
-        const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         if (pWindow != nullptr)
         {
             hwnd = pWindow->GetWindowHandle();
@@ -1115,6 +1224,7 @@ void ApiRoutines::GetConsoleWindowImpl(HWND& hwnd) noexcept
             //      doesn't actually do anything, but is a unique HWND to this
             //      console, so that they know that this console is in fact a real
             //      console window.
+            auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
             if (gci.IsInVtIoMode())
             {
                 hwnd = ServiceLocator::LocatePseudoWindow();
@@ -1516,6 +1626,14 @@ void ApiRoutines::GetConsoleDisplayModeImpl(ULONG& flags) noexcept
     LockConsole();
     auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
-    ServiceLocator::LocateGlobals().getConsoleInformation().SetTitle(title);
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    gci.SetTitle(title);
+
+    if (auto writer = gci.GetVtWriter())
+    {
+        writer.WriteWindowTitle(title);
+        writer.Submit();
+    }
+
     return S_OK;
 }

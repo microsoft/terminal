@@ -14,6 +14,7 @@ namespace Microsoft.Terminal.Core
 
         Boolean SnapOnInput;
         Boolean AltGrAliasing;
+        String AnswerbackMessage;
 
         String StartingTitle;
         Boolean SuppressApplicationTitle;

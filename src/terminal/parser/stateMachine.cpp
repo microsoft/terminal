@@ -1859,7 +1859,7 @@ void StateMachine::ProcessCharacter(const wchar_t wch)
         // code points that get translated as C1 controls when that is not their
         // intended use. In order to avoid them triggering unintentional escape
         // sequences, we ignore these characters by default.
-        if (_parserMode.any(Mode::AcceptC1, Mode::AlwaysAcceptC1))
+        if (_parserMode.test(Mode::AcceptC1))
         {
             ProcessCharacter(AsciiChars::ESC);
             ProcessCharacter(_c1To7Bit(wch));
@@ -1978,6 +1978,7 @@ void StateMachine::ProcessString(const std::wstring_view string)
     _currentString = string;
     _runOffset = 0;
     _runSize = 0;
+    _injections.clear();
 
     if (_state != VTStates::Ground)
     {
@@ -2096,6 +2097,16 @@ void StateMachine::ProcessString(const std::wstring_view string)
 bool StateMachine::IsProcessingLastCharacter() const noexcept
 {
     return _processingLastCharacter;
+}
+
+void StateMachine::InjectSequence(const InjectionType type)
+{
+    _injections.emplace_back(type, _runOffset + _runSize);
+}
+
+const til::small_vector<Injection, 8>& StateMachine::GetInjections() const noexcept
+{
+    return _injections;
 }
 
 // Routine Description:

@@ -80,13 +80,11 @@ public:
     [[nodiscard]] virtual HRESULT WriteConsoleAImpl(IConsoleOutputObject& context,
                                                     const std::string_view buffer,
                                                     size_t& read,
-                                                    bool requiresVtQuirk,
                                                     std::unique_ptr<IWaitRoutine>& waiter) noexcept = 0;
 
     [[nodiscard]] virtual HRESULT WriteConsoleWImpl(IConsoleOutputObject& context,
                                                     const std::wstring_view buffer,
                                                     size_t& read,
-                                                    bool requiresVtQuirk,
                                                     std::unique_ptr<IWaitRoutine>& waiter) noexcept = 0;
 
 #pragma region Thread Creation Info

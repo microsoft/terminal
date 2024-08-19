@@ -164,6 +164,7 @@ private:
     bool _insertMode = false;
     bool _dirty = false;
     bool _redrawPending = false;
+    bool _clearPending = false;
 
     til::point _originInViewport;
     // This value is in the pager coordinate space. (0,0) is the first character of the

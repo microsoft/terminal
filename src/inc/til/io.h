@@ -53,8 +53,8 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         } // details
 
         // Tries to read a file somewhat atomically without locking it.
-        // Strips the UTF8 BOM if it exists.
-        _TIL_INLINEPREFIX std::string read_file_as_utf8_string(const std::filesystem::path& path, const bool elevatedOnly = false, FILETIME* lastWriteTime = nullptr)
+        // Returns an empty string if the file couldn't be opened.
+        _TIL_INLINEPREFIX std::string read_file_as_utf8_string_if_exists(const std::filesystem::path& path, const bool elevatedOnly = false, FILETIME* lastWriteTime = nullptr)
         {
             // From some casual observations we can determine that:
             // * ReadFile() always returns the requested amount of data (unless the file is smaller)
@@ -69,7 +69,16 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                                                     OPEN_EXISTING,
                                                     FILE_ATTRIBUTE_NORMAL,
                                                     nullptr) };
-                THROW_LAST_ERROR_IF(!file);
+
+                if (!file)
+                {
+                    const auto gle = GetLastError();
+                    if (gle == ERROR_FILE_NOT_FOUND)
+                    {
+                        return {};
+                    }
+                    THROW_WIN32(gle);
+                }
 
                 // Open the file _first_, then check if it has the right
                 // permissions. This prevents a "Time-of-check to time-of-use"
@@ -92,7 +101,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                         LOG_LAST_ERROR_IF(!DeleteFile(path.c_str()));
 
                         // Exit early, because obviously there's nothing to read from the deleted file.
-                        return "";
+                        return {};
                     }
                 }
 
@@ -135,24 +144,6 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             }
 
             THROW_WIN32_MSG(ERROR_READ_FAULT, "file size changed while reading");
-        }
-
-        // Same as read_file_as_utf8_string, but returns an empty optional, if the file couldn't be opened.
-        _TIL_INLINEPREFIX std::optional<std::string> read_file_as_utf8_string_if_exists(const std::filesystem::path& path, const bool elevatedOnly = false, FILETIME* lastWriteTime = nullptr)
-        {
-            try
-            {
-                return { read_file_as_utf8_string(path, elevatedOnly, lastWriteTime) };
-            }
-            catch (const wil::ResultException& exception)
-            {
-                if (exception.GetErrorCode() == HRESULT_FROM_WIN32(ERROR_FILE_NOT_FOUND))
-                {
-                    return {};
-                }
-
-                throw;
-            }
         }
 
         _TIL_INLINEPREFIX void write_utf8_string_to_file(const std::filesystem::path& path, const std::string_view& content, const bool elevatedOnly = false, FILETIME* lastWriteTime = nullptr)
