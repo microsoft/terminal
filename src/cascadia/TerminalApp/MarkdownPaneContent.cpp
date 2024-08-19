@@ -54,8 +54,7 @@ namespace winrt::TerminalApp::implementation
         TitleChanged.raise(*this, nullptr);
 
         const std::filesystem::path filePath{ std::wstring_view{ _filePath } };
-        const auto fileContents{ til::io::read_file_as_utf8_string_if_exists(filePath) };
-        const std::string markdownContents = fileContents.value_or("");
+        const auto markdownContents{ til::io::read_file_as_utf8_string_if_exists(filePath) };
 
         Editing(false);
         PropertyChanged.raise(*this, WUX::Data::PropertyChangedEventArgs{ L"Editing" });
