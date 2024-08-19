@@ -109,6 +109,7 @@ namespace RemotingUnitTests
         void HandleActivatePeasant(Remoting::WindowActivatedArgs /*args*/) DIE;
         void SummonWindow(Remoting::SummonWindowSelectionArgs /*args*/) DIE;
         void SignalClose(uint64_t /*peasantId*/) DIE;
+        void QuitAll() DIE;
 
         void SummonAllWindows() DIE;
         bool DoesQuakeWindowExist() DIE;
