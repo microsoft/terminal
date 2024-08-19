@@ -56,7 +56,14 @@ Dies ist ein Open Source-Projekt, und wir freuen uns über die Teilnahme an der 
   <ReleaseNotes>
     Version __VERSION_NUMBER__
 
-Weitere Einzelheiten finden Sie auf der Seite der GitHub-Veröffentlichungen.
+– Terminal speichert jetzt den Inhalt des Fensters, wenn Sie die Sitzungswiederherstellung verwenden.
+– Sie können jetzt mehrere Schriftarten gleichzeitig verwenden.
+– Kästchenzeichnende Zeichen werden jetzt pixelgenau gerendert.
+– Die Verwendung eines IME innerhalb des Terminals wurde erheblich verbessert.
+– Die Farbschemas in Ihrer JSON-Datei sind jetzt viel einfacher.
+– Eine Reihe von Fehlern im Zusammenhang mit der URL-Verarbeitung, Zeilen mit doppelter Breite, Zeilenumbruch und mehr wurden behoben.
+
+Weitere Informationen finden Sie auf unserer GitHub-Releaseseite.
   </ReleaseNotes>
   <ScreenshotCaptions>
     <!-- Valid length: 200 character limit, up to 9 elements per platform -->
