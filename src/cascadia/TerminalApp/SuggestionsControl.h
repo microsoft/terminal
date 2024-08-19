@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "FilteredCommand.h"
+#include "FilteredTask.h"
 #include "SuggestionsControl.g.h"
 #include "AppCommandlineArgs.h"
 
@@ -21,7 +21,7 @@ namespace winrt::TerminalApp::implementation
     {
         SuggestionsControl();
 
-        Windows::Foundation::Collections::IObservableVector<winrt::TerminalApp::FilteredCommand> FilteredActions();
+        Windows::Foundation::Collections::IObservableVector<winrt::TerminalApp::FilteredTask> FilteredActions();
 
         void SetCommands(const Windows::Foundation::Collections::IVector<Microsoft::Terminal::Settings::Model::Command>& actions);
 
@@ -66,10 +66,10 @@ namespace winrt::TerminalApp::implementation
         };
         friend struct SuggestionsControlT<SuggestionsControl>; // for Xaml to bind events
 
-        Windows::Foundation::Collections::IVector<winrt::TerminalApp::FilteredCommand> _allCommands{ nullptr };
-        Windows::Foundation::Collections::IVector<winrt::TerminalApp::FilteredCommand> _currentNestedCommands{ nullptr };
-        Windows::Foundation::Collections::IObservableVector<winrt::TerminalApp::FilteredCommand> _filteredActions{ nullptr };
-        Windows::Foundation::Collections::IVector<winrt::TerminalApp::FilteredCommand> _nestedActionStack{ nullptr };
+        Windows::Foundation::Collections::IVector<winrt::TerminalApp::FilteredTask> _allCommands{ nullptr };
+        Windows::Foundation::Collections::IVector<winrt::TerminalApp::FilteredTask> _currentNestedCommands{ nullptr };
+        Windows::Foundation::Collections::IObservableVector<winrt::TerminalApp::FilteredTask> _filteredActions{ nullptr };
+        Windows::Foundation::Collections::IVector<winrt::TerminalApp::FilteredTask> _nestedActionStack{ nullptr };
 
         TerminalApp::SuggestionsMode _mode{ TerminalApp::SuggestionsMode::Palette };
         TerminalApp::SuggestionsDirection _direction{ TerminalApp::SuggestionsDirection::TopDown };
@@ -94,7 +94,7 @@ namespace winrt::TerminalApp::implementation
         void _updateUIForStackChange();
         void _updateFilteredActions();
 
-        void _dispatchCommand(const winrt::TerminalApp::FilteredCommand& command);
+        void _dispatchCommand(const winrt::TerminalApp::FilteredTask& command);
         void _close();
         void _dismissPalette();
 
@@ -120,8 +120,8 @@ namespace winrt::TerminalApp::implementation
         void _choosingItemContainer(const Windows::UI::Xaml::Controls::ListViewBase& sender, const Windows::UI::Xaml::Controls::ChoosingItemContainerEventArgs& args);
         void _containerContentChanging(const Windows::UI::Xaml::Controls::ListViewBase& sender, const Windows::UI::Xaml::Controls::ContainerContentChangingEventArgs& args);
 
-        std::vector<winrt::TerminalApp::FilteredCommand> _collectFilteredActions();
-        Windows::Foundation::Collections::IVector<winrt::TerminalApp::FilteredCommand> _commandsToFilter();
+        std::vector<winrt::TerminalApp::FilteredTask> _collectFilteredActions();
+        Windows::Foundation::Collections::IVector<winrt::TerminalApp::FilteredTask> _commandsToFilter();
         std::wstring _getTrimmedInput();
         uint32_t _getNumVisibleItems();
         friend class TerminalAppLocalTests::TabTests;

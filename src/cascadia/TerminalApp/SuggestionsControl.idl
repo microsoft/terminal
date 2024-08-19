@@ -3,7 +3,7 @@
 
 import "TabBase.idl";
 import "HighlightedTextControl.idl";
-import "FilteredCommand.idl";
+import "FilteredTask.idl";
 
 namespace TerminalApp
 {
@@ -31,7 +31,7 @@ namespace TerminalApp
 
         Windows.UI.Xaml.FrameworkElement SelectedItem { get; };
 
-        Windows.Foundation.Collections.IObservableVector<FilteredCommand> FilteredActions { get; };
+        Windows.Foundation.Collections.IObservableVector<FilteredTask> FilteredActions { get; };
 
         SuggestionsMode Mode { get; set; };
 

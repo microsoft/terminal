@@ -31,10 +31,10 @@ namespace winrt::TerminalApp::implementation
         _itemTemplateSelector = Resources().Lookup(winrt::box_value(L"PaletteItemTemplateSelector")).try_as<PaletteItemTemplateSelector>();
         _listItemTemplate = Resources().Lookup(winrt::box_value(L"ListItemTemplate")).try_as<DataTemplate>();
 
-        _filteredActions = winrt::single_threaded_observable_vector<winrt::TerminalApp::FilteredCommand>();
-        _nestedActionStack = winrt::single_threaded_vector<winrt::TerminalApp::FilteredCommand>();
-        _currentNestedCommands = winrt::single_threaded_vector<winrt::TerminalApp::FilteredCommand>();
-        _allCommands = winrt::single_threaded_vector<winrt::TerminalApp::FilteredCommand>();
+        _filteredActions = winrt::single_threaded_observable_vector<winrt::TerminalApp::FilteredTask>();
+        _nestedActionStack = winrt::single_threaded_vector<winrt::TerminalApp::FilteredTask>();
+        _currentNestedCommands = winrt::single_threaded_vector<winrt::TerminalApp::FilteredTask>();
+        _allCommands = winrt::single_threaded_vector<winrt::TerminalApp::FilteredTask>();
 
         _switchToMode();
 
@@ -112,6 +112,8 @@ namespace winrt::TerminalApp::implementation
 
         _filteredActionsView().SelectionChanged({ this, &SuggestionsControl::_selectedCommandChanged });
     }
+
+    TerminalApp::implementation::FilteredTask* impl(const TerminalApp::FilteredTask t) { return winrt::get_self<implementation::FilteredTask>(t); };
 
     TerminalApp::SuggestionsMode SuggestionsControl::Mode() const
     {
@@ -267,7 +269,7 @@ namespace winrt::TerminalApp::implementation
                                                      const Windows::UI::Xaml::RoutedEventArgs& /*args*/)
     {
         const auto selectedCommand = _filteredActionsView().SelectedItem();
-        const auto filteredCommand{ selectedCommand.try_as<winrt::TerminalApp::FilteredCommand>() };
+        const auto filteredCommand{ selectedCommand.try_as<winrt::TerminalApp::FilteredTask>() };
 
         PropertyChanged.raise(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"SelectedItem" });
 
@@ -280,7 +282,7 @@ namespace winrt::TerminalApp::implementation
         if (filteredCommand != nullptr &&
             isVisible)
         {
-            if (const auto actionPaletteItem{ filteredCommand.Item().try_as<winrt::TerminalApp::ActionPaletteItem>() })
+            if (const auto actionPaletteItem{ impl(filteredCommand)->Item().try_as<winrt::TerminalApp::ActionPaletteItem>() })
             {
                 const auto& cmd = actionPaletteItem.Command();
                 PreviewAction.raise(*this, cmd);
@@ -413,7 +415,7 @@ namespace winrt::TerminalApp::implementation
             }
 
             const auto selectedCommand = _filteredActionsView().SelectedItem();
-            const auto filteredCommand = selectedCommand.try_as<winrt::TerminalApp::FilteredCommand>();
+            const auto filteredCommand = selectedCommand.try_as<winrt::TerminalApp::FilteredTask>();
             _dispatchCommand(filteredCommand);
             e.Handled(true);
         }
@@ -558,7 +560,7 @@ namespace winrt::TerminalApp::implementation
                                               const Windows::UI::Xaml::Controls::ItemClickEventArgs& e)
     {
         const auto selectedCommand = e.ClickedItem();
-        if (const auto filteredCommand = selectedCommand.try_as<winrt::TerminalApp::FilteredCommand>())
+        if (const auto filteredCommand = selectedCommand.try_as<winrt::TerminalApp::FilteredTask>())
         {
             _dispatchCommand(filteredCommand);
         }
@@ -571,9 +573,9 @@ namespace winrt::TerminalApp::implementation
             if (const auto selectedList = e.AddedItems(); selectedList.Size() > 0)
             {
                 const auto selectedCommand = selectedList.GetAt(0);
-                if (const auto filteredCmd = selectedCommand.try_as<TerminalApp::FilteredCommand>())
+                if (const auto filteredCmd = selectedCommand.try_as<TerminalApp::FilteredTask>())
                 {
-                    if (const auto paletteItem = filteredCmd.Item().try_as<TerminalApp::PaletteItem>())
+                    if (const auto paletteItem = impl(filteredCmd)->Item().try_as<TerminalApp::PaletteItem>())
                     {
                         automationPeer.RaiseNotificationEvent(
                             Automation::Peers::AutomationNotificationKind::ItemAdded,
@@ -607,7 +609,7 @@ namespace winrt::TerminalApp::implementation
         if (_nestedActionStack.Size() > 0)
         {
             const auto newPreviousAction{ _nestedActionStack.GetAt(_nestedActionStack.Size() - 1) };
-            const auto actionPaletteItem{ newPreviousAction.Item().try_as<winrt::TerminalApp::ActionPaletteItem>() };
+            const auto actionPaletteItem{ impl(newPreviousAction)->Item().try_as<winrt::TerminalApp::ActionPaletteItem>() };
 
             ParentCommandName(actionPaletteItem.Command().Name());
             _updateCurrentNestedCommands(actionPaletteItem.Command());
@@ -620,7 +622,7 @@ namespace winrt::TerminalApp::implementation
         _updateFilteredActions();
 
         const auto lastSelectedIt = std::find_if(begin(_filteredActions), end(_filteredActions), [&](const auto& filteredCommand) {
-            return filteredCommand.Item().Name() == previousAction.Item().Name();
+            return impl(filteredCommand)->Item().Name() == impl(previousAction)->Item().Name();
         });
         const auto lastSelectedIndex = static_cast<int32_t>(std::distance(begin(_filteredActions), lastSelectedIt));
         _scrollToIndex(lastSelectedIt != end(_filteredActions) ? lastSelectedIndex : 0);
@@ -668,7 +670,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - A list of Commands to filter.
-    Collections::IVector<winrt::TerminalApp::FilteredCommand> SuggestionsControl::_commandsToFilter()
+    Collections::IVector<winrt::TerminalApp::FilteredTask> SuggestionsControl::_commandsToFilter()
     {
         if (_nestedActionStack.Size() > 0)
         {
@@ -687,11 +689,11 @@ namespace winrt::TerminalApp::implementation
     // - command: the Command to dispatch. This might be null.
     // Return Value:
     // - <none>
-    void SuggestionsControl::_dispatchCommand(const winrt::TerminalApp::FilteredCommand& filteredCommand)
+    void SuggestionsControl::_dispatchCommand(const winrt::TerminalApp::FilteredTask& filteredCommand)
     {
         if (filteredCommand)
         {
-            if (const auto actionPaletteItem{ filteredCommand.Item().try_as<winrt::TerminalApp::ActionPaletteItem>() })
+            if (const auto actionPaletteItem{ impl(filteredCommand)->Item().try_as<winrt::TerminalApp::ActionPaletteItem>() })
             {
                 if (actionPaletteItem.Command().HasNestedCommands())
                 {
@@ -816,7 +818,7 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    Collections::IObservableVector<winrt::TerminalApp::FilteredCommand> SuggestionsControl::FilteredActions()
+    Collections::IObservableVector<winrt::TerminalApp::FilteredTask> SuggestionsControl::FilteredActions()
     {
         return _filteredActions;
     }
@@ -827,8 +829,8 @@ namespace winrt::TerminalApp::implementation
         for (const auto& action : actions)
         {
             // key chords aren't relevant in the suggestions control, so make the palette item with just the command and no keys
-            auto actionPaletteItem{ winrt::make<winrt::TerminalApp::implementation::ActionPaletteItem>(action, winrt::hstring{}) };
-            auto filteredCommand{ winrt::make<FilteredCommand>(actionPaletteItem) };
+            //auto actionPaletteItem{ winrt::make<winrt::TerminalApp::implementation::ActionPaletteItem>(action, winrt::hstring{}) };
+            auto filteredCommand{ winrt::make<FilteredTask>(action) };
             _allCommands.Append(filteredCommand);
         }
 
@@ -879,9 +881,9 @@ namespace winrt::TerminalApp::implementation
     // - A collection that will receive the filtered actions
     // Return Value:
     // - <none>
-    std::vector<winrt::TerminalApp::FilteredCommand> SuggestionsControl::_collectFilteredActions()
+    std::vector<winrt::TerminalApp::FilteredTask> SuggestionsControl::_collectFilteredActions()
     {
-        std::vector<winrt::TerminalApp::FilteredCommand> actions;
+        std::vector<winrt::TerminalApp::FilteredTask> actions;
 
         winrt::hstring searchText{ _getTrimmedInput() };
 
@@ -890,13 +892,14 @@ namespace winrt::TerminalApp::implementation
         {
             for (const auto& action : commandsToFilter)
             {
+                auto* const snippet{ impl(action) };
                 // Update filter for all commands
                 // This will modify the highlighting but will also lead to re-computation of weight (and consequently sorting).
                 // Pay attention that it already updates the highlighting in the UI
-                action.UpdateFilter(searchText);
+                snippet->UpdateFilter(searchText);
 
                 // if there is active search we skip commands with 0 weight
-                if (searchText.empty() || action.Weight() > 0)
+                if (searchText.empty() || snippet->Weight() > 0)
                 {
                     actions.push_back(action);
                 }
@@ -937,9 +940,10 @@ namespace winrt::TerminalApp::implementation
         // This allows WinUI to nicely animate the ListView as it changes.
         for (uint32_t i = 0; i < _filteredActions.Size() && i < actions.size(); i++)
         {
+            auto* const newItemImpl{ impl(actions[i]) };
             for (auto j = i; j < _filteredActions.Size(); j++)
             {
-                if (_filteredActions.GetAt(j).Item() == actions[i].Item())
+                if (impl(_filteredActions.GetAt(j))->Item() == newItemImpl->Item())
                 {
                     for (auto k = i; k < j; k++)
                     {
@@ -949,7 +953,7 @@ namespace winrt::TerminalApp::implementation
                 }
             }
 
-            if (_filteredActions.GetAt(i).Item() != actions[i].Item())
+            if (impl(_filteredActions.GetAt(i))->Item() != newItemImpl->Item())
             {
                 _filteredActions.InsertAt(i, actions[i]);
             }
@@ -981,9 +985,9 @@ namespace winrt::TerminalApp::implementation
         for (const auto& nameAndCommand : parentCommand.NestedCommands())
         {
             const auto action = nameAndCommand.Value();
-            auto nestedActionPaletteItem{ winrt::make<winrt::TerminalApp::implementation::ActionPaletteItem>(action, winrt::hstring{}) };
-            auto nestedFilteredCommand{ winrt::make<FilteredCommand>(nestedActionPaletteItem) };
-            _currentNestedCommands.Append(nestedFilteredCommand);
+            //auto nestedActionPaletteItem{ winrt::make<winrt::TerminalApp::implementation::ActionPaletteItem>(action, winrt::hstring{}) };
+            auto nestedFilteredTask{ winrt::make<FilteredTask>(action) };
+            _currentNestedCommands.Append(nestedFilteredTask);
         }
     }
 

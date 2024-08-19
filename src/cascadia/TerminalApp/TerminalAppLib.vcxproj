@@ -130,6 +130,7 @@
       <DependentUpon>CommandPalette.xaml</DependentUpon>
     </ClInclude>
     <ClInclude Include="FilteredCommand.h" />
+    <ClInclude Include="FilteredTask.h" />
     <ClInclude Include="Pane.h" />
     <ClInclude Include="ColorHelper.h" />
     <ClInclude Include="pch.h" />
@@ -360,6 +361,7 @@
       <SubType>Code</SubType>
     </Midl>
     <Midl Include="FilteredCommand.idl" />
+    <Midl Include="FilteredTask.idl" />
     <Midl Include="IPaneContent.idl" />
     <Midl Include="TerminalPaneContent.idl" >
       <DependentUpon>TaskPaneContent.xaml</DependentUpon>

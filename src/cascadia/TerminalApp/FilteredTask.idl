@@ -1,0 +1,19 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+import "IPaneContent.idl";
+import "TerminalSettingsCache.idl";
+import "FilteredCommand.idl";
+
+namespace TerminalApp
+{
+    [default_interface] runtimeclass FilteredTask : Windows.UI.Xaml.Data.INotifyPropertyChanged
+    {
+        String Input{ get; };
+        Windows.Foundation.Collections.IObservableVector<FilteredTask> Children { get; };
+        Boolean HasChildren { get; };
+        Int32 Row { get; };
+        Windows.UI.Xaml.Visibility Visibility { get; };
+        TerminalApp.FilteredCommand FilteredCommand{ get; };
+    }
+}

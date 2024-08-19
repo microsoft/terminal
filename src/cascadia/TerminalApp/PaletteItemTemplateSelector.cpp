@@ -24,7 +24,15 @@ namespace winrt::TerminalApp::implementation
     // - data template to use for rendering
     Windows::UI::Xaml::DataTemplate PaletteItemTemplateSelector::SelectTemplateCore(const winrt::Windows::Foundation::IInspectable& item)
     {
-        if (const auto filteredCommand{ item.try_as<winrt::TerminalApp::FilteredCommand>() })
+        auto filteredCommand{ item.try_as<winrt::TerminalApp::FilteredCommand>() };
+        if (filteredCommand == nullptr)
+        {
+            if (auto snippet{ item.try_as<winrt::TerminalApp::FilteredTask>() })
+            {
+                filteredCommand = snippet.FilteredCommand();
+            }
+        }
+        if (filteredCommand)
         {
             if (filteredCommand.Item().try_as<winrt::TerminalApp::TabPaletteItem>())
             {
