@@ -15,10 +15,10 @@ private:
     winrt::hstring _baseUri{ L"" };
 
     winrt::Windows::UI::Xaml::Controls::RichTextBlock _root{};
-    winrt::Windows::UI::Xaml::Documents::Run _lastRun{ nullptr };
-    winrt::Windows::UI::Xaml::Documents::Span _lastSpan{ nullptr };
+    winrt::Windows::UI::Xaml::Documents::Run _currentRun{ nullptr };
+    winrt::Windows::UI::Xaml::Documents::Span _currentSpan{ nullptr };
     winrt::Windows::UI::Xaml::Documents::Paragraph _lastParagraph{ nullptr };
-    winrt::Windows::UI::Xaml::Controls::Image _lastImage{ nullptr };
+    winrt::Windows::UI::Xaml::Controls::Image _currentImage{ nullptr };
 
     int _indent = 0;
     int _blockQuoteDepth = 0;
