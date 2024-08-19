@@ -607,6 +607,13 @@ void TerminalBufferTests::TestURLPatternDetection()
     constexpr auto urlStartX = BeforeStr.size();
     constexpr auto urlEndX = BeforeStr.size() + UrlStr.size() - 1;
 
+    // This is off by default; turn it on for the test.
+    auto originalDetectURLs = term->_detectURLs;
+    auto restoreDetectUrls = wil::scope_exit([&]() {
+        term->_detectURLs = originalDetectURLs;
+    });
+    term->_detectURLs = true;
+
     auto& termSm = *term->_stateMachine;
     termSm.ProcessString(fmt::format(FMT_COMPILE(L"{}{}{}"), BeforeStr, UrlStr, AfterStr));
     term->UpdatePatternsUnderLock();
