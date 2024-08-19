@@ -316,20 +316,20 @@ class Microsoft::Console::VirtualTerminal::TestInteractDispatch final : public I
 public:
     TestInteractDispatch(_In_ std::function<void(const std::span<const INPUT_RECORD>&)> pfn,
                          _In_ TestState* testState);
-    virtual bool WriteInput(_In_ const std::span<const INPUT_RECORD>& inputEvents) override;
+    virtual void WriteInput(_In_ const std::span<const INPUT_RECORD>& inputEvents) override;
 
-    virtual bool WriteCtrlKey(const INPUT_RECORD& event) override;
-    virtual bool WindowManipulation(const DispatchTypes::WindowManipulationType function,
+    virtual void WriteCtrlKey(const INPUT_RECORD& event) override;
+    virtual void WindowManipulation(const DispatchTypes::WindowManipulationType function,
                                     const VTParameter parameter1,
                                     const VTParameter parameter2) override; // DTTERM_WindowManipulation
-    virtual bool WriteString(const std::wstring_view string) override;
+    virtual void WriteString(const std::wstring_view string) override;
 
-    virtual bool MoveCursor(const VTInt row,
+    virtual void MoveCursor(const VTInt row,
                             const VTInt col) override;
 
     virtual bool IsVtInputEnabled() const override;
 
-    virtual bool FocusChanged(const bool focused) const override;
+    virtual void FocusChanged(const bool focused) override;
 
 private:
     std::function<void(const std::span<const INPUT_RECORD>&)> _pfnWriteInputCallback;
@@ -343,19 +343,18 @@ TestInteractDispatch::TestInteractDispatch(_In_ std::function<void(const std::sp
 {
 }
 
-bool TestInteractDispatch::WriteInput(_In_ const std::span<const INPUT_RECORD>& inputEvents)
+void TestInteractDispatch::WriteInput(_In_ const std::span<const INPUT_RECORD>& inputEvents)
 {
     _pfnWriteInputCallback(inputEvents);
-    return true;
 }
 
-bool TestInteractDispatch::WriteCtrlKey(const INPUT_RECORD& event)
+void TestInteractDispatch::WriteCtrlKey(const INPUT_RECORD& event)
 {
     VERIFY_IS_TRUE(_testState->_expectSendCtrlC);
-    return WriteInput({ &event, 1 });
+    WriteInput({ &event, 1 });
 }
 
-bool TestInteractDispatch::WindowManipulation(const DispatchTypes::WindowManipulationType function,
+void TestInteractDispatch::WindowManipulation(const DispatchTypes::WindowManipulationType function,
                                               const VTParameter parameter1,
                                               const VTParameter parameter2)
 {
@@ -363,10 +362,9 @@ bool TestInteractDispatch::WindowManipulation(const DispatchTypes::WindowManipul
     VERIFY_ARE_EQUAL(_testState->_expectedWindowManipulation, function);
     VERIFY_ARE_EQUAL(_testState->_expectedParams[0], parameter1.value_or(0));
     VERIFY_ARE_EQUAL(_testState->_expectedParams[1], parameter2.value_or(0));
-    return true;
 }
 
-bool TestInteractDispatch::WriteString(const std::wstring_view string)
+void TestInteractDispatch::WriteString(const std::wstring_view string)
 {
     InputEventQueue keyEvents;
 
@@ -377,15 +375,14 @@ bool TestInteractDispatch::WriteString(const std::wstring_view string)
         Microsoft::Console::Interactivity::CharToKeyEvents(wch, CP_USA, keyEvents);
     }
 
-    return WriteInput(keyEvents);
+    WriteInput(keyEvents);
 }
 
-bool TestInteractDispatch::MoveCursor(const VTInt row, const VTInt col)
+void TestInteractDispatch::MoveCursor(const VTInt row, const VTInt col)
 {
     VERIFY_IS_TRUE(_testState->_expectCursorPosition);
     til::point received{ col, row };
     VERIFY_ARE_EQUAL(_testState->_expectedCursor, received);
-    return true;
 }
 
 bool TestInteractDispatch::IsVtInputEnabled() const
@@ -393,9 +390,8 @@ bool TestInteractDispatch::IsVtInputEnabled() const
     return true;
 }
 
-bool TestInteractDispatch::FocusChanged(const bool /*focused*/) const
+void TestInteractDispatch::FocusChanged(const bool /*focused*/)
 {
-    return false;
 }
 
 void InputEngineTest::C0Test()

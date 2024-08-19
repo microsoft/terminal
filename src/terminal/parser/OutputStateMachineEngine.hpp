@@ -33,7 +33,7 @@ namespace Microsoft::Console::VirtualTerminal
 
         bool ActionPrintString(const std::wstring_view string) override;
 
-        bool ActionPassThroughString(const std::wstring_view string, const bool flush) noexcept override;
+        bool ActionPassThroughString(const std::wstring_view string) noexcept override;
 
         bool ActionEscDispatch(const VTID id) override;
 
@@ -42,10 +42,6 @@ namespace Microsoft::Console::VirtualTerminal
         bool ActionCsiDispatch(const VTID id, const VTParameters parameters) override;
 
         StringHandler ActionDcsDispatch(const VTID id, const VTParameters parameters) override;
-
-        bool ActionClear() noexcept override;
-
-        bool ActionIgnore() noexcept override;
 
         bool ActionOscDispatch(const size_t parameter, const std::wstring_view string) override;
 

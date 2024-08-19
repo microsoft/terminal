@@ -143,7 +143,7 @@ namespace Microsoft::Console::VirtualTerminal
 
         bool ActionPrintString(const std::wstring_view string) override;
 
-        bool ActionPassThroughString(const std::wstring_view string, const bool flush) override;
+        bool ActionPassThroughString(const std::wstring_view string) override;
 
         bool ActionEscDispatch(const VTID id) override;
 
@@ -153,19 +153,12 @@ namespace Microsoft::Console::VirtualTerminal
 
         StringHandler ActionDcsDispatch(const VTID id, const VTParameters parameters) noexcept override;
 
-        bool ActionClear() noexcept override;
-
-        bool ActionIgnore() noexcept override;
-
         bool ActionOscDispatch(const size_t parameter, const std::wstring_view string) noexcept override;
 
         bool ActionSs3Dispatch(const wchar_t wch, const VTParameters parameters) override;
 
-        void SetFlushToInputQueueCallback(std::function<bool()> pfnFlushToInputQueue);
-
     private:
         const std::unique_ptr<IInteractDispatch> _pDispatch;
-        std::function<bool()> _pfnFlushToInputQueue;
         std::atomic<bool> _lookingForDSR{ false };
         bool _encounteredWin32InputModeSequence = false;
         DWORD _mouseButtonState = 0;
@@ -190,10 +183,10 @@ namespace Microsoft::Console::VirtualTerminal
         bool _GetCursorKeysVkey(const VTID id, short& vkey) const;
         bool _GetSs3KeysVkey(const wchar_t wch, short& vkey) const;
 
-        bool _WriteSingleKey(const short vkey, const DWORD modifierState);
-        bool _WriteSingleKey(const wchar_t wch, const short vkey, const DWORD modifierState);
+        void _WriteSingleKey(const short vkey, const DWORD modifierState);
+        void _WriteSingleKey(const wchar_t wch, const short vkey, const DWORD modifierState);
 
-        bool _WriteMouseEvent(const til::point uiPos, const DWORD buttonState, const DWORD controlKeyState, const DWORD eventFlags);
+        void _WriteMouseEvent(const til::point uiPos, const DWORD buttonState, const DWORD controlKeyState, const DWORD eventFlags);
 
         void _GenerateWrappedSequence(const wchar_t wch,
                                       const short vkey,

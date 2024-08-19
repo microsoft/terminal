@@ -625,8 +625,6 @@ void StateMachine::_ActionClear()
     _oscParameter = 0;
 
     _dcsStringHandler = nullptr;
-
-    _engine->ActionClear();
 }
 
 // Routine Description:
@@ -2161,11 +2159,12 @@ template<typename TLambda>
 bool StateMachine::_SafeExecute(TLambda&& lambda)
 try
 {
-    return lambda();
-}
-catch (const ShutdownException&)
-{
-    throw;
+    bool ok = lambda();
+    if (!ok)
+    {
+        FlushToTerminal();
+    }
+    return ok;
 }
 catch (...)
 {

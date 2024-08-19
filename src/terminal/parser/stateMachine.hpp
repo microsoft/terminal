@@ -92,13 +92,6 @@ namespace Microsoft::Console::VirtualTerminal
         const IStateMachineEngine& Engine() const noexcept;
         IStateMachineEngine& Engine() noexcept;
 
-        class ShutdownException : public wil::ResultException
-        {
-        public:
-            ShutdownException() noexcept :
-                ResultException(E_ABORT) {}
-        };
-
     private:
         void _ActionExecute(const wchar_t wch);
         void _ActionExecuteFromEscape(const wchar_t wch);

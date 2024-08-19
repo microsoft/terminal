@@ -59,7 +59,7 @@ public:
         return true;
     };
 
-    bool ActionPassThroughString(const std::wstring_view string, const bool /*flush*/) override
+    bool ActionPassThroughString(const std::wstring_view string) override
     {
         passedThrough += string;
         return true;
@@ -68,10 +68,6 @@ public:
     bool ActionEscDispatch(const VTID /* id */) override { return true; };
 
     bool ActionVt52EscDispatch(const VTID /*id*/, const VTParameters /*parameters*/) override { return true; };
-
-    bool ActionClear() override { return true; };
-
-    bool ActionIgnore() override { return true; };
 
     bool ActionOscDispatch(const size_t /* parameter */, const std::wstring_view /* string */) override
     {

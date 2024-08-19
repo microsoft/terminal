@@ -37,11 +37,10 @@ InteractDispatch::InteractDispatch() :
 // - inputEvents: a collection of IInputEvents
 // Return Value:
 // - True.
-bool InteractDispatch::WriteInput(const std::span<const INPUT_RECORD>& inputEvents)
+void InteractDispatch::WriteInput(const std::span<const INPUT_RECORD>& inputEvents)
 {
     const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     gci.GetActiveInputBuffer()->Write(inputEvents);
-    return true;
 }
 
 // Method Description:
@@ -51,10 +50,9 @@ bool InteractDispatch::WriteInput(const std::span<const INPUT_RECORD>& inputEven
 //   client application.
 // Arguments:
 // - event: The key to send to the host.
-bool InteractDispatch::WriteCtrlKey(const INPUT_RECORD& event)
+void InteractDispatch::WriteCtrlKey(const INPUT_RECORD& event)
 {
     HandleGenericKeyEvent(event, false);
-    return true;
 }
 
 // Method Description:
@@ -63,7 +61,7 @@ bool InteractDispatch::WriteCtrlKey(const INPUT_RECORD& event)
 // - string : a string to write to the console.
 // Return Value:
 // - True.
-bool InteractDispatch::WriteString(const std::wstring_view string)
+void InteractDispatch::WriteString(const std::wstring_view string)
 {
     if (!string.empty())
     {
@@ -77,7 +75,6 @@ bool InteractDispatch::WriteString(const std::wstring_view string)
 
         WriteInput(keyEvents);
     }
-    return true;
 }
 
 //Method Description:
@@ -92,7 +89,7 @@ bool InteractDispatch::WriteString(const std::wstring_view string)
 // - parameter2 - The second optional parameter for the function
 // Return value:
 // True if handled successfully. False otherwise.
-bool InteractDispatch::WindowManipulation(const DispatchTypes::WindowManipulationType function,
+void InteractDispatch::WindowManipulation(const DispatchTypes::WindowManipulationType function,
                                           const VTParameter parameter1,
                                           const VTParameter parameter2)
 {
@@ -103,20 +100,20 @@ bool InteractDispatch::WindowManipulation(const DispatchTypes::WindowManipulatio
     {
     case DispatchTypes::WindowManipulationType::DeIconifyWindow:
         _api.ShowWindow(true);
-        return true;
+        break;
     case DispatchTypes::WindowManipulationType::IconifyWindow:
         _api.ShowWindow(false);
-        return true;
+        break;
     case DispatchTypes::WindowManipulationType::RefreshWindow:
         _api.GetBufferAndViewport().buffer.TriggerRedrawAll();
-        return true;
+        break;
     case DispatchTypes::WindowManipulationType::ResizeWindowInCharacters:
         // TODO:GH#1765 We should introduce a better `ResizeConpty` function to
         // ConhostInternalGetSet, that specifically handles a conpty resize.
         _api.ResizeWindow(parameter2.value_or(0), parameter1.value_or(0));
-        return true;
+        break;
     default:
-        return false;
+        break;
     }
 }
 
@@ -128,7 +125,7 @@ bool InteractDispatch::WindowManipulation(const DispatchTypes::WindowManipulatio
 // - col: The column to move the cursor to.
 // Return value:
 // - True.
-bool InteractDispatch::MoveCursor(const VTInt row, const VTInt col)
+void InteractDispatch::MoveCursor(const VTInt row, const VTInt col)
 {
     // First retrieve some information about the buffer
     const auto viewport = _api.GetBufferAndViewport().viewport;
@@ -142,7 +139,7 @@ bool InteractDispatch::MoveCursor(const VTInt row, const VTInt col)
     // Finally, attempt to set the adjusted cursor position back into the console.
     const auto api = gsl::not_null{ ServiceLocator::LocateGlobals().api };
     auto& info = ServiceLocator::LocateGlobals().getConsoleInformation().GetActiveOutputBuffer();
-    return SUCCEEDED(api->SetConsoleCursorPositionImpl(info, coordCursor));
+    FAILED_LOG(api->SetConsoleCursorPositionImpl(info, coordCursor));
 }
 
 // Routine Description:
@@ -166,7 +163,7 @@ bool InteractDispatch::IsVtInputEnabled() const
 // - focused: if the terminal is now focused
 // Return Value:
 // - true always.
-bool InteractDispatch::FocusChanged(const bool focused) const
+void InteractDispatch::FocusChanged(const bool focused)
 {
     auto& g = ServiceLocator::LocateGlobals();
     auto& gci = g.getConsoleInformation();
@@ -231,6 +228,4 @@ bool InteractDispatch::FocusChanged(const bool focused) const
         gci.pInputBuffer->WriteFocusEvent(focused);
     }
     // Does nothing outside of ConPTY. If there's a real HWND, then the HWND is solely in charge.
-
-    return true;
 }
