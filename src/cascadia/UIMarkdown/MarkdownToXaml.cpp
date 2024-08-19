@@ -121,8 +121,6 @@ WUX::Documents::Run MarkdownToXaml::_NewRun()
 {
     if (_lastRun == nullptr)
     {
-        // _lastRun = WUX::Documents::Run{};
-        // _CurrentSpan().Inlines().Append(_lastRun);
         return _CurrentRun();
     }
     else
@@ -224,12 +222,12 @@ void MarkdownToXaml::_RenderNode(cmark_node* node, cmark_event_type ev_type)
         if (entering)
         {
             _EndParagraph();
-            // _CurrentParagraph();
             _NewRun().Text(bullets[std::clamp(_indent - _blockQuoteDepth - 1, 0, 2)]);
         }
         break;
 
     case CMARK_NODE_HEADING:
+    {
         _EndParagraph();
 
         // At the start of a header, change the font size to match the new
@@ -237,10 +235,15 @@ void MarkdownToXaml::_RenderNode(cmark_node* node, cmark_event_type ev_type)
         // CMARK_NODE_TEXT
         if (entering)
         {
+            // Insert a blank line, just to help break up the walls of text.
+            // This better reflects the way MD is rendered to HTML
+            _root.Blocks().Append(WUX::Documents::Paragraph{});
+
             const auto level = cmark_node_get_heading_level(node);
             _CurrentParagraph().FontSize(std::max(HeaderMinFontSize, H1FontSize - level * 6));
         }
         break;
+    }
 
     case CMARK_NODE_CODE_BLOCK:
     {
@@ -257,7 +260,6 @@ void MarkdownToXaml::_RenderNode(cmark_node* node, cmark_event_type ev_type)
         _CurrentParagraph().Inlines().Append(codeContainer);
 
         _EndParagraph();
-        _CurrentParagraph();
     }
     break;
 
@@ -298,7 +300,6 @@ void MarkdownToXaml::_RenderNode(cmark_node* node, cmark_event_type ev_type)
         }
 
         // Start a new paragraph if we don't have one
-        _CurrentParagraph();
         break;
     }
     case CMARK_NODE_TEXT:
