@@ -18,17 +18,27 @@
 
         <ResourceDictionary>
             <ResourceDictionary.ThemeDictionaries>
+                <ResourceDictionary x:Key="Dark">
+                    <Color x:Key="BlockBackgroundColor">#1e1e1e</Color>
+                    <Color x:Key="BlockBorderColor">#30363d</Color>
+                    <Color x:Key="PlayButtonHoveredColor">#90ef90</Color>
+                    <Color x:Key="PlayButtonNormalColor">#8888</Color>
+                </ResourceDictionary>
                 <ResourceDictionary x:Key="Light">
                     <Color x:Key="BlockBackgroundColor">#f6f8fa</Color>
                     <Color x:Key="BlockBorderColor">#d3d3d3</Color>
                     <Color x:Key="PlayButtonHoveredColor">#257f01</Color>
                     <Color x:Key="PlayButtonNormalColor">#88222222</Color>
                 </ResourceDictionary>
-                <ResourceDictionary x:Key="Dark">
-                    <Color x:Key="BlockBackgroundColor">#1e1e1e</Color>
-                    <Color x:Key="BlockBorderColor">#30363d</Color>
-                    <Color x:Key="PlayButtonHoveredColor">#90ef90</Color>
-                    <Color x:Key="PlayButtonNormalColor">#8888</Color>
+                <ResourceDictionary x:Key="HighContrast">
+                    <StaticResource x:Key="BlockBackgroundColor"
+                                    ResourceKey="SystemColorWindowColorBrush" />
+                    <StaticResource x:Key="BlockBorderColor"
+                                    ResourceKey="SystemColorWindowColorBrush" />
+                    <StaticResource x:Key="PlayButtonHoveredColor"
+                                    ResourceKey="SystemColorHighlightColor" />
+                    <StaticResource x:Key="PlayButtonNormalColor"
+                                    ResourceKey="SystemColorHighlightColor" />
                 </ResourceDictionary>
             </ResourceDictionary.ThemeDictionaries>
 
@@ -141,7 +151,40 @@
                 VerticalAlignment="Top"
                 Style="{StaticResource PlayButtonTemplate}"
                 Tapped="_playPressed"
-                Visibility="{x:Bind PlayButtonVisibility, Mode=OneWay}" />
+                Visibility="{x:Bind PlayButtonVisibility, Mode=OneWay}">
+            <Button.Resources>
+                <ResourceDictionary>
+                    <ResourceDictionary.ThemeDictionaries>
+                        <ResourceDictionary x:Key="Light">
+                            <SolidColorBrush x:Key="ButtonForegroundPointerOver"
+                                             Color="{StaticResource SystemAccentColor}" />
+                            <SolidColorBrush x:Key="ButtonForegroundPressed"
+                                             Color="{StaticResource SystemAccentColor}" />
+                        </ResourceDictionary>
+                        <ResourceDictionary x:Key="Dark">
+                            <SolidColorBrush x:Key="ButtonForegroundPointerOver"
+                                             Color="{StaticResource SystemAccentColor}" />
+                            <SolidColorBrush x:Key="ButtonForegroundPressed"
+                                             Color="{StaticResource SystemAccentColor}" />
+                        </ResourceDictionary>
+                        <ResourceDictionary x:Key="HighContrast">
+                            <SolidColorBrush x:Key="ButtonBackground"
+                                             Color="{ThemeResource SystemColorButtonFaceColor}" />
+                            <SolidColorBrush x:Key="ButtonBackgroundPointerOver"
+                                             Color="{ThemeResource SystemColorHighlightColor}" />
+                            <SolidColorBrush x:Key="ButtonBackgroundPressed"
+                                             Color="{ThemeResource SystemColorHighlightColor}" />
+                            <SolidColorBrush x:Key="ButtonForeground"
+                                             Color="{ThemeResource SystemColorButtonTextColor}" />
+                            <SolidColorBrush x:Key="ButtonForegroundPointerOver"
+                                             Color="{ThemeResource SystemColorHighlightTextColor}" />
+                            <SolidColorBrush x:Key="ButtonForegroundPressed"
+                                             Color="{ThemeResource SystemColorHighlightTextColor}" />
+                        </ResourceDictionary>
+                    </ResourceDictionary.ThemeDictionaries>
+                </ResourceDictionary>
+            </Button.Resources>
+        </Button>
         <Border Grid.Column="1"
                 Padding="0"
                 HorizontalAlignment="Stretch"

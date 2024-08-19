@@ -22,9 +22,10 @@ namespace winrt::Microsoft::Terminal::UI::Markdown::implementation
     {
     }
     void CodeBlock::_playPressed(const Windows::Foundation::IInspectable&,
-                                 const Windows::UI::Xaml::Input::TappedRoutedEventArgs&)
+                                 const Windows::UI::Xaml::Input::TappedRoutedEventArgs& e)
     {
         auto args = winrt::make_self<RequestRunCommandsArgs>(Commandlines());
         RequestRunCommands.raise(*this, *args);
+        e.Handled(true);
     }
 }

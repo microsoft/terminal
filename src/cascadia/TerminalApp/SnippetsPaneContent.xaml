@@ -206,6 +206,10 @@
                     <!--  Define resources for HighContrast mode here  -->
                     <StaticResource x:Key="PageBackground"
                                     ResourceKey="SystemColorWindowColorBrush" />
+                    <StaticResource x:Key="PlayButtonHoveredColor"
+                                    ResourceKey="SystemColorHighlightColor" />
+                    <StaticResource x:Key="PlayButtonNormalColor"
+                                    ResourceKey="SystemColorHighlightColor" />
                 </ResourceDictionary>
 
             </ResourceDictionary.ThemeDictionaries>
