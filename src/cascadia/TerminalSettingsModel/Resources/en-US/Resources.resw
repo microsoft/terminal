@@ -118,13 +118,13 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="SetColorSchemeParentCommandName" xml:space="preserve">
-    <value>Select color scheme</value>
+    <value>Select color scheme...</value>
   </data>
   <data name="NewTabParentCommandName" xml:space="preserve">
-    <value>Open a new tab</value>
+    <value>New tab...</value>
   </data>
   <data name="SplitPaneParentCommandName" xml:space="preserve">
-    <value>Split pane using a profile</value>
+    <value>Split pane...</value>
   </data>
   <data name="SnippetsPaneCommandName" xml:space="preserve">
     <value>Open snippets pane</value>
@@ -329,7 +329,7 @@
     <comment>{Locked="JSON"}. "JSON" is the extension of the file that will be opened.</comment>
   </data>
   <data name="OpenTabColorPickerCommandKey" xml:space="preserve">
-    <value>Change tab color...</value>
+    <value>Set tab color...</value>
   </data>
   <data name="PasteTextCommandKey" xml:space="preserve">
     <value>Paste</value>
@@ -567,7 +567,7 @@
     <value>Quit the Terminal</value>
   </data>
   <data name="SetOpacityParentCommandName" xml:space="preserve">
-    <value>Change background opacity</value>
+    <value>Set background opacity...</value>
   </data>
   <data name="IncreaseOpacityCommandKey" xml:space="preserve">
     <value>Increase background opacity by {0}%</value>
