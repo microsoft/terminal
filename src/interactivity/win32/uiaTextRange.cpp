@@ -71,16 +71,12 @@ IFACEMETHODIMP UiaTextRange::Clone(_Outptr_result_maybenull_ ITextRangeProvider*
 
 void UiaTextRange::_TranslatePointToScreen(til::point& clientPoint) const
 {
-    auto win32Point = clientPoint.as_win32_point();
-    ClientToScreen(_getWindowHandle(), win32Point);
-    clientPoint = til::point{ *win32Point };
+    ClientToScreen(_getWindowHandle(), clientPoint.as_win32_point());
 }
 
 void UiaTextRange::_TranslatePointFromScreen(til::point& screenPoint) const
 {
-    auto win32Point = screenPoint.as_win32_point();
-    ScreenToClient(_getWindowHandle(), win32Point);
-    screenPoint = til::point{ *win32Point };
+    ScreenToClient(_getWindowHandle(), screenPoint.as_win32_point());
 }
 
 HWND UiaTextRange::_getWindowHandle() const
