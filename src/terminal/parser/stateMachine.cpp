@@ -11,7 +11,7 @@
 using namespace Microsoft::Console::VirtualTerminal;
 
 //Takes ownership of the pEngine.
-StateMachine::StateMachine(std::unique_ptr<IStateMachineEngine> engine, const bool isEngineForInput) :
+StateMachine::StateMachine(std::unique_ptr<IStateMachineEngine> engine, const bool isEngineForInput) noexcept :
     _engine(std::move(engine)),
     _isEngineForInput(isEngineForInput),
     _state(VTStates::Ground),
@@ -769,7 +769,7 @@ void StateMachine::_EnterGround() noexcept
 // - <none>
 // Return Value:
 // - <none>
-void StateMachine::_EnterEscape()
+void StateMachine::_EnterEscape() noexcept
 {
     _state = VTStates::Escape;
     _trace.TraceStateChange(L"Escape");
@@ -799,7 +799,7 @@ void StateMachine::_EnterEscapeIntermediate() noexcept
 // - <none>
 // Return Value:
 // - <none>
-void StateMachine::_EnterCsiEntry()
+void StateMachine::_EnterCsiEntry() noexcept
 {
     _state = VTStates::CsiEntry;
     _trace.TraceStateChange(L"CsiEntry");
@@ -915,7 +915,7 @@ void StateMachine::_EnterOscTermination() noexcept
 // - <none>
 // Return Value:
 // - <none>
-void StateMachine::_EnterSs3Entry()
+void StateMachine::_EnterSs3Entry() noexcept
 {
     _state = VTStates::Ss3Entry;
     _trace.TraceStateChange(L"Ss3Entry");
@@ -958,7 +958,7 @@ void StateMachine::_EnterVt52Param() noexcept
 // - <none>
 // Return Value:
 // - <none>
-void StateMachine::_EnterDcsEntry()
+void StateMachine::_EnterDcsEntry() noexcept
 {
     _state = VTStates::DcsEntry;
     _trace.TraceStateChange(L"DcsEntry");
