@@ -186,7 +186,10 @@ extends:
           - ${{ if eq(parameters.buildTerminal, true) }}:
             - template: ./build/pipelines/templates-v2/job-merge-msix-into-bundle.yml@self
               parameters:
-                pool: ${{ parameters.smallBuildPool }}
+                ${{ if eq(false, parameters.publishVpackToWindows) }}:
+                  pool: ${{ parameters.smallBuildPool }}
+                ${{ else }}:
+                  pool: { type: windows } # Vpack builds need to run in the OneBranch pool (only)
                 variables:
                   ob_sdl_checkcflags_enabled: false # BAD-FLAGS
                   ob_sdl_xfgcheck_enabled: false # BAD-FLAGS
@@ -218,7 +221,7 @@ extends:
                   # DH: Don't ask why.
                   ob_updateOSManifest_destination: $(XES_VPACKMANIFESTDIRECTORY)
                   ob_updateOSManifest_skipFetch: true
-                publishArtifacts: ${{ contains(convertToJson(parameters.smallBuildPool), 'isCustom') }}
+                publishArtifacts: ${{ and(eq(false, parameters.publishVpackToWindows), contains(convertToJson(parameters.smallBuildPool), 'isCustom')) }}
                 jobName: Bundle
                 branding: ${{ parameters.branding }}
                 buildConfigurations: ${{ parameters.buildConfigurations }}
