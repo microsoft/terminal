@@ -118,13 +118,13 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="SetColorSchemeParentCommandName" xml:space="preserve">
-    <value>Apply color scheme</value>
+    <value>Select color scheme</value>
   </data>
   <data name="NewTabParentCommandName" xml:space="preserve">
     <value>Open a new tab</value>
   </data>
   <data name="SplitPaneParentCommandName" xml:space="preserve">
-    <value>Split pane</value>
+    <value>Split pane using a profile</value>
   </data>
   <data name="SnippetsPaneCommandName" xml:space="preserve">
     <value>Open snippets pane</value>
@@ -329,7 +329,7 @@
     <comment>{Locked="JSON"}. "JSON" is the extension of the file that will be opened.</comment>
   </data>
   <data name="OpenTabColorPickerCommandKey" xml:space="preserve">
-    <value>Change tab color</value>
+    <value>Change tab color...</value>
   </data>
   <data name="PasteTextCommandKey" xml:space="preserve">
     <value>Paste</value>
