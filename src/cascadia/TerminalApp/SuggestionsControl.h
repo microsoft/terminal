@@ -67,9 +67,10 @@ namespace winrt::TerminalApp::implementation
         friend struct SuggestionsControlT<SuggestionsControl>; // for Xaml to bind events
 
         Windows::Foundation::Collections::IVector<winrt::TerminalApp::FilteredTask> _allCommands{ nullptr };
-        Windows::Foundation::Collections::IVector<winrt::TerminalApp::FilteredTask> _currentNestedCommands{ nullptr };
+        Windows::Foundation::Collections::IVector<winrt::TerminalApp::FilteredTask> _flatAllCommands{ nullptr };
+        // Windows::Foundation::Collections::IVector<winrt::TerminalApp::FilteredTask> _currentNestedCommands{ nullptr };
         Windows::Foundation::Collections::IObservableVector<winrt::TerminalApp::FilteredTask> _filteredActions{ nullptr };
-        Windows::Foundation::Collections::IVector<winrt::TerminalApp::FilteredTask> _nestedActionStack{ nullptr };
+        // Windows::Foundation::Collections::IVector<winrt::TerminalApp::FilteredTask> _nestedActionStack{ nullptr };
 
         TerminalApp::SuggestionsMode _mode{ TerminalApp::SuggestionsMode::Palette };
         TerminalApp::SuggestionsDirection _direction{ TerminalApp::SuggestionsDirection::TopDown };

@@ -32,9 +32,10 @@ namespace winrt::TerminalApp::implementation
         _listItemTemplate = Resources().Lookup(winrt::box_value(L"ListItemTemplate")).try_as<DataTemplate>();
 
         _filteredActions = winrt::single_threaded_observable_vector<winrt::TerminalApp::FilteredTask>();
-        _nestedActionStack = winrt::single_threaded_vector<winrt::TerminalApp::FilteredTask>();
-        _currentNestedCommands = winrt::single_threaded_vector<winrt::TerminalApp::FilteredTask>();
+        // _nestedActionStack = winrt::single_threaded_vector<winrt::TerminalApp::FilteredTask>();
+        // _currentNestedCommands = winrt::single_threaded_vector<winrt::TerminalApp::FilteredTask>();
         _allCommands = winrt::single_threaded_vector<winrt::TerminalApp::FilteredTask>();
+        _flatAllCommands = winrt::single_threaded_vector<winrt::TerminalApp::FilteredTask>();
 
         _switchToMode();
 
@@ -602,30 +603,30 @@ namespace winrt::TerminalApp::implementation
         PreviewAction.raise(*this, nullptr);
         _searchBox().Focus(FocusState::Programmatic);
 
-        const auto previousAction{ _nestedActionStack.GetAt(_nestedActionStack.Size() - 1) };
-        _nestedActionStack.RemoveAtEnd();
+        // const auto previousAction{ _nestedActionStack.GetAt(_nestedActionStack.Size() - 1) };
+        // _nestedActionStack.RemoveAtEnd();
 
-        // Repopulate nested commands when the root has not been reached yet
-        if (_nestedActionStack.Size() > 0)
-        {
-            const auto newPreviousAction{ _nestedActionStack.GetAt(_nestedActionStack.Size() - 1) };
-            const auto actionPaletteItem{ impl(newPreviousAction)->Item().try_as<winrt::TerminalApp::ActionPaletteItem>() };
+        // // Repopulate nested commands when the root has not been reached yet
+        // if (_nestedActionStack.Size() > 0)
+        // {
+        //     const auto newPreviousAction{ _nestedActionStack.GetAt(_nestedActionStack.Size() - 1) };
+        //     const auto actionPaletteItem{ impl(newPreviousAction)->Item().try_as<winrt::TerminalApp::ActionPaletteItem>() };
 
-            ParentCommandName(actionPaletteItem.Command().Name());
-            _updateCurrentNestedCommands(actionPaletteItem.Command());
-        }
-        else
-        {
-            ParentCommandName(L"");
-            _currentNestedCommands.Clear();
-        }
+        //     ParentCommandName(actionPaletteItem.Command().Name());
+        //     _updateCurrentNestedCommands(actionPaletteItem.Command());
+        // }
+        // else
+        // {
+        //     ParentCommandName(L"");
+        //     _currentNestedCommands.Clear();
+        // }
         _updateFilteredActions();
 
-        const auto lastSelectedIt = std::find_if(begin(_filteredActions), end(_filteredActions), [&](const auto& filteredCommand) {
-            return impl(filteredCommand)->Item().Name() == impl(previousAction)->Item().Name();
-        });
-        const auto lastSelectedIndex = static_cast<int32_t>(std::distance(begin(_filteredActions), lastSelectedIt));
-        _scrollToIndex(lastSelectedIt != end(_filteredActions) ? lastSelectedIndex : 0);
+        // const auto lastSelectedIt = std::find_if(begin(_filteredActions), end(_filteredActions), [&](const auto& filteredCommand) {
+        //     return impl(filteredCommand)->Item().Name() == impl(previousAction)->Item().Name();
+        // });
+        // const auto lastSelectedIndex = static_cast<int32_t>(std::distance(begin(_filteredActions), lastSelectedIt));
+        // _scrollToIndex(lastSelectedIt != end(_filteredActions) ? lastSelectedIndex : 0);
     }
 
     // Method Description:
@@ -672,11 +673,14 @@ namespace winrt::TerminalApp::implementation
     // - A list of Commands to filter.
     Collections::IVector<winrt::TerminalApp::FilteredTask> SuggestionsControl::_commandsToFilter()
     {
-        if (_nestedActionStack.Size() > 0)
+        // if (_nestedActionStack.Size() > 0)
+        // {
+        //     return _currentNestedCommands;
+        // }
+        if (_searchBox().Text().size() > 0)
         {
-            return _currentNestedCommands;
+            return _flatAllCommands;
         }
-
         return _allCommands;
     }
 
@@ -697,14 +701,14 @@ namespace winrt::TerminalApp::implementation
             {
                 if (actionPaletteItem.Command().HasNestedCommands())
                 {
-                    // If this Command had subcommands, then don't dispatch the
-                    // action. Instead, display a new list of commands for the user
-                    // to pick from.
-                    _nestedActionStack.Append(filteredCommand);
-                    ParentCommandName(actionPaletteItem.Command().Name());
-                    _updateCurrentNestedCommands(actionPaletteItem.Command());
+                    // // If this Command had subcommands, then don't dispatch the
+                    // // action. Instead, display a new list of commands for the user
+                    // // to pick from.
+                    // _nestedActionStack.Append(filteredCommand);
+                    // ParentCommandName(actionPaletteItem.Command().Name());
+                    // _updateCurrentNestedCommands(actionPaletteItem.Command());
 
-                    _updateUIForStackChange();
+                    // _updateUIForStackChange();
                 }
                 else
                 {
@@ -712,7 +716,7 @@ namespace winrt::TerminalApp::implementation
                     const auto searchTextLength = _searchBox().Text().size();
 
                     // An action from the root command list has depth=0
-                    const auto nestedCommandDepth = _nestedActionStack.Size();
+                    const auto nestedCommandDepth = 0; // _nestedActionStack.Size();
 
                     // Close before we dispatch so that actions that open the command
                     // palette like the Tab Switcher will be able to have the last laugh.
@@ -826,12 +830,39 @@ namespace winrt::TerminalApp::implementation
     void SuggestionsControl::SetCommands(const Collections::IVector<Command>& actions)
     {
         _allCommands.Clear();
+
+        std::function<void(Collections::IMapView<winrt::hstring, Command>)> addMap;
+        addMap = [&](auto actionMap) {
+            for (const auto& [_, action] : actionMap)
+            {
+                if (action.HasNestedCommands())
+                {
+                    addMap(action.NestedCommands());
+                }
+                else
+                {
+                    auto filteredCommand{ winrt::make<FilteredTask>(action) };
+                    _flatAllCommands.Append(filteredCommand);
+                }
+            }
+        };
+
         for (const auto& action : actions)
         {
-            // key chords aren't relevant in the suggestions control, so make the palette item with just the command and no keys
-            //auto actionPaletteItem{ winrt::make<winrt::TerminalApp::implementation::ActionPaletteItem>(action, winrt::hstring{}) };
-            auto filteredCommand{ winrt::make<FilteredTask>(action) };
-            _allCommands.Append(filteredCommand);
+            // // key chords aren't relevant in the suggestions control, so make the palette item with just the command and no keys
+            // //auto actionPaletteItem{ winrt::make<winrt::TerminalApp::implementation::ActionPaletteItem>(action, winrt::hstring{}) };
+            // auto filteredCommand{ winrt::make<FilteredTask>(action) };
+            // _allCommands.Append(filteredCommand);
+            if (action.HasNestedCommands())
+            {
+                addMap(action.NestedCommands());
+            }
+            else
+            {
+                auto filteredCommand{ winrt::make<FilteredTask>(action) };
+                _allCommands.Append(filteredCommand);
+                _flatAllCommands.Append(filteredCommand);
+            }
         }
 
         if (Visibility() == Visibility::Visible)
@@ -855,9 +886,9 @@ namespace winrt::TerminalApp::implementation
         _searchBox().Text(L"");
         _searchBox().Select(_searchBox().Text().size(), 0);
 
-        _nestedActionStack.Clear();
+        // _nestedActionStack.Clear();
         ParentCommandName(L"");
-        _currentNestedCommands.Clear();
+        // _currentNestedCommands.Clear();
         // Leaving this block of code outside the above if-statement
         // guarantees that the correct text is shown for the mode
         // whenever _switchToMode is called.
@@ -979,16 +1010,16 @@ namespace winrt::TerminalApp::implementation
     // - parentCommand: the command with an optional list of nested commands.
     // Return Value:
     // - <none>
-    void SuggestionsControl::_updateCurrentNestedCommands(const winrt::Microsoft::Terminal::Settings::Model::Command& parentCommand)
+    void SuggestionsControl::_updateCurrentNestedCommands(const winrt::Microsoft::Terminal::Settings::Model::Command& /*parentCommand*/)
     {
-        _currentNestedCommands.Clear();
-        for (const auto& nameAndCommand : parentCommand.NestedCommands())
-        {
-            const auto action = nameAndCommand.Value();
-            //auto nestedActionPaletteItem{ winrt::make<winrt::TerminalApp::implementation::ActionPaletteItem>(action, winrt::hstring{}) };
-            auto nestedFilteredTask{ winrt::make<FilteredTask>(action) };
-            _currentNestedCommands.Append(nestedFilteredTask);
-        }
+        // _currentNestedCommands.Clear();
+        // for (const auto& nameAndCommand : parentCommand.NestedCommands())
+        // {
+        //     const auto action = nameAndCommand.Value();
+        //     auto nestedActionPaletteItem{ winrt::make<winrt::TerminalApp::implementation::ActionPaletteItem>(action, winrt::hstring{}) };
+        //     auto nestedFilteredTask{ winrt::make<FilteredTask>(action) };
+        //     _currentNestedCommands.Append(nestedFilteredTask);
+        // }
     }
 
     // Method Description:
@@ -1007,10 +1038,10 @@ namespace winrt::TerminalApp::implementation
         // Clear the text box each time we close the dialog. This is consistent with VsCode.
         _searchBox().Text(L"");
 
-        _nestedActionStack.Clear();
+        // _nestedActionStack.Clear();
 
         ParentCommandName(L"");
-        _currentNestedCommands.Clear();
+        // _currentNestedCommands.Clear();
 
         PreviewAction.raise(*this, nullptr);
     }
