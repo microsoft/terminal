@@ -21,23 +21,15 @@ namespace winrt::TerminalApp::implementation
 {
     std::wstring ExtractAction(const ActionAndArgs& actionAndArgs)
     {
-        std::wstring id{ actionAndArgs.GenerateID() };
-        const auto segment1 = id.find(L'.');
-        const auto segment2 = id.find(L'.', segment1 + 1);
-        if (segment1 != std::wstring::npos)
-        {
-            if (segment2 != std::wstring::npos)
-            {
-                return id.substr(segment1 + 1, segment2 - segment1 - 1);
-            }
-            else
-            {
-                return id.substr(segment1 + 1);
-            }
-        }
-        // This shouldn't be possible.
-        // GenerateID() returns L"User.{}" unless it's invalid
-        return nullptr;
+        // Formatted as "User.{action}" or "User.{action}.{hash}"
+        std::wstring_view remaining{ actionAndArgs.GenerateID() };
+
+        // Throw away "User."
+        std::ignore = til::prefix_split(remaining, L'.');
+
+        // Get the "{action}" part
+        const auto actionName = til::prefix_split(remaining, L'.');
+        return std::wstring{ actionName };
     }
 
     // Method Description:
