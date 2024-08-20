@@ -187,28 +187,17 @@ jobs:
       env:
         SYSTEM_ACCESSTOKEN: $(System.AccessToken)
 
-  - ${{ if eq(parameters.publishArtifacts, true) }}:
-    - publish: $(Build.SourcesDirectory)/msbuild.binlog
-      artifact: logs-$(BuildPlatform)-$(BuildConfiguration)${{ parameters.artifactStem }}
-      condition: always()
-      displayName: Publish Build Log
-    - ${{ if eq(parameters.enableCaching, true) }}:
-      - publish: $(Build.SourcesDirectory)\MSBuildCacheLogs
-        artifact: logs-msbuildcache-$(BuildPlatform)-$(BuildConfiguration)${{ parameters.artifactStem }}
-        condition: always()
-        displayName: Publish MSBuildCache Logs
-  - ${{ else }}:
+  - task: CopyFiles@2
+    displayName: Copy Build Log
+    inputs:
+      contents: $(Build.SourcesDirectory)/msbuild.binlog
+      TargetFolder: $(Terminal.BinDir)
+  - ${{ if eq(parameters.enableCaching, true) }}:
     - task: CopyFiles@2
-      displayName: Copy Build Log
+      displayName: Copy MSBuildCache Logs
       inputs:
-        contents: $(Build.SourcesDirectory)/msbuild.binlog
-        TargetFolder: $(Terminal.BinDir)
-    - ${{ if eq(parameters.enableCaching, true) }}:
-      - task: CopyFiles@2
-        displayName: Copy MSBuildCache Logs
-        inputs:
-          contents: $(Build.SourcesDirectory)/MSBuildCacheLogs/**
-          TargetFolder: $(Terminal.BinDir)/MSBuildCacheLogs
+        contents: $(Build.SourcesDirectory)/MSBuildCacheLogs/**
+        TargetFolder: $(Terminal.BinDir)/MSBuildCacheLogs
 
   # This saves ~2GiB per architecture. We won't need these later.
   # Removes:
@@ -338,3 +327,4 @@ jobs:
     - publish: $(Terminal.BinDir)
       artifact: $(JobOutputArtifactName)
       displayName: Publish All Outputs
+      condition: always()
