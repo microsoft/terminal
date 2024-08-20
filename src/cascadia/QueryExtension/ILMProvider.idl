@@ -17,10 +17,19 @@ namespace Microsoft.Terminal.Query.Extension
         event Windows.Foundation.TypedEventHandler<ILMProvider, Windows.Foundation.Collections.ValueSet> AuthChanged;
     }
 
+    enum ErrorTypes
+    {
+        None = 0,
+        InvalidAuth,
+        InvalidModel,
+        FromProvider,
+        Unknown
+    };
+
     interface IResponse
     {
         String Message { get; };
-        Boolean IsError { get; };
+        ErrorTypes ErrorType { get; };
     };
 
     interface IContext

@@ -128,7 +128,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         }
         else
         {
-            result = winrt::make<SystemResponse>(RS_(L"CouldNotFindKeyErrorMessage"), true);
+            result = winrt::make<SystemResponse>(RS_(L"CouldNotFindKeyErrorMessage"), ErrorTypes::InvalidAuth);
         }
 
         // Switch back to the foreground thread because we are changing the UI now
@@ -140,7 +140,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
             IsProgressRingActive(false);
 
             // Append the result to our list, clear the query box
-            _splitResponseAndAddToChatHelper(result.Message(), result.IsError());
+            _splitResponseAndAddToChatHelper(result.Message(), result.ErrorType());
         }
 
         co_return;
@@ -160,7 +160,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         return winrt::to_hstring(time_str);
     }
 
-    void ExtensionPalette::_splitResponseAndAddToChatHelper(const winrt::hstring& response, const bool isError)
+    void ExtensionPalette::_splitResponseAndAddToChatHelper(const winrt::hstring& response, const ErrorTypes errorType)
     {
         // this function is dependent on the AI response separating code blocks with
         // newlines and "```". OpenAI seems to naturally conform to this, though
@@ -212,7 +212,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
             g_hQueryExtensionProvider,
             "AIResponseReceived",
             TraceLoggingDescription("Event emitted when the user receives a response to their query"),
-            TraceLoggingBoolean(!isError, "ResponseReceivedFromAI", "True if the response came from the AI, false if the response was generated in Terminal or was a server error"),
+            TraceLoggingBoolean(errorType == ErrorTypes::None, "ResponseReceivedFromAI", "True if the response came from the AI, false if the response was generated in Terminal or was a server error"),
             TraceLoggingKeyword(MICROSOFT_KEYWORD_CRITICAL_DATA),
             TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
     }

@@ -70,15 +70,15 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
 
     winrt::Windows::Foundation::IAsyncOperation<Extension::IResponse> AzureLLMProvider::GetResponseAsync(const winrt::hstring& userPrompt)
     {
-        // Use a flag for whether the response the user receives is an error message
-        // we pass this flag back to the caller so they can handle it appropriately (specifically, ExtensionPalette will send the correct telemetry event)
-        // there is only one case downstream from here that sets this flag to false, so start with it being true
-        bool isError{ true };
+        // Use the ErrorTypes enum to flag whether the response the user receives is an error message
+        // we pass this enum back to the caller so they can handle it appropriately (specifically, ExtensionPalette will send the correct telemetry event)
+        ErrorTypes errorType{ ErrorTypes::None };
         hstring message{};
 
         if (_azureEndpoint.empty())
         {
             message = RS_(L"CouldNotFindKeyErrorMessage");
+            errorType = ErrorTypes::InvalidAuth;
         }
         else
         {
@@ -88,6 +88,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
                 !til::ends_with(parsedUri.Host(), expectedHostSuffix))
             {
                 message = RS_(L"InvalidEndpointMessage");
+                errorType = ErrorTypes::InvalidAuth;
             }
         }
 
@@ -143,6 +144,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
                 {
                     const auto errorObject = jsonResult.GetNamedObject(errorString);
                     message = errorObject.GetNamedString(messageString);
+                    errorType = ErrorTypes::FromProvider;
                 }
                 else
                 {
@@ -152,17 +154,18 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
                         const auto firstChoice = choices.GetAt(0).GetObject();
                         const auto messageObject = firstChoice.GetNamedObject(messageString);
                         message = messageObject.GetNamedString(contentString);
-                        isError = false;
                     }
                     else
                     {
                         message = RS_(L"InvalidModelMessage");
+                        errorType = ErrorTypes::InvalidModel;
                     }
                 }
             }
             catch (...)
             {
                 message = RS_(L"UnknownErrorMessage");
+                errorType = ErrorTypes::Unknown;
             }
         }
 
@@ -172,7 +175,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         responseMessageObject.Insert(contentString, WDJ::JsonValue::CreateStringValue(message));
         _jsonMessages.Append(responseMessageObject);
 
-        co_return winrt::make<AzureResponse>(message, isError);
+        co_return winrt::make<AzureResponse>(message, errorType);
     }
 
     bool AzureLLMProvider::_verifyModelIsValidHelper(const WDJ::JsonObject jsonResponse)

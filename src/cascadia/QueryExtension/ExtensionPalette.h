@@ -41,7 +41,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         winrt::fire_and_forget _getSuggestions(const winrt::hstring& prompt, const winrt::hstring& currentLocalTime);
 
         winrt::hstring _getCurrentLocalTimeHelper();
-        void _splitResponseAndAddToChatHelper(const winrt::hstring& response, const bool isError);
+        void _splitResponseAndAddToChatHelper(const winrt::hstring& response, const winrt::Microsoft::Terminal::Query::Extension::ErrorTypes errorType);
         void _setFocusAndPlaceholderTextHelper();
 
         void _clearAndInitializeMessages(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& args);
@@ -153,12 +153,12 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
 
     struct SystemResponse : public winrt::implements<SystemResponse, winrt::Microsoft::Terminal::Query::Extension::IResponse>
     {
-        SystemResponse(const winrt::hstring& message, const bool isError) :
+        SystemResponse(const winrt::hstring& message, const winrt::Microsoft::Terminal::Query::Extension::ErrorTypes errorType) :
             Message{ message },
-            IsError{ isError } {}
+            ErrorType{ errorType } {}
 
         til::property<winrt::hstring> Message;
-        til::property<bool> IsError;
+        til::property<winrt::Microsoft::Terminal::Query::Extension::ErrorTypes> ErrorType;
     };
 }
 

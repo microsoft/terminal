@@ -34,12 +34,12 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
 
     struct AzureResponse : public winrt::implements<AzureResponse, winrt::Microsoft::Terminal::Query::Extension::IResponse>
     {
-        AzureResponse(const winrt::hstring& message, const bool isError) :
+        AzureResponse(const winrt::hstring& message, const winrt::Microsoft::Terminal::Query::Extension::ErrorTypes errorType) :
             Message{ message },
-            IsError{ isError } {}
+            ErrorType{ errorType } {}
 
         til::property<winrt::hstring> Message;
-        til::property<bool> IsError;
+        til::property<winrt::Microsoft::Terminal::Query::Extension::ErrorTypes> ErrorType;
     };
 }
 
