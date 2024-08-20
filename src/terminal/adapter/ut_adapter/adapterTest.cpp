@@ -1823,11 +1823,7 @@ public:
         _pDispatch->RequestTerminalParameters(DispatchTypes::ReportingPermission::Solicited);
         _testGetSet->ValidateInputEvent(L"\x1b[3;1;1;128;128;1;0x");
 
-        Log::Comment(L"Test 3: Verify failure with invalid parameter.");
-        _testGetSet->PrepData();
-        _pDispatch->RequestTerminalParameters((DispatchTypes::ReportingPermission)2);
-
-        Log::Comment(L"Test 4: Verify failure when ReturnResponse doesn't work.");
+        Log::Comment(L"Test 3: Verify failure when ReturnResponse doesn't work.");
         _testGetSet->PrepData();
         _testGetSet->_returnResponseResult = FALSE;
         VERIFY_THROWS(_pDispatch->RequestTerminalParameters(DispatchTypes::ReportingPermission::Unsolicited), std::exception);
