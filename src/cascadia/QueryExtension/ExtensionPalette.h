@@ -6,8 +6,6 @@
 #include "ExtensionPalette.g.h"
 #include "ChatMessage.g.h"
 #include "GroupedChatMessages.g.h"
-#include "TerminalContext.g.h"
-#include "SystemResponse.g.h"
 
 namespace winrt::Microsoft::Terminal::Query::Extension::implementation
 {
@@ -145,27 +143,22 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         Windows::Foundation::Collections::IVector<Windows::Foundation::IInspectable> _messages;
     };
 
-    struct TerminalContext : TerminalContextT<TerminalContext>
+    struct TerminalContext : public winrt::implements<TerminalContext, winrt::Microsoft::Terminal::Query::Extension::IContext>
     {
         TerminalContext(const winrt::hstring& activeCommandline) :
-            _activeCommandline{ activeCommandline } {}
-        winrt::hstring ActiveCommandline() { return _activeCommandline; };
+            ActiveCommandline{ activeCommandline } {}
 
-    private:
-        winrt::hstring _activeCommandline;
+        til::property<winrt::hstring> ActiveCommandline;
     };
 
-    struct SystemResponse : SystemResponseT<SystemResponse>
+    struct SystemResponse : public winrt::implements<SystemResponse, winrt::Microsoft::Terminal::Query::Extension::IResponse>
     {
         SystemResponse(const winrt::hstring& message, const bool isError) :
-            _message{ message },
-            _isError{ isError } {}
-        winrt::hstring Message() { return _message; };
-        bool IsError() { return _isError; };
+            Message{ message },
+            IsError{ isError } {}
 
-    private:
-        winrt::hstring _message;
-        bool _isError;
+        til::property<winrt::hstring> Message;
+        til::property<bool> IsError;
     };
 }
 
@@ -174,6 +167,4 @@ namespace winrt::Microsoft::Terminal::Query::Extension::factory_implementation
     BASIC_FACTORY(ExtensionPalette);
     BASIC_FACTORY(ChatMessage);
     BASIC_FACTORY(GroupedChatMessages);
-    BASIC_FACTORY(TerminalContext);
-    BASIC_FACTORY(SystemResponse);
 }

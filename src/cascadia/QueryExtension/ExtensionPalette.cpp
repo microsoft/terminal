@@ -9,8 +9,6 @@
 #include "ExtensionPalette.g.cpp"
 #include "ChatMessage.g.cpp"
 #include "GroupedChatMessages.g.cpp"
-#include "TerminalContext.g.cpp"
-#include "SystemResponse.g.cpp"
 
 using namespace winrt::Windows::Foundation;
 using namespace winrt::Windows::Foundation::Collections;

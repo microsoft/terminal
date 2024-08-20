@@ -38,14 +38,4 @@ namespace Microsoft.Terminal.Query.Extension
         event Windows.Foundation.TypedEventHandler<ExtensionPalette, IInspectable> ActiveControlInfoRequested;
         event Windows.Foundation.TypedEventHandler<ExtensionPalette, String> InputSuggestionRequested;
     }
-
-    runtimeclass TerminalContext : [default] IContext
-    {
-        TerminalContext(String activeCommandline);
-    }
-
-    runtimeclass SystemResponse : [default] IResponse
-    {
-        SystemResponse(String message, Boolean isError);
-    }
 }
