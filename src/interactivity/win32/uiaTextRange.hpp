@@ -56,8 +56,8 @@ namespace Microsoft::Console::Interactivity::Win32
         IFACEMETHODIMP Clone(_Outptr_result_maybenull_ ITextRangeProvider** ppRetVal) override;
 
     protected:
-        void _TranslatePointToScreen(til::point* clientPoint) const override;
-        void _TranslatePointFromScreen(til::point* screenPoint) const override;
+        void _TranslatePointToScreen(til::point& clientPoint) const override;
+        void _TranslatePointFromScreen(til::point& screenPoint) const override;
 
     private:
         HWND _getWindowHandle() const;
