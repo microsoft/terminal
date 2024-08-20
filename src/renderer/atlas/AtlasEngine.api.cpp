@@ -432,8 +432,8 @@ void AtlasEngine::SetSelectionBackground(const COLORREF color) noexcept
     {
         auto misc = _api.s.write()->misc.write();
         misc->selectionColor = selectionColor;
-        // Selection foreground is based on pushing the selection background as far as possible towards white or black, whichever results in more contrast.
-        misc->selectionForeground = 0xff000000 | ColorFix::GetPerceivableColor(selectionColor, 0x7f7f7f, 10.f);
+        // Select a black or white foreground based on the perceptual lightness of the background.
+        misc->selectionForeground = ColorFix::GetLuminosity(selectionColor) <= 0.5f ? 0xffffffff : 0xff000000;
     }
 }
 

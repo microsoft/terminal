@@ -10,4 +10,5 @@
 namespace ColorFix
 {
     COLORREF GetPerceivableColor(COLORREF color, COLORREF reference, float minSquaredDistance) noexcept;
+    float GetLuminosity(COLORREF color) noexcept;
 }
