@@ -30,8 +30,6 @@ namespace Microsoft.Terminal.Settings.Model
 
         IActionArgs Args;
         ShortcutAction Action;
-
-        String GenerateID();
     };
 
     [default_interface] runtimeclass Command : ISettingsModelObject

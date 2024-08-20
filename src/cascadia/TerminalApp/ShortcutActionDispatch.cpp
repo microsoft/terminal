@@ -19,20 +19,6 @@ using namespace winrt::TerminalApp;
 
 namespace winrt::TerminalApp::implementation
 {
-    std::wstring ExtractAction(const ActionAndArgs& actionAndArgs)
-    {
-        // Formatted as "User.{action}" or "User.{action}.{hash}"
-        const auto id = actionAndArgs.GenerateID();
-        std::wstring_view remaining{ id };
-
-        // Throw away "User."
-        std::ignore = til::prefix_split(remaining, L'.');
-
-        // Get the "{action}" part
-        const auto actionName = til::prefix_split(remaining, L'.');
-        return std::wstring{ actionName };
-    }
-
     // Method Description:
     // - Dispatch the appropriate event for the given ActionAndArgs. Constructs
     //   an ActionEventArgs to hold the IActionArgs payload for the event, and
@@ -71,7 +57,7 @@ namespace winrt::TerminalApp::implementation
                 g_hTerminalAppProvider,
                 "ActionDispatched",
                 TraceLoggingDescription("Event emitted when an action was successfully performed"),
-                TraceLoggingValue(ExtractAction(actionAndArgs).data(), "Action"),
+                TraceLoggingValue(static_cast<int>(actionAndArgs.Action()), "Action"),
                 TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
                 TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
         }
