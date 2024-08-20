@@ -123,7 +123,7 @@ extends:
                 ob_git_skip_checkout_none: true
                 ob_outputDirectory: $(JobOutputDirectory)
                 ob_artifactBaseName: $(JobOutputArtifactName)
-              publishArtifacts: true
+              publishArtifacts: ${{ contains(convertToJson(parameters.largeBuildPool), 'isCustom') }}
               branding: ${{ parameters.branding }}
               buildTerminal: ${{ parameters.buildTerminal }}
               buildConPTY: ${{ parameters.buildConPTY }}
@@ -160,7 +160,7 @@ extends:
                   ob_git_skip_checkout_none: true
                   ob_outputDirectory: $(JobOutputDirectory)
                   ob_artifactBaseName: $(JobOutputArtifactName)
-                publishArtifacts: true
+                publishArtifacts: ${{ contains(convertToJson(parameters.largeBuildPool), 'isCustom') }}
                 jobName: BuildWPF
                 branding: ${{ parameters.branding }}
                 buildTerminal: false
@@ -218,7 +218,7 @@ extends:
                   # DH: Don't ask why.
                   ob_updateOSManifest_destination: $(XES_VPACKMANIFESTDIRECTORY)
                   ob_updateOSManifest_skipFetch: true
-                publishArtifacts: true
+                publishArtifacts: ${{ contains(convertToJson(parameters.smallBuildPool), 'isCustom') }}
                 jobName: Bundle
                 branding: ${{ parameters.branding }}
                 buildConfigurations: ${{ parameters.buildConfigurations }}
@@ -248,7 +248,7 @@ extends:
                   ob_git_skip_checkout_none: true
                   ob_outputDirectory: $(JobOutputDirectory)
                   ob_artifactBaseName: $(JobOutputArtifactName)
-                publishArtifacts: true
+                publishArtifacts: ${{ contains(convertToJson(parameters.smallBuildPool), 'isCustom') }}
                 buildConfigurations: ${{ parameters.buildConfigurations }}
                 buildPlatforms: ${{ parameters.buildPlatforms }}
                 generateSbom: false # this is handled by onebranch
@@ -266,7 +266,7 @@ extends:
                   ob_git_skip_checkout_none: true
                   ob_outputDirectory: $(JobOutputDirectory)
                   ob_artifactBaseName: $(JobOutputArtifactName)
-                publishArtifacts: true
+                publishArtifacts: ${{ contains(convertToJson(parameters.smallBuildPool), 'isCustom') }}
                 buildConfigurations: ${{ parameters.buildConfigurations }}
                 buildPlatforms: ${{ parameters.buildPlatforms }}
                 generateSbom: false # this is handled by onebranch
