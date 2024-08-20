@@ -80,7 +80,6 @@ namespace Microsoft.Terminal.Remoting
 
         void RequestShowNotificationIcon();
         void RequestHideNotificationIcon();
-        void RequestQuitAll();
         void Quit();
 
         void AttachContentToWindow(AttachRequest request);
@@ -95,7 +94,6 @@ namespace Microsoft.Terminal.Remoting
 
         event Windows.Foundation.TypedEventHandler<Object, Object> ShowNotificationIconRequested;
         event Windows.Foundation.TypedEventHandler<Object, Object> HideNotificationIconRequested;
-        event Windows.Foundation.TypedEventHandler<Object, Object> QuitAllRequested;
         event Windows.Foundation.TypedEventHandler<Object, Object> QuitRequested;
 
         event Windows.Foundation.TypedEventHandler<Object, AttachRequest> AttachRequested;

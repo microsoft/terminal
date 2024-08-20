@@ -32,6 +32,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         Remoting::Peasant CreatePeasant(const Remoting::WindowRequestedArgs& args);
 
         void SignalClose(const Remoting::Peasant& peasant);
+        void QuitAll();
         void SummonWindow(const Remoting::SummonWindowSelectionArgs& args);
         void SummonAllWindows();
         Windows::Foundation::Collections::IVectorView<winrt::Microsoft::Terminal::Remoting::PeasantInfo> GetPeasantInfos();

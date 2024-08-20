@@ -86,6 +86,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 
         uint64_t AddPeasant(winrt::Microsoft::Terminal::Remoting::IPeasant peasant);
         void SignalClose(const uint64_t peasantId);
+        void QuitAll();
 
         uint64_t GetNumberOfPeasants();
 
