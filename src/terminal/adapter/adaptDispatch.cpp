@@ -204,8 +204,6 @@ void AdaptDispatch::_WriteToBuffer(const std::wstring_view string)
 //   margin, then the cursor stops at the top line."
 // Arguments:
 // - distance - Distance to move
-// Return Value:
-// - True.
 void AdaptDispatch::CursorUp(const VTInt distance)
 {
     _CursorMovePosition(Offset::Backward(distance), Offset::Unchanged(), true);
@@ -220,8 +218,6 @@ void AdaptDispatch::CursorUp(const VTInt distance)
 //   bottom margin, then the cursor stops at the bottom line."
 // Arguments:
 // - distance - Distance to move
-// Return Value:
-// - True.
 void AdaptDispatch::CursorDown(const VTInt distance)
 {
     _CursorMovePosition(Offset::Forward(distance), Offset::Unchanged(), true);
@@ -231,8 +227,6 @@ void AdaptDispatch::CursorDown(const VTInt distance)
 // - CUF - Handles cursor forward movement by given distance
 // Arguments:
 // - distance - Distance to move
-// Return Value:
-// - True.
 void AdaptDispatch::CursorForward(const VTInt distance)
 {
     _CursorMovePosition(Offset::Unchanged(), Offset::Forward(distance), true);
@@ -242,8 +236,6 @@ void AdaptDispatch::CursorForward(const VTInt distance)
 // - CUB - Handles cursor backward movement by given distance
 // Arguments:
 // - distance - Distance to move
-// Return Value:
-// - True.
 void AdaptDispatch::CursorBackward(const VTInt distance)
 {
     _CursorMovePosition(Offset::Unchanged(), Offset::Backward(distance), true);
@@ -254,8 +246,6 @@ void AdaptDispatch::CursorBackward(const VTInt distance)
 // - Moves to the beginning X/Column position of the line.
 // Arguments:
 // - distance - Distance to move
-// Return Value:
-// - True.
 void AdaptDispatch::CursorNextLine(const VTInt distance)
 {
     _CursorMovePosition(Offset::Forward(distance), Offset::Absolute(1), true);
@@ -266,8 +256,6 @@ void AdaptDispatch::CursorNextLine(const VTInt distance)
 // - Moves to the beginning X/Column position of the line.
 // Arguments:
 // - distance - Distance to move
-// Return Value:
-// - True.
 void AdaptDispatch::CursorPrevLine(const VTInt distance)
 {
     _CursorMovePosition(Offset::Backward(distance), Offset::Absolute(1), true);
@@ -331,8 +319,6 @@ std::pair<int, int> AdaptDispatch::_GetHorizontalMargins(const til::CoordType pa
 // - rowOffset - The row to move to
 // - colOffset - The column to move to
 // - clampInMargins - Should the position be clamped within the scrolling margins
-// Return Value:
-// - True.
 void AdaptDispatch::_CursorMovePosition(const Offset rowOffset, const Offset colOffset, const bool clampInMargins)
 {
     // First retrieve some information about the buffer
@@ -432,8 +418,6 @@ void AdaptDispatch::_ApplyCursorMovementFlags(Cursor& cursor) noexcept
 // - CHA - Moves the cursor to an exact X/Column position on the current line.
 // Arguments:
 // - column - Specific X/Column position to move to
-// Return Value:
-// - True.
 void AdaptDispatch::CursorHorizontalPositionAbsolute(const VTInt column)
 {
     _CursorMovePosition(Offset::Unchanged(), Offset::Absolute(column), false);
@@ -443,8 +427,6 @@ void AdaptDispatch::CursorHorizontalPositionAbsolute(const VTInt column)
 // - VPA - Moves the cursor to an exact Y/row position on the current column.
 // Arguments:
 // - line - Specific Y/Row position to move to
-// Return Value:
-// - True.
 void AdaptDispatch::VerticalLinePositionAbsolute(const VTInt line)
 {
     _CursorMovePosition(Offset::Absolute(line), Offset::Unchanged(), false);
@@ -455,8 +437,6 @@ void AdaptDispatch::VerticalLinePositionAbsolute(const VTInt line)
 // - Unlike CUF, this is not constrained by margin settings.
 // Arguments:
 // - distance - Distance to move
-// Return Value:
-// - True.
 void AdaptDispatch::HorizontalPositionRelative(const VTInt distance)
 {
     _CursorMovePosition(Offset::Unchanged(), Offset::Forward(distance), false);
@@ -467,8 +447,6 @@ void AdaptDispatch::HorizontalPositionRelative(const VTInt distance)
 // - Unlike CUD, this is not constrained by margin settings.
 // Arguments:
 // - distance - Distance to move
-// Return Value:
-// - True.
 void AdaptDispatch::VerticalPositionRelative(const VTInt distance)
 {
     _CursorMovePosition(Offset::Forward(distance), Offset::Unchanged(), false);
@@ -479,8 +457,6 @@ void AdaptDispatch::VerticalPositionRelative(const VTInt distance)
 // Arguments:
 // - line - Specific Y/Row/Line position to move to
 // - column - Specific X/Column position to move to
-// Return Value:
-// - True.
 void AdaptDispatch::CursorPosition(const VTInt line, const VTInt column)
 {
     _CursorMovePosition(Offset::Absolute(line), Offset::Absolute(column), false);
@@ -492,8 +468,6 @@ void AdaptDispatch::CursorPosition(const VTInt line, const VTInt column)
 //   active character set.
 // Arguments:
 // - <none>
-// Return Value:
-// - True.
 void AdaptDispatch::CursorSaveState()
 {
     // First retrieve some information about the buffer
@@ -528,8 +502,6 @@ void AdaptDispatch::CursorSaveState()
 //   rendition, and active character set.
 // Arguments:
 // - <none>
-// Return Value:
-// - True.
 void AdaptDispatch::CursorRestoreState()
 {
     auto& savedCursorState = _savedCursorState.at(_usingAltBuffer);
@@ -715,8 +687,6 @@ void AdaptDispatch::_InsertDeleteCharacterHelper(const VTInt delta)
 //     - Each inserted character will push all text in the row to the right.
 // Arguments:
 // - count - The number of characters to insert
-// Return Value:
-// - True.
 void AdaptDispatch::InsertCharacter(const VTInt count)
 {
     _InsertDeleteCharacterHelper(count);
@@ -727,8 +697,6 @@ void AdaptDispatch::InsertCharacter(const VTInt count)
 //       be inserted from the right edge of the current line.
 // Arguments:
 // - count - The number of characters to delete
-// Return Value:
-// - True.
 void AdaptDispatch::DeleteCharacter(const VTInt count)
 {
     _InsertDeleteCharacterHelper(-count);
@@ -756,8 +724,6 @@ void AdaptDispatch::_FillRect(const Page& page, const til::rect& fillRect, const
 //     receive the currently selected attributes.
 // Arguments:
 // - numChars - The number of characters to erase.
-// Return Value:
-// - True.
 void AdaptDispatch::EraseCharacters(const VTInt numChars)
 {
     const auto page = _pages.ActivePage();
@@ -780,8 +746,6 @@ void AdaptDispatch::EraseCharacters(const VTInt numChars)
 //      From cursor to end (bottom-right corner)
 //      The entire page
 //      The scrollback (outside the page area)
-// Return Value:
-// - True if handled successfully. False otherwise.
 void AdaptDispatch::EraseInDisplay(const DispatchTypes::EraseType eraseType)
 {
     if (eraseType > DispatchTypes::EraseType::Scrollback)
@@ -840,8 +804,6 @@ void AdaptDispatch::EraseInDisplay(const DispatchTypes::EraseType eraseType)
 // - EL - Erases the line that the cursor is currently on.
 // Arguments:
 // - eraseType - Determines whether to erase: From beginning (left edge) to the cursor, from cursor to end (right edge), or the entire line.
-// Return Value:
-// - True if handled successfully. False otherwise.
 void AdaptDispatch::EraseInLine(const DispatchTypes::EraseType eraseType)
 {
     const auto page = _pages.ActivePage();
@@ -907,8 +869,6 @@ void AdaptDispatch::_SelectiveEraseRect(const Page& page, const til::rect& erase
 //      From beginning (top-left corner) to the cursor
 //      From cursor to end (bottom-right corner)
 //      The entire page area
-// Return Value:
-// - True if handled successfully. False otherwise.
 void AdaptDispatch::SelectiveEraseInDisplay(const DispatchTypes::EraseType eraseType)
 {
     const auto page = _pages.ActivePage();
@@ -944,8 +904,6 @@ void AdaptDispatch::SelectiveEraseInDisplay(const DispatchTypes::EraseType erase
 //      From beginning (left edge) to the cursor
 //      From cursor to end (right edge)
 //      The entire line.
-// Return Value:
-// - True if handled successfully. False otherwise.
 void AdaptDispatch::SelectiveEraseInLine(const DispatchTypes::EraseType eraseType)
 {
     const auto page = _pages.ActivePage();
@@ -1104,8 +1062,6 @@ til::rect AdaptDispatch::_CalculateRectArea(const Page& page, const VTInt top, c
 // - bottom - The last row of the area (inclusive).
 // - right - The last column of the area (inclusive).
 // - attrs - The rendition attributes that will be applied to the area.
-// Return Value:
-// - True.
 void AdaptDispatch::ChangeAttributesRectangularArea(const VTInt top, const VTInt left, const VTInt bottom, const VTInt right, const VTParameters attrs)
 {
     auto changeOps = ChangeOps{};
@@ -1156,8 +1112,6 @@ void AdaptDispatch::ChangeAttributesRectangularArea(const VTInt top, const VTInt
 // - bottom - The last row of the area (inclusive).
 // - right - The last column of the area (inclusive).
 // - attrs - The rendition attributes that will be applied to the area.
-// Return Value:
-// - True.
 void AdaptDispatch::ReverseAttributesRectangularArea(const VTInt top, const VTInt left, const VTInt bottom, const VTInt right, const VTParameters attrs)
 {
     // In order to create a mask of the attributes that we want to reverse, we
@@ -1209,8 +1163,6 @@ void AdaptDispatch::ReverseAttributesRectangularArea(const VTInt top, const VTIn
 // - dstTop - The first row of the destination.
 // - dstLeft - The first column of the destination.
 // - dstPage - The destination page number.
-// Return Value:
-// - True.
 void AdaptDispatch::CopyRectangularArea(const VTInt top, const VTInt left, const VTInt bottom, const VTInt right, const VTInt page, const VTInt dstTop, const VTInt dstLeft, const VTInt dstPage)
 {
     const auto src = _pages.Get(page);
@@ -1261,8 +1213,6 @@ void AdaptDispatch::CopyRectangularArea(const VTInt top, const VTInt left, const
 // - left - The first column of the area.
 // - bottom - The last row of the area (inclusive).
 // - right - The last column of the area (inclusive).
-// Return Value:
-// - True.
 void AdaptDispatch::FillRectangularArea(const VTParameter ch, const VTInt top, const VTInt left, const VTInt bottom, const VTInt right)
 {
     const auto page = _pages.ActivePage();
@@ -1291,8 +1241,6 @@ void AdaptDispatch::FillRectangularArea(const VTParameter ch, const VTInt top, c
 // - left - The first column of the area.
 // - bottom - The last row of the area (inclusive).
 // - right - The last column of the area (inclusive).
-// Return Value:
-// - True.
 void AdaptDispatch::EraseRectangularArea(const VTInt top, const VTInt left, const VTInt bottom, const VTInt right)
 {
     const auto page = _pages.ActivePage();
@@ -1309,8 +1257,6 @@ void AdaptDispatch::EraseRectangularArea(const VTInt top, const VTInt left, cons
 // - left - The first column of the area.
 // - bottom - The last row of the area (inclusive).
 // - right - The last column of the area (inclusive).
-// Return Value:
-// - True.
 void AdaptDispatch::SelectiveEraseRectangularArea(const VTInt top, const VTInt left, const VTInt bottom, const VTInt right)
 {
     const auto page = _pages.ActivePage();
@@ -1323,8 +1269,6 @@ void AdaptDispatch::SelectiveEraseRectangularArea(const VTInt top, const VTInt l
 //   by the DECCARA and DECRARA attribute operations.
 // Arguments:
 // - changeExtent - Whether the character range is a stream or a rectangle.
-// Return value:
-// - True if handled successfully. False otherwise.
 void AdaptDispatch::SelectAttributeChangeExtent(const DispatchTypes::ChangeExtent changeExtent) noexcept
 {
     switch (changeExtent)
@@ -1351,8 +1295,6 @@ void AdaptDispatch::SelectAttributeChangeExtent(const DispatchTypes::ChangeExten
 // - left - The first column of the area.
 // - bottom - The last row of the area (inclusive).
 // - right - The last column of the area (inclusive).
-// Return value:
-// - True.
 void AdaptDispatch::RequestChecksumRectangularArea(const VTInt id, const VTInt page, const VTInt top, const VTInt left, const VTInt bottom, const VTInt right)
 {
     uint16_t checksum = 0;
@@ -1425,8 +1367,6 @@ void AdaptDispatch::RequestChecksumRectangularArea(const VTInt id, const VTInt p
 // Arguments:
 // - rendition - Determines whether the line will be rendered as single width, double
 //   width, or as one half of a double height line.
-// Return Value:
-// - True.
 void AdaptDispatch::SetLineRendition(const LineRendition rendition)
 {
     // The line rendition can't be changed if left/right margins are allowed.
@@ -1448,8 +1388,6 @@ void AdaptDispatch::SetLineRendition(const LineRendition rendition)
 // Arguments:
 // - statusType - status type indicating what property we should report back
 // - id - a numeric label used to identify the request in DECCKSR reports
-// Return Value:
-// - True if handled successfully. False otherwise.
 void AdaptDispatch::DeviceStatusReport(const DispatchTypes::StatusType statusType, const VTParameter id)
 {
     constexpr auto GoodCondition = L"0";
@@ -1509,8 +1447,6 @@ void AdaptDispatch::DeviceStatusReport(const DispatchTypes::StatusType statusTyp
 //   supports, and the set of implemented extensions.
 // Arguments:
 // - <none>
-// Return Value:
-// - True.
 void AdaptDispatch::DeviceAttributes()
 {
     // This first parameter of the response is 61, representing a conformance
@@ -1539,8 +1475,6 @@ void AdaptDispatch::DeviceAttributes()
 //   is set to 1 (indicating a PC Keyboard).
 // Arguments:
 // - <none>
-// Return Value:
-// - True.
 void AdaptDispatch::SecondaryDeviceAttributes()
 {
     _api.ReturnResponse(L"\x1b[>0;10;1c");
@@ -1551,8 +1485,6 @@ void AdaptDispatch::SecondaryDeviceAttributes()
 //   typically return a hard-coded value, the most common being all zeros.
 // Arguments:
 // - <none>
-// Return Value:
-// - True.
 void AdaptDispatch::TertiaryDeviceAttributes()
 {
     _api.ReturnResponse(L"\x1bP!|00000000\x1b\\");
@@ -1564,8 +1496,6 @@ void AdaptDispatch::TertiaryDeviceAttributes()
 //   But for a terminal that is emulating a VT52, the sequence should be ESC / Z.
 // Arguments:
 // - <none>
-// Return Value:
-// - True.
 void AdaptDispatch::Vt52DeviceAttributes()
 {
     _api.ReturnResponse(L"\x1b/Z");
@@ -1578,8 +1508,6 @@ void AdaptDispatch::Vt52DeviceAttributes()
 // Arguments:
 // - permission - This would originally have determined whether the terminal
 //   was allowed to send unsolicited reports or not.
-// Return Value:
-// - True if handled successfully. False otherwise.
 void AdaptDispatch::RequestTerminalParameters(const DispatchTypes::ReportingPermission permission)
 {
     // We don't care whether unsolicited reports are allowed or not, but the
@@ -1708,8 +1636,6 @@ void AdaptDispatch::_ScrollMovement(const VTInt delta)
 // - SU - Pans the window DOWN by given distance (distance new lines appear at the bottom of the screen)
 // Arguments:
 // - distance - Distance to move
-// Return Value:
-// - True.
 void AdaptDispatch::ScrollUp(const VTInt uiDistance)
 {
     _ScrollMovement(-uiDistance);
@@ -1719,8 +1645,6 @@ void AdaptDispatch::ScrollUp(const VTInt uiDistance)
 // - SD - Pans the window UP by given distance (distance new lines appear at the top of the screen)
 // Arguments:
 // - distance - Distance to move
-// Return Value:
-// - True.
 void AdaptDispatch::ScrollDown(const VTInt uiDistance)
 {
     _ScrollMovement(uiDistance);
@@ -1731,12 +1655,10 @@ void AdaptDispatch::ScrollDown(const VTInt uiDistance)
 //   cursor to home.
 // Arguments:
 // - pageCount - Number of pages to move
-// Return Value:
-// - True.
 void AdaptDispatch::NextPage(const VTInt pageCount)
 {
     PagePositionRelative(pageCount);
-    return CursorPosition(1, 1);
+    CursorPosition(1, 1);
 }
 
 // Routine Description:
@@ -1744,12 +1666,10 @@ void AdaptDispatch::NextPage(const VTInt pageCount)
 //   cursor to home.
 // Arguments:
 // - pageCount - Number of pages to move
-// Return Value:
-// - True.
 void AdaptDispatch::PrecedingPage(const VTInt pageCount)
 {
     PagePositionBack(pageCount);
-    return CursorPosition(1, 1);
+    CursorPosition(1, 1);
 }
 
 // Routine Description:
@@ -1757,8 +1677,6 @@ void AdaptDispatch::PrecedingPage(const VTInt pageCount)
 //   altering the cursor coordinates.
 // Arguments:
 // - page - Destination page
-// Return Value:
-// - True.
 void AdaptDispatch::PagePositionAbsolute(const VTInt page)
 {
     _pages.MoveTo(page, _modes.test(Mode::PageCursorCoupling));
@@ -1769,8 +1687,6 @@ void AdaptDispatch::PagePositionAbsolute(const VTInt page)
 //   the cursor coordinates.
 // Arguments:
 // - pageCount - Number of pages to move
-// Return Value:
-// - True.
 void AdaptDispatch::PagePositionRelative(const VTInt pageCount)
 {
     _pages.MoveRelative(pageCount, _modes.test(Mode::PageCursorCoupling));
@@ -1781,8 +1697,6 @@ void AdaptDispatch::PagePositionRelative(const VTInt pageCount)
 //   the cursor coordinates.
 // Arguments:
 // - pageCount - Number of pages to move
-// Return Value:
-// - True.
 void AdaptDispatch::PagePositionBack(const VTInt pageCount)
 {
     _pages.MoveRelative(-pageCount, _modes.test(Mode::PageCursorCoupling));
@@ -1792,8 +1706,6 @@ void AdaptDispatch::PagePositionBack(const VTInt pageCount)
 // - DECRQDE - Requests the area of page memory that is currently visible.
 // Arguments:
 // - None
-// Return Value:
-// - True.
 void AdaptDispatch::RequestDisplayedExtent()
 {
     const auto page = _pages.VisiblePage();
@@ -1859,8 +1771,6 @@ void AdaptDispatch::_SetAlternateScreenBufferMode(const bool enable)
 // Arguments:
 // - param - mode parameter to set/reset
 // - enable - True for set, false for unset.
-// Return Value:
-// - True if handled successfully. False otherwise.
 void AdaptDispatch::_ModeParamsHelper(const DispatchTypes::ModeParams param, const bool enable)
 {
     switch (param)
@@ -1991,7 +1901,6 @@ void AdaptDispatch::_ModeParamsHelper(const DispatchTypes::ModeParams param, con
         // Returning true here will mark this as being handled and avoid this.
         break;
     default:
-        // If no functions to call, overall dispatch was a failure.
         break;
     }
 }
@@ -2000,22 +1909,18 @@ void AdaptDispatch::_ModeParamsHelper(const DispatchTypes::ModeParams param, con
 // - SM/DECSET - Enables the given mode parameter (both ANSI and private).
 // Arguments:
 // - param - mode parameter to set
-// Return Value:
-// - True if handled successfully. False otherwise.
 void AdaptDispatch::SetMode(const DispatchTypes::ModeParams param)
 {
-    return _ModeParamsHelper(param, true);
+    _ModeParamsHelper(param, true);
 }
 
 // Routine Description:
 // - RM/DECRST - Disables the given mode parameter (both ANSI and private).
 // Arguments:
 // - param - mode parameter to reset
-// Return Value:
-// - True if handled successfully. False otherwise.
 void AdaptDispatch::ResetMode(const DispatchTypes::ModeParams param)
 {
-    return _ModeParamsHelper(param, false);
+    _ModeParamsHelper(param, false);
 }
 
 // Routine Description:
@@ -2023,8 +1928,6 @@ void AdaptDispatch::ResetMode(const DispatchTypes::ModeParams param)
 //   is reported back with a DECRPM escape sequence.
 // Arguments:
 // - param - the mode number being queried
-// Return Value:
-// - True if handled successfully. False otherwise.
 void AdaptDispatch::RequestMode(const DispatchTypes::ModeParams param)
 {
     static constexpr auto mapTemp = [](const bool b) { return b ? DispatchTypes::DECRPM_Enabled : DispatchTypes::DECRPM_Disabled; };
@@ -2145,8 +2048,6 @@ void AdaptDispatch::RequestMode(const DispatchTypes::ModeParams param)
 // - DECKPAM, DECKPNM - Sets the keypad input mode to either Application mode or Numeric mode (true, false respectively)
 // Arguments:
 // - applicationMode - set to true to enable Application Mode Input, false for Numeric Mode Input.
-// Return Value:
-// - True if handled successfully. False otherwise.
 void AdaptDispatch::SetKeypadMode(const bool fApplicationMode) noexcept
 {
     _terminalInput.SetInputMode(TerminalInput::Mode::Keypad, fApplicationMode);
@@ -2185,8 +2086,6 @@ void AdaptDispatch::_InsertDeleteLineHelper(const VTInt delta)
 //    Lines scrolled off the page are lost. IL has no effect outside the page margins.
 // Arguments:
 // - distance - number of lines to insert
-// Return Value:
-// - True.
 void AdaptDispatch::InsertLine(const VTInt distance)
 {
     _InsertDeleteLineHelper(distance);
@@ -2202,8 +2101,6 @@ void AdaptDispatch::InsertLine(const VTInt distance)
 //    lines. DL has no effect outside the scrolling margins.
 // Arguments:
 // - distance - number of lines to delete
-// Return Value:
-// - True.
 void AdaptDispatch::DeleteLine(const VTInt distance)
 {
     _InsertDeleteLineHelper(-distance);
@@ -2236,8 +2133,6 @@ void AdaptDispatch::_InsertDeleteColumnHelper(const VTInt delta)
 //    scrolling region, starting at the column that has the cursor.
 // Arguments:
 // - distance - number of columns to insert
-// Return Value:
-// - True.
 void AdaptDispatch::InsertColumn(const VTInt distance)
 {
     _InsertDeleteColumnHelper(distance);
@@ -2248,8 +2143,6 @@ void AdaptDispatch::InsertColumn(const VTInt distance)
 //    region, starting with the column that has the cursor.
 // Arguments:
 // - distance - number of columns to delete
-// Return Value:
-// - True.
 void AdaptDispatch::DeleteColumn(const VTInt distance)
 {
     _InsertDeleteColumnHelper(-distance);
@@ -2258,8 +2151,6 @@ void AdaptDispatch::DeleteColumn(const VTInt distance)
 // - DECANM - Sets the terminal emulation mode to either ANSI-compatible or VT52.
 // Arguments:
 // - ansiMode - set to true to enable the ANSI mode, false for VT52 mode.
-// Return Value:
-// - True.
 void AdaptDispatch::SetAnsiMode(const bool ansiMode)
 {
     // When an attempt is made to update the mode, the designated character sets
@@ -2346,8 +2237,6 @@ void AdaptDispatch::_DoSetTopBottomScrollingMargins(const VTInt topMargin,
 // Arguments:
 // - topMargin - the line number for the top margin.
 // - bottomMargin - the line number for the bottom margin.
-// Return Value:
-// - True.
 void AdaptDispatch::SetTopBottomScrollingMargins(const VTInt topMargin,
                                                  const VTInt bottomMargin)
 {
@@ -2420,8 +2309,6 @@ void AdaptDispatch::_DoSetLeftRightScrollingMargins(const VTInt leftMargin,
 // Arguments:
 // - leftMargin - the column number for the left margin.
 // - rightMargin - the column number for the right margin.
-// Return Value:
-// - True.
 void AdaptDispatch::SetLeftRightScrollingMargins(const VTInt leftMargin,
                                                  const VTInt rightMargin)
 {
@@ -2440,8 +2327,6 @@ void AdaptDispatch::SetLeftRightScrollingMargins(const VTInt leftMargin,
 // - ENQ - Directs the terminal to send the answerback message.
 // Arguments:
 // - None
-// Return Value:
-// - True.
 void AdaptDispatch::EnquireAnswerback()
 {
     _api.ReturnAnswerback();
@@ -2452,8 +2337,6 @@ void AdaptDispatch::EnquireAnswerback()
 //    Causes the terminal to emit an audible tone of brief duration.
 // Arguments:
 // - None
-// Return Value:
-// - True.
 void AdaptDispatch::WarningBell()
 {
     _api.WarningBell();
@@ -2464,8 +2347,6 @@ void AdaptDispatch::WarningBell()
 //    Moves the cursor to the leftmost column.
 // Arguments:
 // - None
-// Return Value:
-// - True.
 void AdaptDispatch::CarriageReturn()
 {
     _CursorMovePosition(Offset::Unchanged(), Offset::Absolute(1), true);
@@ -2476,9 +2357,7 @@ void AdaptDispatch::CarriageReturn()
 // Arguments:
 // - page - Target page on which the line feed is executed.
 // - withReturn - Set to true if a carriage return should be performed as well.
-// - wrapForced - Set to true is the line feed was the result of the line wrapping.
-// Return Value:
-// - True if the viewport panned down. False if not.
+// - wrapForced - Set to true is the line feed was the result of the line wrapping. if the viewport panned down. False if not.
 bool AdaptDispatch::_DoLineFeed(const Page& page, const bool withReturn, const bool wrapForced)
 {
     auto& textBuffer = page.Buffer();
@@ -2577,8 +2456,6 @@ bool AdaptDispatch::_DoLineFeed(const Page& page, const bool withReturn, const b
 //    Moves the cursor down one line, and possibly also to the leftmost column.
 // Arguments:
 // - lineFeedType - Specify whether a carriage return should be performed as well.
-// Return Value:
-// - True if handled successfully. False otherwise.
 void AdaptDispatch::LineFeed(const DispatchTypes::LineFeedType lineFeedType)
 {
     const auto page = _pages.ActivePage();
@@ -2603,8 +2480,6 @@ void AdaptDispatch::LineFeed(const DispatchTypes::LineFeedType lineFeedType)
 //    Moves the cursor up one line, and tries to keep its position in the line
 // Arguments:
 // - None
-// Return Value:
-// - True.
 void AdaptDispatch::ReverseLineFeed()
 {
     const auto page = _pages.ActivePage();
@@ -2633,8 +2508,6 @@ void AdaptDispatch::ReverseLineFeed()
 //    horizontally if it reaches the left margin.
 // Arguments:
 // - None
-// Return Value:
-// - True.
 void AdaptDispatch::BackIndex()
 {
     const auto page = _pages.ActivePage();
@@ -2661,8 +2534,6 @@ void AdaptDispatch::BackIndex()
 //    horizontally if it reaches the right margin.
 // Arguments:
 // - None
-// Return Value:
-// - True.
 void AdaptDispatch::ForwardIndex()
 {
     const auto page = _pages.ActivePage();
@@ -2688,8 +2559,6 @@ void AdaptDispatch::ForwardIndex()
 // - OSC Set Window Title - Sets the title of the window
 // Arguments:
 // - title - The string to set the title to.
-// Return Value:
-// - True.
 void AdaptDispatch::SetWindowTitle(std::wstring_view title)
 {
     _api.SetWindowTitle(title);
@@ -2699,8 +2568,6 @@ void AdaptDispatch::SetWindowTitle(std::wstring_view title)
 // HTS - sets a VT tab stop in the cursor's current column.
 //Arguments:
 // - None
-// Return value:
-// - True.
 void AdaptDispatch::HorizontalTabSet()
 {
     const auto page = _pages.ActivePage();
@@ -2717,8 +2584,6 @@ void AdaptDispatch::HorizontalTabSet()
 //     If it's already in the last column of the row, it will move it to the next line.
 //Arguments:
 // - numTabs - the number of tabs to perform
-// Return value:
-// - True.
 void AdaptDispatch::ForwardTab(const VTInt numTabs)
 {
     const auto page = _pages.ActivePage();
@@ -2763,8 +2628,6 @@ void AdaptDispatch::ForwardTab(const VTInt numTabs)
 //     previous to its current location. It will not reverse line feed.
 //Arguments:
 // - numTabs - the number of tabs to perform
-// Return value:
-// - True.
 void AdaptDispatch::BackwardsTab(const VTInt numTabs)
 {
     const auto page = _pages.ActivePage();
@@ -2799,8 +2662,6 @@ void AdaptDispatch::BackwardsTab(const VTInt numTabs)
 //     is one. ClearAllColumns (3) results in resetting all set tab stops.
 //Arguments:
 // - clearType - Whether to clear the current column, or all columns, defined in DispatchTypes::TabClearType
-// Return value:
-// True if handled successfully. False otherwise.
 void AdaptDispatch::TabClear(const DispatchTypes::TabClearType clearType)
 {
     switch (clearType)
@@ -2850,8 +2711,6 @@ void AdaptDispatch::_ClearAllTabStops() noexcept
 //    that the default positions should be reinitialized when needed.
 // Arguments:
 // - setType - only SetEvery8Columns is supported
-// Return value:
-// - True if handled successfully. False otherwise.
 void AdaptDispatch::TabSet(const VTParameter setType) noexcept
 {
     constexpr auto SetEvery8Columns = DispatchTypes::TabSetType::SetEvery8Columns;
@@ -2898,8 +2757,6 @@ void AdaptDispatch::_InitTabStopsForWidth(const VTInt width)
 //     control codes are disabled, and only the GL area can be remapped.
 //Arguments:
 // - codingSystem - The coding system that will be selected.
-// Return value:
-// True if handled successfully. False otherwise.
 void AdaptDispatch::DesignateCodingSystem(const VTID codingSystem)
 {
     // If we haven't previously saved the initial code page, do so now.
@@ -2934,11 +2791,9 @@ void AdaptDispatch::DesignateCodingSystem(const VTID codingSystem)
 //Arguments:
 // - gsetNumber - The G-set into which the charset will be selected.
 // - charset - The identifier indicating the charset that will be used.
-// Return value:
-// True if handled successfully. False otherwise.
 void AdaptDispatch::Designate94Charset(const VTInt gsetNumber, const VTID charset)
 {
-    return _termOutput.Designate94Charset(gsetNumber, charset);
+    _termOutput.Designate94Charset(gsetNumber, charset);
 }
 
 //Routine Description:
@@ -2949,52 +2804,42 @@ void AdaptDispatch::Designate94Charset(const VTInt gsetNumber, const VTID charse
 //Arguments:
 // - gsetNumber - The G-set into which the charset will be selected.
 // - charset - The identifier indicating the charset that will be used.
-// Return value:
-// True if handled successfully. False otherwise.
 void AdaptDispatch::Designate96Charset(const VTInt gsetNumber, const VTID charset)
 {
-    return _termOutput.Designate96Charset(gsetNumber, charset);
+    _termOutput.Designate96Charset(gsetNumber, charset);
 }
 
 //Routine Description:
 // Locking Shift - Invoke one of the G-sets into the left half of the code table.
 //Arguments:
 // - gsetNumber - The G-set that will be invoked.
-// Return value:
-// True if handled successfully. False otherwise.
 void AdaptDispatch::LockingShift(const VTInt gsetNumber)
 {
-    return _termOutput.LockingShift(gsetNumber);
+    _termOutput.LockingShift(gsetNumber);
 }
 
 //Routine Description:
 // Locking Shift Right - Invoke one of the G-sets into the right half of the code table.
 //Arguments:
 // - gsetNumber - The G-set that will be invoked.
-// Return value:
-// True if handled successfully. False otherwise.
 void AdaptDispatch::LockingShiftRight(const VTInt gsetNumber)
 {
-    return _termOutput.LockingShiftRight(gsetNumber);
+    _termOutput.LockingShiftRight(gsetNumber);
 }
 
 //Routine Description:
 // Single Shift - Temporarily invoke one of the G-sets into the code table.
 //Arguments:
 // - gsetNumber - The G-set that will be invoked.
-// Return value:
-// True if handled successfully. False otherwise.
 void AdaptDispatch::SingleShift(const VTInt gsetNumber) noexcept
 {
-    return _termOutput.SingleShift(gsetNumber);
+    _termOutput.SingleShift(gsetNumber);
 }
 
 //Routine Description:
 // DECAC1 - Enable or disable the reception of C1 control codes in the parser.
 //Arguments:
 // - enabled - true to allow C1 controls to be used, false to disallow.
-// Return value:
-// - True.
 void AdaptDispatch::AcceptC1Controls(const bool enabled)
 {
     _api.GetStateMachine().SetParserMode(StateMachine::Mode::AcceptC1, enabled);
@@ -3006,8 +2851,6 @@ void AdaptDispatch::AcceptC1Controls(const bool enabled)
 //  G-sets and in-use tables.
 //Arguments:
 // - ansiLevel - the expected conformance level
-// Return value:
-// - True if handled successfully. False otherwise.
 void AdaptDispatch::AnnounceCodeStructure(const VTInt ansiLevel)
 {
     // Levels 1 and 2 require ASCII in G0/GL and Latin-1 in G1/GR.
@@ -3057,8 +2900,6 @@ void AdaptDispatch::AnnounceCodeStructure(const VTInt ansiLevel)
 //    PC Term mode                DECPCTERM   Always reset.
 //Arguments:
 // <none>
-// Return value:
-// True if handled successfully. False otherwise.
 void AdaptDispatch::SoftReset()
 {
     _pages.ActivePage().Cursor().SetIsVisible(true); // Cursor enabled.
@@ -3119,8 +2960,6 @@ void AdaptDispatch::SoftReset()
 //      * G0(USASCII)
 //Arguments:
 // <none>
-// Return value:
-// True if handled successfully. False otherwise.
 void AdaptDispatch::HardReset()
 {
     // If in the alt buffer, switch back to main before doing anything else.
@@ -3209,8 +3048,6 @@ void AdaptDispatch::HardReset()
 //    the home position.
 // Arguments:
 // - None
-// Return Value:
-// - True.
 void AdaptDispatch::ScreenAlignmentPattern()
 {
     const auto page = _pages.ActivePage();
@@ -3242,8 +3079,6 @@ void AdaptDispatch::ScreenAlignmentPattern()
 //      (There isn't a scroll-forward, only a scrollback)
 // Arguments:
 // - <none>
-// Return value:
-// - True if handled successfully. False otherwise.
 void AdaptDispatch::_EraseScrollback()
 {
     const auto page = _pages.VisiblePage();
@@ -3268,8 +3103,6 @@ void AdaptDispatch::_EraseScrollback()
 //   viewport underneath that character.
 // Arguments:
 // - <none>
-// Return value:
-// - True if handled successfully. False otherwise.
 void AdaptDispatch::_EraseAll()
 {
     const auto page = _pages.ActivePage();
@@ -3324,8 +3157,6 @@ void AdaptDispatch::_EraseAll()
 //      cursor style. Unix styles are a combination of the shape and the blinking state.
 //Arguments:
 // - cursorStyle - The unix-like cursor style to apply to the cursor
-// Return value:
-// True if handled successfully. False otherwise.
 void AdaptDispatch::SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle)
 {
     auto actualType = CursorType::Legacy;
@@ -3366,7 +3197,7 @@ void AdaptDispatch::SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle)
 
     default:
         // Invalid argument should be handled by the connected terminal.
-        break;
+        return;
     }
 
     auto& cursor = _pages.ActivePage().Cursor();
@@ -3379,19 +3210,15 @@ void AdaptDispatch::SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle)
 // Arguments:
 // - tableIndex: The VT color table index
 // - dwColor: The new RGB color value to use.
-// Return Value:
-// True if handled successfully. False otherwise.
 void AdaptDispatch::SetCursorColor(const COLORREF cursorColor)
 {
-    return SetColorTableEntry(TextColor::CURSOR_COLOR, cursorColor);
+    SetColorTableEntry(TextColor::CURSOR_COLOR, cursorColor);
 }
 
 // Routine Description:
 // - OSC Copy to Clipboard
 // Arguments:
 // - content - The content to copy to clipboard. Must be null terminated.
-// Return Value:
-// - True if handled successfully. False otherwise.
 void AdaptDispatch::SetClipboard(const wil::zwstring_view content)
 {
     _api.CopyToClipboard(content);
@@ -3402,8 +3229,6 @@ void AdaptDispatch::SetClipboard(const wil::zwstring_view content)
 // Arguments:
 // - tableIndex: The VT color table index
 // - dwColor: The new RGB color value to use.
-// Return Value:
-// True if handled successfully. False otherwise.
 void AdaptDispatch::SetColorTableEntry(const size_t tableIndex, const DWORD dwColor)
 {
     _renderSettings.SetColorTableEntry(tableIndex, dwColor);
@@ -3427,24 +3252,20 @@ void AdaptDispatch::SetColorTableEntry(const size_t tableIndex, const DWORD dwCo
 // - Sets the default foreground color to a new value
 // Arguments:
 // - dwColor: The new RGB color value to use, as a COLORREF, format 0x00BBGGRR.
-// Return Value:
-// True if handled successfully. False otherwise.
 void AdaptDispatch::SetDefaultForeground(const DWORD dwColor)
 {
     _renderSettings.SetColorAliasIndex(ColorAlias::DefaultForeground, TextColor::DEFAULT_FOREGROUND);
-    return SetColorTableEntry(TextColor::DEFAULT_FOREGROUND, dwColor);
+    SetColorTableEntry(TextColor::DEFAULT_FOREGROUND, dwColor);
 }
 
 // Method Description:
 // - Sets the default background color to a new value
 // Arguments:
 // - dwColor: The new RGB color value to use, as a COLORREF, format 0x00BBGGRR.
-// Return Value:
-// True if handled successfully. False otherwise.
 void AdaptDispatch::SetDefaultBackground(const DWORD dwColor)
 {
     _renderSettings.SetColorAliasIndex(ColorAlias::DefaultBackground, TextColor::DEFAULT_BACKGROUND);
-    return SetColorTableEntry(TextColor::DEFAULT_BACKGROUND, dwColor);
+    SetColorTableEntry(TextColor::DEFAULT_BACKGROUND, dwColor);
 }
 
 // Method Description:
@@ -3454,8 +3275,6 @@ void AdaptDispatch::SetDefaultBackground(const DWORD dwColor)
 // - item: The aspect of the interface that will have its colors altered.
 // - fgIndex: The color table index to be used for the foreground.
 // - bgIndex: The color table index to be used for the background.
-// Return Value:
-// True if handled successfully. False otherwise.
 void AdaptDispatch::AssignColor(const DispatchTypes::ColorItem item, const VTInt fgIndex, const VTInt bgIndex)
 {
     switch (item)
@@ -3469,7 +3288,7 @@ void AdaptDispatch::AssignColor(const DispatchTypes::ColorItem item, const VTInt
         _renderSettings.SetColorAliasIndex(ColorAlias::FrameBackground, bgIndex);
         break;
     default:
-        break;
+        return;
     }
 
     if (_renderer)
@@ -3490,8 +3309,6 @@ void AdaptDispatch::AssignColor(const DispatchTypes::ColorItem item, const VTInt
 // - function - An identifier of the WindowManipulation function to perform
 // - parameter1 - The first optional parameter for the function
 // - parameter2 - The second optional parameter for the function
-// Return value:
-// True if handled successfully. False otherwise.
 void AdaptDispatch::WindowManipulation(const DispatchTypes::WindowManipulationType function,
                                        const VTParameter parameter1,
                                        const VTParameter parameter2)
@@ -3542,8 +3359,6 @@ void AdaptDispatch::WindowManipulation(const DispatchTypes::WindowManipulationTy
 // - Starts a hyperlink
 // Arguments:
 // - The hyperlink URI, optional additional parameters
-// Return Value:
-// - true
 void AdaptDispatch::AddHyperlink(const std::wstring_view uri, const std::wstring_view params)
 {
     const auto page = _pages.ActivePage();
@@ -3556,8 +3371,6 @@ void AdaptDispatch::AddHyperlink(const std::wstring_view uri, const std::wstring
 
 // Method Description:
 // - Ends a hyperlink
-// Return Value:
-// - true
 void AdaptDispatch::EndHyperlink()
 {
     const auto page = _pages.ActivePage();
@@ -3572,8 +3385,6 @@ void AdaptDispatch::EndHyperlink()
 //   and setting the working directory.
 // Arguments:
 // - string - contains the parameters that define which action we do
-// Return Value:
-// - True if handled successfully. False otherwise.
 void AdaptDispatch::DoConEmuAction(const std::wstring_view string)
 {
     constexpr size_t TaskbarMaxState{ 4 };
@@ -3668,8 +3479,6 @@ void AdaptDispatch::DoConEmuAction(const std::wstring_view string)
 // - Not actually used in conhost
 // Arguments:
 // - string: contains the parameters that define which action we do
-// Return Value:
-// - false in conhost, true for the SetMark action, otherwise false.
 void AdaptDispatch::DoITerm2Action(const std::wstring_view string)
 {
     if constexpr (!Feature_ScrollbarMarks::IsEnabled())
@@ -3700,8 +3509,6 @@ void AdaptDispatch::DoITerm2Action(const std::wstring_view string)
 // - The remainder of the FTCS prompt sequences are tracked in GH#11000
 // Arguments:
 // - string: contains the parameters that define which action we do
-// Return Value:
-// - false in conhost, true for the SetMark action, otherwise false.
 void AdaptDispatch::DoFinalTermAction(const std::wstring_view string)
 {
     if constexpr (!Feature_ScrollbarMarks::IsEnabled())
@@ -3777,8 +3584,6 @@ void AdaptDispatch::DoFinalTermAction(const std::wstring_view string)
 // - Not actually used in conhost
 // Arguments:
 // - string: contains the parameters that define which action we do
-// Return Value:
-// - false in conhost, true for the SetMark action, otherwise false.
 void AdaptDispatch::DoVsCodeAction(const std::wstring_view string)
 {
     if constexpr (!Feature_ShellCompletions::IsEnabled())
@@ -3849,8 +3654,6 @@ void AdaptDispatch::DoVsCodeAction(const std::wstring_view string)
 // - Not actually used in conhost
 // Arguments:
 // - string: contains the parameters that define which action we do
-// Return Value:
-// - false in conhost, true for the CmdNotFound action, otherwise false.
 void AdaptDispatch::DoWTAction(const std::wstring_view string)
 {
     const auto parts = Utils::SplitString(string, L';');
@@ -3979,8 +3782,6 @@ ITermDispatch::StringHandler AdaptDispatch::DownloadDRCS(const VTInt fontNumber,
 // - DECRQUPSS - Request the user-preference supplemental character set.
 // Arguments:
 // - None
-// Return Value:
-// - True
 void AdaptDispatch::RequestUserPreferenceCharset()
 {
     const auto size = _termOutput.GetUserPreferenceCharsetSize();
@@ -4052,8 +3853,6 @@ ITermDispatch::StringHandler AdaptDispatch::DefineMacro(const VTInt macroId,
 //   as if it had been received directly from the host.
 // Arguments:
 // - macroId - the id number of the macro to be invoked.
-// Return Value:
-// - True
 void AdaptDispatch::InvokeMacro(const VTInt macroId)
 {
     if (_macroBuffer)
@@ -4079,8 +3878,6 @@ void AdaptDispatch::InvokeMacro(const VTInt macroId)
 // Arguments:
 // - format - the format of the report being requested.
 // - formatOption - a format-specific option.
-// Return Value:
-// - True if handled successfully. False otherwise.
 void AdaptDispatch::RequestTerminalStateReport(const DispatchTypes::ReportFormat format, const VTParameter formatOption)
 {
     switch (format)
@@ -4483,8 +4280,6 @@ void AdaptDispatch::_ReportDECACSetting(const VTInt itemNumber) const
 //   depending on the requested format.
 // Arguments:
 // - format - the format of the report being requested.
-// Return Value:
-// - True if handled successfully. False otherwise.
 void AdaptDispatch::RequestPresentationStateReport(const DispatchTypes::PresentationReportFormat format)
 {
     switch (format)
@@ -4836,8 +4631,6 @@ ITermDispatch::StringHandler AdaptDispatch::_RestoreTabStops()
 // - DECPS - Plays a sequence of musical notes.
 // Arguments:
 // - params - The volume, duration, and note values to play.
-// Return value:
-// - True if handled successfully. False otherwise.
 void AdaptDispatch::PlaySounds(const VTParameters parameters)
 {
     // First parameter is the volume, in the range 0 to 7. We multiply by
@@ -4848,13 +4641,12 @@ void AdaptDispatch::PlaySounds(const VTParameters parameters)
     using namespace std::chrono_literals;
     const auto duration = std::min(parameters.at(1).value_or(0), 255) * 1000000us / 32;
     // The subsequent parameters are notes, in the range 0 to 25.
-    return parameters.subspan(2).for_each([=](const auto param) {
+    parameters.subspan(2).for_each([=](const auto param) {
         // Values 1 to 25 represent the notes C5 to C7, so we add 71 to
         // obtain the equivalent MIDI note numbers (72 = C5).
         const auto noteNumber = std::min(param.value_or(0), 25) + 71;
         // But value 0 is meant to be silent, so if the note number is 71,
         // we set the velocity to 0 (i.e. no volume).
         _api.PlayMidiNote(noteNumber, noteNumber == 71 ? 0 : velocity, duration);
-        return true;
     });
 }

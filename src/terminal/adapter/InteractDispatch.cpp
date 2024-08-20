@@ -35,8 +35,6 @@ InteractDispatch::InteractDispatch() :
 //      to be read by the client.
 // Arguments:
 // - inputEvents: a collection of IInputEvents
-// Return Value:
-// - True.
 void InteractDispatch::WriteInput(const std::span<const INPUT_RECORD>& inputEvents)
 {
     const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
@@ -59,8 +57,6 @@ void InteractDispatch::WriteCtrlKey(const INPUT_RECORD& event)
 // - Writes a string of input to the host.
 // Arguments:
 // - string : a string to write to the console.
-// Return Value:
-// - True.
 void InteractDispatch::WriteString(const std::wstring_view string)
 {
     if (!string.empty())
@@ -87,8 +83,6 @@ void InteractDispatch::WriteString(const std::wstring_view string)
 // - function - An identifier of the WindowManipulation function to perform
 // - parameter1 - The first optional parameter for the function
 // - parameter2 - The second optional parameter for the function
-// Return value:
-// True if handled successfully. False otherwise.
 void InteractDispatch::WindowManipulation(const DispatchTypes::WindowManipulationType function,
                                           const VTParameter parameter1,
                                           const VTParameter parameter2)
@@ -123,8 +117,6 @@ void InteractDispatch::WindowManipulation(const DispatchTypes::WindowManipulatio
 //Arguments:
 // - row: The row to move the cursor to.
 // - col: The column to move the cursor to.
-// Return value:
-// - True.
 void InteractDispatch::MoveCursor(const VTInt row, const VTInt col)
 {
     // First retrieve some information about the buffer
@@ -161,8 +153,6 @@ bool InteractDispatch::IsVtInputEnabled() const
 // - Used to call ConsoleControl(ConsoleSetForeground,...).
 // Arguments:
 // - focused: if the terminal is now focused
-// Return Value:
-// - true always.
 void InteractDispatch::FocusChanged(const bool focused)
 {
     auto& g = ServiceLocator::LocateGlobals();

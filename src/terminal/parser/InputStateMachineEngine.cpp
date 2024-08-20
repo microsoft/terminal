@@ -284,7 +284,28 @@ bool InputStateMachineEngine::ActionPrintString(const std::wstring_view string)
 // - true iff we successfully dispatched the sequence.
 bool InputStateMachineEngine::ActionPassThroughString(const std::wstring_view string)
 {
-    return ActionPrintString(string);
+    if (string.empty())
+    {
+        return true;
+    }
+
+    if (_pDispatch->IsVtInputEnabled())
+    {
+        // Synthesize string into key events that we'll write to the buffer
+        // similar to TerminalInput::_SendInputSequence
+        InputEventQueue inputEvents;
+        for (const auto& wch : string)
+        {
+            inputEvents.push_back(SynthesizeKeyEvent(true, 1, 0, 0, wch, 0));
+        }
+        _pDispatch->WriteInput(inputEvents);
+    }
+    else
+    {
+        _pDispatch->WriteString(string);
+    }
+
+    return true;
 }
 
 // Method Description:

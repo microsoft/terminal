@@ -308,7 +308,6 @@ bool OutputStateMachineEngine::ActionEscDispatch(const VTID id)
             _dispatch->Designate96Charset(3, commandParameter);
             break;
         default:
-            // If no functions to call, overall dispatch was a failure.
             break;
         }
     }
@@ -379,7 +378,6 @@ bool OutputStateMachineEngine::ActionVt52EscDispatch(const VTID id, const VTPara
         _dispatch->SetMode(DispatchTypes::ModeParams::DECANM_AnsiMode);
         break;
     default:
-        // If no functions to call, overall dispatch was a failure.
         break;
     }
 
@@ -457,42 +455,42 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParamete
         break;
     case CsiActionCodes::ED_EraseDisplay:
         parameters.for_each([&](const auto eraseType) {
-            return _dispatch->EraseInDisplay(eraseType);
+            _dispatch->EraseInDisplay(eraseType);
         });
         break;
     case CsiActionCodes::DECSED_SelectiveEraseDisplay:
         parameters.for_each([&](const auto eraseType) {
-            return _dispatch->SelectiveEraseInDisplay(eraseType);
+            _dispatch->SelectiveEraseInDisplay(eraseType);
         });
         break;
     case CsiActionCodes::EL_EraseLine:
         parameters.for_each([&](const auto eraseType) {
-            return _dispatch->EraseInLine(eraseType);
+            _dispatch->EraseInLine(eraseType);
         });
         break;
     case CsiActionCodes::DECSEL_SelectiveEraseLine:
         parameters.for_each([&](const auto eraseType) {
-            return _dispatch->SelectiveEraseInLine(eraseType);
+            _dispatch->SelectiveEraseInLine(eraseType);
         });
         break;
     case CsiActionCodes::SM_SetMode:
         parameters.for_each([&](const auto mode) {
-            return _dispatch->SetMode(DispatchTypes::ANSIStandardMode(mode));
+            _dispatch->SetMode(DispatchTypes::ANSIStandardMode(mode));
         });
         break;
     case CsiActionCodes::DECSET_PrivateModeSet:
         parameters.for_each([&](const auto mode) {
-            return _dispatch->SetMode(DispatchTypes::DECPrivateMode(mode));
+            _dispatch->SetMode(DispatchTypes::DECPrivateMode(mode));
         });
         break;
     case CsiActionCodes::RM_ResetMode:
         parameters.for_each([&](const auto mode) {
-            return _dispatch->ResetMode(DispatchTypes::ANSIStandardMode(mode));
+            _dispatch->ResetMode(DispatchTypes::ANSIStandardMode(mode));
         });
         break;
     case CsiActionCodes::DECRST_PrivateModeReset:
         parameters.for_each([&](const auto mode) {
-            return _dispatch->ResetMode(DispatchTypes::DECPrivateMode(mode));
+            _dispatch->ResetMode(DispatchTypes::DECPrivateMode(mode));
         });
         break;
     case CsiActionCodes::SGR_SetGraphicsRendition:
@@ -554,12 +552,12 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParamete
         break;
     case CsiActionCodes::TBC_TabClear:
         parameters.for_each([&](const auto clearType) {
-            return _dispatch->TabClear(clearType);
+            _dispatch->TabClear(clearType);
         });
         break;
     case CsiActionCodes::DECST8C_SetTabEvery8Columns:
         parameters.for_each([&](const auto setType) {
-            return _dispatch->TabSet(setType);
+            _dispatch->TabSet(setType);
         });
         break;
     case CsiActionCodes::ECH_EraseCharacters:
@@ -665,7 +663,6 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParamete
         _dispatch->PlaySounds(parameters);
         break;
     default:
-        // If no functions to call, overall dispatch was a failure.
         break;
     }
 
@@ -867,7 +864,6 @@ bool OutputStateMachineEngine::ActionOscDispatch(const size_t parameter, const s
         break;
     }
     default:
-        // If no functions to call, overall dispatch was a failure.
         break;
     }
 

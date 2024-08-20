@@ -1331,12 +1331,12 @@ public:
 
     void SetMode(const DispatchTypes::ModeParams param) noexcept override
     {
-        return _ModeParamsHelper(param, true);
+        _ModeParamsHelper(param, true);
     }
 
     void ResetMode(const DispatchTypes::ModeParams param) noexcept override
     {
-        return _ModeParamsHelper(param, false);
+        _ModeParamsHelper(param, false);
     }
 
     void SetAnsiMode(const bool ansiMode) noexcept override

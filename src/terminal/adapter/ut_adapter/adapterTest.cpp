@@ -713,13 +713,13 @@ public:
         // Attributes are restored to defaults.
         _testGetSet->_expectedAttribute = {};
 
-        _pDispatch->CursorRestoreState(), L"By default, restore to top left corner (0,0 offset from viewport).";
+        _pDispatch->CursorRestoreState();
         _testGetSet->ValidateExpectedCursorPos();
         _testGetSet->ValidateExpectedAttributes();
 
         Log::Comment(L"Test 2: Place cursor in center. Save. Move cursor to corner. Restore. Should come back to center.");
         _testGetSet->PrepData(CursorX::XCENTER, CursorY::YCENTER);
-        _pDispatch->CursorSaveState(), L"Succeed at saving position.";
+        _pDispatch->CursorSaveState();
         _testGetSet->ValidateExpectedCursorPos();
 
         Log::Comment(L"Backup expected cursor (in the middle). Move cursor to corner. Then re-set expected cursor to middle.");
@@ -732,7 +732,7 @@ public:
         // restore expected cursor position to center.
         _testGetSet->_expectedCursorPos = coordExpected;
 
-        _pDispatch->CursorRestoreState(), L"Restoring to corner should succeed. API call inside will test that cursor matched expected position.";
+        _pDispatch->CursorRestoreState();
         _testGetSet->ValidateExpectedCursorPos();
         _testGetSet->ValidateExpectedAttributes();
     }
@@ -1502,15 +1502,6 @@ public:
         _pDispatch->SetGraphicsRendition({ rgOptions, cOptions });
         VERIFY_IS_TRUE(_testGetSet->_textBuffer->GetCurrentAttributes().IsIntense());
         _testGetSet->ValidateExpectedAttributes();
-    }
-
-    TEST_METHOD(DeviceStatusReportTests)
-    {
-        Log::Comment(L"Starting test...");
-
-        Log::Comment(L"Test 1: Verify failure when using bad status.");
-        _testGetSet->PrepData();
-        _pDispatch->DeviceStatusReport((DispatchTypes::StatusType)-1, {});
     }
 
     TEST_METHOD(DeviceStatus_OperatingStatusTests)
@@ -2582,12 +2573,12 @@ public:
 
         Log::Comment(L"Restore flags");
         stateMachine.ProcessString(L"\033P1$t1;1;1;@;@;E;0;2;@;BBBB\033\\");
-        _pDispatch->_modes.test(AdaptDispatch::Mode::Origin);
+        VERIFY_IS_TRUE(_pDispatch->_modes.test(AdaptDispatch::Mode::Origin));
         VERIFY_IS_FALSE(termOutput.IsSingleShiftPending(2));
         VERIFY_IS_TRUE(termOutput.IsSingleShiftPending(3));
         VERIFY_IS_FALSE(textBuffer.GetCursor().IsDelayedEOLWrap());
         stateMachine.ProcessString(L"\033P1$t1;1;1;@;@;J;0;2;@;BBBB\033\\");
-        _pDispatch->_modes.test(AdaptDispatch::Mode::Origin);
+        VERIFY_IS_FALSE(_pDispatch->_modes.test(AdaptDispatch::Mode::Origin));
         VERIFY_IS_TRUE(termOutput.IsSingleShiftPending(2));
         VERIFY_IS_FALSE(termOutput.IsSingleShiftPending(3));
         VERIFY_IS_TRUE(textBuffer.GetCursor().IsDelayedEOLWrap());
@@ -3072,15 +3063,15 @@ public:
 
         const auto decdld = [&](const auto cmw, const auto cmh, const auto ss, const auto u, const std::wstring_view data = {}) {
             const auto cellMatrix = static_cast<DispatchTypes::DrcsCellMatrix>(cmw);
-            if (fontBuffer.SetEraseControl(DispatchTypes::DrcsEraseControl::AllChars))
+            if (!fontBuffer.SetEraseControl(DispatchTypes::DrcsEraseControl::AllChars))
             {
                 return false;
             }
-            if (fontBuffer.SetAttributes(cellMatrix, cmh, ss, u))
+            if (!fontBuffer.SetAttributes(cellMatrix, cmh, ss, u))
             {
                 return false;
             }
-            if (fontBuffer.SetStartChar(0, DispatchTypes::CharsetSize::Size94))
+            if (!fontBuffer.SetStartChar(0, DispatchTypes::CharsetSize::Size94))
             {
                 return false;
             }
@@ -3090,7 +3081,7 @@ public:
             {
                 fontBuffer.AddSixelData(ch);
             }
-            if (fontBuffer.FinalizeSixelData())
+            if (!fontBuffer.FinalizeSixelData())
             {
                 return false;
             }

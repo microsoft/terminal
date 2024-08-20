@@ -387,7 +387,7 @@ void TestInteractDispatch::MoveCursor(const VTInt row, const VTInt col)
 
 bool TestInteractDispatch::IsVtInputEnabled() const
 {
-    return true;
+    return false;
 }
 
 void TestInteractDispatch::FocusChanged(const bool /*focused*/)

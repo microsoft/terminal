@@ -418,8 +418,6 @@ void AdaptDispatch::_ApplyGraphicsOptions(const VTParameters options,
 // Arguments:
 // - options - An array of options that will be applied from 0 to N, in order,
 //   one at a time by setting or removing flags in the font style properties.
-// Return Value:
-// - True.
 void AdaptDispatch::SetGraphicsRendition(const VTParameters options)
 {
     const auto page = _pages.ActivePage();
@@ -434,8 +432,6 @@ void AdaptDispatch::SetGraphicsRendition(const VTParameters options)
 //   but the protected attribute was the only one ever implemented.
 // Arguments:
 // - options - An array of options that will be applied in order.
-// Return Value:
-// - True.
 void AdaptDispatch::SetCharacterProtectionAttribute(const VTParameters options)
 {
     const auto page = _pages.ActivePage();
@@ -465,8 +461,6 @@ void AdaptDispatch::SetCharacterProtectionAttribute(const VTParameters options)
 // - options: if not empty, specify which portions of the current text attributes should
 //   be saved. Options that are not supported are ignored. If no options are specified,
 //   all attributes are stored.
-// Return Value:
-// - True.
 void AdaptDispatch::PushGraphicsRendition(const VTParameters options)
 {
     const auto& currentAttributes = _pages.ActivePage().Attributes();
@@ -478,8 +472,6 @@ void AdaptDispatch::PushGraphicsRendition(const VTParameters options)
 //   were saved, combines those with the current attributes.
 // Arguments:
 // - <none>
-// Return Value:
-// - True.
 void AdaptDispatch::PopGraphicsRendition()
 {
     const auto page = _pages.ActivePage();
