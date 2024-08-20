@@ -12,6 +12,7 @@ namespace Microsoft.Terminal.Remoting
         Peasant CreatePeasant(WindowRequestedArgs args);
 
         void SignalClose(Peasant p);
+        void QuitAll();
 
         void UpdateActiveTabTitle(String title, Peasant p);
 
