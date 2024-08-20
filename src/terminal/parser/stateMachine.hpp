@@ -63,7 +63,7 @@ namespace Microsoft::Console::VirtualTerminal
 
     public:
         template<typename T>
-        StateMachine(std::unique_ptr<T> engine) :
+        StateMachine(std::unique_ptr<T> engine) noexcept :
             StateMachine(std::move(engine), std::is_same_v<T, class InputStateMachineEngine>)
         {
         }
