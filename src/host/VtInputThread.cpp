@@ -189,8 +189,8 @@ void VtInputThread::_InputThread()
     return S_OK;
 }
 
-void VtInputThread::WaitUntilDSR(DWORD timeout) const noexcept
+til::enumset<DeviceAttribute, uint64_t> VtInputThread::WaitUntilDA1(DWORD timeout) const noexcept
 {
     const auto& engine = static_cast<InputStateMachineEngine&>(_pInputStateMachine->Engine());
-    engine.WaitUntilDSR(timeout);
+    return engine.WaitUntilDA1(timeout);
 }
