@@ -54,9 +54,16 @@ Si tratta di un progetto open source e la partecipazione della community è molt
     
   </DevStudio>
   <ReleaseNotes>
-    Versione __VERSION_NUMBER__
+    Versione __VERSION_NUMBER__ 
 
-Per ulteriori dettagli, consulta la nostra pagina delle versioni di GitHub.
+- Il terminale ricorda ora il contenuto della finestra quando si usa il ripristino della sessione.
+- È ora possibile usare più tipi di carattere contemporaneamente.
+- I caratteri tracciati vengono ora sottoposti a rendering con pixel di perfezionamento.
+- L'esperienza di utilizzo di un IME all'interno di Terminale è stata notevolmente migliorata.
+- Le combinazioni di colori all'interno del file JSON saranno ora molto più semplici.
+- Sono stati corretti alcuni bug relativi alla gestione degli URL, alle righe a doppia larghezza, al ritorno a capo delle righe e altro ancora.
+
+Per altri dettagli, vedi la pagina delle versioni di GitHub.
   </ReleaseNotes>
   <ScreenshotCaptions>
     <!-- Valid length: 200 character limit, up to 9 elements per platform -->

@@ -56,7 +56,14 @@ Este es un proyecto de fuente abierta y animamos a la comunidad a participar. Pa
   <ReleaseNotes>
     Versión __VERSION_NUMBER__
 
-Para más información, consulte nuestra página de versiones de GitHub.
+- Terminal recordará ahora el contenido de la ventana cuando use la restauración de la sesión.
+- Ahora puede usar varias fuentes al mismo tiempo.
+- Los caracteres que dibujan recuadros ahora se representan con precisión de píxel.
+- Se ha mejorado significativamente la experiencia de utilizar un IME dentro de Terminal.
+- Las combinaciones de colores dentro del archivo JSON ahora serán mucho más sencillas.
+- Se han corregido varios errores relacionados con el control de direcciones URL, las filas de ancho doble, el ajuste de líneas y mucho más.
+
+Consulte la página de versiones de GitHub para más información.
   </ReleaseNotes>
   <ScreenshotCaptions>
     <!-- Valid length: 200 character limit, up to 9 elements per platform -->
