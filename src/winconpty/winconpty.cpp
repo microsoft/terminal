@@ -136,7 +136,6 @@ HRESULT _CreatePseudoConsole(const HANDLE hToken,
     // This is plenty of space to hold the formatted string
     wchar_t cmd[MAX_PATH]{};
     const BOOL bInheritCursor = (dwFlags & PSEUDOCONSOLE_INHERIT_CURSOR) == PSEUDOCONSOLE_INHERIT_CURSOR;
-    const BOOL bResizeQuirk = (dwFlags & PSEUDOCONSOLE_RESIZE_QUIRK) == PSEUDOCONSOLE_RESIZE_QUIRK;
 
     const wchar_t* textMeasurement;
     switch (dwFlags & PSEUDOCONSOLE_GLYPH_WIDTH__MASK)
@@ -157,10 +156,9 @@ HRESULT _CreatePseudoConsole(const HANDLE hToken,
 
     swprintf_s(cmd,
                MAX_PATH,
-               L"\"%s\" --headless %s%s%s--width %hd --height %hd --signal 0x%tx --server 0x%tx",
+               L"\"%s\" --headless %s%s--width %hd --height %hd --signal 0x%tx --server 0x%tx",
                _ConsoleHostPath(),
                bInheritCursor ? L"--inheritcursor " : L"",
-               bResizeQuirk ? L"--resizeQuirk " : L"",
                textMeasurement,
                size.X,
                size.Y,
@@ -370,35 +368,22 @@ HRESULT _ReparentPseudoConsole(_In_ const PseudoConsole* const pPty, _In_ const 
 // - wait: If true, waits for conhost/OpenConsole to exit first.
 // Return Value:
 // - <none>
-void _ClosePseudoConsoleMembers(_In_ PseudoConsole* pPty, _In_ DWORD dwMilliseconds)
+void _ClosePseudoConsoleMembers(_In_ PseudoConsole* pPty)
 {
     if (pPty != nullptr)
     {
-        // See MSFT:19918626
-        // First break the signal pipe - this will trigger conhost to tear itself down
         if (_HandleIsValid(pPty->hSignal))
         {
             CloseHandle(pPty->hSignal);
             pPty->hSignal = nullptr;
         }
-        // The reference handle ensures that conhost keeps running unless ClosePseudoConsole is called.
-        // We have to call it before calling WaitForSingleObject however in order to not deadlock,
-        // Due to conhost waiting for all clients to disconnect, while we wait for conhost to exit.
         if (_HandleIsValid(pPty->hPtyReference))
         {
             CloseHandle(pPty->hPtyReference);
             pPty->hPtyReference = nullptr;
         }
-        // Then, wait on the conhost process before killing it.
-        // We do this to make sure the conhost finishes flushing any output it
-        //      has yet to send before we hard kill it.
         if (_HandleIsValid(pPty->hConPtyProcess))
         {
-            if (dwMilliseconds)
-            {
-                WaitForSingleObject(pPty->hConPtyProcess, dwMilliseconds);
-            }
-
             CloseHandle(pPty->hConPtyProcess);
             pPty->hConPtyProcess = nullptr;
         }
@@ -414,11 +399,11 @@ void _ClosePseudoConsoleMembers(_In_ PseudoConsole* pPty, _In_ DWORD dwMilliseco
 // - wait: If true, waits for conhost/OpenConsole to exit first.
 // Return Value:
 // - <none>
-static void _ClosePseudoConsole(_In_ PseudoConsole* pPty, _In_ DWORD dwMilliseconds) noexcept
+static void _ClosePseudoConsole(_In_ PseudoConsole* pPty) noexcept
 {
     if (pPty != nullptr)
     {
-        _ClosePseudoConsoleMembers(pPty, dwMilliseconds);
+        _ClosePseudoConsoleMembers(pPty);
         HeapFree(GetProcessHeap(), 0, pPty);
     }
 }
@@ -479,7 +464,7 @@ extern "C" HRESULT WINAPI ConptyCreatePseudoConsoleAsUser(_In_ HANDLE hToken,
     auto pPty = (PseudoConsole*)HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(PseudoConsole));
     RETURN_IF_NULL_ALLOC(pPty);
     auto cleanupPty = wil::scope_exit([&]() noexcept {
-        _ClosePseudoConsole(pPty, 0);
+        _ClosePseudoConsole(pPty);
     });
 
     wil::unique_handle duplicatedInput;
@@ -576,19 +561,7 @@ extern "C" HRESULT WINAPI ConptyReleasePseudoConsole(_In_ HPCON hPC)
 // Waits for conhost/OpenConsole to exit first.
 extern "C" VOID WINAPI ConptyClosePseudoConsole(_In_ HPCON hPC)
 {
-    _ClosePseudoConsole((PseudoConsole*)hPC, INFINITE);
-}
-
-// Function Description:
-// Closes the conpty and all associated state.
-// Client applications attached to the conpty will also behave as though the
-//      console window they were running in was closed.
-// This can fail if the conhost hosting the pseudoconsole failed to be
-//      terminated, or if the pseudoconsole was already terminated.
-// Doesn't wait for conhost/OpenConsole to exit.
-extern "C" VOID WINAPI ConptyClosePseudoConsoleTimeout(_In_ HPCON hPC, _In_ DWORD dwMilliseconds)
-{
-    _ClosePseudoConsole((PseudoConsole*)hPC, dwMilliseconds);
+    _ClosePseudoConsole((PseudoConsole*)hPC);
 }
 
 // NOTE: This one is not defined in the Windows headers but is

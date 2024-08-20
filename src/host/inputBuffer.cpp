@@ -10,7 +10,6 @@
 #include "misc.h"
 #include "stream.h"
 #include "../interactivity/inc/ServiceLocator.hpp"
-#include "../types/inc/GlyphWidth.hpp"
 
 #define INPUT_BUFFER_DEFAULT_INPUT_MODE (ENABLE_LINE_INPUT | ENABLE_PROCESSED_INPUT | ENABLE_ECHO_INPUT | ENABLE_MOUSE_INPUT)
 
@@ -804,13 +803,9 @@ bool InputBuffer::_CoalesceEvent(const INPUT_RECORD& inEvent) noexcept
             (lastKey.wVirtualScanCode == inKey.wVirtualScanCode || WI_IsFlagSet(inKey.dwControlKeyState, NLS_IME_CONVERSION)) &&
             lastKey.uChar.UnicodeChar == inKey.uChar.UnicodeChar &&
             lastKey.dwControlKeyState == inKey.dwControlKeyState &&
-            // TODO:GH#8000 This behavior is an import from old conhost v1 and has been broken for decades.
-            // This is probably the outdated idea that any wide glyph is being represented by 2 characters (DBCS) and likely
-            // resulted from conhost originally being split into a ASCII/OEM and a DBCS variant with preprocessor flags.
-            // You can't update the repeat count of such a A,B pair, because they're stored as A,A,B,B (down-down, up-up).
-            // I believe the proper approach is to store pairs of characters as pairs, update their combined
-            // repeat count and only when they're being read de-coalesce them into their alternating form.
-            !IsGlyphFullWidth(inKey.uChar.UnicodeChar))
+            // A single repeat count cannot represent two INPUT_RECORDs simultaneously,
+            // and so it cannot represent a surrogate pair either.
+            !til::is_surrogate(inKey.uChar.UnicodeChar))
         {
             lastKey.wRepeatCount += inKey.wRepeatCount;
             return true;

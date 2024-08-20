@@ -52,14 +52,6 @@ void Terminal::Create(til::size viewportSize, til::CoordType scrollbackLines, Re
     auto dispatch = std::make_unique<AdaptDispatch>(*this, &renderer, _renderSettings, _terminalInput);
     auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
     _stateMachine = std::make_unique<StateMachine>(std::move(engine));
-
-    // Until we have a true pass-through mode (GH#1173), the decision as to
-    // whether C1 controls are interpreted or not is made at the conhost level.
-    // If they are being filtered out, then we will simply never receive them.
-    // But if they are being accepted by conhost, there's a chance they may get
-    // passed through in some situations, so it's important that our state
-    // machine is always prepared to accept them.
-    _stateMachine->SetParserMode(StateMachine::Mode::AlwaysAcceptC1, true);
 }
 
 // Method Description:
@@ -90,6 +82,7 @@ void Terminal::UpdateSettings(ICoreSettings settings)
 
     _snapOnInput = settings.SnapOnInput();
     _altGrAliasing = settings.AltGrAliasing();
+    _answerbackMessage = settings.AnswerbackMessage();
     _wordDelimiters = settings.WordDelimiters();
     _suppressApplicationTitle = settings.SuppressApplicationTitle();
     _startingTitle = settings.StartingTitle();
@@ -1259,7 +1252,7 @@ void Terminal::SetSearchHighlights(const std::vector<til::point_span>& highlight
 // Method Description:
 // - Stores the focused search highlighted region in the terminal
 // - If the region isn't empty, it will be brought into view
-void Terminal::SetSearchHighlightFocused(const size_t focusedIdx)
+void Terminal::SetSearchHighlightFocused(const size_t focusedIdx, til::CoordType searchScrollOffset)
 {
     _assertLocked();
     _searchHighlightFocused = focusedIdx;
@@ -1268,7 +1261,9 @@ void Terminal::SetSearchHighlightFocused(const size_t focusedIdx)
     if (focusedIdx < _searchHighlights.size())
     {
         const auto focused = til::at(_searchHighlights, focusedIdx);
-        _ScrollToPoints(focused.start, focused.end);
+        const auto adjustedStart = til::point{ focused.start.x, std::max(0, focused.start.y - searchScrollOffset) };
+        const auto adjustedEnd = til::point{ focused.end.x, std::max(0, focused.end.y - searchScrollOffset) };
+        _ScrollToPoints(adjustedStart, adjustedEnd);
     }
 }
 
@@ -1429,6 +1424,11 @@ PointTree Terminal::_getPatterns(til::CoordType beg, til::CoordType end) const
     static constexpr std::array<std::wstring_view, 1> patterns{
         LR"(\b(?:https?|ftp|file)://[-A-Za-z0-9+&@#/%?=~_|$!:,.;]*[A-Za-z0-9+&@#/%=~_|$])",
     };
+
+    if (!_detectURLs)
+    {
+        return {};
+    }
 
     auto text = ICU::UTextFromTextBuffer(_activeBuffer(), beg, end + 1);
     UErrorCode status = U_ZERO_ERROR;

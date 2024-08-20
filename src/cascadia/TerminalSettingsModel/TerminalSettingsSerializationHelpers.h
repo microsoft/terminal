@@ -501,9 +501,10 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::FindMatchDirecti
 
 JSON_FLAG_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::SuggestionsSource)
 {
-    static constexpr std::array<pair_type, 6> mappings = {
+    static constexpr std::array<pair_type, 7> mappings = {
         pair_type{ "none", AllClear },
         pair_type{ "tasks", ValueType::Tasks },
+        pair_type{ "snippets", ValueType::Tasks },
         pair_type{ "commandHistory", ValueType::CommandHistory },
         pair_type{ "directoryHistory", ValueType::DirectoryHistory },
         pair_type{ "quickFix", ValueType::QuickFixes },

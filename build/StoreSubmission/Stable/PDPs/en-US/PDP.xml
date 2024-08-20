@@ -56,6 +56,13 @@ This is an open source project and we welcome community participation. To partic
   <ReleaseNotes _locID="App_ReleaseNotes">
     <!-- _locComment_text="{MaxLength=1500} {Locked=__VERSION_NUMBER__} App Release Note" -->Version __VERSION_NUMBER__
 
+- Terminal will now remember the contents of the window when you use session restoration.
+- You can now use multiple fonts at the same time.
+- Box-drawing characters are now rendered with pixel perfection.
+- The experience of using an IME inside Terminal has been significantly improved.
+- The color schemes inside your JSON file will now be much simpler.
+- A number of bugs around URL handling, double-width rows, line wrapping, and more have been fixed.
+
 Please see our GitHub releases page for additional details.
   </ReleaseNotes>
   <ScreenshotCaptions>

@@ -438,7 +438,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
         else
         {
-            _connection.WriteInput(wstr);
+            _connection.WriteInput(winrt_wstring_to_array_view(wstr));
         }
     }
 
@@ -1689,22 +1689,22 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - resetOnly: If true, only Reset() will be called, if anything. FindNext() will never be called.
     // Return Value:
     // - <none>
-    SearchResults ControlCore::Search(const std::wstring_view& text, const bool goForward, const bool caseSensitive, const bool regularExpression, const bool resetOnly)
+    SearchResults ControlCore::Search(SearchRequest request)
     {
         const auto lock = _terminal->LockForWriting();
         SearchFlag flags{};
-        WI_SetFlagIf(flags, SearchFlag::CaseInsensitive, !caseSensitive);
-        WI_SetFlagIf(flags, SearchFlag::RegularExpression, regularExpression);
-        const auto searchInvalidated = _searcher.IsStale(*_terminal.get(), text, flags);
+        WI_SetFlagIf(flags, SearchFlag::CaseInsensitive, !request.CaseSensitive);
+        WI_SetFlagIf(flags, SearchFlag::RegularExpression, request.RegularExpression);
+        const auto searchInvalidated = _searcher.IsStale(*_terminal.get(), request.Text, flags);
 
-        if (searchInvalidated || !resetOnly)
+        if (searchInvalidated || !request.Reset)
         {
             std::vector<til::point_span> oldResults;
 
             if (searchInvalidated)
             {
                 oldResults = _searcher.ExtractResults();
-                _searcher.Reset(*_terminal.get(), text, flags, !goForward);
+                _searcher.Reset(*_terminal.get(), request.Text, flags, !request.GoForward);
 
                 if (SnapSearchResultToSelection())
                 {
@@ -1716,12 +1716,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             }
             else
             {
-                _searcher.FindNext(!goForward);
+                _searcher.FindNext(!request.GoForward);
             }
 
             if (const auto idx = _searcher.CurrentMatch(); idx >= 0)
             {
-                _terminal->SetSearchHighlightFocused(gsl::narrow<size_t>(idx));
+                _terminal->SetSearchHighlightFocused(gsl::narrow<size_t>(idx), request.ScrollOffset);
             }
             _renderer->TriggerSearchHighlight(oldResults);
         }
@@ -1751,7 +1751,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         const auto lock = _terminal->LockForWriting();
         _terminal->SetSearchHighlights({});
-        _terminal->SetSearchHighlightFocused({});
+        _terminal->SetSearchHighlightFocused({}, 0);
         _renderer->TriggerSearchHighlight(_searcher.Results());
         _searcher = {};
     }
@@ -1850,32 +1850,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
             if (read < sizeof(buffer))
             {
+                // Normally the cursor should already be at the start of the line, but let's be absolutely sure it is.
+                if (_terminal->GetCursorPosition().x != 0)
+                {
+                    _terminal->Write(L"\r\n");
+                }
+                _terminal->Write(message);
                 break;
             }
-        }
-
-        {
-            const auto lock = _terminal->LockForWriting();
-
-            // Normally the cursor should already be at the start of the line, but let's be absolutely sure it is.
-            if (_terminal->GetCursorPosition().x != 0)
-            {
-                _terminal->Write(L"\r\n");
-            }
-
-            _terminal->Write(message);
-
-            // Show 3 lines of scrollback to the user, so they know it's there. Otherwise, in particular with the well
-            // hidden touch scrollbars in WinUI 2 and later, there's no indication that there's something to scroll up to.
-            //
-            // We only show 3 lines because ConPTY doesn't know about our restored buffer contents initially,
-            // and so ReadConsole calls will return whitespace.
-            //
-            // We also avoid using actual newlines or similar here, because if we ever change our text buffer implementation
-            // to actually track the written contents, we don't want this to be part of the next buffer snapshot.
-            const auto cursorPosition = _terminal->GetCursorPosition();
-            const auto y = std::max(0, cursorPosition.y - 4);
-            _terminal->SetViewportPosition({ 0, y });
         }
     }
 
@@ -2289,7 +2271,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 const auto trimmed = s.substr(0, strEnd + 1);
                 return winrt::hstring{ trimmed };
             }
-            return winrt::hstring{ L"" };
+            return {};
         };
 
         const auto currentCommand = _terminal->CurrentCommand();
@@ -2316,6 +2298,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         context->CurrentCommandline(trimmedCurrentCommand);
         context->QuickFixes(_cachedQuickFixes);
         return *context;
+    }
+
+    winrt::hstring ControlCore::CurrentWorkingDirectory() const
+    {
+        return winrt::hstring{ _terminal->GetWorkingDirectory() };
     }
 
     bool ControlCore::QuickFixesAvailable() const noexcept
@@ -2500,7 +2487,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             // _sendInputToConnection() asserts that we aren't in focus mode,
             // but window focus events are always fine to send.
-            _connection.WriteInput(*out);
+            _connection.WriteInput(winrt_wstring_to_array_view(*out));
         }
     }
 
@@ -2933,5 +2920,4 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         _terminal->PreviewText(input);
     }
-
 }

@@ -188,6 +188,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         void ContextMenuSelectCommand();
         void ContextMenuSelectOutput();
+
+        winrt::hstring CurrentWorkingDirectory() const;
 #pragma endregion
 
 #pragma region ITerminalInput
@@ -223,7 +225,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void SetSelectionAnchor(const til::point position);
         void SetEndSelectionPoint(const til::point position);
 
-        SearchResults Search(const std::wstring_view& text, bool goForward, bool caseSensitive, bool regularExpression, bool reset);
+        SearchResults Search(SearchRequest request);
         const std::vector<til::point_span>& SearchResultRows() const noexcept;
         void ClearSearch();
         void SnapSearchResultToSelection(bool snap) noexcept;

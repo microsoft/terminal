@@ -374,8 +374,6 @@ constexpr T saturate(auto val)
     std::unique_ptr<IWaitRoutine> waiter;
     size_t cbRead;
 
-    const auto requiresVtQuirk{ m->GetProcessHandle()->GetShimPolicy().IsVtColorQuirkRequired() };
-
     // We have to hold onto the HR from the call and return it.
     // We can't return some other error after the actual API call.
     // This is because the write console function is allowed to write part of the string and then return an error.
@@ -391,7 +389,7 @@ constexpr T saturate(auto val)
             TraceLoggingUInt32(a->NumBytes, "NumBytes"),
             TraceLoggingCountedWideString(buffer.data(), static_cast<ULONG>(buffer.size()), "Buffer"));
 
-        hr = m->_pApiRoutines->WriteConsoleWImpl(*pScreenInfo, buffer, cchInputRead, requiresVtQuirk, waiter);
+        hr = m->_pApiRoutines->WriteConsoleWImpl(*pScreenInfo, buffer, cchInputRead, waiter);
 
         // We must set the reply length in bytes. Convert back from characters.
         LOG_IF_FAILED(SizeTMult(cchInputRead, sizeof(wchar_t), &cbRead));
@@ -406,7 +404,7 @@ constexpr T saturate(auto val)
             TraceLoggingUInt32(a->NumBytes, "NumBytes"),
             TraceLoggingCountedString(buffer.data(), static_cast<ULONG>(buffer.size()), "Buffer"));
 
-        hr = m->_pApiRoutines->WriteConsoleAImpl(*pScreenInfo, buffer, cchInputRead, requiresVtQuirk, waiter);
+        hr = m->_pApiRoutines->WriteConsoleAImpl(*pScreenInfo, buffer, cchInputRead, waiter);
 
         // Reply length is already in bytes (chars), don't need to convert.
         cbRead = cchInputRead;

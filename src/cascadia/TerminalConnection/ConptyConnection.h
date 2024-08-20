@@ -5,9 +5,10 @@
 
 #include "ConptyConnection.g.h"
 #include "BaseTerminalConnection.h"
-
 #include "ITerminalHandoff.h"
+
 #include <til/env.h>
+#include <til/ticket_lock.h>
 
 namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 {
@@ -20,7 +21,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         static winrt::fire_and_forget final_release(std::unique_ptr<ConptyConnection> connection);
 
         void Start();
-        void WriteInput(const hstring& data);
+        void WriteInput(const winrt::array_view<const char16_t> buffer);
         void Resize(uint32_t rows, uint32_t columns);
         void Close() noexcept;
         void ClearBuffer();
@@ -59,6 +60,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
         HRESULT _LaunchAttachedClient() noexcept;
         void _indicateExitWithStatus(unsigned int status) noexcept;
+        static std::wstring _formatStatus(uint32_t status);
         void _LastConPtyClientDisconnected() noexcept;
 
         til::CoordType _rows = 120;
@@ -74,11 +76,16 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         bool _receivedFirstByte{ false };
         std::chrono::high_resolution_clock::time_point _startTime{};
 
-        wil::unique_hfile _inPipe; // The pipe for writing input to
-        wil::unique_hfile _outPipe; // The pipe for reading output from
+        wil::unique_hfile _pipe;
         wil::unique_handle _hOutputThread;
         wil::unique_process_information _piClient;
         wil::unique_any<HPCON, decltype(closePseudoConsoleAsync), closePseudoConsoleAsync> _hPC;
+
+        til::ticket_lock _writeLock;
+        wil::unique_event _writeOverlappedEvent;
+        OVERLAPPED _writeOverlapped{};
+        std::string _writeBuffer;
+        bool _writePending = false;
 
         DWORD _flags{ 0 };
 

@@ -767,13 +767,22 @@ namespace winrt::TerminalApp::implementation
     // definitely not on OUR UI thread.
     winrt::fire_and_forget TerminalWindow::UpdateSettings(winrt::TerminalApp::SettingsLoadEventArgs args)
     {
-        _settings = args.NewSettings();
+        // GH#17620: We have a bug somewhere where a window doesn't get unregistered from the window list.
+        // This causes UpdateSettings calls where the thread dispatcher is already null.
+        const auto dispatcher = _root->Dispatcher();
+        if (!dispatcher)
+        {
+            co_return;
+        }
 
         const auto weakThis{ get_weak() };
-        co_await wil::resume_foreground(_root->Dispatcher());
+        co_await wil::resume_foreground(dispatcher);
+
         // Back on our UI thread...
         if (auto logic{ weakThis.get() })
         {
+            _settings = args.NewSettings();
+
             // Update the settings in TerminalPage
             // We're on our UI thread right now, so this is safe
             _root->SetSettings(_settings, true);
@@ -1362,7 +1371,7 @@ namespace winrt::TerminalApp::implementation
     // - a string for displaying the name of the window.
     winrt::hstring WindowProperties::WindowIdForDisplay() const noexcept
     {
-        return winrt::hstring{ fmt::format(L"{}: {}",
+        return winrt::hstring{ fmt::format(FMT_COMPILE(L"{}: {}"),
                                            std::wstring_view(RS_(L"WindowIdLabel")),
                                            _WindowId) };
     }
@@ -1376,7 +1385,7 @@ namespace winrt::TerminalApp::implementation
     winrt::hstring WindowProperties::WindowNameForDisplay() const noexcept
     {
         return _WindowName.empty() ?
-                   winrt::hstring{ fmt::format(L"<{}>", RS_(L"UnnamedWindowName")) } :
+                   winrt::hstring{ fmt::format(FMT_COMPILE(L"<{}>"), RS_(L"UnnamedWindowName")) } :
                    _WindowName;
     }
 

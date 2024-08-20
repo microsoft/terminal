@@ -37,6 +37,23 @@ namespace Microsoft::Console::VirtualTerminal
     // the their indexes.
     static_assert(MAX_PARAMETER_COUNT * MAX_SUBPARAMETER_COUNT <= 256);
 
+    // When we encounter something like a RIS (hard reset), ConPTY must re-enable
+    // modes that it relies on (like the Win32 Input Mode). To do this, the VT
+    // parser tells it the positions of any such relevant VT sequences.
+    enum class InjectionType : size_t
+    {
+        RIS,
+        DECSET_FOCUS,
+
+        Count,
+    };
+
+    struct Injection
+    {
+        InjectionType type;
+        size_t offset;
+    };
+
     class StateMachine final
     {
 #ifdef UNIT_TESTING
@@ -55,7 +72,6 @@ namespace Microsoft::Console::VirtualTerminal
         enum class Mode : size_t
         {
             AcceptC1,
-            AlwaysAcceptC1,
             Ansi,
         };
 
@@ -66,10 +82,11 @@ namespace Microsoft::Console::VirtualTerminal
         void ProcessString(const std::wstring_view string);
         bool IsProcessingLastCharacter() const noexcept;
 
+        void InjectSequence(InjectionType type);
+        const til::small_vector<Injection, 8>& GetInjections() const noexcept;
+
         void OnCsiComplete(const std::function<void()> callback);
-
         void ResetState() noexcept;
-
         bool FlushToTerminal();
 
         const IStateMachineEngine& Engine() const noexcept;
@@ -212,6 +229,7 @@ namespace Microsoft::Console::VirtualTerminal
         IStateMachineEngine::StringHandler _dcsStringHandler;
 
         std::optional<std::wstring> _cachedSequence;
+        til::small_vector<Injection, 8> _injections;
 
         // This is tracked per state machine instance so that separate calls to Process*
         //   can start and finish a sequence.

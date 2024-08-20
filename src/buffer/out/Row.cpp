@@ -965,14 +965,26 @@ std::vector<uint16_t> ROW::GetHyperlinks() const
     return ids;
 }
 
-const ImageSlice::Pointer& ROW::GetImageSlice() const noexcept
+ImageSlice* ROW::SetImageSlice(ImageSlice::Pointer imageSlice) noexcept
 {
-    return _imageSlice;
+    _imageSlice = std::move(imageSlice);
+    return GetMutableImageSlice();
 }
 
-ImageSlice::Pointer& ROW::GetMutableImageSlice() noexcept
+const ImageSlice* ROW::GetImageSlice() const noexcept
 {
-    return _imageSlice;
+    return _imageSlice.get();
+}
+
+ImageSlice* ROW::GetMutableImageSlice() noexcept
+{
+    const auto ptr = _imageSlice.get();
+    if (!ptr)
+    {
+        return nullptr;
+    }
+    ptr->BumpRevision();
+    return ptr;
 }
 
 uint16_t ROW::size() const noexcept

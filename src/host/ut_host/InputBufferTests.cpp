@@ -219,22 +219,19 @@ class InputBufferTests
         }
     }
 
-    TEST_METHOD(InputBufferDoesNotCoalesceFullWidthChars)
+    TEST_METHOD(InputBufferDoesNotCoalesceSurrogatePairs)
     {
         InputBuffer inputBuffer;
-        WCHAR hiraganaA = 0x3042; // U+3042 hiragana A
-        auto record = MakeKeyEvent(true, 1, hiraganaA, 0, hiraganaA, 0);
 
-        // send a bunch of identical events
-        inputBuffer.Flush();
-        for (size_t i = 0; i < RECORD_INSERT_COUNT; ++i)
-        {
-            VERIFY_IS_GREATER_THAN(inputBuffer.Write(record), 0u);
-            VERIFY_ARE_EQUAL(inputBuffer._storage.back(), record);
-        }
+        // U+1F44D thumbs up emoji
+        inputBuffer.Write(MakeKeyEvent(true, 1, 0xD83D, 0, 0xD83D, 0));
+        inputBuffer.Write(MakeKeyEvent(true, 1, 0xDC4D, 0, 0xDC4D, 0));
+
+        // Should not coalesce despite otherwise matching perfectly.
+        inputBuffer.Write(MakeKeyEvent(true, 1, 0xDC4D, 0, 0xDC4D, 0));
 
         // The events shouldn't be coalesced
-        VERIFY_ARE_EQUAL(inputBuffer.GetNumberOfReadyEvents(), RECORD_INSERT_COUNT);
+        VERIFY_ARE_EQUAL(3u, inputBuffer.GetNumberOfReadyEvents());
     }
 
     TEST_METHOD(CanFlushAllOutput)

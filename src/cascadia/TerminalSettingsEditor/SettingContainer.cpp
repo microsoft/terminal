@@ -255,7 +255,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         if (originTag == Model::OriginTag::Fragment || originTag == Model::OriginTag::Generated)
         {
             // from a fragment extension or generated profile
-            return hstring{ fmt::format(std::wstring_view{ RS_(L"SettingContainer_OverrideMessageFragmentExtension") }, source) };
+            return hstring{ RS_fmt(L"SettingContainer_OverrideMessageFragmentExtension", source) };
         }
         return RS_(L"SettingContainer_OverrideMessageBaseLayer");
     }

@@ -1873,7 +1873,7 @@ namespace winrt::TerminalApp::implementation
             const auto profileName{ control.Settings().ProfileName() };
             if (profileName != Title())
             {
-                return fmt::format(L"{}: {}", profileName, Title()).data();
+                return winrt::hstring{ fmt::format(FMT_COMPILE(L"{}: {}"), profileName, Title()) };
             }
         }
 

@@ -316,26 +316,6 @@ void Renderer::TriggerTeardown() noexcept
 {
     // We need to shut down the paint thread on teardown.
     _pThread->WaitForPaintCompletionAndDisable(INFINITE);
-
-    auto repaint = false;
-
-    // Then walk through and do one final paint on the caller's thread.
-    FOREACH_ENGINE(pEngine)
-    {
-        auto fEngineRequestsRepaint = false;
-        auto hr = pEngine->PrepareForTeardown(&fEngineRequestsRepaint);
-        LOG_IF_FAILED(hr);
-
-        repaint |= SUCCEEDED(hr) && fEngineRequestsRepaint;
-    }
-
-    // BODGY: The only time repaint is true is when VtEngine is used.
-    // Coincidentally VtEngine always runs alone, so if repaint is true, there's only a single engine
-    // to repaint anyways and there's no danger is accidentally repainting an engine that didn't want to.
-    if (repaint)
-    {
-        LOG_IF_FAILED(_PaintFrame());
-    }
 }
 
 // Routine Description:
@@ -345,32 +325,46 @@ void Renderer::TriggerTeardown() noexcept
 // Return Value:
 // - <none>
 void Renderer::TriggerSelection()
+try
 {
-    try
+    const auto spans = _pData->GetSelectionSpans();
+    if (spans.size() != _lastSelectionPaintSize || (!spans.empty() && _lastSelectionPaintSpan != til::point_span{ spans.front().start, spans.back().end }))
     {
-        // Get selection rectangles
-        auto rects = _GetSelectionRects();
+        std::vector<til::rect> newSelectionViewportRects;
 
-        // Make a viewport representing the coordinates that are currently presentable.
-        const til::rect viewport{ _pData->GetViewport().Dimensions() };
-
-        // Restrict all previous selection rectangles to inside the current viewport bounds
-        for (auto& sr : _previousSelection)
+        _lastSelectionPaintSize = spans.size();
+        if (_lastSelectionPaintSize)
         {
-            sr &= viewport;
+            _lastSelectionPaintSpan = til::point_span{ spans.front().start, spans.back().end };
+
+            const auto& buffer = _pData->GetTextBuffer();
+            const auto bufferWidth = buffer.GetSize().Width();
+            const til::rect vp{ _viewport.ToExclusive() };
+            for (auto&& sp : spans)
+            {
+                sp.iterate_rows(bufferWidth, [&](til::CoordType row, til::CoordType min, til::CoordType max) {
+                    const auto shift = buffer.GetLineRendition(row) != LineRendition::SingleWidth ? 1 : 0;
+                    max += 1; // Selection spans are inclusive (still)
+                    min <<= shift;
+                    max <<= shift;
+                    til::rect r{ min, row, max, row + 1 };
+                    newSelectionViewportRects.emplace_back(r.to_origin(vp));
+                });
+            }
         }
 
         FOREACH_ENGINE(pEngine)
         {
-            LOG_IF_FAILED(pEngine->InvalidateSelection(_previousSelection));
-            LOG_IF_FAILED(pEngine->InvalidateSelection(rects));
+            LOG_IF_FAILED(pEngine->InvalidateSelection(_lastSelectionRectsByViewport));
+            LOG_IF_FAILED(pEngine->InvalidateSelection(newSelectionViewportRects));
         }
 
-        _previousSelection = std::move(rects);
+        std::exchange(_lastSelectionRectsByViewport, newSelectionViewportRects);
+
         NotifyPaintFrame();
     }
-    CATCH_LOG();
 }
+CATCH_LOG()
 
 // Routine Description:
 // - Called when the search highlight areas in the console have changed.
@@ -435,8 +429,9 @@ bool Renderer::_CheckViewportAndScroll()
         auto coordCursor = _currentCursorOptions.coordCursor;
 
         // `coordCursor` was stored in viewport-relative while `view` is in absolute coordinates.
-        // --> Turn it back into the absolute coordinates with the help of the old viewport.
-        coordCursor.y += srOldViewport.top;
+        // --> Turn it back into the absolute coordinates with the help of the viewport.
+        // We have to use the new viewport, because _ScrollPreviousSelection adjusts the cursor position to match the new one.
+        coordCursor.y += srNewViewport.top;
 
         // Note that we allow the X coordinate to be outside the left border by 1 position,
         // because the cursor could still be visible if the focused character is double width.
@@ -483,38 +478,6 @@ void Renderer::TriggerScroll(const til::point* const pcoordDelta)
     _ScrollPreviousSelection(*pcoordDelta);
 
     NotifyPaintFrame();
-}
-
-// Routine Description:
-// - Called when the text buffer is about to circle its backing buffer.
-//      A renderer might want to get painted before that happens.
-// Arguments:
-// - <none>
-// Return Value:
-// - <none>
-void Renderer::TriggerFlush(const bool circling)
-{
-    const auto rects = _GetSelectionRects();
-    auto repaint = false;
-
-    FOREACH_ENGINE(pEngine)
-    {
-        auto fEngineRequestsRepaint = false;
-        auto hr = pEngine->InvalidateFlush(circling, &fEngineRequestsRepaint);
-        LOG_IF_FAILED(hr);
-
-        LOG_IF_FAILED(pEngine->InvalidateSelection(rects));
-
-        repaint |= SUCCEEDED(hr) && fEngineRequestsRepaint;
-    }
-
-    // BODGY: The only time repaint is true is when VtEngine is used.
-    // Coincidentally VtEngine always runs alone, so if repaint is true, there's only a single engine
-    // to repaint anyways and there's no danger is accidentally repainting an engine that didn't want to.
-    if (repaint)
-    {
-        LOG_IF_FAILED(_PaintFrame());
-    }
 }
 
 // Routine Description:
@@ -837,7 +800,7 @@ void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
             _PaintBufferOutputHelper(pEngine, it, screenPosition, lineWrapped);
 
             // Paint any image content on top of the text.
-            const auto& imageSlice = buffer.GetRowByOffset(row).GetImageSlice();
+            const auto imageSlice = buffer.GetRowByOffset(row).GetImageSlice();
             if (imageSlice) [[unlikely]]
             {
                 LOG_IF_FAILED(pEngine->PaintImageSlice(*imageSlice, screenPosition.y, view.Left()));
@@ -1312,6 +1275,7 @@ void Renderer::_PaintCursor(_In_ IRenderEngine* const pEngine)
     RenderFrameInfo info;
     info.searchHighlights = _pData->GetSearchHighlights();
     info.searchHighlightFocused = _pData->GetSearchHighlightFocused();
+    info.selectionSpans = _pData->GetSelectionSpans();
     return pEngine->PrepareRenderInfo(std::move(info));
 }
 
@@ -1328,15 +1292,11 @@ void Renderer::_PaintSelection(_In_ IRenderEngine* const pEngine)
         std::span<const til::rect> dirtyAreas;
         LOG_IF_FAILED(pEngine->GetDirtyArea(dirtyAreas));
 
-        // Get selection rectangles
-        const auto rectangles = _GetSelectionRects();
-
-        std::vector<til::rect> dirtySearchRectangles;
-        for (auto& dirtyRect : dirtyAreas)
+        for (auto&& dirtyRect : dirtyAreas)
         {
-            for (const auto& rect : rectangles)
+            for (const auto& rect : _lastSelectionRectsByViewport)
             {
-                if (const auto rectCopy = rect & dirtyRect)
+                if (const auto rectCopy{ rect & dirtyRect })
                 {
                     LOG_IF_FAILED(pEngine->PaintSelection(rectCopy));
                 }
@@ -1381,32 +1341,6 @@ void Renderer::_PaintSelection(_In_ IRenderEngine* const pEngine)
     return pEngine->ScrollFrame();
 }
 
-// Routine Description:
-// - Helper to determine the selected region of the buffer.
-// Return Value:
-// - A vector of rectangles representing the regions to select, line by line.
-std::vector<til::rect> Renderer::_GetSelectionRects() const
-{
-    const auto& buffer = _pData->GetTextBuffer();
-    auto rects = _pData->GetSelectionRects();
-    // Adjust rectangles to viewport
-    auto view = _pData->GetViewport();
-
-    std::vector<til::rect> result;
-    result.reserve(rects.size());
-
-    for (auto rect : rects)
-    {
-        // Convert buffer offsets to the equivalent range of screen cells
-        // expected by callers, taking line rendition into account.
-        const auto lineRendition = buffer.GetLineRendition(rect.Top());
-        rect = Viewport::FromInclusive(BufferToScreenLine(rect.ToInclusive(), lineRendition));
-        result.emplace_back(view.ConvertToOrigin(rect).ToExclusive());
-    }
-
-    return result;
-}
-
 // Method Description:
 // - Offsets all of the selection rectangles we might be holding onto
 //   as the previously selected area. If the whole viewport scrolls,
@@ -1420,7 +1354,7 @@ void Renderer::_ScrollPreviousSelection(const til::point delta)
 {
     if (delta != til::point{ 0, 0 })
     {
-        for (auto& rc : _previousSelection)
+        for (auto& rc : _lastSelectionRectsByViewport)
         {
             rc += delta;
         }

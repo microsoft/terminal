@@ -76,7 +76,7 @@ namespace Microsoft::Console::Render::Atlas
             SolidLine,
 
             Cursor,
-            Selection,
+            FilledRect,
 
             TextDrawingFirst = TextGrayscale,
             TextDrawingLast = SolidLine,
@@ -180,6 +180,41 @@ namespace Microsoft::Console::Render::Atlas
             }
         };
 
+        struct AtlasBitmap
+        {
+            u64 key;
+            u16x2 size;
+            u16x2 texcoord;
+        };
+
+        struct AtlasBitmapHashTrait
+        {
+            static bool occupied(const AtlasBitmap& entry) noexcept
+            {
+                return entry.key != 0;
+            }
+
+            static constexpr size_t hash(const u64 key) noexcept
+            {
+                return til::flat_set_hash_integer(gsl::narrow_cast<size_t>(key));
+            }
+
+            static size_t hash(const AtlasBitmap& entry) noexcept
+            {
+                return hash(entry.key);
+            }
+
+            static bool equals(const AtlasBitmap& entry, const u64 key) noexcept
+            {
+                return entry.key == key;
+            }
+
+            static void assign(AtlasBitmap& entry, u64 key) noexcept
+            {
+                entry.key = key;
+            }
+        };
+
     private:
         struct CursorRect
         {
@@ -202,7 +237,7 @@ namespace Microsoft::Console::Render::Atlas
         void _debugDumpRenderTarget(const RenderingPayload& p);
         void _d2dBeginDrawing() noexcept;
         void _d2dEndDrawing();
-        ATLAS_ATTR_COLD void _resetGlyphAtlas(const RenderingPayload& p);
+        ATLAS_ATTR_COLD void _resetGlyphAtlas(const RenderingPayload& p, u32 minWidth, u32 minHeight);
         ATLAS_ATTR_COLD void _resizeGlyphAtlas(const RenderingPayload& p, u16 u, u16 v);
         static bool _checkMacTypeVersion(const RenderingPayload& p);
         QuadInstance& _getLastQuad() noexcept;
@@ -220,7 +255,8 @@ namespace Microsoft::Console::Render::Atlas
         void _drawGlyphAtlasAllocate(const RenderingPayload& p, stbrp_rect& rect);
         static AtlasGlyphEntry* _drawGlyphAllocateEntry(const ShapedRow& row, AtlasFontFaceEntry& fontFaceEntry, u32 glyphIndex);
         static void _splitDoubleHeightGlyph(const RenderingPayload& p, const ShapedRow& row, AtlasFontFaceEntry& fontFaceEntry, AtlasGlyphEntry* glyphEntry);
-        void _drawGridlines(const RenderingPayload& p, u16 y);
+        ATLAS_ATTR_COLD void _drawGridlines(const RenderingPayload& p, u16 y);
+        ATLAS_ATTR_COLD void _drawBitmap(const RenderingPayload& p, const ShapedRow* row, u16 y);
         void _drawCursorBackground(const RenderingPayload& p);
         ATLAS_ATTR_COLD void _drawCursorForeground();
         ATLAS_ATTR_COLD size_t _drawCursorForegroundSlowPath(const CursorRect& c, size_t offset);
@@ -260,6 +296,7 @@ namespace Microsoft::Console::Render::Atlas
         wil::com_ptr<ID3D11Texture2D> _glyphAtlas;
         wil::com_ptr<ID3D11ShaderResourceView> _glyphAtlasView;
         til::linear_flat_set<AtlasFontFaceEntry, AtlasFontFaceEntryHashTrait> _glyphAtlasMap;
+        til::linear_flat_set<AtlasBitmap, AtlasBitmapHashTrait> _glyphAtlasBitmaps;
         AtlasFontFaceEntry _builtinGlyphs;
         Buffer<stbrp_node> _rectPackerData;
         stbrp_context _rectPacker{};
