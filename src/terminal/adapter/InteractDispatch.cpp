@@ -139,7 +139,7 @@ void InteractDispatch::MoveCursor(const VTInt row, const VTInt col)
     // Finally, attempt to set the adjusted cursor position back into the console.
     const auto api = gsl::not_null{ ServiceLocator::LocateGlobals().api };
     auto& info = ServiceLocator::LocateGlobals().getConsoleInformation().GetActiveOutputBuffer();
-    FAILED_LOG(api->SetConsoleCursorPositionImpl(info, coordCursor));
+    LOG_IF_FAILED(api->SetConsoleCursorPositionImpl(info, coordCursor));
 }
 
 // Routine Description:

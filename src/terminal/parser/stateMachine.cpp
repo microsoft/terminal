@@ -606,7 +606,7 @@ void StateMachine::_ActionSubParam(const wchar_t wch)
 // - wch - Character to dispatch.
 // Return Value:
 // - <none>
-void StateMachine::_ActionClear()
+void StateMachine::_ActionClear() noexcept
 {
     _trace.TraceOnAction(L"Clear");
 
@@ -2159,7 +2159,7 @@ template<typename TLambda>
 bool StateMachine::_SafeExecute(TLambda&& lambda)
 try
 {
-    bool ok = lambda();
+    const auto ok = lambda();
     if (!ok)
     {
         FlushToTerminal();

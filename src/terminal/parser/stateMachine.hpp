@@ -109,7 +109,7 @@ namespace Microsoft::Console::VirtualTerminal
         void _ActionSs3Dispatch(const wchar_t wch);
         void _ActionDcsDispatch(const wchar_t wch);
 
-        void _ActionClear();
+        void _ActionClear() noexcept;
         void _ActionIgnore() noexcept;
         void _ActionInterrupt();
 
