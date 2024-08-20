@@ -25,6 +25,10 @@ variables:
 extends:
   template: templates-v2/pipeline-onebranch-full-release-build.yml
   parameters:
+    pool:
+      type: windows
+      isCustom: true
+      name: SHINE-INT-L
     official: true
     branding: Canary
     buildTerminal: true
@@ -46,7 +50,10 @@ extends:
       extraPublishJobs:
         - template: build/pipelines/templates-v2/job-deploy-to-azure-storage.yml@self
           parameters:
-            pool: { type: windows }
+            pool:
+              type: windows
+              isCustom: true
+              name: SHINE-INT-L
             variables:
               ob_git_checkout: false # This job checks itself out
               ob_git_skip_checkout_none: true
