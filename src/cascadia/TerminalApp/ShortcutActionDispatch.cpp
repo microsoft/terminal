@@ -22,7 +22,8 @@ namespace winrt::TerminalApp::implementation
     std::wstring ExtractAction(const ActionAndArgs& actionAndArgs)
     {
         // Formatted as "User.{action}" or "User.{action}.{hash}"
-        std::wstring_view remaining{ actionAndArgs.GenerateID() };
+        const auto id = actionAndArgs.GenerateID();
+        std::wstring_view remaining{ id };
 
         // Throw away "User."
         std::ignore = til::prefix_split(remaining, L'.');
