@@ -14,7 +14,7 @@ namespace Microsoft.Terminal.Query.Extension
 
         // auth related functions
         void SetAuthentication(Windows.Foundation.Collections.ValueSet authValues);
-        event Windows.Foundation.TypedEventHandler<ILMProvider, String> AuthChanged;
+        event Windows.Foundation.TypedEventHandler<ILMProvider, Windows.Foundation.Collections.ValueSet> AuthChanged;
     }
 
     interface IResponse

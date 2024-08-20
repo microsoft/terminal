@@ -57,3 +57,4 @@ TRACELOGGING_DECLARE_PROVIDER(g_hQueryExtensionProvider);
 #include "til.h"
 
 #include <cppwinrt_utils.h>
+#include <til/winrt.h>

@@ -39,12 +39,12 @@ namespace Microsoft.Terminal.Query.Extension
         event Windows.Foundation.TypedEventHandler<ExtensionPalette, String> InputSuggestionRequested;
     }
 
-    [default_interface] runtimeclass TerminalContext : IContext
+    runtimeclass TerminalContext : [default] IContext
     {
         TerminalContext(String activeCommandline);
     }
 
-    [default_interface] runtimeclass SystemResponse : IResponse
+    runtimeclass SystemResponse : [default] IResponse
     {
         SystemResponse(String message, Boolean isError);
     }

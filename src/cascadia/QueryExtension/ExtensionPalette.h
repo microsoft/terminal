@@ -9,8 +9,6 @@
 #include "TerminalContext.g.h"
 #include "SystemResponse.g.h"
 
-#include "AzureLLMProvider.h"
-
 namespace winrt::Microsoft::Terminal::Query::Extension::implementation
 {
     struct ExtensionPalette : ExtensionPaletteT<ExtensionPalette>

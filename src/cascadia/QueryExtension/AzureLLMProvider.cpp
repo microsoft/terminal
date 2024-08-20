@@ -7,7 +7,6 @@
 #include "LibraryResources.h"
 
 #include "AzureLLMProvider.g.cpp"
-#include "AzureResponse.g.cpp"
 
 using namespace winrt::Windows::Foundation;
 using namespace winrt::Windows::Foundation::Collections;
@@ -27,7 +26,6 @@ static constexpr std::wstring_view acceptedModels[] = {
     L"gpt-35-turbo-16k"
 };
 static constexpr std::wstring_view acceptedSeverityLevel{ L"safe" };
-static constexpr std::wstring_view expectedDomain{ L"azure.com" };
 static constexpr std::wstring_view applicationJson{ L"application/json" };
 static constexpr std::wstring_view endpointString{ L"endpoint" };
 static constexpr std::wstring_view keyString{ L"key" };
@@ -37,7 +35,8 @@ static constexpr std::wstring_view messageString{ L"message" };
 static constexpr std::wstring_view errorString{ L"error" };
 static constexpr std::wstring_view severityString{ L"severity" };
 
-const std::wregex azureOpenAIEndpointRegex{ LR"(^https.*openai\.azure\.com)" };
+static constexpr std::wstring_view expectedScheme{ L"https" };
+static constexpr std::wstring_view expectedHostSuffix{ L".openai.azure.com" };
 
 namespace winrt::Microsoft::Terminal::Query::Extension::implementation
 {
@@ -85,8 +84,8 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         {
             // If the AI endpoint is not an azure open AI endpoint, return an error message
             Windows::Foundation::Uri parsedUri{ _azureEndpoint };
-            if (!std::regex_search(_azureEndpoint.c_str(), azureOpenAIEndpointRegex) ||
-                parsedUri.Domain() != expectedDomain)
+            if (parsedUri.SchemeName() != expectedScheme ||
+                !til::ends_with(parsedUri.Host(), expectedHostSuffix))
             {
                 message = RS_(L"InvalidEndpointMessage");
             }
