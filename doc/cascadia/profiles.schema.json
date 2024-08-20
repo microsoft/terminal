@@ -2855,7 +2855,7 @@
           }
         },
         "autoMarkPrompts": {
-          "default": false,
+          "default": true,
           "description": "When set to true, prompts will automatically be marked.",
           "type": "boolean"
         },
