@@ -63,7 +63,10 @@ parameters:
   - name: signingIdentity
     type: object
     default: {}
-  - name: pool
+  - name: largeBuildPool
+    type: object
+    default: { type: windows }
+  - name: smallBuildPool
     type: object
     default: { type: windows }
 
@@ -112,7 +115,7 @@ extends:
         jobs:
           - template: ./build/pipelines/templates-v2/job-build-project.yml@self
             parameters:
-              pool: ${{ parameters.pool }}
+              pool: ${{ parameters.largeBuildPool }}
               variables:
                 ob_sdl_checkcflags_enabled: false # BAD-FLAGS
                 ob_sdl_xfgcheck_enabled: false # BAD-FLAGS
@@ -149,7 +152,7 @@ extends:
             # Add an Any CPU build flavor for the WPF control bits
             - template: ./build/pipelines/templates-v2/job-build-project.yml@self
               parameters:
-                pool: ${{ parameters.pool }}
+                pool: ${{ parameters.largeBuildPool }}
                 variables:
                   ob_sdl_checkcflags_enabled: false # BAD-FLAGS
                   ob_sdl_xfgcheck_enabled: false # BAD-FLAGS
@@ -183,7 +186,7 @@ extends:
           - ${{ if eq(parameters.buildTerminal, true) }}:
             - template: ./build/pipelines/templates-v2/job-merge-msix-into-bundle.yml@self
               parameters:
-                pool: ${{ parameters.pool }}
+                pool: ${{ parameters.smallBuildPool }}
                 variables:
                   ob_sdl_checkcflags_enabled: false # BAD-FLAGS
                   ob_sdl_xfgcheck_enabled: false # BAD-FLAGS
@@ -237,7 +240,7 @@ extends:
           - ${{ if eq(parameters.buildConPTY, true) }}:
             - template: ./build/pipelines/templates-v2/job-package-conpty.yml@self
               parameters:
-                pool: ${{ parameters.pool }}
+                pool: ${{ parameters.smallBuildPool }}
                 variables:
                   ob_sdl_checkcflags_enabled: false # BAD-FLAGS
                   ob_sdl_xfgcheck_enabled: false # BAD-FLAGS
@@ -255,7 +258,7 @@ extends:
           - ${{ if eq(parameters.buildWPF, true) }}:
             - template: ./build/pipelines/templates-v2/job-build-package-wpf.yml@self
               parameters:
-                pool: ${{ parameters.pool }}
+                pool: ${{ parameters.smallBuildPool }}
                 variables:
                   ob_sdl_checkcflags_enabled: false # BAD-FLAGS
                   ob_sdl_xfgcheck_enabled: false # BAD-FLAGS
@@ -276,7 +279,7 @@ extends:
         jobs:
           - template: ./build/pipelines/templates-v2/job-publish-symbols-using-symbolrequestprod-api.yml@self
             parameters:
-              pool: ${{ parameters.pool }}
+              pool: ${{ parameters.smallBuildPool }}
               includePublicSymbolServer: ${{ parameters.publishSymbolsToPublic }}
               symbolExpiryTime: ${{ parameters.symbolExpiryTime }}
               subscription: ${{ parameters.symbolPublishingSubscription }}

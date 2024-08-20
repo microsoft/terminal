@@ -25,10 +25,14 @@ variables:
 extends:
   template: templates-v2/pipeline-onebranch-full-release-build.yml
   parameters:
-    pool:
+    largeBuildPool:
       type: windows
       isCustom: true
       name: SHINE-INT-L
+    smallBuildPool:
+      type: windows
+      isCustom: true
+      name: SHINE-INT-S
     official: true
     branding: Canary
     buildTerminal: true
@@ -53,7 +57,7 @@ extends:
             pool:
               type: windows
               isCustom: true
-              name: SHINE-INT-L
+              name: SHINE-INT-S
             variables:
               ob_git_checkout: false # This job checks itself out
               ob_git_skip_checkout_none: true
