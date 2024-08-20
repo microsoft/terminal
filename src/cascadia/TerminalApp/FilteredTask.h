@@ -30,6 +30,21 @@ namespace winrt::TerminalApp::implementation
             }
         }
 
+        static int Compare(const winrt::TerminalApp::FilteredTask& first, const winrt::TerminalApp::FilteredTask& second)
+        {
+            auto firstWeight{ winrt::get_self<implementation::FilteredTask>(first)->Weight() };
+            auto secondWeight{ winrt::get_self<implementation::FilteredTask>(second)->Weight() };
+
+            if (firstWeight == secondWeight)
+            {
+                std::wstring_view firstName{ first.FilteredCommand().Item().Name() };
+                std::wstring_view secondName{ second.FilteredCommand().Item().Name() };
+                return lstrcmpi(firstName.data(), secondName.data()) < 0;
+            }
+
+            return firstWeight > secondWeight;
+        }
+
         void UpdateFilter(const winrt::hstring& filter)
         {
             _filteredCommand->UpdateFilter(filter);
@@ -92,7 +107,7 @@ namespace winrt::TerminalApp::implementation
 
         int Weight()
         {
-            return _filteredCommand->Weight() + _HighlightedInput.Weight();
+            return std::max(_filteredCommand->Weight(), _HighlightedInput.Weight());
         }
 
         til::property_changed_event PropertyChanged;

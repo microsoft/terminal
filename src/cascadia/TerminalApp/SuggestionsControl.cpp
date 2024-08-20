@@ -806,7 +806,8 @@ namespace winrt::TerminalApp::implementation
         _updateFilteredActions();
 
         // In the command line mode we want the user to explicitly select the command
-        _filteredActionsView().SelectedIndex(std::min<int32_t>(lastSelectedIndex, _filteredActionsView().Items().Size() - 1));
+        // _filteredActionsView().SelectedIndex(std::min<int32_t>(lastSelectedIndex, _filteredActionsView().Items().Size() - 1));
+        _scrollToIndex(lastSelectedIndex);
 
         const auto currentNeedleHasResults{ _filteredActions.Size() > 0 };
         _noMatchesText().Visibility(currentNeedleHasResults ? Visibility::Collapsed : Visibility::Visible);
@@ -830,6 +831,7 @@ namespace winrt::TerminalApp::implementation
     void SuggestionsControl::SetCommands(const Collections::IVector<Command>& actions)
     {
         _allCommands.Clear();
+        _flatAllCommands.Clear();
 
         std::function<void(Collections::IMapView<winrt::hstring, Command>)> addMap;
         addMap = [&](auto actionMap) {
@@ -943,6 +945,12 @@ namespace winrt::TerminalApp::implementation
         //
         // This is in contrast to the Command Palette, which always sorts its
         // actions.
+
+        // We want to present the commands sorted
+        if (!searchText.empty())
+        {
+            std::sort(actions.begin(), actions.end(), FilteredTask::Compare);
+        }
 
         // Adjust the order of the results depending on if we're top-down or
         // bottom up. This way, the "first" / "best" match is always closest to
