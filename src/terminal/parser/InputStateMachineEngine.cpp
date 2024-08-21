@@ -470,11 +470,14 @@ bool InputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParameter
         {
             til::enumset<DeviceAttribute, uint64_t> attributes;
 
-            // The first parameter denotes the conformance level, so we skip it.
-            parameters.subspan(1).for_each([&](auto p) {
-                attributes.set(static_cast<DeviceAttribute>(p));
-                return true;
-            });
+            // The first parameter denotes the conformance level. 61 is VT220.
+            if (parameters.at(0).value() >= 61)
+            {
+                parameters.subspan(1).for_each([&](auto p) {
+                    attributes.set(static_cast<DeviceAttribute>(p));
+                    return true;
+                });
+            }
 
             _deviceAttributes.fetch_or(attributes.bits(), std::memory_order_relaxed);
             til::atomic_notify_all(_deviceAttributes);
