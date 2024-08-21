@@ -54,7 +54,9 @@ static constexpr std::wstring_view s_initialContentVT{
 
 class ::Microsoft::Console::VirtualTerminal::VtIoTests
 {
-    TEST_CLASS(VtIoTests)
+    BEGIN_TEST_CLASS(VtIoTests)
+        TEST_CLASS_PROPERTY(L"IsolationLevel", L"Class")
+    END_TEST_CLASS()
 
     CommonState commonState;
     ApiRoutines routines;
