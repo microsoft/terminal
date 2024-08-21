@@ -22,6 +22,7 @@ vcvars\w*
 ROY\sG\.\sBIV
 !(?:(?i)ESC)!\[
 !(?:(?i)CSI)!(?:\d+(?:;\d+|)m|[ABCDF])
+(?i)rgb:[a-z0-9]{2,4}/[a-z0-9]{2,4}/[a-z0-9]{2,4}
 
 # SSE intrinsics like "_mm_subs_epu16"
 \b_mm(?:|256|512)_\w+\b

@@ -1158,12 +1158,8 @@ public:
         _numTabs{ 0 },
         _tabClear{ false },
         _tabClearTypes{},
-        _setDefaultForeground(false),
-        _defaultForegroundColor{ RGB(0, 0, 0) },
-        _setDefaultBackground(false),
-        _defaultBackgroundColor{ RGB(0, 0, 0) },
-        _setDefaultCursorColor(false),
-        _defaultCursorColor{ RGB(0, 0, 0) },
+        _xtermResourcesChanged{},
+        _xtermResourceValues{},
         _hyperlinkMode{ false },
         _options{ s_cMaxOptions, static_cast<DispatchTypes::GraphicsOptions>(s_uiGraphicsCleared) }, // fill with cleared option
         _colorTable{},
@@ -1432,24 +1428,22 @@ public:
         return true;
     }
 
-    bool SetDefaultForeground(const DWORD color) noexcept override
+    bool RequestColorTableEntry(const size_t tableIndex) noexcept override
     {
-        _setDefaultForeground = true;
-        _defaultForegroundColor = color;
+        _colorTableEntriesRequested.push_back(tableIndex);
         return true;
     }
 
-    bool SetDefaultBackground(const DWORD color) noexcept override
+    bool SetXtermColorResource(const size_t resource, const DWORD color) override
     {
-        _setDefaultBackground = true;
-        _defaultBackgroundColor = color;
+        _xtermResourcesChanged.push_back(resource);
+        _xtermResourceValues.push_back(color);
         return true;
     }
 
-    bool SetCursorColor(const DWORD color) noexcept override
+    bool RequestXtermColorResource(const size_t resource) override
     {
-        _setDefaultCursorColor = true;
-        _defaultCursorColor = color;
+        _xtermResourcesRequested.push_back(resource);
         return true;
     }
 
@@ -1529,13 +1523,11 @@ public:
     size_t _numTabs;
     bool _tabClear;
     std::vector<DispatchTypes::TabClearType> _tabClearTypes;
-    bool _setDefaultForeground;
-    DWORD _defaultForegroundColor;
-    bool _setDefaultBackground;
-    DWORD _defaultBackgroundColor;
-    bool _setDefaultCursorColor;
-    DWORD _defaultCursorColor;
+    std::vector<size_t> _xtermResourcesChanged;
+    std::vector<DWORD> _xtermResourceValues;
+    std::vector<size_t> _xtermResourcesRequested;
     bool _setColorTableEntry;
+    std::vector<size_t> _colorTableEntriesRequested;
     bool _hyperlinkMode;
     std::wstring _copyContent;
     std::wstring _uri;
@@ -2822,105 +2814,114 @@ class StateMachineExternalTest final
 
         // Single param
         mach.ProcessString(L"\033]10;rgb:1/1/1\033\\");
-        VERIFY_IS_TRUE(pDispatch->_setDefaultForeground);
-        VERIFY_ARE_EQUAL(RGB(0x11, 0x11, 0x11), pDispatch->_defaultForegroundColor);
+        VERIFY_ARE_EQUAL(1u, pDispatch->_xtermResourcesChanged.size());
+        VERIFY_ARE_EQUAL(10u, pDispatch->_xtermResourcesChanged[0]);
+        VERIFY_ARE_EQUAL(RGB(0x11, 0x11, 0x11), pDispatch->_xtermResourceValues[0]);
 
         pDispatch->ClearState();
 
         mach.ProcessString(L"\033]10;rgb:12/34/56\033\\");
-        VERIFY_IS_TRUE(pDispatch->_setDefaultForeground);
-        VERIFY_ARE_EQUAL(RGB(0x12, 0x34, 0x56), pDispatch->_defaultForegroundColor);
+        VERIFY_ARE_EQUAL(1u, pDispatch->_xtermResourcesChanged.size());
+        VERIFY_ARE_EQUAL(10u, pDispatch->_xtermResourcesChanged[0]);
+        VERIFY_ARE_EQUAL(RGB(0x12, 0x34, 0x56), pDispatch->_xtermResourceValues[0]);
 
         pDispatch->ClearState();
 
         mach.ProcessString(L"\033]10;#111\033\\");
-        VERIFY_IS_TRUE(pDispatch->_setDefaultForeground);
-        VERIFY_ARE_EQUAL(RGB(0x10, 0x10, 0x10), pDispatch->_defaultForegroundColor);
+        VERIFY_ARE_EQUAL(1u, pDispatch->_xtermResourcesChanged.size());
+        VERIFY_ARE_EQUAL(10u, pDispatch->_xtermResourcesChanged[0]);
+        VERIFY_ARE_EQUAL(RGB(0x10, 0x10, 0x10), pDispatch->_xtermResourceValues[0]);
 
         pDispatch->ClearState();
 
         mach.ProcessString(L"\033]10;#123456\033\\");
-        VERIFY_IS_TRUE(pDispatch->_setDefaultForeground);
-        VERIFY_ARE_EQUAL(RGB(0x12, 0x34, 0x56), pDispatch->_defaultForegroundColor);
+        VERIFY_ARE_EQUAL(1u, pDispatch->_xtermResourcesChanged.size());
+        VERIFY_ARE_EQUAL(10u, pDispatch->_xtermResourcesChanged[0]);
+        VERIFY_ARE_EQUAL(RGB(0x12, 0x34, 0x56), pDispatch->_xtermResourceValues[0]);
 
         pDispatch->ClearState();
 
         mach.ProcessString(L"\033]10;DarkOrange\033\\");
-        VERIFY_IS_TRUE(pDispatch->_setDefaultForeground);
-        VERIFY_ARE_EQUAL(RGB(255, 140, 0), pDispatch->_defaultForegroundColor);
+        VERIFY_ARE_EQUAL(1u, pDispatch->_xtermResourcesChanged.size());
+        VERIFY_ARE_EQUAL(10u, pDispatch->_xtermResourcesChanged[0]);
+        VERIFY_ARE_EQUAL(RGB(255, 140, 0), pDispatch->_xtermResourceValues[0]);
 
         pDispatch->ClearState();
 
         // Multiple params
         mach.ProcessString(L"\033]10;#111;rgb:2/2/2\033\\");
-        VERIFY_IS_TRUE(pDispatch->_setDefaultForeground);
-        VERIFY_ARE_EQUAL(RGB(0x10, 0x10, 0x10), pDispatch->_defaultForegroundColor);
-        VERIFY_IS_TRUE(pDispatch->_setDefaultBackground);
-        VERIFY_ARE_EQUAL(RGB(0x22, 0x22, 0x22), pDispatch->_defaultBackgroundColor);
+        VERIFY_ARE_EQUAL(2u, pDispatch->_xtermResourcesChanged.size());
+        VERIFY_ARE_EQUAL(10u, pDispatch->_xtermResourcesChanged[0]);
+        VERIFY_ARE_EQUAL(11u, pDispatch->_xtermResourcesChanged[1]);
+        VERIFY_ARE_EQUAL(RGB(0x10, 0x10, 0x10), pDispatch->_xtermResourceValues[0]);
+        VERIFY_ARE_EQUAL(RGB(0x22, 0x22, 0x22), pDispatch->_xtermResourceValues[1]);
 
         pDispatch->ClearState();
 
         mach.ProcessString(L"\033]10;#111;DarkOrange\033\\");
-        VERIFY_IS_TRUE(pDispatch->_setDefaultForeground);
-        VERIFY_ARE_EQUAL(RGB(0x10, 0x10, 0x10), pDispatch->_defaultForegroundColor);
-        VERIFY_IS_TRUE(pDispatch->_setDefaultBackground);
-        VERIFY_ARE_EQUAL(RGB(255, 140, 0), pDispatch->_defaultBackgroundColor);
+        VERIFY_ARE_EQUAL(2u, pDispatch->_xtermResourcesChanged.size());
+        VERIFY_ARE_EQUAL(10u, pDispatch->_xtermResourcesChanged[0]);
+        VERIFY_ARE_EQUAL(11u, pDispatch->_xtermResourcesChanged[1]);
+        VERIFY_ARE_EQUAL(RGB(0x10, 0x10, 0x10), pDispatch->_xtermResourceValues[0]);
+        VERIFY_ARE_EQUAL(RGB(255, 140, 0), pDispatch->_xtermResourceValues[1]);
 
         pDispatch->ClearState();
 
         mach.ProcessString(L"\033]10;#111;DarkOrange;rgb:2/2/2\033\\");
-        VERIFY_IS_TRUE(pDispatch->_setDefaultForeground);
-        VERIFY_ARE_EQUAL(RGB(0x10, 0x10, 0x10), pDispatch->_defaultForegroundColor);
-        VERIFY_IS_TRUE(pDispatch->_setDefaultBackground);
-        VERIFY_ARE_EQUAL(RGB(255, 140, 0), pDispatch->_defaultBackgroundColor);
-        VERIFY_IS_TRUE(pDispatch->_setDefaultCursorColor);
-        VERIFY_ARE_EQUAL(RGB(0x22, 0x22, 0x22), pDispatch->_defaultCursorColor);
+        VERIFY_ARE_EQUAL(3u, pDispatch->_xtermResourcesChanged.size());
+        VERIFY_ARE_EQUAL(10u, pDispatch->_xtermResourcesChanged[0]);
+        VERIFY_ARE_EQUAL(11u, pDispatch->_xtermResourcesChanged[1]);
+        VERIFY_ARE_EQUAL(12u, pDispatch->_xtermResourcesChanged[2]);
+        VERIFY_ARE_EQUAL(RGB(0x10, 0x10, 0x10), pDispatch->_xtermResourceValues[0]);
+        VERIFY_ARE_EQUAL(RGB(255, 140, 0), pDispatch->_xtermResourceValues[1]);
+        VERIFY_ARE_EQUAL(RGB(0x22, 0x22, 0x22), pDispatch->_xtermResourceValues[2]);
 
         pDispatch->ClearState();
 
         // Partially valid multi-param sequences.
         mach.ProcessString(L"\033]10;#111;\033\\");
-        VERIFY_IS_TRUE(pDispatch->_setDefaultForeground);
-        VERIFY_ARE_EQUAL(RGB(0x10, 0x10, 0x10), pDispatch->_defaultForegroundColor);
+        VERIFY_ARE_EQUAL(1u, pDispatch->_xtermResourcesChanged.size());
+        VERIFY_ARE_EQUAL(10u, pDispatch->_xtermResourcesChanged[0]);
+        VERIFY_ARE_EQUAL(RGB(0x10, 0x10, 0x10), pDispatch->_xtermResourceValues[0]);
 
         pDispatch->ClearState();
 
         mach.ProcessString(L"\033]10;#111;rgb:\033\\");
-        VERIFY_IS_TRUE(pDispatch->_setDefaultForeground);
-        VERIFY_ARE_EQUAL(RGB(0x10, 0x10, 0x10), pDispatch->_defaultForegroundColor);
-        VERIFY_IS_FALSE(pDispatch->_setDefaultBackground);
+        VERIFY_ARE_EQUAL(1u, pDispatch->_xtermResourcesChanged.size());
+        VERIFY_ARE_EQUAL(10u, pDispatch->_xtermResourcesChanged[0]);
+        VERIFY_ARE_EQUAL(RGB(0x10, 0x10, 0x10), pDispatch->_xtermResourceValues[0]);
 
         pDispatch->ClearState();
 
         mach.ProcessString(L"\033]10;#111;#2\033\\");
-        VERIFY_IS_TRUE(pDispatch->_setDefaultForeground);
-        VERIFY_ARE_EQUAL(RGB(0x10, 0x10, 0x10), pDispatch->_defaultForegroundColor);
-        VERIFY_IS_FALSE(pDispatch->_setDefaultBackground);
+        VERIFY_ARE_EQUAL(1u, pDispatch->_xtermResourcesChanged.size());
+        VERIFY_ARE_EQUAL(10u, pDispatch->_xtermResourcesChanged[0]);
+        VERIFY_ARE_EQUAL(RGB(0x10, 0x10, 0x10), pDispatch->_xtermResourceValues[0]);
 
         pDispatch->ClearState();
 
         mach.ProcessString(L"\033]10;;rgb:1/1/1\033\\");
-        VERIFY_IS_FALSE(pDispatch->_setDefaultForeground);
-        VERIFY_IS_TRUE(pDispatch->_setDefaultBackground);
-        VERIFY_ARE_EQUAL(RGB(0x11, 0x11, 0x11), pDispatch->_defaultBackgroundColor);
+        VERIFY_ARE_EQUAL(1u, pDispatch->_xtermResourcesChanged.size());
+        VERIFY_ARE_EQUAL(11u, pDispatch->_xtermResourcesChanged[0]);
+        VERIFY_ARE_EQUAL(RGB(0x11, 0x11, 0x11), pDispatch->_xtermResourceValues[0]);
 
         pDispatch->ClearState();
 
         mach.ProcessString(L"\033]10;#1;rgb:1/1/1\033\\");
-        VERIFY_IS_FALSE(pDispatch->_setDefaultForeground);
-        VERIFY_IS_TRUE(pDispatch->_setDefaultBackground);
-        VERIFY_ARE_EQUAL(RGB(0x11, 0x11, 0x11), pDispatch->_defaultBackgroundColor);
+        VERIFY_ARE_EQUAL(1u, pDispatch->_xtermResourcesChanged.size());
+        VERIFY_ARE_EQUAL(11u, pDispatch->_xtermResourcesChanged[0]);
+        VERIFY_ARE_EQUAL(RGB(0x11, 0x11, 0x11), pDispatch->_xtermResourceValues[0]);
 
         pDispatch->ClearState();
 
         // Invalid sequences.
         mach.ProcessString(L"\033]10;rgb:1/1/\033\\");
-        VERIFY_IS_FALSE(pDispatch->_setDefaultForeground);
+        VERIFY_ARE_EQUAL(0u, pDispatch->_xtermResourcesChanged.size());
 
         pDispatch->ClearState();
 
         mach.ProcessString(L"\033]10;#1\033\\");
-        VERIFY_IS_FALSE(pDispatch->_setDefaultForeground);
+        VERIFY_ARE_EQUAL(0u, pDispatch->_xtermResourcesChanged.size());
 
         pDispatch->ClearState();
     }
@@ -2933,100 +2934,115 @@ class StateMachineExternalTest final
         StateMachine mach(std::move(engine));
 
         mach.ProcessString(L"\033]11;rgb:1/1/1\033\\");
-        VERIFY_IS_TRUE(pDispatch->_setDefaultBackground);
-        VERIFY_ARE_EQUAL(RGB(0x11, 0x11, 0x11), pDispatch->_defaultBackgroundColor);
+        VERIFY_ARE_EQUAL(1u, pDispatch->_xtermResourcesChanged.size());
+        VERIFY_ARE_EQUAL(11u, pDispatch->_xtermResourcesChanged[0]);
+        VERIFY_ARE_EQUAL(RGB(0x11, 0x11, 0x11), pDispatch->_xtermResourceValues[0]);
 
         pDispatch->ClearState();
 
         // Single param
         mach.ProcessString(L"\033]11;rgb:12/34/56\033\\");
-        VERIFY_IS_TRUE(pDispatch->_setDefaultBackground);
-        VERIFY_ARE_EQUAL(RGB(0x12, 0x34, 0x56), pDispatch->_defaultBackgroundColor);
+        VERIFY_ARE_EQUAL(1u, pDispatch->_xtermResourcesChanged.size());
+        VERIFY_ARE_EQUAL(11u, pDispatch->_xtermResourcesChanged[0]);
+        VERIFY_ARE_EQUAL(RGB(0x12, 0x34, 0x56), pDispatch->_xtermResourceValues[0]);
 
         pDispatch->ClearState();
 
         mach.ProcessString(L"\033]11;#111\033\\");
-        VERIFY_IS_TRUE(pDispatch->_setDefaultBackground);
-        VERIFY_ARE_EQUAL(RGB(0x10, 0x10, 0x10), pDispatch->_defaultBackgroundColor);
+        VERIFY_ARE_EQUAL(1u, pDispatch->_xtermResourcesChanged.size());
+        VERIFY_ARE_EQUAL(11u, pDispatch->_xtermResourcesChanged[0]);
+        VERIFY_ARE_EQUAL(RGB(0x10, 0x10, 0x10), pDispatch->_xtermResourceValues[0]);
 
         pDispatch->ClearState();
 
         mach.ProcessString(L"\033]11;#123456\033\\");
-        VERIFY_IS_TRUE(pDispatch->_setDefaultBackground);
-        VERIFY_ARE_EQUAL(RGB(0x12, 0x34, 0x56), pDispatch->_defaultBackgroundColor);
+        VERIFY_ARE_EQUAL(1u, pDispatch->_xtermResourcesChanged.size());
+        VERIFY_ARE_EQUAL(11u, pDispatch->_xtermResourcesChanged[0]);
+        VERIFY_ARE_EQUAL(RGB(0x12, 0x34, 0x56), pDispatch->_xtermResourceValues[0]);
 
         pDispatch->ClearState();
 
         mach.ProcessString(L"\033]11;DarkOrange\033\\");
-        VERIFY_IS_TRUE(pDispatch->_setDefaultBackground);
-        VERIFY_ARE_EQUAL(RGB(255, 140, 0), pDispatch->_defaultBackgroundColor);
+        VERIFY_ARE_EQUAL(1u, pDispatch->_xtermResourcesChanged.size());
+        VERIFY_ARE_EQUAL(11u, pDispatch->_xtermResourcesChanged[0]);
+        VERIFY_ARE_EQUAL(RGB(255, 140, 0), pDispatch->_xtermResourceValues[0]);
 
         pDispatch->ClearState();
 
         // Multiple params
         mach.ProcessString(L"\033]11;#111;rgb:2/2/2\033\\");
-        VERIFY_IS_TRUE(pDispatch->_setDefaultBackground);
-        VERIFY_ARE_EQUAL(RGB(0x10, 0x10, 0x10), pDispatch->_defaultBackgroundColor);
-        VERIFY_ARE_EQUAL(RGB(0x22, 0x22, 0x22), pDispatch->_defaultCursorColor);
+        VERIFY_ARE_EQUAL(2u, pDispatch->_xtermResourcesChanged.size());
+        VERIFY_ARE_EQUAL(11u, pDispatch->_xtermResourcesChanged[0]);
+        VERIFY_ARE_EQUAL(12u, pDispatch->_xtermResourcesChanged[1]);
+        VERIFY_ARE_EQUAL(RGB(0x10, 0x10, 0x10), pDispatch->_xtermResourceValues[0]);
+        VERIFY_ARE_EQUAL(RGB(0x22, 0x22, 0x22), pDispatch->_xtermResourceValues[1]);
 
         pDispatch->ClearState();
 
         mach.ProcessString(L"\033]11;#111;DarkOrange\033\\");
-        VERIFY_IS_TRUE(pDispatch->_setDefaultBackground);
-        VERIFY_ARE_EQUAL(RGB(0x10, 0x10, 0x10), pDispatch->_defaultBackgroundColor);
-        VERIFY_ARE_EQUAL(RGB(255, 140, 0), pDispatch->_defaultCursorColor);
+        VERIFY_ARE_EQUAL(2u, pDispatch->_xtermResourcesChanged.size());
+        VERIFY_ARE_EQUAL(11u, pDispatch->_xtermResourcesChanged[0]);
+        VERIFY_ARE_EQUAL(12u, pDispatch->_xtermResourcesChanged[1]);
+        VERIFY_ARE_EQUAL(RGB(0x10, 0x10, 0x10), pDispatch->_xtermResourceValues[0]);
+        VERIFY_ARE_EQUAL(RGB(255, 140, 0), pDispatch->_xtermResourceValues[1]);
 
         pDispatch->ClearState();
 
         mach.ProcessString(L"\033]11;#111;DarkOrange;rgb:2/2/2\033\\");
-        VERIFY_IS_TRUE(pDispatch->_setDefaultBackground);
-        VERIFY_ARE_EQUAL(RGB(0x10, 0x10, 0x10), pDispatch->_defaultBackgroundColor);
-        VERIFY_ARE_EQUAL(RGB(255, 140, 0), pDispatch->_defaultCursorColor);
-        // The third param is out of range.
+        VERIFY_ARE_EQUAL(3u, pDispatch->_xtermResourcesChanged.size());
+        VERIFY_ARE_EQUAL(11u, pDispatch->_xtermResourcesChanged[0]);
+        VERIFY_ARE_EQUAL(12u, pDispatch->_xtermResourcesChanged[1]);
+        VERIFY_ARE_EQUAL(13u, pDispatch->_xtermResourcesChanged[2]);
+        VERIFY_ARE_EQUAL(RGB(0x10, 0x10, 0x10), pDispatch->_xtermResourceValues[0]);
+        VERIFY_ARE_EQUAL(RGB(255, 140, 0), pDispatch->_xtermResourceValues[1]);
+        // The third param is out of range, but it's technically still in compliance to set it
 
         pDispatch->ClearState();
 
         // Partially valid multi-param sequences.
         mach.ProcessString(L"\033]11;#111;\033\\");
-        VERIFY_IS_TRUE(pDispatch->_setDefaultBackground);
-        VERIFY_ARE_EQUAL(RGB(0x10, 0x10, 0x10), pDispatch->_defaultBackgroundColor);
+        VERIFY_ARE_EQUAL(1u, pDispatch->_xtermResourcesChanged.size());
+        VERIFY_ARE_EQUAL(11u, pDispatch->_xtermResourcesChanged[0]);
+        VERIFY_ARE_EQUAL(RGB(0x10, 0x10, 0x10), pDispatch->_xtermResourceValues[0]);
 
         pDispatch->ClearState();
 
         mach.ProcessString(L"\033]11;#111;rgb:\033\\");
-        VERIFY_IS_TRUE(pDispatch->_setDefaultBackground);
-        VERIFY_ARE_EQUAL(RGB(0x10, 0x10, 0x10), pDispatch->_defaultBackgroundColor);
+        VERIFY_ARE_EQUAL(1u, pDispatch->_xtermResourcesChanged.size());
+        VERIFY_ARE_EQUAL(11u, pDispatch->_xtermResourcesChanged[0]);
+        VERIFY_ARE_EQUAL(RGB(0x10, 0x10, 0x10), pDispatch->_xtermResourceValues[0]);
 
         pDispatch->ClearState();
 
         mach.ProcessString(L"\033]11;#111;#2\033\\");
-        VERIFY_IS_TRUE(pDispatch->_setDefaultBackground);
-        VERIFY_ARE_EQUAL(RGB(0x10, 0x10, 0x10), pDispatch->_defaultBackgroundColor);
+        VERIFY_ARE_EQUAL(1u, pDispatch->_xtermResourcesChanged.size());
+        VERIFY_ARE_EQUAL(11u, pDispatch->_xtermResourcesChanged[0]);
+        VERIFY_ARE_EQUAL(RGB(0x10, 0x10, 0x10), pDispatch->_xtermResourceValues[0]);
 
         pDispatch->ClearState();
 
         mach.ProcessString(L"\033]11;;rgb:1/1/1\033\\");
-        VERIFY_IS_FALSE(pDispatch->_setDefaultBackground);
-        VERIFY_IS_TRUE(pDispatch->_setDefaultCursorColor);
-        VERIFY_ARE_EQUAL(RGB(0x11, 0x11, 0x11), pDispatch->_defaultCursorColor);
+        VERIFY_ARE_EQUAL(1u, pDispatch->_xtermResourcesChanged.size());
+        VERIFY_ARE_EQUAL(12u, pDispatch->_xtermResourcesChanged[0]);
+        VERIFY_ARE_EQUAL(RGB(0x11, 0x11, 0x11), pDispatch->_xtermResourceValues[0]);
 
         pDispatch->ClearState();
 
         mach.ProcessString(L"\033]11;#1;rgb:1/1/1\033\\");
-        VERIFY_IS_FALSE(pDispatch->_setDefaultBackground);
-        VERIFY_IS_TRUE(pDispatch->_setDefaultCursorColor);
-        VERIFY_ARE_EQUAL(RGB(0x11, 0x11, 0x11), pDispatch->_defaultCursorColor);
+        VERIFY_ARE_EQUAL(1u, pDispatch->_xtermResourcesChanged.size());
+        VERIFY_ARE_EQUAL(12u, pDispatch->_xtermResourcesChanged[0]);
+        VERIFY_ARE_EQUAL(RGB(0x11, 0x11, 0x11), pDispatch->_xtermResourceValues[0]);
 
         pDispatch->ClearState();
 
         // Invalid sequences.
         mach.ProcessString(L"\033]11;rgb:1/1/\033\\");
-        VERIFY_IS_FALSE(pDispatch->_setDefaultBackground);
+        VERIFY_ARE_EQUAL(0u, pDispatch->_xtermResourcesChanged.size());
 
         pDispatch->ClearState();
 
         mach.ProcessString(L"\033]11;#1\033\\");
-        VERIFY_IS_FALSE(pDispatch->_setDefaultBackground);
+        VERIFY_ARE_EQUAL(0u, pDispatch->_xtermResourcesChanged.size());
 
         pDispatch->ClearState();
     }
@@ -3175,6 +3191,88 @@ class StateMachineExternalTest final
         VERIFY_ARE_EQUAL(RGB(0, 0, 0), pDispatch->_colorTable.at(16));
         VERIFY_ARE_EQUAL(RGB(0, 0, 0), pDispatch->_colorTable.at(64));
 
+        pDispatch->ClearState();
+    }
+
+    TEST_METHOD(TestOscGetColorTableEntry)
+    {
+        auto dispatch = std::make_unique<StatefulDispatch>();
+        auto pDispatch = dispatch.get();
+        auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
+        StateMachine mach(std::move(engine));
+
+        mach.ProcessString(L"\033]4;0;?;1;?;2;;3;?;4;?\033\\"); // Inquire about 0-4 skipping 2
+        VERIFY_ARE_EQUAL((std::vector<size_t>{ 0u, 1u, 3u, 4u }), pDispatch->_colorTableEntriesRequested);
+        pDispatch->ClearState();
+
+        mach.ProcessString(L"\033]4;0;rgb:00/00/00;1;rgb:00/00/01;2;?;3;rgb:00/00/03;4;rgb:00/00/04\033\\"); // Set 0-4, except 2 (inquire)
+        VERIFY_ARE_EQUAL(RGB(0, 0, 0), pDispatch->_colorTable.at(0));
+        VERIFY_ARE_EQUAL(RGB(0, 0, 1), pDispatch->_colorTable.at(1));
+        VERIFY_ARE_EQUAL(RGB(0, 0, 3), pDispatch->_colorTable.at(3));
+        VERIFY_ARE_EQUAL(RGB(0, 0, 4), pDispatch->_colorTable.at(4));
+        VERIFY_ARE_EQUAL(1u, pDispatch->_colorTableEntriesRequested.size()); // note: (1u, 2u) constructs a 1-length vector containing 2
+        VERIFY_ARE_EQUAL(2u, pDispatch->_colorTableEntriesRequested[0]);
+        pDispatch->ClearState();
+
+        pDispatch->_colorTable.at(3) = RGB(0xfe, 0xed, 0xfa);
+        mach.ProcessString(L"\033]4;0;rgb:f0/00/00;1;?;3\033\\"); // Set 0, inquire 1, truncated 3
+        VERIFY_ARE_EQUAL(RGB(0xf0, 0, 0), pDispatch->_colorTable.at(0));
+        VERIFY_ARE_EQUAL(RGB(0xfe, 0xed, 0xfa), pDispatch->_colorTable.at(3)); // unchanged from before ProcessString
+        VERIFY_ARE_EQUAL(1u, pDispatch->_colorTableEntriesRequested.size()); // note: (1u, 2u) constructs a 1-length vector containing 2
+        VERIFY_ARE_EQUAL(1u, pDispatch->_colorTableEntriesRequested[0]);
+        pDispatch->ClearState();
+    }
+
+    TEST_METHOD(TestOscXtermResourceReport)
+    {
+        auto dispatch = std::make_unique<StatefulDispatch>();
+        auto pDispatch = dispatch.get();
+        auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
+        StateMachine mach(std::move(engine));
+
+        mach.ProcessString(L"\033]10;?\033\\");
+        VERIFY_ARE_EQUAL(0u, pDispatch->_xtermResourcesChanged.size());
+        VERIFY_ARE_EQUAL(1u, pDispatch->_xtermResourcesRequested.size());
+        VERIFY_ARE_EQUAL(10u, pDispatch->_xtermResourcesRequested[0]);
+        pDispatch->ClearState();
+
+        // Two params, skip first
+        mach.ProcessString(L"\033]10;;?\033\\");
+        VERIFY_ARE_EQUAL(0u, pDispatch->_xtermResourcesChanged.size());
+        VERIFY_ARE_EQUAL(1u, pDispatch->_xtermResourcesRequested.size());
+        VERIFY_ARE_EQUAL(11u, pDispatch->_xtermResourcesRequested[0]);
+        pDispatch->ClearState();
+
+        // Two params, set first
+        mach.ProcessString(L"\033]10;rgb:11/22/33;?\033\\");
+        VERIFY_ARE_EQUAL(1u, pDispatch->_xtermResourcesChanged.size());
+        VERIFY_ARE_EQUAL(10u, pDispatch->_xtermResourcesChanged[0]);
+        VERIFY_ARE_EQUAL(RGB(0x11, 0x22, 0x33), pDispatch->_xtermResourceValues[0]);
+        VERIFY_ARE_EQUAL(1u, pDispatch->_xtermResourcesRequested.size());
+        VERIFY_ARE_EQUAL(11u, pDispatch->_xtermResourcesRequested[0]);
+        pDispatch->ClearState();
+
+        // Two params, set first, starting at 12
+        mach.ProcessString(L"\033]12;rgb:11/22/33;?\033\\");
+        VERIFY_ARE_EQUAL(1u, pDispatch->_xtermResourcesChanged.size());
+        VERIFY_ARE_EQUAL(12u, pDispatch->_xtermResourcesChanged[0]);
+        VERIFY_ARE_EQUAL(RGB(0x11, 0x22, 0x33), pDispatch->_xtermResourceValues[0]);
+        VERIFY_ARE_EQUAL(1u, pDispatch->_xtermResourcesRequested.size());
+        VERIFY_ARE_EQUAL(13u, pDispatch->_xtermResourcesRequested[0]);
+        pDispatch->ClearState();
+
+        // Request all 10
+        mach.ProcessString(L"\033]10;?;?;?;?;?;?;?;?;?;?\033\\");
+        VERIFY_ARE_EQUAL(0u, pDispatch->_xtermResourcesChanged.size());
+        std::vector<size_t> expected{ 10u, 11u, 12u, 13u, 14u, 15u, 16u, 17u, 18u, 19u };
+        VERIFY_ARE_EQUAL(expected, pDispatch->_xtermResourcesRequested);
+        pDispatch->ClearState();
+
+        // Request out of range
+        mach.ProcessString(L"\033]10;;?\033\\");
+        VERIFY_ARE_EQUAL(0u, pDispatch->_xtermResourcesChanged.size());
+        VERIFY_ARE_EQUAL(1u, pDispatch->_xtermResourcesRequested.size());
+        VERIFY_ARE_EQUAL(11u, pDispatch->_xtermResourcesRequested[0]);
         pDispatch->ClearState();
     }
 

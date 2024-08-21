@@ -69,9 +69,10 @@ public:
     bool BackwardsTab(const VTInt /*numTabs*/) override { return false; } // CBT
     bool TabClear(const DispatchTypes::TabClearType /*clearType*/) override { return false; } // TBC
     bool TabSet(const VTParameter /*setType*/) override { return false; } // DECST8C
-    bool SetColorTableEntry(const size_t /*tableIndex*/, const DWORD /*color*/) override { return false; } // OSCColorTable
-    bool SetDefaultForeground(const DWORD /*color*/) override { return false; } // OSCDefaultForeground
-    bool SetDefaultBackground(const DWORD /*color*/) override { return false; } // OSCDefaultBackground
+    bool SetColorTableEntry(const size_t /*tableIndex*/, const DWORD /*color*/) override { return false; } // OSCSetColorTable
+    bool RequestColorTableEntry(const size_t /*tableIndex*/) override { return false; } // OSCGetColorTable
+    bool SetXtermColorResource(const size_t /*resource*/, const DWORD /*color*/) override { return false; } // OSCSetDefaultForeground, OSCSetDefaultBackground, OSCSetCursorColor, OSCResetCursorColor
+    bool RequestXtermColorResource(const size_t /*resource*/) override { return false; } // OSCGetDefaultForeground, OSCGetDefaultBackground, OSCGetCursorColor
     bool AssignColor(const DispatchTypes::ColorItem /*item*/, const VTInt /*fgIndex*/, const VTInt /*bgIndex*/) override { return false; } // DECAC
 
     bool EraseInDisplay(const DispatchTypes::EraseType /* eraseType*/) override { return false; } // ED
@@ -121,7 +122,6 @@ public:
     bool ScreenAlignmentPattern() override { return false; } // DECALN
 
     bool SetCursorStyle(const DispatchTypes::CursorStyle /*cursorStyle*/) override { return false; } // DECSCUSR
-    bool SetCursorColor(const COLORREF /*color*/) override { return false; } // OSCSetCursorColor, OSCResetCursorColor
 
     bool SetClipboard(wil::zwstring_view /*content*/) override { return false; } // OscSetClipboard
 
