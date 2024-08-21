@@ -433,7 +433,7 @@ void AtlasEngine::SetSelectionBackground(const COLORREF color) noexcept
         auto misc = _api.s.write()->misc.write();
         misc->selectionColor = selectionColor;
         // Select a black or white foreground based on the perceptual lightness of the background.
-        misc->selectionForeground = ColorFix::GetLuminosity(selectionColor) <= 0.5f ? 0xffffffff : 0xff000000;
+        misc->selectionForeground = ColorFix::GetLuminosity(selectionColor) < 0.5f ? 0xffffffff : 0xff000000;
     }
 }
 
