@@ -188,7 +188,7 @@ If ($CommitsBehind -Gt 0) {
 
 $projectNumber = Get-GraphQlProjectNumberGivenName -Organization $GithubOrg -Name "$Version Servicing Pipeline"
 If([String]::IsNullOrEmpty($projectNumber)) {
-	Throw "Failed to find ProjectV2 for `"$Version Servicing Pipeline`""
+    Throw "Failed to find ProjectV2 for `"$Version Servicing Pipeline`""
 }
 
 $Project = Get-GraphQlProjectWithNodes -Organization $GithubOrg -Number $projectNumber
@@ -203,15 +203,15 @@ $ToPickList = $Project.organization.projectV2.items.nodes | Where-Object { $_.st
 $commits = New-Object System.Collections.ArrayList
 $cards = [System.Collections.Generic.Dictionary[String, String[]]]::new()
 $ToPickList | ForEach-Object {
-	If (-Not [String]::IsNullOrEmpty($_.content.mergeCommit.oid)) {
-		$co = $_.content.mergeCommit.oid
-	} ElseIf (-Not [String]::IsNullOrEmpty($_.content.closedByPullRequestsReferences.nodes.mergeCommit.oid)) {
-		$co = $_.content.closedByPullRequestsReferences.nodes.mergeCommit.oid
-	} Else {
-		Return
-	}
-	$null = $commits.Add($co)
-	$cards[$co] += $_.id
+    If (-Not [String]::IsNullOrEmpty($_.content.mergeCommit.oid)) {
+        $co = $_.content.mergeCommit.oid
+    } ElseIf (-Not [String]::IsNullOrEmpty($_.content.closedByPullRequestsReferences.nodes.mergeCommit.oid)) {
+        $co = $_.content.closedByPullRequestsReferences.nodes.mergeCommit.oid
+    } Else {
+        Return
+    }
+    $null = $commits.Add($co)
+    $cards[$co] += $_.id
 }
 
 $sortedAllCommits = & git rev-list --no-walk=sorted $commits
