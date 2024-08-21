@@ -470,7 +470,7 @@ bool InputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParameter
         {
             til::enumset<DeviceAttribute, uint64_t> attributes;
 
-            // The first parameter denotes the conformance level. 61 is VT220.
+            // The first parameter denotes the conformance level.
             if (parameters.at(0).value() >= 61)
             {
                 parameters.subspan(1).for_each([&](auto p) {
