@@ -1020,10 +1020,21 @@ void AppCommandlineArgs::ValidateStartupCommands()
     // handoff connection from the operating system.
     if (!_isHandoffListener)
     {
+        // If we only have a single x-save command, then set our target to the
+        // current terminal window. This will prevent us from spawning a new
+        // window just to save the commandline.
+        if (_startupActions.size() == 1 &&
+            _startupActions.front().Action() == ShortcutAction::SaveSnippet &&
+            _windowTarget.empty())
+        {
+            _windowTarget = "0";
+        }
         // If we parsed no commands, or the first command we've parsed is not a new
         // tab action, prepend a new-tab command to the front of the list.
-        if (_startupActions.empty() ||
-            _startupActions.front().Action() != ShortcutAction::NewTab)
+        // (also, we don't need to do this if the only action is a x-save)
+        else if (_startupActions.empty() ||
+                 (_startupActions.front().Action() != ShortcutAction::NewTab &&
+                  _startupActions.front().Action() != ShortcutAction::SaveSnippet))
         {
             // Build the NewTab action from the values we've parsed on the commandline.
             NewTerminalArgs newTerminalArgs{};
