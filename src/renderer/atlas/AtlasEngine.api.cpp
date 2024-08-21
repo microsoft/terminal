@@ -432,8 +432,8 @@ void AtlasEngine::SetSelectionBackground(const COLORREF color) noexcept
     {
         auto misc = _api.s.write()->misc.write();
         misc->selectionColor = selectionColor;
-        // Selection Foreground is based on the default foreground; it is also updated in UpdateDrawingBrushes
-        misc->selectionForeground = 0xff000000 | ColorFix::GetPerceivableColor(misc->foregroundColor, color, 0.5f * 0.5f);
+        // Select a black or white foreground based on the perceptual lightness of the background.
+        misc->selectionForeground = ColorFix::GetLuminosity(selectionColor) < 0.5f ? 0xffffffff : 0xff000000;
     }
 }
 

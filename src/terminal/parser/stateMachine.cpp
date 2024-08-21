@@ -2029,6 +2029,7 @@ void StateMachine::ProcessString(const std::wstring_view string)
     if (_state != VTStates::Ground)
     {
         const auto run = _CurrentRun();
+        auto cacheUnusedRun = true;
 
         // One of the "weird things" in VT input is the case of something like
         // <kbd>alt+[</kbd>. In VT, that's encoded as `\x1b[`. However, that's
@@ -2066,15 +2067,22 @@ void StateMachine::ProcessString(const std::wstring_view string)
                     _ActionEscDispatch(run.back());
                 }
                 _EnterGround();
+                // No need to cache the run, since we've dealt with it now.
+                cacheUnusedRun = false;
             }
         }
-        else if (_state != VTStates::SosPmApcString && _state != VTStates::DcsPassThrough && _state != VTStates::DcsIgnore)
+        else if (_state == VTStates::SosPmApcString || _state == VTStates::DcsPassThrough || _state == VTStates::DcsIgnore)
         {
-            // If the engine doesn't require flushing at the end of the string, we
-            // want to cache the partial sequence in case we have to flush the whole
-            // thing to the terminal later. There is no need to do this if we've
-            // reached one of the string processing states, though, since that data
+            // There is no need to cache the run if we've reached one of the
+            // string processing states in the output engine, since that data
             // will be dealt with as soon as it is received.
+            cacheUnusedRun = false;
+        }
+
+        // If the run hasn't been dealt with in one of the cases above, we cache
+        // the partial sequence in case we have to flush the whole thing later.
+        if (cacheUnusedRun)
+        {
             if (!_cachedSequence)
             {
                 _cachedSequence.emplace(std::wstring{});
