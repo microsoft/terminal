@@ -1046,11 +1046,11 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
             {
                 // This calculates just the positive offsets caused by out-of-bounds (OOB) source and target coordinates.
                 //
-                // If the source rectangle is OOB to the bottom-right, then the size of the rectangle that can be
-                // copied shrinks, but not its origin. However, if it's OOB to the top-left then the origin of
-                // the to-be-copied rectangle will be offset by an equal amount.
-                // Similarly, if the target rectangle is OOB to the bottom-right, then its size shrinks, but not its
-                // origin, and if it's OOB to the top-left, then the origin is offset.
+                // If the source rectangle is OOB to the bottom-right, then the size of the rectangle that can
+                // be copied shrinks, but its origin stays the same. However, if the rectangle is OOB to the
+                // top-left then the origin of the to-be-copied rectangle will be offset by an inverse amount.
+                // Similarly, if the *target* rectangle is OOB to the bottom-right, its size shrinks while
+                // the origin stays the same, and if it's OOB to the top-left, then the origin is offset.
                 //
                 // In other words, this calculates the total offset that needs to be applied to the to-be-copied rectangle.
                 // Later down below we'll then clamp that rectangle which will cause its size to shrink as needed.
