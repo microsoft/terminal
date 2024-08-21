@@ -658,10 +658,7 @@ try
 
         if (textAttributes.GetForeground().IsDefault() && fg != _api.s->misc->foregroundColor)
         {
-            auto misc = _api.s.write()->misc.write();
-            misc->foregroundColor = fg;
-            // Selection Foreground is based on the default foreground; it is also updated in SetSelectionColor
-            misc->selectionForeground = 0xff000000 | ColorFix::GetPerceivableColor(fg, misc->selectionColor, 0.5f * 0.5f);
+            _api.s.write()->misc.write()->foregroundColor = fg;
         }
     }
 
