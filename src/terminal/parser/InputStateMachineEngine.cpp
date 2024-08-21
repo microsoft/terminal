@@ -420,6 +420,12 @@ bool InputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParameter
             til::atomic_notify_all(_lookingForDSR);
             return true;
         }
+        // Heuristic: If the hosting terminal used the win32 input mode, chances are high
+        // that this is a CPR requested by the terminal application as opposed to a F3 key.
+        if (_encounteredWin32InputModeSequence)
+        {
+            return false;
+        }
         [[fallthrough]];
     case CsiActionCodes::ArrowUp:
     case CsiActionCodes::ArrowDown:
@@ -451,9 +457,6 @@ bool InputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParameter
     }
     case CsiActionCodes::CursorBackTab:
         _WriteSingleKey(VK_TAB, SHIFT_PRESSED);
-        return true;
-    case CsiActionCodes::DTTERM_WindowManipulation:
-        _pDispatch->WindowManipulation(parameters.at(0), parameters.at(1), parameters.at(2));
         return true;
     case CsiActionCodes::FocusIn:
         _pDispatch->FocusChanged(true);

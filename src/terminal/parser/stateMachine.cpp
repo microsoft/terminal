@@ -726,14 +726,14 @@ void StateMachine::_ActionDcsDispatch(const wchar_t wch)
 
     const auto success = _SafeExecute([=]() {
         _dcsStringHandler = _engine->ActionDcsDispatch(_identifier.Finalize(wch), { _parameters.data(), _parameters.size() });
-        // If the returned handler is null, the sequence is not supported.
-        return _dcsStringHandler != nullptr;
+        return true;
     });
 
     // Trace the result.
     _trace.DispatchSequenceTrace(success);
 
-    if (success)
+    // If the returned handler is null, the sequence is not supported.
+    if (_dcsStringHandler)
     {
         // If successful, enter the pass through state.
         _EnterDcsPassThrough();
@@ -2160,6 +2160,7 @@ bool StateMachine::_SafeExecute(TLambda&& lambda)
 try
 {
     const auto ok = lambda();
+    static_assert(std::is_same_v<decltype(ok), const bool>, "lambda must return bool");
     if (!ok)
     {
         FlushToTerminal();
