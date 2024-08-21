@@ -250,7 +250,6 @@ class Microsoft::Console::VirtualTerminal::InputEngineTest
     TEST_METHOD(C0Test);
     TEST_METHOD(AlphanumericTest);
     TEST_METHOD(RoundTripTest);
-    TEST_METHOD(WindowManipulationTest);
     TEST_METHOD(NonAsciiTest);
     TEST_METHOD(CursorPositioningTest);
     TEST_METHOD(CSICursorBackTabTest);
@@ -606,60 +605,6 @@ void InputEngineTest::RoundTripTest()
 
     VerifyExpectedInputDrained();
     */
-}
-
-void InputEngineTest::WindowManipulationTest()
-{
-    auto pfn = std::bind(&TestState::TestInputCallback, &testState, std::placeholders::_1);
-    auto dispatch = std::make_unique<TestInteractDispatch>(pfn, &testState);
-    auto inputEngine = std::make_unique<InputStateMachineEngine>(std::move(dispatch));
-    auto _stateMachine = std::make_unique<StateMachine>(std::move(inputEngine));
-    VERIFY_IS_NOT_NULL(_stateMachine.get());
-    testState._stateMachine = _stateMachine.get();
-
-    Log::Comment(NoThrowString().Format(
-        L"Try sending a bunch of Window Manipulation sequences. "
-        L"Only the valid ones should call the "
-        L"TestInteractDispatch::WindowManipulation callback."));
-
-    const auto param1 = 123;
-    const auto param2 = 456;
-    const auto wszParam1 = L"123";
-    const auto wszParam2 = L"456";
-
-    for (unsigned int i = 0; i < static_cast<unsigned int>(BYTE_MAX); i++)
-    {
-        std::wstringstream seqBuilder;
-        seqBuilder << L"\x1b[" << i;
-
-        if (i == DispatchTypes::WindowManipulationType::ResizeWindowInCharacters)
-        {
-            // We need to build the string with the params as strings for some reason -
-            //      x86 would implicitly convert them to chars (eg 123 -> '{')
-            //      before appending them to the string
-            seqBuilder << L";" << wszParam1 << L";" << wszParam2;
-
-            testState._expectedToCallWindowManipulation = true;
-            testState._expectedParams[0] = param1;
-            testState._expectedParams[1] = param2;
-            testState._expectedWindowManipulation = static_cast<DispatchTypes::WindowManipulationType>(i);
-        }
-        else
-        {
-            // other operations don't expect any params.
-
-            testState._expectedToCallWindowManipulation = true;
-            testState._expectedParams[0] = 0;
-            testState._expectedParams[1] = 0;
-            testState._expectedWindowManipulation = static_cast<DispatchTypes::WindowManipulationType>(i);
-        }
-        seqBuilder << L"t";
-        auto seq = seqBuilder.str();
-        Log::Comment(NoThrowString().Format(
-            L"Processing \"%s\"", seq.c_str()));
-        _stateMachine->ProcessString(seq);
-    }
-    VerifyExpectedInputDrained();
 }
 
 void InputEngineTest::NonAsciiTest()

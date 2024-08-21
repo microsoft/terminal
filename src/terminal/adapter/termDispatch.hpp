@@ -69,9 +69,10 @@ public:
     void BackwardsTab(const VTInt /*numTabs*/) override {} // CBT
     void TabClear(const DispatchTypes::TabClearType /*clearType*/) override {} // TBC
     void TabSet(const VTParameter /*setType*/) override {} // DECST8C
-    void SetColorTableEntry(const size_t /*tableIndex*/, const DWORD /*color*/) override {} // OSCColorTable
-    void SetDefaultForeground(const DWORD /*color*/) override {} // OSCDefaultForeground
-    void SetDefaultBackground(const DWORD /*color*/) override {} // OSCDefaultBackground
+    void SetColorTableEntry(const size_t /*tableIndex*/, const DWORD /*color*/) override {} // OSCSetColorTable
+    void RequestColorTableEntry(const size_t /*tableIndex*/) override {} // OSCGetColorTable
+    void SetXtermColorResource(const size_t /*resource*/, const DWORD /*color*/) override {} // OSCSetDefaultForeground, OSCSetDefaultBackground, OSCSetCursorColor, OSCResetCursorColor
+    void RequestXtermColorResource(const size_t /*resource*/) override {} // OSCGetDefaultForeground, OSCGetDefaultBackground, OSCGetCursorColor
     void AssignColor(const DispatchTypes::ColorItem /*item*/, const VTInt /*fgIndex*/, const VTInt /*bgIndex*/) override {} // DECAC
 
     void EraseInDisplay(const DispatchTypes::EraseType /* eraseType*/) override {} // ED
@@ -121,7 +122,6 @@ public:
     void ScreenAlignmentPattern() override {} // DECALN
 
     void SetCursorStyle(const DispatchTypes::CursorStyle /*cursorStyle*/) override {} // DECSCUSR
-    void SetCursorColor(const COLORREF /*color*/) override {} // OSCSetCursorColor, OSCResetCursorColor
 
     void SetClipboard(wil::zwstring_view /*content*/) override {} // OscSetClipboard
 

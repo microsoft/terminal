@@ -18,6 +18,25 @@ using namespace Microsoft::Console::VirtualTerminal;
 
 static constexpr std::wstring_view whitespace{ L" " };
 
+struct XtermResourceColorTableEntry
+{
+    int ColorTableIndex;
+    int AliasIndex;
+};
+
+static constexpr std::array<XtermResourceColorTableEntry, 10> XtermResourceColorTableMappings{ {
+    /* 10 */ { TextColor::DEFAULT_FOREGROUND, static_cast<int>(ColorAlias::DefaultForeground) },
+    /* 11 */ { TextColor::DEFAULT_BACKGROUND, static_cast<int>(ColorAlias::DefaultBackground) },
+    /* 12 */ { TextColor::CURSOR_COLOR, -1 },
+    /* 13 */ { -1, -1 },
+    /* 14 */ { -1, -1 },
+    /* 15 */ { -1, -1 },
+    /* 16 */ { -1, -1 },
+    /* 17 */ { -1, -1 },
+    /* 18 */ { -1, -1 },
+    /* 19 */ { -1, -1 },
+} };
+
 AdaptDispatch::AdaptDispatch(ITerminalApi& api, Renderer* renderer, RenderSettings& renderSettings, TerminalInput& terminalInput) noexcept :
     _api{ api },
     _renderer{ renderer },
@@ -3212,16 +3231,6 @@ void AdaptDispatch::SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle)
     cursor.SetBlinkingAllowed(fEnableBlinking);
 }
 
-// Method Description:
-// - Sets a single entry of the colortable to a new value
-// Arguments:
-// - tableIndex: The VT color table index
-// - dwColor: The new RGB color value to use.
-void AdaptDispatch::SetCursorColor(const COLORREF cursorColor)
-{
-    SetColorTableEntry(TextColor::CURSOR_COLOR, cursorColor);
-}
-
 // Routine Description:
 // - OSC Copy to Clipboard
 // Arguments:
@@ -3255,24 +3264,61 @@ void AdaptDispatch::SetColorTableEntry(const size_t tableIndex, const DWORD dwCo
     }
 }
 
-// Method Description:
-// - Sets the default foreground color to a new value
-// Arguments:
-// - dwColor: The new RGB color value to use, as a COLORREF, format 0x00BBGGRR.
-void AdaptDispatch::SetDefaultForeground(const DWORD dwColor)
+void AdaptDispatch::RequestColorTableEntry(const size_t tableIndex)
 {
-    _renderSettings.SetColorAliasIndex(ColorAlias::DefaultForeground, TextColor::DEFAULT_FOREGROUND);
-    SetColorTableEntry(TextColor::DEFAULT_FOREGROUND, dwColor);
+    const auto color = _renderSettings.GetColorTableEntry(tableIndex);
+    if (color != INVALID_COLOR)
+    {
+        const til::color c{ color };
+        // Scale values up to match xterm's 16-bit color report format.
+        _api.ReturnResponse(fmt::format(FMT_COMPILE(L"\033]4;{};rgb:{:04x}/{:04x}/{:04x}\033\\"), tableIndex, c.r * 0x0101, c.g * 0x0101, c.b * 0x0101));
+    }
 }
 
 // Method Description:
-// - Sets the default background color to a new value
-// Arguments:
-// - dwColor: The new RGB color value to use, as a COLORREF, format 0x00BBGGRR.
-void AdaptDispatch::SetDefaultBackground(const DWORD dwColor)
+// - Sets one Xterm Color Resource such as Default Foreground, Background, Cursor
+void AdaptDispatch::SetXtermColorResource(const size_t resource, const DWORD color)
 {
-    _renderSettings.SetColorAliasIndex(ColorAlias::DefaultBackground, TextColor::DEFAULT_BACKGROUND);
-    SetColorTableEntry(TextColor::DEFAULT_BACKGROUND, dwColor);
+    assert(resource >= 10);
+    const auto mappingIndex = resource - 10;
+    const auto& oscMapping = XtermResourceColorTableMappings.at(mappingIndex);
+    if (oscMapping.ColorTableIndex > 0)
+    {
+        if (oscMapping.AliasIndex >= 0) [[unlikely]]
+        {
+            // If this color change applies to an aliased color, point the alias at the new color
+            _renderSettings.SetColorAliasIndex(static_cast<ColorAlias>(oscMapping.AliasIndex), oscMapping.ColorTableIndex);
+        }
+        return SetColorTableEntry(oscMapping.ColorTableIndex, color);
+    }
+}
+
+// Method Description:
+// - Reports the value of one Xterm Color Resource, if it is set.
+// Return Value:
+// True if handled successfully. False otherwise.
+void AdaptDispatch::RequestXtermColorResource(const size_t resource)
+{
+    assert(resource >= 10);
+    const auto mappingIndex = resource - 10;
+    const auto& oscMapping = XtermResourceColorTableMappings.at(mappingIndex);
+    if (oscMapping.ColorTableIndex > 0)
+    {
+        size_t finalColorIndex = oscMapping.ColorTableIndex;
+
+        if (oscMapping.AliasIndex >= 0) [[unlikely]]
+        {
+            finalColorIndex = _renderSettings.GetColorAliasIndex(static_cast<ColorAlias>(oscMapping.AliasIndex));
+        }
+
+        const auto color = _renderSettings.GetColorTableEntry(finalColorIndex);
+        if (color != INVALID_COLOR)
+        {
+            const til::color c{ color };
+            // Scale values up to match xterm's 16-bit color report format.
+            _api.ReturnResponse(fmt::format(FMT_COMPILE(L"\033]{};rgb:{:04x}/{:04x}/{:04x}\033\\"), resource, c.r * 0x0101, c.g * 0x0101, c.b * 0x0101));
+        }
+    }
 }
 
 // Method Description:

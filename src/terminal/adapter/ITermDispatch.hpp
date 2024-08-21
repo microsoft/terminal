@@ -76,9 +76,10 @@ public:
     virtual void BackwardsTab(const VTInt numTabs) = 0; // CBT
     virtual void TabClear(const DispatchTypes::TabClearType clearType) = 0; // TBC
     virtual void TabSet(const VTParameter setType) = 0; // DECST8C
-    virtual void SetColorTableEntry(const size_t tableIndex, const DWORD color) = 0; // OSCColorTable
-    virtual void SetDefaultForeground(const DWORD color) = 0; // OSCDefaultForeground
-    virtual void SetDefaultBackground(const DWORD color) = 0; // OSCDefaultBackground
+    virtual void SetColorTableEntry(const size_t tableIndex, const DWORD color) = 0; // OSCSetColorTable
+    virtual void RequestColorTableEntry(const size_t tableIndex) = 0; // OSCGetColorTable
+    virtual void SetXtermColorResource(const size_t resource, const DWORD color) = 0; // OSCSetDefaultForeground, OSCSetDefaultBackground, OSCSetCursorColor, OSCResetCursorColor
+    virtual void RequestXtermColorResource(const size_t resource) = 0; // OSCGetDefaultForeground, OSCGetDefaultBackground, OSCGetCursorColor
     virtual void AssignColor(const DispatchTypes::ColorItem item, const VTInt fgIndex, const VTInt bgIndex) = 0; // DECAC
 
     virtual void EraseInDisplay(const DispatchTypes::EraseType eraseType) = 0; // ED
@@ -128,7 +129,6 @@ public:
     virtual void ScreenAlignmentPattern() = 0; // DECALN
 
     virtual void SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle) = 0; // DECSCUSR
-    virtual void SetCursorColor(const COLORREF color) = 0; // OSCSetCursorColor, OSCResetCursorColor
 
     virtual void SetClipboard(wil::zwstring_view content) = 0; // OSCSetClipboard
 

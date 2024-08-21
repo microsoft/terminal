@@ -14,6 +14,8 @@
 using namespace Microsoft::Console;
 using namespace Microsoft::Console::VirtualTerminal;
 
+constexpr COLORREF COLOR_INQUIRY_COLOR = 0xfeffffff; // It's like INVALID_COLOR but special
+
 // takes ownership of pDispatch
 OutputStateMachineEngine::OutputStateMachineEngine(std::unique_ptr<ITermDispatch> pDispatch) :
     _dispatch(std::move(pDispatch)),
@@ -756,7 +758,14 @@ bool OutputStateMachineEngine::ActionOscDispatch(const size_t parameter, const s
             {
                 const auto tableIndex = til::at(tableIndexes, i);
                 const auto rgb = til::at(colors, i);
-                _dispatch->SetColorTableEntry(tableIndex, rgb);
+                if (rgb == COLOR_INQUIRY_COLOR)
+                {
+                    _dispatch->RequestColorTableEntry(tableIndex);
+                }
+                else
+                {
+                    _dispatch->SetColorTableEntry(tableIndex, rgb);
+                }
             }
         }
         break;
@@ -768,40 +777,18 @@ bool OutputStateMachineEngine::ActionOscDispatch(const size_t parameter, const s
         std::vector<DWORD> colors;
         if (_GetOscSetColor(string, colors))
         {
-            auto commandIndex = parameter;
-            size_t colorIndex = 0;
-
-            if (commandIndex == OscActionCodes::SetForegroundColor && colors.size() > colorIndex)
+            auto resource = parameter;
+            for (auto&& color : colors)
             {
-                const auto color = til::at(colors, colorIndex);
-                if (color != INVALID_COLOR)
+                if (color == COLOR_INQUIRY_COLOR)
                 {
-                    _dispatch->SetDefaultForeground(color);
+                    _dispatch->RequestXtermColorResource(resource);
                 }
-                commandIndex++;
-                colorIndex++;
-            }
-
-            if (commandIndex == OscActionCodes::SetBackgroundColor && colors.size() > colorIndex)
-            {
-                const auto color = til::at(colors, colorIndex);
-                if (color != INVALID_COLOR)
+                else if (color != INVALID_COLOR)
                 {
-                    _dispatch->SetDefaultBackground(color);
+                    _dispatch->SetXtermColorResource(resource, color);
                 }
-                commandIndex++;
-                colorIndex++;
-            }
-
-            if (commandIndex == OscActionCodes::SetCursorColor && colors.size() > colorIndex)
-            {
-                const auto color = til::at(colors, colorIndex);
-                if (color != INVALID_COLOR)
-                {
-                    _dispatch->SetCursorColor(color);
-                }
-                commandIndex++;
-                colorIndex++;
+                resource++;
             }
         }
         break;
@@ -818,7 +805,8 @@ bool OutputStateMachineEngine::ActionOscDispatch(const size_t parameter, const s
     }
     case OscActionCodes::ResetCursorColor:
     {
-        _dispatch->SetCursorColor(INVALID_COLOR);
+        // The reset codes for xterm dynamic resources are the set codes + 100
+        _dispatch->SetXtermColorResource(parameter - 100u, INVALID_COLOR);
         break;
     }
     case OscActionCodes::Hyperlink:
@@ -905,6 +893,8 @@ bool OutputStateMachineEngine::_GetOscSetColorTable(const std::wstring_view stri
                                                     std::vector<size_t>& tableIndexes,
                                                     std::vector<DWORD>& rgbs) const
 {
+    using namespace std::string_view_literals;
+
     const auto parts = Utils::SplitString(string, L';');
     if (parts.size() < 2)
     {
@@ -916,13 +906,23 @@ bool OutputStateMachineEngine::_GetOscSetColorTable(const std::wstring_view stri
 
     for (size_t i = 0, j = 1; j < parts.size(); i += 2, j += 2)
     {
+        auto&& index = til::at(parts, i);
+        auto&& color = til::at(parts, j);
         unsigned int tableIndex = 0;
-        const auto indexSuccess = Utils::StringToUint(til::at(parts, i), tableIndex);
-        const auto colorOptional = Utils::ColorFromXTermColor(til::at(parts, j));
-        if (indexSuccess && colorOptional.has_value())
+        const auto indexSuccess = Utils::StringToUint(index, tableIndex);
+
+        if (indexSuccess)
         {
-            newTableIndexes.push_back(tableIndex);
-            newRgbs.push_back(colorOptional.value());
+            if (color == L"?"sv) [[unlikely]]
+            {
+                newTableIndexes.push_back(tableIndex);
+                newRgbs.push_back(COLOR_INQUIRY_COLOR);
+            }
+            else if (const auto colorOptional = Utils::ColorFromXTermColor(color))
+            {
+                newTableIndexes.push_back(tableIndex);
+                newRgbs.push_back(colorOptional.value());
+            }
         }
     }
 
@@ -999,6 +999,8 @@ bool OutputStateMachineEngine::_ParseHyperlink(const std::wstring_view string,
 bool OutputStateMachineEngine::_GetOscSetColor(const std::wstring_view string,
                                                std::vector<DWORD>& rgbs) const
 {
+    using namespace std::string_view_literals;
+
     const auto parts = Utils::SplitString(string, L';');
     if (parts.size() < 1)
     {
@@ -1006,10 +1008,14 @@ bool OutputStateMachineEngine::_GetOscSetColor(const std::wstring_view string,
     }
 
     std::vector<DWORD> newRgbs;
-    for (size_t i = 0; i < parts.size(); i++)
+    for (auto&& part : parts)
     {
-        const auto colorOptional = Utils::ColorFromXTermColor(til::at(parts, i));
-        if (colorOptional.has_value())
+        if (part == L"?"sv) [[unlikely]]
+        {
+            newRgbs.push_back(COLOR_INQUIRY_COLOR);
+            continue;
+        }
+        else if (const auto colorOptional = Utils::ColorFromXTermColor(part))
         {
             newRgbs.push_back(colorOptional.value());
         }
