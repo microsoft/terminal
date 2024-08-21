@@ -1999,7 +1999,10 @@ bool AdaptDispatch::_ModeParamsHelper(const DispatchTypes::ModeParams param, con
     case DispatchTypes::ModeParams::FOCUS_EVENT_MODE:
         _terminalInput.SetInputMode(TerminalInput::Mode::FocusEvent, enable);
         // ConPTY always wants to know about focus events, so let it know that it needs to re-enable this mode.
-        _api.GetStateMachine().InjectSequence(InjectionType::DECSET_FOCUS);
+        if (!enable)
+        {
+            _api.GetStateMachine().InjectSequence(InjectionType::DECSET_FOCUS);
+        }
         return true;
     case DispatchTypes::ModeParams::ALTERNATE_SCROLL:
         _terminalInput.SetInputMode(TerminalInput::Mode::AlternateScroll, enable);
@@ -2020,6 +2023,10 @@ bool AdaptDispatch::_ModeParamsHelper(const DispatchTypes::ModeParams param, con
         // It also makes more sense to not bubble it up, because this mode is specifically for INPUT_RECORD interop
         // and thus entirely between a PTY's input records and its INPUT_RECORD-aware VT-aware console clients.
         // Returning true here will mark this as being handled and avoid this.
+        if (!enable)
+        {
+            _api.GetStateMachine().InjectSequence(InjectionType::W32IM);
+        }
         return true;
     default:
         // If no functions to call, overall dispatch was a failure.

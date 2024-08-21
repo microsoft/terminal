@@ -368,9 +368,10 @@ void WriteCharsVT(SCREEN_INFORMATION& screenInfo, const std::wstring_view& str)
             write(offset, injection.offset);
             offset = injection.offset;
 
-            static constexpr std::array<std::string_view, 2> mapping{ {
+            static constexpr std::array<std::string_view, 3> mapping{ {
                 { "\x1b[?1004h\x1b[?9001h" }, // RIS: Focus Event Mode + Win32 Input Mode
-                { "\x1b[?1004h" } // DECSET_FOCUS: Focus Event Mode
+                { "\x1b[?1004h" }, // DECSET_FOCUS: Focus Event Mode
+                { "\x1b[?9001h" }, // Win32 Input Mode
             } };
             static_assert(static_cast<size_t>(InjectionType::Count) == mapping.size(), "you need to update the mapping array");
 

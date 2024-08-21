@@ -42,8 +42,9 @@ namespace Microsoft::Console::VirtualTerminal
     // parser tells it the positions of any such relevant VT sequences.
     enum class InjectionType : size_t
     {
-        RIS,
-        DECSET_FOCUS,
+        RIS, // All of the below
+        DECSET_FOCUS, // CSI ? 1004 h
+        W32IM, // CSI ? 9001 h
 
         Count,
     };
