@@ -123,8 +123,8 @@ private:
     void _SystemMenuChangeRequested(const winrt::Windows::Foundation::IInspectable& sender,
                                     const winrt::TerminalApp::SystemMenuChangeArgs& args);
 
-    winrt::fire_and_forget _QuitRequested(const winrt::Windows::Foundation::IInspectable& sender,
-                                          const winrt::Windows::Foundation::IInspectable& args);
+    void _QuitRequested(const winrt::Windows::Foundation::IInspectable& sender,
+                        const winrt::Windows::Foundation::IInspectable& args);
 
     void _RequestQuitAll(const winrt::Windows::Foundation::IInspectable& sender,
                          const winrt::Windows::Foundation::IInspectable& args);

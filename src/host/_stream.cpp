@@ -336,6 +336,9 @@ void WriteCharsVT(SCREEN_INFORMATION& screenInfo, const std::wstring_view& str)
 {
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     auto& stateMachine = screenInfo.GetStateMachine();
+    // If the given screenInfo is the alternate screen buffer, disabling the alternate screen buffer in this
+    // VT payload will cause the pointer to be invalidated. We thus need to get all the information we need now.
+    const auto disableNewlineTranslation = WI_IsFlagSet(screenInfo.OutputMode, DISABLE_NEWLINE_AUTO_RETURN);
     // When switch between the main and alt-buffer SCREEN_INFORMATION::GetActiveBuffer()
     // may change, so get the VtIo reference now, just in case.
     auto writer = gci.GetVtWriterForBuffer(&screenInfo);
@@ -350,7 +353,7 @@ void WriteCharsVT(SCREEN_INFORMATION& screenInfo, const std::wstring_view& str)
         // DISABLE_NEWLINE_AUTO_RETURN not being set is equivalent to a LF -> CRLF translation.
         const auto write = [&](size_t beg, size_t end) {
             const auto chunk = til::safe_slice_abs(str, beg, end);
-            if (WI_IsFlagSet(screenInfo.OutputMode, DISABLE_NEWLINE_AUTO_RETURN))
+            if (disableNewlineTranslation)
             {
                 writer.WriteUTF16(chunk);
             }
@@ -368,9 +371,10 @@ void WriteCharsVT(SCREEN_INFORMATION& screenInfo, const std::wstring_view& str)
             write(offset, injection.offset);
             offset = injection.offset;
 
-            static constexpr std::array<std::string_view, 2> mapping{ {
+            static constexpr std::array<std::string_view, 3> mapping{ {
                 { "\x1b[?1004h\x1b[?9001h" }, // RIS: Focus Event Mode + Win32 Input Mode
-                { "\x1b[?1004h" } // DECSET_FOCUS: Focus Event Mode
+                { "\x1b[?1004h" }, // DECSET_FOCUS: Focus Event Mode
+                { "\x1b[?9001h" }, // Win32 Input Mode
             } };
             static_assert(static_cast<size_t>(InjectionType::Count) == mapping.size(), "you need to update the mapping array");
 

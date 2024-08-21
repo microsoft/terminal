@@ -13,6 +13,8 @@
 
 #include <TerminalThemeHelpers.h>
 
+#include <til/latch.h>
+
 using namespace winrt::Windows::UI;
 using namespace winrt::Windows::UI::Composition;
 using namespace winrt::Windows::UI::Xaml;
@@ -348,9 +350,29 @@ void AppHost::Initialize()
     });
 
     _windowCallbacks.AutomaticShutdownRequested = _window->AutomaticShutdownRequested([this]() {
-        // Raised when the OS is beginning an update of the app. We will quit,
-        // to save our state, before the OS manually kills us.
-        _quit();
+        // This is the WM_ENDSESSION handler.
+        // The event is raised when the user is logged out, because the system is rebooting, etc.
+        // Due to the design of WM_ENDSESSION, returning from the message indicates to the OS that it's fine to
+        // terminate us at any time. Luckily Windows has never heavily relied on message passing or asynchronous
+        // eventing in any of its UI frameworks. It also was clearly impossible to use WaitForMultipleObjects with
+        // bWaitAll=TRUE and a timeout to wait for all applications to exit cleanly.
+        // As such we attempt to synchronously shut down the app here. Otherwise, it could just call _quit().
+
+        const auto state = ApplicationState::SharedInstance();
+
+        state.PersistedWindowLayouts(nullptr);
+
+        // A duplicate of AppHost::_QuitRequested().
+        if (_appLogic && _windowLogic && _appLogic.ShouldUsePersistedLayout())
+        {
+            _windowLogic.PersistState();
+        }
+
+        _windowManager.SignalClose(_peasant);
+        _windowManager.QuitAll();
+
+        // Ensure to write the state.json before we get TerminateProcess()d by the OS (Thanks!).
+        state.Flush();
     });
 
     // Load bearing: make sure the PropertyChanged handler is added before we
@@ -440,7 +462,7 @@ winrt::fire_and_forget AppHost::_quit()
     co_await winrt::resume_background();
 
     ApplicationState::SharedInstance().PersistedWindowLayouts(nullptr);
-    peasant.RequestQuitAll();
+    _windowManager.QuitAll();
 }
 
 void AppHost::_revokeWindowCallbacks()
@@ -1157,25 +1179,32 @@ void AppHost::_IsQuakeWindowChanged(const winrt::Windows::Foundation::IInspectab
 }
 
 // Raised from our Peasant. We handle by propagating the call to our terminal window.
-winrt::fire_and_forget AppHost::_QuitRequested(const winrt::Windows::Foundation::IInspectable&,
-                                               const winrt::Windows::Foundation::IInspectable&)
+void AppHost::_QuitRequested(const winrt::Windows::Foundation::IInspectable&, const winrt::Windows::Foundation::IInspectable&)
 {
-    auto weakThis{ weak_from_this() };
-    // Need to be on the main thread to close out all of the tabs.
-    co_await wil::resume_foreground(_windowLogic.GetRoot().Dispatcher());
+    // We process the shutdown synchronously here, because otherwise the
+    // AutomaticShutdownRequested() logic wouldn't run synchronously either.
+    til::latch latch{ 1 };
 
-    const auto strongThis = weakThis.lock();
-    if (!strongThis)
-    {
-        co_return;
-    }
+    _windowLogic.GetRoot().Dispatcher().RunAsync(winrt::Windows::UI::Core::CoreDispatcherPriority::Normal, [&latch, weakThis = weak_from_this()]() {
+        const auto countDownOnExit = wil::scope_exit([&latch] {
+            latch.count_down();
+        });
 
-    if (_appLogic && _windowLogic && _appLogic.ShouldUsePersistedLayout())
-    {
-        _windowLogic.PersistState();
-    }
+        const auto self = weakThis.lock();
+        if (!self)
+        {
+            return;
+        }
 
-    PostQuitMessage(0);
+        if (self->_appLogic && self->_windowLogic && self->_appLogic.ShouldUsePersistedLayout())
+        {
+            self->_windowLogic.PersistState();
+        }
+
+        PostQuitMessage(0);
+    });
+
+    latch.wait();
 }
 
 // Raised from TerminalWindow. We handle by bubbling the request to the window manager.

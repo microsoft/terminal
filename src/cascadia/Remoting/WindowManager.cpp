@@ -375,6 +375,18 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         WindowClosed.raise(s, e);
     }
 
+    void WindowManager::QuitAll()
+    {
+        if (_monarch)
+        {
+            try
+            {
+                _monarch.QuitAll();
+            }
+            CATCH_LOG()
+        }
+    }
+
     void WindowManager::SignalClose(const Remoting::Peasant& peasant)
     {
         if (_monarch)
