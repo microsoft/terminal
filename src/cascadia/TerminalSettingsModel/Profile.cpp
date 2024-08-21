@@ -175,10 +175,12 @@ void Profile::LayerJson(const Json::Value& json)
     JsonUtils::GetValueForKey(json, NameKey, _Name);
     JsonUtils::GetValueForKey(json, UpdatesKey, _Updates);
     JsonUtils::GetValueForKey(json, GuidKey, _Guid);
+
+    // Make sure Source is before Hidden! We use that to exclude false positives from the settings logger!
+    JsonUtils::GetValueForKey(json, SourceKey, _Source);
     JsonUtils::GetValueForKey(json, HiddenKey, _Hidden);
     _logSettingIfSet(HiddenKey, _Hidden.has_value());
 
-    JsonUtils::GetValueForKey(json, SourceKey, _Source);
     JsonUtils::GetValueForKey(json, IconKey, _Icon);
     _logSettingIfSet(IconKey, _Icon.has_value());
 
@@ -536,7 +538,32 @@ void Profile::_logSettingIfSet(const std::string_view& setting, const bool isSet
 {
     if (isSet)
     {
-        _logSettingSet(setting);
+        // make sure this matches defaults.json.
+        static constexpr winrt::guid DEFAULT_WINDOWS_POWERSHELL_GUID{ 0x61c54bbd, 0xc2c6, 0x5271, { 0x96, 0xe7, 0x00, 0x9a, 0x87, 0xff, 0x44, 0xbf } };
+        static constexpr winrt::guid DEFAULT_COMMAND_PROMPT_GUID{ 0x0caa0dad, 0x35be, 0x5f56, { 0xa8, 0xff, 0xaf, 0xce, 0xee, 0xaa, 0x61, 0x01 } };
+
+        // Exclude some false positives from userDefaults.json
+        // NOTE: we can't use the OriginTag here because it hasn't been set yet!
+        const bool isWinPow = _Guid.has_value() && *_Guid == DEFAULT_WINDOWS_POWERSHELL_GUID; //_Name.has_value() && til::equals_insensitive_ascii(*_Name, L"Windows PowerShell");
+        const bool isCmd = _Guid.has_value() && *_Guid == DEFAULT_COMMAND_PROMPT_GUID; //_Name.has_value() && til::equals_insensitive_ascii(*_Name, L"Command Prompt");
+        const bool isACS = _Name.has_value() && til::equals_insensitive_ascii(*_Name, L"Azure Cloud Shell");
+        const bool isWTDynamicProfile = _Source.has_value() && til::starts_with(*_Source, L"Windows.Terminal");
+        const bool settingHiddenToFalse = til::equals_insensitive_ascii(setting, HiddenKey) && _Hidden.has_value() && _Hidden == false;
+        const bool settingCommandlineToWinPow = til::equals_insensitive_ascii(setting, "commandline") && _Commandline.has_value() && til::equals_insensitive_ascii(*_Commandline, L"%SystemRoot%\\System32\\WindowsPowerShell\\v1.0\\powershell.exe");
+        const bool settingCommandlineToCmd = til::equals_insensitive_ascii(setting, "commandline") && _Commandline.has_value() && til::equals_insensitive_ascii(*_Commandline, L"%SystemRoot%\\System32\\cmd.exe");
+        // clang-format off
+        if ((isWinPow && (settingHiddenToFalse || settingCommandlineToWinPow))
+            || (isCmd && (settingHiddenToFalse || settingCommandlineToCmd))
+            || (isACS && settingHiddenToFalse)
+            || (isWTDynamicProfile && settingHiddenToFalse))
+        {
+            // clang-format on
+            // skip
+        }
+        else
+        {
+            _logSettingSet(setting);
+        }
     }
 }
 
