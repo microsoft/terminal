@@ -393,6 +393,8 @@ try
     const auto offset = til::point{ _api.viewportOffset.x, _api.viewportOffset.y };
     auto it = highlights.begin();
     const auto itEnd = highlights.end();
+
+#if 1
     auto hiStart = it->start - offset;
     auto hiEnd = it->end - offset;
 
@@ -446,6 +448,47 @@ try
             break;
         }
     }
+#endif
+#if 0
+    auto width = _p.s->viewportCellCount.x;
+    while (it != itEnd)
+    {
+        auto hiStart = it->start - offset;
+        auto hiEnd = it->end - offset;
+
+        til::CoordType linHiStart = (hiStart.y * width) + hiStart.x; // incl
+        til::CoordType linHiEnd = (hiEnd.y * width) + hiEnd.x; // incl
+        til::CoordType linX1 = (y * width) + x1; // incl
+        til::CoordType linX2 = ((y * width) + x2) - 1; // incl
+
+        if (linX2 < linHiStart)
+        {
+            // This region hasn't even started yet (region ends (x2) before highlight begins (hiStart))
+            break;
+        }
+
+        til::CoordType linStart = std::max(linHiStart, linX1); // incl
+        til::CoordType linEnd = std::min(linHiEnd, linX2); // incl
+
+        if (linStart <= linEnd)
+        {
+            auto xS = linStart % width; // incl
+            auto xE = static_cast<std::size_t>(linEnd % width) + 1; // excl
+            _fillColorBitmap(y, xS, xE, fgColor, bgColor);
+        }
+        else
+        {
+            __debugbreak();
+        }
+
+        if (linX2 < linHiEnd)
+        {
+            // This region hasn't been fully painted (region ends (x2) before highlight ends (hiEnd))
+            break;
+        }
+        ++it;
+    }
+#endif
 
     // Shorten the list by removing processed regions
     highlights = { it, itEnd };
