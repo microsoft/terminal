@@ -1044,9 +1044,16 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
 
             if (gci.GetVtIo()->GetDeviceAttributes().test(Microsoft::Console::VirtualTerminal::DeviceAttribute::RectangularAreaOperations))
             {
-                // This calculates just the positive offsets caused by out-of-bounds source and target coordinates.
-                // The source gets offset because it's outside the bounds of the buffer (= negative),
-                // while the target gets offset because it's outside the bounds of the clip rect (= usually negative).
+                // This calculates just the positive offsets caused by out-of-bounds (OOB) source and target coordinates.
+                //
+                // If the source rectangle is OOB to the bottom-right, then the size of the rectangle that can be
+                // copied shrinks, but not its origin. However, if it's OOB to the top-left then the origin of
+                // the to-be-copied rectangle will be offset by an equal amount.
+                // Similarly, if the target rectangle is OOB to the bottom-right, then its size shrinks, but not its
+                // origin, and if it's OOB to the top-left, then the origin is offset.
+                //
+                // In other words, this calculates the total offset that needs to be applied to the to-be-copied rectangle.
+                // Later down below we'll then clamp that rectangle which will cause its size to shrink as needed.
                 const til::point offset{
                     std::max(0, -source.left) + std::max(0, clipViewport.Left() - target.x),
                     std::max(0, -source.top) + std::max(0, clipViewport.Top() - target.y),
