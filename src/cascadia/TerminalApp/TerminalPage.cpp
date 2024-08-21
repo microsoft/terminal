@@ -2699,7 +2699,7 @@ namespace winrt::TerminalApp::implementation
         handle.release();
     }
 
-    static void copyToClipboard(wil::zwstring_view text)
+    static void copyToClipboard(winrt::hstring text)
     {
         const auto clipboard = _openClipboard(nullptr);
         if (!clipboard)
@@ -3131,7 +3131,7 @@ namespace winrt::TerminalApp::implementation
                 openFolder(CascadiaSettings::SettingsDirectory());
                 break;
             case SettingsTarget::Clipboard:
-                copyToClipboard(CascadiaSettings::SettingsPath().c_str());
+                copyToClipboard(CascadiaSettings::SettingsPath());
                 break;
             case SettingsTarget::AllFiles:
                 openFile(CascadiaSettings::DefaultSettingsPath());
