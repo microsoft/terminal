@@ -1711,9 +1711,7 @@ void Pane::_SetupChildCloseHandlers()
 IPaneContent Pane::_takePaneContent()
 {
     _closeRequestedRevoker.revoke();
-    // we cannot return std::move(_content) because we don't want _content to be null,
-    // since _content gets accessed even after Close is called
-    return _content;
+    return std::move(_content);
 }
 
 // This method safely sets the content of the Pane. It'll ensure to revoke and
@@ -1723,9 +1721,9 @@ void Pane::_setPaneContent(IPaneContent content)
 {
     // The IPaneContent::Close() implementation may be buggy and raise the CloseRequested event again.
     // _takePaneContent() avoids this as it revokes the event handler.
-    if (_takePaneContent())
+    if (const auto c = _takePaneContent())
     {
-        _content.Close();
+        c.Close();
     }
 
     if (content)
