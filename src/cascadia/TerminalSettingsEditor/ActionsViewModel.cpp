@@ -278,11 +278,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // Check for this special case:
         //  we're changing the key chord,
         //  but the new key chord is already in use
-        const auto& conflictingCmd{ _Settings.ActionMap().GetActionByKeyChord(args.NewKeys()) };
+        bool conflictFound{ false };
         if (isNewAction || args.OldKeys().Modifiers() != args.NewKeys().Modifiers() || args.OldKeys().Vkey() != args.NewKeys().Vkey())
         {
+            const auto& conflictingCmd{ _Settings.ActionMap().GetActionByKeyChord(args.NewKeys()) };
             if (conflictingCmd)
             {
+                conflictFound = true;
                 // We're about to overwrite another key chord.
                 // Display a confirmation dialog.
                 TextBlock errorMessageTB{};
@@ -324,9 +326,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             }
         }
 
-        // if there was a conflictingCmd, the flyout we created will handle whether changes need to be propagated
+        // if there was a conflict, the flyout we created will handle whether changes need to be propagated
         // otherwise, go ahead and apply the changes
-        if (!conflictingCmd)
+        if (!conflictFound)
         {
             // update settings model and view model
             applyChangesToSettingsModel();
