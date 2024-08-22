@@ -722,15 +722,18 @@ namespace winrt::TerminalApp::implementation
                     // ever allow non-sendInput actions.
                     DispatchCommandRequested.raise(*this, actionPaletteItem.Command());
 
-                    if (til::starts_with(actionPaletteItem.Command().ActionAndArgs().Args().as<SendInputArgs>().Input(), L"winget"))
+                    if (const auto& sendInputCmd = actionPaletteItem.Command().ActionAndArgs().Args().try_as<SendInputArgs>())
                     {
-                        TraceLoggingWrite(
-                            g_hTerminalAppProvider,
-                            "QuickFixSuggestionUsed",
-                            TraceLoggingDescription("Event emitted when a winget suggestion from is used"),
-                            TraceLoggingValue("SuggestionsUI", "Source"),
-                            TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
-                            TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
+                        if (til::starts_with(sendInputCmd.Input(), L"winget"))
+                        {
+                            TraceLoggingWrite(
+                                g_hTerminalAppProvider,
+                                "QuickFixSuggestionUsed",
+                                TraceLoggingDescription("Event emitted when a winget suggestion from is used"),
+                                TraceLoggingValue("SuggestionsUI", "Source"),
+                                TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+                                TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
+                        }
                     }
 
                     TraceLoggingWrite(

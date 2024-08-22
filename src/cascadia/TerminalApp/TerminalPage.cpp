@@ -1558,7 +1558,7 @@ namespace winrt::TerminalApp::implementation
         }
 
         // Let's assume the user has bound the dead key "^" to a sendInput command that sends "b".
-        // If the user presses the two keys "^a" it'll produce "bâ", despite us marking the key event as handled.
+        // If the user presses the two keys "^a" it'll produce "bÃ¢", despite us marking the key event as handled.
         // The following is used to manually "consume" such dead keys and clear them from the keyboard state.
         _ClearKeyboardState(vkey, scanCode);
         e.Handled(true);
@@ -3010,14 +3010,19 @@ namespace winrt::TerminalApp::implementation
         };
         catalogRef.PackageCatalogBackgroundUpdateInterval(std::chrono::hours(24));
 
-        ConnectResult connectResult = catalogRef.Connect();
-        for (int retries = 0; connectResult.Status() != ConnectResultStatus::Ok && retries <= 3; ++retries)
+        ConnectResult connectResult{ nullptr };
+        for (int retries = 0;;)
         {
-            if (retries == 3)
+            connectResult = catalogRef.Connect();
+            if (connectResult.Status() == ConnectResultStatus::Ok)
+            {
+                break;
+            }
+
+            if (++retries == 3)
             {
                 co_return nullptr;
             }
-            connectResult = catalogRef.Connect();
         }
 
         PackageCatalog catalog = connectResult.PackageCatalog();
@@ -3053,12 +3058,11 @@ namespace winrt::TerminalApp::implementation
 
     Windows::Foundation::IAsyncAction TerminalPage::_SearchMissingCommandHandler(const IInspectable /*sender*/, const Microsoft::Terminal::Control::SearchMissingCommandEventArgs args)
     {
-        co_await winrt::resume_background();
-
         if (!Feature_QuickFix::IsEnabled())
         {
             co_return;
         }
+        co_await winrt::resume_background();
 
         // no packages were found, nothing to suggest
         const auto pkgList = co_await _FindPackageAsync(args.MissingCommand());
@@ -3069,7 +3073,7 @@ namespace winrt::TerminalApp::implementation
 
         std::vector<hstring> suggestions;
         suggestions.reserve(pkgList.Size());
-        for (const auto pkg : pkgList)
+        for (const auto& pkg : pkgList)
         {
             // --id and --source ensure we don't collide with another package catalog
             suggestions.emplace_back(fmt::format(FMT_COMPILE(L"winget install --id {} -s winget"), pkg.CatalogPackage().Id()));
