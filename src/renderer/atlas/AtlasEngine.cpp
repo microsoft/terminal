@@ -316,7 +316,7 @@ CATCH_RETURN()
 
         _api.selectionSpans = til::point_span_subspan_within_rect(info.selectionSpans, dr);
 
-        u32 newSelectionColor{ static_cast<COLORREF>(info.selectionBackground) | 0xff000000 };
+        const u32 newSelectionColor{ static_cast<COLORREF>(info.selectionBackground) | 0xff000000 };
         if (_api.s->misc->selectionColor != newSelectionColor)
         {
             auto misc = _api.s.write()->misc.write();
