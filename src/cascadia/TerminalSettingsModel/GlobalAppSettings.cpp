@@ -404,7 +404,13 @@ void GlobalAppSettings::_logSettingIfSet(const std::string_view& setting, const 
 {
     if (isSet)
     {
-        _logSettingSet(setting);
+        // Exclude some false positives from userDefaults.json
+        const bool settingCopyFormattingToDefault = til::equals_insensitive_ascii(setting, "copyFormatting") && _CopyFormatting.has_value() && _CopyFormatting.value() == static_cast<Control::CopyFormat>(0);
+        const bool settingNTMtoDefault = til::equals_insensitive_ascii(setting, "newTabMenu") && _NewTabMenu.has_value() && _NewTabMenu->Size() == 1 && _NewTabMenu->GetAt(0).Type() == NewTabMenuEntryType::RemainingProfiles;
+        if (!settingCopyFormattingToDefault && !settingNTMtoDefault)
+        {
+            _logSettingSet(setting);
+        }
     }
 }
 

@@ -552,16 +552,12 @@ void Profile::_logSettingIfSet(const std::string_view& setting, const bool isSet
         const bool settingCommandlineToWinPow = til::equals_insensitive_ascii(setting, "commandline") && _Commandline.has_value() && til::equals_insensitive_ascii(*_Commandline, L"%SystemRoot%\\System32\\WindowsPowerShell\\v1.0\\powershell.exe");
         const bool settingCommandlineToCmd = til::equals_insensitive_ascii(setting, "commandline") && _Commandline.has_value() && til::equals_insensitive_ascii(*_Commandline, L"%SystemRoot%\\System32\\cmd.exe");
         // clang-format off
-        if ((isWinPow && (settingHiddenToFalse || settingCommandlineToWinPow))
-            || (isCmd && (settingHiddenToFalse || settingCommandlineToCmd))
-            || (isACS && settingHiddenToFalse)
-            || (isWTDynamicProfile && settingHiddenToFalse))
+        if (!(isWinPow && (settingHiddenToFalse || settingCommandlineToWinPow))
+            && !(isCmd && (settingHiddenToFalse || settingCommandlineToCmd))
+            && !(isACS && settingHiddenToFalse)
+            && !(isWTDynamicProfile && settingHiddenToFalse))
         {
             // clang-format on
-            // skip
-        }
-        else
-        {
             _logSettingSet(setting);
         }
     }
