@@ -298,6 +298,8 @@ namespace ControlUnitTests
             TEST_METHOD_PROPERTY(L"IsolationLevel", L"Method")
         END_TEST_METHOD_PROPERTIES()
 
+        bool unused{};
+
         // This is a test for GH#9725
         WEX::TestExecution::DisableVerifyExceptions disableVerifyExceptions{};
 
@@ -333,7 +335,8 @@ namespace ControlUnitTests
                                     modifiers,
                                     true, // focused,
                                     cursorPosition1.to_core_point(),
-                                    true);
+                                    true,
+                                    unused);
         Log::Comment(L"Verify that there's one selection");
         VERIFY_IS_TRUE(core->HasSelection());
 
@@ -345,7 +348,8 @@ namespace ControlUnitTests
                                     modifiers,
                                     true, // focused,
                                     cursorPosition2.to_core_point(),
-                                    true);
+                                    true,
+                                    unused);
         Log::Comment(L"Verify that there's now two selections (one on each row)");
         VERIFY_IS_TRUE(core->HasSelection());
 
@@ -376,7 +380,8 @@ namespace ControlUnitTests
                                     modifiers,
                                     true, // focused,
                                     cursorPosition4.to_core_point(),
-                                    true);
+                                    true,
+                                    unused);
         Log::Comment(L"Verify that there's now one selection");
         VERIFY_IS_TRUE(core->HasSelection());
     }
@@ -389,6 +394,8 @@ namespace ControlUnitTests
         _standardInit(core, interactivity);
         // For the sake of this test, scroll one line at a time
         interactivity->_rowsToScroll = 1;
+
+        bool unused{};
 
         Log::Comment(L"Add some test to the terminal so we can scroll");
         for (auto i = 0; i < 40; ++i)
@@ -430,7 +437,8 @@ namespace ControlUnitTests
                                     modifiers,
                                     true, // focused,
                                     cursorPosition1.to_core_point(),
-                                    true);
+                                    true,
+                                    unused);
         Log::Comment(L"Verify that there's one selection");
         VERIFY_IS_TRUE(core->HasSelection());
 
@@ -550,6 +558,8 @@ namespace ControlUnitTests
         auto [core, interactivity] = _createCoreAndInteractivity(*settings, *conn);
         _standardInit(core, interactivity);
 
+        bool unused{};
+
         // For this test, don't use any modifiers
         const auto modifiers = ControlKeyStates();
         const auto leftMouseDown{ Control::MouseButtonState::IsLeftButtonDown };
@@ -577,7 +587,8 @@ namespace ControlUnitTests
                                     modifiers,
                                     true, // focused,
                                     cursorPosition1.to_core_point(),
-                                    true);
+                                    true,
+                                    unused);
         Log::Comment(L"Verify that there's one selection");
         VERIFY_IS_TRUE(core->HasSelection());
 
@@ -593,6 +604,8 @@ namespace ControlUnitTests
         auto [settings, conn] = _createSettingsAndConnection();
         auto [core, interactivity] = _createCoreAndInteractivity(*settings, *conn);
         _standardInit(core, interactivity);
+
+        bool unused {}
 
         // For this test, don't use any modifiers
         const auto modifiers = ControlKeyStates();
@@ -621,7 +634,8 @@ namespace ControlUnitTests
                                     modifiers,
                                     true, // focused,
                                     cursorPosition1.to_core_point(),
-                                    true);
+                                    true,
+                                    unused);
         Log::Comment(L"Verify that there's one selection");
         VERIFY_IS_TRUE(core->HasSelection());
 
@@ -646,7 +660,8 @@ namespace ControlUnitTests
                                     modifiers,
                                     true, // focused,
                                     cursorPosition2.to_core_point(),
-                                    false);
+                                    false,
+                                    unused);
 
         Log::Comment(L"The selection should be unchanged.");
         VERIFY_ARE_EQUAL(expectedAnchor, core->_terminal->GetSelectionAnchor());
@@ -661,6 +676,8 @@ namespace ControlUnitTests
         auto [settings, conn] = _createSettingsAndConnection();
         auto [core, interactivity] = _createCoreAndInteractivity(*settings, *conn);
         _standardInit(core, interactivity);
+
+        bool unused{};
 
         // For this test, don't use any modifiers
         const auto modifiers = ControlKeyStates();
@@ -737,7 +754,8 @@ namespace ControlUnitTests
                                     modifiers,
                                     true, // focused,
                                     cursorPosition1.to_core_point(),
-                                    true);
+                                    true,
+                                    unused);
         Log::Comment(L"Verify that there's still no selection");
         VERIFY_IS_FALSE(core->HasSelection());
     }
@@ -750,6 +768,8 @@ namespace ControlUnitTests
         auto [settings, conn] = _createSettingsAndConnection();
         auto [core, interactivity] = _createCoreAndInteractivity(*settings, *conn);
         _standardInit(core, interactivity);
+
+        bool unused{};
 
         Log::Comment(L"Fill up the history buffer");
         const auto scrollbackLength = settings->HistorySize();
@@ -790,7 +810,8 @@ namespace ControlUnitTests
                                     modifiers,
                                     true, // focused,
                                     cursorPosition1.to_core_point(),
-                                    true);
+                                    true,
+                                    unused);
         Log::Comment(L"Verify that there's one selection");
         VERIFY_IS_TRUE(core->HasSelection());
 
@@ -849,7 +870,8 @@ namespace ControlUnitTests
                                     modifiers,
                                     true, // focused,
                                     cursorPosition0.to_core_point(),
-                                    true);
+                                    true,
+                                    unused);
         VERIFY_IS_TRUE(core->HasSelection());
         {
             const auto anchor{ core->_terminal->GetSelectionAnchor() };
@@ -873,7 +895,8 @@ namespace ControlUnitTests
                                     modifiers,
                                     true, // focused,
                                     cursorPosition1.to_core_point(),
-                                    true);
+                                    true,
+                                    unused);
         VERIFY_IS_TRUE(core->HasSelection());
         {
             const auto anchor{ core->_terminal->GetSelectionAnchor() };
