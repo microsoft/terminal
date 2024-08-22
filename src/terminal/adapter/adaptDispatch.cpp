@@ -32,7 +32,7 @@ static constexpr std::array<XtermResourceColorTableEntry, 10> XtermResourceColor
     /* 14 */ { -1, -1 },
     /* 15 */ { -1, -1 },
     /* 16 */ { -1, -1 },
-    /* 17 */ { -1, -1 },
+    /* 17 */ { TextColor::SELECTION_BACKGROUND, -1 },
     /* 18 */ { -1, -1 },
     /* 19 */ { -1, -1 },
 } };
