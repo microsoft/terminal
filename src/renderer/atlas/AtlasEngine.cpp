@@ -323,6 +323,12 @@ CATCH_RETURN()
             misc->selectionColor = newSelectionColor;
             // Select a black or white foreground based on the perceptual lightness of the background.
             misc->selectionForeground = ColorFix::GetLuminosity(newSelectionColor) < 0.5f ? 0xffffffff : 0xff000000;
+
+            // We copied the selection colors into _p during StartPaint, which happened just before PrepareRenderInfo
+            // This keeps their generations in sync.
+            auto pm = _p.s.write()->misc.write();
+            pm->selectionColor = misc->selectionColor;
+            pm->selectionForeground = misc->selectionForeground;
         }
     }
 
@@ -511,7 +517,7 @@ try
     // Apply the highlighting colors to the highlighted cells
     RETURN_IF_FAILED(_drawHighlighted(_api.searchHighlights, y, x, columnEnd, highlightFg, highlightBg));
     RETURN_IF_FAILED(_drawHighlighted(_api.searchHighlightFocused, y, x, columnEnd, highlightFocusFg, highlightFocusBg));
-    RETURN_IF_FAILED(_drawHighlighted(_api.selectionSpans, y, x, columnEnd, _api.s->misc->selectionForeground, _api.s->misc->selectionColor));
+    RETURN_IF_FAILED(_drawHighlighted(_api.selectionSpans, y, x, columnEnd, _p.s->misc->selectionForeground, _p.s->misc->selectionColor));
 
     _api.lastPaintBufferLineCoord = { x, y };
     return S_OK;
