@@ -1173,128 +1173,110 @@ public:
         *this = dispatch;
     }
 
-    bool CursorUp(const VTInt uiDistance) noexcept override
+    void CursorUp(const VTInt uiDistance) noexcept override
     {
         _cursorUp = true;
         _cursorDistance = uiDistance;
-        return true;
     }
 
-    bool CursorDown(const VTInt uiDistance) noexcept override
+    void CursorDown(const VTInt uiDistance) noexcept override
     {
         _cursorDown = true;
         _cursorDistance = uiDistance;
-        return true;
     }
 
-    bool CursorBackward(const VTInt uiDistance) noexcept override
+    void CursorBackward(const VTInt uiDistance) noexcept override
     {
         _cursorBackward = true;
         _cursorDistance = uiDistance;
-        return true;
     }
 
-    bool CursorForward(const VTInt uiDistance) noexcept override
+    void CursorForward(const VTInt uiDistance) noexcept override
     {
         _cursorForward = true;
         _cursorDistance = uiDistance;
-        return true;
     }
 
-    bool CursorNextLine(const VTInt uiDistance) noexcept override
+    void CursorNextLine(const VTInt uiDistance) noexcept override
     {
         _cursorNextLine = true;
         _cursorDistance = uiDistance;
-        return true;
     }
 
-    bool CursorPrevLine(const VTInt uiDistance) noexcept override
+    void CursorPrevLine(const VTInt uiDistance) noexcept override
     {
         _cursorPreviousLine = true;
         _cursorDistance = uiDistance;
-        return true;
     }
 
-    bool CursorHorizontalPositionAbsolute(const VTInt uiPosition) noexcept override
+    void CursorHorizontalPositionAbsolute(const VTInt uiPosition) noexcept override
     {
         _cursorHorizontalPositionAbsolute = true;
         _cursorDistance = uiPosition;
-        return true;
     }
 
-    bool VerticalLinePositionAbsolute(const VTInt uiPosition) noexcept override
+    void VerticalLinePositionAbsolute(const VTInt uiPosition) noexcept override
     {
         _verticalLinePositionAbsolute = true;
         _cursorDistance = uiPosition;
-        return true;
     }
 
-    bool HorizontalPositionRelative(const VTInt uiDistance) noexcept override
+    void HorizontalPositionRelative(const VTInt uiDistance) noexcept override
     {
         _horizontalPositionRelative = true;
         _cursorDistance = uiDistance;
-        return true;
     }
 
-    bool VerticalPositionRelative(const VTInt uiDistance) noexcept override
+    void VerticalPositionRelative(const VTInt uiDistance) noexcept override
     {
         _verticalPositionRelative = true;
         _cursorDistance = uiDistance;
-        return true;
     }
 
-    bool CursorPosition(const VTInt uiLine, const VTInt uiColumn) noexcept override
+    void CursorPosition(const VTInt uiLine, const VTInt uiColumn) noexcept override
     {
         _cursorPosition = true;
         _line = uiLine;
         _column = uiColumn;
-        return true;
     }
 
-    bool CursorSaveState() noexcept override
+    void CursorSaveState() noexcept override
     {
         _cursorSave = true;
-        return true;
     }
 
-    bool CursorRestoreState() noexcept override
+    void CursorRestoreState() noexcept override
     {
         _cursorLoad = true;
-        return true;
     }
 
-    bool EraseInDisplay(const DispatchTypes::EraseType eraseType) noexcept override
+    void EraseInDisplay(const DispatchTypes::EraseType eraseType) noexcept override
     {
         _eraseDisplay = true;
         _eraseType = eraseType;
         _eraseTypes.push_back(eraseType);
-        return true;
     }
 
-    bool EraseInLine(const DispatchTypes::EraseType eraseType) noexcept override
+    void EraseInLine(const DispatchTypes::EraseType eraseType) noexcept override
     {
         _eraseLine = true;
         _eraseType = eraseType;
         _eraseTypes.push_back(eraseType);
-        return true;
     }
 
-    bool InsertCharacter(const VTInt uiCount) noexcept override
+    void InsertCharacter(const VTInt uiCount) noexcept override
     {
         _insertCharacter = true;
         _cursorDistance = uiCount;
-        return true;
     }
 
-    bool DeleteCharacter(const VTInt uiCount) noexcept override
+    void DeleteCharacter(const VTInt uiCount) noexcept override
     {
         _deleteCharacter = true;
         _cursorDistance = uiCount;
-        return true;
     }
 
-    bool SetGraphicsRendition(const VTParameters options) noexcept override
-    try
+    void SetGraphicsRendition(const VTParameters options) noexcept override
     {
         _options.clear();
         for (size_t i = 0; i < options.size(); i++)
@@ -1302,158 +1284,129 @@ public:
             _options.push_back(options.at(i));
         }
         _setGraphics = true;
-        return true;
     }
-    CATCH_LOG_RETURN_FALSE()
 
-    bool DeviceStatusReport(const DispatchTypes::StatusType statusType, const VTParameter /*id*/) noexcept override
+    void DeviceStatusReport(const DispatchTypes::StatusType statusType, const VTParameter /*id*/) noexcept override
     {
         _deviceStatusReport = true;
         _statusReportType = statusType;
-
-        return true;
     }
 
-    bool DeviceAttributes() noexcept override
+    void DeviceAttributes() noexcept override
     {
         _deviceAttributes = true;
-
-        return true;
     }
 
-    bool SecondaryDeviceAttributes() noexcept override
+    void SecondaryDeviceAttributes() noexcept override
     {
         _secondaryDeviceAttributes = true;
-
-        return true;
     }
 
-    bool TertiaryDeviceAttributes() noexcept override
+    void TertiaryDeviceAttributes() noexcept override
     {
         _tertiaryDeviceAttributes = true;
-
-        return true;
     }
 
-    bool Vt52DeviceAttributes() noexcept override
+    void Vt52DeviceAttributes() noexcept override
     {
         _vt52DeviceAttributes = true;
-
-        return true;
     }
 
-    bool RequestTerminalParameters(const DispatchTypes::ReportingPermission permission) noexcept override
+    void RequestTerminalParameters(const DispatchTypes::ReportingPermission permission) noexcept override
     {
         _requestTerminalParameters = true;
         _reportingPermission = permission;
-
-        return true;
     }
 
-    bool _ModeParamsHelper(_In_ DispatchTypes::ModeParams const param, const bool fEnable)
+    void _ModeParamsHelper(_In_ DispatchTypes::ModeParams const param, const bool fEnable)
     {
         _modeType = param;
         _modeTypes.push_back(param);
         _modeEnabled = fEnable;
-
-        return true;
     }
 
-    bool SetMode(const DispatchTypes::ModeParams param) noexcept override
+    void SetMode(const DispatchTypes::ModeParams param) noexcept override
     {
-        return _ModeParamsHelper(param, true);
+        _ModeParamsHelper(param, true);
     }
 
-    bool ResetMode(const DispatchTypes::ModeParams param) noexcept override
+    void ResetMode(const DispatchTypes::ModeParams param) noexcept override
     {
-        return _ModeParamsHelper(param, false);
+        _ModeParamsHelper(param, false);
     }
 
-    bool SetAnsiMode(const bool ansiMode) noexcept override
+    void SetAnsiMode(const bool ansiMode) noexcept override
     {
         _ModeParamsHelper(DispatchTypes::DECANM_AnsiMode, ansiMode);
-        return true;
     }
 
-    bool WarningBell() noexcept override
+    void WarningBell() noexcept override
     {
         _warningBell = true;
-        return true;
     }
 
-    bool CarriageReturn() noexcept override
+    void CarriageReturn() noexcept override
     {
         _carriageReturn = true;
-        return true;
     }
 
-    bool LineFeed(const DispatchTypes::LineFeedType lineFeedType) noexcept override
+    void LineFeed(const DispatchTypes::LineFeedType lineFeedType) noexcept override
     {
         _lineFeed = true;
         _lineFeedType = lineFeedType;
-        return true;
     }
 
-    bool ReverseLineFeed() noexcept override
+    void ReverseLineFeed() noexcept override
     {
         _reverseLineFeed = true;
-        return true;
     }
 
-    bool SetWindowTitle(std::wstring_view title) override
+    void SetWindowTitle(std::wstring_view title) override
     {
         _setWindowTitle = true;
         _setWindowTitleText = title;
-        return true;
     }
 
-    bool ForwardTab(const VTInt numTabs) noexcept override
+    void ForwardTab(const VTInt numTabs) noexcept override
     {
         _forwardTab = true;
         _numTabs = numTabs;
-        return true;
     }
 
-    bool TabClear(const DispatchTypes::TabClearType clearType) noexcept override
+    void TabClear(const DispatchTypes::TabClearType clearType) noexcept override
     {
         _tabClear = true;
         _tabClearTypes.push_back(clearType);
-        return true;
     }
 
-    bool SetColorTableEntry(const size_t tableIndex, const COLORREF color) noexcept override
+    void SetColorTableEntry(const size_t tableIndex, const COLORREF color) noexcept override
     {
         _setColorTableEntry = true;
         _colorTable.at(tableIndex) = color;
-        return true;
     }
 
-    bool RequestColorTableEntry(const size_t tableIndex) noexcept override
+    void RequestColorTableEntry(const size_t tableIndex) noexcept override
     {
         _colorTableEntriesRequested.push_back(tableIndex);
-        return true;
     }
 
-    bool SetXtermColorResource(const size_t resource, const DWORD color) override
+    void SetXtermColorResource(const size_t resource, const DWORD color) override
     {
         _xtermResourcesChanged.push_back(resource);
         _xtermResourceValues.push_back(color);
-        return true;
     }
 
-    bool RequestXtermColorResource(const size_t resource) override
+    void RequestXtermColorResource(const size_t resource) override
     {
         _xtermResourcesRequested.push_back(resource);
-        return true;
     }
 
-    bool SetClipboard(wil::zwstring_view content) noexcept override
+    void SetClipboard(wil::zwstring_view content) noexcept override
     {
         _copyContent = content;
-        return true;
     }
 
-    bool AddHyperlink(std::wstring_view uri, std::wstring_view params) noexcept override
+    void AddHyperlink(std::wstring_view uri, std::wstring_view params) noexcept override
     {
         _hyperlinkMode = true;
         _uri = uri;
@@ -1461,20 +1414,17 @@ public:
         {
             _customId = params;
         }
-        return true;
     }
 
-    bool EndHyperlink() noexcept override
+    void EndHyperlink() noexcept override
     {
         _hyperlinkMode = false;
         _uri.clear();
         _customId.clear();
-        return true;
     }
 
-    bool DoConEmuAction(const std::wstring_view /*string*/) noexcept override
+    void DoConEmuAction(const std::wstring_view /*string*/) noexcept override
     {
-        return true;
     }
 
     std::wstring _printString;
@@ -1543,11 +1493,6 @@ public:
 class StateMachineExternalTest final
 {
     TEST_CLASS(StateMachineExternalTest);
-
-    TEST_METHOD_SETUP(SetupState)
-    {
-        return true;
-    }
 
     void InsertNumberToMachine(StateMachine* const pMachine, size_t number)
     {

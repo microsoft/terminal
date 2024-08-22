@@ -97,7 +97,6 @@ InputStateMachineEngine::InputStateMachineEngine(std::unique_ptr<IInteractDispat
 InputStateMachineEngine::InputStateMachineEngine(std::unique_ptr<IInteractDispatch> pDispatch, const bool lookingForDSR) :
     _pDispatch(std::move(pDispatch)),
     _lookingForDSR(lookingForDSR),
-    _pfnFlushToInputQueue(nullptr),
     _doubleClickTime(std::chrono::milliseconds(GetDoubleClickTime()))
 {
     THROW_HR_IF_NULL(E_INVALIDARG, _pDispatch.get());
@@ -139,7 +138,6 @@ bool InputStateMachineEngine::ActionExecute(const wchar_t wch)
 // - True if successfully generated and written. False otherwise.
 bool InputStateMachineEngine::_DoControlCharacter(const wchar_t wch, const bool writeAlt)
 {
-    auto success = false;
     if (wch == UNICODE_ETX && !writeAlt)
     {
         // This is Ctrl+C, which is handled specially by the host.
@@ -147,7 +145,6 @@ bool InputStateMachineEngine::_DoControlCharacter(const wchar_t wch, const bool 
         static constexpr auto keyUp = SynthesizeKeyEvent(false, 1, L'C', 0, UNICODE_ETX, LEFT_CTRL_PRESSED);
         _pDispatch->WriteCtrlKey(keyDown);
         _pDispatch->WriteCtrlKey(keyUp);
-        success = true;
     }
     else if (wch >= '\x0' && wch < '\x20')
     {
@@ -155,6 +152,7 @@ bool InputStateMachineEngine::_DoControlCharacter(const wchar_t wch, const bool 
         // This should be translated as Ctrl+(wch+x40)
         auto actualChar = wch;
         auto writeCtrl = true;
+        auto success = false;
 
         short vkey = 0;
         DWORD modifierState = 0;
@@ -200,7 +198,7 @@ bool InputStateMachineEngine::_DoControlCharacter(const wchar_t wch, const bool 
                 WI_SetFlag(modifierState, LEFT_ALT_PRESSED);
             }
 
-            success = _WriteSingleKey(actualChar, vkey, modifierState);
+            _WriteSingleKey(actualChar, vkey, modifierState);
         }
     }
     else if (wch == '\x7f')
@@ -212,13 +210,13 @@ bool InputStateMachineEngine::_DoControlCharacter(const wchar_t wch, const bool 
         //      "delete" any input at all, only backspace.
         //  Because of this, we're treating x7f as backspace, like most
         //      terminals do.
-        success = _WriteSingleKey('\x8', VK_BACK, writeAlt ? LEFT_ALT_PRESSED : 0);
+        _WriteSingleKey('\x8', VK_BACK, writeAlt ? LEFT_ALT_PRESSED : 0);
     }
     else
     {
-        success = ActionPrint(wch);
+        ActionPrint(wch);
     }
-    return success;
+    return true;
 }
 
 // Routine Description:
@@ -234,9 +232,9 @@ bool InputStateMachineEngine::_DoControlCharacter(const wchar_t wch, const bool 
 // - true iff we successfully dispatched the sequence.
 bool InputStateMachineEngine::ActionExecuteFromEscape(const wchar_t wch)
 {
-    if (_pDispatch->IsVtInputEnabled() && _pfnFlushToInputQueue)
+    if (_pDispatch->IsVtInputEnabled())
     {
-        return _pfnFlushToInputQueue();
+        return false;
     }
 
     return _DoControlCharacter(wch, true);
@@ -253,12 +251,11 @@ bool InputStateMachineEngine::ActionPrint(const wchar_t wch)
 {
     short vkey = 0;
     DWORD modifierState = 0;
-    auto success = _GenerateKeyFromChar(wch, vkey, modifierState);
-    if (success)
+    if (_GenerateKeyFromChar(wch, vkey, modifierState))
     {
-        success = _WriteSingleKey(wch, vkey, modifierState);
+        _WriteSingleKey(wch, vkey, modifierState);
     }
-    return success;
+    return true;
 }
 
 // Method Description:
@@ -270,11 +267,11 @@ bool InputStateMachineEngine::ActionPrint(const wchar_t wch)
 // - true iff we successfully dispatched the sequence.
 bool InputStateMachineEngine::ActionPrintString(const std::wstring_view string)
 {
-    if (string.empty())
+    if (!string.empty())
     {
-        return true;
+        _pDispatch->WriteString(string);
     }
-    return _pDispatch->WriteString(string);
+    return true;
 }
 
 // Method Description:
@@ -285,23 +282,30 @@ bool InputStateMachineEngine::ActionPrintString(const std::wstring_view string)
 // - flush - not applicable to the input state machine.
 // Return Value:
 // - true iff we successfully dispatched the sequence.
-bool InputStateMachineEngine::ActionPassThroughString(const std::wstring_view string, const bool /*flush*/)
+bool InputStateMachineEngine::ActionPassThroughString(const std::wstring_view string)
 {
+    if (string.empty())
+    {
+        return true;
+    }
+
     if (_pDispatch->IsVtInputEnabled())
     {
         // Synthesize string into key events that we'll write to the buffer
         // similar to TerminalInput::_SendInputSequence
-        if (!string.empty())
+        InputEventQueue inputEvents;
+        for (const auto& wch : string)
         {
-            InputEventQueue inputEvents;
-            for (const auto& wch : string)
-            {
-                inputEvents.push_back(SynthesizeKeyEvent(true, 1, 0, 0, wch, 0));
-            }
-            return _pDispatch->WriteInput(inputEvents);
+            inputEvents.push_back(SynthesizeKeyEvent(true, 1, 0, 0, wch, 0));
         }
+        _pDispatch->WriteInput(inputEvents);
     }
-    return ActionPrintString(string);
+    else
+    {
+        _pDispatch->WriteString(string);
+    }
+
+    return true;
 }
 
 // Method Description:
@@ -314,12 +318,10 @@ bool InputStateMachineEngine::ActionPassThroughString(const std::wstring_view st
 // - true iff we successfully dispatched the sequence.
 bool InputStateMachineEngine::ActionEscDispatch(const VTID id)
 {
-    if (_pDispatch->IsVtInputEnabled() && _pfnFlushToInputQueue)
+    if (_pDispatch->IsVtInputEnabled())
     {
-        return _pfnFlushToInputQueue();
+        return false;
     }
-
-    auto success = false;
 
     // There are no intermediates, so the id is effectively the final char.
     const auto wch = gsl::narrow_cast<wchar_t>(id);
@@ -327,23 +329,21 @@ bool InputStateMachineEngine::ActionEscDispatch(const VTID id)
     // 0x7f is DEL, which we treat effectively the same as a ctrl character.
     if (wch == 0x7f)
     {
-        success = _DoControlCharacter(wch, true);
+        _DoControlCharacter(wch, true);
     }
     else
     {
         DWORD modifierState = 0;
         short vk = 0;
-        success = _GenerateKeyFromChar(wch, vk, modifierState);
-        if (success)
+        if (_GenerateKeyFromChar(wch, vk, modifierState))
         {
             // Alt is definitely pressed in the esc+key case.
             modifierState = WI_SetFlag(modifierState, LEFT_ALT_PRESSED);
-
-            success = _WriteSingleKey(wch, vk, modifierState);
+            _WriteSingleKey(wch, vk, modifierState);
         }
     }
 
-    return success;
+    return true;
 }
 
 // Method Description:
@@ -382,18 +382,13 @@ bool InputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParameter
     // Focus events in conpty are special, so don't flush those through either.
     // See GH#12799, GH#12900 for details
     if (_pDispatch->IsVtInputEnabled() &&
-        _pfnFlushToInputQueue &&
         id != CsiActionCodes::Win32KeyboardInput &&
         id != CsiActionCodes::FocusIn &&
         id != CsiActionCodes::FocusOut)
     {
-        return _pfnFlushToInputQueue();
+        return false;
     }
 
-    DWORD modifierState = 0;
-    short vkey = 0;
-
-    auto success = false;
     switch (id)
     {
     case CsiActionCodes::MouseDown:
@@ -404,10 +399,12 @@ bool InputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParameter
         const auto firstParameter = parameters.at(0).value_or(0);
         const til::point uiPos{ parameters.at(1) - 1, parameters.at(2) - 1 };
 
-        modifierState = _GetSGRMouseModifierState(firstParameter);
-        success = _UpdateSGRMouseButtonState(id, firstParameter, buttonState, eventFlags, uiPos);
-        success = success && _WriteMouseEvent(uiPos, buttonState, modifierState, eventFlags);
-        break;
+        if (_UpdateSGRMouseButtonState(id, firstParameter, buttonState, eventFlags, uiPos))
+        {
+            const auto modifierState = _GetSGRMouseModifierState(firstParameter);
+            _WriteMouseEvent(uiPos, buttonState, modifierState, eventFlags);
+        }
+        return true;
     }
     // case CsiActionCodes::DSR_DeviceStatusReportResponse:
     case CsiActionCodes::CSI_F3:
@@ -416,12 +413,18 @@ bool InputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParameter
         // Else, fall though to the _GetCursorKeysModifierState handler.
         if (_lookingForDSR.load(std::memory_order::relaxed))
         {
-            success = _pDispatch->MoveCursor(parameters.at(0), parameters.at(1));
+            _pDispatch->MoveCursor(parameters.at(0), parameters.at(1));
             // Right now we're only looking for on initial cursor
             //      position response. After that, only look for F3.
             _lookingForDSR.store(false, std::memory_order::relaxed);
             til::atomic_notify_all(_lookingForDSR);
-            break;
+            return true;
+        }
+        // Heuristic: If the hosting terminal used the win32 input mode, chances are high
+        // that this is a CPR requested by the terminal application as opposed to a F3 key.
+        if (_encounteredWin32InputModeSequence)
+        {
+            return false;
         }
         [[fallthrough]];
     case CsiActionCodes::ArrowUp:
@@ -433,43 +436,47 @@ bool InputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParameter
     case CsiActionCodes::CSI_F1:
     case CsiActionCodes::CSI_F2:
     case CsiActionCodes::CSI_F4:
-        success = _GetCursorKeysVkey(id, vkey);
-        modifierState = _GetCursorKeysModifierState(parameters, id);
-        success = success && _WriteSingleKey(vkey, modifierState);
-        break;
+    {
+        short vkey = 0;
+        if (_GetCursorKeysVkey(id, vkey))
+        {
+            const auto modifierState = _GetCursorKeysModifierState(parameters, id);
+            _WriteSingleKey(vkey, modifierState);
+        }
+        return true;
+    }
     case CsiActionCodes::Generic:
-        success = _GetGenericVkey(parameters.at(0), vkey);
-        modifierState = _GetGenericKeysModifierState(parameters);
-        success = success && _WriteSingleKey(vkey, modifierState);
-        break;
+    {
+        short vkey = 0;
+        if (_GetGenericVkey(parameters.at(0), vkey))
+        {
+            const auto modifierState = _GetGenericKeysModifierState(parameters);
+            _WriteSingleKey(vkey, modifierState);
+        }
+        return true;
+    }
     case CsiActionCodes::CursorBackTab:
-        success = _WriteSingleKey(VK_TAB, SHIFT_PRESSED);
-        break;
-    case CsiActionCodes::DTTERM_WindowManipulation:
-        success = _pDispatch->WindowManipulation(parameters.at(0), parameters.at(1), parameters.at(2));
-        break;
+        _WriteSingleKey(VK_TAB, SHIFT_PRESSED);
+        return true;
     case CsiActionCodes::FocusIn:
-        success = _pDispatch->FocusChanged(true);
-        break;
+        _pDispatch->FocusChanged(true);
+        return true;
     case CsiActionCodes::FocusOut:
-        success = _pDispatch->FocusChanged(false);
-        break;
+        _pDispatch->FocusChanged(false);
+        return true;
     case CsiActionCodes::Win32KeyboardInput:
     {
         // Use WriteCtrlKey here, even for keys that _aren't_ control keys,
         // because that will take extra steps to make sure things like
         // Ctrl+C, Ctrl+Break are handled correctly.
         const auto key = _GenerateWin32Key(parameters);
-        success = _pDispatch->WriteCtrlKey(key);
+        _pDispatch->WriteCtrlKey(key);
         _encounteredWin32InputModeSequence = true;
-        break;
+        return true;
     }
     default:
-        success = false;
-        break;
+        return false;
     }
-
-    return success;
 }
 
 // Routine Description:
@@ -498,47 +505,19 @@ IStateMachineEngine::StringHandler InputStateMachineEngine::ActionDcsDispatch(co
 // - true iff we successfully dispatched the sequence.
 bool InputStateMachineEngine::ActionSs3Dispatch(const wchar_t wch, const VTParameters /*parameters*/)
 {
-    if (_pDispatch->IsVtInputEnabled() && _pfnFlushToInputQueue)
+    if (_pDispatch->IsVtInputEnabled())
     {
-        return _pfnFlushToInputQueue();
+        return false;
     }
 
     // Ss3 sequence keys aren't modified.
     // When F1-F4 *are* modified, they're sent as CSI sequences, not SS3's.
-    const DWORD modifierState = 0;
     short vkey = 0;
-
-    auto success = _GetSs3KeysVkey(wch, vkey);
-
-    if (success)
+    if (_GetSs3KeysVkey(wch, vkey))
     {
-        success = _WriteSingleKey(vkey, modifierState);
+        _WriteSingleKey(vkey, 0);
     }
 
-    return success;
-}
-
-// Method Description:
-// - Triggers the Clear action to indicate that the state machine should erase
-//      all internal state.
-// Arguments:
-// - <none>
-// Return Value:
-// - true iff we successfully dispatched the sequence.
-bool InputStateMachineEngine::ActionClear() noexcept
-{
-    return true;
-}
-
-// Method Description:
-// - Triggers the Ignore action to indicate that the state machine should eat
-//      this character and say nothing.
-// Arguments:
-// - <none>
-// Return Value:
-// - true iff we successfully dispatched the sequence.
-bool InputStateMachineEngine::ActionIgnore() noexcept
-{
     return true;
 }
 
@@ -550,7 +529,7 @@ bool InputStateMachineEngine::ActionIgnore() noexcept
 // - string - OSC string we've collected. NOT null terminated.
 // Return Value:
 // - true if we handled the dispatch.
-bool InputStateMachineEngine::ActionOscDispatch(const size_t /*parameter*/, const std::wstring_view /*string*/)
+bool InputStateMachineEngine::ActionOscDispatch(const size_t /*parameter*/, const std::wstring_view /*string*/) noexcept
 {
     // Unlike ActionCsiDispatch, we are not checking whether the application has requested
     // VT input.
@@ -559,10 +538,6 @@ bool InputStateMachineEngine::ActionOscDispatch(const size_t /*parameter*/, cons
     // that for CSI reports because we may incidentally pass through non-response VT input;
     // however, there should be no OSC on the input stream *except* for responses.
     // It should be safe to pass all OSCs from the input stream through to the application.
-    if (_pfnFlushToInputQueue)
-    {
-        return _pfnFlushToInputQueue();
-    }
     return false;
 }
 
@@ -693,12 +668,12 @@ void InputStateMachineEngine::_GetSingleKeypress(const wchar_t wch,
 // - modifierState - the modifier state to write with the key.
 // Return Value:
 // - true iff we successfully wrote the keypress to the input callback.
-bool InputStateMachineEngine::_WriteSingleKey(const wchar_t wch, const short vkey, const DWORD modifierState)
+void InputStateMachineEngine::_WriteSingleKey(const wchar_t wch, const short vkey, const DWORD modifierState)
 {
     // At most 8 records - 2 for each of shift,ctrl,alt up and down, and 2 for the actual key up and down.
     InputEventQueue inputEvents;
     _GenerateWrappedSequence(wch, vkey, modifierState, inputEvents);
-    return _pDispatch->WriteInput(inputEvents);
+    _pDispatch->WriteInput(inputEvents);
 }
 
 // Method Description:
@@ -709,10 +684,10 @@ bool InputStateMachineEngine::_WriteSingleKey(const wchar_t wch, const short vke
 // - modifierState - the modifier state to write with the key.
 // Return Value:
 // - true iff we successfully wrote the keypress to the input callback.
-bool InputStateMachineEngine::_WriteSingleKey(const short vkey, const DWORD modifierState)
+void InputStateMachineEngine::_WriteSingleKey(const short vkey, const DWORD modifierState)
 {
     const auto wch = gsl::narrow_cast<wchar_t>(OneCoreSafeMapVirtualKeyW(vkey, MAPVK_VK_TO_CHAR));
-    return _WriteSingleKey(wch, vkey, modifierState);
+    _WriteSingleKey(wch, vkey, modifierState);
 }
 
 // Method Description:
@@ -725,10 +700,10 @@ bool InputStateMachineEngine::_WriteSingleKey(const short vkey, const DWORD modi
 // - eventFlags - the type of mouse event to write to the mouse record.
 // Return Value:
 // - true iff we successfully wrote the keypress to the input callback.
-bool InputStateMachineEngine::_WriteMouseEvent(const til::point uiPos, const DWORD buttonState, const DWORD controlKeyState, const DWORD eventFlags)
+void InputStateMachineEngine::_WriteMouseEvent(const til::point uiPos, const DWORD buttonState, const DWORD controlKeyState, const DWORD eventFlags)
 {
     const auto rgInput = SynthesizeMouseEvent(uiPos, buttonState, controlKeyState, eventFlags);
-    return _pDispatch->WriteInput({ &rgInput, 1 });
+    _pDispatch->WriteInput({ &rgInput, 1 });
 }
 
 // Method Description:
@@ -1049,22 +1024,6 @@ bool InputStateMachineEngine::_GenerateKeyFromChar(const wchar_t wch,
     modifierState = modifierFlags;
 
     return true;
-}
-
-// Method Description:
-// - Sets us up for vt input passthrough.
-//      We'll set a couple members, and if they aren't null, when we get a
-//      sequence we don't understand, we'll pass it along to the app
-//      instead of eating it ourselves.
-// Arguments:
-// - pfnFlushToInputQueue: This is a callback to the underlying state machine to
-//      trigger it to call ActionPassThroughString with whatever sequence it's
-//      currently processing.
-// Return Value:
-// - <none>
-void InputStateMachineEngine::SetFlushToInputQueueCallback(std::function<bool()> pfnFlushToInputQueue)
-{
-    _pfnFlushToInputQueue = pfnFlushToInputQueue;
 }
 
 // Method Description:

@@ -27,19 +27,19 @@ namespace Microsoft::Console::VirtualTerminal
 
         void SoftReset() noexcept;
         void RestoreFrom(const TerminalOutput& savedState) noexcept;
-        bool AssignUserPreferenceCharset(const VTID charset, const bool size96);
+        void AssignUserPreferenceCharset(const VTID charset, const bool size96);
         VTID GetUserPreferenceCharsetId() const noexcept;
         size_t GetUserPreferenceCharsetSize() const noexcept;
         wchar_t TranslateKey(const wchar_t wch) const noexcept;
-        bool Designate94Charset(const size_t gsetNumber, const VTID charset);
-        bool Designate96Charset(const size_t gsetNumber, const VTID charset);
+        void Designate94Charset(const size_t gsetNumber, const VTID charset);
+        void Designate96Charset(const size_t gsetNumber, const VTID charset);
         void SetDrcs94Designation(const VTID charset);
         void SetDrcs96Designation(const VTID charset);
         VTID GetCharsetId(const size_t gsetNumber) const;
         size_t GetCharsetSize(const size_t gsetNumber) const;
-        bool LockingShift(const size_t gsetNumber);
-        bool LockingShiftRight(const size_t gsetNumber);
-        bool SingleShift(const size_t gsetNumber) noexcept;
+        void LockingShift(const size_t gsetNumber);
+        void LockingShiftRight(const size_t gsetNumber);
+        void SingleShift(const size_t gsetNumber) noexcept;
         size_t GetLeftSetNumber() const noexcept;
         size_t GetRightSetNumber() const noexcept;
         bool IsSingleShiftPending(const size_t gsetNumber) const noexcept;
@@ -49,7 +49,7 @@ namespace Microsoft::Console::VirtualTerminal
     private:
         const std::wstring_view _LookupTranslationTable94(const VTID charset) const;
         const std::wstring_view _LookupTranslationTable96(const VTID charset) const;
-        bool _SetTranslationTable(const size_t gsetNumber, const std::wstring_view translationTable);
+        void _SetTranslationTable(const size_t gsetNumber, const std::wstring_view translationTable);
         void _ReplaceDrcsTable(const std::wstring_view oldTable, const std::wstring_view newTable);
 
         VTID _upssId;
