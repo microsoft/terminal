@@ -685,13 +685,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                                      const SHORT wheelDelta,
                                                      Control::MouseButtonState buttonState)
     {
-        const auto adjustment = _core->ScrollOffset() > 0 ? _core->BufferHeight() - _core->ScrollOffset() - _core->ViewHeight() : 0;
-        // If the click happened outside the active region, just don't send any mouse event
-        if (const auto adjustedY = terminalPosition.y - adjustment; adjustedY >= 0)
-        {
-            return _core->SendMouseEvent({ terminalPosition.x, adjustedY }, pointerUpdateKind, modifiers, wheelDelta, toInternalMouseState(buttonState));
-        }
-        return false;
+        const auto adjustment = _core->BufferHeight() - _core->ScrollOffset() - _core->ViewHeight();
+        // If the click happened outside the active region, core should get a chance to filter it out or clamp it.
+        const auto adjustedY = terminalPosition.y - adjustment;
+        return _core->SendMouseEvent({ terminalPosition.x, adjustedY }, pointerUpdateKind, modifiers, wheelDelta, toInternalMouseState(buttonState));
     }
 
     // Method Description:
