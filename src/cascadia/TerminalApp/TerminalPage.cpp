@@ -1558,7 +1558,7 @@ namespace winrt::TerminalApp::implementation
         }
 
         // Let's assume the user has bound the dead key "^" to a sendInput command that sends "b".
-        // If the user presses the two keys "^a" it'll produce "bÃ¢", despite us marking the key event as handled.
+        // If the user presses the two keys "^a" it'll produce "bâ", despite us marking the key event as handled.
         // The following is used to manually "consume" such dead keys and clear them from the keyboard state.
         _ClearKeyboardState(vkey, scanCode);
         e.Handled(true);
