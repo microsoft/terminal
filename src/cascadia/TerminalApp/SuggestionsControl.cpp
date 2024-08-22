@@ -803,6 +803,10 @@ namespace winrt::TerminalApp::implementation
         _filteredActionsView().SelectedIndex(std::min<int32_t>(lastSelectedIndex, _filteredActionsView().Items().Size() - 1));
 
         const auto currentNeedleHasResults{ _filteredActions.Size() > 0 };
+        if (!currentNeedleHasResults)
+        {
+            PreviewAction.raise(*this, nullptr);
+        }
         _noMatchesText().Visibility(currentNeedleHasResults ? Visibility::Collapsed : Visibility::Visible);
         if (auto automationPeer{ Automation::Peers::FrameworkElementAutomationPeer::FromElement(_searchBox()) })
         {
