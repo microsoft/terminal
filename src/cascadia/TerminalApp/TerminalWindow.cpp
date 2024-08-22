@@ -15,6 +15,7 @@
 
 using namespace winrt::Windows::ApplicationModel;
 using namespace winrt::Windows::ApplicationModel::DataTransfer;
+using namespace winrt::Windows::Graphics::Display;
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Xaml::Controls;
 using namespace winrt::Windows::UI::Core;
@@ -144,7 +145,6 @@ namespace winrt::TerminalApp::implementation
         // Now that we know we can do XAML, build our page.
         _root = winrt::make_self<TerminalPage>(*_WindowProperties, _manager);
         _dialog = ContentDialog{};
-        _hwnd = hwnd;
 
         // Pass in information about the initial state of the window.
         // * If we were supposed to start from serialized "content", do that,
@@ -1335,11 +1335,8 @@ namespace winrt::TerminalApp::implementation
 
     void TerminalWindow::_WindowSizeChanged(const IInspectable&, winrt::Microsoft::Terminal::Control::WindowSizeChangedEventArgs args)
     {
-        til::size cellCount{ args.Width(), args.Height() };
-        const auto dpi = GetDpiForWindow(_hwnd);
-        const auto settings{ TerminalSettings::CreateWithNewTerminalArgs(_settings, nullptr, nullptr) };
-        auto pixelSize = TermControl::GetProposedDimensions(settings.DefaultSettings(), dpi, cellCount.width, cellCount.height);
-        const auto scale = static_cast<float>(dpi) / static_cast<float>(USER_DEFAULT_SCREEN_DPI);
+        winrt::Windows::Foundation::Size pixelSize = { static_cast<float>(args.Width()), static_cast<float>(args.Height()) };
+        const auto scale = static_cast<float>(DisplayInformation::GetForCurrentView().RawPixelsPerViewPixel());
 
         if (!FocusMode())
         {

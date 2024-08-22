@@ -116,6 +116,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         winrt::Windows::Foundation::Size FontSizeInDips() const;
 
         winrt::Windows::Foundation::Size FontSize() const noexcept;
+        winrt::Windows::Foundation::Size FontSizeUnscaled() const noexcept;
         uint16_t FontWeight() const noexcept;
 
         til::color ForegroundColor() const;

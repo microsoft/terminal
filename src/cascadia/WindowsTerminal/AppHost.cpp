@@ -1267,10 +1267,7 @@ void AppHost::_ShowWindowChanged(const winrt::Windows::Foundation::IInspectable&
 void AppHost::_WindowSizeChanged(const winrt::Windows::Foundation::IInspectable& /*sender*/,
                                  const winrt::Microsoft::Terminal::Control::WindowSizeChangedEventArgs& args)
 {
-    if (!_windowLogic.IsQuakeWindow())
-    {
-        _resizeWindow(_window->GetHandle(), { args.Width(), args.Height() });
-    }
+    _resizeWindow(_window->GetHandle(), { args.Width(), args.Height() });
 }
 
 void AppHost::_SummonWindowRequested(const winrt::Windows::Foundation::IInspectable& sender,

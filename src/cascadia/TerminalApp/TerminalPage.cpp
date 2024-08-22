@@ -3092,17 +3092,28 @@ namespace winrt::TerminalApp::implementation
         term.RefreshQuickFixMenu();
     }
 
-    winrt::fire_and_forget TerminalPage::_WindowSizeChanged(const IInspectable /*sender*/, const Microsoft::Terminal::Control::WindowSizeChangedEventArgs args)
+    void TerminalPage::_WindowSizeChanged(const IInspectable /*sender*/, const Microsoft::Terminal::Control::WindowSizeChangedEventArgs args)
     {
-        co_await wil::resume_foreground(Dispatcher());
-
         // Raise if:
+        // - Not in quake mode
         // - Not in fullscreen
         // - Only one tab exists
         // - Only one pane exists
-        if (!_isFullscreen && NumberOfTabs() == 1 && _GetFocusedTabImpl()->GetLeafPaneCount() == 1)
+        // else:
+        // - Reset conpty to its original size back
+        if (!WindowProperties().IsQuakeWindow() && !Fullscreen() &&
+            NumberOfTabs() == 1 && _GetFocusedTabImpl()->GetLeafPaneCount() == 1)
         {
             WindowSizeChanged.raise(*this, args);
+        }
+        else if (const auto& control{ _GetActiveControl() })
+        {
+            const auto& connection = control.Connection();
+
+            if (const auto& conpty{ connection.try_as<TerminalConnection::ConptyConnection>() })
+            {
+                conpty.ResetSize();
+            }
         }
     }
 

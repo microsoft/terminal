@@ -174,7 +174,6 @@ namespace winrt::TerminalApp::implementation
         winrt::Windows::UI::Xaml::Controls::ContentDialog _dialog{ nullptr };
         std::shared_mutex _dialogLock;
 
-        HWND _hwnd{ nullptr };
         bool _hasCommandLineArguments{ false };
         ::TerminalApp::AppCommandlineArgs _appArgs;
         bool _gotSettingsStartupActions{ false };

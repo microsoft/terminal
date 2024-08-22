@@ -2780,6 +2780,66 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return { width, height };
     }
 
+    // Function Description:
+    // - This function is the same with GetProposedDimensions except it
+    //   uses _core.FontSizeUnscaled() for fontSize.
+    // Return Value:
+    // - a size containing the requested dimensions in pixels.
+    winrt::Windows::Foundation::Size TermControl::GetNewDimensions(const IControlSettings& settings, const uint32_t dpi, const winrt::Windows::Foundation::Size& initialSizeInChars)
+    {
+        const auto cols = ::base::saturated_cast<int>(initialSizeInChars.Width);
+        const auto rows = ::base::saturated_cast<int>(initialSizeInChars.Height);
+        const auto fontSize = _core.FontSizeUnscaled();
+        const auto fontWeight = settings.FontWeight();
+        const auto fontFace = settings.FontFace();
+        const auto scrollState = settings.ScrollState();
+        const auto padding = settings.Padding();
+
+        // Initialize our font information.
+        // The font width doesn't terribly matter, we'll only be using the
+        //      height to look it up
+        // The other params here also largely don't matter.
+        //      The family is only used to determine if the font is truetype or
+        //      not, but DX doesn't use that info at all.
+        //      The Codepage is additionally not actually used by the DX engine at all.
+        FontInfoDesired desiredFont{ fontFace, 0, fontWeight.Weight, fontSize.Height, CP_UTF8 };
+        FontInfo actualFont{ fontFace, 0, fontWeight.Weight, desiredFont.GetEngineSize(), CP_UTF8, false };
+
+        // Create a DX engine and initialize it with our font and DPI. We'll
+        // then use it to measure how much space the requested rows and columns
+        // will take up.
+        // TODO: MSFT:21254947 - use a static function to do this instead of
+        // instantiating a AtlasEngine.
+        // GH#10211 - UNDER NO CIRCUMSTANCE should this fail. If it does, the
+        // whole app will crash instantaneously on launch, which is no good.
+        const auto engine = std::make_unique<::Microsoft::Console::Render::AtlasEngine>();
+        LOG_IF_FAILED(engine->UpdateDpi(dpi));
+        LOG_IF_FAILED(engine->UpdateFont(desiredFont, actualFont));
+
+        const auto scale = dpi / static_cast<float>(USER_DEFAULT_SCREEN_DPI);
+        const auto actualFontSize = actualFont.GetSize();
+
+        // UWP XAML scrollbars aren't guaranteed to be the same size as the
+        // ComCtl scrollbars, but it's certainly close enough.
+        const auto scrollbarSize = GetSystemMetricsForDpi(SM_CXVSCROLL, dpi);
+
+        float width = cols * static_cast<float>(actualFontSize.width);
+
+        // Reserve additional space if scrollbar is intended to be visible
+        if (scrollState != ScrollbarState::Hidden)
+        {
+            width += scrollbarSize;
+        }
+
+        float height = rows * static_cast<float>(actualFontSize.height);
+        const auto thickness = ParseThicknessFromPadding(padding);
+        // GH#2061 - make sure to account for the size the padding _will be_ scaled to
+        width += scale * static_cast<float>(thickness.Left + thickness.Right);
+        height += scale * static_cast<float>(thickness.Top + thickness.Bottom);
+
+        return { width, height };
+    }
+
     // Method Description:
     // - Get the size of a single character of this control. The size is in
     //   _pixels_. If you want it in DIPs, you'll need to DIVIDE by the
@@ -4087,6 +4147,22 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         _quickFixBufferPos = args.BufferRow();
         SearchMissingCommand.raise(*this, args);
+    }
+
+    winrt::fire_and_forget TermControl::_bubbleWindowSizeChanged(const IInspectable& /*sender*/, Control::WindowSizeChangedEventArgs args)
+    {
+        auto weakThis{ get_weak() };
+        co_await wil::resume_foreground(Dispatcher());
+
+        if (auto control{ weakThis.get() })
+        {
+            winrt::Windows::Foundation::Size cellCount{ static_cast<float>(args.Width()), static_cast<float>(args.Height()) };
+            const auto scaleFactor = DisplayInformation::GetForCurrentView().RawPixelsPerViewPixel();
+            const auto dpi = ::base::saturated_cast<uint32_t>(USER_DEFAULT_SCREEN_DPI * scaleFactor);
+            const auto pixelSize = GetNewDimensions(_core.Settings(), dpi, cellCount);
+
+            WindowSizeChanged.raise(*this, winrt::make<implementation::WindowSizeChangedEventArgs>(static_cast<int32_t>(pixelSize.Width), static_cast<int32_t>(pixelSize.Height)));
+        }
     }
 
     til::CoordType TermControl::_calculateSearchScrollOffset() const
