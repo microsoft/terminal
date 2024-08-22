@@ -15,8 +15,10 @@
     <ClCompile Include="../precomp.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="../../server/DeviceHandle.cpp" />
-    <ClCompile Include="../../server/WinNTControl.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\precomp.h" />
+    <ClInclude Include="..\winconpty.h" />
   </ItemGroup>
   <ItemDefinitionGroup>
     <ClCompile>

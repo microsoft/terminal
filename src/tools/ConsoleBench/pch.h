@@ -7,8 +7,11 @@
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
 
+#include <conmsgl1.h>
+#include <winternl.h>
+
 #include <wil/result.h>
-#include <wil/resource.h>
+#include <wil/win32_helpers.h>
 
 #include <array>
 #include <algorithm>

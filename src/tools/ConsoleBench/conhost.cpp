@@ -1,17 +1,16 @@
 #include "pch.h"
 #include "conhost.h"
 
-#include <conmsgl1.h>
-#include <winternl.h>
-#include <wil/win32_helpers.h>
-
 #include "arena.h"
 
-static unique_nthandle conhostCreateHandle(HANDLE parent, const wchar_t* typeName, bool inherit, bool synchronous)
+template<size_t N>
+static constexpr UNICODE_STRING constantUnicodeString(const wchar_t (&s)[N])
 {
-    UNICODE_STRING name;
-    RtlInitUnicodeString(&name, typeName);
+    return { N * 2 - 2, N * 2, const_cast<wchar_t*>(&s[0]) };
+}
 
+static unique_nthandle conhostCreateHandle(HANDLE parent, UNICODE_STRING name, bool inherit, bool synchronous)
+{
     ULONG attrFlags = OBJ_CASE_INSENSITIVE;
     WI_SetFlagIf(attrFlags, OBJ_INHERIT, inherit);
 
@@ -51,8 +50,8 @@ ConhostHandle spawn_conhost(mem::Arena& arena, const wchar_t* path)
     const auto isDLL = pathLen > 4 && wcscmp(&path[pathLen - 4], L".dll") == 0;
 
     const auto scratch = mem::get_scratch_arena(arena);
-    auto server = conhostCreateHandle(nullptr, L"\\Device\\ConDrv\\Server", true, false);
-    auto reference = conhostCreateHandle(server.get(), L"\\Reference", false, true);
+    auto server = conhostCreateHandle(nullptr, constantUnicodeString(L"\\Device\\ConDrv\\Server"), true, false);
+    auto reference = conhostCreateHandle(server.get(), constantUnicodeString(L"\\Reference"), false, true);
 
     {
         const auto selfPath = scratch.arena.push_uninitialized<wchar_t>(64 * 1024);
@@ -109,8 +108,7 @@ ConhostHandle spawn_conhost(mem::Arena& arena, const wchar_t* path)
 
     unique_nthandle connection;
     {
-        UNICODE_STRING name;
-        RtlInitUnicodeString(&name, L"\\Connect");
+        UNICODE_STRING name = constantUnicodeString(L"\\Connect");
 
         OBJECT_ATTRIBUTES attr;
         InitializeObjectAttributes(&attr, &name, OBJ_CASE_INSENSITIVE, reference.get(), nullptr);

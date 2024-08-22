@@ -478,7 +478,7 @@ try
 {
     if (argc < 2)
     {
-        mem::print_literal("Usage: %s [paths to conhost.exe]...");
+        mem::print_literal("Usage: ConsoleBench [paths to conhost.exe]...");
         return 1;
     }
 

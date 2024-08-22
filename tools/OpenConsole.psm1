@@ -59,7 +59,7 @@ function Import-LocalModule
 #.SYNOPSIS
 # Grabs all environment variable set after vcvarsall.bat is called and pulls
 # them into the Powershell environment.
-function Set-MsbuildDevEnvironment
+function Set-MsBuildDevEnvironment
 {
     [CmdletBinding()]
     param(
@@ -85,6 +85,7 @@ function Set-MsbuildDevEnvironment
         default { throw "Unknown architecture: $switch" }
     }
 
+    Write-Host $vsinfo
     $devShellModule = "$vspath\Common7\Tools\Microsoft.VisualStudio.DevShell.dll"
 
     Import-Module -Global -Name $devShellModule
@@ -438,4 +439,4 @@ function Get-Format()
     & "$root\dep\nuget\nuget.exe" restore "$root\tools\packages.config"
 }
 
-Export-ModuleMember -Function Set-MsbuildDevEnvironment,Invoke-OpenConsoleTests,Invoke-OpenConsoleBuild,Start-OpenConsole,Debug-OpenConsole,Invoke-CodeFormat,Invoke-XamlFormat,Test-XamlFormat,Get-Format
+Export-ModuleMember -Function Set-MsBuildDevEnvironment,Invoke-OpenConsoleTests,Invoke-OpenConsoleBuild,Start-OpenConsole,Debug-OpenConsole,Invoke-CodeFormat,Invoke-XamlFormat,Test-XamlFormat,Get-Format

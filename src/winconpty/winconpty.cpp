@@ -6,29 +6,123 @@
 #include "winconpty.h"
 
 #ifdef __INSIDE_WINDOWS
-#include <strsafe.h>
-#include <consoleinternal.h>
 // You need kernelbasestaging.h to be able to use wil in libraries consumed by kernelbase.dll
 #include <kernelbasestaging.h>
 #define RESOURCE_SUPPRESS_STL
 #define WIL_SUPPORT_BITOPERATION_PASCAL_NAMES
 #include <wil/resource.h>
-#else
-#include "device.h"
-#include <filesystem>
 #endif // __INSIDE_WINDOWS
 
 #pragma warning(push)
 #pragma warning(disable : 4273) // inconsistent dll linkage (we are exporting things kernel32 also exports)
-#pragma warning(disable : 26485) // array-to-pointer decay is virtually impossible to avoid when we can't use STL.
+
+using unique_nthandle = wil::unique_any_handle_null<decltype(&::NtClose), ::NtClose>;
+
+static wil::unique_process_heap_string allocString(size_t count)
+{
+    const auto addr = static_cast<wchar_t*>(HeapAlloc(GetProcessHeap(), 0, count * sizeof(wchar_t)));
+    return wil::unique_process_heap_string{ addr };
+}
 
 // Function Description:
 // - Returns the path to conhost.exe as a process heap string.
-static wil::unique_process_heap_string _InboxConsoleHostPath()
+static wil::unique_process_heap_string getInboxConhostPath()
 {
-    wil::unique_process_heap_string systemDirectory;
-    wil::GetSystemDirectoryW<wil::unique_process_heap_string>(systemDirectory);
-    return wil::str_concat_failfast<wil::unique_process_heap_string>(L"\\\\?\\", systemDirectory, L"\\conhost.exe");
+    auto path = allocString(MAX_PATH);
+    if (!path)
+    {
+        return {};
+    }
+
+    const auto cap = MAX_PATH - 12;
+    const auto len = GetSystemDirectoryW(path.get(), cap);
+    if (len >= cap)
+    {
+        return {};
+    }
+
+    memcpy(path.get() + len, L"\\conhost.exe", sizeof(L"\\conhost.exe"));
+    return path;
+}
+
+static bool pathExists(const wchar_t* path)
+{
+    const auto attr = GetFileAttributesW(path);
+    return attr != INVALID_FILE_ATTRIBUTES && !(attr & FILE_ATTRIBUTE_DIRECTORY);
+}
+
+[[maybe_unused]] static wil::unique_process_heap_string getOssConhostPath()
+{
+    static constexpr DWORD longestSuffixLength = 22; // "arm64\OpenConsole.exe"
+
+    const auto module = wil::GetModuleInstanceHandle();
+    wil::unique_process_heap_string path;
+    DWORD basePathLength = MAX_PATH;
+
+    for (;;)
+    {
+        path = allocString(basePathLength + longestSuffixLength);
+        if (!path)
+        {
+            return {};
+        }
+
+        const auto cap = basePathLength;
+        basePathLength = GetModuleFileNameW(module, path.get(), cap);
+
+        // If the function fails, the return value is 0 (zero).
+        if (basePathLength == 0)
+        {
+            return {};
+        }
+
+        // If the function succeeds, the return value is the length of the string that is
+        // copied to the buffer, in characters, not including the terminating null character.
+        if (basePathLength < cap)
+        {
+            break;
+        }
+
+        basePathLength *= 2;
+    }
+
+    const auto basePathBeg = path.get();
+    auto basePathEnd = basePathBeg + basePathLength;
+    for (; basePathEnd != basePathBeg && basePathEnd[-1] != L'\\'; --basePathEnd)
+    {
+    }
+
+    memcpy(basePathEnd, L"OpenConsole.exe", sizeof(L"OpenConsole.exe"));
+    if (pathExists(path.get()))
+    {
+        return path;
+    }
+
+    USHORT unusedImageFileMachine, nativeMachine;
+    if (IsWow64Process2(GetCurrentProcess(), &unusedImageFileMachine, &nativeMachine))
+    {
+        // Despite being a machine type, the values IsWow64Process2 returns are *image* types
+        switch (nativeMachine)
+        {
+        case IMAGE_FILE_MACHINE_AMD64:
+            memcpy(basePathEnd, L"x64\\OpenConsole.exe", sizeof(L"x64\\OpenConsole.exe"));
+            break;
+        case IMAGE_FILE_MACHINE_ARM64:
+            memcpy(basePathEnd, L"arm64\\OpenConsole.exe", sizeof(L"arm64\\OpenConsole.exe"));
+            break;
+        case IMAGE_FILE_MACHINE_I386:
+            memcpy(basePathEnd, L"x86\\OpenConsole.exe", sizeof(L"x86\\OpenConsole.exe"));
+            break;
+        default:
+            break;
+        }
+        if (pathExists(path.get()))
+        {
+            return path;
+        }
+    }
+
+    return {};
 }
 
 // Function Description:
@@ -36,54 +130,17 @@ static wil::unique_process_heap_string _InboxConsoleHostPath()
 //   module is building with Windows and OpenConsole could be found.
 // Return Value:
 // - A pointer to permanent storage containing the path to the console host.
-static wchar_t* _ConsoleHostPath()
+static wchar_t* getConhostPath()
 {
     // Use the magic of magic statics to only calculate this once.
-    static auto consoleHostPath = []() {
-#if defined(__INSIDE_WINDOWS)
-        return _InboxConsoleHostPath();
-#else
-        // Use the STL only if we're not building in Windows.
-        std::filesystem::path modulePath{ wil::GetModuleFileNameW<std::wstring>(wil::GetModuleInstanceHandle()) };
-        modulePath.replace_filename(L"OpenConsole.exe");
-        if (!std::filesystem::exists(modulePath))
+    static const auto consoleHostPath = []() {
+#if !defined(__INSIDE_WINDOWS)
+        if (auto path = getOssConhostPath())
         {
-            std::wstring_view architectureInfix{};
-            USHORT unusedImageFileMachine{}, nativeMachine{};
-            if (IsWow64Process2(GetCurrentProcess(), &unusedImageFileMachine, &nativeMachine))
-            {
-                // Despite being a machine type, the values IsWow64Process2 returns are *image* types
-                switch (nativeMachine)
-                {
-                case IMAGE_FILE_MACHINE_AMD64:
-                    architectureInfix = L"x64";
-                    break;
-                case IMAGE_FILE_MACHINE_ARM64:
-                    architectureInfix = L"arm64";
-                    break;
-                case IMAGE_FILE_MACHINE_I386:
-                    architectureInfix = L"x86";
-                    break;
-                default:
-                    break;
-                }
-            }
-            if (architectureInfix.empty())
-            {
-                // WHAT?
-                return _InboxConsoleHostPath();
-            }
-            modulePath.replace_filename(architectureInfix);
-            modulePath.append(L"OpenConsole.exe");
+            return path;
         }
-        if (!std::filesystem::exists(modulePath))
-        {
-            // We tried the architecture infix version and failed, fall back to conhost.
-            return _InboxConsoleHostPath();
-        }
-        const auto& modulePathAsString = modulePath.native();
-        return wil::make_process_heap_string_nothrow(modulePathAsString.data(), modulePathAsString.size());
 #endif // __INSIDE_WINDOWS
+        return getInboxConhostPath();
     }();
     return consoleHostPath.get();
 }
@@ -93,7 +150,39 @@ static bool _HandleIsValid(HANDLE h) noexcept
     return (h != INVALID_HANDLE_VALUE) && (h != nullptr);
 }
 
-HRESULT _CreatePseudoConsole(const HANDLE hToken,
+template<size_t N>
+static constexpr UNICODE_STRING constantUnicodeString(const wchar_t (&s)[N])
+{
+    return { N * 2 - 2, N * 2, const_cast<wchar_t*>(&s[0]) };
+}
+
+static NTSTATUS conhostCreateHandle(HANDLE* handle, HANDLE parent, UNICODE_STRING name, bool inherit, bool synchronous)
+{
+    ULONG attrFlags = OBJ_CASE_INSENSITIVE;
+    WI_SetFlagIf(attrFlags, OBJ_INHERIT, inherit);
+
+    OBJECT_ATTRIBUTES attr;
+    InitializeObjectAttributes(&attr, &name, attrFlags, parent, nullptr);
+
+    ULONG options = 0;
+    WI_SetFlagIf(options, FILE_SYNCHRONOUS_IO_NONALERT, synchronous);
+
+    IO_STATUS_BLOCK ioStatus;
+    return NtCreateFile(
+        /* FileHandle        */ handle,
+        /* DesiredAccess     */ FILE_GENERIC_READ | FILE_GENERIC_WRITE,
+        /* ObjectAttributes  */ &attr,
+        /* IoStatusBlock     */ &ioStatus,
+        /* AllocationSize    */ nullptr,
+        /* FileAttributes    */ 0,
+        /* ShareAccess       */ FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+        /* CreateDisposition */ FILE_CREATE,
+        /* CreateOptions     */ options,
+        /* EaBuffer          */ nullptr,
+        /* EaLength          */ 0);
+}
+
+HRESULT _CreatePseudoConsole(HANDLE hToken,
                              const COORD size,
                              const HANDLE hInput,
                              const HANDLE hOutput,
@@ -109,16 +198,16 @@ HRESULT _CreatePseudoConsole(const HANDLE hToken,
         return E_INVALIDARG;
     }
 
-    wil::unique_handle serverHandle;
-    RETURN_IF_NTSTATUS_FAILED(CreateServerHandle(serverHandle.addressof(), TRUE));
+    // CreateProcessAsUserW expects the token to be either valid or null.
+    if (hToken == INVALID_HANDLE_VALUE)
+    {
+        hToken = nullptr;
+    }
 
-    // The hPtyReference we create here is used when the PROC_THREAD_ATTRIBUTE_PSEUDOCONSOLE attribute is processed.
-    // This ensures that conhost's client processes inherit the correct (= our) console handle.
-    wil::unique_handle referenceHandle;
-    RETURN_IF_NTSTATUS_FAILED(CreateClientHandle(referenceHandle.addressof(),
-                                                 serverHandle.get(),
-                                                 L"\\Reference",
-                                                 FALSE));
+    unique_nthandle serverHandle;
+    unique_nthandle referenceHandle;
+    RETURN_IF_NTSTATUS_FAILED(conhostCreateHandle(serverHandle.addressof(), nullptr, constantUnicodeString(L"\\Device\\ConDrv\\Server"), true, false));
+    RETURN_IF_NTSTATUS_FAILED(conhostCreateHandle(referenceHandle.addressof(), serverHandle.get(), constantUnicodeString(L"\\Reference"), false, true));
 
     wil::unique_handle signalPipeConhostSide;
     wil::unique_handle signalPipeOurSide;
@@ -134,7 +223,6 @@ HRESULT _CreatePseudoConsole(const HANDLE hToken,
 
     // GH4061: Ensure that the path to executable in the format is escaped so C:\Program.exe cannot collide with C:\Program Files
     // This is plenty of space to hold the formatted string
-    wchar_t cmd[MAX_PATH]{};
     const BOOL bInheritCursor = (dwFlags & PSEUDOCONSOLE_INHERIT_CURSOR) == PSEUDOCONSOLE_INHERIT_CURSOR;
 
     const wchar_t* textMeasurement;
@@ -154,16 +242,23 @@ HRESULT _CreatePseudoConsole(const HANDLE hToken,
         break;
     }
 
-    swprintf_s(cmd,
-               MAX_PATH,
-               L"\"%s\" --headless %s%s--width %hd --height %hd --signal 0x%tx --server 0x%tx",
-               _ConsoleHostPath(),
-               bInheritCursor ? L"--inheritcursor " : L"",
-               textMeasurement,
-               size.X,
-               size.Y,
-               std::bit_cast<uintptr_t>(signalPipeConhostSide.get()),
-               std::bit_cast<uintptr_t>(serverHandle.get()));
+    const auto conhostPath = getConhostPath();
+    if (!conhostPath)
+    {
+        return E_OUTOFMEMORY;
+    }
+
+    wil::unique_process_heap_string cmd;
+    RETURN_IF_FAILED(wil::str_printf_nothrow(
+        cmd,
+        L"\"%s\" --headless %s%s--width %hd --height %hd --signal 0x%tx --server 0x%tx",
+        conhostPath,
+        bInheritCursor ? L"--inheritcursor " : L"",
+        textMeasurement,
+        size.X,
+        size.Y,
+        std::bit_cast<uintptr_t>(signalPipeConhostSide.get()),
+        std::bit_cast<uintptr_t>(serverHandle.get())));
 
     STARTUPINFOEXW siEx{ 0 };
     siEx.StartupInfo.cb = sizeof(STARTUPINFOEXW);
@@ -180,23 +275,12 @@ HRESULT _CreatePseudoConsole(const HANDLE hToken,
     inheritedHandles[2] = hOutput;
     inheritedHandles[3] = signalPipeConhostSide.get();
 
-    // Get the size of the attribute list. We need one attribute, the handle list.
-    SIZE_T listSize = 0;
-    InitializeProcThreadAttributeList(nullptr, 1, 0, &listSize);
+    // Birds aren't real and DeleteProcThreadAttributeList isn't real either.
+    alignas(__STDCPP_DEFAULT_NEW_ALIGNMENT__) char attrListBuffer[128];
+    siEx.lpAttributeList = reinterpret_cast<PPROC_THREAD_ATTRIBUTE_LIST>(&attrListBuffer[0]);
 
-    // I have to use a HeapAlloc here because kernelbase can't link new[] or delete[]
-    auto attrList = static_cast<PPROC_THREAD_ATTRIBUTE_LIST>(HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, listSize));
-    RETURN_IF_NULL_ALLOC(attrList);
-    auto attrListDelete = wil::scope_exit([&]() noexcept {
-        HeapFree(GetProcessHeap(), 0, attrList);
-    });
-
-    siEx.lpAttributeList = attrList;
+    SIZE_T listSize = sizeof(attrListBuffer);
     RETURN_IF_WIN32_BOOL_FALSE(InitializeProcThreadAttributeList(siEx.lpAttributeList, 1, 0, &listSize));
-    // Set cleanup data for ProcThreadAttributeList when successful.
-    auto cleanupProcThreadAttribute = wil::scope_exit([&]() noexcept {
-        DeleteProcThreadAttributeList(siEx.lpAttributeList);
-    });
     RETURN_IF_WIN32_BOOL_FALSE(UpdateProcThreadAttribute(siEx.lpAttributeList,
                                                          0,
                                                          PROC_THREAD_ATTRIBUTE_HANDLE_LIST,
@@ -215,40 +299,26 @@ HRESULT _CreatePseudoConsole(const HANDLE hToken,
             RtlWow64EnableFsRedirectionEx(RedirectionFlag, &RedirectionFlag);
         });
 #endif
-        if (hToken == INVALID_HANDLE_VALUE || hToken == nullptr)
-        {
-            // Call create process
-            RETURN_IF_WIN32_BOOL_FALSE(CreateProcessW(_ConsoleHostPath(),
-                                                      cmd,
-                                                      nullptr,
-                                                      nullptr,
-                                                      TRUE,
-                                                      EXTENDED_STARTUPINFO_PRESENT,
-                                                      nullptr,
-                                                      nullptr,
-                                                      &siEx.StartupInfo,
-                                                      pi.addressof()));
-        }
-        else
-        {
-            // Call create process
-            RETURN_IF_WIN32_BOOL_FALSE(CreateProcessAsUserW(hToken,
-                                                            _ConsoleHostPath(),
-                                                            cmd,
-                                                            nullptr,
-                                                            nullptr,
-                                                            TRUE,
-                                                            EXTENDED_STARTUPINFO_PRESENT,
-                                                            nullptr,
-                                                            nullptr,
-                                                            &siEx.StartupInfo,
-                                                            pi.addressof()));
-        }
+
+        // Call create process
+        RETURN_IF_WIN32_BOOL_FALSE(CreateProcessAsUserW(
+            hToken,
+            conhostPath,
+            cmd.get(),
+            nullptr,
+            nullptr,
+            TRUE,
+            EXTENDED_STARTUPINFO_PRESENT,
+            nullptr,
+            nullptr,
+            &siEx.StartupInfo,
+            pi.addressof()));
     }
 
     pPty->hSignal = signalPipeOurSide.release();
     pPty->hPtyReference = referenceHandle.release();
-    pPty->hConPtyProcess = std::exchange(pi.hProcess, nullptr);
+    pPty->hConPtyProcess = pi.hProcess;
+    pi.hProcess = nullptr;
 
     return S_OK;
 }
