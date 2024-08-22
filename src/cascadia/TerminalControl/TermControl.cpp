@@ -674,11 +674,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // terminal.
         co_await wil::resume_foreground(Dispatcher());
 
-        _core.UpdateSettings(settings, unfocusedAppearance);
+        if (auto strongThis{ weakThis.get() })
+        {
+            _core.UpdateSettings(settings, unfocusedAppearance);
 
-        _UpdateSettingsFromUIThread();
+            _UpdateSettingsFromUIThread();
 
-        _UpdateAppearanceFromUIThread(_focused ? _core.FocusedAppearance() : _core.UnfocusedAppearance());
+            _UpdateAppearanceFromUIThread(_focused ? _core.FocusedAppearance() : _core.UnfocusedAppearance());
+        }
     }
 
     // Method Description:
@@ -687,10 +690,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - newAppearance: the new appearance to set
     winrt::fire_and_forget TermControl::UpdateAppearance(IControlAppearance newAppearance)
     {
+        auto weakThis{ get_weak() };
+
         // Dispatch a call to the UI thread
         co_await wil::resume_foreground(Dispatcher());
 
-        _UpdateAppearanceFromUIThread(newAppearance);
+        if (auto strongThis{ weakThis.get() })
+        {
+            _UpdateAppearanceFromUIThread(newAppearance);
+        }
     }
 
     // Method Description:
