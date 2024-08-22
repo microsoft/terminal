@@ -818,7 +818,7 @@ namespace winrt::TerminalApp::implementation
             // _changes_), we never get a SelectionChanged.
             //
             // To mitigate, only in the case of totally clearing out the filter
-            // (like hitting `esc`), we want to breifly select the 0th item,
+            // (like hitting `esc`), we want to briefly select the 0th item,
             // then immediately select the one we want to make visible. That
             // will make sure we get a SelectionChanged when the ListView is
             // ready, and we can use that to scroll to the right item.
