@@ -3266,23 +3266,30 @@ MarkExtents TextBuffer::_scrollMarkExtentForRow(const til::CoordType rowOffset,
     return mark;
 }
 
-std::wstring TextBuffer::_commandForRow(const til::CoordType rowOffset, const til::CoordType bottomInclusive) const
+std::wstring TextBuffer::_commandForRow(const til::CoordType rowOffset,
+                                        const til::CoordType bottomInclusive,
+                                        const bool clipAtCursor) const
 {
     std::wstring commandBuilder;
     MarkKind lastMarkKind = MarkKind::Prompt;
+    const auto cursorPosition = GetCursor().GetPosition();
     for (auto y = rowOffset; y <= bottomInclusive; y++)
     {
+        const bool onCursorRow = clipAtCursor && y == cursorPosition.y;
         // Now we need to iterate over text attributes. We need to find a
         // segment of Prompt attributes, we'll skip those. Then there should be
         // Command attributes. Collect up all of those, till we get to the next
         // Output attribute.
-
         const auto& row = GetRowByOffset(y);
         const auto runs = row.Attributes().runs();
         auto x = 0;
         for (const auto& [attr, length] : runs)
         {
-            const auto nextX = gsl::narrow_cast<uint16_t>(x + length);
+            auto nextX = gsl::narrow_cast<uint16_t>(x + length);
+            if (onCursorRow)
+            {
+                nextX = std::min(nextX, gsl::narrow_cast<uint16_t>(cursorPosition.x));
+            }
             const auto markKind{ attr.GetMarkAttributes() };
             if (markKind != lastMarkKind)
             {
@@ -3302,6 +3309,10 @@ std::wstring TextBuffer::_commandForRow(const til::CoordType rowOffset, const ti
             }
             // advance to next run of text
             x = nextX;
+            if (onCursorRow && x == cursorPosition.x)
+            {
+                return commandBuilder;
+            }
         }
         // we went over all the runs in this row, but we're not done yet. Keep iterating on the next row.
     }
@@ -3325,7 +3336,7 @@ std::wstring TextBuffer::CurrentCommand() const
         // This row did start a prompt! Find the prompt that starts here.
         // Presumably, no rows below us will have prompts, so pass in the last
         // row with text as the bottom
-        return _commandForRow(promptY, _estimateOffsetOfLastCommittedRow());
+        return _commandForRow(promptY, _estimateOffsetOfLastCommittedRow(), true);
     }
     return L"";
 }
