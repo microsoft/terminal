@@ -262,6 +262,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // The state can be active, while the accumulator is 0, if the user pressed Alt+Numpad0 which enabled
             // the OEM encoding mode (= active), and then pressed Numpad0 again (= accumulator is still 0).
             bool active = false;
+            til::small_vector<std::tuple<WORD, WORD, ::Microsoft::Terminal::Core::ControlKeyStates, bool>, 4> cachedKeyEvents;
         };
         AltNumpadState _altNumpadState;
 

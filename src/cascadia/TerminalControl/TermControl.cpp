@@ -1543,7 +1543,20 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             if (encoding == AltNumpadEncoding::Unicode)
             {
                 // UTF-32 -> UTF-16
-                if (s.accumulator <= 0xffff)
+                if (s.accumulator == 0)
+                {
+                    // If the user pressed Alt + VK_ADD, then released Alt, they probably didn't intend to insert a numpad character at all.
+                    // Send any accumulated key events instead.
+                    bool h = true;
+                    for (auto&& e : _altNumpadState.cachedKeyEvents)
+                    {
+                        h = h && _TrySendKeyEvent(std::get<0>(e), std::get<1>(e), std::get<2>(e), std::get<3>(e));
+                    }
+                    // Send the alt keyup we are currently processing
+                    h = h && _TrySendKeyEvent(vkey, scanCode, modifiers, keyDown);
+                    // do not accumulate into the buffer
+                }
+                else if (s.accumulator <= 0xffff)
                 {
                     buf[buf_len++] = static_cast<uint16_t>(s.accumulator);
                 }
@@ -1601,46 +1614,55 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 SCROLLLOCK_ON |
                 CAPSLOCK_ON;
 
-            if (keyDown && (modifiers.Value() & ~permittedModifiers) == 0)
+            if ((modifiers.Value() & ~permittedModifiers) == 0)
             {
                 auto& s = _altNumpadState;
 
                 if (vkey == VK_ADD)
                 {
-                    // Alt '+' <number> is used to input Unicode code points.
-                    // Every time you press + it resets the entire state
-                    // in the original OS implementation as well.
-                    s.encoding = AltNumpadEncoding::Unicode;
-                    s.accumulator = 0;
-                    s.active = true;
+                    if (keyDown)
+                    {
+                        // Alt '+' <number> is used to input Unicode code points.
+                        // Every time you press + it resets the entire state
+                        // in the original OS implementation as well.
+                        s.encoding = AltNumpadEncoding::Unicode;
+                        s.accumulator = 0;
+                        s.active = true;
+                    }
                 }
                 else if (vkey == VK_NUMPAD0 && s.encoding == AltNumpadEncoding::OEM && s.accumulator == 0)
                 {
-                    // Alt '0' <number> is used to input ANSI code points.
-                    // Otherwise, they're OEM codepoints.
-                    s.encoding = AltNumpadEncoding::ANSI;
-                    s.active = true;
+                    if (keyDown)
+                    {
+                        // Alt '0' <number> is used to input ANSI code points.
+                        // Otherwise, they're OEM codepoints.
+                        s.encoding = AltNumpadEncoding::ANSI;
+                        s.active = true;
+                    }
                 }
                 else
                 {
-                    // Otherwise, append the pressed key to the accumulator.
-                    const uint32_t base = s.encoding == AltNumpadEncoding::Unicode ? 16 : 10;
-                    uint32_t add = 0xffffff;
+                    if (keyDown)
+                    {
+                        // Otherwise, append the pressed key to the accumulator.
+                        const uint32_t base = s.encoding == AltNumpadEncoding::Unicode ? 16 : 10;
+                        uint32_t add = 0xffffff;
 
-                    if (vkey >= VK_NUMPAD0 && vkey <= VK_NUMPAD9)
-                    {
-                        add = vkey - VK_NUMPAD0;
-                    }
-                    else if (vkey >= 'A' && vkey <= 'F')
-                    {
-                        add = vkey - 'A' + 10;
-                    }
+                        if (vkey >= VK_NUMPAD0 && vkey <= VK_NUMPAD9)
+                        {
+                            add = vkey - VK_NUMPAD0;
+                        }
+                        else if (vkey >= 'A' && vkey <= 'F')
+                        {
+                            add = vkey - 'A' + 10;
+                        }
 
-                    // Pressing Alt + <not a number> should not activate the Alt+Numpad input, however.
-                    if (add < base)
-                    {
-                        s.accumulator = std::min(s.accumulator * base + add, 0x10FFFFu);
-                        s.active = true;
+                        // Pressing Alt + <not a number> should not activate the Alt+Numpad input, however.
+                        if (add < base)
+                        {
+                            s.accumulator = std::min(s.accumulator * base + add, 0x10FFFFu);
+                            s.active = true;
+                        }
                     }
                 }
 
@@ -1648,6 +1670,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 // return and send the Alt key combination as per usual.
                 if (s.active)
                 {
+                    // Cache it in case we have to emit it after alt is released
+                    _altNumpadState.cachedKeyEvents.emplace_back(vkey, scanCode, modifiers, keyDown);
                     return true;
                 }
 
