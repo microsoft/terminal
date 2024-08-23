@@ -319,6 +319,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         winrt::com_ptr<ControlSettings> _settings{ nullptr };
 
         std::shared_ptr<::Microsoft::Terminal::Core::Terminal> _terminal{ nullptr };
+        std::wstring _pendingResponses;
 
         // NOTE: _renderEngine must be ordered before _renderer.
         //
