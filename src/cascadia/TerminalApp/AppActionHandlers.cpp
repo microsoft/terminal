@@ -883,7 +883,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Important: Don't take the param by reference, since we'll be doing work
     // on another thread.
-    fire_and_forget TerminalPage::_OpenNewWindow(const INewContentArgs newContentArgs)
+    safe_void_coroutine TerminalPage::_OpenNewWindow(const INewContentArgs newContentArgs)
     {
         auto terminalArgs{ newContentArgs.try_as<NewTerminalArgs>() };
 
@@ -1441,7 +1441,7 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    winrt::fire_and_forget TerminalPage::_doHandleSuggestions(SuggestionsArgs realArgs)
+    safe_void_coroutine TerminalPage::_doHandleSuggestions(SuggestionsArgs realArgs)
     {
         const auto source = realArgs.Source();
         std::vector<Command> commandsCollection;

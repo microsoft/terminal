@@ -134,7 +134,7 @@ namespace winrt::TerminalApp::implementation
     {
         MinMaxCloseControl().PressButton(button);
     }
-    winrt::fire_and_forget TitlebarControl::ClickButton(CaptionButton button)
+    safe_void_coroutine TitlebarControl::ClickButton(CaptionButton button)
     {
         // GH#8587: Handle this on the _next_ pass of the UI thread. If we
         // handle this immediately, then we'll accidentally leave the button in

@@ -949,7 +949,7 @@ namespace winrt::TerminalApp::implementation
 
         events.TitleChanged = content.TitleChanged(
             winrt::auto_revoke,
-            [dispatcher, weakThis](auto&&, auto&&) -> winrt::fire_and_forget {
+            [dispatcher, weakThis](auto&&, auto&&) -> safe_void_coroutine {
                 // The lambda lives in the `std::function`-style container owned by `control`. That is, when the
                 // `control` gets destroyed the lambda struct also gets destroyed. In other words, we need to
                 // copy `weakThis` onto the stack, because that's the only thing that gets captured in coroutines.
@@ -967,7 +967,7 @@ namespace winrt::TerminalApp::implementation
 
         events.TabColorChanged = content.TabColorChanged(
             winrt::auto_revoke,
-            [dispatcher, weakThis](auto&&, auto&&) -> winrt::fire_and_forget {
+            [dispatcher, weakThis](auto&&, auto&&) -> safe_void_coroutine {
                 const auto weakThisCopy = weakThis;
                 co_await wil::resume_foreground(dispatcher);
                 if (auto tab{ weakThisCopy.get() })
@@ -981,7 +981,7 @@ namespace winrt::TerminalApp::implementation
 
         events.TaskbarProgressChanged = content.TaskbarProgressChanged(
             winrt::auto_revoke,
-            [dispatcher, weakThis](auto&&, auto&&) -> winrt::fire_and_forget {
+            [dispatcher, weakThis](auto&&, auto&&) -> safe_void_coroutine {
                 const auto weakThisCopy = weakThis;
                 co_await wil::resume_foreground(dispatcher);
                 // Check if Tab's lifetime has expired
@@ -993,7 +993,7 @@ namespace winrt::TerminalApp::implementation
 
         events.ConnectionStateChanged = content.ConnectionStateChanged(
             winrt::auto_revoke,
-            [dispatcher, weakThis](auto&&, auto&&) -> winrt::fire_and_forget {
+            [dispatcher, weakThis](auto&&, auto&&) -> safe_void_coroutine {
                 const auto weakThisCopy = weakThis;
                 co_await wil::resume_foreground(dispatcher);
                 if (auto tab{ weakThisCopy.get() })
@@ -1004,7 +1004,7 @@ namespace winrt::TerminalApp::implementation
 
         events.ReadOnlyChanged = content.ReadOnlyChanged(
             winrt::auto_revoke,
-            [dispatcher, weakThis](auto&&, auto&&) -> winrt::fire_and_forget {
+            [dispatcher, weakThis](auto&&, auto&&) -> safe_void_coroutine {
                 const auto weakThisCopy = weakThis;
                 co_await wil::resume_foreground(dispatcher);
                 if (auto tab{ weakThis.get() })
@@ -1015,7 +1015,7 @@ namespace winrt::TerminalApp::implementation
 
         events.FocusRequested = content.FocusRequested(
             winrt::auto_revoke,
-            [dispatcher, weakThis](TerminalApp::IPaneContent sender, auto) -> winrt::fire_and_forget {
+            [dispatcher, weakThis](TerminalApp::IPaneContent sender, auto) -> safe_void_coroutine {
                 const auto weakThisCopy = weakThis;
                 co_await wil::resume_foreground(dispatcher);
                 if (const auto tab{ weakThisCopy.get() })
@@ -1029,7 +1029,7 @@ namespace winrt::TerminalApp::implementation
 
         events.BellRequested = content.BellRequested(
             winrt::auto_revoke,
-            [dispatcher, weakThis](TerminalApp::IPaneContent sender, auto bellArgs) -> winrt::fire_and_forget {
+            [dispatcher, weakThis](TerminalApp::IPaneContent sender, auto bellArgs) -> safe_void_coroutine {
                 const auto weakThisCopy = weakThis;
                 co_await wil::resume_foreground(dispatcher);
                 if (const auto tab{ weakThisCopy.get() })

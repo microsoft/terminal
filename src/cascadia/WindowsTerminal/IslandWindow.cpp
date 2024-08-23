@@ -1324,7 +1324,7 @@ void IslandWindow::_SetIsFullscreen(const bool fullscreenEnabled)
 // - toggleVisibility: controls how we should behave when already in the foreground.
 // Return Value:
 // - <none>
-winrt::fire_and_forget IslandWindow::SummonWindow(Remoting::SummonWindowBehavior args)
+safe_void_coroutine IslandWindow::SummonWindow(Remoting::SummonWindowBehavior args)
 {
     // On the foreground thread:
     co_await wil::resume_foreground(_rootGrid.Dispatcher());

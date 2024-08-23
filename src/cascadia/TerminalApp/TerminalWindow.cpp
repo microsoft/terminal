@@ -765,7 +765,7 @@ namespace winrt::TerminalApp::implementation
 
     // This may be called on a background thread, or the main thread, but almost
     // definitely not on OUR UI thread.
-    winrt::fire_and_forget TerminalWindow::UpdateSettings(winrt::TerminalApp::SettingsLoadEventArgs args)
+    safe_void_coroutine TerminalWindow::UpdateSettings(winrt::TerminalApp::SettingsLoadEventArgs args)
     {
         // GH#17620: We have a bug somewhere where a window doesn't get unregistered from the window list.
         // This causes UpdateSettings calls where the thread dispatcher is already null.

@@ -700,16 +700,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         this->Focus(FocusState::Programmatic);
     }
 
-    winrt::fire_and_forget TermControl::UpdateControlSettings(IControlSettings settings)
+    void TermControl::UpdateControlSettings(IControlSettings settings)
     {
-        return UpdateControlSettings(settings, _core.UnfocusedAppearance());
+        UpdateControlSettings(settings, _core.UnfocusedAppearance());
     }
     // Method Description:
     // - Given Settings having been updated, applies the settings to the current terminal.
     // Return Value:
     // - <none>
-    winrt::fire_and_forget TermControl::UpdateControlSettings(IControlSettings settings,
-                                                              IControlAppearance unfocusedAppearance)
+    safe_void_coroutine TermControl::UpdateControlSettings(IControlSettings settings,
+                                                           IControlAppearance unfocusedAppearance)
     {
         auto weakThis{ get_weak() };
 
@@ -731,7 +731,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - Dispatches a call to the UI thread and updates the appearance
     // Arguments:
     // - newAppearance: the new appearance to set
-    winrt::fire_and_forget TermControl::UpdateAppearance(IControlAppearance newAppearance)
+    safe_void_coroutine TermControl::UpdateAppearance(IControlAppearance newAppearance)
     {
         auto weakThis{ get_weak() };
 
@@ -1012,8 +1012,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // <unused>
     // Return Value:
     // - <none>
-    winrt::fire_and_forget TermControl::_coreBackgroundColorChanged(const IInspectable& /*sender*/,
-                                                                    const IInspectable& /*args*/)
+    safe_void_coroutine TermControl::_coreBackgroundColorChanged(const IInspectable& /*sender*/,
+                                                                 const IInspectable& /*args*/)
     {
         auto weakThis{ get_weak() };
         co_await wil::resume_foreground(Dispatcher());
@@ -1190,7 +1190,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - hr: an  HRESULT describing the warning
     // Return Value:
     // - <none>
-    winrt::fire_and_forget TermControl::_RendererWarning(IInspectable /*sender*/, Control::RendererWarningArgs args)
+    safe_void_coroutine TermControl::_RendererWarning(IInspectable /*sender*/, Control::RendererWarningArgs args)
     {
         auto weakThis{ get_weak() };
         co_await wil::resume_foreground(Dispatcher());
@@ -1375,7 +1375,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return true;
     }
 
-    winrt::fire_and_forget TermControl::_restoreInBackground()
+    safe_void_coroutine TermControl::_restoreInBackground()
     {
         const auto path = std::exchange(_restorePath, {});
         const auto weakSelf = get_weak();
@@ -2101,8 +2101,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - <unused>
     // Return Value:
     // - <none>
-    winrt::fire_and_forget TermControl::_coreTransparencyChanged(IInspectable /*sender*/,
-                                                                 Control::TransparencyChangedEventArgs /*args*/)
+    safe_void_coroutine TermControl::_coreTransparencyChanged(IInspectable /*sender*/,
+                                                              Control::TransparencyChangedEventArgs /*args*/)
     {
         co_await wil::resume_foreground(Dispatcher());
         try
@@ -3073,8 +3073,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - e: The DragEventArgs from the Drop event
     // Return Value:
     // - <none>
-    winrt::fire_and_forget TermControl::_DragDropHandler(Windows::Foundation::IInspectable /*sender*/,
-                                                         DragEventArgs e)
+    safe_void_coroutine TermControl::_DragDropHandler(Windows::Foundation::IInspectable /*sender*/,
+                                                      DragEventArgs e)
     {
         if (_IsClosing())
         {
@@ -3309,8 +3309,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - Checks if the uri is valid and sends an event if so
     // Arguments:
     // - The uri
-    winrt::fire_and_forget TermControl::_HyperlinkHandler(IInspectable /*sender*/,
-                                                          Control::OpenHyperlinkEventArgs args)
+    safe_void_coroutine TermControl::_HyperlinkHandler(IInspectable /*sender*/,
+                                                       Control::OpenHyperlinkEventArgs args)
     {
         // Save things we need to resume later.
         auto strongThis{ get_strong() };
@@ -3326,8 +3326,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     // Method Description:
     // - Produces the error dialog that notifies the user that rendering cannot proceed.
-    winrt::fire_and_forget TermControl::_RendererEnteredErrorState(IInspectable /*sender*/,
-                                                                   IInspectable /*args*/)
+    safe_void_coroutine TermControl::_RendererEnteredErrorState(IInspectable /*sender*/,
+                                                                IInspectable /*args*/)
     {
         auto strongThis{ get_strong() };
         co_await winrt::resume_foreground(Dispatcher()); // pop up onto the UI thread
@@ -3550,7 +3550,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         OverlayCanvas().SetTop(HyperlinkTooltipBorder(), locationInDIPs.y - offset.y);
     }
 
-    winrt::fire_and_forget TermControl::_updateSelectionMarkers(IInspectable /*sender*/, Control::UpdateSelectionMarkersEventArgs args)
+    safe_void_coroutine TermControl::_updateSelectionMarkers(IInspectable /*sender*/, Control::UpdateSelectionMarkersEventArgs args)
     {
         auto weakThis{ get_weak() };
         co_await resume_foreground(Dispatcher());

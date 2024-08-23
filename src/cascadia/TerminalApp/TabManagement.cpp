@@ -308,7 +308,7 @@ namespace winrt::TerminalApp::implementation
     // - Exports the content of the Terminal Buffer inside the tab
     // Arguments:
     // - tab: tab to export
-    winrt::fire_and_forget TerminalPage::_ExportTab(const TerminalTab& tab, winrt::hstring filepath)
+    safe_void_coroutine TerminalPage::_ExportTab(const TerminalTab& tab, winrt::hstring filepath)
     {
         // This will be used to set up the file picker "filter", to select .txt
         // files by default.
@@ -680,7 +680,7 @@ namespace winrt::TerminalApp::implementation
     // - tab: tab to focus.
     // Return Value:
     // - <none>
-    winrt::fire_and_forget TerminalPage::_SetFocusedTab(const winrt::TerminalApp::TabBase tab)
+    safe_void_coroutine TerminalPage::_SetFocusedTab(const winrt::TerminalApp::TabBase tab)
     {
         // GH#1117: This is a workaround because _tabView.SelectedIndex(tabIndex)
         //          sometimes set focus to an incorrect tab after removing some tabs
@@ -765,7 +765,7 @@ namespace winrt::TerminalApp::implementation
     // - Close the currently focused pane. If the pane is the last pane in the
     //   tab, the tab will also be closed. This will happen when we handle the
     //   tab's Closed event.
-    winrt::fire_and_forget TerminalPage::_CloseFocusedPane()
+    safe_void_coroutine TerminalPage::_CloseFocusedPane()
     {
         if (const auto terminalTab{ _GetFocusedTabImpl() })
         {
@@ -831,7 +831,7 @@ namespace winrt::TerminalApp::implementation
     // - Closes provided tabs one by one
     // Arguments:
     // - tabs - tabs to remove
-    winrt::fire_and_forget TerminalPage::_RemoveTabs(const std::vector<winrt::TerminalApp::TabBase> tabs)
+    safe_void_coroutine TerminalPage::_RemoveTabs(const std::vector<winrt::TerminalApp::TabBase> tabs)
     {
         for (auto& tab : tabs)
         {
