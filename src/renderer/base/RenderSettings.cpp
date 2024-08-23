@@ -20,6 +20,7 @@ RenderSettings::RenderSettings() noexcept
     SetColorTableEntry(TextColor::FRAME_FOREGROUND, INVALID_COLOR);
     SetColorTableEntry(TextColor::FRAME_BACKGROUND, INVALID_COLOR);
     SetColorTableEntry(TextColor::CURSOR_COLOR, INVALID_COLOR);
+    SetColorTableEntry(TextColor::SELECTION_BACKGROUND, INVALID_COLOR);
 
     SetColorAliasIndex(ColorAlias::DefaultForeground, TextColor::DARK_WHITE);
     SetColorAliasIndex(ColorAlias::DefaultBackground, TextColor::DARK_BLACK);

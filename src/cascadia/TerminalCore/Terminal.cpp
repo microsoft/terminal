@@ -155,6 +155,8 @@ void Terminal::UpdateAppearance(const ICoreAppearance& appearance)
     renderSettings.SetColorAlias(ColorAlias::DefaultForeground, TextColor::DEFAULT_FOREGROUND, newForegroundColor);
     const til::color newCursorColor{ appearance.CursorColor() };
     renderSettings.SetColorTableEntry(TextColor::CURSOR_COLOR, newCursorColor);
+    const til::color newSelectionColor{ appearance.SelectionBackground() };
+    renderSettings.SetColorTableEntry(TextColor::SELECTION_BACKGROUND, newSelectionColor);
 
     for (auto i = 0; i < 16; i++)
     {
@@ -1275,8 +1277,8 @@ Scheme Terminal::GetColorScheme() const
     s.Foreground = til::color{ renderSettings.GetColorAlias(ColorAlias::DefaultForeground) };
     s.Background = til::color{ renderSettings.GetColorAlias(ColorAlias::DefaultBackground) };
 
-    // SelectionBackground is stored in the ControlAppearance
     s.CursorColor = til::color{ renderSettings.GetColorTableEntry(TextColor::CURSOR_COLOR) };
+    s.SelectionBackground = til::color{ renderSettings.GetColorTableEntry(TextColor::SELECTION_BACKGROUND) };
 
     s.Black = til::color{ renderSettings.GetColorTableEntry(TextColor::DARK_BLACK) };
     s.Red = til::color{ renderSettings.GetColorTableEntry(TextColor::DARK_RED) };
@@ -1322,6 +1324,7 @@ void Terminal::ApplyScheme(const Scheme& colorScheme)
     renderSettings.SetColorTableEntry(TextColor::BRIGHT_WHITE, til::color{ colorScheme.BrightWhite });
 
     renderSettings.SetColorTableEntry(TextColor::CURSOR_COLOR, til::color{ colorScheme.CursorColor });
+    renderSettings.SetColorTableEntry(TextColor::SELECTION_BACKGROUND, til::color{ colorScheme.SelectionBackground });
 
     // Tell the control that the scrollbar has somehow changed. Used as a
     // workaround to force the control to redraw any scrollbar marks whose color

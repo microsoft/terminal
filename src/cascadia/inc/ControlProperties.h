@@ -11,6 +11,7 @@
     X(til::color, CursorColor, DEFAULT_CURSOR_COLOR)                                                                      \
     X(winrt::Microsoft::Terminal::Core::CursorStyle, CursorShape, winrt::Microsoft::Terminal::Core::CursorStyle::Vintage) \
     X(uint32_t, CursorHeight, DEFAULT_CURSOR_HEIGHT)                                                                      \
+    X(til::color, SelectionBackground, DEFAULT_FOREGROUND)                                                                \
     X(bool, IntenseIsBold)                                                                                                \
     X(bool, IntenseIsBright, true)                                                                                        \
     X(winrt::Microsoft::Terminal::Core::AdjustTextMode, AdjustIndistinguishableColors, winrt::Microsoft::Terminal::Core::AdjustTextMode::Never)
@@ -18,7 +19,6 @@
 // --------------------------- Control Appearance ---------------------------
 //  All of these settings are defined in IControlAppearance.
 #define CONTROL_APPEARANCE_SETTINGS(X)                                                                                                          \
-    X(til::color, SelectionBackground, DEFAULT_FOREGROUND)                                                                                      \
     X(float, Opacity, 1.0f)                                                                                                                     \
     X(bool, UseAcrylic, false)                                                                                                                  \
     X(winrt::hstring, BackgroundImage)                                                                                                          \

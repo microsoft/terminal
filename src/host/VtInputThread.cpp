@@ -28,10 +28,6 @@ VtInputThread::VtInputThread(_In_ wil::unique_hfile hPipe, const bool inheritCur
 
     auto dispatch = std::make_unique<InteractDispatch>();
     auto engine = std::make_unique<InputStateMachineEngine>(std::move(dispatch), inheritCursor);
-
-    // we need this callback to be able to flush an unknown input sequence to the app
-    engine->SetFlushToInputQueueCallback([this] { return _pInputStateMachine->FlushToTerminal(); });
-
     _pInputStateMachine = std::make_unique<StateMachine>(std::move(engine));
 }
 
