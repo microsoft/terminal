@@ -8337,6 +8337,10 @@ void ScreenBufferTests::SimpleMarkCommand()
 
 void ScreenBufferTests::SimpleWrappedCommand()
 {
+    BEGIN_TEST_METHOD_PROPERTIES()
+        TEST_METHOD_PROPERTY(L"IsolationLevel", L"Method")
+    END_TEST_METHOD_PROPERTIES()
+
     auto& g = ServiceLocator::LocateGlobals();
     auto& gci = g.getConsoleInformation();
     auto& si = gci.GetActiveOutputBuffer();

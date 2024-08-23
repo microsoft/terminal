@@ -41,6 +41,8 @@ namespace ControlUnitTests
         TEST_METHOD(TestSelectCommandSimple);
         TEST_METHOD(TestSelectOutputSimple);
         TEST_METHOD(TestCommandContext);
+        TEST_METHOD(TestCommandContextWithPwshGhostText);
+
         TEST_METHOD(TestSelectOutputScrolling);
         TEST_METHOD(TestSelectOutputExactWrap);
 
@@ -553,6 +555,61 @@ namespace ControlUnitTests
             VERIFY_ARE_EQUAL(1u, historyContext.History().Size());
             // The current commandline is now empty
             VERIFY_ARE_EQUAL(L"", historyContext.CurrentCommandline());
+        }
+    }
+
+    void ControlCoreTests::TestCommandContextWithPwshGhostText()
+    {
+        auto [settings, conn] = _createSettingsAndConnection();
+        Log::Comment(L"Create ControlCore object");
+        auto core = createCore(*settings, *conn);
+        VERIFY_IS_NOT_NULL(core);
+        _standardInit(core);
+
+        Log::Comment(L"Print some text");
+
+        _writePrompt(conn, L"C:\\Windows");
+        conn->WriteInput(winrt_wstring_to_array_view(L"Foo-bar"));
+        conn->WriteInput(winrt_wstring_to_array_view(L"\x1b]133;C\x7"));
+
+        conn->WriteInput(winrt_wstring_to_array_view(L"\r\n"));
+        conn->WriteInput(winrt_wstring_to_array_view(L"This is some text     \r\n"));
+        conn->WriteInput(winrt_wstring_to_array_view(L"with varying amounts  \r\n"));
+        conn->WriteInput(winrt_wstring_to_array_view(L"of whitespace         \r\n"));
+
+        _writePrompt(conn, L"C:\\Windows");
+
+        Log::Comment(L"Check the command context");
+
+        const WEX::TestExecution::DisableVerifyExceptions disableExceptionsScope;
+        {
+            auto historyContext{ core->CommandHistory() };
+            VERIFY_ARE_EQUAL(1u, historyContext.History().Size());
+            VERIFY_ARE_EQUAL(L"", historyContext.CurrentCommandline());
+        }
+
+        Log::Comment(L"Write 'BarBar' to the command...");
+        conn->WriteInput(winrt_wstring_to_array_view(L"BarBar"));
+        {
+            auto historyContext{ core->CommandHistory() };
+            // BarBar shouldn't be in the history, it should be the current command
+            VERIFY_ARE_EQUAL(1u, historyContext.History().Size());
+            VERIFY_ARE_EQUAL(L"BarBar", historyContext.CurrentCommandline());
+        }
+
+        Log::Comment(L"then move the cursor to the left");
+        // This emulates the state the buffer is in when pwsh does it's "ghost
+        // text" thing. We don't want to include all that ghost text in the
+        // current commandline.
+        conn->WriteInput(winrt_wstring_to_array_view(L"\x1b[D"));
+        conn->WriteInput(winrt_wstring_to_array_view(L"\x1b[D"));
+        {
+            auto historyContext{ core->CommandHistory() };
+            VERIFY_ARE_EQUAL(1u, historyContext.History().Size());
+            // The current commandline is only the text to the left of the cursor
+            auto curr{ historyContext.CurrentCommandline() };
+            VERIFY_ARE_EQUAL(4u, curr.size());
+            VERIFY_ARE_EQUAL(L"BarB", curr);
         }
     }
 
