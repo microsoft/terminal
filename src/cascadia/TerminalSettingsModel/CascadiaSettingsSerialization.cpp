@@ -1601,20 +1601,20 @@ void CascadiaSettings::LogSettingChanges(bool isJsonLoad) const
 
     // aggregate setting changes
     std::set<std::string> changes;
-    static std::string globalContext{ "global" };
+    static constexpr std::string_view globalContext{ "global" };
     _globals->LogSettingChanges(changes, globalContext);
 
     // Actions are not expected to change when loaded from the settings UI
-    static std::string actionContext{ "action" };
+    static constexpr std::string_view actionContext{ "action" };
     winrt::get_self<implementation::ActionMap>(_globals->ActionMap())->LogSettingChanges(changes, actionContext);
 
-    static std::string profileContext{ "profile" };
+    static constexpr std::string_view profileContext{ "profile" };
     for (const auto& profile : _allProfiles)
     {
         winrt::get_self<Profile>(profile)->LogSettingChanges(changes, profileContext);
     }
 
-    static std::string profileDefaultsContext{ "profileDefaults" };
+    static constexpr std::string_view profileDefaultsContext{ "profileDefaults" };
     _baseLayerProfile->LogSettingChanges(changes, profileDefaultsContext);
 
     // Themes are not expected to change when loaded from the settings UI

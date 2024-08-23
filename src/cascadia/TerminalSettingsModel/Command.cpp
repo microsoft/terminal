@@ -759,12 +759,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         if (!_Description.empty())
         {
-            changes.emplace(fmt::format(FMT_COMPILE("{}"), DescriptionKey));
+            changes.emplace(DescriptionKey);
         }
 
         if (IsNestedCommand())
         {
-            changes.emplace(fmt::format(FMT_COMPILE("{}"), CommandsKey));
+            changes.emplace(CommandsKey);
         }
         else
         {

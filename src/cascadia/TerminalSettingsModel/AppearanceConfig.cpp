@@ -181,7 +181,7 @@ void AppearanceConfig::_logSettingIfSet(const std::string_view& setting, const b
 {
     if (isSet)
     {
-        _logSettingSet(std::string{ setting });
+        _logSettingSet(setting);
     }
 }
 
