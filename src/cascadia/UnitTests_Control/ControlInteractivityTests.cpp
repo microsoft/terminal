@@ -998,16 +998,15 @@ namespace ControlUnitTests
         VERIFY_IS_GREATER_THAN(core->ScrollOffset(), 0);
 
         // Viewport is now above the mutable viewport, so the mouse event
-        // straight up won't be sent to the terminal.
+        // will be clamped to the top line.
 
-        expectedOutput.push_back(L"sentinel"); // Clearly, it won't be this string
+        expectedOutput.push_back(L"\x1b[M &!"); // 5, 1
         interactivity->PointerPressed(leftMouseDown,
                                       WM_LBUTTONDOWN, //pointerUpdateKind
                                       0, // timestamp
                                       modifiers,
                                       cursorPosition0.to_core_point());
         // Flush it out.
-        conn->WriteInput(winrt_wstring_to_array_view(L"sentinel"));
         VERIFY_ARE_EQUAL(0u, expectedOutput.size(), L"Validate we drained all the expected output");
 
         // This is the part as mentioned in GH#12719
