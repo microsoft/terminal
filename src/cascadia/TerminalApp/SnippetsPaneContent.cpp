@@ -22,7 +22,7 @@ namespace winrt
 namespace winrt::TerminalApp::implementation
 {
     SnippetsPaneContent::SnippetsPaneContent() :
-        _allTasks { winrt::single_threaded_observable_vector<TerminalApp::FilteredTask>() }
+        _allTasks{ winrt::single_threaded_observable_vector<TerminalApp::FilteredTask>() }
     {
         InitializeComponent();
 
