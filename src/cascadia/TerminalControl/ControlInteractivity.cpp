@@ -329,22 +329,22 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _touchAnchor = contactPoint;
     }
 
-    void ControlInteractivity::PointerMoved(Control::MouseButtonState buttonState,
+    bool ControlInteractivity::PointerMoved(Control::MouseButtonState buttonState,
                                             const unsigned int pointerUpdateKind,
                                             const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
                                             const bool focused,
                                             const Core::Point pixelPosition,
-                                            const bool pointerPressedInBounds,
-                                            bool& suppressFurtherHandling)
+                                            const bool pointerPressedInBounds)
     {
         const auto terminalPosition = _getTerminalPosition(til::point{ pixelPosition });
-        suppressFurtherHandling = false;
+        // Returning true from this function indicates that the caller should do no further processing of this movement.
+        bool handledCompletely = false;
 
         // Short-circuit isReadOnly check to avoid warning dialog
         if (focused && !_core->IsInReadOnlyMode() && _canSendVTMouseInput(modifiers))
         {
             _sendMouseEventHelper(terminalPosition, pointerUpdateKind, modifiers, 0, buttonState);
-            suppressFurtherHandling = true;
+            handledCompletely = true;
         }
         // GH#4603 - don't modify the selection if the pointer press didn't
         // actually start _in_ the control bounds. Case in point - someone drags
@@ -381,6 +381,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         _core->SetHoveredCell(terminalPosition.to_core_point());
+        return handledCompletely;
     }
 
     void ControlInteractivity::TouchMoved(const Core::Point newTouchPoint,
