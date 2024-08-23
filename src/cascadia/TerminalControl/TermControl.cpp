@@ -1539,6 +1539,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             auto encoding = s.encoding;
             wchar_t buf[4]{};
             size_t buf_len = 0;
+            bool handled = true;
 
             if (encoding == AltNumpadEncoding::Unicode)
             {
@@ -1547,13 +1548,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 {
                     // If the user pressed Alt + VK_ADD, then released Alt, they probably didn't intend to insert a numpad character at all.
                     // Send any accumulated key events instead.
-                    bool h = true;
                     for (auto&& e : _altNumpadState.cachedKeyEvents)
                     {
-                        h = h && _TrySendKeyEvent(std::get<0>(e), std::get<1>(e), std::get<2>(e), std::get<3>(e));
+                        handled = handled && _TrySendKeyEvent(e.vkey, e.scanCode, e.modifiers, e.keyDown);
                     }
                     // Send the alt keyup we are currently processing
-                    h = h && _TrySendKeyEvent(vkey, scanCode, modifiers, keyDown);
+                    handled = handled && _TrySendKeyEvent(vkey, scanCode, modifiers, keyDown);
                     // do not accumulate into the buffer
                 }
                 else if (s.accumulator <= 0xffff)
@@ -1600,7 +1600,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             }
 
             s = {};
-            return true;
+            return handled;
         }
         // As a continuation of the above, this handles the key-down case.
         if (modifiers.IsAltPressed())
@@ -1618,9 +1618,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             {
                 auto& s = _altNumpadState;
 
-                if (vkey == VK_ADD)
+                if (keyDown)
                 {
-                    if (keyDown)
+                    if (vkey == VK_ADD)
                     {
                         // Alt '+' <number> is used to input Unicode code points.
                         // Every time you press + it resets the entire state
@@ -1629,20 +1629,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                         s.accumulator = 0;
                         s.active = true;
                     }
-                }
-                else if (vkey == VK_NUMPAD0 && s.encoding == AltNumpadEncoding::OEM && s.accumulator == 0)
-                {
-                    if (keyDown)
+                    else if (vkey == VK_NUMPAD0 && s.encoding == AltNumpadEncoding::OEM && s.accumulator == 0)
                     {
                         // Alt '0' <number> is used to input ANSI code points.
                         // Otherwise, they're OEM codepoints.
                         s.encoding = AltNumpadEncoding::ANSI;
                         s.active = true;
                     }
-                }
-                else
-                {
-                    if (keyDown)
+                    else
                     {
                         // Otherwise, append the pressed key to the accumulator.
                         const uint32_t base = s.encoding == AltNumpadEncoding::Unicode ? 16 : 10;
