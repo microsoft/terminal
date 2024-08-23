@@ -481,6 +481,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void MainPage::SaveButton_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*args*/)
     {
+        _settingsClone.LogSettingChanges(false);
         _settingsClone.WriteSettingsToDisk();
     }
 

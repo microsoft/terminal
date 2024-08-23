@@ -432,6 +432,10 @@ namespace winrt::TerminalApp::implementation
                 return;
             }
         }
+        else
+        {
+            _settings.LogSettingChanges(true);
+        }
 
         if (initialLoad)
         {

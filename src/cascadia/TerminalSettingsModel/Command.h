@@ -61,6 +61,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                                                            const Json::Value& json,
                                                            const OriginTag origin);
         Json::Value ToJson() const;
+        void LogSettingChanges(std::set<std::string>& changes);
 
         bool HasNestedCommands() const;
         bool IsNestedCommand() const noexcept;
