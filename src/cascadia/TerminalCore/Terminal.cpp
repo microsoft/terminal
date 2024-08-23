@@ -711,7 +711,7 @@ TerminalInput::OutputType Terminal::SendCharEvent(const wchar_t ch, const WORD s
         // * AND we're not in the alt buffer
         //
         // Then treat this line like it's a prompt mark.
-        if (_autoMarkPrompts)
+        if (_autoMarkPrompts && _mainBuffer && !_inAltBuffer())
         {
             // We need to be a little tricky here, to try and support folks that are
             // auto-marking prompts, but don't necessarily have the rest of shell
@@ -725,10 +725,10 @@ TerminalInput::OutputType Terminal::SendCharEvent(const wchar_t ch, const WORD s
             //
             // (TextBuffer::_createPromptMarkIfNeeded does that work for us)
 
-            const bool createdMark = _activeBuffer().StartOutput();
+            const bool createdMark = _mainBuffer->StartOutput();
             if (createdMark)
             {
-                _activeBuffer().ManuallyMarkRowAsPrompt(_activeBuffer().GetCursor().GetPosition().y);
+                _mainBuffer->ManuallyMarkRowAsPrompt(_mainBuffer->GetCursor().GetPosition().y);
 
                 // This changed the scrollbar marks - raise a notification to update them
                 _NotifyScrollEvent();
