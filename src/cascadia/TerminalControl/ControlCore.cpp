@@ -420,10 +420,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - <none>
     void ControlCore::_sendInputToConnection(std::wstring_view wstr)
     {
-        if (!wstr.empty())
-        {
-            _connection.WriteInput(winrt_wstring_to_array_view(wstr));
-        }
+        _connection.WriteInput(winrt_wstring_to_array_view(wstr));
     }
 
     // Method Description:
