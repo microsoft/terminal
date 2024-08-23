@@ -1615,6 +1615,12 @@ void Terminal::PreviewText(std::wstring_view input)
     static constexpr TextAttribute previewAttrs{ CharacterAttributes::Italics, TextColor{}, TextColor{}, 0u, TextColor{} };
 
     auto lock = LockForWriting();
+
+    if (_mainBuffer == nullptr)
+    {
+        return;
+    }
+
     if (input.empty())
     {
         snippetPreview.text = L"";
