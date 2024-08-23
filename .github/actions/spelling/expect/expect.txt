@@ -9,7 +9,6 @@ ABORTIFHUNG
 ACCESSTOKEN
 acidev
 ACIOSS
-ACover
 acp
 actctx
 ACTCTXW
@@ -87,6 +86,7 @@ Autowrap
 AVerify
 awch
 azurecr
+AZZ
 backgrounded
 Backgrounder
 backgrounding
@@ -180,7 +180,6 @@ CFuzz
 cgscrn
 chafa
 changelists
-charinfo
 CHARSETINFO
 chh
 chshdng
@@ -264,7 +263,6 @@ consolegit
 consolehost
 CONSOLEIME
 consoleinternal
-Consoleroot
 CONSOLESETFOREGROUND
 consoletaeftemplates
 consoleuwp
@@ -386,7 +384,7 @@ DECCIR
 DECCKM
 DECCKSR
 DECCOLM
-DECCRA
+deccra
 DECCTR
 DECDC
 DECDHL
@@ -398,7 +396,7 @@ DECEKBD
 DECERA
 DECFI
 DECFNK
-DECFRA
+decfra
 DECGCI
 DECGCR
 DECGNL
@@ -727,7 +725,6 @@ GHIJKL
 gitcheckin
 gitfilters
 gitlab
-gitmodules
 gle
 GLOBALFOCUS
 GLYPHENTRY
@@ -1021,7 +1018,6 @@ lstatus
 lstrcmp
 lstrcmpi
 LTEXT
-LTLTLTLTL
 ltsc
 LUID
 luma
@@ -1116,7 +1112,6 @@ msrc
 MSVCRTD
 MTSM
 Munged
-munges
 murmurhash
 muxes
 myapplet
@@ -1218,7 +1213,6 @@ ntlpcapi
 ntm
 ntrtl
 ntstatus
-NTSYSCALLAPI
 nttree
 nturtl
 ntuser
@@ -1526,7 +1520,6 @@ rftp
 rgbi
 RGBQUAD
 rgbs
-rgci
 rgfae
 rgfte
 rgn
@@ -1604,6 +1597,7 @@ SELECTALL
 SELECTEDFONT
 SELECTSTRING
 Selfhosters
+Serbo
 SERVERDLL
 SETACTIVE
 SETBUDDYINT
@@ -1832,8 +1826,6 @@ TOPDOWNDIB
 TOpt
 tosign
 touchpad
-Tpp
-Tpqrst
 tracelogging
 traceviewpp
 trackbar
@@ -1958,7 +1950,6 @@ VPACKMANIFESTDIRECTORY
 VPR
 VREDRAW
 vsc
-vsconfig
 vscprintf
 VSCROLL
 vsdevshell
@@ -2000,7 +1991,6 @@ wcswidth
 wddm
 wddmcon
 WDDMCONSOLECONTEXT
-WDK
 wdm
 webpage
 websites
@@ -2074,7 +2064,6 @@ winuserp
 WINVER
 wistd
 wmain
-wmemory
 WMSZ
 wnd
 WNDALLOC
@@ -2173,6 +2162,7 @@ yact
 YCast
 YCENTER
 YCount
+yizz
 YLimit
 YPan
 YSubstantial
@@ -2186,3 +2176,4 @@ ZCtrl
 ZWJs
 ZYXWVU
 ZYXWVUTd
+zzf

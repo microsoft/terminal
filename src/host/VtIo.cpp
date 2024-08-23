@@ -163,38 +163,37 @@ bool VtIo::IsUsingVt() const
     {
         Writer writer{ this };
 
-        // GH#4999 - Send a sequence to the connected terminal to request
-        // win32-input-mode from them. This will enable the connected terminal to
-        // send us full INPUT_RECORDs as input. If the terminal doesn't understand
-        // this sequence, it'll just ignore it.
-
-        writer.WriteUTF8(
-            "\x1b[?1004h" // Focus Event Mode
-            "\x1b[?9001h" // Win32 Input Mode
-        );
-
         // MSFT: 15813316
         // If the terminal application wants us to inherit the cursor position,
-        //  we're going to emit a VT sequence to ask for the cursor position, then
-        //  wait 1s until we get a response.
+        // we're going to emit a VT sequence to ask for the cursor position.
         // If we get a response, the InteractDispatch will call SetCursorPosition,
-        //      which will call to our VtIo::SetCursorPosition method.
+        // which will call to our VtIo::SetCursorPosition method.
+        //
+        // By sending the request before sending the DA1 one, we can simply
+        // wait for the DA1 response below and effectively wait for both.
         if (_lookingForCursorPosition)
         {
             writer.WriteUTF8("\x1b[6n"); // Cursor Position Report (DSR CPR)
         }
 
+        // GH#4999 - Send a sequence to the connected terminal to request
+        // win32-input-mode from them. This will enable the connected terminal to
+        // send us full INPUT_RECORDs as input. If the terminal doesn't understand
+        // this sequence, it'll just ignore it.
+        writer.WriteUTF8(
+            "\x1b[c" // DA1 Report (Primary Device Attributes)
+            "\x1b[?1004h" // Focus Event Mode
+            "\x1b[?9001h" // Win32 Input Mode
+        );
+
         writer.Submit();
     }
 
-    if (_lookingForCursorPosition)
     {
-        _lookingForCursorPosition = false;
-
         // Allow the input thread to momentarily gain the console lock.
         auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         const auto suspension = gci.SuspendLock();
-        _pVtInputThread->WaitUntilDSR(3000);
+        _deviceAttributes = _pVtInputThread->WaitUntilDA1(3000);
     }
 
     if (_pPtySignalInputThread)
@@ -209,6 +208,16 @@ bool VtIo::IsUsingVt() const
     }
 
     return S_OK;
+}
+
+void VtIo::SetDeviceAttributes(const til::enumset<DeviceAttribute, uint64_t> attributes) noexcept
+{
+    _deviceAttributes = attributes;
+}
+
+til::enumset<DeviceAttribute, uint64_t> VtIo::GetDeviceAttributes() const noexcept
+{
+    return _deviceAttributes;
 }
 
 // Method Description:
@@ -357,6 +366,40 @@ void VtIo::FormatAttributes(std::wstring& target, const TextAttribute& attribute
     }
 
     target.append(bufW, len);
+}
+
+wchar_t VtIo::SanitizeUCS2(wchar_t ch)
+{
+    // If any of the values in the buffer are C0 or C1 controls, we need to
+    // convert them to printable codepoints, otherwise they'll end up being
+    // evaluated as control characters by the receiving terminal. We use the
+    // DOS 437 code page for the C0 controls and DEL, and just a `?` for the
+    // C1 controls, since that's what you would most likely have seen in the
+    // legacy v1 console with raster fonts.
+    if (ch < 0x20)
+    {
+        static constexpr wchar_t lut[] = {
+            // clang-format off
+            L' ', L'☺', L'☻', L'♥', L'♦', L'♣', L'♠', L'•', L'◘', L'○', L'◙', L'♂', L'♀', L'♪', L'♫', L'☼',
+            L'►', L'◄', L'↕', L'‼', L'¶', L'§', L'▬', L'↨', L'↑', L'↓', L'→', L'←', L'∟', L'↔', L'▲', L'▼',
+            // clang-format on
+        };
+        ch = lut[ch];
+    }
+    else if (ch == 0x7F)
+    {
+        ch = L'⌂';
+    }
+    else if (ch > 0x7F && ch < 0xA0)
+    {
+        ch = L'?';
+    }
+    else if (til::is_surrogate(ch))
+    {
+        ch = UNICODE_REPLACEMENT;
+    }
+
+    return ch;
 }
 
 VtIo::Writer::Writer(VtIo* io) noexcept :
@@ -592,7 +635,7 @@ void VtIo::Writer::WriteUTF16StripControlChars(std::wstring_view str) const
 
         for (it = begControlChars; it != end && IsControlCharacter(*it); ++it)
         {
-            WriteUCS2StripControlChars(*it);
+            WriteUCS2(SanitizeUCS2(*it));
         }
     }
 }
@@ -624,36 +667,6 @@ void VtIo::Writer::WriteUCS2(wchar_t ch) const
     }
 
     _io->_back.append(buf, len);
-}
-
-void VtIo::Writer::WriteUCS2StripControlChars(wchar_t ch) const
-{
-    // If any of the values in the buffer are C0 or C1 controls, we need to
-    // convert them to printable codepoints, otherwise they'll end up being
-    // evaluated as control characters by the receiving terminal. We use the
-    // DOS 437 code page for the C0 controls and DEL, and just a `?` for the
-    // C1 controls, since that's what you would most likely have seen in the
-    // legacy v1 console with raster fonts.
-    if (ch < 0x20)
-    {
-        static constexpr wchar_t lut[] = {
-            // clang-format off
-            L' ', L'☺', L'☻', L'♥', L'♦', L'♣', L'♠', L'•', L'◘', L'○', L'◙', L'♂', L'♀', L'♪', L'♫', L'☼',
-            L'►', L'◄', L'↕', L'‼', L'¶', L'§', L'▬', L'↨', L'↑', L'↓', L'→', L'←', L'∟', L'↔', L'▲', L'▼',
-            // clang-format on
-        };
-        ch = lut[ch];
-    }
-    else if (ch == 0x7F)
-    {
-        ch = L'⌂';
-    }
-    else if (ch > 0x7F && ch < 0xA0)
-    {
-        ch = L'?';
-    }
-
-    WriteUCS2(ch);
 }
 
 // CUP: Cursor Position
@@ -773,7 +786,7 @@ void VtIo::Writer::WriteInfos(til::point target, std::span<const CHAR_INFO> info
 
         do
         {
-            WriteUCS2StripControlChars(ch);
+            WriteUCS2(SanitizeUCS2(ch));
         } while (--repeat);
     }
 }

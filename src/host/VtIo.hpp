@@ -35,7 +35,6 @@ namespace Microsoft::Console::VirtualTerminal
             void WriteUTF16TranslateCRLF(std::wstring_view str) const;
             void WriteUTF16StripControlChars(std::wstring_view str) const;
             void WriteUCS2(wchar_t ch) const;
-            void WriteUCS2StripControlChars(wchar_t ch) const;
             void WriteCUP(til::point position) const;
             void WriteDECTCEM(bool enabled) const;
             void WriteSGR1006(bool enabled) const;
@@ -54,6 +53,7 @@ namespace Microsoft::Console::VirtualTerminal
 
         static void FormatAttributes(std::string& target, const TextAttribute& attributes);
         static void FormatAttributes(std::wstring& target, const TextAttribute& attributes);
+        static wchar_t SanitizeUCS2(wchar_t ch);
 
         [[nodiscard]] HRESULT Initialize(const ConsoleArguments* const pArgs);
         [[nodiscard]] HRESULT CreateAndStartSignalThread() noexcept;
@@ -62,6 +62,8 @@ namespace Microsoft::Console::VirtualTerminal
         bool IsUsingVt() const;
         [[nodiscard]] HRESULT StartIfNeeded();
 
+        void SetDeviceAttributes(til::enumset<DeviceAttribute, uint64_t> attributes) noexcept;
+        til::enumset<DeviceAttribute, uint64_t> GetDeviceAttributes() const noexcept;
         void SendCloseEvent();
         void CreatePseudoWindow();
 
@@ -79,6 +81,7 @@ namespace Microsoft::Console::VirtualTerminal
 
         std::unique_ptr<Microsoft::Console::VtInputThread> _pVtInputThread;
         std::unique_ptr<Microsoft::Console::PtySignalInputThread> _pPtySignalInputThread;
+        til::enumset<DeviceAttribute, uint64_t> _deviceAttributes;
 
         // We use two buffers: A front and a back buffer. The front buffer is the one we're currently
         // sending to the terminal (it's being "presented" = it's on the "front" & "visible").

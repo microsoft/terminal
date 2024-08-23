@@ -49,6 +49,32 @@ namespace Microsoft::Console::VirtualTerminal
     // CAPSLOCK_ON         0x0080
     // ENHANCED_KEY        0x0100
 
+    enum class DeviceAttribute : uint64_t
+    {
+        Columns132 = 1,
+        PrinterPort = 2,
+        Sixel = 4,
+        SelectiveErase = 6,
+        SoftCharacterSet = 7,
+        UserDefinedKeys = 8,
+        NationalReplacementCharacterSets = 9,
+        SerboCroatianCharacterSet = 12,
+        EightBitInterfaceArchitecture = 14,
+        TechnicalCharacterSet = 15,
+        WindowingCapability = 18,
+        Sessions = 19,
+        HorizontalScrolling = 21,
+        Color = 22,
+        GreekCharacterSet = 23,
+        TurkishCharacterSet = 24,
+        RectangularAreaOperations = 28,
+        TextMacros = 32,
+        Latin2CharacterSet = 42,
+        PCTerm = 44,
+        SoftKeyMapping = 45,
+        AsciiTerminalEmulation = 46,
+    };
+
     enum CsiActionCodes : uint64_t
     {
         ArrowUp = VTID("A"),
@@ -67,6 +93,7 @@ namespace Microsoft::Console::VirtualTerminal
         CSI_F3 = VTID("R"), // Both F3 and DSR are on R.
         // DSR_DeviceStatusReportResponse = VTID("R"),
         CSI_F4 = VTID("S"),
+        DA_DeviceAttributes = VTID("?c"),
         DTTERM_WindowManipulation = VTID("t"),
         CursorBackTab = VTID("Z"),
         Win32KeyboardInput = VTID("_")
@@ -128,11 +155,9 @@ namespace Microsoft::Console::VirtualTerminal
     class InputStateMachineEngine : public IStateMachineEngine
     {
     public:
-        InputStateMachineEngine(std::unique_ptr<IInteractDispatch> pDispatch);
-        InputStateMachineEngine(std::unique_ptr<IInteractDispatch> pDispatch,
-                                const bool lookingForDSR);
+        InputStateMachineEngine(std::unique_ptr<IInteractDispatch> pDispatch, const bool lookingForDSR = false);
 
-        void WaitUntilDSR(DWORD timeout) const noexcept;
+        til::enumset<DeviceAttribute, uint64_t> WaitUntilDA1(DWORD timeout) const noexcept;
 
         bool EncounteredWin32InputModeSequence() const noexcept override;
 
@@ -159,7 +184,8 @@ namespace Microsoft::Console::VirtualTerminal
 
     private:
         const std::unique_ptr<IInteractDispatch> _pDispatch;
-        std::atomic<bool> _lookingForDSR{ false };
+        std::atomic<uint64_t> _deviceAttributes{ 0 };
+        bool _lookingForDSR = false;
         bool _encounteredWin32InputModeSequence = false;
         DWORD _mouseButtonState = 0;
         std::chrono::milliseconds _doubleClickTime;
