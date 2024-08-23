@@ -93,7 +93,7 @@ static bool _HandleIsValid(HANDLE h) noexcept
     return (h != INVALID_HANDLE_VALUE) && (h != nullptr);
 }
 
-HRESULT _CreatePseudoConsole(const HANDLE hToken,
+HRESULT _CreatePseudoConsole(HANDLE hToken,
                              const COORD size,
                              const HANDLE hInput,
                              const HANDLE hOutput,
@@ -107,6 +107,12 @@ HRESULT _CreatePseudoConsole(const HANDLE hToken,
     if (size.X == 0 || size.Y == 0)
     {
         return E_INVALIDARG;
+    }
+
+    // CreateProcessAsUserW expects the token to be either valid or null.
+    if (hToken == INVALID_HANDLE_VALUE)
+    {
+        hToken = nullptr;
     }
 
     wil::unique_handle serverHandle;
@@ -132,9 +138,6 @@ HRESULT _CreatePseudoConsole(const HANDLE hToken,
     RETURN_IF_WIN32_BOOL_FALSE(CreatePipe(signalPipeConhostSide.addressof(), signalPipeOurSide.addressof(), &sa, 0));
     RETURN_IF_WIN32_BOOL_FALSE(SetHandleInformation(signalPipeConhostSide.get(), HANDLE_FLAG_INHERIT, HANDLE_FLAG_INHERIT));
 
-    // GH4061: Ensure that the path to executable in the format is escaped so C:\Program.exe cannot collide with C:\Program Files
-    // This is plenty of space to hold the formatted string
-    wchar_t cmd[MAX_PATH]{};
     const BOOL bInheritCursor = (dwFlags & PSEUDOCONSOLE_INHERIT_CURSOR) == PSEUDOCONSOLE_INHERIT_CURSOR;
 
     const wchar_t* textMeasurement;
@@ -154,16 +157,21 @@ HRESULT _CreatePseudoConsole(const HANDLE hToken,
         break;
     }
 
-    swprintf_s(cmd,
-               MAX_PATH,
-               L"\"%s\" --headless %s%s--width %hd --height %hd --signal 0x%tx --server 0x%tx",
-               _ConsoleHostPath(),
-               bInheritCursor ? L"--inheritcursor " : L"",
-               textMeasurement,
-               size.X,
-               size.Y,
-               std::bit_cast<uintptr_t>(signalPipeConhostSide.get()),
-               std::bit_cast<uintptr_t>(serverHandle.get()));
+    const auto conhostPath = _ConsoleHostPath();
+
+    // GH4061: Ensure that the path to executable in the format is escaped so C:\Program.exe cannot collide with C:\Program Files
+    // This is plenty of space to hold the formatted string
+    wil::unique_process_heap_string cmd;
+    RETURN_IF_FAILED(wil::str_printf_nothrow(
+        cmd,
+        L"\"%s\" --headless %s%s--width %hd --height %hd --signal 0x%tx --server 0x%tx",
+        conhostPath,
+        bInheritCursor ? L"--inheritcursor " : L"",
+        textMeasurement,
+        size.X,
+        size.Y,
+        std::bit_cast<uintptr_t>(signalPipeConhostSide.get()),
+        std::bit_cast<uintptr_t>(serverHandle.get())));
 
     STARTUPINFOEXW siEx{ 0 };
     siEx.StartupInfo.cb = sizeof(STARTUPINFOEXW);
@@ -205,7 +213,8 @@ HRESULT _CreatePseudoConsole(const HANDLE hToken,
                                                          nullptr,
                                                          nullptr));
     wil::unique_process_information pi;
-    { // wow64 disabled filesystem redirection scope
+    {
+        // wow64 disabled filesystem redirection scope
 #if defined(BUILD_WOW6432)
         PVOID RedirectionFlag;
         RETURN_IF_NTSTATUS_FAILED(RtlWow64EnableFsRedirectionEx(
@@ -215,35 +224,20 @@ HRESULT _CreatePseudoConsole(const HANDLE hToken,
             RtlWow64EnableFsRedirectionEx(RedirectionFlag, &RedirectionFlag);
         });
 #endif
-        if (hToken == INVALID_HANDLE_VALUE || hToken == nullptr)
-        {
-            // Call create process
-            RETURN_IF_WIN32_BOOL_FALSE(CreateProcessW(_ConsoleHostPath(),
-                                                      cmd,
-                                                      nullptr,
-                                                      nullptr,
-                                                      TRUE,
-                                                      EXTENDED_STARTUPINFO_PRESENT,
-                                                      nullptr,
-                                                      nullptr,
-                                                      &siEx.StartupInfo,
-                                                      pi.addressof()));
-        }
-        else
-        {
-            // Call create process
-            RETURN_IF_WIN32_BOOL_FALSE(CreateProcessAsUserW(hToken,
-                                                            _ConsoleHostPath(),
-                                                            cmd,
-                                                            nullptr,
-                                                            nullptr,
-                                                            TRUE,
-                                                            EXTENDED_STARTUPINFO_PRESENT,
-                                                            nullptr,
-                                                            nullptr,
-                                                            &siEx.StartupInfo,
-                                                            pi.addressof()));
-        }
+
+        // Call create process
+        RETURN_IF_WIN32_BOOL_FALSE(CreateProcessAsUserW(
+            hToken,
+            conhostPath,
+            cmd.get(),
+            nullptr,
+            nullptr,
+            TRUE,
+            EXTENDED_STARTUPINFO_PRESENT,
+            nullptr,
+            nullptr,
+            &siEx.StartupInfo,
+            pi.addressof()));
     }
 
     pPty->hSignal = signalPipeOurSide.release();
