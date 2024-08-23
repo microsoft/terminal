@@ -455,7 +455,7 @@ void AppHost::Close()
     }
 }
 
-winrt::fire_and_forget AppHost::_quit()
+safe_void_coroutine AppHost::_quit()
 {
     const auto peasant = _peasant;
 
@@ -903,7 +903,7 @@ void AppHost::_WindowActivated(bool activated)
     }
 }
 
-winrt::fire_and_forget AppHost::_peasantNotifyActivateWindow()
+safe_void_coroutine AppHost::_peasantNotifyActivateWindow()
 {
     const auto desktopManager = _desktopManager;
     const auto peasant = _peasant;
@@ -980,8 +980,8 @@ void AppHost::_HandleSummon(const winrt::Windows::Foundation::IInspectable& /*se
 // - <unused>
 // Return Value:
 // - <none>
-winrt::fire_and_forget AppHost::_IdentifyWindowsRequested(const winrt::Windows::Foundation::IInspectable /*sender*/,
-                                                          const winrt::Windows::Foundation::IInspectable /*args*/)
+safe_void_coroutine AppHost::_IdentifyWindowsRequested(const winrt::Windows::Foundation::IInspectable /*sender*/,
+                                                       const winrt::Windows::Foundation::IInspectable /*args*/)
 {
     auto weakThis{ weak_from_this() };
 
@@ -1015,8 +1015,8 @@ void AppHost::_DisplayWindowId(const winrt::Windows::Foundation::IInspectable& /
     _windowLogic.IdentifyWindow();
 }
 
-winrt::fire_and_forget AppHost::_RenameWindowRequested(const winrt::Windows::Foundation::IInspectable /*sender*/,
-                                                       const winrt::TerminalApp::RenameWindowRequestedArgs args)
+safe_void_coroutine AppHost::_RenameWindowRequested(const winrt::Windows::Foundation::IInspectable /*sender*/,
+                                                    const winrt::TerminalApp::RenameWindowRequestedArgs args)
 {
     // Switch to the BG thread - anything x-proc must happen on a BG thread
     co_await winrt::resume_background();
@@ -1350,8 +1350,8 @@ void AppHost::_PropertyChangedHandler(const winrt::Windows::Foundation::IInspect
     }
 }
 
-winrt::fire_and_forget AppHost::_WindowInitializedHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/,
-                                                          const winrt::Windows::Foundation::IInspectable& /*arg*/)
+safe_void_coroutine AppHost::_WindowInitializedHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+                                                       const winrt::Windows::Foundation::IInspectable& /*arg*/)
 {
     _isWindowInitialized = WindowInitializedState::Initializing;
 

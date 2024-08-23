@@ -42,7 +42,7 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    winrt::fire_and_forget SnippetsPaneContent::UpdateSettings(const CascadiaSettings& settings)
+    safe_void_coroutine SnippetsPaneContent::UpdateSettings(const CascadiaSettings& settings)
     {
         _settings = settings;
 

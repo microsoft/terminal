@@ -391,7 +391,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                    const std::chrono::microseconds duration);
         void _terminalSearchMissingCommand(std::wstring_view missingCommand);
 
-        winrt::fire_and_forget _terminalCompletionsChanged(std::wstring_view menuJson, unsigned int replaceLength);
+        safe_void_coroutine _terminalCompletionsChanged(std::wstring_view menuJson, unsigned int replaceLength);
 
 #pragma endregion
 
@@ -400,7 +400,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
 #pragma region RendererCallbacks
         void _rendererWarning(const HRESULT hr, wil::zwstring_view parameter);
-        winrt::fire_and_forget _renderEngineSwapChainChanged(const HANDLE handle);
+        safe_void_coroutine _renderEngineSwapChainChanged(const HANDLE handle);
         void _rendererBackgroundColorChanged();
         void _rendererTabColorChanged();
 #pragma endregion

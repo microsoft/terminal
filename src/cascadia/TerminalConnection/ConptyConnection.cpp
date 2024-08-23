@@ -793,7 +793,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     //   be awaiting our destruction breaks the deadlock.
     // Arguments:
     // - connection: the final living reference to an outgoing connection
-    winrt::fire_and_forget ConptyConnection::final_release(std::unique_ptr<ConptyConnection> connection)
+    safe_void_coroutine ConptyConnection::final_release(std::unique_ptr<ConptyConnection> connection)
     {
         co_await winrt::resume_background(); // move to background
         connection.reset(); // explicitly destruct

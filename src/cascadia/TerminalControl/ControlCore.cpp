@@ -1862,7 +1862,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         RendererWarning.raise(*this, winrt::make<RendererWarningArgs>(hr, winrt::hstring{ parameter }));
     }
 
-    winrt::fire_and_forget ControlCore::_renderEngineSwapChainChanged(const HANDLE sourceHandle)
+    safe_void_coroutine ControlCore::_renderEngineSwapChainChanged(const HANDLE sourceHandle)
     {
         // `sourceHandle` is a weak ref to a HANDLE that's ultimately owned by the
         // render engine's own unique_handle. We'll add another ref to it here.
@@ -2659,8 +2659,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
-    winrt::fire_and_forget ControlCore::_terminalCompletionsChanged(std::wstring_view menuJson,
-                                                                    unsigned int replaceLength)
+    safe_void_coroutine ControlCore::_terminalCompletionsChanged(std::wstring_view menuJson,
+                                                                 unsigned int replaceLength)
     {
         auto args = winrt::make_self<CompletionsChangedEventArgs>(winrt::hstring{ menuJson },
                                                                   replaceLength);

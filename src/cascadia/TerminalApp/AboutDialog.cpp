@@ -58,7 +58,7 @@ namespace winrt::TerminalApp::implementation
         ShellExecute(nullptr, nullptr, currentPath.c_str(), nullptr, nullptr, SW_SHOW);
     }
 
-    winrt::fire_and_forget AboutDialog::_queueUpdateCheck()
+    safe_void_coroutine AboutDialog::_queueUpdateCheck()
     {
         auto strongThis = get_strong();
         auto now{ std::chrono::system_clock::now() };

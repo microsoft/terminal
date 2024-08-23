@@ -1074,7 +1074,7 @@ void CascadiaSettings::_refreshDefaultTerminals()
     std::pair<std::vector<Model::DefaultTerminal>, Model::DefaultTerminal> result{ {}, nullptr };
     til::latch latch{ 1 };
 
-    std::ignore = [&]() -> winrt::fire_and_forget {
+    std::ignore = [&]() -> safe_void_coroutine {
         const auto cleanup = wil::scope_exit([&]() {
             latch.count_down();
         });

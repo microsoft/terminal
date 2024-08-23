@@ -78,7 +78,7 @@ static auto extractValueFromTaskWithoutMainThreadAwait(TTask&& task) -> decltype
     std::optional<decltype(task.get())> finalVal;
     til::latch latch{ 1 };
 
-    const auto _ = [&]() -> winrt::fire_and_forget {
+    const auto _ = [&]() -> safe_void_coroutine {
         const auto cleanup = wil::scope_exit([&]() {
             latch.count_down();
         });
