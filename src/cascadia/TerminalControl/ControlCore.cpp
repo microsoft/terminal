@@ -2288,7 +2288,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // (also account for the fact that the cursor may be in the middle of a commandline)
         if (!commands.empty() &&
             !trimmedCurrentCommand.empty() &&
-            std::wstring{ commands.back() }.substr(0, trimmedCurrentCommand.size()) == trimmedCurrentCommand)
+            std::wstring_view{ commands.back() }.substr(0, trimmedCurrentCommand.size()) == trimmedCurrentCommand)
         {
             commands.pop_back();
         }
