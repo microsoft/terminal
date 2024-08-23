@@ -389,7 +389,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void _terminalPlayMidiNote(const int noteNumber,
                                    const int velocity,
                                    const std::chrono::microseconds duration);
-        void _terminalSearchMissingCommand(std::wstring_view missingCommand);
+        void _terminalSearchMissingCommand(std::wstring_view missingCommand, const til::CoordType& bufferRow);
 
         winrt::fire_and_forget _terminalCompletionsChanged(std::wstring_view menuJson, unsigned int replaceLength);
 

@@ -64,6 +64,8 @@
     <!-- WIL (so widely used that this one does not have a TerminalWIL opt-in property; it is automatic) -->
     <Import Project="$(MSBuildThisFileDirectory)..\packages\Microsoft.Windows.ImplementationLibrary.1.0.240122.1\build\native\Microsoft.Windows.ImplementationLibrary.targets" Condition="Exists('$(MSBuildThisFileDirectory)..\packages\Microsoft.Windows.ImplementationLibrary.1.0.240122.1\build\native\Microsoft.Windows.ImplementationLibrary.targets')" />
 
+    <!-- WinGet Interop -->
+    <Import Project="$(MSBuildThisFileDirectory)..\build\rules\Microsoft.WindowsPackageManager.ComInterop.Additional.targets" Condition="'$(TerminalWinGetInterop)' == 'true'" />
   </ImportGroup>
 
   <Target Name="Terminal_EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">

@@ -26,6 +26,7 @@
 #include "LaunchPositionRequest.g.cpp"
 
 using namespace winrt;
+using namespace winrt::Microsoft::Management::Deployment;
 using namespace winrt::Microsoft::Terminal::Control;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
 using namespace winrt::Microsoft::Terminal::TerminalConnection;
@@ -3001,18 +3002,82 @@ namespace winrt::TerminalApp::implementation
         ShowWindowChanged.raise(*this, args);
     }
 
-    winrt::fire_and_forget TerminalPage::_SearchMissingCommandHandler(const IInspectable /*sender*/, const Microsoft::Terminal::Control::SearchMissingCommandEventArgs args)
+    Windows::Foundation::IAsyncOperation<IVectorView<MatchResult>> TerminalPage::_FindPackageAsync(hstring query)
     {
-        assert(!Dispatcher().HasThreadAccess());
+        const PackageManager packageManager = WindowsPackageManagerFactory::CreatePackageManager();
+        PackageCatalogReference catalogRef{
+            packageManager.GetPredefinedPackageCatalog(PredefinedPackageCatalog::OpenWindowsCatalog)
+        };
+        catalogRef.PackageCatalogBackgroundUpdateInterval(std::chrono::hours(24));
 
+        ConnectResult connectResult{ nullptr };
+        for (int retries = 0;;)
+        {
+            connectResult = catalogRef.Connect();
+            if (connectResult.Status() == ConnectResultStatus::Ok)
+            {
+                break;
+            }
+
+            if (++retries == 3)
+            {
+                co_return nullptr;
+            }
+        }
+
+        PackageCatalog catalog = connectResult.PackageCatalog();
+        // clang-format off
+        static constexpr std::array<WinGetSearchParams, 3> searches{ {
+            { .Field = PackageMatchField::Command, .MatchOption = PackageFieldMatchOption::StartsWithCaseInsensitive },
+            { .Field = PackageMatchField::Name, .MatchOption = PackageFieldMatchOption::ContainsCaseInsensitive },
+            { .Field = PackageMatchField::Moniker, .MatchOption = PackageFieldMatchOption::ContainsCaseInsensitive } } };
+        // clang-format on
+
+        PackageMatchFilter filter = WindowsPackageManagerFactory::CreatePackageMatchFilter();
+        filter.Value(query);
+
+        FindPackagesOptions options = WindowsPackageManagerFactory::CreateFindPackagesOptions();
+        options.Filters().Append(filter);
+        options.ResultLimit(20);
+
+        IVectorView<MatchResult> pkgList;
+        for (const auto& search : searches)
+        {
+            filter.Field(search.Field);
+            filter.Option(search.MatchOption);
+
+            const auto result = co_await catalog.FindPackagesAsync(options);
+            pkgList = result.Matches();
+            if (pkgList.Size() > 0)
+            {
+                break;
+            }
+        }
+        co_return pkgList;
+    }
+
+    Windows::Foundation::IAsyncAction TerminalPage::_SearchMissingCommandHandler(const IInspectable /*sender*/, const Microsoft::Terminal::Control::SearchMissingCommandEventArgs args)
+    {
         if (!Feature_QuickFix::IsEnabled())
+        {
+            co_return;
+        }
+        co_await winrt::resume_background();
+
+        // no packages were found, nothing to suggest
+        const auto pkgList = co_await _FindPackageAsync(args.MissingCommand());
+        if (!pkgList || pkgList.Size() == 0)
         {
             co_return;
         }
 
         std::vector<hstring> suggestions;
-        suggestions.reserve(1);
-        suggestions.emplace_back(fmt::format(FMT_COMPILE(L"winget install {}"), args.MissingCommand()));
+        suggestions.reserve(pkgList.Size());
+        for (const auto& pkg : pkgList)
+        {
+            // --id and --source ensure we don't collide with another package catalog
+            suggestions.emplace_back(fmt::format(FMT_COMPILE(L"winget install --id {} -s winget"), pkg.CatalogPackage().Id()));
+        }
 
         co_await wil::resume_foreground(Dispatcher());
 
@@ -5006,6 +5071,14 @@ namespace winrt::TerminalApp::implementation
                     {
                         ctrl.ClearQuickFix();
                     }
+
+                    TraceLoggingWrite(
+                        g_hTerminalAppProvider,
+                        "QuickFixSuggestionUsed",
+                        TraceLoggingDescription("Event emitted when a winget suggestion from is used"),
+                        TraceLoggingValue("QuickFixMenu", "Source"),
+                        TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+                        TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
                 }
             };
         };
@@ -5027,6 +5100,7 @@ namespace winrt::TerminalApp::implementation
 
             item.Text(qf);
             item.Click(makeCallback(qf));
+            ToolTipService::SetToolTip(item, box_value(qf));
             menu.Items().Append(item);
         }
     }

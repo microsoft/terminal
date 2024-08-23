@@ -4059,18 +4059,17 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const auto rd = get_self<ControlCore>(_core)->GetRenderData();
         rd->LockConsole();
         const auto viewportBufferPosition = rd->GetViewport();
-        const auto cursorBufferPosition = rd->GetCursorPosition();
         rd->UnlockConsole();
-        if (cursorBufferPosition.y < viewportBufferPosition.Top() || cursorBufferPosition.y > viewportBufferPosition.BottomInclusive())
+        if (_quickFixBufferPos < viewportBufferPosition.Top() || _quickFixBufferPos > viewportBufferPosition.BottomInclusive())
         {
             quickFixBtn.Visibility(Visibility::Collapsed);
             return;
         }
 
         // draw the button in the gutter
-        const auto& cursorPosInDips = CursorPositionInDips();
+        const auto& quickFixBtnPosInDips = _toPosInDips({ 0, _quickFixBufferPos });
         Controls::Canvas::SetLeft(quickFixBtn, -termPadding.Left);
-        Controls::Canvas::SetTop(quickFixBtn, cursorPosInDips.Y - termPadding.Top);
+        Controls::Canvas::SetTop(quickFixBtn, quickFixBtnPosInDips.y - termPadding.Top);
         quickFixBtn.Visibility(Visibility::Visible);
 
         if (auto automationPeer{ FrameworkElementAutomationPeer::FromElement(*this) })
@@ -4085,6 +4084,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     void TermControl::_bubbleSearchMissingCommand(const IInspectable& /*sender*/, const Control::SearchMissingCommandEventArgs& args)
     {
+        _quickFixBufferPos = args.BufferRow();
         SearchMissingCommand.raise(*this, args);
     }
 

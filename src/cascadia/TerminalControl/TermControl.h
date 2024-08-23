@@ -278,6 +278,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         bool _initializedTerminal{ false };
         bool _quickFixButtonCollapsible{ false };
         bool _quickFixesAvailable{ false };
+        til::CoordType _quickFixBufferPos{};
 
         std::shared_ptr<ThrottledFuncLeading> _playWarningBell;
 
