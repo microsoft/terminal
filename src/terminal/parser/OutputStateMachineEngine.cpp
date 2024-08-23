@@ -176,7 +176,7 @@ bool OutputStateMachineEngine::ActionPrintString(const std::wstring_view string)
 // - flush - set to true if the string should be flushed immediately.
 // Return Value:
 // - true iff we successfully dispatched the sequence.
-bool OutputStateMachineEngine::ActionPassThroughString(const std::wstring_view /*string*/, const bool /*flush*/) noexcept
+bool OutputStateMachineEngine::ActionPassThroughString(const std::wstring_view /*string*/) noexcept
 {
     return true;
 }
@@ -191,97 +191,94 @@ bool OutputStateMachineEngine::ActionPassThroughString(const std::wstring_view /
 // - true iff we successfully dispatched the sequence.
 bool OutputStateMachineEngine::ActionEscDispatch(const VTID id)
 {
-    auto success = false;
-
     switch (id)
     {
     case EscActionCodes::ST_StringTerminator:
         // This is the 7-bit string terminator, which is essentially a no-op.
-        success = true;
         break;
     case EscActionCodes::DECBI_BackIndex:
-        success = _dispatch->BackIndex();
+        _dispatch->BackIndex();
         break;
     case EscActionCodes::DECSC_CursorSave:
-        success = _dispatch->CursorSaveState();
+        _dispatch->CursorSaveState();
         break;
     case EscActionCodes::DECRC_CursorRestore:
-        success = _dispatch->CursorRestoreState();
+        _dispatch->CursorRestoreState();
         break;
     case EscActionCodes::DECFI_ForwardIndex:
-        success = _dispatch->ForwardIndex();
+        _dispatch->ForwardIndex();
         break;
     case EscActionCodes::DECKPAM_KeypadApplicationMode:
-        success = _dispatch->SetKeypadMode(true);
+        _dispatch->SetKeypadMode(true);
         break;
     case EscActionCodes::DECKPNM_KeypadNumericMode:
-        success = _dispatch->SetKeypadMode(false);
+        _dispatch->SetKeypadMode(false);
         break;
     case EscActionCodes::NEL_NextLine:
-        success = _dispatch->LineFeed(DispatchTypes::LineFeedType::WithReturn);
+        _dispatch->LineFeed(DispatchTypes::LineFeedType::WithReturn);
         break;
     case EscActionCodes::IND_Index:
-        success = _dispatch->LineFeed(DispatchTypes::LineFeedType::WithoutReturn);
+        _dispatch->LineFeed(DispatchTypes::LineFeedType::WithoutReturn);
         break;
     case EscActionCodes::RI_ReverseLineFeed:
-        success = _dispatch->ReverseLineFeed();
+        _dispatch->ReverseLineFeed();
         break;
     case EscActionCodes::HTS_HorizontalTabSet:
-        success = _dispatch->HorizontalTabSet();
+        _dispatch->HorizontalTabSet();
         break;
     case EscActionCodes::DECID_IdentifyDevice:
-        success = _dispatch->DeviceAttributes();
+        _dispatch->DeviceAttributes();
         break;
     case EscActionCodes::RIS_ResetToInitialState:
-        success = _dispatch->HardReset();
+        _dispatch->HardReset();
         break;
     case EscActionCodes::SS2_SingleShift:
-        success = _dispatch->SingleShift(2);
+        _dispatch->SingleShift(2);
         break;
     case EscActionCodes::SS3_SingleShift:
-        success = _dispatch->SingleShift(3);
+        _dispatch->SingleShift(3);
         break;
     case EscActionCodes::LS2_LockingShift:
-        success = _dispatch->LockingShift(2);
+        _dispatch->LockingShift(2);
         break;
     case EscActionCodes::LS3_LockingShift:
-        success = _dispatch->LockingShift(3);
+        _dispatch->LockingShift(3);
         break;
     case EscActionCodes::LS1R_LockingShift:
-        success = _dispatch->LockingShiftRight(1);
+        _dispatch->LockingShiftRight(1);
         break;
     case EscActionCodes::LS2R_LockingShift:
-        success = _dispatch->LockingShiftRight(2);
+        _dispatch->LockingShiftRight(2);
         break;
     case EscActionCodes::LS3R_LockingShift:
-        success = _dispatch->LockingShiftRight(3);
+        _dispatch->LockingShiftRight(3);
         break;
     case EscActionCodes::DECAC1_AcceptC1Controls:
-        success = _dispatch->AcceptC1Controls(true);
+        _dispatch->AcceptC1Controls(true);
         break;
     case EscActionCodes::ACS_AnsiLevel1:
-        success = _dispatch->AnnounceCodeStructure(1);
+        _dispatch->AnnounceCodeStructure(1);
         break;
     case EscActionCodes::ACS_AnsiLevel2:
-        success = _dispatch->AnnounceCodeStructure(2);
+        _dispatch->AnnounceCodeStructure(2);
         break;
     case EscActionCodes::ACS_AnsiLevel3:
-        success = _dispatch->AnnounceCodeStructure(3);
+        _dispatch->AnnounceCodeStructure(3);
         break;
     case EscActionCodes::DECDHL_DoubleHeightLineTop:
-        success = _dispatch->SetLineRendition(LineRendition::DoubleHeightTop);
+        _dispatch->SetLineRendition(LineRendition::DoubleHeightTop);
         break;
     case EscActionCodes::DECDHL_DoubleHeightLineBottom:
-        success = _dispatch->SetLineRendition(LineRendition::DoubleHeightBottom);
+        _dispatch->SetLineRendition(LineRendition::DoubleHeightBottom);
         break;
     case EscActionCodes::DECSWL_SingleWidthLine:
-        success = _dispatch->SetLineRendition(LineRendition::SingleWidth);
+        _dispatch->SetLineRendition(LineRendition::SingleWidth);
         break;
     case EscActionCodes::DECDWL_DoubleWidthLine:
-        success = _dispatch->SetLineRendition(LineRendition::DoubleWidth);
+        _dispatch->SetLineRendition(LineRendition::DoubleWidth);
         break;
     case EscActionCodes::DECALN_ScreenAlignmentPattern:
-        success = _dispatch->ScreenAlignmentPattern();
+        _dispatch->ScreenAlignmentPattern();
         break;
     default:
         const auto commandChar = id[0];
@@ -289,39 +286,37 @@ bool OutputStateMachineEngine::ActionEscDispatch(const VTID id)
         switch (commandChar)
         {
         case '%':
-            success = _dispatch->DesignateCodingSystem(commandParameter);
+            _dispatch->DesignateCodingSystem(commandParameter);
             break;
         case '(':
-            success = _dispatch->Designate94Charset(0, commandParameter);
+            _dispatch->Designate94Charset(0, commandParameter);
             break;
         case ')':
-            success = _dispatch->Designate94Charset(1, commandParameter);
+            _dispatch->Designate94Charset(1, commandParameter);
             break;
         case '*':
-            success = _dispatch->Designate94Charset(2, commandParameter);
+            _dispatch->Designate94Charset(2, commandParameter);
             break;
         case '+':
-            success = _dispatch->Designate94Charset(3, commandParameter);
+            _dispatch->Designate94Charset(3, commandParameter);
             break;
         case '-':
-            success = _dispatch->Designate96Charset(1, commandParameter);
+            _dispatch->Designate96Charset(1, commandParameter);
             break;
         case '.':
-            success = _dispatch->Designate96Charset(2, commandParameter);
+            _dispatch->Designate96Charset(2, commandParameter);
             break;
         case '/':
-            success = _dispatch->Designate96Charset(3, commandParameter);
+            _dispatch->Designate96Charset(3, commandParameter);
             break;
         default:
-            // If no functions to call, overall dispatch was a failure.
-            success = false;
             break;
         }
     }
 
     _ClearLastChar();
 
-    return success;
+    return true;
 }
 
 // Method Description:
@@ -335,66 +330,62 @@ bool OutputStateMachineEngine::ActionEscDispatch(const VTID id)
 // - true iff we successfully dispatched the sequence.
 bool OutputStateMachineEngine::ActionVt52EscDispatch(const VTID id, const VTParameters parameters)
 {
-    auto success = false;
-
     switch (id)
     {
     case Vt52ActionCodes::CursorUp:
-        success = _dispatch->CursorUp(1);
+        _dispatch->CursorUp(1);
         break;
     case Vt52ActionCodes::CursorDown:
-        success = _dispatch->CursorDown(1);
+        _dispatch->CursorDown(1);
         break;
     case Vt52ActionCodes::CursorRight:
-        success = _dispatch->CursorForward(1);
+        _dispatch->CursorForward(1);
         break;
     case Vt52ActionCodes::CursorLeft:
-        success = _dispatch->CursorBackward(1);
+        _dispatch->CursorBackward(1);
         break;
     case Vt52ActionCodes::EnterGraphicsMode:
-        success = _dispatch->Designate94Charset(0, DispatchTypes::CharacterSets::DecSpecialGraphics);
+        _dispatch->Designate94Charset(0, DispatchTypes::CharacterSets::DecSpecialGraphics);
         break;
     case Vt52ActionCodes::ExitGraphicsMode:
-        success = _dispatch->Designate94Charset(0, DispatchTypes::CharacterSets::ASCII);
+        _dispatch->Designate94Charset(0, DispatchTypes::CharacterSets::ASCII);
         break;
     case Vt52ActionCodes::CursorToHome:
-        success = _dispatch->CursorPosition(1, 1);
+        _dispatch->CursorPosition(1, 1);
         break;
     case Vt52ActionCodes::ReverseLineFeed:
-        success = _dispatch->ReverseLineFeed();
+        _dispatch->ReverseLineFeed();
         break;
     case Vt52ActionCodes::EraseToEndOfScreen:
-        success = _dispatch->EraseInDisplay(DispatchTypes::EraseType::ToEnd);
+        _dispatch->EraseInDisplay(DispatchTypes::EraseType::ToEnd);
         break;
     case Vt52ActionCodes::EraseToEndOfLine:
-        success = _dispatch->EraseInLine(DispatchTypes::EraseType::ToEnd);
+        _dispatch->EraseInLine(DispatchTypes::EraseType::ToEnd);
         break;
     case Vt52ActionCodes::DirectCursorAddress:
         // VT52 cursor addresses are provided as ASCII characters, with
         // the lowest value being a space, representing an address of 1.
-        success = _dispatch->CursorPosition(parameters.at(0).value() - ' ' + 1, parameters.at(1).value() - ' ' + 1);
+        _dispatch->CursorPosition(parameters.at(0).value() - ' ' + 1, parameters.at(1).value() - ' ' + 1);
         break;
     case Vt52ActionCodes::Identify:
-        success = _dispatch->Vt52DeviceAttributes();
+        _dispatch->Vt52DeviceAttributes();
         break;
     case Vt52ActionCodes::EnterAlternateKeypadMode:
-        success = _dispatch->SetKeypadMode(true);
+        _dispatch->SetKeypadMode(true);
         break;
     case Vt52ActionCodes::ExitAlternateKeypadMode:
-        success = _dispatch->SetKeypadMode(false);
+        _dispatch->SetKeypadMode(false);
         break;
     case Vt52ActionCodes::ExitVt52Mode:
-        success = _dispatch->SetMode(DispatchTypes::ModeParams::DECANM_AnsiMode);
+        _dispatch->SetMode(DispatchTypes::ModeParams::DECANM_AnsiMode);
         break;
     default:
-        // If no functions to call, overall dispatch was a failure.
-        success = false;
         break;
     }
 
     _ClearLastChar();
 
-    return success;
+    return true;
 }
 
 // Routine Description:
@@ -411,164 +402,171 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParamete
     // Bail out if we receive subparameters, but we don't accept them in the sequence.
     if (parameters.hasSubParams() && !_CanSeqAcceptSubParam(id, parameters)) [[unlikely]]
     {
-        return false;
+        return true;
     }
-
-    auto success = false;
 
     switch (id)
     {
     case CsiActionCodes::CUU_CursorUp:
-        success = _dispatch->CursorUp(parameters.at(0));
+        _dispatch->CursorUp(parameters.at(0));
         break;
     case CsiActionCodes::CUD_CursorDown:
-        success = _dispatch->CursorDown(parameters.at(0));
+        _dispatch->CursorDown(parameters.at(0));
         break;
     case CsiActionCodes::CUF_CursorForward:
-        success = _dispatch->CursorForward(parameters.at(0));
+        _dispatch->CursorForward(parameters.at(0));
         break;
     case CsiActionCodes::CUB_CursorBackward:
-        success = _dispatch->CursorBackward(parameters.at(0));
+        _dispatch->CursorBackward(parameters.at(0));
         break;
     case CsiActionCodes::CNL_CursorNextLine:
-        success = _dispatch->CursorNextLine(parameters.at(0));
+        _dispatch->CursorNextLine(parameters.at(0));
         break;
     case CsiActionCodes::CPL_CursorPrevLine:
-        success = _dispatch->CursorPrevLine(parameters.at(0));
+        _dispatch->CursorPrevLine(parameters.at(0));
         break;
     case CsiActionCodes::CHA_CursorHorizontalAbsolute:
     case CsiActionCodes::HPA_HorizontalPositionAbsolute:
-        success = _dispatch->CursorHorizontalPositionAbsolute(parameters.at(0));
+        _dispatch->CursorHorizontalPositionAbsolute(parameters.at(0));
         break;
     case CsiActionCodes::VPA_VerticalLinePositionAbsolute:
-        success = _dispatch->VerticalLinePositionAbsolute(parameters.at(0));
+        _dispatch->VerticalLinePositionAbsolute(parameters.at(0));
         break;
     case CsiActionCodes::HPR_HorizontalPositionRelative:
-        success = _dispatch->HorizontalPositionRelative(parameters.at(0));
+        _dispatch->HorizontalPositionRelative(parameters.at(0));
         break;
     case CsiActionCodes::VPR_VerticalPositionRelative:
-        success = _dispatch->VerticalPositionRelative(parameters.at(0));
+        _dispatch->VerticalPositionRelative(parameters.at(0));
         break;
     case CsiActionCodes::CUP_CursorPosition:
     case CsiActionCodes::HVP_HorizontalVerticalPosition:
-        success = _dispatch->CursorPosition(parameters.at(0), parameters.at(1));
+        _dispatch->CursorPosition(parameters.at(0), parameters.at(1));
         break;
     case CsiActionCodes::DECSTBM_SetTopBottomMargins:
-        success = _dispatch->SetTopBottomScrollingMargins(parameters.at(0).value_or(0), parameters.at(1).value_or(0));
+        _dispatch->SetTopBottomScrollingMargins(parameters.at(0).value_or(0), parameters.at(1).value_or(0));
         break;
     case CsiActionCodes::DECSLRM_SetLeftRightMargins:
         // Note that this can also be ANSISYSSC, depending on the state of DECLRMM.
-        success = _dispatch->SetLeftRightScrollingMargins(parameters.at(0).value_or(0), parameters.at(1).value_or(0));
+        _dispatch->SetLeftRightScrollingMargins(parameters.at(0).value_or(0), parameters.at(1).value_or(0));
         break;
     case CsiActionCodes::ICH_InsertCharacter:
-        success = _dispatch->InsertCharacter(parameters.at(0));
+        _dispatch->InsertCharacter(parameters.at(0));
         break;
     case CsiActionCodes::DCH_DeleteCharacter:
-        success = _dispatch->DeleteCharacter(parameters.at(0));
+        _dispatch->DeleteCharacter(parameters.at(0));
         break;
     case CsiActionCodes::ED_EraseDisplay:
-        success = parameters.for_each([&](const auto eraseType) {
-            return _dispatch->EraseInDisplay(eraseType);
+        parameters.for_each([&](const auto eraseType) {
+            _dispatch->EraseInDisplay(eraseType);
         });
         break;
     case CsiActionCodes::DECSED_SelectiveEraseDisplay:
-        success = parameters.for_each([&](const auto eraseType) {
-            return _dispatch->SelectiveEraseInDisplay(eraseType);
+        parameters.for_each([&](const auto eraseType) {
+            _dispatch->SelectiveEraseInDisplay(eraseType);
         });
         break;
     case CsiActionCodes::EL_EraseLine:
-        success = parameters.for_each([&](const auto eraseType) {
-            return _dispatch->EraseInLine(eraseType);
+        parameters.for_each([&](const auto eraseType) {
+            _dispatch->EraseInLine(eraseType);
         });
         break;
     case CsiActionCodes::DECSEL_SelectiveEraseLine:
-        success = parameters.for_each([&](const auto eraseType) {
-            return _dispatch->SelectiveEraseInLine(eraseType);
+        parameters.for_each([&](const auto eraseType) {
+            _dispatch->SelectiveEraseInLine(eraseType);
         });
         break;
     case CsiActionCodes::SM_SetMode:
-        success = parameters.for_each([&](const auto mode) {
-            return _dispatch->SetMode(DispatchTypes::ANSIStandardMode(mode));
+        parameters.for_each([&](const auto mode) {
+            _dispatch->SetMode(DispatchTypes::ANSIStandardMode(mode));
         });
         break;
     case CsiActionCodes::DECSET_PrivateModeSet:
-        success = parameters.for_each([&](const auto mode) {
-            return _dispatch->SetMode(DispatchTypes::DECPrivateMode(mode));
+        parameters.for_each([&](const auto mode) {
+            _dispatch->SetMode(DispatchTypes::DECPrivateMode(mode));
         });
         break;
     case CsiActionCodes::RM_ResetMode:
-        success = parameters.for_each([&](const auto mode) {
-            return _dispatch->ResetMode(DispatchTypes::ANSIStandardMode(mode));
+        parameters.for_each([&](const auto mode) {
+            _dispatch->ResetMode(DispatchTypes::ANSIStandardMode(mode));
         });
         break;
     case CsiActionCodes::DECRST_PrivateModeReset:
-        success = parameters.for_each([&](const auto mode) {
-            return _dispatch->ResetMode(DispatchTypes::DECPrivateMode(mode));
+        parameters.for_each([&](const auto mode) {
+            _dispatch->ResetMode(DispatchTypes::DECPrivateMode(mode));
         });
         break;
     case CsiActionCodes::SGR_SetGraphicsRendition:
-        success = _dispatch->SetGraphicsRendition(parameters);
+        _dispatch->SetGraphicsRendition(parameters);
         break;
     case CsiActionCodes::DSR_DeviceStatusReport:
-        success = _dispatch->DeviceStatusReport(DispatchTypes::ANSIStandardStatus(parameters.at(0)), parameters.at(1));
+        _dispatch->DeviceStatusReport(DispatchTypes::ANSIStandardStatus(parameters.at(0)), parameters.at(1));
         break;
     case CsiActionCodes::DSR_PrivateDeviceStatusReport:
-        success = _dispatch->DeviceStatusReport(DispatchTypes::DECPrivateStatus(parameters.at(0)), parameters.at(1));
+        _dispatch->DeviceStatusReport(DispatchTypes::DECPrivateStatus(parameters.at(0)), parameters.at(1));
         break;
     case CsiActionCodes::DA_DeviceAttributes:
-        success = parameters.at(0).value_or(0) == 0 && _dispatch->DeviceAttributes();
+        if (parameters.at(0).value_or(0) == 0)
+        {
+            _dispatch->DeviceAttributes();
+        }
         break;
     case CsiActionCodes::DA2_SecondaryDeviceAttributes:
-        success = parameters.at(0).value_or(0) == 0 && _dispatch->SecondaryDeviceAttributes();
+        if (parameters.at(0).value_or(0) == 0)
+        {
+            _dispatch->SecondaryDeviceAttributes();
+        }
         break;
     case CsiActionCodes::DA3_TertiaryDeviceAttributes:
-        success = parameters.at(0).value_or(0) == 0 && _dispatch->TertiaryDeviceAttributes();
+        if (parameters.at(0).value_or(0) == 0)
+        {
+            _dispatch->TertiaryDeviceAttributes();
+        }
         break;
     case CsiActionCodes::DECREQTPARM_RequestTerminalParameters:
-        success = _dispatch->RequestTerminalParameters(parameters.at(0));
+        _dispatch->RequestTerminalParameters(parameters.at(0));
         break;
     case CsiActionCodes::SU_ScrollUp:
-        success = _dispatch->ScrollUp(parameters.at(0));
+        _dispatch->ScrollUp(parameters.at(0));
         break;
     case CsiActionCodes::SD_ScrollDown:
-        success = _dispatch->ScrollDown(parameters.at(0));
+        _dispatch->ScrollDown(parameters.at(0));
         break;
     case CsiActionCodes::NP_NextPage:
-        success = _dispatch->NextPage(parameters.at(0));
+        _dispatch->NextPage(parameters.at(0));
         break;
     case CsiActionCodes::PP_PrecedingPage:
-        success = _dispatch->PrecedingPage(parameters.at(0));
+        _dispatch->PrecedingPage(parameters.at(0));
         break;
     case CsiActionCodes::ANSISYSRC_CursorRestore:
-        success = _dispatch->CursorRestoreState();
+        _dispatch->CursorRestoreState();
         break;
     case CsiActionCodes::IL_InsertLine:
-        success = _dispatch->InsertLine(parameters.at(0));
+        _dispatch->InsertLine(parameters.at(0));
         break;
     case CsiActionCodes::DL_DeleteLine:
-        success = _dispatch->DeleteLine(parameters.at(0));
+        _dispatch->DeleteLine(parameters.at(0));
         break;
     case CsiActionCodes::CHT_CursorForwardTab:
-        success = _dispatch->ForwardTab(parameters.at(0));
+        _dispatch->ForwardTab(parameters.at(0));
         break;
     case CsiActionCodes::CBT_CursorBackTab:
-        success = _dispatch->BackwardsTab(parameters.at(0));
+        _dispatch->BackwardsTab(parameters.at(0));
         break;
     case CsiActionCodes::TBC_TabClear:
-        success = parameters.for_each([&](const auto clearType) {
-            return _dispatch->TabClear(clearType);
+        parameters.for_each([&](const auto clearType) {
+            _dispatch->TabClear(clearType);
         });
         break;
     case CsiActionCodes::DECST8C_SetTabEvery8Columns:
-        success = parameters.for_each([&](const auto setType) {
-            return _dispatch->TabSet(setType);
+        parameters.for_each([&](const auto setType) {
+            _dispatch->TabSet(setType);
         });
         break;
     case CsiActionCodes::ECH_EraseCharacters:
-        success = _dispatch->EraseCharacters(parameters.at(0));
+        _dispatch->EraseCharacters(parameters.at(0));
         break;
     case CsiActionCodes::DTTERM_WindowManipulation:
-        success = _dispatch->WindowManipulation(parameters.at(0), parameters.at(1), parameters.at(2));
+        _dispatch->WindowManipulation(parameters.at(0), parameters.at(1), parameters.at(2));
         break;
     case CsiActionCodes::REP_RepeatCharacter:
         // Handled w/o the dispatch. This function is unique in that way
@@ -582,100 +580,97 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParamete
             std::wstring wstr(repeatCount, _lastPrintedChar);
             _dispatch->PrintString(wstr);
         }
-        success = true;
         break;
     case CsiActionCodes::PPA_PagePositionAbsolute:
-        success = _dispatch->PagePositionAbsolute(parameters.at(0));
+        _dispatch->PagePositionAbsolute(parameters.at(0));
         break;
     case CsiActionCodes::PPR_PagePositionRelative:
-        success = _dispatch->PagePositionRelative(parameters.at(0));
+        _dispatch->PagePositionRelative(parameters.at(0));
         break;
     case CsiActionCodes::PPB_PagePositionBack:
-        success = _dispatch->PagePositionBack(parameters.at(0));
+        _dispatch->PagePositionBack(parameters.at(0));
         break;
     case CsiActionCodes::DECSCUSR_SetCursorStyle:
-        success = _dispatch->SetCursorStyle(parameters.at(0));
+        _dispatch->SetCursorStyle(parameters.at(0));
         break;
     case CsiActionCodes::DECSTR_SoftReset:
-        success = _dispatch->SoftReset();
+        _dispatch->SoftReset();
         break;
     case CsiActionCodes::DECSCA_SetCharacterProtectionAttribute:
-        success = _dispatch->SetCharacterProtectionAttribute(parameters);
+        _dispatch->SetCharacterProtectionAttribute(parameters);
         break;
     case CsiActionCodes::DECRQDE_RequestDisplayedExtent:
-        success = _dispatch->RequestDisplayedExtent();
+        _dispatch->RequestDisplayedExtent();
         break;
     case CsiActionCodes::XT_PushSgr:
     case CsiActionCodes::XT_PushSgrAlias:
-        success = _dispatch->PushGraphicsRendition(parameters);
+        _dispatch->PushGraphicsRendition(parameters);
         break;
     case CsiActionCodes::XT_PopSgr:
     case CsiActionCodes::XT_PopSgrAlias:
-        success = _dispatch->PopGraphicsRendition();
+        _dispatch->PopGraphicsRendition();
         break;
     case CsiActionCodes::DECRQM_RequestMode:
-        success = _dispatch->RequestMode(DispatchTypes::ANSIStandardMode(parameters.at(0)));
+        _dispatch->RequestMode(DispatchTypes::ANSIStandardMode(parameters.at(0)));
         break;
     case CsiActionCodes::DECRQM_PrivateRequestMode:
-        success = _dispatch->RequestMode(DispatchTypes::DECPrivateMode(parameters.at(0)));
+        _dispatch->RequestMode(DispatchTypes::DECPrivateMode(parameters.at(0)));
         break;
     case CsiActionCodes::DECCARA_ChangeAttributesRectangularArea:
-        success = _dispatch->ChangeAttributesRectangularArea(parameters.at(0), parameters.at(1), parameters.at(2).value_or(0), parameters.at(3).value_or(0), parameters.subspan(4));
+        _dispatch->ChangeAttributesRectangularArea(parameters.at(0), parameters.at(1), parameters.at(2).value_or(0), parameters.at(3).value_or(0), parameters.subspan(4));
         break;
     case CsiActionCodes::DECRARA_ReverseAttributesRectangularArea:
-        success = _dispatch->ReverseAttributesRectangularArea(parameters.at(0), parameters.at(1), parameters.at(2).value_or(0), parameters.at(3).value_or(0), parameters.subspan(4));
+        _dispatch->ReverseAttributesRectangularArea(parameters.at(0), parameters.at(1), parameters.at(2).value_or(0), parameters.at(3).value_or(0), parameters.subspan(4));
         break;
     case CsiActionCodes::DECCRA_CopyRectangularArea:
-        success = _dispatch->CopyRectangularArea(parameters.at(0), parameters.at(1), parameters.at(2).value_or(0), parameters.at(3).value_or(0), parameters.at(4), parameters.at(5), parameters.at(6), parameters.at(7));
+        _dispatch->CopyRectangularArea(parameters.at(0), parameters.at(1), parameters.at(2).value_or(0), parameters.at(3).value_or(0), parameters.at(4), parameters.at(5), parameters.at(6), parameters.at(7));
         break;
     case CsiActionCodes::DECRQTSR_RequestTerminalStateReport:
-        success = _dispatch->RequestTerminalStateReport(parameters.at(0), parameters.at(1));
+        _dispatch->RequestTerminalStateReport(parameters.at(0), parameters.at(1));
         break;
     case CsiActionCodes::DECRQPSR_RequestPresentationStateReport:
-        success = _dispatch->RequestPresentationStateReport(parameters.at(0));
+        _dispatch->RequestPresentationStateReport(parameters.at(0));
         break;
     case CsiActionCodes::DECFRA_FillRectangularArea:
-        success = _dispatch->FillRectangularArea(parameters.at(0), parameters.at(1), parameters.at(2), parameters.at(3).value_or(0), parameters.at(4).value_or(0));
+        _dispatch->FillRectangularArea(parameters.at(0), parameters.at(1), parameters.at(2), parameters.at(3).value_or(0), parameters.at(4).value_or(0));
         break;
     case CsiActionCodes::DECERA_EraseRectangularArea:
-        success = _dispatch->EraseRectangularArea(parameters.at(0), parameters.at(1), parameters.at(2).value_or(0), parameters.at(3).value_or(0));
+        _dispatch->EraseRectangularArea(parameters.at(0), parameters.at(1), parameters.at(2).value_or(0), parameters.at(3).value_or(0));
         break;
     case CsiActionCodes::DECSERA_SelectiveEraseRectangularArea:
-        success = _dispatch->SelectiveEraseRectangularArea(parameters.at(0), parameters.at(1), parameters.at(2).value_or(0), parameters.at(3).value_or(0));
+        _dispatch->SelectiveEraseRectangularArea(parameters.at(0), parameters.at(1), parameters.at(2).value_or(0), parameters.at(3).value_or(0));
         break;
     case CsiActionCodes::DECRQUPSS_RequestUserPreferenceSupplementalSet:
-        success = _dispatch->RequestUserPreferenceCharset();
+        _dispatch->RequestUserPreferenceCharset();
         break;
     case CsiActionCodes::DECIC_InsertColumn:
-        success = _dispatch->InsertColumn(parameters.at(0));
+        _dispatch->InsertColumn(parameters.at(0));
         break;
     case CsiActionCodes::DECDC_DeleteColumn:
-        success = _dispatch->DeleteColumn(parameters.at(0));
+        _dispatch->DeleteColumn(parameters.at(0));
         break;
     case CsiActionCodes::DECSACE_SelectAttributeChangeExtent:
-        success = _dispatch->SelectAttributeChangeExtent(parameters.at(0));
+        _dispatch->SelectAttributeChangeExtent(parameters.at(0));
         break;
     case CsiActionCodes::DECRQCRA_RequestChecksumRectangularArea:
-        success = _dispatch->RequestChecksumRectangularArea(parameters.at(0).value_or(0), parameters.at(1).value_or(0), parameters.at(2), parameters.at(3), parameters.at(4).value_or(0), parameters.at(5).value_or(0));
+        _dispatch->RequestChecksumRectangularArea(parameters.at(0).value_or(0), parameters.at(1).value_or(0), parameters.at(2), parameters.at(3), parameters.at(4).value_or(0), parameters.at(5).value_or(0));
         break;
     case CsiActionCodes::DECINVM_InvokeMacro:
-        success = _dispatch->InvokeMacro(parameters.at(0).value_or(0));
+        _dispatch->InvokeMacro(parameters.at(0).value_or(0));
         break;
     case CsiActionCodes::DECAC_AssignColor:
-        success = _dispatch->AssignColor(parameters.at(0), parameters.at(1).value_or(0), parameters.at(2).value_or(0));
+        _dispatch->AssignColor(parameters.at(0), parameters.at(1).value_or(0), parameters.at(2).value_or(0));
         break;
     case CsiActionCodes::DECPS_PlaySound:
-        success = _dispatch->PlaySounds(parameters);
+        _dispatch->PlaySounds(parameters);
         break;
     default:
-        // If no functions to call, overall dispatch was a failure.
-        success = false;
         break;
     }
 
     _ClearLastChar();
 
-    return success;
+    return true;
 }
 
 // Routine Description:
@@ -734,32 +729,6 @@ IStateMachineEngine::StringHandler OutputStateMachineEngine::ActionDcsDispatch(c
 }
 
 // Routine Description:
-// - Triggers the Clear action to indicate that the state machine should erase
-//      all internal state.
-// Arguments:
-// - <none>
-// Return Value:
-// - <none>
-bool OutputStateMachineEngine::ActionClear() noexcept
-{
-    // do nothing.
-    return true;
-}
-
-// Routine Description:
-// - Triggers the Ignore action to indicate that the state machine should eat
-//      this character and say nothing.
-// Arguments:
-// - <none>
-// Return Value:
-// - <none>
-bool OutputStateMachineEngine::ActionIgnore() noexcept
-{
-    // do nothing.
-    return true;
-}
-
-// Routine Description:
 // - Triggers the OscDispatch action to indicate that the listener should handle a control sequence.
 //   These sequences perform various API-type commands that can include many parameters.
 // Arguments:
@@ -769,8 +738,6 @@ bool OutputStateMachineEngine::ActionIgnore() noexcept
 // - true if we handled the dispatch.
 bool OutputStateMachineEngine::ActionOscDispatch(const size_t parameter, const std::wstring_view string)
 {
-    auto success = false;
-
     switch (parameter)
     {
     case OscActionCodes::SetIconAndWindowTitle:
@@ -778,25 +745,27 @@ bool OutputStateMachineEngine::ActionOscDispatch(const size_t parameter, const s
     case OscActionCodes::SetWindowTitle:
     case OscActionCodes::DECSWT_SetWindowTitle:
     {
-        success = _dispatch->SetWindowTitle(string);
+        _dispatch->SetWindowTitle(string);
         break;
     }
     case OscActionCodes::SetColor:
     {
         std::vector<size_t> tableIndexes;
         std::vector<DWORD> colors;
-        success = _GetOscSetColorTable(string, tableIndexes, colors);
-        for (size_t i = 0; i < tableIndexes.size(); i++)
+        if (_GetOscSetColorTable(string, tableIndexes, colors))
         {
-            const auto tableIndex = til::at(tableIndexes, i);
-            const auto rgb = til::at(colors, i);
-            if (rgb == COLOR_INQUIRY_COLOR)
+            for (size_t i = 0; i < tableIndexes.size(); i++)
             {
-                success = success && _dispatch->RequestColorTableEntry(tableIndex);
-            }
-            else
-            {
-                success = success && _dispatch->SetColorTableEntry(tableIndex, rgb);
+                const auto tableIndex = til::at(tableIndexes, i);
+                const auto rgb = til::at(colors, i);
+                if (rgb == COLOR_INQUIRY_COLOR)
+                {
+                    _dispatch->RequestColorTableEntry(tableIndex);
+                }
+                else
+                {
+                    _dispatch->SetColorTableEntry(tableIndex, rgb);
+                }
             }
         }
         break;
@@ -807,19 +776,18 @@ bool OutputStateMachineEngine::ActionOscDispatch(const size_t parameter, const s
     case OscActionCodes::SetHighlightColor:
     {
         std::vector<DWORD> colors;
-        success = _GetOscSetColor(string, colors);
-        if (success)
+        if (_GetOscSetColor(string, colors))
         {
             auto resource = parameter;
             for (auto&& color : colors)
             {
                 if (color == COLOR_INQUIRY_COLOR)
                 {
-                    success = success && _dispatch->RequestXtermColorResource(resource);
+                    _dispatch->RequestXtermColorResource(resource);
                 }
                 else if (color != INVALID_COLOR)
                 {
-                    success = success && _dispatch->SetXtermColorResource(resource, color);
+                    _dispatch->SetXtermColorResource(resource, color);
                 }
                 resource++;
             }
@@ -830,68 +798,67 @@ bool OutputStateMachineEngine::ActionOscDispatch(const size_t parameter, const s
     {
         std::wstring setClipboardContent;
         auto queryClipboard = false;
-        success = _GetOscSetClipboard(string, setClipboardContent, queryClipboard);
-        if (success && !queryClipboard)
+        if (_GetOscSetClipboard(string, setClipboardContent, queryClipboard) && !queryClipboard)
         {
-            success = _dispatch->SetClipboard(setClipboardContent);
+            _dispatch->SetClipboard(setClipboardContent);
         }
         break;
     }
     case OscActionCodes::ResetCursorColor:
     {
-        /* The reset codes for xterm dynamic resources are the set codes + 100 */
-        success = _dispatch->SetXtermColorResource(parameter - 100u, INVALID_COLOR);
+        // The reset codes for xterm dynamic resources are the set codes + 100
+        _dispatch->SetXtermColorResource(parameter - 100u, INVALID_COLOR);
         break;
     }
     case OscActionCodes::Hyperlink:
     {
         std::wstring params;
         std::wstring uri;
-        success = _ParseHyperlink(string, params, uri);
-        if (uri.empty())
+        if (_ParseHyperlink(string, params, uri))
         {
-            success = success && _dispatch->EndHyperlink();
-        }
-        else
-        {
-            success = success && _dispatch->AddHyperlink(uri, params);
+            if (uri.empty())
+            {
+                _dispatch->EndHyperlink();
+            }
+            else
+            {
+                _dispatch->AddHyperlink(uri, params);
+            }
         }
         break;
     }
     case OscActionCodes::ConEmuAction:
     {
-        success = _dispatch->DoConEmuAction(string);
+        _dispatch->DoConEmuAction(string);
         break;
     }
     case OscActionCodes::ITerm2Action:
     {
-        success = _dispatch->DoITerm2Action(string);
+        _dispatch->DoITerm2Action(string);
         break;
     }
     case OscActionCodes::FinalTermAction:
     {
-        success = _dispatch->DoFinalTermAction(string);
+        _dispatch->DoFinalTermAction(string);
         break;
     }
     case OscActionCodes::VsCodeAction:
     {
-        success = _dispatch->DoVsCodeAction(string);
+        _dispatch->DoVsCodeAction(string);
         break;
     }
     case OscActionCodes::WTAction:
     {
-        success = _dispatch->DoWTAction(string);
+        _dispatch->DoWTAction(string);
         break;
     }
     default:
-        // If no functions to call, overall dispatch was a failure.
-        success = false;
         break;
     }
 
     _ClearLastChar();
 
-    return success;
+    return true;
 }
 
 // Routine Description:
@@ -907,7 +874,7 @@ bool OutputStateMachineEngine::ActionSs3Dispatch(const wchar_t /*wch*/, const VT
 {
     // The output engine doesn't handle any SS3 sequences.
     _ClearLastChar();
-    return false;
+    return true;
 }
 
 // Routine Description:

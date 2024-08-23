@@ -1547,11 +1547,24 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             auto encoding = s.encoding;
             wchar_t buf[4]{};
             size_t buf_len = 0;
+            bool handled = true;
 
             if (encoding == AltNumpadEncoding::Unicode)
             {
                 // UTF-32 -> UTF-16
-                if (s.accumulator <= 0xffff)
+                if (s.accumulator == 0)
+                {
+                    // If the user pressed Alt + VK_ADD, then released Alt, they probably didn't intend to insert a numpad character at all.
+                    // Send any accumulated key events instead.
+                    for (auto&& e : _altNumpadState.cachedKeyEvents)
+                    {
+                        handled = handled && _TrySendKeyEvent(e.vkey, e.scanCode, e.modifiers, e.keyDown);
+                    }
+                    // Send the alt keyup we are currently processing
+                    handled = handled && _TrySendKeyEvent(vkey, scanCode, modifiers, keyDown);
+                    // do not accumulate into the buffer
+                }
+                else if (s.accumulator <= 0xffff)
                 {
                     buf[buf_len++] = static_cast<uint16_t>(s.accumulator);
                 }
@@ -1595,7 +1608,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             }
 
             s = {};
-            return true;
+            return handled;
         }
         // As a continuation of the above, this handles the key-down case.
         if (modifiers.IsAltPressed())
@@ -1609,46 +1622,49 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 SCROLLLOCK_ON |
                 CAPSLOCK_ON;
 
-            if (keyDown && (modifiers.Value() & ~permittedModifiers) == 0)
+            if ((modifiers.Value() & ~permittedModifiers) == 0)
             {
                 auto& s = _altNumpadState;
 
-                if (vkey == VK_ADD)
+                if (keyDown)
                 {
-                    // Alt '+' <number> is used to input Unicode code points.
-                    // Every time you press + it resets the entire state
-                    // in the original OS implementation as well.
-                    s.encoding = AltNumpadEncoding::Unicode;
-                    s.accumulator = 0;
-                    s.active = true;
-                }
-                else if (vkey == VK_NUMPAD0 && s.encoding == AltNumpadEncoding::OEM && s.accumulator == 0)
-                {
-                    // Alt '0' <number> is used to input ANSI code points.
-                    // Otherwise, they're OEM codepoints.
-                    s.encoding = AltNumpadEncoding::ANSI;
-                    s.active = true;
-                }
-                else
-                {
-                    // Otherwise, append the pressed key to the accumulator.
-                    const uint32_t base = s.encoding == AltNumpadEncoding::Unicode ? 16 : 10;
-                    uint32_t add = 0xffffff;
-
-                    if (vkey >= VK_NUMPAD0 && vkey <= VK_NUMPAD9)
+                    if (vkey == VK_ADD)
                     {
-                        add = vkey - VK_NUMPAD0;
-                    }
-                    else if (vkey >= 'A' && vkey <= 'F')
-                    {
-                        add = vkey - 'A' + 10;
-                    }
-
-                    // Pressing Alt + <not a number> should not activate the Alt+Numpad input, however.
-                    if (add < base)
-                    {
-                        s.accumulator = std::min(s.accumulator * base + add, 0x10FFFFu);
+                        // Alt '+' <number> is used to input Unicode code points.
+                        // Every time you press + it resets the entire state
+                        // in the original OS implementation as well.
+                        s.encoding = AltNumpadEncoding::Unicode;
+                        s.accumulator = 0;
                         s.active = true;
+                    }
+                    else if (vkey == VK_NUMPAD0 && s.encoding == AltNumpadEncoding::OEM && s.accumulator == 0)
+                    {
+                        // Alt '0' <number> is used to input ANSI code points.
+                        // Otherwise, they're OEM codepoints.
+                        s.encoding = AltNumpadEncoding::ANSI;
+                        s.active = true;
+                    }
+                    else
+                    {
+                        // Otherwise, append the pressed key to the accumulator.
+                        const uint32_t base = s.encoding == AltNumpadEncoding::Unicode ? 16 : 10;
+                        uint32_t add = 0xffffff;
+
+                        if (vkey >= VK_NUMPAD0 && vkey <= VK_NUMPAD9)
+                        {
+                            add = vkey - VK_NUMPAD0;
+                        }
+                        else if (vkey >= 'A' && vkey <= 'F')
+                        {
+                            add = vkey - 'A' + 10;
+                        }
+
+                        // Pressing Alt + <not a number> should not activate the Alt+Numpad input, however.
+                        if (add < base)
+                        {
+                            s.accumulator = std::min(s.accumulator * base + add, 0x10FFFFu);
+                            s.active = true;
+                        }
                     }
                 }
 
@@ -1656,6 +1672,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 // return and send the Alt key combination as per usual.
                 if (s.active)
                 {
+                    // Cache it in case we have to emit it after alt is released
+                    _altNumpadState.cachedKeyEvents.emplace_back(vkey, scanCode, modifiers, keyDown);
                     return true;
                 }
 
@@ -1918,18 +1936,18 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         if (type == Windows::Devices::Input::PointerDeviceType::Mouse ||
             type == Windows::Devices::Input::PointerDeviceType::Pen)
         {
-            _interactivity.PointerMoved(TermControl::GetPressedMouseButtons(point),
-                                        TermControl::GetPointerUpdateKind(point),
-                                        ControlKeyStates(args.KeyModifiers()),
-                                        _focused,
-                                        pixelPosition.to_core_point(),
-                                        _pointerPressedInBounds);
+            auto suppressFurtherHandling = _interactivity.PointerMoved(TermControl::GetPressedMouseButtons(point),
+                                                                       TermControl::GetPointerUpdateKind(point),
+                                                                       ControlKeyStates(args.KeyModifiers()),
+                                                                       _focused,
+                                                                       pixelPosition.to_core_point(),
+                                                                       _pointerPressedInBounds);
 
             // GH#9109 - Only start an auto-scroll when the drag actually
             // started within our bounds. Otherwise, someone could start a drag
             // outside the terminal control, drag into the padding, and trick us
             // into starting to scroll.
-            if (_focused && _pointerPressedInBounds && point.Properties().IsLeftButtonPressed())
+            if (!suppressFurtherHandling && _focused && _pointerPressedInBounds && point.Properties().IsLeftButtonPressed())
             {
                 // We want to find the distance relative to the bounds of the
                 // SwapChainPanel, not the entire control. If they drag out of
@@ -4041,18 +4059,17 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const auto rd = get_self<ControlCore>(_core)->GetRenderData();
         rd->LockConsole();
         const auto viewportBufferPosition = rd->GetViewport();
-        const auto cursorBufferPosition = rd->GetCursorPosition();
         rd->UnlockConsole();
-        if (cursorBufferPosition.y < viewportBufferPosition.Top() || cursorBufferPosition.y > viewportBufferPosition.BottomInclusive())
+        if (_quickFixBufferPos < viewportBufferPosition.Top() || _quickFixBufferPos > viewportBufferPosition.BottomInclusive())
         {
             quickFixBtn.Visibility(Visibility::Collapsed);
             return;
         }
 
         // draw the button in the gutter
-        const auto& cursorPosInDips = CursorPositionInDips();
+        const auto& quickFixBtnPosInDips = _toPosInDips({ 0, _quickFixBufferPos });
         Controls::Canvas::SetLeft(quickFixBtn, -termPadding.Left);
-        Controls::Canvas::SetTop(quickFixBtn, cursorPosInDips.Y - termPadding.Top);
+        Controls::Canvas::SetTop(quickFixBtn, quickFixBtnPosInDips.y - termPadding.Top);
         quickFixBtn.Visibility(Visibility::Visible);
 
         if (auto automationPeer{ FrameworkElementAutomationPeer::FromElement(*this) })
@@ -4067,6 +4084,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     void TermControl::_bubbleSearchMissingCommand(const IInspectable& /*sender*/, const Control::SearchMissingCommandEventArgs& args)
     {
+        _quickFixBufferPos = args.BufferRow();
         SearchMissingCommand.raise(*this, args);
     }
 

@@ -24,7 +24,6 @@ void Terminal::ReturnResponse(const std::wstring_view response)
 {
     if (_pfnWriteInput && !response.empty())
     {
-        const auto suspension = _readWriteLock.suspend();
         _pfnWriteInput(response);
     }
 }
@@ -338,7 +337,8 @@ void Terminal::SearchMissingCommand(const std::wstring_view command)
 {
     if (_pfnSearchMissingCommand)
     {
-        _pfnSearchMissingCommand(command);
+        const auto bufferRow = GetCursorPosition().y;
+        _pfnSearchMissingCommand(command, bufferRow);
     }
 }
 

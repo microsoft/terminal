@@ -256,12 +256,20 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         };
         struct AltNumpadState
         {
+            struct CachedKey
+            {
+                WORD vkey;
+                WORD scanCode;
+                ::Microsoft::Terminal::Core::ControlKeyStates modifiers;
+                bool keyDown;
+            };
             AltNumpadEncoding encoding = AltNumpadEncoding::OEM;
             uint32_t accumulator = 0;
             // Checking for accumulator != 0 to see if we have an ongoing Alt+Numpad composition is insufficient.
             // The state can be active, while the accumulator is 0, if the user pressed Alt+Numpad0 which enabled
             // the OEM encoding mode (= active), and then pressed Numpad0 again (= accumulator is still 0).
             bool active = false;
+            til::small_vector<CachedKey, 4> cachedKeyEvents;
         };
         AltNumpadState _altNumpadState;
 
@@ -270,6 +278,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         bool _initializedTerminal{ false };
         bool _quickFixButtonCollapsible{ false };
         bool _quickFixesAvailable{ false };
+        til::CoordType _quickFixBufferPos{};
 
         std::shared_ptr<ThrottledFuncLeading> _playWarningBell;
 
