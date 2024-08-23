@@ -98,7 +98,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         Connection(connection);
 
         _terminal->SetWriteInputCallback([this](std::wstring_view wstr) {
-            _sendInputToConnection(wstr);
+            _pendingResponses.append(wstr);
         });
 
         // GH#8969: pre-seed working directory to prevent potential races
@@ -420,6 +420,20 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - <none>
     void ControlCore::_sendInputToConnection(std::wstring_view wstr)
     {
+        if (!wstr.empty())
+        {
+            _connection.WriteInput(winrt_wstring_to_array_view(wstr));
+        }
+    }
+
+    // Method Description:
+    // - Writes the given sequence as input to the active terminal connection,
+    // Arguments:
+    // - wstr: the string of characters to write to the terminal connection.
+    // Return Value:
+    // - <none>
+    void ControlCore::SendInput(const std::wstring_view wstr)
+    {
         if (wstr.empty())
         {
             return;
@@ -435,19 +449,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
         else
         {
-            _connection.WriteInput(winrt_wstring_to_array_view(wstr));
+            _sendInputToConnection(wstr);
         }
-    }
-
-    // Method Description:
-    // - Writes the given sequence as input to the active terminal connection,
-    // Arguments:
-    // - wstr: the string of characters to write to the terminal connection.
-    // Return Value:
-    // - <none>
-    void ControlCore::SendInput(const std::wstring_view wstr)
-    {
-        _sendInputToConnection(wstr);
     }
 
     bool ControlCore::SendCharEvent(const wchar_t ch,
@@ -485,7 +488,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
         if (out)
         {
-            _sendInputToConnection(*out);
+            SendInput(*out);
             return true;
         }
         return false;
@@ -643,7 +646,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
         if (out)
         {
-            _sendInputToConnection(*out);
+            SendInput(*out);
             return true;
         }
         return false;
@@ -662,7 +665,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
         if (out)
         {
-            _sendInputToConnection(*out);
+            SendInput(*out);
             return true;
         }
         return false;
@@ -1412,7 +1415,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         // It's important to not hold the terminal lock while calling this function as sending the data may take a long time.
-        _sendInputToConnection(filtered);
+        SendInput(filtered);
 
         const auto lock = _terminal->LockForWriting();
         _terminal->ClearSelection();
@@ -2107,7 +2110,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                     // Sending input requires that we're unlocked, because
                     // writing the input pipe may block indefinitely.
                     const auto suspension = _terminal->SuspendLock();
-                    _sendInputToConnection(buffer);
+                    SendInput(buffer);
                 }
             }
         }
@@ -2162,6 +2165,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             {
                 const auto lock = _terminal->LockForWriting();
                 _terminal->Write(hstr);
+            }
+
+            if (!_pendingResponses.empty())
+            {
+                _sendInputToConnection(_pendingResponses);
+                _pendingResponses.clear();
             }
 
             // Start the throttled update of where our hyperlinks are.
@@ -2480,9 +2489,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
         if (out && !out->empty())
         {
-            // _sendInputToConnection() asserts that we aren't in focus mode,
-            // but window focus events are always fine to send.
-            _connection.WriteInput(winrt_wstring_to_array_view(*out));
+            _sendInputToConnection(*out);
         }
     }
 
