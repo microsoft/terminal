@@ -14,7 +14,6 @@ target_sources(ConInteractivityWin32
 		uiaTextRange.cpp
 		window.cpp
 		windowdpiapi.cpp
-		WindowIme.cpp
 		windowio.cpp
 		WindowMetrics.cpp
 		windowproc.cpp

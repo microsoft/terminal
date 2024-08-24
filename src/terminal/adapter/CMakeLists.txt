@@ -6,9 +6,9 @@ target_sources(ConTermAdapt
 		FontBuffer.cpp
 		MacroBuffer.cpp
 		InteractDispatch.cpp
-		telemetry.cpp
+		PageManager.cpp
+		SixelParser.cpp
 		terminalOutput.cpp
-		tracing.cpp
 )
 
 target_precompile_headers(ConTermAdapt

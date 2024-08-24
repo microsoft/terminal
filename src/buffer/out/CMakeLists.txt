@@ -2,6 +2,7 @@ add_library(ConBufferOut)
 target_sources(ConBufferOut
 	PRIVATE
 		cursor.cpp
+		ImageSlice.cpp
 		OutputCell.cpp
 		OutputCellIterator.cpp
 		OutputCellRect.cpp
@@ -13,6 +14,7 @@ target_sources(ConBufferOut
 		textBufferCellIterator.cpp
 		textBufferTextIterator.cpp
 		TextColor.cpp
+		UTextAdapter.cpp
 )
 
 target_precompile_headers(ConBufferOut

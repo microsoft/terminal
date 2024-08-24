@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
+#pragma once
+
 #define DEFINE_CONSOLEV2_PROPERTIES
 #define INC_OLE2
 

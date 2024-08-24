@@ -5,14 +5,7 @@ target_sources(ConTypes
 		ColorFix.cpp
 		colorTable.cpp
 		convert.cpp
-		Environment.cpp
-		FocusEvent.cpp
 		GlyphWidth.cpp
-		IInputEvent.cpp
-		KeyEvent.cpp
-		MenuEvent.cpp
-		ModifierKeyState.cpp
-		MouseEvent.cpp
 		ScreenInfoUiaProviderBase.cpp
 		sgrStack.cpp
 		TermControlUiaProvider.cpp
@@ -22,7 +15,6 @@ target_sources(ConTypes
 		UiaTracing.cpp
 		utils.cpp
 		viewport.cpp
-		WindowBufferSizeEvent.cpp
 )
 
 target_precompile_headers(ConTypes

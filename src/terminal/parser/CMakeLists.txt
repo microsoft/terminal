@@ -5,7 +5,6 @@ target_sources(ConTermParser
 		InputStateMachineEngine.cpp
 		OutputStateMachineEngine.cpp
 		stateMachine.cpp
-		telemetry.cpp
 		tracing.cpp
 )
 

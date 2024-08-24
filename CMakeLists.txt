@@ -16,14 +16,14 @@ set(CMAKE_CXX_STANDARD 20)
 add_compile_definitions(
 	UNICODE
 	_UNICODE
-	FMT_HEADER_ONLY
 )
 
 add_compile_options(
 	/W3 /WX /utf-8
 	/wd4201 /wd4702
 	/permissive-
-	/Zc:externConstexpr /Zc:lambda /Zc:throwingNew /fp:contract
+	/Zc:preprocessor
+	/Zc:__cplusplus /Zc:__STDC__ /Zc:enumTypes /Zc:externConstexpr /Zc:templateScope /Zc:throwingNew
 	/FI${CMAKE_CURRENT_LIST_DIR}\\feature.h
 )
 

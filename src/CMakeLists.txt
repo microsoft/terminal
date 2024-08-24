@@ -1,13 +1,16 @@
+find_package(Microsoft.GSL CONFIG REQUIRED)
+
+find_path(GSL_INCLUDE_DIR NAMES gsl)
+find_path(FMT_INCLUDE_DIR NAMES format.h)
+
 include_directories(
 	inc
-	../dep/gsl/include
-	../dep/wil/include
-	../oss/dynamic_bitset
+	../packages/Microsoft.Windows.ImplementationLibrary.1.0.240122.1/include
+	${GSL_INCLUDE_DIR}
+	${FMT_INCUDE_DIR}
+	../oss/stb
 	../oss/chromium
-	../oss/libpopcnt
-	../oss/fmt/include
 	../oss/interval_tree
-	../oss/pch/include
 	../dep/Console
 	../dep/NT
 	../dep/Win32K

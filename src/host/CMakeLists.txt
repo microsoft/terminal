@@ -5,15 +5,8 @@ target_sources(conhost
 		_stream.cpp
 		alias.cpp
 		cmdline.cpp
-		CommandListPopup.cpp
-		CommandNumberPopup.cpp
-		conareainfo.cpp
-		conimeinfo.cpp
 		ConsoleArguments.cpp
 		consoleInformation.cpp
-		convarea.cpp
-		CopyFromCharPopup.cpp
-		CopyToCharPopup.cpp
 		CursorBlinker.cpp
 		dbcs.cpp
 		directio.cpp
@@ -30,7 +23,6 @@ target_sources(conhost
 		ntprivapi.cpp
 		output.cpp
 		outputStream.cpp
-		popup.cpp
 		PtySignalInputThread.cpp
 		readData.cpp
 		readDataCooked.cpp
@@ -47,11 +39,8 @@ target_sources(conhost
 		settings.cpp
 		srvinit.cpp
 		stream.cpp
-		telemetry.cpp
 		tracing.cpp
-		utf8ToWideCharParser.cpp
 		utils.cpp
-		VtApiRoutines.cpp
 		VtInputThread.cpp
 		VtIo.cpp
 		writeData.cpp
@@ -64,6 +53,8 @@ target_include_directories(conhost
 	PRIVATE
 		.
 )
+
+find_package(fmt CONFIG REQUIRED)
 
 target_link_libraries(conhost
 	PRIVATE
@@ -81,9 +72,11 @@ target_link_libraries(conhost
 
 		ConRenderBase
 		ConRenderGdi
-		ConRenderVt
+		ConRenderAtlas
 
 		ConTypes
+
+		fmt::fmt
 
 		onecoreuap_apiset.lib
 		usp10.lib

@@ -1,3 +1,3 @@
 add_subdirectory(base)
 add_subdirectory(gdi)
-add_subdirectory(vt)
+add_subdirectory(atlas)
