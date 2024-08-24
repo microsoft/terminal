@@ -58,6 +58,7 @@ find_package(fmt CONFIG REQUIRED)
 
 target_link_libraries(conhost
 	PRIVATE
+		ConCOMProxy
 		ConAudioMidi
 		ConBufferOut
 		ConInteractivityBase
@@ -90,3 +91,5 @@ target_precompile_headers(conhost
 	PRIVATE
 		precomp.h
 )
+
+add_subdirectory(proxy)
