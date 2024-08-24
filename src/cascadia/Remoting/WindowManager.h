@@ -32,29 +32,25 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         Remoting::Peasant CreatePeasant(const Remoting::WindowRequestedArgs& args);
 
         void SignalClose(const Remoting::Peasant& peasant);
+        void QuitAll();
         void SummonWindow(const Remoting::SummonWindowSelectionArgs& args);
         void SummonAllWindows();
         Windows::Foundation::Collections::IVectorView<winrt::Microsoft::Terminal::Remoting::PeasantInfo> GetPeasantInfos();
 
         uint64_t GetNumberOfPeasants();
 
-        static winrt::fire_and_forget RequestQuitAll(Remoting::Peasant peasant);
         void UpdateActiveTabTitle(const winrt::hstring& title, const Remoting::Peasant& peasant);
 
-        Windows::Foundation::Collections::IVector<winrt::hstring> GetAllWindowLayouts();
         bool DoesQuakeWindowExist();
 
-        winrt::fire_and_forget RequestMoveContent(winrt::hstring window, winrt::hstring content, uint32_t tabIndex, Windows::Foundation::IReference<Windows::Foundation::Rect> windowBounds);
-        winrt::fire_and_forget RequestSendContent(Remoting::RequestReceiveContentArgs args);
+        safe_void_coroutine RequestMoveContent(winrt::hstring window, winrt::hstring content, uint32_t tabIndex, Windows::Foundation::IReference<Windows::Foundation::Rect> windowBounds);
+        safe_void_coroutine RequestSendContent(Remoting::RequestReceiveContentArgs args);
 
-        TYPED_EVENT(FindTargetWindowRequested, winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::FindTargetWindowArgs);
+        til::typed_event<winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::FindTargetWindowArgs> FindTargetWindowRequested;
 
-        TYPED_EVENT(WindowCreated, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
-        TYPED_EVENT(WindowClosed, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
-        TYPED_EVENT(QuitAllRequested, winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::QuitAllRequestedArgs);
-        TYPED_EVENT(GetWindowLayoutRequested, winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::GetWindowLayoutArgs);
-
-        TYPED_EVENT(RequestNewWindow, winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::WindowRequestedArgs);
+        til::typed_event<> WindowCreated;
+        til::typed_event<> WindowClosed;
+        til::typed_event<winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::WindowRequestedArgs> RequestNewWindow;
 
     private:
         DWORD _registrationHostClass{ 0 };
@@ -70,6 +66,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                                              const winrt::Microsoft::Terminal::Remoting::FindTargetWindowArgs& args);
         void _raiseRequestNewWindow(const winrt::Windows::Foundation::IInspectable& sender,
                                     const winrt::Microsoft::Terminal::Remoting::WindowRequestedArgs& args);
+        void _bubbleWindowCreated(const winrt::Windows::Foundation::IInspectable& s, const winrt::Windows::Foundation::IInspectable& e);
+        void _bubbleWindowClosed(const winrt::Windows::Foundation::IInspectable& s, const winrt::Windows::Foundation::IInspectable& e);
     };
 }
 

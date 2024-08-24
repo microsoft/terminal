@@ -16,6 +16,8 @@
 #pragma warning(disable : 26459) // You called an STL function '...' with a raw pointer parameter at position '...' that may be unsafe ... (stl.1).
 // small_vector::_data references potentially uninitialized data and so we can't pass it regular iterators which reference initialized data.
 #pragma warning(disable : 26481) // Don't use pointer arithmetic. Use span instead (bounds.1).
+// small_vector::_buffer is explicitly uninitialized, because we manage its initialization manually.
+#pragma warning(disable : 26495) // Variable '...' is uninitialized. Always initialize a member variable (type.6).
 
 namespace til
 {
@@ -276,6 +278,12 @@ namespace til
             return tmp;
         }
 
+        [[nodiscard]] friend constexpr small_vector_iterator operator+(const difference_type off, small_vector_iterator next) noexcept
+        {
+            next += off;
+            return next;
+        }
+
         constexpr small_vector_iterator& operator-=(const difference_type off) noexcept
         {
             base::operator-=(off);
@@ -328,7 +336,9 @@ namespace til
         using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
         small_vector() noexcept :
-            _data{ &_buffer[0] }
+            _data{ &_buffer[0] },
+            _capacity{ N },
+            _size{ 0 }
         {
         }
 
@@ -355,56 +365,38 @@ namespace til
         small_vector(const small_vector& other) :
             small_vector{}
         {
-            operator=(other);
+            _copy_assign(other);
         }
 
         // NOTE: If an exception is thrown while copying, the vector is left empty.
         small_vector& operator=(const small_vector& other)
         {
-            clear();
-            reserve(other._size);
-
-            std::uninitialized_copy(other.begin(), other.end(), _uninitialized_begin());
-            _size = other._size;
+            if (this != &other)
+            {
+                clear();
+                _copy_assign(other);
+            }
 
             return *this;
         }
 
-        small_vector(small_vector&& other) noexcept :
-            small_vector{}
+        small_vector(small_vector&& other) noexcept
         {
-            operator=(std::move(other));
+            _move_assign(other);
         }
 
         small_vector& operator=(small_vector&& other) noexcept
         {
-            std::destroy(begin(), end());
-            if (_capacity != N)
+            if (this != &other)
             {
-                _deallocate(_data);
-            }
+                std::destroy(begin(), end());
+                if (_capacity != N)
+                {
+                    _deallocate(_data);
+                }
 
-            if (other._capacity == N)
-            {
-                _data = &_buffer[0];
-                _capacity = N;
-                _size = other._size;
-                // The earlier static_assert(std::is_nothrow_move_constructible_v<T>)
-                // ensures that we don't exit in a weird state with invalid `_size`.
-#pragma warning(suppress : 26447) // The function is declared 'noexcept' but calls function '...' which may throw exceptions (f.6).
-                std::uninitialized_move(other.begin(), other.end(), _uninitialized_begin());
-                std::destroy(other.begin(), other.end());
+                _move_assign(other);
             }
-            else
-            {
-                _data = other._data;
-                _capacity = other._capacity;
-                _size = other._size;
-            }
-
-            other._data = &other._buffer[0];
-            other._capacity = N;
-            other._size = 0;
 
             return *this;
         }
@@ -585,16 +577,24 @@ namespace til
 
         void resize(size_type new_size)
         {
-            _generic_resize(new_size, [](auto&& beg, auto&& end) {
+            _generic_resize(new_size, [](iterator&& beg, iterator&& end) {
                 std::uninitialized_value_construct(beg, end);
             });
         }
 
         void resize(size_type new_size, const_reference value)
         {
-            _generic_resize(new_size, [&](auto&& beg, auto&& end) {
+            _generic_resize(new_size, [&](iterator&& beg, iterator&& end) {
                 std::uninitialized_fill(beg, end, value);
             });
+        }
+
+        void resize_and_overwrite(size_type new_size, auto op)
+            requires std::is_trivial_v<T>
+        {
+            _size = 0;
+            reserve(new_size);
+            _size = std::move(op)(_data, new_size);
         }
 
         void shrink_to_fit()
@@ -620,6 +620,24 @@ namespace til
             _capacity = capacity;
         }
 
+        // This is a very unsafe shortcut to free the buffer and get a direct
+        // hold to the _buffer. The caller can then fill it with `size` items.
+        [[nodiscard]] T* unsafe_shrink_to_size(size_t size) noexcept
+        {
+            assert(size <= N);
+
+            if (_capacity != N)
+            {
+                _deallocate(_data);
+            }
+
+            _data = &_buffer[0];
+            _capacity = N;
+            _size = size;
+
+            return &_buffer[0];
+        }
+
         void push_back(const T& value)
         {
             emplace_back(value);
@@ -634,7 +652,7 @@ namespace til
         reference emplace_back(Args&&... args)
         {
             const auto new_size = _ensure_fits(1);
-            const auto it = new (_data + _size) T(std::forward<Args>(args)...);
+            const auto it = std::construct_at(_data + _size, std::forward<Args>(args)...);
             _size = new_size;
             return *it;
         }
@@ -756,6 +774,38 @@ namespace til
 #endif
         }
 
+        void _copy_assign(const small_vector& other)
+        {
+            reserve(other._size);
+            std::uninitialized_copy(other.begin(), other.end(), _uninitialized_begin());
+            _size = other._size;
+        }
+
+        void _move_assign(small_vector& other) noexcept
+        {
+            if (other._capacity == N)
+            {
+                _data = &_buffer[0];
+                _capacity = N;
+                _size = other._size;
+                // The earlier static_assert(std::is_nothrow_move_constructible_v<T>)
+                // ensures that we don't exit in a weird state with invalid `_size`.
+#pragma warning(suppress : 26447) // The function is declared 'noexcept' but calls function '...' which may throw exceptions (f.6).
+                std::uninitialized_move(other.begin(), other.end(), _uninitialized_begin());
+                std::destroy(other.begin(), other.end());
+            }
+            else
+            {
+                _data = other._data;
+                _capacity = other._capacity;
+                _size = other._size;
+            }
+
+            other._data = &other._buffer[0];
+            other._capacity = N;
+            other._size = 0;
+        }
+
         size_type _ensure_fits(size_type add)
         {
             const auto new_size = _size + add;
@@ -819,9 +869,10 @@ namespace til
             const auto new_size = _ensure_fits(count);
             const auto moveable = old_size - offset;
 
-            // An optimization for the most common vector type which is trivially constructible, destructible and copyable.
-            // This allows us to drop exception handlers (= no need to push onto the stack) and replace two moves with just one.
-            if constexpr (noexcept(func(begin())) && std::is_trivially_destructible_v<T> && std::is_trivially_copyable_v<T>)
+            // An optimization for the most common vector type which is trivially and copyable and noexcept constructible.
+            // Compared to the complex form below, we don't need the 2 moves and 1 destroy, because is_trivially_copyable_v implies
+            // that we can just memmove() the items in one fell swoop. We don't need a try/catch either because func() is noexcept.
+            if constexpr (noexcept(func(begin())) && std::is_trivially_copyable_v<T>)
             {
                 _size = new_size;
 
@@ -878,9 +929,12 @@ namespace til
         }
 
         T* _data;
-        size_t _capacity = N;
-        size_t _size = 0;
-        T _buffer[N];
+        size_t _capacity;
+        size_t _size;
+        union
+        {
+            T _buffer[N];
+        };
     };
 }
 

@@ -3,17 +3,10 @@
   <ItemGroup>
     <ClCompile Include="..\alias.cpp" />
     <ClCompile Include="..\cmdline.cpp" />
-    <ClCompile Include="..\CommandNumberPopup.cpp" />
-    <ClCompile Include="..\CommandListPopup.cpp" />
-    <ClCompile Include="..\CopyFromCharPopup.cpp" />
-    <ClCompile Include="..\CopyToCharPopup.cpp" />
     <ClCompile Include="..\ConsoleArguments.cpp" />
     <ClCompile Include="..\CursorBlinker.cpp" />
     <ClCompile Include="..\readDataCooked.cpp" />
-    <ClCompile Include="..\conareainfo.cpp" />
-    <ClCompile Include="..\conimeinfo.cpp" />
     <ClCompile Include="..\consoleInformation.cpp" />
-    <ClCompile Include="..\convarea.cpp" />
     <ClCompile Include="..\dbcs.cpp" />
     <ClCompile Include="..\directio.cpp" />
     <ClCompile Include="..\getset.cpp" />
@@ -29,7 +22,6 @@
     <ClCompile Include="..\ntprivapi.cpp" />
     <ClCompile Include="..\output.cpp" />
     <ClCompile Include="..\outputStream.cpp" />
-    <ClCompile Include="..\popup.cpp" />
     <ClCompile Include="..\precomp.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
@@ -48,11 +40,8 @@
     <ClCompile Include="..\settings.cpp" />
     <ClCompile Include="..\srvinit.cpp" />
     <ClCompile Include="..\stream.cpp" />
-    <ClCompile Include="..\telemetry.cpp" />
     <ClCompile Include="..\tracing.cpp" />
     <ClCompile Include="..\utils.cpp" />
-    <ClCompile Include="..\utf8ToWideCharParser.cpp" />
-    <ClCompile Include="..\VtApiRoutines.cpp" />
     <ClCompile Include="..\VtInputThread.cpp" />
     <ClCompile Include="..\VtIo.cpp" />
     <ClCompile Include="..\writeData.cpp" />
@@ -64,17 +53,10 @@
     <ClInclude Include="..\alias.h" />
     <ClInclude Include="..\ApiRoutines.h" />
     <ClInclude Include="..\cmdline.h" />
-    <ClInclude Include="..\CommandNumberPopup.hpp" />
-    <ClInclude Include="..\CommandListPopup.hpp" />
-    <ClInclude Include="..\CopyFromCharPopup.hpp" />
-    <ClInclude Include="..\CopyToCharPopup.hpp" />
     <ClInclude Include="..\conapi.h" />
     <ClInclude Include="..\conddkrefs.h" />
-    <ClInclude Include="..\conareainfo.h" />
-    <ClInclude Include="..\conimeinfo.h" />
     <ClInclude Include="..\ConsoleArguments.hpp" />
     <ClInclude Include="..\conserv.h" />
-    <ClInclude Include="..\conv.h" />
     <ClInclude Include="..\conwinuserrefs.h" />
     <ClInclude Include="..\CursorBlinker.hpp" />
     <ClInclude Include="..\dbcs.h" />
@@ -90,7 +72,6 @@
     <ClInclude Include="..\ntprivapi.hpp" />
     <ClInclude Include="..\output.h" />
     <ClInclude Include="..\outputStream.hpp" />
-    <ClInclude Include="..\popup.h" />
     <ClInclude Include="..\precomp.h" />
     <ClInclude Include="..\readData.hpp" />
     <ClInclude Include="..\readDataCooked.hpp" />
@@ -107,11 +88,8 @@
     <ClInclude Include="..\settings.hpp" />
     <ClInclude Include="..\srvinit.h" />
     <ClInclude Include="..\stream.h" />
-    <ClInclude Include="..\telemetry.hpp" />
     <ClInclude Include="..\tracing.hpp" />
     <ClInclude Include="..\utils.hpp" />
-    <ClInclude Include="..\utf8ToWideCharParser.hpp" />
-    <ClInclude Include="..\VtApiRoutines.h" />
     <ClInclude Include="..\VtInputThread.hpp" />
     <ClInclude Include="..\VtIo.hpp" />
     <ClInclude Include="..\writeData.hpp" />

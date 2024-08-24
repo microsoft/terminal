@@ -20,13 +20,14 @@ namespace Microsoft.Terminal.TerminalConnection
         void Initialize(Windows.Foundation.Collections.ValueSet settings);
 
         void Start();
-        void WriteInput(String data);
+        void WriteInput(Char[] data);
         void Resize(UInt32 rows, UInt32 columns);
         void Close();
 
         event TerminalOutputHandler TerminalOutput;
-
         event Windows.Foundation.TypedEventHandler<ITerminalConnection, Object> StateChanged;
+
+        Guid SessionId { get; };
         ConnectionState State { get; };
     };
 }

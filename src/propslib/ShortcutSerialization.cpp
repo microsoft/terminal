@@ -165,7 +165,7 @@ void ShortcutSerialization::s_SetLinkPropertyDwordValue(_Inout_ IPropertyStore* 
             NT_FE_CONSOLE_PROPS* pNtFEConsoleProps;
             if (SUCCEEDED(pConsoleLnkDataList->CopyDataBlock(NT_FE_CONSOLE_PROPS_SIG, reinterpret_cast<void**>(&pNtFEConsoleProps))))
             {
-                pNtFEConsoleProps->uCodePage = pStateInfo->CodePage;
+                pStateInfo->CodePage = pNtFEConsoleProps->uCodePage;
                 LocalFree(pNtFEConsoleProps);
             }
         }

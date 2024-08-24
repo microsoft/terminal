@@ -8,12 +8,12 @@
 #include <mutex>
 #include <condition_variable>
 
-#include "ConnectionStateHolder.h"
+#include "BaseTerminalConnection.h"
 #include "AzureClient.h"
 
 namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 {
-    struct AzureConnection : AzureConnectionT<AzureConnection>, ConnectionStateHolder<AzureConnection>
+    struct AzureConnection : AzureConnectionT<AzureConnection>, BaseTerminalConnection<AzureConnection>
     {
         static winrt::guid ConnectionType() noexcept;
         static bool IsAzureConnectionAvailable() noexcept;
@@ -22,11 +22,11 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         void Initialize(const Windows::Foundation::Collections::ValueSet& settings);
 
         void Start();
-        void WriteInput(const hstring& data);
+        void WriteInput(const winrt::array_view<const char16_t> buffer);
         void Resize(uint32_t rows, uint32_t columns);
         void Close();
 
-        WINRT_CALLBACK(TerminalOutput, TerminalOutputHandler);
+        til::event<TerminalOutputHandler> TerminalOutput;
 
     private:
         til::CoordType _initialRows{};
@@ -66,9 +66,10 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         std::vector<::Microsoft::Terminal::Azure::Tenant> _tenantList;
         std::optional<::Microsoft::Terminal::Azure::Tenant> _currentTenant;
 
+        void _writeInput(const std::wstring_view str);
         void _WriteStringWithNewline(const std::wstring_view str);
         void _WriteCaughtExceptionRecord();
-        winrt::Windows::Data::Json::JsonObject _SendRequestReturningJson(std::wstring_view uri, const winrt::Windows::Web::Http::IHttpContent& content = nullptr, winrt::Windows::Web::Http::HttpMethod method = nullptr);
+        winrt::Windows::Data::Json::JsonObject _SendRequestReturningJson(std::wstring_view uri, const winrt::Windows::Web::Http::IHttpContent& content = nullptr, winrt::Windows::Web::Http::HttpMethod method = nullptr, const winrt::Windows::Foundation::Uri referer = nullptr);
         void _setAccessToken(std::wstring_view accessToken);
         winrt::Windows::Data::Json::JsonObject _GetDeviceCode();
         winrt::Windows::Data::Json::JsonObject _WaitForUser(const winrt::hstring& deviceCode, int pollInterval, int expiresIn);

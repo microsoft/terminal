@@ -15,7 +15,6 @@ DLLDEF                  =
 SOURCES = \
     $(SOURCES) \
     BaseTests.cpp \
-    BitmapTests.cpp \
     CoalesceTests.cpp \
     ColorTests.cpp \
     EnumSetTests.cpp \
@@ -30,7 +29,6 @@ SOURCES = \
     RunLengthEncodingTests.cpp \
     SizeTests.cpp \
     SmallVectorTests.cpp \
-    SomeTests.cpp \
     StaticMapTests.cpp \
     string.cpp \
     u8u16convertTests.cpp \

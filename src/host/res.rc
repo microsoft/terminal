@@ -61,9 +61,6 @@ BEGIN
 
     ID_CONSOLE_FMT_WINDOWTITLE, "%s%s"
 
-/* WIP Audit destination name */
-    ID_CONSOLE_WIP_DESTINATIONNAME, "console application"
-
 /* Menu items that replace the standard ones. These don't have the accelerators */
     SC_CLOSE,       "&Close"
 
@@ -86,6 +83,7 @@ BEGIN
     EDITTEXT        ID_CONSOLE_FINDSTR, 47, 7, 128, 12, WS_GROUP | WS_TABSTOP | ES_AUTOHSCROLL
 
     AUTOCHECKBOX    "Match &case", ID_CONSOLE_FINDCASE, 4, 42, 64, 12
+    AUTOCHECKBOX    "Regula&r expression", ID_CONSOLE_FINDREGEX, 4, 28, 96, 12
 
     GROUPBOX        "Direction", -1, 107, 26, 68, 28, WS_GROUP
     AUTORADIOBUTTON "&Up", ID_CONSOLE_FINDUP, 111, 38, 25, 12, WS_GROUP

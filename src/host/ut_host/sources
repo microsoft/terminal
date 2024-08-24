@@ -20,28 +20,18 @@ SOURCES = \
     HistoryTests.cpp \
     UtilsTests.cpp \
     ConsoleArgumentsTests.cpp \
-    CodepointWidthDetectorTests.cpp \
-    DbcsTests.cpp \
     ScreenBufferTests.cpp \
     TextBufferIteratorTests.cpp \
     TextBufferTests.cpp \
     ClipboardTests.cpp \
     SelectionTests.cpp \
-    Utf8ToWideCharParserTests.cpp \
     OutputCellIteratorTests.cpp \
     InitTests.cpp \
     TitleTests.cpp \
     InputBufferTests.cpp \
     VtIoTests.cpp \
-    VtRendererTests.cpp \
-    ConptyOutputTests.cpp \
     ViewportTests.cpp \
     ConsoleArgumentsTests.cpp \
-    CommandLineTests.cpp \
-    CommandListPopupTests.cpp \
-    CommandNumberPopupTests.cpp \
-    CopyFromCharPopupTests.cpp \
-    CopyToCharPopupTests.cpp \
     ObjectTests.cpp \
     DefaultResource.rc \
 

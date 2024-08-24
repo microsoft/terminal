@@ -37,7 +37,7 @@ static constexpr winrt::guid AzureConnectionType = { 0xd9fcfdfa, 0xa479, 0x412c,
 
 static inline std::wstring _colorize(const unsigned int colorCode, const std::wstring_view text)
 {
-    return fmt::format(L"\x1b[{0}m{1}\x1b[m", colorCode, text);
+    return fmt::format(FMT_COMPILE(L"\x1b[{0}m{1}\x1b[m"), colorCode, text);
 }
 
 // Takes N resource names, loads the first one as a format string, and then
@@ -47,15 +47,18 @@ static inline std::wstring _colorize(const unsigned int colorCode, const std::ws
 template<typename... Args>
 static inline std::wstring _formatResWithColoredUserInputOptions(const std::wstring_view resourceKey, Args&&... args)
 {
-    return fmt::format(std::wstring_view{ GetLibraryResourceString(resourceKey) }, (_colorize(USER_INPUT_COLOR, GetLibraryResourceString(args)))...);
+    const auto format = GetLibraryResourceString(resourceKey);
+    return fmt::format(fmt::runtime(std::wstring_view{ format }), (_colorize(USER_INPUT_COLOR, GetLibraryResourceString(args)))...);
 }
 
 static inline std::wstring _formatTenant(int tenantNumber, const Tenant& tenant)
 {
-    return fmt::format(std::wstring_view{ RS_(L"AzureIthTenant") },
-                       _colorize(USER_INPUT_COLOR, std::to_wstring(tenantNumber)),
-                       _colorize(USER_INFO_COLOR, tenant.DisplayName.value_or(std::wstring{ RS_(L"AzureUnknownTenantName") })),
-                       tenant.DefaultDomain.value_or(tenant.ID)); // use the domain name if possible, ID if not.
+    return RS_fmt(
+        L"AzureIthTenant",
+        _colorize(USER_INPUT_COLOR, std::to_wstring(tenantNumber)),
+        _colorize(USER_INFO_COLOR, tenant.DisplayName.value_or(std::wstring{ RS_(L"AzureUnknownTenantName") })),
+        tenant.DefaultDomain.value_or(tenant.ID) // use the domain name if possible, ID if not.
+    );
 }
 
 namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
@@ -77,8 +80,14 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     {
         if (settings)
         {
-            _initialRows = gsl::narrow<til::CoordType>(winrt::unbox_value_or<uint32_t>(settings.TryLookup(L"initialRows").try_as<Windows::Foundation::IPropertyValue>(), _initialRows));
-            _initialCols = gsl::narrow<til::CoordType>(winrt::unbox_value_or<uint32_t>(settings.TryLookup(L"initialCols").try_as<Windows::Foundation::IPropertyValue>(), _initialCols));
+            _initialRows = unbox_prop_or<uint32_t>(settings, L"initialRows", _initialRows);
+            _initialCols = unbox_prop_or<uint32_t>(settings, L"initialCols", _initialCols);
+            _sessionId = unbox_prop_or<guid>(settings, L"sessionId", _sessionId);
+        }
+
+        if (_sessionId == guid{})
+        {
+            _sessionId = Utils::CreateGuid();
         }
     }
 
@@ -88,7 +97,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     // - str: the string to write.
     void AzureConnection::_WriteStringWithNewline(const std::wstring_view str)
     {
-        _TerminalOutputHandlers(str + L"\r\n");
+        TerminalOutput.raise(str + L"\r\n");
     }
 
     // Method description:
@@ -104,7 +113,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         catch (const std::exception& runtimeException)
         {
             // This also catches the AzureException, which has a .what()
-            _TerminalOutputHandlers(_colorize(91, til::u8u16(std::string{ runtimeException.what() })));
+            TerminalOutput.raise(_colorize(91, til::u8u16(std::string{ runtimeException.what() })));
         }
         catch (...)
         {
@@ -154,13 +163,13 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
         _currentInputMode = mode;
 
-        _TerminalOutputHandlers(L"> \x1b[92m"); // Make prompted user input green
+        TerminalOutput.raise(L"> \x1b[92m"); // Make prompted user input green
 
         _inputEvent.wait(inputLock, [this, mode]() {
             return _currentInputMode != mode || _isStateAtOrBeyond(ConnectionState::Closing);
         });
 
-        _TerminalOutputHandlers(L"\x1b[m");
+        TerminalOutput.raise(L"\x1b[m");
 
         if (_isStateAtOrBeyond(ConnectionState::Closing))
         {
@@ -177,7 +186,12 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     // - handles the different possible inputs in the different states
     // Arguments:
     // the user's input
-    void AzureConnection::WriteInput(const hstring& data)
+    void AzureConnection::WriteInput(const winrt::array_view<const char16_t> buffer)
+    {
+        _writeInput(winrt_array_to_wstring_view(buffer));
+    }
+
+    void AzureConnection::_writeInput(const std::wstring_view data)
     {
         // We read input while connected AND connecting.
         if (!_isStateOneOf(ConnectionState::Connected, ConnectionState::Connecting))
@@ -198,19 +212,19 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             if (_userInput.size() > 0)
             {
                 _userInput.pop_back();
-                _TerminalOutputHandlers(L"\x08 \x08"); // overstrike the character with a space
+                TerminalOutput.raise(L"\x08 \x08"); // overstrike the character with a space
             }
         }
         else
         {
-            _TerminalOutputHandlers(data); // echo back
+            TerminalOutput.raise(data); // echo back
 
             switch (_currentInputMode)
             {
             case InputMode::Line:
                 if (data.size() > 0 && gsl::at(data, 0) == UNICODE_CARRIAGERETURN)
                 {
-                    _TerminalOutputHandlers(L"\r\n"); // we probably got a \r, so we need to advance to the next line.
+                    TerminalOutput.raise(L"\r\n"); // we probably got a \r, so we need to advance to the next line.
                     _currentInputMode = InputMode::None; // toggling the mode indicates completion
                     _inputEvent.notify_one();
                     break;
@@ -238,7 +252,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         }
         else // We only transition to Connected when we've established the websocket.
         {
-            auto uri{ fmt::format(L"{}terminals/{}/size?cols={}&rows={}&version=2019-01-01", _cloudShellUri, _terminalID, columns, rows) };
+            auto uri{ fmt::format(FMT_COMPILE(L"{}terminals/{}/size?cols={}&rows={}&version=2019-01-01"), _cloudShellUri, _terminalID, columns, rows) };
 
             WWH::HttpStringContent content{
                 L"",
@@ -273,7 +287,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
             if (_hOutputThread)
             {
-                // Waiting for the output thread to exit ensures that all pending _TerminalOutputHandlers()
+                // Waiting for the output thread to exit ensures that all pending TerminalOutput.raise()
                 // calls have returned and won't notify our caller (ControlCore) anymore. This ensures that
                 // we don't call a destroyed event handler asynchronously from a background thread (GH#13880).
                 WaitForSingleObject(_hOutputThread.get(), INFINITE);
@@ -398,6 +412,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
                         switch (bufferType)
                         {
+                        case WINHTTP_WEB_SOCKET_BINARY_MESSAGE_BUFFER_TYPE:
                         case WINHTTP_WEB_SOCKET_UTF8_FRAGMENT_BUFFER_TYPE:
                         case WINHTTP_WEB_SOCKET_UTF8_MESSAGE_BUFFER_TYPE:
                         {
@@ -415,7 +430,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                             }
 
                             // Pass the output to our registered event handlers
-                            _TerminalOutputHandlers(_u16Str);
+                            TerminalOutput.raise(_u16Str);
                             break;
                         }
                         case WINHTTP_WEB_SOCKET_CLOSE_BUFFER_TYPE:
@@ -603,6 +618,15 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
         // Wait for user authentication and obtain the access/refresh tokens
         auto authenticatedResponse = _WaitForUser(devCode, pollInterval, expiresIn);
+
+        // If user closed tab, `_WaitForUser` returns nullptr
+        // This also occurs if the connection times out, when polling time exceeds the expiry time
+        if (!authenticatedResponse)
+        {
+            _transitionToState(ConnectionState::Failed);
+            return;
+        }
+
         _setAccessToken(authenticatedResponse.GetNamedString(L"access_token"));
         _refreshToken = authenticatedResponse.GetNamedString(L"refresh_token");
 
@@ -749,7 +773,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         const auto shellType = _ParsePreferredShellType(settingsResponse);
         _WriteStringWithNewline(RS_(L"AzureRequestingTerminal"));
         const auto socketUri = _GetTerminal(shellType);
-        _TerminalOutputHandlers(L"\r\n");
+        TerminalOutput.raise(L"\r\n");
 
         //// Step 8: connecting to said terminal
         {
@@ -785,7 +809,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         std::swap(_userInput, queuedUserInput);
         if (queuedUserInput.size() > 0)
         {
-            WriteInput(static_cast<winrt::hstring>(queuedUserInput)); // send the user's queued up input back through
+            _writeInput(queuedUserInput); // send the user's queued up input back through
         }
     }
 
@@ -797,7 +821,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     // - an optional HTTP method (defaults to POST if content is present, GET otherwise)
     // Return value:
     // - the response from the server as a json value
-    WDJ::JsonObject AzureConnection::_SendRequestReturningJson(std::wstring_view uri, const WWH::IHttpContent& content, WWH::HttpMethod method)
+    WDJ::JsonObject AzureConnection::_SendRequestReturningJson(std::wstring_view uri, const WWH::IHttpContent& content, WWH::HttpMethod method, const Windows::Foundation::Uri referer)
     {
         if (!method)
         {
@@ -809,6 +833,11 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
         auto headers{ request.Headers() };
         headers.Accept().TryParseAdd(L"application/json");
+
+        if (referer)
+        {
+            headers.Referer(referer);
+        }
 
         const auto response{ _httpClient.SendRequestAsync(request).get() };
         const auto string{ response.Content().ReadAsStringAsync().get() };
@@ -830,7 +859,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     // - the response to the device code flow initiation
     WDJ::JsonObject AzureConnection::_GetDeviceCode()
     {
-        auto uri{ fmt::format(L"{}common/oauth2/devicecode", _loginUri) };
+        auto uri{ fmt::format(FMT_COMPILE(L"{}common/oauth2/devicecode"), _loginUri) };
         WWH::HttpFormUrlEncodedContent content{
             std::unordered_map<winrt::hstring, winrt::hstring>{
                 { winrt::hstring{ L"client_id" }, winrt::hstring{ AzureClientID } },
@@ -851,7 +880,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     // - else, throw an exception
     WDJ::JsonObject AzureConnection::_WaitForUser(const winrt::hstring& deviceCode, int pollInterval, int expiresIn)
     {
-        auto uri{ fmt::format(L"{}common/oauth2/token", _loginUri) };
+        auto uri{ fmt::format(FMT_COMPILE(L"{}common/oauth2/token"), _loginUri) };
         WWH::HttpFormUrlEncodedContent content{
             std::unordered_map<winrt::hstring, winrt::hstring>{
                 { winrt::hstring{ L"grant_type" }, winrt::hstring{ L"device_code" } },
@@ -902,7 +931,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     // - the response which contains a list of the user's Azure tenants
     void AzureConnection::_PopulateTenantList()
     {
-        auto uri{ fmt::format(L"{}tenants?api-version=2020-01-01", _resourceUri) };
+        auto uri{ fmt::format(FMT_COMPILE(L"{}tenants?api-version=2020-01-01"), _resourceUri) };
 
         // Send the request and return the response as a json value
         auto tenantResponse{ _SendRequestReturningJson(uri, nullptr) };
@@ -918,7 +947,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     // - the response with the new tokens
     void AzureConnection::_RefreshTokens()
     {
-        auto uri{ fmt::format(L"{}{}/oauth2/token", _loginUri, _currentTenant->ID) };
+        auto uri{ fmt::format(FMT_COMPILE(L"{}{}/oauth2/token"), _loginUri, _currentTenant->ID) };
         WWH::HttpFormUrlEncodedContent content{
             std::unordered_map<winrt::hstring, winrt::hstring>{
                 { winrt::hstring{ L"grant_type" }, winrt::hstring{ L"refresh_token" } },
@@ -941,7 +970,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     // - the user's cloud shell settings
     WDJ::JsonObject AzureConnection::_GetCloudShellUserSettings()
     {
-        auto uri{ fmt::format(L"{}providers/Microsoft.Portal/userSettings/cloudconsole?api-version=2020-04-01-preview", _resourceUri) };
+        auto uri{ fmt::format(FMT_COMPILE(L"{}providers/Microsoft.Portal/userSettings/cloudconsole?api-version=2023-02-01-preview"), _resourceUri) };
         return _SendRequestReturningJson(uri, nullptr);
     }
 
@@ -951,7 +980,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     // - the uri for the cloud shell
     winrt::hstring AzureConnection::_GetCloudShell()
     {
-        auto uri{ fmt::format(L"{}providers/Microsoft.Portal/consoles/default?api-version=2020-04-01-preview", _resourceUri) };
+        auto uri{ fmt::format(FMT_COMPILE(L"{}providers/Microsoft.Portal/consoles/default?api-version=2023-02-01-preview"), _resourceUri) };
 
         WWH::HttpStringContent content{
             LR"-({"properties": {"osType": "linux"}})-",
@@ -971,20 +1000,59 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     // - the uri for the terminal
     winrt::hstring AzureConnection::_GetTerminal(const winrt::hstring& shellType)
     {
-        auto uri{ fmt::format(L"{}terminals?cols={}&rows={}&version=2019-01-01&shell={}", _cloudShellUri, _initialCols, _initialRows, shellType) };
+        auto uri{ fmt::format(FMT_COMPILE(L"{}terminals?cols={}&rows={}&version=2019-01-01&shell={}"), _cloudShellUri, _initialCols, _initialRows, shellType) };
 
         WWH::HttpStringContent content{
-            L"",
+            L"{}",
             WSS::UnicodeEncoding::Utf8,
             // LOAD-BEARING. the API returns "'content-type' should be 'application/json' or 'multipart/form-data'"
             L"application/json"
         };
 
-        const auto terminalResponse = _SendRequestReturningJson(uri, content);
+        const auto terminalResponse = _SendRequestReturningJson(uri, content, WWH::HttpMethod::Post(), Windows::Foundation::Uri(_cloudShellUri));
         _terminalID = terminalResponse.GetNamedString(L"id");
 
+        // we have to do some post-handling to get the proper socket endpoint
+        // the logic here is based on the way the cloud shell team itself does it
+        winrt::hstring finalSocketUri;
+        const std::wstring_view wCloudShellUri{ _cloudShellUri };
+
+        if (wCloudShellUri.find(L"servicebus") == std::wstring::npos)
+        {
+            // wCloudShellUri does not contain the word "servicebus", we can just use it to make the final URI
+
+            // remove the "https" from the cloud shell URI
+            const auto uriWithoutProtocol = wCloudShellUri.substr(5);
+
+            finalSocketUri = fmt::format(FMT_COMPILE(L"wss{}terminals/{}"), uriWithoutProtocol, _terminalID);
+        }
+        else
+        {
+            // if wCloudShellUri contains the word "servicebus", that means the returned socketUri is of the form
+            // wss://ccon-prod-westus-aci-03.servicebus.windows.net/cc-AAAA-AAAAAAAA//aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+            // we need to change it to:
+            // wss://ccon-prod-westus-aci-03.servicebus.windows.net/$hc/cc-AAAA-AAAAAAAA/terminals/aaaaaaaaaaaaaaaaaaaaaa
+
+            const auto socketUri = terminalResponse.GetNamedString(L"socketUri");
+            const std::wstring_view wSocketUri{ socketUri };
+
+            // get the substring up until the ".net"
+            const auto dotNetStart = wSocketUri.find(L".net");
+            THROW_HR_IF(E_UNEXPECTED, dotNetStart == std::wstring::npos);
+            const auto dotNetEnd = dotNetStart + 4;
+            const auto wSocketUriBody = wSocketUri.substr(0, dotNetEnd);
+
+            // get the portion between the ".net" and the "//" (this is the cc-AAAA-AAAAAAAA part)
+            const auto lastDoubleSlashPos = wSocketUri.find_last_of(L"//");
+            THROW_HR_IF(E_UNEXPECTED, lastDoubleSlashPos == std::wstring::npos);
+            const auto wSocketUriMiddle = wSocketUri.substr(dotNetEnd, lastDoubleSlashPos - (dotNetEnd));
+
+            // piece together the final uri, adding in the "$hc" and "terminals" where needed
+            finalSocketUri = fmt::format(FMT_COMPILE(L"{}/$hc{}terminals/{}"), wSocketUriBody, wSocketUriMiddle, _terminalID);
+        }
+
         // Return the uri
-        return terminalResponse.GetNamedString(L"socketUri");
+        return winrt::hstring{ finalSocketUri };
     }
 
     // Method description:

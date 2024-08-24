@@ -40,6 +40,11 @@ public:
         dcsDataString.clear();
     }
 
+    bool EncounteredWin32InputModeSequence() const noexcept override
+    {
+        return false;
+    }
+
     bool ActionExecute(const wchar_t wch) override
     {
         executed += wch;
@@ -64,13 +69,7 @@ public:
 
     bool ActionVt52EscDispatch(const VTID /*id*/, const VTParameters /*parameters*/) override { return true; };
 
-    bool ActionClear() override { return true; };
-
-    bool ActionIgnore() override { return true; };
-
-    bool ActionOscDispatch(const wchar_t /* wch */,
-                           const size_t /* parameter */,
-                           const std::wstring_view /* string */) override
+    bool ActionOscDispatch(const size_t /* parameter */, const std::wstring_view /* string */) override
     {
         if (pfnFlushToTerminal)
         {
@@ -157,6 +156,8 @@ class Microsoft::Console::VirtualTerminal::StateMachineTest
     TEST_METHOD(PassThroughUnhandledSplitAcrossWrites);
 
     TEST_METHOD(DcsDataStringsReceivedByHandler);
+
+    TEST_METHOD(VtParameterSubspanTest);
 };
 
 void StateMachineTest::TwoStateMachinesDoNotInterfereWithEachOther()
@@ -336,4 +337,39 @@ void StateMachineTest::DcsDataStringsReceivedByHandler()
 
     // Verify the control characters were executed (if expected).
     VERIFY_ARE_EQUAL(expectedExecuted, engine.executed);
+}
+
+void StateMachineTest::VtParameterSubspanTest()
+{
+    const auto parameterList = std::vector<VTParameter>{ 12, 34, 56, 78 };
+    const auto parameterSpan = VTParameters{ parameterList.data(), parameterList.size() };
+
+    {
+        Log::Comment(L"Subspan from 0 gives all the parameters");
+        const auto subspan = parameterSpan.subspan(0);
+        VERIFY_ARE_EQUAL(4u, subspan.size());
+        VERIFY_ARE_EQUAL(12, subspan.at(0));
+        VERIFY_ARE_EQUAL(34, subspan.at(1));
+        VERIFY_ARE_EQUAL(56, subspan.at(2));
+        VERIFY_ARE_EQUAL(78, subspan.at(3));
+    }
+    {
+        Log::Comment(L"Subspan from 2 gives the last 2 parameters");
+        const auto subspan = parameterSpan.subspan(2);
+        VERIFY_ARE_EQUAL(2u, subspan.size());
+        VERIFY_ARE_EQUAL(56, subspan.at(0));
+        VERIFY_ARE_EQUAL(78, subspan.at(1));
+    }
+    {
+        Log::Comment(L"Subspan at the end of the range gives 1 omitted value");
+        const auto subspan = parameterSpan.subspan(4);
+        VERIFY_ARE_EQUAL(1u, subspan.size());
+        VERIFY_IS_FALSE(subspan.at(0).has_value());
+    }
+    {
+        Log::Comment(L"Subspan past the end of the range gives 1 omitted value");
+        const auto subspan = parameterSpan.subspan(6);
+        VERIFY_ARE_EQUAL(1u, subspan.size());
+        VERIFY_IS_FALSE(subspan.at(0).has_value());
+    }
 }

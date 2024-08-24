@@ -43,12 +43,12 @@ namespace Microsoft.Terminal.Control
                             Microsoft.Terminal.Core.Point pixelPosition);
         void TouchPressed(Microsoft.Terminal.Core.Point contactPoint);
 
-        void PointerMoved(MouseButtonState buttonState,
-                          UInt32 pointerUpdateKind,
-                          Microsoft.Terminal.Core.ControlKeyStates modifiers,
-                          Boolean focused,
-                          Microsoft.Terminal.Core.Point pixelPosition,
-                          Boolean pointerPressedInBounds);
+        Boolean PointerMoved(MouseButtonState buttonState,
+                             UInt32 pointerUpdateKind,
+                             Microsoft.Terminal.Core.ControlKeyStates modifiers,
+                             Boolean focused,
+                             Microsoft.Terminal.Core.Point pixelPosition,
+                             Boolean pointerPressedInBounds);
 
         void TouchMoved(Microsoft.Terminal.Core.Point newTouchPoint,
                         Boolean focused);
@@ -64,7 +64,7 @@ namespace Microsoft.Terminal.Control
                            Microsoft.Terminal.Core.Point pixelPosition,
                            MouseButtonState state);
 
-        void UpdateScrollbar(Double newValue);
+        void UpdateScrollbar(Single newValue);
 
         Boolean ManglePathsForWsl { get; };
 

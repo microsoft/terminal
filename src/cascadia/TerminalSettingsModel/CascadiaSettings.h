@@ -29,6 +29,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model
 
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
+    std::string_view LoadStringResource(int resourceID);
     winrt::com_ptr<Profile> CreateChild(const winrt::com_ptr<Profile>& parent);
 
     class SettingsTypedDeserializationException final : public std::runtime_error
@@ -44,6 +45,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         winrt::com_ptr<implementation::Profile> baseLayerProfile;
         std::vector<winrt::com_ptr<implementation::Profile>> profiles;
         std::unordered_map<winrt::guid, winrt::com_ptr<implementation::Profile>> profilesByGuid;
+        std::unordered_map<winrt::hstring, winrt::com_ptr<implementation::ColorScheme>> colorSchemes;
+        std::unordered_map<winrt::hstring, winrt::hstring> colorSchemeRemappings;
+        bool fixupsAppliedDuringLoad{ false };
+        std::set<std::string> themesChangeLog;
 
         void clear();
     };
@@ -60,6 +65,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void MergeFragmentIntoUserSettings(const winrt::hstring& source, const std::string_view& content);
         void FinalizeLayering();
         bool DisableDeletedProfiles();
+        bool RemapColorSchemeForProfile(const winrt::com_ptr<winrt::Microsoft::Terminal::Settings::Model::implementation::Profile>& profile);
         bool FixupUserSettings();
 
         ParsedSettings inboxSettings;
@@ -87,9 +93,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         static winrt::com_ptr<implementation::Profile> _parseProfile(const OriginTag origin, const winrt::hstring& source, const Json::Value& profileJson);
         void _appendProfile(winrt::com_ptr<Profile>&& profile, const winrt::guid& guid, ParsedSettings& settings);
         void _addUserProfileParent(const winrt::com_ptr<implementation::Profile>& profile);
+        void _addOrMergeUserColorScheme(const winrt::com_ptr<implementation::ColorScheme>& colorScheme);
         void _executeGenerator(const IDynamicProfileGenerator& generator);
 
         std::unordered_set<std::wstring_view> _ignoredNamespaces;
+        std::set<std::string> themesChangeLog;
         // See _getNonUserOriginProfiles().
         size_t _userProfileCount = 0;
     };
@@ -99,14 +107,13 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     public:
         static Model::CascadiaSettings LoadDefaults();
         static Model::CascadiaSettings LoadAll();
-        static Model::CascadiaSettings LoadUniversal();
 
+        static winrt::hstring SettingsDirectory();
         static winrt::hstring SettingsPath();
         static winrt::hstring DefaultSettingsPath();
         static winrt::hstring ApplicationDisplayName();
         static winrt::hstring ApplicationVersion();
         static bool IsPortableMode();
-        static void ExportFile(winrt::hstring path, winrt::hstring content);
 
         CascadiaSettings() noexcept = default;
         CascadiaSettings(const winrt::hstring& userJSON, const winrt::hstring& inboxJSON);
@@ -137,7 +144,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         winrt::hstring GetSerializationErrorMessage() const;
 
         // defterm
-        static std::wstring NormalizeCommandLine(LPCWSTR commandLine);
         static bool IsDefaultTerminalAvailable() noexcept;
         static bool IsDefaultTerminalSet() noexcept;
         winrt::Windows::Foundation::Collections::IObservableVector<Model::DefaultTerminal> DefaultTerminals() noexcept;
@@ -145,6 +151,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void CurrentDefaultTerminal(const Model::DefaultTerminal& terminal);
 
         void ExpandCommands();
+
+        void LogSettingChanges(bool isJsonLoad) const;
 
     private:
         static const std::filesystem::path& _settingsPath();
@@ -162,6 +170,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void _validateSettings();
         void _validateAllSchemesExist();
         void _validateMediaResources();
+        void _validateProfileEnvironmentVariables();
         void _validateKeybindings() const;
         void _validateColorSchemesInCommands() const;
         bool _hasInvalidColorScheme(const Model::Command& command) const;
@@ -175,6 +184,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         winrt::com_ptr<implementation::Profile> _baseLayerProfile = winrt::make_self<implementation::Profile>();
         winrt::Windows::Foundation::Collections::IObservableVector<Model::Profile> _allProfiles = winrt::single_threaded_observable_vector<Model::Profile>();
         winrt::Windows::Foundation::Collections::IObservableVector<Model::Profile> _activeProfiles = winrt::single_threaded_observable_vector<Model::Profile>();
+        std::set<std::string> _themesChangeLog{};
 
         // load errors
         winrt::Windows::Foundation::Collections::IVector<Model::SettingsLoadWarnings> _warnings = winrt::single_threaded_vector<Model::SettingsLoadWarnings>();

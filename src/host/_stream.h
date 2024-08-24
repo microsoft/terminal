@@ -17,81 +17,15 @@ Revision History:
 
 #pragma once
 
-#include "../server/IWaitRoutine.h"
 #include "writeData.hpp"
 
-/*++
-Routine Description:
-    This routine updates the cursor position.  Its input is the non-special
-    cased new location of the cursor.  For example, if the cursor were being
-    moved one space backwards from the left edge of the screen, the X
-    coordinate would be -1.  This routine would set the X coordinate to
-    the right edge of the screen and decrement the Y coordinate by one.
-
-Arguments:
-    pScreenInfo - Pointer to screen buffer information structure.
-    coordCursor - New location of cursor.
-    fKeepCursorVisible - TRUE if changing window origin desirable when hit right edge
-
-Return Value:
---*/
-[[nodiscard]] NTSTATUS AdjustCursorPosition(SCREEN_INFORMATION& screenInfo,
-                                            _In_ til::point coordCursor,
-                                            const BOOL fKeepCursorVisible,
-                                            _Inout_opt_ til::CoordType* psScrollY);
-
-/*++
-Routine Description:
-    This routine writes a string to the screen, processing any embedded
-    unicode characters.  The string is also copied to the input buffer, if
-    the output mode is line mode.
-
-Arguments:
-    ScreenInfo - Pointer to screen buffer information structure.
-    lpBufferBackupLimit - Pointer to beginning of buffer.
-    lpBuffer - Pointer to buffer to copy string to.  assumed to be at least
-        as long as lpRealUnicodeString.  This pointer is updated to point to the
-        next position in the buffer.
-    lpRealUnicodeString - Pointer to string to write.
-    NumBytes - On input, number of bytes to write.  On output, number of
-        bytes written.
-    NumSpaces - On output, the number of spaces consumed by the written characters.
-    dwFlags -
-      WC_DESTRUCTIVE_BACKSPACE   backspace overwrites characters.
-      WC_KEEP_CURSOR_VISIBLE     change window origin desirable when hit rt. edge
-      WC_PRINTABLE_CONTROL_CHARS if control characters should be expanded (as in, to "^X")
-
-Return Value:
-
-Note:
-    This routine does not process tabs and backspace properly.  That code
-    will be implemented as part of the line editing services.
---*/
-[[nodiscard]] NTSTATUS WriteCharsLegacy(SCREEN_INFORMATION& screenInfo,
-                                        _In_range_(<=, pwchBuffer) const wchar_t* const pwchBufferBackupLimit,
-                                        _In_ const wchar_t* pwchBuffer,
-                                        _In_reads_bytes_(*pcb) const wchar_t* pwchRealUnicode,
-                                        _Inout_ size_t* const pcb,
-                                        _Out_opt_ size_t* const pcSpaces,
-                                        const til::CoordType sOriginalXPosition,
-                                        const DWORD dwFlags,
-                                        _Inout_opt_ til::CoordType* const psScrollY);
-
-// The new entry point for WriteChars to act as an intercept in case we place a Virtual Terminal processor in the way.
-[[nodiscard]] NTSTATUS WriteChars(SCREEN_INFORMATION& screenInfo,
-                                  _In_range_(<=, pwchBuffer) const wchar_t* const pwchBufferBackupLimit,
-                                  _In_ const wchar_t* pwchBuffer,
-                                  _In_reads_bytes_(*pcb) const wchar_t* pwchRealUnicode,
-                                  _Inout_ size_t* const pcb,
-                                  _Out_opt_ size_t* const pcSpaces,
-                                  const til::CoordType sOriginalXPosition,
-                                  const DWORD dwFlags,
-                                  _Inout_opt_ til::CoordType* const psScrollY);
+void WriteCharsLegacy(SCREEN_INFORMATION& screenInfo, const std::wstring_view& str, til::CoordType* psScrollY);
+void WriteCharsVT(SCREEN_INFORMATION& screenInfo, const std::wstring_view& str);
+void WriteClearScreen(SCREEN_INFORMATION& screenInfo);
 
 // NOTE: console lock must be held when calling this routine
 // String has been translated to unicode at this point.
-[[nodiscard]] NTSTATUS DoWriteConsole(_In_reads_bytes_(*pcbBuffer) PCWCHAR pwchBuffer,
+[[nodiscard]] NTSTATUS DoWriteConsole(_In_reads_bytes_(pcbBuffer) const wchar_t* pwchBuffer,
                                       _Inout_ size_t* const pcbBuffer,
                                       SCREEN_INFORMATION& screenInfo,
-                                      bool requiresVtQuirk,
                                       std::unique_ptr<WriteData>& waiter);

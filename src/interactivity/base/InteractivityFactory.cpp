@@ -497,9 +497,10 @@ void InteractivityFactory::_WritePseudoWindowCallback(bool showOrHide)
     // this message, if it's already minimized. If the window is maximized a
     // restore will restore-down the window instead.
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    if (const auto io = gci.GetVtIo())
+    if (auto writer = gci.GetVtWriter())
     {
-        io->SetWindowVisibility(showOrHide);
+        writer.WriteWindowVisibility(showOrHide);
+        writer.Submit();
     }
 }
 

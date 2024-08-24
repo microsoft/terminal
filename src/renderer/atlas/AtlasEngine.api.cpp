@@ -4,6 +4,8 @@
 #include "pch.h"
 #include "AtlasEngine.h"
 
+#include "Backend.h"
+#include "../../buffer/out/textBuffer.hpp"
 #include "../base/FontCache.h"
 
 // #### NOTE ####
@@ -20,7 +22,7 @@
 #pragma warning(disable : 26481) // Don't use pointer arithmetic. Use span instead (bounds.1).
 #pragma warning(disable : 26482) // Only index into arrays using constant expressions (bounds.2).
 
-using namespace Microsoft::Console::Render;
+using namespace Microsoft::Console::Render::Atlas;
 
 // Like gsl::narrow but returns a HRESULT.
 #pragma warning(push)
@@ -34,7 +36,7 @@ constexpr HRESULT api_narrow(U val, T& out) noexcept
 #pragma warning(pop)
 
 template<typename T, typename U>
-constexpr HRESULT vec2_narrow(U x, U y, AtlasEngine::vec2<T>& out) noexcept
+constexpr HRESULT vec2_narrow(U x, U y, vec2<T>& out) noexcept
 {
     return api_narrow(x, out.x) | api_narrow(y, out.y);
 }
@@ -46,8 +48,8 @@ constexpr HRESULT vec2_narrow(U x, U y, AtlasEngine::vec2<T>& out) noexcept
     //assert(psrRegion->top < psrRegion->bottom && psrRegion->top >= 0 && psrRegion->bottom <= _api.cellCount.y);
 
     // BeginPaint() protects against invalid out of bounds numbers.
-    _api.invalidatedRows.x = std::min(_api.invalidatedRows.x, gsl::narrow_cast<u16>(psrRegion->top));
-    _api.invalidatedRows.y = std::max(_api.invalidatedRows.y, gsl::narrow_cast<u16>(psrRegion->bottom));
+    _api.invalidatedRows.start = std::min(_api.invalidatedRows.start, gsl::narrow_cast<u16>(psrRegion->top));
+    _api.invalidatedRows.end = std::max(_api.invalidatedRows.end, gsl::narrow_cast<u16>(psrRegion->bottom));
     return S_OK;
 }
 
@@ -71,8 +73,8 @@ constexpr HRESULT vec2_narrow(U x, U y, AtlasEngine::vec2<T>& out) noexcept
 
 [[nodiscard]] HRESULT AtlasEngine::InvalidateSystem(const til::rect* const prcDirtyClient) noexcept
 {
-    const auto top = prcDirtyClient->top / _api.fontMetrics.cellSize.y;
-    const auto bottom = prcDirtyClient->bottom / _api.fontMetrics.cellSize.y;
+    const auto top = prcDirtyClient->top / _api.s->font->cellSize.y;
+    const auto bottom = prcDirtyClient->bottom / _api.s->font->cellSize.y;
 
     // BeginPaint() protects against invalid out of bounds numbers.
     til::rect rect;
@@ -81,16 +83,39 @@ constexpr HRESULT vec2_narrow(U x, U y, AtlasEngine::vec2<T>& out) noexcept
     return Invalidate(&rect);
 }
 
-[[nodiscard]] HRESULT AtlasEngine::InvalidateSelection(const std::vector<til::rect>& rectangles) noexcept
+void AtlasEngine::_invalidateSpans(std::span<const til::point_span> spans, const TextBuffer& buffer) noexcept
 {
-    for (const auto& rect : rectangles)
+    const auto viewportOrigin = til::point{ _api.viewportOffset.x, _api.viewportOffset.y };
+    const auto viewport = til::rect{ 0, 0, _api.s->viewportCellCount.x, _api.s->viewportCellCount.y };
+    for (auto&& sp : spans)
     {
-        // BeginPaint() protects against invalid out of bounds numbers.
-        // TODO: rect can contain invalid out of bounds coordinates when the selection is being
-        // dragged outside of the viewport (and the window begins scrolling automatically).
-        _api.invalidatedRows.x = gsl::narrow_cast<u16>(std::min<int>(_api.invalidatedRows.x, std::max<int>(0, rect.top)));
-        _api.invalidatedRows.y = gsl::narrow_cast<u16>(std::max<int>(_api.invalidatedRows.y, std::max<int>(0, rect.bottom)));
+        sp.iterate_rows(til::CoordTypeMax, [&](til::CoordType row, til::CoordType beg, til::CoordType end) {
+            const auto shift = buffer.GetLineRendition(row) != LineRendition::SingleWidth ? 1 : 0;
+            beg <<= shift;
+            end <<= shift;
+            til::rect rect{ beg, row, end + 1, row + 1 };
+            rect = rect.to_origin(viewportOrigin);
+            rect &= viewport;
+            _api.invalidatedRows.start = gsl::narrow_cast<u16>(std::min<int>(_api.invalidatedRows.start, std::max<int>(0, rect.top)));
+            _api.invalidatedRows.end = gsl::narrow_cast<u16>(std::max<int>(_api.invalidatedRows.end, std::max<int>(0, rect.bottom)));
+        });
     }
+}
+
+[[nodiscard]] HRESULT AtlasEngine::InvalidateSelection(std::span<const til::rect> selections) noexcept
+{
+    if (!selections.empty())
+    {
+        // INVARIANT: This assumes that `selections` is sorted by increasing Y
+        _api.invalidatedRows.start = gsl::narrow_cast<u16>(std::min<int>(_api.invalidatedRows.start, std::max<int>(0, selections.front().top)));
+        _api.invalidatedRows.end = gsl::narrow_cast<u16>(std::max<int>(_api.invalidatedRows.end, std::max<int>(0, selections.back().bottom)));
+    }
+    return S_OK;
+}
+
+[[nodiscard]] HRESULT AtlasEngine::InvalidateHighlight(std::span<const til::point_span> highlights, const TextBuffer& buffer) noexcept
+{
+    _invalidateSpans(highlights, buffer);
     return S_OK;
 }
 
@@ -117,13 +142,13 @@ constexpr HRESULT vec2_narrow(U x, U y, AtlasEngine::vec2<T>& out) noexcept
 
         if (delta < 0)
         {
-            _api.invalidatedRows.x = gsl::narrow_cast<u16>(clamp<int>(_api.invalidatedRows.x + delta, u16min, u16max));
-            _api.invalidatedRows.y = _api.cellCount.y;
+            _api.invalidatedRows.start = gsl::narrow_cast<u16>(clamp<int>(_api.invalidatedRows.start + delta, u16min, u16max));
+            _api.invalidatedRows.end = _api.s->viewportCellCount.y;
         }
         else
         {
-            _api.invalidatedRows.x = 0;
-            _api.invalidatedRows.y = gsl::narrow_cast<u16>(clamp<int>(_api.invalidatedRows.y + delta, u16min, u16max));
+            _api.invalidatedRows.start = 0;
+            _api.invalidatedRows.end = gsl::narrow_cast<u16>(clamp<int>(_api.invalidatedRows.end + delta, u16min, u16max));
         }
     }
 
@@ -136,16 +161,9 @@ constexpr HRESULT vec2_narrow(U x, U y, AtlasEngine::vec2<T>& out) noexcept
     return S_OK;
 }
 
-[[nodiscard]] HRESULT AtlasEngine::InvalidateFlush(_In_ const bool /*circled*/, _Out_ bool* const pForcePaint) noexcept
-{
-    RETURN_HR_IF_NULL(E_INVALIDARG, pForcePaint);
-    *pForcePaint = false;
-    return S_OK;
-}
-
 [[nodiscard]] HRESULT AtlasEngine::InvalidateTitle(const std::wstring_view proposedTitle) noexcept
 {
-    WI_SetFlag(_api.invalidations, ApiInvalidations::Title);
+    _api.invalidatedTitle = true;
     return S_OK;
 }
 
@@ -161,6 +179,10 @@ constexpr HRESULT vec2_narrow(U x, U y, AtlasEngine::vec2<T>& out) noexcept
 
 [[nodiscard]] HRESULT AtlasEngine::UpdateSoftFont(const std::span<const uint16_t> bitPattern, const til::size cellSize, const size_t centeringHint) noexcept
 {
+    const auto softFont = _api.s.write()->font.write();
+    softFont->softFontPattern.assign(bitPattern.begin(), bitPattern.end());
+    softFont->softFontCellSize.width = std::max(0, cellSize.width);
+    softFont->softFontCellSize.height = std::max(0, cellSize.height);
     return S_OK;
 }
 
@@ -169,28 +191,35 @@ constexpr HRESULT vec2_narrow(U x, U y, AtlasEngine::vec2<T>& out) noexcept
     u16 newDPI;
     RETURN_IF_FAILED(api_narrow(dpi, newDPI));
 
-    if (_api.dpi != newDPI)
+    if (_api.s->font->dpi != newDPI)
     {
-        _api.dpi = newDPI;
-        WI_SetFlag(_api.invalidations, ApiInvalidations::Font);
+        _api.s.write()->font.write()->dpi = newDPI;
     }
 
     return S_OK;
 }
 
 [[nodiscard]] HRESULT AtlasEngine::UpdateViewport(const til::inclusive_rect& srNewViewport) noexcept
+try
 {
-    const u16x2 cellCount{
-        gsl::narrow_cast<u16>(std::max(1, srNewViewport.right - srNewViewport.left + 1)),
-        gsl::narrow_cast<u16>(std::max(1, srNewViewport.bottom - srNewViewport.top + 1)),
+    const u16x2 viewportCellCount{
+        gsl::narrow<u16>(std::max(1, srNewViewport.right - srNewViewport.left + 1)),
+        gsl::narrow<u16>(std::max(1, srNewViewport.bottom - srNewViewport.top + 1)),
     };
-    if (_api.cellCount != cellCount)
+    const u16x2 viewportOffset{
+        gsl::narrow<u16>(srNewViewport.left),
+        gsl::narrow<u16>(srNewViewport.top),
+    };
+
+    if (_api.s->viewportCellCount != viewportCellCount)
     {
-        _api.cellCount = cellCount;
-        WI_SetFlag(_api.invalidations, ApiInvalidations::Size);
+        _api.s.write()->viewportCellCount = viewportCellCount;
     }
+    _api.viewportOffset = viewportOffset;
+
     return S_OK;
 }
+CATCH_RETURN()
 
 [[nodiscard]] HRESULT AtlasEngine::GetProposedFont(const FontInfoDesired& fontInfoDesired, _Out_ FontInfo& fontInfo, const int dpi) noexcept
 try
@@ -249,7 +278,7 @@ try
     }
 #endif
 
-    _resolveFontMetrics(nullptr, fontInfoDesired, fontInfo);
+    _resolveFontMetrics(fontInfoDesired, fontInfo);
     return S_OK;
 }
 CATCH_RETURN()
@@ -263,8 +292,8 @@ CATCH_RETURN()
 [[nodiscard]] HRESULT AtlasEngine::GetFontSize(_Out_ til::size* pFontSize) noexcept
 {
     RETURN_HR_IF_NULL(E_INVALIDARG, pFontSize);
-    pFontSize->width = _api.fontMetrics.cellSize.x;
-    pFontSize->height = _api.fontMetrics.cellSize.y;
+    pFontSize->width = _api.s->font->cellSize.x;
+    pFontSize->height = _api.s->font->cellSize.y;
     return S_OK;
 }
 
@@ -272,13 +301,25 @@ CATCH_RETURN()
 {
     RETURN_HR_IF_NULL(E_INVALIDARG, pResult);
 
-    wil::com_ptr<IDWriteTextLayout> textLayout;
-    RETURN_IF_FAILED(_sr.dwriteFactory->CreateTextLayout(glyph.data(), gsl::narrow_cast<uint32_t>(glyph.size()), _getTextFormat(false, false), FLT_MAX, FLT_MAX, textLayout.addressof()));
+    wil::com_ptr<IDWriteTextFormat> textFormat;
+    RETURN_IF_FAILED(_p.dwriteFactory->CreateTextFormat(
+        /* fontFamilyName */ _api.s->font->fontName.c_str(),
+        /* fontCollection */ _api.s->font->fontCollection.get(),
+        /* fontWeight     */ static_cast<DWRITE_FONT_WEIGHT>(_api.s->font->fontWeight),
+        /* fontStyle      */ DWRITE_FONT_STYLE_NORMAL,
+        /* fontStretch    */ DWRITE_FONT_STRETCH_NORMAL,
+        /* fontSize       */ _api.s->font->fontSize,
+        /* localeName     */ _p.userLocaleName.c_str(),
+        /* textFormat     */ textFormat.addressof()));
 
-    DWRITE_TEXT_METRICS metrics;
+    wil::com_ptr<IDWriteTextLayout> textLayout;
+    RETURN_IF_FAILED(_p.dwriteFactory->CreateTextLayout(glyph.data(), gsl::narrow_cast<uint32_t>(glyph.size()), textFormat.get(), FLT_MAX, FLT_MAX, textLayout.addressof()));
+
+    DWRITE_TEXT_METRICS metrics{};
     RETURN_IF_FAILED(textLayout->GetMetrics(&metrics));
 
-    *pResult = static_cast<unsigned int>(std::ceilf(metrics.width)) > _api.fontMetrics.cellSize.x;
+    const auto minWidth = (_api.s->font->cellSize.x * 1.2f);
+    *pResult = metrics.width > minWidth;
     return S_OK;
 }
 
@@ -289,56 +330,49 @@ CATCH_RETURN()
 
 #pragma endregion
 
-#pragma region DxRenderer
-
-HRESULT AtlasEngine::Enable() noexcept
-{
-    return S_OK;
-}
+#pragma region getter
 
 [[nodiscard]] std::wstring_view AtlasEngine::GetPixelShaderPath() noexcept
 {
-    return _api.customPixelShaderPath;
+    return _api.s->misc->customPixelShaderPath;
 }
 
 [[nodiscard]] bool AtlasEngine::GetRetroTerminalEffect() const noexcept
 {
-    return _api.useRetroTerminalEffect;
-}
-
-[[nodiscard]] float AtlasEngine::GetScaling() const noexcept
-{
-    return static_cast<float>(_api.dpi) / static_cast<float>(USER_DEFAULT_SCREEN_DPI);
+    return _api.s->misc->useRetroTerminalEffect;
 }
 
 [[nodiscard]] Microsoft::Console::Types::Viewport AtlasEngine::GetViewportInCharacters(const Types::Viewport& viewInPixels) const noexcept
 {
-    assert(_api.fontMetrics.cellSize.x != 0);
-    assert(_api.fontMetrics.cellSize.y != 0);
-    return Types::Viewport::FromDimensions(viewInPixels.Origin(), { viewInPixels.Width() / _api.fontMetrics.cellSize.x, viewInPixels.Height() / _api.fontMetrics.cellSize.y });
+    assert(_api.s->font->cellSize.x != 0);
+    assert(_api.s->font->cellSize.y != 0);
+    return Types::Viewport::FromDimensions(viewInPixels.Origin(), { viewInPixels.Width() / _api.s->font->cellSize.x, viewInPixels.Height() / _api.s->font->cellSize.y });
 }
 
 [[nodiscard]] Microsoft::Console::Types::Viewport AtlasEngine::GetViewportInPixels(const Types::Viewport& viewInCharacters) const noexcept
 {
-    assert(_api.fontMetrics.cellSize.x != 0);
-    assert(_api.fontMetrics.cellSize.y != 0);
-    return Types::Viewport::FromDimensions(viewInCharacters.Origin(), { viewInCharacters.Width() * _api.fontMetrics.cellSize.x, viewInCharacters.Height() * _api.fontMetrics.cellSize.y });
+    assert(_api.s->font->cellSize.x != 0);
+    assert(_api.s->font->cellSize.y != 0);
+    return Types::Viewport::FromDimensions(viewInCharacters.Origin(), { viewInCharacters.Width() * _api.s->font->cellSize.x, viewInCharacters.Height() * _api.s->font->cellSize.y });
 }
+
+#pragma endregion
+
+#pragma region setter
 
 void AtlasEngine::SetAntialiasingMode(const D2D1_TEXT_ANTIALIAS_MODE antialiasingMode) noexcept
 {
-    const auto mode = gsl::narrow_cast<u8>(antialiasingMode);
+    const auto mode = static_cast<AntialiasingMode>(antialiasingMode);
     if (_api.antialiasingMode != mode)
     {
         _api.antialiasingMode = mode;
         _resolveTransparencySettings();
-        WI_SetFlag(_api.invalidations, ApiInvalidations::Font);
     }
 }
 
 void AtlasEngine::SetCallback(std::function<void(HANDLE)> pfn) noexcept
 {
-    _api.swapChainChangedCallback = std::move(pfn);
+    _p.swapChainChangedCallback = std::move(pfn);
 }
 
 void AtlasEngine::EnableTransparentBackground(const bool isTransparent) noexcept
@@ -347,112 +381,123 @@ void AtlasEngine::EnableTransparentBackground(const bool isTransparent) noexcept
     {
         _api.enableTransparentBackground = isTransparent;
         _resolveTransparencySettings();
-        WI_SetFlag(_api.invalidations, ApiInvalidations::SwapChain);
     }
-}
-
-void AtlasEngine::SetForceFullRepaintRendering(bool enable) noexcept
-{
 }
 
 [[nodiscard]] HRESULT AtlasEngine::SetHwnd(const HWND hwnd) noexcept
 {
-    if (_api.hwnd != hwnd)
+    if (_api.s->target->hwnd != hwnd)
     {
-        _api.hwnd = hwnd;
-        WI_SetFlag(_api.invalidations, ApiInvalidations::SwapChain);
+        _api.s.write()->target.write()->hwnd = hwnd;
     }
     return S_OK;
 }
 
 void AtlasEngine::SetPixelShaderPath(std::wstring_view value) noexcept
+try
 {
-    if (_api.customPixelShaderPath != value)
+    if (_api.s->misc->customPixelShaderPath != value)
     {
-        _api.customPixelShaderPath = value;
+        _api.s.write()->misc.write()->customPixelShaderPath = value;
         _resolveTransparencySettings();
-        WI_SetFlag(_api.invalidations, ApiInvalidations::Device);
     }
 }
+CATCH_LOG()
+
+void AtlasEngine::SetPixelShaderImagePath(std::wstring_view value) noexcept
+try
+{
+    if (_api.s->misc->customPixelShaderImagePath != value)
+    {
+        _api.s.write()->misc.write()->customPixelShaderImagePath = value;
+        _resolveTransparencySettings();
+    }
+}
+CATCH_LOG()
 
 void AtlasEngine::SetRetroTerminalEffect(bool enable) noexcept
 {
-    if (_api.useRetroTerminalEffect != enable)
+    if (_api.s->misc->useRetroTerminalEffect != enable)
     {
-        _api.useRetroTerminalEffect = enable;
+        _api.s.write()->misc.write()->useRetroTerminalEffect = enable;
         _resolveTransparencySettings();
-        WI_SetFlag(_api.invalidations, ApiInvalidations::Device);
-    }
-}
-
-void AtlasEngine::SetSelectionBackground(const COLORREF color, const float alpha) noexcept
-{
-    const u32 selectionColor = (color & 0xffffff) | gsl::narrow_cast<u32>(std::lroundf(alpha * 255.0f)) << 24;
-    if (_api.selectionColor != selectionColor)
-    {
-        _api.selectionColor = selectionColor;
-        WI_SetFlag(_api.invalidations, ApiInvalidations::Settings);
     }
 }
 
 void AtlasEngine::SetSoftwareRendering(bool enable) noexcept
 {
-    if (_api.useSoftwareRendering != enable)
+    if (_api.s->target->useWARP != enable)
     {
-        _api.useSoftwareRendering = enable;
-        WI_SetFlag(_api.invalidations, ApiInvalidations::Device);
+        _api.s.write()->target.write()->useWARP = enable;
     }
 }
 
-void AtlasEngine::SetWarningCallback(std::function<void(HRESULT)> pfn) noexcept
+void AtlasEngine::SetDisablePartialInvalidation(bool enable) noexcept
 {
-    _api.warningCallback = std::move(pfn);
+    if (_api.s->target->disablePresent1 != enable)
+    {
+        _api.s.write()->target.write()->disablePresent1 = enable;
+    }
+}
+
+void AtlasEngine::SetGraphicsAPI(GraphicsAPI graphicsAPI) noexcept
+{
+    if (_api.s->target->graphicsAPI != graphicsAPI)
+    {
+        _api.s.write()->target.write()->graphicsAPI = graphicsAPI;
+    }
+}
+
+void AtlasEngine::SetWarningCallback(std::function<void(HRESULT, wil::zwstring_view)> pfn) noexcept
+{
+    _p.warningCallback = std::move(pfn);
 }
 
 [[nodiscard]] HRESULT AtlasEngine::SetWindowSize(const til::size pixels) noexcept
 {
-    u16x2 newSize;
-    RETURN_IF_FAILED(vec2_narrow(pixels.width, pixels.height, newSize));
-
-    // At the time of writing:
-    // When Win+D is pressed, `TriggerRedrawCursor` is called and a render pass is initiated.
-    // As conhost is in the background, GetClientRect will return {0,0} and we'll get called with {0,0}.
-    // This isn't a valid value for _api.sizeInPixel and would crash _recreateSizeDependentResources().
-    if (_api.sizeInPixel != newSize && newSize != u16x2{})
+    // When Win+D is pressed, `GetClientRect` returns {0,0}.
+    // There's probably more situations in which our callers may pass us invalid data.
+    if (!pixels)
     {
-        _api.sizeInPixel = newSize;
-        WI_SetFlag(_api.invalidations, ApiInvalidations::Size);
+        return S_OK;
+    }
+
+    const u16x2 newSize{
+        gsl::narrow_cast<u16>(clamp<til::CoordType>(pixels.width, 1, u16max)),
+        gsl::narrow_cast<u16>(clamp<til::CoordType>(pixels.height, 1, u16max)),
+    };
+
+    if (_api.s->targetSize != newSize)
+    {
+        _api.s.write()->targetSize = newSize;
     }
 
     return S_OK;
 }
 
-[[nodiscard]] HRESULT AtlasEngine::UpdateFont(const FontInfoDesired& fontInfoDesired, FontInfo& fontInfo, const std::unordered_map<std::wstring_view, uint32_t>& features, const std::unordered_map<std::wstring_view, float>& axes) noexcept
+[[nodiscard]] HRESULT AtlasEngine::UpdateFont(const FontInfoDesired& fontInfoDesired, FontInfo& fontInfo, const std::unordered_map<std::wstring_view, float>& features, const std::unordered_map<std::wstring_view, float>& axes) noexcept
 {
-    static constexpr std::array fallbackFaceNames{ static_cast<const wchar_t*>(nullptr), L"Consolas", L"Lucida Console", L"Courier New" };
-    auto it = fallbackFaceNames.begin();
-    const auto end = fallbackFaceNames.end();
+    // We're currently faced with a font caching bug that we're unable to reproduce locally. See GH#9375.
+    // But it occurs often enough and has no proper workarounds, so we're forced to fix it.
+    //
+    // Our leading theory is: When an app package has a <uap7:Extension Category="windows.sharedFonts">
+    // (like Windows Terminal with Cascadia Mono/Code) and it gets updated, the system locks the file somehow.
+    // DirectWrite still has some information about the font cached though, so it thinks that it still exists,
+    // but using the font causes it to error out because it can't access it. This fact became apparent in
+    // commit 9e86c98 (PR #16196), because it showed that it's definitely not due to FindFamilyName() failing.
+    //
+    // The workaround is to catch the exception and retry it with our nearby fonts manually loaded in.
+    HRESULT hr = _updateFont(fontInfoDesired, fontInfo, features, axes);
 
-    for (;;)
+    if constexpr (Feature_NearbyFontLoading::IsEnabled())
     {
-        try
+        if (FAILED(hr) && _updateWithNearbyFontCollection())
         {
-            _updateFont(*it, fontInfoDesired, fontInfo, features, axes);
-            return S_OK;
-        }
-        catch (...)
-        {
-            ++it;
-            if (it == end)
-            {
-                RETURN_CAUGHT_EXCEPTION();
-            }
-            else
-            {
-                LOG_CAUGHT_EXCEPTION();
-            }
+            hr = _updateFont(fontInfoDesired, fontInfo, features, axes);
         }
     }
+
+    return hr;
 }
 
 void AtlasEngine::UpdateHyperlinkHoveredId(const uint16_t hoveredId) noexcept
@@ -464,16 +509,25 @@ void AtlasEngine::UpdateHyperlinkHoveredId(const uint16_t hoveredId) noexcept
 
 void AtlasEngine::_resolveTransparencySettings() noexcept
 {
+    // An opaque background allows us to use true "independent" flips. See AtlasEngine::_createSwapChain().
+    // We can't enable them if custom shaders are specified, because it's unknown, whether they support opaque inputs.
+    const bool useAlpha = _api.enableTransparentBackground || !_api.s->misc->customPixelShaderPath.empty();
     // If the user asks for ClearType, but also for a transparent background
     // (which our ClearType shader doesn't simultaneously support)
     // then we need to sneakily force the renderer to grayscale AA.
-    _api.realizedAntialiasingMode = _api.enableTransparentBackground && _api.antialiasingMode == D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE ? D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE : _api.antialiasingMode;
-    // An opaque background allows us to use true "independent" flips. See AtlasEngine::_createSwapChain().
-    // We can't enable them if custom shaders are specified, because it's unknown, whether they support opaque inputs.
-    _api.backgroundOpaqueMixin = _api.enableTransparentBackground || !_api.customPixelShaderPath.empty() || _api.useRetroTerminalEffect ? 0x00000000 : 0xff000000;
+    const auto antialiasingMode = useAlpha && _api.antialiasingMode == AntialiasingMode::ClearType ? AntialiasingMode::Grayscale : _api.antialiasingMode;
+
+    if (antialiasingMode != _api.s->font->antialiasingMode || useAlpha != _api.s->target->useAlpha)
+    {
+        const auto s = _api.s.write();
+        s->font.write()->antialiasingMode = antialiasingMode;
+        s->target.write()->useAlpha = useAlpha;
+        _api.backgroundOpaqueMixin = useAlpha ? 0x00000000 : 0xff000000;
+    }
 }
 
-void AtlasEngine::_updateFont(const wchar_t* faceName, const FontInfoDesired& fontInfoDesired, FontInfo& fontInfo, const std::unordered_map<std::wstring_view, uint32_t>& features, const std::unordered_map<std::wstring_view, float>& axes)
+[[nodiscard]] HRESULT AtlasEngine::_updateFont(const FontInfoDesired& fontInfoDesired, FontInfo& fontInfo, const std::unordered_map<std::wstring_view, float>& features, const std::unordered_map<std::wstring_view, float>& axes) noexcept
+try
 {
     std::vector<DWRITE_FONT_FEATURE> fontFeatures;
     if (!features.empty())
@@ -486,28 +540,29 @@ void AtlasEngine::_updateFont(const wchar_t* faceName, const FontInfoDesired& fo
         // Gsub is for GetGlyphs() and Gpos for GetGlyphPlacements().
         //
         // GH#10774: Apparently specifying all of the features is just redundant.
-        fontFeatures.emplace_back(DWRITE_FONT_FEATURE{ DWRITE_FONT_FEATURE_TAG_STANDARD_LIGATURES, 1 });
-        fontFeatures.emplace_back(DWRITE_FONT_FEATURE{ DWRITE_FONT_FEATURE_TAG_CONTEXTUAL_LIGATURES, 1 });
-        fontFeatures.emplace_back(DWRITE_FONT_FEATURE{ DWRITE_FONT_FEATURE_TAG_CONTEXTUAL_ALTERNATES, 1 });
+        fontFeatures.emplace_back(DWRITE_FONT_FEATURE_TAG_STANDARD_LIGATURES, 1);
+        fontFeatures.emplace_back(DWRITE_FONT_FEATURE_TAG_CONTEXTUAL_LIGATURES, 1);
+        fontFeatures.emplace_back(DWRITE_FONT_FEATURE_TAG_CONTEXTUAL_ALTERNATES, 1);
 
         for (const auto& p : features)
         {
             if (p.first.size() == 4)
             {
                 const auto s = p.first.data();
+                const auto v = static_cast<UINT32>(std::max(0l, lrintf(p.second)));
                 switch (const auto tag = DWRITE_MAKE_FONT_FEATURE_TAG(s[0], s[1], s[2], s[3]))
                 {
                 case DWRITE_FONT_FEATURE_TAG_STANDARD_LIGATURES:
-                    fontFeatures[0].parameter = p.second;
+                    fontFeatures[0].parameter = v;
                     break;
                 case DWRITE_FONT_FEATURE_TAG_CONTEXTUAL_LIGATURES:
-                    fontFeatures[1].parameter = p.second;
+                    fontFeatures[1].parameter = v;
                     break;
                 case DWRITE_FONT_FEATURE_TAG_CONTEXTUAL_ALTERNATES:
-                    fontFeatures[2].parameter = p.second;
+                    fontFeatures[2].parameter = v;
                     break;
                 default:
-                    fontFeatures.emplace_back(DWRITE_FONT_FEATURE{ tag, p.second });
+                    fontFeatures.emplace_back(tag, v);
                     break;
                 }
             }
@@ -521,9 +576,9 @@ void AtlasEngine::_updateFont(const wchar_t* faceName, const FontInfoDesired& fo
 
         // AtlasEngine::_recreateFontDependentResources() relies on these fields to
         // exist in this particular order in order to create appropriate default axes.
-        fontAxisValues.emplace_back(DWRITE_FONT_AXIS_VALUE{ DWRITE_FONT_AXIS_TAG_WEIGHT, -1.0f });
-        fontAxisValues.emplace_back(DWRITE_FONT_AXIS_VALUE{ DWRITE_FONT_AXIS_TAG_ITALIC, -1.0f });
-        fontAxisValues.emplace_back(DWRITE_FONT_AXIS_VALUE{ DWRITE_FONT_AXIS_TAG_SLANT, -1.0f });
+        fontAxisValues.emplace_back(DWRITE_FONT_AXIS_TAG_WEIGHT, -1.0f);
+        fontAxisValues.emplace_back(DWRITE_FONT_AXIS_TAG_ITALIC, -1.0f);
+        fontAxisValues.emplace_back(DWRITE_FONT_AXIS_TAG_SLANT, -1.0f);
 
         for (const auto& p : axes)
         {
@@ -542,41 +597,30 @@ void AtlasEngine::_updateFont(const wchar_t* faceName, const FontInfoDesired& fo
                     fontAxisValues[2].value = p.second;
                     break;
                 default:
-                    fontAxisValues.emplace_back(DWRITE_FONT_AXIS_VALUE{ tag, p.second });
+                    fontAxisValues.emplace_back(tag, p.second);
                     break;
                 }
             }
         }
     }
 
-    const auto previousCellSize = _api.fontMetrics.cellSize;
-    _resolveFontMetrics(faceName, fontInfoDesired, fontInfo, &_api.fontMetrics);
-    _api.fontFeatures = std::move(fontFeatures);
-    _api.fontAxisValues = std::move(fontAxisValues);
+    const auto font = _api.s.write()->font.write();
+    _resolveFontMetrics(fontInfoDesired, fontInfo, font);
+    font->fontFeatures = std::move(fontFeatures);
+    font->fontAxisValues = std::move(fontAxisValues);
 
-    WI_SetFlag(_api.invalidations, ApiInvalidations::Font);
-
-    if (previousCellSize != _api.fontMetrics.cellSize)
-    {
-        WI_SetFlag(_api.invalidations, ApiInvalidations::Size);
-    }
+    return S_OK;
 }
+CATCH_RETURN()
 
-void AtlasEngine::_resolveFontMetrics(const wchar_t* requestedFaceName, const FontInfoDesired& fontInfoDesired, FontInfo& fontInfo, FontMetrics* fontMetrics) const
+void AtlasEngine::_resolveFontMetrics(const FontInfoDesired& fontInfoDesired, FontInfo& fontInfo, FontSettings* fontMetrics)
 {
+    const auto& faceName = fontInfoDesired.GetFaceName();
     const auto requestedFamily = fontInfoDesired.GetFamily();
     auto requestedWeight = fontInfoDesired.GetWeight();
-    auto fontSize = fontInfoDesired.GetFontSize();
+    auto fontSize = std::clamp(fontInfoDesired.GetFontSize(), 1.0f, 100.0f);
     auto requestedSize = fontInfoDesired.GetEngineSize();
 
-    if (!requestedFaceName)
-    {
-        requestedFaceName = fontInfoDesired.GetFaceName().c_str();
-        if (!requestedFaceName)
-        {
-            requestedFaceName = L"Consolas";
-        }
-    }
     if (!requestedSize.height)
     {
         fontSize = 12.0f;
@@ -587,56 +631,145 @@ void AtlasEngine::_resolveFontMetrics(const wchar_t* requestedFaceName, const Fo
         requestedWeight = DWRITE_FONT_WEIGHT_NORMAL;
     }
 
-    auto fontCollection = FontCache::GetCached();
+    // UpdateFont() (and its NearbyFontLoading feature path specifically) sets `_api.s->font->fontCollection`
+    // to a custom font collection that includes .ttf files that are bundled with our app package. See GH#9375.
+    // Doing it this way is a bit hacky, but it does have the benefit that we can cache a font collection
+    // instance across font changes, like when zooming the font size rapidly using the scroll wheel.
+    auto fontCollection = _api.s->font->fontCollection;
+    if (!fontCollection)
+    {
+        THROW_IF_FAILED(_p.dwriteFactory->GetSystemFontCollection(fontCollection.addressof(), FALSE));
+    }
 
-    u32 index = 0;
-    BOOL exists = false;
-    THROW_IF_FAILED(fontCollection->FindFamilyName(requestedFaceName, &index, &exists));
-    THROW_HR_IF(DWRITE_E_NOFONT, !exists);
+    std::wstring primaryFontName;
+    std::wstring missingFontNames;
+    wil::com_ptr<IDWriteFontFamily> primaryFontFamily;
+    wil::com_ptr<IDWriteFontFallbackBuilder> fontFallbackBuilder;
 
-    wil::com_ptr<IDWriteFontFamily> fontFamily;
-    THROW_IF_FAILED(fontCollection->GetFontFamily(index, fontFamily.addressof()));
+    // Resolves a comma-separated font list similar to CSS' font-family property. The first font in the list
+    // that can be resolved successfully will be the primary font which dictates the cell size among others.
+    // All remaining fonts are "secondary" fonts used for font fallback.
+    til::iterate_font_families(faceName, [&](std::wstring&& fontName) {
+        u32 index = 0;
+        BOOL exists = false;
+        THROW_IF_FAILED(fontCollection->FindFamilyName(fontName.c_str(), &index, &exists));
 
-    wil::com_ptr<IDWriteFont> font;
-    THROW_IF_FAILED(fontFamily->GetFirstMatchingFont(static_cast<DWRITE_FONT_WEIGHT>(requestedWeight), DWRITE_FONT_STRETCH_NORMAL, DWRITE_FONT_STYLE_NORMAL, font.addressof()));
+        // In case of a portable build, the given font may not be installed and instead be bundled next to our executable.
+        if constexpr (Feature_NearbyFontLoading::IsEnabled())
+        {
+            if (!exists && _updateWithNearbyFontCollection())
+            {
+                fontCollection = _api.s->font->fontCollection;
+                THROW_IF_FAILED(fontCollection->FindFamilyName(fontName.c_str(), &index, &exists));
+            }
+        }
 
-    wil::com_ptr<IDWriteFontFace> fontFace;
-    THROW_IF_FAILED(font->CreateFontFace(fontFace.addressof()));
+        if (!exists)
+        {
+            if (!missingFontNames.empty())
+            {
+                missingFontNames.append(L", ");
+            }
+            missingFontNames.append(fontName);
+            return;
+        }
 
-    DWRITE_FONT_METRICS metrics;
-    fontFace->GetMetrics(&metrics);
+        if (!primaryFontFamily)
+        {
+            primaryFontName = std::move(fontName);
+            THROW_IF_FAILED(fontCollection->GetFontFamily(index, primaryFontFamily.addressof()));
+        }
+        else
+        {
+            if (!fontFallbackBuilder)
+            {
+                THROW_IF_FAILED(_p.dwriteFactory->CreateFontFallbackBuilder(fontFallbackBuilder.addressof()));
+            }
 
-    // According to Wikipedia:
-    // > One em was traditionally defined as the width of the capital 'M' in the current typeface and point size,
-    // > because the 'M' was commonly cast the full-width of the square blocks [...] which are used in printing presses.
-    // Even today M is often the widest character in a font that supports ASCII.
-    // In the future a more robust solution could be written, until then this simple solution works for most cases.
-    static constexpr u32 codePoint = L'M';
-    u16 glyphIndex;
-    THROW_IF_FAILED(fontFace->GetGlyphIndicesW(&codePoint, 1, &glyphIndex));
+            static constexpr DWRITE_UNICODE_RANGE fullRange{ 0, 0x10FFFF };
+            auto fontNamePtr = fontName.c_str();
+            THROW_IF_FAILED(fontFallbackBuilder->AddMapping(
+                /* ranges                 */ &fullRange,
+                /* rangesCount            */ 1,
+                /* targetFamilyNames      */ &fontNamePtr,
+                /* targetFamilyNamesCount */ 1,
+                /* fontCollection         */ fontCollection.get(),
+                /* localeName             */ nullptr,
+                /* baseFamilyName         */ nullptr,
+                /* scale                  */ 1.0f));
+        }
+    });
 
-    DWRITE_GLYPH_METRICS glyphMetrics;
-    THROW_IF_FAILED(fontFace->GetDesignGlyphMetrics(&glyphIndex, 1, &glyphMetrics));
+    if (!missingFontNames.empty() && _p.warningCallback)
+    {
+        _p.warningCallback(DWRITE_E_NOFONT, missingFontNames);
+    }
+
+    // Fall back to Consolas if no font was found or specified.
+    if (!primaryFontFamily)
+    {
+        primaryFontName = L"Consolas";
+
+        u32 index = 0;
+        BOOL exists = false;
+        THROW_IF_FAILED(fontCollection->FindFamilyName(primaryFontName.c_str(), &index, &exists));
+        THROW_HR_IF(DWRITE_E_NOFONT, !exists);
+
+        THROW_IF_FAILED(fontCollection->GetFontFamily(index, primaryFontFamily.addressof()));
+    }
+
+    auto fontFallback = _api.systemFontFallback;
+    if (fontFallbackBuilder)
+    {
+        THROW_IF_FAILED(fontFallbackBuilder->AddMappings(_api.systemFontFallback.get()));
+        THROW_IF_FAILED(fontFallbackBuilder->CreateFontFallback(fontFallback.put()));
+    }
+
+    wil::com_ptr<IDWriteFont> primaryFont;
+    THROW_IF_FAILED(primaryFontFamily->GetFirstMatchingFont(static_cast<DWRITE_FONT_WEIGHT>(requestedWeight), DWRITE_FONT_STRETCH_NORMAL, DWRITE_FONT_STYLE_NORMAL, primaryFont.addressof()));
+
+    wil::com_ptr<IDWriteFontFace> primaryFontFace;
+    THROW_IF_FAILED(primaryFont->CreateFontFace(primaryFontFace.addressof()));
+
+    DWRITE_FONT_METRICS metrics{};
+    primaryFontFace->GetMetrics(&metrics);
 
     // Point sizes are commonly treated at a 72 DPI scale
     // (including by OpenType), whereas DirectWrite uses 96 DPI.
     // Since we want the height in px we multiply by the display's DPI.
-    const auto fontSizeInDIP = fontSize / 72.0f * 96.0f;
-    const auto fontSizeInPx = fontSize / 72.0f * _api.dpi;
+    const auto dpi = static_cast<f32>(_api.s->font->dpi);
+    const auto fontSizeInPx = fontSize / 72.0f * dpi;
 
-    const auto designUnitsPerPx = fontSizeInPx / static_cast<float>(metrics.designUnitsPerEm);
-    const auto ascent = static_cast<float>(metrics.ascent) * designUnitsPerPx;
-    const auto descent = static_cast<float>(metrics.descent) * designUnitsPerPx;
-    const auto lineGap = static_cast<float>(metrics.lineGap) * designUnitsPerPx;
-    const auto underlinePosition = static_cast<float>(-metrics.underlinePosition) * designUnitsPerPx;
-    const auto underlineThickness = static_cast<float>(metrics.underlineThickness) * designUnitsPerPx;
-    const auto strikethroughPosition = static_cast<float>(-metrics.strikethroughPosition) * designUnitsPerPx;
-    const auto strikethroughThickness = static_cast<float>(metrics.strikethroughThickness) * designUnitsPerPx;
-    const auto advanceWidth = static_cast<float>(glyphMetrics.advanceWidth) * designUnitsPerPx;
+    const auto designUnitsPerPx = fontSizeInPx / static_cast<f32>(metrics.designUnitsPerEm);
+    const auto ascent = static_cast<f32>(metrics.ascent) * designUnitsPerPx;
+    const auto descent = static_cast<f32>(metrics.descent) * designUnitsPerPx;
+    const auto lineGap = static_cast<f32>(metrics.lineGap) * designUnitsPerPx;
+    const auto underlinePosition = static_cast<f32>(-metrics.underlinePosition) * designUnitsPerPx;
+    const auto underlineThickness = static_cast<f32>(metrics.underlineThickness) * designUnitsPerPx;
+    const auto strikethroughPosition = static_cast<f32>(-metrics.strikethroughPosition) * designUnitsPerPx;
+    const auto strikethroughThickness = static_cast<f32>(metrics.strikethroughThickness) * designUnitsPerPx;
     const auto advanceHeight = ascent + descent + lineGap;
 
-    auto adjustedWidth = std::roundf(fontInfoDesired.GetCellWidth().Resolve(advanceWidth, _api.dpi, fontSizeInPx, advanceWidth));
-    auto adjustedHeight = std::roundf(fontInfoDesired.GetCellHeight().Resolve(advanceHeight, _api.dpi, fontSizeInPx, advanceWidth));
+    // We use the same character to determine the advance width as CSS for its "ch" unit ("0").
+    // According to the CSS spec, if it's impossible to determine the advance width,
+    // it must be assumed to be 0.5em wide. em in CSS refers to the computed font-size.
+    auto advanceWidth = 0.5f * fontSizeInPx;
+    {
+        static constexpr u32 codePoint = '0';
+
+        u16 glyphIndex;
+        THROW_IF_FAILED(primaryFontFace->GetGlyphIndicesW(&codePoint, 1, &glyphIndex));
+
+        if (glyphIndex)
+        {
+            DWRITE_GLYPH_METRICS glyphMetrics{};
+            THROW_IF_FAILED(primaryFontFace->GetDesignGlyphMetrics(&glyphIndex, 1, &glyphMetrics, FALSE));
+            advanceWidth = static_cast<f32>(glyphMetrics.advanceWidth) * designUnitsPerPx;
+        }
+    }
+
+    auto adjustedWidth = std::roundf(fontInfoDesired.GetCellWidth().Resolve(advanceWidth, dpi, fontSizeInPx, advanceWidth));
+    auto adjustedHeight = std::roundf(fontInfoDesired.GetCellHeight().Resolve(advanceHeight, dpi, fontSizeInPx, advanceWidth));
 
     // Protection against bad user values in GetCellWidth/Y.
     // AtlasEngine fails hard with 0 cell sizes.
@@ -648,10 +781,11 @@ void AtlasEngine::_resolveFontMetrics(const wchar_t* requestedFaceName, const Fo
     const auto underlineWidth = std::max(1.0f, std::roundf(underlineThickness));
     const auto strikethroughPos = std::roundf(baseline + strikethroughPosition);
     const auto strikethroughWidth = std::max(1.0f, std::roundf(strikethroughThickness));
-    const auto thinLineWidth = std::max(1.0f, std::roundf(underlineThickness / 2.0f));
+    const auto doubleUnderlineWidth = std::max(1.0f, std::roundf(underlineThickness / 2.0f));
+    const auto thinLineWidth = std::max(1.0f, std::roundf(std::max(adjustedWidth / 16.0f, adjustedHeight / 32.0f)));
 
     // For double underlines we loosely follow what Word does:
-    // 1. The lines are half the width of an underline (= thinLineWidth)
+    // 1. The lines are half the width of an underline (= doubleUnderlineWidth)
     // 2. Ideally the bottom line is aligned with the bottom of the underline
     // 3. The top underline is vertically in the middle between baseline and ideal bottom underline
     // 4. If the top line gets too close to the baseline the underlines are shifted downwards
@@ -659,21 +793,21 @@ void AtlasEngine::_resolveFontMetrics(const wchar_t* requestedFaceName, const Fo
     // (Additional notes below.)
 
     // 2.
-    auto doubleUnderlinePosBottom = underlinePos + underlineWidth - thinLineWidth;
+    auto doubleUnderlinePosBottom = underlinePos + underlineWidth - doubleUnderlineWidth;
     // 3. Since we don't align the center of our two lines, but rather the top borders
     //    we need to subtract half a line width from our center point.
-    auto doubleUnderlinePosTop = std::roundf((baseline + doubleUnderlinePosBottom - thinLineWidth) / 2.0f);
+    auto doubleUnderlinePosTop = std::roundf((baseline + doubleUnderlinePosBottom - doubleUnderlineWidth) / 2.0f);
     // 4.
-    doubleUnderlinePosTop = std::max(doubleUnderlinePosTop, baseline + thinLineWidth);
+    doubleUnderlinePosTop = std::max(doubleUnderlinePosTop, baseline + doubleUnderlineWidth);
     // 5. The gap is only the distance _between_ the lines, but we need the distance from the
     //    top border of the top and bottom lines, which includes an additional line width.
-    const auto doubleUnderlineGap = std::max(1.0f, std::roundf(1.2f / 72.0f * _api.dpi));
-    doubleUnderlinePosBottom = std::max(doubleUnderlinePosBottom, doubleUnderlinePosTop + doubleUnderlineGap + thinLineWidth);
+    const auto doubleUnderlineGap = std::max(1.0f, std::roundf(1.2f / 72.0f * dpi));
+    doubleUnderlinePosBottom = std::max(doubleUnderlinePosBottom, doubleUnderlinePosTop + doubleUnderlineGap + doubleUnderlineWidth);
     // Our cells can't overlap each other so we additionally clamp the bottom line to be inside the cell boundaries.
-    doubleUnderlinePosBottom = std::min(doubleUnderlinePosBottom, adjustedHeight - thinLineWidth);
+    doubleUnderlinePosBottom = std::min(doubleUnderlinePosBottom, adjustedHeight - doubleUnderlineWidth);
 
-    const auto cellWidth = gsl::narrow<u16>(std::lroundf(adjustedWidth));
-    const auto cellHeight = gsl::narrow<u16>(std::lroundf(adjustedHeight));
+    const auto cellWidth = gsl::narrow<u16>(lrintf(adjustedWidth));
+    const auto cellHeight = gsl::narrow<u16>(lrintf(adjustedHeight));
 
     {
         til::size coordSize;
@@ -685,40 +819,84 @@ void AtlasEngine::_resolveFontMetrics(const wchar_t* requestedFaceName, const Fo
             // The coordSizeUnscaled parameter to SetFromEngine is used for API functions like GetConsoleFontSize.
             // Since clients expect that settings the font height to Y yields back a font height of Y,
             // we're scaling the X relative/proportional to the actual cellWidth/cellHeight ratio.
-            requestedSize.width = gsl::narrow_cast<til::CoordType>(std::lroundf(fontSize / cellHeight * cellWidth));
+            requestedSize.width = gsl::narrow_cast<til::CoordType>(lrintf(fontSize / cellHeight * cellWidth));
         }
 
-        fontInfo.SetFromEngine(requestedFaceName, requestedFamily, requestedWeight, false, coordSize, requestedSize);
+        fontInfo.SetFromEngine(primaryFontName, requestedFamily, requestedWeight, false, coordSize, requestedSize);
     }
 
     if (fontMetrics)
     {
-        std::wstring fontName{ requestedFaceName };
         const auto fontWeightU16 = gsl::narrow_cast<u16>(requestedWeight);
-        const auto underlinePosU16 = gsl::narrow_cast<u16>(underlinePos);
-        const auto underlineWidthU16 = gsl::narrow_cast<u16>(underlineWidth);
-        const auto strikethroughPosU16 = gsl::narrow_cast<u16>(strikethroughPos);
-        const auto strikethroughWidthU16 = gsl::narrow_cast<u16>(strikethroughWidth);
-        const auto doubleUnderlinePosTopU16 = gsl::narrow_cast<u16>(doubleUnderlinePosTop);
-        const auto doubleUnderlinePosBottomU16 = gsl::narrow_cast<u16>(doubleUnderlinePosBottom);
-        const auto thinLineWidthU16 = gsl::narrow_cast<u16>(thinLineWidth);
+        const auto advanceWidthU16 = gsl::narrow_cast<u16>(lrintf(advanceWidth));
+        const auto baselineU16 = gsl::narrow_cast<u16>(lrintf(baseline));
+        const auto descenderU16 = gsl::narrow_cast<u16>(cellHeight - baselineU16);
+        const auto thinLineWidthU16 = gsl::narrow_cast<u16>(lrintf(thinLineWidth));
+
+        const auto gridBottomPositionU16 = gsl::narrow_cast<u16>(cellHeight - thinLineWidth);
+        const auto gridRightPositionU16 = gsl::narrow_cast<u16>(cellWidth - thinLineWidth);
+
+        const auto underlinePosU16 = gsl::narrow_cast<u16>(lrintf(underlinePos));
+        const auto underlineWidthU16 = gsl::narrow_cast<u16>(lrintf(underlineWidth));
+        const auto strikethroughPosU16 = gsl::narrow_cast<u16>(lrintf(strikethroughPos));
+        const auto strikethroughWidthU16 = gsl::narrow_cast<u16>(lrintf(strikethroughWidth));
+        const auto doubleUnderlinePosTopU16 = gsl::narrow_cast<u16>(lrintf(doubleUnderlinePosTop));
+        const auto doubleUnderlinePosBottomU16 = gsl::narrow_cast<u16>(lrintf(doubleUnderlinePosBottom));
+        const auto doubleUnderlineWidthU16 = gsl::narrow_cast<u16>(lrintf(doubleUnderlineWidth));
 
         // NOTE: From this point onward no early returns or throwing code should exist,
         // as we might cause _api to be in an inconsistent state otherwise.
 
         fontMetrics->fontCollection = std::move(fontCollection);
-        fontMetrics->fontFamily = std::move(fontFamily);
-        fontMetrics->fontName = std::move(fontName);
-        fontMetrics->fontSizeInDIP = fontSizeInDIP;
-        fontMetrics->baselineInDIP = baseline / static_cast<float>(_api.dpi) * 96.0f;
-        fontMetrics->advanceScale = cellWidth / advanceWidth;
+        fontMetrics->fontFallback = std::move(fontFallback);
+        fontMetrics->fontFallback.try_query_to(fontMetrics->fontFallback1.put());
+        fontMetrics->fontName = std::move(primaryFontName);
+        fontMetrics->fontSize = fontSizeInPx;
         fontMetrics->cellSize = { cellWidth, cellHeight };
         fontMetrics->fontWeight = fontWeightU16;
-        fontMetrics->underlinePos = underlinePosU16;
-        fontMetrics->underlineWidth = underlineWidthU16;
-        fontMetrics->strikethroughPos = strikethroughPosU16;
-        fontMetrics->strikethroughWidth = strikethroughWidthU16;
-        fontMetrics->doubleUnderlinePos = { doubleUnderlinePosTopU16, doubleUnderlinePosBottomU16 };
+        fontMetrics->advanceWidth = advanceWidthU16;
+        fontMetrics->baseline = baselineU16;
+        fontMetrics->descender = descenderU16;
         fontMetrics->thinLineWidth = thinLineWidthU16;
+
+        fontMetrics->gridTop = { 0, thinLineWidthU16 };
+        fontMetrics->gridBottom = { gridBottomPositionU16, thinLineWidthU16 };
+        fontMetrics->gridLeft = { 0, thinLineWidthU16 };
+        fontMetrics->gridRight = { gridRightPositionU16, thinLineWidthU16 };
+
+        fontMetrics->underline = { underlinePosU16, underlineWidthU16 };
+        fontMetrics->strikethrough = { strikethroughPosU16, strikethroughWidthU16 };
+        fontMetrics->doubleUnderline[0] = { doubleUnderlinePosTopU16, doubleUnderlineWidthU16 };
+        fontMetrics->doubleUnderline[1] = { doubleUnderlinePosBottomU16, doubleUnderlineWidthU16 };
+        fontMetrics->overline = { 0, underlineWidthU16 };
+
+        fontMetrics->builtinGlyphs = fontInfoDesired.GetEnableBuiltinGlyphs();
+        fontMetrics->colorGlyphs = fontInfoDesired.GetEnableColorGlyphs();
     }
+}
+
+// Nearby fonts are described a couple of times throughout the file.
+// This abstraction in particular helps us avoid retrying when it's pointless:
+// After all, if the font collection didn't change (no nearby fonts, loading failed, it's already loaded),
+// we don't need to try it again. It returns true if retrying is necessary.
+[[nodiscard]] bool AtlasEngine::_updateWithNearbyFontCollection() noexcept
+{
+    // _resolveFontMetrics() checks `_api.s->font->fontCollection` for a pre-existing font collection,
+    // before falling back to using the system font collection. This way we can inject our custom one.
+    // Doing it this way is a bit hacky, but it does have the benefit that we can cache a font collection
+    // instance across font changes, like when zooming the font size rapidly using the scroll wheel.
+    wil::com_ptr<IDWriteFontCollection> collection;
+    try
+    {
+        collection = FontCache::GetCached();
+    }
+    CATCH_LOG();
+
+    if (!collection || _api.s->font->fontCollection == collection)
+    {
+        return false;
+    }
+
+    _api.s.write()->font.write()->fontCollection = std::move(collection);
+    return true;
 }

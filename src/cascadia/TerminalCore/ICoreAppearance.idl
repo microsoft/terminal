@@ -59,10 +59,10 @@ namespace Microsoft.Terminal.Core
     // Same thing here, but with padding. Can't use Windows.UI.Thickness, so
     // we'll declare our own.
     struct Padding {
-        Double Left;
-        Double Top;
-        Double Right;
-        Double Bottom;
+        Single Left;
+        Single Top;
+        Single Right;
+        Single Bottom;
     };
 
     // This is a projection of Microsoft::Terminal::Core::ControlKeyStates,
@@ -115,6 +115,7 @@ namespace Microsoft.Terminal.Core
     {
         Microsoft.Terminal.Core.Color DefaultForeground;
         Microsoft.Terminal.Core.Color DefaultBackground;
+        Microsoft.Terminal.Core.Color SelectionBackground;
         Microsoft.Terminal.Core.Color GetColorTableEntry(Int32 index);
         Microsoft.Terminal.Core.Color CursorColor;
         CursorStyle CursorShape;
@@ -122,5 +123,7 @@ namespace Microsoft.Terminal.Core
         Boolean IntenseIsBold;
         Boolean IntenseIsBright;
         AdjustTextMode AdjustIndistinguishableColors;
+
+        // NOTE! When adding something here, make sure to update ControlProperties.h too!
     };
 }

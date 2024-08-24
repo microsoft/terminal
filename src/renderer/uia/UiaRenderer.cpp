@@ -20,7 +20,6 @@ UiaEngine::UiaEngine(IUiaEventDispatcher* dispatcher) :
     _textBufferChanged{ false },
     _cursorChanged{ false },
     _isEnabled{ true },
-    _prevSelection{},
     _prevCursorRegion{},
     RenderEngineBase()
 {
@@ -47,6 +46,12 @@ UiaEngine::UiaEngine(IUiaEventDispatcher* dispatcher) :
 [[nodiscard]] HRESULT UiaEngine::Disable() noexcept
 {
     _isEnabled = false;
+
+    // If we had buffered any text from NotifyNewText, dump it. When we do come
+    // back around to actually paint, we will just no-op. No sense in keeping
+    // the data buffered.
+    _newOutput = std::wstring{};
+
     return S_OK;
 }
 
@@ -104,40 +109,11 @@ CATCH_RETURN();
 // - rectangles - One or more rectangles describing character positions on the grid
 // Return Value:
 // - S_OK
-[[nodiscard]] HRESULT UiaEngine::InvalidateSelection(const std::vector<til::rect>& rectangles) noexcept
+[[nodiscard]] HRESULT UiaEngine::InvalidateSelection(std::span<const til::rect> /*rectangles*/) noexcept
 {
-    // early exit: different number of rows
-    if (_prevSelection.size() != rectangles.size())
-    {
-        try
-        {
-            _selectionChanged = true;
-            _prevSelection = rectangles;
-        }
-        CATCH_LOG_RETURN_HR(E_FAIL);
-        return S_OK;
-    }
-
-    for (size_t i = 0; i < rectangles.size(); i++)
-    {
-        try
-        {
-            const auto prevRect = _prevSelection.at(i);
-            const auto newRect = rectangles.at(i);
-
-            // if any value is different, selection has changed
-            if (prevRect.top != newRect.top || prevRect.right != newRect.right || prevRect.left != newRect.left || prevRect.bottom != newRect.bottom)
-            {
-                _selectionChanged = true;
-                _prevSelection = rectangles;
-                return S_OK;
-            }
-        }
-        CATCH_LOG_RETURN_HR(E_FAIL);
-    }
-
-    // assume selection has not changed
-    _selectionChanged = false;
+    // INVARIANT: Renderer checks the incoming selection spans and only calls InvalidateSelection
+    // if they have actually changed.
+    _selectionChanged = true;
     return S_OK;
 }
 
@@ -171,6 +147,10 @@ CATCH_RETURN();
 [[nodiscard]] HRESULT UiaEngine::NotifyNewText(const std::wstring_view newText) noexcept
 try
 {
+    // GH#16217 - don't even buffer this text if we're disabled. We may never
+    // come around to write it out.
+    RETURN_HR_IF(S_FALSE, !_isEnabled);
+
     if (!newText.empty())
     {
         _newOutput.append(newText);
@@ -180,20 +160,6 @@ try
     return S_OK;
 }
 CATCH_LOG_RETURN_HR(E_FAIL);
-
-// Routine Description:
-// - This is unused by this renderer.
-// Arguments:
-// - pForcePaint - always filled with false.
-// Return Value:
-// - S_FALSE because this is unused.
-[[nodiscard]] HRESULT UiaEngine::PrepareForTeardown(_Out_ bool* const pForcePaint) noexcept
-{
-    RETURN_HR_IF_NULL(E_INVALIDARG, pForcePaint);
-
-    *pForcePaint = false;
-    return S_FALSE;
-}
 
 // Routine Description:
 // - Prepares internal structures for a painting operation.
@@ -347,14 +313,16 @@ void UiaEngine::WaitUntilCanRender() noexcept
 //  For UIA, this doesn't mean anything. So do nothing.
 // Arguments:
 // - lines - <unused>
-// - color - <unused>
+// - gridlineColor - <unused>
+// - underlineColor - <unused>
 // - cchLine - <unused>
 // - coordTarget - <unused>
 // Return Value:
 // - S_FALSE
-[[nodiscard]] HRESULT UiaEngine::PaintBufferGridLines(GridLineSet const /*lines*/,
-                                                      COLORREF const /*color*/,
-                                                      size_t const /*cchLine*/,
+[[nodiscard]] HRESULT UiaEngine::PaintBufferGridLines(const GridLineSet /*lines*/,
+                                                      const COLORREF /*gridlineColor*/,
+                                                      const COLORREF /*underlineColor*/,
+                                                      const size_t /*cchLine*/,
                                                       const til::point /*coordTarget*/) noexcept
 {
     return S_FALSE;

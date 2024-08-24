@@ -9,6 +9,7 @@
 #include "JsonUtils.h"
 #include "TerminalSettingsSerializationHelpers.h"
 
+#include "SettingsTheme.g.h"
 #include "ThemeColor.g.cpp"
 #include "WindowTheme.g.cpp"
 #include "TabRowTheme.g.cpp"
@@ -56,6 +57,7 @@ static constexpr wchar_t RegKeyAccentColor[] = L"AccentColor";
     }
 
 THEME_OBJECT(WindowTheme, MTSM_THEME_WINDOW_SETTINGS);
+THEME_OBJECT(SettingsTheme, MTSM_THEME_SETTINGS_SETTINGS);
 THEME_OBJECT(TabRowTheme, MTSM_THEME_TABROW_SETTINGS);
 THEME_OBJECT(TabTheme, MTSM_THEME_TAB_SETTINGS);
 
@@ -219,6 +221,7 @@ uint8_t ThemeColor::UnfocusedTabOpacity() const noexcept
     };
 
 THEME_OBJECT_CONVERTER(winrt::Microsoft::Terminal::Settings::Model, WindowTheme, MTSM_THEME_WINDOW_SETTINGS);
+THEME_OBJECT_CONVERTER(winrt::Microsoft::Terminal::Settings::Model, SettingsTheme, MTSM_THEME_SETTINGS_SETTINGS);
 THEME_OBJECT_CONVERTER(winrt::Microsoft::Terminal::Settings::Model, TabRowTheme, MTSM_THEME_TABROW_SETTINGS);
 THEME_OBJECT_CONVERTER(winrt::Microsoft::Terminal::Settings::Model, TabTheme, MTSM_THEME_TAB_SETTINGS);
 
@@ -250,6 +253,10 @@ winrt::com_ptr<Theme> Theme::Copy() const
     if (_Tab)
     {
         theme->_Tab = *winrt::get_self<implementation::TabTheme>(_Tab)->Copy();
+    }
+    if (_Settings)
+    {
+        theme->_Settings = *winrt::get_self<implementation::SettingsTheme>(_Settings)->Copy();
     }
 
     return theme;
@@ -283,6 +290,53 @@ winrt::com_ptr<Theme> Theme::FromJson(const Json::Value& json)
 #undef THEME_SETTINGS_LAYER_JSON
 
     return result;
+}
+
+void Theme::LogSettingChanges(std::set<std::string>& changes, const std::string_view& context)
+{
+#pragma warning(push)
+#pragma warning(disable : 5103) // pasting '{' and 'winrt' does not result in a valid preprocessing token
+
+#define GENERATE_SET_CHECK_AND_JSON_KEYS(type, name, jsonKey, ...) \
+    const bool is##name##Set = _##name != nullptr;                 \
+    std::string_view outer##name##JsonKey = jsonKey;
+
+    MTSM_THEME_SETTINGS(GENERATE_SET_CHECK_AND_JSON_KEYS)
+
+#define LOG_IF_SET(type, name, jsonKey, ...) \
+    if (obj.name() != type{##__VA_ARGS__ })  \
+        changes.emplace(fmt::format(FMT_COMPILE("{}.{}.{}"), context, outerJsonKey, jsonKey));
+
+    if (isWindowSet)
+    {
+        const auto obj = _Window;
+        const auto outerJsonKey = outerWindowJsonKey;
+        MTSM_THEME_WINDOW_SETTINGS(LOG_IF_SET)
+    }
+
+    if (isSettingsSet)
+    {
+        const auto obj = _Settings;
+        const auto outerJsonKey = outerSettingsJsonKey;
+        MTSM_THEME_SETTINGS_SETTINGS(LOG_IF_SET)
+    }
+
+    if (isTabRowSet)
+    {
+        const auto obj = _TabRow;
+        const auto outerJsonKey = outerTabRowJsonKey;
+        MTSM_THEME_TABROW_SETTINGS(LOG_IF_SET)
+    }
+
+    if (isTabSet)
+    {
+        const auto obj = _Tab;
+        const auto outerJsonKey = outerTabJsonKey;
+        MTSM_THEME_TAB_SETTINGS(LOG_IF_SET)
+    }
+#undef LOG_IF_SET
+#undef GENERATE_SET_CHECK_AND_JSON_KEYS
+#pragma warning(pop)
 }
 
 // Method Description:

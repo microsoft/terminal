@@ -124,8 +124,7 @@ namespace winrt::TerminalApp::implementation
         return appLogic->GetSettings();
     }
 
-    AppLogic::AppLogic() :
-        _reloadState{ std::chrono::milliseconds(100), []() { ApplicationState::SharedInstance().Reload(); } }
+    AppLogic::AppLogic()
     {
         // For your own sanity, it's better to do setup outside the ctor.
         // If you do any setup in the ctor that ends up throwing an exception,
@@ -150,17 +149,11 @@ namespace winrt::TerminalApp::implementation
         _languageProfileNotifier = winrt::make_self<LanguageProfileNotifier>([this]() {
             _reloadSettings->Run();
         });
-    }
 
-    // Method Description:
-    // - Called around the codebase to discover if this is a UWP where we need to turn off specific settings.
-    // Arguments:
-    // - <none> - reports internal state
-    // Return Value:
-    // - True if UWP, false otherwise.
-    bool AppLogic::IsUwp() const noexcept
-    {
-        return _isUwp;
+        // Do this here, rather than at the top of main. This will prevent us from
+        // including this variable in the vars we serialize in the
+        // Remoting::CommandlineArgs up in HandleCommandlineArgs.
+        _setupFolderPathEnvVar();
     }
 
     // Method Description:
@@ -179,18 +172,6 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Called by UWP context invoker to let us know that we may have to change some of our behaviors
-    //   for being a UWP
-    // Arguments:
-    // - <none> (sets to UWP = true, one way change)
-    // Return Value:
-    // - <none>
-    void AppLogic::RunAsUwp()
-    {
-        _isUwp = true;
-    }
-
-    // Method Description:
     // - Build the UI for the terminal app. Before this method is called, it
     //   should not be assumed that the TerminalApp is usable. The Settings
     //   should be loaded before this is called, either with LoadSettings or
@@ -205,52 +186,7 @@ namespace winrt::TerminalApp::implementation
         // this as a MTA, before the app is Create()'d
         WINRT_ASSERT(_loadedInitialSettings);
 
-        // In UWP mode, we cannot handle taking over the title bar for tabs,
-        // so this setting is overridden to false no matter what the preference is.
-        if (_isUwp)
-        {
-            _settings.GlobalSettings().ShowTabsInTitlebar(false);
-        }
-
-        // These used to be in `TerminalPage::Initialized`, so that they started
-        // _after_ the Terminal window was started and displayed. These could
-        // theoretically move there again too. TODO:GH#14957 - evaluate moving
-        // this after the Page is initialized
-        {
-            // Both LoadSettings and ReloadSettings are supposed to call this function,
-            // but LoadSettings skips it, so that the UI starts up faster.
-            // Now that the UI is present we can do them with a less significant UX impact.
-            _ProcessLazySettingsChanges();
-
-            FILETIME creationTime, exitTime, kernelTime, userTime, now;
-            if (GetThreadTimes(GetCurrentThread(), &creationTime, &exitTime, &kernelTime, &userTime))
-            {
-                static constexpr auto asInteger = [](const FILETIME& f) {
-                    ULARGE_INTEGER i;
-                    i.LowPart = f.dwLowDateTime;
-                    i.HighPart = f.dwHighDateTime;
-                    return i.QuadPart;
-                };
-                static constexpr auto asSeconds = [](uint64_t v) {
-                    return v * 1e-7f;
-                };
-
-                GetSystemTimeAsFileTime(&now);
-
-                const auto latency = asSeconds(asInteger(now) - asInteger(creationTime));
-
-                TraceLoggingWrite(
-                    g_hTerminalAppProvider,
-                    "AppInitialized",
-                    TraceLoggingDescription("Event emitted once the app is initialized"),
-                    TraceLoggingFloat32(latency, "latency"),
-                    TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
-                    TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
-            }
-        }
-
         _ApplyLanguageSettingChange();
-        _ApplyStartupTaskStateChange();
 
         TraceLoggingWrite(
             g_hTerminalAppProvider,
@@ -271,7 +207,7 @@ namespace winrt::TerminalApp::implementation
 
         try
         {
-            auto newSettings = _isUwp ? CascadiaSettings::LoadUniversal() : CascadiaSettings::LoadAll();
+            auto newSettings = CascadiaSettings::LoadAll();
 
             if (newSettings.GetLoadingError())
             {
@@ -389,15 +325,11 @@ namespace winrt::TerminalApp::implementation
                 //
                 // So DON'T ~give a mouse a cookie~ take a static ref here.
 
-                const winrt::hstring modifiedBasename{ std::filesystem::path{ fileModified }.filename().c_str() };
+                const auto modifiedBasename = std::filesystem::path{ fileModified }.filename();
 
                 if (modifiedBasename == settingsBasename)
                 {
                     _reloadSettings->Run();
-                }
-                else if (ApplicationState::SharedInstance().IsStatePath(modifiedBasename))
-                {
-                    _reloadState();
                 }
             });
     }
@@ -423,33 +355,12 @@ namespace winrt::TerminalApp::implementation
     }
     CATCH_LOG()
 
-    // Function Description:
-    // Returns the current app package or nullptr.
-    // TRANSITIONAL
-    // Exists to work around a compiler bug. This function encapsulates the
-    // exception handling that we used to keep around calls to Package::Current,
-    // so that when it's called inside a coroutine and fails it doesn't explode
-    // terribly.
-    static winrt::Windows::ApplicationModel::Package GetCurrentPackageNoThrow() noexcept
-    {
-        try
-        {
-            return winrt::Windows::ApplicationModel::Package::Current();
-        }
-        catch (...)
-        {
-            // discard any exception -- literally pretend we're not in a package
-        }
-        return nullptr;
-    }
-
-    fire_and_forget AppLogic::_ApplyStartupTaskStateChange()
+    safe_void_coroutine AppLogic::_ApplyStartupTaskStateChange()
     try
     {
         // First, make sure we're running in a packaged context. This method
         // won't work, and will crash mysteriously if we're running unpackaged.
-        const auto package{ GetCurrentPackageNoThrow() };
-        if (package == nullptr)
+        if (!IsPackaged())
         {
             co_return;
         }
@@ -517,9 +428,13 @@ namespace winrt::TerminalApp::implementation
                                                                   _settingsLoadExceptionText,
                                                                   warnings,
                                                                   _settings);
-                _SettingsChangedHandlers(*this, *ev);
+                SettingsChanged.raise(*this, *ev);
                 return;
             }
+        }
+        else
+        {
+            _settings.LogSettingChanges(true);
         }
 
         if (initialLoad)
@@ -546,7 +461,48 @@ namespace winrt::TerminalApp::implementation
                                                           _settingsLoadExceptionText,
                                                           warnings,
                                                           _settings);
-        _SettingsChangedHandlers(*this, *ev);
+        SettingsChanged.raise(*this, *ev);
+    }
+
+    // This is a continuation of AppLogic::Create() and includes the more expensive parts.
+    void AppLogic::NotifyRootInitialized()
+    {
+        if (_notifyRootInitializedCalled.exchange(true, std::memory_order_relaxed))
+        {
+            return;
+        }
+
+        // Both LoadSettings and ReloadSettings are supposed to call this function,
+        // but LoadSettings skips it, so that the UI starts up faster.
+        // Now that the UI is present we can do them with a less significant UX impact.
+        _ApplyStartupTaskStateChange();
+        _ProcessLazySettingsChanges();
+
+        FILETIME creationTime, exitTime, kernelTime, userTime, now;
+        if (GetThreadTimes(GetCurrentThread(), &creationTime, &exitTime, &kernelTime, &userTime))
+        {
+            static constexpr auto asInteger = [](const FILETIME& f) {
+                ULARGE_INTEGER i;
+                i.LowPart = f.dwLowDateTime;
+                i.HighPart = f.dwHighDateTime;
+                return i.QuadPart;
+            };
+            static constexpr auto asSeconds = [](uint64_t v) {
+                return v * 1e-7f;
+            };
+
+            GetSystemTimeAsFileTime(&now);
+
+            const auto latency = asSeconds(asInteger(now) - asInteger(creationTime));
+
+            TraceLoggingWrite(
+                g_hTerminalAppProvider,
+                "AppInitialized",
+                TraceLoggingDescription("Event emitted once the app is initialized"),
+                TraceLoggingFloat32(latency, "latency"),
+                TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+                TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
+        }
     }
 
     // Method Description:
@@ -598,6 +554,10 @@ namespace winrt::TerminalApp::implementation
                 return winrt::make<FindTargetWindowResult>(WindowingBehaviorUseNone);
             }
 
+            // Validate the args now. This will make sure that in the case of a
+            // single x-save command, we toss that commandline to the current
+            // terminal window
+            appArgs.ValidateStartupCommands();
             const std::string parsedTarget{ appArgs.GetTargetWindow() };
 
             // If the user did not provide any value on the commandline,
@@ -645,11 +605,11 @@ namespace winrt::TerminalApp::implementation
                 // use as a title though!
                 //
                 // First, check the reserved keywords:
-                if (parsedTarget == "new")
+                if (parsedTarget == NewWindow)
                 {
                     return winrt::make<FindTargetWindowResult>(WindowingBehaviorUseNew);
                 }
-                else if (parsedTarget == "last")
+                else if (parsedTarget == MostRecentlyUsedWindow)
                 {
                     return winrt::make<FindTargetWindowResult>(WindowingBehaviorUseExisting);
                 }
@@ -703,6 +663,16 @@ namespace winrt::TerminalApp::implementation
                globals.MinimizeToNotificationArea();
     }
 
+    bool AppLogic::AllowHeadless()
+    {
+        if (!_loadedInitialSettings)
+        {
+            // Load settings if we haven't already
+            ReloadSettings();
+        }
+        return _settings.GlobalSettings().AllowHeadless();
+    }
+
     TerminalApp::TerminalWindow AppLogic::CreateNewWindow()
     {
         if (_settings == nullptr)
@@ -723,7 +693,6 @@ namespace winrt::TerminalApp::implementation
 
         auto window = winrt::make_self<implementation::TerminalWindow>(*ev, _contentManager);
 
-        this->SettingsChanged({ window->get_weak(), &implementation::TerminalWindow::UpdateSettingsHandler });
         if (_hasSettingsStartupActions)
         {
             window->SetSettingsStartupArgs(_settingsAppArgs.GetStartupActions());
@@ -741,22 +710,6 @@ namespace winrt::TerminalApp::implementation
         return _settings.GlobalSettings().ShouldUsePersistedLayout();
     }
 
-    void AppLogic::SaveWindowLayoutJsons(const Windows::Foundation::Collections::IVector<hstring>& layouts)
-    {
-        std::vector<WindowLayout> converted;
-        converted.reserve(layouts.Size());
-
-        for (const auto& json : layouts)
-        {
-            if (json != L"")
-            {
-                converted.emplace_back(WindowLayout::FromJson(json));
-            }
-        }
-
-        ApplicationState::SharedInstance().PersistedWindowLayouts(winrt::single_threaded_vector(std::move(converted)));
-    }
-
     TerminalApp::ParseCommandlineResult AppLogic::GetParseCommandlineMessage(array_view<const winrt::hstring> args)
     {
         ::TerminalApp::AppCommandlineArgs _appArgs;
@@ -764,4 +717,14 @@ namespace winrt::TerminalApp::implementation
         return TerminalApp::ParseCommandlineResult{ winrt::to_hstring(_appArgs.GetExitMessage()), r };
     }
 
+    // Function Description
+    // * Adds a `WT_SETTINGS_DIR` env var to our own environment block, that
+    //   points at our settings directory. This allows portable installs to
+    //   refer to files in the portable install using %WT_SETTINGS_DIR%
+    void AppLogic::_setupFolderPathEnvVar()
+    {
+        std::wstring path{ CascadiaSettings::SettingsPath() };
+        auto folderPath = path.substr(0, path.find_last_of(L"\\"));
+        SetEnvironmentVariableW(L"WT_SETTINGS_DIR", folderPath.c_str());
+    }
 }

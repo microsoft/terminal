@@ -18,37 +18,6 @@
 using Microsoft::Console::Interactivity::ServiceLocator;
 using Microsoft::Console::VirtualTerminal::VtIo;
 
-CONSOLE_INFORMATION::CONSOLE_INFORMATION() :
-    // ProcessHandleList initializes itself
-    pInputBuffer(nullptr),
-    pCurrentScreenBuffer(nullptr),
-    ScreenBuffers(nullptr),
-    OutputQueue(),
-    // ExeAliasList initialized below
-    _OriginalTitle(),
-    _Title(),
-    _Prefix(),
-    _TitleAndPrefix(),
-    _LinkTitle(),
-    Flags(0),
-    PopupCount(0),
-    CP(0),
-    OutputCP(0),
-    CtrlFlags(0),
-    LimitingProcessId(0),
-    // ColorTable initialized below
-    // CPInfo initialized below
-    // OutputCPInfo initialized below
-    _cookedReadData(nullptr),
-    ConsoleIme{},
-    _vtIo(),
-    _blinker{},
-    renderData{}
-{
-    ZeroMemory((void*)&CPInfo, sizeof(CPInfo));
-    ZeroMemory((void*)&OutputCPInfo, sizeof(OutputCPInfo));
-}
-
 bool CONSOLE_INFORMATION::IsConsoleLocked() const noexcept
 {
     return _lock.is_locked();
@@ -64,6 +33,11 @@ void CONSOLE_INFORMATION::LockConsole() noexcept
 void CONSOLE_INFORMATION::UnlockConsole() noexcept
 {
     _lock.unlock();
+}
+
+til::recursive_ticket_lock_suspension CONSOLE_INFORMATION::SuspendLock() noexcept
+{
+    return _lock.suspend();
 }
 
 ULONG CONSOLE_INFORMATION::GetCSRecursionCount() const noexcept
@@ -128,14 +102,12 @@ ULONG CONSOLE_INFORMATION::GetCSRecursionCount() const noexcept
 
     gci.GetActiveOutputBuffer().ScrollScale = gci.GetScrollScale();
 
-    gci.ConsoleIme.RefreshAreaAttributes();
-
     if (SUCCEEDED_NTSTATUS(Status))
     {
         return STATUS_SUCCESS;
     }
 
-    RIPMSG1(RIP_WARNING, "Console init failed with status 0x%x", Status);
+    LOG_NTSTATUS_MSG(Status, "Console init failed");
 
     delete gci.ScreenBuffers;
     gci.ScreenBuffers = nullptr;
@@ -146,12 +118,28 @@ ErrorExit2:
     return Status;
 }
 
-VtIo* CONSOLE_INFORMATION::GetVtIo()
+VtIo* CONSOLE_INFORMATION::GetVtIo() noexcept
 {
     return &_vtIo;
 }
 
-bool CONSOLE_INFORMATION::IsInVtIoMode() const
+VtIo::Writer CONSOLE_INFORMATION::GetVtWriter() noexcept
+{
+    // If we're not ConPTY, we return an empty writer, which indicates to the caller to do nothing.
+    const auto ok = _vtIo.IsUsingVt();
+    return VtIo::Writer{ ok ? &_vtIo : nullptr };
+}
+
+VtIo::Writer CONSOLE_INFORMATION::GetVtWriterForBuffer(const SCREEN_INFORMATION* context) noexcept
+{
+    // If the given context is not the current screen buffer, we also return an empty writer.
+    // We check both for equality and the alt buffer, because we may switch between the main/alt
+    // buffer while processing the input and this method should return a valid writer in both cases.
+    const auto ok = _vtIo.IsUsingVt() && (pCurrentScreenBuffer == context || pCurrentScreenBuffer == context->GetAltBuffer());
+    return VtIo::Writer{ ok ? &_vtIo : nullptr };
+}
+
+bool CONSOLE_INFORMATION::IsInVtIoMode() const noexcept
 {
     return _vtIo.IsUsingVt();
 }
@@ -159,6 +147,11 @@ bool CONSOLE_INFORMATION::IsInVtIoMode() const
 bool CONSOLE_INFORMATION::HasPendingCookedRead() const noexcept
 {
     return _cookedReadData != nullptr;
+}
+
+bool CONSOLE_INFORMATION::HasPendingPopup() const noexcept
+{
+    return _cookedReadData && _cookedReadData->PresentingPopup();
 }
 
 const COOKED_READ_DATA& CONSOLE_INFORMATION::CookedReadData() const noexcept
@@ -174,6 +167,16 @@ COOKED_READ_DATA& CONSOLE_INFORMATION::CookedReadData() noexcept
 void CONSOLE_INFORMATION::SetCookedReadData(COOKED_READ_DATA* readData) noexcept
 {
     _cookedReadData = readData;
+}
+
+bool CONSOLE_INFORMATION::GetBracketedPasteMode() const noexcept
+{
+    return _bracketedPasteMode;
+}
+
+void CONSOLE_INFORMATION::SetBracketedPasteMode(const bool enabled) noexcept
+{
+    _bracketedPasteMode = enabled;
 }
 
 // Method Description:
@@ -228,20 +231,6 @@ InputBuffer* const CONSOLE_INFORMATION::GetActiveInputBuffer() const
 void CONSOLE_INFORMATION::SetTitle(const std::wstring_view newTitle)
 {
     _Title = std::wstring{ newTitle.begin(), newTitle.end() };
-
-    // Sanitize the input if we're in pty mode. No control chars - this string
-    //      will get emitted back to the TTY in a VT sequence, and we don't want
-    //      to embed control characters in that string. Note that we can't use
-    //      IsInVtIoMode for this test, because the VT I/O thread won't have
-    //      been created when the title is first set during startup.
-    if (ServiceLocator::LocateGlobals().launchArgs.InConptyMode())
-    {
-        _Title.erase(std::remove_if(_Title.begin(), _Title.end(), [](auto ch) {
-                         return ch < UNICODE_SPACE || (ch > UNICODE_DEL && ch < UNICODE_NBSP);
-                     }),
-                     _Title.end());
-    }
-
     _TitleAndPrefix = _Prefix + _Title;
 
     auto* const pRender = ServiceLocator::LocateGlobals().pRender;

@@ -17,6 +17,7 @@
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.pre.props" />
   <ItemGroup>
     <ClInclude Include="AzureClientID.h" />
+    <ClInclude Include="BaseTerminalConnection.h" />
     <ClInclude Include="ConnectionInformation.h">
       <DependentUpon>ConnectionInformation.idl</DependentUpon>
     </ClInclude>
@@ -95,7 +96,6 @@
     </Link>
   </ItemDefinitionGroup>
   <Import Project="$(SolutionDir)build\rules\CollectWildcardResources.targets" />
-
   <!-- This -must- go after cppwinrt.build.post.props because that includes many VS-provided props including appcontainer.common.props, which stomps on what cppwinrt.targets did. -->
   <Import Project="$(OpenConsoleDir)src\common.nugetversions.targets" />
 </Project>

@@ -11,7 +11,11 @@
 #include "../../types/inc/GlyphWidth.hpp"
 #include "../../inc/conattrs.hpp"
 
-static constexpr TextAttribute InvalidTextAttribute{ INVALID_COLOR, INVALID_COLOR };
+// BODGY: Misdiagnosis in MSVC 17.11: Referencing global constants in the member
+// initializer list leads to this warning. Can probably be removed in the future.
+#pragma warning(disable : 26493) // Don't use C-style casts (type.4).)
+
+static constexpr TextAttribute InvalidTextAttribute{ INVALID_COLOR, INVALID_COLOR, INVALID_COLOR };
 
 // Routine Description:
 // - This is a fill-mode iterator for one particular wchar. It will repeat forever if fillLimit is 0.
@@ -274,7 +278,7 @@ OutputCellIterator& OutputCellIterator::operator++()
     }
     case Mode::CharInfo:
     {
-        // Walk forward by one because charinfos are just the legacy version of cells and prealigned to columns
+        // Walk forward by one because char infos are just the legacy version of cells and prealigned to columns
         _pos++;
         if (operator bool())
         {

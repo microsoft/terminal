@@ -63,14 +63,13 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         ~ApplicationState();
 
         // Methods
-        void Reload() const noexcept;
+        void Flush();
         void Reset() noexcept;
 
         void FromJson(const Json::Value& root, FileSource parseSource) const noexcept;
         Json::Value ToJson(FileSource parseSource) const noexcept;
 
-        // General getters/setters
-        bool IsStatePath(const winrt::hstring& filename);
+        void AppendPersistedWindowLayout(Model::WindowLayout layout);
 
         // State getters/setters
 #define MTSM_APPLICATION_STATE_GEN(source, type, name, key, ...) \
@@ -96,9 +95,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         Json::Value _toJsonWithBlob(Json::Value& root, FileSource parseSource) const noexcept;
 
-        std::optional<std::string> _readSharedContents() const;
+        std::string _readSharedContents() const;
         void _writeSharedContents(const std::string_view content) const;
-        std::optional<std::string> _readLocalContents() const;
+        std::string _readLocalContents() const;
         void _writeLocalContents(const std::string_view content) const;
     };
 }

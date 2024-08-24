@@ -1,5 +1,27 @@
 trigger: none
 pr: none
+schedules:
+  - cron: "0 5 * * 2-6" # Run at 05:00 UTC Tuesday through Saturday (Even later than Localization, after the work day in Pacific, Mon-Fri)
+    displayName: "Nightly Instrumentation Build"
+    branches:
+      include:
+        - main
+    always: false # only run if there's code changes!
+
+parameters:
+  - name: branding
+    displayName: "Branding (Build Type)"
+    type: string
+    default: Preview # By default, we'll PGO the Preview builds to get max coverage
+    values:
+      - Release
+      - Preview
+      - Dev
+  - name: buildPlatforms
+    type: object
+    default:
+      - x64
+      - arm64
 
 variables:
   - name: runCodesignValidationInjectionBG
@@ -10,18 +32,57 @@ variables:
 name: 0.0.$(Date:yyMM).$(Date:dd)$(Rev:rr)
 
 stages:
-  - stage: Build_x64
-    displayName: Build x64
+  - stage: Build
+    displayName: Build
     dependsOn: []
     condition: succeeded()
     jobs:
-      - template: ./templates/build-console-pgo.yml
+      - template: ./templates-v2/job-build-project.yml
         parameters:
-          platform: x64
-  - stage: Publish_PGO_Databases
-    displayName: Publish PGO databases
-    dependsOn: ['Build_x64']
+          pool:
+            ${{ if eq(variables['System.CollectionId'], 'cb55739e-4afe-46a3-970f-1b49d8ee7564') }}:
+              name: SHINE-INT-L
+            ${{ else }}:
+              name: SHINE-OSS-L
+          branding: ${{ parameters.branding }}
+          buildPlatforms: ${{ parameters.buildPlatforms }}
+          buildConfigurations: [Release]
+          buildEverything: true
+          pgoBuildMode: Instrument
+          artifactStem: -instrumentation
+
+  - stage: RunPGO
+    displayName: Run PGO
+    dependsOn: [Build]
+    condition: succeeded()
     jobs:
-      - template: ./templates/pgo-build-and-publish-nuget-job.yml
+      - ${{ each platform in parameters.buildPlatforms }}:
+        - template: ./templates-v2/job-run-pgo-tests.yml
+          parameters:
+            # This job chooses its own pools based on platform
+            buildPlatform: ${{ platform }}
+            buildConfiguration: Release
+            artifactStem: -instrumentation
+
+  - stage: FinalizePGO
+    displayName: Finalize PGO and Publish
+    dependsOn: [RunPGO]
+    condition: succeeded()
+    jobs:
+      # This job takes multiple platforms and fans them back in to a single artifact.
+      - template: ./templates-v2/job-pgo-merge-pgd.yml
         parameters:
-          pgoArtifact: 'PGO'
+          jobName: MergePGD
+          pool:
+            vmImage: 'windows-2022'
+          buildConfiguration: Release
+          buildPlatforms: ${{ parameters.buildPlatforms }}
+          artifactStem: -instrumentation
+
+      - template: ./templates-v2/job-pgo-build-nuget-and-publish.yml
+        parameters:
+          pool:
+            vmImage: 'windows-2022'
+          dependsOn: MergePGD
+          buildConfiguration: Release
+          artifactStem: -instrumentation

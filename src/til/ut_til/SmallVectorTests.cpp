@@ -3,8 +3,6 @@
 
 #include "precomp.h"
 
-#include <til/small_vector.h>
-
 using namespace std::literals;
 using namespace WEX::Common;
 using namespace WEX::Logging;
@@ -366,6 +364,26 @@ class SmallVectorTests
         actual.insert(actual.begin(), 2, -1);
 
         til::small_vector<int, 5> expected{ { -1, -1, 0, 1, 2, 3, 3, 3, 4, 5, 5 } };
+        VERIFY_ARE_EQUAL(expected, actual);
+    }
+
+    TEST_METHOD(CopyOntoItself)
+    {
+        til::small_vector<Copyable_int, 5> actual(3);
+        actual.operator=(actual);
+
+        const til::small_vector<Copyable_int, 5> expected(3);
+        VERIFY_ARE_EQUAL(expected, actual);
+    }
+
+    TEST_METHOD(MoveOntoItself)
+    {
+        til::small_vector<Movable_int, 5> actual;
+        actual.resize(3);
+        actual.operator=(std::move(actual));
+
+        til::small_vector<Movable_int, 5> expected;
+        expected.resize(3);
         VERIFY_ARE_EQUAL(expected, actual);
     }
 };

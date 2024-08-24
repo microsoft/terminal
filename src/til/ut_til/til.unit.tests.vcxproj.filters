@@ -6,7 +6,6 @@
   <ItemGroup>
     <ClCompile Include="..\precomp.cpp" />
     <ClCompile Include="BaseTests.cpp" />
-    <ClCompile Include="BitmapTests.cpp" />
     <ClCompile Include="CoalesceTests.cpp" />
     <ClCompile Include="ColorTests.cpp" />
     <ClCompile Include="EnumSetTests.cpp" />
@@ -20,7 +19,6 @@
     <ClCompile Include="RunLengthEncodingTests.cpp" />
     <ClCompile Include="SizeTests.cpp" />
     <ClCompile Include="SmallVectorTests.cpp" />
-    <ClCompile Include="SomeTests.cpp" />
     <ClCompile Include="SPSCTests.cpp" />
     <ClCompile Include="StaticMapTests.cpp" />
     <ClCompile Include="string.cpp" />
@@ -28,6 +26,8 @@
     <ClCompile Include="u8u16convertTests.cpp" />
     <ClCompile Include="EnvTests.cpp" />
     <ClCompile Include="UnicodeTests.cpp" />
+    <ClCompile Include="GenerationalTests.cpp" />
+    <ClCompile Include="FlatSetTests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\precomp.h" />
@@ -38,9 +38,6 @@
       <Filter>inc</Filter>
     </ClInclude>
     <ClInclude Include="..\..\inc\til\bit.h">
-      <Filter>inc</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\inc\til\bitmap.h">
       <Filter>inc</Filter>
     </ClInclude>
     <ClInclude Include="..\..\inc\til\coalesce.h">
@@ -94,9 +91,6 @@
     <ClInclude Include="..\..\inc\til\small_vector.h">
       <Filter>inc</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\til\some.h">
-      <Filter>inc</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\inc\til\spsc.h">
       <Filter>inc</Filter>
     </ClInclude>
@@ -116,6 +110,15 @@
       <Filter>inc</Filter>
     </ClInclude>
     <ClInclude Include="..\..\inc\til\unicode.h">
+      <Filter>inc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\inc\til\bytes.h">
+      <Filter>inc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\inc\til\generational.h">
+      <Filter>inc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\inc\til\type_traits.h">
       <Filter>inc</Filter>
     </ClInclude>
   </ItemGroup>

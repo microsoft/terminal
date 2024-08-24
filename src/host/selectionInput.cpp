@@ -8,8 +8,6 @@
 #include "../interactivity/inc/ServiceLocator.hpp"
 #include "../types/inc/convert.hpp"
 
-#include <algorithm>
-
 using namespace Microsoft::Console::Types;
 using Microsoft::Console::Interactivity::ServiceLocator;
 // Routine Description:
@@ -39,8 +37,6 @@ Selection::KeySelectionEventResult Selection::HandleKeySelectionEvent(const INPU
                  // C-c, C-Ins. C-S-c Is also handled by this case.
                  ((ctrlPressed) && (wVirtualKeyCode == 'C' || wVirtualKeyCode == VK_INSERT)))
         {
-            Telemetry::Instance().SetKeyboardTextEditingUsed();
-
             // copy selection
             return Selection::KeySelectionEventResult::CopyToClipboard;
         }
@@ -293,8 +289,6 @@ bool Selection::HandleKeyboardLineSelectionEvent(const INPUT_KEY_INFO* const pIn
         return false;
     }
 
-    Telemetry::Instance().SetKeyboardTextSelectionUsed();
-
     // if we're not currently selecting anything, start a new mouse selection
     if (!IsInSelectingState())
     {
@@ -318,10 +312,10 @@ bool Selection::HandleKeyboardLineSelectionEvent(const INPUT_KEY_INFO* const pIn
     }
 
     // anchor is the first clicked position
-    const auto coordAnchor = _coordSelectionAnchor;
+    const auto coordAnchor = _d->coordSelectionAnchor;
 
     // rect covers the entire selection
-    const auto rectSelection = _srSelectionRect;
+    const auto rectSelection = _d->srSelectionRect;
 
     // the selection point is the other corner of the rectangle from the anchor that we're about to manipulate
     til::point coordSelPoint;
@@ -611,7 +605,7 @@ bool Selection::HandleKeyboardLineSelectionEvent(const INPUT_KEY_INFO* const pIn
 // - <none>
 void Selection::CheckAndSetAlternateSelection()
 {
-    _fUseAlternateSelection = !!(OneCoreSafeGetKeyState(VK_MENU) & KEY_PRESSED);
+    _d.write()->fUseAlternateSelection = !!(OneCoreSafeGetKeyState(VK_MENU) & KEY_PRESSED);
 }
 
 // Routine Description:
@@ -638,7 +632,7 @@ bool Selection::_HandleColorSelection(const INPUT_KEY_INFO* const pInputKeyInfo)
     // If it is line selection, we can assemble that across multiple lines to make a search term.
     // But if it is block selection and the selected area is > 1 line in height, ignore the shift because we can't search.
     // Also ignore if there is no current selection.
-    if ((fShiftPressed) && (!IsAreaSelected() || (!IsLineSelection() && (_srSelectionRect.top != _srSelectionRect.bottom))))
+    if ((fShiftPressed) && (!IsAreaSelected() || (!IsLineSelection() && (_d->srSelectionRect.top != _d->srSelectionRect.bottom))))
     {
         fShiftPressed = false;
     }
@@ -653,7 +647,7 @@ bool Selection::_HandleColorSelection(const INPUT_KEY_INFO* const pInputKeyInfo)
     auto& screenInfo = gci.GetActiveOutputBuffer();
 
     //  Clip the selection to within the console buffer
-    screenInfo.ClipToScreenBuffer(&_srSelectionRect);
+    screenInfo.ClipToScreenBuffer(&_d.write()->srSelectionRect);
 
     //  If ALT or CTRL are pressed,  then color the selected area.
     //  ALT+n => fg,  CTRL+n => bg
@@ -677,52 +671,35 @@ bool Selection::_HandleColorSelection(const INPUT_KEY_INFO* const pInputKeyInfo)
             selectionAttr.SetIndexedForeground256(colorIndex);
         }
 
-        // If shift was pressed as well, then this is actually a
-        // find-and-color request. Otherwise just color the selection.
+        const auto& textBuffer = gci.renderData.GetTextBuffer();
         if (fShiftPressed)
         {
-            try
+            // Search the selection and color *that*
+            const auto req = TextBuffer::CopyRequest::FromConfig(textBuffer,
+                                                                 til::point{ _d->srSelectionRect.left, _d->srSelectionRect.top },
+                                                                 til::point{ _d->srSelectionRect.right, _d->srSelectionRect.bottom },
+                                                                 true /* multi-line search doesn't make sense; concatenate all lines */,
+                                                                 false /* we filtered out block search above */,
+                                                                 true /* trim block selection */,
+                                                                 true);
+            const auto str = textBuffer.GetPlainText(req);
+            // Clear the selection and call the search / mark function.
+            ClearSelection();
+
+            const auto hits = textBuffer.SearchText(str, SearchFlag::CaseInsensitive).value_or(std::vector<til::point_span>{});
+            for (const auto& s : hits)
             {
-                const auto selectionRects = GetSelectionRects();
-                if (selectionRects.size() > 0)
-                {
-                    // Pull the selection out of the buffer to pass to the
-                    // search function. Clamp to max search string length.
-                    // We just copy the bytes out of the row buffer.
-
-                    std::wstring str;
-                    for (const auto& selectRect : selectionRects)
-                    {
-                        auto it = screenInfo.GetCellDataAt({ selectRect.left, selectRect.top });
-
-                        for (til::CoordType i = 0; i < (selectRect.right - selectRect.left + 1);)
-                        {
-                            str.append(it->Chars());
-                            i += it->Columns();
-                            it += it->Columns();
-                        }
-                    }
-
-                    // Clear the selection and call the search / mark function.
-                    ClearSelection();
-
-                    Telemetry::Instance().LogColorSelectionUsed();
-
-                    Search search(gci.renderData, str, Search::Direction::Forward, Search::Sensitivity::CaseInsensitive);
-                    while (search.FindNext())
-                    {
-                        search.Color(selectionAttr);
-                    }
-                }
+                ColorSelection(s.start, s.end, selectionAttr);
             }
-            CATCH_LOG();
         }
         else
         {
-            const auto selectionRects = GetSelectionRects();
-            for (const auto& selectionRect : selectionRects)
+            const auto selection = GetSelectionSpans();
+            for (auto&& sp : selection)
             {
-                ColorSelection(selectionRect, selectionAttr);
+                sp.iterate_rows(textBuffer.GetSize().Width(), [&](til::CoordType row, til::CoordType beg, til::CoordType end) {
+                    ColorSelection({ beg, row, end, row }, selectionAttr);
+                });
             }
             ClearSelection();
         }
@@ -917,19 +894,20 @@ bool Selection::_HandleMarkModeSelectionNav(const INPUT_KEY_INFO* const pInputKe
         }
         else
         {
+            auto d{ _d.write() };
             // if the selection was not empty, reset the anchor
             if (IsAreaSelected())
             {
                 HideSelection();
-                _dwSelectionFlags &= ~CONSOLE_SELECTION_NOT_EMPTY;
-                _fUseAlternateSelection = false;
+                d->dwSelectionFlags &= ~CONSOLE_SELECTION_NOT_EMPTY;
+                d->fUseAlternateSelection = false;
             }
 
             cursor.SetHasMoved(true);
-            _coordSelectionAnchor = textBuffer.GetCursor().GetPosition();
-            ScreenInfo.MakeCursorVisible(_coordSelectionAnchor);
-            _srSelectionRect.left = _srSelectionRect.right = _coordSelectionAnchor.x;
-            _srSelectionRect.top = _srSelectionRect.bottom = _coordSelectionAnchor.y;
+            d->coordSelectionAnchor = textBuffer.GetCursor().GetPosition();
+            ScreenInfo.MakeCursorVisible(d->coordSelectionAnchor);
+            d->srSelectionRect.left = d->srSelectionRect.right = d->coordSelectionAnchor.x;
+            d->srSelectionRect.top = d->srSelectionRect.bottom = d->coordSelectionAnchor.y;
         }
         return true;
     }
@@ -949,49 +927,27 @@ bool Selection::_HandleMarkModeSelectionNav(const INPUT_KEY_INFO* const pInputKe
 [[nodiscard]] bool Selection::s_GetInputLineBoundaries(_Out_opt_ til::point* const pcoordInputStart, _Out_opt_ til::point* const pcoordInputEnd)
 {
     const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    const auto bufferSize = gci.GetActiveOutputBuffer().GetBufferSize();
 
-    auto& textBuffer = gci.GetActiveOutputBuffer().GetTextBuffer();
-
-    const auto pendingCookedRead = gci.HasPendingCookedRead();
-    const auto isVisible = CommandLine::Instance().IsVisible();
-
-    // if we have no read data, we have no input line.
-    if (!pendingCookedRead || gci.CookedReadData().VisibleCharCount() == 0 || !isVisible)
+    if (gci.HasPendingCookedRead())
     {
-        return false;
+        auto boundaries = gci.CookedReadData().GetBoundaries();
+        if (boundaries.start < boundaries.end)
+        {
+            if (pcoordInputStart != nullptr)
+            {
+                *pcoordInputStart = boundaries.start;
+            }
+            if (pcoordInputEnd != nullptr)
+            {
+                // - 1 so the coordinate is on top of the last position of the text, not one past it.
+                gci.GetActiveOutputBuffer().GetBufferSize().WalkInBounds(boundaries.end, -1);
+                *pcoordInputEnd = boundaries.end;
+            }
+            return true;
+        }
     }
 
-    const auto& cookedRead = gci.CookedReadData();
-    const auto coordStart = cookedRead.OriginalCursorPosition();
-    auto coordEnd = cookedRead.OriginalCursorPosition();
-
-    if (coordEnd.x < 0 && coordEnd.y < 0)
-    {
-        // if the original cursor position from the input line data is invalid, then the buffer cursor position is the final position
-        coordEnd = textBuffer.GetCursor().GetPosition();
-    }
-    else
-    {
-        // otherwise, we need to add the number of characters in the input line to the original cursor position
-        bufferSize.MoveInBounds(gsl::narrow<til::CoordType>(cookedRead.VisibleCharCount()), coordEnd);
-    }
-
-    // - 1 so the coordinate is on top of the last position of the text, not one past it.
-    bufferSize.MoveInBounds(-1, coordEnd);
-
-    if (pcoordInputStart != nullptr)
-    {
-        pcoordInputStart->x = coordStart.x;
-        pcoordInputStart->y = coordStart.y;
-    }
-
-    if (pcoordInputEnd != nullptr)
-    {
-        *pcoordInputEnd = coordEnd;
-    }
-
-    return true;
+    return false;
 }
 
 // Routine Description:
@@ -1015,7 +971,7 @@ void Selection::GetValidAreaBoundaries(_Out_opt_ til::point* const pcoordValidSt
     {
         if (IsInSelectingState() && IsKeyboardMarkSelection())
         {
-            coordEnd = _coordSavedCursorPosition;
+            coordEnd = _d->coordSavedCursorPosition;
         }
         else
         {

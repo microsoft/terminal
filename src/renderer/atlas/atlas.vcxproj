@@ -11,76 +11,72 @@
   <Import Project="$(SolutionDir)src\common.build.pre.props" />
   <Import Project="$(SolutionDir)src\common.nugetversions.props" />
   <ItemGroup>
+    <ClCompile Include="AtlasEngine.cpp" />
     <ClCompile Include="AtlasEngine.api.cpp" />
     <ClCompile Include="AtlasEngine.r.cpp" />
+    <ClCompile Include="Backend.cpp" />
+    <ClCompile Include="BackendD2D.cpp" />
+    <ClCompile Include="BackendD3D.cpp" />
+    <ClCompile Include="BuiltinGlyphs.cpp" />
     <ClCompile Include="dwrite.cpp" />
     <ClCompile Include="DWriteTextAnalysis.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="AtlasEngine.cpp" />
+    <ClCompile Include="stb_rect_pack.cpp" />
+    <ClCompile Include="wic.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="AtlasEngine.h" />
+    <ClInclude Include="Backend.h" />
+    <ClInclude Include="BackendD2D.h" />
+    <ClInclude Include="BackendD3D.h" />
+    <ClInclude Include="BuiltinGlyphs.h" />
+    <ClInclude Include="common.h" />
     <ClInclude Include="dwrite.h" />
     <ClInclude Include="DWriteTextAnalysis.h" />
     <ClInclude Include="pch.h" />
-    <ClInclude Include="AtlasEngine.h" />
+    <ClInclude Include="wic.h" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="custom_shader_ps.hlsl">
       <ShaderType>Pixel</ShaderType>
-      <ShaderModel>4.0</ShaderModel>
-      <AllResourcesBound>true</AllResourcesBound>
-      <VariableName>custom_shader_ps</VariableName>
-      <ObjectFileOutput />
-      <HeaderFileOutput>$(OutDir)$(ProjectName)\%(Filename).h</HeaderFileOutput>
-      <TreatWarningAsError>true</TreatWarningAsError>
-      <AdditionalOptions>/Zpc %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalOptions Condition="'$(Configuration)'=='Release'">/O3 /Qstrip_debug /Qstrip_reflect %(AdditionalOptions)</AdditionalOptions>
     </FxCompile>
     <FxCompile Include="custom_shader_vs.hlsl">
       <ShaderType>Vertex</ShaderType>
-      <ShaderModel>4.0</ShaderModel>
-      <AllResourcesBound>true</AllResourcesBound>
-      <VariableName>custom_shader_vs</VariableName>
-      <ObjectFileOutput />
-      <HeaderFileOutput>$(OutDir)$(ProjectName)\%(Filename).h</HeaderFileOutput>
-      <TreatWarningAsError>true</TreatWarningAsError>
-      <AdditionalOptions>/Zpc %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalOptions Condition="'$(Configuration)'=='Release'">/O3 /Qstrip_debug /Qstrip_reflect %(AdditionalOptions)</AdditionalOptions>
     </FxCompile>
     <FxCompile Include="dwrite.hlsl">
       <ExcludedFromBuild>true</ExcludedFromBuild>
     </FxCompile>
+    <FxCompile Include="shader_common.hlsl">
+      <ExcludedFromBuild>true</ExcludedFromBuild>
+    </FxCompile>
     <FxCompile Include="shader_ps.hlsl">
       <ShaderType>Pixel</ShaderType>
-      <ShaderModel>4.0</ShaderModel>
-      <AllResourcesBound>true</AllResourcesBound>
-      <VariableName>shader_ps</VariableName>
-      <ObjectFileOutput />
-      <HeaderFileOutput>$(OutDir)$(ProjectName)\%(Filename).h</HeaderFileOutput>
-      <TreatWarningAsError>true</TreatWarningAsError>
-      <AdditionalOptions>/Zpc %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalOptions Condition="'$(Configuration)'=='Release'">/O3 /Qstrip_debug /Qstrip_reflect %(AdditionalOptions)</AdditionalOptions>
     </FxCompile>
     <FxCompile Include="shader_vs.hlsl">
       <ShaderType>Vertex</ShaderType>
-      <ShaderModel>4.0</ShaderModel>
-      <AllResourcesBound>true</AllResourcesBound>
-      <VariableName>shader_vs</VariableName>
-      <ObjectFileOutput />
-      <HeaderFileOutput>$(OutDir)$(ProjectName)\%(Filename).h</HeaderFileOutput>
-      <TreatWarningAsError>true</TreatWarningAsError>
-      <AdditionalOptions>/Zpc %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalOptions Condition="'$(Configuration)'=='Release'">/O3 /Qstrip_debug /Qstrip_reflect %(AdditionalOptions)</AdditionalOptions>
     </FxCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="README.md" />
   </ItemGroup>
   <Import Project="$(SolutionDir)src\common.build.post.props" />
   <Import Project="$(SolutionDir)src\common.nugetversions.targets" />
   <ItemDefinitionGroup>
     <ClCompile>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>$(OutDir)$(ProjectName)\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)\oss\stb;$(OutDir)$(ProjectName);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
+    <FxCompile>
+      <ShaderModel>4.0</ShaderModel>
+      <AllResourcesBound>true</AllResourcesBound>
+      <VariableName>%(Filename)</VariableName>
+      <ObjectFileOutput />
+      <HeaderFileOutput>$(OutDir)$(ProjectName)\%(Filename).h</HeaderFileOutput>
+      <TreatWarningAsError>true</TreatWarningAsError>
+      <EnableDebuggingInformation>true</EnableDebuggingInformation>
+      <AdditionalOptions Condition="'$(Configuration)'=='Release'">/O3 /Zsb /Fd $(OutDir)$(ProjectName)\ /Qstrip_debug /Qstrip_reflect %(AdditionalOptions)</AdditionalOptions>
+    </FxCompile>
   </ItemDefinitionGroup>
 </Project>

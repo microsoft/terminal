@@ -14,7 +14,7 @@ Author(s):
 
 #pragma once
 
-#include <json.h>
+#include <json/json.h>
 
 #include "../types/inc/utils.hpp"
 
@@ -729,8 +729,18 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
             return json.isNumeric();
         }
 
-        Json::Value ToJson(const float& val)
+        Json::Value ToJson(const float val)
         {
+            // Convert floats that are almost integers to proper integers, because that looks way neater in JSON.
+            if (val >= static_cast<float>(Json::Value::minInt) && val <= static_cast<float>(Json::Value::maxInt))
+            {
+                const auto i = static_cast<Json::Value::Int>(std::lround(val));
+                const auto f = static_cast<float>(i);
+                if (std::fabs(f - val) < 1e-6f)
+                {
+                    return i;
+                }
+            }
             return val;
         }
 
@@ -753,8 +763,18 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
             return json.isNumeric();
         }
 
-        Json::Value ToJson(const double& val)
+        Json::Value ToJson(const double val)
         {
+            // Convert floats that are almost integers to proper integers, because that looks way neater in JSON.
+            if (val >= static_cast<double>(Json::Value::minInt) && val <= static_cast<double>(Json::Value::maxInt))
+            {
+                const auto i = static_cast<Json::Value::Int>(std::lround(val));
+                const auto f = static_cast<double>(i);
+                if (std::fabs(f - val) < 1e-6)
+                {
+                    return i;
+                }
+            }
             return val;
         }
 

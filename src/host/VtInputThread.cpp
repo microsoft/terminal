@@ -2,17 +2,15 @@
 // Licensed under the MIT license.
 
 #include "precomp.h"
-
 #include "VtInputThread.hpp"
 
-#include "../interactivity/inc/ServiceLocator.hpp"
-#include "input.h"
-#include "../terminal/parser/InputStateMachineEngine.hpp"
-#include "../terminal/adapter/InteractDispatch.hpp"
-#include "../types/inc/convert.hpp"
-#include "server.h"
-#include "output.h"
 #include "handle.h"
+#include "output.h"
+#include "server.h"
+#include "../interactivity/inc/ServiceLocator.hpp"
+#include "../terminal/adapter/InteractDispatch.hpp"
+#include "../terminal/parser/InputStateMachineEngine.hpp"
+#include "../types/inc/utils.hpp"
 
 using namespace Microsoft::Console;
 using namespace Microsoft::Console::Interactivity;
@@ -23,65 +21,14 @@ using namespace Microsoft::Console::VirtualTerminal;
 // - hPipe - a handle to the file representing the read end of the VT pipe.
 // - inheritCursor - a bool indicating if the state machine should expect a
 //      cursor positioning sequence. See MSFT:15681311.
-VtInputThread::VtInputThread(_In_ wil::unique_hfile hPipe,
-                             const bool inheritCursor) :
-    _hFile{ std::move(hPipe) },
-    _hThread{},
-    _u8State{},
-    _dwThreadId{ 0 },
-    _exitRequested{ false },
-    _pfnSetLookingForDSR{}
+VtInputThread::VtInputThread(_In_ wil::unique_hfile hPipe, const bool inheritCursor) :
+    _hFile{ std::move(hPipe) }
 {
     THROW_HR_IF(E_HANDLE, _hFile.get() == INVALID_HANDLE_VALUE);
 
     auto dispatch = std::make_unique<InteractDispatch>();
-
     auto engine = std::make_unique<InputStateMachineEngine>(std::move(dispatch), inheritCursor);
-
-    auto engineRef = engine.get();
-
     _pInputStateMachine = std::make_unique<StateMachine>(std::move(engine));
-
-    // we need this callback to be able to flush an unknown input sequence to the app
-    auto flushCallback = std::bind(&StateMachine::FlushToTerminal, _pInputStateMachine.get());
-    engineRef->SetFlushToInputQueueCallback(flushCallback);
-
-    // we need this callback to capture the reply if someone requests a status from the terminal
-    _pfnSetLookingForDSR = std::bind(&InputStateMachineEngine::SetLookingForDSR, engineRef, std::placeholders::_1);
-}
-
-// Method Description:
-// - Processes a string of input characters. The characters should be UTF-8
-//      encoded, and will get converted to wstring to be processed by the
-//      input state machine.
-// Arguments:
-// - u8Str - the UTF-8 string received.
-// Return Value:
-// - S_OK on success, otherwise an appropriate failure.
-[[nodiscard]] HRESULT VtInputThread::_HandleRunInput(const std::string_view u8Str)
-{
-    // Make sure to call the GLOBAL Lock/Unlock, not the gci's lock/unlock.
-    // Only the global unlock attempts to dispatch ctrl events. If you use the
-    //      gci's unlock, when you press C-c, it won't be dispatched until the
-    //      next console API call. For something like `powershell sleep 60`,
-    //      that won't happen for 60s
-    LockConsole();
-    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
-
-    try
-    {
-        std::wstring wstr{};
-        auto hr = til::u8u16(u8Str, wstr, _u8State);
-        // If we hit a parsing error, eat it. It's bad utf-8, we can't do anything with it.
-        if (FAILED(hr))
-        {
-            return S_FALSE;
-        }
-        _pInputStateMachine->ProcessString(wstr);
-    }
-    CATCH_RETURN();
-
-    return S_OK;
 }
 
 // Function Description:
@@ -92,51 +39,9 @@ VtInputThread::VtInputThread(_In_ wil::unique_hfile hPipe,
 // - The return value of the underlying instance's _InputThread
 DWORD WINAPI VtInputThread::StaticVtInputThreadProc(_In_ LPVOID lpParameter)
 {
-    const auto pInstance = reinterpret_cast<VtInputThread*>(lpParameter);
+    const auto pInstance = static_cast<VtInputThread*>(lpParameter);
     pInstance->_InputThread();
     return S_OK;
-}
-
-// Method Description:
-// - Do a single ReadFile from our pipe, and try and handle it. If handling
-//      failed, throw or log, depending on what the caller wants.
-// Arguments:
-// - throwOnFail: If true, throw an exception if there was an error processing
-//      the input received. Otherwise, log the error.
-// Return Value:
-// - <none>
-void VtInputThread::DoReadInput(const bool throwOnFail)
-{
-    char buffer[256];
-    DWORD dwRead = 0;
-    auto fSuccess = !!ReadFile(_hFile.get(), buffer, ARRAYSIZE(buffer), &dwRead, nullptr);
-
-    if (!fSuccess)
-    {
-        _exitRequested = true;
-        return;
-    }
-
-    auto hr = _HandleRunInput({ buffer, gsl::narrow_cast<size_t>(dwRead) });
-    if (FAILED(hr))
-    {
-        if (throwOnFail)
-        {
-            _exitRequested = true;
-        }
-        else
-        {
-            LOG_IF_FAILED(hr);
-        }
-    }
-}
-
-void VtInputThread::SetLookingForDSR(const bool looking) noexcept
-{
-    if (_pfnSetLookingForDSR)
-    {
-        _pfnSetLookingForDSR(looking);
-    }
 }
 
 // Method Description:
@@ -145,11 +50,114 @@ void VtInputThread::SetLookingForDSR(const bool looking) noexcept
 //      InputStateMachineEngine.
 void VtInputThread::_InputThread()
 {
-    while (!_exitRequested)
+    const auto cleanup = wil::scope_exit([this]() {
+        _hFile.reset();
+        ServiceLocator::LocateGlobals().getConsoleInformation().GetVtIo()->SendCloseEvent();
+    });
+
+    OVERLAPPED* overlapped = nullptr;
+    OVERLAPPED overlappedBuf{};
+    wil::unique_event overlappedEvent;
+    bool overlappedPending = false;
+    char buffer[4096];
+    DWORD read = 0;
+
+    til::u8state u8State;
+    std::wstring wstr;
+
+    if (Utils::HandleWantsOverlappedIo(_hFile.get()))
     {
-        DoReadInput(true);
+        overlappedEvent.reset(CreateEventExW(nullptr, nullptr, CREATE_EVENT_MANUAL_RESET, EVENT_ALL_ACCESS));
+        if (overlappedEvent)
+        {
+            overlappedBuf.hEvent = overlappedEvent.get();
+            overlapped = &overlappedBuf;
+        }
     }
-    ServiceLocator::LocateGlobals().getConsoleInformation().GetVtIo()->CloseInput();
+
+    // If we use overlapped IO We want to queue ReadFile() calls before processing the
+    // string, because LockConsole/ProcessString may take a while (relatively speaking).
+    // That's why the loop looks a little weird as it starts a read, processes the
+    // previous string, and finally converts the previous read to the next string.
+    for (;;)
+    {
+        // When we have a `wstr` that's ready for processing we must do so without blocking.
+        // Otherwise, whatever the user typed will be delayed until the next IO operation.
+        // With overlapped IO that's not a problem because the ReadFile() calls won't block.
+        if (overlapped)
+        {
+            if (!ReadFile(_hFile.get(), &buffer[0], sizeof(buffer), &read, overlapped))
+            {
+                if (GetLastError() != ERROR_IO_PENDING)
+                {
+                    break;
+                }
+                overlappedPending = true;
+            }
+        }
+
+        // wstr can be empty in two situations:
+        // * The previous call to til::u8u16 failed.
+        // * We're using overlapped IO, and it's the first iteration.
+        if (!wstr.empty())
+        {
+            try
+            {
+                // Make sure to call the GLOBAL Lock/Unlock, not the gci's lock/unlock.
+                // Only the global unlock attempts to dispatch ctrl events. If you use the
+                //      gci's unlock, when you press C-c, it won't be dispatched until the
+                //      next console API call. For something like `powershell sleep 60`,
+                //      that won't happen for 60s
+                LockConsole();
+                const auto unlock = wil::scope_exit([&] { UnlockConsole(); });
+
+                _pInputStateMachine->ProcessString(wstr);
+            }
+            CATCH_LOG();
+        }
+
+        // Here's the counterpart to the start of the loop. We processed whatever was in `wstr`,
+        // so blocking synchronously on the pipe is now possible.
+        // If we used overlapped IO, we need to wait for the ReadFile() to complete.
+        // If we didn't, we can now safely block on our ReadFile() call.
+        if (overlapped)
+        {
+            if (overlappedPending)
+            {
+                overlappedPending = false;
+                if (FAILED(Utils::GetOverlappedResultSameThread(overlapped, &read)))
+                {
+                    break;
+                }
+            }
+        }
+        else
+        {
+            if (!ReadFile(_hFile.get(), &buffer[0], sizeof(buffer), &read, overlapped))
+            {
+                break;
+            }
+        }
+
+        // winsock2 (WSA) handles of the \Device\Afd type are transparently compatible with
+        // ReadFile() and the WSARecv() documentations contains this important information:
+        // > For byte streams, zero bytes having been read [..] indicates graceful closure and that no more bytes will ever be read.
+        // --> Exit if we've read 0 bytes.
+        if (read == 0)
+        {
+            break;
+        }
+
+        TraceLoggingWrite(
+            g_hConhostV2EventTraceProvider,
+            "ConPTY ReadFile",
+            TraceLoggingCountedUtf8String(&buffer[0], read, "buffer"),
+            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+            TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+
+        // If we hit a parsing error, eat it. It's bad utf-8, we can't do anything with it.
+        FAILED_LOG(til::u8u16({ &buffer[0], gsl::narrow_cast<size_t>(read) }, wstr, u8State));
+    }
 }
 
 // Method Description:
@@ -175,4 +183,10 @@ void VtInputThread::_InputThread()
     LOG_IF_FAILED(SetThreadDescription(hThread, L"ConPTY Input Handler Thread"));
 
     return S_OK;
+}
+
+til::enumset<DeviceAttribute, uint64_t> VtInputThread::WaitUntilDA1(DWORD timeout) const noexcept
+{
+    const auto& engine = static_cast<InputStateMachineEngine&>(_pInputStateMachine->Engine());
+    return engine.WaitUntilDA1(timeout);
 }

@@ -1,0 +1,337 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!-- 
+    Microsoft ResX Schema 
+    
+    Version 2.0
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
+    associated with the data types.
+    
+    Example:
+    
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+                
+    There are any number of "resheader" rows that contain simple 
+    name/value pairs.
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
+    mimetype set.
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
+    extensible. For a given mimetype the value must be set accordingly:
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
+    read any of the formats listed below.
+    
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+    
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array 
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="SearchBox_CaseSensitivity.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Diferenciar maiúsculas de minúsculas</value>
+    <comment>The tooltip text for the case sensitivity button on the search box control.</comment>
+  </data>
+  <data name="SearchBox_Close.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Fechar</value>
+    <comment>The tooltip text for the close button on the search box control.</comment>
+  </data>
+  <data name="SearchBox_SearchBackwards.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Encontrar acima</value>
+    <comment>The tooltip text for the search backward button.</comment>
+  </data>
+  <data name="SearchBox_SearchForwards.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Localizar abaixo</value>
+    <comment>The tooltip text for the search forward button.</comment>
+  </data>
+  <data name="SearchBox_TextBox.PlaceholderText" xml:space="preserve">
+    <value>Localizar</value>
+    <comment>The placeholder text in the search box control.</comment>
+  </data>
+  <data name="DragFileCaption" xml:space="preserve">
+    <value>Colar caminho para o arquivo</value>
+    <comment>The displayed caption for dragging a file onto a terminal.</comment>
+  </data>
+  <data name="DragTextCaption" xml:space="preserve">
+    <value>Colar texto</value>
+    <comment>The displayed caption for dragging text onto a terminal.</comment>
+  </data>
+  <data name="SearchBox_CaseSensitivity.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Diferencia maiúsculas de minúsculas</value>
+    <comment>The name of the case sensitivity button on the search box control for accessibility.</comment>
+  </data>
+  <data name="SearchBox_SearchForwards.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Pesquisar no futuro</value>
+    <comment>The name of the search forward button for accessibility.</comment>
+  </data>
+  <data name="SearchBox_SearchBackwards.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Pesquisar novamente</value>
+    <comment>The name of the search backward button for accessibility.</comment>
+  </data>
+  <data name="SearchBox_TextBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Localizar</value>
+    <comment>The name of the text box on the search box control for accessibility. This should match "SearchBox_TextBox.PlaceholderText"</comment>
+  </data>
+  <data name="TerminalControl_ControlType" xml:space="preserve">
+    <value>terminal</value>
+    <comment>The type of control that the terminal adheres to. Used to identify how a user can interact with this kind of control.</comment>
+  </data>
+  <data name="SearchBox_Close.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Fechar a caixa de pesquisa</value>
+    <comment>The explanation of the search box close button used by Narrator and other screen readers.</comment>
+  </data>
+  <data name="TermControl_RendererFailedTextBlock.Text" xml:space="preserve">
+    <value>Este terminal encontrou um problema com o driver de gráficos e não pôde ser recuperado no horário. Ele foi suspenso.</value>
+  </data>
+  <data name="TermControl_RendererRetryButton.Content" xml:space="preserve">
+    <value>Retomar</value>
+  </data>
+  <data name="HowToOpenRun.Text" xml:space="preserve">
+    <value>Ctrl+Clique para seguir o link</value>
+  </data>
+  <data name="TermControl_NoMatch" xml:space="preserve">
+    <value>Nenhum resultado encontrado</value>
+    <comment>Will be presented near the search box when Find operation returned no results.</comment>
+  </data>
+  <data name="TermControl_Searching" xml:space="preserve">
+    <value>Pesquisando...</value>
+    <comment>Will be presented near the search box when Find operation is running.</comment>
+  </data>
+  <data name="TermControl_NumResults" xml:space="preserve">
+    <value>{0}/{1}</value>
+    <comment>Will be displayed to indicate what result the user has selected, of how many total results. {0} will be replaced with the index of the current result. {1} will be replaced with the total number of results.</comment>
+  </data>
+  <data name="InvalidUri" xml:space="preserve">
+    <value>URI Inválida</value>
+    <comment>Whenever we encounter an invalid URI or URL we show this string as a warning.</comment>
+  </data>
+  <data name="NoticeFontNotFound" xml:space="preserve">
+    <value>Não é possível localizar a fonte selecionada "{0}".
+
+O "{1}" foi selecionado.
+
+Instale a fonte ausente ou escolha outra.</value>
+    <comment>0 and 1 are names of fonts provided by the user and system respectively.</comment>
+  </data>
+  <data name="PixelShaderNotFound" xml:space="preserve">
+    <value>Não foi possível encontrar o sombreador fornecido "{0}".</value>
+    <comment>{0} is a file name</comment>
+  </data>
+  <data name="PixelShaderCompileFailed" xml:space="preserve">
+    <value>O sombreador de pixel não pôde ser compilado: {0}</value>
+    <comment>{0} is the error message generated by the compiler</comment>
+  </data>
+  <data name="UnexpectedRendererError" xml:space="preserve">
+    <value>O renderizador encontrou um erro inesperado: {0}</value>
+    <comment>{0} is an error code.</comment>
+  </data>
+  <data name="RendererErrorFontNotFound" xml:space="preserve">
+    <value>Não é possível localizar as seguintes fontes: {0}. Instale-os ou escolha fontes diferentes.</value>
+    <comment>{Locked="{0}"} This is a warning dialog shown when the user selects a font that isn't installed.</comment>
+  </data>
+  <data name="RendererErrorMacType" xml:space="preserve">
+    <value>Sua versão do MacType é incompatível com este aplicativo. Atualize para a versão 2023.5.31 ou posterior.</value>
+    <comment>{Locked="2023.5.31","MacType"}</comment>
+  </data>
+  <data name="RendererErrorOther" xml:space="preserve">
+    <value>O renderizador encontrou um erro inesperado: {0:#010x} {1}</value>
+    <comment>{Locked="{0:#010x}","{1}"} {0:#010x} is a placeholder for a Windows error code (e.g. 0x88985002). {1} is the corresponding message. {2} is the filename.</comment>
+  </data>
+  <data name="TermControlReadOnly" xml:space="preserve">
+    <value>O modo somente leitura está habilitado.</value>
+  </data>
+  <data name="SearchBox_MatchesAvailable" xml:space="preserve">
+    <value>Resultados encontrados</value>
+    <comment>Announced to a screen reader when the user searches for some text and there are matches for that text in the terminal.</comment>
+  </data>
+  <data name="SearchBox_NoMatches" xml:space="preserve">
+    <value>Nenhum resultado encontrado</value>
+    <comment>Announced to a screen reader when the user searches for some text and there are no matches for that text in the terminal.</comment>
+  </data>
+  <data name="PasteCommandButton.Label" xml:space="preserve">
+    <value>Colar</value>
+    <comment>The label of a button for pasting the contents of the clipboard.</comment>
+  </data>
+  <data name="PasteCommandButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Colar</value>
+    <comment>The tooltip for a paste button</comment>
+  </data>
+  <data name="CopyCommandButton.Label" xml:space="preserve">
+    <value>Copiar</value>
+    <comment>The label of a button for copying the selected text to the clipboard.</comment>
+  </data>
+  <data name="CopyCommandButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Copiar</value>
+    <comment>The tooltip for a copy button</comment>
+  </data>
+  <data name="PasteWithSelectionCommandButton.Label" xml:space="preserve">
+    <value>Colar</value>
+    <comment>The label of a button for pasting the contents of the clipboard.</comment>
+  </data>
+  <data name="PasteWithSelectionCommandButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Colar</value>
+    <comment>The tooltip for a paste button</comment>
+  </data>
+  <data name="SearchCommandButton.Label" xml:space="preserve">
+    <value>Localizar...</value>
+    <comment>The label of a button for searching for the selected text</comment>
+  </data>
+  <data name="SearchCommandButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Localizar</value>
+    <comment>The tooltip for a button for searching for the selected text</comment>
+  </data>
+  <data name="SelectCommandButton.Label" xml:space="preserve">
+    <value>Selecionar comando</value>
+    <comment>The label of a button for selecting all of the text of a command</comment>
+  </data>
+  <data name="SelectCommandButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Selecionar comando</value>
+    <comment>The tooltip for a button for selecting all of the text of a command</comment>
+  </data>
+  <data name="SelectOutputButton.Label" xml:space="preserve">
+    <value>Selecionar saída</value>
+    <comment>The label of a button for selecting all of a command's output</comment>
+  </data>
+  <data name="SelectOutputButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Selecionar saída</value>
+    <comment>The tooltip for a button for selecting all of a command's output</comment>
+  </data>
+  <data name="SelectCommandWithSelectionButton.Label" xml:space="preserve">
+    <value>Selecionar comando</value>
+    <comment>The label of a button for selecting all of the text of a command</comment>
+  </data>
+  <data name="SelectCommandWithSelectionButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Selecionar comando</value>
+    <comment>The tooltip for a button for selecting all of the text of a command</comment>
+  </data>
+  <data name="SelectOutputWithSelectionButton.Label" xml:space="preserve">
+    <value>Selecionar saída</value>
+    <comment>The label of a button for selecting all of a command's output</comment>
+  </data>
+  <data name="SelectOutputWithSelectionButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Selecionar saída</value>
+    <comment>The tooltip for a button for selecting all of a command's output</comment>
+  </data>
+  <data name="QuickFixButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Correção rápida</value>
+  </data>
+  <data name="QuickFixButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Correção rápida</value>
+  </data>
+  <data name="SessionRestoreMessage" xml:space="preserve">
+    <value>Restaurado</value>
+    <comment>"Restored" as in "This content was restored"</comment>
+  </data>
+  <data name="SearchBox_RegularExpression.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Expressão Regular</value>
+    <comment>The tooltip text for the button on the search box control governing the use of "regular expressions" ("regex").</comment>
+  </data>
+  <data name="SearchBox_RegularExpression.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Pesquisa de Expressão Regular</value>
+    <comment>The accessibility description text for the button on the search box control governing the use of "regular expressions" ("regex").</comment>
+  </data>
+  <data name="SearchRegexInvalid" xml:space="preserve">
+    <value>inválido</value>
+    <comment>This brief message is displayed when a regular expression is invalid.</comment>
+  </data>
+  <data name="QuickFixAvailable" xml:space="preserve">
+    <value>Correção rápida disponível</value>
+    <comment>"Quick fix" is referencing the same feature as "QuickFixButton.ToolTipService.ToolTip".</comment>
+  </data>
+  <data name="QuickFixMenu.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Correção rápida</value>
+  </data>
+  <data name="PreviewTextAnnouncement" xml:space="preserve">
+    <value>Entrada sugerida: {0}</value>
+    <comment>{Locked="{0}"} {0} will be replaced with a string of input that is suggested for the user to input</comment>
+  </data>
+</root>

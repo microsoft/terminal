@@ -48,11 +48,6 @@ BgfxEngine::BgfxEngine(PVOID SharedViewBase, LONG DisplayHeight, LONG DisplayWid
     return S_OK;
 }
 
-[[nodiscard]] HRESULT BgfxEngine::InvalidateSelection(const std::vector<til::rect>& /*rectangles*/) noexcept
-{
-    return S_OK;
-}
-
 [[nodiscard]] HRESULT BgfxEngine::InvalidateScroll(const til::point* /*pcoordDelta*/) noexcept
 {
     return S_OK;
@@ -61,12 +56,6 @@ BgfxEngine::BgfxEngine(PVOID SharedViewBase, LONG DisplayHeight, LONG DisplayWid
 [[nodiscard]] HRESULT BgfxEngine::InvalidateAll() noexcept
 {
     return S_OK;
-}
-
-[[nodiscard]] HRESULT BgfxEngine::PrepareForTeardown(_Out_ bool* const pForcePaint) noexcept
-{
-    *pForcePaint = false;
-    return S_FALSE;
 }
 
 [[nodiscard]] HRESULT BgfxEngine::StartPaint() noexcept
@@ -147,9 +136,10 @@ CATCH_RETURN()
     CATCH_RETURN()
 }
 
-[[nodiscard]] HRESULT BgfxEngine::PaintBufferGridLines(GridLineSet const /*lines*/,
-                                                       COLORREF const /*color*/,
-                                                       size_t const /*cchLine*/,
+[[nodiscard]] HRESULT BgfxEngine::PaintBufferGridLines(const GridLineSet /*lines*/,
+                                                       const COLORREF /*gridlineColor*/,
+                                                       const COLORREF /*underlineColor*/,
+                                                       const size_t /*cchLine*/,
                                                        const til::point /*coordTarget*/) noexcept
 {
     return S_OK;

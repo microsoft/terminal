@@ -29,8 +29,6 @@ namespace TerminalApp
         // registered?" when it definitely is.
         void Create();
 
-        Boolean IsUwp();
-        void RunAsUwp();
         Boolean IsRunningElevated();
         Boolean CanDragDrop();
 
@@ -39,13 +37,13 @@ namespace TerminalApp
         Boolean HasSettingsStartupActions();
 
         Boolean ShouldUsePersistedLayout();
-        void SaveWindowLayoutJsons(Windows.Foundation.Collections.IVector<String> layouts);
 
         void ReloadSettings();
 
         // Selected settings to expose
         Microsoft.Terminal.Settings.Model.Theme Theme { get; };
         Boolean IsolatedMode { get; };
+        Boolean AllowHeadless { get; };
         Boolean RequestsTrayIcon { get; };
 
         FindTargetWindowResult FindTargetWindow(String[] args);

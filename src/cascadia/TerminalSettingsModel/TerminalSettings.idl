@@ -3,6 +3,8 @@
 
 import "CascadiaSettings.idl";
 
+#define COMMA ,
+
 namespace Microsoft.Terminal.Settings.Model
 {
     runtimeclass TerminalSettingsCreateResult
@@ -26,6 +28,8 @@ namespace Microsoft.Terminal.Settings.Model
     {
         TerminalSettings();
 
+        Windows.Foundation.Collections.IMap<String COMMA String> EnvironmentVariables;
+
         static TerminalSettings CreateForPreview(CascadiaSettings appSettings, Profile profile);
         static TerminalSettingsCreateResult CreateWithProfile(CascadiaSettings appSettings, Profile profile, Microsoft.Terminal.Control.IKeyBindings keybindings);
         static TerminalSettingsCreateResult CreateWithNewTerminalArgs(CascadiaSettings appSettings, NewTerminalArgs newTerminalArgs, Microsoft.Terminal.Control.IKeyBindings keybindings);
@@ -37,10 +41,11 @@ namespace Microsoft.Terminal.Settings.Model
         // The getters for these are already defined in IControlSettings. So
         // we're just adding the setters here, because TerminalApp likes to be
         // able to change these at runtime (e.g. when duplicating a pane).
+        Guid SessionId { set; };
         String Commandline { set; };
         String StartingDirectory { set; };
-        String EnvironmentVariables { set; };
 
         Boolean Elevate;
+        Boolean ReloadEnvironmentVariables;
     };
 }

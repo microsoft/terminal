@@ -101,6 +101,13 @@
     <PreferredToolArchitecture>x64</PreferredToolArchitecture>
     <EnableHybridCRT Condition="'$(EnableHybridCRT)'=='' and '$(ConfigurationSupportsHybridCRT)'=='true'">true</EnableHybridCRT>
     <UseCrtSDKReferenceStaticWarning Condition="'$(EnableHybridCRT)'=='true'">false</UseCrtSDKReferenceStaticWarning>
+    <!--
+      We must set this to True for projects that do not contain any ClCompile entries.
+      The Link task guesses whether to enable CFG based on ClCompile->ControlFlowGuard.
+      Without any ClCompile entries, there's nothing to guess!
+      This impacts our dll projects that only link a lib.
+    -->
+    <LinkControlFlowGuard>true</LinkControlFlowGuard>
   </PropertyGroup>
 
   <ItemDefinitionGroup>
@@ -120,25 +127,30 @@
         C26445: Do not assign std::span or std::string_view to a reference. They are cheap to construct and are not owners of the underlying data. (gsl.view).
           Even for MSVC v19.32 this is actually far from true. Copying (as opposed to referencing) larger
           than register-sized structures is fairly expensive. Example: https://godbolt.org/z/oPco88PaP
-        C26813: Use 'bitwise and' to check if a flag is set.
-          The MSVC v19.31 toolset has a bug where a pointer to an enum is incorrectly flagged with C26813.
-          It's supposed to be fixed with VS 17.2.1 and 17.3.0 and later respectively.
+        C26434: Method 'A' hides a non-virtual method 'B' (c.128).
+        C26456: Operator 'A' hides a non-virtual operator 'B' (c.128)
+          I think these rules are for when you fully bought into OOP?
+          We didn't and it breaks WRL and large parts of conhost code.
+        C26478: Don't use std::move on constant variables. (es.56).
+          This diagnostic is broken in VS 17.7 which our CI currently uses. It's fixed in 17.8.
+        C26494: Variable 'index' is uninitialized. Always initialize an object (type. 5).
+          This diagnostic is broken in VS 17.7 which our CI currently uses. It's fixed in 17.8.
       -->
-      <DisableSpecificWarnings>4201;4312;4467;5105;26445;26813;%(DisableSpecificWarnings)</DisableSpecificWarnings>
-      <PreprocessorDefinitions>_WINDOWS;EXTERNAL_BUILD;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <DisableSpecificWarnings>4201;4312;4467;5105;26434;26445;26456;26478;26494;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <PreprocessorDefinitions>_WINDOWS;EXTERNAL_BUILD;_SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <PrecompiledHeaderFile>precomp.h</PrecompiledHeaderFile>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-      <AdditionalIncludeDirectories>$(SolutionDir)\src\inc;$(SolutionDir)\dep;$(SolutionDir)\dep\Console;$(SolutionDir)\dep\gsl\include;$(SolutionDir)\dep\Win32K;$(SolutionDir)\oss\chromium;$(SolutionDir)\oss\dynamic_bitset;$(SolutionDir)\oss\fmt\include;$(SolutionDir)\oss\interval_tree;$(SolutionDir)\oss\libpopcnt;$(SolutionDir)\oss\pcg\include;%(AdditionalIncludeDirectories);</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)\src\inc;$(SolutionDir)\dep;$(SolutionDir)\dep\Console;$(SolutionDir)\dep\Win32K;$(SolutionDir)\oss\chromium;$(SolutionDir)\oss\interval_tree;$(SolutionDir)\oss\pcg\include;%(AdditionalIncludeDirectories);</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <MinimalRebuild>false</MinimalRebuild>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <ConformanceMode>true</ConformanceMode>
       <UseStandardPreprocessor>true</UseStandardPreprocessor>
+      <RemoveUnreferencedCodeData>true</RemoveUnreferencedCodeData>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
-      <!-- /fp:contract used to default to on before VS 17.0. If enabled it allows FMA for floats. -->
-      <AdditionalOptions>%(AdditionalOptions) /utf-8 /Zc:externConstexpr /Zc:lambda /Zc:throwingNew /fp:contract</AdditionalOptions>
+      <AdditionalOptions>%(AdditionalOptions) /utf-8 /Zc:__cplusplus /Zc:__STDC__ /Zc:enumTypes /Zc:externConstexpr /Zc:templateScope /Zc:throwingNew</AdditionalOptions>
       <ControlFlowGuard>Guard</ControlFlowGuard>
     </ClCompile>
     <ResourceCompile>
@@ -155,6 +167,13 @@
     </Link>
   </ItemDefinitionGroup>
 
+  <!-- Work around the Windows Store platform not specifying a TargetMachine for static libraries -->
+  <ItemDefinitionGroup Condition="'$(Platform)'=='Win32'">
+    <Lib>
+      <TargetMachine>MachineX86</TargetMachine>
+    </Lib>
+  </ItemDefinitionGroup>
+
   <!-- For Debug ONLY -->
   <PropertyGroup Condition="'$(Configuration)'=='Debug'" Label="Configuration">
     <UseDebugLibraries>true</UseDebugLibraries>
@@ -163,6 +182,7 @@
 
   <ItemDefinitionGroup Condition="'$(Configuration)'=='Debug'">
     <ClCompile>
+      <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>_DEBUG;DBG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
@@ -211,8 +231,6 @@
     <EnableCppCoreCheck>true</EnableCppCoreCheck>
     <RunCodeAnalysis>true</RunCodeAnalysis>
     <CAExcludePath>$(CAExcludePath);$(SolutionDir)\dep;$(SolutionDir)\oss;$(SolutionDir)\packages</CAExcludePath>
-    <OpenConsoleVcpkgConfiguration>Release</OpenConsoleVcpkgConfiguration>
-    <OpenConsoleTppVcpkgConfiguration>Release</OpenConsoleTppVcpkgConfiguration>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)'=='AuditMode'">
     <ClCompile>
@@ -238,13 +256,32 @@
     </Link>
   </ItemDefinitionGroup>
 
-  <!-- Sanity check: Make sure the user followed the README and initialized git submodules. -->
-  <Target Name="EnsureSubmodulesExist" BeforeTargets="PrepareForBuild">
-    <PropertyGroup>
-      <ErrorText>This project references git submodule(s) that are missing on this computer. Use `git submodule update --init --recursive` to download them.  For more information, see https://github.com/microsoft/terminal#building-the-code. </ErrorText>
-    </PropertyGroup>
-    <Error Condition="!Exists('$(SolutionDir)\dep\gsl\README.md')" Text="$([System.String]::Format('$(ErrorText)'))" />
-  </Target>
-
   <Import Project="$(MSBuildThisFileDirectory)..\build\rules\Branding.targets" />
+
+  <PropertyGroup Label="vcpkg">
+    <VcpkgEnableManifest>true</VcpkgEnableManifest>
+
+    <!-- Set this here so that it doesn't get overwritten with "uwp" -->
+    <VcpkgOSTarget>windows</VcpkgOSTarget>
+    <VcpkgUseStatic>true</VcpkgUseStatic>
+
+    <VcpkgAdditionalInstallOptions>--x-feature=terminal</VcpkgAdditionalInstallOptions>
+    <!--
+      Since we link everything statically, we don't need to copy anything.
+      This saves running a powershell script for every project.
+    -->
+    <VcpkgApplocalDeps>false</VcpkgApplocalDeps>
+    <VcpkgInstalledDir>$(SolutionDir)\obj\$(Platform)\vcpkg</VcpkgInstalledDir>
+    <VcpkgRoot Condition="'$(VcpkgRoot)'==''">$(VCPKG_ROOT)</VcpkgRoot>
+    <!-- VsInstallRoot is set by Visual Studio and MSBuild -->
+    <VcpkgRoot Condition="'$(VcpkgRoot)'==''">$(VsInstallRoot)\VC\vcpkg</VcpkgRoot>
+    <VcpkgRoot Condition="'$(VcpkgRoot)'=='' or !Exists('$(VcpkgRoot)\vcpkg.exe')">$(SolutionDir)\dep\vcpkg</VcpkgRoot>
+
+    <CAExcludePath>$(CAExcludePath);$(VcpkgInstalledDir)</CAExcludePath>
+
+    <!-- For now, don't allow global-per-user installs of vcpkg -->
+    <VCPkgLocalAppDataDisabled>true</VCPkgLocalAppDataDisabled>
+  </PropertyGroup>
+
+  <Import Project="$(VcpkgRoot)/scripts/buildsystems/msbuild/vcpkg.props" Condition="'$(MSBuildProjectExtension)'=='.vcxproj'" />
 </Project>

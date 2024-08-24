@@ -19,7 +19,7 @@ namespace Microsoft::Console::Render
         // Used to release device resources so that another instance of
         // conhost can render to the screen (i.e. only one DirectX
         // application may control the screen at a time.)
-        [[nodiscard]] HRESULT Enable() noexcept override;
+        [[nodiscard]] HRESULT Enable() noexcept;
         [[nodiscard]] HRESULT Disable() noexcept;
 
         til::rect GetDisplaySize() noexcept;
@@ -28,10 +28,8 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT Invalidate(const til::rect* const psrRegion) noexcept override;
         [[nodiscard]] HRESULT InvalidateCursor(const til::rect* const psrRegion) noexcept override;
         [[nodiscard]] HRESULT InvalidateSystem(const til::rect* const prcDirtyClient) noexcept override;
-        [[nodiscard]] HRESULT InvalidateSelection(const std::vector<til::rect>& rectangles) noexcept override;
         [[nodiscard]] HRESULT InvalidateScroll(const til::point* const pcoordDelta) noexcept override;
         [[nodiscard]] HRESULT InvalidateAll() noexcept override;
-        [[nodiscard]] HRESULT PrepareForTeardown(_Out_ bool* const pForcePaint) noexcept override;
 
         [[nodiscard]] HRESULT StartPaint() noexcept override;
         [[nodiscard]] HRESULT EndPaint() noexcept override;
@@ -44,7 +42,7 @@ namespace Microsoft::Console::Render
                                               const til::point coord,
                                               const bool trimLeft,
                                               const bool lineWrapped) noexcept override;
-        [[nodiscard]] HRESULT PaintBufferGridLines(GridLineSet const lines, COLORREF const color, size_t const cchLine, til::point const coordTarget) noexcept override;
+        [[nodiscard]] HRESULT PaintBufferGridLines(const GridLineSet lines, const COLORREF gridlineColor, const COLORREF underlineColor, const size_t cchLine, const til::point coordTarget) noexcept override;
         [[nodiscard]] HRESULT PaintSelection(const til::rect& rect) noexcept override;
 
         [[nodiscard]] HRESULT PaintCursor(const CursorOptions& options) noexcept override;

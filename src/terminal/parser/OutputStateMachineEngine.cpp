@@ -4,23 +4,29 @@
 #include "precomp.h"
 #include "OutputStateMachineEngine.hpp"
 
+#include <conattrs.hpp>
+
 #include "ascii.hpp"
 #include "base64.hpp"
 #include "stateMachine.hpp"
 #include "../../types/inc/utils.hpp"
-#include "../renderer/vt/vtrenderer.hpp"
 
 using namespace Microsoft::Console;
 using namespace Microsoft::Console::VirtualTerminal;
 
+constexpr COLORREF COLOR_INQUIRY_COLOR = 0xfeffffff; // It's like INVALID_COLOR but special
+
 // takes ownership of pDispatch
 OutputStateMachineEngine::OutputStateMachineEngine(std::unique_ptr<ITermDispatch> pDispatch) :
     _dispatch(std::move(pDispatch)),
-    _pfnFlushToTerminal(nullptr),
-    _pTtyConnection(nullptr),
     _lastPrintedChar(AsciiChars::NUL)
 {
     THROW_HR_IF_NULL(E_INVALIDARG, _dispatch.get());
+}
+
+bool OutputStateMachineEngine::EncounteredWin32InputModeSequence() const noexcept
+{
+    return false;
 }
 
 const ITermDispatch& OutputStateMachineEngine::Dispatch() const noexcept
@@ -44,19 +50,11 @@ bool OutputStateMachineEngine::ActionExecute(const wchar_t wch)
 {
     switch (wch)
     {
-    case AsciiChars::NUL:
-        // microsoft/terminal#1825 - VT applications expect to be able to write NUL
-        // and have _nothing_ happen. Filter the NULs here, so they don't fill the
-        // buffer with empty spaces.
+    case AsciiChars::ENQ:
+        _dispatch->EnquireAnswerback();
         break;
     case AsciiChars::BEL:
         _dispatch->WarningBell();
-        // microsoft/terminal#2952
-        // If we're attached to a terminal, let's also pass the BEL through.
-        if (_pfnFlushToTerminal != nullptr)
-        {
-            _pfnFlushToTerminal();
-        }
         break;
     case AsciiChars::BS:
         _dispatch->CursorBackward(1);
@@ -79,8 +77,23 @@ bool OutputStateMachineEngine::ActionExecute(const wchar_t wch)
     case AsciiChars::SO:
         _dispatch->LockingShift(1);
         break;
-    default:
+    case AsciiChars::SUB:
+        // The SUB control is used to cancel a control sequence in the same
+        // way as CAN, but unlike CAN it also displays an error character,
+        // typically a reverse question mark (Unicode substitute form two).
+        _dispatch->Print(L'\u2426');
+        break;
+    case AsciiChars::DEL:
+        // The DEL control can sometimes be translated into a printable glyph
+        // if a 96-character set is designated, so we need to pass it through
+        // to the Print method. If not translated, it will be filtered out
+        // there.
         _dispatch->Print(wch);
+        break;
+    default:
+        // GH#1825, GH#10786: VT applications expect to be able to write other
+        // control characters and have _nothing_ happen. We filter out these
+        // characters here, so they don't fill the buffer.
         break;
     }
 
@@ -160,20 +173,12 @@ bool OutputStateMachineEngine::ActionPrintString(const std::wstring_view string)
 //      we don't know what to do with it)
 // Arguments:
 // - string - string to dispatch.
+// - flush - set to true if the string should be flushed immediately.
 // Return Value:
 // - true iff we successfully dispatched the sequence.
-bool OutputStateMachineEngine::ActionPassThroughString(const std::wstring_view string)
+bool OutputStateMachineEngine::ActionPassThroughString(const std::wstring_view /*string*/) noexcept
 {
-    auto success = true;
-    if (_pTtyConnection != nullptr)
-    {
-        const auto hr = _pTtyConnection->WriteTerminalW(string);
-        LOG_IF_FAILED(hr);
-        success = SUCCEEDED(hr);
-    }
-    // If there's not a TTY connection, our previous behavior was to eat the string.
-
-    return success;
+    return true;
 }
 
 // Routine Description:
@@ -186,105 +191,94 @@ bool OutputStateMachineEngine::ActionPassThroughString(const std::wstring_view s
 // - true iff we successfully dispatched the sequence.
 bool OutputStateMachineEngine::ActionEscDispatch(const VTID id)
 {
-    auto success = false;
-
     switch (id)
     {
     case EscActionCodes::ST_StringTerminator:
         // This is the 7-bit string terminator, which is essentially a no-op.
-        success = true;
+        break;
+    case EscActionCodes::DECBI_BackIndex:
+        _dispatch->BackIndex();
         break;
     case EscActionCodes::DECSC_CursorSave:
-        success = _dispatch->CursorSaveState();
-        TermTelemetry::Instance().Log(TermTelemetry::Codes::DECSC);
+        _dispatch->CursorSaveState();
         break;
     case EscActionCodes::DECRC_CursorRestore:
-        success = _dispatch->CursorRestoreState();
-        TermTelemetry::Instance().Log(TermTelemetry::Codes::DECRC);
+        _dispatch->CursorRestoreState();
+        break;
+    case EscActionCodes::DECFI_ForwardIndex:
+        _dispatch->ForwardIndex();
         break;
     case EscActionCodes::DECKPAM_KeypadApplicationMode:
-        success = _dispatch->SetKeypadMode(true);
-        TermTelemetry::Instance().Log(TermTelemetry::Codes::DECKPAM);
+        _dispatch->SetKeypadMode(true);
         break;
     case EscActionCodes::DECKPNM_KeypadNumericMode:
-        success = _dispatch->SetKeypadMode(false);
-        TermTelemetry::Instance().Log(TermTelemetry::Codes::DECKPNM);
+        _dispatch->SetKeypadMode(false);
         break;
     case EscActionCodes::NEL_NextLine:
-        success = _dispatch->LineFeed(DispatchTypes::LineFeedType::WithReturn);
-        TermTelemetry::Instance().Log(TermTelemetry::Codes::NEL);
+        _dispatch->LineFeed(DispatchTypes::LineFeedType::WithReturn);
         break;
     case EscActionCodes::IND_Index:
-        success = _dispatch->LineFeed(DispatchTypes::LineFeedType::WithoutReturn);
-        TermTelemetry::Instance().Log(TermTelemetry::Codes::IND);
+        _dispatch->LineFeed(DispatchTypes::LineFeedType::WithoutReturn);
         break;
     case EscActionCodes::RI_ReverseLineFeed:
-        success = _dispatch->ReverseLineFeed();
-        TermTelemetry::Instance().Log(TermTelemetry::Codes::RI);
+        _dispatch->ReverseLineFeed();
         break;
     case EscActionCodes::HTS_HorizontalTabSet:
-        success = _dispatch->HorizontalTabSet();
-        TermTelemetry::Instance().Log(TermTelemetry::Codes::HTS);
+        _dispatch->HorizontalTabSet();
         break;
     case EscActionCodes::DECID_IdentifyDevice:
-        success = _dispatch->DeviceAttributes();
-        TermTelemetry::Instance().Log(TermTelemetry::Codes::DA);
+        _dispatch->DeviceAttributes();
         break;
     case EscActionCodes::RIS_ResetToInitialState:
-        success = _dispatch->HardReset();
-        TermTelemetry::Instance().Log(TermTelemetry::Codes::RIS);
+        _dispatch->HardReset();
         break;
     case EscActionCodes::SS2_SingleShift:
-        success = _dispatch->SingleShift(2);
-        TermTelemetry::Instance().Log(TermTelemetry::Codes::SS2);
+        _dispatch->SingleShift(2);
         break;
     case EscActionCodes::SS3_SingleShift:
-        success = _dispatch->SingleShift(3);
-        TermTelemetry::Instance().Log(TermTelemetry::Codes::SS3);
+        _dispatch->SingleShift(3);
         break;
     case EscActionCodes::LS2_LockingShift:
-        success = _dispatch->LockingShift(2);
-        TermTelemetry::Instance().Log(TermTelemetry::Codes::LS2);
+        _dispatch->LockingShift(2);
         break;
     case EscActionCodes::LS3_LockingShift:
-        success = _dispatch->LockingShift(3);
-        TermTelemetry::Instance().Log(TermTelemetry::Codes::LS3);
+        _dispatch->LockingShift(3);
         break;
     case EscActionCodes::LS1R_LockingShift:
-        success = _dispatch->LockingShiftRight(1);
-        TermTelemetry::Instance().Log(TermTelemetry::Codes::LS1R);
+        _dispatch->LockingShiftRight(1);
         break;
     case EscActionCodes::LS2R_LockingShift:
-        success = _dispatch->LockingShiftRight(2);
-        TermTelemetry::Instance().Log(TermTelemetry::Codes::LS2R);
+        _dispatch->LockingShiftRight(2);
         break;
     case EscActionCodes::LS3R_LockingShift:
-        success = _dispatch->LockingShiftRight(3);
-        TermTelemetry::Instance().Log(TermTelemetry::Codes::LS3R);
+        _dispatch->LockingShiftRight(3);
         break;
     case EscActionCodes::DECAC1_AcceptC1Controls:
-        success = _dispatch->AcceptC1Controls(true);
-        TermTelemetry::Instance().Log(TermTelemetry::Codes::DECAC1);
+        _dispatch->AcceptC1Controls(true);
+        break;
+    case EscActionCodes::ACS_AnsiLevel1:
+        _dispatch->AnnounceCodeStructure(1);
+        break;
+    case EscActionCodes::ACS_AnsiLevel2:
+        _dispatch->AnnounceCodeStructure(2);
+        break;
+    case EscActionCodes::ACS_AnsiLevel3:
+        _dispatch->AnnounceCodeStructure(3);
         break;
     case EscActionCodes::DECDHL_DoubleHeightLineTop:
-        success = _dispatch->SetLineRendition(LineRendition::DoubleHeightTop);
-        TermTelemetry::Instance().Log(TermTelemetry::Codes::DECDHL);
+        _dispatch->SetLineRendition(LineRendition::DoubleHeightTop);
         break;
     case EscActionCodes::DECDHL_DoubleHeightLineBottom:
-        success = _dispatch->SetLineRendition(LineRendition::DoubleHeightBottom);
-        TermTelemetry::Instance().Log(TermTelemetry::Codes::DECDHL);
+        _dispatch->SetLineRendition(LineRendition::DoubleHeightBottom);
         break;
     case EscActionCodes::DECSWL_SingleWidthLine:
-        success = _dispatch->SetLineRendition(LineRendition::SingleWidth);
-        TermTelemetry::Instance().Log(TermTelemetry::Codes::DECSWL);
+        _dispatch->SetLineRendition(LineRendition::SingleWidth);
         break;
     case EscActionCodes::DECDWL_DoubleWidthLine:
-        success = _dispatch->SetLineRendition(LineRendition::DoubleWidth);
-        TermTelemetry::Instance().Log(TermTelemetry::Codes::DECDWL);
+        _dispatch->SetLineRendition(LineRendition::DoubleWidth);
         break;
     case EscActionCodes::DECALN_ScreenAlignmentPattern:
-        success = _dispatch->ScreenAlignmentPattern();
-        TermTelemetry::Instance().Log(TermTelemetry::Codes::DECALN);
+        _dispatch->ScreenAlignmentPattern();
         break;
     default:
         const auto commandChar = id[0];
@@ -292,54 +286,37 @@ bool OutputStateMachineEngine::ActionEscDispatch(const VTID id)
         switch (commandChar)
         {
         case '%':
-            success = _dispatch->DesignateCodingSystem(commandParameter);
-            TermTelemetry::Instance().Log(TermTelemetry::Codes::DOCS);
+            _dispatch->DesignateCodingSystem(commandParameter);
             break;
         case '(':
-            success = _dispatch->Designate94Charset(0, commandParameter);
-            TermTelemetry::Instance().Log(TermTelemetry::Codes::DesignateG0);
+            _dispatch->Designate94Charset(0, commandParameter);
             break;
         case ')':
-            success = _dispatch->Designate94Charset(1, commandParameter);
-            TermTelemetry::Instance().Log(TermTelemetry::Codes::DesignateG1);
+            _dispatch->Designate94Charset(1, commandParameter);
             break;
         case '*':
-            success = _dispatch->Designate94Charset(2, commandParameter);
-            TermTelemetry::Instance().Log(TermTelemetry::Codes::DesignateG2);
+            _dispatch->Designate94Charset(2, commandParameter);
             break;
         case '+':
-            success = _dispatch->Designate94Charset(3, commandParameter);
-            TermTelemetry::Instance().Log(TermTelemetry::Codes::DesignateG3);
+            _dispatch->Designate94Charset(3, commandParameter);
             break;
         case '-':
-            success = _dispatch->Designate96Charset(1, commandParameter);
-            TermTelemetry::Instance().Log(TermTelemetry::Codes::DesignateG1);
+            _dispatch->Designate96Charset(1, commandParameter);
             break;
         case '.':
-            success = _dispatch->Designate96Charset(2, commandParameter);
-            TermTelemetry::Instance().Log(TermTelemetry::Codes::DesignateG2);
+            _dispatch->Designate96Charset(2, commandParameter);
             break;
         case '/':
-            success = _dispatch->Designate96Charset(3, commandParameter);
-            TermTelemetry::Instance().Log(TermTelemetry::Codes::DesignateG3);
+            _dispatch->Designate96Charset(3, commandParameter);
             break;
         default:
-            // If no functions to call, overall dispatch was a failure.
-            success = false;
             break;
         }
     }
 
-    // If we were unable to process the string, and there's a TTY attached to us,
-    //      trigger the state machine to flush the string to the terminal.
-    if (_pfnFlushToTerminal != nullptr && !success)
-    {
-        success = _pfnFlushToTerminal();
-    }
-
     _ClearLastChar();
 
-    return success;
+    return true;
 }
 
 // Method Description:
@@ -353,66 +330,62 @@ bool OutputStateMachineEngine::ActionEscDispatch(const VTID id)
 // - true iff we successfully dispatched the sequence.
 bool OutputStateMachineEngine::ActionVt52EscDispatch(const VTID id, const VTParameters parameters)
 {
-    auto success = false;
-
     switch (id)
     {
     case Vt52ActionCodes::CursorUp:
-        success = _dispatch->CursorUp(1);
+        _dispatch->CursorUp(1);
         break;
     case Vt52ActionCodes::CursorDown:
-        success = _dispatch->CursorDown(1);
+        _dispatch->CursorDown(1);
         break;
     case Vt52ActionCodes::CursorRight:
-        success = _dispatch->CursorForward(1);
+        _dispatch->CursorForward(1);
         break;
     case Vt52ActionCodes::CursorLeft:
-        success = _dispatch->CursorBackward(1);
+        _dispatch->CursorBackward(1);
         break;
     case Vt52ActionCodes::EnterGraphicsMode:
-        success = _dispatch->Designate94Charset(0, DispatchTypes::CharacterSets::DecSpecialGraphics);
+        _dispatch->Designate94Charset(0, DispatchTypes::CharacterSets::DecSpecialGraphics);
         break;
     case Vt52ActionCodes::ExitGraphicsMode:
-        success = _dispatch->Designate94Charset(0, DispatchTypes::CharacterSets::ASCII);
+        _dispatch->Designate94Charset(0, DispatchTypes::CharacterSets::ASCII);
         break;
     case Vt52ActionCodes::CursorToHome:
-        success = _dispatch->CursorPosition(1, 1);
+        _dispatch->CursorPosition(1, 1);
         break;
     case Vt52ActionCodes::ReverseLineFeed:
-        success = _dispatch->ReverseLineFeed();
+        _dispatch->ReverseLineFeed();
         break;
     case Vt52ActionCodes::EraseToEndOfScreen:
-        success = _dispatch->EraseInDisplay(DispatchTypes::EraseType::ToEnd);
+        _dispatch->EraseInDisplay(DispatchTypes::EraseType::ToEnd);
         break;
     case Vt52ActionCodes::EraseToEndOfLine:
-        success = _dispatch->EraseInLine(DispatchTypes::EraseType::ToEnd);
+        _dispatch->EraseInLine(DispatchTypes::EraseType::ToEnd);
         break;
     case Vt52ActionCodes::DirectCursorAddress:
         // VT52 cursor addresses are provided as ASCII characters, with
         // the lowest value being a space, representing an address of 1.
-        success = _dispatch->CursorPosition(parameters.at(0).value() - ' ' + 1, parameters.at(1).value() - ' ' + 1);
+        _dispatch->CursorPosition(parameters.at(0).value() - ' ' + 1, parameters.at(1).value() - ' ' + 1);
         break;
     case Vt52ActionCodes::Identify:
-        success = _dispatch->Vt52DeviceAttributes();
+        _dispatch->Vt52DeviceAttributes();
         break;
     case Vt52ActionCodes::EnterAlternateKeypadMode:
-        success = _dispatch->SetKeypadMode(true);
+        _dispatch->SetKeypadMode(true);
         break;
     case Vt52ActionCodes::ExitAlternateKeypadMode:
-        success = _dispatch->SetKeypadMode(false);
+        _dispatch->SetKeypadMode(false);
         break;
     case Vt52ActionCodes::ExitVt52Mode:
-        success = _dispatch->SetMode(DispatchTypes::ModeParams::DECANM_AnsiMode);
+        _dispatch->SetMode(DispatchTypes::ModeParams::DECANM_AnsiMode);
         break;
     default:
-        // If no functions to call, overall dispatch was a failure.
-        success = false;
         break;
     }
 
     _ClearLastChar();
 
-    return success;
+    return true;
 }
 
 // Routine Description:
@@ -426,190 +399,174 @@ bool OutputStateMachineEngine::ActionVt52EscDispatch(const VTID id, const VTPara
 // - true iff we successfully dispatched the sequence.
 bool OutputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParameters parameters)
 {
-    auto success = false;
+    // Bail out if we receive subparameters, but we don't accept them in the sequence.
+    if (parameters.hasSubParams() && !_CanSeqAcceptSubParam(id, parameters)) [[unlikely]]
+    {
+        return true;
+    }
 
     switch (id)
     {
     case CsiActionCodes::CUU_CursorUp:
-        success = _dispatch->CursorUp(parameters.at(0));
-        TermTelemetry::Instance().Log(TermTelemetry::Codes::CUU);
+        _dispatch->CursorUp(parameters.at(0));
         break;
     case CsiActionCodes::CUD_CursorDown:
-        success = _dispatch->CursorDown(parameters.at(0));
-        TermTelemetry::Instance().Log(TermTelemetry::Codes::CUD);
+        _dispatch->CursorDown(parameters.at(0));
         break;
     case CsiActionCodes::CUF_CursorForward:
-        success = _dispatch->CursorForward(parameters.at(0));
-        TermTelemetry::Instance().Log(TermTelemetry::Codes::CUF);
+        _dispatch->CursorForward(parameters.at(0));
         break;
     case CsiActionCodes::CUB_CursorBackward:
-        success = _dispatch->CursorBackward(parameters.at(0));
-        TermTelemetry::Instance().Log(TermTelemetry::Codes::CUB);
+        _dispatch->CursorBackward(parameters.at(0));
         break;
     case CsiActionCodes::CNL_CursorNextLine:
-        success = _dispatch->CursorNextLine(parameters.at(0));
-        TermTelemetry::Instance().Log(TermTelemetry::Codes::CNL);
+        _dispatch->CursorNextLine(parameters.at(0));
         break;
     case CsiActionCodes::CPL_CursorPrevLine:
-        success = _dispatch->CursorPrevLine(parameters.at(0));
-        TermTelemetry::Instance().Log(TermTelemetry::Codes::CPL);
+        _dispatch->CursorPrevLine(parameters.at(0));
         break;
     case CsiActionCodes::CHA_CursorHorizontalAbsolute:
     case CsiActionCodes::HPA_HorizontalPositionAbsolute:
-        success = _dispatch->CursorHorizontalPositionAbsolute(parameters.at(0));
-        TermTelemetry::Instance().Log(TermTelemetry::Codes::CHA);
+        _dispatch->CursorHorizontalPositionAbsolute(parameters.at(0));
         break;
     case CsiActionCodes::VPA_VerticalLinePositionAbsolute:
-        success = _dispatch->VerticalLinePositionAbsolute(parameters.at(0));
-        TermTelemetry::Instance().Log(TermTelemetry::Codes::VPA);
+        _dispatch->VerticalLinePositionAbsolute(parameters.at(0));
         break;
     case CsiActionCodes::HPR_HorizontalPositionRelative:
-        success = _dispatch->HorizontalPositionRelative(parameters.at(0));
-        TermTelemetry::Instance().Log(TermTelemetry::Codes::HPR);
+        _dispatch->HorizontalPositionRelative(parameters.at(0));
         break;
     case CsiActionCodes::VPR_VerticalPositionRelative:
-        success = _dispatch->VerticalPositionRelative(parameters.at(0));
-        TermTelemetry::Instance().Log(TermTelemetry::Codes::VPR);
+        _dispatch->VerticalPositionRelative(parameters.at(0));
         break;
     case CsiActionCodes::CUP_CursorPosition:
     case CsiActionCodes::HVP_HorizontalVerticalPosition:
-        success = _dispatch->CursorPosition(parameters.at(0), parameters.at(1));
-        TermTelemetry::Instance().Log(TermTelemetry::Codes::CUP);
+        _dispatch->CursorPosition(parameters.at(0), parameters.at(1));
         break;
-    case CsiActionCodes::DECSTBM_SetScrollingRegion:
-        success = _dispatch->SetTopBottomScrollingMargins(parameters.at(0).value_or(0), parameters.at(1).value_or(0));
-        TermTelemetry::Instance().Log(TermTelemetry::Codes::DECSTBM);
+    case CsiActionCodes::DECSTBM_SetTopBottomMargins:
+        _dispatch->SetTopBottomScrollingMargins(parameters.at(0).value_or(0), parameters.at(1).value_or(0));
+        break;
+    case CsiActionCodes::DECSLRM_SetLeftRightMargins:
+        // Note that this can also be ANSISYSSC, depending on the state of DECLRMM.
+        _dispatch->SetLeftRightScrollingMargins(parameters.at(0).value_or(0), parameters.at(1).value_or(0));
         break;
     case CsiActionCodes::ICH_InsertCharacter:
-        success = _dispatch->InsertCharacter(parameters.at(0));
-        TermTelemetry::Instance().Log(TermTelemetry::Codes::ICH);
+        _dispatch->InsertCharacter(parameters.at(0));
         break;
     case CsiActionCodes::DCH_DeleteCharacter:
-        success = _dispatch->DeleteCharacter(parameters.at(0));
-        TermTelemetry::Instance().Log(TermTelemetry::Codes::DCH);
+        _dispatch->DeleteCharacter(parameters.at(0));
         break;
     case CsiActionCodes::ED_EraseDisplay:
-        success = parameters.for_each([&](const auto eraseType) {
-            return _dispatch->EraseInDisplay(eraseType);
+        parameters.for_each([&](const auto eraseType) {
+            _dispatch->EraseInDisplay(eraseType);
         });
-        TermTelemetry::Instance().Log(TermTelemetry::Codes::ED);
         break;
     case CsiActionCodes::DECSED_SelectiveEraseDisplay:
-        success = parameters.for_each([&](const auto eraseType) {
-            return _dispatch->SelectiveEraseInDisplay(eraseType);
+        parameters.for_each([&](const auto eraseType) {
+            _dispatch->SelectiveEraseInDisplay(eraseType);
         });
-        TermTelemetry::Instance().Log(TermTelemetry::Codes::DECSED);
         break;
     case CsiActionCodes::EL_EraseLine:
-        success = parameters.for_each([&](const auto eraseType) {
-            return _dispatch->EraseInLine(eraseType);
+        parameters.for_each([&](const auto eraseType) {
+            _dispatch->EraseInLine(eraseType);
         });
-        TermTelemetry::Instance().Log(TermTelemetry::Codes::EL);
         break;
     case CsiActionCodes::DECSEL_SelectiveEraseLine:
-        success = parameters.for_each([&](const auto eraseType) {
-            return _dispatch->SelectiveEraseInLine(eraseType);
+        parameters.for_each([&](const auto eraseType) {
+            _dispatch->SelectiveEraseInLine(eraseType);
         });
-        TermTelemetry::Instance().Log(TermTelemetry::Codes::DECSEL);
         break;
     case CsiActionCodes::SM_SetMode:
-        success = parameters.for_each([&](const auto mode) {
-            return _dispatch->SetMode(DispatchTypes::ANSIStandardMode(mode));
+        parameters.for_each([&](const auto mode) {
+            _dispatch->SetMode(DispatchTypes::ANSIStandardMode(mode));
         });
-        TermTelemetry::Instance().Log(TermTelemetry::Codes::SM);
         break;
     case CsiActionCodes::DECSET_PrivateModeSet:
-        success = parameters.for_each([&](const auto mode) {
-            return _dispatch->SetMode(DispatchTypes::DECPrivateMode(mode));
+        parameters.for_each([&](const auto mode) {
+            _dispatch->SetMode(DispatchTypes::DECPrivateMode(mode));
         });
-        //TODO: MSFT:6367459 Add specific logging for each of the DECSET/DECRST codes
-        TermTelemetry::Instance().Log(TermTelemetry::Codes::DECSET);
         break;
     case CsiActionCodes::RM_ResetMode:
-        success = parameters.for_each([&](const auto mode) {
-            return _dispatch->ResetMode(DispatchTypes::ANSIStandardMode(mode));
+        parameters.for_each([&](const auto mode) {
+            _dispatch->ResetMode(DispatchTypes::ANSIStandardMode(mode));
         });
-        TermTelemetry::Instance().Log(TermTelemetry::Codes::RM);
         break;
     case CsiActionCodes::DECRST_PrivateModeReset:
-        success = parameters.for_each([&](const auto mode) {
-            return _dispatch->ResetMode(DispatchTypes::DECPrivateMode(mode));
+        parameters.for_each([&](const auto mode) {
+            _dispatch->ResetMode(DispatchTypes::DECPrivateMode(mode));
         });
-        TermTelemetry::Instance().Log(TermTelemetry::Codes::DECRST);
         break;
     case CsiActionCodes::SGR_SetGraphicsRendition:
-        success = _dispatch->SetGraphicsRendition(parameters);
-        TermTelemetry::Instance().Log(TermTelemetry::Codes::SGR);
+        _dispatch->SetGraphicsRendition(parameters);
         break;
     case CsiActionCodes::DSR_DeviceStatusReport:
-        success = _dispatch->DeviceStatusReport(DispatchTypes::ANSIStandardStatus(parameters.at(0)), parameters.at(1));
-        TermTelemetry::Instance().Log(TermTelemetry::Codes::DSR);
+        _dispatch->DeviceStatusReport(DispatchTypes::ANSIStandardStatus(parameters.at(0)), parameters.at(1));
         break;
     case CsiActionCodes::DSR_PrivateDeviceStatusReport:
-        success = _dispatch->DeviceStatusReport(DispatchTypes::DECPrivateStatus(parameters.at(0)), parameters.at(1));
-        TermTelemetry::Instance().Log(TermTelemetry::Codes::DSR);
+        _dispatch->DeviceStatusReport(DispatchTypes::DECPrivateStatus(parameters.at(0)), parameters.at(1));
         break;
     case CsiActionCodes::DA_DeviceAttributes:
-        success = parameters.at(0).value_or(0) == 0 && _dispatch->DeviceAttributes();
-        TermTelemetry::Instance().Log(TermTelemetry::Codes::DA);
+        if (parameters.at(0).value_or(0) == 0)
+        {
+            _dispatch->DeviceAttributes();
+        }
         break;
     case CsiActionCodes::DA2_SecondaryDeviceAttributes:
-        success = parameters.at(0).value_or(0) == 0 && _dispatch->SecondaryDeviceAttributes();
-        TermTelemetry::Instance().Log(TermTelemetry::Codes::DA2);
+        if (parameters.at(0).value_or(0) == 0)
+        {
+            _dispatch->SecondaryDeviceAttributes();
+        }
         break;
     case CsiActionCodes::DA3_TertiaryDeviceAttributes:
-        success = parameters.at(0).value_or(0) == 0 && _dispatch->TertiaryDeviceAttributes();
-        TermTelemetry::Instance().Log(TermTelemetry::Codes::DA3);
+        if (parameters.at(0).value_or(0) == 0)
+        {
+            _dispatch->TertiaryDeviceAttributes();
+        }
         break;
     case CsiActionCodes::DECREQTPARM_RequestTerminalParameters:
-        success = _dispatch->RequestTerminalParameters(parameters.at(0));
-        TermTelemetry::Instance().Log(TermTelemetry::Codes::DECREQTPARM);
+        _dispatch->RequestTerminalParameters(parameters.at(0));
         break;
     case CsiActionCodes::SU_ScrollUp:
-        success = _dispatch->ScrollUp(parameters.at(0));
-        TermTelemetry::Instance().Log(TermTelemetry::Codes::SU);
+        _dispatch->ScrollUp(parameters.at(0));
         break;
     case CsiActionCodes::SD_ScrollDown:
-        success = _dispatch->ScrollDown(parameters.at(0));
-        TermTelemetry::Instance().Log(TermTelemetry::Codes::SD);
+        _dispatch->ScrollDown(parameters.at(0));
         break;
-    case CsiActionCodes::ANSISYSSC_CursorSave:
-        success = parameters.empty() && _dispatch->CursorSaveState();
-        TermTelemetry::Instance().Log(TermTelemetry::Codes::ANSISYSSC);
+    case CsiActionCodes::NP_NextPage:
+        _dispatch->NextPage(parameters.at(0));
+        break;
+    case CsiActionCodes::PP_PrecedingPage:
+        _dispatch->PrecedingPage(parameters.at(0));
         break;
     case CsiActionCodes::ANSISYSRC_CursorRestore:
-        success = parameters.empty() && _dispatch->CursorRestoreState();
-        TermTelemetry::Instance().Log(TermTelemetry::Codes::ANSISYSRC);
+        _dispatch->CursorRestoreState();
         break;
     case CsiActionCodes::IL_InsertLine:
-        success = _dispatch->InsertLine(parameters.at(0));
-        TermTelemetry::Instance().Log(TermTelemetry::Codes::IL);
+        _dispatch->InsertLine(parameters.at(0));
         break;
     case CsiActionCodes::DL_DeleteLine:
-        success = _dispatch->DeleteLine(parameters.at(0));
-        TermTelemetry::Instance().Log(TermTelemetry::Codes::DL);
+        _dispatch->DeleteLine(parameters.at(0));
         break;
     case CsiActionCodes::CHT_CursorForwardTab:
-        success = _dispatch->ForwardTab(parameters.at(0));
-        TermTelemetry::Instance().Log(TermTelemetry::Codes::CHT);
+        _dispatch->ForwardTab(parameters.at(0));
         break;
     case CsiActionCodes::CBT_CursorBackTab:
-        success = _dispatch->BackwardsTab(parameters.at(0));
-        TermTelemetry::Instance().Log(TermTelemetry::Codes::CBT);
+        _dispatch->BackwardsTab(parameters.at(0));
         break;
     case CsiActionCodes::TBC_TabClear:
-        success = parameters.for_each([&](const auto clearType) {
-            return _dispatch->TabClear(clearType);
+        parameters.for_each([&](const auto clearType) {
+            _dispatch->TabClear(clearType);
         });
-        TermTelemetry::Instance().Log(TermTelemetry::Codes::TBC);
+        break;
+    case CsiActionCodes::DECST8C_SetTabEvery8Columns:
+        parameters.for_each([&](const auto setType) {
+            _dispatch->TabSet(setType);
+        });
         break;
     case CsiActionCodes::ECH_EraseCharacters:
-        success = _dispatch->EraseCharacters(parameters.at(0));
-        TermTelemetry::Instance().Log(TermTelemetry::Codes::ECH);
+        _dispatch->EraseCharacters(parameters.at(0));
         break;
     case CsiActionCodes::DTTERM_WindowManipulation:
-        success = _dispatch->WindowManipulation(parameters.at(0), parameters.at(1), parameters.at(2));
-        TermTelemetry::Instance().Log(TermTelemetry::Codes::DTTERM_WM);
+        _dispatch->WindowManipulation(parameters.at(0), parameters.at(1), parameters.at(2));
         break;
     case CsiActionCodes::REP_RepeatCharacter:
         // Handled w/o the dispatch. This function is unique in that way
@@ -623,103 +580,97 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParamete
             std::wstring wstr(repeatCount, _lastPrintedChar);
             _dispatch->PrintString(wstr);
         }
-        success = true;
-        TermTelemetry::Instance().Log(TermTelemetry::Codes::REP);
+        break;
+    case CsiActionCodes::PPA_PagePositionAbsolute:
+        _dispatch->PagePositionAbsolute(parameters.at(0));
+        break;
+    case CsiActionCodes::PPR_PagePositionRelative:
+        _dispatch->PagePositionRelative(parameters.at(0));
+        break;
+    case CsiActionCodes::PPB_PagePositionBack:
+        _dispatch->PagePositionBack(parameters.at(0));
         break;
     case CsiActionCodes::DECSCUSR_SetCursorStyle:
-        success = _dispatch->SetCursorStyle(parameters.at(0));
-        TermTelemetry::Instance().Log(TermTelemetry::Codes::DECSCUSR);
+        _dispatch->SetCursorStyle(parameters.at(0));
         break;
     case CsiActionCodes::DECSTR_SoftReset:
-        success = _dispatch->SoftReset();
-        TermTelemetry::Instance().Log(TermTelemetry::Codes::DECSTR);
+        _dispatch->SoftReset();
         break;
     case CsiActionCodes::DECSCA_SetCharacterProtectionAttribute:
-        success = _dispatch->SetCharacterProtectionAttribute(parameters);
-        TermTelemetry::Instance().Log(TermTelemetry::Codes::DECSCA);
+        _dispatch->SetCharacterProtectionAttribute(parameters);
+        break;
+    case CsiActionCodes::DECRQDE_RequestDisplayedExtent:
+        _dispatch->RequestDisplayedExtent();
         break;
     case CsiActionCodes::XT_PushSgr:
     case CsiActionCodes::XT_PushSgrAlias:
-        success = _dispatch->PushGraphicsRendition(parameters);
-        TermTelemetry::Instance().Log(TermTelemetry::Codes::XTPUSHSGR);
+        _dispatch->PushGraphicsRendition(parameters);
         break;
     case CsiActionCodes::XT_PopSgr:
     case CsiActionCodes::XT_PopSgrAlias:
-        success = _dispatch->PopGraphicsRendition();
-        TermTelemetry::Instance().Log(TermTelemetry::Codes::XTPOPSGR);
+        _dispatch->PopGraphicsRendition();
         break;
     case CsiActionCodes::DECRQM_RequestMode:
-        success = _dispatch->RequestMode(DispatchTypes::ANSIStandardMode(parameters.at(0)));
-        TermTelemetry::Instance().Log(TermTelemetry::Codes::DECRQM);
+        _dispatch->RequestMode(DispatchTypes::ANSIStandardMode(parameters.at(0)));
         break;
     case CsiActionCodes::DECRQM_PrivateRequestMode:
-        success = _dispatch->RequestMode(DispatchTypes::DECPrivateMode(parameters.at(0)));
-        TermTelemetry::Instance().Log(TermTelemetry::Codes::DECRQM);
+        _dispatch->RequestMode(DispatchTypes::DECPrivateMode(parameters.at(0)));
         break;
     case CsiActionCodes::DECCARA_ChangeAttributesRectangularArea:
-        success = _dispatch->ChangeAttributesRectangularArea(parameters.at(0), parameters.at(1), parameters.at(2).value_or(0), parameters.at(3).value_or(0), parameters.subspan(4));
-        TermTelemetry::Instance().Log(TermTelemetry::Codes::DECCARA);
+        _dispatch->ChangeAttributesRectangularArea(parameters.at(0), parameters.at(1), parameters.at(2).value_or(0), parameters.at(3).value_or(0), parameters.subspan(4));
         break;
     case CsiActionCodes::DECRARA_ReverseAttributesRectangularArea:
-        success = _dispatch->ReverseAttributesRectangularArea(parameters.at(0), parameters.at(1), parameters.at(2).value_or(0), parameters.at(3).value_or(0), parameters.subspan(4));
-        TermTelemetry::Instance().Log(TermTelemetry::Codes::DECRARA);
+        _dispatch->ReverseAttributesRectangularArea(parameters.at(0), parameters.at(1), parameters.at(2).value_or(0), parameters.at(3).value_or(0), parameters.subspan(4));
         break;
     case CsiActionCodes::DECCRA_CopyRectangularArea:
-        success = _dispatch->CopyRectangularArea(parameters.at(0), parameters.at(1), parameters.at(2).value_or(0), parameters.at(3).value_or(0), parameters.at(4), parameters.at(5), parameters.at(6), parameters.at(7));
-        TermTelemetry::Instance().Log(TermTelemetry::Codes::DECCRA);
+        _dispatch->CopyRectangularArea(parameters.at(0), parameters.at(1), parameters.at(2).value_or(0), parameters.at(3).value_or(0), parameters.at(4), parameters.at(5), parameters.at(6), parameters.at(7));
+        break;
+    case CsiActionCodes::DECRQTSR_RequestTerminalStateReport:
+        _dispatch->RequestTerminalStateReport(parameters.at(0), parameters.at(1));
         break;
     case CsiActionCodes::DECRQPSR_RequestPresentationStateReport:
-        success = _dispatch->RequestPresentationStateReport(parameters.at(0));
-        TermTelemetry::Instance().Log(TermTelemetry::Codes::DECRQPSR);
+        _dispatch->RequestPresentationStateReport(parameters.at(0));
         break;
     case CsiActionCodes::DECFRA_FillRectangularArea:
-        success = _dispatch->FillRectangularArea(parameters.at(0), parameters.at(1), parameters.at(2), parameters.at(3).value_or(0), parameters.at(4).value_or(0));
-        TermTelemetry::Instance().Log(TermTelemetry::Codes::DECFRA);
+        _dispatch->FillRectangularArea(parameters.at(0), parameters.at(1), parameters.at(2), parameters.at(3).value_or(0), parameters.at(4).value_or(0));
         break;
     case CsiActionCodes::DECERA_EraseRectangularArea:
-        success = _dispatch->EraseRectangularArea(parameters.at(0), parameters.at(1), parameters.at(2).value_or(0), parameters.at(3).value_or(0));
-        TermTelemetry::Instance().Log(TermTelemetry::Codes::DECERA);
+        _dispatch->EraseRectangularArea(parameters.at(0), parameters.at(1), parameters.at(2).value_or(0), parameters.at(3).value_or(0));
         break;
     case CsiActionCodes::DECSERA_SelectiveEraseRectangularArea:
-        success = _dispatch->SelectiveEraseRectangularArea(parameters.at(0), parameters.at(1), parameters.at(2).value_or(0), parameters.at(3).value_or(0));
-        TermTelemetry::Instance().Log(TermTelemetry::Codes::DECSERA);
+        _dispatch->SelectiveEraseRectangularArea(parameters.at(0), parameters.at(1), parameters.at(2).value_or(0), parameters.at(3).value_or(0));
+        break;
+    case CsiActionCodes::DECRQUPSS_RequestUserPreferenceSupplementalSet:
+        _dispatch->RequestUserPreferenceCharset();
+        break;
+    case CsiActionCodes::DECIC_InsertColumn:
+        _dispatch->InsertColumn(parameters.at(0));
+        break;
+    case CsiActionCodes::DECDC_DeleteColumn:
+        _dispatch->DeleteColumn(parameters.at(0));
         break;
     case CsiActionCodes::DECSACE_SelectAttributeChangeExtent:
-        success = _dispatch->SelectAttributeChangeExtent(parameters.at(0));
-        TermTelemetry::Instance().Log(TermTelemetry::Codes::DECSACE);
+        _dispatch->SelectAttributeChangeExtent(parameters.at(0));
         break;
     case CsiActionCodes::DECRQCRA_RequestChecksumRectangularArea:
-        success = _dispatch->RequestChecksumRectangularArea(parameters.at(0).value_or(0), parameters.at(1).value_or(0), parameters.at(2), parameters.at(3), parameters.at(4).value_or(0), parameters.at(5).value_or(0));
-        TermTelemetry::Instance().Log(TermTelemetry::Codes::DECRQCRA);
+        _dispatch->RequestChecksumRectangularArea(parameters.at(0).value_or(0), parameters.at(1).value_or(0), parameters.at(2), parameters.at(3), parameters.at(4).value_or(0), parameters.at(5).value_or(0));
         break;
     case CsiActionCodes::DECINVM_InvokeMacro:
-        success = _dispatch->InvokeMacro(parameters.at(0).value_or(0));
-        TermTelemetry::Instance().Log(TermTelemetry::Codes::DECINVM);
+        _dispatch->InvokeMacro(parameters.at(0).value_or(0));
         break;
     case CsiActionCodes::DECAC_AssignColor:
-        success = _dispatch->AssignColor(parameters.at(0), parameters.at(1).value_or(0), parameters.at(2).value_or(0));
-        TermTelemetry::Instance().Log(TermTelemetry::Codes::DECAC);
+        _dispatch->AssignColor(parameters.at(0), parameters.at(1).value_or(0), parameters.at(2).value_or(0));
         break;
     case CsiActionCodes::DECPS_PlaySound:
-        success = _dispatch->PlaySounds(parameters);
-        TermTelemetry::Instance().Log(TermTelemetry::Codes::DECPS);
+        _dispatch->PlaySounds(parameters);
         break;
     default:
-        // If no functions to call, overall dispatch was a failure.
-        success = false;
         break;
-    }
-
-    // If we were unable to process the string, and there's a TTY attached to us,
-    //      trigger the state machine to flush the string to the terminal.
-    if (_pfnFlushToTerminal != nullptr && !success)
-    {
-        success = _pfnFlushToTerminal();
     }
 
     _ClearLastChar();
 
-    return success;
+    return true;
 }
 
 // Routine Description:
@@ -737,6 +688,11 @@ IStateMachineEngine::StringHandler OutputStateMachineEngine::ActionDcsDispatch(c
 
     switch (id)
     {
+    case DcsActionCodes::SIXEL_DefineImage:
+        handler = _dispatch->DefineSixelImage(parameters.at(0),
+                                              parameters.at(1),
+                                              parameters.at(2));
+        break;
     case DcsActionCodes::DECDLD_DownloadDRCS:
         handler = _dispatch->DownloadDRCS(parameters.at(0),
                                           parameters.at(1),
@@ -746,6 +702,9 @@ IStateMachineEngine::StringHandler OutputStateMachineEngine::ActionDcsDispatch(c
                                           parameters.at(5),
                                           parameters.at(6),
                                           parameters.at(7));
+        break;
+    case DcsActionCodes::DECAUPSS_AssignUserPreferenceSupplementalSet:
+        handler = _dispatch->AssignUserPreferenceCharset(parameters.at(0));
         break;
     case DcsActionCodes::DECDMAC_DefineMacro:
         handler = _dispatch->DefineMacro(parameters.at(0).value_or(0), parameters.at(1), parameters.at(2));
@@ -770,117 +729,67 @@ IStateMachineEngine::StringHandler OutputStateMachineEngine::ActionDcsDispatch(c
 }
 
 // Routine Description:
-// - Triggers the Clear action to indicate that the state machine should erase
-//      all internal state.
-// Arguments:
-// - <none>
-// Return Value:
-// - <none>
-bool OutputStateMachineEngine::ActionClear() noexcept
-{
-    // do nothing.
-    return true;
-}
-
-// Routine Description:
-// - Triggers the Ignore action to indicate that the state machine should eat
-//      this character and say nothing.
-// Arguments:
-// - <none>
-// Return Value:
-// - <none>
-bool OutputStateMachineEngine::ActionIgnore() noexcept
-{
-    // do nothing.
-    return true;
-}
-
-// Routine Description:
 // - Triggers the OscDispatch action to indicate that the listener should handle a control sequence.
 //   These sequences perform various API-type commands that can include many parameters.
 // Arguments:
-// - wch - Character to dispatch. This will be a BEL or ST char.
 // - parameter - identifier of the OSC action to perform
 // - string - OSC string we've collected. NOT null terminated.
 // Return Value:
 // - true if we handled the dispatch.
-bool OutputStateMachineEngine::ActionOscDispatch(const wchar_t /*wch*/,
-                                                 const size_t parameter,
-                                                 const std::wstring_view string)
+bool OutputStateMachineEngine::ActionOscDispatch(const size_t parameter, const std::wstring_view string)
 {
-    auto success = false;
-
     switch (parameter)
     {
     case OscActionCodes::SetIconAndWindowTitle:
     case OscActionCodes::SetWindowIcon:
     case OscActionCodes::SetWindowTitle:
+    case OscActionCodes::DECSWT_SetWindowTitle:
     {
-        std::wstring title;
-        success = _GetOscTitle(string, title);
-        success = success && _dispatch->SetWindowTitle(title);
-        TermTelemetry::Instance().Log(TermTelemetry::Codes::OSCWT);
+        _dispatch->SetWindowTitle(string);
         break;
     }
     case OscActionCodes::SetColor:
     {
         std::vector<size_t> tableIndexes;
         std::vector<DWORD> colors;
-        success = _GetOscSetColorTable(string, tableIndexes, colors);
-        for (size_t i = 0; i < tableIndexes.size(); i++)
+        if (_GetOscSetColorTable(string, tableIndexes, colors))
         {
-            const auto tableIndex = til::at(tableIndexes, i);
-            const auto rgb = til::at(colors, i);
-            success = success && _dispatch->SetColorTableEntry(tableIndex, rgb);
+            for (size_t i = 0; i < tableIndexes.size(); i++)
+            {
+                const auto tableIndex = til::at(tableIndexes, i);
+                const auto rgb = til::at(colors, i);
+                if (rgb == COLOR_INQUIRY_COLOR)
+                {
+                    _dispatch->RequestColorTableEntry(tableIndex);
+                }
+                else
+                {
+                    _dispatch->SetColorTableEntry(tableIndex, rgb);
+                }
+            }
         }
-        TermTelemetry::Instance().Log(TermTelemetry::Codes::OSCCT);
         break;
     }
     case OscActionCodes::SetForegroundColor:
     case OscActionCodes::SetBackgroundColor:
     case OscActionCodes::SetCursorColor:
+    case OscActionCodes::SetHighlightColor:
     {
         std::vector<DWORD> colors;
-        success = _GetOscSetColor(string, colors);
-        if (success)
+        if (_GetOscSetColor(string, colors))
         {
-            auto commandIndex = parameter;
-            size_t colorIndex = 0;
-
-            if (commandIndex == OscActionCodes::SetForegroundColor && colors.size() > colorIndex)
+            auto resource = parameter;
+            for (auto&& color : colors)
             {
-                const auto color = til::at(colors, colorIndex);
-                if (color != INVALID_COLOR)
+                if (color == COLOR_INQUIRY_COLOR)
                 {
-                    success = success && _dispatch->SetDefaultForeground(color);
+                    _dispatch->RequestXtermColorResource(resource);
                 }
-                TermTelemetry::Instance().Log(TermTelemetry::Codes::OSCFG);
-                commandIndex++;
-                colorIndex++;
-            }
-
-            if (commandIndex == OscActionCodes::SetBackgroundColor && colors.size() > colorIndex)
-            {
-                const auto color = til::at(colors, colorIndex);
-                if (color != INVALID_COLOR)
+                else if (color != INVALID_COLOR)
                 {
-                    success = success && _dispatch->SetDefaultBackground(color);
+                    _dispatch->SetXtermColorResource(resource, color);
                 }
-                TermTelemetry::Instance().Log(TermTelemetry::Codes::OSCBG);
-                commandIndex++;
-                colorIndex++;
-            }
-
-            if (commandIndex == OscActionCodes::SetCursorColor && colors.size() > colorIndex)
-            {
-                const auto color = til::at(colors, colorIndex);
-                if (color != INVALID_COLOR)
-                {
-                    success = success && _dispatch->SetCursorColor(color);
-                }
-                TermTelemetry::Instance().Log(TermTelemetry::Codes::OSCSCC);
-                commandIndex++;
-                colorIndex++;
+                resource++;
             }
         }
         break;
@@ -889,66 +798,67 @@ bool OutputStateMachineEngine::ActionOscDispatch(const wchar_t /*wch*/,
     {
         std::wstring setClipboardContent;
         auto queryClipboard = false;
-        success = _GetOscSetClipboard(string, setClipboardContent, queryClipboard);
-        if (success && !queryClipboard)
+        if (_GetOscSetClipboard(string, setClipboardContent, queryClipboard) && !queryClipboard)
         {
-            success = _dispatch->SetClipboard(setClipboardContent);
+            _dispatch->SetClipboard(setClipboardContent);
         }
-        TermTelemetry::Instance().Log(TermTelemetry::Codes::OSCSCB);
         break;
     }
     case OscActionCodes::ResetCursorColor:
     {
-        success = _dispatch->SetCursorColor(INVALID_COLOR);
-        TermTelemetry::Instance().Log(TermTelemetry::Codes::OSCRCC);
+        // The reset codes for xterm dynamic resources are the set codes + 100
+        _dispatch->SetXtermColorResource(parameter - 100u, INVALID_COLOR);
         break;
     }
     case OscActionCodes::Hyperlink:
     {
         std::wstring params;
         std::wstring uri;
-        success = _ParseHyperlink(string, params, uri);
-        if (uri.empty())
+        if (_ParseHyperlink(string, params, uri))
         {
-            success = success && _dispatch->EndHyperlink();
-        }
-        else
-        {
-            success = success && _dispatch->AddHyperlink(uri, params);
+            if (uri.empty())
+            {
+                _dispatch->EndHyperlink();
+            }
+            else
+            {
+                _dispatch->AddHyperlink(uri, params);
+            }
         }
         break;
     }
     case OscActionCodes::ConEmuAction:
     {
-        success = _dispatch->DoConEmuAction(string);
+        _dispatch->DoConEmuAction(string);
         break;
     }
     case OscActionCodes::ITerm2Action:
     {
-        success = _dispatch->DoITerm2Action(string);
+        _dispatch->DoITerm2Action(string);
         break;
     }
     case OscActionCodes::FinalTermAction:
     {
-        success = _dispatch->DoFinalTermAction(string);
+        _dispatch->DoFinalTermAction(string);
+        break;
+    }
+    case OscActionCodes::VsCodeAction:
+    {
+        _dispatch->DoVsCodeAction(string);
+        break;
+    }
+    case OscActionCodes::WTAction:
+    {
+        _dispatch->DoWTAction(string);
         break;
     }
     default:
-        // If no functions to call, overall dispatch was a failure.
-        success = false;
         break;
-    }
-
-    // If we were unable to process the string, and there's a TTY attached to us,
-    //      trigger the state machine to flush the string to the terminal.
-    if (_pfnFlushToTerminal != nullptr && !success)
-    {
-        success = _pfnFlushToTerminal();
     }
 
     _ClearLastChar();
 
-    return success;
+    return true;
 }
 
 // Routine Description:
@@ -964,22 +874,7 @@ bool OutputStateMachineEngine::ActionSs3Dispatch(const wchar_t /*wch*/, const VT
 {
     // The output engine doesn't handle any SS3 sequences.
     _ClearLastChar();
-    return false;
-}
-
-// Routine Description:
-// - Null terminates, then returns, the string that we've collected as part of the OSC string.
-// Arguments:
-// - string - Osc String input
-// - title - Where to place the Osc String to use as a title.
-// Return Value:
-// - True if there was a title to output. (a title with length=0 is still valid)
-bool OutputStateMachineEngine::_GetOscTitle(const std::wstring_view string,
-                                            std::wstring& title) const
-{
-    title = string;
-
-    return !string.empty();
+    return true;
 }
 
 // Routine Description:
@@ -999,6 +894,8 @@ bool OutputStateMachineEngine::_GetOscSetColorTable(const std::wstring_view stri
                                                     std::vector<size_t>& tableIndexes,
                                                     std::vector<DWORD>& rgbs) const
 {
+    using namespace std::string_view_literals;
+
     const auto parts = Utils::SplitString(string, L';');
     if (parts.size() < 2)
     {
@@ -1010,13 +907,23 @@ bool OutputStateMachineEngine::_GetOscSetColorTable(const std::wstring_view stri
 
     for (size_t i = 0, j = 1; j < parts.size(); i += 2, j += 2)
     {
+        auto&& index = til::at(parts, i);
+        auto&& color = til::at(parts, j);
         unsigned int tableIndex = 0;
-        const auto indexSuccess = Utils::StringToUint(til::at(parts, i), tableIndex);
-        const auto colorOptional = Utils::ColorFromXTermColor(til::at(parts, j));
-        if (indexSuccess && colorOptional.has_value())
+        const auto indexSuccess = Utils::StringToUint(index, tableIndex);
+
+        if (indexSuccess)
         {
-            newTableIndexes.push_back(tableIndex);
-            newRgbs.push_back(colorOptional.value());
+            if (color == L"?"sv) [[unlikely]]
+            {
+                newTableIndexes.push_back(tableIndex);
+                newRgbs.push_back(COLOR_INQUIRY_COLOR);
+            }
+            else if (const auto colorOptional = Utils::ColorFromXTermColor(color))
+            {
+                newTableIndexes.push_back(tableIndex);
+                newRgbs.push_back(colorOptional.value());
+            }
         }
     }
 
@@ -1093,6 +1000,8 @@ bool OutputStateMachineEngine::_ParseHyperlink(const std::wstring_view string,
 bool OutputStateMachineEngine::_GetOscSetColor(const std::wstring_view string,
                                                std::vector<DWORD>& rgbs) const
 {
+    using namespace std::string_view_literals;
+
     const auto parts = Utils::SplitString(string, L';');
     if (parts.size() < 1)
     {
@@ -1100,10 +1009,14 @@ bool OutputStateMachineEngine::_GetOscSetColor(const std::wstring_view string,
     }
 
     std::vector<DWORD> newRgbs;
-    for (size_t i = 0; i < parts.size(); i++)
+    for (auto&& part : parts)
     {
-        const auto colorOptional = Utils::ColorFromXTermColor(til::at(parts, i));
-        if (colorOptional.has_value())
+        if (part == L"?"sv) [[unlikely]]
+        {
+            newRgbs.push_back(COLOR_INQUIRY_COLOR);
+            continue;
+        }
+        else if (const auto colorOptional = Utils::ColorFromXTermColor(part))
         {
             newRgbs.push_back(colorOptional.value());
         }
@@ -1116,26 +1029,6 @@ bool OutputStateMachineEngine::_GetOscSetColor(const std::wstring_view string,
     rgbs.swap(newRgbs);
 
     return rgbs.size() > 0;
-}
-
-// Method Description:
-// - Sets us up to have another terminal acting as the tty instead of conhost.
-//      We'll set a couple members, and if they aren't null, when we get a
-//      sequence we don't understand, we'll pass it along to the terminal
-//      instead of eating it ourselves.
-// Arguments:
-// - pTtyConnection: This is a TerminalOutputConnection that we can write the
-//      sequence we didn't understand to.
-// - pfnFlushToTerminal: This is a callback to the underlying state machine to
-//      trigger it to call ActionPassThroughString with whatever sequence it's
-//      currently processing.
-// Return Value:
-// - <none>
-void OutputStateMachineEngine::SetTerminalConnection(Render::VtEngine* const pTtyConnection,
-                                                     std::function<bool()> pfnFlushToTerminal)
-{
-    this->_pTtyConnection = pTtyConnection;
-    this->_pfnFlushToTerminal = pfnFlushToTerminal;
 }
 
 // Routine Description:
@@ -1167,6 +1060,26 @@ bool OutputStateMachineEngine::_GetOscSetClipboard(const std::wstring_view strin
 // Log_IfFailed has the following description: "Should be decorated WI_NOEXCEPT, but conflicts with forceinline."
 #pragma warning(suppress : 26447) // The function is declared 'noexcept' but calls function 'Log_IfFailed()' which may throw exceptions (f.6).
     return SUCCEEDED_LOG(Base64::Decode(substr, content));
+}
+
+// Routine Description:
+// - Takes a sequence id ("final byte") and determines if it accepts sub parameters.
+// Arguments:
+// - id - The sequence id to check for.
+// Return Value:
+// - True, if it accepts sub parameters or else False.
+bool OutputStateMachineEngine::_CanSeqAcceptSubParam(const VTID id, const VTParameters& parameters) noexcept
+{
+    switch (id)
+    {
+    case SGR_SetGraphicsRendition:
+        return true;
+    case DECCARA_ChangeAttributesRectangularArea:
+    case DECRARA_ReverseAttributesRectangularArea:
+        return !parameters.hasSubParamsFor(0) && !parameters.hasSubParamsFor(1) && !parameters.hasSubParamsFor(2) && !parameters.hasSubParamsFor(3);
+    default:
+        return false;
+    }
 }
 
 // Method Description:

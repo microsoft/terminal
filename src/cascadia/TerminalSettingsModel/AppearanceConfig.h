@@ -31,6 +31,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         static winrt::com_ptr<AppearanceConfig> CopyAppearance(const AppearanceConfig* source, winrt::weak_ref<Profile> sourceProfile);
         Json::Value ToJson() const;
         void LayerJson(const Json::Value& json);
+        void LogSettingChanges(std::set<std::string>& changes, const std::string_view& context) const;
 
         Model::Profile SourceProfile();
 
@@ -40,7 +41,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         INHERITABLE_NULLABLE_SETTING(Model::IAppearanceConfig, Microsoft::Terminal::Core::Color, Background, nullptr);
         INHERITABLE_NULLABLE_SETTING(Model::IAppearanceConfig, Microsoft::Terminal::Core::Color, SelectionBackground, nullptr);
         INHERITABLE_NULLABLE_SETTING(Model::IAppearanceConfig, Microsoft::Terminal::Core::Color, CursorColor, nullptr);
-        INHERITABLE_SETTING(Model::IAppearanceConfig, double, Opacity, 1.0);
+        INHERITABLE_SETTING(Model::IAppearanceConfig, float, Opacity, 1.0f);
 
         INHERITABLE_SETTING(Model::IAppearanceConfig, hstring, DarkColorSchemeName, L"Campbell");
         INHERITABLE_SETTING(Model::IAppearanceConfig, hstring, LightColorSchemeName, L"Campbell");
@@ -52,5 +53,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     private:
         winrt::weak_ref<Profile> _sourceProfile;
+        std::set<std::string> _changeLog;
+
+        void _logSettingSet(const std::string_view& setting);
+        void _logSettingIfSet(const std::string_view& setting, const bool isSet);
     };
 }

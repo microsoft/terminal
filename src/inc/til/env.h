@@ -5,6 +5,7 @@
 
 #include <wil/token_helpers.h>
 #include <winternl.h>
+#include <til/string.h>
 
 #pragma warning(push)
 #pragma warning(disable : 26429) // Symbol '...' is never tested for nullness, it can be marked as not_null (f.23).
@@ -18,39 +19,24 @@ class EnvTests;
 
 namespace til // Terminal Implementation Library. Also: "Today I Learned"
 {
+    // A case-insensitive wide-character map is used to store environment variables
+    // due to documented requirements:
+    //
+    //      "All strings in the environment block must be sorted alphabetically by name.
+    //      The sort is case-insensitive, Unicode order, without regard to locale.
+    //      Because the equal sign is a separator, it must not be used in the name of
+    //      an environment variable."
+    //      https://docs.microsoft.com/en-us/windows/desktop/ProcThread/changing-environment-variables
+    struct env_key_sorter
+    {
+        [[nodiscard]] bool operator()(const std::wstring& lhs, const std::wstring& rhs) const noexcept
+        {
+            return compare_ordinal_insensitive(lhs, rhs) < 0;
+        }
+    };
+
     namespace details
     {
-
-        //
-        // A case-insensitive wide-character map is used to store environment variables
-        // due to documented requirements:
-        //
-        //      "All strings in the environment block must be sorted alphabetically by name.
-        //      The sort is case-insensitive, Unicode order, without regard to locale.
-        //      Because the equal sign is a separator, it must not be used in the name of
-        //      an environment variable."
-        //      https://docs.microsoft.com/en-us/windows/desktop/ProcThread/changing-environment-variables
-        //
-        // - Returns CSTR_LESS_THAN, CSTR_EQUAL or CSTR_GREATER_THAN
-        [[nodiscard]] inline int compare_string_ordinal(const std::wstring_view& lhs, const std::wstring_view& rhs) noexcept
-        {
-            const auto result = CompareStringOrdinal(
-                lhs.data(),
-                ::base::saturated_cast<int>(lhs.size()),
-                rhs.data(),
-                ::base::saturated_cast<int>(rhs.size()),
-                TRUE);
-            FAIL_FAST_LAST_ERROR_IF(!result);
-            return result;
-        }
-
-        struct wstring_case_insensitive_compare
-        {
-            [[nodiscard]] bool operator()(const std::wstring& lhs, const std::wstring& rhs) const noexcept
-            {
-                return compare_string_ordinal(lhs, rhs) == CSTR_LESS_THAN;
-            }
-        };
 
         namespace vars
         {
@@ -100,71 +86,11 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                 inline constexpr wil::zwstring_view system_env_var_root{ LR"(SYSTEM\CurrentControlSet\Control\Session Manager\Environment)" };
                 inline constexpr wil::zwstring_view user_env_var_root{ LR"(Environment)" };
                 inline constexpr wil::zwstring_view user_volatile_env_var_root{ LR"(Volatile Environment)" };
-                inline constexpr wil::zwstring_view user_volatile_session_env_var_root_pattern{ LR"(Volatile Environment\{0:d})" };
             };
         };
 
         namespace wil_env
         {
-            /** Looks up the computer name and fails if it is not found. */
-            template<typename string_type, size_t initialBufferLength = MAX_COMPUTERNAME_LENGTH + 1>
-            HRESULT GetComputerNameW(string_type& result) WI_NOEXCEPT
-            {
-                return wil::AdaptFixedSizeToAllocatedResult<string_type, initialBufferLength>(result, [&](_Out_writes_(valueLength) PWSTR value, size_t valueLength, _Out_ size_t* valueLengthNeededWithNul) -> HRESULT {
-                    // If the function succeeds, the return value is the number of characters stored in the buffer
-                    // pointed to by lpBuffer, not including the terminating null character.
-                    //
-                    // If lpBuffer is not large enough to hold the data, the return value is the buffer size, in
-                    // characters, required to hold the string and its terminating null character and the contents of
-                    // lpBuffer are undefined.
-                    //
-                    // If the function fails, the return value is zero. If the specified environment variable was not
-                    // found in the environment block, GetLastError returns ERROR_ENVVAR_NOT_FOUND.
-
-                    ::SetLastError(ERROR_SUCCESS);
-
-                    DWORD length = static_cast<DWORD>(valueLength);
-
-                    const auto result = ::GetComputerNameW(value, &length);
-                    *valueLengthNeededWithNul = length;
-                    RETURN_IF_WIN32_BOOL_FALSE_EXPECTED(result);
-                    if (*valueLengthNeededWithNul < valueLength)
-                    {
-                        (*valueLengthNeededWithNul)++; // It fit, account for the null.
-                    }
-                    return S_OK;
-                });
-            }
-
-            /** Looks up the computer name and returns null if it is not found. */
-            template<typename string_type, size_t initialBufferLength = MAX_COMPUTERNAME_LENGTH + 1>
-            HRESULT TryGetComputerNameW(string_type& result) WI_NOEXCEPT
-            {
-                const auto hr = wil_env::GetComputerNameW<string_type, initialBufferLength>(result);
-                RETURN_HR_IF(hr, FAILED(hr) && (hr != HRESULT_FROM_WIN32(ERROR_ENVVAR_NOT_FOUND)));
-                return S_OK;
-            }
-
-#ifdef WIL_ENABLE_EXCEPTIONS
-            /** Looks up the computer name and fails if it is not found. */
-            template<typename string_type = wil::unique_cotaskmem_string, size_t initialBufferLength = MAX_COMPUTERNAME_LENGTH + 1>
-            string_type GetComputerNameW()
-            {
-                string_type result;
-                THROW_IF_FAILED((wil_env::GetComputerNameW<string_type, initialBufferLength>(result)));
-                return result;
-            }
-
-            /** Looks up the computer name and returns null if it is not found. */
-            template<typename string_type = wil::unique_cotaskmem_string, size_t initialBufferLength = MAX_COMPUTERNAME_LENGTH + 1>
-            string_type TryGetComputerNameW()
-            {
-                string_type result;
-                THROW_IF_FAILED((wil_env::TryGetComputerNameW<string_type, initialBufferLength>(result)));
-                return result;
-            }
-#endif
-
             /** Looks up a registry value from 'key' and fails if it is not found. */
             template<typename string_type, size_t initialBufferLength = 256>
             HRESULT RegQueryValueExW(HKEY key, PCWSTR valueName, string_type& result) WI_NOEXCEPT
@@ -250,7 +176,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         friend class ::EnvTests;
 #endif
 
-        std::map<std::wstring, std::wstring, til::details::wstring_case_insensitive_compare> _envMap{};
+        std::map<std::wstring, std::wstring, til::env_key_sorter> _envMap{};
 
         // We make copies of the environment variable names to ensure they are null terminated.
         void get(wil::zwstring_view variable)
@@ -260,41 +186,6 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                 save_to_map(std::wstring{ variable }, std::move(value));
             }
         }
-
-        void get_computer_name()
-        {
-            if (auto value = til::details::wil_env::TryGetComputerNameW<std::wstring>(); !value.empty())
-            {
-                save_to_map(std::wstring{ til::details::vars::computer_name }, std::move(value));
-            }
-        }
-
-        void get_user_name_and_domain()
-        try
-        {
-            const auto token = wil::open_current_access_token();
-            const auto user = wil::get_token_information<TOKEN_USER>(token.get());
-
-            DWORD accountNameSize = 0, userDomainSize = 0;
-            SID_NAME_USE sidNameUse;
-            SetLastError(ERROR_SUCCESS);
-            if (LookupAccountSidW(nullptr, user.get()->User.Sid, nullptr, &accountNameSize, nullptr, &userDomainSize, &sidNameUse) || GetLastError() == ERROR_INSUFFICIENT_BUFFER)
-            {
-                std::wstring accountName, userDomain;
-                accountName.resize(accountNameSize);
-                userDomain.resize(userDomainSize);
-
-                SetLastError(ERROR_SUCCESS);
-                if (LookupAccountSidW(nullptr, user.get()->User.Sid, accountName.data(), &accountNameSize, userDomain.data(), &userDomainSize, &sidNameUse))
-                {
-                    strip_trailing_null(accountName);
-                    strip_trailing_null(userDomain);
-                    save_to_map(std::wstring{ til::details::vars::user_name }, std::move(accountName));
-                    save_to_map(std::wstring{ til::details::vars::user_domain }, std::move(userDomain));
-                }
-            }
-        }
-        CATCH_LOG()
 
         void get_program_files()
         {
@@ -343,29 +234,33 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
                             if (valueNameSize)
                             {
+                                const bool isPathVar = is_path_var(valueName);
+
+                                // On some systems we've seen path variables that are REG_SZ instead
+                                // of REG_EXPAND_SZ. We should always treat them as REG_EXPAND_SZ.
+                                if (isPathVar && type == REG_SZ)
+                                {
+                                    type = REG_EXPAND_SZ;
+                                }
+
                                 std::wstring data;
                                 if (pass == 0 && (type == REG_SZ) && valueDataSize >= sizeof(wchar_t))
                                 {
-                                    data = {
-                                        reinterpret_cast<wchar_t*>(valueData.data()), valueData.size() / sizeof(wchar_t)
-                                    };
+                                    const auto p = reinterpret_cast<const wchar_t*>(valueData.data());
+                                    const auto l = wcsnlen(p, valueData.size() / sizeof(wchar_t));
+                                    data.assign(p, l);
                                 }
                                 else if (pass == 1 && (type == REG_EXPAND_SZ) && valueDataSize >= sizeof(wchar_t))
                                 {
-                                    data = {
-                                        reinterpret_cast<wchar_t*>(valueData.data()), valueData.size() / sizeof(wchar_t)
-                                    };
+                                    const auto p = reinterpret_cast<const wchar_t*>(valueData.data());
+                                    const auto l = wcsnlen(p, valueData.size() / sizeof(wchar_t));
+                                    data.assign(p, l);
                                     data = expand_environment_strings(data.data());
                                 }
 
-                                // Because Registry data may or may not be null terminated... check if we've managed
-                                // to store an extra null in the wstring by telling it to create itself from pointer and size.
-                                // If we did, pull it off.
-                                strip_trailing_null(data);
-
                                 if (!data.empty())
                                 {
-                                    if (is_path_var(valueName))
+                                    if (isPathVar)
                                     {
                                         concat_var(valueName, std::move(data));
                                     }
@@ -438,13 +333,6 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return expanded;
         }
 
-        void set_user_environment_var(std::wstring_view var, std::wstring_view value)
-        {
-            auto valueString = expand_environment_strings(value);
-            valueString = check_for_temp(var, valueString);
-            save_to_map(std::wstring{ var }, std::move(valueString));
-        }
-
         void concat_var(std::wstring var, std::wstring value)
         {
             if (const auto existing = _envMap.find(var); existing != _envMap.end())
@@ -475,8 +363,8 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         {
             static constexpr std::wstring_view temp{ L"temp" };
             static constexpr std::wstring_view tmp{ L"tmp" };
-            if (til::details::compare_string_ordinal(var, temp) == CSTR_EQUAL ||
-                til::details::compare_string_ordinal(var, tmp) == CSTR_EQUAL)
+            if (til::compare_ordinal_insensitive(var, temp) == 0 ||
+                til::compare_ordinal_insensitive(var, tmp) == 0)
             {
                 return til::details::wil_env::GetShortPathNameW<std::wstring, 256>(value.data());
             }
@@ -491,17 +379,9 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             static constexpr std::wstring_view path{ L"Path" };
             static constexpr std::wstring_view libPath{ L"LibPath" };
             static constexpr std::wstring_view os2LibPath{ L"Os2LibPath" };
-            return til::details::compare_string_ordinal(input, path) == CSTR_EQUAL ||
-                   til::details::compare_string_ordinal(input, libPath) == CSTR_EQUAL ||
-                   til::details::compare_string_ordinal(input, os2LibPath) == CSTR_EQUAL;
-        }
-
-        static void strip_trailing_null(std::wstring& str) noexcept
-        {
-            if (!str.empty() && str.back() == L'\0')
-            {
-                str.pop_back();
-            }
+            return til::compare_ordinal_insensitive(input, path) == 0 ||
+                   til::compare_ordinal_insensitive(input, libPath) == 0 ||
+                   til::compare_ordinal_insensitive(input, os2LibPath) == 0;
         }
 
         void parse(const wchar_t* lastCh)
@@ -533,16 +413,52 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             parse(block);
         }
 
+        // Function Description:
+        // - Creates a new environment with the current process's unicode environment
+        //   variables.
+        // Return Value:
+        // - A new environment
+        static til::env from_current_environment()
+        {
+            LPWCH currentEnvVars{};
+            auto freeCurrentEnv = wil::scope_exit([&] {
+                if (currentEnvVars)
+                {
+                    FreeEnvironmentStringsW(currentEnvVars);
+                    currentEnvVars = nullptr;
+                }
+            });
+
+            currentEnvVars = ::GetEnvironmentStringsW();
+            THROW_HR_IF_NULL(E_OUTOFMEMORY, currentEnvVars);
+
+            return til::env{ currentEnvVars };
+        }
+
+        void set_user_environment_var(std::wstring_view var, std::wstring_view value)
+        {
+            auto valueString = expand_environment_strings(value);
+            valueString = check_for_temp(var, valueString);
+            save_to_map(std::wstring{ var }, std::move(valueString));
+        }
+
         void regenerate()
         {
             // Generally replicates the behavior of shell32!RegenerateUserEnvironment
+            // The difference is that we don't
+            // * handle autoexec.bat (intentionally unsupported).
+            // * call LookupAccountSidW to get the USERNAME/USERDOMAIN variables.
+            //   Windows sets these as values of the "Volatile Environment" key at each login.
+            //   We don't expect our process to impersonate another user so we can get them from the PEB.
+            // * call GetComputerNameW to get the COMPUTERNAME variable, for the same reason.
             get(til::details::vars::system_root);
             get(til::details::vars::system_drive);
             get(til::details::vars::all_users_profile);
             get(til::details::vars::public_var);
             get(til::details::vars::program_data);
-            get_computer_name();
-            get_user_name_and_domain();
+            get(til::details::vars::computer_name);
+            get(til::details::vars::user_name);
+            get(til::details::vars::user_domain);
             get(til::details::vars::user_dns_domain);
             get(til::details::vars::home_drive);
             get(til::details::vars::home_share);
@@ -555,20 +471,20 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             // not processing autoexec.bat
             get_vars_from_registry(HKEY_CURRENT_USER, til::details::vars::reg::user_env_var_root);
             get_vars_from_registry(HKEY_CURRENT_USER, til::details::vars::reg::user_volatile_env_var_root);
-            get_vars_from_registry(HKEY_CURRENT_USER, fmt::format(til::details::vars::reg::user_volatile_session_env_var_root_pattern, NtCurrentTeb()->ProcessEnvironmentBlock->SessionId));
+            get_vars_from_registry(HKEY_CURRENT_USER, fmt::format(FMT_COMPILE(LR"(Volatile Environment\{})"), NtCurrentTeb()->ProcessEnvironmentBlock->SessionId));
         }
 
-        std::wstring to_string()
+        std::wstring to_string() const
         {
             std::wstring result;
-            for (const auto& [name, value] : _envMap)
+            for (const auto& [k, v] : _envMap)
             {
-                result += name;
-                result += L"=";
-                result += value;
-                result.append(L"\0", 1); // Override string's natural propensity to stop at \0
+                result.append(k);
+                result.push_back(L'=');
+                result.append(v);
+                result.push_back(L'\0');
             }
-            result.append(L"\0", 1);
+            result.push_back(L'\0');
             return result;
         }
 

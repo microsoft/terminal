@@ -3,8 +3,6 @@
 
 #pragma once
 
-#include "type_traits.h"
-
 namespace til
 {
     template<ContiguousBytes Target>
@@ -40,7 +38,7 @@ namespace til
     }
 
     template<ContiguousBytes Target, ContiguousView Source>
-    requires TriviallyCopyable<typename Source::value_type>
+        requires TriviallyCopyable<typename Source::value_type>
     constexpr void bytes_transfer(Target& target, Source& source)
     {
         using TargetType = typename Target::value_type;

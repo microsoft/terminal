@@ -60,14 +60,6 @@ IFACEMETHODIMP UiaTextRange::Clone(_Outptr_result_maybenull_ ITextRangeProvider*
     *ppRetVal = nullptr;
     RETURN_IF_FAILED(MakeAndInitialize<UiaTextRange>(ppRetVal, *this));
 
-#if defined(_DEBUG) && defined(UiaTextRangeBase_DEBUG_MSGS)
-    OutputDebugString(L"Clone\n");
-    std::wstringstream ss;
-    ss << _id << L" cloned to " << (static_cast<UiaTextRangeBase*>(*ppRetVal))->_id;
-    std::wstring str = ss.str();
-    OutputDebugString(str.c_str());
-    OutputDebugString(L"\n");
-#endif
     // TODO GitHub #1914: Re-attach Tracing to UIA Tree
     // tracing
     /*ApiMsgClone apiMsg;
@@ -77,14 +69,14 @@ IFACEMETHODIMP UiaTextRange::Clone(_Outptr_result_maybenull_ ITextRangeProvider*
     return S_OK;
 }
 
-void UiaTextRange::_TranslatePointToScreen(til::point* clientPoint) const
+void UiaTextRange::_TranslatePointToScreen(til::point& clientPoint) const
 {
-    ClientToScreen(_getWindowHandle(), clientPoint->as_win32_point());
+    ClientToScreen(_getWindowHandle(), clientPoint.as_win32_point());
 }
 
-void UiaTextRange::_TranslatePointFromScreen(til::point* screenPoint) const
+void UiaTextRange::_TranslatePointFromScreen(til::point& screenPoint) const
 {
-    ScreenToClient(_getWindowHandle(), screenPoint->as_win32_point());
+    ScreenToClient(_getWindowHandle(), screenPoint.as_win32_point());
 }
 
 HWND UiaTextRange::_getWindowHandle() const

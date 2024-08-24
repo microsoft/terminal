@@ -157,7 +157,7 @@ static void _accumulateTraditionalLayoutPowerShellInstancesInDirectory(std::wstr
             const auto executable = versionedPath / PWSH_EXE;
             if (std::filesystem::exists(executable))
             {
-                const auto preview = versionedPath.filename().wstring().find(L"-preview") != std::wstring::npos;
+                const auto preview = versionedPath.filename().native().find(L"-preview") != std::wstring::npos;
                 const auto previewFlag = preview ? PowerShellFlags::Preview : PowerShellFlags::None;
                 out.emplace_back(PowerShellInstance{ std::stoi(versionedPath.filename()),
                                                      PowerShellFlags::Traditional | flags | previewFlag,

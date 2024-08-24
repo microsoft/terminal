@@ -2,200 +2,223 @@
 // Licensed under the MIT license.
 
 #include "dwrite.hlsl"
-
-#define INVALID_COLOR 0xffffffff
-
-// These flags are shared with AtlasEngine::CellFlags.
-//
-// clang-format off
-#define CellFlags_None            0x00000000
-#define CellFlags_Inlined         0x00000001
-
-#define CellFlags_ColoredGlyph    0x00000002
-
-#define CellFlags_Cursor          0x00000008
-#define CellFlags_Selected        0x00000010
-
-#define CellFlags_BorderLeft      0x00000020
-#define CellFlags_BorderTop       0x00000040
-#define CellFlags_BorderRight     0x00000080
-#define CellFlags_BorderBottom    0x00000100
-#define CellFlags_Underline       0x00000200
-#define CellFlags_UnderlineDotted 0x00000400
-#define CellFlags_UnderlineDouble 0x00000800
-#define CellFlags_Strikethrough   0x00001000
-// clang-format on
-
-// According to Nvidia's "Understanding Structured Buffer Performance" guide
-// one should aim for structures with sizes divisible by 128 bits (16 bytes).
-// This prevents elements from spanning cache lines.
-struct Cell
-{
-    uint glyphPos;
-    uint flags;
-    uint2 color; // x: foreground, y: background
-};
+#include "shader_common.hlsl"
 
 cbuffer ConstBuffer : register(b0)
 {
-    float4 viewport;
+    float4 backgroundColor;
+    float2 backgroundCellSize;
+    float2 backgroundCellCount;
     float4 gammaRatios;
     float enhancedContrast;
-    uint cellCountX;
-    uint2 cellSize;
-    uint underlinePos;
-    uint underlineWidth;
-    uint strikethroughPos;
-    uint strikethroughWidth;
-    uint2 doubleUnderlinePos;
-    uint thinLineWidth;
-    uint backgroundColor;
-    uint cursorColor;
-    uint selectionColor;
-    uint useClearType;
+    float underlineWidth;
+    float doubleUnderlineWidth;
+    float curlyLineHalfHeight;
+    float shadedGlyphDotSize;
+}
+
+Texture2D<float4> background : register(t0);
+Texture2D<float4> glyphAtlas : register(t1);
+
+struct Output
+{
+    float4 color;
+    float4 weights;
 };
-StructuredBuffer<Cell> cells : register(t0);
-Texture2D<float4> glyphs : register(t1);
-
-float4 decodeRGBA(uint i)
-{
-    float4 c = (i >> uint4(0, 8, 16, 24) & 0xff) / 255.0f;
-    // Convert to premultiplied alpha for simpler alpha blending.
-    c.rgb *= c.a;
-    return c;
-}
-
-uint2 decodeU16x2(uint i)
-{
-    return uint2(i & 0xffff, i >> 16);
-}
-
-float4 alphaBlendPremultiplied(float4 bottom, float4 top)
-{
-    bottom *= 1 - top.a;
-    return bottom + top;
-}
 
 // clang-format off
-float4 main(float4 pos: SV_Position): SV_Target
+Output main(PSData data) : SV_Target
 // clang-format on
 {
-    // We need to fill the entire render target with pixels, but only our "viewport"
-    // has cells we want to draw. The rest gets treated with the background color.
-    [branch] if (any(pos.xy < viewport.xy || pos.xy >= viewport.zw))
+    float4 color;
+    float4 weights;
+
+    switch (data.shadingType)
     {
-        return decodeRGBA(backgroundColor);
+    case SHADING_TYPE_TEXT_BACKGROUND:
+    {
+        float2 cell = data.position.xy / backgroundCellSize;
+        color = all(cell < backgroundCellCount) ? background[cell] : backgroundColor;
+        weights = float4(1, 1, 1, 1);
+        break;
+    }
+    case SHADING_TYPE_TEXT_GRAYSCALE:
+    {
+        // These are independent of the glyph texture and could be moved to the vertex shader or CPU side of things.
+        float4 foreground = premultiplyColor(data.color);
+        float blendEnhancedContrast = DWrite_ApplyLightOnDarkContrastAdjustment(enhancedContrast, data.color.rgb);
+        float intensity = DWrite_CalcColorIntensity(data.color.rgb);
+        // These aren't.
+        float4 glyph = glyphAtlas[data.texcoord];
+        float contrasted = DWrite_EnhanceContrast(glyph.a, blendEnhancedContrast);
+        float alphaCorrected = DWrite_ApplyAlphaCorrection(contrasted, intensity, gammaRatios);
+        color = alphaCorrected * foreground;
+        weights = color.aaaa;
+        break;
+    }
+    case SHADING_TYPE_TEXT_CLEARTYPE:
+    {
+        // These are independent of the glyph texture and could be moved to the vertex shader or CPU side of things.
+        float blendEnhancedContrast = DWrite_ApplyLightOnDarkContrastAdjustment(enhancedContrast, data.color.rgb);
+        // These aren't.
+        float4 glyph = glyphAtlas[data.texcoord];
+        float3 contrasted = DWrite_EnhanceContrast3(glyph.rgb, blendEnhancedContrast);
+        float3 alphaCorrected = DWrite_ApplyAlphaCorrection3(contrasted, data.color.rgb, gammaRatios);
+        weights = float4(alphaCorrected * data.color.a, 1);
+        color = weights * data.color;
+        break;
+    }
+    case SHADING_TYPE_TEXT_BUILTIN_GLYPH:
+    {
+        // The RGB components of builtin glyphs are used to control the generation of pixel patterns in this shader.
+        // Below you can see their intended effects where # indicates lit pixels.
+        //
+        // .r = stretch
+        //      0: #_#_#_#_
+        //         _#_#_#_#
+        //         #_#_#_#_
+        //         _#_#_#_#
+        //
+        //      1: #___#___
+        //         __#___#_
+        //         #___#___
+        //         __#___#_
+        //
+        // .g = invert
+        //      0: #_#_#_#_
+        //         _#_#_#_#
+        //         #_#_#_#_
+        //         _#_#_#_#
+        //
+        //      1: _#_#_#_#
+        //         #_#_#_#_
+        //         _#_#_#_#
+        //         #_#_#_#_
+        //
+        // .r = fill
+        //      0: #_#_#_#_
+        //         _#_#_#_#
+        //         #_#_#_#_
+        //         _#_#_#_#
+        //
+        //      1: ########
+        //         ########
+        //         ########
+        //         ########
+        //
+        float4 glyph = glyphAtlas[data.texcoord];
+        float2 pos = floor(data.position.xy / (shadedGlyphDotSize * data.renditionScale));
+
+        // A series of on/off/on/off/on/off pixels can be generated with:
+        //   step(frac(x * 0.5f), 0)
+        // The inner frac(x * 0.5f) will generate a series of
+        //   0, 0.5, 0, 0.5, 0, 0.5
+        // and the step() will transform that to
+        //   1,   0, 1,   0, 1,   0
+        //
+        // We can now turn that into a checkerboard pattern quite easily,
+        // if we imagine the fields of the checkerboard like this:
+        //   +---+---+---+
+        //   | 0 | 1 | 2 |
+        //   +---+---+---+
+        //   | 1 | 2 | 3 |
+        //   +---+---+---+
+        //   | 2 | 3 | 4 |
+        //   +---+---+---+
+        //
+        // Because this means we just need to set
+        //   x = pos.x + pos.y
+        // and so we end up with
+        //   step(frac(dot(pos, 0.5f)), 0)
+        //
+        // Finally, we need to implement the "stretch" explained above, which can
+        // be easily achieved by simply replacing the factor 0.5 with 0.25 like so
+        //   step(frac(x * 0.25f), 0)
+        // as this gets us
+        //   0, 0.25, 0.5, 0.75, 0, 0.25, 0.5, 0.75
+        // = 1,    0,   0,    0, 1,    0,   0,    0
+        //
+        // Of course we only want to apply that to the X axis, which means
+        // below we end up having 2 different multipliers for the dot().
+        float stretched = step(frac(dot(pos, float2(glyph.r * -0.25f + 0.5f, 0.5f))), 0) * glyph.a;
+        // Thankfully the remaining 2 operations are a lot simpler.
+        float inverted = abs(glyph.g - stretched);
+        float filled = max(glyph.b, inverted);
+
+        color = premultiplyColor(data.color) * filled;
+        weights = color.aaaa;
+        break;
+    }
+    case SHADING_TYPE_TEXT_PASSTHROUGH:
+    {
+        color = glyphAtlas[data.texcoord];
+        weights = color.aaaa;
+        break;
+    }
+    case SHADING_TYPE_DOTTED_LINE:
+    {
+        bool on = frac(data.position.x / (3.0f * underlineWidth * data.renditionScale.x)) < (1.0f / 3.0f);
+        color = on * premultiplyColor(data.color);
+        weights = color.aaaa;
+        break;
+    }
+    case SHADING_TYPE_DASHED_LINE:
+    {
+        bool on = frac(data.position.x / (6.0f * underlineWidth * data.renditionScale.x)) < (4.0f / 6.0f);
+        color = on * premultiplyColor(data.color);
+        weights = color.aaaa;
+        break;
+    }
+    case SHADING_TYPE_CURLY_LINE:
+    {
+        // The curly line has the same thickness as a double underline.
+        // We halve it to make the math a bit easier.
+        float strokeWidthHalf = doubleUnderlineWidth * data.renditionScale.y * 0.5f;
+        float center = curlyLineHalfHeight * data.renditionScale.y;
+        float amplitude = center - strokeWidthHalf;
+        // We multiply the frequency by pi/2 to get a sine wave which has an integer period.
+        // This makes every period of the wave look exactly the same.
+        float frequency = 1.57079632679489661923f / (curlyLineHalfHeight * data.renditionScale.x);
+        // At very small sizes, like when the wave is just 3px tall and 1px wide, it'll look too fat and/or blurry.
+        // Because we multiplied our frequency with pi, the extrema of the curve and its intersections with the
+        // centerline always occur right between two pixels. This causes both to be lit with the same color.
+        // By adding a small phase shift, we can break this symmetry up. It'll make the wave look a lot more crispy.
+        float phase = 1.57079632679489661923f;
+        float sine = sin(data.position.x * frequency + phase);
+        // We use the distance to the sine curve as its alpha value - the closer the more opaque.
+        // To give it a smooth appearance we don't want to simply calculate the vertical distance to the curve:
+        //   abs(pixel.y - sin(pixel.x))
+        //
+        // ...because while a pixel may be vertically far away it may be horizontally close to the sine curve.
+        // We need a proper distance calculation. This makes a large difference at especially small font sizes.
+        //
+        // While calculating the distance to a sine curve is complex, calculating the distance to its tangent is easy,
+        // because tangents are straight lines and line-point distance are trivial. The tangent of sin(x) is cos(x).
+        // The line-point distance is the vertical distance multiplied by the cos(angle) of the line.
+        // To turn out tangent cos(x) into an angle we need to calculate atan(cos(x)). This nets us:
+        //   abs(pixel.y - sin(pixel.x)) * cos(atan(cos(pixel.x))
+        //
+        // The expanded sine form of cos(atan(cos(x))) is 1 / sqrt(2 - sin(x)^2), which results in:
+        //   abs(pixel.y - sin(pixel.x)) * rsqrt(2 - sin(pixel.x)^2)
+        float distance = abs(center - data.texcoord.y - sine * amplitude) * rsqrt(2 - sine * sine);
+        // Since pixel coordinates are always offset by half a pixel (i.e. data.texcoord is 1.5f, 2.5f, 3.5f, ...)
+        // the distance is also off by half a pixel. We undo that by adding half a pixel to the distance.
+        // This gives the line its proper thickness appearance.
+        float a = 1 - saturate(distance - strokeWidthHalf + 0.5f);
+        color = a * premultiplyColor(data.color);
+        weights = color.aaaa;
+        break;
+    }
+    default:
+    {
+        color = premultiplyColor(data.color);
+        weights = color.aaaa;
+        break;
+    }
     }
 
-    uint2 viewportPos = pos.xy - viewport.xy;
-    uint2 cellIndex = viewportPos / cellSize;
-    uint2 cellPos = viewportPos % cellSize;
-    Cell cell = cells[cellIndex.y * cellCountX + cellIndex.x];
-
-    // Layer 0:
-    // The cell's background color
-    float4 color = decodeRGBA(cell.color.y);
-    float4 fg = decodeRGBA(cell.color.x);
-
-    // Layer 1 (optional):
-    // Colored cursors are drawn "in between" the background color and the text of a cell.
-    [branch] if (cell.flags & CellFlags_Cursor)
-    {
-        [branch] if (cursorColor != INVALID_COLOR)
-        {
-            // The cursor texture is stored at the top-left-most glyph cell.
-            // Cursor pixels are either entirely transparent or opaque.
-            // --> We can just use .a as a mask to flip cursor pixels on or off.
-            color = alphaBlendPremultiplied(color, decodeRGBA(cursorColor) * glyphs[cellPos].a);
-        }
-        else if (glyphs[cellPos].a != 0)
-        {
-            // Make sure the cursor is always readable (see gh-3647)
-            // If we imagine the two colors to be in 0-255 instead of 0-1,
-            // this effectively XORs them with 63. This avoids a situation
-            // where a gray background color (0.5) gets inverted to the
-            // same gray making the cursor invisible.
-            float2x4 colors = { color, fg };
-            float2x4 ip; // integral part
-            float2x4 frac = modf(colors * (255.0f / 64.0f), ip);
-            colors = (3.0f - ip + frac) * (64.0f / 255.0f);
-            color = float4(colors[0].rgb, 1);
-            fg = float4(colors[1].rgb, 1);
-        }
-    }
-
-    // Layer 2:
-    // Step 1: The cell's glyph, potentially drawn in the foreground color
-    {
-        float4 glyph = glyphs[decodeU16x2(cell.glyphPos) + cellPos];
-
-        [branch] if (cell.flags & CellFlags_ColoredGlyph)
-        {
-            color = alphaBlendPremultiplied(color, glyph);
-        }
-        else
-        {
-            float3 foregroundStraight = DWrite_UnpremultiplyColor(fg);
-            float blendEnhancedContrast = DWrite_ApplyLightOnDarkContrastAdjustment(enhancedContrast, foregroundStraight);
-
-            [branch] if (useClearType)
-            {
-                // See DWrite_ClearTypeBlend
-                float3 contrasted = DWrite_EnhanceContrast3(glyph.rgb, blendEnhancedContrast);
-                float3 alphaCorrected = DWrite_ApplyAlphaCorrection3(contrasted, foregroundStraight, gammaRatios);
-                color = float4(lerp(color.rgb, foregroundStraight, alphaCorrected * fg.a), 1.0f);
-            }
-            else
-            {
-                // See DWrite_GrayscaleBlend
-                float intensity = DWrite_CalcColorIntensity(foregroundStraight);
-                float contrasted = DWrite_EnhanceContrast(glyph.a, blendEnhancedContrast);
-                float4 alphaCorrected = DWrite_ApplyAlphaCorrection(contrasted, intensity, gammaRatios);
-                color = alphaBlendPremultiplied(color, alphaCorrected * fg);
-            }
-        }
-    }
-    // Step 2: Lines
-    {
-        // What a nice coincidence that we have exactly 8 flags to handle right now!
-        // `mask` will mask away any positive results from checks we don't want.
-        // (I.e. even if we're in an underline, it doesn't matter if we don't want an underline.)
-        bool2x4 mask = {
-            cell.flags & CellFlags_BorderLeft,
-            cell.flags & CellFlags_BorderTop,
-            cell.flags & CellFlags_BorderRight,
-            cell.flags & CellFlags_BorderBottom,
-            cell.flags & CellFlags_Underline,
-            cell.flags & CellFlags_UnderlineDotted,
-            cell.flags & CellFlags_UnderlineDouble,
-            cell.flags & CellFlags_Strikethrough,
-        };
-        // The following <lineWidth checks rely on underflow turning the
-        // uint into a way larger number than any reasonable lineWidth.
-        // That way we don't need to write `y >= lo && y < hi`.
-        bool2x4 checks = {
-            // These 2 expand to 4 bools, because cellPos is a
-            // uint2 vector which results in a bool2 result each.
-            cellPos < thinLineWidth,
-            (cellSize - cellPos) <= thinLineWidth,
-            // These 4 are 4 regular bools.
-            (cellPos.y - underlinePos) < underlineWidth,
-            (cellPos.y - underlinePos) < underlineWidth && (viewportPos.x / underlineWidth & 3) == 0,
-            any((cellPos.y - doubleUnderlinePos) < thinLineWidth),
-            (cellPos.y - strikethroughPos) < strikethroughWidth,
-        };
-        [flatten] if (any(mask && checks))
-        {
-            color = alphaBlendPremultiplied(color, fg);
-        }
-    }
-
-    // Layer 4:
-    // The current selection is drawn semi-transparent on top.
-    [branch] if (cell.flags & CellFlags_Selected)
-    {
-        color = alphaBlendPremultiplied(color, decodeRGBA(selectionColor));
-    }
-
-    return color;
+    Output output;
+    output.color = color;
+    output.weights = weights;
+    return output;
 }

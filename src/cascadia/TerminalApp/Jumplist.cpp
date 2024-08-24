@@ -60,7 +60,7 @@ static std::wstring _normalizeIconPath(std::wstring_view path)
 // - settings - The settings object to update the jumplist with.
 // Return Value:
 // - <none>
-winrt::fire_and_forget Jumplist::UpdateJumplist(const CascadiaSettings& settings) noexcept
+safe_void_coroutine Jumplist::UpdateJumplist(const CascadiaSettings& settings) noexcept
 {
     if (!settings)
     {
@@ -121,7 +121,7 @@ void Jumplist::_updateProfiles(IObjectCollection* jumplistItems, winrt::Windows:
     for (const auto& profile : profiles)
     {
         // Craft the arguments following "wt.exe"
-        auto args = fmt::format(L"-p {}", to_hstring(profile.Guid()));
+        auto args = fmt::format(FMT_COMPILE(L"-p {}"), to_hstring(profile.Guid()));
 
         // Create the shell link object for the profile
         const auto normalizedIconPath{ _normalizeIconPath(profile.Icon()) };
@@ -149,19 +149,40 @@ winrt::com_ptr<IShellLinkW> Jumplist::_createShellLink(const std::wstring_view n
     const auto module{ GetWtExePath() };
     THROW_IF_FAILED(sh->SetPath(module.data()));
     THROW_IF_FAILED(sh->SetArguments(args.data()));
+    auto propStore{ sh.as<IPropertyStore>() };
 
     PROPVARIANT titleProp;
     titleProp.vt = VT_LPWSTR;
     titleProp.pwszVal = const_cast<wchar_t*>(name.data());
 
-    PROPVARIANT iconProp;
-    iconProp.vt = VT_LPWSTR;
-    iconProp.pwszVal = const_cast<wchar_t*>(path.data());
+    // Check for a comma in the path. If we find one we have an indirect icon. Parse the path into a file path and index/id.
+    auto commaPosition = path.find(L",");
+    if (commaPosition != std::wstring_view::npos)
+    {
+        const std::wstring iconPath{ path.substr(0, commaPosition) };
 
-    auto propStore{ sh.as<IPropertyStore>() };
+        // We dont want the comma included so add 1 to its position
+        int iconIndex = til::to_int(path.substr(commaPosition + 1));
+        if (iconIndex != til::to_int_error)
+        {
+            THROW_IF_FAILED(sh->SetIconLocation(iconPath.data(), iconIndex));
+        }
+    }
+    else if (til::ends_with(path, L"exe") || til::ends_with(path, L"dll"))
+    {
+        // We have a binary path but no index/id. Default to 0
+        THROW_IF_FAILED(sh->SetIconLocation(path.data(), 0));
+    }
+    else
+    {
+        PROPVARIANT iconProp;
+        iconProp.vt = VT_LPWSTR;
+        iconProp.pwszVal = const_cast<wchar_t*>(path.data());
+
+        THROW_IF_FAILED(propStore->SetValue(PKEY_AppUserModel_DestListLogoUri, iconProp));
+    }
+
     THROW_IF_FAILED(propStore->SetValue(PKEY_Title, titleProp));
-    THROW_IF_FAILED(propStore->SetValue(PKEY_AppUserModel_DestListLogoUri, iconProp));
-
     THROW_IF_FAILED(propStore->Commit());
 
     return sh;

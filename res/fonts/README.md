@@ -8,5 +8,5 @@ Please consult the [license](https://raw.githubusercontent.com/microsoft/cascadi
 
 ### Fonts Included
 
-* Cascadia Code, Cascadia Mono (2111.01)
-   * from microsoft/cascadia-code@de36d62e777d34d3bed92a7e23988e5d61e0ba02
+* Cascadia Code, Cascadia Mono (2404.23)
+   * from microsoft/cascadia-code@1034791e5fc6e060a448d2b29cd94a6c683edb36

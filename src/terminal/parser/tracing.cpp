@@ -7,8 +7,21 @@
 using namespace Microsoft::Console::VirtualTerminal;
 
 #pragma warning(push)
+#pragma warning(disable : 26426) // Global initializer calls a non-constexpr function '...' (i.22).)
 #pragma warning(disable : 26447) // The function is declared 'noexcept' but calls function '_tlgWrapBinary<wchar_t>()' which may throw exceptions
 #pragma warning(disable : 26477) // Use 'nullptr' rather than 0 or NULL
+
+TRACELOGGING_DEFINE_PROVIDER(g_hConsoleVirtTermParserEventTraceProvider,
+                             "Microsoft.Windows.Console.VirtualTerminal.Parser",
+                             // {c9ba2a84-d3ca-5e19-2bd6-776a0910cb9d}
+                             (0xc9ba2a84, 0xd3ca, 0x5e19, 0x2b, 0xd6, 0x77, 0x6a, 0x09, 0x10, 0xcb, 0x9d));
+
+static const auto cleanup = []() noexcept {
+    TraceLoggingRegister(g_hConsoleVirtTermParserEventTraceProvider);
+    return wil::scope_exit([]() noexcept {
+        TraceLoggingUnregister(g_hConsoleVirtTermParserEventTraceProvider);
+    });
+}();
 
 void ParserTracing::TraceStateChange(_In_z_ const wchar_t* name) const noexcept
 {

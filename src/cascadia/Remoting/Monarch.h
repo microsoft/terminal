@@ -15,6 +15,7 @@
 //
 // * Release: {06171993-7eb1-4f3e-85f5-8bdd7386cce3}
 // * Preview: {04221993-7eb1-4f3e-85f5-8bdd7386cce3}
+// * Canary:  {09222022-7eb1-4f3e-85f5-8bdd7386cce3}
 // * Dev:     {08302020-7eb1-4f3e-85f5-8bdd7386cce3}
 constexpr GUID Monarch_clsid
 {
@@ -22,6 +23,8 @@ constexpr GUID Monarch_clsid
     0x06171993,
 #elif defined(WT_BRANDING_PREVIEW)
     0x04221993,
+#elif defined(WT_BRANDING_CANARY)
+    0x09222022,
 #else
     0x08302020,
 #endif
@@ -46,7 +49,9 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             _Id{ windowInfo.Id() ? windowInfo.Id().Value() : 0 }, // We'll use 0 as a sentinel, since no window will ever get to have that ID
             _WindowName{ windowInfo.WindowName() },
             _args{ command.Commandline() },
-            _CurrentDirectory{ command.CurrentDirectory() } {};
+            _CurrentDirectory{ command.CurrentDirectory() },
+            _ShowWindowCommand{ command.ShowWindowCommand() },
+            _CurrentEnvironment{ command.CurrentEnvironment() } {};
 
         WindowRequestedArgs(const winrt::hstring& window, const winrt::hstring& content, const Windows::Foundation::IReference<Windows::Foundation::Rect>& bounds) :
             _Id{ 0u },
@@ -63,6 +68,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         WINRT_PROPERTY(winrt::hstring, WindowName);
         WINRT_PROPERTY(winrt::hstring, CurrentDirectory);
         WINRT_PROPERTY(winrt::hstring, Content);
+        WINRT_PROPERTY(uint32_t, ShowWindowCommand, SW_NORMAL);
+        WINRT_PROPERTY(winrt::hstring, CurrentEnvironment);
         WINRT_PROPERTY(Windows::Foundation::IReference<Windows::Foundation::Rect>, InitialBounds);
 
     private:
@@ -79,6 +86,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 
         uint64_t AddPeasant(winrt::Microsoft::Terminal::Remoting::IPeasant peasant);
         void SignalClose(const uint64_t peasantId);
+        void QuitAll();
 
         uint64_t GetNumberOfPeasants();
 
@@ -89,19 +97,17 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         void SummonAllWindows();
         bool DoesQuakeWindowExist();
         Windows::Foundation::Collections::IVectorView<winrt::Microsoft::Terminal::Remoting::PeasantInfo> GetPeasantInfos();
-        Windows::Foundation::Collections::IVector<winrt::hstring> GetAllWindowLayouts();
 
         void RequestMoveContent(winrt::hstring window, winrt::hstring content, uint32_t tabIndex, const Windows::Foundation::IReference<Windows::Foundation::Rect>& windowBounds);
         void RequestSendContent(const Remoting::RequestReceiveContentArgs& args);
 
-        TYPED_EVENT(FindTargetWindowRequested, winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::FindTargetWindowArgs);
-        TYPED_EVENT(ShowNotificationIconRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
-        TYPED_EVENT(HideNotificationIconRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
-        TYPED_EVENT(WindowCreated, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
-        TYPED_EVENT(WindowClosed, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
-        TYPED_EVENT(QuitAllRequested, winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::QuitAllRequestedArgs);
+        til::typed_event<winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::FindTargetWindowArgs> FindTargetWindowRequested;
+        til::typed_event<> ShowNotificationIconRequested;
+        til::typed_event<> HideNotificationIconRequested;
+        til::typed_event<> WindowCreated;
+        til::typed_event<> WindowClosed;
 
-        TYPED_EVENT(RequestNewWindow, winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::WindowRequestedArgs);
+        til::typed_event<winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::WindowRequestedArgs> RequestNewWindow;
 
     private:
         uint64_t _ourPID;
@@ -139,8 +145,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         void _renameRequested(const winrt::Windows::Foundation::IInspectable& sender,
                               const winrt::Microsoft::Terminal::Remoting::RenameRequestArgs& args);
 
-        winrt::fire_and_forget _handleQuitAll(const winrt::Windows::Foundation::IInspectable& sender,
-                                              const winrt::Windows::Foundation::IInspectable& args);
+        void _handleQuitAll(const winrt::Windows::Foundation::IInspectable& sender,
+                            const winrt::Windows::Foundation::IInspectable& args);
 
         // Method Description:
         // - Helper for doing something on each and every peasant.
@@ -216,7 +222,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 
                 // A peasant died, let the app host know that the number of
                 // windows has changed.
-                _WindowClosedHandlers(nullptr, nullptr);
+                WindowClosed.raise(nullptr, nullptr);
             }
         }
 

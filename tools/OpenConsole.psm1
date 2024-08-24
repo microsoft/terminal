@@ -169,7 +169,7 @@ function Invoke-OpenConsoleTests()
         [switch]$FTOnly,
 
         [parameter(Mandatory=$false)]
-        [ValidateSet('host', 'interactivityWin32', 'terminal', 'adapter', 'feature', 'uia', 'textbuffer', 'til', 'types', 'terminalCore', 'terminalApp', 'localTerminalApp', 'localSettingsModel', 'unitRemoting', 'unitControl')]
+        [ValidateSet('host', 'interactivityWin32', 'terminal', 'adapter', 'feature', 'uia', 'textbuffer', 'til', 'types', 'terminalCore', 'terminalApp', 'localTerminalApp', 'unitSettingsModel', 'unitRemoting', 'unitControl', 'winconpty')]
         [string]$Test,
 
         [parameter(Mandatory=$false)]
@@ -197,8 +197,8 @@ function Invoke-OpenConsoleTests()
     {
         $OpenConsolePlatform = 'Win32'
     }
-    $OpenConsolePath = "$env:OpenConsoleroot\bin\$OpenConsolePlatform\$Configuration\OpenConsole.exe"
-    $TaefExePath = "$root\packages\Microsoft.Taef.10.60.210621002\build\Binaries\$Platform\te.exe"
+    $OpenConsolePath = "$root\bin\$OpenConsolePlatform\$Configuration\OpenConsole.exe"
+    $TaefExePath = "$root\packages\Microsoft.Taef.10.93.240607003\build\Binaries\$Platform\te.exe"
     $BinDir = "$root\bin\$OpenConsolePlatform\$Configuration"
 
     [xml]$TestConfig = Get-Content "$root\tools\tests.xml"
@@ -232,13 +232,19 @@ function Invoke-OpenConsoleTests()
     # run selected tests
     foreach ($t in $TestsToRun)
     {
+        $currentTaefExe = $TaefExePath
+        if ($t.isolatedTaef -eq "true")
+        {
+            $currentTaefExe = (Join-Path (Split-Path (Join-Path $BinDir $t.binary)) "te.exe")
+        }
+
         if ($t.type -eq "unit")
         {
-            & $TaefExePath "$BinDir\$($t.binary)" $TaefArgs
+            & $currentTaefExe "$BinDir\$($t.binary)" $TaefArgs
         }
         elseif ($t.type -eq "ft")
         {
-            Invoke-TaefInNewWindow -OpenConsolePath $OpenConsolePath -TaefPath $TaefExePath -TestDll "$BinDir\$($t.binary)" -TaefArgs $TaefArgs
+            Invoke-TaefInNewWindow -OpenConsolePath $OpenConsolePath -TaefPath $currentTaefExe -TestDll "$BinDir\$($t.binary)" -TaefArgs $TaefArgs
         }
         else
         {
@@ -367,7 +373,7 @@ function Test-XamlFormat() {
     $xamlsForStyler = (git ls-files "$root/**/*.xaml") -join ","
     dotnet tool run xstyler -- -c "$root\XamlStyler.json" -f "$xamlsForStyler" --passive
 
-    if ($lastExitCode -eq 1) {
+    if ($LASTEXITCODE -eq 1) {
         throw "Xaml formatting bad, run Invoke-XamlFormat on branch"
     }
 

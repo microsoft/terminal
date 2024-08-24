@@ -7,7 +7,7 @@
 
 // Keeping TextColor compact helps us keeping TextAttribute compact,
 // which in turn ensures that our buffer memory usage is low.
-static_assert(sizeof(TextAttribute) == 12);
+static_assert(sizeof(TextAttribute) == 18);
 static_assert(alignof(TextAttribute) == 2);
 // Ensure that we can memcpy() and memmove() the struct for performance.
 static_assert(std::is_trivially_copyable_v<TextAttribute>);
@@ -66,47 +66,6 @@ void TextAttribute::SetLegacyDefaultAttributes(const WORD defaultAttributes) noe
 }
 
 // Routine Description:
-// Pursuant to GH#6807
-// This routine replaces VT colors from the 16-color set with the "default"
-// flag. It is intended to be used as part of the "VT Quirk" in
-// WriteConsole[AW].
-//
-// There is going to be a very long tail of applications that will
-// explicitly request VT SGR 40/37 when what they really want is to
-// SetConsoleTextAttribute() with a black background/white foreground.
-// Instead of making those applications look bad (and therefore making us
-// look bad, because we're releasing this as an update to something that
-// "looks good" already), we're introducing this compatibility hack. Before
-// the color reckoning in GH#6698 + GH#6506, *every* color was subject to
-// being spontaneously and erroneously turned into the default color. Now,
-// only the 16-color palette value that matches the active console
-// background color will be destroyed when the quirk is enabled.
-//
-// This is not intended to be a long-term solution. This comment will be
-// discovered in forty years(*) time and people will laugh at our hubris.
-//
-// *it doesn't matter when you're reading this, it will always be 40 years
-// from now.
-TextAttribute TextAttribute::StripErroneousVT16VersionsOfLegacyDefaults(const TextAttribute& attribute) noexcept
-{
-    const auto fg{ attribute.GetForeground() };
-    const auto bg{ attribute.GetBackground() };
-    auto copy{ attribute };
-    if (fg.IsIndex16() &&
-        attribute.IsIntense() == WI_IsFlagSet(s_ansiDefaultForeground, FOREGROUND_INTENSITY) &&
-        fg.GetIndex() == (s_ansiDefaultForeground & ~FOREGROUND_INTENSITY))
-    {
-        // We don't want to turn 1;37m into 39m (or even 1;39m), as this was meant to mimic a legacy color.
-        copy.SetDefaultForeground();
-    }
-    if (bg.IsIndex16() && bg.GetIndex() == s_ansiDefaultBackground)
-    {
-        copy.SetDefaultBackground();
-    }
-    return copy;
-}
-
-// Routine Description:
 // - Returns a WORD with legacy-style attributes for this textattribute.
 // Parameters:
 // - None
@@ -156,6 +115,25 @@ uint16_t TextAttribute::GetHyperlinkId() const noexcept
     return _hyperlinkId;
 }
 
+TextColor TextAttribute::GetUnderlineColor() const noexcept
+{
+    return _underlineColor;
+}
+
+// Method description:
+// - Retrieves the underline style of the text.
+// - If the attribute is not the **current** attribute of the text buffer,
+//   (eg. reading an attribute from another part of the text buffer, which
+//   was modified using DECRARA), this might return an invalid style. In this
+//   case, treat the style as singly underlined.
+// Return value:
+// - The underline style.
+UnderlineStyle TextAttribute::GetUnderlineStyle() const noexcept
+{
+    const auto styleAttr = WI_EnumValue(_attrs & CharacterAttributes::UnderlineStyle);
+    return static_cast<UnderlineStyle>(styleAttr >> UNDERLINE_STYLE_SHIFT);
+}
+
 void TextAttribute::SetForeground(const TextColor foreground) noexcept
 {
     _foreground = foreground;
@@ -164,6 +142,13 @@ void TextAttribute::SetForeground(const TextColor foreground) noexcept
 void TextAttribute::SetBackground(const TextColor background) noexcept
 {
     _background = background;
+}
+
+void TextAttribute::SetUnderlineColor(const TextColor color) noexcept
+{
+    // Index16 colors are not supported for underline colors.
+    assert(!color.IsIndex16());
+    _underlineColor = color;
 }
 
 void TextAttribute::SetForeground(const COLORREF rgbForeground) noexcept
@@ -277,14 +262,12 @@ bool TextAttribute::IsCrossedOut() const noexcept
     return WI_IsFlagSet(_attrs, CharacterAttributes::CrossedOut);
 }
 
+// Method description:
+// - Returns true if the text is underlined with any underline style.
 bool TextAttribute::IsUnderlined() const noexcept
 {
-    return WI_IsFlagSet(_attrs, CharacterAttributes::Underlined);
-}
-
-bool TextAttribute::IsDoublyUnderlined() const noexcept
-{
-    return WI_IsFlagSet(_attrs, CharacterAttributes::DoublyUnderlined);
+    const auto style = GetUnderlineStyle();
+    return (style != UnderlineStyle::NoUnderline);
 }
 
 bool TextAttribute::IsOverlined() const noexcept
@@ -332,14 +315,14 @@ void TextAttribute::SetCrossedOut(bool isCrossedOut) noexcept
     WI_UpdateFlag(_attrs, CharacterAttributes::CrossedOut, isCrossedOut);
 }
 
-void TextAttribute::SetUnderlined(bool isUnderlined) noexcept
+// Method description:
+// - Sets underline style to singly, doubly, or one of the extended styles.
+// Arguments:
+// - style - underline style to set.
+void TextAttribute::SetUnderlineStyle(const UnderlineStyle style) noexcept
 {
-    WI_UpdateFlag(_attrs, CharacterAttributes::Underlined, isUnderlined);
-}
-
-void TextAttribute::SetDoublyUnderlined(bool isDoublyUnderlined) noexcept
-{
-    WI_UpdateFlag(_attrs, CharacterAttributes::DoublyUnderlined, isDoublyUnderlined);
+    const auto shiftedStyle = WI_EnumValue(style) << UNDERLINE_STYLE_SHIFT;
+    _attrs = (_attrs & ~CharacterAttributes::UnderlineStyle) | static_cast<CharacterAttributes>(shiftedStyle);
 }
 
 void TextAttribute::SetOverlined(bool isOverlined) noexcept
@@ -374,6 +357,11 @@ void TextAttribute::SetDefaultBackground() noexcept
     _background = TextColor();
 }
 
+void TextAttribute::SetDefaultUnderlineColor() noexcept
+{
+    _underlineColor = TextColor{};
+}
+
 // Method description:
 // - Resets only the rendition character attributes, which includes everything
 //     except the Protected attribute.
@@ -405,4 +393,5 @@ void TextAttribute::SetStandardErase() noexcept
 {
     _attrs = CharacterAttributes::Normal;
     _hyperlinkId = 0;
+    _markKind = MarkKind::None;
 }

@@ -38,6 +38,16 @@ namespace ControlUnitTests
         TEST_METHOD(TestClearAll);
         TEST_METHOD(TestReadEntireBuffer);
 
+        TEST_METHOD(TestSelectCommandSimple);
+        TEST_METHOD(TestSelectOutputSimple);
+        TEST_METHOD(TestCommandContext);
+        TEST_METHOD(TestCommandContextWithPwshGhostText);
+
+        TEST_METHOD(TestSelectOutputScrolling);
+        TEST_METHOD(TestSelectOutputExactWrap);
+
+        TEST_METHOD(TestSimpleClickSelection);
+
         TEST_CLASS_SETUP(ModuleSetup)
         {
             winrt::init_apartment(winrt::apartment_type::single_threaded);
@@ -75,9 +85,12 @@ namespace ControlUnitTests
 
         void _standardInit(winrt::com_ptr<Control::implementation::ControlCore> core)
         {
-            // "Consolas" ends up with an actual size of 9x21 at 96DPI. So
-            // let's just arbitrarily start with a 270x420px (30x20 chars) window
-            core->Initialize(270, 420, 1.0);
+            // "Consolas" ends up with an actual size of 9x19 at 96DPI. So
+            // let's just arbitrarily start with a 270x380px (30x20 chars) window
+            core->Initialize(270, 380, 1.0);
+#ifndef NDEBUG
+            core->_terminal->_suppressLockChecks = true;
+#endif
             VERIFY_IS_TRUE(core->_initializedTerminal);
             VERIFY_ARE_EQUAL(20, core->_terminal->GetViewport().Height());
         }
@@ -108,9 +121,12 @@ namespace ControlUnitTests
         VERIFY_IS_NOT_NULL(core);
 
         VERIFY_IS_FALSE(core->_initializedTerminal);
-        // "Consolas" ends up with an actual size of 9x21 at 96DPI. So
-        // let's just arbitrarily start with a 270x420px (30x20 chars) window
-        core->Initialize(270, 420, 1.0);
+        // "Consolas" ends up with an actual size of 9x19 at 96DPI. So
+        // let's just arbitrarily start with a 270x380px (30x20 chars) window
+        core->Initialize(270, 380, 1.0);
+#ifndef NDEBUG
+        core->_terminal->_suppressLockChecks = true;
+#endif
         VERIFY_IS_TRUE(core->_initializedTerminal);
         VERIFY_ARE_EQUAL(30, core->_terminal->GetViewport().Width());
     }
@@ -126,14 +142,14 @@ namespace ControlUnitTests
         VERIFY_IS_NOT_NULL(core);
 
         // A callback to make sure that we're raising TransparencyChanged events
-        auto expectedOpacity = 0.5;
+        auto expectedOpacity = 0.5f;
         auto opacityCallback = [&](auto&&, Control::TransparencyChangedEventArgs args) mutable {
             VERIFY_ARE_EQUAL(expectedOpacity, args.Opacity());
             VERIFY_ARE_EQUAL(expectedOpacity, core->Opacity());
             // The Settings object's opacity shouldn't be changed
-            VERIFY_ARE_EQUAL(0.5, settings->Opacity());
+            VERIFY_ARE_EQUAL(0.5f, settings->Opacity());
 
-            if (expectedOpacity < 1.0)
+            if (expectedOpacity < 1.0f)
             {
                 VERIFY_IS_TRUE(settings->UseAcrylic());
                 VERIFY_IS_TRUE(core->_settings->UseAcrylic());
@@ -142,7 +158,7 @@ namespace ControlUnitTests
             // GH#603: Adjusting opacity shouldn't change whether or not we
             // requested acrylic.
 
-            auto expectedUseAcrylic = expectedOpacity < 1.0;
+            auto expectedUseAcrylic = expectedOpacity < 1.0f;
             VERIFY_IS_TRUE(core->_settings->UseAcrylic());
             VERIFY_ARE_EQUAL(expectedUseAcrylic, core->UseAcrylic());
         };
@@ -155,39 +171,39 @@ namespace ControlUnitTests
         VERIFY_IS_TRUE(core->_initializedTerminal);
 
         Log::Comment(L"Increasing opacity till fully opaque");
-        expectedOpacity += 0.1; // = 0.6;
-        core->AdjustOpacity(0.1);
-        expectedOpacity += 0.1; // = 0.7;
-        core->AdjustOpacity(0.1);
-        expectedOpacity += 0.1; // = 0.8;
-        core->AdjustOpacity(0.1);
-        expectedOpacity += 0.1; // = 0.9;
-        core->AdjustOpacity(0.1);
-        expectedOpacity += 0.1; // = 1.0;
+        expectedOpacity += 0.1f; // = 0.6;
+        core->AdjustOpacity(0.1f);
+        expectedOpacity += 0.1f; // = 0.7;
+        core->AdjustOpacity(0.1f);
+        expectedOpacity += 0.1f; // = 0.8;
+        core->AdjustOpacity(0.1f);
+        expectedOpacity += 0.1f; // = 0.9;
+        core->AdjustOpacity(0.1f);
+        expectedOpacity += 0.1f; // = 1.0;
         // cast to float because floating point numbers are mean
-        VERIFY_ARE_EQUAL(1.0f, base::saturated_cast<float>(expectedOpacity));
-        core->AdjustOpacity(0.1);
+        VERIFY_ARE_EQUAL(1.0f, expectedOpacity);
+        core->AdjustOpacity(0.1f);
 
         Log::Comment(L"Increasing opacity more doesn't actually change it to be >1.0");
 
-        expectedOpacity = 1.0;
-        core->AdjustOpacity(0.1);
+        expectedOpacity = 1.0f;
+        core->AdjustOpacity(0.1f);
 
         Log::Comment(L"Decrease opacity");
-        expectedOpacity -= 0.25; // = 0.75;
-        core->AdjustOpacity(-0.25);
-        expectedOpacity -= 0.25; // = 0.5;
-        core->AdjustOpacity(-0.25);
-        expectedOpacity -= 0.25; // = 0.25;
-        core->AdjustOpacity(-0.25);
-        expectedOpacity -= 0.25; // = 0.05;
+        expectedOpacity -= 0.25f; // = 0.75;
+        core->AdjustOpacity(-0.25f);
+        expectedOpacity -= 0.25f; // = 0.5;
+        core->AdjustOpacity(-0.25f);
+        expectedOpacity -= 0.25f; // = 0.25;
+        core->AdjustOpacity(-0.25f);
+        expectedOpacity -= 0.25f; // = 0.05;
         // cast to float because floating point numbers are mean
-        VERIFY_ARE_EQUAL(0.0f, base::saturated_cast<float>(expectedOpacity));
-        core->AdjustOpacity(-0.25);
+        VERIFY_ARE_EQUAL(0.0f, expectedOpacity);
+        core->AdjustOpacity(-0.25f);
 
         Log::Comment(L"Decreasing opacity more doesn't actually change it to be < 0");
-        expectedOpacity = 0.0;
-        core->AdjustOpacity(-0.25);
+        expectedOpacity = 0.0f;
+        core->AdjustOpacity(-0.25f);
     }
 
     void ControlCoreTests::TestFreeAfterClose()
@@ -235,9 +251,9 @@ namespace ControlUnitTests
                      L"(leaving the cursor afer 'Bar')");
         for (auto i = 0; i < 40; ++i)
         {
-            conn->WriteInput(L"Foo\r\n");
+            conn->WriteInput(winrt_wstring_to_array_view(L"Foo\r\n"));
         }
-        conn->WriteInput(L"Bar");
+        conn->WriteInput(winrt_wstring_to_array_view(L"Bar"));
 
         // We printed that 40 times, but the final \r\n bumped the view down one MORE row.
         Log::Comment(L"Check the buffer viewport before the clear");
@@ -259,8 +275,6 @@ namespace ControlUnitTests
         // contents. ConPTY will handle the actual clearing of the buffer
         // contents. We can only ensure that the viewport moved when we did a
         // clear scrollback.
-        //
-        // The ConptyRoundtripTests test the actual clearing of the contents.
     }
     void ControlCoreTests::TestClearScreen()
     {
@@ -274,9 +288,9 @@ namespace ControlUnitTests
                      L"(leaving the cursor afer 'Bar')");
         for (auto i = 0; i < 40; ++i)
         {
-            conn->WriteInput(L"Foo\r\n");
+            conn->WriteInput(winrt_wstring_to_array_view(L"Foo\r\n"));
         }
-        conn->WriteInput(L"Bar");
+        conn->WriteInput(winrt_wstring_to_array_view(L"Bar"));
 
         // We printed that 40 times, but the final \r\n bumped the view down one MORE row.
         Log::Comment(L"Check the buffer viewport before the clear");
@@ -298,8 +312,6 @@ namespace ControlUnitTests
         // contents. ConPTY will handle the actual clearing of the buffer
         // contents. We can only ensure that the viewport moved when we did a
         // clear scrollback.
-        //
-        // The ConptyRoundtripTests test the actual clearing of the contents.
     }
     void ControlCoreTests::TestClearAll()
     {
@@ -313,9 +325,9 @@ namespace ControlUnitTests
                      L"(leaving the cursor afer 'Bar')");
         for (auto i = 0; i < 40; ++i)
         {
-            conn->WriteInput(L"Foo\r\n");
+            conn->WriteInput(winrt_wstring_to_array_view(L"Foo\r\n"));
         }
-        conn->WriteInput(L"Bar");
+        conn->WriteInput(winrt_wstring_to_array_view(L"Bar"));
 
         // We printed that 40 times, but the final \r\n bumped the view down one MORE row.
         Log::Comment(L"Check the buffer viewport before the clear");
@@ -337,8 +349,6 @@ namespace ControlUnitTests
         // contents. ConPTY will handle the actual clearing of the buffer
         // contents. We can only ensure that the viewport moved when we did a
         // clear scrollback.
-        //
-        // The ConptyRoundtripTests test the actual clearing of the contents.
     }
 
     void ControlCoreTests::TestReadEntireBuffer()
@@ -350,13 +360,454 @@ namespace ControlUnitTests
         _standardInit(core);
 
         Log::Comment(L"Print some text");
-        conn->WriteInput(L"This is some text     \r\n");
-        conn->WriteInput(L"with varying amounts  \r\n");
-        conn->WriteInput(L"of whitespace         \r\n");
+        conn->WriteInput(winrt_wstring_to_array_view(L"This is some text     \r\n"));
+        conn->WriteInput(winrt_wstring_to_array_view(L"with varying amounts  \r\n"));
+        conn->WriteInput(winrt_wstring_to_array_view(L"of whitespace         \r\n"));
 
         Log::Comment(L"Check the buffer contents");
         VERIFY_ARE_EQUAL(L"This is some text\r\nwith varying amounts\r\nof whitespace\r\n",
                          core->ReadEntireBuffer());
     }
 
+    static void _writePrompt(const winrt::com_ptr<MockConnection>& conn, const std::wstring_view& path)
+    {
+        conn->WriteInput(winrt_wstring_to_array_view(L"\x1b]133;D\x7"));
+        conn->WriteInput(winrt_wstring_to_array_view(L"\x1b]133;A\x7"));
+        conn->WriteInput(winrt_wstring_to_array_view(L"\x1b]9;9;"));
+        conn->WriteInput(winrt_wstring_to_array_view(path));
+        conn->WriteInput(winrt_wstring_to_array_view(L"\x7"));
+        conn->WriteInput(winrt_wstring_to_array_view(L"PWSH "));
+        conn->WriteInput(winrt_wstring_to_array_view(path));
+        conn->WriteInput(winrt_wstring_to_array_view(L"> "));
+        conn->WriteInput(winrt_wstring_to_array_view(L"\x1b]133;B\x7"));
+    }
+
+    void ControlCoreTests::TestSelectCommandSimple()
+    {
+        auto [settings, conn] = _createSettingsAndConnection();
+        Log::Comment(L"Create ControlCore object");
+        auto core = createCore(*settings, *conn);
+        VERIFY_IS_NOT_NULL(core);
+        _standardInit(core);
+
+        Log::Comment(L"Print some text");
+
+        _writePrompt(conn, L"C:\\Windows");
+        conn->WriteInput(winrt_wstring_to_array_view(L"Foo-bar"));
+        conn->WriteInput(winrt_wstring_to_array_view(L"\x1b]133;C\x7"));
+
+        conn->WriteInput(winrt_wstring_to_array_view(L"\r\n"));
+        conn->WriteInput(winrt_wstring_to_array_view(L"This is some text     \r\n"));
+        conn->WriteInput(winrt_wstring_to_array_view(L"with varying amounts  \r\n"));
+        conn->WriteInput(winrt_wstring_to_array_view(L"of whitespace         \r\n"));
+
+        _writePrompt(conn, L"C:\\Windows");
+
+        Log::Comment(L"Check the buffer contents");
+        const auto& buffer = core->_terminal->GetTextBuffer();
+        const auto& cursor = buffer.GetCursor();
+
+        {
+            const til::point expectedCursor{ 17, 4 };
+            VERIFY_ARE_EQUAL(expectedCursor, cursor.GetPosition());
+        }
+
+        VERIFY_IS_FALSE(core->HasSelection());
+        core->SelectCommand(true);
+        VERIFY_IS_TRUE(core->HasSelection());
+        {
+            const auto& start = core->_terminal->GetSelectionAnchor();
+            const auto& end = core->_terminal->GetSelectionEnd();
+            const til::point expectedStart{ 17, 0 };
+            const til::point expectedEnd{ 23, 0 };
+            VERIFY_ARE_EQUAL(expectedStart, start);
+            VERIFY_ARE_EQUAL(expectedEnd, end);
+        }
+
+        core->_terminal->ClearSelection();
+        conn->WriteInput(winrt_wstring_to_array_view(L"Boo-far"));
+        conn->WriteInput(winrt_wstring_to_array_view(L"\x1b]133;C\x7"));
+
+        VERIFY_IS_FALSE(core->HasSelection());
+        {
+            const til::point expectedCursor{ 24, 4 };
+            VERIFY_ARE_EQUAL(expectedCursor, cursor.GetPosition());
+        }
+        VERIFY_IS_FALSE(core->HasSelection());
+        core->SelectCommand(true);
+        VERIFY_IS_TRUE(core->HasSelection());
+        {
+            const auto& start = core->_terminal->GetSelectionAnchor();
+            const auto& end = core->_terminal->GetSelectionEnd();
+            const til::point expectedStart{ 17, 4 };
+            const til::point expectedEnd{ 23, 4 };
+            VERIFY_ARE_EQUAL(expectedStart, start);
+            VERIFY_ARE_EQUAL(expectedEnd, end);
+        }
+        core->SelectCommand(true);
+        VERIFY_IS_TRUE(core->HasSelection());
+        {
+            const auto& start = core->_terminal->GetSelectionAnchor();
+            const auto& end = core->_terminal->GetSelectionEnd();
+            const til::point expectedStart{ 17, 0 };
+            const til::point expectedEnd{ 23, 0 };
+            VERIFY_ARE_EQUAL(expectedStart, start);
+            VERIFY_ARE_EQUAL(expectedEnd, end);
+        }
+        core->SelectCommand(false);
+        VERIFY_IS_TRUE(core->HasSelection());
+        {
+            const auto& start = core->_terminal->GetSelectionAnchor();
+            const auto& end = core->_terminal->GetSelectionEnd();
+            const til::point expectedStart{ 17, 4 };
+            const til::point expectedEnd{ 23, 4 };
+            VERIFY_ARE_EQUAL(expectedStart, start);
+            VERIFY_ARE_EQUAL(expectedEnd, end);
+        }
+    }
+    void ControlCoreTests::TestSelectOutputSimple()
+    {
+        auto [settings, conn] = _createSettingsAndConnection();
+        Log::Comment(L"Create ControlCore object");
+        auto core = createCore(*settings, *conn);
+        VERIFY_IS_NOT_NULL(core);
+        _standardInit(core);
+
+        Log::Comment(L"Print some text");
+
+        _writePrompt(conn, L"C:\\Windows");
+        conn->WriteInput(winrt_wstring_to_array_view(L"Foo-bar"));
+        conn->WriteInput(winrt_wstring_to_array_view(L"\x1b]133;C\x7"));
+
+        conn->WriteInput(winrt_wstring_to_array_view(L"\r\n"));
+        conn->WriteInput(winrt_wstring_to_array_view(L"This is some text     \r\n"));
+        conn->WriteInput(winrt_wstring_to_array_view(L"with varying amounts  \r\n"));
+        conn->WriteInput(winrt_wstring_to_array_view(L"of whitespace         \r\n"));
+
+        _writePrompt(conn, L"C:\\Windows");
+
+        Log::Comment(L"Check the buffer contents");
+        const auto& buffer = core->_terminal->GetTextBuffer();
+        const auto& cursor = buffer.GetCursor();
+
+        {
+            const til::point expectedCursor{ 17, 4 };
+            VERIFY_ARE_EQUAL(expectedCursor, cursor.GetPosition());
+        }
+
+        VERIFY_IS_FALSE(core->HasSelection());
+        core->SelectOutput(true);
+        VERIFY_IS_TRUE(core->HasSelection());
+        {
+            const auto& start = core->_terminal->GetSelectionAnchor();
+            const auto& end = core->_terminal->GetSelectionEnd();
+            const til::point expectedStart{ 24, 0 }; // The character after the prompt
+            const til::point expectedEnd{ 21, 3 }; // x = the end of the text
+            VERIFY_ARE_EQUAL(expectedStart, start);
+            VERIFY_ARE_EQUAL(expectedEnd, end);
+        }
+    }
+    void ControlCoreTests::TestCommandContext()
+    {
+        auto [settings, conn] = _createSettingsAndConnection();
+        Log::Comment(L"Create ControlCore object");
+        auto core = createCore(*settings, *conn);
+        VERIFY_IS_NOT_NULL(core);
+        _standardInit(core);
+
+        Log::Comment(L"Print some text");
+
+        _writePrompt(conn, L"C:\\Windows");
+        conn->WriteInput(winrt_wstring_to_array_view(L"Foo-bar"));
+        conn->WriteInput(winrt_wstring_to_array_view(L"\x1b]133;C\x7"));
+
+        conn->WriteInput(winrt_wstring_to_array_view(L"\r\n"));
+        conn->WriteInput(winrt_wstring_to_array_view(L"This is some text     \r\n"));
+        conn->WriteInput(winrt_wstring_to_array_view(L"with varying amounts  \r\n"));
+        conn->WriteInput(winrt_wstring_to_array_view(L"of whitespace         \r\n"));
+
+        _writePrompt(conn, L"C:\\Windows");
+
+        Log::Comment(L"Check the command context");
+
+        const WEX::TestExecution::DisableVerifyExceptions disableExceptionsScope;
+        {
+            auto historyContext{ core->CommandHistory() };
+            VERIFY_ARE_EQUAL(1u, historyContext.History().Size());
+            VERIFY_ARE_EQUAL(L"", historyContext.CurrentCommandline());
+        }
+
+        Log::Comment(L"Write 'Bar' to the command...");
+        conn->WriteInput(winrt_wstring_to_array_view(L"Bar"));
+        {
+            auto historyContext{ core->CommandHistory() };
+            // Bar shouldn't be in the history, it should be the current command
+            VERIFY_ARE_EQUAL(1u, historyContext.History().Size());
+            VERIFY_ARE_EQUAL(L"Bar", historyContext.CurrentCommandline());
+        }
+
+        Log::Comment(L"then delete it");
+        conn->WriteInput(winrt_wstring_to_array_view(L"\b \b"));
+        conn->WriteInput(winrt_wstring_to_array_view(L"\b \b"));
+        conn->WriteInput(winrt_wstring_to_array_view(L"\b \b"));
+        {
+            auto historyContext{ core->CommandHistory() };
+            VERIFY_ARE_EQUAL(1u, historyContext.History().Size());
+            // The current commandline is now empty
+            VERIFY_ARE_EQUAL(L"", historyContext.CurrentCommandline());
+        }
+    }
+
+    void ControlCoreTests::TestCommandContextWithPwshGhostText()
+    {
+        auto [settings, conn] = _createSettingsAndConnection();
+        Log::Comment(L"Create ControlCore object");
+        auto core = createCore(*settings, *conn);
+        VERIFY_IS_NOT_NULL(core);
+        _standardInit(core);
+
+        Log::Comment(L"Print some text");
+
+        _writePrompt(conn, L"C:\\Windows");
+        conn->WriteInput(winrt_wstring_to_array_view(L"Foo-bar"));
+        conn->WriteInput(winrt_wstring_to_array_view(L"\x1b]133;C\x7"));
+
+        conn->WriteInput(winrt_wstring_to_array_view(L"\r\n"));
+        conn->WriteInput(winrt_wstring_to_array_view(L"This is some text     \r\n"));
+        conn->WriteInput(winrt_wstring_to_array_view(L"with varying amounts  \r\n"));
+        conn->WriteInput(winrt_wstring_to_array_view(L"of whitespace         \r\n"));
+
+        _writePrompt(conn, L"C:\\Windows");
+
+        Log::Comment(L"Check the command context");
+
+        const WEX::TestExecution::DisableVerifyExceptions disableExceptionsScope;
+        {
+            auto historyContext{ core->CommandHistory() };
+            VERIFY_ARE_EQUAL(1u, historyContext.History().Size());
+            VERIFY_ARE_EQUAL(L"", historyContext.CurrentCommandline());
+        }
+
+        Log::Comment(L"Write 'BarBar' to the command...");
+        conn->WriteInput(winrt_wstring_to_array_view(L"BarBar"));
+        {
+            auto historyContext{ core->CommandHistory() };
+            // BarBar shouldn't be in the history, it should be the current command
+            VERIFY_ARE_EQUAL(1u, historyContext.History().Size());
+            VERIFY_ARE_EQUAL(L"BarBar", historyContext.CurrentCommandline());
+        }
+
+        Log::Comment(L"then move the cursor to the left");
+        // This emulates the state the buffer is in when pwsh does it's "ghost
+        // text" thing. We don't want to include all that ghost text in the
+        // current commandline.
+        conn->WriteInput(winrt_wstring_to_array_view(L"\x1b[D"));
+        conn->WriteInput(winrt_wstring_to_array_view(L"\x1b[D"));
+        {
+            auto historyContext{ core->CommandHistory() };
+            VERIFY_ARE_EQUAL(1u, historyContext.History().Size());
+            // The current commandline is only the text to the left of the cursor
+            auto curr{ historyContext.CurrentCommandline() };
+            VERIFY_ARE_EQUAL(4u, curr.size());
+            VERIFY_ARE_EQUAL(L"BarB", curr);
+        }
+    }
+
+    void ControlCoreTests::TestSelectOutputScrolling()
+    {
+        auto [settings, conn] = _createSettingsAndConnection();
+        Log::Comment(L"Create ControlCore object");
+        auto core = createCore(*settings, *conn);
+        VERIFY_IS_NOT_NULL(core);
+        _standardInit(core);
+
+        Log::Comment(L"Print some text");
+
+        _writePrompt(conn, L"C:\\Windows"); // row 0
+        conn->WriteInput(winrt_wstring_to_array_view(L"Foo-bar")); // row 0
+        conn->WriteInput(winrt_wstring_to_array_view(L"\x1b]133;C\x7"));
+
+        conn->WriteInput(winrt_wstring_to_array_view(L"\r\n"));
+        conn->WriteInput(winrt_wstring_to_array_view(L"This is some text     \r\n")); // row 1
+        conn->WriteInput(winrt_wstring_to_array_view(L"with varying amounts  \r\n")); // row 2
+        conn->WriteInput(winrt_wstring_to_array_view(L"of whitespace         \r\n")); // row 3
+
+        _writePrompt(conn, L"C:\\Windows"); // row 4
+        conn->WriteInput(winrt_wstring_to_array_view(L"gci"));
+        conn->WriteInput(winrt_wstring_to_array_view(L"\x1b]133;C\x7"));
+        conn->WriteInput(winrt_wstring_to_array_view(L"\r\n"));
+
+        // enough to scroll
+        for (auto i = 0; i < 30; i++) // row 5-34
+        {
+            conn->WriteInput(winrt_wstring_to_array_view(L"-a--- 2/8/2024  9:47 README\r\n"));
+        }
+
+        _writePrompt(conn, L"C:\\Windows");
+
+        Log::Comment(L"Check the buffer contents");
+        const auto& buffer = core->_terminal->GetTextBuffer();
+        const auto& cursor = buffer.GetCursor();
+
+        {
+            const til::point expectedCursor{ 17, 35 };
+            VERIFY_ARE_EQUAL(expectedCursor, cursor.GetPosition());
+        }
+
+        VERIFY_IS_FALSE(core->HasSelection());
+
+        // The second mark is the first one we'll see
+        core->SelectOutput(true);
+        VERIFY_IS_TRUE(core->HasSelection());
+        {
+            const auto& start = core->_terminal->GetSelectionAnchor();
+            const auto& end = core->_terminal->GetSelectionEnd();
+            const til::point expectedStart{ 20, 4 }; // The character after the prompt
+            const til::point expectedEnd{ 26, 34 }; // x = the end of the text
+            VERIFY_ARE_EQUAL(expectedStart, start);
+            VERIFY_ARE_EQUAL(expectedEnd, end);
+        }
+        core->SelectOutput(true);
+        VERIFY_IS_TRUE(core->HasSelection());
+        {
+            const auto& start = core->_terminal->GetSelectionAnchor();
+            const auto& end = core->_terminal->GetSelectionEnd();
+            const til::point expectedStart{ 24, 0 }; // The character after the prompt
+            const til::point expectedEnd{ 21, 3 }; // x = the end of the text
+            VERIFY_ARE_EQUAL(expectedStart, start);
+            VERIFY_ARE_EQUAL(expectedEnd, end);
+        }
+    }
+
+    void ControlCoreTests::TestSelectOutputExactWrap()
+    {
+        // Just like the TestSelectOutputScrolling test, but these lines will
+        // exactly wrap to the right edge of the buffer, to catch a edge case
+        // present in `ControlCore::_selectSpan`
+        auto [settings, conn] = _createSettingsAndConnection();
+        Log::Comment(L"Create ControlCore object");
+        auto core = createCore(*settings, *conn);
+        VERIFY_IS_NOT_NULL(core);
+        _standardInit(core);
+
+        Log::Comment(L"Print some text");
+
+        _writePrompt(conn, L"C:\\Windows"); // row 0
+        conn->WriteInput(winrt_wstring_to_array_view(L"Foo-bar")); // row 0
+        conn->WriteInput(winrt_wstring_to_array_view(L"\x1b]133;C\x7"));
+
+        conn->WriteInput(winrt_wstring_to_array_view(L"\r\n"));
+        conn->WriteInput(winrt_wstring_to_array_view(L"This is some text     \r\n")); // row 1
+        conn->WriteInput(winrt_wstring_to_array_view(L"with varying amounts  \r\n")); // row 2
+        conn->WriteInput(winrt_wstring_to_array_view(L"of whitespace         \r\n")); // row 3
+
+        _writePrompt(conn, L"C:\\Windows"); // row 4
+        conn->WriteInput(winrt_wstring_to_array_view(L"gci"));
+        conn->WriteInput(winrt_wstring_to_array_view(L"\x1b]133;C\x7"));
+        conn->WriteInput(winrt_wstring_to_array_view(L"\r\n"));
+
+        // enough to scroll
+        for (auto i = 0; i < 30; i++) // row 5-35
+        {
+            conn->WriteInput(winrt_wstring_to_array_view(L"-a--- 2/8/2024  9:47 README.md\r\n"));
+        }
+
+        _writePrompt(conn, L"C:\\Windows");
+
+        Log::Comment(L"Check the buffer contents");
+        const auto& buffer = core->_terminal->GetTextBuffer();
+        const auto& cursor = buffer.GetCursor();
+
+        {
+            const til::point expectedCursor{ 17, 35 };
+            VERIFY_ARE_EQUAL(expectedCursor, cursor.GetPosition());
+        }
+
+        VERIFY_IS_FALSE(core->HasSelection());
+        // The second mark is the first one we'll see
+        core->SelectOutput(true);
+        VERIFY_IS_TRUE(core->HasSelection());
+        {
+            const auto& start = core->_terminal->GetSelectionAnchor();
+            const auto& end = core->_terminal->GetSelectionEnd();
+            const til::point expectedStart{ 20, 4 }; // The character after the prompt
+            const til::point expectedEnd{ 29, 34 }; // x = the end of the text
+            VERIFY_ARE_EQUAL(expectedStart, start);
+            VERIFY_ARE_EQUAL(expectedEnd, end);
+        }
+        core->SelectOutput(true);
+        VERIFY_IS_TRUE(core->HasSelection());
+        {
+            const auto& start = core->_terminal->GetSelectionAnchor();
+            const auto& end = core->_terminal->GetSelectionEnd();
+            const til::point expectedStart{ 24, 0 }; // The character after the prompt
+            const til::point expectedEnd{ 21, 3 }; // x = the end of the text
+            VERIFY_ARE_EQUAL(expectedStart, start);
+            VERIFY_ARE_EQUAL(expectedEnd, end);
+        }
+    }
+
+    void ControlCoreTests::TestSimpleClickSelection()
+    {
+        // Create a simple selection with the mouse, then click somewhere else,
+        // and confirm the selection got updated.
+
+        auto [settings, conn] = _createSettingsAndConnection();
+        Log::Comment(L"Create ControlCore object");
+        auto core = createCore(*settings, *conn);
+        VERIFY_IS_NOT_NULL(core);
+        _standardInit(core);
+
+        // Here, we're using the UpdateSelectionMarkers as a stand-in to check
+        // if the selection got updated with the renderer. Standing up a whole
+        // dummy renderer for this test would be not very ergonomic. Instead, we
+        // are relying on ControlCore::_updateSelectionUI both
+        // TriggerSelection()'ing and also rasing this event
+        bool expectedSelectionUpdate = false;
+        bool gotSelectionUpdate = false;
+        core->UpdateSelectionMarkers([&](auto&& /*sender*/, auto&& /*args*/) {
+            VERIFY_IS_TRUE(expectedSelectionUpdate);
+            expectedSelectionUpdate = false;
+            gotSelectionUpdate = true;
+        });
+
+        auto needToCopy = false;
+        expectedSelectionUpdate = true;
+        core->LeftClickOnTerminal(til::point{ 1, 1 },
+                                  1,
+                                  false,
+                                  true,
+                                  false,
+                                  needToCopy);
+
+        VERIFY_IS_TRUE(core->HasSelection());
+        {
+            const auto& start = core->_terminal->GetSelectionAnchor();
+            const auto& end = core->_terminal->GetSelectionEnd();
+            const til::point expectedStart{ 1, 1 };
+            const til::point expectedEnd{ 1, 1 };
+            VERIFY_ARE_EQUAL(expectedStart, start);
+            VERIFY_ARE_EQUAL(expectedEnd, end);
+        }
+        VERIFY_IS_TRUE(gotSelectionUpdate);
+
+        expectedSelectionUpdate = true;
+        core->LeftClickOnTerminal(til::point{ 1, 2 },
+                                  1,
+                                  false,
+                                  true,
+                                  false,
+                                  needToCopy);
+
+        VERIFY_IS_TRUE(core->HasSelection());
+        {
+            const auto& start = core->_terminal->GetSelectionAnchor();
+            const auto& end = core->_terminal->GetSelectionEnd();
+            const til::point expectedStart{ 1, 1 };
+            const til::point expectedEnd{ 1, 2 };
+            VERIFY_ARE_EQUAL(expectedStart, start);
+            VERIFY_ARE_EQUAL(expectedEnd, end);
+        }
+        VERIFY_IS_TRUE(gotSelectionUpdate);
+    }
 }

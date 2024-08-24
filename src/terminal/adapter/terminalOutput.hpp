@@ -23,30 +23,37 @@ namespace Microsoft::Console::VirtualTerminal
     class TerminalOutput sealed
     {
     public:
-        TerminalOutput() noexcept;
+        TerminalOutput(const bool grEnabled = false) noexcept;
 
+        void SoftReset() noexcept;
+        void RestoreFrom(const TerminalOutput& savedState) noexcept;
+        void AssignUserPreferenceCharset(const VTID charset, const bool size96);
+        VTID GetUserPreferenceCharsetId() const noexcept;
+        size_t GetUserPreferenceCharsetSize() const noexcept;
         wchar_t TranslateKey(const wchar_t wch) const noexcept;
-        bool Designate94Charset(const size_t gsetNumber, const VTID charset);
-        bool Designate96Charset(const size_t gsetNumber, const VTID charset);
+        void Designate94Charset(const size_t gsetNumber, const VTID charset);
+        void Designate96Charset(const size_t gsetNumber, const VTID charset);
         void SetDrcs94Designation(const VTID charset);
         void SetDrcs96Designation(const VTID charset);
         VTID GetCharsetId(const size_t gsetNumber) const;
         size_t GetCharsetSize(const size_t gsetNumber) const;
-        bool LockingShift(const size_t gsetNumber);
-        bool LockingShiftRight(const size_t gsetNumber);
-        bool SingleShift(const size_t gsetNumber) noexcept;
+        void LockingShift(const size_t gsetNumber);
+        void LockingShiftRight(const size_t gsetNumber);
+        void SingleShift(const size_t gsetNumber) noexcept;
         size_t GetLeftSetNumber() const noexcept;
         size_t GetRightSetNumber() const noexcept;
         bool IsSingleShiftPending(const size_t gsetNumber) const noexcept;
         bool NeedToTranslate() const noexcept;
-        void EnableGrTranslation(boolean enabled);
+        void EnableGrTranslation(const bool enabled);
 
     private:
         const std::wstring_view _LookupTranslationTable94(const VTID charset) const;
         const std::wstring_view _LookupTranslationTable96(const VTID charset) const;
-        bool _SetTranslationTable(const size_t gsetNumber, const std::wstring_view translationTable);
+        void _SetTranslationTable(const size_t gsetNumber, const std::wstring_view translationTable);
         void _ReplaceDrcsTable(const std::wstring_view oldTable, const std::wstring_view newTable);
 
+        VTID _upssId;
+        std::wstring_view _upssTranslationTable;
         std::array<std::wstring_view, 4> _gsetTranslationTables;
         std::array<VTID, 4> _gsetIds;
         size_t _glSetNumber = 0;
@@ -54,7 +61,7 @@ namespace Microsoft::Console::VirtualTerminal
         std::wstring_view _glTranslationTable;
         std::wstring_view _grTranslationTable;
         mutable size_t _ssSetNumber = 0;
-        boolean _grTranslationEnabled = false;
+        bool _grTranslationEnabled = false;
         VTID _drcsId = 0;
         std::wstring_view _drcsTranslationTable;
     };

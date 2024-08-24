@@ -80,6 +80,12 @@ namespace Microsoft.Terminal.Settings.Model
         Previous
     };
 
+    enum SelectOutputDirection
+    {
+        Previous = 0,
+        Next,
+    };
+
     enum CommandPaletteLaunchMode
     {
         Action = 0,
@@ -107,16 +113,40 @@ namespace Microsoft.Terminal.Settings.Model
         ToMouse,
     };
 
-    [default_interface] runtimeclass NewTerminalArgs {
+    [flags]
+    enum SuggestionsSource
+    {
+        Tasks = 0x1,
+        CommandHistory = 0x2,
+        DirectoryHistory = 0x4,
+        QuickFixes = 0x8,
+        All = 0xffffffff,
+    };
+
+    interface INewContentArgs {
+        String Type { get; };
+        Boolean Equals(INewContentArgs other);
+        UInt64 Hash();
+        INewContentArgs Copy();
+        String GenerateName();
+    };
+
+    runtimeclass BaseContentArgs : [default] INewContentArgs {
+        BaseContentArgs();
+        BaseContentArgs(String type);
+    };
+
+    runtimeclass NewTerminalArgs : INewContentArgs {
         NewTerminalArgs();
         NewTerminalArgs(Int32 profileIndex);
-        NewTerminalArgs Copy();
 
         String Commandline;
         String StartingDirectory;
         String TabTitle;
         Windows.Foundation.IReference<Windows.UI.Color> TabColor;
         String Profile; // Either a GUID or a profile's name if the GUID isn't a match
+        Guid SessionId;
+        Boolean AppendCommandLine;
 
         // We use IReference<> to treat some args as nullable where null means
         // "use the inherited value". See ProfileIndex,
@@ -131,13 +161,12 @@ namespace Microsoft.Terminal.Settings.Model
         // This needs to be an optional so that the default value (null) does
         // not modify whatever the profile's value is (either true or false)
         Windows.Foundation.IReference<Boolean> Elevate;
+        // Similarly with ReloadEnvironmentVariables
+        Windows.Foundation.IReference<Boolean> ReloadEnvironmentVariables;
 
         UInt64 ContentId{ get; set; };
 
-        Boolean Equals(NewTerminalArgs other);
-        String GenerateName();
         String ToCommandline();
-        UInt64 Hash();
     };
 
     [default_interface] runtimeclass ActionEventArgs : IActionEventArgs
@@ -148,14 +177,16 @@ namespace Microsoft.Terminal.Settings.Model
 
     [default_interface] runtimeclass CopyTextArgs : IActionArgs
     {
+        CopyTextArgs();
+        Boolean DismissSelection { get; };
         Boolean SingleLine { get; };
         Windows.Foundation.IReference<Microsoft.Terminal.Control.CopyFormat> CopyFormatting { get; };
     };
 
     [default_interface] runtimeclass NewTabArgs : IActionArgs
     {
-        NewTabArgs(NewTerminalArgs terminalArgs);
-        NewTerminalArgs TerminalArgs { get; };
+        NewTabArgs(INewContentArgs contentArgs);
+        INewContentArgs ContentArgs { get; };
     };
 
     [default_interface] runtimeclass MovePaneArgs : IActionArgs
@@ -195,20 +226,22 @@ namespace Microsoft.Terminal.Settings.Model
 
     [default_interface] runtimeclass SendInputArgs : IActionArgs
     {
+        SendInputArgs(String input);
+
         String Input { get; };
     };
 
     [default_interface] runtimeclass SplitPaneArgs : IActionArgs
     {
-        SplitPaneArgs(SplitType splitMode, SplitDirection split, Double size, NewTerminalArgs terminalArgs);
-        SplitPaneArgs(SplitDirection split, Double size, NewTerminalArgs terminalArgs);
-        SplitPaneArgs(SplitDirection split, NewTerminalArgs terminalArgs);
+        SplitPaneArgs(SplitType splitMode, SplitDirection split, Single size, INewContentArgs contentArgs);
+        SplitPaneArgs(SplitDirection split, Single size, INewContentArgs contentArgs);
+        SplitPaneArgs(SplitDirection split, INewContentArgs contentArgs);
         SplitPaneArgs(SplitType splitMode);
 
         SplitDirection SplitDirection { get; };
-        NewTerminalArgs TerminalArgs { get; };
+        INewContentArgs ContentArgs { get; };
         SplitType SplitMode { get; };
-        Double SplitSize { get; };
+        Single SplitSize { get; };
     };
 
     [default_interface] runtimeclass OpenSettingsArgs : IActionArgs
@@ -310,16 +343,33 @@ namespace Microsoft.Terminal.Settings.Model
         CommandPaletteLaunchMode LaunchMode { get; };
     };
 
+    [default_interface] runtimeclass SuggestionsArgs : IActionArgs
+    {
+        SuggestionsArgs();
+        SuggestionsArgs(SuggestionsSource source, Boolean useCommandline);
+        SuggestionsSource Source { get; };
+        Boolean UseCommandline { get; };
+    };
+
     [default_interface] runtimeclass FindMatchArgs : IActionArgs
     {
         FindMatchArgs(FindMatchDirection direction);
         FindMatchDirection Direction { get; };
     };
 
+    [default_interface] runtimeclass SaveSnippetArgs : IActionArgs
+    {
+        SaveSnippetArgs();
+        SaveSnippetArgs(String Name, String Commandline, String KeyChord);
+        String Name;
+        String Commandline;
+        String KeyChord;
+    };
+
     [default_interface] runtimeclass NewWindowArgs : IActionArgs
     {
-        NewWindowArgs(NewTerminalArgs terminalArgs);
-        NewTerminalArgs TerminalArgs { get; };
+        NewWindowArgs(INewContentArgs contentArgs);
+        INewContentArgs ContentArgs { get; };
     };
 
     [default_interface] runtimeclass PrevTabArgs : IActionArgs
@@ -340,6 +390,11 @@ namespace Microsoft.Terminal.Settings.Model
     {
         RenameWindowArgs(String name);
         String Name { get; };
+    };
+
+    [default_interface] runtimeclass SearchForTextArgs : IActionArgs
+    {
+        String QueryUrl { get; };
     };
 
     [default_interface] runtimeclass GlobalSummonArgs : IActionArgs
@@ -388,4 +443,17 @@ namespace Microsoft.Terminal.Settings.Model
         Microsoft.Terminal.Control.SelectionColor Background;
         Microsoft.Terminal.Core.MatchMode MatchMode { get; };
     };
+
+    [default_interface] runtimeclass SelectCommandArgs : IActionArgs
+    {
+        SelectCommandArgs(SelectOutputDirection direction);
+        SelectOutputDirection Direction { get; };
+    }
+    [default_interface] runtimeclass SelectOutputArgs : IActionArgs
+    {
+        SelectOutputArgs(SelectOutputDirection direction);
+        SelectOutputDirection Direction { get; };
+    }
+
+
 }

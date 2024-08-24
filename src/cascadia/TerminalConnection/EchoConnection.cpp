@@ -15,8 +15,9 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     {
     }
 
-    void EchoConnection::WriteInput(const hstring& data)
+    void EchoConnection::WriteInput(const winrt::array_view<const char16_t> buffer)
     {
+        const auto data = winrt_array_to_wstring_view(buffer);
         std::wstringstream prettyPrint;
         for (const auto& wch : data)
         {
@@ -33,7 +34,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                 prettyPrint << wch;
             }
         }
-        _TerminalOutputHandlers(prettyPrint.str());
+        TerminalOutput.raise(prettyPrint.str());
     }
 
     void EchoConnection::Resize(uint32_t /*rows*/, uint32_t /*columns*/) noexcept

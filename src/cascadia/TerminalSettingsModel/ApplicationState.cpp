@@ -11,6 +11,8 @@
 #include "FileUtils.h"
 #include "../../types/inc/utils.hpp"
 
+#include <til/io.h>
+
 static constexpr std::wstring_view stateFileName{ L"state.json" };
 static constexpr std::wstring_view elevatedStateFileName{ L"elevated-state.json" };
 
@@ -102,34 +104,14 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // The destructor ensures that the last write is flushed to disk before returning.
     ApplicationState::~ApplicationState()
     {
-        TraceLoggingWrite(g_hSettingsModelProvider,
-                          "ApplicationState_Dtor_Start",
-                          TraceLoggingDescription("Event at the start of the ApplicationState destructor"),
-                          TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-                          TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+        Flush();
+    }
 
+    void ApplicationState::Flush()
+    {
         // This will ensure that we not just cancel the last outstanding timer,
         // but instead force it to run as soon as possible and wait for it to complete.
         _throttler.flush();
-
-        TraceLoggingWrite(g_hSettingsModelProvider,
-                          "ApplicationState_Dtor_End",
-                          TraceLoggingDescription("Event at the end of the ApplicationState destructor"),
-                          TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-                          TraceLoggingKeyword(TIL_KEYWORD_TRACE));
-    }
-
-    // Re-read the state.json from disk.
-    void ApplicationState::Reload() const noexcept
-    {
-        _read();
-    }
-
-    bool ApplicationState::IsStatePath(const winrt::hstring& filename)
-    {
-        static const auto sharedPath{ _sharedPath.filename() };
-        static const auto elevatedPath{ _elevatedPath.filename() };
-        return filename == sharedPath || filename == elevatedPath;
     }
 
     // Method Description:
@@ -164,7 +146,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         std::unique_ptr<Json::CharReader> reader{ Json::CharReaderBuilder{}.newCharReader() };
 
         // First get shared state out of `state.json`.
-        const auto sharedData = _readSharedContents().value_or(std::string{});
+        const auto sharedData = _readSharedContents();
         if (!sharedData.empty())
         {
             Json::Value root;
@@ -183,7 +165,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 FromJson(root, FileSource::Shared);
 
                 // Then, try and get anything in elevated-state
-                if (const auto localData{ _readLocalContents().value_or(std::string{}) }; !localData.empty())
+                if (const auto localData{ _readLocalContents() }; !localData.empty())
                 {
                     Json::Value root;
                     if (!reader->parse(localData.data(), localData.data() + localData.size(), &root, &errs))
@@ -234,7 +216,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             // First load the contents of state.json into a json blob. This will
             // contain the Shared properties and the unelevated instance's Local
             // properties.
-            const auto sharedData = _readSharedContents().value_or(std::string{});
+            const auto sharedData = _readSharedContents();
             if (!sharedData.empty())
             {
                 if (!reader->parse(sharedData.data(), sharedData.data() + sharedData.size(), &root, &errs))
@@ -260,8 +242,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // Returns the application-global ApplicationState object.
     Microsoft::Terminal::Settings::Model::ApplicationState ApplicationState::SharedInstance()
     {
-        auto root{ GetBaseSettingsPath() };
-        static auto state = winrt::make_self<ApplicationState>(root);
+        static auto state = winrt::make_self<ApplicationState>(GetBaseSettingsPath());
         return *state;
     }
 
@@ -299,7 +280,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     Json::Value ApplicationState::_toJsonWithBlob(Json::Value& root, FileSource parseSource) const noexcept
     {
         {
-            auto state = _state.lock_shared();
+            const auto state = _state.lock_shared();
 
             // GH#11222: We only write properties that are of the same type (Local
             // or Shared) which we requested. If we didn't want to serialize this
@@ -314,6 +295,20 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return root;
     }
 
+    void ApplicationState::AppendPersistedWindowLayout(Model::WindowLayout layout)
+    {
+        {
+            const auto state = _state.lock();
+            if (!state->PersistedWindowLayouts || !*state->PersistedWindowLayouts)
+            {
+                state->PersistedWindowLayouts = winrt::single_threaded_vector<Model::WindowLayout>();
+            }
+            state->PersistedWindowLayouts->Append(std::move(layout));
+        }
+
+        _throttler();
+    }
+
     // Generate all getter/setters
 #define MTSM_APPLICATION_STATE_GEN(source, type, name, key, ...) \
     type ApplicationState::name() const noexcept                 \
@@ -326,7 +321,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     void ApplicationState::name(const type& value) noexcept      \
     {                                                            \
         {                                                        \
-            auto state = _state.lock();                          \
+            const auto state = _state.lock();                    \
             state->name.emplace(value);                          \
         }                                                        \
                                                                  \
@@ -339,9 +334,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // - Read the contents of our "shared" state - state that should be shared
     //   for elevated and unelevated instances. This is things like the list of
     //   generated profiles, the command palette commandlines.
-    std::optional<std::string> ApplicationState::_readSharedContents() const
+    std::string ApplicationState::_readSharedContents() const
     {
-        return ReadUTF8FileIfExists(_sharedPath);
+        return til::io::read_file_as_utf8_string_if_exists(_sharedPath);
     }
 
     // Method Description:
@@ -351,11 +346,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     //   those don't matter when unelevated).
     // - When elevated, this will DELETE `elevated-state.json` if it has bad
     //   permissions, so we don't potentially read malicious data.
-    std::optional<std::string> ApplicationState::_readLocalContents() const
+    std::string ApplicationState::_readLocalContents() const
     {
         return ::Microsoft::Console::Utils::IsRunningElevated() ?
-                   ReadUTF8FileIfExists(_elevatedPath, true) :
-                   ReadUTF8FileIfExists(_sharedPath, false);
+                   til::io::read_file_as_utf8_string_if_exists(_elevatedPath, true) :
+                   til::io::read_file_as_utf8_string_if_exists(_sharedPath, false);
     }
 
     // Method Description:
@@ -364,7 +359,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     //   `state.json`
     void ApplicationState::_writeSharedContents(const std::string_view content) const
     {
-        WriteUTF8FileAtomic(_sharedPath, content);
+        til::io::write_utf8_string_to_file_atomic(_sharedPath, content);
     }
 
     // Method Description:
@@ -376,7 +371,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         if (::Microsoft::Console::Utils::IsRunningElevated())
         {
-            // DON'T use WriteUTF8FileAtomic, which will write to a temporary file
+            // DON'T use til::io::write_utf8_string_to_file_atomic, which will write to a temporary file
             // then rename that file to the final filename. That actually lets us
             // overwrite the elevate file's contents even when unelevated, because
             // we're effectively deleting the original file, then renaming a
@@ -385,11 +380,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             // We're not worried about someone else doing that though, if they do
             // that with the wrong permissions, then we'll just ignore the file and
             // start over.
-            WriteUTF8File(_elevatedPath, content, true);
+            til::io::write_utf8_string_to_file(_elevatedPath, content, true);
         }
         else
         {
-            WriteUTF8FileAtomic(_sharedPath, content);
+            til::io::write_utf8_string_to_file_atomic(_sharedPath, content);
         }
     }
 

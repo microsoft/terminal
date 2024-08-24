@@ -83,10 +83,17 @@ static void EnsureNativeArchitecture()
     }
 }
 
-int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
+int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int nCmdShow)
 {
     TraceLoggingRegister(g_hWindowsTerminalProvider);
     ::Microsoft::Console::ErrorReporting::EnableFallbackFailureReporting(g_hWindowsTerminalProvider);
+
+    TraceLoggingWrite(
+        g_hWindowsTerminalProvider,
+        "ExeCreated",
+        TraceLoggingDescription("Event emitted when the terminal process is started"),
+        TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+        TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
 
     // If Terminal is spawned by a shortcut that requests that it run in a new process group
     // while attached to a console session, that request is nonsense. That request will, however,
@@ -115,8 +122,5 @@ int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
     winrt::init_apartment(winrt::apartment_type::single_threaded);
 
     const auto emperor = std::make_shared<::WindowEmperor>();
-    if (emperor->HandleCommandlineArgs())
-    {
-        emperor->WaitForWindows();
-    }
+    emperor->HandleCommandlineArgs(nCmdShow);
 }

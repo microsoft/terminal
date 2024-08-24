@@ -13,11 +13,8 @@ namespace Microsoft.Terminal.Control
 
     struct ScrollMark
     {
-        // There are other members of DispatchTypes::ScrollMark, but these are
-        // all we need to expose up and set downwards currently. Additional
-        // members can be bubbled as necessary.
-        Microsoft.Terminal.Core.Point Start;
-        Microsoft.Terminal.Core.Point End; // exclusive
+        // Additional members can be bubbled as necessary.
+        Int32 Row;
         Microsoft.Terminal.Core.OptionalColor Color;
     };
 
@@ -45,6 +42,10 @@ namespace Microsoft.Terminal.Control
         Int32 ViewHeight { get; };
         Int32 BufferHeight { get; };
 
+        Boolean HasSelection { get; };
+        Boolean HasMultiLineSelection { get; };
+        String SelectedText(Boolean trimTrailingWhitespace);
+
         Boolean BracketedPasteEnabled { get; };
 
         Microsoft.Terminal.TerminalConnection.ConnectionState ConnectionState { get; };
@@ -57,7 +58,11 @@ namespace Microsoft.Terminal.Control
         void ClearMark();
         void ClearAllMarks();
         void ScrollToMark(ScrollToMarkDirection direction);
+        void SelectCommand(Boolean goUp);
+        void SelectOutput(Boolean goUp);
         IVector<ScrollMark> ScrollMarks { get; };
+
+        String CurrentWorkingDirectory { get; };
 
     };
 }

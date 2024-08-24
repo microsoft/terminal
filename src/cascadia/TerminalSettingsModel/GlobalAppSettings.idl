@@ -76,10 +76,11 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_SETTING(FirstWindowPreference, FirstWindowPreference);
         INHERITABLE_SETTING(LaunchMode, LaunchMode);
         INHERITABLE_SETTING(Boolean, SnapToGridOnResize);
-        INHERITABLE_SETTING(Boolean, ForceFullRepaintRendering);
+        INHERITABLE_SETTING(Microsoft.Terminal.Control.GraphicsAPI, GraphicsAPI);
+        INHERITABLE_SETTING(Boolean, DisablePartialInvalidation);
         INHERITABLE_SETTING(Boolean, SoftwareRendering);
+        INHERITABLE_SETTING(Microsoft.Terminal.Control.TextMeasurement, TextMeasurement);
         INHERITABLE_SETTING(Boolean, UseBackgroundImageForWindow);
-        INHERITABLE_SETTING(Boolean, ReloadEnvironmentVariables);
         INHERITABLE_SETTING(Boolean, ForceVTInput);
         INHERITABLE_SETTING(Boolean, DebugFeaturesEnabled);
         INHERITABLE_SETTING(Boolean, StartOnUserLogin);
@@ -98,11 +99,16 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_SETTING(Boolean, ShowAdminShield);
         INHERITABLE_SETTING(IVector<NewTabMenuEntry>, NewTabMenu);
         INHERITABLE_SETTING(Boolean, EnableColorSelection);
+        INHERITABLE_SETTING(Boolean, EnableShellCompletionMenu);
+        INHERITABLE_SETTING(Boolean, EnableUnfocusedAcrylic);
         INHERITABLE_SETTING(Boolean, IsolatedMode);
+        INHERITABLE_SETTING(Boolean, AllowHeadless);
+        INHERITABLE_SETTING(String, SearchWebDefaultQueryUrl);
 
         Windows.Foundation.Collections.IMapView<String, ColorScheme> ColorSchemes();
         void AddColorScheme(ColorScheme scheme);
         void RemoveColorScheme(String schemeName);
+        ColorScheme DuplicateColorScheme(ColorScheme scheme);
 
         ActionMap ActionMap { get; };
 

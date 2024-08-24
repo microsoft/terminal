@@ -51,12 +51,12 @@ class TerminalCoreUnitTests::TerminalBufferTests final
 
     TEST_METHOD(TestGetReverseTab);
 
-    TEST_METHOD(TestCursorNotifications);
+    TEST_METHOD(TestURLPatternDetection);
 
     TEST_METHOD_SETUP(MethodSetup)
     {
         // STEP 1: Set up the Terminal
-        term = std::make_unique<Terminal>();
+        term = std::make_unique<Terminal>(Terminal::TestDummyMarker{});
         emptyRenderer = std::make_unique<DummyRenderer>(term.get());
         term->Create({ TerminalViewWidth, TerminalViewHeight }, TerminalHistoryLength, *emptyRenderer);
         return true;
@@ -597,42 +597,40 @@ void TerminalBufferTests::TestGetReverseTab()
     }
 }
 
-void TerminalBufferTests::TestCursorNotifications()
+void TerminalBufferTests::TestURLPatternDetection()
 {
-    // Test for GH#11170
+    using namespace std::string_view_literals;
 
-    // Suppress test exceptions. If they occur in the lambda, they'll just crash
-    // TAEF, which is annoying.
-    const WEX::TestExecution::DisableVerifyExceptions disableExceptionsScope;
+    constexpr auto BeforeStr = L"<Before>"sv;
+    constexpr auto UrlStr = L"https://www.contoso.com"sv;
+    constexpr auto AfterStr = L"<After>"sv;
+    constexpr auto urlStartX = BeforeStr.size();
+    constexpr auto urlEndX = BeforeStr.size() + UrlStr.size() - 1;
 
-    auto callbackWasCalled = false;
-    auto expectedCallbacks = 0;
-    auto cb = [&expectedCallbacks, &callbackWasCalled]() mutable {
-        Log::Comment(L"Callback triggered");
-        callbackWasCalled = true;
-        expectedCallbacks--;
-        VERIFY_IS_GREATER_THAN_OR_EQUAL(expectedCallbacks, 0);
-    };
-    term->_pfnCursorPositionChanged = cb;
+    // This is off by default; turn it on for the test.
+    auto originalDetectURLs = term->_detectURLs;
+    auto restoreDetectUrls = wil::scope_exit([&]() {
+        term->_detectURLs = originalDetectURLs;
+    });
+    term->_detectURLs = true;
 
-    // The exact number of callbacks here is fungible, if need be.
+    auto& termSm = *term->_stateMachine;
+    termSm.ProcessString(fmt::format(FMT_COMPILE(L"{}{}{}"), BeforeStr, UrlStr, AfterStr));
+    term->UpdatePatternsUnderLock();
 
-    expectedCallbacks = 1;
-    callbackWasCalled = false;
-    term->Write(L"Foo");
-    VERIFY_ARE_EQUAL(0, expectedCallbacks);
-    VERIFY_IS_TRUE(callbackWasCalled);
+    std::wstring result;
 
-    expectedCallbacks = 1;
-    callbackWasCalled = false;
-    term->Write(L"Foo\r\nBar");
-    VERIFY_ARE_EQUAL(0, expectedCallbacks);
-    VERIFY_IS_TRUE(callbackWasCalled);
+    result = term->GetHyperlinkAtBufferPosition(til::point{ urlStartX - 1, 0 });
+    VERIFY_IS_TRUE(result.empty(), L"URL is not detected before the actual URL.");
 
-    expectedCallbacks = 2; // One for each Write
-    callbackWasCalled = false;
-    term->Write(L"Foo\r\nBar");
-    term->Write(L"Foo\r\nBar");
-    VERIFY_ARE_EQUAL(0, expectedCallbacks);
-    VERIFY_IS_TRUE(callbackWasCalled);
+    result = term->GetHyperlinkAtBufferPosition(til::point{ urlStartX, 0 });
+    VERIFY_IS_TRUE(!result.empty(), L"A URL is detected at the start position.");
+    VERIFY_ARE_EQUAL(result, UrlStr, L"Detected URL matches the given URL.");
+
+    result = term->GetHyperlinkAtBufferPosition(til::point{ urlEndX, 0 });
+    VERIFY_IS_TRUE(!result.empty(), L"A URL is detected at the end position.");
+    VERIFY_ARE_EQUAL(result, UrlStr, L"Detected URL matches the given URL.");
+
+    result = term->GetHyperlinkAtBufferPosition(til::point{ urlEndX + 1, 0 });
+    VERIFY_IS_TRUE(result.empty(), L"URL is not detected after the actual URL.");
 }

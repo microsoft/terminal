@@ -62,9 +62,14 @@ bool TextColor::CanBeBrightened() const noexcept
     return IsIndex16() || IsDefault();
 }
 
+ColorType TextColor::GetType() const noexcept
+{
+    return _meta;
+}
+
 bool TextColor::IsLegacy() const noexcept
 {
-    return IsIndex16() || (IsIndex256() && _index < 16);
+    return (IsIndex16() || IsIndex256()) && _index < 16;
 }
 
 bool TextColor::IsIndex16() const noexcept
@@ -80,6 +85,11 @@ bool TextColor::IsIndex256() const noexcept
 bool TextColor::IsDefault() const noexcept
 {
     return _meta == ColorType::IsDefault;
+}
+
+bool TextColor::IsDefaultOrLegacy() const noexcept
+{
+    return _meta != ColorType::IsRgb && _index < 16;
 }
 
 bool TextColor::IsRgb() const noexcept
@@ -197,7 +207,7 @@ COLORREF TextColor::GetColor(const std::array<COLORREF, TextColor::TABLE_SIZE>& 
             //    the result will be something like 0b00100000.
             // 5. Use BitScanForward (bsf) to find the index of the most significant 1 bit.
             const auto haystack = _mm256_loadu_si256(reinterpret_cast<const __m256i*>(colorTable.data())); // 1.
-            const auto needle = _mm256_set1_epi32(til::bit_cast<int>(defaultColor)); // 2.
+            const auto needle = _mm256_set1_epi32(std::bit_cast<int>(defaultColor)); // 2.
             const auto result = _mm256_cmpeq_epi32(haystack, needle); // 3.
             const auto mask = _mm256_movemask_ps(_mm256_castsi256_ps(result)); // 4.
             unsigned long index;
@@ -214,7 +224,7 @@ COLORREF TextColor::GetColor(const std::array<COLORREF, TextColor::TABLE_SIZE>& 
             //   --> the index returned by _BitScanForward must be divided by 2.
             const auto haystack1 = _mm_loadu_si128(reinterpret_cast<const __m128i*>(colorTable.data() + 0));
             const auto haystack2 = _mm_loadu_si128(reinterpret_cast<const __m128i*>(colorTable.data() + 4));
-            const auto needle = _mm_set1_epi32(til::bit_cast<int>(defaultColor));
+            const auto needle = _mm_set1_epi32(std::bit_cast<int>(defaultColor));
             const auto result1 = _mm_cmpeq_epi32(haystack1, needle);
             const auto result2 = _mm_cmpeq_epi32(haystack2, needle);
             const auto result = _mm_packs_epi32(result1, result2); // 3.5
@@ -274,16 +284,4 @@ BYTE TextColor::GetLegacyIndex(const BYTE defaultIndex) const noexcept
                                    ((_blue >> 6) & 0b00000011);
         return til::at(CompressedRgbToIndex16, compressedRgb);
     }
-}
-
-// Method Description:
-// - Return a COLORREF containing our stored value. Will return garbage if this
-//attribute is not a RGB attribute.
-// Arguments:
-// - <none>
-// Return Value:
-// - a COLORREF containing our stored value
-COLORREF TextColor::GetRGB() const noexcept
-{
-    return RGB(_red, _green, _blue);
 }

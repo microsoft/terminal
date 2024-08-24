@@ -8,6 +8,9 @@
 #include <fmt/chrono.h>
 #include <shlobj.h>
 #include <til/latch.h>
+#include <til/io.h>
+
+#include "resource.h"
 
 #include "AzureCloudShellGenerator.h"
 #include "PowershellCoreProfileGenerator.h"
@@ -16,16 +19,6 @@
 #if TIL_FEATURE_DYNAMICSSHPROFILES_ENABLED
 #include "SshHostGenerator.h"
 #endif
-
-// The following files are generated at build time into the "Generated Files" directory.
-// defaults(-universal).h is a file containing the default json settings in a std::string_view.
-#include "defaults.h"
-#include "defaults-universal.h"
-// userDefault.h is like the above, but with a default template for the user's settings.json.
-#include <LegacyProfileGeneratorNamespaces.h>
-
-#include "userDefaults.h"
-#include "enableColorSelection.h"
 
 #include "ApplicationState.h"
 #include "DefaultTerminal.h"
@@ -52,6 +45,18 @@ static constexpr std::string_view ThemesKey{ "themes" };
 constexpr std::wstring_view systemThemeName{ L"system" };
 constexpr std::wstring_view darkThemeName{ L"dark" };
 constexpr std::wstring_view lightThemeName{ L"light" };
+constexpr std::wstring_view legacySystemThemeName{ L"legacySystem" };
+constexpr std::wstring_view legacyDarkThemeName{ L"legacyDark" };
+constexpr std::wstring_view legacyLightThemeName{ L"legacyLight" };
+
+static constexpr std::array builtinThemes{
+    systemThemeName,
+    lightThemeName,
+    darkThemeName,
+    legacySystemThemeName,
+    legacyLightThemeName,
+    legacyDarkThemeName,
+};
 
 static constexpr std::wstring_view jsonExtension{ L".json" };
 static constexpr std::wstring_view FragmentsSubDirectory{ L"\\Fragments" };
@@ -73,7 +78,7 @@ static auto extractValueFromTaskWithoutMainThreadAwait(TTask&& task) -> decltype
     std::optional<decltype(task.get())> finalVal;
     til::latch latch{ 1 };
 
-    const auto _ = [&]() -> winrt::fire_and_forget {
+    const auto _ = [&]() -> safe_void_coroutine {
         const auto cleanup = wil::scope_exit([&]() {
             latch.count_down();
         });
@@ -102,6 +107,9 @@ void ParsedSettings::clear()
     baseLayerProfile = {};
     profiles.clear();
     profilesByGuid.clear();
+    colorSchemes.clear();
+    fixupsAppliedDuringLoad = false;
+    themesChangeLog.clear();
 }
 
 // This is a convenience method used by the CascadiaSettings constructor.
@@ -112,6 +120,7 @@ SettingsLoader SettingsLoader::Default(const std::string_view& userJSON, const s
     SettingsLoader loader{ userJSON, inboxJSON };
     loader.MergeInboxIntoUserSettings();
     loader.FinalizeLayering();
+    loader.FixupUserSettings();
     return loader;
 }
 
@@ -199,6 +208,7 @@ void SettingsLoader::ApplyRuntimeInitialSettings()
 // Adds profiles from .inboxSettings as parents of matching profiles in .userSettings.
 // That way the user profiles will get appropriate defaults from the generators (like icons and such).
 // If a matching profile doesn't exist yet in .userSettings, one will be created.
+// Additionally, produces a final view of the color schemes from the inbox + user settings
 void SettingsLoader::MergeInboxIntoUserSettings()
 {
     for (const auto& profile : inboxSettings.profiles)
@@ -225,8 +235,11 @@ void SettingsLoader::FindFragmentsAndMergeIntoUserSettings()
             {
                 try
                 {
-                    const auto content = ReadUTF8File(fragmentExt.path());
-                    _parseFragment(source, content, fragmentSettings);
+                    const auto content = til::io::read_file_as_utf8_string_if_exists(fragmentExt.path());
+                    if (!content.empty())
+                    {
+                        _parseFragment(source, content, fragmentSettings);
+                    }
                 }
                 CATCH_LOG();
             }
@@ -322,6 +335,11 @@ void SettingsLoader::MergeFragmentIntoUserSettings(const winrt::hstring& source,
 // by MergeInboxIntoUserSettings/FindFragmentsAndMergeIntoUserSettings).
 void SettingsLoader::FinalizeLayering()
 {
+    for (const auto& colorScheme : inboxSettings.colorSchemes)
+    {
+        _addOrMergeUserColorScheme(colorScheme.second);
+    }
+
     // Layer default globals -> user globals
     userSettings.globals->AddLeastImportantParent(inboxSettings.globals);
 
@@ -329,8 +347,8 @@ void SettingsLoader::FinalizeLayering()
     // actions, this is the time to do it.
     if (userSettings.globals->EnableColorSelection())
     {
-        const auto json = _parseJson(EnableColorSelectionSettingsJson);
-        const auto globals = GlobalAppSettings::FromJson(json.root);
+        const auto json = _parseJson(LoadStringResource(IDR_ENABLE_COLOR_SELECTION));
+        const auto globals = GlobalAppSettings::FromJson(json.root, OriginTag::InBox);
         userSettings.globals->AddLeastImportantParent(globals);
     }
 
@@ -392,6 +410,42 @@ bool SettingsLoader::DisableDeletedProfiles()
     return newGeneratedProfiles;
 }
 
+bool winrt::Microsoft::Terminal::Settings::Model::implementation::SettingsLoader::RemapColorSchemeForProfile(const winrt::com_ptr<winrt::Microsoft::Terminal::Settings::Model::implementation::Profile>& profile)
+{
+    bool modified{ false };
+
+    const IAppearanceConfig appearances[] = {
+        profile->DefaultAppearance(),
+        profile->UnfocusedAppearance()
+    };
+
+    for (auto&& appearance : appearances)
+    {
+        if (appearance)
+        {
+            if (auto schemeName{ appearance.LightColorSchemeName() }; !schemeName.empty())
+            {
+                if (auto found{ userSettings.colorSchemeRemappings.find(schemeName) }; found != userSettings.colorSchemeRemappings.end())
+                {
+                    appearance.LightColorSchemeName(found->second);
+                    modified = true;
+                }
+            }
+
+            if (auto schemeName{ appearance.DarkColorSchemeName() }; !schemeName.empty())
+            {
+                if (auto found{ userSettings.colorSchemeRemappings.find(schemeName) }; found != userSettings.colorSchemeRemappings.end())
+                {
+                    appearance.DarkColorSchemeName(found->second);
+                    modified = true;
+                }
+            }
+        }
+    }
+
+    return modified;
+}
+
 // Runs migrations and fixups on user settings.
 // Returns true if something got changed and
 // the settings need to be saved to disk.
@@ -399,7 +453,7 @@ bool SettingsLoader::FixupUserSettings()
 {
     struct CommandlinePatch
     {
-        winrt::guid guid;
+        winrt::guid guid{};
         std::wstring_view before;
         std::wstring_view after;
     };
@@ -409,34 +463,65 @@ bool SettingsLoader::FixupUserSettings()
         CommandlinePatch{ DEFAULT_WINDOWS_POWERSHELL_GUID, L"powershell.exe", L"%SystemRoot%\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" },
     };
 
-    auto fixedUp = false;
+    static constexpr std::array iconsToClearFromVisualStudioProfiles{
+        std::wstring_view{ L"ms-appx:///ProfileIcons/{61c54bbd-c2c6-5271-96e7-009a87ff44bf}.png" },
+        std::wstring_view{ L"ms-appx:///ProfileIcons/{0caa0dad-35be-5f56-a8ff-afceeeaa6101}.png" },
+    };
 
+    auto fixedUp = userSettings.fixupsAppliedDuringLoad;
+    fixedUp = userSettings.globals->FixupsAppliedDuringLoad() || fixedUp;
+
+    fixedUp = RemapColorSchemeForProfile(userSettings.baseLayerProfile) || fixedUp;
     for (const auto& profile : userSettings.profiles)
     {
-        if (!profile->HasCommandline())
-        {
-            continue;
-        }
+        fixedUp = RemapColorSchemeForProfile(profile) || fixedUp;
 
-        for (const auto& patch : commandlinePatches)
+        if (profile->HasCommandline())
         {
-            if (profile->Guid() == patch.guid && til::equals_insensitive_ascii(profile->Commandline(), patch.before))
+            for (const auto& patch : commandlinePatches)
             {
-                profile->ClearCommandline();
-
-                // GH#12842:
-                // With the commandline field on the user profile gone, it's actually unknown what
-                // commandline it'll inherit, since a user profile can have multiple parents. We have to
-                // make sure we restore the correct commandline in case we don't inherit the expected one.
-                if (profile->Commandline() != patch.after)
+                if (profile->Guid() == patch.guid && til::equals_insensitive_ascii(profile->Commandline(), patch.before))
                 {
-                    profile->Commandline(winrt::hstring{ patch.after });
-                }
+                    profile->ClearCommandline();
 
-                fixedUp = true;
-                break;
+                    // GH#12842:
+                    // With the commandline field on the user profile gone, it's actually unknown what
+                    // commandline it'll inherit, since a user profile can have multiple parents. We have to
+                    // make sure we restore the correct commandline in case we don't inherit the expected one.
+                    if (profile->Commandline() != patch.after)
+                    {
+                        profile->Commandline(winrt::hstring{ patch.after });
+                    }
+
+                    fixedUp = true;
+                    break;
+                }
             }
         }
+
+        if (profile->HasIcon() && profile->HasSource() && profile->Source() == VisualStudioGenerator::Namespace)
+        {
+            for (auto&& icon : iconsToClearFromVisualStudioProfiles)
+            {
+                if (profile->Icon() == icon)
+                {
+                    profile->ClearIcon();
+                    fixedUp = true;
+                    break;
+                }
+            }
+        }
+    }
+
+    // Terminal 1.19: Migrate the global
+    // `compatibility.reloadEnvironmentVariables` to being a per-profile
+    // setting. If the user had it disabled in 1.18, then set the
+    // profiles.defaults value to false to match.
+    if (!userSettings.globals->LegacyReloadEnvironmentVariables())
+    {
+        // migrate the user's opt-out to the profiles.defaults
+        userSettings.baseLayerProfile->ReloadEnvironmentVariables(false);
+        fixedUp = true;
     }
 
     return fixedUp;
@@ -485,12 +570,12 @@ void SettingsLoader::_rethrowSerializationExceptionWithLocationInfo(const JsonUt
     const auto [line, column] = _lineAndColumnFromPosition(settingsString, static_cast<size_t>(e.jsonValue.getOffsetStart()));
 
     fmt::memory_buffer msg;
-    fmt::format_to(msg, "* Line {}, Column {}", line, column);
+    fmt::format_to(std::back_inserter(msg), "* Line {}, Column {}", line, column);
     if (e.key)
     {
-        fmt::format_to(msg, " ({})", *e.key);
+        fmt::format_to(std::back_inserter(msg), " ({})", *e.key);
     }
-    fmt::format_to(msg, "\n  Have: {}\n  Expected: {}\0", jsonValueAsString, e.expectedType);
+    fmt::format_to(std::back_inserter(msg), "\n  Have: {}\n  Expected: {}\0", jsonValueAsString, e.expectedType);
 
     throw SettingsTypedDeserializationException{ msg.data() };
 }
@@ -546,13 +631,14 @@ void SettingsLoader::_parse(const OriginTag origin, const winrt::hstring& source
     settings.clear();
 
     {
-        settings.globals = GlobalAppSettings::FromJson(json.root);
+        settings.globals = GlobalAppSettings::FromJson(json.root, origin);
 
         for (const auto& schemeJson : json.colorSchemes)
         {
             if (const auto scheme = ColorScheme::FromJson(schemeJson))
             {
-                settings.globals->AddColorScheme(*scheme);
+                scheme->Origin(origin);
+                settings.colorSchemes.emplace(scheme->Name(), std::move(scheme));
             }
         }
     }
@@ -562,14 +648,22 @@ void SettingsLoader::_parse(const OriginTag origin, const winrt::hstring& source
         {
             if (const auto theme = Theme::FromJson(themeJson))
             {
+                const auto& name{ theme->Name() };
+
                 if (origin != OriginTag::InBox &&
-                    (theme->Name() == systemThemeName || theme->Name() == lightThemeName || theme->Name() == darkThemeName))
+                    (std::ranges::find(builtinThemes, name) != builtinThemes.end()))
                 {
                     // If the theme didn't come from the in-box themes, and its
                     // name was one of the reserved names, then just ignore it.
                     // Themes don't support layering - we don't want the user
                     // versions of these themes overriding the built-in ones.
                     continue;
+                }
+
+                if (origin != OriginTag::InBox)
+                {
+                    static std::string themesContext{ "themes" };
+                    theme->LogSettingChanges(settings.themesChangeLog, themesContext);
                 }
                 settings.globals->AddTheme(*theme);
             }
@@ -605,7 +699,7 @@ void SettingsLoader::_parse(const OriginTag origin, const winrt::hstring& source
 // schemes and profiles. Additionally this function supports profiles which specify an "updates" key.
 void SettingsLoader::_parseFragment(const winrt::hstring& source, const std::string_view& content, ParsedSettings& settings)
 {
-    const auto json = _parseJson(content);
+    auto json = _parseJson(content);
 
     settings.clear();
 
@@ -618,11 +712,20 @@ void SettingsLoader::_parseFragment(const winrt::hstring& source, const std::str
             {
                 if (const auto scheme = ColorScheme::FromJson(schemeJson))
                 {
-                    settings.globals->AddColorScheme(*scheme);
+                    scheme->Origin(OriginTag::Fragment);
+                    // Don't add the color scheme to the Fragment's GlobalSettings; that will
+                    // cause layering issues later. Add them to a staging area for later processing.
+                    // (search for STAGED COLORS to find the next step)
+                    settings.colorSchemes.emplace(scheme->Name(), std::move(scheme));
                 }
             }
             CATCH_LOG()
         }
+
+        // Parse out actions from the fragment. Manually opt-out of keybinding
+        // parsing - fragments shouldn't be allowed to bind actions to keys
+        // directly. We may want to revisit circa GH#2205
+        settings.globals->LayerActionsFrom(json.root, OriginTag::Fragment, false);
     }
 
     {
@@ -664,10 +767,18 @@ void SettingsLoader::_parseFragment(const winrt::hstring& source, const std::str
         }
     }
 
-    for (const auto& kv : settings.globals->ColorSchemes())
+    // STAGED COLORS are processed here: we merge them into the partially-loaded
+    // settings directly so that we can resolve conflicts between user-generated
+    // color schemes and fragment-originated ones.
+    for (const auto& fragmentColorScheme : settings.colorSchemes)
     {
-        userSettings.globals->AddColorScheme(kv.Value());
+        _addOrMergeUserColorScheme(fragmentColorScheme.second);
     }
+
+    // Add the parsed fragment globals as a parent of the user's settings.
+    // Later, in FinalizeInheritance, this will result in the action map from
+    // the fragments being applied before the user's own settings.
+    userSettings.globals->AddLeastImportantParent(settings.globals);
 }
 
 SettingsLoader::JsonSettings SettingsLoader::_parseJson(const std::string_view& content)
@@ -767,6 +878,37 @@ void SettingsLoader::_addUserProfileParent(const winrt::com_ptr<implementation::
     }
 }
 
+void SettingsLoader::_addOrMergeUserColorScheme(const winrt::com_ptr<implementation::ColorScheme>& newScheme)
+{
+    // On entry, all the user color schemes have been loaded. Therefore, any insertions of inbox or fragment schemes
+    // will fail; we can leverage this to detect when they are equivalent and delete the user's duplicate copies.
+    // If the user has changed the otherwise "duplicate" scheme, though, we will move it aside.
+    if (const auto [it, inserted] = userSettings.colorSchemes.emplace(newScheme->Name(), newScheme); !inserted)
+    {
+        // This scheme was not inserted because one already existed.
+        auto existingScheme{ it->second };
+        if (existingScheme->Origin() == OriginTag::User) // we only want to impose ordering on User schemes
+        {
+            it->second = newScheme; // Stomp the user's existing scheme with the one we just got (to make sure the right Origin is set)
+            userSettings.fixupsAppliedDuringLoad = true; // Make sure we save the settings.
+            if (!existingScheme->IsEquivalentForSettingsMergePurposes(newScheme))
+            {
+                hstring newName{ fmt::format(FMT_COMPILE(L"{} (modified)"), existingScheme->Name()) };
+                int differentiator = 2;
+                while (userSettings.colorSchemes.contains(newName))
+                {
+                    newName = hstring{ fmt::format(FMT_COMPILE(L"{} (modified {})"), existingScheme->Name(), differentiator++) };
+                }
+                // Rename the user's scheme.
+                existingScheme->Name(newName);
+                userSettings.colorSchemeRemappings.emplace(newScheme->Name(), newName);
+                // And re-add it to the end.
+                userSettings.colorSchemes.emplace(newName, std::move(existingScheme));
+            }
+        }
+    }
+}
+
 // As the name implies it executes a generator.
 // Generated profiles are added to .inboxSettings. Used by GenerateProfiles().
 void SettingsLoader::_executeGenerator(const IDynamicProfileGenerator& generator)
@@ -815,7 +957,7 @@ Model::CascadiaSettings CascadiaSettings::LoadAll()
 try
 {
     FILETIME lastWriteTime{};
-    auto settingsString = ReadUTF8FileIfExists(_settingsPath(), false, &lastWriteTime).value_or(std::string{});
+    auto settingsString = til::io::read_file_as_utf8_string_if_exists(_settingsPath(), false, &lastWriteTime);
     auto firstTimeSetup = settingsString.empty();
 
     // If it's the firstTimeSetup and a preview build, then try to
@@ -824,11 +966,11 @@ try
     bool releaseSettingExists = false;
     if (firstTimeSetup && !IsPortableMode())
     {
-#if defined(WT_BRANDING_PREVIEW)
+#if defined(WT_BRANDING_PREVIEW) || defined(WT_BRANDING_CANARY)
         {
             try
             {
-                settingsString = ReadUTF8FileIfExists(_releaseSettingsPath()).value_or(std::string{});
+                settingsString = til::io::read_file_as_utf8_string_if_exists(_releaseSettingsPath());
                 releaseSettingExists = settingsString.empty() ? false : true;
             }
             catch (...)
@@ -851,10 +993,10 @@ try
 
     // Only uses default settings when firstTimeSetup is true and releaseSettingExists is false
     // Otherwise use existing settingsString
-    const auto settingsStringView = (firstTimeSetup && !releaseSettingExists) ? UserSettingsJson : settingsString;
+    const auto settingsStringView = (firstTimeSetup && !releaseSettingExists) ? LoadStringResource(IDR_USER_DEFAULTS) : settingsString;
     auto mustWriteToDisk = firstTimeSetup;
 
-    SettingsLoader loader{ settingsStringView, DefaultJson };
+    SettingsLoader loader{ settingsStringView, LoadStringResource(IDR_DEFAULTS) };
 
     // Generate dynamic profiles and add them as parents of user profiles.
     // That way the user profiles will get appropriate defaults from the generators (like icons and such).
@@ -925,25 +1067,6 @@ void CascadiaSettings::_researchOnLoad()
     // Only do this if we're actually being sampled
     if (TraceLoggingProviderEnabled(g_hSettingsModelProvider, 0, MICROSOFT_KEYWORD_MEASURES))
     {
-        // GH#13936: We're interested in how many users opt out of useAtlasEngine,
-        // indicating major issues that would require us to disable it by default again.
-        {
-            size_t enabled[2]{};
-            for (const auto& profile : _activeProfiles)
-            {
-                enabled[profile.UseAtlasEngine()]++;
-            }
-
-            TraceLoggingWrite(
-                g_hSettingsModelProvider,
-                "AtlasEngine_Usage",
-                TraceLoggingDescription("Event emitted upon settings load, containing the number of profiles opted-in/out of useAtlasEngine"),
-                TraceLoggingUIntPtr(enabled[0], "UseAtlasEngineDisabled", "Number of profiles for which AtlasEngine is disabled"),
-                TraceLoggingUIntPtr(enabled[1], "UseAtlasEngineEnabled", "Number of profiles for which AtlasEngine is enabled"),
-                TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
-                TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
-        }
-
         // ----------------------------- RE: Themes ----------------------------
         const auto numThemes = GlobalSettings().Themes().Size();
         const auto themeInUse = GlobalSettings().CurrentTheme().Name();
@@ -953,10 +1076,16 @@ void CascadiaSettings::_researchOnLoad()
         // light: 1
         // dark: 2
         // a custom theme: 3
-        const auto themeChoice = themeInUse == L"system" ? 0 :
-                                 themeInUse == L"light"  ? 1 :
-                                 themeInUse == L"dark"   ? 2 :
-                                                           3;
+        // system (legacy): 4
+        // light (legacy): 5
+        // dark (legacy): 6
+        const auto themeChoice = themeInUse == L"system"       ? 0 :
+                                 themeInUse == L"light"        ? 1 :
+                                 themeInUse == L"dark"         ? 2 :
+                                 themeInUse == L"legacyDark"   ? 4 :
+                                 themeInUse == L"legacyLight"  ? 5 :
+                                 themeInUse == L"legacySystem" ? 6 :
+                                                                 3;
 
         TraceLoggingWrite(
             g_hSettingsModelProvider,
@@ -1011,17 +1140,6 @@ void CascadiaSettings::_researchOnLoad()
 }
 
 // Function Description:
-// - Loads a batch of settings curated for the Universal variant of the terminal app
-// Arguments:
-// - <none>
-// Return Value:
-// - a unique_ptr to a CascadiaSettings with the connection types and settings for Universal terminal
-Model::CascadiaSettings CascadiaSettings::LoadUniversal()
-{
-    return *winrt::make_self<CascadiaSettings>(std::string_view{}, DefaultUniversalJson);
-}
-
-// Function Description:
 // - Creates a new CascadiaSettings object initialized with settings from the
 //   hard-coded defaults.json.
 // Arguments:
@@ -1030,7 +1148,7 @@ Model::CascadiaSettings CascadiaSettings::LoadUniversal()
 // - a unique_ptr to a CascadiaSettings with the settings from defaults.json
 Model::CascadiaSettings CascadiaSettings::LoadDefaults()
 {
-    return *winrt::make_self<CascadiaSettings>(std::string_view{}, DefaultJson);
+    return *winrt::make_self<CascadiaSettings>(std::string_view{}, LoadStringResource(IDR_DEFAULTS));
 }
 
 CascadiaSettings::CascadiaSettings(const winrt::hstring& userJSON, const winrt::hstring& inboxJSON) :
@@ -1058,6 +1176,16 @@ CascadiaSettings::CascadiaSettings(SettingsLoader&& loader) :
 
     allProfiles.reserve(loader.userSettings.profiles.size());
     activeProfiles.reserve(loader.userSettings.profiles.size());
+
+    for (const auto& colorScheme : loader.userSettings.colorSchemes)
+    {
+        loader.userSettings.globals->AddColorScheme(*colorScheme.second);
+    }
+
+    // SettingsLoader and ParsedSettings are supposed to always
+    // create these two members. We don't want null-pointer exceptions.
+    assert(loader.userSettings.globals != nullptr);
+    assert(loader.userSettings.baseLayerProfile != nullptr);
 
     for (const auto& profile : loader.userSettings.profiles)
     {
@@ -1096,16 +1224,12 @@ CascadiaSettings::CascadiaSettings(SettingsLoader&& loader) :
         warnings.emplace_back(Model::SettingsLoadWarnings::DuplicateProfile);
     }
 
-    // SettingsLoader and ParsedSettings are supposed to always
-    // create these two members. We don't want null-pointer exceptions.
-    assert(loader.userSettings.globals != nullptr);
-    assert(loader.userSettings.baseLayerProfile != nullptr);
-
     _globals = loader.userSettings.globals;
     _baseLayerProfile = loader.userSettings.baseLayerProfile;
     _allProfiles = winrt::single_threaded_observable_vector(std::move(allProfiles));
     _activeProfiles = winrt::single_threaded_observable_vector(std::move(activeProfiles));
     _warnings = winrt::single_threaded_vector(std::move(warnings));
+    _themesChangeLog = std::move(loader.userSettings.themesChangeLog);
 
     _resolveDefaultProfile();
     _resolveNewTabMenuProfiles();
@@ -1143,8 +1267,15 @@ winrt::hstring CascadiaSettings::_calculateHash(std::string_view settings, const
 {
     const auto fileHash = til::hash(settings);
     const ULARGE_INTEGER fileTime{ lastWriteTime.dwLowDateTime, lastWriteTime.dwHighDateTime };
-    const auto hash = fmt::format(L"{:016x}-{:016x}", fileHash, fileTime.QuadPart);
+    const auto hash = fmt::format(FMT_COMPILE(L"{:016x}-{:016x}"), fileHash, fileTime.QuadPart);
     return winrt::hstring{ hash };
+}
+
+// This returns something akin to %LOCALAPPDATA%\Packages\WindowsTerminalDev_8wekyb3d8bbwe\LocalState
+// just like SettingsPath(), but without the trailing \settings.json.
+winrt::hstring CascadiaSettings::SettingsDirectory()
+{
+    return winrt::hstring{ GetBaseSettingsPath().native() };
 }
 
 // function Description:
@@ -1207,7 +1338,7 @@ void CascadiaSettings::WriteSettingsToDisk()
 
     FILETIME lastWriteTime{};
     const auto styledString{ Json::writeString(wbuilder, ToJson()) };
-    WriteUTF8FileAtomic(settingsPath, styledString, &lastWriteTime);
+    til::io::write_utf8_string_to_file_atomic(settingsPath, styledString, &lastWriteTime);
 
     _hash = _calculateHash(styledString, lastWriteTime);
 
@@ -1218,6 +1349,15 @@ void CascadiaSettings::WriteSettingsToDisk()
         DefaultTerminal::Current(_currentDefaultTerminal);
     }
 }
+
+#ifndef NDEBUG
+[[maybe_unused]] static std::string _getDevPathToSchema()
+{
+    std::filesystem::path filePath{ __FILE__ };
+    auto schemaPath = filePath.parent_path().parent_path().parent_path().parent_path() / "doc" / "cascadia" / "profiles.schema.json";
+    return "file:///" + schemaPath.generic_string();
+}
+#endif
 
 // Method Description:
 // - Create a new serialized JsonObject from an instance of this class
@@ -1230,7 +1370,17 @@ Json::Value CascadiaSettings::ToJson() const
     // top-level json object
     auto json{ _globals->ToJson() };
     json["$help"] = "https://aka.ms/terminal-documentation";
-    json["$schema"] = "https://aka.ms/terminal-profiles-schema";
+    json["$schema"] =
+#if defined(WT_BRANDING_RELEASE)
+        "https://aka.ms/terminal-profiles-schema"
+#elif defined(WT_BRANDING_PREVIEW)
+        "https://aka.ms/terminal-profiles-schema-preview"
+#elif !defined(NDEBUG) // DEBUG mode
+        _getDevPathToSchema() // magic schema path that refers to the local source directory
+#else // All other brandings
+        "https://raw.githubusercontent.com/microsoft/terminal/main/doc/cascadia/profiles.schema.json"
+#endif
+        ;
 
     // "profiles" will always be serialized as an object
     Json::Value profiles{ Json::ValueType::objectValue };
@@ -1247,14 +1397,14 @@ Json::Value CascadiaSettings::ToJson() const
     profiles[JsonKey(ProfilesListKey)] = profilesList;
     json[JsonKey(ProfilesKey)] = profiles;
 
-    // TODO GH#8100:
-    // "schemes" will be an accumulation of _all_ the color schemes
-    // including all of the ones from defaults.json
     Json::Value schemes{ Json::ValueType::arrayValue };
     for (const auto& entry : _globals->ColorSchemes())
     {
         const auto scheme{ winrt::get_self<ColorScheme>(entry.Value()) };
-        schemes.append(scheme->ToJson());
+        if (scheme->Origin() == OriginTag::User)
+        {
+            schemes.append(scheme->ToJson());
+        }
     }
     json[JsonKey(SchemesKey)] = schemes;
 
@@ -1264,7 +1414,8 @@ Json::Value CascadiaSettings::ToJson() const
         // Ignore the built in themes, when serializing the themes back out. We
         // don't want to re-include them in the user settings file.
         const auto theme{ winrt::get_self<Theme>(entry.Value()) };
-        if (theme->Name() == systemThemeName || theme->Name() == lightThemeName || theme->Name() == darkThemeName)
+        const auto& name{ theme->Name() };
+        if (std::ranges::find(builtinThemes, name) != builtinThemes.end())
         {
             continue;
         }
@@ -1451,5 +1602,75 @@ void CascadiaSettings::_resolveNewTabMenuProfilesSet(const IVector<Model::NewTab
             break;
         }
         }
+    }
+}
+
+void CascadiaSettings::LogSettingChanges(bool isJsonLoad) const
+{
+#ifndef _DEBUG
+    // Only do this if we're actually being sampled
+    if (!TraceLoggingProviderEnabled(g_hSettingsModelProvider, 0, MICROSOFT_KEYWORD_MEASURES))
+    {
+        return;
+    }
+#endif // !_DEBUG
+
+    // aggregate setting changes
+    std::set<std::string> changes;
+    static constexpr std::string_view globalContext{ "global" };
+    _globals->LogSettingChanges(changes, globalContext);
+
+    // Actions are not expected to change when loaded from the settings UI
+    static constexpr std::string_view actionContext{ "action" };
+    winrt::get_self<implementation::ActionMap>(_globals->ActionMap())->LogSettingChanges(changes, actionContext);
+
+    static constexpr std::string_view profileContext{ "profile" };
+    for (const auto& profile : _allProfiles)
+    {
+        winrt::get_self<Profile>(profile)->LogSettingChanges(changes, profileContext);
+    }
+
+    static constexpr std::string_view profileDefaultsContext{ "profileDefaults" };
+    _baseLayerProfile->LogSettingChanges(changes, profileDefaultsContext);
+
+    // Themes are not expected to change when loaded from the settings UI
+    // DO NOT CALL Theme::LogSettingChanges!!
+    // We already collected the changes when we loaded the JSON
+    for (const auto& change : _themesChangeLog)
+    {
+        changes.insert(change);
+    }
+
+    // report changes
+    for (const auto& change : changes)
+    {
+#ifndef _DEBUG
+        // A `isJsonLoad ? "JsonSettingsChanged" : "UISettingsChanged"`
+        //   would be nice, but that apparently isn't allowed in the macro below.
+        // Also, there's guidance to not send too much data all in one event,
+        //   so we'll be sending a ton of events here.
+        if (isJsonLoad)
+        {
+            TraceLoggingWrite(g_hSettingsModelProvider,
+                              "JsonSettingsChanged",
+                              TraceLoggingDescription("Event emitted when settings.json change"),
+                              TraceLoggingValue(change.data()),
+                              TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+                              TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
+        }
+        else
+        {
+            TraceLoggingWrite(g_hSettingsModelProvider,
+                              "UISettingsChanged",
+                              TraceLoggingDescription("Event emitted when settings change via the UI"),
+                              TraceLoggingValue(change.data()),
+                              TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+                              TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
+        }
+#else
+        OutputDebugStringA(isJsonLoad ? "JsonSettingsChanged - " : "UISettingsChanged - ");
+        OutputDebugStringA(change.data());
+        OutputDebugStringA("\n");
+#endif // !_DEBUG
     }
 }

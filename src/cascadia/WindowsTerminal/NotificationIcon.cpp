@@ -216,7 +216,7 @@ void NotificationIcon::MenuItemSelected(const HMENU menu, const UINT menuItemInd
             args.SummonBehavior().ToggleVisibility(false);
             args.SummonBehavior().MoveToCurrentDesktop(false);
             args.SummonBehavior().ToMonitor(Remoting::MonitorBehavior::InPlace);
-            _SummonWindowRequestedHandlers(args);
+            SummonWindowRequested.raise(args);
             return;
         }
     }
@@ -231,7 +231,7 @@ void NotificationIcon::MenuItemSelected(const HMENU menu, const UINT menuItemInd
         args.SummonBehavior().ToggleVisibility(false);
         args.SummonBehavior().MoveToCurrentDesktop(false);
         args.SummonBehavior().ToMonitor(Remoting::MonitorBehavior::InPlace);
-        _SummonWindowRequestedHandlers(args);
+        SummonWindowRequested.raise(args);
         break;
     }
     }
@@ -250,7 +250,7 @@ void NotificationIcon::NotificationIconPressed()
     args.SummonBehavior().MoveToCurrentDesktop(false);
     args.SummonBehavior().ToMonitor(Remoting::MonitorBehavior::InPlace);
     args.SummonBehavior().ToggleVisibility(false);
-    _SummonWindowRequestedHandlers(args);
+    SummonWindowRequested.raise(args);
 }
 
 // Method Description:

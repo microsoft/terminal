@@ -10,11 +10,11 @@ using namespace winrt::Microsoft::Terminal;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
 using namespace winrt::TerminalApp;
 
-#define ACTION_CASE(action)                    \
-    case ShortcutAction::action:               \
-    {                                          \
-        _##action##Handlers(*this, eventArgs); \
-        break;                                 \
+#define ACTION_CASE(action)              \
+    case ShortcutAction::action:         \
+    {                                    \
+        action.raise(sender, eventArgs); \
+        break;                           \
     }
 
 namespace winrt::TerminalApp::implementation
@@ -27,7 +27,8 @@ namespace winrt::TerminalApp::implementation
     // - actionAndArgs: the ShortcutAction and associated args to raise an event for.
     // Return Value:
     // - true if we handled the event was handled, else false.
-    bool ShortcutActionDispatch::DoAction(const ActionAndArgs& actionAndArgs)
+    bool ShortcutActionDispatch::DoAction(const winrt::Windows::Foundation::IInspectable& sender,
+                                          const ActionAndArgs& actionAndArgs)
     {
         if (!actionAndArgs)
         {
@@ -43,11 +44,29 @@ namespace winrt::TerminalApp::implementation
         {
 #define ON_ALL_ACTIONS(id) ACTION_CASE(id);
             ALL_SHORTCUT_ACTIONS
+            INTERNAL_SHORTCUT_ACTIONS
 #undef ON_ALL_ACTIONS
         default:
             return false;
         }
-        return eventArgs.Handled();
+        const auto handled = eventArgs.Handled();
+
+        if (handled)
+        {
+            TraceLoggingWrite(
+                g_hTerminalAppProvider,
+                "ActionDispatched",
+                TraceLoggingDescription("Event emitted when an action was successfully performed"),
+                TraceLoggingValue(static_cast<int>(actionAndArgs.Action()), "Action"),
+                TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+                TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
+        }
+
+        return handled;
     }
 
+    bool ShortcutActionDispatch::DoAction(const ActionAndArgs& actionAndArgs)
+    {
+        return DoAction(nullptr, actionAndArgs);
+    }
 }

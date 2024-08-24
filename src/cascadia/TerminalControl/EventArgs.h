@@ -3,8 +3,8 @@
 
 #pragma once
 
+#include "FontSizeChangedArgs.g.h"
 #include "TitleChangedEventArgs.g.h"
-#include "CopyToClipboardEventArgs.g.h"
 #include "ContextMenuRequestedEventArgs.g.h"
 #include "PasteFromClipboardEventArgs.g.h"
 #include "OpenHyperlinkEventArgs.g.h"
@@ -12,12 +12,31 @@
 #include "ScrollPositionChangedArgs.g.h"
 #include "RendererWarningArgs.g.h"
 #include "TransparencyChangedEventArgs.g.h"
-#include "FoundResultsArgs.g.h"
 #include "ShowWindowArgs.g.h"
 #include "UpdateSelectionMarkersEventArgs.g.h"
+#include "CompletionsChangedEventArgs.g.h"
+#include "KeySentEventArgs.g.h"
+#include "CharSentEventArgs.g.h"
+#include "StringSentEventArgs.g.h"
+#include "SearchMissingCommandEventArgs.g.h"
 
 namespace winrt::Microsoft::Terminal::Control::implementation
 {
+
+    struct FontSizeChangedArgs : public FontSizeChangedArgsT<FontSizeChangedArgs>
+    {
+    public:
+        FontSizeChangedArgs(int32_t width,
+                            int32_t height) :
+            Width(width),
+            Height(height)
+        {
+        }
+
+        til::property<int32_t> Width;
+        til::property<int32_t> Height;
+    };
+
     struct TitleChangedEventArgs : public TitleChangedEventArgsT<TitleChangedEventArgs>
     {
     public:
@@ -25,33 +44,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _Title(title) {}
 
         WINRT_PROPERTY(hstring, Title);
-    };
-
-    struct CopyToClipboardEventArgs : public CopyToClipboardEventArgsT<CopyToClipboardEventArgs>
-    {
-    public:
-        CopyToClipboardEventArgs(hstring text) :
-            _text(text),
-            _html(),
-            _rtf(),
-            _formats(static_cast<CopyFormat>(0)) {}
-
-        CopyToClipboardEventArgs(hstring text, hstring html, hstring rtf, Windows::Foundation::IReference<CopyFormat> formats) :
-            _text(text),
-            _html(html),
-            _rtf(rtf),
-            _formats(formats) {}
-
-        hstring Text() { return _text; };
-        hstring Html() { return _html; };
-        hstring Rtf() { return _rtf; };
-        Windows::Foundation::IReference<CopyFormat> Formats() { return _formats; };
-
-    private:
-        hstring _text;
-        hstring _html;
-        hstring _rtf;
-        Windows::Foundation::IReference<CopyFormat> _formats;
     };
 
     struct ContextMenuRequestedEventArgs : public ContextMenuRequestedEventArgsT<ContextMenuRequestedEventArgs>
@@ -66,7 +58,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     struct PasteFromClipboardEventArgs : public PasteFromClipboardEventArgsT<PasteFromClipboardEventArgs>
     {
     public:
-        PasteFromClipboardEventArgs(std::function<void(std::wstring_view)> clipboardDataHandler, bool bracketedPasteEnabled) :
+        PasteFromClipboardEventArgs(std::function<void(const hstring&)> clipboardDataHandler, bool bracketedPasteEnabled) :
             m_clipboardDataHandler(clipboardDataHandler),
             _BracketedPasteEnabled{ bracketedPasteEnabled } {}
 
@@ -78,7 +70,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         WINRT_PROPERTY(bool, BracketedPasteEnabled, false);
 
     private:
-        std::function<void(std::wstring_view)> m_clipboardDataHandler;
+        std::function<void(const hstring&)> m_clipboardDataHandler;
     };
 
     struct OpenHyperlinkEventArgs : public OpenHyperlinkEventArgsT<OpenHyperlinkEventArgs>
@@ -128,34 +120,25 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     struct RendererWarningArgs : public RendererWarningArgsT<RendererWarningArgs>
     {
     public:
-        RendererWarningArgs(const uint64_t hr) :
-            _Result(hr)
+        RendererWarningArgs(const HRESULT hr, winrt::hstring parameter) :
+            _Result{ hr },
+            _Parameter{ std::move(parameter) }
         {
         }
 
-        WINRT_PROPERTY(uint64_t, Result);
+        WINRT_PROPERTY(HRESULT, Result);
+        WINRT_PROPERTY(winrt::hstring, Parameter);
     };
 
     struct TransparencyChangedEventArgs : public TransparencyChangedEventArgsT<TransparencyChangedEventArgs>
     {
     public:
-        TransparencyChangedEventArgs(const double opacity) :
+        TransparencyChangedEventArgs(const float opacity) :
             _Opacity(opacity)
         {
         }
 
-        WINRT_PROPERTY(double, Opacity);
-    };
-
-    struct FoundResultsArgs : public FoundResultsArgsT<FoundResultsArgs>
-    {
-    public:
-        FoundResultsArgs(const bool foundMatch) :
-            _FoundMatch(foundMatch)
-        {
-        }
-
-        WINRT_PROPERTY(bool, FoundMatch);
+        WINRT_PROPERTY(float, Opacity);
     };
 
     struct ShowWindowArgs : public ShowWindowArgsT<ShowWindowArgs>
@@ -179,4 +162,70 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         WINRT_PROPERTY(bool, ClearMarkers, false);
     };
+
+    struct CompletionsChangedEventArgs : public CompletionsChangedEventArgsT<CompletionsChangedEventArgs>
+    {
+    public:
+        CompletionsChangedEventArgs(const winrt::hstring menuJson, const unsigned int replaceLength) :
+            _MenuJson(menuJson),
+            _ReplacementLength(replaceLength)
+        {
+        }
+
+        WINRT_PROPERTY(winrt::hstring, MenuJson, L"");
+        WINRT_PROPERTY(uint32_t, ReplacementLength, 0);
+    };
+
+    struct KeySentEventArgs : public KeySentEventArgsT<KeySentEventArgs>
+    {
+    public:
+        KeySentEventArgs(const WORD vkey, const WORD scanCode, const winrt::Microsoft::Terminal::Core::ControlKeyStates modifiers, const bool keyDown) :
+            _VKey(vkey),
+            _ScanCode(scanCode),
+            _Modifiers(modifiers),
+            _KeyDown(keyDown) {}
+
+        WINRT_PROPERTY(WORD, VKey);
+        WINRT_PROPERTY(WORD, ScanCode);
+        WINRT_PROPERTY(winrt::Microsoft::Terminal::Core::ControlKeyStates, Modifiers);
+        WINRT_PROPERTY(bool, KeyDown, false);
+    };
+
+    struct CharSentEventArgs : public CharSentEventArgsT<CharSentEventArgs>
+    {
+    public:
+        CharSentEventArgs(const wchar_t character, const WORD scanCode, const winrt::Microsoft::Terminal::Core::ControlKeyStates modifiers) :
+            _Character(character),
+            _ScanCode(scanCode),
+            _Modifiers(modifiers) {}
+
+        WINRT_PROPERTY(wchar_t, Character);
+        WINRT_PROPERTY(WORD, ScanCode);
+        WINRT_PROPERTY(winrt::Microsoft::Terminal::Core::ControlKeyStates, Modifiers);
+    };
+
+    struct StringSentEventArgs : public StringSentEventArgsT<StringSentEventArgs>
+    {
+    public:
+        StringSentEventArgs(const winrt::hstring& text) :
+            _Text(text) {}
+
+        WINRT_PROPERTY(winrt::hstring, Text);
+    };
+
+    struct SearchMissingCommandEventArgs : public SearchMissingCommandEventArgsT<SearchMissingCommandEventArgs>
+    {
+    public:
+        SearchMissingCommandEventArgs(const winrt::hstring& missingCommand, const til::CoordType& bufferRow) :
+            MissingCommand(missingCommand),
+            BufferRow(bufferRow) {}
+
+        til::property<winrt::hstring> MissingCommand;
+        til::property<til::CoordType> BufferRow;
+    };
+}
+
+namespace winrt::Microsoft::Terminal::Control::factory_implementation
+{
+    BASIC_FACTORY(OpenHyperlinkEventArgs);
 }
