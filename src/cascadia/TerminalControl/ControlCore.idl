@@ -106,7 +106,6 @@ namespace Microsoft.Terminal.Control
         UInt64 SwapChainHandle { get; };
 
         Windows.Foundation.Size FontSize { get; };
-        Windows.Foundation.Size FontSizeUnscaled { get; };
         UInt16 FontWeight { get; };
         Single Opacity { get; };
         Boolean UseAcrylic { get; };

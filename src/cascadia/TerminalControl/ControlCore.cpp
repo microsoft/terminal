@@ -1437,15 +1437,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         };
     }
 
-    winrt::Windows::Foundation::Size ControlCore::FontSizeUnscaled() const noexcept
-    {
-        const auto fontSize = _actualFont.GetUnscaledSize();
-        return {
-            static_cast<float>(fontSize.width),
-            static_cast<float>(fontSize.height)
-        };
-    }
-
     uint16_t ControlCore::FontWeight() const noexcept
     {
         return static_cast<uint16_t>(_actualFont.GetWeight());
