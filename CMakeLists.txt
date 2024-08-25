@@ -17,6 +17,10 @@ list(APPEND CMAKE_CXX_SOURCE_FILE_EXTENSIONS c)
 
 set(CMAKE_CXX_STANDARD 20)
 
+execute_process(
+	COMMAND powershell -NoProfile -Command "${CMAKE_SOURCE_DIR}/tools/Generate-FeatureStagingHeader.ps1" -Branding Dev -Path "${CMAKE_CURRENT_LIST_DIR}\\src\\features.xml" -OutputPath "${CMAKE_BINARY_DIR}\\features.h"
+)
+
 add_compile_definitions(
 	UNICODE
 	_UNICODE
@@ -28,7 +32,7 @@ add_compile_options(
 	/permissive-
 	/Zc:preprocessor
 	/Zc:__cplusplus /Zc:__STDC__ /Zc:enumTypes /Zc:externConstexpr /Zc:templateScope /Zc:throwingNew
-	/FI${CMAKE_CURRENT_LIST_DIR}\\feature.h
+	/FI${CMAKE_BINARY_DIR}\\features.h
 )
 
 add_compile_definitions(
