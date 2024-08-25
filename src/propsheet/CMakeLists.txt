@@ -23,6 +23,7 @@ target_sources(console
 
 target_include_directories(console
 	PRIVATE
+		${CMAKE_CURRENT_BINARY_DIR}
 		../host
 )
 

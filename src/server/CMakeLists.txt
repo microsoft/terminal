@@ -26,3 +26,9 @@ target_precompile_headers(ConServer
 	PRIVATE
 		precomp.h
 )
+
+# We need the interface import for ConCOMProxy to get the MIDL header path
+target_link_libraries(ConServer
+	PRIVATE
+		ConCOMProxy
+)
