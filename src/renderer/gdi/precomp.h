@@ -10,6 +10,7 @@ Abstract:
 - Avoid including internal project headers. Instead include them only in the classes that need them (helps with test project building).
 --*/
 
+#pragma once
 #include <cwchar>
 #include <sal.h>
 
