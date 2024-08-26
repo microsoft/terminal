@@ -774,7 +774,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 // covers actions w/out args
                 // - "command": "unbound" --> "unbound"
                 // - "command": "copy"    --> "copy"
-                changes.emplace(fmt::format(FMT_COMPILE("{}"), json.asString()));
+                changes.emplace(json.asString());
             }
             else
             {
