@@ -25,6 +25,7 @@
   <PropertyGroup Label="NuGet Dependencies">
     <TerminalCppWinrt>true</TerminalCppWinrt>
     <TerminalMUX>true</TerminalMUX>
+    <TerminalWinGetInterop>true</TerminalWinGetInterop>
   </PropertyGroup>
   <Import Project="..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
   <Import Project="$(OpenConsoleDir)src\common.nugetversions.props" />
@@ -177,6 +178,7 @@
     <ClInclude Include="SuggestionsControl.h">
       <DependentUpon>SuggestionsControl.xaml</DependentUpon>
     </ClInclude>
+    <ClInclude Include="WindowsPackageManagerFactory.h" />
   </ItemGroup>
   <!-- ========================= Cpp Files ======================== -->
   <ItemGroup>
@@ -361,7 +363,7 @@
     </Midl>
     <Midl Include="FilteredCommand.idl" />
     <Midl Include="IPaneContent.idl" />
-    <Midl Include="TerminalPaneContent.idl" >
+    <Midl Include="TerminalPaneContent.idl">
       <DependentUpon>TaskPaneContent.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>

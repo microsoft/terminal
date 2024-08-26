@@ -1105,7 +1105,7 @@ void ScreenBufferTests::VtResize()
     auto initialViewWidth = si.GetViewport().Width();
 
     Log::Comment(NoThrowString().Format(
-        L"Write '\x1b[8;30;80t'"
+        L"Write '\\x1b[8;30;80t'"
         L" The Screen buffer height should remain unchanged, but the width should be 80 columns"
         L" The viewport should be w,h=80,30"));
 
@@ -1127,7 +1127,7 @@ void ScreenBufferTests::VtResize()
     initialViewWidth = newViewWidth;
 
     Log::Comment(NoThrowString().Format(
-        L"Write '\x1b[8;40;80t'"
+        L"Write '\\x1b[8;40;80t'"
         L" The Screen buffer height should remain unchanged, but the width should be 80 columns"
         L" The viewport should be w,h=80,40"));
 
@@ -1149,7 +1149,7 @@ void ScreenBufferTests::VtResize()
     initialViewWidth = newViewWidth;
 
     Log::Comment(NoThrowString().Format(
-        L"Write '\x1b[8;40;90t'"
+        L"Write '\\x1b[8;40;90t'"
         L" The Screen buffer height should remain unchanged, but the width should be 90 columns"
         L" The viewport should be w,h=90,40"));
 
@@ -1171,7 +1171,7 @@ void ScreenBufferTests::VtResize()
     initialViewWidth = newViewWidth;
 
     Log::Comment(NoThrowString().Format(
-        L"Write '\x1b[8;12;12t'"
+        L"Write '\\x1b[8;12;12t'"
         L" The Screen buffer height should remain unchanged, but the width should be 12 columns"
         L" The viewport should be w,h=12,12"));
 
@@ -8337,6 +8337,10 @@ void ScreenBufferTests::SimpleMarkCommand()
 
 void ScreenBufferTests::SimpleWrappedCommand()
 {
+    BEGIN_TEST_METHOD_PROPERTIES()
+        TEST_METHOD_PROPERTY(L"IsolationLevel", L"Method")
+    END_TEST_METHOD_PROPERTIES()
+
     auto& g = ServiceLocator::LocateGlobals();
     auto& gci = g.getConsoleInformation();
     auto& si = gci.GetActiveOutputBuffer();

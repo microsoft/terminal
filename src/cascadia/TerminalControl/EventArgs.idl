@@ -130,5 +130,6 @@ namespace Microsoft.Terminal.Control
     runtimeclass SearchMissingCommandEventArgs
     {
         String MissingCommand { get; };
+        Int32 BufferRow { get; };
     }
 }

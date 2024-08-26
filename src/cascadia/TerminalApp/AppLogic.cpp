@@ -355,7 +355,7 @@ namespace winrt::TerminalApp::implementation
     }
     CATCH_LOG()
 
-    fire_and_forget AppLogic::_ApplyStartupTaskStateChange()
+    safe_void_coroutine AppLogic::_ApplyStartupTaskStateChange()
     try
     {
         // First, make sure we're running in a packaged context. This method
@@ -431,6 +431,10 @@ namespace winrt::TerminalApp::implementation
                 SettingsChanged.raise(*this, *ev);
                 return;
             }
+        }
+        else
+        {
+            _settings.LogSettingChanges(true);
         }
 
         if (initialLoad)

@@ -319,6 +319,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         winrt::com_ptr<ControlSettings> _settings{ nullptr };
 
         std::shared_ptr<::Microsoft::Terminal::Core::Terminal> _terminal{ nullptr };
+        std::wstring _pendingResponses;
 
         // NOTE: _renderEngine must be ordered before _renderer.
         //
@@ -389,9 +390,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void _terminalPlayMidiNote(const int noteNumber,
                                    const int velocity,
                                    const std::chrono::microseconds duration);
-        void _terminalSearchMissingCommand(std::wstring_view missingCommand);
+        void _terminalSearchMissingCommand(std::wstring_view missingCommand, const til::CoordType& bufferRow);
 
-        winrt::fire_and_forget _terminalCompletionsChanged(std::wstring_view menuJson, unsigned int replaceLength);
+        safe_void_coroutine _terminalCompletionsChanged(std::wstring_view menuJson, unsigned int replaceLength);
 
 #pragma endregion
 
@@ -400,7 +401,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
 #pragma region RendererCallbacks
         void _rendererWarning(const HRESULT hr, wil::zwstring_view parameter);
-        winrt::fire_and_forget _renderEngineSwapChainChanged(const HANDLE handle);
+        safe_void_coroutine _renderEngineSwapChainChanged(const HANDLE handle);
         void _rendererBackgroundColorChanged();
         void _rendererTabColorChanged();
 #pragma endregion

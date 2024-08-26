@@ -13,6 +13,7 @@
 #include "_stream.h"
 
 #include "../interactivity/inc/ServiceLocator.hpp"
+#include "../terminal/parser/InputStateMachineEngine.hpp"
 #include "../types/inc/convert.hpp"
 #include "../types/inc/viewport.hpp"
 
@@ -993,29 +994,36 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
 {
     try
     {
+        // Just in case if the client application didn't check if this request is useless.
+        if (source.left == target.x && source.top == target.y)
+        {
+            return S_OK;
+        }
+
         LockConsole();
         auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
         auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-        if (auto writer = gci.GetVtWriterForBuffer(&context))
+        auto& buffer = context.GetActiveBuffer();
+        const auto bufferSize = buffer.GetBufferSize();
+        auto writer = gci.GetVtWriterForBuffer(&context);
+
+        // Applications like to pass 0/0 for the fill char/attribute.
+        // What they want is the whitespace and current attributes.
+        if (fillCharacter == UNICODE_NULL && fillAttribute == 0)
         {
-            auto& buffer = context.GetActiveBuffer();
+            fillAttribute = buffer.GetAttributes().GetLegacyAttributes();
+        }
 
-            // However, if the character is null and we were given a null attribute (represented as legacy 0),
-            // then we'll just fill with spaces and whatever the buffer's default colors are.
-            if (fillCharacter == UNICODE_NULL && fillAttribute == 0)
-            {
-                fillCharacter = UNICODE_SPACE;
-                fillAttribute = buffer.GetAttributes().GetLegacyAttributes();
-            }
+        // Avoid writing control characters into the buffer.
+        // A null character will get translated to whitespace.
+        fillCharacter = Microsoft::Console::VirtualTerminal::VtIo::SanitizeUCS2(fillCharacter);
 
+        if (writer)
+        {
             // GH#3126 - This is a shim for cmd's `cls` function. In the
-            // legacy console, `cls` is supposed to clear the entire buffer. In
-            // conpty however, there's no difference between the viewport and the
-            // entirety of the buffer. We're going to see if this API call exactly
-            // matched the way we expect cmd to call it. If it does, then
-            // let's manually emit a Full Reset (RIS).
-            const auto bufferSize = buffer.GetBufferSize();
+            // legacy console, `cls` is supposed to clear the entire buffer.
+            // We always use a VT sequence, even if ConPTY isn't used, because those are faster nowadays.
             if (enableCmdShim &&
                 source.left <= 0 && source.top <= 0 &&
                 source.right >= bufferSize.RightInclusive() && source.bottom >= bufferSize.BottomInclusive() &&
@@ -1028,36 +1036,96 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
                 return S_OK;
             }
 
-            const auto clipViewport = clip ? Viewport::FromInclusive(*clip) : bufferSize;
+            const auto clipViewport = clip ? Viewport::FromInclusive(*clip).Clamp(bufferSize) : bufferSize;
             const auto sourceViewport = Viewport::FromInclusive(source);
-            Viewport readViewport;
-            Viewport writtenViewport;
-
-            const auto w = std::max(0, sourceViewport.Width());
-            const auto h = std::max(0, sourceViewport.Height());
-            const auto a = static_cast<size_t>(w * h);
-            if (a == 0)
-            {
-                return S_OK;
-            }
-
-            til::small_vector<CHAR_INFO, 1024> backup;
-            til::small_vector<CHAR_INFO, 1024> fill;
-
-            backup.resize(a, CHAR_INFO{ fillCharacter, fillAttribute });
-            fill.resize(a, CHAR_INFO{ fillCharacter, fillAttribute });
+            const auto fillViewport = sourceViewport.Clamp(clipViewport);
 
             writer.BackupCursor();
 
-            RETURN_IF_FAILED(ReadConsoleOutputWImplHelper(context, backup, sourceViewport, readViewport));
-            RETURN_IF_FAILED(WriteConsoleOutputWImplHelper(context, fill, w, sourceViewport.Clamp(clipViewport), writtenViewport));
-            RETURN_IF_FAILED(WriteConsoleOutputWImplHelper(context, backup, w, Viewport::FromDimensions(target, readViewport.Dimensions()).Clamp(clipViewport), writtenViewport));
+            if (gci.GetVtIo()->GetDeviceAttributes().test(Microsoft::Console::VirtualTerminal::DeviceAttribute::RectangularAreaOperations))
+            {
+                // This calculates just the positive offsets caused by out-of-bounds (OOB) source and target coordinates.
+                //
+                // If the source rectangle is OOB to the bottom-right, then the size of the rectangle that can
+                // be copied shrinks, but its origin stays the same. However, if the rectangle is OOB to the
+                // top-left then the origin of the to-be-copied rectangle will be offset by an inverse amount.
+                // Similarly, if the *target* rectangle is OOB to the bottom-right, its size shrinks while
+                // the origin stays the same, and if it's OOB to the top-left, then the origin is offset.
+                //
+                // In other words, this calculates the total offset that needs to be applied to the to-be-copied rectangle.
+                // Later down below we'll then clamp that rectangle which will cause its size to shrink as needed.
+                const til::point offset{
+                    std::max(0, -source.left) + std::max(0, clipViewport.Left() - target.x),
+                    std::max(0, -source.top) + std::max(0, clipViewport.Top() - target.y),
+                };
+
+                const auto copyTargetViewport = Viewport::FromDimensions(target + offset, sourceViewport.Dimensions()).Clamp(clipViewport);
+                const auto copySourceViewport = Viewport::FromDimensions(sourceViewport.Origin() + offset, copyTargetViewport.Dimensions()).Clamp(bufferSize);
+                const auto fills = Viewport::Subtract(fillViewport, copyTargetViewport);
+                std::wstring buf;
+
+                if (!fills.empty())
+                {
+                    Microsoft::Console::VirtualTerminal::VtIo::FormatAttributes(buf, TextAttribute{ fillAttribute });
+                }
+
+                if (copySourceViewport.IsValid() && copyTargetViewport.IsValid())
+                {
+                    // DECCRA: Copy Rectangular Area
+                    fmt::format_to(
+                        std::back_inserter(buf),
+                        FMT_COMPILE(L"\x1b[{};{};{};{};;{};{}$v"),
+                        copySourceViewport.Top() + 1,
+                        copySourceViewport.Left() + 1,
+                        copySourceViewport.BottomExclusive(),
+                        copySourceViewport.RightExclusive(),
+                        copyTargetViewport.Top() + 1,
+                        copyTargetViewport.Left() + 1);
+                }
+
+                for (const auto& fill : fills)
+                {
+                    // DECFRA: Fill Rectangular Area
+                    fmt::format_to(
+                        std::back_inserter(buf),
+                        FMT_COMPILE(L"\x1b[{};{};{};{};{}$x"),
+                        static_cast<int>(fillCharacter),
+                        fill.Top() + 1,
+                        fill.Left() + 1,
+                        fill.BottomExclusive(),
+                        fill.RightExclusive());
+                }
+
+                WriteCharsVT(context, buf);
+            }
+            else
+            {
+                const auto w = std::max(0, sourceViewport.Width());
+                const auto h = std::max(0, sourceViewport.Height());
+                const auto a = static_cast<size_t>(w * h);
+                if (a == 0)
+                {
+                    return S_OK;
+                }
+
+                til::small_vector<CHAR_INFO, 1024> backup;
+                til::small_vector<CHAR_INFO, 1024> fill;
+
+                backup.resize(a, CHAR_INFO{ fillCharacter, fillAttribute });
+                fill.resize(a, CHAR_INFO{ fillCharacter, fillAttribute });
+
+                Viewport readViewport;
+                Viewport writtenViewport;
+
+                RETURN_IF_FAILED(ReadConsoleOutputWImplHelper(context, backup, sourceViewport, readViewport));
+                RETURN_IF_FAILED(WriteConsoleOutputWImplHelper(context, fill, w, fillViewport, writtenViewport));
+                RETURN_IF_FAILED(WriteConsoleOutputWImplHelper(context, backup, w, Viewport::FromDimensions(target, readViewport.Dimensions()).Clamp(clipViewport), writtenViewport));
+            }
 
             writer.Submit();
         }
         else
         {
-            auto& buffer = context.GetActiveBuffer();
             TextAttribute useThisAttr(fillAttribute);
             ScrollRegion(buffer, source, clip, target, fillCharacter, useThisAttr);
         }

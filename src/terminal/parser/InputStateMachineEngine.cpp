@@ -89,11 +89,6 @@ static bool operator==(const Ss3ToVkey& pair, const Ss3ActionCodes code) noexcep
     return pair.action == code;
 }
 
-InputStateMachineEngine::InputStateMachineEngine(std::unique_ptr<IInteractDispatch> pDispatch) :
-    InputStateMachineEngine(std::move(pDispatch), false)
-{
-}
-
 InputStateMachineEngine::InputStateMachineEngine(std::unique_ptr<IInteractDispatch> pDispatch, const bool lookingForDSR) :
     _pDispatch(std::move(pDispatch)),
     _lookingForDSR(lookingForDSR),
@@ -102,14 +97,28 @@ InputStateMachineEngine::InputStateMachineEngine(std::unique_ptr<IInteractDispat
     THROW_HR_IF_NULL(E_INVALIDARG, _pDispatch.get());
 }
 
-void InputStateMachineEngine::WaitUntilDSR(DWORD timeout) const noexcept
+til::enumset<DeviceAttribute, uint64_t> InputStateMachineEngine::WaitUntilDA1(DWORD timeout) const noexcept
 {
+    uint64_t val = 0;
+
     // atomic_wait() returns false when the timeout expires.
     // Technically we should decrement the timeout with each iteration,
     // but I suspect infinite spurious wake-ups are a theoretical problem.
-    while (_lookingForDSR.load(std::memory_order::relaxed) && til::atomic_wait(_lookingForDSR, true, timeout))
+    for (;;)
     {
+        val = _deviceAttributes.load(std::memory_order::relaxed);
+        if (val)
+        {
+            break;
+        }
+
+        if (!til::atomic_wait(_deviceAttributes, val, timeout))
+        {
+            break;
+        }
     }
+
+    return til::enumset<DeviceAttribute, uint64_t>::from_bits(val);
 }
 
 bool InputStateMachineEngine::EncounteredWin32InputModeSequence() const noexcept
@@ -411,13 +420,12 @@ bool InputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParameter
         // The F3 case is special - it shares a code with the DeviceStatusResponse.
         // If we're looking for that response, then do that, and break out.
         // Else, fall though to the _GetCursorKeysModifierState handler.
-        if (_lookingForDSR.load(std::memory_order::relaxed))
+        if (_lookingForDSR)
         {
             _pDispatch->MoveCursor(parameters.at(0), parameters.at(1));
             // Right now we're only looking for on initial cursor
             //      position response. After that, only look for F3.
-            _lookingForDSR.store(false, std::memory_order::relaxed);
-            til::atomic_notify_all(_lookingForDSR);
+            _lookingForDSR = false;
             return true;
         }
         // Heuristic: If the hosting terminal used the win32 input mode, chances are high
@@ -464,6 +472,32 @@ bool InputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParameter
     case CsiActionCodes::FocusOut:
         _pDispatch->FocusChanged(false);
         return true;
+    case CsiActionCodes::DA_DeviceAttributes:
+        // This assumes that InputStateMachineEngine is tightly coupled with VtInputThread and the rest of the ConPTY system (VtIo).
+        // On startup, ConPTY will send a DA1 request to get more information about the hosting terminal.
+        // We catch it here and store the information for later retrieval.
+        if (_deviceAttributes.load(std::memory_order_relaxed) == 0)
+        {
+            til::enumset<DeviceAttribute, uint64_t> attributes;
+
+            // The first parameter denotes the conformance level.
+            if (parameters.at(0).value() >= 61)
+            {
+                parameters.subspan(1).for_each([&](auto p) {
+                    attributes.set(static_cast<DeviceAttribute>(p));
+                    return true;
+                });
+            }
+
+            _deviceAttributes.fetch_or(attributes.bits(), std::memory_order_relaxed);
+            til::atomic_notify_all(_deviceAttributes);
+
+            // VtIo first sends a DSR CPR and then a DA1 request.
+            // If we encountered a DA1 response here, the DSR request is definitely done now.
+            _lookingForDSR = false;
+            return true;
+        }
+        return false;
     case CsiActionCodes::Win32KeyboardInput:
     {
         // Use WriteCtrlKey here, even for keys that _aren't_ control keys,

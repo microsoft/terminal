@@ -75,7 +75,7 @@ namespace winrt::TerminalApp::implementation
 
         void PersistState();
 
-        winrt::fire_and_forget UpdateSettings(winrt::TerminalApp::SettingsLoadEventArgs args);
+        safe_void_coroutine UpdateSettings(winrt::TerminalApp::SettingsLoadEventArgs args);
 
         bool HasCommandlineArguments() const noexcept;
 

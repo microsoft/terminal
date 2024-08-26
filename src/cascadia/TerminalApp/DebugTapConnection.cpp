@@ -21,7 +21,7 @@ namespace winrt::Microsoft::TerminalApp::implementation
         }
         void Initialize(const Windows::Foundation::Collections::ValueSet& /*settings*/) {}
         ~DebugInputTapConnection() = default;
-        winrt::fire_and_forget Start()
+        safe_void_coroutine Start()
         {
             // GH#11282: It's possible that we're about to be started, _before_
             // our paired connection is started. Both will get Start()'ed when

@@ -24,6 +24,7 @@ namespace Microsoft.Terminal.Settings.Model
 
         CascadiaSettings Copy();
         void WriteSettingsToDisk();
+        void LogSettingChanges(Boolean isJsonLoad);
 
         String Hash { get; };
 
