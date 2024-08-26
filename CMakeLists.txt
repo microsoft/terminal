@@ -17,6 +17,9 @@ list(APPEND CMAKE_CXX_SOURCE_FILE_EXTENSIONS c)
 
 set(CMAKE_CXX_STANDARD 20)
 
+# Hybrid CRT (runtime library is static, crt is dynamic)
+set(CMAKE_MSVC_RUNTIME_LIBRARY MultiThreaded$<$<CONFIG:Debug>:Debug>)
+
 execute_process(
 	COMMAND powershell -NoProfile -Command "${CMAKE_SOURCE_DIR}/tools/Generate-FeatureStagingHeader.ps1" -Branding Dev -Path "${CMAKE_CURRENT_LIST_DIR}\\src\\features.xml" -OutputPath "${CMAKE_BINARY_DIR}\\features.h"
 )
@@ -33,6 +36,12 @@ add_compile_options(
 	/Zc:preprocessor
 	/Zc:__cplusplus /Zc:__STDC__ /Zc:enumTypes /Zc:externConstexpr /Zc:templateScope /Zc:throwingNew
 	/FI${CMAKE_BINARY_DIR}\\features.h
+)
+
+add_link_options(
+	# Hybrid CRT (switch the static crt for the dynaimc one)
+	/nodefaultlib:libucrt$<$<CONFIG:Debug>:d>.lib
+	/defaultlib:ucrt$<$<CONFIG:Debug>:d>.lib
 )
 
 add_compile_definitions(
