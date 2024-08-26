@@ -3092,7 +3092,7 @@ namespace winrt::TerminalApp::implementation
         term.RefreshQuickFixMenu();
     }
 
-    void TerminalPage::_WindowSizeChanged(const IInspectable /*sender*/, const Microsoft::Terminal::Control::WindowSizeChangedEventArgs args)
+    void TerminalPage::_WindowSizeChanged(const IInspectable sender, const Microsoft::Terminal::Control::WindowSizeChangedEventArgs args)
     {
         // Raise if:
         // - Not in quake mode
@@ -3106,7 +3106,7 @@ namespace winrt::TerminalApp::implementation
         {
             WindowSizeChanged.raise(*this, args);
         }
-        else if (const auto& control{ _GetActiveControl() })
+        else if (const auto& control{ sender.try_as<TermControl>() })
         {
             const auto& connection = control.Connection();
 
