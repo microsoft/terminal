@@ -1,13 +1,14 @@
 find_package(Microsoft.GSL CONFIG REQUIRED)
+find_package(wil CONFIG REQUIRED)
 
-find_path(GSL_INCLUDE_DIR NAMES gsl)
+get_target_property(WIL_INCLUDE_DIR WIL::WIL INTERFACE_INCLUDE_DIRECTORIES)
+get_target_property(GSL_INCLUDE_DIR Microsoft.GSL::GSL INTERFACE_INCLUDE_DIRECTORIES)
+
 find_path(FMT_INCLUDE_DIR NAMES format.h)
 
 include_directories(
 	inc
-	../packages/Microsoft.Windows.ImplementationLibrary.1.0.240122.1/include
-	${GSL_INCLUDE_DIR}
-	${FMT_INCUDE_DIR}
+	${WIL_INCLUDE_DIR}
 	../oss/stb
 	../oss/chromium
 	../oss/interval_tree
