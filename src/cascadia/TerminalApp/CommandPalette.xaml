@@ -205,6 +205,13 @@
                                   Visibility="{x:Bind Item.(local:TabPaletteItem.TabStatus).IsInputBroadcastActive, Mode=OneWay}" />
 
                     </StackPanel>
+
+                    <Ellipse Grid.Column="4"
+                             Width="8"
+                             Height="8"
+                             HorizontalAlignment="Center"
+                             VerticalAlignment="Center"
+                             Fill="{x:Bind mtu:Converters.ColorToBrush(Item.(local:TabPaletteItem.TabStatus).TabColorIndicator), Mode=OneWay}" />
                 </Grid>
             </DataTemplate>
 
