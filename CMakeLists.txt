@@ -35,13 +35,19 @@ add_compile_options(
 	/permissive-
 	/Zc:preprocessor
 	/Zc:__cplusplus /Zc:__STDC__ /Zc:enumTypes /Zc:externConstexpr /Zc:templateScope /Zc:throwingNew
+	/guard:cf
 	/FI${CMAKE_BINARY_DIR}\\features.h
+	$<$<NOT:$<CONFIG:DEBUG>>:/GL>
 )
 
 add_link_options(
+	$<$<NOT:$<CONFIG:DEBUG>>:/LTCG>
+	$<$<NOT:$<CONFIG:DEBUG>>:/OPT:REF>
+	$<$<NOT:$<CONFIG:DEBUG>>:/OPT:ICF>
 	# Hybrid CRT (switch the static crt for the dynaimc one)
 	/nodefaultlib:libucrt$<$<CONFIG:Debug>:d>.lib
 	/defaultlib:ucrt$<$<CONFIG:Debug>:d>.lib
+	/guard:cf
 )
 
 add_compile_definitions(
