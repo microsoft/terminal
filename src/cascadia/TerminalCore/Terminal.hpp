@@ -139,7 +139,7 @@ public:
     void WarningBell() override;
     void SetWindowTitle(const std::wstring_view title) override;
     CursorType GetUserDefaultCursorStyle() const noexcept override;
-    bool ResizeWindow(const til::CoordType width, const til::CoordType height) noexcept override;
+    bool ResizeWindow(const til::CoordType width, const til::CoordType height) override;
     void SetConsoleOutputCP(const unsigned int codepage) noexcept override;
     unsigned int GetConsoleOutputCP() const noexcept override;
     void CopyToClipboard(wil::zwstring_view content) override;
