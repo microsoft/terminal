@@ -264,7 +264,7 @@
             </local:SettingContainer>
         </StackPanel>
 
-        <!-- Grouping: Color -->
+        <!--  Grouping: Color  -->
         <StackPanel Style="{StaticResource PivotStackStyle}">
             <TextBlock x:Uid="Profile_ColorHeader"
                        Style="{StaticResource TextBlockSubHeaderStyle}" />
@@ -400,37 +400,40 @@
                 </ComboBox>
             </local:SettingContainer>
 
-            <!-- Foreground Color -->
+            <!--  Foreground Color  -->
             <local:SettingContainer x:Name="Foreground"
                                     x:Uid="Profile_Foreground"
                                     ClearSettingValue="{x:Bind Appearance.ClearForeground}"
                                     CurrentValue="{x:Bind Appearance.Foreground, Mode=OneWay}"
+                                    CurrentValueTemplate="{StaticResource ColorPreviewTemplate}"
                                     HasSettingValue="{x:Bind Appearance.HasForeground, Mode=OneWay}"
                                     SettingOverrideSource="{x:Bind Appearance.ForegroundOverrideSource, Mode=OneWay}"
-                                    Style="{StaticResource ExpanderSettingContainerStyle}">
-                <!--TODO CARLOS: Add color picker-->
+                                    Style="{StaticResource ExpanderSettingContainerStyleWithComplexPreview}">
+                <!--  TODO CARLOS: Add color picker  -->
             </local:SettingContainer>
 
-            <!-- Background Color -->
+            <!--  Background Color  -->
             <local:SettingContainer x:Name="Background"
-                        x:Uid="Profile_Background"
-                        ClearSettingValue="{x:Bind Appearance.ClearBackground}"
-                        CurrentValue="{x:Bind Appearance.Background, Mode=OneWay}"
-                        HasSettingValue="{x:Bind Appearance.HasBackground, Mode=OneWay}"
-                        SettingOverrideSource="{x:Bind Appearance.BackgroundOverrideSource, Mode=OneWay}"
-                        Style="{StaticResource ExpanderSettingContainerStyle}">
-                <!--TODO CARLOS: Add color picker-->
+                                    x:Uid="Profile_Background"
+                                    ClearSettingValue="{x:Bind Appearance.ClearBackground}"
+                                    CurrentValue="{x:Bind Appearance.Background, Mode=OneWay}"
+                                    CurrentValueTemplate="{StaticResource ColorPreviewTemplate}"
+                                    HasSettingValue="{x:Bind Appearance.HasBackground, Mode=OneWay}"
+                                    SettingOverrideSource="{x:Bind Appearance.BackgroundOverrideSource, Mode=OneWay}"
+                                    Style="{StaticResource ExpanderSettingContainerStyleWithComplexPreview}">
+                <!--  TODO CARLOS: Add color picker  -->
             </local:SettingContainer>
 
-            <!-- Selection Background Color -->
+            <!--  Selection Background Color  -->
             <local:SettingContainer x:Name="SelectionBackground"
                                     x:Uid="Profile_SelectionBackground"
                                     ClearSettingValue="{x:Bind Appearance.ClearSelectionBackground}"
                                     CurrentValue="{x:Bind Appearance.SelectionBackground, Mode=OneWay}"
+                                    CurrentValueTemplate="{StaticResource ColorPreviewTemplate}"
                                     HasSettingValue="{x:Bind Appearance.HasSelectionBackground, Mode=OneWay}"
                                     SettingOverrideSource="{x:Bind Appearance.SelectionBackgroundOverrideSource, Mode=OneWay}"
-                                    Style="{StaticResource ExpanderSettingContainerStyle}">
-                <!--TODO CARLOS: Add color picker-->
+                                    Style="{StaticResource ExpanderSettingContainerStyleWithComplexPreview}">
+                <!--  TODO CARLOS: Add color picker  -->
             </local:SettingContainer>
         </StackPanel>
 
@@ -473,15 +476,16 @@
                 </Grid>
             </local:SettingContainer>
 
-            <!-- Cursor Color -->
+            <!--  Cursor Color  -->
             <local:SettingContainer x:Name="CursorColor"
                                     x:Uid="Profile_CursorColor"
                                     ClearSettingValue="{x:Bind Appearance.ClearCursorColor}"
                                     CurrentValue="{x:Bind Appearance.CursorColor, Mode=OneWay}"
+                                    CurrentValueTemplate="{StaticResource ColorPreviewTemplate}"
                                     HasSettingValue="{x:Bind Appearance.HasCursorColor, Mode=OneWay}"
                                     SettingOverrideSource="{x:Bind Appearance.CursorColorOverrideSource, Mode=OneWay}"
-                                    Style="{StaticResource ExpanderSettingContainerStyle}">
-                <!--TODO CARLOS: Add color picker-->
+                                    Style="{StaticResource ExpanderSettingContainerStyleWithComplexPreview}">
+                <!--  TODO CARLOS: Add color picker  -->
             </local:SettingContainer>
         </StackPanel>
 

@@ -34,7 +34,5 @@ namespace winrt::Microsoft::Terminal::UI::implementation
 
 namespace winrt::Microsoft::Terminal::UI::factory_implementation
 {
-    struct Converters : ConvertersT<Converters, implementation::Converters>
-    {
-    };
+    BASIC_FACTORY(Converters);
 }

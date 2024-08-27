@@ -1839,7 +1839,7 @@
     <value>Non-monospace fonts:</value>
     <comment>This is a label that is followed by a list of proportional fonts.</comment>
   </data>
-  <data name="Profile_ColorHeader" xml:space="preserve">
+  <data name="Profile_ColorHeader.Text" xml:space="preserve">
     <value>Color</value>
     <comment>Header for a group of settings that control the color of the text.</comment>
   </data>
@@ -1858,5 +1858,17 @@
   <data name="Profile_SelectionBackground.Header" xml:space="preserve">
     <value>Selection background</value>
     <comment>Header for a control to determine the background color of selected text.</comment>
+  </data>
+  <data name="Profile_CursorColor.Header" xml:space="preserve">
+    <value>Color</value>
+    <comment>Header for a control to determine the color of the cursor.</comment>
+  </data>
+  <data name="Profile_Foreground.HelpText" xml:space="preserve">
+    <value>Overrides the foreground color from the color scheme.</value>
+    <comment>A description for what the "foreground" setting does. Presented near "Profile_Foreground".</comment>
+  </data>
+  <data name="Profile_Background.HelpText" xml:space="preserve">
+    <value>Overrides the background color from the color scheme.</value>
+    <comment>A description for what the "background" setting does. Presented near "Profile_Background".</comment>
   </data>
 </root>

@@ -3,6 +3,16 @@
 
 namespace Microsoft.Terminal.Settings.Editor
 {
+    runtimeclass TerminalColorToBrushConverter : [default] Windows.UI.Xaml.Data.IValueConverter
+    {
+        TerminalColorToBrushConverter();
+    }
+
+    runtimeclass TerminalColorToStringConverter : [default] Windows.UI.Xaml.Data.IValueConverter
+    {
+        TerminalColorToStringConverter();
+    }
+
     enum ColorType
     {
         RGB,

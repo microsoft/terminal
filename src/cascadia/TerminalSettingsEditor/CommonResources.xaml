@@ -4,6 +4,7 @@
 -->
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:local="using:Microsoft.Terminal.Settings.Editor"
                     xmlns:muxc="using:Microsoft.UI.Xaml.Controls">
 
     <!--  Merge SettingContainerStyle here to give every page access to the SettingContainer  -->
@@ -60,6 +61,9 @@
         </ResourceDictionary>
     </ResourceDictionary.ThemeDictionaries>
 
+    <local:TerminalColorToBrushConverter x:Key="TerminalColorToBrushConverter" />
+    <local:TerminalColorToStringConverter x:Key="TerminalColorToStringConverter" />
+
     <Color x:Key="DeleteButtonColor">Firebrick</Color>
 
     <x:Double x:Key="StandardIconSize">14.0</x:Double>
@@ -67,6 +71,32 @@
     <Thickness x:Key="StandardControlMargin">0,24,0,0</Thickness>
     <x:Double x:Key="StandardBoxMinWidth">250</x:Double>
     <x:Double x:Key="StandardControlMaxWidth">1000</x:Double>
+
+    <!-- We're purposefully not providing a DataType here.
+         This is expected to be used with an IReference<Microsoft::Terminal::Core::Color>.
+         We're doing all the data type handling in the used converters.-->
+    <DataTemplate x:Key="ColorPreviewTemplate">
+        <Grid ColumnSpacing="5">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="auto" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <Rectangle Grid.Column="0"
+                       Width="13"
+                       Height="13"
+                       VerticalAlignment="Center"
+                       Fill="{Binding Converter={StaticResource TerminalColorToBrushConverter}}"
+                       RadiusX="2"
+                       RadiusY="2" />
+            <TextBlock Grid.Column="1"
+                       Margin="0,0,0,0"
+                       HorizontalAlignment="Right"
+                       VerticalAlignment="Center"
+                       FontFamily="Segoe UI, Segoe Fluent Icons, Segoe MDL2 Assets"
+                       Style="{StaticResource SettingsPageItemDescriptionStyle}"
+                       Text="{Binding Converter={StaticResource TerminalColorToStringConverter}}" />
+        </Grid>
+    </DataTemplate>
 
     <!--
         This is for styling the entire items control used on the
