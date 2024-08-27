@@ -137,6 +137,17 @@
                          Text="{x:Bind Profile.TabTitle, Mode=TwoWay}" />
             </local:SettingContainer>
 
+            <!-- Tab Color -->
+            <local:SettingContainer x:Name="TabColor"
+                                    x:Uid="Profile_TabColor"
+                                    ClearSettingValue="{x:Bind Profile.ClearTabColor}"
+                                    CurrentValue="{x:Bind Profile.TabColor, Mode=OneWay}"
+                                    HasSettingValue="{x:Bind Profile.HasTabColor, Mode=OneWay}"
+                                    SettingOverrideSource="{x:Bind Profile.TabColorOverrideSource, Mode=OneWay}"
+                                    Style="{StaticResource ExpanderSettingContainerStyle}">
+                <!--TODO CARLOS: Add color picker-->
+            </local:SettingContainer>
+
             <!--  Elevate  -->
             <local:SettingContainer x:Uid="Profile_Elevate"
                                     ClearSettingValue="{x:Bind Profile.ClearElevate}"

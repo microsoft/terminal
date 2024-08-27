@@ -147,6 +147,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         OBSERVABLE_PROJECTED_SETTING(_appearance, BackgroundImageAlignment);
         OBSERVABLE_PROJECTED_SETTING(_appearance, IntenseTextStyle);
         OBSERVABLE_PROJECTED_SETTING(_appearance, AdjustIndistinguishableColors);
+        OBSERVABLE_PROJECTED_SETTING(_appearance, Foreground);
+        OBSERVABLE_PROJECTED_SETTING(_appearance, Background);
+        OBSERVABLE_PROJECTED_SETTING(_appearance, SelectionBackground);
+        OBSERVABLE_PROJECTED_SETTING(_appearance, CursorColor);
         WINRT_OBSERVABLE_PROPERTY(Windows::Foundation::Collections::IObservableVector<Editor::ColorSchemeViewModel>, SchemesList, _propertyChangedHandlers, nullptr);
 
     private:
