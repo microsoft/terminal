@@ -511,6 +511,14 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
         return 0;
     }
     case WM_ENABLE:
+    {
+        if (_interopWindowHandle != nullptr)
+        {
+            // send focus to the child window
+            SetFocus(_interopWindowHandle);
+        }
+        break;
+    }
     case WM_SETFOCUS:
     {
         if (_interopWindowHandle != nullptr)
