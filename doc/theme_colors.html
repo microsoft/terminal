@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Theme Color Quality Tests</title>
+    <script src="https://colorjs.io/dist/color.global.min.js"></script>
+    <script src="https://cdn.plot.ly/plotly-2.34.0.min.js"></script>
+    <style>
+        h2 {
+            font-family: monospace;
+        }
+
+        h2 > button {
+            float: right;
+        }
+
+        #container {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        #container > div {
+            width: 418px;
+        }
+
+        .swatch {
+            display: grid;
+            grid-template-columns: repeat(8, 50px);
+            gap: 2px;
+            border: 2px solid black;
+            background: black;
+        }
+
+        .swatch > div {
+            width: 50px;
+            height: 50px;
+        }
+
+        .swatch span {
+            display: block;
+            font-family: monospace;
+            line-height: 2;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+<div id="container"></div>
+<script>(() => {
+    const themes = {
+        // Process:
+        // * Find the Hues of the 3 color primaries
+        //   red: 29.23388°
+        //   green: 142.49535°
+        //   blue: 264.05202°
+        // * With Saturation and Value set to 100%, blue will be the darkest at ~0.5 lightness.
+        // * Reduce the saturation of blue until the lightness is >0.6, roughly the one of red.
+        // * Reduce the value of green until it's <= 0.8, to take its edge off.
+        // * Reduce the saturation of green and red until their chroma matches blue.
+        "Prototype Bright": (() => {
+            const bright = [
+                new Color("oklch(60% 0 0)"), // Bright Black
+                new Color("color(--okhsl  29.23388 100% 61%)"), // Bright Red
+                new Color("color(--okhsl 142.49535 94% 86%)"), // Bright Green
+                new Color("color(--okhsl  91.69289 100% 86%)"), // Bright Yellow
+                new Color("color(--okhsl 264.05202 100% 53%)"), // Bright Blue
+                new Color("color(--okhsl 316.01888 100% 67%)"), // Bright Purple
+                new Color("color(--okhsl 206.36809 100% 86%)"), // Bright Cyan
+                new Color("oklch(100% 0 0)"), // Bright White
+            ];
+            const dark = [
+                new Color("oklch(0% 0 0)"), // Black
+                ...bright.slice(1, 8).map(c => c.mix("#000", 0.15, {space: "oklab"})),
+            ];
+            return dark.concat(...bright).map(c => c.to("sRGB", {method: "clip"}).toString({
+                format: "hex",
+                collapse: false
+            }))
+        })(),
+        // Finds pairs of color with a lightness difference of 0.2, but identical chroma and hue.
+        //
+        // [29.23388, 142.49535, 91.69289, 264.05202, 316.01888, 206.36809].map(h => {
+        //     let minDist = Infinity;
+        //     let optDC = 0;
+        //     let optBC = 0;
+        //
+        //     for (let dc = 0.01; dc <= 0.4; dc += 1e-3) {
+        //         for (let bc = 0.01; bc <= 0.4; bc += 1e-3) {
+        //             const d = new Color("oklch", [0.6, dc, h]);
+        //             const b = new Color("oklch", [0.8, bc, h]);
+        //             const dist = d.toGamut({space: "srgb"}).deltaEOK2(b.toGamut({space: "srgb"}));
+        //             if (dist < minDist) {
+        //                 minDist = dist;
+        //                 optDC = dc;
+        //                 optBC = bc;
+        //             }
+        //         }
+        //     }
+        //
+        //     optDC = Math.round(optDC * 1e3) / 1e3;
+        //     optBC = Math.round(optBC * 1e3) / 1e3;
+        //     return [optDC, optBC];
+        // })
+        "Prototype Uniform Chroma": [
+            new Color("oklch(0% 0 0)"), // Black
+            new Color("oklch(70% 0.125  29.23388)"), // Red
+            new Color("oklch(70% 0.284 142.49535)"), // Green
+            new Color("oklch(70% 0.160  91.69289)"), // Yellow
+            new Color("oklch(70% 0.104 264.05202)"), // Blue
+            new Color("oklch(70% 0.170 316.01888)"), // Purple
+            new Color("oklch(70% 0.274 206.36809)"), // Cyan
+            new Color("oklch(80% 0 0)"), // White
+
+            new Color("oklch(40% 0 0)"), // Bright Black
+            new Color("oklch(80% 0.213  29.23388)"), // Bright Red
+            new Color("oklch(80% 0.240 142.49535)"), // Bright Green
+            new Color("oklch(80% 0.143  91.69289)"), // Bright Yellow
+            new Color("oklch(80% 0.261 264.05202)"), // Bright Blue
+            new Color("oklch(80% 0.203 316.01888)"), // Bright Purple
+            new Color("oklch(80% 0.122 206.36809)"), // Bright Cyan
+            new Color("oklch(100% 0 0)"), // Bright White
+        ].map(c => c.to("sRGB").toString({format: "hex", collapse: false})),
+        // https://oklch.com/
+        "Prototype Symmetric": [
+            new Color("oklch(0% 0 0)"), // Black
+            new Color("oklch(60% 0.098 30)"), // Red
+            new Color("oklch(60% 0.098 150)"), // Green
+            new Color("oklch(60% 0.098 90)"), // Yellow
+            new Color("oklch(60% 0.098 270)"), // Blue
+            new Color("oklch(60% 0.098 330)"), // Purple
+            new Color("oklch(60% 0.098 210)"), // Cyan
+            new Color("oklch(80% 0 0)"), // White
+
+            new Color("oklch(40% 0 0)"), // Bright Black
+            new Color("oklch(80% 0.098 30)"), // Bright Red
+            new Color("oklch(80% 0.098 150)"), // Bright Green
+            new Color("oklch(80% 0.098 90)"), // Bright Yellow
+            new Color("oklch(80% 0.098 270)"), // Bright Blue
+            new Color("oklch(80% 0.098 330)"), // Bright Purple
+            new Color("oklch(80% 0.098 210)"), // Bright Cyan
+            new Color("oklch(100% 0 0)"), // Bright White
+        ].map(c => c.to("sRGB").toString({format: "hex", collapse: false})),
+        "URXVT": [
+            "#000000",
+            "#BE0000",
+            "#00BE00",
+            "#BEBE00",
+            "#0000BE",
+            "#BE00BE",
+            "#00BEBE",
+            "#BEBEBE",
+
+            "#424242",
+            "#FF0000",
+            "#00FF00",
+            "#FFFF00",
+            "#0000FF",
+            "#FF00FF",
+            "#00FFFF",
+            "#FFFFFF",
+        ],
+        "Terminal.app": [
+            "#000000",
+            "#990000",
+            "#00a600",
+            "#999900",
+            "#0000b2",
+            "#b200b2",
+            "#00a6b2",
+            "#bfbfbf",
+            "#666666",
+            "#e50000",
+            "#00d900",
+            "#e5e500",
+            "#0000ff",
+            "#e500e5",
+            "#00e5e5",
+            "#e5e5e5",
+        ],
+        "base16 dark": [
+            "#181818",
+            "#ab4642",
+            "#a1b56c",
+            "#f7ca88",
+            "#7cafc2",
+            "#ba8baf",
+            "#86c1b9",
+            "#d8d8d8",
+            "#585858",
+            "#ab4642",
+            "#a1b56c",
+            "#f7ca88",
+            "#7cafc2",
+            "#ba8baf",
+            "#86c1b9",
+            "#f8f8f8",
+        ],
+        "Campbell": [
+            "#0C0C0C",
+            "#C50F1F",
+            "#13A10E",
+            "#C19C00",
+            "#0037DA",
+            "#881798",
+            "#3A96DD",
+            "#CCCCCC",
+            "#767676",
+            "#E74856",
+            "#16C60C",
+            "#F9F1A5",
+            "#3B78FF",
+            "#B4009E",
+            "#61D6D6",
+            "#F2F2F2",
+        ],
+        "Campbell Powershell": [
+            "#0C0C0C",
+            "#C50F1F",
+            "#13A10E",
+            "#C19C00",
+            "#0037DA",
+            "#881798",
+            "#3A96DD",
+            "#CCCCCC",
+            "#767676",
+            "#E74856",
+            "#16C60C",
+            "#F9F1A5",
+            "#3B78FF",
+            "#B4009E",
+            "#61D6D6",
+            "#F2F2F2",
+        ],
+        "Vintage": [
+            "#000000",
+            "#800000",
+            "#008000",
+            "#808000",
+            "#000080",
+            "#800080",
+            "#008080",
+            "#C0C0C0",
+            "#808080",
+            "#FF0000",
+            "#00FF00",
+            "#FFFF00",
+            "#0000FF",
+            "#FF00FF",
+            "#00FFFF",
+            "#FFFFFF",
+        ],
+        "One Half Dark": [
+            "#282C34",
+            "#E06C75",
+            "#98C379",
+            "#E5C07B",
+            "#61AFEF",
+            "#C678DD",
+            "#56B6C2",
+            "#DCDFE4",
+            "#5A6374",
+            "#E06C75",
+            "#98C379",
+            "#E5C07B",
+            "#61AFEF",
+            "#C678DD",
+            "#56B6C2",
+            "#DCDFE4",
+        ],
+        "One Half Light": [
+            "#383A42",
+            "#E45649",
+            "#50A14F",
+            "#C18301",
+            "#0184BC",
+            "#A626A4",
+            "#0997B3",
+            "#FAFAFA",
+            "#4F525D",
+            "#DF6C75",
+            "#98C379",
+            "#E4C07A",
+            "#61AFEF",
+            "#C577DD",
+            "#56B5C1",
+            "#FFFFFF",
+        ],
+        "Solarized Dark": [
+            "#002B36",
+            "#DC322F",
+            "#859900",
+            "#B58900",
+            "#268BD2",
+            "#D33682",
+            "#2AA198",
+            "#EEE8D5",
+            "#073642",
+            "#CB4B16",
+            "#586E75",
+            "#657B83",
+            "#839496",
+            "#6C71C4",
+            "#93A1A1",
+            "#FDF6E3",
+        ],
+        "Solarized Light": [
+            "#002B36",
+            "#DC322F",
+            "#859900",
+            "#B58900",
+            "#268BD2",
+            "#D33682",
+            "#2AA198",
+            "#EEE8D5",
+            "#073642",
+            "#CB4B16",
+            "#586E75",
+            "#657B83",
+            "#839496",
+            "#6C71C4",
+            "#93A1A1",
+            "#FDF6E3",
+        ],
+        "Tango Dark": [
+            "#000000",
+            "#CC0000",
+            "#4E9A06",
+            "#C4A000",
+            "#3465A4",
+            "#75507B",
+            "#06989A",
+            "#D3D7CF",
+            "#555753",
+            "#EF2929",
+            "#8AE234",
+            "#FCE94F",
+            "#729FCF",
+            "#AD7FA8",
+            "#34E2E2",
+            "#EEEEEC",
+        ],
+        "Tango Light": [
+            "#000000",
+            "#CC0000",
+            "#4E9A06",
+            "#C4A000",
+            "#3465A4",
+            "#75507B",
+            "#06989A",
+            "#D3D7CF",
+            "#555753",
+            "#EF2929",
+            "#8AE234",
+            "#FCE94F",
+            "#729FCF",
+            "#AD7FA8",
+            "#34E2E2",
+            "#EEEEEC",
+        ],
+        "Dark+": [
+            "#000000",
+            "#cd3131",
+            "#0dbc79",
+            "#e5e510",
+            "#2472c8",
+            "#bc3fbc",
+            "#11a8cd",
+            "#e5e5e5",
+            "#666666",
+            "#f14c4c",
+            "#23d18b",
+            "#f5f543",
+            "#3b8eea",
+            "#d670d6",
+            "#29b8db",
+            "#e5e5e5",
+        ],
+        "CGA": [
+            "#000000",
+            "#AA0000",
+            "#00AA00",
+            "#AA5500",
+            "#0000AA",
+            "#AA00AA",
+            "#00AAAA",
+            "#AAAAAA",
+            "#555555",
+            "#FF5555",
+            "#55FF55",
+            "#FFFF55",
+            "#5555FF",
+            "#FF55FF",
+            "#55FFFF",
+            "#FFFFFF",
+        ],
+        "IBM 5153": [
+            "#000000",
+            "#AA0000",
+            "#00AA00",
+            "#C47E00",
+            "#0000AA",
+            "#AA00AA",
+            "#00AAAA",
+            "#AAAAAA",
+            "#555555",
+            "#FF5555",
+            "#55FF55",
+            "#FFFF55",
+            "#5555FF",
+            "#FF55FF",
+            "#55FFFF",
+            "#FFFFFF",
+        ],
+    };
+
+    Object.entries(themes).forEach(([name, table]) => append(name, table));
+
+    function append(name, srgb) {
+        const oklch = srgb.map(c => Color.to(c, "Oklch"));
+
+        const title = document.createElement("h2");
+        title.innerText = name;
+
+        const download = document.createElement("button");
+        download.type = "button";
+        download.innerText = "Copy";
+        download.onclick = () => {
+            navigator.clipboard.writeText(JSON.stringify({
+                name,
+                background: srgb[0],
+                foreground: srgb[7],
+                cursorColor: "#ffffff",
+                black: srgb[0],
+                red: srgb[1],
+                green: srgb[2],
+                yellow: srgb[3],
+                blue: srgb[4],
+                purple: srgb[5],
+                cyan: srgb[6],
+                white: srgb[7],
+                brightBlack: srgb[8],
+                brightRed: srgb[9],
+                brightGreen: srgb[10],
+                brightYellow: srgb[11],
+                brightBlue: srgb[12],
+                brightPurple: srgb[13],
+                brightCyan: srgb[14],
+                brightWhite: srgb[15],
+            }, null, 4));
+
+            download.innerText = "Copied!";
+            download.disabled = true;
+
+            setTimeout(() => {
+                download.innerText = "Copy";
+                download.disabled = false;
+            }, 1000);
+        }
+        title.appendChild(download);
+
+        const swatch = document.createElement("div");
+        swatch.className = "swatch";
+
+        for (let i = 0; i < 16; ++i) {
+            const span = document.createElement("span");
+            span.innerText = oklch[i].l.toFixed(3);
+            span.style.color = srgb[i];
+            span.style.background = srgb[0];
+
+            const div = document.createElement("div");
+            div.style.background = srgb[i];
+            div.appendChild(span);
+
+            swatch.appendChild(div);
+        }
+
+        const plot = document.createElement("div");
+        Plotly.newPlot(plot, [{
+            type: "scatterpolar",
+            mode: "markers+text",
+            hovertext: [
+                "Black",
+                "Red",
+                "Green",
+                "Yellow",
+                "Blue",
+                "Purple",
+                "Cyan",
+                "White",
+                "Bright Black",
+                "Bright Red",
+                "Bright Green",
+                "Bright Yellow",
+                "Bright Blue",
+                "Bright Purple",
+                "Bright Cyan",
+                "Bright White",
+            ],
+            marker: {
+                color: srgb,
+                size: 12,
+            },
+            theta: oklch.map(c => c.h),
+            r: oklch.map(c => c.c),
+        }], {
+            width: 418,
+            height: 418,
+            margin: {
+                l: 40,
+                r: 40,
+                b: 40,
+                t: 40,
+            },
+            polar: {
+                radialaxis: {
+                    range: [0, 0.4],
+                },
+            },
+        });
+
+        const theme = document.createElement("div");
+        theme.appendChild(title);
+        theme.appendChild(swatch);
+        theme.appendChild(plot);
+
+        document.getElementById("container").appendChild(theme);
+    }
+})()</script>
+</body>
+</html>
