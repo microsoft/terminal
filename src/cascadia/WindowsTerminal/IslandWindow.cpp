@@ -510,6 +510,7 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
         _HandleCreateWindow(wparam, lparam);
         return 0;
     }
+    case WM_ENABLE:
     case WM_SETFOCUS:
     {
         if (_interopWindowHandle != nullptr)
