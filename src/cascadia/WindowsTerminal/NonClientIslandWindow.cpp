@@ -171,7 +171,6 @@ LRESULT NonClientIslandWindow::_InputSinkMessageHandler(UINT const message,
         // is absolutely critical to making sure Snap Layouts (GH#9443) works!
         return _dragBarNcHitTest({ GET_X_LPARAM(lparam), GET_Y_LPARAM(lparam) });
     }
-
     break;
 
     case WM_NCMOUSEMOVE:
