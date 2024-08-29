@@ -60,11 +60,11 @@
         // * Reduce the value of green until it's <= 0.8, to take its edge off.
         // * Reduce the saturation of green and red until their chroma matches blue.
         "Prototype Bright": (() => {
-            bright_red = new Color(`color(--okhsl ${Color.to("#f00", "okhsl").h} 100% 60.15%)`);
-            bright_green = new Color(`color(--okhsl ${Color.to("#0f0", "okhsl").h} 92.5% 80%)`);
-            bright_blue = new Color(`color(--okhsl ${Color.to("#00f", "okhsl").h} 100% 51.2%)`);
+            const bright_red = new Color(`color(--okhsl ${Color.to("#f00", "okhsl").h} 100% 60.15%)`);
+            const bright_green = new Color(`color(--okhsl ${Color.to("#0f0", "okhsl").h} 92.5% 80%)`);
+            const bright_blue = new Color(`color(--okhsl ${Color.to("#00f", "okhsl").h} 100% 51.2%)`);
 
-            mixOpts = {space: "oklab", outputSpace: "okhsl"};
+            const mixOpts = {space: "oklab", outputSpace: "okhsl"};
             const bright_yellow = new Color(`color(--okhsl ${bright_red.mix(bright_green, 0.5, mixOpts).h} 100% 86%)`);
             const bright_purple = new Color(`color(--okhsl ${bright_green.mix(bright_blue, 0.5, mixOpts).h} 100% 80%)`);
             const bright_cyan = new Color(`color(--okhsl ${bright_blue.mix(bright_red, 0.5, mixOpts).h} 100% 73%)`);
@@ -88,49 +88,6 @@
                 collapse: false
             }))
         })(),
-        // Finds pairs of color with a lightness difference of 0.2, but identical chroma and hue.
-        //
-        // [29.23388, 142.49535, 91.69289, 264.05202, 316.01888, 206.36809].map(h => {
-        //     let minDist = Infinity;
-        //     let optDC = 0;
-        //     let optBC = 0;
-        //
-        //     for (let dc = 0.01; dc <= 0.4; dc += 1e-3) {
-        //         for (let bc = 0.01; bc <= 0.4; bc += 1e-3) {
-        //             const d = new Color("oklch", [0.6, dc, h]);
-        //             const b = new Color("oklch", [0.8, bc, h]);
-        //             const dist = d.toGamut({space: "srgb"}).deltaEOK2(b.toGamut({space: "srgb"}));
-        //             if (dist < minDist) {
-        //                 minDist = dist;
-        //                 optDC = dc;
-        //                 optBC = bc;
-        //             }
-        //         }
-        //     }
-        //
-        //     optDC = Math.round(optDC * 1e3) / 1e3;
-        //     optBC = Math.round(optBC * 1e3) / 1e3;
-        //     return [optDC, optBC];
-        // })
-        "Prototype Uniform Chroma": [
-            new Color("oklch(0% 0 0)"), // Black
-            new Color("oklch(70% 0.125  29.23388)"), // Red
-            new Color("oklch(70% 0.284 142.49535)"), // Green
-            new Color("oklch(70% 0.160  91.69289)"), // Yellow
-            new Color("oklch(70% 0.104 264.05202)"), // Blue
-            new Color("oklch(70% 0.170 316.01888)"), // Purple
-            new Color("oklch(70% 0.274 206.36809)"), // Cyan
-            new Color("oklch(80% 0 0)"), // White
-
-            new Color("oklch(40% 0 0)"), // Bright Black
-            new Color("oklch(80% 0.213  29.23388)"), // Bright Red
-            new Color("oklch(80% 0.240 142.49535)"), // Bright Green
-            new Color("oklch(80% 0.143  91.69289)"), // Bright Yellow
-            new Color("oklch(80% 0.261 264.05202)"), // Bright Blue
-            new Color("oklch(80% 0.203 316.01888)"), // Bright Purple
-            new Color("oklch(80% 0.122 206.36809)"), // Bright Cyan
-            new Color("oklch(100% 0 0)"), // Bright White
-        ].map(c => c.to("sRGB").toString({format: "hex", collapse: false})),
         // https://oklch.com/
         "Prototype Symmetric": [
             new Color("oklch(0% 0 0)"), // Black
@@ -151,25 +108,6 @@
             new Color("oklch(80% 0.098 210)"), // Bright Cyan
             new Color("oklch(100% 0 0)"), // Bright White
         ].map(c => c.to("sRGB").toString({format: "hex", collapse: false})),
-        "URXVT": [
-            "#000000",
-            "#BE0000",
-            "#00BE00",
-            "#BEBE00",
-            "#0000BE",
-            "#BE00BE",
-            "#00BEBE",
-            "#BEBEBE",
-
-            "#424242",
-            "#FF0000",
-            "#00FF00",
-            "#FFFF00",
-            "#0000FF",
-            "#FF00FF",
-            "#00FFFF",
-            "#FFFFFF",
-        ],
         "Terminal.app": [
             "#000000",
             "#990000",
@@ -188,23 +126,59 @@
             "#00e5e5",
             "#e5e5e5",
         ],
-        "base16 dark": [
-            "#181818",
-            "#ab4642",
-            "#a1b56c",
-            "#f7ca88",
-            "#7cafc2",
-            "#ba8baf",
-            "#86c1b9",
-            "#d8d8d8",
-            "#585858",
-            "#ab4642",
-            "#a1b56c",
-            "#f7ca88",
-            "#7cafc2",
-            "#ba8baf",
-            "#86c1b9",
-            "#f8f8f8",
+        "Windows NT": [
+            "#000000",
+            "#800000",
+            "#008000",
+            "#808000",
+            "#000080",
+            "#800080",
+            "#008080",
+            "#C0C0C0",
+            "#808080",
+            "#FF0000",
+            "#00FF00",
+            "#FFFF00",
+            "#0000FF",
+            "#FF00FF",
+            "#00FFFF",
+            "#FFFFFF",
+        ],
+        "Windows XP": [
+            "#000000",
+            "#A80000",
+            "#00A800",
+            "#A85400",
+            "#0000A8",
+            "#A800A8",
+            "#61D6D6",
+            "#A8A8A8",
+            "#545454",
+            "#FF0000",
+            "#00FF00",
+            "#FFFF00",
+            "#0000FF",
+            "#FF00FF",
+            "#00FFFF",
+            "#FFFFFF",
+        ],
+        "URXVT": [
+            "#000000",
+            "#BE0000",
+            "#00BE00",
+            "#BEBE00",
+            "#0000BE",
+            "#BE00BE",
+            "#00BEBE",
+            "#BEBEBE",
+            "#424242",
+            "#FF0000",
+            "#00FF00",
+            "#FFFF00",
+            "#0000FF",
+            "#FF00FF",
+            "#00FFFF",
+            "#FFFFFF",
         ],
         "Campbell": [
             "#0C0C0C",
@@ -241,24 +215,6 @@
             "#B4009E",
             "#61D6D6",
             "#F2F2F2",
-        ],
-        "Vintage": [
-            "#000000",
-            "#800000",
-            "#008000",
-            "#808000",
-            "#000080",
-            "#800080",
-            "#008080",
-            "#C0C0C0",
-            "#808080",
-            "#FF0000",
-            "#00FF00",
-            "#FFFF00",
-            "#0000FF",
-            "#FF00FF",
-            "#00FFFF",
-            "#FFFFFF",
         ],
         "One Half Dark": [
             "#282C34",
