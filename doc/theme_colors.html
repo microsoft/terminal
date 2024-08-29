@@ -50,15 +50,21 @@
 <div id="container"></div>
 <script>(() => {
     const themes = {
-        // Process:
-        // * Find the Hues of the 3 color primaries
-        //   red: 29.23388°
-        //   green: 142.49535°
-        //   blue: 264.05202°
-        // * With Saturation and Value set to 100%, blue will be the darkest at ~0.5 lightness.
-        // * Reduce the saturation of blue until the lightness is >0.6, roughly the one of red.
-        // * Reduce the value of green until it's <= 0.8, to take its edge off.
-        // * Reduce the saturation of green and red until their chroma matches blue.
+        // Find the optimal selection color (e.g. #92a4fd):
+        //
+        // theme = ["#000000", "#be2c21", "#3fae3a", "#be9a4a", "#204dbe", "#bb54be", "#00a7b2", "#bebebe", "#808080", "#ff3e30", "#58ea51", "#ffd166", "#2f6aff", "#fc74ff", "#00e1f0", "#ffffff"]
+        // theme = theme.map(t => Color.to(t, "oklab"))
+        //
+        // optD = 0;
+        // opt = null;
+        //
+        // for (let h = 264-10; h <= 264+10; h += 1) {
+        //     for (let c = 10; c <= 100; c += 1) {
+        //         for (let l = 40; l <= 90; l += 1) {
+        //             const col = Color.to(`color(--okhsl ${h} ${c}% ${l}%)`, "oklab");
+        //         }
+        //     }
+        // }
         "Prototype Bright": (() => {
             const bright_red = new Color(`color(--okhsl ${Color.to("#f00", "okhsl").h} 100% 60.15%)`);
             const bright_green = new Color(`color(--okhsl ${Color.to("#0f0", "okhsl").h} 92.5% 80%)`);
@@ -70,17 +76,17 @@
             const bright_cyan = new Color(`color(--okhsl ${bright_blue.mix(bright_red, 0.5, mixOpts).h} 100% 73%)`);
 
             const bright = [
-                new Color("oklch(60% 0 0)"), // Bright Black
+                new Color("oklch(60% 0 0)"),
                 bright_red,
                 bright_green,
                 bright_yellow,
                 bright_blue,
                 bright_cyan,
                 bright_purple,
-                new Color("oklch(100% 0 0)"), // Bright White
+                new Color("oklch(100% 0 0)"),
             ];
             const dark = [
-                new Color("oklch(0% 0 0)"), // Black
+                new Color("oklch(0% 0 0)"),
                 ...bright.slice(1, 8).map(c => c.mix("#000", 0.2, {space: "oklab"})),
             ];
             return dark.concat(...bright).map(c => c.to("sRGB", {method: "clip"}).toString({
