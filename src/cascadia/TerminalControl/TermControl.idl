@@ -63,6 +63,7 @@ namespace Microsoft.Terminal.Control
         event Windows.Foundation.TypedEventHandler<Object, Object> TabColorChanged;
         event Windows.Foundation.TypedEventHandler<Object, Object> ReadOnlyChanged;
         event Windows.Foundation.TypedEventHandler<Object, Object> FocusFollowMouseRequested;
+        event Windows.Foundation.TypedEventHandler<Object, WindowSizeChangedEventArgs> WindowSizeChanged;
 
         event Windows.Foundation.TypedEventHandler<Object, CompletionsChangedEventArgs> CompletionsChanged;
 

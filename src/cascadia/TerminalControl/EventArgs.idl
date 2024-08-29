@@ -132,4 +132,10 @@ namespace Microsoft.Terminal.Control
         String MissingCommand { get; };
         Int32 BufferRow { get; };
     }
+
+    runtimeclass WindowSizeChangedEventArgs
+    {
+        Int32 Width;
+        Int32 Height;
+    }
 }

@@ -134,12 +134,17 @@ private:
     void _ShowWindowChanged(const winrt::Windows::Foundation::IInspectable& sender,
                             const winrt::Microsoft::Terminal::Control::ShowWindowArgs& args);
 
+    void _WindowSizeChanged(const winrt::Windows::Foundation::IInspectable& sender,
+                            const winrt::Microsoft::Terminal::Control::WindowSizeChangedEventArgs& args);
+
     void _updateTheme();
 
     void _PropertyChangedHandler(const winrt::Windows::Foundation::IInspectable& sender,
                                  const winrt::Windows::UI::Xaml::Data::PropertyChangedEventArgs& args);
 
     void _initialResizeAndRepositionWindow(const HWND hwnd, til::rect proposedRect, winrt::Microsoft::Terminal::Settings::Model::LaunchMode& launchMode);
+
+    void _resizeWindow(const HWND hwnd, til::size newSize);
 
     void _handleMoveContent(const winrt::Windows::Foundation::IInspectable& sender,
                             winrt::TerminalApp::RequestMoveContentArgs args);
@@ -201,6 +206,7 @@ private:
         winrt::TerminalApp::TerminalWindow::RequestLaunchPosition_revoker RequestLaunchPosition;
         winrt::TerminalApp::TerminalWindow::PropertyChanged_revoker PropertyChanged;
         winrt::TerminalApp::TerminalWindow::SettingsChanged_revoker SettingsChanged;
+        winrt::TerminalApp::TerminalWindow::WindowSizeChanged_revoker WindowSizeChanged;
 
         winrt::Microsoft::Terminal::Remoting::Peasant::SendContentRequested_revoker SendContentRequested;
     } _revokers{};
