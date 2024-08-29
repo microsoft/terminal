@@ -463,7 +463,7 @@ using namespace Microsoft::Console::Interactivity;
         {
             _WritePseudoWindowCallback((bool)wParam);
         }
-        break;
+        return 0;
     }
     case WM_GETOBJECT:
     {
