@@ -35,7 +35,6 @@ SOURCES= \
     ..\convert.cpp \
     ..\colorTable.cpp \
     ..\utils.cpp \
-    ..\ThemeUtils.cpp \
     ..\ScreenInfoUiaProviderBase.cpp \
     ..\sgrStack.cpp \
     ..\UiaTextRangeBase.cpp \

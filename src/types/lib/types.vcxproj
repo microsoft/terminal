@@ -18,7 +18,6 @@
     <ClCompile Include="..\GlyphWidth.cpp" />
     <ClCompile Include="..\ScreenInfoUiaProviderBase.cpp" />
     <ClCompile Include="..\sgrStack.cpp" />
-    <ClCompile Include="..\ThemeUtils.cpp" />
     <ClCompile Include="..\UiaTextRangeBase.cpp" />
     <ClCompile Include="..\UiaTracing.cpp" />
     <ClCompile Include="..\TermControlUiaTextRange.cpp" />
@@ -38,7 +37,6 @@
     <ClInclude Include="..\inc\GlyphWidth.hpp" />
     <ClInclude Include="..\inc\IInputEvent.hpp" />
     <ClInclude Include="..\inc\sgrStack.hpp" />
-    <ClInclude Include="..\inc\ThemeUtils.h" />
     <ClInclude Include="..\inc\utils.hpp" />
     <ClInclude Include="..\inc\Viewport.hpp" />
     <ClInclude Include="..\IUiaEventDispatcher.h" />

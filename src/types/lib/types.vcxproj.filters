@@ -42,9 +42,6 @@
     <ClCompile Include="..\UiaTextRangeBase.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\ThemeUtils.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\sgrStack.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -105,9 +102,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\inc\utils.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\inc\ThemeUtils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\inc\sgrStack.hpp">
