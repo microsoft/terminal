@@ -410,6 +410,9 @@
                                     SettingOverrideSource="{x:Bind Appearance.ForegroundOverrideSource, Mode=OneWay}"
                                     Style="{StaticResource ExpanderSettingContainerStyleWithComplexPreview}">
                 <!--  TODO CARLOS: Add color picker  -->
+                <local:NullableColorPicker x:Name="ForegroundColorPicker"
+                                           CurrentColor="{x:Bind Appearance.Foreground, Mode=TwoWay}"
+                                           ColorSchemeVM="{x:Bind Appearance.CurrentColorScheme, Mode=OneWay}"/>
             </local:SettingContainer>
 
             <!--  Background Color  -->

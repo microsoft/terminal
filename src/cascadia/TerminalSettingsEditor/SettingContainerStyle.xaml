@@ -7,6 +7,7 @@
                     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
                     xmlns:local="using:Microsoft.Terminal.Settings.Editor"
                     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+                    xmlns:mtu="using:Microsoft.Terminal.UI"
                     xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
                     mc:Ignorable="d">
 
@@ -262,7 +263,7 @@
         </Setter>
     </Style>
 
-    <!--  A setting container which can expand  -->
+    <!--  A setting container which can expand. Supports data template override for preview  -->
     <Style x:Key="ExpanderSettingContainerStyleWithComplexPreview"
            TargetType="local:SettingContainer">
         <Setter Property="MaxWidth" Value="1000" />

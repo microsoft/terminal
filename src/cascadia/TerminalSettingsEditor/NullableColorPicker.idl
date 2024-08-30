@@ -1,0 +1,18 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+import "ColorSchemeViewModel.idl";
+
+namespace Microsoft.Terminal.Settings.Editor
+{
+    [default_interface] runtimeclass NullableColorPicker : Windows.UI.Xaml.Controls.UserControl
+    {
+        NullableColorPicker();
+
+        ColorSchemeViewModel ColorSchemeVM;
+        static Windows.UI.Xaml.DependencyProperty ColorSchemeVMProperty { get; };
+
+        Windows.Foundation.IReference<Microsoft.Terminal.Core.Color> CurrentColor;
+        static Windows.UI.Xaml.DependencyProperty CurrentColorProperty { get; };
+    }
+}

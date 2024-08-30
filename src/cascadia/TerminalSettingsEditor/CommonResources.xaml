@@ -73,8 +73,8 @@
     <x:Double x:Key="StandardControlMaxWidth">1000</x:Double>
 
     <!-- We're purposefully not providing a DataType here.
-         This is expected to be used with an IReference<Microsoft::Terminal::Core::Color>.
-         We're doing all the data type handling in the used converters.-->
+     This is expected to be used with an IReference<Microsoft::Terminal::Core::Color>.
+     We're doing all the data type handling in the used converters.-->
     <DataTemplate x:Key="ColorPreviewTemplate">
         <Grid ColumnSpacing="5">
             <Grid.ColumnDefinitions>
@@ -82,19 +82,19 @@
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
             <Rectangle Grid.Column="0"
-                       Width="13"
-                       Height="13"
-                       VerticalAlignment="Center"
-                       Fill="{Binding Converter={StaticResource TerminalColorToBrushConverter}}"
-                       RadiusX="2"
-                       RadiusY="2" />
+                   Width="13"
+                   Height="13"
+                   VerticalAlignment="Center"
+                   Fill="{Binding Converter={StaticResource TerminalColorToBrushConverter}}"
+                   RadiusX="2"
+                   RadiusY="2" />
             <TextBlock Grid.Column="1"
-                       Margin="0,0,0,0"
-                       HorizontalAlignment="Right"
-                       VerticalAlignment="Center"
-                       FontFamily="Segoe UI, Segoe Fluent Icons, Segoe MDL2 Assets"
-                       Style="{StaticResource SettingsPageItemDescriptionStyle}"
-                       Text="{Binding Converter={StaticResource TerminalColorToStringConverter}}" />
+                   Margin="0,0,0,0"
+                   HorizontalAlignment="Right"
+                   VerticalAlignment="Center"
+                   FontFamily="Segoe UI, Segoe Fluent Icons, Segoe MDL2 Assets"
+                   Style="{StaticResource SettingsPageItemDescriptionStyle}"
+                   Text="{Binding Converter={StaticResource TerminalColorToStringConverter}}" />
         </Grid>
     </DataTemplate>
 
@@ -387,6 +387,96 @@
                                                                        Storyboard.TargetProperty="BorderBrush">
                                             <DiscreteObjectKeyFrame KeyTime="0"
                                                                     Value="{ThemeResource ButtonBorderBrushDisabled}" />
+                                        </ObjectAnimationUsingKeyFrames>
+                                    </Storyboard>
+                                </VisualState>
+                            </VisualStateGroup>
+                        </VisualStateManager.VisualStateGroups>
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="ColorToggleButtonStyle"
+           TargetType="ToggleButton">
+        <Setter Property="BackgroundSizing" Value="OuterBorderEdge" />
+        <Setter Property="BorderBrush" Value="{ThemeResource ButtonBorderBrush}" />
+        <Setter Property="BorderThickness" Value="{ThemeResource ButtonBorderThemeThickness}" />
+        <Setter Property="CornerRadius" Value="{ThemeResource ControlCornerRadius}" />
+        <Setter Property="UseSystemFocusVisuals" Value="{StaticResource UseSystemFocusVisuals}" />
+        <Setter Property="FocusVisualMargin" Value="-3" />
+        <Setter Property="Width" Value="32" />
+        <Setter Property="Height" Value="32" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ToggleButton">
+                    <Grid>
+                        <Border x:Name="ColorButtonBorder"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="{TemplateBinding CornerRadius}">
+                            <Grid>
+                                <Rectangle x:Name="ColorButtonBackground"
+                                           Fill="{TemplateBinding Background}"
+                                           RadiusX="{TemplateBinding CornerRadius}"
+                                           RadiusY="{TemplateBinding CornerRadius}"/>
+                                <FontIcon HorizontalAlignment="Right"
+                                          VerticalAlignment="Bottom"
+                                          Margin="0,0,-1,-1"
+                                          FontSize="12"
+                                          FontFamily="Segoe Fluent Icons"
+                                          Glyph="&#xE73D;"
+                                          Visibility="{TemplateBinding IsChecked}"/>
+                            
+                            </Grid>
+                        </Border>
+                        <!--TODO CARLOS: Update the visual state manager to make this feel right. We want the border to appear on hover and selection.-->
+                        <VisualStateManager.VisualStateGroups>
+                            <VisualStateGroup x:Name="CommonStates">
+                                <VisualState x:Name="Normal" />
+
+                                <VisualState x:Name="PointerOver">
+                                    <Storyboard>
+                                        <ObjectAnimationUsingKeyFrames Storyboard.TargetName="ColorButtonBackground"
+                                                                   Storyboard.TargetProperty="Opacity">
+                                            <DiscreteObjectKeyFrame KeyTime="0"
+                                                                Value="0.9" />
+                                        </ObjectAnimationUsingKeyFrames>
+                                        <ObjectAnimationUsingKeyFrames Storyboard.TargetName="ColorButtonBorder"
+                                                                   Storyboard.TargetProperty="BorderBrush">
+                                            <DiscreteObjectKeyFrame KeyTime="0"
+                                                                Value="{ThemeResource ButtonBorderBrushPointerOver}" />
+                                        </ObjectAnimationUsingKeyFrames>
+                                    </Storyboard>
+                                </VisualState>
+
+                                <VisualState x:Name="Pressed">
+                                    <Storyboard>
+                                        <ObjectAnimationUsingKeyFrames Storyboard.TargetName="ColorButtonBackground"
+                                                                   Storyboard.TargetProperty="Opacity">
+                                            <DiscreteObjectKeyFrame KeyTime="0"
+                                                                Value="0.8" />
+                                        </ObjectAnimationUsingKeyFrames>
+                                        <ObjectAnimationUsingKeyFrames Storyboard.TargetName="ColorButtonBackground"
+                                                                   Storyboard.TargetProperty="BorderBrush">
+                                            <DiscreteObjectKeyFrame KeyTime="0"
+                                                                Value="{ThemeResource ButtonBorderBrushPressed}" />
+                                        </ObjectAnimationUsingKeyFrames>
+                                    </Storyboard>
+                                </VisualState>
+
+                                <VisualState x:Name="Disabled">
+                                    <Storyboard>
+                                        <ObjectAnimationUsingKeyFrames Storyboard.TargetName="ColorButtonBackground"
+                                                                   Storyboard.TargetProperty="Background">
+                                            <DiscreteObjectKeyFrame KeyTime="0"
+                                                                Value="{ThemeResource ButtonBackgroundDisabled}" />
+                                        </ObjectAnimationUsingKeyFrames>
+                                        <ObjectAnimationUsingKeyFrames Storyboard.TargetName="ColorButtonBackground"
+                                                                   Storyboard.TargetProperty="BorderBrush">
+                                            <DiscreteObjectKeyFrame KeyTime="0"
+                                                                Value="{ThemeResource ButtonBorderBrushDisabled}" />
                                         </ObjectAnimationUsingKeyFrames>
                                     </Storyboard>
                                 </VisualState>

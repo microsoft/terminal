@@ -1871,4 +1871,8 @@
     <value>Overrides the background color from the color scheme.</value>
     <comment>A description for what the "background" setting does. Presented near "Profile_Background".</comment>
   </data>
+  <data name="NullableColorPicker_MoreColorsButton.Content" xml:space="preserve">
+    <value>More colors...</value>
+    <comment>Text label for a button that allows the user to select from more colors in a new window. {Locked="..."}</comment>
+  </data>
 </root>
