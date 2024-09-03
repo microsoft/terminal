@@ -293,7 +293,11 @@ bool InputStateMachineEngine::ActionPrintString(const std::wstring_view string)
 // - true iff we successfully dispatched the sequence.
 bool InputStateMachineEngine::ActionPassThroughString(const std::wstring_view string)
 {
-    return ActionPrintString(string);
+    if (!string.empty())
+    {
+        _pDispatch->WriteStringRaw(string);
+    }
+    return true;
 }
 
 // Method Description:

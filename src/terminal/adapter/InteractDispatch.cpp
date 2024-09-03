@@ -74,6 +74,12 @@ void InteractDispatch::WriteString(const std::wstring_view string)
     }
 }
 
+void InteractDispatch::WriteStringRaw(std::wstring_view string)
+{
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    gci.GetActiveInputBuffer()->WriteString(string);
+}
+
 //Method Description:
 // Window Manipulation - Performs a variety of actions relating to the window,
 //      such as moving the window position, resizing the window, querying
