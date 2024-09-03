@@ -44,6 +44,7 @@ namespace Microsoft::Console::VirtualTerminal
             void WriteWindowTitle(std::wstring_view title) const;
             void WriteAttributes(const TextAttribute& attributes) const;
             void WriteInfos(til::point target, std::span<const CHAR_INFO> infos) const;
+            void WriteScreenInfo(SCREEN_INFORMATION& newContext, til::size oldSize) const;
 
         private:
             VtIo* _io = nullptr;
