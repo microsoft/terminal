@@ -409,10 +409,9 @@
                                     HasSettingValue="{x:Bind Appearance.HasForeground, Mode=OneWay}"
                                     SettingOverrideSource="{x:Bind Appearance.ForegroundOverrideSource, Mode=OneWay}"
                                     Style="{StaticResource ExpanderSettingContainerStyleWithComplexPreview}">
-                <!--  TODO CARLOS: Add color picker  -->
-                <local:NullableColorPicker x:Name="ForegroundColorPicker"
-                                           CurrentColor="{x:Bind Appearance.Foreground, Mode=TwoWay}"
-                                           ColorSchemeVM="{x:Bind Appearance.CurrentColorScheme, Mode=OneWay}"/>
+                <local:NullableColorPicker CurrentColor="{x:Bind Appearance.Foreground, Mode=TwoWay}"
+                                           ColorSchemeVM="{x:Bind Appearance.CurrentColorScheme, Mode=OneWay}"
+                                           NullColorPreview="{x:Bind Appearance.CurrentColorScheme.ForegroundColor.Color, Mode=OneWay}" />
             </local:SettingContainer>
 
             <!--  Background Color  -->
@@ -424,7 +423,9 @@
                                     HasSettingValue="{x:Bind Appearance.HasBackground, Mode=OneWay}"
                                     SettingOverrideSource="{x:Bind Appearance.BackgroundOverrideSource, Mode=OneWay}"
                                     Style="{StaticResource ExpanderSettingContainerStyleWithComplexPreview}">
-                <!--  TODO CARLOS: Add color picker  -->
+                <local:NullableColorPicker CurrentColor="{x:Bind Appearance.Background, Mode=TwoWay}"
+                                           ColorSchemeVM="{x:Bind Appearance.CurrentColorScheme, Mode=OneWay}"
+                                           NullColorPreview="{x:Bind Appearance.CurrentColorScheme.BackgroundColor.Color, Mode=OneWay}" />
             </local:SettingContainer>
 
             <!--  Selection Background Color  -->
@@ -436,7 +437,9 @@
                                     HasSettingValue="{x:Bind Appearance.HasSelectionBackground, Mode=OneWay}"
                                     SettingOverrideSource="{x:Bind Appearance.SelectionBackgroundOverrideSource, Mode=OneWay}"
                                     Style="{StaticResource ExpanderSettingContainerStyleWithComplexPreview}">
-                <!--  TODO CARLOS: Add color picker  -->
+                <local:NullableColorPicker CurrentColor="{x:Bind Appearance.SelectionBackground, Mode=TwoWay}"
+                                           ColorSchemeVM="{x:Bind Appearance.CurrentColorScheme, Mode=OneWay}"
+                                           NullColorPreview="{x:Bind Appearance.CurrentColorScheme.SelectionBackgroundColor.Color, Mode=OneWay}" />
             </local:SettingContainer>
         </StackPanel>
 
@@ -488,7 +491,9 @@
                                     HasSettingValue="{x:Bind Appearance.HasCursorColor, Mode=OneWay}"
                                     SettingOverrideSource="{x:Bind Appearance.CursorColorOverrideSource, Mode=OneWay}"
                                     Style="{StaticResource ExpanderSettingContainerStyleWithComplexPreview}">
-                <!--  TODO CARLOS: Add color picker  -->
+                <local:NullableColorPicker CurrentColor="{x:Bind Appearance.CursorColor, Mode=TwoWay}"
+                                           ColorSchemeVM="{x:Bind Appearance.CurrentColorScheme, Mode=OneWay}"
+                                           NullColorPreview="{x:Bind Appearance.CurrentColorScheme.CursorColor.Color, Mode=OneWay}"/>
             </local:SettingContainer>
         </StackPanel>
 

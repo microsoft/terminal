@@ -14,5 +14,14 @@ namespace Microsoft.Terminal.Settings.Editor
 
         Windows.Foundation.IReference<Microsoft.Terminal.Core.Color> CurrentColor;
         static Windows.UI.Xaml.DependencyProperty CurrentColorProperty { get; };
+
+        Boolean ShowNullColorButton;
+        static Windows.UI.Xaml.DependencyProperty ShowNullColorButtonProperty { get; };
+
+        String NullColorButtonLabel;
+        static Windows.UI.Xaml.DependencyProperty NullColorButtonLabelProperty { get; };
+
+        Windows.UI.Color NullColorPreview;
+        static Windows.UI.Xaml.DependencyProperty NullColorPreviewProperty { get; };
     }
 }

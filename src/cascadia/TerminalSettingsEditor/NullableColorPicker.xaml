@@ -23,8 +23,11 @@
             <DataTemplate x:Key="ColorPreviewChipTemplate"
                           x:DataType="local:ColorTableEntry">
                 <ToggleButton Margin="2"
+                              AutomationProperties.Name="{x:Bind AccessibleName}"
+                              ToolTipService.ToolTip="{x:Bind NameWithHexCode}"
                               Background="{x:Bind mtu:Converters.ColorToBrush(Color)}"
                               BorderBrush="White"
+                              IsChecked="False"
                               Style="{StaticResource ColorToggleButtonStyle}"
                               Click="ColorChip_Clicked"/>
             </DataTemplate>
@@ -116,10 +119,14 @@
                           Content="{x:Bind ColorSchemeVM, Mode=OneWay}"
                           ContentTemplate="{StaticResource ColorSchemeTemplate}" />
 
-        <Button x:Uid="NullableColorPicker_MoreColorsButton"
-                Grid.Column="1"
-                VerticalAlignment="Bottom"
-                Click="MoreColors_Clicked" />
+        <StackPanel Grid.Column="1"
+                    Spacing="5">
+            <Button Content="{x:Bind NullColorButtonLabel}"
+                    Click="NullColorButton_Clicked" />
+            <Button x:Uid="NullableColorPicker_MoreColorsButton"
+                    HorizontalAlignment="Stretch"
+                    Click="MoreColors_Clicked" />
+        </StackPanel>
     </Grid>
 
 </UserControl>

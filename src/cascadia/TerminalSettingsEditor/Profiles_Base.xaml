@@ -146,7 +146,9 @@
                                     HasSettingValue="{x:Bind Profile.HasTabColor, Mode=OneWay}"
                                     SettingOverrideSource="{x:Bind Profile.TabColorOverrideSource, Mode=OneWay}"
                                     Style="{StaticResource ExpanderSettingContainerStyleWithComplexPreview}">
-                <!--  TODO CARLOS: Add color picker  -->
+                <!--TODO CARLOS: give this a NullColorLabel; we need it localized too!-->
+                <local:NullableColorPicker CurrentColor="{x:Bind Profile.TabColor, Mode=TwoWay}"
+                                           ColorSchemeVM="{x:Bind Profile.DefaultAppearance.CurrentColorScheme, Mode=OneWay}"/>
             </local:SettingContainer>
 
             <!--  Elevate  -->

@@ -5,6 +5,8 @@
 #include "NullableColorPicker.h"
 #include "NullableColorPicker.g.cpp"
 
+#include <LibraryResources.h>
+
 using namespace winrt;
 using namespace winrt::Windows::UI;
 using namespace winrt::Windows::UI::Xaml;
@@ -25,6 +27,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
     DependencyProperty NullableColorPicker::_ColorSchemeVMProperty{ nullptr };
     DependencyProperty NullableColorPicker::_CurrentColorProperty{ nullptr };
+    DependencyProperty NullableColorPicker::_ShowNullColorButtonProperty{ nullptr };
+    DependencyProperty NullableColorPicker::_NullColorButtonLabelProperty{ nullptr };
+    DependencyProperty NullableColorPicker::_NullColorPreviewProperty{ nullptr };
 
     NullableColorPicker::NullableColorPicker()
     {
@@ -55,6 +60,33 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                     xaml_typename<Editor::NullableColorPicker>(),
                     PropertyMetadata{ nullptr });
         }
+        if (!_ShowNullColorButtonProperty)
+        {
+            _ShowNullColorButtonProperty =
+                DependencyProperty::Register(
+                    L"ShowNullColorButton",
+                    xaml_typename<bool>(),
+                    xaml_typename<Editor::NullableColorPicker>(),
+                    PropertyMetadata{ box_value(true) });
+        }
+        if (!_NullColorButtonLabelProperty)
+        {
+            _NullColorButtonLabelProperty =
+                DependencyProperty::Register(
+                    L"NullColorButtonLabel",
+                    xaml_typename<hstring>(),
+                    xaml_typename<Editor::NullableColorPicker>(),
+                    PropertyMetadata{ box_value(RS_(L"NullableColorPicker_NullColorButtonDefaultText")) });
+        }
+        if (!_NullColorPreviewProperty)
+        {
+            _NullColorPreviewProperty =
+                DependencyProperty::Register(
+                    L"NullColorPreview",
+                    xaml_typename<Windows::UI::Color>(),
+                    xaml_typename<Editor::NullableColorPicker>(),
+                    PropertyMetadata{ box_value(Windows::UI::Colors::Transparent()) });
+        }
     }
 
     void NullableColorPicker::ColorChip_Clicked(const IInspectable& sender, const RoutedEventArgs& /*args*/)
@@ -65,6 +97,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         const Microsoft::Terminal::Core::Color terminalColor{ colorEntryColor.R, colorEntryColor.G, colorEntryColor.B, colorEntryColor.A };
         CurrentColor(terminalColor);
         btn.IsChecked(true);
+    }
+
+    void NullableColorPicker::NullColorButton_Clicked(const IInspectable& /*sender*/, const RoutedEventArgs& /*args*/)
+    {
+        CurrentColor(nullptr);
     }
 
     IAsyncAction NullableColorPicker::MoreColors_Clicked(const IInspectable& /*sender*/, const RoutedEventArgs& /*args*/)
