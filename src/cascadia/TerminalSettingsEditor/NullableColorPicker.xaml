@@ -94,11 +94,29 @@
             <ColumnDefinition Width="Auto" />
         </Grid.ColumnDefinitions>
 
+        <ContentDialog x:Uid="NullableColorPicker_ColorPickerContentDialog"
+                       x:Name="ColorPickerDialog"
+                       DefaultButton="Primary"
+                       PrimaryButtonClick="ColorPickerDialog_PrimaryButtonClick"
+                       Opened="ColorPickerDialog_Opened">
+            <muxc:ColorPicker x:Name="ColorPickerControl"
+                              Margin="0,0,0,-40"
+                              ColorSpectrumShape="Box"
+                              IsAlphaEnabled="False"
+                              IsAlphaSliderVisible="True"
+                              IsAlphaTextInputVisible="True"
+                              IsColorChannelTextInputVisible="True"
+                              IsColorSliderVisible="False"
+                              IsHexInputVisible="True"
+                              IsMoreButtonVisible="False"
+                              Orientation="Horizontal" />
+        </ContentDialog>
+
         <ContentPresenter Grid.Column="0"
                           Content="{x:Bind ColorSchemeVM, Mode=OneWay}"
                           ContentTemplate="{StaticResource ColorSchemeTemplate}" />
 
-        <Button x:Uid="NullableColorPicker_MoreColors"
+        <Button x:Uid="NullableColorPicker_MoreColorsButton"
                 Grid.Column="1"
                 VerticalAlignment="Bottom"
                 Click="MoreColors_Clicked" />

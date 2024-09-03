@@ -5,8 +5,6 @@
 #include "NullableColorPicker.h"
 #include "NullableColorPicker.g.cpp"
 
-#include <LibraryResources.h>
-
 using namespace winrt;
 using namespace winrt::Windows::UI;
 using namespace winrt::Windows::UI::Xaml;
@@ -69,7 +67,35 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         btn.IsChecked(true);
     }
 
-    void NullableColorPicker::MoreColors_Clicked(const IInspectable& /*sender*/, const RoutedEventArgs& /*args*/)
+    IAsyncAction NullableColorPicker::MoreColors_Clicked(const IInspectable& /*sender*/, const RoutedEventArgs& /*args*/)
     {
+        co_await ColorPickerDialog().ShowAsync();
+    }
+
+    void NullableColorPicker::ColorPickerDialog_Opened(const IInspectable& /*sender*/, const ContentDialogOpenedEventArgs& /*args*/)
+    {
+        // Initialize color picker with current color
+        if (CurrentColor())
+        {
+            const auto& terminalColor = CurrentColor().Value();
+            const Windows::UI::Color winuiColor{
+                .A = terminalColor.A,
+                .R = terminalColor.R,
+                .G = terminalColor.G,
+                .B = terminalColor.B
+            };
+            ColorPickerControl().Color(winuiColor);
+        }
+        else
+        {
+            // TODO CARLOS: evaluate the value of CurrentColor and set the color picker to that value
+        }
+    }
+
+    void NullableColorPicker::ColorPickerDialog_PrimaryButtonClick(const IInspectable& /*sender*/, const ContentDialogButtonClickEventArgs& /*args*/)
+    {
+        const auto& selectedColor = ColorPickerControl().Color();
+        const Microsoft::Terminal::Core::Color terminalColor{ selectedColor.R, selectedColor.G, selectedColor.B, selectedColor.A };
+        CurrentColor(terminalColor);
     }
 }
