@@ -1221,11 +1221,23 @@ void AppHost::_IsQuakeWindowChanged(const winrt::Windows::Foundation::IInspectab
 // Raised from our Peasant. We handle by propagating the call to our terminal window.
 void AppHost::_QuitRequested(const winrt::Windows::Foundation::IInspectable&, const winrt::Windows::Foundation::IInspectable&)
 {
+    const auto root = _windowLogic.GetRoot();
+    if (!root)
+    {
+        return;
+    }
+
+    const auto dispatcher = root.Dispatcher();
+    if (!dispatcher)
+    {
+        return;
+    }
+
     // We process the shutdown synchronously here, because otherwise the
     // AutomaticShutdownRequested() logic wouldn't run synchronously either.
     til::latch latch{ 1 };
 
-    _windowLogic.GetRoot().Dispatcher().RunAsync(winrt::Windows::UI::Core::CoreDispatcherPriority::Normal, [&latch, weakThis = weak_from_this()]() {
+    dispatcher.RunAsync(winrt::Windows::UI::Core::CoreDispatcherPriority::Normal, [&latch, weakThis = weak_from_this()]() {
         const auto countDownOnExit = wil::scope_exit([&latch] {
             latch.count_down();
         });
