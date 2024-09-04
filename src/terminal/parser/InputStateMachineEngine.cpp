@@ -327,6 +327,16 @@ bool InputStateMachineEngine::ActionPassThroughString(const std::wstring_view st
 // - true iff we successfully dispatched the sequence.
 bool InputStateMachineEngine::ActionEscDispatch(const VTID id)
 {
+    // If the _expectingStringTerminator flag is set, that means we've been
+    // processing a DCS sequence and are waiting for the string terminator.
+    // Once we receive the ST sequence here, we can return false to force the
+    // buffered DCS content to be flushed.
+    if (_expectingStringTerminator && id == VTID("\\"))
+    {
+        _expectingStringTerminator = false;
+        return false;
+    }
+
     if (_pDispatch->IsVtInputEnabled())
     {
         return false;
@@ -524,7 +534,10 @@ bool InputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParameter
 // - the data string handler function or nullptr if the sequence is not supported
 IStateMachineEngine::StringHandler InputStateMachineEngine::ActionDcsDispatch(const VTID /*id*/, const VTParameters /*parameters*/) noexcept
 {
-    // DCS escape sequences are not used in the input state machine.
+    // Returning a nullptr here will cause the content of the DCS sequence to be
+    // ignored, but it'll still be buffered by the state machine, so we can flush
+    // the whole thing once we receive the string terminator.
+    _expectingStringTerminator = true;
     return nullptr;
 }
 
