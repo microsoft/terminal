@@ -995,7 +995,9 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
     try
     {
         // Just in case if the client application didn't check if this request is useless.
-        if (source.left == target.x && source.top == target.y)
+        // Checking if the source is empty also prevents bugs where we use the size of calculations.
+        if ((source.left == target.x && source.top == target.y) ||
+            source.left > source.right || source.top > source.bottom)
         {
             return S_OK;
         }
@@ -1044,23 +1046,23 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
 
             if (gci.GetVtIo()->GetDeviceAttributes().test(Microsoft::Console::VirtualTerminal::DeviceAttribute::RectangularAreaOperations))
             {
-                // This calculates just the positive offsets caused by out-of-bounds (OOB) source and target coordinates.
-                //
-                // If the source rectangle is OOB to the bottom-right, then the size of the rectangle that can
-                // be copied shrinks, but its origin stays the same. However, if the rectangle is OOB to the
-                // top-left then the origin of the to-be-copied rectangle will be offset by an inverse amount.
-                // Similarly, if the *target* rectangle is OOB to the bottom-right, its size shrinks while
-                // the origin stays the same, and if it's OOB to the top-left, then the origin is offset.
-                //
-                // In other words, this calculates the total offset that needs to be applied to the to-be-copied rectangle.
-                // Later down below we'll then clamp that rectangle which will cause its size to shrink as needed.
-                const til::point offset{
-                    std::max(0, -source.left) + std::max(0, clipViewport.Left() - target.x),
-                    std::max(0, -source.top) + std::max(0, clipViewport.Top() - target.y),
-                };
+                const til::point targetSourceDistance{ target - sourceViewport.Origin() };
+                const til::point sourceTargetDistance{ -targetSourceDistance.x, -targetSourceDistance.y };
 
-                const auto copyTargetViewport = Viewport::FromDimensions(target + offset, sourceViewport.Dimensions()).Clamp(clipViewport);
-                const auto copySourceViewport = Viewport::FromDimensions(sourceViewport.Origin() + offset, copyTargetViewport.Dimensions()).Clamp(bufferSize);
+                // To figure out what part of "source" we can copy to "target" without
+                // * reading outside the bufferSize
+                // * writing outside the clipViewport
+                // we move the clipViewport into a coordinate system relative to the source rectangle (= clipAtSource).
+                // Then we can intersect the source rectangle with both the valid bufferSize and clipAtSource at once.
+                const auto clipAtSource = Viewport::Offset(clipViewport, sourceTargetDistance);
+                auto copySourceViewport = sourceViewport.Clamp(bufferSize).Clamp(clipAtSource);
+                if (!copySourceViewport.IsValid())
+                {
+                    copySourceViewport = Viewport::Empty();
+                }
+
+                // Afterward we can undo the translation of clipAtSource to get the target rectangle.
+                const auto copyTargetViewport = Viewport::Offset(copySourceViewport, targetSourceDistance);
                 const auto fills = Viewport::Subtract(fillViewport, copyTargetViewport);
                 std::wstring buf;
 
@@ -1069,7 +1071,7 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
                     Microsoft::Console::VirtualTerminal::VtIo::FormatAttributes(buf, TextAttribute{ fillAttribute });
                 }
 
-                if (copySourceViewport.IsValid() && copyTargetViewport.IsValid())
+                if (copyTargetViewport.IsValid())
                 {
                     // DECCRA: Copy Rectangular Area
                     fmt::format_to(
