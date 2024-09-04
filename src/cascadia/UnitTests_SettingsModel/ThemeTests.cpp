@@ -151,7 +151,7 @@ namespace SettingsModelUnitTests
                     "window":
                     {
                         "applicationTheme": "light",
-                        "micaStyle": "orginal"
+                        "micaStyle": "original"
                     }
                 },
                 {
