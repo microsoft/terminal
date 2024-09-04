@@ -941,7 +941,7 @@ void NonClientIslandWindow::_UpdateFrameMargins() const noexcept
         //   use NCHITTEST to determine where to place the Snap Flyout. The drag
         //   rect will handle that.
 
-        margins.cyTopHeight = (_useMica || _titlebarOpacity < 1.0) ? 0 : -frame.top;
+        margins.cyTopHeight = (_micaStyle != winrt::Microsoft::Terminal::Settings::Model::MicaStyle::Default || _titlebarOpacity < 1.0) ? 0 : -frame.top;
     }
 
     // Extend the frame into the client area. microsoft/terminal#2735 - Just log
@@ -1174,15 +1174,15 @@ void NonClientIslandWindow::SetTitlebarBackground(winrt::Windows::UI::Xaml::Medi
     _titlebar.Background(brush);
 }
 
-void NonClientIslandWindow::UseMica(const bool newValue, const double titlebarOpacity)
+void NonClientIslandWindow::SetMicaStyle(const winrt::Microsoft::Terminal::Settings::Model::MicaStyle newValue, const double titlebarOpacity)
 {
     // Stash internally if we're using Mica. If we aren't, we don't want to
     // totally blow away our titlebar with DwmExtendFrameIntoClientArea,
     // especially on Windows 10
-    _useMica = newValue;
+    _micaStyle = newValue;
     _titlebarOpacity = titlebarOpacity;
 
-    IslandWindow::UseMica(newValue, titlebarOpacity);
+    IslandWindow::SetMicaStyle(newValue, titlebarOpacity);
 
     _UpdateFrameMargins();
 }

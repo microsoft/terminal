@@ -666,6 +666,15 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::IconStyle)
     };
 };
 
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::MicaStyle)
+{
+    JSON_MAPPINGS(3) = {
+        pair_type{ "default", ValueType::Default },
+        pair_type{ "original", ValueType::Original },
+        pair_type{ "alt", ValueType::Alt },
+    };
+};
+
 // Possible ScrollToMarkDirection values
 JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Control::ScrollToMarkDirection)
 {
