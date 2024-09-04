@@ -33,6 +33,7 @@ namespace Microsoft::Console::VirtualTerminal
         virtual void WriteInput(const std::span<const INPUT_RECORD>& inputEvents) = 0;
         virtual void WriteCtrlKey(const INPUT_RECORD& event) = 0;
         virtual void WriteString(std::wstring_view string) = 0;
+        virtual void WriteStringRaw(std::wstring_view string) = 0;
         virtual void WindowManipulation(DispatchTypes::WindowManipulationType function, VTParameter parameter1, VTParameter parameter2) = 0;
         virtual void MoveCursor(VTInt row, VTInt col) = 0;
         virtual void FocusChanged(bool focused) = 0;
