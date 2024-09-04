@@ -696,7 +696,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             const auto hr = DwmGetWindowAttribute(*_hostingHwnd, DWMWA_SYSTEMBACKDROP_TYPE, &attribute, sizeof(attribute));
             if (SUCCEEDED(hr))
             {
-                isMicaAvailable = attribute == DWMSBT_MAINWINDOW;
+                isMicaAvailable = (attribute == DWMSBT_MAINWINDOW) || (attribute == DWMSBT_TABBEDWINDOW);
             }
         }
 
