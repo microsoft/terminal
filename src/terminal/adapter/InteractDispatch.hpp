@@ -30,6 +30,7 @@ namespace Microsoft::Console::VirtualTerminal
         void WriteInput(const std::span<const INPUT_RECORD>& inputEvents) override;
         void WriteCtrlKey(const INPUT_RECORD& event) override;
         void WriteString(std::wstring_view string) override;
+        void WriteStringRaw(std::wstring_view string) override;
         void WindowManipulation(DispatchTypes::WindowManipulationType function, VTParameter parameter1, VTParameter parameter2) override;
         void MoveCursor(VTInt row, VTInt col) override;
         void FocusChanged(bool focused) override;

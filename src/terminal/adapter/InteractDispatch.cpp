@@ -53,10 +53,11 @@ void InteractDispatch::WriteCtrlKey(const INPUT_RECORD& event)
     HandleGenericKeyEvent(event, false);
 }
 
-// Method Description:
-// - Writes a string of input to the host.
-// Arguments:
-// - string : a string to write to the console.
+// Call this method to write some plain text to the InputBuffer.
+//
+// Since the hosting terminal for ConPTY may not support win32-input-mode,
+// it may send an "A" key as an "A", for which we need to generate up/down events.
+// Because of this, we cannot simply call InputBuffer::WriteString directly.
 void InteractDispatch::WriteString(const std::wstring_view string)
 {
     if (!string.empty())
@@ -71,6 +72,12 @@ void InteractDispatch::WriteString(const std::wstring_view string)
 
         WriteInput(keyEvents);
     }
+}
+
+void InteractDispatch::WriteStringRaw(std::wstring_view string)
+{
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    gci.GetActiveInputBuffer()->WriteString(string);
 }
 
 //Method Description:
