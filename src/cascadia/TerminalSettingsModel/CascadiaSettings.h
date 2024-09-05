@@ -163,7 +163,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         void LogSettingChanges(bool isJsonLoad) const;
 
-
     private:
         static const std::filesystem::path& _settingsPath();
         static const std::filesystem::path& _releaseSettingsPath();
