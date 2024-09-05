@@ -9,6 +9,7 @@
 #include "Rendering.h"
 #include "RenderingViewModel.h"
 #include "Actions.h"
+#include "NewActions.h"
 #include "ProfileViewModel.h"
 #include "GlobalAppearance.h"
 #include "GlobalAppearanceViewModel.h"
@@ -40,6 +41,7 @@ static const std::wstring_view launchTag{ L"Launch_Nav" };
 static const std::wstring_view interactionTag{ L"Interaction_Nav" };
 static const std::wstring_view renderingTag{ L"Rendering_Nav" };
 static const std::wstring_view actionsTag{ L"Actions_Nav" };
+static const std::wstring_view newActionsTag{ L"NewActions_Nav" };
 static const std::wstring_view globalProfileTag{ L"GlobalProfile_Nav" };
 static const std::wstring_view addProfileTag{ L"AddProfile" };
 static const std::wstring_view colorSchemesTag{ L"ColorSchemes_Nav" };
@@ -375,6 +377,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         else if (clickedItemTag == actionsTag)
         {
             contentFrame().Navigate(xaml_typename<Editor::Actions>(), winrt::make<ActionsViewModel>(_settingsClone));
+            const auto crumb = winrt::make<Breadcrumb>(box_value(clickedItemTag), RS_(L"Nav_Actions/Content"), BreadcrumbSubPage::None);
+            _breadcrumbs.Append(crumb);
+        }
+        else if (clickedItemTag == newActionsTag)
+        {
+            contentFrame().Navigate(xaml_typename<Editor::NewActions>(), winrt::make<ActionsViewModel>(_settingsClone));
             const auto crumb = winrt::make<Breadcrumb>(box_value(clickedItemTag), RS_(L"Nav_Actions/Content"), BreadcrumbSubPage::None);
             _breadcrumbs.Append(crumb);
         }
