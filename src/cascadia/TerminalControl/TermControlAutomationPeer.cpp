@@ -319,7 +319,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             }
         }
 
-        return L"";
+        return {};
     }
 
     hstring TermControlAutomationPeer::GetHelpTextCore() const
@@ -328,7 +328,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             return control->Title();
         }
-        return L"";
+        return {};
     }
 
     AutomationLiveSetting TermControlAutomationPeer::GetLiveSettingCore() const

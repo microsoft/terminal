@@ -38,12 +38,11 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT EndPaint() noexcept override;
         void WaitUntilCanRender() noexcept override;
         [[nodiscard]] HRESULT Present() noexcept override;
-        [[nodiscard]] HRESULT PrepareForTeardown(_Out_ bool* const pForcePaint) noexcept override;
         [[nodiscard]] HRESULT ScrollFrame() noexcept override;
         [[nodiscard]] HRESULT Invalidate(const til::rect* const psrRegion) noexcept override;
         [[nodiscard]] HRESULT InvalidateCursor(const til::rect* const psrRegion) noexcept override;
         [[nodiscard]] HRESULT InvalidateSystem(const til::rect* const prcDirtyClient) noexcept override;
-        [[nodiscard]] HRESULT InvalidateSelection(const std::vector<til::rect>& rectangles) noexcept override;
+        [[nodiscard]] HRESULT InvalidateSelection(std::span<const til::rect> rectangles) noexcept override;
         [[nodiscard]] HRESULT InvalidateScroll(const til::point* const pcoordDelta) noexcept override;
         [[nodiscard]] HRESULT InvalidateAll() noexcept override;
         [[nodiscard]] HRESULT NotifyNewText(const std::wstring_view newText) noexcept override;
@@ -75,7 +74,6 @@ namespace Microsoft::Console::Render
 
         Microsoft::Console::Types::IUiaEventDispatcher* _dispatcher;
 
-        std::vector<til::rect> _prevSelection;
         til::rect _prevCursorRegion;
     };
 }

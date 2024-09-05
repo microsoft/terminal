@@ -685,7 +685,7 @@ try
     const auto srcWidth = imageSlice.PixelWidth();
     const auto srcHeight = srcCellSize.height;
     const auto dstWidth = srcWidth * dstCellSize.width / srcCellSize.width;
-    const auto dstHeight = srcHeight * dstCellSize.height / srcCellSize.height;
+    const auto dstHeight = dstCellSize.height;
     const auto x = (imageSlice.ColumnOffset() - viewportLeft) * dstCellSize.width;
     const auto y = targetRow * dstCellSize.height;
 

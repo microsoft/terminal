@@ -88,6 +88,13 @@ int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int nCmdShow)
     TraceLoggingRegister(g_hWindowsTerminalProvider);
     ::Microsoft::Console::ErrorReporting::EnableFallbackFailureReporting(g_hWindowsTerminalProvider);
 
+    TraceLoggingWrite(
+        g_hWindowsTerminalProvider,
+        "ExeCreated",
+        TraceLoggingDescription("Event emitted when the terminal process is started"),
+        TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+        TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
+
     // If Terminal is spawned by a shortcut that requests that it run in a new process group
     // while attached to a console session, that request is nonsense. That request will, however,
     // cause WT to start with Ctrl-C disabled. This wouldn't matter, because it's a Windows-subsystem

@@ -176,6 +176,8 @@ public:
     bool IsTerminalScrolling() const noexcept;
     void SetTerminalScrolling(const bool terminalScrollingEnabled) noexcept;
 
+    std::wstring_view GetAnswerbackMessage() const noexcept;
+
     bool GetUseDx() const noexcept;
     bool GetCopyColor() const noexcept;
     SettingsTextMeasurementMode GetTextMeasurementMode() const noexcept;
@@ -236,5 +238,6 @@ private:
     bool _fInterceptCopyPaste;
 
     bool _TerminalScrolling;
+    WCHAR _answerbackMessage[32] = {};
     friend class RegistrySerialization;
 };

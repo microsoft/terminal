@@ -49,6 +49,16 @@ namespace Microsoft.Terminal.Control
         Boolean EndAtRightBoundary;
     };
 
+    struct SearchRequest
+    {
+        String Text;
+        Boolean GoForward;
+        Boolean CaseSensitive;
+        Boolean RegularExpression;
+        Boolean Reset;
+        Int32 ScrollOffset;
+    };
+
     struct SearchResults
     {
         Int32 TotalMatches;
@@ -136,7 +146,7 @@ namespace Microsoft.Terminal.Control
         void ResumeRendering();
         void BlinkAttributeTick();
 
-        SearchResults Search(String text, Boolean goForward, Boolean caseSensitive, Boolean regularExpression, Boolean reset);
+        SearchResults Search(SearchRequest request);
         void ClearSearch();
         Boolean SnapSearchResultToSelection;
 
@@ -180,6 +190,7 @@ namespace Microsoft.Terminal.Control
         event Windows.Foundation.TypedEventHandler<Object, ShowWindowArgs> ShowWindowChanged;
         event Windows.Foundation.TypedEventHandler<Object, SearchMissingCommandEventArgs> SearchMissingCommand;
         event Windows.Foundation.TypedEventHandler<Object, Object> RefreshQuickFixUI;
+        event Windows.Foundation.TypedEventHandler<Object, WindowSizeChangedEventArgs> WindowSizeChanged;
 
         // These events are always called from the UI thread (bugs aside)
         event Windows.Foundation.TypedEventHandler<Object, FontSizeChangedArgs> FontSizeChanged;

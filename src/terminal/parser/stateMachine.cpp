@@ -11,7 +11,7 @@
 using namespace Microsoft::Console::VirtualTerminal;
 
 //Takes ownership of the pEngine.
-StateMachine::StateMachine(std::unique_ptr<IStateMachineEngine> engine, const bool isEngineForInput) :
+StateMachine::StateMachine(std::unique_ptr<IStateMachineEngine> engine, const bool isEngineForInput) noexcept :
     _engine(std::move(engine)),
     _isEngineForInput(isEngineForInput),
     _state(VTStates::Ground),
@@ -606,7 +606,7 @@ void StateMachine::_ActionSubParam(const wchar_t wch)
 // - wch - Character to dispatch.
 // Return Value:
 // - <none>
-void StateMachine::_ActionClear()
+void StateMachine::_ActionClear() noexcept
 {
     _trace.TraceOnAction(L"Clear");
 
@@ -625,8 +625,6 @@ void StateMachine::_ActionClear()
     _oscParameter = 0;
 
     _dcsStringHandler = nullptr;
-
-    _engine->ActionClear();
 }
 
 // Routine Description:
@@ -728,14 +726,14 @@ void StateMachine::_ActionDcsDispatch(const wchar_t wch)
 
     const auto success = _SafeExecute([=]() {
         _dcsStringHandler = _engine->ActionDcsDispatch(_identifier.Finalize(wch), { _parameters.data(), _parameters.size() });
-        // If the returned handler is null, the sequence is not supported.
-        return _dcsStringHandler != nullptr;
+        return true;
     });
 
     // Trace the result.
     _trace.DispatchSequenceTrace(success);
 
-    if (success)
+    // If the returned handler is null, the sequence is not supported.
+    if (_dcsStringHandler)
     {
         // If successful, enter the pass through state.
         _EnterDcsPassThrough();
@@ -771,7 +769,7 @@ void StateMachine::_EnterGround() noexcept
 // - <none>
 // Return Value:
 // - <none>
-void StateMachine::_EnterEscape()
+void StateMachine::_EnterEscape() noexcept
 {
     _state = VTStates::Escape;
     _trace.TraceStateChange(L"Escape");
@@ -801,7 +799,7 @@ void StateMachine::_EnterEscapeIntermediate() noexcept
 // - <none>
 // Return Value:
 // - <none>
-void StateMachine::_EnterCsiEntry()
+void StateMachine::_EnterCsiEntry() noexcept
 {
     _state = VTStates::CsiEntry;
     _trace.TraceStateChange(L"CsiEntry");
@@ -917,7 +915,7 @@ void StateMachine::_EnterOscTermination() noexcept
 // - <none>
 // Return Value:
 // - <none>
-void StateMachine::_EnterSs3Entry()
+void StateMachine::_EnterSs3Entry() noexcept
 {
     _state = VTStates::Ss3Entry;
     _trace.TraceStateChange(L"Ss3Entry");
@@ -960,7 +958,7 @@ void StateMachine::_EnterVt52Param() noexcept
 // - <none>
 // Return Value:
 // - <none>
-void StateMachine::_EnterDcsEntry()
+void StateMachine::_EnterDcsEntry() noexcept
 {
     _state = VTStates::DcsEntry;
     _trace.TraceStateChange(L"DcsEntry");
@@ -1859,7 +1857,7 @@ void StateMachine::ProcessCharacter(const wchar_t wch)
         // code points that get translated as C1 controls when that is not their
         // intended use. In order to avoid them triggering unintentional escape
         // sequences, we ignore these characters by default.
-        if (_parserMode.any(Mode::AcceptC1, Mode::AlwaysAcceptC1))
+        if (_parserMode.test(Mode::AcceptC1))
         {
             ProcessCharacter(AsciiChars::ESC);
             ProcessCharacter(_c1To7Bit(wch));
@@ -1978,6 +1976,7 @@ void StateMachine::ProcessString(const std::wstring_view string)
     _currentString = string;
     _runOffset = 0;
     _runSize = 0;
+    _injections.clear();
 
     if (_state != VTStates::Ground)
     {
@@ -2028,6 +2027,7 @@ void StateMachine::ProcessString(const std::wstring_view string)
     if (_state != VTStates::Ground)
     {
         const auto run = _CurrentRun();
+        auto cacheUnusedRun = true;
 
         // One of the "weird things" in VT input is the case of something like
         // <kbd>alt+[</kbd>. In VT, that's encoded as `\x1b[`. However, that's
@@ -2065,15 +2065,22 @@ void StateMachine::ProcessString(const std::wstring_view string)
                     _ActionEscDispatch(run.back());
                 }
                 _EnterGround();
+                // No need to cache the run, since we've dealt with it now.
+                cacheUnusedRun = false;
             }
         }
-        else if (_state != VTStates::SosPmApcString && _state != VTStates::DcsPassThrough && _state != VTStates::DcsIgnore)
+        else if (_state == VTStates::SosPmApcString || _state == VTStates::DcsPassThrough || _state == VTStates::DcsIgnore)
         {
-            // If the engine doesn't require flushing at the end of the string, we
-            // want to cache the partial sequence in case we have to flush the whole
-            // thing to the terminal later. There is no need to do this if we've
-            // reached one of the string processing states, though, since that data
+            // There is no need to cache the run if we've reached one of the
+            // string processing states in the output engine, since that data
             // will be dealt with as soon as it is received.
+            cacheUnusedRun = false;
+        }
+
+        // If the run hasn't been dealt with in one of the cases above, we cache
+        // the partial sequence in case we have to flush the whole thing later.
+        if (cacheUnusedRun)
+        {
             if (!_cachedSequence)
             {
                 _cachedSequence.emplace(std::wstring{});
@@ -2096,6 +2103,16 @@ void StateMachine::ProcessString(const std::wstring_view string)
 bool StateMachine::IsProcessingLastCharacter() const noexcept
 {
     return _processingLastCharacter;
+}
+
+void StateMachine::InjectSequence(const InjectionType type)
+{
+    _injections.emplace_back(type, _runOffset + _runSize);
+}
+
+const til::small_vector<Injection, 8>& StateMachine::GetInjections() const noexcept
+{
+    return _injections;
 }
 
 // Routine Description:
@@ -2150,11 +2167,13 @@ template<typename TLambda>
 bool StateMachine::_SafeExecute(TLambda&& lambda)
 try
 {
-    return lambda();
-}
-catch (const ShutdownException&)
-{
-    throw;
+    const auto ok = lambda();
+    static_assert(std::is_same_v<decltype(ok), const bool>, "lambda must return bool");
+    if (!ok)
+    {
+        FlushToTerminal();
+    }
+    return ok;
 }
 catch (...)
 {

@@ -12,6 +12,10 @@
 #include "../types/inc/utils.hpp"
 #include "search.h"
 
+// BODGY: Misdiagnosis in MSVC 17.11: Referencing global constants in the member
+// initializer list leads to this warning. Can probably be removed in the future.
+#pragma warning(disable : 26493) // Don't use C-style casts (type.4).)
+
 using namespace Microsoft::Console;
 using namespace Microsoft::Console::Types;
 
@@ -716,13 +720,6 @@ OutputCellIterator TextBuffer::WriteLine(const OutputCellIterator givenIt,
 // - true if we successfully incremented the buffer.
 void TextBuffer::IncrementCircularBuffer(const TextAttribute& fillAttributes)
 {
-    // FirstRow is at any given point in time the array index in the circular buffer that corresponds
-    // to the logical position 0 in the window (cursor coordinates and all other coordinates).
-    if (_isActiveBuffer && _renderer)
-    {
-        _renderer->TriggerFlush(true);
-    }
-
     // Prune hyperlinks to delete obsolete references
     _PruneHyperlinks();
 
@@ -918,7 +915,7 @@ void TextBuffer::SetCurrentLineRendition(const LineRendition lineRendition, cons
         // If the line rendition has changed, the row can no longer be wrapped.
         row.SetWrapForced(false);
         // And all image content on the row is removed.
-        row.GetMutableImageSlice().reset();
+        row.SetImageSlice(nullptr);
         // And if it's no longer single width, the right half of the row should be erased.
         if (lineRendition != LineRendition::SingleWidth)
         {
@@ -2855,6 +2852,15 @@ void TextBuffer::Reflow(TextBuffer& oldBuffer, TextBuffer& newBuffer, const View
         }
     }
 
+    // The for loop right after this if condition will copy entire rows of attributes at a time.
+    // This assumes of course that the "write cursor" (newX, newY) is at the start of a row.
+    // If we didn't check for this, we may otherwise copy attributes from a later row into a previous one.
+    if (newX != 0)
+    {
+        newX = 0;
+        newY++;
+    }
+
     // Finish copying buffer attributes to remaining rows below the last
     // printable character. This is to fix the `color 2f` scenario, where you
     // change the buffer colors then resize and everything below the last
@@ -3260,23 +3266,30 @@ MarkExtents TextBuffer::_scrollMarkExtentForRow(const til::CoordType rowOffset,
     return mark;
 }
 
-std::wstring TextBuffer::_commandForRow(const til::CoordType rowOffset, const til::CoordType bottomInclusive) const
+std::wstring TextBuffer::_commandForRow(const til::CoordType rowOffset,
+                                        const til::CoordType bottomInclusive,
+                                        const bool clipAtCursor) const
 {
     std::wstring commandBuilder;
     MarkKind lastMarkKind = MarkKind::Prompt;
+    const auto cursorPosition = GetCursor().GetPosition();
     for (auto y = rowOffset; y <= bottomInclusive; y++)
     {
+        const bool onCursorRow = clipAtCursor && y == cursorPosition.y;
         // Now we need to iterate over text attributes. We need to find a
         // segment of Prompt attributes, we'll skip those. Then there should be
         // Command attributes. Collect up all of those, till we get to the next
         // Output attribute.
-
         const auto& row = GetRowByOffset(y);
         const auto runs = row.Attributes().runs();
         auto x = 0;
         for (const auto& [attr, length] : runs)
         {
-            const auto nextX = gsl::narrow_cast<uint16_t>(x + length);
+            auto nextX = gsl::narrow_cast<uint16_t>(x + length);
+            if (onCursorRow)
+            {
+                nextX = std::min(nextX, gsl::narrow_cast<uint16_t>(cursorPosition.x));
+            }
             const auto markKind{ attr.GetMarkAttributes() };
             if (markKind != lastMarkKind)
             {
@@ -3296,6 +3309,10 @@ std::wstring TextBuffer::_commandForRow(const til::CoordType rowOffset, const ti
             }
             // advance to next run of text
             x = nextX;
+            if (onCursorRow && x == cursorPosition.x)
+            {
+                return commandBuilder;
+            }
         }
         // we went over all the runs in this row, but we're not done yet. Keep iterating on the next row.
     }
@@ -3319,7 +3336,7 @@ std::wstring TextBuffer::CurrentCommand() const
         // This row did start a prompt! Find the prompt that starts here.
         // Presumably, no rows below us will have prompts, so pass in the last
         // row with text as the bottom
-        return _commandForRow(promptY, _estimateOffsetOfLastCommittedRow());
+        return _commandForRow(promptY, _estimateOffsetOfLastCommittedRow(), true);
     }
     return L"";
 }

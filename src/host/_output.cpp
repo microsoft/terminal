@@ -74,6 +74,7 @@ static FillConsoleResult FillConsoleImpl(SCREEN_INFORMATION& screenInfo, FillCon
     LockConsole();
     const auto unlock = wil::scope_exit([&] { UnlockConsole(); });
 
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     auto& screenBuffer = screenInfo.GetActiveBuffer();
     const auto bufferSize = screenBuffer.GetBufferSize();
     FillConsoleResult result;
@@ -83,6 +84,122 @@ static FillConsoleResult FillConsoleImpl(SCREEN_INFORMATION& screenInfo, FillCon
         return {};
     }
 
+    if (auto writer = gci.GetVtWriterForBuffer(&screenInfo))
+    {
+        writer.BackupCursor();
+
+        const auto h = bufferSize.Height();
+        const auto w = bufferSize.Width();
+        auto y = startingCoordinate.y;
+        auto input = static_cast<const uint16_t*>(data);
+        size_t inputPos = 0;
+        til::small_vector<CHAR_INFO, 1024> infoBuffer;
+        Viewport unused;
+
+        infoBuffer.resize(gsl::narrow_cast<size_t>(w));
+
+        while (y < h && inputPos < lengthToWrite)
+        {
+            const auto beg = y == startingCoordinate.y ? startingCoordinate.x : 0;
+            const auto columnsAvailable = w - beg;
+            til::CoordType columns = 0;
+
+            const auto readViewport = Viewport::FromInclusive({ beg, y, w - 1, y });
+            THROW_IF_FAILED(ReadConsoleOutputWImplHelper(screenInfo, infoBuffer, readViewport, unused));
+
+            switch (mode)
+            {
+            case FillConsoleMode::WriteAttribute:
+                for (; columns < columnsAvailable && inputPos < lengthToWrite; ++columns, ++inputPos)
+                {
+                    infoBuffer[columns].Attributes = input[inputPos];
+                }
+                break;
+            case FillConsoleMode::FillAttribute:
+                for (const auto attr = input[0]; columns < columnsAvailable && inputPos < lengthToWrite; ++columns, ++inputPos)
+                {
+                    infoBuffer[columns].Attributes = attr;
+                }
+                break;
+            case FillConsoleMode::WriteCharacter:
+                for (; columns < columnsAvailable && inputPos < lengthToWrite; ++inputPos)
+                {
+                    const auto ch = input[inputPos];
+                    if (ch >= 0x80 && IsGlyphFullWidth(ch))
+                    {
+                        // If the wide glyph doesn't fit into the last column, pad it with whitespace.
+                        if ((columns + 1) >= columnsAvailable)
+                        {
+                            auto& lead = infoBuffer[columns++];
+                            lead.Char.UnicodeChar = L' ';
+                            lead.Attributes = lead.Attributes & ~(COMMON_LVB_LEADING_BYTE | COMMON_LVB_TRAILING_BYTE);
+                            break;
+                        }
+
+                        auto& lead = infoBuffer[columns++];
+                        lead.Char.UnicodeChar = ch;
+                        lead.Attributes = lead.Attributes & ~COMMON_LVB_TRAILING_BYTE | COMMON_LVB_LEADING_BYTE;
+
+                        auto& trail = infoBuffer[columns++];
+                        trail.Char.UnicodeChar = ch;
+                        trail.Attributes = trail.Attributes & ~COMMON_LVB_LEADING_BYTE | COMMON_LVB_TRAILING_BYTE;
+                    }
+                    else
+                    {
+                        auto& lead = infoBuffer[columns++];
+                        lead.Char.UnicodeChar = ch;
+                        lead.Attributes = lead.Attributes & ~(COMMON_LVB_LEADING_BYTE | COMMON_LVB_TRAILING_BYTE);
+                    }
+                }
+                break;
+            case FillConsoleMode::FillCharacter:
+                // Identical to WriteCharacter above, but with the if() and for() swapped.
+                if (const auto ch = input[0]; ch >= 0x80 && IsGlyphFullWidth(ch))
+                {
+                    for (; columns < columnsAvailable && inputPos < lengthToWrite; ++inputPos)
+                    {
+                        // If the wide glyph doesn't fit into the last column, pad it with whitespace.
+                        if ((columns + 1) >= columnsAvailable)
+                        {
+                            auto& lead = infoBuffer[columns++];
+                            lead.Char.UnicodeChar = L' ';
+                            lead.Attributes = lead.Attributes & ~(COMMON_LVB_LEADING_BYTE | COMMON_LVB_TRAILING_BYTE);
+                            break;
+                        }
+
+                        auto& lead = infoBuffer[columns++];
+                        lead.Char.UnicodeChar = ch;
+                        lead.Attributes = lead.Attributes & ~COMMON_LVB_TRAILING_BYTE | COMMON_LVB_LEADING_BYTE;
+
+                        auto& trail = infoBuffer[columns++];
+                        trail.Char.UnicodeChar = ch;
+                        trail.Attributes = trail.Attributes & ~COMMON_LVB_LEADING_BYTE | COMMON_LVB_TRAILING_BYTE;
+                    }
+                }
+                else
+                {
+                    for (; columns < columnsAvailable && inputPos < lengthToWrite; ++inputPos)
+                    {
+                        auto& lead = infoBuffer[columns++];
+                        lead.Char.UnicodeChar = ch;
+                        lead.Attributes = lead.Attributes & ~(COMMON_LVB_LEADING_BYTE | COMMON_LVB_TRAILING_BYTE);
+                    }
+                }
+                break;
+            }
+
+            const auto writeViewport = Viewport::FromInclusive({ beg, y, beg + columns - 1, y });
+            THROW_IF_FAILED(WriteConsoleOutputWImplHelper(screenInfo, infoBuffer, w, writeViewport, unused));
+
+            y += 1;
+            result.cellsModified += columns;
+        }
+
+        result.lengthRead = inputPos;
+
+        writer.Submit();
+    }
+    else
     {
         // Technically we could always pass `data` as `uint16_t*`, because `wchar_t` is guaranteed to be 16 bits large.
         // However, OutputCellIterator is terrifyingly unsafe code and so we don't do that.
@@ -261,12 +378,30 @@ static FillConsoleResult FillConsoleImpl(SCREEN_INFORMATION& screenInfo, FillCon
                                                                   size_t& cellsModified,
                                                                   const bool enablePowershellShim) noexcept
 {
-    UNREFERENCED_PARAMETER(enablePowershellShim);
-
     try
     {
         LockConsole();
         const auto unlock = wil::scope_exit([&] { UnlockConsole(); });
+
+        // See FillConsoleOutputCharacterWImpl and its identical code.
+        if (enablePowershellShim)
+        {
+            auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+            if (const auto writer = gci.GetVtWriterForBuffer(&OutContext))
+            {
+                const auto currentBufferDimensions{ OutContext.GetBufferSize().Dimensions() };
+                const auto wroteWholeBuffer = lengthToWrite == (currentBufferDimensions.area<size_t>());
+                const auto startedAtOrigin = startingCoordinate == til::point{ 0, 0 };
+                const auto wroteSpaces = attribute == (FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED);
+
+                if (wroteWholeBuffer && startedAtOrigin && wroteSpaces)
+                {
+                    // PowerShell has previously called FillConsoleOutputCharacterW() which triggered a call to WriteClearScreen().
+                    cellsModified = lengthToWrite;
+                    return S_OK;
+                }
+            }
+        }
 
         cellsModified = FillConsoleImpl(OutContext, FillConsoleMode::FillAttribute, &attribute, lengthToWrite, startingCoordinate).cellsModified;
         return S_OK;
@@ -299,8 +434,6 @@ static FillConsoleResult FillConsoleImpl(SCREEN_INFORMATION& screenInfo, FillCon
         LockConsole();
         const auto unlock = wil::scope_exit([&] { UnlockConsole(); });
 
-        cellsModified = FillConsoleImpl(OutContext, FillConsoleMode::FillCharacter, &character, lengthToWrite, startingCoordinate).lengthRead;
-
         // GH#3126 - This is a shim for powershell's `Clear-Host` function. In
         // the vintage console, `Clear-Host` is supposed to clear the entire
         // buffer. In conpty however, there's no difference between the viewport
@@ -311,7 +444,7 @@ static FillConsoleResult FillConsoleImpl(SCREEN_INFORMATION& screenInfo, FillCon
         if (enablePowershellShim)
         {
             auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-            if (gci.IsInVtIoMode())
+            if (auto writer = gci.GetVtWriterForBuffer(&OutContext))
             {
                 const auto currentBufferDimensions{ OutContext.GetBufferSize().Dimensions() };
                 const auto wroteWholeBuffer = lengthToWrite == (currentBufferDimensions.area<size_t>());
@@ -320,14 +453,15 @@ static FillConsoleResult FillConsoleImpl(SCREEN_INFORMATION& screenInfo, FillCon
 
                 if (wroteWholeBuffer && startedAtOrigin && wroteSpaces)
                 {
-                    // It's important that we flush the renderer at this point so we don't
-                    // have any pending output rendered after the scrollback is cleared.
-                    ServiceLocator::LocateGlobals().pRender->TriggerFlush(false);
-                    return gci.GetVtIo()->ManuallyClearScrollback();
+                    WriteClearScreen(OutContext);
+                    writer.Submit();
+                    cellsModified = lengthToWrite;
+                    return S_OK;
                 }
             }
         }
 
+        cellsModified = FillConsoleImpl(OutContext, FillConsoleMode::FillCharacter, &character, lengthToWrite, startingCoordinate).lengthRead;
         return S_OK;
     }
     CATCH_RETURN();

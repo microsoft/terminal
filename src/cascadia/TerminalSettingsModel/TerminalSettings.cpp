@@ -284,6 +284,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         _HistorySize = profile.HistorySize();
         _SnapOnInput = profile.SnapOnInput();
         _AltGrAliasing = profile.AltGrAliasing();
+        _AnswerbackMessage = profile.AnswerbackMessage();
 
         // Fill in the remaining properties from the profile
         _ProfileName = profile.Name();

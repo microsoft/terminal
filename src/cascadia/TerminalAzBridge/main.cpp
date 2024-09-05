@@ -42,7 +42,7 @@ static ConnectionState RunConnectionToCompletion(const ITerminalConnection& conn
             auto input = reader.Read();
             if (input)
             {
-                connection.WriteInput(*input);
+                connection.WriteInput(winrt_wstring_to_array_view(*input));
             }
         }
     }).detach();

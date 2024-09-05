@@ -27,13 +27,12 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] HRESULT SetHwnd(const HWND hwnd) noexcept;
 
-        [[nodiscard]] HRESULT InvalidateSelection(const std::vector<til::rect>& rectangles) noexcept override;
+        [[nodiscard]] HRESULT InvalidateSelection(std::span<const til::rect> selections) noexcept override;
         [[nodiscard]] HRESULT InvalidateScroll(const til::point* const pcoordDelta) noexcept override;
         [[nodiscard]] HRESULT InvalidateSystem(const til::rect* const prcDirtyClient) noexcept override;
         [[nodiscard]] HRESULT Invalidate(const til::rect* const psrRegion) noexcept override;
         [[nodiscard]] HRESULT InvalidateCursor(const til::rect* const psrRegion) noexcept override;
         [[nodiscard]] HRESULT InvalidateAll() noexcept override;
-        [[nodiscard]] HRESULT PrepareForTeardown(_Out_ bool* const pForcePaint) noexcept override;
 
         [[nodiscard]] HRESULT StartPaint() noexcept override;
         [[nodiscard]] HRESULT EndPaint() noexcept override;

@@ -44,7 +44,7 @@
     <Import Project="$(MSBuildThisFileDirectory)..\packages\Microsoft.Windows.CppWinRT.2.0.230207.1\build\native\Microsoft.Windows.CppWinRT.targets" Condition="'$(TerminalCppWinrt)' == 'true' and Exists('$(MSBuildThisFileDirectory)..\packages\Microsoft.Windows.CppWinRT.2.0.230207.1\build\native\Microsoft.Windows.CppWinRT.targets')" />
 
     <!-- TAEF -->
-    <Import Project="$(MSBuildThisFileDirectory)..\packages\Microsoft.Taef.10.60.210621002\build\Microsoft.Taef.targets" Condition="'$(TerminalTAEF)' == 'true' and Exists('$(MSBuildThisFileDirectory)..\packages\Microsoft.Taef.10.60.210621002\build\Microsoft.Taef.targets')" />
+    <Import Project="$(MSBuildThisFileDirectory)..\packages\Microsoft.Taef.10.93.240607003\build\Microsoft.Taef.targets" Condition="'$(TerminalTAEF)' == 'true' and Exists('$(MSBuildThisFileDirectory)..\packages\Microsoft.Taef.10.93.240607003\build\Microsoft.Taef.targets')" />
 
     <!-- TerminalThemeHelpers -->
     <Import Project="$(MSBuildThisFileDirectory)..\packages\Microsoft.Internal.Windows.Terminal.ThemeHelpers.0.7.230706001\build\native\Microsoft.Internal.Windows.Terminal.ThemeHelpers.targets" Condition="'$(TerminalThemeHelpers)' == 'true' and Exists('$(MSBuildThisFileDirectory)..\packages\Microsoft.Internal.Windows.Terminal.ThemeHelpers.0.7.230706001\build\native\Microsoft.Internal.Windows.Terminal.ThemeHelpers.targets')" />
@@ -64,6 +64,8 @@
     <!-- WIL (so widely used that this one does not have a TerminalWIL opt-in property; it is automatic) -->
     <Import Project="$(MSBuildThisFileDirectory)..\packages\Microsoft.Windows.ImplementationLibrary.1.0.240122.1\build\native\Microsoft.Windows.ImplementationLibrary.targets" Condition="Exists('$(MSBuildThisFileDirectory)..\packages\Microsoft.Windows.ImplementationLibrary.1.0.240122.1\build\native\Microsoft.Windows.ImplementationLibrary.targets')" />
 
+    <!-- WinGet Interop -->
+    <Import Project="$(MSBuildThisFileDirectory)..\build\rules\Microsoft.WindowsPackageManager.ComInterop.Additional.targets" Condition="'$(TerminalWinGetInterop)' == 'true'" />
   </ImportGroup>
 
   <Target Name="Terminal_EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
@@ -80,7 +82,7 @@
     <Error Condition="'$(TerminalCppWinrt)' == 'true' AND !Exists('$(MSBuildThisFileDirectory)..\packages\Microsoft.Windows.CppWinRT.2.0.230207.1\build\native\Microsoft.Windows.CppWinRT.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(MSBuildThisFileDirectory)..\packages\Microsoft.Windows.CppWinRT.2.0.230207.1\build\native\Microsoft.Windows.CppWinRT.targets'))" />
 
     <!-- TAEF -->
-    <Error Condition="'$(TerminalTAEF)' == 'true' AND !Exists('$(MSBuildThisFileDirectory)..\packages\Microsoft.Taef.10.60.210621002\build\Microsoft.Taef.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(MSBuildThisFileDirectory)..\packages\Microsoft.Taef.10.60.210621002\build\Microsoft.Taef.targets'))" />
+    <Error Condition="'$(TerminalTAEF)' == 'true' AND !Exists('$(MSBuildThisFileDirectory)..\packages\Microsoft.Taef.10.93.240607003\build\Microsoft.Taef.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(MSBuildThisFileDirectory)..\packages\Microsoft.Taef.10.93.240607003\build\Microsoft.Taef.targets'))" />
 
     <!-- TerminalThemeHelpers -->
     <Error Condition="'$(TerminalThemeHelpers)' == 'true' AND !Exists('$(MSBuildThisFileDirectory)..\packages\Microsoft.Internal.Windows.Terminal.ThemeHelpers.0.7.230706001\build\native\Microsoft.Internal.Windows.Terminal.ThemeHelpers.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(MSBuildThisFileDirectory)..\packages\Microsoft.Internal.Windows.Terminal.ThemeHelpers.0.7.230706001\build\native\Microsoft.Internal.Windows.Terminal.ThemeHelpers.targets'))" />

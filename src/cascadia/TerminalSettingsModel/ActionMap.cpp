@@ -7,6 +7,7 @@
 #include "Command.h"
 #include "AllShortcutActions.h"
 #include <LibraryResources.h>
+#include <til/io.h>
 
 #include "ActionMap.g.cpp"
 
@@ -569,6 +570,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         const auto action = cmd.ActionAndArgs().Action();
         const auto id = action == ShortcutAction::Invalid ? hstring{} : cmd.ID();
         _KeyMap.insert_or_assign(keys, id);
+        _changeLog.emplace(KeysKey);
     }
 
     // Method Description:
@@ -807,10 +809,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return _ExpandedCommandsCache;
     }
 
-    IVector<Model::Command> _filterToSendInput(IMapView<hstring, Model::Command> nameMap,
-                                               winrt::hstring currentCommandline)
+#pragma region Snippets
+    std::vector<Model::Command> _filterToSnippets(IMapView<hstring, Model::Command> nameMap,
+                                                  winrt::hstring currentCommandline,
+                                                  const std::vector<Model::Command>& localCommands)
     {
-        auto results = winrt::single_threaded_vector<Model::Command>();
+        std::vector<Model::Command> results{};
 
         const auto numBackspaces = currentCommandline.size();
         // Helper to clone a sendInput command into a new Command, with the
@@ -842,28 +846,29 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 // UI easier.
 
                 const auto escapedInput = til::visualize_nonspace_control_codes(std::wstring{ inputString });
-                const auto name = fmt::format(std::wstring_view(RS_(L"SendInputCommandKey")), escapedInput);
+                const auto name = RS_fmt(L"SendInputCommandKey", escapedInput);
                 copy->Name(winrt::hstring{ name });
             }
 
             return *copy;
         };
 
-        // iterate over all the commands in all our actions...
-        for (auto&& [name, command] : nameMap)
-        {
+        // Helper to copy this command into a snippet-styled command, and any
+        // nested commands
+        const auto addCommand = [&](auto& command) {
             // If this is not a nested command, and it's a sendInput command...
             if (!command.HasNestedCommands() &&
                 command.ActionAndArgs().Action() == ShortcutAction::SendInput)
             {
                 // copy it into the results.
-                results.Append(createInputAction(command));
+                results.push_back(createInputAction(command));
             }
             // If this is nested...
             else if (command.HasNestedCommands())
             {
                 // Look for any sendInput commands nested underneath us
-                auto innerResults = _filterToSendInput(command.NestedCommands(), currentCommandline);
+                std::vector<Model::Command> empty{};
+                auto innerResults = winrt::single_threaded_vector<Model::Command>(_filterToSnippets(command.NestedCommands(), currentCommandline, empty));
 
                 if (innerResults.Size() > 0)
                 {
@@ -876,9 +881,20 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                     auto copy = cmdImpl->Copy();
                     copy->NestedCommands(innerResults.GetView());
 
-                    results.Append(*copy);
+                    results.push_back(*copy);
                 }
             }
+        };
+
+        // iterate over all the commands in all our actions...
+        for (auto&& [_, command] : nameMap)
+        {
+            addCommand(command);
+        }
+        // ... and all the local commands passed in here
+        for (const auto& command : localCommands)
+        {
+            addCommand(command);
         }
 
         return results;
@@ -900,9 +916,76 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         AddAction(*cmd, keys);
     }
 
-    IVector<Model::Command> ActionMap::FilterToSendInput(
-        winrt::hstring currentCommandline)
+    // Update ActionMap's cache of actions for this directory. We'll look for a
+    // .wt.json in this directory. If it exists, we'll read it, parse it's JSON,
+    // then take all the sendInput actions in it and store them in our
+    // _cwdLocalSnippetsCache
+    std::vector<Model::Command> ActionMap::_updateLocalSnippetCache(winrt::hstring currentWorkingDirectory)
     {
-        return _filterToSendInput(NameMap(), currentCommandline);
+        // This returns an empty string if we fail to load the file.
+        std::filesystem::path localSnippetsPath{ std::wstring_view{ currentWorkingDirectory + L"\\.wt.json" } };
+        const auto data = til::io::read_file_as_utf8_string_if_exists(localSnippetsPath);
+        if (data.empty())
+        {
+            return {};
+        }
+
+        Json::Value root;
+        std::string errs;
+        const std::unique_ptr<Json::CharReader> reader{ Json::CharReaderBuilder{}.newCharReader() };
+        if (!reader->parse(data.data(), data.data() + data.size(), &root, &errs))
+        {
+            // In the real settings parser, we'd throw here:
+            // throw winrt::hresult_error(WEB_E_INVALID_JSON_STRING, winrt::to_hstring(errs));
+            //
+            // That seems overly aggressive for something that we don't
+            // really own. Instead, just bail out.
+            return {};
+        }
+
+        auto result = std::vector<Model::Command>();
+        if (auto actions{ root[JsonKey("snippets")] })
+        {
+            for (const auto& json : actions)
+            {
+                result.push_back(*Command::FromSnippetJson(json));
+            }
+        }
+        return result;
     }
+
+    winrt::Windows::Foundation::IAsyncOperation<IVector<Model::Command>> ActionMap::FilterToSnippets(
+        winrt::hstring currentCommandline,
+        winrt::hstring currentWorkingDirectory)
+    {
+        {
+            // Check if there are any cached commands in this directory.
+            const auto& cache{ _cwdLocalSnippetsCache.lock_shared() };
+
+            const auto cacheIterator = cache->find(currentWorkingDirectory);
+            if (cacheIterator != cache->end())
+            {
+                // We found something in the cache! return it.
+                co_return winrt::single_threaded_vector<Model::Command>(_filterToSnippets(NameMap(),
+                                                                                          currentCommandline,
+                                                                                          cacheIterator->second));
+            }
+        } // release the lock on the cache
+
+        // Don't do I/O on the main thread
+        co_await winrt::resume_background();
+
+        auto result = _updateLocalSnippetCache(currentWorkingDirectory);
+        if (!result.empty())
+        {
+            // We found something! Add it to the cache
+            auto cache{ _cwdLocalSnippetsCache.lock() };
+            cache->insert_or_assign(currentWorkingDirectory, result);
+        }
+
+        co_return winrt::single_threaded_vector<Model::Command>(_filterToSnippets(NameMap(),
+                                                                                  currentCommandline,
+                                                                                  result));
+    }
+#pragma endregion
 }

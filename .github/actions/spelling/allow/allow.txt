@@ -29,6 +29,7 @@ gpt
 hyperlinking
 hyperlinks
 ILM
+Kbds
 kje
 libfuzzer
 liga
@@ -47,6 +48,7 @@ mkmk
 mnt
 mru
 nje
+NTMTo
 notwrapped
 ogonek
 openai

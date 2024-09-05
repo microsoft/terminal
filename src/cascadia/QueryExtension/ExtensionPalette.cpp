@@ -250,6 +250,26 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         _queryBox().Focus(FocusState::Programmatic);
     }
 
+    void ExtensionPalette::_exportMessagesToFile(const Windows::Foundation::IInspectable& /*sender*/,
+                                                 const Windows::UI::Xaml::RoutedEventArgs& /*args*/)
+    {
+        std::wstring concatenatedMessages{};
+        for (const auto groupedMessage : _messages)
+        {
+            concatenatedMessages += groupedMessage.IsQuery() ? RS_(L"UserString") : RS_(L"AssistantString");
+            concatenatedMessages += L":\n";
+            for (const auto chatMessage : groupedMessage)
+            {
+                concatenatedMessages += chatMessage.as<ChatMessage>()->MessageContent();
+                concatenatedMessages += L"\n";
+            }
+        }
+        if (!concatenatedMessages.empty())
+        {
+            _ExportChatHistoryRequestedHandlers(*this, concatenatedMessages);
+        }
+    }
+
     // Method Description:
     // - This event is called when the user clicks on a Chat Message. We will
     //   dispatch the contents of the message to the app to input into the active control.

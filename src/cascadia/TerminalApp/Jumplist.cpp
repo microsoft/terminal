@@ -60,7 +60,7 @@ static std::wstring _normalizeIconPath(std::wstring_view path)
 // - settings - The settings object to update the jumplist with.
 // Return Value:
 // - <none>
-winrt::fire_and_forget Jumplist::UpdateJumplist(const CascadiaSettings& settings) noexcept
+safe_void_coroutine Jumplist::UpdateJumplist(const CascadiaSettings& settings) noexcept
 {
     if (!settings)
     {
@@ -121,7 +121,7 @@ void Jumplist::_updateProfiles(IObjectCollection* jumplistItems, winrt::Windows:
     for (const auto& profile : profiles)
     {
         // Craft the arguments following "wt.exe"
-        auto args = fmt::format(L"-p {}", to_hstring(profile.Guid()));
+        auto args = fmt::format(FMT_COMPILE(L"-p {}"), to_hstring(profile.Guid()));
 
         // Create the shell link object for the profile
         const auto normalizedIconPath{ _normalizeIconPath(profile.Icon()) };

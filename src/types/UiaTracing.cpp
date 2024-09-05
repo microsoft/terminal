@@ -663,7 +663,7 @@ void UiaTracing::TextProvider::RangeFromPoint(const ScreenInfoUiaProviderBase& s
     if (TraceLoggingProviderEnabled(g_UiaProviderTraceProvider, WINEVENT_LEVEL_VERBOSE, TIL_KEYWORD_TRACE))
     {
         static constexpr auto getPoint = [](const UiaPoint& point) {
-            return fmt::format(FMT_COMPILE(L"{},{}"), (float)point.x, (float)point.y);
+            return fmt::format(FMT_COMPILE(L"{},{}"), (int)point.x, (int)point.y);
         };
 
         TraceLoggingWrite(

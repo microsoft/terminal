@@ -47,14 +47,6 @@ Revision History:
 #include "../types/inc/Viewport.hpp"
 class ConversionAreaInfo; // forward decl window. circular reference
 
-// fwdecl unittest classes
-#ifdef UNIT_TESTING
-namespace TerminalCoreUnitTests
-{
-    class ConptyRoundtripTests;
-};
-#endif
-
 class SCREEN_INFORMATION : public ConsoleObjectHeader, public Microsoft::Console::IIoProvider
 {
 public:
@@ -199,7 +191,7 @@ public:
 
     SCREEN_INFORMATION& GetMainBuffer();
     const SCREEN_INFORMATION& GetMainBuffer() const;
-
+    const SCREEN_INFORMATION* GetAltBuffer() const noexcept;
     SCREEN_INFORMATION& GetActiveBuffer();
     const SCREEN_INFORMATION& GetActiveBuffer() const;
 
@@ -213,8 +205,6 @@ public:
 
     [[nodiscard]] HRESULT ClearBuffer();
 
-    void SetTerminalConnection(_In_ Microsoft::Console::Render::VtEngine* const pTtyConnection);
-
     void UpdateBottom();
 
     FontInfo& GetCurrentFont() noexcept;
@@ -223,8 +213,8 @@ public:
     FontInfoDesired& GetDesiredFont() noexcept;
     const FontInfoDesired& GetDesiredFont() const noexcept;
 
-    void SetIgnoreLegacyEquivalentVTAttributes() noexcept;
-    void ResetIgnoreLegacyEquivalentVTAttributes() noexcept;
+    [[nodiscard]] NTSTATUS ResizeWithReflow(const til::size coordnewScreenSize);
+    [[nodiscard]] NTSTATUS ResizeTraditional(const til::size coordNewScreenSize);
 
 private:
     SCREEN_INFORMATION(_In_ Microsoft::Console::Interactivity::IWindowMetrics* pMetrics,
@@ -248,9 +238,6 @@ private:
                                                const til::size* const pcoordFontSize,
                                                _Out_ bool* const pfIsHorizontalVisible,
                                                _Out_ bool* const pfIsVerticalVisible);
-
-    [[nodiscard]] NTSTATUS ResizeWithReflow(const til::size coordnewScreenSize);
-    [[nodiscard]] NTSTATUS ResizeTraditional(const til::size coordNewScreenSize);
 
     [[nodiscard]] NTSTATUS _InitializeOutputStateMachine();
     void _FreeOutputStateMachine();
@@ -287,8 +274,6 @@ private:
     //  the viewport to move (SetBufferInfo, WriteConsole, etc)
     til::CoordType _virtualBottom;
 
-    bool _ignoreLegacyEquivalentVTAttributes;
-
     std::optional<til::size> _deferredPtyResize{ std::nullopt };
 
     static void _handleDeferredResize(SCREEN_INFORMATION& siMain);
@@ -297,7 +282,5 @@ private:
     friend class TextBufferIteratorTests;
     friend class ScreenBufferTests;
     friend class CommonState;
-    friend class ConptyOutputTests;
-    friend class TerminalCoreUnitTests::ConptyRoundtripTests;
 #endif
 };

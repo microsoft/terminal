@@ -21,7 +21,7 @@ namespace winrt::Microsoft::TerminalApp::implementation
         }
         void Initialize(const Windows::Foundation::Collections::ValueSet& /*settings*/) {}
         ~DebugInputTapConnection() = default;
-        winrt::fire_and_forget Start()
+        safe_void_coroutine Start()
         {
             // GH#11282: It's possible that we're about to be started, _before_
             // our paired connection is started. Both will get Start()'ed when
@@ -39,10 +39,10 @@ namespace winrt::Microsoft::TerminalApp::implementation
 
             _wrappedConnection.Start();
         }
-        void WriteInput(const hstring& data)
+        void WriteInput(const winrt::array_view<const char16_t> buffer)
         {
-            _pairedTap->_PrintInput(data);
-            _wrappedConnection.WriteInput(data);
+            _pairedTap->_PrintInput(winrt_array_to_wstring_view(buffer));
+            _wrappedConnection.WriteInput(buffer);
         }
         void Resize(uint32_t rows, uint32_t columns) { _wrappedConnection.Resize(rows, columns); }
         void Close() { _wrappedConnection.Close(); }
@@ -77,13 +77,13 @@ namespace winrt::Microsoft::TerminalApp::implementation
         _start.count_down();
     }
 
-    void DebugTapConnection::WriteInput(const hstring& data)
+    void DebugTapConnection::WriteInput(const winrt::array_view<const char16_t> buffer)
     {
         // If the user types into the tap side, forward it to the input side
         if (auto strongInput{ _inputSide.get() })
         {
             auto inputAsTap{ winrt::get_self<DebugInputTapConnection>(strongInput) };
-            inputAsTap->WriteInput(data);
+            inputAsTap->WriteInput(buffer);
         }
     }
 
@@ -117,7 +117,7 @@ namespace winrt::Microsoft::TerminalApp::implementation
         return ConnectionState::Failed;
     }
 
-    void DebugTapConnection::_OutputHandler(const hstring str)
+    void DebugTapConnection::_OutputHandler(const std::wstring_view str)
     {
         auto output = til::visualize_control_codes(str);
         // To make the output easier to read, we introduce a line break whenever
@@ -131,7 +131,7 @@ namespace winrt::Microsoft::TerminalApp::implementation
     }
 
     // Called by the DebugInputTapConnection to print user input
-    void DebugTapConnection::_PrintInput(const hstring& str)
+    void DebugTapConnection::_PrintInput(const std::wstring_view str)
     {
         auto clean{ til::visualize_control_codes(str) };
         auto formatted{ wil::str_printf<std::wstring>(L"\x1b[91m%ls\x1b[m", clean.data()) };

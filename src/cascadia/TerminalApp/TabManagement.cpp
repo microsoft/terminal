@@ -13,7 +13,6 @@
 #include "Utils.h"
 #include "../../types/inc/utils.hpp"
 #include "../../inc/til/string.h"
-#include <til/io.h>
 
 #include <LibraryResources.h>
 
@@ -308,66 +307,17 @@ namespace winrt::TerminalApp::implementation
     // - Exports the content of the Terminal Buffer inside the tab
     // Arguments:
     // - tab: tab to export
-    winrt::fire_and_forget TerminalPage::_ExportTab(const TerminalTab& tab, winrt::hstring filepath)
+    void TerminalPage::_ExportTab(const TerminalTab& tab, winrt::hstring filepath)
     {
-        // This will be used to set up the file picker "filter", to select .txt
-        // files by default.
-        static constexpr COMDLG_FILTERSPEC supportedFileTypes[] = {
-            { L"Text Files (*.txt)", L"*.txt" },
-            { L"All Files (*.*)", L"*.*" }
-        };
-        // An arbitrary GUID to associate with all instances of this
-        // dialog, so they all re-open in the same path as they were
-        // open before:
-        static constexpr winrt::guid clientGuidExportFile{ 0xF6AF20BB, 0x0800, 0x48E6, { 0xB0, 0x17, 0xA1, 0x4C, 0xD8, 0x73, 0xDD, 0x58 } };
-
-        try
+        if (const auto control{ tab.GetActiveTerminalControl() })
         {
-            if (const auto control{ tab.GetActiveTerminalControl() })
-            {
-                auto path = filepath;
+            // An arbitrary GUID to associate with all instances of the save file dialog
+            // for exporting terminal buffers, so they all re-open in the same path as they were
+            // open before:
+            static constexpr winrt::guid clientGuidExportFile{ 0xF6AF20BB, 0x0800, 0x48E6, { 0xB0, 0x17, 0xA1, 0x4C, 0xD8, 0x73, 0xDD, 0x58 } };
 
-                if (path.empty())
-                {
-                    // GH#11356 - we can't use the UWP apis for writing the file,
-                    // because they don't work elevated (shocker) So just use the
-                    // shell32 file picker manually.
-                    std::wstring filename{ tab.Title() };
-                    filename = til::clean_filename(filename);
-                    path = co_await SaveFilePicker(*_hostingHwnd, [filename = std::move(filename)](auto&& dialog) {
-                        THROW_IF_FAILED(dialog->SetClientGuid(clientGuidExportFile));
-                        try
-                        {
-                            // Default to the Downloads folder
-                            auto folderShellItem{ winrt::capture<IShellItem>(&SHGetKnownFolderItem, FOLDERID_Downloads, KF_FLAG_DEFAULT, nullptr) };
-                            dialog->SetDefaultFolder(folderShellItem.get());
-                        }
-                        CATCH_LOG(); // non-fatal
-                        THROW_IF_FAILED(dialog->SetFileTypes(ARRAYSIZE(supportedFileTypes), supportedFileTypes));
-                        THROW_IF_FAILED(dialog->SetFileTypeIndex(1)); // the array is 1-indexed
-                        THROW_IF_FAILED(dialog->SetDefaultExtension(L"txt"));
-
-                        // Default to using the tab title as the file name
-                        THROW_IF_FAILED(dialog->SetFileName((filename + L".txt").c_str()));
-                    });
-                }
-                else
-                {
-                    // The file picker isn't going to give us paths with
-                    // environment variables, but the user might have set one in
-                    // the settings. Expand those here.
-
-                    path = winrt::hstring{ wil::ExpandEnvironmentStringsW<std::wstring>(path.c_str()) };
-                }
-
-                if (!path.empty())
-                {
-                    const auto buffer = control.ReadEntireBuffer();
-                    til::io::write_utf8_string_to_file_atomic(std::filesystem::path{ std::wstring_view{ path } }, til::u16u8(buffer));
-                }
-            }
+            _SaveStringToFileOrPromptUser(control.ReadEntireBuffer(), filepath, tab.Title(), clientGuidExportFile);
         }
-        CATCH_LOG();
     }
 
     // Method Description:
@@ -680,7 +630,7 @@ namespace winrt::TerminalApp::implementation
     // - tab: tab to focus.
     // Return Value:
     // - <none>
-    winrt::fire_and_forget TerminalPage::_SetFocusedTab(const winrt::TerminalApp::TabBase tab)
+    safe_void_coroutine TerminalPage::_SetFocusedTab(const winrt::TerminalApp::TabBase tab)
     {
         // GH#1117: This is a workaround because _tabView.SelectedIndex(tabIndex)
         //          sometimes set focus to an incorrect tab after removing some tabs
@@ -765,7 +715,7 @@ namespace winrt::TerminalApp::implementation
     // - Close the currently focused pane. If the pane is the last pane in the
     //   tab, the tab will also be closed. This will happen when we handle the
     //   tab's Closed event.
-    winrt::fire_and_forget TerminalPage::_CloseFocusedPane()
+    safe_void_coroutine TerminalPage::_CloseFocusedPane()
     {
         if (const auto terminalTab{ _GetFocusedTabImpl() })
         {
@@ -831,7 +781,7 @@ namespace winrt::TerminalApp::implementation
     // - Closes provided tabs one by one
     // Arguments:
     // - tabs - tabs to remove
-    winrt::fire_and_forget TerminalPage::_RemoveTabs(const std::vector<winrt::TerminalApp::TabBase> tabs)
+    safe_void_coroutine TerminalPage::_RemoveTabs(const std::vector<winrt::TerminalApp::TabBase> tabs)
     {
         for (auto& tab : tabs)
         {
@@ -1035,7 +985,7 @@ namespace winrt::TerminalApp::implementation
                 const auto tabTitle = tab.Title();
                 autoPeer.RaiseNotificationEvent(Automation::Peers::AutomationNotificationKind::ActionCompleted,
                                                 Automation::Peers::AutomationNotificationProcessing::ImportantMostRecent,
-                                                fmt::format(std::wstring_view{ RS_(L"TerminalPage_TabMovedAnnouncement_Direction") }, tabTitle, newTabIndex + 1),
+                                                RS_fmt(L"TerminalPage_TabMovedAnnouncement_Direction", tabTitle, newTabIndex + 1),
                                                 L"TerminalPageMoveTabWithDirection" /* unique name for this notification category */);
             }
         }

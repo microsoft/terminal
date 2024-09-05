@@ -9,7 +9,6 @@ ABORTIFHUNG
 ACCESSTOKEN
 acidev
 ACIOSS
-ACover
 acp
 actctx
 ACTCTXW
@@ -17,7 +16,6 @@ ADDALIAS
 ADDREF
 ADDSTRING
 ADDTOOL
-AFew
 AFill
 AFX
 AHelper
@@ -39,6 +37,7 @@ ANSISYS
 ANSISYSRC
 ANSISYSSC
 answerback
+ANSWERBACKMESSAGE
 antialiasing
 ANull
 anycpu
@@ -53,6 +52,7 @@ appium
 appletname
 applicationmodel
 APPLMODAL
+Applocal
 appmodel
 APPWINDOW
 APPXMANIFESTVERSION
@@ -65,7 +65,6 @@ ARRAYSIZE
 ARROWKEYS
 asan
 ASBSET
-asdfghjkl
 ASetting
 ASingle
 ASYNCDONTCARE
@@ -87,6 +86,7 @@ Autowrap
 AVerify
 awch
 azurecr
+AZZ
 backgrounded
 Backgrounder
 backgrounding
@@ -124,6 +124,7 @@ BKCOLOR
 BKGND
 Bksp
 Blt
+blu
 BLUESCROLL
 bmi
 BODGY
@@ -142,8 +143,8 @@ BTNFACE
 bufferout
 buffersize
 buflen
+buildsystems
 buildtransitive
-burriter
 BValue
 bytebuffer
 cac
@@ -179,7 +180,6 @@ CFuzz
 cgscrn
 chafa
 changelists
-charinfo
 CHARSETINFO
 chh
 chshdng
@@ -208,7 +208,6 @@ cmw
 CNL
 cnn
 Codeflow
-codenav
 codepages
 codepath
 coinit
@@ -264,7 +263,6 @@ consolegit
 consolehost
 CONSOLEIME
 consoleinternal
-Consoleroot
 CONSOLESETFOREGROUND
 consoletaeftemplates
 consoleuwp
@@ -360,6 +358,7 @@ DBGFONTS
 DBGOUTPUT
 dbh
 dblclk
+Dcd
 DColor
 DCOLORVALUE
 dcommon
@@ -377,7 +376,7 @@ DECALN
 DECANM
 DECARM
 DECAUPSS
-DECAWM
+decawm
 DECBI
 DECBKM
 DECCARA
@@ -385,7 +384,7 @@ DECCIR
 DECCKM
 DECCKSR
 DECCOLM
-DECCRA
+deccra
 DECCTR
 DECDC
 DECDHL
@@ -397,7 +396,7 @@ DECEKBD
 DECERA
 DECFI
 DECFNK
-DECFRA
+decfra
 DECGCI
 DECGCR
 DECGNL
@@ -419,6 +418,7 @@ DECPCCM
 DECPCTERM
 DECPS
 DECRARA
+decrc
 DECRC
 DECREQTPARM
 DECRLM
@@ -434,6 +434,7 @@ DECRSPS
 decrst
 DECSACE
 DECSASD
+decsc
 DECSC
 DECSCA
 DECSCNM
@@ -473,7 +474,6 @@ DEFPUSHBUTTON
 defterm
 DELAYLOAD
 DELETEONRELEASE
-Delt
 depersist
 deprioritized
 deserializers
@@ -554,7 +554,6 @@ Efast
 efghijklmn
 EHsc
 EINS
-EJO
 ELEMENTNOTAVAILABLE
 EMPTYBOX
 enabledelayedexpansion
@@ -624,7 +623,6 @@ FINDDOWN
 FINDREGEX
 FINDSTRINGEXACT
 FINDUP
-FIter
 FITZPATRICK
 FIXEDFILEINFO
 Flg
@@ -721,12 +719,12 @@ GETWHEELSCROLLLINES
 Gfun
 gfx
 GGI
+GHgh
 GHIJK
 GHIJKL
 gitcheckin
 gitfilters
 gitlab
-gitmodules
 gle
 GLOBALFOCUS
 GLYPHENTRY
@@ -915,6 +913,7 @@ Keymapping
 keyscan
 keystate
 keyups
+Kickstart
 KILLACTIVE
 KILLFOCUS
 kinda
@@ -946,7 +945,6 @@ LCONTROL
 LCTRL
 lcx
 LEFTALIGN
-libpopcnt
 libsancov
 libtickit
 licate
@@ -1021,7 +1019,6 @@ lstatus
 lstrcmp
 lstrcmpi
 LTEXT
-LTLTLTLTL
 ltsc
 LUID
 luma
@@ -1044,7 +1041,6 @@ MAPBITMAP
 MAPVIRTUALKEY
 MAPVK
 MAXDIMENSTRING
-maxing
 MAXSHORT
 maxval
 maxversiontested
@@ -1117,7 +1113,6 @@ msrc
 MSVCRTD
 MTSM
 Munged
-munges
 murmurhash
 muxes
 myapplet
@@ -1219,7 +1214,6 @@ ntlpcapi
 ntm
 ntrtl
 ntstatus
-NTSYSCALLAPI
 nttree
 nturtl
 ntuser
@@ -1235,6 +1229,7 @@ NUMSCROLL
 NUnit
 nupkg
 NVIDIA
+NVT
 OACR
 objbase
 ocolor
@@ -1409,6 +1404,7 @@ processenv
 processhost
 PROCESSINFOCLASS
 PRODEXT
+Productize
 PROPERTYID
 PROPERTYKEY
 propertyval
@@ -1502,7 +1498,6 @@ REGSTR
 RELBINPATH
 remoting
 renamer
-renderengine
 rendersize
 reparented
 reparenting
@@ -1526,7 +1521,6 @@ rftp
 rgbi
 RGBQUAD
 rgbs
-rgci
 rgfae
 rgfte
 rgn
@@ -1604,6 +1598,7 @@ SELECTALL
 SELECTEDFONT
 SELECTSTRING
 Selfhosters
+Serbo
 SERVERDLL
 SETACTIVE
 SETBUDDYINT
@@ -1816,6 +1811,7 @@ TITLEISLINKNAME
 TJson
 TLambda
 TLDP
+tldr
 TLEN
 TMAE
 TMPF
@@ -1831,8 +1827,6 @@ TOPDOWNDIB
 TOpt
 tosign
 touchpad
-Tpp
-Tpqrst
 tracelogging
 traceviewpp
 trackbar
@@ -1842,7 +1836,6 @@ Trd
 TREX
 triaged
 triaging
-Tribool
 TRIMZEROHEADINGS
 trx
 tsa
@@ -1936,7 +1929,6 @@ uxtheme
 Vanara
 vararg
 vclib
-vcprintf
 vcxitems
 vectorize
 VERCTRL
@@ -1959,7 +1951,6 @@ VPACKMANIFESTDIRECTORY
 VPR
 VREDRAW
 vsc
-vsconfig
 vscprintf
 VSCROLL
 vsdevshell
@@ -1980,7 +1971,6 @@ vtio
 vtmode
 vtpipeterm
 vtpt
-vtrenderer
 VTRGB
 VTRGBTo
 vtseq
@@ -2069,14 +2059,12 @@ Winperf
 WInplace
 winres
 winrt
-wintelnet
 winternl
 winuser
 winuserp
 WINVER
 wistd
 wmain
-wmemory
 WMSZ
 wnd
 WNDALLOC
@@ -2143,6 +2131,7 @@ XBUTTONDOWN
 XBUTTONUP
 XCast
 XCENTER
+xchar
 xcopy
 XCount
 xdy
@@ -2170,16 +2159,15 @@ XTWINOPS
 xunit
 xutr
 XVIRTUALSCREEN
-XWalk
 yact
 YCast
 YCENTER
 YCount
+yizz
 YLimit
 YPan
 YSubstantial
 YVIRTUALSCREEN
-YWalk
 Zab
 zabcd
 Zabcdefghijklmn
@@ -2187,6 +2175,6 @@ Zabcdefghijklmnopqrstuvwxyz
 ZCmd
 ZCtrl
 ZWJs
-zxcvbnm
 ZYXWVU
 ZYXWVUTd
+zzf

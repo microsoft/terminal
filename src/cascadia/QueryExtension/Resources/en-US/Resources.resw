@@ -149,6 +149,10 @@
     <value>Clear the message history</value>
     <comment>Tooltip for the button that allows the user to clear their chat history.</comment>
   </data>
+  <data name="ExportMessagesButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Export the message history to a text file</value>
+    <comment>Tooltip for the button that allows the user to export the message history.</comment>
+  </data>
   <data name="TitleSubheader.Text" xml:space="preserve">
     <value>Take command of your Terminal. Ask Terminal Chat for assistance right in your terminal.</value>
     <comment>Subheader of the AI chat box control.</comment>
@@ -164,5 +168,13 @@
   <data name="LearnMoreLink.Text" xml:space="preserve">
     <value>Learn more</value>
     <comment>The text of the hyperlink that directs the user to the link for them to learn more about Terminal AI.</comment>
+  </data>
+  <data name="UserString" xml:space="preserve">
+    <value>User</value>
+    <comment>A string to represent the section that the user typed, presented when the user exports the chat history to a file</comment>
+  </data>
+  <data name="AssistantString" xml:space="preserve">
+    <value>Assistant</value>
+    <comment>A string to represent the section that the chat assistant typed, presented when the user exports the chat history to a file</comment>
   </data>
 </root>

@@ -76,7 +76,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         winrt::get_self<ProfileViewModel>(_Profile)->DeleteProfile();
     }
 
-    fire_and_forget Profiles_Base::Commandline_Click(const IInspectable&, const RoutedEventArgs&)
+    safe_void_coroutine Profiles_Base::Commandline_Click(const IInspectable&, const RoutedEventArgs&)
     {
         auto lifetime = get_strong();
 
@@ -106,7 +106,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
-    fire_and_forget Profiles_Base::Icon_Click(const IInspectable&, const RoutedEventArgs&)
+    safe_void_coroutine Profiles_Base::Icon_Click(const IInspectable&, const RoutedEventArgs&)
     {
         auto lifetime = get_strong();
 
@@ -118,7 +118,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
-    fire_and_forget Profiles_Base::StartingDirectory_Click(const IInspectable&, const RoutedEventArgs&)
+    safe_void_coroutine Profiles_Base::StartingDirectory_Click(const IInspectable&, const RoutedEventArgs&)
     {
         auto lifetime = get_strong();
         const auto parentHwnd{ reinterpret_cast<HWND>(_windowRoot.GetHostingWindow()) };
