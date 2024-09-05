@@ -41,7 +41,11 @@ namespace Microsoft.Terminal.Settings.Editor
         void SetupAppearances(Windows.Foundation.Collections.IObservableVector<ColorSchemeViewModel> schemesList);
 
         void SetAcrylicOpacityPercentageValue(Double value);
-        void SetPadding(Double value);
+
+        void SetLeftPadding(Double value);
+        void SetTopPadding(Double value);
+        void SetRightPadding(Double value);
+        void SetBottomPadding(Double value);
 
         Boolean IsBellStyleFlagSet(UInt32 flag);
         void SetBellStyleAudible(Windows.Foundation.IReference<Boolean> on);

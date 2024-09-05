@@ -51,9 +51,32 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             Opacity(static_cast<float>(value) / 100.0f);
         };
 
-        void SetPadding(double value)
+        void SetLeftPadding(double value)
         {
-            Padding(to_hstring(value));
+            const hstring& padding = _GetNewPadding(PaddingDirection::Left, value);
+
+            Padding(padding);
+        }
+
+        void SetTopPadding(double value)
+        {
+            const hstring& padding = _GetNewPadding(PaddingDirection::Top, value);
+
+            Padding(padding);
+        }
+
+        void SetRightPadding(double value)
+        {
+            const hstring& padding = _GetNewPadding(PaddingDirection::Right, value);
+
+            Padding(padding);
+        }
+
+        void SetBottomPadding(double value)
+        {
+            const hstring& padding = _GetNewPadding(PaddingDirection::Bottom, value);
+
+            Padding(padding);
         }
 
         winrt::hstring EvaluatedIcon() const
@@ -140,6 +163,47 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         Model::CascadiaSettings _appSettings;
         Editor::AppearanceViewModel _unfocusedAppearanceViewModel;
+
+        enum class PaddingDirection
+        {
+            Left = 0,
+            Top = 1,
+            Right = 2,
+            Bottom = 3
+        };
+
+        winrt::hstring _GetNewPadding(PaddingDirection paddingDirection, double newPaddingValue)
+        {
+            std::wstringstream result;
+            std::array<double, 4> values{};
+            std::wstring_view remaining{ Padding() };
+            uint32_t paddingIndex = static_cast<uint32_t>(paddingDirection);
+
+            try
+            {
+                for (uint32_t index = 0; !remaining.empty() && index < values.size(); ++index)
+                {
+                    const std::wstring token{ til::prefix_split(remaining, L',') };
+                    auto curVal = std::stod(token);
+
+                    if (paddingIndex == index)
+                    {
+                        curVal = newPaddingValue;
+                    }
+
+                    values[index] = curVal;
+                }
+            }
+            catch (...)
+            {
+                values.fill(0);
+                LOG_CAUGHT_EXCEPTION();
+            }
+
+            result << values[0] << L", " << values[1] << L", " << values[2] << L", " << values[3];
+
+            return hstring{ result.str() };
+        }
     };
 
     struct DeleteProfileEventArgs :
