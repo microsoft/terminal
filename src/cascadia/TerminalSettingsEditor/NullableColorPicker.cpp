@@ -97,16 +97,40 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void NullableColorPicker::_UpdateColorChips()
     {
-        if (!CurrentColor())
-        {
-            return;
-        }
-
-        const auto& currentColor = CurrentColor().Value();
+        const auto& currentColor = CurrentColor();
         for (const auto& colorChip : _colorChips)
         {
             const auto& chipColor = colorChip.DataContext().as<Editor::ColorTableEntry>().Color();
-            colorChip.IsChecked(chipColor.R == currentColor.R && chipColor.G == currentColor.G && chipColor.B == currentColor.B);
+            colorChip.IsChecked(currentColor ?
+                                    chipColor.R == currentColor.Value().R && chipColor.G == currentColor.Value().G && chipColor.B == currentColor.Value().B :
+                                    false);
+        }
+    }
+
+    constexpr double _CalculateLuminance(const Windows::UI::Color& color)
+    {
+        auto linearize = [](float value) {
+            value /= 255.0;
+            return (value <= 0.03928) ? (value / 12.92) : (std::pow((value + 0.055) / 1.055, 2.4));
+        };
+        double r = linearize(color.R);
+        double g = linearize(color.G);
+        double b = linearize(color.B);
+        return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+    }
+
+    SolidColorBrush NullableColorPicker::CalculateBorderBrush(const Windows::UI::Color& color)
+    {
+        // Accessibility requirement is a 3:1 contrast ratio
+        static const auto whiteLuminance = _CalculateLuminance(Colors::White());
+        const auto contrastRatio = (whiteLuminance + 0.05) / (_CalculateLuminance(color) + 0.05);
+        if (contrastRatio > 3.0)
+        {
+            return SolidColorBrush(Colors::White());
+        }
+        else
+        {
+            return SolidColorBrush(Colors::Black());
         }
     }
 
@@ -126,10 +150,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             if (const auto& currentColor = CurrentColor())
             {
                 const auto& currentColorVal = currentColor.Value();
-                const auto& newChipColor = args.NewValue().as<Editor::ColorTableEntry>().Color();  
+                const auto& newChipColor = args.NewValue().as<Editor::ColorTableEntry>().Color();
                 toggleBtn.IsChecked(newChipColor.R == currentColorVal.R && newChipColor.G == currentColorVal.G && newChipColor.B == currentColorVal.B);
             }
         }
+    }
+
+    bool NullableColorPicker::IsNull(IReference<Microsoft::Terminal::Core::Color> color)
+    {
+        return color == nullptr;
     }
 
     void NullableColorPicker::NullColorButton_Clicked(const IInspectable& /*sender*/, const RoutedEventArgs& /*args*/)

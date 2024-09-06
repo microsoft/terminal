@@ -403,8 +403,8 @@
     <Style x:Key="ColorToggleButtonStyle"
            TargetType="ToggleButton">
         <Setter Property="BackgroundSizing" Value="OuterBorderEdge" />
-        <Setter Property="BorderBrush" Value="{ThemeResource ButtonBorderBrush}" />
-        <Setter Property="BorderThickness" Value="{ThemeResource ButtonBorderThemeThickness}" />
+        <Setter Property="BorderBrush" Value="{ThemeResource ToggleButtonBorderThemeBrush}" />
+        <Setter Property="BorderThickness" Value="{ThemeResource ToggleButtonBorderThemeThickness}" />
         <Setter Property="CornerRadius" Value="{ThemeResource ControlCornerRadius}" />
         <Setter Property="UseSystemFocusVisuals" Value="{StaticResource UseSystemFocusVisuals}" />
         <Setter Property="FocusVisualMargin" Value="-3" />
@@ -415,15 +415,13 @@
                 <ControlTemplate TargetType="ToggleButton">
                     <Grid>
                         <Border x:Name="ColorButtonBorder"
-                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderBrush="{TemplateBinding Background}"
                                 BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="{TemplateBinding CornerRadius}"
-                                Visibility="{TemplateBinding IsChecked}">
+                                CornerRadius="{TemplateBinding CornerRadius}">
                             <Grid>
-                                <Rectangle x:Name="ColorButtonBackground"
-                                           Fill="{TemplateBinding Background}"
-                                           RadiusX="{TemplateBinding CornerRadius}"
-                                           RadiusY="{TemplateBinding CornerRadius}" />
+                                <Border x:Name="ColorButtonBackground"
+                                        BorderThickness="0"
+                                        Background="{TemplateBinding Background}" />
                                 <!--  We have to use Binding here! We're trying to do a template binding with a converter, so we have to use the verbose syntax.  -->
                                 <FontIcon Margin="0,0,-1,-1"
                                           HorizontalAlignment="Right"
@@ -431,10 +429,10 @@
                                           FontFamily="Segoe Fluent Icons"
                                           FontSize="12"
                                           Glyph="&#xE73D;"
+                                          Foreground="{TemplateBinding BorderBrush}"
                                           Visibility="{Binding RelativeSource={RelativeSource TemplatedParent}, Path=IsChecked, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}" />
                             </Grid>
                         </Border>
-                        <!--  TODO CARLOS: Update the visual state manager to make this feel right. We want the border to appear on hover and selection.  -->
                         <VisualStateManager.VisualStateGroups>
                             <VisualStateGroup x:Name="CommonStates">
                                 <VisualState x:Name="Normal" />
@@ -445,12 +443,12 @@
                                         <ObjectAnimationUsingKeyFrames Storyboard.TargetName="ColorButtonBackground"
                                                                        Storyboard.TargetProperty="Opacity">
                                             <DiscreteObjectKeyFrame KeyTime="0"
-                                                                    Value="0.9" />
+                                                                    Value="0.7" />
                                         </ObjectAnimationUsingKeyFrames>
                                         <ObjectAnimationUsingKeyFrames Storyboard.TargetName="ColorButtonBorder"
-                                                                       Storyboard.TargetProperty="Visibility">
+                                                                       Storyboard.TargetProperty="BorderBrush">
                                             <DiscreteObjectKeyFrame KeyTime="0"
-                                                                    Value="Visible" />
+                                                                    Value="{Binding Path=BorderBrush, RelativeSource={RelativeSource TemplatedParent}}" />
                                         </ObjectAnimationUsingKeyFrames>
                                     </Storyboard>
                                 </VisualState>
@@ -460,7 +458,22 @@
                                         <ObjectAnimationUsingKeyFrames Storyboard.TargetName="ColorButtonBackground"
                                                                        Storyboard.TargetProperty="Opacity">
                                             <DiscreteObjectKeyFrame KeyTime="0"
-                                                                    Value="0.8" />
+                                                                    Value="0.5" />
+                                        </ObjectAnimationUsingKeyFrames>
+                                        <ObjectAnimationUsingKeyFrames Storyboard.TargetName="ColorButtonBorder"
+                                                                       Storyboard.TargetProperty="BorderBrush">
+                                            <DiscreteObjectKeyFrame KeyTime="0"
+                                                                    Value="{Binding Path=BorderBrush, RelativeSource={RelativeSource TemplatedParent}}" />
+                                        </ObjectAnimationUsingKeyFrames>
+                                    </Storyboard>
+                                </VisualState>
+
+                                <VisualState x:Name="Checked">
+                                    <Storyboard>
+                                        <ObjectAnimationUsingKeyFrames Storyboard.TargetName="ColorButtonBorder"
+                                                                       Storyboard.TargetProperty="BorderBrush">
+                                            <DiscreteObjectKeyFrame KeyTime="0"
+                                                                    Value="{Binding Path=BorderBrush, RelativeSource={RelativeSource TemplatedParent}}" />
                                         </ObjectAnimationUsingKeyFrames>
                                     </Storyboard>
                                 </VisualState>

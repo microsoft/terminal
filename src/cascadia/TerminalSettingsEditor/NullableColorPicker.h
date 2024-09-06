@@ -13,6 +13,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     public:
         NullableColorPicker();
 
+        static winrt::Windows::UI::Xaml::Media::SolidColorBrush CalculateBorderBrush(const Windows::UI::Color& color);
+        static bool IsNull(Windows::Foundation::IReference<Microsoft::Terminal::Core::Color> color);
+
         void ColorChip_Loaded(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::RoutedEventArgs& args);
         void ColorChip_Unloaded(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::RoutedEventArgs& args);
         void ColorChip_Clicked(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::RoutedEventArgs& args);

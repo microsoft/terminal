@@ -1867,9 +1867,17 @@
     <value>Overrides the foreground color from the color scheme.</value>
     <comment>A description for what the "foreground" setting does. Presented near "Profile_Foreground".</comment>
   </data>
+  <data name="Profile_CursorColor.HelpText" xml:space="preserve">
+    <value>Overrides the cursor color from the color scheme.</value>
+    <comment>A description for what the "cursor color" setting does. Presented near "Profile_CursorColor".</comment>
+  </data>
   <data name="Profile_Background.HelpText" xml:space="preserve">
     <value>Overrides the background color from the color scheme.</value>
     <comment>A description for what the "background" setting does. Presented near "Profile_Background".</comment>
+  </data>
+  <data name="Profile_SelectionBackground.HelpText" xml:space="preserve">
+    <value>Overrides the selection background color from the color scheme.</value>
+    <comment>A description for what the "selection background" setting does. Presented near "Profile_SelectionBackground".</comment>
   </data>
   <data name="NullableColorPicker_MoreColorsButton.Content" xml:space="preserve">
     <value>More colors...</value>

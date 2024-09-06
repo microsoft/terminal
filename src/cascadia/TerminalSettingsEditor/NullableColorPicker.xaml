@@ -19,17 +19,17 @@
                 <ResourceDictionary Source="CommonResources.xaml" />
             </ResourceDictionary.MergedDictionaries>
 
-            <!--  TODO CARLOS: BorderBrush is white. We should adapt based on (1) app theme and (2) color chip  -->
             <DataTemplate x:Key="ColorPreviewChipTemplate"
                           x:DataType="local:ColorTableEntry">
-                <ToggleButton Margin="2"
+                <ToggleButton Margin="0,0,4,4"
                               Loaded="ColorChip_Loaded"
                               Unloaded="ColorChip_Unloaded"
                               DataContextChanged="ColorChip_DataContextChanged"
-                              AutomationProperties.Name="{x:Bind AccessibleName}"
+                              AutomationProperties.Name="{x:Bind NameWithHexCode}"
+                              BorderBrush="{x:Bind local:NullableColorPicker.CalculateBorderBrush(Color), Mode=OneWay}"
                               Background="{x:Bind mtu:Converters.ColorToBrush(Color)}"
-                              BorderBrush="White"
                               Click="ColorChip_Clicked"
+                              BorderThickness="2"
                               Style="{StaticResource ColorToggleButtonStyle}"
                               ToolTipService.ToolTip="{x:Bind NameWithHexCode}" />
             </DataTemplate>
@@ -124,7 +124,8 @@
 
         <StackPanel Grid.Column="1"
                     Spacing="5">
-            <Button Click="NullColorButton_Clicked">
+            <ToggleButton Click="NullColorButton_Clicked"
+                          IsChecked="{x:Bind IsNull(CurrentColor), Mode=OneWay}">
                 <Grid ColumnSpacing="5">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto" />
@@ -136,12 +137,12 @@
                             Height="20"
                             Background="{x:Bind mtu:Converters.ColorToBrush(NullColorPreview), Mode=OneWay}"
                             BorderThickness="1"
-                            CornerRadius="2" />
+                            CornerRadius="{ThemeResource ControlCornerRadius}" />
 
                     <TextBlock Grid.Column="1"
                                Text="{x:Bind NullColorButtonLabel}" />
                 </Grid>
-            </Button>
+            </ToggleButton>
 
             <Button x:Uid="NullableColorPicker_MoreColorsButton"
                     HorizontalAlignment="Stretch"
