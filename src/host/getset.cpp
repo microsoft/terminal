@@ -487,49 +487,8 @@ void ApiRoutines::SetConsoleActiveScreenBufferImpl(SCREEN_INFORMATION& newContex
 
         if (auto writer = gci.GetVtWriter())
         {
-            const auto viewport = gci.GetActiveOutputBuffer().GetBufferSize();
-            const auto size = viewport.Dimensions();
-            const auto area = static_cast<size_t>(viewport.Width() * viewport.Height());
-
-            auto& main = newContext.GetMainBuffer();
-            auto& alt = newContext.GetActiveBuffer();
-            const auto hasAltBuffer = &alt != &main;
-
-            // TODO GH#5094: This could use xterm's XTWINOPS "\e[8;<height>;<width>t" escape sequence here.
-            THROW_IF_NTSTATUS_FAILED(main.ResizeTraditional(size));
-            main.SetViewportSize(&size);
-            if (hasAltBuffer)
-            {
-                THROW_IF_NTSTATUS_FAILED(alt.ResizeTraditional(size));
-                alt.SetViewportSize(&size);
-            }
-
-            Viewport read;
-            til::small_vector<CHAR_INFO, 1024> infos;
-            infos.resize(area, CHAR_INFO{ L' ', FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED });
-
-            const auto dumpScreenInfo = [&](SCREEN_INFORMATION& screenInfo) {
-                THROW_IF_FAILED(ReadConsoleOutputWImpl(screenInfo, infos, viewport, read));
-                for (til::CoordType i = 0; i < size.height; i++)
-                {
-                    writer.WriteInfos({ 0, i }, { infos.begin() + i * size.width, static_cast<size_t>(size.width) });
-                }
-
-                writer.WriteCUP(screenInfo.GetTextBuffer().GetCursor().GetPosition());
-                writer.WriteAttributes(screenInfo.GetAttributes());
-                writer.WriteDECTCEM(screenInfo.GetTextBuffer().GetCursor().IsVisible());
-                writer.WriteDECAWM(WI_IsFlagSet(screenInfo.OutputMode, ENABLE_WRAP_AT_EOL_OUTPUT));
-            };
-
-            writer.WriteASB(false);
-            dumpScreenInfo(main);
-
-            if (hasAltBuffer)
-            {
-                writer.WriteASB(true);
-                dumpScreenInfo(alt);
-            }
-
+            const auto oldSize = gci.GetActiveOutputBuffer().GetBufferSize().Dimensions();
+            writer.WriteScreenInfo(newContext, oldSize);
             writer.Submit();
         }
 
