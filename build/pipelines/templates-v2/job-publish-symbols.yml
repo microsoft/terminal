@@ -43,7 +43,7 @@ jobs:
     submodules: true
     persistCredentials: True
 
-  - template: steps-setup-versioning.ps1
+  - template: steps-setup-versioning.yml
 
   - task: DownloadPipelineArtifact@2
     displayName: Download all PDBs from all prior build phases
