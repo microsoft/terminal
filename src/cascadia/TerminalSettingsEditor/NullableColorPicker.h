@@ -13,7 +13,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     public:
         NullableColorPicker();
 
+        void ColorChip_Loaded(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::RoutedEventArgs& args);
+        void ColorChip_Unloaded(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::RoutedEventArgs& args);
         void ColorChip_Clicked(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::RoutedEventArgs& args);
+        void ColorChip_DataContextChanged(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::DataContextChangedEventArgs& args);
+
         void NullColorButton_Clicked(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::RoutedEventArgs& args);
         Windows::Foundation::IAsyncAction MoreColors_Clicked(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::RoutedEventArgs& args);
 
@@ -28,6 +32,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     private:
         static void _InitializeProperties();
+        static void _OnCurrentColorValueChanged(const Windows::UI::Xaml::DependencyObject& d, const Windows::UI::Xaml::DependencyPropertyChangedEventArgs& e);
+
+        void _UpdateColorChips();
+
+        std::vector<Windows::UI::Xaml::Controls::Primitives::ToggleButton> _colorChips;
     };
 }
 

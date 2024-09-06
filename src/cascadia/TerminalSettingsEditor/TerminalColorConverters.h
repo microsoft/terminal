@@ -3,23 +3,32 @@
 
 #pragma once
 
-#include "TerminalColorToBrushConverter.g.h"
-#include "TerminalColorToStringConverter.g.h"
+#include "ColorToBrushConverter.g.h"
+#include "ColorToStringConverter.g.h"
+#include "BooleanToVisibilityConverter.g.h"
 #include "Utils.h"
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
-    struct TerminalColorToBrushConverter : TerminalColorToBrushConverterT<TerminalColorToBrushConverter>
+    struct ColorToBrushConverter : ColorToBrushConverterT<ColorToBrushConverter>
     {
-        TerminalColorToBrushConverter() = default;
+        ColorToBrushConverter() = default;
 
         Windows::Foundation::IInspectable Convert(Windows::Foundation::IInspectable const& value, Windows::UI::Xaml::Interop::TypeName const& targetType, Windows::Foundation::IInspectable const& parameter, hstring const& language);
         Windows::Foundation::IInspectable ConvertBack(Windows::Foundation::IInspectable const& value, Windows::UI::Xaml::Interop::TypeName const& targetType, Windows::Foundation::IInspectable const& parameter, hstring const& language);
     };
 
-    struct TerminalColorToStringConverter : TerminalColorToStringConverterT<TerminalColorToStringConverter>
+    struct ColorToStringConverter : ColorToStringConverterT<ColorToStringConverter>
     {
-        TerminalColorToStringConverter() = default;
+        ColorToStringConverter() = default;
+
+        Windows::Foundation::IInspectable Convert(Windows::Foundation::IInspectable const& value, Windows::UI::Xaml::Interop::TypeName const& targetType, Windows::Foundation::IInspectable const& parameter, hstring const& language);
+        Windows::Foundation::IInspectable ConvertBack(Windows::Foundation::IInspectable const& value, Windows::UI::Xaml::Interop::TypeName const& targetType, Windows::Foundation::IInspectable const& parameter, hstring const& language);
+    };
+
+    struct BooleanToVisibilityConverter : BooleanToVisibilityConverterT<BooleanToVisibilityConverter>
+    {
+        BooleanToVisibilityConverter() = default;
 
         Windows::Foundation::IInspectable Convert(Windows::Foundation::IInspectable const& value, Windows::UI::Xaml::Interop::TypeName const& targetType, Windows::Foundation::IInspectable const& parameter, hstring const& language);
         Windows::Foundation::IInspectable ConvertBack(Windows::Foundation::IInspectable const& value, Windows::UI::Xaml::Interop::TypeName const& targetType, Windows::Foundation::IInspectable const& parameter, hstring const& language);
@@ -28,6 +37,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::factory_implementation
 {
-    BASIC_FACTORY(TerminalColorToBrushConverter);
-    BASIC_FACTORY(TerminalColorToStringConverter);
+    BASIC_FACTORY(ColorToBrushConverter);
+    BASIC_FACTORY(ColorToStringConverter);
+    BASIC_FACTORY(BooleanToVisibilityConverter);
 }

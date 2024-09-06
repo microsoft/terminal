@@ -58,7 +58,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                     L"CurrentColor",
                     xaml_typename<Windows::Foundation::IReference<Microsoft::Terminal::Core::Color>>(),
                     xaml_typename<Editor::NullableColorPicker>(),
-                    PropertyMetadata{ nullptr });
+                    PropertyMetadata{ nullptr, PropertyChangedCallback{ &NullableColorPicker::_OnCurrentColorValueChanged } });
         }
         if (!_ShowNullColorButtonProperty)
         {
@@ -76,7 +76,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                     L"NullColorButtonLabel",
                     xaml_typename<hstring>(),
                     xaml_typename<Editor::NullableColorPicker>(),
-                    PropertyMetadata{ box_value(RS_(L"NullableColorPicker_NullColorButtonDefaultText")) });
+                    PropertyMetadata{ nullptr });
         }
         if (!_NullColorPreviewProperty)
         {
@@ -89,14 +89,47 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
+    void NullableColorPicker::_OnCurrentColorValueChanged(const DependencyObject& d, const DependencyPropertyChangedEventArgs& /*e*/)
+    {
+        const auto& obj{ d.try_as<Editor::NullableColorPicker>() };
+        get_self<NullableColorPicker>(obj)->_UpdateColorChips();
+    }
+
+    void NullableColorPicker::_UpdateColorChips()
+    {
+        if (!CurrentColor())
+        {
+            return;
+        }
+
+        const auto& currentColor = CurrentColor().Value();
+        for (const auto& colorChip : _colorChips)
+        {
+            const auto& chipColor = colorChip.DataContext().as<Editor::ColorTableEntry>().Color();
+            colorChip.IsChecked(chipColor.R == currentColor.R && chipColor.G == currentColor.G && chipColor.B == currentColor.B);
+        }
+    }
+
     void NullableColorPicker::ColorChip_Clicked(const IInspectable& sender, const RoutedEventArgs& /*args*/)
     {
         const auto& btn = sender.as<Windows::UI::Xaml::Controls::Primitives::ToggleButton>();
-        const auto& colorEntry = btn.DataContext().as<Editor::ColorTableEntry>();
-        const auto& colorEntryColor = colorEntry.Color();
+        const auto& colorEntryColor = btn.DataContext().as<Editor::ColorTableEntry>().Color();
         const Microsoft::Terminal::Core::Color terminalColor{ colorEntryColor.R, colorEntryColor.G, colorEntryColor.B, colorEntryColor.A };
         CurrentColor(terminalColor);
         btn.IsChecked(true);
+    }
+
+    void NullableColorPicker::ColorChip_DataContextChanged(const IInspectable& sender, const DataContextChangedEventArgs& args)
+    {
+        if (const auto& toggleBtn = sender.try_as<Controls::Primitives::ToggleButton>())
+        {
+            if (const auto& currentColor = CurrentColor())
+            {
+                const auto& currentColorVal = currentColor.Value();
+                const auto& newChipColor = args.NewValue().as<Editor::ColorTableEntry>().Color();  
+                toggleBtn.IsChecked(newChipColor.R == currentColorVal.R && newChipColor.G == currentColorVal.G && newChipColor.B == currentColorVal.B);
+            }
+        }
     }
 
     void NullableColorPicker::NullColorButton_Clicked(const IInspectable& /*sender*/, const RoutedEventArgs& /*args*/)
@@ -125,7 +158,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
         else
         {
-            // TODO CARLOS: evaluate the value of CurrentColor and set the color picker to that value
+            // No current color (null), use the deduced value for null
+            ColorPickerControl().Color(NullColorPreview());
         }
     }
 
@@ -134,5 +168,37 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         const auto& selectedColor = ColorPickerControl().Color();
         const Microsoft::Terminal::Core::Color terminalColor{ selectedColor.R, selectedColor.G, selectedColor.B, selectedColor.A };
         CurrentColor(terminalColor);
+    }
+
+    void NullableColorPicker::ColorChip_Loaded(const IInspectable& sender, const RoutedEventArgs& /*args*/)
+    {
+        if (const auto& toggleBtn = sender.try_as<Controls::Primitives::ToggleButton>())
+        {
+            if (const auto& currentColor = CurrentColor())
+            {
+                const auto& currentColorVal = currentColor.Value();
+                const auto& chipColor = toggleBtn.DataContext().as<Editor::ColorTableEntry>().Color();
+                if (chipColor.R == currentColorVal.R && chipColor.G == currentColorVal.G && chipColor.B == currentColorVal.B)
+                {
+                    toggleBtn.IsChecked(true);
+                }
+            }
+            _colorChips.push_back(toggleBtn);
+        }
+    }
+
+    void NullableColorPicker::ColorChip_Unloaded(const IInspectable& sender, const RoutedEventArgs& /*args*/)
+    {
+        if (const auto& toggleBtn = sender.try_as<Controls::Primitives::ToggleButton>())
+        {
+            for (auto it = _colorChips.begin(); it != _colorChips.end(); ++it)
+            {
+                if (*it == toggleBtn)
+                {
+                    _colorChips.erase(it);
+                    break;
+                }
+            }
+        }
     }
 }

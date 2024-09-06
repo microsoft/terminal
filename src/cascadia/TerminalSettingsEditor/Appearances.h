@@ -121,8 +121,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void SetBackgroundImagePath(winrt::hstring path);
 
         void ClearColorScheme();
-        Editor::ColorSchemeViewModel CurrentColorScheme();
+        Editor::ColorSchemeViewModel CurrentColorScheme() const;
         void CurrentColorScheme(const Editor::ColorSchemeViewModel& val);
+
+        Windows::UI::Color ForegroundPreview() const;
+        Windows::UI::Color BackgroundPreview() const;
+        Windows::UI::Color SelectionBackgroundPreview() const;
+        Windows::UI::Color CursorColorPreview() const;
 
         WINRT_PROPERTY(bool, IsDefault, false);
 

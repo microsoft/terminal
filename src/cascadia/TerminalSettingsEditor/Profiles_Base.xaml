@@ -137,20 +137,6 @@
                          Text="{x:Bind Profile.TabTitle, Mode=TwoWay}" />
             </local:SettingContainer>
 
-            <!--  Tab Color  -->
-            <local:SettingContainer x:Name="TabColor"
-                                    x:Uid="Profile_TabColor"
-                                    ClearSettingValue="{x:Bind Profile.ClearTabColor}"
-                                    CurrentValue="{x:Bind Profile.TabColor, Mode=OneWay}"
-                                    CurrentValueTemplate="{StaticResource ColorPreviewTemplate}"
-                                    HasSettingValue="{x:Bind Profile.HasTabColor, Mode=OneWay}"
-                                    SettingOverrideSource="{x:Bind Profile.TabColorOverrideSource, Mode=OneWay}"
-                                    Style="{StaticResource ExpanderSettingContainerStyleWithComplexPreview}">
-                <!--TODO CARLOS: give this a NullColorLabel; we need it localized too!-->
-                <local:NullableColorPicker CurrentColor="{x:Bind Profile.TabColor, Mode=TwoWay}"
-                                           ColorSchemeVM="{x:Bind Profile.DefaultAppearance.CurrentColorScheme, Mode=OneWay}"/>
-            </local:SettingContainer>
-
             <!--  Elevate  -->
             <local:SettingContainer x:Uid="Profile_Elevate"
                                     ClearSettingValue="{x:Bind Profile.ClearElevate}"

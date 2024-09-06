@@ -5,6 +5,7 @@
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:local="using:Microsoft.Terminal.Settings.Editor"
+                    xmlns:mtu="using:Microsoft.Terminal.UI"
                     xmlns:muxc="using:Microsoft.UI.Xaml.Controls">
 
     <!--  Merge SettingContainerStyle here to give every page access to the SettingContainer  -->
@@ -61,8 +62,9 @@
         </ResourceDictionary>
     </ResourceDictionary.ThemeDictionaries>
 
-    <local:TerminalColorToBrushConverter x:Key="TerminalColorToBrushConverter" />
-    <local:TerminalColorToStringConverter x:Key="TerminalColorToStringConverter" />
+    <local:ColorToBrushConverter x:Key="ColorToBrushConverter" />
+    <local:ColorToStringConverter x:Key="ColorToStringConverter" />
+    <local:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
 
     <Color x:Key="DeleteButtonColor">Firebrick</Color>
 
@@ -82,19 +84,19 @@
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
             <Rectangle Grid.Column="0"
-                   Width="13"
-                   Height="13"
-                   VerticalAlignment="Center"
-                   Fill="{Binding Converter={StaticResource TerminalColorToBrushConverter}}"
-                   RadiusX="2"
-                   RadiusY="2" />
+                       Width="13"
+                       Height="13"
+                       VerticalAlignment="Center"
+                       Fill="{Binding Converter={StaticResource ColorToBrushConverter}}"
+                       RadiusX="2"
+                       RadiusY="2" />
             <TextBlock Grid.Column="1"
-                   Margin="0,0,0,0"
-                   HorizontalAlignment="Right"
-                   VerticalAlignment="Center"
-                   FontFamily="Segoe UI, Segoe Fluent Icons, Segoe MDL2 Assets"
-                   Style="{StaticResource SettingsPageItemDescriptionStyle}"
-                   Text="{Binding Converter={StaticResource TerminalColorToStringConverter}}" />
+                       Margin="0,0,0,0"
+                       HorizontalAlignment="Right"
+                       VerticalAlignment="Center"
+                       FontFamily="Segoe UI, Segoe Fluent Icons, Segoe MDL2 Assets"
+                       Style="{StaticResource SettingsPageItemDescriptionStyle}"
+                       Text="{Binding Converter={StaticResource ColorToStringConverter}}" />
         </Grid>
     </DataTemplate>
 
@@ -421,18 +423,18 @@
                                 <Rectangle x:Name="ColorButtonBackground"
                                            Fill="{TemplateBinding Background}"
                                            RadiusX="{TemplateBinding CornerRadius}"
-                                           RadiusY="{TemplateBinding CornerRadius}"/>
-                                <FontIcon HorizontalAlignment="Right"
+                                           RadiusY="{TemplateBinding CornerRadius}" />
+                                <!--  We have to use Binding here! We're trying to do a template binding with a converter, so we have to use the verbose syntax.  -->
+                                <FontIcon Margin="0,0,-1,-1"
+                                          HorizontalAlignment="Right"
                                           VerticalAlignment="Bottom"
-                                          Margin="0,0,-1,-1"
-                                          FontSize="12"
                                           FontFamily="Segoe Fluent Icons"
+                                          FontSize="12"
                                           Glyph="&#xE73D;"
-                                          Visibility="{TemplateBinding IsChecked}"/>
-                            
+                                          Visibility="{Binding RelativeSource={RelativeSource TemplatedParent}, Path=IsChecked, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}" />
                             </Grid>
                         </Border>
-                        <!--TODO CARLOS: Update the visual state manager to make this feel right. We want the border to appear on hover and selection.-->
+                        <!--  TODO CARLOS: Update the visual state manager to make this feel right. We want the border to appear on hover and selection.  -->
                         <VisualStateManager.VisualStateGroups>
                             <VisualStateGroup x:Name="CommonStates">
                                 <VisualState x:Name="Normal" />
@@ -442,11 +444,13 @@
                                     <Storyboard>
                                         <ObjectAnimationUsingKeyFrames Storyboard.TargetName="ColorButtonBackground"
                                                                        Storyboard.TargetProperty="Opacity">
-                                            <DiscreteObjectKeyFrame KeyTime="0" Value="0.9" />
+                                            <DiscreteObjectKeyFrame KeyTime="0"
+                                                                    Value="0.9" />
                                         </ObjectAnimationUsingKeyFrames>
                                         <ObjectAnimationUsingKeyFrames Storyboard.TargetName="ColorButtonBorder"
                                                                        Storyboard.TargetProperty="Visibility">
-                                            <DiscreteObjectKeyFrame KeyTime="0" Value="Visible" />
+                                            <DiscreteObjectKeyFrame KeyTime="0"
+                                                                    Value="Visible" />
                                         </ObjectAnimationUsingKeyFrames>
                                     </Storyboard>
                                 </VisualState>
@@ -454,8 +458,9 @@
                                 <VisualState x:Name="Pressed">
                                     <Storyboard>
                                         <ObjectAnimationUsingKeyFrames Storyboard.TargetName="ColorButtonBackground"
-                                                                   Storyboard.TargetProperty="Opacity">
-                                            <DiscreteObjectKeyFrame KeyTime="0" Value="0.8" />
+                                                                       Storyboard.TargetProperty="Opacity">
+                                            <DiscreteObjectKeyFrame KeyTime="0"
+                                                                    Value="0.8" />
                                         </ObjectAnimationUsingKeyFrames>
                                     </Storyboard>
                                 </VisualState>

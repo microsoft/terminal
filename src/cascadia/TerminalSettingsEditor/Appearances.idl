@@ -45,6 +45,11 @@ namespace Microsoft.Terminal.Settings.Editor
         ColorSchemeViewModel CurrentColorScheme;
         IObservableVector<ColorSchemeViewModel> SchemesList;
 
+        Windows.UI.Color ForegroundPreview { get; };
+        Windows.UI.Color BackgroundPreview { get; };
+        Windows.UI.Color SelectionBackgroundPreview { get; };
+        Windows.UI.Color CursorColorPreview { get; };
+
         String MissingFontFaces { get; };
         String ProportionalFontFaces { get; };
         Boolean HasPowerlineCharacters { get; };

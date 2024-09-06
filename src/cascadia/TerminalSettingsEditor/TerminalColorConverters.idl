@@ -3,13 +3,18 @@
 
 namespace Microsoft.Terminal.Settings.Editor
 {
-    runtimeclass TerminalColorToBrushConverter : [default] Windows.UI.Xaml.Data.IValueConverter
+    runtimeclass ColorToBrushConverter : [default] Windows.UI.Xaml.Data.IValueConverter
     {
-        TerminalColorToBrushConverter();
+        ColorToBrushConverter();
     }
 
-    runtimeclass TerminalColorToStringConverter : [default] Windows.UI.Xaml.Data.IValueConverter
+    runtimeclass ColorToStringConverter : [default] Windows.UI.Xaml.Data.IValueConverter
     {
-        TerminalColorToStringConverter();
+        ColorToStringConverter();
+    }
+
+    runtimeclass BooleanToVisibilityConverter : [default] Windows.UI.Xaml.Data.IValueConverter
+    {
+        BooleanToVisibilityConverter();
     }
 }

@@ -18,6 +18,11 @@ namespace winrt::Microsoft::Terminal::UI::implementation
         return value ? winrt::Windows::UI::Xaml::Visibility::Collapsed : winrt::Windows::UI::Xaml::Visibility::Visible;
     }
 
+    winrt::Windows::UI::Xaml::Visibility Converters::BooleanToVisibility(bool value)
+    {
+        return value ? winrt::Windows::UI::Xaml::Visibility::Visible : winrt::Windows::UI::Xaml::Visibility::Collapsed;
+    }
+
     // Numbers
     double Converters::PercentageToPercentageValue(double value)
     {
