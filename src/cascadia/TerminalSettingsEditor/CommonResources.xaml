@@ -420,16 +420,16 @@
                                 CornerRadius="{TemplateBinding CornerRadius}">
                             <Grid>
                                 <Border x:Name="ColorButtonBackground"
-                                        BorderThickness="0"
-                                        Background="{TemplateBinding Background}" />
+                                        Background="{TemplateBinding Background}"
+                                        BorderThickness="0" />
                                 <!--  We have to use Binding here! We're trying to do a template binding with a converter, so we have to use the verbose syntax.  -->
                                 <FontIcon Margin="0,0,-1,-1"
                                           HorizontalAlignment="Right"
                                           VerticalAlignment="Bottom"
                                           FontFamily="Segoe Fluent Icons"
                                           FontSize="12"
-                                          Glyph="&#xE73D;"
                                           Foreground="{TemplateBinding BorderBrush}"
+                                          Glyph="&#xE73D;"
                                           Visibility="{Binding RelativeSource={RelativeSource TemplatedParent}, Path=IsChecked, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}" />
                             </Grid>
                         </Border>

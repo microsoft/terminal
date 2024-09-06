@@ -22,16 +22,16 @@
             <DataTemplate x:Key="ColorPreviewChipTemplate"
                           x:DataType="local:ColorTableEntry">
                 <ToggleButton Margin="0,0,4,4"
-                              Loaded="ColorChip_Loaded"
-                              Unloaded="ColorChip_Unloaded"
-                              DataContextChanged="ColorChip_DataContextChanged"
                               AutomationProperties.Name="{x:Bind NameWithHexCode}"
-                              BorderBrush="{x:Bind local:NullableColorPicker.CalculateBorderBrush(Color), Mode=OneWay}"
                               Background="{x:Bind mtu:Converters.ColorToBrush(Color)}"
-                              Click="ColorChip_Clicked"
+                              BorderBrush="{x:Bind local:NullableColorPicker.CalculateBorderBrush(Color), Mode=OneWay}"
                               BorderThickness="2"
+                              Click="ColorChip_Clicked"
+                              DataContextChanged="ColorChip_DataContextChanged"
+                              Loaded="ColorChip_Loaded"
                               Style="{StaticResource ColorToggleButtonStyle}"
-                              ToolTipService.ToolTip="{x:Bind NameWithHexCode}" />
+                              ToolTipService.ToolTip="{x:Bind NameWithHexCode}"
+                              Unloaded="ColorChip_Unloaded" />
             </DataTemplate>
 
             <DataTemplate x:Key="ColorSchemeTemplate"
