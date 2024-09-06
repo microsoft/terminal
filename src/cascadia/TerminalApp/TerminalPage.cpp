@@ -5600,7 +5600,14 @@ namespace winrt::TerminalApp::implementation
                 appPrivate->PrepareForAIChat();
             }
         }
-        _extensionPalette = winrt::Microsoft::Terminal::Query::Extension::ExtensionPalette();
+
+        // since we only support one type of llmProvider for now, just instantiate that one (the AzureLLMProvider)
+        // in the future, we would need to query the settings here for which LLMProvider to use
+        _lmProvider = winrt::Microsoft::Terminal::Query::Extension::AzureLLMProvider();
+        _setAzureOpenAIAuth();
+        _azureOpenAISettingChangedRevoker = Microsoft::Terminal::Settings::Model::CascadiaSettings::AzureOpenAISettingChanged(winrt::auto_revoke, { this, &TerminalPage::_setAzureOpenAIAuth });
+
+        _extensionPalette = winrt::Microsoft::Terminal::Query::Extension::ExtensionPalette(_lmProvider);
         _extensionPalette.RegisterPropertyChangedCallback(UIElement::VisibilityProperty(), [&](auto&&, auto&&) {
             if (_extensionPalette.Visibility() == Visibility::Collapsed)
             {
@@ -5642,9 +5649,18 @@ namespace winrt::TerminalApp::implementation
                 _extensionPalette.ActiveCommandline(L"");
             }
         });
-        _extensionPalette.AIKeyAndEndpointRequested([&](IInspectable const&, IInspectable const&) {
-            _extensionPalette.AIKeyAndEndpoint(_settings.AIEndpoint(), _settings.AIKey());
-        });
+
         ExtensionPresenter().Content(_extensionPalette);
+    }
+
+    void TerminalPage::_setAzureOpenAIAuth()
+    {
+        if (_lmProvider)
+        {
+            Windows::Foundation::Collections::ValueSet authValues{};
+            authValues.Insert(L"endpoint", Windows::Foundation::PropertyValue::CreateString(_settings.AIEndpoint()));
+            authValues.Insert(L"key", Windows::Foundation::PropertyValue::CreateString(_settings.AIKey()));
+            _lmProvider.SetAuthentication(authValues);
+        }
     }
 }

@@ -11,10 +11,9 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
 {
     struct ExtensionPalette : ExtensionPaletteT<ExtensionPalette>
     {
-        ExtensionPalette();
+        ExtensionPalette(const Extension::ILMProvider lmProvider);
 
         // We don't use the winrt_property macro here because we just need the setter
-        void AIKeyAndEndpoint(const winrt::hstring& endpoint, const winrt::hstring& key);
         void IconPath(const winrt::hstring& iconPath);
 
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
@@ -27,7 +26,6 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         WINRT_OBSERVABLE_PROPERTY(Windows::UI::Xaml::Controls::IconElement, ResolvedIcon, _PropertyChangedHandlers, nullptr);
 
         TYPED_EVENT(ActiveControlInfoRequested, winrt::Microsoft::Terminal::Query::Extension::ExtensionPalette, Windows::Foundation::IInspectable);
-        TYPED_EVENT(AIKeyAndEndpointRequested, winrt::Microsoft::Terminal::Query::Extension::ExtensionPalette, Windows::Foundation::IInspectable);
         TYPED_EVENT(InputSuggestionRequested, winrt::Microsoft::Terminal::Query::Extension::ExtensionPalette, winrt::hstring);
         TYPED_EVENT(ExportChatHistoryRequested, winrt::Microsoft::Terminal::Query::Extension::ExtensionPalette, winrt::hstring);
 
@@ -36,21 +34,16 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
 
         winrt::Windows::UI::Xaml::FrameworkElement::Loaded_revoker _loadedRevoker;
 
-        // info/methods for the http requests
-        winrt::hstring _AIEndpoint;
-        winrt::hstring _AIKey;
-        winrt::Windows::Web::Http::HttpClient _httpClient{ nullptr };
+        ILMProvider _lmProvider{ nullptr };
 
         // chat history storage
         Windows::Foundation::Collections::IObservableVector<GroupedChatMessages> _messages{ nullptr };
-        winrt::Windows::Data::Json::JsonArray _jsonMessages;
 
         winrt::fire_and_forget _getSuggestions(const winrt::hstring& prompt, const winrt::hstring& currentLocalTime);
 
         winrt::hstring _getCurrentLocalTimeHelper();
-        void _splitResponseAndAddToChatHelper(const winrt::hstring& response, const bool isError);
+        void _splitResponseAndAddToChatHelper(const winrt::hstring& response, const winrt::Microsoft::Terminal::Query::Extension::ErrorTypes errorType);
         void _setFocusAndPlaceholderTextHelper();
-        bool _verifyModelIsValidHelper(const Windows::Data::Json::JsonObject jsonResponse);
 
         void _clearAndInitializeMessages(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& args);
         void _exportMessagesToFile(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& args);
@@ -150,6 +143,24 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
     private:
         bool _isQuery;
         Windows::Foundation::Collections::IVector<Windows::Foundation::IInspectable> _messages;
+    };
+
+    struct TerminalContext : public winrt::implements<TerminalContext, winrt::Microsoft::Terminal::Query::Extension::IContext>
+    {
+        TerminalContext(const winrt::hstring& activeCommandline) :
+            ActiveCommandline{ activeCommandline } {}
+
+        til::property<winrt::hstring> ActiveCommandline;
+    };
+
+    struct SystemResponse : public winrt::implements<SystemResponse, winrt::Microsoft::Terminal::Query::Extension::IResponse>
+    {
+        SystemResponse(const winrt::hstring& message, const winrt::Microsoft::Terminal::Query::Extension::ErrorTypes errorType) :
+            Message{ message },
+            ErrorType{ errorType } {}
+
+        til::property<winrt::hstring> Message;
+        til::property<winrt::Microsoft::Terminal::Query::Extension::ErrorTypes> ErrorType;
     };
 }
 

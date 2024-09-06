@@ -53,6 +53,9 @@
       <DependentUpon>ExtensionPaletteTemplateSelectors.idl</DependentUpon>
       <SubType>Code</SubType>
     </ClInclude>
+    <ClInclude Include="AzureLLMProvider.h">
+      <DependentUpon>AzureLLMProvider.idl</DependentUpon>
+    </ClInclude>
   </ItemGroup>
   <!-- ========================= XAML files ======================== -->
   <ItemGroup>
@@ -74,6 +77,9 @@
       <DependentUpon>ExtensionPaletteTemplateSelectors.idl</DependentUpon>
       <SubType>Code</SubType>
     </ClCompile>
+    <ClCompile Include="AzureLLMProvider.cpp">
+      <DependentUpon>AzureLLMProvider.idl</DependentUpon>
+    </ClCompile>
   </ItemGroup>
   <!-- ========================= idl Files ======================== -->
   <ItemGroup>
@@ -83,6 +89,12 @@
     </Midl>
     <Midl Include="ExtensionPaletteTemplateSelectors.idl">
       <SubType>Designer</SubType>
+    </Midl>
+    <Midl Include="ILMProvider.idl">
+      <SubType>Code</SubType>
+    </Midl>
+    <Midl Include="AzureLLMProvider.idl">
+      <SubType>Code</SubType>
     </Midl>
   </ItemGroup>
   <!-- ========================= Misc Files ======================== -->

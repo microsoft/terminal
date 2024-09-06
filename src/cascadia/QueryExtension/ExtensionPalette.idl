@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
+import "ILMProvider.idl";
+
 namespace Microsoft.Terminal.Query.Extension
 {
     [default_interface] runtimeclass ChatMessage
@@ -21,9 +23,7 @@ namespace Microsoft.Terminal.Query.Extension
 
     [default_interface] runtimeclass ExtensionPalette : Windows.UI.Xaml.Controls.UserControl, Windows.UI.Xaml.Data.INotifyPropertyChanged
     {
-        ExtensionPalette();
-
-        void AIKeyAndEndpoint(String endpoint, String key);
+        ExtensionPalette(ILMProvider lmProvider);
 
         String ControlName { get; };
         String QueryBoxPlaceholderText { get; };
@@ -36,7 +36,6 @@ namespace Microsoft.Terminal.Query.Extension
         Windows.UI.Xaml.Controls.IconElement ResolvedIcon { get; };
 
         event Windows.Foundation.TypedEventHandler<ExtensionPalette, IInspectable> ActiveControlInfoRequested;
-        event Windows.Foundation.TypedEventHandler<ExtensionPalette, IInspectable> AIKeyAndEndpointRequested;
         event Windows.Foundation.TypedEventHandler<ExtensionPalette, String> InputSuggestionRequested;
         event Windows.Foundation.TypedEventHandler<ExtensionPalette, String> ExportChatHistoryRequested;
     }

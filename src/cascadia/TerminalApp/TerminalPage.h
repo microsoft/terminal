@@ -229,9 +229,13 @@ namespace winrt::TerminalApp::implementation
         Windows::UI::Xaml::Controls::Grid _tabContent{ nullptr };
         Microsoft::UI::Xaml::Controls::SplitButton _newTabButton{ nullptr };
         winrt::TerminalApp::ColorPickupFlyout _tabColorPicker{ nullptr };
+        winrt::Microsoft::Terminal::Query::Extension::ILMProvider _lmProvider{ nullptr };
         winrt::Microsoft::Terminal::Query::Extension::ExtensionPalette _extensionPalette{ nullptr };
         winrt::Windows::UI::Xaml::FrameworkElement::Loaded_revoker _extensionPaletteLoadedRevoker;
         Microsoft::Terminal::Settings::Model::CascadiaSettings _settings{ nullptr };
+
+        winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings::AzureOpenAISettingChanged_revoker _azureOpenAISettingChangedRevoker;
+        void _setAzureOpenAIAuth();
 
         Windows::Foundation::Collections::IObservableVector<TerminalApp::TabBase> _tabs;
         Windows::Foundation::Collections::IObservableVector<TerminalApp::TabBase> _mruTabs;
