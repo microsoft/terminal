@@ -6,6 +6,7 @@
 
 #include <til/unicode.h>
 
+#include "directio.h"
 #include "handle.h" // LockConsole
 #include "output.h" // CloseConsoleProcessState
 #include "../interactivity/inc/ServiceLocator.hpp"
@@ -788,5 +789,53 @@ void VtIo::Writer::WriteInfos(til::point target, std::span<const CHAR_INFO> info
         {
             WriteUCS2(SanitizeUCS2(ch));
         } while (--repeat);
+    }
+}
+
+void VtIo::Writer::WriteScreenInfo(SCREEN_INFORMATION& newContext, til::size oldSize) const
+{
+    const auto area = static_cast<size_t>(oldSize.width * oldSize.height);
+
+    auto& main = newContext.GetMainBuffer();
+    auto& alt = newContext.GetActiveBuffer();
+    const auto hasAltBuffer = &alt != &main;
+
+    // TODO GH#5094: This could use xterm's XTWINOPS "\e[8;<height>;<width>t" escape sequence here.
+    if (oldSize != main.GetBufferSize().Dimensions())
+    {
+        THROW_IF_NTSTATUS_FAILED(main.ResizeTraditional(oldSize));
+        main.SetViewportSize(&oldSize);
+    }
+    if (hasAltBuffer && oldSize != alt.GetBufferSize().Dimensions())
+    {
+        THROW_IF_NTSTATUS_FAILED(alt.ResizeTraditional(oldSize));
+        alt.SetViewportSize(&oldSize);
+    }
+
+    const auto request = Viewport::FromDimensions({}, oldSize);
+    Viewport read;
+    til::small_vector<CHAR_INFO, 1024> infos;
+    infos.resize(area, CHAR_INFO{ L' ', FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED });
+
+    const auto dumpScreenInfo = [&](SCREEN_INFORMATION& screenInfo) {
+        THROW_IF_FAILED(ReadConsoleOutputWImplHelper(screenInfo, infos, request, read));
+        for (til::CoordType i = 0; i < oldSize.height; i++)
+        {
+            WriteInfos({ 0, i }, { infos.begin() + i * oldSize.width, static_cast<size_t>(oldSize.width) });
+        }
+
+        WriteCUP(screenInfo.GetTextBuffer().GetCursor().GetPosition());
+        WriteAttributes(screenInfo.GetAttributes());
+        WriteDECTCEM(screenInfo.GetTextBuffer().GetCursor().IsVisible());
+        WriteDECAWM(WI_IsFlagSet(screenInfo.OutputMode, ENABLE_WRAP_AT_EOL_OUTPUT));
+    };
+
+    WriteASB(false);
+    dumpScreenInfo(main);
+
+    if (hasAltBuffer)
+    {
+        WriteASB(true);
+        dumpScreenInfo(alt);
     }
 }
