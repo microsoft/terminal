@@ -67,16 +67,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void KeyBindingViewModel::ToggleEditMode()
     {
-        // toggle edit mode
-        IsInEditMode(!_IsInEditMode);
-        if (_IsInEditMode)
-        {
-            // if we're in edit mode,
-            // - pre-populate the text box with the current keys
-            // - reset the combo box with the current action
-            ProposedKeys(_CurrentKeys);
-            ProposedAction(box_value(_CurrentAction));
-        }
+        IsInEditMode(true);
+        //// toggle edit mode
+        //IsInEditMode(!_IsInEditMode);
+        //if (_IsInEditMode)
+        //{
+        //    // if we're in edit mode,
+        //    // - pre-populate the text box with the current keys
+        //    // - reset the combo box with the current action
+        //    ProposedKeys(_CurrentKeys);
+        //    ProposedAction(box_value(_CurrentAction));
+        //}
     }
 
     void KeyBindingViewModel::AttemptAcceptChanges()
@@ -175,31 +176,32 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             if (senderVM.IsInEditMode())
             {
+                CurrentPage(ActionsSubPage::Edit);
                 // Ensure that...
                 // 1. we move focus to the edit mode controls
                 // 2. any actions that were newly added are removed
                 // 3. this is the only entry that is in edit mode
-                for (int32_t i = _KeyBindingList.Size() - 1; i >= 0; --i)
-                {
-                    const auto& kbdVM{ _KeyBindingList.GetAt(i) };
-                    if (senderVM == kbdVM)
-                    {
-                        // This is the view model entry that went into edit mode.
-                        // Emit an event to let the page know to move focus to
-                        // this VM's container.
-                        FocusContainer.raise(*this, senderVM);
-                    }
-                    else if (kbdVM.IsNewlyAdded())
-                    {
-                        // Remove any actions that were newly added
-                        _KeyBindingList.RemoveAt(i);
-                    }
-                    else
-                    {
-                        // Exit edit mode for all other containers
-                        get_self<KeyBindingViewModel>(kbdVM)->DisableEditMode();
-                    }
-                }
+                //for (int32_t i = _KeyBindingList.Size() - 1; i >= 0; --i)
+                //{
+                //    const auto& kbdVM{ _KeyBindingList.GetAt(i) };
+                //    if (senderVM == kbdVM)
+                //    {
+                //        // This is the view model entry that went into edit mode.
+                //        // Emit an event to let the page know to move focus to
+                //        // this VM's container.
+                //        FocusContainer.raise(*this, senderVM);
+                //    }
+                //    else if (kbdVM.IsNewlyAdded())
+                //    {
+                //        // Remove any actions that were newly added
+                //        _KeyBindingList.RemoveAt(i);
+                //    }
+                //    else
+                //    {
+                //        // Exit edit mode for all other containers
+                //        get_self<KeyBindingViewModel>(kbdVM)->DisableEditMode();
+                //    }
+                //}
             }
             else
             {

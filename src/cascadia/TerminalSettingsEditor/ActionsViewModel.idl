@@ -46,6 +46,12 @@ namespace Microsoft.Terminal.Settings.Editor
         event Windows.Foundation.TypedEventHandler<KeyBindingViewModel, Microsoft.Terminal.Control.KeyChord> DeleteKeyBindingRequested;
     }
 
+    enum ActionsSubPage
+    {
+        Base = 0,
+        Edit = 1
+    };
+
     runtimeclass ActionsViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged
     {
         ActionsViewModel(Microsoft.Terminal.Settings.Model.CascadiaSettings settings);
@@ -56,5 +62,7 @@ namespace Microsoft.Terminal.Settings.Editor
         IObservableVector<KeyBindingViewModel> KeyBindingList { get; };
         event Windows.Foundation.TypedEventHandler<Object, Object> FocusContainer;
         event Windows.Foundation.TypedEventHandler<Object, Object> UpdateBackground;
+
+        ActionsSubPage CurrentPage;
     }
 }

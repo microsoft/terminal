@@ -111,6 +111,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         til::typed_event<IInspectable, IInspectable> UpdateBackground;
 
         WINRT_PROPERTY(Windows::Foundation::Collections::IObservableVector<Editor::KeyBindingViewModel>, KeyBindingList);
+        VIEW_MODEL_OBSERVABLE_PROPERTY(ActionsSubPage, CurrentPage);
 
     private:
         bool _AutomationPeerAttached{ false };
