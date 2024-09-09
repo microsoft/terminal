@@ -54,13 +54,13 @@
                                         HorizontalAlignment="Right"
                                         VerticalAlignment="Center"
                                         Spacing="8">
-                                <Button Click="ClearAzureOpenAIKeyAndEndpoint_Click"
-                                        Style="{StaticResource DeleteButtonStyle}"
-                                        HorizontalAlignment="Center">
+                                <Button HorizontalAlignment="Center"
+                                        Click="ClearAzureOpenAIKeyAndEndpoint_Click"
+                                        Style="{StaticResource DeleteButtonStyle}">
                                     <TextBlock x:Uid="AISettings_ClearAzureOpenAIKeyAndEndpoint" />
                                 </Button>
-                                <Button Click="SetAzureOpenAIActive_Click"
-                                        HorizontalAlignment="Center"
+                                <Button HorizontalAlignment="Center"
+                                        Click="SetAzureOpenAIActive_Click"
                                         Visibility="{x:Bind mtu:Converters.InvertedBooleanToVisibility(ViewModel.AzureOpenAIActive), Mode=OneWay}">
                                     <TextBlock x:Uid="AISettings_SetActiveProvider" />
                                 </Button>
@@ -145,7 +145,7 @@
                                          Grid.Row="4"
                                          HorizontalAlignment="Stretch"
                                          VerticalAlignment="Center" />
-                                <Button Grid.Row="5"
+                            <Button Grid.Row="5"
                                     HorizontalAlignment="Right"
                                     VerticalAlignment="Center"
                                     Click="StoreAzureOpenAIKeyAndEndpoint_Click"
@@ -171,13 +171,13 @@
                                         HorizontalAlignment="Right"
                                         VerticalAlignment="Center"
                                         Spacing="8">
-                                <Button Click="ClearOpenAIKey_Click"
-                                        Style="{StaticResource DeleteButtonStyle}"
-                                        HorizontalAlignment="Center">
+                                <Button HorizontalAlignment="Center"
+                                        Click="ClearOpenAIKey_Click"
+                                        Style="{StaticResource DeleteButtonStyle}">
                                     <TextBlock x:Uid="AISettings_ClearOpenAIKey" />
                                 </Button>
-                                <Button Click="SetOpenAIActive_Click"
-                                        HorizontalAlignment="Center"
+                                <Button HorizontalAlignment="Center"
+                                        Click="SetOpenAIActive_Click"
                                         Visibility="{x:Bind mtu:Converters.InvertedBooleanToVisibility(ViewModel.OpenAIActive), Mode=OneWay}">
                                     <TextBlock x:Uid="AISettings_SetActiveProvider" />
                                 </Button>
@@ -211,8 +211,8 @@
                                                              Glyph="&#xE625;" />
                                     </muxc:InfoBadge.IconSource>
                                 </muxc:InfoBadge>
-                                <RichTextBlock TextWrapping="WrapWholeWords"
-                                               MaxWidth="900">
+                                <RichTextBlock MaxWidth="900"
+                                               TextWrapping="WrapWholeWords">
                                     <Paragraph>
                                         <Run x:Name="AISettings_OpenAIDescriptionPart1" /><Hyperlink NavigateUri="https://go.microsoft.com/fwlink/?linkid=2251839"
                                                    TextDecorations="None">

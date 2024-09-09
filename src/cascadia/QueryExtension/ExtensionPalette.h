@@ -7,8 +7,6 @@
 #include "ChatMessage.g.h"
 #include "GroupedChatMessages.g.h"
 
-#include "AzureLLMProvider.h"
-
 namespace winrt::Microsoft::Terminal::Query::Extension::implementation
 {
     struct ExtensionPalette : ExtensionPaletteT<ExtensionPalette>
