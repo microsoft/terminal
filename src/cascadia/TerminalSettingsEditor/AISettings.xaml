@@ -297,9 +297,9 @@
                                         <Run x:Uid="AISettings_GithubCopilotPrerequisite" />
                                         <LineBreak />
                                         <LineBreak />
-                                        <Run x:Name="AISettings_GithubCopilotSignUpAndLearnMorePart1" /><Hyperlink NavigateUri="https://go.microsoft.com/fwlink/?linkid=2251839"
+                                        <Run x:Name="AISettings_GithubCopilotSignUpAndLearnMorePart1" /><Hyperlink NavigateUri="https://go.microsoft.com/fwlink/?linkid=2285598"
                                                    TextDecorations="None"><Run x:Name="AISettings_GithubCopilotSignUpLinkText" />
-                                        </Hyperlink><Run x:Name="AISettings_GithubCopilotSignUpAndLearnMorePart2" /><Hyperlink NavigateUri="https://go.microsoft.com/fwlink/?linkid=2251839"
+                                        </Hyperlink><Run x:Name="AISettings_GithubCopilotSignUpAndLearnMorePart2" /><Hyperlink NavigateUri="https://go.microsoft.com/fwlink/?linkid=2285390"
                                                    TextDecorations="None"><Run x:Name="AISettings_GithubCopilotLearnMoreLinkText" />
                                         </Hyperlink><Run x:Name="AISettings_GithubCopilotSignUpAndLearnMorePart3" />
                                     </Paragraph>
