@@ -61,6 +61,16 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         AISettings_OpenAIDescriptionPart1().Text(openAIDescription.at(0));
         AISettings_OpenAIDescriptionLinkText().Text(openAIDescription.at(1));
         AISettings_OpenAIDescriptionPart2().Text(openAIDescription.at(2));
+
+        std::array<std::wstring, 2> githubCopilotDescriptionPlaceholders{ RS_(L"AISettings_GithubCopilotSignUpLinkText").c_str(), RS_(L"AISettings_GithubCopilotLearnMoreLinkText").c_str() };
+        std::span<std::wstring> githubCopilotDescriptionPlaceholdersSpan{ githubCopilotDescriptionPlaceholders };
+        const auto githubCopilotDescription = ::Microsoft::Console::Utils::SplitResourceStringWithPlaceholders(RS_(L"AISettings_GithubCopilotSignUpAndLearnMore"), githubCopilotDescriptionPlaceholdersSpan);
+
+        AISettings_GithubCopilotSignUpAndLearnMorePart1().Text(githubCopilotDescription.at(0));
+        AISettings_GithubCopilotSignUpLinkText().Text(githubCopilotDescription.at(1));
+        AISettings_GithubCopilotSignUpAndLearnMorePart2().Text(githubCopilotDescription.at(2));
+        AISettings_GithubCopilotLearnMoreLinkText().Text(githubCopilotDescription.at(3));
+        AISettings_GithubCopilotSignUpAndLearnMorePart3().Text(githubCopilotDescription.at(4));
     }
 
     void AISettings::OnNavigatedTo(const NavigationEventArgs& e)

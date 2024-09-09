@@ -707,6 +707,26 @@
     <value>Learn More</value>
     <comment>The text of the hyperlink that directs the user to learn more about Terminal Chat.</comment>
   </data>
+  <data name="AISettings_GithubCopilotPrerequisite.Text" xml:space="preserve">
+    <value>GitHub Copilot integration with Terminal Chat requires an active GitHub Copilot subscription.</value>
+    <comment>The prerequisite the user needs to use Github Copilot within Terminal.</comment>
+  </data>
+  <data name="AISettings_GithubCopilotSignUpAndLearnMore" xml:space="preserve">
+    <value>Sign up for a {0} today or request GitHub Copilot access from your enterprise admin. You can read more about GitHub Copilot offerings at {1}.</value>
+    <comment>Information regarding how the user can learn more about GitHub Copilot and sign up for it. {0} will be replaced by AISettings_GithubCopilotSignUpLinkText and {1} will be replaced by AISettings_GithubCopilotLearnMoreLinkText.</comment>
+  </data>
+  <data name="AISettings_GithubCopilotSignUpLinkText" xml:space="preserve">
+    <value>30-day GitHub Copilot free trial</value>
+    <comment>The text of the hyperlink that directs the user to sign up for Github Copilot.</comment>
+  </data>
+  <data name="AISettings_GithubCopilotLearnMoreLinkText" xml:space="preserve">
+    <value>github.com/features/copilot</value>
+    <comment>The text of the hyperlink that directs the user to learn more about Github Copilot.</comment>
+  </data>
+  <data name="AISettings_OpenAILearnMoreLinkText" xml:space="preserve">
+    <value>Learn More</value>
+    <comment>The text of the hyperlink that directs the user to learn more about Terminal Chat.</comment>
+  </data>
   <data name="AISettings_GithubCopilot.Header" xml:space="preserve">
     <value>Github Copilot</value>
     <comment>Header for the text box that allows the user to configure access to Github Copilot.</comment>
