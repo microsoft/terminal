@@ -8,7 +8,7 @@
 
   <!-- TAEF -->
   <PropertyGroup>
-    <TAEFPackagePathRoot>$(MSBuildThisFileDirectory)..\packages\Microsoft.Taef.10.60.210621002</TAEFPackagePathRoot>
+    <TAEFPackagePathRoot>$(MSBuildThisFileDirectory)..\packages\Microsoft.Taef.10.93.240607003</TAEFPackagePathRoot>
   </PropertyGroup>
 
   <!-- AppiumWebDriver -->
@@ -38,5 +38,10 @@
 
   <!-- WinUI (which depends on WebView2 as of 2.8.0) -->
   <Import Project="$(MSBuildThisFileDirectory)..\packages\Microsoft.UI.Xaml.2.8.4\build\native\Microsoft.UI.Xaml.props" Condition="'$(TerminalMUX)' == 'true' and Exists('$(MSBuildThisFileDirectory)..\packages\Microsoft.UI.Xaml.2.8.4\build\native\Microsoft.UI.Xaml.props')" />
+
+  <!-- WinGet Interop -->
+  <PropertyGroup>
+    <WinGetPackageRoot>$(MSBuildThisFileDirectory)..\packages\Microsoft.WindowsPackageManager.ComInterop.1.8.1911\</WinGetPackageRoot>
+  </PropertyGroup>
 
 </Project>

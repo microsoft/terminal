@@ -82,19 +82,12 @@
 #define ENABLE_INTSAFE_SIGNED_FUNCTIONS
 #include <intsafe.h>
 
-// LibPopCnt - Fast C/C++ bit population count library (on bits in an array)
-#include <libpopcnt.h>
-
-// Dynamic Bitset (optional dependency on LibPopCnt for perf at bit counting)
-// Variable-size compressed-storage header-only bit flag storage library.
-#pragma warning(push)
-#pragma warning(disable:4702) // unreachable code
-#include <dynamic_bitset.hpp>
-#pragma warning(pop)
-
 // {fmt}, a C++20-compatible formatting library
-#include <fmt/format.h>
+#pragma warning(push)
+#pragma warning(disable: 4702) // unreachable code
 #include <fmt/compile.h>
+#include <fmt/xchar.h>
+#pragma warning(pop)
 
 #define USE_INTERVAL_TREE_NAMESPACE
 #include <IntervalTree.h>

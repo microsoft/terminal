@@ -375,6 +375,18 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         WindowClosed.raise(s, e);
     }
 
+    void WindowManager::QuitAll()
+    {
+        if (_monarch)
+        {
+            try
+            {
+                _monarch.QuitAll();
+            }
+            CATCH_LOG()
+        }
+    }
+
     void WindowManager::SignalClose(const Remoting::Peasant& peasant)
     {
         if (_monarch)
@@ -430,16 +442,16 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         winrt::get_self<implementation::Peasant>(peasant)->ActiveTabTitle(title);
     }
 
-    winrt::fire_and_forget WindowManager::RequestMoveContent(winrt::hstring window,
-                                                             winrt::hstring content,
-                                                             uint32_t tabIndex,
-                                                             Windows::Foundation::IReference<Windows::Foundation::Rect> windowBounds)
+    safe_void_coroutine WindowManager::RequestMoveContent(winrt::hstring window,
+                                                          winrt::hstring content,
+                                                          uint32_t tabIndex,
+                                                          Windows::Foundation::IReference<Windows::Foundation::Rect> windowBounds)
     {
         co_await winrt::resume_background();
         _monarch.RequestMoveContent(window, content, tabIndex, windowBounds);
     }
 
-    winrt::fire_and_forget WindowManager::RequestSendContent(Remoting::RequestReceiveContentArgs args)
+    safe_void_coroutine WindowManager::RequestSendContent(Remoting::RequestReceiveContentArgs args)
     {
         co_await winrt::resume_background();
         _monarch.RequestSendContent(args);

@@ -14,13 +14,22 @@ namespace Microsoft.Terminal.Query.Extension
 
         // auth related functions
         void SetAuthentication(Windows.Foundation.Collections.ValueSet authValues);
-        event Windows.Foundation.TypedEventHandler<ILMProvider, String> AuthChanged;
+        event Windows.Foundation.TypedEventHandler<ILMProvider, Windows.Foundation.Collections.ValueSet> AuthChanged;
     }
+
+    enum ErrorTypes
+    {
+        None = 0,
+        InvalidAuth,
+        InvalidModel,
+        FromProvider,
+        Unknown
+    };
 
     interface IResponse
     {
         String Message { get; };
-        Boolean IsError { get; };
+        ErrorTypes ErrorType { get; };
     };
 
     interface IContext

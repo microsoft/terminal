@@ -9,8 +9,6 @@
 #include "ExtensionPalette.g.cpp"
 #include "ChatMessage.g.cpp"
 #include "GroupedChatMessages.g.cpp"
-#include "TerminalContext.g.cpp"
-#include "SystemResponse.g.cpp"
 
 using namespace winrt::Windows::Foundation;
 using namespace winrt::Windows::Foundation::Collections;
@@ -135,7 +133,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         }
         else
         {
-            result = winrt::make<SystemResponse>(RS_(L"CouldNotFindKeyErrorMessage"), true);
+            result = winrt::make<SystemResponse>(RS_(L"CouldNotFindKeyErrorMessage"), ErrorTypes::InvalidAuth);
         }
 
         // Switch back to the foreground thread because we are changing the UI now
@@ -147,7 +145,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
             IsProgressRingActive(false);
 
             // Append the result to our list, clear the query box
-            _splitResponseAndAddToChatHelper(result.Message(), result.IsError());
+            _splitResponseAndAddToChatHelper(result.Message(), result.ErrorType());
         }
 
         co_return;
@@ -167,7 +165,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         return winrt::to_hstring(time_str);
     }
 
-    void ExtensionPalette::_splitResponseAndAddToChatHelper(const winrt::hstring& response, const bool isError)
+    void ExtensionPalette::_splitResponseAndAddToChatHelper(const winrt::hstring& response, const ErrorTypes errorType)
     {
         // this function is dependent on the AI response separating code blocks with
         // newlines and "```". OpenAI seems to naturally conform to this, though
@@ -219,7 +217,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
             g_hQueryExtensionProvider,
             "AIResponseReceived",
             TraceLoggingDescription("Event emitted when the user receives a response to their query"),
-            TraceLoggingBoolean(!isError, "ResponseReceivedFromAI", "True if the response came from the AI, false if the response was generated in Terminal or was a server error"),
+            TraceLoggingBoolean(errorType == ErrorTypes::None, "ResponseReceivedFromAI", "True if the response came from the AI, false if the response was generated in Terminal or was a server error"),
             TraceLoggingKeyword(MICROSOFT_KEYWORD_CRITICAL_DATA),
             TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
     }
@@ -255,6 +253,26 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
             _lmProvider.SetSystemPrompt(systemPrompt);
         }
         _queryBox().Focus(FocusState::Programmatic);
+    }
+
+    void ExtensionPalette::_exportMessagesToFile(const Windows::Foundation::IInspectable& /*sender*/,
+                                                 const Windows::UI::Xaml::RoutedEventArgs& /*args*/)
+    {
+        std::wstring concatenatedMessages{};
+        for (const auto groupedMessage : _messages)
+        {
+            concatenatedMessages += groupedMessage.IsQuery() ? RS_(L"UserString") : RS_(L"AssistantString");
+            concatenatedMessages += L":\n";
+            for (const auto chatMessage : groupedMessage)
+            {
+                concatenatedMessages += chatMessage.as<ChatMessage>()->MessageContent();
+                concatenatedMessages += L"\n";
+            }
+        }
+        if (!concatenatedMessages.empty())
+        {
+            _ExportChatHistoryRequestedHandlers(*this, concatenatedMessages);
+        }
     }
 
     // Method Description:

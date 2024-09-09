@@ -40,6 +40,7 @@
 #include <winrt/Windows.UI.Xaml.Automation.Peers.h>
 #include <winrt/Windows.UI.Xaml.Controls.h>
 #include <winrt/Windows.UI.Xaml.Controls.Primitives.h>
+#include <winrt/Windows.UI.Xaml.Shapes.h>
 #include <winrt/Windows.UI.Xaml.Data.h>
 #include <winrt/Windows.UI.Xaml.Documents.h>
 #include <winrt/Windows.UI.Xaml.Input.h>
@@ -81,7 +82,7 @@ TRACELOGGING_DECLARE_PROVIDER(g_hTerminalAppProvider);
 #include <shellapi.h>
 #include <shobjidl_core.h>
 
-#include <CLI11/CLI11.hpp>
+#include <CLI/CLI.hpp>
 
 // Manually include til after we include Windows.Foundation to give it winrt superpowers
 #include "til.h"

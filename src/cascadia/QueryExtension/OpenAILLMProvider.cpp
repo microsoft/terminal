@@ -7,7 +7,6 @@
 #include "LibraryResources.h"
 
 #include "OpenAILLMProvider.g.cpp"
-#include "OpenAIResponse.g.cpp"
 
 using namespace winrt::Windows::Foundation;
 using namespace winrt::Windows::Foundation::Collections;
@@ -54,10 +53,9 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
 
     winrt::Windows::Foundation::IAsyncOperation<Extension::IResponse> OpenAILLMProvider::GetResponseAsync(const winrt::hstring userPrompt)
     {
-        // Use a flag for whether the response the user receives is an error message
-        // we pass this flag back to the caller so they can handle it appropriately (specifically, ExtensionPalette will send the correct telemetry event)
-        // there is only one case downstream from here that sets this flag to false, so start with it being true
-        bool isError{ true };
+        // Use the ErrorTypes enum to flag whether the response the user receives is an error message
+        // we pass this enum back to the caller so they can handle it appropriately (specifically, ExtensionPalette will send the correct telemetry event)
+        ErrorTypes errorType{ ErrorTypes::None };
         hstring message{};
 
         // Make sure we are on the background thread for the http request
@@ -100,6 +98,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
             {
                 const auto errorObject = jsonResult.GetNamedObject(L"error");
                 message = errorObject.GetNamedString(L"message");
+                errorType = ErrorTypes::FromProvider;
             }
             else
             {
@@ -107,12 +106,12 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
                 const auto firstChoice = choices.GetAt(0).GetObject();
                 const auto messageObject = firstChoice.GetNamedObject(L"message");
                 message = messageObject.GetNamedString(L"content");
-                isError = false;
             }
         }
         catch (...)
         {
             message = RS_(L"UnknownErrorMessage");
+            errorType = ErrorTypes::Unknown;
         }
 
         // Also make a new entry in our jsonMessages list, so the AI knows the full conversation so far
@@ -121,6 +120,6 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         responseMessageObject.Insert(L"content", WDJ::JsonValue::CreateStringValue(message));
         _jsonMessages.Append(responseMessageObject);
 
-        co_return winrt::make<OpenAIResponse>(message, isError);
+        co_return winrt::make<OpenAIResponse>(message, errorType);
     }
 }

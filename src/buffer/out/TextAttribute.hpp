@@ -93,7 +93,6 @@ public:
     }
 
     static void SetLegacyDefaultAttributes(const WORD defaultAttributes) noexcept;
-    static TextAttribute StripErroneousVT16VersionsOfLegacyDefaults(const TextAttribute& attribute) noexcept;
     WORD GetLegacyAttributes() const noexcept;
 
     bool IsTopHorizontalDisplayed() const noexcept;

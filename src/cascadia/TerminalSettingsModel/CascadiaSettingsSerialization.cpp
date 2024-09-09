@@ -20,9 +20,6 @@
 #include "SshHostGenerator.h"
 #endif
 
-// userDefault.h is like the above, but with a default template for the user's settings.json.
-#include <LegacyProfileGeneratorNamespaces.h>
-
 #include "ApplicationState.h"
 #include "DefaultTerminal.h"
 #include "FileUtils.h"
@@ -81,7 +78,7 @@ static auto extractValueFromTaskWithoutMainThreadAwait(TTask&& task) -> decltype
     std::optional<decltype(task.get())> finalVal;
     til::latch latch{ 1 };
 
-    const auto _ = [&]() -> winrt::fire_and_forget {
+    const auto _ = [&]() -> safe_void_coroutine {
         const auto cleanup = wil::scope_exit([&]() {
             latch.count_down();
         });
@@ -112,6 +109,7 @@ void ParsedSettings::clear()
     profilesByGuid.clear();
     colorSchemes.clear();
     fixupsAppliedDuringLoad = false;
+    themesChangeLog.clear();
 }
 
 // This is a convenience method used by the CascadiaSettings constructor.
@@ -237,8 +235,11 @@ void SettingsLoader::FindFragmentsAndMergeIntoUserSettings()
             {
                 try
                 {
-                    const auto content = til::io::read_file_as_utf8_string(fragmentExt.path());
-                    _parseFragment(source, content, fragmentSettings);
+                    const auto content = til::io::read_file_as_utf8_string_if_exists(fragmentExt.path());
+                    if (!content.empty())
+                    {
+                        _parseFragment(source, content, fragmentSettings);
+                    }
                 }
                 CATCH_LOG();
             }
@@ -462,6 +463,11 @@ bool SettingsLoader::FixupUserSettings()
         CommandlinePatch{ DEFAULT_WINDOWS_POWERSHELL_GUID, L"powershell.exe", L"%SystemRoot%\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" },
     };
 
+    static constexpr std::array iconsToClearFromVisualStudioProfiles{
+        std::wstring_view{ L"ms-appx:///ProfileIcons/{61c54bbd-c2c6-5271-96e7-009a87ff44bf}.png" },
+        std::wstring_view{ L"ms-appx:///ProfileIcons/{0caa0dad-35be-5f56-a8ff-afceeeaa6101}.png" },
+    };
+
     auto fixedUp = userSettings.fixupsAppliedDuringLoad;
     fixedUp = userSettings.globals->FixupsAppliedDuringLoad() || fixedUp;
 
@@ -470,28 +476,39 @@ bool SettingsLoader::FixupUserSettings()
     {
         fixedUp = RemapColorSchemeForProfile(profile) || fixedUp;
 
-        if (!profile->HasCommandline())
+        if (profile->HasCommandline())
         {
-            continue;
+            for (const auto& patch : commandlinePatches)
+            {
+                if (profile->Guid() == patch.guid && til::equals_insensitive_ascii(profile->Commandline(), patch.before))
+                {
+                    profile->ClearCommandline();
+
+                    // GH#12842:
+                    // With the commandline field on the user profile gone, it's actually unknown what
+                    // commandline it'll inherit, since a user profile can have multiple parents. We have to
+                    // make sure we restore the correct commandline in case we don't inherit the expected one.
+                    if (profile->Commandline() != patch.after)
+                    {
+                        profile->Commandline(winrt::hstring{ patch.after });
+                    }
+
+                    fixedUp = true;
+                    break;
+                }
+            }
         }
 
-        for (const auto& patch : commandlinePatches)
+        if (profile->HasIcon() && profile->HasSource() && profile->Source() == VisualStudioGenerator::Namespace)
         {
-            if (profile->Guid() == patch.guid && til::equals_insensitive_ascii(profile->Commandline(), patch.before))
+            for (auto&& icon : iconsToClearFromVisualStudioProfiles)
             {
-                profile->ClearCommandline();
-
-                // GH#12842:
-                // With the commandline field on the user profile gone, it's actually unknown what
-                // commandline it'll inherit, since a user profile can have multiple parents. We have to
-                // make sure we restore the correct commandline in case we don't inherit the expected one.
-                if (profile->Commandline() != patch.after)
+                if (profile->Icon() == icon)
                 {
-                    profile->Commandline(winrt::hstring{ patch.after });
+                    profile->ClearIcon();
+                    fixedUp = true;
+                    break;
                 }
-
-                fixedUp = true;
-                break;
             }
         }
     }
@@ -553,12 +570,12 @@ void SettingsLoader::_rethrowSerializationExceptionWithLocationInfo(const JsonUt
     const auto [line, column] = _lineAndColumnFromPosition(settingsString, static_cast<size_t>(e.jsonValue.getOffsetStart()));
 
     fmt::memory_buffer msg;
-    fmt::format_to(msg, "* Line {}, Column {}", line, column);
+    fmt::format_to(std::back_inserter(msg), "* Line {}, Column {}", line, column);
     if (e.key)
     {
-        fmt::format_to(msg, " ({})", *e.key);
+        fmt::format_to(std::back_inserter(msg), " ({})", *e.key);
     }
-    fmt::format_to(msg, "\n  Have: {}\n  Expected: {}\0", jsonValueAsString, e.expectedType);
+    fmt::format_to(std::back_inserter(msg), "\n  Have: {}\n  Expected: {}\0", jsonValueAsString, e.expectedType);
 
     throw SettingsTypedDeserializationException{ msg.data() };
 }
@@ -641,6 +658,12 @@ void SettingsLoader::_parse(const OriginTag origin, const winrt::hstring& source
                     // Themes don't support layering - we don't want the user
                     // versions of these themes overriding the built-in ones.
                     continue;
+                }
+
+                if (origin != OriginTag::InBox)
+                {
+                    static std::string themesContext{ "themes" };
+                    theme->LogSettingChanges(settings.themesChangeLog, themesContext);
                 }
                 settings.globals->AddTheme(*theme);
             }
@@ -934,7 +957,7 @@ Model::CascadiaSettings CascadiaSettings::LoadAll()
 try
 {
     FILETIME lastWriteTime{};
-    auto settingsString = til::io::read_file_as_utf8_string_if_exists(_settingsPath(), false, &lastWriteTime).value_or(std::string{});
+    auto settingsString = til::io::read_file_as_utf8_string_if_exists(_settingsPath(), false, &lastWriteTime);
     auto firstTimeSetup = settingsString.empty();
 
     // If it's the firstTimeSetup and a preview build, then try to
@@ -947,7 +970,7 @@ try
         {
             try
             {
-                settingsString = til::io::read_file_as_utf8_string_if_exists(_releaseSettingsPath()).value_or(std::string{});
+                settingsString = til::io::read_file_as_utf8_string_if_exists(_releaseSettingsPath());
                 releaseSettingExists = settingsString.empty() ? false : true;
             }
             catch (...)
@@ -1206,6 +1229,7 @@ CascadiaSettings::CascadiaSettings(SettingsLoader&& loader) :
     _allProfiles = winrt::single_threaded_observable_vector(std::move(allProfiles));
     _activeProfiles = winrt::single_threaded_observable_vector(std::move(activeProfiles));
     _warnings = winrt::single_threaded_vector(std::move(warnings));
+    _themesChangeLog = std::move(loader.userSettings.themesChangeLog);
 
     _resolveDefaultProfile();
     _resolveNewTabMenuProfiles();
@@ -1243,7 +1267,7 @@ winrt::hstring CascadiaSettings::_calculateHash(std::string_view settings, const
 {
     const auto fileHash = til::hash(settings);
     const ULARGE_INTEGER fileTime{ lastWriteTime.dwLowDateTime, lastWriteTime.dwHighDateTime };
-    const auto hash = fmt::format(L"{:016x}-{:016x}", fileHash, fileTime.QuadPart);
+    const auto hash = fmt::format(FMT_COMPILE(L"{:016x}-{:016x}"), fileHash, fileTime.QuadPart);
     return winrt::hstring{ hash };
 }
 
@@ -1578,5 +1602,75 @@ void CascadiaSettings::_resolveNewTabMenuProfilesSet(const IVector<Model::NewTab
             break;
         }
         }
+    }
+}
+
+void CascadiaSettings::LogSettingChanges(bool isJsonLoad) const
+{
+#ifndef _DEBUG
+    // Only do this if we're actually being sampled
+    if (!TraceLoggingProviderEnabled(g_hSettingsModelProvider, 0, MICROSOFT_KEYWORD_MEASURES))
+    {
+        return;
+    }
+#endif // !_DEBUG
+
+    // aggregate setting changes
+    std::set<std::string> changes;
+    static constexpr std::string_view globalContext{ "global" };
+    _globals->LogSettingChanges(changes, globalContext);
+
+    // Actions are not expected to change when loaded from the settings UI
+    static constexpr std::string_view actionContext{ "action" };
+    winrt::get_self<implementation::ActionMap>(_globals->ActionMap())->LogSettingChanges(changes, actionContext);
+
+    static constexpr std::string_view profileContext{ "profile" };
+    for (const auto& profile : _allProfiles)
+    {
+        winrt::get_self<Profile>(profile)->LogSettingChanges(changes, profileContext);
+    }
+
+    static constexpr std::string_view profileDefaultsContext{ "profileDefaults" };
+    _baseLayerProfile->LogSettingChanges(changes, profileDefaultsContext);
+
+    // Themes are not expected to change when loaded from the settings UI
+    // DO NOT CALL Theme::LogSettingChanges!!
+    // We already collected the changes when we loaded the JSON
+    for (const auto& change : _themesChangeLog)
+    {
+        changes.insert(change);
+    }
+
+    // report changes
+    for (const auto& change : changes)
+    {
+#ifndef _DEBUG
+        // A `isJsonLoad ? "JsonSettingsChanged" : "UISettingsChanged"`
+        //   would be nice, but that apparently isn't allowed in the macro below.
+        // Also, there's guidance to not send too much data all in one event,
+        //   so we'll be sending a ton of events here.
+        if (isJsonLoad)
+        {
+            TraceLoggingWrite(g_hSettingsModelProvider,
+                              "JsonSettingsChanged",
+                              TraceLoggingDescription("Event emitted when settings.json change"),
+                              TraceLoggingValue(change.data()),
+                              TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+                              TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
+        }
+        else
+        {
+            TraceLoggingWrite(g_hSettingsModelProvider,
+                              "UISettingsChanged",
+                              TraceLoggingDescription("Event emitted when settings change via the UI"),
+                              TraceLoggingValue(change.data()),
+                              TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+                              TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
+        }
+#else
+        OutputDebugStringA(isJsonLoad ? "JsonSettingsChanged - " : "UISettingsChanged - ");
+        OutputDebugStringA(change.data());
+        OutputDebugStringA("\n");
+#endif // !_DEBUG
     }
 }

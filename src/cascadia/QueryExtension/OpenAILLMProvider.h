@@ -4,7 +4,6 @@
 #pragma once
 
 #include "OpenAILLMProvider.g.h"
-#include "OpenAIResponse.g.h"
 
 namespace winrt::Microsoft::Terminal::Query::Extension::implementation
 {
@@ -19,7 +18,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         winrt::Windows::Foundation::IAsyncOperation<Extension::IResponse> GetResponseAsync(const winrt::hstring userPrompt);
 
         void SetAuthentication(const Windows::Foundation::Collections::ValueSet& authValues);
-        TYPED_EVENT(AuthChanged, winrt::Microsoft::Terminal::Query::Extension::ILMProvider, winrt::hstring);
+        TYPED_EVENT(AuthChanged, winrt::Microsoft::Terminal::Query::Extension::ILMProvider, Windows::Foundation::Collections::ValueSet);
 
     private:
         winrt::hstring _AIKey;
@@ -30,22 +29,18 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         winrt::Windows::Data::Json::JsonArray _jsonMessages;
     };
 
-    struct OpenAIResponse : OpenAIResponseT<OpenAIResponse>
+    struct OpenAIResponse : public winrt::implements<OpenAIResponse, winrt::Microsoft::Terminal::Query::Extension::IResponse>
     {
-        OpenAIResponse(const winrt::hstring& message, const bool isError) :
-            _message{ message },
-            _isError{ isError } {}
-        winrt::hstring Message() { return _message; };
-        bool IsError() { return _isError; };
+        OpenAIResponse(const winrt::hstring& message, const winrt::Microsoft::Terminal::Query::Extension::ErrorTypes errorType) :
+            Message{ message },
+            ErrorType{ errorType } {}
 
-    private:
-        winrt::hstring _message;
-        bool _isError;
+        til::property<winrt::hstring> Message;
+        til::property<winrt::Microsoft::Terminal::Query::Extension::ErrorTypes> ErrorType;
     };
 }
 
 namespace winrt::Microsoft::Terminal::Query::Extension::factory_implementation
 {
     BASIC_FACTORY(OpenAILLMProvider);
-    BASIC_FACTORY(OpenAIResponse);
 }

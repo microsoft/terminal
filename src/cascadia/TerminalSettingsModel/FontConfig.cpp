@@ -83,21 +83,67 @@ void FontConfig::LayerJson(const Json::Value& json)
     {
         // A font object is defined, use that
         const auto fontInfoJson = json[JsonKey(FontInfoKey)];
-#define FONT_SETTINGS_LAYER_JSON(type, name, jsonKey, ...) \
-    JsonUtils::GetValueForKey(fontInfoJson, jsonKey, _##name);
+#define FONT_SETTINGS_LAYER_JSON(type, name, jsonKey, ...)     \
+    JsonUtils::GetValueForKey(fontInfoJson, jsonKey, _##name); \
+    _logSettingIfSet(jsonKey, _##name.has_value());
+
         MTSM_FONT_SETTINGS(FONT_SETTINGS_LAYER_JSON)
 #undef FONT_SETTINGS_LAYER_JSON
     }
     else
     {
         // No font object is defined
+        // Log settings as if they were a part of the font object
         JsonUtils::GetValueForKey(json, LegacyFontFaceKey, _FontFace);
+        _logSettingIfSet("face", _FontFace.has_value());
+
         JsonUtils::GetValueForKey(json, LegacyFontSizeKey, _FontSize);
+        _logSettingIfSet("size", _FontSize.has_value());
+
         JsonUtils::GetValueForKey(json, LegacyFontWeightKey, _FontWeight);
+        _logSettingIfSet("weight", _FontWeight.has_value());
     }
 }
 
 winrt::Microsoft::Terminal::Settings::Model::Profile FontConfig::SourceProfile()
 {
     return _sourceProfile.get();
+}
+
+void FontConfig::_logSettingSet(const std::string_view& setting)
+{
+    if (setting == "axes" && _FontAxes.has_value())
+    {
+        for (const auto& [mapKey, _] : _FontAxes.value())
+        {
+            _changeLog.emplace(fmt::format(FMT_COMPILE("{}.{}"), setting, til::u16u8(mapKey)));
+        }
+    }
+    else if (setting == "features" && _FontFeatures.has_value())
+    {
+        for (const auto& [mapKey, _] : _FontFeatures.value())
+        {
+            _changeLog.emplace(fmt::format(FMT_COMPILE("{}.{}"), setting, til::u16u8(mapKey)));
+        }
+    }
+    else
+    {
+        _changeLog.emplace(setting);
+    }
+}
+
+void FontConfig::_logSettingIfSet(const std::string_view& setting, const bool isSet)
+{
+    if (isSet)
+    {
+        _logSettingSet(setting);
+    }
+}
+
+void FontConfig::LogSettingChanges(std::set<std::string>& changes, const std::string_view& context) const
+{
+    for (const auto& setting : _changeLog)
+    {
+        changes.emplace(fmt::format(FMT_COMPILE("{}.{}"), context, setting));
+    }
 }

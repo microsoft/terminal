@@ -56,7 +56,14 @@ Il s’agit d’un projet open source et nous encourageons la participation à l
   <ReleaseNotes>
     Version __VERSION_NUMBER__
 
-Consultez la page des versions de GitHub pour plus d’informations.
+- Le terminal mémorisera désormais le contenu de la fenêtre lorsque vous utiliserez la restauration de session.
+- Vous pouvez désormais utiliser plusieurs polices en même temps.
+- Les personnages dessinés en boîte sont désormais rendus avec une perfection de pixel.
+- L'expérience d'utilisation d'un IME dans le Terminal a été considérablement améliorée.
+- Les schémas de couleurs à l'intérieur de votre fichier JSON seront désormais beaucoup plus simples.
+- Un certain nombre de bugs concernant la gestion des URL, les lignes à double largeur, le retour à la ligne, etc. ont été corrigés.
+
+Veuillez consulter notre page de versions GitHub pour plus de détails.
   </ReleaseNotes>
   <ScreenshotCaptions>
     <!-- Valid length: 200 character limit, up to 9 elements per platform -->

@@ -884,7 +884,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     bool AppearanceViewModel::BackgroundImageSettingsVisible()
     {
-        return BackgroundImagePath() != L"";
+        return !BackgroundImagePath().empty();
     }
 
     void AppearanceViewModel::ClearColorScheme()
@@ -1240,7 +1240,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
-    fire_and_forget Appearances::BackgroundImage_Click(const IInspectable&, const RoutedEventArgs&)
+    safe_void_coroutine Appearances::BackgroundImage_Click(const IInspectable&, const RoutedEventArgs&)
     {
         auto lifetime = get_strong();
 

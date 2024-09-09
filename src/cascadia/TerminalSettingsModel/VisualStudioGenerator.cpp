@@ -9,9 +9,11 @@
 
 using namespace winrt::Microsoft::Terminal::Settings::Model;
 
+std::wstring_view VisualStudioGenerator::Namespace{ L"Windows.Terminal.VisualStudio" };
+
 std::wstring_view VisualStudioGenerator::GetNamespace() const noexcept
 {
-    return std::wstring_view{ L"Windows.Terminal.VisualStudio" };
+    return Namespace;
 }
 
 void VisualStudioGenerator::GenerateProfiles(std::vector<winrt::com_ptr<implementation::Profile>>& profiles) const

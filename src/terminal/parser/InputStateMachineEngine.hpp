@@ -49,6 +49,32 @@ namespace Microsoft::Console::VirtualTerminal
     // CAPSLOCK_ON         0x0080
     // ENHANCED_KEY        0x0100
 
+    enum class DeviceAttribute : uint64_t
+    {
+        Columns132 = 1,
+        PrinterPort = 2,
+        Sixel = 4,
+        SelectiveErase = 6,
+        SoftCharacterSet = 7,
+        UserDefinedKeys = 8,
+        NationalReplacementCharacterSets = 9,
+        SerboCroatianCharacterSet = 12,
+        EightBitInterfaceArchitecture = 14,
+        TechnicalCharacterSet = 15,
+        WindowingCapability = 18,
+        Sessions = 19,
+        HorizontalScrolling = 21,
+        Color = 22,
+        GreekCharacterSet = 23,
+        TurkishCharacterSet = 24,
+        RectangularAreaOperations = 28,
+        TextMacros = 32,
+        Latin2CharacterSet = 42,
+        PCTerm = 44,
+        SoftKeyMapping = 45,
+        AsciiTerminalEmulation = 46,
+    };
+
     enum CsiActionCodes : uint64_t
     {
         ArrowUp = VTID("A"),
@@ -67,6 +93,7 @@ namespace Microsoft::Console::VirtualTerminal
         CSI_F3 = VTID("R"), // Both F3 and DSR are on R.
         // DSR_DeviceStatusReportResponse = VTID("R"),
         CSI_F4 = VTID("S"),
+        DA_DeviceAttributes = VTID("?c"),
         DTTERM_WindowManipulation = VTID("t"),
         CursorBackTab = VTID("Z"),
         Win32KeyboardInput = VTID("_")
@@ -128,11 +155,9 @@ namespace Microsoft::Console::VirtualTerminal
     class InputStateMachineEngine : public IStateMachineEngine
     {
     public:
-        InputStateMachineEngine(std::unique_ptr<IInteractDispatch> pDispatch);
-        InputStateMachineEngine(std::unique_ptr<IInteractDispatch> pDispatch,
-                                const bool lookingForDSR);
+        InputStateMachineEngine(std::unique_ptr<IInteractDispatch> pDispatch, const bool lookingForDSR = false);
 
-        void WaitUntilDSR(DWORD timeout) const noexcept;
+        til::enumset<DeviceAttribute, uint64_t> WaitUntilDA1(DWORD timeout) const noexcept;
 
         bool EncounteredWin32InputModeSequence() const noexcept override;
 
@@ -143,7 +168,7 @@ namespace Microsoft::Console::VirtualTerminal
 
         bool ActionPrintString(const std::wstring_view string) override;
 
-        bool ActionPassThroughString(const std::wstring_view string, const bool flush) override;
+        bool ActionPassThroughString(const std::wstring_view string) override;
 
         bool ActionEscDispatch(const VTID id) override;
 
@@ -153,21 +178,16 @@ namespace Microsoft::Console::VirtualTerminal
 
         StringHandler ActionDcsDispatch(const VTID id, const VTParameters parameters) noexcept override;
 
-        bool ActionClear() noexcept override;
-
-        bool ActionIgnore() noexcept override;
-
         bool ActionOscDispatch(const size_t parameter, const std::wstring_view string) noexcept override;
 
         bool ActionSs3Dispatch(const wchar_t wch, const VTParameters parameters) override;
 
-        void SetFlushToInputQueueCallback(std::function<bool()> pfnFlushToInputQueue);
-
     private:
         const std::unique_ptr<IInteractDispatch> _pDispatch;
-        std::function<bool()> _pfnFlushToInputQueue;
-        std::atomic<bool> _lookingForDSR{ false };
+        std::atomic<uint64_t> _deviceAttributes{ 0 };
+        bool _lookingForDSR = false;
         bool _encounteredWin32InputModeSequence = false;
+        bool _expectingStringTerminator = false;
         DWORD _mouseButtonState = 0;
         std::chrono::milliseconds _doubleClickTime;
         std::optional<til::point> _lastMouseClickPos{};
@@ -190,10 +210,10 @@ namespace Microsoft::Console::VirtualTerminal
         bool _GetCursorKeysVkey(const VTID id, short& vkey) const;
         bool _GetSs3KeysVkey(const wchar_t wch, short& vkey) const;
 
-        bool _WriteSingleKey(const short vkey, const DWORD modifierState);
-        bool _WriteSingleKey(const wchar_t wch, const short vkey, const DWORD modifierState);
+        void _WriteSingleKey(const short vkey, const DWORD modifierState);
+        void _WriteSingleKey(const wchar_t wch, const short vkey, const DWORD modifierState);
 
-        bool _WriteMouseEvent(const til::point uiPos, const DWORD buttonState, const DWORD controlKeyState, const DWORD eventFlags);
+        void _WriteMouseEvent(const til::point uiPos, const DWORD buttonState, const DWORD controlKeyState, const DWORD eventFlags);
 
         void _GenerateWrappedSequence(const wchar_t wch,
                                       const short vkey,

@@ -5,13 +5,8 @@ import "ILMProvider.idl";
 
 namespace Microsoft.Terminal.Query.Extension
 {
-    [default_interface] runtimeclass OpenAILLMProvider : ILMProvider
+    runtimeclass OpenAILLMProvider : [default] ILMProvider
     {
         OpenAILLMProvider();
-    }
-
-    [default_interface] runtimeclass OpenAIResponse : IResponse
-    {
-        OpenAIResponse(String message, Boolean isError);
     }
 }
