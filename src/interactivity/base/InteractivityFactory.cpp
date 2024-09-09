@@ -463,6 +463,7 @@ using namespace Microsoft::Console::Interactivity;
         {
             _WritePseudoWindowCallback((bool)wParam);
         }
+        return 0;
     }
     case WM_GETOBJECT:
     {
@@ -475,6 +476,15 @@ using namespace Microsoft::Console::Interactivity;
             return UiaReturnRawElementProvider(hWnd, wParam, lParam, _pPseudoConsoleUiaProvider.Get());
         }
         return 0;
+    }
+    case WM_ACTIVATE:
+    {
+        if (const auto ownerHwnd{ ::GetAncestor(hWnd, GA_ROOTOWNER) })
+        {
+            SetFocus(ownerHwnd);
+            return 0;
+        }
+        break;
     }
     }
     // If we get this far, call the default window proc
@@ -497,9 +507,10 @@ void InteractivityFactory::_WritePseudoWindowCallback(bool showOrHide)
     // this message, if it's already minimized. If the window is maximized a
     // restore will restore-down the window instead.
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    if (const auto io = gci.GetVtIo())
+    if (auto writer = gci.GetVtWriter())
     {
-        io->SetWindowVisibility(showOrHide);
+        writer.WriteWindowVisibility(showOrHide);
+        writer.Submit();
     }
 }
 

@@ -198,7 +198,10 @@ void FontBuffer::AddSixelData(const wchar_t ch)
 bool FontBuffer::FinalizeSixelData()
 {
     // If the charset ID hasn't been initialized this isn't a valid update.
-    RETURN_BOOL_IF_FALSE(_charsetIdInitialized);
+    if (!_charsetIdInitialized)
+    {
+        return false;
+    }
 
     // Flush the current line to make sure we take all the used positions
     // into account when calculating the font dimensions.

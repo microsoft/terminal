@@ -23,14 +23,6 @@ Author(s):
 
 #include "../../buffer/out/textBuffer.hpp"
 
-// fwdecl unittest classes
-#ifdef UNIT_TESTING
-namespace TerminalCoreUnitTests
-{
-    class ConptyRoundtripTests;
-};
-#endif
-
 namespace Microsoft::Console::Render
 {
     class Renderer
@@ -60,7 +52,6 @@ namespace Microsoft::Console::Render
         void TriggerScroll();
         void TriggerScroll(const til::point* const pcoordDelta);
 
-        void TriggerFlush(const bool circling);
         void TriggerTitleChange();
 
         void TriggerNewTextNotification(const std::wstring_view newText);
@@ -118,7 +109,6 @@ namespace Microsoft::Console::Render
         void _PaintCursor(_In_ IRenderEngine* const pEngine);
         [[nodiscard]] HRESULT _UpdateDrawingBrushes(_In_ IRenderEngine* const pEngine, const TextAttribute attr, const bool usingSoftFont, const bool isSettingDefaultBrushes);
         [[nodiscard]] HRESULT _PerformScrolling(_In_ IRenderEngine* const pEngine);
-        std::vector<til::rect> _GetSelectionRects() const;
         void _ScrollPreviousSelection(const til::point delta);
         [[nodiscard]] HRESULT _PaintTitle(IRenderEngine* const pEngine);
         bool _isInHoveredInterval(til::point coordTarget) const noexcept;
@@ -140,16 +130,14 @@ namespace Microsoft::Console::Render
         CursorOptions _currentCursorOptions;
         std::optional<CompositionCache> _compositionCache;
         std::vector<Cluster> _clusterBuffer;
-        std::vector<til::rect> _previousSelection;
         std::function<void()> _pfnBackgroundColorChanged;
         std::function<void()> _pfnFrameColorChanged;
         std::function<void()> _pfnRendererEnteredErrorState;
         bool _destructing = false;
         bool _forceUpdateViewport = false;
 
-#ifdef UNIT_TESTING
-        friend class ConptyOutputTests;
-        friend class TerminalCoreUnitTests::ConptyRoundtripTests;
-#endif
+        til::point_span _lastSelectionPaintSpan{};
+        size_t _lastSelectionPaintSize{};
+        std::vector<til::rect> _lastSelectionRectsByViewport{};
     };
 }

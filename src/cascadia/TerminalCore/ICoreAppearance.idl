@@ -115,6 +115,7 @@ namespace Microsoft.Terminal.Core
     {
         Microsoft.Terminal.Core.Color DefaultForeground;
         Microsoft.Terminal.Core.Color DefaultBackground;
+        Microsoft.Terminal.Core.Color SelectionBackground;
         Microsoft.Terminal.Core.Color GetColorTableEntry(Int32 index);
         Microsoft.Terminal.Core.Color CursorColor;
         CursorStyle CursorShape;

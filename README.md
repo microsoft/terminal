@@ -1,5 +1,7 @@
 ![terminal-logos](https://github.com/microsoft/terminal/assets/91625426/333ddc76-8ab2-4eb4-a8c0-4d7b953b1179)
 
+[![Terminal Build Status](https://dev.azure.com/shine-oss/terminal/_apis/build/status%2FTerminal%20CI?branchName=main)](https://dev.azure.com/shine-oss/terminal/_build/latest?definitionId=1&branchName=main)
+
 # Welcome to the Windows Terminal, Console and Command-Line repo
 
 This repository contains the source code for:
@@ -144,15 +146,6 @@ _Learn more about the [types of Windows Terminal distributions](https://learn.mi
 
 The plan for the Windows Terminal [is described here](/doc/roadmap-2023.md) and
 will be updated as the project proceeds.
-
-## Project Build Status
-
-Project|Build Status
----|---
-Terminal|[![Terminal Build Status](https://dev.azure.com/ms/terminal/_apis/build/status/terminal%20CI?branchName=main)](https://dev.azure.com/ms/terminal/_build?definitionId=136)
-ColorTool|![Colortool Build Status](https://microsoft.visualstudio.com/_apis/public/build/definitions/c93e867a-8815-43c1-92c4-e7dd5404f1e1/17023/badge)
-
----
 
 ## Terminal & Console Overview
 

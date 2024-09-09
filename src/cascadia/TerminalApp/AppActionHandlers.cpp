@@ -900,7 +900,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Important: Don't take the param by reference, since we'll be doing work
     // on another thread.
-    fire_and_forget TerminalPage::_OpenNewWindow(const INewContentArgs newContentArgs)
+    safe_void_coroutine TerminalPage::_OpenNewWindow(const INewContentArgs newContentArgs)
     {
         auto terminalArgs{ newContentArgs.try_as<NewTerminalArgs>() };
 
@@ -927,10 +927,8 @@ namespace winrt::TerminalApp::implementation
 
         // Build the commandline to pass to wt for this set of NewTerminalArgs
         // `-w -1` will ensure a new window is created.
-        winrt::hstring cmdline{
-            fmt::format(L"-w -1 new-tab {}",
-                        terminalArgs.ToCommandline().c_str())
-        };
+        const auto commandline = terminalArgs.ToCommandline();
+        winrt::hstring cmdline{ fmt::format(FMT_COMPILE(L"-w -1 new-tab {}"), commandline) };
 
         // Build the args to ShellExecuteEx. We need to use ShellExecuteEx so we
         // can pass the SEE_MASK_NOASYNC flag. That flag allows us to safely
@@ -1124,14 +1122,14 @@ namespace winrt::TerminalApp::implementation
                 {
                     if (const auto& realArgs = args.ActionArgs().try_as<SearchForTextArgs>())
                     {
-                        queryUrl = realArgs.QueryUrl().c_str();
+                        queryUrl = std::wstring_view{ realArgs.QueryUrl() };
                     }
                 }
 
                 // use global default if query URL is unspecified
                 if (queryUrl.empty())
                 {
-                    queryUrl = _settings.GlobalSettings().SearchWebDefaultQueryUrl().c_str();
+                    queryUrl = std::wstring_view{ _settings.GlobalSettings().SearchWebDefaultQueryUrl() };
                 }
 
                 constexpr std::wstring_view queryToken{ L"%s" };
@@ -1454,77 +1452,87 @@ namespace winrt::TerminalApp::implementation
         {
             if (const auto& realArgs = args.ActionArgs().try_as<SuggestionsArgs>())
             {
-                const auto source = realArgs.Source();
-                std::vector<Command> commandsCollection;
-                Control::CommandHistoryContext context{ nullptr };
-                winrt::hstring currentCommandline = L"";
-
-                // If the user wanted to use the current commandline to filter results,
-                //    OR they wanted command history (or some other source that
-                //       requires context from the control)
-                // then get that here.
-                const bool shouldGetContext = realArgs.UseCommandline() ||
-                                              WI_IsAnyFlagSet(source, SuggestionsSource::CommandHistory | SuggestionsSource::QuickFixes);
-                if (shouldGetContext)
-                {
-                    if (const auto& control{ _GetActiveControl() })
-                    {
-                        context = control.CommandHistory();
-                        if (context)
-                        {
-                            currentCommandline = context.CurrentCommandline();
-                        }
-                    }
-                }
-
-                // Aggregate all the commands from the different sources that
-                // the user selected. This is the order presented to the user
-
-                if (WI_IsFlagSet(source, SuggestionsSource::QuickFixes) &&
-                    context != nullptr &&
-                    context.QuickFixes() != nullptr)
-                {
-                    // \ue74c --> OEM icon
-                    const auto recentCommands = Command::HistoryToCommands(context.QuickFixes(), hstring{ L"" }, false, hstring{ L"\ue74c" });
-                    for (const auto& t : recentCommands)
-                    {
-                        commandsCollection.push_back(t);
-                    }
-                }
-
-                // Tasks are all the sendInput commands the user has saved in
-                // their settings file. Ask the ActionMap for those.
-                if (WI_IsFlagSet(source, SuggestionsSource::Tasks))
-                {
-                    const auto tasks = _settings.GlobalSettings().ActionMap().FilterToSendInput(currentCommandline);
-                    for (const auto& t : tasks)
-                    {
-                        commandsCollection.push_back(t);
-                    }
-                }
-
-                // Command History comes from the commands in the buffer,
-                // assuming the user has enabled shell integration. Get those
-                // from the active control.
-                if (WI_IsFlagSet(source, SuggestionsSource::CommandHistory) &&
-                    context != nullptr)
-                {
-                    // \ue81c --> History icon
-                    const auto recentCommands = Command::HistoryToCommands(context.History(), currentCommandline, false, hstring{ L"\ue81c" });
-                    for (const auto& t : recentCommands)
-                    {
-                        commandsCollection.push_back(t);
-                    }
-                }
-
-                // Open the palette with all these commands in it.
-                _OpenSuggestions(_GetActiveControl(),
-                                 winrt::single_threaded_vector<Command>(std::move(commandsCollection)),
-                                 SuggestionsMode::Palette,
-                                 currentCommandline);
+                _doHandleSuggestions(realArgs);
                 args.Handled(true);
             }
         }
+    }
+
+    safe_void_coroutine TerminalPage::_doHandleSuggestions(SuggestionsArgs realArgs)
+    {
+        const auto source = realArgs.Source();
+        std::vector<Command> commandsCollection;
+        Control::CommandHistoryContext context{ nullptr };
+        winrt::hstring currentCommandline;
+        winrt::hstring currentWorkingDirectory;
+
+        // If the user wanted to use the current commandline to filter results,
+        //    OR they wanted command history (or some other source that
+        //       requires context from the control)
+        // then get that here.
+        const bool shouldGetContext = realArgs.UseCommandline() ||
+                                      WI_IsAnyFlagSet(source, SuggestionsSource::CommandHistory | SuggestionsSource::QuickFixes);
+        if (const auto& control{ _GetActiveControl() })
+        {
+            currentWorkingDirectory = control.CurrentWorkingDirectory();
+
+            if (shouldGetContext)
+            {
+                context = control.CommandHistory();
+                if (context)
+                {
+                    currentCommandline = context.CurrentCommandline();
+                }
+            }
+        }
+
+        // Aggregate all the commands from the different sources that
+        // the user selected.
+
+        if (WI_IsFlagSet(source, SuggestionsSource::QuickFixes) &&
+            context != nullptr &&
+            context.QuickFixes() != nullptr)
+        {
+            // \ue74c --> OEM icon
+            const auto recentCommands = Command::HistoryToCommands(context.QuickFixes(), hstring{}, false, hstring{ L"\ue74c" });
+            for (const auto& t : recentCommands)
+            {
+                commandsCollection.push_back(t);
+            }
+        }
+
+        // Tasks are all the sendInput commands the user has saved in
+        // their settings file. Ask the ActionMap for those.
+        if (WI_IsFlagSet(source, SuggestionsSource::Tasks))
+        {
+            const auto tasks = co_await _settings.GlobalSettings().ActionMap().FilterToSnippets(currentCommandline, currentWorkingDirectory);
+            // ----- we may be on a background thread here -----
+            for (const auto& t : tasks)
+            {
+                commandsCollection.push_back(t);
+            }
+        }
+
+        // Command History comes from the commands in the buffer,
+        // assuming the user has enabled shell integration. Get those
+        // from the active control.
+        if (WI_IsFlagSet(source, SuggestionsSource::CommandHistory) &&
+            context != nullptr)
+        {
+            const auto recentCommands = Command::HistoryToCommands(context.History(), currentCommandline, false, hstring{ L"\ue81c" });
+            for (const auto& t : recentCommands)
+            {
+                commandsCollection.push_back(t);
+            }
+        }
+
+        co_await wil::resume_foreground(Dispatcher());
+
+        // Open the palette with all these commands in it.
+        _OpenSuggestions(_GetActiveControl(),
+                         winrt::single_threaded_vector<Command>(std::move(commandsCollection)),
+                         SuggestionsMode::Palette,
+                         currentCommandline);
     }
 
     void TerminalPage::_HandleColorSelection(const IInspectable& /*sender*/,

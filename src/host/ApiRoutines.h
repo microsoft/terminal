@@ -72,13 +72,11 @@ public:
     [[nodiscard]] HRESULT WriteConsoleAImpl(IConsoleOutputObject& context,
                                             const std::string_view buffer,
                                             size_t& read,
-                                            bool requiresVtQuirk,
                                             std::unique_ptr<IWaitRoutine>& waiter) noexcept override;
 
     [[nodiscard]] HRESULT WriteConsoleWImpl(IConsoleOutputObject& context,
                                             const std::wstring_view buffer,
                                             size_t& read,
-                                            bool requiresVtQuirk,
                                             std::unique_ptr<IWaitRoutine>& waiter) noexcept override;
 
 #pragma region ThreadCreationInfo

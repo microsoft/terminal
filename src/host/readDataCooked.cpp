@@ -295,10 +295,14 @@ void COOKED_READ_DATA::EraseBeforeResize()
 
     _redrawPending = true;
 
-    std::wstring output;
-    _appendCUP(output, _originInViewport);
-    output.append(L"\x1b[J");
-    WriteCharsVT(_screenInfo, output);
+    // Position the cursor the start of the prompt before reflow.
+    // Then, after reflow, we'll be able to ask the buffer where it went (the new origin).
+    // This uses the buffer APIs directly, so that we don't emit unnecessary VT into ConPTY's output.
+    auto& textBuffer = _screenInfo.GetTextBuffer();
+    auto& cursor = textBuffer.GetCursor();
+    auto cursorPos = _originInViewport;
+    _screenInfo.GetVtPageArea().ConvertFromOrigin(&cursorPos);
+    cursor.SetPosition(cursorPos);
 }
 
 // The counter-part to EraseBeforeResize().
@@ -321,6 +325,10 @@ void COOKED_READ_DATA::RedrawAfterResize()
     // Ensure that the entire buffer content is rewritten after the above CSI J.
     _bufferDirtyBeg = 0;
     _dirty = !_buffer.empty();
+
+    // Let _redisplay() know to inject a CSI J at the start of the output.
+    // This ensures we fully erase the previous contents, that are now in disarray.
+    _clearPending = true;
 
     _redisplay();
 }
@@ -1080,6 +1088,13 @@ void COOKED_READ_DATA::_redisplay()
     cursorPositionFinal.y += originInViewportFinal.y - pagerContentTop;
 
     std::wstring output;
+
+    if (_clearPending)
+    {
+        _clearPending = false;
+        _appendCUP(output, _originInViewport);
+        output.append(L"\x1b[J");
+    }
 
     // Disable the cursor when opening a popup, reenable it when closing them.
     if (const auto popupOpened = !_popups.empty(); _popupOpened != popupOpened)

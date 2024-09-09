@@ -54,7 +54,14 @@
     
   </DevStudio>
   <ReleaseNotes>
-    版本 __VERSION_NUMBER__
+    Version __VERSION_NUMBER__
+
+- 现在，使用会话还原时，终端将记住窗口的内容。
+- 现在可以同时使用多种字体。
+- 现在以像素为单位呈现框绘图字符。
+- 在终端内使用输入法的体验已得到显著提升。
+- JSON 文件中的配色方案现在要简单得多。
+- 已修复有关 URL 处理、双倍行宽、换行等大量 bug。
 
 有关其他详细信息，请参阅我们的 GitHub 发布页面。
   </ReleaseNotes>

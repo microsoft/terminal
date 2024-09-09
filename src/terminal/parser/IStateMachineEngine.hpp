@@ -35,19 +35,13 @@ namespace Microsoft::Console::VirtualTerminal
         virtual bool ActionPrint(const wchar_t wch) = 0;
         virtual bool ActionPrintString(const std::wstring_view string) = 0;
 
-        virtual bool ActionPassThroughString(const std::wstring_view string, const bool flush = false) = 0;
+        virtual bool ActionPassThroughString(const std::wstring_view string) = 0;
 
         virtual bool ActionEscDispatch(const VTID id) = 0;
         virtual bool ActionVt52EscDispatch(const VTID id, const VTParameters parameters) = 0;
         virtual bool ActionCsiDispatch(const VTID id, const VTParameters parameters) = 0;
         virtual StringHandler ActionDcsDispatch(const VTID id, const VTParameters parameters) = 0;
-
-        virtual bool ActionClear() = 0;
-
-        virtual bool ActionIgnore() = 0;
-
         virtual bool ActionOscDispatch(const size_t parameter, const std::wstring_view string) = 0;
-
         virtual bool ActionSs3Dispatch(const wchar_t wch, const VTParameters parameters) = 0;
 
     protected:

@@ -42,6 +42,7 @@ private:
     winrt::event_token _UpdateSettingsRequestedToken;
 
     std::unique_ptr<::IslandWindow> _warmWindow{ nullptr };
+    static bool _loggedInteraction;
 
     int _messagePump();
     void _pumpRemainingXamlMessages();

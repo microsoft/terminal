@@ -96,7 +96,6 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 
             peasant.ShowNotificationIconRequested([this](auto&&, auto&&) { ShowNotificationIconRequested.raise(*this, nullptr); });
             peasant.HideNotificationIconRequested([this](auto&&, auto&&) { HideNotificationIconRequested.raise(*this, nullptr); });
-            peasant.QuitAllRequested({ this, &Monarch::_handleQuitAll });
 
             {
                 std::unique_lock lock{ _peasantsMutex };
@@ -134,7 +133,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     // - <none> used
     // Return Value:
     // - <none>
-    void Monarch::_handleQuitAll(const winrt::Windows::Foundation::IInspectable& /*sender*/, const winrt::Windows::Foundation::IInspectable& /*args*/)
+    void Monarch::QuitAll()
     {
         if (_quitting.exchange(true, std::memory_order_relaxed))
         {
@@ -165,12 +164,6 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             if (peasantSearch != _peasants.end())
             {
                 peasantSearch->second.Quit();
-            }
-            else
-            {
-                // Somehow we don't have our own peasant, this should never happen.
-                // We are trying to quit anyways so just fail here.
-                assert(peasantSearch != _peasants.end());
             }
         }
     }

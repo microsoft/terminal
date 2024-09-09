@@ -17,10 +17,58 @@ Revision History:
 
 #pragma once
 
+// This type is identical to winrt::fire_and_forget, but its unhandled_exception
+// handler logs the exception instead of terminating the application.
+//
+// Ideally, we'd just use wil::com_task<void>, but it currently crashes
+// with an AV if an exception is thrown after the first suspension point.
+struct safe_void_coroutine
+{
+};
+
+namespace std
+{
+    template<typename... Args>
+    struct coroutine_traits<safe_void_coroutine, Args...>
+    {
+        struct promise_type
+        {
+            safe_void_coroutine get_return_object() const noexcept
+            {
+                return {};
+            }
+
+            void return_void() const noexcept
+            {
+            }
+
+            suspend_never initial_suspend() const noexcept
+            {
+                return {};
+            }
+
+            suspend_never final_suspend() const noexcept
+            {
+                return {};
+            }
+
+            void unhandled_exception() const noexcept
+            {
+                LOG_CAUGHT_EXCEPTION();
+                // If you get here, an unhandled exception was thrown.
+                // In a Release build this would get silently swallowed.
+                // You should probably fix the source of the exception, because it may have
+                // unintended side effects, in particular with exception-unsafe logic.
+                assert(false);
+            }
+        };
+    };
+}
+
 template<>
 struct fmt::formatter<winrt::hstring, wchar_t> : fmt::formatter<fmt::wstring_view, wchar_t>
 {
-    auto format(const winrt::hstring& str, auto& ctx)
+    auto format(const winrt::hstring& str, auto& ctx) const
     {
         return fmt::formatter<fmt::wstring_view, wchar_t>::format({ str.data(), str.size() }, ctx);
     }
@@ -175,6 +223,18 @@ protected:                                                                      
     struct typeName : typeName##T<typeName, implementation::typeName> \
     {                                                                 \
     };
+
+inline winrt::array_view<const char16_t> winrt_wstring_to_array_view(const std::wstring_view& str)
+{
+#pragma warning(suppress : 26490) // Don't use reinterpret_cast (type.1).
+    return winrt::array_view<const char16_t>(reinterpret_cast<const char16_t*>(str.data()), gsl::narrow<uint32_t>(str.size()));
+}
+
+inline std::wstring_view winrt_array_to_wstring_view(const winrt::array_view<const char16_t>& str) noexcept
+{
+#pragma warning(suppress : 26490) // Don't use reinterpret_cast (type.1).
+    return { reinterpret_cast<const wchar_t*>(str.data()), str.size() };
+}
 
 // This is a helper method for deserializing a SAFEARRAY of
 // COM objects and converting it to a vector that

@@ -10,12 +10,8 @@
 #include <til/latch.h>
 #include <Utils.h>
 #include <random>
-
-#include <winrt/Windows.Web.Http.h>
-#include <winrt/Windows.Web.Http.Headers.h>
-#include <winrt/Windows.Web.Http.Filters.h>
-
 #include <winrt/Windows.Data.Json.h>
+#include <shlobj.h>
 
 #include "../../types/inc/utils.hpp"
 #include "App.h"
@@ -25,6 +21,8 @@
 #include "ScratchpadContent.h"
 #include "SnippetsPaneContent.h"
 #include "TabRowControl.h"
+#include <til/io.h>
+#include <time.h>
 
 #include "TerminalPage.g.cpp"
 #include "RenameWindowRequestedArgs.g.cpp"
@@ -33,6 +31,7 @@
 #include "LaunchPositionRequest.g.cpp"
 
 using namespace winrt;
+using namespace winrt::Microsoft::Management::Deployment;
 using namespace winrt::Microsoft::Terminal::Control;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
 using namespace winrt::Microsoft::Terminal::TerminalConnection;
@@ -421,7 +420,7 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    winrt::fire_and_forget TerminalPage::_NewTerminalByDrop(const Windows::Foundation::IInspectable&, winrt::Windows::UI::Xaml::DragEventArgs e)
+    safe_void_coroutine TerminalPage::_NewTerminalByDrop(const Windows::Foundation::IInspectable&, winrt::Windows::UI::Xaml::DragEventArgs e)
     try
     {
         const auto data = e.DataView();
@@ -504,13 +503,12 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    winrt::fire_and_forget TerminalPage::_OnGithubCopilotLLMProviderAuthChanged(const IInspectable& /*sender*/, const winrt::hstring& newAuth)
+    winrt::fire_and_forget TerminalPage::_OnGithubCopilotLLMProviderAuthChanged(const IInspectable& /*sender*/, const Windows::Foundation::Collections::ValueSet& authValues)
     {
         try
         {
-            const auto jsonResult{ WDJ::JsonObject::Parse(newAuth) };
-            const auto authToken{ jsonResult.GetNamedString(L"access_token") };
-            const auto refreshToken{ jsonResult.GetNamedString(L"refresh_token") };
+            const auto authToken = unbox_value_or<hstring>(authValues.TryLookup(L"access_token").try_as<Windows::Foundation::IPropertyValue>(), L"");
+            const auto refreshToken = unbox_value_or<hstring>(authValues.TryLookup(L"refresh_token").try_as<Windows::Foundation::IPropertyValue>(), L"");
             if (!authToken.empty() && !refreshToken.empty())
             {
                 _settings.GlobalSettings().AIInfo().GithubCopilotAuthToken(authToken);
@@ -518,6 +516,94 @@ namespace winrt::TerminalApp::implementation
 
                 co_await wil::resume_foreground(Dispatcher());
                 winrt::Microsoft::Terminal::Settings::Editor::MainPage::RefreshGithubAuthStatus();
+            }
+        }
+        CATCH_LOG();
+    }
+
+    // Method Description:
+    // - This method is called when the user clicks the "export message history" button
+    //   in the query palette
+    // Arguments:
+    // - text - the text to export
+    // Return Value:
+    // - <none>
+    void TerminalPage::_OnExportChatHistoryRequested(const IInspectable& /*sender*/, const winrt::hstring& text)
+    {
+        time_t nowTime;
+        time(&nowTime);
+
+        tm nowTm;
+        localtime_s(&nowTm, &nowTime);
+
+        wchar_t buf[64];
+        wcsftime(&buf[0], ARRAYSIZE(buf), L"%F %T", &nowTm);
+
+        const auto defaultFileName = RS_(L"TerminalChatHistoryDefaultFileName") + winrt::to_hstring(buf);
+
+        // An arbitrary GUID to associate with all instances of the save file dialog
+        // for exporting terminal chat histories, so they all re-open in the same path as they were
+        // open before:
+        static constexpr winrt::guid terminalChatSaveFileDialogGuid{ 0xc3e449f6, 0x1b5, 0x44e0, { 0x9e, 0x6d, 0x63, 0xca, 0x15, 0x43, 0x4b, 0xdc } };
+
+        _SaveStringToFileOrPromptUser(text, L"", defaultFileName, terminalChatSaveFileDialogGuid);
+    }
+
+    // Method Description:
+    // - Saves the given text to the file path provided, or prompts the user for the location to save it
+    // Arguments:
+    // - text - the text to save
+    // - filepath - the location to save the text
+    // - filename - the name of the file to save the text to
+    // - dialogGuid - the guid to associate with these specific saves (determines where the save dialog opens to by default)
+    safe_void_coroutine TerminalPage::_SaveStringToFileOrPromptUser(const winrt::hstring& text, const winrt::hstring& filepath, const std::wstring_view filename, const winrt::guid dialogGuid)
+    {
+        // This will be used to set up the file picker "filter", to select .txt
+        // files by default.
+        static constexpr COMDLG_FILTERSPEC supportedFileTypes[] = {
+            { L"Text Files (*.txt)", L"*.txt" },
+            { L"All Files (*.*)", L"*.*" }
+        };
+
+        try
+        {
+            auto path = filepath;
+
+            if (path.empty())
+            {
+                // GH#11356 - we can't use the UWP apis for writing the file,
+                // because they don't work elevated (shocker) So just use the
+                // shell32 file picker manually.
+                std::wstring cleanedFilename{ til::clean_filename(std::wstring{ filename }) };
+                path = co_await SaveFilePicker(*_hostingHwnd, [filename = std::move(cleanedFilename), saveDialogGuid = std::move(dialogGuid)](auto&& dialog) {
+                    THROW_IF_FAILED(dialog->SetClientGuid(saveDialogGuid));
+                    try
+                    {
+                        // Default to the Downloads folder
+                        auto folderShellItem{ winrt::capture<IShellItem>(&SHGetKnownFolderItem, FOLDERID_Downloads, KF_FLAG_DEFAULT, nullptr) };
+                        dialog->SetDefaultFolder(folderShellItem.get());
+                    }
+                    CATCH_LOG(); // non-fatal
+                    THROW_IF_FAILED(dialog->SetFileTypes(ARRAYSIZE(supportedFileTypes), supportedFileTypes));
+                    THROW_IF_FAILED(dialog->SetFileTypeIndex(1)); // the array is 1-indexed
+                    THROW_IF_FAILED(dialog->SetDefaultExtension(L"txt"));
+
+                    // Default to using the tab title as the file name
+                    THROW_IF_FAILED(dialog->SetFileName((filename + L".txt").c_str()));
+                });
+            }
+            else
+            {
+                // The file picker isn't going to give us paths with
+                // environment variables, but the user might have set one in
+                // the settings. Expand those here.
+
+                path = winrt::hstring{ wil::ExpandEnvironmentStringsW<std::wstring>(path.c_str()) };
+            }
+
+            if (!path.empty())
+            {
+                til::io::write_utf8_string_to_file_atomic(std::filesystem::path{ std::wstring_view{ path } }, til::u16u8(text));
             }
         }
         CATCH_LOG();
@@ -606,10 +692,10 @@ namespace winrt::TerminalApp::implementation
     //   nt -d .` from inside another directory to work as expected.
     // Return Value:
     // - <none>
-    winrt::fire_and_forget TerminalPage::ProcessStartupActions(Windows::Foundation::Collections::IVector<ActionAndArgs> actions,
-                                                               const bool initial,
-                                                               const winrt::hstring cwd,
-                                                               const winrt::hstring env)
+    safe_void_coroutine TerminalPage::ProcessStartupActions(Windows::Foundation::Collections::IVector<ActionAndArgs> actions,
+                                                            const bool initial,
+                                                            const winrt::hstring cwd,
+                                                            const winrt::hstring env)
     {
         auto weakThis{ get_weak() };
 
@@ -694,7 +780,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - <none>
-    winrt::fire_and_forget TerminalPage::_CompleteInitialization()
+    safe_void_coroutine TerminalPage::_CompleteInitialization()
     {
         _startupState = StartupState::Initialized;
 
@@ -1860,6 +1946,8 @@ namespace winrt::TerminalApp::implementation
 
         term.SearchMissingCommand({ get_weak(), &TerminalPage::_SearchMissingCommandHandler });
 
+        term.WindowSizeChanged({ get_weak(), &TerminalPage::_WindowSizeChanged });
+
         // Don't even register for the event if the feature is compiled off.
         if constexpr (Feature_ShellCompletions::IsEnabled())
         {
@@ -2077,7 +2165,7 @@ namespace winrt::TerminalApp::implementation
     // Method Description:
     // - Warn the user that they are about to close all open windows, then
     //   signal that we want to close everything.
-    fire_and_forget TerminalPage::RequestQuit()
+    safe_void_coroutine TerminalPage::RequestQuit()
     {
         if (!_displayingCloseDialog)
         {
@@ -2165,7 +2253,7 @@ namespace winrt::TerminalApp::implementation
     // Method Description:
     // - Close the terminal app. If there is more
     //   than one tab opened, show a warning dialog.
-    fire_and_forget TerminalPage::CloseWindow()
+    safe_void_coroutine TerminalPage::CloseWindow()
     {
         if (_HasMultipleTabs() &&
             _settings.GlobalSettings().ConfirmCloseAllTabs() &&
@@ -2266,7 +2354,7 @@ namespace winrt::TerminalApp::implementation
                         {
                             autoPeer.RaiseNotificationEvent(Automation::Peers::AutomationNotificationKind::ActionCompleted,
                                                             Automation::Peers::AutomationNotificationProcessing::ImportantMostRecent,
-                                                            fmt::format(std::wstring_view{ RS_(L"TerminalPage_PaneMovedAnnouncement_ExistingWindow2") }, windowId),
+                                                            RS_fmt(L"TerminalPage_PaneMovedAnnouncement_ExistingWindow2", windowId),
                                                             L"TerminalPageMovePaneToExistingWindow" /* unique name for this notification category */);
                         }
                     }
@@ -2301,7 +2389,7 @@ namespace winrt::TerminalApp::implementation
                 const auto tabTitle = targetTab->Title();
                 autoPeer.RaiseNotificationEvent(Automation::Peers::AutomationNotificationKind::ActionCompleted,
                                                 Automation::Peers::AutomationNotificationProcessing::ImportantMostRecent,
-                                                fmt::format(std::wstring_view{ RS_(L"TerminalPage_PaneMovedAnnouncement_ExistingTab") }, tabTitle),
+                                                RS_fmt(L"TerminalPage_PaneMovedAnnouncement_ExistingTab", tabTitle),
                                                 L"TerminalPageMovePaneToExistingTab" /* unique name for this notification category */);
             }
         }
@@ -2401,14 +2489,14 @@ namespace winrt::TerminalApp::implementation
                     {
                         autoPeer.RaiseNotificationEvent(Automation::Peers::AutomationNotificationKind::ActionCompleted,
                                                         Automation::Peers::AutomationNotificationProcessing::ImportantMostRecent,
-                                                        fmt::format(std::wstring_view{ RS_(L"TerminalPage_TabMovedAnnouncement_NewWindow") }, tabTitle),
+                                                        RS_fmt(L"TerminalPage_TabMovedAnnouncement_NewWindow", tabTitle),
                                                         L"TerminalPageMoveTabToNewWindow" /* unique name for this notification category */);
                     }
                     else
                     {
                         autoPeer.RaiseNotificationEvent(Automation::Peers::AutomationNotificationKind::ActionCompleted,
                                                         Automation::Peers::AutomationNotificationProcessing::ImportantMostRecent,
-                                                        fmt::format(std::wstring_view{ RS_(L"TerminalPage_TabMovedAnnouncement_Default") }, tabTitle, windowId),
+                                                        RS_fmt(L"TerminalPage_TabMovedAnnouncement_Default", tabTitle, windowId),
                                                         L"TerminalPageMoveTabToExistingWindow" /* unique name for this notification category */);
                     }
                 }
@@ -2472,8 +2560,8 @@ namespace winrt::TerminalApp::implementation
     //   reattach instead of create new content, so this method simply needs to
     //   parse the JSON and pump it into our action handler. Almost the same as
     //   doing something like `wt -w 0 nt`.
-    winrt::fire_and_forget TerminalPage::AttachContent(IVector<Settings::Model::ActionAndArgs> args,
-                                                       uint32_t tabIndex)
+    safe_void_coroutine TerminalPage::AttachContent(IVector<Settings::Model::ActionAndArgs> args,
+                                                    uint32_t tabIndex)
     {
         if (args == nullptr ||
             args.Size() == 0)
@@ -2862,7 +2950,7 @@ namespace winrt::TerminalApp::implementation
     // - Does some of this in a background thread, as to not hang/crash the UI thread.
     // Arguments:
     // - eventArgs: the PasteFromClipboard event sent from the TermControl
-    fire_and_forget TerminalPage::_PasteFromClipboardHandler(const IInspectable /*sender*/, const PasteFromClipboardEventArgs eventArgs)
+    safe_void_coroutine TerminalPage::_PasteFromClipboardHandler(const IInspectable /*sender*/, const PasteFromClipboardEventArgs eventArgs)
     try
     {
         // The old Win32 clipboard API as used below is somewhere in the order of 300-1000x faster than
@@ -2949,7 +3037,7 @@ namespace winrt::TerminalApp::implementation
     {
         try
         {
-            auto parsed = winrt::Windows::Foundation::Uri(eventArgs.Uri().c_str());
+            auto parsed = winrt::Windows::Foundation::Uri(eventArgs.Uri());
             if (_IsUriSupported(parsed))
             {
                 ShellExecute(nullptr, L"open", eventArgs.Uri().c_str(), nullptr, nullptr, SW_SHOWNORMAL);
@@ -3033,8 +3121,8 @@ namespace winrt::TerminalApp::implementation
 
     // Important! Don't take this eventArgs by reference, we need to extend the
     // lifetime of it to the other side of the co_await!
-    winrt::fire_and_forget TerminalPage::_ControlNoticeRaisedHandler(const IInspectable /*sender*/,
-                                                                     const Microsoft::Terminal::Control::NoticeEventArgs eventArgs)
+    safe_void_coroutine TerminalPage::_ControlNoticeRaisedHandler(const IInspectable /*sender*/,
+                                                                  const Microsoft::Terminal::Control::NoticeEventArgs eventArgs)
     {
         auto weakThis = get_weak();
         co_await wil::resume_foreground(Dispatcher());
@@ -3103,7 +3191,7 @@ namespace winrt::TerminalApp::implementation
     // Arguments:
     // - sender (not used)
     // - eventArgs: the arguments specifying how to set the progress indicator
-    winrt::fire_and_forget TerminalPage::_SetTaskbarProgressHandler(const IInspectable /*sender*/, const IInspectable /*eventArgs*/)
+    safe_void_coroutine TerminalPage::_SetTaskbarProgressHandler(const IInspectable /*sender*/, const IInspectable /*eventArgs*/)
     {
         co_await wil::resume_foreground(Dispatcher());
         SetTaskbarProgress.raise(*this, nullptr);
@@ -3119,18 +3207,82 @@ namespace winrt::TerminalApp::implementation
         ShowWindowChanged.raise(*this, args);
     }
 
-    winrt::fire_and_forget TerminalPage::_SearchMissingCommandHandler(const IInspectable /*sender*/, const Microsoft::Terminal::Control::SearchMissingCommandEventArgs args)
+    Windows::Foundation::IAsyncOperation<IVectorView<MatchResult>> TerminalPage::_FindPackageAsync(hstring query)
     {
-        assert(!Dispatcher().HasThreadAccess());
+        const PackageManager packageManager = WindowsPackageManagerFactory::CreatePackageManager();
+        PackageCatalogReference catalogRef{
+            packageManager.GetPredefinedPackageCatalog(PredefinedPackageCatalog::OpenWindowsCatalog)
+        };
+        catalogRef.PackageCatalogBackgroundUpdateInterval(std::chrono::hours(24));
 
+        ConnectResult connectResult{ nullptr };
+        for (int retries = 0;;)
+        {
+            connectResult = catalogRef.Connect();
+            if (connectResult.Status() == ConnectResultStatus::Ok)
+            {
+                break;
+            }
+
+            if (++retries == 3)
+            {
+                co_return nullptr;
+            }
+        }
+
+        PackageCatalog catalog = connectResult.PackageCatalog();
+        // clang-format off
+        static constexpr std::array<WinGetSearchParams, 3> searches{ {
+            { .Field = PackageMatchField::Command, .MatchOption = PackageFieldMatchOption::StartsWithCaseInsensitive },
+            { .Field = PackageMatchField::Name, .MatchOption = PackageFieldMatchOption::ContainsCaseInsensitive },
+            { .Field = PackageMatchField::Moniker, .MatchOption = PackageFieldMatchOption::ContainsCaseInsensitive } } };
+        // clang-format on
+
+        PackageMatchFilter filter = WindowsPackageManagerFactory::CreatePackageMatchFilter();
+        filter.Value(query);
+
+        FindPackagesOptions options = WindowsPackageManagerFactory::CreateFindPackagesOptions();
+        options.Filters().Append(filter);
+        options.ResultLimit(20);
+
+        IVectorView<MatchResult> pkgList;
+        for (const auto& search : searches)
+        {
+            filter.Field(search.Field);
+            filter.Option(search.MatchOption);
+
+            const auto result = co_await catalog.FindPackagesAsync(options);
+            pkgList = result.Matches();
+            if (pkgList.Size() > 0)
+            {
+                break;
+            }
+        }
+        co_return pkgList;
+    }
+
+    Windows::Foundation::IAsyncAction TerminalPage::_SearchMissingCommandHandler(const IInspectable /*sender*/, const Microsoft::Terminal::Control::SearchMissingCommandEventArgs args)
+    {
         if (!Feature_QuickFix::IsEnabled())
+        {
+            co_return;
+        }
+        co_await winrt::resume_background();
+
+        // no packages were found, nothing to suggest
+        const auto pkgList = co_await _FindPackageAsync(args.MissingCommand());
+        if (!pkgList || pkgList.Size() == 0)
         {
             co_return;
         }
 
         std::vector<hstring> suggestions;
-        suggestions.reserve(1);
-        suggestions.emplace_back(fmt::format(FMT_COMPILE(L"winget install {}"), args.MissingCommand()));
+        suggestions.reserve(pkgList.Size());
+        for (const auto& pkg : pkgList)
+        {
+            // --id and --source ensure we don't collide with another package catalog
+            suggestions.emplace_back(fmt::format(FMT_COMPILE(L"winget install --id {} -s winget"), pkg.CatalogPackage().Id()));
+        }
 
         co_await wil::resume_foreground(Dispatcher());
 
@@ -3141,6 +3293,31 @@ namespace winrt::TerminalApp::implementation
         }
         term.UpdateWinGetSuggestions(single_threaded_vector<hstring>(std::move(suggestions)));
         term.RefreshQuickFixMenu();
+    }
+
+    void TerminalPage::_WindowSizeChanged(const IInspectable sender, const Microsoft::Terminal::Control::WindowSizeChangedEventArgs args)
+    {
+        // Raise if:
+        // - Not in quake mode
+        // - Not in fullscreen
+        // - Only one tab exists
+        // - Only one pane exists
+        // else:
+        // - Reset conpty to its original size back
+        if (!WindowProperties().IsQuakeWindow() && !Fullscreen() &&
+            NumberOfTabs() == 1 && _GetFocusedTabImpl()->GetLeafPaneCount() == 1)
+        {
+            WindowSizeChanged.raise(*this, args);
+        }
+        else if (const auto& control{ sender.try_as<TermControl>() })
+        {
+            const auto& connection = control.Connection();
+
+            if (const auto& conpty{ connection.try_as<TerminalConnection::ConptyConnection>() })
+            {
+                conpty.ResetSize();
+            }
+        }
     }
 
     // Method Description:
@@ -3175,7 +3352,7 @@ namespace winrt::TerminalApp::implementation
     // - Called when the settings button is clicked. ShellExecutes the settings
     //   file, as to open it in the default editor for .json files. Does this in
     //   a background thread, as to not hang/crash the UI thread.
-    fire_and_forget TerminalPage::_LaunchSettings(const SettingsTarget target)
+    safe_void_coroutine TerminalPage::_LaunchSettings(const SettingsTarget target)
     {
         if (target == SettingsTarget::SettingsUI)
         {
@@ -4340,8 +4517,8 @@ namespace winrt::TerminalApp::implementation
     winrt::hstring TerminalPage::KeyboardServiceDisabledText()
     {
         const auto serviceName{ _getTabletServiceName() };
-        const winrt::hstring text{ fmt::format(std::wstring_view(RS_(L"KeyboardServiceWarningText")), serviceName) };
-        return text;
+        const auto text{ RS_fmt(L"KeyboardServiceWarningText", serviceName) };
+        return winrt::hstring{ text };
     }
 
     // Method Description:
@@ -4414,7 +4591,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - <none>
-    winrt::fire_and_forget TerminalPage::IdentifyWindow()
+    safe_void_coroutine TerminalPage::IdentifyWindow()
     {
         auto weakThis{ get_weak() };
         co_await wil::resume_foreground(Dispatcher());
@@ -4450,7 +4627,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - <none>
-    winrt::fire_and_forget TerminalPage::RenameFailed()
+    safe_void_coroutine TerminalPage::RenameFailed()
     {
         auto weakThis{ get_weak() };
         co_await wil::resume_foreground(Dispatcher());
@@ -4477,7 +4654,7 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    winrt::fire_and_forget TerminalPage::ShowTerminalWorkingDirectory()
+    safe_void_coroutine TerminalPage::ShowTerminalWorkingDirectory()
     {
         auto weakThis{ get_weak() };
         co_await wil::resume_foreground(Dispatcher());
@@ -4631,7 +4808,7 @@ namespace winrt::TerminalApp::implementation
 
         // Build the commandline to pass to wt for this set of NewTerminalArgs
         auto cmdline{
-            fmt::format(L"new-tab {}", newTerminalArgs.ToCommandline().c_str())
+            fmt::format(FMT_COMPILE(L"new-tab {}"), newTerminalArgs.ToCommandline())
         };
 
         wil::unique_process_information pi;
@@ -4703,7 +4880,7 @@ namespace winrt::TerminalApp::implementation
     // - sender: the ICoreState instance containing the connection state
     // Return Value:
     // - <none>
-    winrt::fire_and_forget TerminalPage::_ConnectionStateChangedHandler(const IInspectable& sender, const IInspectable& /*args*/) const
+    safe_void_coroutine TerminalPage::_ConnectionStateChangedHandler(const IInspectable& sender, const IInspectable& /*args*/) const
     {
         if (const auto coreState{ sender.try_as<winrt::Microsoft::Terminal::Control::ICoreState>() })
         {
@@ -4998,8 +5175,8 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    winrt::fire_and_forget TerminalPage::_ControlCompletionsChangedHandler(const IInspectable sender,
-                                                                           const CompletionsChangedEventArgs args)
+    safe_void_coroutine TerminalPage::_ControlCompletionsChangedHandler(const IInspectable sender,
+                                                                        const CompletionsChangedEventArgs args)
     {
         // This will come in on a background (not-UI, not output) thread.
 
@@ -5170,6 +5347,14 @@ namespace winrt::TerminalApp::implementation
                     {
                         ctrl.ClearQuickFix();
                     }
+
+                    TraceLoggingWrite(
+                        g_hTerminalAppProvider,
+                        "QuickFixSuggestionUsed",
+                        TraceLoggingDescription("Event emitted when a winget suggestion from is used"),
+                        TraceLoggingValue("QuickFixMenu", "Source"),
+                        TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+                        TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
                 }
             };
         };
@@ -5191,14 +5376,15 @@ namespace winrt::TerminalApp::implementation
 
             item.Text(qf);
             item.Click(makeCallback(qf));
+            ToolTipService::SetToolTip(item, box_value(qf));
             menu.Items().Append(item);
         }
     }
 
     // Handler for our WindowProperties's PropertyChanged event. We'll use this
     // to pop the "Identify Window" toast when the user renames our window.
-    winrt::fire_and_forget TerminalPage::_windowPropertyChanged(const IInspectable& /*sender*/,
-                                                                const WUX::Data::PropertyChangedEventArgs& args)
+    safe_void_coroutine TerminalPage::_windowPropertyChanged(const IInspectable& /*sender*/,
+                                                             const WUX::Data::PropertyChangedEventArgs& args)
     {
         if (args.PropertyName() != L"WindowName")
         {
@@ -5294,8 +5480,8 @@ namespace winrt::TerminalApp::implementation
     // - Called on the TARGET of a tab drag/drop. We'll unpack the DataPackage
     //   to find who the tab came from. We'll then ask the Monarch to ask the
     //   sender to move that tab to us.
-    winrt::fire_and_forget TerminalPage::_onTabStripDrop(winrt::Windows::Foundation::IInspectable /*sender*/,
-                                                         winrt::Windows::UI::Xaml::DragEventArgs e)
+    safe_void_coroutine TerminalPage::_onTabStripDrop(winrt::Windows::Foundation::IInspectable /*sender*/,
+                                                      winrt::Windows::UI::Xaml::DragEventArgs e)
     {
         // Get the PID and make sure it is the same as ours.
         if (const auto& pidObj{ e.DataView().Properties().TryLookup(L"pid") })
@@ -5366,7 +5552,7 @@ namespace winrt::TerminalApp::implementation
     //   the destination window.
     // - Fortunately, sending the tab is basically just a MoveTab action, so we
     //   can largely reuse that.
-    winrt::fire_and_forget TerminalPage::SendContentToOther(winrt::TerminalApp::RequestReceiveContentArgs args)
+    safe_void_coroutine TerminalPage::SendContentToOther(winrt::TerminalApp::RequestReceiveContentArgs args)
     {
         // validate that we're the source window of the tab in this request
         if (args.SourceWindow() != _WindowProperties.WindowId())
@@ -5385,14 +5571,14 @@ namespace winrt::TerminalApp::implementation
         {
             // `this` is safe to use in here.
 
-            _sendDraggedTabToWindow(winrt::hstring{ fmt::format(L"{}", args.TargetWindow()) },
+            _sendDraggedTabToWindow(winrt::to_hstring(args.TargetWindow()),
                                     args.TabIndex(),
                                     std::nullopt);
         }
     }
 
-    winrt::fire_and_forget TerminalPage::_onTabDroppedOutside(winrt::IInspectable sender,
-                                                              winrt::MUX::Controls::TabViewTabDroppedOutsideEventArgs e)
+    safe_void_coroutine TerminalPage::_onTabDroppedOutside(winrt::IInspectable sender,
+                                                           winrt::MUX::Controls::TabViewTabDroppedOutsideEventArgs e)
     {
         // Get the current pointer point from the CoreWindow
         const auto& pointerPoint{ CoreWindow::GetForCurrentThread().PointerPosition() };
@@ -5508,6 +5694,7 @@ namespace winrt::TerminalApp::implementation
             }
         });
         _extensionPalette.InputSuggestionRequested({ this, &TerminalPage::_OnInputSuggestionRequested });
+        _extensionPalette.ExportChatHistoryRequested({ this, &TerminalPage::_OnExportChatHistoryRequested });
         _extensionPalette.ActiveControlInfoRequested([&](IInspectable const&, IInspectable const&) {
             if (const auto activeControl = _GetActiveControl())
             {

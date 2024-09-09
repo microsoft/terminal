@@ -104,6 +104,7 @@ GetConsoleKeyboardLayoutNameW(
 #define CONSOLE_REGISTRY_DEFAULTFOREGROUND             L"DefaultForeground"
 #define CONSOLE_REGISTRY_DEFAULTBACKGROUND             L"DefaultBackground"
 #define CONSOLE_REGISTRY_TERMINALSCROLLING             L"TerminalScrolling"
+#define CONSOLE_REGISTRY_ANSWERBACKMESSAGE             L"AnswerbackMessage"
 // end V2 console settings
 
     /*

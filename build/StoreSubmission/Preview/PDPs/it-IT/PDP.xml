@@ -54,9 +54,16 @@ Si tratta di un progetto open source e la partecipazione della community è molt
     
   </DevStudio>
   <ReleaseNotes>
-    Versione __VERSION_NUMBER__
+    Versione __VERSION_NUMBER__ 
 
-Per ulteriori dettagli, consulta la nostra pagina delle versioni di GitHub.
+- È stato riscritto il modo in cui le applicazioni della console vengono ospitate all'interno di Terminale. Segnala eventuali bug riscontrati.
+- Terminal supporta ora Sixel.
+- È ora possibile aprire un pannello ancorato contenente frammenti di comandi salvati per usarli in seguito
+- Gli utenti del prompt dei comandi nella versione più recente di Windows 11 potrebbero visualizzare un'icona di "suggerimento rapido" che consiglia il software installabile da WinGet
+- Il testo selezionato sarà ora molto più visibile, oltre che personalizzabile.
+- Sono stati risolti diversi bug di affidabilità, problemi di praticità e fastidi.
+
+Per altri dettagli, vedi la pagina delle versioni di GitHub.
   </ReleaseNotes>
   <ScreenshotCaptions>
     <!-- Valid length: 200 character limit, up to 9 elements per platform -->

@@ -269,6 +269,8 @@ namespace winrt::TerminalApp::implementation
         const auto selectedCommand = _filteredActionsView().SelectedItem();
         const auto filteredCommand{ selectedCommand.try_as<winrt::TerminalApp::FilteredCommand>() };
 
+        _filteredActionsView().ScrollIntoView(selectedCommand);
+
         PropertyChanged.raise(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"SelectedItem" });
 
         // Make sure to not send the preview if we're collapsed. This can
@@ -654,7 +656,7 @@ namespace winrt::TerminalApp::implementation
             automationPeer.RaiseNotificationEvent(
                 Automation::Peers::AutomationNotificationKind::ActionCompleted,
                 Automation::Peers::AutomationNotificationProcessing::CurrentThenMostRecent,
-                fmt::format(std::wstring_view{ RS_(L"SuggestionsControl_NestedCommandAnnouncement") }, ParentCommandName()),
+                RS_fmt(L"SuggestionsControl_NestedCommandAnnouncement", ParentCommandName()),
                 L"SuggestionsControlNestingLevelChanged" /* unique name for this notification category */);
         }
     }
@@ -721,6 +723,20 @@ namespace winrt::TerminalApp::implementation
                     // same with "Suggestions" actions in the future, should we
                     // ever allow non-sendInput actions.
                     DispatchCommandRequested.raise(*this, actionPaletteItem.Command());
+
+                    if (const auto& sendInputCmd = actionPaletteItem.Command().ActionAndArgs().Args().try_as<SendInputArgs>())
+                    {
+                        if (til::starts_with(sendInputCmd.Input(), L"winget"))
+                        {
+                            TraceLoggingWrite(
+                                g_hTerminalAppProvider,
+                                "QuickFixSuggestionUsed",
+                                TraceLoggingDescription("Event emitted when a winget suggestion from is used"),
+                                TraceLoggingValue("SuggestionsUI", "Source"),
+                                TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+                                TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
+                        }
+                    }
 
                     TraceLoggingWrite(
                         g_hTerminalAppProvider, // handle to TerminalApp tracelogging provider
@@ -795,14 +811,46 @@ namespace winrt::TerminalApp::implementation
         // here will ensure that we can check this case appropriately.
         _lastFilterTextWasEmpty = _searchBox().Text().empty();
 
-        const auto lastSelectedIndex = _filteredActionsView().SelectedIndex();
+        const auto lastSelectedIndex = std::max(0, _filteredActionsView().SelectedIndex()); // SelectedIndex will return -1 for "nothing"
 
         _updateFilteredActions();
 
-        // In the command line mode we want the user to explicitly select the command
-        _filteredActionsView().SelectedIndex(std::min<int32_t>(lastSelectedIndex, _filteredActionsView().Items().Size() - 1));
+        if (const auto newSelectedIndex = _filteredActionsView().SelectedIndex();
+            newSelectedIndex == -1)
+        {
+            // Make sure something stays selected
+            _scrollToIndex(lastSelectedIndex);
+        }
+        else
+        {
+            // BODGY: Calling ScrollIntoView on a ListView doesn't always work
+            // immediately after a change to the items. See:
+            // https://stackoverflow.com/questions/16942580/why-doesnt-listview-scrollintoview-ever-work
+            // The SelectionChanged thing we do (in _selectedCommandChanged),
+            // but because we're also not changing the actual selected item when
+            // the size of the list grows (it _stays_ selected, so it never
+            // _changes_), we never get a SelectionChanged.
+            //
+            // To mitigate, only in the case of totally clearing out the filter
+            // (like hitting `esc`), we want to briefly select the 0th item,
+            // then immediately select the one we want to make visible. That
+            // will make sure we get a SelectionChanged when the ListView is
+            // ready, and we can use that to scroll to the right item.
+            //
+            // If we do this on _every_ change, then the preview text flickers
+            // between the 0th item and the correct one.
+            if (_lastFilterTextWasEmpty)
+            {
+                _filteredActionsView().SelectedIndex(0);
+            }
+            _scrollToIndex(newSelectedIndex);
+        }
 
         const auto currentNeedleHasResults{ _filteredActions.Size() > 0 };
+        if (!currentNeedleHasResults)
+        {
+            PreviewAction.raise(*this, nullptr);
+        }
         _noMatchesText().Visibility(currentNeedleHasResults ? Visibility::Collapsed : Visibility::Visible);
         if (auto automationPeer{ Automation::Peers::FrameworkElementAutomationPeer::FromElement(_searchBox()) })
         {
@@ -810,7 +858,7 @@ namespace winrt::TerminalApp::implementation
                 Automation::Peers::AutomationNotificationKind::ActionCompleted,
                 Automation::Peers::AutomationNotificationProcessing::ImportantMostRecent,
                 currentNeedleHasResults ?
-                    winrt::hstring{ fmt::format(std::wstring_view{ RS_(L"SuggestionsControl_MatchesAvailable") }, _filteredActions.Size()) } :
+                    winrt::hstring{ RS_fmt(L"SuggestionsControl_MatchesAvailable", _filteredActions.Size()) } :
                     NoMatchesText(), // what to announce if results were found
                 L"SuggestionsControlResultAnnouncement" /* unique name for this group of notifications */);
         }
@@ -1203,7 +1251,7 @@ namespace winrt::TerminalApp::implementation
         if (_direction == TerminalApp::SuggestionsDirection::BottomUp)
         {
             const auto last = _filteredActionsView().Items().Size() - 1;
-            _filteredActionsView().SelectedIndex(last);
+            _scrollToIndex(last);
         }
         // Move the cursor to the very last position, so it starts immediately
         // after the text. This is apparently done by starting a 0-wide

@@ -75,7 +75,7 @@ namespace winrt::TerminalApp::implementation
 
         void PersistState();
 
-        winrt::fire_and_forget UpdateSettings(winrt::TerminalApp::SettingsLoadEventArgs args);
+        safe_void_coroutine UpdateSettings(winrt::TerminalApp::SettingsLoadEventArgs args);
 
         bool HasCommandlineArguments() const noexcept;
 
@@ -162,6 +162,7 @@ namespace winrt::TerminalApp::implementation
         til::typed_event<Windows::Foundation::IInspectable, Windows::Foundation::IInspectable> IsQuakeWindowChanged;
         til::typed_event<winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::SystemMenuChangeArgs> SystemMenuChangeRequested;
         til::typed_event<winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::SettingsLoadEventArgs> SettingsChanged;
+        til::typed_event<winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Control::WindowSizeChangedEventArgs> WindowSizeChanged;
 
     private:
         // If you add controls here, but forget to null them either here or in
@@ -202,6 +203,7 @@ namespace winrt::TerminalApp::implementation
         void _OnLoaded(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
         void _pageInitialized(const IInspectable& sender, const IInspectable& eventArgs);
         void _OpenSettingsUI();
+        void _WindowSizeChanged(const IInspectable& sender, winrt::Microsoft::Terminal::Control::WindowSizeChangedEventArgs args);
 
         winrt::Windows::Foundation::Collections::IVector<Microsoft::Terminal::Settings::Model::ActionAndArgs> _contentStringToActions(const winrt::hstring& content,
                                                                                                                                       const bool replaceFirstWithNewTab);

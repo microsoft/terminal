@@ -6,10 +6,6 @@
 #include "ExtensionPalette.g.h"
 #include "ChatMessage.g.h"
 #include "GroupedChatMessages.g.h"
-#include "TerminalContext.g.h"
-#include "SystemResponse.g.h"
-
-#include "AzureLLMProvider.h"
 
 namespace winrt::Microsoft::Terminal::Query::Extension::implementation
 {
@@ -32,6 +28,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
 
         TYPED_EVENT(ActiveControlInfoRequested, winrt::Microsoft::Terminal::Query::Extension::ExtensionPalette, Windows::Foundation::IInspectable);
         TYPED_EVENT(InputSuggestionRequested, winrt::Microsoft::Terminal::Query::Extension::ExtensionPalette, winrt::hstring);
+        TYPED_EVENT(ExportChatHistoryRequested, winrt::Microsoft::Terminal::Query::Extension::ExtensionPalette, winrt::hstring);
 
     private:
         friend struct ExtensionPaletteT<ExtensionPalette>; // for Xaml to bind events
@@ -46,10 +43,11 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         winrt::fire_and_forget _getSuggestions(const winrt::hstring& prompt, const winrt::hstring& currentLocalTime);
 
         winrt::hstring _getCurrentLocalTimeHelper();
-        void _splitResponseAndAddToChatHelper(const winrt::hstring& response, const bool isError);
+        void _splitResponseAndAddToChatHelper(const winrt::hstring& response, const winrt::Microsoft::Terminal::Query::Extension::ErrorTypes errorType);
         void _setFocusAndPlaceholderTextHelper();
 
         void _clearAndInitializeMessages(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& args);
+        void _exportMessagesToFile(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& args);
         void _listItemClicked(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::Controls::ItemClickEventArgs& e);
         void _rootPointerPressed(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::Input::PointerRoutedEventArgs& e);
         void _backdropPointerPressed(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::Input::PointerRoutedEventArgs& e);
@@ -148,27 +146,22 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         Windows::Foundation::Collections::IVector<Windows::Foundation::IInspectable> _messages;
     };
 
-    struct TerminalContext : TerminalContextT<TerminalContext>
+    struct TerminalContext : public winrt::implements<TerminalContext, winrt::Microsoft::Terminal::Query::Extension::IContext>
     {
         TerminalContext(const winrt::hstring& activeCommandline) :
-            _activeCommandline{ activeCommandline } {}
-        winrt::hstring ActiveCommandline() { return _activeCommandline; };
+            ActiveCommandline{ activeCommandline } {}
 
-    private:
-        winrt::hstring _activeCommandline;
+        til::property<winrt::hstring> ActiveCommandline;
     };
 
-    struct SystemResponse : SystemResponseT<SystemResponse>
+    struct SystemResponse : public winrt::implements<SystemResponse, winrt::Microsoft::Terminal::Query::Extension::IResponse>
     {
-        SystemResponse(const winrt::hstring& message, const bool isError) :
-            _message{ message },
-            _isError{ isError } {}
-        winrt::hstring Message() { return _message; };
-        bool IsError() { return _isError; };
+        SystemResponse(const winrt::hstring& message, const winrt::Microsoft::Terminal::Query::Extension::ErrorTypes errorType) :
+            Message{ message },
+            ErrorType{ errorType } {}
 
-    private:
-        winrt::hstring _message;
-        bool _isError;
+        til::property<winrt::hstring> Message;
+        til::property<winrt::Microsoft::Terminal::Query::Extension::ErrorTypes> ErrorType;
     };
 }
 
@@ -177,6 +170,4 @@ namespace winrt::Microsoft::Terminal::Query::Extension::factory_implementation
     BASIC_FACTORY(ExtensionPalette);
     BASIC_FACTORY(ChatMessage);
     BASIC_FACTORY(GroupedChatMessages);
-    BASIC_FACTORY(TerminalContext);
-    BASIC_FACTORY(SystemResponse);
 }

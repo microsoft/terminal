@@ -123,8 +123,8 @@ namespace Microsoft::Console::Types
         std::wstring _wordDelimiters{};
         ::Search _searcher;
 
-        virtual void _TranslatePointToScreen(til::point* clientPoint) const = 0;
-        virtual void _TranslatePointFromScreen(til::point* screenPoint) const = 0;
+        virtual void _TranslatePointToScreen(til::point& clientPoint) const = 0;
+        virtual void _TranslatePointFromScreen(til::point& screenPoint) const = 0;
 
         void Initialize(_In_ const UiaPoint point);
 

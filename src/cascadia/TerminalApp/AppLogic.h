@@ -105,12 +105,12 @@ namespace winrt::TerminalApp::implementation
                                                                        const Microsoft::Terminal::Settings::Model::WindowingMode& windowingBehavior);
 
         void _ApplyLanguageSettingChange() noexcept;
-        fire_and_forget _ApplyStartupTaskStateChange();
+        safe_void_coroutine _ApplyStartupTaskStateChange();
 
         [[nodiscard]] HRESULT _TryLoadSettings() noexcept;
         void _ProcessLazySettingsChanges();
         void _RegisterSettingsChange();
-        fire_and_forget _DispatchReloadSettings();
+        safe_void_coroutine _DispatchReloadSettings();
 
         void _setupFolderPathEnvVar();
 

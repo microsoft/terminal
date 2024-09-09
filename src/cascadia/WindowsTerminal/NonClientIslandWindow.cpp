@@ -871,14 +871,15 @@ til::rect NonClientIslandWindow::GetNonClientFrame(UINT dpi) const noexcept
 til::size NonClientIslandWindow::GetTotalNonClientExclusiveSize(UINT dpi) const noexcept
 {
     const auto islandFrame{ GetNonClientFrame(dpi) };
+    const auto scale = GetCurrentDpiScale();
 
     // If we have a titlebar, this is being called after we've initialized, and
     // we can just ask that titlebar how big it wants to be.
-    const auto titleBarHeight = _titlebar ? static_cast<LONG>(_titlebar.ActualHeight()) : 0;
+    const auto titleBarHeight = _titlebar ? static_cast<LONG>(_titlebar.ActualHeight()) * scale : 0;
 
     return {
         islandFrame.right - islandFrame.left,
-        islandFrame.bottom - islandFrame.top + titleBarHeight
+        islandFrame.bottom - islandFrame.top + static_cast<til::CoordType>(titleBarHeight)
     };
 }
 

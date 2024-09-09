@@ -42,7 +42,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         static winrt::event_token AzureOpenAISettingChanged(const winrt::Microsoft::Terminal::Settings::Model::AzureOpenAISettingChangedHandler& handler);
         static void AzureOpenAISettingChanged(const winrt::event_token& token);
 
-
         winrt::hstring OpenAIKey() noexcept;
         void OpenAIKey(const winrt::hstring& key) noexcept;
         static winrt::event_token OpenAISettingChanged(const winrt::Microsoft::Terminal::Settings::Model::OpenAISettingChangedHandler& handler);

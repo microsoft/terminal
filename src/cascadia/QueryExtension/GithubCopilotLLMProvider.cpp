@@ -7,7 +7,6 @@
 #include "LibraryResources.h"
 
 #include "GithubCopilotLLMProvider.g.cpp"
-#include "GithubCopilotResponse.g.cpp"
 
 using namespace winrt::Windows::Foundation;
 using namespace winrt::Windows::Foundation::Collections;
@@ -87,7 +86,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
                 _httpClient.DefaultRequestHeaders().Authorization(WWH::Headers::HttpCredentialsHeaderValue{ L"Bearer", _authToken });
             }
             // raise the new tokens so the app can store them
-            _AuthChangedHandlers(*this, string);
+            //_AuthChangedHandlers(*this, string);
         }
         CATCH_LOG();
 
@@ -115,10 +114,9 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
 
     winrt::Windows::Foundation::IAsyncOperation<Extension::IResponse> GithubCopilotLLMProvider::GetResponseAsync(const winrt::hstring& userPrompt)
     {
-        // Use a flag for whether the response the user receives is an error message
-        // we pass this flag back to the caller so they can handle it appropriately (specifically, ExtensionPalette will send the correct telemetry event)
-        // there is only one case downstream from here that sets this flag to false, so start with it being true
-        bool isError{ true };
+        // Use the ErrorTypes enum to flag whether the response the user receives is an error message
+        // we pass this enum back to the caller so they can handle it appropriately (specifically, ExtensionPalette will send the correct telemetry event)
+        ErrorTypes errorType{ ErrorTypes::None };
         hstring message{};
         bool refreshAttempted{ false };
 
@@ -176,7 +174,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
                     const auto firstChoice = choices.GetAt(0).GetObject();
                     const auto messageObject = firstChoice.GetNamedObject(L"message");
                     message = messageObject.GetNamedString(L"content");
-                    isError = false;
+                    errorType = ErrorTypes::FromProvider;
                 }
             }
             catch (...)
@@ -186,6 +184,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
                 if (refreshAttempted)
                 {
                     message = RS_(L"UnknownErrorMessage");
+                    errorType = ErrorTypes::Unknown;
                     break;
                 }
                 else
@@ -202,7 +201,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         responseMessageObject.Insert(L"content", WDJ::JsonValue::CreateStringValue(message));
         _jsonMessages.Append(responseMessageObject);
 
-        co_return winrt::make<GithubCopilotResponse>(message, isError);
+        co_return winrt::make<GithubCopilotResponse>(message, errorType);
     }
 
     void GithubCopilotLLMProvider::_refreshAuthTokens()
@@ -234,7 +233,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
             _authToken = jsonResult.GetNamedString(L"access_token");
             _refreshToken = jsonResult.GetNamedString(L"refresh_token");
             _httpClient.DefaultRequestHeaders().Authorization(WWH::Headers::HttpCredentialsHeaderValue{ L"Bearer", _authToken });
-            _AuthChangedHandlers(*this, string);
+            //_AuthChangedHandlers(*this, string);
         }
         CATCH_LOG();
     }

@@ -188,6 +188,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         void ContextMenuSelectCommand();
         void ContextMenuSelectOutput();
+
+        winrt::hstring CurrentWorkingDirectory() const;
 #pragma endregion
 
 #pragma region ITerminalInput
@@ -223,7 +225,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void SetSelectionAnchor(const til::point position);
         void SetEndSelectionPoint(const til::point position);
 
-        SearchResults Search(const std::wstring_view& text, bool goForward, bool caseSensitive, bool regularExpression, bool reset);
+        SearchResults Search(SearchRequest request);
         const std::vector<til::point_span>& SearchResultRows() const noexcept;
         void ClearSearch();
         void SnapSearchResultToSelection(bool snap) noexcept;
@@ -293,6 +295,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         til::typed_event<IInspectable, Control::CompletionsChangedEventArgs> CompletionsChanged;
         til::typed_event<IInspectable, Control::SearchMissingCommandEventArgs> SearchMissingCommand;
         til::typed_event<> RefreshQuickFixUI;
+        til::typed_event<IInspectable, Control::WindowSizeChangedEventArgs> WindowSizeChanged;
 
         til::typed_event<> CloseTerminalRequested;
         til::typed_event<> RestartTerminalRequested;
@@ -317,6 +320,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         winrt::com_ptr<ControlSettings> _settings{ nullptr };
 
         std::shared_ptr<::Microsoft::Terminal::Core::Terminal> _terminal{ nullptr };
+        std::wstring _pendingResponses;
 
         // NOTE: _renderEngine must be ordered before _renderer.
         //
@@ -387,9 +391,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void _terminalPlayMidiNote(const int noteNumber,
                                    const int velocity,
                                    const std::chrono::microseconds duration);
-        void _terminalSearchMissingCommand(std::wstring_view missingCommand);
+        void _terminalSearchMissingCommand(std::wstring_view missingCommand, const til::CoordType& bufferRow);
+        void _terminalWindowSizeChanged(int32_t width, int32_t height);
 
-        winrt::fire_and_forget _terminalCompletionsChanged(std::wstring_view menuJson, unsigned int replaceLength);
+        safe_void_coroutine _terminalCompletionsChanged(std::wstring_view menuJson, unsigned int replaceLength);
 
 #pragma endregion
 
@@ -398,7 +403,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
 #pragma region RendererCallbacks
         void _rendererWarning(const HRESULT hr, wil::zwstring_view parameter);
-        winrt::fire_and_forget _renderEngineSwapChainChanged(const HANDLE handle);
+        safe_void_coroutine _renderEngineSwapChainChanged(const HANDLE handle);
         void _rendererBackgroundColorChanged();
         void _rendererTabColorChanged();
 #pragma endregion

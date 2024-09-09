@@ -574,7 +574,7 @@ try
 
     // GH#13211 - Make sure the terminal obeys the resizing quirk. Otherwise,
     // defterm connections to the Terminal are going to have weird resizing.
-    const auto commandLine = fmt::format(FMT_COMPILE(L" --headless --resizeQuirk --signal {:#x}"),
+    const auto commandLine = fmt::format(FMT_COMPILE(L" --headless --signal {:#x}"),
                                          (int64_t)signalPipeOurSide.release());
 
     ConsoleArguments consoleArgs(commandLine, inPipeOurSide.release(), outPipeOurSide.release());
@@ -841,24 +841,25 @@ PWSTR TranslateConsoleTitle(_In_ PCWSTR pwszConsoleTitle, const BOOL fUnexpand, 
     // No matter what, create a renderer.
     try
     {
-        g.pRender = nullptr;
+        if (!gci.IsInVtIoMode())
+        {
+            auto renderThread = std::make_unique<RenderThread>();
+            // stash a local pointer to the thread here -
+            // We're going to give ownership of the thread to the Renderer,
+            //      but the thread also need to be told who its renderer is,
+            //      and we can't do that until the renderer is constructed.
+            auto* const localPointerToThread = renderThread.get();
 
-        auto renderThread = std::make_unique<RenderThread>();
-        // stash a local pointer to the thread here -
-        // We're going to give ownership of the thread to the Renderer,
-        //      but the thread also need to be told who its renderer is,
-        //      and we can't do that until the renderer is constructed.
-        auto* const localPointerToThread = renderThread.get();
+            g.pRender = new Renderer(gci.GetRenderSettings(), &gci.renderData, nullptr, 0, std::move(renderThread));
 
-        g.pRender = new Renderer(gci.GetRenderSettings(), &gci.renderData, nullptr, 0, std::move(renderThread));
+            THROW_IF_FAILED(localPointerToThread->Initialize(g.pRender));
 
-        THROW_IF_FAILED(localPointerToThread->Initialize(g.pRender));
-
-        // Set up the renderer to be used to calculate the width of a glyph,
-        //      should we be unable to figure out its width another way.
-        CodepointWidthDetector::Singleton().SetFallbackMethod([](const std::wstring_view& glyph) {
-            return ServiceLocator::LocateGlobals().pRender->IsGlyphWideByFont(glyph);
-        });
+            // Set up the renderer to be used to calculate the width of a glyph,
+            //      should we be unable to figure out its width another way.
+            CodepointWidthDetector::Singleton().SetFallbackMethod([](const std::wstring_view& glyph) {
+                return ServiceLocator::LocateGlobals().pRender->IsGlyphWideByFont(glyph);
+            });
+        }
     }
     catch (...)
     {
@@ -876,7 +877,10 @@ PWSTR TranslateConsoleTitle(_In_ PCWSTR pwszConsoleTitle, const BOOL fUnexpand, 
     }
 
     // Allow the renderer to paint once the rest of the console is hooked up.
-    g.pRender->EnablePainting();
+    if (g.pRender)
+    {
+        g.pRender->EnablePainting();
+    }
 
     if (SUCCEEDED_NTSTATUS(Status) && ConsoleConnectionDeservesVisibleWindow(p))
     {

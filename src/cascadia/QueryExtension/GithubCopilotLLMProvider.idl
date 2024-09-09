@@ -5,13 +5,8 @@ import "ILMProvider.idl";
 
 namespace Microsoft.Terminal.Query.Extension
 {
-    [default_interface] runtimeclass GithubCopilotLLMProvider : ILMProvider
+    runtimeclass GithubCopilotLLMProvider : [default] ILMProvider
     {
         GithubCopilotLLMProvider();
-    }
-
-    [default_interface] runtimeclass GithubCopilotResponse : IResponse
-    {
-        GithubCopilotResponse(String message, Boolean isError);
     }
 }

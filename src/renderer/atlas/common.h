@@ -393,7 +393,9 @@ namespace Microsoft::Console::Render::Atlas
     struct MiscellaneousSettings
     {
         u32 backgroundColor = 0;
-        u32 selectionColor = 0x7fffffff;
+        u32 foregroundColor = 0;
+        u32 selectionColor = 0xffffffff;
+        u32 selectionForeground = 0xff000000;
         std::wstring customPixelShaderPath;
         std::wstring customPixelShaderImagePath;
         bool useRetroTerminalEffect = false;
@@ -409,8 +411,6 @@ namespace Microsoft::Console::Render::Atlas
         u16x2 targetSize{ 0, 0 };
         // Size of the portion of the text buffer that we're drawing on the screen.
         u16x2 viewportCellCount{ 0, 0 };
-        // The position of the viewport inside the text buffer (in cells).
-        u16x2 viewportOffset{ 0, 0 };
     };
 
     using GenerationalSettings = til::generational<Settings>;
@@ -450,6 +450,21 @@ namespace Microsoft::Console::Render::Atlas
         u16 to = 0;
     };
 
+    struct Bitmap
+    {
+        // Matches ImageSlice::Revision(). A revision of 0 means the bitmap is empty.
+        u64 revision = 0;
+        // The source RGBA data. Its size matches sourceSize exactly.
+        Buffer<u32, 32> source;
+        i32x2 sourceSize{};
+        // Horizontal offset and width of the bitmap after scaling it (in columns).
+        // The height is always the cell height.
+        i32 targetOffset = 0;
+        i32 targetWidth = 0;
+        // This is used to track unused bitmaps, so that we can free them up.
+        bool active = false;
+    };
+
     struct ShapedRow
     {
         void Clear(u16 y, u16 cellHeight) noexcept
@@ -459,10 +474,9 @@ namespace Microsoft::Console::Render::Atlas
             glyphAdvances.clear();
             glyphOffsets.clear();
             colors.clear();
+            bitmap.active = false;
             gridLineRanges.clear();
             lineRendition = LineRendition::SingleWidth;
-            selectionFrom = 0;
-            selectionTo = 0;
             dirtyTop = y * cellHeight;
             dirtyBottom = dirtyTop + cellHeight;
         }
@@ -479,10 +493,9 @@ namespace Microsoft::Console::Render::Atlas
         // Same size as glyphIndices.
         std::vector<u32> colors;
 
+        Bitmap bitmap;
         std::vector<GridLineRange> gridLineRanges;
         LineRendition lineRendition = LineRendition::SingleWidth;
-        u16 selectionFrom = 0;
-        u16 selectionTo = 0;
         til::CoordType dirtyTop = 0;
         til::CoordType dirtyBottom = 0;
     };
@@ -567,14 +580,16 @@ namespace Microsoft::Console::Render::Atlas
         i32r dirtyRectInPx{};
         // In rows.
         range<u16> invalidatedRows{};
+        // In columns.
+        i32 scrollOffsetX = 0;
         // In pixel.
-        i16 scrollOffset = 0;
+        i16 scrollDeltaY = 0;
 
         void MarkAllAsDirty() noexcept
         {
             dirtyRectInPx = { 0, 0, s->targetSize.x, s->targetSize.y };
             invalidatedRows = { 0, s->viewportCellCount.y };
-            scrollOffset = 0;
+            scrollDeltaY = 0;
         }
     };
 

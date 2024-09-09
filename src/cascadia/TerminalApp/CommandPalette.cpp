@@ -626,7 +626,7 @@ namespace winrt::TerminalApp::implementation
             automationPeer.RaiseNotificationEvent(
                 Automation::Peers::AutomationNotificationKind::ActionCompleted,
                 Automation::Peers::AutomationNotificationProcessing::CurrentThenMostRecent,
-                fmt::format(std::wstring_view{ RS_(L"CommandPalette_NestedCommandAnnouncement") }, ParentCommandName()),
+                RS_fmt(L"CommandPalette_NestedCommandAnnouncement", ParentCommandName()),
                 L"CommandPaletteNestingLevelChanged" /* unique name for this notification category */);
         }
     }
@@ -879,7 +879,7 @@ namespace winrt::TerminalApp::implementation
                     Automation::Peers::AutomationNotificationKind::ActionCompleted,
                     Automation::Peers::AutomationNotificationProcessing::ImportantMostRecent,
                     currentNeedleHasResults ?
-                        winrt::hstring{ fmt::format(std::wstring_view{ RS_(L"CommandPalette_MatchesAvailable") }, _filteredActions.Size()) } :
+                        winrt::hstring{ RS_fmt(L"CommandPalette_MatchesAvailable", _filteredActions.Size()) } :
                         NoMatchesText(), // what to announce if results were found
                     L"CommandPaletteResultAnnouncement" /* unique name for this group of notifications */);
             }
@@ -1204,8 +1204,6 @@ namespace winrt::TerminalApp::implementation
     {
         Visibility(Visibility::Collapsed);
 
-        PreviewAction.raise(*this, nullptr);
-
         // Reset visibility in case anchor mode tab switcher just finished.
         _searchBox().Visibility(Visibility::Visible);
 
@@ -1216,6 +1214,7 @@ namespace winrt::TerminalApp::implementation
 
         ParentCommandName(L"");
         _currentNestedCommands.Clear();
+        PreviewAction.raise(*this, nullptr);
     }
 
     void CommandPalette::EnableTabSwitcherMode(const uint32_t startIdx, TabSwitcherMode tabSwitcherMode)

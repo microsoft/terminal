@@ -953,6 +953,9 @@
   <data name="ActionSaveFailedToast.Title" xml:space="preserve">
     <value>Action save failed</value>
   </data>
+  <data name="TerminalChatHistoryDefaultFileName" xml:space="preserve">
+    <value>TerminalChat_</value>
+  </data>
   <data name="CloseSnippetsPaneButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Close pane</value>
   </data>
