@@ -230,7 +230,6 @@ namespace winrt::TerminalApp::implementation
         Microsoft::UI::Xaml::Controls::SplitButton _newTabButton{ nullptr };
         winrt::TerminalApp::ColorPickupFlyout _tabColorPicker{ nullptr };
         winrt::Microsoft::Terminal::Query::Extension::ILMProvider _lmProvider{ nullptr };
-
         winrt::Microsoft::Terminal::Query::Extension::ExtensionPalette _extensionPalette{ nullptr };
         winrt::Windows::UI::Xaml::FrameworkElement::Loaded_revoker _extensionPaletteLoadedRevoker;
         Microsoft::Terminal::Settings::Model::CascadiaSettings _settings{ nullptr };
