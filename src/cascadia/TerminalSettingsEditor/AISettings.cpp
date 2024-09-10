@@ -137,18 +137,33 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _ViewModel.GithubCopilotRefreshToken(L"");
     }
 
-    void AISettings::SetAzureOpenAIActive_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
+    void AISettings::SetAzureOpenAIActive_Check(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
     {
         _ViewModel.AzureOpenAIActive(true);
     }
 
-    void AISettings::SetOpenAIActive_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
+    void AISettings::SetAzureOpenAIActive_Uncheck(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
+    {
+        _ViewModel.AzureOpenAIActive(false);
+    }
+
+    void AISettings::SetOpenAIActive_Check(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
     {
         _ViewModel.OpenAIActive(true);
     }
 
-    void AISettings::SetGithubCopilotActive_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
+    void AISettings::SetOpenAIActive_Uncheck(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
+    {
+        _ViewModel.OpenAIActive(false);
+    }
+
+    void AISettings::SetGithubCopilotActive_Check(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
     {
         _ViewModel.GithubCopilotActive(true);
+    }
+
+    void AISettings::SetGithubCopilotActive_Uncheck(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
+    {
+        _ViewModel.GithubCopilotActive(false);
     }
 }

@@ -632,8 +632,8 @@
     <comment>Text on the button that allows the user to clear the stored key and endpoint.</comment>
   </data>
   <data name="AISettings_SetActiveProvider.Text" xml:space="preserve">
-    <value>Set as Active Provider</value>
-    <comment>Text on the button that allows the user to set the selected provider as their active one.</comment>
+    <value>Set as active provider</value>
+    <comment>Text on the checkbox that allows the user to set the selected provider as their active one.</comment>
   </data>
   <data name="AISettings_EndpointTextBox.Text" xml:space="preserve">
     <value>Endpoint</value>
