@@ -78,6 +78,11 @@ void TerminalInput::ForceDisableWin32InputMode(const bool win32InputMode) noexce
     _forceDisableWin32InputMode = win32InputMode;
 }
 
+void TerminalInput::SetKeypadModeSupport(const bool enabled) noexcept
+{
+    _keypadModeSupported = enabled;
+}
+
 TerminalInput::OutputType TerminalInput::MakeUnhandled() noexcept
 {
     return {};
@@ -438,7 +443,7 @@ try
         // the ASCII character assigned by the keyboard layout, but when set
         // they transmit SS3 escape sequences. When used with a modifier, the
         // modifier is embedded as a parameter value (not standard).
-        if (Feature_KeypadModeEnabled::IsEnabled() && _inputMode.test(Mode::Keypad))
+        if (Feature_KeypadModeEnabled::IsEnabled() && _keypadModeSupported && _inputMode.test(Mode::Keypad))
         {
             defineNumericKey(VK_MULTIPLY, L'j');
             defineNumericKey(VK_ADD, L'k');
@@ -490,7 +495,7 @@ try
 
         // Keypad keys also depend on Keypad mode, the same as ANSI mappings,
         // but the sequences use an ESC ? prefix instead of SS3.
-        if (Feature_KeypadModeEnabled::IsEnabled() && _inputMode.test(Mode::Keypad))
+        if (Feature_KeypadModeEnabled::IsEnabled() && _keypadModeSupported && _inputMode.test(Mode::Keypad))
         {
             defineKeyWithUnusedModifiers(VK_MULTIPLY, L"\033?j"s);
             defineKeyWithUnusedModifiers(VK_ADD, L"\033?k"s);

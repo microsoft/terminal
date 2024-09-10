@@ -70,7 +70,8 @@ Author(s):
     X(bool, AllowHeadless, "compatibility.allowHeadless", false)                                                                                                                                      \
     X(bool, IsolatedMode, "compatibility.isolatedMode", false)                                                                                                                                        \
     X(hstring, SearchWebDefaultQueryUrl, "searchWebDefaultQueryUrl", L"https://www.bing.com/search?q=%22%s%22")                                                                                       \
-    X(bool, AllowVtChecksumReport, "compatibility.allowVtChecksumReport", false)
+    X(bool, AllowVtChecksumReport, "compatibility.allowVtChecksumReport", false)                                                                                                                      \
+    X(bool, AllowKeypadMode, "compatibility.allowKeypadMode", false)
 
 // Also add these settings to:
 // * Profile.idl

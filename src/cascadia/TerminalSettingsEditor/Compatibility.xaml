@@ -29,7 +29,15 @@
         <!--  Allow VT Checksum Report  -->
         <local:SettingContainer x:Uid="Globals_AllowVtChecksumReport">
             <ToggleSwitch IsOn="{x:Bind ViewModel.AllowVtChecksumReport, Mode=TwoWay}"
-                          Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+                          Style="{StaticResource ToggleSwitchInExpanderStyle}"
+                          Visibility="{x:Bind ViewModel.AllowVtChecksumReportAvailable}" />
+        </local:SettingContainer>
+
+        <!--  Allow Keypad Mode  -->
+        <local:SettingContainer x:Uid="Globals_AllowKeypadMode">
+            <ToggleSwitch IsOn="{x:Bind ViewModel.AllowKeypadMode, Mode=TwoWay}"
+                          Style="{StaticResource ToggleSwitchInExpanderStyle}"
+                          Visibility="{x:Bind ViewModel.AllowKeypadMode}" />
         </local:SettingContainer>
     </StackPanel>
 </Page>

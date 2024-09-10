@@ -96,6 +96,7 @@ void Terminal::UpdateSettings(ICoreSettings settings)
     }
 
     _getTerminalInput().ForceDisableWin32InputMode(settings.ForceVTInput());
+    _getTerminalInput().SetKeypadModeSupport(settings.AllowKeypadMode());
 
     if (settings.TabColor() == nullptr)
     {

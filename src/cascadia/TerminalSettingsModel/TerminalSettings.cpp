@@ -374,6 +374,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         _DetectURLs = globalSettings.DetectURLs();
         _EnableUnfocusedAcrylic = globalSettings.EnableUnfocusedAcrylic();
         _AllowVtChecksumReport = globalSettings.AllowVtChecksumReport();
+        _AllowKeypadMode = globalSettings.AllowKeypadMode();
     }
 
     // Method Description:

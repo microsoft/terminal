@@ -51,6 +51,7 @@ namespace Microsoft::Console::VirtualTerminal
         bool GetInputMode(const Mode mode) const noexcept;
         void ResetInputModes() noexcept;
         void ForceDisableWin32InputMode(const bool win32InputMode) noexcept;
+        void SetKeypadModeSupport(const bool enabled) noexcept;
 
 #pragma region MouseInput
         // These methods are defined in mouseInput.cpp
@@ -79,6 +80,7 @@ namespace Microsoft::Console::VirtualTerminal
 
         til::enumset<Mode> _inputMode{ Mode::Ansi, Mode::AutoRepeat, Mode::AlternateScroll };
         bool _forceDisableWin32InputMode{ false };
+        bool _keypadModeSupported{ false };
 
         // In the future, if we add support for "8-bit" input mode, these prefixes
         // will sometimes be replaced with equivalent C1 control characters.

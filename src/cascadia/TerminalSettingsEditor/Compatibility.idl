@@ -9,8 +9,12 @@ namespace Microsoft.Terminal.Settings.Editor
     {
         CompatibilityViewModel(Microsoft.Terminal.Settings.Model.GlobalAppSettings globalSettings);
 
+        Boolean AllowVtChecksumReportAvailable { get; };
+        Boolean AllowKeypadModeAvailable { get; };
+
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, ForceVTInput);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, AllowVtChecksumReport);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, AllowKeypadMode);
     }
 
     [default_interface] runtimeclass Compatibility : Windows.UI.Xaml.Controls.Page

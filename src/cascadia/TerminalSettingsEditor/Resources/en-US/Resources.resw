@@ -547,6 +547,10 @@
     <value>Allow VT checksum report</value>
     <comment>Header for a control to toggle support for a virtual terminal (VT) sequence that reports a checksum of a portion of the terminal buffer.</comment>
   </data>
+  <data name="Globals_AllowKeypadMode.Header" xml:space="preserve">
+    <value>Allow keypad mode</value>
+    <comment>Header for a control to toggle support for VT keypad modes.</comment>
+  </data>
   <data name="Globals_AlwaysOnTop.HelpText" xml:space="preserve">
     <value>Terminal will always be the topmost window on the desktop.</value>
     <comment>A description for what the "always on top" setting does. Presented near "Globals_AlwaysOnTop.Header".</comment>
@@ -558,6 +562,10 @@
   <data name="Globals_AllowVtChecksumReport.HelpText" xml:space="preserve">
     <value>Enables support for the DECRQRCA escape sequence</value>
     <comment>Additional description for what the "allow vt checksum report" setting does. Presented near "Globals_AllowVtChecksumReport.Header".</comment>
+  </data>
+  <data name="Globals_AllowKeypadMode.HelpText" xml:space="preserve">
+    <value>Enables support for the DECKPAM and DECKPNM escape sequences to work as intended</value>
+    <comment>Additional description for what the "allow keypad mode" setting does. Presented near "Globals_AllowKeypadMode.Header".</comment>
   </data>
   <data name="Globals_TabWidthMode.Header" xml:space="preserve">
     <value>Tab width mode</value>

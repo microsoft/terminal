@@ -16,6 +16,16 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
     }
 
+    bool CompatibilityViewModel::AllowVtChecksumReportAvailable() const noexcept
+    {
+        return Feature_VtChecksumReport::IsEnabled();
+    }
+
+    bool CompatibilityViewModel::AllowKeypadModeAvailable() const noexcept
+    {
+        return Feature_KeypadModeEnabled::IsEnabled();
+    }
+
     Compatibility::Compatibility()
     {
         InitializeComponent();
