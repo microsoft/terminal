@@ -35,6 +35,7 @@ dataobject
 dcomp
 debugbreak
 delayimp
+DECRQRCA
 DERR
 dlldata
 DNE
