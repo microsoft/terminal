@@ -173,6 +173,8 @@ public:
     StringHandler RestorePresentationState(const DispatchTypes::PresentationReportFormat /*format*/) override { return nullptr; } // DECRSPS
 
     void PlaySounds(const VTParameters /*parameters*/) override{}; // DECPS
+
+    void SetVtChecksumReportSupport(const bool /*enabled*/) override{};
 };
 
 #pragma warning(default : 26440) // Restore "can be declared noexcept" warning
