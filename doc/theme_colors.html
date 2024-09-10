@@ -7,6 +7,11 @@
     <script src="https://colorjs.io/dist/color.global.min.js"></script>
     <script src="https://cdn.plot.ly/plotly-2.34.0.min.js"></script>
     <style>
+        html {
+            background: #000;
+            color: #fff;
+        }
+
         h2 {
             font-family: monospace;
         }
@@ -70,10 +75,10 @@
             const bright_green = new Color(`color(--okhsl ${Color.to("#0f0", "okhsl").h} 92.5% 80%)`);
             const bright_blue = new Color(`color(--okhsl ${Color.to("#00f", "okhsl").h} 100% 51.2%)`);
 
-            const mixOpts = {space: "oklab", outputSpace: "okhsl"};
-            const bright_yellow = new Color(`color(--okhsl ${bright_red.mix(bright_green, 0.5, mixOpts).h} 100% 86%)`);
-            const bright_purple = new Color(`color(--okhsl ${bright_green.mix(bright_blue, 0.5, mixOpts).h} 100% 80%)`);
-            const bright_cyan = new Color(`color(--okhsl ${bright_blue.mix(bright_red, 0.5, mixOpts).h} 100% 73%)`);
+            const mixOpts = { space: "oklab", outputSpace: "okhsl" };
+            const bright_yellow = new Color(`color(--okhsl ${bright_red.mix(bright_green, 0.5, mixOpts).h} 100% 84%)`);
+            const bright_purple = new Color(`color(--okhsl ${bright_blue.mix(bright_red, 0.5, mixOpts).h} 100% 73%)`);
+            const bright_cyan = new Color(`color(--okhsl ${bright_green.mix(bright_blue, 0.5, mixOpts).h} 100% 80%)`);
 
             const bright = [
                 new Color("oklch(60% 0 0)"),
@@ -81,15 +86,15 @@
                 bright_green,
                 bright_yellow,
                 bright_blue,
-                bright_cyan,
                 bright_purple,
+                bright_cyan,
                 new Color("oklch(100% 0 0)"),
             ];
             const dark = [
                 new Color("oklch(0% 0 0)"),
-                ...bright.slice(1, 8).map(c => c.mix("#000", 0.2, {space: "oklab"})),
+                ...bright.slice(1, 8).map(c => c.mix("#000", 0.2, { space: "oklab" })),
             ];
-            return dark.concat(...bright).map(c => c.to("sRGB", {method: "clip"}).toString({
+            return dark.concat(...bright).map(c => c.to("sRGB").toString({
                 format: "hex",
                 collapse: false
             }))
@@ -113,7 +118,7 @@
             new Color("oklch(80% 0.098 330)"), // Bright Purple
             new Color("oklch(80% 0.098 210)"), // Bright Cyan
             new Color("oklch(100% 0 0)"), // Bright White
-        ].map(c => c.to("sRGB").toString({format: "hex", collapse: false})),
+        ].map(c => c.to("sRGB").toString({ format: "hex", collapse: false })),
         "Terminal.app": [
             "#000000",
             "#990000",
@@ -386,9 +391,7 @@
         ],
     };
 
-    Object.entries(themes).forEach(([name, table]) => append(name, table));
-
-    function append(name, srgb) {
+    Object.entries(themes).forEach(([name, srgb]) => {
         const oklch = srgb.map(c => Color.to(c, "Oklch"));
 
         const title = document.createElement("h2");
@@ -450,7 +453,20 @@
         const plot = document.createElement("div");
         Plotly.newPlot(plot, [{
             type: "scatterpolar",
+            mode: "lines",
+            hoverinfo: "skip",
+            showlegend: false,
+            theta: Array.from({ length: 360 }, (x, i) => i),
+            // Pre-calculated max. chroma per hue for sRGB colors.
+            r: [0.260, 0.258, 0.258, 0.257, 0.257, 0.257, 0.256, 0.256, 0.256, 0.255, 0.254, 0.253, 0.252, 0.251, 0.251, 0.251, 0.252, 0.252, 0.252, 0.252, 0.253, 0.253, 0.253, 0.254, 0.254, 0.255, 0.255, 0.255, 0.255, 0.255, 0.252, 0.246, 0.242, 0.237, 0.233, 0.229, 0.226, 0.221, 0.219, 0.214, 0.213, 0.209, 0.207, 0.204, 0.201, 0.200, 0.196, 0.196, 0.193, 0.190, 0.190, 0.187, 0.185, 0.185, 0.182, 0.182, 0.181, 0.179, 0.179, 0.177, 0.175, 0.176, 0.174, 0.173, 0.174, 0.172, 0.171, 0.172, 0.171, 0.170, 0.171, 0.170, 0.169, 0.170, 0.169, 0.168, 0.170, 0.169, 0.168, 0.170, 0.169, 0.170, 0.171, 0.170, 0.172, 0.172, 0.171, 0.173, 0.173, 0.175, 0.175, 0.175, 0.177, 0.178, 0.180, 0.180, 0.182, 0.183, 0.184, 0.186, 0.187, 0.189, 0.192, 0.193, 0.196, 0.197, 0.200, 0.201, 0.204, 0.208, 0.209, 0.210, 0.212, 0.211, 0.213, 0.215, 0.217, 0.216, 0.218, 0.220, 0.221, 0.223, 0.225, 0.228, 0.228, 0.231, 0.234, 0.234, 0.237, 0.241, 0.244, 0.245, 0.249, 0.253, 0.255, 0.259, 0.264, 0.266, 0.271, 0.276, 0.280, 0.286, 0.289, 0.287, 0.278, 0.271, 0.265, 0.258, 0.251, 0.245, 0.239, 0.234, 0.228, 0.223, 0.219, 0.215, 0.211, 0.209, 0.205, 0.202, 0.199, 0.195, 0.192, 0.190, 0.187, 0.185, 0.182, 0.180, 0.178, 0.176, 0.175, 0.174, 0.172, 0.170, 0.169, 0.167, 0.166, 0.165, 0.163, 0.162, 0.161, 0.160, 0.159, 0.158, 0.157, 0.156, 0.157, 0.157, 0.156, 0.155, 0.155, 0.154, 0.154, 0.154, 0.153, 0.153, 0.153, 0.151, 0.151, 0.149, 0.149, 0.147, 0.148, 0.147, 0.146, 0.146, 0.145, 0.145, 0.145, 0.144, 0.145, 0.144, 0.144, 0.144, 0.144, 0.144, 0.143, 0.144, 0.145, 0.144, 0.145, 0.145, 0.145, 0.147, 0.146, 0.147, 0.147, 0.148, 0.15, 0.149, 0.151, 0.151, 0.153, 0.154, 0.154, 0.156, 0.157, 0.159, 0.159, 0.162, 0.162, 0.165, 0.166, 0.169, 0.17, 0.173, 0.174, 0.178, 0.18, 0.182, 0.186, 0.189, 0.192, 0.197, 0.2, 0.204, 0.208, 0.213, 0.219, 0.224, 0.232, 0.242, 0.249, 0.262, 0.284, 0.308, 0.307, 0.307, 0.306, 0.304, 0.301, 0.301, 0.302, 0.3, 0.297, 0.297, 0.298, 0.296, 0.294, 0.294, 0.295, 0.294, 0.292, 0.292, 0.294, 0.292, 0.290, 0.292, 0.292, 0.29, 0.291, 0.292, 0.290, 0.291, 0.292, 0.291, 0.291, 0.293, 0.291, 0.293, 0.293, 0.292, 0.295, 0.294, 0.295, 0.296, 0.295, 0.298, 0.296, 0.299, 0.298, 0.301, 0.300, 0.303, 0.302, 0.305, 0.303, 0.307, 0.305, 0.308, 0.308, 0.310, 0.313, 0.311, 0.314, 0.316, 0.316, 0.319, 0.320, 0.320, 0.314, 0.312, 0.311, 0.309, 0.303, 0.302, 0.300, 0.299, 0.296, 0.292, 0.291, 0.289, 0.288, 0.287, 0.283, 0.280, 0.279, 0.278, 0.277, 0.276, 0.274, 0.271, 0.269, 0.268, 0.267, 0.266, 0.266, 0.265, 0.264, 0.262],
+            marker: {
+                color: srgb[7],
+            },
+        }, {
+            type: "scatterpolar",
             mode: "markers+text",
+            hoverinfo: "r+theta+text",
+            showlegend: false,
             hovertext: [
                 "Black",
                 "Red",
@@ -484,8 +500,16 @@
                 b: 40,
                 t: 40,
             },
+            paper_bgcolor: "#000",
             polar: {
+                bgcolor: srgb[0],
+                angularaxis: {
+                    color: srgb[7],
+                    gridcolor: srgb[8],
+                },
                 radialaxis: {
+                    color: srgb[7],
+                    gridcolor: srgb[8],
                     range: [0, 0.4],
                 },
             },
@@ -497,7 +521,7 @@
         theme.appendChild(plot);
 
         document.getElementById("container").appendChild(theme);
-    }
+    });
 })()</script>
 </body>
 </html>
