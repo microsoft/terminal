@@ -51,7 +51,8 @@
     X(bool, DetectURLs, true)                                                                                     \
     X(bool, AutoMarkPrompts)                                                                                      \
     X(bool, RepositionCursorWithMouse, false)                                                                     \
-    X(bool, RainbowSuggestions)
+    X(bool, RainbowSuggestions)                                                                                   \
+    X(bool, AllowVtChecksumReport)
 
 // --------------------------- Control Settings ---------------------------
 //  All of these settings are defined in IControlSettings.

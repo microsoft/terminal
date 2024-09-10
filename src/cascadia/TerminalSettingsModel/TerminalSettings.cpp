@@ -373,6 +373,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         _TrimBlockSelection = globalSettings.TrimBlockSelection();
         _DetectURLs = globalSettings.DetectURLs();
         _EnableUnfocusedAcrylic = globalSettings.EnableUnfocusedAcrylic();
+        _AllowVtChecksumReport = globalSettings.AllowVtChecksumReport();
     }
 
     // Method Description:

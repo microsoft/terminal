@@ -134,7 +134,7 @@ void GlobalAppSettings::LayerJson(const Json::Value& json, const OriginTag origi
     // "useTabSwitcher" to "tabSwitcherMode". Continue supporting
     // "useTabSwitcher", but prefer "tabSwitcherMode"
     JsonUtils::GetValueForKey(json, LegacyUseTabSwitcherModeKey, _TabSwitcherMode);
-    
+
     JsonUtils::GetValueForKey(json, LegacyForceVTInputKey, _ForceVTInput);
 
 #define GLOBAL_SETTINGS_LAYER_JSON(type, name, jsonKey, ...) \

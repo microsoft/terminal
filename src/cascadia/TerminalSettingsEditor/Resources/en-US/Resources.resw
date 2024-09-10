@@ -543,6 +543,10 @@
     <value>Force the terminal to use the legacy input encoding</value>
     <comment>Header for a control to toggle legacy input encoding for the terminal.</comment>
   </data>
+  <data name="Globals_AllowVtChecksumReport.Header" xml:space="preserve">
+    <value>Allow VT checksum report</value>
+    <comment>Header for a control to toggle support for a virtual terminal (VT) sequence that reports a checksum of a portion of the terminal buffer.</comment>
+  </data>
   <data name="Globals_AlwaysOnTop.HelpText" xml:space="preserve">
     <value>Terminal will always be the topmost window on the desktop.</value>
     <comment>A description for what the "always on top" setting does. Presented near "Globals_AlwaysOnTop.Header".</comment>
@@ -550,6 +554,10 @@
   <data name="Globals_ForceVTInput.HelpText" xml:space="preserve">
     <value>Certain keys in some applications may stop working when enabling this setting.</value>
     <comment>Additional description for what the "force vt input" setting does. Presented near "Globals_ForceVTInput.Header".</comment>
+  </data>
+  <data name="Globals_AllowVtChecksumReport.HelpText" xml:space="preserve">
+    <value>Enables support for the DECRQRCA escape sequence</value>
+    <comment>Additional description for what the "allow vt checksum report" setting does. Presented near "Globals_AllowVtChecksumReport.Header".</comment>
   </data>
   <data name="Globals_TabWidthMode.Header" xml:space="preserve">
     <value>Tab width mode</value>

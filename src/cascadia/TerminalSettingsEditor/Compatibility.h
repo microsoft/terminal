@@ -19,6 +19,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         using ViewModelHelper<CompatibilityViewModel>::PropertyChanged;
 
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, ForceVTInput);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, AllowVtChecksumReport);
 
     private:
         Model::GlobalAppSettings _GlobalSettings;

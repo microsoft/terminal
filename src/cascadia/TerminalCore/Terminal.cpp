@@ -90,6 +90,11 @@ void Terminal::UpdateSettings(ICoreSettings settings)
     _autoMarkPrompts = settings.AutoMarkPrompts();
     _rainbowSuggestions = settings.RainbowSuggestions();
 
+    if (_stateMachine)
+    {
+        SetVtChecksumReportSupport(settings.AllowVtChecksumReport());
+    }
+
     _getTerminalInput().ForceDisableWin32InputMode(settings.ForceVTInput());
 
     if (settings.TabColor() == nullptr)
@@ -213,6 +218,12 @@ void Terminal::EraseScrollback()
 {
     auto& engine = reinterpret_cast<OutputStateMachineEngine&>(_stateMachine->Engine());
     engine.Dispatch().EraseInDisplay(DispatchTypes::EraseType::Scrollback);
+}
+
+void Terminal::SetVtChecksumReportSupport(const bool enabled)
+{
+    auto& engine = reinterpret_cast<OutputStateMachineEngine&>(_stateMachine->Engine());
+    engine.Dispatch().SetVtChecksumReportSupport(enabled);
 }
 
 bool Terminal::IsXtermBracketedPasteModeEnabled() const noexcept

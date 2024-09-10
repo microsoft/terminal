@@ -20,11 +20,16 @@
     </Page.Resources>
 
     <StackPanel Style="{StaticResource SettingsStackStyle}">
-        <!-- TODO CARLOS -->
         <!--  Force VT Input  -->
-         <local:SettingContainer x:Uid="Globals_ForceVTInput">
+        <local:SettingContainer x:Uid="Globals_ForceVTInput">
             <ToggleSwitch IsOn="{x:Bind ViewModel.ForceVTInput, Mode=TwoWay}"
                           Style="{StaticResource ToggleSwitchInExpanderStyle}" />
-        </local:SettingContainer> 
+        </local:SettingContainer>
+
+        <!--  Allow VT Checksum Report  -->
+        <local:SettingContainer x:Uid="Globals_AllowVtChecksumReport">
+            <ToggleSwitch IsOn="{x:Bind ViewModel.AllowVtChecksumReport, Mode=TwoWay}"
+                          Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+        </local:SettingContainer>
     </StackPanel>
 </Page>
