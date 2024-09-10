@@ -580,7 +580,7 @@
     <comment>Additional description for what the "allow headless" setting does. Presented near "Globals_AllowHeadless.Header".</comment>
   </data>
   <data name="Globals_IsolatedMode.HelpText" xml:space="preserve">
-    <value>Certain features including but not limited to global hotkeys and tab tearout won't work.</value>
+    <value>Certain features including but not limited to global hotkeys, tab drag and drop, and running commandlines in existing windows won't work.</value>
     <comment>Additional description for what the "isolated mode" setting does. Presented near "Globals_IsolatedMode.Header".</comment>
   </data>
   <data name="Globals_TabWidthMode.Header" xml:space="preserve">
