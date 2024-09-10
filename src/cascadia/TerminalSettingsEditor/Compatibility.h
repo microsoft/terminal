@@ -24,6 +24,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, ForceVTInput);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, AllowVtChecksumReport);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, AllowKeypadMode);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, AllowHeadless);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, IsolatedMode);
 
     private:
         Model::GlobalAppSettings _GlobalSettings;

@@ -551,6 +551,14 @@
     <value>Allow keypad mode</value>
     <comment>Header for a control to toggle support for VT keypad modes.</comment>
   </data>
+  <data name="Globals_AllowHeadless.Header" xml:space="preserve">
+    <value>Allow Windows Terminal to run in the background</value>
+    <comment>Header for a control to toggle support for Windows Terminal to run in the background.</comment>
+  </data>
+  <data name="Globals_IsolatedMode.Header" xml:space="preserve">
+    <value>Force each window to be its own process</value>
+    <comment>Header for a control to toggle making each window be its own process.</comment>
+  </data>
   <data name="Globals_AlwaysOnTop.HelpText" xml:space="preserve">
     <value>Terminal will always be the topmost window on the desktop.</value>
     <comment>A description for what the "always on top" setting does. Presented near "Globals_AlwaysOnTop.Header".</comment>
@@ -566,6 +574,14 @@
   <data name="Globals_AllowKeypadMode.HelpText" xml:space="preserve">
     <value>Enables support for the DECKPAM and DECKPNM escape sequences to work as intended</value>
     <comment>Additional description for what the "allow keypad mode" setting does. Presented near "Globals_AllowKeypadMode.Header".</comment>
+  </data>
+  <data name="Globals_AllowHeadless.HelpText" xml:space="preserve">
+    <value>This allows Global Summon and Quake Mode actions to work even when no windows are open.</value>
+    <comment>Additional description for what the "allow headless" setting does. Presented near "Globals_AllowHeadless.Header".</comment>
+  </data>
+  <data name="Globals_IsolatedMode.HelpText" xml:space="preserve">
+    <value>Certain features including but not limited to global hotkeys and tab tearout won't work.</value>
+    <comment>Additional description for what the "isolated mode" setting does. Presented near "Globals_IsolatedMode.Header".</comment>
   </data>
   <data name="Globals_TabWidthMode.Header" xml:space="preserve">
     <value>Tab width mode</value>

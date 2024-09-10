@@ -20,6 +20,18 @@
     </Page.Resources>
 
     <StackPanel Style="{StaticResource SettingsStackStyle}">
+        <!--  Allow Headless  -->
+        <local:SettingContainer x:Uid="Globals_AllowHeadless">
+            <ToggleSwitch IsOn="{x:Bind ViewModel.AllowHeadless, Mode=TwoWay}"
+                          Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+        </local:SettingContainer>
+
+        <!--  Isolated Mode  -->
+        <local:SettingContainer x:Uid="Globals_IsolatedMode">
+            <ToggleSwitch IsOn="{x:Bind ViewModel.IsolatedMode, Mode=TwoWay}"
+                          Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+        </local:SettingContainer>
+
         <!--  Force VT Input  -->
         <local:SettingContainer x:Uid="Globals_ForceVTInput">
             <ToggleSwitch IsOn="{x:Bind ViewModel.ForceVTInput, Mode=TwoWay}"
