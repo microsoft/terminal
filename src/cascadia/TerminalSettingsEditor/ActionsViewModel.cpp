@@ -5,6 +5,7 @@
 #include "ActionsViewModel.h"
 #include "ActionsViewModel.g.cpp"
 #include "KeyBindingViewModel.g.cpp"
+#include "CommandViewModel.g.cpp"
 #include "LibraryResources.h"
 #include "../TerminalSettingsModel/AllShortcutActions.h"
 
@@ -106,6 +107,21 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
+    CommandViewModel::CommandViewModel(Command cmd) :
+        _command{ cmd }
+    {
+    }
+
+    winrt::hstring CommandViewModel::Name() const
+    {
+        return _command.Name();
+    }
+
+    winrt::hstring CommandViewModel::ID() const
+    {
+        return _command.ID();
+    }
+
     ActionsViewModel::ActionsViewModel(Model::CascadiaSettings settings) :
         _Settings{ settings }
     {
@@ -124,16 +140,23 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         const auto& keyBindingMap{ _Settings.ActionMap().KeyBindings() };
         std::vector<Editor::KeyBindingViewModel> keyBindingList;
         keyBindingList.reserve(keyBindingMap.Size());
+        std::vector<Editor::CommandViewModel> commandList;
+        commandList.reserve(keyBindingMap.Size());
         for (const auto& [keys, cmd] : keyBindingMap)
         {
             // convert the cmd into a KeyBindingViewModel
             auto container{ make_self<KeyBindingViewModel>(keys, cmd.Name(), _AvailableActionAndArgs) };
             _RegisterEvents(container);
             keyBindingList.push_back(*container);
+
+            auto cmdVM{ make_self<CommandViewModel>(cmd) };
+            commandList.push_back(*cmdVM);
         }
 
         std::sort(begin(keyBindingList), end(keyBindingList), KeyBindingViewModelComparator{});
         _KeyBindingList = single_threaded_observable_vector(std::move(keyBindingList));
+        std::sort(begin(commandList), end(commandList), CommandViewModelComparator{});
+        _CommandList = single_threaded_observable_vector(std::move(commandList));
     }
 
     void ActionsViewModel::OnAutomationPeerAttached()

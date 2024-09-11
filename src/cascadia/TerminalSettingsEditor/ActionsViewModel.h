@@ -5,6 +5,7 @@
 
 #include "ActionsViewModel.g.h"
 #include "KeyBindingViewModel.g.h"
+#include "CommandViewModel.g.h"
 #include "ModifyKeyBindingEventArgs.g.h"
 #include "Utils.h"
 #include "ViewModelHelpers.h"
@@ -14,6 +15,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     struct KeyBindingViewModelComparator
     {
         bool operator()(const Editor::KeyBindingViewModel& lhs, const Editor::KeyBindingViewModel& rhs) const
+        {
+            return lhs.Name() < rhs.Name();
+        }
+    };
+
+    struct CommandViewModelComparator
+    {
+        bool operator()(const Editor::CommandViewModel& lhs, const Editor::CommandViewModel& rhs) const
         {
             return lhs.Name() < rhs.Name();
         }
@@ -99,6 +108,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         hstring _KeyChordText{};
     };
 
+    struct CommandViewModel : CommandViewModelT<CommandViewModel>, ViewModelHelper<CommandViewModel>
+    {
+    public:
+        CommandViewModel(winrt::Microsoft::Terminal::Settings::Model::Command cmd);
+        winrt::hstring Name() const;
+        winrt::hstring ID() const;
+
+    private:
+        winrt::Microsoft::Terminal::Settings::Model::Command _command;
+    };
+
     struct ActionsViewModel : ActionsViewModelT<ActionsViewModel>, ViewModelHelper<ActionsViewModel>
     {
     public:
@@ -112,6 +132,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         WINRT_PROPERTY(Windows::Foundation::Collections::IObservableVector<Editor::KeyBindingViewModel>, KeyBindingList);
         VIEW_MODEL_OBSERVABLE_PROPERTY(ActionsSubPage, CurrentPage);
+        WINRT_PROPERTY(Windows::Foundation::Collections::IObservableVector<Editor::CommandViewModel>, CommandList);
 
     private:
         bool _AutomationPeerAttached{ false };

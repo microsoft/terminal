@@ -46,6 +46,17 @@ namespace Microsoft.Terminal.Settings.Editor
         event Windows.Foundation.TypedEventHandler<KeyBindingViewModel, Microsoft.Terminal.Control.KeyChord> DeleteKeyBindingRequested;
     }
 
+    runtimeclass CommandViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged
+    {
+        // Settings Model side
+        String Name { get; };
+        String ID { get; };
+        // icon
+        // list of keybindings
+
+        // UI side
+    }
+
     enum ActionsSubPage
     {
         Base = 0,
@@ -64,5 +75,7 @@ namespace Microsoft.Terminal.Settings.Editor
         event Windows.Foundation.TypedEventHandler<Object, Object> UpdateBackground;
 
         ActionsSubPage CurrentPage;
+
+        IObservableVector<CommandViewModel> CommandList { get; };
     }
 }
