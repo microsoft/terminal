@@ -45,7 +45,7 @@
                             ResourceKey="TextFillColorPrimaryBrush" />
 
             <StaticResource x:Key="SettingContainerResetButtonIconForeground"
-                            ResourceKey="SystemAccentColorDark2"/>
+                            ResourceKey="SystemAccentColorDark2" />
 
         </ResourceDictionary>
         <ResourceDictionary x:Key="HighContrast">
@@ -78,7 +78,7 @@
                             ResourceKey="SystemColorWindowTextColorBrush" />
 
             <StaticResource x:Key="SettingContainerResetButtonIconForeground"
-                            ResourceKey="SystemAccentColorLight1"/>
+                            ResourceKey="SystemAccentColorLight1" />
         </ResourceDictionary>
         <ResourceDictionary x:Key="Dark">
             <Style x:Key="SecondaryTextBlockStyle"
@@ -114,7 +114,7 @@
                             ResourceKey="TextFillColorPrimaryBrush" />
 
             <StaticResource x:Key="SettingContainerResetButtonIconForeground"
-                            ResourceKey="SystemAccentColorLight2"/>
+                            ResourceKey="SystemAccentColorLight2" />
         </ResourceDictionary>
     </ResourceDictionary.ThemeDictionaries>
 
