@@ -28,13 +28,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         hstring ToString();
 
         bool RequestRename(winrt::hstring newName);
+        void RequestDeleteCurrentScheme();
 
         Editor::ColorTableEntry ColorEntryAt(uint32_t index);
         bool IsDefaultScheme();
         void RefreshIsDefault();
         bool IsEditable() const;
 
-        void DeleteConfirmation_Click(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::RoutedEventArgs& e);
         void SetAsDefault_Click(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::RoutedEventArgs& e);
         void Duplicate_Click(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::RoutedEventArgs& e);
 

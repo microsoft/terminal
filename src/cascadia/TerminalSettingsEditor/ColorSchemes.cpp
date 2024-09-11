@@ -46,12 +46,20 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         });
     }
 
-    void ColorSchemes::AddNew_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
+    void ColorSchemes::AddNew_Click(const IInspectable& sender, const RoutedEventArgs& /*e*/)
     {
         if (const auto newSchemeVM{ _ViewModel.RequestAddNew() })
         {
             ColorSchemeListView().SelectedItem(newSchemeVM);
             _ViewModel.RequestEditSelectedScheme();
+
+            if (auto automationPeer{ Automation::Peers::FrameworkElementAutomationPeer::FromElement(sender.as<UIElement>()) })
+            {
+                automationPeer.RaiseNotificationEvent(Automation::Peers::AutomationNotificationKind::ActionCompleted,
+                                                      Automation::Peers::AutomationNotificationProcessing::ImportantAll,
+                                                      RS_fmt(L"ColorScheme_AddNewButton_ConfirmationMessage", newSchemeVM.Name()),
+                                                      L"ColorSchemeAdded");
+            }
         }
     }
 

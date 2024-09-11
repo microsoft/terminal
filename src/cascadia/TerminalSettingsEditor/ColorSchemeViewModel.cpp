@@ -139,7 +139,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
-    void ColorSchemeViewModel::DeleteConfirmation_Click(const IInspectable& /*sender*/, const Windows::UI::Xaml::RoutedEventArgs& /*e*/)
+    void ColorSchemeViewModel::RequestDeleteCurrentScheme()
     {
         if (const auto parentPageVM{ _parentPageVM.get() })
         {

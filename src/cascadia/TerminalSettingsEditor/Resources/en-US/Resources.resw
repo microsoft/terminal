@@ -1483,6 +1483,18 @@
     <value>Add new</value>
     <comment>Button label that creates a new color scheme.</comment>
   </data>
+  <data name="ColorScheme_AddNewButton_ConfirmationMessage" xml:space="preserve">
+    <value>{} added</value>
+    <comment>{Locked="{}"} Confirmation message announced by the screen reader that the color scheme was successfully added. "{}" will be replaced with the color scheme's name.</comment>
+  </data>
+  <data name="ColorScheme_Rename_ConfirmationMessage" xml:space="preserve">
+    <value>{} renamed to {}</value>
+    <comment>{Locked="{}"} Confirmation message announced by the screen reader that the color scheme was successfully renamed. "{}" will be replaced with the color scheme's old and new name respectively.</comment>
+  </data>
+  <data name="ColorScheme_Delete_ConfirmationMessage" xml:space="preserve">
+    <value>{} deleted</value>
+    <comment>{Locked="{}"} Confirmation message announced by the screen reader that the color scheme was successfully deleted. "{}" will be replaced with the color scheme's name.</comment>
+  </data>
   <data name="ColorScheme_DeleteButton.Text" xml:space="preserve">
     <value>Delete color scheme</value>
     <comment>Button label that deletes the selected color scheme.</comment>

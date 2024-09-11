@@ -115,12 +115,21 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void EditColorScheme::_RenameCurrentScheme(hstring newName)
     {
+        const auto oldName = _ViewModel.Name();
         if (_ViewModel.RequestRename(newName))
         {
             // update the UI
             RenameErrorTip().IsOpen(false);
 
             NameBox().Focus(FocusState::Programmatic);
+
+            if (auto automationPeer{ Automation::Peers::FrameworkElementAutomationPeer::FromElement(*this) })
+            {
+                automationPeer.RaiseNotificationEvent(Automation::Peers::AutomationNotificationKind::ActionCompleted,
+                                                      Automation::Peers::AutomationNotificationProcessing::ImportantAll,
+                                                      RS_fmt(L"ColorScheme_Rename_ConfirmationMessage", oldName, newName),
+                                                      L"ColorSchemeAdded");
+            }
         }
         else
         {
@@ -130,6 +139,19 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             // focus the name box
             NameBox().Focus(FocusState::Programmatic);
             NameBox().SelectAll();
+        }
+    }
+
+    void EditColorScheme::DeleteConfirmation_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
+    {
+        winrt::get_self<ColorSchemeViewModel>(_ViewModel)->RequestDeleteCurrentScheme();
+
+        if (auto automationPeer{ Automation::Peers::FrameworkElementAutomationPeer::FromElement(*this) })
+        {
+            automationPeer.RaiseNotificationEvent(Automation::Peers::AutomationNotificationKind::ActionCompleted,
+                                                  Automation::Peers::AutomationNotificationProcessing::ImportantAll,
+                                                  RS_fmt(L"ColorScheme_Delete_ConfirmationMessage", _ViewModel.Name()),
+                                                  L"ColorSchemeDeleted");
         }
     }
 }

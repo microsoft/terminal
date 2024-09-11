@@ -493,7 +493,7 @@
                             <TextBlock x:Uid="ColorScheme_DeleteConfirmationMessage"
                                        Style="{StaticResource CustomFlyoutTextStyle}" />
                             <Button x:Uid="ColorScheme_DeleteConfirmationButton"
-                                    Click="{x:Bind ViewModel.DeleteConfirmation_Click}" />
+                                    Click="DeleteConfirmation_Click" />
                         </StackPanel>
                     </Flyout>
                 </Button.Flyout>
