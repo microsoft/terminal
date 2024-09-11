@@ -61,6 +61,44 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
             // we got tokens, use them
             _httpClient.DefaultRequestHeaders().Authorization(WWH::Headers::HttpCredentialsHeaderValue{ L"Bearer", _authToken });
         }
+
+        _obtainUsernameAndRefreshTokensIfNeeded();
+    }
+
+    winrt::fire_and_forget GithubCopilotLLMProvider::_obtainUsernameAndRefreshTokensIfNeeded()
+    {
+        WWH::HttpRequestMessage request{ WWH::HttpMethod::Get(), Uri{ L"https://api.github.com/user" } };
+        request.Headers().Accept().TryParseAdd(L"application/json");
+        request.Headers().UserAgent().TryParseAdd(L"Windows Terminal");
+
+        co_await winrt::resume_background();
+
+        bool refreshAttempted{ false };
+
+        do
+        {
+            try
+            {
+                const auto response = _httpClient.SendRequestAsync(request).get();
+                const auto string{ response.Content().ReadAsStringAsync().get() };
+                const auto jsonResult{ WDJ::JsonObject::Parse(string) };
+                _QueryMetaData = jsonResult.GetNamedString(L"login");
+                break;
+            }
+            catch (...)
+            {
+                // unknown failure, try refreshing the auth token if we haven't already
+                if (!refreshAttempted)
+                {
+                    _refreshAuthTokens();
+                    refreshAttempted = true;
+                }
+                else
+                {
+                    break;
+                }
+            }
+        } while (refreshAttempted);
     }
 
     winrt::fire_and_forget GithubCopilotLLMProvider::_completeAuthWithUrl(const Windows::Foundation::Uri url)
@@ -193,6 +231,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
                     message = messageObject.GetNamedString(L"content");
                     errorType = ErrorTypes::FromProvider;
                 }
+                break;
             }
             catch (...)
             {
@@ -250,7 +289,12 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
             _authToken = jsonResult.GetNamedString(L"access_token");
             _refreshToken = jsonResult.GetNamedString(L"refresh_token");
             _httpClient.DefaultRequestHeaders().Authorization(WWH::Headers::HttpCredentialsHeaderValue{ L"Bearer", _authToken });
-            //_AuthChangedHandlers(*this, string);
+
+            // raise the new tokens so the app can store them
+            Windows::Foundation::Collections::ValueSet authValues{};
+            authValues.Insert(L"access_token", Windows::Foundation::PropertyValue::CreateString(_authToken));
+            authValues.Insert(L"refresh_token", Windows::Foundation::PropertyValue::CreateString(_refreshToken));
+            _AuthChangedHandlers(*this, authValues);
         }
         CATCH_LOG();
     }

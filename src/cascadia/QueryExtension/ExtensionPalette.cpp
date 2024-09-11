@@ -113,7 +113,8 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
     {
         const auto userMessage = winrt::make<ChatMessage>(prompt, true, false);
         std::vector<IInspectable> userMessageVector{ userMessage };
-        const auto userGroupedMessages = winrt::make<GroupedChatMessages>(currentLocalTime, true, _ProfileName, winrt::single_threaded_vector(std::move(userMessageVector)));
+        const auto queryMetaData = _lmProvider ? _lmProvider.QueryMetaData() : L"";
+        const auto userGroupedMessages = winrt::make<GroupedChatMessages>(currentLocalTime, true, _ProfileName, winrt::single_threaded_vector(std::move(userMessageVector)), queryMetaData);
         _messages.Append(userGroupedMessages);
         _queryBox().Text(L"");
 

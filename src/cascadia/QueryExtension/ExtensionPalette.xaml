@@ -163,14 +163,21 @@
             </Style>
             <DataTemplate x:Key="QueryGroupedMessageTemplate"
                           x:DataType="local:GroupedChatMessages">
-                <TextBlock Margin="0,0,0,-6"
-                           HorizontalAlignment="Right"
-                           VerticalAlignment="Bottom"
-                           FontFamily="Segoe UI"
-                           FontSize="12"
-                           Opacity="0.786">
-                    <Run Text="{x:Bind Key}" />
-                </TextBlock>
+                <StackPanel Orientation="Horizontal"
+                            Margin="0,0,0,-6"
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Bottom"
+                            Spacing="4">
+                    <TextBlock FontFamily="Segoe UI"
+                               FontSize="12">
+                        <Run Text="{x:Bind MetaData}" />
+                    </TextBlock>
+                    <TextBlock FontFamily="Segoe UI"
+                               FontSize="12"
+                               Opacity="0.786">
+                        <Run Text="{x:Bind Key}" />
+                    </TextBlock>
+                </StackPanel>
             </DataTemplate>
             <DataTemplate x:Key="ResponseGroupedMessageTemplate"
                           x:DataType="local:GroupedChatMessages">

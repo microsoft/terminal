@@ -38,6 +38,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
 
         void _refreshAuthTokens();
         winrt::fire_and_forget _completeAuthWithUrl(const Windows::Foundation::Uri url);
+        winrt::fire_and_forget _obtainUsernameAndRefreshTokensIfNeeded();
     };
 
     struct GithubCopilotResponse : public winrt::implements<GithubCopilotResponse, winrt::Microsoft::Terminal::Query::Extension::IResponse>
