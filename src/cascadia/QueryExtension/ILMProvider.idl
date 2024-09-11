@@ -15,6 +15,14 @@ namespace Microsoft.Terminal.Query.Extension
         // auth related functions
         void SetAuthentication(Windows.Foundation.Collections.ValueSet authValues);
         event Windows.Foundation.TypedEventHandler<ILMProvider, Windows.Foundation.Collections.ValueSet> AuthChanged;
+
+        // UI related settings
+        String HeaderIconPath { get; };
+        String HeaderText { get; };
+        String SubheaderText { get; };
+        String BadgeIconPath { get; };
+        String ResponseMetaData { get; };
+        String QueryMetaData { get; };
     }
 
     enum ErrorTypes

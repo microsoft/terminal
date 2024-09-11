@@ -18,10 +18,23 @@ namespace WWH = ::winrt::Windows::Web::Http;
 namespace WSS = ::winrt::Windows::Storage::Streams;
 namespace WDJ = ::winrt::Windows::Data::Json;
 
-static constexpr std::wstring_view acceptedModel{ L"gpt-3.5-turbo" };
+static constexpr std::wstring_view headerIconPath{ L"ms-appx:///ProfileIcons/githubCopilotLogo.png" };
+static constexpr std::wstring_view headerText{ L"Github Copilot" };
+static constexpr std::wstring_view subheaderText{ L"Take command of your Terminal. Ask Copilot for assistance right in your terminal." };
+static constexpr std::wstring_view badgeIconPath{ L"ms-appx:///ProfileIcons/githubCopilotBadge.png" };
+static constexpr std::wstring_view responseMetaData{ L"Github Copilot" };
 
 namespace winrt::Microsoft::Terminal::Query::Extension::implementation
 {
+    GithubCopilotLLMProvider::GithubCopilotLLMProvider()
+    {
+        _HeaderIconPath = headerIconPath;
+        _HeaderText = headerText;
+        _SubheaderText = subheaderText;
+        _BadgeIconPath = badgeIconPath;
+        _ResponseMetaData = responseMetaData;
+    }
+
     void GithubCopilotLLMProvider::SetAuthentication(const Windows::Foundation::Collections::ValueSet& authValues)
     {
         _httpClient = winrt::Windows::Web::Http::HttpClient{};
@@ -85,8 +98,12 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
                 _refreshToken = refreshToken;
                 _httpClient.DefaultRequestHeaders().Authorization(WWH::Headers::HttpCredentialsHeaderValue{ L"Bearer", _authToken });
             }
+
             // raise the new tokens so the app can store them
-            //_AuthChangedHandlers(*this, string);
+            Windows::Foundation::Collections::ValueSet authValues{};
+            authValues.Insert(L"access_token", Windows::Foundation::PropertyValue::CreateString(_authToken));
+            authValues.Insert(L"refresh_token", Windows::Foundation::PropertyValue::CreateString(_refreshToken));
+            _AuthChangedHandlers(*this, authValues);
         }
         CATCH_LOG();
 
