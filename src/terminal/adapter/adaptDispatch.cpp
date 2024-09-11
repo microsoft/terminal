@@ -1304,7 +1304,7 @@ void AdaptDispatch::SelectAttributeChangeExtent(const DispatchTypes::ChangeExten
     }
 }
 
-void AdaptDispatch::SetVtChecksumReportSupport(const bool enabled)
+void AdaptDispatch::SetVtChecksumReportSupport(const bool enabled) noexcept
 {
     _vtChecksumReportEnabled = enabled;
 }

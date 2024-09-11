@@ -184,7 +184,7 @@ namespace Microsoft::Console::VirtualTerminal
 
         void PlaySounds(const VTParameters parameters) override; // DECPS
 
-        void SetVtChecksumReportSupport(const bool enabled) override;
+        void SetVtChecksumReportSupport(const bool enabled) noexcept override;
 
     private:
         enum class Mode
