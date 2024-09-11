@@ -178,7 +178,7 @@
                             <!--  command name  -->
                             <ColumnDefinition Width="*" />
                             <!--  key chord  -->
-                            <ColumnDefinition Width="150" />
+                            <ColumnDefinition Width="auto" />
                             <!--  edit buttons  -->
                             <!--
                                 This needs to be 112 because that is the width of the row of buttons in edit mode + padding.
