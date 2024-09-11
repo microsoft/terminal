@@ -19,10 +19,10 @@ namespace WSS = ::winrt::Windows::Storage::Streams;
 namespace WDJ = ::winrt::Windows::Data::Json;
 
 static constexpr std::wstring_view headerIconPath{ L"ms-appx:///ProfileIcons/githubCopilotLogo.png" };
-static constexpr std::wstring_view headerText{ L"Github Copilot" };
+static constexpr std::wstring_view headerText{ L"GitHub Copilot" };
 static constexpr std::wstring_view subheaderText{ L"Take command of your Terminal. Ask Copilot for assistance right in your terminal." };
 static constexpr std::wstring_view badgeIconPath{ L"ms-appx:///ProfileIcons/githubCopilotBadge.png" };
-static constexpr std::wstring_view responseMetaData{ L"Github Copilot" };
+static constexpr std::wstring_view responseMetaData{ L"GitHub Copilot" };
 
 namespace winrt::Microsoft::Terminal::Query::Extension::implementation
 {
