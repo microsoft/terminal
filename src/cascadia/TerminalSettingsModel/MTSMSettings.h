@@ -93,14 +93,14 @@ Author(s):
     X(hstring, TabTitle, "tabTitle")                                                                                                                           \
     X(Model::BellStyle, BellStyle, "bellStyle", BellStyle::Audible)                                                                                            \
     X(IEnvironmentVariableMap, EnvironmentVariables, "environment", nullptr)                                                                                   \
-    X(bool, RightClickContextMenu, "experimental.rightClickContextMenu", false)                                                                                \
+    X(bool, RightClickContextMenu, "rightClickContextMenu", false)                                                                                             \
     X(Windows::Foundation::Collections::IVector<winrt::hstring>, BellSound, "bellSound", nullptr)                                                              \
     X(bool, Elevate, "elevate", false)                                                                                                                         \
     X(bool, AutoMarkPrompts, "autoMarkPrompts", true)                                                                                                          \
     X(bool, ShowMarks, "showMarksOnScrollbar", false)                                                                                                          \
     X(bool, RepositionCursorWithMouse, "experimental.repositionCursorWithMouse", false)                                                                        \
     X(bool, ReloadEnvironmentVariables, "compatibility.reloadEnvironmentVariables", true)                                                                      \
-    X(bool, RainbowSuggestions, "experimental.rainbowSuggestions", false)
+    X(bool, RainbowSuggestions, "rainbowSuggestions", false)
 
 // Intentionally omitted Profile settings:
 // * Name

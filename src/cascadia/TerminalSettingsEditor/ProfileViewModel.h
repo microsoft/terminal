@@ -120,6 +120,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         OBSERVABLE_PROJECTED_SETTING(_profile, ShowMarks);
         OBSERVABLE_PROJECTED_SETTING(_profile, AutoMarkPrompts);
         OBSERVABLE_PROJECTED_SETTING(_profile, RepositionCursorWithMouse);
+        OBSERVABLE_PROJECTED_SETTING(_profile, RainbowSuggestions);
 
         WINRT_PROPERTY(bool, IsBaseLayer, false);
         WINRT_PROPERTY(bool, FocusDeleteButton, false);

@@ -573,11 +573,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
-    double AppearanceViewModel::LineHeight() const
+    double AppearanceViewModel::_extractCellSizeValue(const hstring val) const
     {
-        const auto fontInfo = _appearance.SourceProfile().FontInfo();
-        const auto cellHeight = fontInfo.CellHeight();
-        const auto str = cellHeight.c_str();
+        const auto str = val.c_str();
 
         auto& errnoRef = errno; // Nonzero cost, pay it once.
         errnoRef = 0;
@@ -588,29 +586,49 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return str == end || errnoRef == ERANGE ? NAN : value;
     }
 
+    double AppearanceViewModel::LineHeight() const
+    {
+        const auto cellHeight = _appearance.SourceProfile().FontInfo().CellHeight();
+        return _extractCellSizeValue(cellHeight);
+    }
+
+    double AppearanceViewModel::CellWidth() const
+    {
+        const auto cellWidth = _appearance.SourceProfile().FontInfo().CellHeight();
+        return _extractCellSizeValue(cellWidth);
+    }
+
+#define CELL_SIZE_SETTER(modelName, viewModelName)                 \
+    std::wstring str;                                              \
+                                                                   \
+    if (value >= 0.1 && value <= 10.0)                             \
+    {                                                              \
+        str = fmt::format(FMT_STRING(L"{:.6g}"), value);           \
+    }                                                              \
+                                                                   \
+    const auto fontInfo = _appearance.SourceProfile().FontInfo();  \
+                                                                   \
+    if (fontInfo.modelName() != str)                               \
+    {                                                              \
+        if (str.empty())                                           \
+        {                                                          \
+            fontInfo.Clear##modelName();                           \
+        }                                                          \
+        else                                                       \
+        {                                                          \
+            fontInfo.modelName(str);                               \
+        }                                                          \
+        _NotifyChanges(L"Has" #viewModelName, L## #viewModelName); \
+    }
+
     void AppearanceViewModel::LineHeight(const double value)
     {
-        std::wstring str;
+        CELL_SIZE_SETTER(CellHeight, LineHeight);
+    }
 
-        if (value >= 0.1 && value <= 10.0)
-        {
-            str = fmt::format(FMT_STRING(L"{:.6g}"), value);
-        }
-
-        const auto fontInfo = _appearance.SourceProfile().FontInfo();
-
-        if (fontInfo.CellHeight() != str)
-        {
-            if (str.empty())
-            {
-                fontInfo.ClearCellHeight();
-            }
-            else
-            {
-                fontInfo.CellHeight(str);
-            }
-            _NotifyChanges(L"HasLineHeight", L"LineHeight");
-        }
+    void AppearanceViewModel::CellWidth(const double value)
+    {
+        CELL_SIZE_SETTER(CellWidth, CellWidth);
     }
 
     bool AppearanceViewModel::HasLineHeight() const
@@ -619,15 +637,32 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return fontInfo.HasCellHeight();
     }
 
+    bool AppearanceViewModel::HasCellWidth() const
+    {
+        const auto fontInfo = _appearance.SourceProfile().FontInfo();
+        return fontInfo.HasCellWidth();
+    }
+
     void AppearanceViewModel::ClearLineHeight()
     {
         LineHeight(NAN);
+    }
+
+    void AppearanceViewModel::ClearCellWidth()
+    {
+        CellWidth(NAN);
     }
 
     Model::FontConfig AppearanceViewModel::LineHeightOverrideSource() const
     {
         const auto fontInfo = _appearance.SourceProfile().FontInfo();
         return fontInfo.CellHeightOverrideSource();
+    }
+
+    Model::FontConfig AppearanceViewModel::CellWidthOverrideSource() const
+    {
+        const auto fontInfo = _appearance.SourceProfile().FontInfo();
+        return fontInfo.CellWidthOverrideSource();
     }
 
     void AppearanceViewModel::SetFontWeightFromDouble(double fontWeight)

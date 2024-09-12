@@ -92,6 +92,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void ClearLineHeight();
         Model::FontConfig LineHeightOverrideSource() const;
 
+        double CellWidth() const;
+        void CellWidth(const double value);
+        bool HasCellWidth() const;
+        void ClearCellWidth();
+        Model::FontConfig CellWidthOverrideSource() const;
+
         void SetFontWeightFromDouble(double fontWeight);
 
         const FontFaceDependentsData& FontFaceDependents();
@@ -160,6 +166,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void _notifyChangesForFontSettingsReactive(FontSettingIndex fontSettingsIndex);
         void _deleteAllFontKeyValuePairs(FontSettingIndex index);
         void _addMenuFlyoutItemToUnused(FontSettingIndex index, Windows::UI::Xaml::Controls::MenuFlyoutItemBase item);
+
+        double _extractCellSizeValue(const hstring val) const;
 
         Model::AppearanceConfig _appearance;
         winrt::hstring _lastBgImagePath;

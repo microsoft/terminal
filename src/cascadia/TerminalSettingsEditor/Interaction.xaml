@@ -88,6 +88,21 @@
                 <ToggleSwitch IsOn="{x:Bind ViewModel.DetectURLs, Mode=TwoWay}"
                               Style="{StaticResource ToggleSwitchInExpanderStyle}" />
             </local:SettingContainer>
+
+            <!--  Search Web Default Query URL  -->
+            <local:SettingContainer x:Uid="Globals_SearchWebDefaultQueryUrl"
+                                    CurrentValue="{x:Bind ViewModel.SearchWebDefaultQueryUrl, Mode=OneWay}"
+                                    Style="{StaticResource ExpanderSettingContainerStyle}">
+                <TextBox IsSpellCheckEnabled="False"
+                         Style="{StaticResource TextBoxSettingStyle}"
+                         Text="{x:Bind ViewModel.SearchWebDefaultQueryUrl, Mode=TwoWay}" />
+            </local:SettingContainer>
+
+            <!--  Enable Color Selection  -->
+            <local:SettingContainer x:Uid="Globals_EnableColorSelection">
+                <ToggleSwitch IsOn="{x:Bind ViewModel.EnableColorSelection, Mode=TwoWay}"
+                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+            </local:SettingContainer>
         </StackPanel>
 
         <StackPanel Style="{StaticResource SettingsStackStyle}">

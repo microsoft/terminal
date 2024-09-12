@@ -165,6 +165,14 @@
                               Style="{StaticResource ToggleSwitchInExpanderStyle}" />
             </local:SettingContainer>
 
+            <!--  RainbowSuggestions  -->
+            <local:SettingContainer x:Uid="Profile_RainbowSuggestions"
+                                    ClearSettingValue="{x:Bind Profile.ClearRainbowSuggestions}"
+                                    HasSettingValue="{x:Bind Profile.HasRainbowSuggestions, Mode=OneWay}"
+                                    SettingOverrideSource="{x:Bind Profile.RainbowSuggestionsOverrideSource, Mode=OneWay}">
+                <ToggleSwitch IsOn="{x:Bind Profile.RainbowSuggestions, Mode=TwoWay}"
+                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+            </local:SettingContainer>
         </StackPanel>
     </Grid>
 </Page>
