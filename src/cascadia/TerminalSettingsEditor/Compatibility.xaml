@@ -51,5 +51,14 @@
                           Style="{StaticResource ToggleSwitchInExpanderStyle}"
                           Visibility="{x:Bind ViewModel.AllowKeypadMode}" />
         </local:SettingContainer>
+
+        <!--  Text Measurement  -->
+        <local:SettingContainer x:Uid="Globals_TextMeasurement">
+            <ComboBox AutomationProperties.AccessibilityView="Content"
+                      ItemTemplate="{StaticResource EnumComboBoxTemplate}"
+                      ItemsSource="{x:Bind ViewModel.TextMeasurementList}"
+                      SelectedItem="{x:Bind ViewModel.CurrentTextMeasurement, Mode=TwoWay}"
+                      Style="{StaticResource ComboBoxSettingStyle}" />
+        </local:SettingContainer>
     </StackPanel>
 </Page>

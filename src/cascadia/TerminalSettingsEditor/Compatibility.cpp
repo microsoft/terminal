@@ -3,6 +3,7 @@
 
 #include "pch.h"
 #include "Compatibility.h"
+#include "EnumEntry.h"
 #include "Compatibility.g.cpp"
 #include "CompatibilityViewModel.g.cpp"
 
@@ -14,6 +15,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     CompatibilityViewModel::CompatibilityViewModel(Model::GlobalAppSettings globalSettings) :
         _GlobalSettings{ globalSettings }
     {
+        INITIALIZE_BINDABLE_ENUM_SETTING(TextMeasurement, TextMeasurement, winrt::Microsoft::Terminal::Control::TextMeasurement, L"Globals_TextMeasurement_", L"Text");
     }
 
     bool CompatibilityViewModel::AllowVtChecksumReportAvailable() const noexcept
