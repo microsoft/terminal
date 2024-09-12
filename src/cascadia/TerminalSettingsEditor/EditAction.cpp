@@ -16,4 +16,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         InitializeComponent();
     }
+
+    void EditAction::OnNavigatedTo(const NavigationEventArgs& e)
+    {
+        _ViewModel = e.Parameter().as<Editor::CommandViewModel>();
+    }
 }

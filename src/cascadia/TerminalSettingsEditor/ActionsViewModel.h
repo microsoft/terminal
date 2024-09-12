@@ -115,6 +115,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         winrt::hstring Name() const;
         winrt::hstring ID() const;
 
+        void Edit_Click();
+        til::typed_event<Editor::CommandViewModel, IInspectable> EditRequested;
+
     private:
         winrt::Microsoft::Terminal::Settings::Model::Command _command;
     };
@@ -127,14 +130,18 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void OnAutomationPeerAttached();
         void AddNewKeybinding();
 
+        void CurrentCommand(const Editor::CommandViewModel& newCommand);
+        Editor::CommandViewModel CurrentCommand();
+
         til::typed_event<IInspectable, IInspectable> FocusContainer;
         til::typed_event<IInspectable, IInspectable> UpdateBackground;
 
         WINRT_PROPERTY(Windows::Foundation::Collections::IObservableVector<Editor::KeyBindingViewModel>, KeyBindingList);
-        VIEW_MODEL_OBSERVABLE_PROPERTY(ActionsSubPage, CurrentPage);
         WINRT_PROPERTY(Windows::Foundation::Collections::IObservableVector<Editor::CommandViewModel>, CommandList);
+        WINRT_OBSERVABLE_PROPERTY(ActionsSubPage, CurrentPage, _propertyChangedHandlers, ActionsSubPage::Base);
 
     private:
+        Editor::CommandViewModel _CurrentCommand{ nullptr };
         bool _AutomationPeerAttached{ false };
         Model::CascadiaSettings _Settings;
         Windows::Foundation::Collections::IObservableVector<hstring> _AvailableActionAndArgs;
@@ -142,11 +149,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         std::optional<uint32_t> _GetContainerIndexByKeyChord(const Control::KeyChord& keys);
         void _RegisterEvents(com_ptr<implementation::KeyBindingViewModel>& kbdVM);
+        void _RegisterCmdVMEvents(com_ptr<implementation::CommandViewModel>& cmdVM);
 
         void _KeyBindingViewModelPropertyChangedHandler(const Windows::Foundation::IInspectable& senderVM, const Windows::UI::Xaml::Data::PropertyChangedEventArgs& args);
         void _KeyBindingViewModelDeleteKeyBindingHandler(const Editor::KeyBindingViewModel& senderVM, const Control::KeyChord& args);
         void _KeyBindingViewModelModifyKeyBindingHandler(const Editor::KeyBindingViewModel& senderVM, const Editor::ModifyKeyBindingEventArgs& args);
         void _KeyBindingViewModelDeleteNewlyAddedKeyBindingHandler(const Editor::KeyBindingViewModel& senderVM, const IInspectable& args);
+
+        void _CmdVMEditRequestedHandler(const Editor::CommandViewModel& senderVM, const IInspectable& args);
     };
 }
 

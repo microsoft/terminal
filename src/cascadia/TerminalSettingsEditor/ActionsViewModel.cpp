@@ -122,6 +122,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return _command.ID();
     }
 
+    void CommandViewModel::Edit_Click()
+    {
+        EditRequested.raise(*this, *this);
+    }
+
     ActionsViewModel::ActionsViewModel(Model::CascadiaSettings settings) :
         _Settings{ settings }
     {
@@ -150,6 +155,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             keyBindingList.push_back(*container);
 
             auto cmdVM{ make_self<CommandViewModel>(cmd) };
+            _RegisterCmdVMEvents(cmdVM);
             commandList.push_back(*cmdVM);
         }
 
@@ -189,6 +195,16 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         kbdVM->IsNewlyAdded(true);
         _KeyBindingList.InsertAt(0, *kbdVM);
         FocusContainer.raise(*this, *kbdVM);
+    }
+
+    void ActionsViewModel::CurrentCommand(const Editor::CommandViewModel& newCommand)
+    {
+        _CurrentCommand = newCommand;
+    }
+
+    Editor::CommandViewModel ActionsViewModel::CurrentCommand()
+    {
+        return _CurrentCommand;
     }
 
     void ActionsViewModel::_KeyBindingViewModelPropertyChangedHandler(const IInspectable& sender, const Windows::UI::Xaml::Data::PropertyChangedEventArgs& args)
@@ -378,6 +394,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
+    void ActionsViewModel::_CmdVMEditRequestedHandler(const Editor::CommandViewModel& senderVM, const IInspectable& /*args*/)
+    {
+        CurrentCommand(senderVM);
+        CurrentPage(ActionsSubPage::Edit);
+    }
+
     // Method Description:
     // - performs a search on KeyBindingList by key chord.
     // Arguments:
@@ -408,5 +430,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         kbdVM->DeleteKeyBindingRequested({ this, &ActionsViewModel::_KeyBindingViewModelDeleteKeyBindingHandler });
         kbdVM->ModifyKeyBindingRequested({ this, &ActionsViewModel::_KeyBindingViewModelModifyKeyBindingHandler });
         kbdVM->IsAutomationPeerAttached(_AutomationPeerAttached);
+    }
+
+    void ActionsViewModel::_RegisterCmdVMEvents(com_ptr<CommandViewModel>& cmdVM)
+    {
+        cmdVM->EditRequested({ this, &ActionsViewModel::_CmdVMEditRequestedHandler });
     }
 }

@@ -28,6 +28,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     void NewActions::OnNavigatedTo(const NavigationEventArgs& e)
     {
         _ViewModel = e.Parameter().as<Editor::ActionsViewModel>();
+        _ViewModel.CurrentPage(ActionsSubPage::Base);
     }
 
     void NewActions::AddNew_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*eventArgs*/)

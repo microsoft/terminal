@@ -192,6 +192,7 @@
                         <Button x:Uid="Actions_EditButton"
                                 Grid.Column="2"
                                 Background="Transparent"
+                                Click="{x:Bind Edit_Click}"
                                 Style="{StaticResource EditButtonStyle}">
                             <Button.Content>
                                 <FontIcon FontSize="{StaticResource EditButtonIconSize}"

@@ -55,6 +55,7 @@ namespace Microsoft.Terminal.Settings.Editor
         // list of keybindings
 
         // UI side
+        void Edit_Click();
     }
 
     enum ActionsSubPage
@@ -75,6 +76,7 @@ namespace Microsoft.Terminal.Settings.Editor
         event Windows.Foundation.TypedEventHandler<Object, Object> UpdateBackground;
 
         ActionsSubPage CurrentPage;
+        CommandViewModel CurrentCommand;
 
         IObservableVector<CommandViewModel> CommandList { get; };
     }

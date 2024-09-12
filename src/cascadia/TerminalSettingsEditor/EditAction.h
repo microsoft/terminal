@@ -4,6 +4,7 @@
 #pragma once
 
 #include "EditAction.g.h"
+#include "ActionsViewModel.h"
 #include "Utils.h"
 #include "ViewModelHelpers.h"
 
@@ -13,8 +14,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
     public:
         EditAction();
+        void OnNavigatedTo(const winrt::Windows::UI::Xaml::Navigation::NavigationEventArgs& e);
 
-        winrt::hstring Ayy() { return L"lmao"; };
+        til::property_changed_event PropertyChanged;
+
+        WINRT_OBSERVABLE_PROPERTY(Editor::CommandViewModel, ViewModel, PropertyChanged.raise, nullptr);
     };
 }
 
