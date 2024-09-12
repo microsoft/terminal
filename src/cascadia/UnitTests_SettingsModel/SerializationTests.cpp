@@ -128,7 +128,7 @@ namespace SettingsModelUnitTests
                 "multiLinePasteWarning": true,
                 "trimPaste": true,
 
-                "experimental.input.forceVT": false,
+                "compatibility.input.forceVT": false,
 
                 "actions": [],
                 "keybindings": []
