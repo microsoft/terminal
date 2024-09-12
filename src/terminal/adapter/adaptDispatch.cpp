@@ -2872,6 +2872,17 @@ void AdaptDispatch::AcceptC1Controls(const bool enabled)
 }
 
 //Routine Description:
+// S8C1T/S7C1T - Enable or disable the sending of C1 controls in key sequences
+//   and query responses. When this is enabled, C1 controls are sent as a single
+//   codepoint. When disabled, they're sent as a two character escape sequence.
+//Arguments:
+// - enabled - true to send C1 controls, false to send escape sequences.
+void AdaptDispatch::SendC1Controls(const bool enabled)
+{
+    _terminalInput.SetInputMode(TerminalInput::Mode::SendC1, enabled);
+}
+
+//Routine Description:
 // ACS - Announces the ANSI conformance level for subsequent data exchange.
 //  This requires certain character sets to be mapped into the terminal's
 //  G-sets and in-use tables.
@@ -3008,8 +3019,9 @@ void AdaptDispatch::HardReset()
         // Restore initial code page if previously changed by a DOCS sequence.
         _api.SetConsoleOutputCP(_initialCodePage.value());
     }
-    // Disable parsing of C1 control codes.
+    // Disable parsing and sending of C1 control codes.
     AcceptC1Controls(false);
+    SendC1Controls(false);
 
     // Sets the SGR state to normal - this must be done before EraseInDisplay
     //      to ensure that it clears with the default background color.

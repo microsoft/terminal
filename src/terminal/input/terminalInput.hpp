@@ -33,6 +33,7 @@ namespace Microsoft::Console::VirtualTerminal
             CursorKey,
             BackarrowKey,
             Win32,
+            SendC1,
 
             Utf8MouseEncoding,
             SgrMouseEncoding,
