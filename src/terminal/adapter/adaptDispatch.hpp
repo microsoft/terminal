@@ -290,6 +290,10 @@ namespace Microsoft::Console::VirtualTerminal
         void _ReportTabStops();
         StringHandler _RestoreTabStops();
 
+        void _ReturnCsiResponse(const std::wstring_view response) const;
+        void _ReturnDcsResponse(const std::wstring_view response) const;
+        void _ReturnOscResponse(const std::wstring_view response) const;
+
         std::vector<uint8_t> _tabStopColumns;
         bool _initDefaultTabStops = true;
 
