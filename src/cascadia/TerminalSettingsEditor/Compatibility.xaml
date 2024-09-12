@@ -41,8 +41,7 @@
         <!--  Allow VT Checksum Report  -->
         <local:SettingContainer x:Uid="Globals_AllowVtChecksumReport">
             <ToggleSwitch IsOn="{x:Bind ViewModel.AllowVtChecksumReport, Mode=TwoWay}"
-                          Style="{StaticResource ToggleSwitchInExpanderStyle}"
-                          Visibility="{x:Bind ViewModel.AllowVtChecksumReportAvailable}" />
+                          Style="{StaticResource ToggleSwitchInExpanderStyle}" />
         </local:SettingContainer>
 
         <!--  Allow Keypad Mode  -->

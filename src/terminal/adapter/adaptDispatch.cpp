@@ -1323,7 +1323,7 @@ void AdaptDispatch::RequestChecksumRectangularArea(const VTInt id, const VTInt p
 {
     uint16_t checksum = 0;
     // If this feature is not enabled, we'll just report a zero checksum.
-    if (Feature_VtChecksumReport::IsEnabled() && _vtChecksumReportEnabled)
+    if (_vtChecksumReportEnabled)
     {
         // If the page number is 0, then we're meant to return a checksum of all
         // of the pages, but we have no need for that, so we'll just return 0.

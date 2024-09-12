@@ -18,11 +18,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         INITIALIZE_BINDABLE_ENUM_SETTING(TextMeasurement, TextMeasurement, winrt::Microsoft::Terminal::Control::TextMeasurement, L"Globals_TextMeasurement_", L"Text");
     }
 
-    bool CompatibilityViewModel::AllowVtChecksumReportAvailable() const noexcept
-    {
-        return Feature_VtChecksumReport::IsEnabled();
-    }
-
     bool CompatibilityViewModel::AllowKeypadModeAvailable() const noexcept
     {
         return Feature_KeypadModeEnabled::IsEnabled();
