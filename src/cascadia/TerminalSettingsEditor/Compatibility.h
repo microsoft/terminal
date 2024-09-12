@@ -25,6 +25,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, AllowKeypadMode);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, AllowHeadless);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, IsolatedMode);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, DebugFeaturesEnabled);
         GETSET_BINDABLE_ENUM_SETTING(TextMeasurement, winrt::Microsoft::Terminal::Control::TextMeasurement, _GlobalSettings.TextMeasurement);
 
     private:

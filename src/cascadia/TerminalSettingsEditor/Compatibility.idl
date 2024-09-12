@@ -18,6 +18,7 @@ namespace Microsoft.Terminal.Settings.Editor
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, AllowKeypadMode);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, AllowHeadless);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, IsolatedMode);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, DebugFeaturesEnabled);
 
         IInspectable CurrentTextMeasurement;
         Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> TextMeasurementList { get; };

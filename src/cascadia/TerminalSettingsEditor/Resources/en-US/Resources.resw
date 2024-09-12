@@ -559,6 +559,10 @@
     <value>Force each window to be its own process</value>
     <comment>Header for a control to toggle making each window be its own process.</comment>
   </data>
+  <data name="Globals_DebugFeaturesEnabled.Header" xml:space="preserve">
+    <value>Debug Mode</value>
+    <comment>Header for a control to toggle debug features.</comment>
+  </data>
   <data name="Globals_AlwaysOnTop.HelpText" xml:space="preserve">
     <value>Terminal will always be the topmost window on the desktop.</value>
     <comment>A description for what the "always on top" setting does. Presented near "Globals_AlwaysOnTop.Header".</comment>
@@ -582,6 +586,10 @@
   <data name="Globals_IsolatedMode.HelpText" xml:space="preserve">
     <value>Certain features including but not limited to global hotkeys, tab drag and drop, and running commandlines in existing windows won't work.</value>
     <comment>Additional description for what the "isolated mode" setting does. Presented near "Globals_IsolatedMode.Header".</comment>
+  </data>
+  <data name="Globals_DebugFeaturesEnabled.HelpText" xml:space="preserve">
+    <value>Enables features to help debug Windows Terminal</value>
+    <comment>Additional description for what the "debug features enabled" setting does. Presented near "Globals_DebugFeaturesEnabled.Header".</comment>
   </data>
   <data name="Globals_TabWidthMode.Header" xml:space="preserve">
     <value>Tab width mode</value>
