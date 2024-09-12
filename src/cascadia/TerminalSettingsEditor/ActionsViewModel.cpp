@@ -289,17 +289,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 // Display a confirmation dialog.
                 TextBlock errorMessageTB{};
                 errorMessageTB.Text(RS_(L"Actions_RenameConflictConfirmationMessage"));
-                errorMessageTB.TextWrapping(TextWrapping::WrapWholeWords);
+                errorMessageTB.TextWrapping(TextWrapping::Wrap);
 
                 const auto conflictingCmdName{ conflictingCmd.Name() };
                 TextBlock conflictingCommandNameTB{};
                 conflictingCommandNameTB.Text(fmt::format(L"\"{}\"", conflictingCmdName.empty() ? RS_(L"Actions_UnnamedCommandName") : conflictingCmdName));
                 conflictingCommandNameTB.FontStyle(Windows::UI::Text::FontStyle::Italic);
-                conflictingCommandNameTB.TextWrapping(TextWrapping::WrapWholeWords);
+                conflictingCommandNameTB.TextWrapping(TextWrapping::Wrap);
 
                 TextBlock confirmationQuestionTB{};
                 confirmationQuestionTB.Text(RS_(L"Actions_RenameConflictConfirmationQuestion"));
-                confirmationQuestionTB.TextWrapping(TextWrapping::WrapWholeWords);
+                confirmationQuestionTB.TextWrapping(TextWrapping::Wrap);
 
                 Button acceptBTN{};
                 acceptBTN.Content(box_value(RS_(L"Actions_RenameConflictConfirmationAcceptButton")));

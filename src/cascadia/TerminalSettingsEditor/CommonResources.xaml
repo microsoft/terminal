@@ -115,7 +115,7 @@
     <!--  Used for disclaimers  -->
     <Style x:Key="DisclaimerStyle"
            TargetType="TextBlock">
-        <Setter Property="TextWrapping" Value="WrapWholeWords" />
+        <Setter Property="TextWrapping" Value="Wrap" />
         <Setter Property="MaxWidth" Value="1000" />
     </Style>
 
@@ -125,7 +125,7 @@
            TargetType="TextBlock">
         <Setter Property="FontWeight" Value="Bold" />
         <Setter Property="Margin" Value="0,0,0,10" />
-        <Setter Property="TextWrapping" Value="WrapWholeWords" />
+        <Setter Property="TextWrapping" Value="Wrap" />
     </Style>
 
     <!--  Used for the flyout itself. Removes scroll bar to allow for text wrapping.  -->
