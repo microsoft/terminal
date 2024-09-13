@@ -60,9 +60,8 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         {
             // we got tokens, use them
             _httpClient.DefaultRequestHeaders().Authorization(WWH::Headers::HttpCredentialsHeaderValue{ L"Bearer", _authToken });
+            _obtainUsernameAndRefreshTokensIfNeeded();
         }
-
-        _obtainUsernameAndRefreshTokensIfNeeded();
     }
 
     winrt::fire_and_forget GithubCopilotLLMProvider::_obtainUsernameAndRefreshTokensIfNeeded()
@@ -135,13 +134,22 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
                 _authToken = authToken;
                 _refreshToken = refreshToken;
                 _httpClient.DefaultRequestHeaders().Authorization(WWH::Headers::HttpCredentialsHeaderValue{ L"Bearer", _authToken });
-            }
 
-            // raise the new tokens so the app can store them
-            Windows::Foundation::Collections::ValueSet authValues{};
-            authValues.Insert(L"access_token", Windows::Foundation::PropertyValue::CreateString(_authToken));
-            authValues.Insert(L"refresh_token", Windows::Foundation::PropertyValue::CreateString(_refreshToken));
-            _AuthChangedHandlers(*this, authValues);
+                // raise the new tokens so the app can store them
+                Windows::Foundation::Collections::ValueSet authValues{};
+                authValues.Insert(L"access_token", Windows::Foundation::PropertyValue::CreateString(_authToken));
+                authValues.Insert(L"refresh_token", Windows::Foundation::PropertyValue::CreateString(_refreshToken));
+                _AuthChangedHandlers(*this, authValues);
+
+                // now that we have the auth, get the username as well
+                WWH::HttpRequestMessage userNameRequest{ WWH::HttpMethod::Get(), Uri{ L"https://api.github.com/user" } };
+                userNameRequest.Headers().Accept().TryParseAdd(L"application/json");
+                userNameRequest.Headers().UserAgent().TryParseAdd(L"Windows Terminal");
+                const auto userNameResponse = _httpClient.SendRequestAsync(userNameRequest).get();
+                const auto userNameString{ userNameResponse.Content().ReadAsStringAsync().get() };
+                const auto userNameJsonResult{ WDJ::JsonObject::Parse(userNameString) };
+                _QueryMetaData = userNameJsonResult.GetNamedString(L"login");
+            }
         }
         CATCH_LOG();
 
