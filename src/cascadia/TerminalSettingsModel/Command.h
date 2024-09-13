@@ -73,6 +73,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void Name(const hstring& name);
 
         hstring ID() const noexcept;
+        void ID(const hstring& ID) noexcept;
         void GenerateID();
         bool IDWasGenerated();
 

@@ -36,8 +36,8 @@ namespace Microsoft.Terminal.Settings.Model
     {
         Command();
 
-        String Name { get; };
-        String ID { get; };
+        String Name;
+        String ID;
 
         String Description { get; };
 

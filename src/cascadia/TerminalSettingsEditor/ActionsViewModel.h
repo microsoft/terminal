@@ -112,8 +112,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
     public:
         CommandViewModel(winrt::Microsoft::Terminal::Settings::Model::Command cmd);
-        winrt::hstring Name() const;
-        winrt::hstring ID() const;
+
+        winrt::hstring Name();
+        void Name(const winrt::hstring& newName);
+
+        winrt::hstring ID();
+        void ID(const winrt::hstring& newID);
+
+        bool IsUserAction();
 
         void Edit_Click();
         til::typed_event<Editor::CommandViewModel, IInspectable> EditRequested;

@@ -49,8 +49,9 @@ namespace Microsoft.Terminal.Settings.Editor
     runtimeclass CommandViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged
     {
         // Settings Model side
-        String Name { get; };
-        String ID { get; };
+        String Name;
+        String ID;
+        Boolean IsUserAction { get; };
         // icon
         // list of keybindings
 

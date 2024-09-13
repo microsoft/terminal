@@ -24,7 +24,10 @@
                     HorizontalAlignment="Left"
                     Spacing="8"
                     Style="{StaticResource SettingsStackStyle}">
-            <TextBlock Text="{x:Bind ViewModel.Name}" />
+            <TextBox Text="{x:Bind ViewModel.Name, Mode=TwoWay}"
+                     IsEnabled="{x:Bind ViewModel.IsUserAction}"/>
+            <TextBox Text="{x:Bind ViewModel.ID, Mode=TwoWay}"
+                     IsEnabled="{x:Bind ViewModel.IsUserAction}"/>
         </StackPanel>
     </Border>
 </Page>

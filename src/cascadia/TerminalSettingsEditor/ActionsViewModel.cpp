@@ -112,14 +112,30 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
     }
 
-    winrt::hstring CommandViewModel::Name() const
+    winrt::hstring CommandViewModel::Name()
     {
         return _command.Name();
     }
 
-    winrt::hstring CommandViewModel::ID() const
+    void CommandViewModel::Name(const winrt::hstring& newName)
+    {
+        // todo: the actions page needs to reorder the action list after the namechange
+        _command.Name(newName);
+    }
+
+    winrt::hstring CommandViewModel::ID()
     {
         return _command.ID();
+    }
+
+    void CommandViewModel::ID(const winrt::hstring& ID)
+    {
+        _command.ID(ID);
+    }
+
+    bool CommandViewModel::IsUserAction()
+    {
+        return _command.Origin() == OriginTag::User;
     }
 
     void CommandViewModel::Edit_Click()
