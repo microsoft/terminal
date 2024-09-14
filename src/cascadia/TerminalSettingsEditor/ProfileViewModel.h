@@ -172,9 +172,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             Bottom = 3
         };
 
-        winrt::hstring _GetNewPadding(PaddingDirection paddingDirection, double newPaddingValue)
+        winrt::hstring _GetNewPadding(PaddingDirection paddingDirection, double newPaddingValue) const
         {
-            std::wstringstream result;
             std::array<double, 4> values{};
             std::wstring_view remaining{ Padding() };
             uint32_t paddingIndex = static_cast<uint32_t>(paddingDirection);
@@ -200,9 +199,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 LOG_CAUGHT_EXCEPTION();
             }
 
-            result << values[0] << L", " << values[1] << L", " << values[2] << L", " << values[3];
+            const auto result = fmt::format(FMT_COMPILE(L"{:.6f}"), fmt::join(values, L","));
 
-            return hstring{ result.str() };
+            return winrt::hstring{ result };
         }
     };
 
