@@ -172,6 +172,7 @@ public:
     void SetInterceptCopyPaste(const bool interceptCopyPaste) noexcept;
 
     void CalculateDefaultColorIndices() noexcept;
+    void SaveDefaultRenderSettings() noexcept;
 
     bool IsTerminalScrolling() const noexcept;
     void SetTerminalScrolling(const bool terminalScrollingEnabled) noexcept;

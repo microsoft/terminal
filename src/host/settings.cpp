@@ -349,6 +349,8 @@ void Settings::Validate()
     TextAttribute::SetLegacyDefaultAttributes(_wFillAttribute);
     // And calculate the position of the default colors in the color table.
     CalculateDefaultColorIndices();
+    // We can also then save these values as the default render settings.
+    SaveDefaultRenderSettings();
 
     FAIL_FAST_IF(!(_dwWindowSize.X > 0));
     FAIL_FAST_IF(!(_dwWindowSize.Y > 0));
@@ -753,6 +755,11 @@ void Settings::CalculateDefaultColorIndices() noexcept
     const auto backgroundIndex = TextColor::TransposeLegacyIndex((_wFillAttribute & BG_ATTRS) >> 4);
     const auto backgroundAlias = backgroundColor != INVALID_COLOR ? TextColor::DEFAULT_BACKGROUND : backgroundIndex;
     _renderSettings.SetColorAliasIndex(ColorAlias::DefaultBackground, backgroundAlias);
+}
+
+void Settings::SaveDefaultRenderSettings() noexcept
+{
+    _renderSettings.SaveDefaultSettings();
 }
 
 bool Settings::IsTerminalScrolling() const noexcept
