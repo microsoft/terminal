@@ -101,6 +101,9 @@ void Terminal::UpdateSettings(ICoreSettings settings)
         GetRenderSettings().SetColorTableEntry(TextColor::FRAME_BACKGROUND, til::color{ settings.TabColor().Value() });
     }
 
+    // Save the changes made above and in UpdateAppearance as the new default render settings.
+    GetRenderSettings().SaveDefaultSettings();
+
     if (!_startingTabColor && settings.StartingTabColor())
     {
         _startingTabColor = settings.StartingTabColor().Value();
