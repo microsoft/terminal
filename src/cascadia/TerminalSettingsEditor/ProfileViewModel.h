@@ -58,11 +58,21 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             Padding(padding);
         }
 
+        double GetLeftPadding(const winrt::hstring& padding)
+        {
+            return _GetPaddingValue(padding, PaddingDirection::Left);
+        }
+
         void SetTopPadding(double value)
         {
             const hstring& padding = _GetNewPadding(PaddingDirection::Top, value);
 
             Padding(padding);
+        }
+
+        double GetTopPadding(const winrt::hstring& padding)
+        {
+            return _GetPaddingValue(padding, PaddingDirection::Top);
         }
 
         void SetRightPadding(double value)
@@ -72,11 +82,21 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             Padding(padding);
         }
 
+        double GetRightPadding(const winrt::hstring& padding)
+        {
+            return _GetPaddingValue(padding, PaddingDirection::Right);
+        }
+
         void SetBottomPadding(double value)
         {
             const hstring& padding = _GetNewPadding(PaddingDirection::Bottom, value);
 
             Padding(padding);
+        }
+
+        double GetBottomPadding(const winrt::hstring& padding)
+        {
+            return _GetPaddingValue(padding, PaddingDirection::Bottom);
         }
 
         winrt::hstring EvaluatedIcon() const
@@ -202,6 +222,35 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             const auto result = fmt::format(FMT_COMPILE(L"{:.6f}"), fmt::join(values, L","));
 
             return winrt::hstring{ result };
+        }
+
+        double _GetPaddingValue(const winrt::hstring& padding, PaddingDirection paddingDirection) const
+        {
+            std::wstring_view remaining{ padding };
+            uint32_t paddingIndex = static_cast<uint32_t>(paddingDirection);
+            double paddingValue = 0.;
+
+            try
+            {
+                for (uint32_t index = 0; !remaining.empty(); ++index)
+                {
+                    const std::wstring token{ til::prefix_split(remaining, L',') };
+                    auto curVal = std::stod(token);
+
+                    if (paddingIndex == index)
+                    {
+                        paddingValue = curVal;
+                        break;
+                    }
+                }
+            }
+            catch (...)
+            {
+                paddingValue = 0.;
+                LOG_CAUGHT_EXCEPTION();
+            }
+
+            return paddingValue;
         }
     };
 

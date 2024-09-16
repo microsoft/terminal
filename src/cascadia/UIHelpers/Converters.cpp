@@ -105,35 +105,4 @@ namespace winrt::Microsoft::Terminal::UI::implementation
 
         return maxVal;
     }
-
-    double Converters::PaddingValueFromIndex(const winrt::hstring& paddingString, uint32_t paddingIndex)
-    {
-        std::wstring_view remaining{ paddingString };
-        double paddingVal = 0;
-        uint32_t index = 0;
-
-        try
-        {
-            while (!remaining.empty())
-            {
-                const std::wstring token{ til::prefix_split(remaining, L',') };
-                const auto curVal = std::stod(token);
-
-                if (paddingIndex == index)
-                {
-                    paddingVal = curVal;
-                    break;
-                }
-
-                ++index;
-            }
-        }
-        catch (...)
-        {
-            paddingVal = 0;
-            LOG_CAUGHT_EXCEPTION();
-        }
-
-        return paddingVal;
-    }
 }

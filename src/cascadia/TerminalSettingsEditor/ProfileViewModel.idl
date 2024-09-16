@@ -43,10 +43,14 @@ namespace Microsoft.Terminal.Settings.Editor
         void SetAcrylicOpacityPercentageValue(Double value);
 
         void SetLeftPadding(Double value);
+        Double GetLeftPadding(String padding);
         void SetTopPadding(Double value);
+        Double GetTopPadding(String padding);
         void SetRightPadding(Double value);
+        Double GetRightPadding(String padding);
         void SetBottomPadding(Double value);
-
+        Double GetBottomPadding(String padding);
+        
         Boolean IsBellStyleFlagSet(UInt32 flag);
         void SetBellStyleAudible(Windows.Foundation.IReference<Boolean> on);
         void SetBellStyleWindow(Windows.Foundation.IReference<Boolean> on);
@@ -78,7 +82,7 @@ namespace Microsoft.Terminal.Settings.Editor
         Boolean ShowMarksAvailable { get; };
         Boolean AutoMarkPromptsAvailable { get; };
         Boolean RepositionCursorWithMouseAvailable { get; };
-
+        
         String EvaluatedIcon { get; };
 
         void CreateUnfocusedAppearance();

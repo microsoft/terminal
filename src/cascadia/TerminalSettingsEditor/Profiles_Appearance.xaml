@@ -154,7 +154,7 @@
                                             Minimum="1"
                                             SmallChange="1"
                                             Style="{StaticResource PaddingNumberBoxStyle}"
-                                            Value="{x:Bind mtu:Converters.PaddingValueFromIndex(Profile.Padding, 0), BindBack=Profile.SetLeftPadding, Mode=TwoWay}" />
+                                            Value="{x:Bind Profile.GetLeftPadding(Profile.Padding), BindBack=Profile.SetLeftPadding, Mode=TwoWay}" />
 
                             <muxc:NumberBox Grid.Row="0"
                                             Grid.Column="1"
@@ -163,7 +163,7 @@
                                             Minimum="1"
                                             SmallChange="1"
                                             Style="{StaticResource PaddingNumberBoxStyle}"
-                                            Value="{x:Bind mtu:Converters.PaddingValueFromIndex(Profile.Padding, 1), BindBack=Profile.SetTopPadding, Mode=TwoWay}" />
+                                            Value="{x:Bind Profile.GetTopPadding(Profile.Padding), BindBack=Profile.SetTopPadding, Mode=TwoWay}" />
 
                             <muxc:NumberBox Grid.Row="1"
                                             Grid.Column="2"
@@ -172,7 +172,7 @@
                                             Minimum="1"
                                             SmallChange="1"
                                             Style="{StaticResource PaddingNumberBoxStyle}"
-                                            Value="{x:Bind mtu:Converters.PaddingValueFromIndex(Profile.Padding, 2), BindBack=Profile.SetRightPadding, Mode=TwoWay}" />
+                                            Value="{x:Bind Profile.GetRightPadding(Profile.Padding), BindBack=Profile.SetRightPadding, Mode=TwoWay}" />
 
                             <muxc:NumberBox Grid.Row="2"
                                             Grid.Column="1"
@@ -181,7 +181,7 @@
                                             Minimum="1"
                                             SmallChange="1"
                                             Style="{StaticResource PaddingNumberBoxStyle}"
-                                            Value="{x:Bind mtu:Converters.PaddingValueFromIndex(Profile.Padding, 3), BindBack=Profile.SetBottomPadding, Mode=TwoWay}" />
+                                            Value="{x:Bind Profile.GetBottomPadding(Profile.Padding), BindBack=Profile.SetBottomPadding, Mode=TwoWay}" />
 
                         </Grid>
                     </Border>
