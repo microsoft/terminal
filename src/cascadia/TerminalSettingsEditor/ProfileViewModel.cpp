@@ -114,7 +114,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         return _GetPaddingValue(PaddingDirection::Left);
     }
-    
+
     void ProfileViewModel::TopPadding(double value) noexcept
     {
         const hstring& padding = _GetNewPadding(PaddingDirection::Top, value);
@@ -214,7 +214,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         return paddingValue;
     }
-    
+
     Model::TerminalSettings ProfileViewModel::TermSettings() const
     {
         return Model::TerminalSettings::CreateForPreview(_appSettings, _profile);

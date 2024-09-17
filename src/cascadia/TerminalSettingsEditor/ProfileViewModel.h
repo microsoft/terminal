@@ -59,7 +59,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         double RightPadding() const noexcept;
         void BottomPadding(double value) noexcept;
         double BottomPadding() const noexcept;
-        
+
         winrt::hstring EvaluatedIcon() const
         {
             return _profile.EvaluatedIcon();
