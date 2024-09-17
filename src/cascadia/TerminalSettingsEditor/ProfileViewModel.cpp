@@ -107,7 +107,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         const hstring& padding = _GetNewPadding(PaddingDirection::Left, value);
 
         Padding(padding);
-        _NotifyChanges(L"LeftPadding", L"HasPadding");
     }
 
     double ProfileViewModel::LeftPadding() const noexcept
@@ -120,7 +119,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         const hstring& padding = _GetNewPadding(PaddingDirection::Top, value);
 
         Padding(padding);
-        _NotifyChanges(L"TopPadding", L"HasPadding");
     }
 
     double ProfileViewModel::TopPadding() const noexcept
@@ -133,7 +131,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         const hstring& padding = _GetNewPadding(PaddingDirection::Right, value);
 
         Padding(padding);
-        _NotifyChanges(L"RightPadding", L"HasPadding");
     }
 
     double ProfileViewModel::RightPadding() const noexcept
@@ -146,7 +143,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         const hstring& padding = _GetNewPadding(PaddingDirection::Bottom, value);
 
         Padding(padding);
-        _NotifyChanges(L"BottomPadding", L"HasPadding");
     }
 
     double ProfileViewModel::BottomPadding() const noexcept
