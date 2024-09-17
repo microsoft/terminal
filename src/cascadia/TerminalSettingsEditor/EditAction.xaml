@@ -16,6 +16,70 @@
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="CommonResources.xaml" />
             </ResourceDictionary.MergedDictionaries>
+            <!--  Theme Dictionary  -->
+            <ResourceDictionary.ThemeDictionaries>
+                <ResourceDictionary x:Key="Dark">
+                    <!--  KeyChordText styles  -->
+                    <Style x:Key="KeyChordBorderStyle"
+                           TargetType="Button">
+                        <Setter Property="BorderThickness" Value="1" />
+                        <Setter Property="CornerRadius" Value="1" />
+                        <Setter Property="Background" Value="{ThemeResource SystemAltMediumLowColor}" />
+                        <Setter Property="BorderBrush" Value="{ThemeResource SystemControlForegroundBaseMediumBrush}" />
+                    </Style>
+                    <Style x:Key="KeyChordTextBlockStyle"
+                           TargetType="TextBlock">
+                        <Setter Property="Foreground" Value="{ThemeResource SystemControlForegroundBaseMediumBrush}" />
+                    </Style>
+                </ResourceDictionary>
+                <ResourceDictionary x:Key="Light">
+                    <!--  KeyChordText styles  -->
+                    <Style x:Key="KeyChordBorderStyle"
+                           TargetType="Button">
+                        <Setter Property="BorderThickness" Value="1" />
+                        <Setter Property="CornerRadius" Value="1" />
+                        <Setter Property="Background" Value="{ThemeResource SystemAltMediumLowColor}" />
+                        <Setter Property="BorderBrush" Value="{ThemeResource SystemControlForegroundBaseMediumBrush}" />
+                    </Style>
+                    <Style x:Key="KeyChordTextBlockStyle"
+                           TargetType="TextBlock">
+                        <Setter Property="Foreground" Value="{ThemeResource SystemControlForegroundBaseMediumBrush}" />
+                    </Style>
+                </ResourceDictionary>
+                <ResourceDictionary x:Key="HighContrast">
+                    <!--  KeyChordText styles (use XAML defaults for High Contrast theme)  -->
+                    <Style x:Key="KeyChordBorderStyle"
+                           TargetType="Button" />
+                    <Style x:Key="KeyChordTextBlockStyle"
+                           TargetType="TextBlock" />
+                </ResourceDictionary>
+            </ResourceDictionary.ThemeDictionaries>
+
+            <!--  Styles  -->
+            <Style x:Key="KeyBindingContainerStyle"
+                   BasedOn="{StaticResource DefaultListViewItemStyle}"
+                   TargetType="ListViewItem">
+                <Setter Property="Padding" Value="4" />
+                <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                <Setter Property="XYFocusKeyboardNavigation" Value="Enabled" />
+            </Style>
+
+            <!--  Templates  -->
+            <DataTemplate x:Key="KeyChordTemplate"
+                          x:DataType="local:KeyChordViewModel">
+                <ListViewItem Style="{StaticResource KeyBindingContainerStyle}">
+                    <Button Grid.Column="1"
+                            Padding="2,0,2,0"
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Center"
+                            Style="{ThemeResource KeyChordBorderStyle}">
+                                <TextBlock FontSize="14"
+                                           Style="{ThemeResource KeyChordTextBlockStyle}"
+                                           Text="{x:Bind KeyChordText}"
+                                           TextWrapping="WrapWholeWords"/>
+                    </Button>
+                </ListViewItem>
+            </DataTemplate>
         </ResourceDictionary>
     </Page.Resources>
 
@@ -28,6 +92,9 @@
                      IsEnabled="{x:Bind ViewModel.IsUserAction}"/>
             <TextBox Text="{x:Bind ViewModel.ID, Mode=TwoWay}"
                      IsEnabled="{x:Bind ViewModel.IsUserAction}"/>
+            <ListView ItemTemplate="{StaticResource KeyChordTemplate}"
+                      ItemsSource="{x:Bind ViewModel.KeyChordViewModelList, Mode=OneWay}"
+                      SelectionMode="None" />
         </StackPanel>
     </Border>
 </Page>

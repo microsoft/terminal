@@ -6,6 +6,7 @@
 #include "ActionsViewModel.g.cpp"
 #include "KeyBindingViewModel.g.cpp"
 #include "CommandViewModel.g.cpp"
+#include "KeyChordViewModel.g.cpp"
 #include "LibraryResources.h"
 #include "../TerminalSettingsModel/AllShortcutActions.h"
 
@@ -107,9 +108,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
-    CommandViewModel::CommandViewModel(Command cmd) :
+    CommandViewModel::CommandViewModel(Command cmd, std::vector<Control::KeyChord> keyChordList) :
         _command{ cmd }
     {
+        std::vector<Editor::KeyChordViewModel> keyChordVMs;
+        for (const auto keys : keyChordList)
+        {
+            auto container{ make_self<KeyChordViewModel>(keys) };
+            //_RegisterEvents(container); todo: implement the event handlers
+            keyChordVMs.push_back(*container);
+        }
+        _KeyChordViewModelList = single_threaded_observable_vector(std::move(keyChordVMs));
     }
 
     winrt::hstring CommandViewModel::Name()
@@ -143,6 +152,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         EditRequested.raise(*this, *this);
     }
 
+    KeyChordViewModel::KeyChordViewModel(Control::KeyChord currentKeys) :
+        _CurrentKeys{ currentKeys }
+    {
+    }
+
     ActionsViewModel::ActionsViewModel(Model::CascadiaSettings settings) :
         _Settings{ settings }
     {
@@ -170,7 +184,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             _RegisterEvents(container);
             keyBindingList.push_back(*container);
 
-            auto cmdVM{ make_self<CommandViewModel>(cmd) };
+            std::vector<Control::KeyChord> keyChordList;
+            // todo: need to loop through all the keybindings that point to this command here
+            keyChordList.emplace_back(keys);
+            auto cmdVM{ make_self<CommandViewModel>(cmd, keyChordList) };
             _RegisterCmdVMEvents(cmdVM);
             commandList.push_back(*cmdVM);
         }

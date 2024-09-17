@@ -53,10 +53,16 @@ namespace Microsoft.Terminal.Settings.Editor
         String ID;
         Boolean IsUserAction { get; };
         // icon
-        // list of keybindings
+        // keybindings
+        IObservableVector<KeyChordViewModel> KeyChordViewModelList { get; };
 
         // UI side
         void Edit_Click();
+    }
+
+    runtimeclass KeyChordViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged
+    {
+        String KeyChordText { get; };
     }
 
     enum ActionsSubPage

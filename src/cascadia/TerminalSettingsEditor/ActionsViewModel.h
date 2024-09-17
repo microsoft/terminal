@@ -6,6 +6,7 @@
 #include "ActionsViewModel.g.h"
 #include "KeyBindingViewModel.g.h"
 #include "CommandViewModel.g.h"
+#include "KeyChordViewModel.g.h"
 #include "ModifyKeyBindingEventArgs.g.h"
 #include "Utils.h"
 #include "ViewModelHelpers.h"
@@ -111,7 +112,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     struct CommandViewModel : CommandViewModelT<CommandViewModel>, ViewModelHelper<CommandViewModel>
     {
     public:
-        CommandViewModel(winrt::Microsoft::Terminal::Settings::Model::Command cmd);
+        CommandViewModel(winrt::Microsoft::Terminal::Settings::Model::Command cmd, std::vector<Control::KeyChord> keyChordList);
 
         winrt::hstring Name();
         void Name(const winrt::hstring& newName);
@@ -124,8 +125,21 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void Edit_Click();
         til::typed_event<Editor::CommandViewModel, IInspectable> EditRequested;
 
+        WINRT_PROPERTY(Windows::Foundation::Collections::IObservableVector<Editor::KeyChordViewModel>, KeyChordViewModelList, nullptr);
+
     private:
         winrt::Microsoft::Terminal::Settings::Model::Command _command;
+    };
+
+    struct KeyChordViewModel : KeyChordViewModelT<KeyChordViewModel>, ViewModelHelper<KeyChordViewModel>
+    {
+    public:
+        KeyChordViewModel(Control::KeyChord CurrentKeys);
+
+        hstring KeyChordText() { return Model::KeyChordSerialization::ToString(_CurrentKeys); };
+
+    private:
+        Control::KeyChord _CurrentKeys;
     };
 
     struct ActionsViewModel : ActionsViewModelT<ActionsViewModel>, ViewModelHelper<ActionsViewModel>
