@@ -289,14 +289,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 // Display a confirmation dialog.
                 TextBlock errorMessageTB{};
                 errorMessageTB.Text(RS_(L"Actions_RenameConflictConfirmationMessage"));
+                errorMessageTB.TextWrapping(TextWrapping::Wrap);
 
                 const auto conflictingCmdName{ conflictingCmd.Name() };
                 TextBlock conflictingCommandNameTB{};
                 conflictingCommandNameTB.Text(fmt::format(L"\"{}\"", conflictingCmdName.empty() ? RS_(L"Actions_UnnamedCommandName") : conflictingCmdName));
                 conflictingCommandNameTB.FontStyle(Windows::UI::Text::FontStyle::Italic);
+                conflictingCommandNameTB.TextWrapping(TextWrapping::Wrap);
 
                 TextBlock confirmationQuestionTB{};
                 confirmationQuestionTB.Text(RS_(L"Actions_RenameConflictConfirmationQuestion"));
+                confirmationQuestionTB.TextWrapping(TextWrapping::Wrap);
 
                 Button acceptBTN{};
                 acceptBTN.Content(box_value(RS_(L"Actions_RenameConflictConfirmationAcceptButton")));
@@ -320,7 +323,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 flyoutStack.Children().Append(confirmationQuestionTB);
                 flyoutStack.Children().Append(acceptBTN);
 
+                // This should match CustomFlyoutPresenterStyle in CommonResources.xaml!
+                // We don't have access to those resources here, so it's easier to just copy them over.
+                // This allows the flyout text to wrap
+                Style acceptChangesFlyoutStyle{ winrt::xaml_typename<FlyoutPresenter>() };
+                Setter horizontalScrollModeStyleSetter{ ScrollViewer::HorizontalScrollModeProperty(), box_value(ScrollMode::Disabled) };
+                Setter horizontalScrollBarVisibilityStyleSetter{ ScrollViewer::HorizontalScrollBarVisibilityProperty(), box_value(ScrollBarVisibility::Disabled) };
+                acceptChangesFlyoutStyle.Setters().Append(horizontalScrollModeStyleSetter);
+                acceptChangesFlyoutStyle.Setters().Append(horizontalScrollBarVisibilityStyleSetter);
+
                 Flyout acceptChangesFlyout{};
+                acceptChangesFlyout.FlyoutPresenterStyle(acceptChangesFlyoutStyle);
                 acceptChangesFlyout.Content(flyoutStack);
                 senderVM.AcceptChangesFlyout(acceptChangesFlyout);
             }
