@@ -221,25 +221,53 @@ void ConhostInternalGetSet::ShowWindow(bool showOrHide)
 }
 
 // Routine Description:
-// - Connects the SetConsoleOutputCP API call directly into our Driver Message servicing call inside Conhost.exe
+// - Set the code page used for translating text when calling A versions of I/O functions.
 // Arguments:
-// - codepage - the new output codepage of the console.
+// - codepage - the new code page of the console.
 // Return Value:
 // - <none>
-void ConhostInternalGetSet::SetConsoleOutputCP(const unsigned int codepage)
+void ConhostInternalGetSet::SetCodePage(const unsigned int codepage)
 {
-    THROW_IF_FAILED(DoSrvSetConsoleOutputCodePage(codepage));
+    if (IsValidCodePage(codepage))
+    {
+        DoSrvSetConsoleOutputCodePage(codepage);
+        DoSrvSetConsoleInputCodePage(codepage);
+    }
 }
 
 // Routine Description:
-// - Gets the codepage used for translating text when calling A versions of functions affecting the output buffer.
+// - Reset the code pages to their default values.
 // Arguments:
 // - <none>
 // Return Value:
-// - the outputCP of the console.
-unsigned int ConhostInternalGetSet::GetConsoleOutputCP() const
+// - <none>
+void ConhostInternalGetSet::ResetCodePage()
+{
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    DoSrvSetConsoleOutputCodePage(gci.DefaultOutputCP);
+    DoSrvSetConsoleInputCodePage(gci.DefaultCP);
+}
+
+// Routine Description:
+// - Gets the code page used for translating text when calling A versions of output functions.
+// Arguments:
+// - <none>
+// Return Value:
+// - the output code page of the console.
+unsigned int ConhostInternalGetSet::GetOutputCodePage() const
 {
     return ServiceLocator::LocateGlobals().getConsoleInformation().OutputCP;
+}
+
+// Routine Description:
+// - Gets the code page used for translating text when calling A versions of input functions.
+// Arguments:
+// - <none>
+// Return Value:
+// - the input code page of the console.
+unsigned int ConhostInternalGetSet::GetInputCodePage() const
+{
+    return ServiceLocator::LocateGlobals().getConsoleInformation().CP;
 }
 
 // Routine Description:

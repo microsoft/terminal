@@ -1243,7 +1243,7 @@ void AdaptDispatch::FillRectangularArea(const VTParameter ch, const VTInt top, c
     const auto charValue = ch.value_or(0) == 0 ? 32 : ch.value();
     const auto glChar = (charValue >= 32 && charValue <= 126);
     const auto grChar = (charValue >= 160 && charValue <= 255);
-    const auto unicodeChar = (charValue >= 256 && charValue <= 65535 && _api.GetConsoleOutputCP() == CP_UTF8);
+    const auto unicodeChar = (charValue >= 256 && charValue <= 65535 && _api.GetOutputCodePage() == CP_UTF8);
     if (glChar || grChar || unicodeChar)
     {
         const auto fillChar = _termOutput.TranslateKey(gsl::narrow_cast<wchar_t>(charValue));
@@ -2780,22 +2780,15 @@ void AdaptDispatch::_InitTabStopsForWidth(const VTInt width)
 // - codingSystem - The coding system that will be selected.
 void AdaptDispatch::DesignateCodingSystem(const VTID codingSystem)
 {
-    // If we haven't previously saved the initial code page, do so now.
-    // This will be used to restore the code page in response to a reset.
-    if (!_initialCodePage.has_value())
-    {
-        _initialCodePage = _api.GetConsoleOutputCP();
-    }
-
     switch (codingSystem)
     {
     case DispatchTypes::CodingSystem::ISO2022:
-        _api.SetConsoleOutputCP(28591);
+        _api.SetCodePage(28591);
         AcceptC1Controls(true);
         _termOutput.EnableGrTranslation(true);
         break;
     case DispatchTypes::CodingSystem::UTF8:
-        _api.SetConsoleOutputCP(CP_UTF8);
+        _api.SetCodePage(CP_UTF8);
         AcceptC1Controls(false);
         _termOutput.EnableGrTranslation(false);
         break;
@@ -2874,7 +2867,14 @@ void AdaptDispatch::AcceptC1Controls(const bool enabled)
 // - enabled - true to send C1 controls, false to send escape sequences.
 void AdaptDispatch::SendC1Controls(const bool enabled)
 {
-    _terminalInput.SetInputMode(TerminalInput::Mode::SendC1, enabled);
+    // If this is an attempt to enable C1 controls, the input code page must be
+    // one of the DOCS choices (UTF-8 or ISO-8859-1), otherwise there's a risk
+    // that those controls won't have a valid encoding.
+    const auto codepage = _api.GetInputCodePage();
+    if (enabled == false || codepage == CP_UTF8 || codepage == 28591)
+    {
+        _terminalInput.SetInputMode(TerminalInput::Mode::SendC1, enabled);
+    }
 }
 
 //Routine Description:
@@ -3009,11 +3009,8 @@ void AdaptDispatch::HardReset()
 
     // Completely reset the TerminalOutput state.
     _termOutput = {};
-    if (_initialCodePage.has_value())
-    {
-        // Restore initial code page if previously changed by a DOCS sequence.
-        _api.SetConsoleOutputCP(_initialCodePage.value());
-    }
+    // Reset the code page to the default value.
+    _api.ResetCodePage();
     // Disable parsing and sending of C1 control codes.
     AcceptC1Controls(false);
     SendC1Controls(false);

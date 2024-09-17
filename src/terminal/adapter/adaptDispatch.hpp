@@ -307,7 +307,6 @@ namespace Microsoft::Console::VirtualTerminal
         std::shared_ptr<SixelParser> _sixelParser;
         std::unique_ptr<FontBuffer> _fontBuffer;
         std::shared_ptr<MacroBuffer> _macroBuffer;
-        std::optional<unsigned int> _initialCodePage;
 
         // We have two instances of the saved cursor state, because we need
         // one for the main buffer (at index 0), and another for the alt buffer
