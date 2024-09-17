@@ -51,54 +51,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             Opacity(static_cast<float>(value) / 100.0f);
         };
 
-        void SetLeftPadding(double value)
-        {
-            const hstring& padding = _GetNewPadding(PaddingDirection::Left, value);
-
-            Padding(padding);
-        }
-
-        double GetLeftPadding(const winrt::hstring& padding)
-        {
-            return _GetPaddingValue(padding, PaddingDirection::Left);
-        }
-
-        void SetTopPadding(double value)
-        {
-            const hstring& padding = _GetNewPadding(PaddingDirection::Top, value);
-
-            Padding(padding);
-        }
-
-        double GetTopPadding(const winrt::hstring& padding)
-        {
-            return _GetPaddingValue(padding, PaddingDirection::Top);
-        }
-
-        void SetRightPadding(double value)
-        {
-            const hstring& padding = _GetNewPadding(PaddingDirection::Right, value);
-
-            Padding(padding);
-        }
-
-        double GetRightPadding(const winrt::hstring& padding)
-        {
-            return _GetPaddingValue(padding, PaddingDirection::Right);
-        }
-
-        void SetBottomPadding(double value)
-        {
-            const hstring& padding = _GetNewPadding(PaddingDirection::Bottom, value);
-
-            Padding(padding);
-        }
-
-        double GetBottomPadding(const winrt::hstring& padding)
-        {
-            return _GetPaddingValue(padding, PaddingDirection::Bottom);
-        }
-
+        void LeftPadding(double value) noexcept;
+        double LeftPadding() const noexcept;
+        void TopPadding(double value) noexcept;
+        double TopPadding() const noexcept;
+        void RightPadding(double value) noexcept;
+        double RightPadding() const noexcept;
+        void BottomPadding(double value) noexcept;
+        double BottomPadding() const noexcept;
+        
         winrt::hstring EvaluatedIcon() const
         {
             return _profile.EvaluatedIcon();
@@ -192,66 +153,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             Bottom = 3
         };
 
-        winrt::hstring _GetNewPadding(PaddingDirection paddingDirection, double newPaddingValue) const
-        {
-            std::array<double, 4> values{};
-            std::wstring_view remaining{ Padding() };
-            uint32_t paddingIndex = static_cast<uint32_t>(paddingDirection);
-
-            try
-            {
-                for (uint32_t index = 0; !remaining.empty() && index < values.size(); ++index)
-                {
-                    const std::wstring token{ til::prefix_split(remaining, L',') };
-                    auto curVal = std::stod(token);
-
-                    if (paddingIndex == index)
-                    {
-                        curVal = newPaddingValue;
-                    }
-
-                    values[index] = curVal;
-                }
-            }
-            catch (...)
-            {
-                values.fill(0);
-                LOG_CAUGHT_EXCEPTION();
-            }
-
-            const auto result = fmt::format(FMT_COMPILE(L"{:.6f}"), fmt::join(values, L","));
-
-            return winrt::hstring{ result };
-        }
-
-        double _GetPaddingValue(const winrt::hstring& padding, PaddingDirection paddingDirection) const
-        {
-            std::wstring_view remaining{ padding };
-            uint32_t paddingIndex = static_cast<uint32_t>(paddingDirection);
-            double paddingValue = 0.;
-
-            try
-            {
-                for (uint32_t index = 0; !remaining.empty(); ++index)
-                {
-                    const std::wstring token{ til::prefix_split(remaining, L',') };
-                    auto curVal = std::stod(token);
-
-                    if (paddingIndex == index)
-                    {
-                        paddingValue = curVal;
-                        break;
-                    }
-                }
-            }
-            catch (...)
-            {
-                paddingValue = 0.;
-                LOG_CAUGHT_EXCEPTION();
-            }
-
-            return paddingValue;
-        }
+        winrt::hstring _GetNewPadding(PaddingDirection paddingDirection, double newPaddingValue) const;
+        double _GetPaddingValue(PaddingDirection paddingDirection) const;
     };
 
     struct DeleteProfileEventArgs :

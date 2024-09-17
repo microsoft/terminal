@@ -154,7 +154,7 @@
                                             Minimum="1"
                                             SmallChange="1"
                                             Style="{StaticResource PaddingNumberBoxStyle}"
-                                            Value="{x:Bind Profile.GetLeftPadding(Profile.Padding), BindBack=Profile.SetLeftPadding, Mode=TwoWay}" />
+                                            Value="{x:Bind Profile.LeftPadding, Mode=TwoWay}" />
 
                             <muxc:NumberBox Grid.Row="0"
                                             Grid.Column="1"
@@ -163,7 +163,7 @@
                                             Minimum="1"
                                             SmallChange="1"
                                             Style="{StaticResource PaddingNumberBoxStyle}"
-                                            Value="{x:Bind Profile.GetTopPadding(Profile.Padding), BindBack=Profile.SetTopPadding, Mode=TwoWay}" />
+                                            Value="{x:Bind Profile.TopPadding, Mode=TwoWay}" />
 
                             <muxc:NumberBox Grid.Row="1"
                                             Grid.Column="2"
@@ -172,7 +172,7 @@
                                             Minimum="1"
                                             SmallChange="1"
                                             Style="{StaticResource PaddingNumberBoxStyle}"
-                                            Value="{x:Bind Profile.GetRightPadding(Profile.Padding), BindBack=Profile.SetRightPadding, Mode=TwoWay}" />
+                                            Value="{x:Bind Profile.RightPadding, Mode=TwoWay}" />
 
                             <muxc:NumberBox Grid.Row="2"
                                             Grid.Column="1"
@@ -181,7 +181,7 @@
                                             Minimum="1"
                                             SmallChange="1"
                                             Style="{StaticResource PaddingNumberBoxStyle}"
-                                            Value="{x:Bind Profile.GetBottomPadding(Profile.Padding), BindBack=Profile.SetBottomPadding, Mode=TwoWay}" />
+                                            Value="{x:Bind Profile.BottomPadding, Mode=TwoWay}" />
 
                         </Grid>
                     </Border>
