@@ -152,7 +152,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     public:
         KeyChordViewModel(Control::KeyChord CurrentKeys);
 
-        hstring KeyChordText() { return Model::KeyChordSerialization::ToString(_CurrentKeys); };
+        void CurrentKeys(const Control::KeyChord& newKeys);
 
         void ToggleEditMode();
         void AttemptAcceptChanges();
@@ -160,12 +160,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         VIEW_MODEL_OBSERVABLE_PROPERTY(bool, IsInEditMode, false);
         VIEW_MODEL_OBSERVABLE_PROPERTY(Control::KeyChord, ProposedKeys);
+        VIEW_MODEL_OBSERVABLE_PROPERTY(winrt::hstring, KeyChordText);
+        VIEW_MODEL_OBSERVABLE_PROPERTY(Windows::UI::Xaml::Controls::Flyout, AcceptChangesFlyout, nullptr);
 
     public:
         til::typed_event<Editor::KeyChordViewModel, Editor::ModifyKeyChordEventArgs> ModifyKeyChordRequested;
 
     private:
-        Control::KeyChord _CurrentKeys;
+        Control::KeyChord _currentKeys;
     };
 
     struct ActionsViewModel : ActionsViewModelT<ActionsViewModel>, ViewModelHelper<ActionsViewModel>

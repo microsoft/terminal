@@ -72,6 +72,7 @@ namespace Microsoft.Terminal.Settings.Editor
 
         // UI side
         Microsoft.Terminal.Control.KeyChord ProposedKeys;
+        Windows.UI.Xaml.Controls.Flyout AcceptChangesFlyout;
         Boolean IsInEditMode { get; };
         void ToggleEditMode();
         void AttemptAcceptChanges();

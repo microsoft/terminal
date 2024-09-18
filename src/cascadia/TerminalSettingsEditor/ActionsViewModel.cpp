@@ -162,9 +162,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
-    KeyChordViewModel::KeyChordViewModel(Control::KeyChord currentKeys) :
-        _CurrentKeys{ currentKeys }
+    KeyChordViewModel::KeyChordViewModel(Control::KeyChord currentKeys)
     {
+        CurrentKeys(currentKeys);
+    }
+
+    void KeyChordViewModel::CurrentKeys(const Control::KeyChord& newKeys)
+    {
+        _currentKeys = newKeys;
+        KeyChordText(Model::KeyChordSerialization::ToString(_currentKeys));
     }
 
     void KeyChordViewModel::ToggleEditMode()
@@ -175,15 +181,18 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             // if we're in edit mode,
             // - pre-populate the text box with the current keys
-            ProposedKeys(_CurrentKeys);
+            ProposedKeys(_currentKeys);
         }
     }
 
     void KeyChordViewModel::AttemptAcceptChanges()
     {
-        const auto args{ make_self<ModifyKeyChordEventArgs>(_CurrentKeys, // OldKeys
-                                                            _ProposedKeys) }; // NewKeys
-        ModifyKeyChordRequested.raise(*this, *args);
+        if (_currentKeys.Modifiers() != _ProposedKeys.Modifiers() || _currentKeys.Vkey() != _ProposedKeys.Vkey())
+        {
+            const auto args{ make_self<ModifyKeyChordEventArgs>(_currentKeys,     // OldKeys
+                                                                _ProposedKeys) }; // NewKeys
+            ModifyKeyChordRequested.raise(*this, *args);
+        }
     }
 
     void KeyChordViewModel::CancelChanges()
@@ -274,9 +283,83 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return _CurrentCommand;
     }
 
-    void ActionsViewModel::AttemptModifyKeyBinding(const Editor::KeyChordViewModel& senderVM, const Editor::ModifyKeyChordEventArgs& /*args*/)
+    void ActionsViewModel::AttemptModifyKeyBinding(const Editor::KeyChordViewModel& senderVM, const Editor::ModifyKeyChordEventArgs& args)
     {
-        senderVM.ToggleEditMode();
+        auto applyChangesToSettingsModel = [=]() {
+            // If the key chord was changed,
+            // update the settings model and view model appropriately
+            // NOTE: we still need to update the view model if we're working with a newly added action
+            if (args.OldKeys().Modifiers() != args.NewKeys().Modifiers() || args.OldKeys().Vkey() != args.NewKeys().Vkey())
+            {
+                // update settings model
+                _Settings.ActionMap().RebindKeys(args.OldKeys(), args.NewKeys());
+
+                // update view model
+                auto senderVMImpl{ get_self<KeyChordViewModel>(senderVM) };
+                senderVMImpl->CurrentKeys(args.NewKeys());
+            }
+        };
+
+        bool conflictFound{ false };
+        const auto& conflictingCmd{ _Settings.ActionMap().GetActionByKeyChord(args.NewKeys()) };
+        if (conflictingCmd)
+        {
+            conflictFound = true;
+            // We're about to overwrite another key chord.
+            // Display a confirmation dialog.
+            TextBlock errorMessageTB{};
+            errorMessageTB.Text(RS_(L"Actions_RenameConflictConfirmationMessage"));
+
+            const auto conflictingCmdName{ conflictingCmd.Name() };
+            TextBlock conflictingCommandNameTB{};
+            conflictingCommandNameTB.Text(fmt::format(L"\"{}\"", conflictingCmdName.empty() ? RS_(L"Actions_UnnamedCommandName") : conflictingCmdName));
+            conflictingCommandNameTB.FontStyle(Windows::UI::Text::FontStyle::Italic);
+
+            TextBlock confirmationQuestionTB{};
+            confirmationQuestionTB.Text(RS_(L"Actions_RenameConflictConfirmationQuestion"));
+
+            Button acceptBTN{};
+            acceptBTN.Content(box_value(RS_(L"Actions_RenameConflictConfirmationAcceptButton")));
+            acceptBTN.Click([=](auto&, auto&) {
+                // remove conflicting key binding from list view
+                const auto containerIndex{ _GetContainerIndexByKeyChord(args.NewKeys()) };
+                _KeyBindingList.RemoveAt(*containerIndex);
+
+                // remove flyout
+                senderVM.AcceptChangesFlyout().Hide();
+                senderVM.AcceptChangesFlyout(nullptr);
+
+                // update settings model and view model
+                applyChangesToSettingsModel();
+                senderVM.ToggleEditMode();
+            });
+
+            StackPanel flyoutStack{};
+            flyoutStack.Children().Append(errorMessageTB);
+            flyoutStack.Children().Append(conflictingCommandNameTB);
+            flyoutStack.Children().Append(confirmationQuestionTB);
+            flyoutStack.Children().Append(acceptBTN);
+
+            Flyout acceptChangesFlyout{};
+            acceptChangesFlyout.Content(flyoutStack);
+            senderVM.AcceptChangesFlyout(acceptChangesFlyout);
+        }
+
+        // if there was a conflict, the flyout we created will handle whether changes need to be propagated
+        // otherwise, go ahead and apply the changes
+        if (!conflictFound)
+        {
+            // update settings model and view model
+            applyChangesToSettingsModel();
+
+            // We NEED to toggle the edit mode here,
+            // so that if nothing changed, we still exit
+            // edit mode.
+            senderVM.ToggleEditMode();
+
+            // also reset the flyout
+            senderVM.AcceptChangesFlyout(nullptr);
+        }
     }
 
     void ActionsViewModel::_KeyBindingViewModelPropertyChangedHandler(const IInspectable& sender, const Windows::UI::Xaml::Data::PropertyChangedEventArgs& args)

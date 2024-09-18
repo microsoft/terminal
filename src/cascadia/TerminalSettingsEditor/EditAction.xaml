@@ -164,7 +164,7 @@
                                 Visibility="{x:Bind mtu:Converters.InvertedBooleanToVisibility(IsInEditMode), Mode=OneWay}">
                             <TextBlock FontSize="14"
                                        Style="{ThemeResource KeyChordTextBlockStyle}"
-                                       Text="{x:Bind KeyChordText}"
+                                       Text="{x:Bind KeyChordText, Mode=OneWay}"
                                        TextWrapping="WrapWholeWords"/>
                         </Button>
                         <StackPanel Orientation="Horizontal"
@@ -185,7 +185,8 @@
                             <!--  Accept changes  -->
                             <Button x:Uid="Actions_AcceptButton"
                                     Style="{StaticResource AccentEditButtonStyle}"
-                                    Click="{x:Bind AttemptAcceptChanges}">
+                                    Click="{x:Bind AttemptAcceptChanges}"
+                                    Flyout="{x:Bind AcceptChangesFlyout, Mode=OneWay}">
                                 <FontIcon FontSize="{StaticResource EditButtonIconSize}"
                                           Glyph="&#xE8FB;" />
                             </Button>
