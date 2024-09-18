@@ -35,16 +35,16 @@ Author(s):
     X(bool, AlwaysShowTabs, "alwaysShowTabs", true)                                                                                                                                                   \
     X(Model::NewTabPosition, NewTabPosition, "newTabPosition", Model::NewTabPosition::AfterLastTab)                                                                                                   \
     X(bool, ShowTitleInTitlebar, "showTerminalTitleInTitlebar", true)                                                                                                                                 \
-    X(bool, ConfirmCloseAllTabs, "confirmCloseAllTabs", true)                                                                                                                                         \
+    X(bool, ConfirmCloseAllTabs, "warning.confirmCloseAllTabs", true)                                                                                                                                 \
     X(Model::ThemePair, Theme, "theme")                                                                                                                                                               \
     X(hstring, Language, "language")                                                                                                                                                                  \
     X(winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode, TabWidthMode, "tabWidthMode", winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode::Equal)                                            \
     X(bool, UseAcrylicInTabRow, "useAcrylicInTabRow", false)                                                                                                                                          \
     X(bool, ShowTabsInTitlebar, "showTabsInTitlebar", true)                                                                                                                                           \
-    X(bool, InputServiceWarning, "inputServiceWarning", true)                                                                                                                                         \
+    X(bool, InputServiceWarning, "warning.inputService", true)                                                                                                                                        \
     X(winrt::Microsoft::Terminal::Control::CopyFormat, CopyFormatting, "copyFormatting", 0)                                                                                                           \
-    X(bool, WarnAboutLargePaste, "largePasteWarning", true)                                                                                                                                           \
-    X(bool, WarnAboutMultiLinePaste, "multiLinePasteWarning", true)                                                                                                                                   \
+    X(bool, WarnAboutLargePaste, "warning.largePaste", true)                                                                                                                                          \
+    X(bool, WarnAboutMultiLinePaste, "warning.multiLinePaste", true)                                                                                                                                  \
     X(Model::LaunchPosition, InitialPosition, "initialPosition", nullptr, nullptr)                                                                                                                    \
     X(bool, CenterOnLaunch, "centerOnLaunch", false)                                                                                                                                                  \
     X(Model::FirstWindowPreference, FirstWindowPreference, "firstWindowPreference", FirstWindowPreference::DefaultProfile)                                                                            \
