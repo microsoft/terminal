@@ -26,6 +26,39 @@
                         <Setter Property="CornerRadius" Value="1" />
                         <Setter Property="Background" Value="{ThemeResource SystemAltMediumLowColor}" />
                         <Setter Property="BorderBrush" Value="{ThemeResource SystemControlForegroundBaseMediumBrush}" />
+                        <!-- Override visual states -->
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="Button">
+                                    <Grid>
+                                        <VisualStateManager.VisualStateGroups>
+                                            <VisualStateGroup x:Name="CommonStates">
+                                                <VisualState x:Name="Normal" />
+                                                <VisualState x:Name="PointerOver">
+                                                    <Storyboard>
+                                                        <ObjectAnimationUsingKeyFrames Storyboard.TargetProperty="Background" Storyboard.TargetName="border">
+                                                            <DiscreteObjectKeyFrame KeyTime="0" Value="{ThemeResource SystemControlHighlightAccentRevealBackgroundBrush}"/>
+                                                        </ObjectAnimationUsingKeyFrames>
+                                                    </Storyboard>
+                                                </VisualState>
+                                                <VisualState x:Name="Pressed" />
+                                                <VisualState x:Name="Disabled" />
+                                            </VisualStateGroup>
+                                        </VisualStateManager.VisualStateGroups>
+
+                                        <!-- Define the appearance of the button -->
+                                        <Border x:Name="border"
+                                                Background="{TemplateBinding Background}"
+                                                BorderBrush="{TemplateBinding BorderBrush}"
+                                                BorderThickness="{TemplateBinding BorderThickness}"
+                                                CornerRadius="{TemplateBinding CornerRadius}">
+                                            <ContentPresenter HorizontalAlignment="Center"
+                                                              VerticalAlignment="Center" />
+                                        </Border>
+                                    </Grid>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
                     </Style>
                     <Style x:Key="KeyChordTextBlockStyle"
                            TargetType="TextBlock">
@@ -40,6 +73,39 @@
                         <Setter Property="CornerRadius" Value="1" />
                         <Setter Property="Background" Value="{ThemeResource SystemAltMediumLowColor}" />
                         <Setter Property="BorderBrush" Value="{ThemeResource SystemControlForegroundBaseMediumBrush}" />
+                        <!-- Override visual states -->
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="Button">
+                                    <Grid>
+                                        <VisualStateManager.VisualStateGroups>
+                                            <VisualStateGroup x:Name="CommonStates">
+                                                <VisualState x:Name="Normal" />
+                                                <VisualState x:Name="PointerOver">
+                                                    <Storyboard>
+                                                        <ObjectAnimationUsingKeyFrames Storyboard.TargetProperty="Background" Storyboard.TargetName="border">
+                                                            <DiscreteObjectKeyFrame KeyTime="0" Value="{ThemeResource SystemControlHighlightAccentRevealBackgroundBrush}"/>
+                                                        </ObjectAnimationUsingKeyFrames>
+                                                    </Storyboard>
+                                                </VisualState>
+                                                <VisualState x:Name="Pressed" />
+                                                <VisualState x:Name="Disabled" />
+                                            </VisualStateGroup>
+                                        </VisualStateManager.VisualStateGroups>
+
+                                        <!-- Define the appearance of the button -->
+                                        <Border x:Name="border"
+                                                Background="{TemplateBinding Background}"
+                                                BorderBrush="{TemplateBinding BorderBrush}"
+                                                BorderThickness="{TemplateBinding BorderThickness}"
+                                                CornerRadius="{TemplateBinding CornerRadius}">
+                                            <ContentPresenter HorizontalAlignment="Center"
+                                                              VerticalAlignment="Center" />
+                                        </Border>
+                                    </Grid>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
                     </Style>
                     <Style x:Key="KeyChordTextBlockStyle"
                            TargetType="TextBlock">
@@ -63,21 +129,68 @@
                 <Setter Property="HorizontalContentAlignment" Value="Stretch" />
                 <Setter Property="XYFocusKeyboardNavigation" Value="Enabled" />
             </Style>
+            <Style x:Key="KeyChordEditorStyle"
+                   TargetType="local:KeyChordListener">
+                <Setter Property="HorizontalAlignment" Value="Left" />
+                <Setter Property="VerticalAlignment" Value="Center" />
+            </Style>
+            <x:Int32 x:Key="EditButtonSize">32</x:Int32>
+            <x:Double x:Key="EditButtonIconSize">15</x:Double>
+            <Style x:Key="EditButtonStyle"
+                   BasedOn="{StaticResource DefaultButtonStyle}"
+                   TargetType="Button">
+                <Setter Property="Padding" Value="0" />
+                <Setter Property="VerticalAlignment" Value="Center" />
+                <Setter Property="Height" Value="{StaticResource EditButtonSize}" />
+                <Setter Property="Width" Value="{StaticResource EditButtonSize}" />
+            </Style>
+            <Style x:Key="AccentEditButtonStyle"
+                   BasedOn="{StaticResource AccentButtonStyle}"
+                   TargetType="Button">
+                <Setter Property="Padding" Value="3" />
+                <Setter Property="VerticalAlignment" Value="Center" />
+                <Setter Property="Height" Value="{StaticResource EditButtonSize}" />
+                <Setter Property="Width" Value="{StaticResource EditButtonSize}" />
+            </Style>
 
             <!--  Templates  -->
             <DataTemplate x:Key="KeyChordTemplate"
                           x:DataType="local:KeyChordViewModel">
                 <ListViewItem Style="{StaticResource KeyBindingContainerStyle}">
-                    <Button Grid.Column="1"
-                            Padding="2,0,2,0"
-                            HorizontalAlignment="Right"
-                            VerticalAlignment="Center"
-                            Style="{ThemeResource KeyChordBorderStyle}">
-                                <TextBlock FontSize="14"
-                                           Style="{ThemeResource KeyChordTextBlockStyle}"
-                                           Text="{x:Bind KeyChordText}"
-                                           TextWrapping="WrapWholeWords"/>
-                    </Button>
+                    <StackPanel Padding="2,0,2,0"
+                                VerticalAlignment="Center">
+                        <Button Style="{ThemeResource KeyChordBorderStyle}"
+                                Click="{x:Bind ToggleEditMode}"
+                                Visibility="{x:Bind mtu:Converters.InvertedBooleanToVisibility(IsInEditMode), Mode=OneWay}">
+                            <TextBlock FontSize="14"
+                                       Style="{ThemeResource KeyChordTextBlockStyle}"
+                                       Text="{x:Bind KeyChordText}"
+                                       TextWrapping="WrapWholeWords"/>
+                        </Button>
+                        <StackPanel Orientation="Horizontal"
+                                    Spacing="8"
+                                    Visibility="{x:Bind IsInEditMode, Mode=OneWay}">
+                            <!--  Edit Mode: Key Chord Listener  -->
+                            <local:KeyChordListener Keys="{x:Bind ProposedKeys, Mode=TwoWay}"
+                                                    Style="{StaticResource KeyChordEditorStyle}"/>
+
+                            <!--  Cancel editing the action  -->
+                            <Button x:Uid="Actions_CancelButton"
+                                    Style="{StaticResource EditButtonStyle}"
+                                    Click="{x:Bind CancelChanges}">
+                                <FontIcon FontSize="{StaticResource EditButtonIconSize}"
+                                          Glyph="&#xE711;" />
+                            </Button>
+
+                            <!--  Accept changes  -->
+                            <Button x:Uid="Actions_AcceptButton"
+                                    Style="{StaticResource AccentEditButtonStyle}"
+                                    Click="{x:Bind AttemptAcceptChanges}">
+                                <FontIcon FontSize="{StaticResource EditButtonIconSize}"
+                                          Glyph="&#xE8FB;" />
+                            </Button>
+                        </StackPanel>
+                    </StackPanel>
                 </ListViewItem>
             </DataTemplate>
         </ResourceDictionary>

@@ -11,6 +11,12 @@ namespace Microsoft.Terminal.Settings.Editor
         String NewActionName { get; };
     }
 
+    runtimeclass ModifyKeyChordEventArgs
+    {
+        Microsoft.Terminal.Control.KeyChord OldKeys { get; };
+        Microsoft.Terminal.Control.KeyChord NewKeys { get; };
+    }
+
     runtimeclass KeyBindingViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged
     {
         // Settings Model side
@@ -63,6 +69,15 @@ namespace Microsoft.Terminal.Settings.Editor
     runtimeclass KeyChordViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged
     {
         String KeyChordText { get; };
+
+        // UI side
+        Microsoft.Terminal.Control.KeyChord ProposedKeys;
+        Boolean IsInEditMode { get; };
+        void ToggleEditMode();
+        void AttemptAcceptChanges();
+        void CancelChanges();
+
+        event Windows.Foundation.TypedEventHandler<KeyChordViewModel, ModifyKeyChordEventArgs> ModifyKeyChordRequested;
     }
 
     enum ActionsSubPage
@@ -84,6 +99,8 @@ namespace Microsoft.Terminal.Settings.Editor
 
         ActionsSubPage CurrentPage;
         CommandViewModel CurrentCommand;
+
+        void AttemptModifyKeyBinding(KeyChordViewModel senderVM, ModifyKeyChordEventArgs args);
 
         IObservableVector<CommandViewModel> CommandList { get; };
     }
