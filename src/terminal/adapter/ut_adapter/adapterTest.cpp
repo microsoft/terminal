@@ -3972,6 +3972,39 @@ public:
         _pDispatch->PagePositionAbsolute(1);
     }
 
+    TEST_METHOD(SendC1ControlTest)
+    {
+        const auto S7C1T = L"\033 F";
+        const auto S8C1T = L"\033 G";
+
+        _testGetSet->PrepData();
+        _testGetSet->_expectedCodePage = CP_UTF8;
+
+        Log::Comment(L"Generating reports with C1 control sequences");
+        _stateMachine->ProcessString(S8C1T);
+
+        _pDispatch->SecondaryDeviceAttributes();
+        _testGetSet->ValidateInputEvent(L"\x9b>0;10;1c");
+
+        _pDispatch->TertiaryDeviceAttributes();
+        _testGetSet->ValidateInputEvent(L"\x90!|00000000\x9c");
+
+        _pDispatch->RequestColorTableEntry(0);
+        _testGetSet->ValidateInputEvent(L"\x9d\x34;0;rgb:0c0c/0c0c/0c0c\x9c");
+
+        Log::Comment(L"Generating reports with 7-bit escape sequence");
+        _stateMachine->ProcessString(S7C1T);
+
+        _pDispatch->SecondaryDeviceAttributes();
+        _testGetSet->ValidateInputEvent(L"\x1b[>0;10;1c");
+
+        _pDispatch->TertiaryDeviceAttributes();
+        _testGetSet->ValidateInputEvent(L"\x1bP!|00000000\x1b\\");
+
+        _pDispatch->RequestColorTableEntry(0);
+        _testGetSet->ValidateInputEvent(L"\x1b]4;0;rgb:0c0c/0c0c/0c0c\x1b\\");
+    }
+
 private:
     TerminalInput _terminalInput;
     std::unique_ptr<TestGetSet> _testGetSet;
