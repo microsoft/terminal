@@ -63,7 +63,9 @@ namespace Microsoft.Terminal.Settings.Editor
         IObservableVector<KeyChordViewModel> KeyChordViewModelList { get; };
 
         // UI side
+        Object ProposedAction;
         void Edit_Click();
+        IObservableVector<String> AvailableActions { get; };
     }
 
     runtimeclass KeyChordViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged
@@ -90,6 +92,7 @@ namespace Microsoft.Terminal.Settings.Editor
     runtimeclass ActionsViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged
     {
         ActionsViewModel(Microsoft.Terminal.Settings.Model.CascadiaSettings settings);
+        void UpdateSettings(Microsoft.Terminal.Settings.Model.CascadiaSettings settings);
 
         void OnAutomationPeerAttached();
         void AddNewKeybinding();

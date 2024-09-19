@@ -107,8 +107,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
-    CommandViewModel::CommandViewModel(Command cmd, std::vector<Control::KeyChord> keyChordList, const Editor::ActionsViewModel actionsPageVM) :
+    CommandViewModel::CommandViewModel(Command cmd, std::vector<Control::KeyChord> keyChordList, const IObservableVector<hstring>& availableActions, const Editor::ActionsViewModel actionsPageVM) :
         _command{ cmd },
+        _AvailableActions { availableActions },
         _actionsPageVM{ actionsPageVM }
     {
         std::vector<Editor::KeyChordViewModel> keyChordVMs;
@@ -119,6 +120,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             keyChordVMs.push_back(kcVM);
         }
         _KeyChordViewModelList = single_threaded_observable_vector(std::move(keyChordVMs));
+        ProposedAction(winrt::box_value(cmd.Name()));
+        CurrentAction(cmd.Name());
     }
 
     winrt::hstring CommandViewModel::Name()
@@ -173,6 +176,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         KeyChordText(Model::KeyChordSerialization::ToString(_currentKeys));
     }
 
+    Control::KeyChord KeyChordViewModel::CurrentKeys() const noexcept
+    {
+        return _currentKeys;
+    }
+
     void KeyChordViewModel::ToggleEditMode()
     {
         // toggle edit mode
@@ -203,6 +211,52 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     ActionsViewModel::ActionsViewModel(Model::CascadiaSettings settings) :
         _Settings{ settings }
     {
+        _MakeCommandVMsHelper();
+    }
+
+    void ActionsViewModel::UpdateSettings(const Model::CascadiaSettings& settings)
+    {
+        _Settings = settings;
+
+        // We want to re-initialize our CommandList, but we want to make sure
+        // we still have the same CurrentCommand as before (if that command still exists)
+
+        // Store the name of the current command (todo: this should update to use ID in the final implementation)
+        const auto currentCommandName = CurrentCommand() ? CurrentCommand().Name() : hstring{};
+
+        // Re-initialize the color scheme list
+        _MakeCommandVMsHelper();
+
+        // Re-select the previously selected scheme if it exists
+        if (!currentCommandName.empty())
+        {
+            const auto it = _CommandList.First();
+            while (it.HasCurrent())
+            {
+                auto cmd = *it;
+                if (cmd.Name() == currentCommandName)
+                {
+                    CurrentCommand(cmd);
+                    break;
+                }
+                it.MoveNext();
+            }
+            if (!it.HasCurrent())
+            {
+                // we didn't find the previously selected command
+                CurrentCommand(nullptr);
+            }
+        }
+        else
+        {
+            // didn't have a command,
+            // so skip over looking through the command
+            CurrentCommand(nullptr);
+        }
+    }
+
+    void ActionsViewModel::_MakeCommandVMsHelper()
+    {
         // Populate AvailableActionAndArgs
         _AvailableActionMap = single_threaded_map<hstring, Model::ActionAndArgs>();
         std::vector<hstring> availableActionAndArgs;
@@ -230,7 +284,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             std::vector<Control::KeyChord> keyChordList;
             // todo: need to loop through all the keybindings that point to this command here
             keyChordList.emplace_back(keys);
-            auto cmdVM{ make_self<CommandViewModel>(cmd, keyChordList, *this) };
+            auto cmdVM{ make_self<CommandViewModel>(cmd, keyChordList, _AvailableActionAndArgs, *this) };
             _RegisterCmdVMEvents(cmdVM);
             commandList.push_back(*cmdVM);
         }
@@ -405,6 +459,29 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
             // Emit an event to let the page know to update the background of this key binding VM
             UpdateBackground.raise(*this, senderVM);
+        }
+    }
+
+    void ActionsViewModel::_CmdVMPropertyChangedHandler(const IInspectable& sender, const Windows::UI::Xaml::Data::PropertyChangedEventArgs& args)
+    {
+        const auto senderVM{ sender.as<Editor::CommandViewModel>() };
+        const auto propertyName{ args.PropertyName() };
+        if (propertyName == L"ProposedAction")
+        {
+            const auto proposedActionName = unbox_value<hstring>(senderVM.ProposedAction());
+            // convert the action's name into a view model.
+            const auto& newAction{ _AvailableActionMap.Lookup(proposedActionName) };
+
+            // update settings model
+            for (const auto kcVM : senderVM.KeyChordViewModelList())
+            {
+                const auto kcVMImpl{ get_self<KeyChordViewModel>(kcVM) };
+                _Settings.ActionMap().RegisterKeyBinding(kcVMImpl->CurrentKeys(), newAction);
+            }
+
+            // update view model
+            auto cmdImpl{ get_self<CommandViewModel>(senderVM) };
+            cmdImpl->CurrentAction(proposedActionName);
         }
     }
 
@@ -589,5 +666,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     void ActionsViewModel::_RegisterCmdVMEvents(com_ptr<CommandViewModel>& cmdVM)
     {
         cmdVM->EditRequested({ this, &ActionsViewModel::_CmdVMEditRequestedHandler });
+        cmdVM->PropertyChanged({ this, &ActionsViewModel::_CmdVMPropertyChangedHandler });
     }
 }

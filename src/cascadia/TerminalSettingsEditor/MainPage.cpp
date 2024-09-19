@@ -154,6 +154,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _InitializeProfilesList();
         // Update the Nav State with the new version of the settings
         _colorSchemesPageVM.UpdateSettings(_settingsClone);
+        _actionsVM.UpdateSettings(_settingsClone);
 
         // We'll update the profile in the _profilesNavState whenever we actually navigate to one
 

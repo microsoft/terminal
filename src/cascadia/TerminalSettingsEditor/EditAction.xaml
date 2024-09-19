@@ -206,6 +206,11 @@
                      IsEnabled="{x:Bind ViewModel.IsUserAction}"/>
             <TextBox Text="{x:Bind ViewModel.ID, Mode=TwoWay}"
                      IsEnabled="{x:Bind ViewModel.IsUserAction}"/>
+            <ComboBox x:Uid="Actions_ActionComboBox"
+                      Grid.Column="0"
+                      VerticalAlignment="Center"
+                      ItemsSource="{x:Bind ViewModel.AvailableActions, Mode=OneWay}"
+                      SelectedItem="{x:Bind ViewModel.ProposedAction, Mode=TwoWay}"/>
             <ListView ItemTemplate="{StaticResource KeyChordTemplate}"
                       ItemsSource="{x:Bind ViewModel.KeyChordViewModelList, Mode=OneWay}"
                       SelectionMode="None" />

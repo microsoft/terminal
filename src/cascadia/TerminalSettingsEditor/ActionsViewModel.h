@@ -126,6 +126,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     public:
         CommandViewModel(winrt::Microsoft::Terminal::Settings::Model::Command cmd,
                          std::vector<Control::KeyChord> keyChordList,
+                         const Windows::Foundation::Collections::IObservableVector<hstring>& availableActions,
                          const Editor::ActionsViewModel actionsPageVM);
 
         winrt::hstring Name();
@@ -139,6 +140,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void Edit_Click();
         til::typed_event<Editor::CommandViewModel, IInspectable> EditRequested;
 
+        VIEW_MODEL_OBSERVABLE_PROPERTY(IInspectable, ProposedAction);
+        VIEW_MODEL_OBSERVABLE_PROPERTY(hstring, CurrentAction);
+        WINRT_PROPERTY(Windows::Foundation::Collections::IObservableVector<hstring>, AvailableActions, nullptr);
         WINRT_PROPERTY(Windows::Foundation::Collections::IObservableVector<Editor::KeyChordViewModel>, KeyChordViewModelList, nullptr);
 
     private:
@@ -153,6 +157,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         KeyChordViewModel(Control::KeyChord CurrentKeys);
 
         void CurrentKeys(const Control::KeyChord& newKeys);
+        Control::KeyChord CurrentKeys() const noexcept;
 
         void ToggleEditMode();
         void AttemptAcceptChanges();
@@ -174,6 +179,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
     public:
         ActionsViewModel(Model::CascadiaSettings settings);
+        void UpdateSettings(const Model::CascadiaSettings& settings);
 
         void OnAutomationPeerAttached();
         void AddNewKeybinding();
@@ -197,6 +203,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Windows::Foundation::Collections::IObservableVector<hstring> _AvailableActionAndArgs;
         Windows::Foundation::Collections::IMap<hstring, Model::ActionAndArgs> _AvailableActionMap;
 
+        void _MakeCommandVMsHelper();
+
         std::optional<uint32_t> _GetContainerIndexByKeyChord(const Control::KeyChord& keys);
         void _RegisterEvents(com_ptr<implementation::KeyBindingViewModel>& kbdVM);
         void _RegisterCmdVMEvents(com_ptr<implementation::CommandViewModel>& cmdVM);
@@ -206,6 +214,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void _KeyBindingViewModelModifyKeyBindingHandler(const Editor::KeyBindingViewModel& senderVM, const Editor::ModifyKeyBindingEventArgs& args);
         void _KeyBindingViewModelDeleteNewlyAddedKeyBindingHandler(const Editor::KeyBindingViewModel& senderVM, const IInspectable& args);
 
+        void _CmdVMPropertyChangedHandler(const IInspectable& sender, const Windows::UI::Xaml::Data::PropertyChangedEventArgs& args);
         void _CmdVMEditRequestedHandler(const Editor::CommandViewModel& senderVM, const IInspectable& args);
     };
 }
