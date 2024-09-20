@@ -36,7 +36,9 @@
 
             <DataTemplate x:Key="ProfileEntryTemplate"
                           x:DataType="local:ProfileEntryViewModel">
-                <muxc:TreeViewItem AutomationProperties.Name="{x:Bind ProfileEntry.Profile.Name, Mode=OneWay}">
+                <muxc:TreeViewItem AutomationProperties.Name="{x:Bind ProfileEntry.Profile.Name, Mode=OneWay}"
+                                   DragOver="TreeViewItem_DragOver"
+                                   Drop="TreeViewItem_Drop">
                     <muxc:TreeViewItem.Content>
                         <StackPanel Orientation="Horizontal"
                                     Spacing="10">
@@ -52,7 +54,9 @@
             <DataTemplate x:Key="SeparatorEntryTemplate"
                           x:DataType="local:SeparatorEntryViewModel">
                 <muxc:TreeViewItem x:Uid="NewTabMenuEntry_Separator"
-                                   FontStyle="Italic"/>
+                                   FontStyle="Italic"
+                                   DragOver="TreeViewItem_DragOver"
+                                   Drop="TreeViewItem_Drop"/>
             </DataTemplate>
 
             <!-- TODO CARLOS: I'm using TreeViewItem.ItemsSource to recursively define
@@ -65,7 +69,9 @@
                           x:DataType="local:FolderEntryViewModel">
                 <muxc:TreeViewItem AutomationProperties.Name="{x:Bind Name, Mode=OneWay}"
                                    ItemsSource="{x:Bind Entries, Mode=TwoWay}"
-                                   IsExpanded="True">
+                                   IsExpanded="True"
+                                   DragOver="TreeViewItem_DragOver"
+                                   Drop="TreeViewItem_Drop">
                     <muxc:TreeViewItem.Content>
                         <StackPanel Orientation="Horizontal" Spacing="10">
                             <!--<Image Source="{x:Bind Icon}"
@@ -80,13 +86,17 @@
             <DataTemplate x:Key="MatchProfilesEntryTemplate"
                           x:DataType="local:MatchProfilesEntryViewModel">
                 <muxc:TreeViewItem FontStyle="Italic"
-                                   Content="{x:Bind DisplayText, Mode=OneWay}"/>
+                                   Content="{x:Bind DisplayText, Mode=OneWay}"
+                                   DragOver="TreeViewItem_DragOver"
+                                   Drop="TreeViewItem_Drop"/>
             </DataTemplate>
 
             <DataTemplate x:Key="RemainingProfilesEntryTemplate"
                           x:DataType="local:RemainingProfilesEntryViewModel">
                 <muxc:TreeViewItem x:Uid="NewTabMenuEntry_RemainingProfiles"
-                                   FontStyle="Italic"/>
+                                   FontStyle="Italic"
+                                   DragOver="TreeViewItem_DragOver"
+                                   Drop="TreeViewItem_Drop"/>
             </DataTemplate>
 
             <local:NewTabMenuEntryTemplateSelector x:Key="NewTabMenuEntryTemplateSelector"
@@ -120,6 +130,10 @@
                                CanDragItems="True"
                                CanReorderItems="True"
                                SelectionMode="None"
+                               DragItemsStarting="TreeView_DragItemsStarting"
+                               DragOver="TreeView_DragOver"
+                               Drop="TreeView_Drop"
+                               DragItemsCompleted="TreeView_DragItemsCompleted"
                                ItemsSource="{x:Bind ViewModel.Entries, Mode=OneWay}"
                                ItemTemplateSelector="{StaticResource NewTabMenuEntryTemplateSelector}"/>
             </Border>
