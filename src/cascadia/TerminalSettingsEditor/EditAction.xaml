@@ -238,14 +238,20 @@
                       IsEnabled="{x:Bind ViewModel.IsUserAction}"/>
             <ListView ItemTemplate="{StaticResource KeyChordTemplate}"
                       ItemsSource="{x:Bind ViewModel.KeyChordViewModelList, Mode=OneWay}"
-                      SelectionMode="None" />
+                      SelectionMode="None">
+                <ListView.Header>
+                    <Button Click="{x:Bind ViewModel.AddKeybinding_Click}">
+                        <TextBlock x:Uid="Actions_AddKeyChord" />
+                    </Button>
+                </ListView.Header>
+            </ListView>
             <Button Style="{StaticResource DeleteButtonStyle}"
                     IsEnabled="{x:Bind ViewModel.IsUserAction}">
                 <Button.Content>
                     <StackPanel Orientation="Horizontal">
                         <FontIcon FontSize="{StaticResource StandardIconSize}"
                                   Glyph="&#xE74D;" />
-                        <TextBlock x:Uid="Actions_DeleteButton"
+                        <TextBlock x:Uid="Actions_DeleteButton2"
                                    Style="{StaticResource IconButtonTextBlockStyle}" />
                     </StackPanel>
                 </Button.Content>

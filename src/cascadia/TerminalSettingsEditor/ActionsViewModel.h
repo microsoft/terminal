@@ -143,6 +143,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void Delete_Click();
         til::typed_event<Editor::CommandViewModel, IInspectable> DeleteRequested;
 
+        void AddKeybinding_Click();
+
         VIEW_MODEL_OBSERVABLE_PROPERTY(IInspectable, ProposedAction);
         VIEW_MODEL_OBSERVABLE_PROPERTY(hstring, CurrentAction);
         WINRT_PROPERTY(Windows::Foundation::Collections::IObservableVector<hstring>, AvailableActions, nullptr);
@@ -173,6 +175,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         VIEW_MODEL_OBSERVABLE_PROPERTY(Windows::UI::Xaml::Controls::Flyout, AcceptChangesFlyout, nullptr);
 
     public:
+        til::typed_event<Editor::KeyChordViewModel, Terminal::Control::KeyChord> AddKeyChordRequested;
         til::typed_event<Editor::KeyChordViewModel, Editor::ModifyKeyChordEventArgs> ModifyKeyChordRequested;
         til::typed_event<Editor::KeyChordViewModel, Terminal::Control::KeyChord> DeleteKeyChordRequested;
 
@@ -194,6 +197,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         void AttemptModifyKeyChord(const Editor::KeyChordViewModel& senderVM, const Editor::ModifyKeyChordEventArgs& args);
         void AttemptDeleteKeyChord(const Control::KeyChord& keys);
+        void AttemptAddKeyChord(const Control::KeyChord& keys, const winrt::hstring& cmdID);
 
         til::typed_event<IInspectable, IInspectable> FocusContainer;
         til::typed_event<IInspectable, IInspectable> UpdateBackground;

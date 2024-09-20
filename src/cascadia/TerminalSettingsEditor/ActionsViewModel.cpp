@@ -160,15 +160,27 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         DeleteRequested.raise(*this, *this);
     }
 
+    void CommandViewModel::AddKeybinding_Click()
+    {
+        auto kbdVM{ make_self<KeyChordViewModel>(nullptr) };
+        kbdVM->IsInEditMode(true);
+        _RegisterEvents(*kbdVM);
+        KeyChordViewModelList().Append(*kbdVM);
+    }
+
     void CommandViewModel::_RegisterEvents(Editor::KeyChordViewModel kcVM)
     {
         if (const auto actionsPageVM{ _actionsPageVM.get() })
         {
+            const auto id = ID();
+            kcVM.AddKeyChordRequested([actionsPageVM, id](const Editor::KeyChordViewModel& /*sender*/, const Control::KeyChord& args) {
+                actionsPageVM.AttemptAddKeyChord(args, id);
+            });
             kcVM.ModifyKeyChordRequested([actionsPageVM](const Editor::KeyChordViewModel& sender, const Editor::ModifyKeyChordEventArgs& args) {
                 actionsPageVM.AttemptModifyKeyChord(sender, args);
             });
             kcVM.DeleteKeyChordRequested([actionsPageVM](const Editor::KeyChordViewModel& /*sender*/, const Control::KeyChord& args) {
-                // todo: remove the sender from our list
+                // todo: remove the sender from our list, remove flyout
                 actionsPageVM.AttemptDeleteKeyChord(args);
             });
         }
@@ -204,7 +216,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void KeyChordViewModel::AttemptAcceptChanges()
     {
-        if (_currentKeys.Modifiers() != _ProposedKeys.Modifiers() || _currentKeys.Vkey() != _ProposedKeys.Vkey())
+        if (!_currentKeys)
+        {
+            AddKeyChordRequested.raise(*this, _ProposedKeys);
+        }
+        else if (_currentKeys.Modifiers() != _ProposedKeys.Modifiers() || _currentKeys.Vkey() != _ProposedKeys.Vkey())
         {
             const auto args{ make_self<ModifyKeyChordEventArgs>(_currentKeys,     // OldKeys
                                                                 _ProposedKeys) }; // NewKeys
@@ -434,6 +450,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         // Update the settings model
         _Settings.ActionMap().DeleteKeyBinding(keys);
+    }
+
+    void ActionsViewModel::AttemptAddKeyChord(const Control::KeyChord& keys, const winrt::hstring& cmdID)
+    {
+        // Update the settings model
+        _Settings.ActionMap().AddKeyBinding(keys, cmdID);
     }
 
     void ActionsViewModel::_KeyBindingViewModelPropertyChangedHandler(const IInspectable& sender, const Windows::UI::Xaml::Data::PropertyChangedEventArgs& args)
