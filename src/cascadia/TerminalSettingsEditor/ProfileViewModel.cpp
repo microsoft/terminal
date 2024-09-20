@@ -40,6 +40,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         INITIALIZE_BINDABLE_ENUM_SETTING_REVERSE_ORDER(CloseOnExitMode, CloseOnExitMode, winrt::Microsoft::Terminal::Settings::Model::CloseOnExitMode, L"Profile_CloseOnExit", L"Content");
         INITIALIZE_BINDABLE_ENUM_SETTING(ScrollState, ScrollbarState, winrt::Microsoft::Terminal::Control::ScrollbarState, L"Profile_ScrollbarVisibility", L"Content");
 
+        _InitializeCurrentBellSounds();
+
         // Add a property changed handler to our own property changed event.
         // This propagates changes from the settings model to anybody listening to our
         //  unique view model members.
@@ -75,6 +77,21 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             else if (viewModelProperty == L"Icon")
             {
                 _NotifyChanges(L"HideIcon");
+            }
+            else if (viewModelProperty == L"CurrentBellSounds")
+            {
+                // we already have infrastructure in place to
+                // propagate changes from the CurrentBellSounds
+                // to the model. Refer to...
+                // - _InitializeCurrentBellSounds() --> _CurrentBellSounds.VectorChanged()
+                // - RequestAddBellSound()
+                // - RequestDeleteBellSound()
+
+                _NotifyChanges(L"BellSoundPreview", L"HasBellSound");
+            }
+            else if (viewModelProperty == L"BellSound")
+            {
+                _InitializeCurrentBellSounds();
             }
         });
 
@@ -372,6 +389,145 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         auto currentStyle = BellStyle();
         WI_UpdateFlag(currentStyle, Model::BellStyle::Taskbar, winrt::unbox_value<bool>(on));
         BellStyle(currentStyle);
+    }
+
+    // Method Description:
+    // - Construct _CurrentBellSounds by importing the _inherited_ value from the model
+    // - Adds a PropertyChanged handler to each BellSoundViewModel to propagate changes to the model
+    void ProfileViewModel::_InitializeCurrentBellSounds()
+    {
+        _CurrentBellSounds = winrt::single_threaded_observable_vector<Editor::BellSoundViewModel>();
+        if (const auto soundList = _profile.BellSound())
+        {
+            for (const auto&& bellSound : soundList)
+            {
+                auto vm = winrt::make<BellSoundViewModel>(bellSound);
+                vm.PropertyChanged({ this, &ProfileViewModel::_BellSoundVMPropertyChanged });
+                _CurrentBellSounds.Append(vm);
+            }
+        }
+        _CurrentBellSounds.VectorChanged([this](auto&&, const IVectorChangedEventArgs& args) {
+            switch (args.CollectionChange())
+            {
+            case CollectionChange::ItemInserted:
+            {
+                const auto index = args.Index();
+                const auto& newSound = _CurrentBellSounds.GetAt(index);
+
+                if (!_profile.BellSound())
+                {
+                    _profile.BellSound(winrt::single_threaded_vector<winrt::hstring>());
+                }
+                _profile.BellSound().InsertAt(index, newSound.Path());
+                break;
+            }
+            case CollectionChange::ItemRemoved:
+            {
+                _profile.BellSound().RemoveAt(args.Index());
+                break;
+            }
+            case CollectionChange::ItemChanged:
+            {
+                // I've never been able to get this one to hit,
+                // but if it ever does, propagate change to model
+                const auto index = args.Index();
+                const auto& newSound = _CurrentBellSounds.GetAt(index);
+                _profile.BellSound().SetAt(index, newSound.Path());
+                break;
+            }
+            case CollectionChange::Reset:
+            default:
+            {
+                // propagate changes to model
+                auto list = winrt::single_threaded_vector<winrt::hstring>();
+                for (const auto& sound : _CurrentBellSounds)
+                {
+                    list.Append(sound.Path());
+                }
+                _profile.BellSound(list);
+                break;
+            }
+            }
+        });
+        _NotifyChanges(L"CurrentBellSounds");
+    }
+
+    // Method Description:
+    // - If the current layer is inheriting the bell sound from its parent,
+    //   we need to copy the _inherited_ bell sound list to the current layer
+    //   so that we can then apply modifications to it
+    void ProfileViewModel::_PrepareModelForBellSoundModification()
+    {
+        if (const auto inheritedSounds = _profile.BellSound(); !_profile.HasBellSound() && inheritedSounds)
+        {
+            auto newSounds{ winrt::single_threaded_vector<winrt::hstring>() };
+            for (const auto sound : inheritedSounds)
+            {
+                newSounds.Append(sound);
+            }
+            _profile.BellSound(newSounds);
+        }
+    }
+
+    hstring ProfileViewModel::BellSoundPreview()
+    {
+        const auto& currentSound = BellSound();
+        if (!currentSound || currentSound.Size() == 0)
+        {
+            return RS_(L"Profile_BellSoundPreviewDefault");
+        }
+        else if (currentSound.Size() == 1)
+        {
+            std::filesystem::path filePath{ std::wstring_view{ currentSound.GetAt(0) } };
+            return hstring{ filePath.filename().wstring() };
+        }
+        return RS_(L"Profile_BellSoundPreviewMultiple");
+    }
+
+    void ProfileViewModel::_BellSoundVMPropertyChanged(const IInspectable& sender, const PropertyChangedEventArgs& args)
+    {
+        if (args.PropertyName() == L"Path")
+        {
+            auto senderVM = sender.as<Editor::BellSoundViewModel>();
+
+            // propagate changes to model
+            uint32_t index;
+            if (_CurrentBellSounds.IndexOf(senderVM, index))
+            {
+                // if current layer is inheriting,
+                // we should copy the bell sound then apply changes
+                _PrepareModelForBellSoundModification();
+
+                _profile.BellSound().SetAt(index, senderVM.Path());
+                _NotifyChanges(L"CurrentBellSounds");
+            }
+        }
+    }
+
+    void ProfileViewModel::RequestAddBellSound()
+    {
+        // If we were inheriting our bell sound,
+        // copy it over to the current layer and apply modifications
+        _PrepareModelForBellSoundModification();
+
+        auto vm = winrt::make<BellSoundViewModel>();
+        vm.PropertyChanged({ this, &ProfileViewModel::_BellSoundVMPropertyChanged });
+        _CurrentBellSounds.Append(vm);
+        _NotifyChanges(L"CurrentBellSounds");
+    }
+
+    void ProfileViewModel::RequestDeleteBellSound(const Editor::BellSoundViewModel& vm)
+    {
+        uint32_t index;
+        if (_CurrentBellSounds.IndexOf(vm, index))
+        {
+            // If we were inheriting our bell sound,
+            // copy it over to the current layer and apply modifications
+            _PrepareModelForBellSoundModification();
+
+            _CurrentBellSounds.RemoveAt(index);
+            _NotifyChanges(L"CurrentBellSounds");
+        }
     }
 
     void ProfileViewModel::DeleteProfile()
