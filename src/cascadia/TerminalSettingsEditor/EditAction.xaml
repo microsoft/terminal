@@ -157,10 +157,15 @@
             <DataTemplate x:Key="KeyChordTemplate"
                           x:DataType="local:KeyChordViewModel">
                 <ListViewItem Style="{StaticResource KeyBindingContainerStyle}">
-                    <StackPanel Padding="2,0,2,0"
-                                VerticalAlignment="Center">
+                    <Grid Padding="2,0,2,0"
+                          VerticalAlignment="Center">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
                         <Button Style="{ThemeResource KeyChordBorderStyle}"
                                 Click="{x:Bind ToggleEditMode}"
+                                Grid.Column="0"
                                 Visibility="{x:Bind mtu:Converters.InvertedBooleanToVisibility(IsInEditMode), Mode=OneWay}">
                             <TextBlock FontSize="14"
                                        Style="{ThemeResource KeyChordTextBlockStyle}"
@@ -169,6 +174,7 @@
                         </Button>
                         <StackPanel Orientation="Horizontal"
                                     Spacing="8"
+                                    Grid.Column="0"
                                     Visibility="{x:Bind IsInEditMode, Mode=OneWay}">
                             <!--  Edit Mode: Key Chord Listener  -->
                             <local:KeyChordListener Keys="{x:Bind ProposedKeys, Mode=TwoWay}"
@@ -191,7 +197,25 @@
                                           Glyph="&#xE8FB;" />
                             </Button>
                         </StackPanel>
-                    </StackPanel>
+                        <Button Grid.Column="1"
+                                Margin="8,0,0,0"
+                                Style="{StaticResource DeleteSmallButtonStyle}">
+                            <Button.Content>
+                                <FontIcon FontSize="{StaticResource EditButtonIconSize}"
+                                          Glyph="&#xE74D;" />
+                            </Button.Content>
+                            <Button.Flyout>
+                                <Flyout>
+                                    <StackPanel>
+                                        <TextBlock x:Uid="Actions_DeleteConfirmationMessage"
+                                                   Style="{StaticResource CustomFlyoutTextStyle}" />
+                                        <Button x:Uid="Actions_DeleteConfirmationButton"
+                                                Click="{x:Bind DeleteKeyChord}" />
+                                    </StackPanel>
+                                </Flyout>
+                            </Button.Flyout>
+                        </Button>
+                    </Grid>
                 </ListViewItem>
             </DataTemplate>
         </ResourceDictionary>
@@ -210,10 +234,32 @@
                       Grid.Column="0"
                       VerticalAlignment="Center"
                       ItemsSource="{x:Bind ViewModel.AvailableActions, Mode=OneWay}"
-                      SelectedItem="{x:Bind ViewModel.ProposedAction, Mode=TwoWay}"/>
+                      SelectedItem="{x:Bind ViewModel.ProposedAction, Mode=TwoWay}"
+                      IsEnabled="{x:Bind ViewModel.IsUserAction}"/>
             <ListView ItemTemplate="{StaticResource KeyChordTemplate}"
                       ItemsSource="{x:Bind ViewModel.KeyChordViewModelList, Mode=OneWay}"
                       SelectionMode="None" />
+            <Button Style="{StaticResource DeleteButtonStyle}"
+                    IsEnabled="{x:Bind ViewModel.IsUserAction}">
+                <Button.Content>
+                    <StackPanel Orientation="Horizontal">
+                        <FontIcon FontSize="{StaticResource StandardIconSize}"
+                                  Glyph="&#xE74D;" />
+                        <TextBlock x:Uid="Actions_DeleteButton"
+                                   Style="{StaticResource IconButtonTextBlockStyle}" />
+                    </StackPanel>
+                </Button.Content>
+                <Button.Flyout>
+                    <Flyout>
+                        <StackPanel>
+                            <TextBlock x:Uid="Actions_DeleteConfirmationMessage"
+                                       Style="{StaticResource CustomFlyoutTextStyle}" />
+                            <Button x:Uid="Actions_DeleteConfirmationButton"
+                                    Click="{x:Bind ViewModel.Delete_Click}" />
+                        </StackPanel>
+                    </Flyout>
+                </Button.Flyout>
+            </Button>
         </StackPanel>
     </Border>
 </Page>

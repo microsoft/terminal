@@ -155,12 +155,21 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         EditRequested.raise(*this, *this);
     }
 
+    void CommandViewModel::Delete_Click()
+    {
+        DeleteRequested.raise(*this, *this);
+    }
+
     void CommandViewModel::_RegisterEvents(Editor::KeyChordViewModel kcVM)
     {
         if (const auto actionsPageVM{ _actionsPageVM.get() })
         {
             kcVM.ModifyKeyChordRequested([actionsPageVM](const Editor::KeyChordViewModel& sender, const Editor::ModifyKeyChordEventArgs& args) {
-                actionsPageVM.AttemptModifyKeyBinding(sender, args);
+                actionsPageVM.AttemptModifyKeyChord(sender, args);
+            });
+            kcVM.DeleteKeyChordRequested([actionsPageVM](const Editor::KeyChordViewModel& /*sender*/, const Control::KeyChord& args) {
+                // todo: remove the sender from our list
+                actionsPageVM.AttemptDeleteKeyChord(args);
             });
         }
     }
@@ -206,6 +215,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     void KeyChordViewModel::CancelChanges()
     {
         ToggleEditMode();
+    }
+
+    void KeyChordViewModel::DeleteKeyChord()
+    {
+        DeleteKeyChordRequested.raise(*this, _currentKeys);
     }
 
     ActionsViewModel::ActionsViewModel(Model::CascadiaSettings settings) :
@@ -337,7 +351,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return _CurrentCommand;
     }
 
-    void ActionsViewModel::AttemptModifyKeyBinding(const Editor::KeyChordViewModel& senderVM, const Editor::ModifyKeyChordEventArgs& args)
+    void ActionsViewModel::AttemptModifyKeyChord(const Editor::KeyChordViewModel& senderVM, const Editor::ModifyKeyChordEventArgs& args)
     {
         auto applyChangesToSettingsModel = [=]() {
             // If the key chord was changed,
@@ -414,6 +428,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             // also reset the flyout
             senderVM.AcceptChangesFlyout(nullptr);
         }
+    }
+
+    void ActionsViewModel::AttemptDeleteKeyChord(const Control::KeyChord& keys)
+    {
+        // Update the settings model
+        _Settings.ActionMap().DeleteKeyBinding(keys);
     }
 
     void ActionsViewModel::_KeyBindingViewModelPropertyChangedHandler(const IInspectable& sender, const Windows::UI::Xaml::Data::PropertyChangedEventArgs& args)
@@ -631,6 +651,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         CurrentPage(ActionsSubPage::Edit);
     }
 
+    void ActionsViewModel::_CmdVMDeleteRequestedHandler(const Editor::CommandViewModel& senderVM, const IInspectable& /*args*/)
+    {
+        // todo: the page needs to update with the new list of commands
+        _Settings.ActionMap().DeleteUserCommand(senderVM.ID());
+        CurrentCommand(nullptr);
+        CurrentPage(ActionsSubPage::Base);
+    }
+
     // Method Description:
     // - performs a search on KeyBindingList by key chord.
     // Arguments:
@@ -666,6 +694,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     void ActionsViewModel::_RegisterCmdVMEvents(com_ptr<CommandViewModel>& cmdVM)
     {
         cmdVM->EditRequested({ this, &ActionsViewModel::_CmdVMEditRequestedHandler });
+        cmdVM->DeleteRequested({ this, &ActionsViewModel::_CmdVMDeleteRequestedHandler });
         cmdVM->PropertyChanged({ this, &ActionsViewModel::_CmdVMPropertyChangedHandler });
     }
 }

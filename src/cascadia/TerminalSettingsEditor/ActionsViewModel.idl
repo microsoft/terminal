@@ -65,6 +65,7 @@ namespace Microsoft.Terminal.Settings.Editor
         // UI side
         Object ProposedAction;
         void Edit_Click();
+        void Delete_Click();
         IObservableVector<String> AvailableActions { get; };
     }
 
@@ -79,8 +80,10 @@ namespace Microsoft.Terminal.Settings.Editor
         void ToggleEditMode();
         void AttemptAcceptChanges();
         void CancelChanges();
+        void DeleteKeyChord();
 
         event Windows.Foundation.TypedEventHandler<KeyChordViewModel, ModifyKeyChordEventArgs> ModifyKeyChordRequested;
+        event Windows.Foundation.TypedEventHandler<KeyChordViewModel, Microsoft.Terminal.Control.KeyChord> DeleteKeyChordRequested;
     }
 
     enum ActionsSubPage
@@ -104,7 +107,8 @@ namespace Microsoft.Terminal.Settings.Editor
         ActionsSubPage CurrentPage;
         CommandViewModel CurrentCommand;
 
-        void AttemptModifyKeyBinding(KeyChordViewModel senderVM, ModifyKeyChordEventArgs args);
+        void AttemptModifyKeyChord(KeyChordViewModel senderVM, ModifyKeyChordEventArgs args);
+        void AttemptDeleteKeyChord(Microsoft.Terminal.Control.KeyChord keys);
 
         IObservableVector<CommandViewModel> CommandList { get; };
     }

@@ -140,6 +140,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void Edit_Click();
         til::typed_event<Editor::CommandViewModel, IInspectable> EditRequested;
 
+        void Delete_Click();
+        til::typed_event<Editor::CommandViewModel, IInspectable> DeleteRequested;
+
         VIEW_MODEL_OBSERVABLE_PROPERTY(IInspectable, ProposedAction);
         VIEW_MODEL_OBSERVABLE_PROPERTY(hstring, CurrentAction);
         WINRT_PROPERTY(Windows::Foundation::Collections::IObservableVector<hstring>, AvailableActions, nullptr);
@@ -162,6 +165,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void ToggleEditMode();
         void AttemptAcceptChanges();
         void CancelChanges();
+        void DeleteKeyChord();
 
         VIEW_MODEL_OBSERVABLE_PROPERTY(bool, IsInEditMode, false);
         VIEW_MODEL_OBSERVABLE_PROPERTY(Control::KeyChord, ProposedKeys);
@@ -170,6 +174,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     public:
         til::typed_event<Editor::KeyChordViewModel, Editor::ModifyKeyChordEventArgs> ModifyKeyChordRequested;
+        til::typed_event<Editor::KeyChordViewModel, Terminal::Control::KeyChord> DeleteKeyChordRequested;
 
     private:
         Control::KeyChord _currentKeys;
@@ -187,7 +192,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void CurrentCommand(const Editor::CommandViewModel& newCommand);
         Editor::CommandViewModel CurrentCommand();
 
-        void AttemptModifyKeyBinding(const Editor::KeyChordViewModel& senderVM, const Editor::ModifyKeyChordEventArgs& args);
+        void AttemptModifyKeyChord(const Editor::KeyChordViewModel& senderVM, const Editor::ModifyKeyChordEventArgs& args);
+        void AttemptDeleteKeyChord(const Control::KeyChord& keys);
 
         til::typed_event<IInspectable, IInspectable> FocusContainer;
         til::typed_event<IInspectable, IInspectable> UpdateBackground;
@@ -216,6 +222,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         void _CmdVMPropertyChangedHandler(const IInspectable& sender, const Windows::UI::Xaml::Data::PropertyChangedEventArgs& args);
         void _CmdVMEditRequestedHandler(const Editor::CommandViewModel& senderVM, const IInspectable& args);
+        void _CmdVMDeleteRequestedHandler(const Editor::CommandViewModel& senderVM, const IInspectable& args);
     };
 }
 

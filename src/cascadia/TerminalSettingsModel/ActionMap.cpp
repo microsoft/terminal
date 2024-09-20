@@ -757,6 +757,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         AddAction(*cmd, keys);
     }
 
+    void ActionMap::DeleteUserCommand(const winrt::hstring& cmdID)
+    {
+        _ActionMap.erase(cmdID);
+        _RefreshKeyBindingCaches();
+    }
+
     // This is a helper to aid in sorting commands by their `Name`s, alphabetically.
     static bool _compareSchemeNames(const ColorScheme& lhs, const ColorScheme& rhs)
     {
