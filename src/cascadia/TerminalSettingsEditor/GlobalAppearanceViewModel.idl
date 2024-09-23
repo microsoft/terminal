@@ -11,11 +11,6 @@ namespace Microsoft.Terminal.Settings.Editor
     {
         GlobalAppearanceViewModel(Microsoft.Terminal.Settings.Model.GlobalAppSettings globalSettings);
 
-        static String LanguageDisplayConverter(String tag);
-        Boolean LanguageSelectorAvailable { get; };
-        Windows.Foundation.Collections.IObservableVector<String> LanguageList { get; };
-        IInspectable CurrentLanguage;
-
         IInspectable CurrentTheme;
         static String ThemeNameConverter(Microsoft.Terminal.Settings.Model.Theme theme);
         Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Model.Theme> ThemeList { get; };
