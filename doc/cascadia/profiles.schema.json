@@ -2365,14 +2365,14 @@
           "description": "When set to true, Terminal windows will not be able to interact with each other (including global hotkeys, tab drag/drop, running commandlines in existing windows, etc.). This is a compatibility escape hatch for users who are running into certain windowing issues.",
           "type": "boolean"
         },
-        "compatibility.allowVtChecksumReport": {
+        "compatibility.allowDECRQCRA": {
           "default": false,
-          "description": "When set to true, the terminal will support the DECRQCRA escape sequence.",
+          "description": "When set to true, the terminal will support the DECRQCRA (Request Checksum of Rectangular Area) escape sequence.",
           "type": "boolean"
         },
-        "compatibility.allowKeypadMode": {
+        "compatibility.allowDECNKM": {
           "default": false,
-          "description": "When set to true, the terminal will support the DECKPAM and DECKPNM escape sequences.",
+          "description": "When set to true, the terminal will support the DECKPAM and DECKPNM (Keypad Numeric Mode) escape sequences.",
           "type": "boolean"
         },
         "copyFormatting": {
