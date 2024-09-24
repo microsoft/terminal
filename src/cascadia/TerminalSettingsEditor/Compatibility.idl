@@ -11,11 +11,8 @@ namespace Microsoft.Terminal.Settings.Editor
     {
         CompatibilityViewModel(Microsoft.Terminal.Settings.Model.GlobalAppSettings globalSettings);
 
-        Boolean AllowKeypadModeAvailable { get; };
+        Boolean DebugFeaturesAvailable { get; };
 
-        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, ForceVTInput);
-        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, AllowVtChecksumReport);
-        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, AllowKeypadMode);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, AllowHeadless);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, IsolatedMode);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, DebugFeaturesEnabled);

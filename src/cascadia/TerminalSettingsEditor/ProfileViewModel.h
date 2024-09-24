@@ -84,6 +84,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         bool ShowMarksAvailable() const noexcept;
         bool AutoMarkPromptsAvailable() const noexcept;
         bool RepositionCursorWithMouseAvailable() const noexcept;
+        bool AllowKeypadModeAvailable() const noexcept;
 
         til::typed_event<Editor::ProfileViewModel, Editor::DeleteProfileEventArgs> DeleteProfileRequested;
 
@@ -120,6 +121,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         OBSERVABLE_PROJECTED_SETTING(_profile, ShowMarks);
         OBSERVABLE_PROJECTED_SETTING(_profile, AutoMarkPrompts);
         OBSERVABLE_PROJECTED_SETTING(_profile, RepositionCursorWithMouse);
+        OBSERVABLE_PROJECTED_SETTING(_profile, ForceVTInput);
+        OBSERVABLE_PROJECTED_SETTING(_profile, AllowVtChecksumReport);
+        OBSERVABLE_PROJECTED_SETTING(_profile, AllowKeypadMode);
 
         WINRT_PROPERTY(bool, IsBaseLayer, false);
         WINRT_PROPERTY(bool, FocusDeleteButton, false);

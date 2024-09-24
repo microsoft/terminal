@@ -23,7 +23,6 @@ static constexpr std::string_view ThemeKey{ "theme" };
 static constexpr std::string_view DefaultProfileKey{ "defaultProfile" };
 static constexpr std::string_view LegacyUseTabSwitcherModeKey{ "useTabSwitcher" };
 static constexpr std::string_view LegacyReloadEnvironmentVariablesKey{ "compatibility.reloadEnvironmentVariables" };
-static constexpr std::string_view LegacyForceVTInputKey{ "experimental.input.forceVT" };
 
 // Method Description:
 // - Copies any extraneous data from the parent before completing a CreateChild call
@@ -134,8 +133,6 @@ void GlobalAppSettings::LayerJson(const Json::Value& json, const OriginTag origi
     // "useTabSwitcher" to "tabSwitcherMode". Continue supporting
     // "useTabSwitcher", but prefer "tabSwitcherMode"
     JsonUtils::GetValueForKey(json, LegacyUseTabSwitcherModeKey, _TabSwitcherMode);
-
-    JsonUtils::GetValueForKey(json, LegacyForceVTInputKey, _ForceVTInput);
 
 #define GLOBAL_SETTINGS_LAYER_JSON(type, name, jsonKey, ...) \
     JsonUtils::GetValueForKey(json, jsonKey, _##name);       \

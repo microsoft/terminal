@@ -341,6 +341,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                     _breadcrumbs.Append(crumb);
                     SettingsMainPage_ScrollViewer().ScrollToVerticalOffset(0);
                 }
+                else if (currentPage == ProfileSubPage::Terminal)
+                {
+                    contentFrame().Navigate(xaml_typename<Editor::Profiles_Terminal>(), profile);
+                    const auto crumb = winrt::make<Breadcrumb>(breadcrumbTag, RS_(L"Profile_Terminal/Header"), BreadcrumbSubPage::Profile_Terminal);
+                    _breadcrumbs.Append(crumb);
+                    SettingsMainPage_ScrollViewer().ScrollToVerticalOffset(0);
+                }
                 else if (currentPage == ProfileSubPage::Advanced)
                 {
                     contentFrame().Navigate(xaml_typename<Editor::Profiles_Advanced>(), profile);
@@ -403,6 +410,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             {
                 profileVM.CurrentPage(ProfileSubPage::Appearance);
             }
+            else if (subPage == BreadcrumbSubPage::Profile_Terminal)
+            {
+                profileVM.CurrentPage(ProfileSubPage::Terminal);
+            }
             else if (subPage == BreadcrumbSubPage::Profile_Advanced)
             {
                 profileVM.CurrentPage(ProfileSubPage::Advanced);
@@ -459,6 +470,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         else if (subPage == BreadcrumbSubPage::Profile_Appearance)
         {
             profile.CurrentPage(ProfileSubPage::Appearance);
+        }
+        else if (subPage == BreadcrumbSubPage::Profile_Terminal)
+        {
+            profile.CurrentPage(ProfileSubPage::Terminal);
         }
         else if (subPage == BreadcrumbSubPage::Profile_Advanced)
         {

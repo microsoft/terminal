@@ -37,15 +37,6 @@
                    Visibility="{x:Bind Profile.IsBaseLayer}" />
         <StackPanel Grid.Row="1"
                     Style="{StaticResource SettingsStackStyle}">
-            <!--  Suppress Application Title  -->
-            <local:SettingContainer x:Uid="Profile_SuppressApplicationTitle"
-                                    ClearSettingValue="{x:Bind Profile.ClearSuppressApplicationTitle}"
-                                    HasSettingValue="{x:Bind Profile.HasSuppressApplicationTitle, Mode=OneWay}"
-                                    SettingOverrideSource="{x:Bind Profile.SuppressApplicationTitleOverrideSource, Mode=OneWay}">
-                <ToggleSwitch IsOn="{x:Bind Profile.SuppressApplicationTitle, Mode=TwoWay}"
-                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
-            </local:SettingContainer>
-
             <!--  Antialiasing Mode  -->
             <local:SettingContainer x:Uid="Profile_AntialiasingMode"
                                     ClearSettingValue="{x:Bind Profile.ClearAntialiasingMode}"

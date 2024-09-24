@@ -41,6 +41,7 @@ static constexpr std::string_view DefaultSettingsKey{ "defaults" };
 static constexpr std::string_view ProfilesListKey{ "list" };
 static constexpr std::string_view SchemesKey{ "schemes" };
 static constexpr std::string_view ThemesKey{ "themes" };
+static constexpr std::string_view LegacyForceVTInputKey{ "experimental.input.forceVT" };
 
 constexpr std::wstring_view systemThemeName{ L"system" };
 constexpr std::wstring_view darkThemeName{ L"dark" };
@@ -676,6 +677,13 @@ void SettingsLoader::_parse(const OriginTag origin, const winrt::hstring& source
         // That will hyper-explode, so just don't let them do that.
         settings.baseLayerProfile->ClearGuid();
         settings.baseLayerProfile->Origin(OriginTag::ProfilesDefaults);
+
+        // This got moved over from a global setting to a profile setting.
+        // If we encounter it, save it to the base layer.
+        if (auto val = JsonUtils::GetValueForKey<std::optional<bool>>(json.root, LegacyForceVTInputKey))
+        {
+            settings.baseLayerProfile->ForceVTInput(*val);
+        }
     }
 
     {

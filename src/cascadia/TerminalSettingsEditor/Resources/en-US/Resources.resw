@@ -539,17 +539,17 @@
     <value>Always on top</value>
     <comment>Header for a control to toggle if the app will always be presented on top of other windows, or is treated normally (when disabled).</comment>
   </data>
-  <data name="Globals_ForceVTInput.Header" xml:space="preserve">
+  <data name="Profile_ForceVTInput.Header" xml:space="preserve">
     <value>Force the terminal to use the legacy input encoding</value>
     <comment>Header for a control to toggle legacy input encoding for the terminal.</comment>
   </data>
-  <data name="Globals_AllowVtChecksumReport.Header" xml:space="preserve">
-    <value>Allow VT checksum report</value>
-    <comment>Header for a control to toggle support for a virtual terminal (VT) sequence that reports a checksum of a portion of the terminal buffer.</comment>
+  <data name="Profile_AllowVtChecksumReport.Header" xml:space="preserve">
+    <value>Allow DECRQRCA</value>
+    <comment>{Locked="DECRQRCA"}Header for a control to toggle support for the DECRQRCA control sequence.</comment>
   </data>
-  <data name="Globals_AllowKeypadMode.Header" xml:space="preserve">
-    <value>Allow keypad mode</value>
-    <comment>Header for a control to toggle support for VT keypad modes.</comment>
+  <data name="Profile_AllowKeypadMode.Header" xml:space="preserve">
+    <value>Allow DECKPAM and DECKPNM</value>
+    <comment>Header for a control to toggle support for the DECKPAM and DECKPNM control sequences.</comment>
   </data>
   <data name="Globals_AllowHeadless.Header" xml:space="preserve">
     <value>Allow Windows Terminal to run in the background</value>
@@ -567,17 +567,9 @@
     <value>Terminal will always be the topmost window on the desktop.</value>
     <comment>A description for what the "always on top" setting does. Presented near "Globals_AlwaysOnTop.Header".</comment>
   </data>
-  <data name="Globals_ForceVTInput.HelpText" xml:space="preserve">
+  <data name="Profile_ForceVTInput.HelpText" xml:space="preserve">
     <value>Certain keys in some applications may stop working when enabling this setting.</value>
     <comment>Additional description for what the "force vt input" setting does. Presented near "Globals_ForceVTInput.Header".</comment>
-  </data>
-  <data name="Globals_AllowVtChecksumReport.HelpText" xml:space="preserve">
-    <value>Enables support for the DECRQRCA escape sequence</value>
-    <comment>Additional description for what the "allow vt checksum report" setting does. Presented near "Globals_AllowVtChecksumReport.Header".</comment>
-  </data>
-  <data name="Globals_AllowKeypadMode.HelpText" xml:space="preserve">
-    <value>Enables support for the DECKPAM and DECKPNM escape sequences to work as intended</value>
-    <comment>Additional description for what the "allow keypad mode" setting does. Presented near "Globals_AllowKeypadMode.Header".</comment>
   </data>
   <data name="Globals_AllowHeadless.HelpText" xml:space="preserve">
     <value>This allows Global Summon and Quake Mode actions to work even when no windows are open.</value>
@@ -698,6 +690,10 @@
   <data name="Profile_Advanced.Header" xml:space="preserve">
     <value>Advanced</value>
     <comment>Header for a sub-page of profile settings focused on more advanced scenarios.</comment>
+  </data>
+  <data name="Profile_Terminal.Header" xml:space="preserve">
+    <value>Terminal</value>
+    <comment>Header for a sub-page of profile settings focused on customizing the capabilities of the terminal.</comment>
   </data>
   <data name="Profile_AltGrAliasing.Header" xml:space="preserve">
     <value>AltGr aliasing</value>

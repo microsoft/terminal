@@ -18,9 +18,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         INITIALIZE_BINDABLE_ENUM_SETTING(TextMeasurement, TextMeasurement, winrt::Microsoft::Terminal::Control::TextMeasurement, L"Globals_TextMeasurement_", L"Text");
     }
 
-    bool CompatibilityViewModel::AllowKeypadModeAvailable() const noexcept
+    bool CompatibilityViewModel::DebugFeaturesAvailable() const noexcept
     {
-        return Feature_KeypadModeEnabled::IsEnabled();
+        return Feature_DebugMode::IsEnabled();
     }
 
     Compatibility::Compatibility()

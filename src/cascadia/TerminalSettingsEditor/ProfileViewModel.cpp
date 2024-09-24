@@ -281,6 +281,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         return Feature_ScrollbarMarks::IsEnabled();
     }
+    bool ProfileViewModel::AllowKeypadModeAvailable() const noexcept
+    {
+        return Feature_KeypadModeEnabled::IsEnabled();
+    }
 
     bool ProfileViewModel::UseParentProcessDirectory()
     {

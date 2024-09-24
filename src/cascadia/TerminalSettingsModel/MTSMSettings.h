@@ -29,7 +29,6 @@ Author(s):
     X(bool, SoftwareRendering, "rendering.software", false)                                                                                                                                           \
     X(winrt::Microsoft::Terminal::Control::TextMeasurement, TextMeasurement, "compatibility.textMeasurement")                                                                                         \
     X(bool, UseBackgroundImageForWindow, "experimental.useBackgroundImageForWindow", false)                                                                                                           \
-    X(bool, ForceVTInput, "compatibility.input.forceVT", false)                                                                                                                                       \
     X(bool, TrimBlockSelection, "trimBlockSelection", true)                                                                                                                                           \
     X(bool, DetectURLs, "experimental.detectURLs", true)                                                                                                                                              \
     X(bool, AlwaysShowTabs, "alwaysShowTabs", true)                                                                                                                                                   \
@@ -69,9 +68,7 @@ Author(s):
     X(winrt::Windows::Foundation::Collections::IVector<Model::NewTabMenuEntry>, NewTabMenu, "newTabMenu", winrt::single_threaded_vector<Model::NewTabMenuEntry>({ Model::RemainingProfilesEntry{} })) \
     X(bool, AllowHeadless, "compatibility.allowHeadless", false)                                                                                                                                      \
     X(bool, IsolatedMode, "compatibility.isolatedMode", false)                                                                                                                                        \
-    X(hstring, SearchWebDefaultQueryUrl, "searchWebDefaultQueryUrl", L"https://www.bing.com/search?q=%22%s%22")                                                                                       \
-    X(bool, AllowVtChecksumReport, "compatibility.allowVtChecksumReport", false)                                                                                                                      \
-    X(bool, AllowKeypadMode, "compatibility.allowKeypadMode", false)
+    X(hstring, SearchWebDefaultQueryUrl, "searchWebDefaultQueryUrl", L"https://www.bing.com/search?q=%22%s%22")
 
 // Also add these settings to:
 // * Profile.idl
@@ -101,7 +98,10 @@ Author(s):
     X(bool, ShowMarks, "showMarksOnScrollbar", false)                                                                                                          \
     X(bool, RepositionCursorWithMouse, "experimental.repositionCursorWithMouse", false)                                                                        \
     X(bool, ReloadEnvironmentVariables, "compatibility.reloadEnvironmentVariables", true)                                                                      \
-    X(bool, RainbowSuggestions, "experimental.rainbowSuggestions", false)
+    X(bool, RainbowSuggestions, "experimental.rainbowSuggestions", false)                                                                                      \
+    X(bool, ForceVTInput, "compatibility.forceVT", false)                                                                                                      \
+    X(bool, AllowVtChecksumReport, "compatibility.allowDECRQCRA", false)                                                                                       \
+    X(bool, AllowKeypadMode, "compatibility.allowDECNKM", false)
 
 // Intentionally omitted Profile settings:
 // * Name

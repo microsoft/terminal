@@ -15,14 +15,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     public:
         CompatibilityViewModel(Model::GlobalAppSettings globalSettings);
 
-        bool AllowKeypadModeAvailable() const noexcept;
+        bool DebugFeaturesAvailable() const noexcept;
 
         // DON'T YOU DARE ADD A `WINRT_CALLBACK(PropertyChanged` TO A CLASS DERIVED FROM ViewModelHelper. Do this instead:
         using ViewModelHelper<CompatibilityViewModel>::PropertyChanged;
 
-        PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, ForceVTInput);
-        PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, AllowVtChecksumReport);
-        PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, AllowKeypadMode);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, AllowHeadless);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, IsolatedMode);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, DebugFeaturesEnabled);
