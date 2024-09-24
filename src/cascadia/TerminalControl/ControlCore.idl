@@ -55,7 +55,7 @@ namespace Microsoft.Terminal.Control
         Boolean GoForward;
         Boolean CaseSensitive;
         Boolean RegularExpression;
-        Boolean Reset;
+        Boolean ResetOnly;
         Int32 ScrollOffset;
     };
 
@@ -148,7 +148,6 @@ namespace Microsoft.Terminal.Control
 
         SearchResults Search(SearchRequest request);
         void ClearSearch();
-        Boolean SnapSearchResultToSelection;
 
         Microsoft.Terminal.Core.Color ForegroundColor { get; };
         Microsoft.Terminal.Core.Color BackgroundColor { get; };
