@@ -209,12 +209,6 @@ void Terminal::SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle)
     engine.Dispatch().SetCursorStyle(cursorStyle);
 }
 
-void Terminal::EraseScrollback()
-{
-    auto& engine = reinterpret_cast<OutputStateMachineEngine&>(_stateMachine->Engine());
-    engine.Dispatch().EraseInDisplay(DispatchTypes::EraseType::Scrollback);
-}
-
 bool Terminal::IsXtermBracketedPasteModeEnabled() const noexcept
 {
     return _systemMode.test(Mode::BracketedPaste);

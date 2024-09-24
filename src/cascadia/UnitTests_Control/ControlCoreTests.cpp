@@ -304,9 +304,9 @@ namespace ControlUnitTests
 
         Log::Comment(L"Check the buffer after the clear");
         VERIFY_ARE_EQUAL(20, core->_terminal->GetViewport().Height());
-        VERIFY_ARE_EQUAL(21, core->ScrollOffset());
+        VERIFY_ARE_EQUAL(41, core->ScrollOffset());
         VERIFY_ARE_EQUAL(20, core->ViewHeight());
-        VERIFY_ARE_EQUAL(41, core->BufferHeight());
+        VERIFY_ARE_EQUAL(61, core->BufferHeight());
 
         // In this test, we can't actually check if we cleared the buffer
         // contents. ConPTY will handle the actual clearing of the buffer
