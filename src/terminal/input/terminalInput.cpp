@@ -443,27 +443,30 @@ try
         // the ASCII character assigned by the keyboard layout, but when set
         // they transmit SS3 escape sequences. When used with a modifier, the
         // modifier is embedded as a parameter value (not standard).
-        if (Feature_KeypadModeEnabled::IsEnabled() && _keypadModeSupported && _inputMode.test(Mode::Keypad))
+        if constexpr (Feature_KeypadModeEnabled::IsEnabled())
         {
-            defineNumericKey(VK_MULTIPLY, L'j');
-            defineNumericKey(VK_ADD, L'k');
-            defineNumericKey(VK_SEPARATOR, L'l');
-            defineNumericKey(VK_SUBTRACT, L'm');
-            defineNumericKey(VK_DECIMAL, L'n');
-            defineNumericKey(VK_DIVIDE, L'o');
+            if (_keypadModeSupported && _inputMode.test(Mode::Keypad))
+            {
+                defineNumericKey(VK_MULTIPLY, L'j');
+                defineNumericKey(VK_ADD, L'k');
+                defineNumericKey(VK_SEPARATOR, L'l');
+                defineNumericKey(VK_SUBTRACT, L'm');
+                defineNumericKey(VK_DECIMAL, L'n');
+                defineNumericKey(VK_DIVIDE, L'o');
 
-            defineNumericKey(VK_NUMPAD0, L'p');
-            defineNumericKey(VK_NUMPAD1, L'q');
-            defineNumericKey(VK_NUMPAD2, L'r');
-            defineNumericKey(VK_NUMPAD3, L's');
-            defineNumericKey(VK_NUMPAD4, L't');
-            defineNumericKey(VK_NUMPAD5, L'u');
-            defineNumericKey(VK_NUMPAD6, L'v');
-            defineNumericKey(VK_NUMPAD7, L'w');
-            defineNumericKey(VK_NUMPAD8, L'x');
-            defineNumericKey(VK_NUMPAD9, L'y');
+                defineNumericKey(VK_NUMPAD0, L'p');
+                defineNumericKey(VK_NUMPAD1, L'q');
+                defineNumericKey(VK_NUMPAD2, L'r');
+                defineNumericKey(VK_NUMPAD3, L's');
+                defineNumericKey(VK_NUMPAD4, L't');
+                defineNumericKey(VK_NUMPAD5, L'u');
+                defineNumericKey(VK_NUMPAD6, L'v');
+                defineNumericKey(VK_NUMPAD7, L'w');
+                defineNumericKey(VK_NUMPAD8, L'x');
+                defineNumericKey(VK_NUMPAD9, L'y');
 
-            defineNumericKey(Enhanced + VK_RETURN, L'M');
+                defineNumericKey(Enhanced + VK_RETURN, L'M');
+            }
         }
     }
     else
@@ -495,27 +498,30 @@ try
 
         // Keypad keys also depend on Keypad mode, the same as ANSI mappings,
         // but the sequences use an ESC ? prefix instead of SS3.
-        if (Feature_KeypadModeEnabled::IsEnabled() && _keypadModeSupported && _inputMode.test(Mode::Keypad))
+        if constexpr (Feature_KeypadModeEnabled::IsEnabled())
         {
-            defineKeyWithUnusedModifiers(VK_MULTIPLY, L"\033?j"s);
-            defineKeyWithUnusedModifiers(VK_ADD, L"\033?k"s);
-            defineKeyWithUnusedModifiers(VK_SEPARATOR, L"\033?l"s);
-            defineKeyWithUnusedModifiers(VK_SUBTRACT, L"\033?m"s);
-            defineKeyWithUnusedModifiers(VK_DECIMAL, L"\033?n"s);
-            defineKeyWithUnusedModifiers(VK_DIVIDE, L"\033?o"s);
+            if (_keypadModeSupported && _inputMode.test(Mode::Keypad))
+            {
+                defineKeyWithUnusedModifiers(VK_MULTIPLY, L"\033?j"s);
+                defineKeyWithUnusedModifiers(VK_ADD, L"\033?k"s);
+                defineKeyWithUnusedModifiers(VK_SEPARATOR, L"\033?l"s);
+                defineKeyWithUnusedModifiers(VK_SUBTRACT, L"\033?m"s);
+                defineKeyWithUnusedModifiers(VK_DECIMAL, L"\033?n"s);
+                defineKeyWithUnusedModifiers(VK_DIVIDE, L"\033?o"s);
 
-            defineKeyWithUnusedModifiers(VK_NUMPAD0, L"\033?p"s);
-            defineKeyWithUnusedModifiers(VK_NUMPAD1, L"\033?q"s);
-            defineKeyWithUnusedModifiers(VK_NUMPAD2, L"\033?r"s);
-            defineKeyWithUnusedModifiers(VK_NUMPAD3, L"\033?s"s);
-            defineKeyWithUnusedModifiers(VK_NUMPAD4, L"\033?t"s);
-            defineKeyWithUnusedModifiers(VK_NUMPAD5, L"\033?u"s);
-            defineKeyWithUnusedModifiers(VK_NUMPAD6, L"\033?v"s);
-            defineKeyWithUnusedModifiers(VK_NUMPAD7, L"\033?w"s);
-            defineKeyWithUnusedModifiers(VK_NUMPAD8, L"\033?x"s);
-            defineKeyWithUnusedModifiers(VK_NUMPAD9, L"\033?y"s);
+                defineKeyWithUnusedModifiers(VK_NUMPAD0, L"\033?p"s);
+                defineKeyWithUnusedModifiers(VK_NUMPAD1, L"\033?q"s);
+                defineKeyWithUnusedModifiers(VK_NUMPAD2, L"\033?r"s);
+                defineKeyWithUnusedModifiers(VK_NUMPAD3, L"\033?s"s);
+                defineKeyWithUnusedModifiers(VK_NUMPAD4, L"\033?t"s);
+                defineKeyWithUnusedModifiers(VK_NUMPAD5, L"\033?u"s);
+                defineKeyWithUnusedModifiers(VK_NUMPAD6, L"\033?v"s);
+                defineKeyWithUnusedModifiers(VK_NUMPAD7, L"\033?w"s);
+                defineKeyWithUnusedModifiers(VK_NUMPAD8, L"\033?x"s);
+                defineKeyWithUnusedModifiers(VK_NUMPAD9, L"\033?y"s);
 
-            defineKeyWithUnusedModifiers(Enhanced + VK_RETURN, L"\033?M"s);
+                defineKeyWithUnusedModifiers(Enhanced + VK_RETURN, L"\033?M"s);
+            }
         }
     }
 

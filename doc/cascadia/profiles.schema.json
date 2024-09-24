@@ -2367,7 +2367,7 @@
         },
         "compatibility.allowVtChecksumReport": {
           "default": false,
-          "description": "When set to true, the terminal will support the DECRQRCA escape sequence.",
+          "description": "When set to true, the terminal will support the DECRQCRA escape sequence.",
           "type": "boolean"
         },
         "compatibility.allowKeypadMode": {

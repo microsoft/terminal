@@ -525,6 +525,15 @@ bool SettingsLoader::FixupUserSettings()
         fixedUp = true;
     }
 
+    // Terminal 1.23: Migrate the global
+    // `experimental.input.forceVT` to being a per-profile setting.
+    if (userSettings.globals->LegacyForceVTInput())
+    {
+        // migrate the user's opt-out to the profiles.defaults
+        userSettings.baseLayerProfile->ForceVTInput(true);
+        fixedUp = true;
+    }
+
     return fixedUp;
 }
 
@@ -677,13 +686,6 @@ void SettingsLoader::_parse(const OriginTag origin, const winrt::hstring& source
         // That will hyper-explode, so just don't let them do that.
         settings.baseLayerProfile->ClearGuid();
         settings.baseLayerProfile->Origin(OriginTag::ProfilesDefaults);
-
-        // This got moved over from a global setting to a profile setting.
-        // If we encounter it, save it to the base layer.
-        if (auto val = JsonUtils::GetValueForKey<std::optional<bool>>(json.root, LegacyForceVTInputKey))
-        {
-            settings.baseLayerProfile->ForceVTInput(*val);
-        }
     }
 
     {
