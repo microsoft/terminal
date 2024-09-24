@@ -575,7 +575,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                     // but since code paths differ, extra work is required to ensure correctness.
                     if (!_core.HasMultiLineSelection())
                     {
-                        _core.SnapSearchResultToSelection(true);
                         const auto selectedLine{ _core.SelectedText(true) };
                         _searchBox->PopulateTextbox(selectedLine);
                     }
@@ -3824,7 +3823,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const auto goForward = _searchBox->GoForward();
         const auto caseSensitive = _searchBox->CaseSensitive();
         const auto regularExpression = _searchBox->RegularExpression();
-        const auto request = SearchRequest{ text, goForward, caseSensitive, regularExpression, true, _calculateSearchScrollOffset() };
+        const auto request = SearchRequest{ text, goForward, caseSensitive, regularExpression, true, _searchScrollOffset };
         _handleSearchResults(_core.Search(request));
     }
 

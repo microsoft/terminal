@@ -1688,38 +1688,41 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     SearchResults ControlCore::Search(SearchRequest request)
     {
         const auto lock = _terminal->LockForWriting();
+
         SearchFlag flags{};
         WI_SetFlagIf(flags, SearchFlag::CaseInsensitive, !request.CaseSensitive);
         WI_SetFlagIf(flags, SearchFlag::RegularExpression, request.RegularExpression);
         const auto searchInvalidated = _searcher.IsStale(*_terminal.get(), request.Text, flags);
 
-        if (searchInvalidated || !request.Reset)
+        if (searchInvalidated || !request.ResetOnly)
         {
             std::vector<til::point_span> oldResults;
+            til::point_span oldFocused;
+
+            if (const auto focused = _terminal->GetSearchHighlightFocused())
+            {
+                oldFocused = *focused;
+            }
 
             if (searchInvalidated)
             {
                 oldResults = _searcher.ExtractResults();
                 _searcher.Reset(*_terminal.get(), request.Text, flags, !request.GoForward);
-
-                if (SnapSearchResultToSelection())
-                {
-                    _searcher.MoveToCurrentSelection();
-                    SnapSearchResultToSelection(false);
-                }
-
                 _terminal->SetSearchHighlights(_searcher.Results());
             }
-            else
+
+            if (!request.ResetOnly)
             {
                 _searcher.FindNext(!request.GoForward);
             }
 
-            if (const auto idx = _searcher.CurrentMatch(); idx >= 0)
-            {
-                _terminal->SetSearchHighlightFocused(gsl::narrow<size_t>(idx), request.ScrollOffset);
-            }
+            _terminal->SetSearchHighlightFocused(gsl::narrow<size_t>(std::max<ptrdiff_t>(0, _searcher.CurrentMatch())));
             _renderer->TriggerSearchHighlight(oldResults);
+
+            if (const auto focused = _terminal->GetSearchHighlightFocused(); focused && *focused != oldFocused)
+            {
+                _terminal->ScrollToSearchHighlight(request.ScrollOffset);
+            }
         }
 
         int32_t totalMatches = 0;
@@ -1747,25 +1750,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         const auto lock = _terminal->LockForWriting();
         _terminal->SetSearchHighlights({});
-        _terminal->SetSearchHighlightFocused({}, 0);
+        _terminal->SetSearchHighlightFocused(0);
         _renderer->TriggerSearchHighlight(_searcher.Results());
         _searcher = {};
-    }
-
-    // Method Description:
-    // - Tells ControlCore to snap the current search result index to currently
-    //   selected text if the search was started using it.
-    void ControlCore::SnapSearchResultToSelection(bool shouldSnap) noexcept
-    {
-        _snapSearchResultToSelection = shouldSnap;
-    }
-
-    // Method Description:
-    // - Returns true, if we should snap the current search result index to
-    //   the currently selected text after a new search is started, else false.
-    bool ControlCore::SnapSearchResultToSelection() const noexcept
-    {
-        return _snapSearchResultToSelection;
     }
 
     void ControlCore::Close()
