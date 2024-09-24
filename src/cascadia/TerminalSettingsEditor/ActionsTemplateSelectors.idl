@@ -1,0 +1,13 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+namespace Microsoft.Terminal.Settings.Editor
+{
+    [default_interface] runtimeclass ActionsTemplateSelectors : Windows.UI.Xaml.Controls.DataTemplateSelector
+    {
+        ActionsTemplateSelectors();
+
+        Windows.UI.Xaml.DataTemplate SendInputTemplate;
+        Windows.UI.Xaml.DataTemplate CloseTabTemplate;
+    }
+}

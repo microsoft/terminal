@@ -9,6 +9,7 @@
       xmlns:local="using:Microsoft.Terminal.Settings.Editor"
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
       xmlns:mtu="using:Microsoft.Terminal.UI"
+      xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
       mc:Ignorable="d">
 
     <Page.Resources>
@@ -218,6 +219,22 @@
                     </Grid>
                 </ListViewItem>
             </DataTemplate>
+            <DataTemplate x:Key="SendInputTemplate"
+                          x:DataType="local:ActionArgsViewModel">
+                <TextBox Text="{x:Bind StringArg1, Mode=TwoWay}" />
+            </DataTemplate>
+            <DataTemplate x:Key="CloseTabTemplate"
+                          x:DataType="local:ActionArgsViewModel">
+                <muxc:NumberBox Value="{x:Bind UInt32Arg1, Mode=TwoWay}"
+                                Style="{StaticResource NumberBoxSettingStyle}"
+                                Minimum="0"
+                                Maximum="999"
+                                LargeChange="1"
+                                SmallChange="1"/>
+            </DataTemplate>
+            <local:ActionsTemplateSelectors x:Key="ActionsTemplateSelector"
+                                            SendInputTemplate="{StaticResource SendInputTemplate}"
+                                            CloseTabTemplate="{StaticResource CloseTabTemplate}"/>
         </ResourceDictionary>
     </Page.Resources>
 
@@ -230,12 +247,13 @@
                      IsEnabled="{x:Bind ViewModel.IsUserAction}"/>
             <TextBox Text="{x:Bind ViewModel.ID, Mode=TwoWay}"
                      IsEnabled="{x:Bind ViewModel.IsUserAction}"/>
-            <ComboBox x:Uid="Actions_ActionComboBox"
-                      Grid.Column="0"
+            <ComboBox Grid.Column="0"
                       VerticalAlignment="Center"
-                      ItemsSource="{x:Bind ViewModel.AvailableActions, Mode=OneWay}"
-                      SelectedItem="{x:Bind ViewModel.ProposedAction, Mode=TwoWay}"
+                      ItemsSource="{x:Bind ViewModel.AvailableShortcutActions, Mode=OneWay}"
+                      SelectedItem="{x:Bind ViewModel.ProposedShortcutAction, Mode=TwoWay}"
                       IsEnabled="{x:Bind ViewModel.IsUserAction}"/>
+            <ContentControl Content="{x:Bind ViewModel.ActionArgsVM, Mode=OneWay}"
+                            ContentTemplateSelector="{StaticResource ActionsTemplateSelector}" />
             <ListView ItemTemplate="{StaticResource KeyChordTemplate}"
                       ItemsSource="{x:Bind ViewModel.KeyChordViewModelList, Mode=OneWay}"
                       SelectionMode="None">

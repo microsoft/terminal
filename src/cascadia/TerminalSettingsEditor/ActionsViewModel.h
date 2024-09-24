@@ -6,6 +6,7 @@
 #include "ActionsViewModel.g.h"
 #include "KeyBindingViewModel.g.h"
 #include "CommandViewModel.g.h"
+#include "ActionArgsViewModel.g.h"
 #include "KeyChordViewModel.g.h"
 #include "ModifyKeyBindingEventArgs.g.h"
 #include "ModifyKeyChordEventArgs.g.h"
@@ -145,15 +146,28 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         void AddKeybinding_Click();
 
-        VIEW_MODEL_OBSERVABLE_PROPERTY(IInspectable, ProposedAction);
         VIEW_MODEL_OBSERVABLE_PROPERTY(hstring, CurrentAction);
+        VIEW_MODEL_OBSERVABLE_PROPERTY(IInspectable, ProposedShortcutAction);
+        VIEW_MODEL_OBSERVABLE_PROPERTY(hstring, CurrentShortcutAction);
+        VIEW_MODEL_OBSERVABLE_PROPERTY(Editor::ActionArgsViewModel, ActionArgsVM, nullptr);
         WINRT_PROPERTY(Windows::Foundation::Collections::IObservableVector<hstring>, AvailableActions, nullptr);
+        WINRT_PROPERTY(Windows::Foundation::Collections::IObservableVector<hstring>, AvailableShortcutActions, nullptr);
         WINRT_PROPERTY(Windows::Foundation::Collections::IObservableVector<Editor::KeyChordViewModel>, KeyChordViewModelList, nullptr);
 
     private:
         winrt::Microsoft::Terminal::Settings::Model::Command _command;
         weak_ref<Editor::ActionsViewModel> _actionsPageVM{ nullptr };
         void _RegisterEvents(Editor::KeyChordViewModel kcVM);
+    };
+
+    struct ActionArgsViewModel : ActionArgsViewModelT<ActionArgsViewModel>, ViewModelHelper<ActionArgsViewModel>
+    {
+    public:
+        ActionArgsViewModel(const Microsoft::Terminal::Settings::Model::Command& cmd);
+
+        VIEW_MODEL_OBSERVABLE_PROPERTY(Microsoft::Terminal::Settings::Model::ShortcutAction, SelectedShortcutAction, Microsoft::Terminal::Settings::Model::ShortcutAction::AddMark);
+        VIEW_MODEL_OBSERVABLE_PROPERTY(hstring, StringArg1);
+        VIEW_MODEL_OBSERVABLE_PROPERTY(uint32_t, UInt32Arg1);
     };
 
     struct KeyChordViewModel : KeyChordViewModelT<KeyChordViewModel>, ViewModelHelper<KeyChordViewModel>

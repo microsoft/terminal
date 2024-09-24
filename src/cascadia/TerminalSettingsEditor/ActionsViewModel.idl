@@ -48,7 +48,6 @@ namespace Microsoft.Terminal.Settings.Editor
         void CancelChanges();
         void DeleteKeyBinding();
 
-
         event Windows.Foundation.TypedEventHandler<KeyBindingViewModel, ModifyKeyBindingEventArgs> ModifyKeyBindingRequested;
         event Windows.Foundation.TypedEventHandler<KeyBindingViewModel, Microsoft.Terminal.Control.KeyChord> DeleteKeyBindingRequested;
     }
@@ -62,13 +61,25 @@ namespace Microsoft.Terminal.Settings.Editor
         // icon
         // keybindings
         IObservableVector<KeyChordViewModel> KeyChordViewModelList { get; };
+        // action args
+        ActionArgsViewModel ActionArgsVM { get; };
 
-        // UI side
-        Object ProposedAction;
+        // UI side (command list page)
         void Edit_Click();
+
+        // UI side (edit command page)
+        IObservableVector<String> AvailableShortcutActions { get; };
+        Object ProposedShortcutAction;
         void Delete_Click();
         void AddKeybinding_Click();
-        IObservableVector<String> AvailableActions { get; };
+    }
+
+    runtimeclass ActionArgsViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged
+    {
+        Microsoft.Terminal.Settings.Model.ShortcutAction SelectedShortcutAction;
+        // Args
+        String StringArg1;
+        UInt32 UInt32Arg1;
     }
 
     runtimeclass KeyChordViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged

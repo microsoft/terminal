@@ -153,7 +153,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 // need a translator between string and enum
                 // todo: need a way to make an "empty" command?
                 Model::Command newCmd{};
-                Model::ActionAndArgs newActionAndArgs{};
+                Model::ActionAndArgs newActionAndArgs{};               
                 const auto actionString = unbox_value<hstring>(ProposedShortcutAction());
                 if (actionString == L"Send Input")
                 {
@@ -583,6 +583,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         const auto propertyName{ args.PropertyName() };
         if (propertyName == L"ProposedAction")
         {
+            
         }
     }
 
