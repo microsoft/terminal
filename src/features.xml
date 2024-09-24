@@ -163,6 +163,7 @@
         <alwaysEnabledBrandingTokens>
             <brandingToken>Dev</brandingToken>
             <brandingToken>Canary</brandingToken>
+            <brandingToken>Preview</brandingToken>
         </alwaysEnabledBrandingTokens>
     </feature>
 
@@ -174,6 +175,7 @@
         <alwaysEnabledBrandingTokens>
             <brandingToken>Dev</brandingToken>
             <brandingToken>Canary</brandingToken>
+            <brandingToken>Preview</brandingToken>
         </alwaysEnabledBrandingTokens>
     </feature>
 

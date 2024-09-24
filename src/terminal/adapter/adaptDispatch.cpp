@@ -3027,8 +3027,13 @@ void AdaptDispatch::HardReset()
     EraseInDisplay(DispatchTypes::EraseType::All);
     EraseInDisplay(DispatchTypes::EraseType::Scrollback);
 
-    // Set the DECSCNM screen mode back to normal.
-    _renderSettings.SetRenderMode(RenderSettings::Mode::ScreenReversed, false);
+    // Set the color table and render modes back to their initial startup values.
+    _renderSettings.RestoreDefaultSettings();
+    // Let the renderer know that the background and frame colors may have changed.
+    if (_renderer)
+    {
+        _renderer->TriggerRedrawAll(true, true);
+    }
 
     // Cursor to 1,1 - the Soft Reset guarantees this is absolute
     CursorPosition(1, 1);

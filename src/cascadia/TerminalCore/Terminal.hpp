@@ -235,7 +235,8 @@ public:
     void SetClearQuickFixCallback(std::function<void()> pfn) noexcept;
     void SetWindowSizeChangedCallback(std::function<void(int32_t, int32_t)> pfn) noexcept;
     void SetSearchHighlights(const std::vector<til::point_span>& highlights) noexcept;
-    void SetSearchHighlightFocused(const size_t focusedIdx, til::CoordType searchScrollOffset);
+    void SetSearchHighlightFocused(size_t focusedIdx) noexcept;
+    void ScrollToSearchHighlight(til::CoordType searchScrollOffset);
 
     void BlinkCursor() noexcept;
     void SetCursorOn(const bool isOn) noexcept;
