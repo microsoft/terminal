@@ -1630,12 +1630,29 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 {
                     if (vkey == VK_ADD)
                     {
-                        // Alt '+' <number> is used to input Unicode code points.
-                        // Every time you press + it resets the entire state
-                        // in the original OS implementation as well.
-                        s.encoding = AltNumpadEncoding::Unicode;
-                        s.accumulator = 0;
-                        s.active = true;
+                        static const auto enabled = []() {
+                            wchar_t buffer[4]{};
+                            DWORD size = sizeof(buffer);
+                            RegGetValueW(
+                                HKEY_CURRENT_USER,
+                                L"Control Panel\\Input Method",
+                                L"EnableHexNumpad",
+                                RRF_RT_REG_SZ,
+                                nullptr,
+                                &buffer[0],
+                                &size);
+                            return size == 4 && memcmp(&buffer[0], L"1", 4) == 0;
+                        }();
+
+                        if (enabled)
+                        {
+                            // Alt '+' <number> is used to input Unicode code points.
+                            // Every time you press + it resets the entire state
+                            // in the original OS implementation as well.
+                            s.encoding = AltNumpadEncoding::Unicode;
+                            s.accumulator = 0;
+                            s.active = true;
+                        }
                     }
                     else if (vkey == VK_NUMPAD0 && s.encoding == AltNumpadEncoding::OEM && s.accumulator == 0)
                     {
