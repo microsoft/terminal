@@ -30,7 +30,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _focusableElements.insert(TextBox());
         _focusableElements.insert(CloseButton());
         _focusableElements.insert(CaseSensitivityButton());
-        _focusableElements.insert(RegexButton());
+        // 1.21 BACKPORT REMOVED - _focusableElements.insert(RegexButton());
         _focusableElements.insert(GoForwardButton());
         _focusableElements.insert(GoBackwardButton());
 
@@ -238,7 +238,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     bool SearchBoxControl::RegularExpression()
     {
-        return RegexButton().IsChecked().GetBoolean();
+        return false; // 1.21 BACKPORT REMOVED - RegexButton().IsChecked().GetBoolean();
     }
 
     // Method Description:
