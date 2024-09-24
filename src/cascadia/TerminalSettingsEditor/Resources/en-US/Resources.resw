@@ -545,7 +545,7 @@
   </data>
   <data name="Profile_AllowVtChecksumReport.Header" xml:space="preserve">
     <value>Allow DECRQCRA (Request Checksum of Rectangular Area)</value>
-    <comment>{Locked="DECRQCRA"}{Locked="Request Checksum of Rectangular Area"}Header for a control to toggle support for the DECRQRCA control sequence.</comment>
+    <comment>{Locked="DECRQCRA"}{Locked="Request Checksum of Rectangular Area"}Header for a control to toggle support for the DECRQCRA control sequence.</comment>
   </data>
   <data name="Profile_AllowKeypadMode.Header" xml:space="preserve">
     <value>Allow DECKPAM and DECKPNM (Keypad Numeric Mode)</value>
