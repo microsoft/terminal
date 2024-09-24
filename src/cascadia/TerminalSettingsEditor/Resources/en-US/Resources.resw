@@ -1825,15 +1825,12 @@
   </data>
   <data name="Globals_InputServiceWarning.Header" xml:space="preserve">
     <value>Warn when "Touch Keyboard and Handwriting Panel Service" is disabled</value>
-    <comment>Header for a control to toggle whether to warn the user when the "Touch Keyboard and Handwriting Panel Service" OS setting is disabled.</comment>
   </data>
   <data name="Globals_WarnAboutLargePaste.Header" xml:space="preserve">
     <value>Warn when trying to paste more than 5 KiB of characters</value>
-    <comment>Header for a control to toggle whether to warn the user when they are trying to paste content greater than 5 kilobytes to the terminal.</comment>
   </data>
   <data name="Globals_WarnAboutMultiLinePaste.Header" xml:space="preserve">
     <value>Warn when trying to paste a "new line" character</value>
-    <comment>Header for a control to toggle whether to warn the user when they are trying to paste content with a newline character in it to the terminal.</comment>
   </data>
   <data name="Settings_PortableModeNote.Text" xml:space="preserve">
     <value>Windows Terminal is running in portable mode.</value>

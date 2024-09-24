@@ -136,12 +136,12 @@ void GlobalAppSettings::LayerJson(const Json::Value& json, const OriginTag origi
     // GH#8076 - when adding enum values to this key, we also changed it from
     // "useTabSwitcher" to "tabSwitcherMode". Continue supporting
     // "useTabSwitcher", but prefer "tabSwitcherMode"
-    JsonUtils::GetValueForKey(json, LegacyUseTabSwitcherModeKey, _TabSwitcherMode);
+    _fixupsAppliedDuringLoad = JsonUtils::GetValueForKey(json, LegacyUseTabSwitcherModeKey, _TabSwitcherMode) || _fixupsAppliedDuringLoad;
 
-    JsonUtils::GetValueForKey(json, LegacyInputServiceWarningKey, _InputServiceWarning);
-    JsonUtils::GetValueForKey(json, LegacyWarnAboutLargePasteKey, _WarnAboutLargePaste);
-    JsonUtils::GetValueForKey(json, LegacyWarnAboutMultiLinePasteKey, _WarnAboutMultiLinePaste);
-    JsonUtils::GetValueForKey(json, LegacyConfirmCloseAllTabsKey, _ConfirmCloseAllTabs);
+    _fixupsAppliedDuringLoad = JsonUtils::GetValueForKey(json, LegacyInputServiceWarningKey, _InputServiceWarning) || _fixupsAppliedDuringLoad;
+    _fixupsAppliedDuringLoad = JsonUtils::GetValueForKey(json, LegacyWarnAboutLargePasteKey, _WarnAboutLargePaste) || _fixupsAppliedDuringLoad;
+    _fixupsAppliedDuringLoad = JsonUtils::GetValueForKey(json, LegacyWarnAboutMultiLinePasteKey, _WarnAboutMultiLinePaste) || _fixupsAppliedDuringLoad;
+    _fixupsAppliedDuringLoad = JsonUtils::GetValueForKey(json, LegacyConfirmCloseAllTabsKey, _ConfirmCloseAllTabs) || _fixupsAppliedDuringLoad;
 
 #define GLOBAL_SETTINGS_LAYER_JSON(type, name, jsonKey, ...) \
     JsonUtils::GetValueForKey(json, jsonKey, _##name);       \
@@ -163,6 +163,8 @@ void GlobalAppSettings::LayerJson(const Json::Value& json, const OriginTag origi
     }
     LayerActionsFrom(json, origin, true);
 
+    // No need to update _fixupsAppliedDuringLoad here.
+    // We already handle this in SettingsLoader::FixupUserSettings().
     JsonUtils::GetValueForKey(json, LegacyReloadEnvironmentVariablesKey, _legacyReloadEnvironmentVariables);
     if (json[LegacyReloadEnvironmentVariablesKey.data()])
     {
@@ -305,7 +307,7 @@ Json::Value GlobalAppSettings::ToJson()
 
 bool GlobalAppSettings::FixupsAppliedDuringLoad()
 {
-    return _actionMap->FixupsAppliedDuringLoad();
+    return _fixupsAppliedDuringLoad || _actionMap->FixupsAppliedDuringLoad();
 }
 
 winrt::Microsoft::Terminal::Settings::Model::Theme GlobalAppSettings::CurrentTheme() noexcept
