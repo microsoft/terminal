@@ -2208,19 +2208,32 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - <none>
     void ControlCore::ClearBuffer(Control::ClearBufferType clearType)
     {
-        if (clearType == Control::ClearBufferType::Scrollback || clearType == Control::ClearBufferType::All)
+        std::wstring_view command;
+        switch (clearType)
+        {
+        case ClearBufferType::Screen:
+            command = L"\x1b[H\x1b[2J";
+            break;
+        case ClearBufferType::Scrollback:
+            command = L"\x1b[3J";
+            break;
+        case ClearBufferType::All:
+            command = L"\x1b[H\x1b[2J\x1b[3J";
+            break;
+        }
+
         {
             const auto lock = _terminal->LockForWriting();
-            _terminal->EraseScrollback();
+            _terminal->Write(command);
         }
 
         if (clearType == Control::ClearBufferType::Screen || clearType == Control::ClearBufferType::All)
         {
-            // Send a signal to conpty to clear the buffer.
             if (auto conpty{ _connection.try_as<TerminalConnection::ConptyConnection>() })
             {
-                // ConPTY will emit sequences to sync up our buffer with its new
-                // contents.
+                // Since the clearing of ConPTY occurs asynchronously, this call can result weird issues,
+                // where a console application still sees contents that we've already deleted, etc.
+                // The correct way would be for ConPTY to emit the appropriate CSI n J sequences.
                 conpty.ClearBuffer();
             }
         }
