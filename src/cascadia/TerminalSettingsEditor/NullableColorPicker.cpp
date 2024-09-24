@@ -25,6 +25,11 @@ namespace winrt
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
+    static constexpr bool equalsColor(Windows::UI::Color a, Microsoft::Terminal::Core::Color b)
+    {
+        return a.R == b.R && a.G == b.G && a.B == b.B;
+    }
+
     DependencyProperty NullableColorPicker::_ColorSchemeVMProperty{ nullptr };
     DependencyProperty NullableColorPicker::_CurrentColorProperty{ nullptr };
     DependencyProperty NullableColorPicker::_ShowNullColorButtonProperty{ nullptr };
@@ -102,35 +107,23 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             const auto& chipColor = colorChip.DataContext().as<Editor::ColorTableEntry>().Color();
             colorChip.IsChecked(currentColor ?
-                                    chipColor.R == currentColor.Value().R && chipColor.G == currentColor.Value().G && chipColor.B == currentColor.Value().B :
+                                    equalsColor(chipColor, currentColor.Value()) :
                                     false);
         }
     }
 
-    constexpr double _CalculateLuminance(const Windows::UI::Color& color)
-    {
-        auto linearize = [](float value) {
-            value /= 255.0;
-            return (value <= 0.03928) ? (value / 12.92) : (std::pow((value + 0.055) / 1.055, 2.4));
-        };
-        double r = linearize(color.R);
-        double g = linearize(color.G);
-        double b = linearize(color.B);
-        return 0.2126 * r + 0.7152 * g + 0.0722 * b;
-    }
-
     SolidColorBrush NullableColorPicker::CalculateBorderBrush(const Windows::UI::Color& color)
     {
-        // Accessibility requirement is a 3:1 contrast ratio
-        static const auto whiteLuminance = _CalculateLuminance(Colors::White());
-        const auto contrastRatio = (whiteLuminance + 0.05) / (_CalculateLuminance(color) + 0.05);
-        if (contrastRatio > 3.0)
+        static constexpr auto isColorLight = [](const winrt::Windows::UI::Color& clr) -> bool {
+            return (((5 * clr.G) + (2 * clr.R) + clr.B) > (8 * 128));
+        };
+        if (isColorLight(color))
         {
-            return SolidColorBrush(Colors::White());
+            return SolidColorBrush(Colors::Black());
         }
         else
         {
-            return SolidColorBrush(Colors::Black());
+            return SolidColorBrush(Colors::White());
         }
     }
 
@@ -151,7 +144,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             {
                 const auto& currentColorVal = currentColor.Value();
                 const auto& newChipColor = args.NewValue().as<Editor::ColorTableEntry>().Color();
-                toggleBtn.IsChecked(newChipColor.R == currentColorVal.R && newChipColor.G == currentColorVal.G && newChipColor.B == currentColorVal.B);
+                toggleBtn.IsChecked(equalsColor(newChipColor, currentColorVal));
             }
         }
     }
@@ -207,7 +200,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             {
                 const auto& currentColorVal = currentColor.Value();
                 const auto& chipColor = toggleBtn.DataContext().as<Editor::ColorTableEntry>().Color();
-                if (chipColor.R == currentColorVal.R && chipColor.G == currentColorVal.G && chipColor.B == currentColorVal.B)
+                if (equalsColor(chipColor, currentColorVal))
                 {
                     toggleBtn.IsChecked(true);
                 }
