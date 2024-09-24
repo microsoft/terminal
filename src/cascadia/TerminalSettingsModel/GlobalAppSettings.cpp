@@ -269,6 +269,10 @@ Json::Value GlobalAppSettings::ToJson()
     {
         _TextMeasurement.reset();
     }
+    if (_DefaultInputScope == Control::DefaultInputScope::Default)
+    {
+        _DefaultInputScope.reset();
+    }
 
     if (_DisablePartialInvalidation == false)
     {
