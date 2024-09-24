@@ -99,7 +99,7 @@ Author(s):
     X(bool, RepositionCursorWithMouse, "experimental.repositionCursorWithMouse", false)                                                                        \
     X(bool, ReloadEnvironmentVariables, "compatibility.reloadEnvironmentVariables", true)                                                                      \
     X(bool, RainbowSuggestions, "experimental.rainbowSuggestions", false)                                                                                      \
-    X(bool, ForceVTInput, "compatibility.forceVT", false)                                                                                                      \
+    X(bool, ForceVTInput, "compatibility.input.forceVT", false)                                                                                                \
     X(bool, AllowVtChecksumReport, "compatibility.allowDECRQCRA", false)                                                                                       \
     X(bool, AllowKeypadMode, "compatibility.allowDECNKM", false)
 

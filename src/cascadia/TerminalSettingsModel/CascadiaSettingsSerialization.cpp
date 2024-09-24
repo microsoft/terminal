@@ -41,7 +41,6 @@ static constexpr std::string_view DefaultSettingsKey{ "defaults" };
 static constexpr std::string_view ProfilesListKey{ "list" };
 static constexpr std::string_view SchemesKey{ "schemes" };
 static constexpr std::string_view ThemesKey{ "themes" };
-static constexpr std::string_view LegacyForceVTInputKey{ "experimental.input.forceVT" };
 
 constexpr std::wstring_view systemThemeName{ L"system" };
 constexpr std::wstring_view darkThemeName{ L"dark" };
