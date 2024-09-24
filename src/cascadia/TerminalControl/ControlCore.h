@@ -222,8 +222,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         SearchResults Search(SearchRequest request);
         const std::vector<til::point_span>& SearchResultRows() const noexcept;
         void ClearSearch();
-        void SnapSearchResultToSelection(bool snap) noexcept;
-        bool SnapSearchResultToSelection() const noexcept;
 
         void LeftClickOnTerminal(const til::point terminalPosition,
                                  const int numberOfClicks,
