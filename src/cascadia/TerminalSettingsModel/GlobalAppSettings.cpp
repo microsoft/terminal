@@ -240,6 +240,11 @@ Json::Value GlobalAppSettings::ToJson()
     {
         _GraphicsAPI.reset();
     }
+    if (_DefaultInputScope == Control::DefaultInputScope::Default)
+    {
+        _DefaultInputScope.reset();
+    }
+
     if (_DisablePartialInvalidation == false)
     {
         _DisablePartialInvalidation.reset();

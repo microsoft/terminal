@@ -770,3 +770,11 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Control::GraphicsAPI)
         pair_type{ "direct3d11", ValueType::Direct3D11 },
     };
 };
+
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Control::DefaultInputScope)
+{
+    JSON_MAPPINGS(2) = {
+        pair_type{ "default", ValueType::Default },
+        pair_type{ "alphanumericHalfWidth", ValueType::AlphanumericHalfWidth },
+    };
+};

@@ -18,6 +18,12 @@ namespace Microsoft.Terminal.Control
         Direct3D11,
     };
 
+    enum DefaultInputScope
+    {
+        Default,
+        AlphanumericHalfWidth,
+    };
+
     runtimeclass FontSizeChangedArgs
     {
         Int32 Width { get; };

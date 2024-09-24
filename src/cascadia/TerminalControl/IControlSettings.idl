@@ -62,6 +62,7 @@ namespace Microsoft.Terminal.Control
         Microsoft.Terminal.Control.GraphicsAPI GraphicsAPI { get; };
         Boolean DisablePartialInvalidation { get; };
         Boolean SoftwareRendering { get; };
+        Microsoft.Terminal.Control.DefaultInputScope DefaultInputScope { get; };
         Boolean ShowMarks { get; };
         Boolean UseBackgroundImageForWindow { get; };
         Boolean RightClickContextMenu { get; };
