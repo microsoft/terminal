@@ -124,8 +124,6 @@ namespace SettingsModelUnitTests
 
                 "trimPaste": true,
 
-                "compatibility.input.forceVT": false,
-
                 "warning.confirmCloseAllTabs" : true,
                 "warning.inputService" : true,
                 "warning.largePaste" : true,

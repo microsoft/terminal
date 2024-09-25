@@ -1913,4 +1913,12 @@
     <value>Non-monospace fonts:</value>
     <comment>This is a label that is followed by a list of proportional fonts.</comment>
   </data>
+  <data name="Profile_AnswerbackMessage.Header" xml:space="preserve">
+    <value>ENQ (Request Terminal Status) response</value>
+    <comment>{Locked=ENQ}{Locked="Request Terminal Status"} Header for a control to determine the response to the ENQ escape sequence. This is represented using a text box.</comment>
+  </data>
+  <data name="Profile_AnswerbackMessage.HelpText" xml:space="preserve">
+    <value>The response that is sent when an ENQ control sequence is received.</value>
+    <comment>{Locked=ENQ} A description for what the "ENQ response" setting does. Presented near "Profile_AnswerbackMessage".</comment>
+  </data>
 </root>

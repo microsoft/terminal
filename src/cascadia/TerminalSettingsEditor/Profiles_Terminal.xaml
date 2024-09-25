@@ -69,6 +69,17 @@
                 <ToggleSwitch IsOn="{x:Bind Profile.AllowKeypadMode, Mode=TwoWay}"
                               Style="{StaticResource ToggleSwitchInExpanderStyle}" />
             </local:SettingContainer>
+
+            <!--  Answerback Message  -->
+            <local:SettingContainer x:Uid="Profile_AnswerbackMessage"
+                                    ClearSettingValue="{x:Bind Profile.ClearAnswerbackMessage}"
+                                    CurrentValue="{x:Bind Profile.AnswerbackMessage, Mode=OneWay}"
+                                    HasSettingValue="{x:Bind Profile.HasAnswerbackMessage, Mode=OneWay}"
+                                    SettingOverrideSource="{x:Bind Profile.AnswerbackMessageOverrideSource, Mode=OneWay}"
+                                    Style="{StaticResource ExpanderSettingContainerStyle}">
+                <TextBox Style="{StaticResource TextBoxSettingStyle}"
+                         Text="{x:Bind Profile.AnswerbackMessage, Mode=TwoWay}" />
+            </local:SettingContainer>
         </StackPanel>
     </Grid>
 </Page>

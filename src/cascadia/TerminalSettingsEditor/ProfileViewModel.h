@@ -124,6 +124,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         OBSERVABLE_PROJECTED_SETTING(_profile, ForceVTInput);
         OBSERVABLE_PROJECTED_SETTING(_profile, AllowVtChecksumReport);
         OBSERVABLE_PROJECTED_SETTING(_profile, AllowKeypadMode);
+        OBSERVABLE_PROJECTED_SETTING(_profile, AnswerbackMessage);
 
         WINRT_PROPERTY(bool, IsBaseLayer, false);
         WINRT_PROPERTY(bool, FocusDeleteButton, false);
