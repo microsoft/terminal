@@ -72,9 +72,9 @@ class StringTests
         VERIFY_IS_TRUE(til::ends_with("0abc", "abc"));
     }
 
-    // Normally this would be the spot where you'd find a TEST_METHOD(to_ulong).
+    // Normally this would be the spot where you'd find a TEST_METHOD(parse_u64).
     // I didn't quite trust my coding skills and thus opted to use fuzz-testing.
-    // The below function was used to test to_ulong for unsafety and conformance with clang's strtoul.
+    // The below function was used to test parse_u64 for unsafety and conformance with clang's strtoul.
     // The test was run as:
     //   clang++ -fsanitize=address,undefined,fuzzer -std=c++17 file.cpp
     // and was run for 20min across 16 jobs in parallel.
@@ -112,7 +112,7 @@ class StringTests
             return 0;
         }
 
-        const auto actual = to_ulong({ wide_buffer, size });
+        const auto actual = parse_u64({ wide_buffer, size });
         if (expected != actual)
         {
             __builtin_trap();
@@ -147,64 +147,39 @@ class StringTests
         VERIFY_IS_TRUE(til::equals_insensitive_ascii("cOUnterStriKE", "COuntERStRike"));
     }
 
-    TEST_METHOD(prefix_split)
+    TEST_METHOD(split_iterator)
     {
-        {
-            std::string_view s{ "" };
-            VERIFY_ARE_EQUAL("", til::prefix_split(s, ""));
-            VERIFY_ARE_EQUAL("", s);
-        }
-        {
-            std::string_view s{ "" };
-            VERIFY_ARE_EQUAL("", til::prefix_split(s, " "));
-            VERIFY_ARE_EQUAL("", s);
-        }
-        {
-            std::string_view s{ " " };
-            VERIFY_ARE_EQUAL(" ", til::prefix_split(s, ""));
-            VERIFY_ARE_EQUAL("", s);
-        }
-        {
-            std::string_view s{ "foo" };
-            VERIFY_ARE_EQUAL("foo", til::prefix_split(s, ""));
-            VERIFY_ARE_EQUAL("", s);
-        }
-        {
-            std::string_view s{ "foo bar baz" };
-            VERIFY_ARE_EQUAL("foo", til::prefix_split(s, " "));
-            VERIFY_ARE_EQUAL("bar baz", s);
-            VERIFY_ARE_EQUAL("bar", til::prefix_split(s, " "));
-            VERIFY_ARE_EQUAL("baz", s);
-            VERIFY_ARE_EQUAL("baz", til::prefix_split(s, " "));
-            VERIFY_ARE_EQUAL("", s);
-        }
-        {
-            std::string_view s{ "foo123barbaz123" };
-            VERIFY_ARE_EQUAL("foo", til::prefix_split(s, "123"));
-            VERIFY_ARE_EQUAL("barbaz123", s);
-            VERIFY_ARE_EQUAL("barbaz", til::prefix_split(s, "123"));
-            VERIFY_ARE_EQUAL("", s);
-            VERIFY_ARE_EQUAL("", til::prefix_split(s, ""));
-            VERIFY_ARE_EQUAL("", s);
-        }
-    }
+        static constexpr auto split = [](const std::string_view& str, const char needle) {
+            std::vector<std::string_view> substrings;
+            for (auto&& s : til::split_iterator{ str, needle })
+            {
+                substrings.emplace_back(s);
+            }
+            return substrings;
+        };
 
-    TEST_METHOD(prefix_split_char)
-    {
-        {
-            std::string_view s{ "" };
-            VERIFY_ARE_EQUAL("", til::prefix_split(s, ' '));
-            VERIFY_ARE_EQUAL("", s);
-        }
-        {
-            std::string_view s{ "foo bar baz" };
-            VERIFY_ARE_EQUAL("foo", til::prefix_split(s, ' '));
-            VERIFY_ARE_EQUAL("bar baz", s);
-            VERIFY_ARE_EQUAL("bar", til::prefix_split(s, ' '));
-            VERIFY_ARE_EQUAL("baz", s);
-            VERIFY_ARE_EQUAL("baz", til::prefix_split(s, ' '));
-            VERIFY_ARE_EQUAL("", s);
-        }
+        std::vector<std::string_view> expected;
+        std::vector<std::string_view> actual;
+
+        expected = { "foo" };
+        actual = split("foo", ' ');
+        VERIFY_ARE_EQUAL(expected, actual);
+
+        expected = { "", "foo" };
+        actual = split(" foo", ' ');
+        VERIFY_ARE_EQUAL(expected, actual);
+
+        expected = { "foo", "" };
+        actual = split("foo ", ' ');
+        VERIFY_ARE_EQUAL(expected, actual);
+
+        expected = { "foo", "bar", "baz" };
+        actual = split("foo bar baz", ' ');
+        VERIFY_ARE_EQUAL(expected, actual);
+
+        expected = { "", "", "foo", "", "bar", "", "" };
+        actual = split(";;foo;;bar;;", ';');
+        VERIFY_ARE_EQUAL(expected, actual);
     }
 
     TEST_METHOD(CleanPathAndFilename)

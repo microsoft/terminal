@@ -133,113 +133,6 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         return ends_with<>(str, prefix);
     }
 
-    inline constexpr unsigned long to_ulong_error = ULONG_MAX;
-    inline constexpr int to_int_error = INT_MAX;
-
-    // Just like std::wcstoul, but without annoying locales and null-terminating strings.
-    // It has been fuzz-tested against clang's strtoul implementation.
-    template<typename T, typename Traits>
-    _TIL_INLINEPREFIX constexpr unsigned long to_ulong(const std::basic_string_view<T, Traits>& str, unsigned long base = 0) noexcept
-    {
-        static constexpr unsigned long maximumValue = ULONG_MAX / 16;
-
-        // We don't have to test ptr for nullability, as we only access it under either condition:
-        // * str.length() > 0, for determining the base
-        // * ptr != end, when parsing the characters; if ptr is null, length will be 0 and thus end == ptr
-#pragma warning(push)
-#pragma warning(disable : 26429) // Symbol 'ptr' is never tested for nullness, it can be marked as not_null
-#pragma warning(disable : 26481) // Don't use pointer arithmetic. Use span instead
-        auto ptr = str.data();
-        const auto end = ptr + str.length();
-        unsigned long accumulator = 0;
-        unsigned long value = ULONG_MAX;
-
-        if (!base)
-        {
-            base = 10;
-
-            if (str.length() > 1 && *ptr == '0')
-            {
-                base = 8;
-                ++ptr;
-
-                if (str.length() > 2 && (*ptr == 'x' || *ptr == 'X'))
-                {
-                    base = 16;
-                    ++ptr;
-                }
-            }
-        }
-
-        if (ptr == end)
-        {
-            return to_ulong_error;
-        }
-
-        for (;; accumulator *= base)
-        {
-            value = ULONG_MAX;
-            if (*ptr >= '0' && *ptr <= '9')
-            {
-                value = *ptr - '0';
-            }
-            else if (*ptr >= 'A' && *ptr <= 'F')
-            {
-                value = *ptr - 'A' + 10;
-            }
-            else if (*ptr >= 'a' && *ptr <= 'f')
-            {
-                value = *ptr - 'a' + 10;
-            }
-            else
-            {
-                return to_ulong_error;
-            }
-
-            accumulator += value;
-            if (accumulator >= maximumValue)
-            {
-                return to_ulong_error;
-            }
-
-            if (++ptr == end)
-            {
-                return accumulator;
-            }
-        }
-#pragma warning(pop)
-    }
-
-    constexpr unsigned long to_ulong(const std::string_view& str, unsigned long base = 0) noexcept
-    {
-        return to_ulong<>(str, base);
-    }
-
-    constexpr unsigned long to_ulong(const std::wstring_view& str, unsigned long base = 0) noexcept
-    {
-        return to_ulong<>(str, base);
-    }
-
-    // Implement to_int in terms of to_ulong by negating its result. to_ulong does not expect
-    // to be passed signed numbers and will return an error accordingly. That error when
-    // compared against -1 evaluates to true. We account for that by returning to_int_error if to_ulong
-    // returns an error.
-    constexpr int to_int(const std::wstring_view& str, unsigned long base = 0) noexcept
-    {
-        auto result = to_ulong_error;
-        const auto signPosition = str.find(L"-");
-        const bool hasSign = signPosition != std::wstring_view::npos;
-        result = hasSign ? to_ulong(str.substr(signPosition + 1), base) : to_ulong(str, base);
-
-        // Check that result is valid and will fit in an int.
-        if (result == to_ulong_error || (result > INT_MAX))
-        {
-            return to_int_error;
-        }
-
-        return hasSign ? result * -1 : result;
-    }
-
     // Just like std::tolower, but without annoying locales.
     template<typename T>
     constexpr T tolower_ascii(T c)
@@ -348,55 +241,6 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         return ends_with<>(str, prefix);
     }
 
-    // Give the arguments ("foo bar baz", " "), this method will
-    // * modify the first argument to "bar baz"
-    // * return "foo"
-    // If the needle cannot be found the "str" argument is returned as is.
-    template<typename T, typename Traits>
-    constexpr std::basic_string_view<T, Traits> prefix_split(std::basic_string_view<T, Traits>& str, const std::basic_string_view<T, Traits>& needle) noexcept
-    {
-        using view_type = std::basic_string_view<T, Traits>;
-
-        const auto needleLen = needle.size();
-        const auto idx = needleLen == 0 ? str.size() : str.find(needle);
-        const auto prefixIdx = std::min(str.size(), idx);
-        const auto suffixIdx = std::min(str.size(), prefixIdx + needle.size());
-
-        const view_type result{ str.data(), prefixIdx };
-#pragma warning(suppress : 26481) // Don't use pointer arithmetic. Use span instead
-        str = { str.data() + suffixIdx, str.size() - suffixIdx };
-        return result;
-    }
-
-    constexpr std::string_view prefix_split(std::string_view& str, const std::string_view& needle) noexcept
-    {
-        return prefix_split<>(str, needle);
-    }
-
-    constexpr std::wstring_view prefix_split(std::wstring_view& str, const std::wstring_view& needle) noexcept
-    {
-        return prefix_split<>(str, needle);
-    }
-
-    // Give the arguments ("foo bar baz", " "), this method will
-    // * modify the first argument to "bar baz"
-    // * return "foo"
-    // If the needle cannot be found the "str" argument is returned as is.
-    template<typename T, typename Traits>
-    constexpr std::basic_string_view<T, Traits> prefix_split(std::basic_string_view<T, Traits>& str, T ch) noexcept
-    {
-        using view_type = std::basic_string_view<T, Traits>;
-
-        const auto idx = str.find(ch);
-        const auto prefixIdx = std::min(str.size(), idx);
-        const auto suffixIdx = std::min(str.size(), prefixIdx + 1);
-
-        const view_type result{ str.data(), prefixIdx };
-#pragma warning(suppress : 26481) // Don't use pointer arithmetic. Use span instead
-        str = { str.data() + suffixIdx, str.size() - suffixIdx };
-        return result;
-    }
-
     template<typename T, typename Traits>
     constexpr std::basic_string_view<T, Traits> trim(const std::basic_string_view<T, Traits>& str, const T ch) noexcept
     {
@@ -412,6 +256,228 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         }
 
         return { beg, end };
+    }
+
+    template<typename T, typename Traits>
+    struct split_iterator
+    {
+        struct sentinel
+        {
+        };
+
+        struct iterator
+        {
+            using iterator_category = std::forward_iterator_tag;
+            using value_type = std::basic_string_view<T, Traits>;
+            using reference = value_type&;
+            using pointer = value_type*;
+            using difference_type = std::ptrdiff_t;
+
+            explicit constexpr iterator(split_iterator& p) noexcept :
+                _iter{ p }
+            {
+            }
+
+            value_type operator*() const noexcept
+            {
+#ifndef NDEBUG
+                // Don't call operator*() twice per iteration.
+                // Since C++ has inflexible iterators we can't implement a split iterator efficiently:
+                // We essentially need a do-while loop but iterators only offer for() loop semantics.
+                // This forces us to either seek to the first token in the constructor and then again on
+                // every operator++(), or we do this trick here where we seek on every operator*() call.
+                // This only works well of course, if you don't call operator*() multiple times.
+                assert(_iter._advanced);
+                _iter._advanced = false;
+#endif
+                _iter._tok = std::find(_iter._it, _iter._end, _iter._needle);
+                return { _iter._it, _iter._tok };
+            }
+
+            iterator& operator++() noexcept
+            {
+#ifndef NDEBUG
+                _iter._advanced = true;
+#endif
+                _iter._it = std::min(_iter._end - 1, _iter._tok) + 1;
+                return *this;
+            }
+
+            bool operator!=(const sentinel&) const noexcept
+            {
+                return _iter._tok != _iter._end;
+            }
+
+        private:
+            split_iterator& _iter;
+        };
+
+        explicit constexpr split_iterator(const std::basic_string_view<T, Traits>& str, T needle) noexcept :
+            _it{ str.begin() },
+            _tok{ str.begin() },
+            _end{ str.end() },
+            _needle{ needle }
+        {
+        }
+
+        iterator begin() noexcept
+        {
+            return iterator{ *this };
+        }
+
+        sentinel end() noexcept
+        {
+            return sentinel{};
+        }
+
+    private:
+        typename iterator::value_type::iterator _it;
+        typename iterator::value_type::iterator _tok;
+        typename iterator::value_type::iterator _end;
+        typename iterator::value_type _value;
+        T _needle;
+#ifndef NDEBUG
+        bool _advanced = true;
+#endif
+    };
+
+    namespace details
+    {
+        // Just like std::wcstoul, but without annoying locales and null-terminating strings.
+        template<typename T, typename Traits>
+        _TIL_INLINEPREFIX constexpr std::optional<uint64_t> parse_u64(const std::basic_string_view<T, Traits>& str, int base = 0) noexcept
+        {
+            // We don't have to test ptr for nullability, as we only access it under either condition:
+            // * str.length() > 0, for determining the base
+            // * ptr != end, when parsing the characters; if ptr is null, length will be 0 and thus end == ptr
+#pragma warning(push)
+#pragma warning(disable : 26429) // Symbol 'ptr' is never tested for nullness, it can be marked as not_null
+#pragma warning(disable : 26481) // Don't use pointer arithmetic. Use span instead
+            auto ptr = str.data();
+            const auto end = ptr + str.length();
+            uint64_t accumulator = 0;
+            uint64_t base64 = base;
+
+            if (base <= 0)
+            {
+                base64 = 10;
+
+                if (ptr != end && *ptr == '0')
+                {
+                    base64 = 8;
+                    ptr += 1;
+
+                    if (ptr != end && (*ptr == 'x' || *ptr == 'X'))
+                    {
+                        base64 = 16;
+                        ptr += 1;
+                    }
+                }
+            }
+
+            if (ptr == end)
+            {
+                return {};
+            }
+
+            for (;;)
+            {
+                uint64_t value = 0;
+                if (*ptr >= '0' && *ptr <= '9')
+                {
+                    value = *ptr - '0';
+                }
+                else if (*ptr >= 'A' && *ptr <= 'F')
+                {
+                    value = *ptr - 'A' + 10;
+                }
+                else if (*ptr >= 'a' && *ptr <= 'f')
+                {
+                    value = *ptr - 'a' + 10;
+                }
+                else
+                {
+                    return {};
+                }
+
+                const auto acc = accumulator * base64 + value;
+                if (acc < accumulator)
+                {
+                    return {};
+                }
+
+                accumulator = acc;
+                ptr += 1;
+
+                if (ptr == end)
+                {
+                    return accumulator;
+                }
+            }
+#pragma warning(pop)
+        }
+
+        template<std::unsigned_integral R, typename T, typename Traits>
+        constexpr std::optional<R> parse_unsigned(const std::basic_string_view<T, Traits>& str, int base = 0) noexcept
+        {
+            if constexpr (std::is_same_v<R, uint64_t>)
+            {
+                return details::parse_u64<>(str, base);
+            }
+            else
+            {
+                const auto opt = details::parse_u64<>(str, base);
+                if (!opt || *opt > uint64_t{ std::numeric_limits<R>::max() })
+                {
+                    return {};
+                }
+                return gsl::narrow_cast<R>(*opt);
+            }
+        }
+
+        template<std::signed_integral R, typename T, typename Traits>
+        constexpr std::optional<R> parse_signed(std::basic_string_view<T, Traits> str, int base = 0) noexcept
+        {
+            const bool hasSign = str.starts_with(L'-');
+            if (hasSign)
+            {
+                str = str.substr(1);
+            }
+
+            const auto opt = details::parse_u64<>(str, base);
+            const auto max = uint64_t{ std::numeric_limits<R>::max() } + hasSign;
+            if (!opt || *opt > max)
+            {
+                return {};
+            }
+
+            const auto r = gsl::narrow_cast<R>(*opt);
+            return hasSign ? -r : r;
+        }
+    }
+
+    template<typename R>
+    constexpr std::optional<R> parse_unsigned(const std::string_view& str, int base = 0) noexcept
+    {
+        return details::parse_unsigned<R>(str, base);
+    }
+
+    template<typename R>
+    constexpr std::optional<R> parse_unsigned(const std::wstring_view& str, int base = 0) noexcept
+    {
+        return details::parse_unsigned<R>(str, base);
+    }
+
+    template<typename R>
+    constexpr std::optional<R> parse_signed(const std::string_view& str, int base = 0) noexcept
+    {
+        return details::parse_signed<R>(str, base);
+    }
+
+    template<typename R>
+    constexpr std::optional<R> parse_signed(const std::wstring_view& str, int base = 0) noexcept
+    {
+        return details::parse_signed<R>(str, base);
     }
 
     // Splits a font-family list into individual font-families. It loosely follows the CSS spec for font-family.
