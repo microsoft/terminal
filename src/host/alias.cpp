@@ -19,39 +19,17 @@
 
 using Microsoft::Console::Interactivity::ServiceLocator;
 
-struct case_insensitive_hash
+struct insensitive_less
 {
-    using is_transparent = void;
+    using is_transparent = int;
 
-    std::size_t operator()(const std::wstring_view& key) const
+    bool operator()(const std::wstring_view& lhs, const std::wstring_view& rhs) const noexcept
     {
-        til::hasher h;
-        for (const auto& ch : key)
-        {
-            h.write(::towlower(ch));
-        }
-        return h.finalize();
+        return til::compare_ordinal_insensitive(lhs, rhs) < 0;
     }
 };
 
-struct case_insensitive_equality
-{
-    using is_transparent = void;
-
-    bool operator()(const std::wstring_view& lhs, const std::wstring_view& rhs) const
-    {
-        return til::compare_ordinal_insensitive(lhs, rhs) == 0;
-    }
-};
-
-std::unordered_map<std::wstring,
-                   std::unordered_map<std::wstring,
-                                      std::wstring,
-                                      case_insensitive_hash,
-                                      case_insensitive_equality>,
-                   case_insensitive_hash,
-                   case_insensitive_equality>
-    g_aliasData;
+static std::map<std::wstring, std::map<std::wstring, std::wstring, insensitive_less>, insensitive_less> g_aliasData;
 
 // Routine Description:
 // - Adds a command line alias to the global set.
@@ -99,26 +77,26 @@ std::unordered_map<std::wstring,
 
     try
     {
-        std::wstring exeNameString(exeName);
-        std::wstring sourceString(source);
-        std::wstring targetString(target);
-
-        std::transform(exeNameString.begin(), exeNameString.end(), exeNameString.begin(), towlower);
-        std::transform(sourceString.begin(), sourceString.end(), sourceString.begin(), towlower);
-
-        if (targetString.size() == 0)
+        if (target.empty())
         {
             // Only try to dig in and erase if the exeName exists.
-            auto exeData = g_aliasData.find(exeNameString);
+            const auto exeData = g_aliasData.find(exeName);
             if (exeData != g_aliasData.end())
             {
-                g_aliasData[exeNameString].erase(sourceString);
+                // With C++23 this can be replaced with just a single erase() call.
+                const auto sourceData = exeData->second.find(source);
+                if (sourceData != exeData->second.end())
+                {
+                    exeData->second.erase(sourceData);
+                }
             }
         }
         else
         {
-            // Map will auto-create each level as necessary
-            g_aliasData[exeNameString][sourceString] = targetString;
+            // With C++26 this can written a lot shorter with operator[].
+            const auto exeData = g_aliasData.emplace(std::piecewise_construct, std::forward_as_tuple(exeName), std::forward_as_tuple()).first;
+            const auto sourceData = exeData->second.emplace(std::piecewise_construct, std::forward_as_tuple(source), std::forward_as_tuple()).first;
+            sourceData->second.assign(exeName);
         }
     }
     CATCH_RETURN();
@@ -153,18 +131,18 @@ std::unordered_map<std::wstring,
         til::at(*target, 0) = UNICODE_NULL;
     }
 
-    std::wstring exeNameString(exeName);
-    std::wstring sourceString(source);
-
-    // For compatibility, return ERROR_GEN_FAILURE for any result where the alias can't be found.
-    // We use .find for the iterators then dereference to search without creating entries.
-    const auto exeIter = g_aliasData.find(exeNameString);
+    // In the past a not-found resulted in a STATUS_UNSUCCESSFUL.
+    // This was then translated by ntdll into ERROR_GEN_FAILURE.
+    // Since we stopped using NTSTATUS codes, we now return ERROR_GEN_FAILURE directly.
+    const auto exeIter = g_aliasData.find(exeName);
     RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_GEN_FAILURE), exeIter == g_aliasData.end());
+
     const auto& exeData = exeIter->second;
-    const auto sourceIter = exeData.find(sourceString);
+    const auto sourceIter = exeData.find(source);
     RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_GEN_FAILURE), sourceIter == exeData.end());
+
     const auto& targetString = sourceIter->second;
-    RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_GEN_FAILURE), targetString.size() == 0);
+    RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_GEN_FAILURE), targetString.empty());
 
     // TargetLength is a byte count, convert to characters.
     auto targetSize = targetString.size();
@@ -337,8 +315,7 @@ static std::wstring aliasesSeparator(L"=");
         auto exeIter = g_aliasData.find(exeNameString);
         if (exeIter != g_aliasData.end())
         {
-            const auto& list = exeIter->second;
-            for (auto& pair : list)
+            for (auto& pair : exeIter->second)
             {
                 // Alias stores lengths in bytes.
                 auto cchSource = pair.first.size();
@@ -422,7 +399,7 @@ static std::wstring aliasesSeparator(L"=");
 void Alias::s_ClearCmdExeAliases()
 {
     // find without creating.
-    auto exeIter = g_aliasData.find(L"cmd.exe");
+    const auto exeIter = g_aliasData.find(L"cmd.exe");
     if (exeIter != g_aliasData.end())
     {
         exeIter->second.clear();
@@ -465,11 +442,10 @@ void Alias::s_ClearCmdExeAliases()
     const size_t cchNull = 1;
 
     // Find without creating.
-    auto exeIter = g_aliasData.find(exeNameString);
+    const auto exeIter = g_aliasData.find(exeNameString);
     if (exeIter != g_aliasData.end())
     {
-        const auto& list = exeIter->second;
-        for (auto& pair : list)
+        for (auto& pair : exeIter->second)
         {
             // Alias stores lengths in bytes.
             const auto cchSource = pair.first.size();

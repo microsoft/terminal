@@ -64,9 +64,7 @@ namespace Microsoft::Console::Utils
     til::color ColorFromRGB100(const int r, const int g, const int b) noexcept;
     std::tuple<int, int, int> ColorToRGB100(const til::color color) noexcept;
 
-    bool HexToUint(const wchar_t wch, unsigned int& value) noexcept;
-    bool StringToUint(const std::wstring_view wstr, unsigned int& value);
-    std::vector<std::wstring_view> SplitString(const std::wstring_view wstr, const wchar_t delimiter) noexcept;
+    til::small_vector<std::wstring_view, 4> SplitString(const std::wstring_view wstr, const wchar_t delimiter) noexcept;
 
     enum FilterOption
     {
@@ -80,33 +78,6 @@ namespace Microsoft::Console::Utils
     DEFINE_ENUM_FLAG_OPERATORS(FilterOption)
 
     std::wstring FilterStringForPaste(const std::wstring_view wstr, const FilterOption option);
-
-    constexpr uint16_t EndianSwap(uint16_t value)
-    {
-        return (value & 0xFF00) >> 8 |
-               (value & 0x00FF) << 8;
-    }
-
-    constexpr uint32_t EndianSwap(uint32_t value)
-    {
-        return (value & 0xFF000000) >> 24 |
-               (value & 0x00FF0000) >> 8 |
-               (value & 0x0000FF00) << 8 |
-               (value & 0x000000FF) << 24;
-    }
-
-    constexpr unsigned long EndianSwap(unsigned long value)
-    {
-        return gsl::narrow_cast<unsigned long>(EndianSwap(gsl::narrow_cast<uint32_t>(value)));
-    }
-
-    constexpr GUID EndianSwap(GUID value)
-    {
-        value.Data1 = EndianSwap(value.Data1);
-        value.Data2 = EndianSwap(value.Data2);
-        value.Data3 = EndianSwap(value.Data3);
-        return value;
-    }
 
     GUID CreateV5Uuid(const GUID& namespaceGuid, const std::span<const std::byte> name);
 

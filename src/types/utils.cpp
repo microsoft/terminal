@@ -11,17 +11,6 @@
 
 using namespace Microsoft::Console;
 
-// Routine Description:
-// - Determines if a character is a valid number character, 0-9.
-// Arguments:
-// - wch - Character to check.
-// Return Value:
-// - True if it is. False if it isn't.
-static constexpr bool _isNumber(const wchar_t wch) noexcept
-{
-    return wch >= L'0' && wch <= L'9'; // 0x30 - 0x39
-}
-
 GSL_SUPPRESS(bounds)
 static std::wstring guidToStringCommon(const GUID& guid, size_t offset, size_t length)
 {
@@ -103,43 +92,34 @@ std::string Utils::ColorToHexString(const til::color color)
 //      the correct format, throws E_INVALIDARG
 til::color Utils::ColorFromHexString(const std::string_view str)
 {
-    THROW_HR_IF(E_INVALIDARG, str.size() != 9 && str.size() != 7 && str.size() != 4);
-    THROW_HR_IF(E_INVALIDARG, str.at(0) != '#');
+    THROW_HR_IF(E_INVALIDARG, str.empty() || str.at(0) != '#');
 
-    std::string rStr;
-    std::string gStr;
-    std::string bStr;
-    std::string aStr;
+    wchar_t wch[8];
+    wch[6] = wch[7] = L'f';
 
-    if (str.size() == 4)
+    switch (str.size())
     {
-        rStr = std::string(2, str.at(1));
-        gStr = std::string(2, str.at(2));
-        bStr = std::string(2, str.at(3));
-        aStr = "ff";
-    }
-    else if (str.size() == 7)
-    {
-        rStr = std::string(&str.at(1), 2);
-        gStr = std::string(&str.at(3), 2);
-        bStr = std::string(&str.at(5), 2);
-        aStr = "ff";
-    }
-    else if (str.size() == 9)
-    {
-        // #rrggbbaa
-        rStr = std::string(&str.at(1), 2);
-        gStr = std::string(&str.at(3), 2);
-        bStr = std::string(&str.at(5), 2);
-        aStr = std::string(&str.at(7), 2);
+    case 4:
+        // For RGB we need to widen it to RRGGBB.
+        wch[0] = wch[1] = str.at(1);
+        wch[2] = wch[3] = str.at(2);
+        wch[4] = wch[5] = str.at(3);
+        break;
+    case 7:
+    case 9:
+        // For RRGGBB or RRGGBBAA we can just copy it directly.
+        std::copy(str.begin() + 1, str.end(), &wch[0]);
+        break;
+    default:
+        THROW_HR(E_INVALIDARG);
     }
 
-    const auto r = gsl::narrow_cast<BYTE>(std::stoul(rStr, nullptr, 16));
-    const auto g = gsl::narrow_cast<BYTE>(std::stoul(gStr, nullptr, 16));
-    const auto b = gsl::narrow_cast<BYTE>(std::stoul(bStr, nullptr, 16));
-    const auto a = gsl::narrow_cast<BYTE>(std::stoul(aStr, nullptr, 16));
+    const auto rgba = til::parse_unsigned<uint32_t>({ &wch[0], 8 }, 16);
+    THROW_HR_IF(E_INVALIDARG, !rgba);
 
-    return til::color{ r, g, b, a };
+    til::color c;
+    c.abgr = _byteswap_ulong(*rgba);
+    return c;
 }
 
 // Routine Description:
@@ -175,175 +155,103 @@ std::optional<til::color> Utils::ColorFromXTermColor(const std::wstring_view str
 // - string - The string containing the color spec string to parse.
 // Return Value:
 // - An optional color which contains value if a color was successfully parsed
-std::optional<til::color> Utils::ColorFromXParseColorSpec(const std::wstring_view string) noexcept
-try
+std::optional<til::color> Utils::ColorFromXParseColorSpec(std::wstring_view string) noexcept
 {
-    auto foundXParseColorSpec = false;
-    auto foundValidColorSpec = false;
-
-    auto isSharpSignFormat = false;
-    size_t rgbHexDigitCount = 0;
-    std::array<unsigned int, 3> colorValues = { 0 };
-    std::array<unsigned int, 3> parameterValues = { 0 };
     const auto stringSize = string.size();
+    unsigned int parameters[3]{};
 
     // First we look for "rgb:"
     // Other colorspaces are theoretically possible, but we don't support them.
-    auto curr = string.cbegin();
-    if (stringSize > 4)
+    if (til::starts_with_insensitive_ascii(string, L"rgb:"))
     {
-        auto prefix = std::wstring(string.substr(0, 4));
-
-        // The "rgb:" indicator should be case insensitive. To prevent possible issues under
-        // different locales, transform only ASCII range latin characters.
-        std::transform(prefix.begin(), prefix.end(), prefix.begin(), [](const auto x) {
-            return x >= L'A' && x <= L'Z' ? static_cast<wchar_t>(std::towlower(x)) : x;
-        });
-
-        if (prefix.compare(L"rgb:") == 0)
+        // If all the components have the same digit count, we can have one of the following formats:
+        // 9 "rgb:h/h/h"
+        // 12 "rgb:hh/hh/hh"
+        // 15 "rgb:hhh/hhh/hhh"
+        // 18 "rgb:hhhh/hhhh/hhhh"
+        // Note that the component sizes aren't required to be the same.
+        // Anything in between is also valid, e.g. "rgb:h/hh/h" and "rgb:h/hh/hhh".
+        // Any fewer cannot be valid, and any more will be too many. Return early in this case.
+        if (stringSize < 9 || stringSize > 18)
         {
-            // If all the components have the same digit count, we can have one of the following formats:
-            // 9 "rgb:h/h/h"
-            // 12 "rgb:hh/hh/hh"
-            // 15 "rgb:hhh/hhh/hhh"
-            // 18 "rgb:hhhh/hhhh/hhhh"
-            // Note that the component sizes aren't required to be the same.
-            // Anything in between is also valid, e.g. "rgb:h/hh/h" and "rgb:h/hh/hhh".
-            // Any fewer cannot be valid, and any more will be too many. Return early in this case.
-            if (stringSize < 9 || stringSize > 18)
+            return {};
+        }
+
+        size_t i = 0;
+        const auto remaining = string.substr(4);
+
+        for (auto&& part : til::split_iterator{ remaining, L'/' })
+        {
+            if (i >= std::size(parameters) || part.size() < 1 || part.size() > 4)
             {
-                return std::nullopt;
+                return {};
             }
 
-            foundXParseColorSpec = true;
+            const auto val = til::parse_unsigned<unsigned int>(part, 16);
+            if (!val)
+            {
+                return {};
+            }
 
-            std::advance(curr, 4);
+            auto v = *val;
+
+            // Map `v` from its 4/8/12/16-bit range to 8-bit.
+            const auto bits = static_cast<unsigned int>(part.size() * 4);
+            // `div` will be 0xf/0xff/0xfff/0xffff respectively.
+            const auto div = (1ul << bits) - 1;
+            // Adding `div / 2` will approximately round the value.
+            v = (v * 255 + div / 2) / div;
+
+            parameters[i] = v;
+            i++;
         }
     }
-
     // Try the sharp sign format.
-    if (!foundXParseColorSpec && stringSize > 1)
+    else if (string.starts_with(L'#'))
     {
-        if (til::at(string, 0) == L'#')
+        // We can have one of the following formats:
+        // 4 "#hhh"
+        // 7 "#hhhhhh"
+        // 10 "#hhhhhhhhh"
+        // 13 "#hhhhhhhhhhhh"
+        // Any other cases will be invalid. Return early in this case.
+        if (stringSize != 4 && stringSize != 7 && stringSize != 10 && stringSize != 13)
         {
-            // We can have one of the following formats:
-            // 4 "#hhh"
-            // 7 "#hhhhhh"
-            // 10 "#hhhhhhhhh"
-            // 13 "#hhhhhhhhhhhh"
-            // Any other cases will be invalid. Return early in this case.
-            if (!(stringSize == 4 || stringSize == 7 || stringSize == 10 || stringSize == 13))
+            return {};
+        }
+
+        const auto digits = (stringSize - 1) / 3;
+        const auto shift = 16 - 4 * digits;
+
+        for (size_t i = 0; i < 3; ++i)
+        {
+            const auto val = til::parse_unsigned<unsigned int>(string.substr(i * digits + 1, digits), 16);
+            if (!val)
             {
-                return std::nullopt;
+                return {};
             }
 
-            isSharpSignFormat = true;
-            foundXParseColorSpec = true;
-            rgbHexDigitCount = (stringSize - 1) / 3;
+            // > When fewer than 16 bits each are specified, they represent the most significant bits of the value.
+            // > For example, the string "#3a7" is the same as "#3000a0007000".
+            // Source: https://www.x.org/releases/current/doc/man/man3/XQueryColor.3.xhtml
+            // -> Shift the value up.
+            auto v = *val << shift;
 
-            std::advance(curr, 1);
+            // Now that `v` is 16-bit large we can map it to an 8-bit value.
+            v = (v * 255 + 0x7fff) / 0xffff;
+
+            parameters[i] = v;
         }
     }
-
     // No valid spec is found. Return early.
-    if (!foundXParseColorSpec)
+    else
     {
-        return std::nullopt;
+        return {};
     }
 
-    // Try to parse the actual color value of each component.
-    for (size_t component = 0; component < 3; component++)
-    {
-        auto foundColor = false;
-        auto& parameterValue = til::at(parameterValues, component);
-        // For "sharp sign" format, the rgbHexDigitCount is known.
-        // For "rgb:" format, colorspecs are up to hhhh/hhhh/hhhh, for 1-4 h's
-        const auto iteration = isSharpSignFormat ? rgbHexDigitCount : 4;
-        for (size_t i = 0; i < iteration && curr < string.cend(); i++)
-        {
-            const auto wch = *curr++;
-
-            parameterValue *= 16;
-            unsigned int intVal = 0;
-            const auto ret = HexToUint(wch, intVal);
-            if (!ret)
-            {
-                // Encountered something weird oh no
-                return std::nullopt;
-            }
-
-            parameterValue += intVal;
-
-            if (isSharpSignFormat)
-            {
-                // If we get this far, any number can be seen as a valid part
-                // of this component.
-                foundColor = true;
-
-                if (i >= rgbHexDigitCount)
-                {
-                    // Successfully parsed this component. Start the next one.
-                    break;
-                }
-            }
-            else
-            {
-                // Record the hex digit count of the current component.
-                rgbHexDigitCount = i + 1;
-
-                // If this is the first 2 component...
-                if (component < 2 && curr < string.cend() && *curr == L'/')
-                {
-                    // ...and we have successfully parsed this component, we need
-                    // to skip the delimiter before starting the next one.
-                    curr++;
-                    foundColor = true;
-                    break;
-                }
-                // Or we have reached the end of the string...
-                else if (curr >= string.cend())
-                {
-                    // ...meaning that this is the last component. We're not going to
-                    // see any delimiter. We can just break out.
-                    foundColor = true;
-                    break;
-                }
-            }
-        }
-
-        if (!foundColor)
-        {
-            // Indicates there was some error parsing color.
-            return std::nullopt;
-        }
-
-        // Calculate the actual color value based on the hex digit count.
-        auto& colorValue = til::at(colorValues, component);
-        const auto scaleMultiplier = isSharpSignFormat ? 0x10 : 0x11;
-        const auto scaleDivisor = scaleMultiplier << 8 >> 4 * (4 - rgbHexDigitCount);
-        colorValue = parameterValue * scaleMultiplier / scaleDivisor;
-    }
-
-    if (curr >= string.cend())
-    {
-        // We're at the end of the string and we have successfully parsed the color.
-        foundValidColorSpec = true;
-    }
-
-    // Only if we find a valid colorspec can we pass it out successfully.
-    if (foundValidColorSpec)
-    {
-        return til::color(LOBYTE(til::at(colorValues, 0)),
-                          LOBYTE(til::at(colorValues, 1)),
-                          LOBYTE(til::at(colorValues, 2)));
-    }
-
-    return std::nullopt;
-}
-catch (...)
-{
-    LOG_CAUGHT_EXCEPTION();
-    return std::nullopt;
+    return til::color(LOBYTE(til::at(parameters, 0)),
+                      LOBYTE(til::at(parameters, 1)),
+                      LOBYTE(til::at(parameters, 2)));
 }
 
 // Routine Description:
@@ -507,108 +415,20 @@ std::tuple<int, int, int> Utils::ColorToHLS(const til::color color) noexcept
 }
 
 // Routine Description:
-// - Converts a hex character to its equivalent integer value.
-// Arguments:
-// - wch - Character to convert.
-// - value - receives the int value of the char
-// Return Value:
-// - true iff the character is a hex character.
-bool Utils::HexToUint(const wchar_t wch,
-                      unsigned int& value) noexcept
-{
-    value = 0;
-    auto success = false;
-    if (wch >= L'0' && wch <= L'9')
-    {
-        value = wch - L'0';
-        success = true;
-    }
-    else if (wch >= L'A' && wch <= L'F')
-    {
-        value = (wch - L'A') + 10;
-        success = true;
-    }
-    else if (wch >= L'a' && wch <= L'f')
-    {
-        value = (wch - L'a') + 10;
-        success = true;
-    }
-    return success;
-}
-
-// Routine Description:
-// - Converts a number string to its equivalent unsigned integer value.
-// Arguments:
-// - wstr - String to convert.
-// - value - receives the int value of the string
-// Return Value:
-// - true iff the string is a unsigned integer string.
-bool Utils::StringToUint(const std::wstring_view wstr,
-                         unsigned int& value)
-{
-    if (wstr.size() < 1)
-    {
-        return false;
-    }
-
-    unsigned int result = 0;
-    size_t current = 0;
-    while (current < wstr.size())
-    {
-        const auto wch = wstr.at(current);
-        if (_isNumber(wch))
-        {
-            result *= 10;
-            result += wch - L'0';
-
-            ++current;
-        }
-        else
-        {
-            return false;
-        }
-    }
-
-    value = result;
-
-    return true;
-}
-
-// Routine Description:
 // - Split a string into different parts using the delimiter provided.
 // Arguments:
 // - wstr - String to split.
 // - delimiter - delimiter to use.
 // Return Value:
 // - a vector containing the result string parts.
-std::vector<std::wstring_view> Utils::SplitString(const std::wstring_view wstr,
-                                                  const wchar_t delimiter) noexcept
+til::small_vector<std::wstring_view, 4> Utils::SplitString(std::wstring_view wstr, const wchar_t delimiter) noexcept
 try
 {
-    std::vector<std::wstring_view> result;
-    size_t current = 0;
-    while (current < wstr.size())
+    til::small_vector<std::wstring_view, 4> result;
+
+    for (auto&& part : til::split_iterator{ wstr, delimiter })
     {
-        const auto nextDelimiter = wstr.find(delimiter, current);
-        if (nextDelimiter == std::wstring::npos)
-        {
-            result.push_back(wstr.substr(current));
-            break;
-        }
-        else
-        {
-            const auto length = nextDelimiter - current;
-            result.push_back(wstr.substr(current, length));
-            // Skip this part and the delimiter. Start the next one
-            current += length + 1;
-            // The next index is larger than string size, which means the string
-            // is in the format of "part1;part2;" (assuming use ';' as delimiter).
-            // Add the last part which is an empty string.
-            if (current >= wstr.size())
-            {
-                result.push_back(L"");
-            }
-        }
+        result.push_back(part);
     }
 
     return result;
@@ -925,6 +745,13 @@ HRESULT Utils::GetOverlappedResultSameThread(const OVERLAPPED* overlapped, DWORD
 // - a new stable v5 UUID
 GUID Utils::CreateV5Uuid(const GUID& namespaceGuid, const std::span<const std::byte> name)
 {
+    static constexpr auto EndianSwap = [](GUID value) {
+        value.Data1 = _byteswap_ulong(value.Data1);
+        value.Data2 = _byteswap_ushort(value.Data2);
+        value.Data3 = _byteswap_ushort(value.Data3);
+        return value;
+    };
+
     // v5 uuid generation happens over values in network byte order, so let's enforce that
     auto correctEndianNamespaceGuid{ EndianSwap(namespaceGuid) };
 

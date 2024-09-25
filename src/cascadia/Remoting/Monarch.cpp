@@ -1035,8 +1035,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         if (windowId == 0)
         {
             // Try the name as an integer ID
-            uint32_t temp;
-            if (!Utils::StringToUint(window.c_str(), temp))
+            const auto temp = til::parse_unsigned<uint32_t>(window.c_str());
+            if (!temp)
             {
                 TraceLoggingWrite(g_hRemotingProvider,
                                   "Monarch_MoveContent_FailedToParseId",
@@ -1045,7 +1045,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             }
             else
             {
-                windowId = temp;
+                windowId = *temp;
             }
         }
 

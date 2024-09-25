@@ -909,19 +909,18 @@ bool OutputStateMachineEngine::_GetOscSetColorTable(const std::wstring_view stri
     {
         auto&& index = til::at(parts, i);
         auto&& color = til::at(parts, j);
-        unsigned int tableIndex = 0;
-        const auto indexSuccess = Utils::StringToUint(index, tableIndex);
+        const auto tableIndex = til::parse_unsigned<unsigned int>(index);
 
-        if (indexSuccess)
+        if (tableIndex)
         {
             if (color == L"?"sv) [[unlikely]]
             {
-                newTableIndexes.push_back(tableIndex);
+                newTableIndexes.push_back(*tableIndex);
                 newRgbs.push_back(COLOR_INQUIRY_COLOR);
             }
             else if (const auto colorOptional = Utils::ColorFromXTermColor(color))
             {
-                newTableIndexes.push_back(tableIndex);
+                newTableIndexes.push_back(*tableIndex);
                 newRgbs.push_back(colorOptional.value());
             }
         }

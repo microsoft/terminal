@@ -289,11 +289,12 @@ constexpr void Utils::InitializeExtendedColorTable(const std::span<COLORREF> tab
 // Return Value:
 // - An optional color which contains value if a color was successfully parsed
 std::optional<til::color> Utils::ColorFromXOrgAppColorName(const std::wstring_view wstr) noexcept
-try
 {
-    std::string stem;
+    char stemBuffer[32];
+    size_t stemLength = 0;
     size_t variantIndex = 0;
     auto foundVariant = false;
+
     for (const auto c : wstr)
     {
         // X11 guarantees that characters are all Latin1.
@@ -317,7 +318,7 @@ try
             continue;
         }
 
-        if (foundVariant)
+        if (foundVariant || stemLength >= std::size(stemBuffer))
         {
             // Variant should be at the end of the string, e.g., "yellow3".
             // This means another non-numeric character is seen, e.g., "yellow3a".
@@ -325,9 +326,10 @@ try
             return std::nullopt;
         }
 
-        stem += gsl::narrow_cast<char>(til::tolower_ascii(c));
+        stemBuffer[stemLength++] = gsl::narrow_cast<char>(til::tolower_ascii(c));
     }
 
+    const std::string_view stem{ &stemBuffer[0], stemLength };
     const auto variantColorIter = xorgAppVariantColorTable.find(stem);
     if (variantColorIter != xorgAppVariantColorTable.end())
     {
@@ -345,7 +347,7 @@ try
         {
             return std::nullopt;
         }
-        const auto component{ ::base::saturated_cast<uint8_t>(((variantIndex * 255) + 50) / 100) };
+        const auto component{ gsl::narrow_cast<uint8_t>(((variantIndex * 255) + 50) / 100) };
         return til::color{ component, component, component };
     }
 
@@ -355,11 +357,6 @@ try
         return colorIter->second;
     }
 
-    return std::nullopt;
-}
-catch (...)
-{
-    LOG_CAUGHT_EXCEPTION();
     return std::nullopt;
 }
 

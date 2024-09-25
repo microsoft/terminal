@@ -757,38 +757,21 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
         // GH#1222 and GH#9754 - Use the "virtual" viewport here, so that the
         // viewport snaps back to the virtual viewport's location.
         const auto currentViewport = buffer.GetVirtualViewport().ToInclusive();
-        til::point delta;
-        {
-            // When evaluating the X offset, we must convert the buffer position to
-            // equivalent screen coordinates, taking line rendition into account.
-            const auto lineRendition = buffer.GetTextBuffer().GetLineRendition(position.y);
-            const auto screenPosition = BufferToScreenLine(til::inclusive_rect{ position.x, position.y, position.x, position.y }, lineRendition);
 
-            if (currentViewport.left > screenPosition.left)
-            {
-                delta.x = screenPosition.left - currentViewport.left;
-            }
-            else if (currentViewport.right < screenPosition.right)
-            {
-                delta.x = screenPosition.right - currentViewport.right;
-            }
+        // When evaluating the X offset, we must convert the buffer position to
+        // equivalent screen coordinates, taking line rendition into account.
+        const auto lineRendition = buffer.GetTextBuffer().GetLineRendition(position.y);
+        const auto screenPosition = BufferToScreenLine(til::inclusive_rect{ position.x, position.y, position.x, position.y }, lineRendition);
 
-            if (currentViewport.top > position.y)
-            {
-                delta.y = position.y - currentViewport.top;
-            }
-            else if (currentViewport.bottom < position.y)
-            {
-                delta.y = position.y - currentViewport.bottom;
-            }
-        }
+        auto left = std::min(currentViewport.left, screenPosition.left);
+        left = std::max(left, screenPosition.right - currentViewport.right + currentViewport.left);
 
-        til::point newWindowOrigin;
-        newWindowOrigin.x = currentViewport.left + delta.x;
-        newWindowOrigin.y = currentViewport.top + delta.y;
+        auto top = std::min(currentViewport.top, screenPosition.top);
+        top = std::max(top, screenPosition.bottom - currentViewport.bottom + currentViewport.top);
+
         // SetViewportOrigin will worry about clamping these values to the
         // buffer for us.
-        RETURN_IF_NTSTATUS_FAILED(buffer.SetViewportOrigin(true, newWindowOrigin, true));
+        RETURN_IF_NTSTATUS_FAILED(buffer.SetViewportOrigin(true, { left, top }, true));
 
         // SetViewportOrigin will only move the virtual bottom down, but in
         // this particular case we also need to allow the virtual bottom to

@@ -417,7 +417,7 @@ static BOOL WINAPI consoleCtrlHandler(DWORD)
 int __stdcall main() noexcept
 {
     g_stdout = GetStdHandle(STD_OUTPUT_HANDLE);
-    g_stderr = GetStdHandle(STD_OUTPUT_HANDLE);
+    g_stderr = GetStdHandle(STD_ERROR_HANDLE);
     g_console_cp_old = GetConsoleOutputCP();
 
     SetConsoleCtrlHandler(consoleCtrlHandler, TRUE);

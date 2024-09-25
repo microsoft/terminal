@@ -3,11 +3,8 @@
 
 #include "precomp.h"
 #include "WexTestClass.h"
-#include "../../inc/consoletaeftemplates.hpp"
 
 #include "../inc/utils.hpp"
-#include "../inc/colorTable.hpp"
-#include <conattrs.hpp>
 
 using namespace WEX::Common;
 using namespace WEX::Logging;
@@ -23,7 +20,7 @@ class UtilsTests
     TEST_METHOD(TestGuidToString);
     TEST_METHOD(TestSplitString);
     TEST_METHOD(TestFilterStringForPaste);
-    TEST_METHOD(TestStringToUint);
+    TEST_METHOD(TestColorFromHexString);
     TEST_METHOD(TestColorFromXTermColor);
 
 #if !__INSIDE_WINDOWS
@@ -87,7 +84,7 @@ void UtilsTests::TestGuidToString()
 
 void UtilsTests::TestSplitString()
 {
-    std::vector<std::wstring_view> result;
+    til::small_vector<std::wstring_view, 4> result;
     result = SplitString(L"", L';');
     VERIFY_ARE_EQUAL(0u, result.size());
     result = SplitString(L"1", L';');
@@ -201,28 +198,11 @@ void UtilsTests::TestFilterStringForPaste()
                      FilterStringForPaste(unicodeString, FilterOption::CarriageReturnNewline | FilterOption::ControlCodes));
 }
 
-void UtilsTests::TestStringToUint()
+void UtilsTests::TestColorFromHexString()
 {
-    auto success = false;
-    unsigned int value = 0;
-    success = StringToUint(L"", value);
-    VERIFY_IS_FALSE(success);
-    success = StringToUint(L"xyz", value);
-    VERIFY_IS_FALSE(success);
-    success = StringToUint(L";", value);
-    VERIFY_IS_FALSE(success);
-
-    success = StringToUint(L"1", value);
-    VERIFY_IS_TRUE(success);
-    VERIFY_ARE_EQUAL(1u, value);
-
-    success = StringToUint(L"123", value);
-    VERIFY_IS_TRUE(success);
-    VERIFY_ARE_EQUAL(123u, value);
-
-    success = StringToUint(L"123456789", value);
-    VERIFY_IS_TRUE(success);
-    VERIFY_ARE_EQUAL(123456789u, value);
+    VERIFY_ARE_EQUAL(til::color(0xAA, 0xBB, 0xCC), ColorFromHexString("#abc"));
+    VERIFY_ARE_EQUAL(til::color(0xAB, 0xCD, 0xEF), ColorFromHexString("#abcdef"));
+    VERIFY_ARE_EQUAL(til::color(0xAB, 0xCD, 0xEF, 0x01), ColorFromHexString("#abcdef01"));
 }
 
 void UtilsTests::TestColorFromXTermColor()
