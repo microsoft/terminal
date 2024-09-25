@@ -864,6 +864,7 @@ INLINEPREFIX
 inproc
 Inputkeyinfo
 Inputreadhandledata
+INPUTSCOPE
 INSERTMODE
 INTERACTIVITYBASE
 INTERCEPTCOPYPASTE
@@ -1290,6 +1291,7 @@ parms
 PATCOPY
 pathcch
 PATTERNID
+pbstr
 pcb
 pcch
 PCCHAR
@@ -1375,9 +1377,11 @@ POSTCHARBREAKS
 POSX
 POSXSCROLL
 POSYSCROLL
+ppbstr
 PPEB
 ppf
 ppidl
+pprg
 PPROC
 ppropvar
 ppsi
@@ -1693,6 +1697,7 @@ srcsrv
 SRCSRVTRG
 srctool
 srect
+SRGS
 srvinit
 srvpipe
 ssa
@@ -1839,7 +1844,6 @@ triaging
 TRIMZEROHEADINGS
 trx
 tsa
-tsattrs
 tsgr
 tsm
 TStr
@@ -1967,10 +1971,8 @@ vswhere
 vtapp
 VTE
 VTID
-vtio
 vtmode
 vtpipeterm
-vtpt
 VTRGB
 VTRGBTo
 vtseq

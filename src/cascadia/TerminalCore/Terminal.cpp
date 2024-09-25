@@ -212,12 +212,6 @@ void Terminal::SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle)
     engine.Dispatch().SetCursorStyle(cursorStyle);
 }
 
-void Terminal::EraseScrollback()
-{
-    auto& engine = reinterpret_cast<OutputStateMachineEngine&>(_stateMachine->Engine());
-    engine.Dispatch().EraseInDisplay(DispatchTypes::EraseType::Scrollback);
-}
-
 bool Terminal::IsXtermBracketedPasteModeEnabled() const noexcept
 {
     return _systemMode.test(Mode::BracketedPaste);
@@ -1262,15 +1256,17 @@ void Terminal::SetSearchHighlights(const std::vector<til::point_span>& highlight
 // Method Description:
 // - Stores the focused search highlighted region in the terminal
 // - If the region isn't empty, it will be brought into view
-void Terminal::SetSearchHighlightFocused(const size_t focusedIdx, til::CoordType searchScrollOffset)
+void Terminal::SetSearchHighlightFocused(const size_t focusedIdx) noexcept
 {
     _assertLocked();
     _searchHighlightFocused = focusedIdx;
+}
 
-    // bring the focused region into the view if the index is in valid range
-    if (focusedIdx < _searchHighlights.size())
+void Terminal::ScrollToSearchHighlight(til::CoordType searchScrollOffset)
+{
+    if (_searchHighlightFocused < _searchHighlights.size())
     {
-        const auto focused = til::at(_searchHighlights, focusedIdx);
+        const auto focused = til::at(_searchHighlights, _searchHighlightFocused);
         const auto adjustedStart = til::point{ focused.start.x, std::max(0, focused.start.y - searchScrollOffset) };
         const auto adjustedEnd = til::point{ focused.end.x, std::max(0, focused.end.y - searchScrollOffset) };
         _ScrollToPoints(adjustedStart, adjustedEnd);

@@ -14,6 +14,16 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     public:
         LaunchViewModel(Model::CascadiaSettings settings);
 
+        // LanguageDisplayConverter maps the given BCP 47 tag to a localized string.
+        // For instance "en-US" produces "English (United States)", while "de-DE" produces
+        // "Deutsch (Deutschland)". This works independently of the user's locale.
+        static winrt::hstring LanguageDisplayConverter(const winrt::hstring& tag);
+
+        bool LanguageSelectorAvailable();
+        winrt::Windows::Foundation::Collections::IObservableVector<winrt::hstring> LanguageList();
+        winrt::Windows::Foundation::IInspectable CurrentLanguage();
+        void CurrentLanguage(const winrt::Windows::Foundation::IInspectable& tag);
+
         winrt::hstring LaunchParametersCurrentValue();
         double InitialPosX();
         double InitialPosY();
@@ -35,6 +45,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void CurrentLaunchMode(const winrt::Windows::Foundation::IInspectable& enumEntry);
         winrt::Windows::Foundation::Collections::IObservableVector<winrt::Microsoft::Terminal::Settings::Editor::EnumEntry> LaunchModeList();
 
+        GETSET_BINDABLE_ENUM_SETTING(DefaultInputScope, winrt::Microsoft::Terminal::Control::DefaultInputScope, _Settings.GlobalSettings().DefaultInputScope);
         GETSET_BINDABLE_ENUM_SETTING(FirstWindowPreference, Model::FirstWindowPreference, _Settings.GlobalSettings().FirstWindowPreference);
         GETSET_BINDABLE_ENUM_SETTING(WindowingBehavior, Model::WindowingMode, _Settings.GlobalSettings().WindowingBehavior);
 
@@ -45,6 +56,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     private:
         Model::CascadiaSettings _Settings;
+        winrt::Windows::Foundation::Collections::IObservableVector<winrt::hstring> _languageList;
+        winrt::Windows::Foundation::IInspectable _currentLanguage;
         bool _useDefaultLaunchPosition;
 
         winrt::Windows::Foundation::Collections::IObservableVector<winrt::Microsoft::Terminal::Settings::Editor::EnumEntry> _LaunchModeList;

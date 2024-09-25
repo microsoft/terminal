@@ -7,6 +7,7 @@
 
 #include "output.h"
 #include "handle.h"
+#include "_stream.h"
 #include "../interactivity/inc/ServiceLocator.hpp"
 
 using namespace Microsoft::Console;
@@ -197,7 +198,9 @@ void PtySignalInputThread::_DoClearBuffer() const
     }
 
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    THROW_IF_FAILED(gci.GetActiveOutputBuffer().ClearBuffer());
+    auto& screenInfo = gci.GetActiveOutputBuffer();
+    auto& stateMachine = screenInfo.GetStateMachine();
+    stateMachine.ProcessString(L"\x1b[H\x1b[2J");
 }
 
 void PtySignalInputThread::_DoShowHide(const ShowHideData& data)
