@@ -89,6 +89,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 #endif
 
         winrt::guid _defaultProfile{};
+        bool _fixupsAppliedDuringLoad{ false };
         bool _legacyReloadEnvironmentVariables{ true };
         winrt::com_ptr<implementation::ActionMap> _actionMap{ winrt::make_self<implementation::ActionMap>() };
         std::set<std::string> _changeLog;
