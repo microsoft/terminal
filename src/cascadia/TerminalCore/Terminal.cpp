@@ -96,7 +96,6 @@ void Terminal::UpdateSettings(ICoreSettings settings)
     }
 
     _getTerminalInput().ForceDisableWin32InputMode(settings.ForceVTInput());
-    _getTerminalInput().SetKeypadModeSupport(settings.AllowKeypadMode());
 
     if (settings.TabColor() == nullptr)
     {
@@ -216,12 +215,6 @@ void Terminal::SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle)
 {
     auto& engine = reinterpret_cast<OutputStateMachineEngine&>(_stateMachine->Engine());
     engine.Dispatch().SetCursorStyle(cursorStyle);
-}
-
-void Terminal::EraseScrollback()
-{
-    auto& engine = reinterpret_cast<OutputStateMachineEngine&>(_stateMachine->Engine());
-    engine.Dispatch().EraseInDisplay(DispatchTypes::EraseType::Scrollback);
 }
 
 void Terminal::SetVtChecksumReportSupport(const bool enabled)

@@ -349,7 +349,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         _RainbowSuggestions = profile.RainbowSuggestions();
         _ForceVTInput = profile.ForceVTInput();
         _AllowVtChecksumReport = profile.AllowVtChecksumReport();
-        _AllowKeypadMode = profile.AllowKeypadMode();
     }
 
     // Method Description:

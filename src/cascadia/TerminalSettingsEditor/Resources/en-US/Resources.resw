@@ -560,10 +560,6 @@
     <value>Allow DECRQCRA (Request Checksum of Rectangular Area)</value>
     <comment>{Locked="DECRQCRA"}{Locked="Request Checksum of Rectangular Area"}Header for a control to toggle support for the DECRQCRA control sequence.</comment>
   </data>
-  <data name="Profile_AllowKeypadMode.Header" xml:space="preserve">
-    <value>Allow DECKPAM and DECKPNM (Keypad Numeric Mode)</value>
-    <comment>{Locked="DECKPAM"}{Locked="DECKPNM"}{Locked="Keypad Numeric Mode"}Header for a control to toggle support for the DECKPAM and DECKPNM control sequences.</comment>
-  </data>
   <data name="Globals_AllowHeadless.Header" xml:space="preserve">
     <value>Allow Windows Terminal to run in the background</value>
     <comment>Header for a control to toggle support for Windows Terminal to run in the background.</comment>

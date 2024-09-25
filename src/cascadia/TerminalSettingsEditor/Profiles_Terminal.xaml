@@ -60,16 +60,6 @@
                               Style="{StaticResource ToggleSwitchInExpanderStyle}" />
             </local:SettingContainer>
 
-            <!--  Allow Keypad Mode  -->
-            <local:SettingContainer x:Uid="Profile_AllowKeypadMode"
-                                    ClearSettingValue="{x:Bind Profile.ClearAllowKeypadMode}"
-                                    HasSettingValue="{x:Bind Profile.HasAllowKeypadMode, Mode=OneWay}"
-                                    SettingOverrideSource="{x:Bind Profile.AllowKeypadModeOverrideSource, Mode=OneWay}"
-                                    Visibility="{x:Bind Profile.AllowKeypadModeAvailable}">
-                <ToggleSwitch IsOn="{x:Bind Profile.AllowKeypadMode, Mode=TwoWay}"
-                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
-            </local:SettingContainer>
-
             <!--  Answerback Message  -->
             <local:SettingContainer x:Uid="Profile_AnswerbackMessage"
                                     ClearSettingValue="{x:Bind Profile.ClearAnswerbackMessage}"

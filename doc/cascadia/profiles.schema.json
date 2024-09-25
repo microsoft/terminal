@@ -2370,11 +2370,6 @@
           "description": "When set to true, the terminal will support the DECRQCRA (Request Checksum of Rectangular Area) escape sequence.",
           "type": "boolean"
         },
-        "compatibility.allowDECNKM": {
-          "default": false,
-          "description": "When set to true, the terminal will support the DECKPAM and DECKPNM (Keypad Numeric Mode) escape sequences.",
-          "type": "boolean"
-        },
         "copyFormatting": {
           "default": true,
           "description": "When set to `true`, the color and font formatting of selected text is also copied to your clipboard. When set to `false`, only plain text is copied to your clipboard. An array of specific formats can also be used. Supported array values include `html` and `rtf`. Plain text is always copied.",

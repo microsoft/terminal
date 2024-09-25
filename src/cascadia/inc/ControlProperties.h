@@ -52,8 +52,7 @@
     X(bool, AutoMarkPrompts)                                                                                      \
     X(bool, RepositionCursorWithMouse, false)                                                                     \
     X(bool, RainbowSuggestions)                                                                                   \
-    X(bool, AllowVtChecksumReport)                                                                                \
-    X(bool, AllowKeypadMode)
+    X(bool, AllowVtChecksumReport)
 
 // --------------------------- Control Settings ---------------------------
 //  All of these settings are defined in IControlSettings.

@@ -22,7 +22,6 @@ namespace Microsoft.Terminal.Core
 
         Boolean ForceVTInput;
         Boolean AllowVtChecksumReport;
-        Boolean AllowKeypadMode;
         Boolean TrimBlockSelection;
         Boolean DetectURLs;
 

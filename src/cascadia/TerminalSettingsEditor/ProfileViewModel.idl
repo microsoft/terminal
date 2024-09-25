@@ -75,7 +75,6 @@ namespace Microsoft.Terminal.Settings.Editor
         Boolean ShowMarksAvailable { get; };
         Boolean AutoMarkPromptsAvailable { get; };
         Boolean RepositionCursorWithMouseAvailable { get; };
-        Boolean AllowKeypadModeAvailable { get; };
 
         String EvaluatedIcon { get; };
 
@@ -115,7 +114,6 @@ namespace Microsoft.Terminal.Settings.Editor
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, RepositionCursorWithMouse);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, ForceVTInput);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, AllowVtChecksumReport);
-        OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, AllowKeypadMode);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(String, AnswerbackMessage);
     }
 }
