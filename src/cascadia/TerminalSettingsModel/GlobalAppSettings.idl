@@ -73,6 +73,7 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_SETTING(Boolean, TrimPaste);
         INHERITABLE_SETTING(LaunchPosition, InitialPosition);
         INHERITABLE_SETTING(Boolean, CenterOnLaunch);
+        INHERITABLE_SETTING(Microsoft.Terminal.Control.DefaultInputScope, DefaultInputScope);
         INHERITABLE_SETTING(FirstWindowPreference, FirstWindowPreference);
         INHERITABLE_SETTING(LaunchMode, LaunchMode);
         INHERITABLE_SETTING(Boolean, SnapToGridOnResize);

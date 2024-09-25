@@ -90,6 +90,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 #endif
 
         winrt::guid _defaultProfile{};
+        bool _fixupsAppliedDuringLoad{ false };
         bool _legacyReloadEnvironmentVariables{ true };
         bool _legacyForceVTInput{ false };
         winrt::com_ptr<implementation::ActionMap> _actionMap{ winrt::make_self<implementation::ActionMap>() };

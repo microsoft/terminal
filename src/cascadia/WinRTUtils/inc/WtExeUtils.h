@@ -1,22 +1,26 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+#pragma once
+
 constexpr std::wstring_view WtExe{ L"wt.exe" };
 constexpr std::wstring_view WtdExe{ L"wtd.exe" };
 constexpr std::wstring_view WindowsTerminalExe{ L"WindowsTerminal.exe" };
 constexpr std::wstring_view LocalAppDataAppsPath{ L"%LOCALAPPDATA%\\Microsoft\\WindowsApps\\" };
 constexpr std::wstring_view ElevateShimExe{ L"elevate-shim.exe" };
 
+// Forward declared from appmodel.h so that we don't need to pull in that header everywhere.
+extern "C" {
+WINBASEAPI LONG WINAPI GetCurrentPackageId(UINT32* bufferLength, BYTE* buffer);
+}
+
 #ifdef WINRT_Windows_ApplicationModel_H
 _TIL_INLINEPREFIX bool IsPackaged()
 {
-    static const auto isPackaged = []() -> bool {
-        try
-        {
-            const auto package = winrt::Windows::ApplicationModel::Package::Current();
-            return true;
-        }
-        catch (...)
-        {
-            return false;
-        }
+    static const auto isPackaged = []() {
+        UINT32 bufferLength = 0;
+        const auto hr = GetCurrentPackageId(&bufferLength, nullptr);
+        return hr != APPMODEL_ERROR_NO_PACKAGE;
     }();
     return isPackaged;
 }
