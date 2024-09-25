@@ -151,7 +151,7 @@ static KeyChord _fromString(std::wstring_view wstr)
     auto vkey = 0;
     auto scanCode = 0;
 
-    for (auto&& part : til::split_iterator{ wstr, L'+' })
+    for (const auto part : til::split_iterator{ wstr, L'+' })
     {
         if (til::equals_insensitive_ascii(part, CTRL_KEY))
         {

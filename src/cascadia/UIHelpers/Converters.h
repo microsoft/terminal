@@ -28,7 +28,7 @@ namespace winrt::Microsoft::Terminal::UI::implementation
         static winrt::Windows::UI::Text::FontWeight DoubleToFontWeight(double value);
         static winrt::Windows::UI::Xaml::Media::SolidColorBrush ColorToBrush(winrt::Windows::UI::Color color);
         static double FontWeightToDouble(winrt::Windows::UI::Text::FontWeight fontWeight);
-        static double MaxValueFromPaddingString(const winrt::hstring& paddingString);
+        static double MaxValueFromPaddingString(std::wstring_view paddingString);
     };
 }
 

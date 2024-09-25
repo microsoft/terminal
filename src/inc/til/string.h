@@ -352,6 +352,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             // * ptr != end, when parsing the characters; if ptr is null, length will be 0 and thus end == ptr
 #pragma warning(push)
 #pragma warning(disable : 26429) // Symbol 'ptr' is never tested for nullness, it can be marked as not_null
+#pragma warning(disable : 26451) // Arithmetic overflow: Using operator '+' on a 4 byte value and then casting the result to a 8 byte value. [...]
 #pragma warning(disable : 26481) // Don't use pointer arithmetic. Use span instead
             auto ptr = str.data();
             const auto end = ptr + str.length();
@@ -445,7 +446,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             }
 
             const auto opt = details::parse_u64<>(str, base);
-            const auto max = uint64_t{ std::numeric_limits<R>::max() } + hasSign;
+            const auto max = gsl::narrow_cast<uint64_t>(std::numeric_limits<R>::max()) + hasSign;
             if (!opt || *opt > max)
             {
                 return {};

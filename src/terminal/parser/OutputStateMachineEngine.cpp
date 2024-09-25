@@ -1009,7 +1009,7 @@ bool OutputStateMachineEngine::_GetOscSetColor(const std::wstring_view string,
     }
 
     std::vector<DWORD> newRgbs;
-    for (auto&& part : parts)
+    for (const auto part : parts)
     {
         if (part == L"?"sv) [[unlikely]]
         {
