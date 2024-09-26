@@ -32,6 +32,14 @@ namespace Microsoft.Terminal.Settings.Editor
         Advanced = 2
     };
 
+    enum IconType
+    {
+        Hidden = 0,
+        FontIcon,
+        Image,
+        Emoji
+    };
+
     runtimeclass ProfileViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged
     {
         Microsoft.Terminal.Settings.Model.TerminalSettings TermSettings { get; };
@@ -63,7 +71,6 @@ namespace Microsoft.Terminal.Settings.Editor
         ProfileSubPage CurrentPage;
         Boolean UseParentProcessDirectory;
         Boolean UseCustomStartingDirectory { get; };
-        Boolean HideIcon;
         AppearanceViewModel DefaultAppearance { get; };
         Guid OriginalProfileGuid { get; };
         Boolean HasUnfocusedAppearance { get; };
@@ -76,6 +83,16 @@ namespace Microsoft.Terminal.Settings.Editor
         Boolean RepositionCursorWithMouseAvailable { get; };
 
         String EvaluatedIcon { get; };
+        String CurrentEmojiIcon;
+        IInspectable CurrentIconType;
+        Windows.Foundation.Collections.IVector<IInspectable> IconTypes { get; };
+        Boolean UsingNoIcon { get; };
+        Boolean UsingBuiltInIcon { get; };
+        Boolean UsingEmojiIcon { get; };
+        Boolean UsingImageIcon { get; };
+
+        IInspectable CurrentBuiltInIcon;
+        Windows.Foundation.Collections.IVector<IInspectable> BuiltInIcons { get; };
 
         void CreateUnfocusedAppearance();
         void DeleteUnfocusedAppearance();

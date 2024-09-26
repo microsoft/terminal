@@ -102,28 +102,87 @@
             <!--  Icon  -->
             <local:SettingContainer x:Uid="Profile_Icon"
                                     ClearSettingValue="{x:Bind Profile.ClearIcon}"
-                                    CurrentValue="{x:Bind Profile.Icon, Mode=OneWay}"
+                                    CurrentValue="{x:Bind Profile, Mode=OneWay}"
                                     HasSettingValue="{x:Bind Profile.HasIcon, Mode=OneWay}"
                                     SettingOverrideSource="{x:Bind Profile.IconOverrideSource, Mode=OneWay}"
-                                    Style="{StaticResource ExpanderSettingContainerStyle}">
-                <StackPanel>
-                    <TextBox x:Uid="Profile_IconBox"
-                             FontFamily="Segoe UI, Segoe Fluent Icons, Segoe MDL2 Assets"
-                             IsEnabled="{x:Bind mtu:Converters.InvertBoolean(Profile.HideIcon), Mode=OneWay}"
-                             IsSpellCheckEnabled="False"
-                             Style="{StaticResource TextBoxSettingStyle}"
-                             Text="{x:Bind Profile.Icon, Mode=TwoWay}"
-                             Visibility="{x:Bind mtu:Converters.InvertedBooleanToVisibility(Profile.HideIcon), Mode=OneWay}" />
-                    <Button x:Uid="Profile_IconBrowse"
-                            Margin="0,10,0,0"
-                            Click="Icon_Click"
-                            Style="{StaticResource BrowseButtonStyle}"
-                            Visibility="{x:Bind mtu:Converters.InvertedBooleanToVisibility(Profile.HideIcon), Mode=OneWay}" />
-                    <CheckBox x:Name="HideIconCheckbox"
-                              x:Uid="Profile_HideIconCheckbox"
-                              Margin="0,5,0,0"
-                              IsChecked="{x:Bind Profile.HideIcon, Mode=TwoWay}" />
-                </StackPanel>
+                                    Style="{StaticResource ExpanderSettingContainerStyleWithComplexPreview}">
+                <!--  TODO CARLOS: figure out way to display "none" instead of preview  -->
+                <local:SettingContainer.CurrentValueTemplate>
+                    <DataTemplate x:DataType="local:ProfileViewModel">
+                        <Grid>
+                            <IconSourceElement Width="16"
+                                               Height="16"
+                                               IconSource="{x:Bind mtu:IconPathConverter.IconSourceWUX(Icon), Mode=OneWay}"
+                                               Visibility="{x:Bind mtu:Converters.InvertedBooleanToVisibility(UsingNoIcon), Mode=OneWay}" />
+                            <TextBlock Margin="0,0,0,0"
+                                       HorizontalAlignment="Right"
+                                       VerticalAlignment="Center"
+                                       FontFamily="Segoe UI, Segoe Fluent Icons, Segoe MDL2 Assets"
+                                       Style="{StaticResource SettingsPageItemDescriptionStyle}"
+                                       Text="{x:Bind Icon, Mode=OneWay}"
+                                       Visibility="{x:Bind mtu:Converters.BooleanToVisibility(UsingNoIcon), Mode=OneWay}" />
+                        </Grid>
+                    </DataTemplate>
+                </local:SettingContainer.CurrentValueTemplate>
+                <local:SettingContainer.Content>
+                    <StackPanel Spacing="10">
+                        <!--  Icon Type  -->
+                        <ComboBox x:Uid="Profile_IconType"
+                                  ItemsSource="{x:Bind Profile.IconTypes}"
+                                  SelectedItem="{x:Bind Profile.CurrentIconType, Mode=TwoWay}">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate x:DataType="local:EnumEntry">
+                                    <TextBlock Text="{x:Bind EnumName}" />
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
+
+                        <!--  Built-In Icon  -->
+                        <ComboBox x:Uid="Profile_BuiltInIcon"
+                                  ItemsSource="{x:Bind Profile.BuiltInIcons}"
+                                  SelectedItem="{x:Bind Profile.CurrentBuiltInIcon, Mode=TwoWay}"
+                                  Visibility="{x:Bind Profile.UsingBuiltInIcon, Mode=OneWay}">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate x:DataType="local:EnumEntry">
+                                    <Grid ColumnSpacing="10">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="16" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+
+                                        <IconSourceElement Grid.Column="0"
+                                                           Width="16"
+                                                           Height="16"
+                                                           IconSource="{x:Bind local:Profiles_Base.BuiltInIconConverter(EnumValue), Mode=OneTime}" />
+                                        <TextBlock Grid.Column="1"
+                                                   Text="{x:Bind EnumName}" />
+                                    </Grid>
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
+
+                        <!--  Image Icon  -->
+                        <StackPanel Visibility="{x:Bind Profile.UsingImageIcon, Mode=OneWay}">
+                            <TextBox x:Uid="Profile_IconBox"
+                                     FontFamily="Segoe UI, Segoe Fluent Icons, Segoe MDL2 Assets"
+                                     IsSpellCheckEnabled="False"
+                                     Style="{StaticResource TextBoxSettingStyle}"
+                                     Text="{x:Bind Profile.Icon, Mode=TwoWay}" />
+                            <Button x:Uid="Profile_IconBrowse"
+                                    Margin="0,10,0,0"
+                                    Click="Icon_Click"
+                                    Style="{StaticResource BrowseButtonStyle}" />
+                        </StackPanel>
+
+                        <!--  Emoji Icon  -->
+                        <TextBox x:Uid="Profile_IconEmojiBox"
+                                 FontFamily="Segoe UI, Segoe Fluent Icons, Segoe MDL2 Assets"
+                                 IsSpellCheckEnabled="False"
+                                 Style="{StaticResource TextBoxSettingStyle}"
+                                 Text="{x:Bind Profile.CurrentEmojiIcon, Mode=TwoWay}"
+                                 Visibility="{x:Bind Profile.UsingEmojiIcon, Mode=OneWay}" />
+                    </StackPanel>
+                </local:SettingContainer.Content>
             </local:SettingContainer>
 
             <!--  Tab Title  -->

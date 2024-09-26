@@ -1911,4 +1911,32 @@
     <value>Use selection background color from color scheme</value>
     <comment>Label for a button directing the user to use the selection background color defined in the terminal's current color scheme.</comment>
   </data>
+  <data name="Profile_IconTypeHidden" xml:space="preserve">
+    <value>Hidden</value>
+    <comment>An option to choose from for the "icon style" dropdown. When selected, the icon will be hidden for the profile.</comment>
+  </data>
+  <data name="Profile_IconTypeImage" xml:space="preserve">
+    <value>Custom Icon</value>
+    <comment>An option to choose from for the "icon style" dropdown. When selected, a custom image can set for the profile's icon.</comment>
+  </data>
+  <data name="Profile_IconTypeEmoji" xml:space="preserve">
+    <value>Emoji</value>
+    <comment>An option to choose from for the "icon style" dropdown. When selected, an emoji can be set for the profile's icon.</comment>
+  </data>
+  <data name="Profile_IconTypeFontIcon" xml:space="preserve">
+    <value>Built-in Icon</value>
+    <comment>An option to choose from for the "icon style" dropdown. When selected, the user can choose from several preselected options to set the profile's icon.</comment>
+  </data>
+  <data name="Profile_IconType.Header" xml:space="preserve">
+    <value>Icon Type</value>
+    <comment>Header for a control allowing the user to select the type of icon they would like to use.</comment>
+  </data>
+  <data name="Profile_BuiltInIcon.Header" xml:space="preserve">
+    <value>Built-In Icons</value>
+    <comment>Header for a control allowing the user to select from a list of built-in icons</comment>
+  </data>
+  <data name="Profile_IconEmojiBox.PlaceholderText" xml:space="preserve">
+    <value>Use "Win + period" to open the emoji picker</value>
+    <comment>"Win + period" refers to the OS key binding to open the emoji picker.</comment>
+  </data>
 </root>

@@ -10,6 +10,7 @@
 #include <LibraryResources.h>
 #include "../WinRTUtils/inc/Utils.h"
 #include "../../renderer/base/FontCache.h"
+#include "SegoeFluentIconList.h"
 
 using namespace winrt::Windows::UI::Text;
 using namespace winrt::Windows::UI::Xaml;
@@ -26,6 +27,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     Windows::Foundation::Collections::IObservableVector<Editor::Font> ProfileViewModel::_MonospaceFontList{ nullptr };
     Windows::Foundation::Collections::IObservableVector<Editor::Font> ProfileViewModel::_FontList{ nullptr };
+    Windows::Foundation::Collections::IVector<IInspectable> ProfileViewModel::_BuiltInIcons{ nullptr };
 
     static constexpr std::wstring_view HideIconValue{ L"none" };
 
@@ -39,6 +41,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         INITIALIZE_BINDABLE_ENUM_SETTING(AntiAliasingMode, TextAntialiasingMode, winrt::Microsoft::Terminal::Control::TextAntialiasingMode, L"Profile_AntialiasingMode", L"Content");
         INITIALIZE_BINDABLE_ENUM_SETTING_REVERSE_ORDER(CloseOnExitMode, CloseOnExitMode, winrt::Microsoft::Terminal::Settings::Model::CloseOnExitMode, L"Profile_CloseOnExit", L"Content");
         INITIALIZE_BINDABLE_ENUM_SETTING(ScrollState, ScrollbarState, winrt::Microsoft::Terminal::Control::ScrollbarState, L"Profile_ScrollbarVisibility", L"Content");
+
+        // set up IconTypes
+        _IconTypes = winrt::single_threaded_vector<IInspectable>();
+        _IconTypes.Append(make<EnumEntry>(RS_(L"Profile_IconTypeHidden"), box_value(IconType::Hidden)));
+        _IconTypes.Append(make<EnumEntry>(RS_(L"Profile_IconTypeFontIcon"), box_value(IconType::FontIcon)));
+        _IconTypes.Append(make<EnumEntry>(RS_(L"Profile_IconTypeEmoji"), box_value(IconType::Emoji)));
+        _IconTypes.Append(make<EnumEntry>(RS_(L"Profile_IconTypeImage"), box_value(IconType::Image)));
+        _DeduceCurrentIconType();
 
         // Add a property changed handler to our own property changed event.
         // This propagates changes from the settings model to anybody listening to our
@@ -74,7 +84,19 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             }
             else if (viewModelProperty == L"Icon")
             {
-                _NotifyChanges(L"HideIcon");
+                _DeduceCurrentIconType();
+            }
+            else if (viewModelProperty == L"CurrentIconType")
+            {
+                _NotifyChanges(L"UsingNoIcon", L"UsingBuiltInIcon", L"UsingEmojiIcon", L"UsingImageIcon");
+            }
+            else if (viewModelProperty == L"CurrentBuiltInIcon")
+            {
+                Icon(unbox_value<hstring>(_CurrentBuiltInIcon.as<Editor::EnumEntry>().EnumValue()));
+            }
+            else if (viewModelProperty == L"CurrentEmojiIcon")
+            {
+                Icon(CurrentEmojiIcon());
             }
         });
 
@@ -90,12 +112,70 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             UpdateFontList();
         }
 
+        if (!_BuiltInIcons)
+        {
+            _UpdateBuiltInIcons();
+        }
+        _DeduceCurrentBuiltInIcon();
+
         if (profile.HasUnfocusedAppearance())
         {
             _unfocusedAppearanceViewModel = winrt::make<implementation::AppearanceViewModel>(profile.UnfocusedAppearance().try_as<AppearanceConfig>());
         }
 
         _defaultAppearanceViewModel.IsDefault(true);
+    }
+
+    void ProfileViewModel::_UpdateBuiltInIcons()
+    {
+        _BuiltInIcons = single_threaded_vector<IInspectable>();
+        for (auto& [val, name] : s_SegoeFluentIcons)
+        {
+            _BuiltInIcons.Append(make<EnumEntry>(hstring{ name }, box_value(val)));
+        }
+    }
+
+    void ProfileViewModel::_DeduceCurrentIconType()
+    {
+        const auto& profileIcon = _profile.Icon();
+        if (profileIcon == HideIconValue)
+        {
+            CurrentIconType(_IconTypes.GetAt(0));
+        }
+        else if (L"\uE700" <= profileIcon && profileIcon <= L"\uF8B3")
+        {
+            CurrentIconType(_IconTypes.GetAt(1));
+            _DeduceCurrentBuiltInIcon();
+        }
+        else if (profileIcon.size() <= 2)
+        {
+            // We already did a range check for MDL2 Assets in the previous one,
+            // so if we're out of that range but still short, assume we're an emoji
+            CurrentIconType(_IconTypes.GetAt(2));
+        }
+        else
+        {
+            CurrentIconType(_IconTypes.GetAt(3));
+        }
+    }
+
+    void ProfileViewModel::_DeduceCurrentBuiltInIcon()
+    {
+        if (!_BuiltInIcons)
+        {
+            _UpdateBuiltInIcons();
+        }
+        const auto& profileIcon = Icon();
+        for (uint32_t i = 0; i < _BuiltInIcons.Size(); i++)
+        {
+            const auto& builtIn = _BuiltInIcons.GetAt(i);
+            if (profileIcon == unbox_value<hstring>(builtIn.as<Editor::EnumEntry>().EnumValue()))
+            {
+                _CurrentBuiltInIcon = builtIn;
+                return;
+            }
+        }
+        _CurrentBuiltInIcon = _BuiltInIcons.GetAt(0);
     }
 
     Model::TerminalSettings ProfileViewModel::TermSettings() const
@@ -328,24 +408,80 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
-    bool ProfileViewModel::HideIcon()
+    void ProfileViewModel::CurrentIconType(const Windows::Foundation::IInspectable& value)
     {
-        return Icon() == HideIconValue;
+        if (_currentIconType != value)
+        {
+            // Switching from...
+            if (_currentIconType && unbox_value<IconType>(_currentIconType.as<Editor::EnumEntry>().EnumValue()) == IconType::Image)
+            {
+                // Stash the current value of Icon. If the user
+                // switches out of then back to IconType::Image, we want
+                // the path that we display in the text box to remain unchanged.
+                _lastIconPath = Icon();
+            }
+
+            // Set the member here instead of after setting Icon() below!
+            // We have an Icon property changed handler defined for when we discard changes.
+            // Inadvertently, that means that we call this setter again.
+            // Setting the member here means that we early exit at the beginning of the function
+            //  because _currentIconType == value.
+            _currentIconType = value;
+
+            // Switched to...
+            switch (unbox_value<IconType>(value.as<Editor::EnumEntry>().EnumValue()))
+            {
+            case IconType::Hidden:
+            {
+                Icon(HideIconValue);
+                break;
+            }
+            case IconType::Image:
+            {
+                if (!_lastIconPath.empty())
+                {
+                    // Conversely, if we switch to Image,
+                    // retrieve that saved value and apply it
+                    Icon(_lastIconPath);
+                    _NotifyChanges(L"Icon");
+                }
+                break;
+            }
+            case IconType::FontIcon:
+            {
+                if (_CurrentBuiltInIcon)
+                {
+                    Icon(unbox_value<hstring>(_CurrentBuiltInIcon.as<Editor::EnumEntry>().EnumValue()));
+                }
+                break;
+            }
+            case IconType::Emoji:
+            {
+                CurrentEmojiIcon({});
+            }
+            }
+            _NotifyChanges(L"CurrentIconType");
+        }
+    };
+
+    bool ProfileViewModel::UsingNoIcon() const
+    {
+        return _currentIconType == _IconTypes.GetAt(0);
     }
-    void ProfileViewModel::HideIcon(const bool hide)
+
+    bool ProfileViewModel::UsingBuiltInIcon() const
     {
-        if (hide)
-        {
-            // Stash the current value of Icon. If the user
-            // checks and un-checks the "Hide Icon" checkbox, we want
-            // the path that we display in the text box to remain unchanged.
-            _lastIcon = Icon();
-            Icon(HideIconValue);
-        }
-        else
-        {
-            Icon(_lastIcon);
-        }
+        return _currentIconType == _IconTypes.GetAt(1);
+    }
+
+    bool ProfileViewModel::UsingEmojiIcon() const
+    {
+        return _currentIconType == _IconTypes.GetAt(2);
+    }
+
+    bool ProfileViewModel::UsingImageIcon() const
+    {
+        return _currentIconType == _IconTypes.GetAt(3);
     }
 
     bool ProfileViewModel::IsBellStyleFlagSet(const uint32_t flag)
