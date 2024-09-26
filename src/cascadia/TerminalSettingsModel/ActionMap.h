@@ -107,6 +107,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         std::vector<Model::Command> _updateLocalSnippetCache(winrt::hstring currentWorkingDirectory);
 
+        void _CommandIDChangedHandler(const Model::Command& senderCmd, const winrt::hstring& oldID);
+
         Windows::Foundation::Collections::IMap<hstring, Model::ActionAndArgs> _AvailableActionsCache{ nullptr };
         Windows::Foundation::Collections::IMap<hstring, Model::Command> _NameMapCache{ nullptr };
         Windows::Foundation::Collections::IMap<Control::KeyChord, Model::Command> _GlobalHotkeysCache{ nullptr };

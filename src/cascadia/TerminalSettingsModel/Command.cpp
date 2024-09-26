@@ -115,8 +115,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     void Command::ID(const hstring& ID) noexcept
     {
-        // todo: the action map needs to be updated - probably have an event here?
+        const auto oldID = _ID;
         _ID = ID;
+        IDChanged.raise(*this, oldID);
     }
 
     void Command::GenerateID()
