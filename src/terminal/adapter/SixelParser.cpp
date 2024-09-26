@@ -341,6 +341,11 @@ void SixelParser::_initRasterAttributes(const VTInt macroParameter, const Dispat
 
     // By default, the filled area will cover the maximum extent allowed.
     _backgroundSize = { til::CoordTypeMax, til::CoordTypeMax };
+
+    // If the requested background area can not initially be filled, we'll
+    // handle the rest of it on demand when the image is resized. But this
+    // will be determined later in the _fillImageBackground method.
+    _resizeFillRequired = false;
 }
 
 void SixelParser::_updateRasterAttributes(const VTParameters& rasterAttributes)
@@ -647,6 +652,10 @@ void SixelParser::_resizeImageBuffer(const til::CoordType requiredHeight)
     {
         static constexpr auto transparentPixel = IndexedPixel{ .transparent = true };
         _imageBuffer.resize(requiredSize, transparentPixel);
+        if (_resizeFillRequired)
+        {
+            _fillImageBackground(requiredHeight);
+        }
     }
 }
 
@@ -656,25 +665,30 @@ void SixelParser::_fillImageBackground()
     {
         _backgroundFillRequired = false;
 
-        const auto backgroundHeight = std::min(_backgroundSize.height, _availablePixelHeight);
-        const auto backgroundWidth = std::min(_backgroundSize.width, _availablePixelWidth);
-        _resizeImageBuffer(backgroundHeight);
-
         // When a background fill is requested, we prefill the buffer with the 0
         // color index, up to the boundaries set by the raster attributes (or if
-        // none were given, up to the page boundaries). The actual image output
-        // isn't limited by the background dimensions though.
-        static constexpr auto backgroundPixel = IndexedPixel{};
-        const auto backgroundOffset = _imageCursor.y * _imageMaxWidth;
-        auto dst = std::next(_imageBuffer.begin(), backgroundOffset);
-        for (auto i = 0; i < backgroundHeight; i++)
-        {
-            std::fill_n(dst, backgroundWidth, backgroundPixel);
-            std::advance(dst, _imageMaxWidth);
-        }
-
-        _imageWidth = std::max(_imageWidth, backgroundWidth);
+        // none were given, up to the page boundaries). If the requested height
+        // is more than the available height, we'll continue filling the rest of
+        // it on demand when the image is resized (see above).
+        const auto backgroundHeight = std::min(_backgroundSize.height, _availablePixelHeight);
+        _resizeImageBuffer(backgroundHeight);
+        _fillImageBackground(backgroundHeight);
+        _resizeFillRequired = _backgroundSize.height > _availablePixelHeight;
     }
+}
+
+void SixelParser::_fillImageBackground(const int backgroundHeight)
+{
+    static constexpr auto backgroundPixel = IndexedPixel{};
+    const auto backgroundWidth = std::min(_backgroundSize.width, _availablePixelWidth);
+    const auto backgroundOffset = _imageCursor.y * _imageMaxWidth;
+    auto dst = std::next(_imageBuffer.begin(), backgroundOffset);
+    for (auto i = 0; i < backgroundHeight; i++)
+    {
+        std::fill_n(dst, backgroundWidth, backgroundPixel);
+        std::advance(dst, _imageMaxWidth);
+    }
+    _imageWidth = std::max(_imageWidth, backgroundWidth);
 }
 
 void SixelParser::_writeToImageBuffer(int sixelValue, int repeatCount)
