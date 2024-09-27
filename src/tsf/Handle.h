@@ -5,6 +5,7 @@
 
 namespace Microsoft::Console::Render
 {
+    struct Composition;
     class Renderer;
 }
 
@@ -24,7 +25,6 @@ namespace Microsoft::Console::TSF
         virtual RECT GetViewport() = 0;
         virtual RECT GetCursorPosition() = 0;
         virtual void HandleOutput(std::wstring_view text) = 0;
-        virtual Render::Renderer* GetRenderer() = 0;
     };
 
     // A pimpl idiom wrapper for `Implementation` so that we don't pull in all the TSF headers everywhere.
@@ -48,6 +48,7 @@ namespace Microsoft::Console::TSF
         void Focus(IDataProvider* provider) const;
         void Unfocus(IDataProvider* provider) const;
         bool HasActiveComposition() const noexcept;
+        Render::Composition GetComposition() const;
 
     private:
         Implementation* _impl = nullptr;

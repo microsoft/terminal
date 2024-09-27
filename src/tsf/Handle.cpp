@@ -5,6 +5,7 @@
 #include "Handle.h"
 
 #include "Implementation.h"
+#include "../renderer/inc/IRenderData.hpp"
 
 using namespace Microsoft::Console::TSF;
 
@@ -84,4 +85,9 @@ void Handle::Unfocus(IDataProvider* provider) const
 bool Handle::HasActiveComposition() const noexcept
 {
     return _impl ? _impl->HasActiveComposition() : false;
+}
+
+Microsoft::Console::Render::Composition Handle::GetComposition() const
+{
+    return _impl ? _impl->GetComposition() : Render::Composition{};
 }

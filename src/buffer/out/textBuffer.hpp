@@ -68,6 +68,7 @@ namespace Microsoft::Console::Render
 class TextBuffer final
 {
 public:
+    TextBuffer() = default;
     TextBuffer(const til::size screenBufferSize,
                const TextAttribute defaultAttributes,
                const UINT cursorSize,
@@ -164,11 +165,7 @@ public:
 
     Microsoft::Console::Render::Renderer* GetRenderer() noexcept;
 
-    void NotifyPaintFrame() noexcept;
-    void TriggerRedraw(const Microsoft::Console::Types::Viewport& viewport);
-    void TriggerRedrawAll();
-    void TriggerScroll();
-    void TriggerScroll(const til::point delta);
+    void TriggerRedraw() noexcept;
     void TriggerNewTextNotification(const std::wstring_view newText);
 
     til::point GetWordStart(const til::point target, const std::wstring_view wordDelimiters, bool accessibilityMode = false, std::optional<til::point> limitOptional = std::nullopt) const;
@@ -401,7 +398,7 @@ private:
     til::CoordType _firstRow = 0; // indexes top row (not necessarily 0)
     uint64_t _lastMutationId = 0;
 
-    Cursor _cursor;
+    Cursor _cursor{ 25, *this };
     bool _isActiveBuffer = false;
 
 #ifdef UNIT_TESTING

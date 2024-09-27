@@ -29,7 +29,7 @@ namespace Microsoft::Terminal
     {
     public:
         TermControlUiaProvider() = default;
-        HRESULT RuntimeClassInitialize(_In_ Console::Render::IRenderData* const renderData,
+        HRESULT RuntimeClassInitialize(_In_ Console::Types::IUiaData* const renderData,
                                        _In_ ::Microsoft::Console::Types::IControlAccessibilityInfo* controlInfo) noexcept;
 
         // IRawElementProviderSimple methods

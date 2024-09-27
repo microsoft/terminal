@@ -22,7 +22,7 @@ Author(s):
 #pragma once
 
 #include "../buffer/out/textBuffer.hpp"
-#include "../renderer/inc/IRenderData.hpp"
+#include "../renderer/inc/FontInfo.hpp"
 #include "UiaTextRangeBase.hpp"
 #include "IUiaTraceable.h"
 
@@ -34,12 +34,33 @@ namespace Microsoft::Console::Types
 {
     class Viewport;
 
+    class IUiaData
+    {
+    public:
+        virtual ~IUiaData() = default;
+        
+        virtual void LockConsole() noexcept = 0;
+        virtual void UnlockConsole() noexcept = 0;
+        virtual Viewport GetViewport() noexcept = 0;
+        virtual til::point GetTextBufferEndPosition() const noexcept = 0;
+        virtual TextBuffer& GetTextBuffer() const noexcept = 0;
+        virtual const FontInfo& GetFontInfo() const noexcept = 0;
+        virtual std::pair<COLORREF, COLORREF> GetAttributeColors(const TextAttribute& attr) const noexcept = 0;
+        virtual const bool IsSelectionActive() const = 0;
+        virtual const bool IsBlockSelection() const = 0;
+        virtual void ClearSelection() = 0;
+        virtual void SelectNewRegion(const til::point coordStart, const til::point coordEnd) = 0;
+        virtual const til::point GetSelectionAnchor() const noexcept = 0;
+        virtual const til::point GetSelectionEnd() const noexcept = 0;
+        virtual const bool IsUiaDataInitialized() const noexcept = 0;
+    };
+
     class ScreenInfoUiaProviderBase :
         public WRL::RuntimeClass<WRL::RuntimeClassFlags<WRL::ClassicCom | WRL::InhibitFtmBase>, IRawElementProviderSimple, IRawElementProviderFragment, ITextProvider>,
         public IUiaTraceable
     {
     public:
-        virtual HRESULT RuntimeClassInitialize(_In_ Render::IRenderData* pData, _In_ std::wstring_view wordDelimiters = UiaTextRangeBase::DefaultWordDelimiter) noexcept;
+        virtual HRESULT RuntimeClassInitialize(_In_ IUiaData* pData, _In_ std::wstring_view wordDelimiters = UiaTextRangeBase::DefaultWordDelimiter) noexcept;
 
         ScreenInfoUiaProviderBase(const ScreenInfoUiaProviderBase&) = delete;
         ScreenInfoUiaProviderBase(ScreenInfoUiaProviderBase&&) = delete;
@@ -104,7 +125,7 @@ namespace Microsoft::Console::Types
                                         _COM_Outptr_result_maybenull_ UiaTextRangeBase** ppUtr) = 0;
 
         // weak reference to IRenderData
-        Render::IRenderData* _pData{ nullptr };
+        IUiaData* _pData{ nullptr };
 
         std::wstring _wordDelimiters{};
 

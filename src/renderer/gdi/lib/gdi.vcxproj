@@ -11,16 +11,13 @@
   <Import Project="$(SolutionDir)src\common.build.pre.props" />
   <Import Project="$(SolutionDir)src\common.nugetversions.props" />
   <ItemGroup>
-    <ClCompile Include="..\invalidate.cpp" />
-    <ClCompile Include="..\math.cpp" />
-    <ClCompile Include="..\paint.cpp" />
-    <ClCompile Include="..\state.cpp" />
+    <ClCompile Include="..\GdiEngine.cpp" />
     <ClCompile Include="..\precomp.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\gdirenderer.hpp" />
+    <ClInclude Include="..\GdiEngine.h" />
     <ClInclude Include="..\precomp.h" />
   </ItemGroup>
   <ItemDefinitionGroup>

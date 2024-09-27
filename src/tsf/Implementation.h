@@ -3,10 +3,13 @@
 
 #pragma once
 
+#include <til/mutex.h>
+
 class TextAttribute;
 
 namespace Microsoft::Console::Render
 {
+    struct Composition;
     class Renderer;
 }
 
@@ -27,6 +30,7 @@ namespace Microsoft::Console::TSF
         void Focus(IDataProvider* provider);
         void Unfocus(IDataProvider* provider);
         bool HasActiveComposition() const noexcept;
+        Render::Composition GetComposition() const;
 
         // IUnknown methods
         STDMETHODIMP QueryInterface(REFIID riid, void** ppvObj) noexcept override;
@@ -130,5 +134,7 @@ namespace Microsoft::Console::TSF
 
         AnsiInputScope _ansiInputScope{ this };
         inline static std::atomic<bool> _wantsAnsiInputScope{ false };
+
+        til::shared_mutex<Render::Composition> _activeComposition;
     };
 }

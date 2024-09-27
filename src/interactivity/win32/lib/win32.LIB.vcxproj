@@ -57,11 +57,6 @@
     <ClInclude Include="..\WindowIo.hpp" />
     <ClInclude Include="..\windowUiaProvider.hpp" />
   </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\..\..\renderer\atlas\atlas.vcxproj">
-      <Project>{8222900C-8B6C-452A-91AC-BE95DB04B95F}</Project>
-    </ProjectReference>
-  </ItemGroup>
   <ItemDefinitionGroup>
     <ClCompile>
       <AdditionalIncludeDirectories>..\..\..\inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>

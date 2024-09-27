@@ -10,35 +10,18 @@ using namespace Microsoft::Console::Types;
 
 bool Search::IsStale(const Microsoft::Console::Render::IRenderData& renderData, const std::wstring_view& needle, SearchFlag flags) const noexcept
 {
-    return _renderData != &renderData ||
-           _needle != needle ||
-           _flags != flags ||
-           _lastMutationId != renderData.GetTextBuffer().GetLastMutationId();
+    UNREFERENCED_PARAMETER(renderData);
+    UNREFERENCED_PARAMETER(needle);
+    UNREFERENCED_PARAMETER(flags);
+    return false;
 }
 
 void Search::Reset(Microsoft::Console::Render::IRenderData& renderData, const std::wstring_view& needle, SearchFlag flags, bool reverse)
 {
-    const auto& textBuffer = renderData.GetTextBuffer();
-
-    _renderData = &renderData;
-    _needle = needle;
-    _flags = flags;
-    _lastMutationId = textBuffer.GetLastMutationId();
-
-    auto result = textBuffer.SearchText(needle, _flags);
-    _ok = result.has_value();
-    _results = std::move(result).value_or(std::vector<til::point_span>{});
-    _index = reverse ? gsl::narrow_cast<ptrdiff_t>(_results.size()) - 1 : 0;
-    _step = reverse ? -1 : 1;
-
-    if (_renderData->IsSelectionActive())
-    {
-        MoveToPoint(_renderData->GetTextBuffer().ScreenToBufferPosition(_renderData->GetSelectionAnchor()));
-    }
-    else if (const auto span = _renderData->GetSearchHighlightFocused())
-    {
-        MoveToPoint(_step > 0 ? span->start : span->end);
-    }
+    UNREFERENCED_PARAMETER(renderData);
+    UNREFERENCED_PARAMETER(needle);
+    UNREFERENCED_PARAMETER(flags);
+    UNREFERENCED_PARAMETER(reverse);
 }
 
 void Search::MoveToPoint(const til::point anchor) noexcept
@@ -117,18 +100,6 @@ const til::point_span* Search::GetCurrent() const noexcept
 
 bool Search::SelectCurrent() const
 {
-    if (const auto s = GetCurrent())
-    {
-        // Convert buffer selection offsets into the equivalent screen coordinates
-        // required by SelectNewRegion, taking line renditions into account.
-        const auto& textBuffer = _renderData->GetTextBuffer();
-        const auto selStart = textBuffer.BufferToScreenPosition(s->start);
-        const auto selEnd = textBuffer.BufferToScreenPosition(s->end);
-        _renderData->SelectNewRegion(selStart, selEnd);
-        return true;
-    }
-
-    _renderData->ClearSelection();
     return false;
 }
 

@@ -530,7 +530,7 @@ void TextBuffer::Replace(til::CoordType row, const TextAttribute& attributes, Ro
     r.ReplaceText(state);
     r.ReplaceAttributes(state.columnBegin, state.columnEnd, attributes);
     ImageSlice::EraseCells(r, state.columnBegin, state.columnEnd);
-    TriggerRedraw(Viewport::FromExclusive({ state.columnBeginDirty, row, state.columnEndDirty, row + 1 }));
+    TriggerRedraw();
 }
 
 void TextBuffer::Insert(til::CoordType row, const TextAttribute& attributes, RowWriteState& state)
@@ -564,7 +564,7 @@ void TextBuffer::Insert(til::CoordType row, const TextAttribute& attributes, Row
     // Image content at the insert position needs to be erased.
     ImageSlice::EraseCells(r, state.columnBegin, restoreState.columnBegin);
 
-    TriggerRedraw(Viewport::FromExclusive({ state.columnBeginDirty, row, restoreState.columnEndDirty, row + 1 }));
+    TriggerRedraw();
 }
 
 // Fills an area of the buffer with a given fill character(s) and attributes.
@@ -618,7 +618,7 @@ void TextBuffer::FillRect(const til::rect& rect, const std::wstring_view& fill, 
             r.CopyTextFrom(state);
             r.ReplaceAttributes(rect.left, rect.right, attributes);
             ImageSlice::EraseCells(r, rect.left, rect.right);
-            TriggerRedraw(Viewport::FromExclusive({ state.columnBeginDirty, y, state.columnEndDirty, y + 1 }));
+            TriggerRedraw();
         }
     }
 }
@@ -699,10 +699,7 @@ OutputCellIterator TextBuffer::WriteLine(const OutputCellIterator givenIt,
     auto& row = GetMutableRowByOffset(target.y);
     const auto newIt = row.WriteCells(givenIt, target.x, wrap, limitRight);
 
-    // Take the cell distance written and notify that it needs to be repainted.
-    const auto written = newIt.GetCellDistance(givenIt);
-    const auto paint = Viewport::FromDimensions(target, { written, 1 });
-    TriggerRedraw(paint);
+    TriggerRedraw();
 
     return newIt;
 }
@@ -919,7 +916,7 @@ void TextBuffer::SetCurrentLineRendition(const LineRendition lineRendition, cons
             // We also need to make sure the cursor is clamped within the new width.
             GetCursor().SetPosition(ClampPositionWithinLine(cursorPosition));
         }
-        TriggerRedraw(Viewport::FromDimensions({ 0, rowIndex }, { GetSize().Width(), 1 }));
+        TriggerRedraw();
     }
 }
 
@@ -1070,52 +1067,17 @@ Microsoft::Console::Render::Renderer* TextBuffer::GetRenderer() noexcept
     return _renderer;
 }
 
-void TextBuffer::NotifyPaintFrame() noexcept
+void TextBuffer::TriggerRedraw() noexcept
 {
     if (_isActiveBuffer && _renderer)
     {
-        _renderer->NotifyPaintFrame();
-    }
-}
-
-void TextBuffer::TriggerRedraw(const Viewport& viewport)
-{
-    if (_isActiveBuffer && _renderer)
-    {
-        _renderer->TriggerRedraw(viewport);
-    }
-}
-
-void TextBuffer::TriggerRedrawAll()
-{
-    if (_isActiveBuffer && _renderer)
-    {
-        _renderer->TriggerRedrawAll();
-    }
-}
-
-void TextBuffer::TriggerScroll()
-{
-    if (_isActiveBuffer && _renderer)
-    {
-        _renderer->TriggerScroll();
-    }
-}
-
-void TextBuffer::TriggerScroll(const til::point delta)
-{
-    if (_isActiveBuffer && _renderer)
-    {
-        _renderer->TriggerScroll(&delta);
+        _renderer->TriggerRedraw();
     }
 }
 
 void TextBuffer::TriggerNewTextNotification(const std::wstring_view newText)
 {
-    if (_isActiveBuffer && _renderer)
-    {
-        _renderer->TriggerNewTextNotification(newText);
-    }
+    UNREFERENCED_PARAMETER(newText);
 }
 
 // Method Description:

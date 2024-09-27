@@ -16,7 +16,7 @@ static constexpr long _RemoveAlpha(COLORREF color) noexcept
 
 // degenerate range constructor.
 #pragma warning(suppress : 26434) // WRL RuntimeClassInitialize base is a no-op and we need this for MakeAndInitialize
-HRESULT UiaTextRangeBase::RuntimeClassInitialize(_In_ Render::IRenderData* pData, _In_ IRawElementProviderSimple* const pProvider, _In_ std::wstring_view wordDelimiters) noexcept
+HRESULT UiaTextRangeBase::RuntimeClassInitialize(_In_ IUiaData* pData, _In_ IRawElementProviderSimple* const pProvider, _In_ std::wstring_view wordDelimiters) noexcept
 try
 {
     RETURN_HR_IF_NULL(E_INVALIDARG, pProvider);
@@ -40,7 +40,7 @@ try
 CATCH_RETURN();
 
 #pragma warning(suppress : 26434) // WRL RuntimeClassInitialize base is a no-op and we need this for MakeAndInitialize
-HRESULT UiaTextRangeBase::RuntimeClassInitialize(_In_ Render::IRenderData* pData,
+HRESULT UiaTextRangeBase::RuntimeClassInitialize(_In_ IUiaData* pData,
                                                  _In_ IRawElementProviderSimple* const pProvider,
                                                  _In_ const Cursor& cursor,
                                                  _In_ std::wstring_view wordDelimiters) noexcept
@@ -72,7 +72,7 @@ try
 CATCH_RETURN();
 
 #pragma warning(suppress : 26434) // WRL RuntimeClassInitialize base is a no-op and we need this for MakeAndInitialize
-HRESULT UiaTextRangeBase::RuntimeClassInitialize(_In_ Render::IRenderData* pData,
+HRESULT UiaTextRangeBase::RuntimeClassInitialize(_In_ IUiaData* pData,
                                                  _In_ IRawElementProviderSimple* const pProvider,
                                                  _In_ const til::point start,
                                                  _In_ const til::point end,
@@ -625,10 +625,11 @@ try
     // -> We need to turn [_beg,_end) into (_beg,_end).
     exclusiveBegin.x--;
 
-    if (_searcher.IsStale(*_pData, queryText, ignoreCase ? SearchFlag::CaseInsensitive : SearchFlag::None))
-    {
-        _searcher.Reset(*_pData, queryText, ignoreCase ? SearchFlag::CaseInsensitive : SearchFlag::None, searchBackward);
-    }
+    // TODO:
+    //if (_searcher.IsStale(*_pData, queryText, ignoreCase ? SearchFlag::CaseInsensitive : SearchFlag::None))
+    //{
+    //    _searcher.Reset(*_pData, queryText, ignoreCase ? SearchFlag::CaseInsensitive : SearchFlag::None, searchBackward);
+    //}
     _searcher.MovePastPoint(searchBackward ? _end : exclusiveBegin);
 
     til::point hitBeg{ til::CoordTypeMax, til::CoordTypeMax };

@@ -6,7 +6,7 @@
 
 #include "Handle.h"
 #include "../buffer/out/TextAttribute.hpp"
-#include "../renderer/base/renderer.hpp"
+#include "../renderer/inc/IRenderData.hpp"
 
 #pragma warning(disable : 4100) // '...': unreferenced formal parameter
 
@@ -142,24 +142,7 @@ void Implementation::Unfocus(IDataProvider* provider)
         return;
     }
 
-    {
-        const auto renderer = _provider->GetRenderer();
-        const auto renderData = renderer->GetRenderData();
-
-        renderData->LockConsole();
-        const auto unlock = wil::scope_exit([&]() {
-            renderData->UnlockConsole();
-        });
-
-        if (!renderData->tsfPreview.text.empty())
-        {
-            auto& comp = renderData->tsfPreview;
-            comp.text.clear();
-            comp.attributes.clear();
-            renderer->NotifyPaintFrame();
-        }
-    }
-
+    *_activeComposition.lock() = {};
     _provider.reset();
 
     if (_compositions > 0 && _ownerCompositionServices)
@@ -171,6 +154,11 @@ void Implementation::Unfocus(IDataProvider* provider)
 bool Implementation::HasActiveComposition() const noexcept
 {
     return _compositions > 0;
+}
+
+Microsoft::Console::Render::Composition Implementation::GetComposition() const
+{
+    return *_activeComposition.lock_shared();
 }
 
 #pragma region IUnknown
@@ -648,20 +636,11 @@ void Implementation::_doCompositionUpdate(TfEditCookie ec)
     if (_provider)
     {
         {
-            const auto renderer = _provider->GetRenderer();
-            const auto renderData = renderer->GetRenderData();
-
-            renderData->LockConsole();
-            const auto unlock = wil::scope_exit([&]() {
-                renderData->UnlockConsole();
-            });
-
-            auto& comp = renderData->tsfPreview;
-            comp.text = std::move(activeComposition);
-            comp.attributes = std::move(activeCompositionRanges);
+            const auto ac = _activeComposition.lock();
+            ac->text = std::move(activeComposition);
+            ac->attributes = std::move(activeCompositionRanges);
             // The code block above that calculates the `cursorPos` will clamp it to a positive number.
-            comp.cursorPos = static_cast<size_t>(cursorPos);
-            renderer->NotifyPaintFrame();
+            ac->cursorPos = static_cast<size_t>(cursorPos);
         }
 
         if (!finalizedString.empty())

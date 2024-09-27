@@ -30,6 +30,8 @@ class UiaTextRangeTests;
 
 namespace Microsoft::Console::Types
 {
+    class IUiaData;
+
     class UiaTextRangeBase : public WRL::RuntimeClass<WRL::RuntimeClassFlags<WRL::ClassicCom | WRL::InhibitFtmBase>, ITextRangeProvider>, public IUiaTraceable
     {
     protected:
@@ -46,18 +48,18 @@ namespace Microsoft::Console::Types
         static constexpr std::wstring_view DefaultWordDelimiter{ &UNICODE_SPACE, 1 };
 
         // degenerate range
-        virtual HRESULT RuntimeClassInitialize(_In_ Render::IRenderData* pData,
+        virtual HRESULT RuntimeClassInitialize(_In_ IUiaData* pData,
                                                _In_ IRawElementProviderSimple* const pProvider,
                                                _In_ std::wstring_view wordDelimiters = DefaultWordDelimiter) noexcept;
 
         // degenerate range at cursor position
-        virtual HRESULT RuntimeClassInitialize(_In_ Render::IRenderData* pData,
+        virtual HRESULT RuntimeClassInitialize(_In_ IUiaData* pData,
                                                _In_ IRawElementProviderSimple* const pProvider,
                                                _In_ const Cursor& cursor,
                                                _In_ std::wstring_view wordDelimiters = DefaultWordDelimiter) noexcept;
 
         // specific endpoint range
-        virtual HRESULT RuntimeClassInitialize(_In_ Render::IRenderData* pData,
+        virtual HRESULT RuntimeClassInitialize(_In_ IUiaData* pData,
                                                _In_ IRawElementProviderSimple* const pProvider,
                                                _In_ const til::point start,
                                                _In_ const til::point end,
@@ -116,7 +118,7 @@ namespace Microsoft::Console::Types
 
     protected:
         UiaTextRangeBase() = default;
-        Render::IRenderData* _pData{ nullptr };
+        IUiaData* _pData{ nullptr };
 
         IRawElementProviderSimple* _pProvider{ nullptr };
 

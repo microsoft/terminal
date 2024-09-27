@@ -12,34 +12,22 @@
   <Import Project="$(SolutionDir)src\common.nugetversions.props" />
   <ItemGroup>
     <ClCompile Include="..\CSSLengthPercentage.cpp" />
-    <ClCompile Include="..\FontInfo.cpp" />
-    <ClCompile Include="..\FontInfoBase.cpp" />
-    <ClCompile Include="..\FontInfoDesired.cpp" />
     <ClCompile Include="..\FontResource.cpp" />
-    <ClCompile Include="..\RenderEngineBase.cpp" />
     <ClCompile Include="..\RenderSettings.cpp" />
     <ClCompile Include="..\renderer.cpp" />
-    <ClCompile Include="..\thread.cpp" />
     <ClCompile Include="..\precomp.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\inc\Cluster.hpp" />
     <ClInclude Include="..\..\inc\CSSLengthPercentage.h" />
-    <ClInclude Include="..\..\inc\FontInfo.hpp" />
-    <ClInclude Include="..\..\inc\FontInfoBase.hpp" />
-    <ClInclude Include="..\..\inc\FontInfoDesired.hpp" />
     <ClInclude Include="..\..\inc\FontResource.hpp" />
-    <ClInclude Include="..\..\inc\IFontDefaultList.hpp" />
     <ClInclude Include="..\..\inc\IRenderData.hpp" />
     <ClInclude Include="..\..\inc\IRenderEngine.hpp" />
-    <ClInclude Include="..\..\inc\RenderEngineBase.hpp" />
     <ClInclude Include="..\..\inc\RenderSettings.hpp" />
     <ClInclude Include="..\FontCache.h" />
     <ClInclude Include="..\precomp.h" />
     <ClInclude Include="..\renderer.hpp" />
-    <ClInclude Include="..\thread.hpp" />
   </ItemGroup>
   <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->
   <Import Project="$(SolutionDir)src\common.build.post.props" />

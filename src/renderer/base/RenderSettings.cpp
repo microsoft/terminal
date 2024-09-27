@@ -303,7 +303,7 @@ try
             _blinkIsInUse = false;
             if (renderer)
             {
-                renderer->TriggerRedrawAll();
+                renderer->TriggerRedraw();
             }
         }
     }
