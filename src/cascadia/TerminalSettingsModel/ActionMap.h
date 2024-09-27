@@ -56,6 +56,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         Windows::Foundation::Collections::IMapView<hstring, Model::Command> NameMap();
         Windows::Foundation::Collections::IMapView<Control::KeyChord, Model::Command> GlobalHotkeys();
         Windows::Foundation::Collections::IMapView<Control::KeyChord, Model::Command> KeyBindings();
+        Windows::Foundation::Collections::IVectorView<Model::Command> AllCommands();
         com_ptr<ActionMap> Copy() const;
 
         // queries
@@ -63,6 +64,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         Model::Command GetActionByID(const winrt::hstring& cmdID) const;
         bool IsKeyChordExplicitlyUnbound(const Control::KeyChord& keys) const;
         Control::KeyChord GetKeyBindingForAction(const winrt::hstring& cmdID);
+        Windows::Foundation::Collections::IVector<Control::KeyChord> AllKeyBindingsForAction(const winrt::hstring& cmdID);
 
         // population
         void AddAction(const Model::Command& cmd, const Control::KeyChord& keys);
@@ -140,6 +142,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         // This is effectively a combination of _CumulativeKeyMapCache and _CumulativeActionMapCache and its purpose is so that
         // we can give the SUI a view of the key chords and the commands they map to
         Windows::Foundation::Collections::IMap<Control::KeyChord, Model::Command> _ResolvedKeyToActionMapCache{ nullptr };
+        Windows::Foundation::Collections::IVector<Model::Command> _AllCommandsCache{ nullptr };
 
         til::shared_mutex<std::unordered_map<hstring, std::vector<Model::Command>>> _cwdLocalSnippetsCache{};
 

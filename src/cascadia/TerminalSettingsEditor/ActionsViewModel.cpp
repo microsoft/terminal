@@ -375,18 +375,24 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         const auto& keyBindingMap{ _Settings.ActionMap().KeyBindings() };
         std::vector<Editor::KeyBindingViewModel> keyBindingList;
         keyBindingList.reserve(keyBindingMap.Size());
-        std::vector<Editor::CommandViewModel> commandList;
-        commandList.reserve(keyBindingMap.Size());
         for (const auto& [keys, cmd] : keyBindingMap)
         {
             // convert the cmd into a KeyBindingViewModel
             auto container{ make_self<KeyBindingViewModel>(keys, cmd.Name(), _AvailableActionAndArgs) };
             _RegisterEvents(container);
             keyBindingList.push_back(*container);
+        }
 
+        const auto& allCommands{ _Settings.ActionMap().AllCommands() };
+        std::vector<Editor::CommandViewModel> commandList;
+        commandList.reserve(allCommands.Size());
+        for (const auto& cmd : allCommands)
+        {
             std::vector<Control::KeyChord> keyChordList;
-            // todo: need to loop through all the keybindings that point to this command here
-            keyChordList.emplace_back(keys);
+            for (const auto& keys : _Settings.ActionMap().AllKeyBindingsForAction(cmd.ID()))
+            {
+                keyChordList.emplace_back(keys);
+            }
             auto cmdVM{ make_self<CommandViewModel>(cmd, keyChordList, _AvailableActionAndArgs, *this) };
             _RegisterCmdVMEvents(cmdVM);
             commandList.push_back(*cmdVM);

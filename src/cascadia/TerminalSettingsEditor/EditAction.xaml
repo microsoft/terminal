@@ -251,9 +251,11 @@
                       VerticalAlignment="Center"
                       ItemsSource="{x:Bind ViewModel.AvailableShortcutActions, Mode=OneWay}"
                       SelectedItem="{x:Bind ViewModel.ProposedShortcutAction, Mode=TwoWay}"
-                      IsEnabled="{x:Bind ViewModel.IsUserAction}"/>
+                      IsEnabled="{x:Bind ViewModel.IsUserAction}"
+                      Visibility="{x:Bind ViewModel.IsUserAction}"/>
             <ContentControl Content="{x:Bind ViewModel.ActionArgsVM, Mode=OneWay}"
-                            ContentTemplateSelector="{StaticResource ActionsTemplateSelector}" />
+                            ContentTemplateSelector="{StaticResource ActionsTemplateSelector}"
+                            Visibility="{x:Bind ViewModel.IsUserAction}"/>
             <ListView ItemTemplate="{StaticResource KeyChordTemplate}"
                       ItemsSource="{x:Bind ViewModel.KeyChordViewModelList, Mode=OneWay}"
                       SelectionMode="None">
