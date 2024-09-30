@@ -1128,9 +1128,13 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
     CATCH_RETURN();
 }
 
-void DoSrvSetConsoleOutputCodePage(const unsigned int codepage)
+[[nodiscard]] HRESULT DoSrvSetConsoleOutputCodePage(const unsigned int codepage)
 {
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+
+    // Return if it's not known as a valid codepage ID.
+    RETURN_HR_IF(E_INVALIDARG, !(IsValidCodePage(codepage)));
+
     // Do nothing if no change.
     if (gci.OutputCP != codepage)
     {
@@ -1138,6 +1142,8 @@ void DoSrvSetConsoleOutputCodePage(const unsigned int codepage)
         gci.OutputCP = codepage;
         SetConsoleCPInfo(TRUE);
     }
+
+    return S_OK;
 }
 
 // Routine Description:
@@ -1153,9 +1159,7 @@ void DoSrvSetConsoleOutputCodePage(const unsigned int codepage)
         auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         LockConsole();
         auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
-        // Return if it's not known as a valid codepage ID.
-        RETURN_HR_IF(E_INVALIDARG, !(IsValidCodePage(codepage)));
-        DoSrvSetConsoleOutputCodePage(codepage);
+        RETURN_IF_FAILED(DoSrvSetConsoleOutputCodePage(codepage));
         // Setting the code page via the API also updates the default value.
         // This is how the initial code page is set to UTF-8 in a WSL shell.
         gci.DefaultOutputCP = codepage;
@@ -1164,9 +1168,13 @@ void DoSrvSetConsoleOutputCodePage(const unsigned int codepage)
     CATCH_RETURN();
 }
 
-void DoSrvSetConsoleInputCodePage(const unsigned int codepage)
+[[nodiscard]] HRESULT DoSrvSetConsoleInputCodePage(const unsigned int codepage)
 {
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+
+    // Return if it's not known as a valid codepage ID.
+    RETURN_HR_IF(E_INVALIDARG, !(IsValidCodePage(codepage)));
+
     // Do nothing if no change.
     if (gci.CP != codepage)
     {
@@ -1174,6 +1182,8 @@ void DoSrvSetConsoleInputCodePage(const unsigned int codepage)
         gci.CP = codepage;
         SetConsoleCPInfo(FALSE);
     }
+
+    return S_OK;
 }
 
 // Routine Description:
@@ -1189,9 +1199,7 @@ void DoSrvSetConsoleInputCodePage(const unsigned int codepage)
         auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         LockConsole();
         auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
-        // Return if it's not known as a valid codepage ID.
-        RETURN_HR_IF(E_INVALIDARG, !(IsValidCodePage(codepage)));
-        DoSrvSetConsoleInputCodePage(codepage);
+        RETURN_IF_FAILED(DoSrvSetConsoleInputCodePage(codepage));
         // Setting the code page via the API also updates the default value.
         // This is how the initial code page is set to UTF-8 in a WSL shell.
         gci.DefaultCP = codepage;

@@ -18,5 +18,5 @@ Revision History:
 #include "../inc/conattrs.hpp"
 class SCREEN_INFORMATION;
 
-void DoSrvSetConsoleOutputCodePage(const unsigned int codepage);
-void DoSrvSetConsoleInputCodePage(const unsigned int codepage);
+[[nodiscard]] HRESULT DoSrvSetConsoleOutputCodePage(const unsigned int codepage);
+[[nodiscard]] HRESULT DoSrvSetConsoleInputCodePage(const unsigned int codepage);

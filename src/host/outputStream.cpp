@@ -228,11 +228,8 @@ void ConhostInternalGetSet::ShowWindow(bool showOrHide)
 // - <none>
 void ConhostInternalGetSet::SetCodePage(const unsigned int codepage)
 {
-    if (IsValidCodePage(codepage))
-    {
-        DoSrvSetConsoleOutputCodePage(codepage);
-        DoSrvSetConsoleInputCodePage(codepage);
-    }
+    LOG_IF_FAILED(DoSrvSetConsoleOutputCodePage(codepage));
+    LOG_IF_FAILED(DoSrvSetConsoleInputCodePage(codepage));
 }
 
 // Routine Description:
@@ -244,8 +241,8 @@ void ConhostInternalGetSet::SetCodePage(const unsigned int codepage)
 void ConhostInternalGetSet::ResetCodePage()
 {
     const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    DoSrvSetConsoleOutputCodePage(gci.DefaultOutputCP);
-    DoSrvSetConsoleInputCodePage(gci.DefaultCP);
+    LOG_IF_FAILED(DoSrvSetConsoleOutputCodePage(gci.DefaultOutputCP));
+    LOG_IF_FAILED(DoSrvSetConsoleInputCodePage(gci.DefaultCP));
 }
 
 // Routine Description:
