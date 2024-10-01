@@ -72,12 +72,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     }
     CATCH_LOG();
 
-    void Profiles_Advanced::BellSoundBrowse_Click(const IInspectable& sender, const RoutedEventArgs& /*e*/)
-    {
-        auto vm = sender.as<Button>().Tag().as<Editor::BellSoundViewModel>();
-        _PickFileForBellSound(vm);
-    }
-
     void Profiles_Advanced::BellSoundDelete_Click(const IInspectable& sender, const RoutedEventArgs& /*e*/)
     {
         auto bellSoundEntry = sender.as<Button>().Tag().as<Editor::BellSoundViewModel>();

@@ -140,7 +140,6 @@
                                         <ColumnDefinition Width="300" />
                                         <ColumnDefinition Width="Auto" />
                                         <ColumnDefinition Width="Auto" />
-                                        <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
                                     <TextBlock x:Uid="Profile_BellSoundPath"
                                                Grid.Column="0"
@@ -156,14 +155,8 @@
                                         <FontIcon FontSize="{StaticResource StandardIconSize}"
                                                   Glyph="&#xE767;" />
                                     </Button>
-                                    <Button x:Uid="Profile_BellSoundBrowse"
-                                            Grid.Column="2"
-                                            VerticalAlignment="Stretch"
-                                            Click="BellSoundBrowse_Click"
-                                            Style="{StaticResource BrowseButtonStyle}"
-                                            Tag="{Binding Mode=OneWay}" />
                                     <Button x:Uid="Profile_BellSoundDelete"
-                                            Grid.Column="3"
+                                            Grid.Column="2"
                                             Margin="5,0,0,0"
                                             VerticalAlignment="Stretch"
                                             Click="BellSoundDelete_Click"
