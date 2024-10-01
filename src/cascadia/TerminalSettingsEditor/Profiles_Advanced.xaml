@@ -137,16 +137,15 @@
                             <DataTemplate x:DataType="local:BellSoundViewModel">
                                 <Grid TabFocusNavigation="Local">
                                     <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="300" />
                                         <ColumnDefinition Width="Auto" />
                                         <ColumnDefinition Width="Auto" />
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
-                                    <TextBox x:Uid="Profile_BellSoundPath"
-                                             Grid.Column="0"
-                                             IsSpellCheckEnabled="False"
-                                             Style="{StaticResource TextBoxSettingStyle}"
-                                             Text="{x:Bind Path=Path, Mode=TwoWay}" />
+                                    <TextBlock x:Uid="Profile_BellSoundPath"
+                                               Grid.Column="0"
+                                               Style="{StaticResource TextBlockSettingStyle}"
+                                               Text="{x:Bind Path=Path, Mode=TwoWay}" />
                                     <Button x:Uid="Profile_BellSoundAudioPreview"
                                             Grid.Column="1"
                                             Margin="5,0,0,0"
@@ -177,7 +176,7 @@
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
-                    <Button Click="{x:Bind Profile.RequestAddBellSound}">
+                    <Button Click="BellSoundAdd_Click">
                         <StackPanel Orientation="Horizontal">
                             <FontIcon FontSize="{StaticResource StandardIconSize}"
                                       Glyph="&#xE948;" />

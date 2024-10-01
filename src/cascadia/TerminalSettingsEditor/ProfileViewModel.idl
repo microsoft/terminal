@@ -55,7 +55,7 @@ namespace Microsoft.Terminal.Settings.Editor
 
         String BellSoundPreview { get; };
         Windows.Foundation.Collections.IObservableVector<BellSoundViewModel> CurrentBellSounds { get; };
-        void RequestAddBellSound();
+        BellSoundViewModel RequestAddBellSound();
         void RequestDeleteBellSound(BellSoundViewModel vm);
 
         IInspectable CurrentAntiAliasingMode;

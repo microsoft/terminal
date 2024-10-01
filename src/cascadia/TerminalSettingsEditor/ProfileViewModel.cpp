@@ -504,7 +504,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
-    void ProfileViewModel::RequestAddBellSound()
+    Editor::BellSoundViewModel ProfileViewModel::RequestAddBellSound()
     {
         // If we were inheriting our bell sound,
         // copy it over to the current layer and apply modifications
@@ -514,6 +514,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         vm.PropertyChanged({ this, &ProfileViewModel::_BellSoundVMPropertyChanged });
         _CurrentBellSounds.Append(vm);
         _NotifyChanges(L"CurrentBellSounds");
+
+        return vm;
     }
 
     void ProfileViewModel::RequestDeleteBellSound(const Editor::BellSoundViewModel& vm)

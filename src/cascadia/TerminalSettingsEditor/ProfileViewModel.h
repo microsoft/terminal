@@ -58,7 +58,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void SetBellStyleTaskbar(winrt::Windows::Foundation::IReference<bool> on);
 
         hstring BellSoundPreview();
-        void RequestAddBellSound();
+        Editor::BellSoundViewModel RequestAddBellSound();
         void RequestDeleteBellSound(const Editor::BellSoundViewModel& vm);
 
         void SetAcrylicOpacityPercentageValue(double value)

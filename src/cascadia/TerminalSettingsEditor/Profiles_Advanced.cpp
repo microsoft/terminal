@@ -72,7 +72,25 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     }
     CATCH_LOG();
 
-    safe_void_coroutine Profiles_Advanced::BellSoundBrowse_Click(const IInspectable& sender, const RoutedEventArgs& /*e*/)
+    void Profiles_Advanced::BellSoundBrowse_Click(const IInspectable& sender, const RoutedEventArgs& /*e*/)
+    {
+        auto vm = sender.as<Button>().Tag().as<Editor::BellSoundViewModel>();
+        _PickFileForBellSound(vm);
+    }
+
+    void Profiles_Advanced::BellSoundDelete_Click(const IInspectable& sender, const RoutedEventArgs& /*e*/)
+    {
+        auto bellSoundEntry = sender.as<Button>().Tag().as<Editor::BellSoundViewModel>();
+        _Profile.RequestDeleteBellSound(bellSoundEntry);
+    }
+
+    void Profiles_Advanced::BellSoundAdd_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
+    {
+        auto bellSoundVM = _Profile.RequestAddBellSound();
+        _PickFileForBellSound(bellSoundVM);
+    }
+
+    safe_void_coroutine Profiles_Advanced::_PickFileForBellSound(Editor::BellSoundViewModel& vm)
     {
         static constexpr COMDLG_FILTERSPEC supportedFileTypes[] = {
             { L"Sound Files (*.wav;*.mp3;*.flac)", L"*.wav;*.mp3;*.flac" },
@@ -93,13 +111,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         });
         if (!file.empty())
         {
-            sender.as<Button>().Tag().as<Editor::BellSoundViewModel>().Path(file);
+            vm.Path(file);
         }
-    }
-
-    void Profiles_Advanced::BellSoundDelete_Click(const IInspectable& sender, const RoutedEventArgs& /*e*/)
-    {
-        auto bellSoundEntry = sender.as<Button>().Tag().as<Editor::BellSoundViewModel>();
-        _Profile.RequestDeleteBellSound(bellSoundEntry);
     }
 }
