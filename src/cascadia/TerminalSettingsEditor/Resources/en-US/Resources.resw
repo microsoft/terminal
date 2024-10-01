@@ -1871,4 +1871,12 @@
     <value>When multiple sounds are defined, one is selected at random when the BEL character is received.</value>
     <comment>{Locked="BEL"} Text block displayed near "Profile_BellSound".</comment>
   </data>
+  <data name="Profile_BellSoundAudioPreview.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Play sound</value>
+    <comment>Tooltip for a button that plays the selected sound when pressed.</comment>
+  </data>
+  <data name="Profile_BellSoundAudioPreview.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Play sound</value>
+    <comment>Tooltip for a button that plays the selected sound when pressed.</comment>
+  </data>
 </root>

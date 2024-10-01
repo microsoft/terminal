@@ -27,26 +27,50 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         const auto args = e.Parameter().as<Editor::NavigateToProfileArgs>();
         _Profile = args.Profile();
         _windowRoot = args.WindowRoot();
-
-        //if (const auto& bellSounds = _Profile.CurrentBellSounds())
-        //{
-        //    auto uiStack = BellSoundStack().Children();
-        //    const auto dataTemplate = Resources().Lookup(box_value(L"BellSoundEntryViewModelTemplate")).as<DataTemplate>();
-        //    for (const auto&& entry : bellSounds)
-        //    {
-        //        ContentControl ctrl;
-        //        ctrl.Content(entry);
-        //        ctrl.ContentTemplate(dataTemplate);
-        //
-        //        uiStack.Append(ctrl);
-        //    }
-        //}
     }
 
     void Profiles_Advanced::OnNavigatedFrom(const NavigationEventArgs& /*e*/)
     {
         _ViewModelChangedRevoker.revoke();
     }
+
+    safe_void_coroutine Profiles_Advanced::BellSoundAudioPreview_Click(const IInspectable& sender, const RoutedEventArgs& /*e*/)
+    try
+    {
+        const auto path = sender.as<Button>().Tag().as<Editor::BellSoundViewModel>().Path();
+        if (path.empty())
+        {
+            co_return;
+        }
+        winrt::hstring soundPath{ wil::ExpandEnvironmentStringsW<std::wstring>(path.c_str()) };
+        winrt::Windows::Foundation::Uri uri{ soundPath };
+
+        auto weakThis{ get_weak() };
+        co_await wil::resume_foreground(Dispatcher());
+        if (auto strongThis{ weakThis.get() })
+        {
+            if (!strongThis->_bellPlayerCreated)
+            {
+                // The MediaPlayer might not exist on Windows N SKU.
+                try
+                {
+                    strongThis->_bellPlayerCreated = true;
+                    strongThis->_bellPlayer = winrt::Windows::Media::Playback::MediaPlayer();
+                    // GH#12258: The media keys (like play/pause) should have no effect on our bell sound.
+                    strongThis->_bellPlayer.CommandManager().IsEnabled(false);
+                }
+                CATCH_LOG();
+            }
+            if (strongThis->_bellPlayer)
+            {
+                const auto source{ winrt::Windows::Media::Core::MediaSource::CreateFromUri(uri) };
+                const auto item{ winrt::Windows::Media::Playback::MediaPlaybackItem(source) };
+                strongThis->_bellPlayer.Source(item);
+                strongThis->_bellPlayer.Play();
+            }
+        }
+    }
+    CATCH_LOG();
 
     safe_void_coroutine Profiles_Advanced::BellSoundBrowse_Click(const IInspectable& sender, const RoutedEventArgs& /*e*/)
     {

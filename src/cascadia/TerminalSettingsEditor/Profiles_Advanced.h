@@ -17,6 +17,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void OnNavigatedTo(const Windows::UI::Xaml::Navigation::NavigationEventArgs& e);
         void OnNavigatedFrom(const Windows::UI::Xaml::Navigation::NavigationEventArgs& e);
 
+        safe_void_coroutine BellSoundAudioPreview_Click(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& e);
         safe_void_coroutine BellSoundBrowse_Click(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& e);
         void BellSoundDelete_Click(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& e);
 
@@ -27,6 +28,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     private:
         Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker _ViewModelChangedRevoker;
         Editor::IHostedInWindow _windowRoot;
+        winrt::Windows::Media::Playback::MediaPlayer _bellPlayer{ nullptr };
+        bool _bellPlayerCreated{ false };
     };
 };
 

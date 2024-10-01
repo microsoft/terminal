@@ -140,20 +140,31 @@
                                         <ColumnDefinition Width="Auto" />
                                         <ColumnDefinition Width="Auto" />
                                         <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
                                     <TextBox x:Uid="Profile_BellSoundPath"
                                              Grid.Column="0"
                                              IsSpellCheckEnabled="False"
                                              Style="{StaticResource TextBoxSettingStyle}"
                                              Text="{x:Bind Path=Path, Mode=TwoWay}" />
-                                    <Button x:Uid="Profile_BellSoundBrowse"
+                                    <Button x:Uid="Profile_BellSoundAudioPreview"
                                             Grid.Column="1"
+                                            Margin="5,0,0,0"
+                                            VerticalAlignment="Stretch"
+                                            Click="BellSoundAudioPreview_Click"
+                                            Style="{StaticResource BrowseButtonStyle}"
+                                            Tag="{Binding Mode=OneWay}">
+                                        <FontIcon FontSize="{StaticResource StandardIconSize}"
+                                                  Glyph="&#xE767;" />
+                                    </Button>
+                                    <Button x:Uid="Profile_BellSoundBrowse"
+                                            Grid.Column="2"
                                             VerticalAlignment="Stretch"
                                             Click="BellSoundBrowse_Click"
                                             Style="{StaticResource BrowseButtonStyle}"
                                             Tag="{Binding Mode=OneWay}" />
                                     <Button x:Uid="Profile_BellSoundDelete"
-                                            Grid.Column="2"
+                                            Grid.Column="3"
                                             Margin="5,0,0,0"
                                             VerticalAlignment="Stretch"
                                             Click="BellSoundDelete_Click"
