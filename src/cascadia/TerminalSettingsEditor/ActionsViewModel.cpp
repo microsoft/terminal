@@ -117,7 +117,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         for (const auto keys : keyChordList)
         {
             auto kcVM{ make<KeyChordViewModel>(keys) };
-            _RegisterEvents(kcVM);
+            _RegisterKeyChordVMEvents(kcVM);
             keyChordVMs.push_back(kcVM);
         }
         _KeyChordViewModelList = single_threaded_observable_vector(std::move(keyChordVMs));
@@ -127,6 +127,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         shortcutActions.emplace_back(L"Send Input");
         shortcutActions.emplace_back(L"Close Tab");
         _AvailableShortcutActions = single_threaded_observable_vector(std::move(shortcutActions));
+
+        ActionArgsVM(make<ActionArgsViewModel>(cmd.ActionAndArgs()));
+        _RegisterActionArgsVMEvents(_ActionArgsVM);
+
         const auto shortcutAction = cmd.ActionAndArgs().Action();
         switch (shortcutAction)
         {
@@ -141,18 +145,16 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         default:
             break;
         }
-        ActionArgsVM(make<ActionArgsViewModel>(cmd));
+        ActionArgsVM(make<ActionArgsViewModel>(cmd.ActionAndArgs()));
 
         // Add a property changed handler to our own property changed event.
-        // This allows us to propagate changes down to our ActionArgsVM
+        // This allows us to create a new ActionArgsVM when the shortcut action changes
         PropertyChanged([this](auto&&, const PropertyChangedEventArgs& args) {
             const auto viewModelProperty{ args.PropertyName() };
             if (viewModelProperty == L"ProposedShortcutAction")
             {
-                // todo: this thing doesn't work, ProposedShortcutAction is a boxed string
-                // need a translator between string and enum
-                // todo: need a way to make an "empty" command?
-                Model::Command newCmd{};
+                // todo: maybe just put this logic in the ProposedShortcutAction setter?
+                // todo: need a translator between string and enum
                 Model::ActionAndArgs newActionAndArgs{};
                 const auto actionString = unbox_value<hstring>(ProposedShortcutAction());
                 if (actionString == L"Send Input")
@@ -166,8 +168,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                     newActionAndArgs.Action(Model::ShortcutAction::CloseTab);
                     newActionAndArgs.Args(Model::CloseTabArgs{ index });
                 }
-                newCmd.ActionAndArgs(newActionAndArgs);
-                ActionArgsVM(make<ActionArgsViewModel>(newCmd));
+                _command.ActionAndArgs(newActionAndArgs);
+                ActionArgsVM(make<ActionArgsViewModel>(newActionAndArgs));
             }
         });
     }
@@ -212,11 +214,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         auto kbdVM{ make_self<KeyChordViewModel>(nullptr) };
         kbdVM->IsInEditMode(true);
-        _RegisterEvents(*kbdVM);
+        _RegisterKeyChordVMEvents(*kbdVM);
         KeyChordViewModelList().Append(*kbdVM);
     }
 
-    void CommandViewModel::_RegisterEvents(Editor::KeyChordViewModel kcVM)
+    void CommandViewModel::_RegisterKeyChordVMEvents(Editor::KeyChordViewModel kcVM)
     {
         if (const auto actionsPageVM{ _actionsPageVM.get() })
         {
@@ -234,29 +236,57 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
-    ActionArgsViewModel::ActionArgsViewModel(const Model::Command& cmd)
+    void CommandViewModel::_RegisterActionArgsVMEvents(Editor::ActionArgsViewModel actionArgsVM)
     {
-        const auto shortcutAction = cmd.ActionAndArgs().Action();
-        SelectedShortcutAction(shortcutAction);
-        const auto shortcutArgs = cmd.ActionAndArgs().Args();
+        actionArgsVM.PropertyChanged([this](auto&&, const PropertyChangedEventArgs& args) {
+            const auto viewModelProperty{ args.PropertyName() };
+            if (viewModelProperty == L"ProposedShortcutAction")
+            {
+                //todo: this is a placeholder, don't know if there's any events we need to listen to
+            }
+        });
+    }
+
+    ActionArgsViewModel::ActionArgsViewModel(const Model::ActionAndArgs actionAndArgs) :
+        _actionAndArgs{ actionAndArgs }
+    {
+        const auto shortcutAction = actionAndArgs.Action();
+        ShortcutActionType(shortcutAction);
+        const auto shortcutArgs = actionAndArgs.Args();
         switch (shortcutAction)
         {
         case ShortcutAction::SendInput:
         {
             const auto sendInputArgs = shortcutArgs.as<Model::SendInputArgs>();
-            StringArg1(sendInputArgs.Input());
+            _StringArg1 = sendInputArgs.Input();
             break;
         }
         case ShortcutAction::CloseTab:
         {
             const auto closeTabArgs = shortcutArgs.as<Model::CloseTabArgs>();
             const auto closeTabIndex = closeTabArgs.Index() ? closeTabArgs.Index().Value() : 0;
-            UInt32Arg1(closeTabIndex);
+            _UInt32Arg1 = closeTabIndex;
             break;
         }
         default:
             break;
         }
+    }
+
+    void ActionArgsViewModel::StringArg1(const winrt::hstring& newStringArg1)
+    {
+        _StringArg1 = newStringArg1;
+        // todo: translate between "StringArg1" and whatever the actual arg is for this action
+        _actionAndArgs.Args().as<Model::SendInputArgs>().Input(_StringArg1);
+        _NotifyChanges(L"StringArg1");
+    }
+
+    void ActionArgsViewModel::UInt32Arg1(const uint32_t newUInt32Arg1)
+    {
+        _UInt32Arg1 = newUInt32Arg1;
+        // todo: translate between "UInt32Arg1" and whatever the actual arg is for this action
+        _actionAndArgs.Args().as<Model::CloseTabArgs>().Index(_UInt32Arg1);
+        _NotifyChanges(L"UInt32Arg1");
     }
 
     KeyChordViewModel::KeyChordViewModel(Control::KeyChord currentKeys)

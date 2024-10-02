@@ -26,7 +26,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         if (const auto actionArgsVM{ item.try_as<winrt::Microsoft::Terminal::Settings::Editor::ActionArgsViewModel>() })
         {
-            const auto shortcutAction = actionArgsVM.SelectedShortcutAction();
+            const auto shortcutAction = actionArgsVM.ShortcutActionType();
             switch (shortcutAction)
             {
             case Microsoft::Terminal::Settings::Model::ShortcutAction::SendInput:

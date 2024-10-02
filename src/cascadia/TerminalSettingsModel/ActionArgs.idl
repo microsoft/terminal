@@ -228,7 +228,7 @@ namespace Microsoft.Terminal.Settings.Model
     {
         SendInputArgs(String input);
 
-        String Input { get; };
+        String Input;
     };
 
     [default_interface] runtimeclass SplitPaneArgs : IActionArgs
@@ -307,7 +307,7 @@ namespace Microsoft.Terminal.Settings.Model
     [default_interface] runtimeclass CloseTabArgs : IActionArgs
     {
         CloseTabArgs(UInt32 tabIndex);
-        Windows.Foundation.IReference<UInt32> Index { get; };
+        Windows.Foundation.IReference<UInt32> Index;
     };
 
     [default_interface] runtimeclass MoveTabArgs : IActionArgs

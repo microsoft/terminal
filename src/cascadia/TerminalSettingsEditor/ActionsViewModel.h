@@ -157,17 +157,27 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     private:
         winrt::Microsoft::Terminal::Settings::Model::Command _command;
         weak_ref<Editor::ActionsViewModel> _actionsPageVM{ nullptr };
-        void _RegisterEvents(Editor::KeyChordViewModel kcVM);
+        void _RegisterKeyChordVMEvents(Editor::KeyChordViewModel kcVM);
+        void _RegisterActionArgsVMEvents(Editor::ActionArgsViewModel actionArgsVM);
     };
 
     struct ActionArgsViewModel : ActionArgsViewModelT<ActionArgsViewModel>, ViewModelHelper<ActionArgsViewModel>
     {
     public:
-        ActionArgsViewModel(const Microsoft::Terminal::Settings::Model::Command& cmd);
+        ActionArgsViewModel(const Microsoft::Terminal::Settings::Model::ActionAndArgs actionAndArgs);
 
-        VIEW_MODEL_OBSERVABLE_PROPERTY(Microsoft::Terminal::Settings::Model::ShortcutAction, SelectedShortcutAction, Microsoft::Terminal::Settings::Model::ShortcutAction::AddMark);
-        VIEW_MODEL_OBSERVABLE_PROPERTY(hstring, StringArg1);
-        VIEW_MODEL_OBSERVABLE_PROPERTY(uint32_t, UInt32Arg1);
+        winrt::hstring StringArg1() { return _StringArg1; }
+        void StringArg1(const winrt::hstring& newStringArg1);
+
+        uint32_t UInt32Arg1() { return _UInt32Arg1; }
+        void UInt32Arg1(const uint32_t newUInt32Arg1);
+
+        VIEW_MODEL_OBSERVABLE_PROPERTY(Microsoft::Terminal::Settings::Model::ShortcutAction, ShortcutActionType, Microsoft::Terminal::Settings::Model::ShortcutAction::AddMark);
+
+    private:
+        Model::ActionAndArgs _actionAndArgs{ nullptr };
+        winrt::hstring _StringArg1;
+        uint32_t _UInt32Arg1;
     };
 
     struct KeyChordViewModel : KeyChordViewModelT<KeyChordViewModel>, ViewModelHelper<KeyChordViewModel>
