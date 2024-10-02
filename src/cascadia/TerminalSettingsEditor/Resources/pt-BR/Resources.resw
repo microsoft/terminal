@@ -1552,6 +1552,10 @@
     <value>Texto</value>
     <comment>Header for a group of settings that control the appearance of text in the app.</comment>
   </data>
+  <data name="Globals_WarningsHeader.Text" xml:space="preserve">
+    <value>Avisos</value>
+    <comment>Header for a group of settings that control the warnings in the app.</comment>
+  </data>
   <data name="Profile_WindowHeader.Text" xml:space="preserve">
     <value>Janela</value>
     <comment>Header for a group of settings that control the appearance of the window frame of the app.</comment>
@@ -1831,6 +1835,15 @@
   <data name="Globals_ConfirmCloseAllTabs.Header" xml:space="preserve">
     <value>Avisar ao fechar mais de uma guia</value>
     <comment>Header for a control to toggle whether to show a confirm dialog box when closing the application with multiple tabs open.</comment>
+  </data>
+  <data name="Globals_InputServiceWarning.Header" xml:space="preserve">
+    <value>Avisar quando o "Serviço de Teclado Virtual e Painel de Manuscrito" estiver desabilitado</value>
+  </data>
+  <data name="Globals_WarnAboutLargePaste.Header" xml:space="preserve">
+    <value>Avisar ao tentar colar mais de 5 KiB de caracteres</value>
+  </data>
+  <data name="Globals_WarnAboutMultiLinePaste.Header" xml:space="preserve">
+    <value>Avisar ao tentar colar um caractere de "nova linha"</value>
   </data>
   <data name="Settings_PortableModeNote.Text" xml:space="preserve">
     <value>O terminal do Windows está em execução no modo portátil.</value>
