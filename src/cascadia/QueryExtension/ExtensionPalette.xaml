@@ -395,6 +395,7 @@
                      IsSpellCheckEnabled="False"
                      PlaceholderText="{x:Bind QueryBoxPlaceholderText}"
                      Text=""
+                     AcceptsReturn="True"
                      TextWrapping="Wrap" />
             <TextBlock Grid.Row="2"
                        Margin="20,0,0,16"
