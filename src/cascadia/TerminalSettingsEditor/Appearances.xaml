@@ -214,11 +214,10 @@
                                     ItemTemplate="{StaticResource FontFaceComboBoxItemTemplate}"
                                     ItemsSource="{x:Bind FilteredFontList, Mode=OneWay}"
                                     LostFocus="FontFaceBox_LostFocus"
-                                    QuerySubmitted="FontFaceBox_QuerySubmitted"
+                                    SuggestionChosen="FontFaceBox_SuggestionChosen"
                                     Text="{x:Bind Appearance.FontFace, Mode=OneWay}"
                                     TextBoxStyle="{StaticResource TextBoxSettingStyle}"
-                                    TextChanged="FontFaceBox_TextChanged"
-                                    UpdateTextOnSelect="False" />
+                                    TextChanged="FontFaceBox_TextChanged" />
                     <CheckBox x:Name="ShowAllFontsCheckbox"
                               x:Uid="Profile_FontFaceShowAllFonts"
                               IsChecked="{x:Bind ShowAllFonts, Mode=TwoWay}" />
