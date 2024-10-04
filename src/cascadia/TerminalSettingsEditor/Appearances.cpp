@@ -1030,9 +1030,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
-    void Appearances::FontFaceBox_QuerySubmitted(const AutoSuggestBox& sender, const AutoSuggestBoxQuerySubmittedEventArgs& args)
+    void Appearances::FontFaceBox_SuggestionChosen(const AutoSuggestBox& sender, const AutoSuggestBoxSuggestionChosenEventArgs& args)
     {
-        const auto font = unbox_value<Editor::Font>(args.ChosenSuggestion());
+        const auto font = unbox_value<Editor::Font>(args.SelectedItem());
         const auto fontName = font.Name();
         auto fontSpec = sender.Text();
 
