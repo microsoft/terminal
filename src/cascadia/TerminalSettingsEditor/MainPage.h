@@ -65,10 +65,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void _AddProfileHandler(const winrt::guid profileGuid);
 
         void _SetupProfileEventHandling(const winrt::Microsoft::Terminal::Settings::Editor::ProfileViewModel profile);
+        void _SetupNTMEventHandling(const Editor::NewTabMenuViewModel vm);
 
         void _PreNavigateHelper();
         void _Navigate(hstring clickedItemTag, BreadcrumbSubPage subPage);
         void _Navigate(const Editor::ProfileViewModel& profile, BreadcrumbSubPage subPage);
+        void _Navigate(const Editor::NewTabMenuEntryViewModel& ntmEntryVM, BreadcrumbSubPage subPage);
 
         void _UpdateBackgroundForMica();
         void _MoveXamlParsedNavItemsIntoItemSource();
@@ -78,6 +80,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker _profileViewModelChangedRevoker;
         Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker _colorSchemesPageViewModelChangedRevoker;
+        Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker _ntmViewModelChangedRevoker;
     };
 }
 

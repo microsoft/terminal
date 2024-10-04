@@ -1851,11 +1851,11 @@
     <value>New Tab Menu</value>
     <comment>Header for the "new tab menu" menu item. This navigates to a page that lets you see and modify settings related to the app's new tab menu (i.e. profile ordering, nested folders, dividers, etc.)</comment>
   </data>
-  <data name="NewTabMenuEntry_Separator.Content" xml:space="preserve">
+  <data name="NewTabMenuEntry_Separator.Text" xml:space="preserve">
     <value>&lt;Separator&gt;</value>
     <comment>{Locked="&lt;"}, {Locked="&gt;"}</comment>
   </data>
-  <data name="NewTabMenuEntry_RemainingProfiles.Content" xml:space="preserve">
+  <data name="NewTabMenuEntry_RemainingProfiles.Text" xml:space="preserve">
     <value>&lt;Remaining profiles&gt;</value>
     <comment>{Locked="&lt;"}{Locked="&gt;"}</comment>
   </data>

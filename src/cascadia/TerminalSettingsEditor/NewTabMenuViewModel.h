@@ -23,8 +23,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         NewTabMenuViewModel(Model::CascadiaSettings settings);
 
         static bool IsRemainingProfilesEntryMissing(const Windows::Foundation::Collections::IObservableVector<Editor::NewTabMenuEntryViewModel>& entries);
+        bool IsFolderView() const noexcept;
 
         void UpdateSettings(Model::CascadiaSettings settings);
+
+        void RequestReorderEntry(Editor::NewTabMenuEntryViewModel vm, bool goingUp);
+        void RequestDeleteEntry(Editor::NewTabMenuEntryViewModel vm);
 
         void RequestAddSelectedProfileEntry();
         void RequestAddSeparatorEntry();
@@ -42,8 +46,22 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         VIEW_MODEL_OBSERVABLE_PROPERTY(hstring, FolderName);
 
+        VIEW_MODEL_OBSERVABLE_PROPERTY(NTMSubPage, CurrentPage);
+        VIEW_MODEL_OBSERVABLE_PROPERTY(Editor::FolderEntryViewModel, CurrentFolderEntry, nullptr);
+
     private:
         Model::CascadiaSettings _Settings{ nullptr };
+        Windows::Foundation::Collections::IObservableVector<Editor::NewTabMenuEntryViewModel>::VectorChanged_revoker _entriesChangedRevoker;
+
+        void _UpdateEntries();
+
+        void _PrintAll();
+#ifdef _DEBUG
+        void _PrintModel(Windows::Foundation::Collections::IVector<Model::NewTabMenuEntry> list, std::wstring prefix = L"");
+        void _PrintModel(const Model::NewTabMenuEntry& e, std::wstring prefix = L"");
+        void _PrintVM(Windows::Foundation::Collections::IVector<Editor::NewTabMenuEntryViewModel> list, std::wstring prefix = L"");
+        void _PrintVM(const Editor::NewTabMenuEntryViewModel& vm, std::wstring prefix = L"");
+#endif
     };
 
     struct NewTabMenuEntryViewModel : NewTabMenuEntryViewModelT<NewTabMenuEntryViewModel>, ViewModelHelper<NewTabMenuEntryViewModel>

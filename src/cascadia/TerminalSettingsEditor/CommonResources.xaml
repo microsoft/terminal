@@ -247,6 +247,15 @@
         </Setter>
     </Style>
 
+    <Style x:Key="ExtraSmallButtonStyle"
+           BasedOn="{StaticResource BrowseButtonStyle}"
+           TargetType="Button">
+        <Setter Property="Height" Value="25" />
+        <Setter Property="Width" Value="25" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="Margin" Value="0" />
+    </Style>
+
     <Style x:Key="SmallButtonStyle"
            BasedOn="{StaticResource BrowseButtonStyle}"
            TargetType="Button">
@@ -278,6 +287,15 @@
         <Setter Property="Height" Value="32" />
         <Setter Property="Width" Value="32" />
         <Setter Property="Padding" Value="5" />
+    </Style>
+
+    <Style x:Key="DeleteExtraSmallButtonStyle"
+           BasedOn="{StaticResource DeleteButtonStyle}"
+           TargetType="Button">
+        <Setter Property="Height" Value="25" />
+        <Setter Property="Width" Value="25" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="Margin" Value="0" />
     </Style>
 
     <Style x:Key="IconButtonTextBlockStyle"

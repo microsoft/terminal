@@ -36,18 +36,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         // Therefore, we will store the JSON entries list internally, and then expose only the
         // entries to be rendered to WinRT.
         winrt::Windows::Foundation::Collections::IVector<Model::NewTabMenuEntry> Entries() const;
-        winrt::Windows::Foundation::Collections::IVector<Model::NewTabMenuEntry> RawEntries() const
-        {
-            return _Entries;
-        };
 
         WINRT_PROPERTY(winrt::hstring, Name);
         WINRT_PROPERTY(winrt::hstring, Icon);
         WINRT_PROPERTY(FolderEntryInlining, Inlining, FolderEntryInlining::Never);
         WINRT_PROPERTY(bool, AllowEmpty, false);
-
-    private:
-        winrt::Windows::Foundation::Collections::IVector<Model::NewTabMenuEntry> _Entries{};
+        WINRT_PROPERTY(winrt::Windows::Foundation::Collections::IVector<Model::NewTabMenuEntry>, RawEntries);
     };
 }
 

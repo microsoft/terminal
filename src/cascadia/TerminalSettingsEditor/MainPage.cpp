@@ -62,6 +62,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _UpdateBackgroundForMica();
 
         _newTabMenuPageVM = winrt::make<NewTabMenuViewModel>(_settingsClone);
+        _SetupNTMEventHandling(_newTabMenuPageVM);
+
         _colorSchemesPageVM = winrt::make<ColorSchemesPageViewModel>(_settingsClone);
         _colorSchemesPageViewModelChangedRevoker = _colorSchemesPageVM.PropertyChanged(winrt::auto_revoke, [=](auto&&, const PropertyChangedEventArgs& args) {
             const auto settingName{ args.PropertyName() };
@@ -177,6 +179,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                                 }
                             }
                         }
+                        // TODO CARLOS: probably need to add NTM here
                     }
                 }
             }
@@ -303,6 +306,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     void MainPage::_PreNavigateHelper()
     {
         _profileViewModelChangedRevoker.revoke();
+        _ntmViewModelChangedRevoker.revoke();
         _breadcrumbs.Clear();
     }
 
@@ -354,6 +358,35 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         });
     }
 
+    void MainPage::_SetupNTMEventHandling(const Editor::NewTabMenuViewModel vm)
+    {
+        // TODO CARLOS: validate
+        _ntmViewModelChangedRevoker = vm.PropertyChanged(winrt::auto_revoke, [=](auto&&, const PropertyChangedEventArgs& args) {
+            const auto settingName{ args.PropertyName() };
+            if (settingName == L"CurrentPage")
+            {
+                const auto currentPage = vm.CurrentPage();
+                if (currentPage == NTMSubPage::Base)
+                {
+                    _newTabMenuPageVM.CurrentFolderEntry(nullptr);
+                    contentFrame().Navigate(xaml_typename<Editor::NewTabMenu>(), _newTabMenuPageVM);
+                    _breadcrumbs.Clear();
+                    const auto crumb = winrt::make<Breadcrumb>(box_value(newTabMenuTag), RS_(L"Nav_NewTabMenu/Content"), BreadcrumbSubPage::None);
+                    _breadcrumbs.Append(crumb);
+                }
+                else if (currentPage == NTMSubPage::Folder)
+                {
+                    const auto currentFolder = _newTabMenuPageVM.CurrentFolderEntry();
+
+                    contentFrame().Navigate(xaml_typename<Editor::NewTabMenu>(), _newTabMenuPageVM);
+                    const auto crumb = winrt::make<Breadcrumb>(box_value(currentFolder), currentFolder.Name(), BreadcrumbSubPage::NTM_Folder);
+                    _breadcrumbs.Append(crumb);
+                    SettingsMainPage_ScrollViewer().ScrollToVerticalOffset(0);
+                }
+            }
+        });
+    }
+
     void MainPage::_Navigate(hstring clickedItemTag, BreadcrumbSubPage subPage)
     {
         _PreNavigateHelper();
@@ -384,6 +417,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
         else if (clickedItemTag == newTabMenuTag)
         {
+            // Reset the current folder entry and page BEFORE setting up the event handling
+            _newTabMenuPageVM.CurrentFolderEntry(nullptr);
+            _newTabMenuPageVM.CurrentPage(NTMSubPage::Base);
+
+            _SetupNTMEventHandling(_newTabMenuPageVM);
+
             contentFrame().Navigate(xaml_typename<Editor::NewTabMenu>(), _newTabMenuPageVM);
             const auto crumb = winrt::make<Breadcrumb>(box_value(clickedItemTag), RS_(L"Nav_NewTabMenu/Content"), BreadcrumbSubPage::None);
             _breadcrumbs.Append(crumb);
@@ -468,6 +507,28 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
+    void MainPage::_Navigate(const Editor::NewTabMenuEntryViewModel& ntmEntryVM, BreadcrumbSubPage subPage)
+    {
+        // TODO CARLOS: validate
+        _PreNavigateHelper();
+
+        _SetupNTMEventHandling(_newTabMenuPageVM);
+
+        contentFrame().Navigate(xaml_typename<Editor::NewTabMenu>(), _newTabMenuPageVM);
+        const auto crumb = winrt::make<Breadcrumb>(box_value(newTabMenuTag), RS_(L"Nav_NewTabMenu/Content"), BreadcrumbSubPage::None);
+        _breadcrumbs.Append(crumb);
+
+        if (subPage == BreadcrumbSubPage::None)
+        {
+            _newTabMenuPageVM.CurrentPage(NTMSubPage::Base);
+        }
+        else if (const auto folderEntry = ntmEntryVM.try_as<FolderEntryViewModel>(); subPage == BreadcrumbSubPage::NTM_Folder && folderEntry)
+        {
+            _newTabMenuPageVM.CurrentFolderEntry(*folderEntry);
+            _newTabMenuPageVM.CurrentPage(NTMSubPage::Folder);
+        }
+    }
+
     void MainPage::OpenJsonTapped(const IInspectable& /*sender*/, const Windows::UI::Xaml::Input::TappedRoutedEventArgs& /*args*/)
     {
         const auto window = CoreWindow::GetForCurrentThread();
@@ -509,6 +570,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             if (const auto profileViewModel = tag.try_as<ProfileViewModel>())
             {
                 _Navigate(*profileViewModel, subPage);
+            }
+            else if (const auto ntmEntryViewModel = tag.try_as<NewTabMenuEntryViewModel>())
+            {
+                // TODO CARLOS: validate
+                _Navigate(*ntmEntryViewModel, subPage);
             }
             else
             {

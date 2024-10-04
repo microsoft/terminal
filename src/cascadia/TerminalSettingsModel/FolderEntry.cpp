@@ -40,7 +40,7 @@ Json::Value FolderEntry::ToJson() const
 
     JsonUtils::SetValueForKey(json, NameKey, _Name);
     JsonUtils::SetValueForKey(json, IconKey, _Icon);
-    JsonUtils::SetValueForKey(json, EntriesKey, _Entries);
+    JsonUtils::SetValueForKey(json, EntriesKey, _RawEntries);
     JsonUtils::SetValueForKey(json, InliningKey, _Inlining);
     JsonUtils::SetValueForKey(json, AllowEmptyKey, _AllowEmpty);
 
@@ -53,7 +53,7 @@ winrt::com_ptr<NewTabMenuEntry> FolderEntry::FromJson(const Json::Value& json)
 
     JsonUtils::GetValueForKey(json, NameKey, entry->_Name);
     JsonUtils::GetValueForKey(json, IconKey, entry->_Icon);
-    JsonUtils::GetValueForKey(json, EntriesKey, entry->_Entries);
+    JsonUtils::GetValueForKey(json, EntriesKey, entry->_RawEntries);
     JsonUtils::GetValueForKey(json, InliningKey, entry->_Inlining);
     JsonUtils::GetValueForKey(json, AllowEmptyKey, entry->_AllowEmpty);
 
@@ -68,12 +68,12 @@ IVector<NewTabMenuEntryModel> FolderEntry::Entries() const
     // We filter the full list of entries from JSON to just include the
     // non-empty ones.
     IVector<NewTabMenuEntryModel> result{ winrt::single_threaded_vector<NewTabMenuEntryModel>() };
-    if (_Entries == nullptr)
+    if (_RawEntries == nullptr)
     {
         return result;
     }
 
-    for (const auto& entry : _Entries)
+    for (const auto& entry : _RawEntries)
     {
         if (entry == nullptr)
         {
@@ -136,31 +136,31 @@ winrt::com_ptr<FolderEntry> FolderEntry::Copy() const
     entry->_Inlining = _Inlining;
     entry->_AllowEmpty = _AllowEmpty;
 
-    if (_Entries)
+    if (_RawEntries)
     {
-        entry->_Entries = winrt::single_threaded_vector<Model::NewTabMenuEntry>();
-        for (const auto& e : _Entries)
+        entry->_RawEntries = winrt::single_threaded_vector<Model::NewTabMenuEntry>();
+        for (const auto& e : _RawEntries)
         {
             switch (e.Type())
             {
             case NewTabMenuEntryType::Profile:
-                entry->_Entries.Append(*winrt::get_self<implementation::ProfileEntry>(e.as<Model::ProfileEntry>())->Copy());
+                entry->_RawEntries.Append(*winrt::get_self<implementation::ProfileEntry>(e.as<Model::ProfileEntry>())->Copy());
                 break;
             case NewTabMenuEntryType::Separator:
-                entry->_Entries.Append(*winrt::get_self<implementation::SeparatorEntry>(e.as<Model::SeparatorEntry>())->Copy());
+                entry->_RawEntries.Append(*winrt::get_self<implementation::SeparatorEntry>(e.as<Model::SeparatorEntry>())->Copy());
                 break;
             case NewTabMenuEntryType::Folder:
-                entry->_Entries.Append(*winrt::get_self<implementation::FolderEntry>(e.as<Model::FolderEntry>())->Copy());
+                entry->_RawEntries.Append(*winrt::get_self<implementation::FolderEntry>(e.as<Model::FolderEntry>())->Copy());
                 break;
             case NewTabMenuEntryType::RemainingProfiles:
-                entry->_Entries.Append(*winrt::get_self<implementation::RemainingProfilesEntry>(e.as<Model::RemainingProfilesEntry>())->Copy());
+                entry->_RawEntries.Append(*winrt::get_self<implementation::RemainingProfilesEntry>(e.as<Model::RemainingProfilesEntry>())->Copy());
                 break;
             case NewTabMenuEntryType::MatchProfiles:
-                entry->_Entries.Append(*winrt::get_self<implementation::MatchProfilesEntry>(e.as<Model::MatchProfilesEntry>())->Copy());
+                entry->_RawEntries.Append(*winrt::get_self<implementation::MatchProfilesEntry>(e.as<Model::MatchProfilesEntry>())->Copy());
                 break;
             case NewTabMenuEntryType::Action:
             {
-                entry->_Entries.Append(*winrt::get_self<implementation::ActionEntry>(e.as<Model::ActionEntry>())->Copy());
+                entry->_RawEntries.Append(*winrt::get_self<implementation::ActionEntry>(e.as<Model::ActionEntry>())->Copy());
                 break;
             }
             case NewTabMenuEntryType::Invalid:

@@ -185,8 +185,8 @@
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
                         <FontIcon Grid.Column="0"
-                                  Glyph="{TemplateBinding FontIconGlyph}"
-                                  Margin="0,0,10,0"/>
+                                  Margin="0,0,10,0"
+                                  Glyph="{TemplateBinding FontIconGlyph}" />
                         <StackPanel Grid.Column="1"
                                     Style="{StaticResource StackPanelInExpanderStyle}">
                             <StackPanel Orientation="Horizontal">
@@ -234,8 +234,8 @@
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
                                 <FontIcon Grid.Column="0"
-                                          Glyph="{TemplateBinding FontIconGlyph}"
-                                          Margin="0,0,10,0"/>
+                                          Margin="0,0,10,0"
+                                          Glyph="{TemplateBinding FontIconGlyph}" />
                                 <StackPanel Grid.Column="1"
                                             Style="{StaticResource StackPanelInExpanderStyle}">
                                     <StackPanel Orientation="Horizontal">
