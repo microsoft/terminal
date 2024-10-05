@@ -1826,60 +1826,77 @@ void IslandWindow::SetMinimizeToNotificationAreaBehavior(bool MinimizeToNotifica
 }
 
 // Method Description:
-// - Opens the window's system menu.
-// - The system menu is the menu that opens when the user presses Alt+Space or
-//   right clicks on the title bar.
-// - Before updating the menu, we update the buttons like "Maximize" and
-//   "Restore" so that they are grayed out depending on the window's state.
+// - Displays the system menu of the window.
+// - The system menu, typically appearing when the user performs an Alt+Space keystroke or
+//   right-clicks on the title bar, provides system commands such as Minimize, Maximize, and Close.
+// - Prior to displaying the menu, the method updates the availability of commands like "Maximize" and
+//   "Restore" based on the current state of the window, graying out options that are not applicable.
 // Arguments:
-// - cursorX: the cursor's X position in screen coordinates
-// - cursorY: the cursor's Y position in screen coordinates
-void IslandWindow::OpenSystemMenu(const std::optional<int> mouseX, const std::optional<int> mouseY) const noexcept
+// - x: Specifies the X-coordinate (in screen coordinates) of the location where the system menu should appear.
+//   If this parameter is not provided, the method will default to displaying the menu at the top-left edge of the window's client area.
+// - y: Specifies the Y-coordinate (in screen coordinates) of the location where the system menu should appear.
+//   If this parameter is not provided, the method will default to displaying the menu at the top-left edge of the window's client area.
+// - yOffset: If provided, this value will be added to the cursor's Y position, moving the menu downward by the specified amount. This is
+//   useful, for example, when accounting for the height of a custom title bar.
+void IslandWindow::OpenSystemMenu(std::optional<int> x, std::optional<int> y, const std::optional<int> yOffset) const noexcept
 {
-    const auto systemMenu = GetSystemMenu(_window.get(), FALSE);
+    // Retrieve the system menu of the current window.
+    if (const HMENU systemMenu = GetSystemMenu(_window.get(), FALSE); LOG_LAST_ERROR_IF_NULL(systemMenu))
+    {
+        WINDOWPLACEMENT placement;
+        if (!LOG_LAST_ERROR_IF(!GetWindowPlacement(_window.get(), &placement)))
+        {
+            const bool isMaximized = placement.showCmd == SW_SHOWMAXIMIZED;
 
-    WINDOWPLACEMENT placement;
-    if (!GetWindowPlacement(_window.get(), &placement))
-    {
-        return;
-    }
-    const auto isMaximized = placement.showCmd == SW_SHOWMAXIMIZED;
+            // A lambda to update the state of a menu item.
+            const auto fnSetMenuItemState = [&](const UINT item, const bool enabled) -> BOOL {
+                MENUITEMINFO menuItemInfo = { 0 };
+                menuItemInfo.cbSize = sizeof(MENUITEMINFO);
+                menuItemInfo.fMask = MIIM_STATE;
+                menuItemInfo.fType = MFT_STRING;
+                menuItemInfo.fState = enabled ? MF_ENABLED : MF_DISABLED;
+                return !LOG_LAST_ERROR_IF(!SetMenuItemInfo(systemMenu, item, FALSE, &menuItemInfo));
+            };
 
-    // Update the options based on window state.
-    MENUITEMINFO mii;
-    mii.cbSize = sizeof(MENUITEMINFO);
-    mii.fMask = MIIM_STATE;
-    mii.fType = MFT_STRING;
-    auto setState = [&](UINT item, bool enabled) {
-        mii.fState = enabled ? MF_ENABLED : MF_DISABLED;
-        SetMenuItemInfo(systemMenu, item, FALSE, &mii);
-    };
-    setState(SC_RESTORE, isMaximized);
-    setState(SC_MOVE, !isMaximized);
-    setState(SC_SIZE, !isMaximized);
-    setState(SC_MINIMIZE, true);
-    setState(SC_MAXIMIZE, !isMaximized);
-    setState(SC_CLOSE, true);
-    SetMenuDefaultItem(systemMenu, UINT_MAX, FALSE);
+            // Updating states of various menu items based on the window state.
+            if (fnSetMenuItemState(SC_RESTORE, isMaximized) &&
+                fnSetMenuItemState(SC_MOVE, !isMaximized) &&
+                fnSetMenuItemState(SC_SIZE, !isMaximized) &&
+                fnSetMenuItemState(SC_MINIMIZE, true) &&
+                fnSetMenuItemState(SC_MAXIMIZE, !isMaximized) &&
+                fnSetMenuItemState(SC_CLOSE, true))
+            {
+                if (!LOG_LAST_ERROR_IF(!SetMenuDefaultItem(systemMenu, UINT_MAX, FALSE)))
+                {
+                    // If the caller didn't specify a position, use the top-left corner of the client area.
+                    if (!x.has_value() || !y.has_value())
+                    {
+                        RECT clientScreenRect;
+                        if (!LOG_LAST_ERROR_IF(!GetClientRect(GetHandle(), &clientScreenRect)) && LOG_IF_WIN32_BOOL_FALSE(ClientToScreen(GetHandle(), reinterpret_cast<LPPOINT>(&clientScreenRect))))
+                        {
+                            x = clientScreenRect.left;
+                            y = clientScreenRect.top;
+                        }
+                    }
 
-    int xPos;
-    int yPos;
-    if (mouseX && mouseY)
-    {
-        xPos = mouseX.value();
-        yPos = mouseY.value();
-    }
-    else
-    {
-        RECT windowPos;
-        ::GetWindowRect(GetHandle(), &windowPos);
-        xPos = windowPos.left;
-        yPos = windowPos.top;
-    }
-    const auto ret = TrackPopupMenu(systemMenu, TPM_RETURNCMD, xPos, yPos, 0, _window.get(), nullptr);
-    if (ret != 0)
-    {
-        PostMessage(_window.get(), WM_SYSCOMMAND, ret, 0);
+                    // Show the system menu. If a command is selected, send it to the window.
+                    if (x.has_value() && y.has_value())
+                    {
+                        // yOffset is used to add some vertical padding to the position where the system menu will appear.
+                        // This is especially useful when accounting for the height of a custom title bar, or for custom handling of Alt+Space case.
+                        const BOOL menuItemIdentifier = TrackPopupMenu(systemMenu, TPM_RETURNCMD, x.value(), y.value() + yOffset.value_or(0), 0, _window.get(), nullptr);
+                        if (menuItemIdentifier != 0)
+                        {
+                            LOG_LAST_ERROR_IF(!PostMessage(_window.get(), WM_SYSCOMMAND, menuItemIdentifier, 0));
+                        }
+                        else if (GetLastError() != 0) // TrackPopupMenu does not set the last error when the user cancels the menu without a selection.
+                        {
+                            LOG_LAST_ERROR();
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 
