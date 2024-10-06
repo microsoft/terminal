@@ -306,49 +306,50 @@ class RunLengthEncodingTests
             std::string_view change;
 
             std::string_view expected;
+            std::tuple<size_t, size_type> expected_hint;
         };
 
         std::array<TestCase, 29> test_cases{
             {
                 // empty source
-                { "", 0, 0, "", "" },
-                { "", 0, 0, "1|2|3", "1|2|3" },
+                { "", 0, 0, "", "", { 0, size_type(0) } },
+                { "", 0, 0, "1|2|3", "1|2|3", { 1, size_type(1) } },
 
                 // empty change
-                { "1|2|3", 0, 0, "", "1|2|3" },
-                { "1|2|3", 2, 2, "", "1|2|3" },
-                { "1|2|3", 3, 3, "", "1|2|3" },
+                { "1|2|3", 0, 0, "", "1|2|3", { 0, size_type(0) } },
+                { "1|2|3", 2, 2, "", "1|2|3", { 2, size_type(2) } },
+                { "1|2|3", 3, 3, "", "1|2|3", { 3, size_type(3) } },
 
                 // remove
-                { "1|3 3|2|1 1 1|5 5", 0, 9, "", "" }, // all
-                { "1|3 3|2|1 1 1|5 5", 0, 6, "", "1|5 5" }, // beginning
-                { "1|3 3|2|1 1 1|5 5", 6, 9, "", "1|3 3|2|1 1" }, // end
-                { "1|3 3|2|1 1 1|5 5", 3, 7, "", "1|3 3|5 5" }, // middle, between runs
-                { "1|3 3|2|1 1 1|5 5", 2, 6, "", "1|3|1|5 5" }, // middle, within runs
+                { "1|3 3|2|1 1 1|5 5", 0, 9, "", "", { 0, size_type(0) } }, // all
+                { "1|3 3|2|1 1 1|5 5", 0, 6, "", "1|5 5", { 0, size_type(0) } }, // beginning
+                { "1|3 3|2|1 1 1|5 5", 6, 9, "", "1|3 3|2|1 1", { 3, size_type(4) } }, // end
+                { "1|3 3|2|1 1 1|5 5", 3, 7, "", "1|3 3|5 5", { 2, size_type(3) } }, // middle, between runs
+                { "1|3 3|2|1 1 1|5 5", 2, 6, "", "1|3|1|5 5", { 1, size_type(1) } }, // middle, within runs
 
                 // insert
-                { "1|3 3|2|1 1 1|5 5", 0, 0, "6|7 7|8", "6|7 7|8|1|3 3|2|1 1 1|5 5" }, // beginning
-                { "1|3 3|2|1 1 1|5 5", 9, 9, "6|7 7|8", "1|3 3|2|1 1 1|5 5|6|7 7|8" }, // end
-                { "1|3 3|2|1 1 1|5 5", 4, 4, "6|7 7|8", "1|3 3|2|6|7 7|8|1 1 1|5 5" }, // middle, between runs
-                { "1|3 3|2|1 1 1|5 5", 5, 5, "6|7 7|8", "1|3 3|2|1|6|7 7|8|1 1|5 5" }, // middle, within runs
-                { "1|3 3|2|1 1 1|5 5", 6, 6, "6", "1|3 3|2|1 1|6|1|5 5" }, // middle, within runs, single run
+                { "1|3 3|2|1 1 1|5 5", 0, 0, "6|7 7|8", "6|7 7|8|1|3 3|2|1 1 1|5 5", { 3, size_type(4) } }, // beginning
+                { "1|3 3|2|1 1 1|5 5", 9, 9, "6|7 7|8", "1|3 3|2|1 1 1|5 5|6|7 7|8", { 5, size_type(9) } }, // end
+                { "1|3 3|2|1 1 1|5 5", 4, 4, "6|7 7|8", "1|3 3|2|6|7 7|8|1 1 1|5 5", { 6, size_type(8) } }, // middle, between runs
+                { "1|3 3|2|1 1 1|5 5", 5, 5, "6|7 7|8", "1|3 3|2|1|6|7 7|8|1 1|5 5", { 7, size_type(9) } }, // middle, within runs
+                { "1|3 3|2|1 1 1|5 5", 6, 6, "6", "1|3 3|2|1 1|6|1|5 5", { 5, size_type(7) } }, // middle, within runs, single run
 
                 // replace
-                { "1|3 3|2|1 1 1|5 5", 0, 9, "6|7 7|8", "6|7 7|8" }, // all
-                { "1|3 3|2|1 1 1|5 5", 0, 6, "6|7 7|8", "6|7 7|8|1|5 5" }, // beginning
-                { "1|3 3|2|1 1 1|5 5", 6, 9, "6|7 7|8", "1|3 3|2|1 1|6|7 7|8" }, // end
-                { "1|3 3|2|1 1 1|5 5", 3, 7, "6|7 7|8", "1|3 3|6|7 7|8|5 5" }, // middle, between runs
-                { "1|3 3|2|1 1 1|5 5", 3, 7, "6|7 7 7", "1|3 3|6|7 7 7|5 5" }, // middle, between runs, same size
-                { "1|3 3|2|1 1 1|5 5", 2, 6, "6|7 7|8", "1|3|6|7 7|8|1|5 5" }, // middle, within runs
-                { "1|3 3|2|1 1 1|5 5", 2, 6, "6", "1|3|6|1|5 5" }, // middle, within runs, single run
+                { "1|3 3|2|1 1 1|5 5", 0, 9, "6|7 7|8", "6|7 7|8", { 1, size_type(1) } }, // all
+                { "1|3 3|2|1 1 1|5 5", 0, 6, "6|7 7|8", "6|7 7|8|1|5 5", { 3, size_type(4) } }, // beginning
+                { "1|3 3|2|1 1 1|5 5", 6, 9, "6|7 7|8", "1|3 3|2|1 1|6|7 7|8", { 4, size_type(6) } }, // end
+                { "1|3 3|2|1 1 1|5 5", 3, 7, "6|7 7|8", "1|3 3|6|7 7|8|5 5", { 2, size_type(3) } }, // middle, between runs
+                { "1|3 3|2|1 1 1|5 5", 3, 7, "6|7 7 7", "1|3 3|6|7 7 7|5 5", { 2, size_type(3) } }, // middle, between runs, same size
+                { "1|3 3|2|1 1 1|5 5", 2, 6, "6|7 7|8", "1|3|6|7 7|8|1|5 5", { 5, size_type(6) } }, // middle, within runs
+                { "1|3 3|2|1 1 1|5 5", 2, 6, "6", "1|3|6|1|5 5", { 3, size_type(3) } }, // middle, within runs, single run
 
                 // join with predecessor/successor run
-                { "1|3 3|2|1 1 1|5 5", 0, 3, "1|2 2", "1|2 2 2|1 1 1|5 5" }, // beginning
-                { "1|3 3|2|1 1 1|5 5", 7, 9, "1|5", "1|3 3|2|1 1 1 1|5" }, // end
-                { "1|3 3|2|1 1 1|5 5", 1, 4, "1|2|1", "1 1|2|1 1 1 1|5 5" }, // middle, between runs
-                { "1|3 3|2|1 1 1|5 5", 2, 6, "3 3|1", "1|3 3 3|1 1|5 5" }, // middle, within runs
-                { "1|3 3|2|1 1 1|5 5", 1, 6, "1", "1 1 1|5 5" }, // middle, within runs, single run
-                { "1|3 3|2|1 1 1|5 5", 1, 4, "", "1 1 1 1|5 5" }, // middle, within runs, no runs
+                { "1|3 3|2|1 1 1|5 5", 0, 3, "1|2 2", "1|2 2 2|1 1 1|5 5", { 1, size_type(1) } }, // beginning
+                { "1|3 3|2|1 1 1|5 5", 7, 9, "1|5", "1|3 3|2|1 1 1 1|5", { 3, size_type(4) } }, // end
+                { "1|3 3|2|1 1 1|5 5", 1, 4, "1|2|1", "1 1|2|1 1 1 1|5 5", { 2, size_type(3) } }, // middle, between runs
+                { "1|3 3|2|1 1 1|5 5", 2, 6, "3 3|1", "1|3 3 3|1 1|5 5", { 2, size_type(4) } }, // middle, within runs
+                { "1|3 3|2|1 1 1|5 5", 1, 6, "1", "1 1 1|5 5", { 0, size_type(0) } }, // middle, within runs, single run
+                { "1|3 3|2|1 1 1|5 5", 1, 4, "", "1 1 1 1|5 5", { 0, size_type(0) } }, // middle, within runs, no runs
             }
         };
 
@@ -373,6 +374,9 @@ class RunLengthEncodingTests
                     test_case.change.data(),
                     test_case.expected.data(),
                     rle.to_string().c_str()));
+
+            VERIFY_IS_TRUE(std::get<0>(test_case.expected_hint) == std::get<0>(rle.hint()));
+            VERIFY_IS_TRUE(std::get<1>(test_case.expected_hint) == std::get<1>(rle.hint()));
 
             ++idx;
         }
