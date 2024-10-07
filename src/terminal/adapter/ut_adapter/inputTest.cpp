@@ -36,6 +36,7 @@ public:
     TEST_METHOD(CtrlNumTest);
     TEST_METHOD(BackarrowKeyModeTest);
     TEST_METHOD(AutoRepeatModeTest);
+    TEST_METHOD(SendC1ControlTest);
 
     wchar_t GetModifierChar(const bool fShift, const bool fAlt, const bool fCtrl)
     {
@@ -789,4 +790,21 @@ void InputTest::AutoRepeatModeTest()
     VERIFY_ARE_EQUAL(TerminalInput::MakeOutput(L"A"), input.HandleKey(down));
     VERIFY_ARE_EQUAL(TerminalInput::MakeOutput(L"A"), input.HandleKey(down));
     VERIFY_ARE_EQUAL(TerminalInput::MakeOutput({}), input.HandleKey(up));
+}
+
+void InputTest::SendC1ControlTest()
+{
+    TerminalInput input;
+
+    Log::Comment(L"Sending keys with C1 control sequences");
+    input.SetInputMode(TerminalInput::Mode::SendC1, true);
+
+    TestKey(TerminalInput::MakeOutput(L"\x9bH"), input, 0, VK_HOME);
+    TestKey(TerminalInput::MakeOutput(L"\x8fP"), input, 0, VK_F1);
+
+    Log::Comment(L"Sending keys with 7-bit escape sequence");
+    input.SetInputMode(TerminalInput::Mode::SendC1, false);
+
+    TestKey(TerminalInput::MakeOutput(L"\x1b[H"), input, 0, VK_HOME);
+    TestKey(TerminalInput::MakeOutput(L"\x1bOP"), input, 0, VK_F1);
 }

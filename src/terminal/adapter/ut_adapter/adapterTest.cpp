@@ -158,17 +158,28 @@ public:
         return true;
     }
 
-    void SetConsoleOutputCP(const unsigned int codepage) override
+    void SetCodePage(const unsigned int codepage) override
     {
-        Log::Comment(L"SetConsoleOutputCP MOCK called...");
-        THROW_HR_IF(E_FAIL, !_setConsoleOutputCPResult);
-        VERIFY_ARE_EQUAL(_expectedOutputCP, codepage);
+        Log::Comment(L"SetCodePage MOCK called...");
+        THROW_HR_IF(E_FAIL, !_setCodePageResult);
+        VERIFY_ARE_EQUAL(_expectedCodePage, codepage);
     }
 
-    unsigned int GetConsoleOutputCP() const override
+    void ResetCodePage() override
     {
-        Log::Comment(L"GetConsoleOutputCP MOCK called...");
-        return _expectedOutputCP;
+        Log::Comment(L"ResetCodePage MOCK called...");
+    }
+
+    unsigned int GetOutputCodePage() const override
+    {
+        Log::Comment(L"GetOutputCodePage MOCK called...");
+        return _expectedCodePage;
+    }
+
+    unsigned int GetInputCodePage() const override
+    {
+        Log::Comment(L"GetInputCodePage MOCK called...");
+        return _expectedCodePage;
     }
 
     void CopyToClipboard(const wil::zwstring_view /*content*/)
@@ -367,7 +378,7 @@ public:
     til::point _expectedCursorPos;
 
     TextAttribute _expectedAttribute = {};
-    unsigned int _expectedOutputCP = 0;
+    unsigned int _expectedCodePage = 0;
     bool _isPty = false;
 
     bool _returnResponseResult = false;
@@ -376,8 +387,7 @@ public:
 
     bool _setWindowTitleResult = false;
     std::wstring_view _expectedWindowTitle{};
-    bool _setConsoleOutputCPResult = false;
-    bool _getConsoleOutputCPResult = false;
+    bool _setCodePageResult = false;
     bool _expectedShowWindow = false;
 
     std::wstring _expectedMenuJson{};
@@ -3529,15 +3539,15 @@ public:
 
         Log::Comment(L"3. Designate ISO-2022 coding system");
         // Code page should be set to ISO-8859-1 and C1 parsing enabled
-        _testGetSet->_setConsoleOutputCPResult = true;
-        _testGetSet->_expectedOutputCP = 28591;
+        _testGetSet->_setCodePageResult = true;
+        _testGetSet->_expectedCodePage = 28591;
         _pDispatch->DesignateCodingSystem(DispatchTypes::CodingSystem::ISO2022);
         VERIFY_IS_TRUE(_stateMachine->GetParserMode(StateMachine::Mode::AcceptC1));
 
         Log::Comment(L"4. Designate UTF-8 coding system");
         // Code page should be set to UTF-8 and C1 parsing disabled
-        _testGetSet->_setConsoleOutputCPResult = true;
-        _testGetSet->_expectedOutputCP = CP_UTF8;
+        _testGetSet->_setCodePageResult = true;
+        _testGetSet->_expectedCodePage = CP_UTF8;
         _pDispatch->DesignateCodingSystem(DispatchTypes::CodingSystem::UTF8);
         VERIFY_IS_FALSE(_stateMachine->GetParserMode(StateMachine::Mode::AcceptC1));
     }
@@ -3960,6 +3970,39 @@ public:
 
         // Reset to page 1
         _pDispatch->PagePositionAbsolute(1);
+    }
+
+    TEST_METHOD(SendC1ControlTest)
+    {
+        const auto S7C1T = L"\033 F";
+        const auto S8C1T = L"\033 G";
+
+        _testGetSet->PrepData();
+        _testGetSet->_expectedCodePage = CP_UTF8;
+
+        Log::Comment(L"Generating reports with C1 control sequences");
+        _stateMachine->ProcessString(S8C1T);
+
+        _pDispatch->SecondaryDeviceAttributes();
+        _testGetSet->ValidateInputEvent(L"\x9b>0;10;1c");
+
+        _pDispatch->TertiaryDeviceAttributes();
+        _testGetSet->ValidateInputEvent(L"\x90!|00000000\x9c");
+
+        _pDispatch->RequestColorTableEntry(0);
+        _testGetSet->ValidateInputEvent(L"\x9d\x34;0;rgb:0c0c/0c0c/0c0c\x9c");
+
+        Log::Comment(L"Generating reports with 7-bit escape sequence");
+        _stateMachine->ProcessString(S7C1T);
+
+        _pDispatch->SecondaryDeviceAttributes();
+        _testGetSet->ValidateInputEvent(L"\x1b[>0;10;1c");
+
+        _pDispatch->TertiaryDeviceAttributes();
+        _testGetSet->ValidateInputEvent(L"\x1bP!|00000000\x1b\\");
+
+        _pDispatch->RequestColorTableEntry(0);
+        _testGetSet->ValidateInputEvent(L"\x1b]4;0;rgb:0c0c/0c0c/0c0c\x1b\\");
     }
 
 private:
