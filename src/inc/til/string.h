@@ -258,6 +258,12 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         return { beg, end };
     }
 
+    // The primary use-case for this is in for-range loops to split a string by a delimiter.
+    // For instance, to split a string by semicolon:
+    //   for (const auto& token : wil::split_iterator{ str, L';' })
+    //
+    // It's written in a way that lets MSVC optimize away the _advance flag and
+    // the ternary in advance(). The resulting assembly is quite alright.
     template<typename T, typename Traits>
     struct split_iterator
     {
@@ -273,39 +279,26 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             using pointer = value_type*;
             using difference_type = std::ptrdiff_t;
 
-            explicit constexpr iterator(split_iterator& p) noexcept :
+            explicit constexpr iterator(split_iterator& p) noexcept
+                :
                 _iter{ p }
             {
             }
 
-            value_type operator*() const noexcept
+            const value_type& operator*() const noexcept
             {
-#ifndef NDEBUG
-                // Don't call operator*() twice per iteration.
-                // Since C++ has inflexible iterators we can't implement a split iterator efficiently:
-                // We essentially need a do-while loop but iterators only offer for() loop semantics.
-                // This forces us to either seek to the first token in the constructor and then again on
-                // every operator++(), or we do this trick here where we seek on every operator*() call.
-                // This only works well of course, if you don't call operator*() multiple times.
-                assert(_iter._advanced);
-                _iter._advanced = false;
-#endif
-                _iter._tok = std::find(_iter._it, _iter._end, _iter._needle);
-                return { _iter._it, _iter._tok };
+                return _iter.value();
             }
 
             iterator& operator++() noexcept
             {
-#ifndef NDEBUG
-                _iter._advanced = true;
-#endif
-                _iter._it = std::min(_iter._end - 1, _iter._tok) + 1;
+                _iter.advance();
                 return *this;
             }
 
             bool operator!=(const sentinel&) const noexcept
             {
-                return _iter._tok != _iter._end;
+                return _iter.valid();
             }
 
         private:
@@ -331,14 +324,34 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         }
 
     private:
+        bool valid() const noexcept
+        {
+            return _tok != _end;
+        }
+
+        void advance() noexcept
+        {
+            _it = _tok == _end ? _end : _tok + 1;
+            _advance = true;
+        }
+
+        const typename iterator::value_type& value() noexcept
+        {
+            if (_advance)
+            {
+                _tok = std::find(_it, _end, _needle);
+                _value = { _it, _tok };
+                _advance = false;
+            }
+            return _value;
+        }
+
         typename iterator::value_type::iterator _it;
         typename iterator::value_type::iterator _tok;
         typename iterator::value_type::iterator _end;
         typename iterator::value_type _value;
         T _needle;
-#ifndef NDEBUG
-        bool _advanced = true;
-#endif
+        bool _advance = true;
     };
 
     namespace details
