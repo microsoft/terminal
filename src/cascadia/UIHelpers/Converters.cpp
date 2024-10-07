@@ -82,7 +82,7 @@ namespace winrt::Microsoft::Terminal::UI::implementation
         // Non-numeral values detected will default to 0
         // std::stod will throw invalid_argument exception if the input is an invalid double value
         // std::stod will throw out_of_range exception if the input value is more than DBL_MAX
-        for (const auto part : til::split_iterator{ paddingString, L',' })
+        for (const auto& part : til::split_iterator{ paddingString, L',' })
         {
             buffer.assign(part);
 
