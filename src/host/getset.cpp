@@ -1140,7 +1140,6 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
     {
         // Set new code page
         gci.OutputCP = codepage;
-
         SetConsoleCPInfo(TRUE);
     }
 
@@ -1157,11 +1156,34 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
 {
     try
     {
+        auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         LockConsole();
         auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
-        return DoSrvSetConsoleOutputCodePage(codepage);
+        RETURN_IF_FAILED(DoSrvSetConsoleOutputCodePage(codepage));
+        // Setting the code page via the API also updates the default value.
+        // This is how the initial code page is set to UTF-8 in a WSL shell.
+        gci.DefaultOutputCP = codepage;
+        return S_OK;
     }
     CATCH_RETURN();
+}
+
+[[nodiscard]] HRESULT DoSrvSetConsoleInputCodePage(const unsigned int codepage)
+{
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+
+    // Return if it's not known as a valid codepage ID.
+    RETURN_HR_IF(E_INVALIDARG, !(IsValidCodePage(codepage)));
+
+    // Do nothing if no change.
+    if (gci.CP != codepage)
+    {
+        // Set new code page
+        gci.CP = codepage;
+        SetConsoleCPInfo(FALSE);
+    }
+
+    return S_OK;
 }
 
 // Routine Description:
@@ -1177,19 +1199,10 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
         auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         LockConsole();
         auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
-
-        // Return if it's not known as a valid codepage ID.
-        RETURN_HR_IF(E_INVALIDARG, !(IsValidCodePage(codepage)));
-
-        // Do nothing if no change.
-        if (gci.CP != codepage)
-        {
-            // Set new code page
-            gci.CP = codepage;
-
-            SetConsoleCPInfo(FALSE);
-        }
-
+        RETURN_IF_FAILED(DoSrvSetConsoleInputCodePage(codepage));
+        // Setting the code page via the API also updates the default value.
+        // This is how the initial code page is set to UTF-8 in a WSL shell.
+        gci.DefaultCP = codepage;
         return S_OK;
     }
     CATCH_RETURN();

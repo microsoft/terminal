@@ -26,6 +26,29 @@ RenderSettings::RenderSettings() noexcept
     SetColorAliasIndex(ColorAlias::DefaultBackground, TextColor::DARK_BLACK);
     SetColorAliasIndex(ColorAlias::FrameForeground, TextColor::FRAME_FOREGROUND);
     SetColorAliasIndex(ColorAlias::FrameBackground, TextColor::FRAME_BACKGROUND);
+
+    SaveDefaultSettings();
+}
+
+// Routine Description:
+// - Saves the current color table and color aliases as the default values, so
+//   we can later restore them when a hard reset (RIS) is requested.
+void RenderSettings::SaveDefaultSettings() noexcept
+{
+    _defaultColorTable = _colorTable;
+    _defaultColorAliasIndices = _colorAliasIndices;
+}
+
+// Routine Description:
+// - Resets the render settings to their default values. which is typically
+//   what they were set to at startup.
+void RenderSettings::RestoreDefaultSettings() noexcept
+{
+    _colorTable = _defaultColorTable;
+    _colorAliasIndices = _defaultColorAliasIndices;
+    // For now, DECSCNM is the only render mode we need to reset. The others are
+    // all user preferences that can't be changed programmatically.
+    _renderMode.reset(Mode::ScreenReversed);
 }
 
 // Routine Description:

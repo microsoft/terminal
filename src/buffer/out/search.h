@@ -36,9 +36,8 @@ public:
     Search() = default;
 
     bool IsStale(const Microsoft::Console::Render::IRenderData& renderData, const std::wstring_view& needle, SearchFlag flags) const noexcept;
-    bool Reset(Microsoft::Console::Render::IRenderData& renderData, const std::wstring_view& needle, SearchFlag flags, bool reverse);
+    void Reset(Microsoft::Console::Render::IRenderData& renderData, const std::wstring_view& needle, SearchFlag flags, bool reverse);
 
-    void MoveToCurrentSelection();
     void MoveToPoint(til::point anchor) noexcept;
     void MovePastPoint(til::point anchor) noexcept;
     void FindNext(bool reverse) noexcept;

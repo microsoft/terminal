@@ -62,7 +62,7 @@ void InteractDispatch::WriteString(const std::wstring_view string)
 {
     if (!string.empty())
     {
-        const auto codepage = _api.GetConsoleOutputCP();
+        const auto codepage = _api.GetOutputCodePage();
         InputEventQueue keyEvents;
 
         for (const auto& wch : string)

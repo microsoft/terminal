@@ -122,6 +122,7 @@ public:
     virtual void LockingShiftRight(const VTInt gsetNumber) = 0; // LS1R, LS2R, LS3R
     virtual void SingleShift(const VTInt gsetNumber) = 0; // SS2, SS3
     virtual void AcceptC1Controls(const bool enabled) = 0; // DECAC1
+    virtual void SendC1Controls(const bool enabled) = 0; // S8C1T, S7C1T
     virtual void AnnounceCodeStructure(const VTInt ansiLevel) = 0; // ACS
 
     virtual void SoftReset() = 0; // DECSTR

@@ -246,8 +246,21 @@
     <comment>A description explaining how this control changes the app's language. {Locked="Windows"}</comment>
   </data>
   <data name="Globals_LanguageDefault" xml:space="preserve">
-    <value>使用系统默认值</value>
+    <value>默认</value>
     <comment>The app contains a control allowing users to choose the app's language. If this value is chosen, the language preference list of the system settings is used instead.</comment>
+  </data>
+  <data name="Globals_DefaultInputScope.Header" xml:space="preserve">
+    <value>默认输入法输入模式</value>
+    <comment>The "input scope" of an IME tells it what type of characters should be available for input. A Chinese IME for instance may show English letters instead of Chinese ones. It's a technical term. We're using "input mode" instead of "input scope" to make it easier to understand for users.</comment>
+  </data>
+  <data name="Globals_DefaultInputScope.HelpText" xml:space="preserve">
+    <value>告知输入法默认使用的语言。对于依赖于输入法且默认不使用拉丁字符的语言，此设置可用于在启动时强制进行英语输入。</value>
+  </data>
+  <data name="Globals_DefaultInputScopeDefault.Content" xml:space="preserve">
+    <value>默认</value>
+  </data>
+  <data name="Globals_DefaultInputScopeAlphanumericHalfWidth.Content" xml:space="preserve">
+    <value>字母数字半角(英语)</value>
   </data>
   <data name="Globals_AlwaysShowTabs.Header" xml:space="preserve">
     <value>始终显示选项卡</value>
@@ -1157,7 +1170,7 @@
     <comment>Header for a control to determine the title of the tab. This is represented using a text box.</comment>
   </data>
   <data name="Profile_TabTitle.HelpText" xml:space="preserve">
-    <value>将配置文件名称替换为标题，以在启动时传递给外壳。</value>
+    <value>将配置文件名称替换为标题，以在启动时传递给 shell。</value>
     <comment>A description for what the "tab title" setting does. Presented near "Profile_TabTitle".</comment>
   </data>
   <data name="Profile_UnfocusedAppearanceTextBlock.Text" xml:space="preserve">
@@ -1539,6 +1552,10 @@
     <value>文本</value>
     <comment>Header for a group of settings that control the appearance of text in the app.</comment>
   </data>
+  <data name="Globals_WarningsHeader.Text" xml:space="preserve">
+    <value>警告</value>
+    <comment>Header for a group of settings that control the warnings in the app.</comment>
+  </data>
   <data name="Profile_WindowHeader.Text" xml:space="preserve">
     <value>窗口</value>
     <comment>Header for a group of settings that control the appearance of the window frame of the app.</comment>
@@ -1818,6 +1835,15 @@
   <data name="Globals_ConfirmCloseAllTabs.Header" xml:space="preserve">
     <value>关闭多个选项卡时发出警告</value>
     <comment>Header for a control to toggle whether to show a confirm dialog box when closing the application with multiple tabs open.</comment>
+  </data>
+  <data name="Globals_InputServiceWarning.Header" xml:space="preserve">
+    <value>禁用“触摸键盘和手写面板服务”时发出警告</value>
+  </data>
+  <data name="Globals_WarnAboutLargePaste.Header" xml:space="preserve">
+    <value>尝试粘贴超过 5 KiB 字符时发出警告</value>
+  </data>
+  <data name="Globals_WarnAboutMultiLinePaste.Header" xml:space="preserve">
+    <value>尝试粘贴“新行”字符时发出警告</value>
   </data>
   <data name="Settings_PortableModeNote.Text" xml:space="preserve">
     <value>Windows 终端正在便携模式下运行。</value>

@@ -488,7 +488,7 @@
                     </StackPanel>
                 </Button.Content>
                 <Button.Flyout>
-                    <Flyout>
+                    <Flyout FlyoutPresenterStyle="{StaticResource CustomFlyoutPresenterStyle}">
                         <StackPanel>
                             <TextBlock x:Uid="ColorScheme_DeleteConfirmationMessage"
                                        Style="{StaticResource CustomFlyoutTextStyle}" />

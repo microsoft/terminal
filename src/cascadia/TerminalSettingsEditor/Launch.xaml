@@ -139,6 +139,29 @@
                 </ComboBox>
             </local:SettingContainer>
 
+            <!--  Language  -->
+            <local:SettingContainer x:Uid="Globals_Language"
+                                    Visibility="{x:Bind ViewModel.LanguageSelectorAvailable}">
+                <ComboBox ItemsSource="{x:Bind ViewModel.LanguageList}"
+                          SelectedItem="{x:Bind ViewModel.CurrentLanguage, Mode=TwoWay}"
+                          Style="{StaticResource ComboBoxSettingStyle}">
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate x:DataType="x:String">
+                            <TextBlock Text="{x:Bind local:LaunchViewModel.LanguageDisplayConverter((x:String))}" />
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
+            </local:SettingContainer>
+
+            <!--  Language  -->
+            <local:SettingContainer x:Uid="Globals_DefaultInputScope">
+                <ComboBox AutomationProperties.AccessibilityView="Content"
+                          ItemTemplate="{StaticResource EnumComboBoxTemplate}"
+                          ItemsSource="{x:Bind ViewModel.DefaultInputScopeList}"
+                          SelectedItem="{x:Bind ViewModel.CurrentDefaultInputScope, Mode=TwoWay}"
+                          Style="{StaticResource ComboBoxSettingStyle}" />
+            </local:SettingContainer>
+
             <!--  Start on User Login  -->
             <local:SettingContainer x:Uid="Globals_StartOnUserLogin">
                 <ToggleSwitch IsOn="{x:Bind ViewModel.StartOnUserLogin, Mode=TwoWay}"
