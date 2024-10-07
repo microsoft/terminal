@@ -139,8 +139,10 @@ public:
     void SetWindowTitle(const std::wstring_view title) override;
     CursorType GetUserDefaultCursorStyle() const noexcept override;
     bool ResizeWindow(const til::CoordType width, const til::CoordType height) override;
-    void SetConsoleOutputCP(const unsigned int codepage) noexcept override;
-    unsigned int GetConsoleOutputCP() const noexcept override;
+    void SetCodePage(const unsigned int codepage) noexcept override;
+    void ResetCodePage() noexcept override;
+    unsigned int GetOutputCodePage() const noexcept override;
+    unsigned int GetInputCodePage() const noexcept override;
     void CopyToClipboard(wil::zwstring_view content) override;
     void SetTaskbarProgress(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::TaskbarState state, const size_t progress) override;
     void SetWorkingDirectory(std::wstring_view uri) override;
