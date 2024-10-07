@@ -423,6 +423,7 @@
         "newWindow",
         "nextTab",
         "openAbout",
+        "openCWD",
         "openNewTabDropdown",
         "openSettings",
         "openSystemMenu",

@@ -178,6 +178,8 @@ namespace Microsoft.Terminal.Control
         Boolean ShouldShowSelectCommand();
         Boolean ShouldShowSelectOutput();
 
+        void OpenCWD();
+
         void ClearQuickFix();
 
         // These events are called from some background thread
