@@ -202,7 +202,8 @@
             </local:SettingContainer>
 
             <!--  Font Face  -->
-            <local:SettingContainer x:Uid="Profile_FontFace"
+            <local:SettingContainer x:Name="FontFaceContainer"
+                                    x:Uid="Profile_FontFace"
                                     ClearSettingValue="{x:Bind Appearance.ClearFontFace}"
                                     HasSettingValue="{x:Bind Appearance.HasFontFace, Mode=OneWay}"
                                     SettingOverrideSource="{x:Bind Appearance.FontFaceOverrideSource, Mode=OneWay}"
@@ -214,10 +215,11 @@
                                     ItemTemplate="{StaticResource FontFaceComboBoxItemTemplate}"
                                     ItemsSource="{x:Bind FilteredFontList, Mode=OneWay}"
                                     LostFocus="FontFaceBox_LostFocus"
-                                    SuggestionChosen="FontFaceBox_SuggestionChosen"
+                                    QuerySubmitted="FontFaceBox_QuerySubmitted"
                                     Text="{x:Bind Appearance.FontFace, Mode=OneWay}"
                                     TextBoxStyle="{StaticResource TextBoxSettingStyle}"
-                                    TextChanged="FontFaceBox_TextChanged" />
+                                    TextChanged="FontFaceBox_TextChanged"
+                                    UpdateTextOnSelect="False" />
                     <CheckBox x:Name="ShowAllFontsCheckbox"
                               x:Uid="Profile_FontFaceShowAllFonts"
                               IsChecked="{x:Bind ShowAllFonts, Mode=TwoWay}" />
