@@ -1129,7 +1129,7 @@ namespace winrt::TerminalApp::implementation
     }
 
     void TerminalPage::_HandleOpenCWD(const IInspectable& /*sender*/,
-                                            const ActionEventArgs& args)
+                                      const ActionEventArgs& args)
     {
         if (const auto& control{ _GetActiveControl() })
         {
