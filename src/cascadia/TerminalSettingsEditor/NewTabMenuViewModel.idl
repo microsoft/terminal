@@ -20,6 +20,7 @@ namespace Microsoft.Terminal.Settings.Editor
     {
         NewTabMenuViewModel(Microsoft.Terminal.Settings.Model.CascadiaSettings settings);
         void UpdateSettings(Microsoft.Terminal.Settings.Model.CascadiaSettings settings);
+        void GenerateFolderTree();
 
         FolderEntryViewModel CurrentFolder;
         Boolean IsFolderView { get; };

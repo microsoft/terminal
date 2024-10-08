@@ -141,10 +141,21 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 if (_CurrentFolder)
                 {
                     CurrentFolderName(_CurrentFolder.Name());
+                    _CurrentFolder.PropertyChanged({ this, &NewTabMenuViewModel::_FolderPropertyChanged });
                 }
                 _NotifyChanges(L"IsFolderView", L"CurrentView");
             }
         });
+    }
+
+    void NewTabMenuViewModel::_FolderPropertyChanged(const IInspectable& /*sender*/, const Windows::UI::Xaml::Data::PropertyChangedEventArgs& args)
+    {
+        const auto viewModelProperty{ args.PropertyName() };
+        if (viewModelProperty == L"Name")
+        {
+            // FolderTree needs to be updated when a folder is renamed
+            _folderTreeCache = nullptr;
+        }
     }
 
     hstring NewTabMenuViewModel::CurrentFolderName() const
@@ -161,6 +172,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         if (_CurrentFolder && _CurrentFolder.Name() != value)
         {
             _CurrentFolder.Name(value);
+            _NotifyChanges(L"CurrentFolderName");
         }
     }
 
@@ -178,6 +190,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         if (_CurrentFolder && _CurrentFolder.Inlining() != value)
         {
             _CurrentFolder.Inlining(value);
+            _NotifyChanges(L"CurrentFolderInlining");
         }
     }
 
@@ -187,14 +200,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             return {};
         }
-        return _CurrentFolder.Inlining();
+        return _CurrentFolder.AllowEmpty();
     }
 
     void NewTabMenuViewModel::CurrentFolderAllowEmpty(bool value)
     {
-        if (_CurrentFolder && _CurrentFolder.Inlining() != value)
+        if (_CurrentFolder && _CurrentFolder.AllowEmpty() != value)
         {
-            _CurrentFolder.Inlining(value);
+            _CurrentFolder.AllowEmpty(value);
+            _NotifyChanges(L"CurrentFolderAllowEmpty");
         }
     }
 
@@ -279,6 +293,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         if (CurrentView().IndexOf(vm, idx))
         {
             CurrentView().RemoveAt(idx);
+
+            if (vm.try_as<Editor::FolderEntryViewModel>())
+            {
+                _folderTreeCache = nullptr;
+            }
         }
     }
 
@@ -286,9 +305,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         for (auto&& e : entries)
         {
-            // Remove entry from the current layer
+            // Remove entry from the current layer,
+            // and add it to the destination folder
             RequestDeleteEntry(e);
-
             destinationFolder.Entries().Append(e);
         }
     }
@@ -321,8 +340,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         CurrentView().Append(make<FolderEntryViewModel>(folderEntry));
 
-        // Clear the field after adding the entry
+        // Reset state after adding the entry
         AddFolderName({});
+        _folderTreeCache = nullptr;
 
         _PrintAll();
     }
@@ -354,10 +374,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _PrintAll();
     }
 
-    // TODO CARLOS:
-    // - validate
-    // - reset cache when needed
-    Collections::IObservableVector<Editor::FolderTreeViewEntry> NewTabMenuViewModel::FolderTree()
+    void NewTabMenuViewModel::GenerateFolderTree()
     {
         if (!_folderTreeCache)
         {
@@ -374,7 +391,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                     root.Children().Append(winrt::make<FolderTreeViewEntry>(entry.as<Editor::FolderEntryViewModel>()));
                 }
             }
+            _NotifyChanges(L"FolderTree");
         }
+    }
+
+    Collections::IObservableVector<Editor::FolderTreeViewEntry> NewTabMenuViewModel::FolderTree() const
+    {
+        // We could do this...
+        //   if (!_folderTreeCache){ GenerateFolderTree(); }
+        // But FolderTree() gets called when we open the page.
+        // Instead, we generate the tree as needed using GenerateFolderTree()
+        //  which caches the tree.
         return _folderTreeCache;
     }
 
@@ -589,7 +616,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         _Entries = _ConvertToViewModelEntries(_FolderEntry.RawEntries());
 
-        // TODO CARLOS: we need to use this revoker somewhere
         _entriesChangedRevoker = _Entries.VectorChanged(winrt::auto_revoke, [this](auto&&, const IVectorChangedEventArgs& args) {
             switch (args.CollectionChange())
             {

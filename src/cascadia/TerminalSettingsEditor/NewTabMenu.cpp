@@ -33,6 +33,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     void NewTabMenu::FolderPickerDialog_Opened(const IInspectable& /*sender*/, const Controls::ContentDialogOpenedEventArgs& /*e*/)
     {
         _ViewModel.CurrentFolderTreeViewSelectedItem(nullptr);
+        _ViewModel.GenerateFolderTree();
     }
 
     void NewTabMenu::FolderPickerDialog_PrimaryButtonClick(const IInspectable& /*sender*/, const Controls::ContentDialogButtonClickEventArgs& /*e*/)

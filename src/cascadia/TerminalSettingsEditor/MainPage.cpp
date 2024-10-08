@@ -150,7 +150,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             // Early exit if the last breadcrumb was a FolderEntry in the NewTabMenu
             if (const auto& breadcrumbFolderEntry{ crumb->Tag().try_as<Editor::FolderEntryViewModel>() })
             {
-                // TODO CARLOS: It's _a lot_ of extra work to figure out where this folder is and recreate the breadcrumbs
+                // It's _a lot_ of extra work to figure out where this folder is and recreate the breadcrumbs
                 // (and that assumes that the folder even exists!) so for now we'll just navigate to the base page
                 _newTabMenuPageVM.CurrentFolder(nullptr);
                 _Navigate(breadcrumbFolderEntry, BreadcrumbSubPage::None);
@@ -369,7 +369,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void MainPage::_SetupNTMEventHandling()
     {
-        // TODO CARLOS: validate
         _ntmViewModelChangedRevoker = _newTabMenuPageVM.PropertyChanged(winrt::auto_revoke, [this](auto&&, const PropertyChangedEventArgs& args) {
             const auto settingName{ args.PropertyName() };
             if (settingName == L"CurrentFolder")
@@ -514,7 +513,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void MainPage::_Navigate(const Editor::NewTabMenuEntryViewModel& ntmEntryVM, BreadcrumbSubPage subPage)
     {
-        // TODO CARLOS: validate
         _PreNavigateHelper();
 
         _SetupNTMEventHandling();
@@ -577,7 +575,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             }
             else if (const auto ntmEntryViewModel = tag.try_as<NewTabMenuEntryViewModel>())
             {
-                // TODO CARLOS: validate
                 _Navigate(*ntmEntryViewModel, subPage);
             }
             else

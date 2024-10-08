@@ -18,6 +18,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         // FolderPickerDialog handlers
         void FolderPickerDialog_Opened(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::Controls::ContentDialogOpenedEventArgs& e);
+        void FolderPickerDialog_Closed(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::Controls::ContentDialogClosedEventArgs& e);
         void FolderPickerDialog_PrimaryButtonClick(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::Controls::ContentDialogButtonClickEventArgs& e);
 
         // NTM Entry handlers

@@ -23,6 +23,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     public:
         NewTabMenuViewModel(Model::CascadiaSettings settings);
         void UpdateSettings(const Model::CascadiaSettings& settings);
+        void GenerateFolderTree();
 
         bool IsRemainingProfilesEntryMissing() const;
         bool IsFolderView() const noexcept;
@@ -44,8 +45,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         bool CurrentFolderAllowEmpty() const;
         void CurrentFolderAllowEmpty(bool value);
 
-        Windows::Foundation::Collections::IObservableVector<Model::Profile> AvailableProfiles() { return _Settings.AllProfiles(); }
-        Windows::Foundation::Collections::IObservableVector<Editor::FolderTreeViewEntry> FolderTree();
+        Windows::Foundation::Collections::IObservableVector<Model::Profile> AvailableProfiles() const { return _Settings.AllProfiles(); }
+        Windows::Foundation::Collections::IObservableVector<Editor::FolderTreeViewEntry> FolderTree() const;
         Windows::Foundation::Collections::IObservableVector<Editor::NewTabMenuEntryViewModel> CurrentView() const;
         VIEW_MODEL_OBSERVABLE_PROPERTY(Editor::FolderEntryViewModel, CurrentFolder, nullptr);
         VIEW_MODEL_OBSERVABLE_PROPERTY(Editor::FolderTreeViewEntry, CurrentFolderTreeViewSelectedItem, nullptr);
@@ -60,12 +61,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     private:
         Model::CascadiaSettings _Settings{ nullptr };
         Windows::Foundation::Collections::IObservableVector<Editor::NewTabMenuEntryViewModel> _rootEntries;
+        Windows::Foundation::Collections::IObservableVector<Editor::FolderTreeViewEntry> _folderTreeCache;
         Windows::Foundation::Collections::IObservableVector<Editor::NewTabMenuEntryViewModel>::VectorChanged_revoker _rootEntriesChangedRevoker;
 
-        Windows::Foundation::Collections::IObservableVector<Editor::FolderTreeViewEntry> _folderTreeCache;
-        Windows::Foundation::Collections::IObservableVector<Editor::NewTabMenuEntryViewModel>::VectorChanged_revoker _CurrentViewChangedRevoker;
-
         static bool _IsRemainingProfilesEntryMissing(const Windows::Foundation::Collections::IVector<Editor::NewTabMenuEntryViewModel>& entries);
+        void _FolderPropertyChanged(const IInspectable& sender, const Windows::UI::Xaml::Data::PropertyChangedEventArgs& args);
 
         void _PrintAll();
 #ifdef _DEBUG
