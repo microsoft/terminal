@@ -2690,6 +2690,38 @@ namespace winrt::TerminalApp::implementation
         return wil::unique_close_clipboard_call{ success };
     }
 
+    static void _copyToClipboard(const UINT format, const void* src, const size_t bytes)
+    {
+        wil::unique_hglobal handle{ THROW_LAST_ERROR_IF_NULL(GlobalAlloc(GMEM_MOVEABLE, bytes)) };
+
+        const auto locked = GlobalLock(handle.get());
+        memcpy(locked, src, bytes);
+        GlobalUnlock(handle.get());
+
+        THROW_LAST_ERROR_IF_NULL(SetClipboardData(format, handle.get()));
+        handle.release();
+    }
+
+    static void copyToClipboard(winrt::hstring text)
+    {
+        const auto clipboard = _openClipboard(nullptr);
+        if (!clipboard)
+        {
+            LOG_LAST_ERROR();
+            return;
+        }
+
+        EmptyClipboard();
+
+        if (!text.empty())
+        {
+            // As per: https://learn.microsoft.com/en-us/windows/win32/dataxchg/standard-clipboard-formats
+            //   CF_UNICODETEXT: [...] A null character signals the end of the data.
+            // --> We add +1 to the length. This works because .c_str() is null-terminated.
+            _copyToClipboard(CF_UNICODETEXT, text.c_str(), (text.size() + 1) * sizeof(wchar_t));
+        }
+    }
+
     static winrt::hstring _extractClipboard()
     {
         // This handles most cases of pasting text as the OS converts most formats to CF_UNICODETEXT automatically.
@@ -3171,6 +3203,14 @@ namespace winrt::TerminalApp::implementation
                 }
             };
 
+            auto openFolder = [](const auto& filePath) {
+                HINSTANCE res = ShellExecute(nullptr, nullptr, filePath.c_str(), nullptr, nullptr, SW_SHOW);
+                if (static_cast<int>(reinterpret_cast<uintptr_t>(res)) <= 32)
+                {
+                    ShellExecute(nullptr, nullptr, L"open", filePath.c_str(), nullptr, SW_SHOW);
+                }
+            };
+
             switch (target)
             {
             case SettingsTarget::DefaultsFile:
@@ -3178,6 +3218,12 @@ namespace winrt::TerminalApp::implementation
                 break;
             case SettingsTarget::SettingsFile:
                 openFile(CascadiaSettings::SettingsPath());
+                break;
+            case SettingsTarget::FileExplorer:
+                openFolder(CascadiaSettings::SettingsDirectory());
+                break;
+            case SettingsTarget::Clipboard:
+                copyToClipboard(CascadiaSettings::SettingsPath());
                 break;
             case SettingsTarget::AllFiles:
                 openFile(CascadiaSettings::DefaultSettingsPath());
