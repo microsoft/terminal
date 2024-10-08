@@ -1128,6 +1128,16 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    void TerminalPage::_HandleOpenCWD(const IInspectable& /*sender*/,
+                                      const ActionEventArgs& args)
+    {
+        if (const auto& control{ _GetActiveControl() })
+        {
+            control.OpenCWD();
+            args.Handled(true);
+        }
+    }
+
     void TerminalPage::_HandleGlobalSummon(const IInspectable& /*sender*/,
                                            const ActionEventArgs& args)
     {
