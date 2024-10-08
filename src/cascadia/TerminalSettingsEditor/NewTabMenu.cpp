@@ -30,10 +30,28 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _ViewModel = e.Parameter().as<Editor::NewTabMenuViewModel>();
     }
 
-    void NewTabMenu::FolderNameTextBox_TextChanged(const IInspectable& sender, const Controls::TextChangedEventArgs& /*e*/)
+    void NewTabMenu::FolderPickerDialog_Opened(const IInspectable& /*sender*/, const Controls::ContentDialogOpenedEventArgs& /*e*/)
     {
-        const auto isTextEmpty = sender.as<Controls::TextBox>().Text().empty();
-        AddFolderButton().IsEnabled(!isTextEmpty);
+        _ViewModel.CurrentFolderTreeViewSelectedItem(nullptr);
+    }
+
+    void NewTabMenu::FolderPickerDialog_PrimaryButtonClick(const IInspectable& /*sender*/, const Controls::ContentDialogButtonClickEventArgs& /*e*/)
+    {
+        // copy selected items first (it updates as we move entries)
+        auto entries = winrt::single_threaded_vector<Editor::NewTabMenuEntryViewModel>();
+        for (const auto& item : NewTabMenuListView().SelectedItems())
+        {
+            entries.Append(item.as<Editor::NewTabMenuEntryViewModel>());
+        }
+
+        // now actually move them
+        _ViewModel.RequestMoveEntriesToFolder(entries, FolderTreeView().SelectedItem().as<Editor::FolderTreeViewEntry>().FolderEntryVM());
+    }
+
+    void NewTabMenu::EditEntry_Clicked(const IInspectable& sender, const RoutedEventArgs& /*e*/)
+    {
+        auto folderVM = sender.as<FrameworkElement>().DataContext().as<Editor::FolderEntryViewModel>();
+        _ViewModel.CurrentFolder(folderVM);
     }
 
     void NewTabMenu::ReorderEntry_Clicked(const IInspectable& sender, const RoutedEventArgs& /*e*/)
@@ -51,11 +69,44 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _ViewModel.RequestDeleteEntry(entry);
     }
 
-    void NewTabMenu::EditEntry_Clicked(const IInspectable& sender, const RoutedEventArgs& /*e*/)
+    safe_void_coroutine NewTabMenu::MoveMultiple_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
     {
-        auto entryVM = sender.as<FrameworkElement>().DataContext().as<Editor::FolderEntryViewModel>();
-        _ViewModel.CurrentFolderEntry(entryVM);
-        _ViewModel.CurrentPage(NTMSubPage::Folder);
+        co_await FindName(L"FolderPickerDialog").as<Controls::ContentDialog>().ShowAsync();
+    }
+
+    void NewTabMenu::DeleteMultiple_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
+    {
+        // copy selected items first (it updates as we delete entries)
+        auto entries = winrt::single_threaded_vector<Editor::NewTabMenuEntryViewModel>();
+        for (const auto& item : NewTabMenuListView().SelectedItems())
+        {
+            entries.Append(item.as<Editor::NewTabMenuEntryViewModel>());
+        }
+
+        // now actually delete them
+        for (const auto&& vm : entries)
+        {
+            _ViewModel.RequestDeleteEntry(vm);
+        }
+    }
+
+    void NewTabMenu::AddFolderNameTextBox_KeyDown(const IInspectable& /*sender*/, const Input::KeyRoutedEventArgs& e)
+    {
+        if (e.Key() == Windows::System::VirtualKey::Enter)
+        {
+            // We need to manually set the FolderName here because the TextBox's TextChanged event hasn't fired yet.
+            if (const auto folderName = FolderNameTextBox().Text(); !folderName.empty())
+            {
+                _ViewModel.AddFolderName(folderName);
+                _ViewModel.RequestAddFolderEntry();
+            }
+        }
+    }
+
+    void NewTabMenu::AddFolderNameTextBox_TextChanged(const IInspectable& sender, const Controls::TextChangedEventArgs& /*e*/)
+    {
+        const auto isTextEmpty = sender.as<Controls::TextBox>().Text().empty();
+        AddFolderButton().IsEnabled(!isTextEmpty);
     }
 
     DataTemplate NewTabMenuEntryTemplateSelector::SelectTemplateCore(const IInspectable& item, const DependencyObject& /*container*/)

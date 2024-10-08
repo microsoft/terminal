@@ -4,6 +4,7 @@
 #pragma once
 
 #include "NewTabMenuViewModel.g.h"
+#include "FolderTreeViewEntry.g.h"
 #include "NewTabMenuEntryViewModel.g.h"
 #include "ProfileEntryViewModel.g.h"
 #include "SeparatorEntryViewModel.g.h"
@@ -21,14 +22,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
     public:
         NewTabMenuViewModel(Model::CascadiaSettings settings);
+        void UpdateSettings(const Model::CascadiaSettings& settings);
 
-        static bool IsRemainingProfilesEntryMissing(const Windows::Foundation::Collections::IObservableVector<Editor::NewTabMenuEntryViewModel>& entries);
+        bool IsRemainingProfilesEntryMissing() const;
         bool IsFolderView() const noexcept;
 
-        void UpdateSettings(Model::CascadiaSettings settings);
-
-        void RequestReorderEntry(Editor::NewTabMenuEntryViewModel vm, bool goingUp);
-        void RequestDeleteEntry(Editor::NewTabMenuEntryViewModel vm);
+        void RequestReorderEntry(const Editor::NewTabMenuEntryViewModel& vm, bool goingUp);
+        void RequestDeleteEntry(const Editor::NewTabMenuEntryViewModel& vm);
+        void RequestMoveEntriesToFolder(const Windows::Foundation::Collections::IVector<Editor::NewTabMenuEntryViewModel>& entries, const Editor::FolderEntryViewModel& destinationFolder);
 
         void RequestAddSelectedProfileEntry();
         void RequestAddSeparatorEntry();
@@ -36,24 +37,35 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void RequestAddProfileMatcherEntry();
         void RequestAddRemainingProfilesEntry();
 
-        Windows::Foundation::Collections::IObservableVector<Model::Profile> AvailableProfiles() { return _Settings.AllProfiles(); }
-        VIEW_MODEL_OBSERVABLE_PROPERTY(Windows::Foundation::Collections::IObservableVector<Editor::NewTabMenuEntryViewModel>, Entries);
-        VIEW_MODEL_OBSERVABLE_PROPERTY(Model::Profile, SelectedProfile, nullptr);
+        hstring CurrentFolderName() const;
+        void CurrentFolderName(const hstring& value);
+        bool CurrentFolderInlining() const;
+        void CurrentFolderInlining(bool value);
+        bool CurrentFolderAllowEmpty() const;
+        void CurrentFolderAllowEmpty(bool value);
 
+        Windows::Foundation::Collections::IObservableVector<Model::Profile> AvailableProfiles() { return _Settings.AllProfiles(); }
+        Windows::Foundation::Collections::IObservableVector<Editor::FolderTreeViewEntry> FolderTree();
+        Windows::Foundation::Collections::IObservableVector<Editor::NewTabMenuEntryViewModel> CurrentView() const;
+        VIEW_MODEL_OBSERVABLE_PROPERTY(Editor::FolderEntryViewModel, CurrentFolder, nullptr);
+        VIEW_MODEL_OBSERVABLE_PROPERTY(Editor::FolderTreeViewEntry, CurrentFolderTreeViewSelectedItem, nullptr);
+
+        // Bound to the UI to create new entries
+        VIEW_MODEL_OBSERVABLE_PROPERTY(Model::Profile, SelectedProfile, nullptr);
         VIEW_MODEL_OBSERVABLE_PROPERTY(hstring, ProfileMatcherName);
         VIEW_MODEL_OBSERVABLE_PROPERTY(hstring, ProfileMatcherSource);
         VIEW_MODEL_OBSERVABLE_PROPERTY(hstring, ProfileMatcherCommandline);
-
-        VIEW_MODEL_OBSERVABLE_PROPERTY(hstring, FolderName);
-
-        VIEW_MODEL_OBSERVABLE_PROPERTY(NTMSubPage, CurrentPage);
-        VIEW_MODEL_OBSERVABLE_PROPERTY(Editor::FolderEntryViewModel, CurrentFolderEntry, nullptr);
+        VIEW_MODEL_OBSERVABLE_PROPERTY(hstring, AddFolderName);
 
     private:
         Model::CascadiaSettings _Settings{ nullptr };
-        Windows::Foundation::Collections::IObservableVector<Editor::NewTabMenuEntryViewModel>::VectorChanged_revoker _entriesChangedRevoker;
+        Windows::Foundation::Collections::IObservableVector<Editor::NewTabMenuEntryViewModel> _rootEntries;
+        Windows::Foundation::Collections::IObservableVector<Editor::NewTabMenuEntryViewModel>::VectorChanged_revoker _rootEntriesChangedRevoker;
 
-        void _UpdateEntries();
+        Windows::Foundation::Collections::IObservableVector<Editor::FolderTreeViewEntry> _folderTreeCache;
+        Windows::Foundation::Collections::IObservableVector<Editor::NewTabMenuEntryViewModel>::VectorChanged_revoker _CurrentViewChangedRevoker;
+
+        static bool _IsRemainingProfilesEntryMissing(const Windows::Foundation::Collections::IVector<Editor::NewTabMenuEntryViewModel>& entries);
 
         void _PrintAll();
 #ifdef _DEBUG
@@ -62,6 +74,21 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void _PrintVM(Windows::Foundation::Collections::IVector<Editor::NewTabMenuEntryViewModel> list, std::wstring prefix = L"");
         void _PrintVM(const Editor::NewTabMenuEntryViewModel& vm, std::wstring prefix = L"");
 #endif
+    };
+
+    struct FolderTreeViewEntry : FolderTreeViewEntryT<FolderTreeViewEntry>
+    {
+    public:
+        FolderTreeViewEntry(Editor::FolderEntryViewModel folderEntry);
+
+        hstring Name();
+        hstring Icon();
+        Editor::FolderEntryViewModel FolderEntryVM() { return _folderEntry; }
+
+        WINRT_PROPERTY(Windows::Foundation::Collections::IObservableVector<Microsoft::Terminal::Settings::Editor::FolderTreeViewEntry>, Children);
+
+    private:
+        Editor::FolderEntryViewModel _folderEntry;
     };
 
     struct NewTabMenuEntryViewModel : NewTabMenuEntryViewModelT<NewTabMenuEntryViewModel>, ViewModelHelper<NewTabMenuEntryViewModel>
@@ -95,11 +122,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     public:
         FolderEntryViewModel(Model::FolderEntry folderEntry);
 
+        bool Inlining() const;
+        void Inlining(bool value);
         GETSET_OBSERVABLE_PROJECTED_SETTING(_FolderEntry, Name);
         GETSET_OBSERVABLE_PROJECTED_SETTING(_FolderEntry, Icon);
+        GETSET_OBSERVABLE_PROJECTED_SETTING(_FolderEntry, AllowEmpty);
 
         VIEW_MODEL_OBSERVABLE_PROPERTY(Windows::Foundation::Collections::IObservableVector<Editor::NewTabMenuEntryViewModel>, Entries);
         VIEW_MODEL_OBSERVABLE_PROPERTY(Model::FolderEntry, FolderEntry, nullptr);
+
+    private:
+        Windows::Foundation::Collections::IObservableVector<Editor::NewTabMenuEntryViewModel>::VectorChanged_revoker _entriesChangedRevoker;
     };
 
     struct MatchProfilesEntryViewModel : MatchProfilesEntryViewModelT<MatchProfilesEntryViewModel, NewTabMenuEntryViewModel>
@@ -123,6 +156,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 namespace winrt::Microsoft::Terminal::Settings::Editor::factory_implementation
 {
     BASIC_FACTORY(NewTabMenuViewModel);
+    BASIC_FACTORY(FolderTreeViewEntry);
     BASIC_FACTORY(ProfileEntryViewModel);
     BASIC_FACTORY(SeparatorEntryViewModel);
     BASIC_FACTORY(FolderEntryViewModel);

@@ -6,6 +6,7 @@
 #include <LibraryResources.h>
 
 #include "NewTabMenuViewModel.g.cpp"
+#include "FolderTreeViewEntry.g.cpp"
 #include "NewTabMenuEntryViewModel.g.cpp"
 #include "ProfileEntryViewModel.g.cpp"
 #include "SeparatorEntryViewModel.g.cpp"
@@ -24,6 +25,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     static IObservableVector<Editor::NewTabMenuEntryViewModel> _ConvertToViewModelEntries(IVector<Model::NewTabMenuEntry> settingsModelEntries)
     {
         auto result = single_threaded_observable_vector<Editor::NewTabMenuEntryViewModel>();
+        if (!settingsModelEntries)
+        {
+            return result;
+        }
+
         for (const auto& entry : settingsModelEntries)
         {
             switch (entry.Type())
@@ -83,7 +89,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return result;
     }
 
-    bool NewTabMenuViewModel::IsRemainingProfilesEntryMissing(const IObservableVector<Editor::NewTabMenuEntryViewModel>& entries)
+    bool NewTabMenuViewModel::IsRemainingProfilesEntryMissing() const
+    {
+        return _IsRemainingProfilesEntryMissing(_rootEntries);
+    }
+
+    bool NewTabMenuViewModel::_IsRemainingProfilesEntryMissing(const IVector<Editor::NewTabMenuEntryViewModel>& entries)
     {
         for (const auto& entry : entries)
         {
@@ -95,7 +106,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             }
             case NewTabMenuEntryType::Folder:
             {
-                if (!IsRemainingProfilesEntryMissing(entry.as<Editor::FolderEntryViewModel>().Entries()))
+                if (!_IsRemainingProfilesEntryMissing(entry.as<Editor::FolderEntryViewModel>().Entries()))
                 {
                     return false;
                 }
@@ -105,18 +116,16 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             }
         }
         return true;
-    };
+    }
 
     bool NewTabMenuViewModel::IsFolderView() const noexcept
     {
-        return _CurrentFolderEntry != nullptr;
+        return CurrentView() != _rootEntries;
     }
 
     NewTabMenuViewModel::NewTabMenuViewModel(Model::CascadiaSettings settings)
     {
         UpdateSettings(settings);
-
-        _UpdateEntries();
 
         // Add a property changed handler to our own property changed event.
         // This propagates changes from the settings model to anybody listening to our
@@ -127,135 +136,160 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             {
                 _NotifyChanges(L"SelectedProfile");
             }
-            else if (viewModelProperty == L"CurrentFolderEntry")
+            else if (viewModelProperty == L"CurrentFolder")
             {
-                _NotifyChanges(L"IsFolderView");
-                _UpdateEntries();
+                if (_CurrentFolder)
+                {
+                    CurrentFolderName(_CurrentFolder.Name());
+                }
+                _NotifyChanges(L"IsFolderView", L"CurrentView");
             }
         });
     }
 
-    void NewTabMenuViewModel::UpdateSettings(Model::CascadiaSettings settings)
+    hstring NewTabMenuViewModel::CurrentFolderName() const
+    {
+        if (!_CurrentFolder)
+        {
+            return {};
+        }
+        return _CurrentFolder.Name();
+    }
+
+    void NewTabMenuViewModel::CurrentFolderName(const hstring& value)
+    {
+        if (_CurrentFolder && _CurrentFolder.Name() != value)
+        {
+            _CurrentFolder.Name(value);
+        }
+    }
+
+    bool NewTabMenuViewModel::CurrentFolderInlining() const
+    {
+        if (!_CurrentFolder)
+        {
+            return {};
+        }
+        return _CurrentFolder.Inlining();
+    }
+
+    void NewTabMenuViewModel::CurrentFolderInlining(bool value)
+    {
+        if (_CurrentFolder && _CurrentFolder.Inlining() != value)
+        {
+            _CurrentFolder.Inlining(value);
+        }
+    }
+
+    bool NewTabMenuViewModel::CurrentFolderAllowEmpty() const
+    {
+        if (!_CurrentFolder)
+        {
+            return {};
+        }
+        return _CurrentFolder.Inlining();
+    }
+
+    void NewTabMenuViewModel::CurrentFolderAllowEmpty(bool value)
+    {
+        if (_CurrentFolder && _CurrentFolder.Inlining() != value)
+        {
+            _CurrentFolder.Inlining(value);
+        }
+    }
+
+    Windows::Foundation::Collections::IObservableVector<Editor::NewTabMenuEntryViewModel> NewTabMenuViewModel::CurrentView() const
+    {
+        if (!_CurrentFolder)
+        {
+            return _rootEntries;
+        }
+        return _CurrentFolder.Entries();
+    }
+
+    void NewTabMenuViewModel::UpdateSettings(const Model::CascadiaSettings& settings)
     {
         _Settings = settings;
         _NotifyChanges(L"AvailableProfiles");
 
         SelectedProfile(AvailableProfiles().GetAt(0));
-    }
 
-    void NewTabMenuViewModel::_UpdateEntries()
-    {
-        // TODO CARLOS: shorthand
-        //Entries(_CurrentFolderEntry ? _CurrentFolderEntry.Entries() : _ConvertToViewModelEntries(_Settings.GlobalSettings().NewTabMenu()));
-        _entriesChangedRevoker.revoke();
-        if (_CurrentFolderEntry)
-        {
-            Entries(_CurrentFolderEntry.Entries());
-        }
-        else
-        {
-            Entries(_ConvertToViewModelEntries(_Settings.GlobalSettings().NewTabMenu()));
-        }
+        _rootEntries = _ConvertToViewModelEntries(_Settings.GlobalSettings().NewTabMenu());
 
-        // TODO CARLOS: I have the revoker here, not sure when/how to use it though, but I suspect we need it
-        _entriesChangedRevoker = _Entries.VectorChanged(winrt::auto_revoke, [this](auto&&, const IVectorChangedEventArgs& args) {
+        _rootEntriesChangedRevoker = _rootEntries.VectorChanged(winrt::auto_revoke, [this](auto&&, const IVectorChangedEventArgs& args) {
             switch (args.CollectionChange())
             {
             case CollectionChange::Reset:
             {
-                // fully replace settings model with _Entries
-                for (const auto& entry : _Entries)
+                // fully replace settings model with view model structure
+                auto modelEntries = single_threaded_vector<Model::NewTabMenuEntry>();
+                for (const auto& entry : _rootEntries)
                 {
-                    auto modelEntries = single_threaded_vector<Model::NewTabMenuEntry>();
                     modelEntries.Append(NewTabMenuEntryViewModel::GetModel(entry));
-
-                    if (_CurrentFolderEntry)
-                    {
-                        FolderEntry modelCurrentFolder = NewTabMenuEntryViewModel::GetModel(_CurrentFolderEntry).as<FolderEntry>();
-                        modelCurrentFolder.RawEntries(modelEntries);
-                    }
-                    else
-                    {
-                        _Settings.GlobalSettings().NewTabMenu(modelEntries);
-                    }
                 }
+                _Settings.GlobalSettings().NewTabMenu(modelEntries);
                 return;
             }
             case CollectionChange::ItemInserted:
             {
-                const auto& insertedEntryVM = _Entries.GetAt(args.Index());
+                const auto& insertedEntryVM = _rootEntries.GetAt(args.Index());
                 const auto& insertedEntry = NewTabMenuEntryViewModel::GetModel(insertedEntryVM);
-
-                if (_CurrentFolderEntry)
-                {
-                    FolderEntry modelCurrentFolder = NewTabMenuEntryViewModel::GetModel(_CurrentFolderEntry).as<FolderEntry>();
-                    modelCurrentFolder.RawEntries().InsertAt(args.Index(), insertedEntry);
-                }
-                else
-                {
-                    auto newTabMenu = _Settings.GlobalSettings().NewTabMenu();
-                    newTabMenu.InsertAt(args.Index(), insertedEntry);
-                }
+                _Settings.GlobalSettings().NewTabMenu().InsertAt(args.Index(), insertedEntry);
                 return;
             }
             case CollectionChange::ItemRemoved:
             {
-                if (_CurrentFolderEntry)
-                {
-                    FolderEntry modelCurrentFolder = NewTabMenuEntryViewModel::GetModel(_CurrentFolderEntry).as<FolderEntry>();
-                    modelCurrentFolder.RawEntries().RemoveAt(args.Index());
-                }
-                else
-                {
-                    auto newTabMenu = _Settings.GlobalSettings().NewTabMenu();
-                    newTabMenu.RemoveAt(args.Index());
-                }
+                _Settings.GlobalSettings().NewTabMenu().RemoveAt(args.Index());
                 return;
             }
             case CollectionChange::ItemChanged:
             {
-                if (_CurrentFolderEntry)
-                {
-                    FolderEntry modelCurrentFolder = NewTabMenuEntryViewModel::GetModel(_CurrentFolderEntry).as<FolderEntry>();
-                    const auto modifiedEntry = _Entries.GetAt(args.Index());
-                    modelCurrentFolder.Entries().SetAt(args.Index(), NewTabMenuEntryViewModel::GetModel(modifiedEntry));
-                }
-                else
-                {
-                    auto newTabMenu = _Settings.GlobalSettings().NewTabMenu();
-                    const auto modifiedEntry = _Entries.GetAt(args.Index());
-                    newTabMenu.SetAt(args.Index(), NewTabMenuEntryViewModel::GetModel(modifiedEntry));
-                }
+                const auto& modifiedEntry = _rootEntries.GetAt(args.Index());
+                _Settings.GlobalSettings().NewTabMenu().SetAt(args.Index(), NewTabMenuEntryViewModel::GetModel(modifiedEntry));
                 return;
             }
             }
         });
+
+        // Clear CurrentFolder to reset the view
+        _CurrentFolder = nullptr;
     }
 
-    void NewTabMenuViewModel::RequestReorderEntry(Editor::NewTabMenuEntryViewModel vm, bool goingUp)
+    void NewTabMenuViewModel::RequestReorderEntry(const Editor::NewTabMenuEntryViewModel& vm, bool goingUp)
     {
         uint32_t idx;
-        if (_Entries.IndexOf(vm, idx))
+        if (CurrentView().IndexOf(vm, idx))
         {
             if (goingUp && idx > 0)
             {
-                _Entries.RemoveAt(idx);
-                _Entries.InsertAt(idx - 1, vm);
+                CurrentView().RemoveAt(idx);
+                CurrentView().InsertAt(idx - 1, vm);
             }
-            else if (!goingUp && idx < _Entries.Size() - 1)
+            else if (!goingUp && idx < CurrentView().Size() - 1)
             {
-                _Entries.RemoveAt(idx);
-                _Entries.InsertAt(idx + 1, vm);
+                CurrentView().RemoveAt(idx);
+                CurrentView().InsertAt(idx + 1, vm);
             }
         }
     }
 
-    void NewTabMenuViewModel::RequestDeleteEntry(Editor::NewTabMenuEntryViewModel vm)
+    void NewTabMenuViewModel::RequestDeleteEntry(const Editor::NewTabMenuEntryViewModel& vm)
     {
         uint32_t idx;
-        if (_Entries.IndexOf(vm, idx))
+        if (CurrentView().IndexOf(vm, idx))
         {
-            _Entries.RemoveAt(idx);
+            CurrentView().RemoveAt(idx);
+        }
+    }
+
+    void NewTabMenuViewModel::RequestMoveEntriesToFolder(const Windows::Foundation::Collections::IVector<Editor::NewTabMenuEntryViewModel>& entries, const Editor::FolderEntryViewModel& destinationFolder)
+    {
+        for (auto&& e : entries)
+        {
+            // Remove entry from the current layer
+            RequestDeleteEntry(e);
+
+            destinationFolder.Entries().Append(e);
         }
     }
 
@@ -266,7 +300,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             Model::ProfileEntry profileEntry;
             profileEntry.Profile(_SelectedProfile);
 
-            _Entries.Append(make<ProfileEntryViewModel>(profileEntry));
+            CurrentView().Append(make<ProfileEntryViewModel>(profileEntry));
         }
         _PrintAll();
     }
@@ -275,7 +309,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         Model::SeparatorEntry separatorEntry;
 
-        _Entries.Append(make<SeparatorEntryViewModel>(separatorEntry));
+        CurrentView().Append(make<SeparatorEntryViewModel>(separatorEntry));
 
         _PrintAll();
     }
@@ -283,12 +317,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     void NewTabMenuViewModel::RequestAddFolderEntry()
     {
         Model::FolderEntry folderEntry;
-        folderEntry.Name(_FolderName);
+        folderEntry.Name(_AddFolderName);
 
-        _Entries.Append(make<FolderEntryViewModel>(folderEntry));
+        CurrentView().Append(make<FolderEntryViewModel>(folderEntry));
 
         // Clear the field after adding the entry
-        FolderName({});
+        AddFolderName({});
 
         _PrintAll();
     }
@@ -300,7 +334,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         matchProfilesEntry.Source(_ProfileMatcherSource);
         matchProfilesEntry.Commandline(_ProfileMatcherCommandline);
 
-        _Entries.Append(make<MatchProfilesEntryViewModel>(matchProfilesEntry));
+        CurrentView().Append(make<MatchProfilesEntryViewModel>(matchProfilesEntry));
 
         // Clear the fields after adding the entry
         ProfileMatcherName({});
@@ -313,9 +347,72 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     void NewTabMenuViewModel::RequestAddRemainingProfilesEntry()
     {
         Model::RemainingProfilesEntry remainingProfilesEntry;
-        _Entries.Append(make<RemainingProfilesEntryViewModel>(remainingProfilesEntry));
+        CurrentView().Append(make<RemainingProfilesEntryViewModel>(remainingProfilesEntry));
+
+        _NotifyChanges(L"IsRemainingProfilesEntryMissing");
 
         _PrintAll();
+    }
+
+    // TODO CARLOS:
+    // - validate
+    // - reset cache when needed
+    Collections::IObservableVector<Editor::FolderTreeViewEntry> NewTabMenuViewModel::FolderTree()
+    {
+        if (!_folderTreeCache)
+        {
+            _folderTreeCache = single_threaded_observable_vector<Editor::FolderTreeViewEntry>();
+
+            // Add the root folder
+            auto root = winrt::make<FolderTreeViewEntry>(nullptr);
+            _folderTreeCache.Append(root);
+
+            for (const auto&& entry : _rootEntries)
+            {
+                if (entry.Type() == NewTabMenuEntryType::Folder)
+                {
+                    root.Children().Append(winrt::make<FolderTreeViewEntry>(entry.as<Editor::FolderEntryViewModel>()));
+                }
+            }
+        }
+        return _folderTreeCache;
+    }
+
+    // This recursively constructs the FolderTree
+    FolderTreeViewEntry::FolderTreeViewEntry(Editor::FolderEntryViewModel folderEntry) :
+        _folderEntry{ folderEntry },
+        _Children{ single_threaded_observable_vector<Editor::FolderTreeViewEntry>() }
+    {
+        if (!_folderEntry)
+        {
+            return;
+        }
+
+        for (const auto&& entry : _folderEntry.Entries())
+        {
+            if (entry.Type() == NewTabMenuEntryType::Folder)
+            {
+                _Children.Append(winrt::make<FolderTreeViewEntry>(entry.as<Editor::FolderEntryViewModel>()));
+            }
+        }
+    }
+
+    hstring FolderTreeViewEntry::Name()
+    {
+        if (!_folderEntry)
+        {
+            return RS_(L"NewTabMenu_RootFolderName");
+        }
+        return _folderEntry.Name();
+    }
+
+    hstring FolderTreeViewEntry::Icon()
+    {
+        if (!_folderEntry)
+        {
+            return {};
+        }
+        return _folderEntry.Icon();
     }
 
     void NewTabMenuViewModel::_PrintAll()
@@ -324,8 +421,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         OutputDebugString(L"---Model:---\n");
         _PrintModel(_Settings.GlobalSettings().NewTabMenu());
         OutputDebugString(L"\n");
-        OutputDebugString(L"---VM (Current Layer):---\n");
-        _PrintVM(Entries());
+        OutputDebugString(L"---VM:---\n");
+        _PrintVM(_rootEntries);
         OutputDebugString(L"\n");
 #endif
     }
@@ -333,6 +430,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 #ifdef _DEBUG
     void NewTabMenuViewModel::_PrintModel(Windows::Foundation::Collections::IVector<Model::NewTabMenuEntry> list, std::wstring prefix)
     {
+        if (!list)
+        {
+            return;
+        }
+
         for (auto&& e : list)
         {
             _PrintModel(e, prefix);
@@ -379,9 +481,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void NewTabMenuViewModel::_PrintVM(Windows::Foundation::Collections::IVector<Editor::NewTabMenuEntryViewModel> list, std::wstring prefix)
     {
+        if (!list)
+        {
+            return;
+        }
+
         for (auto&& e : list)
         {
-            _PrintVM(e);
+            _PrintVM(e, prefix);
         }
     }
 
@@ -481,7 +588,62 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _FolderEntry{ folderEntry }
     {
         _Entries = _ConvertToViewModelEntries(_FolderEntry.RawEntries());
+
+        // TODO CARLOS: we need to use this revoker somewhere
+        _entriesChangedRevoker = _Entries.VectorChanged(winrt::auto_revoke, [this](auto&&, const IVectorChangedEventArgs& args) {
+            switch (args.CollectionChange())
+            {
+            case CollectionChange::Reset:
+            {
+                // fully replace settings model with _Entries
+                auto modelEntries = single_threaded_vector<Model::NewTabMenuEntry>();
+                for (const auto& entry : _Entries)
+                {
+                    modelEntries.Append(NewTabMenuEntryViewModel::GetModel(entry));
+                }
+                _FolderEntry.RawEntries(modelEntries);
+                return;
+            }
+            case CollectionChange::ItemInserted:
+            {
+                const auto& insertedEntryVM = _Entries.GetAt(args.Index());
+                const auto& insertedEntry = NewTabMenuEntryViewModel::GetModel(insertedEntryVM);
+                if (!_FolderEntry.RawEntries())
+                {
+                    _FolderEntry.RawEntries(single_threaded_vector<Model::NewTabMenuEntry>());
+                }
+                _FolderEntry.RawEntries().InsertAt(args.Index(), insertedEntry);
+                return;
+            }
+            case CollectionChange::ItemRemoved:
+            {
+                _FolderEntry.RawEntries().RemoveAt(args.Index());
+                return;
+            }
+            case CollectionChange::ItemChanged:
+            {
+                const auto& modifiedEntry = _Entries.GetAt(args.Index());
+                _FolderEntry.RawEntries().SetAt(args.Index(), NewTabMenuEntryViewModel::GetModel(modifiedEntry));
+                return;
+            }
+            }
+        });
     }
+
+    bool FolderEntryViewModel::Inlining() const
+    {
+        return _FolderEntry.Inlining() == FolderEntryInlining::Auto;
+    }
+
+    void FolderEntryViewModel::Inlining(bool value)
+    {
+        const auto valueAsEnum = value ? FolderEntryInlining::Auto : FolderEntryInlining::Never;
+        if (_FolderEntry.Inlining() != valueAsEnum)
+        {
+            _FolderEntry.Inlining(valueAsEnum);
+            _NotifyChanges(L"Inlining");
+        }
+    };
 
     MatchProfilesEntryViewModel::MatchProfilesEntryViewModel(Model::MatchProfilesEntry matchProfilesEntry) :
         MatchProfilesEntryViewModelT<MatchProfilesEntryViewModel, NewTabMenuEntryViewModel>(Model::NewTabMenuEntryType::MatchProfiles),

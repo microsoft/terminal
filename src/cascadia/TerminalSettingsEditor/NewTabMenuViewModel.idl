@@ -5,40 +5,49 @@ import "ProfileViewModel.idl";
 
 namespace Microsoft.Terminal.Settings.Editor
 {
-    enum NTMSubPage
+    [default_interface] runtimeclass FolderTreeViewEntry
     {
-        Base = 0,
-        Folder = 1
-    };
+        FolderTreeViewEntry(FolderEntryViewModel folderEntry);
+
+        String Name { get; };
+        String Icon { get; };
+        FolderEntryViewModel FolderEntryVM { get; };
+
+        IObservableVector<Microsoft.Terminal.Settings.Editor.FolderTreeViewEntry> Children { get; };
+    }
 
     runtimeclass NewTabMenuViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged
     {
         NewTabMenuViewModel(Microsoft.Terminal.Settings.Model.CascadiaSettings settings);
+        void UpdateSettings(Microsoft.Terminal.Settings.Model.CascadiaSettings settings);
 
-        NTMSubPage CurrentPage;
-        FolderEntryViewModel CurrentFolderEntry;
+        FolderEntryViewModel CurrentFolder;
         Boolean IsFolderView { get; };
+        FolderTreeViewEntry CurrentFolderTreeViewSelectedItem;
+        Boolean IsRemainingProfilesEntryMissing { get; };
 
-        IObservableVector<NewTabMenuEntryViewModel> Entries;
+        IObservableVector<NewTabMenuEntryViewModel> CurrentView { get; };
         IObservableVector<Microsoft.Terminal.Settings.Model.Profile> AvailableProfiles { get; };
+        IObservableVector<FolderTreeViewEntry> FolderTree { get; };
         Microsoft.Terminal.Settings.Model.Profile SelectedProfile;
 
+        String CurrentFolderName;
+        Boolean CurrentFolderInlining;
+        Boolean CurrentFolderAllowEmpty;
         String ProfileMatcherName;
         String ProfileMatcherSource;
         String ProfileMatcherCommandline;
-
-        String FolderName;
+        String AddFolderName;
 
         void RequestReorderEntry(NewTabMenuEntryViewModel vm, Boolean goingUp);
         void RequestDeleteEntry(NewTabMenuEntryViewModel vm);
+        void RequestMoveEntriesToFolder(IVector<NewTabMenuEntryViewModel> entries, FolderEntryViewModel folderEntry);
 
         void RequestAddSelectedProfileEntry();
         void RequestAddSeparatorEntry();
         void RequestAddFolderEntry();
         void RequestAddProfileMatcherEntry();
         void RequestAddRemainingProfilesEntry();
-
-        static Boolean IsRemainingProfilesEntryMissing(IObservableVector<NewTabMenuEntryViewModel> entries);
     }
 
     [default_interface] unsealed runtimeclass NewTabMenuEntryViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged
@@ -64,6 +73,8 @@ namespace Microsoft.Terminal.Settings.Editor
 
         String Name;
         String Icon;
+        Boolean Inlining;
+        Boolean AllowEmpty;
         IObservableVector<Microsoft.Terminal.Settings.Editor.NewTabMenuEntryViewModel> Entries;
     }
 
