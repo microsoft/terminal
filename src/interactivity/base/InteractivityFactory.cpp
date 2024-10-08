@@ -294,7 +294,7 @@ using namespace Microsoft::Console::Interactivity;
 // - owner: the HWND that should be the initial owner of the pseudo window.
 // Return Value:
 // - STATUS_SUCCESS on success, otherwise an appropriate error.
-[[nodiscard]] NTSTATUS InteractivityFactory::CreatePseudoWindow(HWND& hwnd, const HWND owner)
+[[nodiscard]] NTSTATUS InteractivityFactory::CreatePseudoWindow(HWND& hwnd)
 {
     hwnd = nullptr;
     ApiLevel level;
@@ -310,6 +310,11 @@ using namespace Microsoft::Console::Interactivity;
             {
             case ApiLevel::Win32:
             {
+                // We don't need an "Default IME" window for ConPTY. That's the terminal's job.
+                // -1, aka DWORD_MAX, tells the function to disable it for the entire process.
+                // Must be called before creating any window.
+                ImmDisableIME(DWORD_MAX);
+
                 pseudoClass.cbSize = sizeof(WNDCLASSEXW);
                 pseudoClass.lpszClassName = PSEUDO_WINDOW_CLASS;
                 pseudoClass.lpfnWndProc = s_PseudoWindowProc;
@@ -330,19 +335,15 @@ using namespace Microsoft::Console::Interactivity;
                 // will return the console handle again, not the owning
                 // terminal's handle. It's not entirely clear why, but WS_POPUP
                 // is absolutely vital for this to work correctly.
-                const auto windowStyle = WS_OVERLAPPEDWINDOW | WS_POPUP;
-                const auto exStyles = WS_EX_TOOLWINDOW | WS_EX_TRANSPARENT | WS_EX_LAYERED | WS_EX_NOACTIVATE;
-
-                // Attempt to create window.
-                hwnd = CreateWindowExW(exStyles,
+                hwnd = CreateWindowExW(WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE,
                                        reinterpret_cast<LPCWSTR>(windowClassAtom),
                                        nullptr,
-                                       windowStyle,
+                                       WS_POPUP,
                                        0,
                                        0,
                                        0,
                                        0,
-                                       owner,
+                                       _owner.load(std::memory_order_relaxed),
                                        nullptr,
                                        nullptr,
                                        this);
@@ -373,6 +374,38 @@ using namespace Microsoft::Console::Interactivity;
     }
 
     return status;
+}
+
+void InteractivityFactory::SetOwner(HWND owner) noexcept
+{
+    _owner.store(owner, std::memory_order_relaxed);
+
+    if (_pseudoConsoleWindowHwnd)
+    {
+        // DO NOT USE SetParent HERE!
+        //
+        // Calling SetParent on a window that is WS_VISIBLE will cause the OS to
+        // hide the window, make it a _child_ window, then call SW_SHOW on the
+        // window to re-show it. SW_SHOW, however, will cause the OS to also set
+        // that window as the _foreground_ window, which would result in the
+        // pty's hwnd stealing the foreground away from the owning terminal
+        // window. That's bad.
+        //
+        // SetWindowLongPtr seems to do the job of changing who the window owner
+        // is, without all the other side effects of reparenting the window.
+        // See #13066
+        ::SetWindowLongPtrW(_pseudoConsoleWindowHwnd, GWLP_HWNDPARENT, reinterpret_cast<LONG_PTR>(owner));
+    }
+}
+
+void InteractivityFactory::SetVisibility(const bool isVisible) noexcept
+{
+    if (_pseudoConsoleWindowHwnd && IsIconic(_pseudoConsoleWindowHwnd) != static_cast<BOOL>(isVisible))
+    {
+        _suppressVisibilityChange.store(true, std::memory_order_relaxed);
+        ShowWindow(_pseudoConsoleWindowHwnd, isVisible ? SW_SHOWNOACTIVATE : SW_MINIMIZE);
+        _suppressVisibilityChange.store(false, std::memory_order_relaxed);
+    }
 }
 
 // Method Description:
@@ -446,7 +479,7 @@ using namespace Microsoft::Console::Interactivity;
         {
             _WritePseudoWindowCallback(false);
         }
-        break;
+        return 0;
     }
     // case WM_WINDOWPOSCHANGING:
     //     As long as user32 didn't eat the `ShowWindow` call because the window state requested
@@ -479,12 +512,12 @@ using namespace Microsoft::Console::Interactivity;
     }
     case WM_ACTIVATE:
     {
-        if (const auto ownerHwnd{ ::GetAncestor(hWnd, GA_ROOTOWNER) })
+        if (const auto ownerHwnd = _owner.load(std::memory_order_relaxed))
         {
             SetFocus(ownerHwnd);
             return 0;
         }
-        break;
+        return 0;
     }
     }
     // If we get this far, call the default window proc
@@ -501,6 +534,11 @@ using namespace Microsoft::Console::Interactivity;
 // - <none>
 void InteractivityFactory::_WritePseudoWindowCallback(bool showOrHide)
 {
+    if (_suppressVisibilityChange.load(std::memory_order_relaxed))
+    {
+        return;
+    }
+
     // IMPORTANT!
     //
     // A hosting terminal window should only "restore" itself in response to

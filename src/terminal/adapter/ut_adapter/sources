@@ -48,6 +48,7 @@ TARGETLIBS = \
     $(ONECOREUAP_EXTERNAL_SDK_LIB_PATH)\d3d11.lib \
     $(ONECOREUAP_EXTERNAL_SDK_LIB_PATH)\d3dcompiler.lib \
     $(MODERNCORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\api-ms-win-mm-playsound-l1.lib \
+    $(MODERNCORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\ext-ms-win-imm-l1-1-0.lib \
     $(ONECORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\ext-ms-win-dwmapi-ext-l1.lib \
     $(MINCORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\ext-ms-win-gdi-dc-l1.lib \
     $(MINCORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\ext-ms-win-gdi-dc-create-l1.lib \
@@ -106,6 +107,7 @@ DELAYLOAD = \
     OLEAUT32.dll; \
     icu.dll; \
     api-ms-win-mm-playsound-l1.dll; \
+    ext-ms-win-imm-l1-1-0.lib; \
     api-ms-win-shcore-scaling-l1.dll; \
     api-ms-win-shell-dataobject-l1.dll; \
     api-ms-win-shell-namespace-l1.dll; \
@@ -152,4 +154,3 @@ DLOAD_ERROR_HANDLER = kernelbase
 #                                    $(ONECORESDKTOOLS_INTERNAL_LIB_PATH_L)\WexTest\Cue\Wex.Logger.lib \
 #                                    $(ONECORESDKTOOLS_INTERNAL_LIB_PATH_L)\WexTest\Cue\Te.Common.lib \
 #                                    $(SDKTOOLS_LIB_PATH)\WexTest\Cue\Mock10.lib \
-

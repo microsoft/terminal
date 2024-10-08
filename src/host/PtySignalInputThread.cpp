@@ -75,8 +75,6 @@ void PtySignalInputThread::ConnectConsole() noexcept
     {
         _DoShowHide(*_initialShowHide);
     }
-
-    // We should have successfully used the _earlyReparent message in CreatePseudoWindow.
 }
 
 // Method Description:
@@ -88,8 +86,7 @@ void PtySignalInputThread::ConnectConsole() noexcept
 // - Refer to GH#13066 for details.
 void PtySignalInputThread::CreatePseudoWindow()
 {
-    HWND owner = _earlyReparent.has_value() ? reinterpret_cast<HWND>((*_earlyReparent).handle) : HWND_DESKTOP;
-    ServiceLocator::LocatePseudoWindow(owner);
+    ServiceLocator::LocatePseudoWindow();
 }
 
 // Method Description:
@@ -223,7 +220,7 @@ void PtySignalInputThread::_DoShowHide(const ShowHideData& data)
         return;
     }
 
-    _api.ShowWindow(data.show);
+    ServiceLocator::SetPseudoWindowVisibility(data.show);
 }
 
 // Method Description:
@@ -240,44 +237,7 @@ void PtySignalInputThread::_DoSetWindowParent(const SetParentData& data)
     LockConsole();
     auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
-    // If the client app hasn't yet connected, stash the new owner.
-    // We'll later (PtySignalInputThread::ConnectConsole) use the value
-    // to set up the owner of the conpty window.
-    if (!_consoleConnected)
-    {
-        _earlyReparent = data;
-        return;
-    }
-
-    const auto owner{ reinterpret_cast<HWND>(data.handle) };
-    // This will initialize s_interactivityFactory for us. It will also
-    // conveniently return 0 when we're on OneCore.
-    //
-    // If the window hasn't been created yet, by some other call to
-    // LocatePseudoWindow, then this will also initialize the owner of the
-    // window.
-    if (const auto pseudoHwnd{ ServiceLocator::LocatePseudoWindow(owner) })
-    {
-        // SetWindowLongPtrW may call back into the message handler and wait for it to finish,
-        // similar to SendMessageW(). If the conhost message handler is already processing and
-        // waiting to acquire the console lock, which we're currently holding, we'd deadlock.
-        // --> Release the lock now.
-        Unlock.reset();
-
-        // DO NOT USE SetParent HERE!
-        //
-        // Calling SetParent on a window that is WS_VISIBLE will cause the OS to
-        // hide the window, make it a _child_ window, then call SW_SHOW on the
-        // window to re-show it. SW_SHOW, however, will cause the OS to also set
-        // that window as the _foreground_ window, which would result in the
-        // pty's hwnd stealing the foreground away from the owning terminal
-        // window. That's bad.
-        //
-        // SetWindowLongPtr seems to do the job of changing who the window owner
-        // is, without all the other side effects of reparenting the window.
-        // See #13066
-        ::SetWindowLongPtrW(pseudoHwnd, GWLP_HWNDPARENT, reinterpret_cast<LONG_PTR>(owner));
-    }
+    ServiceLocator::SetPseudoWindowOwner(reinterpret_cast<HWND>(data.handle));
 }
 
 // Method Description:
