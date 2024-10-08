@@ -564,6 +564,7 @@ entrypoints
 ENU
 ENUMLOGFONT
 ENUMLOGFONTEX
+EOB
 EOK
 EPres
 EQU
@@ -782,6 +783,7 @@ HIWORD
 HKCU
 hkey
 hkl
+HKLM
 hlocal
 hlsl
 HMB
@@ -1735,6 +1737,7 @@ swapchain
 swapchainpanel
 SWMR
 SWP
+swrapped
 SYMED
 SYNCPAINT
 syscalls
@@ -2077,6 +2080,8 @@ WNDCLASSW
 Wndproc
 WNegative
 WNull
+wordi
+wordiswrapped
 workarea
 WOutside
 WOWARM
@@ -2090,6 +2095,7 @@ WPrep
 WPresent
 wprp
 wprpi
+wrappe
 wregex
 writeback
 WRITECONSOLE

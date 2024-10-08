@@ -96,7 +96,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void _addOrMergeUserColorScheme(const winrt::com_ptr<implementation::ColorScheme>& colorScheme);
         void _executeGenerator(const IDynamicProfileGenerator& generator);
 
-        std::unordered_set<std::wstring_view> _ignoredNamespaces;
+        std::unordered_set<winrt::hstring, til::transparent_hstring_hash, til::transparent_hstring_equal_to> _ignoredNamespaces;
         std::set<std::string> themesChangeLog;
         // See _getNonUserOriginProfiles().
         size_t _userProfileCount = 0;
