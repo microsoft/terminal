@@ -7,6 +7,19 @@
 
 namespace winrt::Microsoft::Terminal::Query::Extension::implementation
 {
+    struct AzureBranding : public winrt::implements<AzureBranding, winrt::Microsoft::Terminal::Query::Extension::IBrandingData>
+    {
+        AzureBranding() = default;
+
+        WINRT_PROPERTY(winrt::hstring, Name, L"Azure OpenAI");
+        WINRT_PROPERTY(winrt::hstring, HeaderIconPath);
+        WINRT_PROPERTY(winrt::hstring, HeaderText);
+        WINRT_PROPERTY(winrt::hstring, SubheaderText);
+        WINRT_PROPERTY(winrt::hstring, BadgeIconPath);
+        WINRT_PROPERTY(winrt::hstring, ResponseMetaData);
+        WINRT_PROPERTY(winrt::hstring, QueryMetaData);
+    };
+
     struct AzureLLMProvider : AzureLLMProviderT<AzureLLMProvider>
     {
         AzureLLMProvider() = default;
@@ -20,12 +33,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         void SetAuthentication(const Windows::Foundation::Collections::ValueSet& authValues);
         TYPED_EVENT(AuthChanged, winrt::Microsoft::Terminal::Query::Extension::ILMProvider, Windows::Foundation::Collections::ValueSet);
 
-        WINRT_PROPERTY(winrt::hstring, HeaderIconPath);
-        WINRT_PROPERTY(winrt::hstring, HeaderText);
-        WINRT_PROPERTY(winrt::hstring, SubheaderText);
-        WINRT_PROPERTY(winrt::hstring, BadgeIconPath);
-        WINRT_PROPERTY(winrt::hstring, ResponseMetaData);
-        WINRT_PROPERTY(winrt::hstring, QueryMetaData);
+        WINRT_PROPERTY(IBrandingData, BrandingData, winrt::make<AzureBranding>());
 
     private:
         winrt::hstring _azureEndpoint;

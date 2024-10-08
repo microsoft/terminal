@@ -3,6 +3,17 @@
 
 namespace Microsoft.Terminal.Query.Extension
 {
+    interface IBrandingData
+    {
+        String Name { get; };
+        String HeaderIconPath { get; };
+        String HeaderText { get; };
+        String SubheaderText { get; };
+        String BadgeIconPath { get; };
+        String ResponseMetaData { get; };
+        String QueryMetaData { get; };
+    };
+
     interface ILMProvider
     {
         // chat related functions
@@ -17,12 +28,7 @@ namespace Microsoft.Terminal.Query.Extension
         event Windows.Foundation.TypedEventHandler<ILMProvider, Windows.Foundation.Collections.ValueSet> AuthChanged;
 
         // UI related settings
-        String HeaderIconPath { get; };
-        String HeaderText { get; };
-        String SubheaderText { get; };
-        String BadgeIconPath { get; };
-        String ResponseMetaData { get; };
-        String QueryMetaData { get; };
+        IBrandingData BrandingData { get; };
     }
 
     enum ErrorTypes

@@ -90,15 +90,16 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         _lmProvider = lmProvider;
         _clearAndInitializeMessages(nullptr, nullptr);
 
-        const auto headerIconPath = _lmProvider.HeaderIconPath().empty() ? terminalChatLogoPath : _lmProvider.HeaderIconPath();
+        const auto brandingData = _lmProvider.BrandingData();
+        const auto headerIconPath = brandingData.HeaderIconPath().empty() ? terminalChatLogoPath : brandingData.HeaderIconPath();
         Windows::Foundation::Uri headerImageSourceUri{ headerIconPath };
         Media::Imaging::BitmapImage headerImageSource{ headerImageSourceUri };
         HeaderIcon().Source(headerImageSource);
 
-        const auto headerText = _lmProvider.HeaderText().empty() ? RS_(L"IntroText/Text") : _lmProvider.HeaderText();
+        const auto headerText = brandingData.HeaderText().empty() ? RS_(L"IntroText/Text") : brandingData.HeaderText();
         QueryIntro().Text(headerText);
 
-        const auto subheaderText = _lmProvider.SubheaderText().empty() ? RS_(L"TitleSubheader/Text") : _lmProvider.SubheaderText();
+        const auto subheaderText = brandingData.SubheaderText().empty() ? RS_(L"TitleSubheader/Text") : brandingData.SubheaderText();
         TitleSubheader().Text(subheaderText);
     }
 
@@ -113,7 +114,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
     {
         const auto userMessage = winrt::make<ChatMessage>(prompt, true, false);
         std::vector<IInspectable> userMessageVector{ userMessage };
-        const auto queryMetaData = _lmProvider ? _lmProvider.QueryMetaData() : L"";
+        const auto queryMetaData = _lmProvider ? _lmProvider.BrandingData().QueryMetaData() : L"";
         const auto userGroupedMessages = winrt::make<GroupedChatMessages>(currentLocalTime, true, _ProfileName, winrt::single_threaded_vector(std::move(userMessageVector)), queryMetaData);
         _messages.Append(userGroupedMessages);
         _queryBox().Text(L"");
@@ -222,8 +223,9 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
             }
         }
 
-        const auto responseMetaData = _lmProvider ? _lmProvider.ResponseMetaData() : L"";
-        const auto badgeUriPath = _lmProvider ? _lmProvider.BadgeIconPath() : L"";
+        const auto brandingData = _lmProvider.BrandingData();
+        const auto responseMetaData = _lmProvider ? brandingData.ResponseMetaData() : L"";
+        const auto badgeUriPath = _lmProvider ? brandingData.BadgeIconPath() : L"";
         const auto responseGroupedMessages = winrt::make<GroupedChatMessages>(time, false, _ProfileName, winrt::single_threaded_vector(std::move(messageParts)), responseMetaData, badgeUriPath);
         _messages.Append(responseGroupedMessages);
 

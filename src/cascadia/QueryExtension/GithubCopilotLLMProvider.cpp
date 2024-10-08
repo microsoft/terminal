@@ -26,7 +26,7 @@ static constexpr std::wstring_view responseMetaData{ L"GitHub Copilot" };
 
 namespace winrt::Microsoft::Terminal::Query::Extension::implementation
 {
-    GithubCopilotLLMProvider::GithubCopilotLLMProvider()
+    GithubCopilotBranding::GithubCopilotBranding()
     {
         _HeaderIconPath = headerIconPath;
         _HeaderText = headerText;
@@ -81,7 +81,8 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
                 const auto response = _httpClient.SendRequestAsync(request).get();
                 const auto string{ response.Content().ReadAsStringAsync().get() };
                 const auto jsonResult{ WDJ::JsonObject::Parse(string) };
-                _QueryMetaData = jsonResult.GetNamedString(L"login");
+                const auto brandingData{ get_self<GithubCopilotBranding>(_BrandingData) };
+                brandingData->QueryMetaData(jsonResult.GetNamedString(L"login"));
                 break;
             }
             catch (...)
@@ -148,7 +149,8 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
                 const auto userNameResponse = _httpClient.SendRequestAsync(userNameRequest).get();
                 const auto userNameString{ userNameResponse.Content().ReadAsStringAsync().get() };
                 const auto userNameJsonResult{ WDJ::JsonObject::Parse(userNameString) };
-                _QueryMetaData = userNameJsonResult.GetNamedString(L"login");
+                const auto brandingData{ get_self<GithubCopilotBranding>(_BrandingData) };
+                brandingData->QueryMetaData(jsonResult.GetNamedString(L"login"));
             }
         }
         CATCH_LOG();

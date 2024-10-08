@@ -7,9 +7,22 @@
 
 namespace winrt::Microsoft::Terminal::Query::Extension::implementation
 {
+    struct GithubCopilotBranding : public winrt::implements<GithubCopilotBranding, winrt::Microsoft::Terminal::Query::Extension::IBrandingData>
+    {
+        GithubCopilotBranding();
+
+        WINRT_PROPERTY(winrt::hstring, Name, L"Github Copilot");
+        WINRT_PROPERTY(winrt::hstring, HeaderIconPath);
+        WINRT_PROPERTY(winrt::hstring, HeaderText);
+        WINRT_PROPERTY(winrt::hstring, SubheaderText);
+        WINRT_PROPERTY(winrt::hstring, BadgeIconPath);
+        WINRT_PROPERTY(winrt::hstring, ResponseMetaData);
+        WINRT_PROPERTY(winrt::hstring, QueryMetaData);
+    };
+
     struct GithubCopilotLLMProvider : GithubCopilotLLMProviderT<GithubCopilotLLMProvider>
     {
-        GithubCopilotLLMProvider();
+        GithubCopilotLLMProvider() = default;
 
         void ClearMessageHistory();
         void SetSystemPrompt(const winrt::hstring& systemPrompt);
@@ -20,12 +33,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         void SetAuthentication(const Windows::Foundation::Collections::ValueSet& authValues);
         TYPED_EVENT(AuthChanged, winrt::Microsoft::Terminal::Query::Extension::ILMProvider, Windows::Foundation::Collections::ValueSet);
 
-        WINRT_PROPERTY(winrt::hstring, HeaderIconPath, L"ms-appx:///ProfileIcons/githubCopilotLogo.png");
-        WINRT_PROPERTY(winrt::hstring, HeaderText);
-        WINRT_PROPERTY(winrt::hstring, SubheaderText);
-        WINRT_PROPERTY(winrt::hstring, BadgeIconPath, L"ms-appx:///ProfileIcons/githubCopilotBadge.png");
-        WINRT_PROPERTY(winrt::hstring, ResponseMetaData);
-        WINRT_PROPERTY(winrt::hstring, QueryMetaData);
+        WINRT_PROPERTY(IBrandingData, BrandingData, winrt::make<GithubCopilotBranding>());
 
     private:
         winrt::hstring _authToken;
