@@ -1050,12 +1050,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // among the UI frameworks, it raises the LostFocus event _before_ the QuerySubmitted event.
         // So, when you press Save, the model will have the wrong font face string, because LostFocus was raised too early.
         // Also, this causes the first tab in the application to be focused, so when you press Enter it'll switch tabs.
+        //
         // You can't just assign focus back to the AutoSuggestBox, because the FocusState() within the GotFocus event handler
         // contains random values. This prevents us from avoiding the IsSuggestionListOpen(true) in our GotFocus event handler.
         // You can't just do IsSuggestionListOpen(false) either, because you can show the list with that property but not hide it.
-        // So, we assign focus to the parent and update the model manually.
-        FontFaceContainer().Focus(FocusState::Programmatic);
+        // So, we update the model manually and assign focus to the parent container.
+        //
+        // BUT you can't just focus the parent container, because of a weird interaction with AutoSuggestBox where it'll refuse to lose
+        // focus if you picked a suggestion that matches the current fontSpec. So, we unfocus it first and then focus the parent container.
         _updateFontName(fontSpec);
+        sender.Focus(FocusState::Unfocused);
+        FontFaceContainer().Focus(FocusState::Programmatic);
     }
 
     void Appearances::FontFaceBox_TextChanged(const AutoSuggestBox& sender, const AutoSuggestBoxTextChangedEventArgs& args)
