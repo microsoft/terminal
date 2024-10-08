@@ -51,10 +51,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             Opacity(static_cast<float>(value) / 100.0f);
         };
 
-        void SetPadding(double value)
-        {
-            Padding(to_hstring(value));
-        }
+        void LeftPadding(double value) noexcept;
+        double LeftPadding() const noexcept;
+        void TopPadding(double value) noexcept;
+        double TopPadding() const noexcept;
+        void RightPadding(double value) noexcept;
+        double RightPadding() const noexcept;
+        void BottomPadding(double value) noexcept;
+        double BottomPadding() const noexcept;
 
         winrt::hstring EvaluatedIcon() const
         {
@@ -140,6 +144,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         Model::CascadiaSettings _appSettings;
         Editor::AppearanceViewModel _unfocusedAppearanceViewModel;
+
+        enum class PaddingDirection
+        {
+            Left = 0,
+            Top = 1,
+            Right = 2,
+            Bottom = 3
+        };
+
+        winrt::hstring _GetNewPadding(PaddingDirection paddingDirection, double newPaddingValue) const;
+        double _GetPaddingValue(PaddingDirection paddingDirection) const;
     };
 
     struct DeleteProfileEventArgs :

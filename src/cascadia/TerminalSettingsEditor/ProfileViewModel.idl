@@ -41,7 +41,6 @@ namespace Microsoft.Terminal.Settings.Editor
         void SetupAppearances(Windows.Foundation.Collections.IObservableVector<ColorSchemeViewModel> schemesList);
 
         void SetAcrylicOpacityPercentageValue(Double value);
-        void SetPadding(Double value);
 
         Boolean IsBellStyleFlagSet(UInt32 flag);
         void SetBellStyleAudible(Windows.Foundation.IReference<Boolean> on);
@@ -57,6 +56,10 @@ namespace Microsoft.Terminal.Settings.Editor
         IInspectable CurrentScrollState;
         Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> ScrollStateList { get; };
 
+        Double LeftPadding { get; set; };
+        Double TopPadding { get; set; };
+        Double RightPadding { get; set; };
+        Double BottomPadding { get; set; };
         Boolean CanDeleteProfile { get; };
         Boolean FocusDeleteButton;
         Boolean IsBaseLayer;
@@ -74,7 +77,7 @@ namespace Microsoft.Terminal.Settings.Editor
         Boolean ShowMarksAvailable { get; };
         Boolean AutoMarkPromptsAvailable { get; };
         Boolean RepositionCursorWithMouseAvailable { get; };
-
+        
         String EvaluatedIcon { get; };
 
         void CreateUnfocusedAppearance();
