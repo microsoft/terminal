@@ -130,6 +130,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     void AISettingsViewModel::InitiateGithubAuth_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
     {
         GithubAuthRequested.raise(nullptr, nullptr);
+        TraceLoggingWrite(
+            g_hSettingsEditorProvider,
+            "GithubAuthInitiated",
+            TraceLoggingDescription("Event emitted when the user clicks the button to initiate the Github auth flow"),
+            TraceLoggingKeyword(MICROSOFT_KEYWORD_CRITICAL_DATA),
+            TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
     }
 
     void AISettingsViewModel::_OnGithubAuthCompleted()
