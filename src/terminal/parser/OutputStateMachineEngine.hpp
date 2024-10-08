@@ -77,6 +77,8 @@ namespace Microsoft::Console::VirtualTerminal
             LS2R_LockingShift = VTID("}"),
             LS3R_LockingShift = VTID("|"),
             DECAC1_AcceptC1Controls = VTID(" 7"),
+            S7C1T_Send7bitC1Controls = VTID(" F"),
+            S8C1T_Send8bitC1Controls = VTID(" G"),
             ACS_AnsiLevel1 = VTID(" L"),
             ACS_AnsiLevel2 = VTID(" M"),
             ACS_AnsiLevel3 = VTID(" N"),
