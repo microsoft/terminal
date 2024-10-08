@@ -380,6 +380,8 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         {
             std::swap(_runs, other._runs);
             std::swap(_total_length, other._total_length);
+            std::swap(_hint_run, other._hint_run);
+            std::swap(_hint_index, other._hint_index);
         }
 
         bool empty() const noexcept
@@ -503,6 +505,9 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             }
 
             _compact();
+
+            _hint_run = 0;
+            _hint_index = 0;
         }
 
         // Adjust the size of the vector.
@@ -532,6 +537,8 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             }
 
             _total_length = new_size;
+            _hint_run = 0;
+            _hint_index = 0;
         }
 
         constexpr bool operator==(const basic_rle& other) const noexcept
@@ -614,6 +621,11 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
             return ss.str();
         }
+
+        [[nodiscard]] auto hint() const
+        {
+            return std::tuple{ _hint_run, _hint_index };
+        }
 #endif
 
     private:
@@ -640,6 +652,13 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                 }
 
                 return { it, run_pos };
+            }
+
+            void boost(It new_it, size_type new_total)
+            {
+                it = new_it;
+                total = new_total;
+                run_pos = 0;
             }
 
         private:
@@ -866,9 +885,69 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
             // TODO GH#10135: Ensure replacements contains no runs with .length == 0.
 
-            rle_scanner scanner{ _runs.begin(), _runs.end() };
-            auto [begin, begin_pos] = scanner.scan(start_index);
-            auto [end, end_pos] = scanner.scan(end_index);
+            // Fast path: replace all
+            if (start_index == 0 && end_index == _total_length)
+            {
+                _runs.clear();
+                _total_length = 0;
+                _runs.insert(_runs.begin(), replacements.begin(), replacements.end());
+                const auto size = replacements.size();
+                const auto mid = size / 2;
+                for (size_t i = 0; i < size; i++)
+                {
+                    if (i == mid)
+                    {
+                        _hint_run = i;
+                        _hint_index = _total_length;
+                    }
+                    _total_length += replacements[i].length;
+                }
+                return;
+            }
+
+            using It = Container::iterator;
+            It begin;
+            size_type begin_pos;
+            It end;
+            size_type end_pos;
+            bool end_as_hint = false;
+
+            if (start_index == _total_length)
+            {
+                begin = end = _runs.end();
+                begin_pos = end_pos = size_type{ 0 };
+            }
+            else
+            {
+                const auto last_index = static_cast<size_type>(_total_length - _runs.back().length);
+
+                if (start_index >= last_index)
+                {
+                    begin = _runs.end() - 1;
+                    begin_pos = static_cast<size_type>(start_index - last_index);
+                    if (end_index == _total_length)
+                    {
+                        end = _runs.end();
+                        end_pos = size_type{ 0 };
+                    }
+                    else
+                    {
+                        end = begin;
+                        end_pos = static_cast<size_type>(end_index - last_index);
+                    }
+                }
+                else
+                {
+                    end_as_hint = end_index < last_index;
+                    rle_scanner scanner{ _runs.begin(), _runs.end() };
+                    if (start_index >= _hint_index)
+                    {
+                        scanner.boost(_runs.begin() + _hint_run, _hint_index);
+                    }
+                    std::tie(begin, begin_pos) = scanner.scan(start_index);
+                    std::tie(end, end_pos) = scanner.scan(end_index);
+                }
+            }
 
             // This condition handles pure removals, where replacements.size() == 0.
             //
@@ -882,6 +961,8 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             //   Especially since this logic is extremely similar to the one below for non-empty replacements.
             if (replacements.empty())
             {
+                _hint_index = start_index - begin_pos;
+
                 const size_type removed = end_index - start_index;
 
                 if (start_index != 0 && end_index != _total_length)
@@ -890,11 +971,14 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                     if (previous->value == end->value)
                     {
                         end->length -= end_pos - (begin_pos ? begin_pos : previous->length);
+                        _hint_index -= begin_pos ? 0 : previous->length;
                         begin_pos = 0;
                         end_pos = 0;
                         begin = previous;
                     }
                 }
+
+                _hint_run = begin - _runs.begin();
 
                 if (begin_pos)
                 {
@@ -1015,14 +1099,42 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
             // [Step8]
             _total_length -= end_index - start_index;
+            size_type replacements_length = 0;
             for (const auto& run : replacements)
             {
-                _total_length += run.length;
+                replacements_length += run.length;
+            }
+            _total_length += replacements_length;
+
+            if (end_as_hint)
+            {
+                _hint_run = begin_index + replacements.size();
+                _hint_index = start_index + replacements_length;
+                if (end_additional_length)
+                {
+                    _hint_run--;
+                    _hint_index -= replacements.back().length;
+                    if (replacements.size() == 1 && begin_additional_length)
+                    {
+                        _hint_index -= begin_additional_length;
+                    }
+                }
+            }
+            else
+            {
+                _hint_run = begin_index;
+                _hint_index = start_index;
+                if (begin_additional_length)
+                {
+                    _hint_index -= begin_additional_length;
+                }
             }
         }
 
         container _runs;
         S _total_length{ 0 };
+        S _hint_index{ 0 };
+        container::size_type _hint_run{ 0 };
 
 #ifdef UNIT_TESTING
         friend class ::RunLengthEncodingTests;
