@@ -304,6 +304,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         struct SharedState
         {
             std::unique_ptr<til::debounced_func_trailing<>> outputIdle;
+            std::unique_ptr<til::debounced_func_trailing<bool>> focusChanged;
             std::shared_ptr<ThrottledFuncTrailing<Control::ScrollPositionChangedArgs>> updateScrollBar;
         };
 

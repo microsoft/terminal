@@ -208,8 +208,14 @@ CursorType ConhostInternalGetSet::GetUserDefaultCursorStyle() const
 // - <none>
 void ConhostInternalGetSet::ShowWindow(bool showOrHide)
 {
-    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    const auto hwnd = gci.IsInVtIoMode() ? ServiceLocator::LocatePseudoWindow() : ServiceLocator::LocateConsoleWindow()->GetWindowHandle();
+    // ConPTY is supposed to be "transparent" to the VT application. Any VT it processes is given to the terminal.
+    // As such, it must not react to this "CSI 1 t" or "CSI 2 t" sequence. That's the job of the terminal.
+    // If the terminal encounters such a sequence, it can show/hide itself and let ConPTY know via its signal API.
+    const auto window = ServiceLocator::LocateConsoleWindow();
+    if (!window)
+    {
+        return;
+    }
 
     // GH#13301 - When we send this ShowWindow message, if we send it to the
     // conhost HWND, it's going to need to get processed by the window message
@@ -217,6 +223,7 @@ void ConhostInternalGetSet::ShowWindow(bool showOrHide)
     // However, ShowWindowAsync doesn't have this problem. It'll post the
     // message to the window thread, then immediately return, so we don't have
     // to worry about deadlocking.
+    const auto hwnd = window->GetWindowHandle();
     ::ShowWindowAsync(hwnd, showOrHide ? SW_SHOWNOACTIVATE : SW_MINIMIZE);
 }
 

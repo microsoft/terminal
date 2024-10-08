@@ -96,6 +96,7 @@ IGraphics
 IImage
 IInheritable
 IMap
+imm
 IMonarch
 IObject
 iosfwd
