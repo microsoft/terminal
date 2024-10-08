@@ -1959,4 +1959,8 @@
     <value>When enabled, if the folder has no entries, it will still be displayed. Otherwise, the folder will not be rendered.</value>
     <comment>Additional text displayed near "NewTabMenu_CurrentFolderAllowEmpty.Header".</comment>
   </data>
+  <data name="NewTabMenu_ActionNotFound" xml:space="preserve">
+    <value>Action ID not found</value>
+    <comment>Displayed text for an entry who's action identifier wasn't found. The action ID is presented in the format "Action ID not found: &lt;actionID&gt;"</comment>
+  </data>
 </root>

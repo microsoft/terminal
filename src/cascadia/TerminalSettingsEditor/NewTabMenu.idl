@@ -16,6 +16,7 @@ namespace Microsoft.Terminal.Settings.Editor
 		NewTabMenuEntryTemplateSelector();
 
         Windows.UI.Xaml.DataTemplate ProfileEntryTemplate;
+        Windows.UI.Xaml.DataTemplate ActionEntryTemplate;
         Windows.UI.Xaml.DataTemplate SeparatorEntryTemplate;
         Windows.UI.Xaml.DataTemplate FolderEntryTemplate;
         Windows.UI.Xaml.DataTemplate MatchProfilesEntryTemplate;

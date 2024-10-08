@@ -52,6 +52,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Windows::UI::Xaml::DataTemplate SelectTemplateCore(const Windows::Foundation::IInspectable& item);
 
         WINRT_PROPERTY(Windows::UI::Xaml::DataTemplate, ProfileEntryTemplate, nullptr);
+        WINRT_PROPERTY(Windows::UI::Xaml::DataTemplate, ActionEntryTemplate, nullptr);
         WINRT_PROPERTY(Windows::UI::Xaml::DataTemplate, SeparatorEntryTemplate, nullptr);
         WINRT_PROPERTY(Windows::UI::Xaml::DataTemplate, FolderEntryTemplate, nullptr);
         WINRT_PROPERTY(Windows::UI::Xaml::DataTemplate, MatchProfilesEntryTemplate, nullptr);

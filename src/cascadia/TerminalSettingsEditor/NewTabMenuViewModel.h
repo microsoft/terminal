@@ -7,6 +7,7 @@
 #include "FolderTreeViewEntry.g.h"
 #include "NewTabMenuEntryViewModel.g.h"
 #include "ProfileEntryViewModel.g.h"
+#include "ActionEntryViewModel.g.h"
 #include "SeparatorEntryViewModel.g.h"
 #include "FolderEntryViewModel.g.h"
 #include "MatchProfilesEntryViewModel.g.h"
@@ -109,6 +110,18 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         VIEW_MODEL_OBSERVABLE_PROPERTY(Model::ProfileEntry, ProfileEntry, nullptr);
     };
 
+    struct ActionEntryViewModel : ActionEntryViewModelT<ActionEntryViewModel, NewTabMenuEntryViewModel>
+    {
+    public:
+        ActionEntryViewModel(Model::ActionEntry actionEntry, Model::CascadiaSettings settings);
+
+        hstring DisplayText() const;
+        VIEW_MODEL_OBSERVABLE_PROPERTY(Model::ActionEntry, ActionEntry, nullptr);
+
+    private:
+        Model::CascadiaSettings _Settings;
+    };
+
     struct SeparatorEntryViewModel : SeparatorEntryViewModelT<SeparatorEntryViewModel, NewTabMenuEntryViewModel>
     {
     public:
@@ -120,7 +133,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     struct FolderEntryViewModel : FolderEntryViewModelT<FolderEntryViewModel, NewTabMenuEntryViewModel>
     {
     public:
-        FolderEntryViewModel(Model::FolderEntry folderEntry);
+        FolderEntryViewModel(Model::FolderEntry folderEntry, Model::CascadiaSettings settings);
+        explicit FolderEntryViewModel(Model::FolderEntry folderEntry);
 
         bool Inlining() const;
         void Inlining(bool value);
@@ -133,6 +147,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     private:
         Windows::Foundation::Collections::IObservableVector<Editor::NewTabMenuEntryViewModel>::VectorChanged_revoker _entriesChangedRevoker;
+        Model::CascadiaSettings _Settings;
     };
 
     struct MatchProfilesEntryViewModel : MatchProfilesEntryViewModelT<MatchProfilesEntryViewModel, NewTabMenuEntryViewModel>
@@ -147,7 +162,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     struct RemainingProfilesEntryViewModel : RemainingProfilesEntryViewModelT<RemainingProfilesEntryViewModel, NewTabMenuEntryViewModel>
     {
     public:
-        RemainingProfilesEntryViewModel(Model::RemainingProfilesEntry remainingProfielsEntry);
+        RemainingProfilesEntryViewModel(Model::RemainingProfilesEntry remainingProfilesEntry);
 
         VIEW_MODEL_OBSERVABLE_PROPERTY(Model::RemainingProfilesEntry, RemainingProfilesEntry, nullptr);
     };
@@ -158,6 +173,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::factory_implementation
     BASIC_FACTORY(NewTabMenuViewModel);
     BASIC_FACTORY(FolderTreeViewEntry);
     BASIC_FACTORY(ProfileEntryViewModel);
+    BASIC_FACTORY(ActionEntryViewModel);
     BASIC_FACTORY(SeparatorEntryViewModel);
     BASIC_FACTORY(FolderEntryViewModel);
     BASIC_FACTORY(MatchProfilesEntryViewModel);

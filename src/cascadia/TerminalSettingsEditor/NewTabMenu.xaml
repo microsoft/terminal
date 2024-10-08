@@ -19,21 +19,6 @@
                 <ResourceDictionary Source="CommonResources.xaml" />
             </ResourceDictionary.MergedDictionaries>
 
-            <!--<ResourceDictionary.ThemeDictionaries>
-                <ResourceDictionary x:Key="Light">
-                    <StaticResource x:Key="ControlExampleDisplayBrush" ResourceKey="SolidBackgroundFillColorBaseBrush" />
-                    <Thickness x:Key="ControlExampleDisplayBorderThickness">0</Thickness>
-                </ResourceDictionary>
-                <ResourceDictionary x:Key="Dark">
-                    <StaticResource x:Key="ControlExampleDisplayBrush" ResourceKey="SolidBackgroundFillColorBaseBrush" />
-                    <Thickness x:Key="ControlExampleDisplayBorderThickness">0</Thickness>
-                </ResourceDictionary>
-                <ResourceDictionary x:Key="HighContrast">
-                    <SolidColorBrush x:Key="ControlExampleDisplayBrush" Color="{ThemeResource SystemColorWindowColor}" />
-                    <Thickness x:Key="ControlExampleDisplayBorderThickness">1</Thickness>
-                </ResourceDictionary>
-            </ResourceDictionary.ThemeDictionaries>-->
-
             <Style x:Key="NewTabMenuEntryControlsWrapper"
                    TargetType="ContentControl">
                 <Setter Property="IsTabStop" Value="False" />
@@ -94,6 +79,19 @@
                 </ContentControl>
             </DataTemplate>
 
+            <DataTemplate x:Key="ActionEntryTemplate"
+                          x:DataType="local:ActionEntryViewModel">
+                <ContentControl DataContext="{Binding Mode=OneWay}"
+                                Style="{StaticResource NewTabMenuEntryControlsWrapper}">
+                    <StackPanel AutomationProperties.Name="{x:Bind DisplayText, Mode=OneWay}"
+                                Orientation="Horizontal"
+                                Spacing="10">
+                        <TextBlock VerticalAlignment="Center"
+                                   Text="{x:Bind DisplayText, Mode=OneWay}" />
+                    </StackPanel>
+                </ContentControl>
+            </DataTemplate>
+
             <DataTemplate x:Key="SeparatorEntryTemplate"
                           x:DataType="local:SeparatorEntryViewModel">
                 <ContentControl DataContext="{Binding Mode=OneWay}"
@@ -119,6 +117,7 @@
                                 AutomationProperties.Name="{x:Bind Name, Mode=OneWay}"
                                 Orientation="Horizontal"
                                 Spacing="10">
+                        <!--  TODO CARLOS: add icon  -->
                         <!--<Image Source="{x:Bind Icon}"
                                    Width="16"
                                    Height="16"
@@ -180,6 +179,7 @@
             </DataTemplate>
 
             <local:NewTabMenuEntryTemplateSelector x:Key="NewTabMenuEntryTemplateSelector"
+                                                   ActionEntryTemplate="{StaticResource ActionEntryTemplate}"
                                                    FolderEntryTemplate="{StaticResource FolderEntryTemplate}"
                                                    MatchProfilesEntryTemplate="{StaticResource MatchProfilesEntryTemplate}"
                                                    ProfileEntryTemplate="{StaticResource ProfileEntryTemplate}"
@@ -215,6 +215,7 @@
                             <StackPanel AutomationProperties.Name="{x:Bind Name, Mode=OneWay}"
                                         Orientation="Horizontal"
                                         Spacing="10">
+                                <!--  TODO CARLOS: add icon  -->
                                 <!--<Image Source="{x:Bind Icon}"
                                            Width="16"
                                            Height="16"

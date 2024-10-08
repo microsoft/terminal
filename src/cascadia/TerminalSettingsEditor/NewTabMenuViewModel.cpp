@@ -9,6 +9,7 @@
 #include "FolderTreeViewEntry.g.cpp"
 #include "NewTabMenuEntryViewModel.g.cpp"
 #include "ProfileEntryViewModel.g.cpp"
+#include "ActionEntryViewModel.g.cpp"
 #include "SeparatorEntryViewModel.g.cpp"
 #include "FolderEntryViewModel.g.cpp"
 #include "MatchProfilesEntryViewModel.g.cpp"
@@ -22,7 +23,7 @@ using namespace winrt::Windows::UI::Xaml::Data;
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
-    static IObservableVector<Editor::NewTabMenuEntryViewModel> _ConvertToViewModelEntries(IVector<Model::NewTabMenuEntry> settingsModelEntries)
+    static IObservableVector<Editor::NewTabMenuEntryViewModel> _ConvertToViewModelEntries(const IVector<Model::NewTabMenuEntry>& settingsModelEntries, const Model::CascadiaSettings& settings)
     {
         auto result = single_threaded_observable_vector<Editor::NewTabMenuEntryViewModel>();
         if (!settingsModelEntries)
@@ -44,6 +45,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 }
                 break;
             }
+            case NewTabMenuEntryType::Action:
+            {
+                if (const auto& actionEntry = entry.as<Model::ActionEntry>())
+                {
+                    const auto actionEntryVM = make<ActionEntryViewModel>(actionEntry, settings);
+                    result.Append(actionEntryVM);
+                }
+                break;
+            }
             case NewTabMenuEntryType::Separator:
             {
                 if (const auto& separatorEntry = entry.as<Model::SeparatorEntry>())
@@ -58,7 +68,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 if (const auto& folderEntry = entry.as<Model::FolderEntry>())
                 {
                     // The ctor will convert the children of the folder to view models
-                    const auto folderEntryVM = make<FolderEntryViewModel>(folderEntry);
+                    const auto folderEntryVM = make<FolderEntryViewModel>(folderEntry, settings);
                     result.Append(folderEntryVM);
                 }
                 break;
@@ -228,7 +238,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         SelectedProfile(AvailableProfiles().GetAt(0));
 
-        _rootEntries = _ConvertToViewModelEntries(_Settings.GlobalSettings().NewTabMenu());
+        _rootEntries = _ConvertToViewModelEntries(_Settings.GlobalSettings().NewTabMenu(), _Settings);
 
         _rootEntriesChangedRevoker = _rootEntries.VectorChanged(winrt::auto_revoke, [this](auto&&, const IVectorChangedEventArgs& args) {
             switch (args.CollectionChange())
@@ -338,7 +348,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Model::FolderEntry folderEntry;
         folderEntry.Name(_AddFolderName);
 
-        CurrentView().Append(make<FolderEntryViewModel>(folderEntry));
+        CurrentView().Append(make<FolderEntryViewModel>(folderEntry, _Settings));
 
         // Reset state after adding the entry
         AddFolderName({});
@@ -478,6 +488,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             OutputDebugString(fmt::format(L"{}Profile: {}\n", prefix, pe.Profile().Name()).c_str());
             break;
         }
+        case NewTabMenuEntryType::Action:
+        {
+            const auto& actionEntry = e.as<Model::ActionEntry>();
+            OutputDebugString(fmt::format(L"{}Action: {}\n", prefix, actionEntry.ActionId()).c_str());
+            break;
+        }
         case NewTabMenuEntryType::Separator:
         {
             OutputDebugString(fmt::format(L"{}Separator\n", prefix).c_str());
@@ -492,8 +508,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
         case NewTabMenuEntryType::MatchProfiles:
         {
-            const auto& mpe = e.as<Model::MatchProfilesEntry>();
-            OutputDebugString(fmt::format(L"{}MatchProfiles: {}\n", prefix, mpe.Name()).c_str());
+            const auto& matchProfilesEntry = e.as<Model::MatchProfilesEntry>();
+            OutputDebugString(fmt::format(L"{}MatchProfiles: {}\n", prefix, matchProfilesEntry.Name()).c_str());
             break;
         }
         case NewTabMenuEntryType::RemainingProfiles:
@@ -529,6 +545,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             OutputDebugString(fmt::format(L"{}Profile: {}\n", prefix, pe.ProfileEntry().Profile().Name()).c_str());
             break;
         }
+        case NewTabMenuEntryType::Action:
+        {
+            const auto& actionEntry = e.as<Editor::ActionEntryViewModel>();
+            OutputDebugString(fmt::format(L"{}Action: {}\n", prefix, actionEntry.ActionEntry().ActionId()).c_str());
+            break;
+        }
         case NewTabMenuEntryType::Separator:
         {
             OutputDebugString(fmt::format(L"{}Separator\n", prefix).c_str());
@@ -543,8 +565,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
         case NewTabMenuEntryType::MatchProfiles:
         {
-            const auto& mpe = e.as<Editor::MatchProfilesEntryViewModel>();
-            OutputDebugString(fmt::format(L"{}MatchProfiles: {}\n", prefix, mpe.DisplayText()).c_str());
+            const auto& matchProfilesEntry = e.as<Editor::MatchProfilesEntryViewModel>();
+            OutputDebugString(fmt::format(L"{}MatchProfiles: {}\n", prefix, matchProfilesEntry.DisplayText()).c_str());
             break;
         }
         case NewTabMenuEntryType::RemainingProfiles:
@@ -571,6 +593,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             const auto& projVM = viewModel.as<Editor::ProfileEntryViewModel>();
             return get_self<ProfileEntryViewModel>(projVM)->ProfileEntry();
+        }
+        case NewTabMenuEntryType::Action:
+        {
+            const auto& projVM = viewModel.as<Editor::ActionEntryViewModel>();
+            return get_self<ActionEntryViewModel>(projVM)->ActionEntry();
         }
         case NewTabMenuEntryType::Separator:
         {
@@ -604,6 +631,25 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
     }
 
+    ActionEntryViewModel::ActionEntryViewModel(Model::ActionEntry actionEntry, Model::CascadiaSettings settings) :
+        ActionEntryViewModelT<ActionEntryViewModel, NewTabMenuEntryViewModel>(Model::NewTabMenuEntryType::Action),
+        _ActionEntry{ actionEntry },
+        _Settings{ settings }
+    {
+    }
+
+    hstring ActionEntryViewModel::DisplayText() const
+    {
+        assert(_Settings);
+
+        const auto actionID = _ActionEntry.ActionId();
+        if (const auto& action = _Settings.ActionMap().GetActionByID(actionID))
+        {
+            return action.Name();
+        }
+        return hstring{ fmt::format(L"{}: {}", RS_(L"NewTabMenu_ActionNotFound"), actionID) };
+    }
+
     SeparatorEntryViewModel::SeparatorEntryViewModel(Model::SeparatorEntry separatorEntry) :
         SeparatorEntryViewModelT<SeparatorEntryViewModel, NewTabMenuEntryViewModel>(Model::NewTabMenuEntryType::Separator),
         _SeparatorEntry{ separatorEntry }
@@ -611,10 +657,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     }
 
     FolderEntryViewModel::FolderEntryViewModel(Model::FolderEntry folderEntry) :
+        FolderEntryViewModel(folderEntry, nullptr) {}
+
+    FolderEntryViewModel::FolderEntryViewModel(Model::FolderEntry folderEntry, Model::CascadiaSettings settings) :
         FolderEntryViewModelT<FolderEntryViewModel, NewTabMenuEntryViewModel>(Model::NewTabMenuEntryType::Folder),
-        _FolderEntry{ folderEntry }
+        _FolderEntry{ folderEntry },
+        _Settings{ settings }
     {
-        _Entries = _ConvertToViewModelEntries(_FolderEntry.RawEntries());
+        _Entries = _ConvertToViewModelEntries(_FolderEntry.RawEntries(), _Settings);
 
         _entriesChangedRevoker = _Entries.VectorChanged(winrt::auto_revoke, [this](auto&&, const IVectorChangedEventArgs& args) {
             switch (args.CollectionChange())

@@ -123,6 +123,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             {
             case Model::NewTabMenuEntryType::Profile:
                 return ProfileEntryTemplate();
+            case Model::NewTabMenuEntryType::Action:
+                return ActionEntryTemplate();
             case Model::NewTabMenuEntryType::Separator:
                 return SeparatorEntryTemplate();
             case Model::NewTabMenuEntryType::Folder:
