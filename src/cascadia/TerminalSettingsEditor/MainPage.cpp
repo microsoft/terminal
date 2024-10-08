@@ -341,7 +341,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 }
                 else if (currentPage == ProfileSubPage::Advanced)
                 {
-                    contentFrame().Navigate(xaml_typename<Editor::Profiles_Advanced>(), profile);
+                    contentFrame().Navigate(xaml_typename<Editor::Profiles_Advanced>(), winrt::make<implementation::NavigateToProfileArgs>(profile, *this));
                     const auto crumb = winrt::make<Breadcrumb>(breadcrumbTag, RS_(L"Profile_Advanced/Header"), BreadcrumbSubPage::Profile_Advanced);
                     _breadcrumbs.Append(crumb);
                     SettingsMainPage_ScrollViewer().ScrollToVerticalOffset(0);
