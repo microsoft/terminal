@@ -77,12 +77,24 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
 
     struct GroupedChatMessages : GroupedChatMessagesT<GroupedChatMessages>
     {
-        GroupedChatMessages(winrt::hstring key, bool isQuery, winrt::hstring profileName, const Windows::Foundation::Collections::IVector<Windows::Foundation::IInspectable>& messages)
+        GroupedChatMessages(winrt::hstring key,
+                            bool isQuery,
+                            winrt::hstring profileName,
+                            const Windows::Foundation::Collections::IVector<Windows::Foundation::IInspectable>& messages,
+                            winrt::hstring metaData = L"",
+                            winrt::hstring badgeImagePath = L"")
         {
             _Key = key;
             _isQuery = isQuery;
             _ProfileName = profileName;
             _messages = messages;
+            _MetaData = metaData.empty() ? _ProfileName : metaData;
+
+            if (!badgeImagePath.empty())
+            {
+                Windows::Foundation::Uri badgeImageSourceUri{ badgeImagePath };
+                _BadgeBitmapImage = winrt::Windows::UI::Xaml::Media::Imaging::BitmapImage{ badgeImageSourceUri };
+            }
         }
         winrt::Windows::Foundation::Collections::IIterator<winrt::Windows::Foundation::IInspectable> First()
         {
@@ -140,6 +152,8 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         bool IsQuery() const { return _isQuery; };
         WINRT_PROPERTY(winrt::hstring, Key);
         WINRT_PROPERTY(winrt::hstring, ProfileName);
+        WINRT_PROPERTY(winrt::hstring, MetaData);
+        WINRT_PROPERTY(winrt::Windows::UI::Xaml::Media::Imaging::BitmapImage, BadgeBitmapImage, nullptr);
 
     private:
         bool _isQuery;

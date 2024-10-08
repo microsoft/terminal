@@ -45,6 +45,7 @@ namespace TerminalApp
         Boolean IsolatedMode { get; };
         Boolean AllowHeadless { get; };
         Boolean RequestsTrayIcon { get; };
+        String RandomStateString;
 
         FindTargetWindowResult FindTargetWindow(String[] args);
 

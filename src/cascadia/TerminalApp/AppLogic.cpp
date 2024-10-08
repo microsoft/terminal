@@ -554,6 +554,16 @@ namespace winrt::TerminalApp::implementation
                 return winrt::make<FindTargetWindowResult>(WindowingBehaviorUseNone);
             }
 
+            // special case: handle-uri
+            // The handle-uri command only gets invoked during the github authentication flow,
+            // and we need it to be handled by the existing window to update the settings.
+            // Since for now that is the only case where we use a "handle-uri" command, just checking for that is sufficient,
+            // if we add more in the future we would need to check that the uri is a github one.
+            if (args.size() == 3 && args[1] == L"handle-uri")
+            {
+                return winrt::make<FindTargetWindowResult>(WindowingBehaviorUseExisting);
+            }
+
             // Validate the args now. This will make sure that in the case of a
             // single x-save command, we toss that commandline to the current
             // terminal window

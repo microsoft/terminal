@@ -3,15 +3,15 @@
 
 #pragma once
 
-#include "OpenAILLMProvider.g.h"
+#include "GithubCopilotLLMProvider.g.h"
 
 namespace winrt::Microsoft::Terminal::Query::Extension::implementation
 {
-    struct OpenAIBranding : public winrt::implements<OpenAIBranding, winrt::Microsoft::Terminal::Query::Extension::IBrandingData>
+    struct GithubCopilotBranding : public winrt::implements<GithubCopilotBranding, winrt::Microsoft::Terminal::Query::Extension::IBrandingData>
     {
-        OpenAIBranding() = default;
+        GithubCopilotBranding();
 
-        WINRT_PROPERTY(winrt::hstring, Name, L"Open AI");
+        WINRT_PROPERTY(winrt::hstring, Name, L"Github Copilot");
         WINRT_PROPERTY(winrt::hstring, HeaderIconPath);
         WINRT_PROPERTY(winrt::hstring, HeaderText);
         WINRT_PROPERTY(winrt::hstring, SubheaderText);
@@ -20,33 +20,38 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         WINRT_PROPERTY(winrt::hstring, QueryMetaData);
     };
 
-    struct OpenAILLMProvider : OpenAILLMProviderT<OpenAILLMProvider>
+    struct GithubCopilotLLMProvider : GithubCopilotLLMProviderT<GithubCopilotLLMProvider>
     {
-        OpenAILLMProvider() = default;
+        GithubCopilotLLMProvider() = default;
 
         void ClearMessageHistory();
         void SetSystemPrompt(const winrt::hstring& systemPrompt);
         void SetContext(const Extension::IContext context);
 
-        winrt::Windows::Foundation::IAsyncOperation<Extension::IResponse> GetResponseAsync(const winrt::hstring userPrompt);
+        winrt::Windows::Foundation::IAsyncOperation<Extension::IResponse> GetResponseAsync(const winrt::hstring& userPrompt);
 
         void SetAuthentication(const Windows::Foundation::Collections::ValueSet& authValues);
         TYPED_EVENT(AuthChanged, winrt::Microsoft::Terminal::Query::Extension::ILMProvider, Windows::Foundation::Collections::ValueSet);
 
-        WINRT_PROPERTY(IBrandingData, BrandingData, winrt::make<OpenAIBranding>());
+        WINRT_PROPERTY(IBrandingData, BrandingData, winrt::make<GithubCopilotBranding>());
 
     private:
-        winrt::hstring _AIKey;
+        winrt::hstring _authToken;
+        winrt::hstring _refreshToken;
         winrt::Windows::Web::Http::HttpClient _httpClient{ nullptr };
 
         Extension::IContext _context;
 
         winrt::Windows::Data::Json::JsonArray _jsonMessages;
+
+        void _refreshAuthTokens();
+        winrt::fire_and_forget _completeAuthWithUrl(const Windows::Foundation::Uri url);
+        winrt::fire_and_forget _obtainUsernameAndRefreshTokensIfNeeded();
     };
 
-    struct OpenAIResponse : public winrt::implements<OpenAIResponse, winrt::Microsoft::Terminal::Query::Extension::IResponse>
+    struct GithubCopilotResponse : public winrt::implements<GithubCopilotResponse, winrt::Microsoft::Terminal::Query::Extension::IResponse>
     {
-        OpenAIResponse(const winrt::hstring& message, const winrt::Microsoft::Terminal::Query::Extension::ErrorTypes errorType) :
+        GithubCopilotResponse(const winrt::hstring& message, const winrt::Microsoft::Terminal::Query::Extension::ErrorTypes errorType) :
             Message{ message },
             ErrorType{ errorType } {}
 
@@ -57,5 +62,5 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
 
 namespace winrt::Microsoft::Terminal::Query::Extension::factory_implementation
 {
-    BASIC_FACTORY(OpenAILLMProvider);
+    BASIC_FACTORY(GithubCopilotLLMProvider);
 }

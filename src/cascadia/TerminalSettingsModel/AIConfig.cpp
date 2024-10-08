@@ -17,6 +17,8 @@ static constexpr std::wstring_view PasswordVaultResourceName = L"TerminalAI";
 static constexpr std::wstring_view PasswordVaultAIKey = L"TerminalAIKey";
 static constexpr std::wstring_view PasswordVaultAIEndpoint = L"TerminalAIEndpoint";
 static constexpr std::wstring_view PasswordVaultOpenAIKey = L"TerminalOpenAIKey";
+static constexpr std::wstring_view PasswordVaultGithubCopilotAuthToken = L"TerminalGithubCopilotAuthToken";
+static constexpr std::wstring_view PasswordVaultGithubCopilotRefreshToken = L"TerminalGithubCopilotRefreshToken";
 
 winrt::com_ptr<AIConfig> AIConfig::CopyAIConfig(const AIConfig* source)
 {
@@ -95,6 +97,26 @@ void AIConfig::OpenAIKey(const winrt::hstring& key) noexcept
     _openAISettingChangedHandlers();
 }
 
+winrt::hstring AIConfig::GithubCopilotAuthToken() noexcept
+{
+    return _RetrieveCredential(PasswordVaultGithubCopilotAuthToken);
+}
+
+void AIConfig::GithubCopilotAuthToken(const winrt::hstring& authToken) noexcept
+{
+    _SetCredential(PasswordVaultGithubCopilotAuthToken, authToken);
+}
+
+winrt::hstring AIConfig::GithubCopilotRefreshToken() noexcept
+{
+    return _RetrieveCredential(PasswordVaultGithubCopilotRefreshToken);
+}
+
+void AIConfig::GithubCopilotRefreshToken(const winrt::hstring& refreshToken) noexcept
+{
+    _SetCredential(PasswordVaultGithubCopilotRefreshToken, refreshToken);
+}
+
 winrt::Microsoft::Terminal::Settings::Model::LLMProvider AIConfig::ActiveProvider()
 {
     const auto val{ _getActiveProviderImpl() };
@@ -112,6 +134,10 @@ winrt::Microsoft::Terminal::Settings::Model::LLMProvider AIConfig::ActiveProvide
     {
         // no explicitly set provider but we have an open ai key, use that
         return LLMProvider::OpenAI;
+    }
+    else if (!GithubCopilotAuthToken().empty() && !GithubCopilotRefreshToken().empty())
+    {
+        return LLMProvider::GithubCopilot;
     }
     else
     {

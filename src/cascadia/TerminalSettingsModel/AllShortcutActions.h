@@ -113,6 +113,7 @@
     ON_ALL_ACTIONS(ToggleBroadcastInput)    \
     ON_ALL_ACTIONS(OpenScratchpad)          \
     ON_ALL_ACTIONS(OpenAbout)               \
+    ON_ALL_ACTIONS(HandleUri)               \
     ON_ALL_ACTIONS(QuickFix)
 
 #define ALL_SHORTCUT_ACTIONS_WITH_ARGS             \
@@ -158,7 +159,8 @@
     ON_ALL_ACTIONS_WITH_ARGS(Suggestions)          \
     ON_ALL_ACTIONS_WITH_ARGS(SelectCommand)        \
     ON_ALL_ACTIONS_WITH_ARGS(SelectOutput)         \
-    ON_ALL_ACTIONS_WITH_ARGS(ColorSelection)
+    ON_ALL_ACTIONS_WITH_ARGS(ColorSelection)       \
+    ON_ALL_ACTIONS_WITH_ARGS(HandleUri)
 
 // These two macros here are for actions that we only use as internal currency.
 // They don't need to be parsed by the settings model, or saved as actions to

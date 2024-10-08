@@ -1619,6 +1619,32 @@ namespace winrt::TerminalApp::implementation
         args.Handled(true);
     }
 
+    void TerminalPage::_HandleHandleUri(const IInspectable& /*sender*/,
+                                        const ActionEventArgs& args)
+    {
+        if (const auto& uriArgs{ args.ActionArgs().try_as<HandleUriArgs>() })
+        {
+            const auto uriString{ uriArgs.Uri() };
+            if (!uriString.empty())
+            {
+                Windows::Foundation::Uri uri{ uriString };
+                // we only accept "github-auth" host names for now
+                if (uri.Host() == L"github-auth")
+                {
+                    // we should have a randomStateString stored, if we don't then don't handle this
+                    if (const auto randomStateString = Application::Current().as<TerminalApp::App>().Logic().RandomStateString(); !randomStateString.empty())
+                    {
+                        ValueSet authentication{};
+                        authentication.Insert(L"url", Windows::Foundation::PropertyValue::CreateString(uriString));
+                        authentication.Insert(L"state", Windows::Foundation::PropertyValue::CreateString(randomStateString));
+                        _createAndSetAuthenticationForLMProvider(LLMProvider::GithubCopilot, authentication);
+                        args.Handled(true);
+                    }
+                }
+            }
+        }
+    }
+
     void TerminalPage::_HandleQuickFix(const IInspectable& /*sender*/,
                                        const ActionEventArgs& args)
     {
