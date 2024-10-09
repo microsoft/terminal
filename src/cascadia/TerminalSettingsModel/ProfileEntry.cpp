@@ -57,3 +57,12 @@ winrt::com_ptr<NewTabMenuEntry> ProfileEntry::FromJson(const Json::Value& json)
 
     return entry;
 }
+
+winrt::com_ptr<ProfileEntry> ProfileEntry::Copy() const
+{
+    auto entry{ winrt::make_self<ProfileEntry>() };
+    entry->_Profile = _Profile;
+    entry->_ProfileIndex = _ProfileIndex;
+    entry->_ProfileName = _ProfileName;
+    return entry;
+}

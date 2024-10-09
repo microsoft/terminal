@@ -71,3 +71,12 @@ bool MatchProfilesEntry::MatchesProfile(const Model::Profile& profile)
 
     return isMatching.value_or(false);
 }
+
+winrt::com_ptr<MatchProfilesEntry> MatchProfilesEntry::Copy() const
+{
+    auto entry = winrt::make_self<MatchProfilesEntry>();
+    entry->_Name = _Name;
+    entry->_Commandline = _Commandline;
+    entry->_Source = _Source;
+    return entry;
+}

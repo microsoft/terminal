@@ -189,10 +189,15 @@
                     <Grid AutomationProperties.Name="{TemplateBinding Header}"
                           Style="{StaticResource NonExpanderGrid}">
                         <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
-                        <StackPanel Style="{StaticResource StackPanelInExpanderStyle}">
+                        <FontIcon Grid.Column="0"
+                                  Margin="0,0,10,0"
+                                  Glyph="{TemplateBinding FontIconGlyph}" />
+                        <StackPanel Grid.Column="1"
+                                    Style="{StaticResource StackPanelInExpanderStyle}">
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock Style="{StaticResource SettingsPageItemHeaderStyle}"
                                            Text="{TemplateBinding Header}" />
@@ -206,7 +211,7 @@
                                        Style="{StaticResource SettingsPageItemDescriptionStyle}"
                                        Text="{TemplateBinding HelpText}" />
                         </StackPanel>
-                        <ContentPresenter Grid.Column="1"
+                        <ContentPresenter Grid.Column="2"
                                           HorizontalAlignment="Right"
                                           VerticalAlignment="Center"
                                           Content="{TemplateBinding Content}" />
@@ -233,10 +238,15 @@
                         <muxc:Expander.Header>
                             <Grid MinHeight="64">
                                 <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
-                                <StackPanel Style="{StaticResource StackPanelInExpanderStyle}">
+                                <FontIcon Grid.Column="0"
+                                          Margin="0,0,10,0"
+                                          Glyph="{TemplateBinding FontIconGlyph}" />
+                                <StackPanel Grid.Column="1"
+                                            Style="{StaticResource StackPanelInExpanderStyle}">
                                     <StackPanel Orientation="Horizontal">
                                         <TextBlock Style="{StaticResource SettingsPageItemHeaderStyle}"
                                                    Text="{TemplateBinding Header}" />
@@ -250,7 +260,7 @@
                                                Style="{StaticResource SettingsPageItemDescriptionStyle}"
                                                Text="{TemplateBinding HelpText}" />
                                 </StackPanel>
-                                <TextBlock Grid.Column="1"
+                                <TextBlock Grid.Column="2"
                                            MaxWidth="250"
                                            Margin="0,0,-16,0"
                                            HorizontalAlignment="Right"
