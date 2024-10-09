@@ -16,6 +16,8 @@ ADDALIAS
 ADDREF
 ADDSTRING
 ADDTOOL
+adml
+admx
 AFill
 AFX
 AHelper
