@@ -1763,6 +1763,14 @@
     <value>Action</value>
     <comment>Label for a control that sets the action of a key binding.</comment>
   </data>
+  <data name="ShortcutAction_SendInput" xml:space="preserve">
+    <value>Send input</value>
+    <comment>One of the possible shortcut action types. This represents the "Send input" action.</comment>
+  </data>
+  <data name="ShortcutAction_CloseTab" xml:space="preserve">
+    <value>Close tab</value>
+    <comment>One of the possible shortcut action types. This represents the "Close tab" action.</comment>
+  </data>
   <data name="KeyChordListener.[using:Windows.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve">
     <value>Input your desired keyboard shortcut.</value>
     <comment>Help text directing users how to use the "KeyChordListener" control. Pressing a keyboard shortcut will be recorded by this control.</comment>

@@ -632,6 +632,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             h.write(ContentArgs());
             return h.finalize();
         }
+        uint32_t GetArgCount() const
+        {
+            return 2;
+        }
     };
 
     struct SplitPaneArgs : public SplitPaneArgsT<SplitPaneArgs>
@@ -724,6 +728,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             h.write(SplitSize());
             return h.finalize();
         }
+        uint32_t GetArgCount() const
+        {
+            return 4;
+        }
     };
 
     struct NewWindowArgs : public NewWindowArgsT<NewWindowArgs>
@@ -773,6 +781,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             til::hasher h;
             h.write(ContentArgs());
             return h.finalize();
+        }
+        uint32_t GetArgCount() const
+        {
+            return 2; // todo: is this correct? or should we return the number of args in INewContentArgs?
         }
     };
 
@@ -912,6 +924,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             til::hasher h;
             h.write(winrt::get_abi(_Actions));
             return h.finalize();
+        }
+        uint32_t GetArgCount() const
+        {
+            return _Actions.Size();
         }
     };
 

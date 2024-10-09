@@ -2,7 +2,6 @@
 // Licensed under the MIT license.
 
 #include "pch.h"
-//#include "TabPaletteItem.h"
 #include "ActionsTemplateSelectors.h"
 #include "ActionsTemplateSelectors.g.cpp"
 
@@ -35,6 +34,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 return CloseTabTemplate();
             }
         }
-        return SendInputTemplate();
+        return nullptr;
     }
 }

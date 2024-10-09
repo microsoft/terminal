@@ -66,6 +66,10 @@ struct InitListPlaceholder
 #define CTOR_INIT(type, name, jsonKey, required, ...) \
     _##name{ name##Param },
 
+// count the number of args
+#define COUNT_ARGS(type, name, jsonKey, required, ...) \
+    argCount++;
+
 // check each property in the Equals() method. You'll note there's a stray
 // `true` in the definition of Equals() below, that's to deal with trailing
 // commas
@@ -160,4 +164,10 @@ public:                                                     \
         til::hasher h;                                      \
         argsMacro(HASH_ARGS);                               \
         return h.finalize();                                \
+    }                                                       \
+    uint32_t GetArgCount() const                            \
+    {                                                       \
+        uint32_t argCount{ 0 };                             \
+        argsMacro(COUNT_ARGS);                              \
+        return argCount;                                    \
     }
