@@ -434,7 +434,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
-    hstring FolderTreeViewEntry::Name()
+    hstring FolderTreeViewEntry::Name() const
     {
         if (!_folderEntry)
         {
@@ -443,7 +443,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return _folderEntry.Name();
     }
 
-    hstring FolderTreeViewEntry::Icon()
+    hstring FolderTreeViewEntry::Icon() const
     {
         if (!_folderEntry)
         {
@@ -648,6 +648,18 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             return action.Name();
         }
         return hstring{ fmt::format(L"{}: {}", RS_(L"NewTabMenu_ActionNotFound"), actionID) };
+    }
+
+    hstring ActionEntryViewModel::Icon() const
+    {
+        assert(_Settings);
+
+        const auto actionID = _ActionEntry.ActionId();
+        if (const auto& action = _Settings.ActionMap().GetActionByID(actionID))
+        {
+            return action.IconPath();
+        }
+        return {};
     }
 
     SeparatorEntryViewModel::SeparatorEntryViewModel(Model::SeparatorEntry separatorEntry) :

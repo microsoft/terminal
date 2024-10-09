@@ -69,6 +69,7 @@ namespace Microsoft.Terminal.Settings.Editor
 
         Microsoft.Terminal.Settings.Model.ActionEntry ActionEntry { get; };
         String DisplayText { get; };
+        String Icon { get; };
     }
 
     [default_interface] runtimeclass SeparatorEntryViewModel : Microsoft.Terminal.Settings.Editor.NewTabMenuEntryViewModel

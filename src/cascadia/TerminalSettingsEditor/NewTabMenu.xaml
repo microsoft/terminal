@@ -84,8 +84,13 @@
                 <ContentControl DataContext="{Binding Mode=OneWay}"
                                 Style="{StaticResource NewTabMenuEntryControlsWrapper}">
                     <StackPanel AutomationProperties.Name="{x:Bind DisplayText, Mode=OneWay}"
-                                Orientation="Horizontal"
-                                Spacing="10">
+                                Orientation="Horizontal">
+                        <IconSourceElement Width="16"
+                                           Height="16"
+                                           Margin="0,0,10,0"
+                                           VerticalAlignment="Center"
+                                           IconSource="{x:Bind mtu:IconPathConverter.IconSourceWUX(Icon), Mode=OneWay}"
+                                           Visibility="{x:Bind mtu:Converters.StringNotEmptyToVisibility(Icon), Mode=OneWay}" />
                         <TextBlock VerticalAlignment="Center"
                                    Text="{x:Bind DisplayText, Mode=OneWay}" />
                     </StackPanel>
@@ -115,13 +120,13 @@
                     </Grid.ColumnDefinitions>
                     <StackPanel Grid.Column="0"
                                 AutomationProperties.Name="{x:Bind Name, Mode=OneWay}"
-                                Orientation="Horizontal"
-                                Spacing="10">
-                        <!--  TODO CARLOS: add icon  -->
-                        <!--<Image Source="{x:Bind Icon}"
-                                   Width="16"
-                                   Height="16"
-                                   VerticalAlignment="Center" />-->
+                                Orientation="Horizontal">
+                        <IconSourceElement Width="16"
+                                           Height="16"
+                                           Margin="0,0,10,0"
+                                           VerticalAlignment="Center"
+                                           IconSource="{x:Bind mtu:IconPathConverter.IconSourceWUX(Icon), Mode=OneWay}"
+                                           Visibility="{x:Bind mtu:Converters.StringNotEmptyToVisibility(Icon), Mode=OneWay}" />
                         <TextBlock VerticalAlignment="Center"
                                    Text="{x:Bind Name, Mode=OneWay}" />
                     </StackPanel>
@@ -213,13 +218,13 @@
                                            IsExpanded="True"
                                            ItemsSource="{x:Bind Children, Mode=OneWay}">
                             <StackPanel AutomationProperties.Name="{x:Bind Name, Mode=OneWay}"
-                                        Orientation="Horizontal"
-                                        Spacing="10">
-                                <!--  TODO CARLOS: add icon  -->
-                                <!--<Image Source="{x:Bind Icon}"
-                                           Width="16"
-                                           Height="16"
-                                           VerticalAlignment="Center" />-->
+                                        Orientation="Horizontal">
+                                <IconSourceElement Width="16"
+                                                   Height="16"
+                                                   Margin="0,0,10,0"
+                                                   VerticalAlignment="Center"
+                                                   IconSource="{x:Bind mtu:IconPathConverter.IconSourceWUX(Icon), Mode=OneWay}"
+                                                   Visibility="{x:Bind mtu:Converters.StringNotEmptyToVisibility(Icon), Mode=OneWay}" />
                                 <TextBlock VerticalAlignment="Center"
                                            Text="{x:Bind Name, Mode=OneWay}" />
                             </StackPanel>

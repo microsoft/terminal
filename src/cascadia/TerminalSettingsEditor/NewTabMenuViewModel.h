@@ -82,8 +82,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     public:
         FolderTreeViewEntry(Editor::FolderEntryViewModel folderEntry);
 
-        hstring Name();
-        hstring Icon();
+        hstring Name() const;
+        hstring Icon() const;
         Editor::FolderEntryViewModel FolderEntryVM() { return _folderEntry; }
 
         WINRT_PROPERTY(Windows::Foundation::Collections::IObservableVector<Microsoft::Terminal::Settings::Editor::FolderTreeViewEntry>, Children);
@@ -116,6 +116,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         ActionEntryViewModel(Model::ActionEntry actionEntry, Model::CascadiaSettings settings);
 
         hstring DisplayText() const;
+        hstring Icon() const;
         VIEW_MODEL_OBSERVABLE_PROPERTY(Model::ActionEntry, ActionEntry, nullptr);
 
     private:
