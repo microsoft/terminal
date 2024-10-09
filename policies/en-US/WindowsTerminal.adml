@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--  (c) 2024 Microsoft Corporation  -->
+<policyDefinitionResources xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" revision="1.0" schemaVersion="1.0" xmlns="http://schemas.microsoft.com/GroupPolicy/2006/07/PolicyDefinitions">
+  <displayName>Windows Terminal</displayName>
+  <description>Windows Terminal</description>
+  <resources>
+    <stringTable>
+      <string id="WindowsTerminal">Windows Terminal</string>
+      <string id="DisabledProfileSources">Disabled Profile Sources</string>
+      <string id="DisabledProfileSourcesText">Sources you specify here will not show up as profiles. Possible sources are, among others:
+- Windows.Terminal.Azure
+- Windows.Terminal.PowershellCore
+- Windows.Terminal.Wsl</string>
+    </stringTable>
+    <presentationTable>
+      <presentation id="DisabledProfileSources">
+        <multiTextBox refId="DisabledProfileSources">List of disabled sources</multiTextBox>
+      </presentation>
+    </presentationTable>
+  </resources>
+</policyDefinitionResources>
