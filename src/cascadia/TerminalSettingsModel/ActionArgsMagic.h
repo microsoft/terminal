@@ -66,9 +66,9 @@ struct InitListPlaceholder
 #define CTOR_INIT(type, name, jsonKey, required, ...) \
     _##name{ name##Param },
 
-// count the number of args
-#define COUNT_ARGS(type, name, jsonKey, required, ...) \
-    argCount++;
+// increment our internal arg count
+#define INCREMENT_ARG_COUNT(type, name, jsonKey, required, ...) \
+    _argCount += 1;
 
 // check each property in the Equals() method. You'll note there's a stray
 // `true` in the definition of Equals() below, that's to deal with trailing
@@ -85,6 +85,7 @@ struct InitListPlaceholder
 // is used as the conditional for the validation here.
 #define FROM_JSON_ARGS(type, name, jsonKey, required, ...)                      \
     JsonUtils::GetValueForKey(json, jsonKey, args->_##name);                    \
+    args->_argCount += 1;                                                       \
     if (required)                                                               \
     {                                                                           \
         return { nullptr, { SettingsLoadWarnings::MissingRequiredParameter } }; \
@@ -119,11 +120,14 @@ struct InitListPlaceholder
     className() = default;                                  \
     className(                                              \
         argsMacro(CTOR_PARAMS) InitListPlaceholder = {}) :  \
-        argsMacro(CTOR_INIT) _placeholder{} {};             \
+        argsMacro(CTOR_INIT) _placeholder{} {               \
+            argsMacro(INCREMENT_ARG_COUNT)                  \
+        };                                                  \
     argsMacro(DECLARE_ARGS);                                \
                                                             \
 private:                                                    \
     InitListPlaceholder _placeholder;                       \
+    uint32_t _argCount{ 0 };                                \
                                                             \
 public:                                                     \
     hstring GenerateName() const;                           \
@@ -157,6 +161,7 @@ public:                                                     \
     {                                                       \
         auto copy{ winrt::make_self<className>() };         \
         argsMacro(COPY_ARGS);                               \
+        copy->_argCount = _argCount;                        \
         return *copy;                                       \
     }                                                       \
     size_t Hash() const                                     \
@@ -167,7 +172,5 @@ public:                                                     \
     }                                                       \
     uint32_t GetArgCount() const                            \
     {                                                       \
-        uint32_t argCount{ 0 };                             \
-        argsMacro(COUNT_ARGS);                              \
-        return argCount;                                    \
+        return _argCount;                                   \
     }
