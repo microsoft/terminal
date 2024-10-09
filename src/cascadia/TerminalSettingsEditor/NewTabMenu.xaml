@@ -19,6 +19,7 @@
                 <ResourceDictionary Source="CommonResources.xaml" />
             </ResourceDictionary.MergedDictionaries>
 
+            <!--  Wrapper for NewTabMenuEntry that adds buttons to the ListView entries  -->
             <Style x:Key="NewTabMenuEntryControlsWrapper"
                    TargetType="ContentControl">
                 <Setter Property="IsTabStop" Value="False" />
@@ -35,21 +36,27 @@
                                 <StackPanel Grid.Column="1"
                                             Orientation="Horizontal"
                                             Spacing="5">
-                                    <Button Click="ReorderEntry_Clicked"
+                                    <!--  Reorder: Up  -->
+                                    <Button x:Uid="NewTabMenuEntry_ReorderUp"
+                                            Click="ReorderEntry_Clicked"
                                             DataContext="{TemplateBinding DataContext}"
                                             Style="{StaticResource ExtraSmallButtonStyle}"
                                             Tag="Up">
                                         <FontIcon FontSize="{StaticResource StandardIconSize}"
                                                   Glyph="&#xF0AD;" />
                                     </Button>
-                                    <Button Click="ReorderEntry_Clicked"
+                                    <!--  Reorder: Down  -->
+                                    <Button x:Uid="NewTabMenuEntry_ReorderDown"
+                                            Click="ReorderEntry_Clicked"
                                             DataContext="{TemplateBinding DataContext}"
                                             Style="{StaticResource ExtraSmallButtonStyle}"
                                             Tag="Down">
                                         <FontIcon FontSize="{StaticResource StandardIconSize}"
                                                   Glyph="&#xF0AE;" />
                                     </Button>
-                                    <Button Click="DeleteEntry_Clicked"
+                                    <!--  Delete Entry  -->
+                                    <Button x:Uid="NewTabMenuEntry_Delete"
+                                            Click="DeleteEntry_Clicked"
                                             DataContext="{TemplateBinding DataContext}"
                                             Style="{StaticResource DeleteExtraSmallButtonStyle}">
                                         <FontIcon FontSize="{StaticResource StandardIconSize}"
@@ -64,10 +71,10 @@
 
             <DataTemplate x:Key="ProfileEntryTemplate"
                           x:DataType="local:ProfileEntryViewModel">
-                <ContentControl DataContext="{Binding Mode=OneWay}"
+                <ContentControl AutomationProperties.Name="{x:Bind ProfileEntry.Profile.Name, Mode=OneWay}"
+                                DataContext="{Binding Mode=OneWay}"
                                 Style="{StaticResource NewTabMenuEntryControlsWrapper}">
-                    <StackPanel AutomationProperties.Name="{x:Bind ProfileEntry.Profile.Name, Mode=OneWay}"
-                                Orientation="Horizontal"
+                    <StackPanel Orientation="Horizontal"
                                 Spacing="10">
                         <Image Width="16"
                                Height="16"
@@ -81,10 +88,10 @@
 
             <DataTemplate x:Key="ActionEntryTemplate"
                           x:DataType="local:ActionEntryViewModel">
-                <ContentControl DataContext="{Binding Mode=OneWay}"
+                <ContentControl AutomationProperties.Name="{x:Bind DisplayText, Mode=OneWay}"
+                                DataContext="{Binding Mode=OneWay}"
                                 Style="{StaticResource NewTabMenuEntryControlsWrapper}">
-                    <StackPanel AutomationProperties.Name="{x:Bind DisplayText, Mode=OneWay}"
-                                Orientation="Horizontal">
+                    <StackPanel Orientation="Horizontal">
                         <IconSourceElement Width="16"
                                            Height="16"
                                            Margin="0,0,10,0"
@@ -99,7 +106,8 @@
 
             <DataTemplate x:Key="SeparatorEntryTemplate"
                           x:DataType="local:SeparatorEntryViewModel">
-                <ContentControl DataContext="{Binding Mode=OneWay}"
+                <ContentControl x:Uid="NewTabMenuEntry_SeparatorItem"
+                                DataContext="{Binding Mode=OneWay}"
                                 Style="{StaticResource NewTabMenuEntryControlsWrapper}">
                     <TextBlock x:Uid="NewTabMenuEntry_Separator"
                                VerticalAlignment="Center"
@@ -113,13 +121,13 @@
                     Most of this was copied from NewTabMenuEntryControlsWrapper.
                     We really just added the Edit button here.
                 -->
-                <Grid XYFocusKeyboardNavigation="Enabled">
+                <Grid AutomationProperties.Name="{x:Bind Name, Mode=OneWay}"
+                      XYFocusKeyboardNavigation="Enabled">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
                     <StackPanel Grid.Column="0"
-                                AutomationProperties.Name="{x:Bind Name, Mode=OneWay}"
                                 Orientation="Horizontal">
                         <IconSourceElement Width="16"
                                            Height="16"
@@ -133,27 +141,31 @@
                     <StackPanel Grid.Column="1"
                                 Orientation="Horizontal"
                                 Spacing="5">
-                        <Button Click="EditEntry_Clicked"
+                        <Button x:Uid="NewTabMenuEntry_EditFolder"
+                                Click="EditEntry_Clicked"
                                 DataContext="{Binding Mode=OneWay}"
                                 Style="{StaticResource ExtraSmallButtonStyle}">
                             <FontIcon FontSize="{StaticResource StandardIconSize}"
                                       Glyph="&#xE70F;" />
                         </Button>
-                        <Button Click="ReorderEntry_Clicked"
+                        <Button x:Uid="NewTabMenuEntry_ReorderUp"
+                                Click="ReorderEntry_Clicked"
                                 DataContext="{Binding Mode=OneWay}"
                                 Style="{StaticResource ExtraSmallButtonStyle}"
                                 Tag="Up">
                             <FontIcon FontSize="{StaticResource StandardIconSize}"
                                       Glyph="&#xF0AD;" />
                         </Button>
-                        <Button Click="ReorderEntry_Clicked"
+                        <Button x:Uid="NewTabMenuEntry_ReorderDown"
+                                Click="ReorderEntry_Clicked"
                                 DataContext="{Binding Mode=OneWay}"
                                 Style="{StaticResource ExtraSmallButtonStyle}"
                                 Tag="Down">
                             <FontIcon FontSize="{StaticResource StandardIconSize}"
                                       Glyph="&#xF0AE;" />
                         </Button>
-                        <Button Click="DeleteEntry_Clicked"
+                        <Button x:Uid="NewTabMenuEntry_Delete"
+                                Click="DeleteEntry_Clicked"
                                 DataContext="{Binding Mode=OneWay}"
                                 Style="{StaticResource DeleteExtraSmallButtonStyle}">
                             <FontIcon FontSize="{StaticResource StandardIconSize}"
@@ -165,7 +177,8 @@
 
             <DataTemplate x:Key="MatchProfilesEntryTemplate"
                           x:DataType="local:MatchProfilesEntryViewModel">
-                <ContentControl DataContext="{Binding Mode=OneWay}"
+                <ContentControl AutomationProperties.Name="{x:Bind DisplayText, Mode=OneWay}"
+                                DataContext="{Binding Mode=OneWay}"
                                 Style="{StaticResource NewTabMenuEntryControlsWrapper}">
                     <TextBlock VerticalAlignment="Center"
                                FontStyle="Italic"
@@ -175,7 +188,8 @@
 
             <DataTemplate x:Key="RemainingProfilesEntryTemplate"
                           x:DataType="local:RemainingProfilesEntryViewModel">
-                <ContentControl DataContext="{Binding Mode=OneWay}"
+                <ContentControl x:Uid="NewTabMenuEntry_RemainingProfilesItem"
+                                DataContext="{Binding Mode=OneWay}"
                                 Style="{StaticResource NewTabMenuEntryControlsWrapper}">
                     <TextBlock x:Uid="NewTabMenuEntry_RemainingProfiles"
                                VerticalAlignment="Center"
@@ -193,7 +207,6 @@
         </ResourceDictionary>
     </Page.Resources>
 
-    <!--  Margin stolen from SettingsStackStyle  -->
     <Grid Margin="{StaticResource SettingStackMargin}"
           RowSpacing="10">
         <Grid.RowDefinitions>
@@ -202,6 +215,7 @@
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
+        <!--  Folder Picker Dialog: used to select a folder to move entries to  -->
         <ContentDialog x:Name="FolderPickerDialog"
                        x:Uid="NewTabMenu_FolderPickerDialog"
                        x:Load="False"
@@ -256,20 +270,22 @@
             <!--  General Controls  -->
             <StackPanel Orientation="Horizontal"
                         Spacing="10">
-                <Button Click="MoveMultiple_Click">
+                <Button x:Name="MoveToFolderButton"
+                        Click="MoveMultiple_Click">
                     <StackPanel Orientation="Horizontal">
                         <FontIcon FontSize="{StaticResource StandardIconSize}"
                                   Glyph="&#xE8DE;" />
-                        <TextBlock x:Uid="NewTabMenu_MoveToFolderButton"
+                        <TextBlock x:Uid="NewTabMenu_MoveToFolderTextBlock"
                                    Margin="10,0,0,0" />
                     </StackPanel>
                 </Button>
-                <Button Click="DeleteMultiple_Click"
+                <Button x:Name="DeleteMultipleButton"
+                        Click="DeleteMultiple_Click"
                         Style="{StaticResource DeleteButtonStyle}">
                     <StackPanel Orientation="Horizontal">
                         <FontIcon FontSize="{StaticResource StandardIconSize}"
                                   Glyph="&#xE74D;" />
-                        <TextBlock x:Uid="NewTabMenu_DeleteMultipleButton"
+                        <TextBlock x:Uid="NewTabMenu_DeleteMultipleTextBlock"
                                    Margin="10,0,0,0" />
                     </StackPanel>
                 </Button>
@@ -351,6 +367,7 @@
                     </ComboBox>
 
                     <Button x:Name="AddProfileButton"
+                            x:Uid="NewTabMenu_AddProfileButton"
                             HorizontalAlignment="Stretch"
                             VerticalAlignment="Stretch"
                             Click="{x:Bind ViewModel.RequestAddSelectedProfileEntry}">
@@ -366,6 +383,7 @@
             <local:SettingContainer x:Uid="NewTabMenu_AddSeparator"
                                     FontIconGlyph="&#xE76f;">
                 <Button x:Name="AddSeparatorButton"
+                        x:Uid="NewTabMenu_AddSeparatorButton"
                         HorizontalAlignment="Stretch"
                         VerticalAlignment="Stretch"
                         Click="{x:Bind ViewModel.RequestAddSeparatorEntry}">
@@ -388,6 +406,7 @@
                              Text="{x:Bind ViewModel.AddFolderName, Mode=TwoWay}"
                              TextChanged="AddFolderNameTextBox_TextChanged" />
                     <Button x:Name="AddFolderButton"
+                            x:Uid="NewTabMenu_AddFolderButton"
                             HorizontalAlignment="Stretch"
                             VerticalAlignment="Stretch"
                             Click="{x:Bind ViewModel.RequestAddFolderEntry}"
@@ -417,7 +436,7 @@
                             <StackPanel Orientation="Horizontal">
                                 <FontIcon FontSize="{StaticResource StandardIconSize}"
                                           Glyph="&#xE710;" />
-                                <TextBlock x:Uid="NewTabMenu_AddMatchProfiles_Confirmation"
+                                <TextBlock x:Uid="NewTabMenu_AddMatchProfilesTextBlock"
                                            Style="{StaticResource IconButtonTextBlockStyle}" />
                             </StackPanel>
                         </Button.Content>
@@ -428,7 +447,9 @@
             <!--  Add Remaining Profiles  -->
             <local:SettingContainer x:Uid="NewTabMenu_AddRemainingProfiles"
                                     FontIconGlyph="&#xE902;">
-                <Button HorizontalAlignment="Stretch"
+                <Button x:Name="AddRemainingProfilesButton"
+                        x:Uid="NewTabMenu_AddRemainingProfilesButton"
+                        HorizontalAlignment="Stretch"
                         VerticalAlignment="Stretch"
                         Click="{x:Bind ViewModel.RequestAddRemainingProfilesEntry}"
                         IsEnabled="{x:Bind ViewModel.IsRemainingProfilesEntryMissing, Mode=OneWay}">

@@ -23,6 +23,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         InitializeComponent();
 
         _entryTemplateSelector = Resources().Lookup(box_value(L"NewTabMenuEntryTemplateSelector")).as<Editor::NewTabMenuEntryTemplateSelector>();
+
+        Automation::AutomationProperties::SetName(MoveToFolderButton(), RS_(L"NewTabMenu_MoveToFolderTextBlock/Text"));
+        Automation::AutomationProperties::SetName(DeleteMultipleButton(), RS_(L"NewTabMenu_DeleteMultipleTextBlock/Text"));
+        Automation::AutomationProperties::SetName(AddProfileComboBox(), RS_(L"NewTabMenu_AddProfile/Header"));
+        Automation::AutomationProperties::SetName(AddProfileButton(), RS_(L"NewTabMenu_AddProfileButton/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip"));
+        Automation::AutomationProperties::SetName(AddSeparatorButton(), RS_(L"NewTabMenu_AddSeparatorButton/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip"));
+        Automation::AutomationProperties::SetName(AddFolderButton(), RS_(L"NewTabMenu_AddFolderButton/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip"));
+        Automation::AutomationProperties::SetName(AddMatchProfilesButton(), RS_(L"NewTabMenu_AddMatchProfilesTextBlock/Text"));
+        Automation::AutomationProperties::SetName(AddRemainingProfilesButton(), RS_(L"NewTabMenu_AddRemainingProfilesButton/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip"));
     }
 
     void NewTabMenu::OnNavigatedTo(const NavigationEventArgs& e)
