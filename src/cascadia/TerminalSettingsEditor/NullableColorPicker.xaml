@@ -124,7 +124,8 @@
 
         <StackPanel Grid.Column="1"
                     Spacing="5">
-            <ToggleButton Click="NullColorButton_Clicked"
+            <ToggleButton AutomationProperties.Name="{x:Bind NullColorButtonLabel}"
+                          Click="NullColorButton_Clicked"
                           IsChecked="{x:Bind IsNull(CurrentColor), Mode=OneWay}">
                 <Grid ColumnSpacing="5">
                     <Grid.ColumnDefinitions>

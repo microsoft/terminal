@@ -159,7 +159,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         CurrentColor(nullptr);
     }
 
-    IAsyncAction NullableColorPicker::MoreColors_Clicked(const IInspectable& /*sender*/, const RoutedEventArgs& /*args*/)
+    safe_void_coroutine NullableColorPicker::MoreColors_Clicked(const IInspectable& /*sender*/, const RoutedEventArgs& /*args*/)
     {
         co_await ColorPickerDialog().ShowAsync();
     }

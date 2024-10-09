@@ -64,7 +64,6 @@
 
     <local:ColorToBrushConverter x:Key="ColorToBrushConverter" />
     <local:ColorToStringConverter x:Key="ColorToStringConverter" />
-    <local:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
 
     <Color x:Key="DeleteButtonColor">Firebrick</Color>
 
@@ -430,7 +429,7 @@
                                           FontSize="12"
                                           Foreground="{TemplateBinding BorderBrush}"
                                           Glyph="&#xE73D;"
-                                          Visibility="{Binding RelativeSource={RelativeSource TemplatedParent}, Path=IsChecked, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}" />
+                                          Visibility="{Binding RelativeSource={RelativeSource TemplatedParent}, Path=IsChecked, Mode=OneWay}" />
                             </Grid>
                         </Border>
                         <VisualStateManager.VisualStateGroups>
