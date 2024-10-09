@@ -15,8 +15,11 @@ namespace Microsoft.Terminal.Settings.Editor
         String HelpText;
         static Windows.UI.Xaml.DependencyProperty HelpTextProperty { get; };
 
-        String CurrentValue;
+        IInspectable CurrentValue;
         static Windows.UI.Xaml.DependencyProperty CurrentValueProperty { get; };
+
+        Windows.UI.Xaml.DataTemplate CurrentValueTemplate;
+        static Windows.UI.Xaml.DependencyProperty CurrentValueTemplateProperty { get; };
 
         Boolean HasSettingValue;
         static Windows.UI.Xaml.DependencyProperty HasSettingValueProperty { get; };

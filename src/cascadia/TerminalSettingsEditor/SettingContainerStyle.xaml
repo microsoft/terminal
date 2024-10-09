@@ -7,6 +7,7 @@
                     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
                     xmlns:local="using:Microsoft.Terminal.Settings.Editor"
                     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+                    xmlns:mtu="using:Microsoft.Terminal.UI"
                     xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
                     mc:Ignorable="d">
 
@@ -178,6 +179,16 @@
         <Setter Property="TextWrapping" Value="WrapWholeWords" />
     </Style>
 
+    <DataTemplate x:Key="ExpanderSettingContainerStringPreviewTemplate">
+        <TextBlock MaxWidth="250"
+                   Margin="0,0,-16,0"
+                   HorizontalAlignment="Right"
+                   VerticalAlignment="Center"
+                   FontFamily="Segoe UI, Segoe Fluent Icons, Segoe MDL2 Assets"
+                   Style="{StaticResource SettingsPageItemDescriptionStyle}"
+                   Text="{Binding}" />
+    </DataTemplate>
+
     <!--  A setting container for a setting that has no additional options  -->
     <Style TargetType="local:SettingContainer">
         <Setter Property="Margin" Value="0,4,0,0" />
@@ -250,14 +261,58 @@
                                                Style="{StaticResource SettingsPageItemDescriptionStyle}"
                                                Text="{TemplateBinding HelpText}" />
                                 </StackPanel>
-                                <TextBlock Grid.Column="1"
-                                           MaxWidth="250"
-                                           Margin="0,0,-16,0"
-                                           HorizontalAlignment="Right"
-                                           VerticalAlignment="Center"
-                                           FontFamily="Segoe UI, Segoe Fluent Icons, Segoe MDL2 Assets"
-                                           Style="{StaticResource SettingsPageItemDescriptionStyle}"
-                                           Text="{TemplateBinding CurrentValue}" />
+                                <ContentPresenter Grid.Column="1"
+                                                  Content="{TemplateBinding CurrentValue}"
+                                                  ContentTemplate="{StaticResource ExpanderSettingContainerStringPreviewTemplate}" />
+                            </Grid>
+                        </muxc:Expander.Header>
+                    </muxc:Expander>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!--  A setting container which can expand. Supports data template override for preview  -->
+    <Style x:Key="ExpanderSettingContainerStyleWithComplexPreview"
+           TargetType="local:SettingContainer">
+        <Setter Property="MaxWidth" Value="1000" />
+        <Setter Property="IsTabStop" Value="False" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="local:SettingContainer">
+                    <muxc:Expander x:Name="Expander"
+                                   Margin="0,4,0,0"
+                                   HorizontalAlignment="Stretch"
+                                   HorizontalContentAlignment="Stretch"
+                                   Content="{TemplateBinding Content}"
+                                   IsExpanded="{TemplateBinding StartExpanded}">
+                        <muxc:Expander.Header>
+                            <Grid MinHeight="64">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Style="{StaticResource StackPanelInExpanderStyle}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Style="{StaticResource SettingsPageItemHeaderStyle}"
+                                                   Text="{TemplateBinding Header}" />
+                                        <Button x:Name="ResetButton"
+                                                Style="{StaticResource SettingContainerResetButtonStyle}">
+                                            <FontIcon Glyph="&#xE845;"
+                                                      Style="{StaticResource SettingContainerFontIconStyle}" />
+                                        </Button>
+                                    </StackPanel>
+                                    <TextBlock x:Name="HelpTextBlock"
+                                               Style="{StaticResource SettingsPageItemDescriptionStyle}"
+                                               Text="{TemplateBinding HelpText}" />
+                                </StackPanel>
+                                <ContentPresenter Grid.Column="1"
+                                                  MaxWidth="250"
+                                                  Margin="0,0,-16,0"
+                                                  HorizontalAlignment="Right"
+                                                  VerticalAlignment="Center"
+                                                  Content="{TemplateBinding CurrentValue}"
+                                                  ContentTemplate="{TemplateBinding CurrentValueTemplate}" />
                             </Grid>
                         </muxc:Expander.Header>
                     </muxc:Expander>

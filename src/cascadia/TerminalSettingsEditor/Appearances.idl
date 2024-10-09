@@ -45,6 +45,11 @@ namespace Microsoft.Terminal.Settings.Editor
         ColorSchemeViewModel CurrentColorScheme;
         IObservableVector<ColorSchemeViewModel> SchemesList;
 
+        Windows.UI.Color ForegroundPreview { get; };
+        Windows.UI.Color BackgroundPreview { get; };
+        Windows.UI.Color SelectionBackgroundPreview { get; };
+        Windows.UI.Color CursorColorPreview { get; };
+
         String MissingFontFaces { get; };
         String ProportionalFontFaces { get; };
         Boolean HasPowerlineCharacters { get; };
@@ -77,6 +82,11 @@ namespace Microsoft.Terminal.Settings.Editor
         OBSERVABLE_PROJECTED_APPEARANCE_SETTING(Microsoft.Terminal.Settings.Model.ConvergedAlignment, BackgroundImageAlignment);
         OBSERVABLE_PROJECTED_APPEARANCE_SETTING(Microsoft.Terminal.Settings.Model.IntenseStyle, IntenseTextStyle);
         OBSERVABLE_PROJECTED_APPEARANCE_SETTING(Microsoft.Terminal.Core.AdjustTextMode, AdjustIndistinguishableColors);
+
+        OBSERVABLE_PROJECTED_APPEARANCE_SETTING(Windows.Foundation.IReference<Microsoft.Terminal.Core.Color>, Foreground);
+        OBSERVABLE_PROJECTED_APPEARANCE_SETTING(Windows.Foundation.IReference<Microsoft.Terminal.Core.Color>, Background);
+        OBSERVABLE_PROJECTED_APPEARANCE_SETTING(Windows.Foundation.IReference<Microsoft.Terminal.Core.Color>, SelectionBackground);
+        OBSERVABLE_PROJECTED_APPEARANCE_SETTING(Windows.Foundation.IReference<Microsoft.Terminal.Core.Color>, CursorColor);
     }
 
     [default_interface] runtimeclass Appearances : Windows.UI.Xaml.Controls.UserControl, Windows.UI.Xaml.Data.INotifyPropertyChanged

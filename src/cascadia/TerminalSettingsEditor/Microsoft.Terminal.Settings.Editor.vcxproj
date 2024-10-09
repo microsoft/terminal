@@ -57,6 +57,10 @@
       <DependentUpon>ColorSchemes.xaml</DependentUpon>
       <SubType>Code</SubType>
     </ClInclude>
+    <ClInclude Include="NullableColorPicker.h">
+      <DependentUpon>NullableColorPicker.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </ClInclude>
     <ClInclude Include="EditColorScheme.h">
       <DependentUpon>EditColorScheme.xaml</DependentUpon>
       <SubType>Code</SubType>
@@ -80,6 +84,10 @@
     </ClInclude>
     <ClInclude Include="ActionsViewModel.h">
       <DependentUpon>ActionsViewModel.idl</DependentUpon>
+      <SubType>Code</SubType>
+    </ClInclude>
+    <ClInclude Include="TerminalColorConverters.h">
+      <DependentUpon>TerminalColorConverters.idl</DependentUpon>
       <SubType>Code</SubType>
     </ClInclude>
     <ClInclude Include="ColorSchemeViewModel.h">
@@ -148,6 +156,9 @@
     <Page Include="ColorSchemes.xaml">
       <SubType>Designer</SubType>
     </Page>
+    <Page Include="NullableColorPicker.xaml">
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="EditColorScheme.xaml">
       <SubType>Designer</SubType>
     </Page>
@@ -197,6 +208,10 @@
       <DependentUpon>ColorSchemes.xaml</DependentUpon>
       <SubType>Code</SubType>
     </ClCompile>
+    <ClCompile Include="NullableColorPicker.cpp">
+      <DependentUpon>NullableColorPicker.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </ClCompile>
     <ClCompile Include="EditColorScheme.cpp">
       <DependentUpon>EditColorScheme.xaml</DependentUpon>
       <SubType>Code</SubType>
@@ -223,6 +238,10 @@
     </ClCompile>
     <ClCompile Include="ActionsViewModel.cpp">
       <DependentUpon>ActionsViewModel.idl</DependentUpon>
+      <SubType>Code</SubType>
+    </ClCompile>
+    <ClCompile Include="TerminalColorConverters.cpp">
+      <DependentUpon>TerminalColorConverters.idl</DependentUpon>
       <SubType>Code</SubType>
     </ClCompile>
     <ClCompile Include="ColorSchemeViewModel.cpp">
@@ -295,6 +314,10 @@
       <DependentUpon>ColorSchemes.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>
+    <Midl Include="NullableColorPicker.idl">
+      <DependentUpon>NullableColorPicker.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Midl>
     <Midl Include="EditColorScheme.idl">
       <DependentUpon>EditColorScheme.xaml</DependentUpon>
       <SubType>Code</SubType>
@@ -320,6 +343,7 @@
     </Midl>
     <Midl Include="ProfileViewModel.idl" />
     <Midl Include="ActionsViewModel.idl" />
+    <Midl Include="TerminalColorConverters.idl" />
     <Midl Include="ColorSchemeViewModel.idl" />
     <Midl Include="ColorSchemesPageViewModel.idl" />
     <Midl Include="RenderingViewModel.idl" />
@@ -374,7 +398,6 @@
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalConnection\TerminalConnection.vcxproj">
       <Private>false</Private>
     </ProjectReference>
-
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalControl\dll\TerminalControl.vcxproj">
       <!-- Private:false and ReferenceOutputAssembly:false, in combination with
       the manual reference to TerminalControl.winmd below make sure that this
@@ -387,7 +410,6 @@
       <Private>false</Private>
     </ProjectReference>
   </ItemGroup>
-
   <ItemGroup>
     <!-- Manually add a reference to TerminalControl here. We need this so
     MDMERGE will know where the TermControl types are defined. However, we need
@@ -406,17 +428,13 @@
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
     </Reference>
   </ItemGroup>
-
   <ItemDefinitionGroup>
     <Link>
       <AdditionalDependencies>shell32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
-
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" />
-
   <!-- This -must- go after cppwinrt.build.post.props because that includes many VS-provided props including appcontainer.common.props, which stomps on what cppwinrt.targets did. -->
   <Import Project="$(OpenConsoleDir)src\common.nugetversions.targets" />
-
   <Import Project="$(SolutionDir)build\rules\CollectWildcardResources.targets" />
 </Project>
