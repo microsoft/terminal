@@ -41,7 +41,7 @@ namespace Microsoft.Terminal.Control
                             UInt64 timestamp,
                             Microsoft.Terminal.Core.ControlKeyStates modifiers,
                             Microsoft.Terminal.Core.Point pixelPosition);
-        void TouchPressed(Microsoft.Terminal.Core.Point contactPoint);
+        void TouchPressed(Windows.Foundation.Point contactPoint);
 
         Boolean PointerMoved(MouseButtonState buttonState,
                              UInt32 pointerUpdateKind,
@@ -50,7 +50,7 @@ namespace Microsoft.Terminal.Control
                              Microsoft.Terminal.Core.Point pixelPosition,
                              Boolean pointerPressedInBounds);
 
-        void TouchMoved(Microsoft.Terminal.Core.Point newTouchPoint,
+        void TouchMoved(Windows.Foundation.Point newTouchPoint,
                         Boolean focused);
 
         void PointerReleased(MouseButtonState buttonState,

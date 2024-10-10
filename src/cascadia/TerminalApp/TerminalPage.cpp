@@ -2240,7 +2240,7 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_MoveContent(std::vector<Settings::Model::ActionAndArgs>&& actions,
                                     const winrt::hstring& windowName,
                                     const uint32_t tabIndex,
-                                    const std::optional<til::point>& dragPoint)
+                                    const std::optional<winrt::Windows::Foundation::Point>& dragPoint)
     {
         const auto winRtActions{ winrt::single_threaded_vector<ActionAndArgs>(std::move(actions)) };
         const auto str{ ActionAndArgs::Serialize(winRtActions) };
@@ -2249,7 +2249,7 @@ namespace winrt::TerminalApp::implementation
                                                                       tabIndex);
         if (dragPoint.has_value())
         {
-            request->WindowPosition(dragPoint->to_winrt_point());
+            request->WindowPosition(*dragPoint);
         }
         RequestMoveContent.raise(*this, *request);
     }
@@ -5175,16 +5175,17 @@ namespace winrt::TerminalApp::implementation
             // position the dropped window.
 
             // First, the position of the pointer, from the CoreWindow
-            const til::point pointerPosition{ til::math::rounding, CoreWindow::GetForCurrentThread().PointerPosition() };
+            const auto pointerPosition = CoreWindow::GetForCurrentThread().PointerPosition();
             // Next, the position of the tab itself:
-            const til::point tabPosition{ til::math::rounding, eventTab.TransformToVisual(nullptr).TransformPoint({ 0, 0 }) };
+            const auto tabPosition = eventTab.TransformToVisual(nullptr).TransformPoint({ 0, 0 });
             // Now, we need to add the origin of our CoreWindow to the tab
             // position.
-            const auto& coreWindowBounds{ CoreWindow::GetForCurrentThread().Bounds() };
-            const til::point windowOrigin{ til::math::rounding, coreWindowBounds.X, coreWindowBounds.Y };
-            const auto realTabPosition = windowOrigin + tabPosition;
+            const auto windowOrigin = CoreWindow::GetForCurrentThread().Bounds();
             // Subtract the two to get the offset.
-            _stashed.dragOffset = til::point{ pointerPosition - realTabPosition };
+            _stashed.dragOffset = {
+                pointerPosition.X - windowOrigin.X - tabPosition.X,
+                pointerPosition.Y - windowOrigin.Y - tabPosition.Y,
+            };
 
             // Into the DataPackage, let's stash our own window ID.
             const auto id{ _WindowProperties.WindowId() };
@@ -5358,14 +5359,17 @@ namespace winrt::TerminalApp::implementation
 
             // -1 is the magic number for "new window"
             // 0 as the tab index, because we don't care. It's making a new window. It'll be the only tab.
-            const til::point adjusted = til::point{ til::math::rounding, pointerPoint } - _stashed.dragOffset;
+            const winrt::Windows::Foundation::Point adjusted = {
+                pointerPoint.X - _stashed.dragOffset.X,
+                pointerPoint.Y - _stashed.dragOffset.Y,
+            };
             _sendDraggedTabToWindow(winrt::hstring{ L"-1" }, 0, adjusted);
         }
     }
 
     void TerminalPage::_sendDraggedTabToWindow(const winrt::hstring& windowId,
                                                const uint32_t tabIndex,
-                                               std::optional<til::point> dragPoint)
+                                               std::optional<winrt::Windows::Foundation::Point> dragPoint)
     {
         auto startupActions = _stashed.draggedTab->BuildStartupActions(BuildStartupKind::Content);
         _DetachTabFromWindow(_stashed.draggedTab);
