@@ -264,6 +264,22 @@
                                 Value="{x:Bind Appearance.LineHeight, Mode=TwoWay}" />
             </local:SettingContainer>
 
+            <!--  Cell Width  -->
+            <local:SettingContainer x:Uid="Profile_CellWidth"
+                                    ClearSettingValue="{x:Bind Appearance.ClearCellWidth}"
+                                    HasSettingValue="{x:Bind Appearance.HasCellWidth, Mode=OneWay}"
+                                    SettingOverrideSource="{x:Bind Appearance.CellWidthOverrideSource, Mode=OneWay}"
+                                    Visibility="{x:Bind Appearance.IsDefault, Mode=OneWay}">
+                <muxc:NumberBox x:Name="_cellWidthBox"
+                                x:Uid="Profile_CellWidthBox"
+                                LargeChange="0.1"
+                                Maximum="10"
+                                Minimum="0.1"
+                                SmallChange="0.1"
+                                Style="{StaticResource NumberBoxSettingStyle}"
+                                Value="{x:Bind Appearance.CellWidth, Mode=TwoWay}" />
+            </local:SettingContainer>
+
             <!--  Font Weight  -->
             <local:SettingContainer x:Uid="Profile_FontWeight"
                                     ClearSettingValue="{x:Bind Appearance.ClearFontWeight}"

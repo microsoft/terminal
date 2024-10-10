@@ -62,6 +62,7 @@ namespace Microsoft.Terminal.Settings.Editor
         OBSERVABLE_PROJECTED_APPEARANCE_SETTING(String, FontFace);
         OBSERVABLE_PROJECTED_APPEARANCE_SETTING(Single, FontSize);
         OBSERVABLE_PROJECTED_APPEARANCE_SETTING(Double, LineHeight);
+        OBSERVABLE_PROJECTED_APPEARANCE_SETTING(Double, CellWidth);
         OBSERVABLE_PROJECTED_APPEARANCE_SETTING(Windows.UI.Text.FontWeight, FontWeight);
         OBSERVABLE_PROJECTED_APPEARANCE_SETTING(Boolean, EnableBuiltinGlyphs);
         OBSERVABLE_PROJECTED_APPEARANCE_SETTING(Boolean, EnableColorGlyphs);

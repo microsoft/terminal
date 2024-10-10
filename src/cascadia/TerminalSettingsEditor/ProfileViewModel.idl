@@ -111,5 +111,6 @@ namespace Microsoft.Terminal.Settings.Editor
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, ShowMarks);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, AutoMarkPrompts);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, RepositionCursorWithMouse);
+        OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, RainbowSuggestions);
     }
 }
