@@ -2355,9 +2355,19 @@
           "description": "When set to true, the terminal will focus the pane on mouse hover.",
           "type": "boolean"
         },
+        "compatibility.allowHeadless": {
+          "default": false,
+          "description": "When set to true, Windows Terminal will run in the background. This allows globalSummon and quakeMode actions to work even when no windows are open.",
+          "type": "boolean"
+        },
         "compatibility.isolatedMode": {
           "default": false,
           "description": "When set to true, Terminal windows will not be able to interact with each other (including global hotkeys, tab drag/drop, running commandlines in existing windows, etc.). This is a compatibility escape hatch for users who are running into certain windowing issues.",
+          "type": "boolean"
+        },
+        "compatibility.allowDECRQCRA": {
+          "default": false,
+          "description": "When set to true, the terminal will support the DECRQCRA (Request Checksum of Rectangular Area) escape sequence.",
           "type": "boolean"
         },
         "copyFormatting": {

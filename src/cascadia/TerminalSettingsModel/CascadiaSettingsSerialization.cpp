@@ -524,6 +524,15 @@ bool SettingsLoader::FixupUserSettings()
         fixedUp = true;
     }
 
+    // Terminal 1.23: Migrate the global
+    // `experimental.input.forceVT` to being a per-profile setting.
+    if (userSettings.globals->LegacyForceVTInput())
+    {
+        // migrate the user's opt-out to the profiles.defaults
+        userSettings.baseLayerProfile->ForceVTInput(true);
+        fixedUp = true;
+    }
+
     return fixedUp;
 }
 
