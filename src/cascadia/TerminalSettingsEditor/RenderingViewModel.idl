@@ -15,7 +15,5 @@ namespace Microsoft.Terminal.Settings.Editor
         Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> GraphicsAPIList { get; };
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, DisablePartialInvalidation);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, SoftwareRendering);
-        IInspectable CurrentTextMeasurement;
-        Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> TextMeasurementList { get; };
     }
 }

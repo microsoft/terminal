@@ -64,6 +64,9 @@
     <ClInclude Include="Interaction.h">
       <DependentUpon>Interaction.xaml</DependentUpon>
     </ClInclude>
+    <ClInclude Include="Compatibility.h">
+      <DependentUpon>Compatibility.xaml</DependentUpon>
+    </ClInclude>
     <ClInclude Include="KeyChordListener.h">
       <DependentUpon>KeyChordListener.xaml</DependentUpon>
     </ClInclude>
@@ -118,6 +121,10 @@
       <DependentUpon>Profiles_Appearance.xaml</DependentUpon>
       <SubType>Code</SubType>
     </ClInclude>
+    <ClInclude Include="Profiles_Terminal.h">
+      <DependentUpon>Profiles_Terminal.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </ClInclude>
     <ClInclude Include="Appearances.h">
       <DependentUpon>Appearances.xaml</DependentUpon>
       <SubType>Code</SubType>
@@ -154,6 +161,9 @@
     <Page Include="Interaction.xaml">
       <SubType>Designer</SubType>
     </Page>
+    <Page Include="Compatibility.xaml">
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="KeyChordListener.xaml">
       <SubType>Designer</SubType>
     </Page>
@@ -170,6 +180,9 @@
       <SubType>Designer</SubType>
     </Page>
     <Page Include="Profiles_Appearance.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Profiles_Terminal.xaml">
       <SubType>Designer</SubType>
     </Page>
     <Page Include="Appearances.xaml">
@@ -203,6 +216,9 @@
     </ClCompile>
     <ClCompile Include="Interaction.cpp">
       <DependentUpon>Interaction.xaml</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="Compatibility.cpp">
+      <DependentUpon>Compatibility.xaml</DependentUpon>
     </ClCompile>
     <ClCompile Include="KeyChordListener.cpp">
       <DependentUpon>KeyChordListener.xaml</DependentUpon>
@@ -261,6 +277,10 @@
       <DependentUpon>Profiles_Appearance.xaml</DependentUpon>
       <SubType>Code</SubType>
     </ClCompile>
+    <ClCompile Include="Profiles_Terminal.cpp">
+      <DependentUpon>Profiles_Terminal.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </ClCompile>
     <ClCompile Include="Appearances.cpp">
       <DependentUpon>Appearances.xaml</DependentUpon>
       <SubType>Code</SubType>
@@ -311,6 +331,10 @@
       <DependentUpon>Interaction.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>
+    <Midl Include="Compatibility.idl">
+      <DependentUpon>Compatibility.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Midl>
     <Midl Include="Rendering.idl">
       <DependentUpon>Rendering.xaml</DependentUpon>
       <SubType>Code</SubType>
@@ -336,6 +360,10 @@
     </Midl>
     <Midl Include="Profiles_Appearance.idl">
       <DependentUpon>Profiles_Appearance.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Midl>
+    <Midl Include="Profiles_Terminal.idl">
+      <DependentUpon>Profiles_Terminal.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>
     <Midl Include="Appearances.idl">
