@@ -1,10 +1,4 @@
-# throw error if Powershell version is lower than 7
-if ($PSVersionTable.PSVersion.Major -lt 7) {
-    throw "This script requires PowerShell 7 or higher. Current version: $($PSVersionTable.PSVersion)"
-    exit
-} 
-
-
+#Requires -Version 7
 
 # The project's root directory.
 $script:OpenConsoleFallbackRoot="$PSScriptRoot\.."
