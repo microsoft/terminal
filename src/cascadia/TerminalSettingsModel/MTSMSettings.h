@@ -100,7 +100,7 @@ Author(s):
     X(bool, ShowMarks, "showMarksOnScrollbar", false)                                                                                                          \
     X(bool, RepositionCursorWithMouse, "experimental.repositionCursorWithMouse", false)                                                                        \
     X(bool, ReloadEnvironmentVariables, "compatibility.reloadEnvironmentVariables", true)                                                                      \
-    X(bool, RainbowSuggestions, "rainbowSuggestions", false)
+    X(bool, RainbowSuggestions, "experimental.rainbowSuggestions", false)
 
 // Intentionally omitted Profile settings:
 // * Name

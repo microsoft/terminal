@@ -167,7 +167,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void _deleteAllFontKeyValuePairs(FontSettingIndex index);
         void _addMenuFlyoutItemToUnused(FontSettingIndex index, Windows::UI::Xaml::Controls::MenuFlyoutItemBase item);
 
-        double _extractCellSizeValue(const hstring val) const;
+        double _parseCellSizeValue(const hstring& val) const;
 
         Model::AppearanceConfig _appearance;
         winrt::hstring _lastBgImagePath;

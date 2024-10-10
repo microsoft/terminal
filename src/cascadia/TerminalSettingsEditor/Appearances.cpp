@@ -573,7 +573,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
-    double AppearanceViewModel::_extractCellSizeValue(const hstring val) const
+    double AppearanceViewModel::_parseCellSizeValue(const hstring& val) const
     {
         const auto str = val.c_str();
 
@@ -589,13 +589,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     double AppearanceViewModel::LineHeight() const
     {
         const auto cellHeight = _appearance.SourceProfile().FontInfo().CellHeight();
-        return _extractCellSizeValue(cellHeight);
+        return _parseCellSizeValue(cellHeight);
     }
 
     double AppearanceViewModel::CellWidth() const
     {
-        const auto cellWidth = _appearance.SourceProfile().FontInfo().CellHeight();
-        return _extractCellSizeValue(cellWidth);
+        const auto cellWidth = _appearance.SourceProfile().FontInfo().CellWidth();
+        return _parseCellSizeValue(cellWidth);
     }
 
 #define CELL_SIZE_SETTER(modelName, viewModelName)                 \
@@ -603,7 +603,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                                                                    \
     if (value >= 0.1 && value <= 10.0)                             \
     {                                                              \
-        str = fmt::format(FMT_STRING(L"{:.6g}"), value);           \
+        str = fmt::format(FMT_COMPILE(L"{:.6g}"), value);          \
     }                                                              \
                                                                    \
     const auto fontInfo = _appearance.SourceProfile().FontInfo();  \

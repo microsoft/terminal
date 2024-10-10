@@ -37,7 +37,6 @@ static constexpr std::string_view UnfocusedAppearanceKey{ "unfocusedAppearance" 
 static constexpr std::string_view LegacyAutoMarkPromptsKey{ "experimental.autoMarkPrompts" };
 static constexpr std::string_view LegacyShowMarksKey{ "experimental.showMarksOnScrollbar" };
 static constexpr std::string_view LegacyRightClickContextMenuKey{ "experimental.rightClickContextMenu" };
-static constexpr std::string_view LegacyRainbowSuggestionsKey{ "experimental.rainbowSuggestions" };
 
 Profile::Profile(guid guid) noexcept :
     _Guid(guid)
@@ -199,7 +198,6 @@ void Profile::LayerJson(const Json::Value& json)
     JsonUtils::GetValueForKey(json, LegacyShowMarksKey, _ShowMarks);
     JsonUtils::GetValueForKey(json, LegacyAutoMarkPromptsKey, _AutoMarkPrompts);
     JsonUtils::GetValueForKey(json, LegacyRightClickContextMenuKey, _RightClickContextMenu);
-    JsonUtils::GetValueForKey(json, LegacyRainbowSuggestionsKey, _RainbowSuggestions);
 
 #define PROFILE_SETTINGS_LAYER_JSON(type, name, jsonKey, ...) \
     JsonUtils::GetValueForKey(json, jsonKey, _##name);        \
