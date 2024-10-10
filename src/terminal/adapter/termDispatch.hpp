@@ -115,6 +115,7 @@ public:
     void LockingShiftRight(const VTInt /*gsetNumber*/) override {} // LS1R, LS2R, LS3R
     void SingleShift(const VTInt /*gsetNumber*/) override {} // SS2, SS3
     void AcceptC1Controls(const bool /*enabled*/) override {} // DECAC1
+    void SendC1Controls(const bool /*enabled*/) override {} // S8C1T, S7C1T
     void AnnounceCodeStructure(const VTInt /*ansiLevel*/) override {} // ACS
 
     void SoftReset() override {} // DECSTR

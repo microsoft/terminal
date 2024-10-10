@@ -246,8 +246,21 @@
     <comment>A description explaining how this control changes the app's language. {Locked="Windows"}</comment>
   </data>
   <data name="Globals_LanguageDefault" xml:space="preserve">
-    <value>Ůŝê ѕŷŝτėм đєƒāùľŧ !!! !!</value>
+    <value>Ďėƒąūļτ !!</value>
     <comment>The app contains a control allowing users to choose the app's language. If this value is chosen, the language preference list of the system settings is used instead.</comment>
+  </data>
+  <data name="Globals_DefaultInputScope.Header" xml:space="preserve">
+    <value>Đέƒàųŀт ĨΜЗ ΐήрũŧ mоδę !!! !!! </value>
+    <comment>The "input scope" of an IME tells it what type of characters should be available for input. A Chinese IME for instance may show English letters instead of Chinese ones. It's a technical term. We're using "input mode" instead of "input scope" to make it easier to understand for users.</comment>
+  </data>
+  <data name="Globals_DefaultInputScope.HelpText" xml:space="preserve">
+    <value>Íŋƒбгмş ţђе ÎМЕ ẁћдŧ ļàņĝŭªġé ŧб üśе ьý ðěƒαűľŧ. ₣òѓ ļάņģųαģєś ţћáŧ ґ℮ŀу öŋ àи ĪΜÊ ǻйð δŏй'т цѕέ £âтĩŋ çħãѓâćтèřš ъγ ðėƒāџľŧ, ţнϊś ŝэťтĭñġ ċάń ье цѕёð τό ƒóřċε ∑ήģĺîѕħ îήρüт οŋ şŧªřťúр. !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !</value>
+  </data>
+  <data name="Globals_DefaultInputScopeDefault.Content" xml:space="preserve">
+    <value>Ðеƒãϋĺţ !!</value>
+  </data>
+  <data name="Globals_DefaultInputScopeAlphanumericHalfWidth.Content" xml:space="preserve">
+    <value>Дĺρħăпυмегїç Ηâŀƒ-Щιδτĥ (Ęñģℓîšĥ) !!! !!! !!! </value>
   </data>
   <data name="Globals_AlwaysShowTabs.Header" xml:space="preserve">
     <value>Άľώāŷš şђǿŵ тãвŝ !!! !</value>
@@ -1539,6 +1552,10 @@
     <value>Ţέхţ !</value>
     <comment>Header for a group of settings that control the appearance of text in the app.</comment>
   </data>
+  <data name="Globals_WarningsHeader.Text" xml:space="preserve">
+    <value>Ẅåŕⁿįņğѕ !!</value>
+    <comment>Header for a group of settings that control the warnings in the app.</comment>
+  </data>
   <data name="Profile_WindowHeader.Text" xml:space="preserve">
     <value>Щіňďош !</value>
     <comment>Header for a group of settings that control the appearance of the window frame of the app.</comment>
@@ -1818,6 +1835,15 @@
   <data name="Globals_ConfirmCloseAllTabs.Header" xml:space="preserve">
     <value>Ẃářй ẅђëπ ĉľôśĩήĝ mǿѓĕ тĥąπ òπё τάь !!! !!! !!! !</value>
     <comment>Header for a control to toggle whether to show a confirm dialog box when closing the application with multiple tabs open.</comment>
+  </data>
+  <data name="Globals_InputServiceWarning.Header" xml:space="preserve">
+    <value>Ẃǻґņ ώћĕπ "Ŧõũčђ Κзγьοдгď ąŉð Нáлđẅŕīťίńģ Ρàňεℓ Śεŕνîçé" íš đìşāъŀêδ !!! !!! !!! !!! !!! !!! !!</value>
+  </data>
+  <data name="Globals_WarnAboutLargePaste.Header" xml:space="preserve">
+    <value>Ẃăґи ẅнěπ тґўіήĝ τø рáŝťё mοřé ţħäή 5 ΚĩВ òƒ ĉħāґąćτєґѕ !!! !!! !!! !!! !!! !</value>
+  </data>
+  <data name="Globals_WarnAboutMultiLinePaste.Header" xml:space="preserve">
+    <value>Щāřπ ẃĥєи ťгýīлğ ţõ ρäşŧè ª "пėщ ľїл℮" ςћářǻ¢ţēř !!! !!! !!! !!! !!</value>
   </data>
   <data name="Settings_PortableModeNote.Text" xml:space="preserve">
     <value>Ẅїηðσшѕ Ţеřmíńăľ īѕ ґϋййïŉģ ĭņ рόѓťáъℓė mōďе. !!! !!! !!! !!! !</value>
