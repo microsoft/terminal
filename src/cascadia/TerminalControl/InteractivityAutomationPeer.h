@@ -66,7 +66,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         virtual til::size GetFontSize() const noexcept override;
         virtual til::rect GetBounds() const noexcept override;
         virtual til::rect GetPadding() const noexcept override;
-        virtual float GetScaleFactor() const noexcept override;
         virtual void ChangeViewport(const til::inclusive_rect& NewWindow) override;
         virtual HRESULT GetHostUiaProvider(IRawElementProviderSimple** provider) override;
 #pragma endregion

@@ -58,7 +58,14 @@ namespace winrt::Microsoft::Terminal::UI::implementation
     // Misc
     winrt::Windows::UI::Text::FontWeight Converters::DoubleToFontWeight(double value)
     {
-        return winrt::Windows::UI::Text::FontWeight{ base::ClampedNumeric<uint16_t>(value) };
+        uint16_t val = 400;
+
+        if (value >= 1.0 && value <= 1000.0)
+        {
+            val = gsl::narrow_cast<uint16_t>(lrint(value));
+        }
+
+        return winrt::Windows::UI::Text::FontWeight{ val };
     }
 
     winrt::Windows::UI::Xaml::Media::SolidColorBrush Converters::ColorToBrush(const winrt::Windows::UI::Color color)

@@ -35,14 +35,19 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         THROW_IF_FAILED(::Microsoft::WRL::MakeAndInitialize<::Microsoft::Terminal::TermControlUiaProvider>(&_uiaProvider, _interactivity->GetRenderData(), this));
     };
 
+    // Bounds is expected to be in pixels.
     void InteractivityAutomationPeer::SetControlBounds(const Windows::Foundation::Rect bounds)
     {
-        _controlBounds = til::rect{ til::math::rounding, bounds };
+        _controlBounds = { til::math::rounding, bounds };
     }
+
+    // Padding is expected to be in DIPs.
     void InteractivityAutomationPeer::SetControlPadding(const Core::Padding padding)
     {
-        _controlPadding = til::rect{ til::math::rounding, padding };
+        const auto scale = static_cast<float>(DisplayInformation::GetForCurrentView().RawPixelsPerViewPixel());
+        _controlPadding = { til::math::rounding, padding.Left * scale, padding.Top * scale, padding.Right * scale, padding.Bottom * scale };
     }
+
     void InteractivityAutomationPeer::ParentProvider(AutomationPeer parentProvider)
     {
         _parentProvider = parentProvider;
@@ -167,11 +172,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     til::rect InteractivityAutomationPeer::GetPadding() const noexcept
     {
         return _controlPadding;
-    }
-
-    float InteractivityAutomationPeer::GetScaleFactor() const noexcept
-    {
-        return static_cast<float>(DisplayInformation::GetForCurrentView().RawPixelsPerViewPixel());
     }
 
     void InteractivityAutomationPeer::ChangeViewport(const til::inclusive_rect& NewWindow)
