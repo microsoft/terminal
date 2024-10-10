@@ -50,8 +50,7 @@
         <local:SettingContainer x:Uid="Globals_DebugFeaturesEnabled"
                                 Visibility="{x:Bind ViewModel.DebugFeaturesAvailable}">
             <ToggleSwitch IsOn="{x:Bind ViewModel.DebugFeaturesEnabled, Mode=TwoWay}"
-                          Style="{StaticResource ToggleSwitchInExpanderStyle}"
-                          Visibility="{x:Bind ViewModel.DebugFeaturesEnabled}" />
+                          Style="{StaticResource ToggleSwitchInExpanderStyle}" />
         </local:SettingContainer>
     </StackPanel>
 </Page>

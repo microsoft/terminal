@@ -180,8 +180,8 @@
     </feature>
 
     <feature>
-        <name>Feature_DebugMode</name>
-        <description>Enables the debug mode setting</description>
+        <name>Feature_DebugModeUI</name>
+        <description>Enables UI access to the debug mode setting</description>
         <stage>AlwaysEnabled</stage>
         <alwaysDisabledReleaseTokens/>
     </feature>

@@ -20,7 +20,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     bool CompatibilityViewModel::DebugFeaturesAvailable() const noexcept
     {
-        return Feature_DebugMode::IsEnabled();
+        return Feature_DebugModeUI::IsEnabled();
     }
 
     Compatibility::Compatibility()
