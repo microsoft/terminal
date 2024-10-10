@@ -498,7 +498,7 @@ namespace winrt::TerminalApp::implementation
                 // * B (tabIndex=1): We'll want to focus tab A (now in index 0)
                 // * C (tabIndex=2): We'll want to focus tab B (now in index 1)
                 // * D (tabIndex=3): We'll want to focus tab C (now in index 2)
-                const auto newSelectedIndex = std::clamp<int32_t>(tabIndex - 1, 0, _tabs.Size() - 1);
+                const auto newSelectedIndex = std::clamp<int32_t>(tabIndex, 0, _tabs.Size() - 1);
                 // _UpdatedSelectedTab will do the work of setting up the new tab as
                 // the focused one, and unfocusing all the others.
                 auto newSelectedTab{ _tabs.GetAt(newSelectedIndex) };
