@@ -1,0 +1,28 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+import "EnumEntry.idl";
+
+#include "ViewModelHelpers.idl.h"
+
+namespace Microsoft.Terminal.Settings.Editor
+{
+    runtimeclass CompatibilityViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged
+    {
+        CompatibilityViewModel(Microsoft.Terminal.Settings.Model.GlobalAppSettings globalSettings);
+
+        Boolean DebugFeaturesAvailable { get; };
+
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, AllowHeadless);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, DebugFeaturesEnabled);
+
+        IInspectable CurrentTextMeasurement;
+        Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> TextMeasurementList { get; };
+    }
+
+    [default_interface] runtimeclass Compatibility : Windows.UI.Xaml.Controls.Page
+    {
+        Compatibility();
+        CompatibilityViewModel ViewModel { get; };
+    }
+}

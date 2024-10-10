@@ -30,7 +30,6 @@ Author(s):
     X(winrt::Microsoft::Terminal::Control::TextMeasurement, TextMeasurement, "compatibility.textMeasurement")                                                                                         \
     X(winrt::Microsoft::Terminal::Control::DefaultInputScope, DefaultInputScope, "defaultInputScope")                                                                                                 \
     X(bool, UseBackgroundImageForWindow, "experimental.useBackgroundImageForWindow", false)                                                                                                           \
-    X(bool, ForceVTInput, "experimental.input.forceVT", false)                                                                                                                                        \
     X(bool, TrimBlockSelection, "trimBlockSelection", true)                                                                                                                                           \
     X(bool, DetectURLs, "experimental.detectURLs", true)                                                                                                                                              \
     X(bool, AlwaysShowTabs, "alwaysShowTabs", true)                                                                                                                                                   \
@@ -100,7 +99,10 @@ Author(s):
     X(bool, ShowMarks, "showMarksOnScrollbar", false)                                                                                                          \
     X(bool, RepositionCursorWithMouse, "experimental.repositionCursorWithMouse", false)                                                                        \
     X(bool, ReloadEnvironmentVariables, "compatibility.reloadEnvironmentVariables", true)                                                                      \
-    X(bool, RainbowSuggestions, "experimental.rainbowSuggestions", false)
+    X(bool, RainbowSuggestions, "experimental.rainbowSuggestions", false)                                                                                      \
+    X(bool, ForceVTInput, "compatibility.input.forceVT", false)                                                                                                \
+    X(bool, AllowVtChecksumReport, "compatibility.allowDECRQCRA", false)                                                                                       \
+    X(bool, AllowKeypadMode, "compatibility.allowDECNKM", false)
 
 // Intentionally omitted Profile settings:
 // * Name

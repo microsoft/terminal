@@ -6,6 +6,7 @@
 #include "MainPage.g.cpp"
 #include "Launch.h"
 #include "Interaction.h"
+#include "Compatibility.h"
 #include "Rendering.h"
 #include "RenderingViewModel.h"
 #include "Actions.h"
@@ -39,6 +40,7 @@ using namespace winrt::Windows::Foundation::Collections;
 static const std::wstring_view launchTag{ L"Launch_Nav" };
 static const std::wstring_view interactionTag{ L"Interaction_Nav" };
 static const std::wstring_view renderingTag{ L"Rendering_Nav" };
+static const std::wstring_view compatibilityTag{ L"Compatibility_Nav" };
 static const std::wstring_view actionsTag{ L"Actions_Nav" };
 static const std::wstring_view globalProfileTag{ L"GlobalProfile_Nav" };
 static const std::wstring_view addProfileTag{ L"AddProfile" };
@@ -339,6 +341,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                     _breadcrumbs.Append(crumb);
                     SettingsMainPage_ScrollViewer().ScrollToVerticalOffset(0);
                 }
+                else if (currentPage == ProfileSubPage::Terminal)
+                {
+                    contentFrame().Navigate(xaml_typename<Editor::Profiles_Terminal>(), profile);
+                    const auto crumb = winrt::make<Breadcrumb>(breadcrumbTag, RS_(L"Profile_Terminal/Header"), BreadcrumbSubPage::Profile_Terminal);
+                    _breadcrumbs.Append(crumb);
+                    SettingsMainPage_ScrollViewer().ScrollToVerticalOffset(0);
+                }
                 else if (currentPage == ProfileSubPage::Advanced)
                 {
                     contentFrame().Navigate(xaml_typename<Editor::Profiles_Advanced>(), profile);
@@ -372,6 +381,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             const auto crumb = winrt::make<Breadcrumb>(box_value(clickedItemTag), RS_(L"Nav_Rendering/Content"), BreadcrumbSubPage::None);
             _breadcrumbs.Append(crumb);
         }
+        else if (clickedItemTag == compatibilityTag)
+        {
+            contentFrame().Navigate(xaml_typename<Editor::Compatibility>(), winrt::make<CompatibilityViewModel>(_settingsClone.GlobalSettings()));
+            const auto crumb = winrt::make<Breadcrumb>(box_value(clickedItemTag), RS_(L"Nav_Compatibility/Content"), BreadcrumbSubPage::None);
+            _breadcrumbs.Append(crumb);
+        }
         else if (clickedItemTag == actionsTag)
         {
             contentFrame().Navigate(xaml_typename<Editor::Actions>(), winrt::make<ActionsViewModel>(_settingsClone));
@@ -394,6 +409,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             if (subPage == BreadcrumbSubPage::Profile_Appearance)
             {
                 profileVM.CurrentPage(ProfileSubPage::Appearance);
+            }
+            else if (subPage == BreadcrumbSubPage::Profile_Terminal)
+            {
+                profileVM.CurrentPage(ProfileSubPage::Terminal);
             }
             else if (subPage == BreadcrumbSubPage::Profile_Advanced)
             {
@@ -451,6 +470,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         else if (subPage == BreadcrumbSubPage::Profile_Appearance)
         {
             profile.CurrentPage(ProfileSubPage::Appearance);
+        }
+        else if (subPage == BreadcrumbSubPage::Profile_Terminal)
+        {
+            profile.CurrentPage(ProfileSubPage::Terminal);
         }
         else if (subPage == BreadcrumbSubPage::Profile_Advanced)
         {

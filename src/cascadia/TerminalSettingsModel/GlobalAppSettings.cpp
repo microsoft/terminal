@@ -23,6 +23,7 @@ static constexpr std::string_view ThemeKey{ "theme" };
 static constexpr std::string_view DefaultProfileKey{ "defaultProfile" };
 static constexpr std::string_view LegacyUseTabSwitcherModeKey{ "useTabSwitcher" };
 static constexpr std::string_view LegacyReloadEnvironmentVariablesKey{ "compatibility.reloadEnvironmentVariables" };
+static constexpr std::string_view LegacyForceVTInputKey{ "experimental.input.forceVT" };
 
 // Method Description:
 // - Copies any extraneous data from the parent before completing a CreateChild call
@@ -158,6 +159,12 @@ void GlobalAppSettings::LayerJson(const Json::Value& json, const OriginTag origi
     if (json[LegacyReloadEnvironmentVariablesKey.data()])
     {
         _logSettingSet(LegacyReloadEnvironmentVariablesKey);
+    }
+
+    JsonUtils::GetValueForKey(json, LegacyForceVTInputKey, _legacyForceVTInput);
+    if (json[LegacyForceVTInputKey.data()])
+    {
+        _logSettingSet(LegacyForceVTInputKey);
     }
 
     // Remove settings included in userDefaults

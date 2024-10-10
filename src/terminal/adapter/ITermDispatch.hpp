@@ -129,6 +129,7 @@ public:
     virtual void ScreenAlignmentPattern() = 0; // DECALN
 
     virtual void SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle) = 0; // DECSCUSR
+    virtual void SetVtChecksumReportSupport(const bool enabled) = 0;
 
     virtual void SetClipboard(wil::zwstring_view content) = 0; // OSCSetClipboard
 

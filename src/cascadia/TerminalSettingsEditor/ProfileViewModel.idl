@@ -29,7 +29,8 @@ namespace Microsoft.Terminal.Settings.Editor
     {
         Base = 0,
         Appearance = 1,
-        Advanced = 2
+        Terminal = 2,
+        Advanced = 3
     };
 
     runtimeclass ProfileViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged
@@ -111,5 +112,8 @@ namespace Microsoft.Terminal.Settings.Editor
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, ShowMarks);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, AutoMarkPrompts);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, RepositionCursorWithMouse);
+        OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, ForceVTInput);
+        OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, AllowVtChecksumReport);
+        OBSERVABLE_PROJECTED_PROFILE_SETTING(String, AnswerbackMessage);
     }
 }

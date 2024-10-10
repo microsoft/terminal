@@ -572,10 +572,6 @@
     <value>Permitir que Terminal Windows se ejecuten en segundo plano</value>
     <comment>Header for a control to toggle support for Windows Terminal to run in the background.</comment>
   </data>
-  <data name="Globals_IsolatedMode.Header" xml:space="preserve">
-    <value>Forzar que cada ventana se ejecute en su propio proceso</value>
-    <comment>Header for a control to toggle making each window be its own process.</comment>
-  </data>
   <data name="Globals_DebugFeaturesEnabled.Header" xml:space="preserve">
     <value>Habilitar características de depuración</value>
     <comment>Header for a control to toggle debug features.</comment>
@@ -591,10 +587,6 @@
   <data name="Globals_AllowHeadless.HelpText" xml:space="preserve">
     <value>Esto permite que acciones como las acciones de la convocatoria global y el modo de conferencia funcionen incluso cuando no hay ventanas abiertas.</value>
     <comment>Additional description for what the "allow headless" setting does. Presented near "Globals_AllowHeadless.Header".</comment>
-  </data>
-  <data name="Globals_IsolatedMode.HelpText" xml:space="preserve">
-    <value>Algunas características no funcionarán correctamente, incluidas(pero no limitadas a) teclas de acceso rápido globales, arrastrar y colocar pestañas y wt.exe destino de ventana.</value>
-    <comment>{Locked="wt.exe"} Additional description for what the "isolated mode" setting does. Presented near "Globals_IsolatedMode.Header".</comment>
   </data>
   <data name="Globals_TabWidthMode.Header" xml:space="preserve">
     <value>Modo de ancho de pestaña</value>

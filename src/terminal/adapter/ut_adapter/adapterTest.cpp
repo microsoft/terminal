@@ -405,6 +405,7 @@ public:
             auto& renderer = _testGetSet->_renderer;
             auto& renderSettings = renderer._renderSettings;
             auto adapter = std::make_unique<AdaptDispatch>(*_testGetSet, &renderer, renderSettings, _terminalInput);
+            adapter->SetVtChecksumReportSupport(true);
 
             fSuccess = adapter.get() != nullptr;
             if (fSuccess)

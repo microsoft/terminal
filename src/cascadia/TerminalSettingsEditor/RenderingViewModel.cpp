@@ -17,6 +17,5 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _settings{ std::move(settings) }
     {
         INITIALIZE_BINDABLE_ENUM_SETTING(GraphicsAPI, GraphicsAPI, winrt::Microsoft::Terminal::Control::GraphicsAPI, L"Globals_GraphicsAPI_", L"Text");
-        INITIALIZE_BINDABLE_ENUM_SETTING(TextMeasurement, TextMeasurement, winrt::Microsoft::Terminal::Control::TextMeasurement, L"Globals_TextMeasurement_", L"Text");
     }
 }
