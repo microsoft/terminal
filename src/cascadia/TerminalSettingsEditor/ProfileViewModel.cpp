@@ -462,7 +462,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                     // Conversely, if we switch to Image,
                     // retrieve that saved value and apply it
                     Icon(_lastIconPath);
-                    _NotifyChanges(L"Icon");
                 }
                 break;
             }
