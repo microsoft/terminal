@@ -115,5 +115,6 @@ namespace Microsoft.Terminal.Settings.Editor
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, ForceVTInput);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, AllowVtChecksumReport);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(String, AnswerbackMessage);
+        OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, RainbowSuggestions);
     }
 }

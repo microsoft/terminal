@@ -115,5 +115,17 @@
             <ToggleSwitch IsOn="{x:Bind ViewModel.AutoHideWindow, Mode=TwoWay}"
                           Style="{StaticResource ToggleSwitchInExpanderStyle}" />
         </local:SettingContainer>
+
+        <!--  Show Admin Shield  -->
+        <local:SettingContainer x:Uid="Globals_ShowAdminShield">
+            <ToggleSwitch IsOn="{x:Bind ViewModel.ShowAdminShield, Mode=TwoWay}"
+                          Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+        </local:SettingContainer>
+
+        <!--  Enable Unfocused Acrylic  -->
+        <local:SettingContainer x:Uid="Globals_EnableUnfocusedAcrylic">
+            <ToggleSwitch IsOn="{x:Bind ViewModel.EnableUnfocusedAcrylic, Mode=TwoWay}"
+                          Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+        </local:SettingContainer>
     </StackPanel>
 </Page>
