@@ -55,7 +55,7 @@ public:
     void FlashTaskbar();
     void SetTaskbarProgress(const size_t state, const size_t progress);
 
-    winrt::fire_and_forget SummonWindow(winrt::Microsoft::Terminal::Remoting::SummonWindowBehavior args);
+    safe_void_coroutine SummonWindow(winrt::Microsoft::Terminal::Remoting::SummonWindowBehavior args);
 
     bool IsQuakeWindow() const noexcept;
     void IsQuakeWindow(bool isQuakeWindow) noexcept;

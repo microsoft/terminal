@@ -57,7 +57,6 @@ INT_PTR CALLBACK FindDialogProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM l
             if (searcher.IsStale(gci.renderData, lastFindString, flags))
             {
                 searcher.Reset(gci.renderData, lastFindString, flags, reverse);
-                searcher.MoveToCurrentSelection();
             }
             else
             {

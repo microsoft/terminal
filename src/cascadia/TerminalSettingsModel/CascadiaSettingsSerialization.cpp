@@ -78,7 +78,7 @@ static auto extractValueFromTaskWithoutMainThreadAwait(TTask&& task) -> decltype
     std::optional<decltype(task.get())> finalVal;
     til::latch latch{ 1 };
 
-    const auto _ = [&]() -> winrt::fire_and_forget {
+    const auto _ = [&]() -> safe_void_coroutine {
         const auto cleanup = wil::scope_exit([&]() {
             latch.count_down();
         });
@@ -109,6 +109,7 @@ void ParsedSettings::clear()
     profilesByGuid.clear();
     colorSchemes.clear();
     fixupsAppliedDuringLoad = false;
+    themesChangeLog.clear();
 }
 
 // This is a convenience method used by the CascadiaSettings constructor.
@@ -657,6 +658,12 @@ void SettingsLoader::_parse(const OriginTag origin, const winrt::hstring& source
                     // Themes don't support layering - we don't want the user
                     // versions of these themes overriding the built-in ones.
                     continue;
+                }
+
+                if (origin != OriginTag::InBox)
+                {
+                    static std::string themesContext{ "themes" };
+                    theme->LogSettingChanges(settings.themesChangeLog, themesContext);
                 }
                 settings.globals->AddTheme(*theme);
             }
@@ -1222,6 +1229,7 @@ CascadiaSettings::CascadiaSettings(SettingsLoader&& loader) :
     _allProfiles = winrt::single_threaded_observable_vector(std::move(allProfiles));
     _activeProfiles = winrt::single_threaded_observable_vector(std::move(activeProfiles));
     _warnings = winrt::single_threaded_vector(std::move(warnings));
+    _themesChangeLog = std::move(loader.userSettings.themesChangeLog);
 
     _resolveDefaultProfile();
     _resolveNewTabMenuProfiles();
@@ -1594,5 +1602,75 @@ void CascadiaSettings::_resolveNewTabMenuProfilesSet(const IVector<Model::NewTab
             break;
         }
         }
+    }
+}
+
+void CascadiaSettings::LogSettingChanges(bool isJsonLoad) const
+{
+#ifndef _DEBUG
+    // Only do this if we're actually being sampled
+    if (!TraceLoggingProviderEnabled(g_hSettingsModelProvider, 0, MICROSOFT_KEYWORD_MEASURES))
+    {
+        return;
+    }
+#endif // !_DEBUG
+
+    // aggregate setting changes
+    std::set<std::string> changes;
+    static constexpr std::string_view globalContext{ "global" };
+    _globals->LogSettingChanges(changes, globalContext);
+
+    // Actions are not expected to change when loaded from the settings UI
+    static constexpr std::string_view actionContext{ "action" };
+    winrt::get_self<implementation::ActionMap>(_globals->ActionMap())->LogSettingChanges(changes, actionContext);
+
+    static constexpr std::string_view profileContext{ "profile" };
+    for (const auto& profile : _allProfiles)
+    {
+        winrt::get_self<Profile>(profile)->LogSettingChanges(changes, profileContext);
+    }
+
+    static constexpr std::string_view profileDefaultsContext{ "profileDefaults" };
+    _baseLayerProfile->LogSettingChanges(changes, profileDefaultsContext);
+
+    // Themes are not expected to change when loaded from the settings UI
+    // DO NOT CALL Theme::LogSettingChanges!!
+    // We already collected the changes when we loaded the JSON
+    for (const auto& change : _themesChangeLog)
+    {
+        changes.insert(change);
+    }
+
+    // report changes
+    for (const auto& change : changes)
+    {
+#ifndef _DEBUG
+        // A `isJsonLoad ? "JsonSettingsChanged" : "UISettingsChanged"`
+        //   would be nice, but that apparently isn't allowed in the macro below.
+        // Also, there's guidance to not send too much data all in one event,
+        //   so we'll be sending a ton of events here.
+        if (isJsonLoad)
+        {
+            TraceLoggingWrite(g_hSettingsModelProvider,
+                              "JsonSettingsChanged",
+                              TraceLoggingDescription("Event emitted when settings.json change"),
+                              TraceLoggingValue(change.data()),
+                              TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+                              TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
+        }
+        else
+        {
+            TraceLoggingWrite(g_hSettingsModelProvider,
+                              "UISettingsChanged",
+                              TraceLoggingDescription("Event emitted when settings change via the UI"),
+                              TraceLoggingValue(change.data()),
+                              TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+                              TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
+        }
+#else
+        OutputDebugStringA(isJsonLoad ? "JsonSettingsChanged - " : "UISettingsChanged - ");
+        OutputDebugStringA(change.data());
+        OutputDebugStringA("\n");
+#endif // !_DEBUG
     }
 }

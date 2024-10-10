@@ -11,7 +11,7 @@
 using namespace Microsoft::Console::VirtualTerminal;
 
 //Takes ownership of the pEngine.
-StateMachine::StateMachine(std::unique_ptr<IStateMachineEngine> engine, const bool isEngineForInput) :
+StateMachine::StateMachine(std::unique_ptr<IStateMachineEngine> engine, const bool isEngineForInput) noexcept :
     _engine(std::move(engine)),
     _isEngineForInput(isEngineForInput),
     _state(VTStates::Ground),
@@ -25,6 +25,9 @@ StateMachine::StateMachine(std::unique_ptr<IStateMachineEngine> engine, const bo
     _oscString{},
     _cachedSequence{ std::nullopt }
 {
+    // The state machine must always accept C1 controls for the input engine,
+    // otherwise it won't work when the ConPTY terminal has S8C1T enabled.
+    _parserMode.set(Mode::AcceptC1, _isEngineForInput);
     _ActionClear();
 }
 
@@ -606,7 +609,7 @@ void StateMachine::_ActionSubParam(const wchar_t wch)
 // - wch - Character to dispatch.
 // Return Value:
 // - <none>
-void StateMachine::_ActionClear()
+void StateMachine::_ActionClear() noexcept
 {
     _trace.TraceOnAction(L"Clear");
 
@@ -625,8 +628,6 @@ void StateMachine::_ActionClear()
     _oscParameter = 0;
 
     _dcsStringHandler = nullptr;
-
-    _engine->ActionClear();
 }
 
 // Routine Description:
@@ -728,14 +729,14 @@ void StateMachine::_ActionDcsDispatch(const wchar_t wch)
 
     const auto success = _SafeExecute([=]() {
         _dcsStringHandler = _engine->ActionDcsDispatch(_identifier.Finalize(wch), { _parameters.data(), _parameters.size() });
-        // If the returned handler is null, the sequence is not supported.
-        return _dcsStringHandler != nullptr;
+        return true;
     });
 
     // Trace the result.
     _trace.DispatchSequenceTrace(success);
 
-    if (success)
+    // If the returned handler is null, the sequence is not supported.
+    if (_dcsStringHandler)
     {
         // If successful, enter the pass through state.
         _EnterDcsPassThrough();
@@ -771,7 +772,7 @@ void StateMachine::_EnterGround() noexcept
 // - <none>
 // Return Value:
 // - <none>
-void StateMachine::_EnterEscape()
+void StateMachine::_EnterEscape() noexcept
 {
     _state = VTStates::Escape;
     _trace.TraceStateChange(L"Escape");
@@ -801,7 +802,7 @@ void StateMachine::_EnterEscapeIntermediate() noexcept
 // - <none>
 // Return Value:
 // - <none>
-void StateMachine::_EnterCsiEntry()
+void StateMachine::_EnterCsiEntry() noexcept
 {
     _state = VTStates::CsiEntry;
     _trace.TraceStateChange(L"CsiEntry");
@@ -917,7 +918,7 @@ void StateMachine::_EnterOscTermination() noexcept
 // - <none>
 // Return Value:
 // - <none>
-void StateMachine::_EnterSs3Entry()
+void StateMachine::_EnterSs3Entry() noexcept
 {
     _state = VTStates::Ss3Entry;
     _trace.TraceStateChange(L"Ss3Entry");
@@ -960,7 +961,7 @@ void StateMachine::_EnterVt52Param() noexcept
 // - <none>
 // Return Value:
 // - <none>
-void StateMachine::_EnterDcsEntry()
+void StateMachine::_EnterDcsEntry() noexcept
 {
     _state = VTStates::DcsEntry;
     _trace.TraceStateChange(L"DcsEntry");
@@ -2169,11 +2170,13 @@ template<typename TLambda>
 bool StateMachine::_SafeExecute(TLambda&& lambda)
 try
 {
-    return lambda();
-}
-catch (const ShutdownException&)
-{
-    throw;
+    const auto ok = lambda();
+    static_assert(std::is_same_v<decltype(ok), const bool>, "lambda must return bool");
+    if (!ok)
+    {
+        FlushToTerminal();
+    }
+    return ok;
 }
 catch (...)
 {

@@ -479,7 +479,7 @@ LRESULT WindowEmperor::_messageHandler(UINT const message, WPARAM const wParam, 
 // windows left, and we don't want to keep running anymore. This will discard
 // all our refrigerated windows. If we try to use XAML on Windows 10 after this,
 // we'll undoubtedly crash.
-winrt::fire_and_forget WindowEmperor::_close()
+safe_void_coroutine WindowEmperor::_close()
 {
     // Important! Switch back to the main thread for the emperor. That way, the
     // quit will go to the emperor's message pump.
@@ -582,7 +582,7 @@ void WindowEmperor::_finalizeSessionPersistence() const
 // - args: Contains information on how we should name the window
 // Return Value:
 // - <none>
-static winrt::fire_and_forget _createNewTerminalWindow(Settings::Model::GlobalSummonArgs args)
+static safe_void_coroutine _createNewTerminalWindow(Settings::Model::GlobalSummonArgs args)
 {
     // Hop to the BG thread
     co_await winrt::resume_background();
@@ -704,7 +704,7 @@ void WindowEmperor::_unregisterHotKey(const int index) noexcept
     LOG_IF_WIN32_BOOL_FALSE(::UnregisterHotKey(_window.get(), index));
 }
 
-winrt::fire_and_forget WindowEmperor::_setupGlobalHotkeys()
+safe_void_coroutine WindowEmperor::_setupGlobalHotkeys()
 {
     // The hotkey MUST be registered on the main thread. It will fail otherwise!
     co_await wil::resume_foreground(_dispatcher);
@@ -844,13 +844,13 @@ void WindowEmperor::_hideNotificationIconRequested()
 // A callback to the window's logic to let us know when the window's
 // quake mode state changes. We'll use this to check if we need to add
 // or remove the notification icon.
-winrt::fire_and_forget WindowEmperor::_windowIsQuakeWindowChanged(winrt::Windows::Foundation::IInspectable sender,
-                                                                  winrt::Windows::Foundation::IInspectable args)
+safe_void_coroutine WindowEmperor::_windowIsQuakeWindowChanged(winrt::Windows::Foundation::IInspectable sender,
+                                                               winrt::Windows::Foundation::IInspectable args)
 {
     co_await wil::resume_foreground(this->_dispatcher);
     _checkWindowsForNotificationIcon();
 }
-winrt::fire_and_forget WindowEmperor::_windowRequestUpdateSettings()
+safe_void_coroutine WindowEmperor::_windowRequestUpdateSettings()
 {
     // We MUST be on the main thread to update the settings. We will crash when trying to enumerate fragment extensions otherwise.
     co_await wil::resume_foreground(this->_dispatcher);

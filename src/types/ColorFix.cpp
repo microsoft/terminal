@@ -209,4 +209,9 @@ COLORREF ColorFix::GetPerceivableColor(COLORREF color, COLORREF reference, float
     return linearToColorref(oklab::oklab_to_linear_srgb(colorOklab)) | (color & 0xff000000);
 }
 
+float ColorFix::GetLuminosity(COLORREF color) noexcept
+{
+    return oklab::linear_srgb_to_oklab(colorrefToLinear(color)).l;
+}
+
 TIL_FAST_MATH_END

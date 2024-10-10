@@ -118,13 +118,13 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="SetColorSchemeParentCommandName" xml:space="preserve">
-    <value>Select color scheme</value>
+    <value>Select color scheme...</value>
   </data>
   <data name="NewTabParentCommandName" xml:space="preserve">
-    <value>New tab</value>
+    <value>New tab...</value>
   </data>
   <data name="SplitPaneParentCommandName" xml:space="preserve">
-    <value>Split pane</value>
+    <value>Split pane...</value>
   </data>
   <data name="SnippetsPaneCommandName" xml:space="preserve">
     <value>Open snippets pane</value>
@@ -329,7 +329,7 @@
     <comment>{Locked="JSON"}. "JSON" is the extension of the file that will be opened.</comment>
   </data>
   <data name="OpenTabColorPickerCommandKey" xml:space="preserve">
-    <value>Set the tab color</value>
+    <value>Set tab color...</value>
   </data>
   <data name="PasteTextCommandKey" xml:space="preserve">
     <value>Paste</value>
@@ -351,7 +351,7 @@
     <value>Reset tab title</value>
   </data>
   <data name="OpenTabRenamerCommandKey" xml:space="preserve">
-    <value>Rename tab title</value>
+    <value>Rename tab</value>
   </data>
   <data name="ResizePaneCommandKey" xml:space="preserve">
     <value>Resize pane</value>
@@ -445,16 +445,13 @@
     <value>Switch to the last tab</value>
   </data>
   <data name="TabSearchCommandKey" xml:space="preserve">
-    <value>Search for tab</value>
+    <value>Search for tab...</value>
   </data>
   <data name="ToggleAlwaysOnTopCommandKey" xml:space="preserve">
     <value>Toggle always on top mode</value>
   </data>
   <data name="ToggleCommandPaletteCommandKey" xml:space="preserve">
     <value>Toggle command palette</value>
-  </data>
-  <data name="SuggestionsCommandHistoryCommandKey" xml:space="preserve">
-    <value>Recent commands</value>
   </data>
   <data name="SuggestionsCommandKey" xml:space="preserve">
     <value>Open suggestions</value>
@@ -519,7 +516,7 @@
     <value>Reset window name</value>
   </data>
   <data name="OpenWindowRenamerCommandKey" xml:space="preserve">
-    <value>Rename window</value>
+    <value>Rename window...</value>
   </data>
   <data name="DisplayWorkingDirectoryCommandKey" xml:space="preserve">
     <value>Display Terminal's current working directory</value>
@@ -570,7 +567,7 @@
     <value>Quit the Terminal</value>
   </data>
   <data name="SetOpacityParentCommandName" xml:space="preserve">
-    <value>Set background opacity</value>
+    <value>Set background opacity...</value>
   </data>
   <data name="IncreaseOpacityCommandKey" xml:space="preserve">
     <value>Increase background opacity by {0}%</value>

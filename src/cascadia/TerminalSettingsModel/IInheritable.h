@@ -185,6 +185,27 @@ public:                                                                      \
         _##name = value;                                                     \
     }
 
+#define INHERITABLE_SETTING_WITH_LOGGING(projectedType, type, name, jsonKey, ...) \
+    _BASE_INHERITABLE_SETTING(projectedType, std::optional<type>, name, ...)      \
+public:                                                                           \
+    /* Returns the resolved value for this setting */                             \
+    /* fallback: user set value --> inherited value --> system set value */       \
+    type name() const                                                             \
+    {                                                                             \
+        const auto val{ _get##name##Impl() };                                     \
+        return val ? *val : type{ __VA_ARGS__ };                                  \
+    }                                                                             \
+                                                                                  \
+    /* Overwrite the user set value */                                            \
+    void name(const type& value)                                                  \
+    {                                                                             \
+        if (!_##name.has_value() || _##name.value() != value)                     \
+        {                                                                         \
+            _logSettingSet(jsonKey);                                              \
+        }                                                                         \
+        _##name = value;                                                          \
+    }
+
 // This macro is similar to the one above, but is reserved for optional settings
 // like Profile.Foreground (where null is interpreted
 // as an acceptable value, rather than "inherit")

@@ -246,8 +246,21 @@
     <comment>A description explaining how this control changes the app's language. {Locked="Windows"}</comment>
   </data>
   <data name="Globals_LanguageDefault" xml:space="preserve">
-    <value>使用系統預設值</value>
+    <value>預設</value>
     <comment>The app contains a control allowing users to choose the app's language. If this value is chosen, the language preference list of the system settings is used instead.</comment>
+  </data>
+  <data name="Globals_DefaultInputScope.Header" xml:space="preserve">
+    <value>預設 IME 輸入模式</value>
+    <comment>The "input scope" of an IME tells it what type of characters should be available for input. A Chinese IME for instance may show English letters instead of Chinese ones. It's a technical term. We're using "input mode" instead of "input scope" to make it easier to understand for users.</comment>
+  </data>
+  <data name="Globals_DefaultInputScope.HelpText" xml:space="preserve">
+    <value>通知 IME 預設使用的語言。對於依賴 IME 且預設不使用拉丁字元的語言，此設定可用來強制啟動英文輸入。</value>
+  </data>
+  <data name="Globals_DefaultInputScopeDefault.Content" xml:space="preserve">
+    <value>預設</value>
+  </data>
+  <data name="Globals_DefaultInputScopeAlphanumericHalfWidth.Content" xml:space="preserve">
+    <value>英數字元半寬 (英文)</value>
   </data>
   <data name="Globals_AlwaysShowTabs.Header" xml:space="preserve">
     <value>永遠顯示索引標籤</value>
@@ -1539,6 +1552,10 @@
     <value>文字</value>
     <comment>Header for a group of settings that control the appearance of text in the app.</comment>
   </data>
+  <data name="Globals_WarningsHeader.Text" xml:space="preserve">
+    <value>警告</value>
+    <comment>Header for a group of settings that control the warnings in the app.</comment>
+  </data>
   <data name="Profile_WindowHeader.Text" xml:space="preserve">
     <value>視窗</value>
     <comment>Header for a group of settings that control the appearance of the window frame of the app.</comment>
@@ -1818,6 +1835,15 @@
   <data name="Globals_ConfirmCloseAllTabs.Header" xml:space="preserve">
     <value>關閉多個索引標籤時發出警告</value>
     <comment>Header for a control to toggle whether to show a confirm dialog box when closing the application with multiple tabs open.</comment>
+  </data>
+  <data name="Globals_InputServiceWarning.Header" xml:space="preserve">
+    <value>停用「觸控式鍵盤和手寫面板服務」時發出警告</value>
+  </data>
+  <data name="Globals_WarnAboutLargePaste.Header" xml:space="preserve">
+    <value>嘗試貼上超過 5 個 KiB 字元時發出警告</value>
+  </data>
+  <data name="Globals_WarnAboutMultiLinePaste.Header" xml:space="preserve">
+    <value>嘗試貼上「新行」字元時發出警告</value>
   </data>
   <data name="Settings_PortableModeNote.Text" xml:space="preserve">
     <value>Windows 終端機正以可攜式模式執行。</value>

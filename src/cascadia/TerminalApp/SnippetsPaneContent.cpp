@@ -21,7 +21,8 @@ namespace winrt
 
 namespace winrt::TerminalApp::implementation
 {
-    SnippetsPaneContent::SnippetsPaneContent()
+    SnippetsPaneContent::SnippetsPaneContent() :
+        _allTasks{ winrt::single_threaded_observable_vector<TerminalApp::FilteredTask>() }
     {
         InitializeComponent();
 
@@ -42,7 +43,7 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    winrt::fire_and_forget SnippetsPaneContent::UpdateSettings(const CascadiaSettings& settings)
+    safe_void_coroutine SnippetsPaneContent::UpdateSettings(const CascadiaSettings& settings)
     {
         _settings = settings;
 
@@ -54,7 +55,7 @@ namespace winrt::TerminalApp::implementation
         const auto tasks = co_await _settings.GlobalSettings().ActionMap().FilterToSnippets(winrt::hstring{}, winrt::hstring{}); // IVector<Model::Command>
         co_await wil::resume_foreground(Dispatcher());
 
-        _allTasks = winrt::single_threaded_observable_vector<TerminalApp::FilteredTask>();
+        _allTasks.Clear();
         for (const auto& t : tasks)
         {
             const auto& filtered{ winrt::make<FilteredTask>(t) };

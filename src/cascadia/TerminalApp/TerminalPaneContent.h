@@ -82,9 +82,9 @@ namespace winrt::TerminalApp::implementation
         void _setupControlEvents();
         void _removeControlEvents();
 
-        winrt::fire_and_forget _playBellSound(winrt::Windows::Foundation::Uri uri);
+        safe_void_coroutine _playBellSound(winrt::Windows::Foundation::Uri uri);
 
-        winrt::fire_and_forget _controlConnectionStateChangedHandler(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::Foundation::IInspectable& /*args*/);
+        safe_void_coroutine _controlConnectionStateChangedHandler(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::Foundation::IInspectable& /*args*/);
         void _controlWarningBellHandler(const winrt::Windows::Foundation::IInspectable& sender,
                                         const winrt::Windows::Foundation::IInspectable& e);
         void _controlReadOnlyChangedHandler(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::Foundation::IInspectable& e);

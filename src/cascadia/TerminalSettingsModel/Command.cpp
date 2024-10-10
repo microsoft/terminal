@@ -741,4 +741,57 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         return winrt::single_threaded_vector<Model::Command>(std::move(result));
     }
+
+    void Command::LogSettingChanges(std::set<std::string>& changes)
+    {
+        if (_IterateOn != ExpandCommandType::None)
+        {
+            switch (_IterateOn)
+            {
+            case ExpandCommandType::Profiles:
+                changes.emplace(fmt::format(FMT_COMPILE("{}.{}"), IterateOnKey, "profiles"));
+                break;
+            case ExpandCommandType::ColorSchemes:
+                changes.emplace(fmt::format(FMT_COMPILE("{}.{}"), IterateOnKey, "schemes"));
+                break;
+            }
+        }
+
+        if (!_Description.empty())
+        {
+            changes.emplace(DescriptionKey);
+        }
+
+        if (IsNestedCommand())
+        {
+            changes.emplace(CommandsKey);
+        }
+        else
+        {
+            const auto json{ ActionAndArgs::ToJson(ActionAndArgs()) };
+            if (json.isString())
+            {
+                // covers actions w/out args
+                // - "command": "unbound" --> "unbound"
+                // - "command": "copy"    --> "copy"
+                changes.emplace(json.asString());
+            }
+            else
+            {
+                // covers actions w/ args
+                // - "command": { "action": "copy", "singleLine": true }                           --> "copy.singleLine"
+                // - "command": { "action": "copy", "singleLine": true, "dismissSelection": true } --> "copy.singleLine", "copy.dismissSelection"
+
+                const std::string shortcutActionName{ json[JsonKey("action")].asString() };
+
+                auto members = json.getMemberNames();
+                members.erase(std::remove_if(members.begin(), members.end(), [](const auto& member) { return member == "action"; }), members.end());
+
+                for (const auto& actionArg : members)
+                {
+                    changes.emplace(fmt::format(FMT_COMPILE("{}.{}"), shortcutActionName, actionArg));
+                }
+            }
+        }
+    }
 }

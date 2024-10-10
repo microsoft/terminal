@@ -61,17 +61,17 @@ private:
     void _becomeMonarch();
     void _numberOfWindowsChanged(const winrt::Windows::Foundation::IInspectable&, const winrt::Windows::Foundation::IInspectable&);
 
-    winrt::fire_and_forget _windowIsQuakeWindowChanged(winrt::Windows::Foundation::IInspectable sender, winrt::Windows::Foundation::IInspectable args);
-    winrt::fire_and_forget _windowRequestUpdateSettings();
+    safe_void_coroutine _windowIsQuakeWindowChanged(winrt::Windows::Foundation::IInspectable sender, winrt::Windows::Foundation::IInspectable args);
+    safe_void_coroutine _windowRequestUpdateSettings();
 
     void _createMessageWindow();
 
     void _hotkeyPressed(const long hotkeyIndex);
     bool _registerHotKey(const int index, const winrt::Microsoft::Terminal::Control::KeyChord& hotkey) noexcept;
     void _unregisterHotKey(const int index) noexcept;
-    winrt::fire_and_forget _setupGlobalHotkeys();
+    safe_void_coroutine _setupGlobalHotkeys();
 
-    winrt::fire_and_forget _close();
+    safe_void_coroutine _close();
     void _finalizeSessionPersistence() const;
 
     void _createNotificationIcon();

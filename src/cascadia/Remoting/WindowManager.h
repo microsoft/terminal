@@ -43,8 +43,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 
         bool DoesQuakeWindowExist();
 
-        winrt::fire_and_forget RequestMoveContent(winrt::hstring window, winrt::hstring content, uint32_t tabIndex, Windows::Foundation::IReference<Windows::Foundation::Rect> windowBounds);
-        winrt::fire_and_forget RequestSendContent(Remoting::RequestReceiveContentArgs args);
+        safe_void_coroutine RequestMoveContent(winrt::hstring window, winrt::hstring content, uint32_t tabIndex, Windows::Foundation::IReference<Windows::Foundation::Rect> windowBounds);
+        safe_void_coroutine RequestSendContent(Remoting::RequestReceiveContentArgs args);
 
         til::typed_event<winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::FindTargetWindowArgs> FindTargetWindowRequested;
 

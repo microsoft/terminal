@@ -2340,7 +2340,7 @@
           "description": "When set to `true`, the terminal window will auto-center itself on the display it opens on. The terminal will use the \"initialPosition\" to determine which display to open on.",
           "type": "boolean"
         },
-        "inputServiceWarning": {
+        "warning.inputService": {
           "default": true,
           "description": "Warning if 'Touch Keyboard and Handwriting Panel Service' is disabled.",
           "type": "boolean"
@@ -2390,12 +2390,12 @@
           "description": "When set to `true`, visual animations will be disabled across the application.",
           "type": "boolean"
         },
-        "largePasteWarning": {
+        "warning.largePaste": {
           "default": true,
           "description": "When set to true, trying to paste text with more than 5 KiB of characters will display a warning asking you whether to continue or not with the paste.",
           "type": "boolean"
         },
-        "multiLinePasteWarning": {
+        "warning.multiLinePaste": {
           "default": true,
           "description": "When set to true, trying to paste text with a \"new line\" character will display a warning asking you whether to continue or not with the paste.",
           "type": "boolean"
@@ -2593,7 +2593,7 @@
           "description": "Determines the delimiters used in a double click selection.",
           "type": "string"
         },
-        "confirmCloseAllTabs": {
+        "warning.confirmCloseAllTabs": {
           "default": true,
           "description": "When set to \"true\" closing a window with multiple tabs open will require confirmation.  When set to \"false\", the confirmation dialog will not appear.",
           "type": "boolean"
@@ -2855,7 +2855,7 @@
           }
         },
         "autoMarkPrompts": {
-          "default": false,
+          "default": true,
           "description": "When set to true, prompts will automatically be marked.",
           "type": "boolean"
         },

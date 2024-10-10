@@ -315,6 +315,21 @@ CATCH_RETURN()
         }
 
         _api.selectionSpans = til::point_span_subspan_within_rect(info.selectionSpans, dr);
+
+        const u32 newSelectionColor{ static_cast<COLORREF>(info.selectionBackground) | 0xff000000 };
+        if (_api.s->misc->selectionColor != newSelectionColor)
+        {
+            auto misc = _api.s.write()->misc.write();
+            misc->selectionColor = newSelectionColor;
+            // Select a black or white foreground based on the perceptual lightness of the background.
+            misc->selectionForeground = ColorFix::GetLuminosity(newSelectionColor) < 0.5f ? 0xffffffff : 0xff000000;
+
+            // We copied the selection colors into _p during StartPaint, which happened just before PrepareRenderInfo
+            // This keeps their generations in sync.
+            auto pm = _p.s.write()->misc.write();
+            pm->selectionColor = misc->selectionColor;
+            pm->selectionForeground = misc->selectionForeground;
+        }
     }
 
     return S_OK;
@@ -502,7 +517,7 @@ try
     // Apply the highlighting colors to the highlighted cells
     RETURN_IF_FAILED(_drawHighlighted(_api.searchHighlights, y, x, columnEnd, highlightFg, highlightBg));
     RETURN_IF_FAILED(_drawHighlighted(_api.searchHighlightFocused, y, x, columnEnd, highlightFocusFg, highlightFocusBg));
-    RETURN_IF_FAILED(_drawHighlighted(_api.selectionSpans, y, x, columnEnd, _api.s->misc->selectionForeground, _api.s->misc->selectionColor));
+    RETURN_IF_FAILED(_drawHighlighted(_api.selectionSpans, y, x, columnEnd, _p.s->misc->selectionForeground, _p.s->misc->selectionColor));
 
     _api.lastPaintBufferLineCoord = { x, y };
     return S_OK;
@@ -658,10 +673,7 @@ try
 
         if (textAttributes.GetForeground().IsDefault() && fg != _api.s->misc->foregroundColor)
         {
-            auto misc = _api.s.write()->misc.write();
-            misc->foregroundColor = fg;
-            // Selection Foreground is based on the default foreground; it is also updated in SetSelectionColor
-            misc->selectionForeground = 0xff000000 | ColorFix::GetPerceivableColor(fg, misc->selectionColor, 0.5f * 0.5f);
+            _api.s.write()->misc.write()->foregroundColor = fg;
         }
     }
 

@@ -118,7 +118,7 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="InitialJsonParseErrorText" xml:space="preserve">
-    <value>파일에서 설정을 로드 하지 못했습니다. 후행 쉼표를 포함 하 여 구문 오류가 있는지 확인 합니다.</value>
+    <value>파일에서 설정을 로드하지 못했습니다. 후행 쉼표를 포함하여 구문 오류가 있는지 확인합니다.</value>
   </data>
   <data name="MissingDefaultProfileText" xml:space="preserve">
     <value>첫 번째 프로필을 사용하여 프로필 목록에서 기본 프로필을 찾을 수 없습니다. "defaultProfile"이 프로필 중 하나의 GUID와 일치하는지 확인합니다.</value>
@@ -319,7 +319,7 @@
     <value>상위 창의 백분율로 크기를 지정합니다. (0,1) 사이 값만 유효합니다.</value>
   </data>
   <data name="CmdNewTabDesc" xml:space="preserve">
-    <value>새 작업 만들기</value>
+    <value>새 탭 만들기</value>
   </data>
   <data name="CmdNTDesc" xml:space="preserve">
     <value>"new-tab" 하위 명령의 별칭입니다.</value>
@@ -524,7 +524,7 @@
     <value>경고</value>
   </data>
   <data name="CloseReadOnlyDialog.Content" xml:space="preserve">
-    <value>읽기 전용 터미널을 닫으려고 합니다. 계속하시겠어요?</value>
+    <value>읽기 전용 터미널을 닫으려고 합니다. 계속하시겠습니까?</value>
   </data>
   <data name="LargePasteDialog.CloseButtonText" xml:space="preserve">
     <value>취소</value>
@@ -616,7 +616,7 @@
     <comment>{0} will be replaced with a number.</comment>
   </data>
   <data name="CrimsonColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>심홍</value>
+    <value>진홍</value>
   </data>
   <data name="SteelBlueColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>강철색</value>

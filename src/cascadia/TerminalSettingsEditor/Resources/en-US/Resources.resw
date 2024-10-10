@@ -246,8 +246,21 @@
     <comment>A description explaining how this control changes the app's language. {Locked="Windows"}</comment>
   </data>
   <data name="Globals_LanguageDefault" xml:space="preserve">
-    <value>Use system default</value>
+    <value>Default</value>
     <comment>The app contains a control allowing users to choose the app's language. If this value is chosen, the language preference list of the system settings is used instead.</comment>
+  </data>
+  <data name="Globals_DefaultInputScope.Header" xml:space="preserve">
+    <value>Default IME input mode</value>
+    <comment>The "input scope" of an IME tells it what type of characters should be available for input. A Chinese IME for instance may show English letters instead of Chinese ones. It's a technical term. We're using "input mode" instead of "input scope" to make it easier to understand for users.</comment>
+  </data>
+  <data name="Globals_DefaultInputScope.HelpText" xml:space="preserve">
+    <value>Informs the IME what language to use by default. For languages that rely on an IME and don't use Latin characters by default, this setting can be used to force English input on startup.</value>
+  </data>
+  <data name="Globals_DefaultInputScopeDefault.Content" xml:space="preserve">
+    <value>Default</value>
+  </data>
+  <data name="Globals_DefaultInputScopeAlphanumericHalfWidth.Content" xml:space="preserve">
+    <value>Alphanumeric Half-Width (English)</value>
   </data>
   <data name="Globals_AlwaysShowTabs.Header" xml:space="preserve">
     <value>Always show tabs</value>
@@ -1539,6 +1552,10 @@
     <value>Text</value>
     <comment>Header for a group of settings that control the appearance of text in the app.</comment>
   </data>
+  <data name="Globals_WarningsHeader.Text" xml:space="preserve">
+    <value>Warnings</value>
+    <comment>Header for a group of settings that control the warnings in the app.</comment>
+  </data>
   <data name="Profile_WindowHeader.Text" xml:space="preserve">
     <value>Window</value>
     <comment>Header for a group of settings that control the appearance of the window frame of the app.</comment>
@@ -1818,6 +1835,15 @@
   <data name="Globals_ConfirmCloseAllTabs.Header" xml:space="preserve">
     <value>Warn when closing more than one tab</value>
     <comment>Header for a control to toggle whether to show a confirm dialog box when closing the application with multiple tabs open.</comment>
+  </data>
+  <data name="Globals_InputServiceWarning.Header" xml:space="preserve">
+    <value>Warn when "Touch Keyboard and Handwriting Panel Service" is disabled</value>
+  </data>
+  <data name="Globals_WarnAboutLargePaste.Header" xml:space="preserve">
+    <value>Warn when trying to paste more than 5 KiB of characters</value>
+  </data>
+  <data name="Globals_WarnAboutMultiLinePaste.Header" xml:space="preserve">
+    <value>Warn when trying to paste a "new line" character</value>
   </data>
   <data name="Settings_PortableModeNote.Text" xml:space="preserve">
     <value>Windows Terminal is running in portable mode.</value>

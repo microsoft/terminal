@@ -94,7 +94,6 @@ public:
     void UpdateAppearance(const winrt::Microsoft::Terminal::Core::ICoreAppearance& appearance);
     void SetFontInfo(const FontInfo& fontInfo);
     void SetCursorStyle(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::CursorStyle cursorStyle);
-    void EraseScrollback();
     bool IsXtermBracketedPasteModeEnabled() const noexcept;
     std::wstring_view GetWorkingDirectory() noexcept;
 
@@ -139,9 +138,11 @@ public:
     void WarningBell() override;
     void SetWindowTitle(const std::wstring_view title) override;
     CursorType GetUserDefaultCursorStyle() const noexcept override;
-    bool ResizeWindow(const til::CoordType width, const til::CoordType height) noexcept override;
-    void SetConsoleOutputCP(const unsigned int codepage) noexcept override;
-    unsigned int GetConsoleOutputCP() const noexcept override;
+    bool ResizeWindow(const til::CoordType width, const til::CoordType height) override;
+    void SetCodePage(const unsigned int codepage) noexcept override;
+    void ResetCodePage() noexcept override;
+    unsigned int GetOutputCodePage() const noexcept override;
+    unsigned int GetInputCodePage() const noexcept override;
     void CopyToClipboard(wil::zwstring_view content) override;
     void SetTaskbarProgress(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::TaskbarState state, const size_t progress) override;
     void SetWorkingDirectory(std::wstring_view uri) override;
@@ -230,10 +231,12 @@ public:
     void SetShowWindowCallback(std::function<void(bool)> pfn) noexcept;
     void SetPlayMidiNoteCallback(std::function<void(const int, const int, const std::chrono::microseconds)> pfn) noexcept;
     void CompletionsChangedCallback(std::function<void(std::wstring_view, unsigned int)> pfn) noexcept;
-    void SetSearchMissingCommandCallback(std::function<void(std::wstring_view)> pfn) noexcept;
+    void SetSearchMissingCommandCallback(std::function<void(std::wstring_view, const til::CoordType)> pfn) noexcept;
     void SetClearQuickFixCallback(std::function<void()> pfn) noexcept;
+    void SetWindowSizeChangedCallback(std::function<void(int32_t, int32_t)> pfn) noexcept;
     void SetSearchHighlights(const std::vector<til::point_span>& highlights) noexcept;
-    void SetSearchHighlightFocused(const size_t focusedIdx, til::CoordType searchScrollOffset);
+    void SetSearchHighlightFocused(size_t focusedIdx) noexcept;
+    void ScrollToSearchHighlight(til::CoordType searchScrollOffset);
 
     void BlinkCursor() noexcept;
     void SetCursorOn(const bool isOn) noexcept;
@@ -342,8 +345,9 @@ private:
     std::function<void(bool)> _pfnShowWindowChanged;
     std::function<void(const int, const int, const std::chrono::microseconds)> _pfnPlayMidiNote;
     std::function<void(std::wstring_view, unsigned int)> _pfnCompletionsChanged;
-    std::function<void(std::wstring_view)> _pfnSearchMissingCommand;
+    std::function<void(std::wstring_view, const til::CoordType)> _pfnSearchMissingCommand;
     std::function<void()> _pfnClearQuickFix;
+    std::function<void(int32_t, int32_t)> _pfnWindowSizeChanged;
 
     RenderSettings _renderSettings;
     std::unique_ptr<::Microsoft::Console::VirtualTerminal::StateMachine> _stateMachine;

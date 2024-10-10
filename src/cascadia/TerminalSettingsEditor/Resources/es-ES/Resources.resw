@@ -246,8 +246,21 @@
     <comment>A description explaining how this control changes the app's language. {Locked="Windows"}</comment>
   </data>
   <data name="Globals_LanguageDefault" xml:space="preserve">
-    <value>Usar los valores predeterminados del sistema</value>
+    <value>Predeterminado</value>
     <comment>The app contains a control allowing users to choose the app's language. If this value is chosen, the language preference list of the system settings is used instead.</comment>
+  </data>
+  <data name="Globals_DefaultInputScope.Header" xml:space="preserve">
+    <value>Modo de entrada IME predeterminado</value>
+    <comment>The "input scope" of an IME tells it what type of characters should be available for input. A Chinese IME for instance may show English letters instead of Chinese ones. It's a technical term. We're using "input mode" instead of "input scope" to make it easier to understand for users.</comment>
+  </data>
+  <data name="Globals_DefaultInputScope.HelpText" xml:space="preserve">
+    <value>Informa al IME qué idioma usar de forma predeterminada. Para los idiomas que dependen de un IME y no usan caracteres latinos de forma predeterminada, esta configuración se puede usar para forzar la entrada de inglés al iniciar.</value>
+  </data>
+  <data name="Globals_DefaultInputScopeDefault.Content" xml:space="preserve">
+    <value>Predeterminado</value>
+  </data>
+  <data name="Globals_DefaultInputScopeAlphanumericHalfWidth.Content" xml:space="preserve">
+    <value>Ancho medio alfanumérico (inglés)</value>
   </data>
   <data name="Globals_AlwaysShowTabs.Header" xml:space="preserve">
     <value>Mostrar pestañas siempre</value>
@@ -1539,6 +1552,10 @@
     <value>Texto</value>
     <comment>Header for a group of settings that control the appearance of text in the app.</comment>
   </data>
+  <data name="Globals_WarningsHeader.Text" xml:space="preserve">
+    <value>Advertencias</value>
+    <comment>Header for a group of settings that control the warnings in the app.</comment>
+  </data>
   <data name="Profile_WindowHeader.Text" xml:space="preserve">
     <value>Ventana</value>
     <comment>Header for a group of settings that control the appearance of the window frame of the app.</comment>
@@ -1818,6 +1835,15 @@
   <data name="Globals_ConfirmCloseAllTabs.Header" xml:space="preserve">
     <value>Advertir al cerrar más de una pestaña</value>
     <comment>Header for a control to toggle whether to show a confirm dialog box when closing the application with multiple tabs open.</comment>
+  </data>
+  <data name="Globals_InputServiceWarning.Header" xml:space="preserve">
+    <value>Advertir cuando el servicio "Panel de escritura a mano y teclado táctil" está deshabilitado</value>
+  </data>
+  <data name="Globals_WarnAboutLargePaste.Header" xml:space="preserve">
+    <value>Advertir al intentar pegar más de 5 KiB de caracteres</value>
+  </data>
+  <data name="Globals_WarnAboutMultiLinePaste.Header" xml:space="preserve">
+    <value>Advertir al intentar pegar un carácter de "nueva línea"</value>
   </data>
   <data name="Settings_PortableModeNote.Text" xml:space="preserve">
     <value>Terminal Windows se ejecuta en modo portátil.</value>

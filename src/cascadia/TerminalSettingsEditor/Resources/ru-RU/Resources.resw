@@ -246,8 +246,21 @@
     <comment>A description explaining how this control changes the app's language. {Locked="Windows"}</comment>
   </data>
   <data name="Globals_LanguageDefault" xml:space="preserve">
-    <value>Использовать системные параметры по умолчанию</value>
+    <value>По умолчанию</value>
     <comment>The app contains a control allowing users to choose the app's language. If this value is chosen, the language preference list of the system settings is used instead.</comment>
+  </data>
+  <data name="Globals_DefaultInputScope.Header" xml:space="preserve">
+    <value>Режим ввода IME по умолчанию</value>
+    <comment>The "input scope" of an IME tells it what type of characters should be available for input. A Chinese IME for instance may show English letters instead of Chinese ones. It's a technical term. We're using "input mode" instead of "input scope" to make it easier to understand for users.</comment>
+  </data>
+  <data name="Globals_DefaultInputScope.HelpText" xml:space="preserve">
+    <value>Сообщает IME, какой язык нужно использовать по умолчанию. Для языков, которые применяют IME и не используют латинские символы по умолчанию, этот параметр можно использовать для принудительного ввода на английском языке при запуске.</value>
+  </data>
+  <data name="Globals_DefaultInputScopeDefault.Content" xml:space="preserve">
+    <value>По умолчанию</value>
+  </data>
+  <data name="Globals_DefaultInputScopeAlphanumericHalfWidth.Content" xml:space="preserve">
+    <value>Буквенно-цифровой полуширинный (английский)</value>
   </data>
   <data name="Globals_AlwaysShowTabs.Header" xml:space="preserve">
     <value>Всегда отображать вкладки</value>
@@ -1539,6 +1552,10 @@
     <value>Текст</value>
     <comment>Header for a group of settings that control the appearance of text in the app.</comment>
   </data>
+  <data name="Globals_WarningsHeader.Text" xml:space="preserve">
+    <value>Предупреждения</value>
+    <comment>Header for a group of settings that control the warnings in the app.</comment>
+  </data>
   <data name="Profile_WindowHeader.Text" xml:space="preserve">
     <value>Окно</value>
     <comment>Header for a group of settings that control the appearance of the window frame of the app.</comment>
@@ -1818,6 +1835,15 @@
   <data name="Globals_ConfirmCloseAllTabs.Header" xml:space="preserve">
     <value>Предупреждать при закрытии нескольких вкладок</value>
     <comment>Header for a control to toggle whether to show a confirm dialog box when closing the application with multiple tabs open.</comment>
+  </data>
+  <data name="Globals_InputServiceWarning.Header" xml:space="preserve">
+    <value>Предупреждать, если параметр "Служба сенсорной клавиатуры и панели рукописного ввода" отключен</value>
+  </data>
+  <data name="Globals_WarnAboutLargePaste.Header" xml:space="preserve">
+    <value>Предупреждать при попытке вставки более 5 КиБ символов</value>
+  </data>
+  <data name="Globals_WarnAboutMultiLinePaste.Header" xml:space="preserve">
+    <value>Предупреждать при попытке вставки символа "новая строка"</value>
   </data>
   <data name="Settings_PortableModeNote.Text" xml:space="preserve">
     <value>Терминал Windows работает в переносном режиме.</value>

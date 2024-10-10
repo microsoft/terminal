@@ -158,7 +158,10 @@ namespace winrt::TerminalApp::implementation
         // Set this tab's icon to the icon from the content
         _UpdateTabIcon(*newTabImpl);
 
-        tabViewItem.PointerReleased({ this, &TerminalPage::_OnTabClick });
+        tabViewItem.PointerPressed({ this, &TerminalPage::_OnTabPointerPressed });
+        tabViewItem.PointerReleased({ this, &TerminalPage::_OnTabPointerReleased });
+        tabViewItem.PointerExited({ this, &TerminalPage::_OnTabPointerExited });
+        tabViewItem.PointerEntered({ this, &TerminalPage::_OnTabPointerEntered });
 
         // When the tab requests close, try to close it (prompt for approval, if required)
         newTabImpl->CloseRequested([weakTab, weakThis{ get_weak() }](auto&& /*s*/, auto&& /*e*/) {
@@ -308,7 +311,7 @@ namespace winrt::TerminalApp::implementation
     // - Exports the content of the Terminal Buffer inside the tab
     // Arguments:
     // - tab: tab to export
-    winrt::fire_and_forget TerminalPage::_ExportTab(const TerminalTab& tab, winrt::hstring filepath)
+    safe_void_coroutine TerminalPage::_ExportTab(const TerminalTab& tab, winrt::hstring filepath)
     {
         // This will be used to set up the file picker "filter", to select .txt
         // files by default.
@@ -680,7 +683,7 @@ namespace winrt::TerminalApp::implementation
     // - tab: tab to focus.
     // Return Value:
     // - <none>
-    winrt::fire_and_forget TerminalPage::_SetFocusedTab(const winrt::TerminalApp::TabBase tab)
+    safe_void_coroutine TerminalPage::_SetFocusedTab(const winrt::TerminalApp::TabBase tab)
     {
         // GH#1117: This is a workaround because _tabView.SelectedIndex(tabIndex)
         //          sometimes set focus to an incorrect tab after removing some tabs
@@ -765,7 +768,7 @@ namespace winrt::TerminalApp::implementation
     // - Close the currently focused pane. If the pane is the last pane in the
     //   tab, the tab will also be closed. This will happen when we handle the
     //   tab's Closed event.
-    winrt::fire_and_forget TerminalPage::_CloseFocusedPane()
+    safe_void_coroutine TerminalPage::_CloseFocusedPane()
     {
         if (const auto terminalTab{ _GetFocusedTabImpl() })
         {
@@ -831,7 +834,7 @@ namespace winrt::TerminalApp::implementation
     // - Closes provided tabs one by one
     // Arguments:
     // - tabs - tabs to remove
-    winrt::fire_and_forget TerminalPage::_RemoveTabs(const std::vector<winrt::TerminalApp::TabBase> tabs)
+    safe_void_coroutine TerminalPage::_RemoveTabs(const std::vector<winrt::TerminalApp::TabBase> tabs)
     {
         for (auto& tab : tabs)
         {
@@ -875,19 +878,66 @@ namespace winrt::TerminalApp::implementation
     // Arguments:
     // - sender: the control that originated this event (TabViewItem)
     // - eventArgs: the event's constituent arguments
-    void TerminalPage::_OnTabClick(const IInspectable& sender, const Windows::UI::Xaml::Input::PointerRoutedEventArgs& eventArgs)
+    void TerminalPage::_OnTabPointerPressed(const IInspectable& sender, const Windows::UI::Xaml::Input::PointerRoutedEventArgs& eventArgs)
     {
-        if (eventArgs.GetCurrentPoint(*this).Properties().IsMiddleButtonPressed())
+        if (eventArgs.GetCurrentPoint(nullptr).Properties().IsMiddleButtonPressed())
         {
-            const auto tabViewItem = sender.try_as<MUX::Controls::TabViewItem>();
-            if (auto tab{ _GetTabByTabViewItem(tabViewItem) })
+            if (const auto tabViewItem{ sender.try_as<MUX::Controls::TabViewItem>() })
             {
-                _HandleCloseTabRequested(tab);
+                _tabPointerMiddleButtonPressed = tabViewItem.CapturePointer(eventArgs.Pointer());
+                _tabPointerMiddleButtonExited = false;
             }
             eventArgs.Handled(true);
         }
-        else if (eventArgs.GetCurrentPoint(*this).Properties().IsRightButtonPressed())
+    }
+
+    // Method Description:
+    // - Tracking pointer state for tab remove
+    // Arguments:
+    // - sender: the control that originated this event (TabViewItem)
+    // - eventArgs: the event's constituent arguments
+    void TerminalPage::_OnTabPointerReleased(const IInspectable& sender, const Windows::UI::Xaml::Input::PointerRoutedEventArgs& eventArgs)
+    {
+        if (_tabPointerMiddleButtonPressed && !eventArgs.GetCurrentPoint(nullptr).Properties().IsMiddleButtonPressed())
         {
+            _tabPointerMiddleButtonPressed = false;
+            if (const auto tabViewItem{ sender.try_as<MUX::Controls::TabViewItem>() })
+            {
+                tabViewItem.ReleasePointerCapture(eventArgs.Pointer());
+                auto tab = _GetTabByTabViewItem(tabViewItem);
+                if (!_tabPointerMiddleButtonExited && tab)
+                {
+                    _HandleCloseTabRequested(tab);
+                }
+            }
+            eventArgs.Handled(true);
+        }
+    }
+
+    // Method Description:
+    // - Tracking pointer state for tab remove
+    // Arguments:
+    // - sender: the control that originated this event (TabViewItem)
+    // - eventArgs: the event's constituent arguments
+    void TerminalPage::_OnTabPointerEntered(const IInspectable& /*sender*/, const Windows::UI::Xaml::Input::PointerRoutedEventArgs& eventArgs)
+    {
+        if (eventArgs.GetCurrentPoint(nullptr).Properties().IsMiddleButtonPressed())
+        {
+            _tabPointerMiddleButtonExited = false;
+            eventArgs.Handled(true);
+        }
+    }
+
+    // Method Description:
+    // - Tracking pointer state for tab remove
+    // Arguments:
+    // - sender: the control that originated this event (TabViewItem)
+    // - eventArgs: the event's constituent arguments
+    void TerminalPage::_OnTabPointerExited(const IInspectable& /*sender*/, const Windows::UI::Xaml::Input::PointerRoutedEventArgs& eventArgs)
+    {
+        if (eventArgs.GetCurrentPoint(nullptr).Properties().IsMiddleButtonPressed())
+        {
+            _tabPointerMiddleButtonExited = true;
             eventArgs.Handled(true);
         }
     }

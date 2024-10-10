@@ -49,7 +49,20 @@ namespace winrt::TerminalApp::implementation
         default:
             return false;
         }
-        return eventArgs.Handled();
+        const auto handled = eventArgs.Handled();
+
+        if (handled)
+        {
+            TraceLoggingWrite(
+                g_hTerminalAppProvider,
+                "ActionDispatched",
+                TraceLoggingDescription("Event emitted when an action was successfully performed"),
+                TraceLoggingValue(static_cast<int>(actionAndArgs.Action()), "Action"),
+                TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+                TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
+        }
+
+        return handled;
     }
 
     bool ShortcutActionDispatch::DoAction(const ActionAndArgs& actionAndArgs)

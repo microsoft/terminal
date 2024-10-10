@@ -28,6 +28,7 @@ Author(s):
     X(bool, DisablePartialInvalidation, "rendering.disablePartialInvalidation", false)                                                                                                                \
     X(bool, SoftwareRendering, "rendering.software", false)                                                                                                                                           \
     X(winrt::Microsoft::Terminal::Control::TextMeasurement, TextMeasurement, "compatibility.textMeasurement")                                                                                         \
+    X(winrt::Microsoft::Terminal::Control::DefaultInputScope, DefaultInputScope, "defaultInputScope")                                                                                                 \
     X(bool, UseBackgroundImageForWindow, "experimental.useBackgroundImageForWindow", false)                                                                                                           \
     X(bool, ForceVTInput, "experimental.input.forceVT", false)                                                                                                                                        \
     X(bool, TrimBlockSelection, "trimBlockSelection", true)                                                                                                                                           \
@@ -35,16 +36,16 @@ Author(s):
     X(bool, AlwaysShowTabs, "alwaysShowTabs", true)                                                                                                                                                   \
     X(Model::NewTabPosition, NewTabPosition, "newTabPosition", Model::NewTabPosition::AfterLastTab)                                                                                                   \
     X(bool, ShowTitleInTitlebar, "showTerminalTitleInTitlebar", true)                                                                                                                                 \
-    X(bool, ConfirmCloseAllTabs, "confirmCloseAllTabs", true)                                                                                                                                         \
+    X(bool, ConfirmCloseAllTabs, "warning.confirmCloseAllTabs", true)                                                                                                                                 \
     X(Model::ThemePair, Theme, "theme")                                                                                                                                                               \
     X(hstring, Language, "language")                                                                                                                                                                  \
     X(winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode, TabWidthMode, "tabWidthMode", winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode::Equal)                                            \
     X(bool, UseAcrylicInTabRow, "useAcrylicInTabRow", false)                                                                                                                                          \
     X(bool, ShowTabsInTitlebar, "showTabsInTitlebar", true)                                                                                                                                           \
-    X(bool, InputServiceWarning, "inputServiceWarning", true)                                                                                                                                         \
+    X(bool, InputServiceWarning, "warning.inputService", true)                                                                                                                                        \
     X(winrt::Microsoft::Terminal::Control::CopyFormat, CopyFormatting, "copyFormatting", 0)                                                                                                           \
-    X(bool, WarnAboutLargePaste, "largePasteWarning", true)                                                                                                                                           \
-    X(bool, WarnAboutMultiLinePaste, "multiLinePasteWarning", true)                                                                                                                                   \
+    X(bool, WarnAboutLargePaste, "warning.largePaste", true)                                                                                                                                          \
+    X(bool, WarnAboutMultiLinePaste, "warning.multiLinePaste", true)                                                                                                                                  \
     X(Model::LaunchPosition, InitialPosition, "initialPosition", nullptr, nullptr)                                                                                                                    \
     X(bool, CenterOnLaunch, "centerOnLaunch", false)                                                                                                                                                  \
     X(Model::FirstWindowPreference, FirstWindowPreference, "firstWindowPreference", FirstWindowPreference::DefaultProfile)                                                                            \
@@ -95,7 +96,7 @@ Author(s):
     X(bool, RightClickContextMenu, "experimental.rightClickContextMenu", false)                                                                                \
     X(Windows::Foundation::Collections::IVector<winrt::hstring>, BellSound, "bellSound", nullptr)                                                              \
     X(bool, Elevate, "elevate", false)                                                                                                                         \
-    X(bool, AutoMarkPrompts, "autoMarkPrompts", false)                                                                                                         \
+    X(bool, AutoMarkPrompts, "autoMarkPrompts", true)                                                                                                          \
     X(bool, ShowMarks, "showMarksOnScrollbar", false)                                                                                                          \
     X(bool, RepositionCursorWithMouse, "experimental.repositionCursorWithMouse", false)                                                                        \
     X(bool, ReloadEnvironmentVariables, "compatibility.reloadEnvironmentVariables", true)                                                                      \

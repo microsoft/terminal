@@ -326,7 +326,7 @@ private:
     til::point _GetWordEndForSelection(const til::point target, const std::wstring_view wordDelimiters) const;
     void _PruneHyperlinks();
 
-    std::wstring _commandForRow(const til::CoordType rowOffset, const til::CoordType bottomInclusive) const;
+    std::wstring _commandForRow(const til::CoordType rowOffset, const til::CoordType bottomInclusive, const bool clipAtCursor = false) const;
     MarkExtents _scrollMarkExtentForRow(const til::CoordType rowOffset, const til::CoordType bottomInclusive) const;
     bool _createPromptMarkIfNeeded();
 

@@ -603,7 +603,11 @@ try
     const auto intersection = Viewport::Intersect(original, removeMe);
 
     // If there's no intersection, there's nothing to remove.
-    if (!intersection.IsValid())
+    if (!original.IsValid())
+    {
+        // Nothing to do here.
+    }
+    else if (!intersection.IsValid())
     {
         // Just put the original rectangle into the results and return early.
         result.push_back(original);

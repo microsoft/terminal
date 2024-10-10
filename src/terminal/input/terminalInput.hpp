@@ -33,6 +33,7 @@ namespace Microsoft::Console::VirtualTerminal
             CursorKey,
             BackarrowKey,
             Win32,
+            SendC1,
 
             Utf8MouseEncoding,
             SgrMouseEncoding,
@@ -80,10 +81,8 @@ namespace Microsoft::Console::VirtualTerminal
         til::enumset<Mode> _inputMode{ Mode::Ansi, Mode::AutoRepeat, Mode::AlternateScroll };
         bool _forceDisableWin32InputMode{ false };
 
-        // In the future, if we add support for "8-bit" input mode, these prefixes
-        // will sometimes be replaced with equivalent C1 control characters.
-        static constexpr auto _csi = L"\x1B[";
-        static constexpr auto _ss3 = L"\x1BO";
+        const wchar_t* _csi = L"\x1B[";
+        const wchar_t* _ss3 = L"\x1BO";
 
         void _initKeyboardMap() noexcept;
         DWORD _trackControlKeyState(const KEY_EVENT_RECORD& key);
@@ -108,9 +107,9 @@ namespace Microsoft::Console::VirtualTerminal
 #pragma endregion
 
 #pragma region MouseInput
-        [[nodiscard]] static OutputType _GenerateDefaultSequence(til::point position, unsigned int button, bool isHover, short modifierKeyState, short delta);
-        [[nodiscard]] static OutputType _GenerateUtf8Sequence(til::point position, unsigned int button, bool isHover, short modifierKeyState, short delta);
-        [[nodiscard]] static OutputType _GenerateSGRSequence(til::point position, unsigned int button, bool isDown, bool isHover, short modifierKeyState, short delta);
+        [[nodiscard]] OutputType _GenerateDefaultSequence(til::point position, unsigned int button, bool isHover, short modifierKeyState, short delta);
+        [[nodiscard]] OutputType _GenerateUtf8Sequence(til::point position, unsigned int button, bool isHover, short modifierKeyState, short delta);
+        [[nodiscard]] OutputType _GenerateSGRSequence(til::point position, unsigned int button, bool isDown, bool isHover, short modifierKeyState, short delta);
 
         [[nodiscard]] OutputType _makeAlternateScrollOutput(short delta) const;
 

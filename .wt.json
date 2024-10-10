@@ -23,6 +23,12 @@
             "name": "Upload package to nuget feed",
             "icon": "\uE898",
             "description": "Go download a .nupkg, put it in ~/Downloads, and use this to push to our private feed."
+        },
+        {
+            "input": "runut /name:**\u001b[D",
+            "name": "Run a test",
+            "icon": "",
+            "description": "Enter the name of a test to run"
         }
     ]
 }

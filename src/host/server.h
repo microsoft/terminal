@@ -90,6 +90,9 @@ public:
     // the following fields are used for ansi-unicode translation
     UINT CP = 0;
     UINT OutputCP = 0;
+    // the VT RIS sequence uses these default values to reset the code pages
+    UINT DefaultCP = 0;
+    UINT DefaultOutputCP = 0;
 
     ULONG CtrlFlags = 0; // indicates outstanding ctrl requests
     ULONG LimitingProcessId = 0;
