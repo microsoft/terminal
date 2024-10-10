@@ -44,7 +44,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         // set up IconTypes
         _IconTypes = winrt::single_threaded_vector<IInspectable>();
-        _IconTypes.Append(make<EnumEntry>(RS_(L"Profile_IconTypeHidden"), box_value(IconType::Hidden)));
+        _IconTypes.Append(make<EnumEntry>(RS_(L"Profile_IconTypeNone"), box_value(IconType::None)));
         _IconTypes.Append(make<EnumEntry>(RS_(L"Profile_IconTypeFontIcon"), box_value(IconType::FontIcon)));
         _IconTypes.Append(make<EnumEntry>(RS_(L"Profile_IconTypeEmoji"), box_value(IconType::Emoji)));
         _IconTypes.Append(make<EnumEntry>(RS_(L"Profile_IconTypeImage"), box_value(IconType::Image)));
@@ -85,6 +85,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             else if (viewModelProperty == L"Icon")
             {
                 _DeduceCurrentIconType();
+                _NotifyChanges(L"LocalizedIcon");
             }
             else if (viewModelProperty == L"CurrentIconType")
             {
@@ -408,6 +409,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
+    winrt::hstring ProfileViewModel::LocalizedIcon() const
+    {
+        if (_currentIconType && unbox_value<IconType>(_currentIconType.as<Editor::EnumEntry>().EnumValue()) == IconType::None)
+        {
+            return RS_(L"Profile_IconTypeNone");
+        }
+        return Icon();
+    }
+
     void ProfileViewModel::CurrentIconType(const Windows::Foundation::IInspectable& value)
     {
         if (_currentIconType != value)
@@ -431,7 +441,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             // Switched to...
             switch (unbox_value<IconType>(value.as<Editor::EnumEntry>().EnumValue()))
             {
-            case IconType::Hidden:
+            case IconType::None:
             {
                 Icon(HideIconValue);
                 break;

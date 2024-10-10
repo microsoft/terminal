@@ -1044,6 +1044,10 @@
     <value>Icon</value>
     <comment>Name for a control to determine what icon can be used to represent this profile. This is not necessarily a file path, but can be one.</comment>
   </data>
+  <data name="Profile_IconEmojiBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Icon</value>
+    <comment>Name for a control to determine what icon can be used to represent this profile.</comment>
+  </data>
   <data name="Profile_Icon.HelpText" xml:space="preserve">
     <value>Emoji or image file location of the icon used in the profile.</value>
     <comment>A description for what the "icon" setting does. Presented near "Profile_Icon".</comment>
@@ -1911,12 +1915,12 @@
     <value>Use selection background color from color scheme</value>
     <comment>Label for a button directing the user to use the selection background color defined in the terminal's current color scheme.</comment>
   </data>
-  <data name="Profile_IconTypeHidden" xml:space="preserve">
-    <value>Hidden</value>
-    <comment>An option to choose from for the "icon style" dropdown. When selected, the icon will be hidden for the profile.</comment>
+  <data name="Profile_IconTypeNone" xml:space="preserve">
+    <value>None</value>
+    <comment>An option to choose from for the "icon style" dropdown. When selected, there will be no icon for the profile.</comment>
   </data>
   <data name="Profile_IconTypeImage" xml:space="preserve">
-    <value>Custom Icon</value>
+    <value>File</value>
     <comment>An option to choose from for the "icon style" dropdown. When selected, a custom image can set for the profile's icon.</comment>
   </data>
   <data name="Profile_IconTypeEmoji" xml:space="preserve">
@@ -1927,16 +1931,16 @@
     <value>Built-in Icon</value>
     <comment>An option to choose from for the "icon style" dropdown. When selected, the user can choose from several preselected options to set the profile's icon.</comment>
   </data>
-  <data name="Profile_IconType.Header" xml:space="preserve">
-    <value>Icon Type</value>
-    <comment>Header for a control allowing the user to select the type of icon they would like to use.</comment>
-  </data>
-  <data name="Profile_BuiltInIcon.Header" xml:space="preserve">
-    <value>Built-In Icons</value>
-    <comment>Header for a control allowing the user to select from a list of built-in icons</comment>
-  </data>
   <data name="Profile_IconEmojiBox.PlaceholderText" xml:space="preserve">
     <value>Use "Win + period" to open the emoji picker</value>
     <comment>"Win + period" refers to the OS key binding to open the emoji picker.</comment>
+  </data>
+  <data name="Profile_IconType.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Icon type</value>
+    <comment>Accessible name for a control allowing the user to select the type of icon they would like to use.</comment>
+  </data>
+  <data name="Profile_BuiltInIcon.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Icon</value>
+    <comment>Accessible name for a control allowing the user to select the icon from a list of built in icons.</comment>
   </data>
 </root>

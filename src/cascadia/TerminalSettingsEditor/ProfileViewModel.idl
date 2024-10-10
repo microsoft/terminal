@@ -34,7 +34,7 @@ namespace Microsoft.Terminal.Settings.Editor
 
     enum IconType
     {
-        Hidden = 0,
+        None = 0,
         FontIcon,
         Image,
         Emoji
@@ -83,6 +83,7 @@ namespace Microsoft.Terminal.Settings.Editor
         Boolean RepositionCursorWithMouseAvailable { get; };
 
         String EvaluatedIcon { get; };
+        String LocalizedIcon { get; };
         String CurrentEmojiIcon;
         IInspectable CurrentIconType;
         Windows.Foundation.Collections.IVector<IInspectable> IconTypes { get; };
