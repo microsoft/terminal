@@ -532,7 +532,7 @@ void CascadiaSettings::_validateMediaResources()
         // want to blow up if we fell back to the commandline and the
         // commandline _isn't an icon_.
         // GH #17943: "none" is a special value interpreted as "remove the icon"
-        static hstring HideIconValue{ L"none" };
+        static constexpr std::wstring_view HideIconValue{ L"none" };
         if (const auto icon = profile.Icon(); icon.size() > 2 && icon != HideIconValue)
         {
             const auto iconPath{ wil::ExpandEnvironmentStringsW<std::wstring>(icon.c_str()) };
