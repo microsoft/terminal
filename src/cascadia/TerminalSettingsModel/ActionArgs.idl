@@ -18,15 +18,11 @@ namespace Microsoft.Terminal.Settings.Model
         String GenerateName();
         IActionArgs Copy();
         UInt64 Hash();
-        // some info here that tells you Input is a string...
-        // 1. how many args
-        // 2. get descriptor of arg at index n (description is a custom struct we define here: name, type, required)
-        // 3. set arg at index n
-        // 4. get arg at index n
+
         UInt32 GetArgCount();
-        // ArgDescription GetArgDescriptorAt(UInt32 index);
-        // void SetArgAt(UInt32 index, Object value);
-        // IInspectable GetArgAt(UInt32 index);
+        ArgDescription GetArgDescriptionAt(UInt32 index);
+        IInspectable GetArgAt(UInt32 index);
+        void SetArgAt(UInt32 index, Object value);
     };
 
     interface IActionEventArgs

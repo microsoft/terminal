@@ -636,6 +636,17 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         {
             return 2;
         }
+        Model::ArgDescription GetArgDescriptionAt(uint32_t /*index*/) const
+        {
+            return {};
+        }
+        IInspectable GetArgAt(uint32_t /*index*/) const
+        {
+            return nullptr;
+        }
+        void SetArgAt(uint32_t /*index*/, IInspectable /*value*/)
+        {
+        }
     };
 
     struct SplitPaneArgs : public SplitPaneArgsT<SplitPaneArgs>
@@ -732,6 +743,17 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         {
             return 4;
         }
+        Model::ArgDescription GetArgDescriptionAt(uint32_t /*index*/) const
+        {
+            return {};
+        }
+        IInspectable GetArgAt(uint32_t /*index*/) const
+        {
+            return nullptr;
+        }
+        void SetArgAt(uint32_t /*index*/, IInspectable /*value*/)
+        {
+        }
     };
 
     struct NewWindowArgs : public NewWindowArgsT<NewWindowArgs>
@@ -785,6 +807,17 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         uint32_t GetArgCount() const
         {
             return 2; // todo: is this correct? or should we return the number of args in INewContentArgs?
+        }
+        Model::ArgDescription GetArgDescriptionAt(uint32_t /*index*/) const
+        {
+            return {};
+        }
+        IInspectable GetArgAt(uint32_t /*index*/) const
+        {
+            return nullptr;
+        }
+        void SetArgAt(uint32_t /*index*/, IInspectable /*value*/)
+        {
         }
     };
 
@@ -928,6 +961,17 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         uint32_t GetArgCount() const
         {
             return _Actions.Size();
+        }
+        Model::ArgDescription GetArgDescriptionAt(uint32_t /*index*/) const
+        {
+            return {};
+        }
+        IInspectable GetArgAt(uint32_t /*index*/) const
+        {
+            return nullptr;
+        }
+        void SetArgAt(uint32_t /*index*/, IInspectable /*value*/)
+        {
         }
     };
 

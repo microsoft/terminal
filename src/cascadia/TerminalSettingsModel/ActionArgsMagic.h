@@ -70,11 +70,35 @@ struct InitListPlaceholder
 #define INCREMENT_ARG_COUNT(type, name, jsonKey, required, ...) \
     _argCount += 1;
 
+// append this argument's description to the internal vector
+#define APPEND_ARG_DESCRIPTION(type, name, jsonKey, required, ...)                                  \
+    _argDescriptions.push_back({ L## #name, L## #type, std::wstring(L## #required) != L"false" });
+
 // check each property in the Equals() method. You'll note there's a stray
 // `true` in the definition of Equals() below, that's to deal with trailing
 // commas
 #define EQUALS_ARGS(type, name, jsonKey, required, ...) \
     &&(otherAsUs->_##name == _##name)
+
+// getter and setter for each property by name
+#define GET_ARG_BY_NAME(type, name, jsonKey, required, ...) \
+    if (argName == L## #name)                               \
+    {                                                       \
+        if (_##name.has_value())                            \
+        {                                                   \
+            return winrt::box_value(_##name.value());       \
+        }                                                   \
+        else                                                \
+        {                                                   \
+            return nullptr;                                 \
+        }                                                   \
+    }
+
+#define SET_ARG_BY_NAME(type, name, jsonKey, required, ...) \
+    if (argName == L## #name)                               \
+    {                                                       \
+        _##name = winrt::unbox_value<type>(value);          \
+    }
 
 // JSON deserialization. If the parameter is required to pass any validation,
 // add that as the `required` parameter here, as the body of a conditional
@@ -83,12 +107,13 @@ struct InitListPlaceholder
 // the bit
 //    args->ResizeDirection() == ResizeDirection::None
 // is used as the conditional for the validation here.
-#define FROM_JSON_ARGS(type, name, jsonKey, required, ...)                      \
-    JsonUtils::GetValueForKey(json, jsonKey, args->_##name);                    \
-    args->_argCount += 1;                                                       \
-    if (required)                                                               \
-    {                                                                           \
-        return { nullptr, { SettingsLoadWarnings::MissingRequiredParameter } }; \
+#define FROM_JSON_ARGS(type, name, jsonKey, required, ...)                                                \
+    JsonUtils::GetValueForKey(json, jsonKey, args->_##name);                                              \
+    args->_argCount += 1;                                                                                 \
+    args->_argDescriptions.push_back({ L## #name, L## #type, std::wstring(L## #required) != L"false" });  \
+    if (required)                                                                                         \
+    {                                                                                                     \
+        return { nullptr, { SettingsLoadWarnings::MissingRequiredParameter } };                           \
     }
 
 // JSON serialization
@@ -116,61 +141,79 @@ struct InitListPlaceholder
 //   * NewTerminalArgs has a ToCommandline method it needs to additionally declare.
 //   * GlobalSummonArgs has the QuakeModeFromJson helper
 
-#define ACTION_ARG_BODY(className, argsMacro)               \
-    className() = default;                                  \
-    className(                                              \
-        argsMacro(CTOR_PARAMS) InitListPlaceholder = {}) :  \
-        argsMacro(CTOR_INIT) _placeholder{} {               \
-            argsMacro(INCREMENT_ARG_COUNT)                  \
-        };                                                  \
-    argsMacro(DECLARE_ARGS);                                \
-                                                            \
-private:                                                    \
-    InitListPlaceholder _placeholder;                       \
-    uint32_t _argCount{ 0 };                                \
-                                                            \
-public:                                                     \
-    hstring GenerateName() const;                           \
-    bool Equals(const IActionArgs& other)                   \
-    {                                                       \
-        auto otherAsUs = other.try_as<className>();         \
-        if (otherAsUs)                                      \
-        {                                                   \
-            return true argsMacro(EQUALS_ARGS);             \
-        }                                                   \
-        return false;                                       \
-    };                                                      \
-    static FromJsonResult FromJson(const Json::Value& json) \
-    {                                                       \
-        auto args = winrt::make_self<className>();          \
-        argsMacro(FROM_JSON_ARGS);                          \
-        return { *args, {} };                               \
-    }                                                       \
-    static Json::Value ToJson(const IActionArgs& val)       \
-    {                                                       \
-        if (!val)                                           \
-        {                                                   \
-            return {};                                      \
-        }                                                   \
-        Json::Value json{ Json::ValueType::objectValue };   \
-        const auto args{ get_self<className>(val) };        \
-        argsMacro(TO_JSON_ARGS);                            \
-        return json;                                        \
-    }                                                       \
-    IActionArgs Copy() const                                \
-    {                                                       \
-        auto copy{ winrt::make_self<className>() };         \
-        argsMacro(COPY_ARGS);                               \
-        copy->_argCount = _argCount;                        \
-        return *copy;                                       \
-    }                                                       \
-    size_t Hash() const                                     \
-    {                                                       \
-        til::hasher h;                                      \
-        argsMacro(HASH_ARGS);                               \
-        return h.finalize();                                \
-    }                                                       \
-    uint32_t GetArgCount() const                            \
-    {                                                       \
-        return _argCount;                                   \
+#define ACTION_ARG_BODY(className, argsMacro)                    \
+    className() = default;                                       \
+    className(                                                   \
+        argsMacro(CTOR_PARAMS) InitListPlaceholder = {}) :       \
+        argsMacro(CTOR_INIT) _placeholder{} {                    \
+            argsMacro(INCREMENT_ARG_COUNT)                       \
+            argsMacro(APPEND_ARG_DESCRIPTION)                    \
+        };                                                       \
+    argsMacro(DECLARE_ARGS);                                     \
+                                                                 \
+private:                                                         \
+    InitListPlaceholder _placeholder;                            \
+    uint32_t _argCount{ 0 };                                     \
+    std::vector<ArgDescription> _argDescriptions;                \
+                                                                 \
+public:                                                          \
+    hstring GenerateName() const;                                \
+    bool Equals(const IActionArgs& other)                        \
+    {                                                            \
+        auto otherAsUs = other.try_as<className>();              \
+        if (otherAsUs)                                           \
+        {                                                        \
+            return true argsMacro(EQUALS_ARGS);                  \
+        }                                                        \
+        return false;                                            \
+    };                                                           \
+    static FromJsonResult FromJson(const Json::Value& json)      \
+    {                                                            \
+        auto args = winrt::make_self<className>();               \
+        argsMacro(FROM_JSON_ARGS);                               \
+        return { *args, {} };                                    \
+    }                                                            \
+    static Json::Value ToJson(const IActionArgs& val)            \
+    {                                                            \
+        if (!val)                                                \
+        {                                                        \
+            return {};                                           \
+        }                                                        \
+        Json::Value json{ Json::ValueType::objectValue };        \
+        const auto args{ get_self<className>(val) };             \
+        argsMacro(TO_JSON_ARGS);                                 \
+        return json;                                             \
+    }                                                            \
+    IActionArgs Copy() const                                     \
+    {                                                            \
+        auto copy{ winrt::make_self<className>() };              \
+        argsMacro(COPY_ARGS);                                    \
+        copy->_argCount = _argCount;                             \
+        copy->_argDescriptions = _argDescriptions;               \
+        return *copy;                                            \
+    }                                                            \
+    size_t Hash() const                                          \
+    {                                                            \
+        til::hasher h;                                           \
+        argsMacro(HASH_ARGS);                                    \
+        return h.finalize();                                     \
+    }                                                            \
+    uint32_t GetArgCount() const                                 \
+    {                                                            \
+        return _argCount;                                        \
+    }                                                            \
+    ArgDescription GetArgDescriptionAt(uint32_t index) const     \
+    {                                                            \
+        return _argDescriptions.at(index);                       \
+    }                                                            \
+    IInspectable GetArgAt(uint32_t index) const                  \
+    {                                                            \
+        const auto& argName = GetArgDescriptionAt(index).Name;   \
+        argsMacro(GET_ARG_BY_NAME)                               \
+        return nullptr;                                          \
+    }                                                            \
+    void SetArgAt(uint32_t index, IInspectable value)            \
+    {                                                            \
+        const auto& argName = GetArgDescriptionAt(index).Name;   \
+        argsMacro(SET_ARG_BY_NAME)                               \
     }
