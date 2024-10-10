@@ -648,7 +648,7 @@
     <comment>Text on the button that allows the user to store their key and/or endpoint.</comment>
   </data>
   <data name="AISettings_InitiateGithubAuthFlow.Text" xml:space="preserve">
-    <value>Authenticate via Github</value>
+    <value>Authenticate via GitHub</value>
     <comment>Text on the button that allows the user to authenticate to Github.</comment>
   </data>
   <data name="AISettings_AzureOpenAIDescription.Text" xml:space="preserve">
@@ -728,7 +728,7 @@
     <comment>The text of the hyperlink that directs the user to learn more about Terminal Chat.</comment>
   </data>
   <data name="AISettings_GithubCopilot.Header" xml:space="preserve">
-    <value>Github Copilot</value>
+    <value>GitHub Copilot</value>
     <comment>Header for the text box that allows the user to configure access to Github Copilot.</comment>
   </data>
   <data name="AISettings_GithubCopilotConfigured.Text" xml:space="preserve">
