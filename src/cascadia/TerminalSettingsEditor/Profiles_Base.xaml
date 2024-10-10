@@ -109,10 +109,10 @@
                 <local:SettingContainer.CurrentValueTemplate>
                     <DataTemplate x:DataType="local:ProfileViewModel">
                         <Grid>
-                            <IconSourceElement Width="16"
-                                               Height="16"
-                                               IconSource="{x:Bind mtu:IconPathConverter.IconSourceWUX(Icon), Mode=OneWay}"
-                                               Visibility="{x:Bind mtu:Converters.InvertedBooleanToVisibility(UsingNoIcon), Mode=OneWay}" />
+                            <ContentControl Width="16"
+                                            Height="16"
+                                            Content="{x:Bind IconPreview, Mode=OneWay}"
+                                            Visibility="{x:Bind mtu:Converters.InvertedBooleanToVisibility(UsingNoIcon), Mode=OneWay}" />
                             <TextBlock Margin="0,0,0,0"
                                        HorizontalAlignment="Right"
                                        VerticalAlignment="Center"

@@ -65,6 +65,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             return _currentIconType;
         }
+        Windows::UI::Xaml::Controls::IconElement IconPreview() const;
         winrt::hstring LocalizedIcon() const;
         void CurrentIconType(const Windows::Foundation::IInspectable& value);
         bool UsingNoIcon() const;

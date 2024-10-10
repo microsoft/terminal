@@ -85,7 +85,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             else if (viewModelProperty == L"Icon")
             {
                 _DeduceCurrentIconType();
-                _NotifyChanges(L"LocalizedIcon");
+                _NotifyChanges(L"LocalizedIcon", L"EvaluatedIcon", L"IconPreview");
             }
             else if (viewModelProperty == L"CurrentIconType")
             {
@@ -416,6 +416,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             return RS_(L"Profile_IconTypeNone");
         }
         return Icon();
+    }
+
+    Windows::UI::Xaml::Controls::IconElement ProfileViewModel::IconPreview() const
+    {
+        // IconWUX sets the icon width/height to 32 by default
+        auto icon = Microsoft::Terminal::UI::IconPathConverter::IconWUX(EvaluatedIcon());
+        icon.Width(16);
+        icon.Height(16);
+        return icon;
     }
 
     void ProfileViewModel::CurrentIconType(const Windows::Foundation::IInspectable& value)

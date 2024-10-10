@@ -82,6 +82,7 @@ namespace Microsoft.Terminal.Settings.Editor
         Boolean AutoMarkPromptsAvailable { get; };
         Boolean RepositionCursorWithMouseAvailable { get; };
 
+        Windows.UI.Xaml.Controls.IconElement IconPreview { get; };
         String EvaluatedIcon { get; };
         String LocalizedIcon { get; };
         String CurrentEmojiIcon;
