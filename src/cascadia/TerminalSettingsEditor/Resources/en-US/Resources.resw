@@ -1894,8 +1894,12 @@
     <comment>This is a label for a setting that, when enabled, applies a rainbow coloring to the preview text from the suggestions UI.</comment>
   </data>
   <data name="Globals_EnableColorSelection.Header" xml:space="preserve">
-    <value>Experimental: Add key bindings to highlight selected text and to search for and highlight all instances of selected text</value>
+    <value>Experimental: Add key bindings to color selected text</value>
     <comment>Header for a control to toggle adding a set of key bindings that can be used to apply coloring to selected text in a terminal session.</comment>
+  </data>
+  <data name="Globals_EnableColorSelection.HelpText" xml:space="preserve">
+    <value>These key bindings can highlight the selected text or all instances of the selected text with a specified color.</value>
+    <comment>Additional text for a control to toggle adding a set of key bindings that can be used to apply coloring to selected text in a terminal session. Presented near "Globals_EnableColorSelection.Header".</comment>
   </data>
   <data name="Globals_EnableUnfocusedAcrylic.Header" xml:space="preserve">
     <value>Allow acrylic material in unfocused windows</value>
