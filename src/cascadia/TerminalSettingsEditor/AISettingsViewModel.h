@@ -36,6 +36,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void GithubCopilotRefreshToken(winrt::hstring refreshToken);
         bool GithubCopilotActive();
         void GithubCopilotActive(bool active);
+        bool GithubCopilotFeatureEnabled();
         void InitiateGithubAuth_Click(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& e);
         til::typed_event<Windows::Foundation::IInspectable, Windows::Foundation::IInspectable> GithubAuthRequested;
 

@@ -127,6 +127,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
+    bool AISettingsViewModel::GithubCopilotFeatureEnabled()
+    {
+        return Feature_GithubCopilot::IsEnabled();
+    }
+
     void AISettingsViewModel::InitiateGithubAuth_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
     {
         GithubAuthRequested.raise(nullptr, nullptr);

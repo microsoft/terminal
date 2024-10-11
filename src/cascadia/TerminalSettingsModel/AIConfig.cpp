@@ -123,6 +123,11 @@ winrt::Microsoft::Terminal::Settings::Model::LLMProvider AIConfig::ActiveProvide
     if (val)
     {
         // an active provider was explicitly set, return that
+        // special case: only allow github copilot if the feature is enabled
+        if (*val == LLMProvider::GithubCopilot && !Feature_GithubCopilot::IsEnabled())
+        {
+            return LLMProvider{};
+        }
         return *val;
     }
     else if (!AzureOpenAIEndpoint().empty() && !AzureOpenAIKey().empty())
