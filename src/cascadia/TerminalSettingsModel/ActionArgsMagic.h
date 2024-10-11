@@ -66,13 +66,9 @@ struct InitListPlaceholder
 #define CTOR_INIT(type, name, jsonKey, required, ...) \
     _##name{ name##Param },
 
-// increment our internal arg count
-#define INCREMENT_ARG_COUNT(type, name, jsonKey, required, ...) \
-    _argCount += 1;
-
 // append this argument's description to the internal vector
-#define APPEND_ARG_DESCRIPTION(type, name, jsonKey, required, ...)                                  \
-    _argDescriptions.push_back({ L## #name, L## #type, std::wstring(L## #required) != L"false" });
+#define APPEND_ARG_DESCRIPTION(type, name, jsonKey, required, ...)                                      \
+    _argDescriptions.push_back({ L## #name, L## #type, std::wstring_view(L## #required) != L"false" });
 
 // check each property in the Equals() method. You'll note there's a stray
 // `true` in the definition of Equals() below, that's to deal with trailing
@@ -81,23 +77,23 @@ struct InitListPlaceholder
     &&(otherAsUs->_##name == _##name)
 
 // getter and setter for each property by name
-#define GET_ARG_BY_NAME(type, name, jsonKey, required, ...) \
-    if (argName == L## #name)                               \
-    {                                                       \
-        if (_##name.has_value())                            \
-        {                                                   \
-            return winrt::box_value(_##name.value());       \
-        }                                                   \
-        else                                                \
-        {                                                   \
-            return nullptr;                                 \
-        }                                                   \
+#define GET_ARG_BY_INDEX(type, name, jsonKey, required, ...) \
+    if (index == curIndex++)                                 \
+    {                                                        \
+        if (_##name.has_value())                             \
+        {                                                    \
+            return winrt::box_value(_##name.value());        \
+        }                                                    \
+        else                                                 \
+        {                                                    \
+            return nullptr;                                  \
+        }                                                    \
     }
 
-#define SET_ARG_BY_NAME(type, name, jsonKey, required, ...) \
-    if (argName == L## #name)                               \
-    {                                                       \
-        _##name = winrt::unbox_value<type>(value);          \
+#define SET_ARG_BY_INDEX(type, name, jsonKey, required, ...) \
+    if (index == curIndex++)                                 \
+    {                                                        \
+        _##name = winrt::unbox_value<type>(value);           \
     }
 
 // JSON deserialization. If the parameter is required to pass any validation,
@@ -146,7 +142,6 @@ struct InitListPlaceholder
     className(                                                   \
         argsMacro(CTOR_PARAMS) InitListPlaceholder = {}) :       \
         argsMacro(CTOR_INIT) _placeholder{} {                    \
-            argsMacro(INCREMENT_ARG_COUNT)                       \
             argsMacro(APPEND_ARG_DESCRIPTION)                    \
         };                                                       \
     argsMacro(DECLARE_ARGS);                                     \
@@ -200,7 +195,7 @@ public:                                                          \
     }                                                            \
     uint32_t GetArgCount() const                                 \
     {                                                            \
-        return _argCount;                                        \
+        return gsl::narrow<uint32_t>(_argDescriptions.size());   \
     }                                                            \
     ArgDescription GetArgDescriptionAt(uint32_t index) const     \
     {                                                            \
@@ -208,12 +203,12 @@ public:                                                          \
     }                                                            \
     IInspectable GetArgAt(uint32_t index) const                  \
     {                                                            \
-        const auto& argName = GetArgDescriptionAt(index).Name;   \
-        argsMacro(GET_ARG_BY_NAME)                               \
+        uint32_t curIndex{ 0 };                                  \
+        argsMacro(GET_ARG_BY_INDEX)                              \
         return nullptr;                                          \
     }                                                            \
     void SetArgAt(uint32_t index, IInspectable value)            \
     {                                                            \
-        const auto& argName = GetArgDescriptionAt(index).Name;   \
-        argsMacro(SET_ARG_BY_NAME)                               \
+        uint32_t curIndex{ 0 };                                  \
+        argsMacro(SET_ARG_BY_INDEX)                              \
     }
