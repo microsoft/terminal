@@ -135,6 +135,13 @@
                 </muxc:NavigationViewItem.Icon>
             </muxc:NavigationViewItem>
 
+            <muxc:NavigationViewItem x:Uid="Nav_Compatibility"
+                                     Tag="Compatibility_Nav">
+                <muxc:NavigationViewItem.Icon>
+                    <FontIcon Glyph="&#xEC7A;" />
+                </muxc:NavigationViewItem.Icon>
+            </muxc:NavigationViewItem>
+
             <muxc:NavigationViewItem x:Uid="Nav_Actions"
                                      Tag="Actions_Nav">
                 <muxc:NavigationViewItem.Icon>

@@ -347,6 +347,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         _RepositionCursorWithMouse = profile.RepositionCursorWithMouse();
         _ReloadEnvironmentVariables = profile.ReloadEnvironmentVariables();
         _RainbowSuggestions = profile.RainbowSuggestions();
+        _ForceVTInput = profile.ForceVTInput();
+        _AllowVtChecksumReport = profile.AllowVtChecksumReport();
     }
 
     // Method Description:
@@ -370,7 +372,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         _TextMeasurement = globalSettings.TextMeasurement();
         _DefaultInputScope = globalSettings.DefaultInputScope();
         _UseBackgroundImageForWindow = globalSettings.UseBackgroundImageForWindow();
-        _ForceVTInput = globalSettings.ForceVTInput();
         _TrimBlockSelection = globalSettings.TrimBlockSelection();
         _DetectURLs = globalSettings.DetectURLs();
         _EnableUnfocusedAcrylic = globalSettings.EnableUnfocusedAcrylic();
