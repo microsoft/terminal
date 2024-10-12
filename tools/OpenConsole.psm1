@@ -1,3 +1,4 @@
+#Requires -Version 7
 
 # The project's root directory.
 $script:OpenConsoleFallbackRoot="$PSScriptRoot\.."
