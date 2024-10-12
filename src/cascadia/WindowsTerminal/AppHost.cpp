@@ -1294,9 +1294,10 @@ void AppHost::_SummonWindowRequested(const winrt::Windows::Foundation::IInspecta
 }
 
 void AppHost::_OpenSystemMenu(const winrt::Windows::Foundation::IInspectable&,
-                              const winrt::Windows::Foundation::IInspectable&)
+                              const winrt::Windows::Foundation::IInspectable&) const
 {
-    _window->OpenSystemMenu(std::nullopt, std::nullopt);
+    const NonClientIslandWindow* nonClientWindow{ static_cast<NonClientIslandWindow*>(_window.get()) };
+    _window->OpenSystemMenu(std::nullopt, std::nullopt, static_cast<int>(nonClientWindow->GetTitleBarPhysicalRenderHeight()));
 }
 
 void AppHost::_SystemMenuChangeRequested(const winrt::Windows::Foundation::IInspectable&, const winrt::TerminalApp::SystemMenuChangeArgs& args)

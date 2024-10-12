@@ -118,7 +118,7 @@ private:
                                 const winrt::Windows::Foundation::IInspectable& args);
 
     void _OpenSystemMenu(const winrt::Windows::Foundation::IInspectable& sender,
-                         const winrt::Windows::Foundation::IInspectable& args);
+                         const winrt::Windows::Foundation::IInspectable& args) const;
 
     void _SystemMenuChangeRequested(const winrt::Windows::Foundation::IInspectable& sender,
                                     const winrt::TerminalApp::SystemMenuChangeArgs& args);

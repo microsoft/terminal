@@ -884,6 +884,17 @@ til::size NonClientIslandWindow::GetTotalNonClientExclusiveSize(UINT dpi) const 
 }
 
 // Method Description:
+// - Gets the height of title bar in physical pixels.
+// Return Value
+// - The height of title bar in physical pixels.
+[[nodiscard]] float NonClientIslandWindow::GetTitleBarPhysicalRenderHeight() const noexcept
+{
+    const float titleBarRenderedHeightDeviceIndependentUnits = _titlebar.Visibility() == Visibility::Visible ? _titlebar.RenderSize().Height : 0;
+    const float titleBarPhysicalHeight = titleBarRenderedHeightDeviceIndependentUnits * GetCurrentDpiScale();
+    return titleBarPhysicalHeight;
+}
+
+// Method Description:
 // - Updates the borders of our window frame, using DwmExtendFrameIntoClientArea.
 // Arguments:
 // - <none>
@@ -984,7 +995,8 @@ void NonClientIslandWindow::_UpdateFrameMargins() const noexcept
         // reason so we have to do it ourselves.
         if (wParam == HTCAPTION)
         {
-            OpenSystemMenu(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
+            constexpr auto yOffset = 0;
+            OpenSystemMenu(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam), yOffset);
         }
         break;
     }
