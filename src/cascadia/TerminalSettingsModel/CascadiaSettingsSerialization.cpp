@@ -158,7 +158,7 @@ SettingsLoader::SettingsLoader(const std::string_view& userJSON, const std::stri
     {
         wchar_t buffer[512]; // "640K ought to be enough for anyone"
         DWORD bufferSize = sizeof(buffer);
-        if (RegGetValueW(key, LR"(Software\Policies\Microsoft\Windows\Terminal)", L"DisabledProfileSources", RRF_RT_REG_MULTI_SZ, nullptr, buffer, &bufferSize) == 0)
+        if (RegGetValueW(key, LR"(Software\Policies\Microsoft\Windows Terminal)", L"DisabledProfileSources", RRF_RT_REG_MULTI_SZ, nullptr, buffer, &bufferSize) == 0)
         {
             for (auto p = buffer; *p;)
             {

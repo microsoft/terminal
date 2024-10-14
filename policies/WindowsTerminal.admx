@@ -17,9 +17,9 @@
     </category>
   </categories>
   <policies>
-    <policy name="DisabledProfileSources" class="Both" displayName="$(string.DisabledProfileSources)" explainText="$(string.DisabledProfileSourcesText)" presentation="$(presentation.DisabledProfileSources)" key="Software\Policies\Microsoft\Windows\Terminal">
+    <policy name="DisabledProfileSources" class="Both" displayName="$(string.DisabledProfileSources)" explainText="$(string.DisabledProfileSourcesText)" presentation="$(presentation.DisabledProfileSources)" key="Software\Policies\Microsoft\Windows Terminal">
       <parentCategory ref="WindowsTerminal" />
-      <supportedOn ref="terminal:SUPPORTED_WindowsTerminal_1_21" />
+      <supportedOn ref="SUPPORTED_WindowsTerminal_1_21" />
       <elements>
         <multiText id="DisabledProfileSources" valueName="DisabledProfileSources" required="true" />
       </elements>
