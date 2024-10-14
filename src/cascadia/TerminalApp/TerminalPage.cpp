@@ -5621,13 +5621,32 @@ namespace winrt::TerminalApp::implementation
             if (const auto activeControl = _GetActiveControl())
             {
                 const auto profileName = activeControl.Settings().ProfileName();
-                const std::wstring fullCommandline = activeControl.Settings().Commandline().c_str();
+                std::wstring fullCommandline = activeControl.Settings().Commandline().c_str();
+
+                // If the commandline starts with a quote ("), we just need the string up until the
+                // next quote, and we need that string to be stripped of whitespace
+                if (!fullCommandline.empty() && til::at(fullCommandline, 0) == L'"')
+                {
+                    const auto secondQuotePos = fullCommandline.find(L"\"", 1);
+                    if (secondQuotePos != std::wstring::npos)
+                    {
+                        std::wstring editedCommandline;
+                        editedCommandline.reserve(fullCommandline.size());
+
+                        editedCommandline = fullCommandline.substr(1, secondQuotePos - 1);
+                        editedCommandline.erase(
+                            std::remove_if(editedCommandline.begin(), editedCommandline.end(), [](wchar_t ch) {
+                                return std::iswspace(ch);
+                            }),
+                            editedCommandline.end());
+                        fullCommandline = editedCommandline;
+                    }
+                }
 
                 // We just need the executable
                 // Code here uses the same logic as in utils.cpp, Utils::MangleStartingDirectoryForWSL
-                const auto terminator{ fullCommandline.find_first_of(LR"(" )", 1) }; // look past the first character in case it starts with "
-                const auto start{ til::at(fullCommandline, 0) == L'"' ? 1 : 0 };
-                const std::filesystem::path executablePath{ fullCommandline.substr(start, terminator - start) };
+                const auto terminator{ fullCommandline.find_first_of(LR"(" )", 0) };
+                const std::filesystem::path executablePath{ fullCommandline.substr(0, terminator) };
                 const auto executableFilename{ executablePath.filename() };
                 winrt::hstring executableString{ executableFilename.c_str() };
                 _extensionPalette.ActiveCommandline(executableString);
