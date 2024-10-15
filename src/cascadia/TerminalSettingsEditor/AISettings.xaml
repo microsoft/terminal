@@ -107,13 +107,18 @@
                                     </Paragraph>
                                 </RichTextBlock>
                             </StackPanel>
-                            <Button Grid.Row="1"
-                                    HorizontalAlignment="Right"
-                                    VerticalAlignment="Center"
-                                    Click="{x:Bind ViewModel.InitiateGithubAuth_Click}"
-                                    Style="{StaticResource AccentButtonStyle}">
-                                <TextBlock x:Uid="AISettings_InitiateGithubAuthFlow" />
-                            </Button>
+                            <StackPanel Grid.Row="1"
+                                        Orientation="Horizontal"
+                                        HorizontalAlignment="Right"
+                                        VerticalAlignment="Center"
+                                        Spacing="8">
+                                <TextBlock Text="{x:Bind ViewModel.GithubCopilotAuthMessage, Mode=OneWay}"
+                                           VerticalAlignment="Center"/>
+                                <Button Click="{x:Bind ViewModel.InitiateGithubAuth_Click}"
+                                        Style="{StaticResource AccentButtonStyle}">
+                                    <TextBlock x:Uid="AISettings_InitiateGithubAuthFlow" />
+                                </Button>
+                            </StackPanel>
                         </Grid>
                     </StackPanel>
                 </local:SettingContainer>

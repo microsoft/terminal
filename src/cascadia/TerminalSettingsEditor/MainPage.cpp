@@ -695,9 +695,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     winrt::event_token MainPage::GithubAuthCompleted(const GithubAuthCompletedHandler& handler) { return _githubAuthCompletedHandlers.add(handler); };
     void MainPage::GithubAuthCompleted(const winrt::event_token& token) { _githubAuthCompletedHandlers.remove(token); };
 
-    void MainPage::RefreshGithubAuthStatus()
+    void MainPage::RefreshGithubAuthStatus(const winrt::hstring& message)
     {
-        _githubAuthCompletedHandlers();
+        _githubAuthCompletedHandlers(message);
     }
 
     winrt::Windows::UI::Xaml::Media::Brush MainPage::BackgroundBrush()

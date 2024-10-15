@@ -14,6 +14,12 @@ namespace Microsoft.Terminal.Query.Extension
         String QueryMetaData { get; };
     };
 
+    interface IAuthenticationResult
+    {
+        String ErrorMessage { get; };
+        Windows.Foundation.Collections.ValueSet AuthValues { get; };
+    };
+
     interface ILMProvider
     {
         // chat related functions
@@ -25,7 +31,7 @@ namespace Microsoft.Terminal.Query.Extension
 
         // auth related functions
         void SetAuthentication(Windows.Foundation.Collections.ValueSet authValues);
-        event Windows.Foundation.TypedEventHandler<ILMProvider, Windows.Foundation.Collections.ValueSet> AuthChanged;
+        event Windows.Foundation.TypedEventHandler<ILMProvider, IAuthenticationResult> AuthChanged;
 
         // UI related settings
         IBrandingData BrandingData { get; };

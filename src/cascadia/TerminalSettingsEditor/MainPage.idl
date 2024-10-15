@@ -3,7 +3,7 @@
 
 namespace Microsoft.Terminal.Settings.Editor
 {
-    delegate void GithubAuthCompletedHandler();
+    delegate void GithubAuthCompletedHandler(String result);
 
     // Due to a XAML Compiler bug, it is hard for us to propagate an HWND into a XAML-using runtimeclass.
     // To work around that, we'll only propagate the HWND (when we need to) into the settings' toplevel page
@@ -46,7 +46,7 @@ namespace Microsoft.Terminal.Settings.Editor
         Windows.UI.Xaml.Media.Brush BackgroundBrush { get; };
 
         event Windows.Foundation.TypedEventHandler<Object, Object> GithubAuthRequested;
-        static void RefreshGithubAuthStatus();
+        static void RefreshGithubAuthStatus(String message);
         static event GithubAuthCompletedHandler GithubAuthCompleted;
     }
 }

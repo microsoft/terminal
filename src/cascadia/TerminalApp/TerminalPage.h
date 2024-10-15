@@ -582,7 +582,7 @@ namespace winrt::TerminalApp::implementation
         winrt::Microsoft::Terminal::Settings::Model::LLMProvider _currentProvider;
         void _createAndSetAuthenticationForLMProvider(winrt::Microsoft::Terminal::Settings::Model::LLMProvider providerType, Windows::Foundation::Collections::ValueSet authValues = nullptr);
         void _InitiateGithubAuth();
-        winrt::fire_and_forget _OnGithubCopilotLLMProviderAuthChanged(const IInspectable& sender, const Windows::Foundation::Collections::ValueSet& authValues);
+        winrt::fire_and_forget _OnGithubCopilotLLMProviderAuthChanged(const IInspectable& sender, const winrt::Microsoft::Terminal::Query::Extension::IAuthenticationResult& authResult);
         winrt::Microsoft::Terminal::Settings::Model::AIConfig::AzureOpenAISettingChanged_revoker _azureOpenAISettingChangedRevoker;
         void _setAzureOpenAIAuth();
         winrt::Microsoft::Terminal::Settings::Model::AIConfig::OpenAISettingChanged_revoker _openAISettingChangedRevoker;

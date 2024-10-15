@@ -503,22 +503,31 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    winrt::fire_and_forget TerminalPage::_OnGithubCopilotLLMProviderAuthChanged(const IInspectable& /*sender*/, const Windows::Foundation::Collections::ValueSet& authValues)
+    winrt::fire_and_forget TerminalPage::_OnGithubCopilotLLMProviderAuthChanged(const IInspectable& /*sender*/, const winrt::Microsoft::Terminal::Query::Extension::IAuthenticationResult& authResult)
     {
-        try
+        winrt::hstring message{};
+        if (authResult.ErrorMessage().empty())
         {
-            const auto authToken = unbox_value_or<hstring>(authValues.TryLookup(L"access_token").try_as<Windows::Foundation::IPropertyValue>(), L"");
-            const auto refreshToken = unbox_value_or<hstring>(authValues.TryLookup(L"refresh_token").try_as<Windows::Foundation::IPropertyValue>(), L"");
-            if (!authToken.empty() && !refreshToken.empty())
+            // the auth succeeded, extract the values
+            const auto authValues = authResult.AuthValues();
+            try
             {
-                _settings.GlobalSettings().AIInfo().GithubCopilotAuthToken(authToken);
-                _settings.GlobalSettings().AIInfo().GithubCopilotRefreshToken(refreshToken);
-
-                co_await wil::resume_foreground(Dispatcher());
-                winrt::Microsoft::Terminal::Settings::Editor::MainPage::RefreshGithubAuthStatus();
+                const auto authToken = unbox_value_or<hstring>(authValues.TryLookup(L"access_token").try_as<Windows::Foundation::IPropertyValue>(), L"");
+                const auto refreshToken = unbox_value_or<hstring>(authValues.TryLookup(L"refresh_token").try_as<Windows::Foundation::IPropertyValue>(), L"");
+                if (!authToken.empty() && !refreshToken.empty())
+                {
+                    _settings.GlobalSettings().AIInfo().GithubCopilotAuthToken(authToken);
+                    _settings.GlobalSettings().AIInfo().GithubCopilotRefreshToken(refreshToken);
+                }
             }
+            CATCH_LOG();
         }
-        CATCH_LOG();
+        else
+        {
+            message = authResult.ErrorMessage();
+        }
+        co_await wil::resume_foreground(Dispatcher());
+        winrt::Microsoft::Terminal::Settings::Editor::MainPage::RefreshGithubAuthStatus(message);
     }
 
     // Method Description:

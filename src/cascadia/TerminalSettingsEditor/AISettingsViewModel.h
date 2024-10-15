@@ -32,6 +32,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void OpenAIActive(bool active);
 
         bool AreGithubCopilotTokensSet();
+        winrt::hstring GithubCopilotAuthMessage();
         void GithubCopilotAuthToken(winrt::hstring authToken);
         void GithubCopilotRefreshToken(winrt::hstring refreshToken);
         bool GithubCopilotActive();
@@ -42,10 +43,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     private:
         Model::CascadiaSettings _Settings;
+        winrt::hstring _githubCopilotAuthMessage;
 
         winrt::Microsoft::Terminal::Settings::Editor::MainPage::GithubAuthCompleted_revoker _githubAuthCompleteRevoker;
 
-        void _OnGithubAuthCompleted();
+        void _OnGithubAuthCompleted(const winrt::hstring& message);
     };
 };
 

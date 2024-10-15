@@ -21,6 +21,7 @@ namespace Microsoft.Terminal.Settings.Editor
         Boolean OpenAIActive;
 
         Boolean AreGithubCopilotTokensSet { get; };
+        String GithubCopilotAuthMessage { get; };
         void GithubCopilotAuthToken(String authToken);
         void GithubCopilotRefreshToken(String refreshToken);
         Boolean GithubCopilotActive;

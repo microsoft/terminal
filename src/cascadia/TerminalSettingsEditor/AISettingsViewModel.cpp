@@ -101,6 +101,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return !_Settings.GlobalSettings().AIInfo().GithubCopilotAuthToken().empty() && !_Settings.GlobalSettings().AIInfo().GithubCopilotRefreshToken().empty();
     }
 
+    winrt::hstring AISettingsViewModel::GithubCopilotAuthMessage()
+    {
+        return _githubCopilotAuthMessage;
+    }
+
     void AISettingsViewModel::GithubCopilotAuthToken(winrt::hstring authToken)
     {
         _Settings.GlobalSettings().AIInfo().GithubCopilotAuthToken(authToken);
@@ -134,6 +139,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void AISettingsViewModel::InitiateGithubAuth_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
     {
+        _githubCopilotAuthMessage = RS_(L"AISettings_WaitingForGithubAuth");
+        _NotifyChanges(L"GithubCopilotAuthMessage");
         GithubAuthRequested.raise(nullptr, nullptr);
         TraceLoggingWrite(
             g_hSettingsEditorProvider,
@@ -143,8 +150,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
     }
 
-    void AISettingsViewModel::_OnGithubAuthCompleted()
+    void AISettingsViewModel::_OnGithubAuthCompleted(const winrt::hstring& message)
     {
-        _NotifyChanges(L"AreGithubCopilotTokensSet");
+        _githubCopilotAuthMessage = message;
+        _NotifyChanges(L"AreGithubCopilotTokensSet", L"GithubCopilotAuthMessage");
     }
 }

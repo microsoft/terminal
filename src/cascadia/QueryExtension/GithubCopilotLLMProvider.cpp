@@ -128,32 +128,43 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
             const auto string{ response.Content().ReadAsStringAsync().get() };
 
             const auto jsonResult{ WDJ::JsonObject::Parse(string) };
-            const auto authToken{ jsonResult.GetNamedString(L"access_token") };
-            const auto refreshToken{ jsonResult.GetNamedString(L"refresh_token") };
-            if (!authToken.empty() && !refreshToken.empty())
+            if (jsonResult.HasKey(L"error"))
             {
-                _authToken = authToken;
-                _refreshToken = refreshToken;
-                _httpClient.DefaultRequestHeaders().Authorization(WWH::Headers::HttpCredentialsHeaderValue{ L"Bearer", _authToken });
+                const auto errorMessage = jsonResult.GetNamedString(L"error_description");
+                _AuthChangedHandlers(*this, winrt::make<GithubCopilotAuthenticationResult>(errorMessage, nullptr));
+            }
+            else
+            {
+                const auto authToken{ jsonResult.GetNamedString(L"access_token") };
+                const auto refreshToken{ jsonResult.GetNamedString(L"refresh_token") };
+                if (!authToken.empty() && !refreshToken.empty())
+                {
+                    _authToken = authToken;
+                    _refreshToken = refreshToken;
+                    _httpClient.DefaultRequestHeaders().Authorization(WWH::Headers::HttpCredentialsHeaderValue{ L"Bearer", _authToken });
 
-                // raise the new tokens so the app can store them
-                Windows::Foundation::Collections::ValueSet authValues{};
-                authValues.Insert(L"access_token", Windows::Foundation::PropertyValue::CreateString(_authToken));
-                authValues.Insert(L"refresh_token", Windows::Foundation::PropertyValue::CreateString(_refreshToken));
-                _AuthChangedHandlers(*this, authValues);
+                    // raise the new tokens so the app can store them
+                    Windows::Foundation::Collections::ValueSet authValues{};
+                    authValues.Insert(L"access_token", Windows::Foundation::PropertyValue::CreateString(_authToken));
+                    authValues.Insert(L"refresh_token", Windows::Foundation::PropertyValue::CreateString(_refreshToken));
+                    _AuthChangedHandlers(*this, winrt::make<GithubCopilotAuthenticationResult>(L"", authValues));
 
-                // now that we have the auth, get the username as well
-                WWH::HttpRequestMessage userNameRequest{ WWH::HttpMethod::Get(), Uri{ L"https://api.github.com/user" } };
-                userNameRequest.Headers().Accept().TryParseAdd(L"application/json");
-                userNameRequest.Headers().UserAgent().TryParseAdd(L"Windows Terminal");
-                const auto userNameResponse = _httpClient.SendRequestAsync(userNameRequest).get();
-                const auto userNameString{ userNameResponse.Content().ReadAsStringAsync().get() };
-                const auto userNameJsonResult{ WDJ::JsonObject::Parse(userNameString) };
-                const auto brandingData{ get_self<GithubCopilotBranding>(_BrandingData) };
-                brandingData->QueryMetaData(jsonResult.GetNamedString(L"login"));
+                    // now that we have the auth, get the username as well
+                    WWH::HttpRequestMessage userNameRequest{ WWH::HttpMethod::Get(), Uri{ L"https://api.github.com/user" } };
+                    userNameRequest.Headers().Accept().TryParseAdd(L"application/json");
+                    userNameRequest.Headers().UserAgent().TryParseAdd(L"Windows Terminal");
+                    const auto userNameResponse = _httpClient.SendRequestAsync(userNameRequest).get();
+                    const auto userNameString{ userNameResponse.Content().ReadAsStringAsync().get() };
+                    const auto userNameJsonResult{ WDJ::JsonObject::Parse(userNameString) };
+                    const auto brandingData{ get_self<GithubCopilotBranding>(_BrandingData) };
+                    brandingData->QueryMetaData(jsonResult.GetNamedString(L"login"));
+                }
             }
         }
-        CATCH_LOG();
+        catch (...)
+        {
+            _AuthChangedHandlers(*this, winrt::make<GithubCopilotAuthenticationResult>(RS_(L"UnknownErrorMessage"), nullptr));
+        }
 
         co_return;
     }
@@ -207,8 +218,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
                 winrt::hstring engineeredPrompt{ promptCopy };
                 if (_context && !_context.ActiveCommandline().empty())
                 {
-                    //engineeredPrompt = promptCopy + L". The shell I am running is " + _context.ActiveCommandline();
-                    engineeredPrompt = promptCopy;
+                    engineeredPrompt = promptCopy + L". The shell I am running is " + _context.ActiveCommandline();
                 }
                 messageObject.Insert(L"role", WDJ::JsonValue::CreateStringValue(L"user"));
                 messageObject.Insert(L"content", WDJ::JsonValue::CreateStringValue(engineeredPrompt));
@@ -304,7 +314,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
             Windows::Foundation::Collections::ValueSet authValues{};
             authValues.Insert(L"access_token", Windows::Foundation::PropertyValue::CreateString(_authToken));
             authValues.Insert(L"refresh_token", Windows::Foundation::PropertyValue::CreateString(_refreshToken));
-            _AuthChangedHandlers(*this, authValues);
+            _AuthChangedHandlers(*this, winrt::make<GithubCopilotAuthenticationResult>(L"", authValues));
         }
         CATCH_LOG();
     }

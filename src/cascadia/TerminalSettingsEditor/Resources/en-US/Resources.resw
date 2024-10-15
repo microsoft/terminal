@@ -739,6 +739,10 @@
     <value>Clear stored auth tokens</value>
     <comment>Text on the button that allows the user to clear the stored tokens.</comment>
   </data>
+  <data name="AISettings_WaitingForGithubAuth" xml:space="preserve">
+    <value>Awaiting authentication completion from browser...</value>
+    <comment>Text displayed after the user clicks the button to initiate the Github authentication flow in their browser.</comment>
+  </data>
   <data name="Nav_Appearance.Content" xml:space="preserve">
     <value>Appearance</value>
     <comment>Header for the "appearance" menu item. This navigates to a page that lets you see and modify settings related to the app's appearance.</comment>

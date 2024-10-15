@@ -31,7 +31,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         winrt::Windows::Foundation::IAsyncOperation<Extension::IResponse> GetResponseAsync(const winrt::hstring& userPrompt);
 
         void SetAuthentication(const Windows::Foundation::Collections::ValueSet& authValues);
-        TYPED_EVENT(AuthChanged, winrt::Microsoft::Terminal::Query::Extension::ILMProvider, Windows::Foundation::Collections::ValueSet);
+        TYPED_EVENT(AuthChanged, winrt::Microsoft::Terminal::Query::Extension::ILMProvider, winrt::Microsoft::Terminal::Query::Extension::IAuthenticationResult);
 
         WINRT_PROPERTY(IBrandingData, BrandingData, winrt::make<AzureBranding>());
 
