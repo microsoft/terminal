@@ -148,6 +148,7 @@ NIN
 NOAGGREGATION
 NOASYNC
 NOCHANGEDIR
+NOCRLF
 NOPROGRESS
 NOREDIRECTIONBITMAP
 NOREPEAT
@@ -250,6 +251,7 @@ wcsnlen
 wcsstr
 wcstoui
 WDJ
+wincrypt
 winhttp
 wininet
 winmain
