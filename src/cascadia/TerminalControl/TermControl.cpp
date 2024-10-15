@@ -3287,7 +3287,26 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                     {
                         allPathsString.push_back(quotesChar);
                     }
-                    allPathsString.append(fullPath);
+                    if (isWSL)
+                    {
+                        // Fix quoted path for WSL
+                        // Single quote is allowed on the Win32 subsystem and must be processed
+                        // when we are quoting the path with single quotes (on WSL).
+                        // Note that we assume that all paths are quoted for WSL.
+                        std::wstring_view fullPathView{ fullPath };
+                        size_t pos;
+                        while ((pos = fullPathView.find(L'\'')) != std::wstring_view::npos)
+                        {
+                            allPathsString.append(fullPathView.begin(), fullPathView.begin() + pos);
+                            allPathsString.append(L"'\\''");
+                            fullPathView.remove_prefix(pos + 1);
+                        }
+                        allPathsString.append(fullPathView);
+                    }
+                    else
+                    {
+                        allPathsString.append(fullPath);
+                    }
                     if (quotesNeeded)
                     {
                         allPathsString.push_back(quotesChar);
