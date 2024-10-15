@@ -1118,7 +1118,7 @@ std::wstring_view ROW::GetText(til::CoordType columnBegin, til::CoordType column
 {
     const auto columns = GetReadableColumnCount();
     const auto colBeg = clamp(columnBegin, 0, columns);
-    const auto colEnd = clamp(columnEnd, colBeg, columns);
+    const auto colEnd = clamp(columnEnd - 1, colBeg, columns);
     const size_t chBeg = _uncheckedCharOffset(gsl::narrow_cast<size_t>(colBeg));
     const size_t chEnd = _uncheckedCharOffset(gsl::narrow_cast<size_t>(colEnd));
 #pragma warning(suppress : 26481) // Don't use pointer arithmetic. Use span instead (bounds.1).

@@ -2597,7 +2597,9 @@ void TextBuffer::Serialize(const wchar_t* destination) const
                 newX = lastCharX;
             }
 
-            buffer.append(row.GetText(oldX, newX));
+            // GetText() has an exclusive end,
+            // add 1 to newX to get the correct range
+            buffer.append(row.GetText(oldX, newX + 1));
 
             if (clearToEndOfLine)
             {
@@ -3300,7 +3302,9 @@ std::wstring TextBuffer::_commandForRow(const til::CoordType rowOffset,
 
             if (markKind == MarkKind::Command)
             {
-                commandBuilder += row.GetText(x, nextX);
+                // GetText() has an exclusive end,
+                // add 1 to newX to get the correct range
+                commandBuilder += row.GetText(x, nextX + 1);
             }
             // advance to next run of text
             x = nextX;
