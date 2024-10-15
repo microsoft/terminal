@@ -113,14 +113,6 @@ til::point Terminal::SelectionEndForRendering() const
 {
     auto pos{ _selection->end };
     const auto bufferSize{ GetTextBuffer().GetSize() };
-    if (pos.x != bufferSize.RightInclusive())
-    {
-        // In general, we need to draw the marker one after the
-        // end of the selection.
-        // When we're at the right boundary, we want to
-        // flip the marker, so we skip this step.
-        bufferSize.IncrementInBounds(pos);
-    }
     pos.y = base::ClampSub(pos.y, _VisibleStartIndex());
     return til::point{ pos };
 }
