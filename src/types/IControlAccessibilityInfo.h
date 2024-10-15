@@ -27,7 +27,6 @@ namespace Microsoft::Console::Types
         virtual til::size GetFontSize() const noexcept = 0;
         virtual til::rect GetBounds() const noexcept = 0;
         virtual til::rect GetPadding() const noexcept = 0;
-        virtual float GetScaleFactor() const noexcept = 0;
         virtual void ChangeViewport(const til::inclusive_rect& NewWindow) = 0;
         virtual HRESULT GetHostUiaProvider(IRawElementProviderSimple** provider) = 0;
 
