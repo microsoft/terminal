@@ -70,9 +70,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         auto strongThis = get_strong();
         co_await winrt::resume_background();
 
-        bool refreshAttempted{ false };
-
-        do
+        for (bool refreshAttempted = false;;)
         {
             try
             {
@@ -83,20 +81,17 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
                 brandingData->QueryMetaData(jsonResult.GetNamedString(L"login"));
                 break;
             }
-            catch (...)
+            CATCH_LOG();
+
+            // unknown failure, try refreshing the auth token if we haven't already
+            if (refreshAttempted)
             {
-                // unknown failure, try refreshing the auth token if we haven't already
-                if (!refreshAttempted)
-                {
-                    _refreshAuthTokens();
-                    refreshAttempted = true;
-                }
-                else
-                {
-                    break;
-                }
+                break;
             }
-        } while (refreshAttempted);
+
+            _refreshAuthTokens();
+            refreshAttempted = true;
+        }
     }
 
     safe_void_coroutine GithubCopilotLLMProvider::_completeAuthWithUrl(const Windows::Foundation::Uri url)
@@ -193,7 +188,6 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         // we pass this enum back to the caller so they can handle it appropriately (specifically, ExtensionPalette will send the correct telemetry event)
         ErrorTypes errorType{ ErrorTypes::None };
         hstring message{};
-        bool refreshAttempted{ false };
 
         // Make a copy of the prompt because we are switching threads
         const auto promptCopy{ userPrompt };
@@ -201,7 +195,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         // Make sure we are on the background thread for the http request
         co_await winrt::resume_background();
 
-        do
+        for (bool refreshAttempted = false;;)
         {
             try
             {
@@ -252,23 +246,20 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
                 }
                 break;
             }
-            catch (...)
+            CATCH_LOG();
+
+            // unknown failure, if we have already attempted a refresh report failure
+            // otherwise, try refreshing the auth token
+            if (refreshAttempted)
             {
-                // unknown failure, if we have already attempted a refresh report failure
-                // otherwise, try refreshing the auth token
-                if (refreshAttempted)
-                {
-                    message = RS_(L"UnknownErrorMessage");
-                    errorType = ErrorTypes::Unknown;
-                    break;
-                }
-                else
-                {
-                    _refreshAuthTokens();
-                    refreshAttempted = true;
-                }
+                message = RS_(L"UnknownErrorMessage");
+                errorType = ErrorTypes::Unknown;
+                break;
             }
-        } while (refreshAttempted);
+
+            _refreshAuthTokens();
+            refreshAttempted = true;
+        }
 
         // Also make a new entry in our jsonMessages list, so the AI knows the full conversation so far
         WDJ::JsonObject responseMessageObject;
