@@ -76,6 +76,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             {
                 _NotifyChanges(L"HideIcon");
             }
+            else if (viewModelProperty == L"Padding")
+            {
+                _NotifyChanges(L"LeftPadding", L"TopPadding", L"RightPadding", L"BottomPadding");
+            }
         });
 
         // Do the same for the starting directory
@@ -96,6 +100,115 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
 
         _defaultAppearanceViewModel.IsDefault(true);
+    }
+
+    void ProfileViewModel::LeftPadding(double value) noexcept
+    {
+        const hstring& padding = _GetNewPadding(PaddingDirection::Left, value);
+
+        Padding(padding);
+    }
+
+    double ProfileViewModel::LeftPadding() const noexcept
+    {
+        return _GetPaddingValue(PaddingDirection::Left);
+    }
+
+    void ProfileViewModel::TopPadding(double value) noexcept
+    {
+        const hstring& padding = _GetNewPadding(PaddingDirection::Top, value);
+
+        Padding(padding);
+    }
+
+    double ProfileViewModel::TopPadding() const noexcept
+    {
+        return _GetPaddingValue(PaddingDirection::Top);
+    }
+
+    void ProfileViewModel::RightPadding(double value) noexcept
+    {
+        const hstring& padding = _GetNewPadding(PaddingDirection::Right, value);
+
+        Padding(padding);
+    }
+
+    double ProfileViewModel::RightPadding() const noexcept
+    {
+        return _GetPaddingValue(PaddingDirection::Right);
+    }
+
+    void ProfileViewModel::BottomPadding(double value) noexcept
+    {
+        const hstring& padding = _GetNewPadding(PaddingDirection::Bottom, value);
+
+        Padding(padding);
+    }
+
+    double ProfileViewModel::BottomPadding() const noexcept
+    {
+        return _GetPaddingValue(PaddingDirection::Bottom);
+    }
+
+    winrt::hstring ProfileViewModel::_GetNewPadding(PaddingDirection paddingDirection, double newPaddingValue) const
+    {
+        std::array<double, 4> values{};
+        std::wstring_view remaining{ Padding() };
+        uint32_t paddingIndex = static_cast<uint32_t>(paddingDirection);
+
+        try
+        {
+            for (uint32_t index = 0; !remaining.empty() && index < values.size(); ++index)
+            {
+                const std::wstring token{ til::prefix_split(remaining, L',') };
+                auto curVal = std::stod(token);
+
+                if (paddingIndex == index)
+                {
+                    curVal = newPaddingValue;
+                }
+
+                values[index] = curVal;
+            }
+        }
+        catch (...)
+        {
+            values.fill(0);
+            LOG_CAUGHT_EXCEPTION();
+        }
+
+        const auto result = fmt::format(FMT_COMPILE(L"{:.6f}"), fmt::join(values, L","));
+
+        return winrt::hstring{ result };
+    }
+
+    double ProfileViewModel::_GetPaddingValue(PaddingDirection paddingDirection) const
+    {
+        std::wstring_view remaining{ Padding() };
+        uint32_t paddingIndex = static_cast<uint32_t>(paddingDirection);
+        double paddingValue = 0.;
+
+        try
+        {
+            for (uint32_t index = 0; !remaining.empty(); ++index)
+            {
+                const std::wstring token{ til::prefix_split(remaining, L',') };
+                auto curVal = std::stod(token);
+
+                if (paddingIndex == index)
+                {
+                    paddingValue = curVal;
+                    break;
+                }
+            }
+        }
+        catch (...)
+        {
+            paddingValue = 0.;
+            LOG_CAUGHT_EXCEPTION();
+        }
+
+        return paddingValue;
     }
 
     Model::TerminalSettings ProfileViewModel::TermSettings() const
