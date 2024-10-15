@@ -73,34 +73,31 @@ namespace winrt::Microsoft::Terminal::UI::implementation
 
     double Converters::MaxValueFromPaddingString(const winrt::hstring& paddingString)
     {
-        std::wstring_view remaining{ paddingString };
+        std::wstring buffer;
         double maxVal = 0;
+
+        auto& errnoRef = errno; // Nonzero cost, pay it once
 
         // Get padding values till we run out of delimiter separated values in the stream
         // Non-numeral values detected will default to 0
         // std::stod will throw invalid_argument exception if the input is an invalid double value
         // std::stod will throw out_of_range exception if the input value is more than DBL_MAX
-        try
+        for (const auto& part : til::split_iterator{ std::wstring_view{ paddingString }, L',' })
         {
-            while (!remaining.empty())
+            buffer.assign(part);
+
+            // wcstod handles whitespace prefix (which is ignored) & stops the
+            // scan when first char outside the range of radix is encountered.
+            // We'll be permissive till the extent that stod function allows us to be by default
+            // Ex. a value like 100.3#535w2 will be read as 100.3, but ;df25 will fail
+            errnoRef = 0;
+            wchar_t* end;
+            const double val = wcstod(buffer.c_str(), &end);
+
+            if (end != buffer.c_str() && errnoRef != ERANGE)
             {
-                const std::wstring token{ til::prefix_split(remaining, L',') };
-                // std::stod internally calls wcstod which handles whitespace prefix (which is ignored)
-                //  & stops the scan when first char outside the range of radix is encountered
-                // We'll be permissive till the extent that stod function allows us to be by default
-                // Ex. a value like 100.3#535w2 will be read as 100.3, but ;df25 will fail
-                const auto curVal = std::stod(token);
-                if (curVal > maxVal)
-                {
-                    maxVal = curVal;
-                }
+                maxVal = std::max(maxVal, val);
             }
-        }
-        catch (...)
-        {
-            // If something goes wrong, even if due to a single bad padding value, we'll return default 0 padding
-            maxVal = 0;
-            LOG_CAUGHT_EXCEPTION();
         }
 
         return maxVal;
