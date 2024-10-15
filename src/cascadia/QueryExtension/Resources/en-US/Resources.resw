@@ -177,4 +177,16 @@
     <value>Assistant</value>
     <comment>A string to represent the section that the chat assistant typed, presented when the user exports the chat history to a file</comment>
   </data>
+  <data name="GithubCopilot_HeaderText" xml:space="preserve">
+    <value>GitHub Copilot</value>
+    <comment>The header for Terminal Chat when GitHub Copilot is the connected service provider</comment>
+  </data>
+  <data name="GithubCopilot_SubheaderText" xml:space="preserve">
+    <value>Take command of your Terminal. Ask Copilot for assistance right in your terminal.</value>
+    <comment>The subheader for Terminal Chat when GitHub Copilot is the connected service provider</comment>
+  </data>
+  <data name="GithubCopilot_ResponseMetaData" xml:space="preserve">
+    <value>GitHub Copilot</value>
+    <comment>The metadata string to display whenever a response is received from the GitHub Copilot service provider</comment>
+  </data>
 </root>

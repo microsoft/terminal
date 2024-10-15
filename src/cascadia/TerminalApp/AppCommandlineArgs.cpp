@@ -564,11 +564,14 @@ void AppCommandlineArgs::_buildHandleUriParser()
                     }
                 }
             }
-            ActionAndArgs handleUriAction{};
-            handleUriAction.Action(ShortcutAction::HandleUri);
-            HandleUriArgs args{ uri };
-            handleUriAction.Args(args);
-            _startupActions.push_back(handleUriAction);
+            if (!uri.empty())
+            {
+                ActionAndArgs handleUriAction{};
+                handleUriAction.Action(ShortcutAction::HandleUri);
+                HandleUriArgs args{ uri };
+                handleUriAction.Args(args);
+                _startupActions.push_back(handleUriAction);
+            }
         });
     };
 

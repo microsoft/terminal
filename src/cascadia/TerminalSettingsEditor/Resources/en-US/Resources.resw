@@ -713,7 +713,7 @@
   </data>
   <data name="AISettings_GithubCopilotSignUpAndLearnMore" xml:space="preserve">
     <value>Sign up for a {0} today or request GitHub Copilot access from your enterprise admin. You can read more about GitHub Copilot offerings at {1}.</value>
-    <comment>Information regarding how the user can learn more about GitHub Copilot and sign up for it. {0} will be replaced by AISettings_GithubCopilotSignUpLinkText and {1} will be replaced by AISettings_GithubCopilotLearnMoreLinkText.</comment>
+    <comment>{Locked="{0}"}{Locked="{1}"} Information regarding how the user can learn more about GitHub Copilot and sign up for it. {0} will be replaced by AISettings_GithubCopilotSignUpLinkText and {1} will be replaced by AISettings_GithubCopilotLearnMoreLinkText.</comment>
   </data>
   <data name="AISettings_GithubCopilotSignUpLinkText" xml:space="preserve">
     <value>30-day GitHub Copilot free trial</value>

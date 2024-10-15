@@ -19,20 +19,17 @@ namespace WSS = ::winrt::Windows::Storage::Streams;
 namespace WDJ = ::winrt::Windows::Data::Json;
 
 static constexpr std::wstring_view headerIconPath{ L"ms-appx:///ProfileIcons/githubCopilotLogo.png" };
-static constexpr std::wstring_view headerText{ L"GitHub Copilot" };
-static constexpr std::wstring_view subheaderText{ L"Take command of your Terminal. Ask Copilot for assistance right in your terminal." };
 static constexpr std::wstring_view badgeIconPath{ L"ms-appx:///ProfileIcons/githubCopilotBadge.png" };
-static constexpr std::wstring_view responseMetaData{ L"GitHub Copilot" };
 
 namespace winrt::Microsoft::Terminal::Query::Extension::implementation
 {
     GithubCopilotBranding::GithubCopilotBranding()
     {
         _HeaderIconPath = headerIconPath;
-        _HeaderText = headerText;
-        _SubheaderText = subheaderText;
+        _HeaderText = RS_(L"GithubCopilot_HeaderText");
+        _SubheaderText = RS_(L"GithubCopilot_SubheaderText");
         _BadgeIconPath = badgeIconPath;
-        _ResponseMetaData = responseMetaData;
+        _ResponseMetaData = RS_(L"GithubCopilot_ResponseMetaData");
     }
 
     void GithubCopilotLLMProvider::SetAuthentication(const Windows::Foundation::Collections::ValueSet& authValues)
@@ -64,12 +61,13 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         }
     }
 
-    winrt::fire_and_forget GithubCopilotLLMProvider::_obtainUsernameAndRefreshTokensIfNeeded()
+    safe_void_coroutine GithubCopilotLLMProvider::_obtainUsernameAndRefreshTokensIfNeeded()
     {
         WWH::HttpRequestMessage request{ WWH::HttpMethod::Get(), Uri{ L"https://api.github.com/user" } };
         request.Headers().Accept().TryParseAdd(L"application/json");
         request.Headers().UserAgent().TryParseAdd(L"Windows Terminal");
 
+        auto strongThis = get_strong();
         co_await winrt::resume_background();
 
         bool refreshAttempted{ false };
@@ -78,8 +76,8 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         {
             try
             {
-                const auto response = _httpClient.SendRequestAsync(request).get();
-                const auto string{ response.Content().ReadAsStringAsync().get() };
+                const auto response = co_await _httpClient.SendRequestAsync(request);
+                const auto string = co_await response.Content().ReadAsStringAsync();
                 const auto jsonResult{ WDJ::JsonObject::Parse(string) };
                 const auto brandingData{ get_self<GithubCopilotBranding>(_BrandingData) };
                 brandingData->QueryMetaData(jsonResult.GetNamedString(L"login"));
@@ -101,7 +99,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         } while (refreshAttempted);
     }
 
-    winrt::fire_and_forget GithubCopilotLLMProvider::_completeAuthWithUrl(const Windows::Foundation::Uri url)
+    safe_void_coroutine GithubCopilotLLMProvider::_completeAuthWithUrl(const Windows::Foundation::Uri url)
     {
         WWH::HttpRequestMessage request{ WWH::HttpMethod::Post(), Windows::Foundation::Uri{ L"https://github.com/login/oauth/access_token" } };
         request.Headers().Accept().TryParseAdd(L"application/json");
@@ -119,13 +117,14 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
 
         request.Content(requestContent);
 
+        auto strongThis = get_strong();
         co_await winrt::resume_background();
 
         try
         {
-            const auto response = _httpClient.SendRequestAsync(request).get();
+            const auto response = co_await _httpClient.SendRequestAsync(request);
             // Parse out the suggestion from the response
-            const auto string{ response.Content().ReadAsStringAsync().get() };
+            const auto string = co_await response.Content().ReadAsStringAsync();
 
             const auto jsonResult{ WDJ::JsonObject::Parse(string) };
             if (jsonResult.HasKey(L"error"))
@@ -153,8 +152,8 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
                     WWH::HttpRequestMessage userNameRequest{ WWH::HttpMethod::Get(), Uri{ L"https://api.github.com/user" } };
                     userNameRequest.Headers().Accept().TryParseAdd(L"application/json");
                     userNameRequest.Headers().UserAgent().TryParseAdd(L"Windows Terminal");
-                    const auto userNameResponse = _httpClient.SendRequestAsync(userNameRequest).get();
-                    const auto userNameString{ userNameResponse.Content().ReadAsStringAsync().get() };
+                    const auto userNameResponse = co_await _httpClient.SendRequestAsync(userNameRequest);
+                    const auto userNameString = co_await userNameResponse.Content().ReadAsStringAsync();
                     const auto userNameJsonResult{ WDJ::JsonObject::Parse(userNameString) };
                     const auto brandingData{ get_self<GithubCopilotBranding>(_BrandingData) };
                     brandingData->QueryMetaData(jsonResult.GetNamedString(L"login"));

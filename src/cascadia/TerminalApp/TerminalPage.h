@@ -587,7 +587,7 @@ namespace winrt::TerminalApp::implementation
         void _setAzureOpenAIAuth();
         winrt::Microsoft::Terminal::Settings::Model::AIConfig::OpenAISettingChanged_revoker _openAISettingChangedRevoker;
         void _setOpenAIAuth();
-        std::wstring _generateRandomString();
+        winrt::hstring _generateRandomString();
 
 #pragma region ActionHandlers
         // These are all defined in AppActionHandlers.cpp

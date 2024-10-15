@@ -9,7 +9,8 @@
 #include <TerminalCore/ControlKeyStates.hpp>
 #include <til/latch.h>
 #include <Utils.h>
-#include <random>
+#include <til/rand.h>
+#include <wincrypt.h>
 #include <winrt/Windows.Data.Json.h>
 #include <shlobj.h>
 
@@ -4360,29 +4361,16 @@ namespace winrt::TerminalApp::implementation
         Application::Current().as<TerminalApp::App>().Logic().RandomStateString(randomStateString);
     }
 
-    std::wstring TerminalPage::_generateRandomString()
+    winrt::hstring TerminalPage::_generateRandomString()
     {
-        // Define the character set to use (wide characters)
-        const std::wstring charset = L"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-        const size_t charsetSize = charset.size();
+        BYTE buffer[16];
+        til::gen_random(&buffer[0], sizeof(buffer));
 
-        // Initialize random number generators
-        std::random_device rd;
-        std::mt19937 generator(rd());
-        std::uniform_int_distribution<> lengthDistribution(8, 12);
-        std::uniform_int_distribution<> charDistribution(0, gsl::narrow<int>(charsetSize) - 1);
+        wchar_t string[24];
+        DWORD stringLen = 24;
+        THROW_IF_WIN32_BOOL_FALSE(CryptBinaryToStringW(&buffer[0], sizeof(buffer), CRYPT_STRING_BASE64URI | CRYPT_STRING_NOCRLF, &string[0], &stringLen));
 
-        // Generate a random length between 8 and 12
-        size_t length = gsl::narrow<size_t>(lengthDistribution(generator));
-
-        // Generate a random wstring of the determined length
-        std::wstring randomWString;
-        for (size_t i = 0; i < length; ++i)
-        {
-            randomWString += charset[charDistribution(generator)];
-        }
-
-        return randomWString;
+        return winrt::hstring{ &string[0], stringLen };
     }
 
     // Method Description:

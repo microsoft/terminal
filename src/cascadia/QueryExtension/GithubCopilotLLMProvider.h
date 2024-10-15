@@ -55,8 +55,8 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         winrt::Windows::Data::Json::JsonArray _jsonMessages;
 
         void _refreshAuthTokens();
-        winrt::fire_and_forget _completeAuthWithUrl(const Windows::Foundation::Uri url);
-        winrt::fire_and_forget _obtainUsernameAndRefreshTokensIfNeeded();
+        safe_void_coroutine _completeAuthWithUrl(const Windows::Foundation::Uri url);
+        safe_void_coroutine _obtainUsernameAndRefreshTokensIfNeeded();
     };
 
     struct GithubCopilotResponse : public winrt::implements<GithubCopilotResponse, winrt::Microsoft::Terminal::Query::Extension::IResponse>
