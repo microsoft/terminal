@@ -24,7 +24,7 @@
 #include <VersionHelpers.h>
 #include <wincodec.h>
 
-#include <gsl/gsl_util>
+#include <gsl/util>
 #include <gsl/pointers>
 #include <wil/com.h>
 #include <wil/filesystem.h>
