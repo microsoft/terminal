@@ -344,7 +344,6 @@ try
             {
                 sp.iterate_rows(bufferWidth, [&](til::CoordType row, til::CoordType min, til::CoordType max) {
                     const auto shift = buffer.GetLineRendition(row) != LineRendition::SingleWidth ? 1 : 0;
-                    max += 1; // Selection spans are inclusive (still)
                     min <<= shift;
                     max <<= shift;
                     til::rect r{ min, row, max, row + 1 };

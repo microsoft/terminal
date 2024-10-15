@@ -451,7 +451,7 @@ try
         const auto isEndInside = y == hiEnd.y && hiEnd.x < x2;
         if (isStartInside && isEndInside)
         {
-            _fillColorBitmap(row, hiStart.x, static_cast<size_t>(hiEnd.x) + 1, fgColor, bgColor);
+            _fillColorBitmap(row, hiStart.x, static_cast<size_t>(hiEnd.x), fgColor, bgColor);
             ++it;
         }
         else
