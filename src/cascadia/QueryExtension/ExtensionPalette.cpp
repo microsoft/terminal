@@ -24,6 +24,7 @@ static constexpr std::wstring_view systemPrompt{ L"- You are acting as a develop
 static constexpr std::string_view commandDelimiter{ ";" };
 static constexpr std::string_view cmdCommandDelimiter{ "&" };
 static constexpr std::wstring_view cmdExe{ L"cmd.exe" };
+static constexpr std::wstring_view cmd{ L"cmd" };
 const std::wregex azureOpenAIEndpointRegex{ LR"(^https.*openai\.azure\.com)" };
 
 namespace winrt::Microsoft::Terminal::Query::Extension::implementation
@@ -294,7 +295,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
             size_t pos = 0;
             while ((pos = suggestion.find("\n", pos)) != std::string::npos)
             {
-                const auto delimiter = _ActiveCommandline == cmdExe ? cmdCommandDelimiter : commandDelimiter;
+                const auto delimiter = (_ActiveCommandline == cmdExe || _ActiveCommandline == cmd) ? cmdCommandDelimiter : commandDelimiter;
                 suggestion.replace(pos, 1, delimiter);
                 pos += 1; // Move past the replaced character
             }
