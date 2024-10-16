@@ -48,6 +48,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
     private:
         winrt::hstring _authToken;
         winrt::hstring _refreshToken;
+        winrt::hstring _endpointUri;
         winrt::Windows::Web::Http::HttpClient _httpClient{ nullptr };
 
         Extension::IContext _context;

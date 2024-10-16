@@ -20,6 +20,7 @@ namespace WDJ = ::winrt::Windows::Data::Json;
 
 static constexpr std::wstring_view headerIconPath{ L"ms-appx:///ProfileIcons/githubCopilotLogo.png" };
 static constexpr std::wstring_view badgeIconPath{ L"ms-appx:///ProfileIcons/githubCopilotBadge.png" };
+static constexpr std::wstring_view chatCompletionSuffix{ L"/chat/completions" };
 
 namespace winrt::Microsoft::Terminal::Query::Extension::implementation
 {
@@ -143,15 +144,27 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
                     authValues.Insert(L"refresh_token", Windows::Foundation::PropertyValue::CreateString(_refreshToken));
                     _AuthChangedHandlers(*this, winrt::make<GithubCopilotAuthenticationResult>(L"", authValues));
 
-                    // now that we have the auth, get the username as well
-                    WWH::HttpRequestMessage userNameRequest{ WWH::HttpMethod::Get(), Uri{ L"https://api.github.com/user" } };
-                    userNameRequest.Headers().Accept().TryParseAdd(L"application/json");
-                    userNameRequest.Headers().UserAgent().TryParseAdd(L"Windows Terminal");
-                    const auto userNameResponse = co_await _httpClient.SendRequestAsync(userNameRequest);
-                    const auto userNameString = co_await userNameResponse.Content().ReadAsStringAsync();
-                    const auto userNameJsonResult{ WDJ::JsonObject::Parse(userNameString) };
+                    // we also need to get the correct endpoint to use and the username
+                    WWH::HttpRequestMessage endpointAndUsernameRequest{ WWH::HttpMethod::Post(), Windows::Foundation::Uri{ L"https://api.github.com/graphql" } };
+                    endpointAndUsernameRequest.Headers().UserAgent().TryParseAdd(L"Windows Terminal");
+                    WDJ::JsonObject endpointAndUsernameRequestJson;
+                    endpointAndUsernameRequestJson.SetNamedValue(L"query", WDJ::JsonValue::CreateStringValue(L"{ viewer { copilotEndpoints { api } login } }"));
+                    const auto endpointAndUsernameRequestString = endpointAndUsernameRequestJson.ToString();
+                    WWH::HttpStringContent endpointAndUsernameRequestContent{
+                        endpointAndUsernameRequestString,
+                        WSS::UnicodeEncoding::Utf8,
+                        L"application/json"
+                    };
+                    endpointAndUsernameRequest.Content(endpointAndUsernameRequestContent);
+                    const auto endpointAndUsernameResponse = co_await _httpClient.SendRequestAsync(endpointAndUsernameRequest);
+                    const auto endpointAndUsernameString = co_await endpointAndUsernameResponse.Content().ReadAsStringAsync();
+                    const auto endpointAndUsernameResult{ WDJ::JsonObject::Parse(endpointAndUsernameString) };
+                    const auto userName = endpointAndUsernameResult.GetNamedObject(L"data").GetNamedObject(L"viewer").GetNamedString(L"login");
+                    const auto copilotEndpoints = endpointAndUsernameResult.GetNamedObject(L"data").GetNamedObject(L"viewer").GetNamedObject(L"copilotEndpoints").GetNamedString(L"api");
+
+                    _endpointUri = copilotEndpoints + chatCompletionSuffix;
                     const auto brandingData{ get_self<GithubCopilotBranding>(_BrandingData) };
-                    brandingData->QueryMetaData(jsonResult.GetNamedString(L"login"));
+                    brandingData->QueryMetaData(userName);
                 }
             }
         }
@@ -202,7 +215,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
                 // create the request object
                 // we construct the request object within the while loop because if we do need to attempt
                 // a request again after refreshing the tokens, we need a new request object
-                WWH::HttpRequestMessage request{ WWH::HttpMethod::Post(), Uri{ L"https://api.githubcopilot.com/chat/completions" } };
+                WWH::HttpRequestMessage request{ WWH::HttpMethod::Post(), Uri{ _endpointUri } };
                 request.Headers().Accept().TryParseAdd(L"application/json");
 
                 WDJ::JsonObject jsonContent;
