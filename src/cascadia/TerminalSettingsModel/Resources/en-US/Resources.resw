@@ -328,6 +328,15 @@
     <value>Open settings file (JSON)</value>
     <comment>{Locked="JSON"}. "JSON" is the extension of the file that will be opened.</comment>
   </data>
+  <data name="SettingFilePathSendInputCommandKey" xml:space="preserve">
+    <value>Send the settings file path as input to the terminal</value>
+  </data>
+  <data name="SettingsFileOpenInExplorerCommandKey" xml:space="preserve">
+    <value>Open the settings file directory in File Explorer</value>
+  </data>
+  <data name="SettingsFilePathSendToClipboard" xml:space="preserve">
+    <value>Send settings file path to clipboard</value>
+  </data>
   <data name="OpenTabColorPickerCommandKey" xml:space="preserve">
     <value>Set tab color...</value>
   </data>
