@@ -821,7 +821,7 @@ void Terminal::_MoveByBuffer(SelectionDirection direction, til::point& pos) noex
         break;
     case SelectionDirection::Right:
     case SelectionDirection::Down:
-        pos = { bufferSize.RightInclusive(), _GetMutableViewport().BottomInclusive() };
+        pos = { bufferSize.RightExclusive(), _GetMutableViewport().BottomInclusive() };
         break;
     }
 }
