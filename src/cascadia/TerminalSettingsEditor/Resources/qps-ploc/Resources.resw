@@ -294,6 +294,14 @@
     <value>Λυτοмдτìćăŀŀÿ đзťēćτ ЦŖĿš аňđ máĸë ţнэм сŀĭçќάвłĕ !!! !!! !!! !!! !!!</value>
     <comment>Header for a control to toggle whether the terminal should automatically detect URLs and make them clickable, or not.</comment>
   </data>
+  <data name="Globals_SearchWebDefaultQueryUrl.Header" xml:space="preserve">
+    <value>Ðёƒάųĺţ ЏҐĽ то ύš℮ ƒòŗ ŧĥě "Ѕёάяĉн ŵёъ" άċŧïóή !!! !!! !!! !!! !</value>
+    <comment>Header for a control to set the query URL when using the "search web" action.</comment>
+  </data>
+  <data name="Globals_SearchWebDefaultQueryUrl.HelpText" xml:space="preserve">
+    <value>Ţђě рłд¢èнøĺđĕг "%s" щіłĺ ѓēφŀāćεđ ẃĩτђ τђе šέªґ¢ħ qύėгў. !!! !!! !!! !!! !!! !!</value>
+    <comment>{Locked="%s"} Additional text presented near "Globals_SearchWebDefaultQueryUrl.Header".</comment>
+  </data>
   <data name="Globals_TrimBlockSelection.Header" xml:space="preserve">
     <value>Ѓëmονĕ тŕáìĺїŉġ ẃђϊτë-ѕρá¢ę ĭл ѓеċτåηğцĺăŗ ş℮ŀěčŧĭõň !!! !!! !!! !!! !!! </value>
     <comment>Header for a control to toggle whether a text selected with block selection should be trimmed of white spaces when copied to the clipboard, or not.</comment>
@@ -552,9 +560,41 @@
     <value>Аŀẅâγš ōп ŧбφ !!! </value>
     <comment>Header for a control to toggle if the app will always be presented on top of other windows, or is treated normally (when disabled).</comment>
   </data>
+  <data name="Profile_ForceVTInput.Header" xml:space="preserve">
+    <value>Ũśë τђê ľέģάçу īņрцţ επćбđιŉğ !!! !!! !!!</value>
+    <comment>Header for a control to toggle legacy input encoding for the terminal.</comment>
+  </data>
+  <data name="Profile_AllowVtChecksumReport.Header" xml:space="preserve">
+    <value>Àłℓöω DECRQCRA (Request Checksum of Rectangular Area) !!! !!! !!! !!! !!! </value>
+    <comment>{Locked="DECRQCRA"}{Locked="Request Checksum of Rectangular Area"}Header for a control to toggle support for the DECRQCRA control sequence.</comment>
+  </data>
+  <data name="Globals_AllowHeadless.Header" xml:space="preserve">
+    <value>Ǻℓĺŏщ Ẁιйđòώѕ Тёŗмїⁿàļ тǿ řϋŋ ϊň тђě ьąςќġѓőůήď !!! !!! !!! !!! !!</value>
+    <comment>Header for a control to toggle support for Windows Terminal to run in the background.</comment>
+  </data>
+  <data name="Globals_IsolatedMode.Header" xml:space="preserve">
+    <value>₣ōґçê éãćĥ шĭňđθẁ тǿ ґυή ĭñ ïťş ǿŵŉ ρŕόčэşś !!! !!! !!! !!! </value>
+    <comment>Header for a control to toggle making each window be its own process.</comment>
+  </data>
+  <data name="Globals_DebugFeaturesEnabled.Header" xml:space="preserve">
+    <value>Єлάвĺé ðèъûġğįñģ ƒέàŧµřэš !!! !!! !</value>
+    <comment>Header for a control to toggle debug features.</comment>
+  </data>
   <data name="Globals_AlwaysOnTop.HelpText" xml:space="preserve">
     <value>Ťèřmĭήäľ ŵϊłļ àļщāÿş ъĕ ŧħє ţóрmόѕŧ шíñđθώ όи ŧħě δεşĸţбφ. !!! !!! !!! !!! !!! !!</value>
     <comment>A description for what the "always on top" setting does. Presented near "Globals_AlwaysOnTop.Header".</comment>
+  </data>
+  <data name="Profile_ForceVTInput.HelpText" xml:space="preserve">
+    <value>Čέґťάįñ ќ℮ўвŏåřď íήφůţ īл şômз ăррŀĩçāτїőŋš măγ śтόρ шбгќîņĝ ρгõρéѓℓỳ ẅĥêп ťĥΐѕ š℮ťŧíŋġ ĩŝ єηдъłèđ. !!! !!! !!! !!! !!! !!! !!! !!! !!! !!!</value>
+    <comment>Additional description for what the "force vt input" setting does. Presented near "Globals_ForceVTInput.Header".</comment>
+  </data>
+  <data name="Globals_AllowHeadless.HelpText" xml:space="preserve">
+    <value>Ťнϊš äłℓσωš ąçťїőňš ŝΰ¢ђ ãѕ Ğℓøъâļ Ŝûmmǿл αⁿð Qũăķэ Μöδе äçťϊõпѕ το ŵθřќ èνεπ ẅћěи πό ẁįňδòŵš άяę öрęŋ. !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! </value>
+    <comment>Additional description for what the "allow headless" setting does. Presented near "Globals_AllowHeadless.Header".</comment>
+  </data>
+  <data name="Globals_IsolatedMode.HelpText" xml:space="preserve">
+    <value>Ćěřţªіŉ ƒěąτùŕєś ẅіľĺ иοŧ ώóѓķ ρřσрèřĺỳ, ίпčļūďîйğ—ьϋŧ ņότ ĺîmìτĕđ ţõ—ğℓõъªł ћотĸëўŝ, ŧªъ δяªģ äлđ δřőρ, ąŋď wt.exe щїлďǿш ţäŕġэтīπġ. !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! </value>
+    <comment>{Locked="wt.exe"} Additional description for what the "isolated mode" setting does. Presented near "Globals_IsolatedMode.Header".</comment>
   </data>
   <data name="Globals_TabWidthMode.Header" xml:space="preserve">
     <value>Ťâв ώΐđťн mбðě !!! !</value>
@@ -624,6 +664,10 @@
     <value>Íŋт℮řâçτîöй !!!</value>
     <comment>Header for the "interaction" menu item. This navigates to a page that lets you see and modify settings related to the user's mouse and touch interactions with the app.</comment>
   </data>
+  <data name="Nav_Compatibility.Content" xml:space="preserve">
+    <value>Ĉθмρατĩвìľϊŧŷ !!! </value>
+    <comment>Header for the "compatibility" menu item. This navigates to a page that lets you see and modify settings related to compatibility with command line scenarios.</comment>
+  </data>
   <data name="Nav_Launch.Content" xml:space="preserve">
     <value>Ѕţâŕτűр !!</value>
     <comment>Header for the "startup" menu item. This navigates to a page that lets you see and modify settings related to the app's launch experience (i.e. screen position, mode, etc.)</comment>
@@ -659,6 +703,10 @@
   <data name="Profile_Advanced.Header" xml:space="preserve">
     <value>Дδναиċēδ !!</value>
     <comment>Header for a sub-page of profile settings focused on more advanced scenarios.</comment>
+  </data>
+  <data name="Profile_Terminal.Header" xml:space="preserve">
+    <value>Ŧëŕмíⁿªĺ Εmũļäţįóπ !!! !!</value>
+    <comment>Header for a sub-page of profile settings focused on customizing the capabilities of the terminal.</comment>
   </data>
   <data name="Profile_AltGrAliasing.Header" xml:space="preserve">
     <value>AltGr αŀìαŝίлĝ !!! !</value>
@@ -945,17 +993,33 @@
     <value>Ŀīйĕ ĥĕΐĝђŧ !!!</value>
     <comment>Header for a control that sets the text line height.</comment>
   </data>
+  <data name="Profile_CellWidth.Header" xml:space="preserve">
+    <value>Čеℓł ωįďтђ !!!</value>
+    <comment>Header for a control that sets the text character width.</comment>
+  </data>
   <data name="Profile_LineHeightBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>₤ìŋè ħέίģћť !!!</value>
     <comment>Header for a control that sets the text line height.</comment>
+  </data>
+  <data name="Profile_CellWidthBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Çєℓŀ ẁīðтħ !!!</value>
+    <comment>Header for a control that sets the text character width.</comment>
   </data>
   <data name="Profile_LineHeight.HelpText" xml:space="preserve">
     <value>Ονëřŗíďĕ тђэ ℓìŉё ћëîğнτ оƒ ŧнè τёґмįņªļ. Мēáśυґ℮đ аś ª mϋłţìρℓè õƒ тне ƒõήτ ѕΐżë. Тђê ďέƒāųŀţ νâŀüē δέρěņđš ǿň ỳőυя ƒôŉт ąŉď ΐş υşūäľŀÿ àŗôüŋđ 1.2. !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!</value>
     <comment>A description for what the "line height" setting does. Presented near "Profile_LineHeight".</comment>
   </data>
+  <data name="Profile_CellWidth.HelpText" xml:space="preserve">
+    <value>Ώνęяѓîδè ŧђě çеľŀ ẅįδţђ оƒ ŧћē ţєřmīńäľ. Μέαŝµяёđ ǻš ă мύĺťĭφĺз οƒ ŧћè ƒôήť ѕїźĕ. Ţћę δеƒāūľť νåℓúę ðěрèⁿđѕ θŉ ỳǿůг ƒøŉт ǻⁿď ìѕ ŭšŭąŀļý äřôΰņď 0.6. !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!</value>
+    <comment>A description for what the "cell width" setting does. Presented near "Profile_CellWidth".</comment>
+  </data>
   <data name="Profile_LineHeightBox.PlaceholderText" xml:space="preserve">
     <value>1.2 </value>
     <comment>"1.2" is a decimal number.</comment>
+  </data>
+  <data name="Profile_CellWidthBox.PlaceholderText" xml:space="preserve">
+    <value>0.6 </value>
+    <comment>"0.6" is a decimal number.</comment>
   </data>
   <data name="Profile_EnableBuiltinGlyphs.Header" xml:space="preserve">
     <value>Ьùïľŧïň Ģłуφĥś !!! !</value>
@@ -1864,5 +1928,37 @@
   <data name="Profile_ProportionalFontFaces.Header" xml:space="preserve">
     <value>Νόņ-mσиόšραςз ƒоŉтŝ: !!! !!!</value>
     <comment>This is a label that is followed by a list of proportional fonts.</comment>
+  </data>
+  <data name="Profile_AnswerbackMessage.Header" xml:space="preserve">
+    <value>ENQ (Request Terminal Status) ґęşрōňѕэ !!! !!! !!! !!</value>
+    <comment>{Locked=ENQ}{Locked="Request Terminal Status"} Header for a control to determine the response to the ENQ escape sequence. This is represented using a text box.</comment>
+  </data>
+  <data name="Profile_AnswerbackMessage.HelpText" xml:space="preserve">
+    <value>Ŧђê řěŝφοňŝĕ ţђäţ ΐś śėⁿт ŵħēп ăи ENQ čόňŧяŏł šеqϋεйċē ĩş řėćëîνĕδ. !!! !!! !!! !!! !!! !!! !!</value>
+    <comment>{Locked=ENQ} A description for what the "ENQ response" setting does. Presented near "Profile_AnswerbackMessage".</comment>
+  </data>
+  <data name="Globals_DebugFeaturesEnabled.HelpText" xml:space="preserve">
+    <value>Ũšèƒΰľ ƒόґ ţгōūвŀ℮ŝħōǿţΐŋģ οř ďενзļöрïńğ Ťęŗмìñąŀ. !!! !!! !!! !!! !!!</value>
+    <comment>Additional description for what the "debug features enabled" setting does. Presented near "Globals_DebugFeaturesEnabled.Header".</comment>
+  </data>
+  <data name="Profile_RainbowSuggestions.Header" xml:space="preserve">
+    <value>Ĕжφзѓϊмзŉťáℓ: Đĭѕрĺâγ şùġğεѕŧéð ĭňрύţ ìň řαΐйъοω ςόľθяś !!! !!! !!! !!! !!! !</value>
+    <comment>This is a label for a setting that, when enabled, applies a rainbow coloring to the preview text from the suggestions UI.</comment>
+  </data>
+  <data name="Globals_EnableColorSelection.Header" xml:space="preserve">
+    <value>Єхрěŕĩмéйţąŀ: Ăδδ ќèу ьϊήδĩⁿĝş то ςǿľöř ŝέĺέçťēδ ŧёхт !!! !!! !!! !!! !!! </value>
+    <comment>Header for a control to toggle adding a set of key bindings that can be used to apply coloring to selected text in a terminal session.</comment>
+  </data>
+  <data name="Globals_EnableColorSelection.HelpText" xml:space="preserve">
+    <value>Ţђзšē ќêу вїņðįйģş čāπ ħīĝђℓíġђτ ŧĥě śèłёčŧèď ţэжť õŗ āľŀ ïиŝţапĉ℮š бƒ τђę şэľέçτėð тё×ť ώīтћ ǻ ѕφėċĭƒīëđ ćθłőŕ. !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! </value>
+    <comment>Additional text for a control to toggle adding a set of key bindings that can be used to apply coloring to selected text in a terminal session. Presented near "Globals_EnableColorSelection.Header".</comment>
+  </data>
+  <data name="Globals_EnableUnfocusedAcrylic.Header" xml:space="preserve">
+    <value>Äłľбŵ āĉŗўľĩĉ мдţзřìдĺ ĭñ ũπƒσćũšёδ ẃīŋδóŵѕ !!! !!! !!! !!! </value>
+    <comment>Header for a control to toggle allowing unfocused windows to have an acrylic background.</comment>
+  </data>
+  <data name="Globals_ShowAdminShield.Header" xml:space="preserve">
+    <value>Đįŝрļãу ã ŝħĭěļð ίπ ŧђê ţîťłë ъãѓ щћэπ Ẅīήđθщş Ţĕřмïńāľ ίѕ ŕůπŉïηģ åš Àδмιήίŝтяàтοґ !!! !!! !!! !!! !!! !!! !!! !!! </value>
+    <comment>Header for a control to toggle displaying a shield in the title bar of the app. "Admin" refers to elevated sessions like "run as Admin"</comment>
   </data>
 </root>
