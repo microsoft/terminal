@@ -313,7 +313,7 @@ bool Viewport::DecrementInExclusiveBounds(til::point& pos) const noexcept
 bool Viewport::IsInExclusiveBounds(const til::point pos) const noexcept
 {
     return pos.x >= Left() && pos.x <= RightExclusive() &&
-           pos.y >= Top() && pos.y <= BottomExclusive();
+           pos.y >= Top() && pos.y <= BottomInclusive();
 }
 
 int Viewport::CompareInExclusiveBounds(const til::point first, const til::point second) const noexcept

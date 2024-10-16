@@ -790,7 +790,7 @@ void Terminal::_MoveByViewport(SelectionDirection direction, til::point& pos) no
         pos = { bufferSize.Left(), pos.y };
         break;
     case SelectionDirection::Right:
-        pos = { bufferSize.RightInclusive(), pos.y };
+        pos = { bufferSize.RightExclusive(), pos.y };
         break;
     case SelectionDirection::Up:
     {
@@ -804,7 +804,7 @@ void Terminal::_MoveByViewport(SelectionDirection direction, til::point& pos) no
         const auto viewportHeight{ _GetMutableViewport().Height() };
         const auto mutableBottom{ _GetMutableViewport().BottomInclusive() };
         const auto newY{ pos.y + viewportHeight };
-        pos = newY > mutableBottom ? til::point{ bufferSize.RightInclusive(), mutableBottom } : til::point{ pos.x, newY };
+        pos = newY > mutableBottom ? til::point{ bufferSize.RightExclusive(), mutableBottom } : til::point{ pos.x, newY };
         break;
     }
     }
@@ -909,7 +909,7 @@ til::point Terminal::_ConvertToBufferCell(const til::point viewportPos) const
 // - pos: a coordinate relative to the buffer (not viewport)
 void Terminal::_ScrollToPoint(const til::point pos)
 {
-    if (const auto visibleViewport = _GetVisibleViewport(); !visibleViewport.IsInBounds(pos))
+    if (const auto visibleViewport = _GetVisibleViewport(); !visibleViewport.IsInExclusiveBounds(pos))
     {
         if (const auto amtAboveView = visibleViewport.Top() - pos.y; amtAboveView > 0)
         {
