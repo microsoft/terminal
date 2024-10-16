@@ -295,8 +295,8 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
             size_t pos = 0;
             while ((pos = suggestion.find("\n", pos)) != std::string::npos)
             {
-                const auto delimiter = (_ActiveCommandline == cmdExe || _ActiveCommandline == cmd) ? cmdCommandDelimiter : commandDelimiter;
-                suggestion.replace(pos, 1, delimiter);
+                const auto delimiter = (_ActiveCommandline == cmdExe || _ActiveCommandline == cmd) ? cmdCommandDelimiter[0] : commandDelimiter[0];
+                suggestion.at(pos) = delimiter;
                 pos += 1; // Move past the replaced character
             }
             _InputSuggestionRequestedHandlers(*this, winrt::to_hstring(suggestion));
