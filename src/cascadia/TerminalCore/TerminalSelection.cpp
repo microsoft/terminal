@@ -100,7 +100,7 @@ til::point Terminal::SelectionStartForRendering() const
         // beginning of the selection.
         // When we're at the left boundary, we want to
         // flip the marker, so we skip this step.
-        bufferSize.DecrementInBounds(pos);
+        bufferSize.DecrementInExclusiveBounds(pos);
     }
     pos.y = base::ClampSub(pos.y, _VisibleStartIndex());
     return til::point{ pos };
@@ -113,6 +113,14 @@ til::point Terminal::SelectionEndForRendering() const
 {
     auto pos{ _selection->end };
     const auto bufferSize{ GetTextBuffer().GetSize() };
+    if (pos.x == bufferSize.RightExclusive())
+    {
+        // sln->end is exclusive
+        // In general, we need to draw the marker on the same cell.
+        // When we're at the right boundary, we want to
+        // flip the marker, so we move one cell to the left.
+        bufferSize.DecrementInExclusiveBounds(pos);
+    }
     pos.y = base::ClampSub(pos.y, _VisibleStartIndex());
     return til::point{ pos };
 }
@@ -617,7 +625,7 @@ void Terminal::UpdateSelection(SelectionDirection direction, SelectionExpansion 
     }
     auto targetPos{ WI_IsFlagSet(_selectionEndpoint, SelectionEndpoint::Start) ? _selection->start : _selection->end };
 
-    // 2 Perform the movement
+    // 2. Perform the movement
     switch (mode)
     {
     case SelectionExpansion::Char:
@@ -687,12 +695,12 @@ void Terminal::_MoveByChar(SelectionDirection direction, til::point& pos)
     switch (direction)
     {
     case SelectionDirection::Left:
-        _activeBuffer().GetSize().DecrementInBounds(pos);
-        pos = _activeBuffer().GetGlyphStart(pos);
+        _activeBuffer().MoveToPreviousGlyph2(pos);
         break;
     case SelectionDirection::Right:
-        _activeBuffer().GetSize().IncrementInBounds(pos);
-        pos = _activeBuffer().GetGlyphEnd(pos);
+        // We need the limit to be the mutable viewport here,
+        // otherwise we're allowed to navigate by character past the mutable bottom
+        _activeBuffer().MoveToNextGlyph2(pos, _GetMutableViewport().BottomInclusiveRightExclusive());
         break;
     case SelectionDirection::Up:
     {
@@ -706,7 +714,7 @@ void Terminal::_MoveByChar(SelectionDirection direction, til::point& pos)
         const auto bufferSize{ _activeBuffer().GetSize() };
         const auto mutableBottom{ _GetMutableViewport().BottomInclusive() };
         const auto newY{ pos.y + 1 };
-        pos = newY > mutableBottom ? til::point{ bufferSize.RightInclusive(), mutableBottom } : til::point{ pos.x, newY };
+        pos = newY > mutableBottom ? til::point{ bufferSize.RightExclusive(), mutableBottom } : til::point{ pos.x, newY };
         break;
     }
     }

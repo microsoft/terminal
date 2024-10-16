@@ -1520,13 +1520,14 @@ til::point TextBuffer::GetGlyphStart(const til::point pos, std::optional<til::po
     const auto limit{ limitOptional.value_or(bufferSize.EndExclusive()) };
 
     // Clamp pos to limit
-    if (bufferSize.CompareInBounds(resultPos, limit, true) > 0)
+    if (resultPos > limit)
     {
-        resultPos = limit;
+        return limit;
     }
 
-    // limit is exclusive, so we need to move back to be within valid bounds
-    if (resultPos != limit && GetCellDataAt(resultPos)->DbcsAttr() == DbcsAttribute::Trailing)
+    // if we're on a trailing byte, move to the leading byte
+    if (bufferSize.IsInBounds(resultPos) &&
+        GetCellDataAt(resultPos)->DbcsAttr() == DbcsAttribute::Trailing)
     {
         bufferSize.DecrementInBounds(resultPos, true);
     }
@@ -1548,12 +1549,13 @@ til::point TextBuffer::GetGlyphEnd(const til::point pos, bool accessibilityMode,
     const auto limit{ limitOptional.value_or(bufferSize.EndExclusive()) };
 
     // Clamp pos to limit
-    if (bufferSize.CompareInBounds(resultPos, limit, true) > 0)
+    if (resultPos > limit)
     {
-        resultPos = limit;
+        return limit;
     }
 
-    if (resultPos != limit && GetCellDataAt(resultPos)->DbcsAttr() == DbcsAttribute::Leading)
+    if (bufferSize.IsInBounds(resultPos) &&
+        GetCellDataAt(resultPos)->DbcsAttr() == DbcsAttribute::Leading)
     {
         bufferSize.IncrementInBounds(resultPos, true);
     }
@@ -1610,6 +1612,31 @@ bool TextBuffer::MoveToNextGlyph(til::point& pos, bool allowExclusiveEnd, std::o
     return success;
 }
 
+bool TextBuffer::MoveToNextGlyph2(til::point& pos, std::optional<til::point> limitOptional) const
+{
+    const auto bufferSize = GetSize();
+    const auto limit{ limitOptional.value_or(bufferSize.BottomInclusiveRightExclusive()) };
+
+    if (pos >= limit)
+    {
+        // Corner Case: we're on/past the limit
+        // Clamp us to the limit
+        pos = limit;
+        return false;
+    }
+
+    // Try to move forward, but if we hit the buffer boundary, we fail to move.
+    const bool success = bufferSize.IncrementInExclusiveBounds(pos);
+    if (success &&
+        bufferSize.IsInBounds(pos) &&
+        GetCellDataAt(pos)->DbcsAttr() == DbcsAttribute::Trailing)
+    {
+        // Move again if we're on a wide glyph
+        bufferSize.IncrementInExclusiveBounds(pos);
+    }
+    return success;
+}
+
 // Method Description:
 // - Update pos to be the beginning of the previous glyph/character. This is used for accessibility
 // Arguments:
@@ -1639,6 +1666,31 @@ bool TextBuffer::MoveToPreviousGlyph(til::point& pos, std::optional<til::point> 
     }
 
     pos = resultPos;
+    return success;
+}
+
+bool TextBuffer::MoveToPreviousGlyph2(til::point& pos, std::optional<til::point> limitOptional) const
+{
+    const auto bufferSize = GetSize();
+    const auto limit{ limitOptional.value_or(bufferSize.BottomInclusiveRightExclusive()) };
+
+    if (pos >= limit)
+    {
+        // Corner Case: we're on/past the limit
+        // Clamp us to the limit
+        pos = limit;
+        return false;
+    }
+
+    // Try to move backward, but if we hit the buffer boundary, we fail to move.
+    const bool success = bufferSize.DecrementInExclusiveBounds(pos);
+    if (success &&
+        bufferSize.IsInBounds(pos) &&
+        GetCellDataAt(pos)->DbcsAttr() == DbcsAttribute::Trailing)
+    {
+        // Move again if we're on a wide glyph
+        bufferSize.DecrementInExclusiveBounds(pos);
+    }
     return success;
 }
 
@@ -1780,31 +1832,17 @@ void TextBuffer::_ExpandTextRow(til::inclusive_rect& textRow) const
 
     // expand left side of rect
     til::point targetPoint{ textRow.left, textRow.top };
-    if (GetCellDataAt(targetPoint)->DbcsAttr() == DbcsAttribute::Trailing)
+    if (bufferSize.IsInBounds(targetPoint) && GetCellDataAt(targetPoint)->DbcsAttr() == DbcsAttribute::Trailing)
     {
-        if (targetPoint.x == bufferSize.Left())
-        {
-            bufferSize.IncrementInBounds(targetPoint);
-        }
-        else
-        {
-            bufferSize.DecrementInBounds(targetPoint);
-        }
+        bufferSize.DecrementInExclusiveBounds(targetPoint);
         textRow.left = targetPoint.x;
     }
 
     // expand right side of rect
     targetPoint = { textRow.right, textRow.bottom };
-    if (GetCellDataAt(targetPoint)->DbcsAttr() == DbcsAttribute::Leading)
+    if (bufferSize.IsInBounds(targetPoint) && GetCellDataAt(targetPoint)->DbcsAttr() == DbcsAttribute::Trailing)
     {
-        if (targetPoint.x == bufferSize.RightInclusive())
-        {
-            bufferSize.DecrementInBounds(targetPoint);
-        }
-        else
-        {
-            bufferSize.IncrementInBounds(targetPoint);
-        }
+        bufferSize.IncrementInExclusiveBounds(targetPoint);
         textRow.right = targetPoint.x;
     }
 }

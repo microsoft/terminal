@@ -180,6 +180,8 @@ public:
     til::point GetGlyphEnd(const til::point pos, bool accessibilityMode = false, std::optional<til::point> limitOptional = std::nullopt) const;
     bool MoveToNextGlyph(til::point& pos, bool allowBottomExclusive = false, std::optional<til::point> limitOptional = std::nullopt) const;
     bool MoveToPreviousGlyph(til::point& pos, std::optional<til::point> limitOptional = std::nullopt) const;
+    bool MoveToNextGlyph2(til::point& pos, std::optional<til::point> limitOptional = std::nullopt) const;
+    bool MoveToPreviousGlyph2(til::point& pos, std::optional<til::point> limitOptional = std::nullopt) const;
 
     const std::vector<til::inclusive_rect> GetTextRects(til::point start, til::point end, bool blockSelection, bool bufferCoordinates) const;
     std::vector<til::point_span> GetTextSpans(til::point start, til::point end, bool blockSelection, bool bufferCoordinates) const;
