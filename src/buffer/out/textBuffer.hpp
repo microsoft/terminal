@@ -173,6 +173,8 @@ public:
 
     til::point GetWordStart(const til::point target, const std::wstring_view wordDelimiters, bool accessibilityMode = false, std::optional<til::point> limitOptional = std::nullopt) const;
     til::point GetWordEnd(const til::point target, const std::wstring_view wordDelimiters, bool accessibilityMode = false, std::optional<til::point> limitOptional = std::nullopt) const;
+    til::point GetWordStart2(til::point pos, const std::wstring_view wordDelimiters, std::optional<til::point> limitOptional = std::nullopt) const;
+    til::point GetWordEnd2(til::point pos, const std::wstring_view wordDelimiters, std::optional<til::point> limitOptional = std::nullopt) const;
     bool MoveToNextWord(til::point& pos, const std::wstring_view wordDelimiters, std::optional<til::point> limitOptional = std::nullopt) const;
     bool MoveToPreviousWord(til::point& pos, const std::wstring_view wordDelimiters) const;
 
@@ -322,6 +324,8 @@ private:
     void _SetFirstRowIndex(const til::CoordType FirstRowIndex) noexcept;
     void _ExpandTextRow(til::inclusive_rect& selectionRow) const;
     DelimiterClass _GetDelimiterClassAt(const til::point pos, const std::wstring_view wordDelimiters) const;
+    til::point _GetDelimiterClassRunStart(til::point pos, const std::wstring_view wordDelimiters) const;
+    til::point _GetDelimiterClassRunEnd(til::point pos, const std::wstring_view wordDelimiters) const;
     til::point _GetWordStartForAccessibility(const til::point target, const std::wstring_view wordDelimiters) const;
     til::point _GetWordStartForSelection(const til::point target, const std::wstring_view wordDelimiters) const;
     til::point _GetWordEndForAccessibility(const til::point target, const std::wstring_view wordDelimiters, const til::point limit) const;

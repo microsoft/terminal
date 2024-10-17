@@ -1132,6 +1132,158 @@ DelimiterClass TextBuffer::_GetDelimiterClassAt(const til::point pos, const std:
     return GetRowByOffset(realPos.y).DelimiterClassAt(realPos.x, wordDelimiters);
 }
 
+til::point TextBuffer::GetWordStart2(til::point pos, const std::wstring_view wordDelimiters, std::optional<til::point> limitOptional) const
+{
+    const auto bufferSize{ GetSize() };
+    const auto limit{ limitOptional.value_or(bufferSize.BottomInclusiveRightExclusive()) };
+
+    if (pos < bufferSize.Origin())
+    {
+        // can't move further back, so return early at origin
+        return bufferSize.Origin();
+    }
+    else if (pos >= limit)
+    {
+        // clamp to limit,
+        // but still do movement
+        pos = limit;
+    }
+
+    // Consider the delimiter classes represented as these chars:
+    // - ControlChar:   "_"
+    // - DelimiterChar: "D"
+    // - RegularChar:   "C"
+    // Expected results ("|" is the position):
+    //   CCC___| --> |CCC___
+    //   DDD___| --> |DDD___
+    //   ___CCC| --> ___|CCC
+    //   DDDCCC| --> DDD|CCC
+    //   ___DDD| --> ___|DDD
+    //   CCCDDD| --> CCC|DDD
+    // So the heuristic we use is:
+    // 1. move to the beginning of the delimiter class run
+    // 2. if we were on a ControlChar, go back one more delimiter class run
+    const auto initialDelimiter = bufferSize.IsInBounds(pos) ? _GetDelimiterClassAt(pos, wordDelimiters) : DelimiterClass::ControlChar;
+    pos = _GetDelimiterClassRunStart(pos, wordDelimiters);
+    if (initialDelimiter == DelimiterClass::ControlChar)
+    {
+        bufferSize.DecrementInExclusiveBounds(pos);
+        pos = _GetDelimiterClassRunStart(pos, wordDelimiters);
+    }
+    return pos;
+}
+
+til::point TextBuffer::GetWordEnd2(til::point pos, const std::wstring_view wordDelimiters, std::optional<til::point> limitOptional) const
+{
+    const auto bufferSize{ GetSize() };
+    const auto limit{ limitOptional.value_or(bufferSize.BottomInclusiveRightExclusive()) };
+
+    if (pos >= limit)
+    {
+        // can't move further forward,
+        // so return early at limit
+        return limit;
+    }
+    else if (const auto origin{ bufferSize.Origin() }; pos < origin)
+    {
+        // clamp to origin,
+        // but still do movement
+        pos = origin;
+    }
+
+    // Consider the delimiter classes represented as these chars:
+    // - ControlChar:   "_"
+    // - DelimiterChar: "D"
+    // - RegularChar:   "C"
+    // Expected results ("|" is the position):
+    //   |CCC___ --> CCC__|_
+    //   |DDD___ --> DDD__|_
+    //   |___CCC --> __|_CCC
+    //   |DDDCCC --> DD|DCCC
+    //   |___DDD --> __|_DDD
+    //   |CCCDDD --> CC|CDDD
+    // So the heuristic we use is:
+    // 1. move to the end of the delimiter class run
+    // 2. if the next delimiter class run is a ControlChar, go forward one more delimiter class run
+    pos = _GetDelimiterClassRunEnd(pos, wordDelimiters);
+    if (pos.x == bufferSize.RightExclusive())
+    {
+        // Special case:
+        // we're at the right boundary (and end of a delimiter class run),
+        // we already know we can't wrap, so return early
+        return pos;
+    }
+
+    auto nextPos = pos;
+    bufferSize.IncrementInExclusiveBounds(nextPos);
+    if (const auto nextDelimClass = bufferSize.IsInBounds(nextPos) ? _GetDelimiterClassAt(nextPos, wordDelimiters) : DelimiterClass::ControlChar;
+        nextDelimClass == DelimiterClass::ControlChar)
+    {
+        return _GetDelimiterClassRunEnd(nextPos, wordDelimiters);
+    }
+    return pos;
+}
+
+til::point TextBuffer::_GetDelimiterClassRunStart(til::point pos, const std::wstring_view wordDelimiters) const
+{
+    const auto bufferSize = GetSize();
+    const auto initialDelimClass = bufferSize.IsInBounds(pos) ? _GetDelimiterClassAt(pos, wordDelimiters) : DelimiterClass::ControlChar;
+    for (auto nextPos = pos; nextPos != bufferSize.Origin();)
+    {
+        bufferSize.DecrementInExclusiveBounds(nextPos);
+
+        if (nextPos.x == bufferSize.RightExclusive())
+        {
+            // wrapped onto previous line,
+            // check if it was forced to wrap
+            const auto& row = GetRowByOffset(nextPos.y);
+            if (!row.WasWrapForced())
+            {
+                return pos;
+            }
+        }
+        else if (_GetDelimiterClassAt(nextPos, wordDelimiters) != initialDelimClass)
+        {
+            // if we changed delim class, we're done (don't apply move)
+            return pos;
+        }
+
+        // apply the move
+        pos = nextPos;
+    }
+    return pos;
+}
+
+til::point TextBuffer::_GetDelimiterClassRunEnd(til::point pos, const std::wstring_view wordDelimiters) const
+{
+    const auto bufferSize = GetSize();
+    const auto initialDelimClass = bufferSize.IsInBounds(pos) ? _GetDelimiterClassAt(pos, wordDelimiters) : DelimiterClass::ControlChar;
+    for (auto nextPos = pos; nextPos != bufferSize.BottomInclusiveRightExclusive();)
+    {
+        bufferSize.IncrementInExclusiveBounds(nextPos);
+
+        if (nextPos.x == bufferSize.Left())
+        {
+            // wrapped onto next line,
+            // check if it was forced to wrap or switched delimiter class
+            const auto& row = GetRowByOffset(pos.y);
+            if (!row.WasWrapForced() || _GetDelimiterClassAt(nextPos, wordDelimiters) != initialDelimClass)
+            {
+                return pos;
+            }
+        }
+        else if (bufferSize.IsInBounds(nextPos) && _GetDelimiterClassAt(nextPos, wordDelimiters) != initialDelimClass)
+        {
+            // if we changed delim class, we're done (don't apply move)
+            return pos;
+        }
+
+        // apply the move
+        pos = nextPos;
+    }
+    return pos;
+}
+
 // Method Description:
 // - Get the til::point for the beginning of the word you are on
 // Arguments:

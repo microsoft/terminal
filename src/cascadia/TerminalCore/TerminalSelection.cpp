@@ -248,7 +248,7 @@ void Terminal::_SetSelectionEnd(SelectionInfo* selection, const til::point viewp
 // - the new start/end for a selection
 std::pair<til::point, til::point> Terminal::_PivotSelection(const til::point targetPos, bool& targetStart) const noexcept
 {
-    if (targetStart = _activeBuffer().GetSize().CompareInBounds(targetPos, _selection->pivot) <= 0)
+    if (targetStart = targetPos <= _selection->pivot)
     {
         // target is before pivot
         // treat target as start
@@ -726,48 +726,25 @@ void Terminal::_MoveByWord(SelectionDirection direction, til::point& pos)
     {
     case SelectionDirection::Left:
     {
-        const auto wordStartPos{ _activeBuffer().GetWordStart(pos, _wordDelimiters) };
-        if (_activeBuffer().GetSize().CompareInBounds(_selection->pivot, pos) < 0)
+        const auto& buffer = _activeBuffer();
+        auto nextPos = pos;
+        nextPos = buffer.GetWordStart2(nextPos, _wordDelimiters);
+        if (nextPos == pos)
         {
-            // If we're moving towards the pivot, move one more cell
-            pos = wordStartPos;
-            _activeBuffer().GetSize().DecrementInBounds(pos);
+            // didn't move because we're already at the beginning of a word,
+            // so move to the beginning of the previous word
+            buffer.GetSize().DecrementInExclusiveBounds(nextPos);
+            nextPos = buffer.GetWordStart2(nextPos, _wordDelimiters);
         }
-        else if (wordStartPos == pos)
-        {
-            // already at the beginning of the current word,
-            // move to the beginning of the previous word
-            _activeBuffer().GetSize().DecrementInBounds(pos);
-            pos = _activeBuffer().GetWordStart(pos, _wordDelimiters);
-        }
-        else
-        {
-            // move to the beginning of the current word
-            pos = wordStartPos;
-        }
+        pos = nextPos;
         break;
     }
     case SelectionDirection::Right:
     {
-        const auto wordEndPos{ _activeBuffer().GetWordEnd(pos, _wordDelimiters) };
-        if (_activeBuffer().GetSize().CompareInBounds(pos, _selection->pivot) < 0)
-        {
-            // If we're moving towards the pivot, move one more cell
-            pos = _activeBuffer().GetWordEnd(pos, _wordDelimiters);
-            _activeBuffer().GetSize().IncrementInBounds(pos);
-        }
-        else if (wordEndPos == pos)
-        {
-            // already at the end of the current word,
-            // move to the end of the next word
-            _activeBuffer().GetSize().IncrementInBounds(pos);
-            pos = _activeBuffer().GetWordEnd(pos, _wordDelimiters);
-        }
-        else
-        {
-            // move to the end of the current word
-            pos = wordEndPos;
-        }
+        // increment one more because end is exclusive
+        const auto& buffer = _activeBuffer();
+        pos = buffer.GetWordEnd2(pos, _wordDelimiters);
+        buffer.GetSize().IncrementInExclusiveBounds(pos);
         break;
     }
     case SelectionDirection::Up:
