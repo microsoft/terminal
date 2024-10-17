@@ -300,12 +300,10 @@
                                 <RichTextBlock MaxWidth="900"
                                                TextWrapping="WrapWholeWords">
                                     <Paragraph>
-                                        <Run x:Name="AISettings_OpenAIDescriptionPart1" />
-                                        <Hyperlink NavigateUri="https://go.microsoft.com/fwlink/?linkid=2251839"
+                                        <Run x:Name="AISettings_OpenAIDescriptionPart1" /><Hyperlink NavigateUri="https://go.microsoft.com/fwlink/?linkid=2251839"
                                                    TextDecorations="None">
                                             <Run x:Name="AISettings_OpenAIDescriptionLinkText" />
-                                        </Hyperlink>
-                                        <Run x:Name="AISettings_OpenAIDescriptionPart2" />
+                                        </Hyperlink><Run x:Name="AISettings_OpenAIDescriptionPart2" />
                                     </Paragraph>
                                 </RichTextBlock>
                             </StackPanel>

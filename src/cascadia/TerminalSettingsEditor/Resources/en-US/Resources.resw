@@ -753,11 +753,11 @@
     <comment>Text on the button that allows the user to clear the stored key.</comment>
   </data>
   <data name="AISettings_OpenAIDescription" xml:space="preserve">
-    <value>OpenAI is provided by a third-party and not Microsoft.  When you send a message in Terminal Chat, your chat history and the name of your active shell are sent to the third-party AI service for use by OpenAI. {0}.  Your use of OpenAI is governed by the relevant third-party terms, conditions, and privacy statement. </value>
+    <value>OpenAI is provided by a third-party and not Microsoft.  When you send a message in Terminal Chat, your chat history and the name of your active shell are sent to the third-party AI service for use by OpenAI. {0}. Your use of OpenAI is governed by the relevant third-party terms, conditions, and privacy statement. </value>
     <comment>Header of the description that informs the user about their usage of OpenAI in Terminal. {0} will be replaced by AISettings_OpenAILearnMoreLinkText.</comment>
   </data>
   <data name="AISettings_OpenAILearnMoreLinkText" xml:space="preserve">
-    <value>Learn More</value>
+    <value>Learn more</value>
     <comment>The text of the hyperlink that directs the user to learn more about Terminal Chat.</comment>
   </data>
   <data name="AISettings_GithubCopilotPrerequisite.Text" xml:space="preserve">
@@ -775,10 +775,6 @@
   <data name="AISettings_GithubCopilotLearnMoreLinkText" xml:space="preserve">
     <value>github.com/features/copilot</value>
     <comment>The text of the hyperlink that directs the user to learn more about Github Copilot.</comment>
-  </data>
-  <data name="AISettings_OpenAILearnMoreLinkText" xml:space="preserve">
-    <value>Learn More</value>
-    <comment>The text of the hyperlink that directs the user to learn more about Terminal Chat.</comment>
   </data>
   <data name="AISettings_GithubCopilot.Header" xml:space="preserve">
     <value>GitHub Copilot</value>
