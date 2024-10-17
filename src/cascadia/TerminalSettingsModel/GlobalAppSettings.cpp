@@ -23,6 +23,7 @@ static constexpr std::string_view ThemeKey{ "theme" };
 static constexpr std::string_view DefaultProfileKey{ "defaultProfile" };
 static constexpr std::string_view LegacyUseTabSwitcherModeKey{ "useTabSwitcher" };
 static constexpr std::string_view LegacyReloadEnvironmentVariablesKey{ "compatibility.reloadEnvironmentVariables" };
+static constexpr std::string_view AIInfoKey{ "aiConfig" };
 static constexpr std::string_view LegacyForceVTInputKey{ "experimental.input.forceVT" };
 static constexpr std::string_view LegacyInputServiceWarningKey{ "inputServiceWarning" };
 static constexpr std::string_view LegacyWarnAboutLargePasteKey{ "largePasteWarning" };
@@ -62,6 +63,9 @@ winrt::com_ptr<GlobalAppSettings> GlobalAppSettings::Copy() const
     globals->_defaultProfile = _defaultProfile;
     globals->_actionMap = _actionMap->Copy();
     globals->_keybindingsWarnings = _keybindingsWarnings;
+
+    const auto aiInfo = AIConfig::CopyAIConfig(winrt::get_self<AIConfig>(_AIInfo));
+    globals->_AIInfo = *aiInfo;
 
 #define GLOBAL_SETTINGS_COPY(type, name, jsonKey, ...) \
     globals->_##name = _##name;
@@ -143,6 +147,10 @@ void GlobalAppSettings::LayerJson(const Json::Value& json, const OriginTag origi
     _fixupsAppliedDuringLoad = JsonUtils::GetValueForKey(json, LegacyWarnAboutLargePasteKey, _WarnAboutLargePaste) || _fixupsAppliedDuringLoad;
     _fixupsAppliedDuringLoad = JsonUtils::GetValueForKey(json, LegacyWarnAboutMultiLinePasteKey, _WarnAboutMultiLinePaste) || _fixupsAppliedDuringLoad;
     _fixupsAppliedDuringLoad = JsonUtils::GetValueForKey(json, LegacyConfirmCloseAllTabsKey, _ConfirmCloseAllTabs) || _fixupsAppliedDuringLoad;
+
+    // AI Settings
+    auto aiInfoImpl = winrt::get_self<implementation::AIConfig>(_AIInfo);
+    aiInfoImpl->LayerJson(json);
 
 #define GLOBAL_SETTINGS_LAYER_JSON(type, name, jsonKey, ...) \
     JsonUtils::GetValueForKey(json, jsonKey, _##name);       \
@@ -312,6 +320,10 @@ Json::Value GlobalAppSettings::ToJson()
 
     json[JsonKey(ActionsKey)] = _actionMap->ToJson();
     json[JsonKey(KeybindingsKey)] = _actionMap->KeyBindingsToJson();
+    if (auto aiJSON = winrt::get_self<AIConfig>(_AIInfo)->ToJson(); !aiJSON.empty())
+    {
+        json[JsonKey(AIInfoKey)] = std::move(aiJSON);
+    }
 
     return json;
 }
@@ -360,6 +372,11 @@ void GlobalAppSettings::ExpandCommands(const winrt::Windows::Foundation::Collect
 bool GlobalAppSettings::ShouldUsePersistedLayout() const
 {
     return FirstWindowPreference() == FirstWindowPreference::PersistedWindowLayout && !IsolatedMode();
+}
+
+winrt::Microsoft::Terminal::Settings::Model::AIConfig GlobalAppSettings::AIInfo()
+{
+    return _AIInfo;
 }
 
 void GlobalAppSettings::_logSettingSet(const std::string_view& setting)

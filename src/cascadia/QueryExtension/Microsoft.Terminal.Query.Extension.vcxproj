@@ -56,6 +56,9 @@
     <ClInclude Include="AzureLLMProvider.h">
       <DependentUpon>AzureLLMProvider.idl</DependentUpon>
     </ClInclude>
+    <ClInclude Include="OpenAILLMProvider.h">
+      <DependentUpon>OpenAILLMProvider.idl</DependentUpon>
+    </ClInclude>
   </ItemGroup>
   <!-- ========================= XAML files ======================== -->
   <ItemGroup>
@@ -80,6 +83,9 @@
     <ClCompile Include="AzureLLMProvider.cpp">
       <DependentUpon>AzureLLMProvider.idl</DependentUpon>
     </ClCompile>
+    <ClCompile Include="OpenAILLMProvider.cpp">
+      <DependentUpon>OpenAILLMProvider.idl</DependentUpon>
+    </ClCompile>
   </ItemGroup>
   <!-- ========================= idl Files ======================== -->
   <ItemGroup>
@@ -94,6 +100,9 @@
       <SubType>Code</SubType>
     </Midl>
     <Midl Include="AzureLLMProvider.idl">
+      <SubType>Code</SubType>
+    </Midl>
+    <Midl Include="OpenAILLMProvider.idl">
       <SubType>Code</SubType>
     </Midl>
   </ItemGroup>

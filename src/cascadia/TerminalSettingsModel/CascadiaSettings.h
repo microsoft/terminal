@@ -150,12 +150,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         Model::DefaultTerminal CurrentDefaultTerminal() noexcept;
         void CurrentDefaultTerminal(const Model::DefaultTerminal& terminal);
 
-        // AI Key and endpoint
-        winrt::hstring AIEndpoint() noexcept;
-        void AIEndpoint(const winrt::hstring& endpoint) noexcept;
-        winrt::hstring AIKey() noexcept;
-        void AIKey(const winrt::hstring& key) noexcept;
-
         void ExpandCommands();
 
         static winrt::event_token AzureOpenAISettingChanged(const AzureOpenAISettingChangedHandler& handler);

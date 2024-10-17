@@ -53,6 +53,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         AISettings_AzureOpenAIProductTermsPart1().Text(productTermsParts.at(0));
         AISettings_AzureOpenAIProductTermsLinkText().Text(productTermsParts.at(1));
         AISettings_AzureOpenAIProductTermsPart2().Text(productTermsParts.at(2));
+
+        std::array<std::wstring, 1> openAIDescriptionPlaceholders{ RS_(L"AISettings_OpenAILearnMoreLinkText").c_str() };
+        std::span<std::wstring> openAIDescriptionPlaceholdersSpan{ openAIDescriptionPlaceholders };
+        const auto openAIDescription = ::Microsoft::Console::Utils::SplitResourceStringWithPlaceholders(RS_(L"AISettings_OpenAIDescription"), openAIDescriptionPlaceholdersSpan);
+
+        AISettings_OpenAIDescriptionPart1().Text(openAIDescription.at(0));
+        AISettings_OpenAIDescriptionLinkText().Text(openAIDescription.at(1));
+        AISettings_OpenAIDescriptionPart2().Text(openAIDescription.at(2));
     }
 
     void AISettings::OnNavigatedTo(const NavigationEventArgs& e)
@@ -67,28 +75,59 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
     }
 
-    void AISettings::ClearKeyAndEndpoint_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
+    void AISettings::ClearAzureOpenAIKeyAndEndpoint_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
     {
-        _ViewModel.AIEndpoint(L"");
-        _ViewModel.AIKey(L"");
+        _ViewModel.AzureOpenAIEndpoint(L"");
+        _ViewModel.AzureOpenAIKey(L"");
     }
 
-    void AISettings::StoreKeyAndEndpoint_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
+    void AISettings::StoreAzureOpenAIKeyAndEndpoint_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
     {
         // only store anything if both fields are filled
-        if (!EndpointInputBox().Text().empty() && !KeyInputBox().Password().empty())
+        if (!AzureOpenAIEndpointInputBox().Text().empty() && !AzureOpenAIKeyInputBox().Password().empty())
         {
-            _ViewModel.AIEndpoint(EndpointInputBox().Text());
-            _ViewModel.AIKey(KeyInputBox().Password());
-            EndpointInputBox().Text(L"");
-            KeyInputBox().Password(L"");
+            _ViewModel.AzureOpenAIEndpoint(AzureOpenAIEndpointInputBox().Text());
+            _ViewModel.AzureOpenAIKey(AzureOpenAIKeyInputBox().Password());
+            AzureOpenAIEndpointInputBox().Text(L"");
+            AzureOpenAIKeyInputBox().Password(L"");
 
             TraceLoggingWrite(
                 g_hSettingsEditorProvider,
-                "AIEndpointAndKeySaved",
-                TraceLoggingDescription("Event emitted when the user stores an AI key and endpoint"),
+                "AzureOpenAIEndpointAndKeySaved",
+                TraceLoggingDescription("Event emitted when the user stores an Azure OpenAI key and endpoint"),
                 TraceLoggingKeyword(MICROSOFT_KEYWORD_CRITICAL_DATA),
                 TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
         }
+    }
+
+    void AISettings::ClearOpenAIKey_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
+    {
+        _ViewModel.OpenAIKey(L"");
+    }
+
+    void AISettings::StoreOpenAIKey_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
+    {
+        if (!OpenAIKeyInputBox().Password().empty())
+        {
+            _ViewModel.OpenAIKey(OpenAIKeyInputBox().Password());
+            OpenAIKeyInputBox().Password(L"");
+
+            TraceLoggingWrite(
+                g_hSettingsEditorProvider,
+                "OpenAIEndpointAndKeySaved",
+                TraceLoggingDescription("Event emitted when the user stores an OpenAI key and endpoint"),
+                TraceLoggingKeyword(MICROSOFT_KEYWORD_CRITICAL_DATA),
+                TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
+        }
+    }
+
+    void AISettings::SetAzureOpenAIActive_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
+    {
+        _ViewModel.AzureOpenAIActive(true);
+    }
+
+    void AISettings::SetOpenAIActive_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
+    {
+        _ViewModel.OpenAIActive(true);
     }
 }
