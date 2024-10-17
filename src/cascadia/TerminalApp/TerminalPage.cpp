@@ -5630,17 +5630,33 @@ namespace winrt::TerminalApp::implementation
             if (const auto activeControl = _GetActiveControl())
             {
                 const auto profileName = activeControl.Settings().ProfileName();
-                const std::wstring fullCommandline = activeControl.Settings().Commandline().c_str();
+                std::wstring fullCommandline = activeControl.Settings().Commandline().c_str();
 
-                // We just need the executable
-                // Code here uses the same logic as in utils.cpp, Utils::MangleStartingDirectoryForWSL
-                const auto terminator{ fullCommandline.find_first_of(LR"(" )", 1) }; // look past the first character in case it starts with "
-                const auto start{ til::at(fullCommandline, 0) == L'"' ? 1 : 0 };
-                const std::filesystem::path executablePath{ fullCommandline.substr(start, terminator - start) };
-                const auto executableFilename{ executablePath.filename() };
-                winrt::hstring executableString{ executableFilename.c_str() };
-                _extensionPalette.ActiveCommandline(executableString);
-                _extensionPalette.ProfileName(profileName);
+                // We need to extract the executable to send to the LMProvider for context
+                if (!fullCommandline.empty())
+                {
+                    std::filesystem::path executablePath;
+                    if (til::at(fullCommandline, 0) == L'"')
+                    {
+                        // commandline starts with a quote ("), the path is the string up until the next quote
+                        const auto secondQuotePos = fullCommandline.find(L"\"", 1);
+                        if (secondQuotePos != std::wstring::npos)
+                        {
+                            executablePath = std::filesystem::path{ fullCommandline.substr(1, secondQuotePos - 1) };
+                        }
+                    }
+                    else
+                    {
+                        // commandline does not start with a quote, the path is simply the first word
+                        const auto terminator{ fullCommandline.find_first_of(LR"(" )", 0) };
+                        executablePath = std::filesystem::path{ fullCommandline.substr(0, terminator) };
+                    }
+
+                    const auto executableFilename{ executablePath.filename() };
+                    winrt::hstring executableString{ executableFilename.c_str() };
+                    _extensionPalette.ActiveCommandline(executableString);
+                    _extensionPalette.ProfileName(profileName);
+                }
 
                 // Unfortunately IControlSettings doesn't contain the icon, we need to search our
                 // settings for the matching profile and get the icon from there

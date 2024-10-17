@@ -1267,17 +1267,30 @@ COOKED_READ_DATA::LayoutResult COOKED_READ_DATA::_layoutLine(std::wstring& outpu
             output.append(text, 0, len);
             column += cols;
             it += len;
+
+            if (it != nextControlChar)
+            {
+                // The only reason that not all text could be fit into the line is if the last character was a wide glyph.
+                // In that case we want to return the columnLimit, to indicate that the row is full and a line wrap is required,
+                // BUT DON'T want to pad the line with a whitespace to actually fill the line to the columnLimit.
+                // This is because copying the prompt contents (Ctrl-A, Ctrl-C) should not copy any trailing padding whitespace.
+                //
+                // Thanks to this lie, the _redisplay() code will not use a CRLF sequence or similar to move to the next line,
+                // as it thinks that this row has naturally wrapped. This causes it to print the wide glyph on the preceding line
+                // which causes the terminal to insert the padding whitespace for us.
+                column = columnLimit;
+                break;
+            }
+
+            if (column >= columnLimit)
+            {
+                break;
+            }
         }
 
         const auto nextPlainChar = std::find_if(it, end, [](const auto& wch) { return wch >= L' '; });
         for (; it != nextPlainChar; ++it)
         {
-            if (column >= columnLimit)
-            {
-                column = columnLimit;
-                goto outerLoopExit;
-            }
-
             const auto wch = *it;
             wchar_t buf[8];
             til::CoordType len = 0;
@@ -1297,11 +1310,20 @@ COOKED_READ_DATA::LayoutResult COOKED_READ_DATA::_layoutLine(std::wstring& outpu
 
             if (column + len > columnLimit)
             {
+                // Unlike above with regular text we can't avoid padding the line with whitespace, because a string
+                // like "^A" is not a wide glyph, and so we cannot trick the terminal to insert the padding for us.
+                output.append(columnLimit - column, L' ');
+                column = columnLimit;
                 goto outerLoopExit;
             }
 
             output.append(buf, len);
             column += len;
+
+            if (column >= columnLimit)
+            {
+                goto outerLoopExit;
+            }
         }
     }
 

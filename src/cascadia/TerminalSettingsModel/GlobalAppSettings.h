@@ -72,6 +72,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                             const Windows::Foundation::Collections::IMapView<winrt::hstring, Model::ColorScheme>& schemes);
 
         bool LegacyReloadEnvironmentVariables() const noexcept { return _legacyReloadEnvironmentVariables; }
+        bool LegacyForceVTInput() const noexcept { return _legacyForceVTInput; }
 
         Model::AIConfig AIInfo();
 
@@ -92,7 +93,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 #endif
 
         winrt::guid _defaultProfile{};
+        bool _fixupsAppliedDuringLoad{ false };
         bool _legacyReloadEnvironmentVariables{ true };
+        bool _legacyForceVTInput{ false };
         winrt::com_ptr<implementation::ActionMap> _actionMap{ winrt::make_self<implementation::ActionMap>() };
         std::set<std::string> _changeLog;
 

@@ -387,6 +387,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         const auto key = e.OriginalKey();
         const auto coreWindow = CoreWindow::GetForCurrentThread();
         const auto ctrlDown = WI_IsFlagSet(coreWindow.GetKeyState(winrt::Windows::System::VirtualKey::Control), CoreVirtualKeyStates::Down);
+        const auto shiftDown = WI_IsFlagSet(coreWindow.GetKeyState(winrt::Windows::System::VirtualKey::Shift), CoreVirtualKeyStates::Down);
 
         if (key == VirtualKey::Escape)
         {
@@ -398,7 +399,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
 
             e.Handled(true);
         }
-        else if (key == VirtualKey::Enter)
+        else if (key == VirtualKey::Enter && !shiftDown)
         {
             if (const auto& textBox = e.OriginalSource().try_as<TextBox>())
             {

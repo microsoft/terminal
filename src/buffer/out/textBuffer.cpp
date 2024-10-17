@@ -451,14 +451,9 @@ size_t TextBuffer::FitTextIntoColumns(const std::wstring_view& chars, til::Coord
         cwd.GraphemeNext(state, chars);
         col += state.width;
 
-        // If we ran out of columns, we need to always return `columnLimit` and not `cols`,
-        // because if we tried inserting a wide glyph into just 1 remaining column it will
-        // fail to fit, but that remaining column still has been used up. When the caller sees
-        // `columns == columnLimit` they will line-wrap and continue inserting into the next row.
         if (col > columnLimit)
         {
-            columns = columnLimit;
-            return dist;
+            break;
         }
 
         dist += state.len;
@@ -466,7 +461,7 @@ size_t TextBuffer::FitTextIntoColumns(const std::wstring_view& chars, til::Coord
 
     // But if we simply ran out of text we just need to return the actual number of columns.
     columns = col;
-    return chars.size();
+    return dist;
 }
 
 // Pretend as if `position` is a regular cursor in the TextBuffer.

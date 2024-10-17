@@ -107,7 +107,6 @@ namespace SettingsModelUnitTests
                 "initialPosition": ",",
                 "launchMode": "default",
                 "alwaysOnTop": false,
-                "inputServiceWarning": true,
                 "copyOnSelect": false,
                 "copyFormatting": "all",
                 "wordDelimiters": " /\\()\"'-.,:;<>~!@#$%^&*|+=[]{}~?\u2502",
@@ -123,12 +122,12 @@ namespace SettingsModelUnitTests
                 "snapToGridOnResize": true,
                 "disableAnimations": false,
 
-                "confirmCloseAllTabs": true,
-                "largePasteWarning": true,
-                "multiLinePasteWarning": true,
                 "trimPaste": true,
 
-                "experimental.input.forceVT": false,
+                "warning.confirmCloseAllTabs" : true,
+                "warning.inputService" : true,
+                "warning.largePaste" : true,
+                "warning.multiLinePaste" : true,
 
                 "actions": [],
                 "keybindings": []

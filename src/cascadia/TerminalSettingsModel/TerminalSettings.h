@@ -94,6 +94,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         INHERITABLE_SETTING(Model::TerminalSettings, bool, CopyOnSelect, false);
         INHERITABLE_SETTING(Model::TerminalSettings, Microsoft::Terminal::Control::CopyFormat, CopyFormatting, 0);
         INHERITABLE_SETTING(Model::TerminalSettings, bool, FocusFollowMouse, false);
+        INHERITABLE_SETTING(Model::TerminalSettings, bool, AllowVtChecksumReport, false);
         INHERITABLE_SETTING(Model::TerminalSettings, bool, TrimBlockSelection, true);
         INHERITABLE_SETTING(Model::TerminalSettings, bool, DetectURLs, true);
 
@@ -161,6 +162,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         INHERITABLE_SETTING(Model::TerminalSettings, bool, DisablePartialInvalidation, false);
         INHERITABLE_SETTING(Model::TerminalSettings, bool, SoftwareRendering, false);
         INHERITABLE_SETTING(Model::TerminalSettings, Microsoft::Terminal::Control::TextMeasurement, TextMeasurement);
+        INHERITABLE_SETTING(Model::TerminalSettings, Microsoft::Terminal::Control::DefaultInputScope, DefaultInputScope);
         INHERITABLE_SETTING(Model::TerminalSettings, bool, UseBackgroundImageForWindow, false);
         INHERITABLE_SETTING(Model::TerminalSettings, bool, ForceVTInput, false);
 
