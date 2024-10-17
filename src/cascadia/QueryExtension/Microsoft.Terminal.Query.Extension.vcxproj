@@ -62,6 +62,8 @@
     <ClInclude Include="GithubCopilotLLMProvider.h">
       <DependentUpon>GithubCopilotLLMProvider.idl</DependentUpon>
     </ClInclude>
+    <ClInclude Include="WindowsTerminalIDAndSecret.h">
+    </ClInclude>
   </ItemGroup>
   <!-- ========================= XAML files ======================== -->
   <ItemGroup>

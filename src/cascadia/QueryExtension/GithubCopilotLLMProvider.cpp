@@ -5,6 +5,7 @@
 #include "GithubCopilotLLMProvider.h"
 #include "../../types/inc/utils.hpp"
 #include "LibraryResources.h"
+#include "WindowsTerminalIDAndSecret.h"
 
 #include "GithubCopilotLLMProvider.g.cpp"
 
@@ -60,8 +61,6 @@ static constexpr std::wstring_view chatCompletionSuffix{ L"/chat/completions" };
 static constexpr std::wstring_view accessTokenEndpoint{ L"https://github.com/login/oauth/access_token" };
 
 // Windows Terminal specific strings
-static constexpr std::wstring_view windowsTerminalClientSecret{ L"FineKeepYourSecrets" };
-static constexpr std::wstring_view windowsTerminalClientID{ L"Iv1.b0870d058e4473a1" };
 static constexpr std::wstring_view windowsTerminalUserAgent{ L"Windows Terminal" };
 static constexpr std::wstring_view windowsTerminalIntegrationId{ L"windows-terminal-chat" };
 
