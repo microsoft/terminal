@@ -50,6 +50,7 @@
 #include "SelectCommandArgs.g.cpp"
 #include "SelectOutputArgs.g.cpp"
 #include "ColorSelectionArgs.g.cpp"
+#include "HandleUriArgs.g.cpp"
 
 #include <LibraryResources.h>
 #include <WtExeUtils.h>
@@ -1017,5 +1018,17 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             return RS_(L"SelectCommandPreviousCommandKey");
         }
         return {};
+    }
+
+    winrt::hstring HandleUriArgs::GenerateName() const
+    {
+        if (_Uri)
+        {
+            return winrt::hstring{ RS_fmt(L"HandleUri_default_action", _Uri.value()) };
+        }
+        else
+        {
+            return RS_(L"HandleUri_default_action");
+        }
     }
 }

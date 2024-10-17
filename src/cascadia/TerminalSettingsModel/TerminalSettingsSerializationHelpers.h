@@ -144,9 +144,10 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Control::TextAntialiasingMode)
 
 JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::LLMProvider)
 {
-    static constexpr std::array<pair_type, 2> mappings = {
+    static constexpr std::array<pair_type, 3> mappings = {
         pair_type{ "azureOpenAI", ValueType::AzureOpenAI },
-        pair_type{ "openAI", ValueType::OpenAI }
+        pair_type{ "openAI", ValueType::OpenAI },
+        pair_type{ "githubCopilot", ValueType::GithubCopilot }
     };
 };
 

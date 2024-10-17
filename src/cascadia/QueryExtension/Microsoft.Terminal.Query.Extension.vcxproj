@@ -59,6 +59,11 @@
     <ClInclude Include="OpenAILLMProvider.h">
       <DependentUpon>OpenAILLMProvider.idl</DependentUpon>
     </ClInclude>
+    <ClInclude Include="GithubCopilotLLMProvider.h">
+      <DependentUpon>GithubCopilotLLMProvider.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="WindowsTerminalIDAndSecret.h">
+    </ClInclude>
   </ItemGroup>
   <!-- ========================= XAML files ======================== -->
   <ItemGroup>
@@ -86,6 +91,9 @@
     <ClCompile Include="OpenAILLMProvider.cpp">
       <DependentUpon>OpenAILLMProvider.idl</DependentUpon>
     </ClCompile>
+    <ClCompile Include="GithubCopilotLLMProvider.cpp">
+      <DependentUpon>GithubCopilotLLMProvider.idl</DependentUpon>
+    </ClCompile>
   </ItemGroup>
   <!-- ========================= idl Files ======================== -->
   <ItemGroup>
@@ -103,6 +111,9 @@
       <SubType>Code</SubType>
     </Midl>
     <Midl Include="OpenAILLMProvider.idl">
+      <SubType>Code</SubType>
+    </Midl>
+    <Midl Include="GithubCopilotLLMProvider.idl">
       <SubType>Code</SubType>
     </Midl>
   </ItemGroup>

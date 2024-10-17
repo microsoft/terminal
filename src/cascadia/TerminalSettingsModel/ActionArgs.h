@@ -52,6 +52,7 @@
 #include "SelectCommandArgs.g.h"
 #include "SelectOutputArgs.g.h"
 #include "ColorSelectionArgs.g.h"
+#include "HandleUriArgs.g.h"
 
 #include "JsonUtils.h"
 #include "HashUtils.h"
@@ -279,6 +280,10 @@ protected:                                                                  \
 ////////////////////////////////////////////////////////////////////////////////
 #define SELECT_OUTPUT_ARGS(X) \
     X(SelectOutputDirection, Direction, "direction", false, SelectOutputDirection::Previous)
+
+////////////////////////////////////////////////////////////////////////////////
+#define HANDLE_URI_ARGS(X) \
+    X(winrt::hstring, Uri, "uri", false)
 
 ////////////////////////////////////////////////////////////////////////////////
 #define COLOR_SELECTION_ARGS(X)                                                                      \
@@ -920,6 +925,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     ACTION_ARGS_STRUCT(SelectCommandArgs, SELECT_COMMAND_ARGS);
     ACTION_ARGS_STRUCT(SelectOutputArgs, SELECT_OUTPUT_ARGS);
 
+    ACTION_ARGS_STRUCT(HandleUriArgs, HANDLE_URI_ARGS);
+
     ACTION_ARGS_STRUCT(ColorSelectionArgs, COLOR_SELECTION_ARGS);
 
 }
@@ -963,4 +970,5 @@ namespace winrt::Microsoft::Terminal::Settings::Model::factory_implementation
     BASIC_FACTORY(SuggestionsArgs);
     BASIC_FACTORY(SelectCommandArgs);
     BASIC_FACTORY(SelectOutputArgs);
+    BASIC_FACTORY(HandleUriArgs);
 }

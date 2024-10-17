@@ -9,6 +9,9 @@
 #include <TerminalCore/ControlKeyStates.hpp>
 #include <til/latch.h>
 #include <Utils.h>
+#include <til/rand.h>
+#include <wincrypt.h>
+#include <winrt/Windows.Data.Json.h>
 #include <shlobj.h>
 
 #include "../../types/inc/utils.hpp"
@@ -48,6 +51,9 @@ using namespace ::TerminalApp;
 using namespace ::Microsoft::Console;
 using namespace ::Microsoft::Terminal::Core;
 using namespace std::chrono_literals;
+namespace WWH = ::winrt::Windows::Web::Http;
+namespace WSS = ::winrt::Windows::Storage::Streams;
+namespace WDJ = ::winrt::Windows::Data::Json;
 
 #define HOOKUP_ACTION(action) _actionDispatch->action({ this, &TerminalPage::_Handle##action });
 
@@ -496,6 +502,33 @@ namespace winrt::TerminalApp::implementation
         {
             activeControl.SendInput(suggestion);
         }
+    }
+
+    winrt::fire_and_forget TerminalPage::_OnGithubCopilotLLMProviderAuthChanged(const IInspectable& /*sender*/, const winrt::Microsoft::Terminal::Query::Extension::IAuthenticationResult& authResult)
+    {
+        winrt::hstring message{};
+        if (authResult.ErrorMessage().empty())
+        {
+            // the auth succeeded, extract the values
+            const auto authValues = authResult.AuthValues();
+            try
+            {
+                const auto authToken = unbox_value_or<hstring>(authValues.TryLookup(L"access_token").try_as<Windows::Foundation::IPropertyValue>(), L"");
+                const auto refreshToken = unbox_value_or<hstring>(authValues.TryLookup(L"refresh_token").try_as<Windows::Foundation::IPropertyValue>(), L"");
+                if (!authToken.empty() && !refreshToken.empty())
+                {
+                    _settings.GlobalSettings().AIInfo().GithubCopilotAuthToken(authToken);
+                    _settings.GlobalSettings().AIInfo().GithubCopilotRefreshToken(refreshToken);
+                }
+            }
+            CATCH_LOG();
+        }
+        else
+        {
+            message = authResult.ErrorMessage();
+        }
+        co_await wil::resume_foreground(Dispatcher());
+        winrt::Microsoft::Terminal::Settings::Editor::MainPage::RefreshGithubAuthStatus(message);
     }
 
     // Method Description:
@@ -4304,7 +4337,40 @@ namespace winrt::TerminalApp::implementation
             }
         });
 
+        sui.GithubAuthRequested([weakThis{ get_weak() }](auto&& /*s*/, auto&& /*e*/) {
+            if (auto page{ weakThis.get() })
+            {
+                page->_InitiateGithubAuth();
+            }
+        });
+
         return *settingsContent;
+    }
+
+    void TerminalPage::_InitiateGithubAuth()
+    {
+#if defined(WT_BRANDING_DEV)
+        const auto callbackUri = L"ms-terminal-dev://github-auth";
+#elif defined(WT_BRANDING_CANARY)
+        const auto callbackUri = L"ms-terminal-can://github-auth";
+#endif
+
+        const auto randomStateString = _generateRandomString();
+        const auto executeUrl = fmt::format(FMT_COMPILE(L"https://github.com/login/oauth/authorize?client_id=Iv1.b0870d058e4473a1&redirect_uri={}&state={}"), callbackUri, randomStateString);
+        ShellExecute(nullptr, L"open", executeUrl.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
+        Application::Current().as<TerminalApp::App>().Logic().RandomStateString(randomStateString);
+    }
+
+    winrt::hstring TerminalPage::_generateRandomString()
+    {
+        BYTE buffer[16];
+        til::gen_random(&buffer[0], sizeof(buffer));
+
+        wchar_t string[24];
+        DWORD stringLen = 24;
+        THROW_IF_WIN32_BOOL_FALSE(CryptBinaryToStringW(&buffer[0], sizeof(buffer), CRYPT_STRING_BASE64URI | CRYPT_STRING_NOCRLF, &string[0], &stringLen));
+
+        return winrt::hstring{ &string[0], stringLen };
     }
 
     // Method Description:
@@ -5677,7 +5743,7 @@ namespace winrt::TerminalApp::implementation
         ExtensionPresenter().Content(_extensionPalette);
     }
 
-    void TerminalPage::_createAndSetAuthenticationForLMProvider(LLMProvider providerType)
+    void TerminalPage::_createAndSetAuthenticationForLMProvider(LLMProvider providerType, Windows::Foundation::Collections::ValueSet authValues)
     {
         if (!_lmProvider || (_currentProvider != providerType))
         {
@@ -5692,25 +5758,37 @@ namespace winrt::TerminalApp::implementation
                 _currentProvider = LLMProvider::OpenAI;
                 _lmProvider = winrt::Microsoft::Terminal::Query::Extension::OpenAILLMProvider();
                 break;
+            case LLMProvider::GithubCopilot:
+                _currentProvider = LLMProvider::GithubCopilot;
+                _lmProvider = winrt::Microsoft::Terminal::Query::Extension::GithubCopilotLLMProvider();
+                _lmProvider.AuthChanged({ this, &TerminalPage::_OnGithubCopilotLLMProviderAuthChanged });
+                break;
             default:
                 break;
             }
         }
 
         // we now have a provider of the correct type, update that
-        Windows::Foundation::Collections::ValueSet authValues{};
-        const auto settingsAIInfo = _settings.GlobalSettings().AIInfo();
-        switch (providerType)
+        if (!authValues)
         {
-        case LLMProvider::AzureOpenAI:
-            authValues.Insert(L"endpoint", Windows::Foundation::PropertyValue::CreateString(settingsAIInfo.AzureOpenAIEndpoint()));
-            authValues.Insert(L"key", Windows::Foundation::PropertyValue::CreateString(settingsAIInfo.AzureOpenAIKey()));
-            break;
-        case LLMProvider::OpenAI:
-            authValues.Insert(L"key", Windows::Foundation::PropertyValue::CreateString(settingsAIInfo.OpenAIKey()));
-            break;
-        default:
-            break;
+            authValues = Windows::Foundation::Collections::ValueSet{};
+            const auto settingsAIInfo = _settings.GlobalSettings().AIInfo();
+            switch (providerType)
+            {
+            case LLMProvider::AzureOpenAI:
+                authValues.Insert(L"endpoint", Windows::Foundation::PropertyValue::CreateString(settingsAIInfo.AzureOpenAIEndpoint()));
+                authValues.Insert(L"key", Windows::Foundation::PropertyValue::CreateString(settingsAIInfo.AzureOpenAIKey()));
+                break;
+            case LLMProvider::OpenAI:
+                authValues.Insert(L"key", Windows::Foundation::PropertyValue::CreateString(settingsAIInfo.OpenAIKey()));
+                break;
+            case LLMProvider::GithubCopilot:
+                authValues.Insert(L"access_token", Windows::Foundation::PropertyValue::CreateString(settingsAIInfo.GithubCopilotAuthToken()));
+                authValues.Insert(L"refresh_token", Windows::Foundation::PropertyValue::CreateString(settingsAIInfo.GithubCopilotRefreshToken()));
+                break;
+            default:
+                break;
+            }
         }
         _lmProvider.SetAuthentication(authValues);
 

@@ -441,7 +441,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
         else if (clickedItemTag == AISettingsTag)
         {
-            contentFrame().Navigate(xaml_typename<Editor::AISettings>(), winrt::make<AISettingsViewModel>(_settingsClone));
+            auto aiSettingsVM{ winrt::make<AISettingsViewModel>(_settingsClone) };
+            aiSettingsVM.GithubAuthRequested([weakThis{ get_weak() }](auto&& /*s*/, auto&& /*e*/) {
+                if (auto mainPage{ weakThis.get() })
+                {
+                    // propagate the event to TerminalPage
+                    mainPage->GithubAuthRequested.raise(nullptr, nullptr);
+                }
+            });
+            contentFrame().Navigate(xaml_typename<Editor::AISettings>(), aiSettingsVM);
             const auto crumb = winrt::make<Breadcrumb>(box_value(clickedItemTag), RS_(L"Nav_AISettings/Content"), BreadcrumbSubPage::None);
             _breadcrumbs.Append(crumb);
         }
@@ -703,6 +711,16 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     IObservableVector<IInspectable> MainPage::Breadcrumbs() noexcept
     {
         return _breadcrumbs;
+    }
+
+    static winrt::event<GithubAuthCompletedHandler> _githubAuthCompletedHandlers;
+
+    winrt::event_token MainPage::GithubAuthCompleted(const GithubAuthCompletedHandler& handler) { return _githubAuthCompletedHandlers.add(handler); };
+    void MainPage::GithubAuthCompleted(const winrt::event_token& token) { _githubAuthCompletedHandlers.remove(token); };
+
+    void MainPage::RefreshGithubAuthStatus(const winrt::hstring& message)
+    {
+        _githubAuthCompletedHandlers(message);
     }
 
     winrt::Windows::UI::Xaml::Media::Brush MainPage::BackgroundBrush()
