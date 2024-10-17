@@ -116,7 +116,7 @@ try
                     const auto lock = publicTerminal->_terminal->LockForWriting();
                     if (publicTerminal->_terminal->IsSelectionActive())
                     {
-                        const auto bufferData = publicTerminal->_terminal->RetrieveSelectedTextFromBuffer(false, true, true);
+                        const auto bufferData = publicTerminal->_terminal->RetrieveSelectedTextFromBuffer(false, false, true, true);
                         LOG_IF_FAILED(publicTerminal->_CopyTextToSystemClipboard(bufferData.plainText, bufferData.html, bufferData.rtf));
                         publicTerminal->_ClearSelection();
                         return 0;
