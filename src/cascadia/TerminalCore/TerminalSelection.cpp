@@ -93,7 +93,14 @@ const til::point Terminal::GetSelectionEnd() const noexcept
 til::point Terminal::SelectionStartForRendering() const
 {
     auto pos{ _selection->start };
-    const auto bufferSize{ GetTextBuffer().GetSize() };
+    const auto& buffer = GetTextBuffer();
+    const auto bufferSize{ buffer.GetSize() };
+    if (bufferSize.IsInBounds(pos) && buffer.GetCellDataAt(pos)->DbcsAttr() == DbcsAttribute::Trailing)
+    {
+        // if we're on a trailing byte, move off of it to include it
+        bufferSize.DecrementInExclusiveBounds(pos);
+    }
+
     if (pos.x != bufferSize.Left())
     {
         // In general, we need to draw the marker one before the
@@ -112,7 +119,14 @@ til::point Terminal::SelectionStartForRendering() const
 til::point Terminal::SelectionEndForRendering() const
 {
     auto pos{ _selection->end };
-    const auto bufferSize{ GetTextBuffer().GetSize() };
+    const auto& buffer = GetTextBuffer();
+    const auto bufferSize{ buffer.GetSize() };
+    if (bufferSize.IsInBounds(pos) && buffer.GetCellDataAt(pos)->DbcsAttr() == DbcsAttribute::Trailing)
+    {
+        // if we're on a trailing byte, move off of it to include it
+        bufferSize.IncrementInExclusiveBounds(pos);
+    }
+
     if (pos.x == bufferSize.RightExclusive())
     {
         // sln->end is exclusive
