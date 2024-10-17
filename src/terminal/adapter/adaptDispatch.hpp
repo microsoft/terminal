@@ -121,6 +121,7 @@ namespace Microsoft::Console::VirtualTerminal
         void LockingShiftRight(const VTInt gsetNumber) override; // LS1R, LS2R, LS3R
         void SingleShift(const VTInt gsetNumber) noexcept override; // SS2, SS3
         void AcceptC1Controls(const bool enabled) override; // DECAC1
+        void SendC1Controls(const bool enabled) override; // S8C1T, S7C1T
         void AnnounceCodeStructure(const VTInt ansiLevel) override; // ACS
         void SoftReset() override; // DECSTR
         void HardReset() override; // RIS
@@ -183,6 +184,8 @@ namespace Microsoft::Console::VirtualTerminal
         StringHandler RestorePresentationState(const DispatchTypes::PresentationReportFormat format) override; // DECRSPS
 
         void PlaySounds(const VTParameters parameters) override; // DECPS
+
+        void SetVtChecksumReportSupport(const bool enabled) noexcept override;
 
     private:
         enum class Mode
@@ -289,6 +292,10 @@ namespace Microsoft::Console::VirtualTerminal
         void _ReportTabStops();
         StringHandler _RestoreTabStops();
 
+        void _ReturnCsiResponse(const std::wstring_view response) const;
+        void _ReturnDcsResponse(const std::wstring_view response) const;
+        void _ReturnOscResponse(const std::wstring_view response) const;
+
         std::vector<uint8_t> _tabStopColumns;
         bool _initDefaultTabStops = true;
 
@@ -303,6 +310,7 @@ namespace Microsoft::Console::VirtualTerminal
         std::unique_ptr<FontBuffer> _fontBuffer;
         std::shared_ptr<MacroBuffer> _macroBuffer;
         std::optional<unsigned int> _initialCodePage;
+        bool _vtChecksumReportEnabled = false;
 
         // We have two instances of the saved cursor state, because we need
         // one for the main buffer (at index 0), and another for the alt buffer

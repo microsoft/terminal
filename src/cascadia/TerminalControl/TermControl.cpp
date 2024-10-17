@@ -576,7 +576,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                     // but since code paths differ, extra work is required to ensure correctness.
                     if (!_core.HasMultiLineSelection())
                     {
-                        _core.SnapSearchResultToSelection(true);
                         const auto selectedLine{ _core.SelectedText(true) };
                         _searchBox->PopulateTextbox(selectedLine);
                     }
@@ -863,6 +862,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         _interactivity.UpdateSettings();
+        {
+            const auto inputScope = settings.DefaultInputScope();
+            const auto alpha = inputScope == DefaultInputScope::AlphanumericHalfWidth;
+            ::Microsoft::Console::TSF::Handle::SetDefaultScopeAlphanumericHalfWidth(alpha);
+        }
         if (_automationPeer)
         {
             _automationPeer.SetControlPadding(Core::Padding{
@@ -1631,12 +1635,29 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 {
                     if (vkey == VK_ADD)
                     {
-                        // Alt '+' <number> is used to input Unicode code points.
-                        // Every time you press + it resets the entire state
-                        // in the original OS implementation as well.
-                        s.encoding = AltNumpadEncoding::Unicode;
-                        s.accumulator = 0;
-                        s.active = true;
+                        static const auto enabled = []() {
+                            wchar_t buffer[4]{};
+                            DWORD size = sizeof(buffer);
+                            RegGetValueW(
+                                HKEY_CURRENT_USER,
+                                L"Control Panel\\Input Method",
+                                L"EnableHexNumpad",
+                                RRF_RT_REG_SZ,
+                                nullptr,
+                                &buffer[0],
+                                &size);
+                            return size == 4 && memcmp(&buffer[0], L"1", 4) == 0;
+                        }();
+
+                        if (enabled)
+                        {
+                            // Alt '+' <number> is used to input Unicode code points.
+                            // Every time you press + it resets the entire state
+                            // in the original OS implementation as well.
+                            s.encoding = AltNumpadEncoding::Unicode;
+                            s.accumulator = 0;
+                            s.active = true;
+                        }
                     }
                     else if (vkey == VK_NUMPAD0 && s.encoding == AltNumpadEncoding::OEM && s.accumulator == 0)
                     {
@@ -3844,7 +3865,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const auto goForward = _searchBox->GoForward();
         const auto caseSensitive = _searchBox->CaseSensitive();
         const auto regularExpression = _searchBox->RegularExpression();
-        const auto request = SearchRequest{ text, goForward, caseSensitive, regularExpression, true, _calculateSearchScrollOffset() };
+        const auto request = SearchRequest{ text, goForward, caseSensitive, regularExpression, true, _searchScrollOffset };
         _handleSearchResults(_core.Search(request));
     }
 

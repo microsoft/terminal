@@ -146,9 +146,27 @@ SettingsLoader::SettingsLoader(const std::string_view& userJSON, const std::stri
     if (const auto sources = userSettings.globals->DisabledProfileSources())
     {
         _ignoredNamespaces.reserve(sources.Size());
-        for (const auto& id : sources)
+        for (auto&& id : sources)
         {
-            _ignoredNamespaces.emplace(id);
+            _ignoredNamespaces.emplace(std::move(id));
+        }
+    }
+
+    // Apply DisabledProfileSources policy setting. Pick whatever policy is set first.
+    // In most cases HKCU settings take precedence over HKLM settings, but the inverse is true for policies.
+    for (const auto key : { HKEY_LOCAL_MACHINE, HKEY_CURRENT_USER })
+    {
+        wchar_t buffer[512]; // "640K ought to be enough for anyone"
+        DWORD bufferSize = sizeof(buffer);
+        if (RegGetValueW(key, LR"(Software\Policies\Microsoft\Windows Terminal)", L"DisabledProfileSources", RRF_RT_REG_MULTI_SZ, nullptr, buffer, &bufferSize) == 0)
+        {
+            for (auto p = buffer; *p;)
+            {
+                const auto len = wcslen(p);
+                _ignoredNamespaces.emplace(p, gsl::narrow_cast<uint32_t>(len));
+                p += len + 1;
+            }
+            break;
         }
     }
 
@@ -260,7 +278,7 @@ void SettingsLoader::FindFragmentsAndMergeIntoUserSettings()
                 const auto filename = fragmentExtFolder.path().filename();
                 const auto& source = filename.native();
 
-                if (!_ignoredNamespaces.count(std::wstring_view{ source }) && fragmentExtFolder.is_directory())
+                if (!_ignoredNamespaces.contains(std::wstring_view{ source }) && fragmentExtFolder.is_directory())
                 {
                     parseAndLayerFragmentFiles(fragmentExtFolder.path(), winrt::hstring{ source });
                 }
@@ -295,7 +313,7 @@ void SettingsLoader::FindFragmentsAndMergeIntoUserSettings()
     for (const auto& ext : extensions)
     {
         const auto packageName = ext.Package().Id().FamilyName();
-        if (_ignoredNamespaces.count(std::wstring_view{ packageName }))
+        if (_ignoredNamespaces.contains(std::wstring_view{ packageName }))
         {
             continue;
         }
@@ -521,6 +539,15 @@ bool SettingsLoader::FixupUserSettings()
     {
         // migrate the user's opt-out to the profiles.defaults
         userSettings.baseLayerProfile->ReloadEnvironmentVariables(false);
+        fixedUp = true;
+    }
+
+    // Terminal 1.23: Migrate the global
+    // `experimental.input.forceVT` to being a per-profile setting.
+    if (userSettings.globals->LegacyForceVTInput())
+    {
+        // migrate the user's opt-out to the profiles.defaults
+        userSettings.baseLayerProfile->ForceVTInput(true);
         fixedUp = true;
     }
 
@@ -914,7 +941,7 @@ void SettingsLoader::_addOrMergeUserColorScheme(const winrt::com_ptr<implementat
 void SettingsLoader::_executeGenerator(const IDynamicProfileGenerator& generator)
 {
     const auto generatorNamespace = generator.GetNamespace();
-    if (_ignoredNamespaces.count(generatorNamespace))
+    if (_ignoredNamespaces.contains(generatorNamespace))
     {
         return;
     }

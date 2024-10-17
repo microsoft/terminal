@@ -53,8 +53,10 @@ public:
 
     bool ResizeWindow(const til::CoordType width, const til::CoordType height) override;
 
-    void SetConsoleOutputCP(const unsigned int codepage) override;
-    unsigned int GetConsoleOutputCP() const override;
+    void SetCodePage(const unsigned int codepage) override;
+    void ResetCodePage() override;
+    unsigned int GetOutputCodePage() const override;
+    unsigned int GetInputCodePage() const override;
 
     void CopyToClipboard(const wil::zwstring_view content) override;
     void SetTaskbarProgress(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::TaskbarState state, const size_t progress) override;

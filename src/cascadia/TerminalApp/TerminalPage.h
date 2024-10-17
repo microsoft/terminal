@@ -446,7 +446,13 @@ namespace winrt::TerminalApp::implementation
         void _TabDragStarted(const IInspectable& sender, const IInspectable& eventArgs);
         void _TabDragCompleted(const IInspectable& sender, const IInspectable& eventArgs);
 
-        void _OnTabClick(const IInspectable& sender, const Windows::UI::Xaml::Input::PointerRoutedEventArgs& eventArgs);
+        bool _tabPointerMiddleButtonPressed{ false };
+        bool _tabPointerMiddleButtonExited{ false };
+        void _OnTabPointerPressed(const IInspectable& sender, const Windows::UI::Xaml::Input::PointerRoutedEventArgs& eventArgs);
+        void _OnTabPointerReleased(const IInspectable& sender, const Windows::UI::Xaml::Input::PointerRoutedEventArgs& eventArgs);
+        void _OnTabPointerEntered(const IInspectable& sender, const Windows::UI::Xaml::Input::PointerRoutedEventArgs& eventArgs);
+        void _OnTabPointerExited(const IInspectable& sender, const Windows::UI::Xaml::Input::PointerRoutedEventArgs& eventArgs);
+
         void _OnTabSelectionChanged(const IInspectable& sender, const Windows::UI::Xaml::Controls::SelectionChangedEventArgs& eventArgs);
         void _OnTabItemsChanged(const IInspectable& sender, const Windows::Foundation::Collections::IVectorChangedEventArgs& eventArgs);
         void _OnTabCloseRequested(const IInspectable& sender, const Microsoft::UI::Xaml::Controls::TabViewTabCloseRequestedEventArgs& eventArgs);
