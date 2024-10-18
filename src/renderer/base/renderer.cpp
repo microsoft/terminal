@@ -342,7 +342,7 @@ try
             const til::rect vp{ _viewport.ToExclusive() };
             for (auto&& sp : spans)
             {
-                sp.iterate_rows(bufferWidth, [&](til::CoordType row, til::CoordType min, til::CoordType max) {
+                sp.iterate_rows_exclusive(bufferWidth, [&](til::CoordType row, til::CoordType min, til::CoordType max) {
                     const auto shift = buffer.GetLineRendition(row) != LineRendition::SingleWidth ? 1 : 0;
                     min <<= shift;
                     max <<= shift;
