@@ -77,7 +77,7 @@ namespace Microsoft.Terminal.Settings.Editor
         Boolean ShowMarksAvailable { get; };
         Boolean AutoMarkPromptsAvailable { get; };
         Boolean RepositionCursorWithMouseAvailable { get; };
-        
+
         String EvaluatedIcon { get; };
 
         void CreateUnfocusedAppearance();

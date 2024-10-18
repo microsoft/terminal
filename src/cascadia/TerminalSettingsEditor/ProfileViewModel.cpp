@@ -186,26 +186,49 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         std::wstring_view remaining{ Padding() };
         uint32_t paddingIndex = static_cast<uint32_t>(paddingDirection);
+        std::array<double, 4> paddingValues{};
         double paddingValue = 0.;
+        uint32_t index = 0;
 
         try
         {
-            for (uint32_t index = 0; !remaining.empty(); ++index)
+            for (index = 0; !remaining.empty() && index < paddingValues.size(); ++index)
             {
                 const std::wstring token{ til::prefix_split(remaining, L',') };
                 auto curVal = std::stod(token);
 
-                if (paddingIndex == index)
-                {
-                    paddingValue = curVal;
-                    break;
-                }
+                paddingValues[index] = curVal;
             }
         }
         catch (...)
         {
             paddingValue = 0.;
             LOG_CAUGHT_EXCEPTION();
+        }
+
+        // Padding: 8
+        if (index == 1)
+        {
+            paddingValue = paddingValues[0];
+        }
+        // Padding: 8, 4
+        else if (index == 2)
+        {
+            if (paddingDirection == PaddingDirection::Left ||
+                paddingDirection == PaddingDirection::Right)
+            {
+                paddingValue = paddingValues[0];
+            }
+            else if (paddingDirection == PaddingDirection::Top ||
+                     paddingDirection == PaddingDirection::Bottom)
+            {
+                paddingValue = paddingValues[1];
+            }
+        }
+        // Padding: 8, 4, 8, 4
+        else
+        {
+            paddingValue = paddingValues[paddingIndex];
         }
 
         return paddingValue;
