@@ -757,8 +757,12 @@ void Terminal::_MoveByWord(SelectionDirection direction, til::point& pos)
     {
         // increment one more because end is exclusive
         const auto& buffer = _activeBuffer();
-        pos = buffer.GetWordEnd2(pos, _wordDelimiters);
-        buffer.GetSize().IncrementInExclusiveBounds(pos);
+        const auto mutableViewportEndExclusive = _GetMutableViewport().BottomInclusiveRightExclusive();
+        pos = buffer.GetWordEnd2(pos, _wordDelimiters, mutableViewportEndExclusive);
+        if (pos != mutableViewportEndExclusive)
+        {
+            buffer.GetSize().IncrementInExclusiveBounds(pos);
+        }
         break;
     }
     case SelectionDirection::Up:
