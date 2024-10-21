@@ -427,7 +427,7 @@ try
     if (y > hiStart.y)
     {
         const auto isFinalRow = y == hiEnd.y;
-        const auto end = isFinalRow ? std::min(hiEnd.x + 1, x2) : x2;
+        const auto end = isFinalRow ? std::min(hiEnd.x, x2) : x2;
         _fillColorBitmap(row, x1, end, fgColor, bgColor);
 
         // Return early if we couldn't paint the whole region (either this was not the last row, or

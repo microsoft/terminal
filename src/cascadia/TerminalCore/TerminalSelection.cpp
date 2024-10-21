@@ -767,11 +767,11 @@ void Terminal::_MoveByWord(SelectionDirection direction, til::point& pos)
     }
     case SelectionDirection::Up:
         _MoveByChar(direction, pos);
-        pos = _activeBuffer().GetWordStart(pos, _wordDelimiters);
+        pos = _activeBuffer().GetWordStart2(pos, _wordDelimiters);
         break;
     case SelectionDirection::Down:
         _MoveByChar(direction, pos);
-        pos = _activeBuffer().GetWordEnd(pos, _wordDelimiters);
+        pos = _activeBuffer().GetWordEnd2(pos, _wordDelimiters);
         break;
     }
 }

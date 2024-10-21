@@ -2011,8 +2011,8 @@ size_t TextBuffer::SpanLength(const til::point coordStart, const til::point coor
 // - Retrieves the plain text data between the specified coordinates.
 // Arguments:
 // - trimTrailingWhitespace - remove the trailing whitespace at the end of the result.
-// - start - where to start getting text (should be at or prior to "end")
-// - end - where to end getting text
+// - start - where to start getting text (should be at or prior to "end") (inclusive)
+// - end - where to end getting text (exclusive)
 // Return Value:
 // - Just the text.
 std::wstring TextBuffer::GetPlainText(const til::point start, const til::point end) const
@@ -2050,7 +2050,7 @@ std::tuple<til::CoordType, til::CoordType, bool> TextBuffer::_RowCopyHelper(cons
         const auto end = req.bufferCoordinates ? req.end : ScreenToBufferLineInclusive(req.end, lineRendition);
 
         rowBeg = iRow != beg.y ? 0 : beg.x;
-        rowEnd = iRow != end.y ? row.GetReadableColumnCount() : end.x + 1; // +1 to get an exclusive end
+        rowEnd = iRow != end.y ? row.GetReadableColumnCount(): end.x;
     }
 
     // Our selection mechanism doesn't stick to glyph boundaries at the moment.
