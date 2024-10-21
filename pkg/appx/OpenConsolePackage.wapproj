@@ -4,8 +4,6 @@
   <Import Project="$(OpenConsoleDir)src\wap-common.build.pre.props" />
 
   <PropertyGroup Label="Configuration">
-    <TargetPlatformVersion>10.0.17763.0</TargetPlatformVersion>
-    <TargetPlatformMinVersion>10.0.17134.0</TargetPlatformMinVersion>
     <!--
     These two properties are very important!
     Without them, msbuild will stomp MinVersion and MaxVersionTested in the
@@ -76,11 +74,38 @@
 
   <Target Name="OpenConsoleStompSourceProjectForWapProject" BeforeTargets="_ConvertItems">
     <ItemGroup>
+      <!-- Stomp all "SourceProject" values for all incoming dependencies to flatten the package. -->
       <_TemporaryFilteredWapProjOutput Include="@(_FilteredNonWapProjProjectOutput)" />
-      <_FilteredNonWapProjProjectOutput Remove="@(_FilteredNonWapProjProjectOutput)" />
+      <_FilteredNonWapProjProjectOutput Remove="@(_TemporaryFilteredWapProjOutput)" />
       <_FilteredNonWapProjProjectOutput Include="@(_TemporaryFilteredWapProjOutput)">
-        <SourceProject></SourceProject> <!-- Blank SourceProject, which WapProj uses to name subdirectories. -->
+        <!-- Blank the SourceProject here to vend all files into the root of the package. -->
+        <SourceProject>
+        </SourceProject>
       </_FilteredNonWapProjProjectOutput>
     </ItemGroup>
   </Target>
+
+  <!-- **BEGIN VC LIBS HACK** -->
+  <!--
+    For our release builds, we're just going to integrate the UWPDesktop CRT into our package and delete the package dependencies.
+    It's very difficult for users who do not have access to the store to get our dependency packages, and we want to be robust
+    and deployable everywhere. Since these libraries can be redistributed, it's easiest if we simply redistribute them.
+    See also the "VC LIBS HACK" section in WindowsTerminal.vcxproj.
+  -->
+  <!-- This target removes the FrameworkSdkReferences from before the AppX package targets manifest generation happens.
+       This is part of the generic machinery that applies to every AppX. -->
+  <Target Name="_OpenConsoleStripAllDependenciesFromPackageFirstManifest" BeforeTargets="_GenerateCurrentProjectAppxManifest">
+    <ItemGroup Condition="'$(WindowsTerminalOfficialBuild)'=='true'">
+      <FrameworkSdkReference Remove="@(FrameworkSdkReference)" />
+    </ItemGroup>
+  </Target>
+
+  <!-- This target removes the FrameworkSdkPackages from before the *desktop bridge* manifest generation happens. -->
+  <Target Name="_OpenConsoleStripAllDependenciesFromPackageSecondManifest" BeforeTargets="_GenerateDesktopBridgeAppxManifest" DependsOnTargets="_ResolveVCLibDependencies">
+    <ItemGroup Condition="'$(WindowsTerminalOfficialBuild)'=='true'">
+      <FrameworkSdkPackage Remove="@(FrameworkSdkPackage)" />
+    </ItemGroup>
+  </Target>
+  <!-- **END VC LIBS HACK** -->
+
 </Project>

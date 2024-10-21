@@ -123,6 +123,7 @@ jobs:
         $SignFragments = @()
         If ([bool]::Parse("${{ parameters.buildTerminal }}")) {
           $BuildTargets += "Terminal\CascadiaPackage"
+          $BuildTargets += "Conhost\OpenConsolePackage"
           $SignFragments += "terminal_constituents"
         }
         If ([bool]::Parse("${{ parameters.buildWPFDotNetComponents }}")) {
@@ -217,7 +218,6 @@ jobs:
   # - Directories ending in Lib (static lib projects that we fully linked into DLLs which may also contain unnecessary resources)
   # - All LocalTests_ project outputs, as they were subsumed into TestHostApp
   # - All PDB files inside the WindowsTerminal/ output, which do not belong there.
-  # - console.dll, which apparently breaks XFGCheck? lol.
   - pwsh: |-
       $binDir = '$(Terminal.BinDir)'
       $ImportLibs = Get-ChildItem $binDir -Recurse -File -Filter '*.exp' | ForEach-Object { $_.FullName -Replace "exp$","lib" }
@@ -233,8 +233,6 @@ jobs:
       If (-Not [bool]::Parse('${{ parameters.keepAllExpensiveBuildOutputs }}')) {
         $Items += Get-ChildItem '$(Terminal.BinDir)' -Filter '*.pdb' -Recurse
       }
-
-      $Items += Get-ChildItem $binDir -Filter 'console.dll'
 
       $Items | Remove-Item -Recurse -Force -Verbose -ErrorAction:Ignore
     displayName: Clean up static libs and extra symbols
@@ -252,6 +250,9 @@ jobs:
         $Package = (Get-ChildItem -Recurse -Filter "CascadiaPackage*.msix" | Select -First 1)
         $PackageFilename = $Package.FullName
         Write-Host "##vso[task.setvariable variable=WindowsTerminalPackagePath]${PackageFilename}"
+        $Package = (Get-ChildItem -Recurse -Filter "OpenConsolePackage*.msix" | Select -First 1)
+        $PackageFilename = $Package.FullName
+        Write-Host "##vso[task.setvariable variable=OpenConsolePackagePath]${PackageFilename}"
       displayName: Locate the MSIX
 
     # CHECK EXCEPTION
@@ -265,6 +266,7 @@ jobs:
     - ${{ if eq(parameters.codeSign, true) }}:
       - pwsh: |-
           & "$(MakeAppxPath)" unpack /p "$(WindowsTerminalPackagePath)" /d "$(Terminal.BinDir)/PackageContents"
+          & "$(MakeAppxPath)" unpack /p "$(OpenConsolePackagePath)" /d "$(Terminal.BinDir)/OpenConsolePackageContents"
         displayName: Unpack the MSIX for signing
 
   - ${{ if eq(parameters.codeSign, true) }}:
@@ -292,7 +294,11 @@ jobs:
           $PackageFilename = Join-Path $outDir.FullName (Split-Path -Leaf "$(WindowsTerminalPackagePath)")
           & "$(MakeAppxPath)" pack /h SHA256 /o /p $PackageFilename /d "$(Terminal.BinDir)/PackageContents"
           Write-Host "##vso[task.setvariable variable=WindowsTerminalPackagePath]${PackageFilename}"
-        displayName: Re-pack the new Terminal package after signing
+
+          $PackageFilename = Join-Path $outDir.FullName (Split-Path -Leaf "$(OpenConsolePackagePath)")
+          & "$(MakeAppxPath)" pack /h SHA256 /o /p $PackageFilename /d "$(Terminal.BinDir)/OpenConsolePackageContents"
+          Write-Host "##vso[task.setvariable variable=OpenConsolePackagePath]${PackageFilename}"
+        displayName: Re-pack the new Terminal packages after signing
 
     # Some of our governed pipelines explicitly fail builds that have *any* non-codesigned filed (!)
     - ${{ if eq(parameters.removeAllNonSignedFiles, true) }}:
@@ -309,6 +315,10 @@ jobs:
           $PackageFilename = Join-Path $outDir.FullName (Split-Path -Leaf "$(WindowsTerminalPackagePath)")
           Copy-Item "$(WindowsTerminalPackagePath)" $PackageFilename
           Write-Host "##vso[task.setvariable variable=WindowsTerminalPackagePath]${PackageFilename}"
+
+          $PackageFilename = Join-Path $outDir.FullName (Split-Path -Leaf "$(OpenConsolePackagePath)")
+          Copy-Item "$(OpenConsolePackagePath)" $PackageFilename
+          Write-Host "##vso[task.setvariable variable=OpenConsolePackagePath]${PackageFilename}"
         displayName: Stage the package (unsigned)
         condition: and(succeeded(), ne(variables.WindowsTerminalPackagePath, ''))
 

@@ -92,8 +92,12 @@ jobs:
       New-Item -Type Directory "$(System.ArtifactsDirectory)/bundle"
       $BundlePath = "$(System.ArtifactsDirectory)\bundle\$(BundleStemName)_$(XES_APPXMANIFESTVERSION)_8wekyb3d8bbwe.msixbundle"
       .\build\scripts\Create-AppxBundle.ps1 -InputPath 'bin/' -ProjectName CascadiaPackage -BundleVersion $BundleVersion -OutputPath $BundlePath
+
       Write-Host "##vso[task.setvariable variable=MsixBundlePath]${BundlePath}"
-    displayName: Create msixbundle
+
+      $BundlePath = "$(System.ArtifactsDirectory)\bundle\Microsoft.WindowsConsoleHost_$(XES_APPXMANIFESTVERSION)_8wekyb3d8bbwe.msixbundle"
+      .\build\scripts\Create-AppxBundle.ps1 -InputPath 'bin/' -ProjectName OpenConsolePackage -BundleVersion $BundleVersion -OutputPath $BundlePath
+    displayName: Create msixbundles
 
   - ${{ if eq(parameters.codeSign, true) }}:
     - template: steps-esrp-signing.yml
@@ -102,7 +106,7 @@ jobs:
         signingIdentity: ${{ parameters.signingIdentity }}
         inputs:
           FolderPath: $(System.ArtifactsDirectory)\bundle
-          Pattern: $(BundleStemName)*.msixbundle
+          Pattern: "*.msixbundle"
           UseMinimatch: true
           signConfigType: inlineSignParams
           inlineOperation: >-
