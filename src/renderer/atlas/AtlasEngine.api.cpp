@@ -89,11 +89,11 @@ void AtlasEngine::_invalidateSpans(std::span<const til::point_span> spans, const
     const auto viewport = til::rect{ 0, 0, _api.s->viewportCellCount.x, _api.s->viewportCellCount.y };
     for (auto&& sp : spans)
     {
-        sp.iterate_rows(til::CoordTypeMax, [&](til::CoordType row, til::CoordType beg, til::CoordType end) {
+        sp.iterate_rows_exclusive(til::CoordTypeMax, [&](til::CoordType row, til::CoordType beg, til::CoordType end) {
             const auto shift = buffer.GetLineRendition(row) != LineRendition::SingleWidth ? 1 : 0;
             beg <<= shift;
             end <<= shift;
-            til::rect rect{ beg, row, end + 1, row + 1 };
+            til::rect rect{ beg, row, end, row + 1 };
             rect = rect.to_origin(viewportOrigin);
             rect &= viewport;
             _api.invalidatedRows.start = gsl::narrow_cast<u16>(std::min<int>(_api.invalidatedRows.start, std::max<int>(0, rect.top)));

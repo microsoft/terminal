@@ -433,7 +433,7 @@ try
         // Return early if we couldn't paint the whole region (either this was not the last row, or
         // it was the last row but the highlight ends outside of our x range.)
         // We will resume from here in the next call.
-        if (!isFinalRow || hiEnd.x /*inclusive*/ >= x2 /*exclusive*/)
+        if (!isFinalRow || hiEnd.x /*inclusive*/ > x2 /*exclusive*/)
         {
             return S_OK;
         }

@@ -417,10 +417,7 @@ til::point_span Microsoft::Console::ICU::BufferRangeFromMatch(UText* ut, URegula
 {
     UErrorCode status = U_ZERO_ERROR;
     const auto nativeIndexBeg = uregex_start64(re, 0, &status);
-    auto nativeIndexEnd = uregex_end64(re, 0, &status);
-
-    // The parameters are given as a half-open [beg,end) range, but the point_span we return in closed [beg,end].
-    nativeIndexEnd--;
+    const auto nativeIndexEnd = uregex_end64(re, 0, &status);
 
     const auto& textBuffer = *static_cast<const TextBuffer*>(ut->context);
     til::point_span ret;
