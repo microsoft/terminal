@@ -2787,9 +2787,7 @@ void TextBuffer::Serialize(const wchar_t* destination) const
                 newX = lastCharX;
             }
 
-            // GetText() has an exclusive end,
-            // add 1 to newX to get the correct range
-            buffer.append(row.GetText(oldX, newX + 1));
+            buffer.append(row.GetText(oldX, newX));
 
             if (clearToEndOfLine)
             {
