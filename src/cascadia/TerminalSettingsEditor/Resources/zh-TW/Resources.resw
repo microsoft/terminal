@@ -294,6 +294,14 @@
     <value>自動偵測 URL 並使連結可點選</value>
     <comment>Header for a control to toggle whether the terminal should automatically detect URLs and make them clickable, or not.</comment>
   </data>
+  <data name="Globals_SearchWebDefaultQueryUrl.Header" xml:space="preserve">
+    <value>用於「搜尋 Web」動作的預設 URL</value>
+    <comment>Header for a control to set the query URL when using the "search web" action.</comment>
+  </data>
+  <data name="Globals_SearchWebDefaultQueryUrl.HelpText" xml:space="preserve">
+    <value>佔位元 "%s" 將取代為搜尋查詢。</value>
+    <comment>{Locked="%s"} Additional text presented near "Globals_SearchWebDefaultQueryUrl.Header".</comment>
+  </data>
   <data name="Globals_TrimBlockSelection.Header" xml:space="preserve">
     <value>移除矩形選取範圍中的尾端空白區域</value>
     <comment>Header for a control to toggle whether a text selected with block selection should be trimmed of white spaces when copied to the clipboard, or not.</comment>
@@ -552,9 +560,41 @@
     <value>最上層顯示</value>
     <comment>Header for a control to toggle if the app will always be presented on top of other windows, or is treated normally (when disabled).</comment>
   </data>
+  <data name="Profile_ForceVTInput.Header" xml:space="preserve">
+    <value>使用舊版輸入編碼</value>
+    <comment>Header for a control to toggle legacy input encoding for the terminal.</comment>
+  </data>
+  <data name="Profile_AllowVtChecksumReport.Header" xml:space="preserve">
+    <value>允許 DECRQCRA (Request Checksum of Rectangular Area)</value>
+    <comment>{Locked="DECRQCRA"}{Locked="Request Checksum of Rectangular Area"}Header for a control to toggle support for the DECRQCRA control sequence.</comment>
+  </data>
+  <data name="Globals_AllowHeadless.Header" xml:space="preserve">
+    <value>允許 Windows 終端機 在背景執行</value>
+    <comment>Header for a control to toggle support for Windows Terminal to run in the background.</comment>
+  </data>
+  <data name="Globals_IsolatedMode.Header" xml:space="preserve">
+    <value>強制每個視窗在自己的處理程式中執行</value>
+    <comment>Header for a control to toggle making each window be its own process.</comment>
+  </data>
+  <data name="Globals_DebugFeaturesEnabled.Header" xml:space="preserve">
+    <value>啟用偵錯功能</value>
+    <comment>Header for a control to toggle debug features.</comment>
+  </data>
   <data name="Globals_AlwaysOnTop.HelpText" xml:space="preserve">
     <value>終端機永遠是桌面最上方的視窗。</value>
     <comment>A description for what the "always on top" setting does. Presented near "Globals_AlwaysOnTop.Header".</comment>
+  </data>
+  <data name="Profile_ForceVTInput.HelpText" xml:space="preserve">
+    <value>啟用此設定時，某些應用程式中的某些鍵盤輸入可能會停止正常運作。</value>
+    <comment>Additional description for what the "force vt input" setting does. Presented near "Globals_ForceVTInput.Header".</comment>
+  </data>
+  <data name="Globals_AllowHeadless.HelpText" xml:space="preserve">
+    <value>這可允許全域傳送與「受擷取模式」等動作運作，即使沒有開啟視窗也可運作。</value>
+    <comment>Additional description for what the "allow headless" setting does. Presented near "Globals_AllowHeadless.Header".</comment>
+  </data>
+  <data name="Globals_IsolatedMode.HelpText" xml:space="preserve">
+    <value>某些功能將無法正常運作，包括但不限於全域快捷鍵、索引標籤拖放以及 wt.exe 窗口目標。</value>
+    <comment>{Locked="wt.exe"} Additional description for what the "isolated mode" setting does. Presented near "Globals_IsolatedMode.Header".</comment>
   </data>
   <data name="Globals_TabWidthMode.Header" xml:space="preserve">
     <value>索引標籤寬度模式</value>
@@ -624,6 +664,10 @@
     <value>互動</value>
     <comment>Header for the "interaction" menu item. This navigates to a page that lets you see and modify settings related to the user's mouse and touch interactions with the app.</comment>
   </data>
+  <data name="Nav_Compatibility.Content" xml:space="preserve">
+    <value>相容性</value>
+    <comment>Header for the "compatibility" menu item. This navigates to a page that lets you see and modify settings related to compatibility with command line scenarios.</comment>
+  </data>
   <data name="Nav_Launch.Content" xml:space="preserve">
     <value>啟動</value>
     <comment>Header for the "startup" menu item. This navigates to a page that lets you see and modify settings related to the app's launch experience (i.e. screen position, mode, etc.)</comment>
@@ -659,6 +703,10 @@
   <data name="Profile_Advanced.Header" xml:space="preserve">
     <value>進階</value>
     <comment>Header for a sub-page of profile settings focused on more advanced scenarios.</comment>
+  </data>
+  <data name="Profile_Terminal.Header" xml:space="preserve">
+    <value>終端機模擬</value>
+    <comment>Header for a sub-page of profile settings focused on customizing the capabilities of the terminal.</comment>
   </data>
   <data name="Profile_AltGrAliasing.Header" xml:space="preserve">
     <value>AltGr 別名</value>
@@ -945,17 +993,33 @@
     <value>行高</value>
     <comment>Header for a control that sets the text line height.</comment>
   </data>
+  <data name="Profile_CellWidth.Header" xml:space="preserve">
+    <value>儲存格寬度</value>
+    <comment>Header for a control that sets the text character width.</comment>
+  </data>
   <data name="Profile_LineHeightBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>行高</value>
     <comment>Header for a control that sets the text line height.</comment>
+  </data>
+  <data name="Profile_CellWidthBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>儲存格寬度</value>
+    <comment>Header for a control that sets the text character width.</comment>
   </data>
   <data name="Profile_LineHeight.HelpText" xml:space="preserve">
     <value>覆寫終端機的行高。以字型大小的倍數表示。預設值取決於您的字型，通常大約是 1.2。</value>
     <comment>A description for what the "line height" setting does. Presented near "Profile_LineHeight".</comment>
   </data>
+  <data name="Profile_CellWidth.HelpText" xml:space="preserve">
+    <value>覆寫終端機的單元格寬度。以字型大小的倍數表示。默認值取決於您的字型，通常大約是0.6。</value>
+    <comment>A description for what the "cell width" setting does. Presented near "Profile_CellWidth".</comment>
+  </data>
   <data name="Profile_LineHeightBox.PlaceholderText" xml:space="preserve">
     <value>1.2</value>
     <comment>"1.2" is a decimal number.</comment>
+  </data>
+  <data name="Profile_CellWidthBox.PlaceholderText" xml:space="preserve">
+    <value>0.6</value>
+    <comment>"0.6" is a decimal number.</comment>
   </data>
   <data name="Profile_EnableBuiltinGlyphs.Header" xml:space="preserve">
     <value>內建自符</value>
@@ -1860,5 +1924,37 @@
   <data name="Profile_ProportionalFontFaces.Header" xml:space="preserve">
     <value>非等寬字型:</value>
     <comment>This is a label that is followed by a list of proportional fonts.</comment>
+  </data>
+  <data name="Profile_AnswerbackMessage.Header" xml:space="preserve">
+    <value>ENQ (Request Terminal Status) 回應</value>
+    <comment>{Locked=ENQ}{Locked="Request Terminal Status"} Header for a control to determine the response to the ENQ escape sequence. This is represented using a text box.</comment>
+  </data>
+  <data name="Profile_AnswerbackMessage.HelpText" xml:space="preserve">
+    <value>接收到 ENQ 控制順序時所傳送的回應。</value>
+    <comment>{Locked=ENQ} A description for what the "ENQ response" setting does. Presented near "Profile_AnswerbackMessage".</comment>
+  </data>
+  <data name="Globals_DebugFeaturesEnabled.HelpText" xml:space="preserve">
+    <value>適用於疑難排解或開發終端機。</value>
+    <comment>Additional description for what the "debug features enabled" setting does. Presented near "Globals_DebugFeaturesEnabled.Header".</comment>
+  </data>
+  <data name="Profile_RainbowSuggestions.Header" xml:space="preserve">
+    <value>實驗性：以彩虹色顯示建議的輸入</value>
+    <comment>This is a label for a setting that, when enabled, applies a rainbow coloring to the preview text from the suggestions UI.</comment>
+  </data>
+  <data name="Globals_EnableColorSelection.Header" xml:space="preserve">
+    <value>實驗性： 將按鍵系結新增到選取文字的色彩</value>
+    <comment>Header for a control to toggle adding a set of key bindings that can be used to apply coloring to selected text in a terminal session.</comment>
+  </data>
+  <data name="Globals_EnableColorSelection.HelpText" xml:space="preserve">
+    <value>這些索引鍵系結可以醒目提示選取文字或具有指定色彩之選取文字的所有實例。</value>
+    <comment>Additional text for a control to toggle adding a set of key bindings that can be used to apply coloring to selected text in a terminal session. Presented near "Globals_EnableColorSelection.Header".</comment>
+  </data>
+  <data name="Globals_EnableUnfocusedAcrylic.Header" xml:space="preserve">
+    <value>允許未聚焦視窗中的壓克力素材</value>
+    <comment>Header for a control to toggle allowing unfocused windows to have an acrylic background.</comment>
+  </data>
+  <data name="Globals_ShowAdminShield.Header" xml:space="preserve">
+    <value>當 Windows 終端機 以系統管理員身分執行時，在標題欄中顯示遮罩</value>
+    <comment>Header for a control to toggle displaying a shield in the title bar of the app. "Admin" refers to elevated sessions like "run as Admin"</comment>
   </data>
 </root>
