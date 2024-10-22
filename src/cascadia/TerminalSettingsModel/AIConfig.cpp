@@ -126,6 +126,13 @@ void AIConfig::ActiveProvider(const LLMProvider& provider)
 
 winrt::hstring AIConfig::_RetrieveCredential(const std::wstring_view credential)
 {
+    const auto credentialData = credential.data();
+    // first check our cache
+    if (_credentialCache.contains(credentialData))
+    {
+        return winrt::hstring{ _credentialCache.at(credentialData) };
+    }
+
     PasswordVault vault;
     PasswordCredential cred;
     // Retrieve throws an exception if there are no credentials stored under the given resource so we wrap it in a try-catch block
@@ -137,11 +144,15 @@ winrt::hstring AIConfig::_RetrieveCredential(const std::wstring_view credential)
     {
         return L"";
     }
-    return cred.Password();
+
+    winrt::hstring password{ cred.Password() };
+    _credentialCache.emplace(credentialData, password);
+    return password;
 }
 
 void AIConfig::_SetCredential(const std::wstring_view credential, const winrt::hstring& value)
 {
+    _credentialCache.emplace(credential.data(), value);
     PasswordVault vault;
     if (value.empty())
     {

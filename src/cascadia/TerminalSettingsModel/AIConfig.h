@@ -57,6 +57,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     private:
         winrt::hstring _RetrieveCredential(const std::wstring_view credential);
         void _SetCredential(const std::wstring_view credential, const winrt::hstring& value);
+        std::unordered_map<std::wstring, std::wstring> _credentialCache;
     };
 }
 
