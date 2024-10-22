@@ -130,6 +130,9 @@ namespace winrt::TerminalApp::implementation
         }
 
         // If the active LLMProvider changed, make sure we reinitialize the provider
+        // We only need to do this if an _lmProvider already existed, this is to handle
+        // the case where a user uses the chat, then goes to settings and changes
+        // the active provider and returns to chat
         const auto newProviderType = _settings.GlobalSettings().AIInfo().ActiveProvider();
         if (_lmProvider && (newProviderType != _currentProvider))
         {
