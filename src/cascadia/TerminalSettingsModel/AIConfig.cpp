@@ -19,13 +19,9 @@ static constexpr std::wstring_view PasswordVaultAIEndpoint = L"TerminalAIEndpoin
 static constexpr std::wstring_view PasswordVaultOpenAIKey = L"TerminalOpenAIKey";
 static constexpr std::wstring_view PasswordVaultGithubCopilotAuthToken = L"TerminalGithubCopilotAuthToken";
 static constexpr std::wstring_view PasswordVaultGithubCopilotRefreshToken = L"TerminalGithubCopilotRefreshToken";
-static constexpr std::wstring_view AzureOpenAIRegistryKey = L"AzureOpenAI";
-static constexpr std::wstring_view OpenAIRegistryKey = L"OpenAI";
-static constexpr std::wstring_view GitHubCopilotRegistryKey = L"GitHubCopilot";
-
-AIConfig::AIConfig()
-{
-}
+static constexpr std::wstring_view AzureOpenAIPolicyKey = L"AzureOpenAI";
+static constexpr std::wstring_view OpenAIPolicyKey = L"OpenAI";
+static constexpr std::wstring_view GitHubCopilotPolicyKey = L"GitHubCopilot";
 
 winrt::Microsoft::Terminal::Settings::Model::EnabledLMProviders AIConfig::AllowedLMProviders() noexcept
 {
@@ -41,15 +37,15 @@ winrt::Microsoft::Terminal::Settings::Model::EnabledLMProviders AIConfig::Allowe
             for (auto p = buffer; *p;)
             {
                 const auto len = wcslen(p);
-                if (wcscmp(p, AzureOpenAIRegistryKey.data()) == 0)
+                if (wcscmp(p, AzureOpenAIPolicyKey.data()) == 0)
                 {
                     WI_SetFlag(enabledLMProviders, Model::EnabledLMProviders::AzureOpenAI);
                 }
-                else if (wcscmp(p, OpenAIRegistryKey.data()) == 0)
+                else if (wcscmp(p, OpenAIPolicyKey.data()) == 0)
                 {
                     WI_SetFlag(enabledLMProviders, Model::EnabledLMProviders::OpenAI);
                 }
-                else if (wcscmp(p, GitHubCopilotRegistryKey.data()) == 0)
+                else if (wcscmp(p, GitHubCopilotPolicyKey.data()) == 0)
                 {
                     WI_SetFlag(enabledLMProviders, Model::EnabledLMProviders::GithubCopilot);
                 }

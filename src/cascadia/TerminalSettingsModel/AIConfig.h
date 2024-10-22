@@ -28,7 +28,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     struct AIConfig : AIConfigT<AIConfig>, IInheritable<AIConfig>
     {
     public:
-        AIConfig();
+        AIConfig() = default;
         static winrt::com_ptr<AIConfig> CopyAIConfig(const AIConfig* source);
         Json::Value ToJson() const;
         void LayerJson(const Json::Value& json);

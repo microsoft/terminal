@@ -713,7 +713,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return _breadcrumbs;
     }
 
-    bool MainPage::AISettingsVisibility() const noexcept
+    bool MainPage::AISettingsEnabled() const noexcept
     {
         return WI_IsAnyFlagSet(AIConfig::AllowedLMProviders(), EnabledLMProviders::All);
     }

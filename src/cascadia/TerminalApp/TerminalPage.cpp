@@ -1002,61 +1002,60 @@ namespace winrt::TerminalApp::implementation
                 _SetAcceleratorForMenuItem(commandPaletteFlyout, commandPaletteKeyChord);
             }
 
-            // Create the AI chat button if allowed
-            if (WI_IsAnyFlagSet(AIConfig::AllowedLMProviders(), EnabledLMProviders::All))
+            // Create the AI chat button
+            const auto terminalChatEnabled = WI_IsAnyFlagSet(_settings.GlobalSettings().AIInfo().AllowedLMProviders(), EnabledLMProviders::All);
+            auto AIChatFlyout = WUX::Controls::MenuFlyoutItem{};
+            AIChatFlyout.Text(terminalChatEnabled ? RS_(L"AIChatMenuItem") : RS_(L"AIChatMenuItemDisabled"));
+            const auto AIChatToolTip = RS_(L"AIChatToolTip");
+
+            WUX::Controls::ToolTipService::SetToolTip(AIChatFlyout, box_value(AIChatToolTip));
+            Automation::AutomationProperties::SetHelpText(AIChatFlyout, AIChatToolTip);
+
+            // BODGY
+            // Manually load this icon from an SVG path; it is ironically much more humane this way.
+            // The XAML resource loader can't resolve theme-light/theme-dark for us, for... well, reasons.
+            // But also, you can't load a PathIcon with a *string* using the WinRT API... well. Reasons.
             {
-                auto AIChatFlyout = WUX::Controls::MenuFlyoutItem{};
-                AIChatFlyout.Text(RS_(L"AIChatMenuItem"));
-                const auto AIChatToolTip = RS_(L"AIChatToolTip");
-
-                WUX::Controls::ToolTipService::SetToolTip(AIChatFlyout, box_value(AIChatToolTip));
-                Automation::AutomationProperties::SetHelpText(AIChatFlyout, AIChatToolTip);
-
-                // BODGY
-                // Manually load this icon from an SVG path; it is ironically much more humane this way.
-                // The XAML resource loader can't resolve theme-light/theme-dark for us, for... well, reasons.
-                // But also, you can't load a PathIcon with a *string* using the WinRT API... well. Reasons.
+                static constexpr wil::zwstring_view pathSVG{
+                    L"m11.799 0c1.4358 0 2.5997 1.1639 2.5997 2.5997"
+                    "v4.6161c-0.3705-0.2371-0.7731-0.42843-1.1998-0.56618"
+                    "v-2.2501h-11.999v7.3991c0 0.7731 0.62673 1.3999 1.3998 1.3999"
+                    "h4.0503c0.06775 0.2097 0.14838 0.4137 0.24109 0.6109l-0.17934 0.5889"
+                    "h-4.1121c-1.4358 0-2.5997-1.1639-2.5997-2.5997"
+                    "v-9.1989c0-1.4358 1.1639-2.5997 2.5997-2.5997"
+                    "h9.1989zm0 1.1999h-9.1989c-0.77311 0-1.3998 0.62673-1.3998 1.3998"
+                    "v0.59993h11.999v-0.59993c0-0.77311-0.6267-1.3998-1.3999-1.3998"
+                    "zm1.3999 6.2987c0.4385 0.1711 0.8428 0.41052 1.1998 0.70512 0.9782 "
+                    "0.80711 1.6017 2.0287 1.6017 3.3959 0 2.4304-1.9702 4.4005-4.4005 "
+                    "4.4005-0.7739 0-1.5013-0.1998-2.1332-0.5508l-1.7496 0.5325c-0.30612 "
+                    "0.0931-0.59233-0.1931-0.49914-0.4993l0.53258-1.749c-0.35108-0.6321-0.55106-1.3596-0.55106-2.1339 "
+                    "0-2.3834 1.8949-4.3243 4.2604-4.3983 0.0395-0.0012 0.0792-0.00192 "
+                    "0.1191-0.00208 0.0069-8e-5 0.0139-8e-5 0.0208-8e-5 0.5641 0 1.1034 "
+                    "0.10607 1.599 0.2994zm0.0012 3.701c0.2209 0 0.4-0.1791 0.4-0.4 "
+                    "0-0.221-0.1791-0.4001-0.4-0.4001h-3.2003c-0.22094 0-0.40003 0.1791-0.40003 "
+                    "0.4001 0 0.2209 0.17909 0.4 0.40003 0.4h3.2003zm-3.2003 1.6001h1.6001c0.221 "
+                    "0 0.4001-0.1791 0.4001-0.4s-0.1791-0.4-0.4001-0.4h-1.6001c-0.22094 0-0.40003 "
+                    "0.1791-0.40003 0.4s0.17909 0.4 0.40003 0.4z"
+                };
+                try
                 {
-                    static constexpr wil::zwstring_view pathSVG{
-                        L"m11.799 0c1.4358 0 2.5997 1.1639 2.5997 2.5997"
-                        "v4.6161c-0.3705-0.2371-0.7731-0.42843-1.1998-0.56618"
-                        "v-2.2501h-11.999v7.3991c0 0.7731 0.62673 1.3999 1.3998 1.3999"
-                        "h4.0503c0.06775 0.2097 0.14838 0.4137 0.24109 0.6109l-0.17934 0.5889"
-                        "h-4.1121c-1.4358 0-2.5997-1.1639-2.5997-2.5997"
-                        "v-9.1989c0-1.4358 1.1639-2.5997 2.5997-2.5997"
-                        "h9.1989zm0 1.1999h-9.1989c-0.77311 0-1.3998 0.62673-1.3998 1.3998"
-                        "v0.59993h11.999v-0.59993c0-0.77311-0.6267-1.3998-1.3999-1.3998"
-                        "zm1.3999 6.2987c0.4385 0.1711 0.8428 0.41052 1.1998 0.70512 0.9782 "
-                        "0.80711 1.6017 2.0287 1.6017 3.3959 0 2.4304-1.9702 4.4005-4.4005 "
-                        "4.4005-0.7739 0-1.5013-0.1998-2.1332-0.5508l-1.7496 0.5325c-0.30612 "
-                        "0.0931-0.59233-0.1931-0.49914-0.4993l0.53258-1.749c-0.35108-0.6321-0.55106-1.3596-0.55106-2.1339 "
-                        "0-2.3834 1.8949-4.3243 4.2604-4.3983 0.0395-0.0012 0.0792-0.00192 "
-                        "0.1191-0.00208 0.0069-8e-5 0.0139-8e-5 0.0208-8e-5 0.5641 0 1.1034 "
-                        "0.10607 1.599 0.2994zm0.0012 3.701c0.2209 0 0.4-0.1791 0.4-0.4 "
-                        "0-0.221-0.1791-0.4001-0.4-0.4001h-3.2003c-0.22094 0-0.40003 0.1791-0.40003 "
-                        "0.4001 0 0.2209 0.17909 0.4 0.40003 0.4h3.2003zm-3.2003 1.6001h1.6001c0.221 "
-                        "0 0.4001-0.1791 0.4001-0.4s-0.1791-0.4-0.4001-0.4h-1.6001c-0.22094 0-0.40003 "
-                        "0.1791-0.40003 0.4s0.17909 0.4 0.40003 0.4z"
-                    };
-                    try
-                    {
-                        hstring hsPathSVG{ pathSVG };
-                        auto geometry = Markup::XamlBindingHelper::ConvertValue(winrt::xaml_typename<WUX::Media::Geometry>(), winrt::box_value(hsPathSVG));
-                        WUX::Controls::PathIcon pathIcon;
-                        pathIcon.Data(geometry.try_as<WUX::Media::Geometry>());
-                        AIChatFlyout.Icon(pathIcon);
-                    }
-                    CATCH_LOG();
+                    hstring hsPathSVG{ pathSVG };
+                    auto geometry = Markup::XamlBindingHelper::ConvertValue(winrt::xaml_typename<WUX::Media::Geometry>(), winrt::box_value(hsPathSVG));
+                    WUX::Controls::PathIcon pathIcon;
+                    pathIcon.Data(geometry.try_as<WUX::Media::Geometry>());
+                    AIChatFlyout.Icon(pathIcon);
                 }
+                CATCH_LOG();
+            }
 
-                AIChatFlyout.Click({ this, &TerminalPage::_AIChatButtonOnClick });
-                newTabFlyout.Items().Append(AIChatFlyout);
+            AIChatFlyout.Click({ this, &TerminalPage::_AIChatButtonOnClick });
+            AIChatFlyout.IsEnabled(terminalChatEnabled);
+            newTabFlyout.Items().Append(AIChatFlyout);
 
-                const auto AIChatKeyChord{ actionMap.GetKeyBindingForAction(L"Terminal.OpenTerminalChat") };
-                if (AIChatKeyChord)
-                {
-                    _SetAcceleratorForMenuItem(AIChatFlyout, AIChatKeyChord);
-                }
+            const auto AIChatKeyChord{ actionMap.GetKeyBindingForAction(L"Terminal.OpenTerminalChat") };
+            if (AIChatKeyChord)
+            {
+                _SetAcceleratorForMenuItem(AIChatFlyout, AIChatKeyChord);
             }
 
             // Create the about button.
