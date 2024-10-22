@@ -5793,7 +5793,10 @@ namespace winrt::TerminalApp::implementation
                 break;
             }
         }
-        _lmProvider.SetAuthentication(authValues);
+        if (_lmProvider)
+        {
+            _lmProvider.SetAuthentication(authValues);
+        }
 
         if (_extensionPalette)
         {

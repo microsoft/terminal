@@ -160,16 +160,36 @@ void AIConfig::GithubCopilotRefreshToken(const winrt::hstring& refreshToken) noe
 
 winrt::Microsoft::Terminal::Settings::Model::LLMProvider AIConfig::ActiveProvider()
 {
+    const auto allowedLMProviders = AllowedLMProviders();
     const auto val{ _getActiveProviderImpl() };
     if (val)
     {
-        // an active provider was explicitly set, return that
-        // special case: only allow github copilot if the feature is enabled
-        if (*val == LLMProvider::GithubCopilot && !Feature_GithubCopilot::IsEnabled())
+        const auto setProvider = *val;
+        // an active provider was explicitly set, return that as long as it is allowed
+        switch (setProvider)
         {
-            return LLMProvider{};
+        case LLMProvider::GithubCopilot:
+            if (Feature_GithubCopilot::IsEnabled() && WI_IsFlagSet(allowedLMProviders, EnabledLMProviders::GithubCopilot))
+            {
+                return setProvider;
+            }
+            break;
+        case LLMProvider::AzureOpenAI:
+            if (WI_IsFlagSet(allowedLMProviders, EnabledLMProviders::AzureOpenAI))
+            {
+                return setProvider;
+            }
+            break;
+        case LLMProvider::OpenAI:
+            if (WI_IsFlagSet(allowedLMProviders, EnabledLMProviders::OpenAI))
+            {
+                return setProvider;
+            }
+            break;
+        default:
+            break;
         }
-        return *val;
+        return LLMProvider{};
     }
     else if (!AzureOpenAIEndpoint().empty() && !AzureOpenAIKey().empty())
     {

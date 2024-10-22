@@ -94,16 +94,16 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         _lmProvider = lmProvider;
         _clearAndInitializeMessages(nullptr, nullptr);
 
-        const auto brandingData = _lmProvider.BrandingData();
-        const auto headerIconPath = brandingData.HeaderIconPath().empty() ? terminalChatLogoPath : brandingData.HeaderIconPath();
+        const auto brandingData = _lmProvider ? _lmProvider.BrandingData() : nullptr;
+        const auto headerIconPath = (!brandingData || brandingData.HeaderIconPath().empty()) ? terminalChatLogoPath : brandingData.HeaderIconPath();
         Windows::Foundation::Uri headerImageSourceUri{ headerIconPath };
         Media::Imaging::BitmapImage headerImageSource{ headerImageSourceUri };
         HeaderIcon().Source(headerImageSource);
 
-        const auto headerText = brandingData.HeaderText().empty() ? RS_(L"IntroText/Text") : brandingData.HeaderText();
+        const auto headerText = (!brandingData || brandingData.HeaderText().empty()) ? RS_(L"IntroText/Text") : brandingData.HeaderText();
         QueryIntro().Text(headerText);
 
-        const auto subheaderText = brandingData.SubheaderText().empty() ? RS_(L"TitleSubheader/Text") : brandingData.SubheaderText();
+        const auto subheaderText = (!brandingData || brandingData.SubheaderText().empty()) ? RS_(L"TitleSubheader/Text") : brandingData.SubheaderText();
         TitleSubheader().Text(subheaderText);
     }
 
@@ -229,9 +229,9 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
             }
         }
 
-        const auto brandingData = _lmProvider.BrandingData();
-        const auto responseMetaData = _lmProvider ? brandingData.ResponseMetaData() : L"";
-        const auto badgeUriPath = _lmProvider ? brandingData.BadgeIconPath() : L"";
+        const auto brandingData = _lmProvider ? _lmProvider.BrandingData() : nullptr;
+        const auto responseMetaData = brandingData ? brandingData.ResponseMetaData() : L"";
+        const auto badgeUriPath = brandingData ? brandingData.BadgeIconPath() : L"";
         const auto responseGroupedMessages = winrt::make<GroupedChatMessages>(time, false, _ProfileName, winrt::single_threaded_vector(std::move(messageParts)), responseMetaData, badgeUriPath);
         _messages.Append(responseGroupedMessages);
 
