@@ -86,6 +86,7 @@
       <DependentUpon>ActionsViewModel.idl</DependentUpon>
       <SubType>Code</SubType>
     </ClInclude>
+    <ClInclude Include="SegoeFluentIconList.h" />
     <ClInclude Include="TerminalColorConverters.h">
       <DependentUpon>TerminalColorConverters.idl</DependentUpon>
       <SubType>Code</SubType>
