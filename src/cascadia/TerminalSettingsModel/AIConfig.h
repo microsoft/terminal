@@ -33,7 +33,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         Json::Value ToJson() const;
         void LayerJson(const Json::Value& json);
 
-        Model::EnabledLMProviders AllowedLMProviders() const noexcept;
+        static Model::EnabledLMProviders AllowedLMProviders() noexcept;
 
         // Key and endpoint storage
         // These are not written to the json, they are stored in the Windows Security Storage Vault

@@ -715,7 +715,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     bool MainPage::AISettingsVisibility() const noexcept
     {
-        return WI_IsAnyFlagSet(_settingsClone.GlobalSettings().AIInfo().AllowedLMProviders(), Model::EnabledLMProviders::All);
+        return WI_IsAnyFlagSet(AIConfig::AllowedLMProviders(), EnabledLMProviders::All);
     }
 
     static winrt::event<GithubAuthCompletedHandler> _githubAuthCompletedHandlers;

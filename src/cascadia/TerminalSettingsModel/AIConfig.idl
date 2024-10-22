@@ -26,7 +26,7 @@ namespace Microsoft.Terminal.Settings.Model
     [default_interface] runtimeclass AIConfig {
         INHERITABLE_SETTING(LLMProvider, ActiveProvider);
 
-        EnabledLMProviders AllowedLMProviders { get; };
+        static EnabledLMProviders AllowedLMProviders { get; };
 
         String AzureOpenAIEndpoint;
         String AzureOpenAIKey;
