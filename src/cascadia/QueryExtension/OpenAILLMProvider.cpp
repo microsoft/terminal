@@ -46,9 +46,9 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         _jsonMessages.Append(systemMessageObject);
     }
 
-    void OpenAILLMProvider::SetContext(const Extension::IContext context)
+    void OpenAILLMProvider::SetContext(Extension::IContext context)
     {
-        _context = context;
+        _context = std::move(context);
     }
 
     winrt::Windows::Foundation::IAsyncOperation<Extension::IResponse> OpenAILLMProvider::GetResponseAsync(const winrt::hstring userPrompt)

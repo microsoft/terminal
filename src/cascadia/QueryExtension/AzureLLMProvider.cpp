@@ -63,9 +63,9 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         _jsonMessages.Append(systemMessageObject);
     }
 
-    void AzureLLMProvider::SetContext(const Extension::IContext context)
+    void AzureLLMProvider::SetContext(Extension::IContext context)
     {
-        _context = context;
+        _context = std::move(context);
     }
 
     winrt::Windows::Foundation::IAsyncOperation<Extension::IResponse> AzureLLMProvider::GetResponseAsync(const winrt::hstring& userPrompt)
