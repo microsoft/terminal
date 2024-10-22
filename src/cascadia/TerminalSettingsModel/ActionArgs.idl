@@ -64,9 +64,7 @@ namespace Microsoft.Terminal.Settings.Model
         DefaultsFile,
         AllFiles,
         SettingsUI,
-        FileExplorer,
-        SendInput,
-        Clipboard
+        Directory
     };
 
     enum MoveTabDirection

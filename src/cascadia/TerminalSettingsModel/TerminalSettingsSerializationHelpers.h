@@ -439,9 +439,7 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::SettingsTarget)
         pair_type{ "defaultsFile", ValueType::DefaultsFile },
         pair_type{ "allFiles", ValueType::AllFiles },
         pair_type{ "settingsUI", ValueType::SettingsUI },
-        pair_type{ "fileExplorer", ValueType::FileExplorer },
-        pair_type{ "sendInput", ValueType::SendInput },
-        pair_type{ "clipboard", ValueType::Clipboard },
+        pair_type{ "directory", ValueType::Directory }
     };
 };
 
