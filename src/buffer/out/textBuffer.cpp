@@ -2050,7 +2050,7 @@ std::tuple<til::CoordType, til::CoordType, bool> TextBuffer::_RowCopyHelper(cons
         const auto end = req.bufferCoordinates ? req.end : ScreenToBufferLineInclusive(req.end, lineRendition);
 
         rowBeg = iRow != beg.y ? 0 : beg.x;
-        rowEnd = iRow != end.y ? row.GetReadableColumnCount(): end.x;
+        rowEnd = iRow != end.y ? row.GetReadableColumnCount() : end.x;
     }
 
     // Our selection mechanism doesn't stick to glyph boundaries at the moment.

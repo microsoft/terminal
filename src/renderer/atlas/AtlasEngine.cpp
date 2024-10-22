@@ -433,7 +433,7 @@ try
         // Return early if we couldn't paint the whole region (either this was not the last row, or
         // it was the last row but the highlight ends outside of our x range.)
         // We will resume from here in the next call.
-        if (!isFinalRow || hiEnd.x /*inclusive*/ > x2 /*exclusive*/)
+        if (!isFinalRow || hiEnd.x > x2)
         {
             return S_OK;
         }
@@ -448,7 +448,7 @@ try
         hiEnd = it->end - offset;
 
         const auto isStartInside = y == hiStart.y && hiStart.x < x2;
-        const auto isEndInside = y == hiEnd.y && hiEnd.x < x2;
+        const auto isEndInside = y == hiEnd.y && hiEnd.x <= x2;
         if (isStartInside && isEndInside)
         {
             _fillColorBitmap(row, hiStart.x, static_cast<size_t>(hiEnd.x), fgColor, bgColor);
