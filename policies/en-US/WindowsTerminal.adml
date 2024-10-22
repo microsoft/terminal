@@ -27,7 +27,7 @@ Common providers are:
 - OpenAI
 - GitHubCopilot
 
-For instance, setting this policy to GitHubCopilot will allow the use of GitHubCopilot in Terminal Chat. Leaving this list empty will disable AI features in Terminal.</string>
+For instance, setting this policy to GitHubCopilot will allow the use of GitHubCopilot in Terminal Chat. Configuring the policy but leaving the list empty will disable AI features in Terminal.</string>
     </stringTable>
     <presentationTable>
       <presentation id="DisabledProfileSources">
