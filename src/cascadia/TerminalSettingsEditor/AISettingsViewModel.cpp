@@ -52,6 +52,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _NotifyChanges(L"AreAzureOpenAIKeyAndEndpointSet");
     }
 
+    bool AISettingsViewModel::AzureOpenAIAllowed() const noexcept
+    {
+        return WI_IsFlagSet(_Settings.GlobalSettings().AIInfo().AllowedLMProviders(), Model::EnabledLMProviders::AzureOpenAI);
+    }
+
     bool AISettingsViewModel::IsOpenAIKeySet()
     {
         return !_Settings.GlobalSettings().AIInfo().OpenAIKey().empty();
@@ -66,6 +71,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         _Settings.GlobalSettings().AIInfo().OpenAIKey(key);
         _NotifyChanges(L"IsOpenAIKeySet");
+    }
+
+    bool AISettingsViewModel::OpenAIAllowed() const noexcept
+    {
+        return WI_IsFlagSet(_Settings.GlobalSettings().AIInfo().AllowedLMProviders(), Model::EnabledLMProviders::OpenAI);
     }
 
     bool AISettingsViewModel::AzureOpenAIActive()
@@ -132,9 +142,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
-    bool AISettingsViewModel::GithubCopilotFeatureEnabled()
+    bool AISettingsViewModel::GithubCopilotAllowed() const noexcept
     {
-        return Feature_GithubCopilot::IsEnabled();
+        return Feature_GithubCopilot::IsEnabled() && WI_IsFlagSet(_Settings.GlobalSettings().AIInfo().AllowedLMProviders(), Model::EnabledLMProviders::GithubCopilot);
     }
 
     void AISettingsViewModel::InitiateGithubAuth_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)

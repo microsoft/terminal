@@ -24,12 +24,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void AzureOpenAIKey(winrt::hstring key);
         bool AzureOpenAIActive();
         void AzureOpenAIActive(bool active);
+        bool AzureOpenAIAllowed() const noexcept;
 
         bool IsOpenAIKeySet();
         winrt::hstring OpenAIKey();
         void OpenAIKey(winrt::hstring key);
         bool OpenAIActive();
         void OpenAIActive(bool active);
+        bool OpenAIAllowed() const noexcept;
 
         bool AreGithubCopilotTokensSet();
         winrt::hstring GithubCopilotAuthMessage();
@@ -37,7 +39,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void GithubCopilotRefreshToken(winrt::hstring refreshToken);
         bool GithubCopilotActive();
         void GithubCopilotActive(bool active);
-        bool GithubCopilotFeatureEnabled();
+        bool GithubCopilotAllowed() const noexcept;
         void InitiateGithubAuth_Click(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& e);
         til::typed_event<Windows::Foundation::IInspectable, Windows::Foundation::IInspectable> GithubAuthRequested;
 

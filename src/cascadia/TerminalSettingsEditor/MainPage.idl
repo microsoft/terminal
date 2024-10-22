@@ -46,6 +46,7 @@ namespace Microsoft.Terminal.Settings.Editor
 
         Windows.UI.Xaml.Media.Brush BackgroundBrush { get; };
 
+        Boolean AISettingsVisibility { get; };
         event Windows.Foundation.TypedEventHandler<Object, Object> GithubAuthRequested;
         static void RefreshGithubAuthStatus(String message);
         static event GithubAuthCompletedHandler GithubAuthCompleted;

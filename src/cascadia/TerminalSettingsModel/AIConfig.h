@@ -28,10 +28,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     struct AIConfig : AIConfigT<AIConfig>, IInheritable<AIConfig>
     {
     public:
-        AIConfig() = default;
+        AIConfig();
         static winrt::com_ptr<AIConfig> CopyAIConfig(const AIConfig* source);
         Json::Value ToJson() const;
         void LayerJson(const Json::Value& json);
+
+        Model::EnabledLMProviders AllowedLMProviders() const noexcept;
 
         // Key and endpoint storage
         // These are not written to the json, they are stored in the Windows Security Storage Vault
@@ -62,6 +64,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     private:
         winrt::hstring _RetrieveCredential(const std::wstring_view credential);
         void _SetCredential(const std::wstring_view credential, const winrt::hstring& value);
+
+        Model::EnabledLMProviders _enabledLMProviders{ Model::EnabledLMProviders::All };
     };
 }
 

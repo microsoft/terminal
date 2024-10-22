@@ -19,6 +19,46 @@ static constexpr std::wstring_view PasswordVaultAIEndpoint = L"TerminalAIEndpoin
 static constexpr std::wstring_view PasswordVaultOpenAIKey = L"TerminalOpenAIKey";
 static constexpr std::wstring_view PasswordVaultGithubCopilotAuthToken = L"TerminalGithubCopilotAuthToken";
 static constexpr std::wstring_view PasswordVaultGithubCopilotRefreshToken = L"TerminalGithubCopilotRefreshToken";
+static constexpr std::wstring_view AzureOpenAIRegistryKey = L"AzureOpenAI";
+static constexpr std::wstring_view OpenAIRegistryKey = L"OpenAI";
+static constexpr std::wstring_view GitHubCopilotRegistryKey = L"GitHubCopilot";
+
+AIConfig::AIConfig()
+{
+    // get our allowed list of LM providers from the registry
+    for (const auto key : { HKEY_LOCAL_MACHINE, HKEY_CURRENT_USER })
+    {
+        wchar_t buffer[512]; // "640K ought to be enough for anyone"
+        DWORD bufferSize = sizeof(buffer);
+        if (RegGetValueW(key, LR"(Software\Policies\Microsoft\Windows Terminal)", L"EnabledLMProviders", RRF_RT_REG_MULTI_SZ, nullptr, buffer, &bufferSize) == 0)
+        {
+            WI_ClearAllFlags(_enabledLMProviders, Model::EnabledLMProviders::All);
+            for (auto p = buffer; *p;)
+            {
+                const auto len = wcslen(p);
+                if (wcscmp(p, AzureOpenAIRegistryKey.data()) == 0)
+                {
+                    WI_SetFlag(_enabledLMProviders, Model::EnabledLMProviders::AzureOpenAI);
+                }
+                else if (wcscmp(p, OpenAIRegistryKey.data()) == 0)
+                {
+                    WI_SetFlag(_enabledLMProviders, Model::EnabledLMProviders::OpenAI);
+                }
+                else if (wcscmp(p, GitHubCopilotRegistryKey.data()) == 0)
+                {
+                    WI_SetFlag(_enabledLMProviders, Model::EnabledLMProviders::GithubCopilot);
+                }
+                p += len + 1;
+            }
+            break;
+        }
+    }
+}
+
+winrt::Microsoft::Terminal::Settings::Model::EnabledLMProviders AIConfig::AllowedLMProviders() const noexcept
+{
+    return _enabledLMProviders;
+}
 
 winrt::com_ptr<AIConfig> AIConfig::CopyAIConfig(const AIConfig* source)
 {

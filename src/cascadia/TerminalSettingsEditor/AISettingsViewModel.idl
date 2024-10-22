@@ -15,17 +15,19 @@ namespace Microsoft.Terminal.Settings.Editor
         String AzureOpenAIEndpoint;
         String AzureOpenAIKey;
         Boolean AzureOpenAIActive;
+        Boolean AzureOpenAIAllowed { get; };
 
         Boolean IsOpenAIKeySet { get; };
         String OpenAIKey;
         Boolean OpenAIActive;
+        Boolean OpenAIAllowed { get; };
 
         Boolean AreGithubCopilotTokensSet { get; };
         String GithubCopilotAuthMessage { get; };
         void GithubCopilotAuthToken(String authToken);
         void GithubCopilotRefreshToken(String refreshToken);
         Boolean GithubCopilotActive;
-        Boolean GithubCopilotFeatureEnabled { get; };
+        Boolean GithubCopilotAllowed { get; };
 
         void InitiateGithubAuth_Click(IInspectable sender, Windows.UI.Xaml.RoutedEventArgs args);
         event Windows.Foundation.TypedEventHandler<Object, Object> GithubAuthRequested;

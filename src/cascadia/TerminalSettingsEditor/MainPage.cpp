@@ -713,6 +713,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return _breadcrumbs;
     }
 
+    bool MainPage::AISettingsVisibility() const noexcept
+    {
+        return WI_IsAnyFlagSet(_settingsClone.GlobalSettings().AIInfo().AllowedLMProviders(), Model::EnabledLMProviders::All);
+    }
+
     static winrt::event<GithubAuthCompletedHandler> _githubAuthCompletedHandlers;
 
     winrt::event_token MainPage::GithubAuthCompleted(const GithubAuthCompletedHandler& handler) { return _githubAuthCompletedHandlers.add(handler); };
