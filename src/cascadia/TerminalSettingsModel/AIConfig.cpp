@@ -13,10 +13,10 @@ using namespace winrt::Microsoft::Terminal::Settings::Model::implementation;
 using namespace winrt::Windows::Security::Credentials;
 
 static constexpr std::string_view AIConfigKey{ "aiConfig" };
-static constexpr std::wstring_view PasswordVaultResourceName = L"TerminalAI";
-static constexpr std::wstring_view PasswordVaultAIKey = L"TerminalAIKey";
-static constexpr std::wstring_view PasswordVaultAIEndpoint = L"TerminalAIEndpoint";
-static constexpr std::wstring_view PasswordVaultOpenAIKey = L"TerminalOpenAIKey";
+static constexpr wil::zwstring_view PasswordVaultResourceName = L"TerminalAI";
+static constexpr wil::zwstring_view PasswordVaultAIKey = L"TerminalAIKey";
+static constexpr wil::zwstring_view PasswordVaultAIEndpoint = L"TerminalAIEndpoint";
+static constexpr wil::zwstring_view PasswordVaultOpenAIKey = L"TerminalOpenAIKey";
 
 winrt::com_ptr<AIConfig> AIConfig::CopyAIConfig(const AIConfig* source)
 {
@@ -124,13 +124,13 @@ void AIConfig::ActiveProvider(const LLMProvider& provider)
     _ActiveProvider = provider;
 }
 
-winrt::hstring AIConfig::_RetrieveCredential(const std::wstring_view credential)
+winrt::hstring AIConfig::_RetrieveCredential(const wil::zwstring_view credential)
 {
-    const auto credentialData = credential.data();
+    const auto credentialStr = credential.c_str();
     // first check our cache
-    if (_credentialCache.contains(credentialData))
+    if (const auto cachedCredential = _credentialCache.find(credentialStr); cachedCredential != _credentialCache.end())
     {
-        return winrt::hstring{ _credentialCache.at(credentialData) };
+        return winrt::hstring{ cachedCredential->second };
     }
 
     PasswordVault vault;
@@ -146,13 +146,13 @@ winrt::hstring AIConfig::_RetrieveCredential(const std::wstring_view credential)
     }
 
     winrt::hstring password{ cred.Password() };
-    _credentialCache.emplace(credentialData, password);
+    _credentialCache.emplace(credentialStr, password);
     return password;
 }
 
-void AIConfig::_SetCredential(const std::wstring_view credential, const winrt::hstring& value)
+void AIConfig::_SetCredential(const wil::zwstring_view credential, const winrt::hstring& value)
 {
-    _credentialCache.emplace(credential.data(), value);
+    const auto credentialStr = credential.c_str();
     PasswordVault vault;
     if (value.empty())
     {
@@ -168,10 +168,12 @@ void AIConfig::_SetCredential(const std::wstring_view credential, const winrt::h
             return;
         }
         vault.Remove(cred);
+        _credentialCache.erase(credentialStr);
     }
     else
     {
         PasswordCredential newCredential{ PasswordVaultResourceName, credential, value };
         vault.Add(newCredential);
+        _credentialCache.emplace(credentialStr, value);
     }
 }
