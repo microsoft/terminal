@@ -987,13 +987,9 @@ std::wstring UiaTextRangeBase::_getTextValue(til::CoordType maxLength) const
 
         // TODO GH#5406: create a different UIA parent object for each TextBuffer
         // nvaccess/nvda#11428: Ensure our endpoints are in bounds
-        THROW_HR_IF(E_FAIL, !bufferSize.IsInBounds(_start, true) || !bufferSize.IsInBounds(_end, true));
+        THROW_HR_IF(E_FAIL, !bufferSize.IsInExclusiveBounds(_start) || !bufferSize.IsInExclusiveBounds(_end));
 
-        // convert _end to be inclusive
-        auto inclusiveEnd = _end;
-        bufferSize.DecrementInBounds(inclusiveEnd, true);
-
-        const auto req = TextBuffer::CopyRequest{ buffer, _start, inclusiveEnd, _blockRange, true, false, false, true };
+        const auto req = TextBuffer::CopyRequest{ buffer, _start, _end, _blockRange, true, false, false, true };
         auto plainText = buffer.GetPlainText(req);
 
         if (plainText.size() > maxLengthAsSize)

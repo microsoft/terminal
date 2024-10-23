@@ -2716,7 +2716,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         bufferSize.DecrementInBounds(inclusiveEnd);
 
         _terminal->SelectNewRegion(s.start, inclusiveEnd);
-        _renderer->TriggerSelection();
     }
 
     void ControlCore::SelectCommand(const bool goUp)

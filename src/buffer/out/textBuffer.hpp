@@ -170,6 +170,7 @@ public:
     void TriggerScroll();
     void TriggerScroll(const til::point delta);
     void TriggerNewTextNotification(const std::wstring_view newText);
+    void TriggerSelection();
 
     til::point GetWordStart(const til::point target, const std::wstring_view wordDelimiters, bool accessibilityMode = false, std::optional<til::point> limitOptional = std::nullopt) const;
     til::point GetWordEnd(const til::point target, const std::wstring_view wordDelimiters, bool accessibilityMode = false, std::optional<til::point> limitOptional = std::nullopt) const;

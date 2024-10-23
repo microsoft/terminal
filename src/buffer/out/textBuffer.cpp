@@ -1118,6 +1118,14 @@ void TextBuffer::TriggerNewTextNotification(const std::wstring_view newText)
     }
 }
 
+void TextBuffer::TriggerSelection()
+{
+    if (_isActiveBuffer && _renderer)
+    {
+        _renderer->TriggerSelection();
+    }
+}
+
 // Method Description:
 // - get delimiter class for buffer cell position
 // - used for double click selection and uia word navigation

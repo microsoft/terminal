@@ -174,7 +174,6 @@ void Terminal::MultiClickSelection(const til::point viewportPos, SelectionExpans
     selection->pivot = _ConvertToBufferCell(viewportPos, true);
     selection->active = true;
 
-    // TODO CARLOS: validate
     _multiClickSelectionMode = expansionMode;
     SetSelectionEnd(viewportPos);
 
@@ -197,7 +196,6 @@ void Terminal::SetSelectionAnchor(const til::point viewportPos)
     selection->pivot = _ConvertToBufferCell(viewportPos, true);
     selection->active = true;
 
-    // TODO CARLOS: validate
     _multiClickSelectionMode = SelectionExpansion::Char;
     SetSelectionEnd(viewportPos);
 
@@ -916,7 +914,6 @@ Terminal::TextCopyData Terminal::RetrieveSelectedTextFromBuffer(const bool singl
 // - the corresponding location on the buffer
 til::point Terminal::_ConvertToBufferCell(const til::point viewportPos, bool allowRightExclusive) const
 {
-    // TODO CARLOS: this is a dangerous change. Validate side-effects!
     const auto yPos = _VisibleStartIndex() + viewportPos.y;
     til::point bufferPos = { viewportPos.x, yPos };
     const auto bufferSize = _activeBuffer().GetSize();
