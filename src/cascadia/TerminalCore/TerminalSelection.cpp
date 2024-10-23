@@ -171,9 +171,10 @@ void Terminal::MultiClickSelection(const til::point viewportPos, SelectionExpans
     auto selection{ _selection.write() };
     wil::hide_name _selection;
 
-    selection->pivot = _ConvertToBufferCell(viewportPos);
+    selection->pivot = _ConvertToBufferCell(viewportPos, true);
     selection->active = true;
 
+    // TODO CARLOS: validate
     _multiClickSelectionMode = expansionMode;
     SetSelectionEnd(viewportPos);
 
@@ -193,9 +194,10 @@ void Terminal::SetSelectionAnchor(const til::point viewportPos)
     auto selection{ _selection.write() };
     wil::hide_name _selection;
 
-    selection->pivot = _ConvertToBufferCell(viewportPos);
+    selection->pivot = _ConvertToBufferCell(viewportPos, true);
     selection->active = true;
 
+    // TODO CARLOS: validate
     _multiClickSelectionMode = SelectionExpansion::Char;
     SetSelectionEnd(viewportPos);
 
@@ -212,7 +214,7 @@ void Terminal::SetSelectionEnd(const til::point viewportPos, std::optional<Selec
 // - based on the selection expansion mode
 // Arguments:
 // - viewportPos: the (x,y) coordinate on the visible viewport
-// - newExpansionMode: overwrites the _multiClickSelectionMode for this function call. Used for ShiftClick
+// - newExpansionMode: overwrites the _multiClickSelectionMode for this function call. Used for Shift+Click
 void Terminal::_SetSelectionEnd(SelectionInfo* selection, const til::point viewportPos, std::optional<SelectionExpansion> newExpansionMode)
 {
     wil::hide_name _selection;
@@ -223,7 +225,12 @@ void Terminal::_SetSelectionEnd(SelectionInfo* selection, const til::point viewp
         return;
     }
 
-    const auto textBufferPos = _ConvertToBufferCell(viewportPos);
+    auto textBufferPos = _ConvertToBufferCell(viewportPos, true);
+    if (newExpansionMode && *newExpansionMode == SelectionExpansion::Char && textBufferPos >= selection->pivot)
+    {
+        // Shift+Click forwards should highlight the clicked space
+        _activeBuffer().GetSize().IncrementInExclusiveBounds(textBufferPos);
+    }
 
     // if this is a shiftClick action, we need to overwrite the _multiClickSelectionMode value (even if it's the same)
     // Otherwise, we may accidentally expand during other selection-based actions
@@ -287,17 +294,29 @@ std::pair<til::point, til::point> Terminal::_ExpandSelectionAnchors(std::pair<ti
     auto start = anchors.first;
     auto end = anchors.second;
 
-    const auto bufferSize = _activeBuffer().GetSize();
+    const auto& buffer = _activeBuffer();
+    const auto bufferSize = buffer.GetSize();
     switch (_multiClickSelectionMode)
     {
     case SelectionExpansion::Line:
         start = { bufferSize.Left(), start.y };
-        end = { bufferSize.RightInclusive(), end.y };
+        end = { bufferSize.RightExclusive(), end.y };
         break;
     case SelectionExpansion::Word:
-        start = _activeBuffer().GetWordStart(start, _wordDelimiters);
-        end = _activeBuffer().GetWordEnd(end, _wordDelimiters);
+    {
+        start = buffer.GetWordStart2(start, _wordDelimiters);
+
+        // GH#5099: We round to the nearest cell boundary,
+        //   so we would normally prematurely expand to the next word
+        //   as we approach it during a 2x-click+drag.
+        // - !IsWordBoundary(): fixes issue above by prohibiting expanding to the next word if we're at the word boundary
+        // - start == end: allow word expansion when 2x-clicking word boundary
+        if (start == end || !buffer.IsWordBoundary(end, _wordDelimiters))
+        {
+            end = buffer.GetWordEnd2(end, _wordDelimiters);
+        }
         break;
+    }
     case SelectionExpansion::Char:
     default:
         // no expansion is necessary
@@ -736,11 +755,11 @@ void Terminal::_MoveByChar(SelectionDirection direction, til::point& pos)
 
 void Terminal::_MoveByWord(SelectionDirection direction, til::point& pos)
 {
+    const auto& buffer = _activeBuffer();
     switch (direction)
     {
     case SelectionDirection::Left:
     {
-        const auto& buffer = _activeBuffer();
         auto nextPos = pos;
         nextPos = buffer.GetWordStart2(nextPos, _wordDelimiters);
         if (nextPos == pos)
@@ -755,23 +774,26 @@ void Terminal::_MoveByWord(SelectionDirection direction, til::point& pos)
     }
     case SelectionDirection::Right:
     {
-        // increment one more because end is exclusive
-        const auto& buffer = _activeBuffer();
         const auto mutableViewportEndExclusive = _GetMutableViewport().BottomInclusiveRightExclusive();
-        pos = buffer.GetWordEnd2(pos, _wordDelimiters, mutableViewportEndExclusive);
-        if (pos != mutableViewportEndExclusive)
+        auto nextPos = pos;
+        nextPos = buffer.GetWordEnd2(nextPos, _wordDelimiters, mutableViewportEndExclusive);
+        if (nextPos == pos)
         {
-            buffer.GetSize().IncrementInExclusiveBounds(pos);
+            // didn't move because we're already at the end of a word,
+            // so move to the end of the next word
+            buffer.GetSize().IncrementInExclusiveBounds(nextPos);
+            nextPos = buffer.GetWordEnd2(nextPos, _wordDelimiters, mutableViewportEndExclusive);
         }
+        pos = nextPos;
         break;
     }
     case SelectionDirection::Up:
         _MoveByChar(direction, pos);
-        pos = _activeBuffer().GetWordStart2(pos, _wordDelimiters);
+        pos = buffer.GetWordStart2(pos, _wordDelimiters);
         break;
     case SelectionDirection::Down:
         _MoveByChar(direction, pos);
-        pos = _activeBuffer().GetWordEnd2(pos, _wordDelimiters);
+        pos = buffer.GetWordEnd2(pos, _wordDelimiters);
         break;
     }
 }
@@ -888,13 +910,18 @@ Terminal::TextCopyData Terminal::RetrieveSelectedTextFromBuffer(const bool singl
 // - convert viewport position to the corresponding location on the buffer
 // Arguments:
 // - viewportPos: a coordinate on the viewport
+// - allowRightExclusive: if true, clamp to the right exclusive boundary of the buffer.
+//     Careful! This position doesn't point to any data in the buffer!
 // Return Value:
 // - the corresponding location on the buffer
-til::point Terminal::_ConvertToBufferCell(const til::point viewportPos) const
+til::point Terminal::_ConvertToBufferCell(const til::point viewportPos, bool allowRightExclusive) const
 {
+    // TODO CARLOS: this is a dangerous change. Validate side-effects!
     const auto yPos = _VisibleStartIndex() + viewportPos.y;
     til::point bufferPos = { viewportPos.x, yPos };
-    _activeBuffer().GetSize().Clamp(bufferPos);
+    const auto bufferSize = _activeBuffer().GetSize();
+    bufferPos.x = std::clamp(bufferPos.x, bufferSize.Left(), allowRightExclusive ? bufferSize.RightExclusive() : bufferSize.RightInclusive());
+    bufferPos.y = std::clamp(bufferPos.y, bufferSize.Top(), bufferSize.BottomInclusive());
     return bufferPos;
 }
 

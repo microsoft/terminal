@@ -543,7 +543,7 @@ std::wstring Terminal::GetHyperlinkAtBufferPosition(const til::point bufferPos)
 // - The hyperlink ID
 uint16_t Terminal::GetHyperlinkIdAtViewportPosition(const til::point viewportPos)
 {
-    return _activeBuffer().GetCellDataAt(_ConvertToBufferCell(viewportPos))->TextAttr().GetHyperlinkId();
+    return _activeBuffer().GetCellDataAt(_ConvertToBufferCell(viewportPos, false))->TextAttr().GetHyperlinkId();
 }
 
 // Method description:
