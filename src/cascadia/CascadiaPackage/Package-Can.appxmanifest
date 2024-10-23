@@ -141,7 +141,7 @@
         </desktop4:Extension>
         <uap10:Extension Category="windows.protocol">
           <uap10:Protocol Name="ms-terminal-can" Parameters="handle-uri %1">
-            <uap10:DisplayName>Terminal Github Auth</uap10:DisplayName>
+            <uap10:DisplayName>Terminal GitHub Auth</uap10:DisplayName>
           </uap10:Protocol>
         </uap10:Extension>
 

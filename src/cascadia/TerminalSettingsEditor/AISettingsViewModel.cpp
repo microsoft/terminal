@@ -145,7 +145,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         TraceLoggingWrite(
             g_hSettingsEditorProvider,
             "GithubAuthInitiated",
-            TraceLoggingDescription("Event emitted when the user clicks the button to initiate the Github auth flow"),
+            TraceLoggingDescription("Event emitted when the user clicks the button to initiate the GitHub auth flow"),
             TraceLoggingKeyword(MICROSOFT_KEYWORD_CRITICAL_DATA),
             TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
     }

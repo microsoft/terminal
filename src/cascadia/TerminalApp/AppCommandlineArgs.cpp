@@ -552,7 +552,7 @@ void AppCommandlineArgs::_buildHandleUriParser()
             // Build the action from the values we've parsed on the commandline.
             const auto cmdlineArgs = _currentCommandline->Args();
             winrt::hstring uri;
-            for (auto i = 0; i < cmdlineArgs.size(); ++i)
+            for (size_t i = 0; i < cmdlineArgs.size(); ++i)
             {
                 if (cmdlineArgs[i] == "handle-uri")
                 {

@@ -702,7 +702,7 @@
   </data>
   <data name="AISettings_InitiateGithubAuthFlow.Text" xml:space="preserve">
     <value>Authenticate via GitHub</value>
-    <comment>Text on the button that allows the user to authenticate to Github.</comment>
+    <comment>Text on the button that allows the user to authenticate to GitHub.</comment>
   </data>
   <data name="AISettings_AzureOpenAIDescription.Text" xml:space="preserve">
     <value>To use Azure OpenAI as a service provider, you need an Azure OpenAI service resource.</value>
@@ -762,7 +762,7 @@
   </data>
   <data name="AISettings_GithubCopilotPrerequisite.Text" xml:space="preserve">
     <value>GitHub Copilot integration with Terminal Chat requires an active GitHub Copilot subscription.</value>
-    <comment>The prerequisite the user needs to use Github Copilot within Terminal.</comment>
+    <comment>The prerequisite the user needs to use GitHub Copilot within Terminal.</comment>
   </data>
   <data name="AISettings_GithubCopilotSignUpAndLearnMore" xml:space="preserve">
     <value>Sign up for a {0} today or request GitHub Copilot access from your enterprise admin. You can read more about GitHub Copilot offerings at {1}.</value>
@@ -770,19 +770,19 @@
   </data>
   <data name="AISettings_GithubCopilotSignUpLinkText" xml:space="preserve">
     <value>30-day GitHub Copilot free trial</value>
-    <comment>The text of the hyperlink that directs the user to sign up for Github Copilot.</comment>
+    <comment>The text of the hyperlink that directs the user to sign up for GitHub Copilot.</comment>
   </data>
   <data name="AISettings_GithubCopilotLearnMoreLinkText" xml:space="preserve">
     <value>github.com/features/copilot</value>
-    <comment>The text of the hyperlink that directs the user to learn more about Github Copilot.</comment>
+    <comment>The text of the hyperlink that directs the user to learn more about GitHub Copilot.</comment>
   </data>
   <data name="AISettings_GithubCopilot.Header" xml:space="preserve">
     <value>GitHub Copilot</value>
-    <comment>Header for the text box that allows the user to configure access to Github Copilot.</comment>
+    <comment>Header for the text box that allows the user to configure access to GitHub Copilot.</comment>
   </data>
   <data name="AISettings_GithubCopilotConfigured.Text" xml:space="preserve">
-    <value>Github Copilot is configured.</value>
-    <comment>Description for the Github Copilot setting when we have access already.</comment>
+    <value>GitHub Copilot is configured.</value>
+    <comment>Description for the GitHub Copilot setting when we have access already.</comment>
   </data>
   <data name="AISettings_ClearGithubCopilotTokens.Text" xml:space="preserve">
     <value>Clear stored auth tokens</value>
@@ -790,7 +790,7 @@
   </data>
   <data name="AISettings_WaitingForGithubAuth" xml:space="preserve">
     <value>Awaiting authentication completion from browser...</value>
-    <comment>Text displayed after the user clicks the button to initiate the Github authentication flow in their browser.</comment>
+    <comment>Text displayed after the user clicks the button to initiate the GitHub authentication flow in their browser.</comment>
   </data>
   <data name="Nav_Appearance.Content" xml:space="preserve">
     <value>Appearance</value>

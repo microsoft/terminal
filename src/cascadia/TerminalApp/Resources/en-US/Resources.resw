@@ -684,7 +684,7 @@
     <value>Cancel</value>
   </data>
   <data name="GithubAuthFailedDialog.Content" xml:space="preserve">
-    <value>The authentication failed. You might not have Github Copilot access or the service is temporarily unavailable.</value>
+    <value>The authentication failed. You might not have GitHub Copilot access or the service is temporarily unavailable.</value>
   </data>
   <data name="GithubAuthFailedDialog.Title" xml:space="preserve">
     <value>Failed</value>
