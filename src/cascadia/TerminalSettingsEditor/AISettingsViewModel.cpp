@@ -17,6 +17,8 @@ using namespace winrt::Windows::UI::Xaml::Controls;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
 using namespace winrt::Windows::Foundation::Collections;
 
+static constexpr std::wstring_view lockGlyph{ L"\uE72E" };
+
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
     AISettingsViewModel::AISettingsViewModel(Model::CascadiaSettings settings) :
@@ -38,7 +40,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     void AISettingsViewModel::AzureOpenAIEndpoint(winrt::hstring endpoint)
     {
         _Settings.GlobalSettings().AIInfo().AzureOpenAIEndpoint(endpoint);
-        _NotifyChanges(L"AreAzureOpenAIKeyAndEndpointSet");
+        _NotifyChanges(L"AreAzureOpenAIKeyAndEndpointSet", L"AzureOpenAIStatus");
     }
 
     winrt::hstring AISettingsViewModel::AzureOpenAIKey()
@@ -49,12 +51,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     void AISettingsViewModel::AzureOpenAIKey(winrt::hstring key)
     {
         _Settings.GlobalSettings().AIInfo().AzureOpenAIKey(key);
-        _NotifyChanges(L"AreAzureOpenAIKeyAndEndpointSet");
+        _NotifyChanges(L"AreAzureOpenAIKeyAndEndpointSet", L"AzureOpenAIStatus");
     }
 
     bool AISettingsViewModel::AzureOpenAIAllowed() const noexcept
     {
         return WI_IsFlagSet(AIConfig::AllowedLMProviders(), EnabledLMProviders::AzureOpenAI);
+    }
+
+    winrt::hstring AISettingsViewModel::AzureOpenAIStatus()
+    {
+        return _getStatusHelper(Model::LLMProvider::AzureOpenAI);
     }
 
     bool AISettingsViewModel::IsOpenAIKeySet()
@@ -70,12 +77,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     void AISettingsViewModel::OpenAIKey(winrt::hstring key)
     {
         _Settings.GlobalSettings().AIInfo().OpenAIKey(key);
-        _NotifyChanges(L"IsOpenAIKeySet");
+        _NotifyChanges(L"IsOpenAIKeySet", L"OpenAIStatus");
     }
 
     bool AISettingsViewModel::OpenAIAllowed() const noexcept
     {
         return WI_IsFlagSet(AIConfig::AllowedLMProviders(), EnabledLMProviders::OpenAI);
+    }
+
+    winrt::hstring AISettingsViewModel::OpenAIStatus()
+    {
+        return _getStatusHelper(Model::LLMProvider::OpenAI);
     }
 
     bool AISettingsViewModel::AzureOpenAIActive()
@@ -88,8 +100,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         if (active)
         {
             _Settings.GlobalSettings().AIInfo().ActiveProvider(Model::LLMProvider::AzureOpenAI);
-            _NotifyChanges(L"AzureOpenAIActive", L"OpenAIActive", L"GithubCopilotActive");
         }
+        else
+        {
+            _Settings.GlobalSettings().AIInfo().ActiveProvider(Model::LLMProvider::None);
+        }
+        _NotifyChanges(L"AzureOpenAIActive", L"OpenAIActive", L"GithubCopilotActive", L"AzureOpenAIStatus", L"OpenAIStatus", L"GithubCopilotStatus");
     }
 
     bool AISettingsViewModel::OpenAIActive()
@@ -102,8 +118,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         if (active)
         {
             _Settings.GlobalSettings().AIInfo().ActiveProvider(Model::LLMProvider::OpenAI);
-            _NotifyChanges(L"AzureOpenAIActive", L"OpenAIActive", L"GithubCopilotActive");
         }
+        else
+        {
+            _Settings.GlobalSettings().AIInfo().ActiveProvider(Model::LLMProvider::None);
+        }
+        _NotifyChanges(L"AzureOpenAIActive", L"OpenAIActive", L"GithubCopilotActive", L"AzureOpenAIStatus", L"OpenAIStatus", L"GithubCopilotStatus");
     }
 
     bool AISettingsViewModel::AreGithubCopilotTokensSet()
@@ -119,13 +139,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     void AISettingsViewModel::GithubCopilotAuthToken(winrt::hstring authToken)
     {
         _Settings.GlobalSettings().AIInfo().GithubCopilotAuthToken(authToken);
-        _NotifyChanges(L"AreGithubCopilotTokensSet");
+        _NotifyChanges(L"AreGithubCopilotTokensSet", L"GithubCopilotStatus");
     }
 
     void AISettingsViewModel::GithubCopilotRefreshToken(winrt::hstring refreshToken)
     {
         _Settings.GlobalSettings().AIInfo().GithubCopilotRefreshToken(refreshToken);
-        _NotifyChanges(L"AreGithubCopilotTokensSet");
+        _NotifyChanges(L"AreGithubCopilotTokensSet", L"GithubCopilotStatus");
     }
 
     bool AISettingsViewModel::GithubCopilotActive()
@@ -138,13 +158,22 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         if (active)
         {
             _Settings.GlobalSettings().AIInfo().ActiveProvider(Model::LLMProvider::GithubCopilot);
-            _NotifyChanges(L"AzureOpenAIActive", L"OpenAIActive", L"GithubCopilotActive");
         }
+        else
+        {
+            _Settings.GlobalSettings().AIInfo().ActiveProvider(Model::LLMProvider::None);
+        }
+        _NotifyChanges(L"AzureOpenAIActive", L"OpenAIActive", L"GithubCopilotActive", L"AzureOpenAIStatus", L"OpenAIStatus", L"GithubCopilotStatus");
     }
 
     bool AISettingsViewModel::GithubCopilotAllowed() const noexcept
     {
         return Feature_GithubCopilot::IsEnabled() && WI_IsFlagSet(AIConfig::AllowedLMProviders(), EnabledLMProviders::GithubCopilot);
+    }
+
+    winrt::hstring AISettingsViewModel::GithubCopilotStatus()
+    {
+        return _getStatusHelper(Model::LLMProvider::GithubCopilot);
     }
 
     void AISettingsViewModel::InitiateGithubAuth_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
@@ -163,6 +192,55 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     void AISettingsViewModel::_OnGithubAuthCompleted(const winrt::hstring& message)
     {
         _githubCopilotAuthMessage = message;
-        _NotifyChanges(L"AreGithubCopilotTokensSet", L"GithubCopilotAuthMessage");
+        _NotifyChanges(L"AreGithubCopilotTokensSet", L"GithubCopilotAuthMessage", L"GithubCopilotStatus");
+    }
+
+    winrt::hstring AISettingsViewModel::_getStatusHelper(const Model::LLMProvider provider)
+    {
+        bool allowed;
+        bool active;
+        bool loggedIn;
+        switch (provider)
+        {
+        case LLMProvider::AzureOpenAI:
+            allowed = AzureOpenAIAllowed();
+            active = AzureOpenAIActive();
+            loggedIn = AreAzureOpenAIKeyAndEndpointSet();
+            break;
+        case LLMProvider::OpenAI:
+            allowed = OpenAIAllowed();
+            active = OpenAIActive();
+            loggedIn = IsOpenAIKeySet();
+            break;
+        case LLMProvider::GithubCopilot:
+            allowed = GithubCopilotAllowed();
+            active = GithubCopilotActive();
+            loggedIn = AreGithubCopilotTokensSet();
+            break;
+        default:
+            return L"";
+        }
+
+        if (!allowed)
+        {
+            // not allowed, display the lock glyph
+            return winrt::hstring{ lockGlyph } + L" " + RS_(L"AISettings_ProviderNotAllowed");
+        }
+        else if (active && loggedIn)
+        {
+            // active provider and logged in
+            return RS_(L"AISettings_ActiveLoggedIn");
+        }
+        else if (active)
+        {
+            // active provider, not logged in
+            return RS_(L"AISettings_Active");
+        }
+        else if (loggedIn)
+        {
+            // logged in, not active provider
+            return RS_(L"AISettings_LoggedIn");
+        }
+        return L"";
     }
 }

@@ -792,6 +792,22 @@
     <value>Awaiting authentication completion from browser...</value>
     <comment>Text displayed after the user clicks the button to initiate the GitHub authentication flow in their browser.</comment>
   </data>
+  <data name="AISettings_Active" xml:space="preserve">
+    <value>Active</value>
+    <comment>Text displayed when the service provider is active.</comment>
+  </data>
+  <data name="AISettings_LoggedIn" xml:space="preserve">
+    <value>Logged in</value>
+    <comment>Text displayed when the user is logged in to the service provider.</comment>
+  </data>
+  <data name="AISettings_ActiveLoggedIn" xml:space="preserve">
+    <value>Active, Logged in</value>
+    <comment>Text displayed when the user is logged in to the service provider and that service provider is active.</comment>
+  </data>
+  <data name="AISettings_ProviderNotAllowed" xml:space="preserve">
+    <value>Managed by your administrator</value>
+    <comment>Text displayed when the service provider has been disabled by the administator.</comment>
+  </data>
   <data name="Nav_Appearance.Content" xml:space="preserve">
     <value>Appearance</value>
     <comment>Header for the "appearance" menu item. This navigates to a page that lets you see and modify settings related to the app's appearance.</comment>

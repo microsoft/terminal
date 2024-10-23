@@ -761,7 +761,7 @@
     <value>Terminal Chat</value>
   </data>
   <data name="AIChatMenuItemDisabled" xml:space="preserve">
-    <value>Terminal Chat (disabled by your admin)</value>
+    <value>Terminal Chat (managed by your administrator)</value>
   </data>
   <data name="NotificationIconFocusTerminal" xml:space="preserve">
     <value>Focus Terminal</value>
