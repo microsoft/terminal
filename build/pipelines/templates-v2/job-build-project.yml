@@ -312,7 +312,7 @@ jobs:
   - ${{ if or(parameters.buildTerminal, parameters.buildEverything) }}:
     # Pack OpenConsole out of the signed _or unsigned_ bits.
     - pwsh: |-
-        $outDir = New-Item -Type Directory "$(Terminal.BinDir)/_appx" -ErrorAction:Ignore
+        $outDir = Get-Item "$(Terminal.BinDir)/_appx" # Produced by prior step
         $PackageFilename = "Microsoft.WindowsConsoleHost_$(XES_APPXMANIFESTVERSION).msix"
         $PackagePath = Join-Path $outDir.FullName $PackageFilename
         $ContentPath = "$(Terminal.BinDir)/OpenConsolePackageContents"
