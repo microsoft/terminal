@@ -50,6 +50,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         winrt::hstring _refreshToken;
         winrt::hstring _endpointUri;
         winrt::Windows::Web::Http::HttpClient _httpClient{ nullptr };
+        winrt::hstring _lastResponse;
 
         Extension::IContext _context;
 

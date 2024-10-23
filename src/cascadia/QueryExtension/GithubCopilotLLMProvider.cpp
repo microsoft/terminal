@@ -194,7 +194,9 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         }
         catch (...)
         {
-            _AuthChangedHandlers(*this, winrt::make<GithubCopilotAuthenticationResult>(RS_(L"UnknownErrorMessage"), nullptr));
+            // some unknown error happened and we didn't get an "error" key, bubble the raw string of the last response if we have one
+            const auto errorMessage = _lastResponse.empty() ? RS_(L"UnknownErrorMessage") : _lastResponse;
+            _AuthChangedHandlers(*this, winrt::make<GithubCopilotAuthenticationResult>(errorMessage, nullptr));
         }
 
         co_return;
@@ -281,7 +283,9 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
             // otherwise, try refreshing the auth token
             if (refreshAttempted)
             {
-                message = RS_(L"UnknownErrorMessage");
+                // if we have a last recorded response, bubble that instead of the unknown error message
+                // since that's likely going to be more useful
+                message = _lastResponse.empty() ? RS_(L"UnknownErrorMessage") : _lastResponse;
                 errorType = ErrorTypes::Unknown;
                 break;
             }
@@ -342,6 +346,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
 
         const auto response{ _httpClient.SendRequestAsync(request).get() };
         const auto string{ response.Content().ReadAsStringAsync().get() };
+        _lastResponse = string;
         const auto jsonResult{ WDJ::JsonObject::Parse(string) };
 
         return jsonResult;
