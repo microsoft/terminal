@@ -60,8 +60,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         _BASE_INHERITABLE_SETTING(Model::AIConfig, std::optional<LLMProvider>, ActiveProvider);
 
     private:
-        winrt::hstring _RetrieveCredential(const std::wstring_view credential);
-        void _SetCredential(const std::wstring_view credential, const winrt::hstring& value);
+        winrt::hstring _RetrieveCredential(const wil::zwstring_view credential);
+        void _SetCredential(const wil::zwstring_view credential, const winrt::hstring& value);
+        std::unordered_map<std::wstring, std::wstring> _credentialCache;
     };
 }
 

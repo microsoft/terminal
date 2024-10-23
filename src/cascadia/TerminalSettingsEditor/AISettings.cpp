@@ -117,9 +117,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void AISettings::StoreOpenAIKey_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
     {
-        if (!OpenAIKeyInputBox().Password().empty())
+        const auto password = OpenAIKeyInputBox().Password();
+        if (!password.empty())
         {
-            _ViewModel.OpenAIKey(OpenAIKeyInputBox().Password());
+            _ViewModel.OpenAIKey(password);
             OpenAIKeyInputBox().Password(L"");
 
             TraceLoggingWrite(

@@ -46,9 +46,9 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         _jsonMessages.Append(systemMessageObject);
     }
 
-    void OpenAILLMProvider::SetContext(const Extension::IContext context)
+    void OpenAILLMProvider::SetContext(Extension::IContext context)
     {
-        _context = context;
+        _context = std::move(context);
     }
 
     winrt::Windows::Foundation::IAsyncOperation<Extension::IResponse> OpenAILLMProvider::GetResponseAsync(const winrt::hstring userPrompt)
@@ -59,6 +59,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         hstring message{};
 
         // Make sure we are on the background thread for the http request
+        auto strongThis = get_strong();
         co_await winrt::resume_background();
 
         WWH::HttpRequestMessage request{ WWH::HttpMethod::Post(), Uri{ openAIEndpoint } };
@@ -90,9 +91,9 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         // Send the request
         try
         {
-            const auto response = _httpClient.SendRequestAsync(request).get();
+            const auto response = co_await _httpClient.SendRequestAsync(request);
             // Parse out the suggestion from the response
-            const auto string{ response.Content().ReadAsStringAsync().get() };
+            const auto string{ co_await response.Content().ReadAsStringAsync() };
             const auto jsonResult{ WDJ::JsonObject::Parse(string) };
             if (jsonResult.HasKey(L"error"))
             {
