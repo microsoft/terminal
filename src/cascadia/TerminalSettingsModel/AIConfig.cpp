@@ -13,15 +13,17 @@ using namespace winrt::Microsoft::Terminal::Settings::Model::implementation;
 using namespace winrt::Windows::Security::Credentials;
 
 static constexpr std::string_view AIConfigKey{ "aiConfig" };
-static constexpr std::wstring_view PasswordVaultResourceName = L"TerminalAI";
-static constexpr std::wstring_view PasswordVaultAIKey = L"TerminalAIKey";
-static constexpr std::wstring_view PasswordVaultAIEndpoint = L"TerminalAIEndpoint";
-static constexpr std::wstring_view PasswordVaultOpenAIKey = L"TerminalOpenAIKey";
-static constexpr std::wstring_view PasswordVaultGithubCopilotAuthToken = L"TerminalGithubCopilotAuthToken";
-static constexpr std::wstring_view PasswordVaultGithubCopilotRefreshToken = L"TerminalGithubCopilotRefreshToken";
-static constexpr std::wstring_view AzureOpenAIPolicyKey = L"AzureOpenAI";
-static constexpr std::wstring_view OpenAIPolicyKey = L"OpenAI";
-static constexpr std::wstring_view GitHubCopilotPolicyKey = L"GitHubCopilot";
+static constexpr wil::zwstring_view PasswordVaultResourceName = L"TerminalAI";
+static constexpr wil::zwstring_view PasswordVaultAIKey = L"TerminalAIKey";
+static constexpr wil::zwstring_view PasswordVaultAIEndpoint = L"TerminalAIEndpoint";
+static constexpr wil::zwstring_view PasswordVaultOpenAIKey = L"TerminalOpenAIKey";
+static constexpr wil::zwstring_view PasswordVaultGithubCopilotAuthToken = L"TerminalGithubCopilotAuthToken";
+static constexpr wil::zwstring_view PasswordVaultGithubCopilotRefreshToken = L"TerminalGithubCopilotRefreshToken";
+
+// When new LM providers are added here, make sure you also update the admx/adml!
+static constexpr wil::zwstring_view AzureOpenAIPolicyKey = L"AzureOpenAI";
+static constexpr wil::zwstring_view OpenAIPolicyKey = L"OpenAI";
+static constexpr wil::zwstring_view GitHubCopilotPolicyKey = L"GitHubCopilot";
 
 winrt::Microsoft::Terminal::Settings::Model::EnabledLMProviders AIConfig::AllowedLMProviders() noexcept
 {
@@ -37,15 +39,15 @@ winrt::Microsoft::Terminal::Settings::Model::EnabledLMProviders AIConfig::Allowe
             for (auto p = buffer; *p;)
             {
                 const auto len = wcslen(p);
-                if (wcscmp(p, AzureOpenAIPolicyKey.data()) == 0)
+                if (wcscmp(p, AzureOpenAIPolicyKey.c_str()) == 0)
                 {
                     WI_SetFlag(enabledLMProviders, Model::EnabledLMProviders::AzureOpenAI);
                 }
-                else if (wcscmp(p, OpenAIPolicyKey.data()) == 0)
+                else if (wcscmp(p, OpenAIPolicyKey.c_str()) == 0)
                 {
                     WI_SetFlag(enabledLMProviders, Model::EnabledLMProviders::OpenAI);
                 }
-                else if (wcscmp(p, GitHubCopilotPolicyKey.data()) == 0)
+                else if (wcscmp(p, GitHubCopilotPolicyKey.c_str()) == 0)
                 {
                     WI_SetFlag(enabledLMProviders, Model::EnabledLMProviders::GithubCopilot);
                 }
@@ -212,8 +214,15 @@ void AIConfig::ActiveProvider(const LLMProvider& provider)
     _ActiveProvider = provider;
 }
 
-winrt::hstring AIConfig::_RetrieveCredential(const std::wstring_view credential)
+winrt::hstring AIConfig::_RetrieveCredential(const wil::zwstring_view credential)
 {
+    const auto credentialStr = credential.c_str();
+    // first check our cache
+    if (const auto cachedCredential = _credentialCache.find(credentialStr); cachedCredential != _credentialCache.end())
+    {
+        return winrt::hstring{ cachedCredential->second };
+    }
+
     PasswordVault vault;
     PasswordCredential cred;
     // Retrieve throws an exception if there are no credentials stored under the given resource so we wrap it in a try-catch block
@@ -225,11 +234,15 @@ winrt::hstring AIConfig::_RetrieveCredential(const std::wstring_view credential)
     {
         return L"";
     }
-    return cred.Password();
+
+    winrt::hstring password{ cred.Password() };
+    _credentialCache.emplace(credentialStr, password);
+    return password;
 }
 
-void AIConfig::_SetCredential(const std::wstring_view credential, const winrt::hstring& value)
+void AIConfig::_SetCredential(const wil::zwstring_view credential, const winrt::hstring& value)
 {
+    const auto credentialStr = credential.c_str();
     PasswordVault vault;
     if (value.empty())
     {
@@ -245,10 +258,12 @@ void AIConfig::_SetCredential(const std::wstring_view credential, const winrt::h
             return;
         }
         vault.Remove(cred);
+        _credentialCache.erase(credentialStr);
     }
     else
     {
         PasswordCredential newCredential{ PasswordVaultResourceName, credential, value };
         vault.Add(newCredential);
+        _credentialCache.emplace(credentialStr, value);
     }
 }

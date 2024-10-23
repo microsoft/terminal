@@ -26,7 +26,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
 
         void ClearMessageHistory();
         void SetSystemPrompt(const winrt::hstring& systemPrompt);
-        void SetContext(const Extension::IContext context);
+        void SetContext(Extension::IContext context);
 
         winrt::Windows::Foundation::IAsyncOperation<Extension::IResponse> GetResponseAsync(const winrt::hstring userPrompt);
 

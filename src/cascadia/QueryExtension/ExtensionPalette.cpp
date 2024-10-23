@@ -254,7 +254,8 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         // Now that we have the context, make sure the lmProvider knows it too
         if (_lmProvider)
         {
-            _lmProvider.SetContext(winrt::make<TerminalContext>(_ActiveCommandline));
+            const auto context = winrt::make<TerminalContext>(_ActiveCommandline);
+            _lmProvider.SetContext(std::move(context));
         }
 
         // Give the palette focus

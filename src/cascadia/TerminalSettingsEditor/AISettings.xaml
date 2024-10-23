@@ -38,7 +38,7 @@
                 <TextBlock x:Uid="AISettings_ServiceProvidersHeader"
                            Margin="0,8,0,0"
                            Style="{StaticResource TextBlockSubHeaderStyle}" />
-                <!--  Github Copilot  -->
+                <!--  GitHub Copilot  -->
                 <local:SettingContainer x:Uid="AISettings_GithubCopilot"
                                         Style="{StaticResource ExpanderSettingContainerStyle}"
                                         Visibility="{x:Bind ViewModel.GithubCopilotAllowed}">

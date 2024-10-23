@@ -11,7 +11,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
     {
         GithubCopilotBranding();
 
-        WINRT_PROPERTY(winrt::hstring, Name, L"Github Copilot");
+        WINRT_PROPERTY(winrt::hstring, Name, L"GitHub Copilot");
         WINRT_PROPERTY(winrt::hstring, HeaderIconPath);
         WINRT_PROPERTY(winrt::hstring, HeaderText);
         WINRT_PROPERTY(winrt::hstring, SubheaderText);

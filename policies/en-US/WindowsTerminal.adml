@@ -20,14 +20,16 @@ For instance, setting this policy to Windows.Terminal.Wsl will disable the built
 
 Note: Existing profiles will disappear from Windows Terminal after adding their source to this policy.</string>
       <string id="EnabledLMProviders">Enabled Language Model/AI Providers</string>
-      <string id="EnabledLMProvidersText">These Language Model/AI Providers will be available for use in Terminal Chat.
+      <string id="EnabledLMProvidersText">The listed Language Models/AI Providers will be available for use in Terminal Chat.
+
+Enabling the policy but leaving the list empty disallows all providers and therefore disables the Terminal Chat feature completely.
 
 Common providers are:
 - AzureOpenAI
 - OpenAI
 - GitHubCopilot
 
-For instance, setting this policy to GitHubCopilot will allow the use of GitHubCopilot in Terminal Chat. Configuring the policy but leaving the list empty will disable AI features in Terminal.</string>
+For instance, setting this policy to GitHubCopilot will allow the use of GitHubCopilot in Terminal Chat.</string>
     </stringTable>
     <presentationTable>
       <presentation id="DisabledProfileSources">
