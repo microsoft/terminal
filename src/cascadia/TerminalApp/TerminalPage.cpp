@@ -1005,17 +1005,16 @@ namespace winrt::TerminalApp::implementation
                 _SetAcceleratorForMenuItem(commandPaletteFlyout, commandPaletteKeyChord);
             }
 
-            // Create the AI chat button
-            const auto terminalChatEnabled = WI_IsAnyFlagSet(_settings.GlobalSettings().AIInfo().AllowedLMProviders(), EnabledLMProviders::All);
-            auto AIChatFlyout = WUX::Controls::MenuFlyoutItem{};
-            AIChatFlyout.Text(terminalChatEnabled ? RS_(L"AIChatMenuItem") : RS_(L"AIChatMenuItemDisabled"));
-            const auto AIChatToolTip = RS_(L"AIChatToolTip");
-
-            WUX::Controls::ToolTipService::SetToolTip(AIChatFlyout, box_value(AIChatToolTip));
-            Automation::AutomationProperties::SetHelpText(AIChatFlyout, AIChatToolTip);
-
-            if (terminalChatEnabled)
+            // Create the AI chat button if AI features are allowed
+            if (WI_IsAnyFlagSet(_settings.GlobalSettings().AIInfo().AllowedLMProviders(), EnabledLMProviders::All))
             {
+                auto AIChatFlyout = WUX::Controls::MenuFlyoutItem{};
+                AIChatFlyout.Text(RS_(L"AIChatMenuItem"));
+                const auto AIChatToolTip = RS_(L"AIChatToolTip");
+
+                WUX::Controls::ToolTipService::SetToolTip(AIChatFlyout, box_value(AIChatToolTip));
+                Automation::AutomationProperties::SetHelpText(AIChatFlyout, AIChatToolTip);
+
                 // BODGY
                 // Manually load this icon from an SVG path; it is ironically much more humane this way.
                 // The XAML resource loader can't resolve theme-light/theme-dark for us, for... well, reasons.
@@ -1052,23 +1051,15 @@ namespace winrt::TerminalApp::implementation
                     }
                     CATCH_LOG();
                 }
-            }
-            else
-            {
-                WUX::Controls::FontIcon chatDisabledIcon{};
-                chatDisabledIcon.Glyph(L"\uE72E");
-                chatDisabledIcon.FontFamily(Media::FontFamily{ L"Segoe Fluent Icons, Segoe MDL2 Assets" });
-                AIChatFlyout.Icon(chatDisabledIcon);
-            }
 
-            AIChatFlyout.Click({ this, &TerminalPage::_AIChatButtonOnClick });
-            AIChatFlyout.IsEnabled(terminalChatEnabled);
-            newTabFlyout.Items().Append(AIChatFlyout);
+                AIChatFlyout.Click({ this, &TerminalPage::_AIChatButtonOnClick });
+                newTabFlyout.Items().Append(AIChatFlyout);
 
-            const auto AIChatKeyChord{ actionMap.GetKeyBindingForAction(L"Terminal.OpenTerminalChat") };
-            if (AIChatKeyChord)
-            {
-                _SetAcceleratorForMenuItem(AIChatFlyout, AIChatKeyChord);
+                const auto AIChatKeyChord{ actionMap.GetKeyBindingForAction(L"Terminal.OpenTerminalChat") };
+                if (AIChatKeyChord)
+                {
+                    _SetAcceleratorForMenuItem(AIChatFlyout, AIChatKeyChord);
+                }
             }
 
             // Create the about button.

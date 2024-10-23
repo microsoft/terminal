@@ -760,9 +760,6 @@
   <data name="AIChatMenuItem" xml:space="preserve">
     <value>Terminal Chat</value>
   </data>
-  <data name="AIChatMenuItemDisabled" xml:space="preserve">
-    <value>Terminal Chat (managed by your administrator)</value>
-  </data>
   <data name="NotificationIconFocusTerminal" xml:space="preserve">
     <value>Focus Terminal</value>
     <comment>This is displayed as a label for the context menu item that focuses the terminal.</comment>

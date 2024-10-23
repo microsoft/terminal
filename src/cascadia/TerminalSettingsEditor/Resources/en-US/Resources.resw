@@ -806,7 +806,7 @@
   </data>
   <data name="AISettings_ProviderNotAllowed" xml:space="preserve">
     <value>Managed by your administrator</value>
-    <comment>Text displayed when the service provider has been disabled by the administator.</comment>
+    <comment>Text displayed when the service provider has been disabled by the administrator.</comment>
   </data>
   <data name="Nav_Appearance.Content" xml:space="preserve">
     <value>Appearance</value>
