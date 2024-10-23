@@ -313,13 +313,13 @@ jobs:
     # Pack OpenConsole out of the signed _or unsigned_ bits.
     - pwsh: |-
         $outDir = New-Item -Type Directory "$(Terminal.BinDir)/_appx" -ErrorAction:Ignore
-        $PackageFilename = "Microsoft.WindowsConsoleHost_$(XES_APPXVERSIONMANIFEST).msix"
+        $PackageFilename = "Microsoft.WindowsConsoleHost_$(XES_APPXMANIFESTVERSION).msix"
         $PackagePath = Join-Path $outDir.FullName $PackageFilename
         $ContentPath = "$(Terminal.BinDir)/OpenConsolePackageContents"
         $contentDir = New-Item -Type Directory $ContentPath -ErrorAction:Ignore
 
         $Manifest = [xml](Get-Content build/OpenConsoleAppxManifest.xml)
-        $Manifest.Package.Identity.Version = "$(XES_APPXVERSIONMANIFEST)"
+        $Manifest.Package.Identity.Version = "$(XES_APPXMANIFESTVERSION)"
         $Manifest.Package.Identity.ProcessorArchitecture = "$(BuildPlatform)"
         $Manifest.Save((Join-Path $contentDir.FullName "AppxManifest.xml"))
 
@@ -330,7 +330,10 @@ jobs:
           New-Item -Type HardLink "$contentDir/OpenConsole.exe" -Target "$(Terminal.BinDir)/OpenConsole.exe"
         }
         New-Item -Type HardLink "$contentDir/console.dll" -Target "$(Terminal.BinDir)/console.dll"
-        & "$(MakeAppxPath)" pack /h SHA256 /o /p $PackagePath /d "$(Terminal.BinDir)/OpenConsolePackageContents"
+        Copy-Item .\res\OpenConsole\Images $contentDir -Recurse
+        & build/scripts/New-PriFileFromDirectory.ps1 -Path .\res\OpenConsole\Images -OutputPath (Join-Path $contentDir "resources.pri")
+
+        & "$(MakeAppxPath)" pack /h SHA256 /o /p $PackagePath /d $contentDir
         Write-Host "##vso[task.setvariable variable=OpenConsolePackagePath]${PackagePath}"
       displayName: Pack OpenConsole MSIX
 
