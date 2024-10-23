@@ -6,10 +6,9 @@
             "PackageContents/Microsoft.Terminal.*.winmd",
 
             // ConPTY and DefTerm
-            "OpenConsolePackageContents/OpenConsole.exe",
-            "OpenConsolePackageContents/console.dll",
             "PackageContents/OpenConsole.exe",
             "PackageContents/OpenConsoleProxy.dll",
+            "console.dll",
 
             // Legacy DLLs with old names
             "PackageContents/TerminalApp.dll",

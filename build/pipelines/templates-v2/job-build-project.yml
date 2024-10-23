@@ -123,7 +123,6 @@ jobs:
         $SignFragments = @()
         If ([bool]::Parse("${{ parameters.buildTerminal }}")) {
           $BuildTargets += "Terminal\CascadiaPackage"
-          $BuildTargets += "Conhost\OpenConsolePackage"
           $SignFragments += "terminal_constituents"
         }
         If ([bool]::Parse("${{ parameters.buildWPFDotNetComponents }}")) {
@@ -250,9 +249,6 @@ jobs:
         $Package = (Get-ChildItem -Recurse -Filter "CascadiaPackage*.msix" | Select -First 1)
         $PackageFilename = $Package.FullName
         Write-Host "##vso[task.setvariable variable=WindowsTerminalPackagePath]${PackageFilename}"
-        $Package = (Get-ChildItem -Recurse -Filter "OpenConsolePackage*.msix" | Select -First 1)
-        $PackageFilename = $Package.FullName
-        Write-Host "##vso[task.setvariable variable=OpenConsolePackagePath]${PackageFilename}"
       displayName: Locate the MSIX
 
     # CHECK EXCEPTION
@@ -266,7 +262,6 @@ jobs:
     - ${{ if eq(parameters.codeSign, true) }}:
       - pwsh: |-
           & "$(MakeAppxPath)" unpack /p "$(WindowsTerminalPackagePath)" /d "$(Terminal.BinDir)/PackageContents"
-          & "$(MakeAppxPath)" unpack /p "$(OpenConsolePackagePath)" /d "$(Terminal.BinDir)/OpenConsolePackageContents"
         displayName: Unpack the MSIX for signing
 
   - ${{ if eq(parameters.codeSign, true) }}:
@@ -294,10 +289,6 @@ jobs:
           $PackageFilename = Join-Path $outDir.FullName (Split-Path -Leaf "$(WindowsTerminalPackagePath)")
           & "$(MakeAppxPath)" pack /h SHA256 /o /p $PackageFilename /d "$(Terminal.BinDir)/PackageContents"
           Write-Host "##vso[task.setvariable variable=WindowsTerminalPackagePath]${PackageFilename}"
-
-          $PackageFilename = Join-Path $outDir.FullName (Split-Path -Leaf "$(OpenConsolePackagePath)")
-          & "$(MakeAppxPath)" pack /h SHA256 /o /p $PackageFilename /d "$(Terminal.BinDir)/OpenConsolePackageContents"
-          Write-Host "##vso[task.setvariable variable=OpenConsolePackagePath]${PackageFilename}"
         displayName: Re-pack the new Terminal packages after signing
 
     # Some of our governed pipelines explicitly fail builds that have *any* non-codesigned filed (!)
@@ -315,14 +306,34 @@ jobs:
           $PackageFilename = Join-Path $outDir.FullName (Split-Path -Leaf "$(WindowsTerminalPackagePath)")
           Copy-Item "$(WindowsTerminalPackagePath)" $PackageFilename
           Write-Host "##vso[task.setvariable variable=WindowsTerminalPackagePath]${PackageFilename}"
-
-          $PackageFilename = Join-Path $outDir.FullName (Split-Path -Leaf "$(OpenConsolePackagePath)")
-          Copy-Item "$(OpenConsolePackagePath)" $PackageFilename
-          Write-Host "##vso[task.setvariable variable=OpenConsolePackagePath]${PackageFilename}"
         displayName: Stage the package (unsigned)
         condition: and(succeeded(), ne(variables.WindowsTerminalPackagePath, ''))
 
   - ${{ if or(parameters.buildTerminal, parameters.buildEverything) }}:
+    # Pack OpenConsole out of the signed _or unsigned_ bits.
+    - pwsh: |-
+        $outDir = New-Item -Type Directory "$(Terminal.BinDir)/_appx" -ErrorAction:Ignore
+        $PackageFilename = "Microsoft.WindowsConsoleHost_$(XES_APPXVERSIONMANIFEST).msix"
+        $PackagePath = Join-Path $outDir.FullName $PackageFilename
+        $ContentPath = "$(Terminal.BinDir)/OpenConsolePackageContents"
+        $contentDir = New-Item -Type Directory $ContentPath -ErrorAction:Ignore
+
+        $Manifest = [xml](Get-Content build/OpenConsoleAppxManifest.xml)
+        $Manifest.Package.Identity.Version = "$(XES_APPXVERSIONMANIFEST)"
+        $Manifest.Package.Identity.ProcessorArchitecture = "$(BuildPlatform)"
+        $Manifest.Save((Join-Path $contentDir.FullName "AppxManifest.xml"))
+
+        If ($Null -Ne (Get-Item "$(Terminal.BinDir)/PackageContents/OpenConsole.exe" -ErrorAction:Ignore)) {
+          New-Item -Type HardLink "$contentDir/OpenConsole.exe" -Target "$(Terminal.BinDir)/PackageContents/OpenConsole.exe"
+        } Else {
+          # Use the unsigned version since the signed one doesn't exist
+          New-Item -Type HardLink "$contentDir/OpenConsole.exe" -Target "$(Terminal.BinDir)/OpenConsole.exe"
+        }
+        New-Item -Type HardLink "$contentDir/console.dll" -Target "$(Terminal.BinDir)/console.dll"
+        & "$(MakeAppxPath)" pack /h SHA256 /o /p $PackagePath /d "$(Terminal.BinDir)/OpenConsolePackageContents"
+        Write-Host "##vso[task.setvariable variable=OpenConsolePackagePath]${PackagePath}"
+      displayName: Pack OpenConsole MSIX
+
     - pwsh: |-
         $XamlAppxPath = (Get-Item "src\cascadia\CascadiaPackage\AppPackages\*\Dependencies\$(BuildPlatform)\Microsoft.UI.Xaml*.appx").FullName
         $outDir = New-Item -Type Directory "$(Terminal.BinDir)/_unpackaged" -ErrorAction:Ignore
