@@ -37,8 +37,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         bool AreGithubCopilotTokensSet();
         winrt::hstring GithubCopilotAuthMessage();
-        void GithubCopilotAuthToken(winrt::hstring authToken);
-        void GithubCopilotRefreshToken(winrt::hstring refreshToken);
+        void GithubCopilotAuthValues(winrt::hstring authValues);
         bool GithubCopilotActive();
         void GithubCopilotActive(bool active);
         bool GithubCopilotAllowed() const noexcept;

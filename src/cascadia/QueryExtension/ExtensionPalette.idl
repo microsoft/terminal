@@ -15,9 +15,9 @@ namespace Microsoft.Terminal.Query.Extension
 
     runtimeclass GroupedChatMessages : Windows.Foundation.Collections.IVector<IInspectable>
     {
-        GroupedChatMessages(String key, Boolean isQuery, String profileName, Windows.Foundation.Collections.IVector<IInspectable> messages, String MetaData, String badgeImagePath);
+        GroupedChatMessages(String key, Boolean isQuery, Windows.Foundation.Collections.IVector<IInspectable> messages, String Attribution, String badgeImagePath);
         String Key;
-        String MetaData;
+        String Attribution;
         Windows.UI.Xaml.Media.Imaging.BitmapImage BadgeBitmapImage;
         Boolean IsQuery { get; };
     }

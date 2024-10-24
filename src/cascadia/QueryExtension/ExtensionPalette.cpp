@@ -51,7 +51,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
 
             _setFocusAndPlaceholderTextHelper();
 
-            const auto lmProviderName = _lmProvider ? _lmProvider.BrandingData().Name() : L"";
+            const auto lmProviderName = _lmProvider ? _lmProvider.BrandingData().Name() : winrt::hstring{};
             TraceLoggingWrite(
                 g_hQueryExtensionProvider,
                 "QueryPaletteOpened",
@@ -72,7 +72,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
 
                 _setFocusAndPlaceholderTextHelper();
 
-                const auto lmProviderName = _lmProvider ? _lmProvider.BrandingData().Name() : L"";
+                const auto lmProviderName = _lmProvider ? _lmProvider.BrandingData().Name() : winrt::hstring{};
                 TraceLoggingWrite(
                     g_hQueryExtensionProvider,
                     "QueryPaletteOpened",
@@ -118,12 +118,12 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
     {
         const auto userMessage = winrt::make<ChatMessage>(prompt, true, false);
         std::vector<IInspectable> userMessageVector{ userMessage };
-        const auto queryMetaData = _lmProvider ? _lmProvider.BrandingData().QueryMetaData() : L"";
-        const auto userGroupedMessages = winrt::make<GroupedChatMessages>(currentLocalTime, true, _ProfileName, winrt::single_threaded_vector(std::move(userMessageVector)), queryMetaData);
+        const auto queryAttribution = _lmProvider ? _lmProvider.BrandingData().QueryAttribution() : winrt::hstring{};
+        const auto userGroupedMessages = winrt::make<GroupedChatMessages>(currentLocalTime, true, winrt::single_threaded_vector(std::move(userMessageVector)), queryAttribution);
         _messages.Append(userGroupedMessages);
-        _queryBox().Text(L"");
+        _queryBox().Text(winrt::hstring{});
 
-        const auto lmProviderName = _lmProvider ? _lmProvider.BrandingData().Name() : L"";
+        const auto lmProviderName = _lmProvider ? _lmProvider.BrandingData().Name() : winrt::hstring{};
         TraceLoggingWrite(
             g_hQueryExtensionProvider,
             "AIQuerySent",
@@ -152,7 +152,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         }
         else
         {
-            result = winrt::make<SystemResponse>(RS_(L"CouldNotFindKeyErrorMessage"), ErrorTypes::InvalidAuth);
+            result = winrt::make<SystemResponse>(RS_(L"CouldNotFindKeyErrorMessage"), ErrorTypes::InvalidAuth, winrt::hstring{});
         }
 
         // Switch back to the foreground thread because we are changing the UI now
@@ -164,7 +164,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
             IsProgressRingActive(false);
 
             // Append the result to our list, clear the query box
-            _splitResponseAndAddToChatHelper(result.Message(), result.ErrorType());
+            _splitResponseAndAddToChatHelper(result);
         }
 
         co_return;
@@ -184,12 +184,12 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         return winrt::to_hstring(time_str);
     }
 
-    void ExtensionPalette::_splitResponseAndAddToChatHelper(const winrt::hstring& response, const ErrorTypes errorType)
+    void ExtensionPalette::_splitResponseAndAddToChatHelper(const IResponse response)
     {
         // this function is dependent on the AI response separating code blocks with
         // newlines and "```". OpenAI seems to naturally conform to this, though
         // we could probably engineer the prompt to specify this if we need to.
-        std::wstringstream ss(response.c_str());
+        std::wstringstream ss(response.Message().c_str());
         std::wstring line;
         std::wstring codeBlock;
         bool inCodeBlock = false;
@@ -230,17 +230,17 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         }
 
         const auto brandingData = _lmProvider ? _lmProvider.BrandingData() : nullptr;
-        const auto responseMetaData = brandingData ? brandingData.ResponseMetaData() : L"";
+        const auto responseAttribution = response.ResponseAttribution().empty() ? _ProfileName : response.ResponseAttribution();
         const auto badgeUriPath = brandingData ? brandingData.BadgeIconPath() : L"";
-        const auto responseGroupedMessages = winrt::make<GroupedChatMessages>(time, false, _ProfileName, winrt::single_threaded_vector(std::move(messageParts)), responseMetaData, badgeUriPath);
+        const auto responseGroupedMessages = winrt::make<GroupedChatMessages>(time, false, winrt::single_threaded_vector(std::move(messageParts)), responseAttribution, badgeUriPath);
         _messages.Append(responseGroupedMessages);
 
-        const auto lmProviderName = _lmProvider ? _lmProvider.BrandingData().Name() : L"";
+        const auto lmProviderName = _lmProvider ? _lmProvider.BrandingData().Name() : winrt::hstring{};
         TraceLoggingWrite(
             g_hQueryExtensionProvider,
             "AIResponseReceived",
             TraceLoggingDescription("Event emitted when the user receives a response to their query"),
-            TraceLoggingBoolean(errorType == ErrorTypes::None, "ResponseReceivedFromAI", "True if the response came from the AI, false if the response was generated in Terminal or was a server error"),
+            TraceLoggingBoolean(response.ErrorType() == ErrorTypes::None, "ResponseReceivedFromAI", "True if the response came from the AI, false if the response was generated in Terminal or was a server error"),
             TraceLoggingWideString(lmProviderName.c_str(), "LMProviderName", "The name of the connected service provider, if present"),
             TraceLoggingKeyword(MICROSOFT_KEYWORD_CRITICAL_DATA),
             TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
@@ -327,7 +327,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
             _InputSuggestionRequestedHandlers(*this, winrt::to_hstring(suggestion));
             _close();
 
-            const auto lmProviderName = _lmProvider ? _lmProvider.BrandingData().Name() : L"";
+            const auto lmProviderName = _lmProvider ? _lmProvider.BrandingData().Name() : winrt::hstring{};
             TraceLoggingWrite(
                 g_hQueryExtensionProvider,
                 "AICodeResponseInputted",
@@ -465,6 +465,6 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         Visibility(Visibility::Collapsed);
 
         // Clear the text box each time we close the dialog. This is consistent with VsCode.
-        _queryBox().Text(L"");
+        _queryBox().Text(winrt::hstring{});
     }
 }

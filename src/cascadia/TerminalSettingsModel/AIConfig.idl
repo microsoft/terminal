@@ -36,7 +36,6 @@ namespace Microsoft.Terminal.Settings.Model
         String OpenAIKey;
         static event OpenAISettingChangedHandler OpenAISettingChanged;
 
-        String GithubCopilotAuthToken;
-        String GithubCopilotRefreshToken;
+        String GithubCopilotAuthValues;
     }
 }

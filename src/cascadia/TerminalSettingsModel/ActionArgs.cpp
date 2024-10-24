@@ -1022,13 +1022,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     winrt::hstring HandleUriArgs::GenerateName() const
     {
-        if (_Uri)
-        {
-            return winrt::hstring{ RS_fmt(L"HandleUri_default_action", _Uri.value()) };
-        }
-        else
-        {
-            return RS_(L"HandleUri_default_action");
-        }
+        // This is an internal-use only action, don't generate a name for it
+        return winrt::hstring{};
     }
 }

@@ -344,7 +344,7 @@
     <value>Focus the pane at the given index</value>
   </data>
   <data name="CmdHandleUriDesc" xml:space="preserve">
-    <value>Handle the given URI</value>
+    <value>(For internal use) handle the given URI</value>
   </data>
   <data name="CmdProfileArgDesc" xml:space="preserve">
     <value>Open with the given profile. Accepts either the name or GUID of a profile</value>
@@ -682,15 +682,6 @@
   </data>
   <data name="CouldNotOpenUriDialog.PrimaryButtonText" xml:space="preserve">
     <value>Cancel</value>
-  </data>
-  <data name="GithubAuthFailedDialog.Content" xml:space="preserve">
-    <value>The authentication failed. You might not have GitHub Copilot access or the service is temporarily unavailable.</value>
-  </data>
-  <data name="GithubAuthFailedDialog.Title" xml:space="preserve">
-    <value>Failed</value>
-  </data>
-  <data name="GithubAuthFailedDialog.PrimaryButtonText" xml:space="preserve">
-    <value>Ok</value>
   </data>
   <data name="SettingsTab" xml:space="preserve">
     <value>Settings</value>

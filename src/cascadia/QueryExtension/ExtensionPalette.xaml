@@ -170,7 +170,7 @@
                             Spacing="4">
                     <TextBlock FontFamily="Segoe UI"
                                FontSize="12">
-                        <Run Text="{x:Bind MetaData}" />
+                        <Run Text="{x:Bind Attribution}" />
                     </TextBlock>
                     <TextBlock FontFamily="Segoe UI"
                                FontSize="12"
@@ -189,7 +189,7 @@
                     <mux:ImageIcon Source="{x:Bind BadgeBitmapImage}"/>
                     <TextBlock FontFamily="Segoe UI"
                                FontSize="12">
-                        <Run Text="{x:Bind MetaData}" />
+                        <Run Text="{x:Bind Attribution}" />
                     </TextBlock>
                     <TextBlock FontFamily="Segoe UI"
                                FontSize="12"
