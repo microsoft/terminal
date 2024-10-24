@@ -3,6 +3,22 @@
 
 namespace Microsoft.Terminal.Query.Extension
 {
+    interface IBrandingData
+    {
+        String Name { get; };
+        String HeaderIconPath { get; };
+        String HeaderText { get; };
+        String SubheaderText { get; };
+        String BadgeIconPath { get; };
+        String QueryAttribution { get; };
+    };
+
+    interface IAuthenticationResult
+    {
+        String ErrorMessage { get; };
+        String AuthValues { get; };
+    };
+
     interface ILMProvider
     {
         // chat related functions
@@ -13,8 +29,11 @@ namespace Microsoft.Terminal.Query.Extension
         Windows.Foundation.IAsyncOperation<IResponse> GetResponseAsync(String userPrompt);
 
         // auth related functions
-        void SetAuthentication(Windows.Foundation.Collections.ValueSet authValues);
-        event Windows.Foundation.TypedEventHandler<ILMProvider, Windows.Foundation.Collections.ValueSet> AuthChanged;
+        void SetAuthentication(String authValues);
+        event Windows.Foundation.TypedEventHandler<ILMProvider, IAuthenticationResult> AuthChanged;
+
+        // UI related settings
+        IBrandingData BrandingData { get; };
     }
 
     enum ErrorTypes
@@ -30,6 +49,7 @@ namespace Microsoft.Terminal.Query.Extension
     {
         String Message { get; };
         ErrorTypes ErrorType { get; };
+        String ResponseAttribution { get; };
     };
 
     interface IContext

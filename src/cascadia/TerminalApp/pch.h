@@ -52,6 +52,7 @@
 #include <winrt/Windows.Media.Core.h>
 #include <winrt/Windows.Media.Playback.h>
 #include <winrt/Windows.Management.Deployment.h>
+#include <winrt/Windows.Data.Json.h>
 
 #include <winrt/Microsoft.UI.Xaml.Controls.h>
 #include <winrt/Microsoft.UI.Xaml.Controls.Primitives.h>
@@ -81,12 +82,14 @@ TRACELOGGING_DECLARE_PROVIDER(g_hTerminalAppProvider);
 #include <msctf.h>
 #include <shellapi.h>
 #include <shobjidl_core.h>
+#include <wincrypt.h>
 
 #include <CLI/CLI.hpp>
 
 // Manually include til after we include Windows.Foundation to give it winrt superpowers
 #include "til.h"
 #include <til/winrt.h>
+#include <til/rand.h>
 
 #include <SafeDispatcherTimer.h>
 

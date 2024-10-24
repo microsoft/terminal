@@ -8,7 +8,8 @@ namespace Microsoft.Terminal.Settings.Model
     enum LLMProvider
     {
         AzureOpenAI,
-        OpenAI
+        OpenAI,
+        GithubCopilot
     };
 
     delegate void AzureOpenAISettingChangedHandler();
@@ -21,8 +22,9 @@ namespace Microsoft.Terminal.Settings.Model
         String AzureOpenAIKey;
         static event AzureOpenAISettingChangedHandler AzureOpenAISettingChanged;
 
-
         String OpenAIKey;
         static event OpenAISettingChangedHandler OpenAISettingChanged;
+
+        String GithubCopilotAuthValues;
     }
 }

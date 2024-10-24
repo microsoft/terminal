@@ -455,5 +455,9 @@ namespace Microsoft.Terminal.Settings.Model
         SelectOutputDirection Direction { get; };
     }
 
-
+    [default_interface] runtimeclass HandleUriArgs : IActionArgs
+    {
+        HandleUriArgs(String uri);
+        String Uri { get; };
+    }
 }

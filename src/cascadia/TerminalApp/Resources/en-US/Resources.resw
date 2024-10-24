@@ -343,6 +343,9 @@
   <data name="CmdFocusPaneTargetArgDesc" xml:space="preserve">
     <value>Focus the pane at the given index</value>
   </data>
+  <data name="CmdHandleUriDesc" xml:space="preserve">
+    <value>(For internal use) handle the given URI</value>
+  </data>
   <data name="CmdProfileArgDesc" xml:space="preserve">
     <value>Open with the given profile. Accepts either the name or GUID of a profile</value>
   </data>

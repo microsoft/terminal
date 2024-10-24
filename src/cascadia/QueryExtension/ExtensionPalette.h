@@ -43,7 +43,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         winrt::fire_and_forget _getSuggestions(const winrt::hstring& prompt, const winrt::hstring& currentLocalTime);
 
         winrt::hstring _getCurrentLocalTimeHelper();
-        void _splitResponseAndAddToChatHelper(const winrt::hstring& response, const winrt::Microsoft::Terminal::Query::Extension::ErrorTypes errorType);
+        void _splitResponseAndAddToChatHelper(const winrt::Microsoft::Terminal::Query::Extension::IResponse response);
         void _setFocusAndPlaceholderTextHelper();
 
         void _clearAndInitializeMessages(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& args);
@@ -77,12 +77,22 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
 
     struct GroupedChatMessages : GroupedChatMessagesT<GroupedChatMessages>
     {
-        GroupedChatMessages(winrt::hstring key, bool isQuery, winrt::hstring profileName, const Windows::Foundation::Collections::IVector<Windows::Foundation::IInspectable>& messages)
+        GroupedChatMessages(winrt::hstring key,
+                            bool isQuery,
+                            const Windows::Foundation::Collections::IVector<Windows::Foundation::IInspectable>& messages,
+                            winrt::hstring attribution = winrt::hstring{},
+                            winrt::hstring badgeImagePath = winrt::hstring{})
         {
             _Key = key;
             _isQuery = isQuery;
-            _ProfileName = profileName;
             _messages = messages;
+            _Attribution = attribution;
+
+            if (!badgeImagePath.empty())
+            {
+                Windows::Foundation::Uri badgeImageSourceUri{ badgeImagePath };
+                _BadgeBitmapImage = winrt::Windows::UI::Xaml::Media::Imaging::BitmapImage{ badgeImageSourceUri };
+            }
         }
         winrt::Windows::Foundation::Collections::IIterator<winrt::Windows::Foundation::IInspectable> First()
         {
@@ -140,6 +150,8 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         bool IsQuery() const { return _isQuery; };
         WINRT_PROPERTY(winrt::hstring, Key);
         WINRT_PROPERTY(winrt::hstring, ProfileName);
+        WINRT_PROPERTY(winrt::hstring, Attribution);
+        WINRT_PROPERTY(winrt::Windows::UI::Xaml::Media::Imaging::BitmapImage, BadgeBitmapImage, nullptr);
 
     private:
         bool _isQuery;
@@ -156,12 +168,14 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
 
     struct SystemResponse : public winrt::implements<SystemResponse, winrt::Microsoft::Terminal::Query::Extension::IResponse>
     {
-        SystemResponse(const winrt::hstring& message, const winrt::Microsoft::Terminal::Query::Extension::ErrorTypes errorType) :
+        SystemResponse(const winrt::hstring& message, const winrt::Microsoft::Terminal::Query::Extension::ErrorTypes errorType, const winrt::hstring& responseAttribution) :
             Message{ message },
-            ErrorType{ errorType } {}
+            ErrorType{ errorType },
+            ResponseAttribution{ responseAttribution } {}
 
         til::property<winrt::hstring> Message;
         til::property<winrt::Microsoft::Terminal::Query::Extension::ErrorTypes> ErrorType;
+        til::property<winrt::hstring> ResponseAttribution;
     };
 }
 
