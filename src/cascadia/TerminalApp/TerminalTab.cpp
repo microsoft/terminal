@@ -10,7 +10,6 @@
 #include "Utils.h"
 #include "ColorHelper.h"
 #include "AppLogic.h"
-#include "../inc/WindowingBehavior.h"
 
 using namespace winrt;
 using namespace winrt::Windows::UI::Xaml;
@@ -1443,23 +1442,6 @@ namespace winrt::TerminalApp::implementation
             Automation::AutomationProperties::SetHelpText(splitTabMenuItem, splitTabToolTip);
         }
 
-        Controls::MenuFlyoutItem moveTabToNewWindowMenuItem;
-        {
-            // "Move tab to new window"
-            Controls::FontIcon moveTabToNewWindowTabSymbol;
-            moveTabToNewWindowTabSymbol.FontFamily(Media::FontFamily{ L"Segoe Fluent Icons, Segoe MDL2 Assets" });
-            moveTabToNewWindowTabSymbol.Glyph(L"\xE8A7");
-
-            moveTabToNewWindowMenuItem.Click({ get_weak(), &TerminalTab::_moveTabToNewWindowClicked });
-            moveTabToNewWindowMenuItem.Text(RS_(L"MoveTabToNewWindowText"));
-            moveTabToNewWindowMenuItem.Icon(moveTabToNewWindowTabSymbol);
-
-            const auto moveTabToNewWindowToolTip = RS_(L"MoveTabToNewWindowToolTip");
-
-            WUX::Controls::ToolTipService::SetToolTip(moveTabToNewWindowMenuItem, box_value(moveTabToNewWindowToolTip));
-            Automation::AutomationProperties::SetHelpText(moveTabToNewWindowMenuItem, moveTabToNewWindowToolTip);
-        }
-
         Controls::MenuFlyoutItem closePaneMenuItem = _closePaneMenuItem;
         {
             // "Close pane"
@@ -1535,11 +1517,14 @@ namespace winrt::TerminalApp::implementation
         contextMenuFlyout.Items().Append(renameTabMenuItem);
         contextMenuFlyout.Items().Append(duplicateTabMenuItem);
         contextMenuFlyout.Items().Append(splitTabMenuItem);
-        contextMenuFlyout.Items().Append(moveTabToNewWindowMenuItem);
+        _AppendMoveMenuItems(contextMenuFlyout);
         contextMenuFlyout.Items().Append(exportTabMenuItem);
         contextMenuFlyout.Items().Append(findMenuItem);
         contextMenuFlyout.Items().Append(restartConnectionMenuItem);
         contextMenuFlyout.Items().Append(menuSeparator);
+
+        auto closeSubMenu = _AppendCloseMenuItems(contextMenuFlyout);
+        closeSubMenu.Items().Append(closePaneMenuItem);
 
         // GH#5750 - When the context menu is dismissed with ESC, toss the focus
         // back to our control.
@@ -1560,8 +1545,6 @@ namespace winrt::TerminalApp::implementation
                 }
             }
         });
-        auto closeSubMenu = _AppendCloseMenuItems(contextMenuFlyout);
-        closeSubMenu.Items().Append(closePaneMenuItem);
 
         TabViewItem().ContextFlyout(contextMenuFlyout);
     }
@@ -1999,13 +1982,6 @@ namespace winrt::TerminalApp::implementation
     {
         ActionAndArgs actionAndArgs{};
         actionAndArgs.Action(ShortcutAction::ExportBuffer);
-        _dispatch.DoAction(*this, actionAndArgs);
-    }
-    void TerminalTab::_moveTabToNewWindowClicked(const winrt::Windows::Foundation::IInspectable& /* sender */,
-                                                 const winrt::Windows::UI::Xaml::RoutedEventArgs& /* args */)
-    {
-        MoveTabArgs args{ winrt::to_hstring(NewWindow), MoveTabDirection::Forward };
-        ActionAndArgs actionAndArgs{ ShortcutAction::MoveTab, args };
         _dispatch.DoAction(*this, actionAndArgs);
     }
     void TerminalTab::_findClicked(const winrt::Windows::Foundation::IInspectable& /* sender */,
