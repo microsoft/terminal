@@ -87,8 +87,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void AISettings::ClearAzureOpenAIKeyAndEndpoint_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
     {
-        _ViewModel.AzureOpenAIEndpoint(L"");
-        _ViewModel.AzureOpenAIKey(L"");
+        _ViewModel.AzureOpenAIEndpoint(winrt::hstring{});
+        _ViewModel.AzureOpenAIKey(winrt::hstring{});
     }
 
     void AISettings::StoreAzureOpenAIKeyAndEndpoint_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
@@ -98,8 +98,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             _ViewModel.AzureOpenAIEndpoint(AzureOpenAIEndpointInputBox().Text());
             _ViewModel.AzureOpenAIKey(AzureOpenAIKeyInputBox().Password());
-            AzureOpenAIEndpointInputBox().Text(L"");
-            AzureOpenAIKeyInputBox().Password(L"");
+            AzureOpenAIEndpointInputBox().Text(winrt::hstring{});
+            AzureOpenAIKeyInputBox().Password(winrt::hstring{});
 
             TraceLoggingWrite(
                 g_hSettingsEditorProvider,
@@ -112,7 +112,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void AISettings::ClearOpenAIKey_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
     {
-        _ViewModel.OpenAIKey(L"");
+        _ViewModel.OpenAIKey(winrt::hstring{});
     }
 
     void AISettings::StoreOpenAIKey_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
@@ -121,7 +121,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         if (!password.empty())
         {
             _ViewModel.OpenAIKey(password);
-            OpenAIKeyInputBox().Password(L"");
+            OpenAIKeyInputBox().Password(winrt::hstring{});
 
             TraceLoggingWrite(
                 g_hSettingsEditorProvider,
@@ -134,7 +134,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void AISettings::ClearGithubCopilotTokens_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
     {
-        _ViewModel.GithubCopilotAuthValues(L"");
+        _ViewModel.GithubCopilotAuthValues(winrt::hstring{});
     }
 
     void AISettings::SetAzureOpenAIActive_Check(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)

@@ -162,7 +162,7 @@ winrt::hstring AIConfig::_RetrieveCredential(const wil::zwstring_view credential
     }
     catch (...)
     {
-        return L"";
+        return winrt::hstring{};
     }
 
     winrt::hstring password{ cred.Password() };

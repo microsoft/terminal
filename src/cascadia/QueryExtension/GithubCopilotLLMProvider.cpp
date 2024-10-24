@@ -198,7 +198,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
                     Windows::Data::Json::JsonObject authValuesJson;
                     authValuesJson.SetNamedValue(accessTokenKey, WDJ::JsonValue::CreateStringValue(_authToken));
                     authValuesJson.SetNamedValue(refreshTokenKey, WDJ::JsonValue::CreateStringValue(_refreshToken));
-                    _AuthChangedHandlers(*this, winrt::make<GithubCopilotAuthenticationResult>(L"", authValuesJson.ToString()));
+                    _AuthChangedHandlers(*this, winrt::make<GithubCopilotAuthenticationResult>(winrt::hstring{}, authValuesJson.ToString()));
 
                     // we also need to get the correct endpoint to use and the username
                     _obtainUsernameAndRefreshTokensIfNeeded();
@@ -342,7 +342,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
             Windows::Data::Json::JsonObject authValuesJson;
             authValuesJson.SetNamedValue(accessTokenKey, WDJ::JsonValue::CreateStringValue(_authToken));
             authValuesJson.SetNamedValue(refreshTokenKey, WDJ::JsonValue::CreateStringValue(_refreshToken));
-            _AuthChangedHandlers(*this, winrt::make<GithubCopilotAuthenticationResult>(L"", authValuesJson.ToString()));
+            _AuthChangedHandlers(*this, winrt::make<GithubCopilotAuthenticationResult>(winrt::hstring{}, authValuesJson.ToString()));
         }
         CATCH_LOG();
     }
