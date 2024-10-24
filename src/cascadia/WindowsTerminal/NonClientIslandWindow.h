@@ -52,7 +52,7 @@ public:
 
     void SetTitlebarBackground(winrt::Windows::UI::Xaml::Media::Brush brush);
 
-    virtual void UseMica(const bool newValue, const double titlebarOpacity) override;
+    virtual void SetMicaStyle(const winrt::Microsoft::Terminal::Settings::Model::MicaStyle newValue, const double titlebarOpacity) override;
 
 private:
     std::optional<til::point> _oldIslandPos;
@@ -67,7 +67,8 @@ private:
 
     winrt::Windows::UI::Xaml::ElementTheme _theme;
 
-    bool _useMica{ false };
+    winrt::Microsoft::Terminal::Settings::Model::MicaStyle _micaStyle{ winrt::Microsoft::Terminal::Settings::Model::MicaStyle::Default };
+
     double _titlebarOpacity{ 1.0 };
 
     bool _isMaximized;
