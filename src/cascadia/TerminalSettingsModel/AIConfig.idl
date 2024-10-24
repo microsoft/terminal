@@ -1,0 +1,28 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+#include "IInheritable.idl.h"
+
+namespace Microsoft.Terminal.Settings.Model
+{
+    enum LLMProvider
+    {
+        AzureOpenAI,
+        OpenAI
+    };
+
+    delegate void AzureOpenAISettingChangedHandler();
+    delegate void OpenAISettingChangedHandler();
+
+    [default_interface] runtimeclass AIConfig {
+        INHERITABLE_SETTING(LLMProvider, ActiveProvider);
+
+        String AzureOpenAIEndpoint;
+        String AzureOpenAIKey;
+        static event AzureOpenAISettingChangedHandler AzureOpenAISettingChanged;
+
+
+        String OpenAIKey;
+        static event OpenAISettingChangedHandler OpenAISettingChanged;
+    }
+}

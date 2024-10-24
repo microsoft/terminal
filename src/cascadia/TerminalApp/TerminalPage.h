@@ -234,8 +234,12 @@ namespace winrt::TerminalApp::implementation
         winrt::Windows::UI::Xaml::FrameworkElement::Loaded_revoker _extensionPaletteLoadedRevoker;
         Microsoft::Terminal::Settings::Model::CascadiaSettings _settings{ nullptr };
 
-        winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings::AzureOpenAISettingChanged_revoker _azureOpenAISettingChangedRevoker;
+        winrt::Microsoft::Terminal::Settings::Model::LLMProvider _currentProvider;
+        winrt::Microsoft::Terminal::Settings::Model::AIConfig::AzureOpenAISettingChanged_revoker _azureOpenAISettingChangedRevoker;
         void _setAzureOpenAIAuth();
+        winrt::Microsoft::Terminal::Settings::Model::AIConfig::OpenAISettingChanged_revoker _openAISettingChangedRevoker;
+        void _setOpenAIAuth();
+        void _createAndSetAuthenticationForLMProvider(winrt::Microsoft::Terminal::Settings::Model::LLMProvider providerType);
 
         Windows::Foundation::Collections::IObservableVector<TerminalApp::TabBase> _tabs;
         Windows::Foundation::Collections::IObservableVector<TerminalApp::TabBase> _mruTabs;

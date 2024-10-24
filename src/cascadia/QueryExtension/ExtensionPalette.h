@@ -11,7 +11,8 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
 {
     struct ExtensionPalette : ExtensionPaletteT<ExtensionPalette>
     {
-        ExtensionPalette(const Extension::ILMProvider lmProvider);
+        ExtensionPalette();
+        void SetProvider(const Extension::ILMProvider lmProvider);
 
         // We don't use the winrt_property macro here because we just need the setter
         void IconPath(const winrt::hstring& iconPath);

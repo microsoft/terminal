@@ -129,6 +129,16 @@ namespace winrt::TerminalApp::implementation
             p.SetActionMap(_settings.ActionMap());
         }
 
+        // If the active LLMProvider changed, make sure we reinitialize the provider
+        // We only need to do this if an _lmProvider already existed, this is to handle
+        // the case where a user uses the chat, then goes to settings and changes
+        // the active provider and returns to chat
+        const auto newProviderType = _settings.GlobalSettings().AIInfo().ActiveProvider();
+        if (_lmProvider && (newProviderType != _currentProvider))
+        {
+            _createAndSetAuthenticationForLMProvider(newProviderType);
+        }
+
         if (needRefreshUI)
         {
             _RefreshUIForSettingsReload();
@@ -5601,13 +5611,15 @@ namespace winrt::TerminalApp::implementation
             }
         }
 
-        // since we only support one type of llmProvider for now, just instantiate that one (the AzureLLMProvider)
-        // in the future, we would need to query the settings here for which LLMProvider to use
-        _lmProvider = winrt::Microsoft::Terminal::Query::Extension::AzureLLMProvider();
-        _setAzureOpenAIAuth();
-        _azureOpenAISettingChangedRevoker = Microsoft::Terminal::Settings::Model::CascadiaSettings::AzureOpenAISettingChanged(winrt::auto_revoke, { this, &TerminalPage::_setAzureOpenAIAuth });
+        _extensionPalette = winrt::Microsoft::Terminal::Query::Extension::ExtensionPalette();
 
-        _extensionPalette = winrt::Microsoft::Terminal::Query::Extension::ExtensionPalette(_lmProvider);
+        // create the correct lm provider
+        _createAndSetAuthenticationForLMProvider(_settings.GlobalSettings().AIInfo().ActiveProvider());
+
+        // make sure we listen for auth changes
+        _azureOpenAISettingChangedRevoker = Microsoft::Terminal::Settings::Model::AIConfig::AzureOpenAISettingChanged(winrt::auto_revoke, { this, &TerminalPage::_setAzureOpenAIAuth });
+        _openAISettingChangedRevoker = Microsoft::Terminal::Settings::Model::AIConfig::OpenAISettingChanged(winrt::auto_revoke, { this, &TerminalPage::_setOpenAIAuth });
+
         _extensionPalette.RegisterPropertyChangedCallback(UIElement::VisibilityProperty(), [&](auto&&, auto&&) {
             if (_extensionPalette.Visibility() == Visibility::Collapsed)
             {
@@ -5665,18 +5677,59 @@ namespace winrt::TerminalApp::implementation
                 _extensionPalette.ActiveCommandline(L"");
             }
         });
-
         ExtensionPresenter().Content(_extensionPalette);
+    }
+
+    void TerminalPage::_createAndSetAuthenticationForLMProvider(LLMProvider providerType)
+    {
+        if (!_lmProvider || (_currentProvider != providerType))
+        {
+            // we don't have a provider or our current provider is the wrong one, create a new provider
+            switch (providerType)
+            {
+            case LLMProvider::AzureOpenAI:
+                _currentProvider = LLMProvider::AzureOpenAI;
+                _lmProvider = winrt::Microsoft::Terminal::Query::Extension::AzureLLMProvider();
+                break;
+            case LLMProvider::OpenAI:
+                _currentProvider = LLMProvider::OpenAI;
+                _lmProvider = winrt::Microsoft::Terminal::Query::Extension::OpenAILLMProvider();
+                break;
+            default:
+                break;
+            }
+        }
+
+        // we now have a provider of the correct type, update that
+        Windows::Foundation::Collections::ValueSet authValues{};
+        const auto settingsAIInfo = _settings.GlobalSettings().AIInfo();
+        switch (providerType)
+        {
+        case LLMProvider::AzureOpenAI:
+            authValues.Insert(L"endpoint", Windows::Foundation::PropertyValue::CreateString(settingsAIInfo.AzureOpenAIEndpoint()));
+            authValues.Insert(L"key", Windows::Foundation::PropertyValue::CreateString(settingsAIInfo.AzureOpenAIKey()));
+            break;
+        case LLMProvider::OpenAI:
+            authValues.Insert(L"key", Windows::Foundation::PropertyValue::CreateString(settingsAIInfo.OpenAIKey()));
+            break;
+        default:
+            break;
+        }
+        _lmProvider.SetAuthentication(authValues);
+
+        if (_extensionPalette)
+        {
+            _extensionPalette.SetProvider(_lmProvider);
+        }
     }
 
     void TerminalPage::_setAzureOpenAIAuth()
     {
-        if (_lmProvider)
-        {
-            Windows::Foundation::Collections::ValueSet authValues{};
-            authValues.Insert(L"endpoint", Windows::Foundation::PropertyValue::CreateString(_settings.AIEndpoint()));
-            authValues.Insert(L"key", Windows::Foundation::PropertyValue::CreateString(_settings.AIKey()));
-            _lmProvider.SetAuthentication(authValues);
-        }
+        _createAndSetAuthenticationForLMProvider(LLMProvider::AzureOpenAI);
+    }
+
+    void TerminalPage::_setOpenAIAuth()
+    {
+        _createAndSetAuthenticationForLMProvider(LLMProvider::OpenAI);
     }
 }
