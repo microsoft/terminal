@@ -449,6 +449,7 @@
         { "command": "experimental.openTasks", "id": "Terminal.OpenTasks" },
         { "command": "quickFix", "id": "Terminal.QuickFix" },
         { "command": { "action": "showSuggestions", "source": "all"}, "id": "Terminal.Suggestions" },
+        { "command": "openCWD", "id": "Terminal.OpenCWD" },
 
         // Tab Management
         // "command": "closeTab" is unbound by default.
