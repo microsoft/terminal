@@ -1464,6 +1464,7 @@ QWER
 Qxxxxxxxxxxxxxxx
 qzmp
 RAII
+Ralph
 RALT
 rasterbar
 rasterfont
@@ -2013,6 +2014,7 @@ WHelper
 wic
 WIDTHSCROLL
 Widthx
+Wiggum
 wil
 WImpl
 WINAPI
