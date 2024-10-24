@@ -128,7 +128,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
                 const auto copilotEndpoint = viewerObject.GetNamedObject(copilotEndpointsKey).GetNamedString(apiKey);
 
                 _endpointUri = copilotEndpoint + chatCompletionSuffix;
-                const auto brandingData{ get_self<GithubCopilotBranding>(_BrandingData) };
+                const auto brandingData{ get_self<GithubCopilotBranding>(_brandingData) };
                 brandingData->QueryAttribution(userName);
                 break;
             }
