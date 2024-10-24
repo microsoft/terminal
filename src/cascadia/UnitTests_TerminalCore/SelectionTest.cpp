@@ -126,20 +126,20 @@ namespace TerminalCoreUnitTests
 
             // Test with no scrollback
             Log::Comment(L"Single click selection with NO scrollback value");
-            ValidateSingleClickSelection(0, { 9, 9 }, { 9, 9 });
+            ValidateSingleClickSelection(0, { 10, 9 }, { 10, 9 });
             Log::Comment(L"Double click selection with NO scrollback value");
-            ValidateDoubleClickSelection(0, { 0, 9 }, { 9, 9 });
+            ValidateDoubleClickSelection(0, { 0, 9 }, { 10, 9 });
             Log::Comment(L"Triple click selection with NO scrollback value");
-            ValidateTripleClickSelection(0, { 0, 9 }, { 9, 9 });
+            ValidateTripleClickSelection(0, { 0, 9 }, { 10, 9 });
 
             // Test with max scrollback
             const til::CoordType expected_row = SHRT_MAX - 1;
             Log::Comment(L"Single click selection with MAXIMUM scrollback value");
-            ValidateSingleClickSelection(SHRT_MAX, { 9, expected_row }, { 9, expected_row });
+            ValidateSingleClickSelection(SHRT_MAX, { 10, expected_row }, { 10, expected_row });
             Log::Comment(L"Double click selection with MAXIMUM scrollback value");
-            ValidateDoubleClickSelection(SHRT_MAX, { 0, expected_row }, { 9, expected_row });
+            ValidateDoubleClickSelection(SHRT_MAX, { 0, expected_row }, { 10, expected_row });
             Log::Comment(L"Triple click selection with MAXIMUM scrollback value");
-            ValidateTripleClickSelection(SHRT_MAX, { 0, expected_row }, { 9, expected_row });
+            ValidateTripleClickSelection(SHRT_MAX, { 0, expected_row }, { 10, expected_row });
         }
 
         TEST_METHOD(SelectFromOutofBounds)
@@ -155,7 +155,7 @@ namespace TerminalCoreUnitTests
 
             auto viewport = term.GetViewport();
             const auto leftBoundary = viewport.Left();
-            const auto rightBoundary = viewport.RightInclusive();
+            const auto rightExclusiveBoundary = viewport.RightExclusive();
             const auto topBoundary = viewport.Top();
             const auto bottomBoundary = viewport.BottomInclusive();
 
@@ -163,7 +163,7 @@ namespace TerminalCoreUnitTests
             // should clamp to right boundary
             term.SetSelectionAnchor({ 20, 5 });
             Log::Comment(L"Out of bounds: X-value too large");
-            ValidateLinearSelection(term, { rightBoundary, 5 }, { rightBoundary, 5 });
+            ValidateLinearSelection(term, { rightExclusiveBoundary, 5 }, { rightExclusiveBoundary, 5 });
 
             // Case 2: Simulate click past left (x,y) = (-20,5)
             // should clamp to left boundary
@@ -197,7 +197,7 @@ namespace TerminalCoreUnitTests
 
             auto viewport = term.GetViewport();
             const til::CoordType leftBoundary = 0;
-            const auto rightBoundary = viewport.RightInclusive();
+            const auto rightExclusiveBoundary = viewport.RightExclusive();
 
             // Simulate click at (x,y) = (5,5)
             term.SetSelectionAnchor({ 5, 5 });
@@ -205,7 +205,7 @@ namespace TerminalCoreUnitTests
             // Case 1: Move out of right boundary
             Log::Comment(L"Out of bounds: X-value too large");
             term.SetSelectionEnd({ 20, 5 });
-            ValidateLinearSelection(term, { 5, 5 }, { rightBoundary, 5 });
+            ValidateLinearSelection(term, { 5, 5 }, { rightExclusiveBoundary, 5 });
 
             // Case 2: Move out of left boundary
             Log::Comment(L"Out of bounds: X-value negative");
@@ -312,7 +312,7 @@ namespace TerminalCoreUnitTests
 
             // Validate selection area
             // Selection should expand one to the left to get the leading half of the wide glyph
-            ValidateLinearSelection(term, { 4, 10 }, { 5, 10 });
+            ValidateLinearSelection(term, { 4, 10 }, { 6, 10 });
         }
 
         TEST_METHOD(SelectWideGlyph_Leading)
@@ -334,8 +334,8 @@ namespace TerminalCoreUnitTests
             term.SetSelectionAnchor(clickPos);
 
             // Validate selection area
-            // Selection should expand one to the left to get the leading half of the wide glyph
-            ValidateLinearSelection(term, { 4, 10 }, { 5, 10 });
+            // Selection should clamp to the left side of the glyph and stay degenerate
+            ValidateLinearSelection(term, { 4, 10 }, { 4, 10 });
         }
 
         TEST_METHOD(SelectWideGlyphsInBoxSelection)
@@ -381,7 +381,7 @@ namespace TerminalCoreUnitTests
                 else if (rowValue == 11)
                 {
                     VERIFY_ARE_EQUAL((til::point{ 5, rowValue }), sp.start);
-                    VERIFY_ARE_EQUAL((til::point{ 8, rowValue }), sp.end);
+                    VERIFY_ARE_EQUAL((til::point{ 7, rowValue }), sp.end);
                 }
                 else
                 {
@@ -414,7 +414,7 @@ namespace TerminalCoreUnitTests
             term.MultiClickSelection(clickPos, Terminal::SelectionExpansion::Word);
 
             // Validate selection area
-            ValidateLinearSelection(term, { 4, 10 }, { gsl::narrow<til::CoordType>(4 + text.size() - 1), 10 });
+            ValidateLinearSelection(term, { 4, 10 }, { term.GetViewport().RightExclusive(), 10 });
         }
 
         TEST_METHOD(DoubleClick_Delimiter)
@@ -432,7 +432,7 @@ namespace TerminalCoreUnitTests
             term.MultiClickSelection(clickPos, Terminal::SelectionExpansion::Word);
 
             // Validate selection area
-            ValidateLinearSelection(term, { 0, 10 }, { 99, 10 });
+            ValidateLinearSelection(term, { 0, 10 }, { term.GetViewport().RightExclusive(), 10 });
         }
 
         TEST_METHOD(DoubleClick_DelimiterClass)
@@ -457,10 +457,10 @@ namespace TerminalCoreUnitTests
 
             // ---Validate selection area---
             // "Terminal" is in class 2
-            // ">" is in class 1
+            // ":" and ">" are in class 1
             // the white space to the right of the ">" is in class 0
-            // Double-clicking the ">" should only highlight that cell
-            ValidateLinearSelection(term, { 15, 10 }, { 15, 10 });
+            // Double-clicking the ">" should highlight that cell and the whitespace
+            ValidateLinearSelection(term, { 15, 10 }, { term.GetViewport().RightExclusive(), 10 });
         }
 
         TEST_METHOD(DoubleClickDrag_Right)
@@ -489,7 +489,7 @@ namespace TerminalCoreUnitTests
             term.SetSelectionEnd({ 21, 10 });
 
             // Validate selection area
-            ValidateLinearSelection(term, { 4, 10 }, { 32, 10 });
+            ValidateLinearSelection(term, { 4, 10 }, { term.GetViewport().RightExclusive(), 10 });
         }
 
         TEST_METHOD(DoubleClickDrag_Left)
@@ -502,7 +502,7 @@ namespace TerminalCoreUnitTests
             auto settings = winrt::make<MockTermSettings>(0, 100, 100);
             term.UpdateSettings(settings);
 
-            // Insert text at position (21,10)
+            // Insert text at position (4,10)
             const std::wstring_view text = L"doubleClickMe dragThroughHere";
             GetTextBuffer(term).GetCursor().SetPosition({ 4, 10 });
             term.Write(text);
@@ -513,12 +513,12 @@ namespace TerminalCoreUnitTests
             // Simulate move to (x,y) = (5,10)
             //
             // buffer: doubleClickMe dragThroughHere
-            //         ^                ^
-            //       finish            start
+            //          ^               ^
+            //        finish           start
             term.SetSelectionEnd({ 5, 10 });
 
             // Validate selection area
-            ValidateLinearSelection(term, { 4, 10 }, { 32, 10 });
+            ValidateLinearSelection(term, { 4, 10 }, { 18, 10 });
         }
 
         TEST_METHOD(TripleClick_GeneralCase)
@@ -532,7 +532,7 @@ namespace TerminalCoreUnitTests
             term.MultiClickSelection(clickPos, Terminal::SelectionExpansion::Line);
 
             // Validate selection area
-            ValidateLinearSelection(term, { 0, 10 }, { 99, 10 });
+            ValidateLinearSelection(term, { 0, 10 }, { term.GetViewport().RightExclusive(), 10 });
         }
 
         TEST_METHOD(TripleClickDrag_Horizontal)
@@ -549,7 +549,7 @@ namespace TerminalCoreUnitTests
             term.SetSelectionEnd({ 7, 10 });
 
             // Validate selection area
-            ValidateLinearSelection(term, { 0, 10 }, { 99, 10 });
+            ValidateLinearSelection(term, { 0, 10 }, { term.GetViewport().RightExclusive(), 10 });
         }
 
         TEST_METHOD(TripleClickDrag_Vertical)
@@ -565,7 +565,7 @@ namespace TerminalCoreUnitTests
             // Simulate move to (x,y) = (5,11)
             term.SetSelectionEnd({ 5, 11 });
 
-            ValidateLinearSelection(term, { 0, 10 }, { 99, 11 });
+            ValidateLinearSelection(term, { 0, 10 }, { term.GetViewport().RightExclusive(), 11 });
         }
 
         TEST_METHOD(ShiftClick)
@@ -579,20 +579,20 @@ namespace TerminalCoreUnitTests
             term.UpdateSettings(settings);
 
             // Insert text at position (4,10)
-            const std::wstring_view text = L"doubleClickMe dragThroughHere";
+            const std::wstring_view text = L"doubleClickMe dragThroughHere anotherWord";
             GetTextBuffer(term).GetCursor().SetPosition({ 4, 10 });
             term.Write(text);
 
-            // Step 1: Create a selection on "doubleClickMe"
+            Log::Comment(L"Step 1 : Create a selection on \"doubleClickMe\"");
             {
                 // Simulate double click at (x,y) = (5,10)
                 term.MultiClickSelection({ 5, 10 }, Terminal::SelectionExpansion::Word);
 
                 // Validate selection area: "doubleClickMe" selected
-                ValidateLinearSelection(term, { 4, 10 }, { 16, 10 });
+                ValidateLinearSelection(term, { 4, 10 }, { 18, 10 });
             }
 
-            // Step 2: Shift+Click to "dragThroughHere"
+            Log::Comment(L"Step 2: Shift+Click to \"dragThroughHere\"");
             {
                 // Simulate Shift+Click at (x,y) = (21,10)
                 //
@@ -602,10 +602,10 @@ namespace TerminalCoreUnitTests
                 term.SetSelectionEnd({ 21, 10 }, Terminal::SelectionExpansion::Char);
 
                 // Validate selection area: "doubleClickMe drag" selected
-                ValidateLinearSelection(term, { 4, 10 }, { 21, 10 });
+                ValidateLinearSelection(term, { 4, 10 }, { 22, 10 });
             }
 
-            // Step 3: Shift+Double-Click at "dragThroughHere"
+            Log::Comment(L"Step 3: Shift+Double-Click at \"dragThroughHere\"");
             {
                 // Simulate Shift+DoubleClick at (x,y) = (21,10)
                 //
@@ -614,11 +614,11 @@ namespace TerminalCoreUnitTests
                 //       start            click      finish
                 term.SetSelectionEnd({ 21, 10 }, Terminal::SelectionExpansion::Word);
 
-                // Validate selection area: "doubleClickMe dragThroughHere" selected
-                ValidateLinearSelection(term, { 4, 10 }, { 32, 10 });
+                // Validate selection area: "doubleClickMe dragThroughHere " selected
+                ValidateLinearSelection(term, { 4, 10 }, { 34, 10 });
             }
 
-            // Step 4: Shift+Triple-Click at "dragThroughHere"
+            Log::Comment(L"Step 4: Shift+Triple-Click at \"dragThroughHere\"");
             {
                 // Simulate Shift+TripleClick at (x,y) = (21,10)
                 //
@@ -628,23 +628,23 @@ namespace TerminalCoreUnitTests
                 term.SetSelectionEnd({ 21, 10 }, Terminal::SelectionExpansion::Line);
 
                 // Validate selection area: "doubleClickMe dragThroughHere..." selected
-                ValidateLinearSelection(term, { 4, 10 }, { 99, 10 });
+                ValidateLinearSelection(term, { 4, 10 }, { term.GetViewport().RightExclusive(), 10 });
             }
 
-            // Step 5: Shift+Double-Click at "dragThroughHere"
+            Log::Comment(L"Step 5: Shift+Double-Click at \"dragThroughHere\"");
             {
                 // Simulate Shift+DoubleClick at (x,y) = (21,10)
                 //
-                // buffer: doubleClickMe dragThroughHere
-                //         ^                ^          ^
-                //       start            click      finish
+                // buffer: doubleClickMe dragThroughHere anotherWord
+                //         ^                ^            ^
+                //       start            click        finish
                 term.SetSelectionEnd({ 21, 10 }, Terminal::SelectionExpansion::Word);
 
                 // Validate selection area: "doubleClickMe dragThroughHere" selected
-                ValidateLinearSelection(term, { 4, 10 }, { 32, 10 });
+                ValidateLinearSelection(term, { 4, 10 }, { 34, 10 });
             }
 
-            // Step 6: Drag past "dragThroughHere"
+            Log::Comment(L"Step 6: Drag past \"dragThroughHere\"");
             {
                 // Simulate drag to (x,y) = (35,10)
                 // Since we were preceded by a double-click, we're in "word" expansion mode
@@ -655,33 +655,33 @@ namespace TerminalCoreUnitTests
                 term.SetSelectionEnd({ 35, 10 });
 
                 // Validate selection area: "doubleClickMe dragThroughHere..." selected
-                ValidateLinearSelection(term, { 4, 10 }, { 99, 10 });
+                ValidateLinearSelection(term, { 4, 10 }, { term.GetViewport().RightExclusive(), 10 });
             }
 
-            // Step 6: Drag back to "dragThroughHere"
+            Log::Comment(L"Step 7: Drag back to \"dragThroughHere\"");
             {
                 // Simulate drag to (x,y) = (21,10)
                 //
-                // buffer: doubleClickMe dragThroughHere
-                //         ^                ^          ^
-                //       start             drag      finish
+                // buffer: doubleClickMe dragThroughHere anotherWord
+                //         ^                ^            ^
+                //       start             drag        finish
                 term.SetSelectionEnd({ 21, 10 });
 
-                // Validate selection area: "doubleClickMe dragThroughHere" selected
-                ValidateLinearSelection(term, { 4, 10 }, { 32, 10 });
+                // Validate selection area: "doubleClickMe dragThroughHere " selected
+                ValidateLinearSelection(term, { 4, 10 }, { 34, 10 });
             }
 
-            // Step 7: Drag within "dragThroughHere"
+            Log::Comment(L"Step 8: Drag within \"dragThroughHere\"");
             {
                 // Simulate drag to (x,y) = (25,10)
                 //
-                // buffer: doubleClickMe dragThroughHere
-                //         ^                    ^      ^
-                //       start                 drag  finish
+                // buffer: doubleClickMe dragThroughHere anotherWord
+                //         ^                    ^        ^
+                //       start                 drag    finish
                 term.SetSelectionEnd({ 25, 10 });
 
                 // Validate selection area: "doubleClickMe dragThroughHere" still selected
-                ValidateLinearSelection(term, { 4, 10 }, { 32, 10 });
+                ValidateLinearSelection(term, { 4, 10 }, { 34, 10 });
             }
         }
 
@@ -691,16 +691,16 @@ namespace TerminalCoreUnitTests
             DummyRenderer renderer{ &term };
             term.Create({ 100, 100 }, 0, renderer);
 
-            // Step 1: Create a selection
+            Log::Comment(L"Step 1: Create a selection");
             {
-                // (10,10) to (20, 10)
+                // (10,10) to (20, 10) (inclusive)
                 term.SelectNewRegion({ 10, 10 }, { 20, 10 });
 
                 // Validate selection area
-                ValidateLinearSelection(term, { 10, 10 }, { 20, 10 });
+                ValidateLinearSelection(term, { 10, 10 }, { 21, 10 });
             }
 
-            // Step 2: Drag to (5,10)
+            Log::Comment(L"Step 2: Drag to (5,10)");
             {
                 term.SetSelectionEnd({ 5, 10 });
 
@@ -709,7 +709,7 @@ namespace TerminalCoreUnitTests
                 ValidateLinearSelection(term, { 5, 10 }, { 10, 10 });
             }
 
-            // Step 3: Drag back to (20,10)
+            Log::Comment(L"Step 3: Drag back to (20,10)");
             {
                 term.SetSelectionEnd({ 20, 10 });
 
@@ -718,7 +718,7 @@ namespace TerminalCoreUnitTests
                 ValidateLinearSelection(term, { 10, 10 }, { 20, 10 });
             }
 
-            // Step 4: Shift+Click at (5,10)
+            Log::Comment(L"Step 4: Shift+Click at (5,10)");
             {
                 term.SetSelectionEnd({ 5, 10 }, Terminal::SelectionExpansion::Char);
 
@@ -727,13 +727,14 @@ namespace TerminalCoreUnitTests
                 ValidateLinearSelection(term, { 5, 10 }, { 10, 10 });
             }
 
-            // Step 5: Shift+Click back at (20,10)
+            Log::Comment(L"Step 5: Shift+Click back at (20,10)");
             {
                 term.SetSelectionEnd({ 20, 10 }, Terminal::SelectionExpansion::Char);
 
                 // Validate selection area
-                // NOTE: Pivot should still be (10, 10)
-                ValidateLinearSelection(term, { 10, 10 }, { 20, 10 });
+                //   Pivot should still be (10, 10)
+                //   Shift+Click makes end inclusive (so add 1)
+                ValidateLinearSelection(term, { 10, 10 }, { 21, 10 });
             }
         }
     };

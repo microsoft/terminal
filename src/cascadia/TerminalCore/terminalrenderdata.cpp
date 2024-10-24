@@ -210,6 +210,7 @@ void Terminal::SelectNewRegion(const til::point coordStart, const til::point coo
     const auto newCoordEnd = til::point{ coordEnd.x, coordEnd.y - newScrollOffset };
     SetSelectionAnchor(newCoordStart);
     SetSelectionEnd(newCoordEnd, SelectionExpansion::Char);
+    _activeBuffer().TriggerSelection();
 }
 
 const std::wstring_view Terminal::GetConsoleTitle() const noexcept

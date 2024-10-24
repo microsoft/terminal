@@ -1200,7 +1200,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         const auto bufferSize{ _terminal->GetTextBuffer().GetSize() };
         info.StartAtLeftBoundary = _terminal->GetSelectionAnchor().x == bufferSize.Left();
-        info.EndAtRightBoundary = _terminal->GetSelectionEnd().x == bufferSize.RightInclusive();
+        info.EndAtRightBoundary = _terminal->GetSelectionEnd().x == bufferSize.RightExclusive();
         return info;
     }
 
@@ -1217,8 +1217,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             return;
         }
 
+        // clamp the converted position to be within the viewport bounds
+        // x: allow range of [-1, RightExclusive].
         til::point terminalPosition{
-            std::clamp(position.x, 0, _terminal->GetViewport().Width() - 1),
+            std::clamp(position.x, -1, _terminal->GetViewport().Width()),
             std::clamp(position.y, 0, _terminal->GetViewport().Height() - 1)
         };
 
@@ -2714,7 +2716,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         bufferSize.DecrementInBounds(inclusiveEnd);
 
         _terminal->SelectNewRegion(s.start, inclusiveEnd);
-        _renderer->TriggerSelection();
     }
 
     void ControlCore::SelectCommand(const bool goUp)

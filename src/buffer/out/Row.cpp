@@ -1114,6 +1114,9 @@ std::wstring_view ROW::GetText() const noexcept
     return { _chars.data(), width };
 }
 
+// Arguments:
+// - columnBegin: inclusive
+// - columnEnd: exclusive
 std::wstring_view ROW::GetText(til::CoordType columnBegin, til::CoordType columnEnd) const noexcept
 {
     const auto columns = GetReadableColumnCount();
