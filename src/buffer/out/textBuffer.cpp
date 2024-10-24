@@ -1173,7 +1173,14 @@ til::point TextBuffer::GetWordStart2(til::point pos, const std::wstring_view wor
     // 2. if we were on a ControlChar, go back one more delimiter class run
     const auto initialDelimiter = bufferSize.IsInBounds(pos) ? _GetDelimiterClassAt(pos, wordDelimiters) : DelimiterClass::ControlChar;
     pos = _GetDelimiterClassRunStart(pos, wordDelimiters);
-    if (initialDelimiter == DelimiterClass::ControlChar)
+    if (pos.x == bufferSize.Left())
+    {
+        // Special case:
+        // we're at the left boundary (and end of a delimiter class run),
+        // we already know we can't wrap, so return early
+        return pos;
+    }
+    else if (initialDelimiter == DelimiterClass::ControlChar)
     {
         bufferSize.DecrementInExclusiveBounds(pos);
         pos = _GetDelimiterClassRunStart(pos, wordDelimiters);
