@@ -9,6 +9,7 @@
   <supportedOn>
     <definitions>
       <definition name="SUPPORTED_WindowsTerminal_1_21" displayName="$(string.SUPPORTED_WindowsTerminal_1_21)" />
+      <definition name="SUPPORTED_WindowsTerminalCanary_1_23" displayName="$(string.SUPPORTED_WindowsTerminalCanary_1_23)" />
     </definitions>
   </supportedOn>
   <categories>
@@ -22,6 +23,13 @@
       <supportedOn ref="SUPPORTED_WindowsTerminal_1_21" />
       <elements>
         <multiText id="DisabledProfileSources" valueName="DisabledProfileSources" required="true" />
+      </elements>
+    </policy>
+    <policy name="EnabledLMProviders" class="Both" displayName="$(string.EnabledLMProviders)" explainText="$(string.EnabledLMProvidersText)" presentation="$(presentation.EnabledLMProviders)" key="Software\Policies\Microsoft\Windows Terminal">
+      <parentCategory ref="WindowsTerminal" />
+      <supportedOn ref="SUPPORTED_WindowsTerminalCanary_1_23" />
+      <elements>
+        <multiText id="EnabledLMProviders" valueName="EnabledLMProviders" required="false" />
       </elements>
     </policy>
   </policies>

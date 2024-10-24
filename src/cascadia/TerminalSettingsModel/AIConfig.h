@@ -33,6 +33,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         Json::Value ToJson() const;
         void LayerJson(const Json::Value& json);
 
+        static Model::EnabledLMProviders AllowedLMProviders() noexcept;
+
         // Key and endpoint storage
         // These are not written to the json, they are stored in the Windows Security Storage Vault
         winrt::hstring AzureOpenAIEndpoint() noexcept;
@@ -58,6 +60,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         _BASE_INHERITABLE_SETTING(Model::AIConfig, std::optional<LLMProvider>, ActiveProvider);
 
     private:
+        Model::EnabledLMProviders _enabledLMProviders{ Model::EnabledLMProviders::All };
         winrt::hstring _RetrieveCredential(const wil::zwstring_view credential);
         void _SetCredential(const wil::zwstring_view credential, const winrt::hstring& value);
         std::unordered_map<std::wstring, std::wstring> _credentialCache;

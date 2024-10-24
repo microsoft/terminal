@@ -41,7 +41,8 @@
                 <!--  GitHub Copilot  -->
                 <local:SettingContainer x:Uid="AISettings_GithubCopilot"
                                         Style="{StaticResource ExpanderSettingContainerStyle}"
-                                        Visibility="{x:Bind ViewModel.GithubCopilotFeatureEnabled}">
+                                        IsEnabled="{x:Bind ViewModel.GithubCopilotAllowed}"
+                                        CurrentValue="{x:Bind ViewModel.GithubCopilotStatus, Mode=OneWay}">
                     <StackPanel>
                         <Grid Visibility="{x:Bind ViewModel.AreGithubCopilotTokensSet, Mode=OneWay}">
                             <Grid.ColumnDefinitions>
@@ -124,7 +125,9 @@
                 </local:SettingContainer>
                 <!--  Azure OpenAI  -->
                 <local:SettingContainer x:Uid="AISettings_AzureOpenAIKeyAndEndpoint"
-                                        Style="{StaticResource ExpanderSettingContainerStyle}">
+                                        Style="{StaticResource ExpanderSettingContainerStyle}"
+                                        IsEnabled="{x:Bind ViewModel.AzureOpenAIAllowed}"
+                                        CurrentValue="{x:Bind ViewModel.AzureOpenAIStatus, Mode=OneWay}">
                     <StackPanel>
                         <Grid Visibility="{x:Bind ViewModel.AreAzureOpenAIKeyAndEndpointSet, Mode=OneWay}">
                             <Grid.ColumnDefinitions>
@@ -242,7 +245,9 @@
                 </local:SettingContainer>
                 <!--  OpenAI  -->
                 <local:SettingContainer x:Uid="AISettings_OpenAIKey"
-                                        Style="{StaticResource ExpanderSettingContainerStyle}">
+                                        Style="{StaticResource ExpanderSettingContainerStyle}"
+                                        IsEnabled="{x:Bind ViewModel.OpenAIAllowed}"
+                                        CurrentValue="{x:Bind ViewModel.OpenAIStatus, Mode=OneWay}">
                     <StackPanel>
                         <Grid Visibility="{x:Bind ViewModel.IsOpenAIKeySet, Mode=OneWay}">
                             <Grid.ColumnDefinitions>
