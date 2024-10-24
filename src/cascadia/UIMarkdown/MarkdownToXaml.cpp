@@ -80,7 +80,6 @@ WUX::Documents::Paragraph MarkdownToXaml::_CurrentParagraph()
 {
     if (_lastParagraph == nullptr)
     {
-        // _EndRun(); // sanity check
         _lastParagraph = WUX::Documents::Paragraph{};
         if (_indent > 0)
         {

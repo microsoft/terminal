@@ -22,7 +22,7 @@
                     <Color x:Key="BlockBackgroundColor">#1e1e1e</Color>
                     <Color x:Key="BlockBorderColor">#30363d</Color>
                     <Color x:Key="PlayButtonHoveredColor">#90ef90</Color>
-                    <Color x:Key="PlayButtonNormalColor">#8888</Color>
+                    <Color x:Key="PlayButtonNormalColor">#88888888</Color>
                 </ResourceDictionary>
                 <ResourceDictionary x:Key="Light">
                     <Color x:Key="BlockBackgroundColor">#f6f8fa</Color>
