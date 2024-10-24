@@ -431,6 +431,7 @@
         { "command": { "action": "openSettings", "target": "settingsUI" }, "id": "Terminal.OpenSettingsUI" },
         { "command": { "action": "openSettings", "target": "settingsFile" }, "id": "Terminal.OpenSettingsFile" },
         { "command": { "action": "openSettings", "target": "defaultsFile" }, "id": "Terminal.OpenDefaultSettingsFile" },
+        { "command": { "action": "openSettings", "target": "directory" }, "id": "Terminal.OpenSettingsDirectory" },
         { "command": "find", "id": "Terminal.FindText" },
         { "command": { "action": "findMatch", "direction": "next" }, "id": "Terminal.FindNextMatch" },
         { "command": { "action": "findMatch", "direction": "prev" }, "id": "Terminal.FindPrevMatch" },
