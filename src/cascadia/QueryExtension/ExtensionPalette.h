@@ -80,8 +80,8 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         GroupedChatMessages(winrt::hstring key,
                             bool isQuery,
                             const Windows::Foundation::Collections::IVector<Windows::Foundation::IInspectable>& messages,
-                            winrt::hstring attribution = L"",
-                            winrt::hstring badgeImagePath = L"")
+                            winrt::hstring attribution = winrt::hstring{},
+                            winrt::hstring badgeImagePath = winrt::hstring{})
         {
             _Key = key;
             _isQuery = isQuery;

@@ -51,7 +51,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
 
             _setFocusAndPlaceholderTextHelper();
 
-            const auto lmProviderName = _lmProvider ? _lmProvider.BrandingData().Name() : L"";
+            const auto lmProviderName = _lmProvider ? _lmProvider.BrandingData().Name() : winrt::hstring{};
             TraceLoggingWrite(
                 g_hQueryExtensionProvider,
                 "QueryPaletteOpened",
@@ -72,7 +72,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
 
                 _setFocusAndPlaceholderTextHelper();
 
-                const auto lmProviderName = _lmProvider ? _lmProvider.BrandingData().Name() : L"";
+                const auto lmProviderName = _lmProvider ? _lmProvider.BrandingData().Name() : winrt::hstring{};
                 TraceLoggingWrite(
                     g_hQueryExtensionProvider,
                     "QueryPaletteOpened",
@@ -118,12 +118,12 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
     {
         const auto userMessage = winrt::make<ChatMessage>(prompt, true, false);
         std::vector<IInspectable> userMessageVector{ userMessage };
-        const auto queryAttribution = _lmProvider ? _lmProvider.BrandingData().QueryAttribution() : L"";
+        const auto queryAttribution = _lmProvider ? _lmProvider.BrandingData().QueryAttribution() : winrt::hstring{};
         const auto userGroupedMessages = winrt::make<GroupedChatMessages>(currentLocalTime, true, winrt::single_threaded_vector(std::move(userMessageVector)), queryAttribution);
         _messages.Append(userGroupedMessages);
-        _queryBox().Text(L"");
+        _queryBox().Text(winrt::hstring{});
 
-        const auto lmProviderName = _lmProvider ? _lmProvider.BrandingData().Name() : L"";
+        const auto lmProviderName = _lmProvider ? _lmProvider.BrandingData().Name() : winrt::hstring{};
         TraceLoggingWrite(
             g_hQueryExtensionProvider,
             "AIQuerySent",
@@ -152,7 +152,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         }
         else
         {
-            result = winrt::make<SystemResponse>(RS_(L"CouldNotFindKeyErrorMessage"), ErrorTypes::InvalidAuth, L"");
+            result = winrt::make<SystemResponse>(RS_(L"CouldNotFindKeyErrorMessage"), ErrorTypes::InvalidAuth, winrt::hstring{});
         }
 
         // Switch back to the foreground thread because we are changing the UI now
@@ -231,11 +231,11 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
 
         const auto brandingData = _lmProvider.BrandingData();
         const auto responseAttribution = response.ResponseAttribution().empty() ? _ProfileName : response.ResponseAttribution();
-        const auto badgeUriPath = _lmProvider ? brandingData.BadgeIconPath() : L"";
+        const auto badgeUriPath = _lmProvider ? brandingData.BadgeIconPath() : winrt::hstring{};
         const auto responseGroupedMessages = winrt::make<GroupedChatMessages>(time, false, winrt::single_threaded_vector(std::move(messageParts)), responseAttribution, badgeUriPath);
         _messages.Append(responseGroupedMessages);
 
-        const auto lmProviderName = _lmProvider ? _lmProvider.BrandingData().Name() : L"";
+        const auto lmProviderName = _lmProvider ? _lmProvider.BrandingData().Name() : winrt::hstring{};
         TraceLoggingWrite(
             g_hQueryExtensionProvider,
             "AIResponseReceived",
@@ -327,7 +327,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
             _InputSuggestionRequestedHandlers(*this, winrt::to_hstring(suggestion));
             _close();
 
-            const auto lmProviderName = _lmProvider ? _lmProvider.BrandingData().Name() : L"";
+            const auto lmProviderName = _lmProvider ? _lmProvider.BrandingData().Name() : winrt::hstring{};
             TraceLoggingWrite(
                 g_hQueryExtensionProvider,
                 "AICodeResponseInputted",
@@ -465,6 +465,6 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         Visibility(Visibility::Collapsed);
 
         // Clear the text box each time we close the dialog. This is consistent with VsCode.
-        _queryBox().Text(L"");
+        _queryBox().Text(winrt::hstring{});
     }
 }

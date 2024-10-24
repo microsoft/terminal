@@ -184,7 +184,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         responseMessageObject.Insert(contentString, WDJ::JsonValue::CreateStringValue(message));
         _jsonMessages.Append(responseMessageObject);
 
-        co_return winrt::make<AzureResponse>(message, errorType, L"");
+        co_return winrt::make<AzureResponse>(message, errorType, winrt::hstring{});
     }
 
     bool AzureLLMProvider::_verifyModelIsValidHelper(const WDJ::JsonObject jsonResponse)
