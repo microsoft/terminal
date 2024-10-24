@@ -123,7 +123,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         void AdjustFontSize(float fontSizeDelta);
         void ResetFontSize();
-        til::point GetFontSize() const;
+        winrt::Windows::Foundation::Size GetFontSize() const;
 
         void SendInput(const winrt::hstring& input);
         void ClearBuffer(Control::ClearBufferType clearType);
@@ -411,8 +411,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         static void _ClearKeyboardState(const WORD vkey, const WORD scanCode) noexcept;
         bool _TrySendKeyEvent(const WORD vkey, const WORD scanCode, ::Microsoft::Terminal::Core::ControlKeyStates modifiers, const bool keyDown);
 
-        til::point _toControlOrigin(const til::point terminalPosition);
-        const til::point _toTerminalOrigin(winrt::Windows::Foundation::Point cursorPosition);
+        winrt::Windows::Foundation::Point _toControlOrigin(const til::point terminalPosition);
+        Core::Point _toTerminalOrigin(winrt::Windows::Foundation::Point cursorPosition);
 
         double _GetAutoScrollSpeed(double cursorDistanceFromBorder) const;
 
@@ -431,13 +431,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void _coreWarningBell(const IInspectable& sender, const IInspectable& args);
         void _coreOutputIdle(const IInspectable& sender, const IInspectable& args);
 
-        til::point _toPosInDips(const Core::Point terminalCellPos);
+        winrt::Windows::Foundation::Point _toPosInDips(const Core::Point terminalCellPos);
         void _throttledUpdateScrollbar(const ScrollBarUpdate& update);
 
         void _pasteTextWithBroadcast(const winrt::hstring& text);
 
         void _contextMenuHandler(IInspectable sender, Control::ContextMenuRequestedEventArgs args);
-        void _showContextMenuAt(const til::point& controlRelativePos);
+        void _showContextMenuAt(const winrt::Windows::Foundation::Point& controlRelativePos);
 
         void _bubbleSearchMissingCommand(const IInspectable& sender, const Control::SearchMissingCommandEventArgs& args);
         winrt::fire_and_forget _bubbleWindowSizeChanged(const IInspectable& sender, Control::WindowSizeChangedEventArgs args);
