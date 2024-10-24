@@ -2543,16 +2543,17 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // Arguments:
     // - dismissSelection: dismiss the text selection after copy
     // - singleLine: collapse all of the text to one line
+    // - withControlSequences: if enabled, the copied plain text contains color/style ANSI escape codes from the selection
     // - formats: which formats to copy (defined by action's CopyFormatting arg). nullptr
     //             if we should defer which formats are copied to the global setting
-    bool TermControl::CopySelectionToClipboard(bool dismissSelection, bool singleLine, const Windows::Foundation::IReference<CopyFormat>& formats)
+    bool TermControl::CopySelectionToClipboard(bool dismissSelection, bool singleLine, bool withControlSequences, const Windows::Foundation::IReference<CopyFormat>& formats)
     {
         if (_IsClosing())
         {
             return false;
         }
 
-        const auto successfulCopy = _interactivity.CopySelectionToClipboard(singleLine, formats);
+        const auto successfulCopy = _interactivity.CopySelectionToClipboard(singleLine, withControlSequences, formats);
 
         if (dismissSelection)
         {
@@ -4189,7 +4190,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                           const IInspectable& /*args*/)
     {
         // formats = nullptr -> copy all formats
-        _interactivity.CopySelectionToClipboard(false, nullptr);
+        _interactivity.CopySelectionToClipboard(false, false, nullptr);
         ContextMenu().Hide();
         SelectionContextMenu().Hide();
     }

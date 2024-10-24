@@ -1917,6 +1917,41 @@ std::wstring TextBuffer::GetPlainText(const CopyRequest& req) const
     return selectedText;
 }
 
+// Retrieves the text data from the buffer *with* ANSI escape code control sequences and presents it in
+//      a clipboard-ready format.
+// Arguments:
+// - req - the copy request having the bounds of the selected region and other related configuration flags.
+// Return Value:
+// - The text and control sequence data from the selected region of the text buffer. Empty if the copy request
+//      is invalid.
+std::wstring TextBuffer::GetWithControlSequences(const CopyRequest& req) const
+{
+    if (req.beg > req.end)
+    {
+        return {};
+    }
+
+    std::wstring selectedText;
+    std::optional<TextAttribute> previousTextAttr;
+    bool delayedLineBreak = false;
+
+    const auto firstRow = req.beg.y;
+    const auto lastRow = req.end.y;
+
+    for (til::CoordType currentRow = firstRow; currentRow <= lastRow; currentRow++)
+    {
+        const auto& row = GetRowByOffset(currentRow);
+
+        const auto [startX, endX, reqAddLineBreak] = _RowCopyHelper(req, currentRow, row);
+        const bool isLastRow = currentRow == lastRow;
+        const bool addLineBreak = reqAddLineBreak && !isLastRow;
+
+        _SerializeRow(row, startX, endX, addLineBreak, isLastRow, selectedText, previousTextAttr, delayedLineBreak);
+    }
+
+    return selectedText;
+}
+
 // Routine Description:
 // - Generates a CF_HTML compliant structure from the selected region of the buffer
 // Arguments:
@@ -2348,7 +2383,7 @@ void TextBuffer::_AppendRTFText(std::string& contentBuilder, const std::wstring_
     }
 }
 
-void TextBuffer::Serialize(const wchar_t* destination) const
+void TextBuffer::SerializeToPath(const wchar_t* destination) const
 {
     const wil::unique_handle file{ CreateFileW(destination, GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_DELETE, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr) };
     THROW_LAST_ERROR_IF(!file);
@@ -2358,268 +2393,26 @@ void TextBuffer::Serialize(const wchar_t* destination) const
     buffer.reserve(writeThreshold + writeThreshold / 2);
     buffer.push_back(L'\uFEFF');
 
-    const til::CoordType lastRowWithText = GetLastNonSpaceCharacter(nullptr).y;
-    CharacterAttributes previousAttr = CharacterAttributes::Unused1;
-    TextColor previousFg;
-    TextColor previousBg;
-    TextColor previousUl;
-    uint16_t previousHyperlinkId = 0;
+    std::optional<TextAttribute> previousTextAttr;
     bool delayedLineBreak = false;
+
+    const til::CoordType firstRow = 0;
+    const til::CoordType lastRow = GetLastNonSpaceCharacter(nullptr).y;
 
     // This iterates through each row. The exit condition is at the end
     // of the for() loop so that we can properly handle file flushing.
-    for (til::CoordType currentRow = 0;; currentRow++)
+    for (til::CoordType currentRow = firstRow;; currentRow++)
     {
         const auto& row = GetRowByOffset(currentRow);
 
-        if (const auto lr = row.GetLineRendition(); lr != LineRendition::SingleWidth)
-        {
-            static constexpr std::wstring_view mappings[] = {
-                L"\x1b#6", // LineRendition::DoubleWidth
-                L"\x1b#3", // LineRendition::DoubleHeightTop
-                L"\x1b#4", // LineRendition::DoubleHeightBottom
-            };
-            const auto idx = std::clamp(static_cast<int>(lr) - 1, 0, 2);
-            buffer.append(til::at(mappings, idx));
-        }
+        const auto isLastRow = currentRow == lastRow;
+        const auto startX = 0;
+        const auto endX = row.GetReadableColumnCount();
+        const bool addLineBreak = !row.WasWrapForced() || isLastRow;
 
-        const auto& runs = row.Attributes().runs();
-        const auto beg = runs.begin();
-        const auto end = runs.end();
-        auto it = beg;
-        const auto last = end - 1;
-        const auto lastCharX = row.MeasureRight();
-        til::CoordType oldX = 0;
+        _SerializeRow(row, startX, endX, addLineBreak, isLastRow, buffer, previousTextAttr, delayedLineBreak);
 
-        for (; it != end; ++it)
-        {
-            const auto attr = it->value.GetCharacterAttributes();
-            const auto hyperlinkId = it->value.GetHyperlinkId();
-            const auto fg = it->value.GetForeground();
-            const auto bg = it->value.GetBackground();
-            const auto ul = it->value.GetUnderlineColor();
-
-            if (previousAttr != attr)
-            {
-                auto attrDelta = attr ^ previousAttr;
-
-                // There's no escape sequence that only turns off either bold/intense or dim/faint. SGR 22 turns off both.
-                // This results in two issues in our generic "Mapping" code below. Assuming, both Intense and Faint were on...
-                // * ...and either turned off, it would emit SGR 22 which turns both attributes off = Wrong.
-                // * ...and both are now off, it would emit SGR 22 twice.
-                //
-                // This extra branch takes care of both issues. If both attributes turned off it'll emit a single \x1b[22m,
-                // if faint turned off \x1b[22;1m (intense is still on), and \x1b[22;2m if intense turned off (vice versa).
-                if (WI_AreAllFlagsSet(previousAttr, CharacterAttributes::Intense | CharacterAttributes::Faint) &&
-                    WI_IsAnyFlagSet(attrDelta, CharacterAttributes::Intense | CharacterAttributes::Faint))
-                {
-                    wchar_t buf[8] = L"\x1b[22m";
-                    size_t len = 5;
-
-                    if (WI_IsAnyFlagSet(attr, CharacterAttributes::Intense | CharacterAttributes::Faint))
-                    {
-                        buf[4] = L';';
-                        buf[5] = WI_IsAnyFlagSet(attr, CharacterAttributes::Intense) ? L'1' : L'2';
-                        buf[6] = L'm';
-                        len = 7;
-                    }
-
-                    buffer.append(&buf[0], len);
-                    WI_ClearAllFlags(attrDelta, CharacterAttributes::Intense | CharacterAttributes::Faint);
-                }
-
-                {
-                    struct Mapping
-                    {
-                        CharacterAttributes attr;
-                        uint8_t change[2]; // [0] = off, [1] = on
-                    };
-                    static constexpr Mapping mappings[] = {
-                        { CharacterAttributes::Intense, { 22, 1 } },
-                        { CharacterAttributes::Italics, { 23, 3 } },
-                        { CharacterAttributes::Blinking, { 25, 5 } },
-                        { CharacterAttributes::Invisible, { 28, 8 } },
-                        { CharacterAttributes::CrossedOut, { 29, 9 } },
-                        { CharacterAttributes::Faint, { 22, 2 } },
-                        { CharacterAttributes::TopGridline, { 55, 53 } },
-                        { CharacterAttributes::ReverseVideo, { 27, 7 } },
-                    };
-                    for (const auto& mapping : mappings)
-                    {
-                        if (WI_IsAnyFlagSet(attrDelta, mapping.attr))
-                        {
-                            const auto n = til::at(mapping.change, WI_IsAnyFlagSet(attr, mapping.attr));
-                            fmt::format_to(std::back_inserter(buffer), FMT_COMPILE(L"\x1b[{}m"), n);
-                        }
-                    }
-                }
-
-                if (WI_IsAnyFlagSet(attrDelta, CharacterAttributes::UnderlineStyle))
-                {
-                    static constexpr std::wstring_view mappings[] = {
-                        L"\x1b[24m", // UnderlineStyle::NoUnderline
-                        L"\x1b[4m", // UnderlineStyle::SinglyUnderlined
-                        L"\x1b[21m", // UnderlineStyle::DoublyUnderlined
-                        L"\x1b[4:3m", // UnderlineStyle::CurlyUnderlined
-                        L"\x1b[4:4m", // UnderlineStyle::DottedUnderlined
-                        L"\x1b[4:5m", // UnderlineStyle::DashedUnderlined
-                    };
-
-                    auto idx = WI_EnumValue(it->value.GetUnderlineStyle());
-                    if (idx >= std::size(mappings))
-                    {
-                        idx = 1; // UnderlineStyle::SinglyUnderlined
-                    }
-
-                    buffer.append(til::at(mappings, idx));
-                }
-
-                previousAttr = attr;
-            }
-
-            if (previousFg != fg)
-            {
-                switch (fg.GetType())
-                {
-                case ColorType::IsDefault:
-                    buffer.append(L"\x1b[39m");
-                    break;
-                case ColorType::IsIndex16:
-                {
-                    uint8_t index = WI_IsFlagSet(fg.GetIndex(), 8) ? 90 : 30;
-                    index += fg.GetIndex() & 7;
-                    fmt::format_to(std::back_inserter(buffer), FMT_COMPILE(L"\x1b[{}m"), index);
-                    break;
-                }
-                case ColorType::IsIndex256:
-                    fmt::format_to(std::back_inserter(buffer), FMT_COMPILE(L"\x1b[38;5;{}m"), fg.GetIndex());
-                    break;
-                case ColorType::IsRgb:
-                    fmt::format_to(std::back_inserter(buffer), FMT_COMPILE(L"\x1b[38;2;{};{};{}m"), fg.GetR(), fg.GetG(), fg.GetB());
-                    break;
-                default:
-                    break;
-                }
-                previousFg = fg;
-            }
-
-            if (previousBg != bg)
-            {
-                switch (bg.GetType())
-                {
-                case ColorType::IsDefault:
-                    buffer.append(L"\x1b[49m");
-                    break;
-                case ColorType::IsIndex16:
-                {
-                    uint8_t index = WI_IsFlagSet(bg.GetIndex(), 8) ? 100 : 40;
-                    index += bg.GetIndex() & 7;
-                    fmt::format_to(std::back_inserter(buffer), FMT_COMPILE(L"\x1b[{}m"), index);
-                    break;
-                }
-                case ColorType::IsIndex256:
-                    fmt::format_to(std::back_inserter(buffer), FMT_COMPILE(L"\x1b[48;5;{}m"), bg.GetIndex());
-                    break;
-                case ColorType::IsRgb:
-                    fmt::format_to(std::back_inserter(buffer), FMT_COMPILE(L"\x1b[48;2;{};{};{}m"), bg.GetR(), bg.GetG(), bg.GetB());
-                    break;
-                default:
-                    break;
-                }
-                previousBg = bg;
-            }
-
-            if (previousUl != ul)
-            {
-                switch (fg.GetType())
-                {
-                case ColorType::IsDefault:
-                    buffer.append(L"\x1b[59m");
-                    break;
-                case ColorType::IsIndex256:
-                    fmt::format_to(std::back_inserter(buffer), FMT_COMPILE(L"\x1b[58:5:{}m"), ul.GetIndex());
-                    break;
-                case ColorType::IsRgb:
-                    fmt::format_to(std::back_inserter(buffer), FMT_COMPILE(L"\x1b[58:2::{}:{}:{}m"), ul.GetR(), ul.GetG(), ul.GetB());
-                    break;
-                default:
-                    break;
-                }
-                previousUl = ul;
-            }
-
-            if (previousHyperlinkId != hyperlinkId)
-            {
-                if (hyperlinkId)
-                {
-                    const auto uri = GetHyperlinkUriFromId(hyperlinkId);
-                    if (!uri.empty())
-                    {
-                        buffer.append(L"\x1b]8;;");
-                        buffer.append(uri);
-                        buffer.append(L"\x1b\\");
-                        previousHyperlinkId = hyperlinkId;
-                    }
-                }
-                else
-                {
-                    buffer.append(L"\x1b]8;;\x1b\\");
-                    previousHyperlinkId = 0;
-                }
-            }
-
-            // Initially, the buffer is initialized with the default attributes, but once it begins to scroll,
-            // newly scrolled in rows are initialized with the current attributes. This means we need to set
-            // the current attributes to those of the upcoming row before the row comes up. Or inversely:
-            // We let the row come up, let it set its attributes and only then print the newline.
-            if (delayedLineBreak)
-            {
-                buffer.append(L"\r\n");
-                delayedLineBreak = false;
-            }
-
-            auto newX = oldX + it->length;
-
-            // Since our text buffer doesn't store the original input text, the information over the amount of trailing
-            // whitespaces was lost. If we don't do anything here then a row that just says "Hello" would be serialized
-            // to "Hello                    ...". If the user restores the buffer dump with a different window size,
-            // this would result in some fairly ugly reflow. This code attempts to at least trim trailing whitespaces.
-            //
-            // As mentioned above for `delayedLineBreak`, rows are initialized with their first attribute, BUT
-            // only if the viewport has begun to scroll. Otherwise, they're initialized with the default attributes.
-            // In other words, we can only skip \x1b[K = Erase in Line, if both the first/last attribute are the default attribute.
-            static constexpr TextAttribute defaultAttr;
-            const auto trimTrailingWhitespaces = it == last && lastCharX < newX;
-            const auto clearToEndOfLine = trimTrailingWhitespaces && (beg->value != defaultAttr || last->value != defaultAttr);
-
-            if (trimTrailingWhitespaces)
-            {
-                newX = lastCharX;
-            }
-
-            buffer.append(row.GetText(oldX, newX));
-
-            if (clearToEndOfLine)
-            {
-                buffer.append(L"\x1b[K");
-            }
-
-            oldX = newX;
-        }
-
-        const auto moreRowsRemaining = currentRow < lastRowWithText;
-        delayedLineBreak = !row.WasWrapForced();
-
-        if (!moreRowsRemaining)
-        {
-            if (previousHyperlinkId)
-            {
-                buffer.append(L"\x1b]8;;\x1b\\");
-            }
-            buffer.append(L"\x1b[m\r\n");
-        }
-
-        if (buffer.size() >= writeThreshold || !moreRowsRemaining)
+        if (buffer.size() >= writeThreshold || isLastRow)
         {
             const auto fileSize = gsl::narrow<DWORD>(buffer.size() * sizeof(wchar_t));
             DWORD bytesWritten = 0;
@@ -2628,9 +2421,290 @@ void TextBuffer::Serialize(const wchar_t* destination) const
             buffer.clear();
         }
 
-        if (!moreRowsRemaining)
+        if (isLastRow)
         {
             break;
+        }
+    }
+}
+
+// Serializes one row of the text buffer including ANSI escape code control sequences.
+// Arguments:
+// - row - A reference to the row being serialized.
+// - startX - The first column (inclusive) to include in the serialized content.
+// - endX - The last column (exclusive) to include in the serialized content.
+// - addLineBreak - Whether to add a line break at the end of the serialized row.
+// - isLastRow - Whether this is the final row to be serialized.
+// - buffer - A string to write the serialized row into.
+// - previousTextAttr - Used for tracking state across multiple calls to `_SerializeRow` for sequential rows.
+//      The value will be mutated by the call. The initial call should contain `nullopt`, and subsequent calls
+//      should pass the value that was written by the previous call.
+// - delayedLineBreak - Similarly used for tracking state across multiple calls, and similarly will be mutated
+//      by the call. The initial call should pass `false` and subsequent calls should pass the value that was
+//      written by the previous call.
+void TextBuffer::_SerializeRow(const ROW& row, const til::CoordType startX, const til::CoordType endX, const bool addLineBreak, const bool isLastRow, std::wstring& buffer, std::optional<TextAttribute>& previousTextAttr, bool& delayedLineBreak) const
+{
+    if (const auto lr = row.GetLineRendition(); lr != LineRendition::SingleWidth)
+    {
+        static constexpr std::wstring_view mappings[] = {
+            L"\x1b#6", // LineRendition::DoubleWidth
+            L"\x1b#3", // LineRendition::DoubleHeightTop
+            L"\x1b#4", // LineRendition::DoubleHeightBottom
+        };
+        const auto idx = std::clamp(static_cast<int>(lr) - 1, 0, 2);
+        buffer.append(til::at(mappings, idx));
+    }
+
+    const auto startXU16 = gsl::narrow_cast<uint16_t>(startX);
+    const auto endXU16 = gsl::narrow_cast<uint16_t>(endX);
+    const auto runs = row.Attributes().slice(startXU16, endXU16).runs();
+
+    const auto beg = runs.begin();
+    const auto end = runs.end();
+    auto it = beg;
+    // Don't try to get `end - 1` if it's an empty iterator; in this case we're going to ignore the `last`
+    // value anyway so just use `end`.
+    const auto last = it == end ? end : end - 1;
+    const auto lastCharX = row.MeasureRight();
+    til::CoordType oldX = startX;
+
+    for (; it != end; ++it)
+    {
+        const auto effectivePreviousTextAttr = previousTextAttr.value_or(TextAttribute{ CharacterAttributes::Unused1, TextColor{}, TextColor{}, 0, TextColor{} });
+        const auto previousAttr = effectivePreviousTextAttr.GetCharacterAttributes();
+        const auto previousHyperlinkId = effectivePreviousTextAttr.GetHyperlinkId();
+        const auto previousFg = effectivePreviousTextAttr.GetForeground();
+        const auto previousBg = effectivePreviousTextAttr.GetBackground();
+        const auto previousUl = effectivePreviousTextAttr.GetUnderlineColor();
+
+        const auto attr = it->value.GetCharacterAttributes();
+        const auto hyperlinkId = it->value.GetHyperlinkId();
+        const auto fg = it->value.GetForeground();
+        const auto bg = it->value.GetBackground();
+        const auto ul = it->value.GetUnderlineColor();
+
+        if (previousAttr != attr)
+        {
+            auto attrDelta = attr ^ previousAttr;
+
+            // There's no escape sequence that only turns off either bold/intense or dim/faint. SGR 22 turns off both.
+            // This results in two issues in our generic "Mapping" code below. Assuming, both Intense and Faint were on...
+            // * ...and either turned off, it would emit SGR 22 which turns both attributes off = Wrong.
+            // * ...and both are now off, it would emit SGR 22 twice.
+            //
+            // This extra branch takes care of both issues. If both attributes turned off it'll emit a single \x1b[22m,
+            // if faint turned off \x1b[22;1m (intense is still on), and \x1b[22;2m if intense turned off (vice versa).
+            if (WI_AreAllFlagsSet(previousAttr, CharacterAttributes::Intense | CharacterAttributes::Faint) &&
+                WI_IsAnyFlagSet(attrDelta, CharacterAttributes::Intense | CharacterAttributes::Faint))
+            {
+                wchar_t buf[8] = L"\x1b[22m";
+                size_t len = 5;
+
+                if (WI_IsAnyFlagSet(attr, CharacterAttributes::Intense | CharacterAttributes::Faint))
+                {
+                    buf[4] = L';';
+                    buf[5] = WI_IsAnyFlagSet(attr, CharacterAttributes::Intense) ? L'1' : L'2';
+                    buf[6] = L'm';
+                    len = 7;
+                }
+
+                buffer.append(&buf[0], len);
+                WI_ClearAllFlags(attrDelta, CharacterAttributes::Intense | CharacterAttributes::Faint);
+            }
+
+            {
+                struct Mapping
+                {
+                    CharacterAttributes attr;
+                    uint8_t change[2]; // [0] = off, [1] = on
+                };
+                static constexpr Mapping mappings[] = {
+                    { CharacterAttributes::Intense, { 22, 1 } },
+                    { CharacterAttributes::Italics, { 23, 3 } },
+                    { CharacterAttributes::Blinking, { 25, 5 } },
+                    { CharacterAttributes::Invisible, { 28, 8 } },
+                    { CharacterAttributes::CrossedOut, { 29, 9 } },
+                    { CharacterAttributes::Faint, { 22, 2 } },
+                    { CharacterAttributes::TopGridline, { 55, 53 } },
+                    { CharacterAttributes::ReverseVideo, { 27, 7 } },
+                };
+                for (const auto& mapping : mappings)
+                {
+                    if (WI_IsAnyFlagSet(attrDelta, mapping.attr))
+                    {
+                        const auto n = til::at(mapping.change, WI_IsAnyFlagSet(attr, mapping.attr));
+                        fmt::format_to(std::back_inserter(buffer), FMT_COMPILE(L"\x1b[{}m"), n);
+                    }
+                }
+            }
+
+            if (WI_IsAnyFlagSet(attrDelta, CharacterAttributes::UnderlineStyle))
+            {
+                static constexpr std::wstring_view mappings[] = {
+                    L"\x1b[24m", // UnderlineStyle::NoUnderline
+                    L"\x1b[4m", // UnderlineStyle::SinglyUnderlined
+                    L"\x1b[21m", // UnderlineStyle::DoublyUnderlined
+                    L"\x1b[4:3m", // UnderlineStyle::CurlyUnderlined
+                    L"\x1b[4:4m", // UnderlineStyle::DottedUnderlined
+                    L"\x1b[4:5m", // UnderlineStyle::DashedUnderlined
+                };
+
+                auto idx = WI_EnumValue(it->value.GetUnderlineStyle());
+                if (idx >= std::size(mappings))
+                {
+                    idx = 1; // UnderlineStyle::SinglyUnderlined
+                }
+
+                buffer.append(til::at(mappings, idx));
+            }
+        }
+
+        if (previousFg != fg)
+        {
+            switch (fg.GetType())
+            {
+            case ColorType::IsDefault:
+                buffer.append(L"\x1b[39m");
+                break;
+            case ColorType::IsIndex16:
+            {
+                uint8_t index = WI_IsFlagSet(fg.GetIndex(), 8) ? 90 : 30;
+                index += fg.GetIndex() & 7;
+                fmt::format_to(std::back_inserter(buffer), FMT_COMPILE(L"\x1b[{}m"), index);
+                break;
+            }
+            case ColorType::IsIndex256:
+                fmt::format_to(std::back_inserter(buffer), FMT_COMPILE(L"\x1b[38;5;{}m"), fg.GetIndex());
+                break;
+            case ColorType::IsRgb:
+                fmt::format_to(std::back_inserter(buffer), FMT_COMPILE(L"\x1b[38;2;{};{};{}m"), fg.GetR(), fg.GetG(), fg.GetB());
+                break;
+            default:
+                break;
+            }
+        }
+
+        if (previousBg != bg)
+        {
+            switch (bg.GetType())
+            {
+            case ColorType::IsDefault:
+                buffer.append(L"\x1b[49m");
+                break;
+            case ColorType::IsIndex16:
+            {
+                uint8_t index = WI_IsFlagSet(bg.GetIndex(), 8) ? 100 : 40;
+                index += bg.GetIndex() & 7;
+                fmt::format_to(std::back_inserter(buffer), FMT_COMPILE(L"\x1b[{}m"), index);
+                break;
+            }
+            case ColorType::IsIndex256:
+                fmt::format_to(std::back_inserter(buffer), FMT_COMPILE(L"\x1b[48;5;{}m"), bg.GetIndex());
+                break;
+            case ColorType::IsRgb:
+                fmt::format_to(std::back_inserter(buffer), FMT_COMPILE(L"\x1b[48;2;{};{};{}m"), bg.GetR(), bg.GetG(), bg.GetB());
+                break;
+            default:
+                break;
+            }
+        }
+
+        if (previousUl != ul)
+        {
+            switch (fg.GetType())
+            {
+            case ColorType::IsDefault:
+                buffer.append(L"\x1b[59m");
+                break;
+            case ColorType::IsIndex256:
+                fmt::format_to(std::back_inserter(buffer), FMT_COMPILE(L"\x1b[58:5:{}m"), ul.GetIndex());
+                break;
+            case ColorType::IsRgb:
+                fmt::format_to(std::back_inserter(buffer), FMT_COMPILE(L"\x1b[58:2::{}:{}:{}m"), ul.GetR(), ul.GetG(), ul.GetB());
+                break;
+            default:
+                break;
+            }
+        }
+
+        if (previousHyperlinkId != hyperlinkId)
+        {
+            if (hyperlinkId)
+            {
+                const auto uri = GetHyperlinkUriFromId(hyperlinkId);
+                if (!uri.empty())
+                {
+                    buffer.append(L"\x1b]8;;");
+                    buffer.append(uri);
+                    buffer.append(L"\x1b\\");
+                }
+            }
+            else
+            {
+                buffer.append(L"\x1b]8;;\x1b\\");
+            }
+        }
+
+        previousTextAttr = it->value;
+
+        // Initially, the buffer is initialized with the default attributes, but once it begins to scroll,
+        // newly scrolled in rows are initialized with the current attributes. This means we need to set
+        // the current attributes to those of the upcoming row before the row comes up. Or inversely:
+        // We let the row come up, let it set its attributes and only then print the newline.
+        if (delayedLineBreak)
+        {
+            buffer.append(L"\r\n");
+            delayedLineBreak = false;
+        }
+
+        auto newX = oldX + it->length;
+
+        // Since our text buffer doesn't store the original input text, the information over the amount of trailing
+        // whitespaces was lost. If we don't do anything here then a row that just says "Hello" would be serialized
+        // to "Hello                    ...". If the user restores the buffer dump with a different window size,
+        // this would result in some fairly ugly reflow. This code attempts to at least trim trailing whitespaces.
+        //
+        // As mentioned above for `delayedLineBreak`, rows are initialized with their first attribute, BUT
+        // only if the viewport has begun to scroll. Otherwise, they're initialized with the default attributes.
+        // In other words, we can only skip \x1b[K = Erase in Line, if both the first/last attribute are the default attribute.
+        static constexpr TextAttribute defaultAttr;
+        const auto trimTrailingWhitespaces = it == last && lastCharX < newX;
+        const auto clearToEndOfLine = trimTrailingWhitespaces && (beg->value != defaultAttr || last->value != defaultAttr);
+
+        if (trimTrailingWhitespaces)
+        {
+            newX = lastCharX;
+        }
+
+        buffer.append(row.GetText(oldX, newX));
+
+        if (clearToEndOfLine)
+        {
+            buffer.append(L"\x1b[K");
+        }
+
+        oldX = newX;
+    }
+
+    // Handle empty rows (with no runs). See above for more details about `delayedLineBreak`.
+    if (delayedLineBreak)
+    {
+        buffer.append(L"\r\n");
+        delayedLineBreak = false;
+    }
+
+    delayedLineBreak = !row.WasWrapForced() && addLineBreak;
+
+    if (isLastRow)
+    {
+        if (previousTextAttr.has_value() && previousTextAttr->GetHyperlinkId())
+        {
+            buffer.append(L"\x1b]8;;\x1b\\");
+        }
+        buffer.append(L"\x1b[0m");
+        if (addLineBreak)
+        {
+            buffer.append(L"\r\n");
         }
     }
 }
