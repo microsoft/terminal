@@ -56,7 +56,15 @@ Dies ist ein Open Source-Projekt, und wir freuen uns über die Teilnahme der Com
   <ReleaseNotes>
     Version __VERSION_NUMBER__
 
-Weitere Einzelheiten finden Sie auf der Seite der GitHub-Veröffentlichungen.
+– Wir haben umgeschrieben, wie Konsolenanwendungen im Terminal gehostet werden! Melden Sie alle auftretenden Fehler.
+- Terminal unterstützt jetzt Sixels!
+- Sie können jetzt ein angedocktes Fenster öffnen, das Ausschnitte von Befehlen enthält, die Sie gespeichert haben, um sie später zu verwenden.
+- Für Benutzer der Eingabeaufforderung der neuesten Version von Windows 11 wird möglicherweise ein „Kurzer Tipp“-Symbol angezeigt, das installierbare Software von WinGet
+ vorschlägt
+- Ausgewählter Text wird jetzt viel sichtbarer (und anpassbarer!)
+- Eine Reihe von Zuverlässigkeitsfehlern, Komfortproblemen und Ärgernissen wurden behoben.
+
+Weitere Informationen finden Sie auf unserer GitHub-Releaseseite.
   </ReleaseNotes>
   <ScreenshotCaptions>
     <!-- Valid length: 200 character limit, up to 9 elements per platform -->

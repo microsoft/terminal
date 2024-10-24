@@ -13,6 +13,8 @@
 
 #include <TerminalThemeHelpers.h>
 
+#include <til/latch.h>
+
 using namespace winrt::Windows::UI;
 using namespace winrt::Windows::UI::Composition;
 using namespace winrt::Windows::UI::Xaml;
@@ -348,9 +350,29 @@ void AppHost::Initialize()
     });
 
     _windowCallbacks.AutomaticShutdownRequested = _window->AutomaticShutdownRequested([this]() {
-        // Raised when the OS is beginning an update of the app. We will quit,
-        // to save our state, before the OS manually kills us.
-        _quit();
+        // This is the WM_ENDSESSION handler.
+        // The event is raised when the user is logged out, because the system is rebooting, etc.
+        // Due to the design of WM_ENDSESSION, returning from the message indicates to the OS that it's fine to
+        // terminate us at any time. Luckily Windows has never heavily relied on message passing or asynchronous
+        // eventing in any of its UI frameworks. It also was clearly impossible to use WaitForMultipleObjects with
+        // bWaitAll=TRUE and a timeout to wait for all applications to exit cleanly.
+        // As such we attempt to synchronously shut down the app here. Otherwise, it could just call _quit().
+
+        const auto state = ApplicationState::SharedInstance();
+
+        state.PersistedWindowLayouts(nullptr);
+
+        // A duplicate of AppHost::_QuitRequested().
+        if (_appLogic && _windowLogic && _appLogic.ShouldUsePersistedLayout())
+        {
+            _windowLogic.PersistState();
+        }
+
+        _windowManager.SignalClose(_peasant);
+        _windowManager.QuitAll();
+
+        // Ensure to write the state.json before we get TerminateProcess()d by the OS (Thanks!).
+        state.Flush();
     });
 
     // Load bearing: make sure the PropertyChanged handler is added before we
@@ -366,6 +388,7 @@ void AppHost::Initialize()
     _revokers.SetTaskbarProgress = _windowLogic.SetTaskbarProgress(winrt::auto_revoke, { this, &AppHost::SetTaskbarProgress });
     _revokers.IdentifyWindowsRequested = _windowLogic.IdentifyWindowsRequested(winrt::auto_revoke, { this, &AppHost::_IdentifyWindowsRequested });
     _revokers.RenameWindowRequested = _windowLogic.RenameWindowRequested(winrt::auto_revoke, { this, &AppHost::_RenameWindowRequested });
+    _revokers.WindowSizeChanged = _windowLogic.WindowSizeChanged(winrt::auto_revoke, { this, &AppHost::_WindowSizeChanged });
 
     // A note: make sure to listen to our _window_'s settings changed, not the
     // AppLogic's. We want to make sure the event has gone through the window
@@ -433,14 +456,14 @@ void AppHost::Close()
     }
 }
 
-winrt::fire_and_forget AppHost::_quit()
+safe_void_coroutine AppHost::_quit()
 {
     const auto peasant = _peasant;
 
     co_await winrt::resume_background();
 
     ApplicationState::SharedInstance().PersistedWindowLayouts(nullptr);
-    peasant.RequestQuitAll();
+    _windowManager.QuitAll();
 }
 
 void AppHost::_revokeWindowCallbacks()
@@ -704,6 +727,45 @@ void AppHost::_initialResizeAndRepositionWindow(const HWND hwnd, til::rect propo
 }
 
 // Method Description:
+// - Resize the window when window size changed signal is received.
+// Arguments:
+// - hwnd: The HWND of the window we're about to resize.
+// - newSize: The new size of the window in pixels.
+// Return Value:
+// - None
+void AppHost::_resizeWindow(const HWND hwnd, til::size newSize)
+{
+    til::rect windowRect{ _window->GetWindowRect() };
+    UINT dpix = _window->GetCurrentDpi();
+
+    const auto islandWidth = Utils::ClampToShortMax(newSize.width, 1);
+    const auto islandHeight = Utils::ClampToShortMax(newSize.height, 1);
+
+    // Get the size of a window we'd need to host that client rect. This will
+    // add the titlebar space.
+    const til::size nonClientSize{ _window->GetTotalNonClientExclusiveSize(dpix) };
+    long adjustedWidth = islandWidth + nonClientSize.width;
+    long adjustedHeight = islandHeight + nonClientSize.height;
+
+    til::size dimensions{ Utils::ClampToShortMax(adjustedWidth, 1),
+                          Utils::ClampToShortMax(adjustedHeight, 1) };
+    til::point origin{ windowRect.left, windowRect.top };
+
+    const til::rect newRect{ origin, dimensions };
+    bool succeeded = SetWindowPos(hwnd,
+                                  nullptr,
+                                  newRect.left,
+                                  newRect.top,
+                                  newRect.width(),
+                                  newRect.height(),
+                                  SWP_NOACTIVATE | SWP_NOZORDER);
+
+    // If we can't resize the window, that's really okay. We can just go on with
+    // the originally proposed window size.
+    LOG_LAST_ERROR_IF(!succeeded);
+}
+
+// Method Description:
 // - Called when the app wants to set its titlebar content. We'll take the
 //   UIElement and set the Content property of our Titlebar that element.
 // Arguments:
@@ -881,7 +943,7 @@ void AppHost::_WindowActivated(bool activated)
     }
 }
 
-winrt::fire_and_forget AppHost::_peasantNotifyActivateWindow()
+safe_void_coroutine AppHost::_peasantNotifyActivateWindow()
 {
     const auto desktopManager = _desktopManager;
     const auto peasant = _peasant;
@@ -958,8 +1020,8 @@ void AppHost::_HandleSummon(const winrt::Windows::Foundation::IInspectable& /*se
 // - <unused>
 // Return Value:
 // - <none>
-winrt::fire_and_forget AppHost::_IdentifyWindowsRequested(const winrt::Windows::Foundation::IInspectable /*sender*/,
-                                                          const winrt::Windows::Foundation::IInspectable /*args*/)
+safe_void_coroutine AppHost::_IdentifyWindowsRequested(const winrt::Windows::Foundation::IInspectable /*sender*/,
+                                                       const winrt::Windows::Foundation::IInspectable /*args*/)
 {
     auto weakThis{ weak_from_this() };
 
@@ -993,8 +1055,8 @@ void AppHost::_DisplayWindowId(const winrt::Windows::Foundation::IInspectable& /
     _windowLogic.IdentifyWindow();
 }
 
-winrt::fire_and_forget AppHost::_RenameWindowRequested(const winrt::Windows::Foundation::IInspectable /*sender*/,
-                                                       const winrt::TerminalApp::RenameWindowRequestedArgs args)
+safe_void_coroutine AppHost::_RenameWindowRequested(const winrt::Windows::Foundation::IInspectable /*sender*/,
+                                                    const winrt::TerminalApp::RenameWindowRequestedArgs args)
 {
     // Switch to the BG thread - anything x-proc must happen on a BG thread
     co_await winrt::resume_background();
@@ -1157,25 +1219,44 @@ void AppHost::_IsQuakeWindowChanged(const winrt::Windows::Foundation::IInspectab
 }
 
 // Raised from our Peasant. We handle by propagating the call to our terminal window.
-winrt::fire_and_forget AppHost::_QuitRequested(const winrt::Windows::Foundation::IInspectable&,
-                                               const winrt::Windows::Foundation::IInspectable&)
+void AppHost::_QuitRequested(const winrt::Windows::Foundation::IInspectable&, const winrt::Windows::Foundation::IInspectable&)
 {
-    auto weakThis{ weak_from_this() };
-    // Need to be on the main thread to close out all of the tabs.
-    co_await wil::resume_foreground(_windowLogic.GetRoot().Dispatcher());
-
-    const auto strongThis = weakThis.lock();
-    if (!strongThis)
+    const auto root = _windowLogic.GetRoot();
+    if (!root)
     {
-        co_return;
+        return;
     }
 
-    if (_appLogic && _windowLogic && _appLogic.ShouldUsePersistedLayout())
+    const auto dispatcher = root.Dispatcher();
+    if (!dispatcher)
     {
-        _windowLogic.PersistState();
+        return;
     }
 
-    PostQuitMessage(0);
+    // We process the shutdown synchronously here, because otherwise the
+    // AutomaticShutdownRequested() logic wouldn't run synchronously either.
+    til::latch latch{ 1 };
+
+    dispatcher.RunAsync(winrt::Windows::UI::Core::CoreDispatcherPriority::Normal, [&latch, weakThis = weak_from_this()]() {
+        const auto countDownOnExit = wil::scope_exit([&latch] {
+            latch.count_down();
+        });
+
+        const auto self = weakThis.lock();
+        if (!self)
+        {
+            return;
+        }
+
+        if (self->_appLogic && self->_windowLogic && self->_appLogic.ShouldUsePersistedLayout())
+        {
+            self->_windowLogic.PersistState();
+        }
+
+        PostQuitMessage(0);
+    });
+
+    latch.wait();
 }
 
 // Raised from TerminalWindow. We handle by bubbling the request to the window manager.
@@ -1193,6 +1274,12 @@ void AppHost::_ShowWindowChanged(const winrt::Windows::Foundation::IInspectable&
     // state get de-sync'd, and cause the window to minimize/restore constantly
     // in a loop.
     _showHideWindowThrottler->Run(args.ShowOrHide());
+}
+
+void AppHost::_WindowSizeChanged(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+                                 const winrt::Microsoft::Terminal::Control::WindowSizeChangedEventArgs& args)
+{
+    _resizeWindow(_window->GetHandle(), { args.Width(), args.Height() });
 }
 
 void AppHost::_SummonWindowRequested(const winrt::Windows::Foundation::IInspectable& sender,
@@ -1321,8 +1408,8 @@ void AppHost::_PropertyChangedHandler(const winrt::Windows::Foundation::IInspect
     }
 }
 
-winrt::fire_and_forget AppHost::_WindowInitializedHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/,
-                                                          const winrt::Windows::Foundation::IInspectable& /*arg*/)
+safe_void_coroutine AppHost::_WindowInitializedHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+                                                       const winrt::Windows::Foundation::IInspectable& /*arg*/)
 {
     _isWindowInitialized = WindowInitializedState::Initializing;
 

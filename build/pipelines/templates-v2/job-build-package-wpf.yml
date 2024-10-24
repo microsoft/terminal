@@ -59,10 +59,7 @@ jobs:
     submodules: true
     persistCredentials: True
 
-  - task: PkgESSetupBuild@12
-    displayName: Package ES - Setup Build
-    inputs:
-      disableOutputRedirect: true
+  - template: steps-setup-versioning.yml
 
   - template: steps-download-bin-dir-artifact.yml
     parameters:

@@ -11,6 +11,8 @@
 #include "DWriteTextAnalysis.h"
 #include "../../interactivity/win32/CustomWindowMessages.h"
 
+#include "../types/inc/ColorFix.hpp"
+
 // #### NOTE ####
 // This file should only contain methods that are only accessed by the caller of Present() (the "Renderer" class).
 // Basically this file poses the "synchronization" point between the concurrently running
@@ -311,6 +313,23 @@ CATCH_RETURN()
                 _api.searchHighlightFocused = { info.searchHighlightFocused, 1 };
             }
         }
+
+        _api.selectionSpans = til::point_span_subspan_within_rect(info.selectionSpans, dr);
+
+        const u32 newSelectionColor{ static_cast<COLORREF>(info.selectionBackground) | 0xff000000 };
+        if (_api.s->misc->selectionColor != newSelectionColor)
+        {
+            auto misc = _api.s.write()->misc.write();
+            misc->selectionColor = newSelectionColor;
+            // Select a black or white foreground based on the perceptual lightness of the background.
+            misc->selectionForeground = ColorFix::GetLuminosity(newSelectionColor) < 0.5f ? 0xffffffff : 0xff000000;
+
+            // We copied the selection colors into _p during StartPaint, which happened just before PrepareRenderInfo
+            // This keeps their generations in sync.
+            auto pm = _p.s.write()->misc.write();
+            pm->selectionColor = misc->selectionColor;
+            pm->selectionForeground = misc->selectionForeground;
+        }
     }
 
     return S_OK;
@@ -411,9 +430,10 @@ try
         const auto end = isFinalRow ? std::min(hiEnd.x + 1, x2) : x2;
         _fillColorBitmap(row, x1, end, fgColor, bgColor);
 
-        // Return early if we couldn't paint the whole region. We will resume
-        // from here in the next call.
-        if (!isFinalRow || end == x2)
+        // Return early if we couldn't paint the whole region (either this was not the last row, or
+        // it was the last row but the highlight ends outside of our x range.)
+        // We will resume from here in the next call.
+        if (!isFinalRow || hiEnd.x /*inclusive*/ >= x2 /*exclusive*/)
         {
             return S_OK;
         }
@@ -497,6 +517,7 @@ try
     // Apply the highlighting colors to the highlighted cells
     RETURN_IF_FAILED(_drawHighlighted(_api.searchHighlights, y, x, columnEnd, highlightFg, highlightBg));
     RETURN_IF_FAILED(_drawHighlighted(_api.searchHighlightFocused, y, x, columnEnd, highlightFocusFg, highlightFocusBg));
+    RETURN_IF_FAILED(_drawHighlighted(_api.selectionSpans, y, x, columnEnd, _p.s->misc->selectionForeground, _p.s->misc->selectionColor));
 
     _api.lastPaintBufferLineCoord = { x, y };
     return S_OK;
@@ -563,28 +584,9 @@ try
 CATCH_RETURN()
 
 [[nodiscard]] HRESULT AtlasEngine::PaintSelection(const til::rect& rect) noexcept
-try
 {
-    // Unfortunately there's no step after Renderer::_PaintBufferOutput that
-    // would inform us that it's done with the last AtlasEngine::PaintBufferLine.
-    // As such we got to call _flushBufferLine() here just to be sure.
-    _flushBufferLine();
-
-    const auto y = gsl::narrow_cast<u16>(clamp<til::CoordType>(rect.top, 0, _p.s->viewportCellCount.y - 1));
-    const auto from = gsl::narrow_cast<u16>(clamp<til::CoordType>(rect.left, 0, _p.s->viewportCellCount.x - 1));
-    const auto to = gsl::narrow_cast<u16>(clamp<til::CoordType>(rect.right, from, _p.s->viewportCellCount.x));
-
-    auto& row = *_p.rows[y];
-    row.selectionFrom = from;
-    row.selectionTo = to;
-
-    _p.dirtyRectInPx.left = std::min(_p.dirtyRectInPx.left, from * _p.s->font->cellSize.x);
-    _p.dirtyRectInPx.top = std::min(_p.dirtyRectInPx.top, y * _p.s->font->cellSize.y);
-    _p.dirtyRectInPx.right = std::max(_p.dirtyRectInPx.right, to * _p.s->font->cellSize.x);
-    _p.dirtyRectInPx.bottom = std::max(_p.dirtyRectInPx.bottom, _p.dirtyRectInPx.top + _p.s->font->cellSize.y);
     return S_OK;
 }
-CATCH_RETURN()
 
 [[nodiscard]] HRESULT AtlasEngine::PaintCursor(const CursorOptions& options) noexcept
 try
@@ -661,10 +663,18 @@ try
         _api.currentForeground = gsl::narrow_cast<u32>(fg);
         _api.attributes = attributes;
     }
-    else if (textAttributes.BackgroundIsDefault() && bg != _api.s->misc->backgroundColor)
+    else
     {
-        _api.s.write()->misc.write()->backgroundColor = bg;
-        _p.s.write()->misc.write()->backgroundColor = bg;
+        if (textAttributes.BackgroundIsDefault() && bg != _api.s->misc->backgroundColor)
+        {
+            _api.s.write()->misc.write()->backgroundColor = bg;
+            _p.s.write()->misc.write()->backgroundColor = bg;
+        }
+
+        if (textAttributes.GetForeground().IsDefault() && fg != _api.s->misc->foregroundColor)
+        {
+            _api.s.write()->misc.write()->foregroundColor = fg;
+        }
     }
 
     return S_OK;

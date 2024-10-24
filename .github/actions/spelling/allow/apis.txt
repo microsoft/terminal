@@ -98,6 +98,7 @@ IGraphics
 IImage
 IInheritable
 IMap
+imm
 IMonarch
 IObject
 iosfwd
@@ -178,6 +179,7 @@ PALLOC
 PATINVERT
 PEXPLICIT
 PICKFOLDERS
+PINPUT
 pmr
 ptstr
 QUERYENDSESSION

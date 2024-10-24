@@ -115,7 +115,7 @@
     <!--  Used for disclaimers  -->
     <Style x:Key="DisclaimerStyle"
            TargetType="TextBlock">
-        <Setter Property="TextWrapping" Value="WrapWholeWords" />
+        <Setter Property="TextWrapping" Value="Wrap" />
         <Setter Property="MaxWidth" Value="1000" />
     </Style>
 
@@ -125,6 +125,14 @@
            TargetType="TextBlock">
         <Setter Property="FontWeight" Value="Bold" />
         <Setter Property="Margin" Value="0,0,0,10" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+
+    <!--  Used for the flyout itself. Removes scroll bar to allow for text wrapping.  -->
+    <Style x:Key="CustomFlyoutPresenterStyle"
+           TargetType="FlyoutPresenter">
+        <Setter Property="ScrollViewer.HorizontalScrollMode" Value="Disabled" />
+        <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled" />
     </Style>
 
     <!--  Number Box  -->
@@ -145,7 +153,7 @@
            BasedOn="{StaticResource BaseButtonStyle}"
            TargetType="Button">
         <Setter Property="Margin" Value="10,0,0,0" />
-        <Setter Property="Height" Value="33" />
+        <Setter Property="MinHeight" Value="33" />
     </Style>
 
     <!--  Delete button based on Accent button template  -->

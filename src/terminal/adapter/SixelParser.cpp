@@ -715,8 +715,16 @@ void SixelParser::_eraseImageBufferRows(const int rowCount, const til::CoordType
     const auto pixelCount = rowCount * _cellSize.height;
     const auto bufferOffset = rowOffset * _cellSize.height * _imageMaxWidth;
     const auto bufferOffsetEnd = bufferOffset + pixelCount * _imageMaxWidth;
-    _imageBuffer.erase(_imageBuffer.begin() + bufferOffset, _imageBuffer.begin() + bufferOffsetEnd);
-    _imageCursor.y -= pixelCount;
+    if (static_cast<size_t>(bufferOffsetEnd) >= _imageBuffer.size()) [[unlikely]]
+    {
+        _imageBuffer.clear();
+        _imageCursor.y = 0;
+    }
+    else
+    {
+        _imageBuffer.erase(_imageBuffer.begin() + bufferOffset, _imageBuffer.begin() + bufferOffsetEnd);
+        _imageCursor.y -= pixelCount;
+    }
 }
 
 void SixelParser::_maybeFlushImageBuffer(const bool endOfSequence)

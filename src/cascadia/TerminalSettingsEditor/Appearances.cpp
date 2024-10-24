@@ -573,11 +573,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
-    double AppearanceViewModel::LineHeight() const
+    double AppearanceViewModel::_parseCellSizeValue(const hstring& val) const
     {
-        const auto fontInfo = _appearance.SourceProfile().FontInfo();
-        const auto cellHeight = fontInfo.CellHeight();
-        const auto str = cellHeight.c_str();
+        const auto str = val.c_str();
 
         auto& errnoRef = errno; // Nonzero cost, pay it once.
         errnoRef = 0;
@@ -588,29 +586,49 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return str == end || errnoRef == ERANGE ? NAN : value;
     }
 
+    double AppearanceViewModel::LineHeight() const
+    {
+        const auto cellHeight = _appearance.SourceProfile().FontInfo().CellHeight();
+        return _parseCellSizeValue(cellHeight);
+    }
+
+    double AppearanceViewModel::CellWidth() const
+    {
+        const auto cellWidth = _appearance.SourceProfile().FontInfo().CellWidth();
+        return _parseCellSizeValue(cellWidth);
+    }
+
+#define CELL_SIZE_SETTER(modelName, viewModelName)                 \
+    std::wstring str;                                              \
+                                                                   \
+    if (value >= 0.1 && value <= 10.0)                             \
+    {                                                              \
+        str = fmt::format(FMT_COMPILE(L"{:.6g}"), value);          \
+    }                                                              \
+                                                                   \
+    const auto fontInfo = _appearance.SourceProfile().FontInfo();  \
+                                                                   \
+    if (fontInfo.modelName() != str)                               \
+    {                                                              \
+        if (str.empty())                                           \
+        {                                                          \
+            fontInfo.Clear##modelName();                           \
+        }                                                          \
+        else                                                       \
+        {                                                          \
+            fontInfo.modelName(str);                               \
+        }                                                          \
+        _NotifyChanges(L"Has" #viewModelName, L## #viewModelName); \
+    }
+
     void AppearanceViewModel::LineHeight(const double value)
     {
-        std::wstring str;
+        CELL_SIZE_SETTER(CellHeight, LineHeight);
+    }
 
-        if (value >= 0.1 && value <= 10.0)
-        {
-            str = fmt::format(FMT_STRING(L"{:.6g}"), value);
-        }
-
-        const auto fontInfo = _appearance.SourceProfile().FontInfo();
-
-        if (fontInfo.CellHeight() != str)
-        {
-            if (str.empty())
-            {
-                fontInfo.ClearCellHeight();
-            }
-            else
-            {
-                fontInfo.CellHeight(str);
-            }
-            _NotifyChanges(L"HasLineHeight", L"LineHeight");
-        }
+    void AppearanceViewModel::CellWidth(const double value)
+    {
+        CELL_SIZE_SETTER(CellWidth, CellWidth);
     }
 
     bool AppearanceViewModel::HasLineHeight() const
@@ -619,15 +637,32 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return fontInfo.HasCellHeight();
     }
 
+    bool AppearanceViewModel::HasCellWidth() const
+    {
+        const auto fontInfo = _appearance.SourceProfile().FontInfo();
+        return fontInfo.HasCellWidth();
+    }
+
     void AppearanceViewModel::ClearLineHeight()
     {
         LineHeight(NAN);
+    }
+
+    void AppearanceViewModel::ClearCellWidth()
+    {
+        CellWidth(NAN);
     }
 
     Model::FontConfig AppearanceViewModel::LineHeightOverrideSource() const
     {
         const auto fontInfo = _appearance.SourceProfile().FontInfo();
         return fontInfo.CellHeightOverrideSource();
+    }
+
+    Model::FontConfig AppearanceViewModel::CellWidthOverrideSource() const
+    {
+        const auto fontInfo = _appearance.SourceProfile().FontInfo();
+        return fontInfo.CellWidthOverrideSource();
     }
 
     void AppearanceViewModel::SetFontWeightFromDouble(double fontWeight)
@@ -1017,22 +1052,18 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void Appearances::FontFaceBox_LostFocus(const IInspectable& sender, const RoutedEventArgs&)
     {
-        const auto appearance = Appearance();
-        const auto fontSpec = sender.as<AutoSuggestBox>().Text();
-
-        if (fontSpec.empty())
-        {
-            appearance.ClearFontFace();
-        }
-        else
-        {
-            appearance.FontFace(fontSpec);
-        }
+        _updateFontName(sender.as<AutoSuggestBox>().Text());
     }
 
-    void Appearances::FontFaceBox_SuggestionChosen(const AutoSuggestBox& sender, const AutoSuggestBoxSuggestionChosenEventArgs& args)
+    void Appearances::FontFaceBox_QuerySubmitted(const AutoSuggestBox& sender, const AutoSuggestBoxQuerySubmittedEventArgs& args)
     {
-        const auto font = unbox_value<Editor::Font>(args.SelectedItem());
+        // When pressing Enter within the input line, this callback will be invoked with no suggestion.
+        const auto font = unbox_value_or<Editor::Font>(args.ChosenSuggestion(), nullptr);
+        if (!font)
+        {
+            return;
+        }
+
         const auto fontName = font.Name();
         auto fontSpec = sender.Text();
 
@@ -1049,6 +1080,22 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
 
         sender.Text(fontSpec);
+
+        // Normally we'd just update the model property in LostFocus above, but because WinUI is the Ralph Wiggum
+        // among the UI frameworks, it raises the LostFocus event _before_ the QuerySubmitted event.
+        // So, when you press Save, the model will have the wrong font face string, because LostFocus was raised too early.
+        // Also, this causes the first tab in the application to be focused, so when you press Enter it'll switch tabs.
+        //
+        // You can't just assign focus back to the AutoSuggestBox, because the FocusState() within the GotFocus event handler
+        // contains random values. This prevents us from avoiding the IsSuggestionListOpen(true) in our GotFocus event handler.
+        // You can't just do IsSuggestionListOpen(false) either, because you can show the list with that property but not hide it.
+        // So, we update the model manually and assign focus to the parent container.
+        //
+        // BUT you can't just focus the parent container, because of a weird interaction with AutoSuggestBox where it'll refuse to lose
+        // focus if you picked a suggestion that matches the current fontSpec. So, we unfocus it first and then focus the parent container.
+        _updateFontName(fontSpec);
+        sender.Focus(FocusState::Unfocused);
+        FontFaceContainer().Focus(FocusState::Programmatic);
     }
 
     void Appearances::FontFaceBox_TextChanged(const AutoSuggestBox& sender, const AutoSuggestBoxTextChangedEventArgs& args)
@@ -1069,6 +1116,19 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         filter = til::trim(filter, L' ');
         _updateFontNameFilter(filter);
+    }
+
+    void Appearances::_updateFontName(hstring fontSpec)
+    {
+        const auto appearance = Appearance();
+        if (fontSpec.empty())
+        {
+            appearance.ClearFontFace();
+        }
+        else
+        {
+            appearance.FontFace(std::move(fontSpec));
+        }
     }
 
     void Appearances::_updateFontNameFilter(std::wstring_view filter)
@@ -1240,7 +1300,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
-    fire_and_forget Appearances::BackgroundImage_Click(const IInspectable&, const RoutedEventArgs&)
+    safe_void_coroutine Appearances::BackgroundImage_Click(const IInspectable&, const RoutedEventArgs&)
     {
         auto lifetime = get_strong();
 

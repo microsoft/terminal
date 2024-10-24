@@ -56,7 +56,6 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         void RequestRename(const winrt::Microsoft::Terminal::Remoting::RenameRequestArgs& args);
         void RequestShowNotificationIcon();
         void RequestHideNotificationIcon();
-        void RequestQuitAll();
         void Quit();
 
         void AttachContentToWindow(Remoting::AttachRequest request);
@@ -76,7 +75,6 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 
         til::typed_event<> ShowNotificationIconRequested;
         til::typed_event<> HideNotificationIconRequested;
-        til::typed_event<> QuitAllRequested;
         til::typed_event<> QuitRequested;
 
         til::typed_event<winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::AttachRequest> AttachRequested;

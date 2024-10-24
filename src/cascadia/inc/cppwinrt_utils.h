@@ -17,6 +17,54 @@ Revision History:
 
 #pragma once
 
+// This type is identical to winrt::fire_and_forget, but its unhandled_exception
+// handler logs the exception instead of terminating the application.
+//
+// Ideally, we'd just use wil::com_task<void>, but it currently crashes
+// with an AV if an exception is thrown after the first suspension point.
+struct safe_void_coroutine
+{
+};
+
+namespace std
+{
+    template<typename... Args>
+    struct coroutine_traits<safe_void_coroutine, Args...>
+    {
+        struct promise_type
+        {
+            safe_void_coroutine get_return_object() const noexcept
+            {
+                return {};
+            }
+
+            void return_void() const noexcept
+            {
+            }
+
+            suspend_never initial_suspend() const noexcept
+            {
+                return {};
+            }
+
+            suspend_never final_suspend() const noexcept
+            {
+                return {};
+            }
+
+            void unhandled_exception() const noexcept
+            {
+                LOG_CAUGHT_EXCEPTION();
+                // If you get here, an unhandled exception was thrown.
+                // In a Release build this would get silently swallowed.
+                // You should probably fix the source of the exception, because it may have
+                // unintended side effects, in particular with exception-unsafe logic.
+                assert(false);
+            }
+        };
+    };
+}
+
 template<>
 struct fmt::formatter<winrt::hstring, wchar_t> : fmt::formatter<fmt::wstring_view, wchar_t>
 {

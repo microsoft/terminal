@@ -29,6 +29,8 @@ namespace Microsoft::Console::Render
         };
 
         RenderSettings() noexcept;
+        void SaveDefaultSettings() noexcept;
+        void RestoreDefaultSettings() noexcept;
         void SetRenderMode(const Mode mode, const bool enabled) noexcept;
         bool GetRenderMode(const Mode mode) const noexcept;
         const std::array<COLORREF, TextColor::TABLE_SIZE>& GetColorTable() const noexcept;
@@ -48,6 +50,8 @@ namespace Microsoft::Console::Render
         til::enumset<Mode> _renderMode{ Mode::BlinkAllowed, Mode::IntenseIsBright };
         std::array<COLORREF, TextColor::TABLE_SIZE> _colorTable;
         std::array<size_t, static_cast<size_t>(ColorAlias::ENUM_COUNT)> _colorAliasIndices;
+        std::array<COLORREF, TextColor::TABLE_SIZE> _defaultColorTable;
+        std::array<size_t, static_cast<size_t>(ColorAlias::ENUM_COUNT)> _defaultColorAliasIndices;
         size_t _blinkCycle = 0;
         mutable bool _blinkIsInUse = false;
         bool _blinkShouldBeFaint = false;

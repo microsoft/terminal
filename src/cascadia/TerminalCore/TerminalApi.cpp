@@ -24,7 +24,6 @@ void Terminal::ReturnResponse(const std::wstring_view response)
 {
     if (_pfnWriteInput && !response.empty())
     {
-        const auto suspension = _readWriteLock.suspend();
         _pfnWriteInput(response);
     }
 }
@@ -87,7 +86,7 @@ void Terminal::SetWindowTitle(const std::wstring_view title)
     _assertLocked();
     if (!_suppressApplicationTitle)
     {
-        _title.emplace(title);
+        _title.emplace(title.empty() ? _startingTitle : title);
         _pfnTitleChanged(_title.value());
     }
 }
@@ -98,20 +97,44 @@ CursorType Terminal::GetUserDefaultCursorStyle() const noexcept
     return _defaultCursorShape;
 }
 
-bool Terminal::ResizeWindow(const til::CoordType /*width*/, const til::CoordType /*height*/) noexcept
+bool Terminal::ResizeWindow(const til::CoordType width, const til::CoordType height)
 {
     // TODO: This will be needed to support various resizing sequences. See also GH#1860.
+    _assertLocked();
+
+    if (width <= 0 || height <= 0 || width > SHRT_MAX || height > SHRT_MAX)
+    {
+        return false;
+    }
+
+    if (_pfnWindowSizeChanged)
+    {
+        _pfnWindowSizeChanged(width, height);
+        return true;
+    }
+
     return false;
 }
 
-void Terminal::SetConsoleOutputCP(const unsigned int /*codepage*/) noexcept
+void Terminal::SetCodePage(const unsigned int /*codepage*/) noexcept
 {
-    // TODO: This will be needed to support 8-bit charsets and DOCS sequences.
+    // Code pages are dealt with in ConHost, so this isn't needed.
 }
 
-unsigned int Terminal::GetConsoleOutputCP() const noexcept
+void Terminal::ResetCodePage() noexcept
 {
-    // TODO: See SetConsoleOutputCP above.
+    // There is nothing to reset, since the code page never changes.
+}
+
+unsigned int Terminal::GetOutputCodePage() const noexcept
+{
+    // See above. The code page is always UTF-8.
+    return CP_UTF8;
+}
+
+unsigned int Terminal::GetInputCodePage() const noexcept
+{
+    // See above. The code page is always UTF-8.
     return CP_UTF8;
 }
 
@@ -338,7 +361,8 @@ void Terminal::SearchMissingCommand(const std::wstring_view command)
 {
     if (_pfnSearchMissingCommand)
     {
-        _pfnSearchMissingCommand(command);
+        const auto bufferRow = GetCursorPosition().y;
+        _pfnSearchMissingCommand(command, bufferRow);
     }
 }
 

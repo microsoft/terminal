@@ -280,7 +280,7 @@ namespace Microsoft::Console::VirtualTerminal
         }
 
         template<typename T>
-        bool for_each(const T&& predicate) const
+        void for_each(const T&& predicate) const
         {
             auto params = _params;
 
@@ -291,12 +291,10 @@ namespace Microsoft::Console::VirtualTerminal
                 params = defaultParameters;
             }
 
-            auto success = true;
             for (const auto& v : params)
             {
-                success = predicate(v) && success;
+                predicate(v);
             }
-            return success;
         }
 
     private:

@@ -510,6 +510,15 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
         _HandleCreateWindow(wparam, lparam);
         return 0;
     }
+    case WM_ENABLE:
+    {
+        if (_interopWindowHandle != nullptr)
+        {
+            // send focus to the child window
+            SetFocus(_interopWindowHandle);
+        }
+        break;
+    }
     case WM_SETFOCUS:
     {
         if (_interopWindowHandle != nullptr)
@@ -1324,7 +1333,7 @@ void IslandWindow::_SetIsFullscreen(const bool fullscreenEnabled)
 // - toggleVisibility: controls how we should behave when already in the foreground.
 // Return Value:
 // - <none>
-winrt::fire_and_forget IslandWindow::SummonWindow(Remoting::SummonWindowBehavior args)
+safe_void_coroutine IslandWindow::SummonWindow(Remoting::SummonWindowBehavior args)
 {
     // On the foreground thread:
     co_await wil::resume_foreground(_rootGrid.Dispatcher());

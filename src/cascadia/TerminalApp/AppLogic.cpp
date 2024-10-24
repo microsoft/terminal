@@ -355,7 +355,7 @@ namespace winrt::TerminalApp::implementation
     }
     CATCH_LOG()
 
-    fire_and_forget AppLogic::_ApplyStartupTaskStateChange()
+    safe_void_coroutine AppLogic::_ApplyStartupTaskStateChange()
     try
     {
         // First, make sure we're running in a packaged context. This method
@@ -431,6 +431,10 @@ namespace winrt::TerminalApp::implementation
                 SettingsChanged.raise(*this, *ev);
                 return;
             }
+        }
+        else
+        {
+            _settings.LogSettingChanges(true);
         }
 
         if (initialLoad)
@@ -550,6 +554,10 @@ namespace winrt::TerminalApp::implementation
                 return winrt::make<FindTargetWindowResult>(WindowingBehaviorUseNone);
             }
 
+            // Validate the args now. This will make sure that in the case of a
+            // single x-save command, we toss that commandline to the current
+            // terminal window
+            appArgs.ValidateStartupCommands();
             const std::string parsedTarget{ appArgs.GetTargetWindow() };
 
             // If the user did not provide any value on the commandline,

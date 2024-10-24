@@ -1204,8 +1204,6 @@ namespace winrt::TerminalApp::implementation
     {
         Visibility(Visibility::Collapsed);
 
-        PreviewAction.raise(*this, nullptr);
-
         // Reset visibility in case anchor mode tab switcher just finished.
         _searchBox().Visibility(Visibility::Visible);
 
@@ -1216,6 +1214,7 @@ namespace winrt::TerminalApp::implementation
 
         ParentCommandName(L"");
         _currentNestedCommands.Clear();
+        PreviewAction.raise(*this, nullptr);
     }
 
     void CommandPalette::EnableTabSwitcherMode(const uint32_t startIdx, TabSwitcherMode tabSwitcherMode)

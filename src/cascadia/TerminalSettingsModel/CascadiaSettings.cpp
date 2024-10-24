@@ -531,7 +531,9 @@ void CascadiaSettings::_validateMediaResources()
         // Explicitly just use the Icon here, not the EvaluatedIcon. We don't
         // want to blow up if we fell back to the commandline and the
         // commandline _isn't an icon_.
-        if (const auto icon = profile.Icon(); icon.size() > 2)
+        // GH #17943: "none" is a special value interpreted as "remove the icon"
+        static constexpr std::wstring_view HideIconValue{ L"none" };
+        if (const auto icon = profile.Icon(); icon.size() > 2 && icon != HideIconValue)
         {
             const auto iconPath{ wil::ExpandEnvironmentStringsW<std::wstring>(icon.c_str()) };
             try
@@ -1074,7 +1076,7 @@ void CascadiaSettings::_refreshDefaultTerminals()
     std::pair<std::vector<Model::DefaultTerminal>, Model::DefaultTerminal> result{ {}, nullptr };
     til::latch latch{ 1 };
 
-    std::ignore = [&]() -> winrt::fire_and_forget {
+    std::ignore = [&]() -> safe_void_coroutine {
         const auto cleanup = wil::scope_exit([&]() {
             latch.count_down();
         });

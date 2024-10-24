@@ -38,10 +38,7 @@ jobs:
     submodules: true
     persistCredentials: True
 
-  - task: PkgESSetupBuild@12
-    displayName: Package ES - Setup Build
-    inputs:
-      disableOutputRedirect: true
+  - template: steps-setup-versioning.yml
 
   - task: DownloadPipelineArtifact@2
     displayName: Download MSIX Bundle Artifact

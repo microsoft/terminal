@@ -9,7 +9,6 @@ ABORTIFHUNG
 ACCESSTOKEN
 acidev
 ACIOSS
-ACover
 acp
 actctx
 ACTCTXW
@@ -17,6 +16,8 @@ ADDALIAS
 ADDREF
 ADDSTRING
 ADDTOOL
+adml
+admx
 AFill
 AFX
 AHelper
@@ -87,6 +88,7 @@ Autowrap
 AVerify
 awch
 azurecr
+AZZ
 backgrounded
 Backgrounder
 backgrounding
@@ -180,7 +182,6 @@ CFuzz
 cgscrn
 chafa
 changelists
-charinfo
 CHARSETINFO
 chh
 chshdng
@@ -264,7 +265,6 @@ consolegit
 consolehost
 CONSOLEIME
 consoleinternal
-Consoleroot
 CONSOLESETFOREGROUND
 consoletaeftemplates
 consoleuwp
@@ -386,7 +386,7 @@ DECCIR
 DECCKM
 DECCKSR
 DECCOLM
-DECCRA
+deccra
 DECCTR
 DECDC
 DECDHL
@@ -398,7 +398,7 @@ DECEKBD
 DECERA
 DECFI
 DECFNK
-DECFRA
+decfra
 DECGCI
 DECGCR
 DECGNL
@@ -566,6 +566,7 @@ entrypoints
 ENU
 ENUMLOGFONT
 ENUMLOGFONTEX
+EOB
 EOK
 EPres
 EQU
@@ -727,7 +728,6 @@ GHIJKL
 gitcheckin
 gitfilters
 gitlab
-gitmodules
 gle
 GLOBALFOCUS
 GLYPHENTRY
@@ -785,6 +785,7 @@ HIWORD
 HKCU
 hkey
 hkl
+HKLM
 hlocal
 hlsl
 HMB
@@ -867,6 +868,7 @@ INLINEPREFIX
 inproc
 Inputkeyinfo
 Inputreadhandledata
+INPUTSCOPE
 INSERTMODE
 INTERACTIVITYBASE
 INTERCEPTCOPYPASTE
@@ -916,6 +918,7 @@ Keymapping
 keyscan
 keystate
 keyups
+Kickstart
 KILLACTIVE
 KILLFOCUS
 kinda
@@ -1021,7 +1024,6 @@ lstatus
 lstrcmp
 lstrcmpi
 LTEXT
-LTLTLTLTL
 ltsc
 LUID
 luma
@@ -1116,7 +1118,6 @@ msrc
 MSVCRTD
 MTSM
 Munged
-munges
 murmurhash
 muxes
 myapplet
@@ -1218,7 +1219,6 @@ ntlpcapi
 ntm
 ntrtl
 ntstatus
-NTSYSCALLAPI
 nttree
 nturtl
 ntuser
@@ -1295,6 +1295,7 @@ parms
 PATCOPY
 pathcch
 PATTERNID
+pbstr
 pcb
 pcch
 PCCHAR
@@ -1380,9 +1381,11 @@ POSTCHARBREAKS
 POSX
 POSXSCROLL
 POSYSCROLL
+ppbstr
 PPEB
 ppf
 ppidl
+pprg
 PPROC
 ppropvar
 ppsi
@@ -1461,6 +1464,7 @@ QWER
 Qxxxxxxxxxxxxxxx
 qzmp
 RAII
+Ralph
 RALT
 rasterbar
 rasterfont
@@ -1526,7 +1530,6 @@ rftp
 rgbi
 RGBQUAD
 rgbs
-rgci
 rgfae
 rgfte
 rgn
@@ -1604,6 +1607,7 @@ SELECTALL
 SELECTEDFONT
 SELECTSTRING
 Selfhosters
+Serbo
 SERVERDLL
 SETACTIVE
 SETBUDDYINT
@@ -1698,6 +1702,7 @@ srcsrv
 SRCSRVTRG
 srctool
 srect
+SRGS
 srvinit
 srvpipe
 ssa
@@ -1735,6 +1740,7 @@ swapchain
 swapchainpanel
 SWMR
 SWP
+swrapped
 SYMED
 SYNCPAINT
 syscalls
@@ -1832,8 +1838,6 @@ TOPDOWNDIB
 TOpt
 tosign
 touchpad
-Tpp
-Tpqrst
 tracelogging
 traceviewpp
 trackbar
@@ -1846,7 +1850,6 @@ triaging
 TRIMZEROHEADINGS
 trx
 tsa
-tsattrs
 tsgr
 tsm
 TStr
@@ -1958,7 +1961,6 @@ VPACKMANIFESTDIRECTORY
 VPR
 VREDRAW
 vsc
-vsconfig
 vscprintf
 VSCROLL
 vsdevshell
@@ -1975,10 +1977,8 @@ vswhere
 vtapp
 VTE
 VTID
-vtio
 vtmode
 vtpipeterm
-vtpt
 VTRGB
 VTRGBTo
 vtseq
@@ -2000,7 +2000,6 @@ wcswidth
 wddm
 wddmcon
 WDDMCONSOLECONTEXT
-WDK
 wdm
 webpage
 websites
@@ -2015,6 +2014,7 @@ WHelper
 wic
 WIDTHSCROLL
 Widthx
+Wiggum
 wil
 WImpl
 WINAPI
@@ -2074,7 +2074,6 @@ winuserp
 WINVER
 wistd
 wmain
-wmemory
 WMSZ
 wnd
 WNDALLOC
@@ -2085,6 +2084,8 @@ WNDCLASSW
 Wndproc
 WNegative
 WNull
+wordi
+wordiswrapped
 workarea
 WOutside
 WOWARM
@@ -2098,6 +2099,7 @@ WPrep
 WPresent
 wprp
 wprpi
+wrappe
 wregex
 writeback
 WRITECONSOLE
@@ -2173,6 +2175,7 @@ yact
 YCast
 YCENTER
 YCount
+yizz
 YLimit
 YPan
 YSubstantial
@@ -2186,3 +2189,4 @@ ZCtrl
 ZWJs
 ZYXWVU
 ZYXWVUTd
+zzf

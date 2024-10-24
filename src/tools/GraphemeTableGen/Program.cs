@@ -161,7 +161,7 @@ foreach (var table in rules)
 }
 buf.Append("};\n");
 
-buf.Append($"constexpr uint{trie.Stages[^1].Bits}_t ucdLookup(const char32_t cp) noexcept\n");
+buf.Append("constexpr int ucdLookup(const char32_t cp) noexcept\n");
 buf.Append("{\n");
 foreach (var stage in trie.Stages)
 {
@@ -290,11 +290,10 @@ static Ucd ExtractValuesFromUcd(string path)
             };
 
             // There's no "ea" attribute for "zero width" so we need to do that ourselves. This matches:
-            //   Mc: Mark, spacing combining
             //   Me: Mark, enclosing
             //   Mn: Mark, non-spacing
             //   Cf: Control, format
-            if (generalCategory.StartsWith("M") || generalCategory == "Cf")
+            if (generalCategory == "Me" || generalCategory == "Mn" || generalCategory == "Cf")
             {
                 width = CharacterWidth.ZeroWidth;
             }

@@ -60,7 +60,7 @@ static std::wstring _normalizeIconPath(std::wstring_view path)
 // - settings - The settings object to update the jumplist with.
 // Return Value:
 // - <none>
-winrt::fire_and_forget Jumplist::UpdateJumplist(const CascadiaSettings& settings) noexcept
+safe_void_coroutine Jumplist::UpdateJumplist(const CascadiaSettings& settings) noexcept
 {
     if (!settings)
     {

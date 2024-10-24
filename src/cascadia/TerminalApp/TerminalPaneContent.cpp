@@ -194,8 +194,8 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - <none>
-    winrt::fire_and_forget TerminalPaneContent::_controlConnectionStateChangedHandler(const winrt::Windows::Foundation::IInspectable& sender,
-                                                                                      const winrt::Windows::Foundation::IInspectable& args)
+    safe_void_coroutine TerminalPaneContent::_controlConnectionStateChangedHandler(const winrt::Windows::Foundation::IInspectable& sender,
+                                                                                   const winrt::Windows::Foundation::IInspectable& args)
     {
         ConnectionStateChanged.raise(sender, args);
         auto newConnectionState = ConnectionState::Closed;
@@ -300,7 +300,7 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    winrt::fire_and_forget TerminalPaneContent::_playBellSound(winrt::Windows::Foundation::Uri uri)
+    safe_void_coroutine TerminalPaneContent::_playBellSound(winrt::Windows::Foundation::Uri uri)
     {
         auto weakThis{ get_weak() };
         co_await wil::resume_foreground(_control.Dispatcher());

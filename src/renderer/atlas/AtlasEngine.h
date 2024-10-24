@@ -71,7 +71,6 @@ namespace Microsoft::Console::Render::Atlas
         void SetPixelShaderPath(std::wstring_view value) noexcept;
         void SetPixelShaderImagePath(std::wstring_view value) noexcept;
         void SetRetroTerminalEffect(bool enable) noexcept;
-        void SetSelectionBackground(COLORREF color, float alpha = 0.5f) noexcept;
         void SetSoftwareRendering(bool enable) noexcept;
         void SetDisablePartialInvalidation(bool enable) noexcept;
         void SetGraphicsAPI(GraphicsAPI graphicsAPI) noexcept;
@@ -171,6 +170,7 @@ namespace Microsoft::Console::Render::Atlas
             // These tracks the highlighted regions on the screen that are yet to be painted.
             std::span<const til::point_span> searchHighlights;
             std::span<const til::point_span> searchHighlightFocused;
+            std::span<const til::point_span> selectionSpans;
 
             // dirtyRect is a computed value based on invalidatedRows.
             til::rect dirtyRect;

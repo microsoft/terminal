@@ -22,8 +22,6 @@ TARGETLIBS=\
     $(ONECORE_EXTERNAL_SDK_LIB_VPATH_L)\onecore.lib
 
 SOURCES=main.cpp  \
-        VtConsole.cpp \
-        res.rc \
 
 TARGET_DESTINATION=retail
 

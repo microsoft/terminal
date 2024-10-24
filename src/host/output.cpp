@@ -35,6 +35,8 @@ using namespace Microsoft::Console::Interactivity;
     // codepage by console.cpl or shell32. The default codepage is OEMCP.
     gci.CP = gci.GetCodePage();
     gci.OutputCP = gci.GetCodePage();
+    gci.DefaultCP = gci.GetCodePage();
+    gci.DefaultOutputCP = gci.GetCodePage();
 
     gci.Flags |= CONSOLE_USE_PRIVATE_FLAGS;
 

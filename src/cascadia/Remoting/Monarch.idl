@@ -63,6 +63,7 @@ namespace Microsoft.Terminal.Remoting
         void HandleActivatePeasant(WindowActivatedArgs args);
         void SummonWindow(SummonWindowSelectionArgs args);
         void SignalClose(UInt64 peasantId);
+        void QuitAll();
 
         void SummonAllWindows();
         Boolean DoesQuakeWindowExist();

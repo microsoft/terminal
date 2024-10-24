@@ -15,4 +15,5 @@
   <test name="til" type="unit" binary="til.unit.tests.dll" />
   <test name="feature" type="ft" binary="Conhost.Feature.Tests.dll" />
   <test name="uia" type="ft" binary="Conhost.UIA.Tests.dll" />
+  <test name="winconpty" type="ft" binary="winconpty.Feature.Tests.dll" />
 </tests>

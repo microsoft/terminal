@@ -69,10 +69,9 @@ jobs:
     fetchTags: false # Tags still result in depth > 1 fetch; we don't need them here
     submodules: true
     persistCredentials: True
-  - task: PkgESSetupBuild@12
-    displayName: Package ES - Setup Build
-    inputs:
-      disableOutputRedirect: true
+
+  - template: steps-setup-versioning.yml
+
   - template: steps-download-bin-dir-artifact.yml
     parameters:
       buildPlatforms: ${{ parameters.buildPlatforms }}

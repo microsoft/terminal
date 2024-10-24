@@ -17,7 +17,7 @@ namespace winrt::TerminalApp::implementation
 
         winrt::Windows::UI::Xaml::FrameworkElement GetRoot();
 
-        winrt::fire_and_forget UpdateSettings(const winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings& settings);
+        safe_void_coroutine UpdateSettings(const winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings& settings);
 
         winrt::Windows::Foundation::Size MinimumSize();
         void Focus(winrt::Windows::UI::Xaml::FocusState reason = winrt::Windows::UI::Xaml::FocusState::Programmatic);

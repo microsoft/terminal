@@ -73,7 +73,7 @@ IFACEMETHODIMP TermControlUiaTextRange::Clone(_Outptr_result_maybenull_ ITextRan
 //                (0,0) is the top-left of the app window
 // Return Value:
 // - <none>
-void TermControlUiaTextRange::_TranslatePointToScreen(til::point* clientPoint) const
+void TermControlUiaTextRange::_TranslatePointToScreen(til::point& clientPoint) const
 {
     const gsl::not_null<TermControlUiaProvider*> provider = static_cast<TermControlUiaProvider*>(_pProvider);
 
@@ -96,8 +96,8 @@ void TermControlUiaTextRange::_TranslatePointToScreen(til::point* clientPoint) c
     // Get scale factor for display
     const auto scaleFactor = provider->GetScaleFactor();
 
-    clientPoint->x = includeOffsets(clientPoint->x, boundingRect.left, padding.left, scaleFactor);
-    clientPoint->y = includeOffsets(clientPoint->y, boundingRect.top, padding.top, scaleFactor);
+    clientPoint.x = includeOffsets(clientPoint.x, boundingRect.left, padding.left, scaleFactor);
+    clientPoint.y = includeOffsets(clientPoint.y, boundingRect.top, padding.top, scaleFactor);
 }
 
 // Method Description:
@@ -107,15 +107,13 @@ void TermControlUiaTextRange::_TranslatePointToScreen(til::point* clientPoint) c
 //                (0,0) is the top-left of the screen
 // Return Value:
 // - <none>
-void TermControlUiaTextRange::_TranslatePointFromScreen(til::point* screenPoint) const
+void TermControlUiaTextRange::_TranslatePointFromScreen(til::point& screenPoint) const
 {
     const gsl::not_null<TermControlUiaProvider*> provider = static_cast<TermControlUiaProvider*>(_pProvider);
 
     const auto includeOffsets = [](long screenPos, double termControlPos, double padding, double scaleFactor) {
-        auto result = base::ClampedNumeric<double>(padding);
-        // only the padding is in DIPs now
-        result /= scaleFactor;
-        result -= screenPos;
+        auto result = base::ClampedNumeric<til::CoordType>(screenPos);
+        result -= padding / scaleFactor;
         result -= termControlPos;
         return result;
     };
@@ -130,8 +128,8 @@ void TermControlUiaTextRange::_TranslatePointFromScreen(til::point* screenPoint)
     // Get scale factor for display
     const auto scaleFactor = provider->GetScaleFactor();
 
-    screenPoint->x = includeOffsets(screenPoint->x, boundingRect.left, padding.left, scaleFactor);
-    screenPoint->y = includeOffsets(screenPoint->y, boundingRect.top, padding.top, scaleFactor);
+    screenPoint.x = includeOffsets(screenPoint.x, boundingRect.left, padding.left, scaleFactor);
+    screenPoint.y = includeOffsets(screenPoint.y, boundingRect.top, padding.top, scaleFactor);
 }
 
 til::size TermControlUiaTextRange::_getScreenFontSize() const noexcept

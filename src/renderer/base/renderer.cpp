@@ -1276,6 +1276,7 @@ void Renderer::_PaintCursor(_In_ IRenderEngine* const pEngine)
     info.searchHighlights = _pData->GetSearchHighlights();
     info.searchHighlightFocused = _pData->GetSearchHighlightFocused();
     info.selectionSpans = _pData->GetSelectionSpans();
+    info.selectionBackground = _renderSettings.GetColorTableEntry(TextColor::SELECTION_BACKGROUND);
     return pEngine->PrepareRenderInfo(std::move(info));
 }
 

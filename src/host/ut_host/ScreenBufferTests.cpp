@@ -16,6 +16,7 @@
 
 #include "../interactivity/inc/ServiceLocator.hpp"
 #include "../../inc/conattrs.hpp"
+#include "../../types/inc/colorTable.hpp"
 #include "../../types/inc/Viewport.hpp"
 
 #include "../../inc/TestUtils.h"
@@ -1105,7 +1106,7 @@ void ScreenBufferTests::VtResize()
     auto initialViewWidth = si.GetViewport().Width();
 
     Log::Comment(NoThrowString().Format(
-        L"Write '\x1b[8;30;80t'"
+        L"Write '\\x1b[8;30;80t'"
         L" The Screen buffer height should remain unchanged, but the width should be 80 columns"
         L" The viewport should be w,h=80,30"));
 
@@ -1127,7 +1128,7 @@ void ScreenBufferTests::VtResize()
     initialViewWidth = newViewWidth;
 
     Log::Comment(NoThrowString().Format(
-        L"Write '\x1b[8;40;80t'"
+        L"Write '\\x1b[8;40;80t'"
         L" The Screen buffer height should remain unchanged, but the width should be 80 columns"
         L" The viewport should be w,h=80,40"));
 
@@ -1149,7 +1150,7 @@ void ScreenBufferTests::VtResize()
     initialViewWidth = newViewWidth;
 
     Log::Comment(NoThrowString().Format(
-        L"Write '\x1b[8;40;90t'"
+        L"Write '\\x1b[8;40;90t'"
         L" The Screen buffer height should remain unchanged, but the width should be 90 columns"
         L" The viewport should be w,h=90,40"));
 
@@ -1171,7 +1172,7 @@ void ScreenBufferTests::VtResize()
     initialViewWidth = newViewWidth;
 
     Log::Comment(NoThrowString().Format(
-        L"Write '\x1b[8;12;12t'"
+        L"Write '\\x1b[8;12;12t'"
         L" The Screen buffer height should remain unchanged, but the width should be 12 columns"
         L" The viewport should be w,h=12,12"));
 
@@ -2070,6 +2071,15 @@ void ScreenBufferTests::VtRestoreColorTableReport()
     // Blue component is clamped at 100%, so 150% interpreted as 100%
     stateMachine.ProcessString(L"\033P2$p14;2;0;0;150\033\\");
     VERIFY_ARE_EQUAL(RGB(0, 0, 255), gci.GetColorTableEntry(14));
+
+    Log::Comment(L"RIS restores initial Campbell color scheme");
+
+    stateMachine.ProcessString(L"\033c");
+    for (auto i = 0; i < 16; i++)
+    {
+        const COLORREF expectedColor = Microsoft::Console::Utils::CampbellColorTable()[i];
+        VERIFY_ARE_EQUAL(expectedColor, gci.GetColorTableEntry(i));
+    }
 }
 
 void ScreenBufferTests::ResizeTraditionalDoesNotDoubleFreeAttrRows()
@@ -3352,6 +3362,13 @@ void ScreenBufferTests::AssignColorAliases()
     stateMachine.ProcessString(L"\033[2;34;56,|");
     VERIFY_ARE_EQUAL(34u, renderSettings.GetColorAliasIndex(ColorAlias::FrameForeground));
     VERIFY_ARE_EQUAL(56u, renderSettings.GetColorAliasIndex(ColorAlias::FrameBackground));
+
+    Log::Comment(L"Test RIS restores initial color assignments");
+    stateMachine.ProcessString(L"\033c");
+    VERIFY_ARE_EQUAL(defaultFg, renderSettings.GetColorAliasIndex(ColorAlias::DefaultForeground));
+    VERIFY_ARE_EQUAL(defaultBg, renderSettings.GetColorAliasIndex(ColorAlias::DefaultBackground));
+    VERIFY_ARE_EQUAL(frameFg, renderSettings.GetColorAliasIndex(ColorAlias::FrameForeground));
+    VERIFY_ARE_EQUAL(frameBg, renderSettings.GetColorAliasIndex(ColorAlias::FrameBackground));
 }
 
 void ScreenBufferTests::DeleteCharsNearEndOfLine()
@@ -8337,6 +8354,10 @@ void ScreenBufferTests::SimpleMarkCommand()
 
 void ScreenBufferTests::SimpleWrappedCommand()
 {
+    BEGIN_TEST_METHOD_PROPERTIES()
+        TEST_METHOD_PROPERTY(L"IsolationLevel", L"Method")
+    END_TEST_METHOD_PROPERTIES()
+
     auto& g = ServiceLocator::LocateGlobals();
     auto& gci = g.getConsoleInformation();
     auto& si = gci.GetActiveOutputBuffer();

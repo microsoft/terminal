@@ -15,6 +15,7 @@
 
 using namespace winrt::Windows::ApplicationModel;
 using namespace winrt::Windows::ApplicationModel::DataTransfer;
+using namespace winrt::Windows::Graphics::Display;
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Xaml::Controls;
 using namespace winrt::Windows::UI::Core;
@@ -217,6 +218,7 @@ namespace winrt::TerminalApp::implementation
         _root->SetSettings(_settings, false); // We're on our UI thread right now, so this is safe
         _root->Loaded({ get_weak(), &TerminalWindow::_OnLoaded });
         _root->Initialized({ get_weak(), &TerminalWindow::_pageInitialized });
+        _root->WindowSizeChanged({ get_weak(), &TerminalWindow::_WindowSizeChanged });
         _root->Create();
 
         AppLogic::Current()->SettingsChanged({ get_weak(), &TerminalWindow::UpdateSettingsHandler });
@@ -765,15 +767,24 @@ namespace winrt::TerminalApp::implementation
 
     // This may be called on a background thread, or the main thread, but almost
     // definitely not on OUR UI thread.
-    winrt::fire_and_forget TerminalWindow::UpdateSettings(winrt::TerminalApp::SettingsLoadEventArgs args)
+    safe_void_coroutine TerminalWindow::UpdateSettings(winrt::TerminalApp::SettingsLoadEventArgs args)
     {
-        _settings = args.NewSettings();
+        // GH#17620: We have a bug somewhere where a window doesn't get unregistered from the window list.
+        // This causes UpdateSettings calls where the thread dispatcher is already null.
+        const auto dispatcher = _root->Dispatcher();
+        if (!dispatcher)
+        {
+            co_return;
+        }
 
         const auto weakThis{ get_weak() };
-        co_await wil::resume_foreground(_root->Dispatcher());
+        co_await wil::resume_foreground(dispatcher);
+
         // Back on our UI thread...
         if (auto logic{ weakThis.get() })
         {
+            _settings = args.NewSettings();
+
             // Update the settings in TerminalPage
             // We're on our UI thread right now, so this is safe
             _root->SetSettings(_settings, true);
@@ -1320,6 +1331,41 @@ namespace winrt::TerminalApp::implementation
             _root->HandoffToElevated(_settings);
             return;
         }
+    }
+
+    void TerminalWindow::_WindowSizeChanged(const IInspectable&, winrt::Microsoft::Terminal::Control::WindowSizeChangedEventArgs args)
+    {
+        winrt::Windows::Foundation::Size pixelSize = { static_cast<float>(args.Width()), static_cast<float>(args.Height()) };
+        const auto scale = static_cast<float>(DisplayInformation::GetForCurrentView().RawPixelsPerViewPixel());
+
+        if (!FocusMode())
+        {
+            if (!_settings.GlobalSettings().AlwaysShowTabs())
+            {
+                // Hide the title bar = off, Always show tabs = off.
+                static constexpr auto titlebarHeight = 10;
+                pixelSize.Height += (titlebarHeight)*scale;
+            }
+            else if (!_settings.GlobalSettings().ShowTabsInTitlebar())
+            {
+                // Hide the title bar = off, Always show tabs = on.
+                static constexpr auto titlebarAndTabBarHeight = 40;
+                pixelSize.Height += (titlebarAndTabBarHeight)*scale;
+            }
+            // Hide the title bar = on, Always show tabs = on.
+            // In this case, we don't add any height because
+            // NonClientIslandWindow::GetTotalNonClientExclusiveSize() gets
+            // called in AppHost::_resizeWindow and it already takes title bar
+            // height into account.  In other cases above
+            // IslandWindow::GetTotalNonClientExclusiveSize() is called, and it
+            // doesn't take the title bar height into account, so we have to do
+            // the calculation manually.
+        }
+
+        args.Width(static_cast<int32_t>(pixelSize.Width));
+        args.Height(static_cast<int32_t>(pixelSize.Height));
+
+        WindowSizeChanged.raise(*this, args);
     }
 
     winrt::hstring WindowProperties::WindowName() const noexcept

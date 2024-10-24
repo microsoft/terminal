@@ -69,14 +69,14 @@ IFACEMETHODIMP UiaTextRange::Clone(_Outptr_result_maybenull_ ITextRangeProvider*
     return S_OK;
 }
 
-void UiaTextRange::_TranslatePointToScreen(til::point* clientPoint) const
+void UiaTextRange::_TranslatePointToScreen(til::point& clientPoint) const
 {
-    ClientToScreen(_getWindowHandle(), clientPoint->as_win32_point());
+    ClientToScreen(_getWindowHandle(), clientPoint.as_win32_point());
 }
 
-void UiaTextRange::_TranslatePointFromScreen(til::point* screenPoint) const
+void UiaTextRange::_TranslatePointFromScreen(til::point& screenPoint) const
 {
-    ScreenToClient(_getWindowHandle(), screenPoint->as_win32_point());
+    ScreenToClient(_getWindowHandle(), screenPoint.as_win32_point());
 }
 
 HWND UiaTextRange::_getWindowHandle() const

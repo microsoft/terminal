@@ -56,7 +56,14 @@
   <ReleaseNotes>
     版本 __VERSION_NUMBER__
 
-如需詳細資訊，請參閱我們的 GitHub 版本頁面。
+- 當您使用工作階段還原時，終端機現在會記住視窗的內容。
+- 現在您可以同時使用多個字型。
+- 製表格圖字元現在會以完美像素模式呈現。
+- 在終端機內使用 IME 的體驗已大幅改善。
+- JSON 檔案內的色彩配置現在將變得更簡單了。
+- 已修正一些 URL 處理、雙寬度列、換行等相關錯誤。
+
+如需更多詳細資訊，請參閱我們的 GitHub 發行頁面。
   </ReleaseNotes>
   <ScreenshotCaptions>
     <!-- Valid length: 200 character limit, up to 9 elements per platform -->

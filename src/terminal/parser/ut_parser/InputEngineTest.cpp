@@ -250,7 +250,6 @@ class Microsoft::Console::VirtualTerminal::InputEngineTest
     TEST_METHOD(C0Test);
     TEST_METHOD(AlphanumericTest);
     TEST_METHOD(RoundTripTest);
-    TEST_METHOD(WindowManipulationTest);
     TEST_METHOD(NonAsciiTest);
     TEST_METHOD(CursorPositioningTest);
     TEST_METHOD(CSICursorBackTabTest);
@@ -316,20 +315,21 @@ class Microsoft::Console::VirtualTerminal::TestInteractDispatch final : public I
 public:
     TestInteractDispatch(_In_ std::function<void(const std::span<const INPUT_RECORD>&)> pfn,
                          _In_ TestState* testState);
-    virtual bool WriteInput(_In_ const std::span<const INPUT_RECORD>& inputEvents) override;
+    virtual void WriteInput(_In_ const std::span<const INPUT_RECORD>& inputEvents) override;
 
-    virtual bool WriteCtrlKey(const INPUT_RECORD& event) override;
-    virtual bool WindowManipulation(const DispatchTypes::WindowManipulationType function,
+    virtual void WriteCtrlKey(const INPUT_RECORD& event) override;
+    virtual void WindowManipulation(const DispatchTypes::WindowManipulationType function,
                                     const VTParameter parameter1,
                                     const VTParameter parameter2) override; // DTTERM_WindowManipulation
-    virtual bool WriteString(const std::wstring_view string) override;
+    virtual void WriteString(const std::wstring_view string) override;
+    virtual void WriteStringRaw(const std::wstring_view string) override;
 
-    virtual bool MoveCursor(const VTInt row,
+    virtual void MoveCursor(const VTInt row,
                             const VTInt col) override;
 
     virtual bool IsVtInputEnabled() const override;
 
-    virtual bool FocusChanged(const bool focused) const override;
+    virtual void FocusChanged(const bool focused) override;
 
 private:
     std::function<void(const std::span<const INPUT_RECORD>&)> _pfnWriteInputCallback;
@@ -343,19 +343,18 @@ TestInteractDispatch::TestInteractDispatch(_In_ std::function<void(const std::sp
 {
 }
 
-bool TestInteractDispatch::WriteInput(_In_ const std::span<const INPUT_RECORD>& inputEvents)
+void TestInteractDispatch::WriteInput(_In_ const std::span<const INPUT_RECORD>& inputEvents)
 {
     _pfnWriteInputCallback(inputEvents);
-    return true;
 }
 
-bool TestInteractDispatch::WriteCtrlKey(const INPUT_RECORD& event)
+void TestInteractDispatch::WriteCtrlKey(const INPUT_RECORD& event)
 {
     VERIFY_IS_TRUE(_testState->_expectSendCtrlC);
-    return WriteInput({ &event, 1 });
+    WriteInput({ &event, 1 });
 }
 
-bool TestInteractDispatch::WindowManipulation(const DispatchTypes::WindowManipulationType function,
+void TestInteractDispatch::WindowManipulation(const DispatchTypes::WindowManipulationType function,
                                               const VTParameter parameter1,
                                               const VTParameter parameter2)
 {
@@ -363,10 +362,9 @@ bool TestInteractDispatch::WindowManipulation(const DispatchTypes::WindowManipul
     VERIFY_ARE_EQUAL(_testState->_expectedWindowManipulation, function);
     VERIFY_ARE_EQUAL(_testState->_expectedParams[0], parameter1.value_or(0));
     VERIFY_ARE_EQUAL(_testState->_expectedParams[1], parameter2.value_or(0));
-    return true;
 }
 
-bool TestInteractDispatch::WriteString(const std::wstring_view string)
+void TestInteractDispatch::WriteString(const std::wstring_view string)
 {
     InputEventQueue keyEvents;
 
@@ -377,25 +375,35 @@ bool TestInteractDispatch::WriteString(const std::wstring_view string)
         Microsoft::Console::Interactivity::CharToKeyEvents(wch, CP_USA, keyEvents);
     }
 
-    return WriteInput(keyEvents);
+    WriteInput(keyEvents);
 }
 
-bool TestInteractDispatch::MoveCursor(const VTInt row, const VTInt col)
+void TestInteractDispatch::WriteStringRaw(const std::wstring_view string)
+{
+    InputEventQueue keyEvents;
+
+    for (const auto& wch : string)
+    {
+        keyEvents.push_back(SynthesizeKeyEvent(true, 1, 0, 0, wch, 0));
+    }
+
+    WriteInput(keyEvents);
+}
+
+void TestInteractDispatch::MoveCursor(const VTInt row, const VTInt col)
 {
     VERIFY_IS_TRUE(_testState->_expectCursorPosition);
     til::point received{ col, row };
     VERIFY_ARE_EQUAL(_testState->_expectedCursor, received);
-    return true;
 }
 
 bool TestInteractDispatch::IsVtInputEnabled() const
 {
-    return true;
+    return false;
 }
 
-bool TestInteractDispatch::FocusChanged(const bool /*focused*/) const
+void TestInteractDispatch::FocusChanged(const bool /*focused*/)
 {
-    return false;
 }
 
 void InputEngineTest::C0Test()
@@ -610,60 +618,6 @@ void InputEngineTest::RoundTripTest()
 
     VerifyExpectedInputDrained();
     */
-}
-
-void InputEngineTest::WindowManipulationTest()
-{
-    auto pfn = std::bind(&TestState::TestInputCallback, &testState, std::placeholders::_1);
-    auto dispatch = std::make_unique<TestInteractDispatch>(pfn, &testState);
-    auto inputEngine = std::make_unique<InputStateMachineEngine>(std::move(dispatch));
-    auto _stateMachine = std::make_unique<StateMachine>(std::move(inputEngine));
-    VERIFY_IS_NOT_NULL(_stateMachine.get());
-    testState._stateMachine = _stateMachine.get();
-
-    Log::Comment(NoThrowString().Format(
-        L"Try sending a bunch of Window Manipulation sequences. "
-        L"Only the valid ones should call the "
-        L"TestInteractDispatch::WindowManipulation callback."));
-
-    const auto param1 = 123;
-    const auto param2 = 456;
-    const auto wszParam1 = L"123";
-    const auto wszParam2 = L"456";
-
-    for (unsigned int i = 0; i < static_cast<unsigned int>(BYTE_MAX); i++)
-    {
-        std::wstringstream seqBuilder;
-        seqBuilder << L"\x1b[" << i;
-
-        if (i == DispatchTypes::WindowManipulationType::ResizeWindowInCharacters)
-        {
-            // We need to build the string with the params as strings for some reason -
-            //      x86 would implicitly convert them to chars (eg 123 -> '{')
-            //      before appending them to the string
-            seqBuilder << L";" << wszParam1 << L";" << wszParam2;
-
-            testState._expectedToCallWindowManipulation = true;
-            testState._expectedParams[0] = param1;
-            testState._expectedParams[1] = param2;
-            testState._expectedWindowManipulation = static_cast<DispatchTypes::WindowManipulationType>(i);
-        }
-        else
-        {
-            // other operations don't expect any params.
-
-            testState._expectedToCallWindowManipulation = true;
-            testState._expectedParams[0] = 0;
-            testState._expectedParams[1] = 0;
-            testState._expectedWindowManipulation = static_cast<DispatchTypes::WindowManipulationType>(i);
-        }
-        seqBuilder << L"t";
-        auto seq = seqBuilder.str();
-        Log::Comment(NoThrowString().Format(
-            L"Processing \"%s\"", seq.c_str()));
-        _stateMachine->ProcessString(seq);
-    }
-    VerifyExpectedInputDrained();
 }
 
 void InputEngineTest::NonAsciiTest()

@@ -322,7 +322,7 @@ Globals& ServiceLocator::LocateGlobals()
 //   owner of the pseudo window.
 // Return Value:
 // - a reference to the pseudoconsole window.
-HWND ServiceLocator::LocatePseudoWindow(const HWND owner)
+HWND ServiceLocator::LocatePseudoWindow()
 {
     auto status = STATUS_SUCCESS;
     if (!s_pseudoWindowInitialized)
@@ -335,7 +335,7 @@ HWND ServiceLocator::LocatePseudoWindow(const HWND owner)
         if (SUCCEEDED_NTSTATUS(status))
         {
             HWND hwnd;
-            status = s_interactivityFactory->CreatePseudoWindow(hwnd, owner);
+            status = s_interactivityFactory->CreatePseudoWindow(hwnd);
             s_pseudoWindow.reset(hwnd);
         }
 
@@ -343,6 +343,38 @@ HWND ServiceLocator::LocatePseudoWindow(const HWND owner)
     }
     LOG_IF_NTSTATUS_FAILED(status);
     return s_pseudoWindow.get();
+}
+
+void ServiceLocator::SetPseudoWindowOwner(HWND owner)
+{
+    auto status = STATUS_SUCCESS;
+    if (!s_interactivityFactory)
+    {
+        status = ServiceLocator::LoadInteractivityFactory();
+    }
+
+    if (s_interactivityFactory)
+    {
+        static_cast<InteractivityFactory*>(s_interactivityFactory.get())->SetOwner(owner);
+    }
+
+    LOG_IF_NTSTATUS_FAILED(status);
+}
+
+void ServiceLocator::SetPseudoWindowVisibility(bool showOrHide)
+{
+    auto status = STATUS_SUCCESS;
+    if (!s_interactivityFactory)
+    {
+        status = ServiceLocator::LoadInteractivityFactory();
+    }
+
+    if (s_interactivityFactory)
+    {
+        static_cast<InteractivityFactory*>(s_interactivityFactory.get())->SetVisibility(showOrHide);
+    }
+
+    LOG_IF_NTSTATUS_FAILED(status);
 }
 
 #pragma endregion

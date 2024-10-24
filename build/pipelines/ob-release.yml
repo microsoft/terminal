@@ -27,7 +27,7 @@ parameters:
   - name: pgoBuildMode
     displayName: "PGO Build Mode"
     type: string
-    default: Optimize
+    default: None # BODGY - OneBranch is on VS 17.10, which is known to be the worst
     values:
       - Optimize
       - Instrument

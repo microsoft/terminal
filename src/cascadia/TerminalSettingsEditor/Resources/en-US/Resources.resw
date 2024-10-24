@@ -246,8 +246,21 @@
     <comment>A description explaining how this control changes the app's language. {Locked="Windows"}</comment>
   </data>
   <data name="Globals_LanguageDefault" xml:space="preserve">
-    <value>Use system default</value>
+    <value>Default</value>
     <comment>The app contains a control allowing users to choose the app's language. If this value is chosen, the language preference list of the system settings is used instead.</comment>
+  </data>
+  <data name="Globals_DefaultInputScope.Header" xml:space="preserve">
+    <value>Default IME input mode</value>
+    <comment>The "input scope" of an IME tells it what type of characters should be available for input. A Chinese IME for instance may show English letters instead of Chinese ones. It's a technical term. We're using "input mode" instead of "input scope" to make it easier to understand for users.</comment>
+  </data>
+  <data name="Globals_DefaultInputScope.HelpText" xml:space="preserve">
+    <value>Informs the IME what language to use by default. For languages that rely on an IME and don't use Latin characters by default, this setting can be used to force English input on startup.</value>
+  </data>
+  <data name="Globals_DefaultInputScopeDefault.Content" xml:space="preserve">
+    <value>Default</value>
+  </data>
+  <data name="Globals_DefaultInputScopeAlphanumericHalfWidth.Content" xml:space="preserve">
+    <value>Alphanumeric Half-Width (English)</value>
   </data>
   <data name="Globals_AlwaysShowTabs.Header" xml:space="preserve">
     <value>Always show tabs</value>
@@ -280,6 +293,14 @@
   <data name="Globals_DetectURLs.Header" xml:space="preserve">
     <value>Automatically detect URLs and make them clickable</value>
     <comment>Header for a control to toggle whether the terminal should automatically detect URLs and make them clickable, or not.</comment>
+  </data>
+  <data name="Globals_SearchWebDefaultQueryUrl.Header" xml:space="preserve">
+    <value>Default URL to use for the "Search web" action</value>
+    <comment>Header for a control to set the query URL when using the "search web" action.</comment>
+  </data>
+  <data name="Globals_SearchWebDefaultQueryUrl.HelpText" xml:space="preserve">
+    <value>The placeholder "%s" will replaced with the search query.</value>
+    <comment>{Locked="%s"} Additional text presented near "Globals_SearchWebDefaultQueryUrl.Header".</comment>
   </data>
   <data name="Globals_TrimBlockSelection.Header" xml:space="preserve">
     <value>Remove trailing white-space in rectangular selection</value>
@@ -539,9 +560,41 @@
     <value>Always on top</value>
     <comment>Header for a control to toggle if the app will always be presented on top of other windows, or is treated normally (when disabled).</comment>
   </data>
+  <data name="Profile_ForceVTInput.Header" xml:space="preserve">
+    <value>Use the legacy input encoding</value>
+    <comment>Header for a control to toggle legacy input encoding for the terminal.</comment>
+  </data>
+  <data name="Profile_AllowVtChecksumReport.Header" xml:space="preserve">
+    <value>Allow DECRQCRA (Request Checksum of Rectangular Area)</value>
+    <comment>{Locked="DECRQCRA"}{Locked="Request Checksum of Rectangular Area"}Header for a control to toggle support for the DECRQCRA control sequence.</comment>
+  </data>
+  <data name="Globals_AllowHeadless.Header" xml:space="preserve">
+    <value>Allow Windows Terminal to run in the background</value>
+    <comment>Header for a control to toggle support for Windows Terminal to run in the background.</comment>
+  </data>
+  <data name="Globals_IsolatedMode.Header" xml:space="preserve">
+    <value>Force each window to run in its own process</value>
+    <comment>Header for a control to toggle making each window be its own process.</comment>
+  </data>
+  <data name="Globals_DebugFeaturesEnabled.Header" xml:space="preserve">
+    <value>Enable debugging features</value>
+    <comment>Header for a control to toggle debug features.</comment>
+  </data>
   <data name="Globals_AlwaysOnTop.HelpText" xml:space="preserve">
     <value>Terminal will always be the topmost window on the desktop.</value>
     <comment>A description for what the "always on top" setting does. Presented near "Globals_AlwaysOnTop.Header".</comment>
+  </data>
+  <data name="Profile_ForceVTInput.HelpText" xml:space="preserve">
+    <value>Certain keyboard input in some applications may stop working properly when this setting is enabled.</value>
+    <comment>Additional description for what the "force vt input" setting does. Presented near "Globals_ForceVTInput.Header".</comment>
+  </data>
+  <data name="Globals_AllowHeadless.HelpText" xml:space="preserve">
+    <value>This allows actions such as Global Summon and Quake Mode actions to work even when no windows are open.</value>
+    <comment>Additional description for what the "allow headless" setting does. Presented near "Globals_AllowHeadless.Header".</comment>
+  </data>
+  <data name="Globals_IsolatedMode.HelpText" xml:space="preserve">
+    <value>Certain features will not work properly, including—but not limited to—global hotkeys, tab drag and drop, and wt.exe window targeting.</value>
+    <comment>{Locked="wt.exe"} Additional description for what the "isolated mode" setting does. Presented near "Globals_IsolatedMode.Header".</comment>
   </data>
   <data name="Globals_TabWidthMode.Header" xml:space="preserve">
     <value>Tab width mode</value>
@@ -611,6 +664,10 @@
     <value>Interaction</value>
     <comment>Header for the "interaction" menu item. This navigates to a page that lets you see and modify settings related to the user's mouse and touch interactions with the app.</comment>
   </data>
+  <data name="Nav_Compatibility.Content" xml:space="preserve">
+    <value>Compatibility</value>
+    <comment>Header for the "compatibility" menu item. This navigates to a page that lets you see and modify settings related to compatibility with command line scenarios.</comment>
+  </data>
   <data name="Nav_Launch.Content" xml:space="preserve">
     <value>Startup</value>
     <comment>Header for the "startup" menu item. This navigates to a page that lets you see and modify settings related to the app's launch experience (i.e. screen position, mode, etc.)</comment>
@@ -646,6 +703,10 @@
   <data name="Profile_Advanced.Header" xml:space="preserve">
     <value>Advanced</value>
     <comment>Header for a sub-page of profile settings focused on more advanced scenarios.</comment>
+  </data>
+  <data name="Profile_Terminal.Header" xml:space="preserve">
+    <value>Terminal Emulation</value>
+    <comment>Header for a sub-page of profile settings focused on customizing the capabilities of the terminal.</comment>
   </data>
   <data name="Profile_AltGrAliasing.Header" xml:space="preserve">
     <value>AltGr aliasing</value>
@@ -932,17 +993,33 @@
     <value>Line height</value>
     <comment>Header for a control that sets the text line height.</comment>
   </data>
+  <data name="Profile_CellWidth.Header" xml:space="preserve">
+    <value>Cell width</value>
+    <comment>Header for a control that sets the text character width.</comment>
+  </data>
   <data name="Profile_LineHeightBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Line height</value>
     <comment>Header for a control that sets the text line height.</comment>
+  </data>
+  <data name="Profile_CellWidthBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Cell width</value>
+    <comment>Header for a control that sets the text character width.</comment>
   </data>
   <data name="Profile_LineHeight.HelpText" xml:space="preserve">
     <value>Override the line height of the terminal. Measured as a multiple of the font size. The default value depends on your font and is usually around 1.2.</value>
     <comment>A description for what the "line height" setting does. Presented near "Profile_LineHeight".</comment>
   </data>
+  <data name="Profile_CellWidth.HelpText" xml:space="preserve">
+    <value>Override the cell width of the terminal. Measured as a multiple of the font size. The default value depends on your font and is usually around 0.6.</value>
+    <comment>A description for what the "cell width" setting does. Presented near "Profile_CellWidth".</comment>
+  </data>
   <data name="Profile_LineHeightBox.PlaceholderText" xml:space="preserve">
     <value>1.2</value>
     <comment>"1.2" is a decimal number.</comment>
+  </data>
+  <data name="Profile_CellWidthBox.PlaceholderText" xml:space="preserve">
+    <value>0.6</value>
+    <comment>"0.6" is a decimal number.</comment>
   </data>
   <data name="Profile_EnableBuiltinGlyphs.Header" xml:space="preserve">
     <value>Builtin Glyphs</value>
@@ -1539,6 +1616,10 @@
     <value>Text</value>
     <comment>Header for a group of settings that control the appearance of text in the app.</comment>
   </data>
+  <data name="Globals_WarningsHeader.Text" xml:space="preserve">
+    <value>Warnings</value>
+    <comment>Header for a group of settings that control the warnings in the app.</comment>
+  </data>
   <data name="Profile_WindowHeader.Text" xml:space="preserve">
     <value>Window</value>
     <comment>Header for a group of settings that control the appearance of the window frame of the app.</comment>
@@ -1819,6 +1900,15 @@
     <value>Warn when closing more than one tab</value>
     <comment>Header for a control to toggle whether to show a confirm dialog box when closing the application with multiple tabs open.</comment>
   </data>
+  <data name="Globals_InputServiceWarning.Header" xml:space="preserve">
+    <value>Warn when "Touch Keyboard and Handwriting Panel Service" is disabled</value>
+  </data>
+  <data name="Globals_WarnAboutLargePaste.Header" xml:space="preserve">
+    <value>Warn when trying to paste more than 5 KiB of characters</value>
+  </data>
+  <data name="Globals_WarnAboutMultiLinePaste.Header" xml:space="preserve">
+    <value>Warn when trying to paste a "new line" character</value>
+  </data>
   <data name="Settings_PortableModeNote.Text" xml:space="preserve">
     <value>Windows Terminal is running in portable mode.</value>
     <comment>A disclaimer that indicates that Terminal is running in a mode that saves settings to a different folder.</comment>
@@ -1838,5 +1928,37 @@
   <data name="Profile_ProportionalFontFaces.Header" xml:space="preserve">
     <value>Non-monospace fonts:</value>
     <comment>This is a label that is followed by a list of proportional fonts.</comment>
+  </data>
+  <data name="Profile_AnswerbackMessage.Header" xml:space="preserve">
+    <value>ENQ (Request Terminal Status) response</value>
+    <comment>{Locked=ENQ}{Locked="Request Terminal Status"} Header for a control to determine the response to the ENQ escape sequence. This is represented using a text box.</comment>
+  </data>
+  <data name="Profile_AnswerbackMessage.HelpText" xml:space="preserve">
+    <value>The response that is sent when an ENQ control sequence is received.</value>
+    <comment>{Locked=ENQ} A description for what the "ENQ response" setting does. Presented near "Profile_AnswerbackMessage".</comment>
+  </data>
+  <data name="Globals_DebugFeaturesEnabled.HelpText" xml:space="preserve">
+    <value>Useful for troubleshooting or developing Terminal.</value>
+    <comment>Additional description for what the "debug features enabled" setting does. Presented near "Globals_DebugFeaturesEnabled.Header".</comment>
+  </data>
+  <data name="Profile_RainbowSuggestions.Header" xml:space="preserve">
+    <value>Experimental: Display suggested input in rainbow colors</value>
+    <comment>This is a label for a setting that, when enabled, applies a rainbow coloring to the preview text from the suggestions UI.</comment>
+  </data>
+  <data name="Globals_EnableColorSelection.Header" xml:space="preserve">
+    <value>Experimental: Add key bindings to color selected text</value>
+    <comment>Header for a control to toggle adding a set of key bindings that can be used to apply coloring to selected text in a terminal session.</comment>
+  </data>
+  <data name="Globals_EnableColorSelection.HelpText" xml:space="preserve">
+    <value>These key bindings can highlight the selected text or all instances of the selected text with a specified color.</value>
+    <comment>Additional text for a control to toggle adding a set of key bindings that can be used to apply coloring to selected text in a terminal session. Presented near "Globals_EnableColorSelection.Header".</comment>
+  </data>
+  <data name="Globals_EnableUnfocusedAcrylic.Header" xml:space="preserve">
+    <value>Allow acrylic material in unfocused windows</value>
+    <comment>Header for a control to toggle allowing unfocused windows to have an acrylic background.</comment>
+  </data>
+  <data name="Globals_ShowAdminShield.Header" xml:space="preserve">
+    <value>Display a shield in the title bar when Windows Terminal is running as Administrator</value>
+    <comment>Header for a control to toggle displaying a shield in the title bar of the app. "Admin" refers to elevated sessions like "run as Admin"</comment>
   </data>
 </root>

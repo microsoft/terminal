@@ -329,7 +329,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _touchAnchor = contactPoint;
     }
 
-    void ControlInteractivity::PointerMoved(Control::MouseButtonState buttonState,
+    bool ControlInteractivity::PointerMoved(Control::MouseButtonState buttonState,
                                             const unsigned int pointerUpdateKind,
                                             const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
                                             const bool focused,
@@ -337,11 +337,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                             const bool pointerPressedInBounds)
     {
         const auto terminalPosition = _getTerminalPosition(til::point{ pixelPosition });
+        // Returning true from this function indicates that the caller should do no further processing of this movement.
+        bool handledCompletely = false;
 
         // Short-circuit isReadOnly check to avoid warning dialog
         if (focused && !_core->IsInReadOnlyMode() && _canSendVTMouseInput(modifiers))
         {
             _sendMouseEventHelper(terminalPosition, pointerUpdateKind, modifiers, 0, buttonState);
+            handledCompletely = true;
         }
         // GH#4603 - don't modify the selection if the pointer press didn't
         // actually start _in_ the control bounds. Case in point - someone drags
@@ -378,6 +381,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         _core->SetHoveredCell(terminalPosition.to_core_point());
+        return handledCompletely;
     }
 
     void ControlInteractivity::TouchMoved(const Core::Point newTouchPoint,
@@ -682,13 +686,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                                      const SHORT wheelDelta,
                                                      Control::MouseButtonState buttonState)
     {
-        const auto adjustment = _core->ScrollOffset() > 0 ? _core->BufferHeight() - _core->ScrollOffset() - _core->ViewHeight() : 0;
-        // If the click happened outside the active region, just don't send any mouse event
-        if (const auto adjustedY = terminalPosition.y - adjustment; adjustedY >= 0)
-        {
-            return _core->SendMouseEvent({ terminalPosition.x, adjustedY }, pointerUpdateKind, modifiers, wheelDelta, toInternalMouseState(buttonState));
-        }
-        return false;
+        const auto adjustment = _core->BufferHeight() - _core->ScrollOffset() - _core->ViewHeight();
+        // If the click happened outside the active region, core should get a chance to filter it out or clamp it.
+        const auto adjustedY = terminalPosition.y - adjustment;
+        return _core->SendMouseEvent({ terminalPosition.x, adjustedY }, pointerUpdateKind, modifiers, wheelDelta, toInternalMouseState(buttonState));
     }
 
     // Method Description:

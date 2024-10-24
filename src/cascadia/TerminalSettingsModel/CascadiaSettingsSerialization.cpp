@@ -78,7 +78,7 @@ static auto extractValueFromTaskWithoutMainThreadAwait(TTask&& task) -> decltype
     std::optional<decltype(task.get())> finalVal;
     til::latch latch{ 1 };
 
-    const auto _ = [&]() -> winrt::fire_and_forget {
+    const auto _ = [&]() -> safe_void_coroutine {
         const auto cleanup = wil::scope_exit([&]() {
             latch.count_down();
         });
@@ -109,6 +109,7 @@ void ParsedSettings::clear()
     profilesByGuid.clear();
     colorSchemes.clear();
     fixupsAppliedDuringLoad = false;
+    themesChangeLog.clear();
 }
 
 // This is a convenience method used by the CascadiaSettings constructor.
@@ -145,9 +146,27 @@ SettingsLoader::SettingsLoader(const std::string_view& userJSON, const std::stri
     if (const auto sources = userSettings.globals->DisabledProfileSources())
     {
         _ignoredNamespaces.reserve(sources.Size());
-        for (const auto& id : sources)
+        for (auto&& id : sources)
         {
-            _ignoredNamespaces.emplace(id);
+            _ignoredNamespaces.emplace(std::move(id));
+        }
+    }
+
+    // Apply DisabledProfileSources policy setting. Pick whatever policy is set first.
+    // In most cases HKCU settings take precedence over HKLM settings, but the inverse is true for policies.
+    for (const auto key : { HKEY_LOCAL_MACHINE, HKEY_CURRENT_USER })
+    {
+        wchar_t buffer[512]; // "640K ought to be enough for anyone"
+        DWORD bufferSize = sizeof(buffer);
+        if (RegGetValueW(key, LR"(Software\Policies\Microsoft\Windows Terminal)", L"DisabledProfileSources", RRF_RT_REG_MULTI_SZ, nullptr, buffer, &bufferSize) == 0)
+        {
+            for (auto p = buffer; *p;)
+            {
+                const auto len = wcslen(p);
+                _ignoredNamespaces.emplace(p, gsl::narrow_cast<uint32_t>(len));
+                p += len + 1;
+            }
+            break;
         }
     }
 
@@ -259,7 +278,7 @@ void SettingsLoader::FindFragmentsAndMergeIntoUserSettings()
                 const auto filename = fragmentExtFolder.path().filename();
                 const auto& source = filename.native();
 
-                if (!_ignoredNamespaces.count(std::wstring_view{ source }) && fragmentExtFolder.is_directory())
+                if (!_ignoredNamespaces.contains(std::wstring_view{ source }) && fragmentExtFolder.is_directory())
                 {
                     parseAndLayerFragmentFiles(fragmentExtFolder.path(), winrt::hstring{ source });
                 }
@@ -294,7 +313,7 @@ void SettingsLoader::FindFragmentsAndMergeIntoUserSettings()
     for (const auto& ext : extensions)
     {
         const auto packageName = ext.Package().Id().FamilyName();
-        if (_ignoredNamespaces.count(std::wstring_view{ packageName }))
+        if (_ignoredNamespaces.contains(std::wstring_view{ packageName }))
         {
             continue;
         }
@@ -523,6 +542,15 @@ bool SettingsLoader::FixupUserSettings()
         fixedUp = true;
     }
 
+    // Terminal 1.23: Migrate the global
+    // `experimental.input.forceVT` to being a per-profile setting.
+    if (userSettings.globals->LegacyForceVTInput())
+    {
+        // migrate the user's opt-out to the profiles.defaults
+        userSettings.baseLayerProfile->ForceVTInput(true);
+        fixedUp = true;
+    }
+
     return fixedUp;
 }
 
@@ -657,6 +685,12 @@ void SettingsLoader::_parse(const OriginTag origin, const winrt::hstring& source
                     // Themes don't support layering - we don't want the user
                     // versions of these themes overriding the built-in ones.
                     continue;
+                }
+
+                if (origin != OriginTag::InBox)
+                {
+                    static std::string themesContext{ "themes" };
+                    theme->LogSettingChanges(settings.themesChangeLog, themesContext);
                 }
                 settings.globals->AddTheme(*theme);
             }
@@ -907,7 +941,7 @@ void SettingsLoader::_addOrMergeUserColorScheme(const winrt::com_ptr<implementat
 void SettingsLoader::_executeGenerator(const IDynamicProfileGenerator& generator)
 {
     const auto generatorNamespace = generator.GetNamespace();
-    if (_ignoredNamespaces.count(generatorNamespace))
+    if (_ignoredNamespaces.contains(generatorNamespace))
     {
         return;
     }
@@ -1222,6 +1256,7 @@ CascadiaSettings::CascadiaSettings(SettingsLoader&& loader) :
     _allProfiles = winrt::single_threaded_observable_vector(std::move(allProfiles));
     _activeProfiles = winrt::single_threaded_observable_vector(std::move(activeProfiles));
     _warnings = winrt::single_threaded_vector(std::move(warnings));
+    _themesChangeLog = std::move(loader.userSettings.themesChangeLog);
 
     _resolveDefaultProfile();
     _resolveNewTabMenuProfiles();
@@ -1594,5 +1629,75 @@ void CascadiaSettings::_resolveNewTabMenuProfilesSet(const IVector<Model::NewTab
             break;
         }
         }
+    }
+}
+
+void CascadiaSettings::LogSettingChanges(bool isJsonLoad) const
+{
+#ifndef _DEBUG
+    // Only do this if we're actually being sampled
+    if (!TraceLoggingProviderEnabled(g_hSettingsModelProvider, 0, MICROSOFT_KEYWORD_MEASURES))
+    {
+        return;
+    }
+#endif // !_DEBUG
+
+    // aggregate setting changes
+    std::set<std::string> changes;
+    static constexpr std::string_view globalContext{ "global" };
+    _globals->LogSettingChanges(changes, globalContext);
+
+    // Actions are not expected to change when loaded from the settings UI
+    static constexpr std::string_view actionContext{ "action" };
+    winrt::get_self<implementation::ActionMap>(_globals->ActionMap())->LogSettingChanges(changes, actionContext);
+
+    static constexpr std::string_view profileContext{ "profile" };
+    for (const auto& profile : _allProfiles)
+    {
+        winrt::get_self<Profile>(profile)->LogSettingChanges(changes, profileContext);
+    }
+
+    static constexpr std::string_view profileDefaultsContext{ "profileDefaults" };
+    _baseLayerProfile->LogSettingChanges(changes, profileDefaultsContext);
+
+    // Themes are not expected to change when loaded from the settings UI
+    // DO NOT CALL Theme::LogSettingChanges!!
+    // We already collected the changes when we loaded the JSON
+    for (const auto& change : _themesChangeLog)
+    {
+        changes.insert(change);
+    }
+
+    // report changes
+    for (const auto& change : changes)
+    {
+#ifndef _DEBUG
+        // A `isJsonLoad ? "JsonSettingsChanged" : "UISettingsChanged"`
+        //   would be nice, but that apparently isn't allowed in the macro below.
+        // Also, there's guidance to not send too much data all in one event,
+        //   so we'll be sending a ton of events here.
+        if (isJsonLoad)
+        {
+            TraceLoggingWrite(g_hSettingsModelProvider,
+                              "JsonSettingsChanged",
+                              TraceLoggingDescription("Event emitted when settings.json change"),
+                              TraceLoggingValue(change.data()),
+                              TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+                              TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
+        }
+        else
+        {
+            TraceLoggingWrite(g_hSettingsModelProvider,
+                              "UISettingsChanged",
+                              TraceLoggingDescription("Event emitted when settings change via the UI"),
+                              TraceLoggingValue(change.data()),
+                              TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+                              TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
+        }
+#else
+        OutputDebugStringA(isJsonLoad ? "JsonSettingsChanged - " : "UISettingsChanged - ");
+        OutputDebugStringA(change.data());
+        OutputDebugStringA("\n");
+#endif // !_DEBUG
     }
 }

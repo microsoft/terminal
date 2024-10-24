@@ -118,13 +118,13 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="SetColorSchemeParentCommandName" xml:space="preserve">
-    <value>选择配色方案</value>
+    <value>选择配色方案...</value>
   </data>
   <data name="NewTabParentCommandName" xml:space="preserve">
-    <value>新建标签页</value>
+    <value>新建选项卡...</value>
   </data>
   <data name="SplitPaneParentCommandName" xml:space="preserve">
-    <value>拆分窗格</value>
+    <value>拆分窗格...</value>
   </data>
   <data name="SnippetsPaneCommandName" xml:space="preserve">
     <value>打开代码片段窗格</value>
@@ -329,7 +329,7 @@
     <comment>{Locked="JSON"}. "JSON" is the extension of the file that will be opened.</comment>
   </data>
   <data name="OpenTabColorPickerCommandKey" xml:space="preserve">
-    <value>设置选项卡颜色</value>
+    <value>设置选项卡颜色...</value>
   </data>
   <data name="PasteTextCommandKey" xml:space="preserve">
     <value>粘贴</value>
@@ -351,7 +351,7 @@
     <value>重置标签页标题</value>
   </data>
   <data name="OpenTabRenamerCommandKey" xml:space="preserve">
-    <value>重命名选项卡标题</value>
+    <value>重命名选项卡</value>
   </data>
   <data name="ResizePaneCommandKey" xml:space="preserve">
     <value>调整窗格大小</value>
@@ -445,16 +445,13 @@
     <value>切换到最后一个选项卡</value>
   </data>
   <data name="TabSearchCommandKey" xml:space="preserve">
-    <value>搜索选项卡</value>
+    <value>搜索选项卡...</value>
   </data>
   <data name="ToggleAlwaysOnTopCommandKey" xml:space="preserve">
     <value>切换“总在最前面”模式</value>
   </data>
   <data name="ToggleCommandPaletteCommandKey" xml:space="preserve">
     <value>切换命令面板</value>
-  </data>
-  <data name="SuggestionsCommandHistoryCommandKey" xml:space="preserve">
-    <value>最近使用的命令</value>
   </data>
   <data name="SuggestionsCommandKey" xml:space="preserve">
     <value>打开建议</value>
@@ -519,7 +516,7 @@
     <value>重置窗口名称</value>
   </data>
   <data name="OpenWindowRenamerCommandKey" xml:space="preserve">
-    <value>重命名窗口</value>
+    <value>重命名窗口...</value>
   </data>
   <data name="DisplayWorkingDirectoryCommandKey" xml:space="preserve">
     <value>显示终端的当前工作目录</value>
@@ -570,7 +567,7 @@
     <value>退出终端</value>
   </data>
   <data name="SetOpacityParentCommandName" xml:space="preserve">
-    <value>设置背景不透明度</value>
+    <value>设置背景不透明度...</value>
   </data>
   <data name="IncreaseOpacityCommandKey" xml:space="preserve">
     <value>将背景不透明度增加 {0}%</value>

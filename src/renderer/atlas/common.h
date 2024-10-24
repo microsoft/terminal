@@ -393,7 +393,9 @@ namespace Microsoft::Console::Render::Atlas
     struct MiscellaneousSettings
     {
         u32 backgroundColor = 0;
-        u32 selectionColor = 0x7fffffff;
+        u32 foregroundColor = 0;
+        u32 selectionColor = 0xffffffff;
+        u32 selectionForeground = 0xff000000;
         std::wstring customPixelShaderPath;
         std::wstring customPixelShaderImagePath;
         bool useRetroTerminalEffect = false;
@@ -475,8 +477,6 @@ namespace Microsoft::Console::Render::Atlas
             bitmap.active = false;
             gridLineRanges.clear();
             lineRendition = LineRendition::SingleWidth;
-            selectionFrom = 0;
-            selectionTo = 0;
             dirtyTop = y * cellHeight;
             dirtyBottom = dirtyTop + cellHeight;
         }
@@ -496,8 +496,6 @@ namespace Microsoft::Console::Render::Atlas
         Bitmap bitmap;
         std::vector<GridLineRange> gridLineRanges;
         LineRendition lineRendition = LineRendition::SingleWidth;
-        u16 selectionFrom = 0;
-        u16 selectionTo = 0;
         til::CoordType dirtyTop = 0;
         til::CoordType dirtyBottom = 0;
     };

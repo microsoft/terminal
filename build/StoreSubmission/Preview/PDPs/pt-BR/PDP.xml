@@ -56,7 +56,14 @@ Este é um projeto de código aberto e a participação da comunidade é bem-vin
   <ReleaseNotes>
     Versão __VERSION_NUMBER__
 
-Consulte nossa página de lançamentos do GitHub para obter detalhes adicionais.
+- Reescrevemos a forma como os aplicativos de console são hospedados no Terminal! Certifique-se de reportar os bugs que você encontrar.
+- O terminal agora é compatível com o Sixels!
+- Agora você pode abrir um painel acoplado contendo snippets de comandos que você salvou para usar mais tarde
+- Os usuários do Prompt de Comando na versão mais recente do Windows 11 podem ver um ícone de "dica rápida", que sugere softwares instaláveis a partir do WinGet
+- O texto selecionado agora ficará muito mais visível (e personalizável!)
+- Vários bugs de confiabilidade, problemas de conveniência e incômodos foram resolvidos.
+
+Confira nossa página de lançamentos no GitHub para obter mais detalhes.
   </ReleaseNotes>
   <ScreenshotCaptions>
     <!-- Valid length: 200 character limit, up to 9 elements per platform -->

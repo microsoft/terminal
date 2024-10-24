@@ -56,7 +56,14 @@ Il s’agit d’un projet open source et nous vous invitons à participer dans l
   <ReleaseNotes>
     Version __VERSION_NUMBER__
 
-Consultez la page des versions de GitHub pour plus d’informations.
+- Nous avons réécrit la manière dont les applications de console sont hébergées dans Terminal ! Veuillez signaler tout bug que vous rencontrez.
+- Le terminal prend désormais en charge Sixels !
+- Vous pouvez désormais ouvrir un panneau ancré contenant des extraits de commandes que vous avez enregistrées pour les utiliser ultérieurement
+- Les utilisateurs de l'invite de commande sur la dernière version de Windows 11 peuvent voir une icône « astuce rapide » qui suggère un logiciel installable à partir de WinGet
+- Le texte sélectionné sera désormais beaucoup plus visible (et personnalisable !)
+- Un certain nombre de bugs de fiabilité, de problèmes de commodité et de désagréments ont été corrigés.
+
+Veuillez consulter notre page de versions GitHub pour plus de détails.
   </ReleaseNotes>
   <ScreenshotCaptions>
     <!-- Valid length: 200 character limit, up to 9 elements per platform -->

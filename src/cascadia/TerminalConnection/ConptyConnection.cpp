@@ -534,6 +534,14 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         }
     }
 
+    void ConptyConnection::ResetSize()
+    {
+        if (_isConnected())
+        {
+            THROW_IF_FAILED(ConptyResizePseudoConsole(_hPC.get(), { Utils::ClampToShortMax(_cols, 1), Utils::ClampToShortMax(_rows, 1) }));
+        }
+    }
+
     void ConptyConnection::ClearBuffer()
     {
         // If we haven't connected yet, then we really don't need to do
@@ -793,7 +801,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     //   be awaiting our destruction breaks the deadlock.
     // Arguments:
     // - connection: the final living reference to an outgoing connection
-    winrt::fire_and_forget ConptyConnection::final_release(std::unique_ptr<ConptyConnection> connection)
+    safe_void_coroutine ConptyConnection::final_release(std::unique_ptr<ConptyConnection> connection)
     {
         co_await winrt::resume_background(); // move to background
         connection.reset(); // explicitly destruct
