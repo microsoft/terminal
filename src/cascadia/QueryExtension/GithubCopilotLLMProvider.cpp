@@ -136,7 +136,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         {
             try
             {
-                const auto endpointAndUsernameResult = _SendRequestReturningJson(githubGraphQLEndpoint, endpointAndUsernameRequestContent, WWH::HttpMethod::Post());
+                const auto endpointAndUsernameResult = co_await _SendRequestReturningJson(githubGraphQLEndpoint, endpointAndUsernameRequestContent, WWH::HttpMethod::Post());
                 const auto viewerObject = endpointAndUsernameResult.GetNamedObject(dataKey).GetNamedObject(viewerKey);
                 const auto userName = viewerObject.GetNamedString(loginKey);
                 const auto copilotEndpoint = viewerObject.GetNamedObject(copilotEndpointsKey).GetNamedString(apiKey);
@@ -178,7 +178,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         try
         {
             // Get the user's oauth token
-            const auto jsonResult = _SendRequestReturningJson(accessTokenEndpoint, requestContent, WWH::HttpMethod::Post());
+            const auto jsonResult = co_await _SendRequestReturningJson(accessTokenEndpoint, requestContent, WWH::HttpMethod::Post());
             if (jsonResult.HasKey(errorKey))
             {
                 const auto errorMessage = jsonResult.GetNamedString(errorDescriptionKey);
@@ -275,7 +275,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
                 };
 
                 // Send the request
-                const auto jsonResult = _SendRequestReturningJson(_endpointUri, requestContent, WWH::HttpMethod::Post());
+                const auto jsonResult = co_await _SendRequestReturningJson(_endpointUri, requestContent, WWH::HttpMethod::Post());
                 if (jsonResult.HasKey(errorKey))
                 {
                     const auto errorObject = jsonResult.GetNamedObject(errorKey);
@@ -317,7 +317,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         co_return winrt::make<GithubCopilotResponse>(message, errorType, RS_(L"GithubCopilot_ResponseMetaData"));
     }
 
-    void GithubCopilotLLMProvider::_refreshAuthTokens()
+    safe_void_coroutine GithubCopilotLLMProvider::_refreshAuthTokens()
     {
         WDJ::JsonObject jsonContent;
         jsonContent.SetNamedValue(clientIdKey, WDJ::JsonValue::CreateStringValue(windowsTerminalClientID));
@@ -333,7 +333,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
 
         try
         {
-            const auto jsonResult = _SendRequestReturningJson(accessTokenEndpoint, requestContent, WWH::HttpMethod::Post());
+            const auto jsonResult = co_await _SendRequestReturningJson(accessTokenEndpoint, requestContent, WWH::HttpMethod::Post());
 
             _authToken = jsonResult.GetNamedString(accessTokenKey);
             _refreshToken = jsonResult.GetNamedString(refreshTokenKey);
@@ -348,7 +348,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         CATCH_LOG();
     }
 
-    WDJ::JsonObject GithubCopilotLLMProvider::_SendRequestReturningJson(std::wstring_view uri, const WWH::IHttpContent& content, WWH::HttpMethod method)
+    IAsyncOperation<WDJ::JsonObject> GithubCopilotLLMProvider::_SendRequestReturningJson(std::wstring_view uri, const winrt::Windows::Web::Http::IHttpContent& content, winrt::Windows::Web::Http::HttpMethod method)
     {
         if (!method)
         {
@@ -358,11 +358,11 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         WWH::HttpRequestMessage request{ method, Uri{ uri } };
         request.Content(content);
 
-        const auto response{ _httpClient.SendRequestAsync(request).get() };
-        const auto string{ response.Content().ReadAsStringAsync().get() };
+        const auto response{ co_await _httpClient.SendRequestAsync(request) };
+        const auto string{ co_await response.Content().ReadAsStringAsync() };
         _lastResponse = string;
         const auto jsonResult{ WDJ::JsonObject::Parse(string) };
 
-        return jsonResult;
+        co_return jsonResult;
     }
 }
