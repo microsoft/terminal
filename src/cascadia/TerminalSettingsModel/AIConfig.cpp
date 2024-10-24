@@ -17,8 +17,7 @@ static constexpr wil::zwstring_view PasswordVaultResourceName = L"TerminalAI";
 static constexpr wil::zwstring_view PasswordVaultAIKey = L"TerminalAIKey";
 static constexpr wil::zwstring_view PasswordVaultAIEndpoint = L"TerminalAIEndpoint";
 static constexpr wil::zwstring_view PasswordVaultOpenAIKey = L"TerminalOpenAIKey";
-static constexpr wil::zwstring_view PasswordVaultGithubCopilotAuthToken = L"TerminalGithubCopilotAuthToken";
-static constexpr wil::zwstring_view PasswordVaultGithubCopilotRefreshToken = L"TerminalGithubCopilotRefreshToken";
+static constexpr wil::zwstring_view PasswordVaultGithubCopilotAuthValues = L"TerminalGithubCopilotAuthValues";
 
 winrt::com_ptr<AIConfig> AIConfig::CopyAIConfig(const AIConfig* source)
 {
@@ -97,24 +96,14 @@ void AIConfig::OpenAIKey(const winrt::hstring& key) noexcept
     _openAISettingChangedHandlers();
 }
 
-winrt::hstring AIConfig::GithubCopilotAuthToken() noexcept
+void AIConfig::GithubCopilotAuthValues(const winrt::hstring& authValues)
 {
-    return _RetrieveCredential(PasswordVaultGithubCopilotAuthToken);
+    _SetCredential(PasswordVaultGithubCopilotAuthValues, authValues);
 }
 
-void AIConfig::GithubCopilotAuthToken(const winrt::hstring& authToken) noexcept
+winrt::hstring AIConfig::GithubCopilotAuthValues()
 {
-    _SetCredential(PasswordVaultGithubCopilotAuthToken, authToken);
-}
-
-winrt::hstring AIConfig::GithubCopilotRefreshToken() noexcept
-{
-    return _RetrieveCredential(PasswordVaultGithubCopilotRefreshToken);
-}
-
-void AIConfig::GithubCopilotRefreshToken(const winrt::hstring& refreshToken) noexcept
-{
-    _SetCredential(PasswordVaultGithubCopilotRefreshToken, refreshToken);
+    return _RetrieveCredential(PasswordVaultGithubCopilotAuthValues);
 }
 
 winrt::Microsoft::Terminal::Settings::Model::LLMProvider AIConfig::ActiveProvider()
@@ -140,7 +129,7 @@ winrt::Microsoft::Terminal::Settings::Model::LLMProvider AIConfig::ActiveProvide
         // no explicitly set provider but we have an open ai key, use that
         return LLMProvider::OpenAI;
     }
-    else if (!GithubCopilotAuthToken().empty() && !GithubCopilotRefreshToken().empty())
+    else if (!GithubCopilotAuthValues().empty())
     {
         return LLMProvider::GithubCopilot;
     }

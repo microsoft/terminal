@@ -22,8 +22,7 @@ namespace Microsoft.Terminal.Settings.Editor
 
         Boolean AreGithubCopilotTokensSet { get; };
         String GithubCopilotAuthMessage { get; };
-        void GithubCopilotAuthToken(String authToken);
-        void GithubCopilotRefreshToken(String refreshToken);
+        void GithubCopilotAuthValues(String authValues);
         Boolean GithubCopilotActive;
         Boolean GithubCopilotFeatureEnabled { get; };
 

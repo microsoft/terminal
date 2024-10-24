@@ -586,7 +586,7 @@ namespace winrt::TerminalApp::implementation
         // Terminal Chat related members and functions
         winrt::Microsoft::Terminal::Query::Extension::ILMProvider _lmProvider{ nullptr };
         winrt::Microsoft::Terminal::Settings::Model::LLMProvider _currentProvider;
-        void _createAndSetAuthenticationForLMProvider(winrt::Microsoft::Terminal::Settings::Model::LLMProvider providerType, Windows::Foundation::Collections::ValueSet authValues = nullptr);
+        void _createAndSetAuthenticationForLMProvider(winrt::Microsoft::Terminal::Settings::Model::LLMProvider providerType, const winrt::hstring& authValuesString = winrt::hstring{});
         void _InitiateGithubAuth();
         winrt::fire_and_forget _OnGithubCopilotLLMProviderAuthChanged(const IInspectable& sender, const winrt::Microsoft::Terminal::Query::Extension::IAuthenticationResult& authResult);
         winrt::Microsoft::Terminal::Settings::Model::AIConfig::AzureOpenAISettingChanged_revoker _azureOpenAISettingChangedRevoker;

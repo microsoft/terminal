@@ -47,10 +47,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         static winrt::event_token OpenAISettingChanged(const winrt::Microsoft::Terminal::Settings::Model::OpenAISettingChangedHandler& handler);
         static void OpenAISettingChanged(const winrt::event_token& token);
 
-        winrt::hstring GithubCopilotAuthToken() noexcept;
-        void GithubCopilotAuthToken(const winrt::hstring& authToken) noexcept;
-        winrt::hstring GithubCopilotRefreshToken() noexcept;
-        void GithubCopilotRefreshToken(const winrt::hstring& refreshToken) noexcept;
+        void GithubCopilotAuthValues(const winrt::hstring& authValues);
+        winrt::hstring GithubCopilotAuthValues();
 
         // we cannot just use INHERITABLE_SETTING here because we try to be smart about what the ActiveProvider is
         // i.e. even if there's no ActiveProvider explicitly set, if there's only the key stored for one of the providers

@@ -21,12 +21,12 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
 
     struct GithubCopilotAuthenticationResult : public winrt::implements<GithubCopilotAuthenticationResult, winrt::Microsoft::Terminal::Query::Extension::IAuthenticationResult>
     {
-        GithubCopilotAuthenticationResult(const winrt::hstring& errorMessage, const Windows::Foundation::Collections::ValueSet& authValues) :
+        GithubCopilotAuthenticationResult(const winrt::hstring& errorMessage, const winrt::hstring& authValues) :
             ErrorMessage{ errorMessage },
             AuthValues{ authValues } {}
 
         til::property<winrt::hstring> ErrorMessage;
-        til::property<Windows::Foundation::Collections::ValueSet> AuthValues;
+        til::property<winrt::hstring> AuthValues;
     };
 
     struct GithubCopilotLLMProvider : GithubCopilotLLMProviderT<GithubCopilotLLMProvider>
@@ -41,7 +41,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
 
         winrt::Windows::Foundation::IAsyncOperation<Extension::IResponse> GetResponseAsync(const winrt::hstring& userPrompt);
 
-        void SetAuthentication(const Windows::Foundation::Collections::ValueSet& authValues);
+        void SetAuthentication(const winrt::hstring& authValues);
         TYPED_EVENT(AuthChanged, winrt::Microsoft::Terminal::Query::Extension::ILMProvider, winrt::Microsoft::Terminal::Query::Extension::IAuthenticationResult);
 
     private:

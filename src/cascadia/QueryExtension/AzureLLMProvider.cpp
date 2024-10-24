@@ -40,13 +40,22 @@ static constexpr std::wstring_view expectedHostSuffix{ L".openai.azure.com" };
 
 namespace winrt::Microsoft::Terminal::Query::Extension::implementation
 {
-    void AzureLLMProvider::SetAuthentication(const Windows::Foundation::Collections::ValueSet& authValues)
+    void AzureLLMProvider::SetAuthentication(const winrt::hstring& authValues)
     {
-        _azureEndpoint = unbox_value_or<hstring>(authValues.TryLookup(endpointString).try_as<IPropertyValue>(), L"");
-        _azureKey = unbox_value_or<hstring>(authValues.TryLookup(keyString).try_as<IPropertyValue>(), L"");
         _httpClient = winrt::Windows::Web::Http::HttpClient{};
         _httpClient.DefaultRequestHeaders().Accept().TryParseAdd(applicationJson);
-        _httpClient.DefaultRequestHeaders().Append(L"api-key", _azureKey);
+
+        if (!authValues.empty())
+        {
+            // Parse out the endpoint and key from the authValues string
+            WDJ::JsonObject authValuesObject{ WDJ::JsonObject::Parse(authValues) };
+            if (authValuesObject.HasKey(endpointString) && authValuesObject.HasKey(keyString))
+            {
+                _azureEndpoint = authValuesObject.GetNamedString(endpointString);
+                _azureKey = authValuesObject.GetNamedString(keyString);
+                _httpClient.DefaultRequestHeaders().Append(L"api-key", _azureKey);
+            }
+        }
     }
 
     void AzureLLMProvider::ClearMessageHistory()

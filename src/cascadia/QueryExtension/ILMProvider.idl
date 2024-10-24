@@ -16,7 +16,7 @@ namespace Microsoft.Terminal.Query.Extension
     interface IAuthenticationResult
     {
         String ErrorMessage { get; };
-        Windows.Foundation.Collections.ValueSet AuthValues { get; };
+        String AuthValues { get; };
     };
 
     interface ILMProvider
@@ -29,7 +29,7 @@ namespace Microsoft.Terminal.Query.Extension
         Windows.Foundation.IAsyncOperation<IResponse> GetResponseAsync(String userPrompt);
 
         // auth related functions
-        void SetAuthentication(Windows.Foundation.Collections.ValueSet authValues);
+        void SetAuthentication(String authValues);
         event Windows.Foundation.TypedEventHandler<ILMProvider, IAuthenticationResult> AuthChanged;
 
         // UI related settings

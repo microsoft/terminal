@@ -48,6 +48,7 @@ using namespace ::TerminalApp;
 using namespace ::Microsoft::Console;
 using namespace ::Microsoft::Terminal::Core;
 using namespace std::chrono_literals;
+namespace WDJ = ::winrt::Windows::Data::Json;
 
 #define HOOKUP_ACTION(action) _actionDispatch->action({ this, &TerminalPage::_Handle##action });
 
@@ -506,19 +507,8 @@ namespace winrt::TerminalApp::implementation
         winrt::hstring message{};
         if (authResult.ErrorMessage().empty())
         {
-            // the auth succeeded, extract the values
-            const auto authValues = authResult.AuthValues();
-            try
-            {
-                const auto authToken = unbox_value_or<hstring>(authValues.TryLookup(L"access_token").try_as<Windows::Foundation::IPropertyValue>(), L"");
-                const auto refreshToken = unbox_value_or<hstring>(authValues.TryLookup(L"refresh_token").try_as<Windows::Foundation::IPropertyValue>(), L"");
-                if (!authToken.empty() && !refreshToken.empty())
-                {
-                    _settings.GlobalSettings().AIInfo().GithubCopilotAuthToken(authToken);
-                    _settings.GlobalSettings().AIInfo().GithubCopilotRefreshToken(refreshToken);
-                }
-            }
-            CATCH_LOG();
+            // the auth succeeded, store the values
+            _settings.GlobalSettings().AIInfo().GithubCopilotAuthValues(authResult.AuthValues());
         }
         else
         {
@@ -5740,7 +5730,7 @@ namespace winrt::TerminalApp::implementation
         ExtensionPresenter().Content(_extensionPalette);
     }
 
-    void TerminalPage::_createAndSetAuthenticationForLMProvider(LLMProvider providerType, Windows::Foundation::Collections::ValueSet authValues)
+    void TerminalPage::_createAndSetAuthenticationForLMProvider(LLMProvider providerType, const winrt::hstring& authValuesString)
     {
         if (!_lmProvider || (_currentProvider != providerType))
         {
@@ -5766,28 +5756,30 @@ namespace winrt::TerminalApp::implementation
         }
 
         // we now have a provider of the correct type, update that
-        if (!authValues)
+        winrt::hstring newAuthValues = authValuesString;
+        if (newAuthValues.empty())
         {
-            authValues = Windows::Foundation::Collections::ValueSet{};
+            Windows::Data::Json::JsonObject authValuesJson;
             const auto settingsAIInfo = _settings.GlobalSettings().AIInfo();
             switch (providerType)
             {
             case LLMProvider::AzureOpenAI:
-                authValues.Insert(L"endpoint", Windows::Foundation::PropertyValue::CreateString(settingsAIInfo.AzureOpenAIEndpoint()));
-                authValues.Insert(L"key", Windows::Foundation::PropertyValue::CreateString(settingsAIInfo.AzureOpenAIKey()));
+                authValuesJson.SetNamedValue(L"endpoint", WDJ::JsonValue::CreateStringValue(settingsAIInfo.AzureOpenAIEndpoint()));
+                authValuesJson.SetNamedValue(L"key", WDJ::JsonValue::CreateStringValue(settingsAIInfo.AzureOpenAIKey()));
+                newAuthValues = authValuesJson.ToString();
                 break;
             case LLMProvider::OpenAI:
-                authValues.Insert(L"key", Windows::Foundation::PropertyValue::CreateString(settingsAIInfo.OpenAIKey()));
+                authValuesJson.SetNamedValue(L"key", WDJ::JsonValue::CreateStringValue(settingsAIInfo.OpenAIKey()));
+                newAuthValues = authValuesJson.ToString();
                 break;
             case LLMProvider::GithubCopilot:
-                authValues.Insert(L"access_token", Windows::Foundation::PropertyValue::CreateString(settingsAIInfo.GithubCopilotAuthToken()));
-                authValues.Insert(L"refresh_token", Windows::Foundation::PropertyValue::CreateString(settingsAIInfo.GithubCopilotRefreshToken()));
+                newAuthValues = settingsAIInfo.GithubCopilotAuthValues();
                 break;
             default:
                 break;
             }
         }
-        _lmProvider.SetAuthentication(authValues);
+        _lmProvider.SetAuthentication(newAuthValues);
 
         if (_extensionPalette)
         {

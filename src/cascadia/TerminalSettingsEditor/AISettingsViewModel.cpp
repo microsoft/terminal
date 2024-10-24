@@ -98,7 +98,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     bool AISettingsViewModel::AreGithubCopilotTokensSet()
     {
-        return !_Settings.GlobalSettings().AIInfo().GithubCopilotAuthToken().empty() && !_Settings.GlobalSettings().AIInfo().GithubCopilotRefreshToken().empty();
+        return !_Settings.GlobalSettings().AIInfo().GithubCopilotAuthValues().empty();
     }
 
     winrt::hstring AISettingsViewModel::GithubCopilotAuthMessage()
@@ -106,15 +106,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return _githubCopilotAuthMessage;
     }
 
-    void AISettingsViewModel::GithubCopilotAuthToken(winrt::hstring authToken)
+    void AISettingsViewModel::GithubCopilotAuthValues(winrt::hstring authValues)
     {
-        _Settings.GlobalSettings().AIInfo().GithubCopilotAuthToken(authToken);
-        _NotifyChanges(L"AreGithubCopilotTokensSet");
-    }
-
-    void AISettingsViewModel::GithubCopilotRefreshToken(winrt::hstring refreshToken)
-    {
-        _Settings.GlobalSettings().AIInfo().GithubCopilotRefreshToken(refreshToken);
+        _Settings.GlobalSettings().AIInfo().GithubCopilotAuthValues(authValues);
         _NotifyChanges(L"AreGithubCopilotTokensSet");
     }
 
