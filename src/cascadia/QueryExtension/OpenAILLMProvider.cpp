@@ -121,6 +121,6 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         responseMessageObject.Insert(L"content", WDJ::JsonValue::CreateStringValue(message));
         _jsonMessages.Append(responseMessageObject);
 
-        co_return winrt::make<OpenAIResponse>(message, errorType);
+        co_return winrt::make<OpenAIResponse>(message, errorType, L"");
     }
 }

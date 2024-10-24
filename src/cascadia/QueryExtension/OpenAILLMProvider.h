@@ -11,13 +11,20 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
     {
         OpenAIBranding() = default;
 
-        WINRT_PROPERTY(winrt::hstring, Name, L"Open AI");
-        WINRT_PROPERTY(winrt::hstring, HeaderIconPath);
-        WINRT_PROPERTY(winrt::hstring, HeaderText);
-        WINRT_PROPERTY(winrt::hstring, SubheaderText);
-        WINRT_PROPERTY(winrt::hstring, BadgeIconPath);
-        WINRT_PROPERTY(winrt::hstring, ResponseMetaData);
-        WINRT_PROPERTY(winrt::hstring, QueryMetaData);
+        winrt::hstring Name() { return _name; };
+        winrt::hstring HeaderIconPath() { return _headerIconPath; };
+        winrt::hstring HeaderText() { return _headerText; };
+        winrt::hstring SubheaderText() { return _subheaderText; };
+        winrt::hstring BadgeIconPath() { return _badgeIconPath; };
+        winrt::hstring QueryAttribution() { return _queryAttribution; };
+
+    private:
+        winrt::hstring _name{ L"OpenAI" };
+        winrt::hstring _headerIconPath;
+        winrt::hstring _headerText;
+        winrt::hstring _subheaderText;
+        winrt::hstring _badgeIconPath;
+        winrt::hstring _queryAttribution;
     };
 
     struct OpenAILLMProvider : OpenAILLMProviderT<OpenAILLMProvider>
@@ -46,12 +53,14 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
 
     struct OpenAIResponse : public winrt::implements<OpenAIResponse, winrt::Microsoft::Terminal::Query::Extension::IResponse>
     {
-        OpenAIResponse(const winrt::hstring& message, const winrt::Microsoft::Terminal::Query::Extension::ErrorTypes errorType) :
+        OpenAIResponse(const winrt::hstring& message, const winrt::Microsoft::Terminal::Query::Extension::ErrorTypes errorType, const winrt::hstring& responseAttribution) :
             Message{ message },
-            ErrorType{ errorType } {}
+            ErrorType{ errorType },
+            ResponseAttribution{ responseAttribution } {}
 
         til::property<winrt::hstring> Message;
         til::property<winrt::Microsoft::Terminal::Query::Extension::ErrorTypes> ErrorType;
+        til::property<winrt::hstring> ResponseAttribution;
     };
 }
 

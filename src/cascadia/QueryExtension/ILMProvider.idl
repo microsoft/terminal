@@ -10,8 +10,7 @@ namespace Microsoft.Terminal.Query.Extension
         String HeaderText { get; };
         String SubheaderText { get; };
         String BadgeIconPath { get; };
-        String ResponseMetaData { get; };
-        String QueryMetaData { get; };
+        String QueryAttribution { get; };
     };
 
     interface IAuthenticationResult
@@ -50,6 +49,7 @@ namespace Microsoft.Terminal.Query.Extension
     {
         String Message { get; };
         ErrorTypes ErrorType { get; };
+        String ResponseAttribution { get; };
     };
 
     interface IContext

@@ -11,13 +11,20 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
     {
         AzureBranding() = default;
 
-        WINRT_PROPERTY(winrt::hstring, Name, L"Azure OpenAI");
-        WINRT_PROPERTY(winrt::hstring, HeaderIconPath);
-        WINRT_PROPERTY(winrt::hstring, HeaderText);
-        WINRT_PROPERTY(winrt::hstring, SubheaderText);
-        WINRT_PROPERTY(winrt::hstring, BadgeIconPath);
-        WINRT_PROPERTY(winrt::hstring, ResponseMetaData);
-        WINRT_PROPERTY(winrt::hstring, QueryMetaData);
+        winrt::hstring Name() { return _name; };
+        winrt::hstring HeaderIconPath() { return _headerIconPath; };
+        winrt::hstring HeaderText() { return _headerText; };
+        winrt::hstring SubheaderText() { return _subheaderText; };
+        winrt::hstring BadgeIconPath() { return _badgeIconPath; };
+        winrt::hstring QueryAttribution() { return _queryAttribution; };
+
+    private:
+        winrt::hstring _name{ L"Azure OpenAI" };
+        winrt::hstring _headerIconPath;
+        winrt::hstring _headerText;
+        winrt::hstring _subheaderText;
+        winrt::hstring _badgeIconPath;
+        winrt::hstring _queryAttribution;
     };
 
     struct AzureLLMProvider : AzureLLMProviderT<AzureLLMProvider>
@@ -49,12 +56,14 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
 
     struct AzureResponse : public winrt::implements<AzureResponse, winrt::Microsoft::Terminal::Query::Extension::IResponse>
     {
-        AzureResponse(const winrt::hstring& message, const winrt::Microsoft::Terminal::Query::Extension::ErrorTypes errorType) :
+        AzureResponse(const winrt::hstring& message, const winrt::Microsoft::Terminal::Query::Extension::ErrorTypes errorType, const winrt::hstring& responseAttribution) :
             Message{ message },
-            ErrorType{ errorType } {}
+            ErrorType{ errorType },
+            ResponseAttribution{ responseAttribution } {}
 
         til::property<winrt::hstring> Message;
         til::property<winrt::Microsoft::Terminal::Query::Extension::ErrorTypes> ErrorType;
+        til::property<winrt::hstring> ResponseAttribution;
     };
 }
 

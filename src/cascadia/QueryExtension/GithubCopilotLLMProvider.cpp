@@ -68,11 +68,10 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
 {
     GithubCopilotBranding::GithubCopilotBranding()
     {
-        _HeaderIconPath = headerIconPath;
-        _HeaderText = RS_(L"GithubCopilot_HeaderText");
-        _SubheaderText = RS_(L"GithubCopilot_SubheaderText");
-        _BadgeIconPath = badgeIconPath;
-        _ResponseMetaData = RS_(L"GithubCopilot_ResponseMetaData");
+        _headerIconPath = headerIconPath;
+        _headerText = RS_(L"GithubCopilot_HeaderText");
+        _subheaderText = RS_(L"GithubCopilot_SubheaderText");
+        _badgeIconPath = badgeIconPath;
     }
 
     void GithubCopilotLLMProvider::SetAuthentication(const Windows::Foundation::Collections::ValueSet& authValues)
@@ -130,7 +129,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
 
                 _endpointUri = copilotEndpoint + chatCompletionSuffix;
                 const auto brandingData{ get_self<GithubCopilotBranding>(_BrandingData) };
-                brandingData->QueryMetaData(userName);
+                brandingData->QueryAttribution(userName);
                 break;
             }
             CATCH_LOG();
@@ -300,7 +299,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         responseMessageObject.Insert(contentKey, WDJ::JsonValue::CreateStringValue(message));
         _jsonMessages.Append(responseMessageObject);
 
-        co_return winrt::make<GithubCopilotResponse>(message, errorType);
+        co_return winrt::make<GithubCopilotResponse>(message, errorType, RS_(L"GithubCopilot_ResponseMetaData"));
     }
 
     void GithubCopilotLLMProvider::_refreshAuthTokens()

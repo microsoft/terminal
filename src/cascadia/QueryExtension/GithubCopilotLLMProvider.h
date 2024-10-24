@@ -11,13 +11,19 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
     {
         GithubCopilotBranding();
 
-        WINRT_PROPERTY(winrt::hstring, Name, L"GitHub Copilot");
-        WINRT_PROPERTY(winrt::hstring, HeaderIconPath);
-        WINRT_PROPERTY(winrt::hstring, HeaderText);
-        WINRT_PROPERTY(winrt::hstring, SubheaderText);
-        WINRT_PROPERTY(winrt::hstring, BadgeIconPath);
-        WINRT_PROPERTY(winrt::hstring, ResponseMetaData);
-        WINRT_PROPERTY(winrt::hstring, QueryMetaData);
+        winrt::hstring Name() { return _name; };
+        winrt::hstring HeaderIconPath() { return _headerIconPath; };
+        winrt::hstring HeaderText() { return _headerText; };
+        winrt::hstring SubheaderText() { return _subheaderText; };
+        winrt::hstring BadgeIconPath() { return _badgeIconPath; };
+        WINRT_PROPERTY(winrt::hstring, QueryAttribution);
+
+    private:
+        winrt::hstring _name{ L"GitHub Copilot" };
+        winrt::hstring _headerIconPath;
+        winrt::hstring _headerText;
+        winrt::hstring _subheaderText;
+        winrt::hstring _badgeIconPath;
     };
 
     struct GithubCopilotAuthenticationResult : public winrt::implements<GithubCopilotAuthenticationResult, winrt::Microsoft::Terminal::Query::Extension::IAuthenticationResult>
@@ -64,12 +70,14 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
 
     struct GithubCopilotResponse : public winrt::implements<GithubCopilotResponse, winrt::Microsoft::Terminal::Query::Extension::IResponse>
     {
-        GithubCopilotResponse(const winrt::hstring& message, const winrt::Microsoft::Terminal::Query::Extension::ErrorTypes errorType) :
+        GithubCopilotResponse(const winrt::hstring& message, const winrt::Microsoft::Terminal::Query::Extension::ErrorTypes errorType, const winrt::hstring& responseAttribution) :
             Message{ message },
-            ErrorType{ errorType } {}
+            ErrorType{ errorType },
+            ResponseAttribution{ responseAttribution } {}
 
         til::property<winrt::hstring> Message;
         til::property<winrt::Microsoft::Terminal::Query::Extension::ErrorTypes> ErrorType;
+        til::property<winrt::hstring> ResponseAttribution;
     };
 }
 
