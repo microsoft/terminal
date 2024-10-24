@@ -245,6 +245,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         const auto promptCopy{ userPrompt };
 
         // Make sure we are on the background thread for the http request
+        auto strongThis = get_strong();
         co_await winrt::resume_background();
 
         for (bool refreshAttempted = false;;)
