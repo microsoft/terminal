@@ -146,6 +146,17 @@
     </feature>
 
     <feature>
+        <name>Feature_MarkdownPane</name>
+        <description>Allow the user to create markdown panes. Experimental, to validate markdown parsing.</description>
+        <id>16495</id>
+        <stage>AlwaysDisabled</stage>
+        <alwaysEnabledBrandingTokens>
+            <brandingToken>Dev</brandingToken>
+            <brandingToken>Canary</brandingToken>
+        </alwaysEnabledBrandingTokens>
+    </feature>
+
+    <feature>
         <name>Feature_KeypadModeEnabled</name>
         <description>Enables the DECKPAM, DECKPNM sequences to work as intended </description>
         <id>16654</id>
