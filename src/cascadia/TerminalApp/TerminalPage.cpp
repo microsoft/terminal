@@ -9,9 +9,6 @@
 #include <TerminalCore/ControlKeyStates.hpp>
 #include <til/latch.h>
 #include <Utils.h>
-#include <til/rand.h>
-#include <wincrypt.h>
-#include <winrt/Windows.Data.Json.h>
 #include <shlobj.h>
 
 #include "../../types/inc/utils.hpp"
@@ -51,9 +48,6 @@ using namespace ::TerminalApp;
 using namespace ::Microsoft::Console;
 using namespace ::Microsoft::Terminal::Core;
 using namespace std::chrono_literals;
-namespace WWH = ::winrt::Windows::Web::Http;
-namespace WSS = ::winrt::Windows::Storage::Streams;
-namespace WDJ = ::winrt::Windows::Data::Json;
 
 #define HOOKUP_ACTION(action) _actionDispatch->action({ this, &TerminalPage::_Handle##action });
 

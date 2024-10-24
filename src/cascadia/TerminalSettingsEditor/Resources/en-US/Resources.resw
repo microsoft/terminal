@@ -774,7 +774,7 @@
   </data>
   <data name="AISettings_GithubCopilotLearnMoreLinkText" xml:space="preserve">
     <value>github.com/features/copilot</value>
-    <comment>The text of the hyperlink that directs the user to learn more about GitHub Copilot.</comment>
+    <comment>The text of the hyperlink that directs the user to learn more about GitHub Copilot. {Locked="github.com/features/copilot"}</comment>
   </data>
   <data name="AISettings_GithubCopilot.Header" xml:space="preserve">
     <value>GitHub Copilot</value>

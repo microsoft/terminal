@@ -11,20 +11,12 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
     {
         AzureBranding() = default;
 
-        winrt::hstring Name() { return _name; };
-        winrt::hstring HeaderIconPath() { return _headerIconPath; };
-        winrt::hstring HeaderText() { return _headerText; };
-        winrt::hstring SubheaderText() { return _subheaderText; };
-        winrt::hstring BadgeIconPath() { return _badgeIconPath; };
-        winrt::hstring QueryAttribution() { return _queryAttribution; };
-
-    private:
-        winrt::hstring _name{ L"Azure OpenAI" };
-        winrt::hstring _headerIconPath;
-        winrt::hstring _headerText;
-        winrt::hstring _subheaderText;
-        winrt::hstring _badgeIconPath;
-        winrt::hstring _queryAttribution;
+        winrt::hstring Name() const noexcept { return L"Azure OpenAI"; };
+        winrt::hstring HeaderIconPath() const noexcept { return winrt::hstring{}; };
+        winrt::hstring HeaderText() const noexcept { return winrt::hstring{}; };
+        winrt::hstring SubheaderText() const noexcept { return winrt::hstring{}; };
+        winrt::hstring BadgeIconPath() const noexcept { return winrt::hstring{}; };
+        winrt::hstring QueryAttribution() const noexcept { return winrt::hstring{}; };
     };
 
     struct AzureLLMProvider : AzureLLMProviderT<AzureLLMProvider>

@@ -624,10 +624,6 @@
     <value>[default]</value>
     <comment>This is used in the description of an action which changes the color of selected text, as a placeholder for a color, to indicate that the default (foreground or background) color will be used.</comment>
   </data>
-  <data name="HandleUri_default_action" xml:space="preserve">
-    <value>Handle Uri: {0}</value>
-    <comment>This is the description of an action which handles the given URI. {0}: The URI to handle.</comment>
-  </data>
   <data name="ColorSelection_Black" xml:space="preserve">
     <value>black</value>
     <comment>A color used in the "ColorSelection" action.</comment>

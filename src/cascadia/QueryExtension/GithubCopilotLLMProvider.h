@@ -9,21 +9,14 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
 {
     struct GithubCopilotBranding : public winrt::implements<GithubCopilotBranding, winrt::Microsoft::Terminal::Query::Extension::IBrandingData>
     {
-        GithubCopilotBranding();
+        GithubCopilotBranding() = default;
 
-        winrt::hstring Name() { return _name; };
-        winrt::hstring HeaderIconPath() { return _headerIconPath; };
-        winrt::hstring HeaderText() { return _headerText; };
-        winrt::hstring SubheaderText() { return _subheaderText; };
-        winrt::hstring BadgeIconPath() { return _badgeIconPath; };
+        winrt::hstring Name() const noexcept { return L"GitHub Copilot"; };
+        winrt::hstring HeaderIconPath() const noexcept;
+        winrt::hstring HeaderText() const noexcept;
+        winrt::hstring SubheaderText() const noexcept;
+        winrt::hstring BadgeIconPath() const noexcept;
         WINRT_PROPERTY(winrt::hstring, QueryAttribution);
-
-    private:
-        winrt::hstring _name{ L"GitHub Copilot" };
-        winrt::hstring _headerIconPath;
-        winrt::hstring _headerText;
-        winrt::hstring _subheaderText;
-        winrt::hstring _badgeIconPath;
     };
 
     struct GithubCopilotAuthenticationResult : public winrt::implements<GithubCopilotAuthenticationResult, winrt::Microsoft::Terminal::Query::Extension::IAuthenticationResult>

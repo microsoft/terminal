@@ -20,8 +20,8 @@ namespace WSS = ::winrt::Windows::Storage::Streams;
 namespace WDJ = ::winrt::Windows::Data::Json;
 
 // branding data
-static constexpr std::wstring_view headerIconPath{ L"ms-appx:///ProfileIcons/githubCopilotLogo.png" };
-static constexpr std::wstring_view badgeIconPath{ L"ms-appx:///ProfileIcons/githubCopilotBadge.png" };
+static constexpr wil::zwstring_view headerIconPath{ L"ms-appx:///ProfileIcons/githubCopilotLogo.png" };
+static constexpr wil::zwstring_view badgeIconPath{ L"ms-appx:///ProfileIcons/githubCopilotBadge.png" };
 
 // header and request strings
 static constexpr std::wstring_view applicationJsonString{ L"application/json" };
@@ -66,12 +66,24 @@ static constexpr std::wstring_view windowsTerminalIntegrationId{ L"windows-termi
 
 namespace winrt::Microsoft::Terminal::Query::Extension::implementation
 {
-    GithubCopilotBranding::GithubCopilotBranding()
+    winrt::hstring GithubCopilotBranding::HeaderIconPath() const noexcept
     {
-        _headerIconPath = headerIconPath;
-        _headerText = RS_(L"GithubCopilot_HeaderText");
-        _subheaderText = RS_(L"GithubCopilot_SubheaderText");
-        _badgeIconPath = badgeIconPath;
+        return headerIconPath.c_str();
+    }
+
+    winrt::hstring GithubCopilotBranding::HeaderText() const noexcept
+    {
+        return RS_(L"GithubCopilot_HeaderText");
+    }
+
+    winrt::hstring GithubCopilotBranding::SubheaderText() const noexcept
+    {
+        return RS_(L"GithubCopilot_SubheaderText");
+    }
+
+    winrt::hstring GithubCopilotBranding::BadgeIconPath() const noexcept
+    {
+        return badgeIconPath.c_str();
     }
 
     void GithubCopilotLLMProvider::SetAuthentication(const Windows::Foundation::Collections::ValueSet& authValues)
