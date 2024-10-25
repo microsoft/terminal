@@ -471,6 +471,7 @@ namespace winrt::TerminalApp::implementation
         const auto& tabItemResources{ TabViewItem().Resources() };
 
         TabViewItem().Background(deselectedTabBrush);
+        tabItemResources.Insert(winrt::box_value(L"TabViewItemHeaderBackground"), deselectedTabBrush);
         tabItemResources.Insert(winrt::box_value(L"TabViewItemHeaderBackgroundSelected"), selectedTabBrush);
         tabItemResources.Insert(winrt::box_value(L"TabViewItemHeaderBackgroundPointerOver"), hoverTabBrush);
         tabItemResources.Insert(winrt::box_value(L"TabViewItemHeaderBackgroundPressed"), selectedTabBrush);
