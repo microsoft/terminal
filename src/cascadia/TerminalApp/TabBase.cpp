@@ -458,46 +458,67 @@ namespace winrt::TerminalApp::implementation
             deselectedFontBrush.Color(winrt::Windows::UI::Colors::White());
         }
 
-        // Prior to MUX 2.7, we set TabViewItemHeaderBackground, but now we can
-        // use TabViewItem().Background() for that. HOWEVER,
-        // TabViewItem().Background() only sets the color of the tab background
-        // when the TabViewItem is unselected. So we still need to set the other
-        // properties ourselves.
-        //
-        // In GH#11294 we thought we'd still need to set
-        // TabViewItemHeaderBackground manually, but GH#11382 discovered that
-        // Background() was actually okay after all.
+        // Add the empty theme dictionaries
+        const auto& tabItemThemeResources{ TabViewItem().Resources().ThemeDictionaries() };
+        ResourceDictionary lightThemeDictionary;
+        ResourceDictionary darkThemeDictionary;
+        ResourceDictionary highContrastThemeDictionary;
+        tabItemThemeResources.Insert(winrt::box_value(L"Light"), lightThemeDictionary);
+        tabItemThemeResources.Insert(winrt::box_value(L"Dark"), darkThemeDictionary);
+        tabItemThemeResources.Insert(winrt::box_value(L"HighContrast"), highContrastThemeDictionary);
 
-        const auto& tabItemResources{ TabViewItem().Resources() };
+        // Now actually set the resources we want in them.
+        // Before, we used to put these on the ResourceDictionary directly.
+        // However, HighContrast mode may require some adjustments. So let's just add
+        //   all three so we can make those adjustments on the HighContrast version.
+        for (const auto& [k, v] : tabItemThemeResources)
+        {
+            const bool isHighContrast = winrt::unbox_value<hstring>(k) == L"HighContrast";
+            const auto& currentDictionary = v.as<ResourceDictionary>();
 
-        TabViewItem().Background(deselectedTabBrush);
-        tabItemResources.Insert(winrt::box_value(L"TabViewItemHeaderBackground"), deselectedTabBrush);
-        tabItemResources.Insert(winrt::box_value(L"TabViewItemHeaderBackgroundSelected"), selectedTabBrush);
-        tabItemResources.Insert(winrt::box_value(L"TabViewItemHeaderBackgroundPointerOver"), hoverTabBrush);
-        tabItemResources.Insert(winrt::box_value(L"TabViewItemHeaderBackgroundPressed"), selectedTabBrush);
+            // TabViewItem.Background
+            currentDictionary.Insert(winrt::box_value(L"TabViewItemHeaderBackground"), deselectedTabBrush);
+            currentDictionary.Insert(winrt::box_value(L"TabViewItemHeaderBackgroundSelected"), selectedTabBrush);
+            currentDictionary.Insert(winrt::box_value(L"TabViewItemHeaderBackgroundPointerOver"), isHighContrast ? fontBrush : hoverTabBrush);
+            currentDictionary.Insert(winrt::box_value(L"TabViewItemHeaderBackgroundPressed"), selectedTabBrush);
 
-        // Similarly, TabViewItem().Foreground()  sets the color for the text
-        // when the TabViewItem isn't selected, but not when it is hovered,
-        // pressed, dragged, or selected, so we'll need to just set them all
-        // anyways.
-        TabViewItem().Foreground(deselectedFontBrush);
-        tabItemResources.Insert(winrt::box_value(L"TabViewItemHeaderForeground"), deselectedFontBrush);
-        tabItemResources.Insert(winrt::box_value(L"TabViewItemHeaderForegroundSelected"), fontBrush);
-        tabItemResources.Insert(winrt::box_value(L"TabViewItemHeaderForegroundPointerOver"), fontBrush);
-        tabItemResources.Insert(winrt::box_value(L"TabViewItemHeaderForegroundPressed"), fontBrush);
+            // TabViewItem.Foreground (aka text)
+            currentDictionary.Insert(winrt::box_value(L"TabViewItemHeaderForeground"), deselectedFontBrush);
+            currentDictionary.Insert(winrt::box_value(L"TabViewItemHeaderForegroundSelected"), fontBrush);
+            currentDictionary.Insert(winrt::box_value(L"TabViewItemHeaderForegroundPointerOver"), isHighContrast ? selectedTabBrush : fontBrush);
+            currentDictionary.Insert(winrt::box_value(L"TabViewItemHeaderForegroundPressed"), fontBrush);
 
-        tabItemResources.Insert(winrt::box_value(L"TabViewItemHeaderCloseButtonForeground"), deselectedFontBrush);
-        tabItemResources.Insert(winrt::box_value(L"TabViewItemHeaderCloseButtonForegroundPressed"), secondaryFontBrush);
-        tabItemResources.Insert(winrt::box_value(L"TabViewItemHeaderCloseButtonForegroundPointerOver"), fontBrush);
-        tabItemResources.Insert(winrt::box_value(L"TabViewItemHeaderPressedCloseButtonForeground"), fontBrush);
-        tabItemResources.Insert(winrt::box_value(L"TabViewItemHeaderPointerOverCloseButtonForeground"), fontBrush);
-        tabItemResources.Insert(winrt::box_value(L"TabViewItemHeaderSelectedCloseButtonForeground"), fontBrush);
-        tabItemResources.Insert(winrt::box_value(L"TabViewItemHeaderCloseButtonBackgroundPressed"), subtleFillColorTertiaryBrush);
-        tabItemResources.Insert(winrt::box_value(L"TabViewItemHeaderCloseButtonBackgroundPointerOver"), subtleFillColorSecondaryBrush);
+            // TabViewItem.CloseButton.Foreground (aka X)
+            currentDictionary.Insert(winrt::box_value(L"TabViewItemHeaderCloseButtonForeground"), deselectedFontBrush);
+            currentDictionary.Insert(winrt::box_value(L"TabViewItemHeaderCloseButtonForegroundPressed"), isHighContrast ? deselectedFontBrush : secondaryFontBrush);
+            currentDictionary.Insert(winrt::box_value(L"TabViewItemHeaderCloseButtonForegroundPointerOver"), isHighContrast ? deselectedFontBrush : fontBrush);
 
-        tabItemResources.Insert(winrt::box_value(L"TabViewButtonForegroundActiveTab"), fontBrush);
-        tabItemResources.Insert(winrt::box_value(L"TabViewButtonForegroundPressed"), fontBrush);
-        tabItemResources.Insert(winrt::box_value(L"TabViewButtonForegroundPointerOver"), fontBrush);
+            // TabViewItem.CloseButton.Foreground _when_ interacting with the tab
+            currentDictionary.Insert(winrt::box_value(L"TabViewItemHeaderPressedCloseButtonForeground"), fontBrush);
+            currentDictionary.Insert(winrt::box_value(L"TabViewItemHeaderPointerOverCloseButtonForeground"), isHighContrast ? selectedTabBrush : fontBrush);
+            currentDictionary.Insert(winrt::box_value(L"TabViewItemHeaderSelectedCloseButtonForeground"), fontBrush);
+
+            // TabViewItem.CloseButton.Background (aka X button)
+            currentDictionary.Insert(winrt::box_value(L"TabViewItemHeaderCloseButtonBackground"), deselectedTabBrush);
+            currentDictionary.Insert(winrt::box_value(L"TabViewItemHeaderCloseButtonBackgroundPressed"), isHighContrast ? selectedTabBrush : subtleFillColorTertiaryBrush);
+            currentDictionary.Insert(winrt::box_value(L"TabViewItemHeaderCloseButtonBackgroundPointerOver"), isHighContrast ? selectedTabBrush : subtleFillColorSecondaryBrush);
+
+            // A few miscellaneous resources that WinUI said may be removed in the future
+            currentDictionary.Insert(winrt::box_value(L"TabViewButtonForegroundActiveTab"), fontBrush);
+            currentDictionary.Insert(winrt::box_value(L"TabViewButtonForegroundPressed"), fontBrush);
+            currentDictionary.Insert(winrt::box_value(L"TabViewButtonForegroundPointerOver"), fontBrush);
+
+            // Add a few extra ones for high contrast mode
+            // BODGY: contrary to the docs, Insert() seems to throw if the value already exists
+            //   Make sure you don't touch any that already exist here!
+            if (isHighContrast)
+            {
+                // TabViewItem.CloseButton.Border: in HC mode, the border makes the button more clearly visible
+                currentDictionary.Insert(winrt::box_value(L"TabViewItemHeaderCloseButtonBorderBrushPressed"), fontBrush);
+                currentDictionary.Insert(winrt::box_value(L"TabViewItemHeaderCloseButtonBorderBrushPointerOver"), fontBrush);
+                currentDictionary.Insert(winrt::box_value(L"TabViewItemHeaderCloseButtonBorderBrushSelected"), fontBrush);
+            }
+        }
 
         _RefreshVisualState();
     }
@@ -512,28 +533,47 @@ namespace winrt::TerminalApp::implementation
     void TabBase::_ClearTabBackgroundColor()
     {
         static const winrt::hstring keys[] = {
+            // TabViewItem.Background
             L"TabViewItemHeaderBackground",
             L"TabViewItemHeaderBackgroundSelected",
             L"TabViewItemHeaderBackgroundPointerOver",
             L"TabViewItemHeaderBackgroundPressed",
+
+            // TabViewItem.Foreground (aka text)
             L"TabViewItemHeaderForeground",
             L"TabViewItemHeaderForegroundSelected",
             L"TabViewItemHeaderForegroundPointerOver",
             L"TabViewItemHeaderForegroundPressed",
+
+            // TabViewItem.CloseButton.Foreground (aka X)
             L"TabViewItemHeaderCloseButtonForeground",
-            L"TabViewItemHeaderCloseButtonForegroundPressed",
+            L"TabViewItemHeaderForegroundSelected",
             L"TabViewItemHeaderCloseButtonForegroundPointerOver",
+            L"TabViewItemHeaderCloseButtonForegroundPressed",
+
+            // TabViewItem.CloseButton.Foreground _when_ interacting with the tab
             L"TabViewItemHeaderPressedCloseButtonForeground",
             L"TabViewItemHeaderPointerOverCloseButtonForeground",
             L"TabViewItemHeaderSelectedCloseButtonForeground",
+
+            // TabViewItem.CloseButton.Background (aka X button)
+            L"TabViewItemHeaderCloseButtonBackground",
             L"TabViewItemHeaderCloseButtonBackgroundPressed",
             L"TabViewItemHeaderCloseButtonBackgroundPointerOver",
+
+            // A few miscellaneous resources that WinUI said may be removed in the future
             L"TabViewButtonForegroundActiveTab",
             L"TabViewButtonForegroundPressed",
-            L"TabViewButtonForegroundPointerOver"
+            L"TabViewButtonForegroundPointerOver",
+
+            // TabViewItem.CloseButton.Border: in HC mode, the border makes the button more clearly visible
+            L"TabViewItemHeaderCloseButtonBorderBrushPressed",
+            L"TabViewItemHeaderCloseButtonBorderBrushPointerOver",
+            L"TabViewItemHeaderCloseButtonBorderBrushSelected"
         };
 
         const auto& tabItemResources{ TabViewItem().Resources() };
+        const auto& tabItemThemeResources{ tabItemResources.ThemeDictionaries() };
 
         // simply clear any of the colors in the tab's dict
         for (const auto& keyString : keys)
@@ -542,6 +582,15 @@ namespace winrt::TerminalApp::implementation
             if (tabItemResources.HasKey(key))
             {
                 tabItemResources.Remove(key);
+            }
+
+            for (const auto& [k, v] : tabItemThemeResources)
+            {
+                const auto& currentDictionary = v.as<ResourceDictionary>();
+                if (currentDictionary.HasKey(key))
+                {
+                    currentDictionary.Remove(key);
+                }
             }
         }
 
