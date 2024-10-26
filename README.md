@@ -369,6 +369,101 @@ not a C# one).
 > [#926](https://github.com/microsoft/terminal/issues/926),
 > [#4043](https://github.com/microsoft/terminal/issues/4043)
 
+### Setup Guide
+
+#### Step-by-Step Installation
+
+1. **Install Windows Terminal from the Microsoft Store**: This is the recommended method as it ensures you always have the latest version with automatic updates.
+2. **Install via GitHub**: Download the latest release from the [Releases page](https://github.com/microsoft/terminal/releases) and install the `.msixbundle` file.
+3. **Install via Windows Package Manager (winget)**: Use the command `winget install --id Microsoft.WindowsTerminal -e`.
+4. **Install via Chocolatey**: Use the command `choco install microsoft-windows-terminal`.
+5. **Install via Scoop**: Use the command `scoop install windows-terminal`.
+
+#### Configuration
+
+1. **Open Settings**: You can open the settings file by clicking on the dropdown arrow in the title bar and selecting "Settings".
+2. **Customize Profiles**: Add or modify profiles to suit your needs. You can set different shells, colors, fonts, and more.
+3. **Keybindings**: Customize keybindings to improve your workflow. You can add, remove, or modify keybindings in the settings file.
+4. **Themes and Appearance**: Customize the appearance of the terminal by changing the theme, background image, and other settings.
+
+### FAQs
+
+#### How do I open a new tab?
+
+You can open a new tab by clicking the "+" button in the title bar or by using the default keybinding `Ctrl+Shift+T`.
+
+#### How do I split the terminal window?
+
+You can split the terminal window horizontally by using the default keybinding `Alt+Shift+-` and vertically by using `Alt+Shift+|`.
+
+#### How do I change the default shell?
+
+You can change the default shell by modifying the `"defaultProfile"` setting in the settings file to the GUID of the desired profile.
+
+#### How do I update Windows Terminal?
+
+If you installed Windows Terminal from the Microsoft Store, it will update automatically. If you installed it manually, you will need to download and install the latest release from the [Releases page](https://github.com/microsoft/terminal/releases).
+
+### Examples
+
+#### Example 1: Customizing Profiles
+
+```json
+{
+    "profiles": {
+        "list": [
+            {
+                "guid": "{0caa0dad-35be-5f56-a8ff-afceeeaa6101}",
+                "name": "PowerShell",
+                "commandline": "powershell.exe",
+                "hidden": false
+            },
+            {
+                "guid": "{2c4de342-38b7-51cf-b940-2309a097f518}",
+                "name": "Ubuntu",
+                "source": "Windows.Terminal.Wsl",
+                "hidden": false
+            }
+        ]
+    }
+}
+```
+
+#### Example 2: Customizing Keybindings
+
+```json
+{
+    "keybindings": [
+        {
+            "command": "newTab",
+            "keys": "ctrl+shift+t"
+        },
+        {
+            "command": "splitPane",
+            "keys": "alt+shift+-"
+        },
+        {
+            "command": "closePane",
+            "keys": "ctrl+shift+w"
+        }
+    ]
+}
+```
+
+#### Example 3: Customizing Appearance
+
+```json
+{
+    "profiles": {
+        "defaults": {
+            "backgroundImage": "C:\\path\\to\\image.png",
+            "backgroundImageOpacity": 0.5,
+            "colorScheme": "Campbell"
+        }
+    }
+}
+```
+
 ### Coding Guidance
 
 Please review these brief docs below about our coding practices.
