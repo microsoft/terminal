@@ -493,3 +493,20 @@ additional questions or comments.
 [conduct-FAQ]: https://opensource.microsoft.com/codeofconduct/faq/
 [conduct-email]: mailto:opencode@microsoft.com
 [store-install-link]: https://aka.ms/terminal
+
+## A Poem about a Tangerine
+
+In the orchard, where the sun does gleam,
+Hangs a fruit, a tangerine dream.
+With skin so bright, like morning's beam,
+A citrus burst, a sweet regime.
+
+Peel away its golden coat,
+Revealing segments, afloat.
+Juicy jewels, they gently gloat,
+A taste of sunshine, note by note.
+
+In winter's chill, it brings delight,
+A summer's kiss in every bite.
+Oh, tangerine, so pure, so bright,
+You fill our hearts with sweet respite.
