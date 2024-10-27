@@ -733,6 +733,9 @@
               "type": "string",
               "default": "",
               "description": "The name or GUID of the profile to show in this entry"
+            },
+            "icon": {
+              "$ref": "#/$defs/Icon"
             }
           }
         }

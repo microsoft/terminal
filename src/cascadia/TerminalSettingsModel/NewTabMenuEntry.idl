@@ -33,6 +33,7 @@ namespace Microsoft.Terminal.Settings.Model
 
         Profile Profile;
         Int32 ProfileIndex;
+        String Icon;
     }
 
     [default_interface] runtimeclass ActionEntry : NewTabMenuEntry
