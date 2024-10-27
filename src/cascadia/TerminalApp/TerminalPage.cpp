@@ -1013,7 +1013,7 @@ namespace winrt::TerminalApp::implementation
                 const auto actionId = actionEntry.ActionId();
                 if (_settings.ActionMap().GetActionByID(actionId))
                 {
-                    auto actionItem = _CreateNewTabFlyoutAction(actionEntry);
+                    auto actionItem = _CreateNewTabFlyoutAction(actionId, actionEntry.Icon());
                     items.push_back(actionItem);
                 }
 
@@ -1112,7 +1112,7 @@ namespace winrt::TerminalApp::implementation
     // Method Description:
     // - This method creates a flyout menu item for a given action
     //   It makes sure to set the correct icon, keybinding, and click-action.
-    WUX::Controls::MenuFlyoutItem TerminalPage::_CreateNewTabFlyoutAction(const ActionEntry actionEntry)
+    WUX::Controls::MenuFlyoutItem TerminalPage::_CreateNewTabFlyoutAction(const winrt::hstring& actionId, const winrt::hstring& iconPathOverride)
     {
         auto actionMenuItem = WUX::Controls::MenuFlyoutItem{};
         const auto actionId = actionEntry.ActionId();
@@ -1126,10 +1126,10 @@ namespace winrt::TerminalApp::implementation
 
         actionMenuItem.Text(action.Name());
 
-        // If there's a custom icon set for this actionEntry, set it as the icon for
+        // If a custom icon path has been specified, set it as the icon for
         // this flyout item. Otherwise, if an icon is set for this action, set that icon
         // for this flyout item.
-        if (actionEntry.Icon().empty())
+        if (iconPathOverride.empty())
         {
             const auto& iconPath = action.IconPath();
             if (!iconPath.empty())
@@ -1140,8 +1140,7 @@ namespace winrt::TerminalApp::implementation
         }
         else
         {
-            const auto& iconPath = actionEntry.Icon();
-            const auto icon = _CreateNewTabFlyoutIcon(iconPath);
+            const auto icon = _CreateNewTabFlyoutIcon(iconPathOverride);
             actionMenuItem.Icon(icon);
         }
 
