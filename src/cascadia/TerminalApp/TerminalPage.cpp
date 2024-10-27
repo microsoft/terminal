@@ -1013,7 +1013,7 @@ namespace winrt::TerminalApp::implementation
                 const auto actionId = actionEntry.ActionId();
                 if (_settings.ActionMap().GetActionByID(actionId))
                 {
-                    auto actionItem = _CreateNewTabFlyoutAction(actionId);
+                    auto actionItem = _CreateNewTabFlyoutAction(actionEntry);
                     items.push_back(actionItem);
                 }
 
@@ -1112,9 +1112,10 @@ namespace winrt::TerminalApp::implementation
     // Method Description:
     // - This method creates a flyout menu item for a given action
     //   It makes sure to set the correct icon, keybinding, and click-action.
-    WUX::Controls::MenuFlyoutItem TerminalPage::_CreateNewTabFlyoutAction(const winrt::hstring& actionId)
+    WUX::Controls::MenuFlyoutItem TerminalPage::_CreateNewTabFlyoutAction(const ActionEntry actionEntry)
     {
         auto actionMenuItem = WUX::Controls::MenuFlyoutItem{};
+        const auto actionId = actionEntry.ActionId();
         const auto action{ _settings.ActionMap().GetActionByID(actionId) };
         const auto actionKeyChord{ _settings.ActionMap().GetKeyBindingForAction(actionId) };
 
@@ -1125,11 +1126,21 @@ namespace winrt::TerminalApp::implementation
 
         actionMenuItem.Text(action.Name());
 
-        // If there's an icon set for this action, set it as the icon for
-        // this flyout item
-        const auto& iconPath = action.IconPath();
-        if (!iconPath.empty())
+        // If there's a custom icon set for this actionEntry, set it as the icon for
+        // this flyout item. Otherwise, if an icon is set for this action, set that icon
+        // for this flyout item.
+        if (actionEntry.Icon().empty())
         {
+            const auto& iconPath = action.IconPath();
+            if (!iconPath.empty())
+            {
+                const auto icon = _CreateNewTabFlyoutIcon(iconPath);
+                actionMenuItem.Icon(icon);
+            }
+        }
+        else
+        {
+            const auto& iconPath = actionEntry.Icon();
             const auto icon = _CreateNewTabFlyoutIcon(iconPath);
             actionMenuItem.Icon(icon);
         }

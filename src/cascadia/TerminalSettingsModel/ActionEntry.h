@@ -28,6 +28,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         static com_ptr<NewTabMenuEntry> FromJson(const Json::Value& json);
 
         WINRT_PROPERTY(winrt::hstring, ActionId);
+        WINRT_PROPERTY(winrt::hstring, Icon);
     };
 }
 
