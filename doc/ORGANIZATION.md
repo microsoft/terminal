@@ -125,3 +125,6 @@
 * Window resizing/layout/management/window messaging loops and all that other stuff that has us interact with Windows to create a visual display surface and control the user interaction entry point
 	* `Window.cpp`
 	* `Windowproc.cpp`
+
+## Code Organisation after building the project
+![image](https://github.com/user-attachments/assets/7ec037cb-3038-4e4b-bfdd-e8f14c09f3be)
