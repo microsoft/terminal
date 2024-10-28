@@ -53,6 +53,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         til::typed_event<Windows::Foundation::IInspectable, Model::SettingsTarget> OpenJson;
         til::typed_event<Windows::Foundation::IInspectable, Windows::Foundation::IInspectable> GithubAuthRequested;
 
+        WINRT_PROPERTY(hstring, StartingPage, {});
+
     private:
         Windows::Foundation::Collections::IObservableVector<IInspectable> _breadcrumbs;
         Windows::Foundation::Collections::IObservableVector<IInspectable> _menuItemSource;

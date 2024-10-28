@@ -26,6 +26,7 @@ namespace Microsoft.Terminal.Query.Extension
     {
         ExtensionPalette();
         void SetProvider(ILMProvider lmProvider);
+        Boolean ProviderExists { get; };
 
         String ControlName { get; };
         String QueryBoxPlaceholderText { get; };
@@ -40,5 +41,6 @@ namespace Microsoft.Terminal.Query.Extension
         event Windows.Foundation.TypedEventHandler<ExtensionPalette, IInspectable> ActiveControlInfoRequested;
         event Windows.Foundation.TypedEventHandler<ExtensionPalette, String> InputSuggestionRequested;
         event Windows.Foundation.TypedEventHandler<ExtensionPalette, String> ExportChatHistoryRequested;
+        event Windows.Foundation.TypedEventHandler<ExtensionPalette, IInspectable> SetUpProviderInSettingsRequested;
     }
 }

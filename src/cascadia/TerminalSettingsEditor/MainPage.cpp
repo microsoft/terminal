@@ -254,6 +254,29 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     // - <none>
     void MainPage::SettingsNav_Loaded(const IInspectable&, const RoutedEventArgs&)
     {
+        if (!_StartingPage.empty())
+        {
+            for (const auto& item : _menuItemSource)
+            {
+                if (const auto& menuItem{ item.try_as<MUX::Controls::NavigationViewItem>() })
+                {
+                    if (const auto& tag{ menuItem.Tag() })
+                    {
+                        if (const auto& stringTag{ tag.try_as<hstring>() })
+                        {
+                            if (stringTag == _StartingPage)
+                            {
+                                // found the one that was selected
+                                SettingsNav().SelectedItem(item);
+                                _Navigate(*stringTag, BreadcrumbSubPage::None);
+                                _StartingPage = {};
+                                return;
+                            }
+                        }
+                    }
+                }
+            }
+        }
         if (SettingsNav().SelectedItem() == nullptr)
         {
             const auto initialItem = SettingsNav().MenuItems().GetAt(0);
