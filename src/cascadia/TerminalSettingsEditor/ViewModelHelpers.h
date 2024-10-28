@@ -46,10 +46,9 @@ public:                                                   \
     template<typename T>                                  \
     void name(const T& value)                             \
     {                                                     \
-        const auto t = target;                            \
-        if (t.name() != value)                            \
+        if (target.name() != value)                       \
         {                                                 \
-            t.name(value);                                \
+            target.name(value);                           \
             _NotifyChanges(L"Has" #name, L## #name);      \
         }                                                 \
     }

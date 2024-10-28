@@ -48,14 +48,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     void NewTabMenu::FolderPickerDialog_PrimaryButtonClick(const IInspectable& /*sender*/, const Controls::ContentDialogButtonClickEventArgs& /*e*/)
     {
         // copy selected items first (it updates as we move entries)
-        auto entries = winrt::single_threaded_vector<Editor::NewTabMenuEntryViewModel>();
+        std::vector<Editor::NewTabMenuEntryViewModel> entries;
         for (const auto& item : NewTabMenuListView().SelectedItems())
         {
-            entries.Append(item.as<Editor::NewTabMenuEntryViewModel>());
+            entries.push_back(item.as<Editor::NewTabMenuEntryViewModel>());
         }
 
         // now actually move them
-        _ViewModel.RequestMoveEntriesToFolder(entries, FolderTreeView().SelectedItem().as<Editor::FolderTreeViewEntry>().FolderEntryVM());
+        _ViewModel.RequestMoveEntriesToFolder(single_threaded_vector<Editor::NewTabMenuEntryViewModel>(std::move(entries)), FolderTreeView().SelectedItem().as<Editor::FolderTreeViewEntry>().FolderEntryVM());
     }
 
     void NewTabMenu::EditEntry_Clicked(const IInspectable& sender, const RoutedEventArgs& /*e*/)
@@ -87,14 +87,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     void NewTabMenu::DeleteMultiple_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
     {
         // copy selected items first (it updates as we delete entries)
-        auto entries = winrt::single_threaded_vector<Editor::NewTabMenuEntryViewModel>();
+        std::vector<Editor::NewTabMenuEntryViewModel> entries;
         for (const auto& item : NewTabMenuListView().SelectedItems())
         {
-            entries.Append(item.as<Editor::NewTabMenuEntryViewModel>());
+            entries.push_back(item.as<Editor::NewTabMenuEntryViewModel>());
         }
 
         // now actually delete them
-        for (const auto&& vm : entries)
+        for (const auto& vm : entries)
         {
             _ViewModel.RequestDeleteEntry(vm);
         }

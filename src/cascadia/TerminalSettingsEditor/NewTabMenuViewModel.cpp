@@ -25,10 +25,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
     static IObservableVector<Editor::NewTabMenuEntryViewModel> _ConvertToViewModelEntries(const IVector<Model::NewTabMenuEntry>& settingsModelEntries, const Model::CascadiaSettings& settings)
     {
-        auto result = single_threaded_observable_vector<Editor::NewTabMenuEntryViewModel>();
+        std::vector<Editor::NewTabMenuEntryViewModel> result{};
         if (!settingsModelEntries)
         {
-            return result;
+            return single_threaded_observable_vector<Editor::NewTabMenuEntryViewModel>(std::move(result));
         }
 
         for (const auto& entry : settingsModelEntries)
@@ -40,8 +40,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 // If the Profile isn't set, this is an invalid entry. Skip it.
                 if (const auto& profileEntry = entry.as<Model::ProfileEntry>(); profileEntry.Profile())
                 {
-                    const auto profileEntryVM = make<ProfileEntryViewModel>(profileEntry);
-                    result.Append(profileEntryVM);
+                    result.push_back(make<ProfileEntryViewModel>(profileEntry));
                 }
                 break;
             }
@@ -49,8 +48,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             {
                 if (const auto& actionEntry = entry.as<Model::ActionEntry>())
                 {
-                    const auto actionEntryVM = make<ActionEntryViewModel>(actionEntry, settings);
-                    result.Append(actionEntryVM);
+                    result.push_back(make<ActionEntryViewModel>(actionEntry, settings));
                 }
                 break;
             }
@@ -58,8 +56,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             {
                 if (const auto& separatorEntry = entry.as<Model::SeparatorEntry>())
                 {
-                    const auto separatorEntryVM = make<SeparatorEntryViewModel>(separatorEntry);
-                    result.Append(separatorEntryVM);
+                    result.push_back(make<SeparatorEntryViewModel>(separatorEntry));
                 }
                 break;
             }
@@ -68,8 +65,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 if (const auto& folderEntry = entry.as<Model::FolderEntry>())
                 {
                     // The ctor will convert the children of the folder to view models
-                    const auto folderEntryVM = make<FolderEntryViewModel>(folderEntry, settings);
-                    result.Append(folderEntryVM);
+                    result.push_back(make<FolderEntryViewModel>(folderEntry, settings));
                 }
                 break;
             }
@@ -77,8 +73,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             {
                 if (const auto& matchProfilesEntry = entry.as<Model::MatchProfilesEntry>())
                 {
-                    const auto matchProfilesEntryVM = make<MatchProfilesEntryViewModel>(matchProfilesEntry);
-                    result.Append(matchProfilesEntryVM);
+                    result.push_back(make<MatchProfilesEntryViewModel>(matchProfilesEntry));
                 }
                 break;
             }
@@ -86,8 +81,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             {
                 if (const auto& remainingProfilesEntry = entry.as<Model::RemainingProfilesEntry>())
                 {
-                    const auto remainingProfilesEntryVM = make<RemainingProfilesEntryViewModel>(remainingProfilesEntry);
-                    result.Append(remainingProfilesEntryVM);
+                    result.push_back(make<RemainingProfilesEntryViewModel>(remainingProfilesEntry));
                 }
                 break;
             }
@@ -96,7 +90,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 break;
             }
         }
-        return result;
+        return single_threaded_observable_vector<Editor::NewTabMenuEntryViewModel>(std::move(result));
     }
 
     bool NewTabMenuViewModel::IsRemainingProfilesEntryMissing() const
@@ -120,6 +114,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 {
                     return false;
                 }
+                break;
             }
             default:
                 break;
@@ -246,12 +241,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             case CollectionChange::Reset:
             {
                 // fully replace settings model with view model structure
-                auto modelEntries = single_threaded_vector<Model::NewTabMenuEntry>();
+                std::vector<Model::NewTabMenuEntry> modelEntries;
                 for (const auto& entry : _rootEntries)
                 {
-                    modelEntries.Append(NewTabMenuEntryViewModel::GetModel(entry));
+                    modelEntries.push_back(NewTabMenuEntryViewModel::GetModel(entry));
                 }
-                _Settings.GlobalSettings().NewTabMenu(modelEntries);
+                _Settings.GlobalSettings().NewTabMenu(single_threaded_vector<Model::NewTabMenuEntry>(std::move(modelEntries)));
                 return;
             }
             case CollectionChange::ItemInserted:
@@ -684,12 +679,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             case CollectionChange::Reset:
             {
                 // fully replace settings model with _Entries
-                auto modelEntries = single_threaded_vector<Model::NewTabMenuEntry>();
+                std::vector<Model::NewTabMenuEntry> modelEntries;
                 for (const auto& entry : _Entries)
                 {
-                    modelEntries.Append(NewTabMenuEntryViewModel::GetModel(entry));
+                    modelEntries.push_back(NewTabMenuEntryViewModel::GetModel(entry));
                 }
-                _FolderEntry.RawEntries(modelEntries);
+                _FolderEntry.RawEntries(single_threaded_vector<Model::NewTabMenuEntry>(std::move(modelEntries)));
                 return;
             }
             case CollectionChange::ItemInserted:
@@ -741,23 +736,23 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     hstring MatchProfilesEntryViewModel::DisplayText() const
     {
-        std::wstringstream ss;
+        std::wstring displayText;
         if (const auto profileName = _MatchProfilesEntry.Name(); !profileName.empty())
         {
-            ss << fmt::format(L"profile: {}, ", profileName);
+            fmt::format_to(std::back_inserter(displayText), FMT_COMPILE(L"profile: {}, "), profileName);
         }
         if (const auto commandline = _MatchProfilesEntry.Commandline(); !commandline.empty())
         {
-            ss << fmt::format(L"profile: {}, ", commandline);
+            fmt::format_to(std::back_inserter(displayText), FMT_COMPILE(L"commandline: {}, "), commandline);
         }
         if (const auto source = _MatchProfilesEntry.Source(); !source.empty())
         {
-            ss << fmt::format(L"profile: {}, ", source);
+            fmt::format_to(std::back_inserter(displayText), FMT_COMPILE(L"source: {}, "), source);
         }
 
         // Chop off the last ", "
-        auto s = ss.str();
-        return winrt::hstring{ s.substr(0, s.size() - 2) };
+        displayText.resize(displayText.size() - 2);
+        return winrt::hstring{ displayText };
     }
 
     RemainingProfilesEntryViewModel::RemainingProfilesEntryViewModel(Model::RemainingProfilesEntry remainingProfilesEntry) :
