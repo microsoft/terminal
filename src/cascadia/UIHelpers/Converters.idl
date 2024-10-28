@@ -10,7 +10,6 @@ namespace Microsoft.Terminal.UI
         // Booleans
         static Boolean InvertBoolean(Boolean value);
         static Windows.UI.Xaml.Visibility InvertedBooleanToVisibility(Boolean value);
-        static Windows.UI.Xaml.Visibility BooleanToVisibility(Boolean value);
 
         // Numbers
         static Double PercentageToPercentageValue(Double value);

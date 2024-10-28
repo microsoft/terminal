@@ -104,7 +104,8 @@
                        x:Uid="NullableColorPicker_ColorPickerContentDialog"
                        DefaultButton="Primary"
                        Opened="ColorPickerDialog_Opened"
-                       PrimaryButtonClick="ColorPickerDialog_PrimaryButtonClick">
+                       PrimaryButtonClick="ColorPickerDialog_PrimaryButtonClick"
+                       TabFocusNavigation="Cycle">
             <muxc:ColorPicker x:Name="ColorPickerControl"
                               Margin="0,0,0,-40"
                               ColorSpectrumShape="Box"

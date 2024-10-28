@@ -119,7 +119,7 @@
                                        FontFamily="Segoe UI, Segoe Fluent Icons, Segoe MDL2 Assets"
                                        Style="{StaticResource SettingsPageItemDescriptionStyle}"
                                        Text="{x:Bind LocalizedIcon, Mode=OneWay}"
-                                       Visibility="{x:Bind mtu:Converters.BooleanToVisibility(UsingNoIcon), Mode=OneWay}" />
+                                       Visibility="{x:Bind UsingNoIcon, Mode=OneWay}" />
                         </Grid>
                     </DataTemplate>
                 </local:SettingContainer.CurrentValueTemplate>

@@ -12,7 +12,6 @@ namespace winrt::Microsoft::Terminal::UI::implementation
         // Booleans
         static bool InvertBoolean(bool value);
         static winrt::Windows::UI::Xaml::Visibility InvertedBooleanToVisibility(bool value);
-        static winrt::Windows::UI::Xaml::Visibility BooleanToVisibility(bool value);
 
         // Numbers
         static double PercentageToPercentageValue(double value);

@@ -935,40 +935,41 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         LightColorSchemeName(val.Name());
     }
 
-#define GET_COLOR_PREVIEW(appearanceVal, deducedVal)     \
-    if (const auto& modelVal = appearanceVal)            \
-    {                                                    \
-        /* user defined an override value */             \
-        return Windows::UI::Color{                       \
-            .A = 255,                                    \
-            .R = modelVal.Value().R,                     \
-            .G = modelVal.Value().G,                     \
-            .B = modelVal.Value().B                      \
-        };                                               \
-    }                                                    \
-    /* set to null --> deduce value from color scheme */ \
-    return deducedVal;
+    static inline Windows::UI::Color _getColorPreview(const IReference<Microsoft::Terminal::Core::Color>& modelVal, Windows::UI::Color deducedVal)
+    {
+        if (modelVal)
+        {
+            // user defined an override value
+            return Windows::UI::Color{
+                .A = 255,
+                .R = modelVal.Value().R,
+                .G = modelVal.Value().G,
+                .B = modelVal.Value().B
+            };
+        }
+        // set to null --> deduce value from color scheme
+        return deducedVal;
+    }
 
     Windows::UI::Color AppearanceViewModel::ForegroundPreview() const
     {
-        GET_COLOR_PREVIEW(_appearance.Foreground(), CurrentColorScheme().ForegroundColor().Color());
+        return _getColorPreview(_appearance.Foreground(), CurrentColorScheme().ForegroundColor().Color());
     }
 
     Windows::UI::Color AppearanceViewModel::BackgroundPreview() const
     {
-        GET_COLOR_PREVIEW(_appearance.Background(), CurrentColorScheme().BackgroundColor().Color());
+        return _getColorPreview(_appearance.Background(), CurrentColorScheme().BackgroundColor().Color());
     }
 
     Windows::UI::Color AppearanceViewModel::SelectionBackgroundPreview() const
     {
-        GET_COLOR_PREVIEW(_appearance.SelectionBackground(), CurrentColorScheme().SelectionBackgroundColor().Color());
+        return _getColorPreview(_appearance.SelectionBackground(), CurrentColorScheme().SelectionBackgroundColor().Color());
     }
 
     Windows::UI::Color AppearanceViewModel::CursorColorPreview() const
     {
-        GET_COLOR_PREVIEW(_appearance.CursorColor(), CurrentColorScheme().CursorColor().Color());
+        return _getColorPreview(_appearance.CursorColor(), CurrentColorScheme().CursorColor().Color());
     }
-#undef GET_COLOR_PREVIEW
 
     DependencyProperty Appearances::_AppearanceProperty{ nullptr };
 
