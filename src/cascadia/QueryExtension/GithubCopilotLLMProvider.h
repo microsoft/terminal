@@ -56,9 +56,9 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
 
         winrt::Windows::Data::Json::JsonArray _jsonMessages;
 
-        safe_void_coroutine _refreshAuthTokens();
-        safe_void_coroutine _completeAuthWithUrl(const Windows::Foundation::Uri url);
-        safe_void_coroutine _obtainUsernameAndRefreshTokensIfNeeded();
+        winrt::Windows::Foundation::IAsyncAction _refreshAuthTokens();
+        winrt::Windows::Foundation::IAsyncAction _completeAuthWithUrl(const Windows::Foundation::Uri url);
+        winrt::Windows::Foundation::IAsyncAction _obtainUsernameAndRefreshTokensIfNeeded();
         winrt::Windows::Foundation::IAsyncOperation<winrt::Windows::Data::Json::JsonObject> _SendRequestReturningJson(std::wstring_view uri, const winrt::Windows::Web::Http::IHttpContent& content = nullptr, winrt::Windows::Web::Http::HttpMethod method = nullptr);
     };
 

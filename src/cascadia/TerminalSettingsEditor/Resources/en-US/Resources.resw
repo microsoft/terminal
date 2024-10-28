@@ -808,6 +808,10 @@
     <value>Managed by your administrator</value>
     <comment>Text displayed when the service provider has been disabled by the administrator.</comment>
   </data>
+  <data name="AISettings_PortableModeDisclaimer.Text" xml:space="preserve">
+    <value>Unable to authenticate to GitHub in unpackaged mode. Please launch Terminal as a packaged application to authenticate.</value>
+    <comment>Text displayed to the user when Terminal is un unpackaged mode.</comment>
+  </data>
   <data name="Nav_Appearance.Content" xml:space="preserve">
     <value>Appearance</value>
     <comment>Header for the "appearance" menu item. This navigates to a page that lets you see and modify settings related to the app's appearance.</comment>

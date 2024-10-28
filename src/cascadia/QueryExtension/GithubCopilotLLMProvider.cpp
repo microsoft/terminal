@@ -118,7 +118,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         }
     }
 
-    safe_void_coroutine GithubCopilotLLMProvider::_obtainUsernameAndRefreshTokensIfNeeded()
+    IAsyncAction GithubCopilotLLMProvider::_obtainUsernameAndRefreshTokensIfNeeded()
     {
         WDJ::JsonObject endpointAndUsernameRequestJson;
         endpointAndUsernameRequestJson.SetNamedValue(queryKey, WDJ::JsonValue::CreateStringValue(endpointAndUsernameRequestString));
@@ -157,9 +157,10 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
             _refreshAuthTokens();
             refreshAttempted = true;
         }
+        co_return;
     }
 
-    safe_void_coroutine GithubCopilotLLMProvider::_completeAuthWithUrl(const Windows::Foundation::Uri url)
+    IAsyncAction GithubCopilotLLMProvider::_completeAuthWithUrl(const Windows::Foundation::Uri url)
     {
         WDJ::JsonObject jsonContent;
         jsonContent.SetNamedValue(clientIdKey, WDJ::JsonValue::CreateStringValue(windowsTerminalClientID));
@@ -317,7 +318,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         co_return winrt::make<GithubCopilotResponse>(message, errorType, RS_(L"GithubCopilot_ResponseMetaData"));
     }
 
-    safe_void_coroutine GithubCopilotLLMProvider::_refreshAuthTokens()
+    IAsyncAction GithubCopilotLLMProvider::_refreshAuthTokens()
     {
         WDJ::JsonObject jsonContent;
         jsonContent.SetNamedValue(clientIdKey, WDJ::JsonValue::CreateStringValue(windowsTerminalClientID));
@@ -346,6 +347,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
             _AuthChangedHandlers(*this, winrt::make<GithubCopilotAuthenticationResult>(winrt::hstring{}, authValuesJson.ToString()));
         }
         CATCH_LOG();
+        co_return;
     }
 
     IAsyncOperation<WDJ::JsonObject> GithubCopilotLLMProvider::_SendRequestReturningJson(std::wstring_view uri, const winrt::Windows::Web::Http::IHttpContent& content, winrt::Windows::Web::Http::HttpMethod method)
