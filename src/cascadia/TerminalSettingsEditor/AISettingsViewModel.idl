@@ -25,6 +25,7 @@ namespace Microsoft.Terminal.Settings.Editor
         void GithubCopilotAuthValues(String authValues);
         Boolean GithubCopilotActive;
         Boolean GithubCopilotFeatureEnabled { get; };
+        Boolean IsTerminalPackaged { get; };
 
         void InitiateGithubAuth_Click(IInspectable sender, Windows.UI.Xaml.RoutedEventArgs args);
         event Windows.Foundation.TypedEventHandler<Object, Object> GithubAuthRequested;
