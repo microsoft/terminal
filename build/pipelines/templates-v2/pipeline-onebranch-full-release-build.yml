@@ -130,10 +130,7 @@ extends:
               codeSign: ${{ parameters.codeSign }}
               signingIdentity: ${{ parameters.signingIdentity }}
               beforeBuildSteps: # Right before we build, lay down the universal package and localizations
-                - task: PkgESSetupBuild@12
-                  displayName: Package ES - Setup Build
-                  inputs:
-                    disableOutputRedirect: true
+                - template: ./build/pipelines/templates-v2/steps-setup-versioning.yml@self
 
                 - task: UniversalPackages@0
                   displayName: Download terminal-internal Universal Package
@@ -167,10 +164,7 @@ extends:
                 codeSign: ${{ parameters.codeSign }}
                 signingIdentity: ${{ parameters.signingIdentity }}
                 beforeBuildSteps:
-                  - task: PkgESSetupBuild@12
-                    displayName: Package ES - Setup Build
-                    inputs:
-                      disableOutputRedirect: true
+                  - template: ./build/pipelines/templates-v2/steps-setup-versioning.yml@self
                   # WPF doesn't need the localizations or the universal package, but if it does... put them here.
 
       - stage: Package

@@ -11,11 +11,6 @@ namespace Microsoft.Terminal.Settings.Editor
     {
         GlobalAppearanceViewModel(Microsoft.Terminal.Settings.Model.GlobalAppSettings globalSettings);
 
-        static String LanguageDisplayConverter(String tag);
-        Boolean LanguageSelectorAvailable { get; };
-        Windows.Foundation.Collections.IObservableVector<String> LanguageList { get; };
-        IInspectable CurrentLanguage;
-
         IInspectable CurrentTheme;
         static String ThemeNameConverter(Microsoft.Terminal.Settings.Model.Theme theme);
         Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Model.Theme> ThemeList { get; };
@@ -38,5 +33,7 @@ namespace Microsoft.Terminal.Settings.Editor
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, AutoHideWindow);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, AlwaysShowNotificationIcon);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, MinimizeToNotificationArea);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, ShowAdminShield);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, EnableUnfocusedAcrylic);
     }
 }
