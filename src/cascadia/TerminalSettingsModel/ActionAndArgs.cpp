@@ -101,6 +101,7 @@ static constexpr std::string_view RestartConnectionKey{ "restartConnection" };
 static constexpr std::string_view ToggleBroadcastInputKey{ "toggleBroadcastInput" };
 static constexpr std::string_view OpenScratchpadKey{ "experimental.openScratchpad" };
 static constexpr std::string_view OpenAboutKey{ "openAbout" };
+static constexpr std::string_view HandleUriKey{ "handleUri" };
 static constexpr std::string_view QuickFixKey{ "quickFix" };
 
 static constexpr std::string_view ActionKey{ "action" };

@@ -8,6 +8,7 @@
   xmlns:uap3="http://schemas.microsoft.com/appx/manifest/uap/windows10/3"
   xmlns:uap4="http://schemas.microsoft.com/appx/manifest/uap/windows10/4"
   xmlns:uap5="http://schemas.microsoft.com/appx/manifest/uap/windows10/5"
+  xmlns:uap10="http://schemas.microsoft.com/appx/manifest/uap/windows10/10"
   xmlns:uap17="http://schemas.microsoft.com/appx/manifest/uap/windows10/17"
   xmlns:desktop="http://schemas.microsoft.com/appx/manifest/desktop/windows10"
   xmlns:desktop4="http://schemas.microsoft.com/appx/manifest/desktop/windows10/4"
@@ -138,6 +139,11 @@
                 </desktop5:ItemType>
             </desktop4:FileExplorerContextMenus>
         </desktop4:Extension>
+        <uap10:Extension Category="windows.protocol">
+          <uap10:Protocol Name="ms-terminal-can" Parameters="handle-uri %1">
+            <uap10:DisplayName>Terminal GitHub Auth</uap10:DisplayName>
+          </uap10:Protocol>
+        </uap10:Extension>
 
       </Extensions>
 

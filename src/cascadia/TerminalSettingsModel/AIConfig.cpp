@@ -17,6 +17,7 @@ static constexpr wil::zwstring_view PasswordVaultResourceName = L"TerminalAI";
 static constexpr wil::zwstring_view PasswordVaultAIKey = L"TerminalAIKey";
 static constexpr wil::zwstring_view PasswordVaultAIEndpoint = L"TerminalAIEndpoint";
 static constexpr wil::zwstring_view PasswordVaultOpenAIKey = L"TerminalOpenAIKey";
+static constexpr wil::zwstring_view PasswordVaultGithubCopilotAuthValues = L"TerminalGithubCopilotAuthValues";
 
 winrt::com_ptr<AIConfig> AIConfig::CopyAIConfig(const AIConfig* source)
 {
@@ -95,12 +96,27 @@ void AIConfig::OpenAIKey(const winrt::hstring& key) noexcept
     _openAISettingChangedHandlers();
 }
 
+void AIConfig::GithubCopilotAuthValues(const winrt::hstring& authValues)
+{
+    _SetCredential(PasswordVaultGithubCopilotAuthValues, authValues);
+}
+
+winrt::hstring AIConfig::GithubCopilotAuthValues()
+{
+    return _RetrieveCredential(PasswordVaultGithubCopilotAuthValues);
+}
+
 winrt::Microsoft::Terminal::Settings::Model::LLMProvider AIConfig::ActiveProvider()
 {
     const auto val{ _getActiveProviderImpl() };
     if (val)
     {
         // an active provider was explicitly set, return that
+        // special case: only allow github copilot if the feature is enabled
+        if (*val == LLMProvider::GithubCopilot && !Feature_GithubCopilot::IsEnabled())
+        {
+            return LLMProvider{};
+        }
         return *val;
     }
     else if (!AzureOpenAIEndpoint().empty() && !AzureOpenAIKey().empty())
@@ -112,6 +128,10 @@ winrt::Microsoft::Terminal::Settings::Model::LLMProvider AIConfig::ActiveProvide
     {
         // no explicitly set provider but we have an open ai key, use that
         return LLMProvider::OpenAI;
+    }
+    else if (!GithubCopilotAuthValues().empty())
+    {
+        return LLMProvider::GithubCopilot;
     }
     else
     {
@@ -142,7 +162,7 @@ winrt::hstring AIConfig::_RetrieveCredential(const wil::zwstring_view credential
     }
     catch (...)
     {
-        return L"";
+        return winrt::hstring{};
     }
 
     winrt::hstring password{ cred.Password() };

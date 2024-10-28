@@ -685,8 +685,8 @@
     <comment>Text on the button that allows the user to clear the stored key and endpoint.</comment>
   </data>
   <data name="AISettings_SetActiveProvider.Text" xml:space="preserve">
-    <value>Set as Active Provider</value>
-    <comment>Text on the button that allows the user to set the selected provider as their active one.</comment>
+    <value>Set as active provider</value>
+    <comment>Text on the checkbox that allows the user to set the selected provider as their active one.</comment>
   </data>
   <data name="AISettings_EndpointTextBox.Text" xml:space="preserve">
     <value>Endpoint</value>
@@ -699,6 +699,10 @@
   <data name="AISettings_StoreSecrets.Text" xml:space="preserve">
     <value>Store</value>
     <comment>Text on the button that allows the user to store their key and/or endpoint.</comment>
+  </data>
+  <data name="AISettings_InitiateGithubAuthFlow.Text" xml:space="preserve">
+    <value>Authenticate via GitHub</value>
+    <comment>Text on the button that allows the user to authenticate to GitHub.</comment>
   </data>
   <data name="AISettings_AzureOpenAIDescription.Text" xml:space="preserve">
     <value>To use Azure OpenAI as a service provider, you need an Azure OpenAI service resource.</value>
@@ -749,12 +753,48 @@
     <comment>Text on the button that allows the user to clear the stored key.</comment>
   </data>
   <data name="AISettings_OpenAIDescription" xml:space="preserve">
-    <value>OpenAI is provided by a third-party and not Microsoft.  When you send a message in Terminal Chat, your chat history and the name of your active shell are sent to the third-party AI service for use by OpenAI. {0}.  Your use of OpenAI is governed by the relevant third-party terms, conditions, and privacy statement. </value>
+    <value>OpenAI is provided by a third-party and not Microsoft.  When you send a message in Terminal Chat, your chat history and the name of your active shell are sent to the third-party AI service for use by OpenAI. {0}. Your use of OpenAI is governed by the relevant third-party terms, conditions, and privacy statement. </value>
     <comment>Header of the description that informs the user about their usage of OpenAI in Terminal. {0} will be replaced by AISettings_OpenAILearnMoreLinkText.</comment>
   </data>
   <data name="AISettings_OpenAILearnMoreLinkText" xml:space="preserve">
-    <value>Learn More</value>
+    <value>Learn more</value>
     <comment>The text of the hyperlink that directs the user to learn more about Terminal Chat.</comment>
+  </data>
+  <data name="AISettings_GithubCopilotPrerequisite.Text" xml:space="preserve">
+    <value>GitHub Copilot integration with Terminal Chat requires an active GitHub Copilot subscription.</value>
+    <comment>The prerequisite the user needs to use GitHub Copilot within Terminal.</comment>
+  </data>
+  <data name="AISettings_GithubCopilotSignUpAndLearnMore" xml:space="preserve">
+    <value>Sign up for a {0} today or request GitHub Copilot access from your enterprise admin. You can read more about GitHub Copilot offerings at {1}.</value>
+    <comment>{Locked="{0}"}{Locked="{1}"} Information regarding how the user can learn more about GitHub Copilot and sign up for it. {0} will be replaced by AISettings_GithubCopilotSignUpLinkText and {1} will be replaced by AISettings_GithubCopilotLearnMoreLinkText.</comment>
+  </data>
+  <data name="AISettings_GithubCopilotSignUpLinkText" xml:space="preserve">
+    <value>30-day GitHub Copilot free trial</value>
+    <comment>The text of the hyperlink that directs the user to sign up for GitHub Copilot.</comment>
+  </data>
+  <data name="AISettings_GithubCopilotLearnMoreLinkText" xml:space="preserve">
+    <value>github.com/features/copilot</value>
+    <comment>The text of the hyperlink that directs the user to learn more about GitHub Copilot. {Locked="github.com/features/copilot"}</comment>
+  </data>
+  <data name="AISettings_GithubCopilot.Header" xml:space="preserve">
+    <value>GitHub Copilot</value>
+    <comment>Header for the text box that allows the user to configure access to GitHub Copilot.</comment>
+  </data>
+  <data name="AISettings_GithubCopilotConfigured.Text" xml:space="preserve">
+    <value>GitHub Copilot is configured.</value>
+    <comment>Description for the GitHub Copilot setting when we have access already.</comment>
+  </data>
+  <data name="AISettings_ClearGithubCopilotTokens.Text" xml:space="preserve">
+    <value>Clear stored auth tokens</value>
+    <comment>Text on the button that allows the user to clear the stored tokens.</comment>
+  </data>
+  <data name="AISettings_WaitingForGithubAuth" xml:space="preserve">
+    <value>Awaiting authentication completion from browser...</value>
+    <comment>Text displayed after the user clicks the button to initiate the GitHub authentication flow in their browser.</comment>
+  </data>
+  <data name="AISettings_PortableModeDisclaimer.Text" xml:space="preserve">
+    <value>Unable to authenticate to GitHub in unpackaged mode. Please launch Terminal as a packaged application to authenticate.</value>
+    <comment>Text displayed to the user when Terminal is un unpackaged mode.</comment>
   </data>
   <data name="Nav_Appearance.Content" xml:space="preserve">
     <value>Appearance</value>

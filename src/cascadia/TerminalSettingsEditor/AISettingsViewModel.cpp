@@ -8,6 +8,7 @@
 
 #include <LibraryResources.h>
 #include <WtExeUtils.h>
+#include <shellapi.h>
 
 using namespace winrt;
 using namespace winrt::Windows::UI::Xaml;
@@ -21,6 +22,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     AISettingsViewModel::AISettingsViewModel(Model::CascadiaSettings settings) :
         _Settings{ settings }
     {
+        _githubAuthCompleteRevoker = MainPage::GithubAuthCompleted(winrt::auto_revoke, { this, &AISettingsViewModel::_OnGithubAuthCompleted });
     }
 
     bool AISettingsViewModel::AreAzureOpenAIKeyAndEndpointSet()
@@ -76,7 +78,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         if (active)
         {
             _Settings.GlobalSettings().AIInfo().ActiveProvider(Model::LLMProvider::AzureOpenAI);
-            _NotifyChanges(L"AzureOpenAIActive", L"OpenAIActive");
+            _NotifyChanges(L"AzureOpenAIActive", L"OpenAIActive", L"GithubCopilotActive");
         }
     }
 
@@ -90,7 +92,66 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         if (active)
         {
             _Settings.GlobalSettings().AIInfo().ActiveProvider(Model::LLMProvider::OpenAI);
-            _NotifyChanges(L"AzureOpenAIActive", L"OpenAIActive");
+            _NotifyChanges(L"AzureOpenAIActive", L"OpenAIActive", L"GithubCopilotActive");
         }
+    }
+
+    bool AISettingsViewModel::AreGithubCopilotTokensSet()
+    {
+        return !_Settings.GlobalSettings().AIInfo().GithubCopilotAuthValues().empty();
+    }
+
+    winrt::hstring AISettingsViewModel::GithubCopilotAuthMessage()
+    {
+        return _githubCopilotAuthMessage;
+    }
+
+    void AISettingsViewModel::GithubCopilotAuthValues(winrt::hstring authValues)
+    {
+        _Settings.GlobalSettings().AIInfo().GithubCopilotAuthValues(authValues);
+        _NotifyChanges(L"AreGithubCopilotTokensSet");
+    }
+
+    bool AISettingsViewModel::GithubCopilotActive()
+    {
+        return _Settings.GlobalSettings().AIInfo().ActiveProvider() == Model::LLMProvider::GithubCopilot;
+    }
+
+    void AISettingsViewModel::GithubCopilotActive(bool active)
+    {
+        if (active)
+        {
+            _Settings.GlobalSettings().AIInfo().ActiveProvider(Model::LLMProvider::GithubCopilot);
+            _NotifyChanges(L"AzureOpenAIActive", L"OpenAIActive", L"GithubCopilotActive");
+        }
+    }
+
+    bool AISettingsViewModel::GithubCopilotFeatureEnabled()
+    {
+        return Feature_GithubCopilot::IsEnabled();
+    }
+
+    bool AISettingsViewModel::IsTerminalPackaged()
+    {
+        return IsPackaged();
+    }
+
+    void AISettingsViewModel::InitiateGithubAuth_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
+    {
+        _githubCopilotAuthMessage = RS_(L"AISettings_WaitingForGithubAuth");
+        _NotifyChanges(L"GithubCopilotAuthMessage");
+        GithubAuthRequested.raise(nullptr, nullptr);
+        TraceLoggingWrite(
+            g_hSettingsEditorProvider,
+            "GithubAuthInitiated",
+            TraceLoggingDescription("Event emitted when the user clicks the button to initiate the GitHub auth flow"),
+            TraceLoggingKeyword(MICROSOFT_KEYWORD_CRITICAL_DATA),
+            TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
+    }
+
+    void AISettingsViewModel::_OnGithubAuthCompleted(const winrt::hstring& message)
+    {
+        _githubCopilotAuthMessage = message;
+        _NotifyChanges(L"AreGithubCopilotTokensSet", L"GithubCopilotAuthMessage");
     }
 }

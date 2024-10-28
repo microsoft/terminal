@@ -24,12 +24,21 @@ static constexpr std::wstring_view openAIEndpoint{ L"https://api.openai.com/v1/c
 
 namespace winrt::Microsoft::Terminal::Query::Extension::implementation
 {
-    void OpenAILLMProvider::SetAuthentication(const Windows::Foundation::Collections::ValueSet& authValues)
+    void OpenAILLMProvider::SetAuthentication(const winrt::hstring& authValues)
     {
-        _AIKey = unbox_value_or<hstring>(authValues.TryLookup(L"key").try_as<IPropertyValue>(), L"");
         _httpClient = winrt::Windows::Web::Http::HttpClient{};
         _httpClient.DefaultRequestHeaders().Accept().TryParseAdd(applicationJson);
-        _httpClient.DefaultRequestHeaders().Authorization(WWH::Headers::HttpCredentialsHeaderValue{ L"Bearer", _AIKey });
+
+        if (!authValues.empty())
+        {
+            // Parse out the key from the authValues string
+            WDJ::JsonObject authValuesObject{ WDJ::JsonObject::Parse(authValues) };
+            if (authValuesObject.HasKey(L"key"))
+            {
+                _AIKey = authValuesObject.GetNamedString(L"key");
+                _httpClient.DefaultRequestHeaders().Authorization(WWH::Headers::HttpCredentialsHeaderValue{ L"Bearer", _AIKey });
+            }
+        }
     }
 
     void OpenAILLMProvider::ClearMessageHistory()
@@ -121,6 +130,6 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         responseMessageObject.Insert(L"content", WDJ::JsonValue::CreateStringValue(message));
         _jsonMessages.Append(responseMessageObject);
 
-        co_return winrt::make<OpenAIResponse>(message, errorType);
+        co_return winrt::make<OpenAIResponse>(message, errorType, winrt::hstring{});
     }
 }

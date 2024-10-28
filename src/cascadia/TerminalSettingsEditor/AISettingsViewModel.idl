@@ -19,5 +19,15 @@ namespace Microsoft.Terminal.Settings.Editor
         Boolean IsOpenAIKeySet { get; };
         String OpenAIKey;
         Boolean OpenAIActive;
+
+        Boolean AreGithubCopilotTokensSet { get; };
+        String GithubCopilotAuthMessage { get; };
+        void GithubCopilotAuthValues(String authValues);
+        Boolean GithubCopilotActive;
+        Boolean GithubCopilotFeatureEnabled { get; };
+        Boolean IsTerminalPackaged { get; };
+
+        void InitiateGithubAuth_Click(IInspectable sender, Windows.UI.Xaml.RoutedEventArgs args);
+        event Windows.Foundation.TypedEventHandler<Object, Object> GithubAuthRequested;
     }
 }

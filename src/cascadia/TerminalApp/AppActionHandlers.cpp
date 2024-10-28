@@ -21,6 +21,7 @@ using namespace winrt::Microsoft::Terminal::Settings::Model;
 using namespace winrt::Microsoft::Terminal::Control;
 using namespace winrt::Microsoft::Terminal::TerminalConnection;
 using namespace ::TerminalApp;
+namespace WDJ = ::winrt::Windows::Data::Json;
 
 namespace winrt
 {
@@ -1617,6 +1618,33 @@ namespace winrt::TerminalApp::implementation
     {
         _ShowAboutDialog();
         args.Handled(true);
+    }
+
+    void TerminalPage::_HandleHandleUri(const IInspectable& /*sender*/,
+                                        const ActionEventArgs& args)
+    {
+        if (const auto& uriArgs{ args.ActionArgs().try_as<HandleUriArgs>() })
+        {
+            const auto uriString{ uriArgs.Uri() };
+            if (!uriString.empty())
+            {
+                Windows::Foundation::Uri uri{ uriString };
+                // we only accept "github-auth" host names for now
+                if (uri.Host() == L"github-auth")
+                {
+                    // we should have a randomStateString stored, if we don't then don't handle this
+                    if (const auto randomStateString = Application::Current().as<TerminalApp::App>().Logic().RandomStateString(); !randomStateString.empty())
+                    {
+                        Windows::Data::Json::JsonObject authValuesJson;
+                        authValuesJson.SetNamedValue(L"url", WDJ::JsonValue::CreateStringValue(uriString));
+                        authValuesJson.SetNamedValue(L"state", WDJ::JsonValue::CreateStringValue(randomStateString));
+
+                        _createAndSetAuthenticationForLMProvider(LLMProvider::GithubCopilot, authValuesJson.ToString());
+                        args.Handled(true);
+                    }
+                }
+            }
+        }
     }
 
     void TerminalPage::_HandleQuickFix(const IInspectable& /*sender*/,

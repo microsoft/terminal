@@ -38,6 +38,103 @@
                 <TextBlock x:Uid="AISettings_ServiceProvidersHeader"
                            Margin="0,8,0,0"
                            Style="{StaticResource TextBlockSubHeaderStyle}" />
+                <!--  GitHub Copilot  -->
+                <local:SettingContainer x:Uid="AISettings_GithubCopilot"
+                                        Style="{StaticResource ExpanderSettingContainerStyle}"
+                                        Visibility="{x:Bind ViewModel.GithubCopilotFeatureEnabled}">
+                    <StackPanel>
+                        <Grid Visibility="{x:Bind ViewModel.AreGithubCopilotTokensSet, Mode=OneWay}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0"
+                                        Spacing="8">
+                                <TextBlock x:Uid="AISettings_GithubCopilotConfigured"
+                                           Grid.Column="0"
+                                           VerticalAlignment="Center" />
+                                <CheckBox Grid.Row="1"
+                                          HorizontalAlignment="Left"
+                                          Checked="SetGithubCopilotActive_Check"
+                                          IsChecked="{x:Bind ViewModel.GithubCopilotActive, Mode=OneWay}"
+                                          Unchecked="SetGithubCopilotActive_Uncheck">
+                                    <TextBlock x:Uid="AISettings_SetActiveProvider" />
+                                </CheckBox>
+                            </StackPanel>
+                            <Button Grid.Column="1"
+                                    HorizontalAlignment="Right"
+                                    Click="ClearGithubCopilotTokens_Click"
+                                    Style="{StaticResource DeleteButtonStyle}">
+                                <TextBlock x:Uid="AISettings_ClearGithubCopilotTokens" />
+                            </Button>
+                        </Grid>
+                        <Grid RowSpacing="8"
+                              Visibility="{x:Bind mtu:Converters.InvertedBooleanToVisibility(ViewModel.AreGithubCopilotTokensSet), Mode=OneWay}">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+                            <Grid Grid.Row="0"
+                                  Grid.Column="0"
+                                  Padding="16"
+                                  ColumnSpacing="14"
+                                  CornerRadius="4">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <Grid.Background>
+                                    <SolidColorBrush Opacity="0.7"
+                                                     Color="#404040" />
+                                </Grid.Background>
+                                <muxc:InfoBadge x:Name="GithubCopilotDescriptionInfoBadge"
+                                                Grid.Column="0"
+                                                VerticalAlignment="Top"
+                                                FontSize="16"
+                                                Style="{ThemeResource AttentionIconInfoBadgeStyle}">
+                                    <muxc:InfoBadge.IconSource>
+                                        <muxc:FontIconSource FontSize="16"
+                                                             Glyph="&#xE625;" />
+                                    </muxc:InfoBadge.IconSource>
+                                </muxc:InfoBadge>
+                                <RichTextBlock Grid.Column="1"
+                                               TextWrapping="WrapWholeWords"
+                                               Visibility="{x:Bind ViewModel.IsTerminalPackaged}">
+                                    <Paragraph>
+                                        <Run x:Uid="AISettings_GithubCopilotPrerequisite" />
+                                        <LineBreak />
+                                        <LineBreak />
+                                        <Run x:Name="AISettings_GithubCopilotSignUpAndLearnMorePart1" /><Hyperlink NavigateUri="https://go.microsoft.com/fwlink/?linkid=2285598"
+                                                   TextDecorations="None">
+                                            <Run x:Name="AISettings_GithubCopilotSignUpLinkText" />
+                                        </Hyperlink><Run x:Name="AISettings_GithubCopilotSignUpAndLearnMorePart2" /><Hyperlink NavigateUri="https://go.microsoft.com/fwlink/?linkid=2285390"
+                                                   TextDecorations="None">
+                                            <Run x:Name="AISettings_GithubCopilotLearnMoreLinkText" />
+                                        </Hyperlink><Run x:Name="AISettings_GithubCopilotSignUpAndLearnMorePart3" />
+                                    </Paragraph>
+                                </RichTextBlock>
+                                <TextBlock x:Uid="AISettings_PortableModeDisclaimer"
+                                           Grid.Column="1"
+                                           Visibility="{x:Bind mtu:Converters.InvertedBooleanToVisibility(ViewModel.IsTerminalPackaged)}" />
+                            </Grid>
+                            <StackPanel Grid.Row="1"
+                                        HorizontalAlignment="Right"
+                                        VerticalAlignment="Center"
+                                        Orientation="Horizontal"
+                                        Spacing="8"
+                                        Visibility="{x:Bind ViewModel.IsTerminalPackaged}">
+                                <TextBlock VerticalAlignment="Center"
+                                           Text="{x:Bind ViewModel.GithubCopilotAuthMessage, Mode=OneWay}" />
+                                <Button Click="{x:Bind ViewModel.InitiateGithubAuth_Click}"
+                                        Style="{StaticResource AccentButtonStyle}"
+                                        Visibility="{x:Bind ViewModel.IsTerminalPackaged}">
+                                    <TextBlock x:Uid="AISettings_InitiateGithubAuthFlow" />
+                                </Button>
+                            </StackPanel>
+                        </Grid>
+                    </StackPanel>
+                </local:SettingContainer>
                 <!--  Azure OpenAI  -->
                 <local:SettingContainer x:Uid="AISettings_AzureOpenAIKeyAndEndpoint"
                                         Style="{StaticResource ExpanderSettingContainerStyle}">
@@ -47,24 +144,25 @@
                                 <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
-                            <TextBlock x:Uid="AISettings_AzureOpenAIKeyAndEndpointStored"
-                                       Grid.Column="0"
-                                       VerticalAlignment="Center" />
-                            <StackPanel Grid.Column="1"
-                                        HorizontalAlignment="Right"
-                                        VerticalAlignment="Center"
+                            <StackPanel Grid.Column="0"
                                         Spacing="8">
-                                <Button HorizontalAlignment="Center"
-                                        Click="ClearAzureOpenAIKeyAndEndpoint_Click"
-                                        Style="{StaticResource DeleteButtonStyle}">
-                                    <TextBlock x:Uid="AISettings_ClearAzureOpenAIKeyAndEndpoint" />
-                                </Button>
-                                <Button HorizontalAlignment="Center"
-                                        Click="SetAzureOpenAIActive_Click"
-                                        Visibility="{x:Bind mtu:Converters.InvertedBooleanToVisibility(ViewModel.AzureOpenAIActive), Mode=OneWay}">
+                                <TextBlock x:Uid="AISettings_AzureOpenAIKeyAndEndpointStored"
+                                           Grid.Column="0"
+                                           VerticalAlignment="Center" />
+                                <CheckBox Grid.Row="1"
+                                          HorizontalAlignment="Left"
+                                          Checked="SetAzureOpenAIActive_Check"
+                                          IsChecked="{x:Bind ViewModel.AzureOpenAIActive, Mode=OneWay}"
+                                          Unchecked="SetAzureOpenAIActive_Uncheck">
                                     <TextBlock x:Uid="AISettings_SetActiveProvider" />
-                                </Button>
+                                </CheckBox>
                             </StackPanel>
+                            <Button Grid.Column="1"
+                                    HorizontalAlignment="Right"
+                                    Click="ClearAzureOpenAIKeyAndEndpoint_Click"
+                                    Style="{StaticResource DeleteButtonStyle}">
+                                <TextBlock x:Uid="AISettings_ClearAzureOpenAIKeyAndEndpoint" />
+                            </Button>
                         </Grid>
                         <Grid RowSpacing="8"
                               Visibility="{x:Bind mtu:Converters.InvertedBooleanToVisibility(ViewModel.AreAzureOpenAIKeyAndEndpointSet), Mode=OneWay}">
@@ -76,16 +174,21 @@
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="Auto" />
                             </Grid.RowDefinitions>
-                            <StackPanel Grid.Row="0"
-                                        Padding="16"
-                                        CornerRadius="4"
-                                        Orientation="Horizontal"
-                                        Spacing="14">
-                                <StackPanel.Background>
+                            <Grid Grid.Row="0"
+                                  Grid.Column="0"
+                                  Padding="16"
+                                  ColumnSpacing="14"
+                                  CornerRadius="4">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <Grid.Background>
                                     <SolidColorBrush Opacity="0.7"
                                                      Color="#404040" />
-                                </StackPanel.Background>
+                                </Grid.Background>
                                 <muxc:InfoBadge x:Name="AzureOpenAIDescriptionInfoBadge"
+                                                Grid.Column="0"
                                                 VerticalAlignment="Top"
                                                 FontSize="16"
                                                 Style="{ThemeResource AttentionIconInfoBadgeStyle}">
@@ -94,7 +197,8 @@
                                                              Glyph="&#xE625;" />
                                     </muxc:InfoBadge.IconSource>
                                 </muxc:InfoBadge>
-                                <RichTextBlock TextWrapping="WrapWholeWords">
+                                <RichTextBlock Grid.Column="1"
+                                               TextWrapping="WrapWholeWords">
                                     <Paragraph>
                                         <Run x:Uid="AISettings_AzureOpenAIDescription" />
                                         <LineBreak />
@@ -130,7 +234,7 @@
                                         </Hyperlink><Run x:Name="AISettings_AzureOpenAIProductTermsPart2" />
                                     </Paragraph>
                                 </RichTextBlock>
-                            </StackPanel>
+                            </Grid>
                             <TextBlock x:Uid="AISettings_EndpointTextBox"
                                        Grid.Row="1"
                                        VerticalAlignment="Center" />
@@ -164,24 +268,25 @@
                                 <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
-                            <TextBlock x:Uid="AISettings_OpenAIKeyStored"
-                                       Grid.Column="0"
-                                       VerticalAlignment="Center" />
-                            <StackPanel Grid.Column="1"
-                                        HorizontalAlignment="Right"
-                                        VerticalAlignment="Center"
+                            <StackPanel Grid.Column="0"
                                         Spacing="8">
-                                <Button HorizontalAlignment="Center"
-                                        Click="ClearOpenAIKey_Click"
-                                        Style="{StaticResource DeleteButtonStyle}">
-                                    <TextBlock x:Uid="AISettings_ClearOpenAIKey" />
-                                </Button>
-                                <Button HorizontalAlignment="Center"
-                                        Click="SetOpenAIActive_Click"
-                                        Visibility="{x:Bind mtu:Converters.InvertedBooleanToVisibility(ViewModel.OpenAIActive), Mode=OneWay}">
+                                <TextBlock x:Uid="AISettings_OpenAIKeyStored"
+                                           Grid.Column="0"
+                                           VerticalAlignment="Center" />
+                                <CheckBox Grid.Row="1"
+                                          HorizontalAlignment="Left"
+                                          Checked="SetOpenAIActive_Check"
+                                          IsChecked="{x:Bind ViewModel.OpenAIActive, Mode=OneWay}"
+                                          Unchecked="SetOpenAIActive_Uncheck">
                                     <TextBlock x:Uid="AISettings_SetActiveProvider" />
-                                </Button>
+                                </CheckBox>
                             </StackPanel>
+                            <Button Grid.Column="1"
+                                    HorizontalAlignment="Right"
+                                    Click="ClearOpenAIKey_Click"
+                                    Style="{StaticResource DeleteButtonStyle}">
+                                <TextBlock x:Uid="AISettings_ClearOpenAIKey" />
+                            </Button>
                         </Grid>
                         <Grid RowSpacing="8"
                               Visibility="{x:Bind mtu:Converters.InvertedBooleanToVisibility(ViewModel.IsOpenAIKeySet), Mode=OneWay}">
@@ -193,16 +298,21 @@
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="Auto" />
                             </Grid.RowDefinitions>
-                            <StackPanel Grid.Row="0"
-                                        Padding="16"
-                                        CornerRadius="4"
-                                        Orientation="Horizontal"
-                                        Spacing="14">
-                                <StackPanel.Background>
+                            <Grid Grid.Row="0"
+                                  Grid.Column="0"
+                                  Padding="16"
+                                  ColumnSpacing="14"
+                                  CornerRadius="4">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <Grid.Background>
                                     <SolidColorBrush Opacity="0.7"
                                                      Color="#404040" />
-                                </StackPanel.Background>
+                                </Grid.Background>
                                 <muxc:InfoBadge x:Name="OpenAIDescriptionInfoBadge"
+                                                Grid.Column="0"
                                                 VerticalAlignment="Top"
                                                 FontSize="16"
                                                 Style="{ThemeResource AttentionIconInfoBadgeStyle}">
@@ -211,7 +321,7 @@
                                                              Glyph="&#xE625;" />
                                     </muxc:InfoBadge.IconSource>
                                 </muxc:InfoBadge>
-                                <RichTextBlock MaxWidth="900"
+                                <RichTextBlock Grid.Column="1"
                                                TextWrapping="WrapWholeWords">
                                     <Paragraph>
                                         <Run x:Name="AISettings_OpenAIDescriptionPart1" /><Hyperlink NavigateUri="https://go.microsoft.com/fwlink/?linkid=2251839"
@@ -220,7 +330,7 @@
                                         </Hyperlink><Run x:Name="AISettings_OpenAIDescriptionPart2" />
                                     </Paragraph>
                                 </RichTextBlock>
-                            </StackPanel>
+                            </Grid>
                             <TextBlock x:Uid="AISettings_KeyTextBox"
                                        Grid.Row="3"
                                        VerticalAlignment="Center" />

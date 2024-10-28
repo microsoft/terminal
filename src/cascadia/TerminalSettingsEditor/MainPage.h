@@ -46,7 +46,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         Windows::Foundation::Collections::IObservableVector<IInspectable> Breadcrumbs() noexcept;
 
+        static void RefreshGithubAuthStatus(const winrt::hstring& message);
+        static winrt::event_token GithubAuthCompleted(const GithubAuthCompletedHandler& handler);
+        static void GithubAuthCompleted(const winrt::event_token& token);
+
         til::typed_event<Windows::Foundation::IInspectable, Model::SettingsTarget> OpenJson;
+        til::typed_event<Windows::Foundation::IInspectable, Windows::Foundation::IInspectable> GithubAuthRequested;
 
     private:
         Windows::Foundation::Collections::IObservableVector<IInspectable> _breadcrumbs;
