@@ -9,20 +9,21 @@
 #include "RemainingProfilesEntry.g.cpp"
 
 using namespace Microsoft::Terminal::Settings::Model;
-using namespace winrt::Microsoft::Terminal::Settings::Model::implementation;
 
-RemainingProfilesEntry::RemainingProfilesEntry() noexcept :
-    RemainingProfilesEntryT<RemainingProfilesEntry, ProfileCollectionEntry>(NewTabMenuEntryType::RemainingProfiles)
+namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
-}
+    RemainingProfilesEntry::RemainingProfilesEntry() noexcept :
+        RemainingProfilesEntryT<RemainingProfilesEntry, ProfileCollectionEntry>(NewTabMenuEntryType::RemainingProfiles)
+    {
+    }
 
-winrt::com_ptr<NewTabMenuEntry> RemainingProfilesEntry::FromJson(const Json::Value&)
-{
-    return winrt::make_self<RemainingProfilesEntry>();
-}
+    winrt::com_ptr<NewTabMenuEntry> RemainingProfilesEntry::FromJson(const Json::Value&)
+    {
+        return winrt::make_self<RemainingProfilesEntry>();
+    }
 
-winrt::com_ptr<RemainingProfilesEntry> RemainingProfilesEntry::Copy() const
-{
-    auto entry = winrt::make_self<RemainingProfilesEntry>();
-    return entry;
+    Model::NewTabMenuEntry RemainingProfilesEntry::Copy() const
+    {
+        return winrt::make<RemainingProfilesEntry>();
+    }
 }

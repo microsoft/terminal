@@ -24,7 +24,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     public:
         ActionEntry() noexcept;
 
-        winrt::com_ptr<ActionEntry> Copy() const;
+        Model::NewTabMenuEntry Copy() const;
 
         Json::Value ToJson() const override;
         static com_ptr<NewTabMenuEntry> FromJson(const Json::Value& json);

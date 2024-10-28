@@ -88,34 +88,9 @@ winrt::com_ptr<GlobalAppSettings> GlobalAppSettings::Copy() const
     if (_NewTabMenu)
     {
         globals->_NewTabMenu = winrt::single_threaded_vector<Model::NewTabMenuEntry>();
-        for (auto entry : *_NewTabMenu)
+        for (const auto& entry : *_NewTabMenu)
         {
-            switch (entry.Type())
-            {
-            case NewTabMenuEntryType::Profile:
-                globals->_NewTabMenu->Append(*winrt::get_self<ProfileEntry>(entry.as<Model::ProfileEntry>())->Copy());
-                break;
-            case NewTabMenuEntryType::Separator:
-                globals->_NewTabMenu->Append(*winrt::get_self<SeparatorEntry>(entry.as<Model::SeparatorEntry>())->Copy());
-                break;
-            case NewTabMenuEntryType::Folder:
-                globals->_NewTabMenu->Append(*winrt::get_self<FolderEntry>(entry.as<Model::FolderEntry>())->Copy());
-                break;
-            case NewTabMenuEntryType::RemainingProfiles:
-                globals->_NewTabMenu->Append(*winrt::get_self<RemainingProfilesEntry>(entry.as<Model::RemainingProfilesEntry>())->Copy());
-                break;
-            case NewTabMenuEntryType::MatchProfiles:
-                globals->_NewTabMenu->Append(*winrt::get_self<MatchProfilesEntry>(entry.as<Model::MatchProfilesEntry>())->Copy());
-                break;
-            case NewTabMenuEntryType::Action:
-            {
-                globals->_NewTabMenu->Append(*winrt::get_self<ActionEntry>(entry.as<Model::ActionEntry>())->Copy());
-                break;
-            }
-            case NewTabMenuEntryType::Invalid:
-                // ignore invalid
-                break;
-            }
+            globals->_NewTabMenu->Append(get_self<NewTabMenuEntry>(entry)->Copy());
         }
     }
 

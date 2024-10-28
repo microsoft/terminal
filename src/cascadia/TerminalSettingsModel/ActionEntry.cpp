@@ -8,36 +8,39 @@
 #include "ActionEntry.g.cpp"
 
 using namespace Microsoft::Terminal::Settings::Model;
-using namespace winrt::Microsoft::Terminal::Settings::Model::implementation;
 
 static constexpr std::string_view ActionIdKey{ "id" };
 
-ActionEntry::ActionEntry() noexcept :
-    ActionEntryT<ActionEntry, NewTabMenuEntry>(NewTabMenuEntryType::Action)
+namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
-}
 
-Json::Value ActionEntry::ToJson() const
-{
-    auto json = NewTabMenuEntry::ToJson();
+    ActionEntry::ActionEntry() noexcept :
+        ActionEntryT<ActionEntry, NewTabMenuEntry>(NewTabMenuEntryType::Action)
+    {
+    }
 
-    JsonUtils::SetValueForKey(json, ActionIdKey, _ActionId);
+    Json::Value ActionEntry::ToJson() const
+    {
+        auto json = NewTabMenuEntry::ToJson();
 
-    return json;
-}
+        JsonUtils::SetValueForKey(json, ActionIdKey, _ActionId);
 
-winrt::com_ptr<NewTabMenuEntry> ActionEntry::FromJson(const Json::Value& json)
-{
-    auto entry = winrt::make_self<ActionEntry>();
+        return json;
+    }
 
-    JsonUtils::GetValueForKey(json, ActionIdKey, entry->_ActionId);
+    winrt::com_ptr<NewTabMenuEntry> ActionEntry::FromJson(const Json::Value& json)
+    {
+        auto entry = winrt::make_self<ActionEntry>();
 
-    return entry;
-}
+        JsonUtils::GetValueForKey(json, ActionIdKey, entry->_ActionId);
 
-winrt::com_ptr<ActionEntry> ActionEntry::Copy() const
-{
-    auto entry = winrt::make_self<ActionEntry>();
-    entry->_ActionId = _ActionId;
-    return entry;
+        return entry;
+    }
+
+    Model::NewTabMenuEntry ActionEntry::Copy() const
+    {
+        auto entry = winrt::make_self<ActionEntry>();
+        entry->_ActionId = _ActionId;
+        return *entry;
+    }
 }

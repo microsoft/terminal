@@ -28,7 +28,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         ProfileEntry() noexcept;
         explicit ProfileEntry(const winrt::hstring& profile) noexcept;
 
-        winrt::com_ptr<ProfileEntry> Copy() const;
+        Model::NewTabMenuEntry Copy() const override;
 
         Json::Value ToJson() const override;
         static com_ptr<NewTabMenuEntry> FromJson(const Json::Value& json);
