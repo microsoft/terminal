@@ -294,6 +294,14 @@
     <value>Автоматически определять URL-адреса и делать их доступными для нажатия</value>
     <comment>Header for a control to toggle whether the terminal should automatically detect URLs and make them clickable, or not.</comment>
   </data>
+  <data name="Globals_SearchWebDefaultQueryUrl.Header" xml:space="preserve">
+    <value>URL-адрес по умолчанию, используемый для действия "Поиск в Интернете"</value>
+    <comment>Header for a control to set the query URL when using the "search web" action.</comment>
+  </data>
+  <data name="Globals_SearchWebDefaultQueryUrl.HelpText" xml:space="preserve">
+    <value>Заполнитель "%s" будет заменен поисковым запросом.</value>
+    <comment>{Locked="%s"} Additional text presented near "Globals_SearchWebDefaultQueryUrl.Header".</comment>
+  </data>
   <data name="Globals_TrimBlockSelection.Header" xml:space="preserve">
     <value>Удалить конечный пробел в прямоугольном выделении</value>
     <comment>Header for a control to toggle whether a text selected with block selection should be trimmed of white spaces when copied to the clipboard, or not.</comment>
@@ -552,9 +560,41 @@
     <value>Поверх остальных окон</value>
     <comment>Header for a control to toggle if the app will always be presented on top of other windows, or is treated normally (when disabled).</comment>
   </data>
+  <data name="Profile_ForceVTInput.Header" xml:space="preserve">
+    <value>Использовать устаревшую входную кодировку</value>
+    <comment>Header for a control to toggle legacy input encoding for the terminal.</comment>
+  </data>
+  <data name="Profile_AllowVtChecksumReport.Header" xml:space="preserve">
+    <value>Разрешить DECRQCRA (Request Checksum of Rectangular Area)</value>
+    <comment>{Locked="DECRQCRA"}{Locked="Request Checksum of Rectangular Area"}Header for a control to toggle support for the DECRQCRA control sequence.</comment>
+  </data>
+  <data name="Globals_AllowHeadless.Header" xml:space="preserve">
+    <value>Разрешить запуск терминала Windows в фоновом режиме</value>
+    <comment>Header for a control to toggle support for Windows Terminal to run in the background.</comment>
+  </data>
+  <data name="Globals_IsolatedMode.Header" xml:space="preserve">
+    <value>Принудительное выполнение каждого окна в отдельном процессе</value>
+    <comment>Header for a control to toggle making each window be its own process.</comment>
+  </data>
+  <data name="Globals_DebugFeaturesEnabled.Header" xml:space="preserve">
+    <value>Включить функции отладки</value>
+    <comment>Header for a control to toggle debug features.</comment>
+  </data>
   <data name="Globals_AlwaysOnTop.HelpText" xml:space="preserve">
     <value>Терминал всегда будет верхним окном рабочего стола.</value>
     <comment>A description for what the "always on top" setting does. Presented near "Globals_AlwaysOnTop.Header".</comment>
+  </data>
+  <data name="Profile_ForceVTInput.HelpText" xml:space="preserve">
+    <value>Некоторые входные данные клавиатуры в некоторых приложениях могут перестать работать правильно, если этот параметр включен.</value>
+    <comment>Additional description for what the "force vt input" setting does. Presented near "Globals_ForceVTInput.Header".</comment>
+  </data>
+  <data name="Globals_AllowHeadless.HelpText" xml:space="preserve">
+    <value>Это позволяет выполнять такие действия, как глобальный вызов и режим землетрясения, даже если ни одно окно не открыто.</value>
+    <comment>Additional description for what the "allow headless" setting does. Presented near "Globals_AllowHeadless.Header".</comment>
+  </data>
+  <data name="Globals_IsolatedMode.HelpText" xml:space="preserve">
+    <value>Некоторые функции будут работать неправильно, включая глобальные сочетания клавиш, перетаскивание вкладок и wt.exe нацеливание окна.</value>
+    <comment>{Locked="wt.exe"} Additional description for what the "isolated mode" setting does. Presented near "Globals_IsolatedMode.Header".</comment>
   </data>
   <data name="Globals_TabWidthMode.Header" xml:space="preserve">
     <value>Режим ширины вкладки</value>
@@ -624,6 +664,10 @@
     <value>Взаимодействие</value>
     <comment>Header for the "interaction" menu item. This navigates to a page that lets you see and modify settings related to the user's mouse and touch interactions with the app.</comment>
   </data>
+  <data name="Nav_Compatibility.Content" xml:space="preserve">
+    <value>Совместимость</value>
+    <comment>Header for the "compatibility" menu item. This navigates to a page that lets you see and modify settings related to compatibility with command line scenarios.</comment>
+  </data>
   <data name="Nav_Launch.Content" xml:space="preserve">
     <value>Запуск</value>
     <comment>Header for the "startup" menu item. This navigates to a page that lets you see and modify settings related to the app's launch experience (i.e. screen position, mode, etc.)</comment>
@@ -659,6 +703,10 @@
   <data name="Profile_Advanced.Header" xml:space="preserve">
     <value>Расширенная</value>
     <comment>Header for a sub-page of profile settings focused on more advanced scenarios.</comment>
+  </data>
+  <data name="Profile_Terminal.Header" xml:space="preserve">
+    <value>Эмуляция терминала</value>
+    <comment>Header for a sub-page of profile settings focused on customizing the capabilities of the terminal.</comment>
   </data>
   <data name="Profile_AltGrAliasing.Header" xml:space="preserve">
     <value>Псевдоним AltGr</value>
@@ -945,17 +993,33 @@
     <value>Высота строки</value>
     <comment>Header for a control that sets the text line height.</comment>
   </data>
+  <data name="Profile_CellWidth.Header" xml:space="preserve">
+    <value>Ширина ячейки</value>
+    <comment>Header for a control that sets the text character width.</comment>
+  </data>
   <data name="Profile_LineHeightBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Высота строки</value>
     <comment>Header for a control that sets the text line height.</comment>
+  </data>
+  <data name="Profile_CellWidthBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Ширина ячейки</value>
+    <comment>Header for a control that sets the text character width.</comment>
   </data>
   <data name="Profile_LineHeight.HelpText" xml:space="preserve">
     <value>Переопределить высоту строки терминала. Измеряется как кратное размеру шрифта. Значение по умолчанию зависит от вашего шрифта и обычно составляет около 1,2.</value>
     <comment>A description for what the "line height" setting does. Presented near "Profile_LineHeight".</comment>
   </data>
+  <data name="Profile_CellWidth.HelpText" xml:space="preserve">
+    <value>Переопределите ширину ячейки терминала. Измеряется как кратное размеру шрифта. Значение по умолчанию зависит от шрифта и обычно около 0,6.</value>
+    <comment>A description for what the "cell width" setting does. Presented near "Profile_CellWidth".</comment>
+  </data>
   <data name="Profile_LineHeightBox.PlaceholderText" xml:space="preserve">
     <value>1,2</value>
     <comment>"1.2" is a decimal number.</comment>
+  </data>
+  <data name="Profile_CellWidthBox.PlaceholderText" xml:space="preserve">
+    <value>0,6</value>
+    <comment>"0.6" is a decimal number.</comment>
   </data>
   <data name="Profile_EnableBuiltinGlyphs.Header" xml:space="preserve">
     <value>Встроенные глифы</value>
@@ -1860,5 +1924,37 @@
   <data name="Profile_ProportionalFontFaces.Header" xml:space="preserve">
     <value>Шрифты, кроме моноширинных:</value>
     <comment>This is a label that is followed by a list of proportional fonts.</comment>
+  </data>
+  <data name="Profile_AnswerbackMessage.Header" xml:space="preserve">
+    <value>Ответ на ENQ (Request Terminal Status)</value>
+    <comment>{Locked=ENQ}{Locked="Request Terminal Status"} Header for a control to determine the response to the ENQ escape sequence. This is represented using a text box.</comment>
+  </data>
+  <data name="Profile_AnswerbackMessage.HelpText" xml:space="preserve">
+    <value>Ответ, который отправляется при получении последовательности управления ENQ.</value>
+    <comment>{Locked=ENQ} A description for what the "ENQ response" setting does. Presented near "Profile_AnswerbackMessage".</comment>
+  </data>
+  <data name="Globals_DebugFeaturesEnabled.HelpText" xml:space="preserve">
+    <value>Это полезно для устранения неполадок и разработки терминала.</value>
+    <comment>Additional description for what the "debug features enabled" setting does. Presented near "Globals_DebugFeaturesEnabled.Header".</comment>
+  </data>
+  <data name="Profile_RainbowSuggestions.Header" xml:space="preserve">
+    <value>Экспериментальная функция: показывать предлагаемые входные данные в цветах радуги</value>
+    <comment>This is a label for a setting that, when enabled, applies a rainbow coloring to the preview text from the suggestions UI.</comment>
+  </data>
+  <data name="Globals_EnableColorSelection.Header" xml:space="preserve">
+    <value>Экспериментальная функция: добавление привязок к ключам для изменения цвета выбранного текста</value>
+    <comment>Header for a control to toggle adding a set of key bindings that can be used to apply coloring to selected text in a terminal session.</comment>
+  </data>
+  <data name="Globals_EnableColorSelection.HelpText" xml:space="preserve">
+    <value>Эти привязки ключей могут выделять указанным цветом выбранный текст или все вхождения выбранного текста.</value>
+    <comment>Additional text for a control to toggle adding a set of key bindings that can be used to apply coloring to selected text in a terminal session. Presented near "Globals_EnableColorSelection.Header".</comment>
+  </data>
+  <data name="Globals_EnableUnfocusedAcrylic.Header" xml:space="preserve">
+    <value>Разрешить использование акрилового материала в несфокусированных окнах</value>
+    <comment>Header for a control to toggle allowing unfocused windows to have an acrylic background.</comment>
+  </data>
+  <data name="Globals_ShowAdminShield.Header" xml:space="preserve">
+    <value>Отображать экран в заголовке, когда Терминал Windows от имени администратора</value>
+    <comment>Header for a control to toggle displaying a shield in the title bar of the app. "Admin" refers to elevated sessions like "run as Admin"</comment>
   </data>
 </root>
