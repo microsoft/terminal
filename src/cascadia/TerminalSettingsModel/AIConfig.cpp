@@ -37,20 +37,20 @@ winrt::Microsoft::Terminal::Settings::Model::EnabledLMProviders AIConfig::Allowe
             WI_ClearAllFlags(enabledLMProviders, Model::EnabledLMProviders::All);
             for (auto p = buffer; *p;)
             {
-                const auto len = wcslen(p);
-                if (wcscmp(p, AzureOpenAIPolicyKey.c_str()) == 0)
+                const std::wstring_view value{ p };
+                if (value == AzureOpenAIPolicyKey)
                 {
                     WI_SetFlag(enabledLMProviders, Model::EnabledLMProviders::AzureOpenAI);
                 }
-                else if (wcscmp(p, OpenAIPolicyKey.c_str()) == 0)
+                else if (value == OpenAIPolicyKey)
                 {
                     WI_SetFlag(enabledLMProviders, Model::EnabledLMProviders::OpenAI);
                 }
-                else if (wcscmp(p, GitHubCopilotPolicyKey.c_str()) == 0)
+                else if (value == GitHubCopilotPolicyKey)
                 {
                     WI_SetFlag(enabledLMProviders, Model::EnabledLMProviders::GithubCopilot);
                 }
-                p += len + 1;
+                p += value.size() + 1;
             }
             break;
         }
