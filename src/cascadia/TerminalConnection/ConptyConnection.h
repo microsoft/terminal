@@ -23,6 +23,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         void Start();
         void WriteInput(const winrt::array_view<const char16_t> buffer);
         void Resize(uint32_t rows, uint32_t columns);
+        void ResetSize();
         void Close() noexcept;
         void ClearBuffer();
 

@@ -16,6 +16,8 @@ ADDALIAS
 ADDREF
 ADDSTRING
 ADDTOOL
+adml
+admx
 AFill
 AFX
 AHelper
@@ -564,6 +566,7 @@ entrypoints
 ENU
 ENUMLOGFONT
 ENUMLOGFONTEX
+EOB
 EOK
 EPres
 EQU
@@ -782,6 +785,7 @@ HIWORD
 HKCU
 hkey
 hkl
+HKLM
 hlocal
 hlsl
 HMB
@@ -864,6 +868,7 @@ INLINEPREFIX
 inproc
 Inputkeyinfo
 Inputreadhandledata
+INPUTSCOPE
 INSERTMODE
 INTERACTIVITYBASE
 INTERCEPTCOPYPASTE
@@ -1290,6 +1295,7 @@ parms
 PATCOPY
 pathcch
 PATTERNID
+pbstr
 pcb
 pcch
 PCCHAR
@@ -1375,9 +1381,11 @@ POSTCHARBREAKS
 POSX
 POSXSCROLL
 POSYSCROLL
+ppbstr
 PPEB
 ppf
 ppidl
+pprg
 PPROC
 ppropvar
 ppsi
@@ -1456,6 +1464,7 @@ QWER
 Qxxxxxxxxxxxxxxx
 qzmp
 RAII
+Ralph
 RALT
 rasterbar
 rasterfont
@@ -1693,6 +1702,7 @@ srcsrv
 SRCSRVTRG
 srctool
 srect
+SRGS
 srvinit
 srvpipe
 ssa
@@ -1730,6 +1740,7 @@ swapchain
 swapchainpanel
 SWMR
 SWP
+swrapped
 SYMED
 SYNCPAINT
 syscalls
@@ -1839,7 +1850,6 @@ triaging
 TRIMZEROHEADINGS
 trx
 tsa
-tsattrs
 tsgr
 tsm
 TStr
@@ -1967,10 +1977,8 @@ vswhere
 vtapp
 VTE
 VTID
-vtio
 vtmode
 vtpipeterm
-vtpt
 VTRGB
 VTRGBTo
 vtseq
@@ -2006,6 +2014,7 @@ WHelper
 wic
 WIDTHSCROLL
 Widthx
+Wiggum
 wil
 WImpl
 WINAPI
@@ -2075,6 +2084,8 @@ WNDCLASSW
 Wndproc
 WNegative
 WNull
+wordi
+wordiswrapped
 workarea
 WOutside
 WOWARM
@@ -2088,6 +2099,7 @@ WPrep
 WPresent
 wprp
 wprpi
+wrappe
 wregex
 writeback
 WRITECONSOLE

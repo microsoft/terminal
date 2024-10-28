@@ -187,6 +187,7 @@ namespace Microsoft::Console::VirtualTerminal
         std::atomic<uint64_t> _deviceAttributes{ 0 };
         bool _lookingForDSR = false;
         bool _encounteredWin32InputModeSequence = false;
+        bool _expectingStringTerminator = false;
         DWORD _mouseButtonState = 0;
         std::chrono::milliseconds _doubleClickTime;
         std::optional<til::point> _lastMouseClickPos{};

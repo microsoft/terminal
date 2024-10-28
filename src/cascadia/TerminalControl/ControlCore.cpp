@@ -134,6 +134,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         auto pfnClearQuickFix = [this] { ClearQuickFix(); };
         _terminal->SetClearQuickFixCallback(pfnClearQuickFix);
 
+        auto pfnWindowSizeChanged = [this](auto&& PH1, auto&& PH2) { _terminalWindowSizeChanged(std::forward<decltype(PH1)>(PH1), std::forward<decltype(PH2)>(PH2)); };
+        _terminal->SetWindowSizeChangedCallback(pfnWindowSizeChanged);
+
         // MSFT 33353327: Initialize the renderer in the ctor instead of Initialize().
         // We need the renderer to be ready to accept new engines before the SwapChainPanel is ready to go.
         // If we wait, a screen reader may try to get the AutomationPeer (aka the UIA Engine), and we won't be able to attach
@@ -195,6 +198,17 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 {
                     const auto lock = t->LockForWriting();
                     t->UpdatePatternsUnderLock();
+                }
+            });
+
+        // If you rapidly show/hide Windows Terminal, something about GotFocus()/LostFocus() gets broken.
+        // We'll then receive easily 10+ such calls from WinUI the next time the application is shown.
+        shared->focusChanged = std::make_unique<til::debounced_func_trailing<bool>>(
+            std::chrono::milliseconds{ 25 },
+            [weakThis = get_weak()](const bool focused) {
+                if (const auto core{ weakThis.get() })
+                {
+                    core->_focusChanged(focused);
                 }
             });
 
@@ -1629,6 +1643,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _midiAudio.PlayNote(reinterpret_cast<HWND>(_owningHwnd), noteNumber, velocity, std::chrono::duration_cast<std::chrono::milliseconds>(duration));
     }
 
+    void ControlCore::_terminalWindowSizeChanged(int32_t width, int32_t height)
+    {
+        auto size = winrt::make<implementation::WindowSizeChangedEventArgs>(width, height);
+        WindowSizeChanged.raise(*this, size);
+    }
+
     void ControlCore::_terminalSearchMissingCommand(std::wstring_view missingCommand, const til::CoordType& bufferRow)
     {
         SearchMissingCommand.raise(*this, make<implementation::SearchMissingCommandEventArgs>(hstring{ missingCommand }, bufferRow));
@@ -1688,38 +1708,41 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     SearchResults ControlCore::Search(SearchRequest request)
     {
         const auto lock = _terminal->LockForWriting();
+
         SearchFlag flags{};
         WI_SetFlagIf(flags, SearchFlag::CaseInsensitive, !request.CaseSensitive);
         WI_SetFlagIf(flags, SearchFlag::RegularExpression, request.RegularExpression);
         const auto searchInvalidated = _searcher.IsStale(*_terminal.get(), request.Text, flags);
 
-        if (searchInvalidated || !request.Reset)
+        if (searchInvalidated || !request.ResetOnly)
         {
             std::vector<til::point_span> oldResults;
+            til::point_span oldFocused;
+
+            if (const auto focused = _terminal->GetSearchHighlightFocused())
+            {
+                oldFocused = *focused;
+            }
 
             if (searchInvalidated)
             {
                 oldResults = _searcher.ExtractResults();
                 _searcher.Reset(*_terminal.get(), request.Text, flags, !request.GoForward);
-
-                if (SnapSearchResultToSelection())
-                {
-                    _searcher.MoveToCurrentSelection();
-                    SnapSearchResultToSelection(false);
-                }
-
                 _terminal->SetSearchHighlights(_searcher.Results());
             }
-            else
+
+            if (!request.ResetOnly)
             {
                 _searcher.FindNext(!request.GoForward);
             }
 
-            if (const auto idx = _searcher.CurrentMatch(); idx >= 0)
-            {
-                _terminal->SetSearchHighlightFocused(gsl::narrow<size_t>(idx), request.ScrollOffset);
-            }
+            _terminal->SetSearchHighlightFocused(gsl::narrow<size_t>(std::max<ptrdiff_t>(0, _searcher.CurrentMatch())));
             _renderer->TriggerSearchHighlight(oldResults);
+
+            if (const auto focused = _terminal->GetSearchHighlightFocused(); focused && *focused != oldFocused)
+            {
+                _terminal->ScrollToSearchHighlight(request.ScrollOffset);
+            }
         }
 
         int32_t totalMatches = 0;
@@ -1747,25 +1770,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         const auto lock = _terminal->LockForWriting();
         _terminal->SetSearchHighlights({});
-        _terminal->SetSearchHighlightFocused({}, 0);
+        _terminal->SetSearchHighlightFocused(0);
         _renderer->TriggerSearchHighlight(_searcher.Results());
         _searcher = {};
-    }
-
-    // Method Description:
-    // - Tells ControlCore to snap the current search result index to currently
-    //   selected text if the search was started using it.
-    void ControlCore::SnapSearchResultToSelection(bool shouldSnap) noexcept
-    {
-        _snapSearchResultToSelection = shouldSnap;
-    }
-
-    // Method Description:
-    // - Returns true, if we should snap the current search result index to
-    //   the currently selected text after a new search is started, else false.
-    bool ControlCore::SnapSearchResultToSelection() const noexcept
-    {
-        return _snapSearchResultToSelection;
     }
 
     void ControlCore::Close()
@@ -2212,19 +2219,32 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - <none>
     void ControlCore::ClearBuffer(Control::ClearBufferType clearType)
     {
-        if (clearType == Control::ClearBufferType::Scrollback || clearType == Control::ClearBufferType::All)
+        std::wstring_view command;
+        switch (clearType)
+        {
+        case ClearBufferType::Screen:
+            command = L"\x1b[H\x1b[2J";
+            break;
+        case ClearBufferType::Scrollback:
+            command = L"\x1b[3J";
+            break;
+        case ClearBufferType::All:
+            command = L"\x1b[H\x1b[2J\x1b[3J";
+            break;
+        }
+
         {
             const auto lock = _terminal->LockForWriting();
-            _terminal->EraseScrollback();
+            _terminal->Write(command);
         }
 
         if (clearType == Control::ClearBufferType::Screen || clearType == Control::ClearBufferType::All)
         {
-            // Send a signal to conpty to clear the buffer.
             if (auto conpty{ _connection.try_as<TerminalConnection::ConptyConnection>() })
             {
-                // ConPTY will emit sequences to sync up our buffer with its new
-                // contents.
+                // Since the clearing of ConPTY occurs asynchronously, this call can result weird issues,
+                // where a console application still sees contents that we've already deleted, etc.
+                // The correct way would be for ConPTY to emit the appropriate CSI n J sequences.
                 conpty.ClearBuffer();
             }
         }
@@ -2471,13 +2491,21 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - This is related to work done for GH#2988.
     void ControlCore::GotFocus()
     {
-        _focusChanged(true);
+        const auto shared = _shared.lock_shared();
+        if (shared->focusChanged)
+        {
+            (*shared->focusChanged)(true);
+        }
     }
 
     // See GotFocus.
     void ControlCore::LostFocus()
     {
-        _focusChanged(false);
+        const auto shared = _shared.lock_shared();
+        if (shared->focusChanged)
+        {
+            (*shared->focusChanged)(false);
+        }
     }
 
     void ControlCore::_focusChanged(bool focused)

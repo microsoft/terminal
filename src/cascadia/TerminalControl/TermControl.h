@@ -159,6 +159,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                                                int32_t commandlineRows);
         static Windows::Foundation::Size GetProposedDimensions(const IControlSettings& settings, const uint32_t dpi, const winrt::Windows::Foundation::Size& initialSizeInChars);
 
+        winrt::Windows::Foundation::Size GetNewDimensions(const winrt::Windows::Foundation::Size& initialSizeInChars);
+
         void BellLightOn();
 
         bool ReadOnly() const noexcept;
@@ -211,6 +213,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         til::typed_event<IInspectable, Control::CharSentEventArgs> CharSent;
         til::typed_event<IInspectable, Control::StringSentEventArgs> StringSent;
         til::typed_event<IInspectable, Control::SearchMissingCommandEventArgs> SearchMissingCommand;
+        til::typed_event<IInspectable, Control::WindowSizeChangedEventArgs> WindowSizeChanged;
 
         // UNDER NO CIRCUMSTANCES SHOULD YOU ADD A (PROJECTED_)FORWARDED_TYPED_EVENT HERE
         // Those attach the handler to the core directly, and will explode if
@@ -437,6 +440,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void _showContextMenuAt(const til::point& controlRelativePos);
 
         void _bubbleSearchMissingCommand(const IInspectable& sender, const Control::SearchMissingCommandEventArgs& args);
+        winrt::fire_and_forget _bubbleWindowSizeChanged(const IInspectable& sender, Control::WindowSizeChangedEventArgs args);
         til::CoordType _calculateSearchScrollOffset() const;
 
         void _PasteCommandHandler(const IInspectable& sender, const IInspectable& args);
@@ -470,6 +474,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             Control::ControlCore::RestartTerminalRequested_revoker RestartTerminalRequested;
             Control::ControlCore::SearchMissingCommand_revoker SearchMissingCommand;
             Control::ControlCore::RefreshQuickFixUI_revoker RefreshQuickFixUI;
+            Control::ControlCore::WindowSizeChanged_revoker WindowSizeChanged;
 
             // These are set up in _InitializeTerminal
             Control::ControlCore::RendererWarning_revoker RendererWarning;

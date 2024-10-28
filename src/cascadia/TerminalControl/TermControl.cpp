@@ -224,6 +224,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _revokers.CompletionsChanged = _core.CompletionsChanged(winrt::auto_revoke, { get_weak(), &TermControl::_bubbleCompletionsChanged });
         _revokers.RestartTerminalRequested = _core.RestartTerminalRequested(winrt::auto_revoke, { get_weak(), &TermControl::_bubbleRestartTerminalRequested });
         _revokers.SearchMissingCommand = _core.SearchMissingCommand(winrt::auto_revoke, { get_weak(), &TermControl::_bubbleSearchMissingCommand });
+        _revokers.WindowSizeChanged = _core.WindowSizeChanged(winrt::auto_revoke, { get_weak(), &TermControl::_bubbleWindowSizeChanged });
 
         _revokers.PasteFromClipboard = _interactivity.PasteFromClipboard(winrt::auto_revoke, { get_weak(), &TermControl::_bubblePasteFromClipboard });
 
@@ -575,7 +576,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                     // but since code paths differ, extra work is required to ensure correctness.
                     if (!_core.HasMultiLineSelection())
                     {
-                        _core.SnapSearchResultToSelection(true);
                         const auto selectedLine{ _core.SelectedText(true) };
                         _searchBox->PopulateTextbox(selectedLine);
                     }
@@ -862,6 +862,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         _interactivity.UpdateSettings();
+        {
+            const auto inputScope = settings.DefaultInputScope();
+            const auto alpha = inputScope == DefaultInputScope::AlphanumericHalfWidth;
+            ::Microsoft::Console::TSF::Handle::SetDefaultScopeAlphanumericHalfWidth(alpha);
+        }
         if (_automationPeer)
         {
             _automationPeer.SetControlPadding(Core::Padding{
@@ -1630,12 +1635,29 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 {
                     if (vkey == VK_ADD)
                     {
-                        // Alt '+' <number> is used to input Unicode code points.
-                        // Every time you press + it resets the entire state
-                        // in the original OS implementation as well.
-                        s.encoding = AltNumpadEncoding::Unicode;
-                        s.accumulator = 0;
-                        s.active = true;
+                        static const auto enabled = []() {
+                            wchar_t buffer[4]{};
+                            DWORD size = sizeof(buffer);
+                            RegGetValueW(
+                                HKEY_CURRENT_USER,
+                                L"Control Panel\\Input Method",
+                                L"EnableHexNumpad",
+                                RRF_RT_REG_SZ,
+                                nullptr,
+                                &buffer[0],
+                                &size);
+                            return size == 4 && memcmp(&buffer[0], L"1", 4) == 0;
+                        }();
+
+                        if (enabled)
+                        {
+                            // Alt '+' <number> is used to input Unicode code points.
+                            // Every time you press + it resets the entire state
+                            // in the original OS implementation as well.
+                            s.encoding = AltNumpadEncoding::Unicode;
+                            s.accumulator = 0;
+                            s.active = true;
+                        }
                     }
                     else if (vkey == VK_NUMPAD0 && s.encoding == AltNumpadEncoding::OEM && s.accumulator == 0)
                     {
@@ -2779,6 +2801,42 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return { width, height };
     }
 
+    // Function Description:
+    // - Calculates new dimensions (in pixels) from row and column counts.
+    // Arguments:
+    // - dpi: The dpi value.
+    // - sizeInChars: The size to get the new dimensions for.
+    // Return Value:
+    // - a size containing the requested dimensions in pixels.
+    winrt::Windows::Foundation::Size TermControl::GetNewDimensions(const winrt::Windows::Foundation::Size& sizeInChars)
+    {
+        const auto cols = ::base::saturated_cast<int32_t>(sizeInChars.Width);
+        const auto rows = ::base::saturated_cast<int32_t>(sizeInChars.Height);
+        const auto fontSize = _core.FontSize();
+        const auto scrollState = _core.Settings().ScrollState();
+        const auto padding = _core.Settings().Padding();
+        const auto scale = static_cast<float>(DisplayInformation::GetForCurrentView().RawPixelsPerViewPixel());
+        float width = cols * static_cast<float>(fontSize.Width);
+        float height = rows * static_cast<float>(fontSize.Height);
+
+        // Reserve additional space if scrollbar is intended to be visible
+        if (scrollState != ScrollbarState::Hidden)
+        {
+            // UWP XAML scrollbars aren't guaranteed to be the same size as the
+            // ComCtl scrollbars, but it's certainly close enough.
+            const auto dpi = ::base::saturated_cast<uint32_t>(USER_DEFAULT_SCREEN_DPI * scale);
+            const auto scrollbarSize = GetSystemMetricsForDpi(SM_CXVSCROLL, dpi);
+            width += scrollbarSize;
+        }
+
+        const auto thickness = ParseThicknessFromPadding(padding);
+        // GH#2061 - make sure to account for the size the padding _will be_ scaled to
+        width += scale * static_cast<float>(thickness.Left + thickness.Right);
+        height += scale * static_cast<float>(thickness.Top + thickness.Bottom);
+
+        return { width, height };
+    }
+
     // Method Description:
     // - Get the size of a single character of this control. The size is in
     //   _pixels_. If you want it in DIPs, you'll need to DIVIDE by the
@@ -3807,7 +3865,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const auto goForward = _searchBox->GoForward();
         const auto caseSensitive = _searchBox->CaseSensitive();
         const auto regularExpression = _searchBox->RegularExpression();
-        const auto request = SearchRequest{ text, goForward, caseSensitive, regularExpression, true, _calculateSearchScrollOffset() };
+        const auto request = SearchRequest{ text, goForward, caseSensitive, regularExpression, true, _searchScrollOffset };
         _handleSearchResults(_core.Search(request));
     }
 
@@ -4086,6 +4144,20 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         _quickFixBufferPos = args.BufferRow();
         SearchMissingCommand.raise(*this, args);
+    }
+
+    winrt::fire_and_forget TermControl::_bubbleWindowSizeChanged(const IInspectable& /*sender*/, Control::WindowSizeChangedEventArgs args)
+    {
+        auto weakThis{ get_weak() };
+        co_await wil::resume_foreground(Dispatcher());
+
+        if (auto control{ weakThis.get() })
+        {
+            winrt::Windows::Foundation::Size cellCount{ static_cast<float>(args.Width()), static_cast<float>(args.Height()) };
+            const auto pixelSize = GetNewDimensions(cellCount);
+
+            WindowSizeChanged.raise(*this, winrt::make<implementation::WindowSizeChangedEventArgs>(static_cast<int32_t>(pixelSize.Width), static_cast<int32_t>(pixelSize.Height)));
+        }
     }
 
     til::CoordType TermControl::_calculateSearchScrollOffset() const

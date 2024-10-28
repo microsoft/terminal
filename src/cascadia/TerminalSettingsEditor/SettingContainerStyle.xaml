@@ -45,6 +45,9 @@
             <StaticResource x:Key="SettingContainerMessageForeground"
                             ResourceKey="TextFillColorPrimaryBrush" />
 
+            <StaticResource x:Key="SettingContainerResetButtonIconForeground"
+                            ResourceKey="SystemAccentColorDark2" />
+
         </ResourceDictionary>
         <ResourceDictionary x:Key="HighContrast">
             <Style x:Key="SecondaryTextBlockStyle"
@@ -74,6 +77,9 @@
                             ResourceKey="SystemColorWindowTextColorBrush" />
             <StaticResource x:Key="SettingContainerMessageForeground"
                             ResourceKey="SystemColorWindowTextColorBrush" />
+
+            <StaticResource x:Key="SettingContainerResetButtonIconForeground"
+                            ResourceKey="SystemAccentColorLight1" />
         </ResourceDictionary>
         <ResourceDictionary x:Key="Dark">
             <Style x:Key="SecondaryTextBlockStyle"
@@ -107,6 +113,9 @@
                             ResourceKey="TextFillColorPrimaryBrush" />
             <StaticResource x:Key="SettingContainerMessageForeground"
                             ResourceKey="TextFillColorPrimaryBrush" />
+
+            <StaticResource x:Key="SettingContainerResetButtonIconForeground"
+                            ResourceKey="SystemAccentColorLight2" />
         </ResourceDictionary>
     </ResourceDictionary.ThemeDictionaries>
 
@@ -137,7 +146,7 @@
 
     <Style x:Key="SettingContainerFontIconStyle"
            TargetType="FontIcon">
-        <Setter Property="Foreground" Value="{StaticResource SystemAccentColor}" />
+        <Setter Property="Foreground" Value="{ThemeResource SettingContainerResetButtonIconForeground}" />
         <Setter Property="FontSize" Value="11" />
         <Setter Property="FontFamily" Value="{ThemeResource SymbolThemeFontFamily}" />
     </Style>

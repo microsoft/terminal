@@ -534,6 +534,14 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         }
     }
 
+    void ConptyConnection::ResetSize()
+    {
+        if (_isConnected())
+        {
+            THROW_IF_FAILED(ConptyResizePseudoConsole(_hPC.get(), { Utils::ClampToShortMax(_cols, 1), Utils::ClampToShortMax(_rows, 1) }));
+        }
+    }
+
     void ConptyConnection::ClearBuffer()
     {
         // If we haven't connected yet, then we really don't need to do

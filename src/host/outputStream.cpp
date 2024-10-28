@@ -208,8 +208,14 @@ CursorType ConhostInternalGetSet::GetUserDefaultCursorStyle() const
 // - <none>
 void ConhostInternalGetSet::ShowWindow(bool showOrHide)
 {
-    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    const auto hwnd = gci.IsInVtIoMode() ? ServiceLocator::LocatePseudoWindow() : ServiceLocator::LocateConsoleWindow()->GetWindowHandle();
+    // ConPTY is supposed to be "transparent" to the VT application. Any VT it processes is given to the terminal.
+    // As such, it must not react to this "CSI 1 t" or "CSI 2 t" sequence. That's the job of the terminal.
+    // If the terminal encounters such a sequence, it can show/hide itself and let ConPTY know via its signal API.
+    const auto window = ServiceLocator::LocateConsoleWindow();
+    if (!window)
+    {
+        return;
+    }
 
     // GH#13301 - When we send this ShowWindow message, if we send it to the
     // conhost HWND, it's going to need to get processed by the window message
@@ -217,29 +223,55 @@ void ConhostInternalGetSet::ShowWindow(bool showOrHide)
     // However, ShowWindowAsync doesn't have this problem. It'll post the
     // message to the window thread, then immediately return, so we don't have
     // to worry about deadlocking.
+    const auto hwnd = window->GetWindowHandle();
     ::ShowWindowAsync(hwnd, showOrHide ? SW_SHOWNOACTIVATE : SW_MINIMIZE);
 }
 
 // Routine Description:
-// - Connects the SetConsoleOutputCP API call directly into our Driver Message servicing call inside Conhost.exe
+// - Set the code page used for translating text when calling A versions of I/O functions.
 // Arguments:
-// - codepage - the new output codepage of the console.
+// - codepage - the new code page of the console.
 // Return Value:
 // - <none>
-void ConhostInternalGetSet::SetConsoleOutputCP(const unsigned int codepage)
+void ConhostInternalGetSet::SetCodePage(const unsigned int codepage)
 {
-    THROW_IF_FAILED(DoSrvSetConsoleOutputCodePage(codepage));
+    LOG_IF_FAILED(DoSrvSetConsoleOutputCodePage(codepage));
+    LOG_IF_FAILED(DoSrvSetConsoleInputCodePage(codepage));
 }
 
 // Routine Description:
-// - Gets the codepage used for translating text when calling A versions of functions affecting the output buffer.
+// - Reset the code pages to their default values.
 // Arguments:
 // - <none>
 // Return Value:
-// - the outputCP of the console.
-unsigned int ConhostInternalGetSet::GetConsoleOutputCP() const
+// - <none>
+void ConhostInternalGetSet::ResetCodePage()
+{
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    LOG_IF_FAILED(DoSrvSetConsoleOutputCodePage(gci.DefaultOutputCP));
+    LOG_IF_FAILED(DoSrvSetConsoleInputCodePage(gci.DefaultCP));
+}
+
+// Routine Description:
+// - Gets the code page used for translating text when calling A versions of output functions.
+// Arguments:
+// - <none>
+// Return Value:
+// - the output code page of the console.
+unsigned int ConhostInternalGetSet::GetOutputCodePage() const
 {
     return ServiceLocator::LocateGlobals().getConsoleInformation().OutputCP;
+}
+
+// Routine Description:
+// - Gets the code page used for translating text when calling A versions of input functions.
+// Arguments:
+// - <none>
+// Return Value:
+// - the input code page of the console.
+unsigned int ConhostInternalGetSet::GetInputCodePage() const
+{
+    return ServiceLocator::LocateGlobals().getConsoleInformation().CP;
 }
 
 // Routine Description:

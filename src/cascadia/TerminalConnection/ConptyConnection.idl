@@ -14,6 +14,7 @@ namespace Microsoft.Terminal.TerminalConnection
         String StartingTitle { get; };
         UInt16 ShowWindow { get; };
 
+        void ResetSize();
         void ClearBuffer();
 
         void ShowHide(Boolean show);

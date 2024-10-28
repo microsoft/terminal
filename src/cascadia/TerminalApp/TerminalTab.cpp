@@ -976,6 +976,7 @@ namespace winrt::TerminalApp::implementation
                     // active control in this tab. We'll just recalculate the
                     // current color anyways.
                     tab->_RecalculateAndApplyTabColor();
+                    tab->_tabStatus.TabColorIndicator(tab->GetTabColor().value_or(Windows::UI::Colors::Transparent()));
                 }
             });
 
@@ -1617,6 +1618,7 @@ namespace winrt::TerminalApp::implementation
 
         _runtimeTabColor.emplace(color);
         _RecalculateAndApplyTabColor();
+        _tabStatus.TabColorIndicator(color);
     }
 
     // Method Description:
@@ -1633,6 +1635,7 @@ namespace winrt::TerminalApp::implementation
 
         _runtimeTabColor.reset();
         _RecalculateAndApplyTabColor();
+        _tabStatus.TabColorIndicator(GetTabColor().value_or(Windows::UI::Colors::Transparent()));
     }
 
     winrt::Windows::UI::Xaml::Media::Brush TerminalTab::_BackgroundBrush()

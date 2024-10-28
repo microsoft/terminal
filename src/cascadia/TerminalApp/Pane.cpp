@@ -2956,13 +2956,13 @@ bool Pane::ContainsReadOnly() const
 // - <none>
 void Pane::CollectTaskbarStates(std::vector<winrt::TerminalApp::TaskbarState>& states)
 {
-    if (_IsLeaf())
+    if (_content)
     {
         auto tbState{ winrt::make<winrt::TerminalApp::implementation::TaskbarState>(_content.TaskbarState(),
                                                                                     _content.TaskbarProgress()) };
         states.push_back(tbState);
     }
-    else
+    else if (_firstChild && _secondChild)
     {
         _firstChild->CollectTaskbarStates(states);
         _secondChild->CollectTaskbarStates(states);

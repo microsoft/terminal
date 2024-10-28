@@ -388,6 +388,7 @@ void AppHost::Initialize()
     _revokers.SetTaskbarProgress = _windowLogic.SetTaskbarProgress(winrt::auto_revoke, { this, &AppHost::SetTaskbarProgress });
     _revokers.IdentifyWindowsRequested = _windowLogic.IdentifyWindowsRequested(winrt::auto_revoke, { this, &AppHost::_IdentifyWindowsRequested });
     _revokers.RenameWindowRequested = _windowLogic.RenameWindowRequested(winrt::auto_revoke, { this, &AppHost::_RenameWindowRequested });
+    _revokers.WindowSizeChanged = _windowLogic.WindowSizeChanged(winrt::auto_revoke, { this, &AppHost::_WindowSizeChanged });
 
     // A note: make sure to listen to our _window_'s settings changed, not the
     // AppLogic's. We want to make sure the event has gone through the window
@@ -719,6 +720,45 @@ void AppHost::_initialResizeAndRepositionWindow(const HWND hwnd, til::rect propo
     // Refresh the dpi of HWND because the dpi where the window will launch may be different
     // at this time
     _window->RefreshCurrentDPI();
+
+    // If we can't resize the window, that's really okay. We can just go on with
+    // the originally proposed window size.
+    LOG_LAST_ERROR_IF(!succeeded);
+}
+
+// Method Description:
+// - Resize the window when window size changed signal is received.
+// Arguments:
+// - hwnd: The HWND of the window we're about to resize.
+// - newSize: The new size of the window in pixels.
+// Return Value:
+// - None
+void AppHost::_resizeWindow(const HWND hwnd, til::size newSize)
+{
+    til::rect windowRect{ _window->GetWindowRect() };
+    UINT dpix = _window->GetCurrentDpi();
+
+    const auto islandWidth = Utils::ClampToShortMax(newSize.width, 1);
+    const auto islandHeight = Utils::ClampToShortMax(newSize.height, 1);
+
+    // Get the size of a window we'd need to host that client rect. This will
+    // add the titlebar space.
+    const til::size nonClientSize{ _window->GetTotalNonClientExclusiveSize(dpix) };
+    long adjustedWidth = islandWidth + nonClientSize.width;
+    long adjustedHeight = islandHeight + nonClientSize.height;
+
+    til::size dimensions{ Utils::ClampToShortMax(adjustedWidth, 1),
+                          Utils::ClampToShortMax(adjustedHeight, 1) };
+    til::point origin{ windowRect.left, windowRect.top };
+
+    const til::rect newRect{ origin, dimensions };
+    bool succeeded = SetWindowPos(hwnd,
+                                  nullptr,
+                                  newRect.left,
+                                  newRect.top,
+                                  newRect.width(),
+                                  newRect.height(),
+                                  SWP_NOACTIVATE | SWP_NOZORDER);
 
     // If we can't resize the window, that's really okay. We can just go on with
     // the originally proposed window size.
@@ -1181,11 +1221,23 @@ void AppHost::_IsQuakeWindowChanged(const winrt::Windows::Foundation::IInspectab
 // Raised from our Peasant. We handle by propagating the call to our terminal window.
 void AppHost::_QuitRequested(const winrt::Windows::Foundation::IInspectable&, const winrt::Windows::Foundation::IInspectable&)
 {
+    const auto root = _windowLogic.GetRoot();
+    if (!root)
+    {
+        return;
+    }
+
+    const auto dispatcher = root.Dispatcher();
+    if (!dispatcher)
+    {
+        return;
+    }
+
     // We process the shutdown synchronously here, because otherwise the
     // AutomaticShutdownRequested() logic wouldn't run synchronously either.
     til::latch latch{ 1 };
 
-    _windowLogic.GetRoot().Dispatcher().RunAsync(winrt::Windows::UI::Core::CoreDispatcherPriority::Normal, [&latch, weakThis = weak_from_this()]() {
+    dispatcher.RunAsync(winrt::Windows::UI::Core::CoreDispatcherPriority::Normal, [&latch, weakThis = weak_from_this()]() {
         const auto countDownOnExit = wil::scope_exit([&latch] {
             latch.count_down();
         });
@@ -1222,6 +1274,12 @@ void AppHost::_ShowWindowChanged(const winrt::Windows::Foundation::IInspectable&
     // state get de-sync'd, and cause the window to minimize/restore constantly
     // in a loop.
     _showHideWindowThrottler->Run(args.ShowOrHide());
+}
+
+void AppHost::_WindowSizeChanged(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+                                 const winrt::Microsoft::Terminal::Control::WindowSizeChangedEventArgs& args)
+{
+    _resizeWindow(_window->GetHandle(), { args.Width(), args.Height() });
 }
 
 void AppHost::_SummonWindowRequested(const winrt::Windows::Foundation::IInspectable& sender,

@@ -24,6 +24,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         Automation::AutomationProperties::SetName(DeleteButton(), RS_(L"Profile_DeleteButton/Text"));
         AppearanceNavigator().Content(box_value(RS_(L"Profile_Appearance/Header")));
+        TerminalNavigator().Content(box_value(RS_(L"Profile_Terminal/Header")));
         AdvancedNavigator().Content(box_value(RS_(L"Profile_Advanced/Header")));
     }
 
@@ -64,6 +65,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     void Profiles_Base::Appearance_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*args*/)
     {
         _Profile.CurrentPage(ProfileSubPage::Appearance);
+    }
+
+    void Profiles_Base::Terminal_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*args*/)
+    {
+        _Profile.CurrentPage(ProfileSubPage::Terminal);
     }
 
     void Profiles_Base::Advanced_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*args*/)
