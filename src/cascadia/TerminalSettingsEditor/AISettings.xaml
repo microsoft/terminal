@@ -38,11 +38,11 @@
                 <TextBlock x:Uid="AISettings_ServiceProvidersHeader"
                            Margin="0,8,0,0"
                            Style="{StaticResource TextBlockSubHeaderStyle}" />
-                <!--  AIKey  -->
+                <!--  Azure OpenAI  -->
                 <local:SettingContainer x:Uid="AISettings_AzureOpenAIKeyAndEndpoint"
                                         Style="{StaticResource ExpanderSettingContainerStyle}">
                     <StackPanel>
-                        <Grid Visibility="{x:Bind ViewModel.AreAIKeyAndEndpointSet, Mode=OneWay}">
+                        <Grid Visibility="{x:Bind ViewModel.AreAzureOpenAIKeyAndEndpointSet, Mode=OneWay}">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="*" />
@@ -50,16 +50,24 @@
                             <TextBlock x:Uid="AISettings_AzureOpenAIKeyAndEndpointStored"
                                        Grid.Column="0"
                                        VerticalAlignment="Center" />
-                            <Button Grid.Column="1"
-                                    HorizontalAlignment="Right"
-                                    VerticalAlignment="Center"
-                                    Click="ClearKeyAndEndpoint_Click"
-                                    Style="{StaticResource DeleteButtonStyle}">
-                                <TextBlock x:Uid="AISettings_ClearAzureOpenAIKeyAndEndpoint" />
-                            </Button>
+                            <StackPanel Grid.Column="1"
+                                        HorizontalAlignment="Right"
+                                        VerticalAlignment="Center"
+                                        Spacing="8">
+                                <Button HorizontalAlignment="Center"
+                                        Click="ClearAzureOpenAIKeyAndEndpoint_Click"
+                                        Style="{StaticResource DeleteButtonStyle}">
+                                    <TextBlock x:Uid="AISettings_ClearAzureOpenAIKeyAndEndpoint" />
+                                </Button>
+                                <Button HorizontalAlignment="Center"
+                                        Click="SetAzureOpenAIActive_Click"
+                                        Visibility="{x:Bind mtu:Converters.InvertedBooleanToVisibility(ViewModel.AzureOpenAIActive), Mode=OneWay}">
+                                    <TextBlock x:Uid="AISettings_SetActiveProvider" />
+                                </Button>
+                            </StackPanel>
                         </Grid>
                         <Grid RowSpacing="8"
-                              Visibility="{x:Bind mtu:Converters.InvertedBooleanToVisibility(ViewModel.AreAIKeyAndEndpointSet), Mode=OneWay}">
+                              Visibility="{x:Bind mtu:Converters.InvertedBooleanToVisibility(ViewModel.AreAzureOpenAIKeyAndEndpointSet), Mode=OneWay}">
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="Auto" />
@@ -126,23 +134,106 @@
                             <TextBlock x:Uid="AISettings_EndpointTextBox"
                                        Grid.Row="1"
                                        VerticalAlignment="Center" />
-                            <TextBox x:Name="EndpointInputBox"
+                            <TextBox x:Name="AzureOpenAIEndpointInputBox"
                                      Grid.Row="2"
                                      HorizontalAlignment="Stretch"
                                      VerticalAlignment="Center" />
                             <TextBlock x:Uid="AISettings_KeyTextBox"
                                        Grid.Row="3"
                                        VerticalAlignment="Center" />
-                            <PasswordBox x:Name="KeyInputBox"
+                            <PasswordBox x:Name="AzureOpenAIKeyInputBox"
                                          Grid.Row="4"
                                          HorizontalAlignment="Stretch"
                                          VerticalAlignment="Center" />
                             <Button Grid.Row="5"
                                     HorizontalAlignment="Right"
                                     VerticalAlignment="Center"
-                                    Click="StoreKeyAndEndpoint_Click"
+                                    Click="StoreAzureOpenAIKeyAndEndpoint_Click"
                                     Style="{StaticResource AccentButtonStyle}">
-                                <TextBlock x:Uid="AISettings_StoreAzureOpenAIKeyAndEndpoint" />
+                                <TextBlock x:Uid="AISettings_StoreSecrets" />
+                            </Button>
+                        </Grid>
+                    </StackPanel>
+                </local:SettingContainer>
+                <!--  OpenAI  -->
+                <local:SettingContainer x:Uid="AISettings_OpenAIKey"
+                                        Style="{StaticResource ExpanderSettingContainerStyle}">
+                    <StackPanel>
+                        <Grid Visibility="{x:Bind ViewModel.IsOpenAIKeySet, Mode=OneWay}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock x:Uid="AISettings_OpenAIKeyStored"
+                                       Grid.Column="0"
+                                       VerticalAlignment="Center" />
+                            <StackPanel Grid.Column="1"
+                                        HorizontalAlignment="Right"
+                                        VerticalAlignment="Center"
+                                        Spacing="8">
+                                <Button HorizontalAlignment="Center"
+                                        Click="ClearOpenAIKey_Click"
+                                        Style="{StaticResource DeleteButtonStyle}">
+                                    <TextBlock x:Uid="AISettings_ClearOpenAIKey" />
+                                </Button>
+                                <Button HorizontalAlignment="Center"
+                                        Click="SetOpenAIActive_Click"
+                                        Visibility="{x:Bind mtu:Converters.InvertedBooleanToVisibility(ViewModel.OpenAIActive), Mode=OneWay}">
+                                    <TextBlock x:Uid="AISettings_SetActiveProvider" />
+                                </Button>
+                            </StackPanel>
+                        </Grid>
+                        <Grid RowSpacing="8"
+                              Visibility="{x:Bind mtu:Converters.InvertedBooleanToVisibility(ViewModel.IsOpenAIKeySet), Mode=OneWay}">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+                            <StackPanel Grid.Row="0"
+                                        Padding="16"
+                                        CornerRadius="4"
+                                        Orientation="Horizontal"
+                                        Spacing="14">
+                                <StackPanel.Background>
+                                    <SolidColorBrush Opacity="0.7"
+                                                     Color="#404040" />
+                                </StackPanel.Background>
+                                <muxc:InfoBadge x:Name="OpenAIDescriptionInfoBadge"
+                                                VerticalAlignment="Top"
+                                                FontSize="16"
+                                                Style="{ThemeResource AttentionIconInfoBadgeStyle}">
+                                    <muxc:InfoBadge.IconSource>
+                                        <muxc:FontIconSource FontSize="16"
+                                                             Glyph="&#xE625;" />
+                                    </muxc:InfoBadge.IconSource>
+                                </muxc:InfoBadge>
+                                <RichTextBlock MaxWidth="900"
+                                               TextWrapping="WrapWholeWords">
+                                    <Paragraph>
+                                        <Run x:Name="AISettings_OpenAIDescriptionPart1" /><Hyperlink NavigateUri="https://go.microsoft.com/fwlink/?linkid=2251839"
+                                                   TextDecorations="None">
+                                            <Run x:Name="AISettings_OpenAIDescriptionLinkText" />
+                                        </Hyperlink><Run x:Name="AISettings_OpenAIDescriptionPart2" />
+                                    </Paragraph>
+                                </RichTextBlock>
+                            </StackPanel>
+                            <TextBlock x:Uid="AISettings_KeyTextBox"
+                                       Grid.Row="3"
+                                       VerticalAlignment="Center" />
+                            <PasswordBox x:Name="OpenAIKeyInputBox"
+                                         Grid.Row="4"
+                                         HorizontalAlignment="Stretch"
+                                         VerticalAlignment="Center" />
+                            <Button Grid.Row="5"
+                                    HorizontalAlignment="Right"
+                                    VerticalAlignment="Center"
+                                    Click="StoreOpenAIKey_Click"
+                                    Style="{StaticResource AccentButtonStyle}">
+                                <TextBlock x:Uid="AISettings_StoreSecrets" />
                             </Button>
                         </Grid>
                     </StackPanel>

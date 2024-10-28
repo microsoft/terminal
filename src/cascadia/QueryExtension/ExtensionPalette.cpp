@@ -29,8 +29,7 @@ const std::wregex azureOpenAIEndpointRegex{ LR"(^https.*openai\.azure\.com)" };
 
 namespace winrt::Microsoft::Terminal::Query::Extension::implementation
 {
-    ExtensionPalette::ExtensionPalette(const Extension::ILMProvider lmProvider) :
-        _lmProvider{ lmProvider }
+    ExtensionPalette::ExtensionPalette()
     {
         InitializeComponent();
 
@@ -87,6 +86,12 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
                 _close();
             }
         });
+    }
+
+    void ExtensionPalette::SetProvider(const Extension::ILMProvider lmProvider)
+    {
+        _lmProvider = lmProvider;
+        _clearAndInitializeMessages(nullptr, nullptr);
     }
 
     void ExtensionPalette::IconPath(const winrt::hstring& iconPath)
@@ -228,7 +233,8 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         // Now that we have the context, make sure the lmProvider knows it too
         if (_lmProvider)
         {
-            _lmProvider.SetContext(winrt::make<TerminalContext>(_ActiveCommandline));
+            const auto context = winrt::make<TerminalContext>(_ActiveCommandline);
+            _lmProvider.SetContext(std::move(context));
         }
 
         // Give the palette focus

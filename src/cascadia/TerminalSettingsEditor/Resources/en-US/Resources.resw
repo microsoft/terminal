@@ -286,6 +286,14 @@
     <value>After the current tab</value>
     <comment>An option to choose from for the "Position of newly created tabs" setting. When selected new tab appears after the current tab.</comment>
   </data>
+  <data name="Globals_LLMProviderAzureOpenAI.Content" xml:space="preserve">
+    <value>Azure OpenAI</value>
+    <comment>An option to choose from for the "Active LLM Provider" setting.</comment>
+  </data>
+  <data name="Globals_LLMProviderOpenAI.Content" xml:space="preserve">
+    <value>OpenAI</value>
+    <comment>An option to choose from for the "Active LLM Provider" setting.</comment>
+  </data>
   <data name="Globals_CopyOnSelect.Header" xml:space="preserve">
     <value>Automatically copy selection to clipboard</value>
     <comment>Header for a control to toggle whether selected text should be copied to the clipboard automatically, or not.</comment>
@@ -676,6 +684,10 @@
     <value>Clear stored key and endpoint</value>
     <comment>Text on the button that allows the user to clear the stored key and endpoint.</comment>
   </data>
+  <data name="AISettings_SetActiveProvider.Text" xml:space="preserve">
+    <value>Set as Active Provider</value>
+    <comment>Text on the button that allows the user to set the selected provider as their active one.</comment>
+  </data>
   <data name="AISettings_EndpointTextBox.Text" xml:space="preserve">
     <value>Endpoint</value>
     <comment>Title for the textbox where the user should input their Azure OpenAI endpoint.</comment>
@@ -684,9 +696,9 @@
     <value>Secret key</value>
     <comment>Title for the textbox where the user should input their Azure OpenAI secret key.</comment>
   </data>
-  <data name="AISettings_StoreAzureOpenAIKeyAndEndpoint.Text" xml:space="preserve">
+  <data name="AISettings_StoreSecrets.Text" xml:space="preserve">
     <value>Store</value>
-    <comment>Text on the button that allows the user to store their key and endpoint.</comment>
+    <comment>Text on the button that allows the user to store their key and/or endpoint.</comment>
   </data>
   <data name="AISettings_AzureOpenAIDescription.Text" xml:space="preserve">
     <value>To use Azure OpenAI as a service provider, you need an Azure OpenAI service resource.</value>
@@ -723,6 +735,26 @@
   <data name="AISettings_AzureOpenAIProductTermsLinkText" xml:space="preserve">
     <value>Product Terms</value>
     <comment>The text of the hyperlink that directs the user to the Product Terms.</comment>
+  </data>
+  <data name="AISettings_OpenAIKey.Header" xml:space="preserve">
+    <value>OpenAI</value>
+    <comment>Header for the text box that allows the user to store their OpenAI secret key.</comment>
+  </data>
+  <data name="AISettings_OpenAIKeyStored.Text" xml:space="preserve">
+    <value>OpenAI key is stored.</value>
+    <comment>Description for the OpenAI setting when a key is already stored.</comment>
+  </data>
+  <data name="AISettings_ClearOpenAIKey.Text" xml:space="preserve">
+    <value>Clear stored key</value>
+    <comment>Text on the button that allows the user to clear the stored key.</comment>
+  </data>
+  <data name="AISettings_OpenAIDescription" xml:space="preserve">
+    <value>OpenAI is provided by a third-party and not Microsoft.  When you send a message in Terminal Chat, your chat history and the name of your active shell are sent to the third-party AI service for use by OpenAI. {0}.  Your use of OpenAI is governed by the relevant third-party terms, conditions, and privacy statement. </value>
+    <comment>Header of the description that informs the user about their usage of OpenAI in Terminal. {0} will be replaced by AISettings_OpenAILearnMoreLinkText.</comment>
+  </data>
+  <data name="AISettings_OpenAILearnMoreLinkText" xml:space="preserve">
+    <value>Learn More</value>
+    <comment>The text of the hyperlink that directs the user to learn more about Terminal Chat.</comment>
   </data>
   <data name="Nav_Appearance.Content" xml:space="preserve">
     <value>Appearance</value>

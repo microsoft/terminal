@@ -19,6 +19,7 @@ namespace Microsoft.Terminal.Settings.Model
         static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.Settings.Model.WindowingMode> WindowingMode { get; };
         static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.Core.MatchMode> MatchMode { get; };
         static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.Control.GraphicsAPI> GraphicsAPI { get; };
+        static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.Settings.Model.LLMProvider> LLMProvider { get; };
         static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.Control.TextMeasurement> TextMeasurement { get; };
 
         // Profile Settings

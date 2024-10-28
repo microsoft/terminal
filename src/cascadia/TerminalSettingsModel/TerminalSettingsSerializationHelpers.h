@@ -142,6 +142,14 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Control::TextAntialiasingMode)
     };
 };
 
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::LLMProvider)
+{
+    static constexpr std::array<pair_type, 2> mappings = {
+        pair_type{ "azureOpenAI", ValueType::AzureOpenAI },
+        pair_type{ "openAI", ValueType::OpenAI }
+    };
+};
+
 // Type Description:
 // - Helper for converting a user-specified closeOnExit value to its corresponding enum
 JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::CloseOnExitMode)

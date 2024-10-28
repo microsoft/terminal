@@ -25,6 +25,7 @@ Author(s):
 #include "Theme.h"
 #include "NewTabMenuEntry.h"
 #include "RemainingProfilesEntry.h"
+#include "AIConfig.h"
 
 // fwdecl unittest classes
 namespace SettingsModelUnitTests
@@ -73,6 +74,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         bool LegacyReloadEnvironmentVariables() const noexcept { return _legacyReloadEnvironmentVariables; }
         bool LegacyForceVTInput() const noexcept { return _legacyForceVTInput; }
 
+        Model::AIConfig AIInfo();
+
         void LogSettingChanges(std::set<std::string>& changes, const std::string_view& context) const;
 
         INHERITABLE_SETTING(Model::GlobalAppSettings, hstring, UnparsedDefaultProfile, L"");
@@ -99,6 +102,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         std::vector<SettingsLoadWarnings> _keybindingsWarnings;
         Windows::Foundation::Collections::IMap<winrt::hstring, Model::ColorScheme> _colorSchemes{ winrt::single_threaded_map<winrt::hstring, Model::ColorScheme>() };
         Windows::Foundation::Collections::IMap<winrt::hstring, Model::Theme> _themes{ winrt::single_threaded_map<winrt::hstring, Model::Theme>() };
+        Model::AIConfig _AIInfo{ winrt::make<AIConfig>() };
 
         void _logSettingSet(const std::string_view& setting);
         void _logSettingIfSet(const std::string_view& setting, const bool isSet);
