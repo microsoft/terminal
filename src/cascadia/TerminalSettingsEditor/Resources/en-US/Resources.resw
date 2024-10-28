@@ -805,7 +805,7 @@
     <comment>Text displayed when the user is logged in to the service provider and that service provider is active.</comment>
   </data>
   <data name="AISettings_ProviderNotAllowed" xml:space="preserve">
-    <value>Managed by your administrator</value>
+    <value>Disabled by your administrator</value>
     <comment>Text displayed when the service provider has been disabled by the administrator.</comment>
   </data>
   <data name="AISettings_PortableModeDisclaimer.Text" xml:space="preserve">
