@@ -1964,9 +1964,17 @@
     <value>Play sound</value>
     <comment>Tooltip for a button that plays the selected sound when pressed.</comment>
   </data>
+  <data name="Profile_BellSoundDelete.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Delete</value>
+    <comment>Tooltip for a button that deletes the selected sound when pressed.</comment>
+  </data>
   <data name="Profile_BellSoundAudioPreview.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Play sound</value>
-    <comment>Tooltip for a button that plays the selected sound when pressed.</comment>
+    <comment>Screen reader name for a button that plays the selected sound when pressed.</comment>
+  </data>
+  <data name="Profile_BellSoundDelete.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Delete</value>
+    <comment>Screen reader name for a button that deletes the selected sound when pressed.</comment>
   </data>
   <data name="Profile_AnswerbackMessage.Header" xml:space="preserve">
     <value>ENQ (Request Terminal Status) response</value>

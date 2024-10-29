@@ -178,7 +178,8 @@
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
-                    <Button Click="BellSoundAdd_Click">
+                    <Button x:Name="AddBellSoundButton"
+                            Click="BellSoundAdd_Click">
                         <StackPanel Orientation="Horizontal">
                             <FontIcon FontSize="{StaticResource StandardIconSize}"
                                       Glyph="&#xE948;" />

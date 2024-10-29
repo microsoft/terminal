@@ -20,6 +20,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     Profiles_Advanced::Profiles_Advanced()
     {
         InitializeComponent();
+
+        Automation::AutomationProperties::SetName(AddBellSoundButton(), RS_(L"Profile_AddBellSound/Text"));
     }
 
     void Profiles_Advanced::OnNavigatedTo(const NavigationEventArgs& e)
