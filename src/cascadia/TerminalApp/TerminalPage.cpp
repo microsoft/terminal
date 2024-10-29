@@ -989,7 +989,7 @@ namespace winrt::TerminalApp::implementation
 
                 for (auto&& [profileIndex, remainingProfile] : remainingProfilesEntry.Profiles())
                 {
-                    items.push_back(_CreateNewTabFlyoutProfile(remainingProfile, profileIndex, winrt::hstring{}));
+                    items.push_back(_CreateNewTabFlyoutProfile(remainingProfile, profileIndex, {}));
                 }
 
                 break;
@@ -1052,20 +1052,13 @@ namespace winrt::TerminalApp::implementation
         // If a custom icon path has been specified, set it as the icon for
         // this flyout item. Otherwise, if an icon is set for this profile, set that icon
         // for this flyout item.
-        if (iconPathOverride.empty())
+        const auto& iconPath = iconPathOverride.empty() ? profile.EvaluatedIcon() : iconPathOverride;
+        if (!iconPath.empty())
         {
-            const auto& iconPath = profile.EvaluatedIcon();
-            if (!iconPath.empty())
-            {
-                const auto icon = _CreateNewTabFlyoutIcon(iconPath);
-                profileMenuItem.Icon(icon);
-            }
-        }
-        else
-        {
-            const auto icon = _CreateNewTabFlyoutIcon(iconPathOverride);
+            const auto icon = _CreateNewTabFlyoutIcon(iconPath);
             profileMenuItem.Icon(icon);
         }
+
 
         if (profile.Guid() == _settings.GlobalSettings().DefaultProfile())
         {
@@ -1137,18 +1130,10 @@ namespace winrt::TerminalApp::implementation
         // If a custom icon path has been specified, set it as the icon for
         // this flyout item. Otherwise, if an icon is set for this action, set that icon
         // for this flyout item.
-        if (iconPathOverride.empty())
+        const auto& iconPath = iconPathOverride.empty() ? action.IconPath() : iconPathOverride;
+        if (!iconPath.empty())
         {
-            const auto& iconPath = action.IconPath();
-            if (!iconPath.empty())
-            {
-                const auto icon = _CreateNewTabFlyoutIcon(iconPath);
-                actionMenuItem.Icon(icon);
-            }
-        }
-        else
-        {
-            const auto icon = _CreateNewTabFlyoutIcon(iconPathOverride);
+            const auto icon = _CreateNewTabFlyoutIcon(iconPath);
             actionMenuItem.Icon(icon);
         }
 
