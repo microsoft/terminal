@@ -77,16 +77,21 @@
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="Auto" />
                             </Grid.RowDefinitions>
-                            <StackPanel Grid.Row="0"
-                                        Padding="16"
-                                        CornerRadius="4"
-                                        Orientation="Horizontal"
-                                        Spacing="14">
-                                <StackPanel.Background>
+                            <Grid Grid.Row="0"
+                                  Grid.Column="0"
+                                  Padding="16"
+                                  ColumnSpacing="14"
+                                  CornerRadius="4">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <Grid.Background>
                                     <SolidColorBrush Opacity="0.7"
                                                      Color="#404040" />
-                                </StackPanel.Background>
+                                </Grid.Background>
                                 <muxc:InfoBadge x:Name="GithubCopilotDescriptionInfoBadge"
+                                                Grid.Column="0"
                                                 VerticalAlignment="Top"
                                                 FontSize="16"
                                                 Style="{ThemeResource AttentionIconInfoBadgeStyle}">
@@ -95,9 +100,11 @@
                                                              Glyph="&#xE625;" />
                                     </muxc:InfoBadge.IconSource>
                                 </muxc:InfoBadge>
-                                <RichTextBlock MaxWidth="900"
-                                               TextWrapping="WrapWholeWords">
-                                    <Paragraph>
+                                <RichTextBlock Grid.Column="1"
+                                               MaxWidth="900"
+                                               TextWrapping="WrapWholeWords"
+                                               Visibility="{x:Bind ViewModel.IsTerminalPackaged}">
+                                        <Paragraph>
                                         <Run x:Uid="AISettings_GithubCopilotPrerequisite" />
                                         <LineBreak />
                                         <LineBreak />
@@ -110,16 +117,21 @@
                                         </Hyperlink><Run x:Name="AISettings_GithubCopilotSignUpAndLearnMorePart3" />
                                     </Paragraph>
                                 </RichTextBlock>
-                            </StackPanel>
+                                <TextBlock x:Uid="AISettings_PortableModeDisclaimer"
+                                           Grid.Column="1"
+                                           Visibility="{x:Bind mtu:Converters.InvertedBooleanToVisibility(ViewModel.IsTerminalPackaged)}" />
+                            </Grid>
                             <StackPanel Grid.Row="1"
                                         HorizontalAlignment="Right"
                                         VerticalAlignment="Center"
                                         Orientation="Horizontal"
-                                        Spacing="8">
+                                        Spacing="8"
+                                        Visibility="{x:Bind ViewModel.IsTerminalPackaged}">
                                 <TextBlock VerticalAlignment="Center"
                                            Text="{x:Bind ViewModel.GithubCopilotAuthMessage, Mode=OneWay}" />
                                 <Button Click="{x:Bind ViewModel.InitiateGithubAuth_Click}"
-                                        Style="{StaticResource AccentButtonStyle}">
+                                        Style="{StaticResource AccentButtonStyle}"
+                                        Visibility="{x:Bind ViewModel.IsTerminalPackaged}">
                                     <TextBlock x:Uid="AISettings_InitiateGithubAuthFlow" />
                                 </Button>
                             </StackPanel>
@@ -167,16 +179,21 @@
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="Auto" />
                             </Grid.RowDefinitions>
-                            <StackPanel Grid.Row="0"
-                                        Padding="16"
-                                        CornerRadius="4"
-                                        Orientation="Horizontal"
-                                        Spacing="14">
-                                <StackPanel.Background>
+                            <Grid Grid.Row="0"
+                                  Grid.Column="0"
+                                  Padding="16"
+                                  ColumnSpacing="14"
+                                  CornerRadius="4">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <Grid.Background>
                                     <SolidColorBrush Opacity="0.7"
                                                      Color="#404040" />
-                                </StackPanel.Background>
+                                </Grid.Background>
                                 <muxc:InfoBadge x:Name="AzureOpenAIDescriptionInfoBadge"
+                                                Grid.Column="0"
                                                 VerticalAlignment="Top"
                                                 FontSize="16"
                                                 Style="{ThemeResource AttentionIconInfoBadgeStyle}">
@@ -185,7 +202,8 @@
                                                              Glyph="&#xE625;" />
                                     </muxc:InfoBadge.IconSource>
                                 </muxc:InfoBadge>
-                                <RichTextBlock TextWrapping="WrapWholeWords">
+                                <RichTextBlock Grid.Column="1"
+                                               TextWrapping="WrapWholeWords">
                                     <Paragraph>
                                         <Run x:Uid="AISettings_AzureOpenAIDescription" />
                                         <LineBreak />
@@ -221,7 +239,7 @@
                                         </Hyperlink><Run x:Name="AISettings_AzureOpenAIProductTermsPart2" />
                                     </Paragraph>
                                 </RichTextBlock>
-                            </StackPanel>
+                            </Grid>
                             <TextBlock x:Uid="AISettings_EndpointTextBox"
                                        Grid.Row="1"
                                        VerticalAlignment="Center" />
@@ -287,16 +305,21 @@
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="Auto" />
                             </Grid.RowDefinitions>
-                            <StackPanel Grid.Row="0"
-                                        Padding="16"
-                                        CornerRadius="4"
-                                        Orientation="Horizontal"
-                                        Spacing="14">
-                                <StackPanel.Background>
+                            <Grid Grid.Row="0"
+                                  Grid.Column="0"
+                                  Padding="16"
+                                  ColumnSpacing="14"
+                                  CornerRadius="4">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <Grid.Background>
                                     <SolidColorBrush Opacity="0.7"
                                                      Color="#404040" />
-                                </StackPanel.Background>
+                                </Grid.Background>
                                 <muxc:InfoBadge x:Name="OpenAIDescriptionInfoBadge"
+                                                Grid.Column="0"
                                                 VerticalAlignment="Top"
                                                 FontSize="16"
                                                 Style="{ThemeResource AttentionIconInfoBadgeStyle}">
@@ -305,7 +328,7 @@
                                                              Glyph="&#xE625;" />
                                     </muxc:InfoBadge.IconSource>
                                 </muxc:InfoBadge>
-                                <RichTextBlock MaxWidth="900"
+                                <RichTextBlock Grid.Column="1"
                                                TextWrapping="WrapWholeWords">
                                     <Paragraph>
                                         <Run x:Name="AISettings_OpenAIDescriptionPart1" /><Hyperlink NavigateUri="https://go.microsoft.com/fwlink/?linkid=2251839"
@@ -314,7 +337,7 @@
                                         </Hyperlink><Run x:Name="AISettings_OpenAIDescriptionPart2" />
                                     </Paragraph>
                                 </RichTextBlock>
-                            </StackPanel>
+                            </Grid>
                             <TextBlock x:Uid="AISettings_KeyTextBox"
                                        Grid.Row="3"
                                        VerticalAlignment="Center" />

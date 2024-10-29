@@ -30,6 +30,7 @@ namespace Microsoft.Terminal.Settings.Editor
         Boolean GithubCopilotActive;
         Boolean GithubCopilotAllowed { get; };
         String GithubCopilotStatus { get; };
+        Boolean IsTerminalPackaged { get; };
 
         void InitiateGithubAuth_Click(IInspectable sender, Windows.UI.Xaml.RoutedEventArgs args);
         event Windows.Foundation.TypedEventHandler<Object, Object> GithubAuthRequested;
