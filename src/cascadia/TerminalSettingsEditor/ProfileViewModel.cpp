@@ -86,7 +86,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 // - _InitializeCurrentBellSounds() --> _CurrentBellSounds.VectorChanged()
                 // - RequestAddBellSound()
                 // - RequestDeleteBellSound()
-
+                _MarkDuplicateBellSoundDirectories();
                 _NotifyChanges(L"BellSoundPreview", L"HasBellSound");
             }
             else if (viewModelProperty == L"BellSound")
@@ -406,49 +406,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 _CurrentBellSounds.Append(vm);
             }
         }
-        _CurrentBellSounds.VectorChanged([this](auto&&, const IVectorChangedEventArgs& args) {
-            switch (args.CollectionChange())
-            {
-            case CollectionChange::ItemInserted:
-            {
-                const auto index = args.Index();
-                const auto& newSound = _CurrentBellSounds.GetAt(index);
-
-                if (!_profile.BellSound())
-                {
-                    _profile.BellSound(winrt::single_threaded_vector<winrt::hstring>());
-                }
-                _profile.BellSound().InsertAt(index, newSound.Path());
-                break;
-            }
-            case CollectionChange::ItemRemoved:
-            {
-                _profile.BellSound().RemoveAt(args.Index());
-                break;
-            }
-            case CollectionChange::ItemChanged:
-            {
-                // I've never been able to get this one to hit,
-                // but if it ever does, propagate change to model
-                const auto index = args.Index();
-                const auto& newSound = _CurrentBellSounds.GetAt(index);
-                _profile.BellSound().SetAt(index, newSound.Path());
-                break;
-            }
-            case CollectionChange::Reset:
-            default:
-            {
-                // propagate changes to model
-                auto list = winrt::single_threaded_vector<winrt::hstring>();
-                for (const auto& sound : _CurrentBellSounds)
-                {
-                    list.Append(sound.Path());
-                }
-                _profile.BellSound(list);
-                break;
-            }
-            }
-        });
         _MarkDuplicateBellSoundDirectories();
         _NotifyChanges(L"CurrentBellSounds");
     }
@@ -559,6 +516,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         vm.Path(path);
         vm.PropertyChanged({ this, &ProfileViewModel::_BellSoundVMPropertyChanged });
         _CurrentBellSounds.Append(vm);
+        _profile.BellSound().Append(path);
         _NotifyChanges(L"CurrentBellSounds");
     }
 
@@ -572,6 +530,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             _PrepareModelForBellSoundModification();
 
             _CurrentBellSounds.RemoveAt(index);
+            _profile.BellSound().RemoveAt(index);
             _NotifyChanges(L"CurrentBellSounds");
         }
     }
