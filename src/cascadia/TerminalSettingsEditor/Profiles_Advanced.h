@@ -31,7 +31,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         winrt::Windows::Media::Playback::MediaPlayer _bellPlayer{ nullptr };
         bool _bellPlayerCreated{ false };
 
-        safe_void_coroutine _PickFileForBellSound(Editor::BellSoundViewModel& vm);
+        safe_void_coroutine _PickFileForBellSound();
     };
 };
 

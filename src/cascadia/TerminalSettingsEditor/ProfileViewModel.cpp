@@ -449,6 +449,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             }
             }
         });
+        _MarkDuplicateBellSoundDirectories();
         _NotifyChanges(L"CurrentBellSounds");
     }
 
@@ -467,6 +468,50 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             }
             _profile.BellSound(newSounds);
         }
+    }
+
+    void ProfileViewModel::_MarkDuplicateBellSoundDirectories()
+    {
+        for (uint32_t i = 0; i < _CurrentBellSounds.Size(); i++)
+        {
+            auto soundA = _CurrentBellSounds.GetAt(i);
+            for (uint32_t j = i + 1; j < _CurrentBellSounds.Size(); j++)
+            {
+                auto soundB = _CurrentBellSounds.GetAt(j);
+                if (soundA.DisplayPath() == soundB.DisplayPath())
+                {
+                    get_self<BellSoundViewModel>(_CurrentBellSounds.GetAt(i))->ShowDirectory(true);
+                    get_self<BellSoundViewModel>(_CurrentBellSounds.GetAt(j))->ShowDirectory(true);
+                }
+            }
+        }
+    }
+
+    hstring BellSoundViewModel::DisplayPath() const
+    {
+        if (FileExists())
+        {
+            // filename
+            std::filesystem::path filePath{ std::wstring_view{ _Path } };
+            return hstring{ filePath.filename().wstring() };
+        }
+        return _Path;
+    }
+
+    hstring BellSoundViewModel::SubText() const
+    {
+        if (FileExists())
+        {
+            // Directory
+            std::filesystem::path filePath{ std::wstring_view{ _Path } };
+            return hstring{ filePath.parent_path().wstring() };
+        }
+        return RS_(L"Profile_BellSoundNotFound");
+    }
+
+    bool BellSoundViewModel::FileExists() const
+    {
+        return std::filesystem::exists(std::wstring_view{ _Path });
     }
 
     hstring ProfileViewModel::BellSoundPreview()
@@ -504,18 +549,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
-    Editor::BellSoundViewModel ProfileViewModel::RequestAddBellSound()
+    void ProfileViewModel::RequestAddBellSound(hstring path)
     {
         // If we were inheriting our bell sound,
         // copy it over to the current layer and apply modifications
         _PrepareModelForBellSoundModification();
 
         auto vm = winrt::make<BellSoundViewModel>();
+        vm.Path(path);
         vm.PropertyChanged({ this, &ProfileViewModel::_BellSoundVMPropertyChanged });
         _CurrentBellSounds.Append(vm);
         _NotifyChanges(L"CurrentBellSounds");
-
-        return vm;
     }
 
     void ProfileViewModel::RequestDeleteBellSound(const Editor::BellSoundViewModel& vm)

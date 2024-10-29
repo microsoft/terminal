@@ -80,11 +80,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void Profiles_Advanced::BellSoundAdd_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
     {
-        auto bellSoundVM = _Profile.RequestAddBellSound();
-        _PickFileForBellSound(bellSoundVM);
+        _PickFileForBellSound();
     }
 
-    safe_void_coroutine Profiles_Advanced::_PickFileForBellSound(Editor::BellSoundViewModel& vm)
+    safe_void_coroutine Profiles_Advanced::_PickFileForBellSound()
     {
         static constexpr COMDLG_FILTERSPEC supportedFileTypes[] = {
             { L"Sound Files (*.wav;*.mp3;*.flac)", L"*.wav;*.mp3;*.flac" },
@@ -105,7 +104,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         });
         if (!file.empty())
         {
-            vm.Path(file);
+            _Profile.RequestAddBellSound(file);
         }
     }
 }

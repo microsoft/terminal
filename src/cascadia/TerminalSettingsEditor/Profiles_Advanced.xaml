@@ -9,6 +9,7 @@
       xmlns:local="using:Microsoft.Terminal.Settings.Editor"
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
       xmlns:model="using:Microsoft.Terminal.Settings.Model"
+      xmlns:mtu="using:Microsoft.Terminal.UI"
       xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
       mc:Ignorable="d">
 
@@ -132,15 +133,32 @@
                                         <ColumnDefinition Width="Auto" />
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
-                                    <TextBlock x:Uid="Profile_BellSoundPath"
-                                               Grid.Column="0"
-                                               Style="{StaticResource TextBlockSettingStyle}"
-                                               Text="{x:Bind Path=Path, Mode=TwoWay}" />
+                                    <!--  standard UI for bell sound entry  -->
+                                    <StackPanel Grid.Column="0"
+                                                Visibility="{x:Bind FileExists, Mode=OneWay}">
+                                        <TextBlock Style="{StaticResource TextBlockSettingStyle}"
+                                                   Text="{x:Bind DisplayPath, Mode=OneWay}" />
+                                        <TextBlock Foreground="{ThemeResource SubgroupHeaderBrush}"
+                                                   Style="{StaticResource CaptionTextBlockStyle}"
+                                                   Text="{x:Bind SubText, Mode=OneWay}"
+                                                   Visibility="{x:Bind ShowDirectory, Mode=OneWay}" />
+                                    </StackPanel>
+                                    <!--  When a file is not found, we use this UI  -->
+                                    <StackPanel Grid.Column="0"
+                                                Visibility="{x:Bind mtu:Converters.InvertedBooleanToVisibility(FileExists), Mode=OneWay}">
+                                        <TextBlock Style="{StaticResource TextBlockSettingStyle}"
+                                                   Text="{x:Bind DisplayPath, Mode=OneWay}"
+                                                   TextDecorations="Strikethrough" />
+                                        <TextBlock Foreground="{ThemeResource SubgroupHeaderBrush}"
+                                                   Style="{StaticResource CaptionTextBlockStyle}"
+                                                   Text="{x:Bind SubText, Mode=OneWay}" />
+                                    </StackPanel>
                                     <Button x:Uid="Profile_BellSoundAudioPreview"
                                             Grid.Column="1"
                                             Margin="5,0,0,0"
                                             VerticalAlignment="Stretch"
                                             Click="BellSoundAudioPreview_Click"
+                                            IsEnabled="{x:Bind FileExists, Mode=OneWay}"
                                             Style="{StaticResource BrowseButtonStyle}"
                                             Tag="{Binding Mode=OneWay}">
                                         <FontIcon FontSize="{StaticResource StandardIconSize}"

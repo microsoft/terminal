@@ -28,6 +28,10 @@ namespace Microsoft.Terminal.Settings.Editor
     runtimeclass BellSoundViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged
     {
         String Path;
+        String DisplayPath { get; };
+        String SubText { get; };
+        Boolean ShowDirectory { get; };
+        Boolean FileExists { get; };
     }
 
     enum ProfileSubPage
@@ -56,7 +60,7 @@ namespace Microsoft.Terminal.Settings.Editor
 
         String BellSoundPreview { get; };
         Windows.Foundation.Collections.IObservableVector<BellSoundViewModel> CurrentBellSounds { get; };
-        BellSoundViewModel RequestAddBellSound();
+        void RequestAddBellSound(String path);
         void RequestDeleteBellSound(BellSoundViewModel vm);
 
         IInspectable CurrentAntiAliasingMode;

@@ -1942,8 +1942,8 @@
     <comment>Header for a control to determine what sound the app uses to notify the user. "Bell" is the common term in terminals for the BEL character (like the metal device used to chime).</comment>
   </data>
   <data name="Profile_BellSound.HelpText" xml:space="preserve">
-    <value>Controls what sound is played when the application emits a BEL character.</value>
-    <comment>A description for what the "bell sound" setting does. Presented near "Profile_BellSound".{Locked="BEL"}</comment>
+    <value>Controls what sound is played when the application emits a BEL character. "Bell notification style" must have "audible" set.</value>
+    <comment>A description for what the "bell sound" setting does. Presented near "Profile_BellSound". "Bell notification style" and "audible" come from "Profile_BellStyle" and "Profile_BellStyleAudible.Content" respectively.{Locked="BEL"}</comment>
   </data>
   <data name="Profile_AddBellSound.Text" xml:space="preserve">
     <value>Add sound</value>
@@ -1956,6 +1956,9 @@
   <data name="Profile_BellSoundInfo.Text" xml:space="preserve">
     <value>When multiple sounds are defined, one is selected at random when the BEL character is received.</value>
     <comment>{Locked="BEL"} Text block displayed near "Profile_BellSound".</comment>
+  </data>
+  <data name="Profile_BellSoundNotFound" xml:space="preserve">
+    <value>⚠️ File not found</value>
   </data>
   <data name="Profile_BellSoundAudioPreview.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Play sound</value>
