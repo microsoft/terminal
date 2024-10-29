@@ -4313,7 +4313,7 @@ namespace winrt::TerminalApp::implementation
         auto sui = settingsContent->SettingsUI();
         if (!startingPage.empty())
         {
-            sui.StartingPage(L"AISettings_Nav");
+            sui.StartingPage(startingPage);
         }
 
         if (_hostingHwnd)
