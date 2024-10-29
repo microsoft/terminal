@@ -101,7 +101,6 @@
                                     </muxc:InfoBadge.IconSource>
                                 </muxc:InfoBadge>
                                 <RichTextBlock Grid.Column="1"
-                                               MaxWidth="900"
                                                TextWrapping="WrapWholeWords"
                                                Visibility="{x:Bind ViewModel.IsTerminalPackaged}">
                                         <Paragraph>
