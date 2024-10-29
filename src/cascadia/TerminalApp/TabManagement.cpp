@@ -491,14 +491,14 @@ namespace winrt::TerminalApp::implementation
                 // Because this will always return -1 in this scenario unfortunately.
                 //
                 // So, what we're going to try to do is move the focus to the tab
-                // to the left, within the bounds of how many tabs we have.
+                // to the right, within the bounds of how many tabs we have.
                 //
                 // EX: we have 4 tabs: [A, B, C, D]. If we close:
                 // * A (tabIndex=0): We'll want to focus tab B (now in index 0)
-                // * B (tabIndex=1): We'll want to focus tab A (now in index 0)
-                // * C (tabIndex=2): We'll want to focus tab B (now in index 1)
+                // * B (tabIndex=1): We'll want to focus tab C (now in index 1)
+                // * C (tabIndex=2): We'll want to focus tab D (now in index 2)
                 // * D (tabIndex=3): We'll want to focus tab C (now in index 2)
-                const auto newSelectedIndex = std::clamp<int32_t>(tabIndex - 1, 0, _tabs.Size() - 1);
+                const auto newSelectedIndex = std::clamp<int32_t>(tabIndex, 0, _tabs.Size() - 1);
                 // _UpdatedSelectedTab will do the work of setting up the new tab as
                 // the focused one, and unfocusing all the others.
                 auto newSelectedTab{ _tabs.GetAt(newSelectedIndex) };

@@ -24,73 +24,116 @@
         </ResourceDictionary>
     </Page.Resources>
 
-    <StackPanel Style="{StaticResource SettingsStackStyle}">
-        <!--  Copy On Select  -->
-        <local:SettingContainer x:Uid="Globals_CopyOnSelect">
-            <ToggleSwitch IsOn="{x:Bind ViewModel.CopyOnSelect, Mode=TwoWay}"
-                          Style="{StaticResource ToggleSwitchInExpanderStyle}" />
-        </local:SettingContainer>
+    <StackPanel>
+        <StackPanel Style="{StaticResource SettingsStackStyle}">
+            <!--  Copy On Select  -->
+            <local:SettingContainer x:Uid="Globals_CopyOnSelect">
+                <ToggleSwitch IsOn="{x:Bind ViewModel.CopyOnSelect, Mode=TwoWay}"
+                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+            </local:SettingContainer>
 
-        <!--  Copy Format  -->
-        <local:SettingContainer x:Uid="Globals_CopyFormat">
-            <ComboBox AutomationProperties.AccessibilityView="Content"
-                      ItemTemplate="{StaticResource EnumComboBoxTemplate}"
-                      ItemsSource="{x:Bind ViewModel.CopyFormatList, Mode=OneWay}"
-                      SelectedItem="{x:Bind ViewModel.CurrentCopyFormat, Mode=TwoWay}"
-                      Style="{StaticResource ComboBoxSettingStyle}" />
-        </local:SettingContainer>
+            <!--  Copy Format  -->
+            <local:SettingContainer x:Uid="Globals_CopyFormat">
+                <ComboBox AutomationProperties.AccessibilityView="Content"
+                          ItemTemplate="{StaticResource EnumComboBoxTemplate}"
+                          ItemsSource="{x:Bind ViewModel.CopyFormatList, Mode=OneWay}"
+                          SelectedItem="{x:Bind ViewModel.CurrentCopyFormat, Mode=TwoWay}"
+                          Style="{StaticResource ComboBoxSettingStyle}" />
+            </local:SettingContainer>
 
-        <!--  Trim Block Selection  -->
-        <local:SettingContainer x:Uid="Globals_TrimBlockSelection">
-            <ToggleSwitch IsOn="{x:Bind ViewModel.TrimBlockSelection, Mode=TwoWay}"
-                          Style="{StaticResource ToggleSwitchInExpanderStyle}" />
-        </local:SettingContainer>
+            <!--  Trim Block Selection  -->
+            <local:SettingContainer x:Uid="Globals_TrimBlockSelection">
+                <ToggleSwitch IsOn="{x:Bind ViewModel.TrimBlockSelection, Mode=TwoWay}"
+                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+            </local:SettingContainer>
 
-        <!--  Trim Paste  -->
-        <local:SettingContainer x:Uid="Globals_TrimPaste">
-            <ToggleSwitch IsOn="{x:Bind ViewModel.TrimPaste, Mode=TwoWay}"
-                          Style="{StaticResource ToggleSwitchInExpanderStyle}" />
-        </local:SettingContainer>
+            <!--  Trim Paste  -->
+            <local:SettingContainer x:Uid="Globals_TrimPaste">
+                <ToggleSwitch IsOn="{x:Bind ViewModel.TrimPaste, Mode=TwoWay}"
+                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+            </local:SettingContainer>
 
-        <!--  Word Delimiters  -->
-        <local:SettingContainer x:Uid="Globals_WordDelimiters"
-                                CurrentValue="{x:Bind ViewModel.WordDelimiters, Mode=OneWay}"
-                                Style="{StaticResource ExpanderSettingContainerStyle}">
-            <TextBox IsSpellCheckEnabled="False"
-                     Style="{StaticResource TextBoxSettingStyle}"
-                     Text="{x:Bind ViewModel.WordDelimiters, Mode=TwoWay}" />
-        </local:SettingContainer>
+            <!--  Word Delimiters  -->
+            <local:SettingContainer x:Uid="Globals_WordDelimiters"
+                                    CurrentValue="{x:Bind ViewModel.WordDelimiters, Mode=OneWay}"
+                                    Style="{StaticResource ExpanderSettingContainerStyle}">
+                <TextBox IsSpellCheckEnabled="False"
+                         Style="{StaticResource TextBoxSettingStyle}"
+                         Text="{x:Bind ViewModel.WordDelimiters, Mode=TwoWay}" />
+            </local:SettingContainer>
 
-        <!--  Snap On Resize  -->
-        <local:SettingContainer x:Uid="Globals_SnapToGridOnResize">
-            <ToggleSwitch IsOn="{x:Bind ViewModel.SnapToGridOnResize, Mode=TwoWay}"
-                          Style="{StaticResource ToggleSwitchInExpanderStyle}" />
-        </local:SettingContainer>
+            <!--  Snap On Resize  -->
+            <local:SettingContainer x:Uid="Globals_SnapToGridOnResize">
+                <ToggleSwitch IsOn="{x:Bind ViewModel.SnapToGridOnResize, Mode=TwoWay}"
+                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+            </local:SettingContainer>
 
-        <!--  Tab Switcher Mode  -->
-        <local:SettingContainer x:Uid="Globals_TabSwitcherMode">
-            <ComboBox AutomationProperties.AccessibilityView="Content"
-                      ItemTemplate="{StaticResource EnumComboBoxTemplate}"
-                      ItemsSource="{x:Bind ViewModel.TabSwitcherModeList}"
-                      SelectedItem="{x:Bind ViewModel.CurrentTabSwitcherMode, Mode=TwoWay}"
-                      Style="{StaticResource ComboBoxSettingStyle}" />
-        </local:SettingContainer>
+            <!--  Tab Switcher Mode  -->
+            <local:SettingContainer x:Uid="Globals_TabSwitcherMode">
+                <ComboBox AutomationProperties.AccessibilityView="Content"
+                          ItemTemplate="{StaticResource EnumComboBoxTemplate}"
+                          ItemsSource="{x:Bind ViewModel.TabSwitcherModeList}"
+                          SelectedItem="{x:Bind ViewModel.CurrentTabSwitcherMode, Mode=TwoWay}"
+                          Style="{StaticResource ComboBoxSettingStyle}" />
+            </local:SettingContainer>
 
-        <!--  Focus Follow Mouse Mode  -->
-        <local:SettingContainer x:Uid="Globals_FocusFollowMouse">
-            <ToggleSwitch IsOn="{x:Bind ViewModel.FocusFollowMouse, Mode=TwoWay}"
-                          Style="{StaticResource ToggleSwitchInExpanderStyle}" />
-        </local:SettingContainer>
+            <!--  Focus Follow Mouse Mode  -->
+            <local:SettingContainer x:Uid="Globals_FocusFollowMouse">
+                <ToggleSwitch IsOn="{x:Bind ViewModel.FocusFollowMouse, Mode=TwoWay}"
+                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+            </local:SettingContainer>
 
-        <!--  Detect URLs  -->
-        <local:SettingContainer x:Uid="Globals_DetectURLs">
-            <ToggleSwitch IsOn="{x:Bind ViewModel.DetectURLs, Mode=TwoWay}"
-                          Style="{StaticResource ToggleSwitchInExpanderStyle}" />
-        </local:SettingContainer>
+            <!--  Detect URLs  -->
+            <local:SettingContainer x:Uid="Globals_DetectURLs">
+                <ToggleSwitch IsOn="{x:Bind ViewModel.DetectURLs, Mode=TwoWay}"
+                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+            </local:SettingContainer>
 
-        <local:SettingContainer x:Uid="Globals_ConfirmCloseAllTabs">
-            <ToggleSwitch IsOn="{x:Bind ViewModel.ConfirmCloseAllTabs, Mode=TwoWay}"
-                          Style="{StaticResource ToggleSwitchInExpanderStyle}" />
-        </local:SettingContainer>
+            <!--  Search Web Default Query URL  -->
+            <local:SettingContainer x:Uid="Globals_SearchWebDefaultQueryUrl"
+                                    CurrentValue="{x:Bind ViewModel.SearchWebDefaultQueryUrl, Mode=OneWay}"
+                                    Style="{StaticResource ExpanderSettingContainerStyle}">
+                <TextBox IsSpellCheckEnabled="False"
+                         Style="{StaticResource TextBoxSettingStyle}"
+                         Text="{x:Bind ViewModel.SearchWebDefaultQueryUrl, Mode=TwoWay}" />
+            </local:SettingContainer>
+
+            <!--  Enable Color Selection  -->
+            <local:SettingContainer x:Uid="Globals_EnableColorSelection">
+                <ToggleSwitch IsOn="{x:Bind ViewModel.EnableColorSelection, Mode=TwoWay}"
+                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+            </local:SettingContainer>
+        </StackPanel>
+
+        <StackPanel Style="{StaticResource SettingsStackStyle}">
+            <!--  Grouping: Warnings  -->
+            <TextBlock x:Uid="Globals_WarningsHeader"
+                       Style="{StaticResource TextBlockSubHeaderStyle}" />
+
+            <!--  Close All Tabs Warning  -->
+            <local:SettingContainer x:Uid="Globals_ConfirmCloseAllTabs">
+                <ToggleSwitch IsOn="{x:Bind ViewModel.ConfirmCloseAllTabs, Mode=TwoWay}"
+                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+            </local:SettingContainer>
+
+            <!--  Input Service Warning  -->
+            <local:SettingContainer x:Uid="Globals_InputServiceWarning">
+                <ToggleSwitch IsOn="{x:Bind ViewModel.InputServiceWarning, Mode=TwoWay}"
+                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+            </local:SettingContainer>
+
+            <!--  Large Paste Warning  -->
+            <local:SettingContainer x:Uid="Globals_WarnAboutLargePaste">
+                <ToggleSwitch IsOn="{x:Bind ViewModel.WarnAboutLargePaste, Mode=TwoWay}"
+                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+            </local:SettingContainer>
+
+            <!--  Multi Line Paste Warning  -->
+            <local:SettingContainer x:Uid="Globals_WarnAboutMultiLinePaste">
+                <ToggleSwitch IsOn="{x:Bind ViewModel.WarnAboutMultiLinePaste, Mode=TwoWay}"
+                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+            </local:SettingContainer>
+
+        </StackPanel>
     </StackPanel>
 </Page>

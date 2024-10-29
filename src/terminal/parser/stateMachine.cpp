@@ -25,6 +25,9 @@ StateMachine::StateMachine(std::unique_ptr<IStateMachineEngine> engine, const bo
     _oscString{},
     _cachedSequence{ std::nullopt }
 {
+    // The state machine must always accept C1 controls for the input engine,
+    // otherwise it won't work when the ConPTY terminal has S8C1T enabled.
+    _parserMode.set(Mode::AcceptC1, _isEngineForInput);
     _ActionClear();
 }
 

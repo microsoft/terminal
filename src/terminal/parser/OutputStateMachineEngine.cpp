@@ -256,6 +256,12 @@ bool OutputStateMachineEngine::ActionEscDispatch(const VTID id)
     case EscActionCodes::DECAC1_AcceptC1Controls:
         _dispatch->AcceptC1Controls(true);
         break;
+    case EscActionCodes::S7C1T_Send7bitC1Controls:
+        _dispatch->SendC1Controls(false);
+        break;
+    case EscActionCodes::S8C1T_Send8bitC1Controls:
+        _dispatch->SendC1Controls(true);
+        break;
     case EscActionCodes::ACS_AnsiLevel1:
         _dispatch->AnnounceCodeStructure(1);
         break;

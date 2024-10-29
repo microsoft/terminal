@@ -2340,7 +2340,7 @@
           "description": "When set to `true`, the terminal window will auto-center itself on the display it opens on. The terminal will use the \"initialPosition\" to determine which display to open on.",
           "type": "boolean"
         },
-        "inputServiceWarning": {
+        "warning.inputService": {
           "default": true,
           "description": "Warning if 'Touch Keyboard and Handwriting Panel Service' is disabled.",
           "type": "boolean"
@@ -2355,9 +2355,19 @@
           "description": "When set to true, the terminal will focus the pane on mouse hover.",
           "type": "boolean"
         },
+        "compatibility.allowHeadless": {
+          "default": false,
+          "description": "When set to true, Windows Terminal will run in the background. This allows globalSummon and quakeMode actions to work even when no windows are open.",
+          "type": "boolean"
+        },
         "compatibility.isolatedMode": {
           "default": false,
           "description": "When set to true, Terminal windows will not be able to interact with each other (including global hotkeys, tab drag/drop, running commandlines in existing windows, etc.). This is a compatibility escape hatch for users who are running into certain windowing issues.",
+          "type": "boolean"
+        },
+        "compatibility.allowDECRQCRA": {
+          "default": false,
+          "description": "When set to true, the terminal will support the DECRQCRA (Request Checksum of Rectangular Area) escape sequence.",
           "type": "boolean"
         },
         "copyFormatting": {
@@ -2390,12 +2400,12 @@
           "description": "When set to `true`, visual animations will be disabled across the application.",
           "type": "boolean"
         },
-        "largePasteWarning": {
+        "warning.largePaste": {
           "default": true,
           "description": "When set to true, trying to paste text with more than 5 KiB of characters will display a warning asking you whether to continue or not with the paste.",
           "type": "boolean"
         },
-        "multiLinePasteWarning": {
+        "warning.multiLinePaste": {
           "default": true,
           "description": "When set to true, trying to paste text with a \"new line\" character will display a warning asking you whether to continue or not with the paste.",
           "type": "boolean"
@@ -2593,7 +2603,7 @@
           "description": "Determines the delimiters used in a double click selection.",
           "type": "string"
         },
-        "confirmCloseAllTabs": {
+        "warning.confirmCloseAllTabs": {
           "default": true,
           "description": "When set to \"true\" closing a window with multiple tabs open will require confirmation.  When set to \"false\", the confirmation dialog will not appear.",
           "type": "boolean"

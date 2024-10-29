@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--  (c) 2024 Microsoft Corporation  -->
+<policyDefinitions xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" revision="1.0" schemaVersion="1.0" xmlns="http://schemas.microsoft.com/GroupPolicy/2006/07/PolicyDefinitions">
+  <policyNamespaces>
+    <target prefix="terminal" namespace="Microsoft.Policies.WindowsTerminal" />
+    <using prefix="windows" namespace="Microsoft.Policies.Windows" />
+  </policyNamespaces>
+  <resources minRequiredRevision="1.0" />
+  <supportedOn>
+    <definitions>
+      <definition name="SUPPORTED_WindowsTerminal_1_21" displayName="$(string.SUPPORTED_WindowsTerminal_1_21)" />
+    </definitions>
+  </supportedOn>
+  <categories>
+    <category name="WindowsTerminal" displayName="$(string.WindowsTerminal)">
+      <parentCategory ref="windows:WindowsComponents" />
+    </category>
+  </categories>
+  <policies>
+    <policy name="DisabledProfileSources" class="Both" displayName="$(string.DisabledProfileSources)" explainText="$(string.DisabledProfileSourcesText)" presentation="$(presentation.DisabledProfileSources)" key="Software\Policies\Microsoft\Windows Terminal">
+      <parentCategory ref="WindowsTerminal" />
+      <supportedOn ref="SUPPORTED_WindowsTerminal_1_21" />
+      <elements>
+        <multiText id="DisabledProfileSources" valueName="DisabledProfileSources" required="true" />
+      </elements>
+    </policy>
+  </policies>
+</policyDefinitions>
