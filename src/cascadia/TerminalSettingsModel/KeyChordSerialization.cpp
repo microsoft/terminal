@@ -101,10 +101,10 @@ static int32_t parseNumericCode(const std::wstring_view& str, const std::wstring
         return 0;
     }
 
-    const auto value = til::to_ulong({ str.data() + prefix.size(), str.size() - prefix.size() - suffix.size() });
-    if (value > 0 && value < 256)
+    const auto value = til::parse_unsigned<uint8_t>({ str.data() + prefix.size(), str.size() - prefix.size() - suffix.size() });
+    if (value)
     {
-        return gsl::narrow_cast<int32_t>(value);
+        return gsl::narrow_cast<int32_t>(*value);
     }
 
     throw winrt::hresult_invalid_argument(L"Invalid numeric argument to vk() or sc()");
@@ -151,10 +151,8 @@ static KeyChord _fromString(std::wstring_view wstr)
     auto vkey = 0;
     auto scanCode = 0;
 
-    while (!wstr.empty())
+    for (const auto& part : til::split_iterator{ wstr, L'+' })
     {
-        const auto part = til::prefix_split(wstr, L'+');
-
         if (til::equals_insensitive_ascii(part, CTRL_KEY))
         {
             modifiers |= VirtualKeyModifiers::Control;

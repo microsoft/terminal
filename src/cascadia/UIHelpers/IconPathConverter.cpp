@@ -271,12 +271,7 @@ namespace winrt::Microsoft::Terminal::UI::implementation
         if (commaIndex != std::wstring::npos)
         {
             // Convert the string iconIndex to a signed int to support negative numbers which represent an Icon's ID.
-            const auto index{ til::to_int(pathView.substr(commaIndex + 1)) };
-            if (index == til::to_int_error)
-            {
-                return std::nullopt;
-            }
-            return static_cast<int>(index);
+            return til::parse_signed<int>(pathView.substr(commaIndex + 1));
         }
 
         // We had a binary path, but no index. Default to 0.
