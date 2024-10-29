@@ -1059,7 +1059,6 @@ namespace winrt::TerminalApp::implementation
             profileMenuItem.Icon(icon);
         }
 
-
         if (profile.Guid() == _settings.GlobalSettings().DefaultProfile())
         {
             // Contrast the default profile with others in font weight.
