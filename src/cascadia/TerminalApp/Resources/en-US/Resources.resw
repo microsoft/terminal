@@ -211,6 +211,18 @@
   <data name="SplitPaneText" xml:space="preserve">
     <value>Split pane</value>
   </data>
+  <data name="SplitPaneDownText" xml:space="preserve">
+    <value>Split Pane Down</value>
+  </data>
+  <data name="SplitPaneRightText" xml:space="preserve">
+    <value>Split Pane Right</value>
+  </data>
+  <data name="SplitPaneUpText" xml:space="preserve">
+    <value>Split Pane Up</value>
+  </data>
+  <data name="SplitPaneLeftText" xml:space="preserve">
+    <value>Split Pane Left</value>
+  </data>
   <data name="SearchWebText" xml:space="preserve">
     <value>Web search</value>
   </data>
