@@ -195,6 +195,7 @@
         <stage>AlwaysDisabled</stage>
         <alwaysEnabledBrandingTokens>
             <brandingToken>Dev</brandingToken>
+            <brandingToken>Canary</brandingToken>
         </alwaysEnabledBrandingTokens>
     </feature>
 
