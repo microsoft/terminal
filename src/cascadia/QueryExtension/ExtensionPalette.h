@@ -13,6 +13,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
     {
         ExtensionPalette();
         void SetProvider(const Extension::ILMProvider lmProvider);
+        bool ProviderExists() const noexcept;
 
         // We don't use the winrt_property macro here because we just need the setter
         void IconPath(const winrt::hstring& iconPath);
@@ -29,6 +30,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         TYPED_EVENT(ActiveControlInfoRequested, winrt::Microsoft::Terminal::Query::Extension::ExtensionPalette, Windows::Foundation::IInspectable);
         TYPED_EVENT(InputSuggestionRequested, winrt::Microsoft::Terminal::Query::Extension::ExtensionPalette, winrt::hstring);
         TYPED_EVENT(ExportChatHistoryRequested, winrt::Microsoft::Terminal::Query::Extension::ExtensionPalette, winrt::hstring);
+        TYPED_EVENT(SetUpProviderInSettingsRequested, winrt::Microsoft::Terminal::Query::Extension::ExtensionPalette, Windows::Foundation::IInspectable);
 
     private:
         friend struct ExtensionPaletteT<ExtensionPalette>; // for Xaml to bind events
@@ -54,6 +56,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         void _lostFocusHandler(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& args);
         void _previewKeyDownHandler(const Windows::Foundation::IInspectable& sender,
                                     const Windows::UI::Xaml::Input::KeyRoutedEventArgs& e);
+        void _setUpAIProviderInSettings(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& args);
 
         void _close();
     };

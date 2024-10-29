@@ -8,6 +8,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:local="using:Microsoft.Terminal.Query.Extension"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:mtu="using:Microsoft.Terminal.UI"
              xmlns:mux="using:Microsoft.UI.Xaml.Controls"
              VerticalAlignment="Stretch"
              AllowFocusOnInteraction="True"
@@ -409,7 +410,26 @@
                      IsSpellCheckEnabled="False"
                      PlaceholderText="{x:Bind QueryBoxPlaceholderText}"
                      Text=""
-                     TextWrapping="Wrap" />
+                     TextWrapping="Wrap"
+                     Visibility="{x:Bind ProviderExists, Mode=OneWay}" />
+            <Grid Grid.Row="1"
+                  HorizontalAlignment="Center"
+                  RowSpacing="8"
+                  Visibility="{x:Bind mtu:Converters.InvertedBooleanToVisibility(ProviderExists), Mode=OneWay}">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+                <TextBlock x:Uid="SetUpProviderDisclaimer"
+                           Grid.Row="0"
+                           HorizontalAlignment="Center" />
+                <Button x:Name="SetUpProviderButton"
+                        Grid.Row="1"
+                        HorizontalAlignment="Center"
+                        Click="_setUpAIProviderInSettings">
+                    <TextBlock x:Uid="SetUpProviderButton" />
+                </Button>
+            </Grid>
             <TextBlock Grid.Row="2"
                        Margin="20,0,0,16"
                        FontSize="10">

@@ -4297,7 +4297,7 @@ namespace winrt::TerminalApp::implementation
         CATCH_RETURN()
     }
 
-    TerminalApp::IPaneContent TerminalPage::_makeSettingsContent()
+    TerminalApp::IPaneContent TerminalPage::_makeSettingsContent(const winrt::hstring& startingPage)
     {
         if (auto app{ winrt::Windows::UI::Xaml::Application::Current().try_as<winrt::TerminalApp::App>() })
         {
@@ -4311,6 +4311,10 @@ namespace winrt::TerminalApp::implementation
         // Create the SUI pane content
         auto settingsContent{ winrt::make_self<SettingsPaneContent>(_settings) };
         auto sui = settingsContent->SettingsUI();
+        if (!startingPage.empty())
+        {
+            sui.StartingPage(startingPage);
+        }
 
         if (_hostingHwnd)
         {
@@ -4370,13 +4374,13 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - <none>
-    void TerminalPage::OpenSettingsUI()
+    void TerminalPage::OpenSettingsUI(const winrt::hstring& startingPage)
     {
         // If we're holding the settings tab's switch command, don't create a new one, switch to the existing one.
         if (!_settingsTab)
         {
             // Create the tab
-            auto resultPane = std::make_shared<Pane>(_makeSettingsContent());
+            auto resultPane = std::make_shared<Pane>(_makeSettingsContent(startingPage));
             _settingsTab = _CreateNewTabFromPane(resultPane);
         }
         else
@@ -5729,6 +5733,9 @@ namespace winrt::TerminalApp::implementation
             {
                 _extensionPalette.ActiveCommandline(L"");
             }
+        });
+        _extensionPalette.SetUpProviderInSettingsRequested([&](IInspectable const&, IInspectable const&) {
+            OpenSettingsUI(L"AISettings_Nav");
         });
         ExtensionPresenter().Content(_extensionPalette);
     }

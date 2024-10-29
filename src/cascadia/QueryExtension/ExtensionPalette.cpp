@@ -110,6 +110,12 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
 
         const auto subheaderText = (!brandingData || brandingData.SubheaderText().empty()) ? RS_(L"TitleSubheader/Text") : brandingData.SubheaderText();
         TitleSubheader().Text(subheaderText);
+        _PropertyChangedHandlers(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"ProviderExists" });
+    }
+
+    bool ExtensionPalette::ProviderExists() const noexcept
+    {
+        return _lmProvider != nullptr;
     }
 
     void ExtensionPalette::IconPath(const winrt::hstring& iconPath)
@@ -261,10 +267,12 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         {
             const auto context = winrt::make<TerminalContext>(_ActiveCommandline);
             _lmProvider.SetContext(std::move(context));
+            _queryBox().Focus(FocusState::Programmatic);
         }
-
-        // Give the palette focus
-        _queryBox().Focus(FocusState::Programmatic);
+        else
+        {
+            SetUpProviderButton().Focus(FocusState::Programmatic);
+        }
     }
 
     void ExtensionPalette::_clearAndInitializeMessages(const Windows::Foundation::IInspectable& /*sender*/,
@@ -457,6 +465,13 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
             _queryBox().PasteFromClipboard();
             e.Handled(true);
         }
+    }
+
+    void ExtensionPalette::_setUpAIProviderInSettings(const Windows::Foundation::IInspectable& /*sender*/,
+                                                      const Windows::UI::Xaml::RoutedEventArgs& /*args*/)
+    {
+        _SetUpProviderInSettingsRequestedHandlers(nullptr, nullptr);
+        _close();
     }
 
     // Method Description:

@@ -169,7 +169,7 @@ namespace winrt::TerminalApp::implementation
         bool CanDragDrop() const noexcept;
         bool IsRunningElevated() const noexcept;
 
-        void OpenSettingsUI();
+        void OpenSettingsUI(const winrt::hstring& startingPage = {});
         void WindowActivated(const bool activated);
 
         bool OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, const bool down);
@@ -475,7 +475,7 @@ namespace winrt::TerminalApp::implementation
         winrt::Microsoft::Terminal::Control::TermControl _SetupControl(const winrt::Microsoft::Terminal::Control::TermControl& term);
         winrt::Microsoft::Terminal::Control::TermControl _AttachControlToContent(const uint64_t& contentGuid);
 
-        TerminalApp::IPaneContent _makeSettingsContent();
+        TerminalApp::IPaneContent _makeSettingsContent(const winrt::hstring& startingPage = {});
         std::shared_ptr<Pane> _MakeTerminalPane(const Microsoft::Terminal::Settings::Model::NewTerminalArgs& newTerminalArgs = nullptr,
                                                 const winrt::TerminalApp::TabBase& sourceTab = nullptr,
                                                 winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection existingConnection = nullptr);
@@ -585,7 +585,7 @@ namespace winrt::TerminalApp::implementation
 
         // Terminal Chat related members and functions
         winrt::Microsoft::Terminal::Query::Extension::ILMProvider _lmProvider{ nullptr };
-        winrt::Microsoft::Terminal::Settings::Model::LLMProvider _currentProvider;
+        winrt::Microsoft::Terminal::Settings::Model::LLMProvider _currentProvider{ winrt::Microsoft::Terminal::Settings::Model::LLMProvider::None };
         void _createAndSetAuthenticationForLMProvider(winrt::Microsoft::Terminal::Settings::Model::LLMProvider providerType, const winrt::hstring& authValuesString = winrt::hstring{});
         void _InitiateGithubAuth();
         winrt::fire_and_forget _OnGithubCopilotLLMProviderAuthChanged(const IInspectable& sender, const winrt::Microsoft::Terminal::Query::Extension::IAuthenticationResult& authResult);

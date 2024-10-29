@@ -42,6 +42,7 @@
                 <local:SettingContainer x:Uid="AISettings_GithubCopilot"
                                         CurrentValue="{x:Bind ViewModel.GithubCopilotStatus, Mode=OneWay}"
                                         IsEnabled="{x:Bind ViewModel.GithubCopilotAllowed}"
+                                        StartExpanded="True"
                                         Style="{StaticResource ExpanderSettingContainerStyle}">
                     <StackPanel>
                         <Grid Visibility="{x:Bind ViewModel.AreGithubCopilotTokensSet, Mode=OneWay}">

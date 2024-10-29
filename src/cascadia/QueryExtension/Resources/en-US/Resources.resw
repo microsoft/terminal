@@ -177,6 +177,14 @@
     <value>Assistant</value>
     <comment>A string to represent the section that the chat assistant typed, presented when the user exports the chat history to a file</comment>
   </data>
+  <data name="SetUpProviderDisclaimer.Text" xml:space="preserve">
+    <value>You have not set up an AI provider yet! Set one up in the settings</value>
+    <comment>Disclaimer shown to the user when they open up Terminal Chat without having set up a provider yet.</comment>
+  </data>
+  <data name="SetUpProviderButton.Text" xml:space="preserve">
+    <value>Set up AI provider</value>
+    <comment>Description of the button that sends the user to the settings page where they can set up a provider.</comment>
+  </data>
   <data name="GithubCopilot_HeaderText" xml:space="preserve">
     <value>GitHub Copilot</value>
     <comment>The header for Terminal Chat when GitHub Copilot is the connected service provider</comment>
