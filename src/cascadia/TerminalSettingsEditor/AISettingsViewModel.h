@@ -24,26 +24,33 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void AzureOpenAIKey(winrt::hstring key);
         bool AzureOpenAIActive();
         void AzureOpenAIActive(bool active);
+        bool AzureOpenAIAllowed() const noexcept;
+        winrt::hstring AzureOpenAIStatus();
 
         bool IsOpenAIKeySet();
         winrt::hstring OpenAIKey();
         void OpenAIKey(winrt::hstring key);
         bool OpenAIActive();
         void OpenAIActive(bool active);
+        bool OpenAIAllowed() const noexcept;
+        winrt::hstring OpenAIStatus();
 
         bool AreGithubCopilotTokensSet();
         winrt::hstring GithubCopilotAuthMessage();
         void GithubCopilotAuthValues(winrt::hstring authValues);
         bool GithubCopilotActive();
         void GithubCopilotActive(bool active);
-        bool GithubCopilotFeatureEnabled();
+        bool GithubCopilotAllowed() const noexcept;
         bool IsTerminalPackaged();
         void InitiateGithubAuth_Click(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& e);
         til::typed_event<Windows::Foundation::IInspectable, Windows::Foundation::IInspectable> GithubAuthRequested;
+        winrt::hstring GithubCopilotStatus();
 
     private:
         Model::CascadiaSettings _Settings;
         winrt::hstring _githubCopilotAuthMessage;
+
+        winrt::hstring _getStatusHelper(const winrt::Microsoft::Terminal::Settings::Model::LLMProvider provider);
 
         winrt::Microsoft::Terminal::Settings::Editor::MainPage::GithubAuthCompleted_revoker _githubAuthCompleteRevoker;
 

@@ -19,6 +19,45 @@ static constexpr wil::zwstring_view PasswordVaultAIEndpoint = L"TerminalAIEndpoi
 static constexpr wil::zwstring_view PasswordVaultOpenAIKey = L"TerminalOpenAIKey";
 static constexpr wil::zwstring_view PasswordVaultGithubCopilotAuthValues = L"TerminalGithubCopilotAuthValues";
 
+// When new LM providers are added here, make sure you also update the admx/adml!
+static constexpr wil::zwstring_view AzureOpenAIPolicyKey = L"AzureOpenAI";
+static constexpr wil::zwstring_view OpenAIPolicyKey = L"OpenAI";
+static constexpr wil::zwstring_view GitHubCopilotPolicyKey = L"GitHubCopilot";
+
+winrt::Microsoft::Terminal::Settings::Model::EnabledLMProviders AIConfig::AllowedLMProviders() noexcept
+{
+    Model::EnabledLMProviders enabledLMProviders{ Model::EnabledLMProviders::All };
+    // get our allowed list of LM providers from the registry
+    for (const auto key : { HKEY_LOCAL_MACHINE, HKEY_CURRENT_USER })
+    {
+        wchar_t buffer[512]; // "640K ought to be enough for anyone"
+        DWORD bufferSize = sizeof(buffer);
+        if (RegGetValueW(key, LR"(Software\Policies\Microsoft\Windows Terminal)", L"EnabledLMProviders", RRF_RT_REG_MULTI_SZ, nullptr, buffer, &bufferSize) == 0)
+        {
+            WI_ClearAllFlags(enabledLMProviders, Model::EnabledLMProviders::All);
+            for (auto p = buffer; *p;)
+            {
+                const std::wstring_view value{ p };
+                if (value == AzureOpenAIPolicyKey)
+                {
+                    WI_SetFlag(enabledLMProviders, Model::EnabledLMProviders::AzureOpenAI);
+                }
+                else if (value == OpenAIPolicyKey)
+                {
+                    WI_SetFlag(enabledLMProviders, Model::EnabledLMProviders::OpenAI);
+                }
+                else if (value == GitHubCopilotPolicyKey)
+                {
+                    WI_SetFlag(enabledLMProviders, Model::EnabledLMProviders::GithubCopilot);
+                }
+                p += value.size() + 1;
+            }
+            break;
+        }
+    }
+    return enabledLMProviders;
+}
+
 winrt::com_ptr<AIConfig> AIConfig::CopyAIConfig(const AIConfig* source)
 {
     auto aiConfig{ winrt::make_self<AIConfig>() };
@@ -108,16 +147,36 @@ winrt::hstring AIConfig::GithubCopilotAuthValues()
 
 winrt::Microsoft::Terminal::Settings::Model::LLMProvider AIConfig::ActiveProvider()
 {
+    const auto allowedLMProviders = AllowedLMProviders();
     const auto val{ _getActiveProviderImpl() };
     if (val)
     {
-        // an active provider was explicitly set, return that
-        // special case: only allow github copilot if the feature is enabled
-        if (*val == LLMProvider::GithubCopilot && !Feature_GithubCopilot::IsEnabled())
+        const auto setProvider = *val;
+        // an active provider was explicitly set, return that as long as it is allowed
+        switch (setProvider)
         {
-            return LLMProvider{};
+        case LLMProvider::GithubCopilot:
+            if (Feature_GithubCopilot::IsEnabled() && WI_IsFlagSet(allowedLMProviders, EnabledLMProviders::GithubCopilot))
+            {
+                return setProvider;
+            }
+            break;
+        case LLMProvider::AzureOpenAI:
+            if (WI_IsFlagSet(allowedLMProviders, EnabledLMProviders::AzureOpenAI))
+            {
+                return setProvider;
+            }
+            break;
+        case LLMProvider::OpenAI:
+            if (WI_IsFlagSet(allowedLMProviders, EnabledLMProviders::OpenAI))
+            {
+                return setProvider;
+            }
+            break;
+        default:
+            break;
         }
-        return *val;
+        return LLMProvider{};
     }
     else if (!AzureOpenAIEndpoint().empty() && !AzureOpenAIKey().empty())
     {

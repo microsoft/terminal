@@ -7,6 +7,7 @@
     <stringTable>
       <string id="WindowsTerminal">Windows Terminal</string>
       <string id="SUPPORTED_WindowsTerminal_1_21">At least Windows Terminal 1.21</string>
+      <string id="SUPPORTED_WindowsTerminalCanary_1_23">At least Windows Terminal Canary 1.23</string>
       <string id="DisabledProfileSources">Disabled Profile Sources</string>
       <string id="DisabledProfileSourcesText">Profiles will not be generated from any sources listed here. Source names can be arbitrary strings. Potential candidates can be found as the "source" property on profile definitions in Windows Terminal's settings.json file.
 
@@ -18,10 +19,24 @@ Common sources are:
 For instance, setting this policy to Windows.Terminal.Wsl will disable the builtin WSL integration of Windows Terminal.
 
 Note: Existing profiles will disappear from Windows Terminal after adding their source to this policy.</string>
+      <string id="EnabledLMProviders">Enabled Language Model/AI Providers</string>
+      <string id="EnabledLMProvidersText">The listed Language Models/AI Providers will be available for use in Terminal Chat.
+
+Enabling the policy but leaving the list empty disallows all providers and therefore disables the Terminal Chat feature completely.
+
+Common providers are:
+- AzureOpenAI
+- OpenAI
+- GitHubCopilot
+
+For instance, setting this policy to GitHubCopilot will allow the use of GitHubCopilot in Terminal Chat.</string>
     </stringTable>
     <presentationTable>
       <presentation id="DisabledProfileSources">
         <multiTextBox refId="DisabledProfileSources">List of disabled sources (one per line)</multiTextBox>
+      </presentation>
+      <presentation id="EnabledLMProviders">
+        <multiTextBox refId="EnabledLMProviders">List of enabled Language Model/AI Providers (one per line)</multiTextBox>
       </presentation>
     </presentationTable>
   </resources>

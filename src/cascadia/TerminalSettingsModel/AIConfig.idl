@@ -7,9 +7,18 @@ namespace Microsoft.Terminal.Settings.Model
 {
     enum LLMProvider
     {
+        None,
         AzureOpenAI,
         OpenAI,
         GithubCopilot
+    };
+
+    [flags] enum EnabledLMProviders
+    {
+        AzureOpenAI = 0x1,
+        OpenAI = 0x2,
+        GithubCopilot = 0x4,
+        All = 0xffffffff
     };
 
     delegate void AzureOpenAISettingChangedHandler();
@@ -17,6 +26,8 @@ namespace Microsoft.Terminal.Settings.Model
 
     [default_interface] runtimeclass AIConfig {
         INHERITABLE_SETTING(LLMProvider, ActiveProvider);
+
+        static EnabledLMProviders AllowedLMProviders { get; };
 
         String AzureOpenAIEndpoint;
         String AzureOpenAIKey;
