@@ -103,7 +103,7 @@
                                 <RichTextBlock Grid.Column="1"
                                                TextWrapping="WrapWholeWords"
                                                Visibility="{x:Bind ViewModel.IsTerminalPackaged}">
-                                        <Paragraph>
+                                    <Paragraph>
                                         <Run x:Uid="AISettings_GithubCopilotPrerequisite" />
                                         <LineBreak />
                                         <LineBreak />
