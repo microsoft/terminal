@@ -5010,17 +5010,10 @@ namespace winrt::TerminalApp::implementation
                                             const MUX::Controls::CommandBarFlyout& menu,
                                             const bool withSelection)
     {
-        // withSelection can be used to add actions that only appear if there's
-        // selected text, like "search the web"
-
         if (!control || !menu)
         {
             return;
         }
-
-        // Helper lambda for dispatching an ActionAndArgs onto the
-        // ShortcutActionDispatch. Used below to wire up each menu entry to the
-        // respective action.
 
         auto weak = get_weak();
         auto makeCallback = [weak](const ActionAndArgs& actionAndArgs) {
@@ -5032,9 +5025,10 @@ namespace winrt::TerminalApp::implementation
             };
         };
 
-        auto makeItem = [&menu, &makeCallback](const winrt::hstring& label,
-                                               const winrt::hstring& icon,
-                                               const auto& action) {
+        auto makeItem = [&makeCallback](const winrt::hstring& label,
+                                        const winrt::hstring& icon,
+                                        const auto& action,
+                                        auto& targetMenu) {
             AppBarButton button{};
 
             if (!icon.empty())
@@ -5046,38 +5040,53 @@ namespace winrt::TerminalApp::implementation
 
             button.Label(label);
             button.Click(makeCallback(action));
-            menu.SecondaryCommands().Append(button);
+            targetMenu.SecondaryCommands().Append(button);
         };
 
-        // Wire up each item to the action that should be performed. By actually
-        // connecting these to actions, we ensure the implementation is
-        // consistent. This also leaves room for customizing this menu with
-        // actions in the future.
+        auto makeMenuItem = [](const winrt::hstring& label,
+                               const winrt::hstring& icon,
+                               const auto& subMenu,
+                               auto& targetMenu) {
+            AppBarButton button{};
 
-        // makeItem(RS_(L"SplitPaneText"), L"\xF246", ActionAndArgs{ ShortcutAction::SplitPane, SplitPaneArgs{ SplitType::Duplicate } });
-        makeItem(RS_(L"SplitPaneDownText"), L"\xF246", ActionAndArgs{ ShortcutAction::SplitPane, SplitPaneArgs{ SplitType::Duplicate, SplitDirection::Down, .5, nullptr } });
-        makeItem(RS_(L"SplitPaneRightText"), L"\xF246", ActionAndArgs{ ShortcutAction::SplitPane, SplitPaneArgs{ SplitType::Duplicate, SplitDirection::Right, .5, nullptr } });
-        makeItem(RS_(L"SplitPaneUpText"), L"\xF246", ActionAndArgs{ ShortcutAction::SplitPane, SplitPaneArgs{ SplitType::Duplicate, SplitDirection::Up, .5, nullptr } });
-        makeItem(RS_(L"SplitPaneLeftText"), L"\xF246", ActionAndArgs{ ShortcutAction::SplitPane, SplitPaneArgs{ SplitType::Duplicate, SplitDirection::Left, .5, nullptr } });
-        makeItem(RS_(L"DuplicateTabText"), L"\xF5ED", ActionAndArgs{ ShortcutAction::DuplicateTab, nullptr });
+            if (!icon.empty())
+            {
+                auto iconElement = UI::IconPathConverter::IconWUX(icon);
+                Automation::AutomationProperties::SetAccessibilityView(iconElement, Automation::Peers::AccessibilityView::Raw);
+                button.Icon(iconElement);
+            }
 
-        // Only wire up "Close Pane" if there's multiple panes.
+            button.Label(label);
+            button.Flyout(subMenu);
+            targetMenu.SecondaryCommands().Append(button);
+        };
+
+        MUX::Controls::CommandBarFlyout splitPaneMenu{};
+        makeItem(RS_(L"SplitPaneDownText"), L"\xF246", ActionAndArgs{ ShortcutAction::SplitPane, SplitPaneArgs{ SplitType::Duplicate, SplitDirection::Down, .5, nullptr } }, splitPaneMenu);
+        makeItem(RS_(L"SplitPaneRightText"), L"\xF246", ActionAndArgs{ ShortcutAction::SplitPane, SplitPaneArgs{ SplitType::Duplicate, SplitDirection::Right, .5, nullptr } }, splitPaneMenu);
+        makeItem(RS_(L"SplitPaneUpText"), L"\xF246", ActionAndArgs{ ShortcutAction::SplitPane, SplitPaneArgs{ SplitType::Duplicate, SplitDirection::Up, .5, nullptr } }, splitPaneMenu);
+        makeItem(RS_(L"SplitPaneLeftText"), L"\xF246", ActionAndArgs{ ShortcutAction::SplitPane, SplitPaneArgs{ SplitType::Duplicate, SplitDirection::Left, .5, nullptr } }, splitPaneMenu);
+
+        makeMenuItem(RS_(L"SplitPaneText"), L"\xF246", splitPaneMenu, menu);
+
+        makeItem(RS_(L"DuplicateTabText"), L"\xF5ED", ActionAndArgs{ ShortcutAction::DuplicateTab, nullptr }, menu);
+
         if (_GetFocusedTabImpl()->GetLeafPaneCount() > 1)
         {
-            makeItem(RS_(L"PaneClose"), L"\xE89F", ActionAndArgs{ ShortcutAction::ClosePane, nullptr });
+            makeItem(RS_(L"PaneClose"), L"\xE89F", ActionAndArgs{ ShortcutAction::ClosePane, nullptr }, menu);
         }
 
         if (control.ConnectionState() >= ConnectionState::Closed)
         {
-            makeItem(RS_(L"RestartConnectionText"), L"\xE72C", ActionAndArgs{ ShortcutAction::RestartConnection, nullptr });
+            makeItem(RS_(L"RestartConnectionText"), L"\xE72C", ActionAndArgs{ ShortcutAction::RestartConnection, nullptr }, menu);
         }
 
         if (withSelection)
         {
-            makeItem(RS_(L"SearchWebText"), L"\xF6FA", ActionAndArgs{ ShortcutAction::SearchForText, nullptr });
+            makeItem(RS_(L"SearchWebText"), L"\xF6FA", ActionAndArgs{ ShortcutAction::SearchForText, nullptr }, menu);
         }
 
-        makeItem(RS_(L"TabClose"), L"\xE711", ActionAndArgs{ ShortcutAction::CloseTab, CloseTabArgs{ _GetFocusedTabIndex().value() } });
+        makeItem(RS_(L"TabClose"), L"\xE711", ActionAndArgs{ ShortcutAction::CloseTab, CloseTabArgs{ _GetFocusedTabIndex().value() } }, menu);
     }
 
     void TerminalPage::_PopulateQuickFixMenu(const TermControl& control,

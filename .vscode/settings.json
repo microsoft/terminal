@@ -127,4 +127,7 @@
         "**/obj/**": true,
         "**/packages/**": true,
     },
+    "dotnet.preferCSharpExtension": true,
+    "dotnet.defaultSolution": "OpenConsole.sln",
+    "cquery.cacheDirectory": "${workspaceFolder}/.vscode/cquery_cached_index/",
 }
