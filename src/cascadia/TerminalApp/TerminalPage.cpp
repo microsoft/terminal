@@ -5075,7 +5075,7 @@ namespace winrt::TerminalApp::implementation
             const auto profile = activeProfiles.GetAt(profileIndex);
             NewTerminalArgs args{};
             args.Profile(profile.Name());
-            args.StartingDirectory(profile.StartingDirectory());
+            args.StartingDirectory(_evaluatePathForCwd(profile.EvaluatedStartingDirectory()));
             args.TabTitle(profile.TabTitle());
             args.Commandline(profile.Commandline());
             args.SuppressApplicationTitle(profile.SuppressApplicationTitle());
