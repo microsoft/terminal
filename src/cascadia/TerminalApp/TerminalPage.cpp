@@ -5061,18 +5061,54 @@ namespace winrt::TerminalApp::implementation
             targetMenu.SecondaryCommands().Append(button);
         };
 
+        auto activeProfiles = _settings.ActiveProfiles();
+        auto activeProfileCount = gsl::narrow_cast<int>(activeProfiles.Size());
+
+        makeItem(RS_(L"DuplicateTabText"), L"\xF5ED", ActionAndArgs{ ShortcutAction::DuplicateTab, nullptr }, menu);
+
+        MUX::Controls::CommandBarFlyout splitPaneDownMenu{};
+        MUX::Controls::CommandBarFlyout splitPaneUpMenu{};
+        MUX::Controls::CommandBarFlyout splitPaneRightMenu{};
+        MUX::Controls::CommandBarFlyout splitPaneLeftMenu{};
+        for (auto profileIndex = 0; profileIndex < activeProfileCount; profileIndex++)
+        {
+            const auto profile = activeProfiles.GetAt(profileIndex);
+            NewTerminalArgs args{};
+            args.Profile(profile.Name());
+            args.StartingDirectory(profile.StartingDirectory());
+            args.TabTitle(profile.TabTitle());
+            args.Commandline(profile.Commandline());
+            args.SuppressApplicationTitle(profile.SuppressApplicationTitle());
+            makeItem(profile.Name(), profile.Icon(), ActionAndArgs{ ShortcutAction::SplitPane, SplitPaneArgs{ SplitType::Manual, SplitDirection::Down, .5, args } }, splitPaneDownMenu);
+            makeItem(profile.Name(), profile.Icon(), ActionAndArgs{ ShortcutAction::SplitPane, SplitPaneArgs{ SplitType::Manual, SplitDirection::Up, .5, args } }, splitPaneUpMenu);
+            makeItem(profile.Name(), profile.Icon(), ActionAndArgs{ ShortcutAction::SplitPane, SplitPaneArgs{ SplitType::Manual, SplitDirection::Right, .5, args } }, splitPaneRightMenu);
+            makeItem(profile.Name(), profile.Icon(), ActionAndArgs{ ShortcutAction::SplitPane, SplitPaneArgs{ SplitType::Manual, SplitDirection::Left, .5, args } }, splitPaneLeftMenu);
+        }
+
         MUX::Controls::CommandBarFlyout splitPaneMenu{};
         makeItem(RS_(L"SplitPaneDownText"), L"\xF246", ActionAndArgs{ ShortcutAction::SplitPane, SplitPaneArgs{ SplitType::Duplicate, SplitDirection::Down, .5, nullptr } }, splitPaneMenu);
         makeItem(RS_(L"SplitPaneRightText"), L"\xF246", ActionAndArgs{ ShortcutAction::SplitPane, SplitPaneArgs{ SplitType::Duplicate, SplitDirection::Right, .5, nullptr } }, splitPaneMenu);
         makeItem(RS_(L"SplitPaneUpText"), L"\xF246", ActionAndArgs{ ShortcutAction::SplitPane, SplitPaneArgs{ SplitType::Duplicate, SplitDirection::Up, .5, nullptr } }, splitPaneMenu);
         makeItem(RS_(L"SplitPaneLeftText"), L"\xF246", ActionAndArgs{ ShortcutAction::SplitPane, SplitPaneArgs{ SplitType::Duplicate, SplitDirection::Left, .5, nullptr } }, splitPaneMenu);
 
-        makeMenuItem(RS_(L"SplitPaneText"), L"\xF246", splitPaneMenu, menu);
+        makeMenuItem(RS_(L"SplitPaneDownText"), L"\xF246", splitPaneDownMenu, splitPaneMenu);
+        makeMenuItem(RS_(L"SplitPaneRightText"), L"\xF246", splitPaneRightMenu, splitPaneMenu);
+        makeMenuItem(RS_(L"SplitPaneUpText"), L"\xF246", splitPaneUpMenu, splitPaneMenu);
+        makeMenuItem(RS_(L"SplitPaneLeftText"), L"\xF246", splitPaneLeftMenu, splitPaneMenu);
 
-        makeItem(RS_(L"DuplicateTabText"), L"\xF5ED", ActionAndArgs{ ShortcutAction::DuplicateTab, nullptr }, menu);
+        makeMenuItem(RS_(L"SplitPaneText"), L"\xF246", splitPaneMenu, menu);
 
         if (_GetFocusedTabImpl()->GetLeafPaneCount() > 1)
         {
+            MUX::Controls::CommandBarFlyout swapPaneMenu{};
+            makeItem(RS_(L"SwapPaneDownText"), L"\xF1CB", ActionAndArgs{ ShortcutAction::SwapPane, SwapPaneArgs{ FocusDirection::Down } }, swapPaneMenu);
+            makeItem(RS_(L"SwapPaneRightText"), L"\xF1CB", ActionAndArgs{ ShortcutAction::SwapPane, SwapPaneArgs{ FocusDirection::Right } }, swapPaneMenu);
+            makeItem(RS_(L"SwapPaneUpText"), L"\xF1CB", ActionAndArgs{ ShortcutAction::SwapPane, SwapPaneArgs{ FocusDirection::Up } }, swapPaneMenu);
+            makeItem(RS_(L"SwapPaneLeftText"), L"\xF1CB", ActionAndArgs{ ShortcutAction::SwapPane, SwapPaneArgs{ FocusDirection::Left } }, swapPaneMenu);
+            makeMenuItem(RS_(L"SwapPaneText"), L"\xF1CB", swapPaneMenu, menu);
+
+            makeItem(RS_(L"TogglePaneZoomText"), L"\xE8A3", ActionAndArgs{ ShortcutAction::TogglePaneZoom, nullptr }, menu);
+            makeItem(RS_(L"CloseOtherPanesText"), L"\xE89F", ActionAndArgs{ ShortcutAction::CloseOtherPanes, nullptr }, menu);
             makeItem(RS_(L"PaneClose"), L"\xE89F", ActionAndArgs{ ShortcutAction::ClosePane, nullptr }, menu);
         }
 
