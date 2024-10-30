@@ -43,6 +43,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         WINRT_PROPERTY(Model::Profile, Profile);
         WINRT_PROPERTY(int, ProfileIndex);
+        WINRT_PROPERTY(winrt::hstring, Icon);
 
     private:
         winrt::hstring _ProfileName;

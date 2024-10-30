@@ -10,6 +10,7 @@
 using namespace Microsoft::Terminal::Settings::Model;
 
 static constexpr std::string_view ProfileKey{ "profile" };
+static constexpr std::string_view IconKey{ "icon" };
 
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
@@ -46,6 +47,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         {
             JsonUtils::SetValueForKey(json, ProfileKey, _Profile.Guid());
         }
+        JsonUtils::SetValueForKey(json, IconKey, _Icon);
 
         return json;
     }
@@ -55,6 +57,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         auto entry = winrt::make_self<ProfileEntry>();
 
         JsonUtils::GetValueForKey(json, ProfileKey, entry->_ProfileName);
+        JsonUtils::GetValueForKey(json, IconKey, entry->_Icon);
 
         return entry;
     }
@@ -65,6 +68,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         entry->_Profile = _Profile;
         entry->_ProfileIndex = _ProfileIndex;
         entry->_ProfileName = _ProfileName;
+        entry->_Icon = _Icon;
         return *entry;
     }
 }
