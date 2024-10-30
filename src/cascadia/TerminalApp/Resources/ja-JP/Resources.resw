@@ -934,4 +934,37 @@
   <data name="CloseSnippetsPaneButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>ウィンドウを閉じる</value>
   </data>
+  <data name="SplitPaneDownText" xml:space="preserve">
+    <value>ペインを下に分割</value>
+  </data>
+  <data name="SplitPaneRightText" xml:space="preserve">
+    <value>ペインを右に分割</value>
+  </data>
+  <data name="SplitPaneUpText" xml:space="preserve">
+    <value>ペインを上に分割</value>
+  </data>
+  <data name="SplitPaneLeftText" xml:space="preserve">
+    <value>ペインを左に分割</value>
+  </data>
+  <data name="SwapPaneText" xml:space="preserve">
+    <value>ペインを交換</value>
+  </data>
+  <data name="SwapPaneDownText" xml:space="preserve">
+    <value>ペインを下に交換</value>
+  </data>
+  <data name="SwapPaneRightText" xml:space="preserve">
+    <value>ペインを右に交換</value>
+  </data>
+  <data name="SwapPaneUpText" xml:space="preserve">
+    <value>ペインを上に交換</value>
+  </data>
+  <data name="SwapPaneLeftText" xml:space="preserve">
+    <value>ペインを左に交換</value>
+  </data>
+  <data name="TogglePaneZoomText" xml:space="preserve">
+    <value>ペインのズームを切り替える</value>
+  </data>
+  <data name="CloseOtherPanesText" xml:space="preserve">
+    <value>他のペインを閉じる</value>
+  </data>
 </root>

@@ -941,4 +941,37 @@
   <data name="CloseSnippetsPaneButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Ćℓǿŝé ρдŉé !!!</value>
   </data>
+  <data name="SplitPaneDownText" xml:space="preserve">
+    <value>⟦Split Pane Down⟧</value>
+  </data>
+  <data name="SplitPaneRightText" xml:space="preserve">
+    <value>⟦Split Pane Right⟧</value>
+  </data>
+  <data name="SplitPaneUpText" xml:space="preserve">
+    <value>⟦Split Pane Up⟧</value>
+  </data>
+  <data name="SplitPaneLeftText" xml:space="preserve">
+    <value>⟦Split Pane Left⟧</value>
+  </data>
+  <data name="SwapPaneText" xml:space="preserve">
+    <value>⟦Swap Pane⟧</value>
+  </data>
+  <data name="SwapPaneDownText" xml:space="preserve">
+    <value>⟦Swap Pane Down⟧</value>
+  </data>
+  <data name="SwapPaneRightText" xml:space="preserve">
+    <value>⟦Swap Pane Right⟧</value>
+  </data>
+  <data name="SwapPaneUpText" xml:space="preserve">
+    <value>⟦Swap Pane Up⟧</value>
+  </data>
+  <data name="SwapPaneLeftText" xml:space="preserve">
+    <value>⟦Swap Pane Left⟧</value>
+  </data>
+  <data name="TogglePaneZoomText" xml:space="preserve">
+    <value>⟦Toggle Pane Zoom⟧</value>
+  </data>
+  <data name="CloseOtherPanesText" xml:space="preserve">
+    <value>⟦Close Other Panes⟧</value>
+  </data>
 </root>

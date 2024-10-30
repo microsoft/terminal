@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -935,5 +935,38 @@
   </data>
   <data name="CloseSnippetsPaneButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Bereich schließen</value>
+  </data>
+  <data xml:space="preserve" name="SplitPaneDownText">
+    <value>Fenster nach unten teilen</value>
+  </data>
+  <data xml:space="preserve" name="SplitPaneRightText">
+    <value>Fenster nach rechts teilen</value>
+  </data>
+  <data xml:space="preserve" name="SplitPaneUpText">
+    <value>Fenster nach oben teilen</value>
+  </data>
+  <data xml:space="preserve" name="SplitPaneLeftText">
+    <value>Fenster nach links teilen</value>
+  </data>
+  <data xml:space="preserve" name="SwapPaneText">
+    <value>Fenster tauschen</value>
+  </data>
+  <data xml:space="preserve" name="SwapPaneDownText">
+    <value>Fenster nach unten tauschen</value>
+  </data>
+  <data xml:space="preserve" name="SwapPaneRightText">
+    <value>Fenster nach rechts tauschen</value>
+  </data>
+  <data xml:space="preserve" name="SwapPaneUpText">
+    <value>Fenster nach oben tauschen</value>
+  </data>
+  <data xml:space="preserve" name="SwapPaneLeftText">
+    <value>Fenster nach links tauschen</value>
+  </data>
+  <data xml:space="preserve" name="TogglePaneZoomText">
+    <value>Fenster-Zoom umschalten</value>
+  </data>
+  <data xml:space="preserve" name="CloseOtherPanesText">
+    <value>Andere Fenster schließen</value>
   </data>
 </root>

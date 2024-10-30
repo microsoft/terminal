@@ -933,4 +933,37 @@
   <data name="CloseSnippetsPaneButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>창 닫기</value>
   </data>
+  <data name="SplitPaneDownText" xml:space="preserve">
+    <value>창을 아래로 분할</value>
+  </data>
+  <data name="SplitPaneRightText" xml:space="preserve">
+    <value>창을 오른쪽으로 분할</value>
+  </data>
+  <data name="SplitPaneUpText" xml:space="preserve">
+    <value>창을 위로 분할</value>
+  </data>
+  <data name="SplitPaneLeftText" xml:space="preserve">
+    <value>창을 왼쪽으로 분할</value>
+  </data>
+  <data name="SwapPaneText" xml:space="preserve">
+    <value>창 교환</value>
+  </data>
+  <data name="SwapPaneDownText" xml:space="preserve">
+    <value>창을 아래로 교환</value>
+  </data>
+  <data name="SwapPaneRightText" xml:space="preserve">
+    <value>창을 오른쪽으로 교환</value>
+  </data>
+  <data name="SwapPaneUpText" xml:space="preserve">
+    <value>창을 위로 교환</value>
+  </data>
+  <data name="SwapPaneLeftText" xml:space="preserve">
+    <value>창을 왼쪽으로 교환</value>
+  </data>
+  <data name="TogglePaneZoomText" xml:space="preserve">
+    <value>창 확대/축소 전환</value>
+  </data>
+  <data name="CloseOtherPanesText" xml:space="preserve">
+    <value>다른 창 닫기</value>
+  </data>
 </root>

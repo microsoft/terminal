@@ -933,4 +933,37 @@
   <data name="CloseSnippetsPaneButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Chiudi il riquadro</value>
   </data>
+  <data name="SplitPaneDownText" xml:space="preserve">
+    <value>Dividi finestra in basso</value>
+  </data>
+  <data name="SplitPaneRightText" xml:space="preserve">
+    <value>Dividi finestra a destra</value>
+  </data>
+  <data name="SplitPaneUpText" xml:space="preserve">
+    <value>Dividi finestra in alto</value>
+  </data>
+  <data name="SplitPaneLeftText" xml:space="preserve">
+    <value>Dividi finestra a sinistra</value>
+  </data>
+  <data name="SwapPaneText" xml:space="preserve">
+    <value>Scambia finestra</value>
+  </data>
+  <data name="SwapPaneDownText" xml:space="preserve">
+    <value>Scambia finestra in basso</value>
+  </data>
+  <data name="SwapPaneRightText" xml:space="preserve">
+    <value>Scambia finestra a destra</value>
+  </data>
+  <data name="SwapPaneUpText" xml:space="preserve">
+    <value>Scambia finestra in alto</value>
+  </data>
+  <data name="SwapPaneLeftText" xml:space="preserve">
+    <value>Scambia finestra a sinistra</value>
+  </data>
+  <data name="TogglePaneZoomText" xml:space="preserve">
+    <value>Attiva/disattiva zoom finestra</value>
+  </data>
+  <data name="CloseOtherPanesText" xml:space="preserve">
+    <value>Chiudi altre finestre</value>
+  </data>
 </root>

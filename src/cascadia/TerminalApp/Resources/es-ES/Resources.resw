@@ -933,4 +933,37 @@
   <data name="CloseSnippetsPaneButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Cerrar panel</value>
   </data>
+  <data name="SplitPaneDownText" xml:space="preserve">
+    <value>Dividir ventana hacia abajo</value>
+  </data>
+  <data name="SplitPaneRightText" xml:space="preserve">
+    <value>Dividir ventana hacia la derecha</value>
+  </data>
+  <data name="SplitPaneUpText" xml:space="preserve">
+    <value>Dividir ventana hacia arriba</value>
+  </data>
+  <data name="SplitPaneLeftText" xml:space="preserve">
+    <value>Dividir ventana hacia la izquierda</value>
+  </data>
+  <data name="SwapPaneText" xml:space="preserve">
+    <value>Intercambiar ventana</value>
+  </data>
+  <data name="SwapPaneDownText" xml:space="preserve">
+    <value>Intercambiar ventana hacia abajo</value>
+  </data>
+  <data name="SwapPaneRightText" xml:space="preserve">
+    <value>Intercambiar ventana hacia la derecha</value>
+  </data>
+  <data name="SwapPaneUpText" xml:space="preserve">
+    <value>Intercambiar ventana hacia arriba</value>
+  </data>
+  <data name="SwapPaneLeftText" xml:space="preserve">
+    <value>Intercambiar ventana hacia la izquierda</value>
+  </data>
+  <data name="TogglePaneZoomText" xml:space="preserve">
+    <value>Alternar zoom</value>
+  </data>
+  <data name="CloseOtherPanesText" xml:space="preserve">
+    <value>Cerrar otras ventanas</value>
+  </data>
 </root>
