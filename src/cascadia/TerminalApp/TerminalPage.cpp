@@ -989,7 +989,7 @@ namespace winrt::TerminalApp::implementation
 
                 for (auto&& [profileIndex, remainingProfile] : remainingProfilesEntry.Profiles())
                 {
-                    items.push_back(_CreateNewTabFlyoutProfile(remainingProfile, profileIndex));
+                    items.push_back(_CreateNewTabFlyoutProfile(remainingProfile, profileIndex, {}));
                 }
 
                 break;
@@ -1003,7 +1003,7 @@ namespace winrt::TerminalApp::implementation
                     break;
                 }
 
-                auto profileItem = _CreateNewTabFlyoutProfile(profileEntry.Profile(), profileEntry.ProfileIndex());
+                auto profileItem = _CreateNewTabFlyoutProfile(profileEntry.Profile(), profileEntry.ProfileIndex(), profileEntry.Icon());
                 items.push_back(profileItem);
                 break;
             }
@@ -1013,7 +1013,7 @@ namespace winrt::TerminalApp::implementation
                 const auto actionId = actionEntry.ActionId();
                 if (_settings.ActionMap().GetActionByID(actionId))
                 {
-                    auto actionItem = _CreateNewTabFlyoutAction(actionId);
+                    auto actionItem = _CreateNewTabFlyoutAction(actionId, actionEntry.Icon());
                     items.push_back(actionItem);
                 }
 
@@ -1028,7 +1028,7 @@ namespace winrt::TerminalApp::implementation
     // Method Description:
     // - This method creates a flyout menu item for a given profile with the given index.
     //   It makes sure to set the correct icon, keybinding, and click-action.
-    WUX::Controls::MenuFlyoutItem TerminalPage::_CreateNewTabFlyoutProfile(const Profile profile, int profileIndex)
+    WUX::Controls::MenuFlyoutItem TerminalPage::_CreateNewTabFlyoutProfile(const Profile profile, int profileIndex, const winrt::hstring& iconPathOverride)
     {
         auto profileMenuItem = WUX::Controls::MenuFlyoutItem{};
 
@@ -1049,9 +1049,10 @@ namespace winrt::TerminalApp::implementation
         auto profileName = profile.Name();
         profileMenuItem.Text(profileName);
 
-        // If there's an icon set for this profile, set it as the icon for
-        // this flyout item
-        const auto& iconPath = profile.EvaluatedIcon();
+        // If a custom icon path has been specified, set it as the icon for
+        // this flyout item. Otherwise, if an icon is set for this profile, set that icon
+        // for this flyout item.
+        const auto& iconPath = iconPathOverride.empty() ? profile.EvaluatedIcon() : iconPathOverride;
         if (!iconPath.empty())
         {
             const auto icon = _CreateNewTabFlyoutIcon(iconPath);
@@ -1112,7 +1113,7 @@ namespace winrt::TerminalApp::implementation
     // Method Description:
     // - This method creates a flyout menu item for a given action
     //   It makes sure to set the correct icon, keybinding, and click-action.
-    WUX::Controls::MenuFlyoutItem TerminalPage::_CreateNewTabFlyoutAction(const winrt::hstring& actionId)
+    WUX::Controls::MenuFlyoutItem TerminalPage::_CreateNewTabFlyoutAction(const winrt::hstring& actionId, const winrt::hstring& iconPathOverride)
     {
         auto actionMenuItem = WUX::Controls::MenuFlyoutItem{};
         const auto action{ _settings.ActionMap().GetActionByID(actionId) };
@@ -1125,9 +1126,10 @@ namespace winrt::TerminalApp::implementation
 
         actionMenuItem.Text(action.Name());
 
-        // If there's an icon set for this action, set it as the icon for
-        // this flyout item
-        const auto& iconPath = action.IconPath();
+        // If a custom icon path has been specified, set it as the icon for
+        // this flyout item. Otherwise, if an icon is set for this action, set that icon
+        // for this flyout item.
+        const auto& iconPath = iconPathOverride.empty() ? action.IconPath() : iconPathOverride;
         if (!iconPath.empty())
         {
             const auto icon = _CreateNewTabFlyoutIcon(iconPath);
