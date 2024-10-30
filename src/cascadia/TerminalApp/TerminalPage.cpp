@@ -5012,10 +5012,17 @@ namespace winrt::TerminalApp::implementation
                                             const MUX::Controls::CommandBarFlyout& menu,
                                             const bool withSelection)
     {
+        // withSelection can be used to add actions that only appear if there's
+        // selected text, like "search the web"
+
         if (!control || !menu)
         {
             return;
         }
+
+        // Helper lambda for dispatching an ActionAndArgs onto the
+        // ShortcutActionDispatch. Used below to wire up each menu entry to the
+        // respective action.
 
         auto weak = get_weak();
         auto makeCallback = [weak](const ActionAndArgs& actionAndArgs) {
@@ -5065,13 +5072,18 @@ namespace winrt::TerminalApp::implementation
 
         auto activeProfiles = _settings.ActiveProfiles();
         auto activeProfileCount = gsl::narrow_cast<int>(activeProfiles.Size());
-
-        makeItem(RS_(L"DuplicateTabText"), L"\xF5ED", ActionAndArgs{ ShortcutAction::DuplicateTab, nullptr }, menu);
-
         MUX::Controls::CommandBarFlyout splitPaneDownMenu{};
         MUX::Controls::CommandBarFlyout splitPaneUpMenu{};
         MUX::Controls::CommandBarFlyout splitPaneRightMenu{};
         MUX::Controls::CommandBarFlyout splitPaneLeftMenu{};
+
+        // Wire up each item to the action that should be performed. By actually
+        // connecting these to actions, we ensure the implementation is
+        // consistent. This also leaves room for customizing this menu with
+        // actions in the future.
+
+        makeItem(RS_(L"DuplicateTabText"), L"\xF5ED", ActionAndArgs{ ShortcutAction::DuplicateTab, nullptr }, menu);
+
         for (auto profileIndex = 0; profileIndex < activeProfileCount; profileIndex++)
         {
             const auto profile = activeProfiles.GetAt(profileIndex);
@@ -5100,6 +5112,7 @@ namespace winrt::TerminalApp::implementation
 
         makeMenuItem(RS_(L"SplitPaneText"), L"\xF246", splitPaneMenu, menu);
 
+        // Only wire up "Close Pane" if there's multiple panes.
         if (_GetFocusedTabImpl()->GetLeafPaneCount() > 1)
         {
             MUX::Controls::CommandBarFlyout swapPaneMenu{};

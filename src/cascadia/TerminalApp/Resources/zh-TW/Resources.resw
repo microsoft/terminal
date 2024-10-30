@@ -933,37 +933,4 @@
   <data name="CloseSnippetsPaneButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>關閉窗格</value>
   </data>
-  <data name="SplitPaneDownText" xml:space="preserve">
-    <value>向下分割窗格</value>
-  </data>
-  <data name="SplitPaneRightText" xml:space="preserve">
-    <value>向右分割窗格</value>
-  </data>
-  <data name="SplitPaneUpText" xml:space="preserve">
-    <value>向上分割窗格</value>
-  </data>
-  <data name="SplitPaneLeftText" xml:space="preserve">
-    <value>向左分割窗格</value>
-  </data>
-  <data name="SwapPaneText" xml:space="preserve">
-    <value>交換窗格</value>
-  </data>
-  <data name="SwapPaneDownText" xml:space="preserve">
-    <value>向下交換窗格</value>
-  </data>
-  <data name="SwapPaneRightText" xml:space="preserve">
-    <value>向右交換窗格</value>
-  </data>
-  <data name="SwapPaneUpText" xml:space="preserve">
-    <value>向上交換窗格</value>
-  </data>
-  <data name="SwapPaneLeftText" xml:space="preserve">
-    <value>向左交換窗格</value>
-  </data>
-  <data name="TogglePaneZoomText" xml:space="preserve">
-    <value>切換窗格縮放</value>
-  </data>
-  <data name="CloseOtherPanesText" xml:space="preserve">
-    <value>關閉其他窗格</value>
-  </data>
 </root>
