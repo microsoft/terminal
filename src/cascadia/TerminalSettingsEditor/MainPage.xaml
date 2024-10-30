@@ -44,11 +44,10 @@
                         <ResourceDictionary x:Key="HighContrast">
                             <!--  Define resources for HighContrast mode here  -->
                             <StaticResource x:Key="SettingsPageBackground"
-                                            ResourceKey="SystemColorWindowColorBrush" />
+                                            ResourceKey="SystemColorWindowBrush" />
                             <StaticResource x:Key="SettingsPageMicaBackground"
-                                            ResourceKey="SystemColorWindowColorBrush" />
+                                            ResourceKey="SystemColorWindowBrush" />
                         </ResourceDictionary>
-
                     </ResourceDictionary.ThemeDictionaries>
                 </ResourceDictionary>
 
