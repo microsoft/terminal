@@ -7,6 +7,7 @@
 #include "TabBase.g.cpp"
 #include "Utils.h"
 #include "ColorHelper.h"
+#include "../inc/WindowingBehavior.h"
 
 using namespace winrt;
 using namespace winrt::Windows::UI::Xaml;
@@ -56,8 +57,70 @@ namespace winrt::TerminalApp::implementation
                 tab->RequestFocusActiveControl.raise();
             }
         });
+        _AppendMoveMenuItems(contextMenuFlyout);
         _AppendCloseMenuItems(contextMenuFlyout);
         TabViewItem().ContextFlyout(contextMenuFlyout);
+    }
+
+    void TabBase::_AppendMoveMenuItems(winrt::Windows::UI::Xaml::Controls::MenuFlyout flyout)
+    {
+        auto weakThis{ get_weak() };
+
+        // Move to new window
+        {
+            Controls::FontIcon moveTabToNewWindowTabSymbol;
+            moveTabToNewWindowTabSymbol.FontFamily(Media::FontFamily{ L"Segoe Fluent Icons, Segoe MDL2 Assets" });
+            moveTabToNewWindowTabSymbol.Glyph(L"\xE8A7");
+
+            _moveToNewWindowMenuItem.Click([weakThis](auto&&, auto&&) {
+                if (auto tab{ weakThis.get() })
+                {
+                    MoveTabArgs args{ winrt::to_hstring(NewWindow), MoveTabDirection::Forward };
+                    ActionAndArgs actionAndArgs{ ShortcutAction::MoveTab, args };
+                    tab->_dispatch.DoAction(*tab, actionAndArgs);
+                }
+            });
+            _moveToNewWindowMenuItem.Text(RS_(L"MoveTabToNewWindowText"));
+            _moveToNewWindowMenuItem.Icon(moveTabToNewWindowTabSymbol);
+
+            const auto moveTabToNewWindowToolTip = RS_(L"MoveTabToNewWindowToolTip");
+            WUX::Controls::ToolTipService::SetToolTip(_moveToNewWindowMenuItem, box_value(moveTabToNewWindowToolTip));
+            Automation::AutomationProperties::SetHelpText(_moveToNewWindowMenuItem, moveTabToNewWindowToolTip);
+        }
+
+        // Move left
+        {
+            _moveLeftMenuItem.Click([weakThis](auto&&, auto&&) {
+                if (auto tab{ weakThis.get() })
+                {
+                    MoveTabArgs args{ hstring{}, MoveTabDirection::Backward };
+                    ActionAndArgs actionAndArgs{ ShortcutAction::MoveTab, args };
+                    tab->_dispatch.DoAction(*tab, actionAndArgs);
+                }
+            });
+            _moveLeftMenuItem.Text(RS_(L"TabMoveLeft"));
+        }
+
+        // Move right
+        {
+            _moveRightMenuItem.Click([weakThis](auto&&, auto&&) {
+                if (auto tab{ weakThis.get() })
+                {
+                    MoveTabArgs args{ hstring{}, MoveTabDirection::Forward };
+                    ActionAndArgs actionAndArgs{ ShortcutAction::MoveTab, args };
+                    tab->_dispatch.DoAction(*tab, actionAndArgs);
+                }
+            });
+            _moveRightMenuItem.Text(RS_(L"TabMoveRight"));
+        }
+
+        // Create a sub-menu for our extended move tab items.
+        Controls::MenuFlyoutSubItem moveSubMenu;
+        moveSubMenu.Text(RS_(L"TabMoveSubMenu"));
+        moveSubMenu.Items().Append(_moveToNewWindowMenuItem);
+        moveSubMenu.Items().Append(_moveRightMenuItem);
+        moveSubMenu.Items().Append(_moveLeftMenuItem);
+        flyout.Items().Append(moveSubMenu);
     }
 
     // Method Description:
@@ -75,7 +138,9 @@ namespace winrt::TerminalApp::implementation
         _closeTabsAfterMenuItem.Click([weakThis](auto&&, auto&&) {
             if (auto tab{ weakThis.get() })
             {
-                tab->_CloseTabsAfter();
+                CloseTabsAfterArgs args{ tab->_TabViewIndex };
+                ActionAndArgs closeTabsAfter{ ShortcutAction::CloseTabsAfter, args };
+                tab->_dispatch.DoAction(*tab, closeTabsAfter);
             }
         });
         _closeTabsAfterMenuItem.Text(RS_(L"TabCloseAfter"));
@@ -88,7 +153,9 @@ namespace winrt::TerminalApp::implementation
         _closeOtherTabsMenuItem.Click([weakThis](auto&&, auto&&) {
             if (auto tab{ weakThis.get() })
             {
-                tab->_CloseOtherTabs();
+                CloseOtherTabsArgs args{ tab->_TabViewIndex };
+                ActionAndArgs closeOtherTabs{ ShortcutAction::CloseOtherTabs, args };
+                tab->_dispatch.DoAction(*tab, closeOtherTabs);
             }
         });
         _closeOtherTabsMenuItem.Text(RS_(L"TabCloseOther"));
@@ -129,33 +196,27 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Enable the Close menu items based on tab index and total number of tabs
+    // - Enable menu items based on tab index and total number of tabs
     // Arguments:
     // - <none>
     // Return Value:
     // - <none>
-    void TabBase::_EnableCloseMenuItems()
+    void TabBase::_EnableMenuItems()
     {
-        // close other tabs is enabled only if there are other tabs
-        _closeOtherTabsMenuItem.IsEnabled(TabViewNumTabs() > 1);
-        // close tabs after is enabled only if there are other tabs on the right
-        _closeTabsAfterMenuItem.IsEnabled(TabViewIndex() < TabViewNumTabs() - 1);
-    }
+        const auto tabIndex = TabViewIndex();
+        const auto numOfTabs = TabViewNumTabs();
 
-    void TabBase::_CloseTabsAfter()
-    {
-        CloseTabsAfterArgs args{ _TabViewIndex };
-        ActionAndArgs closeTabsAfter{ ShortcutAction::CloseTabsAfter, args };
+        // enabled if there are other tabs
+        _closeOtherTabsMenuItem.IsEnabled(numOfTabs > 1);
 
-        _dispatch.DoAction(closeTabsAfter);
-    }
+        // enabled if there are other tabs on the right
+        _closeTabsAfterMenuItem.IsEnabled(tabIndex < numOfTabs - 1);
 
-    void TabBase::_CloseOtherTabs()
-    {
-        CloseOtherTabsArgs args{ _TabViewIndex };
-        ActionAndArgs closeOtherTabs{ ShortcutAction::CloseOtherTabs, args };
+        // enabled if not left-most tab
+        _moveLeftMenuItem.IsEnabled(tabIndex > 0);
 
-        _dispatch.DoAction(closeOtherTabs);
+        // enabled if not last tab
+        _moveRightMenuItem.IsEnabled(tabIndex < numOfTabs - 1);
     }
 
     void TabBase::UpdateTabViewIndex(const uint32_t idx, const uint32_t numTabs)
@@ -164,7 +225,7 @@ namespace winrt::TerminalApp::implementation
 
         TabViewIndex(idx);
         TabViewNumTabs(numTabs);
-        _EnableCloseMenuItems();
+        _EnableMenuItems();
         _UpdateSwitchToTabKeyChord();
     }
 

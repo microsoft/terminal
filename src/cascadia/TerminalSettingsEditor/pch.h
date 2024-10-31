@@ -35,6 +35,7 @@ TRACELOGGING_DECLARE_PROVIDER(g_hSettingsEditorProvider);
 #include <winrt/Windows.UI.Input.h>
 #include <winrt/Windows.UI.Popups.h>
 #include <winrt/Windows.UI.Text.h>
+#include <winrt/Windows.UI.ViewManagement.h>
 #include <winrt/Windows.UI.Xaml.h>
 #include <winrt/Windows.UI.Xaml.Automation.h>
 #include <winrt/Windows.UI.Xaml.Automation.Peers.h>
