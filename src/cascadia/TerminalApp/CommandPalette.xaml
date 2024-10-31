@@ -43,10 +43,6 @@
                 <Setter Property="Background" Value="{ThemeResource CardBackgroundFillColorDefaultBrush}" />
                 <Setter Property="BorderBrush" Value="{ThemeResource CardStrokeColorDefaultBrush}" />
             </Style>
-            <Style x:Key="ParsedCommandLineTextBlockStyle"
-                   TargetType="TextBlock">
-                <Setter Property="Foreground" Value="{ThemeResource SystemControlForegroundBaseMediumBrush}" />
-            </Style>
 
             <DataTemplate x:Key="ListItemTemplate"
                           x:DataType="local:FilteredCommand">
