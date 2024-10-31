@@ -154,7 +154,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
                 break;
             }
 
-            _refreshAuthTokens();
+            co_await _refreshAuthTokens();
             refreshAttempted = true;
         }
         co_return;
@@ -305,7 +305,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
                 break;
             }
 
-            _refreshAuthTokens();
+            co_await _refreshAuthTokens();
             refreshAttempted = true;
         }
 
