@@ -102,6 +102,7 @@ namespace Microsoft.Terminal.Control
         IControlAppearance FocusedAppearance { get; };
         IControlAppearance UnfocusedAppearance { get; };
         Boolean HasUnfocusedAppearance();
+        void SetHighContrastInfo(Boolean enabled);
 
         UInt64 SwapChainHandle { get; };
 

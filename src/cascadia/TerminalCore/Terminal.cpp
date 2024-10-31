@@ -147,10 +147,8 @@ void Terminal::UpdateAppearance(const ICoreAppearance& appearance)
         const auto initialAIC = appearance.AdjustIndistinguishableColors();
         switch (initialAIC)
         {
-        case AdjustTextMode::AutomaticIndexed:
+        case AdjustTextMode::Automatic:
             return _highContrastMode ? AdjustTextMode::Indexed : AdjustTextMode::Never;
-        case AdjustTextMode::AutomaticAlways:
-            return _highContrastMode ? AdjustTextMode::Always : AdjustTextMode::Never;
         default:
             return initialAIC;
         }

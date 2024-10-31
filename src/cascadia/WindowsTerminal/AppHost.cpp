@@ -1574,7 +1574,7 @@ void AppHost::_handleSendContent(const winrt::Windows::Foundation::IInspectable&
 // Bubble the update settings request up to the emperor. We're being called on
 // the Window thread, but the Emperor needs to update the settings on the _main_
 // thread.
-void AppHost::_requestUpdateSettings(bool highContrastEnabled)
+void AppHost::_requestUpdateSettings()
 {
-    UpdateSettingsRequested.raise(highContrastEnabled);
+    UpdateSettingsRequested.raise();
 }

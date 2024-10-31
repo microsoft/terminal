@@ -32,7 +32,7 @@ public:
 
     static void s_DisplayMessageBox(const winrt::TerminalApp::ParseCommandlineResult& message);
 
-    til::event<winrt::delegate<void(bool)>> UpdateSettingsRequested;
+    til::event<winrt::delegate<void()>> UpdateSettingsRequested;
 
 private:
     std::unique_ptr<IslandWindow> _window;
@@ -151,7 +151,7 @@ private:
     void _handleAttach(const winrt::Windows::Foundation::IInspectable& sender,
                        winrt::Microsoft::Terminal::Remoting::AttachRequest args);
 
-    void _requestUpdateSettings(bool highContrastEnabled);
+    void _requestUpdateSettings();
 
     // Page -> us -> monarch
     void _handleReceiveContent(const winrt::Windows::Foundation::IInspectable& sender,

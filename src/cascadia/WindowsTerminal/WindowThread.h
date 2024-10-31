@@ -25,7 +25,7 @@ public:
 
     uint64_t PeasantID();
 
-    til::event<winrt::delegate<void(bool)>> UpdateSettingsRequested;
+    til::event<winrt::delegate<void()>> UpdateSettingsRequested;
 
 private:
     winrt::Microsoft::Terminal::Remoting::Peasant _peasant{ nullptr };

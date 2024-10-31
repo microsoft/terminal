@@ -237,6 +237,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         friend struct TermControlT<TermControl>; // friend our parent so it can bind private event handlers
         friend struct TsfDataProvider;
 
+        static Windows::UI::ViewManagement::AccessibilitySettings _accessibilitySettings;
+
         // NOTE: _uiaEngine must be ordered before _core.
         //
         // ControlCore::AttachUiaEngine receives a IRenderEngine as a raw pointer, which we own.

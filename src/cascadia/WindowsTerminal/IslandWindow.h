@@ -87,7 +87,7 @@ public:
 
     til::event<winrt::delegate<void()>> WindowMoved;
     til::event<winrt::delegate<void(bool)>> WindowVisibilityChanged;
-    til::event<winrt::delegate<void(bool)>> UpdateSettingsRequested;
+    til::event<winrt::delegate<void()>> UpdateSettingsRequested;
 
 protected:
     void ForceResize()
@@ -118,7 +118,6 @@ protected:
     RECT _rcWorkBeforeFullscreen{};
     UINT _dpiBeforeFullscreen{ 96 };
     bool _currentSystemThemeIsDark{ true };
-    bool _currentHighContrastModeState{ false };
 
     void _coldInitialize();
     void _warmInitialize();

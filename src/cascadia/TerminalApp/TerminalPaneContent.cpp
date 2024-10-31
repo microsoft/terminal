@@ -339,13 +339,11 @@ namespace winrt::TerminalApp::implementation
         RestartTerminalRequested.raise(*this, nullptr);
     }
 
-    void TerminalPaneContent::UpdateSettings(const CascadiaSettings& settings)
+    void TerminalPaneContent::UpdateSettings(const CascadiaSettings& /*settings*/)
     {
-        if (const auto& cachedSettings{ _cache.TryLookup(_profile) })
+        if (const auto& settings{ _cache.TryLookup(_profile) })
         {
-            auto cachedDefaultSettings = cachedSettings.DefaultSettings();
-            cachedDefaultSettings.HighContrastMode(settings.HighContrastMode());
-            _control.UpdateControlSettings(cachedDefaultSettings, cachedSettings.UnfocusedSettings());
+            _control.UpdateControlSettings(settings.DefaultSettings(), settings.UnfocusedSettings());
         }
     }
 

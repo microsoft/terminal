@@ -58,6 +58,8 @@ static Microsoft::Console::TSF::Handle& GetTSFHandle()
 
 namespace winrt::Microsoft::Terminal::Control::implementation
 {
+    Windows::UI::ViewManagement::AccessibilitySettings TermControl::_accessibilitySettings{};
+
     TsfDataProvider::TsfDataProvider(TermControl* termControl) noexcept :
         _termControl{ termControl }
     {
@@ -186,6 +188,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         InitializeComponent();
 
         _core = _interactivity.Core();
+
+        // If high contrast mode was changed, update the appearance appropriately.
+        _accessibilitySettings.HighContrastChanged([this](const Windows::UI::ViewManagement::AccessibilitySettings& a11ySettings, auto&&) {
+            _core.SetHighContrastInfo(a11ySettings.HighContrast());
+            _core.ApplyAppearance(_focused);
+        });
 
         // This event is specifically triggered by the renderer thread, a BG thread. Use a weak ref here.
         _revokers.RendererEnteredErrorState = _core.RendererEnteredErrorState(winrt::auto_revoke, { get_weak(), &TermControl::_RendererEnteredErrorState });
