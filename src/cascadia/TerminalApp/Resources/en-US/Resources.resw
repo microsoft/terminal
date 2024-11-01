@@ -224,7 +224,7 @@
     <value>Split Pane Left</value>
   </data>
   <data name="SwapPaneText" xml:space="preserve">
-    <value>Split pane</value>
+    <value>Swap pane</value>
   </data>
   <data name="SwapPaneDownText" xml:space="preserve">
     <value>Swap Pane Down</value>

@@ -5109,7 +5109,6 @@ namespace winrt::TerminalApp::implementation
         makeMenuItem(RS_(L"SplitPaneRightText"), L"\xF246", splitPaneRightMenu, splitPaneMenu);
         makeMenuItem(RS_(L"SplitPaneUpText"), L"\xF246", splitPaneUpMenu, splitPaneMenu);
         makeMenuItem(RS_(L"SplitPaneLeftText"), L"\xF246", splitPaneLeftMenu, splitPaneMenu);
-
         makeMenuItem(RS_(L"SplitPaneText"), L"\xF246", splitPaneMenu, menu);
 
         // Only wire up "Close Pane" if there's multiple panes.
