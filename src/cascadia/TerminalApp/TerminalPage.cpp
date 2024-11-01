@@ -5119,6 +5119,7 @@ namespace winrt::TerminalApp::implementation
             makeItem(RS_(L"SwapPaneRightText"), L"\xF1CB", ActionAndArgs{ ShortcutAction::SwapPane, SwapPaneArgs{ FocusDirection::Right } }, swapPaneMenu);
             makeItem(RS_(L"SwapPaneUpText"), L"\xF1CB", ActionAndArgs{ ShortcutAction::SwapPane, SwapPaneArgs{ FocusDirection::Up } }, swapPaneMenu);
             makeItem(RS_(L"SwapPaneLeftText"), L"\xF1CB", ActionAndArgs{ ShortcutAction::SwapPane, SwapPaneArgs{ FocusDirection::Left } }, swapPaneMenu);
+
             makeMenuItem(RS_(L"SwapPaneText"), L"\xF1CB", swapPaneMenu, menu);
 
             makeItem(RS_(L"TogglePaneZoomText"), L"\xE8A3", ActionAndArgs{ ShortcutAction::TogglePaneZoom, nullptr }, menu);
