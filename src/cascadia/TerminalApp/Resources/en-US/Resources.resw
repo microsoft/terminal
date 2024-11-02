@@ -223,6 +223,9 @@
   <data name="SplitPaneLeftText" xml:space="preserve">
     <value>Split Pane Left</value>
   </data>
+  <data name="SplitPaneDuplicateText" xml:space="preserve">
+    <value>Duplicate pane</value>
+  </data>
   <data name="SwapPaneText" xml:space="preserve">
     <value>Swap pane</value>
   </data>

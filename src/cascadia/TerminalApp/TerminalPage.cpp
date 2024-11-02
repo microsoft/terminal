@@ -5084,6 +5084,13 @@ namespace winrt::TerminalApp::implementation
 
         makeItem(RS_(L"DuplicateTabText"), L"\xF5ED", ActionAndArgs{ ShortcutAction::DuplicateTab, nullptr }, menu);
 
+        const auto focusedProfile = _GetFocusedTabImpl()->GetFocusedProfile();
+
+        makeItem(RS_(L"SplitPaneDuplicateText"), focusedProfile.Icon(), ActionAndArgs{ ShortcutAction::SplitPane, SplitPaneArgs{ SplitType::Duplicate, SplitDirection::Down, .5, nullptr } }, splitPaneDownMenu);
+        makeItem(RS_(L"SplitPaneDuplicateText"), focusedProfile.Icon(), ActionAndArgs{ ShortcutAction::SplitPane, SplitPaneArgs{ SplitType::Duplicate, SplitDirection::Up, .5, nullptr } }, splitPaneUpMenu);
+        makeItem(RS_(L"SplitPaneDuplicateText"), focusedProfile.Icon(), ActionAndArgs{ ShortcutAction::SplitPane, SplitPaneArgs{ SplitType::Duplicate, SplitDirection::Right, .5, nullptr } }, splitPaneRightMenu);
+        makeItem(RS_(L"SplitPaneDuplicateText"), focusedProfile.Icon(), ActionAndArgs{ ShortcutAction::SplitPane, SplitPaneArgs{ SplitType::Duplicate, SplitDirection::Left, .5, nullptr } }, splitPaneLeftMenu);
+
         for (auto profileIndex = 0; profileIndex < activeProfileCount; profileIndex++)
         {
             const auto profile = activeProfiles.GetAt(profileIndex);
@@ -5100,11 +5107,6 @@ namespace winrt::TerminalApp::implementation
         }
 
         MUX::Controls::CommandBarFlyout splitPaneMenu{};
-        makeItem(RS_(L"SplitPaneDownText"), L"\xF246", ActionAndArgs{ ShortcutAction::SplitPane, SplitPaneArgs{ SplitType::Duplicate, SplitDirection::Down, .5, nullptr } }, splitPaneMenu);
-        makeItem(RS_(L"SplitPaneRightText"), L"\xF246", ActionAndArgs{ ShortcutAction::SplitPane, SplitPaneArgs{ SplitType::Duplicate, SplitDirection::Right, .5, nullptr } }, splitPaneMenu);
-        makeItem(RS_(L"SplitPaneUpText"), L"\xF246", ActionAndArgs{ ShortcutAction::SplitPane, SplitPaneArgs{ SplitType::Duplicate, SplitDirection::Up, .5, nullptr } }, splitPaneMenu);
-        makeItem(RS_(L"SplitPaneLeftText"), L"\xF246", ActionAndArgs{ ShortcutAction::SplitPane, SplitPaneArgs{ SplitType::Duplicate, SplitDirection::Left, .5, nullptr } }, splitPaneMenu);
-
         makeMenuItem(RS_(L"SplitPaneDownText"), L"\xF246", splitPaneDownMenu, splitPaneMenu);
         makeMenuItem(RS_(L"SplitPaneRightText"), L"\xF246", splitPaneRightMenu, splitPaneMenu);
         makeMenuItem(RS_(L"SplitPaneUpText"), L"\xF246", splitPaneUpMenu, splitPaneMenu);
