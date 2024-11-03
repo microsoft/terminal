@@ -1225,6 +1225,7 @@ void AppHost::_HandleSettingsChanged(const winrt::Windows::Foundation::IInspecta
 
     _window->SetMinimizeToNotificationAreaBehavior(_windowLogic.GetMinimizeToNotificationArea());
     _window->SetAutoHideWindow(_windowLogic.AutoHideWindow());
+    _window->SetShowTabsFullscreen(_windowLogic.ShowTabsFullscreen());
     _updateTheme();
 }
 

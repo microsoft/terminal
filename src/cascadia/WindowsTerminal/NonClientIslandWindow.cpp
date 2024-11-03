@@ -1147,25 +1147,36 @@ void NonClientIslandWindow::_SetIsFullscreen(const bool fullscreenEnabled)
 {
     IslandWindow::_SetIsFullscreen(fullscreenEnabled);
     _UpdateTitlebarVisibility();
-}
-
-void NonClientIslandWindow::_SetShowTabsFullscreen(const bool newShowTabsFullscreen)
-{
-    IslandWindow::_SetShowTabsFullscreen(newShowTabsFullscreen);
-    _UpdateTitlebarVisibility();
-}
-
-void NonClientIslandWindow::_UpdateTitlebarVisibility()
-{
-    if (_titlebar)
-    {
-        _titlebar.Visibility(_IsTitlebarVisible() ? Visibility::Visible : Visibility::Collapsed);
-    }
     // GH#4224 - When the auto-hide taskbar setting is enabled, then we don't
     // always get another window message to trigger us to remove the drag bar.
     // So, make sure to update the size of the drag region here, so that it
     // _definitely_ goes away.
     _ResizeDragBarWindow();
+}
+
+void NonClientIslandWindow::SetShowTabsFullscreen(const bool newShowTabsFullscreen)
+{
+    IslandWindow::SetShowTabsFullscreen(newShowTabsFullscreen);
+
+    // don't waste time recalculating UI elements if we're not
+    // in fullscreen state - this setting doesn't affect other
+    // window states
+    if (_fullscreen)
+    {
+        _UpdateTitlebarVisibility();
+    }
+}
+
+void NonClientIslandWindow::_UpdateTitlebarVisibility()
+{
+    if (!_titlebar)
+    {
+        return;
+    }
+
+    const auto showTitlebar = _IsTitlebarVisible();
+    _titlebar.Visibility(showTitlebar ? Visibility::Visible : Visibility::Collapsed);
+    _titlebar.FullscreenChanged(_fullscreen);
 }
 
 // Method Description:

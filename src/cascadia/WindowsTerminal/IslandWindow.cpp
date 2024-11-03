@@ -994,11 +994,7 @@ void IslandWindow::ShowWindowChanged(const bool showOrHide)
 
 void IslandWindow::SetShowTabsFullscreen(const bool newShowTabsFullscreen)
 {
-    if (_showTabsFullscreen == newShowTabsFullscreen)
-    {
-        return;
-    }
-    _SetShowTabsFullscreen(newShowTabsFullscreen);
+    _showTabsFullscreen = newShowTabsFullscreen;
 }
 
 // Method Description
@@ -1322,11 +1318,6 @@ void IslandWindow::_SetIsFullscreen(const bool fullscreenEnabled)
             _RestoreFullscreenPosition(mi.rcWork);
         }
     }
-}
-
-void IslandWindow::_SetShowTabsFullscreen(const bool newShowTabsFullscreen)
-{
-    _showTabsFullscreen = newShowTabsFullscreen;
 }
 
 // Method Description:

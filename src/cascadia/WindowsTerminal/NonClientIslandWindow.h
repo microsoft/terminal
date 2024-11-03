@@ -51,6 +51,7 @@ public:
     void OnApplicationThemeChanged(const winrt::Windows::UI::Xaml::ElementTheme& requestedTheme) override;
 
     void SetTitlebarBackground(winrt::Windows::UI::Xaml::Media::Brush brush);
+    void SetShowTabsFullscreen(const bool newShowTabsFullscreen) override;
 
     virtual void UseMica(const bool newValue, const double titlebarOpacity) override;
 
@@ -92,7 +93,6 @@ private:
 
     void _SetIsBorderless(const bool borderlessEnabled) override;
     void _SetIsFullscreen(const bool fullscreenEnabled) override;
-    void _SetShowTabsFullscreen(const bool newShowTabsFullscreen) override;
     bool _IsTitlebarVisible() const;
 
     void _UpdateFrameMargins() const noexcept;
