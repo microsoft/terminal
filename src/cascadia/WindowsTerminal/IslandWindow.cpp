@@ -992,6 +992,15 @@ void IslandWindow::ShowWindowChanged(const bool showOrHide)
     }
 }
 
+void IslandWindow::SetShowTabsFullscreen(const bool newShowTabsFullscreen)
+{
+    if (_showTabsFullscreen == newShowTabsFullscreen)
+    {
+        return;
+    }
+    _SetShowTabsFullscreen(newShowTabsFullscreen);
+}
+
 // Method Description
 // - Flash the taskbar icon, indicating to the user that something needs their attention
 void IslandWindow::FlashTaskbar()
@@ -1313,6 +1322,11 @@ void IslandWindow::_SetIsFullscreen(const bool fullscreenEnabled)
             _RestoreFullscreenPosition(mi.rcWork);
         }
     }
+}
+
+void IslandWindow::_SetShowTabsFullscreen(const bool newShowTabsFullscreen)
+{
+    _showTabsFullscreen = newShowTabsFullscreen;
 }
 
 // Method Description:

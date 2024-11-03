@@ -92,11 +92,13 @@ private:
 
     void _SetIsBorderless(const bool borderlessEnabled) override;
     void _SetIsFullscreen(const bool fullscreenEnabled) override;
+    void _SetShowTabsFullscreen(const bool newShowTabsFullscreen) override;
     bool _IsTitlebarVisible() const;
 
     void _UpdateFrameMargins() const noexcept;
     void _UpdateMaximizedState();
     void _UpdateIslandPosition(const UINT windowWidth, const UINT windowHeight);
+    void _UpdateTitlebarVisibility();
 
     struct Revokers
     {

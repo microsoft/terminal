@@ -71,6 +71,7 @@ namespace TerminalApp
         void Maximized(Boolean newMaximized);
         Boolean AlwaysOnTop { get; };
         Boolean AutoHideWindow { get; };
+        Boolean ShowTabsFullscreen { get; };
 
         void IdentifyWindow();
         void SetPersistedLayoutIdx(UInt32 idx);
@@ -86,6 +87,7 @@ namespace TerminalApp
         Microsoft.Terminal.Settings.Model.LaunchMode GetLaunchMode();
         Boolean GetShowTabsInTitlebar();
         Boolean GetInitialAlwaysOnTop();
+        Boolean GetInitialShowTabsFullscreen();
         Single CalcSnappedDimension(Boolean widthOrHeight, Single dimension);
         void TitlebarClicked();
         void CloseWindow();
@@ -121,6 +123,7 @@ namespace TerminalApp
         event Windows.Foundation.TypedEventHandler<Object, Object> FullscreenChanged;
         event Windows.Foundation.TypedEventHandler<Object, Object> ChangeMaximizeRequested;
         event Windows.Foundation.TypedEventHandler<Object, Object> AlwaysOnTopChanged;
+        event Windows.Foundation.TypedEventHandler<Object, Object> ShowTabsFullscreenChanged;
         event Windows.Foundation.TypedEventHandler<Object, Object> RaiseVisualBell;
         event Windows.Foundation.TypedEventHandler<Object, Object> SetTaskbarProgress;
         event Windows.Foundation.TypedEventHandler<Object, Object> IdentifyWindowsRequested;

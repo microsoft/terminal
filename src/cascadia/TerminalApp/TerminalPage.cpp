@@ -270,6 +270,7 @@ namespace winrt::TerminalApp::implementation
         _layoutUpdatedRevoker = _tabContent.LayoutUpdated(winrt::auto_revoke, { this, &TerminalPage::_OnFirstLayout });
 
         _isAlwaysOnTop = _settings.GlobalSettings().AlwaysOnTop();
+        _showTabsFullscreen = _settings.GlobalSettings().ShowTabsFullscreen();
 
         // DON'T set up Toasts/TeachingTips here. They should be loaded and
         // initialized the first time they're opened, in whatever method opens
@@ -3605,6 +3606,9 @@ namespace winrt::TerminalApp::implementation
         _isAlwaysOnTop = _settings.GlobalSettings().AlwaysOnTop();
         AlwaysOnTopChanged.raise(*this, nullptr);
 
+        _showTabsFullscreen = _settings.GlobalSettings().ShowTabsFullscreen();
+        ShowTabsFullscreenChanged.raise(*this, nullptr);
+
         // Settings AllowDependentAnimations will affect whether animations are
         // enabled application-wide, so we don't need to check it each time we
         // want to create an animation.
@@ -4027,6 +4031,39 @@ namespace winrt::TerminalApp::implementation
     bool TerminalPage::AlwaysOnTop() const
     {
         return _isAlwaysOnTop;
+    }
+
+    // Method Description:
+    // - Returns true if the tab row should be visible when we're in full screen
+    //   state.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - true if the tab row should be visibile in full screen state
+    bool TerminalPage::ShowTabsFullscreen() const
+    {
+        return _showTabsFullscreen;
+    }
+
+    // Method Description:
+    // - Updates the the visibility of the tab row when in fullscreen state and
+    //   raises the ShowTabsFullscreenChanged event
+    void TerminalPage::SetShowTabsFullscreen(bool newShowTabsFullscreen)
+    {
+        if (_showTabsFullscreen == newShowTabsFullscreen)
+        {
+            return;
+        }
+
+        _showTabsFullscreen = newShowTabsFullscreen;
+
+        // if we're currently in fullscreen, update tab view to make
+        // sure tabs are given the correct visibility
+        if (_isFullscreen)
+        {
+            _UpdateTabView();
+        }
+        ShowTabsFullscreenChanged.raise(*this, nullptr);
     }
 
     void TerminalPage::SetFullscreen(bool newFullscreen)
