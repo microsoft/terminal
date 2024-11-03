@@ -1,6 +1,3 @@
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT license.
-
 #pragma once
 
 class CommandHistory
@@ -61,6 +58,8 @@ public:
     std::wstring_view GetLastCommand() const;
 
     void Swap(const Index indexA, const Index indexB);
+
+    std::wstring_view CycleCommandHistory(const SearchDirection searchDirection);
 
 private:
     void _Reset();

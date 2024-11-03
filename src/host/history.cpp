@@ -1,6 +1,3 @@
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT license.
-
 #include "precomp.h"
 
 #include "history.h"
@@ -848,4 +845,24 @@ HRESULT ApiRoutines::GetConsoleCommandHistoryWImpl(const std::wstring_view exeNa
         return GetConsoleCommandHistoryWImplHelper(exeName, commandHistory, written);
     }
     CATCH_RETURN();
+}
+
+std::wstring_view CommandHistory::CycleCommandHistory(const SearchDirection searchDirection)
+{
+    if (_commands.empty())
+    {
+        LastDisplayed = 0;
+        return {};
+    }
+
+    if (searchDirection == SearchDirection::Previous)
+    {
+        LastDisplayed = (LastDisplayed - 1 + GetNumberOfCommands()) % GetNumberOfCommands();
+    }
+    else
+    {
+        LastDisplayed = (LastDisplayed + 1) % GetNumberOfCommands();
+    }
+
+    return _commands.at(LastDisplayed);
 }
