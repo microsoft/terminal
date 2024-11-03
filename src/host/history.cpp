@@ -1,6 +1,3 @@
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT license.
-
 #include "precomp.h"
 
 #include "history.h"
@@ -186,6 +183,10 @@ std::wstring_view CommandHistory::Retrieve(const SearchDirection searchDirection
     else
     {
         LastDisplayed++;
+        if (LastDisplayed >= GetNumberOfCommands())
+        {
+            LastDisplayed = 0;
+        }
     }
 
     return RetrieveNth(LastDisplayed);
@@ -199,7 +200,7 @@ std::wstring_view CommandHistory::RetrieveNth(Index index)
         return {};
     }
 
-    LastDisplayed = std::clamp(index, 0, GetNumberOfCommands() - 1);
+    LastDisplayed = (index + GetNumberOfCommands()) % GetNumberOfCommands();
     return _commands.at(LastDisplayed);
 }
 

@@ -1,6 +1,3 @@
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT license.
-
 #include "precomp.h"
 #include "WexTestClass.h"
 #include "../../inc/consoletaeftemplates.hpp"
@@ -240,6 +237,28 @@ class HistoryTests
         VERIFY_SUCCEEDED(history->Add(L"dir", true));
 
         VERIFY_ARE_EQUAL(2, history->GetNumberOfCommands());
+    }
+
+    TEST_METHOD(CyclicRecallCommandsUsingDownArrow)
+    {
+        auto history = CommandHistory::s_Allocate(_manyApps[0], _MakeHandle(0));
+        VERIFY_IS_NOT_NULL(history);
+
+        // Add commands to history
+        VERIFY_SUCCEEDED(history->Add(L"echo 1", false));
+        VERIFY_SUCCEEDED(history->Add(L"echo 2", false));
+        VERIFY_SUCCEEDED(history->Add(L"echo 3", false));
+
+        // Retrieve commands using UP ARROW
+        VERIFY_ARE_EQUAL(String(L"echo 3"), String(history->Retrieve(CommandHistory::SearchDirection::Previous).data()));
+        VERIFY_ARE_EQUAL(String(L"echo 2"), String(history->Retrieve(CommandHistory::SearchDirection::Previous).data()));
+        VERIFY_ARE_EQUAL(String(L"echo 1"), String(history->Retrieve(CommandHistory::SearchDirection::Previous).data()));
+
+        // Retrieve commands using DOWN ARROW and verify cyclic recall
+        VERIFY_ARE_EQUAL(String(L"echo 2"), String(history->Retrieve(CommandHistory::SearchDirection::Next).data()));
+        VERIFY_ARE_EQUAL(String(L"echo 3"), String(history->Retrieve(CommandHistory::SearchDirection::Next).data()));
+        VERIFY_ARE_EQUAL(String(L"echo 1"), String(history->Retrieve(CommandHistory::SearchDirection::Next).data()));
+        VERIFY_ARE_EQUAL(String(L"echo 2"), String(history->Retrieve(CommandHistory::SearchDirection::Next).data()));
     }
 
 private:
