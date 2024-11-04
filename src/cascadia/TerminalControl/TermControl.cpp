@@ -3575,8 +3575,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         HoveredUri().Text(uriText);
 
         // Set the border thickness so it covers the entire cell
-        const auto charSizeInPixels = CharacterDimensions();
-        const Thickness newThickness{ charSizeInPixels.Height, charSizeInPixels.Width, 0, 0 };
+        const auto fontSize = CharacterDimensions();
+        const Thickness newThickness{ fontSize.Height, fontSize.Width, 0, 0 };
         HyperlinkTooltipBorder().BorderThickness(newThickness);
 
         // Compute the location of the top left corner of the cell in DIPS
