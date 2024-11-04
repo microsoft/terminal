@@ -572,25 +572,16 @@ namespace winrt::TerminalApp::implementation
             L"TabViewItemHeaderCloseButtonBorderBrushSelected"
         };
 
-        const auto& tabItemResources{ TabViewItem().Resources() };
-        const auto& tabItemThemeResources{ tabItemResources.ThemeDictionaries() };
+        const auto& tabItemThemeResources{ TabViewItem().Resources().ThemeDictionaries() };
 
         // simply clear any of the colors in the tab's dict
         for (const auto& keyString : keys)
         {
-            auto key = winrt::box_value(keyString);
-            if (tabItemResources.HasKey(key))
+            const auto key = winrt::box_value(keyString);
+            for (const auto& [_, v] : tabItemThemeResources)
             {
-                tabItemResources.Remove(key);
-            }
-
-            for (const auto& [k, v] : tabItemThemeResources)
-            {
-                const auto& currentDictionary = v.as<ResourceDictionary>();
-                if (currentDictionary.HasKey(key))
-                {
-                    currentDictionary.Remove(key);
-                }
+                const auto& themeDictionary = v.as<ResourceDictionary>();
+                themeDictionary.Remove(key);
             }
         }
 
