@@ -26,11 +26,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, SnapToGridOnResize);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, FocusFollowMouse);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, DetectURLs);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, SearchWebDefaultQueryUrl);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, WordDelimiters);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, ConfirmCloseAllTabs);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, InputServiceWarning);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, WarnAboutLargePaste);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, WarnAboutMultiLinePaste);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, EnableColorSelection);
 
     private:
         Model::GlobalAppSettings _GlobalSettings;

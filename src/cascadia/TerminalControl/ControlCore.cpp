@@ -201,6 +201,17 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 }
             });
 
+        // If you rapidly show/hide Windows Terminal, something about GotFocus()/LostFocus() gets broken.
+        // We'll then receive easily 10+ such calls from WinUI the next time the application is shown.
+        shared->focusChanged = std::make_unique<til::debounced_func_trailing<bool>>(
+            std::chrono::milliseconds{ 25 },
+            [weakThis = get_weak()](const bool focused) {
+                if (const auto core{ weakThis.get() })
+                {
+                    core->_focusChanged(focused);
+                }
+            });
+
         // Scrollbar updates are also expensive (XAML), so we'll throttle them as well.
         shared->updateScrollBar = std::make_shared<ThrottledFuncTrailing<Control::ScrollPositionChangedArgs>>(
             _dispatcher,
@@ -2480,13 +2491,21 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - This is related to work done for GH#2988.
     void ControlCore::GotFocus()
     {
-        _focusChanged(true);
+        const auto shared = _shared.lock_shared();
+        if (shared->focusChanged)
+        {
+            (*shared->focusChanged)(true);
+        }
     }
 
     // See GotFocus.
     void ControlCore::LostFocus()
     {
-        _focusChanged(false);
+        const auto shared = _shared.lock_shared();
+        if (shared->focusChanged)
+        {
+            (*shared->focusChanged)(false);
+        }
     }
 
     void ControlCore::_focusChanged(bool focused)

@@ -21,6 +21,7 @@ namespace Microsoft.Terminal.Core
         String WordDelimiters;
 
         Boolean ForceVTInput;
+        Boolean AllowVtChecksumReport;
         Boolean TrimBlockSelection;
         Boolean DetectURLs;
 

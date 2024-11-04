@@ -11,6 +11,7 @@ using namespace Microsoft::Terminal::Settings::Model;
 using namespace winrt::Microsoft::Terminal::Settings::Model::implementation;
 
 static constexpr std::string_view ProfileKey{ "profile" };
+static constexpr std::string_view IconKey{ "icon" };
 
 ProfileEntry::ProfileEntry() noexcept :
     ProfileEntry{ winrt::hstring{} }
@@ -46,6 +47,8 @@ Json::Value ProfileEntry::ToJson() const
         JsonUtils::SetValueForKey(json, ProfileKey, _Profile.Guid());
     }
 
+    JsonUtils::SetValueForKey(json, IconKey, _Icon);
+
     return json;
 }
 
@@ -54,6 +57,7 @@ winrt::com_ptr<NewTabMenuEntry> ProfileEntry::FromJson(const Json::Value& json)
     auto entry = winrt::make_self<ProfileEntry>();
 
     JsonUtils::GetValueForKey(json, ProfileKey, entry->_ProfileName);
+    JsonUtils::GetValueForKey(json, IconKey, entry->_Icon);
 
     return entry;
 }

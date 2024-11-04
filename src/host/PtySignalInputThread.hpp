@@ -75,8 +75,5 @@ namespace Microsoft::Console
         std::optional<ResizeWindowData> _earlyResize;
         std::optional<ShowHideData> _initialShowHide;
         ConhostInternalGetSet _api;
-
-    public:
-        std::optional<SetParentData> _earlyReparent;
     };
 }

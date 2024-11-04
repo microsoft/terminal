@@ -89,6 +89,8 @@ namespace Microsoft.Terminal.Settings.Model
 
         INHERITABLE_PROFILE_SETTING(Boolean, ReloadEnvironmentVariables);
         INHERITABLE_PROFILE_SETTING(Boolean, RainbowSuggestions);
-
+        INHERITABLE_PROFILE_SETTING(Boolean, ForceVTInput);
+        INHERITABLE_PROFILE_SETTING(Boolean, AllowVtChecksumReport);
+        INHERITABLE_PROFILE_SETTING(Boolean, AllowKeypadMode);
     }
 }
