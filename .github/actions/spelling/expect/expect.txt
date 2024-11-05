@@ -163,6 +163,7 @@ CBN
 cbt
 Ccc
 CCCBB
+CCCDDD
 cch
 CCHAR
 CCmd
@@ -365,6 +366,7 @@ dcommon
 dcompiler
 DComposition
 dde
+DDDCCC
 DDESHARE
 DDevice
 DEADCHAR
