@@ -193,6 +193,9 @@
   <data name="TabCloseSubMenu" xml:space="preserve">
     <value>Ćļôŝέ !</value>
   </data>
+  <data name="TabMoveSubMenu" xml:space="preserve">
+    <value>Μòνë ťäв !!</value>
+  </data>
   <data name="TabCloseAfter" xml:space="preserve">
     <value>Ċĺοşέ ţаъş ťό ŧђé яΐğђт !!! !!! </value>
   </data>
@@ -940,5 +943,11 @@
   </data>
   <data name="CloseSnippetsPaneButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Ćℓǿŝé ρдŉé !!!</value>
+  </data>
+  <data name="TabMoveLeft" xml:space="preserve">
+    <value>Μŏνê ĺэƒť !!!</value>
+  </data>
+  <data name="TabMoveRight" xml:space="preserve">
+    <value>Мóνε яίģнŧ !!!</value>
   </data>
 </root>
