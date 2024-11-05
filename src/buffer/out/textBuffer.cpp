@@ -2097,7 +2097,7 @@ std::tuple<til::CoordType, til::CoordType, bool> TextBuffer::_RowCopyHelper(cons
         const auto maxX = req.bufferCoordinates ? req.maxX : ScreenToBufferLineInclusive(til::point{ req.maxX, iRow }, lineRendition).x;
 
         rowBeg = minX;
-        rowEnd = maxX + 1; // +1 to get an exclusive end
+        rowEnd = maxX;
     }
     else
     {
@@ -3546,9 +3546,7 @@ std::wstring TextBuffer::_commandForRow(const til::CoordType rowOffset,
 
             if (markKind == MarkKind::Command)
             {
-                // GetText() has an exclusive end,
-                // add 1 to newX to get the correct range
-                commandBuilder += row.GetText(x, nextX + 1);
+                commandBuilder += row.GetText(x, nextX);
             }
             // advance to next run of text
             x = nextX;
