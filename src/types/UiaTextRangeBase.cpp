@@ -972,7 +972,7 @@ CATCH_RETURN();
 // Return Value:
 // - the text that the UiaTextRange encompasses
 #pragma warning(push)
-#pragma warning(disable : 26447) // compiler isn't filtering throws inside the try/catch
+#pragma warning(disable : 26440) // The function ... can be declared as noexcept.
 std::wstring UiaTextRangeBase::_getTextValue(til::CoordType maxLength) const
 {
     std::wstring textData{};
