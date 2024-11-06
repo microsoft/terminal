@@ -894,6 +894,10 @@
     <value>Color scheme</value>
     <comment>Header for a control to select the scheme (or set) of colors used in the session. This is selected from a list of options managed by the user.</comment>
   </data>
+  <data name="Profile_ColorScheme.HelpText" xml:space="preserve">
+    <value>Expand to override the foreground, background, and selection background.</value>
+    <comment>Help text for a control to select the scheme (or set) of colors used in the session. Directs the user to expand the control to access overrides for certain values in the color scheme.</comment>
+  </data>
   <data name="Profile_Commandline.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Command line</value>
     <comment>Name for a control to determine commandline executable (i.e. a .exe file) to run when a terminal session of this profile is launched.</comment>
@@ -1932,10 +1936,6 @@
   <data name="Profile_ProportionalFontFaces.Header" xml:space="preserve">
     <value>Non-monospace fonts:</value>
     <comment>This is a label that is followed by a list of proportional fonts.</comment>
-  </data>
-  <data name="Profile_ColorHeader.Text" xml:space="preserve">
-    <value>Color</value>
-    <comment>Header for a group of settings that control the color of the text.</comment>
   </data>
   <data name="Profile_TabColor.Header" xml:space="preserve">
     <value>Tab color</value>
