@@ -383,11 +383,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         if (!_folderTreeCache)
         {
-            _folderTreeCache = single_threaded_observable_vector<Editor::FolderTreeViewEntry>();
-
             // Add the root folder
             auto root = winrt::make<FolderTreeViewEntry>(nullptr);
-            _folderTreeCache.Append(root);
 
             for (const auto&& entry : _rootEntries)
             {
@@ -396,6 +393,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                     root.Children().Append(winrt::make<FolderTreeViewEntry>(entry.as<Editor::FolderEntryViewModel>()));
                 }
             }
+
+            std::vector<Editor::FolderTreeViewEntry> folderTreeCache;
+            folderTreeCache.emplace_back(std::move(root));
+            _folderTreeCache = single_threaded_observable_vector<Editor::FolderTreeViewEntry>(std::move(folderTreeCache));
+
             _NotifyChanges(L"FolderTree");
         }
     }
