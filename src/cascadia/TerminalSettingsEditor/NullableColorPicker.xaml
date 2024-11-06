@@ -112,9 +112,9 @@
                               IsAlphaEnabled="False"
                               IsAlphaSliderVisible="True"
                               IsAlphaTextInputVisible="True"
-                              IsColorChannelTextInputVisible="True"
+                              IsColorChannelTextInputVisible="False"
                               IsColorSliderVisible="False"
-                              IsHexInputVisible="True"
+                              IsHexInputVisible="False"
                               IsMoreButtonVisible="False"
                               Orientation="Horizontal" />
         </ContentDialog>
