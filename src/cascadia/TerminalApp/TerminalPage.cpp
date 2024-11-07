@@ -5071,14 +5071,24 @@ namespace winrt::TerminalApp::implementation
         };
 
         const auto focusedProfile = _GetFocusedTabImpl()->GetFocusedProfile();
-        auto separatorItem = AppBarSeparator{};
-        auto activeProfiles = _settings.ActiveProfiles();
-        auto activeProfileCount = gsl::narrow_cast<int>(activeProfiles.Size());
-        MUX::Controls::CommandBarFlyout splitPaneDownMenu{};
-        MUX::Controls::CommandBarFlyout splitPaneUpMenu{};
-        MUX::Controls::CommandBarFlyout splitPaneRightMenu{};
-        MUX::Controls::CommandBarFlyout splitPaneLeftMenu{};
+        const auto separatorDownItem = AppBarSeparator{};
+        const auto separatorUpItem = AppBarSeparator{};
+        const auto separatorRightItem = AppBarSeparator{};
+        const auto separatorLeftItem = AppBarSeparator{};
+        const auto activeProfiles = _settings.ActiveProfiles();
+        const auto activeProfileCount = gsl::narrow_cast<int>(activeProfiles.Size());
+        auto splitPaneDownMenu = MUX::Controls::CommandBarFlyout{};
+        auto splitPaneUpMenu = MUX::Controls::CommandBarFlyout{};
+        auto splitPaneRightMenu = MUX::Controls::CommandBarFlyout{};
+        auto splitPaneLeftMenu = MUX::Controls::CommandBarFlyout{};
+        auto splitPaneMenu = MUX::Controls::CommandBarFlyout{};
 
+        splitPaneDownMenu.Placement(WUX::Controls::Primitives::FlyoutPlacementMode::BottomEdgeAlignedLeft);
+        splitPaneUpMenu.Placement(WUX::Controls::Primitives::FlyoutPlacementMode::BottomEdgeAlignedLeft);
+        splitPaneRightMenu.Placement(WUX::Controls::Primitives::FlyoutPlacementMode::BottomEdgeAlignedLeft);
+        splitPaneLeftMenu.Placement(WUX::Controls::Primitives::FlyoutPlacementMode::BottomEdgeAlignedLeft);
+        splitPaneMenu.Placement(WUX::Controls::Primitives::FlyoutPlacementMode::BottomEdgeAlignedLeft);
+        
         // Wire up each item to the action that should be performed. By actually
         // connecting these to actions, we ensure the implementation is
         // consistent. This also leaves room for customizing this menu with
@@ -5092,15 +5102,15 @@ namespace winrt::TerminalApp::implementation
         makeItem(RS_(L"SplitPaneDuplicateText") + L" " + focusedProfile.Name(), focusedProfile.Icon(), ActionAndArgs{ ShortcutAction::SplitPane, SplitPaneArgs{ SplitType::Duplicate, SplitDirection::Left, .5, nullptr } }, splitPaneLeftMenu);
 
         // add menu separator
-        splitPaneDownMenu.SecondaryCommands().Append(separatorItem);
-        splitPaneUpMenu.SecondaryCommands().Append(separatorItem);
-        splitPaneRightMenu.SecondaryCommands().Append(separatorItem);
-        splitPaneLeftMenu.SecondaryCommands().Append(separatorItem);
+        splitPaneDownMenu.SecondaryCommands().Append(separatorDownItem);
+        splitPaneUpMenu.SecondaryCommands().Append(separatorUpItem);
+        splitPaneRightMenu.SecondaryCommands().Append(separatorRightItem);
+        splitPaneLeftMenu.SecondaryCommands().Append(separatorLeftItem);
 
         for (auto profileIndex = 0; profileIndex < activeProfileCount; profileIndex++)
         {
             const auto profile = activeProfiles.GetAt(profileIndex);
-            NewTerminalArgs args{};
+            auto args = NewTerminalArgs{};
             args.Profile(profile.Name());
             args.StartingDirectory(_evaluatePathForCwd(profile.EvaluatedStartingDirectory()));
             args.TabTitle(profile.TabTitle());
@@ -5112,7 +5122,6 @@ namespace winrt::TerminalApp::implementation
             makeItem(profile.Name(), profile.Icon(), ActionAndArgs{ ShortcutAction::SplitPane, SplitPaneArgs{ SplitType::Manual, SplitDirection::Left, .5, args } }, splitPaneLeftMenu);
         }
 
-        MUX::Controls::CommandBarFlyout splitPaneMenu{};
         makeMenuItem(RS_(L"SplitPaneDownText"), L"\xF246", splitPaneDownMenu, splitPaneMenu);
         makeMenuItem(RS_(L"SplitPaneRightText"), L"\xF246", splitPaneRightMenu, splitPaneMenu);
         makeMenuItem(RS_(L"SplitPaneUpText"), L"\xF246", splitPaneUpMenu, splitPaneMenu);
@@ -5122,7 +5131,8 @@ namespace winrt::TerminalApp::implementation
         // Only wire up "Close Pane" if there's multiple panes.
         if (_GetFocusedTabImpl()->GetLeafPaneCount() > 1)
         {
-            MUX::Controls::CommandBarFlyout swapPaneMenu{};
+            auto swapPaneMenu = MUX::Controls::CommandBarFlyout{};
+            swapPaneMenu.Placement(WUX::Controls::Primitives::FlyoutPlacementMode::BottomEdgeAlignedLeft);
             makeItem(RS_(L"SwapPaneDownText"), L"\xF1CB", ActionAndArgs{ ShortcutAction::SwapPane, SwapPaneArgs{ FocusDirection::Down } }, swapPaneMenu);
             makeItem(RS_(L"SwapPaneRightText"), L"\xF1CB", ActionAndArgs{ ShortcutAction::SwapPane, SwapPaneArgs{ FocusDirection::Right } }, swapPaneMenu);
             makeItem(RS_(L"SwapPaneUpText"), L"\xF1CB", ActionAndArgs{ ShortcutAction::SwapPane, SwapPaneArgs{ FocusDirection::Up } }, swapPaneMenu);
