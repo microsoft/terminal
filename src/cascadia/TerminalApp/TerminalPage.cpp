@@ -5086,10 +5086,17 @@ namespace winrt::TerminalApp::implementation
 
         const auto focusedProfile = _GetFocusedTabImpl()->GetFocusedProfile();
 
-        makeItem(RS_(L"SplitPaneDuplicateText"), focusedProfile.Icon(), ActionAndArgs{ ShortcutAction::SplitPane, SplitPaneArgs{ SplitType::Duplicate, SplitDirection::Down, .5, nullptr } }, splitPaneDownMenu);
-        makeItem(RS_(L"SplitPaneDuplicateText"), focusedProfile.Icon(), ActionAndArgs{ ShortcutAction::SplitPane, SplitPaneArgs{ SplitType::Duplicate, SplitDirection::Up, .5, nullptr } }, splitPaneUpMenu);
-        makeItem(RS_(L"SplitPaneDuplicateText"), focusedProfile.Icon(), ActionAndArgs{ ShortcutAction::SplitPane, SplitPaneArgs{ SplitType::Duplicate, SplitDirection::Right, .5, nullptr } }, splitPaneRightMenu);
-        makeItem(RS_(L"SplitPaneDuplicateText"), focusedProfile.Icon(), ActionAndArgs{ ShortcutAction::SplitPane, SplitPaneArgs{ SplitType::Duplicate, SplitDirection::Left, .5, nullptr } }, splitPaneLeftMenu);
+        makeItem(RS_(L"SplitPaneDuplicateText") + L" " + focusedProfile.Name(), focusedProfile.Icon(), ActionAndArgs{ ShortcutAction::SplitPane, SplitPaneArgs{ SplitType::Duplicate, SplitDirection::Down, .5, nullptr } }, splitPaneDownMenu);
+        makeItem(RS_(L"SplitPaneDuplicateText") + L" " + focusedProfile.Name(), focusedProfile.Icon(), ActionAndArgs{ ShortcutAction::SplitPane, SplitPaneArgs{ SplitType::Duplicate, SplitDirection::Up, .5, nullptr } }, splitPaneUpMenu);
+        makeItem(RS_(L"SplitPaneDuplicateText") + L" " + focusedProfile.Name(), focusedProfile.Icon(), ActionAndArgs{ ShortcutAction::SplitPane, SplitPaneArgs{ SplitType::Duplicate, SplitDirection::Right, .5, nullptr } }, splitPaneRightMenu);
+        makeItem(RS_(L"SplitPaneDuplicateText") + L" " + focusedProfile.Name(), focusedProfile.Icon(), ActionAndArgs{ ShortcutAction::SplitPane, SplitPaneArgs{ SplitType::Duplicate, SplitDirection::Left, .5, nullptr } }, splitPaneLeftMenu);
+
+        // add menu separator
+        auto separatorItem = AppBarSeparator{};
+        splitPaneDownMenu.SecondaryCommands().Append(separatorItem);
+        splitPaneUpMenu.SecondaryCommands().Append(separatorItem);
+        splitPaneRightMenu.SecondaryCommands().Append(separatorItem);
+        splitPaneLeftMenu.SecondaryCommands().Append(separatorItem);
 
         for (auto profileIndex = 0; profileIndex < activeProfileCount; profileIndex++)
         {
