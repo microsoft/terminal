@@ -6,6 +6,12 @@
 #include "../../types/inc/Utils.hpp"
 #include "JsonUtils.h"
 #include "KeyChordSerialization.h"
+#include "FolderEntry.h"
+#include "ProfileEntry.h"
+#include "SeparatorEntry.h"
+#include "RemainingProfilesEntry.h"
+#include "MatchProfilesEntry.h"
+#include "ActionEntry.h"
 
 #include "GlobalAppSettings.g.cpp"
 
@@ -82,6 +88,14 @@ winrt::com_ptr<GlobalAppSettings> GlobalAppSettings::Copy() const
         {
             const auto themeImpl{ winrt::get_self<implementation::Theme>(kv.Value()) };
             globals->_themes.Insert(kv.Key(), *themeImpl->Copy());
+        }
+    }
+    if (_NewTabMenu)
+    {
+        globals->_NewTabMenu = winrt::single_threaded_vector<Model::NewTabMenuEntry>();
+        for (const auto& entry : *_NewTabMenu)
+        {
+            globals->_NewTabMenu->Append(get_self<NewTabMenuEntry>(entry)->Copy());
         }
     }
 
