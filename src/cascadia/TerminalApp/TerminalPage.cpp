@@ -5093,9 +5093,8 @@ namespace winrt::TerminalApp::implementation
         // connecting these to actions, we ensure the implementation is
         // consistent. This also leaves room for customizing this menu with
         // actions in the future.
-
         makeItem(RS_(L"DuplicateTabText"), L"\xF5ED", ActionAndArgs{ ShortcutAction::DuplicateTab, nullptr }, menu);
-
+        
         makeItem(RS_(L"SplitPaneDuplicateText") + L" " + focusedProfile.Name(), focusedProfile.Icon(), ActionAndArgs{ ShortcutAction::SplitPane, SplitPaneArgs{ SplitType::Duplicate, SplitDirection::Down, .5, nullptr } }, splitPaneDownMenu);
         makeItem(RS_(L"SplitPaneDuplicateText") + L" " + focusedProfile.Name(), focusedProfile.Icon(), ActionAndArgs{ ShortcutAction::SplitPane, SplitPaneArgs{ SplitType::Duplicate, SplitDirection::Up, .5, nullptr } }, splitPaneUpMenu);
         makeItem(RS_(L"SplitPaneDuplicateText") + L" " + focusedProfile.Name(), focusedProfile.Icon(), ActionAndArgs{ ShortcutAction::SplitPane, SplitPaneArgs{ SplitType::Duplicate, SplitDirection::Right, .5, nullptr } }, splitPaneRightMenu);
