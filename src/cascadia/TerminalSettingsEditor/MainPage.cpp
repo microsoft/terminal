@@ -705,6 +705,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     // can have mica too.
     void MainPage::_UpdateBackgroundForMica()
     {
+        // If we're in high contrast mode, don't override the theme.
+        if (Windows::UI::ViewManagement::AccessibilitySettings accessibilitySettings; accessibilitySettings.HighContrast())
+        {
+            return;
+        }
+
         bool isMicaAvailable = false;
 
         // Check to see if our hosting window supports Mica at all. We'll check
