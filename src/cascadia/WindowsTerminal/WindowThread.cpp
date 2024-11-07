@@ -181,19 +181,30 @@ static bool _messageIsAltSpaceKeypress(const MSG& message)
 int WindowThread::_messagePump()
 {
     MSG message{};
+    BOOL exit = FALSE;
 
-    for (; message.message != AppHost::WM_REFRIGERATE;)
+    for (;exit == FALSE;)
     {
-        try
+        __try
         {
-            while (GetMessageW(&message, nullptr, 0, 0))
+            // while (GetMessageW(&message, nullptr, 0, 0))
+            for (;;)
             {
+                BOOL result = GetMessageW(&message, nullptr, 0, 0);
                 // We're using a single window message (WM_REFRIGERATE) to indicate both
                 // state transitions. In this case, the window is actually being refrigerated.
                 // This will break us out of our main message loop we'll eventually start
                 // the loop in WindowThread::KeepWarm to await a call to Microwave().
-                if (message.message == AppHost::WM_REFRIGERATE)
+                if (message.message == AppHost::WM_REFRIGERATE || result == 0)
                 {
+                    exit = TRUE;
+                    break;
+                }
+
+                if (result < 0)
+                {
+                    LOG_LAST_ERROR();
+                    exit = TRUE;
                     break;
                 }
 
@@ -250,7 +261,11 @@ int WindowThread::_messagePump()
                 DispatchMessage(&message);
             }
         }
-        CATCH_LOG()
+        __except (EXCEPTION_CONTINUE_EXECUTION) // Catch structured exceptions
+        {
+            LOG_CAUGHT_EXCEPTION();
+        }
+        //CATCH_LOG()
     }
 
     return 0;
