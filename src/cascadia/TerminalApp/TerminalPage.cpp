@@ -5070,6 +5070,8 @@ namespace winrt::TerminalApp::implementation
             targetMenu.SecondaryCommands().Append(button);
         };
 
+        const auto focusedProfile = _GetFocusedTabImpl()->GetFocusedProfile();
+        auto separatorItem = AppBarSeparator{};
         auto activeProfiles = _settings.ActiveProfiles();
         auto activeProfileCount = gsl::narrow_cast<int>(activeProfiles.Size());
         MUX::Controls::CommandBarFlyout splitPaneDownMenu{};
@@ -5084,15 +5086,12 @@ namespace winrt::TerminalApp::implementation
 
         makeItem(RS_(L"DuplicateTabText"), L"\xF5ED", ActionAndArgs{ ShortcutAction::DuplicateTab, nullptr }, menu);
 
-        const auto focusedProfile = _GetFocusedTabImpl()->GetFocusedProfile();
-
         makeItem(RS_(L"SplitPaneDuplicateText") + L" " + focusedProfile.Name(), focusedProfile.Icon(), ActionAndArgs{ ShortcutAction::SplitPane, SplitPaneArgs{ SplitType::Duplicate, SplitDirection::Down, .5, nullptr } }, splitPaneDownMenu);
         makeItem(RS_(L"SplitPaneDuplicateText") + L" " + focusedProfile.Name(), focusedProfile.Icon(), ActionAndArgs{ ShortcutAction::SplitPane, SplitPaneArgs{ SplitType::Duplicate, SplitDirection::Up, .5, nullptr } }, splitPaneUpMenu);
         makeItem(RS_(L"SplitPaneDuplicateText") + L" " + focusedProfile.Name(), focusedProfile.Icon(), ActionAndArgs{ ShortcutAction::SplitPane, SplitPaneArgs{ SplitType::Duplicate, SplitDirection::Right, .5, nullptr } }, splitPaneRightMenu);
         makeItem(RS_(L"SplitPaneDuplicateText") + L" " + focusedProfile.Name(), focusedProfile.Icon(), ActionAndArgs{ ShortcutAction::SplitPane, SplitPaneArgs{ SplitType::Duplicate, SplitDirection::Left, .5, nullptr } }, splitPaneLeftMenu);
 
         // add menu separator
-        auto separatorItem = AppBarSeparator{};
         splitPaneDownMenu.SecondaryCommands().Append(separatorItem);
         splitPaneUpMenu.SecondaryCommands().Append(separatorItem);
         splitPaneRightMenu.SecondaryCommands().Append(separatorItem);
