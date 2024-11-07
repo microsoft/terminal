@@ -43,6 +43,9 @@ Pane::Pane(IPaneContent content, const bool lastFocused) :
         _lostFocusRevoker = control.LostFocus(winrt::auto_revoke, { this, &Pane::_ContentLostFocusHandler });
     }
 
+    _manipulationDeltaRevoker = _root.ManipulationDelta(winrt::auto_revoke, { this, &Pane::_ManipulationDeltaHandler });
+    _manipulationStartedRevoker = _root.ManipulationStarted(winrt::auto_revoke, { this, &Pane::_ManipulationStartedHandler });
+
     // When our border is tapped, make sure to transfer focus to our control.
     // LOAD-BEARING: This will NOT work if the border's BorderBrush is set to
     // Colors::Transparent! The border won't get Tapped events, and they'll fall
@@ -72,6 +75,8 @@ Pane::Pane(std::shared_ptr<Pane> first,
 
     _root.Children().Append(_borderFirst);
     _root.Children().Append(_borderSecond);
+
+    _manipulationDeltaRevoker = _root.ManipulationDelta(winrt::auto_revoke, { this, &Pane::_ManipulationDeltaHandler });
 
     _ApplySplitDefinitions();
 
@@ -243,14 +248,13 @@ Pane::BuildStartupState Pane::BuildStartupActions(uint32_t currentId, uint32_t n
 //   decreasing the size of our first child.
 // Return Value:
 // - false if we couldn't resize this pane in the given direction, else true.
-bool Pane::_Resize(const ResizeDirection& direction)
+bool Pane::_Resize(const ResizeDirection& direction, float amount)
 {
     if (!DirectionMatchesSplit(direction, _splitState))
     {
         return false;
     }
 
-    auto amount = .05f;
     if (direction == ResizeDirection::Right || direction == ResizeDirection::Down)
     {
         amount = -amount;
@@ -284,7 +288,7 @@ bool Pane::_Resize(const ResizeDirection& direction)
 // - direction: The direction to move the separator in.
 // Return Value:
 // - true if we or a child handled this resize request.
-bool Pane::ResizePane(const ResizeDirection& direction)
+bool Pane::ResizePane(const ResizeDirection& direction, float amount)
 {
     // If we're a leaf, do nothing. We can't possibly have a descendant with a
     // separator the correct direction.
@@ -301,7 +305,7 @@ bool Pane::ResizePane(const ResizeDirection& direction)
     const auto secondIsFocused = _secondChild->_lastActive;
     if (firstIsFocused || secondIsFocused)
     {
-        return _Resize(direction);
+        return _Resize(direction, amount);
     }
 
     // If neither of our children were the focused pane, then recurse into
@@ -315,15 +319,198 @@ bool Pane::ResizePane(const ResizeDirection& direction)
     // either.
     if ((!_firstChild->_IsLeaf()) && _firstChild->_HasFocusedChild())
     {
-        return _firstChild->ResizePane(direction) || _Resize(direction);
+        return _firstChild->ResizePane(direction, amount) || _Resize(direction, amount);
     }
 
     if ((!_secondChild->_IsLeaf()) && _secondChild->_HasFocusedChild())
     {
-        return _secondChild->ResizePane(direction) || _Resize(direction);
+        return _secondChild->ResizePane(direction, amount) || _Resize(direction, amount);
     }
 
     return false;
+}
+
+// Handler for the _root's ManipulationStarted event. We use this to check if a
+// manipulation (read: drag) started inside our content. If it did, we _don't_
+// want to do our normal pane dragging.
+//
+// Consider the case that the TermControl might be selecting text, and the user
+// drags the mouse over the pane border. We don't want that to start moving the
+// border!
+void Pane::_ManipulationStartedHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+                                       const winrt::Windows::UI::Xaml::Input::ManipulationStartedRoutedEventArgs& args)
+{
+    // This is added to each _root. But it also bubbles, so only leaves should actually try to handle this.
+    if (args.Handled())
+    {
+        return;
+    }
+    args.Handled(true);
+
+    assert(_IsLeaf());
+
+    const auto contentSize = _content.GetRoot().ActualSize();
+    auto transformCurrentPos = args.Position();
+    auto transformOrigin = transformCurrentPos;
+
+    const auto transform_contentFromOurRoot = _root.TransformToVisual(_content.GetRoot());
+    const auto transformInControlSpace = transform_contentFromOurRoot.TransformPoint(transformOrigin);
+
+    // If we clicked on the control. bail, and don't allow any manipulations
+    // for this series of events.
+    _shouldManipulate = !((transformInControlSpace.X >= 0 && transformInControlSpace.X < contentSize.x) &&
+                          (transformInControlSpace.Y >= 0 && transformInControlSpace.Y < contentSize.y));
+}
+
+// Handler for the _root's ManipulationDelta event. This is the event raised
+// when a user clicks and drags somewhere inside the pane. We're going to use
+// this to determine if the user clicked on one of our borders. If they did,
+// we're going to need to ask our parent pane (or other ancestors) to resize
+// their split.
+//
+// Recall that a leaf itself is responsible for having the right borders, but it
+// is the parent of the leaf that actually controls how big a split is.
+//
+// When we do want to be resized, we'll pass the delta from this event upwards
+// via ManipulationRequested, which will be handled in
+// Pane::_handleOrBubbleManipulation.
+void Pane::_ManipulationDeltaHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+                                     const winrt::Windows::UI::Xaml::Input::ManipulationDeltaRoutedEventArgs& args)
+{
+    // sender is ORIGINALLY the root Grid of a leaf, and the leaf may or may not
+    // have a border.
+    if (args.Handled())
+    {
+        return;
+    }
+    if (!_shouldManipulate)
+    {
+        // Using our stored _shouldManipulate set up in
+        // _ManipulationStartedHandler, bail if the manipulation didn't start
+        // _on the border_.
+        return;
+    }
+
+    assert(_IsLeaf());
+
+    const auto delta = args.Delta().Translation;
+    const auto transformOrigin = args.Position();
+
+    const auto contentSize = _content.GetRoot().ActualSize();
+
+    const auto transform_contentFromOurRoot = _root.TransformToVisual(_content.GetRoot());
+    // This is the position of the drag relative to the bounds of our content.
+    const auto transformInControlSpace = transform_contentFromOurRoot.TransformPoint(transformOrigin);
+
+    // Did we click somewhere in the bounds of our content?
+    if ((transformInControlSpace.X >= 0 && transformInControlSpace.X < contentSize.x) &&
+        (transformInControlSpace.Y >= 0 && transformInControlSpace.Y < contentSize.y))
+    {
+        // We did! Bail.
+        return;
+    }
+
+    // Now, we know we clicked somewhere outside the bounds of our content. Set
+    // border flags based on the side that was clicked on.
+    Borders clicked = Borders::None;
+    clicked |= (transformInControlSpace.X < 0) ? Borders::Left : Borders::None;
+    clicked |= (transformInControlSpace.Y < 0) ? Borders::Top : Borders::None;
+    clicked |= (transformInControlSpace.X > contentSize.x) ? Borders::Right : Borders::None;
+    clicked |= (transformInControlSpace.Y > contentSize.y) ? Borders::Bottom : Borders::None;
+
+    // Ask our parent to resize their split.
+    ManipulationRequested.raise(shared_from_this(), delta, clicked);
+}
+
+// Handler for our child's own ManipulationRequested event. They will pass to us
+// (their immediate parent) the delta and the side that was clicked on.
+// * If we control that border, then we'll handle the resize ourself in _handleManipulation.
+// * If not, then we'll ask our own parent to try and resize that same border.
+void Pane::_handleOrBubbleManipulation(std::shared_ptr<Pane> sender,
+                                       const winrt::Windows::Foundation::Point delta,
+                                       Borders side)
+{
+    if (side == Borders::None || _splitState == SplitState::None)
+    {
+        return;
+    }
+
+    const bool isFirstChild = sender == _firstChild;
+    // We want to handle this drag in the following cases
+    // * In a vertical split: if we're dragging the right of the first pane or the left of the second
+    // * In a horizontal split: if we're dragging the bottom of the first pane or the top of the second
+    const auto sideMatched = (_splitState == SplitState::Vertical)   ? (isFirstChild && WI_IsFlagSet(side, Borders::Right)) || (!isFirstChild && WI_IsFlagSet(side, Borders::Left)) :
+                             (_splitState == SplitState::Horizontal) ? (isFirstChild && WI_IsFlagSet(side, Borders::Bottom)) || (!isFirstChild && WI_IsFlagSet(side, Borders::Top)) :
+                                                                       false;
+
+    if (sideMatched)
+    {
+        _handleManipulation(delta);
+    }
+    else
+    {
+        // Bubble, with us as the new sender.
+        ManipulationRequested.raise(shared_from_this(), delta, side);
+    }
+}
+
+// Actually handle resizing our split in response to a drag event. If we're
+// being called, then we know that the delta that's passed to us should be
+// applied to our own split.  The delta that's passed in here is in PIXELS, not
+// DIPs.
+void Pane::_handleManipulation(const winrt::Windows::Foundation::Point delta)
+{
+    const auto scaleFactor = DisplayInformation::GetForCurrentView().RawPixelsPerViewPixel();
+
+    const auto weAreVertical = _splitState == SplitState::Vertical;
+    const winrt::Windows::Foundation::Point translationForUs = (weAreVertical) ? Point{ delta.X, 0 } : Point{ 0, delta.Y };
+
+    // Decide on direction based on delta
+    ResizeDirection dir = ResizeDirection::None;
+    if (_splitState == SplitState::Vertical)
+    {
+        if (translationForUs.X < 0)
+        {
+            dir = ResizeDirection::Left;
+        }
+        else if (translationForUs.X > 0)
+        {
+            dir = ResizeDirection::Right;
+        }
+    }
+    else if (_splitState == SplitState::Horizontal)
+    {
+        if (translationForUs.Y < 0)
+        {
+            dir = ResizeDirection::Up;
+        }
+        else if (translationForUs.Y > 0)
+        {
+            dir = ResizeDirection::Down;
+        }
+    }
+
+    // Resize in the given direction
+    if (dir != ResizeDirection::None)
+    {
+        // turn delta into a percentage
+        base::ClampedNumeric<float> amount;
+        base::ClampedNumeric<float> actualDimension;
+        if (dir == ResizeDirection::Left || dir == ResizeDirection::Right)
+        {
+            amount = translationForUs.X;
+            actualDimension = base::ClampedNumeric<float>(_root.ActualWidth());
+        }
+        else if (dir == ResizeDirection::Up || dir == ResizeDirection::Down)
+        {
+            amount = translationForUs.Y;
+            actualDimension = base::ClampedNumeric<float>(_root.ActualHeight());
+        }
+        const auto scaledAmount = amount * scaleFactor;
+        const auto percentDelta = scaledAmount / actualDimension;
+
+        _Resize(dir, percentDelta.Abs());
+    }
 }
 
 // Method Description:
@@ -1864,6 +2051,9 @@ Borders Pane::_GetCommonBorders()
 // - <none>
 void Pane::_ApplySplitDefinitions()
 {
+    // Remove our old handler, if we had one.
+    _manipulationDeltaRevoker.revoke();
+
     if (_splitState == SplitState::Vertical)
     {
         Controls::Grid::SetColumn(_borderFirst, 0);
@@ -1888,6 +2078,17 @@ void Pane::_ApplySplitDefinitions()
         _firstChild->_ApplySplitDefinitions();
         _secondChild->_ApplySplitDefinitions();
     }
+    else
+    {
+        assert(_IsLeaf());
+        // If we're a leaf, then add a ManipulationDelta handler.
+        _manipulationDeltaRevoker = _root.ManipulationDelta(winrt::auto_revoke, { this, &Pane::_ManipulationDeltaHandler });
+    }
+
+    _root.ManipulationMode(Xaml::Input::ManipulationModes::TranslateX |
+                           Xaml::Input::ManipulationModes::TranslateRailsX |
+                           Xaml::Input::ManipulationModes::TranslateY |
+                           Xaml::Input::ManipulationModes::TranslateRailsY);
     _UpdateBorders();
 }
 
@@ -2271,6 +2472,9 @@ std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::_Split(SplitDirect
     // Create a new pane from ourself
     if (!_IsLeaf())
     {
+        _firstChild->ManipulationRequested(_firstManipulatedToken);
+        _secondChild->ManipulationRequested(_secondManipulatedToken);
+
         // Since we are a parent we don't have borders normally,
         // so set them temporarily for when we update our split definition.
         _borders = _GetCommonBorders();
@@ -2307,6 +2511,9 @@ std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::_Split(SplitDirect
     _root.Children().Append(_borderSecond);
 
     _ApplySplitDefinitions();
+
+    _firstManipulatedToken = _firstChild->ManipulationRequested({ this, &Pane::_handleOrBubbleManipulation });
+    _secondManipulatedToken = _secondChild->ManipulationRequested({ this, &Pane::_handleOrBubbleManipulation });
 
     // Register event handlers on our children to handle their Close events
     _SetupChildCloseHandlers();
