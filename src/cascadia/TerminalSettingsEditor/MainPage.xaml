@@ -148,6 +148,13 @@
                 </muxc:NavigationViewItem.Icon>
             </muxc:NavigationViewItem>
 
+            <muxc:NavigationViewItem x:Uid="Nav_NewTabMenu"
+                                     Tag="NewTabMenu_Nav">
+                <muxc:NavigationViewItem.Icon>
+                    <FontIcon Glyph="&#xE71d;" />
+                </muxc:NavigationViewItem.Icon>
+            </muxc:NavigationViewItem>
+
             <muxc:NavigationViewItemHeader x:Uid="Nav_Profiles" />
 
             <muxc:NavigationViewItem x:Name="BaseLayerMenuItem"
