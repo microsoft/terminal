@@ -189,6 +189,9 @@
   <data name="TabCloseSubMenu" xml:space="preserve">
     <value>Fechar</value>
   </data>
+  <data name="TabMoveSubMenu" xml:space="preserve">
+    <value>Mover guia</value>
+  </data>
   <data name="TabCloseAfter" xml:space="preserve">
     <value>Fechar guias à direita</value>
   </data>
@@ -932,5 +935,11 @@
   </data>
   <data name="CloseSnippetsPaneButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Fechar o painel</value>
+  </data>
+  <data name="TabMoveLeft" xml:space="preserve">
+    <value>Mover para a esquerda</value>
+  </data>
+  <data name="TabMoveRight" xml:space="preserve">
+    <value>Mover para a direita</value>
   </data>
 </root>
