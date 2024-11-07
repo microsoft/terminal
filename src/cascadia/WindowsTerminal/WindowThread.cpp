@@ -182,69 +182,77 @@ int WindowThread::_messagePump()
 {
     MSG message{};
 
-    while (GetMessageW(&message, nullptr, 0, 0))
+    for (; message.message != AppHost::WM_REFRIGERATE;)
     {
-        // We're using a single window message (WM_REFRIGERATE) to indicate both
-        // state transitions. In this case, the window is actually being refrigerated.
-        // This will break us out of our main message loop we'll eventually start
-        // the loop in WindowThread::KeepWarm to await a call to Microwave().
-        if (message.message == AppHost::WM_REFRIGERATE)
+        try
         {
-            break;
-        }
-
-        if (!_loggedInteraction && (message.message == WM_KEYDOWN || message.message == WM_SYSKEYDOWN))
-        {
-            TraceLoggingWrite(
-                g_hWindowsTerminalProvider,
-                "SessionBecameInteractive",
-                TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-                TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
-            _loggedInteraction = true;
-        }
-
-        // GH#638 (Pressing F7 brings up both the history AND a caret browsing message)
-        // The Xaml input stack doesn't allow an application to suppress the "caret browsing"
-        // dialog experience triggered when you press F7. Official recommendation from the Xaml
-        // team is to catch F7 before we hand it off.
-        // AppLogic contains an ad-hoc implementation of event bubbling for a runtime classes
-        // implementing a custom IF7Listener interface.
-        // If the recipient of IF7Listener::OnF7Pressed suggests that the F7 press has, in fact,
-        // been handled we can discard the message before we even translate it.
-        if (_messageIsF7Keypress(message))
-        {
-            if (_host->OnDirectKeyEvent(VK_F7, LOBYTE(HIWORD(message.lParam)), true))
+            while (GetMessageW(&message, nullptr, 0, 0))
             {
-                // The application consumed the F7. Don't let Xaml get it.
-                continue;
+                // We're using a single window message (WM_REFRIGERATE) to indicate both
+                // state transitions. In this case, the window is actually being refrigerated.
+                // This will break us out of our main message loop we'll eventually start
+                // the loop in WindowThread::KeepWarm to await a call to Microwave().
+                if (message.message == AppHost::WM_REFRIGERATE)
+                {
+                    break;
+                }
+
+                if (!_loggedInteraction && (message.message == WM_KEYDOWN || message.message == WM_SYSKEYDOWN))
+                {
+                    TraceLoggingWrite(
+                        g_hWindowsTerminalProvider,
+                        "SessionBecameInteractive",
+                        TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                        TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
+                    _loggedInteraction = true;
+                }
+
+                // GH#638 (Pressing F7 brings up both the history AND a caret browsing message)
+                // The Xaml input stack doesn't allow an application to suppress the "caret browsing"
+                // dialog experience triggered when you press F7. Official recommendation from the Xaml
+                // team is to catch F7 before we hand it off.
+                // AppLogic contains an ad-hoc implementation of event bubbling for a runtime classes
+                // implementing a custom IF7Listener interface.
+                // If the recipient of IF7Listener::OnF7Pressed suggests that the F7 press has, in fact,
+                // been handled we can discard the message before we even translate it.
+                if (_messageIsF7Keypress(message))
+                {
+                    if (_host->OnDirectKeyEvent(VK_F7, LOBYTE(HIWORD(message.lParam)), true))
+                    {
+                        // The application consumed the F7. Don't let Xaml get it.
+                        continue;
+                    }
+                }
+
+                // GH#6421 - System XAML will never send an Alt KeyUp event. So, similar
+                // to how we'll steal the F7 KeyDown above, we'll steal the Alt KeyUp
+                // here, and plumb it through.
+                if (_messageIsAltKeyup(message))
+                {
+                    // Let's pass <Alt> to the application
+                    if (_host->OnDirectKeyEvent(VK_MENU, LOBYTE(HIWORD(message.lParam)), false))
+                    {
+                        // The application consumed the Alt. Don't let Xaml get it.
+                        continue;
+                    }
+                }
+
+                // GH#7125 = System XAML will show a system dialog on Alt Space. We want to
+                // explicitly prevent that because we handle that ourselves. So similar to
+                // above, we steal the event and hand it off to the host.
+                if (_messageIsAltSpaceKeypress(message))
+                {
+                    _host->OnDirectKeyEvent(VK_SPACE, LOBYTE(HIWORD(message.lParam)), true);
+                    continue;
+                }
+
+                TranslateMessage(&message);
+                DispatchMessage(&message);
             }
         }
-
-        // GH#6421 - System XAML will never send an Alt KeyUp event. So, similar
-        // to how we'll steal the F7 KeyDown above, we'll steal the Alt KeyUp
-        // here, and plumb it through.
-        if (_messageIsAltKeyup(message))
-        {
-            // Let's pass <Alt> to the application
-            if (_host->OnDirectKeyEvent(VK_MENU, LOBYTE(HIWORD(message.lParam)), false))
-            {
-                // The application consumed the Alt. Don't let Xaml get it.
-                continue;
-            }
-        }
-
-        // GH#7125 = System XAML will show a system dialog on Alt Space. We want to
-        // explicitly prevent that because we handle that ourselves. So similar to
-        // above, we steal the event and hand it off to the host.
-        if (_messageIsAltSpaceKeypress(message))
-        {
-            _host->OnDirectKeyEvent(VK_SPACE, LOBYTE(HIWORD(message.lParam)), true);
-            continue;
-        }
-
-        TranslateMessage(&message);
-        DispatchMessage(&message);
+        CATCH_LOG()
     }
+
     return 0;
 }
 
