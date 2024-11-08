@@ -1218,9 +1218,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         // clamp the converted position to be within the viewport bounds
-        // x: allow range of [-1, RightExclusive].
+        // x: allow range of [0, RightExclusive]
+        // GH #18106: right exclusive needed for selection to support exclusive end
         til::point terminalPosition{
-            std::clamp(position.x, -1, _terminal->GetViewport().Width()),
+            std::clamp(position.x, 0, _terminal->GetViewport().Width()),
             std::clamp(position.y, 0, _terminal->GetViewport().Height() - 1)
         };
 
