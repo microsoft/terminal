@@ -5128,10 +5128,38 @@ namespace winrt::TerminalApp::implementation
         if (_GetFocusedTabImpl()->GetLeafPaneCount() > 1)
         {
             MUX::Controls::CommandBarFlyout swapPaneMenu{};
-            makeItem(RS_(L"SwapPaneDownText"), L"\xF1CB", ActionAndArgs{ ShortcutAction::SwapPane, SwapPaneArgs{ FocusDirection::Down } }, swapPaneMenu);
-            makeItem(RS_(L"SwapPaneRightText"), L"\xF1CB", ActionAndArgs{ ShortcutAction::SwapPane, SwapPaneArgs{ FocusDirection::Right } }, swapPaneMenu);
-            makeItem(RS_(L"SwapPaneUpText"), L"\xF1CB", ActionAndArgs{ ShortcutAction::SwapPane, SwapPaneArgs{ FocusDirection::Up } }, swapPaneMenu);
-            makeItem(RS_(L"SwapPaneLeftText"), L"\xF1CB", ActionAndArgs{ ShortcutAction::SwapPane, SwapPaneArgs{ FocusDirection::Left } }, swapPaneMenu);
+            const auto rootPane = _GetFocusedTabImpl()->GetRootPane();
+            const auto mruPanes = _GetFocusedTabImpl()->GetMruPanes();
+            auto activePane = _GetFocusedTabImpl()->GetActivePane();
+            rootPane->WalkTree([&](auto p) {
+                if (const auto& c{ p->GetTerminalControl() })
+                {
+                    if (c == control)
+                    {
+                        activePane = p;
+                    }
+                }
+            });
+
+            if (auto neighbor = rootPane->NavigateDirection(activePane, FocusDirection::Down, mruPanes))
+            {
+                makeItem(RS_(L"SwapPaneDownText"), neighbor->GetProfile().Icon(), ActionAndArgs{ ShortcutAction::SwapPane, SwapPaneArgs{ FocusDirection::Down } }, swapPaneMenu);
+            }
+
+            if (auto neighbor = rootPane->NavigateDirection(activePane, FocusDirection::Right, mruPanes))
+            {
+                makeItem(RS_(L"SwapPaneRightText"), neighbor->GetProfile().Icon(), ActionAndArgs{ ShortcutAction::SwapPane, SwapPaneArgs{ FocusDirection::Right } }, swapPaneMenu);
+            }
+
+            if (auto neighbor = rootPane->NavigateDirection(activePane, FocusDirection::Up, mruPanes))
+            {
+                makeItem(RS_(L"SwapPaneUpText"), neighbor->GetProfile().Icon(), ActionAndArgs{ ShortcutAction::SwapPane, SwapPaneArgs{ FocusDirection::Up } }, swapPaneMenu);
+            }
+
+            if (auto neighbor = rootPane->NavigateDirection(activePane, FocusDirection::Left, mruPanes))
+            {
+                makeItem(RS_(L"SwapPaneLeftText"), neighbor->GetProfile().Icon(), ActionAndArgs{ ShortcutAction::SwapPane, SwapPaneArgs{ FocusDirection::Left } }, swapPaneMenu);
+            }
 
             makeMenuItem(RS_(L"SwapPaneText"), L"\xF1CB", swapPaneMenu, menu);
 
