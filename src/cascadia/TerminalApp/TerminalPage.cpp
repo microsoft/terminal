@@ -5084,6 +5084,11 @@ namespace winrt::TerminalApp::implementation
         // consistent. This also leaves room for customizing this menu with
         // actions in the future.
 
+        if (!withSelection)
+        {
+            makeItem(RS_(L"FindText"), L"\xF78B", ActionAndArgs{ ShortcutAction::Find, nullptr }, menu);
+        }
+
         makeItem(RS_(L"DuplicateTabText"), L"\xF5ED", ActionAndArgs{ ShortcutAction::DuplicateTab, nullptr }, menu);
 
         makeItem(RS_(L"SplitPaneDuplicateText") + L" " + focusedProfile.Name(), focusedProfile.Icon(), ActionAndArgs{ ShortcutAction::SplitPane, SplitPaneArgs{ SplitType::Duplicate, SplitDirection::Down, .5, nullptr } }, splitPaneDownMenu);
