@@ -4039,7 +4039,7 @@ namespace winrt::TerminalApp::implementation
     // Arguments:
     // - <none>
     // Return Value:
-    // - true if the tab row should be visibile in full screen state
+    // - true if the tab row should be visible in full screen state
     bool TerminalPage::ShowTabsFullscreen() const
     {
         return _showTabsFullscreen;
@@ -4047,7 +4047,7 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - Updates the the visibility of the tab row when in fullscreen state and
-    //   raises the ShowTabsFullscreenChanged event
+    //   raises the ShowTabsFullscreenChanged event.
     void TerminalPage::SetShowTabsFullscreen(bool newShowTabsFullscreen)
     {
         if (_showTabsFullscreen == newShowTabsFullscreen)
