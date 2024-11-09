@@ -4046,7 +4046,7 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Updates the the visibility of the tab row when in fullscreen state and
+    // - Updates the visibility of the tab row when in fullscreen state and
     //   raises the ShowTabsFullscreenChanged event.
     void TerminalPage::SetShowTabsFullscreen(bool newShowTabsFullscreen)
     {
