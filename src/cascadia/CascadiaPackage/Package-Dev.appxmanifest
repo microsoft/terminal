@@ -19,8 +19,8 @@
 
   <Identity
     Name="WindowsTerminalDev"
-    Publisher="CN=Microsoft Corporation, O=Microsoft Corporation, L=Redmond, S=Washington, C=US"
-    Version="0.0.1.0" />
+    Publisher="CN=Dm17tryK"
+    Version="1.23.3101.1" />
 
   <Properties>
     <DisplayName>ms-resource:AppStoreNameDev</DisplayName>

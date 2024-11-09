@@ -195,6 +195,7 @@ ClientBin/
 *.dbmdl
 *.dbproj.schemaview
 *.pfx
+*.cer
 *.publishsettings
 node_modules/
 orleans.codegen.cs
@@ -286,3 +287,7 @@ profiles.json
 
 # MSBuildCache
 /MSBuildCacheLogs/
+
+msix/
+*.msix
+*.msixbundle

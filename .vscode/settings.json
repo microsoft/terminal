@@ -127,4 +127,6 @@
         "**/obj/**": true,
         "**/packages/**": true,
     },
+    "dotnet.preferCSharpExtension": true,
+    "dotnet.defaultSolution": "OpenConsole.sln",
 }
