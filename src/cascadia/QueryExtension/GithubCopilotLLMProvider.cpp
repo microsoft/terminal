@@ -281,6 +281,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
                 {
                     const auto errorObject = jsonResult.GetNamedObject(errorKey);
                     message = errorObject.GetNamedString(messageKey);
+                    errorType = ErrorTypes::FromProvider;
                 }
                 else
                 {
@@ -288,7 +289,6 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
                     const auto firstChoice = choices.GetAt(0).GetObject();
                     const auto messageObject = firstChoice.GetNamedObject(messageKey);
                     message = messageObject.GetNamedString(contentKey);
-                    errorType = ErrorTypes::FromProvider;
                 }
                 break;
             }
