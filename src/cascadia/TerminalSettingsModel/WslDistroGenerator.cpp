@@ -190,7 +190,7 @@ static bool getWslNames(const wil::unique_hkey& wslRootKey,
         }
 
         const auto modernValue{ wil::reg::try_get_value<uint32_t>(distroKey.get(), RegKeyModern) };
-        if (modernValue == 1u)
+        if (modernValue.value_or(0u) == 1u)
         {
             continue;
         }
