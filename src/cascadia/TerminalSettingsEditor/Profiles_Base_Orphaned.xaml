@@ -21,29 +21,32 @@
         </ResourceDictionary>
     </Page.Resources>
 
-    <!--  Use a Grid instead of a StackPanel. StackPanel suppresses the inner ScrollViewer.  -->
-    <Grid>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="*" />
-        </Grid.RowDefinitions>
-        <StackPanel Grid.Row="0"
-                    Style="{StaticResource SettingsStackStyle}">
+    <StackPanel Style="{StaticResource SettingsStackStyle}">
 
-            <!--  Name  -->
-            <local:SettingContainer x:Uid="Profile_Name"
-                                    CurrentValue="{x:Bind Profile.Name, Mode=OneWay}"
-                                    Style="{StaticResource ExpanderSettingContainerStyle}"
-                                    Visibility="{x:Bind mtu:Converters.InvertedBooleanToVisibility(Profile.IsBaseLayer), Mode=OneWay}">
-                <TextBox Style="{StaticResource TextBoxSettingStyle}"
-                         Text="{x:Bind Profile.Name, Mode=TwoWay}" />
-            </local:SettingContainer>
+        <local:SettingContainer x:Uid="Profile_Name">
+            <local:SettingContainer.Content>
+                <TextBlock MaxWidth="250"
+                           FontFamily="Segoe UI, Segoe Fluent Icons, Segoe MDL2 Assets"
+                           Style="{StaticResource SettingsPageItemDescriptionStyle}"
+                           Text="{x:Bind Profile.Name, Mode=OneTime}" />
+            </local:SettingContainer.Content>
+        </local:SettingContainer>
 
-            <!--  Delete Button  -->
-            <Border MaxWidth="{StaticResource StandardControlMaxWidth}">
+        <local:SettingContainer x:Uid="Profile_Source_Orphaned">
+            <local:SettingContainer.Content>
+                <TextBlock MaxWidth="250"
+                           FontFamily="Segoe UI, Segoe Fluent Icons, Segoe MDL2 Assets"
+                           Style="{StaticResource SettingsPageItemDescriptionStyle}"
+                           Text="{x:Bind Profile.Source, Mode=OneTime}" />
+            </local:SettingContainer.Content>
+        </local:SettingContainer>
+
+        <!--  Delete Button  -->
+        <local:SettingContainer x:Uid="Profile_Delete_Orphaned">
+            <local:SettingContainer.Content>
                 <Button x:Name="DeleteButton"
-                        Margin="{StaticResource StandardControlMargin}"
-                        Style="{StaticResource DeleteButtonStyle}"
-                        Visibility="{x:Bind Profile.CanDeleteProfile}">
+                        Click="DeleteConfirmation_Click"
+                        Style="{StaticResource DeleteButtonStyle}">
                     <Button.Content>
                         <StackPanel Orientation="Horizontal">
                             <FontIcon FontSize="{StaticResource StandardIconSize}"
@@ -52,18 +55,9 @@
                                        Margin="10,0,0,0" />
                         </StackPanel>
                     </Button.Content>
-                    <Button.Flyout>
-                        <Flyout>
-                            <StackPanel>
-                                <TextBlock x:Uid="Profile_DeleteConfirmationMessage"
-                                           Style="{StaticResource CustomFlyoutTextStyle}" />
-                                <Button x:Uid="Profile_DeleteConfirmationButton"
-                                        Click="DeleteConfirmation_Click" />
-                            </StackPanel>
-                        </Flyout>
-                    </Button.Flyout>
                 </Button>
-            </Border>
-        </StackPanel>
-    </Grid>
+
+            </local:SettingContainer.Content>
+        </local:SettingContainer>
+    </StackPanel>
 </Page>
