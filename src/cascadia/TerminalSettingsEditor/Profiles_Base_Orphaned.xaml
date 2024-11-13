@@ -22,23 +22,6 @@
     </Page.Resources>
 
     <StackPanel Style="{StaticResource SettingsStackStyle}">
-
-        <local:SettingContainer x:Uid="Profile_Name">
-            <local:SettingContainer.Content>
-                <TextBlock FontFamily="Segoe UI, Segoe Fluent Icons, Segoe MDL2 Assets"
-                           Style="{StaticResource SettingsPageItemDescriptionStyle}"
-                           Text="{x:Bind Profile.Name, Mode=OneTime}" />
-            </local:SettingContainer.Content>
-        </local:SettingContainer>
-
-        <local:SettingContainer x:Uid="Profile_Source_Orphaned">
-            <local:SettingContainer.Content>
-                <TextBlock FontFamily="Segoe UI, Segoe Fluent Icons, Segoe MDL2 Assets"
-                           Style="{StaticResource SettingsPageItemDescriptionStyle}"
-                           Text="{x:Bind Profile.Source, Mode=OneTime}" />
-            </local:SettingContainer.Content>
-        </local:SettingContainer>
-
         <!--  Delete Button  -->
         <local:SettingContainer x:Uid="Profile_Delete_Orphaned">
             <local:SettingContainer.Content>
@@ -54,7 +37,22 @@
                         </StackPanel>
                     </Button.Content>
                 </Button>
+            </local:SettingContainer.Content>
+        </local:SettingContainer>
 
+        <local:SettingContainer x:Uid="Profile_Name" HelpText="">
+            <local:SettingContainer.Content>
+                <TextBlock FontFamily="Segoe UI, Segoe Fluent Icons, Segoe MDL2 Assets"
+                           Style="{StaticResource SettingsPageItemDescriptionStyle}"
+                           Text="{x:Bind Profile.Name, Mode=OneTime}" />
+            </local:SettingContainer.Content>
+        </local:SettingContainer>
+
+        <local:SettingContainer x:Uid="Profile_Source_Orphaned">
+            <local:SettingContainer.Content>
+                <TextBlock FontFamily="Segoe UI, Segoe Fluent Icons, Segoe MDL2 Assets"
+                           Style="{StaticResource SettingsPageItemDescriptionStyle}"
+                           Text="{x:Bind Profile.Source, Mode=OneTime}" />
             </local:SettingContainer.Content>
         </local:SettingContainer>
     </StackPanel>
