@@ -121,6 +121,7 @@
             </muxc:NavigationViewItem>
 
             <muxc:NavigationViewItem x:Uid="Nav_ColorSchemes"
+                                     x:Name="ColorSchemesNavItem"
                                      Tag="ColorSchemes_Nav">
                 <muxc:NavigationViewItem.Icon>
                     <FontIcon Glyph="&#xE790;" />
@@ -152,6 +153,14 @@
                                      Tag="NewTabMenu_Nav">
                 <muxc:NavigationViewItem.Icon>
                     <FontIcon Glyph="&#xE71d;" />
+                </muxc:NavigationViewItem.Icon>
+            </muxc:NavigationViewItem>
+
+            <muxc:NavigationViewItem x:Uid="Nav_Extensions"
+                                     Tag="Extensions_Nav">
+                <muxc:NavigationViewItem.Icon>
+                    <FontIcon Glyph="&#xE74C;" />
+                    <!--  Alternative: Puzzle - EA86  -->
                 </muxc:NavigationViewItem.Icon>
             </muxc:NavigationViewItem>
 

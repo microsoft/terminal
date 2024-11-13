@@ -18,6 +18,9 @@ Author(s):
 #pragma once
 
 #include "CascadiaSettings.g.h"
+#include "FragmentSettings.g.h"
+#include "FragmentProfileEntry.g.h"
+#include "FragmentColorSchemeEntry.g.h"
 
 #include "GlobalAppSettings.h"
 #include "Profile.h"
@@ -70,6 +73,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         ParsedSettings inboxSettings;
         ParsedSettings userSettings;
+        std::vector<Model::FragmentSettings> fragmentExtensions;
         bool duplicateProfile = false;
 
     private:
@@ -93,7 +97,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         static winrt::com_ptr<implementation::Profile> _parseProfile(const OriginTag origin, const winrt::hstring& source, const Json::Value& profileJson);
         void _appendProfile(winrt::com_ptr<Profile>&& profile, const winrt::guid& guid, ParsedSettings& settings);
         void _addUserProfileParent(const winrt::com_ptr<implementation::Profile>& profile);
-        void _addOrMergeUserColorScheme(const winrt::com_ptr<implementation::ColorScheme>& colorScheme);
+        bool _addOrMergeUserColorScheme(const winrt::com_ptr<implementation::ColorScheme>& colorScheme);
         void _executeGenerator(const IDynamicProfileGenerator& generator);
 
         std::unordered_set<winrt::hstring, til::transparent_hstring_hash, til::transparent_hstring_equal_to> _ignoredNamespaces;
@@ -127,6 +131,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         winrt::Windows::Foundation::Collections::IObservableVector<Model::Profile> AllProfiles() const noexcept;
         winrt::Windows::Foundation::Collections::IObservableVector<Model::Profile> ActiveProfiles() const noexcept;
         Model::ActionMap ActionMap() const noexcept;
+        winrt::Windows::Foundation::Collections::IVectorView<Model::FragmentSettings> FragmentExtensions() const noexcept;
         void WriteSettingsToDisk();
         Json::Value ToJson() const;
         Model::Profile ProfileDefaults() const;
@@ -184,6 +189,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         winrt::com_ptr<implementation::Profile> _baseLayerProfile = winrt::make_self<implementation::Profile>();
         winrt::Windows::Foundation::Collections::IObservableVector<Model::Profile> _allProfiles = winrt::single_threaded_observable_vector<Model::Profile>();
         winrt::Windows::Foundation::Collections::IObservableVector<Model::Profile> _activeProfiles = winrt::single_threaded_observable_vector<Model::Profile>();
+        winrt::Windows::Foundation::Collections::IVector<Model::FragmentSettings> _fragmentExtensions = winrt::single_threaded_vector<Model::FragmentSettings>();
         std::set<std::string> _themesChangeLog{};
 
         // load errors
@@ -198,6 +204,67 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         // GetProfileForArgs cache
         mutable std::once_flag _commandLinesCacheOnce;
         mutable std::vector<std::pair<std::wstring, Model::Profile>> _commandLinesCache;
+    };
+
+    struct FragmentProfileEntry : FragmentProfileEntryT<FragmentProfileEntry>
+    {
+    public:
+        FragmentProfileEntry(winrt::guid profileGuid, hstring json) :
+            _profileGuid{ profileGuid },
+            _json{ json } {}
+
+        winrt::guid ProfileGuid() const noexcept { return _profileGuid; }
+        hstring Json() const noexcept { return _json; }
+
+    private:
+        winrt::guid _profileGuid;
+        hstring _json;
+    };
+
+    struct FragmentColorSchemeEntry : FragmentColorSchemeEntryT<FragmentColorSchemeEntry>
+    {
+    public:
+        FragmentColorSchemeEntry(hstring schemeName, hstring json) :
+            _schemeName{ schemeName },
+            _json{ json } {}
+
+        hstring ColorSchemeName() const noexcept { return _schemeName; }
+        hstring Json() const noexcept { return _json; }
+
+    private:
+        hstring _schemeName;
+        hstring _json;
+    };
+
+    struct FragmentSettings : FragmentSettingsT<FragmentSettings>
+    {
+    public:
+        FragmentSettings(hstring source, hstring json) :
+            _source{ source },
+            _json{ json },
+            _modifiedProfiles{ winrt::single_threaded_vector<Model::FragmentProfileEntry>() },
+            _newProfiles{ winrt::single_threaded_vector<Model::FragmentProfileEntry>() },
+            _colorSchemes{ winrt::single_threaded_vector<Model::FragmentColorSchemeEntry>() } {}
+
+        Model::FragmentSettings Copy() const;
+
+        hstring Source() const noexcept { return _source; }
+        hstring Json() const noexcept { return _json; }
+        Windows::Foundation::Collections::IVector<Model::FragmentProfileEntry> ModifiedProfiles() const noexcept { return _modifiedProfiles; }
+        Windows::Foundation::Collections::IVector<Model::FragmentProfileEntry> NewProfiles() const noexcept { return _newProfiles; }
+        Windows::Foundation::Collections::IVector<Model::FragmentColorSchemeEntry> ColorSchemes() const noexcept { return _colorSchemes; }
+
+        // views
+        Windows::Foundation::Collections::IVectorView<Model::FragmentProfileEntry> ModifiedProfilesView() const noexcept { return _modifiedProfiles.GetView(); }
+        Windows::Foundation::Collections::IVectorView<Model::FragmentProfileEntry> NewProfilesView() const noexcept { return _newProfiles.GetView(); }
+        Windows::Foundation::Collections::IVectorView<Model::FragmentColorSchemeEntry> ColorSchemesView() const noexcept { return _colorSchemes.GetView(); }
+
+    private:
+        hstring _source;
+        hstring _json;
+        Windows::Foundation::Collections::IVector<Model::FragmentProfileEntry> _modifiedProfiles;
+        Windows::Foundation::Collections::IVector<Model::FragmentProfileEntry> _newProfiles;
+        Windows::Foundation::Collections::IVector<Model::FragmentColorSchemeEntry> _colorSchemes;
     };
 }
 

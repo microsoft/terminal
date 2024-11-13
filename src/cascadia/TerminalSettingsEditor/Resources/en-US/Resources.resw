@@ -684,6 +684,10 @@
     <value>Actions</value>
     <comment>Header for the "actions" menu item. This navigates to a page that lets you see and modify commands, key bindings, and actions that can be done in the app.</comment>
   </data>
+  <data name="Nav_Extensions.Content" xml:space="preserve">
+    <value>Extensions</value>
+    <comment>Header for the "extensions" menu item. This navigates to a page that lets you see and modify extensions for the app.</comment>
+  </data>
   <data name="Profile_OpacitySlider.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Background opacity</value>
     <comment>Name for a control to determine the level of opacity for the background of the control. The user can choose to make the background of the app more or less opaque.</comment>
@@ -2339,5 +2343,33 @@
   <data name="Globals_StartOnUserLogin_UnavailableByPolicy" xml:space="preserve">
     <value>This option is managed by enterprise policy and cannot be changed here.</value>
     <comment>This is displayed in concordance with Globals_StartOnUserLogin if the enterprise administrator has taken control of this setting.</comment>
+  </data>
+  <data name="Globals_ActiveExtensionsHeader.Text" xml:space="preserve">
+    <value>Active Extensions</value>
+  </data>
+  <data name="Globals_ModifiedProfilesHeader.Text" xml:space="preserve">
+    <value>Modified Profiles</value>
+  </data>
+  <data name="Globals_AddedProfilesHeader.Text" xml:space="preserve">
+    <value>Added Profiles</value>
+  </data>
+  <data name="Globals_AddedColorSchemesHeader.Text" xml:space="preserve">
+    <value>Added Color Schemes</value>
+  </data>
+  <data name="Globals_NoActiveExtensionsDisclaimer.Text" xml:space="preserve">
+    <value>None</value>
+    <comment>Text displayed when no extensions are available. Shown in place of a list of entries.</comment>
+  </data>
+  <data name="Globals_NoProfilesModifiedDisclaimer.Text" xml:space="preserve">
+    <value>None</value>
+    <comment>Text displayed when no profiles were modified. Shown in place of a list of entries.</comment>
+  </data>
+  <data name="Globals_NoSchemesAddedDisclaimer.Text" xml:space="preserve">
+    <value>None</value>
+    <comment>Text displayed when no color schemes were added. Shown in place of a list of entries.</comment>
+  </data>
+  <data name="Globals_NoProfilesAddedDisclaimer.Text" xml:space="preserve">
+    <value>None</value>
+    <comment>Text displayed when no profiles were added. Shown in place of a list of entries.</comment>
   </data>
 </root>

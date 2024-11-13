@@ -1,0 +1,56 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+import "ColorSchemeViewModel.idl";
+
+namespace Microsoft.Terminal.Settings.Editor
+{
+    [default_interface] runtimeclass Extensions : Windows.UI.Xaml.Controls.Page
+    {
+        Extensions();
+        ExtensionsViewModel ViewModel { get; };
+    }
+
+    [default_interface] runtimeclass ExtensionsViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged
+    {
+        // Properties
+        Boolean NoActiveExtensions { get; };
+        Boolean NoProfilesModified { get; };
+        Boolean NoProfilesAdded { get; };
+        Boolean NoSchemesAdded { get; };
+
+        // Views
+        Windows.Foundation.Collections.IVectorView<IInspectable> FragmentExtensions { get; };
+        Windows.Foundation.Collections.IVectorView<IInspectable> ProfilesModified { get; };
+        Windows.Foundation.Collections.IVectorView<IInspectable> ProfilesAdded { get; };
+        Windows.Foundation.Collections.IVectorView<IInspectable> ColorSchemesAdded { get; };
+
+        // Methods
+        Boolean GetExtensionState(String extensionSource);
+        void SetExtensionState(String extensionSource, Boolean enableExt);
+
+        event Windows.Foundation.TypedEventHandler<Object, Guid> NavigateToProfileRequested;
+    }
+
+    [default_interface] runtimeclass FragmentProfileViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged
+    {
+        Microsoft.Terminal.Settings.Model.Profile Profile { get; };
+        String SourceName { get; };
+        String Json { get; };
+
+        void AttemptNavigateToProfile();
+
+        event Windows.Foundation.TypedEventHandler<Object, Guid> NavigateToProfileRequested;
+    }
+
+    [default_interface] runtimeclass FragmentColorSchemeViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged
+    {
+        ColorSchemeViewModel ColorSchemeVM { get; };
+        String SourceName { get; };
+        String Json { get; };
+
+        void AttemptNavigateToColorScheme();
+
+        event Windows.Foundation.TypedEventHandler<Object, ColorSchemeViewModel> NavigateToColorSchemeRequested;
+    }
+}

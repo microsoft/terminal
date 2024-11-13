@@ -9,6 +9,7 @@
 #include "Compatibility.h"
 #include "Rendering.h"
 #include "RenderingViewModel.h"
+#include "Extensions.h"
 #include "Actions.h"
 #include "ProfileViewModel.h"
 #include "GlobalAppearance.h"
@@ -44,6 +45,7 @@ static const std::wstring_view renderingTag{ L"Rendering_Nav" };
 static const std::wstring_view compatibilityTag{ L"Compatibility_Nav" };
 static const std::wstring_view actionsTag{ L"Actions_Nav" };
 static const std::wstring_view newTabMenuTag{ L"NewTabMenu_Nav" };
+static const std::wstring_view extensionsTag{ L"Extensions_Nav" };
 static const std::wstring_view globalProfileTag{ L"GlobalProfile_Nav" };
 static const std::wstring_view addProfileTag{ L"AddProfile" };
 static const std::wstring_view colorSchemesTag{ L"ColorSchemes_Nav" };
@@ -445,6 +447,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 _breadcrumbs.Append(crumb);
             }
         }
+        else if (clickedItemTag == extensionsTag)
+        {
+            auto vm = winrt::make_self<ExtensionsViewModel>(_settingsClone, _colorSchemesPageVM);
+            vm->NavigateToProfileRequested({ this, &MainPage::_NavigateToProfileHandler });
+            vm->NavigateToColorSchemeRequested({ this, &MainPage::_NavigateToColorSchemeHandler });
+            contentFrame().Navigate(xaml_typename<Editor::Extensions>(), *vm);
+            const auto crumb = winrt::make<Breadcrumb>(box_value(clickedItemTag), RS_(L"Nav_Extensions/Content"), BreadcrumbSubPage::None);
+            _breadcrumbs.Append(crumb);
+        }
         else if (clickedItemTag == globalProfileTag)
         {
             auto profileVM{ _viewModelForProfile(_settingsClone.ProfileDefaults(), _settingsClone, Dispatcher()) };
@@ -816,6 +827,35 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     IObservableVector<IInspectable> MainPage::Breadcrumbs() noexcept
     {
         return _breadcrumbs;
+    }
+
+    void MainPage::_NavigateToProfileHandler(const IInspectable& /*sender*/, winrt::guid profileGuid)
+    {
+        for (auto&& menuItem : _menuItemSource)
+        {
+            if (const auto& navViewItem{ menuItem.try_as<MUX::Controls::NavigationViewItem>() })
+            {
+                if (const auto& tag{ navViewItem.Tag() })
+                {
+                    if (const auto& profileTag{ tag.try_as<ProfileViewModel>() })
+                    {
+                        if (profileTag->OriginalProfileGuid() == profileGuid)
+                        {
+                            SettingsNav().SelectedItem(menuItem);
+                            _Navigate(*profileTag, BreadcrumbSubPage::None);
+                            return;
+                        }
+                    }
+                }
+            }
+        }
+        // Silently fail if the profile wasn't found
+    }
+
+    void MainPage::_NavigateToColorSchemeHandler(const IInspectable& /*sender*/, const IInspectable& /*args*/)
+    {
+        SettingsNav().SelectedItem(ColorSchemesNavItem());
+        _Navigate(hstring{ colorSchemesTag }, BreadcrumbSubPage::ColorSchemes_Edit);
     }
 
     winrt::Windows::UI::Xaml::Media::Brush MainPage::BackgroundBrush()
