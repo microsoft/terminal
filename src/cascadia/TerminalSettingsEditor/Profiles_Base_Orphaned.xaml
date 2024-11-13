@@ -25,8 +25,7 @@
 
         <local:SettingContainer x:Uid="Profile_Name">
             <local:SettingContainer.Content>
-                <TextBlock MaxWidth="250"
-                           FontFamily="Segoe UI, Segoe Fluent Icons, Segoe MDL2 Assets"
+                <TextBlock FontFamily="Segoe UI, Segoe Fluent Icons, Segoe MDL2 Assets"
                            Style="{StaticResource SettingsPageItemDescriptionStyle}"
                            Text="{x:Bind Profile.Name, Mode=OneTime}" />
             </local:SettingContainer.Content>
@@ -34,8 +33,7 @@
 
         <local:SettingContainer x:Uid="Profile_Source_Orphaned">
             <local:SettingContainer.Content>
-                <TextBlock MaxWidth="250"
-                           FontFamily="Segoe UI, Segoe Fluent Icons, Segoe MDL2 Assets"
+                <TextBlock FontFamily="Segoe UI, Segoe Fluent Icons, Segoe MDL2 Assets"
                            Style="{StaticResource SettingsPageItemDescriptionStyle}"
                            Text="{x:Bind Profile.Source, Mode=OneTime}" />
             </local:SettingContainer.Content>
