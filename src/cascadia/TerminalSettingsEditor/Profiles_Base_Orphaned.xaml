@@ -40,7 +40,7 @@
             </local:SettingContainer.Content>
         </local:SettingContainer>
 
-        <local:SettingContainer x:Uid="Profile_Name" HelpText="">
+        <local:SettingContainer x:Uid="Profile_Name">
             <local:SettingContainer.Content>
                 <TextBlock FontFamily="Segoe UI, Segoe Fluent Icons, Segoe MDL2 Assets"
                            Style="{StaticResource SettingsPageItemDescriptionStyle}"
