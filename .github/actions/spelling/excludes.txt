@@ -104,6 +104,7 @@
 ^doc/reference/UTF8-torture-test\.txt$
 ^doc/reference/windows-terminal-logo\.ans$
 ^oss/
+^NOTICE.md
 ^samples/PixelShaders/Screenshots/
 ^src/interactivity/onecore/BgfxEngine\.
 ^src/renderer/atlas/
