@@ -225,6 +225,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return !IsBaseLayer();
     }
 
+    bool ProfileViewModel::Orphaned() const
+    {
+        return _profile.Orphaned();
+    }
+
     Editor::AppearanceViewModel ProfileViewModel::DefaultAppearance()
     {
         return _defaultAppearanceViewModel;

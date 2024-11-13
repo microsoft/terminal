@@ -104,6 +104,7 @@ winrt::com_ptr<Profile> Profile::CopySettings() const
     const auto defaultAppearance = AppearanceConfig::CopyAppearance(winrt::get_self<AppearanceConfig>(_DefaultAppearance), weakProfile);
 
     profile->_Deleted = _Deleted;
+    profile->_Orphaned = _Orphaned;
     profile->_Updates = _Updates;
     profile->_Guid = _Guid;
     profile->_Name = _Name;

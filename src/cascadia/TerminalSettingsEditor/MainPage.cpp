@@ -457,6 +457,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         _SetupProfileEventHandling(profile);
 
+        if (profile.Orphaned())
+        {
+            contentFrame().Navigate(xaml_typename<Editor::Profiles_Base_Orphaned>(), winrt::make<implementation::NavigateToProfileArgs>(profile, *this));
+            const auto crumb = winrt::make<Breadcrumb>(box_value(profile), profile.Name(), BreadcrumbSubPage::None);
+            _breadcrumbs.Append(crumb);
+            profile.CurrentPage(ProfileSubPage::Base);
+            return;
+        }
+
         contentFrame().Navigate(xaml_typename<Editor::Profiles_Base>(), winrt::make<implementation::NavigateToProfileArgs>(profile, *this));
         const auto crumb = winrt::make<Breadcrumb>(box_value(profile), profile.Name(), BreadcrumbSubPage::None);
         _breadcrumbs.Append(crumb);
