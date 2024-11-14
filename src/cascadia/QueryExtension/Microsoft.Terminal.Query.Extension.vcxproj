@@ -157,6 +157,7 @@
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalSettingsModel\dll\Microsoft.Terminal.Settings.Model.vcxproj">
       <Private>false</Private>
     </ProjectReference>
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\UIMarkdown\UIMarkdown.vcxproj" />
   </ItemGroup>
 
   <ItemGroup>

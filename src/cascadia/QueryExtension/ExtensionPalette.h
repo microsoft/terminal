@@ -71,6 +71,11 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         bool IsQuery() const { return _isQuery; };
         bool IsCode() const { return _isCode; };
         winrt::hstring MessageContent() const { return _messageContent; };
+        winrt::Windows::UI::Xaml::Controls::RichTextBlock RichBlock() const {
+            auto richBlock = Microsoft::Terminal::UI::Markdown::Builder::Convert(_messageContent, L"");
+            richBlock.FontSize(14);
+            return richBlock;
+        };
 
     private:
         bool _isQuery;

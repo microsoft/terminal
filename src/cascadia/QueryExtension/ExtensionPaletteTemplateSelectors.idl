@@ -12,6 +12,14 @@ namespace Microsoft.Terminal.Query.Extension
         Windows.UI.Xaml.DataTemplate CodeResponseMessageTemplate;
     }
 
+    [default_interface] runtimeclass ExtensionPaletteMessageTemplateSelector2 : Windows.UI.Xaml.Controls.DataTemplateSelector
+    {
+        ExtensionPaletteMessageTemplateSelector2();
+
+        Windows.UI.Xaml.DataTemplate RichQueryMessageTemplate;
+        Windows.UI.Xaml.DataTemplate RichResponseMessageTemplate;
+    }
+
     [default_interface] runtimeclass ExtensionPaletteGroupedMessagesHeaderTemplateSelector : Windows.UI.Xaml.Controls.DataTemplateSelector
     {
         ExtensionPaletteGroupedMessagesHeaderTemplateSelector();

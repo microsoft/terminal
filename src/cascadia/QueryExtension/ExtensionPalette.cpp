@@ -6,6 +6,7 @@
 #include "../../types/inc/utils.hpp"
 #include "LibraryResources.h"
 #include <winrt/Windows.UI.Xaml.Media.Imaging.h>
+#include <cmark.h>
 
 #include "ExtensionPalette.g.cpp"
 #include "ChatMessage.g.cpp"
@@ -28,6 +29,9 @@ static constexpr char cmdCommandDelimiter{ '&' };
 static constexpr std::wstring_view cmdExe{ L"cmd.exe" };
 static constexpr std::wstring_view cmd{ L"cmd" };
 const std::wregex azureOpenAIEndpointRegex{ LR"(^https.*openai\.azure\.com)" };
+
+typedef wil::unique_any<cmark_node*, decltype(&cmark_node_free), cmark_node_free> unique_node;
+typedef wil::unique_any<cmark_iter*, decltype(&cmark_iter_free), cmark_iter_free> unique_iter;
 
 namespace winrt::Microsoft::Terminal::Query::Extension::implementation
 {
@@ -104,9 +108,11 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         Windows::Foundation::Uri headerImageSourceUri{ headerIconPath };
         Media::Imaging::BitmapImage headerImageSource{ headerImageSourceUri };
         HeaderIcon().Source(headerImageSource);
+        HeaderIcon2().Source(headerImageSource);
 
         const auto headerText = (!brandingData || brandingData.HeaderText().empty()) ? RS_(L"IntroText/Text") : brandingData.HeaderText();
         QueryIntro().Text(headerText);
+        QueryIntro2().Text(headerText);
 
         const auto subheaderText = (!brandingData || brandingData.SubheaderText().empty()) ? RS_(L"TitleSubheader/Text") : brandingData.SubheaderText();
         TitleSubheader().Text(subheaderText);
@@ -197,47 +203,49 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
 
     void ExtensionPalette::_splitResponseAndAddToChatHelper(const IResponse response)
     {
-        // this function is dependent on the AI response separating code blocks with
-        // newlines and "```". OpenAI seems to naturally conform to this, though
-        // we could probably engineer the prompt to specify this if we need to.
-        std::wstringstream ss(response.Message().c_str());
-        std::wstring line;
-        std::wstring codeBlock;
-        bool inCodeBlock = false;
         const auto time = _getCurrentLocalTimeHelper();
         std::vector<IInspectable> messageParts;
 
-        while (std::getline(ss, line))
+        const auto responseMessageStr = winrt::to_string(response.Message());
+        unique_node doc{ cmark_parse_document(responseMessageStr.c_str(), responseMessageStr.size(), CMARK_OPT_DEFAULT) };
+        unique_iter iter{ cmark_iter_new(doc.get()) };
+        cmark_event_type ev_type;
+
+        std::string currentRun{};
+        while ((ev_type = cmark_iter_next(iter.get())) != CMARK_EVENT_DONE)
         {
-            if (!line.empty())
+            const auto node = cmark_iter_get_node(iter.get());
+            const auto nodeType = cmark_node_get_type(node);
+            if (nodeType == CMARK_NODE_TEXT || nodeType == CMARK_NODE_CODE)
             {
-                if (!inCodeBlock && line.find(L"```") == 0)
-                {
-                    inCodeBlock = true;
-                    continue;
-                }
-                if (inCodeBlock && line.find(L"```") == 0)
-                {
-                    inCodeBlock = false;
-                    const auto chatMsg = winrt::make<ChatMessage>(winrt::hstring{ std::move(codeBlock) }, false, true);
-                    messageParts.push_back(chatMsg);
-                    codeBlock.clear();
-                    continue;
-                }
-                if (inCodeBlock)
-                {
-                    if (!codeBlock.empty())
-                    {
-                        codeBlock += L'\n';
-                    }
-                    codeBlock += line;
-                }
-                else
-                {
-                    const auto chatMsg = winrt::make<ChatMessage>(winrt::hstring{ line }, false, false);
-                    messageParts.push_back(chatMsg);
-                }
+                // we don't want to create a separate chat message for each text/code node (note that a code node is just an
+                // inline code part, e.g. `-Filter`) because that would be a lot of chat messages for a single response,
+                // so just append the raw string here and we'll make the chat message when we hit a code block or when we end
+                currentRun += cmark_node_get_literal(node);
             }
+            else if (nodeType == CMARK_NODE_CODE_BLOCK)
+            {
+                // before parsing the code block, append any plaintext we have
+                if (!currentRun.empty())
+                {
+                    const auto chatMsg = winrt::make<ChatMessage>(winrt::to_hstring(currentRun), false, false);
+                    messageParts.push_back(chatMsg);
+                    currentRun.clear();
+                }
+
+                const auto nodeStr = winrt::to_hstring(cmark_node_get_literal(node));
+                // trim the trailing newline
+                std::wstring_view codeView{ nodeStr.c_str(), nodeStr.size() - 1 };
+                const auto chatMsg = winrt::make<ChatMessage>(winrt::hstring{ codeView }, false, true);
+                messageParts.push_back(chatMsg);
+            }
+        }
+        // append any final plaintext
+        if (!currentRun.empty())
+        {
+            const auto chatMsg = winrt::make<ChatMessage>(winrt::to_hstring(currentRun), false, false);
+            messageParts.push_back(chatMsg);
+            currentRun.clear();
         }
 
         const auto brandingData = _lmProvider ? _lmProvider.BrandingData() : nullptr;
@@ -285,6 +293,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
 
         _messages.Clear();
         MessagesCollectionViewSource().Source(_messages);
+        MessagesCollectionViewSource2().Source(_messages);
         if (_lmProvider)
         {
             _lmProvider.ClearMessageHistory();
