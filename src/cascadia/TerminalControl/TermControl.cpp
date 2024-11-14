@@ -3233,17 +3233,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                         allPathsString += L" ";
                     }
 
-                    // Fix path for WSL
-                    // In the fullness of time, we should likely plumb this up
-                    // to the TerminalApp layer, and have it make the decision
-                    // if this control should have its path mangled (and do the
-                    // mangling), rather than exposing the source concept to the
-                    // Control layer.
-                    //
-                    // However, it's likely that the control layer may need to
-                    // know about the source anyways in the future, to support
-                    // GH#3158
-                    const auto isWSL = _interactivity.ManglePathsForWsl();
+                    const auto isWSL = false /* TODO PATH TRANSLATION MODE */;
 
                     if (isWSL)
                     {

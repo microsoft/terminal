@@ -288,7 +288,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         // Fill in the remaining properties from the profile
         _ProfileName = profile.Name();
-        _ProfileSource = profile.Source();
 
         const auto fontInfo = profile.FontInfo();
         _FontFace = fontInfo.FontFace();

@@ -119,7 +119,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         // ------------------------ End of Core Settings -----------------------
 
         INHERITABLE_SETTING(Model::TerminalSettings, hstring, ProfileName);
-        INHERITABLE_SETTING(Model::TerminalSettings, hstring, ProfileSource);
 
         INHERITABLE_SETTING(Model::TerminalSettings, guid, SessionId);
         INHERITABLE_SETTING(Model::TerminalSettings, bool, EnableUnfocusedAcrylic, false);

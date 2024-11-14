@@ -30,7 +30,6 @@ namespace Microsoft.Terminal.Control
                                Microsoft.Terminal.Control.IControlAppearance
     {
         String ProfileName;
-        String ProfileSource;
 
         Boolean EnableUnfocusedAcrylic { get; };
         Guid SessionId { get; };
