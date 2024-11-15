@@ -502,7 +502,7 @@ std::wstring Terminal::GetHyperlinkAtBufferPosition(const til::point bufferPos)
         if (result.has_value())
         {
             result->start = _ConvertToBufferCell(result->start, false);
-            result->stop = _ConvertToBufferCell(result->stop, false);
+            result->stop = _ConvertToBufferCell(result->stop, true);
         }
     }
     else

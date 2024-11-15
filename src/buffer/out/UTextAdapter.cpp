@@ -436,7 +436,7 @@ til::point_span Microsoft::Console::ICU::BufferRangeFromMatch(UText* ut, URegula
     if (utextAccess(ut, nativeIndexEnd, true))
     {
         const auto y = accessCurrentRow(ut);
-        ret.end.x = textBuffer.GetRowByOffset(y).GetTrailingColumnAtCharOffset(ut->chunkOffset);
+        ret.end.x = textBuffer.GetRowByOffset(y).GetLeadingColumnAtCharOffset(ut->chunkOffset);
         ret.end.y = y;
     }
     else
