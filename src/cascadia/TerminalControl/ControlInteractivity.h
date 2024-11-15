@@ -86,7 +86,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                       const Windows::Foundation::IReference<CopyFormat>& formats);
         void RequestPasteTextFromClipboard();
         void SetEndSelectionPoint(const Core::Point pixelPosition);
-        bool ManglePathsForWsl();
 
         uint64_t Id();
         void AttachToNewControl(const Microsoft::Terminal::Control::IKeyBindings& keyBindings);

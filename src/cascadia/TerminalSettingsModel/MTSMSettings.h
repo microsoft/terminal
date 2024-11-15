@@ -103,7 +103,8 @@ Author(s):
     X(bool, ForceVTInput, "compatibility.input.forceVT", false)                                                                                                \
     X(bool, AllowVtChecksumReport, "compatibility.allowDECRQCRA", false)                                                                                       \
     X(bool, AllowVtClipboardWrite, "compatibility.allowOSC52", true)                                                                                           \
-    X(bool, AllowKeypadMode, "compatibility.allowDECNKM", false)
+    X(bool, AllowKeypadMode, "compatibility.allowDECNKM", false)                                                                                               \
+    X(Microsoft::Terminal::Control::PathTranslationStyle, PathTranslationStyle, "pathTranslationStyle", Microsoft::Terminal::Control::PathTranslationStyle::None)
 
 // Intentionally omitted Profile settings:
 // * Name

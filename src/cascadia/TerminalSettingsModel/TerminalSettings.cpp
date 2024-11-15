@@ -288,7 +288,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         // Fill in the remaining properties from the profile
         _ProfileName = profile.Name();
-        _ProfileSource = profile.Source();
 
         const auto fontInfo = profile.FontInfo();
         _FontFace = fontInfo.FontFace();
@@ -350,6 +349,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         _ForceVTInput = profile.ForceVTInput();
         _AllowVtChecksumReport = profile.AllowVtChecksumReport();
         _AllowVtClipboardWrite = profile.AllowVtClipboardWrite();
+        _PathTranslationStyle = profile.PathTranslationStyle();
     }
 
     // Method Description:
