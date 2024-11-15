@@ -85,6 +85,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         bool AutoMarkPromptsAvailable() const noexcept;
         bool RepositionCursorWithMouseAvailable() const noexcept;
 
+        bool Orphaned() const;
+
         til::typed_event<Editor::ProfileViewModel, Editor::DeleteProfileEventArgs> DeleteProfileRequested;
 
         VIEW_MODEL_OBSERVABLE_PROPERTY(ProfileSubPage, CurrentPage);

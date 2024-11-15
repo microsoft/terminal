@@ -718,8 +718,8 @@ namespace winrt::TerminalApp::implementation
             //
             // contentBounds is in screen pixels, but that's okay! we want to
             // return screen pixels out of here. Nailed it.
-            const til::rect bounds = { til::math::rounding, _contentBounds.Value() };
-            initialPosition = { bounds.left, bounds.top };
+            const auto bounds = _contentBounds.Value();
+            initialPosition = { lroundf(bounds.X), lroundf(bounds.Y) };
         }
         return {
             initialPosition.X ? initialPosition.X.Value() : defaultInitialX,

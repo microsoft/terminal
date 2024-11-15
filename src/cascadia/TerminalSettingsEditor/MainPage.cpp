@@ -457,6 +457,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         _SetupProfileEventHandling(profile);
 
+        if (profile.Orphaned())
+        {
+            contentFrame().Navigate(xaml_typename<Editor::Profiles_Base_Orphaned>(), winrt::make<implementation::NavigateToProfileArgs>(profile, *this));
+            const auto crumb = winrt::make<Breadcrumb>(box_value(profile), profile.Name(), BreadcrumbSubPage::None);
+            _breadcrumbs.Append(crumb);
+            profile.CurrentPage(ProfileSubPage::Base);
+            return;
+        }
+
         contentFrame().Navigate(xaml_typename<Editor::Profiles_Base>(), winrt::make<implementation::NavigateToProfileArgs>(profile, *this));
         const auto crumb = winrt::make<Breadcrumb>(box_value(profile), profile.Name(), BreadcrumbSubPage::None);
         _breadcrumbs.Append(crumb);
@@ -621,12 +630,32 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _Navigate(profileViewModel, BreadcrumbSubPage::None);
     }
 
+    static MUX::Controls::InfoBadge _createGlyphIconBadge(wil::zwstring_view glyph)
+    {
+        MUX::Controls::InfoBadge badge;
+        MUX::Controls::FontIconSource icon;
+        icon.FontFamily(winrt::Windows::UI::Xaml::Media::FontFamily{ L"Segoe Fluent Icons, Segoe MDL2 Assets" });
+        icon.FontSize(12);
+        icon.Glyph(glyph);
+        badge.IconSource(icon);
+        return badge;
+    }
+
     MUX::Controls::NavigationViewItem MainPage::_CreateProfileNavViewItem(const Editor::ProfileViewModel& profile)
     {
         MUX::Controls::NavigationViewItem profileNavItem;
         profileNavItem.Content(box_value(profile.Name()));
         profileNavItem.Tag(box_value<Editor::ProfileViewModel>(profile));
         profileNavItem.Icon(UI::IconPathConverter::IconWUX(profile.EvaluatedIcon()));
+
+        if (profile.Orphaned())
+        {
+            profileNavItem.InfoBadge(_createGlyphIconBadge(L"\xE7BA") /* Warning Triangle */);
+        }
+        else if (profile.Hidden())
+        {
+            profileNavItem.InfoBadge(_createGlyphIconBadge(L"\xED1A") /* Hide */);
+        }
 
         // Update the menu item when the icon/name changes
         auto weakMenuItem{ make_weak(profileNavItem) };
@@ -641,6 +670,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 else if (args.PropertyName() == L"Name")
                 {
                     menuItem.Content(box_value(tag.Name()));
+                }
+                else if (args.PropertyName() == L"Hidden")
+                {
+                    menuItem.InfoBadge(tag.Hidden() ? _createGlyphIconBadge(L"\xED1A") /* Hide */ : nullptr);
                 }
             }
         });
