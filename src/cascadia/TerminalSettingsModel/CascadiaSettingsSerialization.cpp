@@ -1226,12 +1226,12 @@ CascadiaSettings::CascadiaSettings(SettingsLoader&& loader) :
             const auto& parents = profile->Parents();
             if (std::none_of(parents.begin(), parents.end(), [&](const auto& parent) { return parent->Source() == source; }))
             {
-                continue;
+                profile->Orphaned(true);
             }
         }
 
         allProfiles.emplace_back(*profile);
-        if (!profile->Hidden())
+        if (!profile->Hidden() && !profile->Orphaned())
         {
             activeProfiles.emplace_back(*profile);
         }

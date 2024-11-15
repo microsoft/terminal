@@ -1961,4 +1961,16 @@
     <value>Display a shield in the title bar when Windows Terminal is running as Administrator</value>
     <comment>Header for a control to toggle displaying a shield in the title bar of the app. "Admin" refers to elevated sessions like "run as Admin"</comment>
   </data>
+  <data name="Profile_Delete_Orphaned.Header" xml:space="preserve">
+    <value>Profile no longer detected</value>
+  </data>
+  <data name="Profile_Delete_Orphaned.HelpText" xml:space="preserve">
+    <value>This automatically-detected profile appears to have been uninstalled. Changes you have made to it are preserved, but it cannot be used until it has been reinstalled.</value>
+  </data>
+  <data name="Profile_Source_Orphaned.Header" xml:space="preserve">
+    <value>Original Source</value>
+  </data>
+  <data name="Profile_Source_Orphaned.HelpText" xml:space="preserve">
+    <value>Indicates the software that originally created this profile.</value>
+  </data>
 </root>
