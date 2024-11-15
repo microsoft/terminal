@@ -1970,7 +1970,7 @@ const std::vector<til::inclusive_rect> TextBuffer::GetTextRects(til::point start
 // - Else if a blockSelection, returns spans corresponding to each line in the block selection
 // Arguments:
 // - start: beginning of the text region of interest (inclusive)
-// - end: the other end of the text region of interest (inclusive)
+// - end: the other end of the text region of interest (exclusive)
 // - blockSelection: when enabled, get spans for each line covered by the block
 // - bufferCoordinates: when enabled, treat the coordinates as relative to
 //                      the buffer rather than the screen.
