@@ -58,6 +58,54 @@ static Microsoft::Console::TSF::Handle& GetTSFHandle()
 
 namespace winrt::Microsoft::Terminal::Control::implementation
 {
+    static void _translatePathInPlace(std::wstring& fullPath, PathTranslationStyle translationStyle)
+    {
+        static constexpr wil::zwstring_view s_pathPrefixes[] = {
+            {},
+            /* WSL */ L"/mnt/",
+            /* Cygwin */ L"/cygdrive/",
+            /* MSYS2 */ L"/",
+        };
+
+        if (translationStyle == PathTranslationStyle::None)
+        {
+            return;
+        }
+
+        // All of the other path translation modes current result in /-delimited paths
+        std::replace(fullPath.begin(), fullPath.end(), L'\\', L'/');
+
+        if (fullPath.size() >= 2 && fullPath.at(1) == L':')
+        {
+            // C:/foo/bar -> Cc/foo/bar
+            fullPath.at(1) = til::tolower_ascii(fullPath.at(0));
+            // Cc/foo/bar -> [PREFIX]c/foo/bar
+            fullPath.replace(0, 1, s_pathPrefixes[static_cast<int>(translationStyle)]);
+        }
+        else if (translationStyle == PathTranslationStyle::WSL)
+        {
+            // Stripping the UNC name and distribution prefix only applies to WSL.
+            static constexpr std::wstring_view wslPathPrefixes[] = { L"//wsl.localhost/", L"//wsl$/" };
+            for (auto prefix : wslPathPrefixes)
+            {
+                if (til::starts_with(fullPath, prefix))
+                {
+                    if (const auto idx = fullPath.find(L'/', prefix.size()); idx != std::wstring::npos)
+                    {
+                        // //wsl.localhost/Ubuntu-18.04/foo/bar -> /foo/bar
+                        fullPath.erase(0, idx);
+                    }
+                    else
+                    {
+                        // //wsl.localhost/Ubuntu-18.04 -> /
+                        fullPath = L"/";
+                    }
+                    break;
+                }
+            }
+        }
+    }
+
     TsfDataProvider::TsfDataProvider(TermControl* termControl) noexcept :
         _termControl{ termControl }
     {
@@ -3215,54 +3263,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                         allPathsString += L" ";
                     }
 
-                    // Fix path for WSL
-                    // In the fullness of time, we should likely plumb this up
-                    // to the TerminalApp layer, and have it make the decision
-                    // if this control should have its path mangled (and do the
-                    // mangling), rather than exposing the source concept to the
-                    // Control layer.
-                    //
-                    // However, it's likely that the control layer may need to
-                    // know about the source anyways in the future, to support
-                    // GH#3158
-                    const auto isWSL = _interactivity.ManglePathsForWsl();
+                    const auto translationStyle{ _core.Settings().PathTranslationStyle() };
+                    _translatePathInPlace(fullPath, translationStyle);
 
-                    if (isWSL)
-                    {
-                        std::replace(fullPath.begin(), fullPath.end(), L'\\', L'/');
-
-                        if (fullPath.size() >= 2 && fullPath.at(1) == L':')
-                        {
-                            // C:/foo/bar -> Cc/foo/bar
-                            fullPath.at(1) = til::tolower_ascii(fullPath.at(0));
-                            // Cc/foo/bar -> /mnt/c/foo/bar
-                            fullPath.replace(0, 1, L"/mnt/");
-                        }
-                        else
-                        {
-                            static constexpr std::wstring_view wslPathPrefixes[] = { L"//wsl.localhost/", L"//wsl$/" };
-                            for (auto prefix : wslPathPrefixes)
-                            {
-                                if (til::starts_with(fullPath, prefix))
-                                {
-                                    if (const auto idx = fullPath.find(L'/', prefix.size()); idx != std::wstring::npos)
-                                    {
-                                        // //wsl.localhost/Ubuntu-18.04/foo/bar -> /foo/bar
-                                        fullPath.erase(0, idx);
-                                    }
-                                    else
-                                    {
-                                        // //wsl.localhost/Ubuntu-18.04 -> /
-                                        fullPath = L"/";
-                                    }
-                                    break;
-                                }
-                            }
-                        }
-                    }
-
-                    const auto quotesNeeded = isWSL || fullPath.find(L' ') != std::wstring::npos;
-                    const auto quotesChar = isWSL ? L'\'' : L'"';
+                    // All translated paths get quotes, and all strings spaces get quotes; all translated paths get single quotes
+                    const auto quotesNeeded = translationStyle != PathTranslationStyle::None || fullPath.find(L' ') != std::wstring::npos;
+                    const auto quotesChar = translationStyle != PathTranslationStyle::None ? L'\'' : L'"';
 
                     // Append fullPath and also wrap it in quotes if needed
                     if (quotesNeeded)
