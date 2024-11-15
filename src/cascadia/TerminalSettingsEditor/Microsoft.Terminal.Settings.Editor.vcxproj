@@ -120,6 +120,10 @@
       <DependentUpon>Profiles_Base.xaml</DependentUpon>
       <SubType>Code</SubType>
     </ClInclude>
+    <ClInclude Include="Profiles_Base_Orphaned.h">
+      <DependentUpon>Profiles_Base_Orphaned.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </ClInclude>
     <ClInclude Include="Profiles_Advanced.h">
       <DependentUpon>Profiles_Advanced.xaml</DependentUpon>
       <SubType>Code</SubType>
@@ -184,6 +188,9 @@
       <SubType>Designer</SubType>
     </Page>
     <Page Include="Profiles_Base.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Profiles_Base_Orphaned.xaml">
       <SubType>Designer</SubType>
     </Page>
     <Page Include="Profiles_Advanced.xaml">
@@ -286,6 +293,10 @@
       <DependentUpon>Profiles_Base.xaml</DependentUpon>
       <SubType>Code</SubType>
     </ClCompile>
+    <ClCompile Include="Profiles_Base_Orphaned.cpp">
+      <DependentUpon>Profiles_Base_Orphaned.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </ClCompile>
     <ClCompile Include="Profiles_Advanced.cpp">
       <DependentUpon>Profiles_Advanced.xaml</DependentUpon>
       <SubType>Code</SubType>
@@ -374,6 +385,10 @@
     <Midl Include="NewTabMenuViewModel.idl" />
     <Midl Include="Profiles_Base.idl">
       <DependentUpon>Profiles_Base.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Midl>
+    <Midl Include="Profiles_Base_Orphaned.idl">
+      <DependentUpon>Profiles_Base_Orphaned.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>
     <Midl Include="Profiles_Advanced.idl">
