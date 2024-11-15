@@ -560,7 +560,6 @@ void Terminal::SelectHyperlink(const SearchDirection dir)
         selection->start = result->first;
         selection->pivot = result->first;
         selection->end = result->second;
-        bufferSize.DecrementInBounds(selection->end);
         _selectionIsTargetingUrl = true;
         _selectionEndpoint = SelectionEndpoint::End;
     }
