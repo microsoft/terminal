@@ -85,8 +85,6 @@ private:
                                   const winrt::Windows::Foundation::IInspectable& arg);
     void _AlwaysOnTopChanged(const winrt::Windows::Foundation::IInspectable& sender,
                              const winrt::Windows::Foundation::IInspectable& arg);
-    void _ShowTabsFullscreenChanged(const winrt::Windows::Foundation::IInspectable& sender,
-                                    const winrt::Windows::Foundation::IInspectable& arg);
     safe_void_coroutine _WindowInitializedHandler(const winrt::Windows::Foundation::IInspectable& sender,
                                                   const winrt::Windows::Foundation::IInspectable& arg);
 
@@ -190,7 +188,6 @@ private:
         winrt::TerminalApp::TerminalWindow::FullscreenChanged_revoker FullscreenChanged;
         winrt::TerminalApp::TerminalWindow::FocusModeChanged_revoker FocusModeChanged;
         winrt::TerminalApp::TerminalWindow::AlwaysOnTopChanged_revoker AlwaysOnTopChanged;
-        winrt::TerminalApp::TerminalWindow::ShowTabsFullscreenChanged_revoker ShowTabsFullscreenChanged;
         winrt::TerminalApp::TerminalWindow::RaiseVisualBell_revoker RaiseVisualBell;
         winrt::TerminalApp::TerminalWindow::SystemMenuChangeRequested_revoker SystemMenuChangeRequested;
         winrt::TerminalApp::TerminalWindow::ChangeMaximizeRequested_revoker ChangeMaximizeRequested;

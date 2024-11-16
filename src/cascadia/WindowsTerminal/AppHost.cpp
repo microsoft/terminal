@@ -338,7 +338,6 @@ void AppHost::Initialize()
     _revokers.FullscreenChanged = _windowLogic.FullscreenChanged(winrt::auto_revoke, { this, &AppHost::_FullscreenChanged });
     _revokers.FocusModeChanged = _windowLogic.FocusModeChanged(winrt::auto_revoke, { this, &AppHost::_FocusModeChanged });
     _revokers.AlwaysOnTopChanged = _windowLogic.AlwaysOnTopChanged(winrt::auto_revoke, { this, &AppHost::_AlwaysOnTopChanged });
-    _revokers.ShowTabsFullscreenChanged = _windowLogic.ShowTabsFullscreenChanged(winrt::auto_revoke, { this, &AppHost::_ShowTabsFullscreenChanged });
     _revokers.RaiseVisualBell = _windowLogic.RaiseVisualBell(winrt::auto_revoke, { this, &AppHost::_RaiseVisualBell });
     _revokers.SystemMenuChangeRequested = _windowLogic.SystemMenuChangeRequested(winrt::auto_revoke, { this, &AppHost::_SystemMenuChangeRequested });
     _revokers.ChangeMaximizeRequested = _windowLogic.ChangeMaximizeRequested(winrt::auto_revoke, { this, &AppHost::_ChangeMaximizeRequested });
@@ -849,17 +848,6 @@ void AppHost::_AlwaysOnTopChanged(const winrt::Windows::Foundation::IInspectable
     }
 
     _window->SetAlwaysOnTop(_windowLogic.AlwaysOnTop());
-}
-
-void AppHost::_ShowTabsFullscreenChanged(const winrt::Windows::Foundation::IInspectable&,
-                                         const winrt::Windows::Foundation::IInspectable&)
-{
-    if (_window == nullptr)
-    {
-        return;
-    }
-
-    _window->SetShowTabsFullscreen(_windowLogic.ShowTabsFullscreen());
 }
 
 // Method Description

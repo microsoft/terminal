@@ -3607,7 +3607,6 @@ namespace winrt::TerminalApp::implementation
         AlwaysOnTopChanged.raise(*this, nullptr);
 
         _showTabsFullscreen = _settings.GlobalSettings().ShowTabsFullscreen();
-        ShowTabsFullscreenChanged.raise(*this, nullptr);
 
         // Settings AllowDependentAnimations will affect whether animations are
         // enabled application-wide, so we don't need to check it each time we
@@ -4046,8 +4045,7 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Updates the visibility of the tab row when in fullscreen state and
-    //   raises the ShowTabsFullscreenChanged event.
+    // - Updates the visibility of the tab row when in fullscreen state.
     void TerminalPage::SetShowTabsFullscreen(bool newShowTabsFullscreen)
     {
         if (_showTabsFullscreen == newShowTabsFullscreen)
@@ -4063,7 +4061,6 @@ namespace winrt::TerminalApp::implementation
         {
             _UpdateTabView();
         }
-        ShowTabsFullscreenChanged.raise(*this, nullptr);
     }
 
     void TerminalPage::SetFullscreen(bool newFullscreen)

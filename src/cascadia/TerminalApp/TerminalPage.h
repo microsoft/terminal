@@ -191,7 +191,6 @@ namespace winrt::TerminalApp::implementation
         til::typed_event<IInspectable, IInspectable> FullscreenChanged;
         til::typed_event<IInspectable, IInspectable> ChangeMaximizeRequested;
         til::typed_event<IInspectable, IInspectable> AlwaysOnTopChanged;
-        til::typed_event<IInspectable, IInspectable> ShowTabsFullscreenChanged;
         til::typed_event<IInspectable, IInspectable> RaiseVisualBell;
         til::typed_event<IInspectable, IInspectable> SetTaskbarProgress;
         til::typed_event<IInspectable, IInspectable> Initialized;
