@@ -8,11 +8,43 @@ param(
     [switch]$NoPackage,
     [int]$Zm = 1500,
     [switch]$Format,
-    [switch]$Bundle
+    [switch]$Bundle,
+    [switch]$DistClean  # Added DistClean parameter
 )
 
 Import-Module .\tools\OpenConsole.psm1
 Set-MsBuildDevEnvironment
+
+if ($DistClean) {
+    Write-Host "Performing DistClean operation..."
+
+    # Define the folders to delete
+    $foldersToDelete = @("obj", "bin", "AppPackages", "Generated Files")
+
+    # Get the root path of the solution
+    $solutionRoot = Get-Location
+
+    # Find all directories recursively and filter by folder names
+    Write-Host "Searching for directories to delete..."
+    $directoriesToDelete = Get-ChildItem -Path $solutionRoot -Directory -Recurse -ErrorAction SilentlyContinue | Where-Object { $_.Name -in $foldersToDelete }
+
+    if ($directoriesToDelete.Count -eq 0) {
+        Write-Host "No matching directories found to delete."
+    } else {
+        foreach ($dir in $directoriesToDelete) {
+            try {
+                Write-Host "Deleting folder: $($dir.FullName)"
+                Remove-Item -LiteralPath $dir.FullName -Force -Recurse
+            } catch {
+                Write-Warning "Failed to delete $($dir.FullName): $_"
+            }
+        }
+    }
+
+    Write-Host "DistClean operation completed."
+    # Exit the script after cleaning
+    return
+}
 
 # Set default configurations if none are specified
 if (-not $Debug -and -not $Release) {
