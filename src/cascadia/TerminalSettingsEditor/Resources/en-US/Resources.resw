@@ -1965,7 +1965,7 @@
     <value>Show tabs in full screen</value>
     <comment>Header for a control to toggle if the app should show the tabs when in full screen state.</comment>
   </data>
-	<data name="Globals_ShowTabsFullscreen.HelpText" xml:space="preserve">
+  <data name="Globals_ShowTabsFullscreen.HelpText" xml:space="preserve">
     <value>When enabled, the tab bar will be visible when the app is full screen</value>
     <comment>A description for what the "show tabs in full screen" setting does.</comment>
   </data>
