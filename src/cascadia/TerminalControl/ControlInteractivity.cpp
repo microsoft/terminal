@@ -725,16 +725,4 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         return _core->GetRenderData();
     }
-
-    // Method Description:
-    // - Used by the TermControl to know if it should translate drag-dropped
-    //   paths into WSL-friendly paths.
-    // Arguments:
-    // - <none>
-    // Return Value:
-    // - true if the connection we were created with was a WSL profile.
-    bool ControlInteractivity::ManglePathsForWsl()
-    {
-        return _core->Settings().ProfileSource() == L"Windows.Terminal.Wsl";
-    }
 }

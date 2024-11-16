@@ -66,6 +66,7 @@ static winrt::com_ptr<implementation::Profile> makeProfile(const std::wstring& d
         WSLDistro->StartingDirectory(winrt::hstring{ DEFAULT_STARTING_DIRECTORY });
     }
     WSLDistro->Icon(L"ms-appx:///ProfileIcons/{9acb9455-ca41-5af7-950f-6bca1bc9722f}.png");
+    WSLDistro->PathTranslationStyle(winrt::Microsoft::Terminal::Control::PathTranslationStyle::WSL);
     return WSLDistro;
 }
 
