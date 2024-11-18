@@ -228,6 +228,16 @@ LRESULT IslandWindow::_OnSizing(const WPARAM wParam, const LPARAM lParam)
 
     auto winRect = reinterpret_cast<LPRECT>(lParam);
 
+    // If we're the quake window, prevent resizing on all sides except the
+    // bottom. This also applies to resizing with the Alt+Space menu
+    if (IsQuakeWindow() && wParam != WMSZ_BOTTOM)
+    {
+        // Stuff our current window size into the lParam, and return true. This
+        // will tell User32 to use our current dimensions to resize to.
+        ::GetWindowRect(_window.get(), winRect);
+        return true;
+    }
+
     // Find nearest monitor.
     auto hmon = MonitorFromRect(winRect, MONITOR_DEFAULTTONEAREST);
 
@@ -239,36 +249,30 @@ LRESULT IslandWindow::_OnSizing(const WPARAM wParam, const LPARAM lParam)
     // bad parameters, which we won't have, so no big deal.
     LOG_IF_FAILED(GetDpiForMonitor(hmon, MDT_EFFECTIVE_DPI, &dpix, &dpiy));
 
-    const long minWidthScaled = minimumWidth * dpix / USER_DEFAULT_SCREEN_DPI;
-
     const auto nonClientSize = GetTotalNonClientExclusiveSize(dpix);
+    const auto dipPerPx = static_cast<float>(USER_DEFAULT_SCREEN_DPI) / static_cast<float>(dpix);
+    const auto pxPerDip = static_cast<float>(dpix) / static_cast<float>(USER_DEFAULT_SCREEN_DPI);
 
     auto clientWidth = winRect->right - winRect->left - nonClientSize.width;
-    clientWidth = std::max(minWidthScaled, clientWidth);
-
     auto clientHeight = winRect->bottom - winRect->top - nonClientSize.height;
-
-    // If we're the quake window, prevent resizing on all sides except the
-    // bottom. This also applies to resizing with the Alt+Space menu
-    if (IsQuakeWindow() && wParam != WMSZ_BOTTOM)
-    {
-        // Stuff our current window size into the lParam, and return true. This
-        // will tell User32 to use our current dimensions to resize to.
-        ::GetWindowRect(_window.get(), winRect);
-        return true;
-    }
 
     if (wParam != WMSZ_TOP && wParam != WMSZ_BOTTOM)
     {
         // If user has dragged anything but the top or bottom border (so e.g. left border,
         // top-right corner etc.), then this means that the width has changed. We thus ask to
         // adjust this new width so that terminal(s) is/are aligned to their character grid(s).
-        clientWidth = gsl::narrow_cast<decltype(clientWidth)>(_pfnSnapDimensionCallback(true, gsl::narrow_cast<float>(clientWidth)));
+        auto width = clientWidth * dipPerPx;
+        width = std::max(width, minimumWidth);
+        width = _pfnSnapDimensionCallback(true, width);
+        clientWidth = lroundf(width * pxPerDip);
     }
     if (wParam != WMSZ_LEFT && wParam != WMSZ_RIGHT)
     {
         // Analogous to above, but for height.
-        clientHeight = gsl::narrow_cast<decltype(clientHeight)>(_pfnSnapDimensionCallback(false, gsl::narrow_cast<float>(clientHeight)));
+        auto height = clientHeight * dipPerPx;
+        height = std::max(height, minimumHeight);
+        height = _pfnSnapDimensionCallback(false, height);
+        clientHeight = lroundf(height * pxPerDip);
     }
 
     // Now make the window rectangle match the calculated client width and height,
@@ -470,30 +474,16 @@ void IslandWindow::_OnGetMinMaxInfo(const WPARAM /*wParam*/, const LPARAM lParam
 
     // From now we use dpix for all computations (same as in _OnSizing).
     const auto nonClientSizeScaled = GetTotalNonClientExclusiveSize(dpix);
+    const auto pxPerDip = static_cast<float>(dpix) / static_cast<float>(USER_DEFAULT_SCREEN_DPI);
 
-    auto lpMinMaxInfo = reinterpret_cast<LPMINMAXINFO>(lParam);
-    lpMinMaxInfo->ptMinTrackSize.x = _calculateTotalSize(true, minimumWidth * dpix / USER_DEFAULT_SCREEN_DPI, nonClientSizeScaled.width);
-    lpMinMaxInfo->ptMinTrackSize.y = _calculateTotalSize(false, minimumHeight * dpiy / USER_DEFAULT_SCREEN_DPI, nonClientSizeScaled.height);
-}
-
-// Method Description:
-// - Helper function that calculates a single dimension value, given initialWindow and nonClientSizes
-// Arguments:
-// - isWidth: parameter to pass to SnapDimensionCallback.
-//   True if the method is invoked for width computation, false if for height.
-// - clientSize: the size of the client area (already)
-// - nonClientSizeScaled: the exclusive non-client size (already scaled)
-// Return Value:
-// - The total dimension
-long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize, const long nonClientSize)
-{
-    if (_pfnSnapDimensionCallback)
-    {
-        return gsl::narrow_cast<int>(_pfnSnapDimensionCallback(isWidth, gsl::narrow_cast<float>(clientSize)) + nonClientSize);
-    }
     // We might have been called in WM_CREATE, before we've initialized XAML or
     // our page. That's okay.
-    return clientSize + nonClientSize;
+    const auto width = _pfnSnapDimensionCallback(true, minimumWidth);
+    const auto height = _pfnSnapDimensionCallback(false, minimumHeight);
+
+    auto lpMinMaxInfo = reinterpret_cast<LPMINMAXINFO>(lParam);
+    lpMinMaxInfo->ptMinTrackSize.x = lroundf(width * pxPerDip) + nonClientSizeScaled.width;
+    lpMinMaxInfo->ptMinTrackSize.y = lroundf(height * pxPerDip) + nonClientSizeScaled.height;
 }
 
 [[nodiscard]] LRESULT IslandWindow::MessageHandler(UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept
@@ -655,7 +645,7 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
             const auto relative = eventPoint - origin;
             // Convert to logical scaling before raising the event.
             const auto scale = GetCurrentDpiScale();
-            const til::point real{ til::math::flooring, relative.x / scale, relative.y / scale };
+            const winrt::Windows::Foundation::Point real{ relative.x / scale, relative.y / scale };
 
             const auto wheelDelta = static_cast<short>(HIWORD(wparam));
 

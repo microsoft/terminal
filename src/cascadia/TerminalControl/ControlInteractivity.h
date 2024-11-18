@@ -56,7 +56,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                             const uint64_t timestamp,
                             const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
                             const Core::Point pixelPosition);
-        void TouchPressed(const Core::Point contactPoint);
+        void TouchPressed(const winrt::Windows::Foundation::Point contactPoint);
 
         bool PointerMoved(Control::MouseButtonState buttonState,
                           const unsigned int pointerUpdateKind,
@@ -64,7 +64,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                           const bool focused,
                           const Core::Point pixelPosition,
                           const bool pointerPressedInBounds);
-        void TouchMoved(const Core::Point newTouchPoint,
+        void TouchMoved(const winrt::Windows::Foundation::Point newTouchPoint,
                         const bool focused);
 
         void PointerReleased(Control::MouseButtonState buttonState,
@@ -86,7 +86,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                       const Windows::Foundation::IReference<CopyFormat>& formats);
         void RequestPasteTextFromClipboard();
         void SetEndSelectionPoint(const Core::Point pixelPosition);
-        bool ManglePathsForWsl();
 
         uint64_t Id();
         void AttachToNewControl(const Microsoft::Terminal::Control::IKeyBindings& keyBindings);
@@ -115,7 +114,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         // If this is set, then we assume we are in the middle of panning the
         //      viewport via touch input.
-        std::optional<Core::Point> _touchAnchor;
+        std::optional<winrt::Windows::Foundation::Point> _touchAnchor;
 
         using Timestamp = uint64_t;
 

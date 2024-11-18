@@ -1092,11 +1092,6 @@ til::rect HwndTerminal::GetPadding() const noexcept
     return {};
 }
 
-float HwndTerminal::GetScaleFactor() const noexcept
-{
-    return static_cast<float>(_currentDpi) / static_cast<float>(USER_DEFAULT_SCREEN_DPI);
-}
-
 void HwndTerminal::ChangeViewport(const til::inclusive_rect& NewWindow)
 {
     if (!_terminal)

@@ -3096,6 +3096,17 @@
           "default": false,
           "description": "When set to true, the window will have an acrylic material background. When set to false, the window will have a plain, untextured background.",
           "type": "boolean"
+        },
+        "pathTranslationStyle": {
+          "default": "none",
+          "description": "Controls how file paths are transformed when they are dragged and dropped on the terminal. Possible values are \"none\", \"wsl\", \"cygwin\" and \"msys2\".",
+          "enum": [
+            "none",
+            "wsl",
+            "cygwin",
+            "msys2"
+          ],
+          "type": "string"
         }
       }
     },
