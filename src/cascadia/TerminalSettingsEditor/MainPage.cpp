@@ -526,7 +526,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // profile changes.
         for (const auto& profile : _settingsClone.AllProfiles())
         {
-            if (!profile.Deleted())
+            if (!profile.Deleted() && !profile.Orphaned() /* BACKPORT GH#18188 - DO NOT DISPLAY ORPHANED PROFILES */)
             {
                 auto profileVM = _viewModelForProfile(profile, _settingsClone);
                 profileVM.SetupAppearances(_colorSchemesPageVM.AllColorSchemes());

@@ -332,7 +332,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // from menus, but still work as the startup profile for instance.
         for (const auto& profile : allProfiles)
         {
-            if (!profile.Deleted())
+            if (!profile.Deleted() && !profile.Orphaned() /* BACKPORT GH#18188 - DO NOT DISPLAY ORPHANED PROFILES */)
             {
                 profiles.emplace_back(profile);
             }
