@@ -113,6 +113,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void Icon(const hstring& value);
 
         WINRT_PROPERTY(bool, Deleted, false);
+        WINRT_PROPERTY(bool, Orphaned, false);
         WINRT_PROPERTY(OriginTag, Origin, OriginTag::None);
         WINRT_PROPERTY(guid, Updates);
 

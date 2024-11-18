@@ -103,7 +103,7 @@ Model::CascadiaSettings CascadiaSettings::Copy() const
             for (const auto& profile : targetProfiles)
             {
                 allProfiles.emplace_back(*profile);
-                if (!profile->Hidden())
+                if (!profile->Hidden() && !profile->Orphaned())
                 {
                     activeProfiles.emplace_back(*profile);
                 }
