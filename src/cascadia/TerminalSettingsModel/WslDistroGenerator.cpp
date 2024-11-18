@@ -19,6 +19,7 @@ static constexpr std::wstring_view RancherDistributionPrefix{ L"rancher-desktop"
 //     ⌞ DistributionName: {the name}
 static constexpr wchar_t RegKeyLxss[] = L"Software\\Microsoft\\Windows\\CurrentVersion\\Lxss";
 static constexpr wchar_t RegKeyDistroName[] = L"DistributionName";
+static constexpr wchar_t RegKeyModern[] = L"Modern";
 
 using namespace ::Microsoft::Terminal::Settings::Model;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
@@ -184,6 +185,12 @@ static bool getWslNames(const wil::unique_hkey& wslRootKey,
     {
         auto distroKey{ openDistroKey(wslRootKey, guid) };
         if (!distroKey)
+        {
+            continue;
+        }
+
+        const auto modernValue{ wil::reg::try_get_value<uint32_t>(distroKey.get(), RegKeyModern) };
+        if (modernValue.value_or(0u) == 1u)
         {
             continue;
         }
