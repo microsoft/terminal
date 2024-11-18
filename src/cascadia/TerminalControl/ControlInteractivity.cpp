@@ -734,6 +734,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - true if the connection we were created with was a WSL profile.
     bool ControlInteractivity::ManglePathsForWsl()
     {
-        return _core->Settings().ProfileSource() == L"Windows.Terminal.Wsl";
+        const auto source{ _core->Settings().ProfileSource() };
+        return til::equals_insensitive_ascii(source, L"Windows.Terminal.Wsl") || til::equals_insensitive_ascii(source, L"Microsoft.WSL");
     }
 }
