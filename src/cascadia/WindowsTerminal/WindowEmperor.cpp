@@ -385,6 +385,11 @@ void WindowEmperor::HandleCommandlineArgs(int nCmdShow)
 
     _finalizeSessionPersistence();
 
+    if (_notificationIconShown)
+    {
+        Shell_NotifyIconW(NIM_DELETE, &_notificationIcon);
+    }
+
     // There's a mysterious crash in XAML on Windows 10 if you just let _app get destroyed (GH#15410).
     // We also need to ensure that all UI threads exit before WindowEmperor leaves the scope on the main thread (MSFT:46744208).
     // Both problems can be solved and the shutdown accelerated by using TerminateProcess.
