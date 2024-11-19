@@ -80,9 +80,14 @@ private:
     TriBool _currentSystemThemeIsDark = TriBool::Indeterminate;
 
 #ifdef NDEBUG
-    static constexpr void _assertIsMainThread() noexcept {}
+    static constexpr void _assertIsMainThread() noexcept
+    {
+    }
 #else
-    void _assertIsMainThread() const noexcept { assert(_mainThreadId == GetCurrentThreadId()); }
+    void _assertIsMainThread() const noexcept
+    {
+        assert(_mainThreadId == GetCurrentThreadId());
+    }
     DWORD _mainThreadId = GetCurrentThreadId();
 #endif
 };
