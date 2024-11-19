@@ -87,8 +87,8 @@
                 </Grid>
             </DataTemplate>
             <local:ExtensionPaletteMessageTemplateSelector x:Key="ChatMessageTemplateSelector"
-                                                           RichResponseMessageTemplate="{StaticResource RichResponseMessageTemplate}"
-                                                           RichQueryMessageTemplate="{StaticResource RichQueryMessageTemplate}" />
+                                                           RichQueryMessageTemplate="{StaticResource RichQueryMessageTemplate}"
+                                                           RichResponseMessageTemplate="{StaticResource RichResponseMessageTemplate}" />
             <Style TargetType="ListViewHeaderItem">
                 <Setter Property="FontFamily" Value="{ThemeResource ContentControlThemeFontFamily}" />
                 <Setter Property="FontSize" Value="{ThemeResource ListViewHeaderItemThemeFontSize}" />
