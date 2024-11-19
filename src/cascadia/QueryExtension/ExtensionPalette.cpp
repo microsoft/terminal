@@ -206,47 +206,8 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         const auto time = _getCurrentLocalTimeHelper();
         std::vector<IInspectable> messageParts;
 
-        const auto responseMessageStr = winrt::to_string(response.Message());
-        unique_node doc{ cmark_parse_document(responseMessageStr.c_str(), responseMessageStr.size(), CMARK_OPT_DEFAULT) };
-        unique_iter iter{ cmark_iter_new(doc.get()) };
-        cmark_event_type ev_type;
-
-        std::string currentRun{};
-        while ((ev_type = cmark_iter_next(iter.get())) != CMARK_EVENT_DONE)
-        {
-            const auto node = cmark_iter_get_node(iter.get());
-            const auto nodeType = cmark_node_get_type(node);
-            if (nodeType == CMARK_NODE_TEXT || nodeType == CMARK_NODE_CODE)
-            {
-                // we don't want to create a separate chat message for each text/code node (note that a code node is just an
-                // inline code part, e.g. `-Filter`) because that would be a lot of chat messages for a single response,
-                // so just append the raw string here and we'll make the chat message when we hit a code block or when we end
-                currentRun += cmark_node_get_literal(node);
-            }
-            else if (nodeType == CMARK_NODE_CODE_BLOCK)
-            {
-                // before parsing the code block, append any plaintext we have
-                if (!currentRun.empty())
-                {
-                    const auto chatMsg = winrt::make<ChatMessage>(winrt::to_hstring(currentRun), false, false);
-                    messageParts.push_back(chatMsg);
-                    currentRun.clear();
-                }
-
-                const auto nodeStr = winrt::to_hstring(cmark_node_get_literal(node));
-                // trim the trailing newline
-                std::wstring_view codeView{ nodeStr.c_str(), nodeStr.size() - 1 };
-                const auto chatMsg = winrt::make<ChatMessage>(winrt::hstring{ codeView }, false, true);
-                messageParts.push_back(chatMsg);
-            }
-        }
-        // append any final plaintext
-        if (!currentRun.empty())
-        {
-            const auto chatMsg = winrt::make<ChatMessage>(winrt::to_hstring(currentRun), false, false);
-            messageParts.push_back(chatMsg);
-            currentRun.clear();
-        }
+        const auto chatMsg = winrt::make<ChatMessage>(winrt::to_hstring(response.Message()), false, false);
+        messageParts.push_back(chatMsg);
 
         const auto brandingData = _lmProvider ? _lmProvider.BrandingData() : nullptr;
         const auto responseAttribution = response.ResponseAttribution().empty() ? _ProfileName : response.ResponseAttribution();
@@ -497,5 +458,53 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
 
         // Clear the text box each time we close the dialog. This is consistent with VsCode.
         _queryBox().Text(winrt::hstring{});
+    }
+
+    ChatMessage::ChatMessage(winrt::hstring content, bool isQuery, bool isCode) :
+        _messageContent{ content },
+        _isQuery{ isQuery },
+        _isCode{ isCode }
+    {
+        _richBlock = Microsoft::Terminal::UI::Markdown::Builder::Convert(_messageContent, L"");
+        const auto resources = Application::Current().Resources();
+        if (_isQuery)
+        {
+            if (const auto textBrush = resources.Lookup(box_value(L"TextOnAccentFillColorPrimaryBrush")).try_as<Windows::UI::Xaml::Media::SolidColorBrush>())
+            {
+                _richBlock.Foreground(textBrush);
+            }
+        }
+        else
+        {
+            for (const auto& b : _richBlock.Blocks())
+            {
+                if (const auto& p{ b.try_as<Windows::UI::Xaml::Documents::Paragraph>() })
+                {
+                    for (const auto& line : p.Inlines())
+                    {
+                        if (const auto& otherContent{ line.try_as<Windows::UI::Xaml::Documents::InlineUIContainer>() })
+                        {
+                            if (const auto& codeBlock{ otherContent.Child().try_as<Microsoft::Terminal::UI::Markdown::CodeBlock>() })
+                            {
+                                codeBlock.Margin({ 0, 8, 0, 8 });
+                                codeBlock.PlayButtonVisibility(Windows::UI::Xaml::Visibility::Visible);
+                                if (const auto backgroundBrush = resources.Lookup(box_value(L"ControlAltFillColorSecondaryBrush")).try_as<Windows::UI::Xaml::Media::SolidColorBrush>())
+                                {
+                                    codeBlock.Background(backgroundBrush);
+                                }
+                                if (const auto foregroundBrush = resources.Lookup(box_value(L"AccentTextFillColorPrimaryBrush")).try_as<Windows::UI::Xaml::Media::SolidColorBrush>())
+                                {
+                                    codeBlock.Foreground(foregroundBrush);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            if (const auto textBrush = resources.Lookup(box_value(L"TextFillColorPrimaryBrush")).try_as<Windows::UI::Xaml::Media::SolidColorBrush>())
+            {
+                _richBlock.Foreground(textBrush);
+            }
+        }
     }
 }

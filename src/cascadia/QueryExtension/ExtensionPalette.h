@@ -63,24 +63,18 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
 
     struct ChatMessage : ChatMessageT<ChatMessage>
     {
-        ChatMessage(winrt::hstring content, bool isQuery, bool isCode) :
-            _messageContent{ content },
-            _isQuery{ isQuery },
-            _isCode{ isCode } {}
+        ChatMessage(winrt::hstring content, bool isQuery, bool isCode);
 
         bool IsQuery() const { return _isQuery; };
         bool IsCode() const { return _isCode; };
         winrt::hstring MessageContent() const { return _messageContent; };
-        winrt::Windows::UI::Xaml::Controls::RichTextBlock RichBlock() const {
-            auto richBlock = Microsoft::Terminal::UI::Markdown::Builder::Convert(_messageContent, L"");
-            richBlock.FontSize(14);
-            return richBlock;
-        };
+        winrt::Windows::UI::Xaml::Controls::RichTextBlock RichBlock() const { return _richBlock; };
 
     private:
         bool _isQuery;
         bool _isCode;
         winrt::hstring _messageContent;
+        Windows::UI::Xaml::Controls::RichTextBlock _richBlock;
     };
 
     struct GroupedChatMessages : GroupedChatMessagesT<GroupedChatMessages>

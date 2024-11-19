@@ -142,8 +142,15 @@
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
-                    <ContentPresenter Grid.Row="1"
-                                      Content="{x:Bind RichBlock}" />
+                    <StackPanel Grid.Row="1"
+                                MaxWidth="400"
+                                Padding="16,8,16,8"
+                                Background="{ThemeResource AccentFillColorDefaultBrush}"
+                                BorderBrush="{ThemeResource MessageBorderBrush}"
+                                BorderThickness="{ThemeResource MessageBorderThickness}"
+                                CornerRadius="8">
+                        <ContentPresenter Content="{x:Bind RichBlock}" />
+                    </StackPanel>
                 </Grid>
             </DataTemplate>
             <DataTemplate x:Key="RichResponseMessageTemplate"
@@ -155,8 +162,15 @@
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
-                    <ContentPresenter Grid.Row="1"
-                                      Content="{x:Bind RichBlock}" />
+                    <StackPanel Grid.Row="1"
+                                MaxWidth="400"
+                                Padding="16,8,16,8"
+                                Background="{ThemeResource ControlAltFillColorQuarternaryBrush}"
+                                BorderBrush="{ThemeResource MessageBorderBrush}"
+                                BorderThickness="{ThemeResource MessageBorderThickness}"
+                                CornerRadius="8">
+                        <ContentPresenter Content="{x:Bind RichBlock}" />
+                    </StackPanel>
                 </Grid>
             </DataTemplate>
             <local:ExtensionPaletteMessageTemplateSelector2 x:Key="ChatMessageTemplateSelector2"
@@ -408,7 +422,7 @@
                               HorizontalContentAlignment="Stretch"
                               IsItemClickEnabled="True"
                               ItemClick="_listItemClicked"
-                              ItemTemplateSelector="{StaticResource ChatMessageTemplateSelector}"
+                              ItemTemplateSelector="{StaticResource ChatMessageTemplateSelector2}"
                               ItemsSource="{Binding Source={StaticResource MessagesCollectionViewSource2}}"
                               SelectionMode="None">
                         <ListView.Resources>
