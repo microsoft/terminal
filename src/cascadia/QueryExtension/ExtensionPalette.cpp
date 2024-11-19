@@ -6,7 +6,6 @@
 #include "../../types/inc/utils.hpp"
 #include "LibraryResources.h"
 #include <winrt/Windows.UI.Xaml.Media.Imaging.h>
-#include <cmark.h>
 
 #include "ExtensionPalette.g.cpp"
 #include "ChatMessage.g.cpp"
@@ -29,9 +28,6 @@ static constexpr char cmdCommandDelimiter{ '&' };
 static constexpr std::wstring_view cmdExe{ L"cmd.exe" };
 static constexpr std::wstring_view cmd{ L"cmd" };
 const std::wregex azureOpenAIEndpointRegex{ LR"(^https.*openai\.azure\.com)" };
-
-typedef wil::unique_any<cmark_node*, decltype(&cmark_node_free), cmark_node_free> unique_node;
-typedef wil::unique_any<cmark_iter*, decltype(&cmark_iter_free), cmark_iter_free> unique_iter;
 
 namespace winrt::Microsoft::Terminal::Query::Extension::implementation
 {
