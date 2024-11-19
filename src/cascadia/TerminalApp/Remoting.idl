@@ -42,7 +42,7 @@ namespace TerminalApp
         WindowRequestedArgs(String window, String content, Windows.Foundation.IReference<Windows.Foundation.Rect> bounds);
 
         UInt64 Id;
-        String WindowName { get; };
+        String WindowName;
 
         String[] Commandline { get; };
         String CurrentDirectory { get; };

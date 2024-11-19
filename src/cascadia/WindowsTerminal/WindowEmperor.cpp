@@ -37,12 +37,15 @@ static constexpr ULONG_PTR TERMINAL_HANDOFF_MAGIC = 0x4d524554; // 'TERM'
 
 extern "C" IMAGE_DOS_HEADER __ImageBase;
 
-static std::vector<winrt::hstring> buildArgsFromCommandline(const wchar_t* commandLine)
+// A convenience function around CommandLineToArgv.
+static std::vector<winrt::hstring> commandlineToArgArray(const wchar_t* commandLine)
 {
     int argc = 0;
     const wil::unique_hlocal_ptr<LPWSTR> argv{ CommandLineToArgvW(commandLine, &argc) };
+    argc = std::max(argc, 0);
 
     std::vector<winrt::hstring> args;
+    args.reserve(argc);
     for (int i = 0; i < argc; i++)
     {
         args.emplace_back(argv.get()[i]);
@@ -62,11 +65,14 @@ static std::wstring_view stringFromDoubleNullTerminated(const wchar_t* beg)
     return { beg, end };
 }
 
+// Appends an uint32_t to a byte vector.
 static void serializeUint32(std::vector<uint8_t>& out, uint32_t value)
 {
     out.insert(out.end(), reinterpret_cast<const uint8_t*>(&value), reinterpret_cast<const uint8_t*>(&value) + sizeof(value));
 }
 
+// Parses an uint32_t from the input iterator. Performs bounds-checks.
+// Returns an iterator that points past it.
 static const uint8_t* deserializeUint32(const uint8_t* it, const uint8_t* end, uint32_t& val)
 {
     if (static_cast<size_t>(end - it) < sizeof(uint32_t))
@@ -86,9 +92,8 @@ static void serializeString(std::vector<uint8_t>& out, std::wstring_view str)
     out.insert(out.end(), ptr, ptr + len * sizeof(wchar_t));
 }
 
-// Parses the next string from the input iterator.
+// Parses the next string from the input iterator. Performs bounds-checks.
 // Returns an iterator that points past it.
-// Performs bounds-checks and throws std::out_of_range if the input is malformed.
 static const uint8_t* deserializeString(const uint8_t* it, const uint8_t* end, std::wstring_view& str)
 {
     uint32_t len;
@@ -111,6 +116,8 @@ struct Handoff
     uint32_t show;
 };
 
+// Serializes all relevant parameters to a byte blob for a WM_COPYDATA message.
+// This allows us to hand off an invocation to an existing instance of the Terminal.
 static std::vector<uint8_t> serializeHandoffPayload(int nCmdShow)
 {
     const auto args = GetCommandLineW();
@@ -126,6 +133,7 @@ static std::vector<uint8_t> serializeHandoffPayload(int nCmdShow)
     return out;
 }
 
+// Counterpart to serializeHandoffPayload.
 static Handoff deserializeHandoffPayload(const uint8_t* beg, const uint8_t* end)
 {
     Handoff result{};
@@ -137,6 +145,8 @@ static Handoff deserializeHandoffPayload(const uint8_t* beg, const uint8_t* end)
     return result;
 }
 
+// Either acquires unique ownership over the given `className` mutex,
+// or attempts to pass the commandline to the existing instance.
 static wil::unique_mutex acquireMutexOrAttemptHandoff(const wchar_t* className, int nCmdShow)
 {
     // If the process that owns the mutex has not finished creating the window yet,
@@ -179,11 +189,14 @@ static wil::unique_mutex acquireMutexOrAttemptHandoff(const wchar_t* className, 
 
 HWND WindowEmperor::GetMainWindow() const noexcept
 {
+    _assertIsMainThread();
     return _window.get();
 }
 
 AppHost* WindowEmperor::GetWindowById(uint64_t id) const noexcept
 {
+    _assertIsMainThread();
+
     for (const auto& window : _windows)
     {
         if (window->Logic().WindowProperties().WindowId() == id)
@@ -196,6 +209,8 @@ AppHost* WindowEmperor::GetWindowById(uint64_t id) const noexcept
 
 AppHost* WindowEmperor::GetWindowByName(std::wstring_view name) const noexcept
 {
+    _assertIsMainThread();
+
     for (const auto& window : _windows)
     {
         if (window->Logic().WindowProperties().WindowName() == name)
@@ -208,6 +223,8 @@ AppHost* WindowEmperor::GetWindowByName(std::wstring_view name) const noexcept
 
 void WindowEmperor::CreateNewWindow(winrt::TerminalApp::WindowRequestedArgs args)
 {
+    _assertIsMainThread();
+
     uint64_t id = args.Id();
     bool needsNewId = _windows.empty() || id == 0;
     uint64_t newId = 0;
@@ -227,6 +244,24 @@ void WindowEmperor::CreateNewWindow(winrt::TerminalApp::WindowRequestedArgs args
     auto host = std::make_shared<AppHost>(this, _app.Logic(), std::move(args));
     host->Initialize();
     _windows.emplace_back(std::move(host));
+}
+
+AppHost* WindowEmperor::_mostRecentWindow() const noexcept
+{
+    int64_t max = INT64_MIN;
+    AppHost* mostRecent = nullptr;
+
+    for (const auto& w : _windows)
+    {
+        const auto lastActivatedTime = w->GetLastActivatedTime();
+        if (lastActivatedTime > max)
+        {
+            max = lastActivatedTime;
+            mostRecent = w.get();
+        }
+    }
+
+    return mostRecent;
 }
 
 void WindowEmperor::HandleCommandlineArgs(int nCmdShow)
@@ -280,6 +315,7 @@ void WindowEmperor::HandleCommandlineArgs(int nCmdShow)
     _app.Logic().SettingsChanged([this](auto&&, const TerminalApp::SettingsLoadEventArgs& args) {
         if (SUCCEEDED(args.Result()))
         {
+            _assertIsMainThread();
             _setupGlobalHotkeys();
             _checkWindowsForNotificationIcon();
         }
@@ -302,16 +338,16 @@ void WindowEmperor::HandleCommandlineArgs(int nCmdShow)
             for (const auto layout : layouts)
             {
                 hstring args[] = { L"wt", L"-w", L"new", L"-s", winrt::to_hstring(startIdx) };
-                _createNewWindow(0, { args, cwd, showCmd, std::move(env) });
+                _createNewWindow({ args, cwd, showCmd, std::move(env) });
                 startIdx += 1;
             }
         }
 
         // Create another window if needed: There aren't any yet, or we got an explicit command line.
-        const auto args = buildArgsFromCommandline(GetCommandLineW());
+        const auto args = commandlineToArgArray(GetCommandLineW());
         if (_windows.empty() || args.size() != 1)
         {
-            _createNewWindow(0, { args, cwd, showCmd, std::move(env) });
+            _dispatchCommandline({ args, cwd, showCmd, std::move(env) });
         }
     }
 
@@ -398,15 +434,16 @@ void WindowEmperor::HandleCommandlineArgs(int nCmdShow)
     __assume(false);
 }
 
-void WindowEmperor::_createNewWindow(uint64_t id, winrt::TerminalApp::CommandlineArgs args)
+void WindowEmperor::_createNewWindow(winrt::TerminalApp::CommandlineArgs args)
 {
-    CreateNewWindow(winrt::TerminalApp::WindowRequestedArgs{ id, std::move(args) });
+    CreateNewWindow(winrt::TerminalApp::WindowRequestedArgs{ 0, std::move(args) });
 }
 
 void WindowEmperor::_dispatchCommandline(winrt::TerminalApp::CommandlineArgs args)
 {
     const auto result = _app.Logic().FindTargetWindow(args.Commandline());
-    const auto targetWindow = result.WindowId();
+    auto targetWindow = result.WindowId();
+    winrt::hstring windowName;
     AppHost* window = nullptr;
 
     if (targetWindow == WindowingBehaviorUseNone)
@@ -424,11 +461,8 @@ void WindowEmperor::_dispatchCommandline(winrt::TerminalApp::CommandlineArgs arg
         window = _mostRecentWindow();
         break;
     case WindowingBehaviorUseName:
-        window = GetWindowByName(result.WindowName());
-        if (!window)
-        {
-            window = _mostRecentWindow();
-        }
+        windowName = result.WindowName();
+        window = GetWindowByName(windowName);
         break;
     default:
         break;
@@ -440,19 +474,99 @@ void WindowEmperor::_dispatchCommandline(winrt::TerminalApp::CommandlineArgs arg
     }
     else
     {
-        _createNewWindow(std::max(0, targetWindow), std::move(args));
+        winrt::TerminalApp::WindowRequestedArgs request{ gsl::narrow_cast<uint64_t>(std::max(0, targetWindow)), std::move(args) };
+        request.WindowName(std::move(windowName));
+        CreateNewWindow(std::move(request));
     }
 }
 
+// This is an implementation-detail of _dispatchCommandline().
 safe_void_coroutine WindowEmperor::_dispatchCommandlineCurrentDesktop(winrt::TerminalApp::CommandlineArgs args)
 {
-    if (const auto window = co_await _mostRecentWindowOnCurrentDesktop())
+    std::weak_ptr<AppHost> mostRecentWeak;
+
+    if (winrt::guid currentDesktop; VirtualDesktopUtils::GetCurrentVirtualDesktopId(reinterpret_cast<GUID*>(&currentDesktop)))
+    {
+        int64_t max = INT64_MIN;
+        for (const auto& w : _windows)
+        {
+            const auto lastActivatedTime = w->GetLastActivatedTime();
+            const auto desktopId = co_await w->GetVirtualDesktopId();
+            if (desktopId == currentDesktop && lastActivatedTime > max)
+            {
+                max = lastActivatedTime;
+                mostRecentWeak = w;
+            }
+        }
+    }
+
+    // GetVirtualDesktopId(), as current implemented, should always return on the main thread.
+    _assertIsMainThread();
+
+    auto window = mostRecentWeak.lock().get();
+    if (!window)
+    {
+        window = _mostRecentWindow();
+    }
+
+    if (window)
     {
         window->DispatchCommandline(std::move(args));
     }
     else
     {
-        _createNewWindow(0, std::move(args));
+        _createNewWindow(std::move(args));
+    }
+}
+
+bool WindowEmperor::_summonWindow(const SummonWindowSelectionArgs& args) const
+{
+    AppHost* window = nullptr;
+
+    if (args.WindowID)
+    {
+        for (const auto& w : _windows)
+        {
+            if (w->Logic().WindowProperties().WindowId() == args.WindowID)
+            {
+                window = w.get();
+                break;
+            }
+        }
+    }
+    else if (!args.WindowName.empty())
+    {
+        for (const auto& w : _windows)
+        {
+            if (w->Logic().WindowProperties().WindowName() == args.WindowName)
+            {
+                window = w.get();
+                break;
+            }
+        }
+    }
+    else
+    {
+        window = _mostRecentWindow();
+    }
+
+    if (!window)
+    {
+        return false;
+    }
+
+    window->HandleSummon(args.SummonBehavior);
+    return true;
+}
+
+void WindowEmperor::_summonAllWindows() const
+{
+    TerminalApp::SummonWindowBehavior args;
+    args.ToggleVisibility(false);
+
+    for (const auto& window : _windows)
+    {
+        window->HandleSummon(args);
     }
 }
 
@@ -484,6 +598,7 @@ static WindowEmperor* GetThisFromHandle(HWND const window) noexcept
 
     return DefWindowProcW(window, message, wparam, lparam);
 }
+
 void WindowEmperor::_createMessageWindow(const wchar_t* className)
 {
     const auto instance = reinterpret_cast<HINSTANCE>(&__ImageBase);
@@ -720,7 +835,7 @@ LRESULT WindowEmperor::_messageHandler(HWND window, UINT const message, WPARAM c
                 const winrt::hstring args{ handoff.args };
                 const winrt::hstring env{ handoff.env };
                 const winrt::hstring cwd{ handoff.cwd };
-                const auto argv = buildArgsFromCommandline(args.c_str());
+                const auto argv = commandlineToArgArray(args.c_str());
                 _dispatchCommandline({ argv, cwd, gsl::narrow_cast<uint32_t>(handoff.show), env });
             }
             return 0;
@@ -900,7 +1015,7 @@ void WindowEmperor::_hotkeyPressed(const long hotkeyIndex)
     const wil::unique_environstrings_ptr envMem{ GetEnvironmentStringsW() };
     const auto env = stringFromDoubleNullTerminated(envMem.get());
     const auto cwd = wil::GetCurrentDirectoryW<std::wstring>();
-    _createNewWindow(0, { argv, cwd, SW_SHOWDEFAULT, std::move(env) });
+    _dispatchCommandline({ argv, cwd, SW_SHOWDEFAULT, std::move(env) });
 }
 
 void WindowEmperor::_registerHotKey(const int index, const winrt::Microsoft::Terminal::Control::KeyChord& hotkey) noexcept
@@ -1010,102 +1125,6 @@ void WindowEmperor::_checkWindowsForNotificationIcon()
     }
 
     _notificationIconShown = needsIcon;
-}
-
-bool WindowEmperor::_summonWindow(const SummonWindowSelectionArgs& args) const
-{
-    AppHost* window = nullptr;
-
-    if (args.WindowID)
-    {
-        for (const auto& w : _windows)
-        {
-            if (w->Logic().WindowProperties().WindowId() == args.WindowID)
-            {
-                window = w.get();
-                break;
-            }
-        }
-    }
-    else if (!args.WindowName.empty())
-    {
-        for (const auto& w : _windows)
-        {
-            if (w->Logic().WindowProperties().WindowName() == args.WindowName)
-            {
-                window = w.get();
-                break;
-            }
-        }
-    }
-    else
-    {
-        window = _mostRecentWindow();
-    }
-
-    if (!window)
-    {
-        return false;
-    }
-
-    window->HandleSummon(args.SummonBehavior);
-    return true;
-}
-
-void WindowEmperor::_summonAllWindows() const
-{
-    TerminalApp::SummonWindowBehavior args;
-    args.ToggleVisibility(false);
-
-    for (const auto& window : _windows)
-    {
-        window->HandleSummon(args);
-    }
-}
-
-AppHost* WindowEmperor::_mostRecentWindow() const noexcept
-{
-    int64_t max = INT64_MIN;
-    AppHost* mostRecent = nullptr;
-
-    for (const auto& w : _windows)
-    {
-        const auto lastActivatedTime = w->GetLastActivatedTime();
-        if (lastActivatedTime > max)
-        {
-            max = lastActivatedTime;
-            mostRecent = w.get();
-        }
-    }
-
-    return mostRecent;
-}
-
-wil::task<AppHost*> WindowEmperor::_mostRecentWindowOnCurrentDesktop() const
-{
-    std::weak_ptr<AppHost> mostRecentWeak;
-
-    if (winrt::guid currentDesktop; VirtualDesktopUtils::GetCurrentVirtualDesktopId(reinterpret_cast<GUID*>(&currentDesktop)))
-    {
-        int64_t max = INT64_MIN;
-        for (const auto& w : _windows)
-        {
-            const auto lastActivatedTime = w->GetLastActivatedTime();
-            const auto desktopId = co_await w->GetVirtualDesktopId();
-            if (desktopId == currentDesktop && lastActivatedTime > max)
-            {
-                max = lastActivatedTime;
-                mostRecentWeak = w;
-            }
-        }
-    }
-
-    auto mostRecent = mostRecentWeak.lock().get();
-    if (!mostRecent)
-    {
-        mostRecent = _mostRecentWindow();
-    }
-    co_return mostRecent;
 }
 
 #pragma endregion

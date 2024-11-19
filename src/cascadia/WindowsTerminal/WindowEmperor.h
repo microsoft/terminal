@@ -16,7 +16,6 @@ Abstract:
 --*/
 
 #pragma once
-#include <wil/coroutine.h>
 
 class AppHost;
 
@@ -54,7 +53,10 @@ private:
 
     [[nodiscard]] static LRESULT __stdcall _wndProc(HWND window, UINT message, WPARAM wparam, LPARAM lparam) noexcept;
 
-    void _createNewWindow(uint64_t id, winrt::TerminalApp::CommandlineArgs args);
+    AppHost* _mostRecentWindow() const noexcept;
+    bool _summonWindow(const SummonWindowSelectionArgs& args) const;
+    void _summonAllWindows() const;
+    void _createNewWindow(winrt::TerminalApp::CommandlineArgs args);
     void _dispatchCommandline(winrt::TerminalApp::CommandlineArgs args);
     safe_void_coroutine _dispatchCommandlineCurrentDesktop(winrt::TerminalApp::CommandlineArgs args);
     LRESULT _messageHandler(HWND window, UINT message, WPARAM wParam, LPARAM lParam) noexcept;
@@ -65,10 +67,6 @@ private:
     void _setupGlobalHotkeys();
     void _finalizeSessionPersistence() const;
     void _checkWindowsForNotificationIcon();
-    bool _summonWindow(const SummonWindowSelectionArgs& args) const;
-    void _summonAllWindows() const;
-    AppHost* _mostRecentWindow() const noexcept;
-    wil::task<AppHost*> _mostRecentWindowOnCurrentDesktop() const;
 
     wil::unique_hwnd _window;
     winrt::TerminalApp::App _app{ nullptr };
@@ -80,4 +78,11 @@ private:
     bool _forcePersistence = false;
     bool _needsPersistenceCleanup = false;
     TriBool _currentSystemThemeIsDark = TriBool::Indeterminate;
+
+#ifdef NDEBUG
+    static constexpr void _assertIsMainThread() noexcept {}
+#else
+    void _assertIsMainThread() const noexcept { assert(_mainThreadId == GetCurrentThreadId()); }
+    DWORD _mainThreadId = GetCurrentThreadId();
+#endif
 };
