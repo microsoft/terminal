@@ -240,7 +240,6 @@
                               VerticalAlignment="Bottom"
                               HorizontalContentAlignment="Stretch"
                               IsItemClickEnabled="True"
-                              ItemClick="_listItemClicked"
                               ItemTemplateSelector="{StaticResource ChatMessageTemplateSelector}"
                               ItemsSource="{Binding Source={StaticResource MessagesCollectionViewSource}}"
                               SelectionMode="None">

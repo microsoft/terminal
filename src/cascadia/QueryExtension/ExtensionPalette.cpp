@@ -127,7 +127,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
 
     winrt::fire_and_forget ExtensionPalette::_getSuggestions(const winrt::hstring& prompt, const winrt::hstring& currentLocalTime)
     {
-        const auto userMessage = winrt::make<ChatMessage>(prompt, true, false);
+        const auto userMessage = winrt::make<ChatMessage>(prompt, true);
         std::vector<IInspectable> userMessageVector{ userMessage };
         const auto queryAttribution = _lmProvider ? _lmProvider.BrandingData().QueryAttribution() : winrt::hstring{};
         const auto userGroupedMessages = winrt::make<GroupedChatMessages>(currentLocalTime, true, winrt::single_threaded_vector(std::move(userMessageVector)), queryAttribution);
@@ -200,10 +200,19 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         const auto time = _getCurrentLocalTimeHelper();
         std::vector<IInspectable> messageParts;
 
-        const auto chatMsg = winrt::make<ChatMessage>(winrt::to_hstring(response.Message()), false, false);
+        const auto chatMsg = winrt::make<ChatMessage>(winrt::to_hstring(response.Message()), false);
         chatMsg.RunCommandClicked([this](auto&&, const auto commandlines) {
             _InputSuggestionRequestedHandlers(*this, commandlines);
             _close();
+
+            const auto lmProviderName = _lmProvider ? _lmProvider.BrandingData().Name() : winrt::hstring{};
+            TraceLoggingWrite(
+                g_hQueryExtensionProvider,
+                "AICodeResponseInputted",
+                TraceLoggingDescription("Event emitted when the user clicks on a suggestion to have it be input into their active shell"),
+                TraceLoggingWideString(lmProviderName.c_str(), "LMProviderName", "The name of the connected service provider, if present"),
+                TraceLoggingKeyword(MICROSOFT_KEYWORD_CRITICAL_DATA),
+                TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
         });
         messageParts.push_back(chatMsg);
 
@@ -277,46 +286,6 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         if (!concatenatedMessages.empty())
         {
             _ExportChatHistoryRequestedHandlers(*this, concatenatedMessages);
-        }
-    }
-
-    // Method Description:
-    // - This event is called when the user clicks on a Chat Message. We will
-    //   dispatch the contents of the message to the app to input into the active control.
-    // Arguments:
-    // - e: an ItemClickEventArgs who's ClickedItem() will be the message that was clicked on.
-    // Return Value:
-    // - <none>
-    void ExtensionPalette::_listItemClicked(const Windows::Foundation::IInspectable& /*sender*/,
-                                            const Windows::UI::Xaml::Controls::ItemClickEventArgs& e)
-    {
-        const auto selectedSuggestionItem = e.ClickedItem();
-        const auto selectedItemAsChatMessage = selectedSuggestionItem.as<winrt::Microsoft::Terminal::Query::Extension::ChatMessage>();
-        if (selectedItemAsChatMessage.IsCode())
-        {
-            auto suggestion = winrt::to_string(selectedItemAsChatMessage.MessageContent());
-
-            // the AI sometimes sends multiline code blocks
-            // we don't want to run any of those commands when the chat item is clicked,
-            // so we replace newlines with the appropriate delimiter
-            size_t pos = 0;
-            while ((pos = suggestion.find("\n", pos)) != std::string::npos)
-            {
-                const auto delimiter = (_ActiveCommandline == cmdExe || _ActiveCommandline == cmd) ? cmdCommandDelimiter : commandDelimiter;
-                suggestion.at(pos) = delimiter;
-                pos += 1; // Move past the replaced character
-            }
-            _InputSuggestionRequestedHandlers(*this, winrt::to_hstring(suggestion));
-            _close();
-
-            const auto lmProviderName = _lmProvider ? _lmProvider.BrandingData().Name() : winrt::hstring{};
-            TraceLoggingWrite(
-                g_hQueryExtensionProvider,
-                "AICodeResponseInputted",
-                TraceLoggingDescription("Event emitted when the user clicks on a suggestion to have it be input into their active shell"),
-                TraceLoggingWideString(lmProviderName.c_str(), "LMProviderName", "The name of the connected service provider, if present"),
-                TraceLoggingKeyword(MICROSOFT_KEYWORD_CRITICAL_DATA),
-                TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
         }
     }
 
@@ -457,10 +426,9 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         _queryBox().Text(winrt::hstring{});
     }
 
-    ChatMessage::ChatMessage(winrt::hstring content, bool isQuery, bool isCode) :
+    ChatMessage::ChatMessage(winrt::hstring content, bool isQuery) :
         _messageContent{ content },
-        _isQuery{ isQuery },
-        _isCode{ isCode }
+        _isQuery{ isQuery }
     {
         _richBlock = Microsoft::Terminal::UI::Markdown::Builder::Convert(_messageContent, L"");
         const auto resources = Application::Current().Resources();

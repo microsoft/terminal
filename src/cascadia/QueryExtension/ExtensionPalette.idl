@@ -7,10 +7,9 @@ namespace Microsoft.Terminal.Query.Extension
 {
     [default_interface] runtimeclass ChatMessage
     {
-        ChatMessage(String content, Boolean isQuery, Boolean isCode);
+        ChatMessage(String content, Boolean isQuery);
         String MessageContent { get; };
         Boolean IsQuery { get; };
-        Boolean IsCode { get; };
         Windows.UI.Xaml.Controls.RichTextBlock RichBlock { get; };
         event Windows.Foundation.TypedEventHandler<ChatMessage, String> RunCommandClicked;
     }
