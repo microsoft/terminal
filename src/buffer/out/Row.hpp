@@ -71,7 +71,7 @@ struct RowCopyTextFromState
 // into a ROW's text this class can tell you what cell that pointer belongs to.
 struct CharToColumnMapper
 {
-    CharToColumnMapper(const wchar_t* chars, const uint16_t* charOffsets, ptrdiff_t lastCharOffset, til::CoordType currentColumn) noexcept;
+    CharToColumnMapper(const wchar_t* chars, const uint16_t* charOffsets, ptrdiff_t lastCharOffset, til::CoordType currentColumn, til::CoordType columnCount) noexcept;
 
     til::CoordType GetLeadingColumnAt(ptrdiff_t targetOffset) noexcept;
     til::CoordType GetTrailingColumnAt(ptrdiff_t offset) noexcept;
@@ -85,8 +85,9 @@ private:
 
     const wchar_t* _chars;
     const uint16_t* _charOffsets;
-    ptrdiff_t _lastCharOffset;
+    ptrdiff_t _charsLength;
     til::CoordType _currentColumn;
+    til::CoordType _columnCount;
 };
 
 class ROW final

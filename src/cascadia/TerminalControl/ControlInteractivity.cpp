@@ -239,7 +239,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                               const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
                                               const Core::Point pixelPosition)
     {
-        const auto terminalPosition = _getTerminalPosition(til::point{ pixelPosition });
+        const auto terminalPosition = _getTerminalPosition(til::point{ pixelPosition }, false);
 
         const auto altEnabled = modifiers.IsAltPressed();
         const auto shiftEnabled = modifiers.IsShiftPressed();
@@ -336,7 +336,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                             const Core::Point pixelPosition,
                                             const bool pointerPressedInBounds)
     {
-        const auto terminalPosition = _getTerminalPosition(til::point{ pixelPosition });
+        const auto terminalPosition = _getTerminalPosition(til::point{ pixelPosition }, true);
         // Returning true from this function indicates that the caller should do no further processing of this movement.
         bool handledCompletely = false;
 
@@ -370,7 +370,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                     // _touchdown_ point here. We want to start the selection
                     // from where the user initially clicked, not where they are
                     // now.
-                    _core->SetSelectionAnchor(_getTerminalPosition(til::point{ touchdownPoint }));
+                    _core->SetSelectionAnchor(_getTerminalPosition(til::point{ touchdownPoint }, false));
 
                     // stop tracking the touchdown point
                     _singleClickTouchdownPos = std::nullopt;
@@ -426,7 +426,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                                const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
                                                const Core::Point pixelPosition)
     {
-        const auto terminalPosition = _getTerminalPosition(til::point{ pixelPosition });
+        const auto terminalPosition = _getTerminalPosition(til::point{ pixelPosition }, false);
         // Short-circuit isReadOnly check to avoid warning dialog
         if (!_core->IsInReadOnlyMode() && _canSendVTMouseInput(modifiers))
         {
@@ -473,7 +473,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                           const Core::Point pixelPosition,
                                           const Control::MouseButtonState buttonState)
     {
-        const auto terminalPosition = _getTerminalPosition(til::point{ pixelPosition });
+        const auto terminalPosition = _getTerminalPosition(til::point{ pixelPosition }, true);
 
         // Short-circuit isReadOnly check to avoid warning dialog.
         //
@@ -660,7 +660,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - cursorPosition: in pixels, relative to the origin of the control
     void ControlInteractivity::SetEndSelectionPoint(const Core::Point pixelPosition)
     {
-        _core->SetEndSelectionPoint(_getTerminalPosition(til::point{ pixelPosition }));
+        _core->SetEndSelectionPoint(_getTerminalPosition(til::point{ pixelPosition }, true));
         _selectionNeedsToBeCopied = true;
     }
 
@@ -670,12 +670,22 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // Arguments:
     // - pixelPosition: the (x,y) position of a given point (i.e.: mouse cursor).
     //    NOTE: origin (0,0) is top-left.
+    // - roundToNearestCell: if true, round the x-value. Otherwise, floor it (standard int division)
     // Return Value:
     // - the corresponding viewport terminal position for the given Point parameter
-    til::point ControlInteractivity::_getTerminalPosition(const til::point pixelPosition)
+    til::point ControlInteractivity::_getTerminalPosition(const til::point pixelPosition, bool roundToNearestCell)
     {
         // Get the size of the font, which is in pixels
-        const til::size fontSize{ _core->GetFont().GetSize() };
+        const auto fontSize{ _core->GetFont().GetSize() };
+
+        if (roundToNearestCell)
+        {
+            // GH#5099: round the x-value to the nearest cell
+            til::point result;
+            result.x = gsl::narrow_cast<til::CoordType>(std::round(gsl::narrow_cast<double>(pixelPosition.x) / fontSize.width));
+            result.y = pixelPosition.y / fontSize.height;
+            return result;
+        }
         // Convert the location in pixels to characters within the current viewport.
         return pixelPosition / fontSize;
     }

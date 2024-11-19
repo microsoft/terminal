@@ -118,6 +118,11 @@ til::point Viewport::BottomRightExclusive() const noexcept
     return { RightExclusive(), BottomExclusive() };
 }
 
+til::point Viewport::BottomInclusiveRightExclusive() const noexcept
+{
+    return { RightExclusive(), BottomInclusive() };
+}
+
 // Method Description:
 // - For Accessibility, get a til::point representing the end of this viewport in exclusive terms.
 // - This is needed to represent an exclusive endpoint in UiaTextRange that includes the last
@@ -288,6 +293,61 @@ bool Viewport::WalkInBounds(til::point& pos, const til::CoordType delta, bool al
     const auto w = static_cast<ptrdiff_t>(std::max(0, _sr.right - _sr.left + 1));
     const auto h = static_cast<ptrdiff_t>(std::max(0, _sr.bottom - _sr.top + 1));
     const auto max = w * h - !allowEndExclusive;
+    const auto off = w * (pos.y - t) + (pos.x - l) + delta;
+    const auto offClamped = std::clamp(off, ptrdiff_t{ 0 }, max);
+    pos.x = gsl::narrow_cast<til::CoordType>(offClamped % w + l);
+    pos.y = gsl::narrow_cast<til::CoordType>(offClamped / w + t);
+    return off == offClamped;
+}
+
+bool Viewport::IncrementInExclusiveBounds(til::point& pos) const noexcept
+{
+    return WalkInExclusiveBounds(pos, 1);
+}
+
+bool Viewport::DecrementInExclusiveBounds(til::point& pos) const noexcept
+{
+    return WalkInExclusiveBounds(pos, -1);
+}
+
+bool Viewport::IsInExclusiveBounds(const til::point pos) const noexcept
+{
+    return pos.x >= Left() && pos.x <= RightExclusive() &&
+           pos.y >= Top() && pos.y <= BottomInclusive();
+}
+
+int Viewport::CompareInExclusiveBounds(const til::point first, const til::point second) const noexcept
+{
+    // Assert that our coordinates are within the expected boundaries
+    assert(IsInExclusiveBounds(first));
+    assert(IsInExclusiveBounds(second));
+
+    // First set the distance vertically
+    //   If first is on row 4 and second is on row 6, first will be -2 rows behind second * an 80 character row would be -160.
+    //   For the same row, it'll be 0 rows * 80 character width = 0 difference.
+    auto retVal = (first.y - second.y) * Width();
+
+    // Now adjust for horizontal differences
+    //   If first is in position 15 and second is in position 30, first is -15 left in relation to 30.
+    retVal += (first.x - second.x);
+
+    // Further notes:
+    //   If we already moved behind one row, this will help correct for when first is right of second.
+    //     For example, with row 4, col 79 and row 5, col 0 as first and second respectively, the distance is -1.
+    //     Assume the row width is 80.
+    //     Step one will set the retVal as -80 as first is one row behind the second.
+    //     Step two will then see that first is 79 - 0 = +79 right of second and add 79
+    //     The total is -80 + 79 = -1.
+    return retVal;
+}
+
+bool Viewport::WalkInExclusiveBounds(til::point& pos, const til::CoordType delta) const noexcept
+{
+    const auto l = static_cast<ptrdiff_t>(_sr.left);
+    const auto t = static_cast<ptrdiff_t>(_sr.top);
+    const auto w = static_cast<ptrdiff_t>(std::max(0, _sr.right - _sr.left + 2));
+    const auto h = static_cast<ptrdiff_t>(std::max(0, _sr.bottom - _sr.top + 1));
+    const auto max = w * h;
     const auto off = w * (pos.y - t) + (pos.x - l) + delta;
     const auto offClamped = std::clamp(off, ptrdiff_t{ 0 }, max);
     pos.x = gsl::narrow_cast<til::CoordType>(offClamped % w + l);
