@@ -67,6 +67,7 @@ namespace Microsoft::Console::Utils
     bool HexToUint(const wchar_t wch, unsigned int& value) noexcept;
     bool StringToUint(const std::wstring_view wstr, unsigned int& value);
     std::vector<std::wstring_view> SplitString(const std::wstring_view wstr, const wchar_t delimiter) noexcept;
+    std::vector<std::wstring> SplitResourceStringWithPlaceholders(std::wstring_view resourceString, std::span<std::wstring> placeholderStringsSpan);
 
     enum FilterOption
     {

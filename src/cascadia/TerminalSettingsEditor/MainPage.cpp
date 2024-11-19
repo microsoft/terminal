@@ -13,6 +13,8 @@
 #include "ProfileViewModel.h"
 #include "GlobalAppearance.h"
 #include "GlobalAppearanceViewModel.h"
+#include "AISettings.h"
+#include "AISettingsViewModel.h"
 #include "ColorSchemes.h"
 #include "AddProfile.h"
 #include "InteractionViewModel.h"
@@ -46,6 +48,7 @@ static const std::wstring_view globalProfileTag{ L"GlobalProfile_Nav" };
 static const std::wstring_view addProfileTag{ L"AddProfile" };
 static const std::wstring_view colorSchemesTag{ L"ColorSchemes_Nav" };
 static const std::wstring_view globalAppearanceTag{ L"GlobalAppearance_Nav" };
+static const std::wstring_view AISettingsTag{ L"AISettings_Nav" };
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
@@ -251,6 +254,29 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     // - <none>
     void MainPage::SettingsNav_Loaded(const IInspectable&, const RoutedEventArgs&)
     {
+        if (!_StartingPage.empty())
+        {
+            for (const auto& item : _menuItemSource)
+            {
+                if (const auto& menuItem{ item.try_as<MUX::Controls::NavigationViewItem>() })
+                {
+                    if (const auto& tag{ menuItem.Tag() })
+                    {
+                        if (const auto& stringTag{ tag.try_as<hstring>() })
+                        {
+                            if (stringTag == _StartingPage)
+                            {
+                                // found the one that was selected
+                                SettingsNav().SelectedItem(item);
+                                _Navigate(*stringTag, BreadcrumbSubPage::None);
+                                _StartingPage = {};
+                                return;
+                            }
+                        }
+                    }
+                }
+            }
+        }
         if (SettingsNav().SelectedItem() == nullptr)
         {
             const auto initialItem = SettingsNav().MenuItems().GetAt(0);
@@ -434,6 +460,20 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             contentFrame().Navigate(xaml_typename<Editor::GlobalAppearance>(), winrt::make<GlobalAppearanceViewModel>(_settingsClone.GlobalSettings()));
             const auto crumb = winrt::make<Breadcrumb>(box_value(clickedItemTag), RS_(L"Nav_Appearance/Content"), BreadcrumbSubPage::None);
+            _breadcrumbs.Append(crumb);
+        }
+        else if (clickedItemTag == AISettingsTag)
+        {
+            auto aiSettingsVM{ winrt::make<AISettingsViewModel>(_settingsClone) };
+            aiSettingsVM.GithubAuthRequested([weakThis{ get_weak() }](auto&& /*s*/, auto&& /*e*/) {
+                if (auto mainPage{ weakThis.get() })
+                {
+                    // propagate the event to TerminalPage
+                    mainPage->GithubAuthRequested.raise(nullptr, nullptr);
+                }
+            });
+            contentFrame().Navigate(xaml_typename<Editor::AISettings>(), aiSettingsVM);
+            const auto crumb = winrt::make<Breadcrumb>(box_value(clickedItemTag), RS_(L"Nav_AISettings/Content"), BreadcrumbSubPage::None);
             _breadcrumbs.Append(crumb);
         }
         else if (clickedItemTag == addProfileTag)
@@ -727,6 +767,16 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     IObservableVector<IInspectable> MainPage::Breadcrumbs() noexcept
     {
         return _breadcrumbs;
+    }
+
+    static winrt::event<GithubAuthCompletedHandler> _githubAuthCompletedHandlers;
+
+    winrt::event_token MainPage::GithubAuthCompleted(const GithubAuthCompletedHandler& handler) { return _githubAuthCompletedHandlers.add(handler); };
+    void MainPage::GithubAuthCompleted(const winrt::event_token& token) { _githubAuthCompletedHandlers.remove(token); };
+
+    void MainPage::RefreshGithubAuthStatus(const winrt::hstring& message)
+    {
+        _githubAuthCompletedHandlers(message);
     }
 
     winrt::Windows::UI::Xaml::Media::Brush MainPage::BackgroundBrush()

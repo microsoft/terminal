@@ -10,6 +10,7 @@
     <ClCompile Include="pch.cpp" />
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
     <ClCompile Include="Utils.cpp" />
+    <ClCompile Include="init.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
@@ -24,6 +25,7 @@
     <Midl Include="RenderingViewModel.idl" />
     <Midl Include="InteractionViewModel.idl" />
     <Midl Include="GlobalAppearanceViewModel.idl" />
+    <Midl Include="AISettingsViewModel.idl" />
     <Midl Include="LaunchViewModel.idl" />
     <Midl Include="EnumEntry.idl" />
     <Midl Include="SettingContainer.idl" />
@@ -35,6 +37,7 @@
   <ItemGroup>
     <Page Include="CommonResources.xaml" />
     <Page Include="GlobalAppearance.xaml" />
+    <Page Include="AISettings.xaml" />
     <Page Include="ColorSchemes.xaml" />
     <Page Include="EditColorScheme.xaml" />
     <Page Include="Interaction.xaml" />

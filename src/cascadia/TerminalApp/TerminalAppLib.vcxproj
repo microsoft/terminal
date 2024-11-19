@@ -428,6 +428,10 @@
       <Private>true</Private>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\QueryExtension\Microsoft.Terminal.Query.Extension.vcxproj">
+      <Private>true</Private>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\UIHelpers\UIHelpers.vcxproj">
       <Project>{6515F03F-E56D-4DB4-B23D-AC4FB80DB36F}</Project>
     </ProjectReference>
@@ -463,6 +467,12 @@
     </Reference>
     <Reference Include="Microsoft.Terminal.Settings.Editor">
       <HintPath>$(OpenConsoleCommonOutDir)Microsoft.Terminal.Settings.Editor\Microsoft.Terminal.Settings.Editor.winmd</HintPath>
+      <IsWinMDFile>true</IsWinMDFile>
+      <Private>false</Private>
+      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
+    </Reference>
+    <Reference Include="Microsoft.Terminal.Query.Extension">
+      <HintPath>$(OpenConsoleCommonOutDir)Microsoft.Terminal.Query.Extension\Microsoft.Terminal.Query.Extension.winmd</HintPath>
       <IsWinMDFile>true</IsWinMDFile>
       <Private>false</Private>
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>

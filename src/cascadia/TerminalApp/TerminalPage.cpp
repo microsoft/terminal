@@ -9,6 +9,7 @@
 #include <TerminalCore/ControlKeyStates.hpp>
 #include <til/latch.h>
 #include <Utils.h>
+#include <shlobj.h>
 
 #include "../../types/inc/utils.hpp"
 #include "App.h"
@@ -19,6 +20,8 @@
 #include "SnippetsPaneContent.h"
 #include "MarkdownPaneContent.h"
 #include "TabRowControl.h"
+#include <til/io.h>
+#include <time.h>
 
 #include "TerminalPage.g.cpp"
 #include "RenameWindowRequestedArgs.g.cpp"
@@ -46,6 +49,7 @@ using namespace ::TerminalApp;
 using namespace ::Microsoft::Console;
 using namespace ::Microsoft::Terminal::Core;
 using namespace std::chrono_literals;
+namespace WDJ = ::winrt::Windows::Data::Json;
 
 #define HOOKUP_ACTION(action) _actionDispatch->action({ this, &TerminalPage::_Handle##action });
 
@@ -125,6 +129,16 @@ namespace winrt::TerminalApp::implementation
         if (const auto p = CommandPaletteElement())
         {
             p.SetActionMap(_settings.ActionMap());
+        }
+
+        // If the active LLMProvider changed, make sure we reinitialize the provider
+        // We only need to do this if an _lmProvider already existed, this is to handle
+        // the case where a user uses the chat, then goes to settings and changes
+        // the active provider and returns to chat
+        const auto newProviderType = _settings.GlobalSettings().AIInfo().ActiveProvider();
+        if (_lmProvider && (newProviderType != _currentProvider))
+        {
+            _createAndSetAuthenticationForLMProvider(newProviderType);
         }
 
         if (needRefreshUI)
@@ -472,6 +486,125 @@ namespace winrt::TerminalApp::implementation
         ExecuteCommandlineArgs args{ commandLine };
         ActionAndArgs actionAndArgs{ ShortcutAction::ExecuteCommandline, args };
         _actionDispatch->DoAction(actionAndArgs);
+    }
+
+    // Method Description:
+    // - This method is called once the query palette suggestion was chosen
+    //   We'll use this event to input the suggestion
+    // Arguments:
+    // - suggestion - suggestion to dispatch
+    // Return Value:
+    // - <none>
+    void TerminalPage::_OnInputSuggestionRequested(const IInspectable& /*sender*/, const winrt::hstring& suggestion)
+    {
+        if (auto activeControl = _GetActiveControl())
+        {
+            activeControl.SendInput(suggestion);
+        }
+    }
+
+    winrt::fire_and_forget TerminalPage::_OnGithubCopilotLLMProviderAuthChanged(const IInspectable& /*sender*/, const winrt::Microsoft::Terminal::Query::Extension::IAuthenticationResult& authResult)
+    {
+        winrt::hstring message{};
+        if (authResult.ErrorMessage().empty())
+        {
+            // the auth succeeded, store the values
+            _settings.GlobalSettings().AIInfo().GithubCopilotAuthValues(authResult.AuthValues());
+        }
+        else
+        {
+            message = authResult.ErrorMessage();
+        }
+        co_await wil::resume_foreground(Dispatcher());
+        winrt::Microsoft::Terminal::Settings::Editor::MainPage::RefreshGithubAuthStatus(message);
+    }
+
+    // Method Description:
+    // - This method is called when the user clicks the "export message history" button
+    //   in the query palette
+    // Arguments:
+    // - text - the text to export
+    // Return Value:
+    // - <none>
+    void TerminalPage::_OnExportChatHistoryRequested(const IInspectable& /*sender*/, const winrt::hstring& text)
+    {
+        time_t nowTime;
+        time(&nowTime);
+
+        tm nowTm;
+        localtime_s(&nowTm, &nowTime);
+
+        wchar_t buf[64];
+        wcsftime(&buf[0], ARRAYSIZE(buf), L"%F %T", &nowTm);
+
+        const auto defaultFileName = RS_(L"TerminalChatHistoryDefaultFileName") + winrt::to_hstring(buf);
+
+        // An arbitrary GUID to associate with all instances of the save file dialog
+        // for exporting terminal chat histories, so they all re-open in the same path as they were
+        // open before:
+        static constexpr winrt::guid terminalChatSaveFileDialogGuid{ 0xc3e449f6, 0x1b5, 0x44e0, { 0x9e, 0x6d, 0x63, 0xca, 0x15, 0x43, 0x4b, 0xdc } };
+
+        _SaveStringToFileOrPromptUser(text, L"", defaultFileName, terminalChatSaveFileDialogGuid);
+    }
+
+    // Method Description:
+    // - Saves the given text to the file path provided, or prompts the user for the location to save it
+    // Arguments:
+    // - text - the text to save
+    // - filepath - the location to save the text
+    // - filename - the name of the file to save the text to
+    // - dialogGuid - the guid to associate with these specific saves (determines where the save dialog opens to by default)
+    safe_void_coroutine TerminalPage::_SaveStringToFileOrPromptUser(const winrt::hstring& text, const winrt::hstring& filepath, const std::wstring_view filename, const winrt::guid dialogGuid)
+    {
+        // This will be used to set up the file picker "filter", to select .txt
+        // files by default.
+        static constexpr COMDLG_FILTERSPEC supportedFileTypes[] = {
+            { L"Text Files (*.txt)", L"*.txt" },
+            { L"All Files (*.*)", L"*.*" }
+        };
+
+        try
+        {
+            auto path = filepath;
+
+            if (path.empty())
+            {
+                // GH#11356 - we can't use the UWP apis for writing the file,
+                // because they don't work elevated (shocker) So just use the
+                // shell32 file picker manually.
+                std::wstring cleanedFilename{ til::clean_filename(std::wstring{ filename }) };
+                path = co_await SaveFilePicker(*_hostingHwnd, [filename = std::move(cleanedFilename), saveDialogGuid = std::move(dialogGuid)](auto&& dialog) {
+                    THROW_IF_FAILED(dialog->SetClientGuid(saveDialogGuid));
+                    try
+                    {
+                        // Default to the Downloads folder
+                        auto folderShellItem{ winrt::capture<IShellItem>(&SHGetKnownFolderItem, FOLDERID_Downloads, KF_FLAG_DEFAULT, nullptr) };
+                        dialog->SetDefaultFolder(folderShellItem.get());
+                    }
+                    CATCH_LOG(); // non-fatal
+                    THROW_IF_FAILED(dialog->SetFileTypes(ARRAYSIZE(supportedFileTypes), supportedFileTypes));
+                    THROW_IF_FAILED(dialog->SetFileTypeIndex(1)); // the array is 1-indexed
+                    THROW_IF_FAILED(dialog->SetDefaultExtension(L"txt"));
+
+                    // Default to using the tab title as the file name
+                    THROW_IF_FAILED(dialog->SetFileName((filename + L".txt").c_str()));
+                });
+            }
+            else
+            {
+                // The file picker isn't going to give us paths with
+                // environment variables, but the user might have set one in
+                // the settings. Expand those here.
+
+                path = winrt::hstring{ wil::ExpandEnvironmentStringsW<std::wstring>(path.c_str()) };
+            }
+
+            if (!path.empty())
+            {
+                til::io::write_utf8_string_to_file_atomic(std::filesystem::path{ std::wstring_view{ path } }, til::u16u8(text));
+            }
+        }
+        CATCH_LOG();
     }
 
     // Method Description:
@@ -857,6 +990,63 @@ namespace winrt::TerminalApp::implementation
                 _SetAcceleratorForMenuItem(commandPaletteFlyout, commandPaletteKeyChord);
             }
 
+            // Create the AI chat button if AI features are allowed
+            if (WI_IsAnyFlagSet(_settings.GlobalSettings().AIInfo().AllowedLMProviders(), EnabledLMProviders::All))
+            {
+                auto AIChatFlyout = WUX::Controls::MenuFlyoutItem{};
+                AIChatFlyout.Text(RS_(L"AIChatMenuItem"));
+                const auto AIChatToolTip = RS_(L"AIChatToolTip");
+
+                WUX::Controls::ToolTipService::SetToolTip(AIChatFlyout, box_value(AIChatToolTip));
+                Automation::AutomationProperties::SetHelpText(AIChatFlyout, AIChatToolTip);
+
+                // BODGY
+                // Manually load this icon from an SVG path; it is ironically much more humane this way.
+                // The XAML resource loader can't resolve theme-light/theme-dark for us, for... well, reasons.
+                // But also, you can't load a PathIcon with a *string* using the WinRT API... well. Reasons.
+                {
+                    static constexpr wil::zwstring_view pathSVG{
+                        L"m11.799 0c1.4358 0 2.5997 1.1639 2.5997 2.5997"
+                        "v4.6161c-0.3705-0.2371-0.7731-0.42843-1.1998-0.56618"
+                        "v-2.2501h-11.999v7.3991c0 0.7731 0.62673 1.3999 1.3998 1.3999"
+                        "h4.0503c0.06775 0.2097 0.14838 0.4137 0.24109 0.6109l-0.17934 0.5889"
+                        "h-4.1121c-1.4358 0-2.5997-1.1639-2.5997-2.5997"
+                        "v-9.1989c0-1.4358 1.1639-2.5997 2.5997-2.5997"
+                        "h9.1989zm0 1.1999h-9.1989c-0.77311 0-1.3998 0.62673-1.3998 1.3998"
+                        "v0.59993h11.999v-0.59993c0-0.77311-0.6267-1.3998-1.3999-1.3998"
+                        "zm1.3999 6.2987c0.4385 0.1711 0.8428 0.41052 1.1998 0.70512 0.9782 "
+                        "0.80711 1.6017 2.0287 1.6017 3.3959 0 2.4304-1.9702 4.4005-4.4005 "
+                        "4.4005-0.7739 0-1.5013-0.1998-2.1332-0.5508l-1.7496 0.5325c-0.30612 "
+                        "0.0931-0.59233-0.1931-0.49914-0.4993l0.53258-1.749c-0.35108-0.6321-0.55106-1.3596-0.55106-2.1339 "
+                        "0-2.3834 1.8949-4.3243 4.2604-4.3983 0.0395-0.0012 0.0792-0.00192 "
+                        "0.1191-0.00208 0.0069-8e-5 0.0139-8e-5 0.0208-8e-5 0.5641 0 1.1034 "
+                        "0.10607 1.599 0.2994zm0.0012 3.701c0.2209 0 0.4-0.1791 0.4-0.4 "
+                        "0-0.221-0.1791-0.4001-0.4-0.4001h-3.2003c-0.22094 0-0.40003 0.1791-0.40003 "
+                        "0.4001 0 0.2209 0.17909 0.4 0.40003 0.4h3.2003zm-3.2003 1.6001h1.6001c0.221 "
+                        "0 0.4001-0.1791 0.4001-0.4s-0.1791-0.4-0.4001-0.4h-1.6001c-0.22094 0-0.40003 "
+                        "0.1791-0.40003 0.4s0.17909 0.4 0.40003 0.4z"
+                    };
+                    try
+                    {
+                        hstring hsPathSVG{ pathSVG };
+                        auto geometry = Markup::XamlBindingHelper::ConvertValue(winrt::xaml_typename<WUX::Media::Geometry>(), winrt::box_value(hsPathSVG));
+                        WUX::Controls::PathIcon pathIcon;
+                        pathIcon.Data(geometry.try_as<WUX::Media::Geometry>());
+                        AIChatFlyout.Icon(pathIcon);
+                    }
+                    CATCH_LOG();
+                }
+
+                AIChatFlyout.Click({ this, &TerminalPage::_AIChatButtonOnClick });
+                newTabFlyout.Items().Append(AIChatFlyout);
+
+                const auto AIChatKeyChord{ actionMap.GetKeyBindingForAction(L"Terminal.OpenTerminalChat") };
+                if (AIChatKeyChord)
+                {
+                    _SetAcceleratorForMenuItem(AIChatFlyout, AIChatKeyChord);
+                }
+            }
+
             // Create the about button.
             auto aboutFlyout = WUX::Controls::MenuFlyoutItem{};
             aboutFlyout.Text(RS_(L"AboutMenuItem"));
@@ -886,7 +1076,7 @@ namespace winrt::TerminalApp::implementation
         });
         // Necessary for fly-out sub items to get focus on a tab before collapsing. Related to #15049
         newTabFlyout.Closing([this](auto&&, auto&&) {
-            if (!_commandPaletteIs(Visibility::Visible))
+            if (!_commandPaletteIs(Visibility::Visible) && (ExtensionPresenter().Visibility() != Visibility::Visible))
             {
                 _FocusCurrentTab(true);
             }
@@ -1463,6 +1653,19 @@ namespace winrt::TerminalApp::implementation
         auto p = LoadCommandPalette();
         p.EnableCommandPaletteMode(CommandPaletteLaunchMode::Action);
         p.Visibility(Visibility::Visible);
+    }
+
+    // Method Description:
+    // - Called when the AI chat button is clicked. Opens the AI chat.
+    void TerminalPage::_AIChatButtonOnClick(const IInspectable&,
+                                            const RoutedEventArgs&)
+    {
+        if (ExtensionPresenter().Visibility() == Visibility::Collapsed)
+        {
+            _loadQueryExtension();
+            ExtensionPresenter().Visibility(Visibility::Visible);
+            _extensionPalette.Visibility(Visibility::Visible);
+        }
     }
 
     // Method Description:
@@ -4121,7 +4324,7 @@ namespace winrt::TerminalApp::implementation
         CATCH_RETURN()
     }
 
-    TerminalApp::IPaneContent TerminalPage::_makeSettingsContent()
+    TerminalApp::IPaneContent TerminalPage::_makeSettingsContent(const winrt::hstring& startingPage)
     {
         if (auto app{ winrt::Windows::UI::Xaml::Application::Current().try_as<winrt::TerminalApp::App>() })
         {
@@ -4135,6 +4338,10 @@ namespace winrt::TerminalApp::implementation
         // Create the SUI pane content
         auto settingsContent{ winrt::make_self<SettingsPaneContent>(_settings) };
         auto sui = settingsContent->SettingsUI();
+        if (!startingPage.empty())
+        {
+            sui.StartingPage(startingPage);
+        }
 
         if (_hostingHwnd)
         {
@@ -4151,7 +4358,40 @@ namespace winrt::TerminalApp::implementation
             }
         });
 
+        sui.GithubAuthRequested([weakThis{ get_weak() }](auto&& /*s*/, auto&& /*e*/) {
+            if (auto page{ weakThis.get() })
+            {
+                page->_InitiateGithubAuth();
+            }
+        });
+
         return *settingsContent;
+    }
+
+    void TerminalPage::_InitiateGithubAuth()
+    {
+#if defined(WT_BRANDING_DEV)
+        const auto callbackUri = L"ms-terminal-dev://github-auth";
+#elif defined(WT_BRANDING_CANARY)
+        const auto callbackUri = L"ms-terminal-can://github-auth";
+#endif
+
+        const auto randomStateString = _generateRandomString();
+        const auto executeUrl = fmt::format(FMT_COMPILE(L"https://github.com/login/oauth/authorize?client_id=Iv1.b0870d058e4473a1&redirect_uri={}&state={}"), callbackUri, randomStateString);
+        ShellExecute(nullptr, L"open", executeUrl.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
+        Application::Current().as<TerminalApp::App>().Logic().RandomStateString(randomStateString);
+    }
+
+    winrt::hstring TerminalPage::_generateRandomString()
+    {
+        BYTE buffer[16];
+        til::gen_random(&buffer[0], sizeof(buffer));
+
+        wchar_t string[24];
+        DWORD stringLen = 24;
+        THROW_IF_WIN32_BOOL_FALSE(CryptBinaryToStringW(&buffer[0], sizeof(buffer), CRYPT_STRING_BASE64URI | CRYPT_STRING_NOCRLF, &string[0], &stringLen));
+
+        return winrt::hstring{ &string[0], stringLen };
     }
 
     // Method Description:
@@ -4161,13 +4401,13 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - <none>
-    void TerminalPage::OpenSettingsUI()
+    void TerminalPage::OpenSettingsUI(const winrt::hstring& startingPage)
     {
         // If we're holding the settings tab's switch command, don't create a new one, switch to the existing one.
         if (!_settingsTab)
         {
             // Create the tab
-            auto resultPane = std::make_shared<Pane>(_makeSettingsContent());
+            auto resultPane = std::make_shared<Pane>(_makeSettingsContent(startingPage));
             _settingsTab = _CreateNewTabFromPane(resultPane);
         }
         else
@@ -5441,5 +5681,163 @@ namespace winrt::TerminalApp::implementation
         profileMenuItemFlyout.Items().Append(runAsAdminItem);
 
         return profileMenuItemFlyout;
+    }
+
+    void TerminalPage::_loadQueryExtension()
+    {
+        if (_extensionPalette)
+        {
+            return;
+        }
+
+        if (auto app{ winrt::Windows::UI::Xaml::Application::Current().try_as<winrt::TerminalApp::App>() })
+        {
+            if (auto appPrivate{ winrt::get_self<implementation::App>(app) })
+            {
+                // Lazily load the query palette components so that we don't do it on startup.
+                appPrivate->PrepareForAIChat();
+            }
+        }
+
+        _extensionPalette = winrt::Microsoft::Terminal::Query::Extension::ExtensionPalette();
+
+        // create the correct lm provider
+        _createAndSetAuthenticationForLMProvider(_settings.GlobalSettings().AIInfo().ActiveProvider());
+
+        // make sure we listen for auth changes
+        _azureOpenAISettingChangedRevoker = Microsoft::Terminal::Settings::Model::AIConfig::AzureOpenAISettingChanged(winrt::auto_revoke, { this, &TerminalPage::_setAzureOpenAIAuth });
+        _openAISettingChangedRevoker = Microsoft::Terminal::Settings::Model::AIConfig::OpenAISettingChanged(winrt::auto_revoke, { this, &TerminalPage::_setOpenAIAuth });
+
+        _extensionPalette.RegisterPropertyChangedCallback(UIElement::VisibilityProperty(), [&](auto&&, auto&&) {
+            if (_extensionPalette.Visibility() == Visibility::Collapsed)
+            {
+                ExtensionPresenter().Visibility(Visibility::Collapsed);
+                _FocusActiveControl(nullptr, nullptr);
+            }
+        });
+        _extensionPalette.InputSuggestionRequested({ this, &TerminalPage::_OnInputSuggestionRequested });
+        _extensionPalette.ExportChatHistoryRequested({ this, &TerminalPage::_OnExportChatHistoryRequested });
+        _extensionPalette.ActiveControlInfoRequested([&](IInspectable const&, IInspectable const&) {
+            if (const auto activeControl = _GetActiveControl())
+            {
+                const auto profileName = activeControl.Settings().ProfileName();
+                std::wstring fullCommandline = activeControl.Settings().Commandline().c_str();
+
+                // We need to extract the executable to send to the LMProvider for context
+                if (!fullCommandline.empty())
+                {
+                    std::filesystem::path executablePath;
+                    if (til::at(fullCommandline, 0) == L'"')
+                    {
+                        // commandline starts with a quote ("), the path is the string up until the next quote
+                        const auto secondQuotePos = fullCommandline.find(L"\"", 1);
+                        if (secondQuotePos != std::wstring::npos)
+                        {
+                            executablePath = std::filesystem::path{ fullCommandline.substr(1, secondQuotePos - 1) };
+                        }
+                    }
+                    else
+                    {
+                        // commandline does not start with a quote, the path is simply the first word
+                        const auto terminator{ fullCommandline.find_first_of(LR"(" )", 0) };
+                        executablePath = std::filesystem::path{ fullCommandline.substr(0, terminator) };
+                    }
+
+                    const auto executableFilename{ executablePath.filename() };
+                    winrt::hstring executableString{ executableFilename.c_str() };
+                    _extensionPalette.ActiveCommandline(executableString);
+                    _extensionPalette.ProfileName(profileName);
+                }
+
+                // Unfortunately IControlSettings doesn't contain the icon, we need to search our
+                // settings for the matching profile and get the icon from there
+                for (const auto profile : _settings.AllProfiles())
+                {
+                    if (profile.Name() == profileName)
+                    {
+                        _extensionPalette.IconPath(profile.Icon());
+                        break;
+                    }
+                }
+            }
+            else
+            {
+                _extensionPalette.ActiveCommandline(L"");
+            }
+        });
+        _extensionPalette.SetUpProviderInSettingsRequested([&](IInspectable const&, IInspectable const&) {
+            OpenSettingsUI(L"AISettings_Nav");
+        });
+        ExtensionPresenter().Content(_extensionPalette);
+    }
+
+    void TerminalPage::_createAndSetAuthenticationForLMProvider(LLMProvider providerType, const winrt::hstring& authValuesString)
+    {
+        if (!_lmProvider || (_currentProvider != providerType))
+        {
+            // we don't have a provider or our current provider is the wrong one, create a new provider
+            switch (providerType)
+            {
+            case LLMProvider::AzureOpenAI:
+                _currentProvider = LLMProvider::AzureOpenAI;
+                _lmProvider = winrt::Microsoft::Terminal::Query::Extension::AzureLLMProvider();
+                break;
+            case LLMProvider::OpenAI:
+                _currentProvider = LLMProvider::OpenAI;
+                _lmProvider = winrt::Microsoft::Terminal::Query::Extension::OpenAILLMProvider();
+                break;
+            case LLMProvider::GithubCopilot:
+                _currentProvider = LLMProvider::GithubCopilot;
+                _lmProvider = winrt::Microsoft::Terminal::Query::Extension::GithubCopilotLLMProvider();
+                _lmProvider.AuthChanged({ this, &TerminalPage::_OnGithubCopilotLLMProviderAuthChanged });
+                break;
+            default:
+                break;
+            }
+        }
+
+        if (_lmProvider)
+        {
+            // we now have a provider of the correct type, update that
+            winrt::hstring newAuthValues = authValuesString;
+            if (newAuthValues.empty())
+            {
+                Windows::Data::Json::JsonObject authValuesJson;
+                const auto settingsAIInfo = _settings.GlobalSettings().AIInfo();
+                switch (providerType)
+                {
+                case LLMProvider::AzureOpenAI:
+                    authValuesJson.SetNamedValue(L"endpoint", WDJ::JsonValue::CreateStringValue(settingsAIInfo.AzureOpenAIEndpoint()));
+                    authValuesJson.SetNamedValue(L"key", WDJ::JsonValue::CreateStringValue(settingsAIInfo.AzureOpenAIKey()));
+                    newAuthValues = authValuesJson.ToString();
+                    break;
+                case LLMProvider::OpenAI:
+                    authValuesJson.SetNamedValue(L"key", WDJ::JsonValue::CreateStringValue(settingsAIInfo.OpenAIKey()));
+                    newAuthValues = authValuesJson.ToString();
+                    break;
+                case LLMProvider::GithubCopilot:
+                    newAuthValues = settingsAIInfo.GithubCopilotAuthValues();
+                    break;
+                default:
+                    break;
+                }
+            }
+            _lmProvider.SetAuthentication(newAuthValues);
+        }
+
+        if (_extensionPalette)
+        {
+            _extensionPalette.SetProvider(_lmProvider);
+        }
+    }
+
+    void TerminalPage::_setAzureOpenAIAuth()
+    {
+        _createAndSetAuthenticationForLMProvider(LLMProvider::AzureOpenAI);
+    }
+
+    void TerminalPage::_setOpenAIAuth()
+    {
+        _createAndSetAuthenticationForLMProvider(LLMProvider::OpenAI);
     }
 }

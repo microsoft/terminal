@@ -1,0 +1,41 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+#include "IInheritable.idl.h"
+
+namespace Microsoft.Terminal.Settings.Model
+{
+    enum LLMProvider
+    {
+        None,
+        AzureOpenAI,
+        OpenAI,
+        GithubCopilot
+    };
+
+    [flags] enum EnabledLMProviders
+    {
+        AzureOpenAI = 0x1,
+        OpenAI = 0x2,
+        GithubCopilot = 0x4,
+        All = 0xffffffff
+    };
+
+    delegate void AzureOpenAISettingChangedHandler();
+    delegate void OpenAISettingChangedHandler();
+
+    [default_interface] runtimeclass AIConfig {
+        INHERITABLE_SETTING(LLMProvider, ActiveProvider);
+
+        static EnabledLMProviders AllowedLMProviders { get; };
+
+        String AzureOpenAIEndpoint;
+        String AzureOpenAIKey;
+        static event AzureOpenAISettingChangedHandler AzureOpenAISettingChanged;
+
+        String OpenAIKey;
+        static event OpenAISettingChangedHandler OpenAISettingChanged;
+
+        String GithubCopilotAuthValues;
+    }
+}

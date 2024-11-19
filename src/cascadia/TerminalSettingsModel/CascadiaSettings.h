@@ -152,6 +152,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         void ExpandCommands();
 
+        static winrt::event_token AzureOpenAISettingChanged(const AzureOpenAISettingChangedHandler& handler);
+        static void AzureOpenAISettingChanged(const winrt::event_token& token);
+
         void LogSettingChanges(bool isJsonLoad) const;
 
     private:

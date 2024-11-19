@@ -47,7 +47,7 @@ parameters:
   - name: terminalInternalPackageVersion
     displayName: "Terminal Internal Package Version"
     type: string
-    default: '0.0.8'
+    default: '0.0.9'
 
   - name: publishSymbolsToPublic
     displayName: "Publish Symbols to MSDL"

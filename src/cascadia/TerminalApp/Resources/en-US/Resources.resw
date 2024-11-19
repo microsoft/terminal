@@ -346,6 +346,9 @@
   <data name="CmdFocusPaneTargetArgDesc" xml:space="preserve">
     <value>Focus the pane at the given index</value>
   </data>
+  <data name="CmdHandleUriDesc" xml:space="preserve">
+    <value>(For internal use) handle the given URI</value>
+  </data>
   <data name="CmdProfileArgDesc" xml:space="preserve">
     <value>Open with the given profile. Accepts either the name or GUID of a profile</value>
   </data>
@@ -500,8 +503,8 @@
     <comment>A hyperlink name for the Terminal's release notes</comment>
   </data>
   <data name="AboutDialog_PrivacyPolicyLink.Content" xml:space="preserve">
-    <value>Privacy policy</value>
-    <comment>A hyperlink name for the Terminal's privacy policy</comment>
+    <value>Privacy statement</value>
+    <comment>A hyperlink name for the Terminal's privacy statement</comment>
   </data>
   <data name="AboutDialog_ThirdPartyNoticesLink.Content" xml:space="preserve">
     <value>Third-Party notices</value>
@@ -748,6 +751,9 @@
   <data name="CommandPaletteMenuItem" xml:space="preserve">
     <value>Command palette</value>
   </data>
+  <data name="AIChatMenuItem" xml:space="preserve">
+    <value>Terminal Chat</value>
+  </data>
   <data name="NotificationIconFocusTerminal" xml:space="preserve">
     <value>Focus Terminal</value>
     <comment>This is displayed as a label for the context menu item that focuses the terminal.</comment>
@@ -818,6 +824,9 @@
   </data>
   <data name="CommandPaletteToolTip" xml:space="preserve">
     <value>Open the command palette</value>
+  </data>
+  <data name="AIChatToolTip" xml:space="preserve">
+    <value>Open the terminal chat</value>
   </data>
   <data name="DuplicateTabToolTip" xml:space="preserve">
     <value>Open a new tab using the active profile in the current directory</value>
@@ -937,6 +946,9 @@
   </data>
   <data name="ActionSaveFailedToast.Title" xml:space="preserve">
     <value>Action save failed</value>
+  </data>
+  <data name="TerminalChatHistoryDefaultFileName" xml:space="preserve">
+    <value>TerminalChat_</value>
   </data>
   <data name="CloseSnippetsPaneButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Close pane</value>

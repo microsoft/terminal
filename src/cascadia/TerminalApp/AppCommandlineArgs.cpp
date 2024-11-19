@@ -209,6 +209,7 @@ void AppCommandlineArgs::_buildParser()
     _buildMovePaneParser();
     _buildSwapPaneParser();
     _buildFocusPaneParser();
+    _buildHandleUriParser();
     _buildSaveSnippetParser();
 }
 
@@ -538,6 +539,45 @@ void AppCommandlineArgs::_buildFocusPaneParser()
     setupSubcommand(_focusPaneShort);
 }
 
+void AppCommandlineArgs::_buildHandleUriParser()
+{
+    _handleUriCommand = _app.add_subcommand("handle-uri", RS_A(L"CmdHandleUriDesc"));
+
+    auto setupSubcommand = [this](auto* subcommand) {
+        // When ParseCommand is called, if this subcommand was provided, this
+        // callback function will be triggered on the same thread. We can be sure
+        // that `this` will still be safe - this function just lets us know this
+        // command was parsed.
+        subcommand->callback([&, this]() {
+            // Build the action from the values we've parsed on the commandline.
+            const auto cmdlineArgs = _currentCommandline->Args();
+            winrt::hstring uri;
+            for (size_t i = 0; i < cmdlineArgs.size(); ++i)
+            {
+                if (cmdlineArgs[i] == "handle-uri")
+                {
+                    // the next arg is our uri
+                    if ((i + 1) < cmdlineArgs.size())
+                    {
+                        uri = winrt::to_hstring(cmdlineArgs[i + 1]);
+                        break;
+                    }
+                }
+            }
+            if (!uri.empty())
+            {
+                ActionAndArgs handleUriAction{};
+                handleUriAction.Action(ShortcutAction::HandleUri);
+                HandleUriArgs args{ uri };
+                handleUriAction.Args(args);
+                _startupActions.push_back(handleUriAction);
+            }
+        });
+    };
+
+    setupSubcommand(_handleUriCommand);
+}
+
 void AppCommandlineArgs::_buildSaveSnippetParser()
 {
     _saveCommand = _app.add_subcommand("x-save", RS_A(L"SaveSnippetDesc"));
@@ -778,6 +818,7 @@ bool AppCommandlineArgs::_noCommandsProvided()
              *_focusPaneShort ||
              *_newPaneShort.subcommand ||
              *_newPaneCommand.subcommand ||
+             *_handleUriCommand ||
              *_saveCommand);
 }
 
@@ -1034,7 +1075,8 @@ void AppCommandlineArgs::ValidateStartupCommands()
         // (also, we don't need to do this if the only action is a x-save)
         else if (_startupActions.empty() ||
                  (_startupActions.front().Action() != ShortcutAction::NewTab &&
-                  _startupActions.front().Action() != ShortcutAction::SaveSnippet))
+                  _startupActions.front().Action() != ShortcutAction::SaveSnippet &&
+                  _startupActions.front().Action() != ShortcutAction::HandleUri))
         {
             // Build the NewTab action from the values we've parsed on the commandline.
             NewTerminalArgs newTerminalArgs{};

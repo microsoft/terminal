@@ -1,0 +1,12 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+import "ILMProvider.idl";
+
+namespace Microsoft.Terminal.Query.Extension
+{
+    runtimeclass OpenAILLMProvider : [default] ILMProvider
+    {
+        OpenAILLMProvider();
+    }
+}

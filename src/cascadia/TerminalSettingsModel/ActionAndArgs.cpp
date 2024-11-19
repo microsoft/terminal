@@ -53,6 +53,8 @@ static constexpr std::string_view SwitchToTabKey{ "switchToTab" };
 static constexpr std::string_view TabSearchKey{ "tabSearch" };
 static constexpr std::string_view ToggleAlwaysOnTopKey{ "toggleAlwaysOnTop" };
 static constexpr std::string_view ToggleCommandPaletteKey{ "commandPalette" };
+static constexpr std::string_view ToggleAIChatKey{ "terminalChat" };
+static constexpr std::string_view SaveSnippetKey{ "experimental.saveSnippet" };
 static constexpr std::string_view SuggestionsKey{ "showSuggestions" };
 static constexpr std::string_view ToggleFocusModeKey{ "toggleFocusMode" };
 static constexpr std::string_view SetFocusModeKey{ "setFocusMode" };
@@ -99,6 +101,7 @@ static constexpr std::string_view RestartConnectionKey{ "restartConnection" };
 static constexpr std::string_view ToggleBroadcastInputKey{ "toggleBroadcastInput" };
 static constexpr std::string_view OpenScratchpadKey{ "experimental.openScratchpad" };
 static constexpr std::string_view OpenAboutKey{ "openAbout" };
+static constexpr std::string_view HandleUriKey{ "handleUri" };
 static constexpr std::string_view QuickFixKey{ "quickFix" };
 
 static constexpr std::string_view ActionKey{ "action" };
@@ -389,6 +392,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 { ShortcutAction::SwitchToTab, RS_(L"SwitchToTabCommandKey") },
                 { ShortcutAction::TabSearch, RS_(L"TabSearchCommandKey") },
                 { ShortcutAction::ToggleAlwaysOnTop, RS_(L"ToggleAlwaysOnTopCommandKey") },
+                { ShortcutAction::ToggleAIChat, RS_(L"ToggleAIChatCommandKey") },
                 { ShortcutAction::ToggleCommandPalette, MustGenerate },
                 { ShortcutAction::SaveSnippet, MustGenerate },
                 { ShortcutAction::Suggestions, MustGenerate },

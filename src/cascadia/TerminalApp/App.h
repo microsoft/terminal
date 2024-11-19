@@ -20,6 +20,7 @@ namespace winrt::TerminalApp::implementation
 
         void Close();
         void PrepareForSettingsUI();
+        void PrepareForAIChat();
 
         bool IsDisposed() const
         {
@@ -30,6 +31,7 @@ namespace winrt::TerminalApp::implementation
         winrt::Windows::UI::Xaml::Hosting::WindowsXamlManager _windowsXamlManager = nullptr;
         bool _bIsClosed = false;
         bool _preparedForSettingsUI{ false };
+        bool _preparedForAIChat{ false };
     };
 }
 

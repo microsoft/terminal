@@ -1,0 +1,193 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <!--
+    We're explicitly telling our references to be non-private so that they won't
+    be copied into our folder. In the case of Microsoft.Ui.Xaml, it seems to copy
+    literally everything EXCEPT its .winmd file, which allows us to keep building.
+    -->
+  <ItemDefinitionGroup>
+    <Reference>
+      <Private>false</Private>
+    </Reference>
+  </ItemDefinitionGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{6085A85F-59A9-41CA-AE74-8F4922AAE55E}</ProjectGuid>
+    <ProjectName>Microsoft.Terminal.Query.Extension</ProjectName>
+    <RootNamespace>Microsoft.Terminal.Query.Extension</RootNamespace>
+    <!-- cppwinrt.build.pre.props depends on these settings: -->
+    <!-- build a dll, not exe (Application) -->
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <SubSystem>Console</SubSystem>
+    <!-- sets a bunch of Windows Universal properties -->
+    <OpenConsoleUniversalApp>true</OpenConsoleUniversalApp>
+    <PgoTarget>false</PgoTarget>
+    <!-- C++/WinRT sets the depth to 1 if there is a XAML file in the project
+      Unfortunately for us, we need it to be 3. When the namespace merging
+      depth is 1, Microsoft.Terminal.Control becomes "Microsoft",
+      and our WinMD file becomes "Microsoft". Because WinRT is very
+      namespace-driven, this winmd is considered to contain the entire
+      Microsoft namespace. This is, obviously, not great. None of our other
+      projects compile properly when they depend on this "Microsoft.winmd."
+    -->
+    <CppWinRTNamespaceMergeDepth>4</CppWinRTNamespaceMergeDepth>
+    <XamlComponentResourceLocation>nested</XamlComponentResourceLocation>
+    <!--
+      Disable automatic provider generation so that we can control when they initialize.
+    -->
+    <XamlCodeGenerationControlFlags>DoNotGenerateOtherProviders</XamlCodeGenerationControlFlags>
+  </PropertyGroup>
+  <PropertyGroup Label="NuGet Dependencies">
+    <TerminalCppWinrt>true</TerminalCppWinrt>
+    <TerminalMUX>true</TerminalMUX>
+  </PropertyGroup>
+  <Import Project="..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
+  <Import Project="$(OpenConsoleDir)src\common.nugetversions.props" />
+  <Import Project="$(OpenConsoleDir)src\cppwinrt.build.pre.props" />
+  <!-- ========================= Headers ======================== -->
+  <ItemGroup>
+    <ClInclude Include="pch.h" />
+    <ClInclude Include="ExtensionPalette.h">
+      <DependentUpon>ExtensionPalette.xaml</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="ExtensionPaletteTemplateSelectors.h">
+      <DependentUpon>ExtensionPaletteTemplateSelectors.idl</DependentUpon>
+      <SubType>Code</SubType>
+    </ClInclude>
+    <ClInclude Include="AzureLLMProvider.h">
+      <DependentUpon>AzureLLMProvider.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="OpenAILLMProvider.h">
+      <DependentUpon>OpenAILLMProvider.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="GithubCopilotLLMProvider.h">
+      <DependentUpon>GithubCopilotLLMProvider.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="WindowsTerminalIDAndSecret.h">
+    </ClInclude>
+  </ItemGroup>
+  <!-- ========================= XAML files ======================== -->
+  <ItemGroup>
+    <Page Include="ExtensionPalette.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+  </ItemGroup>
+  <!-- ========================= Cpp Files ======================== -->
+  <ItemGroup>
+    <ClCompile Include="init.cpp" />
+    <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
+    <ClCompile Include="pch.cpp">
+      <PrecompiledHeader>Create</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="ExtensionPalette.cpp">
+      <DependentUpon>ExtensionPalette.xaml</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="ExtensionPaletteTemplateSelectors.cpp">
+      <DependentUpon>ExtensionPaletteTemplateSelectors.idl</DependentUpon>
+      <SubType>Code</SubType>
+    </ClCompile>
+    <ClCompile Include="AzureLLMProvider.cpp">
+      <DependentUpon>AzureLLMProvider.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="OpenAILLMProvider.cpp">
+      <DependentUpon>OpenAILLMProvider.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="GithubCopilotLLMProvider.cpp">
+      <DependentUpon>GithubCopilotLLMProvider.idl</DependentUpon>
+    </ClCompile>
+  </ItemGroup>
+  <!-- ========================= idl Files ======================== -->
+  <ItemGroup>
+    <Midl Include="ExtensionPalette.idl">
+      <DependentUpon>ExtensionPalette.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Midl>
+    <Midl Include="ExtensionPaletteTemplateSelectors.idl">
+      <SubType>Designer</SubType>
+    </Midl>
+    <Midl Include="ILMProvider.idl">
+      <SubType>Code</SubType>
+    </Midl>
+    <Midl Include="AzureLLMProvider.idl">
+      <SubType>Code</SubType>
+    </Midl>
+    <Midl Include="OpenAILLMProvider.idl">
+      <SubType>Code</SubType>
+    </Midl>
+    <Midl Include="GithubCopilotLLMProvider.idl">
+      <SubType>Code</SubType>
+    </Midl>
+  </ItemGroup>
+  <!-- ========================= Misc Files ======================== -->
+  <ItemGroup>
+    <PRIResource Include="Resources\en-US\Resources.resw">
+      <SubType>Designer</SubType>
+    </PRIResource>
+    <OCResourceDirectory Include="Resources" />
+    <None Include="$(ProjectName).def" />
+  </ItemGroup>
+  <!-- ========================= Project References ======================== -->
+  <ItemGroup>
+    <!--
+      the packaging project won't recurse through our dependencies, you have to
+      make sure that if you add a cppwinrt dependency to any of these projects,
+      you also update all the consumers
+    -->
+    <ProjectReference Include="$(OpenConsoleDir)src\types\lib\types.vcxproj">
+      <Project>{18D09A24-8240-42D6-8CB6-236EEE820263}</Project>
+    </ProjectReference>
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\WinRTUtils\WinRTUtils.vcxproj">
+      <Project>{CA5CAD1A-039A-4929-BA2A-8BEB2E4106FE}</Project>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalConnection\TerminalConnection.vcxproj">
+      <Private>false</Private>
+    </ProjectReference>
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\UIHelpers\UIHelpers.vcxproj">
+      <Project>{6515F03F-E56D-4DB4-B23D-AC4FB80DB36F}</Project>
+    </ProjectReference>
+
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalControl\dll\TerminalControl.vcxproj">
+      <!-- Private:false and ReferenceOutputAssembly:false, in combination with
+      the manual reference to TerminalControl.winmd below make sure that this
+      project will compile correct, and that we won't roll up the TermControl
+      xbf's into the packaging project twice. -->
+      <Private>true</Private>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalSettingsModel\dll\Microsoft.Terminal.Settings.Model.vcxproj">
+      <Private>false</Private>
+    </ProjectReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Manually add a reference to TerminalControl here. We need this so
+    MDMERGE will know where the TermControl types are defined. However, we need
+    to do it exactly like this so the packaging project won't roll up
+    TermControl's .xbf's from both the TermControl project and this one. -->
+    <Reference Include="Microsoft.Terminal.Control">
+      <HintPath>$(OpenConsoleCommonOutDir)Microsoft.Terminal.Control\Microsoft.Terminal.Control.winmd</HintPath>
+      <IsWinMDFile>true</IsWinMDFile>
+      <Private>false</Private>
+      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
+    </Reference>
+    <Reference Include="Microsoft.Terminal.Core">
+      <HintPath>$(OpenConsoleCommonOutDir)TerminalCore\Microsoft.Terminal.Core.winmd</HintPath>
+      <IsWinMDFile>true</IsWinMDFile>
+      <Private>false</Private>
+      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
+    </Reference>
+  </ItemGroup>
+
+  <ItemDefinitionGroup>
+    <Link>
+      <AdditionalDependencies>shell32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+
+  <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" />
+
+  <!-- This -must- go after cppwinrt.build.post.props because that includes many VS-provided props including appcontainer.common.props, which stomps on what cppwinrt.targets did. -->
+  <Import Project="$(OpenConsoleDir)src\common.nugetversions.targets" />
+
+  <Import Project="$(SolutionDir)build\rules\CollectWildcardResources.targets" />
+</Project>

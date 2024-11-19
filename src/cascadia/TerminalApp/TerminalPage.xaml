@@ -161,6 +161,12 @@
                               PreviewKeyDown="_KeyDownHandler"
                               Visibility="Collapsed" />
 
+        <ContentPresenter x:Name="ExtensionPresenter"
+                          Grid.Row="2"
+                          VerticalAlignment="Stretch"
+                          PreviewKeyDown="_KeyDownHandler"
+                          Visibility="Collapsed" />
+
         <local:SuggestionsControl x:Name="SuggestionsElement"
                                   Grid.Row="2"
                                   HorizontalAlignment="Left"

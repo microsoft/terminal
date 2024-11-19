@@ -1,0 +1,200 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!-- 
+    Microsoft ResX Schema 
+    
+    Version 2.0
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
+    associated with the data types.
+    
+    Example:
+    
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+                
+    There are any number of "resheader" rows that contain simple 
+    name/value pairs.
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
+    mimetype set.
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
+    extensible. For a given mimetype the value must be set accordingly:
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
+    read any of the formats listed below.
+    
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+    
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array 
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="ControlName" xml:space="preserve">
+    <value>Extension Palette</value>
+    <comment>Name of the control that contains the chat messages with the AI.</comment>
+  </data>
+  <data name="CouldNotFindKeyErrorMessage" xml:space="preserve">
+    <value>Couldn't find an AI key and/or endpoint. Please open up a Settings tab, navigate to the AI Settings page and set a valid key and endpoint.</value>
+    <comment>The message presented to the user when they attempt to use the AI chat feature without providing an AI endpoint and key.</comment>
+  </data>
+  <data name="UnknownErrorMessage" xml:space="preserve">
+    <value>An error occurred. Your AI provider might not be correctly configured, or the service might be temporarily unavailable.</value>
+    <comment>The error message presented to the user when we were unable to query the provided endpoint.</comment>
+  </data>
+  <data name="InvalidModelMessage" xml:space="preserve">
+    <value>The model you have provided is either invalid or does not adhere to our content filter requirements. Please use a gpt-35-turbo AI model and set all content filter categories to "safe".</value>
+    <comment>The error message presented to the user when their provided endpoint does not match our requirements.</comment>
+  </data>
+  <data name="InvalidEndpointMessage" xml:space="preserve">
+    <value>The endpoint you have provided is not an Azure OpenAI endpoint. Please provide an Azure OpenAI endpoint.</value>
+    <comment>The error message presented to the user when their provided endpoint is not an Azure OpenAI endpoint.</comment>
+  </data>
+  <data name="CurrentShell" xml:space="preserve">
+    <value>Ask me anything about Shell commands…</value>
+    <comment>Part of the placeholder text in the user's message box to let them know that the AI is aware of their current shell.</comment>
+  </data>
+  <data name="IntroText.Text" xml:space="preserve">
+    <value>Welcome to Terminal Chat (Experimental)</value>
+    <comment>Header text of the AI chat box control.</comment>
+  </data>
+  <data name="ClearMessagesButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Clear the message history</value>
+    <comment>Tooltip for the button that allows the user to clear their chat history.</comment>
+  </data>
+  <data name="ExportMessagesButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Export the message history to a text file</value>
+    <comment>Tooltip for the button that allows the user to export the message history.</comment>
+  </data>
+  <data name="TitleSubheader.Text" xml:space="preserve">
+    <value>Take command of your Terminal. Ask Terminal Chat for assistance right in your terminal.</value>
+    <comment>Subheader of the AI chat box control.</comment>
+  </data>
+  <data name="AIContentDisclaimer" xml:space="preserve">
+    <value>AI can make mistakes — {0} to help us improve.</value>
+    <comment>The disclaimer presented to the user within the chat UI element. {0} will be replaced by AIContentDisclaimerLinkText.</comment>
+  </data>
+  <data name="AIContentDisclaimerLinkText" xml:space="preserve">
+    <value>send feedback</value>
+    <comment>The portion of the disclaimer presented to the user as a hyperlink within the chat UI element.</comment>
+  </data>
+  <data name="LearnMoreLink.Text" xml:space="preserve">
+    <value>Learn more</value>
+    <comment>The text of the hyperlink that directs the user to the link for them to learn more about Terminal AI.</comment>
+  </data>
+  <data name="UserString" xml:space="preserve">
+    <value>User</value>
+    <comment>A string to represent the section that the user typed, presented when the user exports the chat history to a file</comment>
+  </data>
+  <data name="AssistantString" xml:space="preserve">
+    <value>Assistant</value>
+    <comment>A string to represent the section that the chat assistant typed, presented when the user exports the chat history to a file</comment>
+  </data>
+  <data name="SetUpProviderDisclaimer.Text" xml:space="preserve">
+    <value>You have not set up an AI provider yet! Set one up in the settings</value>
+    <comment>Disclaimer shown to the user when they open up Terminal Chat without having set up a provider yet.</comment>
+  </data>
+  <data name="SetUpProviderButton.Text" xml:space="preserve">
+    <value>Set up AI provider</value>
+    <comment>Description of the button that sends the user to the settings page where they can set up a provider.</comment>
+  </data>
+  <data name="GithubCopilot_HeaderText" xml:space="preserve">
+    <value>GitHub Copilot</value>
+    <comment>The header for Terminal Chat when GitHub Copilot is the connected service provider</comment>
+  </data>
+  <data name="GithubCopilot_SubheaderText" xml:space="preserve">
+    <value>Take command of your Terminal. Ask Copilot for assistance right in your terminal.</value>
+    <comment>The subheader for Terminal Chat when GitHub Copilot is the connected service provider</comment>
+  </data>
+  <data name="GithubCopilot_ResponseMetaData" xml:space="preserve">
+    <value>GitHub Copilot</value>
+    <comment>The metadata string to display whenever a response is received from the GitHub Copilot service provider</comment>
+  </data>
+</root>

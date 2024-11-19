@@ -1,4 +1,6 @@
 aci
+AIIs
+AILLM
 allcolors
 breadcrumb
 breadcrumbs
@@ -27,14 +29,18 @@ gfm
 ghe
 gje
 godbolt
+gpt
 hyperlinking
 hyperlinks
+ILM
 Kbds
 kje
 libfuzzer
 liga
 lje
 Llast
+lm
+llm
 Lmid
 locl
 lol
@@ -49,6 +55,7 @@ nje
 NTMTo
 notwrapped
 ogonek
+openai
 overlined
 perlw
 postmodern
@@ -58,6 +65,7 @@ pwn
 pwshw
 qof
 qps
+Quarternary
 quickfix
 rclt
 reimplementation
