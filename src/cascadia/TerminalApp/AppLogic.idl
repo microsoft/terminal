@@ -46,6 +46,7 @@ namespace TerminalApp
         Boolean AllowHeadless { get; };
         Boolean RequestsTrayIcon { get; };
         String RandomStateString;
+        Microsoft.Terminal.Settings.Model.CascadiaSettings Settings { get; };
 
         FindTargetWindowResult FindTargetWindow(String[] args);
 

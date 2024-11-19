@@ -219,6 +219,7 @@ namespace winrt::TerminalApp::implementation
         _root->Loaded({ get_weak(), &TerminalWindow::_OnLoaded });
         _root->Initialized({ get_weak(), &TerminalWindow::_pageInitialized });
         _root->WindowSizeChanged({ get_weak(), &TerminalWindow::_WindowSizeChanged });
+        _root->RenameWindowRequested({ get_weak(), &TerminalWindow::_RenameWindowRequested });
         _root->Create();
 
         AppLogic::Current()->SettingsChanged({ get_weak(), &TerminalWindow::UpdateSettingsHandler });
@@ -767,51 +768,36 @@ namespace winrt::TerminalApp::implementation
 
     // This may be called on a background thread, or the main thread, but almost
     // definitely not on OUR UI thread.
-    safe_void_coroutine TerminalWindow::UpdateSettings(winrt::TerminalApp::SettingsLoadEventArgs args)
+    void TerminalWindow::UpdateSettings(winrt::TerminalApp::SettingsLoadEventArgs args)
     {
-        // GH#17620: We have a bug somewhere where a window doesn't get unregistered from the window list.
-        // This causes UpdateSettings calls where the thread dispatcher is already null.
-        const auto dispatcher = _root->Dispatcher();
-        if (!dispatcher)
+        _settings = args.NewSettings();
+
+        // Update the settings in TerminalPage
+        // We're on our UI thread right now, so this is safe
+        _root->SetSettings(_settings, true);
+
+        // Bubble the notification up to the AppHost, now that we've updated our _settings.
+        SettingsChanged.raise(*this, args);
+
+        if (FAILED(args.Result()))
         {
-            co_return;
+            const winrt::hstring titleKey = USES_RESOURCE(L"ReloadJsonParseErrorTitle");
+            const winrt::hstring textKey = USES_RESOURCE(L"ReloadJsonParseErrorText");
+            _ShowLoadErrorsDialog(titleKey,
+                                  textKey,
+                                  gsl::narrow_cast<HRESULT>(args.Result()),
+                                  args.ExceptionText());
+            return;
         }
-
-        const auto weakThis{ get_weak() };
-        co_await wil::resume_foreground(dispatcher);
-
-        // Back on our UI thread...
-        if (auto logic{ weakThis.get() })
+        else if (args.Result() == S_FALSE)
         {
-            _settings = args.NewSettings();
-
-            // Update the settings in TerminalPage
-            // We're on our UI thread right now, so this is safe
-            _root->SetSettings(_settings, true);
-
-            // Bubble the notification up to the AppHost, now that we've updated our _settings.
-            SettingsChanged.raise(*this, args);
-
-            if (FAILED(args.Result()))
-            {
-                const winrt::hstring titleKey = USES_RESOURCE(L"ReloadJsonParseErrorTitle");
-                const winrt::hstring textKey = USES_RESOURCE(L"ReloadJsonParseErrorText");
-                _ShowLoadErrorsDialog(titleKey,
-                                      textKey,
-                                      gsl::narrow_cast<HRESULT>(args.Result()),
-                                      args.ExceptionText());
-                co_return;
-            }
-            else if (args.Result() == S_FALSE)
-            {
-                _ShowLoadWarningsDialog(args.Warnings());
-            }
-            else if (args.Result() == S_OK)
-            {
-                DismissDialog();
-            }
-            _RefreshThemeRoutine();
+            _ShowLoadWarningsDialog(args.Warnings());
         }
+        else if (args.Result() == S_OK)
+        {
+            DismissDialog();
+        }
+        _RefreshThemeRoutine();
     }
 
     void TerminalWindow::_OpenSettingsUI()
@@ -1205,14 +1191,6 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    void TerminalWindow::RenameFailed()
-    {
-        if (_root)
-        {
-            _root->RenameFailed();
-        }
-    }
-
     void TerminalWindow::WindowName(const winrt::hstring& name)
     {
         const auto oldIsQuakeMode = _WindowProperties->IsQuakeWindow();
@@ -1366,6 +1344,11 @@ namespace winrt::TerminalApp::implementation
         args.Height(static_cast<int32_t>(pixelSize.Height));
 
         WindowSizeChanged.raise(*this, args);
+    }
+
+    void TerminalWindow::_RenameWindowRequested(const IInspectable&, const winrt::TerminalApp::RenameWindowRequestedArgs args)
+    {
+        WindowName(args.ProposedName());
     }
 
     winrt::hstring WindowProperties::WindowName() const noexcept

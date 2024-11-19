@@ -725,12 +725,6 @@
   <data name="WindowRenamer.CloseButtonContent" xml:space="preserve">
     <value>取消</value>
   </data>
-  <data name="RenameFailedToast.Title" xml:space="preserve">
-    <value>未能重命名窗口</value>
-  </data>
-  <data name="RenameFailedToast.Subtitle" xml:space="preserve">
-    <value>已存在另一个具有该名称的窗口</value>
-  </data>
   <data name="WindowMaximizeButtonToolTip" xml:space="preserve">
     <value>最大化</value>
   </data>

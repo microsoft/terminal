@@ -572,10 +572,6 @@
     <value>Autoriser Terminal Windows à s’exécuter en arrière-plan</value>
     <comment>Header for a control to toggle support for Windows Terminal to run in the background.</comment>
   </data>
-  <data name="Globals_IsolatedMode.Header" xml:space="preserve">
-    <value>Forcer chaque fenêtre à s’exécuter dans son propre processus</value>
-    <comment>Header for a control to toggle making each window be its own process.</comment>
-  </data>
   <data name="Globals_DebugFeaturesEnabled.Header" xml:space="preserve">
     <value>Activer les fonctionnalités de débogage</value>
     <comment>Header for a control to toggle debug features.</comment>
@@ -591,10 +587,6 @@
   <data name="Globals_AllowHeadless.HelpText" xml:space="preserve">
     <value>Cela permet aux actions telles que les actions en mode d’engagement global et de mode Dent de fonctionner même lorsqu’aucune fenêtre n’est ouverte.</value>
     <comment>Additional description for what the "allow headless" setting does. Presented near "Globals_AllowHeadless.Header".</comment>
-  </data>
-  <data name="Globals_IsolatedMode.HelpText" xml:space="preserve">
-    <value>Certaines fonctionnalités ne fonctionnent pas correctement, notamment les touches de raccourci globales, le glisser-déplacer des onglets et le ciblage de fenêtres wt.exe.</value>
-    <comment>{Locked="wt.exe"} Additional description for what the "isolated mode" setting does. Presented near "Globals_IsolatedMode.Header".</comment>
   </data>
   <data name="Globals_TabWidthMode.Header" xml:space="preserve">
     <value>Largeur des onglets</value>

@@ -580,10 +580,6 @@
     <value>Allow Windows Terminal to run in the background</value>
     <comment>Header for a control to toggle support for Windows Terminal to run in the background.</comment>
   </data>
-  <data name="Globals_IsolatedMode.Header" xml:space="preserve">
-    <value>Force each window to run in its own process</value>
-    <comment>Header for a control to toggle making each window be its own process.</comment>
-  </data>
   <data name="Globals_DebugFeaturesEnabled.Header" xml:space="preserve">
     <value>Enable debugging features</value>
     <comment>Header for a control to toggle debug features.</comment>
@@ -599,10 +595,6 @@
   <data name="Globals_AllowHeadless.HelpText" xml:space="preserve">
     <value>This allows actions such as Global Summon and Quake Mode actions to work even when no windows are open.</value>
     <comment>Additional description for what the "allow headless" setting does. Presented near "Globals_AllowHeadless.Header".</comment>
-  </data>
-  <data name="Globals_IsolatedMode.HelpText" xml:space="preserve">
-    <value>Certain features will not work properly, including—but not limited to—global hotkeys, tab drag and drop, and wt.exe window targeting.</value>
-    <comment>{Locked="wt.exe"} Additional description for what the "isolated mode" setting does. Presented near "Globals_IsolatedMode.Header".</comment>
   </data>
   <data name="Globals_TabWidthMode.Header" xml:space="preserve">
     <value>Tab width mode</value>

@@ -173,6 +173,7 @@ CCom
 CConsole
 CCRT
 cdd
+cds
 CELLSIZE
 cfae
 cfie
@@ -280,6 +281,8 @@ contypes
 conwinuserrefs
 coordnew
 COPYCOLOR
+COPYDATA
+COPYDATASTRUCT
 CORESYSTEM
 cotaskmem
 countof
@@ -572,6 +575,7 @@ EOK
 EPres
 EQU
 ERASEBKGND
+ERRORONEXIT
 ESFCIB
 esrp
 ESV

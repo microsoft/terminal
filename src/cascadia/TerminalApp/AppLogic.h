@@ -55,16 +55,11 @@ namespace winrt::TerminalApp::implementation
         bool HasSettingsStartupActions() const noexcept;
         bool ShouldUsePersistedLayout() const;
 
-        [[nodiscard]] Microsoft::Terminal::Settings::Model::CascadiaSettings GetSettings() const noexcept;
+        Microsoft::Terminal::Settings::Model::CascadiaSettings Settings() const noexcept;
 
         TerminalApp::FindTargetWindowResult FindTargetWindow(array_view<const winrt::hstring> actions);
 
         Windows::Foundation::Collections::IMapView<Microsoft::Terminal::Control::KeyChord, Microsoft::Terminal::Settings::Model::Command> GlobalHotkeys();
-
-        Microsoft::Terminal::Settings::Model::Theme Theme();
-        bool IsolatedMode();
-        bool AllowHeadless();
-        bool RequestsTrayIcon();
 
         TerminalApp::TerminalWindow CreateNewWindow();
 

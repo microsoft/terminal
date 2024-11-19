@@ -371,7 +371,7 @@ void GlobalAppSettings::ExpandCommands(const winrt::Windows::Foundation::Collect
 
 bool GlobalAppSettings::ShouldUsePersistedLayout() const
 {
-    return FirstWindowPreference() == FirstWindowPreference::PersistedWindowLayout && !IsolatedMode();
+    return FirstWindowPreference() == FirstWindowPreference::PersistedWindowLayout;
 }
 
 winrt::Microsoft::Terminal::Settings::Model::AIConfig GlobalAppSettings::AIInfo()
