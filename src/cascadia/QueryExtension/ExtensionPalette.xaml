@@ -46,93 +46,6 @@
             <mux:StackLayout x:Name="VerticalStackLayout"
                              Orientation="Vertical"
                              Spacing="16" />
-            <DataTemplate x:Key="QueryMessageTemplate"
-                          x:DataType="local:ChatMessage">
-                <Grid Height="Auto"
-                      Margin="4"
-                      HorizontalAlignment="Right">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                    </Grid.RowDefinitions>
-                    <StackPanel Grid.Row="1"
-                                MaxWidth="400"
-                                Padding="16,8,16,8"
-                                Background="{ThemeResource AccentFillColorDefaultBrush}"
-                                BorderBrush="{ThemeResource MessageBorderBrush}"
-                                BorderThickness="{ThemeResource MessageBorderThickness}"
-                                CornerRadius="8">
-                        <TextBlock FontSize="14"
-                                   Foreground="{ThemeResource TextOnAccentFillColorPrimaryBrush}"
-                                   Text="{x:Bind MessageContent}"
-                                   TextWrapping="WrapWholeWords" />
-                    </StackPanel>
-                </Grid>
-            </DataTemplate>
-            <DataTemplate x:Key="TextResponseMessageTemplate"
-                          x:DataType="local:ChatMessage">
-                <Grid Height="Auto"
-                      Margin="4"
-                      HorizontalAlignment="Left">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                    </Grid.RowDefinitions>
-                    <StackPanel Grid.Row="1"
-                                MaxWidth="400"
-                                Padding="16,8,16,8"
-                                Background="{ThemeResource ControlAltFillColorQuarternaryBrush}"
-                                BorderBrush="{ThemeResource MessageBorderBrush}"
-                                BorderThickness="{ThemeResource MessageBorderThickness}"
-                                CornerRadius="8">
-                        <TextBlock FontSize="14"
-                                   Foreground="{ThemeResource TextFillColorPrimaryBrush}"
-                                   IsTextSelectionEnabled="False"
-                                   Text="{x:Bind MessageContent}"
-                                   TextWrapping="WrapWholeWords" />
-                    </StackPanel>
-                </Grid>
-            </DataTemplate>
-            <DataTemplate x:Key="CodeResponseMessageTemplate"
-                          x:DataType="local:ChatMessage">
-                <Grid Height="Auto"
-                      Margin="4"
-                      HorizontalAlignment="Left">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                    </Grid.RowDefinitions>
-                    <StackPanel Grid.Row="1"
-                                Padding="16,8,16,8"
-                                Background="{ThemeResource ControlAltFillColorQuarternaryBrush}"
-                                BorderBrush="{ThemeResource MessageBorderBrush}"
-                                BorderThickness="{ThemeResource MessageBorderThickness}"
-                                CornerRadius="8">
-                        <Border Padding="8,4,8,4"
-                                Background="{ThemeResource ControlAltFillColorSecondaryBrush}"
-                                CornerRadius="4">
-                            <StackPanel Orientation="Horizontal"
-                                        Spacing="8">
-                                <TextBlock MaxWidth="400"
-                                           FontFamily="Cascadia Code"
-                                           FontSize="12"
-                                           Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
-                                           IsTextSelectionEnabled="False"
-                                           Text="{x:Bind MessageContent}"
-                                           TextWrapping="Wrap" />
-                                <FontIcon VerticalAlignment="Center"
-                                          FontSize="16"
-                                          Foreground="{ThemeResource TextFillColorPrimaryBrush}"
-                                          Glyph="&#xE8C8;" />
-                            </StackPanel>
-                        </Border>
-                    </StackPanel>
-                </Grid>
-            </DataTemplate>
-            <local:ExtensionPaletteMessageTemplateSelector x:Key="ChatMessageTemplateSelector"
-                                                           CodeResponseMessageTemplate="{StaticResource CodeResponseMessageTemplate}"
-                                                           QueryMessageTemplate="{StaticResource QueryMessageTemplate}"
-                                                           TextResponseMessageTemplate="{StaticResource TextResponseMessageTemplate}" />
             <DataTemplate x:Key="RichQueryMessageTemplate"
                           x:DataType="local:ChatMessage">
                 <Grid Height="Auto"
@@ -173,9 +86,9 @@
                     </StackPanel>
                 </Grid>
             </DataTemplate>
-            <local:ExtensionPaletteMessageTemplateSelector2 x:Key="ChatMessageTemplateSelector2"
-                                                            RichResponseMessageTemplate="{StaticResource RichResponseMessageTemplate}"
-                                                            RichQueryMessageTemplate="{StaticResource RichQueryMessageTemplate}" />
+            <local:ExtensionPaletteMessageTemplateSelector x:Key="ChatMessageTemplateSelector"
+                                                           RichResponseMessageTemplate="{StaticResource RichResponseMessageTemplate}"
+                                                           RichQueryMessageTemplate="{StaticResource RichQueryMessageTemplate}" />
             <Style TargetType="ListViewHeaderItem">
                 <Setter Property="FontFamily" Value="{ThemeResource ContentControlThemeFontFamily}" />
                 <Setter Property="FontSize" Value="{ThemeResource ListViewHeaderItemThemeFontSize}" />
@@ -247,9 +160,6 @@
                                                                          ResponseGroupedMessageTemplate="{StaticResource ResponseGroupedMessageTemplate}" />
             <CollectionViewSource x:Key="MessagesCollectionViewSource"
                                   x:Name="MessagesCollectionViewSource"
-                                  IsSourceGrouped="True" />
-            <CollectionViewSource x:Key="MessagesCollectionViewSource2"
-                                  x:Name="MessagesCollectionViewSource2"
                                   IsSourceGrouped="True" />
         </ResourceDictionary>
     </UserControl.Resources>
@@ -333,8 +243,7 @@
                               ItemClick="_listItemClicked"
                               ItemTemplateSelector="{StaticResource ChatMessageTemplateSelector}"
                               ItemsSource="{Binding Source={StaticResource MessagesCollectionViewSource}}"
-                              SelectionMode="None"
-                              Visibility="Collapsed">
+                              SelectionMode="None">
                         <ListView.Resources>
                             <SolidColorBrush x:Key="ListViewItemBackgroundPointerOver"
                                              Color="Transparent" />
@@ -381,96 +290,6 @@
                                                HorizontalTextAlignment="Center"
                                                TextWrapping="WrapWholeWords">
                                         <Run x:Name="TitleSubheader" />
-                                    </TextBlock>
-                                </Border>
-                                <StackPanel Grid.Row="3"
-                                            Grid.Column="2"
-                                            Margin="0,12,0,12"
-                                            HorizontalAlignment="Center"
-                                            Orientation="Horizontal">
-                                    <TextBlock Margin="0,0,8,0"
-                                               FontSize="12">
-                                        <Hyperlink NavigateUri="https://go.microsoft.com/fwlink/?linkid=2251839"
-                                                   TextDecorations="None">
-                                            <Run x:Uid="LearnMoreLink" />
-                                        </Hyperlink>
-                                    </TextBlock>
-                                </StackPanel>
-                            </Grid>
-                        </ListView.Header>
-                        <ListView.GroupStyle>
-                            <GroupStyle HeaderTemplateSelector="{StaticResource GroupedChatMessageTemplateSelector}" />
-                        </ListView.GroupStyle>
-                        <ListView.ItemsPanel>
-                            <ItemsPanelTemplate>
-                                <ItemsStackPanel VerticalAlignment="Bottom"
-                                                 ItemsUpdatingScrollMode="KeepLastItemInView" />
-                            </ItemsPanelTemplate>
-                        </ListView.ItemsPanel>
-                        <ListView.ItemContainerStyle>
-                            <Style TargetType="ListViewItem">
-                                <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-                            </Style>
-                        </ListView.ItemContainerStyle>
-                    </ListView>
-                    <ListView x:Name="_suggestionsListView2"
-                              Grid.Row="0"
-                              Grid.Column="0"
-                              Grid.ColumnSpan="3"
-                              HorizontalAlignment="Stretch"
-                              VerticalAlignment="Bottom"
-                              HorizontalContentAlignment="Stretch"
-                              IsItemClickEnabled="True"
-                              ItemClick="_listItemClicked"
-                              ItemTemplateSelector="{StaticResource ChatMessageTemplateSelector2}"
-                              ItemsSource="{Binding Source={StaticResource MessagesCollectionViewSource2}}"
-                              SelectionMode="None">
-                        <ListView.Resources>
-                            <SolidColorBrush x:Key="ListViewItemBackgroundPointerOver"
-                                             Color="Transparent" />
-                            <SolidColorBrush x:Key="ListViewItemBackgroundPressed"
-                                             Color="Transparent" />
-                        </ListView.Resources>
-                        <ListView.Header>
-                            <Grid RowSpacing="0">
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="Auto" />
-                                </Grid.RowDefinitions>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="1*" />
-                                    <ColumnDefinition Width="1*" />
-                                    <ColumnDefinition Width="6*" />
-                                    <ColumnDefinition Width="1*" />
-                                    <ColumnDefinition Width="1*" />
-                                </Grid.ColumnDefinitions>
-                                <mux:ImageIcon Name="HeaderIcon2"
-                                               Grid.Row="0"
-                                               Grid.Column="1"
-                                               Grid.ColumnSpan="3"
-                                               Width="64"
-                                               Height="64"
-                                               Margin="0,0,0,20" />
-                                <TextBlock x:Name="QueryIntro2"
-                                           Grid.Row="1"
-                                           Grid.Column="1"
-                                           Grid.ColumnSpan="3"
-                                           Margin="0,0,0,20"
-                                           HorizontalAlignment="Center"
-                                           FontSize="20" />
-                                <Border Grid.Row="2"
-                                        Grid.Column="2"
-                                        BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}"
-                                        BorderThickness="0,0,0,1">
-                                    <TextBlock Margin="16,0,16,12"
-                                               HorizontalAlignment="Center"
-                                               FontSize="14"
-                                               Foreground="{ThemeResource ApplicationSecondaryForegroundThemeBrush}"
-                                               HorizontalTextAlignment="Center"
-                                               TextWrapping="WrapWholeWords">
-                                        <Run x:Name="TitleSubheader2" />
                                     </TextBlock>
                                 </Border>
                                 <StackPanel Grid.Row="3"

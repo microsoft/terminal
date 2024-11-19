@@ -108,11 +108,9 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         Windows::Foundation::Uri headerImageSourceUri{ headerIconPath };
         Media::Imaging::BitmapImage headerImageSource{ headerImageSourceUri };
         HeaderIcon().Source(headerImageSource);
-        HeaderIcon2().Source(headerImageSource);
 
         const auto headerText = (!brandingData || brandingData.HeaderText().empty()) ? RS_(L"IntroText/Text") : brandingData.HeaderText();
         QueryIntro().Text(headerText);
-        QueryIntro2().Text(headerText);
 
         const auto subheaderText = (!brandingData || brandingData.SubheaderText().empty()) ? RS_(L"TitleSubheader/Text") : brandingData.SubheaderText();
         TitleSubheader().Text(subheaderText);
@@ -258,7 +256,6 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
 
         _messages.Clear();
         MessagesCollectionViewSource().Source(_messages);
-        MessagesCollectionViewSource2().Source(_messages);
         if (_lmProvider)
         {
             _lmProvider.ClearMessageHistory();
