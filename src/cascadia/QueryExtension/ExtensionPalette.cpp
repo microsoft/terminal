@@ -207,6 +207,10 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         std::vector<IInspectable> messageParts;
 
         const auto chatMsg = winrt::make<ChatMessage>(winrt::to_hstring(response.Message()), false, false);
+        chatMsg.RunCommandClicked([this](auto&&, const auto commandlines) {
+            _InputSuggestionRequestedHandlers(*this, commandlines);
+            _close();
+        });
         messageParts.push_back(chatMsg);
 
         const auto brandingData = _lmProvider ? _lmProvider.BrandingData() : nullptr;
@@ -496,6 +500,9 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
                                 {
                                     codeBlock.Foreground(foregroundBrush);
                                 }
+                                codeBlock.RequestRunCommands([this, commandlines = codeBlock.Commandlines()](auto&&, auto&&) {
+                                    _RunCommandClickedHandlers(*this, commandlines);
+                                });
                             }
                         }
                     }

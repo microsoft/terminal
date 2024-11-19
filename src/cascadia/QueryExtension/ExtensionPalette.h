@@ -70,6 +70,8 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         winrt::hstring MessageContent() const { return _messageContent; };
         winrt::Windows::UI::Xaml::Controls::RichTextBlock RichBlock() const { return _richBlock; };
 
+        TYPED_EVENT(RunCommandClicked, winrt::Microsoft::Terminal::Query::Extension::ChatMessage, winrt::hstring);
+
     private:
         bool _isQuery;
         bool _isCode;

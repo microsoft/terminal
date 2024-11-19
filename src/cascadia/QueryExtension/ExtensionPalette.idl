@@ -12,6 +12,7 @@ namespace Microsoft.Terminal.Query.Extension
         Boolean IsQuery { get; };
         Boolean IsCode { get; };
         Windows.UI.Xaml.Controls.RichTextBlock RichBlock { get; };
+        event Windows.Foundation.TypedEventHandler<ChatMessage, String> RunCommandClicked;
     }
 
     runtimeclass GroupedChatMessages : Windows.Foundation.Collections.IVector<IInspectable>
