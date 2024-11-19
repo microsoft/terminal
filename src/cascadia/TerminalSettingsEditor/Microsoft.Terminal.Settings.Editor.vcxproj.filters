@@ -2,6 +2,7 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Natvis Include="$(SolutionDir)tools\ConsoleTypes.natvis" />
+    <Natvis Include="$(MSBuildThisFileDirectory)..\..\natvis\wil.natvis" />
   </ItemGroup>
   <ItemGroup>
     <PRIResource Include="Resources\en-US\Resources.resw" />
@@ -16,6 +17,7 @@
     <ClInclude Include="pch.h" />
     <ClInclude Include="Utils.h" />
     <ClInclude Include="PreviewConnection.h" />
+    <ClInclude Include="SegoeFluentIconList.h" />
   </ItemGroup>
   <ItemGroup>
     <Midl Include="ProfileViewModel.idl" />
@@ -30,9 +32,9 @@
     <Midl Include="EnumEntry.idl" />
     <Midl Include="SettingContainer.idl" />
     <Midl Include="NewTabMenuViewModel.idl" />
+    <Midl Include="TerminalColorConverters.idl" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="packages.config" />
     <None Include="$(ProjectName).def" />
   </ItemGroup>
   <ItemGroup>
@@ -54,5 +56,6 @@
     <Page Include="AddProfile.xaml" />
     <Page Include="KeyChordListener.xaml" />
     <Page Include="NewTabMenu.xaml" />
+    <Page Include="NullableColorPicker.xaml" />
   </ItemGroup>
 </Project>
