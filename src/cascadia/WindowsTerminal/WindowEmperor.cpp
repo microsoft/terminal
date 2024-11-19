@@ -4,12 +4,14 @@
 #include "pch.h"
 #include "WindowEmperor.h"
 
+#include <LibraryResources.h>
+#include <ScopedResourceLoader.h>
 #include <WindowingBehavior.h>
+#include <WtExeUtils.h>
+#include <til/hash.h>
 
 #include "AppHost.h"
-#include "LibraryResources.h"
 #include "resource.h"
-#include "ScopedResourceLoader.h"
 #include "VirtualDesktopUtils.h"
 #include "../../types/inc/utils.hpp"
 
@@ -230,9 +232,9 @@ void WindowEmperor::CreateNewWindow(winrt::TerminalApp::WindowRequestedArgs args
 void WindowEmperor::HandleCommandlineArgs(int nCmdShow)
 {
     std::wstring windowClassName;
-    windowClassName.reserve(32);
+    windowClassName.reserve(47); // "Windows Terminal Preview Admin 0123456789012345"
 #if defined(WT_BRANDING_RELEASE)
-    windowClassName.append(L"Windows Terminal Release");
+    windowClassName.append(L"Windows Terminal");
 #elif defined(WT_BRANDING_PREVIEW)
     windowClassName.append(L"Windows Terminal Preview");
 #elif defined(WT_BRANDING_CANARY)
@@ -243,6 +245,16 @@ void WindowEmperor::HandleCommandlineArgs(int nCmdShow)
     if (Utils::IsRunningElevated())
     {
         windowClassName.append(L" Admin");
+    }
+    if (!IsPackaged())
+    {
+        const auto path = wil::GetModuleFileNameW<std::wstring>(nullptr);
+        const auto hash = til::hash(path);
+#ifdef _WIN64
+        fmt::format_to(std::back_inserter(windowClassName), FMT_COMPILE(L" {:016x}"), hash);
+#else
+        fmt::format_to(std::back_inserter(windowClassName), FMT_COMPILE(L" {:08x}"), hash);
+#endif
     }
 
     // Windows Terminal is a single-instance application. Either acquire ownership
