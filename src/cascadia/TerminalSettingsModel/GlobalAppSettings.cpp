@@ -359,7 +359,7 @@ void GlobalAppSettings::ExpandCommands(const winrt::Windows::Foundation::Collect
 
 bool GlobalAppSettings::ShouldUsePersistedLayout() const
 {
-    return FirstWindowPreference() == FirstWindowPreference::PersistedWindowLayout && !IsolatedMode();
+    return FirstWindowPreference() == FirstWindowPreference::PersistedWindowLayout;
 }
 
 void GlobalAppSettings::_logSettingSet(const std::string_view& setting)

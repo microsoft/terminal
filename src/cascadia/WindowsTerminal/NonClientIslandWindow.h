@@ -32,8 +32,6 @@ public:
     NonClientIslandWindow(const winrt::Windows::UI::Xaml::ElementTheme& requestedTheme) noexcept;
     ~NonClientIslandWindow() override;
 
-    void Refrigerate() noexcept override;
-
     virtual void Close() override;
     void MakeWindow() noexcept override;
     virtual void OnSize(const UINT width, const UINT height) override;

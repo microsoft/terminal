@@ -572,10 +572,6 @@
     <value>Windows 터미널 백그라운드에서 실행하도록 허용</value>
     <comment>Header for a control to toggle support for Windows Terminal to run in the background.</comment>
   </data>
-  <data name="Globals_IsolatedMode.Header" xml:space="preserve">
-    <value>각 창이 자체 프로세스에서 실행되도록 강제 적용</value>
-    <comment>Header for a control to toggle making each window be its own process.</comment>
-  </data>
   <data name="Globals_DebugFeaturesEnabled.Header" xml:space="preserve">
     <value>디버깅 기능 사용</value>
     <comment>Header for a control to toggle debug features.</comment>
@@ -591,10 +587,6 @@
   <data name="Globals_AllowHeadless.HelpText" xml:space="preserve">
     <value>이렇게 하면 창이 열려 있지 않아도 전역 관리자 및 관리자 모드 작업과 같은 작업이 작동할 수 있습니다.</value>
     <comment>Additional description for what the "allow headless" setting does. Presented near "Globals_AllowHeadless.Header".</comment>
-  </data>
-  <data name="Globals_IsolatedMode.HelpText" xml:space="preserve">
-    <value>전역 바로 가기 키, 탭 끌어서 놓기, 창 대상 지정 wt.exe 포함하지만 제한되지 않는 특정 기능은 제대로 작동하지 않습니다.</value>
-    <comment>{Locked="wt.exe"} Additional description for what the "isolated mode" setting does. Presented near "Globals_IsolatedMode.Header".</comment>
   </data>
   <data name="Globals_TabWidthMode.Header" xml:space="preserve">
     <value>탭 너비 모드</value>

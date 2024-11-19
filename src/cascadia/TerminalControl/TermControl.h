@@ -53,7 +53,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         static Control::TermControl NewControlByAttachingContent(Control::ControlInteractivity content, const Microsoft::Terminal::Control::IKeyBindings& keyBindings);
 
         void UpdateControlSettings(Control::IControlSettings settings);
-        safe_void_coroutine UpdateControlSettings(Control::IControlSettings settings, Control::IControlAppearance unfocusedAppearance);
+        void UpdateControlSettings(Control::IControlSettings settings, Control::IControlAppearance unfocusedAppearance);
         IControlSettings Settings() const;
 
         uint64_t ContentId() const;
@@ -345,7 +345,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void _UpdateAppearanceFromUIThread(Control::IControlAppearance newAppearance);
 
         void _ApplyUISettings();
-        safe_void_coroutine UpdateAppearance(Control::IControlAppearance newAppearance);
+        void UpdateAppearance(Control::IControlAppearance newAppearance);
         void _SetBackgroundImage(const IControlAppearance& newAppearance);
 
         void _InitializeBackgroundBrush();
@@ -426,7 +426,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         safe_void_coroutine _updateSelectionMarkers(IInspectable sender, Control::UpdateSelectionMarkersEventArgs args);
 
         void _coreFontSizeChanged(const IInspectable& s, const Control::FontSizeChangedArgs& args);
-        safe_void_coroutine _coreTransparencyChanged(IInspectable sender, Control::TransparencyChangedEventArgs args);
+        void _coreTransparencyChanged(IInspectable sender, Control::TransparencyChangedEventArgs args);
         void _coreRaisedNotice(const IInspectable& s, const Control::NoticeEventArgs& args);
         void _coreWarningBell(const IInspectable& sender, const IInspectable& args);
         void _coreOutputIdle(const IInspectable& sender, const IInspectable& args);
