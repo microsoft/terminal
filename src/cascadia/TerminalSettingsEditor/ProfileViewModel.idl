@@ -84,7 +84,7 @@ namespace Microsoft.Terminal.Settings.Editor
         void CreateUnfocusedAppearance();
         void DeleteUnfocusedAppearance();
 
-	Boolean Orphaned { get; };
+        Boolean Orphaned { get; };
         OBSERVABLE_PROJECTED_PROFILE_SETTING(String, Name);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(Guid, Guid);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(String, Source);
