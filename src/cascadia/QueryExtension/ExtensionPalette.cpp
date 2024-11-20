@@ -444,14 +444,12 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
     {
         _richBlock = Microsoft::Terminal::UI::Markdown::Builder::Convert(_messageContent, L"");
         const auto resources = Application::Current().Resources();
-        if (_isQuery)
+        const auto textBrushObj = _isQuery ? resources.Lookup(box_value(L"TextOnAccentFillColorPrimaryBrush")) : resources.Lookup(box_value(L"TextFillColorPrimaryBrush"));
+        if (const auto textBrush = textBrushObj.try_as<Windows::UI::Xaml::Media::SolidColorBrush>())
         {
-            if (const auto textBrush = resources.Lookup(box_value(L"TextOnAccentFillColorPrimaryBrush")).try_as<Windows::UI::Xaml::Media::SolidColorBrush>())
-            {
-                _richBlock.Foreground(textBrush);
-            }
+            _richBlock.Foreground(textBrush);
         }
-        else
+        if (!_isQuery)
         {
             for (const auto& b : _richBlock.Blocks())
             {
@@ -480,10 +478,6 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
                         }
                     }
                 }
-            }
-            if (const auto textBrush = resources.Lookup(box_value(L"TextFillColorPrimaryBrush")).try_as<Windows::UI::Xaml::Media::SolidColorBrush>())
-            {
-                _richBlock.Foreground(textBrush);
             }
         }
     }
