@@ -1954,7 +1954,7 @@
     <comment>Header for a control to determine the background color of selected text.</comment>
   </data>
   <data name="Profile_CursorColor.Header" xml:space="preserve">
-    <value>Color</value>
+    <value>Cursor color</value>
     <comment>Header for a control to determine the color of the cursor.</comment>
   </data>
   <data name="Profile_Foreground.HelpText" xml:space="preserve">

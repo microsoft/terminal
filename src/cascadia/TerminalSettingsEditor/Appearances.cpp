@@ -241,6 +241,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             {
                 _NotifyChanges(L"CurrentColorScheme");
             }
+            else if (viewModelProperty == L"CurrentColorScheme")
+            {
+                _NotifyChanges(L"ForegroundPreview", L"BackgroundPreview", L"SelectionBackgroundPreview", L"CursorColorPreview");
+            }
         });
 
         // Cache the original BG image path. If the user clicks "Use desktop
