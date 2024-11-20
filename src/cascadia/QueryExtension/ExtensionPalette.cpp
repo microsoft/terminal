@@ -200,7 +200,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         const auto time = _getCurrentLocalTimeHelper();
         std::vector<IInspectable> messageParts;
 
-        const auto chatMsg = winrt::make<ChatMessage>(winrt::to_hstring(response.Message()), false);
+        const auto chatMsg = winrt::make<ChatMessage>(response.Message(), false);
         chatMsg.RunCommandClicked([this](auto&&, const auto commandlines) {
             auto suggestion = winrt::to_string(commandlines);
             // the AI sometimes sends multiline code blocks
@@ -439,7 +439,8 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
 
     ChatMessage::ChatMessage(winrt::hstring content, bool isQuery) :
         _messageContent{ content },
-        _isQuery{ isQuery }
+        _isQuery{ isQuery },
+        _richBlock{ nullptr }
     {
         _richBlock = Microsoft::Terminal::UI::Markdown::Builder::Convert(_messageContent, L"");
         const auto resources = Application::Current().Resources();
