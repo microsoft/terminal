@@ -43,12 +43,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         INITIALIZE_BINDABLE_ENUM_SETTING(ScrollState, ScrollbarState, winrt::Microsoft::Terminal::Control::ScrollbarState, L"Profile_ScrollbarVisibility", L"Content");
 
         // set up IconTypes
-        _IconTypes = winrt::single_threaded_vector<IInspectable>();
-        _IconTypes.Append(make<EnumEntry>(RS_(L"Profile_IconTypeNone"), box_value(IconType::None)));
-        _IconTypes.Append(make<EnumEntry>(RS_(L"Profile_IconTypeFontIcon"), box_value(IconType::FontIcon)));
-        _IconTypes.Append(make<EnumEntry>(RS_(L"Profile_IconTypeEmoji"), box_value(IconType::Emoji)));
-        _IconTypes.Append(make<EnumEntry>(RS_(L"Profile_IconTypeImage"), box_value(IconType::Image)));
+        std::vector<IInspectable> iconTypes;
+        iconTypes.reserve(4);
+        iconTypes.emplace_back(make<EnumEntry>(RS_(L"Profile_IconTypeNone"), box_value(IconType::None)));
+        iconTypes.emplace_back(make<EnumEntry>(RS_(L"Profile_IconTypeFontIcon"), box_value(IconType::FontIcon)));
+        iconTypes.emplace_back(make<EnumEntry>(RS_(L"Profile_IconTypeEmoji"), box_value(IconType::Emoji)));
+        iconTypes.emplace_back(make<EnumEntry>(RS_(L"Profile_IconTypeImage"), box_value(IconType::Image)));
+        _IconTypes = winrt::single_threaded_vector<IInspectable>(std::move(iconTypes));
         _DeduceCurrentIconType();
+        _DeduceCurrentBuiltInIcon();
 
         // Add a property changed handler to our own property changed event.
         // This propagates changes from the settings model to anybody listening to our
@@ -84,12 +87,21 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             }
             else if (viewModelProperty == L"Icon")
             {
+                // _DeduceCurrentIconType() ends with a "CurrentIconType" notification
+                //  so we don't need to call _UpdateIconPreview() here
                 _DeduceCurrentIconType();
-                _NotifyChanges(L"LocalizedIcon", L"EvaluatedIcon", L"IconPreview");
             }
             else if (viewModelProperty == L"CurrentIconType")
             {
-                _NotifyChanges(L"UsingNoIcon", L"UsingBuiltInIcon", L"UsingEmojiIcon", L"UsingImageIcon");
+                // "Using*" handles the visibility of the IconType-related UI.
+                // The others propagate the rendered icon into a preview (i.e. nav view, container item)
+                _NotifyChanges(L"UsingNoIcon",
+                               L"UsingBuiltInIcon",
+                               L"UsingEmojiIcon",
+                               L"UsingImageIcon",
+                               L"LocalizedIcon",
+                               L"IconPreview",
+                               L"EvaluatedIcon");
             }
             else if (viewModelProperty == L"CurrentBuiltInIcon")
             {
@@ -113,12 +125,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             UpdateFontList();
         }
 
-        if (!_BuiltInIcons)
-        {
-            _UpdateBuiltInIcons();
-        }
-        _DeduceCurrentBuiltInIcon();
-
         if (profile.HasUnfocusedAppearance())
         {
             _unfocusedAppearanceViewModel = winrt::make<implementation::AppearanceViewModel>(profile.UnfocusedAppearance().try_as<AppearanceConfig>());
@@ -129,11 +135,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void ProfileViewModel::_UpdateBuiltInIcons()
     {
-        _BuiltInIcons = single_threaded_vector<IInspectable>();
+        std::vector<IInspectable> builtInIcons;
         for (auto& [val, name] : s_SegoeFluentIcons)
         {
-            _BuiltInIcons.Append(make<EnumEntry>(hstring{ name }, box_value(val)));
+            builtInIcons.emplace_back(make<EnumEntry>(hstring{ name }, box_value(val)));
         }
+        _BuiltInIcons = single_threaded_vector<IInspectable>(std::move(builtInIcons));
     }
 
     void ProfileViewModel::_DeduceCurrentIconType()
@@ -141,23 +148,24 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         const auto& profileIcon = _profile.Icon();
         if (profileIcon == HideIconValue)
         {
-            CurrentIconType(_IconTypes.GetAt(0));
+            _currentIconType = _IconTypes.GetAt(0);
         }
         else if (L"\uE700" <= profileIcon && profileIcon <= L"\uF8B3")
         {
-            CurrentIconType(_IconTypes.GetAt(1));
+            _currentIconType = _IconTypes.GetAt(1);
             _DeduceCurrentBuiltInIcon();
         }
         else if (profileIcon.size() <= 2)
         {
             // We already did a range check for MDL2 Assets in the previous one,
             // so if we're out of that range but still short, assume we're an emoji
-            CurrentIconType(_IconTypes.GetAt(2));
+            _currentIconType = _IconTypes.GetAt(2);
         }
         else
         {
-            CurrentIconType(_IconTypes.GetAt(3));
+            _currentIconType = _IconTypes.GetAt(3);
         }
+        _NotifyChanges(L"CurrentIconType");
     }
 
     void ProfileViewModel::_DeduceCurrentBuiltInIcon()
@@ -177,6 +185,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             }
         }
         _CurrentBuiltInIcon = _BuiltInIcons.GetAt(0);
+        _NotifyChanges(L"CurrentBuiltInIcon");
     }
 
     Model::TerminalSettings ProfileViewModel::TermSettings() const
@@ -452,7 +461,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             {
             case IconType::None:
             {
-                Icon(HideIconValue);
+                _profile.Icon(HideIconValue);
                 break;
             }
             case IconType::Image:
@@ -461,7 +470,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 {
                     // Conversely, if we switch to Image,
                     // retrieve that saved value and apply it
-                    Icon(_lastIconPath);
+                    _profile.Icon(_lastIconPath);
                 }
                 break;
             }
@@ -469,18 +478,22 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             {
                 if (_CurrentBuiltInIcon)
                 {
-                    Icon(unbox_value<hstring>(_CurrentBuiltInIcon.as<Editor::EnumEntry>().EnumValue()));
+                    _profile.Icon(unbox_value<hstring>(_CurrentBuiltInIcon.as<Editor::EnumEntry>().EnumValue()));
                 }
                 break;
             }
             case IconType::Emoji:
             {
+                // Don't set Icon here!
+                // Clear out the text box so we direct the user to use the emoji picker.
                 CurrentEmojiIcon({});
             }
             }
-            _NotifyChanges(L"CurrentIconType");
+            // We're not using the VM's Icon() setter above,
+            // so notify HasIcon changed manually
+            _NotifyChanges(L"CurrentIconType", L"HasIcon");
         }
-    };
+    }
 
     bool ProfileViewModel::UsingNoIcon() const
     {

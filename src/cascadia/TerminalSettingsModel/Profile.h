@@ -113,6 +113,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         // Special fields
         hstring Icon() const;
         void Icon(const hstring& value);
+        bool HasIcon() const;
+        Model::Profile IconOverrideSource();
+        void ClearIcon();
 
         WINRT_PROPERTY(bool, Deleted, false);
         WINRT_PROPERTY(OriginTag, Origin, OriginTag::None);
@@ -128,8 +131,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         INHERITABLE_SETTING(Model::Profile, bool, Hidden, false);
         INHERITABLE_SETTING(Model::Profile, guid, Guid, _GenerateGuidForProfile(Name(), Source()));
         INHERITABLE_SETTING(Model::Profile, hstring, Padding, DEFAULT_PADDING);
-        // Icon is _very special_ because we want to customize its setter
-        _BASE_INHERITABLE_SETTING(Model::Profile, std::optional<hstring>, Icon, L"\uE756");
 
     public:
 #define PROFILE_SETTINGS_INITIALIZE(type, name, jsonKey, ...) \
@@ -141,6 +142,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         Model::IAppearanceConfig _DefaultAppearance{ winrt::make<AppearanceConfig>(weak_ref<Model::Profile>(*this)) };
         Model::FontConfig _FontInfo{ winrt::make<FontConfig>(weak_ref<Model::Profile>(*this)) };
 
+        std::optional<hstring> _Icon{ std::nullopt };
         std::optional<winrt::hstring> _evaluatedIcon{ std::nullopt };
         std::set<std::string> _changeLog;
 
@@ -149,6 +151,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         static guid _GenerateGuidForProfile(const std::wstring_view& name, const std::wstring_view& source) noexcept;
 
         winrt::hstring _evaluateIcon() const;
+        std::optional<hstring> _getIconImpl() const;
+        Model::Profile _getIconOverrideSourceImpl() const;
         void _logSettingSet(const std::string_view& setting);
         void _logSettingIfSet(const std::string_view& setting, const bool isSet);
 

@@ -102,27 +102,24 @@
             <!--  Icon  -->
             <local:SettingContainer x:Uid="Profile_Icon"
                                     ClearSettingValue="{x:Bind Profile.ClearIcon}"
-                                    CurrentValue="{x:Bind Profile, Mode=OneWay}"
                                     HasSettingValue="{x:Bind Profile.HasIcon, Mode=OneWay}"
                                     SettingOverrideSource="{x:Bind Profile.IconOverrideSource, Mode=OneWay}"
                                     Style="{StaticResource ExpanderSettingContainerStyleWithComplexPreview}">
-                <local:SettingContainer.CurrentValueTemplate>
-                    <DataTemplate x:DataType="local:ProfileViewModel">
-                        <Grid>
-                            <ContentControl Width="16"
-                                            Height="16"
-                                            Content="{x:Bind IconPreview, Mode=OneWay}"
-                                            Visibility="{x:Bind mtu:Converters.InvertedBooleanToVisibility(UsingNoIcon), Mode=OneWay}" />
-                            <TextBlock Margin="0,0,0,0"
-                                       HorizontalAlignment="Right"
-                                       VerticalAlignment="Center"
-                                       FontFamily="Segoe UI, Segoe Fluent Icons, Segoe MDL2 Assets"
-                                       Style="{StaticResource SettingsPageItemDescriptionStyle}"
-                                       Text="{x:Bind LocalizedIcon, Mode=OneWay}"
-                                       Visibility="{x:Bind UsingNoIcon, Mode=OneWay}" />
-                        </Grid>
-                    </DataTemplate>
-                </local:SettingContainer.CurrentValueTemplate>
+                <local:SettingContainer.CurrentValue>
+                    <Grid>
+                        <ContentControl Width="16"
+                                        Height="16"
+                                        Content="{x:Bind Profile.IconPreview, Mode=OneWay}"
+                                        Visibility="{x:Bind mtu:Converters.InvertedBooleanToVisibility(Profile.UsingNoIcon), Mode=OneWay}" />
+                        <TextBlock Margin="0,0,0,0"
+                                   HorizontalAlignment="Right"
+                                   VerticalAlignment="Center"
+                                   FontFamily="Segoe UI, Segoe Fluent Icons, Segoe MDL2 Assets"
+                                   Style="{StaticResource SettingsPageItemDescriptionStyle}"
+                                   Text="{x:Bind Profile.LocalizedIcon, Mode=OneWay}"
+                                   Visibility="{x:Bind Profile.UsingNoIcon, Mode=OneWay}" />
+                    </Grid>
+                </local:SettingContainer.CurrentValue>
                 <local:SettingContainer.Content>
                     <Grid ColumnSpacing="10">
                         <Grid.ColumnDefinitions>

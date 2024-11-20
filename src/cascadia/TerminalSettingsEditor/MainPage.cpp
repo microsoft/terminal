@@ -634,9 +634,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             if (auto menuItem{ weakMenuItem.get() })
             {
                 const auto& tag{ menuItem.Tag().as<Editor::ProfileViewModel>() };
-                if (args.PropertyName() == L"Icon")
+                if (args.PropertyName() == L"Icon" || args.PropertyName() == L"EvaluatedIcon")
                 {
-                    menuItem.Icon(UI::IconPathConverter::IconWUX(tag.Icon()));
+                    menuItem.Icon(UI::IconPathConverter::IconWUX(tag.EvaluatedIcon()));
                 }
                 else if (args.PropertyName() == L"Name")
                 {
