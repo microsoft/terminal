@@ -202,7 +202,18 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
 
         const auto chatMsg = winrt::make<ChatMessage>(winrt::to_hstring(response.Message()), false);
         chatMsg.RunCommandClicked([this](auto&&, const auto commandlines) {
-            _InputSuggestionRequestedHandlers(*this, commandlines);
+            auto suggestion = winrt::to_string(commandlines);
+            // the AI sometimes sends multiline code blocks
+            // we don't want to run any of those commands when the chat item is clicked,
+            // so we replace newlines with the appropriate delimiter
+            size_t pos = 0;
+            while ((pos = suggestion.find("\n", pos)) != std::string::npos)
+            {
+                const auto delimiter = (_ActiveCommandline == cmdExe || _ActiveCommandline == cmd) ? cmdCommandDelimiter : commandDelimiter;
+                suggestion.at(pos) = delimiter;
+                pos += 1; // Move past the replaced character
+            }
+            _InputSuggestionRequestedHandlers(*this, winrt::to_hstring(suggestion));
             _close();
 
             const auto lmProviderName = _lmProvider ? _lmProvider.BrandingData().Name() : winrt::hstring{};
