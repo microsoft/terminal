@@ -60,7 +60,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         hstring GetProfileName() const;
 
-        bool CopySelectionToClipboard(bool dismissSelection, bool singleLine, const Windows::Foundation::IReference<CopyFormat>& formats);
+        bool CopySelectionToClipboard(bool dismissSelection, bool singleLine, bool withControlSequences, const Windows::Foundation::IReference<CopyFormat>& formats);
         void PasteTextFromClipboard();
         void SelectAll();
         bool ToggleBlockSelection();
