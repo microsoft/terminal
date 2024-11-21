@@ -252,7 +252,7 @@
         <StackPanel Grid.Row="0"
                     MaxWidth="{StaticResource StandardControlMaxWidth}"
                     Spacing="10">
-            <Border Height="200"
+            <Border Height="300"
                     MaxWidth="{StaticResource StandardControlMaxWidth}"
                     Margin="0,12,0,0"
                     BorderBrush="{ThemeResource SystemControlForegroundBaseMediumLowBrush}"
