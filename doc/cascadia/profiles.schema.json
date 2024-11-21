@@ -886,6 +886,11 @@
               "default": false,
               "description": "If true, the copied content will be copied as a single line (even if there are hard line breaks present in the text). If false, newlines persist from the selected text."
             },
+            "withControlSequences": {
+              "type": "boolean",
+              "default": false,
+              "description": "If true, copied content will contain ANSI escape code control sequences representing the styling of the content."
+            },
             "dismissSelection": {
               "type": "boolean",
               "default": true,

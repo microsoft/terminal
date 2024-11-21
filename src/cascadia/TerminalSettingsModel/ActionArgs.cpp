@@ -208,6 +208,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             str.append(RS_(L"CopyTextCommandKey"));
         }
 
+        if (WithControlSequences())
+        {
+            str.append(L", withControlSequences: true");
+        }
+
         if (!DismissSelection())
         {
             str.append(L", dismissSelection: false");
