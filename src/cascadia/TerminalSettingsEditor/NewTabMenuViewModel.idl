@@ -44,11 +44,11 @@ namespace Microsoft.Terminal.Settings.Editor
         void RequestDeleteEntry(NewTabMenuEntryViewModel vm);
         void RequestMoveEntriesToFolder(IVector<NewTabMenuEntryViewModel> entries, FolderEntryViewModel folderEntry);
 
-        void RequestAddSelectedProfileEntry();
-        void RequestAddSeparatorEntry();
-        void RequestAddFolderEntry();
-        void RequestAddProfileMatcherEntry();
-        void RequestAddRemainingProfilesEntry();
+        NewTabMenuEntryViewModel RequestAddSelectedProfileEntry();
+        NewTabMenuEntryViewModel RequestAddSeparatorEntry();
+        NewTabMenuEntryViewModel RequestAddFolderEntry();
+        NewTabMenuEntryViewModel RequestAddProfileMatcherEntry();
+        NewTabMenuEntryViewModel RequestAddRemainingProfilesEntry();
     }
 
     [default_interface] unsealed runtimeclass NewTabMenuEntryViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged

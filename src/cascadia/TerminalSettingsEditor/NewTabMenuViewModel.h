@@ -33,11 +33,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void RequestDeleteEntry(const Editor::NewTabMenuEntryViewModel& vm);
         void RequestMoveEntriesToFolder(const Windows::Foundation::Collections::IVector<Editor::NewTabMenuEntryViewModel>& entries, const Editor::FolderEntryViewModel& destinationFolder);
 
-        void RequestAddSelectedProfileEntry();
-        void RequestAddSeparatorEntry();
-        void RequestAddFolderEntry();
-        void RequestAddProfileMatcherEntry();
-        void RequestAddRemainingProfilesEntry();
+        Editor::NewTabMenuEntryViewModel RequestAddSelectedProfileEntry();
+        Editor::NewTabMenuEntryViewModel RequestAddSeparatorEntry();
+        Editor::NewTabMenuEntryViewModel RequestAddFolderEntry();
+        Editor::NewTabMenuEntryViewModel RequestAddProfileMatcherEntry();
+        Editor::NewTabMenuEntryViewModel RequestAddRemainingProfilesEntry();
 
         hstring CurrentFolderName() const;
         void CurrentFolderName(const hstring& value);

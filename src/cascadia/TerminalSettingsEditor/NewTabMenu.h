@@ -18,7 +18,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         // FolderPickerDialog handlers
         void FolderPickerDialog_Opened(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::Controls::ContentDialogOpenedEventArgs& e);
-        void FolderPickerDialog_Closed(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::Controls::ContentDialogClosedEventArgs& e);
         void FolderPickerDialog_PrimaryButtonClick(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::Controls::ContentDialogButtonClickEventArgs& e);
 
         // NTM Entry handlers
@@ -31,6 +30,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void DeleteMultiple_Click(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::RoutedEventArgs& e);
 
         // New Entry handlers
+        void AddProfileButton_Clicked(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::RoutedEventArgs& e);
+        void AddSeparatorButton_Clicked(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::RoutedEventArgs& e);
+        void AddFolderButton_Clicked(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::RoutedEventArgs& e);
+        void AddMatchProfilesButton_Clicked(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::RoutedEventArgs& e);
+        void AddRemainingProfilesButton_Clicked(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::RoutedEventArgs& e);
         void AddFolderNameTextBox_KeyDown(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::Input::KeyRoutedEventArgs& e);
         void AddFolderNameTextBox_TextChanged(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::Controls::TextChangedEventArgs& e);
 
@@ -39,8 +43,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     private:
         Editor::NewTabMenuEntryTemplateSelector _entryTemplateSelector{ nullptr };
-
         Editor::NewTabMenuEntryViewModel _draggedEntry{ nullptr };
+
+        void _ScrollToEntry(const Editor::NewTabMenuEntryViewModel& entry);
     };
 
     struct NewTabMenuEntryTemplateSelector : public NewTabMenuEntryTemplateSelectorT<NewTabMenuEntryTemplateSelector>

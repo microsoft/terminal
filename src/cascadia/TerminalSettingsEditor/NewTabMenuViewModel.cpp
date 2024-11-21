@@ -317,49 +317,56 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
-    void NewTabMenuViewModel::RequestAddSelectedProfileEntry()
+    Editor::NewTabMenuEntryViewModel NewTabMenuViewModel::RequestAddSelectedProfileEntry()
     {
         if (_SelectedProfile)
         {
             Model::ProfileEntry profileEntry;
             profileEntry.Profile(_SelectedProfile);
 
-            CurrentView().Append(make<ProfileEntryViewModel>(profileEntry));
+            const auto& entryVM = make<ProfileEntryViewModel>(profileEntry);
+            CurrentView().Append(entryVM);
+            _PrintAll();
+            return entryVM;
         }
-        _PrintAll();
+        return nullptr;
     }
 
-    void NewTabMenuViewModel::RequestAddSeparatorEntry()
+    Editor::NewTabMenuEntryViewModel NewTabMenuViewModel::RequestAddSeparatorEntry()
     {
         Model::SeparatorEntry separatorEntry;
-
-        CurrentView().Append(make<SeparatorEntryViewModel>(separatorEntry));
+        const auto& entryVM = make<SeparatorEntryViewModel>(separatorEntry);
+        CurrentView().Append(entryVM);
 
         _PrintAll();
+        return entryVM;
     }
 
-    void NewTabMenuViewModel::RequestAddFolderEntry()
+    Editor::NewTabMenuEntryViewModel NewTabMenuViewModel::RequestAddFolderEntry()
     {
         Model::FolderEntry folderEntry;
         folderEntry.Name(_AddFolderName);
 
-        CurrentView().Append(make<FolderEntryViewModel>(folderEntry, _Settings));
+        const auto& entryVM = make<FolderEntryViewModel>(folderEntry, _Settings);
+        CurrentView().Append(entryVM);
 
         // Reset state after adding the entry
         AddFolderName({});
         _folderTreeCache = nullptr;
 
         _PrintAll();
+        return entryVM;
     }
 
-    void NewTabMenuViewModel::RequestAddProfileMatcherEntry()
+    Editor::NewTabMenuEntryViewModel NewTabMenuViewModel::RequestAddProfileMatcherEntry()
     {
         Model::MatchProfilesEntry matchProfilesEntry;
         matchProfilesEntry.Name(_ProfileMatcherName);
         matchProfilesEntry.Source(_ProfileMatcherSource);
         matchProfilesEntry.Commandline(_ProfileMatcherCommandline);
 
-        CurrentView().Append(make<MatchProfilesEntryViewModel>(matchProfilesEntry));
+        const auto& entryVM = make<MatchProfilesEntryViewModel>(matchProfilesEntry);
+        CurrentView().Append(entryVM);
 
         // Clear the fields after adding the entry
         ProfileMatcherName({});
@@ -367,16 +374,19 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         ProfileMatcherCommandline({});
 
         _PrintAll();
+        return entryVM;
     }
 
-    void NewTabMenuViewModel::RequestAddRemainingProfilesEntry()
+    Editor::NewTabMenuEntryViewModel NewTabMenuViewModel::RequestAddRemainingProfilesEntry()
     {
         Model::RemainingProfilesEntry remainingProfilesEntry;
-        CurrentView().Append(make<RemainingProfilesEntryViewModel>(remainingProfilesEntry));
+        const auto& entryVM = make<RemainingProfilesEntryViewModel>(remainingProfilesEntry);
+        CurrentView().Append(entryVM);
 
         _NotifyChanges(L"IsRemainingProfilesEntryMissing");
 
         _PrintAll();
+        return entryVM;
     }
 
     void NewTabMenuViewModel::GenerateFolderTree()
