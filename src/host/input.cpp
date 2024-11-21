@@ -306,7 +306,7 @@ void ProcessCtrlEvents()
         break;
 
     case CONSOLE_CTRL_C_FLAG:
-        EventType = CTRL_BREAK_EVENT;
+        EventType = CTRL_C_EVENT;
         break;
 
     case CONSOLE_CTRL_LOGOFF_FLAG:
