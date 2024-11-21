@@ -24,6 +24,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         _entryTemplateSelector = Resources().Lookup(box_value(L"NewTabMenuEntryTemplateSelector")).as<Editor::NewTabMenuEntryTemplateSelector>();
 
+        // Ideally, we'd bind IsEnabled to something like mtu:Converters.isEmpty(NewTabMenuListView.SelectedItems.Size) in the XAML,
+        //   but the XAML compiler can't find NewTabMenuListView when we try that. Rather than copying the list of selected items over
+        //   to the view model, we'll just do this instead (much simpler).
+        NewTabMenuListView().SelectionChanged([this](auto&&, auto&&) {
+            const auto list = NewTabMenuListView();
+            MoveToFolderButton().IsEnabled(list.SelectedItems().Size() > 0);
+            DeleteMultipleButton().IsEnabled(list.SelectedItems().Size() > 0);
+        });
+
         Automation::AutomationProperties::SetName(MoveToFolderButton(), RS_(L"NewTabMenu_MoveToFolderTextBlock/Text"));
         Automation::AutomationProperties::SetName(DeleteMultipleButton(), RS_(L"NewTabMenu_DeleteMultipleTextBlock/Text"));
         Automation::AutomationProperties::SetName(AddProfileComboBox(), RS_(L"NewTabMenu_AddProfile/Header"));
@@ -60,7 +69,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void NewTabMenu::EditEntry_Clicked(const IInspectable& sender, const RoutedEventArgs& /*e*/)
     {
-        auto folderVM = sender.as<FrameworkElement>().DataContext().as<Editor::FolderEntryViewModel>();
+        const auto folderVM = sender.as<FrameworkElement>().DataContext().as<Editor::FolderEntryViewModel>();
         _ViewModel.CurrentFolder(folderVM);
     }
 

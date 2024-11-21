@@ -271,7 +271,8 @@
             <StackPanel Orientation="Horizontal"
                         Spacing="10">
                 <Button x:Name="MoveToFolderButton"
-                        Click="MoveMultiple_Click">
+                        Click="MoveMultiple_Click"
+                        IsEnabled="False">
                     <StackPanel Orientation="Horizontal">
                         <FontIcon FontSize="{StaticResource StandardIconSize}"
                                   Glyph="&#xE8DE;" />
@@ -281,6 +282,7 @@
                 </Button>
                 <Button x:Name="DeleteMultipleButton"
                         Click="DeleteMultiple_Click"
+                        IsEnabled="False"
                         Style="{StaticResource DeleteButtonStyle}">
                     <StackPanel Orientation="Horizontal">
                         <FontIcon FontSize="{StaticResource StandardIconSize}"
