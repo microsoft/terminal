@@ -149,16 +149,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // refresh the current page using the breadcrumb data we collected before the refresh
         if (const auto& crumb{ lastBreadcrumb.try_as<Breadcrumb>() }; crumb && crumb->Tag())
         {
-            // Early exit if the last breadcrumb was a FolderEntry in the NewTabMenu
-            if (const auto& breadcrumbFolderEntry{ crumb->Tag().try_as<Editor::FolderEntryViewModel>() })
-            {
-                // It's _a lot_ of extra work to figure out where this folder is and recreate the breadcrumbs
-                // (and that assumes that the folder even exists!) so for now we'll just navigate to the base page
-                _newTabMenuPageVM.CurrentFolder(nullptr);
-                _Navigate(breadcrumbFolderEntry, BreadcrumbSubPage::None);
-                return;
-            }
-
             for (const auto& item : _menuItemSource)
             {
                 if (const auto& menuItem{ item.try_as<MUX::Controls::NavigationViewItem>() })
@@ -174,6 +164,18 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                                     // found the one that was selected before the refresh
                                     SettingsNav().SelectedItem(item);
                                     _Navigate(*stringTag, crumb->SubPage());
+                                    return;
+                                }
+                            }
+                            else if (const auto& breadcrumbFolderEntry{ crumb->Tag().try_as<Editor::FolderEntryViewModel>() })
+                            {
+                                if (stringTag == newTabMenuTag)
+                                {
+                                    // It's _a lot_ of extra work to figure out where this folder is and recreate the breadcrumbs
+                                    // (and that assumes that the folder even exists!) so for now we'll just navigate to the NewTabMenu page
+                                    _newTabMenuPageVM.CurrentFolder(nullptr);
+                                    SettingsNav().SelectedItem(item);
+                                    _Navigate(hstring{ newTabMenuTag }, BreadcrumbSubPage::None);
                                     return;
                                 }
                             }
