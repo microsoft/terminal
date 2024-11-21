@@ -325,10 +325,10 @@ void ProcessCtrlEvents()
 
     for (const auto& r : termRecords)
     {
-        // Older versions of Windows would do various things at this point:
+        // Older versions of Windows would do various things if the EndTask() call failed:
         // * XP: Pops up a "Windows can't end this program" dialog for every already-dead process.
         // * Vista - Win 7: Simply skips over already-dead processes.
-        // * Win 8 - Windows 11 26100: Aborts on an already-dead process (you have to WM_CLOSE conhost multiple times).
+        // * Win 8 - Win 11 26100: Aborts on an already-dead process (you have to WM_CLOSE conhost multiple times).
         //
         // That last period had the following comment:
         //   Status will be non-successful if a process attached to this console
@@ -346,7 +346,7 @@ void ProcessCtrlEvents()
         //
         // That logic was removed around the Windows 11 26100 time frame, because CSRSS
         // (which handles EndTask) now waits 5s and then force-kills the process for us.
-        // Going back to the old behavior then should make shutdown a lot more robust.
+        // Going back to the Win 7 behavior then should make shutdown a lot more robust.
         // The bad news is that EndTask() returns STATUS_UNSUCCESSFUL no matter whether
         // the process was already dead, or if the request actually failed for some reason.
         // Hopefully there aren't any regressions, but we can't know without trying.
