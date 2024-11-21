@@ -50,8 +50,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void NewTabMenu::FolderPickerDialog_Opened(const IInspectable& /*sender*/, const Controls::ContentDialogOpenedEventArgs& /*e*/)
     {
-        _ViewModel.CurrentFolderTreeViewSelectedItem(nullptr);
+        // Ideally, we'd bind IsPrimaryButtonEnabled to something like mtu:Converters.isEmpty(FolderTree.SelectedItems.Size) in the XAML.
+        // Similar to above, the XAML compiler can't find FolderTree when we try that.
+        // To make matters worse, SelectionChanged doesn't exist for WinUI 2's TreeView.
+        // Let's just select the first item and call it a day.
         _ViewModel.GenerateFolderTree();
+        _ViewModel.CurrentFolderTreeViewSelectedItem(_ViewModel.FolderTree().First().Current());
     }
 
     void NewTabMenu::FolderPickerDialog_PrimaryButtonClick(const IInspectable& /*sender*/, const Controls::ContentDialogButtonClickEventArgs& /*e*/)

@@ -308,12 +308,19 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void NewTabMenuViewModel::RequestMoveEntriesToFolder(const Windows::Foundation::Collections::IVector<Editor::NewTabMenuEntryViewModel>& entries, const Editor::FolderEntryViewModel& destinationFolder)
     {
+        auto destination{ destinationFolder == nullptr ? _rootEntries : destinationFolder.Entries() };
         for (auto&& e : entries)
         {
+            // Don't move the folder into itself (just skip over it)
+            if (e == destinationFolder)
+            {
+                continue;
+            }
+
             // Remove entry from the current layer,
             // and add it to the destination folder
             RequestDeleteEntry(e);
-            destinationFolder.Entries().Append(e);
+            destination.Append(e);
         }
     }
 
