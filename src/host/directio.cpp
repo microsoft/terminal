@@ -56,6 +56,7 @@ using Microsoft::Console::Interactivity::ServiceLocator;
                                                        INPUT_READ_HANDLE_DATA& readHandleState,
                                                        const bool IsUnicode,
                                                        const bool IsPeek,
+                                                       const bool IsWaitAllowed,
                                                        std::unique_ptr<IWaitRoutine>& waiter) noexcept
 {
     try
@@ -73,7 +74,7 @@ using Microsoft::Console::Interactivity::ServiceLocator;
         const auto Status = inputBuffer.Read(outEvents,
                                              eventReadCount,
                                              IsPeek,
-                                             true,
+                                             IsWaitAllowed,
                                              IsUnicode,
                                              false);
 

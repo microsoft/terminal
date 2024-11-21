@@ -63,6 +63,7 @@ public:
                                                       INPUT_READ_HANDLE_DATA& readHandleState,
                                                       const bool IsUnicode,
                                                       const bool IsPeek,
+                                                      const bool IsWaitAllowed,
                                                       std::unique_ptr<IWaitRoutine>& waiter) noexcept = 0;
 
     [[nodiscard]] virtual HRESULT ReadConsoleImpl(IConsoleInputObject& context,
