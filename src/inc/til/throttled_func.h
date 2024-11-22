@@ -30,12 +30,23 @@ namespace til
                 }
             }
 
-            std::tuple<Args...> take()
+            void apply(const auto& func)
             {
-                std::unique_lock guard{ _lock };
-                auto pendingRunArgs = std::move(*_pendingRunArgs);
-                _pendingRunArgs.reset();
-                return pendingRunArgs;
+                decltype(_pendingRunArgs) args;
+                {
+                    std::unique_lock guard{ _lock };
+                    args = std::move(_pendingRunArgs);
+                    _pendingRunArgs.reset();
+                }
+                // Theoretically it should always have a value, because the throttled_func
+                // should not call the callback without there being a reason.
+                // But in practice a failure here was observed at least once.
+                // It's unknown to me what caused it, so the best we can do is avoid a crash.
+                assert(args.has_value());
+                if (args)
+                {
+                    std::apply(func, *args);
+                }
             }
 
             explicit operator bool() const
@@ -60,10 +71,12 @@ namespace til
                 return _isPending.exchange(true, std::memory_order_relaxed);
             }
 
-            std::tuple<> take()
+            void apply(const auto& func)
             {
-                reset();
-                return {};
+                if (_isPending.exchange(false, std::memory_order_relaxed))
+                {
+                    func();
+                }
             }
 
             void reset()
@@ -193,7 +206,7 @@ namespace til
             }
             else
             {
-                std::apply(_func, _storage.take());
+                _storage.apply(_func);
             }
         }
 
