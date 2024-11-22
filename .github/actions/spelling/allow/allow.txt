@@ -54,6 +54,7 @@ Powerline
 ptys
 pwn
 pwshw
+QOL
 qof
 qps
 quickfix
