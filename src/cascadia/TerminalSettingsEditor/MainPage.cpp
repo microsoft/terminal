@@ -64,7 +64,27 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _UpdateBackgroundForMica();
 
         _newTabMenuPageVM = winrt::make<NewTabMenuViewModel>(_settingsClone);
-        _SetupNTMEventHandling();
+        _ntmViewModelChangedRevoker = _newTabMenuPageVM.PropertyChanged(winrt::auto_revoke, [this](auto&&, const PropertyChangedEventArgs& args) {
+            const auto settingName{ args.PropertyName() };
+            if (settingName == L"CurrentFolder")
+            {
+                if (const auto& currentFolder = _newTabMenuPageVM.CurrentFolder())
+                {
+                    
+                    const auto crumb = winrt::make<Breadcrumb>(box_value(currentFolder), currentFolder.Name(), BreadcrumbSubPage::NewTabMenu_Folder);
+                    _breadcrumbs.Append(crumb);
+                    SettingsMainPage_ScrollViewer().ScrollToVerticalOffset(0);
+                }
+                else
+                {
+                    // If we don't have a current folder, we're at the root of the NTM
+                    _breadcrumbs.Clear();
+                    const auto crumb = winrt::make<Breadcrumb>(box_value(newTabMenuTag), RS_(L"Nav_NewTabMenu/Content"), BreadcrumbSubPage::None);
+                    _breadcrumbs.Append(crumb);
+                }
+                contentFrame().Navigate(xaml_typename<Editor::NewTabMenu>(), _newTabMenuPageVM);
+            }
+        });
 
         _colorSchemesPageVM = winrt::make<ColorSchemesPageViewModel>(_settingsClone);
         _colorSchemesPageViewModelChangedRevoker = _colorSchemesPageVM.PropertyChanged(winrt::auto_revoke, [=](auto&&, const PropertyChangedEventArgs& args) {
@@ -319,7 +339,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     void MainPage::_PreNavigateHelper()
     {
         _profileViewModelChangedRevoker.revoke();
-        _ntmViewModelChangedRevoker.revoke();
         _breadcrumbs.Clear();
     }
 
@@ -378,31 +397,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         });
     }
 
-    void MainPage::_SetupNTMEventHandling()
-    {
-        _ntmViewModelChangedRevoker = _newTabMenuPageVM.PropertyChanged(winrt::auto_revoke, [this](auto&&, const PropertyChangedEventArgs& args) {
-            const auto settingName{ args.PropertyName() };
-            if (settingName == L"CurrentFolder")
-            {
-                if (const auto& currentFolder = _newTabMenuPageVM.CurrentFolder())
-                {
-                    contentFrame().Navigate(xaml_typename<Editor::NewTabMenu>(), _newTabMenuPageVM);
-                    const auto crumb = winrt::make<Breadcrumb>(box_value(currentFolder), currentFolder.Name(), BreadcrumbSubPage::NTM_Folder);
-                    _breadcrumbs.Append(crumb);
-                    SettingsMainPage_ScrollViewer().ScrollToVerticalOffset(0);
-                }
-                else
-                {
-                    // If we don't have a current folder, we're at the root of the NTM
-                    contentFrame().Navigate(xaml_typename<Editor::NewTabMenu>(), _newTabMenuPageVM);
-                    _breadcrumbs.Clear();
-                    const auto crumb = winrt::make<Breadcrumb>(box_value(newTabMenuTag), RS_(L"Nav_NewTabMenu/Content"), BreadcrumbSubPage::None);
-                    _breadcrumbs.Append(crumb);
-                }
-            }
-        });
-    }
-
     void MainPage::_Navigate(hstring clickedItemTag, BreadcrumbSubPage subPage)
     {
         _PreNavigateHelper();
@@ -439,10 +433,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
         else if (clickedItemTag == newTabMenuTag)
         {
+            // TODO CARLOS: we don't revoke anymore. Is this going to be a problem?
             // Reset the current folder entry and page BEFORE setting up the event handling
             _newTabMenuPageVM.CurrentFolder(nullptr);
-
-            _SetupNTMEventHandling();
 
             contentFrame().Navigate(xaml_typename<Editor::NewTabMenu>(), _newTabMenuPageVM);
             const auto crumb = winrt::make<Breadcrumb>(box_value(clickedItemTag), RS_(L"Nav_NewTabMenu/Content"), BreadcrumbSubPage::None);
@@ -540,8 +533,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         _PreNavigateHelper();
 
-        _SetupNTMEventHandling();
-
         contentFrame().Navigate(xaml_typename<Editor::NewTabMenu>(), _newTabMenuPageVM);
         const auto crumb = winrt::make<Breadcrumb>(box_value(newTabMenuTag), RS_(L"Nav_NewTabMenu/Content"), BreadcrumbSubPage::None);
         _breadcrumbs.Append(crumb);
@@ -550,7 +541,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             _newTabMenuPageVM.CurrentFolder(nullptr);
         }
-        else if (const auto folderEntry = ntmEntryVM.try_as<FolderEntryViewModel>(); subPage == BreadcrumbSubPage::NTM_Folder && folderEntry)
+        else if (const auto folderEntry = ntmEntryVM.try_as<FolderEntryViewModel>(); subPage == BreadcrumbSubPage::NewTabMenu_Folder && folderEntry)
         {
             _newTabMenuPageVM.CurrentFolder(*folderEntry);
         }

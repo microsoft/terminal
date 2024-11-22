@@ -20,7 +20,7 @@ namespace Microsoft.Terminal.Settings.Editor
         Profile_Terminal,
         Profile_Advanced,
         ColorSchemes_Edit,
-        NTM_Folder
+        NewTabMenu_Folder
     };
 
     runtimeclass Breadcrumb : Windows.Foundation.IStringable

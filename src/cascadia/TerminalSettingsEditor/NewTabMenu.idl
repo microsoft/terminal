@@ -12,8 +12,8 @@ namespace Microsoft.Terminal.Settings.Editor
     }
 
     [default_interface] runtimeclass NewTabMenuEntryTemplateSelector : Windows.UI.Xaml.Controls.DataTemplateSelector
-	{
-		NewTabMenuEntryTemplateSelector();
+    {
+        NewTabMenuEntryTemplateSelector();
 
         Windows.UI.Xaml.DataTemplate ProfileEntryTemplate;
         Windows.UI.Xaml.DataTemplate ActionEntryTemplate;
@@ -21,5 +21,5 @@ namespace Microsoft.Terminal.Settings.Editor
         Windows.UI.Xaml.DataTemplate FolderEntryTemplate;
         Windows.UI.Xaml.DataTemplate MatchProfilesEntryTemplate;
         Windows.UI.Xaml.DataTemplate RemainingProfilesEntryTemplate;
-	}
+    }
 }
