@@ -1570,7 +1570,7 @@ std::wstring Terminal::CurrentCommand() const
 
 void Terminal::SerializeMainBuffer(const wchar_t* destination) const
 {
-    _mainBuffer->Serialize(destination);
+    _mainBuffer->SerializeToPath(destination);
 }
 
 void Terminal::ColorSelection(const TextAttribute& attr, winrt::Microsoft::Terminal::Core::MatchMode matchMode)
