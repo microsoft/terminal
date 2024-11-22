@@ -237,8 +237,8 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
 
     winrt::Windows::Foundation::IAsyncOperation<Extension::IResponse> GithubCopilotLLMProvider::GetResponseAsync(const winrt::hstring& userPrompt)
     {
-        auto cancelation_token{ co_await winrt::get_cancellation_token() };
-        cancelation_token.callback([=] {
+        auto cancellationToken{ co_await winrt::get_cancellation_token() };
+        cancellationToken.callback([=] {
             if (_lastRequest)
             {
                 _lastRequest.Cancel();
