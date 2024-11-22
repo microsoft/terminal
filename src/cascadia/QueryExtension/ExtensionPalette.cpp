@@ -159,7 +159,15 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
 
         if (_lmProvider)
         {
-            result = _lmProvider.GetResponseAsync(promptCopy).get();
+            const auto asyncOperation = _lmProvider.GetResponseAsync(promptCopy);
+            if (asyncOperation.wait_for(std::chrono::seconds(5)) == AsyncStatus::Completed)
+            {
+                result = asyncOperation.GetResults();
+            }
+            else
+            {
+                result = winrt::make<SystemResponse>(RS_(L"UnknownErrorMessage"), ErrorTypes::Unknown, winrt::hstring{});
+            }
         }
         else
         {
