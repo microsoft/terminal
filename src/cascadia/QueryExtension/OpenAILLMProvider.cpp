@@ -62,6 +62,14 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
 
     winrt::Windows::Foundation::IAsyncOperation<Extension::IResponse> OpenAILLMProvider::GetResponseAsync(const winrt::hstring userPrompt)
     {
+        auto cancelation_token{ co_await winrt::get_cancellation_token() };
+        cancelation_token.callback([=] {
+            if (_lastRequest)
+            {
+                _lastRequest.Cancel();
+            }
+        });
+
         // Use the ErrorTypes enum to flag whether the response the user receives is an error message
         // we pass this enum back to the caller so they can handle it appropriately (specifically, ExtensionPalette will send the correct telemetry event)
         ErrorTypes errorType{ ErrorTypes::None };
@@ -100,7 +108,9 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         // Send the request
         try
         {
-            const auto response = co_await _httpClient.SendRequestAsync(request);
+            const auto sendRequestOperation = _httpClient.SendRequestAsync(request);
+            const auto response{ co_await sendRequestOperation };
+            _lastRequest = sendRequestOperation;
             // Parse out the suggestion from the response
             const auto string{ co_await response.Content().ReadAsStringAsync() };
             const auto jsonResult{ WDJ::JsonObject::Parse(string) };

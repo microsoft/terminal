@@ -166,6 +166,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
             }
             else
             {
+                asyncOperation.Cancel();
                 result = winrt::make<SystemResponse>(RS_(L"UnknownErrorMessage"), ErrorTypes::Unknown, winrt::hstring{});
             }
         }
