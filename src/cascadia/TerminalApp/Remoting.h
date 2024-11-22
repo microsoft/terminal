@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include "AppCommandlineArgs.h"
 #include "CommandlineArgs.g.h"
 #include "RequestReceiveContentArgs.g.h"
 #include "SummonWindowBehavior.g.h"
@@ -12,34 +13,28 @@ namespace winrt::TerminalApp::implementation
 {
     struct CommandlineArgs : public CommandlineArgsT<CommandlineArgs>
     {
+        CommandlineArgs() = default;
+        CommandlineArgs(winrt::array_view<const winrt::hstring> args, winrt::hstring currentDirectory, uint32_t showWindowCommand, winrt::hstring envString);
+
+        ::TerminalApp::AppCommandlineArgs& ParsedArgs() noexcept;
+        winrt::com_array<winrt::hstring>& CommandlineRef() noexcept;
+
+        // These bits are exposed via WinRT:
     public:
-        CommandlineArgs() :
-            _args{},
-            _cwd{ L"" }
-        {
-        }
-
-        CommandlineArgs(const winrt::array_view<const winrt::hstring>& args,
-                        winrt::hstring currentDirectory,
-                        const uint32_t showWindowCommand,
-                        winrt::hstring envString) :
-            _args{ args.begin(), args.end() },
-            _cwd{ currentDirectory },
-            _ShowWindowCommand{ showWindowCommand },
-            CurrentEnvironment{ envString }
-        {
-        }
-
-        winrt::hstring CurrentDirectory() { return _cwd; };
+        int32_t ExitCode() const noexcept;
+        winrt::hstring ExitMessage() const;
+        winrt::hstring TargetWindow() const;
 
         void Commandline(const winrt::array_view<const winrt::hstring>& value);
         winrt::com_array<winrt::hstring> Commandline();
 
+        til::property<winrt::hstring> CurrentDirectory;
         til::property<winrt::hstring> CurrentEnvironment;
-
-        WINRT_PROPERTY(uint32_t, ShowWindowCommand, SW_NORMAL); // SW_NORMAL is 1, 0 is SW_HIDE
+        til::property<uint32_t> ShowWindowCommand{ static_cast<uint32_t>(SW_NORMAL) }; // SW_NORMAL is 1, 0 is SW_HIDE
 
     private:
+        ::TerminalApp::AppCommandlineArgs _parsed;
+        int32_t _parseResult = 0;
         winrt::com_array<winrt::hstring> _args;
         winrt::hstring _cwd;
     };
@@ -79,32 +74,24 @@ namespace winrt::TerminalApp::implementation
     public:
         WindowRequestedArgs(uint64_t id, const winrt::TerminalApp::CommandlineArgs& command) :
             _Id{ id },
-            _args{ command.Commandline() },
-            _CurrentDirectory{ command.CurrentDirectory() },
-            _ShowWindowCommand{ command.ShowWindowCommand() },
-            _CurrentEnvironment{ command.CurrentEnvironment() } {};
+            _Command{ std::move(command) }
+        {
+        }
 
         WindowRequestedArgs(const winrt::hstring& window, const winrt::hstring& content, const Windows::Foundation::IReference<Windows::Foundation::Rect>& bounds) :
-            _Id{ 0u },
             _WindowName{ window },
-            _args{},
-            _CurrentDirectory{},
             _Content{ content },
-            _InitialBounds{ bounds } {};
-
-        void Commandline(const winrt::array_view<const winrt::hstring>& value) { _args = { value.begin(), value.end() }; };
-        winrt::com_array<winrt::hstring> Commandline() { return winrt::com_array<winrt::hstring>{ _args.begin(), _args.end() }; }
+            _InitialBounds{ bounds }
+        {
+        }
 
         WINRT_PROPERTY(uint64_t, Id);
         WINRT_PROPERTY(winrt::hstring, WindowName);
-        WINRT_PROPERTY(winrt::hstring, CurrentDirectory);
+        WINRT_PROPERTY(TerminalApp::CommandlineArgs, Command);
         WINRT_PROPERTY(winrt::hstring, Content);
-        WINRT_PROPERTY(uint32_t, ShowWindowCommand, SW_NORMAL);
-        WINRT_PROPERTY(winrt::hstring, CurrentEnvironment);
         WINRT_PROPERTY(Windows::Foundation::IReference<Windows::Foundation::Rect>, InitialBounds);
 
     private:
-        winrt::com_array<winrt::hstring> _args;
     };
 }
 

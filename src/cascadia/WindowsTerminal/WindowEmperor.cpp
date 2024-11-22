@@ -6,7 +6,6 @@
 
 #include <LibraryResources.h>
 #include <ScopedResourceLoader.h>
-#include <WindowingBehavior.h>
 #include <WtExeUtils.h>
 #include <til/hash.h>
 
@@ -14,6 +13,7 @@
 #include "resource.h"
 #include "VirtualDesktopUtils.h"
 #include "../../types/inc/utils.hpp"
+#include "../../types/inc/User32Utils.hpp"
 
 enum class NotificationIconMenuItemAction
 {
@@ -175,7 +175,7 @@ static wil::unique_mutex acquireMutexOrAttemptHandoff(const wchar_t* className, 
                 .cbData = gsl::narrow<DWORD>(payload.size()),
                 .lpData = payload.data(),
             };
-            if (SendMessageTimeoutW(hwnd, WM_COPYDATA, 0, reinterpret_cast<LPARAM>(&cds), SMTO_ABORTIFHUNG | SMTO_ERRORONEXIT, 10000, nullptr))
+            if (SendMessageTimeoutW(hwnd, WM_COPYDATA, 0, reinterpret_cast<LPARAM>(&cds), SMTO_ABORTIFHUNG | SMTO_ERRORONEXIT, 10000000, nullptr))
             {
                 return {};
             }
@@ -226,7 +226,7 @@ void WindowEmperor::CreateNewWindow(winrt::TerminalApp::WindowRequestedArgs args
     _assertIsMainThread();
 
     uint64_t id = args.Id();
-    bool needsNewId = _windows.empty() || id == 0;
+    bool needsNewId = id == 0;
     uint64_t newId = 0;
 
     for (const auto& host : _windows)
@@ -338,7 +338,7 @@ void WindowEmperor::HandleCommandlineArgs(int nCmdShow)
             for (const auto layout : layouts)
             {
                 hstring args[] = { L"wt", L"-w", L"new", L"-s", winrt::to_hstring(startIdx) };
-                _createNewWindow({ args, cwd, showCmd, std::move(env) });
+                _dispatchCommandline({ args, cwd, showCmd, std::move(env) });
                 startIdx += 1;
             }
         }
@@ -349,6 +349,9 @@ void WindowEmperor::HandleCommandlineArgs(int nCmdShow)
         {
             _dispatchCommandline({ args, cwd, showCmd, std::move(env) });
         }
+
+        // If we created no windows, e.g. because the args are "/?" we can just exit now.
+        _postQuitMessageIfNeeded();
     }
 
     // ALWAYS change the _real_ CWD of the Terminal to system32,
@@ -434,38 +437,78 @@ void WindowEmperor::HandleCommandlineArgs(int nCmdShow)
     __assume(false);
 }
 
-void WindowEmperor::_createNewWindow(winrt::TerminalApp::CommandlineArgs args)
-{
-    CreateNewWindow(winrt::TerminalApp::WindowRequestedArgs{ 0, std::move(args) });
-}
-
 void WindowEmperor::_dispatchCommandline(winrt::TerminalApp::CommandlineArgs args)
 {
-    const auto result = _app.Logic().FindTargetWindow(args.Commandline());
-    auto targetWindow = result.WindowId();
-    winrt::hstring windowName;
-    AppHost* window = nullptr;
+    const auto exitCode = args.ExitCode();
 
-    if (targetWindow == WindowingBehaviorUseNone)
+    if (const auto msg = args.ExitMessage(); !msg.empty())
+    {
+        _showMessageBox(msg, exitCode != 0);
+        return;
+    }
+
+    if (exitCode != 0)
     {
         return;
     }
 
-    switch (targetWindow)
+    const auto parsedTarget = args.TargetWindow();
+    WindowingMode windowingBehavior = WindowingMode::UseNew;
+    uint64_t windowId = 0;
+    winrt::hstring windowName;
+
+    // Figure out the windowing behavior the caller wants
+    // and get the sanitized window ID (if any) and window name (if any).
+    if (parsedTarget.empty())
     {
-    case WindowingBehaviorUseCurrent:
-    case WindowingBehaviorUseExisting:
-        _dispatchCommandlineCurrentDesktop(std::move(args));
-        return;
-    case WindowingBehaviorUseAnyExisting:
-        window = _mostRecentWindow();
-        break;
-    case WindowingBehaviorUseName:
-        windowName = result.WindowName();
+        windowingBehavior = _app.Logic().Settings().GlobalSettings().WindowingBehavior();
+    }
+    else if (const auto opt = til::parse_signed<int64_t>(parsedTarget, 10))
+    {
+        // Negative window IDs map to WindowingMode::UseNew.
+        if (*opt > 0)
+        {
+            windowId = gsl::narrow_cast<uint64_t>(*opt);
+        }
+        else if (*opt == 0)
+        {
+            windowingBehavior = WindowingMode::UseExisting;
+        }
+    }
+    else if (parsedTarget == L"last")
+    {
+        windowingBehavior = WindowingMode::UseExisting;
+    }
+    // A window name of "new" maps to WindowingMode::UseNew.
+    else if (parsedTarget != L"new")
+    {
+        windowName = parsedTarget;
+    }
+
+    AppHost* window = nullptr;
+
+    // Map from the windowing behavior, ID, and name to a window.
+    if (windowId)
+    {
+        window = GetWindowById(windowId);
+    }
+    else if (!windowName.empty())
+    {
         window = GetWindowByName(windowName);
-        break;
-    default:
-        break;
+    }
+    else
+    {
+        switch (windowingBehavior)
+        {
+        case WindowingMode::UseAnyExisting:
+            window = _mostRecentWindow();
+            break;
+        case WindowingMode::UseExisting:
+            _dispatchCommandlineCurrentDesktop(std::move(args));
+            return;
+        default:
+            break;
+        }
     }
 
     if (window)
@@ -474,7 +517,7 @@ void WindowEmperor::_dispatchCommandline(winrt::TerminalApp::CommandlineArgs arg
     }
     else
     {
-        winrt::TerminalApp::WindowRequestedArgs request{ gsl::narrow_cast<uint64_t>(std::max(0, targetWindow)), std::move(args) };
+        winrt::TerminalApp::WindowRequestedArgs request{ windowId, std::move(args) };
         request.WindowName(std::move(windowName));
         CreateNewWindow(std::move(request));
     }
@@ -515,7 +558,7 @@ safe_void_coroutine WindowEmperor::_dispatchCommandlineCurrentDesktop(winrt::Ter
     }
     else
     {
-        _createNewWindow(std::move(args));
+        CreateNewWindow(winrt::TerminalApp::WindowRequestedArgs{ 0, std::move(args) });
     }
 }
 
@@ -640,6 +683,26 @@ void WindowEmperor::_createMessageWindow(const wchar_t* className)
     StringCchCopy(_notificationIcon.szTip, ARRAYSIZE(_notificationIcon.szTip), appNameLoc.c_str());
 }
 
+void WindowEmperor::_postQuitMessageIfNeeded() const
+{
+    if (_windows.empty() && !_app.Logic().Settings().GlobalSettings().AllowHeadless())
+    {
+        PostQuitMessage(0);
+    }
+}
+
+safe_void_coroutine WindowEmperor::_showMessageBox(winrt::hstring message, bool error) const
+{
+    const auto hwnd = _window.get();
+
+    co_await winrt::resume_background();
+
+    const auto messageTitle = error ? IDS_ERROR_DIALOG_TITLE : IDS_HELP_DIALOG_TITLE;
+    const auto messageIcon = error ? MB_ICONERROR : MB_ICONWARNING;
+    // TODO:GH#4134: polish this dialog more, to make the text more like msiexec /?
+    MessageBoxW(hwnd, message.c_str(), GetStringResource(messageTitle).data(), MB_OK | messageIcon);
+}
+
 LRESULT WindowEmperor::_messageHandler(HWND window, UINT const message, WPARAM const wParam, LPARAM const lParam) noexcept
 {
     // use C++11 magic statics to make sure we only do this once.
@@ -666,10 +729,7 @@ LRESULT WindowEmperor::_messageHandler(HWND window, UINT const message, WPARAM c
                 }
             }
 
-            if (_windows.empty() && !_app.Logic().Settings().GlobalSettings().AllowHeadless())
-            {
-                PostQuitMessage(0);
-            }
+            _postQuitMessageIfNeeded();
             return 0;
         }
         case WM_IDENTIFY_ALL_WINDOWS:
@@ -881,7 +941,7 @@ void WindowEmperor::_finalizeSessionPersistence() const
 {
     const auto state = ApplicationState::SharedInstance();
 
-    if (_forcePersistence || _app.Logic().ShouldUsePersistedLayout())
+    if (_forcePersistence || _app.Logic().Settings().GlobalSettings().ShouldUsePersistedLayout())
     {
         state.PersistedWindowLayouts(nullptr);
         for (const auto& w : _windows)

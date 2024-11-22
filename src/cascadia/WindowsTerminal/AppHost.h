@@ -12,8 +12,6 @@ class WindowEmperor;
 class AppHost : public std::enable_shared_from_this<AppHost>
 {
 public:
-    static void s_DisplayMessageBox(const winrt::TerminalApp::ParseCommandlineResult& message);
-
     AppHost(WindowEmperor* manager, const winrt::TerminalApp::AppLogic& logic, winrt::TerminalApp::WindowRequestedArgs args) noexcept;
 
     void Initialize();

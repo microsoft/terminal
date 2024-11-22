@@ -98,19 +98,6 @@ void AppHost::SetTaskbarProgress(const winrt::Windows::Foundation::IInspectable&
     }
 }
 
-void AppHost::s_DisplayMessageBox(const winrt::TerminalApp::ParseCommandlineResult& result)
-{
-    const auto displayHelp = result.ExitCode == 0;
-    const auto messageTitle = displayHelp ? IDS_HELP_DIALOG_TITLE : IDS_ERROR_DIALOG_TITLE;
-    const auto messageIcon = displayHelp ? MB_ICONWARNING : MB_ICONERROR;
-    // TODO:GH#4134: polish this dialog more, to make the text more
-    // like msiexec /?
-    MessageBoxW(nullptr,
-                result.Message.data(),
-                GetStringResource(messageTitle).data(),
-                MB_OK | messageIcon);
-}
-
 // Method Description:
 // - Retrieve any commandline args passed on the commandline, and pass them to
 //   the WindowManager, to ask if we should become a window process.
@@ -135,23 +122,14 @@ void AppHost::_HandleCommandlineArgs(const winrt::TerminalApp::WindowRequestedAr
     if (const auto content = windowArgs.Content(); !content.empty())
     {
         _windowLogic.SetStartupContent(content, windowArgs.InitialBounds());
+        _launchShowWindowCommand = SW_NORMAL;
     }
     else
     {
-        const auto result = _windowLogic.SetStartupCommandline(windowArgs.Commandline(), windowArgs.CurrentDirectory(), windowArgs.CurrentEnvironment());
-        const auto message = _windowLogic.ParseCommandlineMessage();
-        if (!message.empty())
-        {
-            AppHost::s_DisplayMessageBox({ message, result });
-
-            if (_windowLogic.ShouldExitEarly())
-            {
-                _CloseRequested(nullptr, nullptr);
-            }
-        }
+        const auto args = windowArgs.Command();
+        _windowLogic.SetStartupCommandline(args);
+        _launchShowWindowCommand = args.ShowWindowCommand();
     }
-
-    _launchShowWindowCommand = windowArgs.ShowWindowCommand();
 
     // This is a fix for GH#12190 and hopefully GH#12169.
     //
@@ -823,7 +801,7 @@ void AppHost::DispatchCommandline(winrt::TerminalApp::CommandlineArgs args)
     // Summon the window whenever we dispatch a commandline to it. This will
     // make it obvious when a new tab/pane is created in a window.
     HandleSummon(std::move(summonArgs));
-    _windowLogic.ExecuteCommandline(args.Commandline(), args.CurrentDirectory(), args.CurrentEnvironment());
+    _windowLogic.ExecuteCommandline(std::move(args));
 }
 
 void AppHost::_WindowActivated(bool activated)

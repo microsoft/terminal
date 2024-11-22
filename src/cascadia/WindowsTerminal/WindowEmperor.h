@@ -56,11 +56,12 @@ private:
     AppHost* _mostRecentWindow() const noexcept;
     bool _summonWindow(const SummonWindowSelectionArgs& args) const;
     void _summonAllWindows() const;
-    void _createNewWindow(winrt::TerminalApp::CommandlineArgs args);
     void _dispatchCommandline(winrt::TerminalApp::CommandlineArgs args);
     safe_void_coroutine _dispatchCommandlineCurrentDesktop(winrt::TerminalApp::CommandlineArgs args);
     LRESULT _messageHandler(HWND window, UINT message, WPARAM wParam, LPARAM lParam) noexcept;
     void _createMessageWindow(const wchar_t* className);
+    void _postQuitMessageIfNeeded() const;
+    safe_void_coroutine _showMessageBox(winrt::hstring message, bool error) const;
     void _hotkeyPressed(long hotkeyIndex);
     void _registerHotKey(int index, const winrt::Microsoft::Terminal::Control::KeyChord& hotkey) noexcept;
     void _unregisterHotKey(int index) noexcept;

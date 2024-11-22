@@ -52,11 +52,9 @@ namespace TerminalApp
 
         Boolean HasCommandlineArguments();
 
-        Int32 SetStartupCommandline(String[] commands, String cwd, String env);
+        Int32 SetStartupCommandline(CommandlineArgs args);
         void SetStartupContent(String json, Windows.Foundation.IReference<Windows.Foundation.Rect> bounds);
-        Int32 ExecuteCommandline(String[] commands, String cwd, String env);
-        String ParseCommandlineMessage { get; };
-        Boolean ShouldExitEarly { get; };
+        Int32 ExecuteCommandline(CommandlineArgs args);
 
         Boolean ShouldImmediatelyHandoffToElevated();
         void HandoffToElevated();

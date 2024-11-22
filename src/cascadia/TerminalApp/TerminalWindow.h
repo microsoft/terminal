@@ -7,12 +7,10 @@
 #include "SystemMenuChangeArgs.g.h"
 #include "WindowProperties.g.h"
 
-#include "SettingsLoadEventArgs.h"
+#include "Remoting.h"
 #include "TerminalPage.h"
-#include "SettingsLoadEventArgs.h"
 
-#include <inc/cppwinrt_utils.h>
-#include <ThrottledFunc.h>
+#include <cppwinrt_utils.h>
 
 #ifdef UNIT_TESTING
 // fwdecl unittest classes
@@ -79,12 +77,10 @@ namespace winrt::TerminalApp::implementation
 
         bool HasCommandlineArguments() const noexcept;
 
-        int32_t SetStartupCommandline(array_view<const winrt::hstring> actions, winrt::hstring cwd, winrt::hstring env);
+        int32_t SetStartupCommandline(TerminalApp::CommandlineArgs args);
         void SetStartupContent(const winrt::hstring& content, const Windows::Foundation::IReference<Windows::Foundation::Rect>& contentBounds);
-        int32_t ExecuteCommandline(array_view<const winrt::hstring> actions, const winrt::hstring& cwd, const winrt::hstring& env);
+        int32_t ExecuteCommandline(TerminalApp::CommandlineArgs args);
         void SetSettingsStartupArgs(const std::vector<winrt::Microsoft::Terminal::Settings::Model::ActionAndArgs>& actions);
-        winrt::hstring ParseCommandlineMessage();
-        bool ShouldExitEarly();
 
         bool ShouldImmediatelyHandoffToElevated();
         void HandoffToElevated();
@@ -172,8 +168,8 @@ namespace winrt::TerminalApp::implementation
         winrt::Windows::UI::Xaml::Controls::ContentDialog _dialog{ nullptr };
         std::shared_mutex _dialogLock;
 
+        wil::com_ptr<CommandlineArgs> _appArgs{ nullptr };
         bool _hasCommandLineArguments{ false };
-        ::TerminalApp::AppCommandlineArgs _appArgs;
         bool _gotSettingsStartupActions{ false };
         std::vector<winrt::Microsoft::Terminal::Settings::Model::ActionAndArgs> _settingsStartupArgs{};
         Windows::Foundation::IReference<Windows::Foundation::Rect> _contentBounds{ nullptr };

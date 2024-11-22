@@ -7,7 +7,6 @@
 #include "TabBase.g.cpp"
 #include "Utils.h"
 #include "ColorHelper.h"
-#include "../inc/WindowingBehavior.h"
 
 using namespace winrt;
 using namespace winrt::Windows::UI::Xaml;
@@ -75,7 +74,7 @@ namespace winrt::TerminalApp::implementation
             _moveToNewWindowMenuItem.Click([weakThis](auto&&, auto&&) {
                 if (auto tab{ weakThis.get() })
                 {
-                    MoveTabArgs args{ winrt::to_hstring(NewWindow), MoveTabDirection::Forward };
+                    MoveTabArgs args{ L"new", MoveTabDirection::Forward };
                     ActionAndArgs actionAndArgs{ ShortcutAction::MoveTab, args };
                     tab->_dispatch.DoAction(*tab, actionAndArgs);
                 }
