@@ -879,7 +879,7 @@ LRESULT WindowEmperor::_messageHandler(HWND window, UINT const message, WPARAM c
                     // _actually_ changed. ImmersiveColorSet gets sent more often
                     // than just on a theme change. It notably gets sent when the PC
                     // is locked, or the UAC prompt opens.
-                    const auto isCurrentlyDark = Theme::IsSystemInDarkTheme() ? TriBool::True : TriBool::False;
+                    const auto isCurrentlyDark = Theme::IsSystemInDarkTheme();
                     if (isCurrentlyDark != _currentSystemThemeIsDark)
                     {
                         _currentSystemThemeIsDark = isCurrentlyDark;

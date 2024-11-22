@@ -146,8 +146,6 @@ protected:
     void _enterQuakeMode();
     til::rect _getQuakeModeSize(HMONITOR hmon);
 
-    void _summonWindowRoutineBody(winrt::TerminalApp::SummonWindowBehavior args);
-
     bool _minimizeToNotificationArea{ false };
 
     std::unordered_map<UINT, SystemMenuItemInfo> _systemMenuItems;

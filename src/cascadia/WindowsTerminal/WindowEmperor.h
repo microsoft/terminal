@@ -36,13 +36,6 @@ public:
     void HandleCommandlineArgs(int nCmdShow);
 
 private:
-    enum class TriBool : uint8_t
-    {
-        Indeterminate,
-        False,
-        True,
-    };
-
     struct SummonWindowSelectionArgs
     {
         uint64_t WindowID = 0;
@@ -78,7 +71,7 @@ private:
     bool _notificationIconShown = false;
     bool _forcePersistence = false;
     bool _needsPersistenceCleanup = false;
-    TriBool _currentSystemThemeIsDark = TriBool::Indeterminate;
+    std::optional<bool> _currentSystemThemeIsDark;
 
 #ifdef NDEBUG
     static constexpr void _assertIsMainThread() noexcept

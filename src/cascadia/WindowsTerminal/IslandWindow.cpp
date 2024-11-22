@@ -1218,15 +1218,6 @@ void IslandWindow::_SetIsFullscreen(const bool fullscreenEnabled)
 // - <none>
 void IslandWindow::SummonWindow(winrt::TerminalApp::SummonWindowBehavior args)
 {
-    _summonWindowRoutineBody(std::move(args));
-}
-
-// Method Description:
-// - As above.
-//   BODGY: ARM64 BUILD FAILED WITH fatal error C1001: Internal compiler error
-//   when this was part of the coroutine body.
-void IslandWindow::_summonWindowRoutineBody(winrt::TerminalApp::SummonWindowBehavior args)
-{
     auto actualDropdownDuration = args.DropdownDuration();
     // If the user requested an animation, let's check if animations are enabled in the OS.
     if (actualDropdownDuration > 0)
