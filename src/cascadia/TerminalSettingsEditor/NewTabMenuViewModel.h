@@ -25,6 +25,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         NewTabMenuViewModel(Model::CascadiaSettings settings);
         void UpdateSettings(const Model::CascadiaSettings& settings);
         void GenerateFolderTree();
+        Windows::Foundation::Collections::IVector<Editor::FolderEntryViewModel> FindFolderPathByName(const hstring& name);
 
         bool IsRemainingProfilesEntryMissing() const;
         bool IsFolderView() const noexcept;

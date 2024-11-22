@@ -21,6 +21,7 @@ namespace Microsoft.Terminal.Settings.Editor
         NewTabMenuViewModel(Microsoft.Terminal.Settings.Model.CascadiaSettings settings);
         void UpdateSettings(Microsoft.Terminal.Settings.Model.CascadiaSettings settings);
         void GenerateFolderTree();
+        Windows.Foundation.Collections.IVector<FolderEntryViewModel> FindFolderPathByName(String name);
 
         FolderEntryViewModel CurrentFolder;
         Boolean IsFolderView { get; };

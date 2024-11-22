@@ -6,12 +6,6 @@
 #include "../../types/inc/Utils.hpp"
 #include "JsonUtils.h"
 #include "KeyChordSerialization.h"
-#include "FolderEntry.h"
-#include "ProfileEntry.h"
-#include "SeparatorEntry.h"
-#include "RemainingProfilesEntry.h"
-#include "MatchProfilesEntry.h"
-#include "ActionEntry.h"
 
 #include "GlobalAppSettings.g.cpp"
 

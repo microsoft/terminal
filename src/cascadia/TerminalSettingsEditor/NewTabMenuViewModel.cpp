@@ -125,7 +125,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     bool NewTabMenuViewModel::IsFolderView() const noexcept
     {
-        return CurrentView() != _rootEntries;
+        return _CurrentFolder != nullptr;
     }
 
     NewTabMenuViewModel::NewTabMenuViewModel(Model::CascadiaSettings settings)
@@ -226,6 +226,40 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return _CurrentFolder.Entries();
     }
 
+    static bool _FindFolderPathByName(const IVector<Editor::NewTabMenuEntryViewModel>& entries, const hstring& name, std::vector<Editor::FolderEntryViewModel>& result)
+    {
+        for (const auto& entry : entries)
+        {
+            if (const auto& folderVM = entry.try_as<Editor::FolderEntryViewModel>())
+            {
+                result.push_back(folderVM);
+                if (folderVM.Name() == name)
+                {
+                    // Found the folder
+                    return true;
+                }
+                else if (_FindFolderPathByName(folderVM.Entries(), name, result))
+                {
+                    // Found the folder in the children of this folder
+                    return true;
+                }
+                else
+                {
+                    // This folder and its descendants are not the folder we're looking for
+                    result.pop_back();
+                }
+            }
+        }
+        return false;
+    }
+
+    IVector<Editor::FolderEntryViewModel> NewTabMenuViewModel::FindFolderPathByName(const hstring& name)
+    {
+        std::vector<Editor::FolderEntryViewModel> entries;
+        _FindFolderPathByName(_rootEntries, name, entries);
+        return single_threaded_vector<Editor::FolderEntryViewModel>(std::move(entries));
+    }
+
     void NewTabMenuViewModel::UpdateSettings(const Model::CascadiaSettings& settings)
     {
         _Settings = settings;
@@ -234,7 +268,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         SelectedProfile(AvailableProfiles().GetAt(0));
 
         _rootEntries = _ConvertToViewModelEntries(_Settings.GlobalSettings().NewTabMenu(), _Settings);
-
         _rootEntriesChangedRevoker = _rootEntries.VectorChanged(winrt::auto_revoke, [this](auto&&, const IVectorChangedEventArgs& args) {
             switch (args.CollectionChange())
             {
@@ -269,9 +302,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             }
             }
         });
-
-        // Clear CurrentFolder to reset the view
-        _CurrentFolder = nullptr;
     }
 
     void NewTabMenuViewModel::RequestReorderEntry(const Editor::NewTabMenuEntryViewModel& vm, bool goingUp)
