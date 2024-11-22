@@ -1311,7 +1311,7 @@ void AppHost::_handleMoveContent(const winrt::Windows::Foundation::IInspectable&
 void AppHost::_handleReceiveContent(const winrt::Windows::Foundation::IInspectable& /* sender */,
                                     winrt::TerminalApp::RequestReceiveContentArgs args)
 {
-    if (const auto target = _windowManager->GetWindowById(args.TargetWindow()))
+    if (const auto target = _windowManager->GetWindowById(args.SourceWindow()))
     {
         target->_windowLogic.SendContentToOther(winrt::TerminalApp::RequestReceiveContentArgs{ args.SourceWindow(), args.TargetWindow(), args.TabIndex() });
     }
