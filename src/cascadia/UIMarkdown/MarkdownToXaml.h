@@ -27,9 +27,9 @@ private:
     winrt::Windows::UI::Xaml::Documents::Run _CurrentRun();
     winrt::Windows::UI::Xaml::Documents::Span _CurrentSpan();
     winrt::Windows::UI::Xaml::Documents::Run _NewRun();
-    void _EndRun();
-    void _EndSpan();
-    void _EndParagraph();
+    void _EndRun() noexcept;
+    void _EndSpan() noexcept;
+    void _EndParagraph() noexcept;
 
     winrt::Windows::UI::Xaml::Controls::TextBlock _makeDefaultTextBlock();
 
