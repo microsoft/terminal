@@ -66,6 +66,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             /* Cygwin */ L"/cygdrive/",
             /* MSYS2 */ L"/",
         };
+        static constexpr wil::zwstring_view sSingleQuoteEscape = L"'\\''";
+        static constexpr auto cchSingleQuoteEscape = sSingleQuoteEscape.size();
 
         if (translationStyle == PathTranslationStyle::None)
         {
@@ -74,6 +76,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         // All of the other path translation modes current result in /-delimited paths
         std::replace(fullPath.begin(), fullPath.end(), L'\\', L'/');
+
+        // Escape single quotes, assuming translated paths are always quoted by a pair of single quotes.
+        size_t pos = 0;
+        while ((pos = fullPath.find(L'\'', pos)) != std::wstring::npos)
+        {
+            // ' -> '\'' (for POSIX shell)
+            fullPath.replace(pos, 1, sSingleQuoteEscape);
+            // Arithmetic overflow cannot occur here.
+            pos += cchSingleQuoteEscape;
+        }
 
         if (fullPath.size() >= 2 && fullPath.at(1) == L':')
         {
