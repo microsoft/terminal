@@ -175,14 +175,11 @@ void Terminal::SetTaskbarProgress(const ::Microsoft::Console::VirtualTerminal::D
         // leave the progress value unchanged, unless the current progress
         // value is 0, in which case set it to a 'minimum' value (10 in our case);
         // if the given progress value is greater than 0, then set the progress value
-        if (progress == 0)
+        if (progress == 0 && _taskbarProgress == 0)
         {
-            if (_taskbarProgress == 0)
-            {
                 _taskbarProgress = TaskbarMinProgress;
-            }
         }
-        else
+        else if (progress > 0)
         {
             _taskbarProgress = progress;
         }
