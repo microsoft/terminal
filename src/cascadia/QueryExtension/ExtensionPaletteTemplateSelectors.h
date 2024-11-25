@@ -15,9 +15,8 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         Windows::UI::Xaml::DataTemplate SelectTemplateCore(const winrt::Windows::Foundation::IInspectable&, const winrt::Windows::UI::Xaml::DependencyObject&);
         Windows::UI::Xaml::DataTemplate SelectTemplateCore(const winrt::Windows::Foundation::IInspectable&);
 
-        WINRT_PROPERTY(winrt::Windows::UI::Xaml::DataTemplate, QueryMessageTemplate);
-        WINRT_PROPERTY(winrt::Windows::UI::Xaml::DataTemplate, TextResponseMessageTemplate);
-        WINRT_PROPERTY(winrt::Windows::UI::Xaml::DataTemplate, CodeResponseMessageTemplate);
+        WINRT_PROPERTY(winrt::Windows::UI::Xaml::DataTemplate, RichQueryMessageTemplate);
+        WINRT_PROPERTY(winrt::Windows::UI::Xaml::DataTemplate, RichResponseMessageTemplate);
     };
 
     struct ExtensionPaletteGroupedMessagesHeaderTemplateSelector : ExtensionPaletteGroupedMessagesHeaderTemplateSelectorT<ExtensionPaletteGroupedMessagesHeaderTemplateSelector>

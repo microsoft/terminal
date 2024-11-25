@@ -7,9 +7,8 @@ namespace Microsoft.Terminal.Query.Extension
     {
         ExtensionPaletteMessageTemplateSelector();
 
-        Windows.UI.Xaml.DataTemplate QueryMessageTemplate;
-        Windows.UI.Xaml.DataTemplate TextResponseMessageTemplate;
-        Windows.UI.Xaml.DataTemplate CodeResponseMessageTemplate;
+        Windows.UI.Xaml.DataTemplate RichQueryMessageTemplate;
+        Windows.UI.Xaml.DataTemplate RichResponseMessageTemplate;
     }
 
     [default_interface] runtimeclass ExtensionPaletteGroupedMessagesHeaderTemplateSelector : Windows.UI.Xaml.Controls.DataTemplateSelector

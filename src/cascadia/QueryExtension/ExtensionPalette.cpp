@@ -127,7 +127,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
 
     winrt::fire_and_forget ExtensionPalette::_getSuggestions(const winrt::hstring& prompt, const winrt::hstring& currentLocalTime)
     {
-        const auto userMessage = winrt::make<ChatMessage>(prompt, true, false);
+        const auto userMessage = winrt::make<ChatMessage>(prompt, true);
         std::vector<IInspectable> userMessageVector{ userMessage };
         const auto queryAttribution = _lmProvider ? _lmProvider.BrandingData().QueryAttribution() : winrt::hstring{};
         const auto userGroupedMessages = winrt::make<GroupedChatMessages>(currentLocalTime, true, winrt::single_threaded_vector(std::move(userMessageVector)), queryAttribution);
@@ -197,48 +197,35 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
 
     void ExtensionPalette::_splitResponseAndAddToChatHelper(const IResponse response)
     {
-        // this function is dependent on the AI response separating code blocks with
-        // newlines and "```". OpenAI seems to naturally conform to this, though
-        // we could probably engineer the prompt to specify this if we need to.
-        std::wstringstream ss(response.Message().c_str());
-        std::wstring line;
-        std::wstring codeBlock;
-        bool inCodeBlock = false;
         const auto time = _getCurrentLocalTimeHelper();
         std::vector<IInspectable> messageParts;
 
-        while (std::getline(ss, line))
-        {
-            if (!line.empty())
+        const auto chatMsg = winrt::make<ChatMessage>(response.Message(), false);
+        chatMsg.RunCommandClicked([this](auto&&, const auto commandlines) {
+            auto suggestion = winrt::to_string(commandlines);
+            // the AI sometimes sends multiline code blocks
+            // we don't want to run any of those commands when the chat item is clicked,
+            // so we replace newlines with the appropriate delimiter
+            size_t pos = 0;
+            while ((pos = suggestion.find("\n", pos)) != std::string::npos)
             {
-                if (!inCodeBlock && line.find(L"```") == 0)
-                {
-                    inCodeBlock = true;
-                    continue;
-                }
-                if (inCodeBlock && line.find(L"```") == 0)
-                {
-                    inCodeBlock = false;
-                    const auto chatMsg = winrt::make<ChatMessage>(winrt::hstring{ std::move(codeBlock) }, false, true);
-                    messageParts.push_back(chatMsg);
-                    codeBlock.clear();
-                    continue;
-                }
-                if (inCodeBlock)
-                {
-                    if (!codeBlock.empty())
-                    {
-                        codeBlock += L'\n';
-                    }
-                    codeBlock += line;
-                }
-                else
-                {
-                    const auto chatMsg = winrt::make<ChatMessage>(winrt::hstring{ line }, false, false);
-                    messageParts.push_back(chatMsg);
-                }
+                const auto delimiter = (_ActiveCommandline == cmdExe || _ActiveCommandline == cmd) ? cmdCommandDelimiter : commandDelimiter;
+                suggestion.at(pos) = delimiter;
+                pos += 1; // Move past the replaced character
             }
-        }
+            _InputSuggestionRequestedHandlers(*this, winrt::to_hstring(suggestion));
+            _close();
+
+            const auto lmProviderName = _lmProvider ? _lmProvider.BrandingData().Name() : winrt::hstring{};
+            TraceLoggingWrite(
+                g_hQueryExtensionProvider,
+                "AICodeResponseInputted",
+                TraceLoggingDescription("Event emitted when the user clicks on a suggestion to have it be input into their active shell"),
+                TraceLoggingWideString(lmProviderName.c_str(), "LMProviderName", "The name of the connected service provider, if present"),
+                TraceLoggingKeyword(MICROSOFT_KEYWORD_CRITICAL_DATA),
+                TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
+        });
+        messageParts.push_back(chatMsg);
 
         const auto brandingData = _lmProvider ? _lmProvider.BrandingData() : nullptr;
         const auto responseAttribution = response.ResponseAttribution().empty() ? _ProfileName : response.ResponseAttribution();
@@ -310,46 +297,6 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         if (!concatenatedMessages.empty())
         {
             _ExportChatHistoryRequestedHandlers(*this, concatenatedMessages);
-        }
-    }
-
-    // Method Description:
-    // - This event is called when the user clicks on a Chat Message. We will
-    //   dispatch the contents of the message to the app to input into the active control.
-    // Arguments:
-    // - e: an ItemClickEventArgs who's ClickedItem() will be the message that was clicked on.
-    // Return Value:
-    // - <none>
-    void ExtensionPalette::_listItemClicked(const Windows::Foundation::IInspectable& /*sender*/,
-                                            const Windows::UI::Xaml::Controls::ItemClickEventArgs& e)
-    {
-        const auto selectedSuggestionItem = e.ClickedItem();
-        const auto selectedItemAsChatMessage = selectedSuggestionItem.as<winrt::Microsoft::Terminal::Query::Extension::ChatMessage>();
-        if (selectedItemAsChatMessage.IsCode())
-        {
-            auto suggestion = winrt::to_string(selectedItemAsChatMessage.MessageContent());
-
-            // the AI sometimes sends multiline code blocks
-            // we don't want to run any of those commands when the chat item is clicked,
-            // so we replace newlines with the appropriate delimiter
-            size_t pos = 0;
-            while ((pos = suggestion.find("\n", pos)) != std::string::npos)
-            {
-                const auto delimiter = (_ActiveCommandline == cmdExe || _ActiveCommandline == cmd) ? cmdCommandDelimiter : commandDelimiter;
-                suggestion.at(pos) = delimiter;
-                pos += 1; // Move past the replaced character
-            }
-            _InputSuggestionRequestedHandlers(*this, winrt::to_hstring(suggestion));
-            _close();
-
-            const auto lmProviderName = _lmProvider ? _lmProvider.BrandingData().Name() : winrt::hstring{};
-            TraceLoggingWrite(
-                g_hQueryExtensionProvider,
-                "AICodeResponseInputted",
-                TraceLoggingDescription("Event emitted when the user clicks on a suggestion to have it be input into their active shell"),
-                TraceLoggingWideString(lmProviderName.c_str(), "LMProviderName", "The name of the connected service provider, if present"),
-                TraceLoggingKeyword(MICROSOFT_KEYWORD_CRITICAL_DATA),
-                TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
         }
     }
 
@@ -488,5 +435,50 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
 
         // Clear the text box each time we close the dialog. This is consistent with VsCode.
         _queryBox().Text(winrt::hstring{});
+    }
+
+    ChatMessage::ChatMessage(winrt::hstring content, bool isQuery) :
+        _messageContent{ content },
+        _isQuery{ isQuery },
+        _richBlock{ nullptr }
+    {
+        _richBlock = Microsoft::Terminal::UI::Markdown::Builder::Convert(_messageContent, L"");
+        const auto resources = Application::Current().Resources();
+        const auto textBrushObj = _isQuery ? resources.Lookup(box_value(L"TextOnAccentFillColorPrimaryBrush")) : resources.Lookup(box_value(L"TextFillColorPrimaryBrush"));
+        if (const auto textBrush = textBrushObj.try_as<Windows::UI::Xaml::Media::SolidColorBrush>())
+        {
+            _richBlock.Foreground(textBrush);
+        }
+        if (!_isQuery)
+        {
+            for (const auto& b : _richBlock.Blocks())
+            {
+                if (const auto& p{ b.try_as<Windows::UI::Xaml::Documents::Paragraph>() })
+                {
+                    for (const auto& line : p.Inlines())
+                    {
+                        if (const auto& otherContent{ line.try_as<Windows::UI::Xaml::Documents::InlineUIContainer>() })
+                        {
+                            if (const auto& codeBlock{ otherContent.Child().try_as<Microsoft::Terminal::UI::Markdown::CodeBlock>() })
+                            {
+                                codeBlock.Margin({ 0, 8, 0, 8 });
+                                codeBlock.PlayButtonVisibility(Windows::UI::Xaml::Visibility::Visible);
+                                if (const auto backgroundBrush = resources.Lookup(box_value(L"ControlAltFillColorSecondaryBrush")).try_as<Windows::UI::Xaml::Media::SolidColorBrush>())
+                                {
+                                    codeBlock.Background(backgroundBrush);
+                                }
+                                if (const auto foregroundBrush = resources.Lookup(box_value(L"AccentTextFillColorPrimaryBrush")).try_as<Windows::UI::Xaml::Media::SolidColorBrush>())
+                                {
+                                    codeBlock.Foreground(foregroundBrush);
+                                }
+                                codeBlock.RequestRunCommands([this, commandlines = codeBlock.Commandlines()](auto&&, auto&&) {
+                                    _RunCommandClickedHandlers(*this, commandlines);
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 }

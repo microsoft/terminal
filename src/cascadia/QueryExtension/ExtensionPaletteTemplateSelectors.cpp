@@ -28,17 +28,10 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         {
             if (!message.IsQuery())
             {
-                if (message.IsCode())
-                {
-                    return CodeResponseMessageTemplate();
-                }
-                else
-                {
-                    return TextResponseMessageTemplate();
-                }
+                return RichResponseMessageTemplate();
             }
         }
-        return QueryMessageTemplate();
+        return RichQueryMessageTemplate();
     }
 
     Windows::UI::Xaml::DataTemplate ExtensionPaletteGroupedMessagesHeaderTemplateSelector::SelectTemplateCore(const winrt::Windows::Foundation::IInspectable& item, const winrt::Windows::UI::Xaml::DependencyObject& /*container*/)
