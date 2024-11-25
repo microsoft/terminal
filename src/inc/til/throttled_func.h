@@ -35,8 +35,7 @@ namespace til
                 decltype(_pendingRunArgs) args;
                 {
                     std::unique_lock guard{ _lock };
-                    args = std::move(_pendingRunArgs);
-                    _pendingRunArgs.reset();
+                    args = std::exchange(_pendingRunArgs, std::nullopt);
                 }
                 // Theoretically it should always have a value, because the throttled_func
                 // should not call the callback without there being a reason.
@@ -184,31 +183,24 @@ namespace til
         void flush()
         {
             WaitForThreadpoolTimerCallbacks(_timer.get(), true);
-            if (_storage)
-            {
-                _trailing_edge();
-            }
+            _timer_callback(nullptr, this, nullptr);
         }
 
     private:
         static void __stdcall _timer_callback(PTP_CALLBACK_INSTANCE /*instance*/, PVOID context, PTP_TIMER /*timer*/) noexcept
         try
         {
-            static_cast<throttled_func*>(context)->_trailing_edge();
-        }
-        CATCH_LOG()
-
-        void _trailing_edge()
-        {
+            const auto self = static_cast<throttled_func*>(context);
             if constexpr (Leading)
             {
-                _storage.reset();
+                self->_storage.reset();
             }
             else
             {
-                _storage.apply(_func);
+                self->_storage.apply(self->_func);
             }
         }
+        CATCH_LOG()
 
         wil::unique_threadpool_timer _createTimer()
         {
