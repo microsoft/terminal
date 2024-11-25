@@ -8,12 +8,12 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     template<typename T>
     struct property
     {
-        explicit constexpr property(auto&&... args) :
+        explicit constexpr property(auto&&... args) noexcept(std::is_nothrow_constructible_v<T, decltype(args)...>) :
             _value{ std::forward<decltype(args)>(args)... } {}
 
         property& operator=(const property& other) = default;
 
-        T operator()() const noexcept
+        T operator()() const noexcept(std::is_nothrow_copy_constructible<T>::value)
         {
             return _value;
         }
