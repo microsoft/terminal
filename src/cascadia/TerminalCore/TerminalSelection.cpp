@@ -844,12 +844,13 @@ void Terminal::ClearSelection()
 // - Optionally, get the highlighted text in HTML and RTF formats
 // Arguments:
 // - singleLine: collapse all of the text to one line. (Turns off trailing whitespace trimming)
+// - withControlSequences: if enabled, the copied plain text contains color/style ANSI escape codes from the selection
 // - html: also get text in HTML format
 // - rtf: also get text in RTF format
 // Return Value:
 // - Plain and formatted selected text from buffer. Empty string represents no data for that format.
 // - If extended to multiple lines, each line is separated by \r\n
-Terminal::TextCopyData Terminal::RetrieveSelectedTextFromBuffer(const bool singleLine, const bool html, const bool rtf) const
+Terminal::TextCopyData Terminal::RetrieveSelectedTextFromBuffer(const bool singleLine, const bool withControlSequences, const bool html, const bool rtf) const
 {
     TextCopyData data;
 
@@ -867,7 +868,14 @@ Terminal::TextCopyData Terminal::RetrieveSelectedTextFromBuffer(const bool singl
     const auto& textBuffer = _activeBuffer();
 
     const auto req = TextBuffer::CopyRequest::FromConfig(textBuffer, _selection->start, _selection->end, singleLine, _selection->blockSelection, _trimBlockSelection);
-    data.plainText = textBuffer.GetPlainText(req);
+    if (withControlSequences)
+    {
+        data.plainText = textBuffer.GetWithControlSequences(req);
+    }
+    else
+    {
+        data.plainText = textBuffer.GetPlainText(req);
+    }
 
     if (html || rtf)
     {
