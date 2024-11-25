@@ -92,7 +92,7 @@ WUX::Documents::Paragraph MarkdownToXaml::_CurrentParagraph()
             {
                 _lastParagraph.TextIndent(-WidthOfBulletPoint);
             }
-            _lastParagraph.Margin(WUX::ThicknessHelper::FromLengths(gsl::narrow<double>(IndentWidth) * _indent, 0, 0, 0));
+            _lastParagraph.Margin(WUX::ThicknessHelper::FromLengths(static_cast<double>(IndentWidth) * _indent, 0, 0, 0));
         }
         _root.Blocks().Append(_lastParagraph);
     }
