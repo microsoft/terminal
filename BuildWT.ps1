@@ -9,7 +9,8 @@ param(
     [int]$Zm = 1500,
     [switch]$Format,
     [switch]$Bundle,
-    [switch]$DistClean  # Added DistClean parameter
+    [switch]$DistClean,  # Added DistClean parameter
+    [switch]$Restore  # Added DistClean parameter
 )
 
 Import-Module .\tools\OpenConsole.psm1
@@ -43,7 +44,7 @@ if ($DistClean) {
 
     Write-Host "DistClean operation completed."
     # Exit the script after cleaning
-    return
+    # return
 }
 
 # Set default configurations if none are specified
@@ -71,6 +72,17 @@ if ($Clean) {
         foreach ($Platform in $Platforms) {
             Invoke-OpenConsoleBuild /t:Clean /p:Configuration=$Configuration /p:Platform=$Platform
         }
+    }
+}
+
+if ($Restore) {
+    # Check if nuget exists
+    if (Get-Command nuget -ErrorAction SilentlyContinue) {
+        Write-Host "NuGet exists, using nuget restore..."
+        nuget restore OpenConsole.sln
+    } else {
+        Write-Host "NuGet not found, falling back to dotnet restore..."
+        dotnet restore OpenConsole.sln
     }
 }
 
