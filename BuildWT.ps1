@@ -9,7 +9,7 @@ param(
     [int]$Zm = 1500,
     [switch]$Format,
     [switch]$Bundle,
-    [switch]$DistClean,  # Added DistClean parameter
+    [switch]$DistClean, # Added DistClean parameter
     [switch]$Restore  # Added DistClean parameter
 )
 
@@ -22,21 +22,35 @@ if ($DistClean) {
     # Define the folders to delete
     $foldersToDelete = @("obj", "bin", "AppPackages", "Generated Files")
 
+    # Define the folders to exclude
+    $foldersToExclude = @("packages", ".PowershellModules")
+
     # Get the root path of the solution
     $solutionRoot = Get-Location
 
-    # Find all directories recursively and filter by folder names
+    # Find all directories recursively and filter by folder names, excluding specified directories
     Write-Host "Searching for directories to delete..."
-    $directoriesToDelete = Get-ChildItem -Path $solutionRoot -Directory -Recurse -ErrorAction SilentlyContinue | Where-Object { $_.Name -in $foldersToDelete }
+    $directoriesToDelete = Get-ChildItem -Path $solutionRoot -Directory -Recurse -ErrorAction SilentlyContinue | Where-Object {
+        # Folder name is in the list of folders to delete
+        ($_.Name -in $foldersToDelete) -and
+        # Folder name is not in the list of folders to exclude
+        ($_.Name -notin $foldersToExclude) -and
+        # Folder name does not start with a dot
+        ($_.Name -notlike '.*') -and
+        # Path does not contain any directory starting with a dot
+        ($_.FullName -notmatch '(\\\.[^\\]*)')
+    }
 
     if ($directoriesToDelete.Count -eq 0) {
         Write-Host "No matching directories found to delete."
-    } else {
+    }
+    else {
         foreach ($dir in $directoriesToDelete) {
             try {
                 Write-Host "Deleting folder: $($dir.FullName)"
                 Remove-Item -LiteralPath $dir.FullName -Force -Recurse
-            } catch {
+            }
+            catch {
                 Write-Warning "Failed to delete $($dir.FullName): $_"
             }
         }
@@ -44,7 +58,7 @@ if ($DistClean) {
 
     Write-Host "DistClean operation completed."
     # Exit the script after cleaning
-    # return
+    return
 }
 
 # Set default configurations if none are specified
@@ -54,7 +68,7 @@ if (-not $Debug -and -not $Release) {
 
 $Configurations = @()
 if ($Release) { $Configurations += "Release" }
-if ($Debug)   { $Configurations += "Debug" }
+if ($Debug) { $Configurations += "Debug" }
 
 # Set default platforms if none are specified
 if (-not $x64 -and -not $x86 -and -not $ARM64) {
@@ -62,8 +76,8 @@ if (-not $x64 -and -not $x86 -and -not $ARM64) {
 }
 
 $Platforms = @()
-if ($x64)   { $Platforms += "x64" }
-if ($x86)   { $Platforms += "x86" }
+if ($x64) { $Platforms += "x64" }
+if ($x86) { $Platforms += "x86" }
 if ($ARM64) { $Platforms += "ARM64" }
 
 # Clean builds if the Clean switch is specified
@@ -80,7 +94,8 @@ if ($Restore) {
     if (Get-Command nuget -ErrorAction SilentlyContinue) {
         Write-Host "NuGet exists, using nuget restore..."
         nuget restore OpenConsole.sln
-    } else {
+    }
+    else {
         Write-Host "NuGet not found, falling back to dotnet restore..."
         dotnet restore OpenConsole.sln
     }
@@ -108,7 +123,8 @@ if (-not $NoPackage -and $Bundle) {
     # Clean the msix folder before copying
     if (Test-Path $msixFolder) {
         Remove-Item -Path "$msixFolder\*" -Recurse -Force
-    } else {
+    }
+    else {
         New-Item -ItemType Directory -Path $msixFolder | Out-Null
     }
 
@@ -183,10 +199,12 @@ if (-not $NoPackage -and $Bundle) {
             # Zero out and dispose of the password for security
             [System.Runtime.InteropServices.Marshal]::ZeroFreeBSTR($ptr)
             $certPassword.Dispose()
-        } else {
+        }
+        else {
             Write-Warning "Certificate file $certPath not found. Skipping signing."
         }
-    } else {
+    }
+    else {
         Write-Warning "Version could not be determined. Skipping bundle creation and signing."
     }
 }
