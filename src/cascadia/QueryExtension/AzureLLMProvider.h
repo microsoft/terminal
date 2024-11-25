@@ -39,7 +39,6 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         winrt::hstring _azureKey;
         winrt::Windows::Web::Http::HttpClient _httpClient{ nullptr };
         IBrandingData _brandingData{ winrt::make<AzureBranding>() };
-        winrt::Windows::Foundation::IAsyncOperationWithProgress<winrt::Windows::Web::Http::HttpResponseMessage, winrt::Windows::Web::Http::HttpProgress> _lastRequest{ nullptr };
 
         Extension::IContext _context;
 
