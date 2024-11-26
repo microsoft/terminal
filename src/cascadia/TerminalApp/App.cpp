@@ -71,31 +71,6 @@ namespace winrt::TerminalApp::implementation
         return logic;
     }
 
-    void App::Close()
-    {
-        if (_bIsClosed)
-        {
-            return;
-        }
-
-        _bIsClosed = true;
-
-        if (_windowsXamlManager)
-        {
-            _windowsXamlManager.Close();
-        }
-        _windowsXamlManager = nullptr;
-
-        Exit();
-        {
-            MSG msg = {};
-            while (PeekMessageW(&msg, nullptr, 0, 0, PM_REMOVE))
-            {
-                ::DispatchMessageW(&msg);
-            }
-        }
-    }
-
     /// <summary>
     /// Invoked when the application is launched normally by the end user.  Other entry points
     /// will be used such as when the application is launched to open a specific file.

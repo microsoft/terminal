@@ -314,30 +314,12 @@ LRESULT IslandWindow::_OnMoving(const WPARAM /*wParam*/, const LPARAM lParam)
     return false;
 }
 
-// return true if this was a "cold" initialize, that didn't start XAML before.
-bool IslandWindow::Initialize()
-{
-    if (!_source)
-    {
-        _coldInitialize();
-        return true;
-    }
-    else
-    {
-        // This was a "warm" initialize - we've already got an HWND, but we need
-        // to move it to the new correct place, new size, and reset any leftover
-        // runtime state.
-        _warmInitialize();
-        return false;
-    }
-}
-
 // Method Description:
 // - Start this window for the first time. This will instantiate our XAML
 //   island, set up our root grid, and initialize some other members that only
 //   need to be initialized once.
 // - This should only be called once.
-void IslandWindow::_coldInitialize()
+void IslandWindow::Initialize()
 {
     _source = DesktopWindowXamlSource{};
 
@@ -369,25 +351,6 @@ void IslandWindow::_coldInitialize()
     // Enable vintage opacity by removing the XAML emergency backstop, GH#603.
     // We don't really care if this failed or not.
     TerminalTrySetTransparentBackground(true);
-}
-void IslandWindow::_warmInitialize()
-{
-    // re-add the pointer to us to our HWND's user data, so that we can start
-    // getting window proc callbacks again.
-    _setupUserData();
-
-    // Manually ask how we want to be created.
-    if (_pfnCreateCallback)
-    {
-        til::rect rc{ GetWindowRect() };
-        _pfnCreateCallback(_window.get(), rc);
-    }
-
-    // Don't call IslandWindow::OnSize - that will set the Width/Height members
-    // of the _rootGrid. However, NonClientIslandWindow doesn't use those! If you set them, here,
-    // the contents of the window will never resize.
-    UpdateWindow(_window.get());
-    ForceResize();
 }
 
 void IslandWindow::OnSize(const UINT width, const UINT height)

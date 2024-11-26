@@ -38,7 +38,7 @@ public:
     virtual til::rect GetNonClientFrame(const UINT dpi) const noexcept;
     virtual til::size GetTotalNonClientExclusiveSize(const UINT dpi) const noexcept;
 
-    virtual bool Initialize();
+    virtual void Initialize();
 
     void SetCreateCallback(std::function<void(const HWND, const til::rect&)> pfn) noexcept;
 
@@ -111,9 +111,6 @@ protected:
     RECT _rcWindowBeforeFullscreen{};
     RECT _rcWorkBeforeFullscreen{};
     UINT _dpiBeforeFullscreen{ 96 };
-
-    void _coldInitialize();
-    void _warmInitialize();
 
     virtual void _SetIsBorderless(const bool borderlessEnabled);
     virtual void _SetIsFullscreen(const bool fullscreenEnabled);

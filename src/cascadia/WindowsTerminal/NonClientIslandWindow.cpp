@@ -348,9 +348,9 @@ void NonClientIslandWindow::OnAppInitialized()
     IslandWindow::OnAppInitialized();
 }
 
-bool NonClientIslandWindow::Initialize()
+void NonClientIslandWindow::Initialize()
 {
-    const bool coldInit = IslandWindow::Initialize();
+    IslandWindow::Initialize();
 
     _UpdateFrameMargins();
 
@@ -387,8 +387,6 @@ bool NonClientIslandWindow::Initialize()
     // (i.e. re-using an existing window), we need to manually update the
     // island's position to fill the new window bounds.
     _ResizeDragBarWindow();
-
-    return coldInit;
 }
 
 // Method Description:

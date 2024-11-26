@@ -307,8 +307,6 @@ void AppHost::Close()
         _windowLogic.DismissDialog();
         _windowLogic = nullptr;
     }
-
-    DestroyWindow(_window->GetHandle());
 }
 
 int64_t AppHost::GetLastActivatedTime() const noexcept
