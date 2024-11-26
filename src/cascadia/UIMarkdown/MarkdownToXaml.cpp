@@ -92,7 +92,7 @@ WUX::Documents::Paragraph MarkdownToXaml::_CurrentParagraph()
             {
                 _lastParagraph.TextIndent(-WidthOfBulletPoint);
             }
-            _lastParagraph.Margin(WUX::ThicknessHelper::FromLengths(IndentWidth * _indent, 0, 0, 0));
+            _lastParagraph.Margin(WUX::ThicknessHelper::FromLengths(static_cast<double>(IndentWidth) * _indent, 0, 0, 0));
         }
         _root.Blocks().Append(_lastParagraph);
     }
@@ -137,16 +137,16 @@ WUX::Documents::Run MarkdownToXaml::_NewRun()
     }
     return _lastRun;
 }
-void MarkdownToXaml::_EndRun()
+void MarkdownToXaml::_EndRun() noexcept
 {
     _lastRun = nullptr;
 }
-void MarkdownToXaml::_EndSpan()
+void MarkdownToXaml::_EndSpan() noexcept
 {
     _EndRun();
     _lastSpan = nullptr;
 }
-void MarkdownToXaml::_EndParagraph()
+void MarkdownToXaml::_EndParagraph() noexcept
 {
     _EndSpan();
     _lastParagraph = nullptr;
@@ -162,7 +162,7 @@ WUX::Controls::TextBlock MarkdownToXaml::_makeDefaultTextBlock()
 
 void MarkdownToXaml::_RenderNode(cmark_node* node, cmark_event_type ev_type)
 {
-    bool entering = (ev_type == CMARK_EVENT_ENTER);
+    const bool entering = (ev_type == CMARK_EVENT_ENTER);
 
     switch (cmark_node_get_type(node))
     {
@@ -221,7 +221,7 @@ void MarkdownToXaml::_RenderNode(cmark_node* node, cmark_event_type ev_type)
         if (entering)
         {
             _EndParagraph();
-            _NewRun().Text(bullets[std::clamp(_indent - _blockQuoteDepth - 1, 0, 2)]);
+            _NewRun().Text(gsl::at(bullets, std::clamp(_indent - _blockQuoteDepth - 1, 0, 2)));
         }
         break;
 
@@ -251,7 +251,7 @@ void MarkdownToXaml::_RenderNode(cmark_node* node, cmark_event_type ev_type)
         const auto codeHstring{ winrt::to_hstring(cmark_node_get_literal(node)) };
         // The literal for a code node always includes the trailing newline.
         // Trim that off.
-        std::wstring_view codeView{ codeHstring.c_str(), codeHstring.size() - 1 };
+        const std::wstring_view codeView{ codeHstring.c_str(), codeHstring.size() - 1 };
 
         auto codeBlock = winrt::make<winrt::Microsoft::Terminal::UI::Markdown::implementation::CodeBlock>(winrt::hstring{ codeView });
         WUX::Documents::InlineUIContainer codeContainer{};
@@ -282,7 +282,7 @@ void MarkdownToXaml::_RenderNode(cmark_node* node, cmark_event_type ev_type)
         cmark_node* parent = cmark_node_parent(node);
         cmark_node* grandparent = cmark_node_parent(parent);
 
-        if (grandparent != NULL && cmark_node_get_type(grandparent))
+        if (grandparent != nullptr && cmark_node_get_type(grandparent))
         {
             tight = cmark_node_get_list_tight(grandparent);
         }
