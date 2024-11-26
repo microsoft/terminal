@@ -5,6 +5,7 @@
 #include "TermControl.h"
 
 #include <LibraryResources.h>
+#include <inputpaneinterop.h>
 
 #include "TermControlAutomationPeer.h"
 #include "../../renderer/atlas/AtlasEngine.h"
@@ -54,7 +55,7 @@ DEFINE_ENUM_FLAG_OPERATORS(winrt::Microsoft::Terminal::Control::MouseButtonState
 // * You can't start dragging the cursor (for text selection) while it's still hidden.
 // * The CoreWindow covers the union of all window rectangles, so the cursor is hidden even if it's outside
 //   the current foreground window, but still on top of another Terminal window in the background.
-static void thereWasKeyboardInputSoMaybeHideTheCursor()
+static void hideCursorUntilMoved()
 {
     static CoreCursor previousCursor{ nullptr };
     static auto shouldVanish = []() {
@@ -109,6 +110,39 @@ static void thereWasKeyboardInputSoMaybeHideTheCursor()
             // Swallow the 0x80070057 "Failed to get pointer information." exception that randomly occurs.
             // Curiously, it doesn't happen during the PointerCursor() but during the SetPointerCapture() call (thanks, WinUI).
         }
+    }
+}
+
+// InputPane::GetForCurrentView() does not reliably work for XAML islands,
+// as it assumes that there's a 1:1 relationship between windows and threads.
+//
+// During testing, I found that the input pane shows up when touching into the terminal even if
+// TryShow is never called. This surprised me, but I figured it's worth trying it without this.
+static void setInputPaneVisibility(HWND hwnd, bool visible)
+{
+    static const auto inputPaneInterop = []() {
+        return winrt::try_get_activation_factory<InputPane, IInputPaneInterop>();
+    }();
+
+    if (!inputPaneInterop)
+    {
+        return;
+    }
+
+    winrt::com_ptr<IInputPane2> inputPane;
+    if (FAILED(inputPaneInterop->GetForWindow(hwnd, winrt::guid_of<IInputPane2>(), inputPane.put_void())))
+    {
+        return;
+    }
+
+    bool result;
+    if (visible)
+    {
+        std::ignore = inputPane->TryShow(&result);
+    }
+    else
+    {
+        std::ignore = inputPane->TryHide(&result);
     }
 }
 
@@ -1511,7 +1545,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             return;
         }
 
-        thereWasKeyboardInputSoMaybeHideTheCursor();
+        hideCursorUntilMoved();
 
         const auto ch = e.Character();
         const auto keyStatus = e.KeyStatus();
@@ -1954,6 +1988,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void TermControl::_TappedHandler(const IInspectable& /*sender*/, const TappedRoutedEventArgs& e)
     {
         Focus(FocusState::Pointer);
+
+        if (e.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Touch)
+        {
+            // Normally TSF would be responsible for showing the touch keyboard, but it's buggy for us:
+            // If you have focus on a TermControl and type on your physical keyboard then touching
+            // the TermControl will not show the touch keyboard ever again unless you focus another app.
+            // Why that happens is unclear, but it can be fixed by us showing it manually.
+            setInputPaneVisibility(reinterpret_cast<HWND>(OwningHwnd()), true);
+        }
+
         e.Handled(true);
     }
 
@@ -1977,12 +2021,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const auto ptr = args.Pointer();
         const auto point = args.GetCurrentPoint(*this);
         const auto type = ptr.PointerDeviceType();
-
-        // We also TryShow in GotFocusHandler, but this call is specifically
-        // for the case where the Terminal is in focus but the user closed the
-        // on-screen keyboard. This lets the user simply tap on the terminal
-        // again to bring it up.
-        InputPane::GetForCurrentView().TryShow();
 
         if (!_focused)
         {
@@ -2383,8 +2421,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         _focused = true;
-
-        InputPane::GetForCurrentView().TryShow();
 
         // GH#5421: Enable the UiaEngine before checking for the SearchBox
         // That way, new selections are notified to automation clients.
