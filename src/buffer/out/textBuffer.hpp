@@ -174,8 +174,10 @@ public:
 
     til::point GetWordStart(const til::point target, const std::wstring_view wordDelimiters, bool accessibilityMode = false, std::optional<til::point> limitOptional = std::nullopt) const;
     til::point GetWordEnd(const til::point target, const std::wstring_view wordDelimiters, bool accessibilityMode = false, std::optional<til::point> limitOptional = std::nullopt) const;
-    til::point GetWordStart2(til::point pos, const std::wstring_view wordDelimiters, std::optional<til::point> limitOptional = std::nullopt) const;
-    til::point GetWordEnd2(til::point pos, const std::wstring_view wordDelimiters, std::optional<til::point> limitOptional = std::nullopt) const;
+
+    til::point GetWordStart2(til::point pos, const std::wstring_view wordDelimiters, bool includeWhitespace, std::optional<til::point> limitOptional = std::nullopt) const;
+    til::point GetWordEnd2(til::point pos, const std::wstring_view wordDelimiters, bool includeWhitespace, std::optional<til::point> limitOptional = std::nullopt) const;
+
     bool IsWordBoundary(const til::point pos, const std::wstring_view wordDelimiters) const;
     bool MoveToNextWord(til::point& pos, const std::wstring_view wordDelimiters, std::optional<til::point> limitOptional = std::nullopt) const;
     bool MoveToPreviousWord(til::point& pos, const std::wstring_view wordDelimiters) const;

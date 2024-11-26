@@ -1140,7 +1140,7 @@ DelimiterClass TextBuffer::_GetDelimiterClassAt(const til::point pos, const std:
     return GetRowByOffset(realPos.y).DelimiterClassAt(realPos.x, wordDelimiters);
 }
 
-til::point TextBuffer::GetWordStart2(til::point pos, const std::wstring_view wordDelimiters, std::optional<til::point> limitOptional) const
+til::point TextBuffer::GetWordStart2(til::point pos, const std::wstring_view wordDelimiters, bool includeWhitespace, std::optional<til::point> limitOptional) const
 {
     const auto bufferSize{ GetSize() };
     const auto limit{ limitOptional.value_or(bufferSize.BottomInclusiveRightExclusive()) };
@@ -1162,18 +1162,19 @@ til::point TextBuffer::GetWordStart2(til::point pos, const std::wstring_view wor
     // - DelimiterChar: "D"
     // - RegularChar:   "C"
     // Expected results ("|" is the position):
-    //   CCC___| --> |CCC___
-    //   DDD___| --> |DDD___
-    //   ___CCC| --> ___|CCC
-    //   DDDCCC| --> DDD|CCC
-    //   ___DDD| --> ___|DDD
-    //   CCCDDD| --> CCC|DDD
+    //   includeWhitespace: true     false
+    //     CCC___|   -->   |CCC___  CCC|___
+    //     DDD___|   -->   |DDD___  DDD|___
+    //     ___CCC|   -->   ___|CCC  ___|CCC
+    //     DDDCCC|   -->   DDD|CCC  DDD|CCC
+    //     ___DDD|   -->   ___|DDD  ___|DDD
+    //     CCCDDD|   -->   CCC|DDD  CCC|DDD
     // So the heuristic we use is:
     // 1. move to the beginning of the delimiter class run
-    // 2. if we were on a ControlChar, go back one more delimiter class run
+    // 2. (includeWhitespace) if we were on a ControlChar, go back one more delimiter class run
     const auto initialDelimiter = bufferSize.IsInBounds(pos) ? _GetDelimiterClassAt(pos, wordDelimiters) : DelimiterClass::ControlChar;
     pos = _GetDelimiterClassRunStart(pos, wordDelimiters);
-    if (pos.x == bufferSize.Left())
+    if (!includeWhitespace || pos.x == bufferSize.Left())
     {
         // Special case:
         // we're at the left boundary (and end of a delimiter class run),
@@ -1188,7 +1189,7 @@ til::point TextBuffer::GetWordStart2(til::point pos, const std::wstring_view wor
     return pos;
 }
 
-til::point TextBuffer::GetWordEnd2(til::point pos, const std::wstring_view wordDelimiters, std::optional<til::point> limitOptional) const
+til::point TextBuffer::GetWordEnd2(til::point pos, const std::wstring_view wordDelimiters, bool includeWhitespace, std::optional<til::point> limitOptional) const
 {
     const auto bufferSize{ GetSize() };
     const auto limit{ limitOptional.value_or(bufferSize.BottomInclusiveRightExclusive()) };
@@ -1211,17 +1212,18 @@ til::point TextBuffer::GetWordEnd2(til::point pos, const std::wstring_view wordD
     // - DelimiterChar: "D"
     // - RegularChar:   "C"
     // Expected results ("|" is the position):
-    //   |CCC___ --> CCC___|
-    //   |DDD___ --> DDD___|
-    //   |___CCC --> ___|CCC
-    //   |DDDCCC --> DDD|CCC
-    //   |___DDD --> ___|DDD
-    //   |CCCDDD --> CCC|DDD
+    //   includeWhitespace: true     false
+    //     |CCC___   -->   CCC___|  CCC|___
+    //     |DDD___   -->   DDD___|  DDD|___
+    //     |___CCC   -->   ___|CCC  ___|CCC
+    //     |DDDCCC   -->   DDD|CCC  DDD|CCC
+    //     |___DDD   -->   ___|DDD  ___|DDD
+    //     |CCCDDD   -->   CCC|DDD  CCC|DDD
     // So the heuristic we use is:
     // 1. move to the end of the delimiter class run
-    // 2. if the next delimiter class run is a ControlChar, go forward one more delimiter class run
+    // 2. (includeWhitespace) if the next delimiter class run is a ControlChar, go forward one more delimiter class run
     pos = _GetDelimiterClassRunEnd(pos, wordDelimiters);
-    if (pos.x == bufferSize.RightExclusive())
+    if (!includeWhitespace || pos.x == bufferSize.RightExclusive())
     {
         // Special case:
         // we're at the right boundary (and end of a delimiter class run),
@@ -1312,6 +1314,11 @@ til::point TextBuffer::_GetDelimiterClassRunStart(til::point pos, const std::wst
     return pos;
 }
 
+// Method Description:
+// - Get the exclusive position for the end of the current delimiter class run
+// Arguments:
+// - pos - the buffer position being within the current delimiter class
+// - wordDelimiters - what characters are we considering for the separation of words
 til::point TextBuffer::_GetDelimiterClassRunEnd(til::point pos, const std::wstring_view wordDelimiters) const
 {
     const auto bufferSize = GetSize();
