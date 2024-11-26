@@ -4,13 +4,12 @@
 #include "pch.h"
 #include "AppHost.h"
 
+#include <dwmapi.h>
 #include <TerminalThemeHelpers.h>
 #include <til/latch.h>
 
-#include "resource.h"
 #include "VirtualDesktopUtils.h"
 #include "WindowEmperor.h"
-#include "../types/inc/User32Utils.hpp"
 #include "../types/inc/utils.hpp"
 
 using namespace winrt::Windows::UI;
@@ -21,7 +20,6 @@ using namespace winrt::Windows::Foundation::Numerics;
 using namespace winrt::Microsoft::Terminal;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
 using namespace ::Microsoft::Console;
-using namespace ::Microsoft::Console::Types;
 using namespace std::chrono_literals;
 
 // This magic flag is "documented" at https://msdn.microsoft.com/en-us/library/windows/desktop/ms646301(v=vs.85).aspx

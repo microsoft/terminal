@@ -5,8 +5,11 @@
 ********************************************************/
 #include "pch.h"
 #include "NonClientIslandWindow.h"
+
+#include <dwmapi.h>
+#include <uxtheme.h>
+
 #include "../types/inc/utils.hpp"
-#include "TerminalThemeHelpers.h"
 
 using namespace winrt::Windows::UI;
 using namespace winrt::Windows::UI::Composition;
@@ -14,7 +17,6 @@ using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Xaml::Hosting;
 using namespace winrt::Windows::Foundation::Numerics;
 using namespace ::Microsoft::Console;
-using namespace ::Microsoft::Console::Types;
 
 static constexpr int AutohideTaskbarSize = 2;
 

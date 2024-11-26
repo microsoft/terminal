@@ -17,11 +17,8 @@ Author(s):
     Mike Griese (migrie) April-2019
 --*/
 
-#include "pch.h"
+#pragma once
 #include "IslandWindow.h"
-#include "../../types/inc/Viewport.hpp"
-#include <dwmapi.h>
-#include <wil/resource.h>
 
 class NonClientIslandWindow : public IslandWindow
 {
