@@ -967,7 +967,7 @@ of each other.
    - Summon the nearest window
    - make the window "drop down" from the top
    - Summon the MRU window
-     - It would need to track a the MRU for windows, so pressing the shortcut when
+     - It would need to track the MRU for windows, so pressing the shortcut when
        no window is active summons the MRU one.
 
 <hr>
