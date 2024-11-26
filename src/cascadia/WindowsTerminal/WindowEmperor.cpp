@@ -176,7 +176,7 @@ static wil::unique_mutex acquireMutexOrAttemptHandoff(const wchar_t* className, 
                 .cbData = gsl::narrow<DWORD>(payload.size()),
                 .lpData = payload.data(),
             };
-            if (SendMessageTimeoutW(hwnd, WM_COPYDATA, 0, reinterpret_cast<LPARAM>(&cds), SMTO_ABORTIFHUNG | SMTO_ERRORONEXIT, 10000000, nullptr))
+            if (SendMessageTimeoutW(hwnd, WM_COPYDATA, 0, reinterpret_cast<LPARAM>(&cds), SMTO_ABORTIFHUNG | SMTO_ERRORONEXIT, 5000, nullptr))
             {
                 return {};
             }
