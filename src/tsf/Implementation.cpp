@@ -90,7 +90,7 @@ HWND Implementation::FindWindowOfActiveTSF() noexcept
     // the code below and it may very well be us (this instance).
     // It's also possible that our IDataProvider's GetHwnd()
     // implementation calls this FindWindowOfActiveTSF() function.
-    // This can then in infinite recursion because we're calling
+    // This can result in infinite recursion because we're calling
     // GetWnd() below, which may call GetHwnd(), which may call
     // FindWindowOfActiveTSF(), and so on.
     // By temporarily clearing the _provider we fix that flaw.
