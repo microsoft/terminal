@@ -716,11 +716,10 @@ namespace winrt::TerminalApp::implementation
             // that to determine the initial position of the window. This is
             // used when the user is dragging a tab out of the window, to create
             // a new window.
-            //
-            // contentBounds is in screen pixels, but that's okay! we want to
-            // return screen pixels out of here. Nailed it.
+            // BODY: Technically we don't have a guarantee to be within the XAML stack right now to be have as a view to reference.
+            const auto scale = static_cast<float>(DisplayInformation::GetForCurrentView().RawPixelsPerViewPixel());
             const auto bounds = _contentBounds.Value();
-            initialPosition = { lroundf(bounds.X), lroundf(bounds.Y) };
+            initialPosition = { lroundf(bounds.X * scale), lroundf(bounds.Y * scale) };
         }
         return {
             initialPosition.X ? initialPosition.X.Value() : defaultInitialX,
