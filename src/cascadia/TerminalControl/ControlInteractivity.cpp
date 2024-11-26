@@ -239,7 +239,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                               const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
                                               const Core::Point pixelPosition)
     {
-        const auto terminalPosition = _getTerminalPosition(til::point{ pixelPosition }, false);
+        const auto terminalPosition = _getTerminalPosition(til::point{ pixelPosition }, true);
 
         const auto altEnabled = modifiers.IsAltPressed();
         const auto shiftEnabled = modifiers.IsShiftPressed();
@@ -370,7 +370,19 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                     // _touchdown_ point here. We want to start the selection
                     // from where the user initially clicked, not where they are
                     // now.
-                    _core->SetSelectionAnchor(_getTerminalPosition(til::point{ touchdownPoint }, false));
+                    auto termPos = _getTerminalPosition(til::point{ touchdownPoint }, false);
+                    if (dx < 0)
+                    {
+                        // _getTerminalPosition(_, false) will floor the x-value,
+                        //   meaning that the selection will start on the left-side
+                        //   of the current cell. This is great if the use is dragging
+                        //   towards the right.
+                        // If the user is dragging towards the left (dx < 0),
+                        //   we want to select the current cell, so place the anchor on the right
+                        //   side of the current cell.
+                        termPos.x++;
+                    }
+                    _core->SetSelectionAnchor(termPos);
 
                     // stop tracking the touchdown point
                     _singleClickTouchdownPos = std::nullopt;
