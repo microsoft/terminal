@@ -103,10 +103,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
             const auto sendRequestOperation = _httpClient.SendRequestAsync(request);
             auto cancellationToken{ co_await winrt::get_cancellation_token() };
             cancellationToken.callback([sendRequestOperation] {
-                if (sendRequestOperation)
-                {
-                    sendRequestOperation.Cancel();
-                }
+                sendRequestOperation.Cancel();
             });
             const auto response{ co_await sendRequestOperation };
             // Parse out the suggestion from the response

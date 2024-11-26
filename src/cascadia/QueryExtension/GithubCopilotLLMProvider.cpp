@@ -237,14 +237,6 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
 
     winrt::Windows::Foundation::IAsyncOperation<Extension::IResponse> GithubCopilotLLMProvider::GetResponseAsync(const winrt::hstring& userPrompt)
     {
-        auto cancellationToken{ co_await winrt::get_cancellation_token() };
-        cancellationToken.callback([=] {
-            if (_lastRequest)
-            {
-                _lastRequest.Cancel();
-            }
-        });
-
         // Use the ErrorTypes enum to flag whether the response the user receives is an error message
         // we pass this enum back to the caller so they can handle it appropriately (specifically, ExtensionPalette will send the correct telemetry event)
         ErrorTypes errorType{ ErrorTypes::None };
@@ -284,7 +276,12 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
                 };
 
                 // Send the request
-                const auto jsonResult = co_await _SendRequestReturningJson(_endpointUri, requestContent, WWH::HttpMethod::Post());
+                const auto jsonResultOperation = _SendRequestReturningJson(_endpointUri, requestContent, WWH::HttpMethod::Post());
+                auto cancellationToken{ co_await winrt::get_cancellation_token() };
+                cancellationToken.callback([jsonResultOperation] {
+                    jsonResultOperation.Cancel();
+                });
+                const auto jsonResult = co_await jsonResultOperation;
                 if (jsonResult.HasKey(errorKey))
                 {
                     const auto errorObject = jsonResult.GetNamedObject(errorKey);
@@ -369,6 +366,10 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         request.Content(content);
 
         const auto sendRequestOperation = _httpClient.SendRequestAsync(request);
+        auto cancellationToken{ co_await winrt::get_cancellation_token() };
+        cancellationToken.callback([sendRequestOperation] {
+            sendRequestOperation.Cancel();
+        });
         const auto response{ co_await sendRequestOperation };
         _lastRequest = sendRequestOperation;
         const auto string{ co_await response.Content().ReadAsStringAsync() };
