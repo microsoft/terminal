@@ -84,8 +84,20 @@ void Implementation::Uninitialize() noexcept
     }
 }
 
-HWND Implementation::FindWindowOfActiveTSF() const noexcept
+HWND Implementation::FindWindowOfActiveTSF() noexcept
 {
+    // We don't know what ITfContextOwner we're going to get in
+    // the code below and it may very well be us (this instance).
+    // It's also possible that our IDataProvider's GetHwnd()
+    // implementation calls this FindWindowOfActiveTSF() function.
+    // This can result in infinite recursion because we're calling
+    // GetWnd() below, which may call GetHwnd(), which may call
+    // FindWindowOfActiveTSF(), and so on.
+    // By temporarily clearing the _provider we fix that flaw.
+    const auto restore = wil::scope_exit([this, provider = std::move(_provider)]() mutable {
+        _provider = std::move(provider);
+    });
+
     wil::com_ptr<IEnumTfDocumentMgrs> enumDocumentMgrs;
     if (FAILED_LOG(_threadMgrEx->EnumDocumentMgrs(enumDocumentMgrs.addressof())))
     {
