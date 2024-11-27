@@ -4186,7 +4186,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         SelectionContextMenu().Hide();
 
         // CreateSearchBoxControl will actually create the search box and
-        // pre-populate the box with the currently selected text.
+        // prepopulate the box with the currently selected text.
         CreateSearchBoxControl();
     }
 

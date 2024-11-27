@@ -1917,7 +1917,7 @@
             },
             "useCommandline": {
               "default": false,
-              "description": "When set to `true`, the current commandline the user has typed will pre-populate the filter of the Suggestions UI. This requires that the user has enabled shell integration in their shell's config. When set to false, the filter will start empty."
+              "description": "When set to `true`, the current commandline the user has typed will prepopulate the filter of the Suggestions UI. This requires that the user has enabled shell integration in their shell's config. When set to false, the filter will start empty."
             }
           }
         }

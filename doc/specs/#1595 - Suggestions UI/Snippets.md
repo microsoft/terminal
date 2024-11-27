@@ -563,9 +563,9 @@ their own workflows.
   * We'd have inputs for the commandline, name, description.
   * Obviously, it'd be easy to have a "Add new" button (to open that dialog) on
     the snippets pane.
-  * We could have `wt save` open that dialog pre-populated, rather than just
+  * We could have `wt save` open that dialog prepopulated, rather than just
     saving the command directly.
-  * We could even also find a way to pre-populate that dialog with the recent
+  * We could even also find a way to prepopulate that dialog with the recent
     commands (from shell integration)!
 * As a potential v2.0 of the snippets file schema, we may look to the
   `.vscode/tasks.json` schema for inspiration. That file supports much more
