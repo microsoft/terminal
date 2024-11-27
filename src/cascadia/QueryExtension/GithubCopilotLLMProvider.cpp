@@ -247,7 +247,6 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
 
         // Make sure we are on the background thread for the http request
         auto strongThis = get_strong();
-
         co_await winrt::resume_background();
         auto cancellationToken{ co_await winrt::get_cancellation_token() };
 
@@ -297,7 +296,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
                     }
                     else
                     {
-                        const auto choices = jsonResult.GetNamedArray(L"ayy");
+                        const auto choices = jsonResult.GetNamedArray(choicesKey);
                         const auto firstChoice = choices.GetAt(0).GetObject();
                         const auto messageObject = firstChoice.GetNamedObject(messageKey);
                         message = messageObject.GetNamedString(contentKey);
