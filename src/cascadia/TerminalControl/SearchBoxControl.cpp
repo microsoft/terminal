@@ -225,11 +225,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     }
 
     // Method Description:
-    // - Check if the current search is case sensitive
+    // - Check if the current search is case-sensitive
     // Arguments:
     // - <none>
     // Return Value:
-    // - bool: whether the current search is case sensitive (case button is checked )
+    // - bool: whether the current search is case-sensitive (case button is checked )
     //   or not
     bool SearchBoxControl::CaseSensitive()
     {
