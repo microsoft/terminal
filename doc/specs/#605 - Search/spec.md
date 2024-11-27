@@ -61,7 +61,7 @@ The search box defaults to be on the top right corner of the Terminal window. If
 1. The user presses <kbd>ctrl+shift+f</kbd> (or user's custom key binding) to open the search box. Focus will move to the TextBox. 
 2. Search is performed on a XAML TextBox. Once the user presses Enter or click up/down arrow button, the search starts and searched text will be selected. Next search will be performed beginning from the current selection and go towards up/down. 
 3. The user can choose to search up or down by selecting up arrow or down arrow buttons. The chosen button will be styled to indicate it is selected. If the user does not click the arrows buttons, the default direction is up. 
-4. The user can choose to do case sensitive or insensitive match by checking a check box. The default is case insensitive. 
+4. The user can choose to do case sensitive or insensitive match by checking a check box. The default is case-insensitive. 
 5. If the search box is focused, the user can navigate all the elements on the search box using tab. When selected, press Enter equals to click. 
 6. If the user click the "X" button or press <kbd>Esc</kbd>, the search stopped and the search box disappears and focus will move back to Terminal.
 7. Once the search box is closed (exiting search mode), the selection will still be there. This coincides with the current VS Code and cmd experience. To get rid of the selection, the user can just click other area of the window.
