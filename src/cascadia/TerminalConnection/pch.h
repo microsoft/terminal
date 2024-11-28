@@ -18,7 +18,7 @@
 #include <LibraryIncludes.h>
 
 // Must be included before any WinRT headers.
-#include <unknwn.h>
+#include <Unknwn.h>
 #include <winrt/Windows.Foundation.h>
 #include <wil/cppwinrt.h>
 
