@@ -30,7 +30,7 @@ namespace winrt::Microsoft::Terminal::UI::Markdown::implementation
 
     struct RequestRunCommandsArgs : RequestRunCommandsArgsT<RequestRunCommandsArgs>
     {
-        RequestRunCommandsArgs(const winrt::hstring& commandlines) :
+        RequestRunCommandsArgs(const winrt::hstring& commandlines) noexcept :
             Commandlines{ commandlines } {};
 
         til::property<winrt::hstring> Commandlines;
