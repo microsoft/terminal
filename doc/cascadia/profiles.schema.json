@@ -2381,6 +2381,15 @@
           "description": "When set to true, the terminal will support the DECRQCRA (Request Checksum of Rectangular Area) escape sequence.",
           "type": "boolean"
         },
+        "compatibility.textMeasurement": {
+          "default": "graphemes",
+          "description": "This changes the way incoming text is grouped into cells. The \"graphemes\" option is the most modern and Unicode-correct way to do so, while \"wcswidth\" is a common approach on UNIX, and \"console\" replicates the way it used to work on Windows.",
+          "enum": [
+            "graphemes",
+            "wcswidth",
+            "console"
+          ]
+        },
         "copyFormatting": {
           "default": true,
           "description": "When set to `true`, the color and font formatting of selected text is also copied to your clipboard. When set to `false`, only plain text is copied to your clipboard. An array of specific formats can also be used. Supported array values include `html` and `rtf`. Plain text is always copied.",
