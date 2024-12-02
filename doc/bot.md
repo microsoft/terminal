@@ -34,7 +34,7 @@ We'll be using tags, primarily, to help us understand what needs attention, what
 ## Rules
 
 ### Triage Shorthand
-- All rules in this category apply to triaging issues. They're shorthand comments that the triage team can use in order to complete the triage process faster. 
+- All rules in this category apply to triaging issues. They're shorthand comments that the triage team can use in order to complete the triage process faster.
 - Only individuals with `Write` or `Admin` privileges on the repository can use these responses.
 
 #### Duplicate Issues
@@ -119,12 +119,3 @@ We'll be using tags, primarily, to help us understand what needs attention, what
 
 #### Remove Needs-Second from completed PRs
 - If a PR is closed and it has the `Needs-Second` tag, the bot will remove the tag.
-
-### Release Management
-
-When a release is created, if the PR ID number is linked inside the release description, the bot will walk through the related PR and all of its related issues and leave a message.
-- PR message: "🎉{release name} {release version} has been released which incorporates this pull request.🎉
-- Issue message: 🎉This issue was addressed in #{pull request ID}, which has now been successfully released as {release name} {release version}.🎉"
-
-## Admin Panel
-[Here](https://portal.fabricbot.ms/bot/?repo=microsoft/terminal)
