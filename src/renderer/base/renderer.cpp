@@ -139,6 +139,13 @@ IRenderData* Renderer::GetRenderData() const noexcept
     FOREACH_ENGINE(pEngine)
     {
         RETURN_IF_FAILED(pEngine->Present());
+        // If the engine tells us it really wants to redraw immediately,
+        // tell the thread so it doesn't go to sleep and ticks again
+        // at the next opportunity.
+        if (pEngine->RequiresContinuousRedraw())
+        {
+            NotifyPaintFrame();
+        }
     }
 
     return S_OK;
@@ -161,16 +168,8 @@ try
         return S_OK;
     }
 
-    auto endPaint = wil::scope_exit([&]() {
+    const auto endPaint = wil::scope_exit([&]() {
         LOG_IF_FAILED(pEngine->EndPaint());
-
-        // If the engine tells us it really wants to redraw immediately,
-        // tell the thread so it doesn't go to sleep and ticks again
-        // at the next opportunity.
-        if (pEngine->RequiresContinuousRedraw())
-        {
-            NotifyPaintFrame();
-        }
     });
 
     // A. Prep Colors
@@ -197,10 +196,6 @@ try
     // 6. Paint window title
     RETURN_IF_FAILED(_PaintTitle(pEngine));
 
-    // Force scope exit end paint to finish up collecting information and possibly painting
-    endPaint.reset();
-
-    // As we leave the scope, EndPaint will be called (declared above)
     return S_OK;
 }
 CATCH_RETURN()

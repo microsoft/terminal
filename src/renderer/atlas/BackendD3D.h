@@ -328,11 +328,14 @@ namespace Microsoft::Console::Render::Atlas
         til::small_vector<CursorRect, 6> _cursorRects;
         // The bounding rect of _cursorRects in pixels.
         til::rect _cursorPosition;
+        til::rect _cursorRectTarget;
+        til::rect _cursorRectCurrent;
 
         f32 _curlyLineHalfHeight = 0.0f;
         FontDecorationPosition _curlyUnderline;
 
         bool _requiresContinuousRedraw = false;
+        bool _requiresContinuousRedrawOnce = false;
 
 #if ATLAS_DEBUG_SHOW_DIRTY
         i32r _presentRects[9]{};

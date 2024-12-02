@@ -237,12 +237,19 @@ void BackendD3D::Render(RenderingPayload& p)
         _executeCustomShader(p);
     }
 
+    if (_requiresContinuousRedrawOnce)
+    {
+        p.MarkAllAsDirty();
+    }
+
     _debugDumpRenderTarget(p);
 }
 
 bool BackendD3D::RequiresContinuousRedraw() noexcept
 {
-    return _requiresContinuousRedraw;
+    const auto result = _requiresContinuousRedraw || _requiresContinuousRedrawOnce;
+    _requiresContinuousRedrawOnce = false;
+    return result;
 }
 
 void BackendD3D::_handleSettingsUpdate(const RenderingPayload& p)
@@ -1926,33 +1933,53 @@ void BackendD3D::_drawCursorBackground(const RenderingPayload& p)
 {
     _cursorRects.clear();
 
-    if (p.cursorRect.empty())
+    if (p.cursorRect.empty() && _cursorRectTarget == _cursorRectCurrent)
     {
         return;
     }
 
+    if (!p.cursorRect.empty())
+    {
+        _cursorRectTarget = p.cursorRect;
+    }
+
+    auto dl = _cursorRectTarget.left - _cursorRectCurrent.left;
+    auto dt = _cursorRectTarget.top - _cursorRectCurrent.top;
+    auto dr = _cursorRectTarget.right - _cursorRectCurrent.right;
+    auto db = _cursorRectTarget.bottom - _cursorRectCurrent.bottom;
+
+    dl = clamp(dl, -1, 1) + dl / 8;
+    dt = clamp(dt, -1, 1) + dt / 8;
+    dr = clamp(dr, -1, 1) + dr / 8;
+    db = clamp(db, -1, 1) + db / 8;
+
+    _requiresContinuousRedrawOnce |= (dl | dt | dr | db) != 0;
+    _cursorRectCurrent.left += dl;
+    _cursorRectCurrent.top += dt;
+    _cursorRectCurrent.right += dr;
+    _cursorRectCurrent.bottom += db;
     _cursorPosition = {
-        p.s->font->cellSize.x * p.cursorRect.left,
-        p.s->font->cellSize.y * p.cursorRect.top,
-        p.s->font->cellSize.x * p.cursorRect.right,
-        p.s->font->cellSize.y * p.cursorRect.bottom,
+        p.s->font->cellSize.x * _cursorRectCurrent.left,
+        p.s->font->cellSize.y * _cursorRectCurrent.top,
+        p.s->font->cellSize.x * _cursorRectCurrent.right,
+        p.s->font->cellSize.y * _cursorRectCurrent.bottom,
     };
 
     const auto cursorColor = p.s->cursor->cursorColor;
-    const auto offset = p.cursorRect.top * p.colorBitmapRowStride;
+    const auto offset = _cursorRectCurrent.top * p.colorBitmapRowStride;
 
-    for (auto x1 = p.cursorRect.left; x1 < p.cursorRect.right; ++x1)
+    for (auto x1 = _cursorRectCurrent.left; x1 < _cursorRectCurrent.right; ++x1)
     {
         const auto x0 = x1;
         const auto bg = p.backgroundBitmap[offset + x1] | 0xff000000;
 
-        for (; x1 < p.cursorRect.right && (p.backgroundBitmap[offset + x1] | 0xff000000) == bg; ++x1)
+        for (; x1 < _cursorRectCurrent.right && (p.backgroundBitmap[offset + x1] | 0xff000000) == bg; ++x1)
         {
         }
 
         const i16x2 position{
             static_cast<i16>(p.s->font->cellSize.x * x0),
-            static_cast<i16>(p.s->font->cellSize.y * p.cursorRect.top),
+            static_cast<i16>(p.s->font->cellSize.y * _cursorRectCurrent.top),
         };
         const u16x2 size{
             static_cast<u16>(p.s->font->cellSize.x * (x1 - x0)),
@@ -1992,7 +2019,7 @@ void BackendD3D::_drawCursorBackground(const RenderingPayload& p)
         case CursorType::EmptyBox:
         {
             auto& c1 = _cursorRects.emplace_back(c0);
-            if (x0 == p.cursorRect.left)
+            if (x0 == _cursorRectCurrent.left)
             {
                 auto& c = _cursorRects.emplace_back(c0);
                 // Make line a little shorter vertically so it doesn't overlap with the top/bottom horizontal lines.
@@ -2001,7 +2028,7 @@ void BackendD3D::_drawCursorBackground(const RenderingPayload& p)
                 // The actual adjustment...
                 c.size.x = p.s->font->thinLineWidth;
             }
-            if (x1 == p.cursorRect.right)
+            if (x1 == _cursorRectCurrent.right)
             {
                 auto& c = _cursorRects.emplace_back(c0);
                 // Make line a little shorter vertically so it doesn't overlap with the top/bottom horizontal lines.
