@@ -852,6 +852,7 @@ ification
 IGNORELANGUAGE
 IHosted
 iid
+IInput
 IIo
 ILC
 ILCo
@@ -872,6 +873,7 @@ inkscape
 INLINEPREFIX
 inproc
 Inputkeyinfo
+inputpaneinterop
 Inputreadhandledata
 INPUTSCOPE
 INSERTMODE
