@@ -418,7 +418,13 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                 // but when MSVC finally added support for it in v17.7, it had a different name,
                 // only worked on x86, and only for signed integers. So, we can't use it.
                 const auto acc = accumulator * base_uint64 + value;
-                if (value >= base_uint64 || accumulator > max_before_mul || acc < accumulator)
+                if (
+                    // Check for invalid inputs.
+                    value >= base_uint64 ||
+                    // Check for multiplication overflow.
+                    accumulator > max_before_mul ||
+                    // Check for addition overflow.
+                    acc < accumulator)
                 {
                     return {};
                 }
