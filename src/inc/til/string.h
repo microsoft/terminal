@@ -409,9 +409,10 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                 // Magic mapping from 0-9, A-Z, a-z to 0-35 go brrr. Invalid values are >35.
                 const uint64_t ch = *ptr;
                 const uint64_t sub = ch >= '0' && ch <= '9' ? (('0' - 1) & ~0x20) : (('A' - 1) & ~0x20) - 10;
-                // Since @ and ` reside 0b..00000 we subtract 1.
-                // That way we can mask off 0x20 to map a-z to A-Z, while ensuring that subtracting
-                // `sub` will underflow for all characters between Z and a, including @ and `.
+                // 'A' and 'a' reside at 0b...00001. By subtracting 1 we shift them to 0b...00000.
+                // We can then mask off 0b..1..... (= 0x20) to map a-z to A-Z.
+                // Once we subtract `sub`, all characters between Z and a will underflow.
+                // This results in A-Z and a-z mapping to 10-35.
                 const uint64_t value = ((ch - 1) & ~0x20) - sub;
 
                 // This is where we'd be using __builtin_mul_overflow and __builtin_add_overflow,
