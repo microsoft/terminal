@@ -63,6 +63,7 @@ Powerline
 ptys
 pwn
 pwshw
+QOL
 qof
 qps
 Quarternary
@@ -81,6 +82,7 @@ shcha
 similaritytolerance
 slnt
 stakeholders
+subpage
 sustainability
 sxn
 TLDR
