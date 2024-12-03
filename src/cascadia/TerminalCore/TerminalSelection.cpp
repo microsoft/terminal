@@ -307,12 +307,14 @@ std::pair<til::point, til::point> Terminal::_ExpandSelectionAnchors(std::pair<ti
         // GH#5099: We round to the nearest cell boundary,
         //   so we would normally prematurely expand to the next word
         //   as we approach it during a 2x-click+drag.
-        // - !IsWordBoundary(): fixes issue above by prohibiting expanding to the next word if we're at the word boundary
-        // - start == end: allow word expansion when 2x-clicking word boundary
-        if (start == end || !buffer.IsWordBoundary(end, _wordDelimiters))
+        //   To remedy this, decrement the end's position by 1.
+        //   However, only do this when expanding right (it's correct
+        //   as is when expanding left).
+        if (end > _selection->pivot)
         {
-            end = buffer.GetWordEnd2(end, _wordDelimiters, false);
+            bufferSize.DecrementInExclusiveBounds(end);
         }
+        end = buffer.GetWordEnd2(end, _wordDelimiters, false);
         break;
     }
     case SelectionExpansion::Char:
