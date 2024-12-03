@@ -1,0 +1,103 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+import "ProfileViewModel.idl";
+
+namespace Microsoft.Terminal.Settings.Editor
+{
+    [default_interface] runtimeclass FolderTreeViewEntry
+    {
+        FolderTreeViewEntry(FolderEntryViewModel folderEntry);
+
+        String Name { get; };
+        String Icon { get; };
+        FolderEntryViewModel FolderEntryVM { get; };
+
+        IObservableVector<Microsoft.Terminal.Settings.Editor.FolderTreeViewEntry> Children { get; };
+    }
+
+    runtimeclass NewTabMenuViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged
+    {
+        NewTabMenuViewModel(Microsoft.Terminal.Settings.Model.CascadiaSettings settings);
+        void UpdateSettings(Microsoft.Terminal.Settings.Model.CascadiaSettings settings);
+        void GenerateFolderTree();
+        Windows.Foundation.Collections.IVector<FolderEntryViewModel> FindFolderPathByName(String name);
+
+        FolderEntryViewModel CurrentFolder;
+        Boolean IsFolderView { get; };
+        FolderTreeViewEntry CurrentFolderTreeViewSelectedItem;
+        Boolean IsRemainingProfilesEntryMissing { get; };
+
+        IObservableVector<NewTabMenuEntryViewModel> CurrentView { get; };
+        IObservableVector<Microsoft.Terminal.Settings.Model.Profile> AvailableProfiles { get; };
+        IObservableVector<FolderTreeViewEntry> FolderTree { get; };
+        Microsoft.Terminal.Settings.Model.Profile SelectedProfile;
+
+        String CurrentFolderName;
+        Boolean CurrentFolderInlining;
+        Boolean CurrentFolderAllowEmpty;
+        String ProfileMatcherName;
+        String ProfileMatcherSource;
+        String ProfileMatcherCommandline;
+        String AddFolderName;
+
+        void RequestReorderEntry(NewTabMenuEntryViewModel vm, Boolean goingUp);
+        void RequestDeleteEntry(NewTabMenuEntryViewModel vm);
+        void RequestMoveEntriesToFolder(IVector<NewTabMenuEntryViewModel> entries, FolderEntryViewModel folderEntry);
+
+        NewTabMenuEntryViewModel RequestAddSelectedProfileEntry();
+        NewTabMenuEntryViewModel RequestAddSeparatorEntry();
+        NewTabMenuEntryViewModel RequestAddFolderEntry();
+        NewTabMenuEntryViewModel RequestAddProfileMatcherEntry();
+        NewTabMenuEntryViewModel RequestAddRemainingProfilesEntry();
+    }
+
+    [default_interface] unsealed runtimeclass NewTabMenuEntryViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged
+    {
+        Microsoft.Terminal.Settings.Model.NewTabMenuEntryType Type;
+    }
+
+    [default_interface] runtimeclass ProfileEntryViewModel : Microsoft.Terminal.Settings.Editor.NewTabMenuEntryViewModel
+    {
+        ProfileEntryViewModel(Microsoft.Terminal.Settings.Model.ProfileEntry profileEntry);
+
+        Microsoft.Terminal.Settings.Model.ProfileEntry ProfileEntry { get; };
+    }
+
+    [default_interface] runtimeclass ActionEntryViewModel : Microsoft.Terminal.Settings.Editor.NewTabMenuEntryViewModel
+    {
+        ActionEntryViewModel(Microsoft.Terminal.Settings.Model.ActionEntry actionEntry, Microsoft.Terminal.Settings.Model.CascadiaSettings settings);
+
+        Microsoft.Terminal.Settings.Model.ActionEntry ActionEntry { get; };
+        String DisplayText { get; };
+        String Icon { get; };
+    }
+
+    [default_interface] runtimeclass SeparatorEntryViewModel : Microsoft.Terminal.Settings.Editor.NewTabMenuEntryViewModel
+    {
+        SeparatorEntryViewModel(Microsoft.Terminal.Settings.Model.SeparatorEntry separatorEntry);
+    }
+
+    [default_interface] runtimeclass FolderEntryViewModel : Microsoft.Terminal.Settings.Editor.NewTabMenuEntryViewModel
+    {
+        FolderEntryViewModel(Microsoft.Terminal.Settings.Model.FolderEntry folderEntry, Microsoft.Terminal.Settings.Model.CascadiaSettings settings);
+
+        String Name;
+        String Icon;
+        Boolean Inlining;
+        Boolean AllowEmpty;
+        IObservableVector<Microsoft.Terminal.Settings.Editor.NewTabMenuEntryViewModel> Entries;
+    }
+
+    [default_interface] runtimeclass MatchProfilesEntryViewModel : Microsoft.Terminal.Settings.Editor.NewTabMenuEntryViewModel
+    {
+        MatchProfilesEntryViewModel(Microsoft.Terminal.Settings.Model.MatchProfilesEntry matchProfilesEntry);
+
+        String DisplayText { get; };
+    }
+
+    [default_interface] runtimeclass RemainingProfilesEntryViewModel : Microsoft.Terminal.Settings.Editor.NewTabMenuEntryViewModel
+    {
+        RemainingProfilesEntryViewModel(Microsoft.Terminal.Settings.Model.RemainingProfilesEntry remainingProfilesEntry);
+    }
+}

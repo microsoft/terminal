@@ -67,6 +67,7 @@
     <Thickness x:Key="StandardControlMargin">0,24,0,0</Thickness>
     <x:Double x:Key="StandardBoxMinWidth">250</x:Double>
     <x:Double x:Key="StandardControlMaxWidth">1000</x:Double>
+    <Thickness x:Key="SettingStackMargin">13,0,13,48</Thickness>
 
     <!--
         This is for styling the entire items control used on the
@@ -80,13 +81,13 @@
     <!--  Used to stack a group of settings  -->
     <Style x:Key="SettingsStackStyle"
            TargetType="StackPanel">
-        <Setter Property="Margin" Value="13,0,13,48" />
+        <Setter Property="Margin" Value="{StaticResource SettingStackMargin}" />
     </Style>
 
     <!--  Used to stack a group of settings inside a pivot  -->
     <Style x:Key="PivotStackStyle"
            TargetType="StackPanel">
-        <Setter Property="Margin" Value="0,0,13,48" />
+        <Setter Property="Margin" Value="{StaticResource SettingStackMargin}" />
     </Style>
 
     <!--  Combo Box  -->
@@ -255,6 +256,17 @@
         </Setter>
     </Style>
 
+    <Style x:Key="ExtraSmallButtonStyle"
+           BasedOn="{StaticResource BrowseButtonStyle}"
+           TargetType="Button">
+        <Setter Property="Height" Value="25" />
+        <Setter Property="Width" Value="25" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="Margin" Value="0" />
+        <Setter Property="MinHeight" Value="0" />
+        <Setter Property="MinWidth" Value="0" />
+    </Style>
+
     <Style x:Key="SmallButtonStyle"
            BasedOn="{StaticResource BrowseButtonStyle}"
            TargetType="Button">
@@ -286,6 +298,17 @@
         <Setter Property="Height" Value="32" />
         <Setter Property="Width" Value="32" />
         <Setter Property="Padding" Value="5" />
+    </Style>
+
+    <Style x:Key="DeleteExtraSmallButtonStyle"
+           BasedOn="{StaticResource DeleteButtonStyle}"
+           TargetType="Button">
+        <Setter Property="Height" Value="25" />
+        <Setter Property="Width" Value="25" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="Margin" Value="0" />
+        <Setter Property="MinHeight" Value="0" />
+        <Setter Property="MinWidth" Value="0" />
     </Style>
 
     <Style x:Key="IconButtonTextBlockStyle"
