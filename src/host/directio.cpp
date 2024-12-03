@@ -45,6 +45,7 @@ using Microsoft::Console::Interactivity::ServiceLocator;
 // - ppWaiter - If we have to wait (not enough data to fill client
 // buffer), this contains context that will allow the server to
 // restore this call later.
+// - IsWaitAllowed - Whether an async read via CONSOLE_STATUS_WAIT is permitted.
 // Return Value:
 // - STATUS_SUCCESS - If data was found and ready for return to the client.
 // - CONSOLE_STATUS_WAIT - If we didn't have enough data or needed to

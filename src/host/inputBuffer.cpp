@@ -668,7 +668,6 @@ void InputBuffer::_wakeupReadersImpl(bool initiallyEmpty)
 // - inRecords - The events to store.
 // - eventsWritten - The number of events written since this function
 // was called.
-// - setWaitEvent - on exit, true if buffer became non-empty.
 // Return Value:
 // - None
 // Note:
