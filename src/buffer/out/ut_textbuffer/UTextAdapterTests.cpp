@@ -57,7 +57,7 @@ class UTextAdapterTests
         actual = buffer.SearchText(L"𝒷", SearchFlag::None);
         VERIFY_ARE_EQUAL(expected, actual);
 
-        expected = std::vector{ s(12, 17) };
+        expected = std::vector{ s(12, 16) };
         actual = buffer.SearchText(L"ネコ", SearchFlag::None);
         VERIFY_ARE_EQUAL(expected, actual);
     }

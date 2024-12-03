@@ -43,14 +43,24 @@ void Selection::_RegenerateSelectionSpans() const
     endSelectionAnchor.x = (_d->coordSelectionAnchor.x == _d->srSelectionRect.left) ? _d->srSelectionRect.right : _d->srSelectionRect.left;
     endSelectionAnchor.y = (_d->coordSelectionAnchor.y == _d->srSelectionRect.top) ? _d->srSelectionRect.bottom : _d->srSelectionRect.top;
 
-    // GH #18106: Conhost uses an inclusive range for selection. GetTextSpans() needs an exclusive range.
-    // Increment the "end" point (bottom-right-most) to make it exclusive.
-    // NOTE: if start is past end, increment start instead
+    // GH #18106: Conhost uses an inclusive range for selection,
+    //    but GetTextSpans() needs an exclusive range.
+    const auto blockSelection = !IsLineSelection();
     const auto& buffer = screenInfo.GetTextBuffer();
     auto startSelectionAnchor = _d->coordSelectionAnchor;
-    buffer.GetSize().IncrementInExclusiveBounds(startSelectionAnchor <= endSelectionAnchor ? endSelectionAnchor : startSelectionAnchor);
+    if (blockSelection)
+    {
+        auto& targetEndpoint = startSelectionAnchor.x <= endSelectionAnchor.x ? endSelectionAnchor : startSelectionAnchor;
+        if (targetEndpoint.x != buffer.GetSize().RightInclusive())
+        {
+            buffer.GetSize().IncrementInBounds(targetEndpoint);
+        }
+    }
+    else
+    {
+        buffer.GetSize().IncrementInExclusiveBounds(startSelectionAnchor <= endSelectionAnchor ? endSelectionAnchor : startSelectionAnchor);
+    }
 
-    const auto blockSelection = !IsLineSelection();
     _lastSelectionSpans = buffer.GetTextSpans(startSelectionAnchor,
                                               endSelectionAnchor,
                                               blockSelection,
