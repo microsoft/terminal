@@ -36,7 +36,7 @@ Settings::Settings() :
     _bAutoPosition(true),
     _uHistoryBufferSize(DEFAULT_NUMBER_OF_COMMANDS),
     _uNumberOfHistoryBuffers(DEFAULT_NUMBER_OF_BUFFERS),
-    _bHistoryNoDup(true),
+    _bHistoryNoDup(false),
     // ColorTable initialized below
     _uCodePage(ServiceLocator::LocateGlobals().uiOEMCP),
     _uScrollScale(1),
@@ -110,7 +110,7 @@ void Settings::ApplyDesktopSpecificDefaults()
     _bQuickEdit = TRUE;
     _uHistoryBufferSize = 50;
     _uNumberOfHistoryBuffers = 4;
-    _bHistoryNoDup = true;
+    _bHistoryNoDup = FALSE;
 
     _renderSettings.ResetColorTable();
 
