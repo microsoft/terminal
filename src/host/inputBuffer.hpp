@@ -85,7 +85,7 @@ private:
     Microsoft::Console::VirtualTerminal::TerminalInput _termInput;
 
     // Wakes up readers waiting for data to be in the input buffer.
-    auto _wakeupReadersOnExit()
+    auto _wakeupReadersOnExit() noexcept
     {
         const auto initiallyEmpty = _storage.empty();
         return wil::scope_exit([this, initiallyEmpty]() {

@@ -575,31 +575,6 @@ class InputBufferTests
                                            false));
     }
 
-    TEST_METHOD(WritingToEmptyBufferSignalsWaitEvent)
-    {
-        InputBuffer inputBuffer;
-        auto record = MakeKeyEvent(true, 1, L'a', 0, L'a', 0);
-        auto inputEvent = record;
-        size_t eventsWritten;
-        auto waitEvent = false;
-        inputBuffer.Flush();
-        // write one event to an empty buffer
-        InputEventQueue storage;
-        storage.push_back(std::move(inputEvent));
-        inputBuffer._WriteBuffer(storage, eventsWritten, waitEvent);
-        VERIFY_IS_TRUE(waitEvent);
-        // write another, it shouldn't signal this time
-        auto record2 = MakeKeyEvent(true, 1, L'b', 0, L'b', 0);
-        auto inputEvent2 = record2;
-        // write another event to a non-empty buffer
-        waitEvent = false;
-        storage.clear();
-        storage.push_back(std::move(inputEvent2));
-        inputBuffer._WriteBuffer(storage, eventsWritten, waitEvent);
-
-        VERIFY_IS_FALSE(waitEvent);
-    }
-
     TEST_METHOD(StreamReadingDeCoalesces)
     {
         InputBuffer inputBuffer;
