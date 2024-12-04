@@ -1,0 +1,22 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+namespace Microsoft.Terminal.UI.Markdown
+{
+    runtimeclass RequestRunCommandsArgs
+    {
+        String Commandlines { get;};
+    }
+
+    [default_interface] runtimeclass CodeBlock : Windows.UI.Xaml.Controls.UserControl,
+                                                 Windows.UI.Xaml.Data.INotifyPropertyChanged
+    {
+        CodeBlock(String initialCommandlines);
+
+        String Commandlines { get; set; };
+        Windows.UI.Xaml.Visibility PlayButtonVisibility { get; set; };
+
+        event Windows.Foundation.TypedEventHandler<CodeBlock, RequestRunCommandsArgs> RequestRunCommands;
+    };
+
+}

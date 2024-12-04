@@ -275,6 +275,9 @@
     <VcpkgOSTarget>windows</VcpkgOSTarget>
     <VcpkgUseStatic>true</VcpkgUseStatic>
 
+    <!-- BODGY - work around DD#2302065. vcpkg now validates target triplets, and is *case-sensitive* -->
+    <VcpkgPlatformTarget Condition="'$(Platform)'=='ARM64'">arm64</VcpkgPlatformTarget>
+
     <VcpkgAdditionalInstallOptions>--x-feature=terminal</VcpkgAdditionalInstallOptions>
     <!--
       Since we link everything statically, we don't need to copy anything.

@@ -30,12 +30,22 @@ namespace til
                 }
             }
 
-            std::tuple<Args...> take()
+            void apply(const auto& func)
             {
-                std::unique_lock guard{ _lock };
-                auto pendingRunArgs = std::move(*_pendingRunArgs);
-                _pendingRunArgs.reset();
-                return pendingRunArgs;
+                decltype(_pendingRunArgs) args;
+                {
+                    std::unique_lock guard{ _lock };
+                    args = std::exchange(_pendingRunArgs, std::nullopt);
+                }
+                // Theoretically it should always have a value, because the throttled_func
+                // should not call the callback without there being a reason.
+                // But in practice a failure here was observed at least once.
+                // It's unknown to me what caused it, so the best we can do is avoid a crash.
+                assert(args.has_value());
+                if (args)
+                {
+                    std::apply(func, *args);
+                }
             }
 
             explicit operator bool() const
@@ -60,10 +70,12 @@ namespace til
                 return _isPending.exchange(true, std::memory_order_relaxed);
             }
 
-            std::tuple<> take()
+            void apply(const auto& func)
             {
-                reset();
-                return {};
+                if (_isPending.exchange(false, std::memory_order_relaxed))
+                {
+                    func();
+                }
             }
 
             void reset()
@@ -171,31 +183,24 @@ namespace til
         void flush()
         {
             WaitForThreadpoolTimerCallbacks(_timer.get(), true);
-            if (_storage)
-            {
-                _trailing_edge();
-            }
+            _timer_callback(nullptr, this, nullptr);
         }
 
     private:
         static void __stdcall _timer_callback(PTP_CALLBACK_INSTANCE /*instance*/, PVOID context, PTP_TIMER /*timer*/) noexcept
         try
         {
-            static_cast<throttled_func*>(context)->_trailing_edge();
-        }
-        CATCH_LOG()
-
-        void _trailing_edge()
-        {
+            const auto self = static_cast<throttled_func*>(context);
             if constexpr (Leading)
             {
-                _storage.reset();
+                self->_storage.reset();
             }
             else
             {
-                std::apply(_func, _storage.take());
+                self->_storage.apply(self->_func);
             }
         }
+        CATCH_LOG()
 
         wil::unique_threadpool_timer _createTimer()
         {

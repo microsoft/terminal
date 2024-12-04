@@ -528,7 +528,7 @@ void AppHost::AppTitleChanged(const winrt::Windows::Foundation::IInspectable& /*
     _windowManager.UpdateActiveTabTitle(newTitle, _peasant);
 }
 
-// The terminal page is responsible for persisting it's own state, but it does
+// The terminal page is responsible for persisting its own state, but it does
 // need to ask us where exactly on the screen the window is.
 void AppHost::_HandleRequestLaunchPosition(const winrt::Windows::Foundation::IInspectable& /*sender*/,
                                            winrt::TerminalApp::LaunchPositionRequest args)
@@ -872,12 +872,12 @@ void AppHost::_RaiseVisualBell(const winrt::Windows::Foundation::IInspectable&,
 // - delta: the wheel delta that triggered this event.
 // Return Value:
 // - <none>
-void AppHost::_WindowMouseWheeled(const til::point coord, const int32_t delta)
+void AppHost::_WindowMouseWheeled(const winrt::Windows::Foundation::Point coord, const int32_t delta)
 {
     if (_windowLogic)
     {
         // Find all the elements that are underneath the mouse
-        auto elems = Xaml::Media::VisualTreeHelper::FindElementsInHostCoordinates(coord.to_winrt_point(), _windowLogic.GetRoot());
+        auto elems = Xaml::Media::VisualTreeHelper::FindElementsInHostCoordinates(coord, _windowLogic.GetRoot());
         for (const auto& e : elems)
         {
             // If that element has implemented IMouseWheelListener, call OnMouseWheel on that element.
@@ -888,15 +888,18 @@ void AppHost::_WindowMouseWheeled(const til::point coord, const int32_t delta)
                     // Translate the event to the coordinate space of the control
                     // we're attempting to dispatch it to
                     const auto transform = e.TransformToVisual(nullptr);
-                    const til::point controlOrigin{ til::math::flooring, transform.TransformPoint({}) };
+                    const auto controlOrigin = transform.TransformPoint({});
 
-                    const auto offsetPoint = coord - controlOrigin;
+                    const winrt::Windows::Foundation::Point offsetPoint{
+                        coord.X - controlOrigin.X,
+                        coord.Y - controlOrigin.Y,
+                    };
 
                     const auto lButtonDown = WI_IsFlagSet(GetKeyState(VK_LBUTTON), KeyPressed);
                     const auto mButtonDown = WI_IsFlagSet(GetKeyState(VK_MBUTTON), KeyPressed);
                     const auto rButtonDown = WI_IsFlagSet(GetKeyState(VK_RBUTTON), KeyPressed);
 
-                    if (control.OnMouseWheel(offsetPoint.to_winrt_point(), delta, lButtonDown, mButtonDown, rButtonDown))
+                    if (control.OnMouseWheel(offsetPoint, delta, lButtonDown, mButtonDown, rButtonDown))
                     {
                         // If the element handled the mouse wheel event, don't
                         // continue to iterate over the remaining controls.
@@ -1493,14 +1496,12 @@ void AppHost::_handleMoveContent(const winrt::Windows::Foundation::IInspectable&
     if (args.WindowPosition() && _window)
     {
         // The WindowPosition is in DIPs. We need to convert it to pixels.
-        const til::point dragPositionInDips{ til::math::rounding, args.WindowPosition().Value() };
+        const auto dragPositionInDips = args.WindowPosition().Value();
         const auto scale = _window->GetCurrentDpiScale();
 
-        til::point dragPositionInPixels{
-            til::math::rounding,
-            dragPositionInDips.x * scale,
-            dragPositionInDips.y * scale,
-        };
+        auto dragPositionInPixels = dragPositionInDips;
+        dragPositionInPixels.X *= scale;
+        dragPositionInPixels.Y *= scale;
 
         // Fortunately, the window position is already in pixels.
         til::rect windowBoundsInPixels{ _window->GetWindowRect() };
@@ -1532,17 +1533,20 @@ void AppHost::_handleMoveContent(const winrt::Windows::Foundation::IInspectable&
         }
 
         // Adjust for the non-client bounds
-        dragPositionInPixels.x -= nonClientFrame.left;
-        dragPositionInPixels.y -= nonClientFrame.top;
+        dragPositionInPixels.X -= nonClientFrame.left;
+        dragPositionInPixels.Y -= nonClientFrame.top;
         windowSize = windowSize - nonClientFrame.size();
 
         // Convert to DIPs for the size, so that dragging across a DPI boundary
         // retains the correct dimensions.
-        const auto sizeInDips = windowSize.scale(til::math::rounding, 1.0f / scale);
-        til::rect inDips{ dragPositionInPixels, sizeInDips };
-
         // Use the drag event as the new position, and the size of the actual window.
-        windowBoundsReference = inDips.to_winrt_rect();
+        const auto inverseScale = 1.0f / scale;
+        windowBoundsReference = winrt::Windows::Foundation::Rect{
+            dragPositionInPixels.X * inverseScale,
+            dragPositionInPixels.Y * inverseScale,
+            windowSize.width * inverseScale,
+            windowSize.height * inverseScale,
+        };
     }
 
     _windowManager.RequestMoveContent(args.Window(), args.Content(), args.TabIndex(), windowBoundsReference);

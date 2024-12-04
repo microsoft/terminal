@@ -189,6 +189,9 @@
   <data name="TabCloseSubMenu" xml:space="preserve">
     <value>닫기</value>
   </data>
+  <data name="TabMoveSubMenu" xml:space="preserve">
+    <value>탭 이동</value>
+  </data>
   <data name="TabCloseAfter" xml:space="preserve">
     <value>오른쪽에 있는 탭 닫기</value>
   </data>
@@ -932,5 +935,11 @@
   </data>
   <data name="CloseSnippetsPaneButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>창 닫기</value>
+  </data>
+  <data name="TabMoveLeft" xml:space="preserve">
+    <value>왼쪽으로 이동</value>
+  </data>
+  <data name="TabMoveRight" xml:space="preserve">
+    <value>오른쪽으로 이동</value>
   </data>
 </root>

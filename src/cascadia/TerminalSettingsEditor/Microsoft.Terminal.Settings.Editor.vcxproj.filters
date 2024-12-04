@@ -27,6 +27,7 @@
     <Midl Include="LaunchViewModel.idl" />
     <Midl Include="EnumEntry.idl" />
     <Midl Include="SettingContainer.idl" />
+    <Midl Include="NewTabMenuViewModel.idl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
@@ -49,5 +50,6 @@
     <Page Include="SettingContainerStyle.xaml" />
     <Page Include="AddProfile.xaml" />
     <Page Include="KeyChordListener.xaml" />
+    <Page Include="NewTabMenu.xaml" />
   </ItemGroup>
 </Project>

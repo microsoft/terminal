@@ -79,7 +79,7 @@ VOID InitRegistryValues(
     pStateInfo->CursorSize = 25;
     pStateInfo->HistoryBufferSize = 25;
     pStateInfo->NumberOfHistoryBuffers = 4;
-    pStateInfo->HistoryNoDup = 1;
+    pStateInfo->HistoryNoDup = 0;
 
     // clang-format off
     if (pStateInfo->fIsV2Console)

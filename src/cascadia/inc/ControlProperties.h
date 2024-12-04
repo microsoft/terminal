@@ -58,7 +58,6 @@
 //  All of these settings are defined in IControlSettings.
 #define CONTROL_SETTINGS(X)                                                                                                                              \
     X(winrt::hstring, ProfileName)                                                                                                                       \
-    X(winrt::hstring, ProfileSource)                                                                                                                     \
     X(winrt::guid, SessionId)                                                                                                                            \
     X(bool, EnableUnfocusedAcrylic, false)                                                                                                               \
     X(winrt::hstring, Padding, DEFAULT_PADDING)                                                                                                          \
@@ -84,4 +83,5 @@
     X(bool, UseBackgroundImageForWindow, false)                                                                                                          \
     X(bool, ShowMarks, false)                                                                                                                            \
     X(winrt::Microsoft::Terminal::Control::CopyFormat, CopyFormatting, 0)                                                                                \
-    X(bool, RightClickContextMenu, false)
+    X(bool, RightClickContextMenu, false)                                                                                                                \
+    X(winrt::Microsoft::Terminal::Control::PathTranslationStyle, PathTranslationStyle, winrt::Microsoft::Terminal::Control::PathTranslationStyle::None)

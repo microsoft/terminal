@@ -72,7 +72,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         if (_IsInEditMode)
         {
             // if we're in edit mode,
-            // - pre-populate the text box with the current keys
+            // - prepopulate the text box with the current keys
             // - reset the combo box with the current action
             ProposedKeys(_CurrentKeys);
             ProposedAction(box_value(_CurrentAction));

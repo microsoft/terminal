@@ -84,6 +84,14 @@ winrt::com_ptr<GlobalAppSettings> GlobalAppSettings::Copy() const
             globals->_themes.Insert(kv.Key(), *themeImpl->Copy());
         }
     }
+    if (_NewTabMenu)
+    {
+        globals->_NewTabMenu = winrt::single_threaded_vector<Model::NewTabMenuEntry>();
+        for (const auto& entry : *_NewTabMenu)
+        {
+            globals->_NewTabMenu->Append(get_self<NewTabMenuEntry>(entry)->Copy());
+        }
+    }
 
     for (const auto& parent : _parents)
     {
