@@ -32,15 +32,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     public:
         BellSoundViewModel() = default;
         BellSoundViewModel(hstring path) :
-            _Path{ path }
-        {
-            PropertyChanged([this](auto&&, auto&& e) {
-                if (e.PropertyName() == L"Path")
-                {
-                    _NotifyChanges(L"DisplayPath", L"SubText", L"FileExists", L"ShowSubText");
-                }
-            });
-        }
+            _Path{ path } {}
 
         hstring DisplayPath() const;
         hstring SubText() const;
@@ -175,7 +167,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void _InitializeCurrentBellSounds();
         void _PrepareModelForBellSoundModification();
         void _MarkDuplicateBellSoundDirectories();
-        void _BellSoundVMPropertyChanged(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::Data::PropertyChangedEventArgs& args);
         static Windows::Foundation::Collections::IObservableVector<Editor::Font> _MonospaceFontList;
         static Windows::Foundation::Collections::IObservableVector<Editor::Font> _FontList;
 

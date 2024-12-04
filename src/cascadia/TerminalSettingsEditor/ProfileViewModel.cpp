@@ -412,7 +412,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             for (const auto&& bellSound : soundList)
             {
                 auto vm = winrt::make<BellSoundViewModel>(bellSound);
-                vm.PropertyChanged({ this, &ProfileViewModel::_BellSoundVMPropertyChanged });
                 _CurrentBellSounds.Append(vm);
             }
         }
@@ -503,35 +502,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return RS_(L"Profile_BellSoundPreviewMultiple");
     }
 
-    void ProfileViewModel::_BellSoundVMPropertyChanged(const IInspectable& sender, const PropertyChangedEventArgs& args)
-    {
-        if (args.PropertyName() == L"Path")
-        {
-            auto senderVM = sender.as<Editor::BellSoundViewModel>();
-
-            // propagate changes to model
-            uint32_t index;
-            if (_CurrentBellSounds.IndexOf(senderVM, index))
-            {
-                // if current layer is inheriting,
-                // we should copy the bell sound then apply changes
-                _PrepareModelForBellSoundModification();
-
-                _profile.BellSound().SetAt(index, senderVM.Path());
-                _NotifyChanges(L"CurrentBellSounds");
-            }
-        }
-    }
-
     void ProfileViewModel::RequestAddBellSound(hstring path)
     {
         // If we were inheriting our bell sound,
         // copy it over to the current layer and apply modifications
         _PrepareModelForBellSoundModification();
 
-        auto vm = winrt::make<BellSoundViewModel>();
-        vm.Path(path);
-        vm.PropertyChanged({ this, &ProfileViewModel::_BellSoundVMPropertyChanged });
+        auto vm = winrt::make<BellSoundViewModel>(path);
         _CurrentBellSounds.Append(vm);
         _profile.BellSound().Append(path);
         _NotifyChanges(L"CurrentBellSounds");
