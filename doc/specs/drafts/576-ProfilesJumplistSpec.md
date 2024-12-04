@@ -33,7 +33,8 @@ The jumplist has to be created/modified during the life-cycle of the application
 UWP provides an API to access to the jumplist through the [Windows.UI.StartScreen.JumpList class](https://docs.microsoft.com/en-us/uwp/api/windows.ui.startscreen.jumplist), however from previous attempts [1], the api does not work for the project architecture.
 Instead, we'll use the COM interface [ICustomDestinationList](https://docs.microsoft.com/en-us/windows/desktop/api/shobjidl_core/nn-shobjidl_core-icustomdestinationlist) [2] directly to create the jumplist. Since we are using Win32 apis, the work should be done in the `WindowsTerminal` project.
 
-Using `ICustomDestinationList` is straightforward with a few additions discussed in this section [below](#Implementation-notes). Resources for using the jumplist can be found [here](https://msdn.microsoft.com/en-us/library/windows/desktop/gg281362.aspx) and [here](https://www.codeproject.com/Articles/36561/Windows-7-Goodies-in-C-Jump-Lists).
+Using `ICustomDestinationList` is straightforward with a few additions discussed in this section [below](#Implementation-notes). See [Adding Support for Windows 7 Jump Lists & Taskbar Tabs](https://msdn.microsoft.com/en-us/library/windows/desktop/gg281362.aspx) and [Windows 7 Goodies in C++: Jump Lists](https://www.codeproject.com/Articles/36561/Windows-7-Goodies-in-C-Jump-Lists).
+
 
 The basic overview:
 1. Get an instance of the `ICustomDestinationList` COM object

@@ -507,7 +507,7 @@ void DimensionsTests::TestSetConsoleScreenBufferInfoEx()
 
     // NOTE: Ignore cursor position. It can change or not depending on the word wrap mode and the API set doesn't do anything.
 
-    // BUG: This is a long standing bug in the console which some of our customers have documented on the MSDN page.
+    // BUG: This is a long-standing bug in the console which some of our customers have documented on the MSDN page.
     //      The console driver (\minkernel\console\client\getset.c) is treating the viewport as an "exclusive" rectangle where it is actually "inclusive"
     //      of its edges. This means when it does a width calculation, it has an off-by-one error and will shrink the window in height and width by 1 each
     //      trip around. For example, normally we do viewport width as Right-Left+1, and the driver does it as Right-Left.

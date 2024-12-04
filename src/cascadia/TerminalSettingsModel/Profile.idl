@@ -41,6 +41,8 @@ namespace Microsoft.Terminal.Settings.Model
 
         // True if the user explicitly removed this Profile from settings.json.
         Boolean Deleted { get; };
+        // True if the user *kept* this Profile, but it disappeared from the system.
+        Boolean Orphaned { get; };
 
         // Helper for magically using a commandline for an icon for a profile
         // without an explicit icon.
@@ -92,5 +94,7 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_PROFILE_SETTING(Boolean, ForceVTInput);
         INHERITABLE_PROFILE_SETTING(Boolean, AllowVtChecksumReport);
         INHERITABLE_PROFILE_SETTING(Boolean, AllowKeypadMode);
+
+        INHERITABLE_PROFILE_SETTING(Microsoft.Terminal.Control.PathTranslationStyle, PathTranslationStyle);
     }
 }

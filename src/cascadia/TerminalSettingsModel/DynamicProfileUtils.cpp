@@ -9,7 +9,7 @@ static constexpr std::wstring_view PACKAGED_PROFILE_ICON_PATH{ L"ms-appx:///Prof
 static constexpr std::wstring_view PACKAGED_PROFILE_ICON_EXTENSION{ L".png" };
 
 // Method Description:
-// - Helper function for creating a skeleton default profile with a pre-populated
+// - Helper function for creating a skeleton default profile with a prepopulated
 //   guid and name.
 // Arguments:
 // - name: the name of the new profile.

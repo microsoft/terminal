@@ -246,6 +246,19 @@
                 <ToggleSwitch IsOn="{x:Bind Profile.RainbowSuggestions, Mode=TwoWay}"
                               Style="{StaticResource ToggleSwitchInExpanderStyle}" />
             </local:SettingContainer>
+
+            <!--  Path Translation  -->
+            <local:SettingContainer x:Uid="Profile_PathTranslationStyle"
+                                    ClearSettingValue="{x:Bind Profile.ClearPathTranslationStyle}"
+                                    HasSettingValue="{x:Bind Profile.HasPathTranslationStyle, Mode=OneWay}"
+                                    SettingOverrideSource="{x:Bind Profile.PathTranslationStyleOverrideSource, Mode=OneWay}">
+                <ComboBox AutomationProperties.AccessibilityView="Content"
+                          ItemTemplate="{StaticResource EnumComboBoxTemplate}"
+                          ItemsSource="{x:Bind Profile.PathTranslationStyleList, Mode=OneWay}"
+                          SelectedItem="{x:Bind Profile.CurrentPathTranslationStyle, Mode=TwoWay}"
+                          Style="{StaticResource ComboBoxSettingStyle}" />
+            </local:SettingContainer>
+
         </StackPanel>
     </Grid>
 </Page>

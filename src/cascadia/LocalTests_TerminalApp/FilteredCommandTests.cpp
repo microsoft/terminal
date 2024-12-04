@@ -50,7 +50,7 @@ namespace TerminalAppLocalTests
                 VERIFY_IS_FALSE(segments.GetAt(0).IsHighlighted());
             }
             {
-                Log::Comment(L"Testing command name segmentation with filter equals to the string");
+                Log::Comment(L"Testing command name segmentation with filter equal to the string");
                 const auto filteredCommand = winrt::make_self<winrt::TerminalApp::implementation::FilteredCommand>(paletteItem);
                 filteredCommand->_Filter = L"AAAAAABBBBBBCCC";
                 auto segments = filteredCommand->_computeHighlightedName().Segments();
@@ -129,7 +129,7 @@ namespace TerminalAppLocalTests
                 VERIFY_ARE_EQUAL(weight, 0);
             }
             {
-                Log::Comment(L"Testing weight of command with filter equals to the string");
+                Log::Comment(L"Testing weight of command with filter equal to the string");
                 const auto filteredCommand = winrt::make_self<winrt::TerminalApp::implementation::FilteredCommand>(paletteItem);
                 filteredCommand->_Filter = L"AAAAAABBBBBBCCC";
                 filteredCommand->_HighlightedName = filteredCommand->_computeHighlightedName();

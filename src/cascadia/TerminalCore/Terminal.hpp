@@ -320,7 +320,7 @@ public:
     til::point SelectionEndForRendering() const;
     const SelectionEndpoint SelectionEndpointTarget() const noexcept;
 
-    TextCopyData RetrieveSelectedTextFromBuffer(const bool singleLine, const bool html = false, const bool rtf = false) const;
+    TextCopyData RetrieveSelectedTextFromBuffer(const bool singleLine, const bool withControlSequences = false, const bool html = false, const bool rtf = false) const;
 #pragma endregion
 
 #ifndef NDEBUG

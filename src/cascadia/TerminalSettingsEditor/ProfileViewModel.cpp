@@ -39,6 +39,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         INITIALIZE_BINDABLE_ENUM_SETTING(AntiAliasingMode, TextAntialiasingMode, winrt::Microsoft::Terminal::Control::TextAntialiasingMode, L"Profile_AntialiasingMode", L"Content");
         INITIALIZE_BINDABLE_ENUM_SETTING_REVERSE_ORDER(CloseOnExitMode, CloseOnExitMode, winrt::Microsoft::Terminal::Settings::Model::CloseOnExitMode, L"Profile_CloseOnExit", L"Content");
         INITIALIZE_BINDABLE_ENUM_SETTING(ScrollState, ScrollbarState, winrt::Microsoft::Terminal::Control::ScrollbarState, L"Profile_ScrollbarVisibility", L"Content");
+        INITIALIZE_BINDABLE_ENUM_SETTING(PathTranslationStyle, PathTranslationStyle, winrt::Microsoft::Terminal::Control::PathTranslationStyle, L"Profile_PathTranslationStyle", L"Content");
 
         _InitializeCurrentBellSounds();
 
@@ -92,6 +93,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             else if (viewModelProperty == L"BellSound")
             {
                 _InitializeCurrentBellSounds();
+            }
+            else if (viewModelProperty == L"PathTranslationStyle")
+            {
+                _NotifyChanges(L"CurrentPathTranslationStyle");
             }
         });
 
@@ -240,6 +245,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     bool ProfileViewModel::CanDeleteProfile() const
     {
         return !IsBaseLayer();
+    }
+
+    bool ProfileViewModel::Orphaned() const
+    {
+        return _profile.Orphaned();
     }
 
     Editor::AppearanceViewModel ProfileViewModel::DefaultAppearance()

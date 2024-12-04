@@ -140,14 +140,11 @@ til::size TermControlUiaProvider::GetFontSize() const noexcept
     return _controlInfo->GetFontSize();
 }
 
-til::rect TermControlUiaProvider::GetPadding() const noexcept
+til::point TermControlUiaProvider::GetContentOrigin() const noexcept
 {
-    return _controlInfo->GetPadding();
-}
-
-float TermControlUiaProvider::GetScaleFactor() const noexcept
-{
-    return _controlInfo->GetScaleFactor();
+    const auto bounds = _controlInfo->GetBounds();
+    const auto padding = _controlInfo->GetPadding();
+    return { bounds.left + padding.left, bounds.top + padding.top };
 }
 
 void TermControlUiaProvider::ChangeViewport(const til::inclusive_rect& NewWindow)

@@ -90,7 +90,7 @@ private:
 
     void _RaiseVisualBell(const winrt::Windows::Foundation::IInspectable& sender,
                           const winrt::Windows::Foundation::IInspectable& arg);
-    void _WindowMouseWheeled(const til::point coord, const int32_t delta);
+    void _WindowMouseWheeled(const winrt::Windows::Foundation::Point coord, const int32_t delta);
     void _WindowActivated(bool activated);
     safe_void_coroutine _peasantNotifyActivateWindow();
     void _WindowMoved();
