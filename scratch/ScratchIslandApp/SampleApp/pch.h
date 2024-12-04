@@ -25,7 +25,7 @@
 
 #include <wil/cppwinrt.h>
 
-#include <unknwn.h>
+#include <Unknwn.h>
 
 #include <hstring.h>
 

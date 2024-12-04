@@ -87,7 +87,7 @@ class AliasTests
                                  L"pipe $1$boutput $2=pipe one|output two%,"
                                  L"PIPE $1$BOUTPUT $2=PIPE one|OUTPUT two%,"
                                  L"run$tmultiple$tcommands=run%multiple%commands%,"
-                                 L"MyMoney$$$$$$App=MyMoney$$$$$$App%," // this is a long standing bug, $$ isn't replaced with $.
+                                 L"MyMoney$$$$$$App=MyMoney$$$$$$App%," // this is a long-standing bug, $$ isn't replaced with $.
                                  L"Invalid$Apple=Invalid$Apple%," // An invalid macro $A is copied through
                                  L"IEndInA$=IEndInA$%," // Ending in a $ is copied through.
                                  L"megamix $7$Gfun $1 $b test $9 $L $2.txt$tall$$the$$things $*$tat$g$gonce.log=megamix seven>fun one | test nine < two.txt%all$$the$$things one two three four five six    seven eight nine ten eleven twelve%at>>once.log%"
