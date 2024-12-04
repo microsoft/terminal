@@ -12,6 +12,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
     DependencyProperty SettingContainer::_HeaderProperty{ nullptr };
     DependencyProperty SettingContainer::_HelpTextProperty{ nullptr };
+    DependencyProperty SettingContainer::_FontIconGlyphProperty{ nullptr };
     DependencyProperty SettingContainer::_CurrentValueProperty{ nullptr };
     DependencyProperty SettingContainer::_CurrentValueTemplateProperty{ nullptr };
     DependencyProperty SettingContainer::_HasSettingValueProperty{ nullptr };
@@ -42,6 +43,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             _HelpTextProperty =
                 DependencyProperty::Register(
                     L"HelpText",
+                    xaml_typename<hstring>(),
+                    xaml_typename<Editor::SettingContainer>(),
+                    PropertyMetadata{ box_value(L"") });
+        }
+        if (!_FontIconGlyphProperty)
+        {
+            _FontIconGlyphProperty =
+                DependencyProperty::Register(
+                    L"FontIconGlyph",
                     xaml_typename<hstring>(),
                     xaml_typename<Editor::SettingContainer>(),
                     PropertyMetadata{ box_value(L"") });

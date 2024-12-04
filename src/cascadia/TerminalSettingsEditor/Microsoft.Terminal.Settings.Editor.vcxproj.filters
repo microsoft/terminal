@@ -30,6 +30,7 @@
     <Midl Include="EnumEntry.idl" />
     <Midl Include="SettingContainer.idl" />
     <Midl Include="TerminalColorConverters.idl" />
+    <Midl Include="NewTabMenuViewModel.idl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="$(ProjectName).def" />
@@ -52,5 +53,6 @@
     <Page Include="AddProfile.xaml" />
     <Page Include="KeyChordListener.xaml" />
     <Page Include="NullableColorPicker.xaml" />
+    <Page Include="NewTabMenu.xaml" />
   </ItemGroup>
 </Project>

@@ -733,6 +733,9 @@
               "type": "string",
               "default": "",
               "description": "The name or GUID of the profile to show in this entry"
+            },
+            "icon": {
+              "$ref": "#/$defs/Icon"
             }
           }
         }
@@ -804,6 +807,9 @@
               "type": "string",
               "default": "",
               "description": "The ID of the action to show in this entry"
+            },
+            "icon": {
+              "$ref": "#/$defs/Icon"
             }
           }
         }
@@ -878,6 +884,11 @@
               "type": "boolean",
               "default": false,
               "description": "If true, the copied content will be copied as a single line (even if there are hard line breaks present in the text). If false, newlines persist from the selected text."
+            },
+            "withControlSequences": {
+              "type": "boolean",
+              "default": false,
+              "description": "If true, copied content will contain ANSI escape code control sequences representing the styling of the content."
             },
             "dismissSelection": {
               "type": "boolean",
@@ -3089,6 +3100,17 @@
           "default": false,
           "description": "When set to true, the window will have an acrylic material background. When set to false, the window will have a plain, untextured background.",
           "type": "boolean"
+        },
+        "pathTranslationStyle": {
+          "default": "none",
+          "description": "Controls how file paths are transformed when they are dragged and dropped on the terminal. Possible values are \"none\", \"wsl\", \"cygwin\" and \"msys2\".",
+          "enum": [
+            "none",
+            "wsl",
+            "cygwin",
+            "msys2"
+          ],
+          "type": "string"
         }
       }
     },

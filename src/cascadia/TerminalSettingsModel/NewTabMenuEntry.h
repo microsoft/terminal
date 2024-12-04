@@ -25,6 +25,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     public:
         static com_ptr<NewTabMenuEntry> FromJson(const Json::Value& json);
         virtual Json::Value ToJson() const;
+        virtual Model::NewTabMenuEntry Copy() const = 0;
 
         WINRT_PROPERTY(NewTabMenuEntryType, Type, NewTabMenuEntryType::Invalid);
 

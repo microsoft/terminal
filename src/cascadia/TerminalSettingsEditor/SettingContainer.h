@@ -35,6 +35,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         DEPENDENCY_PROPERTY(Windows::Foundation::IInspectable, Header);
         DEPENDENCY_PROPERTY(hstring, HelpText);
+        DEPENDENCY_PROPERTY(hstring, FontIconGlyph);
         DEPENDENCY_PROPERTY(Windows::Foundation::IInspectable, CurrentValue);
         DEPENDENCY_PROPERTY(Windows::UI::Xaml::DataTemplate, CurrentValueTemplate);
         DEPENDENCY_PROPERTY(bool, HasSettingValue);

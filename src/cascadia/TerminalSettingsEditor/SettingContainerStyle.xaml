@@ -7,7 +7,6 @@
                     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
                     xmlns:local="using:Microsoft.Terminal.Settings.Editor"
                     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-                    xmlns:mtu="using:Microsoft.Terminal.UI"
                     xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
                     mc:Ignorable="d">
 
@@ -203,7 +202,8 @@
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
-                        <StackPanel Style="{StaticResource StackPanelInExpanderStyle}">
+                        <StackPanel Grid.Column="0"
+                                    Style="{StaticResource StackPanelInExpanderStyle}">
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock Style="{StaticResource SettingsPageItemHeaderStyle}"
                                            Text="{TemplateBinding Header}" />
@@ -218,6 +218,56 @@
                                        Text="{TemplateBinding HelpText}" />
                         </StackPanel>
                         <ContentPresenter Grid.Column="1"
+                                          HorizontalAlignment="Right"
+                                          VerticalAlignment="Center"
+                                          Content="{TemplateBinding Content}" />
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!--
+        A setting container for a setting that has no additional options.
+        Includes space for an icon on the left side of the header.
+        XAML applies the margin/padding of the icon regardless of its
+        existence (which caused inconsistent padding). It's easier to just create
+        another style and move on.
+    -->
+    <Style x:Key="SettingContainerWithIcon"
+           TargetType="local:SettingContainer">
+        <Setter Property="Margin" Value="0,4,0,0" />
+        <Setter Property="IsTabStop" Value="False" />
+        <Setter Property="MaxWidth" Value="1000" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="local:SettingContainer">
+                    <Grid AutomationProperties.Name="{TemplateBinding Header}"
+                          Style="{StaticResource NonExpanderGrid}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <FontIcon Grid.Column="0"
+                                  Glyph="{TemplateBinding FontIconGlyph}" />
+                        <StackPanel Grid.Column="1"
+                                    Padding="14,12,0,12"
+                                    Style="{StaticResource StackPanelInExpanderStyle}">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Style="{StaticResource SettingsPageItemHeaderStyle}"
+                                           Text="{TemplateBinding Header}" />
+                                <Button x:Name="ResetButton"
+                                        Style="{StaticResource SettingContainerResetButtonStyle}">
+                                    <FontIcon Glyph="&#xE845;"
+                                              Style="{StaticResource SettingContainerFontIconStyle}" />
+                                </Button>
+                            </StackPanel>
+                            <TextBlock x:Name="HelpTextBlock"
+                                       Style="{StaticResource SettingsPageItemDescriptionStyle}"
+                                       Text="{TemplateBinding HelpText}" />
+                        </StackPanel>
+                        <ContentPresenter Grid.Column="2"
                                           HorizontalAlignment="Right"
                                           VerticalAlignment="Center"
                                           Content="{TemplateBinding Content}" />
@@ -247,7 +297,8 @@
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
-                                <StackPanel Style="{StaticResource StackPanelInExpanderStyle}">
+                                <StackPanel Grid.Column="0"
+                                            Style="{StaticResource StackPanelInExpanderStyle}">
                                     <StackPanel Orientation="Horizontal">
                                         <TextBlock Style="{StaticResource SettingsPageItemHeaderStyle}"
                                                    Text="{TemplateBinding Header}" />
@@ -262,6 +313,61 @@
                                                Text="{TemplateBinding HelpText}" />
                                 </StackPanel>
                                 <ContentPresenter Grid.Column="1"
+                                                  Content="{TemplateBinding CurrentValue}"
+                                                  ContentTemplate="{StaticResource ExpanderSettingContainerStringPreviewTemplate}" />
+                            </Grid>
+                        </muxc:Expander.Header>
+                    </muxc:Expander>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!--
+        A setting container which can expand. Includes space for an icon on the left side of the header.
+        XAML applies the margin/padding of the icon regardless of its
+        existence (which caused inconsistent padding). It's easier to just create
+        another style and move on.
+    -->
+    <Style x:Key="ExpanderSettingContainerStyleWithIcon"
+           TargetType="local:SettingContainer">
+        <Setter Property="MaxWidth" Value="1000" />
+        <Setter Property="IsTabStop" Value="False" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="local:SettingContainer">
+                    <muxc:Expander x:Name="Expander"
+                                   Margin="0,4,0,0"
+                                   HorizontalAlignment="Stretch"
+                                   HorizontalContentAlignment="Stretch"
+                                   Content="{TemplateBinding Content}"
+                                   IsExpanded="{TemplateBinding StartExpanded}">
+                        <muxc:Expander.Header>
+                            <Grid MinHeight="64">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <FontIcon Grid.Column="0"
+                                          Glyph="{TemplateBinding FontIconGlyph}" />
+                                <StackPanel Grid.Column="1"
+                                            Padding="14,12,0,12"
+                                            Style="{StaticResource StackPanelInExpanderStyle}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Style="{StaticResource SettingsPageItemHeaderStyle}"
+                                                   Text="{TemplateBinding Header}" />
+                                        <Button x:Name="ResetButton"
+                                                Style="{StaticResource SettingContainerResetButtonStyle}">
+                                            <FontIcon Glyph="&#xE845;"
+                                                      Style="{StaticResource SettingContainerFontIconStyle}" />
+                                        </Button>
+                                    </StackPanel>
+                                    <TextBlock x:Name="HelpTextBlock"
+                                               Style="{StaticResource SettingsPageItemDescriptionStyle}"
+                                               Text="{TemplateBinding HelpText}" />
+                                </StackPanel>
+                                <ContentPresenter Grid.Column="2"
                                                   Content="{TemplateBinding CurrentValue}"
                                                   ContentTemplate="{StaticResource ExpanderSettingContainerStringPreviewTemplate}" />
                             </Grid>
@@ -292,7 +398,8 @@
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
-                                <StackPanel Style="{StaticResource StackPanelInExpanderStyle}">
+                                <StackPanel Grid.Column="0"
+                                            Style="{StaticResource StackPanelInExpanderStyle}">
                                     <StackPanel Orientation="Horizontal">
                                         <TextBlock Style="{StaticResource SettingsPageItemHeaderStyle}"
                                                    Text="{TemplateBinding Header}" />
