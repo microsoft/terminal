@@ -426,14 +426,21 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     //   so that we can then apply modifications to it
     void ProfileViewModel::_PrepareModelForBellSoundModification()
     {
-        if (const auto inheritedSounds = _profile.BellSound(); !_profile.HasBellSound() && inheritedSounds)
+        if (!_profile.HasBellSound())
         {
-            auto newSounds{ winrt::single_threaded_vector<winrt::hstring>() };
-            for (const auto sound : inheritedSounds)
+            std::vector<hstring> newSounds;
+            if (const auto inheritedSounds = _profile.BellSound())
             {
-                newSounds.Append(sound);
+                // copy inherited bell sounds to the current layer
+                newSounds.reserve(inheritedSounds.Size());
+                for (const auto sound : inheritedSounds)
+                {
+                    newSounds.push_back(sound);
+                }
             }
-            _profile.BellSound(newSounds);
+            // if we didn't inherit any bell sounds,
+            // we should still set the bell sound to an empty list (instead of null)
+            _profile.BellSound(winrt::single_threaded_vector<hstring>(std::move(newSounds)));
         }
     }
 
