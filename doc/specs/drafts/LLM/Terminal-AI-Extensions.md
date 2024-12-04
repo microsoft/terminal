@@ -29,6 +29,7 @@ packages over a well-defined [App Service Connection].
   - [User Experience and Design](#user-experience-and-design)
   - [Potential Issues](#potential-issues)
     - [Tenents](#tenents)
+  - [Before spec is done TODO!s](#before-spec-is-done-todos)
   - [Future considerations](#future-considerations)
   - [Resources](#resources)
     - [Footnotes](#footnotes)
@@ -43,6 +44,8 @@ need to be manifested so they can communicate with one another. Then we'll
 briefly touch on how Terminal can use this model to pick from different
 extensions to choose it's AI model. Lastly, we'll decribe the API the Terminal
 will use to communicate with these extensions.
+
+![](./img/ai-providers-plus-powershell.png)
 
 ### Declaring the Extension & Host
 
