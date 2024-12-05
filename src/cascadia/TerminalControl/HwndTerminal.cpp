@@ -116,7 +116,7 @@ try
                     const auto lock = publicTerminal->_terminal->LockForWriting();
                     if (publicTerminal->_terminal->IsSelectionActive())
                     {
-                        const auto bufferData = publicTerminal->_terminal->RetrieveSelectedTextFromBuffer(false, true, true);
+                        const auto bufferData = publicTerminal->_terminal->RetrieveSelectedTextFromBuffer(false, false, true, true);
                         LOG_IF_FAILED(publicTerminal->_CopyTextToSystemClipboard(bufferData.plainText, bufferData.html, bufferData.rtf));
                         publicTerminal->_ClearSelection();
                         return 0;
@@ -891,6 +891,9 @@ void _stdcall TerminalSetTheme(void* terminal, TerminalTheme theme, LPCWSTR font
             renderSettings.SetColorTableEntry(tableIndex, gsl::at(theme.ColorTable, tableIndex));
         }
 
+        // Save these values as the new default render settings.
+        renderSettings.SaveDefaultSettings();
+
         publicTerminal->_terminal->SetCursorStyle(static_cast<Microsoft::Console::VirtualTerminal::DispatchTypes::CursorStyle>(theme.CursorStyle));
 
         publicTerminal->_desiredFont = { fontFamily, 0, DEFAULT_FONT_WEIGHT, static_cast<float>(fontSize), CP_UTF8 };
@@ -1087,11 +1090,6 @@ til::rect HwndTerminal::GetBounds() const noexcept
 til::rect HwndTerminal::GetPadding() const noexcept
 {
     return {};
-}
-
-float HwndTerminal::GetScaleFactor() const noexcept
-{
-    return static_cast<float>(_currentDpi) / static_cast<float>(USER_DEFAULT_SCREEN_DPI);
 }
 
 void HwndTerminal::ChangeViewport(const til::inclusive_rect& NewWindow)

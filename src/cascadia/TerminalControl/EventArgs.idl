@@ -25,6 +25,12 @@ namespace Microsoft.Terminal.Control
         Console,
     };
 
+    enum DefaultInputScope
+    {
+        Default,
+        AlphanumericHalfWidth,
+    };
+
     runtimeclass FontSizeChangedArgs
     {
         Int32 Width { get; };

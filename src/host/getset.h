@@ -19,3 +19,4 @@ Revision History:
 class SCREEN_INFORMATION;
 
 [[nodiscard]] HRESULT DoSrvSetConsoleOutputCodePage(const unsigned int codepage);
+[[nodiscard]] HRESULT DoSrvSetConsoleInputCodePage(const unsigned int codepage);

@@ -5,8 +5,10 @@ breadcrumbs
 ccmp
 ccon
 clickable
+cmark
 CMMI
 colorbrewer
+commandlines
 consvc
 copyable
 dalet
@@ -22,9 +24,11 @@ Emacspeak
 Fitt
 FTCS
 gantt
+gfm
 ghe
 gje
 godbolt
+hstrings
 hyperlinking
 hyperlinks
 Kbds
@@ -44,8 +48,8 @@ mkmk
 mnt
 mru
 nje
-NTMTo
 notwrapped
+NTMTo
 ogonek
 overlined
 perlw
@@ -54,6 +58,7 @@ Powerline
 ptys
 pwn
 pwshw
+QOL
 qof
 qps
 quickfix
@@ -71,6 +76,7 @@ shcha
 similaritytolerance
 slnt
 stakeholders
+subpage
 sustainability
 sxn
 TLDR
@@ -83,6 +89,7 @@ und
 vsdevcmd
 westus
 workarounds
+WSLs
 wtconfig
 XBox
 YBox

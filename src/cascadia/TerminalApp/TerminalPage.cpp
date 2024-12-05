@@ -17,6 +17,7 @@
 #include "SettingsPaneContent.h"
 #include "ScratchpadContent.h"
 #include "SnippetsPaneContent.h"
+#include "MarkdownPaneContent.h"
 #include "TabRowControl.h"
 
 #include "TerminalPage.g.cpp"
@@ -989,7 +990,7 @@ namespace winrt::TerminalApp::implementation
 
                 for (auto&& [profileIndex, remainingProfile] : remainingProfilesEntry.Profiles())
                 {
-                    items.push_back(_CreateNewTabFlyoutProfile(remainingProfile, profileIndex));
+                    items.push_back(_CreateNewTabFlyoutProfile(remainingProfile, profileIndex, {}));
                 }
 
                 break;
@@ -1003,7 +1004,7 @@ namespace winrt::TerminalApp::implementation
                     break;
                 }
 
-                auto profileItem = _CreateNewTabFlyoutProfile(profileEntry.Profile(), profileEntry.ProfileIndex());
+                auto profileItem = _CreateNewTabFlyoutProfile(profileEntry.Profile(), profileEntry.ProfileIndex(), profileEntry.Icon());
                 items.push_back(profileItem);
                 break;
             }
@@ -1013,7 +1014,7 @@ namespace winrt::TerminalApp::implementation
                 const auto actionId = actionEntry.ActionId();
                 if (_settings.ActionMap().GetActionByID(actionId))
                 {
-                    auto actionItem = _CreateNewTabFlyoutAction(actionId);
+                    auto actionItem = _CreateNewTabFlyoutAction(actionId, actionEntry.Icon());
                     items.push_back(actionItem);
                 }
 
@@ -1028,7 +1029,7 @@ namespace winrt::TerminalApp::implementation
     // Method Description:
     // - This method creates a flyout menu item for a given profile with the given index.
     //   It makes sure to set the correct icon, keybinding, and click-action.
-    WUX::Controls::MenuFlyoutItem TerminalPage::_CreateNewTabFlyoutProfile(const Profile profile, int profileIndex)
+    WUX::Controls::MenuFlyoutItem TerminalPage::_CreateNewTabFlyoutProfile(const Profile profile, int profileIndex, const winrt::hstring& iconPathOverride)
     {
         auto profileMenuItem = WUX::Controls::MenuFlyoutItem{};
 
@@ -1049,9 +1050,10 @@ namespace winrt::TerminalApp::implementation
         auto profileName = profile.Name();
         profileMenuItem.Text(profileName);
 
-        // If there's an icon set for this profile, set it as the icon for
-        // this flyout item
-        const auto& iconPath = profile.EvaluatedIcon();
+        // If a custom icon path has been specified, set it as the icon for
+        // this flyout item. Otherwise, if an icon is set for this profile, set that icon
+        // for this flyout item.
+        const auto& iconPath = iconPathOverride.empty() ? profile.EvaluatedIcon() : iconPathOverride;
         if (!iconPath.empty())
         {
             const auto icon = _CreateNewTabFlyoutIcon(iconPath);
@@ -1112,7 +1114,7 @@ namespace winrt::TerminalApp::implementation
     // Method Description:
     // - This method creates a flyout menu item for a given action
     //   It makes sure to set the correct icon, keybinding, and click-action.
-    WUX::Controls::MenuFlyoutItem TerminalPage::_CreateNewTabFlyoutAction(const winrt::hstring& actionId)
+    WUX::Controls::MenuFlyoutItem TerminalPage::_CreateNewTabFlyoutAction(const winrt::hstring& actionId, const winrt::hstring& iconPathOverride)
     {
         auto actionMenuItem = WUX::Controls::MenuFlyoutItem{};
         const auto action{ _settings.ActionMap().GetActionByID(actionId) };
@@ -1125,9 +1127,10 @@ namespace winrt::TerminalApp::implementation
 
         actionMenuItem.Text(action.Name());
 
-        // If there's an icon set for this action, set it as the icon for
-        // this flyout item
-        const auto& iconPath = action.IconPath();
+        // If a custom icon path has been specified, set it as the icon for
+        // this flyout item. Otherwise, if an icon is set for this action, set that icon
+        // for this flyout item.
+        const auto& iconPath = iconPathOverride.empty() ? action.IconPath() : iconPathOverride;
         if (!iconPath.empty())
         {
             const auto icon = _CreateNewTabFlyoutIcon(iconPath);
@@ -2240,7 +2243,7 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_MoveContent(std::vector<Settings::Model::ActionAndArgs>&& actions,
                                     const winrt::hstring& windowName,
                                     const uint32_t tabIndex,
-                                    const std::optional<til::point>& dragPoint)
+                                    const std::optional<winrt::Windows::Foundation::Point>& dragPoint)
     {
         const auto winRtActions{ winrt::single_threaded_vector<ActionAndArgs>(std::move(actions)) };
         const auto str{ ActionAndArgs::Serialize(winRtActions) };
@@ -2249,7 +2252,7 @@ namespace winrt::TerminalApp::implementation
                                                                       tabIndex);
         if (dragPoint.has_value())
         {
-            request->WindowPosition(dragPoint->to_winrt_point());
+            request->WindowPosition(*dragPoint);
         }
         RequestMoveContent.raise(*this, *request);
     }
@@ -2971,14 +2974,15 @@ namespace winrt::TerminalApp::implementation
     // Arguments:
     // - dismissSelection: if not enabled, copying text doesn't dismiss the selection
     // - singleLine: if enabled, copy contents as a single line of text
+    // - withControlSequences: if enabled, the copied plain text contains color/style ANSI escape codes from the selection
     // - formats: dictate which formats need to be copied
     // Return Value:
     // - true iff we we able to copy text (if a selection was active)
-    bool TerminalPage::_CopyText(const bool dismissSelection, const bool singleLine, const Windows::Foundation::IReference<CopyFormat>& formats)
+    bool TerminalPage::_CopyText(const bool dismissSelection, const bool singleLine, const bool withControlSequences, const Windows::Foundation::IReference<CopyFormat>& formats)
     {
         if (const auto& control{ _GetActiveControl() })
         {
-            return control.CopySelectionToClipboard(dismissSelection, singleLine, formats);
+            return control.CopySelectionToClipboard(dismissSelection, singleLine, withControlSequences, formats);
         }
         return false;
     }
@@ -3171,6 +3175,14 @@ namespace winrt::TerminalApp::implementation
                 }
             };
 
+            auto openFolder = [](const auto& filePath) {
+                HINSTANCE res = ShellExecute(nullptr, nullptr, filePath.c_str(), nullptr, nullptr, SW_SHOW);
+                if (static_cast<int>(reinterpret_cast<uintptr_t>(res)) <= 32)
+                {
+                    ShellExecute(nullptr, nullptr, L"open", filePath.c_str(), nullptr, SW_SHOW);
+                }
+            };
+
             switch (target)
             {
             case SettingsTarget::DefaultsFile:
@@ -3178,6 +3190,9 @@ namespace winrt::TerminalApp::implementation
                 break;
             case SettingsTarget::SettingsFile:
                 openFile(CascadiaSettings::SettingsPath());
+                break;
+            case SettingsTarget::Directory:
+                openFolder(CascadiaSettings::SettingsDirectory());
                 break;
             case SettingsTarget::AllFiles:
                 openFile(CascadiaSettings::DefaultSettingsPath());
@@ -3435,6 +3450,30 @@ namespace winrt::TerminalApp::implementation
             }
 
             content = *tasksContent;
+        }
+        else if (paneType == L"x-markdown")
+        {
+            if (Feature_MarkdownPane::IsEnabled())
+            {
+                const auto& markdownContent{ winrt::make_self<MarkdownPaneContent>(L"") };
+                markdownContent->UpdateSettings(_settings);
+                markdownContent->GetRoot().KeyDown({ this, &TerminalPage::_KeyDownHandler });
+
+                // This one doesn't use DispatchCommand, because we don't create
+                // Command's freely at runtime like we do with just plain old actions.
+                markdownContent->DispatchActionRequested([weak = get_weak()](const auto& sender, const auto& actionAndArgs) {
+                    if (const auto& page{ weak.get() })
+                    {
+                        page->_actionDispatch->DoAction(sender, actionAndArgs);
+                    }
+                });
+                if (const auto& termControl{ _GetActiveControl() })
+                {
+                    markdownContent->SetLastActiveControl(termControl);
+                }
+
+                content = *markdownContent;
+            }
         }
 
         assert(content);
@@ -5175,16 +5214,17 @@ namespace winrt::TerminalApp::implementation
             // position the dropped window.
 
             // First, the position of the pointer, from the CoreWindow
-            const til::point pointerPosition{ til::math::rounding, CoreWindow::GetForCurrentThread().PointerPosition() };
+            const auto pointerPosition = CoreWindow::GetForCurrentThread().PointerPosition();
             // Next, the position of the tab itself:
-            const til::point tabPosition{ til::math::rounding, eventTab.TransformToVisual(nullptr).TransformPoint({ 0, 0 }) };
+            const auto tabPosition = eventTab.TransformToVisual(nullptr).TransformPoint({ 0, 0 });
             // Now, we need to add the origin of our CoreWindow to the tab
             // position.
-            const auto& coreWindowBounds{ CoreWindow::GetForCurrentThread().Bounds() };
-            const til::point windowOrigin{ til::math::rounding, coreWindowBounds.X, coreWindowBounds.Y };
-            const auto realTabPosition = windowOrigin + tabPosition;
+            const auto windowOrigin = CoreWindow::GetForCurrentThread().Bounds();
             // Subtract the two to get the offset.
-            _stashed.dragOffset = til::point{ pointerPosition - realTabPosition };
+            _stashed.dragOffset = {
+                pointerPosition.X - windowOrigin.X - tabPosition.X,
+                pointerPosition.Y - windowOrigin.Y - tabPosition.Y,
+            };
 
             // Into the DataPackage, let's stash our own window ID.
             const auto id{ _WindowProperties.WindowId() };
@@ -5358,14 +5398,17 @@ namespace winrt::TerminalApp::implementation
 
             // -1 is the magic number for "new window"
             // 0 as the tab index, because we don't care. It's making a new window. It'll be the only tab.
-            const til::point adjusted = til::point{ til::math::rounding, pointerPoint } - _stashed.dragOffset;
+            const winrt::Windows::Foundation::Point adjusted = {
+                pointerPoint.X - _stashed.dragOffset.X,
+                pointerPoint.Y - _stashed.dragOffset.Y,
+            };
             _sendDraggedTabToWindow(winrt::hstring{ L"-1" }, 0, adjusted);
         }
     }
 
     void TerminalPage::_sendDraggedTabToWindow(const winrt::hstring& windowId,
                                                const uint32_t tabIndex,
-                                               std::optional<til::point> dragPoint)
+                                               std::optional<winrt::Windows::Foundation::Point> dragPoint)
     {
         auto startupActions = _stashed.draggedTab->BuildStartupActions(BuildStartupKind::Content);
         _DetachTabFromWindow(_stashed.draggedTab);

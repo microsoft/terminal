@@ -94,7 +94,7 @@ public:
     void UpdateAppearance(const winrt::Microsoft::Terminal::Core::ICoreAppearance& appearance);
     void SetFontInfo(const FontInfo& fontInfo);
     void SetCursorStyle(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::CursorStyle cursorStyle);
-    void EraseScrollback();
+    void SetVtChecksumReportSupport(const bool enabled);
     bool IsXtermBracketedPasteModeEnabled() const noexcept;
     std::wstring_view GetWorkingDirectory() noexcept;
 
@@ -140,8 +140,10 @@ public:
     void SetWindowTitle(const std::wstring_view title) override;
     CursorType GetUserDefaultCursorStyle() const noexcept override;
     bool ResizeWindow(const til::CoordType width, const til::CoordType height) override;
-    void SetConsoleOutputCP(const unsigned int codepage) noexcept override;
-    unsigned int GetConsoleOutputCP() const noexcept override;
+    void SetCodePage(const unsigned int codepage) noexcept override;
+    void ResetCodePage() noexcept override;
+    unsigned int GetOutputCodePage() const noexcept override;
+    unsigned int GetInputCodePage() const noexcept override;
     void CopyToClipboard(wil::zwstring_view content) override;
     void SetTaskbarProgress(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::TaskbarState state, const size_t progress) override;
     void SetWorkingDirectory(std::wstring_view uri) override;
@@ -234,7 +236,8 @@ public:
     void SetClearQuickFixCallback(std::function<void()> pfn) noexcept;
     void SetWindowSizeChangedCallback(std::function<void(int32_t, int32_t)> pfn) noexcept;
     void SetSearchHighlights(const std::vector<til::point_span>& highlights) noexcept;
-    void SetSearchHighlightFocused(const size_t focusedIdx, til::CoordType searchScrollOffset);
+    void SetSearchHighlightFocused(size_t focusedIdx) noexcept;
+    void ScrollToSearchHighlight(til::CoordType searchScrollOffset);
 
     void BlinkCursor() noexcept;
     void SetCursorOn(const bool isOn) noexcept;
@@ -317,7 +320,7 @@ public:
     til::point SelectionEndForRendering() const;
     const SelectionEndpoint SelectionEndpointTarget() const noexcept;
 
-    TextCopyData RetrieveSelectedTextFromBuffer(const bool singleLine, const bool html = false, const bool rtf = false) const;
+    TextCopyData RetrieveSelectedTextFromBuffer(const bool singleLine, const bool withControlSequences = false, const bool html = false, const bool rtf = false) const;
 #pragma endregion
 
 #ifndef NDEBUG

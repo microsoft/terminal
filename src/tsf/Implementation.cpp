@@ -27,6 +27,11 @@ static void TfPropertyvalClose(TF_PROPERTYVAL* val)
 }
 using unique_tf_propertyval = wil::unique_struct<TF_PROPERTYVAL, decltype(&TfPropertyvalClose), &TfPropertyvalClose>;
 
+void Implementation::SetDefaultScopeAlphanumericHalfWidth(bool enable) noexcept
+{
+    _wantsAnsiInputScope.store(enable, std::memory_order_relaxed);
+}
+
 void Implementation::Initialize()
 {
     _categoryMgr = wil::CoCreateInstance<ITfCategoryMgr>(CLSID_TF_CategoryMgr, CLSCTX_INPROC_SERVER);
@@ -40,6 +45,8 @@ void Implementation::Initialize()
 
     TfEditCookie ecTextStore;
     THROW_IF_FAILED(_documentMgr->CreateContext(_clientId, 0, static_cast<ITfContextOwnerCompositionSink*>(this), _context.addressof(), &ecTextStore));
+
+    _ownerCompositionServices = _context.try_query<ITfContextOwnerCompositionServices>();
 
     _contextSource = _context.query<ITfSource>();
     THROW_IF_FAILED(_contextSource->AdviseSink(IID_ITfContextOwner, static_cast<ITfContextOwner*>(this), &_cookieContextOwner));
@@ -77,8 +84,20 @@ void Implementation::Uninitialize() noexcept
     }
 }
 
-HWND Implementation::FindWindowOfActiveTSF() const noexcept
+HWND Implementation::FindWindowOfActiveTSF() noexcept
 {
+    // We don't know what ITfContextOwner we're going to get in
+    // the code below and it may very well be us (this instance).
+    // It's also possible that our IDataProvider's GetHwnd()
+    // implementation calls this FindWindowOfActiveTSF() function.
+    // This can result in infinite recursion because we're calling
+    // GetWnd() below, which may call GetHwnd(), which may call
+    // FindWindowOfActiveTSF(), and so on.
+    // By temporarily clearing the _provider we fix that flaw.
+    const auto restore = wil::scope_exit([this, provider = std::move(_provider)]() mutable {
+        _provider = std::move(provider);
+    });
+
     wil::com_ptr<IEnumTfDocumentMgrs> enumDocumentMgrs;
     if (FAILED_LOG(_threadMgrEx->EnumDocumentMgrs(enumDocumentMgrs.addressof())))
     {
@@ -155,12 +174,9 @@ void Implementation::Unfocus(IDataProvider* provider)
 
     _provider.reset();
 
-    if (_compositions > 0)
+    if (_compositions > 0 && _ownerCompositionServices)
     {
-        if (const auto svc = _context.try_query<ITfContextOwnerCompositionServices>())
-        {
-            svc->TerminateComposition(nullptr);
-        }
+        std::ignore = _ownerCompositionServices->TerminateComposition(nullptr);
     }
 }
 
@@ -229,9 +245,7 @@ STDMETHODIMP Implementation::GetACPFromPoint(const POINT* ptScreen, DWORD dwFlag
     return E_NOTIMPL;
 }
 
-// This returns rectangle of current command line edit area.
-// When a user types in East Asian language, candidate window is shown at this position.
-// Emoji and more panel (Win+.) is shown at the position, too.
+// The returned rectangle is used to position the TSF candidate window.
 STDMETHODIMP Implementation::GetTextExt(LONG acpStart, LONG acpEnd, RECT* prc, BOOL* pfClipped) noexcept
 try
 {
@@ -249,8 +263,7 @@ try
 }
 CATCH_RETURN()
 
-// This returns Rectangle of the text box of whole console.
-// When a user taps inside the rectangle while hardware keyboard is not available, touch keyboard is invoked.
+// The returned rectangle is used to activate the touch keyboard.
 STDMETHODIMP Implementation::GetScreenExt(RECT* prc) noexcept
 try
 {
@@ -306,7 +319,16 @@ STDMETHODIMP Implementation::GetWnd(HWND* phwnd) noexcept
 
 STDMETHODIMP Implementation::GetAttribute(REFGUID rguidAttribute, VARIANT* pvarValue) noexcept
 {
-    return E_NOTIMPL;
+    if (_wantsAnsiInputScope.load(std::memory_order_relaxed) && IsEqualGUID(rguidAttribute, GUID_PROP_INPUTSCOPE))
+    {
+        _ansiInputScope.AddRef();
+        pvarValue->vt = VT_UNKNOWN;
+        pvarValue->punkVal = &_ansiInputScope;
+        return S_OK;
+    }
+
+    pvarValue->vt = VT_EMPTY;
+    return S_OK;
 }
 
 #pragma endregion ITfContextOwner
@@ -403,13 +425,89 @@ STDMETHODIMP Implementation::EditSessionProxyBase::QueryInterface(REFIID riid, v
 
 ULONG STDMETHODCALLTYPE Implementation::EditSessionProxyBase::AddRef() noexcept
 {
-    return InterlockedIncrement(&referenceCount);
+    InterlockedIncrement(&referenceCount);
+    return self->AddRef();
 }
 
 ULONG STDMETHODCALLTYPE Implementation::EditSessionProxyBase::Release() noexcept
 {
-    FAIL_FAST_IF(referenceCount == 0);
-    return InterlockedDecrement(&referenceCount);
+    InterlockedDecrement(&referenceCount);
+    return self->Release();
+}
+
+Implementation::AnsiInputScope::AnsiInputScope(Implementation* self) noexcept :
+    self{ self }
+{
+}
+
+HRESULT Implementation::AnsiInputScope::QueryInterface(const IID& riid, void** ppvObj) noexcept
+{
+    if (!ppvObj)
+    {
+        return E_POINTER;
+    }
+
+    if (IsEqualGUID(riid, IID_ITfInputScope))
+    {
+        *ppvObj = static_cast<ITfInputScope*>(this);
+    }
+    else if (IsEqualGUID(riid, IID_IUnknown))
+    {
+        *ppvObj = static_cast<IUnknown*>(this);
+    }
+    else
+    {
+        *ppvObj = nullptr;
+        return E_NOINTERFACE;
+    }
+
+    AddRef();
+    return S_OK;
+}
+
+ULONG Implementation::AnsiInputScope::AddRef() noexcept
+{
+    return self->AddRef();
+}
+
+ULONG Implementation::AnsiInputScope::Release() noexcept
+{
+    return self->Release();
+}
+
+HRESULT Implementation::AnsiInputScope::GetInputScopes(InputScope** pprgInputScopes, UINT* pcCount) noexcept
+{
+    const auto scopes = static_cast<InputScope*>(CoTaskMemAlloc(1 * sizeof(InputScope)));
+    if (!scopes)
+    {
+        return E_OUTOFMEMORY;
+    }
+
+    scopes[0] = IS_ALPHANUMERIC_HALFWIDTH;
+
+    *pprgInputScopes = scopes;
+    *pcCount = 1;
+    return S_OK;
+}
+
+HRESULT Implementation::AnsiInputScope::GetPhrase(BSTR** ppbstrPhrases, UINT* pcCount) noexcept
+{
+    return E_NOTIMPL;
+}
+
+HRESULT Implementation::AnsiInputScope::GetRegularExpression(BSTR* pbstrRegExp) noexcept
+{
+    return E_NOTIMPL;
+}
+
+HRESULT Implementation::AnsiInputScope::GetSRGS(BSTR* pbstrSRGS) noexcept
+{
+    return E_NOTIMPL;
+}
+
+HRESULT Implementation::AnsiInputScope::GetXML(BSTR* pbstrXML) noexcept
+{
+    return E_NOTIMPL;
 }
 
 [[nodiscard]] HRESULT Implementation::_request(EditSessionProxyBase& session, DWORD flags) const

@@ -103,7 +103,7 @@ Model::CascadiaSettings CascadiaSettings::Copy() const
             for (const auto& profile : targetProfiles)
             {
                 allProfiles.emplace_back(*profile);
-                if (!profile->Hidden())
+                if (!profile->Hidden() && !profile->Orphaned())
                 {
                     activeProfiles.emplace_back(*profile);
                 }
@@ -531,7 +531,9 @@ void CascadiaSettings::_validateMediaResources()
         // Explicitly just use the Icon here, not the EvaluatedIcon. We don't
         // want to blow up if we fell back to the commandline and the
         // commandline _isn't an icon_.
-        if (const auto icon = profile.Icon(); icon.size() > 2)
+        // GH #17943: "none" is a special value interpreted as "remove the icon"
+        static constexpr std::wstring_view HideIconValue{ L"none" };
+        if (const auto icon = profile.Icon(); icon.size() > 2 && icon != HideIconValue)
         {
             const auto iconPath{ wil::ExpandEnvironmentStringsW<std::wstring>(icon.c_str()) };
             try

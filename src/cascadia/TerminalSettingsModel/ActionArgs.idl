@@ -63,7 +63,8 @@ namespace Microsoft.Terminal.Settings.Model
         SettingsFile = 0,
         DefaultsFile,
         AllFiles,
-        SettingsUI
+        SettingsUI,
+        Directory
     };
 
     enum MoveTabDirection
@@ -180,6 +181,7 @@ namespace Microsoft.Terminal.Settings.Model
         CopyTextArgs();
         Boolean DismissSelection { get; };
         Boolean SingleLine { get; };
+        Boolean WithControlSequences { get; };
         Windows.Foundation.IReference<Microsoft.Terminal.Control.CopyFormat> CopyFormatting { get; };
     };
 
