@@ -58,7 +58,7 @@ DEFINE_ENUM_FLAG_OPERATORS(winrt::Microsoft::Terminal::Control::MouseButtonState
 static void hideCursorUntilMoved()
 {
     static CoreCursor previousCursor{ nullptr };
-    static auto shouldVanish = []() {
+    static const auto shouldVanish = []() {
         BOOL shouldVanish = TRUE;
         SystemParametersInfoW(SPI_GETMOUSEVANISH, 0, &shouldVanish, 0);
         if (!shouldVanish)
