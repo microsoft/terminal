@@ -67,6 +67,7 @@ private:
     std::vector<std::shared_ptr<::AppHost>> _windows;
     std::vector<winrt::Microsoft::Terminal::Settings::Model::GlobalSummonArgs> _hotkeys;
     NOTIFYICONDATA _notificationIcon{};
+    UINT WM_TASKBARCREATED = 0;
     HMENU _currentWindowMenu = nullptr;
     bool _notificationIconShown = false;
     bool _forcePersistence = false;

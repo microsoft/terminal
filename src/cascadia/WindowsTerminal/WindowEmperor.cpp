@@ -642,20 +642,17 @@ static WindowEmperor* GetThisFromHandle(HWND const window) noexcept
 
 [[nodiscard]] LRESULT __stdcall WindowEmperor::_wndProc(HWND const window, UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept
 {
-    WINRT_ASSERT(window);
+    if (const auto that = GetThisFromHandle(window))
+    {
+        return that->_messageHandler(window, message, wparam, lparam);
+    }
 
     if (WM_NCCREATE == message)
     {
         const auto cs = reinterpret_cast<CREATESTRUCT*>(lparam);
-        WindowEmperor* that = static_cast<WindowEmperor*>(cs->lpCreateParams);
-        WINRT_ASSERT(that);
-        WINRT_ASSERT(!that->_window);
-        that->_window = wil::unique_hwnd(window);
-        SetWindowLongPtr(that->_window.get(), GWLP_USERDATA, reinterpret_cast<LONG_PTR>(that));
-    }
-    else if (WindowEmperor* that = GetThisFromHandle(window))
-    {
-        return that->_messageHandler(window, message, wparam, lparam);
+        const auto that = static_cast<WindowEmperor*>(cs->lpCreateParams);
+        that->_window.reset(window);
+        SetWindowLongPtrW(window, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(that));
     }
 
     return DefWindowProcW(window, message, wparam, lparam);
@@ -673,6 +670,8 @@ void WindowEmperor::_createMessageWindow(const wchar_t* className)
         .lpszClassName = className,
     };
     RegisterClassW(&wc);
+
+    WM_TASKBARCREATED = RegisterWindowMessageW(L"TaskbarCreated");
 
     WINRT_VERIFY(CreateWindowExW(
         /* dwExStyle    */ 0,
@@ -724,10 +723,6 @@ safe_void_coroutine WindowEmperor::_showMessageBox(winrt::hstring message, bool 
 
 LRESULT WindowEmperor::_messageHandler(HWND window, UINT const message, WPARAM const wParam, LPARAM const lParam) noexcept
 {
-    // use C++11 magic statics to make sure we only do this once.
-    // This won't change over the lifetime of the application
-    static const UINT WM_TASKBARCREATED = []() { return RegisterWindowMessageW(L"TaskbarCreated"); }();
-
     try
     {
         switch (message)
