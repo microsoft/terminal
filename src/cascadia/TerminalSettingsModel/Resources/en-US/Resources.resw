@@ -734,4 +734,7 @@
   <data name="QuickFixCommandKey" xml:space="preserve">
     <value>Open quick fix menu</value>
   </data>
+  <data name="OpenCWDCommandKey" xml:space="preserve">
+    <value>Open current working directory</value>
+  </data>
 </root>

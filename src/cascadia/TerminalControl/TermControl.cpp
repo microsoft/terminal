@@ -2675,6 +2675,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
+    void TermControl::OpenCWD()
+    {
+        _core.OpenCWD();
+    }
+
     void TermControl::Close()
     {
         if (!_IsClosing())
