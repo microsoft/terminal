@@ -73,6 +73,9 @@
     <ClInclude Include="Launch.h">
       <DependentUpon>Launch.xaml</DependentUpon>
     </ClInclude>
+    <ClInclude Include="NewTabMenu.h">
+      <DependentUpon>NewTabMenu.xaml</DependentUpon>
+    </ClInclude>
     <ClInclude Include="pch.h" />
     <ClInclude Include="MainPage.h">
       <DependentUpon>MainPage.xaml</DependentUpon>
@@ -107,6 +110,10 @@
     </ClInclude>
     <ClInclude Include="LaunchViewModel.h">
       <DependentUpon>LaunchViewModel.idl</DependentUpon>
+      <SubType>Code</SubType>
+    </ClInclude>
+    <ClInclude Include="NewTabMenuViewModel.h">
+      <DependentUpon>NewTabMenuViewModel.idl</DependentUpon>
       <SubType>Code</SubType>
     </ClInclude>
     <ClInclude Include="Profiles_Base.h">
@@ -174,6 +181,9 @@
     <Page Include="Launch.xaml">
       <SubType>Designer</SubType>
     </Page>
+    <Page Include="NewTabMenu.xaml">
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="MainPage.xaml">
       <SubType>Designer</SubType>
     </Page>
@@ -233,6 +243,9 @@
     <ClCompile Include="Launch.cpp">
       <DependentUpon>Launch.xaml</DependentUpon>
     </ClCompile>
+    <ClCompile Include="NewTabMenu.cpp">
+      <DependentUpon>NewTabMenu.xaml</DependentUpon>
+    </ClCompile>
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
@@ -270,6 +283,10 @@
     </ClCompile>
     <ClCompile Include="LaunchViewModel.cpp">
       <DependentUpon>LaunchViewModel.idl</DependentUpon>
+      <SubType>Code</SubType>
+    </ClCompile>
+    <ClCompile Include="NewTabMenuViewModel.cpp">
+      <DependentUpon>NewTabMenuViewModel.idl</DependentUpon>
       <SubType>Code</SubType>
     </ClCompile>
     <ClCompile Include="Profiles_Base.cpp">
@@ -338,6 +355,10 @@
       <DependentUpon>Launch.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>
+    <Midl Include="NewTabMenu.idl">
+      <DependentUpon>NewTabMenu.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Midl>
     <Midl Include="Interaction.idl">
       <DependentUpon>Interaction.xaml</DependentUpon>
       <SubType>Code</SubType>
@@ -361,6 +382,7 @@
     <Midl Include="InteractionViewModel.idl" />
     <Midl Include="GlobalAppearanceViewModel.idl" />
     <Midl Include="LaunchViewModel.idl" />
+    <Midl Include="NewTabMenuViewModel.idl" />
     <Midl Include="Profiles_Base.idl">
       <DependentUpon>Profiles_Base.xaml</DependentUpon>
       <SubType>Code</SubType>

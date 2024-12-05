@@ -3157,6 +3157,14 @@ namespace winrt::TerminalApp::implementation
                 }
             };
 
+            auto openFolder = [](const auto& filePath) {
+                HINSTANCE res = ShellExecute(nullptr, nullptr, filePath.c_str(), nullptr, nullptr, SW_SHOW);
+                if (static_cast<int>(reinterpret_cast<uintptr_t>(res)) <= 32)
+                {
+                    ShellExecute(nullptr, nullptr, L"open", filePath.c_str(), nullptr, SW_SHOW);
+                }
+            };
+
             switch (target)
             {
             case SettingsTarget::DefaultsFile:
@@ -3164,6 +3172,9 @@ namespace winrt::TerminalApp::implementation
                 break;
             case SettingsTarget::SettingsFile:
                 openFile(CascadiaSettings::SettingsPath());
+                break;
+            case SettingsTarget::Directory:
+                openFolder(CascadiaSettings::SettingsDirectory());
                 break;
             case SettingsTarget::AllFiles:
                 openFile(CascadiaSettings::DefaultSettingsPath());

@@ -404,7 +404,7 @@ void AppHost::_AppTitleChanged(const winrt::Windows::Foundation::IInspectable& /
     }
 }
 
-// The terminal page is responsible for persisting it's own state, but it does
+// The terminal page is responsible for persisting its own state, but it does
 // need to ask us where exactly on the screen the window is.
 void AppHost::_HandleRequestLaunchPosition(const winrt::Windows::Foundation::IInspectable& /*sender*/,
                                            winrt::TerminalApp::LaunchPositionRequest args)

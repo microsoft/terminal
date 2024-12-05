@@ -480,6 +480,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             return RS_(L"OpenBothSettingsFilesCommandKey");
         case SettingsTarget::SettingsFile:
             return RS_(L"OpenSettingsCommandKey");
+        case SettingsTarget::Directory:
+            return RS_(L"SettingsFileOpenInExplorerCommandKey");
         case SettingsTarget::SettingsUI:
         default:
             return RS_(L"OpenSettingsUICommandKey");

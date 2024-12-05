@@ -107,7 +107,7 @@ try
     *pReplyStatus = _pInputBuffer->Read(_outEvents,
                                         amountToRead,
                                         false,
-                                        false,
+                                        true,
                                         fIsUnicode,
                                         false);
 
