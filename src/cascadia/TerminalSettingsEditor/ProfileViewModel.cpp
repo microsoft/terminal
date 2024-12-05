@@ -158,14 +158,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     winrt::hstring ProfileViewModel::_GetNewPadding(PaddingDirection paddingDirection, double newPaddingValue) const
     {
         std::array<double, 4> values{};
-        std::wstring_view remaining{ Padding() };
+        std::wstring_view padding{ Padding() };
         uint32_t paddingIndex = static_cast<uint32_t>(paddingDirection);
 
         try
         {
-            for (uint32_t index = 0; !remaining.empty() && index < values.size(); ++index)
+            uint32_t index = 0;
+            for (const auto& token : til::split_iterator{ padding, L',' })
             {
-                const std::wstring token{ til::prefix_split(remaining, L',') };
                 auto curVal = std::stod(token);
 
                 if (paddingIndex == index)
@@ -173,7 +173,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                     curVal = newPaddingValue;
                 }
 
-                values[index] = curVal;
+                values[index++] = curVal;
+
+                if (index >= values.size())
+                {
+                    break;
+                }
             }
         }
         catch (...)
@@ -189,7 +194,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     double ProfileViewModel::_GetPaddingValue(PaddingDirection paddingDirection) const
     {
-        std::wstring_view remaining{ Padding() };
+        std::wstring_view padding{ Padding() };
         uint32_t paddingIndex = static_cast<uint32_t>(paddingDirection);
         std::array<double, 4> paddingValues{};
         double paddingValue = 0.;
@@ -197,12 +202,16 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         try
         {
-            for (index = 0; !remaining.empty() && index < paddingValues.size(); ++index)
+            for (const auto& token : til::split_iterator{ padding, L',' })
             {
-                const std::wstring token{ til::prefix_split(remaining, L',') };
                 auto curVal = std::stod(token);
 
-                paddingValues[index] = curVal;
+                paddingValues[index++] = curVal;
+
+                if (index >= paddingValues.size())
+                {
+                    break;
+                }
             }
         }
         catch (...)
