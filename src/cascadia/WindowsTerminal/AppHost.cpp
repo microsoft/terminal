@@ -27,17 +27,27 @@ using namespace std::chrono_literals;
 static constexpr short KeyPressed{ gsl::narrow_cast<short>(0x8000) };
 static constexpr auto FrameUpdateInterval = std::chrono::milliseconds(16);
 
-static winrt::com_ptr<IVirtualDesktopManager> s_desktopManager;
+winrt::com_ptr<IVirtualDesktopManager> getDesktopManager()
+{
+    static til::shared_mutex<winrt::com_ptr<IVirtualDesktopManager>> s_desktopManager;
+
+    if (const auto manager = *s_desktopManager.lock_shared())
+    {
+        return manager;
+    }
+
+    const auto guard = s_desktopManager.lock();
+    if (!*guard)
+    {
+        *guard = winrt::try_create_instance<IVirtualDesktopManager>(__uuidof(VirtualDesktopManager));
+    }
+    return *guard;
+}
 
 AppHost::AppHost(WindowEmperor* manager, const winrt::TerminalApp::AppLogic& logic, winrt::TerminalApp::WindowRequestedArgs args) noexcept :
     _appLogic{ logic },
     _windowManager{ manager }
 {
-    if (!s_desktopManager)
-    {
-        s_desktopManager = winrt::try_create_instance<IVirtualDesktopManager>(__uuidof(VirtualDesktopManager));
-    }
-
     _HandleCommandlineArgs(args);
 
     // _HandleCommandlineArgs will create a _windowLogic
@@ -327,8 +337,9 @@ winrt::Windows::Foundation::IAsyncOperation<winrt::guid> AppHost::GetVirtualDesk
     const auto dispatcher = _windowLogic.GetRoot().Dispatcher();
     const auto hwnd = _window->GetHandle();
     const auto weakThis = weak_from_this();
+    const auto desktopManager = getDesktopManager();
 
-    if (!hwnd || !s_desktopManager)
+    if (!hwnd || !desktopManager)
     {
         co_return null_guid;
     }
@@ -339,7 +350,7 @@ winrt::Windows::Foundation::IAsyncOperation<winrt::guid> AppHost::GetVirtualDesk
     co_await winrt::resume_background();
 
     GUID id;
-    if (FAILED_LOG(s_desktopManager->GetWindowDesktopId(hwnd, &id)))
+    if (FAILED_LOG(desktopManager->GetWindowDesktopId(hwnd, &id)))
     {
         co_return null_guid;
     }
@@ -811,37 +822,47 @@ void AppHost::_WindowActivated(bool activated)
     }
 }
 
-void AppHost::HandleSummon(const winrt::TerminalApp::SummonWindowBehavior args) const
+safe_void_coroutine AppHost::HandleSummon(const winrt::TerminalApp::SummonWindowBehavior args) const
 {
     _window->SummonWindow(args);
 
-    if (args != nullptr && args.MoveToCurrentDesktop())
+    if (!args || !args.MoveToCurrentDesktop())
     {
-        if (s_desktopManager)
-        {
-            // First thing - make sure that we're not on the current desktop. If
-            // we are, then don't call MoveWindowToDesktop. This is to mitigate
-            // MSFT:33035972
-            BOOL onCurrentDesktop{ false };
-            if (SUCCEEDED(s_desktopManager->IsWindowOnCurrentVirtualDesktop(_window->GetHandle(), &onCurrentDesktop)) && onCurrentDesktop)
-            {
-                // If we succeeded, and the window was on the current desktop, then do nothing.
-            }
-            else
-            {
-                // Here, we either failed to check if the window is on the
-                // current desktop, or it wasn't on that desktop. In both those
-                // cases, just move the window.
+        co_return;
+    }
 
-                GUID currentlyActiveDesktop{ 0 };
-                if (VirtualDesktopUtils::GetCurrentVirtualDesktopId(&currentlyActiveDesktop))
-                {
-                    LOG_IF_FAILED(s_desktopManager->MoveWindowToDesktop(_window->GetHandle(), currentlyActiveDesktop));
-                }
-                // If GetCurrentVirtualDesktopId failed, then just leave the window
-                // where it is. Nothing else to be done :/
-            }
+    const auto desktopManager = getDesktopManager();
+    if (!desktopManager)
+    {
+        co_return;
+    }
+
+    // Just like AppHost::GetVirtualDesktopId:
+    // IVirtualDesktopManager is cross-process COM into explorer.exe,
+    // and we can't use that on the UI thread.
+    co_await winrt::resume_background();
+
+    // First thing - make sure that we're not on the current desktop. If
+    // we are, then don't call MoveWindowToDesktop. This is to mitigate
+    // MSFT:33035972
+    BOOL onCurrentDesktop{ false };
+    if (SUCCEEDED(desktopManager->IsWindowOnCurrentVirtualDesktop(_window->GetHandle(), &onCurrentDesktop)) && onCurrentDesktop)
+    {
+        // If we succeeded, and the window was on the current desktop, then do nothing.
+    }
+    else
+    {
+        // Here, we either failed to check if the window is on the
+        // current desktop, or it wasn't on that desktop. In both those
+        // cases, just move the window.
+
+        GUID currentlyActiveDesktop{ 0 };
+        if (VirtualDesktopUtils::GetCurrentVirtualDesktopId(&currentlyActiveDesktop))
+        {
+            LOG_IF_FAILED(desktopManager->MoveWindowToDesktop(_window->GetHandle(), currentlyActiveDesktop));
         }
+        // If GetCurrentVirtualDesktopId failed, then just leave the window
+        // where it is. Nothing else to be done :/
     }
 }
 
