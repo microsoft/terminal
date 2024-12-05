@@ -141,18 +141,13 @@ void Terminal::UpdateAppearance(const ICoreAppearance& appearance)
     renderSettings.SetRenderMode(RenderSettings::Mode::IntenseIsBold, appearance.IntenseIsBold());
     renderSettings.SetRenderMode(RenderSettings::Mode::IntenseIsBright, appearance.IntenseIsBright());
 
-    // If we're in high contrast mode and AIC is set to Automatic Indexed/Always,
-    // fallback to Indexed/Always respectively.
-    const auto deducedAIC = [this, &appearance]() {
-        const auto initialAIC = appearance.AdjustIndistinguishableColors();
-        switch (initialAIC)
-        {
-        case AdjustTextMode::Automatic:
-            return _highContrastMode ? AdjustTextMode::Indexed : AdjustTextMode::Never;
-        default:
-            return initialAIC;
-        }
-    }();
+    // If AIC is set to Automatic,
+    // update the value based on if high contrast mode is enabled.
+    AdjustTextMode deducedAIC = appearance.AdjustIndistinguishableColors();
+    if (deducedAIC == AdjustTextMode::Automatic)
+    {
+        deducedAIC = _highContrastMode ? AdjustTextMode::Indexed : AdjustTextMode::Never;
+    }
 
     switch (deducedAIC)
     {
