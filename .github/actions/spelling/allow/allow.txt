@@ -10,6 +10,7 @@ clickable
 cmark
 CMMI
 colorbrewer
+commandlines
 consvc
 copyable
 dalet
@@ -30,6 +31,7 @@ ghe
 gje
 godbolt
 gpt
+hstrings
 hyperlinking
 hyperlinks
 ILM
@@ -52,8 +54,8 @@ mkmk
 mnt
 mru
 nje
-NTMTo
 notwrapped
+NTMTo
 ogonek
 openai
 overlined
@@ -95,6 +97,7 @@ und
 vsdevcmd
 westus
 workarounds
+WSLs
 wtconfig
 XBox
 YBox

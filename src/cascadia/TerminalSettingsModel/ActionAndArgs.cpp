@@ -103,6 +103,7 @@ static constexpr std::string_view OpenScratchpadKey{ "experimental.openScratchpa
 static constexpr std::string_view OpenAboutKey{ "openAbout" };
 static constexpr std::string_view HandleUriKey{ "handleUri" };
 static constexpr std::string_view QuickFixKey{ "quickFix" };
+static constexpr std::string_view OpenCWDKey{ "openCWD" };
 
 static constexpr std::string_view ActionKey{ "action" };
 
@@ -441,6 +442,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 { ShortcutAction::OpenScratchpad, RS_(L"OpenScratchpadKey") },
                 { ShortcutAction::OpenAbout, RS_(L"OpenAboutCommandKey") },
                 { ShortcutAction::QuickFix, RS_(L"QuickFixCommandKey") },
+                { ShortcutAction::OpenCWD, RS_(L"OpenCWDCommandKey") },
             };
         }();
 

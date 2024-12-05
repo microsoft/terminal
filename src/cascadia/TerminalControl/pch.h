@@ -25,7 +25,7 @@
 
 #include <wil/cppwinrt.h>
 
-#include <unknwn.h>
+#include <Unknwn.h>
 #include <winrt/Windows.Foundation.h>
 #include <winrt/Windows.Foundation.Collections.h>
 #include <winrt/Windows.system.h>

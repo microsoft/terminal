@@ -698,7 +698,7 @@ This would define three commands, each with a number of nested commands undernea
 * The second command:
   - It uses the string literal `"Connect to ssh..."` as it's name
   - It contains two nested commands:
-    - Each nested command has it's own literal name
+    - Each nested command has its own literal name
     - Activating these commands would cause us to open a new tab with the
       provided `commandline` instead of the default profile's `commandline`
 * The third command:
