@@ -33,6 +33,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         static void UpdateFontList() noexcept;
         static Windows::Foundation::Collections::IObservableVector<Editor::Font> CompleteFontList() noexcept { return _FontList; };
         static Windows::Foundation::Collections::IObservableVector<Editor::Font> MonospaceFontList() noexcept { return _MonospaceFontList; };
+        static Windows::Foundation::Collections::IVector<IInspectable> BuiltInIcons() noexcept { return _BuiltInIcons; };
 
         ProfileViewModel(const Model::Profile& profile, const Model::CascadiaSettings& settings);
         Model::TerminalSettings TermSettings() const;
@@ -60,15 +61,22 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             return _profile.EvaluatedIcon();
         }
+        Windows::Foundation::IInspectable CurrentIconType() const noexcept
+        {
+            return _currentIconType;
+        }
+        Windows::UI::Xaml::Controls::IconElement IconPreview() const;
+        winrt::hstring LocalizedIcon() const;
+        void CurrentIconType(const Windows::Foundation::IInspectable& value);
+        bool UsingNoIcon() const;
+        bool UsingBuiltInIcon() const;
+        bool UsingEmojiIcon() const;
+        bool UsingImageIcon() const;
 
         // starting directory
         bool UseParentProcessDirectory();
         void UseParentProcessDirectory(const bool useParent);
         bool UseCustomStartingDirectory();
-
-        // icon
-        bool HideIcon();
-        void HideIcon(const bool hide);
 
         // general profile knowledge
         winrt::guid OriginalProfileGuid() const noexcept;
@@ -90,6 +98,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         til::typed_event<Editor::ProfileViewModel, Editor::DeleteProfileEventArgs> DeleteProfileRequested;
 
         VIEW_MODEL_OBSERVABLE_PROPERTY(ProfileSubPage, CurrentPage);
+        VIEW_MODEL_OBSERVABLE_PROPERTY(Windows::Foundation::IInspectable, CurrentBuiltInIcon);
+        VIEW_MODEL_OBSERVABLE_PROPERTY(hstring, CurrentEmojiIcon);
 
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_profile, Guid);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_profile, ConnectionType);
@@ -106,10 +116,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         OBSERVABLE_PROJECTED_SETTING(_profile, Commandline);
         OBSERVABLE_PROJECTED_SETTING(_profile, StartingDirectory);
         OBSERVABLE_PROJECTED_SETTING(_profile, AntialiasingMode);
-        OBSERVABLE_PROJECTED_SETTING(_profile.DefaultAppearance(), Foreground);
-        OBSERVABLE_PROJECTED_SETTING(_profile.DefaultAppearance(), Background);
-        OBSERVABLE_PROJECTED_SETTING(_profile.DefaultAppearance(), SelectionBackground);
-        OBSERVABLE_PROJECTED_SETTING(_profile.DefaultAppearance(), CursorColor);
         OBSERVABLE_PROJECTED_SETTING(_profile.DefaultAppearance(), Opacity);
         OBSERVABLE_PROJECTED_SETTING(_profile.DefaultAppearance(), UseAcrylic);
         OBSERVABLE_PROJECTED_SETTING(_profile, HistorySize);
@@ -130,6 +136,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         WINRT_PROPERTY(bool, IsBaseLayer, false);
         WINRT_PROPERTY(bool, FocusDeleteButton, false);
+        WINRT_PROPERTY(Windows::Foundation::Collections::IVector<Windows::Foundation::IInspectable>, IconTypes);
         GETSET_BINDABLE_ENUM_SETTING(AntiAliasingMode, Microsoft::Terminal::Control::TextAntialiasingMode, AntialiasingMode);
         GETSET_BINDABLE_ENUM_SETTING(CloseOnExitMode, Microsoft::Terminal::Settings::Model::CloseOnExitMode, CloseOnExit);
         GETSET_BINDABLE_ENUM_SETTING(ScrollState, Microsoft::Terminal::Control::ScrollbarState, ScrollState);
@@ -140,14 +147,20 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         winrt::guid _originalProfileGuid{};
         winrt::hstring _lastBgImagePath;
         winrt::hstring _lastStartingDirectoryPath;
-        winrt::hstring _lastIcon;
+        winrt::hstring _lastIconPath;
+        Windows::Foundation::IInspectable _currentIconType{};
         Editor::AppearanceViewModel _defaultAppearanceViewModel;
 
         static Windows::Foundation::Collections::IObservableVector<Editor::Font> _MonospaceFontList;
         static Windows::Foundation::Collections::IObservableVector<Editor::Font> _FontList;
+        static Windows::Foundation::Collections::IVector<Windows::Foundation::IInspectable> _BuiltInIcons;
 
         Model::CascadiaSettings _appSettings;
         Editor::AppearanceViewModel _unfocusedAppearanceViewModel;
+
+        void _UpdateBuiltInIcons();
+        void _DeduceCurrentIconType();
+        void _DeduceCurrentBuiltInIcon();
     };
 
     struct DeleteProfileEventArgs :
