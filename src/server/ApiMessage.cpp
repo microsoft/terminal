@@ -108,7 +108,7 @@ try
 
         // If we were previously called with a huge buffer we have an equally large _inputBuffer.
         // We shouldn't just keep this huge buffer around, if no one needs it anymore.
-        if (_inputBuffer.capacity() > 16 * 1024 && (_inputBuffer.capacity() >> 1) > cbReadSize)
+        if (_inputBuffer.capacity() > 128 * 1024 && (_inputBuffer.capacity() >> 1) > cbReadSize)
         {
             _inputBuffer.shrink_to_fit();
         }
@@ -151,7 +151,7 @@ try
 
         // If we were previously called with a huge buffer we have an equally large _outputBuffer.
         // We shouldn't just keep this huge buffer around, if no one needs it anymore.
-        if (_outputBuffer.capacity() > 16 * 1024 && (_outputBuffer.capacity() >> 1) > cbWriteSize)
+        if (_outputBuffer.capacity() > 128 * 1024 && (_outputBuffer.capacity() >> 1) > cbWriteSize)
         {
             _outputBuffer.shrink_to_fit();
         }
