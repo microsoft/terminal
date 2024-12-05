@@ -166,7 +166,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             uint32_t index = 0;
             for (const auto& token : til::split_iterator{ padding, L',' })
             {
-                auto curVal = std::stod(token);
+                auto curVal = std::stod(std::wstring{ token });
 
                 if (paddingIndex == index)
                 {
@@ -204,7 +204,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             for (const auto& token : til::split_iterator{ padding, L',' })
             {
-                auto curVal = std::stod(token);
+                auto curVal = std::stod(std::wstring{ token });
 
                 paddingValues[index++] = curVal;
 
