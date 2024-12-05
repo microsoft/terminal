@@ -1058,12 +1058,12 @@ void AppHost::_WindowSizeChanged(const winrt::Windows::Foundation::IInspectable&
 void AppHost::_SummonWindowRequested(const winrt::Windows::Foundation::IInspectable&,
                                      const winrt::Windows::Foundation::IInspectable&)
 {
-    const winrt::TerminalApp::SummonWindowBehavior summonArgs{};
+    winrt::TerminalApp::SummonWindowBehavior summonArgs;
     summonArgs.MoveToCurrentDesktop(false);
     summonArgs.DropdownDuration(0);
     summonArgs.ToMonitor(winrt::TerminalApp::MonitorBehavior::InPlace);
     summonArgs.ToggleVisibility(false); // Do not toggle, just make visible.
-    HandleSummon(summonArgs);
+    HandleSummon(std::move(summonArgs));
 }
 
 void AppHost::_OpenSystemMenu(const winrt::Windows::Foundation::IInspectable&,
