@@ -59,7 +59,7 @@ static Microsoft::Console::TSF::Handle& GetTSFHandle()
 namespace winrt::Microsoft::Terminal::Control::implementation
 {
     Windows::UI::ViewManagement::AccessibilitySettings TermControl::_accessibilitySettings{};
-    
+
     static void _translatePathInPlace(std::wstring& fullPath, PathTranslationStyle translationStyle)
     {
         static constexpr wil::zwstring_view s_pathPrefixes[] = {
