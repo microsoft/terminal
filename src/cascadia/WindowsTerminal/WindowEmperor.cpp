@@ -673,6 +673,10 @@ void WindowEmperor::_createMessageWindow(const wchar_t* className)
 
     WM_TASKBARCREATED = RegisterWindowMessageW(L"TaskbarCreated");
 
+    // NOTE: This cannot be a HWND_MESSAGE window as otherwise we don't
+    // receive any HWND_BROADCAST messages, like WM_QUERYENDSESSION.
+    // NOTE: Before CreateWindowExW() returns it invokes our WM_NCCREATE
+    // message handler, which then stores the HWND in this->_window.
     WINRT_VERIFY(CreateWindowExW(
         /* dwExStyle    */ 0,
         /* lpClassName  */ className,
@@ -682,7 +686,7 @@ void WindowEmperor::_createMessageWindow(const wchar_t* className)
         /* Y            */ 0,
         /* nWidth       */ 0,
         /* nHeight      */ 0,
-        /* hWndParent   */ HWND_MESSAGE,
+        /* hWndParent   */ nullptr,
         /* hMenu        */ nullptr,
         /* hInstance    */ instance,
         /* lpParam      */ this));
@@ -938,6 +942,7 @@ LRESULT WindowEmperor::_messageHandler(HWND window, UINT const message, WPARAM c
             // message at runtime.
             if (message == WM_TASKBARCREATED)
             {
+                _notificationIconShown = false;
                 _checkWindowsForNotificationIcon();
                 return 0;
             }
