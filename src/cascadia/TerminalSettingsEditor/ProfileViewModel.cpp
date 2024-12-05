@@ -29,12 +29,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     static constexpr std::wstring_view HideIconValue{ L"none" };
 
-    ProfileViewModel::ProfileViewModel(const Model::Profile& profile, const Model::CascadiaSettings& appSettings) :
+    ProfileViewModel::ProfileViewModel(const Model::Profile& profile, const Model::CascadiaSettings& appSettings, const Windows::UI::Core::CoreDispatcher& dispatcher) :
         _profile{ profile },
         _defaultAppearanceViewModel{ winrt::make<implementation::AppearanceViewModel>(profile.DefaultAppearance().try_as<AppearanceConfig>()) },
         _originalProfileGuid{ profile.Guid() },
         _appSettings{ appSettings },
-        _unfocusedAppearanceViewModel{ nullptr }
+        _unfocusedAppearanceViewModel{ nullptr },
+        _dispatcher{ dispatcher }
     {
         INITIALIZE_BINDABLE_ENUM_SETTING(AntiAliasingMode, TextAntialiasingMode, winrt::Microsoft::Terminal::Control::TextAntialiasingMode, L"Profile_AntialiasingMode", L"Content");
         INITIALIZE_BINDABLE_ENUM_SETTING_REVERSE_ORDER(CloseOnExitMode, CloseOnExitMode, winrt::Microsoft::Terminal::Settings::Model::CloseOnExitMode, L"Profile_CloseOnExit", L"Content");
@@ -411,8 +412,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             for (const auto&& bellSound : soundList)
             {
-                auto vm = winrt::make<BellSoundViewModel>(bellSound);
-                _CurrentBellSounds.Append(vm);
+                _CurrentBellSounds.Append(winrt::make<BellSoundViewModel>(bellSound, _dispatcher));
             }
         }
         _MarkDuplicateBellSoundDirectories();
@@ -443,6 +443,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
+    // Method Description:
+    // - Check if any bell sounds share the same name.
+    //   If they do, mark them so that they show the directory path in the UI
     void ProfileViewModel::_MarkDuplicateBellSoundDirectories()
     {
         for (uint32_t i = 0; i < _CurrentBellSounds.Size(); i++)
@@ -460,12 +463,28 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
+    BellSoundViewModel::BellSoundViewModel(hstring path, const Windows::UI::Core::CoreDispatcher& dispatcher) :
+        _Path{ path },
+        _dispatcher{ dispatcher }
+    {
+        _CheckIfFileExists();
+    }
+
+    safe_void_coroutine BellSoundViewModel::_CheckIfFileExists()
+    {
+        co_await winrt::resume_background();
+        const auto exists = std::filesystem::exists(std::wstring_view{ _Path });
+
+        co_await winrt::resume_foreground(_dispatcher);
+        FileExists(exists);
+    }
+
     hstring BellSoundViewModel::DisplayPath() const
     {
         if (FileExists())
         {
             // filename
-            std::filesystem::path filePath{ std::wstring_view{ _Path } };
+            const std::filesystem::path filePath{ std::wstring_view{ _Path } };
             return hstring{ filePath.filename().wstring() };
         }
         return _Path;
@@ -476,15 +495,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         if (FileExists())
         {
             // Directory
-            std::filesystem::path filePath{ std::wstring_view{ _Path } };
+            const std::filesystem::path filePath{ std::wstring_view{ _Path } };
             return hstring{ filePath.parent_path().wstring() };
         }
         return RS_(L"Profile_BellSoundNotFound");
-    }
-
-    bool BellSoundViewModel::FileExists() const
-    {
-        return std::filesystem::exists(std::wstring_view{ _Path });
     }
 
     hstring ProfileViewModel::BellSoundPreview()
@@ -508,8 +522,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // copy it over to the current layer and apply modifications
         _PrepareModelForBellSoundModification();
 
-        auto vm = winrt::make<BellSoundViewModel>(path);
-        _CurrentBellSounds.Append(vm);
+        _CurrentBellSounds.Append(winrt::make<BellSoundViewModel>(path, _dispatcher));
         _profile.BellSound().Append(path);
         _NotifyChanges(L"CurrentBellSounds");
     }
@@ -531,7 +544,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void ProfileViewModel::DeleteProfile()
     {
-        auto deleteProfileArgs{ winrt::make_self<DeleteProfileEventArgs>(Guid()) };
+        const auto deleteProfileArgs{ winrt::make_self<DeleteProfileEventArgs>(Guid()) };
         DeleteProfileRequested.raise(*this, *deleteProfileArgs);
     }
 

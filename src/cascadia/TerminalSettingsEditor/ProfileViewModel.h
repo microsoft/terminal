@@ -30,15 +30,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     struct BellSoundViewModel : BellSoundViewModelT<BellSoundViewModel>, ViewModelHelper<BellSoundViewModel>
     {
     public:
-        BellSoundViewModel() = default;
-        BellSoundViewModel(hstring path) :
-            _Path{ path } {}
+        BellSoundViewModel(hstring path, const Windows::UI::Core::CoreDispatcher& dispatcher);
 
         hstring DisplayPath() const;
         hstring SubText() const;
-        bool FileExists() const;
+        VIEW_MODEL_OBSERVABLE_PROPERTY(bool, FileExists, true);
         VIEW_MODEL_OBSERVABLE_PROPERTY(hstring, Path);
         VIEW_MODEL_OBSERVABLE_PROPERTY(bool, ShowDirectory);
+
+    private:
+        safe_void_coroutine _CheckIfFileExists();
+        Windows::UI::Core::CoreDispatcher _dispatcher;
     };
 
     struct ProfileViewModel : ProfileViewModelT<ProfileViewModel>, ViewModelHelper<ProfileViewModel>
@@ -49,7 +51,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         static Windows::Foundation::Collections::IObservableVector<Editor::Font> CompleteFontList() noexcept { return _FontList; };
         static Windows::Foundation::Collections::IObservableVector<Editor::Font> MonospaceFontList() noexcept { return _MonospaceFontList; };
 
-        ProfileViewModel(const Model::Profile& profile, const Model::CascadiaSettings& settings);
+        ProfileViewModel(const Model::Profile& profile, const Model::CascadiaSettings& settings, const Windows::UI::Core::CoreDispatcher& dispatcher);
         Model::TerminalSettings TermSettings() const;
         void DeleteProfile();
 
@@ -163,6 +165,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         winrt::hstring _lastStartingDirectoryPath;
         winrt::hstring _lastIcon;
         Editor::AppearanceViewModel _defaultAppearanceViewModel;
+        Windows::UI::Core::CoreDispatcher _dispatcher;
 
         void _InitializeCurrentBellSounds();
         void _PrepareModelForBellSoundModification();

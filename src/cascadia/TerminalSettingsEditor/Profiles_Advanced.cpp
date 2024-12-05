@@ -76,7 +76,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void Profiles_Advanced::BellSoundDelete_Click(const IInspectable& sender, const RoutedEventArgs& /*e*/)
     {
-        auto bellSoundEntry = sender.as<Button>().Tag().as<Editor::BellSoundViewModel>();
+        const auto bellSoundEntry = sender.as<Button>().Tag().as<Editor::BellSoundViewModel>();
         _Profile.RequestDeleteBellSound(bellSoundEntry);
     }
 
