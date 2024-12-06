@@ -150,7 +150,7 @@ void TextBuffer::_decommit(til::CoordType keep) noexcept
     keep += _commitReadAheadRowCount;
     keep = std::min(keep, _height);
 
-    // Amount of bytes that have been MEM_COMMIT'ted so far.
+    // Amount of bytes that have been allocated with MEM_COMMIT so far.
     const auto commitBytes = gsl::narrow_cast<size_t>(_commitWatermark - _buffer.get());
     // Offset in bytes to the first row that we were asked to destroy.
     // The offset may be invalid and past the _commitWatermark.
