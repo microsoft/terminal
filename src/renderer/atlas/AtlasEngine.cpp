@@ -95,8 +95,8 @@ try
     }
     if (_api.scrollOffset)
     {
-        const auto limit = gsl::narrow_cast<i16>(_p.s->viewportCellCount.y & 0x7fff);
-        const auto offset = gsl::narrow_cast<i16>(clamp<int>(_api.scrollOffset, -limit, limit));
+        const auto limit = _p.s->viewportCellCount.y;
+        const auto offset = clamp(_api.scrollOffset, -limit, limit);
         const auto nothingInvalid = _api.invalidatedRows.start == _api.invalidatedRows.end;
 
         _api.scrollOffset = offset;
@@ -104,13 +104,13 @@ try
         // Mark the newly scrolled in rows as invalidated
         if (offset < 0)
         {
-            const u16 begRow = _p.s->viewportCellCount.y + offset;
+            const auto begRow = _p.s->viewportCellCount.y + offset;
             _api.invalidatedRows.start = nothingInvalid ? begRow : std::min(_api.invalidatedRows.start, begRow);
             _api.invalidatedRows.end = _p.s->viewportCellCount.y;
         }
         else
         {
-            const u16 endRow = offset;
+            const auto endRow = offset;
             _api.invalidatedRows.start = 0;
             _api.invalidatedRows.end = nothingInvalid ? endRow : std::max(_api.invalidatedRows.end, endRow);
         }
@@ -142,7 +142,7 @@ try
     //   the contents of the entire swap chain is redundant, but more importantly because the scroll rect
     //   is the subset of the contents that are being scrolled into. If you scroll the entire viewport
     //   then the scroll rect is empty, which Present1() will loudly complain about.
-    if (_p.invalidatedRows == range<u16>{ 0, _p.s->viewportCellCount.y })
+    if (_p.invalidatedRows == range<i32>{ 0, _p.s->viewportCellCount.y })
     {
         _p.MarkAllAsDirty();
     }
@@ -398,7 +398,7 @@ void AtlasEngine::_fillColorBitmap(const size_t y, const size_t x1, const size_t
 // - bgColor: the background highlight color
 // Returns:
 // - S_OK if we painted successfully, else an appropriate HRESULT error code
-[[nodiscard]] HRESULT AtlasEngine::_drawHighlighted(std::span<const til::point_span>& highlights, const u16 row, const u16 begX, const u16 endX, const u32 fgColor, const u32 bgColor) noexcept
+[[nodiscard]] HRESULT AtlasEngine::_drawHighlighted(std::span<const til::point_span>& highlights, const i32 row, const i32 begX, const i32 endX, const u32 fgColor, const u32 bgColor) noexcept
 try
 {
     if (highlights.empty())

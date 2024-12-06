@@ -36,13 +36,13 @@ namespace Microsoft::Console::Render::Atlas
         [[nodiscard]] HRESULT InvalidateScroll(const til::point* pcoordDelta) noexcept override;
         [[nodiscard]] HRESULT InvalidateAll() noexcept override;
         [[nodiscard]] HRESULT InvalidateTitle(std::wstring_view proposedTitle) noexcept override;
-        [[nodiscard]] HRESULT NotifyNewText(const std::wstring_view newText) noexcept override;
+        [[nodiscard]] HRESULT NotifyNewText(std::wstring_view newText) noexcept override;
         [[nodiscard]] HRESULT PrepareRenderInfo(RenderFrameInfo info) noexcept override;
         [[nodiscard]] HRESULT ResetLineTransform() noexcept override;
         [[nodiscard]] HRESULT PrepareLineTransform(LineRendition lineRendition, til::CoordType targetRow, til::CoordType viewportLeft) noexcept override;
         [[nodiscard]] HRESULT PaintBackground() noexcept override;
         [[nodiscard]] HRESULT PaintBufferLine(std::span<const Cluster> clusters, til::point coord, bool fTrimLeft, bool lineWrapped) noexcept override;
-        [[nodiscard]] HRESULT PaintBufferGridLines(const GridLineSet lines, const COLORREF gridlineColor, const COLORREF underlineColor, const size_t cchLine, const til::point coordTarget) noexcept override;
+        [[nodiscard]] HRESULT PaintBufferGridLines(GridLineSet lines, COLORREF gridlineColor, COLORREF underlineColor, size_t cchLine, til::point coordTarget) noexcept override;
         [[nodiscard]] HRESULT PaintImageSlice(const ImageSlice& imageSlice, til::CoordType targetRow, til::CoordType viewportLeft) noexcept override;
         [[nodiscard]] HRESULT PaintSelection(const til::rect& rect) noexcept override;
         [[nodiscard]] HRESULT PaintCursor(const CursorOptions& options) noexcept override;
@@ -66,7 +66,7 @@ namespace Microsoft::Console::Render::Atlas
         // setter
         void SetAntialiasingMode(D2D1_TEXT_ANTIALIAS_MODE antialiasingMode) noexcept;
         void SetCallback(std::function<void(HANDLE)> pfn) noexcept;
-        void EnableTransparentBackground(const bool isTransparent) noexcept;
+        void EnableTransparentBackground(bool isTransparent) noexcept;
         [[nodiscard]] HRESULT SetHwnd(HWND hwnd) noexcept;
         void SetPixelShaderPath(std::wstring_view value) noexcept;
         void SetPixelShaderImagePath(std::wstring_view value) noexcept;
@@ -89,8 +89,8 @@ namespace Microsoft::Console::Render::Atlas
         void _mapCharacters(const wchar_t* text, u32 textLength, u32* mappedLength, IDWriteFontFace2** mappedFontFace) const;
         void _mapComplex(IDWriteFontFace2* mappedFontFace, u32 idx, u32 length, ShapedRow& row);
         ATLAS_ATTR_COLD void _mapReplacementCharacter(u32 from, u32 to, ShapedRow& row);
-        void _fillColorBitmap(const size_t y, const size_t x1, const size_t x2, const u32 fgColor, const u32 bgColor) noexcept;
-        [[nodiscard]] HRESULT _drawHighlighted(std::span<const til::point_span>& highlights, const u16 row, const u16 begX, const u16 endX, const u32 fgColor, const u32 bgColor) noexcept;
+        void _fillColorBitmap(size_t y, size_t x1, size_t x2, u32 fgColor, u32 bgColor) noexcept;
+        [[nodiscard]] HRESULT _drawHighlighted(std::span<const til::point_span>& highlights, i32 row, i32 begX, i32 endX, u32 fgColor, u32 bgColor) noexcept;
 
         // AtlasEngine.api.cpp
         void _resolveTransparencySettings() noexcept;
@@ -110,13 +110,10 @@ namespace Microsoft::Console::Render::Atlas
         void _waitUntilCanRender() noexcept;
         void _present();
 
-        static constexpr u16 u16min = 0x0000;
-        static constexpr u16 u16max = 0xffff;
-        static constexpr i16 i16min = -0x8000;
-        static constexpr i16 i16max = 0x7fff;
-        static constexpr u16r invalidatedAreaNone = { u16max, u16max, u16min, u16min };
-        static constexpr range<u16> invalidatedRowsNone{ u16max, u16min };
-        static constexpr range<u16> invalidatedRowsAll{ u16min, u16max };
+        static constexpr i32 i32SafeMax = INT32_MAX / 2;
+        static constexpr i32r invalidatedAreaNone = { i32SafeMax, i32SafeMax, 0, 0 };
+        static constexpr range<i32> invalidatedRowsNone{ i32SafeMax, 0 };
+        static constexpr range<i32> invalidatedRowsAll{ 0, i32SafeMax };
 
         static constexpr u32 highlightBg = 0xff00ffff;
         static constexpr u32 highlightFg = 0xff000000;
@@ -140,7 +137,7 @@ namespace Microsoft::Console::Render::Atlas
             AntialiasingMode antialiasingMode = DefaultAntialiasingMode;
 
             std::vector<wchar_t> bufferLine;
-            std::vector<u16> bufferLineColumn;
+            std::vector<u32> bufferLineColumn;
 
             std::array<Buffer<DWRITE_FONT_AXIS_VALUE>, 4> textFormatAxes;
             std::vector<TextAnalysisSinkResult> analysisResults;
@@ -163,9 +160,9 @@ namespace Microsoft::Console::Render::Atlas
             u32 currentBackground = 0;
             u32 currentForeground = 0;
             FontRelevantAttributes attributes = FontRelevantAttributes::None;
-            u16x2 lastPaintBufferLineCoord{};
+            u32x2 lastPaintBufferLineCoord{};
             // UpdateHyperlinkHoveredId()
-            u16 hyperlinkHoveredId = 0;
+            u32 hyperlinkHoveredId = 0;
 
             // These tracks the highlighted regions on the screen that are yet to be painted.
             std::span<const til::point_span> searchHighlights;
@@ -175,12 +172,12 @@ namespace Microsoft::Console::Render::Atlas
             // dirtyRect is a computed value based on invalidatedRows.
             til::rect dirtyRect;
             // These "invalidation" fields are reset in EndPaint()
-            u16r invalidatedCursorArea = invalidatedAreaNone;
-            range<u16> invalidatedRows = invalidatedRowsNone; // x is treated as "top" and y as "bottom"
-            i16 scrollOffset = 0;
+            i32r invalidatedCursorArea = invalidatedAreaNone;
+            range<i32> invalidatedRows = invalidatedRowsNone; // x is treated as "top" and y as "bottom"
+            i32 scrollOffset = 0;
 
             // The position of the viewport inside the text buffer (in cells).
-            u16x2 viewportOffset{ 0, 0 };
+            i32x2 viewportOffset{ 0, 0 };
         } _api;
     };
 }

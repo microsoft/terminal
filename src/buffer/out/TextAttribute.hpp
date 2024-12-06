@@ -41,10 +41,9 @@ enum class UnderlineStyle
 // We only need a few bits, but uint8_t apparently doesn't satisfy std::has_unique_object_representations_v
 enum class MarkKind : uint16_t
 {
-    None = 0,
+    Output = 0,
     Prompt = 1,
     Command = 2,
-    Output = 3,
 };
 
 class TextAttribute final
@@ -56,7 +55,7 @@ public:
         _background{},
         _hyperlinkId{ 0 },
         _underlineColor{},
-        _markKind{ MarkKind::None }
+        _markKind{ MarkKind::Output }
     {
     }
 
@@ -66,7 +65,7 @@ public:
         _background{ gsl::at(s_legacyBackgroundColorMap, (wLegacyAttr & BG_ATTRS) >> 4) },
         _hyperlinkId{ 0 },
         _underlineColor{},
-        _markKind{ MarkKind::None }
+        _markKind{ MarkKind::Output }
     {
     }
 
@@ -78,7 +77,7 @@ public:
         _background{ rgbBackground },
         _hyperlinkId{ 0 },
         _underlineColor{ rgbUnderline },
-        _markKind{ MarkKind::None }
+        _markKind{ MarkKind::Output }
     {
     }
 
@@ -88,7 +87,7 @@ public:
         _background{ background },
         _hyperlinkId{ hyperlinkId },
         _underlineColor{ underlineColor },
-        _markKind{ MarkKind::None }
+        _markKind{ MarkKind::Output }
     {
     }
 

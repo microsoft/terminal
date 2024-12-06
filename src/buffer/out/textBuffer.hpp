@@ -311,10 +311,10 @@ public:
 
 private:
     void _reserve(til::size screenBufferSize, const TextAttribute& defaultAttributes);
-    void _commit(const std::byte* row);
-    void _decommit() noexcept;
-    void _construct(const std::byte* until) noexcept;
-    void _destroy() const noexcept;
+    void _commit(const uint8_t* row);
+    void _decommit(til::CoordType keep) noexcept;
+    void _construct(const uint8_t* until) noexcept;
+    void _destroy(uint8_t* it) const noexcept;
     ROW& _getRowByOffsetDirect(size_t offset);
     ROW& _getRow(til::CoordType y) const;
     til::CoordType _estimateOffsetOfLastCommittedRow() const noexcept;
@@ -357,9 +357,9 @@ private:
     // Padding may exist for alignment purposes.
     //
     // The base (start) address of the memory arena.
-    wil::unique_virtualalloc_ptr<std::byte> _buffer;
+    wil::unique_virtualalloc_ptr<uint8_t> _buffer;
     // The past-the-end pointer of the memory arena.
-    std::byte* _bufferEnd = nullptr;
+    uint8_t* _bufferEnd = nullptr;
     // The range between _buffer (inclusive) and _commitWatermark (exclusive) is the range of
     // memory that has already been committed via MEM_COMMIT and contains ready-to-use ROWs.
     //
@@ -375,15 +375,15 @@ private:
     // _commitWatermark will always be a multiple of _bufferRowStride away from _buffer.
     // In other words, _commitWatermark itself will either point exactly onto the next ROW
     // that should be committed or be equal to _bufferEnd when all ROWs are committed.
-    std::byte* _commitWatermark = nullptr;
-    // This will MEM_COMMIT 128 rows more than we need, to avoid us from having to call VirtualAlloc too often.
+    uint8_t* _commitWatermark = nullptr;
+    // This will MEM_COMMIT 256 rows more than we need, to avoid us from having to call VirtualAlloc too often.
     // This equates to roughly the following commit chunk sizes at these column counts:
-    // *  80 columns (the usual minimum) =  60KB chunks,  4.1MB buffer at 9001 rows
-    // * 120 columns (the most common)   =  80KB chunks,  5.6MB buffer at 9001 rows
-    // * 400 columns (the usual maximum) = 220KB chunks, 15.5MB buffer at 9001 rows
+    // *  80 columns (the usual minimum) = 120KB chunks,  4.1MB buffer at 9001 rows
+    // * 120 columns (the most common)   = 160KB chunks,  5.6MB buffer at 9001 rows
+    // * 400 columns (the usual maximum) = 440KB chunks, 15.5MB buffer at 9001 rows
     // There's probably a better metric than this. (This comment was written when ROW had both,
     // a _chars array containing text and a _charOffsets array contain column-to-text indices.)
-    static constexpr size_t _commitReadAheadRowCount = 128;
+    static constexpr size_t _commitReadAheadRowCount = 256;
     // Before TextBuffer was made to use virtual memory it initialized the entire memory arena with the initial
     // attributes right away. To ensure it continues to work the way it used to, this stores these initial attributes.
     TextAttribute _initialAttributes;
@@ -397,9 +397,9 @@ private:
     size_t _bufferOffsetChars = 0;
     size_t _bufferOffsetCharOffsets = 0;
     // The width of the buffer in columns.
-    uint16_t _width = 0;
+    til::CoordType _width = 0;
     // The height of the buffer in rows, excluding the scratchpad row.
-    uint16_t _height = 0;
+    til::CoordType _height = 0;
 
     TextAttribute _currentAttributes;
     til::CoordType _firstRow = 0; // indexes top row (not necessarily 0)

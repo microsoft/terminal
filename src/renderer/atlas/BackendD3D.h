@@ -319,8 +319,8 @@ namespace Microsoft::Console::Render::Atlas
         til::generation_t _generation;
         til::generation_t _fontGeneration;
         til::generation_t _miscGeneration;
-        u16x2 _targetSize{};
-        u16x2 _viewportCellCount{};
+        i32x2 _targetSize{};
+        i32x2 _viewportCellCount{};
         ShadingType _textShadingType = ShadingType::Default;
 
         // An empty-box cursor spanning a wide glyph that has different

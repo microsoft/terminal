@@ -344,9 +344,9 @@ void BackendD2D::_drawText(RenderingPayload& p)
 
 f32 BackendD2D::_drawBuiltinGlyphs(const RenderingPayload& p, const ShapedRow* row, const FontMapping& m, f32 baselineY, f32 baselineX)
 {
-    const f32 cellTop = baselineY - p.s->font->baseline;
-    const f32 cellBottom = cellTop + p.s->font->cellSize.y;
-    const f32 cellWidth = p.s->font->cellSize.x;
+    const auto cellTop = baselineY - p.s->font->baseline;
+    const auto cellBottom = cellTop + p.s->font->cellSize.y;
+    const auto cellWidth = static_cast<f32>(p.s->font->cellSize.x);
 
     _prepareBuiltinGlyphRenderTarget(p);
 
@@ -628,8 +628,8 @@ void BackendD2D::_drawGridlineRow(const RenderingPayload& p, const ShapedRow* ro
         D2D1_POINT_2F point0{ 0, cellCenter };
         D2D1_POINT_2F point1{ 0, cellCenter + cellHeight };
         const auto brush = _brushWithColor(r.gridlineColor);
-        const f32 w = pos.height;
-        const f32 hw = w * 0.5f;
+        const auto w = static_cast<f32>(pos.height);
+        const auto hw = w * 0.5f;
 
         for (; x < to; x += cellWidth)
         {
@@ -644,8 +644,8 @@ void BackendD2D::_drawGridlineRow(const RenderingPayload& p, const ShapedRow* ro
         const auto to = r.to * scaledCellWidth;
 
         const auto brush = _brushWithColor(color);
-        const f32 w = pos.height;
-        const f32 centerY = cellCenter + pos.position + w * 0.5f;
+        const auto w = static_cast<f32>(pos.height);
+        const auto centerY = cellCenter + pos.position + w * 0.5f;
         const D2D1_POINT_2F point0{ from, centerY };
         const D2D1_POINT_2F point1{ to, centerY };
         _renderTarget->DrawLine(point0, point1, brush, w, strokeStyle);

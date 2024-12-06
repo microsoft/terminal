@@ -536,8 +536,8 @@ void BackendD3D::_recreateCustomRenderTargetView(const RenderingPayload& p)
     _customOffscreenTextureView.reset();
 
     const D3D11_TEXTURE2D_DESC desc{
-        .Width = p.s->targetSize.x,
-        .Height = p.s->targetSize.y,
+        .Width = static_cast<UINT>(p.s->targetSize.x),
+        .Height = static_cast<UINT>(p.s->targetSize.y),
         .MipLevels = 1,
         .ArraySize = 1,
         .Format = DXGI_FORMAT_B8G8R8A8_UNORM,
@@ -556,8 +556,8 @@ void BackendD3D::_recreateBackgroundColorBitmap(const RenderingPayload& p)
     _backgroundBitmapView.reset();
 
     const D3D11_TEXTURE2D_DESC desc{
-        .Width = p.s->viewportCellCount.x,
-        .Height = p.s->viewportCellCount.y,
+        .Width = static_cast<UINT>(p.s->viewportCellCount.x),
+        .Height = static_cast<UINT>(p.s->viewportCellCount.y),
         .MipLevels = 1,
         .ArraySize = 1,
         .Format = DXGI_FORMAT_R8G8B8A8_UNORM,
@@ -1072,7 +1072,7 @@ void BackendD3D::_drawBackground(const RenderingPayload& p)
 
     _appendQuad() = {
         .shadingType = static_cast<u16>(ShadingType::Background),
-        .size = p.s->targetSize,
+        .size = { static_cast<u16>(p.s->targetSize.x), static_cast<u16>(p.s->targetSize.y) },
     };
 }
 
@@ -1789,7 +1789,7 @@ void BackendD3D::_drawGridlines(const RenderingPayload& p, u16 y)
             _appendQuad() = {
                 .shadingType = static_cast<u16>(ShadingType::SolidLine),
                 .position = { static_cast<i16>(posX), rowTop },
-                .size = { width, p.s->font->cellSize.y },
+                .size = { width, static_cast<u16>(p.s->font->cellSize.y) },
                 .color = r.gridlineColor,
             };
         }
@@ -1956,7 +1956,7 @@ void BackendD3D::_drawCursorBackground(const RenderingPayload& p)
         };
         const u16x2 size{
             static_cast<u16>(p.s->font->cellSize.x * (x1 - x0)),
-            p.s->font->cellSize.y,
+            static_cast<u16>(p.s->font->cellSize.y),
         };
         auto background = cursorColor;
         auto foreground = bg;
