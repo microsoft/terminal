@@ -393,5 +393,5 @@ void TextAttribute::SetStandardErase() noexcept
 {
     _attrs = CharacterAttributes::Normal;
     _hyperlinkId = 0;
-    _markKind = MarkKind::None;
+    _markKind = MarkKind::Output;
 }
