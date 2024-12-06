@@ -77,7 +77,11 @@
             </ResourceDictionary>
         </muxc:NavigationView.Resources>
         <muxc:NavigationView.Header>
-            <muxc:BreadcrumbBar x:Name="NavigationBreadcrumbBar"
+            <StackPanel Orientation="Horizontal">
+                <IconSourceElement Height="28"
+                                   Margin="{ThemeResource NavigationViewHeaderMargin}"
+                                   IconSource="{Binding ElementName=SettingsNav, Path=SelectedItem.Icon.IconSource, Mode=OneWay}" />
+                <muxc:BreadcrumbBar x:Name="NavigationBreadcrumbBar"
                                 MaxWidth="{StaticResource StandardControlMaxWidth}"
                                 ItemClicked="BreadcrumbBar_ItemClicked"
                                 ItemsSource="{x:Bind Breadcrumbs}">
@@ -95,6 +99,7 @@
                     </ResourceDictionary>
                 </muxc:BreadcrumbBar.Resources>
             </muxc:BreadcrumbBar>
+            </StackPanel>
         </muxc:NavigationView.Header>
 
         <muxc:NavigationView.MenuItems>
@@ -102,14 +107,22 @@
             <muxc:NavigationViewItem x:Uid="Nav_Launch"
                                      Tag="Launch_Nav">
                 <muxc:NavigationViewItem.Icon>
-                    <FontIcon Glyph="&#xE7B5;" />
+                    <IconSourceElement>
+                        <IconSourceElement.IconSource>
+                            <FontIconSource Glyph="&#xE7B5;" />
+                        </IconSourceElement.IconSource>
+                    </IconSourceElement>
                 </muxc:NavigationViewItem.Icon>
             </muxc:NavigationViewItem>
 
             <muxc:NavigationViewItem x:Uid="Nav_Interaction"
                                      Tag="Interaction_Nav">
                 <muxc:NavigationViewItem.Icon>
-                    <FontIcon Glyph="&#xE7C9;" />
+                    <IconSourceElement>
+                        <IconSourceElement.IconSource>
+                            <FontIconSource Glyph="&#xE7C9;" />
+                        </IconSourceElement.IconSource>
+                    </IconSourceElement>
                 </muxc:NavigationViewItem.Icon>
             </muxc:NavigationViewItem>
 
@@ -123,14 +136,22 @@
             <muxc:NavigationViewItem x:Uid="Nav_ColorSchemes"
                                      Tag="ColorSchemes_Nav">
                 <muxc:NavigationViewItem.Icon>
-                    <FontIcon Glyph="&#xE790;" />
+                    <IconSourceElement>
+                        <IconSourceElement.IconSource>
+                            <FontIconSource Glyph="&#xE790;" />
+                        </IconSourceElement.IconSource>
+                    </IconSourceElement>
                 </muxc:NavigationViewItem.Icon>
             </muxc:NavigationViewItem>
 
             <muxc:NavigationViewItem x:Uid="Nav_Rendering"
                                      Tag="Rendering_Nav">
                 <muxc:NavigationViewItem.Icon>
-                    <FontIcon Glyph="&#xE7F8;" />
+                    <IconSourceElement>
+                        <IconSourceElement.IconSource>
+                            <FontIconSource Glyph="&#xE7F8;" />
+                        </IconSourceElement.IconSource>
+                    </IconSourceElement>
                 </muxc:NavigationViewItem.Icon>
             </muxc:NavigationViewItem>
 
@@ -144,7 +165,11 @@
             <muxc:NavigationViewItem x:Uid="Nav_Actions"
                                      Tag="Actions_Nav">
                 <muxc:NavigationViewItem.Icon>
-                    <FontIcon Glyph="&#xE765;" />
+                    <IconSourceElement>
+                        <IconSourceElement.IconSource>
+                            <FontIconSource Glyph="&#xE765;" />
+                        </IconSourceElement.IconSource>
+                    </IconSourceElement>
                 </muxc:NavigationViewItem.Icon>
             </muxc:NavigationViewItem>
 
@@ -161,7 +186,11 @@
                                      x:Uid="Nav_ProfileDefaults"
                                      Tag="GlobalProfile_Nav">
                 <muxc:NavigationViewItem.Icon>
-                    <FontIcon Glyph="&#xE81E;" />
+                    <IconSourceElement>
+                        <IconSourceElement.IconSource>
+                            <FontIconSource Glyph="&#xE81E;" />
+                        </IconSourceElement.IconSource>
+                    </IconSourceElement>
                 </muxc:NavigationViewItem.Icon>
             </muxc:NavigationViewItem>
 
@@ -174,7 +203,11 @@
                                      KeyDown="OpenJsonKeyDown"
                                      Tapped="OpenJsonTapped">
                 <muxc:NavigationViewItem.Icon>
-                    <FontIcon Glyph="&#xE713;" />
+                    <IconSourceElement>
+                        <IconSourceElement.IconSource>
+                            <FontIconSource Glyph="&#xE713;" />
+                        </IconSourceElement.IconSource>
+                    </IconSourceElement>
                 </muxc:NavigationViewItem.Icon>
             </muxc:NavigationViewItem>
         </muxc:NavigationView.FooterMenuItems>
