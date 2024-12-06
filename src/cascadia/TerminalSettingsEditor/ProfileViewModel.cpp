@@ -29,17 +29,20 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     static constexpr std::wstring_view HideIconValue{ L"none" };
 
-    ProfileViewModel::ProfileViewModel(const Model::Profile& profile, const Model::CascadiaSettings& appSettings) :
+    ProfileViewModel::ProfileViewModel(const Model::Profile& profile, const Model::CascadiaSettings& appSettings, const Windows::UI::Core::CoreDispatcher& dispatcher) :
         _profile{ profile },
         _defaultAppearanceViewModel{ winrt::make<implementation::AppearanceViewModel>(profile.DefaultAppearance().try_as<AppearanceConfig>()) },
         _originalProfileGuid{ profile.Guid() },
         _appSettings{ appSettings },
-        _unfocusedAppearanceViewModel{ nullptr }
+        _unfocusedAppearanceViewModel{ nullptr },
+        _dispatcher{ dispatcher }
     {
         INITIALIZE_BINDABLE_ENUM_SETTING(AntiAliasingMode, TextAntialiasingMode, winrt::Microsoft::Terminal::Control::TextAntialiasingMode, L"Profile_AntialiasingMode", L"Content");
         INITIALIZE_BINDABLE_ENUM_SETTING_REVERSE_ORDER(CloseOnExitMode, CloseOnExitMode, winrt::Microsoft::Terminal::Settings::Model::CloseOnExitMode, L"Profile_CloseOnExit", L"Content");
         INITIALIZE_BINDABLE_ENUM_SETTING(ScrollState, ScrollbarState, winrt::Microsoft::Terminal::Control::ScrollbarState, L"Profile_ScrollbarVisibility", L"Content");
         INITIALIZE_BINDABLE_ENUM_SETTING(PathTranslationStyle, PathTranslationStyle, winrt::Microsoft::Terminal::Control::PathTranslationStyle, L"Profile_PathTranslationStyle", L"Content");
+
+        _InitializeCurrentBellSounds();
 
         // Add a property changed handler to our own property changed event.
         // This propagates changes from the settings model to anybody listening to our
@@ -76,6 +79,21 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             else if (viewModelProperty == L"Icon")
             {
                 _NotifyChanges(L"HideIcon");
+            }
+            else if (viewModelProperty == L"CurrentBellSounds")
+            {
+                // we already have infrastructure in place to
+                // propagate changes from the CurrentBellSounds
+                // to the model. Refer to...
+                // - _InitializeCurrentBellSounds() --> _CurrentBellSounds.VectorChanged()
+                // - RequestAddBellSound()
+                // - RequestDeleteBellSound()
+                _MarkDuplicateBellSoundDirectories();
+                _NotifyChanges(L"BellSoundPreview", L"HasBellSound");
+            }
+            else if (viewModelProperty == L"BellSound")
+            {
+                _InitializeCurrentBellSounds();
             }
             else if (viewModelProperty == L"PathTranslationStyle")
             {
@@ -529,9 +547,149 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         BellStyle(currentStyle);
     }
 
+    // Method Description:
+    // - Construct _CurrentBellSounds by importing the _inherited_ value from the model
+    // - Adds a PropertyChanged handler to each BellSoundViewModel to propagate changes to the model
+    void ProfileViewModel::_InitializeCurrentBellSounds()
+    {
+        _CurrentBellSounds = winrt::single_threaded_observable_vector<Editor::BellSoundViewModel>();
+        if (const auto soundList = _profile.BellSound())
+        {
+            for (const auto&& bellSound : soundList)
+            {
+                _CurrentBellSounds.Append(winrt::make<BellSoundViewModel>(bellSound, _dispatcher));
+            }
+        }
+        _MarkDuplicateBellSoundDirectories();
+        _NotifyChanges(L"CurrentBellSounds");
+    }
+
+    // Method Description:
+    // - If the current layer is inheriting the bell sound from its parent,
+    //   we need to copy the _inherited_ bell sound list to the current layer
+    //   so that we can then apply modifications to it
+    void ProfileViewModel::_PrepareModelForBellSoundModification()
+    {
+        if (!_profile.HasBellSound())
+        {
+            std::vector<hstring> newSounds;
+            if (const auto inheritedSounds = _profile.BellSound())
+            {
+                // copy inherited bell sounds to the current layer
+                newSounds.reserve(inheritedSounds.Size());
+                for (const auto sound : inheritedSounds)
+                {
+                    newSounds.push_back(sound);
+                }
+            }
+            // if we didn't inherit any bell sounds,
+            // we should still set the bell sound to an empty list (instead of null)
+            _profile.BellSound(winrt::single_threaded_vector<hstring>(std::move(newSounds)));
+        }
+    }
+
+    // Method Description:
+    // - Check if any bell sounds share the same name.
+    //   If they do, mark them so that they show the directory path in the UI
+    void ProfileViewModel::_MarkDuplicateBellSoundDirectories()
+    {
+        for (uint32_t i = 0; i < _CurrentBellSounds.Size(); i++)
+        {
+            auto soundA = _CurrentBellSounds.GetAt(i);
+            for (uint32_t j = i + 1; j < _CurrentBellSounds.Size(); j++)
+            {
+                auto soundB = _CurrentBellSounds.GetAt(j);
+                if (soundA.DisplayPath() == soundB.DisplayPath())
+                {
+                    get_self<BellSoundViewModel>(_CurrentBellSounds.GetAt(i))->ShowDirectory(true);
+                    get_self<BellSoundViewModel>(_CurrentBellSounds.GetAt(j))->ShowDirectory(true);
+                }
+            }
+        }
+    }
+
+    BellSoundViewModel::BellSoundViewModel(hstring path, const Windows::UI::Core::CoreDispatcher& dispatcher) :
+        _Path{ path },
+        _dispatcher{ dispatcher }
+    {
+        _CheckIfFileExists();
+    }
+
+    safe_void_coroutine BellSoundViewModel::_CheckIfFileExists()
+    {
+        co_await winrt::resume_background();
+        const auto exists = std::filesystem::exists(std::wstring_view{ _Path });
+
+        co_await winrt::resume_foreground(_dispatcher);
+        FileExists(exists);
+    }
+
+    hstring BellSoundViewModel::DisplayPath() const
+    {
+        if (FileExists())
+        {
+            // filename
+            const std::filesystem::path filePath{ std::wstring_view{ _Path } };
+            return hstring{ filePath.filename().wstring() };
+        }
+        return _Path;
+    }
+
+    hstring BellSoundViewModel::SubText() const
+    {
+        if (FileExists())
+        {
+            // Directory
+            const std::filesystem::path filePath{ std::wstring_view{ _Path } };
+            return hstring{ filePath.parent_path().wstring() };
+        }
+        return RS_(L"Profile_BellSoundNotFound");
+    }
+
+    hstring ProfileViewModel::BellSoundPreview()
+    {
+        const auto& currentSound = BellSound();
+        if (!currentSound || currentSound.Size() == 0)
+        {
+            return RS_(L"Profile_BellSoundPreviewDefault");
+        }
+        else if (currentSound.Size() == 1)
+        {
+            std::filesystem::path filePath{ std::wstring_view{ currentSound.GetAt(0) } };
+            return hstring{ filePath.filename().wstring() };
+        }
+        return RS_(L"Profile_BellSoundPreviewMultiple");
+    }
+
+    void ProfileViewModel::RequestAddBellSound(hstring path)
+    {
+        // If we were inheriting our bell sound,
+        // copy it over to the current layer and apply modifications
+        _PrepareModelForBellSoundModification();
+
+        _CurrentBellSounds.Append(winrt::make<BellSoundViewModel>(path, _dispatcher));
+        _profile.BellSound().Append(path);
+        _NotifyChanges(L"CurrentBellSounds");
+    }
+
+    void ProfileViewModel::RequestDeleteBellSound(const Editor::BellSoundViewModel& vm)
+    {
+        uint32_t index;
+        if (_CurrentBellSounds.IndexOf(vm, index))
+        {
+            // If we were inheriting our bell sound,
+            // copy it over to the current layer and apply modifications
+            _PrepareModelForBellSoundModification();
+
+            _CurrentBellSounds.RemoveAt(index);
+            _profile.BellSound().RemoveAt(index);
+            _NotifyChanges(L"CurrentBellSounds");
+        }
+    }
+
     void ProfileViewModel::DeleteProfile()
     {
-        auto deleteProfileArgs{ winrt::make_self<DeleteProfileEventArgs>(Guid()) };
+        const auto deleteProfileArgs{ winrt::make_self<DeleteProfileEventArgs>(Guid()) };
         DeleteProfileRequested.raise(*this, *deleteProfileArgs);
     }
 
