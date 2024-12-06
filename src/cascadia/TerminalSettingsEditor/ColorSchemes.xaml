@@ -37,22 +37,15 @@
         </ResourceDictionary>
     </Page.Resources>
 
-    <Grid Margin="0,0,0,8"
-          RowSpacing="8">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="*" />
-        </Grid.RowDefinitions>
-        <StackPanel Grid.Row="0"
-                    MaxWidth="{StaticResource StandardControlMaxWidth}"
-                    Spacing="8">
+    <StackPanel Style="{StaticResource SettingsStackStyle}">
+        <StackPanel MaxWidth="{StaticResource StandardControlMaxWidth}"
+                    Spacing="8"
+                    Margin="4,0,0,8">
             <TextBlock x:Uid="ColorSchemesDisclaimer"
                        Style="{StaticResource DisclaimerStyle}" />
 
             <Button x:Name="AddNewButton"
-                    Margin="4,0,0,0"
-                    Click="AddNew_Click"
-                    Style="{StaticResource BrowseButtonStyle}">
+                    Click="AddNew_Click">
                 <StackPanel Orientation="Horizontal">
                     <FontIcon FontSize="{StaticResource StandardIconSize}"
                               Glyph="&#xE710;" />
@@ -63,7 +56,6 @@
         </StackPanel>
 
         <ListView x:Name="ColorSchemeListView"
-                  Grid.Row="1"
                   MaxWidth="{StaticResource StandardControlMaxWidth}"
                   IsItemClickEnabled="True"
                   ItemClick="{x:Bind ViewModel.SchemeListItemClicked}"
@@ -218,5 +210,5 @@
                 </DataTemplate>
             </ListView.ItemTemplate>
         </ListView>
-    </Grid>
+    </StackPanel>
 </Page>
