@@ -941,6 +941,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
+    void ControlCore::SetHighContrastInfo(const bool enabled)
+    {
+        _terminal->SetHighContrastInfo(enabled);
+    }
+
     Control::IControlSettings ControlCore::Settings()
     {
         return *_settings;
