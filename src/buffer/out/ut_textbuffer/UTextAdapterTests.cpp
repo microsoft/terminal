@@ -49,15 +49,15 @@ class UTextAdapterTests
             return { { beg, 0 }, { end, 0 } };
         };
 
-        auto expected = std::vector{ s(0, 2), s(8, 10) };
+        auto expected = std::vector{ s(0, 3), s(8, 11) };
         auto actual = buffer.SearchText(L"abc", SearchFlag::None);
         VERIFY_ARE_EQUAL(expected, actual);
 
-        expected = std::vector{ s(5, 5) };
+        expected = std::vector{ s(5, 6) };
         actual = buffer.SearchText(L"𝒷", SearchFlag::None);
         VERIFY_ARE_EQUAL(expected, actual);
 
-        expected = std::vector{ s(12, 15) };
+        expected = std::vector{ s(12, 16) };
         actual = buffer.SearchText(L"ネコ", SearchFlag::None);
         VERIFY_ARE_EQUAL(expected, actual);
     }

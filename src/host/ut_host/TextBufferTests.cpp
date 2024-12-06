@@ -2432,11 +2432,11 @@ void TextBufferTests::GetTextRects()
     std::vector<til::inclusive_rect> expected{};
     if (blockSelection)
     {
-        expected.push_back({ 1, 0, 7, 0 });
-        expected.push_back({ 1, 1, 8, 1 }); // expand right
-        expected.push_back({ 1, 2, 7, 2 });
-        expected.push_back({ 0, 3, 7, 3 }); // expand left
-        expected.push_back({ 1, 4, 7, 4 });
+        expected.push_back({ 1, 0, 8, 0 });
+        expected.push_back({ 1, 1, 9, 1 }); // expand right
+        expected.push_back({ 1, 2, 8, 2 });
+        expected.push_back({ 0, 3, 8, 3 }); // do not expand
+        expected.push_back({ 1, 4, 8, 4 });
     }
     else
     {
@@ -2444,11 +2444,11 @@ void TextBufferTests::GetTextRects()
         expected.push_back({ 0, 1, 19, 1 });
         expected.push_back({ 0, 2, 19, 2 });
         expected.push_back({ 0, 3, 19, 3 });
-        expected.push_back({ 0, 4, 7, 4 });
+        expected.push_back({ 0, 4, 8, 4 });
     }
 
     til::point start{ 1, 0 };
-    til::point end{ 7, 4 };
+    til::point end{ 8, 4 };
     const auto result = _buffer->GetTextRects(start, end, blockSelection, false);
     VERIFY_ARE_EQUAL(expected.size(), result.size());
     for (size_t i = 0; i < expected.size(); ++i)
@@ -2506,21 +2506,31 @@ void TextBufferTests::GetPlainText()
             if (trimTrailingWhitespace)
             {
                 Log::Comment(L"Standard Copy to Clipboard");
-                expectedText += L"12345\r\n";
-                expectedText += L"  345\r\n";
-                expectedText += L"123\r\n";
-                expectedText += L"  3\r\n";
+                if (blockSelection)
+                {
+                    expectedText += L"1234\r\n";
+                    expectedText += L"  34\r\n";
+                    expectedText += L"123\r\n";
+                    expectedText += L"  3\r\n";
+                }
+                else
+                {
+                    expectedText += L"12345\r\n";
+                    expectedText += L"  345\r\n";
+                    expectedText += L"123\r\n";
+                    expectedText += L"  3\r\n";
+                }
             }
             else
             {
                 Log::Comment(L"UI Automation");
                 if (blockSelection)
                 {
-                    expectedText += L"12345\r\n";
-                    expectedText += L"  345\r\n";
-                    expectedText += L"123  \r\n";
-                    expectedText += L"  3  \r\n";
-                    expectedText += L"     ";
+                    expectedText += L"1234\r\n";
+                    expectedText += L"  34\r\n";
+                    expectedText += L"123 \r\n";
+                    expectedText += L"  3 \r\n";
+                    expectedText += L"    ";
                 }
                 else
                 {
@@ -2528,7 +2538,7 @@ void TextBufferTests::GetPlainText()
                     expectedText += L"  345     \r\n";
                     expectedText += L"123       \r\n";
                     expectedText += L"  3       \r\n";
-                    expectedText += L"     ";
+                    expectedText += L"    ";
                 }
             }
         }
@@ -2537,21 +2547,31 @@ void TextBufferTests::GetPlainText()
             if (trimTrailingWhitespace)
             {
                 Log::Comment(L"UNDEFINED");
-                expectedText += L"12345";
-                expectedText += L"  345";
-                expectedText += L"123";
-                expectedText += L"  3";
+                if (blockSelection)
+                {
+                    expectedText += L"1234";
+                    expectedText += L"  34";
+                    expectedText += L"123";
+                    expectedText += L"  3";
+                }
+                else
+                {
+                    expectedText += L"12345";
+                    expectedText += L"  345";
+                    expectedText += L"123";
+                    expectedText += L"  3";
+                }
             }
             else
             {
                 Log::Comment(L"Shift+Copy to Clipboard");
                 if (blockSelection)
                 {
-                    expectedText += L"12345";
-                    expectedText += L"  345";
-                    expectedText += L"123  ";
-                    expectedText += L"  3  ";
-                    expectedText += L"     ";
+                    expectedText += L"1234";
+                    expectedText += L"  34";
+                    expectedText += L"123 ";
+                    expectedText += L"  3 ";
+                    expectedText += L"    ";
                 }
                 else
                 {
@@ -2559,7 +2579,7 @@ void TextBufferTests::GetPlainText()
                     expectedText += L"  345     ";
                     expectedText += L"123       ";
                     expectedText += L"  3       ";
-                    expectedText += L"     ";
+                    expectedText += L"    ";
                 }
             }
         }
@@ -2604,21 +2624,21 @@ void TextBufferTests::GetPlainText()
                 if (trimTrailingWhitespace)
                 {
                     Log::Comment(L"UNDEFINED");
-                    expectedText += L"12345\r\n";
+                    expectedText += L"1234\r\n";
                     expectedText += L"67\r\n";
-                    expectedText += L"  345\r\n";
+                    expectedText += L"  34\r\n";
                     expectedText += L"123\r\n";
                     expectedText += L"\r\n";
                 }
                 else
                 {
                     Log::Comment(L"Copy block selection to Clipboard");
-                    expectedText += L"12345\r\n";
-                    expectedText += L"67   \r\n";
-                    expectedText += L"  345\r\n";
-                    expectedText += L"123  \r\n";
-                    expectedText += L"     \r\n";
-                    expectedText += L"     ";
+                    expectedText += L"1234\r\n";
+                    expectedText += L"67  \r\n";
+                    expectedText += L"  34\r\n";
+                    expectedText += L"123 \r\n";
+                    expectedText += L"    \r\n";
+                    expectedText += L"    ";
                 }
             }
             else
@@ -2626,20 +2646,20 @@ void TextBufferTests::GetPlainText()
                 if (trimTrailingWhitespace)
                 {
                     Log::Comment(L"UNDEFINED");
-                    expectedText += L"12345";
+                    expectedText += L"1234";
                     expectedText += L"67";
-                    expectedText += L"  345";
+                    expectedText += L"  34";
                     expectedText += L"123";
                 }
                 else
                 {
                     Log::Comment(L"UNDEFINED");
-                    expectedText += L"12345";
-                    expectedText += L"67   ";
-                    expectedText += L"  345";
-                    expectedText += L"123  ";
-                    expectedText += L"     ";
-                    expectedText += L"     ";
+                    expectedText += L"1234";
+                    expectedText += L"67  ";
+                    expectedText += L"  34";
+                    expectedText += L"123 ";
+                    expectedText += L"    ";
+                    expectedText += L"    ";
                 }
             }
         }
@@ -2663,7 +2683,7 @@ void TextBufferTests::GetPlainText()
                     expectedText += L"  345";
                     expectedText += L"123  ";
                     expectedText += L"     \r\n";
-                    expectedText += L"     ";
+                    expectedText += L"    ";
                 }
             }
             else
@@ -2684,7 +2704,7 @@ void TextBufferTests::GetPlainText()
                     expectedText += L"  345";
                     expectedText += L"123  ";
                     expectedText += L"     ";
-                    expectedText += L"     ";
+                    expectedText += L"    ";
                 }
             }
         }
