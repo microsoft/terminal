@@ -328,6 +328,9 @@
     <value>Őρęň ŝέŧτїйģѕ ƒіĺē (JSON) !!! !!! !</value>
     <comment>{Locked="JSON"}. "JSON" is the extension of the file that will be opened.</comment>
   </data>
+  <data name="SettingsFileOpenInExplorerCommandKey" xml:space="preserve">
+    <value>Òρéń ţђë şêţŧįπĝş ƒìℓė δίяěςτøґў !!! !!! !!! </value>
+  </data>
   <data name="OpenTabColorPickerCommandKey" xml:space="preserve">
     <value>Şėŧ ŧăь ĉõľοґ... !!! !</value>
   </data>
@@ -733,5 +736,8 @@
   </data>
   <data name="QuickFixCommandKey" xml:space="preserve">
     <value>Ωρзπ qυί¢к ƒϊ× мėŋύ !!! !!!</value>
+  </data>
+  <data name="OpenCWDCommandKey" xml:space="preserve">
+    <value>Öφěп сùяŗĕŉŧ ώθяќìⁿġ ðїгéćţοŗу !!! !!! !!!</value>
   </data>
 </root>
