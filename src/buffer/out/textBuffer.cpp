@@ -3221,7 +3221,7 @@ void TextBuffer::ClearMarksInRange(
         row.SetScrollbarData(std::nullopt);
         for (auto& [attr, length] : runs)
         {
-            attr.SetMarkAttributes(MarkKind::None);
+            attr.SetMarkAttributes(MarkKind::Output);
         }
     }
 }
@@ -3246,7 +3246,6 @@ MarkExtents TextBuffer::_scrollMarkExtentForRow(const til::CoordType rowOffset,
     bool startedPrompt = false;
     bool startedCommand = false;
     bool startedOutput = false;
-    MarkKind lastMarkKind = MarkKind::Output;
 
     const auto endThisMark = [&](auto x, auto y) {
         if (startedOutput)
@@ -3280,7 +3279,7 @@ MarkExtents TextBuffer::_scrollMarkExtentForRow(const til::CoordType rowOffset,
             const auto nextX = gsl::narrow_cast<uint16_t>(x + length);
             const auto markKind{ attr.GetMarkAttributes() };
 
-            if (markKind != MarkKind::None)
+            if (markKind != MarkKind::Output)
             {
                 lastMarkedText = { nextX, y };
 
@@ -3316,8 +3315,6 @@ MarkExtents TextBuffer::_scrollMarkExtentForRow(const til::CoordType rowOffset,
 
                     endThisMark(lastMarkedText.x, lastMarkedText.y);
                 }
-                // Otherwise, we've changed from any state -> any state, and it doesn't really matter.
-                lastMarkKind = markKind;
             }
             // advance to next run of text
             x = nextX;
@@ -3510,7 +3507,7 @@ bool TextBuffer::StartOutput()
 // the exit code on that row's scroll mark.
 void TextBuffer::EndCurrentCommand(std::optional<unsigned int> error)
 {
-    _currentAttributes.SetMarkAttributes(MarkKind::None);
+    _currentAttributes.SetMarkAttributes(MarkKind::Output);
 
     for (auto y = GetCursor().GetPosition().y; y >= 0; y--)
     {
