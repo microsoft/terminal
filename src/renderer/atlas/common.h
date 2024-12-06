@@ -342,8 +342,8 @@ namespace Microsoft::Console::Render::Atlas
 
     struct FontDecorationPosition
     {
-        u16 position = 0;
-        u16 height = 0;
+        i32 position = 0;
+        i32 height = 0;
     };
 
     struct FontSettings
@@ -355,12 +355,12 @@ namespace Microsoft::Console::Render::Atlas
         std::vector<DWRITE_FONT_FEATURE> fontFeatures;
         std::vector<DWRITE_FONT_AXIS_VALUE> fontAxisValues;
         f32 fontSize = 0;
-        u16x2 cellSize;
-        u16 fontWeight = 0;
-        u16 advanceWidth = 0;
-        u16 baseline = 0;
-        u16 descender = 0;
-        u16 thinLineWidth = 0;
+        i32x2 cellSize;
+        i32 fontWeight = 0;
+        i32 advanceWidth = 0;
+        i32 baseline = 0;
+        i32 descender = 0;
+        i32 thinLineWidth = 0;
 
         FontDecorationPosition gridTop;
         FontDecorationPosition gridBottom;
@@ -372,7 +372,7 @@ namespace Microsoft::Console::Render::Atlas
         FontDecorationPosition doubleUnderline[2];
         FontDecorationPosition overline;
 
-        u16 dpi = 96;
+        i32 dpi = 96;
         AntialiasingMode antialiasingMode = DefaultAntialiasingMode;
         bool builtinGlyphs = false;
         bool colorGlyphs = true;
@@ -386,8 +386,8 @@ namespace Microsoft::Console::Render::Atlas
         ATLAS_POD_OPS(CursorSettings)
 
         u32 cursorColor = 0xffffffff;
-        u16 cursorType = 0;
-        u16 heightPercentage = 20;
+        i32 cursorType = 0;
+        i32 heightPercentage = 20;
     };
 
     struct MiscellaneousSettings
@@ -408,9 +408,9 @@ namespace Microsoft::Console::Render::Atlas
         til::generational<CursorSettings> cursor;
         til::generational<MiscellaneousSettings> misc;
         // Size of the viewport / swap chain in pixel.
-        u16x2 targetSize{ 0, 0 };
+        i32x2 targetSize{ 0, 0 };
         // Size of the portion of the text buffer that we're drawing on the screen.
-        u16x2 viewportCellCount{ 0, 0 };
+        i32x2 viewportCellCount{ 0, 0 };
     };
 
     using GenerationalSettings = til::generational<Settings>;
@@ -467,7 +467,7 @@ namespace Microsoft::Console::Render::Atlas
 
     struct ShapedRow
     {
-        void Clear(u16 y, u16 cellHeight) noexcept
+        void Clear(i32 y, i32 cellHeight) noexcept
         {
             mappings.clear();
             glyphIndices.clear();
@@ -526,7 +526,7 @@ namespace Microsoft::Console::Render::Atlas
             til::generation_t generation;
             til::generation_t targetGeneration;
             til::generation_t fontGeneration;
-            u16x2 targetSize{};
+            i32x2 targetSize{};
             bool waitForPresentation = false;
         } swapChain;
         wil::com_ptr<ID3D11Device2> device;
@@ -579,11 +579,11 @@ namespace Microsoft::Console::Render::Atlas
         //   whenever glyphs go out of bounds. `AtlasEngine::_present()` will clamp it.
         i32r dirtyRectInPx{};
         // In rows.
-        range<u16> invalidatedRows{};
+        range<i32> invalidatedRows{};
         // In columns.
         i32 scrollOffsetX = 0;
         // In pixel.
-        i16 scrollDeltaY = 0;
+        i32 scrollDeltaY = 0;
 
         void MarkAllAsDirty() noexcept
         {

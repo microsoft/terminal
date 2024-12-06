@@ -48,8 +48,8 @@ constexpr HRESULT vec2_narrow(U x, U y, vec2<T>& out) noexcept
     //assert(psrRegion->top < psrRegion->bottom && psrRegion->top >= 0 && psrRegion->bottom <= _api.cellCount.y);
 
     // BeginPaint() protects against invalid out of bounds numbers.
-    _api.invalidatedRows.start = std::min(_api.invalidatedRows.start, gsl::narrow_cast<u16>(psrRegion->top));
-    _api.invalidatedRows.end = std::max(_api.invalidatedRows.end, gsl::narrow_cast<u16>(psrRegion->bottom));
+    _api.invalidatedRows.start = std::min(_api.invalidatedRows.start, gsl::narrow_cast<i32>(psrRegion->top));
+    _api.invalidatedRows.end = std::max(_api.invalidatedRows.end, gsl::narrow_cast<i32>(psrRegion->bottom));
     return S_OK;
 }
 
@@ -58,10 +58,10 @@ constexpr HRESULT vec2_narrow(U x, U y, vec2<T>& out) noexcept
     //assert(psrRegion->left <= psrRegion->right && psrRegion->left >= 0 && psrRegion->right <= _api.cellCount.x);
     //assert(psrRegion->top <= psrRegion->bottom && psrRegion->top >= 0 && psrRegion->bottom <= _api.cellCount.y);
 
-    const auto left = gsl::narrow_cast<u16>(psrRegion->left);
-    const auto top = gsl::narrow_cast<u16>(psrRegion->top);
-    const auto right = gsl::narrow_cast<u16>(psrRegion->right);
-    const auto bottom = gsl::narrow_cast<u16>(psrRegion->bottom);
+    const auto left = gsl::narrow_cast<i32>(psrRegion->left);
+    const auto top = gsl::narrow_cast<i32>(psrRegion->top);
+    const auto right = gsl::narrow_cast<i32>(psrRegion->right);
+    const auto bottom = gsl::narrow_cast<i32>(psrRegion->bottom);
 
     // BeginPaint() protects against invalid out of bounds numbers.
     _api.invalidatedCursorArea.left = std::min(_api.invalidatedCursorArea.left, left);
@@ -96,8 +96,8 @@ void AtlasEngine::_invalidateSpans(std::span<const til::point_span> spans, const
             til::rect rect{ beg, row, end + 1, row + 1 };
             rect = rect.to_origin(viewportOrigin);
             rect &= viewport;
-            _api.invalidatedRows.start = gsl::narrow_cast<u16>(std::min<int>(_api.invalidatedRows.start, std::max<int>(0, rect.top)));
-            _api.invalidatedRows.end = gsl::narrow_cast<u16>(std::max<int>(_api.invalidatedRows.end, std::max<int>(0, rect.bottom)));
+            _api.invalidatedRows.start = std::min(_api.invalidatedRows.start, std::max(0, rect.top));
+            _api.invalidatedRows.end = std::max(_api.invalidatedRows.end, std::max(0, rect.bottom));
         });
     }
 }
@@ -107,8 +107,8 @@ void AtlasEngine::_invalidateSpans(std::span<const til::point_span> spans, const
     if (!selections.empty())
     {
         // INVARIANT: This assumes that `selections` is sorted by increasing Y
-        _api.invalidatedRows.start = gsl::narrow_cast<u16>(std::min<int>(_api.invalidatedRows.start, std::max<int>(0, selections.front().top)));
-        _api.invalidatedRows.end = gsl::narrow_cast<u16>(std::max<int>(_api.invalidatedRows.end, std::max<int>(0, selections.back().bottom)));
+        _api.invalidatedRows.start = std::min(_api.invalidatedRows.start, std::max(0, selections.front().top));
+        _api.invalidatedRows.end = std::max(_api.invalidatedRows.end, std::max(0, selections.back().bottom));
     }
     return S_OK;
 }
@@ -127,28 +127,26 @@ void AtlasEngine::_invalidateSpans(std::span<const til::point_span> spans, const
 
     if (const auto delta = pcoordDelta->x)
     {
-        _api.invalidatedCursorArea.left = gsl::narrow_cast<u16>(clamp<int>(_api.invalidatedCursorArea.left + delta, u16min, u16max));
-        _api.invalidatedCursorArea.right = gsl::narrow_cast<u16>(clamp<int>(_api.invalidatedCursorArea.right + delta, u16min, u16max));
-
+        _api.invalidatedCursorArea.left = clamp(_api.invalidatedCursorArea.left + delta, 0, i32SafeMax);
+        _api.invalidatedCursorArea.right = clamp(_api.invalidatedCursorArea.right + delta, 0, i32SafeMax);
         _api.invalidatedRows = invalidatedRowsAll;
     }
 
     if (const auto delta = pcoordDelta->y)
     {
-        _api.scrollOffset = gsl::narrow_cast<i16>(clamp<int>(_api.scrollOffset + delta, i16min, i16max));
-
-        _api.invalidatedCursorArea.top = gsl::narrow_cast<u16>(clamp<int>(_api.invalidatedCursorArea.top + delta, u16min, u16max));
-        _api.invalidatedCursorArea.bottom = gsl::narrow_cast<u16>(clamp<int>(_api.invalidatedCursorArea.bottom + delta, u16min, u16max));
+        _api.scrollOffset = clamp(_api.scrollOffset + delta, -i32SafeMax, i32SafeMax);
+        _api.invalidatedCursorArea.top = clamp(_api.invalidatedCursorArea.top + delta, 0, i32SafeMax);
+        _api.invalidatedCursorArea.bottom = clamp(_api.invalidatedCursorArea.bottom + delta, 0, i32SafeMax);
 
         if (delta < 0)
         {
-            _api.invalidatedRows.start = gsl::narrow_cast<u16>(clamp<int>(_api.invalidatedRows.start + delta, u16min, u16max));
+            _api.invalidatedRows.start = clamp(_api.invalidatedRows.start + delta, 0, i32SafeMax);
             _api.invalidatedRows.end = _api.s->viewportCellCount.y;
         }
         else
         {
             _api.invalidatedRows.start = 0;
-            _api.invalidatedRows.end = gsl::narrow_cast<u16>(clamp<int>(_api.invalidatedRows.end + delta, u16min, u16max));
+            _api.invalidatedRows.end = clamp(_api.invalidatedRows.end + delta, 0, i32SafeMax);
         }
     }
 
@@ -188,7 +186,7 @@ void AtlasEngine::_invalidateSpans(std::span<const til::point_span> spans, const
 
 [[nodiscard]] HRESULT AtlasEngine::UpdateDpi(const int dpi) noexcept
 {
-    u16 newDPI;
+    i32 newDPI;
     RETURN_IF_FAILED(api_narrow(dpi, newDPI));
 
     if (_api.s->font->dpi != newDPI)
@@ -202,13 +200,13 @@ void AtlasEngine::_invalidateSpans(std::span<const til::point_span> spans, const
 [[nodiscard]] HRESULT AtlasEngine::UpdateViewport(const til::inclusive_rect& srNewViewport) noexcept
 try
 {
-    const u16x2 viewportCellCount{
-        gsl::narrow<u16>(std::max(1, srNewViewport.right - srNewViewport.left + 1)),
-        gsl::narrow<u16>(std::max(1, srNewViewport.bottom - srNewViewport.top + 1)),
+    const i32x2 viewportCellCount{
+        gsl::narrow<i32>(std::max(1, srNewViewport.right - srNewViewport.left + 1)),
+        gsl::narrow<i32>(std::max(1, srNewViewport.bottom - srNewViewport.top + 1)),
     };
-    const u16x2 viewportOffset{
-        gsl::narrow<u16>(srNewViewport.left),
-        gsl::narrow<u16>(srNewViewport.top),
+    const i32x2 viewportOffset{
+        gsl::narrow<i32>(srNewViewport.left),
+        gsl::narrow<i32>(srNewViewport.top),
     };
 
     if (_api.s->viewportCellCount != viewportCellCount)
@@ -462,10 +460,7 @@ void AtlasEngine::SetWarningCallback(std::function<void(HRESULT, wil::zwstring_v
         return S_OK;
     }
 
-    const u16x2 newSize{
-        gsl::narrow_cast<u16>(clamp<til::CoordType>(pixels.width, 1, u16max)),
-        gsl::narrow_cast<u16>(clamp<til::CoordType>(pixels.height, 1, u16max)),
-    };
+    const i32x2 newSize{ pixels.width, pixels.height };
 
     if (_api.s->targetSize != newSize)
     {
@@ -806,8 +801,8 @@ void AtlasEngine::_resolveFontMetrics(const FontInfoDesired& fontInfoDesired, Fo
     // Our cells can't overlap each other so we additionally clamp the bottom line to be inside the cell boundaries.
     doubleUnderlinePosBottom = std::min(doubleUnderlinePosBottom, adjustedHeight - doubleUnderlineWidth);
 
-    const auto cellWidth = gsl::narrow<u16>(lrintf(adjustedWidth));
-    const auto cellHeight = gsl::narrow<u16>(lrintf(adjustedHeight));
+    const auto cellWidth = gsl::narrow<i32>(lrintf(adjustedWidth));
+    const auto cellHeight = gsl::narrow<i32>(lrintf(adjustedHeight));
 
     {
         til::size coordSize;
@@ -827,22 +822,21 @@ void AtlasEngine::_resolveFontMetrics(const FontInfoDesired& fontInfoDesired, Fo
 
     if (fontMetrics)
     {
-        const auto fontWeightU16 = gsl::narrow_cast<u16>(requestedWeight);
-        const auto advanceWidthU16 = gsl::narrow_cast<u16>(lrintf(advanceWidth));
-        const auto baselineU16 = gsl::narrow_cast<u16>(lrintf(baseline));
-        const auto descenderU16 = gsl::narrow_cast<u16>(cellHeight - baselineU16);
-        const auto thinLineWidthU16 = gsl::narrow_cast<u16>(lrintf(thinLineWidth));
+        const auto advanceWidthI32 = static_cast<i32>(lrintf(advanceWidth));
+        const auto baselineI32 = static_cast<i32>(lrintf(baseline));
+        const auto descenderI32 = cellHeight - baselineI32;
+        const auto thinLineWidthI32 = static_cast<i32>(lrintf(thinLineWidth));
 
-        const auto gridBottomPositionU16 = gsl::narrow_cast<u16>(cellHeight - thinLineWidth);
-        const auto gridRightPositionU16 = gsl::narrow_cast<u16>(cellWidth - thinLineWidth);
+        const auto gridBottomPositionI32 = static_cast<i32>(lrintf(cellHeight - thinLineWidth));
+        const auto gridRightPositionI32 = static_cast<i32>(lrintf(cellWidth - thinLineWidth));
 
-        const auto underlinePosU16 = gsl::narrow_cast<u16>(lrintf(underlinePos));
-        const auto underlineWidthU16 = gsl::narrow_cast<u16>(lrintf(underlineWidth));
-        const auto strikethroughPosU16 = gsl::narrow_cast<u16>(lrintf(strikethroughPos));
-        const auto strikethroughWidthU16 = gsl::narrow_cast<u16>(lrintf(strikethroughWidth));
-        const auto doubleUnderlinePosTopU16 = gsl::narrow_cast<u16>(lrintf(doubleUnderlinePosTop));
-        const auto doubleUnderlinePosBottomU16 = gsl::narrow_cast<u16>(lrintf(doubleUnderlinePosBottom));
-        const auto doubleUnderlineWidthU16 = gsl::narrow_cast<u16>(lrintf(doubleUnderlineWidth));
+        const auto underlinePosI32 = static_cast<i32>(lrintf(underlinePos));
+        const auto underlineWidthI32 = static_cast<i32>(lrintf(underlineWidth));
+        const auto strikethroughPosI32 = static_cast<i32>(lrintf(strikethroughPos));
+        const auto strikethroughWidthI32 = static_cast<i32>(lrintf(strikethroughWidth));
+        const auto doubleUnderlinePosTopI32 = static_cast<i32>(lrintf(doubleUnderlinePosTop));
+        const auto doubleUnderlinePosBottomI32 = static_cast<i32>(lrintf(doubleUnderlinePosBottom));
+        const auto doubleUnderlineWidthI32 = static_cast<i32>(lrintf(doubleUnderlineWidth));
 
         // NOTE: From this point onward no early returns or throwing code should exist,
         // as we might cause _api to be in an inconsistent state otherwise.
@@ -853,22 +847,22 @@ void AtlasEngine::_resolveFontMetrics(const FontInfoDesired& fontInfoDesired, Fo
         fontMetrics->fontName = std::move(primaryFontName);
         fontMetrics->fontSize = fontSizeInPx;
         fontMetrics->cellSize = { cellWidth, cellHeight };
-        fontMetrics->fontWeight = fontWeightU16;
-        fontMetrics->advanceWidth = advanceWidthU16;
-        fontMetrics->baseline = baselineU16;
-        fontMetrics->descender = descenderU16;
-        fontMetrics->thinLineWidth = thinLineWidthU16;
+        fontMetrics->fontWeight = requestedWeight;
+        fontMetrics->advanceWidth = advanceWidthI32;
+        fontMetrics->baseline = baselineI32;
+        fontMetrics->descender = descenderI32;
+        fontMetrics->thinLineWidth = thinLineWidthI32;
 
-        fontMetrics->gridTop = { 0, thinLineWidthU16 };
-        fontMetrics->gridBottom = { gridBottomPositionU16, thinLineWidthU16 };
-        fontMetrics->gridLeft = { 0, thinLineWidthU16 };
-        fontMetrics->gridRight = { gridRightPositionU16, thinLineWidthU16 };
+        fontMetrics->gridTop = { 0, thinLineWidthI32 };
+        fontMetrics->gridBottom = { gridBottomPositionI32, thinLineWidthI32 };
+        fontMetrics->gridLeft = { 0, thinLineWidthI32 };
+        fontMetrics->gridRight = { gridRightPositionI32, thinLineWidthI32 };
 
-        fontMetrics->underline = { underlinePosU16, underlineWidthU16 };
-        fontMetrics->strikethrough = { strikethroughPosU16, strikethroughWidthU16 };
-        fontMetrics->doubleUnderline[0] = { doubleUnderlinePosTopU16, doubleUnderlineWidthU16 };
-        fontMetrics->doubleUnderline[1] = { doubleUnderlinePosBottomU16, doubleUnderlineWidthU16 };
-        fontMetrics->overline = { 0, underlineWidthU16 };
+        fontMetrics->underline = { underlinePosI32, underlineWidthI32 };
+        fontMetrics->strikethrough = { strikethroughPosI32, strikethroughWidthI32 };
+        fontMetrics->doubleUnderline[0] = { doubleUnderlinePosTopI32, doubleUnderlineWidthI32 };
+        fontMetrics->doubleUnderline[1] = { doubleUnderlinePosBottomI32, doubleUnderlineWidthI32 };
+        fontMetrics->overline = { 0, underlineWidthI32 };
 
         fontMetrics->builtinGlyphs = fontInfoDesired.GetEnableBuiltinGlyphs();
         fontMetrics->colorGlyphs = fontInfoDesired.GetEnableColorGlyphs();

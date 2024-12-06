@@ -319,8 +319,8 @@ void AtlasEngine::_createSwapChain()
     _destroySwapChain();
 
     DXGI_SWAP_CHAIN_DESC1 desc{
-        .Width = _p.s->targetSize.x,
-        .Height = _p.s->targetSize.y,
+        .Width = static_cast<UINT>(_p.s->targetSize.x),
+        .Height = static_cast<UINT>(_p.s->targetSize.y),
         .Format = DXGI_FORMAT_B8G8R8A8_UNORM,
         .SampleDesc = { .Count = 1 },
         .BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT,
