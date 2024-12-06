@@ -1288,12 +1288,6 @@ namespace TerminalAppLocalTests
         END_TEST_METHOD_PROPERTIES()
 
         auto page = _commonSetup();
-        page->RenameWindowRequested([&page](auto&&, auto&&) {
-            // In the real terminal, this would bounce up to the monarch and
-            // come back down. Instead, immediately call back to tell the terminal it failed.
-            page->RenameFailed();
-        });
-
         auto windowNameChanged = false;
 
         page->PropertyChanged([&page, &windowNameChanged](auto&&, const winrt::WUX::Data::PropertyChangedEventArgs& args) mutable {

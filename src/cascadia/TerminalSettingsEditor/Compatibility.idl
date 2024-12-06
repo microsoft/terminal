@@ -14,7 +14,6 @@ namespace Microsoft.Terminal.Settings.Editor
         Boolean DebugFeaturesAvailable { get; };
 
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, AllowHeadless);
-        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, IsolatedMode);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, DebugFeaturesEnabled);
 
         IInspectable CurrentTextMeasurement;

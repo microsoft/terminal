@@ -4,7 +4,6 @@
 #pragma once
 
 #include "AppLogic.g.h"
-#include "FindTargetWindowResult.g.h"
 
 #include "Jumplist.h"
 #include "LanguageProfileNotifier.h"
@@ -25,19 +24,6 @@ namespace TerminalAppLocalTests
 
 namespace winrt::TerminalApp::implementation
 {
-    struct FindTargetWindowResult : FindTargetWindowResultT<FindTargetWindowResult>
-    {
-        WINRT_PROPERTY(int32_t, WindowId, -1);
-        WINRT_PROPERTY(winrt::hstring, WindowName, L"");
-
-    public:
-        FindTargetWindowResult(const int32_t id, const winrt::hstring& name) :
-            _WindowId{ id }, _WindowName{ name } {};
-
-        FindTargetWindowResult(const int32_t id) :
-            FindTargetWindowResult(id, L""){};
-    };
-
     struct AppLogic : AppLogicT<AppLogic>
     {
     public:
@@ -53,24 +39,14 @@ namespace winrt::TerminalApp::implementation
         void NotifyRootInitialized();
 
         bool HasSettingsStartupActions() const noexcept;
-        bool ShouldUsePersistedLayout() const;
 
-        [[nodiscard]] Microsoft::Terminal::Settings::Model::CascadiaSettings GetSettings() const noexcept;
-
-        TerminalApp::FindTargetWindowResult FindTargetWindow(array_view<const winrt::hstring> actions);
+        Microsoft::Terminal::Settings::Model::CascadiaSettings Settings() const noexcept;
 
         Windows::Foundation::Collections::IMapView<Microsoft::Terminal::Control::KeyChord, Microsoft::Terminal::Settings::Model::Command> GlobalHotkeys();
-
-        Microsoft::Terminal::Settings::Model::Theme Theme();
-        bool IsolatedMode();
-        bool AllowHeadless();
-        bool RequestsTrayIcon();
 
         TerminalApp::TerminalWindow CreateNewWindow();
 
         winrt::TerminalApp::ContentManager ContentManager();
-
-        TerminalApp::ParseCommandlineResult GetParseCommandlineMessage(array_view<const winrt::hstring> args);
 
         til::typed_event<winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::SettingsLoadEventArgs> SettingsChanged;
 
@@ -98,9 +74,6 @@ namespace winrt::TerminalApp::implementation
         wil::unique_folder_change_reader_nothrow _reader;
 
         TerminalApp::ContentManager _contentManager{ winrt::make<implementation::ContentManager>() };
-
-        static TerminalApp::FindTargetWindowResult _doFindTargetWindow(winrt::array_view<const hstring> args,
-                                                                       const Microsoft::Terminal::Settings::Model::WindowingMode& windowingBehavior);
 
         void _ApplyLanguageSettingChange() noexcept;
         safe_void_coroutine _ApplyStartupTaskStateChange();

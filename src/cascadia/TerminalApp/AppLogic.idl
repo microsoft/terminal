@@ -4,18 +4,6 @@ import "TerminalWindow.idl";
 
 namespace TerminalApp
 {
-    [default_interface] runtimeclass FindTargetWindowResult
-    {
-        Int32 WindowId { get; };
-        String WindowName { get; };
-    };
-
-    struct ParseCommandlineResult
-    {
-        String Message;
-        Int32 ExitCode;
-    };
-
     // See IDialogPresenter and TerminalPage's DialogPresenter for more
     // information.
     [default_interface] runtimeclass AppLogic
@@ -36,21 +24,10 @@ namespace TerminalApp
 
         Boolean HasSettingsStartupActions();
 
-        Boolean ShouldUsePersistedLayout();
-
         void ReloadSettings();
-
-        // Selected settings to expose
-        Microsoft.Terminal.Settings.Model.Theme Theme { get; };
-        Boolean IsolatedMode { get; };
-        Boolean AllowHeadless { get; };
-        Boolean RequestsTrayIcon { get; };
-
-        FindTargetWindowResult FindTargetWindow(String[] args);
+        Microsoft.Terminal.Settings.Model.CascadiaSettings Settings { get; };
 
         TerminalWindow CreateNewWindow();
-
-        ParseCommandlineResult GetParseCommandlineMessage(String[] args);
 
         IMapView<Microsoft.Terminal.Control.KeyChord, Microsoft.Terminal.Settings.Model.Command> GlobalHotkeys();
 

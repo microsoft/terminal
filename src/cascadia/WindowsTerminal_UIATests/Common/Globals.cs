@@ -31,7 +31,6 @@ namespace WindowsTerminal.UIA.Tests.Common
             "WindowsTerminal.exe",
             "OpenConsole.exe",
             "Microsoft.Terminal.Control.dll",
-            "Microsoft.Terminal.Remoting.dll",
             "Microsoft.Terminal.Settings.Editor.dll",
             "Microsoft.Terminal.Settings.Model.dll",
             "TerminalApp.dll",

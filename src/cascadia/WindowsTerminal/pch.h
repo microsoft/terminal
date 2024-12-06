@@ -45,8 +45,6 @@ Abstract:
 #undef GetCurrentTime
 #endif
 
-#include <wil/cppwinrt.h>
-
 // Needed just for XamlIslands to work at all:
 #include <winrt/Windows.System.h>
 #include <winrt/Windows.Foundation.Collections.h>
@@ -70,11 +68,10 @@ Abstract:
 
 #include <winrt/TerminalApp.h>
 #include <winrt/Microsoft.Terminal.Settings.Model.h>
-#include <winrt/Microsoft.Terminal.Remoting.h>
 #include <winrt/Microsoft.Terminal.Control.h>
 #include <winrt/Microsoft.Terminal.UI.h>
 
-#include <wil/resource.h>
+#include <wil/cppwinrt.h>
 #include <wil/win32_helpers.h>
 
 // Including TraceLogging essentials for the binary

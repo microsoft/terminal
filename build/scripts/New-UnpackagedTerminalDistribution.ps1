@@ -34,7 +34,7 @@ Param(
 )
 
 $filesToRemove = @("*.xml", "*.winmd", "Appx*", "Images/*Tile*", "Images/*Logo*") # Remove from Terminal
-$filesToKeep = @("Microsoft.Terminal.Remoting.winmd") # ... except for these
+$filesToKeep = @() # ... except for these
 $filesToCopyFromXaml = @("Microsoft.UI.Xaml.dll", "Microsoft.UI.Xaml") # We don't need the .winmd
 
 $ErrorActionPreference = 'Stop'

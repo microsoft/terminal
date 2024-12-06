@@ -1,0 +1,55 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+namespace TerminalApp
+{
+    runtimeclass CommandlineArgs
+    {
+        CommandlineArgs();
+        CommandlineArgs(String[] args, String cwd, UInt32 showWindowCommand, String env);
+
+        Int32 ExitCode { get; };
+        String ExitMessage { get; };
+        String TargetWindow { get; };
+
+        String[] Commandline;
+        String CurrentDirectory { get; };
+        UInt32 ShowWindowCommand { get; };
+        String CurrentEnvironment { get; };
+    };
+
+    enum MonitorBehavior
+    {
+        InPlace,
+        ToCurrent,
+        ToMouse,
+    };
+
+    [default_interface] runtimeclass SummonWindowBehavior {
+        SummonWindowBehavior();
+        Boolean MoveToCurrentDesktop;
+        Boolean ToggleVisibility;
+        UInt32 DropdownDuration;
+        MonitorBehavior ToMonitor;
+    }
+
+    [default_interface] runtimeclass RequestReceiveContentArgs {
+        RequestReceiveContentArgs(UInt64 src, UInt64 tgt, UInt32 tabIndex);
+
+        UInt64 SourceWindow { get; };
+        UInt64 TargetWindow { get; };
+        UInt32 TabIndex { get; };
+    };
+
+    [default_interface] runtimeclass WindowRequestedArgs {
+        WindowRequestedArgs(UInt64 id, CommandlineArgs command);
+        WindowRequestedArgs(String window, String content, Windows.Foundation.IReference<Windows.Foundation.Rect> bounds);
+
+        UInt64 Id;
+        String WindowName;
+
+        CommandlineArgs Command { get; };
+        String Content { get; };
+        Windows.Foundation.IReference<Windows.Foundation.Rect> InitialBounds { get; };
+    };
+}

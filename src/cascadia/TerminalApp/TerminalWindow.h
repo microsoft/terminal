@@ -7,12 +7,10 @@
 #include "SystemMenuChangeArgs.g.h"
 #include "WindowProperties.g.h"
 
-#include "SettingsLoadEventArgs.h"
+#include "Remoting.h"
 #include "TerminalPage.h"
-#include "SettingsLoadEventArgs.h"
 
-#include <inc/cppwinrt_utils.h>
-#include <ThrottledFunc.h>
+#include <cppwinrt_utils.h>
 
 #ifdef UNIT_TESTING
 // fwdecl unittest classes
@@ -75,16 +73,14 @@ namespace winrt::TerminalApp::implementation
 
         void PersistState();
 
-        safe_void_coroutine UpdateSettings(winrt::TerminalApp::SettingsLoadEventArgs args);
+        void UpdateSettings(winrt::TerminalApp::SettingsLoadEventArgs args);
 
         bool HasCommandlineArguments() const noexcept;
 
-        int32_t SetStartupCommandline(array_view<const winrt::hstring> actions, winrt::hstring cwd, winrt::hstring env);
+        int32_t SetStartupCommandline(TerminalApp::CommandlineArgs args);
         void SetStartupContent(const winrt::hstring& content, const Windows::Foundation::IReference<Windows::Foundation::Rect>& contentBounds);
-        int32_t ExecuteCommandline(array_view<const winrt::hstring> actions, const winrt::hstring& cwd, const winrt::hstring& env);
+        int32_t ExecuteCommandline(TerminalApp::CommandlineArgs args);
         void SetSettingsStartupArgs(const std::vector<winrt::Microsoft::Terminal::Settings::Model::ActionAndArgs>& actions);
-        winrt::hstring ParseCommandlineMessage();
-        bool ShouldExitEarly();
 
         bool ShouldImmediatelyHandoffToElevated();
         void HandoffToElevated();
@@ -94,9 +90,7 @@ namespace winrt::TerminalApp::implementation
         void Maximized(bool newMaximized);
         bool AlwaysOnTop() const;
         bool AutoHideWindow();
-
         void IdentifyWindow();
-        void RenameFailed();
 
         std::optional<uint32_t> LoadPersistedLayoutIdx() const;
         winrt::Microsoft::Terminal::Settings::Model::WindowLayout LoadPersistedLayout();
@@ -174,8 +168,8 @@ namespace winrt::TerminalApp::implementation
         winrt::Windows::UI::Xaml::Controls::ContentDialog _dialog{ nullptr };
         std::shared_mutex _dialogLock;
 
+        wil::com_ptr<CommandlineArgs> _appArgs{ nullptr };
         bool _hasCommandLineArguments{ false };
-        ::TerminalApp::AppCommandlineArgs _appArgs;
         bool _gotSettingsStartupActions{ false };
         std::vector<winrt::Microsoft::Terminal::Settings::Model::ActionAndArgs> _settingsStartupArgs{};
         Windows::Foundation::IReference<Windows::Foundation::Rect> _contentBounds{ nullptr };
@@ -204,6 +198,7 @@ namespace winrt::TerminalApp::implementation
         void _pageInitialized(const IInspectable& sender, const IInspectable& eventArgs);
         void _OpenSettingsUI();
         void _WindowSizeChanged(const IInspectable& sender, winrt::Microsoft::Terminal::Control::WindowSizeChangedEventArgs args);
+        void _RenameWindowRequested(const IInspectable& sender, const winrt::TerminalApp::RenameWindowRequestedArgs args);
 
         winrt::Windows::Foundation::Collections::IVector<Microsoft::Terminal::Settings::Model::ActionAndArgs> _contentStringToActions(const winrt::hstring& content,
                                                                                                                                       const bool replaceFirstWithNewTab);
@@ -223,7 +218,6 @@ namespace winrt::TerminalApp::implementation
         FORWARDED_TYPED_EVENT(RaiseVisualBell, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable, _root, RaiseVisualBell);
         FORWARDED_TYPED_EVENT(SetTaskbarProgress, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable, _root, SetTaskbarProgress);
         FORWARDED_TYPED_EVENT(IdentifyWindowsRequested, Windows::Foundation::IInspectable, Windows::Foundation::IInspectable, _root, IdentifyWindowsRequested);
-        FORWARDED_TYPED_EVENT(RenameWindowRequested, Windows::Foundation::IInspectable, winrt::TerminalApp::RenameWindowRequestedArgs, _root, RenameWindowRequested);
         FORWARDED_TYPED_EVENT(SummonWindowRequested, Windows::Foundation::IInspectable, Windows::Foundation::IInspectable, _root, SummonWindowRequested);
         FORWARDED_TYPED_EVENT(CloseRequested, Windows::Foundation::IInspectable, Windows::Foundation::IInspectable, _root, CloseRequested);
         FORWARDED_TYPED_EVENT(OpenSystemMenu, Windows::Foundation::IInspectable, Windows::Foundation::IInspectable, _root, OpenSystemMenu);
