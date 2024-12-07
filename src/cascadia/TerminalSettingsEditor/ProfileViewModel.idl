@@ -42,7 +42,6 @@ namespace Microsoft.Terminal.Settings.Editor
         void SetupAppearances(Windows.Foundation.Collections.IObservableVector<ColorSchemeViewModel> schemesList);
 
         void SetAcrylicOpacityPercentageValue(Double value);
-        void SetPadding(Double value);
 
         Boolean IsBellStyleFlagSet(UInt32 flag);
         void SetBellStyleAudible(Windows.Foundation.IReference<Boolean> on);
@@ -57,6 +56,11 @@ namespace Microsoft.Terminal.Settings.Editor
 
         IInspectable CurrentScrollState;
         Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> ScrollStateList { get; };
+
+        Double LeftPadding { get; set; };
+        Double TopPadding { get; set; };
+        Double RightPadding { get; set; };
+        Double BottomPadding { get; set; };
 
         IInspectable CurrentPathTranslationStyle;
         Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> PathTranslationStyleList { get; };
