@@ -328,6 +328,9 @@
     <value>Abrir o arquivo de configurações (JSON)</value>
     <comment>{Locked="JSON"}. "JSON" is the extension of the file that will be opened.</comment>
   </data>
+  <data name="SettingsFileOpenInExplorerCommandKey" xml:space="preserve">
+    <value>Abrir o diretório de arquivo de configurações</value>
+  </data>
   <data name="OpenTabColorPickerCommandKey" xml:space="preserve">
     <value>Definir cor da guia...</value>
   </data>
@@ -733,5 +736,8 @@
   </data>
   <data name="QuickFixCommandKey" xml:space="preserve">
     <value>Abrir o menu de correção rápida</value>
+  </data>
+  <data name="OpenCWDCommandKey" xml:space="preserve">
+    <value>Abrir o diretório de trabalho atual</value>
   </data>
 </root>
