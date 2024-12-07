@@ -19,22 +19,8 @@ namespace Microsoft::Console::Render::Atlas
         void Render(RenderingPayload& payload) override;
         bool RequiresContinuousRedraw() noexcept override;
 
-        // NOTE: D3D constant buffers sizes must be a multiple of 16 bytes.
-        struct alignas(16) VSConstBuffer
-        {
-            // WARNING: Modify this carefully after understanding how HLSL struct packing works. The gist is:
-            // * Minimum alignment is 4 bytes
-            // * Members cannot straddle 16 byte boundaries
-            //   This means a structure like {u32; u32; u32; u32x2} would require
-            //   padding so that it is {u32; u32; u32; <4 byte padding>; u32x2}.
-            // * bool will probably not work the way you want it to,
-            //   because HLSL uses 32-bit bools and C++ doesn't.
-            alignas(sizeof(f32x2)) f32x2 positionScale;
-#pragma warning(suppress : 4324) // 'VSConstBuffer': structure was padded due to alignment specifier
-        };
-
         // WARNING: Same rules as for VSConstBuffer above apply.
-        struct alignas(16) PSConstBuffer
+        struct alignas(16) ConstBuffer
         {
             alignas(sizeof(f32x4)) f32x4 backgroundColor;
             alignas(sizeof(f32x2)) f32x2 backgroundCellSize;
@@ -97,6 +83,15 @@ namespace Microsoft::Console::Render::Atlas
             alignas(u32) u16x2 size;
             alignas(u32) u16x2 texcoord;
             alignas(u32) u32 color;
+        };
+        
+        struct Sprite
+        {
+            u32x2 position;
+            u32x2 size;
+            u32x2 texcoord;
+            u32 color;
+            u32 padding;
         };
 
         // NOTE: Don't initialize any members in this struct. This ensures that no
@@ -240,11 +235,8 @@ namespace Microsoft::Console::Render::Atlas
         ATLAS_ATTR_COLD void _resetGlyphAtlas(const RenderingPayload& p, u32 minWidth, u32 minHeight);
         ATLAS_ATTR_COLD void _resizeGlyphAtlas(const RenderingPayload& p, u16 u, u16 v);
         static bool _checkMacTypeVersion(const RenderingPayload& p);
-        QuadInstance& _getLastQuad() noexcept;
-        QuadInstance& _appendQuad();
-        ATLAS_ATTR_COLD void _bumpInstancesSize();
+        void _appendQuad(Sprite sprite);
         void _flushQuads(const RenderingPayload& p);
-        ATLAS_ATTR_COLD void _recreateInstanceBuffers(const RenderingPayload& p);
         void _drawBackground(const RenderingPayload& p);
         void _uploadBackgroundBitmap(const RenderingPayload& p);
         void _drawText(RenderingPayload& p);
@@ -263,19 +255,16 @@ namespace Microsoft::Console::Render::Atlas
         void _drawSelection(const RenderingPayload& p);
         void _executeCustomShader(RenderingPayload& p);
 
-        wil::com_ptr<ID3D11RenderTargetView> _renderTargetView;
-        wil::com_ptr<ID3D11InputLayout> _inputLayout;
-        wil::com_ptr<ID3D11VertexShader> _vertexShader;
-        wil::com_ptr<ID3D11PixelShader> _pixelShader;
-        wil::com_ptr<ID3D11BlendState> _blendState;
-        wil::com_ptr<ID3D11Buffer> _vsConstantBuffer;
-        wil::com_ptr<ID3D11Buffer> _psConstantBuffer;
-        wil::com_ptr<ID3D11Buffer> _vertexBuffer;
-        wil::com_ptr<ID3D11Buffer> _indexBuffer;
-        wil::com_ptr<ID3D11Buffer> _instanceBuffer;
-        size_t _instanceBufferCapacity = 0;
-        Buffer<QuadInstance, 32> _instances;
-        size_t _instancesCount = 0;
+        wil::com_ptr<ID3D11UnorderedAccessView> _renderTargetView;
+        wil::com_ptr<ID3D11ComputeShader> _computeShader;
+        wil::com_ptr<ID3D11Buffer> _constantBuffer;
+        wil::com_ptr<ID3D11Texture2D> _tileBuffer;
+        wil::com_ptr<ID3D11ShaderResourceView> _tileBufferView;
+        wil::com_ptr<ID3D11Buffer> _spriteBuffer;
+        wil::com_ptr<ID3D11ShaderResourceView> _spriteBufferView;
+        std::vector<std::vector<Sprite>> _tileQueues;
+        std::vector<u32x2> _tiles;
+        std::vector<Sprite> _sprites;
 
         wil::com_ptr<ID3D11RenderTargetView> _customRenderTargetView;
         wil::com_ptr<ID3D11Texture2D> _customOffscreenTexture;
@@ -321,6 +310,7 @@ namespace Microsoft::Console::Render::Atlas
         til::generation_t _miscGeneration;
         u16x2 _targetSize{};
         u16x2 _viewportCellCount{};
+        u16x2 _shaderCellCount{};
         ShadingType _textShadingType = ShadingType::Default;
 
         // An empty-box cursor spanning a wide glyph that has different

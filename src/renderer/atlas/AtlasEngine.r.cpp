@@ -323,7 +323,7 @@ void AtlasEngine::_createSwapChain()
         .Height = _p.s->targetSize.y,
         .Format = DXGI_FORMAT_B8G8R8A8_UNORM,
         .SampleDesc = { .Count = 1 },
-        .BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT,
+        .BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT | DXGI_USAGE_UNORDERED_ACCESS,
         // Sometimes up to 2 buffers are locked, for instance during screen capture or when moving the window.
         // 3 buffers seems to guarantee a stable framerate at display frequency at all times.
         .BufferCount = 3,
