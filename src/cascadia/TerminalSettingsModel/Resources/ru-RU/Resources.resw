@@ -328,6 +328,9 @@
     <value>Открыть файл параметров (JSON)</value>
     <comment>{Locked="JSON"}. "JSON" is the extension of the file that will be opened.</comment>
   </data>
+  <data name="SettingsFileOpenInExplorerCommandKey" xml:space="preserve">
+    <value>Открыть каталог файлов параметров</value>
+  </data>
   <data name="OpenTabColorPickerCommandKey" xml:space="preserve">
     <value>Установить цвет вкладки...</value>
   </data>
@@ -733,5 +736,8 @@
   </data>
   <data name="QuickFixCommandKey" xml:space="preserve">
     <value>Открыть меню быстрого исправления</value>
+  </data>
+  <data name="OpenCWDCommandKey" xml:space="preserve">
+    <value>Открыть текущую рабочую папку</value>
   </data>
 </root>
