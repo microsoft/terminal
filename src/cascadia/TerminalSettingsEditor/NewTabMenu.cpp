@@ -24,6 +24,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         _entryTemplateSelector = Resources().Lookup(box_value(L"NewTabMenuEntryTemplateSelector")).as<Editor::NewTabMenuEntryTemplateSelector>();
 
+        // Ideally, we'd bind IsEnabled to something like mtu:Converters.isEmpty(NewTabMenuListView.SelectedItems.Size) in the XAML,
+        //   but the XAML compiler can't find NewTabMenuListView when we try that. Rather than copying the list of selected items over
+        //   to the view model, we'll just do this instead (much simpler).
+        NewTabMenuListView().SelectionChanged([this](auto&&, auto&&) {
+            const auto list = NewTabMenuListView();
+            MoveToFolderButton().IsEnabled(list.SelectedItems().Size() > 0);
+            DeleteMultipleButton().IsEnabled(list.SelectedItems().Size() > 0);
+        });
+
         Automation::AutomationProperties::SetName(MoveToFolderButton(), RS_(L"NewTabMenu_MoveToFolderTextBlock/Text"));
         Automation::AutomationProperties::SetName(DeleteMultipleButton(), RS_(L"NewTabMenu_DeleteMultipleTextBlock/Text"));
         Automation::AutomationProperties::SetName(AddProfileComboBox(), RS_(L"NewTabMenu_AddProfile/Header"));
@@ -41,8 +50,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void NewTabMenu::FolderPickerDialog_Opened(const IInspectable& /*sender*/, const Controls::ContentDialogOpenedEventArgs& /*e*/)
     {
-        _ViewModel.CurrentFolderTreeViewSelectedItem(nullptr);
+        // Ideally, we'd bind IsPrimaryButtonEnabled to something like mtu:Converters.isEmpty(FolderTree.SelectedItems.Size) in the XAML.
+        // Similar to above, the XAML compiler can't find FolderTree when we try that.
+        // To make matters worse, SelectionChanged doesn't exist for WinUI 2's TreeView.
+        // Let's just select the first item and call it a day.
         _ViewModel.GenerateFolderTree();
+        _ViewModel.CurrentFolderTreeViewSelectedItem(_ViewModel.FolderTree().First().Current());
     }
 
     void NewTabMenu::FolderPickerDialog_PrimaryButtonClick(const IInspectable& /*sender*/, const Controls::ContentDialogButtonClickEventArgs& /*e*/)
@@ -60,7 +73,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void NewTabMenu::EditEntry_Clicked(const IInspectable& sender, const RoutedEventArgs& /*e*/)
     {
-        auto folderVM = sender.as<FrameworkElement>().DataContext().as<Editor::FolderEntryViewModel>();
+        const auto folderVM = sender.as<FrameworkElement>().DataContext().as<Editor::FolderEntryViewModel>();
         _ViewModel.CurrentFolder(folderVM);
     }
 
@@ -100,6 +113,41 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
+    void NewTabMenu::AddProfileButton_Clicked(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
+    {
+        _ScrollToEntry(_ViewModel.RequestAddSelectedProfileEntry());
+    }
+
+    void NewTabMenu::AddSeparatorButton_Clicked(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
+    {
+        _ScrollToEntry(_ViewModel.RequestAddSeparatorEntry());
+    }
+
+    void NewTabMenu::AddFolderButton_Clicked(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
+    {
+        _ScrollToEntry(_ViewModel.RequestAddFolderEntry());
+    }
+
+    void NewTabMenu::AddMatchProfilesButton_Clicked(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
+    {
+        _ScrollToEntry(_ViewModel.RequestAddProfileMatcherEntry());
+    }
+
+    void NewTabMenu::AddRemainingProfilesButton_Clicked(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
+    {
+        _ScrollToEntry(_ViewModel.RequestAddRemainingProfilesEntry());
+    }
+
+    // As a QOL improvement, we scroll to the newly added entry.
+    // Calling ScrollIntoView() on its own causes the items to briefly disappear.
+    // Calling UpdateLayout() beforehand remedies this issue.
+    void NewTabMenu::_ScrollToEntry(const Editor::NewTabMenuEntryViewModel& entry)
+    {
+        const auto& listView = NewTabMenuListView();
+        listView.UpdateLayout();
+        listView.ScrollIntoView(entry);
+    }
+
     void NewTabMenu::AddFolderNameTextBox_KeyDown(const IInspectable& /*sender*/, const Input::KeyRoutedEventArgs& e)
     {
         if (e.Key() == Windows::System::VirtualKey::Enter)
@@ -108,7 +156,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             if (const auto folderName = FolderNameTextBox().Text(); !folderName.empty())
             {
                 _ViewModel.AddFolderName(folderName);
-                _ViewModel.RequestAddFolderEntry();
+                const auto entry = _ViewModel.RequestAddFolderEntry();
+                NewTabMenuListView().ScrollIntoView(entry);
             }
         }
     }

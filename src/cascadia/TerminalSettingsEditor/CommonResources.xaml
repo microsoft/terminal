@@ -263,6 +263,8 @@
         <Setter Property="Width" Value="25" />
         <Setter Property="Padding" Value="0" />
         <Setter Property="Margin" Value="0" />
+        <Setter Property="MinHeight" Value="0" />
+        <Setter Property="MinWidth" Value="0" />
     </Style>
 
     <Style x:Key="SmallButtonStyle"
@@ -305,6 +307,8 @@
         <Setter Property="Width" Value="25" />
         <Setter Property="Padding" Value="0" />
         <Setter Property="Margin" Value="0" />
+        <Setter Property="MinHeight" Value="0" />
+        <Setter Property="MinWidth" Value="0" />
     </Style>
 
     <Style x:Key="IconButtonTextBlockStyle"

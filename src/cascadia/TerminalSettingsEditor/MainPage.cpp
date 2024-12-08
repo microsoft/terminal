@@ -64,7 +64,26 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _UpdateBackgroundForMica();
 
         _newTabMenuPageVM = winrt::make<NewTabMenuViewModel>(_settingsClone);
-        _SetupNTMEventHandling();
+        _ntmViewModelChangedRevoker = _newTabMenuPageVM.PropertyChanged(winrt::auto_revoke, [this](auto&&, const PropertyChangedEventArgs& args) {
+            const auto settingName{ args.PropertyName() };
+            if (settingName == L"CurrentFolder")
+            {
+                if (const auto& currentFolder = _newTabMenuPageVM.CurrentFolder())
+                {
+                    const auto crumb = winrt::make<Breadcrumb>(box_value(currentFolder), currentFolder.Name(), BreadcrumbSubPage::NewTabMenu_Folder);
+                    _breadcrumbs.Append(crumb);
+                    SettingsMainPage_ScrollViewer().ScrollToVerticalOffset(0);
+                }
+                else
+                {
+                    // If we don't have a current folder, we're at the root of the NTM
+                    _breadcrumbs.Clear();
+                    const auto crumb = winrt::make<Breadcrumb>(box_value(newTabMenuTag), RS_(L"Nav_NewTabMenu/Content"), BreadcrumbSubPage::None);
+                    _breadcrumbs.Append(crumb);
+                }
+                contentFrame().Navigate(xaml_typename<Editor::NewTabMenu>(), _newTabMenuPageVM);
+            }
+        });
 
         _colorSchemesPageVM = winrt::make<ColorSchemesPageViewModel>(_settingsClone);
         _colorSchemesPageViewModelChangedRevoker = _colorSchemesPageVM.PropertyChanged(winrt::auto_revoke, [=](auto&&, const PropertyChangedEventArgs& args) {
@@ -174,6 +193,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                                     // found the one that was selected before the refresh
                                     SettingsNav().SelectedItem(item);
                                     _Navigate(*stringTag, crumb->SubPage());
+                                    return;
+                                }
+                            }
+                            else if (const auto& breadcrumbFolderEntry{ crumb->Tag().try_as<Editor::FolderEntryViewModel>() })
+                            {
+                                if (stringTag == newTabMenuTag)
+                                {
+                                    // navigate to the NewTabMenu page,
+                                    // _Navigate() will handle trying to find the right subpage
+                                    SettingsNav().SelectedItem(item);
+                                    _Navigate(breadcrumbFolderEntry, BreadcrumbSubPage::NewTabMenu_Folder);
                                     return;
                                 }
                             }
@@ -385,7 +415,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 if (const auto& currentFolder = _newTabMenuPageVM.CurrentFolder())
                 {
                     contentFrame().Navigate(xaml_typename<Editor::NewTabMenu>(), _newTabMenuPageVM);
-                    const auto crumb = winrt::make<Breadcrumb>(box_value(currentFolder), currentFolder.Name(), BreadcrumbSubPage::NTM_Folder);
+                    const auto crumb = winrt::make<Breadcrumb>(box_value(currentFolder), currentFolder.Name(), BreadcrumbSubPage::NewTabMenu_Folder);
                     _breadcrumbs.Append(crumb);
                     SettingsMainPage_ScrollViewer().ScrollToVerticalOffset(0);
                 }
@@ -437,14 +467,19 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
         else if (clickedItemTag == newTabMenuTag)
         {
-            // Reset the current folder entry and page BEFORE setting up the event handling
-            _newTabMenuPageVM.CurrentFolder(nullptr);
-
-            _SetupNTMEventHandling();
-
-            contentFrame().Navigate(xaml_typename<Editor::NewTabMenu>(), _newTabMenuPageVM);
-            const auto crumb = winrt::make<Breadcrumb>(box_value(clickedItemTag), RS_(L"Nav_NewTabMenu/Content"), BreadcrumbSubPage::None);
-            _breadcrumbs.Append(crumb);
+            if (_newTabMenuPageVM.CurrentFolder())
+            {
+                // Setting CurrentFolder triggers the PropertyChanged event,
+                // which will navigate to the correct page and update the breadcrumbs appropriately
+                _newTabMenuPageVM.CurrentFolder(nullptr);
+            }
+            else
+            {
+                // Navigate to the NewTabMenu page
+                contentFrame().Navigate(xaml_typename<Editor::NewTabMenu>(), _newTabMenuPageVM);
+                const auto crumb = winrt::make<Breadcrumb>(box_value(clickedItemTag), RS_(L"Nav_NewTabMenu/Content"), BreadcrumbSubPage::None);
+                _breadcrumbs.Append(crumb);
+            }
         }
         else if (clickedItemTag == globalProfileTag)
         {
@@ -547,8 +582,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         _PreNavigateHelper();
 
-        _SetupNTMEventHandling();
-
         contentFrame().Navigate(xaml_typename<Editor::NewTabMenu>(), _newTabMenuPageVM);
         const auto crumb = winrt::make<Breadcrumb>(box_value(newTabMenuTag), RS_(L"Nav_NewTabMenu/Content"), BreadcrumbSubPage::None);
         _breadcrumbs.Append(crumb);
@@ -557,9 +590,24 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             _newTabMenuPageVM.CurrentFolder(nullptr);
         }
-        else if (const auto folderEntry = ntmEntryVM.try_as<FolderEntryViewModel>(); subPage == BreadcrumbSubPage::NTM_Folder && folderEntry)
+        else if (const auto& folderEntryVM = ntmEntryVM.try_as<Editor::FolderEntryViewModel>(); subPage == BreadcrumbSubPage::NewTabMenu_Folder && folderEntryVM)
         {
-            _newTabMenuPageVM.CurrentFolder(*folderEntry);
+            // The given ntmEntryVM doesn't exist anymore since the whole tree had to be recreated.
+            // Instead, let's look for a match by name and navigate to it.
+            if (const auto& folderPath = _newTabMenuPageVM.FindFolderPathByName(folderEntryVM.Name()); folderPath.Size() > 0)
+            {
+                for (const auto& step : folderPath)
+                {
+                    // Take advantage of the PropertyChanged event to navigate
+                    // to the correct folder and build the breadcrumbs as we go
+                    _newTabMenuPageVM.CurrentFolder(step);
+                }
+            }
+            else
+            {
+                // If we couldn't find a reasonable match, just go back to the root
+                _newTabMenuPageVM.CurrentFolder(nullptr);
+            }
         }
     }
 

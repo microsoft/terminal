@@ -76,10 +76,10 @@
                                 Style="{StaticResource NewTabMenuEntryControlsWrapper}">
                     <StackPanel Orientation="Horizontal"
                                 Spacing="10">
-                        <Image Width="16"
-                               Height="16"
-                               VerticalAlignment="Center"
-                               Source="{x:Bind ProfileEntry.Profile.Icon, Mode=OneWay}" />
+                        <IconSourceElement Width="16"
+                                           Height="16"
+                                           VerticalAlignment="Center"
+                                           IconSource="{x:Bind mtu:IconPathConverter.IconSourceWUX(ProfileEntry.Profile.EvaluatedIcon), Mode=OneTime}" />
                         <TextBlock VerticalAlignment="Center"
                                    Text="{x:Bind ProfileEntry.Profile.Name, Mode=OneWay}" />
                     </StackPanel>
@@ -252,7 +252,7 @@
         <StackPanel Grid.Row="0"
                     MaxWidth="{StaticResource StandardControlMaxWidth}"
                     Spacing="10">
-            <Border Height="200"
+            <Border Height="300"
                     MaxWidth="{StaticResource StandardControlMaxWidth}"
                     Margin="0,12,0,0"
                     BorderBrush="{ThemeResource SystemControlForegroundBaseMediumLowBrush}"
@@ -271,7 +271,8 @@
             <StackPanel Orientation="Horizontal"
                         Spacing="10">
                 <Button x:Name="MoveToFolderButton"
-                        Click="MoveMultiple_Click">
+                        Click="MoveMultiple_Click"
+                        IsEnabled="False">
                     <StackPanel Orientation="Horizontal">
                         <FontIcon FontSize="{StaticResource StandardIconSize}"
                                   Glyph="&#xE8DE;" />
@@ -281,6 +282,7 @@
                 </Button>
                 <Button x:Name="DeleteMultipleButton"
                         Click="DeleteMultiple_Click"
+                        IsEnabled="False"
                         Style="{StaticResource DeleteButtonStyle}">
                     <StackPanel Orientation="Horizontal">
                         <FontIcon FontSize="{StaticResource StandardIconSize}"
@@ -357,7 +359,7 @@
                                     <IconSourceElement Grid.Column="0"
                                                        Width="16"
                                                        Height="16"
-                                                       IconSource="{x:Bind mtu:IconPathConverter.IconSourceWUX(Icon), Mode=OneTime}" />
+                                                       IconSource="{x:Bind mtu:IconPathConverter.IconSourceWUX(EvaluatedIcon), Mode=OneTime}" />
 
                                     <TextBlock Grid.Column="1"
                                                Text="{x:Bind Name}" />
@@ -370,7 +372,7 @@
                             x:Uid="NewTabMenu_AddProfileButton"
                             HorizontalAlignment="Stretch"
                             VerticalAlignment="Stretch"
-                            Click="{x:Bind ViewModel.RequestAddSelectedProfileEntry}">
+                            Click="AddProfileButton_Clicked">
                         <Button.Content>
                             <FontIcon FontSize="{StaticResource StandardIconSize}"
                                       Glyph="&#xE710;" />
@@ -386,7 +388,7 @@
                         x:Uid="NewTabMenu_AddSeparatorButton"
                         HorizontalAlignment="Stretch"
                         VerticalAlignment="Stretch"
-                        Click="{x:Bind ViewModel.RequestAddSeparatorEntry}">
+                        Click="AddSeparatorButton_Clicked">
                     <Button.Content>
                         <FontIcon FontSize="{StaticResource StandardIconSize}"
                                   Glyph="&#xE710;" />
@@ -409,7 +411,7 @@
                             x:Uid="NewTabMenu_AddFolderButton"
                             HorizontalAlignment="Stretch"
                             VerticalAlignment="Stretch"
-                            Click="{x:Bind ViewModel.RequestAddFolderEntry}"
+                            Click="AddFolderButton_Clicked"
                             IsEnabled="False">
                         <Button.Content>
                             <FontIcon FontSize="{StaticResource StandardIconSize}"
@@ -431,7 +433,7 @@
                     <TextBox x:Uid="NewTabMenu_AddMatchProfiles_Commandline"
                              Text="{x:Bind ViewModel.ProfileMatcherCommandline, Mode=TwoWay}" />
                     <Button x:Name="AddMatchProfilesButton"
-                            Click="{x:Bind ViewModel.RequestAddProfileMatcherEntry}">
+                            Click="AddMatchProfilesButton_Clicked">
                         <Button.Content>
                             <StackPanel Orientation="Horizontal">
                                 <FontIcon FontSize="{StaticResource StandardIconSize}"
@@ -451,7 +453,7 @@
                         x:Uid="NewTabMenu_AddRemainingProfilesButton"
                         HorizontalAlignment="Stretch"
                         VerticalAlignment="Stretch"
-                        Click="{x:Bind ViewModel.RequestAddRemainingProfilesEntry}"
+                        Click="AddRemainingProfilesButton_Clicked"
                         IsEnabled="{x:Bind ViewModel.IsRemainingProfilesEntryMissing, Mode=OneWay}">
                     <Button.Content>
                         <FontIcon FontSize="{StaticResource StandardIconSize}"

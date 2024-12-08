@@ -25,6 +25,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         NewTabMenuViewModel(Model::CascadiaSettings settings);
         void UpdateSettings(const Model::CascadiaSettings& settings);
         void GenerateFolderTree();
+        Windows::Foundation::Collections::IVector<Editor::FolderEntryViewModel> FindFolderPathByName(const hstring& name);
 
         bool IsRemainingProfilesEntryMissing() const;
         bool IsFolderView() const noexcept;
@@ -33,11 +34,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void RequestDeleteEntry(const Editor::NewTabMenuEntryViewModel& vm);
         void RequestMoveEntriesToFolder(const Windows::Foundation::Collections::IVector<Editor::NewTabMenuEntryViewModel>& entries, const Editor::FolderEntryViewModel& destinationFolder);
 
-        void RequestAddSelectedProfileEntry();
-        void RequestAddSeparatorEntry();
-        void RequestAddFolderEntry();
-        void RequestAddProfileMatcherEntry();
-        void RequestAddRemainingProfilesEntry();
+        Editor::NewTabMenuEntryViewModel RequestAddSelectedProfileEntry();
+        Editor::NewTabMenuEntryViewModel RequestAddSeparatorEntry();
+        Editor::NewTabMenuEntryViewModel RequestAddFolderEntry();
+        Editor::NewTabMenuEntryViewModel RequestAddProfileMatcherEntry();
+        Editor::NewTabMenuEntryViewModel RequestAddRemainingProfilesEntry();
 
         hstring CurrentFolderName() const;
         void CurrentFolderName(const hstring& value);

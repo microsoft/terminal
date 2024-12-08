@@ -2,7 +2,6 @@ aaaaabbb
 aabbcc
 ABANDONFONT
 abbcc
-ABCDEFGHIJKLMNOPQRSTUVWXY
 ABCF
 abgr
 ABORTIFHUNG
@@ -94,7 +93,6 @@ Backgrounder
 backgrounding
 backported
 backstory
-barbaz
 Bazz
 bbb
 bbccb
@@ -210,6 +208,7 @@ cmw
 CNL
 cnn
 Codeflow
+codenav
 codepages
 codepath
 coinit
@@ -221,6 +220,7 @@ colortable
 colortbl
 colortest
 colortool
+COLORVALUE
 combaseapi
 comctl
 commandline
@@ -363,9 +363,7 @@ dbh
 dblclk
 Dcd
 DColor
-DCOLORVALUE
 dcommon
-dcompiler
 DComposition
 dde
 DDESHARE
@@ -422,7 +420,6 @@ DECPCTERM
 DECPS
 DECRARA
 decrc
-DECRC
 DECREQTPARM
 DECRLM
 DECRPM
@@ -438,7 +435,6 @@ decrst
 DECSACE
 DECSASD
 decsc
-DECSC
 DECSCA
 DECSCNM
 DECSCPP
@@ -464,7 +460,6 @@ DECXCPR
 DEFAPP
 DEFAULTBACKGROUND
 DEFAULTFOREGROUND
-defaultsettings
 DEFAULTTONEAREST
 DEFAULTTONULL
 DEFAULTTOPRIMARY
@@ -797,10 +792,8 @@ hmon
 homoglyph
 hostable
 hostlib
-Hostx
 HPA
 hpcon
-HPCON
 hpen
 HPR
 HProvider
@@ -828,7 +821,6 @@ HWNDPARENT
 iccex
 ICONERROR
 ICONINFORMATION
-IConsole
 ICONSTOP
 ICONWARNING
 IDCANCEL
@@ -841,12 +833,9 @@ IDR
 idth
 IDTo
 IDXGI
-IEnd
-IEnum
 IFACEMETHODIMP
 ification
 IGNORELANGUAGE
-IHosted
 iid
 IIo
 ILC
@@ -859,7 +848,6 @@ inclusivity
 INCONTEXT
 INFOEX
 inheritcursor
-inheritfrom
 INITCOMMONCONTROLSEX
 INITDIALOG
 initguid
@@ -880,13 +868,9 @@ INVALIDARG
 INVALIDATERECT
 Ioctl
 ipch
-IProperty
 ipsp
-IShell
-ISwap
 iterm
 itermcolors
-ITerminal
 itf
 Ith
 IUI
@@ -895,7 +879,6 @@ ivalid
 IWIC
 IXP
 jconcpp
-JLO
 JOBOBJECT
 JOBOBJECTINFOCLASS
 JONGSEONG
@@ -951,9 +934,6 @@ LCONTROL
 LCTRL
 lcx
 LEFTALIGN
-libsancov
-libtickit
-licate
 LIMITTEXT
 LINEDOWN
 LINESELECTION
@@ -1265,7 +1245,6 @@ openconsoleproxy
 openps
 openvt
 ORIGINALFILENAME
-orking
 osc
 OSDEPENDSROOT
 OSG
@@ -1292,7 +1271,6 @@ PAINTSTRUCT
 PALPC
 pankaj
 parentable
-parms
 PATCOPY
 pathcch
 PATTERNID
@@ -1401,6 +1379,7 @@ prealigned
 prect
 prefast
 preflighting
+prepopulate
 presorted
 PREVENTPINNING
 PREVIEWLABEL
@@ -1465,7 +1444,6 @@ QWER
 Qxxxxxxxxxxxxxxx
 qzmp
 RAII
-Ralph
 RALT
 rasterbar
 rasterfont
@@ -1516,7 +1494,6 @@ replatformed
 Replymessage
 reportfileaccesses
 repositorypath
-Requiresx
 rerasterize
 rescap
 RESETCONTENT
@@ -1543,7 +1520,6 @@ RIGHTALIGN
 RIGHTBUTTON
 riid
 ris
-RIS
 roadmap
 robomac
 rodata
@@ -1574,6 +1550,7 @@ rvpa
 RWIN
 rxvt
 safemath
+sancov
 sba
 SBCS
 SBCSDBCS
@@ -1716,7 +1693,6 @@ STARTUPINFOW
 STARTWPARMS
 STARTWPARMSA
 STARTWPARMSW
-stb
 stdafx
 STDAPI
 stdc
@@ -1735,8 +1711,6 @@ SUA
 subcompartment
 subkeys
 SUBLANG
-subsystemconsole
-subsystemwindows
 swapchain
 swapchainpanel
 SWMR
@@ -1816,6 +1790,7 @@ texttests
 TFunction
 THUMBPOSITION
 THUMBTRACK
+tickit
 TIcon
 tilunittests
 titlebars
@@ -1823,7 +1798,6 @@ TITLEISLINKNAME
 TJson
 TLambda
 TLDP
-tldr
 TLEN
 TMAE
 TMPF
@@ -1881,7 +1855,6 @@ uiacore
 uiautomationcore
 uielem
 UINTs
-ul
 uld
 uldash
 uldb
@@ -1995,6 +1968,7 @@ wch
 wchars
 WCIA
 WCIW
+wcs
 WCSHELPER
 wcsrev
 wcswidth
@@ -2121,7 +2095,6 @@ WTest
 WTEXT
 WTo
 wtof
-wtoi
 WTs
 WTSOFTFONT
 wtw
@@ -2163,7 +2136,6 @@ XResource
 xsi
 xstyler
 XSubstantial
-xtended
 XTest
 XTPOPSGR
 XTPUSHSGR

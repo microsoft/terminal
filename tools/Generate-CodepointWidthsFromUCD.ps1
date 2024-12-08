@@ -5,7 +5,7 @@
 # (we use the null coalescing operator)
 
 ################################################################################
-# This script generates the an array suitable for replacing the body of
+# This script generates an array suitable for replacing the body of
 # src/types/CodepointWidthDetector.cpp from a Unicode UCD XML document[1]
 # compliant with UAX#42[2].
 #

@@ -244,7 +244,7 @@ std::unordered_map<std::wstring,
                                                     exeNameW));
 
         // Set the return size copied to the size given before we attempt to copy.
-        // Then multiply by sizeof(wchar_t) due to a long standing bug that we must preserve for compatibility.
+        // Then multiply by sizeof(wchar_t) due to a long-standing bug that we must preserve for compatibility.
         // On failure, the API has historically given back this value.
         written = target.size() * sizeof(wchar_t);
 

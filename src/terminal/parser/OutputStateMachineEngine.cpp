@@ -994,7 +994,7 @@ bool OutputStateMachineEngine::_ParseHyperlink(const std::wstring_view string,
 // - OSC 10, 11, 12 ; spec ST
 //      spec: The colors are specified by name or RGB specification as per XParseColor
 //
-//   It's possible to have multiple "spec", which by design equals to a series of OSC command
+//   It's possible to have multiple "spec", which by design equals a series of OSC command
 //   with accumulated Ps. For example "OSC 10;color1;color2" is effectively an "OSC 10;color1"
 //   and an "OSC 11;color2".
 //

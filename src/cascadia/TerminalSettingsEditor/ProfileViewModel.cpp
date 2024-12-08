@@ -81,6 +81,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             {
                 _NotifyChanges(L"CurrentPathTranslationStyle");
             }
+            else if (viewModelProperty == L"Padding")
+            {
+                _NotifyChanges(L"LeftPadding", L"TopPadding", L"RightPadding", L"BottomPadding");
+            }
         });
 
         // Do the same for the starting directory
@@ -101,6 +105,147 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
 
         _defaultAppearanceViewModel.IsDefault(true);
+    }
+
+    void ProfileViewModel::LeftPadding(double value) noexcept
+    {
+        const hstring& padding = _GetNewPadding(PaddingDirection::Left, value);
+
+        Padding(padding);
+    }
+
+    double ProfileViewModel::LeftPadding() const noexcept
+    {
+        return _GetPaddingValue(PaddingDirection::Left);
+    }
+
+    void ProfileViewModel::TopPadding(double value) noexcept
+    {
+        const hstring& padding = _GetNewPadding(PaddingDirection::Top, value);
+
+        Padding(padding);
+    }
+
+    double ProfileViewModel::TopPadding() const noexcept
+    {
+        return _GetPaddingValue(PaddingDirection::Top);
+    }
+
+    void ProfileViewModel::RightPadding(double value) noexcept
+    {
+        const hstring& padding = _GetNewPadding(PaddingDirection::Right, value);
+
+        Padding(padding);
+    }
+
+    double ProfileViewModel::RightPadding() const noexcept
+    {
+        return _GetPaddingValue(PaddingDirection::Right);
+    }
+
+    void ProfileViewModel::BottomPadding(double value) noexcept
+    {
+        const hstring& padding = _GetNewPadding(PaddingDirection::Bottom, value);
+
+        Padding(padding);
+    }
+
+    double ProfileViewModel::BottomPadding() const noexcept
+    {
+        return _GetPaddingValue(PaddingDirection::Bottom);
+    }
+
+    winrt::hstring ProfileViewModel::_GetNewPadding(PaddingDirection paddingDirection, double newPaddingValue) const
+    {
+        std::array<double, 4> values{};
+        std::wstring_view padding{ Padding() };
+        uint32_t paddingIndex = static_cast<uint32_t>(paddingDirection);
+
+        try
+        {
+            uint32_t index = 0;
+            for (const auto& token : til::split_iterator{ padding, L',' })
+            {
+                auto curVal = std::stod(std::wstring{ token });
+
+                if (paddingIndex == index)
+                {
+                    curVal = newPaddingValue;
+                }
+
+                values[index++] = curVal;
+
+                if (index >= values.size())
+                {
+                    break;
+                }
+            }
+        }
+        catch (...)
+        {
+            values.fill(0);
+            LOG_CAUGHT_EXCEPTION();
+        }
+
+        const auto result = fmt::format(FMT_COMPILE(L"{:.6f}"), fmt::join(values, L","));
+
+        return winrt::hstring{ result };
+    }
+
+    double ProfileViewModel::_GetPaddingValue(PaddingDirection paddingDirection) const
+    {
+        std::wstring_view padding{ Padding() };
+        uint32_t paddingIndex = static_cast<uint32_t>(paddingDirection);
+        std::array<double, 4> paddingValues{};
+        double paddingValue = 0.;
+        uint32_t index = 0;
+
+        try
+        {
+            for (const auto& token : til::split_iterator{ padding, L',' })
+            {
+                auto curVal = std::stod(std::wstring{ token });
+
+                paddingValues[index++] = curVal;
+
+                if (index >= paddingValues.size())
+                {
+                    break;
+                }
+            }
+        }
+        catch (...)
+        {
+            paddingValue = 0.;
+            LOG_CAUGHT_EXCEPTION();
+        }
+
+        // Padding: 8
+        if (index == 1)
+        {
+            paddingValue = paddingValues[0];
+        }
+        // Padding: 8, 4
+        else if (index == 2)
+        {
+            if (paddingDirection == PaddingDirection::Left ||
+                paddingDirection == PaddingDirection::Right)
+            {
+                paddingValue = paddingValues[0];
+            }
+            else if (paddingDirection == PaddingDirection::Top ||
+                     paddingDirection == PaddingDirection::Bottom)
+            {
+                paddingValue = paddingValues[1];
+            }
+        }
+        // Padding: 8, 4, 8, 4
+        else
+        {
+            paddingValue = paddingValues[paddingIndex];
+        }
+
+        return paddingValue;
     }
 
     Model::TerminalSettings ProfileViewModel::TermSettings() const

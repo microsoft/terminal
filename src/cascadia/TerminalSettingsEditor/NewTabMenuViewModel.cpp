@@ -125,7 +125,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     bool NewTabMenuViewModel::IsFolderView() const noexcept
     {
-        return CurrentView() != _rootEntries;
+        return _CurrentFolder != nullptr;
     }
 
     NewTabMenuViewModel::NewTabMenuViewModel(Model::CascadiaSettings settings)
@@ -226,6 +226,40 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return _CurrentFolder.Entries();
     }
 
+    static bool _FindFolderPathByName(const IVector<Editor::NewTabMenuEntryViewModel>& entries, const hstring& name, std::vector<Editor::FolderEntryViewModel>& result)
+    {
+        for (const auto& entry : entries)
+        {
+            if (const auto& folderVM = entry.try_as<Editor::FolderEntryViewModel>())
+            {
+                result.push_back(folderVM);
+                if (folderVM.Name() == name)
+                {
+                    // Found the folder
+                    return true;
+                }
+                else if (_FindFolderPathByName(folderVM.Entries(), name, result))
+                {
+                    // Found the folder in the children of this folder
+                    return true;
+                }
+                else
+                {
+                    // This folder and its descendants are not the folder we're looking for
+                    result.pop_back();
+                }
+            }
+        }
+        return false;
+    }
+
+    IVector<Editor::FolderEntryViewModel> NewTabMenuViewModel::FindFolderPathByName(const hstring& name)
+    {
+        std::vector<Editor::FolderEntryViewModel> entries;
+        _FindFolderPathByName(_rootEntries, name, entries);
+        return single_threaded_vector<Editor::FolderEntryViewModel>(std::move(entries));
+    }
+
     void NewTabMenuViewModel::UpdateSettings(const Model::CascadiaSettings& settings)
     {
         _Settings = settings;
@@ -234,7 +268,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         SelectedProfile(AvailableProfiles().GetAt(0));
 
         _rootEntries = _ConvertToViewModelEntries(_Settings.GlobalSettings().NewTabMenu(), _Settings);
-
         _rootEntriesChangedRevoker = _rootEntries.VectorChanged(winrt::auto_revoke, [this](auto&&, const IVectorChangedEventArgs& args) {
             switch (args.CollectionChange())
             {
@@ -269,9 +302,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             }
             }
         });
-
-        // Clear CurrentFolder to reset the view
-        _CurrentFolder = nullptr;
     }
 
     void NewTabMenuViewModel::RequestReorderEntry(const Editor::NewTabMenuEntryViewModel& vm, bool goingUp)
@@ -308,58 +338,72 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void NewTabMenuViewModel::RequestMoveEntriesToFolder(const Windows::Foundation::Collections::IVector<Editor::NewTabMenuEntryViewModel>& entries, const Editor::FolderEntryViewModel& destinationFolder)
     {
+        auto destination{ destinationFolder == nullptr ? _rootEntries : destinationFolder.Entries() };
         for (auto&& e : entries)
         {
+            // Don't move the folder into itself (just skip over it)
+            if (e == destinationFolder)
+            {
+                continue;
+            }
+
             // Remove entry from the current layer,
             // and add it to the destination folder
             RequestDeleteEntry(e);
-            destinationFolder.Entries().Append(e);
+            destination.Append(e);
         }
     }
 
-    void NewTabMenuViewModel::RequestAddSelectedProfileEntry()
+    Editor::NewTabMenuEntryViewModel NewTabMenuViewModel::RequestAddSelectedProfileEntry()
     {
         if (_SelectedProfile)
         {
             Model::ProfileEntry profileEntry;
             profileEntry.Profile(_SelectedProfile);
 
-            CurrentView().Append(make<ProfileEntryViewModel>(profileEntry));
+            const auto& entryVM = make<ProfileEntryViewModel>(profileEntry);
+            CurrentView().Append(entryVM);
+            _PrintAll();
+            return entryVM;
         }
-        _PrintAll();
+        return nullptr;
     }
 
-    void NewTabMenuViewModel::RequestAddSeparatorEntry()
+    Editor::NewTabMenuEntryViewModel NewTabMenuViewModel::RequestAddSeparatorEntry()
     {
         Model::SeparatorEntry separatorEntry;
-
-        CurrentView().Append(make<SeparatorEntryViewModel>(separatorEntry));
+        const auto& entryVM = make<SeparatorEntryViewModel>(separatorEntry);
+        CurrentView().Append(entryVM);
 
         _PrintAll();
+        return entryVM;
     }
 
-    void NewTabMenuViewModel::RequestAddFolderEntry()
+    Editor::NewTabMenuEntryViewModel NewTabMenuViewModel::RequestAddFolderEntry()
     {
         Model::FolderEntry folderEntry;
         folderEntry.Name(_AddFolderName);
 
-        CurrentView().Append(make<FolderEntryViewModel>(folderEntry, _Settings));
+        const auto& entryVM = make<FolderEntryViewModel>(folderEntry, _Settings);
+        CurrentView().Append(entryVM);
 
         // Reset state after adding the entry
         AddFolderName({});
         _folderTreeCache = nullptr;
 
         _PrintAll();
+        return entryVM;
     }
 
-    void NewTabMenuViewModel::RequestAddProfileMatcherEntry()
+    Editor::NewTabMenuEntryViewModel NewTabMenuViewModel::RequestAddProfileMatcherEntry()
     {
         Model::MatchProfilesEntry matchProfilesEntry;
         matchProfilesEntry.Name(_ProfileMatcherName);
         matchProfilesEntry.Source(_ProfileMatcherSource);
         matchProfilesEntry.Commandline(_ProfileMatcherCommandline);
 
-        CurrentView().Append(make<MatchProfilesEntryViewModel>(matchProfilesEntry));
+        const auto& entryVM = make<MatchProfilesEntryViewModel>(matchProfilesEntry);
+        CurrentView().Append(entryVM);
 
         // Clear the fields after adding the entry
         ProfileMatcherName({});
@@ -367,16 +411,19 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         ProfileMatcherCommandline({});
 
         _PrintAll();
+        return entryVM;
     }
 
-    void NewTabMenuViewModel::RequestAddRemainingProfilesEntry()
+    Editor::NewTabMenuEntryViewModel NewTabMenuViewModel::RequestAddRemainingProfilesEntry()
     {
         Model::RemainingProfilesEntry remainingProfilesEntry;
-        CurrentView().Append(make<RemainingProfilesEntryViewModel>(remainingProfilesEntry));
+        const auto& entryVM = make<RemainingProfilesEntryViewModel>(remainingProfilesEntry);
+        CurrentView().Append(entryVM);
 
         _NotifyChanges(L"IsRemainingProfilesEntryMissing");
 
         _PrintAll();
+        return entryVM;
     }
 
     void NewTabMenuViewModel::GenerateFolderTree()

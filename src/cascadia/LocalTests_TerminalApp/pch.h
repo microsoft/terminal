@@ -28,7 +28,7 @@ Author(s):
 #endif
 
 #include <wil/cppwinrt.h>
-#include <unknwn.h>
+#include <Unknwn.h>
 #include <hstring.h>
 
 #include <WexTestClass.h>

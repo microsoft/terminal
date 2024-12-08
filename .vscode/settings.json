@@ -129,4 +129,15 @@
     },
     "dotnet.preferCSharpExtension": true,
     "dotnet.defaultSolution": "OpenConsole.sln",
+    "cquery.cacheDirectory": "${workspaceFolder}/.vscode/cquery_cached_index/",
+    "make-to-cpp-props.configurations": [
+        {
+            "name": "default",
+            "cStandard": "c11",
+            "cppStandard": "c++11",
+            "includePath": [],
+            "defines": []
+        }
+    ],
+    "make-to-cpp-props.activeConfigName": "default",
 }
