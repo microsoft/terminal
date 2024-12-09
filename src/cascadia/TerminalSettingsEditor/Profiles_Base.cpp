@@ -148,4 +148,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             _Profile.StartingDirectory(folder);
         }
     }
+
+    Windows::UI::Xaml::Controls::IconSource Profiles_Base::BuiltInIconConverter(const IInspectable& iconVal)
+    {
+        return Microsoft::Terminal::UI::IconPathConverter::IconSourceWUX(unbox_value<hstring>(iconVal));
+    }
 }

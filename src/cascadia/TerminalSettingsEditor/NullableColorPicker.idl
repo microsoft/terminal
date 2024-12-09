@@ -1,0 +1,30 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+import "ColorSchemeViewModel.idl";
+
+namespace Microsoft.Terminal.Settings.Editor
+{
+    [default_interface] runtimeclass NullableColorPicker : Windows.UI.Xaml.Controls.UserControl
+    {
+        NullableColorPicker();
+
+        ColorSchemeViewModel ColorSchemeVM;
+        static Windows.UI.Xaml.DependencyProperty ColorSchemeVMProperty { get; };
+
+        Windows.Foundation.IReference<Microsoft.Terminal.Core.Color> CurrentColor;
+        static Windows.UI.Xaml.DependencyProperty CurrentColorProperty { get; };
+
+        Boolean ShowNullColorButton;
+        static Windows.UI.Xaml.DependencyProperty ShowNullColorButtonProperty { get; };
+
+        String NullColorButtonLabel;
+        static Windows.UI.Xaml.DependencyProperty NullColorButtonLabelProperty { get; };
+
+        Windows.UI.Color NullColorPreview;
+        static Windows.UI.Xaml.DependencyProperty NullColorPreviewProperty { get; };
+
+        static Windows.UI.Xaml.Media.SolidColorBrush CalculateBorderBrush(Windows.UI.Color color);
+        static Boolean IsNull(Windows.Foundation.IReference<Microsoft.Terminal.Core.Color> color);
+    }
+}

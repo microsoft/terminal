@@ -33,6 +33,14 @@ namespace Microsoft.Terminal.Settings.Editor
         Advanced = 3
     };
 
+    enum IconType
+    {
+        None = 0,
+        FontIcon,
+        Image,
+        Emoji
+    };
+
     runtimeclass ProfileViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged
     {
         Microsoft.Terminal.Settings.Model.TerminalSettings TermSettings { get; };
@@ -71,7 +79,6 @@ namespace Microsoft.Terminal.Settings.Editor
         ProfileSubPage CurrentPage;
         Boolean UseParentProcessDirectory;
         Boolean UseCustomStartingDirectory { get; };
-        Boolean HideIcon;
         AppearanceViewModel DefaultAppearance { get; };
         Guid OriginalProfileGuid { get; };
         Boolean HasUnfocusedAppearance { get; };
@@ -83,7 +90,19 @@ namespace Microsoft.Terminal.Settings.Editor
         Boolean AutoMarkPromptsAvailable { get; };
         Boolean RepositionCursorWithMouseAvailable { get; };
 
+        Windows.UI.Xaml.Controls.IconElement IconPreview { get; };
         String EvaluatedIcon { get; };
+        String LocalizedIcon { get; };
+        String CurrentEmojiIcon;
+        IInspectable CurrentIconType;
+        Windows.Foundation.Collections.IVector<IInspectable> IconTypes { get; };
+        Boolean UsingNoIcon { get; };
+        Boolean UsingBuiltInIcon { get; };
+        Boolean UsingEmojiIcon { get; };
+        Boolean UsingImageIcon { get; };
+
+        IInspectable CurrentBuiltInIcon;
+        Windows.Foundation.Collections.IVector<IInspectable> BuiltInIcons { get; };
 
         void CreateUnfocusedAppearance();
         void DeleteUnfocusedAppearance();
@@ -106,10 +125,6 @@ namespace Microsoft.Terminal.Settings.Editor
         OBSERVABLE_PROJECTED_PROFILE_SETTING(String, Commandline);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(String, StartingDirectory);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Microsoft.Terminal.Control.TextAntialiasingMode, AntialiasingMode);
-        OBSERVABLE_PROJECTED_PROFILE_SETTING(Windows.Foundation.IReference<Microsoft.Terminal.Core.Color>, Foreground);
-        OBSERVABLE_PROJECTED_PROFILE_SETTING(Windows.Foundation.IReference<Microsoft.Terminal.Core.Color>, Background);
-        OBSERVABLE_PROJECTED_PROFILE_SETTING(Windows.Foundation.IReference<Microsoft.Terminal.Core.Color>, SelectionBackground);
-        OBSERVABLE_PROJECTED_PROFILE_SETTING(Windows.Foundation.IReference<Microsoft.Terminal.Core.Color>, CursorColor);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Int32, HistorySize);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, SnapOnInput);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, AltGrAliasing);
