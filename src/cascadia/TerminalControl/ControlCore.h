@@ -157,6 +157,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         void ClearQuickFix();
 
+        void OpenCWD();
+
 #pragma region ICoreState
         const size_t TaskbarState() const noexcept;
         const size_t TaskbarProgress() const noexcept;

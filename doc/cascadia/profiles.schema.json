@@ -423,6 +423,7 @@
         "newWindow",
         "nextTab",
         "openAbout",
+        "openCWD",
         "openNewTabDropdown",
         "openSettings",
         "openSystemMenu",
@@ -1917,7 +1918,7 @@
             },
             "useCommandline": {
               "default": false,
-              "description": "When set to `true`, the current commandline the user has typed will pre-populate the filter of the Suggestions UI. This requires that the user has enabled shell integration in their shell's config. When set to false, the filter will start empty."
+              "description": "When set to `true`, the current commandline the user has typed will prepopulate the filter of the Suggestions UI. This requires that the user has enabled shell integration in their shell's config. When set to false, the filter will start empty."
             }
           }
         }
@@ -2380,6 +2381,15 @@
           "default": false,
           "description": "When set to true, the terminal will support the DECRQCRA (Request Checksum of Rectangular Area) escape sequence.",
           "type": "boolean"
+        },
+        "compatibility.textMeasurement": {
+          "default": "graphemes",
+          "description": "This changes the way incoming text is grouped into cells. The \"graphemes\" option is the most modern and Unicode-correct way to do so, while \"wcswidth\" is a common approach on UNIX, and \"console\" replicates the way it used to work on Windows.",
+          "enum": [
+            "graphemes",
+            "wcswidth",
+            "console"
+          ]
         },
         "copyFormatting": {
           "default": true,
@@ -2869,7 +2879,7 @@
           "description": "When true, this profile should always open in an elevated context. If the window isn't running as an Administrator, then a new elevated window will be created."
         },
         "environment": {
-          "description": "Key-value pairs representing environment variables to set. Environment variable names are not case sensitive. You can reference existing environment variable names by enclosing them in literal percent characters (e.g. %PATH%).",
+          "description": "Key-value pairs representing environment variables to set. Environment variable names are not case-sensitive. You can reference existing environment variable names by enclosing them in literal percent characters (e.g. %PATH%).",
           "type": "object",
           "additionalProperties": {
             "type": "string"

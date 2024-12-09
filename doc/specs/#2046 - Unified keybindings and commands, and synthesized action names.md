@@ -10,7 +10,7 @@ issue id: 2046
 ## Abstract
 
 This document is intended to serve as an addition to the [Command Palette Spec].
-While that spec is complete in it's own right, subsequent discussion revealed
+While that spec is complete in its own right, subsequent discussion revealed
 additional ways to improve the functionality and usability of the command
 palette. This document builds largely on the topics already introduced in the
 original spec, so readers should first familiarize themselves with that
