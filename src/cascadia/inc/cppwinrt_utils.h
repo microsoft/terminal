@@ -314,19 +314,22 @@ try
 {
     uintptr_t count{ 0 };
     double t[4]{ 0. }; // left, top, right, bottom
-    wchar_t buf[16];
+    wchar_t buf[17];
     for (const auto& token : til::split_iterator{ padding, L',' })
     {
-        auto l{ std::min(token.size(), std::extent_v<decltype(buf)> - 1) };
-        std::copy_n(token.data(), l, buf);
-        buf[l] = L'\0';
-        t[count++] = std::stod(buf, nullptr);
+        const auto l{ std::min(token.size(), std::extent_v<decltype(buf)> - 1) };
+#pragma warning(suppress : 26459) // You called an STL function '...' with a raw pointer parameter at position '...' that may be unsafe ... (stl.1).
+        std::copy_n(token.data(), l, &buf[0]); // the length of buf is controlled for above
+        til::at(buf, l) = L'\0';
+        til::at(t, count++) = std::wcstod(&buf[0], nullptr);
         if (count >= 4)
         {
             break;
         }
     }
 
+#pragma warning(push)
+#pragma warning(disable : 26446) // Prefer to use gsl::at() instead of unchecked subscript operator (bounds.4).
     switch (count)
     {
     case 1: // one input = all 4 values are the same
@@ -338,8 +341,11 @@ try
         __fallthrough;
     case 4: // four inputs = fully specified
         break;
+    default:
+        return {};
     }
     return { t[0], t[1], t[2], t[3] };
+#pragma warning(pop)
 }
 catch (...)
 {
