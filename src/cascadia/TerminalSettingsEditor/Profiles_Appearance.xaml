@@ -124,6 +124,7 @@
                 <!--  Padding  -->
                 <local:SettingContainer x:Uid="Profile_Padding"
                                         ClearSettingValue="{x:Bind Profile.ClearPadding}"
+                                        CurrentValue="{x:Bind Profile.Padding, Mode=OneWay}"
                                         HasSettingValue="{x:Bind Profile.HasPadding, Mode=OneWay}"
                                         SettingOverrideSource="{x:Bind Profile.PaddingOverrideSource, Mode=OneWay}"
                                         Style="{StaticResource ExpanderSettingContainerStyle}">
