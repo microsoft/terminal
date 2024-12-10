@@ -1243,7 +1243,7 @@ void AdaptDispatch::FillRectangularArea(const VTParameter ch, const VTInt top, c
     const auto charValue = ch.value_or(0) == 0 ? 32 : ch.value();
     const auto glChar = (charValue >= 32 && charValue <= 126);
     const auto grChar = (charValue >= 160 && charValue <= 255);
-    const auto unicodeChar = (charValue >= 256 && charValue <= 65535 && _api.GetConsoleOutputCP() == CP_UTF8);
+    const auto unicodeChar = (charValue >= 256 && charValue <= 65535 && _api.GetOutputCodePage() == CP_UTF8);
     if (glChar || grChar || unicodeChar)
     {
         const auto fillChar = _termOutput.TranslateKey(gsl::narrow_cast<wchar_t>(charValue));
@@ -1304,6 +1304,11 @@ void AdaptDispatch::SelectAttributeChangeExtent(const DispatchTypes::ChangeExten
     }
 }
 
+void AdaptDispatch::SetVtChecksumReportSupport(const bool enabled) noexcept
+{
+    _vtChecksumReportEnabled = enabled;
+}
+
 // Routine Description:
 // - DECRQCRA - Computes and reports a checksum of the specified area of
 //   the buffer memory.
@@ -1320,65 +1325,67 @@ void AdaptDispatch::RequestChecksumRectangularArea(const VTInt id, const VTInt p
     // If this feature is not enabled, we'll just report a zero checksum.
     if constexpr (Feature_VtChecksumReport::IsEnabled())
     {
-        // If the page number is 0, then we're meant to return a checksum of all
-        // of the pages, but we have no need for that, so we'll just return 0.
-        if (page != 0)
+        if (_vtChecksumReportEnabled)
         {
-            // As part of the checksum, we need to include the color indices of each
-            // cell, and in the case of default colors, those indices come from the
-            // color alias table. But if they're not in the bottom 16 range, we just
-            // fallback to using white on black (7 and 0).
-            auto defaultFgIndex = _renderSettings.GetColorAliasIndex(ColorAlias::DefaultForeground);
-            auto defaultBgIndex = _renderSettings.GetColorAliasIndex(ColorAlias::DefaultBackground);
-            defaultFgIndex = defaultFgIndex < 16 ? defaultFgIndex : 7;
-            defaultBgIndex = defaultBgIndex < 16 ? defaultBgIndex : 0;
-
-            const auto target = _pages.Get(page);
-            const auto eraseRect = _CalculateRectArea(target, top, left, bottom, right);
-            for (auto row = eraseRect.top; row < eraseRect.bottom; row++)
+            // If the page number is 0, then we're meant to return a checksum of all
+            // of the pages, but we have no need for that, so we'll just return 0.
+            if (page != 0)
             {
-                for (auto col = eraseRect.left; col < eraseRect.right; col++)
+                // As part of the checksum, we need to include the color indices of each
+                // cell, and in the case of default colors, those indices come from the
+                // color alias table. But if they're not in the bottom 16 range, we just
+                // fallback to using white on black (7 and 0).
+                auto defaultFgIndex = _renderSettings.GetColorAliasIndex(ColorAlias::DefaultForeground);
+                auto defaultBgIndex = _renderSettings.GetColorAliasIndex(ColorAlias::DefaultBackground);
+                defaultFgIndex = defaultFgIndex < 16 ? defaultFgIndex : 7;
+                defaultBgIndex = defaultBgIndex < 16 ? defaultBgIndex : 0;
+
+                const auto target = _pages.Get(page);
+                const auto eraseRect = _CalculateRectArea(target, top, left, bottom, right);
+                for (auto row = eraseRect.top; row < eraseRect.bottom; row++)
                 {
-                    // The algorithm we're using here should match the DEC terminals
-                    // for the ASCII and Latin-1 range. Their other character sets
-                    // predate Unicode, though, so we'd need a custom mapping table
-                    // to lookup the correct checksums. Considering this is only for
-                    // testing at the moment, that doesn't seem worth the effort.
-                    const auto cell = target.Buffer().GetCellDataAt({ col, row });
-                    for (auto ch : cell->Chars())
+                    for (auto col = eraseRect.left; col < eraseRect.right; col++)
                     {
-                        // That said, I've made a special allowance for U+2426,
-                        // since that is widely used in a lot of character sets.
-                        checksum -= (ch == L'\u2426' ? 0x1B : ch);
+                        // The algorithm we're using here should match the DEC terminals
+                        // for the ASCII and Latin-1 range. Their other character sets
+                        // predate Unicode, though, so we'd need a custom mapping table
+                        // to lookup the correct checksums. Considering this is only for
+                        // testing at the moment, that doesn't seem worth the effort.
+                        const auto cell = target.Buffer().GetCellDataAt({ col, row });
+                        for (auto ch : cell->Chars())
+                        {
+                            // That said, I've made a special allowance for U+2426,
+                            // since that is widely used in a lot of character sets.
+                            checksum -= (ch == L'\u2426' ? 0x1B : ch);
+                        }
+
+                        // Since we're attempting to match the DEC checksum algorithm,
+                        // the only attributes affecting the checksum are the ones that
+                        // were supported by DEC terminals.
+                        const auto attr = cell->TextAttr();
+                        checksum -= attr.IsProtected() ? 0x04 : 0;
+                        checksum -= attr.IsInvisible() ? 0x08 : 0;
+                        checksum -= attr.IsUnderlined() ? 0x10 : 0;
+                        checksum -= attr.IsReverseVideo() ? 0x20 : 0;
+                        checksum -= attr.IsBlinking() ? 0x40 : 0;
+                        checksum -= attr.IsIntense() ? 0x80 : 0;
+
+                        // For the same reason, we only care about the eight basic ANSI
+                        // colors, although technically we also report the 8-16 index
+                        // range. Everything else gets mapped to the default colors.
+                        const auto colorIndex = [](const auto color, const auto defaultIndex) {
+                            return color.IsLegacy() ? color.GetIndex() : defaultIndex;
+                        };
+                        const auto fgIndex = colorIndex(attr.GetForeground(), defaultFgIndex);
+                        const auto bgIndex = colorIndex(attr.GetBackground(), defaultBgIndex);
+                        checksum -= gsl::narrow_cast<uint16_t>(fgIndex << 4);
+                        checksum -= gsl::narrow_cast<uint16_t>(bgIndex);
                     }
-
-                    // Since we're attempting to match the DEC checksum algorithm,
-                    // the only attributes affecting the checksum are the ones that
-                    // were supported by DEC terminals.
-                    const auto attr = cell->TextAttr();
-                    checksum -= attr.IsProtected() ? 0x04 : 0;
-                    checksum -= attr.IsInvisible() ? 0x08 : 0;
-                    checksum -= attr.IsUnderlined() ? 0x10 : 0;
-                    checksum -= attr.IsReverseVideo() ? 0x20 : 0;
-                    checksum -= attr.IsBlinking() ? 0x40 : 0;
-                    checksum -= attr.IsIntense() ? 0x80 : 0;
-
-                    // For the same reason, we only care about the eight basic ANSI
-                    // colors, although technically we also report the 8-16 index
-                    // range. Everything else gets mapped to the default colors.
-                    const auto colorIndex = [](const auto color, const auto defaultIndex) {
-                        return color.IsLegacy() ? color.GetIndex() : defaultIndex;
-                    };
-                    const auto fgIndex = colorIndex(attr.GetForeground(), defaultFgIndex);
-                    const auto bgIndex = colorIndex(attr.GetBackground(), defaultBgIndex);
-                    checksum -= gsl::narrow_cast<uint16_t>(fgIndex << 4);
-                    checksum -= gsl::narrow_cast<uint16_t>(bgIndex);
                 }
             }
         }
     }
-    const auto response = wil::str_printf<std::wstring>(L"\033P%d!~%04X\033\\", id, checksum);
-    _api.ReturnResponse(response);
+    _ReturnDcsResponse(wil::str_printf<std::wstring>(L"%d!~%04X", id, checksum));
 }
 
 // Routine Description:
@@ -1484,7 +1491,7 @@ void AdaptDispatch::DeviceAttributes()
     // 32 = Text macros
     // 42 = ISO Latin-2 character set
 
-    _api.ReturnResponse(L"\x1b[?61;4;6;7;14;21;22;23;24;28;32;42c");
+    _ReturnCsiResponse(L"?61;4;6;7;14;21;22;23;24;28;32;42c");
 }
 
 // Routine Description:
@@ -1496,7 +1503,7 @@ void AdaptDispatch::DeviceAttributes()
 // - <none>
 void AdaptDispatch::SecondaryDeviceAttributes()
 {
-    _api.ReturnResponse(L"\x1b[>0;10;1c");
+    _ReturnCsiResponse(L">0;10;1c");
 }
 
 // Routine Description:
@@ -1506,7 +1513,7 @@ void AdaptDispatch::SecondaryDeviceAttributes()
 // - <none>
 void AdaptDispatch::TertiaryDeviceAttributes()
 {
-    _api.ReturnResponse(L"\x1bP!|00000000\x1b\\");
+    _ReturnDcsResponse(L"!|00000000");
 }
 
 // Routine Description:
@@ -1544,10 +1551,10 @@ void AdaptDispatch::RequestTerminalParameters(const DispatchTypes::ReportingPerm
     switch (permission)
     {
     case DispatchTypes::ReportingPermission::Unsolicited:
-        _api.ReturnResponse(L"\x1b[2;1;1;128;128;1;0x");
+        _ReturnCsiResponse(L"2;1;1;128;128;1;0x");
         break;
     case DispatchTypes::ReportingPermission::Solicited:
-        _api.ReturnResponse(L"\x1b[3;1;1;128;128;1;0x");
+        _ReturnCsiResponse(L"3;1;1;128;128;1;0x");
         break;
     default:
         break;
@@ -1562,7 +1569,7 @@ void AdaptDispatch::RequestTerminalParameters(const DispatchTypes::ReportingPerm
 // - <none>
 void AdaptDispatch::_DeviceStatusReport(const wchar_t* parameters) const
 {
-    _api.ReturnResponse(fmt::format(FMT_COMPILE(L"\033[{}n"), parameters));
+    _ReturnCsiResponse(fmt::format(FMT_COMPILE(L"{}n"), parameters));
 }
 
 // Routine Description:
@@ -1598,14 +1605,12 @@ void AdaptDispatch::_CursorPositionReport(const bool extendedReport)
     {
         // An extended report also includes the page number.
         const auto pageNumber = page.Number();
-        const auto response = wil::str_printf<std::wstring>(L"\x1b[?%d;%d;%dR", cursorPosition.y, cursorPosition.x, pageNumber);
-        _api.ReturnResponse(response);
+        _ReturnCsiResponse(wil::str_printf<std::wstring>(L"?%d;%d;%dR", cursorPosition.y, cursorPosition.x, pageNumber));
     }
     else
     {
         // The standard report only returns the cursor position.
-        const auto response = wil::str_printf<std::wstring>(L"\x1b[%d;%dR", cursorPosition.y, cursorPosition.x);
-        _api.ReturnResponse(response);
+        _ReturnCsiResponse(wil::str_printf<std::wstring>(L"%d;%dR", cursorPosition.y, cursorPosition.x));
     }
 }
 
@@ -1619,8 +1624,7 @@ void AdaptDispatch::_MacroSpaceReport() const
 {
     const auto spaceInBytes = _macroBuffer ? _macroBuffer->GetSpaceAvailable() : MacroBuffer::MAX_SPACE;
     // The available space is measured in blocks of 16 bytes, so we need to divide by 16.
-    const auto response = wil::str_printf<std::wstring>(L"\x1b[%zu*{", spaceInBytes / 16);
-    _api.ReturnResponse(response);
+    _ReturnCsiResponse(wil::str_printf<std::wstring>(L"%zu*{", spaceInBytes / 16));
 }
 
 // Routine Description:
@@ -1633,8 +1637,7 @@ void AdaptDispatch::_MacroChecksumReport(const VTParameter id) const
 {
     const auto requestId = id.value_or(0);
     const auto checksum = _macroBuffer ? _macroBuffer->CalculateChecksum() : 0;
-    const auto response = wil::str_printf<std::wstring>(L"\033P%d!~%04X\033\\", requestId, checksum);
-    _api.ReturnResponse(response);
+    _ReturnDcsResponse(wil::str_printf<std::wstring>(L"%d!~%04X", requestId, checksum));
 }
 
 // Routine Description:
@@ -1732,7 +1735,7 @@ void AdaptDispatch::RequestDisplayedExtent()
     const auto height = page.Viewport().height();
     const auto left = page.XPanOffset() + 1;
     const auto top = page.YPanOffset() + 1;
-    _api.ReturnResponse(fmt::format(FMT_COMPILE(L"\033[{};{};{};{};{}\"w"), height, width, left, top, page.Number()));
+    _ReturnCsiResponse(fmt::format(FMT_COMPILE(L"{};{};{};{};{}\"w"), height, width, left, top, page.Number()));
 }
 
 // Routine Description:
@@ -2068,7 +2071,7 @@ void AdaptDispatch::RequestMode(const DispatchTypes::ModeParams param)
         prefix = L"?";
     }
 
-    _api.ReturnResponse(fmt::format(FMT_COMPILE(L"\x1b[{}{};{}$y"), prefix, mode, state));
+    _ReturnCsiResponse(fmt::format(FMT_COMPILE(L"{}{};{}$y"), prefix, mode, state));
 }
 
 // - DECKPAM, DECKPNM - Sets the keypad input mode to either Application mode or Numeric mode (true, false respectively)
@@ -2785,22 +2788,15 @@ void AdaptDispatch::_InitTabStopsForWidth(const VTInt width)
 // - codingSystem - The coding system that will be selected.
 void AdaptDispatch::DesignateCodingSystem(const VTID codingSystem)
 {
-    // If we haven't previously saved the initial code page, do so now.
-    // This will be used to restore the code page in response to a reset.
-    if (!_initialCodePage.has_value())
-    {
-        _initialCodePage = _api.GetConsoleOutputCP();
-    }
-
     switch (codingSystem)
     {
     case DispatchTypes::CodingSystem::ISO2022:
-        _api.SetConsoleOutputCP(28591);
+        _api.SetCodePage(28591);
         AcceptC1Controls(true);
         _termOutput.EnableGrTranslation(true);
         break;
     case DispatchTypes::CodingSystem::UTF8:
-        _api.SetConsoleOutputCP(CP_UTF8);
+        _api.SetCodePage(CP_UTF8);
         AcceptC1Controls(false);
         _termOutput.EnableGrTranslation(false);
         break;
@@ -2869,6 +2865,24 @@ void AdaptDispatch::SingleShift(const VTInt gsetNumber) noexcept
 void AdaptDispatch::AcceptC1Controls(const bool enabled)
 {
     _api.GetStateMachine().SetParserMode(StateMachine::Mode::AcceptC1, enabled);
+}
+
+//Routine Description:
+// S8C1T/S7C1T - Enable or disable the sending of C1 controls in key sequences
+//   and query responses. When this is enabled, C1 controls are sent as a single
+//   codepoint. When disabled, they're sent as a two character escape sequence.
+//Arguments:
+// - enabled - true to send C1 controls, false to send escape sequences.
+void AdaptDispatch::SendC1Controls(const bool enabled)
+{
+    // If this is an attempt to enable C1 controls, the input code page must be
+    // one of the DOCS choices (UTF-8 or ISO-8859-1), otherwise there's a risk
+    // that those controls won't have a valid encoding.
+    const auto codepage = _api.GetInputCodePage();
+    if (enabled == false || codepage == CP_UTF8 || codepage == 28591)
+    {
+        _terminalInput.SetInputMode(TerminalInput::Mode::SendC1, enabled);
+    }
 }
 
 //Routine Description:
@@ -3003,13 +3017,11 @@ void AdaptDispatch::HardReset()
 
     // Completely reset the TerminalOutput state.
     _termOutput = {};
-    if (_initialCodePage.has_value())
-    {
-        // Restore initial code page if previously changed by a DOCS sequence.
-        _api.SetConsoleOutputCP(_initialCodePage.value());
-    }
-    // Disable parsing of C1 control codes.
+    // Reset the code page to the default value.
+    _api.ResetCodePage();
+    // Disable parsing and sending of C1 control codes.
     AcceptC1Controls(false);
+    SendC1Controls(false);
 
     // Sets the SGR state to normal - this must be done before EraseInDisplay
     //      to ensure that it clears with the default background color.
@@ -3019,8 +3031,13 @@ void AdaptDispatch::HardReset()
     EraseInDisplay(DispatchTypes::EraseType::All);
     EraseInDisplay(DispatchTypes::EraseType::Scrollback);
 
-    // Set the DECSCNM screen mode back to normal.
-    _renderSettings.SetRenderMode(RenderSettings::Mode::ScreenReversed, false);
+    // Set the color table and render modes back to their initial startup values.
+    _renderSettings.RestoreDefaultSettings();
+    // Let the renderer know that the background and frame colors may have changed.
+    if (_renderer)
+    {
+        _renderer->TriggerRedrawAll(true, true);
+    }
 
     // Cursor to 1,1 - the Soft Reset guarantees this is absolute
     CursorPosition(1, 1);
@@ -3271,7 +3288,7 @@ void AdaptDispatch::RequestColorTableEntry(const size_t tableIndex)
     {
         const til::color c{ color };
         // Scale values up to match xterm's 16-bit color report format.
-        _api.ReturnResponse(fmt::format(FMT_COMPILE(L"\033]4;{};rgb:{:04x}/{:04x}/{:04x}\033\\"), tableIndex, c.r * 0x0101, c.g * 0x0101, c.b * 0x0101));
+        _ReturnOscResponse(fmt::format(FMT_COMPILE(L"4;{};rgb:{:04x}/{:04x}/{:04x}"), tableIndex, c.r * 0x0101, c.g * 0x0101, c.b * 0x0101));
     }
 }
 
@@ -3316,7 +3333,7 @@ void AdaptDispatch::RequestXtermColorResource(const size_t resource)
         {
             const til::color c{ color };
             // Scale values up to match xterm's 16-bit color report format.
-            _api.ReturnResponse(fmt::format(FMT_COMPILE(L"\033]{};rgb:{:04x}/{:04x}/{:04x}\033\\"), resource, c.r * 0x0101, c.g * 0x0101, c.b * 0x0101));
+            _ReturnOscResponse(fmt::format(FMT_COMPILE(L"{};rgb:{:04x}/{:04x}/{:04x}"), resource, c.r * 0x0101, c.g * 0x0101, c.b * 0x0101));
         }
     }
 }
@@ -3372,7 +3389,7 @@ void AdaptDispatch::WindowManipulation(const DispatchTypes::WindowManipulationTy
 
     const auto reportSize = [&](const auto size) {
         const auto reportType = function - 10;
-        _api.ReturnResponse(fmt::format(FMT_COMPILE(L"\033[{};{};{}t"), reportType, size.height, size.width));
+        _ReturnCsiResponse(fmt::format(FMT_COMPILE(L"{};{};{}t"), reportType, size.height, size.width));
     };
 
     switch (function)
@@ -3839,7 +3856,7 @@ void AdaptDispatch::RequestUserPreferenceCharset()
 {
     const auto size = _termOutput.GetUserPreferenceCharsetSize();
     const auto id = _termOutput.GetUserPreferenceCharsetId();
-    _api.ReturnResponse(fmt::format(FMT_COMPILE(L"\033P{}!u{}\033\\"), (size == 96 ? 1 : 0), id));
+    _ReturnDcsResponse(fmt::format(FMT_COMPILE(L"{}!u{}"), (size == 96 ? 1 : 0), id));
 }
 
 // Method Description:
@@ -3971,9 +3988,9 @@ void AdaptDispatch::_ReportColorTable(const DispatchTypes::ColorModel colorModel
 {
     using namespace std::string_view_literals;
 
-    // A valid response always starts with DCS 2 $ s.
+    // A valid response always starts with 2 $ s.
     fmt::basic_memory_buffer<wchar_t, TextColor::TABLE_SIZE * 18> response;
-    response.append(L"\033P2$s"sv);
+    response.append(L"2$s"sv);
 
     const auto modelNumber = static_cast<int>(colorModel);
     for (size_t colorNumber = 0; colorNumber < TextColor::TABLE_SIZE; colorNumber++)
@@ -3998,9 +4015,7 @@ void AdaptDispatch::_ReportColorTable(const DispatchTypes::ColorModel colorModel
         }
     }
 
-    // An ST ends the sequence.
-    response.append(L"\033\\"sv);
-    _api.ReturnResponse({ response.data(), response.size() });
+    _ReturnDcsResponse({ response.data(), response.size() });
 }
 
 // Method Description:
@@ -4103,7 +4118,7 @@ ITermDispatch::StringHandler AdaptDispatch::RequestSetting()
                 _ReportDECACSetting(VTParameter{ parameter });
                 break;
             default:
-                _api.ReturnResponse(L"\033P0$r\033\\");
+                _ReturnDcsResponse(L"0$r");
                 break;
             }
             return false;
@@ -4142,10 +4157,10 @@ void AdaptDispatch::_ReportSGRSetting() const
 {
     using namespace std::string_view_literals;
 
-    // A valid response always starts with DCS 1 $ r.
+    // A valid response always starts with 1 $ r.
     // Then the '0' parameter is to reset the SGR attributes to the defaults.
     fmt::basic_memory_buffer<wchar_t, 64> response;
-    response.append(L"\033P1$r0"sv);
+    response.append(L"1$r0"sv);
 
     const auto& attr = _pages.ActivePage().Attributes();
     const auto ulStyle = attr.GetUnderlineStyle();
@@ -4197,9 +4212,9 @@ void AdaptDispatch::_ReportSGRSetting() const
     addColor(40, attr.GetBackground());
     addColor(50, attr.GetUnderlineColor());
 
-    // The 'm' indicates this is an SGR response, and ST ends the sequence.
-    response.append(L"m\033\\"sv);
-    _api.ReturnResponse({ response.data(), response.size() });
+    // The 'm' indicates this is an SGR response.
+    response.append(L"m"sv);
+    _ReturnDcsResponse({ response.data(), response.size() });
 }
 
 // Method Description:
@@ -4212,10 +4227,9 @@ void AdaptDispatch::_ReportDECSTBMSetting()
 {
     const auto page = _pages.ActivePage();
     const auto [marginTop, marginBottom] = _GetVerticalMargins(page, false);
-    // A valid response always starts with DCS 1 $ r, the 'r' indicates this
-    // is a DECSTBM response, and ST ends the sequence.
+    // A valid response always starts with 1 $ r and the final 'r' indicates this is a DECSTBM response.
     // VT origin is at 1,1 so we need to add 1 to these margins.
-    _api.ReturnResponse(fmt::format(FMT_COMPILE(L"\033P1$r{};{}r\033\\"), marginTop + 1, marginBottom + 1));
+    _ReturnDcsResponse(fmt::format(FMT_COMPILE(L"1$r{};{}r"), marginTop + 1, marginBottom + 1));
 }
 
 // Method Description:
@@ -4228,10 +4242,9 @@ void AdaptDispatch::_ReportDECSLRMSetting()
 {
     const auto pageWidth = _pages.ActivePage().Width();
     const auto [marginLeft, marginRight] = _GetHorizontalMargins(pageWidth);
-    // A valid response always starts with DCS 1 $ r, the 's' indicates this
-    // is a DECSLRM response, and ST ends the sequence.
+    // A valid response always starts with 1 $ r and the 's' indicates this is a DECSLRM response.
     // VT origin is at 1,1 so we need to add 1 to these margins.
-    _api.ReturnResponse(fmt::format(FMT_COMPILE(L"\033P1$r{};{}s\033\\"), marginLeft + 1, marginRight + 1));
+    _ReturnDcsResponse(fmt::format(FMT_COMPILE(L"1$r{};{}s"), marginLeft + 1, marginRight + 1));
 }
 
 // Method Description:
@@ -4244,26 +4257,26 @@ void AdaptDispatch::_ReportDECSCUSRSetting() const
 {
     const auto& cursor = _pages.ActivePage().Cursor();
     const auto blinking = cursor.IsBlinkingAllowed();
-    // A valid response always starts with DCS 1 $ r. This is followed by a
+    // A valid response always starts with 1 $ r. This is followed by a
     // number from 1 to 6 representing the cursor style. The ' q' indicates
-    // this is a DECSCUSR response, and ST ends the sequence.
+    // this is a DECSCUSR response.
     switch (cursor.GetType())
     {
     case CursorType::FullBox:
-        _api.ReturnResponse(blinking ? L"\033P1$r1 q\033\\" : L"\033P1$r2 q\033\\");
+        _ReturnDcsResponse(blinking ? L"1$r1 q" : L"1$r2 q");
         break;
     case CursorType::Underscore:
-        _api.ReturnResponse(blinking ? L"\033P1$r3 q\033\\" : L"\033P1$r4 q\033\\");
+        _ReturnDcsResponse(blinking ? L"1$r3 q" : L"1$r4 q");
         break;
     case CursorType::VerticalBar:
-        _api.ReturnResponse(blinking ? L"\033P1$r5 q\033\\" : L"\033P1$r6 q\033\\");
+        _ReturnDcsResponse(blinking ? L"1$r5 q" : L"1$r6 q");
         break;
     default:
         // If we have a non-standard style, this is likely because it's the
         // user's chosen default style, so we report a default value of 0.
         // That way, if an application later tries to restore the cursor with
         // the returned value, it should be reset to its original state.
-        _api.ReturnResponse(L"\033P1$r0 q\033\\");
+        _ReturnDcsResponse(L"1$r0 q");
         break;
     }
 }
@@ -4277,10 +4290,10 @@ void AdaptDispatch::_ReportDECSCUSRSetting() const
 void AdaptDispatch::_ReportDECSCASetting() const
 {
     const auto isProtected = _pages.ActivePage().Attributes().IsProtected();
-    // A valid response always starts with DCS 1 $ r. This is followed by '1' if
-    // the protected attribute is set, or '0' if not. The '"q' indicates this is
-    // a DECSCA response, and ST ends the sequence.
-    _api.ReturnResponse(isProtected ? L"\033P1$r1\"q\033\\" : L"\033P1$r0\"q\033\\");
+    // A valid response always starts with 1 $ r. This is followed by '1' if the
+    // protected attribute is set, or '0' if not. The '"q' indicates this is a
+    // DECSCA response.
+    _ReturnDcsResponse(isProtected ? L"1$r1\"q" : L"1$r0\"q");
 }
 
 // Method Description:
@@ -4292,10 +4305,10 @@ void AdaptDispatch::_ReportDECSCASetting() const
 void AdaptDispatch::_ReportDECSACESetting() const
 {
     const auto rectangularExtent = _modes.test(Mode::RectangularChangeExtent);
-    // A valid response always starts with DCS 1 $ r. This is followed by '2' if
+    // A valid response always starts with 1 $ r. This is followed by '2' if
     // the extent is rectangular, or '1' if it's a stream. The '*x' indicates
-    // this is a DECSACE response, and ST ends the sequence.
-    _api.ReturnResponse(rectangularExtent ? L"\033P1$r2*x\033\\" : L"\033P1$r1*x\033\\");
+    // this is a DECSACE response.
+    _ReturnDcsResponse(rectangularExtent ? L"1$r2*x" : L"1$r1*x");
 }
 
 // Method Description:
@@ -4319,12 +4332,11 @@ void AdaptDispatch::_ReportDECACSetting(const VTInt itemNumber) const
         bgIndex = _renderSettings.GetColorAliasIndex(ColorAlias::FrameBackground);
         break;
     default:
-        _api.ReturnResponse(L"\033P0$r\033\\");
+        _ReturnDcsResponse(L"0$r");
         return;
     }
-    // A valid response always starts with DCS 1 $ r, the ',|' indicates this
-    // is a DECAC response, and ST ends the sequence.
-    _api.ReturnResponse(fmt::format(FMT_COMPILE(L"\033P1$r{};{};{},|\033\\"), itemNumber, fgIndex, bgIndex));
+    // A valid response always starts with 1 $ r and the ',|' indicates this is a DECAC response.
+    _ReturnDcsResponse(fmt::format(FMT_COMPILE(L"1$r{};{};{},|"), itemNumber, fgIndex, bgIndex));
 }
 
 // Routine Description:
@@ -4437,9 +4449,9 @@ void AdaptDispatch::_ReportCursorInformation()
     const auto charset2 = _termOutput.GetCharsetId(2);
     const auto charset3 = _termOutput.GetCharsetId(3);
 
-    // A valid response always starts with DCS 1 $ u and ends with ST.
+    // A valid response always starts with 1 $ u.
     const auto response = fmt::format(
-        FMT_COMPILE(L"\033P1$u{};{};{};{};{};{};{};{};{};{}{}{}{}\033\\"),
+        FMT_COMPILE(L"1$u{};{};{};{};{};{};{};{};{};{}{}{}{}"),
         cursorPosition.y,
         cursorPosition.x,
         page.Number(),
@@ -4453,7 +4465,7 @@ void AdaptDispatch::_ReportCursorInformation()
         charset1,
         charset2,
         charset3);
-    _api.ReturnResponse({ response.data(), response.size() });
+    _ReturnDcsResponse({ response.data(), response.size() });
 }
 
 // Method Description:
@@ -4618,9 +4630,9 @@ void AdaptDispatch::_ReportTabStops()
 
     using namespace std::string_view_literals;
 
-    // A valid response always starts with DCS 2 $ u.
+    // A valid response always starts with 2 $ u.
     fmt::basic_memory_buffer<wchar_t, 64> response;
-    response.append(L"\033P2$u"sv);
+    response.append(L"2$u"sv);
 
     auto need_separator = false;
     for (auto column = 0; column < width; column++)
@@ -4633,9 +4645,7 @@ void AdaptDispatch::_ReportTabStops()
         }
     }
 
-    // An ST ends the sequence.
-    response.append(L"\033\\"sv);
-    _api.ReturnResponse({ response.data(), response.size() });
+    _ReturnDcsResponse({ response.data(), response.size() });
 }
 
 // Method Description:
@@ -4678,6 +4688,26 @@ ITermDispatch::StringHandler AdaptDispatch::_RestoreTabStops()
         }
         return (ch != AsciiChars::ESC);
     };
+}
+
+void AdaptDispatch::_ReturnCsiResponse(const std::wstring_view response) const
+{
+    const auto csi = _terminalInput.GetInputMode(TerminalInput::Mode::SendC1) ? L"\x9B" : L"\x1B[";
+    _api.ReturnResponse(fmt::format(FMT_COMPILE(L"{}{}"), csi, response));
+}
+
+void AdaptDispatch::_ReturnDcsResponse(const std::wstring_view response) const
+{
+    const auto dcs = _terminalInput.GetInputMode(TerminalInput::Mode::SendC1) ? L"\x90" : L"\x1BP";
+    const auto st = _terminalInput.GetInputMode(TerminalInput::Mode::SendC1) ? L"\x9C" : L"\x1B\\";
+    _api.ReturnResponse(fmt::format(FMT_COMPILE(L"{}{}{}"), dcs, response, st));
+}
+
+void AdaptDispatch::_ReturnOscResponse(const std::wstring_view response) const
+{
+    const auto osc = _terminalInput.GetInputMode(TerminalInput::Mode::SendC1) ? L"\x9D" : L"\x1B]";
+    const auto st = _terminalInput.GetInputMode(TerminalInput::Mode::SendC1) ? L"\x9C" : L"\x1B\\";
+    _api.ReturnResponse(fmt::format(FMT_COMPILE(L"{}{}{}"), osc, response, st));
 }
 
 // Routine Description:

@@ -8,12 +8,12 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     template<typename T>
     struct property
     {
-        explicit constexpr property(auto&&... args) :
+        explicit constexpr property(auto&&... args) noexcept(std::is_nothrow_constructible_v<T, decltype(args)...>) :
             _value{ std::forward<decltype(args)>(args)... } {}
 
         property& operator=(const property& other) = default;
 
-        T operator()() const noexcept
+        T operator()() const noexcept(std::is_nothrow_copy_constructible<T>::value)
         {
             return _value;
         }
@@ -109,4 +109,24 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     //     Which is just silly
 
 #endif
+
+    struct transparent_hstring_hash
+    {
+        using is_transparent = void;
+
+        size_t operator()(const auto& hstr) const noexcept
+        {
+            return std::hash<std::wstring_view>{}(hstr);
+        }
+    };
+
+    struct transparent_hstring_equal_to
+    {
+        using is_transparent = void;
+
+        bool operator()(const auto& lhs, const auto& rhs) const noexcept
+        {
+            return lhs == rhs;
+        }
+    };
 }

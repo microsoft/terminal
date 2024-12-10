@@ -9,7 +9,8 @@
       "description": "Components required for Windows Terminal; separated out to make the Windows conhost build work",
       "dependencies": [
         "jsoncpp",
-        "cli11"
+        "cli11",
+        "cmark"
       ]
     }
   },
@@ -29,6 +30,10 @@
     {
       "name": "cli11",
       "version": "2.4.2"
+    },
+    {
+      "name": "cmark",
+      "version": "0.30.3"
     }
   ],
   "builtin-baseline": "fe1cde61e971d53c9687cf9a46308f8f55da19fa"

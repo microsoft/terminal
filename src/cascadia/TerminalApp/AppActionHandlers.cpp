@@ -548,7 +548,7 @@ namespace winrt::TerminalApp::implementation
     {
         if (const auto& realArgs = args.ActionArgs().try_as<CopyTextArgs>())
         {
-            const auto handled = _CopyText(realArgs.DismissSelection(), realArgs.SingleLine(), realArgs.CopyFormatting());
+            const auto handled = _CopyText(realArgs.DismissSelection(), realArgs.SingleLine(), realArgs.WithControlSequences(), realArgs.CopyFormatting());
             args.Handled(handled);
         }
     }
@@ -1125,6 +1125,16 @@ namespace winrt::TerminalApp::implementation
                 _OpenHyperlinkHandler(termControl, shortcut);
                 args.Handled(true);
             }
+        }
+    }
+
+    void TerminalPage::_HandleOpenCWD(const IInspectable& /*sender*/,
+                                      const ActionEventArgs& args)
+    {
+        if (const auto& control{ _GetActiveControl() })
+        {
+            control.OpenCWD();
+            args.Handled(true);
         }
     }
 

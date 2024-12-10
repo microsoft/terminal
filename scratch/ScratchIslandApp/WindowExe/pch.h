@@ -23,7 +23,7 @@ Abstract:
 #define NOHELP
 #define NOCOMM
 
-#include <unknwn.h>
+#include <Unknwn.h>
 
 #define NT_SUCCESS(Status) (((NTSTATUS)(Status)) >= 0)
 

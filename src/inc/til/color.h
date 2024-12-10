@@ -78,7 +78,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 #endif
 
         // Method Description:
-        // - Converting constructor for any other color structure type containing integral R, G, B, A (case sensitive.)
+        // - Converting constructor for any other color structure type containing integral R, G, B, A (case-sensitive.)
         // Notes:
         // - This and all below conversions make use of std::enable_if and a default parameter to disambiguate themselves.
         //   enable_if will result in an <error-type> if the constraint within it is not met, which will make this
@@ -93,7 +93,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         }
 
         // Method Description:
-        // - Converting constructor for any other color structure type containing integral r, g, b, a (case sensitive.)
+        // - Converting constructor for any other color structure type containing integral r, g, b, a (case-sensitive.)
         template<typename TOther>
         constexpr color(const TOther& other, std::enable_if_t<std::is_integral_v<decltype(std::declval<TOther>().r)> && std::is_integral_v<decltype(std::declval<TOther>().a)>, int> /*sentinel*/ = 0) :
             r{ static_cast<uint8_t>(other.r) },
@@ -104,7 +104,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         }
 
         // Method Description:
-        // - Converting constructor for any other color structure type containing floating-point R, G, B, A (case sensitive.)
+        // - Converting constructor for any other color structure type containing floating-point R, G, B, A (case-sensitive.)
         template<typename TOther>
         constexpr color(const TOther& other, std::enable_if_t<std::is_floating_point_v<decltype(std::declval<TOther>().R)> && std::is_floating_point_v<decltype(std::declval<TOther>().A)>, float> /*sentinel*/ = 1.0f) :
             r{ static_cast<uint8_t>(other.R * 255.0f) },
@@ -115,7 +115,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         }
 
         // Method Description:
-        // - Converting constructor for any other color structure type containing floating-point r, g, b, a (case sensitive.)
+        // - Converting constructor for any other color structure type containing floating-point r, g, b, a (case-sensitive.)
         template<typename TOther>
         constexpr color(const TOther& other, std::enable_if_t<std::is_floating_point_v<decltype(std::declval<TOther>().r)> && std::is_floating_point_v<decltype(std::declval<TOther>().a)>, float> /*sentinel*/ = 1.0f) :
             r{ static_cast<uint8_t>(other.r * 255.0f) },

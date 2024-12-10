@@ -55,7 +55,7 @@ namespace Microsoft.Terminal.Control
         Boolean GoForward;
         Boolean CaseSensitive;
         Boolean RegularExpression;
-        Boolean Reset;
+        Boolean ResetOnly;
         Int32 ScrollOffset;
     };
 
@@ -106,6 +106,7 @@ namespace Microsoft.Terminal.Control
         UInt64 SwapChainHandle { get; };
 
         Windows.Foundation.Size FontSize { get; };
+        Windows.Foundation.Size FontSizeInDips { get; };
         UInt16 FontWeight { get; };
         Single Opacity { get; };
         Boolean UseAcrylic { get; };
@@ -148,7 +149,6 @@ namespace Microsoft.Terminal.Control
 
         SearchResults Search(SearchRequest request);
         void ClearSearch();
-        Boolean SnapSearchResultToSelection;
 
         Microsoft.Terminal.Core.Color ForegroundColor { get; };
         Microsoft.Terminal.Core.Color BackgroundColor { get; };
@@ -177,6 +177,8 @@ namespace Microsoft.Terminal.Control
         void ContextMenuSelectOutput();
         Boolean ShouldShowSelectCommand();
         Boolean ShouldShowSelectOutput();
+
+        void OpenCWD();
 
         void ClearQuickFix();
 

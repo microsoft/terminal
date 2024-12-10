@@ -123,7 +123,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         void SendInput(std::wstring_view wstr);
         void PasteText(const winrt::hstring& hstr);
-        bool CopySelectionToClipboard(bool singleLine, const Windows::Foundation::IReference<CopyFormat>& formats);
+        bool CopySelectionToClipboard(bool singleLine, bool withControlSequences, const Windows::Foundation::IReference<CopyFormat>& formats);
         void SelectAll();
         void ClearSelection();
         bool ToggleBlockSelection();
@@ -156,6 +156,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void RestoreFromPath(const wchar_t* path) const;
 
         void ClearQuickFix();
+
+        void OpenCWD();
 
 #pragma region ICoreState
         const size_t TaskbarState() const noexcept;
@@ -228,8 +230,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         SearchResults Search(SearchRequest request);
         const std::vector<til::point_span>& SearchResultRows() const noexcept;
         void ClearSearch();
-        void SnapSearchResultToSelection(bool snap) noexcept;
-        bool SnapSearchResultToSelection() const noexcept;
 
         void LeftClickOnTerminal(const til::point terminalPosition,
                                  const int numberOfClicks,
@@ -307,6 +307,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         struct SharedState
         {
             std::unique_ptr<til::debounced_func_trailing<>> outputIdle;
+            std::unique_ptr<til::debounced_func_trailing<bool>> focusChanged;
             std::shared_ptr<ThrottledFuncTrailing<Control::ScrollPositionChangedArgs>> updateScrollBar;
         };
 

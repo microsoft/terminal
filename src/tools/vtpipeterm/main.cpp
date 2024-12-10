@@ -184,7 +184,7 @@ static int run(int argc, const wchar_t* argv[])
             if (write != 0)
             {
                 DWORD written;
-                if (!WriteFile(pipe.server.get(), &inputConptyBuffer[0], write, &written, nullptr) || written != read)
+                if (!WriteFile(pipe.server.get(), &inputConptyBuffer[0], write, &written, nullptr) || written != write)
                 {
                     return 0;
                 }

@@ -23,6 +23,27 @@
 
     <UserControl.Resources>
         <ResourceDictionary>
+            <!--  KeyChordText styles  -->
+            <Style x:Key="KeyChordBorderStyle"
+                   TargetType="Border">
+                <Setter Property="BorderThickness" Value="1" />
+                <Setter Property="CornerRadius" Value="2" />
+                <Setter Property="Background" Value="Transparent" />
+                <Setter Property="BorderBrush" Value="{ThemeResource SystemControlForegroundBaseMediumBrush}" />
+            </Style>
+            <Style x:Key="KeyChordTextBlockStyle"
+                   TargetType="TextBlock">
+                <Setter Property="Foreground" Value="{ThemeResource SystemControlForegroundBaseMediumBrush}" />
+            </Style>
+            <!--  ParsedCommandLineText styles  -->
+            <Style x:Key="ParsedCommandLineBorderStyle"
+                   TargetType="Border">
+                <Setter Property="BorderThickness" Value="1" />
+                <Setter Property="CornerRadius" Value="{ThemeResource ControlCornerRadius}" />
+                <Setter Property="Background" Value="{ThemeResource CardBackgroundFillColorDefaultBrush}" />
+                <Setter Property="BorderBrush" Value="{ThemeResource CardStrokeColorDefaultBrush}" />
+            </Style>
+
             <DataTemplate x:Key="ListItemTemplate"
                           x:DataType="local:FilteredCommand">
                 <ListViewItem HorizontalContentAlignment="Stretch"
@@ -69,12 +90,12 @@
                             VerticalAlignment="Center"
                             AutomationProperties.AccessibilityView="Raw"
                             Background="{ThemeResource FlyoutPresenterBackground}"
-                            Style="{ThemeResource KeyChordBorderStyle}"
+                            Style="{StaticResource KeyChordBorderStyle}"
                             Visibility="{x:Bind mtu:Converters.StringNotEmptyToVisibility(Item.KeyChordText), Mode=OneWay}">
 
                         <TextBlock AutomationProperties.AccessibilityView="Raw"
                                    FontSize="12"
-                                   Style="{ThemeResource KeyChordTextBlockStyle}"
+                                   Style="{StaticResource KeyChordTextBlockStyle}"
                                    Text="{x:Bind Item.KeyChordText, Mode=OneWay}" />
                     </Border>
                 </Grid>
@@ -118,12 +139,12 @@
                             HorizontalAlignment="Right"
                             VerticalAlignment="Center"
                             AutomationProperties.AccessibilityView="Raw"
-                            Style="{ThemeResource KeyChordBorderStyle}"
+                            Style="{StaticResource KeyChordBorderStyle}"
                             Visibility="{x:Bind mtu:Converters.StringNotEmptyToVisibility(Item.KeyChordText), Mode=OneWay}">
 
                         <TextBlock AutomationProperties.AccessibilityView="Raw"
                                    FontSize="12"
-                                   Style="{ThemeResource KeyChordTextBlockStyle}"
+                                   Style="{StaticResource KeyChordTextBlockStyle}"
                                    Text="{x:Bind Item.KeyChordText, Mode=OneWay}" />
                     </Border>
 
@@ -205,6 +226,13 @@
                                   Visibility="{x:Bind Item.(local:TabPaletteItem.TabStatus).IsInputBroadcastActive, Mode=OneWay}" />
 
                     </StackPanel>
+
+                    <Ellipse Grid.Column="4"
+                             Width="8"
+                             Height="8"
+                             HorizontalAlignment="Center"
+                             VerticalAlignment="Center"
+                             Fill="{x:Bind mtu:Converters.ColorToBrush(Item.(local:TabPaletteItem.TabStatus).TabColorIndicator), Mode=OneWay}" />
                 </Grid>
             </DataTemplate>
 
@@ -212,79 +240,6 @@
                                                GeneralItemTemplate="{StaticResource GeneralItemTemplate}"
                                                NestedItemTemplate="{StaticResource NestedItemTemplate}"
                                                TabItemTemplate="{StaticResource TabItemTemplate}" />
-
-            <ResourceDictionary.ThemeDictionaries>
-                <ResourceDictionary x:Key="Dark">
-
-                    <!--  KeyChordText styles  -->
-                    <Style x:Key="KeyChordBorderStyle"
-                           TargetType="Border">
-                        <Setter Property="BorderThickness" Value="1" />
-                        <Setter Property="CornerRadius" Value="2" />
-                        <Setter Property="Background" Value="Transparent" />
-                        <Setter Property="BorderBrush" Value="{ThemeResource SystemControlForegroundBaseMediumBrush}" />
-                    </Style>
-                    <Style x:Key="KeyChordTextBlockStyle"
-                           TargetType="TextBlock">
-                        <Setter Property="Foreground" Value="{ThemeResource SystemControlForegroundBaseMediumBrush}" />
-                    </Style>
-
-                    <!--  ParsedCommandLineText styles  -->
-                    <Style x:Key="ParsedCommandLineBorderStyle"
-                           TargetType="Border">
-                        <Setter Property="BorderThickness" Value="1" />
-                        <Setter Property="CornerRadius" Value="{ThemeResource ControlCornerRadius}" />
-                        <Setter Property="Background" Value="{ThemeResource CardBackgroundFillColorDefaultBrush}" />
-                        <Setter Property="BorderBrush" Value="{ThemeResource CardStrokeColorDefaultBrush}" />
-                    </Style>
-                    <Style x:Key="ParsedCommandLineTextBlockStyle"
-                           TargetType="TextBlock">
-                        <Setter Property="Foreground" Value="{ThemeResource SystemControlForegroundBaseMediumBrush}" />
-                    </Style>
-                </ResourceDictionary>
-                <ResourceDictionary x:Key="Light">
-
-                    <!--  KeyChordText styles  -->
-                    <Style x:Key="KeyChordBorderStyle"
-                           TargetType="Border">
-                        <Setter Property="BorderThickness" Value="1" />
-                        <Setter Property="CornerRadius" Value="2" />
-                        <Setter Property="Background" Value="Transparent" />
-                        <Setter Property="BorderBrush" Value="{ThemeResource SystemControlForegroundBaseMediumBrush}" />
-                    </Style>
-                    <Style x:Key="KeyChordTextBlockStyle"
-                           TargetType="TextBlock">
-                        <Setter Property="Foreground" Value="{ThemeResource SystemControlForegroundBaseMediumBrush}" />
-                    </Style>
-
-                    <!--  ParsedCommandLineText styles  -->
-                    <Style x:Key="ParsedCommandLineBorderStyle"
-                           TargetType="Border">
-                        <Setter Property="BorderThickness" Value="1" />
-                        <Setter Property="CornerRadius" Value="{ThemeResource ControlCornerRadius}" />
-                        <Setter Property="Background" Value="{ThemeResource CardBackgroundFillColorDefaultBrush}" />
-                        <Setter Property="BorderBrush" Value="{ThemeResource CardStrokeColorDefaultBrush}" />
-                    </Style>
-                    <Style x:Key="ParsedCommandLineTextBlockStyle"
-                           TargetType="TextBlock">
-                        <Setter Property="Foreground" Value="{ThemeResource SystemControlForegroundBaseMediumBrush}" />
-                    </Style>
-                </ResourceDictionary>
-                <ResourceDictionary x:Key="HighContrast">
-
-                    <!--  KeyChordText styles (use XAML defaults for High Contrast theme)  -->
-                    <Style x:Key="KeyChordBorderStyle"
-                           TargetType="Border" />
-                    <Style x:Key="KeyChordTextBlockStyle"
-                           TargetType="TextBlock" />
-
-                    <!--  ParsedCommandLineText styles (use XAML defaults for High Contrast theme)  -->
-                    <Style x:Key="ParsedCommandLineBorderStyle"
-                           TargetType="Border" />
-                    <Style x:Key="ParsedCommandLineTextBlockStyle"
-                           TargetType="TextBlock" />
-                </ResourceDictionary>
-            </ResourceDictionary.ThemeDictionaries>
         </ResourceDictionary>
     </UserControl.Resources>
 
@@ -368,7 +323,7 @@
                     Padding="16,12"
                     HorizontalAlignment="Stretch"
                     VerticalAlignment="Center"
-                    Style="{ThemeResource ParsedCommandLineBorderStyle}"
+                    Style="{StaticResource ParsedCommandLineBorderStyle}"
                     Visibility="{x:Bind mtu:Converters.StringNotEmptyToVisibility(ParsedCommandLineText), Mode=OneWay}">
 
                 <ScrollViewer MaxHeight="200"

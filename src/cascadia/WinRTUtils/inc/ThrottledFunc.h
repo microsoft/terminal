@@ -113,7 +113,7 @@ private:
                 {
                     try
                     {
-                        std::apply(self->_func, self->_storage.take());
+                        self->_storage.apply(self->_func);
                     }
                     CATCH_LOG();
                 }

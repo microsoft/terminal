@@ -322,6 +322,7 @@ public:
                                     const VTParameter parameter1,
                                     const VTParameter parameter2) override; // DTTERM_WindowManipulation
     virtual void WriteString(const std::wstring_view string) override;
+    virtual void WriteStringRaw(const std::wstring_view string) override;
 
     virtual void MoveCursor(const VTInt row,
                             const VTInt col) override;
@@ -372,6 +373,18 @@ void TestInteractDispatch::WriteString(const std::wstring_view string)
         // We're forcing the translation to CP_USA, so that it'll be constant
         //  regardless of the CP the test is running in
         Microsoft::Console::Interactivity::CharToKeyEvents(wch, CP_USA, keyEvents);
+    }
+
+    WriteInput(keyEvents);
+}
+
+void TestInteractDispatch::WriteStringRaw(const std::wstring_view string)
+{
+    InputEventQueue keyEvents;
+
+    for (const auto& wch : string)
+    {
+        keyEvents.push_back(SynthesizeKeyEvent(true, 1, 0, 0, wch, 0));
     }
 
     WriteInput(keyEvents);

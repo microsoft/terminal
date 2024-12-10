@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--  (c) 2024 Microsoft Corporation  -->
+<policyDefinitionResources xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" revision="1.0" schemaVersion="1.0" xmlns="http://schemas.microsoft.com/GroupPolicy/2006/07/PolicyDefinitions">
+  <displayName>Windows Terminal</displayName>
+  <description>Windows Terminal</description>
+  <resources>
+    <stringTable>
+      <string id="WindowsTerminal">Windows Terminal</string>
+      <string id="SUPPORTED_WindowsTerminal_1_21">At least Windows Terminal 1.21</string>
+      <string id="DisabledProfileSources">Disabled Profile Sources</string>
+      <string id="DisabledProfileSourcesText">Profiles will not be generated from any sources listed here. Source names can be arbitrary strings. Potential candidates can be found as the "source" property on profile definitions in Windows Terminal's settings.json file.
+
+Common sources are:
+- Windows.Terminal.Azure
+- Windows.Terminal.PowershellCore
+- Windows.Terminal.Wsl
+
+For instance, setting this policy to Windows.Terminal.Wsl will disable the builtin WSL integration of Windows Terminal.
+
+Note: Existing profiles will disappear from Windows Terminal after adding their source to this policy.</string>
+    </stringTable>
+    <presentationTable>
+      <presentation id="DisabledProfileSources">
+        <multiTextBox refId="DisabledProfileSources">List of disabled sources (one per line)</multiTextBox>
+      </presentation>
+    </presentationTable>
+  </resources>
+</policyDefinitionResources>

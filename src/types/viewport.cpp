@@ -466,7 +466,7 @@ Viewport Viewport::ToOrigin() const noexcept
 // Arguments:
 // - other: the viewport to convert to this coordinate space
 // Return Value:
-// - the input viewport in a the coordinate space with origin at (this.top, this.left)
+// - the input viewport in the coordinate space with origin at (this.top, this.left)
 [[nodiscard]] Viewport Viewport::ConvertToOrigin(const Viewport& other) const noexcept
 {
     auto returnVal = other;
@@ -483,7 +483,7 @@ Viewport Viewport::ToOrigin() const noexcept
 // Arguments:
 // - other: the viewport to convert out of this coordinate space
 // Return Value:
-// - the input viewport in a the coordinate space with origin at (0, 0)
+// - the input viewport in the coordinate space with origin at (0, 0)
 [[nodiscard]] Viewport Viewport::ConvertFromOrigin(const Viewport& other) const noexcept
 {
     auto returnVal = other;

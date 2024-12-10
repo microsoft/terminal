@@ -74,11 +74,10 @@ public:
 
     til::event<winrt::delegate<>> DragRegionClicked;
     til::event<winrt::delegate<>> WindowCloseButtonClicked;
-    til::event<winrt::delegate<void(til::point, int32_t)>> MouseScrolled;
+    til::event<winrt::delegate<void(winrt::Windows::Foundation::Point, int32_t)>> MouseScrolled;
     til::event<winrt::delegate<void(bool)>> WindowActivated;
     til::event<winrt::delegate<void()>> NotifyNotificationIconPressed;
     til::event<winrt::delegate<void()>> NotifyWindowHidden;
-    til::event<winrt::delegate<void(til::point)>> NotifyShowNotificationIconContextMenu;
     til::event<winrt::delegate<void(HMENU, UINT)>> NotifyNotificationIconMenuItemSelected;
     til::event<winrt::delegate<void()>> NotifyReAddNotificationIcon;
     til::event<winrt::delegate<void()>> ShouldExitFullscreen;
@@ -130,7 +129,6 @@ protected:
     LONG _getDesiredWindowStyle() const;
 
     void _OnGetMinMaxInfo(const WPARAM wParam, const LPARAM lParam);
-    long _calculateTotalSize(const bool isWidth, const long clientSize, const long nonClientSize);
 
     void _globalActivateWindow(const uint32_t dropdownDuration,
                                const winrt::Microsoft::Terminal::Remoting::MonitorBehavior toMonitor);
@@ -163,10 +161,10 @@ protected:
 
 private:
     // This minimum width allows for width the tabs fit
-    static constexpr long minimumWidth = 460L;
+    static constexpr float minimumWidth = 460;
 
     // We run with no height requirement for client area,
     // though the total height will take into account the non-client area
     // and the requirements of components hosted in the client area
-    static constexpr long minimumHeight = 0L;
+    static constexpr float minimumHeight = 0;
 };
