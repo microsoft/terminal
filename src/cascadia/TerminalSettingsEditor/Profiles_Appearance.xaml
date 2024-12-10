@@ -126,6 +126,7 @@
                                         ClearSettingValue="{x:Bind Profile.ClearPadding}"
                                         HasSettingValue="{x:Bind Profile.HasPadding, Mode=OneWay}"
                                         SettingOverrideSource="{x:Bind Profile.PaddingOverrideSource, Mode=OneWay}"
+                                        CurrentValue="{x:Bind Profile.Padding, Mode=OneWay}"
                                         Style="{StaticResource ExpanderSettingContainerStyle}">
                     <Border Margin="0,12,0,12"
                             Padding="2,0,2,0"

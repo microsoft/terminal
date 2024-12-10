@@ -147,22 +147,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         winrt::hstring _lastIcon;
         Editor::AppearanceViewModel _defaultAppearanceViewModel;
 
+        winrt::Windows::UI::Xaml::Thickness _parsedPadding;
+
         static Windows::Foundation::Collections::IObservableVector<Editor::Font> _MonospaceFontList;
         static Windows::Foundation::Collections::IObservableVector<Editor::Font> _FontList;
 
         Model::CascadiaSettings _appSettings;
         Editor::AppearanceViewModel _unfocusedAppearanceViewModel;
-
-        enum class PaddingDirection
-        {
-            Left = 0,
-            Top = 1,
-            Right = 2,
-            Bottom = 3
-        };
-
-        winrt::hstring _GetNewPadding(PaddingDirection paddingDirection, double newPaddingValue) const;
-        double _GetPaddingValue(PaddingDirection paddingDirection) const;
     };
 
     struct DeleteProfileEventArgs :

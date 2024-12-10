@@ -288,4 +288,63 @@ std::vector<wil::com_ptr<T>> SafeArrayToOwningVector(SAFEARRAY* safeArray)
     namespace nameSpace::factory_implementation                                                                   \
     {                                                                                                             \
         BASIC_FACTORY(className);                                                                                 \
-    }\
+    }
+
+#ifdef WINRT_Windows_UI_Xaml_H
+
+inline ::winrt::hstring XamlThicknessToOptimalString(const ::winrt::Windows::UI::Xaml::Thickness& t)
+{
+    if (t.Left == t.Right)
+    {
+        if (t.Top == t.Bottom)
+        {
+            if (t.Top == t.Left)
+            {
+                return ::winrt::hstring{ fmt::format(FMT_COMPILE(L"{}"), t.Left) };
+            }
+            return ::winrt::hstring{ fmt::format(FMT_COMPILE(L"{},{}"), t.Left, t.Top) };
+        }
+        // fall through
+    }
+    return ::winrt::hstring{ fmt::format(FMT_COMPILE(L"{},{},{},{}"), t.Left, t.Top, t.Right, t.Bottom) };
+}
+
+inline ::winrt::Windows::UI::Xaml::Thickness StringToXamlThickness(std::wstring_view padding)
+try
+{
+    uintptr_t count{ 0 };
+    double t[4]{ 0. }; // left, top, right, bottom
+    wchar_t buf[16];
+    for (const auto& token : til::split_iterator{ padding, L',' })
+    {
+        auto l{ std::min(token.size(), std::extent_v<decltype(buf)> - 1) };
+        std::copy_n(token.data(), l, buf);
+        buf[l] = L'\0';
+        t[count++] = std::stod(buf, nullptr);
+        if (count >= 4)
+        {
+            break;
+        }
+    }
+
+    switch (count)
+    {
+    case 1: // one input = all 4 values are the same
+        t[1] = t[0]; // top = left
+        __fallthrough;
+    case 2: // two inputs = top/bottom and left/right are the same
+        t[2] = t[0]; // right = left
+        t[3] = t[1]; // bottom = top
+        __fallthrough;
+    case 4: // four inputs = fully specified
+        break;
+    }
+    return { t[0], t[1], t[2], t[3] };
+}
+catch (...)
+{
+    LOG_CAUGHT_EXCEPTION();
+    return {};
+}
+
+#endif
