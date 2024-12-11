@@ -215,16 +215,16 @@
     <value>Split pane</value>
   </data>
   <data name="SplitPaneDownText" xml:space="preserve">
-    <value>Split Pane Down</value>
+    <value>Split pane down</value>
   </data>
   <data name="SplitPaneRightText" xml:space="preserve">
-    <value>Split Pane Right</value>
+    <value>Split pane right</value>
   </data>
   <data name="SplitPaneUpText" xml:space="preserve">
-    <value>Split Pane Up</value>
+    <value>Split pane up</value>
   </data>
   <data name="SplitPaneLeftText" xml:space="preserve">
-    <value>Split Pane Left</value>
+    <value>Split pane left</value>
   </data>
   <data name="SplitPaneDuplicateText" xml:space="preserve">
     <value>Duplicate</value>
@@ -233,22 +233,22 @@
     <value>Swap pane</value>
   </data>
   <data name="SwapPaneDownText" xml:space="preserve">
-    <value>Swap Pane Down</value>
+    <value>Swap pane down</value>
   </data>
   <data name="SwapPaneRightText" xml:space="preserve">
-    <value>Swap Pane Right</value>
+    <value>Swap pane right</value>
   </data>
   <data name="SwapPaneUpText" xml:space="preserve">
-    <value>Swap Pane Up</value>
+    <value>Swap pane up</value>
   </data>
   <data name="SwapPaneLeftText" xml:space="preserve">
-    <value>Swap Pane Left</value>
+    <value>Swap pane left</value>
   </data>
   <data name="TogglePaneZoomText" xml:space="preserve">
-    <value>Toggle Pane Zoom</value>
+    <value>Toggle pane zoom</value>
   </data>
   <data name="CloseOtherPanesText" xml:space="preserve">
-    <value>Close Other Panes</value>
+    <value>Close other panes</value>
   </data>
   <data name="SearchWebText" xml:space="preserve">
     <value>Web search</value>

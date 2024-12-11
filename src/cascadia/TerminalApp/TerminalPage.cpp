@@ -5121,17 +5121,15 @@ namespace winrt::TerminalApp::implementation
         // consistent. This also leaves room for customizing this menu with
         // actions in the future.
 
-        if (!withSelection)
-        {
-            makeItem(RS_(L"FindText"), L"\xF78B", ActionAndArgs{ ShortcutAction::Find, nullptr }, menu);
-        }
-
         makeItem(RS_(L"DuplicateTabText"), L"\xF5ED", ActionAndArgs{ ShortcutAction::DuplicateTab, nullptr }, menu);
 
-        makeItem(RS_(L"SplitPaneDuplicateText") + L" " + focusedProfile.Name(), focusedProfile.Icon(), ActionAndArgs{ ShortcutAction::SplitPane, SplitPaneArgs{ SplitType::Duplicate, SplitDirection::Down, .5, nullptr } }, splitPaneDownMenu);
-        makeItem(RS_(L"SplitPaneDuplicateText") + L" " + focusedProfile.Name(), focusedProfile.Icon(), ActionAndArgs{ ShortcutAction::SplitPane, SplitPaneArgs{ SplitType::Duplicate, SplitDirection::Up, .5, nullptr } }, splitPaneUpMenu);
-        makeItem(RS_(L"SplitPaneDuplicateText") + L" " + focusedProfile.Name(), focusedProfile.Icon(), ActionAndArgs{ ShortcutAction::SplitPane, SplitPaneArgs{ SplitType::Duplicate, SplitDirection::Right, .5, nullptr } }, splitPaneRightMenu);
-        makeItem(RS_(L"SplitPaneDuplicateText") + L" " + focusedProfile.Name(), focusedProfile.Icon(), ActionAndArgs{ ShortcutAction::SplitPane, SplitPaneArgs{ SplitType::Duplicate, SplitDirection::Left, .5, nullptr } }, splitPaneLeftMenu);
+        const auto focusedProfileName = focusedProfile.Name();
+        const auto focusedProfileIcon = focusedProfile.Icon();
+
+        makeItem(RS_(L"SplitPaneDuplicateText") + L" " + focusedProfileName, focusedProfileIcon, ActionAndArgs{ ShortcutAction::SplitPane, SplitPaneArgs{ SplitType::Duplicate, SplitDirection::Down, .5, nullptr } }, splitPaneDownMenu);
+        makeItem(RS_(L"SplitPaneDuplicateText") + L" " + focusedProfileName, focusedProfileIcon, ActionAndArgs{ ShortcutAction::SplitPane, SplitPaneArgs{ SplitType::Duplicate, SplitDirection::Up, .5, nullptr } }, splitPaneUpMenu);
+        makeItem(RS_(L"SplitPaneDuplicateText") + L" " + focusedProfileName, focusedProfileIcon, ActionAndArgs{ ShortcutAction::SplitPane, SplitPaneArgs{ SplitType::Duplicate, SplitDirection::Right, .5, nullptr } }, splitPaneRightMenu);
+        makeItem(RS_(L"SplitPaneDuplicateText") + L" " + focusedProfileName, focusedProfileIcon, ActionAndArgs{ ShortcutAction::SplitPane, SplitPaneArgs{ SplitType::Duplicate, SplitDirection::Left, .5, nullptr } }, splitPaneLeftMenu);
 
         // add menu separator
         const auto separatorDownItem = AppBarSeparator{};
@@ -5147,16 +5145,16 @@ namespace winrt::TerminalApp::implementation
         for (auto profileIndex = 0; profileIndex < activeProfileCount; profileIndex++)
         {
             const auto profile = activeProfiles.GetAt(profileIndex);
+            const auto profileName = profile.Name();
+            const auto profileIcon = profile.Icon();
+
             NewTerminalArgs args{};
-            args.Profile(profile.Name());
-            args.StartingDirectory(_evaluatePathForCwd(profile.EvaluatedStartingDirectory()));
-            args.TabTitle(profile.TabTitle());
-            args.Commandline(profile.Commandline());
-            args.SuppressApplicationTitle(profile.SuppressApplicationTitle());
-            makeItem(profile.Name(), profile.Icon(), ActionAndArgs{ ShortcutAction::SplitPane, SplitPaneArgs{ SplitType::Manual, SplitDirection::Down, .5, args } }, splitPaneDownMenu);
-            makeItem(profile.Name(), profile.Icon(), ActionAndArgs{ ShortcutAction::SplitPane, SplitPaneArgs{ SplitType::Manual, SplitDirection::Up, .5, args } }, splitPaneUpMenu);
-            makeItem(profile.Name(), profile.Icon(), ActionAndArgs{ ShortcutAction::SplitPane, SplitPaneArgs{ SplitType::Manual, SplitDirection::Right, .5, args } }, splitPaneRightMenu);
-            makeItem(profile.Name(), profile.Icon(), ActionAndArgs{ ShortcutAction::SplitPane, SplitPaneArgs{ SplitType::Manual, SplitDirection::Left, .5, args } }, splitPaneLeftMenu);
+            args.Profile(profileName);
+
+            makeItem(profileName, profileIcon, ActionAndArgs{ ShortcutAction::SplitPane, SplitPaneArgs{ SplitType::Manual, SplitDirection::Down, .5, args } }, splitPaneDownMenu);
+            makeItem(profileName, profileIcon, ActionAndArgs{ ShortcutAction::SplitPane, SplitPaneArgs{ SplitType::Manual, SplitDirection::Up, .5, args } }, splitPaneUpMenu);
+            makeItem(profileName, profileIcon, ActionAndArgs{ ShortcutAction::SplitPane, SplitPaneArgs{ SplitType::Manual, SplitDirection::Right, .5, args } }, splitPaneRightMenu);
+            makeItem(profileName, profileIcon, ActionAndArgs{ ShortcutAction::SplitPane, SplitPaneArgs{ SplitType::Manual, SplitDirection::Left, .5, args } }, splitPaneLeftMenu);
         }
 
         MUX::Controls::CommandBarFlyout splitPaneMenu{};
