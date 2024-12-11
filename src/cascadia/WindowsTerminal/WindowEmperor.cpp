@@ -16,12 +16,6 @@
 #include "../../types/inc/User32Utils.hpp"
 #include "../../types/inc/utils.hpp"
 
-enum class NotificationIconMenuItemAction
-{
-    FocusTerminal, // Focus the MRU terminal.
-    SummonWindow
-};
-
 using namespace winrt;
 using namespace winrt::Microsoft::Terminal;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
@@ -756,71 +750,7 @@ LRESULT WindowEmperor::_messageHandler(HWND window, UINT const message, WPARAM c
                 break;
             }
             case WM_CONTEXTMENU:
-                if (const auto menu = CreatePopupMenu())
-                {
-                    MENUINFO mi{};
-                    mi.cbSize = sizeof(MENUINFO);
-                    mi.fMask = MIM_STYLE | MIM_APPLYTOSUBMENUS | MIM_MENUDATA;
-                    mi.dwStyle = MNS_NOTIFYBYPOS;
-                    mi.dwMenuData = NULL;
-                    SetMenuInfo(menu, &mi);
-
-                    // Focus Current Terminal Window
-                    AppendMenuW(menu, MF_STRING, static_cast<UINT_PTR>(NotificationIconMenuItemAction::FocusTerminal), RS_(L"NotificationIconFocusTerminal").c_str());
-                    AppendMenuW(menu, MF_SEPARATOR, 0, L"");
-
-                    // Submenu for Windows
-                    if (const auto submenu = CreatePopupMenu())
-                    {
-                        for (const auto& host : _windows)
-                        {
-                            const auto logic = host->Logic();
-                            const auto props = logic.WindowProperties();
-
-                            std::wstring displayText;
-                            displayText.reserve(64);
-
-                            const auto id = props.WindowId();
-                            fmt::format_to(std::back_inserter(displayText), L"#{}", id);
-
-                            if (const auto title = logic.Title(); !title.empty())
-                            {
-                                fmt::format_to(std::back_inserter(displayText), L": {}", title);
-                            }
-
-                            if (const auto name = props.WindowName(); !name.empty())
-                            {
-                                fmt::format_to(std::back_inserter(displayText), L" [{}]", name);
-                            }
-
-                            AppendMenuW(submenu, MF_STRING, gsl::narrow_cast<UINT_PTR>(id), displayText.c_str());
-                        }
-
-                        static constexpr MENUINFO submenuInfo{
-                            .cbSize = sizeof(MENUINFO),
-                            .fMask = MIM_MENUDATA,
-                            .dwStyle = MNS_NOTIFYBYPOS,
-                            .dwMenuData = static_cast<UINT_PTR>(NotificationIconMenuItemAction::SummonWindow),
-                        };
-                        SetMenuInfo(submenu, &submenuInfo);
-                        AppendMenuW(menu, MF_POPUP, reinterpret_cast<UINT_PTR>(submenu), RS_(L"NotificationIconWindowSubmenu").c_str());
-                    }
-
-                    // We'll need to set our window to the foreground before calling
-                    // TrackPopupMenuEx or else the menu won't dismiss when clicking away.
-                    SetForegroundWindow(window);
-
-                    // User can select menu items with the left and right buttons.
-                    const auto rightAlign = GetSystemMetrics(SM_MENUDROPALIGNMENT) != 0;
-                    const UINT uFlags = TPM_RIGHTBUTTON | (rightAlign ? TPM_RIGHTALIGN : TPM_LEFTALIGN);
-                    TrackPopupMenuEx(menu, uFlags, GET_X_LPARAM(wParam), GET_Y_LPARAM(wParam), window, nullptr);
-
-                    if (_currentWindowMenu)
-                    {
-                        DestroyMenu(_currentWindowMenu);
-                    }
-                    _currentWindowMenu = menu;
-                }
+                _notificationAreaMenuRequested(wParam);
                 break;
             default:
                 break;
@@ -835,67 +765,26 @@ LRESULT WindowEmperor::_messageHandler(HWND window, UINT const message, WPARAM c
             return 0;
         }
         case WM_MENUCOMMAND:
-        {
-            const auto menu = (HMENU)lParam;
-            const auto menuItemIndex = LOWORD(wParam);
-
-            MENUINFO mi{};
-            mi.cbSize = sizeof(MENUINFO);
-            mi.fMask = MIM_MENUDATA;
-            GetMenuInfo(menu, &mi);
-
-            if (mi.dwMenuData)
-            {
-                if (gsl::narrow_cast<NotificationIconMenuItemAction>(mi.dwMenuData) == NotificationIconMenuItemAction::SummonWindow)
-                {
-                    SummonWindowSelectionArgs args;
-                    args.WindowID = GetMenuItemID(menu, menuItemIndex);
-                    args.SummonBehavior.ToggleVisibility(false);
-                    args.SummonBehavior.MoveToCurrentDesktop(false);
-                    args.SummonBehavior.ToMonitor(winrt::TerminalApp::MonitorBehavior::InPlace);
-                    std::ignore = _summonWindow(std::move(args));
-                    return 0;
-                }
-            }
-
-            // Now check the menu item itself for an action.
-            const auto action = gsl::narrow_cast<NotificationIconMenuItemAction>(GetMenuItemID(menu, menuItemIndex));
-            switch (action)
-            {
-            case NotificationIconMenuItemAction::FocusTerminal:
-            {
-                SummonWindowSelectionArgs args;
-                args.SummonBehavior.ToggleVisibility(false);
-                args.SummonBehavior.MoveToCurrentDesktop(false);
-                args.SummonBehavior.ToMonitor(winrt::TerminalApp::MonitorBehavior::InPlace);
-                std::ignore = _summonWindow(std::move(args));
-                break;
-            }
-            default:
-                break;
-            }
+            _notificationAreaMenuClicked(wParam, lParam);
             return 0;
-        }
         case WM_SETTINGCHANGE:
             // Currently, we only support checking when the OS theme changes. In that case, wParam is 0.
             // GH#15102: Re-evaluate when we decide to reload env vars.
-            if (wParam == 0 && lParam != 0)
+            //
+            // ImmersiveColorSet seems to be the notification that the OS theme
+            // changed. If that happens, let the app know, so it can hot-reload
+            // themes, color schemes that might depend on the OS theme
+            if (wParam == 0 && lParam != 0 && wcscmp(reinterpret_cast<const wchar_t*>(lParam), L"ImmersiveColorSet") == 0)
             {
-                // ImmersiveColorSet seems to be the notification that the OS theme
-                // changed. If that happens, let the app know, so it can hot-reload
-                // themes, color schemes that might depend on the OS theme
-                if (wcscmp(reinterpret_cast<const wchar_t*>(lParam), L"ImmersiveColorSet") == 0)
+                // GH#15732: Don't update the settings, unless the theme
+                // _actually_ changed. ImmersiveColorSet gets sent more often
+                // than just on a theme change. It notably gets sent when the PC
+                // is locked, or the UAC prompt opens.
+                const auto isCurrentlyDark = Theme::IsSystemInDarkTheme();
+                if (isCurrentlyDark != _currentSystemThemeIsDark)
                 {
-                    // GH#15732: Don't update the settings, unless the theme
-                    // _actually_ changed. ImmersiveColorSet gets sent more often
-                    // than just on a theme change. It notably gets sent when the PC
-                    // is locked, or the UAC prompt opens.
-                    const auto isCurrentlyDark = Theme::IsSystemInDarkTheme();
-                    if (isCurrentlyDark != _currentSystemThemeIsDark)
-                    {
-                        _currentSystemThemeIsDark = isCurrentlyDark;
-                        _app.Logic().ReloadSettings();
-                    }
+                    _currentSystemThemeIsDark = isCurrentlyDark;
+                    _app.Logic().ReloadSettings();
                 }
             }
             return 0;
@@ -1036,6 +925,96 @@ void WindowEmperor::_finalizeSessionPersistence() const
             } while (FindNextFileW(handle.get(), &ffd));
         }
     }
+}
+
+void WindowEmperor::_notificationAreaMenuRequested(const WPARAM wParam)
+{
+    const auto menu = CreatePopupMenu();
+    if (!menu)
+    {
+        assert(false);
+        return;
+    }
+
+    static constexpr MENUINFO mi{
+        .cbSize = sizeof(MENUINFO),
+        .fMask = MIM_STYLE | MIM_APPLYTOSUBMENUS | MIM_MENUDATA,
+        .dwStyle = MNS_NOTIFYBYPOS,
+    };
+    SetMenuInfo(menu, &mi);
+
+    // The "Focus Terminal" menu item.
+    AppendMenuW(menu, MF_STRING, 0, RS_(L"NotificationIconFocusTerminal").c_str());
+    AppendMenuW(menu, MF_SEPARATOR, 0, L"");
+
+    // A submenu to focus a specific window. Lists all windows that we manage.
+    if (const auto submenu = CreatePopupMenu())
+    {
+        static constexpr MENUINFO submenuInfo{
+            .cbSize = sizeof(MENUINFO),
+            .fMask = MIM_MENUDATA,
+            .dwStyle = MNS_NOTIFYBYPOS,
+        };
+        SetMenuInfo(submenu, &submenuInfo);
+
+        std::wstring displayText;
+        displayText.reserve(64);
+
+        for (const auto& host : _windows)
+        {
+            const auto logic = host->Logic();
+            const auto props = logic.WindowProperties();
+            const auto id = props.WindowId();
+
+            displayText.clear();
+            fmt::format_to(std::back_inserter(displayText), L"#{}", id);
+            if (const auto title = logic.Title(); !title.empty())
+            {
+                fmt::format_to(std::back_inserter(displayText), L": {}", title);
+            }
+            if (const auto name = props.WindowName(); !name.empty())
+            {
+                fmt::format_to(std::back_inserter(displayText), L" [{}]", name);
+            }
+
+            AppendMenuW(submenu, MF_STRING, gsl::narrow_cast<UINT_PTR>(id), displayText.c_str());
+        }
+
+        AppendMenuW(menu, MF_POPUP, reinterpret_cast<UINT_PTR>(submenu), RS_(L"NotificationIconWindowSubmenu").c_str());
+    }
+
+    // We'll need to set our window to the foreground before calling
+    // TrackPopupMenuEx or else the menu won't dismiss when clicking away.
+    SetForegroundWindow(_window.get());
+
+    // User can select menu items with the left and right buttons.
+    const auto rightAlign = GetSystemMetrics(SM_MENUDROPALIGNMENT) != 0;
+    const UINT uFlags = TPM_RIGHTBUTTON | (rightAlign ? TPM_RIGHTALIGN : TPM_LEFTALIGN);
+    TrackPopupMenuEx(menu, uFlags, GET_X_LPARAM(wParam), GET_Y_LPARAM(wParam), _window.get(), nullptr);
+
+    if (_currentWindowMenu)
+    {
+        // This will recursively destroy the submenu(s) as well.
+        DestroyMenu(_currentWindowMenu);
+    }
+    _currentWindowMenu = menu;
+}
+
+void WindowEmperor::_notificationAreaMenuClicked(const WPARAM wParam, const LPARAM lParam) const
+{
+    const auto menu = reinterpret_cast<HMENU>(lParam);
+    const auto menuItemIndex = LOWORD(wParam);
+    const auto windowId = GetMenuItemID(menu, menuItemIndex);
+
+    // _notificationAreaMenuRequested constructs each menu item with an ID
+    // that is either 0 for "Focus Terminal" or >0 for a specific window ID.
+    // This works well for us because valid window IDs are always >0.
+    SummonWindowSelectionArgs args;
+    args.WindowID = windowId;
+    args.SummonBehavior.ToggleVisibility(false);
+    args.SummonBehavior.MoveToCurrentDesktop(false);
+    args.SummonBehavior.ToMonitor(winrt::TerminalApp::MonitorBehavior::InPlace);
+    std::ignore = _summonWindow(std::move(args));
 }
 
 #pragma endregion

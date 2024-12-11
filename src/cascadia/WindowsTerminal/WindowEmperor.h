@@ -54,7 +54,8 @@ private:
     LRESULT _messageHandler(HWND window, UINT message, WPARAM wParam, LPARAM lParam) noexcept;
     void _createMessageWindow(const wchar_t* className);
     void _postQuitMessageIfNeeded() const;
-    safe_void_coroutine _showMessageBox(winrt::hstring message, bool error) const;
+    void _notificationAreaMenuRequested(WPARAM wParam);
+    void _notificationAreaMenuClicked(WPARAM wParam, LPARAM lParam) const;
     void _hotkeyPressed(long hotkeyIndex);
     void _registerHotKey(int index, const winrt::Microsoft::Terminal::Control::KeyChord& hotkey) noexcept;
     void _unregisterHotKey(int index) noexcept;
