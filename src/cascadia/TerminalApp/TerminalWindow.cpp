@@ -716,7 +716,7 @@ namespace winrt::TerminalApp::implementation
             // that to determine the initial position of the window. This is
             // used when the user is dragging a tab out of the window, to create
             // a new window.
-            // BODY: Technically we don't have a guarantee to be within the XAML stack right now to be have as a view to reference.
+            // BODY: Technically we aren't guaranteed to be within the XAML stack right now to have a "current view".
             const auto scale = static_cast<float>(DisplayInformation::GetForCurrentView().RawPixelsPerViewPixel());
             const auto bounds = _contentBounds.Value();
             initialPosition = { lroundf(bounds.X * scale), lroundf(bounds.Y * scale) };
