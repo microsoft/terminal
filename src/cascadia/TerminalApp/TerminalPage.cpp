@@ -5108,15 +5108,11 @@ namespace winrt::TerminalApp::implementation
         for (auto profileIndex = 0; profileIndex < activeProfileCount; profileIndex++)
         {
             const auto profile = activeProfiles.GetAt(profileIndex);
-            NewTerminalArgs args{};
-            args.Profile(profile.Name());
-            args.StartingDirectory(_evaluatePathForCwd(profile.EvaluatedStartingDirectory()));
-            args.TabTitle(profile.TabTitle());
-            args.Commandline(profile.Commandline());
-            args.SuppressApplicationTitle(profile.SuppressApplicationTitle());
-
             const auto profileName = profile.Name();
             const auto profileIcon = profile.Icon();
+
+            NewTerminalArgs args{};
+            args.Profile(profileName);
 
             makeItem(profileName, profileIcon, ActionAndArgs{ ShortcutAction::SplitPane, SplitPaneArgs{ SplitType::Manual, SplitDirection::Down, .5, args } }, splitPaneDownMenu);
             makeItem(profileName, profileIcon, ActionAndArgs{ ShortcutAction::SplitPane, SplitPaneArgs{ SplitType::Manual, SplitDirection::Up, .5, args } }, splitPaneUpMenu);
