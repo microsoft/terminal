@@ -687,22 +687,30 @@ void WindowEmperor::_createMessageWindow(const wchar_t* className)
 
 void WindowEmperor::_postQuitMessageIfNeeded() const
 {
-    if (_windows.empty() && !_app.Logic().Settings().GlobalSettings().AllowHeadless())
+    if (_messageBoxCount <= 0 && _windows.empty() && !_app.Logic().Settings().GlobalSettings().AllowHeadless())
     {
         PostQuitMessage(0);
     }
 }
 
-safe_void_coroutine WindowEmperor::_showMessageBox(winrt::hstring message, bool error) const
+safe_void_coroutine WindowEmperor::_showMessageBox(winrt::hstring message, bool error)
 {
-    const auto hwnd = _window.get();
+    // Prevent the main loop from exiting until the message box is closed.
+    // Once the loop exits, the app exits, and the message box will be closed.
+    _messageBoxCount += 1;
+    const auto decrement = wil::scope_exit([hwnd = _window.get()]() noexcept {
+        PostMessageW(hwnd, WM_MESSAGE_BOX_CLOSED, 0, 0);
+    });
 
+    // We must yield to a background thread, because MessageBoxW() is a blocking call, and we can't
+    // block the main thread. That would prevent us from servicing WM_COPYDATA messages and similar.
     co_await winrt::resume_background();
 
     const auto messageTitle = error ? IDS_ERROR_DIALOG_TITLE : IDS_HELP_DIALOG_TITLE;
     const auto messageIcon = error ? MB_ICONERROR : MB_ICONWARNING;
+    // The dialog cannot have our _window as the parent, because that one is always hidden/invisible.
     // TODO:GH#4134: polish this dialog more, to make the text more like msiexec /?
-    MessageBoxW(hwnd, message.c_str(), GetStringResource(messageTitle).data(), MB_OK | messageIcon);
+    MessageBoxW(nullptr, message.c_str(), GetStringResource(messageTitle).c_str(), MB_OK | messageIcon);
 }
 
 LRESULT WindowEmperor::_messageHandler(HWND window, UINT const message, WPARAM const wParam, LPARAM const lParam) noexcept
@@ -730,6 +738,11 @@ LRESULT WindowEmperor::_messageHandler(HWND window, UINT const message, WPARAM c
             _postQuitMessageIfNeeded();
             return 0;
         }
+        case WM_MESSAGE_BOX_CLOSED:
+            // Counterpart specific to _showMessageBox().
+            _messageBoxCount -= 1;
+            _postQuitMessageIfNeeded();
+            return 0;
         case WM_IDENTIFY_ALL_WINDOWS:
             for (const auto& host : _windows)
             {

@@ -25,6 +25,7 @@ public:
     enum UserMessages : UINT
     {
         WM_CLOSE_TERMINAL_WINDOW = WM_USER,
+        WM_MESSAGE_BOX_CLOSED,
         WM_IDENTIFY_ALL_WINDOWS,
         WM_NOTIFY_FROM_NOTIFICATION_AREA,
     };
@@ -54,6 +55,7 @@ private:
     LRESULT _messageHandler(HWND window, UINT message, WPARAM wParam, LPARAM lParam) noexcept;
     void _createMessageWindow(const wchar_t* className);
     void _postQuitMessageIfNeeded() const;
+    safe_void_coroutine _showMessageBox(winrt::hstring message, bool error);
     void _notificationAreaMenuRequested(WPARAM wParam);
     void _notificationAreaMenuClicked(WPARAM wParam, LPARAM lParam) const;
     void _hotkeyPressed(long hotkeyIndex);
@@ -74,6 +76,7 @@ private:
     bool _forcePersistence = false;
     bool _needsPersistenceCleanup = false;
     std::optional<bool> _currentSystemThemeIsDark;
+    int32_t _messageBoxCount = 0;
 
 #ifdef NDEBUG
     static constexpr void _assertIsMainThread() noexcept
