@@ -10,7 +10,6 @@
     <EventProvider Id="EventProvider_TerminalSettingsModel" Name="be579944-4d33-5202-e5d6-a7a57f1935cb" />
     <EventProvider Id="EventProvider_TerminalApp" Name="24a1622f-7da7-5c77-3303-d850bd1ab2ed" />
     <EventProvider Id="EventProvider_TerminalWin32Host" Name="56c06166-2e2e-5f4d-7ff3-74f4b78c87d6" />
-    <EventProvider Id="EventProvider_TerminalRemoting" Name="d6f04aad-629f-539a-77c1-73f5c3e4aa7b" />
     <EventProvider Id="EventProvider_TerminalDirectX" Name="c93e739e-ae50-5a14-78e7-f171e947535d" />
     <EventProvider Id="EventProvider_TerminalUIA" Name="e7ebce59-2161-572d-b263-2f16a6afb9e5"/>
     <!-- Console providers here -->
@@ -30,7 +29,6 @@
             <EventProviderId Value="EventProvider_TerminalSettingsModel" />
             <EventProviderId Value="EventProvider_TerminalApp" />
             <EventProviderId Value="EventProvider_TerminalWin32Host" />
-            <EventProviderId Value="EventProvider_TerminalRemoting" />
             <EventProviderId Value="EventProvider_TerminalDirectX" />
             <EventProviderId Value="EventProvider_TerminalUIA" />
           </EventProviders>
@@ -51,7 +49,6 @@
             <EventProviderId Value="EventProvider_TerminalSettingsModel" />
             <EventProviderId Value="EventProvider_TerminalApp" />
             <EventProviderId Value="EventProvider_TerminalWin32Host" />
-            <EventProviderId Value="EventProvider_TerminalRemoting" />
             <EventProviderId Value="EventProvider-Microsoft.Windows.Console.Launcher" />
             <EventProviderId Value="EventProvider-Microsoft.Windows.Console.Host" />
             <EventProviderId Value="EventProvider-Microsoft.Windows.Console.Server" />

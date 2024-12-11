@@ -17,11 +17,8 @@ Author(s):
     Mike Griese (migrie) April-2019
 --*/
 
-#include "pch.h"
+#pragma once
 #include "IslandWindow.h"
-#include "../../types/inc/Viewport.hpp"
-#include <dwmapi.h>
-#include <wil/resource.h>
 
 class NonClientIslandWindow : public IslandWindow
 {
@@ -32,8 +29,6 @@ public:
     NonClientIslandWindow(const winrt::Windows::UI::Xaml::ElementTheme& requestedTheme) noexcept;
     ~NonClientIslandWindow() override;
 
-    void Refrigerate() noexcept override;
-
     virtual void Close() override;
     void MakeWindow() noexcept override;
     virtual void OnSize(const UINT width, const UINT height) override;
@@ -43,7 +38,7 @@ public:
     virtual til::rect GetNonClientFrame(UINT dpi) const noexcept override;
     virtual til::size GetTotalNonClientExclusiveSize(UINT dpi) const noexcept override;
 
-    bool Initialize() override;
+    void Initialize() override;
 
     void OnAppInitialized() override;
     void SetContent(winrt::Windows::UI::Xaml::UIElement content) override;

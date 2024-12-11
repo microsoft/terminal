@@ -31,12 +31,6 @@
                           Style="{StaticResource ToggleSwitchInExpanderStyle}" />
         </local:SettingContainer>
 
-        <!--  Isolated Mode  -->
-        <local:SettingContainer x:Uid="Globals_IsolatedMode">
-            <ToggleSwitch IsOn="{x:Bind ViewModel.IsolatedMode, Mode=TwoWay}"
-                          Style="{StaticResource ToggleSwitchInExpanderStyle}" />
-        </local:SettingContainer>
-
         <!--  Text Measurement  -->
         <local:SettingContainer x:Uid="Globals_TextMeasurement">
             <ComboBox AutomationProperties.AccessibilityView="Content"

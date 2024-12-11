@@ -572,10 +572,6 @@
     <value>Разрешить запуск терминала Windows в фоновом режиме</value>
     <comment>Header for a control to toggle support for Windows Terminal to run in the background.</comment>
   </data>
-  <data name="Globals_IsolatedMode.Header" xml:space="preserve">
-    <value>Принудительное выполнение каждого окна в отдельном процессе</value>
-    <comment>Header for a control to toggle making each window be its own process.</comment>
-  </data>
   <data name="Globals_DebugFeaturesEnabled.Header" xml:space="preserve">
     <value>Включить функции отладки</value>
     <comment>Header for a control to toggle debug features.</comment>
@@ -591,10 +587,6 @@
   <data name="Globals_AllowHeadless.HelpText" xml:space="preserve">
     <value>Это позволяет выполнять такие действия, как глобальный вызов и режим землетрясения, даже если ни одно окно не открыто.</value>
     <comment>Additional description for what the "allow headless" setting does. Presented near "Globals_AllowHeadless.Header".</comment>
-  </data>
-  <data name="Globals_IsolatedMode.HelpText" xml:space="preserve">
-    <value>Некоторые функции будут работать неправильно, включая глобальные сочетания клавиш, перетаскивание вкладок и wt.exe нацеливание окна.</value>
-    <comment>{Locked="wt.exe"} Additional description for what the "isolated mode" setting does. Presented near "Globals_IsolatedMode.Header".</comment>
   </data>
   <data name="Globals_TabWidthMode.Header" xml:space="preserve">
     <value>Режим ширины вкладки</value>

@@ -6,7 +6,6 @@
 #include "../types/inc/Viewport.hpp"
 #include "resource.h"
 #include "icon.h"
-#include "NotificationIcon.h"
 #include <dwmapi.h>
 #include <TerminalThemeHelpers.h>
 #include <CoreWindow.h>
@@ -57,29 +56,6 @@ void IslandWindow::Close()
         _source.Close();
         _source = nullptr;
     }
-}
-
-// Clear out any state that might be associated with this app instance, so that
-// we can later re-use this HWND for another instance.
-//
-// This doesn't actually close out our HWND or DesktopWindowXamlSource, but it
-// will remove all our content, and SW_HIDE the window, so it isn't accessible.
-void IslandWindow::Refrigerate() noexcept
-{
-    // Similar to in Close - unset our HWND's user data. We'll re-set this when
-    // we get re-heated, so that while we're refrigerated, we won't have
-    // unexpected callbacks into us while we don't have content.
-    //
-    // This pointer will get re-set in _warmInitialize
-    SetWindowLongPtr(_window.get(), GWLP_USERDATA, 0);
-
-    _resetSystemMenu();
-
-    _pfnCreateCallback = nullptr;
-    _pfnSnapDimensionCallback = nullptr;
-
-    _rootGrid.Children().Clear();
-    ShowWindow(_window.get(), SW_HIDE);
 }
 
 HWND IslandWindow::GetInteropHandle() const
@@ -201,8 +177,6 @@ void IslandWindow::_HandleCreateWindow(const WPARAM, const LPARAM lParam) noexce
     UpdateWindow(_window.get());
 
     UpdateWindowIconForActiveMetrics(_window.get());
-
-    _currentSystemThemeIsDark = Theme::IsSystemInDarkTheme();
 }
 
 // Method Description:
@@ -340,30 +314,12 @@ LRESULT IslandWindow::_OnMoving(const WPARAM /*wParam*/, const LPARAM lParam)
     return false;
 }
 
-// return true if this was a "cold" initialize, that didn't start XAML before.
-bool IslandWindow::Initialize()
-{
-    if (!_source)
-    {
-        _coldInitialize();
-        return true;
-    }
-    else
-    {
-        // This was a "warm" initialize - we've already got an HWND, but we need
-        // to move it to the new correct place, new size, and reset any leftover
-        // runtime state.
-        _warmInitialize();
-        return false;
-    }
-}
-
 // Method Description:
 // - Start this window for the first time. This will instantiate our XAML
 //   island, set up our root grid, and initialize some other members that only
 //   need to be initialized once.
 // - This should only be called once.
-void IslandWindow::_coldInitialize()
+void IslandWindow::Initialize()
 {
     _source = DesktopWindowXamlSource{};
 
@@ -395,25 +351,6 @@ void IslandWindow::_coldInitialize()
     // Enable vintage opacity by removing the XAML emergency backstop, GH#603.
     // We don't really care if this failed or not.
     TerminalTrySetTransparentBackground(true);
-}
-void IslandWindow::_warmInitialize()
-{
-    // re-add the pointer to us to our HWND's user data, so that we can start
-    // getting window proc callbacks again.
-    _setupUserData();
-
-    // Manually ask how we want to be created.
-    if (_pfnCreateCallback)
-    {
-        til::rect rc{ GetWindowRect() };
-        _pfnCreateCallback(_window.get(), rc);
-    }
-
-    // Don't call IslandWindow::OnSize - that will set the Width/Height members
-    // of the _rootGrid. However, NonClientIslandWindow doesn't use those! If you set them, here,
-    // the contents of the window will never resize.
-    UpdateWindow(_window.get());
-    ForceResize();
 }
 
 void IslandWindow::OnSize(const UINT width, const UINT height)
@@ -583,23 +520,6 @@ void IslandWindow::_OnGetMinMaxInfo(const WPARAM /*wParam*/, const LPARAM lParam
             }
         }
 
-        // BODGY This is a fix for the upstream:
-        //
-        // https://github.com/microsoft/microsoft-ui-xaml/issues/3577
-        //
-        // ContentDialogs don't resize themselves when the XAML island resizes.
-        // However, if we manually resize our CoreWindow, that'll actually
-        // trigger a resize of the ContentDialog.
-        if (const auto& coreWindow{ winrt::Windows::UI::Core::CoreWindow::GetForCurrentThread() })
-        {
-            if (const auto& interop{ coreWindow.as<ICoreWindowInterop>() })
-            {
-                HWND coreWindowInterop;
-                interop->get_WindowHandle(&coreWindowInterop);
-                PostMessage(coreWindowInterop, message, wparam, lparam);
-            }
-        }
-
         break;
     }
     case WM_MOVING:
@@ -734,70 +654,6 @@ void IslandWindow::_OnGetMinMaxInfo(const WPARAM /*wParam*/, const LPARAM lParam
             search->second.callback();
         }
         break;
-    }
-    case WM_SETTINGCHANGE:
-    {
-        // Currently, we only support checking when the OS theme changes. In
-        // that case, wParam is 0. Re-evaluate when we decide to reload env vars
-        // (GH#1125)
-        if (wparam == 0 && lparam != 0)
-        {
-            const std::wstring param{ (wchar_t*)lparam };
-            // ImmersiveColorSet seems to be the notification that the OS theme
-            // changed. If that happens, let the app know, so it can hot-reload
-            // themes, color schemes that might depend on the OS theme
-            if (param == L"ImmersiveColorSet")
-            {
-                // GH#15732: Don't update the settings, unless the theme
-                // _actually_ changed. ImmersiveColorSet gets sent more often
-                // than just on a theme change. It notably gets sent when the PC
-                // is locked, or the UAC prompt opens.
-                auto isCurrentlyDark = Theme::IsSystemInDarkTheme();
-                if (isCurrentlyDark != _currentSystemThemeIsDark)
-                {
-                    _currentSystemThemeIsDark = isCurrentlyDark;
-                    UpdateSettingsRequested.raise();
-                }
-            }
-        }
-        break;
-    }
-    case WM_ENDSESSION:
-    {
-        // For WM_QUERYENDSESSION and WM_ENDSESSION, refer to:
-        //
-        // https://docs.microsoft.com/en-us/windows/win32/rstmgr/guidelines-for-applications
-        //
-        // The OS will send us a WM_QUERYENDSESSION when it's preparing an
-        // update for our app. It will then send us a WM_ENDSESSION, which gives
-        // us a small timeout (~30s) to actually shut down gracefully. After
-        // that timeout, it will send us a WM_CLOSE. If we still don't close
-        // after the WM_CLOSE, it'll force-kill us (causing a crash which will be
-        // bucketed to MoAppHang).
-        //
-        // If we need to do anything to prepare for being told to shutdown,
-        // start it in WM_QUERYENDSESSION. If (in the future) we need to prevent
-        // logoff, we can return false there. (DefWindowProc returns true)
-        //
-        // The OS is going to shut us down here. We will manually start a quit,
-        // so that we can persist the state. If we refuse to gracefully shut
-        // down here, the OS will crash us to forcefully terminate us. We choose
-        // to quit here, rather than just close, to skip over any warning
-        // dialogs (e.g. "Are you sure you want to close all tabs?") which might
-        // prevent a WM_CLOSE from cleanly closing the window.
-        //
-        // This will cause a appHost._RequestQuitAll, which will notify the
-        // monarch to collect up all the window state and save it.
-
-        TraceLoggingWrite(
-            g_hWindowsTerminalProvider,
-            "EndSession",
-            TraceLoggingDescription("Emitted when the OS has sent a WM_ENDSESSION"),
-            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-            TraceLoggingKeyword(TIL_KEYWORD_TRACE));
-
-        AutomaticShutdownRequested.raise();
-        return true;
     }
     }
 
@@ -1049,7 +905,7 @@ void IslandWindow::SetTaskbarProgress(const size_t state, const size_t progress)
 }
 
 // From GdiEngine::s_SetWindowLongWHelper
-void SetWindowLongWHelper(const HWND hWnd, const int nIndex, const LONG dwNewLong) noexcept
+static void SetWindowLongWHelper(const HWND hWnd, const int nIndex, const LONG dwNewLong) noexcept
 {
     // SetWindowLong has strange error handling. On success, it returns the
     // previous Window Long value and doesn't modify the Last Error state. To
@@ -1323,18 +1179,7 @@ void IslandWindow::_SetIsFullscreen(const bool fullscreenEnabled)
 // - toggleVisibility: controls how we should behave when already in the foreground.
 // Return Value:
 // - <none>
-safe_void_coroutine IslandWindow::SummonWindow(Remoting::SummonWindowBehavior args)
-{
-    // On the foreground thread:
-    co_await wil::resume_foreground(_rootGrid.Dispatcher());
-    _summonWindowRoutineBody(args);
-}
-
-// Method Description:
-// - As above.
-//   BODGY: ARM64 BUILD FAILED WITH fatal error C1001: Internal compiler error
-//   when this was part of the coroutine body.
-void IslandWindow::_summonWindowRoutineBody(Remoting::SummonWindowBehavior args)
+void IslandWindow::SummonWindow(winrt::TerminalApp::SummonWindowBehavior args)
 {
     auto actualDropdownDuration = args.DropdownDuration();
     // If the user requested an animation, let's check if animations are enabled in the OS.
@@ -1370,7 +1215,7 @@ void IslandWindow::_summonWindowRoutineBody(Remoting::SummonWindowBehavior args)
         // They want to toggle the window when it is the FG window, and we are
         // the FG window. However, if we're on a different monitor than the
         // mouse, then we should move to that monitor instead of dismissing.
-        if (args.ToMonitor() == Remoting::MonitorBehavior::ToMouse)
+        if (args.ToMonitor() == winrt::TerminalApp::MonitorBehavior::ToMouse)
         {
             const til::rect cursorMonitorRect{ _getMonitorForCursor().rcMonitor };
             const til::rect currentMonitorRect{ _getMonitorForWindow(GetHandle()).rcMonitor };
@@ -1447,7 +1292,7 @@ void IslandWindow::_doSlideAnimation(const uint32_t dropdownDuration, const bool
 }
 
 void IslandWindow::_dropdownWindow(const uint32_t dropdownDuration,
-                                   const Remoting::MonitorBehavior toMonitor)
+                                   const winrt::TerminalApp::MonitorBehavior toMonitor)
 {
     // First, get the window that's currently in the foreground. We'll need
     // _this_ window to be able to appear on top of. If we just use
@@ -1504,7 +1349,7 @@ void IslandWindow::_slideUpWindow(const uint32_t dropdownDuration)
 // Return Value:
 // - <none>
 void IslandWindow::_globalActivateWindow(const uint32_t dropdownDuration,
-                                         const Remoting::MonitorBehavior toMonitor)
+                                         const winrt::TerminalApp::MonitorBehavior toMonitor)
 {
     // First, get the window that's currently in the foreground. We'll need
     // _this_ window to be able to appear on top of. If we just use
@@ -1636,13 +1481,13 @@ MONITORINFO IslandWindow::_getMonitorForWindow(HWND foregroundWindow)
 // - toMonitor: Controls which monitor we should move to.
 // Return Value:
 // - <none>
-void IslandWindow::_moveToMonitor(HWND oldForegroundWindow, Remoting::MonitorBehavior toMonitor)
+void IslandWindow::_moveToMonitor(HWND oldForegroundWindow, winrt::TerminalApp::MonitorBehavior toMonitor)
 {
-    if (toMonitor == Remoting::MonitorBehavior::ToCurrent)
+    if (toMonitor == winrt::TerminalApp::MonitorBehavior::ToCurrent)
     {
         _moveToMonitorOf(oldForegroundWindow);
     }
-    else if (toMonitor == Remoting::MonitorBehavior::ToMouse)
+    else if (toMonitor == winrt::TerminalApp::MonitorBehavior::ToMouse)
     {
         _moveToMonitorOfMouse();
     }

@@ -725,12 +725,6 @@
   <data name="WindowRenamer.CloseButtonContent" xml:space="preserve">
     <value>취소</value>
   </data>
-  <data name="RenameFailedToast.Title" xml:space="preserve">
-    <value>창 이름을 바꾸지 못함</value>
-  </data>
-  <data name="RenameFailedToast.Subtitle" xml:space="preserve">
-    <value>해당 이름으로 된 다른 창이 이미 있습니다</value>
-  </data>
   <data name="WindowMaximizeButtonToolTip" xml:space="preserve">
     <value>최대화</value>
   </data>

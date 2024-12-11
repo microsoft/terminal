@@ -572,10 +572,6 @@
     <value>Windows ターミナルのバックグラウンドでの実行を許可する</value>
     <comment>Header for a control to toggle support for Windows Terminal to run in the background.</comment>
   </data>
-  <data name="Globals_IsolatedMode.Header" xml:space="preserve">
-    <value>各ウィンドウを独自のプロセスで強制的に実行する</value>
-    <comment>Header for a control to toggle making each window be its own process.</comment>
-  </data>
   <data name="Globals_DebugFeaturesEnabled.Header" xml:space="preserve">
     <value>デバッグ機能を有効にする</value>
     <comment>Header for a control to toggle debug features.</comment>
@@ -591,10 +587,6 @@
   <data name="Globals_AllowHeadless.HelpText" xml:space="preserve">
     <value>これにより、ウィンドウが開かなくても、グローバル デコレーションや Quake モードのアクションなどのアクションを実行できます。</value>
     <comment>Additional description for what the "allow headless" setting does. Presented near "Globals_AllowHeadless.Header".</comment>
-  </data>
-  <data name="Globals_IsolatedMode.HelpText" xml:space="preserve">
-    <value>グローバル ホットキー、タブ ドラッグ アンド ドロップ、ウィンドウターゲット設定など、一部の機能は正しく動作しません(ただし wt.exe、これらに限定されません)。</value>
-    <comment>{Locked="wt.exe"} Additional description for what the "isolated mode" setting does. Presented near "Globals_IsolatedMode.Header".</comment>
   </data>
   <data name="Globals_TabWidthMode.Header" xml:space="preserve">
     <value>タブ幅モード</value>

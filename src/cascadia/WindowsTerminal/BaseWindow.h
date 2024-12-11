@@ -3,13 +3,12 @@
 
 #pragma once
 
-#include "CustomWindowMessages.h"
-#include <wil/resource.h>
-
 template<typename T>
 class BaseWindow
 {
 public:
+    static constexpr UINT CM_UPDATE_TITLE = WM_USER + 0;
+
     virtual ~BaseWindow() = 0;
     static T* GetThisFromHandle(HWND const window) noexcept
     {
@@ -46,13 +45,6 @@ public:
         {
             return HandleDpiChange(_window.get(), wparam, lparam);
         }
-
-        case WM_DESTROY:
-        {
-            PostQuitMessage(0);
-            return 0;
-        }
-
         case WM_SIZE:
         {
             UINT width = LOWORD(lparam);
