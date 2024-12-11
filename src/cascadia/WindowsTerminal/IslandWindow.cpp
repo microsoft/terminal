@@ -905,7 +905,7 @@ void IslandWindow::SetTaskbarProgress(const size_t state, const size_t progress)
 }
 
 // From GdiEngine::s_SetWindowLongWHelper
-void SetWindowLongWHelper(const HWND hWnd, const int nIndex, const LONG dwNewLong) noexcept
+static void SetWindowLongWHelper(const HWND hWnd, const int nIndex, const LONG dwNewLong) noexcept
 {
     // SetWindowLong has strange error handling. On success, it returns the
     // previous Window Long value and doesn't modify the Last Error state. To

@@ -4,8 +4,6 @@
 #pragma once
 #include "BaseWindow.h"
 
-void SetWindowLongWHelper(const HWND hWnd, const int nIndex, const LONG dwNewLong) noexcept;
-
 struct SystemMenuItemInfo
 {
     winrt::hstring label;

@@ -339,7 +339,7 @@ void WindowEmperor::HandleCommandlineArgs(int nCmdShow)
             for (const auto layout : layouts)
             {
                 hstring args[] = { L"wt", L"-w", L"new", L"-s", winrt::to_hstring(startIdx) };
-                _dispatchCommandline({ args, cwd, showCmd, std::move(env) });
+                _dispatchCommandline({ args, cwd, showCmd, env });
                 startIdx += 1;
             }
         }
@@ -348,7 +348,7 @@ void WindowEmperor::HandleCommandlineArgs(int nCmdShow)
         const auto args = commandlineToArgArray(GetCommandLineW());
         if (_windows.empty() || args.size() != 1)
         {
-            _dispatchCommandline({ args, cwd, showCmd, std::move(env) });
+            _dispatchCommandline({ args, cwd, showCmd, env });
         }
 
         // If we created no windows, e.g. because the args are "/?" we can just exit now.
@@ -363,9 +363,9 @@ void WindowEmperor::HandleCommandlineArgs(int nCmdShow)
     }
 
     // The first CoreWindow is created implicitly by XAML and parented to the
-    // first XAML island. We parent it to our message-only window for 2 reasons:
-    // * On Windows 10 the CoreWindow will show up as a visible window on the
-    //   taskbar due to a WinUI bug, and this will hide it.
+    // first XAML island. We parent it to our initial window for 2 reasons:
+    // * On Windows 10 the CoreWindow will show up as a visible window on the taskbar
+    //   due to a WinUI bug, and this will hide it, because our initial window is hidden.
     // * When we DestroyWindow() the island it will destroy the CoreWindow,
     //   and it's not possible to recreate it. That's also a WinUI bug.
     if (const auto coreWindow = winrt::Windows::UI::Core::CoreWindow::GetForCurrentThread())
@@ -385,55 +385,39 @@ void WindowEmperor::HandleCommandlineArgs(int nCmdShow)
     MSG msg{};
     while (GetMessageW(&msg, nullptr, 0, 0))
     {
-        if (!loggedInteraction && (msg.message == WM_KEYDOWN || msg.message == WM_SYSKEYDOWN))
+        // FYI: For the key-down/up messages the lowest bit indicates if it's up.
+        if ((msg.message & ~1) == WM_KEYDOWN || (msg.message & ~1) == WM_SYSKEYDOWN)
         {
-            TraceLoggingWrite(
-                g_hWindowsTerminalProvider,
-                "SessionBecameInteractive",
-                TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-                TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
-            loggedInteraction = true;
-        }
-
-        // GH#638 (Pressing F7 brings up both the history AND a caret browsing message)
-        // The Xaml input stack doesn't allow an application to suppress the "caret browsing"
-        // dialog experience triggered when you press F7. Official recommendation from the Xaml
-        // team is to catch F7 before we hand it off.
-        // AppLogic contains an ad-hoc implementation of event bubbling for a runtime classes
-        // implementing a custom IF7Listener interface.
-        // If the recipient of IF7Listener::OnF7Pressed suggests that the F7 press has, in fact,
-        // been handled we can discard the message before we even translate it.
-        if ((msg.message == WM_KEYDOWN || msg.message == WM_SYSKEYDOWN) && msg.wParam == VK_F7)
-        {
-            if (const auto w = _mostRecentWindow(); w && w->OnDirectKeyEvent(VK_F7, LOBYTE(HIWORD(msg.lParam)), true))
+            if (!loggedInteraction)
             {
-                // The application consumed the F7. Don't let Xaml get it.
-                continue;
+                TraceLoggingWrite(
+                    g_hWindowsTerminalProvider,
+                    "SessionBecameInteractive",
+                    TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                    TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
+                loggedInteraction = true;
             }
-        }
 
-        // GH#6421 - System XAML will never send an Alt KeyUp event. So, similar
-        // to how we'll steal the F7 KeyDown above, we'll steal the Alt KeyUp
-        // here, and plumb it through.
-        if ((msg.message == WM_KEYUP || msg.message == WM_SYSKEYUP) && msg.wParam == VK_MENU)
-        {
-            // Let's pass <Alt> to the application
-            if (const auto w = _mostRecentWindow(); w && w->OnDirectKeyEvent(VK_MENU, LOBYTE(HIWORD(msg.lParam)), false))
+            const bool keyDown = msg.message & 1;
+            if (
+                // GH#638: The Xaml input stack doesn't allow an application to suppress the "caret browsing"
+                // dialog experience triggered when you press F7. Official recommendation from the Xaml
+                // team is to catch F7 before we hand it off.
+                (msg.wParam == VK_F7 && keyDown) ||
+                // GH#6421: System XAML will never send an Alt KeyUp event. Same thing here.
+                (msg.wParam == VK_MENU && !keyDown) ||
+                // GH#7125: System XAML will show a system dialog on Alt Space.
+                // We want to handle it ourselves and there's no way to suppress it.
+                // It almost seems like there's a pattern here...
+                (msg.wParam == VK_SPACE && msg.message == WM_SYSKEYDOWN))
             {
-                // The application consumed the Alt. Don't let Xaml get it.
-                continue;
-            }
-        }
-
-        // GH#7125 = System XAML will show a system dialog on Alt Space. We want to
-        // explicitly prevent that because we handle that ourselves. So similar to
-        // above, we steal the event and hand it off to the host.
-        if (msg.message == WM_SYSKEYDOWN && msg.wParam == VK_SPACE)
-        {
-            if (const auto w = _mostRecentWindow())
-            {
-                w->OnDirectKeyEvent(VK_SPACE, LOBYTE(HIWORD(msg.lParam)), true);
-                continue;
+                if (const auto w = _mostRecentWindow())
+                {
+                    const auto vkey = gsl::narrow_cast<uint32_t>(msg.wParam);
+                    const auto scanCode = gsl::narrow_cast<uint8_t>(msg.lParam >> 16);
+                    w->OnDirectKeyEvent(vkey, scanCode, keyDown);
+                    continue;
+                }
             }
         }
 
@@ -565,7 +549,9 @@ safe_void_coroutine WindowEmperor::_dispatchCommandlineCurrentDesktop(winrt::Ter
     // GetVirtualDesktopId(), as current implemented, should always return on the main thread.
     _assertIsMainThread();
 
-    auto window = mostRecentWeak.lock().get();
+    const auto mostRecent = mostRecentWeak.lock();
+    auto window = mostRecent.get();
+
     if (!window)
     {
         window = _mostRecentWindow();
@@ -766,7 +752,7 @@ LRESULT WindowEmperor::_messageHandler(HWND window, UINT const message, WPARAM c
                 args.SummonBehavior.MoveToCurrentDesktop(false);
                 args.SummonBehavior.ToMonitor(winrt::TerminalApp::MonitorBehavior::InPlace);
                 args.SummonBehavior.ToggleVisibility(false);
-                std::ignore = _summonWindow(args);
+                std::ignore = _summonWindow(std::move(args));
                 break;
             }
             case WM_CONTEXTMENU:
@@ -840,6 +826,14 @@ LRESULT WindowEmperor::_messageHandler(HWND window, UINT const message, WPARAM c
                 break;
             }
             return 0;
+        case WM_WINDOWPOSCHANGING:
+        {
+            // No, we really don't want this window to be visible. It hides the buggy CoreWindow that XAML creates.
+            // We can't make it a HWND_MESSAGE window, because then we don't get WM_QUERYENDSESSION messages.
+            const auto wp = reinterpret_cast<WINDOWPOS*>(lParam);
+            wp->flags &= ~SWP_SHOWWINDOW;
+            return 0;
+        }
         case WM_MENUCOMMAND:
         {
             const auto menu = (HMENU)lParam;
@@ -859,7 +853,7 @@ LRESULT WindowEmperor::_messageHandler(HWND window, UINT const message, WPARAM c
                     args.SummonBehavior.ToggleVisibility(false);
                     args.SummonBehavior.MoveToCurrentDesktop(false);
                     args.SummonBehavior.ToMonitor(winrt::TerminalApp::MonitorBehavior::InPlace);
-                    std::ignore = _summonWindow(args);
+                    std::ignore = _summonWindow(std::move(args));
                     return 0;
                 }
             }
@@ -874,7 +868,7 @@ LRESULT WindowEmperor::_messageHandler(HWND window, UINT const message, WPARAM c
                 args.SummonBehavior.ToggleVisibility(false);
                 args.SummonBehavior.MoveToCurrentDesktop(false);
                 args.SummonBehavior.ToMonitor(winrt::TerminalApp::MonitorBehavior::InPlace);
-                std::ignore = _summonWindow(args);
+                std::ignore = _summonWindow(std::move(args));
                 break;
             }
             default:
@@ -883,9 +877,8 @@ LRESULT WindowEmperor::_messageHandler(HWND window, UINT const message, WPARAM c
             return 0;
         }
         case WM_SETTINGCHANGE:
-            // Currently, we only support checking when the OS theme changes. In
-            // that case, wParam is 0. Re-evaluate when we decide to reload env vars
-            // (GH#1125)
+            // Currently, we only support checking when the OS theme changes. In that case, wParam is 0.
+            // GH#15102: Re-evaluate when we decide to reload env vars.
             if (wParam == 0 && lParam != 0)
             {
                 // ImmersiveColorSet seems to be the notification that the OS theme
