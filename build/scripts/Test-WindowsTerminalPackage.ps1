@@ -58,7 +58,7 @@ Try {
 
     ### Check the activatable class entries for a few DLLs we need.
     $inProcServers = $Manifest.Package.Extensions.Extension.InProcessServer.Path
-    $RequiredInProcServers = ("TerminalApp.dll", "Microsoft.Terminal.Control.dll", "Microsoft.Terminal.Remoting.dll", "Microsoft.Terminal.Settings.Editor.dll", "Microsoft.Terminal.Settings.Model.dll", "TerminalConnection.dll")
+    $RequiredInProcServers = ("TerminalApp.dll", "Microsoft.Terminal.Control.dll", "Microsoft.Terminal.Settings.Editor.dll", "Microsoft.Terminal.Settings.Model.dll", "TerminalConnection.dll")
 
     Write-Verbose "InProc Servers: $inProcServers"
 

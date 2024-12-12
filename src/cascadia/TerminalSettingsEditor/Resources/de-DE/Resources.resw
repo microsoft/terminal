@@ -572,10 +572,6 @@
     <value>Ausführung von Windows Terminal im Hintergrund zulassen</value>
     <comment>Header for a control to toggle support for Windows Terminal to run in the background.</comment>
   </data>
-  <data name="Globals_IsolatedMode.Header" xml:space="preserve">
-    <value>Ausführung jedes Fensters in einem eigenen Prozess erzwingen</value>
-    <comment>Header for a control to toggle making each window be its own process.</comment>
-  </data>
   <data name="Globals_DebugFeaturesEnabled.Header" xml:space="preserve">
     <value>Debugfeatures aktivieren</value>
     <comment>Header for a control to toggle debug features.</comment>
@@ -591,10 +587,6 @@
   <data name="Globals_AllowHeadless.HelpText" xml:space="preserve">
     <value>Auf diese Weise können Aktionen wie globale Korrektur- und Quakemodusaktionen auch dann funktionieren, wenn keine Fenster geöffnet sind.</value>
     <comment>Additional description for what the "allow headless" setting does. Presented near "Globals_AllowHeadless.Header".</comment>
-  </data>
-  <data name="Globals_IsolatedMode.HelpText" xml:space="preserve">
-    <value>Bestimmte Funktionen funktionieren nicht ordnungsgemäß, darunter (jedoch nicht beschränkt auf) globale Hotkeys, Drag &amp;amp; Drop von Registerkarten und die Fensterausrichtung von wt.exe.</value>
-    <comment>{Locked="wt.exe"} Additional description for what the "isolated mode" setting does. Presented near "Globals_IsolatedMode.Header".</comment>
   </data>
   <data name="Globals_TabWidthMode.Header" xml:space="preserve">
     <value>Modus Registerkartenbreite</value>

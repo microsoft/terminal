@@ -572,10 +572,6 @@
     <value>Ǻℓĺŏщ Ẁιйđòώѕ Тёŗмїⁿàļ тǿ řϋŋ ϊň тђě ьąςќġѓőůήď !!! !!! !!! !!! !!</value>
     <comment>Header for a control to toggle support for Windows Terminal to run in the background.</comment>
   </data>
-  <data name="Globals_IsolatedMode.Header" xml:space="preserve">
-    <value>₣ōґçê éãćĥ шĭňđθẁ тǿ ґυή ĭñ ïťş ǿŵŉ ρŕόčэşś !!! !!! !!! !!! </value>
-    <comment>Header for a control to toggle making each window be its own process.</comment>
-  </data>
   <data name="Globals_DebugFeaturesEnabled.Header" xml:space="preserve">
     <value>Єлάвĺé ðèъûġğįñģ ƒέàŧµřэš !!! !!! !</value>
     <comment>Header for a control to toggle debug features.</comment>
@@ -591,10 +587,6 @@
   <data name="Globals_AllowHeadless.HelpText" xml:space="preserve">
     <value>Ťнϊš äłℓσωš ąçťїőňš ŝΰ¢ђ ãѕ Ğℓøъâļ Ŝûmmǿл αⁿð Qũăķэ Μöδе äçťϊõпѕ το ŵθřќ èνεπ ẅћěи πό ẁįňδòŵš άяę öрęŋ. !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! </value>
     <comment>Additional description for what the "allow headless" setting does. Presented near "Globals_AllowHeadless.Header".</comment>
-  </data>
-  <data name="Globals_IsolatedMode.HelpText" xml:space="preserve">
-    <value>Ćěřţªіŉ ƒěąτùŕєś ẅіľĺ иοŧ ώóѓķ ρřσрèřĺỳ, ίпčļūďîйğ—ьϋŧ ņότ ĺîmìτĕđ ţõ—ğℓõъªł ћотĸëўŝ, ŧªъ δяªģ äлđ δřőρ, ąŋď wt.exe щїлďǿш ţäŕġэтīπġ. !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! </value>
-    <comment>{Locked="wt.exe"} Additional description for what the "isolated mode" setting does. Presented near "Globals_IsolatedMode.Header".</comment>
   </data>
   <data name="Globals_TabWidthMode.Header" xml:space="preserve">
     <value>Ťâв ώΐđťн mбðě !!! !</value>
