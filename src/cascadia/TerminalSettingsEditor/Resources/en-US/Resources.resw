@@ -1929,6 +1929,53 @@
     <value>Non-monospace fonts:</value>
     <comment>This is a label that is followed by a list of proportional fonts.</comment>
   </data>
+  <data name="Profile_BellSoundPreviewDefault" xml:space="preserve">
+    <value>Default system sound</value>
+    <comment>The value shown for the default value for bell sound.</comment>
+  </data>
+  <data name="Profile_BellSoundPreviewMultiple" xml:space="preserve">
+    <value>Multiple sounds</value>
+    <comment>The value shown for when the "bell sound" setting is set to multiple values.</comment>
+  </data>
+  <data name="Profile_BellSound.Header" xml:space="preserve">
+    <value>Bell sound</value>
+    <comment>Header for a control to determine what sound the app uses to notify the user. "Bell" is the common term in terminals for the BEL character (like the metal device used to chime).</comment>
+  </data>
+  <data name="Profile_BellSound.HelpText" xml:space="preserve">
+    <value>Controls what sound is played when the application emits a BEL character. "Bell notification style" must include "Audible".</value>
+    <comment>A description for what the "bell sound" setting does. Presented near "Profile_BellSound". "Bell notification style" and "audible" come from "Profile_BellStyle" and "Profile_BellStyleAudible.Content" respectively.{Locked="BEL"}</comment>
+  </data>
+  <data name="Profile_AddBellSound.Text" xml:space="preserve">
+    <value>Add sound</value>
+    <comment>Text label for a button that adds a sound to the bell sound list. Presented near "Profile_BellSound"</comment>
+  </data>
+  <data name="Profile_BellSoundBrowse.Content" xml:space="preserve">
+    <value>Browse...</value>
+    <comment>Text label for a button that opens a file picker to select a sound file to use for the bell sound. Presented near "Profile_BellSound".</comment>
+  </data>
+  <data name="Profile_BellSoundInfo.Text" xml:space="preserve">
+    <value>When multiple sounds are defined, one is selected at random when the BEL character is received.</value>
+    <comment>{Locked="BEL"} Text block displayed near "Profile_BellSound".</comment>
+  </data>
+  <data name="Profile_BellSoundNotFound" xml:space="preserve">
+    <value>⚠️ File not found</value>
+  </data>
+  <data name="Profile_BellSoundAudioPreview.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Play sound</value>
+    <comment>Tooltip for a button that plays the selected sound when pressed.</comment>
+  </data>
+  <data name="Profile_BellSoundDelete.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Delete</value>
+    <comment>Tooltip for a button that deletes the selected sound when pressed.</comment>
+  </data>
+  <data name="Profile_BellSoundAudioPreview.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Play sound</value>
+    <comment>Screen reader name for a button that plays the selected sound when pressed.</comment>
+  </data>
+  <data name="Profile_BellSoundDelete.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Delete</value>
+    <comment>Screen reader name for a button that deletes the selected sound when pressed.</comment>
+  </data>
   <data name="Profile_TabColor.Header" xml:space="preserve">
     <value>Tab color</value>
     <comment>Header for a control to determine the color of the tab.</comment>
