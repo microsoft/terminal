@@ -328,6 +328,9 @@
     <value>설정 파일 열기(JSON)</value>
     <comment>{Locked="JSON"}. "JSON" is the extension of the file that will be opened.</comment>
   </data>
+  <data name="SettingsFileOpenInExplorerCommandKey" xml:space="preserve">
+    <value>설정 파일 디렉터리 열기</value>
+  </data>
   <data name="OpenTabColorPickerCommandKey" xml:space="preserve">
     <value>탭 색 설정...</value>
   </data>
@@ -733,5 +736,8 @@
   </data>
   <data name="QuickFixCommandKey" xml:space="preserve">
     <value>빠른 수정 메뉴 열기</value>
+  </data>
+  <data name="OpenCWDCommandKey" xml:space="preserve">
+    <value>현재 작업 디렉터리 열기</value>
   </data>
 </root>
