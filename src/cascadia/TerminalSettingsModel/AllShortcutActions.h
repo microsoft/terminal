@@ -112,7 +112,8 @@
     ON_ALL_ACTIONS(ToggleBroadcastInput)    \
     ON_ALL_ACTIONS(OpenScratchpad)          \
     ON_ALL_ACTIONS(OpenAbout)               \
-    ON_ALL_ACTIONS(QuickFix)
+    ON_ALL_ACTIONS(QuickFix)                \
+    ON_ALL_ACTIONS(OpenCWD)
 
 #define ALL_SHORTCUT_ACTIONS_WITH_ARGS             \
     ON_ALL_ACTIONS_WITH_ARGS(AdjustFontSize)       \

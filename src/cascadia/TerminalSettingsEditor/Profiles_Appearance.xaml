@@ -29,6 +29,24 @@
                 <TextBlock FontFamily="{x:Bind Name}"
                            Text="{x:Bind LocalizedName}" />
             </DataTemplate>
+
+            <Style x:Key="PaddingNumberBoxStyle"
+                   TargetType="muxc:NumberBox">
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="muxc:NumberBox">
+                            <Grid x:Name="Root">
+                                <TextBox x:Name="InputBox"
+                                         Padding="0,6"
+                                         HorizontalAlignment="Center"
+                                         VerticalAlignment="Center"
+                                         Text="{Binding Value, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
+                                         TextAlignment="Center" />
+                            </Grid>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
         </ResourceDictionary>
     </Page.Resources>
 
@@ -107,20 +125,66 @@
                 <local:SettingContainer x:Uid="Profile_Padding"
                                         ClearSettingValue="{x:Bind Profile.ClearPadding}"
                                         HasSettingValue="{x:Bind Profile.HasPadding, Mode=OneWay}"
-                                        SettingOverrideSource="{x:Bind Profile.PaddingOverrideSource, Mode=OneWay}">
-                    <Grid Style="{StaticResource CustomSliderControlGridStyle}">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-                        <Slider x:Name="PaddingSlider"
-                                x:Uid="Profile_PaddingSlider"
-                                Grid.Column="0"
-                                Value="{x:Bind mtu:Converters.MaxValueFromPaddingString(Profile.Padding), BindBack=Profile.SetPadding, Mode=TwoWay}" />
-                        <TextBlock Grid.Column="1"
-                                   Style="{StaticResource SliderValueLabelStyle}"
-                                   Text="{Binding ElementName=PaddingSlider, Path=Value, Mode=OneWay}" />
-                    </Grid>
+                                        SettingOverrideSource="{x:Bind Profile.PaddingOverrideSource, Mode=OneWay}"
+                                        Style="{StaticResource ExpanderSettingContainerStyle}">
+                    <Border Margin="0,12,0,12"
+                            Padding="2,0,2,0"
+                            HorizontalAlignment="Left"
+                            BorderBrush="{ThemeResource SystemControlForegroundBaseMediumLowBrush}"
+                            BorderThickness="1"
+                            CornerRadius="8">
+                        <Grid>
+
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="48" />
+                                <RowDefinition Height="48" />
+                                <RowDefinition Height="48" />
+                            </Grid.RowDefinitions>
+
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="72" />
+                                <ColumnDefinition Width="72" />
+                                <ColumnDefinition Width="72" />
+                            </Grid.ColumnDefinitions>
+
+                            <muxc:NumberBox Grid.Row="1"
+                                            Grid.Column="0"
+                                            LargeChange="10"
+                                            Maximum="100"
+                                            Minimum="1"
+                                            SmallChange="1"
+                                            Style="{StaticResource PaddingNumberBoxStyle}"
+                                            Value="{x:Bind Profile.LeftPadding, Mode=TwoWay}" />
+
+                            <muxc:NumberBox Grid.Row="0"
+                                            Grid.Column="1"
+                                            LargeChange="10"
+                                            Maximum="100"
+                                            Minimum="1"
+                                            SmallChange="1"
+                                            Style="{StaticResource PaddingNumberBoxStyle}"
+                                            Value="{x:Bind Profile.TopPadding, Mode=TwoWay}" />
+
+                            <muxc:NumberBox Grid.Row="1"
+                                            Grid.Column="2"
+                                            LargeChange="10"
+                                            Maximum="100"
+                                            Minimum="1"
+                                            SmallChange="1"
+                                            Style="{StaticResource PaddingNumberBoxStyle}"
+                                            Value="{x:Bind Profile.RightPadding, Mode=TwoWay}" />
+
+                            <muxc:NumberBox Grid.Row="2"
+                                            Grid.Column="1"
+                                            LargeChange="10"
+                                            Maximum="100"
+                                            Minimum="1"
+                                            SmallChange="1"
+                                            Style="{StaticResource PaddingNumberBoxStyle}"
+                                            Value="{x:Bind Profile.BottomPadding, Mode=TwoWay}" />
+
+                        </Grid>
+                    </Border>
                 </local:SettingContainer>
 
                 <!--  Scrollbar Visibility  -->

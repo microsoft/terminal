@@ -46,6 +46,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         static void UpdateFontList() noexcept;
         static Windows::Foundation::Collections::IObservableVector<Editor::Font> CompleteFontList() noexcept { return _FontList; };
         static Windows::Foundation::Collections::IObservableVector<Editor::Font> MonospaceFontList() noexcept { return _MonospaceFontList; };
+        static Windows::Foundation::Collections::IVector<IInspectable> BuiltInIcons() noexcept { return _BuiltInIcons; };
 
         ProfileViewModel(const Model::Profile& profile, const Model::CascadiaSettings& settings, const Windows::UI::Core::CoreDispatcher& dispatcher);
         Model::TerminalSettings TermSettings() const;
@@ -68,24 +69,35 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             Opacity(static_cast<float>(value) / 100.0f);
         };
 
-        void SetPadding(double value)
-        {
-            Padding(to_hstring(value));
-        }
+        void LeftPadding(double value) noexcept;
+        double LeftPadding() const noexcept;
+        void TopPadding(double value) noexcept;
+        double TopPadding() const noexcept;
+        void RightPadding(double value) noexcept;
+        double RightPadding() const noexcept;
+        void BottomPadding(double value) noexcept;
+        double BottomPadding() const noexcept;
 
         winrt::hstring EvaluatedIcon() const
         {
             return _profile.EvaluatedIcon();
         }
+        Windows::Foundation::IInspectable CurrentIconType() const noexcept
+        {
+            return _currentIconType;
+        }
+        Windows::UI::Xaml::Controls::IconElement IconPreview() const;
+        winrt::hstring LocalizedIcon() const;
+        void CurrentIconType(const Windows::Foundation::IInspectable& value);
+        bool UsingNoIcon() const;
+        bool UsingBuiltInIcon() const;
+        bool UsingEmojiIcon() const;
+        bool UsingImageIcon() const;
 
         // starting directory
         bool UseParentProcessDirectory();
         void UseParentProcessDirectory(const bool useParent);
         bool UseCustomStartingDirectory();
-
-        // icon
-        bool HideIcon();
-        void HideIcon(const bool hide);
 
         // general profile knowledge
         winrt::guid OriginalProfileGuid() const noexcept;
@@ -108,6 +120,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         VIEW_MODEL_OBSERVABLE_PROPERTY(ProfileSubPage, CurrentPage);
         VIEW_MODEL_OBSERVABLE_PROPERTY(Windows::Foundation::Collections::IObservableVector<Editor::BellSoundViewModel>, CurrentBellSounds);
+        VIEW_MODEL_OBSERVABLE_PROPERTY(Windows::Foundation::IInspectable, CurrentBuiltInIcon);
+        VIEW_MODEL_OBSERVABLE_PROPERTY(hstring, CurrentEmojiIcon);
 
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_profile, Guid);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_profile, ConnectionType);
@@ -124,10 +138,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         OBSERVABLE_PROJECTED_SETTING(_profile, Commandline);
         OBSERVABLE_PROJECTED_SETTING(_profile, StartingDirectory);
         OBSERVABLE_PROJECTED_SETTING(_profile, AntialiasingMode);
-        OBSERVABLE_PROJECTED_SETTING(_profile.DefaultAppearance(), Foreground);
-        OBSERVABLE_PROJECTED_SETTING(_profile.DefaultAppearance(), Background);
-        OBSERVABLE_PROJECTED_SETTING(_profile.DefaultAppearance(), SelectionBackground);
-        OBSERVABLE_PROJECTED_SETTING(_profile.DefaultAppearance(), CursorColor);
         OBSERVABLE_PROJECTED_SETTING(_profile.DefaultAppearance(), Opacity);
         OBSERVABLE_PROJECTED_SETTING(_profile.DefaultAppearance(), UseAcrylic);
         OBSERVABLE_PROJECTED_SETTING(_profile, HistorySize);
@@ -149,6 +159,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         WINRT_PROPERTY(bool, IsBaseLayer, false);
         WINRT_PROPERTY(bool, FocusDeleteButton, false);
+        WINRT_PROPERTY(Windows::Foundation::Collections::IVector<Windows::Foundation::IInspectable>, IconTypes);
         GETSET_BINDABLE_ENUM_SETTING(AntiAliasingMode, Microsoft::Terminal::Control::TextAntialiasingMode, AntialiasingMode);
         GETSET_BINDABLE_ENUM_SETTING(CloseOnExitMode, Microsoft::Terminal::Settings::Model::CloseOnExitMode, CloseOnExit);
         GETSET_BINDABLE_ENUM_SETTING(ScrollState, Microsoft::Terminal::Control::ScrollbarState, ScrollState);
@@ -159,7 +170,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         winrt::guid _originalProfileGuid{};
         winrt::hstring _lastBgImagePath;
         winrt::hstring _lastStartingDirectoryPath;
-        winrt::hstring _lastIcon;
+        winrt::hstring _lastIconPath;
+        Windows::Foundation::IInspectable _currentIconType{};
         Editor::AppearanceViewModel _defaultAppearanceViewModel;
         Windows::UI::Core::CoreDispatcher _dispatcher;
 
@@ -169,9 +181,24 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         safe_void_coroutine _CheckBellSoundsExistence();
         static Windows::Foundation::Collections::IObservableVector<Editor::Font> _MonospaceFontList;
         static Windows::Foundation::Collections::IObservableVector<Editor::Font> _FontList;
+        static Windows::Foundation::Collections::IVector<Windows::Foundation::IInspectable> _BuiltInIcons;
 
         Model::CascadiaSettings _appSettings;
         Editor::AppearanceViewModel _unfocusedAppearanceViewModel;
+
+        enum class PaddingDirection
+        {
+            Left = 0,
+            Top = 1,
+            Right = 2,
+            Bottom = 3
+        };
+
+        winrt::hstring _GetNewPadding(PaddingDirection paddingDirection, double newPaddingValue) const;
+        double _GetPaddingValue(PaddingDirection paddingDirection) const;
+        void _UpdateBuiltInIcons();
+        void _DeduceCurrentIconType();
+        void _DeduceCurrentBuiltInIcon();
     };
 
     struct DeleteProfileEventArgs :

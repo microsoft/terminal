@@ -69,6 +69,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             return hstring{ fmt::format(FMT_COMPILE(L"{} RGB({}, {}, {})"), _Name, _Color.R, _Color.G, _Color.B) };
         }
 
+        hstring NameWithHexCode() const
+        {
+            return hstring{ fmt::format(FMT_COMPILE(L"{} #{:02X}{:02X}{:02X}"), _Name, _Color.R, _Color.G, _Color.B) };
+        }
+
         til::property_changed_event PropertyChanged;
         WINRT_OBSERVABLE_PROPERTY(Windows::UI::Color, Color, PropertyChanged.raise);
         WINRT_OBSERVABLE_PROPERTY(winrt::hstring, Name, PropertyChanged.raise);

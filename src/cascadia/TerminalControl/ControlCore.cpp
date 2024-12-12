@@ -1656,6 +1656,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         SearchMissingCommand.raise(*this, make<implementation::SearchMissingCommandEventArgs>(hstring{ missingCommand }, bufferRow));
     }
 
+    void ControlCore::OpenCWD()
+    {
+        const auto workingDirectory = WorkingDirectory();
+        ShellExecute(nullptr, nullptr, L"explorer", workingDirectory.c_str(), nullptr, SW_SHOW);
+    }
+
     void ControlCore::ClearQuickFix()
     {
         _cachedQuickFixes = nullptr;
