@@ -44,32 +44,27 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             co_return;
         }
-        winrt::hstring soundPath{ wil::ExpandEnvironmentStringsW<std::wstring>(path.c_str()) };
-        winrt::Windows::Foundation::Uri uri{ soundPath };
+        const winrt::hstring soundPath{ wil::ExpandEnvironmentStringsW<std::wstring>(path.c_str()) };
+        const winrt::Windows::Foundation::Uri uri{ soundPath };
 
-        auto weakThis{ get_weak() };
-        co_await wil::resume_foreground(Dispatcher());
-        if (auto strongThis{ weakThis.get() })
+        if (!_bellPlayerCreated)
         {
-            if (!strongThis->_bellPlayerCreated)
+            // The MediaPlayer might not exist on Windows N SKU.
+            try
             {
-                // The MediaPlayer might not exist on Windows N SKU.
-                try
-                {
-                    strongThis->_bellPlayerCreated = true;
-                    strongThis->_bellPlayer = winrt::Windows::Media::Playback::MediaPlayer();
-                    // GH#12258: The media keys (like play/pause) should have no effect on our bell sound.
-                    strongThis->_bellPlayer.CommandManager().IsEnabled(false);
-                }
-                CATCH_LOG();
+                _bellPlayerCreated = true;
+                _bellPlayer = winrt::Windows::Media::Playback::MediaPlayer();
+                // GH#12258: The media keys (like play/pause) should have no effect on our bell sound.
+                _bellPlayer.CommandManager().IsEnabled(false);
             }
-            if (strongThis->_bellPlayer)
-            {
-                const auto source{ winrt::Windows::Media::Core::MediaSource::CreateFromUri(uri) };
-                const auto item{ winrt::Windows::Media::Playback::MediaPlaybackItem(source) };
-                strongThis->_bellPlayer.Source(item);
-                strongThis->_bellPlayer.Play();
-            }
+            CATCH_LOG();
+        }
+        if (_bellPlayer)
+        {
+            const auto source{ winrt::Windows::Media::Core::MediaSource::CreateFromUri(uri) };
+            const auto item{ winrt::Windows::Media::Playback::MediaPlaybackItem(source) };
+            _bellPlayer.Source(item);
+            _bellPlayer.Play();
         }
     }
     CATCH_LOG();

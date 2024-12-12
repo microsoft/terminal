@@ -456,8 +456,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 auto soundB = _CurrentBellSounds.GetAt(j);
                 if (soundA.DisplayPath() == soundB.DisplayPath())
                 {
-                    get_self<BellSoundViewModel>(_CurrentBellSounds.GetAt(i))->ShowDirectory(true);
-                    get_self<BellSoundViewModel>(_CurrentBellSounds.GetAt(j))->ShowDirectory(true);
+                    get_self<BellSoundViewModel>(soundA)->ShowDirectory(true);
+                    get_self<BellSoundViewModel>(soundB)->ShowDirectory(true);
                 }
             }
         }
