@@ -454,18 +454,9 @@ void WindowEmperor::_dispatchCommandline(winrt::TerminalApp::CommandlineArgs arg
     uint64_t windowId = 0;
     winrt::hstring windowName;
 
-    // special case: handle-uri
-    // The handle-uri command only gets invoked during the github authentication flow,
-    // and we need it to be handled by the existing window to update the settings.
-    // Since for now that is the only case where we use a "handle-uri" command, just checking for that is sufficient,
-    // if we add more in the future we would need to check that the uri is a github one.
-    if (const auto argv = args.Commandline(); argv.size() == 3 && argv[1] == L"handle-uri")
-    {
-        windowingBehavior = WindowingMode::UseExisting;
-    }
     // Figure out the windowing behavior the caller wants
     // and get the sanitized window ID (if any) and window name (if any).
-    else if (parsedTarget.empty())
+    if (parsedTarget.empty())
     {
         windowingBehavior = _app.Logic().Settings().GlobalSettings().WindowingBehavior();
     }
