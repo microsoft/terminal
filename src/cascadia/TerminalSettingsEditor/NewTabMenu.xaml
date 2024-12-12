@@ -335,7 +335,8 @@
 
             <!--  Add Profile  -->
             <local:SettingContainer x:Uid="NewTabMenu_AddProfile"
-                                    FontIconGlyph="&#xE756;">
+                                    FontIconGlyph="&#xE756;"
+                                    Style="{StaticResource SettingContainerWithIcon}">
 
                 <StackPanel Orientation="Horizontal"
                             Spacing="5">
@@ -383,7 +384,8 @@
 
             <!--  Add Separator  -->
             <local:SettingContainer x:Uid="NewTabMenu_AddSeparator"
-                                    FontIconGlyph="&#xE76f;">
+                                    FontIconGlyph="&#xE76f;"
+                                    Style="{StaticResource SettingContainerWithIcon}">
                 <Button x:Name="AddSeparatorButton"
                         x:Uid="NewTabMenu_AddSeparatorButton"
                         HorizontalAlignment="Stretch"
@@ -398,7 +400,8 @@
 
             <!--  Add Folder  -->
             <local:SettingContainer x:Uid="NewTabMenu_AddFolder"
-                                    FontIconGlyph="&#xF12B;">
+                                    FontIconGlyph="&#xF12B;"
+                                    Style="{StaticResource SettingContainerWithIcon}">
                 <StackPanel Orientation="Horizontal"
                             Spacing="5">
                     <TextBox x:Name="FolderNameTextBox"
@@ -424,7 +427,7 @@
             <!--  Add Match Profiles  -->
             <local:SettingContainer x:Uid="NewTabMenu_AddMatchProfiles"
                                     FontIconGlyph="&#xE748;"
-                                    Style="{StaticResource ExpanderSettingContainerStyle}">
+                                    Style="{StaticResource ExpanderSettingContainerStyleWithIcon}">
                 <StackPanel Spacing="10">
                     <TextBox x:Uid="NewTabMenu_AddMatchProfiles_Name"
                              Text="{x:Bind ViewModel.ProfileMatcherName, Mode=TwoWay}" />
@@ -448,7 +451,8 @@
 
             <!--  Add Remaining Profiles  -->
             <local:SettingContainer x:Uid="NewTabMenu_AddRemainingProfiles"
-                                    FontIconGlyph="&#xE902;">
+                                    FontIconGlyph="&#xE902;"
+                                    Style="{StaticResource SettingContainerWithIcon}">
                 <Button x:Name="AddRemainingProfilesButton"
                         x:Uid="NewTabMenu_AddRemainingProfilesButton"
                         HorizontalAlignment="Stretch"

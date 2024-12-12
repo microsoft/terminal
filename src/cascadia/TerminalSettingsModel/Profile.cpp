@@ -409,6 +409,61 @@ winrt::hstring Profile::_evaluateIcon() const
     return winrt::hstring{ cmdline.c_str() };
 }
 
+bool Profile::HasIcon() const
+{
+    return _Icon.has_value();
+}
+
+winrt::Microsoft::Terminal::Settings::Model::Profile Profile::IconOverrideSource()
+{
+    for (const auto& parent : _parents)
+    {
+        if (auto source{ parent->_getIconOverrideSourceImpl() })
+        {
+            return source;
+        }
+    }
+    return nullptr;
+}
+
+void Profile::ClearIcon()
+{
+    _Icon = std::nullopt;
+    _evaluatedIcon = std::nullopt;
+}
+
+std::optional<winrt::hstring> Profile::_getIconImpl() const
+{
+    if (_Icon)
+    {
+        return _Icon;
+    }
+    for (const auto& parent : _parents)
+    {
+        if (auto val{ parent->_getIconImpl() })
+        {
+            return val;
+        }
+    }
+    return std::nullopt;
+}
+
+winrt::Microsoft::Terminal::Settings::Model::Profile Profile::_getIconOverrideSourceImpl() const
+{
+    if (_Icon)
+    {
+        return *this;
+    }
+    for (const auto& parent : _parents)
+    {
+        if (auto source{ parent->_getIconOverrideSourceImpl() })
+        {
+            return source;
+        }
+    }
+    return nullptr;
+}
+
 // Given a commandLine like the following:
 // * "C:\WINDOWS\System32\cmd.exe"
 // * "pwsh -WorkingDirectory ~"

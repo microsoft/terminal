@@ -102,28 +102,98 @@
             <!--  Icon  -->
             <local:SettingContainer x:Uid="Profile_Icon"
                                     ClearSettingValue="{x:Bind Profile.ClearIcon}"
-                                    CurrentValue="{x:Bind Profile.Icon, Mode=OneWay}"
                                     HasSettingValue="{x:Bind Profile.HasIcon, Mode=OneWay}"
                                     SettingOverrideSource="{x:Bind Profile.IconOverrideSource, Mode=OneWay}"
-                                    Style="{StaticResource ExpanderSettingContainerStyle}">
-                <StackPanel>
-                    <TextBox x:Uid="Profile_IconBox"
-                             FontFamily="Segoe UI, Segoe Fluent Icons, Segoe MDL2 Assets"
-                             IsEnabled="{x:Bind mtu:Converters.InvertBoolean(Profile.HideIcon), Mode=OneWay}"
-                             IsSpellCheckEnabled="False"
-                             Style="{StaticResource TextBoxSettingStyle}"
-                             Text="{x:Bind Profile.Icon, Mode=TwoWay}"
-                             Visibility="{x:Bind mtu:Converters.InvertedBooleanToVisibility(Profile.HideIcon), Mode=OneWay}" />
-                    <Button x:Uid="Profile_IconBrowse"
-                            Margin="0,10,0,0"
-                            Click="Icon_Click"
-                            Style="{StaticResource BrowseButtonStyle}"
-                            Visibility="{x:Bind mtu:Converters.InvertedBooleanToVisibility(Profile.HideIcon), Mode=OneWay}" />
-                    <CheckBox x:Name="HideIconCheckbox"
-                              x:Uid="Profile_HideIconCheckbox"
-                              Margin="0,5,0,0"
-                              IsChecked="{x:Bind Profile.HideIcon, Mode=TwoWay}" />
-                </StackPanel>
+                                    Style="{StaticResource ExpanderSettingContainerStyleWithComplexPreview}">
+                <local:SettingContainer.CurrentValue>
+                    <Grid>
+                        <ContentControl Width="16"
+                                        Height="16"
+                                        Content="{x:Bind Profile.IconPreview, Mode=OneWay}"
+                                        Visibility="{x:Bind mtu:Converters.InvertedBooleanToVisibility(Profile.UsingNoIcon), Mode=OneWay}" />
+                        <TextBlock Margin="0,0,0,0"
+                                   HorizontalAlignment="Right"
+                                   VerticalAlignment="Center"
+                                   FontFamily="Segoe UI, Segoe Fluent Icons, Segoe MDL2 Assets"
+                                   Style="{StaticResource SettingsPageItemDescriptionStyle}"
+                                   Text="{x:Bind Profile.LocalizedIcon, Mode=OneWay}"
+                                   Visibility="{x:Bind Profile.UsingNoIcon, Mode=OneWay}" />
+                    </Grid>
+                </local:SettingContainer.CurrentValue>
+                <local:SettingContainer.Content>
+                    <Grid ColumnSpacing="10">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <!--  Icon Type  -->
+                        <ComboBox x:Uid="Profile_IconType"
+                                  Grid.Column="0"
+                                  ItemsSource="{x:Bind Profile.IconTypes}"
+                                  SelectedItem="{x:Bind Profile.CurrentIconType, Mode=TwoWay}">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate x:DataType="local:EnumEntry">
+                                    <TextBlock Text="{x:Bind EnumName}" />
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
+
+                        <!--  Built-In Icon  -->
+                        <ComboBox x:Uid="Profile_BuiltInIcon"
+                                  Grid.Column="1"
+                                  ItemsSource="{x:Bind Profile.BuiltInIcons}"
+                                  SelectedItem="{x:Bind Profile.CurrentBuiltInIcon, Mode=TwoWay}"
+                                  Visibility="{x:Bind Profile.UsingBuiltInIcon, Mode=OneWay}">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate x:DataType="local:EnumEntry">
+                                    <Grid ColumnSpacing="10">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="16" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+
+                                        <IconSourceElement Grid.Column="0"
+                                                           Width="16"
+                                                           Height="16"
+                                                           IconSource="{x:Bind local:Profiles_Base.BuiltInIconConverter(EnumValue), Mode=OneTime}" />
+                                        <TextBlock Grid.Column="1"
+                                                   Text="{x:Bind EnumName}" />
+                                    </Grid>
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
+
+                        <!--  Image (File) Icon  -->
+                        <TextBox x:Uid="Profile_IconBox"
+                                 Grid.Column="1"
+                                 MaxWidth="Infinity"
+                                 HorizontalAlignment="Stretch"
+                                 FontFamily="Segoe UI, Segoe Fluent Icons, Segoe MDL2 Assets"
+                                 IsSpellCheckEnabled="False"
+                                 Style="{StaticResource TextBoxSettingStyle}"
+                                 Text="{x:Bind Profile.Icon, Mode=TwoWay}"
+                                 Visibility="{x:Bind Profile.UsingImageIcon, Mode=OneWay}" />
+                        <Button x:Uid="Profile_IconBrowse"
+                                Grid.Column="2"
+                                Margin="0"
+                                VerticalAlignment="Top"
+                                Click="Icon_Click"
+                                Style="{StaticResource BrowseButtonStyle}"
+                                Visibility="{x:Bind Profile.UsingImageIcon, Mode=OneWay}" />
+
+                        <!--  Emoji Icon  -->
+                        <TextBox x:Uid="Profile_IconEmojiBox"
+                                 Grid.Column="1"
+                                 MaxWidth="Infinity"
+                                 FontFamily="Segoe UI, Segoe Fluent Icons, Segoe MDL2 Assets"
+                                 IsSpellCheckEnabled="False"
+                                 Style="{StaticResource TextBoxSettingStyle}"
+                                 Text="{x:Bind Profile.CurrentEmojiIcon, Mode=TwoWay}"
+                                 Visibility="{x:Bind Profile.UsingEmojiIcon, Mode=OneWay}" />
+                    </Grid>
+                </local:SettingContainer.Content>
             </local:SettingContainer>
 
             <!--  Tab Title  -->
