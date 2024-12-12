@@ -186,11 +186,6 @@
                          IsLightDismissEnabled="True"
                          Subtitle="{x:Bind WindowProperties.WindowNameForDisplay, Mode=OneWay}" />
 
-        <mux:TeachingTip x:Name="RenameFailedToast"
-                         x:Uid="RenameFailedToast"
-                         x:Load="False"
-                         IsLightDismissEnabled="True" />
-
         <mux:TeachingTip x:Name="WindowRenamer"
                          x:Uid="WindowRenamer"
                          Title="{x:Bind WindowProperties.WindowIdForDisplay}"

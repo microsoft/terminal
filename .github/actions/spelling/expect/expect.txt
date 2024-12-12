@@ -171,6 +171,7 @@ CCom
 CConsole
 CCRT
 cdd
+cds
 CELLSIZE
 cfae
 cfie
@@ -280,6 +281,8 @@ contypes
 conwinuserrefs
 coordnew
 COPYCOLOR
+COPYDATA
+COPYDATASTRUCT
 CORESYSTEM
 cotaskmem
 countof
@@ -567,6 +570,7 @@ EOK
 EPres
 EQU
 ERASEBKGND
+ERRORONEXIT
 ESFCIB
 esrp
 ESV
@@ -837,6 +841,7 @@ IFACEMETHODIMP
 ification
 IGNORELANGUAGE
 iid
+IInput
 IIo
 ILC
 ILCo
@@ -856,6 +861,7 @@ inkscape
 INLINEPREFIX
 inproc
 Inputkeyinfo
+inputpaneinterop
 Inputreadhandledata
 INPUTSCOPE
 INSERTMODE

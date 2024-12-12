@@ -16,73 +16,77 @@ Abstract:
 --*/
 
 #pragma once
-#include "pch.h"
 
-#include "WindowThread.h"
+class AppHost;
 
-class WindowEmperor : public std::enable_shared_from_this<WindowEmperor>
+class WindowEmperor
 {
 public:
-    WindowEmperor() noexcept;
-    void WaitForWindows();
+    enum UserMessages : UINT
+    {
+        WM_CLOSE_TERMINAL_WINDOW = WM_USER,
+        WM_MESSAGE_BOX_CLOSED,
+        WM_IDENTIFY_ALL_WINDOWS,
+        WM_NOTIFY_FROM_NOTIFICATION_AREA,
+    };
 
+    HWND GetMainWindow() const noexcept;
+    AppHost* GetWindowById(uint64_t id) const noexcept;
+    AppHost* GetWindowByName(std::wstring_view name) const noexcept;
+    void CreateNewWindow(winrt::TerminalApp::WindowRequestedArgs args);
     void HandleCommandlineArgs(int nCmdShow);
 
 private:
-    void _createNewWindowThread(const winrt::Microsoft::Terminal::Remoting::WindowRequestedArgs& args);
-
-    [[nodiscard]] static LRESULT __stdcall _wndProc(HWND const window, UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept;
-    LRESULT _messageHandler(UINT const message, WPARAM const wParam, LPARAM const lParam) noexcept;
-    wil::unique_hwnd _window;
-
-    winrt::TerminalApp::App _app;
-    winrt::Windows::System::DispatcherQueue _dispatcher{ nullptr };
-    winrt::Microsoft::Terminal::Remoting::WindowManager _manager;
-
-    til::shared_mutex<std::vector<std::shared_ptr<WindowThread>>> _windows;
-    std::atomic<uint32_t> _windowThreadInstances;
-
-    til::shared_mutex<std::vector<std::shared_ptr<WindowThread>>> _oldThreads;
-
-    winrt::event_token _WindowCreatedToken;
-    winrt::event_token _WindowClosedToken;
-
-    std::vector<winrt::Microsoft::Terminal::Settings::Model::GlobalSummonArgs> _hotkeys;
-
-    std::unique_ptr<NotificationIcon> _notificationIcon;
-
-    bool _requiresPersistenceCleanupOnExit = false;
-    bool _quitting{ false };
-
-    void _windowStartedHandlerPostXAML(const std::shared_ptr<WindowThread>& sender);
-    void _removeWindow(uint64_t senderID);
-    void _decrementWindowCount();
-
-    void _becomeMonarch();
-    void _numberOfWindowsChanged(const winrt::Windows::Foundation::IInspectable&, const winrt::Windows::Foundation::IInspectable&);
-
-    safe_void_coroutine _windowIsQuakeWindowChanged(winrt::Windows::Foundation::IInspectable sender, winrt::Windows::Foundation::IInspectable args);
-    safe_void_coroutine _windowRequestUpdateSettings();
-
-    void _createMessageWindow();
-
-    void _hotkeyPressed(const long hotkeyIndex);
-    bool _registerHotKey(const int index, const winrt::Microsoft::Terminal::Control::KeyChord& hotkey) noexcept;
-    void _unregisterHotKey(const int index) noexcept;
-    safe_void_coroutine _setupGlobalHotkeys();
-
-    safe_void_coroutine _close();
-    void _finalizeSessionPersistence() const;
-
-    void _createNotificationIcon();
-    void _destroyNotificationIcon();
-    void _checkWindowsForNotificationIcon();
-    void _showNotificationIconRequested();
-    void _hideNotificationIconRequested();
-
-    struct Revokers
+    struct SummonWindowSelectionArgs
     {
-        winrt::Microsoft::Terminal::Remoting::WindowManager::WindowCreated_revoker WindowCreated;
-        winrt::Microsoft::Terminal::Remoting::WindowManager::WindowClosed_revoker WindowClosed;
-    } _revokers{};
+        uint64_t WindowID = 0;
+        std::wstring_view WindowName;
+        bool OnCurrentDesktop = false;
+        winrt::TerminalApp::SummonWindowBehavior SummonBehavior;
+    };
+
+    [[nodiscard]] static LRESULT __stdcall _wndProc(HWND window, UINT message, WPARAM wparam, LPARAM lparam) noexcept;
+
+    AppHost* _mostRecentWindow() const noexcept;
+    bool _summonWindow(const SummonWindowSelectionArgs& args) const;
+    void _summonAllWindows() const;
+    void _dispatchCommandline(winrt::TerminalApp::CommandlineArgs args);
+    safe_void_coroutine _dispatchCommandlineCurrentDesktop(winrt::TerminalApp::CommandlineArgs args);
+    LRESULT _messageHandler(HWND window, UINT message, WPARAM wParam, LPARAM lParam) noexcept;
+    void _createMessageWindow(const wchar_t* className);
+    void _postQuitMessageIfNeeded() const;
+    safe_void_coroutine _showMessageBox(winrt::hstring message, bool error);
+    void _notificationAreaMenuRequested(WPARAM wParam);
+    void _notificationAreaMenuClicked(WPARAM wParam, LPARAM lParam) const;
+    void _hotkeyPressed(long hotkeyIndex);
+    void _registerHotKey(int index, const winrt::Microsoft::Terminal::Control::KeyChord& hotkey) noexcept;
+    void _unregisterHotKey(int index) noexcept;
+    void _setupGlobalHotkeys();
+    void _finalizeSessionPersistence() const;
+    void _checkWindowsForNotificationIcon();
+
+    wil::unique_hwnd _window;
+    winrt::TerminalApp::App _app{ nullptr };
+    std::vector<std::shared_ptr<::AppHost>> _windows;
+    std::vector<winrt::Microsoft::Terminal::Settings::Model::GlobalSummonArgs> _hotkeys;
+    NOTIFYICONDATA _notificationIcon{};
+    UINT WM_TASKBARCREATED = 0;
+    HMENU _currentWindowMenu = nullptr;
+    bool _notificationIconShown = false;
+    bool _forcePersistence = false;
+    bool _needsPersistenceCleanup = false;
+    std::optional<bool> _currentSystemThemeIsDark;
+    int32_t _messageBoxCount = 0;
+
+#ifdef NDEBUG
+    static constexpr void _assertIsMainThread() noexcept
+    {
+    }
+#else
+    void _assertIsMainThread() const noexcept
+    {
+        assert(_mainThreadId == GetCurrentThreadId());
+    }
+    DWORD _mainThreadId = GetCurrentThreadId();
+#endif
 };

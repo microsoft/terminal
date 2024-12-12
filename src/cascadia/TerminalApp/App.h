@@ -18,7 +18,6 @@ namespace winrt::TerminalApp::implementation
 
         TerminalApp::AppLogic Logic();
 
-        void Close();
         void PrepareForSettingsUI();
         void PrepareForAIChat();
 

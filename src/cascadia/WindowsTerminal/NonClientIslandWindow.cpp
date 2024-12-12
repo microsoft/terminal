@@ -5,8 +5,11 @@
 ********************************************************/
 #include "pch.h"
 #include "NonClientIslandWindow.h"
+
+#include <dwmapi.h>
+#include <uxtheme.h>
+
 #include "../types/inc/utils.hpp"
-#include "TerminalThemeHelpers.h"
 
 using namespace winrt::Windows::UI;
 using namespace winrt::Windows::UI::Composition;
@@ -14,7 +17,6 @@ using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Xaml::Hosting;
 using namespace winrt::Windows::Foundation::Numerics;
 using namespace ::Microsoft::Console;
-using namespace ::Microsoft::Console::Types;
 
 static constexpr int AutohideTaskbarSize = 2;
 
@@ -346,17 +348,9 @@ void NonClientIslandWindow::OnAppInitialized()
     IslandWindow::OnAppInitialized();
 }
 
-void NonClientIslandWindow::Refrigerate() noexcept
+void NonClientIslandWindow::Initialize()
 {
-    IslandWindow::Refrigerate();
-
-    // Revoke all our XAML callbacks.
-    _callbacks = {};
-}
-
-bool NonClientIslandWindow::Initialize()
-{
-    const bool coldInit = IslandWindow::Initialize();
+    IslandWindow::Initialize();
 
     _UpdateFrameMargins();
 
@@ -393,8 +387,6 @@ bool NonClientIslandWindow::Initialize()
     // (i.e. re-using an existing window), we need to manually update the
     // island's position to fill the new window bounds.
     _ResizeDragBarWindow();
-
-    return coldInit;
 }
 
 // Method Description:
