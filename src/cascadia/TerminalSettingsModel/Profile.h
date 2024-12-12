@@ -102,15 +102,17 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         Model::IAppearanceConfig DefaultAppearance();
         Model::FontConfig FontInfo();
 
-        winrt::hstring EvaluatedIcon();
-
         static std::wstring NormalizeCommandLine(LPCWSTR commandLine);
 
         void _FinalizeInheritance() override;
 
         void LogSettingChanges(std::set<std::string>& changes, const std::string_view& context) const;
 
-        // Special fields
+        // EvaluatedIcon depends on Icon. It allows us to grab the
+        //   icon from an exe path.
+        // As a result, we can't use the INHERITABLE_SETTING macro for Icon,
+        //   as we manually have to set/unset _evaluatedIcon when Icon changes.
+        winrt::hstring EvaluatedIcon();
         hstring Icon() const;
         void Icon(const hstring& value);
         bool HasIcon() const;

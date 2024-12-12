@@ -196,7 +196,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _CurrentBuiltInIcon = _BuiltInIcons.GetAt(0);
         _NotifyChanges(L"CurrentBuiltInIcon");
     }
-    
+
     void ProfileViewModel::LeftPadding(double value) noexcept
     {
         const hstring& padding = _GetNewPadding(PaddingDirection::Left, value);
