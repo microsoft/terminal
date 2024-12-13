@@ -170,6 +170,14 @@ static wil::unique_mutex acquireMutexOrAttemptHandoff(const wchar_t* className, 
                 .cbData = gsl::narrow<DWORD>(payload.size()),
                 .lpData = payload.data(),
             };
+
+            // Allow the existing instance to gain foreground rights.
+            DWORD processId = 0;
+            if (GetWindowThreadProcessId(hwnd, &processId) && processId)
+            {
+                AllowSetForegroundWindow(processId);
+            }
+
             if (SendMessageTimeoutW(hwnd, WM_COPYDATA, 0, reinterpret_cast<LPARAM>(&cds), SMTO_ABORTIFHUNG | SMTO_ERRORONEXIT, 5000, nullptr))
             {
                 return {};
