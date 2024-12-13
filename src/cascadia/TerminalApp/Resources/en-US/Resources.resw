@@ -214,6 +214,42 @@
   <data name="SplitPaneText" xml:space="preserve">
     <value>Split pane</value>
   </data>
+  <data name="SplitPaneDownText" xml:space="preserve">
+    <value>Split pane down</value>
+  </data>
+  <data name="SplitPaneRightText" xml:space="preserve">
+    <value>Split pane right</value>
+  </data>
+  <data name="SplitPaneUpText" xml:space="preserve">
+    <value>Split pane up</value>
+  </data>
+  <data name="SplitPaneLeftText" xml:space="preserve">
+    <value>Split pane left</value>
+  </data>
+  <data name="SplitPaneDuplicateText" xml:space="preserve">
+    <value>Duplicate</value>
+  </data>
+  <data name="SwapPaneText" xml:space="preserve">
+    <value>Swap pane</value>
+  </data>
+  <data name="SwapPaneDownText" xml:space="preserve">
+    <value>Swap pane down</value>
+  </data>
+  <data name="SwapPaneRightText" xml:space="preserve">
+    <value>Swap pane right</value>
+  </data>
+  <data name="SwapPaneUpText" xml:space="preserve">
+    <value>Swap pane up</value>
+  </data>
+  <data name="SwapPaneLeftText" xml:space="preserve">
+    <value>Swap pane left</value>
+  </data>
+  <data name="TogglePaneZoomText" xml:space="preserve">
+    <value>Toggle pane zoom</value>
+  </data>
+  <data name="CloseOtherPanesText" xml:space="preserve">
+    <value>Close other panes</value>
+  </data>
   <data name="SearchWebText" xml:space="preserve">
     <value>Web search</value>
   </data>
