@@ -138,6 +138,17 @@
         <Setter Property="TextWrapping" Value="Wrap" />
     </Style>
 
+    <!--  Text Block  -->
+    <Style x:Key="TextBlockSettingStyle"
+           BasedOn="{StaticResource BaseTextBlockStyle}"
+           TargetType="TextBlock">
+        <Setter Property="MinWidth" Value="{StaticResource StandardBoxMinWidth}" />
+        <Setter Property="MaxWidth" Value="400" />
+        <Setter Property="HorizontalAlignment" Value="Left" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+
     <Style x:Key="TextBlockSubHeaderStyle"
            BasedOn="{StaticResource SubtitleTextBlockStyle}"
            TargetType="TextBlock">

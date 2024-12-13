@@ -25,6 +25,7 @@ dzhe
 Emacspeak
 Fitt
 FTCS
+flac
 gantt
 gfm
 ghe
