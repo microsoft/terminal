@@ -123,6 +123,18 @@ winrt::com_ptr<Profile> Profile::CopySettings() const
     MTSM_PROFILE_SETTINGS(PROFILE_SETTINGS_COPY)
 #undef PROFILE_SETTINGS_COPY
 
+    // BellSound is an IVector<hstring>, so we need to manually copy it over
+    if (_BellSound)
+    {
+        std::vector<hstring> sounds;
+        sounds.reserve(_BellSound->Size());
+        for (const auto& sound : *_BellSound)
+        {
+            sounds.emplace_back(sound);
+        }
+        profile->_BellSound = single_threaded_vector(std::move(sounds));
+    }
+
     if (_UnfocusedAppearance)
     {
         Model::AppearanceConfig unfocused{ nullptr };
@@ -407,6 +419,61 @@ winrt::hstring Profile::_evaluateIcon() const
     // NormalizeCommandLine will return a string with embedded nulls after each
     // arg. We just want the first one.
     return winrt::hstring{ cmdline.c_str() };
+}
+
+bool Profile::HasIcon() const
+{
+    return _Icon.has_value();
+}
+
+winrt::Microsoft::Terminal::Settings::Model::Profile Profile::IconOverrideSource()
+{
+    for (const auto& parent : _parents)
+    {
+        if (auto source{ parent->_getIconOverrideSourceImpl() })
+        {
+            return source;
+        }
+    }
+    return nullptr;
+}
+
+void Profile::ClearIcon()
+{
+    _Icon = std::nullopt;
+    _evaluatedIcon = std::nullopt;
+}
+
+std::optional<winrt::hstring> Profile::_getIconImpl() const
+{
+    if (_Icon)
+    {
+        return _Icon;
+    }
+    for (const auto& parent : _parents)
+    {
+        if (auto val{ parent->_getIconImpl() })
+        {
+            return val;
+        }
+    }
+    return std::nullopt;
+}
+
+winrt::Microsoft::Terminal::Settings::Model::Profile Profile::_getIconOverrideSourceImpl() const
+{
+    if (_Icon)
+    {
+        return *this;
+    }
+    for (const auto& parent : _parents)
+    {
+        if (auto source{ parent->_getIconOverrideSourceImpl() })
+        {
+            return source;
+        }
+    }
+    return nullptr;
 }
 
 // Given a commandLine like the following:

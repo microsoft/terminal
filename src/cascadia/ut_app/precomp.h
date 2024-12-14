@@ -38,7 +38,7 @@ Author(s):
 // need to be added to the LocalTests.
 
 // These however are okay, for some _basic_ winrt things:
-#include <unknwn.h>
+#include <Unknwn.h>
 #include <hstring.h>
 #include <winrt/Windows.Foundation.h>
 #include <winrt/Windows.Foundation.Collections.h>

@@ -7,7 +7,6 @@
 #include "TabBase.g.cpp"
 #include "Utils.h"
 #include "ColorHelper.h"
-#include "../inc/WindowingBehavior.h"
 
 using namespace winrt;
 using namespace winrt::Windows::UI::Xaml;
@@ -75,7 +74,7 @@ namespace winrt::TerminalApp::implementation
             _moveToNewWindowMenuItem.Click([weakThis](auto&&, auto&&) {
                 if (auto tab{ weakThis.get() })
                 {
-                    MoveTabArgs args{ winrt::to_hstring(NewWindow), MoveTabDirection::Forward };
+                    MoveTabArgs args{ L"new", MoveTabDirection::Forward };
                     ActionAndArgs actionAndArgs{ ShortcutAction::MoveTab, args };
                     tab->_dispatch.DoAction(*tab, actionAndArgs);
                 }
@@ -528,6 +527,9 @@ namespace winrt::TerminalApp::implementation
         tabItemThemeResources.Insert(winrt::box_value(L"Dark"), darkThemeDictionary);
         tabItemThemeResources.Insert(winrt::box_value(L"HighContrast"), highContrastThemeDictionary);
 
+        // Apply the color to the tab
+        TabViewItem().Background(deselectedTabBrush);
+
         // Now actually set the resources we want in them.
         // Before, we used to put these on the ResourceDictionary directly.
         // However, HighContrast mode may require some adjustments. So let's just add
@@ -560,7 +562,6 @@ namespace winrt::TerminalApp::implementation
             currentDictionary.Insert(winrt::box_value(L"TabViewItemHeaderSelectedCloseButtonForeground"), fontBrush);
 
             // TabViewItem.CloseButton.Background (aka X button)
-            currentDictionary.Insert(winrt::box_value(L"TabViewItemHeaderCloseButtonBackground"), deselectedTabBrush);
             currentDictionary.Insert(winrt::box_value(L"TabViewItemHeaderCloseButtonBackgroundPressed"), isHighContrast ? selectedTabBrush : subtleFillColorTertiaryBrush);
             currentDictionary.Insert(winrt::box_value(L"TabViewItemHeaderCloseButtonBackgroundPointerOver"), isHighContrast ? selectedTabBrush : subtleFillColorSecondaryBrush);
 

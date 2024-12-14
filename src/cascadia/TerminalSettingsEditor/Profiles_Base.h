@@ -25,6 +25,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void Advanced_Click(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& e);
         void DeleteConfirmation_Click(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& e);
 
+        static Windows::UI::Xaml::Controls::IconSource BuiltInIconConverter(const Windows::Foundation::IInspectable& iconVal);
+
         til::property_changed_event PropertyChanged;
         WINRT_PROPERTY(Editor::ProfileViewModel, Profile, nullptr);
 

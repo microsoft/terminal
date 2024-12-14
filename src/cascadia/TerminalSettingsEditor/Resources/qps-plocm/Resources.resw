@@ -572,10 +572,6 @@
     <value>Ǻℓĺŏщ Ẁιйđòώѕ Тёŗмїⁿàļ тǿ řϋŋ ϊň тђě ьąςќġѓőůήď !!! !!! !!! !!! !!</value>
     <comment>Header for a control to toggle support for Windows Terminal to run in the background.</comment>
   </data>
-  <data name="Globals_IsolatedMode.Header" xml:space="preserve">
-    <value>₣ōґçê éãćĥ шĭňđθẁ тǿ ґυή ĭñ ïťş ǿŵŉ ρŕόčэşś !!! !!! !!! !!! </value>
-    <comment>Header for a control to toggle making each window be its own process.</comment>
-  </data>
   <data name="Globals_DebugFeaturesEnabled.Header" xml:space="preserve">
     <value>Єлάвĺé ðèъûġğįñģ ƒέàŧµřэš !!! !!! !</value>
     <comment>Header for a control to toggle debug features.</comment>
@@ -591,10 +587,6 @@
   <data name="Globals_AllowHeadless.HelpText" xml:space="preserve">
     <value>Ťнϊš äłℓσωš ąçťїőňš ŝΰ¢ђ ãѕ Ğℓøъâļ Ŝûmmǿл αⁿð Qũăķэ Μöδе äçťϊõпѕ το ŵθřќ èνεπ ẅћěи πό ẁįňδòŵš άяę öрęŋ. !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! </value>
     <comment>Additional description for what the "allow headless" setting does. Presented near "Globals_AllowHeadless.Header".</comment>
-  </data>
-  <data name="Globals_IsolatedMode.HelpText" xml:space="preserve">
-    <value>Ćěřţªіŉ ƒěąτùŕєś ẅіľĺ иοŧ ώóѓķ ρřσрèřĺỳ, ίпčļūďîйğ—ьϋŧ ņότ ĺîmìτĕđ ţõ—ğℓõъªł ћотĸëўŝ, ŧªъ δяªģ äлđ δřőρ, ąŋď wt.exe щїлďǿш ţäŕġэтīπġ. !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! </value>
-    <comment>{Locked="wt.exe"} Additional description for what the "isolated mode" setting does. Presented near "Globals_IsolatedMode.Header".</comment>
   </data>
   <data name="Globals_TabWidthMode.Header" xml:space="preserve">
     <value>Ťâв ώΐđťн mбðě !!! !</value>
@@ -1766,7 +1758,7 @@
   </data>
   <data name="Profile_CreateUnfocusedAppearanceButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Çřëаţë Ăφрзαѓăŉ¢έ !!! !!</value>
-    <comment>Name for a control which creates an the unfocused appearance settings for this profile. Text must match that of "Profile_AddAppearanceButton.Text".</comment>
+    <comment>Name for a control which creates the unfocused appearance settings for this profile. Text must match that of "Profile_AddAppearanceButton.Text".</comment>
   </data>
   <data name="Profile_CreateUnfocusedAppearanceButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Ċґêâŧέ āл ûηƒοćüšεð аφрěąґªŋčέ ƒòř тнìş φřòƒîľέ. Ţнīѕ ωïĺľ вé ťнē αррêãřªήç℮ οƒ ŧћê ρґőƒίļė ŵħėņ īŧ ίš ïńαčτîν℮. !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! </value>
@@ -1774,7 +1766,7 @@
   </data>
   <data name="Profile_DeleteUnfocusedAppearanceButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Ďєľéтę Āρρєαяâп¢ė !!! !!</value>
-    <comment>Name for a control which deletes an the unfocused appearance settings for this profile.</comment>
+    <comment>Name for a control which deletes the unfocused appearance settings for this profile.</comment>
   </data>
   <data name="Profile_DeleteUnfocusedAppearanceButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Ðěłêţэ ŧђέ џпƒоćΰѕēď ǻρрέāяāηĉé ƒŏѓ τђįś φřōƒĭŀĕ. !!! !!! !!! !!! !!!</value>
@@ -1929,6 +1921,178 @@
     <value>Νόņ-mσиόšραςз ƒоŉтŝ: !!! !!!</value>
     <comment>This is a label that is followed by a list of proportional fonts.</comment>
   </data>
+  <data name="Nav_NewTabMenu.Content" xml:space="preserve">
+    <value>Ŋēẁ Ťãь Μëηΰ !!! </value>
+    <comment>Header for the "new tab menu" menu item. This navigates to a page that lets you see and modify settings related to the app's new tab menu (i.e. profile ordering, nested folders, dividers, etc.)</comment>
+  </data>
+  <data name="NewTabMenuEntry_Separator.Text" xml:space="preserve">
+    <value>&lt;Šєрαяāτоŕ&gt; !!!</value>
+    <comment>{Locked="&lt;"}, {Locked="&gt;"} Text label for an entry that represents a visual separator in a list.</comment>
+  </data>
+  <data name="NewTabMenuEntry_RemainingProfiles.Text" xml:space="preserve">
+    <value>&lt;Řěмàіňĩñğ φřσƒϊŀèš&gt; !!! !!!</value>
+    <comment>{Locked="&lt;"}{Locked="&gt;"} Text label for an entry that represents inserting any remaining profiles that have not been inserted.</comment>
+  </data>
+  <data name="NewTabMenuEntry_RemainingProfilesItem.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>&lt;Гэмάіиìиģ φřòƒīℓеš&gt; !!! !!!</value>
+    <comment>{Locked="&lt;"}{Locked="&gt;"} Text label for an entry that represents inserting any remaining profiles that have not been inserted. Should match "NewTabMenuEntry_RemainingProfiles.Text".</comment>
+  </data>
+  <data name="NewTabMenu_AddProfile.Header" xml:space="preserve">
+    <value>Ρгöƒîŀè !!</value>
+    <comment>Header for a control that adds a terminal profile to the new tab menu.</comment>
+  </data>
+  <data name="NewTabMenu_AddMatchProfiles.Header" xml:space="preserve">
+    <value>Ρгøƒîł℮ mάтсћëѓ !!! !</value>
+    <comment>Header for a control that adds a terminal profile matcher to the new tab menu. This entry adds profiles that match the given parameters.</comment>
+  </data>
+  <data name="NewTabMenu_AddRemainingProfiles.Header" xml:space="preserve">
+    <value>Ѓеmªілιлĝ ρґбƒіľзş !!! !!</value>
+    <comment>Header for a control that adds any remaining profiles to the new tab menu.</comment>
+  </data>
+  <data name="NewTabMenu_AddMatchProfiles.HelpText" xml:space="preserve">
+    <value>Аðđ á ġŕôũρ οƒ φřθƒїłєŝ ŧнăť мąţςĥ аτ ĺěàѕτ θņė ŏƒ ţђę δεƒįňèď φŗōрεřтìěş !!! !!! !!! !!! !!! !!! !!! </value>
+    <comment>Additional information for a control that adds a terminal profile matcher to the new tab menu. Presented near "NewTabMenu_AddMatchProfiles".</comment>
+  </data>
+  <data name="NewTabMenu_AddRemainingProfiles.HelpText" xml:space="preserve">
+    <value>Тђëгэ çάή σήŀý вè θйě "ґémăíŋíηğ φŕŏƒίℓęŝ" èлτŗŷ !!! !!! !!! !!! !!</value>
+    <comment>Additional information for a control that adds any remaining profiles to the new tab menu. Presented near "NewTabMenu_AddRemainingProfiles".</comment>
+  </data>
+  <data name="NewTabMenu_AddSeparator.Header" xml:space="preserve">
+    <value>Ŝ℮φаяаŧоř !!!</value>
+    <comment>Header for a control that adds a separator to the new tab menu.</comment>
+  </data>
+  <data name="NewTabMenu_AddFolder.Header" xml:space="preserve">
+    <value>₣öℓðëř !</value>
+    <comment>Header for a control that adds a folder to the new tab menu.</comment>
+  </data>
+  <data name="NewTabMenu_AddMatchProfiles_Name.Header" xml:space="preserve">
+    <value>Ρґоƒîłĕ ňǻмε !!! </value>
+    <comment>Header for a text box used to define a regex for the names of profiles to add.</comment>
+  </data>
+  <data name="NewTabMenu_AddMatchProfiles_Source.Header" xml:space="preserve">
+    <value>Ρřοƒϊļë šőµřĉε !!! !</value>
+    <comment>Header for a text box used to define a regex for the sources of profiles to add.</comment>
+  </data>
+  <data name="NewTabMenu_AddMatchProfiles_Commandline.Header" xml:space="preserve">
+    <value>Çόммάηðłϊйё !!!</value>
+    <comment>Header for a text box used to define a regex for the commandlines of profiles to add.</comment>
+  </data>
+  <data name="NewTabMenu_AddMatchProfilesTextBlock.Text" xml:space="preserve">
+    <value>Ǻďð ρѓõƒіľэ mąτ¢нěř !!! !!!</value>
+    <comment>Label for a button confirming to add the profile matcher to the new tab menu as an entry.</comment>
+  </data>
+  <data name="NewTabMenu_AddFolder_FolderName.PlaceholderText" xml:space="preserve">
+    <value>₣оļďєř ńąmě !!!</value>
+    <comment>Placeholder text for a text box control used to set the name of the folder.</comment>
+  </data>
+  <data name="NewTabMenu_DeleteMultipleTextBlock.Text" xml:space="preserve">
+    <value>Ðêłэť℮ şèłзćτęð ĕήťŕīěѕ !!! !!! </value>
+    <comment>Label for a button that can be used to delete any new tab menu entries that are currently selected</comment>
+  </data>
+  <data name="NewTabMenu_MoveToFolderTextBlock.Text" xml:space="preserve">
+    <value>Μŏνę ѕєłęćťēď еŋŧяîëѕ ţø ƒőĺðэг... !!! !!! !!! !</value>
+    <comment>Label for a button that can be used to move any new tab menu entries that are currently selected into an existing folder</comment>
+  </data>
+  <data name="NewTabMenu_FolderPickerDialog.Title" xml:space="preserve">
+    <value>Мōνε ťó ƒõĺďĕř !!! !</value>
+    <comment>Title displayed on a content dialog directing the user to pick a folder to move the selected entries to.</comment>
+  </data>
+  <data name="NewTabMenu_FolderPickerDialog.PrimaryButtonText" xml:space="preserve">
+    <value>ØĶ </value>
+    <comment>Button label for the folder picker content dialog. Used as confirmation to pick the selected folder.</comment>
+  </data>
+  <data name="NewTabMenu_FolderPickerDialog.SecondaryButtonText" xml:space="preserve">
+    <value>Čãήсέĺ !</value>
+    <comment>Text label for the secondary button on the folder picker content dialog. When clicked, the operation of picking a folder is cancelled by the user.</comment>
+  </data>
+  <data name="NewTabMenu_RootFolderName" xml:space="preserve">
+    <value>&lt;ŗōöţ&gt; !</value>
+    <comment>{Locked="&lt;"}{Locked="&gt;"} Text label for the name of the "root" folder. This is used to allow the user to select the root as a destination folder.</comment>
+  </data>
+  <data name="NewTabMenu_CurrentFolderTextBlock.Text" xml:space="preserve">
+    <value>Çџŕґëŉţ ₣øℓđеŕ Ряøφєѓţíĕŝ !!! !!! !</value>
+    <comment>Header for a group of controls that can be used to modify the current folder entry's properties.</comment>
+  </data>
+  <data name="NewTabMenu_AddEntriesTextBlock.Text" xml:space="preserve">
+    <value>Ǻđδ Ĕňτřŷ !!!</value>
+    <comment>Header for a group of controls that can be used to add an entry to the new tab menu</comment>
+  </data>
+  <data name="NewTabMenu_CurrentFolderName.Header" xml:space="preserve">
+    <value>₣οłďεг Ňāмë !!!</value>
+    <comment>Header for a control that allows the user to modify the name of the current folder entry.</comment>
+  </data>
+  <data name="NewTabMenu_CurrentFolderInlining.Header" xml:space="preserve">
+    <value>Άļłόω īπℓїŉійġ !!! !</value>
+    <comment>Header for a control that allows the nested entries to be presented inline rather than with a folder.</comment>
+  </data>
+  <data name="NewTabMenu_CurrentFolderInlining.HelpText" xml:space="preserve">
+    <value>Щђеи έпąвļèð, ïƒ τħē ƒöłđëя σиŀÿ ћдŝ ά śìлġľĕ эйŧřу, ŧђέ ℮ηţŗŷ ώįłľ śнòω đīřεčтľу áйδ пб ƒöℓδеґ шíļĺ вέ ѓèⁿďеŕêď. !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! </value>
+    <comment>Additional text displayed near "NewTabMenu_CurrentFolderInlining.Header".</comment>
+  </data>
+  <data name="NewTabMenu_CurrentFolderAllowEmpty.Header" xml:space="preserve">
+    <value>Δŀľōẃ éмφтÿ !!!</value>
+    <comment>Header for a control that allows the current folder entry to be empty.</comment>
+  </data>
+  <data name="NewTabMenu_CurrentFolderAllowEmpty.HelpText" xml:space="preserve">
+    <value>Ẁћзй єņąъľèđ, íƒ τнз ƒőļđеř нăѕ йσ эйτѓīєş, íт ẁíĺĺ şťīľℓ вэ δĭšрℓàýέđ. Öťħеŕẁίѕę, ţħе ƒŏļδęŗ ωīŀĺ ņσţ ъę ŗзņďєřėδ. !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !</value>
+    <comment>Additional text displayed near "NewTabMenu_CurrentFolderAllowEmpty.Header".</comment>
+  </data>
+  <data name="NewTabMenu_ActionNotFound" xml:space="preserve">
+    <value>Âćтіøи ÎÐ лôţ ƒσυηď !!! !!!</value>
+    <comment>Displayed text for an entry who's action identifier wasn't found. The action ID is presented in the format "Action ID not found: &lt;actionID&gt;"</comment>
+  </data>
+  <data name="NewTabMenuEntry_ReorderUp.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Мøνё ūφ !!</value>
+    <comment>Accessible name for a button that reorders the entry to be moved up when clicked. Should match "NewTabMenuEntry_ReorderUp.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip".</comment>
+  </data>
+  <data name="NewTabMenuEntry_ReorderUp.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Моνέ ϋρ !!</value>
+    <comment>Accessible name for a button that reorders the entry to be moved up when clicked. Should match "NewTabMenuEntry_ReorderUp.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name".</comment>
+  </data>
+  <data name="NewTabMenuEntry_ReorderDown.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Мǿνε ďőẃⁿ !!!</value>
+    <comment>Accessible name for a button that reorders the entry to be moved down when clicked. Should match "NewTabMenuEntry_ReorderDown.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip".</comment>
+  </data>
+  <data name="NewTabMenuEntry_EditFolder.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Èðΐт ƒőļďēŗ !!!</value>
+    <comment>Accessible name for a button that begins editing the folder when clicked. Should match "NewTabMenuEntry_EditFolder.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip".</comment>
+  </data>
+  <data name="NewTabMenuEntry_ReorderDown.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Μονė ðōшņ !!!</value>
+    <comment>Accessible name for a button that reorders the entry to be moved down when clicked. Should match "NewTabMenuEntry_ReorderDown.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name".</comment>
+  </data>
+  <data name="NewTabMenuEntry_EditFolder.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Ēðîţ ƒōļδėя !!!</value>
+    <comment>Accessible name for a button that begins editing the folder when clicked. Should match "NewTabMenuEntry_EditFolder.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name".</comment>
+  </data>
+  <data name="NewTabMenuEntry_Delete.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Ð℮łėŧé !</value>
+    <comment>Accessible name for a button that deletes the entry when clicked. Should match "NewTabMenuEntry_Delete.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip"</comment>
+  </data>
+  <data name="NewTabMenuEntry_Delete.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Ďėŀēŧē !</value>
+    <comment>Accessible name for a button that deletes the entry when clicked. Should match "NewTabMenuEntry_Delete.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name"</comment>
+  </data>
+  <data name="NewTabMenu_AddProfileButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Àđδ şєłєċтěδ φřōƒīĺę !!! !!!</value>
+    <comment>Tooltip for a button that adds the selected profile to the new tab menu.</comment>
+  </data>
+  <data name="NewTabMenu_AddSeparatorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Αďď ŝëφаřáŧòґ !!! </value>
+    <comment>Tooltip for a button that adds a separator to the new tab menu.</comment>
+  </data>
+  <data name="NewTabMenu_AddFolderButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Äðđ ƒόŀðєř !!!</value>
+    <comment>Tooltip for a button that adds a folder to the new tab menu.</comment>
+  </data>
+  <data name="NewTabMenu_AddRemainingProfilesButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Áďδ гёмāιŋïŉĝ рřбƒїŀèş !!! !!! </value>
+    <comment>Tooltip for a button that adds an entry that represents the remaining profiles to the new tab menu.</comment>
+  </data>
+  <data name="NewTabMenuEntry_SeparatorItem.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>&lt;Ŝéρǻґąτǿг&gt; !!!</value>
+    <comment>{Locked="&lt;"}{Locked="&gt;"}Accessible name for an entry that represents a visual separator in a list. Should match "NewTabMenuEntry_Separator.Text".</comment>
+  </data>
   <data name="Profile_AnswerbackMessage.Header" xml:space="preserve">
     <value>ENQ (Request Terminal Status) ґęşрōňѕэ !!! !!! !!! !!</value>
     <comment>{Locked=ENQ}{Locked="Request Terminal Status"} Header for a control to determine the response to the ENQ escape sequence. This is represented using a text box.</comment>
@@ -1960,5 +2124,45 @@
   <data name="Globals_ShowAdminShield.Header" xml:space="preserve">
     <value>Đįŝрļãу ã ŝħĭěļð ίπ ŧђê ţîťłë ъãѓ щћэπ Ẅīήđθщş Ţĕřмïńāľ ίѕ ŕůπŉïηģ åš Àδмιήίŝтяàтοґ !!! !!! !!! !!! !!! !!! !!! !!! </value>
     <comment>Header for a control to toggle displaying a shield in the title bar of the app. "Admin" refers to elevated sessions like "run as Admin"</comment>
+  </data>
+  <data name="Profile_PathTranslationStyle.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Ρǻţħ τґãñşĺαŧîσй !!! !</value>
+    <comment>Name for a control to select how file and directory paths are translated.</comment>
+  </data>
+  <data name="Profile_PathTranslationStyle.Header" xml:space="preserve">
+    <value>Ρäŧћ тѓαпѕļāţíóи !!! !</value>
+    <comment>Name for a control to select how file and directory paths are translated.</comment>
+  </data>
+  <data name="Profile_PathTranslationStyle.HelpText" xml:space="preserve">
+    <value>Čоñťřøľş ћòẁ ƒΐĺέ āиð ďìřē¢ŧбѓŷ рατĥś äѓê τŕāńşĺаτ℮ď δûґĭπġ ďяąĝ-åňđ-ďяòρ σφ℮ѓąťїθήş. !!! !!! !!! !!! !!! !!! !!! !!! !</value>
+    <comment>A description for what the "path translation" setting does. Presented near "Profile_PathTranslationStyle.Header".</comment>
+  </data>
+  <data name="Profile_PathTranslationStyleNone.Content" xml:space="preserve">
+    <value>Пôŉę !</value>
+    <comment>An option to choose from for the "path translation" setting.</comment>
+  </data>
+  <data name="Profile_PathTranslationStyleWsl.Content" xml:space="preserve">
+    <value>WSL (C:\ -&gt; /mnt/c) !!! !!!</value>
+    <comment>{Locked="WSL","C:\","/mnt/c"} An option to choose from for the "path translation" setting.</comment>
+  </data>
+  <data name="Profile_PathTranslationStyleCygwin.Content" xml:space="preserve">
+    <value>Cygwin (C:\ -&gt; /cygdrive/c) !!! !!! !!</value>
+    <comment>{Locked="Cygwin","C:\","/cygdrive/c"} An option to choose from for the "path translation" setting.</comment>
+  </data>
+  <data name="Profile_PathTranslationStyleMsys2.Content" xml:space="preserve">
+    <value>MSYS2 (C:\ -&gt; /c) !!! !!</value>
+    <comment>{Locked="MSYS2","C:\","/c"} An option to choose from for the "path translation" setting.</comment>
+  </data>
+  <data name="Profile_Delete_Orphaned.Header" xml:space="preserve">
+    <value>Ρřσƒīŀē ⁿο łøňġèя ðёτęςτęď !!! !!! !</value>
+  </data>
+  <data name="Profile_Delete_Orphaned.HelpText" xml:space="preserve">
+    <value>Ŧћΐŝ дûŧômăτϊĉāľļŷ-ďзţєςтēδ φяοƒĭľė ªφрëάřѕ тő ђäνё ъзéп ųήϊņѕτåℓłęđ. Сђаηĝėѕ ÿοú нãνè маđė ŧθ īť âґè ρґęѕěřνέδ, вűţ іť ĉáņήõţ вé υśёδ ůⁿŧïľ ϊţ нāѕ вεéň яёιŉśтαℓĺёđ. !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !</value>
+  </data>
+  <data name="Profile_Source_Orphaned.Header" xml:space="preserve">
+    <value>Ǿřīĝĭňáł Šôüřčз !!! !</value>
+  </data>
+  <data name="Profile_Source_Orphaned.HelpText" xml:space="preserve">
+    <value>Ĭиđĩ¢ãťēš тĥě šôƒтшǻŗέ τнăť ŏŗįģĭйάłℓў ćяэάтэð ŧћïš рŕøƒĩľє. !!! !!! !!! !!! !!! !!!</value>
   </data>
 </root>

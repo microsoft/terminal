@@ -572,10 +572,6 @@
     <value>Windows ターミナルのバックグラウンドでの実行を許可する</value>
     <comment>Header for a control to toggle support for Windows Terminal to run in the background.</comment>
   </data>
-  <data name="Globals_IsolatedMode.Header" xml:space="preserve">
-    <value>各ウィンドウを独自のプロセスで強制的に実行する</value>
-    <comment>Header for a control to toggle making each window be its own process.</comment>
-  </data>
   <data name="Globals_DebugFeaturesEnabled.Header" xml:space="preserve">
     <value>デバッグ機能を有効にする</value>
     <comment>Header for a control to toggle debug features.</comment>
@@ -591,10 +587,6 @@
   <data name="Globals_AllowHeadless.HelpText" xml:space="preserve">
     <value>これにより、ウィンドウが開かなくても、グローバル デコレーションや Quake モードのアクションなどのアクションを実行できます。</value>
     <comment>Additional description for what the "allow headless" setting does. Presented near "Globals_AllowHeadless.Header".</comment>
-  </data>
-  <data name="Globals_IsolatedMode.HelpText" xml:space="preserve">
-    <value>グローバル ホットキー、タブ ドラッグ アンド ドロップ、ウィンドウターゲット設定など、一部の機能は正しく動作しません(ただし wt.exe、これらに限定されません)。</value>
-    <comment>{Locked="wt.exe"} Additional description for what the "isolated mode" setting does. Presented near "Globals_IsolatedMode.Header".</comment>
   </data>
   <data name="Globals_TabWidthMode.Header" xml:space="preserve">
     <value>タブ幅モード</value>
@@ -1766,7 +1758,7 @@
   </data>
   <data name="Profile_CreateUnfocusedAppearanceButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>外観の作成</value>
-    <comment>Name for a control which creates an the unfocused appearance settings for this profile. Text must match that of "Profile_AddAppearanceButton.Text".</comment>
+    <comment>Name for a control which creates the unfocused appearance settings for this profile. Text must match that of "Profile_AddAppearanceButton.Text".</comment>
   </data>
   <data name="Profile_CreateUnfocusedAppearanceButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>このプロファイルのフォーカスされていない外観を作成します。これは、プロファイルが非アクティブな場合の外観になります。</value>
@@ -1774,7 +1766,7 @@
   </data>
   <data name="Profile_DeleteUnfocusedAppearanceButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>外観の削除</value>
-    <comment>Name for a control which deletes an the unfocused appearance settings for this profile.</comment>
+    <comment>Name for a control which deletes the unfocused appearance settings for this profile.</comment>
   </data>
   <data name="Profile_DeleteUnfocusedAppearanceButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>このプロファイルのフォーカスされていない外観を削除します。</value>
@@ -1925,6 +1917,178 @@
     <value>非等幅フォント:</value>
     <comment>This is a label that is followed by a list of proportional fonts.</comment>
   </data>
+  <data name="Nav_NewTabMenu.Content" xml:space="preserve">
+    <value>新しいタブ メニュー</value>
+    <comment>Header for the "new tab menu" menu item. This navigates to a page that lets you see and modify settings related to the app's new tab menu (i.e. profile ordering, nested folders, dividers, etc.)</comment>
+  </data>
+  <data name="NewTabMenuEntry_Separator.Text" xml:space="preserve">
+    <value>&lt;区切り&gt;</value>
+    <comment>{Locked="&lt;"}, {Locked="&gt;"} Text label for an entry that represents a visual separator in a list.</comment>
+  </data>
+  <data name="NewTabMenuEntry_RemainingProfiles.Text" xml:space="preserve">
+    <value>&lt;残りのプロファイル&gt;</value>
+    <comment>{Locked="&lt;"}{Locked="&gt;"} Text label for an entry that represents inserting any remaining profiles that have not been inserted.</comment>
+  </data>
+  <data name="NewTabMenuEntry_RemainingProfilesItem.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>&lt;残りのプロファイル&gt;</value>
+    <comment>{Locked="&lt;"}{Locked="&gt;"} Text label for an entry that represents inserting any remaining profiles that have not been inserted. Should match "NewTabMenuEntry_RemainingProfiles.Text".</comment>
+  </data>
+  <data name="NewTabMenu_AddProfile.Header" xml:space="preserve">
+    <value>プロファイル</value>
+    <comment>Header for a control that adds a terminal profile to the new tab menu.</comment>
+  </data>
+  <data name="NewTabMenu_AddMatchProfiles.Header" xml:space="preserve">
+    <value>プロフィール マッチャー</value>
+    <comment>Header for a control that adds a terminal profile matcher to the new tab menu. This entry adds profiles that match the given parameters.</comment>
+  </data>
+  <data name="NewTabMenu_AddRemainingProfiles.Header" xml:space="preserve">
+    <value>残りのプロファイル</value>
+    <comment>Header for a control that adds any remaining profiles to the new tab menu.</comment>
+  </data>
+  <data name="NewTabMenu_AddMatchProfiles.HelpText" xml:space="preserve">
+    <value>定義されたプロパティの少なくとも 1 つに一致するプロファイルのグループを追加します</value>
+    <comment>Additional information for a control that adds a terminal profile matcher to the new tab menu. Presented near "NewTabMenu_AddMatchProfiles".</comment>
+  </data>
+  <data name="NewTabMenu_AddRemainingProfiles.HelpText" xml:space="preserve">
+    <value>"残りのプロファイル" エントリは 1 つしか指定できません</value>
+    <comment>Additional information for a control that adds any remaining profiles to the new tab menu. Presented near "NewTabMenu_AddRemainingProfiles".</comment>
+  </data>
+  <data name="NewTabMenu_AddSeparator.Header" xml:space="preserve">
+    <value>区切り</value>
+    <comment>Header for a control that adds a separator to the new tab menu.</comment>
+  </data>
+  <data name="NewTabMenu_AddFolder.Header" xml:space="preserve">
+    <value>フォルダー</value>
+    <comment>Header for a control that adds a folder to the new tab menu.</comment>
+  </data>
+  <data name="NewTabMenu_AddMatchProfiles_Name.Header" xml:space="preserve">
+    <value>プロファイル名</value>
+    <comment>Header for a text box used to define a regex for the names of profiles to add.</comment>
+  </data>
+  <data name="NewTabMenu_AddMatchProfiles_Source.Header" xml:space="preserve">
+    <value>プロファイル ソース</value>
+    <comment>Header for a text box used to define a regex for the sources of profiles to add.</comment>
+  </data>
+  <data name="NewTabMenu_AddMatchProfiles_Commandline.Header" xml:space="preserve">
+    <value>Commandline</value>
+    <comment>Header for a text box used to define a regex for the commandlines of profiles to add.</comment>
+  </data>
+  <data name="NewTabMenu_AddMatchProfilesTextBlock.Text" xml:space="preserve">
+    <value>プロファイル マッチャーの追加</value>
+    <comment>Label for a button confirming to add the profile matcher to the new tab menu as an entry.</comment>
+  </data>
+  <data name="NewTabMenu_AddFolder_FolderName.PlaceholderText" xml:space="preserve">
+    <value>フォルダー名</value>
+    <comment>Placeholder text for a text box control used to set the name of the folder.</comment>
+  </data>
+  <data name="NewTabMenu_DeleteMultipleTextBlock.Text" xml:space="preserve">
+    <value>選択したエントリを削除する</value>
+    <comment>Label for a button that can be used to delete any new tab menu entries that are currently selected</comment>
+  </data>
+  <data name="NewTabMenu_MoveToFolderTextBlock.Text" xml:space="preserve">
+    <value>選択したエントリをフォルダーに移動...</value>
+    <comment>Label for a button that can be used to move any new tab menu entries that are currently selected into an existing folder</comment>
+  </data>
+  <data name="NewTabMenu_FolderPickerDialog.Title" xml:space="preserve">
+    <value>フォルダーへ移動</value>
+    <comment>Title displayed on a content dialog directing the user to pick a folder to move the selected entries to.</comment>
+  </data>
+  <data name="NewTabMenu_FolderPickerDialog.PrimaryButtonText" xml:space="preserve">
+    <value>OK</value>
+    <comment>Button label for the folder picker content dialog. Used as confirmation to pick the selected folder.</comment>
+  </data>
+  <data name="NewTabMenu_FolderPickerDialog.SecondaryButtonText" xml:space="preserve">
+    <value>キャンセル</value>
+    <comment>Text label for the secondary button on the folder picker content dialog. When clicked, the operation of picking a folder is cancelled by the user.</comment>
+  </data>
+  <data name="NewTabMenu_RootFolderName" xml:space="preserve">
+    <value>&lt;root&gt;</value>
+    <comment>{Locked="&lt;"}{Locked="&gt;"} Text label for the name of the "root" folder. This is used to allow the user to select the root as a destination folder.</comment>
+  </data>
+  <data name="NewTabMenu_CurrentFolderTextBlock.Text" xml:space="preserve">
+    <value>現在のフォルダーのプロパティ</value>
+    <comment>Header for a group of controls that can be used to modify the current folder entry's properties.</comment>
+  </data>
+  <data name="NewTabMenu_AddEntriesTextBlock.Text" xml:space="preserve">
+    <value>エントリの追加</value>
+    <comment>Header for a group of controls that can be used to add an entry to the new tab menu</comment>
+  </data>
+  <data name="NewTabMenu_CurrentFolderName.Header" xml:space="preserve">
+    <value>フォルダー名</value>
+    <comment>Header for a control that allows the user to modify the name of the current folder entry.</comment>
+  </data>
+  <data name="NewTabMenu_CurrentFolderInlining.Header" xml:space="preserve">
+    <value>インライン化を許可する</value>
+    <comment>Header for a control that allows the nested entries to be presented inline rather than with a folder.</comment>
+  </data>
+  <data name="NewTabMenu_CurrentFolderInlining.HelpText" xml:space="preserve">
+    <value>有効にすると、フォルダーに 1 つのエントリしかない場合、エントリは直接表示され、フォルダーは表示されません。</value>
+    <comment>Additional text displayed near "NewTabMenu_CurrentFolderInlining.Header".</comment>
+  </data>
+  <data name="NewTabMenu_CurrentFolderAllowEmpty.Header" xml:space="preserve">
+    <value>空を許可する</value>
+    <comment>Header for a control that allows the current folder entry to be empty.</comment>
+  </data>
+  <data name="NewTabMenu_CurrentFolderAllowEmpty.HelpText" xml:space="preserve">
+    <value>有効にすると、フォルダーにエントリがない場合でも表示されます。それ以外の場合、フォルダーは表示されません。</value>
+    <comment>Additional text displayed near "NewTabMenu_CurrentFolderAllowEmpty.Header".</comment>
+  </data>
+  <data name="NewTabMenu_ActionNotFound" xml:space="preserve">
+    <value>アクション ID が見つかりません</value>
+    <comment>Displayed text for an entry who's action identifier wasn't found. The action ID is presented in the format "Action ID not found: &lt;actionID&gt;"</comment>
+  </data>
+  <data name="NewTabMenuEntry_ReorderUp.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>上に移動</value>
+    <comment>Accessible name for a button that reorders the entry to be moved up when clicked. Should match "NewTabMenuEntry_ReorderUp.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip".</comment>
+  </data>
+  <data name="NewTabMenuEntry_ReorderUp.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>上に移動</value>
+    <comment>Accessible name for a button that reorders the entry to be moved up when clicked. Should match "NewTabMenuEntry_ReorderUp.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name".</comment>
+  </data>
+  <data name="NewTabMenuEntry_ReorderDown.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>下に移動</value>
+    <comment>Accessible name for a button that reorders the entry to be moved down when clicked. Should match "NewTabMenuEntry_ReorderDown.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip".</comment>
+  </data>
+  <data name="NewTabMenuEntry_EditFolder.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>フォルダーの編集</value>
+    <comment>Accessible name for a button that begins editing the folder when clicked. Should match "NewTabMenuEntry_EditFolder.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip".</comment>
+  </data>
+  <data name="NewTabMenuEntry_ReorderDown.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>下に移動</value>
+    <comment>Accessible name for a button that reorders the entry to be moved down when clicked. Should match "NewTabMenuEntry_ReorderDown.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name".</comment>
+  </data>
+  <data name="NewTabMenuEntry_EditFolder.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>フォルダーの編集</value>
+    <comment>Accessible name for a button that begins editing the folder when clicked. Should match "NewTabMenuEntry_EditFolder.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name".</comment>
+  </data>
+  <data name="NewTabMenuEntry_Delete.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>削除</value>
+    <comment>Accessible name for a button that deletes the entry when clicked. Should match "NewTabMenuEntry_Delete.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip"</comment>
+  </data>
+  <data name="NewTabMenuEntry_Delete.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>削除</value>
+    <comment>Accessible name for a button that deletes the entry when clicked. Should match "NewTabMenuEntry_Delete.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name"</comment>
+  </data>
+  <data name="NewTabMenu_AddProfileButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>選択したプロファイルの追加</value>
+    <comment>Tooltip for a button that adds the selected profile to the new tab menu.</comment>
+  </data>
+  <data name="NewTabMenu_AddSeparatorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>区切りの追加</value>
+    <comment>Tooltip for a button that adds a separator to the new tab menu.</comment>
+  </data>
+  <data name="NewTabMenu_AddFolderButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>フォルダーの追加</value>
+    <comment>Tooltip for a button that adds a folder to the new tab menu.</comment>
+  </data>
+  <data name="NewTabMenu_AddRemainingProfilesButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>残りのプロファイルの追加</value>
+    <comment>Tooltip for a button that adds an entry that represents the remaining profiles to the new tab menu.</comment>
+  </data>
+  <data name="NewTabMenuEntry_SeparatorItem.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>&lt;区切り&gt;</value>
+    <comment>{Locked="&lt;"}{Locked="&gt;"}Accessible name for an entry that represents a visual separator in a list. Should match "NewTabMenuEntry_Separator.Text".</comment>
+  </data>
   <data name="Profile_AnswerbackMessage.Header" xml:space="preserve">
     <value>ENQ (Request Terminal Status) 応答</value>
     <comment>{Locked=ENQ}{Locked="Request Terminal Status"} Header for a control to determine the response to the ENQ escape sequence. This is represented using a text box.</comment>
@@ -1956,5 +2120,45 @@
   <data name="Globals_ShowAdminShield.Header" xml:space="preserve">
     <value>Windows ターミナルが管理者として実行されているときにタイトル バーにシールドを表示する</value>
     <comment>Header for a control to toggle displaying a shield in the title bar of the app. "Admin" refers to elevated sessions like "run as Admin"</comment>
+  </data>
+  <data name="Profile_PathTranslationStyle.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>パスの変換</value>
+    <comment>Name for a control to select how file and directory paths are translated.</comment>
+  </data>
+  <data name="Profile_PathTranslationStyle.Header" xml:space="preserve">
+    <value>パスの変換</value>
+    <comment>Name for a control to select how file and directory paths are translated.</comment>
+  </data>
+  <data name="Profile_PathTranslationStyle.HelpText" xml:space="preserve">
+    <value>ドラッグ アンド ドロップ操作中にファイルパスとディレクトリ パスを変換する方法を制御します。</value>
+    <comment>A description for what the "path translation" setting does. Presented near "Profile_PathTranslationStyle.Header".</comment>
+  </data>
+  <data name="Profile_PathTranslationStyleNone.Content" xml:space="preserve">
+    <value>なし</value>
+    <comment>An option to choose from for the "path translation" setting.</comment>
+  </data>
+  <data name="Profile_PathTranslationStyleWsl.Content" xml:space="preserve">
+    <value>WSL (C:\ -&gt; /mnt/c)</value>
+    <comment>{Locked="WSL","C:\","/mnt/c"} An option to choose from for the "path translation" setting.</comment>
+  </data>
+  <data name="Profile_PathTranslationStyleCygwin.Content" xml:space="preserve">
+    <value>Cygwin (C:\ -&gt; /cygdrive/c)</value>
+    <comment>{Locked="Cygwin","C:\","/cygdrive/c"} An option to choose from for the "path translation" setting.</comment>
+  </data>
+  <data name="Profile_PathTranslationStyleMsys2.Content" xml:space="preserve">
+    <value>MSYS2 (C:\ -&gt; /c)</value>
+    <comment>{Locked="MSYS2","C:\","/c"} An option to choose from for the "path translation" setting.</comment>
+  </data>
+  <data name="Profile_Delete_Orphaned.Header" xml:space="preserve">
+    <value>プロファイルは検出されなくなりました</value>
+  </data>
+  <data name="Profile_Delete_Orphaned.HelpText" xml:space="preserve">
+    <value>この自動的に検出されたプロファイルはアンインストールされた可能性があります。行った変更は保存されますが、再インストールされるまでは使用できません。</value>
+  </data>
+  <data name="Profile_Source_Orphaned.Header" xml:space="preserve">
+    <value>元のソース</value>
+  </data>
+  <data name="Profile_Source_Orphaned.HelpText" xml:space="preserve">
+    <value>このプロファイルを最初に作成したソフトウェアを示します。</value>
   </data>
 </root>

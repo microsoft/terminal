@@ -44,6 +44,10 @@
 #include <winrt/Windows.UI.Xaml.Media.h>
 #include <winrt/Windows.UI.Xaml.Navigation.h>
 
+#include <winrt/Windows.Media.h>
+#include <winrt/Windows.Media.Core.h>
+#include <winrt/Windows.Media.Playback.h>
+
 #include <winrt/Microsoft.UI.Xaml.Controls.h>
 #include <winrt/Microsoft.UI.Xaml.XamlTypeInfo.h>
 
@@ -61,3 +65,4 @@
 #include <til/winrt.h>
 
 #include <cppwinrt_utils.h>
+#include <wil/cppwinrt_helpers.h> // must go after the CoreDispatcher type is defined

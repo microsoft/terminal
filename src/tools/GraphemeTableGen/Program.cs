@@ -1,8 +1,13 @@
 using System.Text;
 using System.Runtime.InteropServices;
-using System.Numerics;
 using System.Xml.Linq;
+
 using TrieType = uint;
+
+// Used as an indicator in joinRules for ÷ ("does not join").
+// Underscore is one of the few characters that are permitted as an identifier,
+// are monospace in most fonts and also visually distinct from the digits.
+const byte _ = 3;
 
 // JoinRules doesn't quite follow UAX #29, as it states:
 // > Note: Testing two adjacent characters is insufficient for determining a boundary.
@@ -25,6 +30,11 @@ using TrieType = uint;
 //     ZWJ × \p{Extended_Pictographic}
 //   In other words, it doesn't check whether the ZWJ is led by another \p{InCB=Extended_Pictographic}.
 //   Again, I suspect that a trailing, standalone ZWJ is a rare occurrence and joining it with any Emoji is fine.
+//   GB11 could be implemented properly quite easily for forward iteration by forbidding "ZWJ × \p{Extended_Pictographic}"
+//   in the base table and switching to a second joinRules table when encountering any valid "\p{Extended_Pictographic} ×".
+//   Only in that secondary table "ZWJ × \p{Extended_Pictographic}" would be permitted. This then properly implements
+//   "\p{Extended_Pictographic} × ZWJ × \p{Extended_Pictographic}". However, this makes backward iteration difficult,
+//   because knowing whether to transition to the secondary table requires looking ahead, which we want to avoid.
 // * GB12: sot (RI RI)* RI × RI
 //   GB13: [^RI] (RI RI)* RI × RI
 //   "Do not break within emoji flag sequences. That is, do not break between regional indicator
@@ -44,43 +54,43 @@ byte[][][] joinRules =
 [
     // Base table
     [
-        /* | leading       -> trailing codepoint                                                                                                                                                            */
-        /* v               |  cbOther | cbControl | cbExtend |   cbRI   | cbPrepend | cbHangulL | cbHangulV | cbHangulT | cbHangulLV | cbHangulLVT | cbInCBLinker | cbInCBConsonant | cbExtPic |   cbZWJ  | */
-        /* cbOther         | */ [3 /* | */, 3 /*  | */, 0 /* | */, 3 /* | */, 3 /*  | */, 3 /*  | */, 3 /*  | */, 3 /*  |  */, 3 /*  |  */, 3 /*   |   */, 0 /*   |    */, 3 /*     | */, 3 /* | */, 0 /* | */],
-        /* cbControl       | */ [3 /* | */, 3 /*  | */, 3 /* | */, 3 /* | */, 3 /*  | */, 3 /*  | */, 3 /*  | */, 3 /*  |  */, 3 /*  |  */, 3 /*   |   */, 3 /*   |    */, 3 /*     | */, 3 /* | */, 3 /* | */],
-        /* cbExtend        | */ [3 /* | */, 3 /*  | */, 0 /* | */, 3 /* | */, 3 /*  | */, 3 /*  | */, 3 /*  | */, 3 /*  |  */, 3 /*  |  */, 3 /*   |   */, 0 /*   |    */, 3 /*     | */, 3 /* | */, 0 /* | */],
-        /* cbRI            | */ [3 /* | */, 3 /*  | */, 0 /* | */, 1 /* | */, 3 /*  | */, 3 /*  | */, 3 /*  | */, 3 /*  |  */, 3 /*  |  */, 3 /*   |   */, 0 /*   |    */, 3 /*     | */, 3 /* | */, 0 /* | */],
-        /* cbPrepend       | */ [0 /* | */, 3 /*  | */, 0 /* | */, 0 /* | */, 0 /*  | */, 0 /*  | */, 0 /*  | */, 0 /*  |  */, 0 /*  |  */, 0 /*   |   */, 0 /*   |    */, 0 /*     | */, 0 /* | */, 0 /* | */],
-        /* cbHangulL       | */ [3 /* | */, 3 /*  | */, 0 /* | */, 3 /* | */, 3 /*  | */, 0 /*  | */, 0 /*  | */, 3 /*  |  */, 0 /*  |  */, 0 /*   |   */, 0 /*   |    */, 3 /*     | */, 3 /* | */, 0 /* | */],
-        /* cbHangulV       | */ [3 /* | */, 3 /*  | */, 0 /* | */, 3 /* | */, 3 /*  | */, 3 /*  | */, 0 /*  | */, 0 /*  |  */, 3 /*  |  */, 3 /*   |   */, 0 /*   |    */, 3 /*     | */, 3 /* | */, 0 /* | */],
-        /* cbHangulT       | */ [3 /* | */, 3 /*  | */, 0 /* | */, 3 /* | */, 3 /*  | */, 3 /*  | */, 3 /*  | */, 0 /*  |  */, 3 /*  |  */, 3 /*   |   */, 0 /*   |    */, 3 /*     | */, 3 /* | */, 0 /* | */],
-        /* cbHangulLV      | */ [3 /* | */, 3 /*  | */, 0 /* | */, 3 /* | */, 3 /*  | */, 3 /*  | */, 0 /*  | */, 0 /*  |  */, 3 /*  |  */, 3 /*   |   */, 0 /*   |    */, 3 /*     | */, 3 /* | */, 0 /* | */],
-        /* cbHangulLVT     | */ [3 /* | */, 3 /*  | */, 0 /* | */, 3 /* | */, 3 /*  | */, 3 /*  | */, 3 /*  | */, 0 /*  |  */, 3 /*  |  */, 3 /*   |   */, 0 /*   |    */, 3 /*     | */, 3 /* | */, 0 /* | */],
-        /* cbInCBLinker    | */ [3 /* | */, 3 /*  | */, 0 /* | */, 3 /* | */, 3 /*  | */, 3 /*  | */, 3 /*  | */, 3 /*  |  */, 3 /*  |  */, 3 /*   |   */, 0 /*   |    */, 0 /*     | */, 3 /* | */, 0 /* | */],
-        /* cbInCBConsonant | */ [3 /* | */, 3 /*  | */, 0 /* | */, 3 /* | */, 3 /*  | */, 3 /*  | */, 3 /*  | */, 3 /*  |  */, 3 /*  |  */, 3 /*   |   */, 0 /*   |    */, 3 /*     | */, 3 /* | */, 0 /* | */],
-        /* cbExtPic        | */ [3 /* | */, 3 /*  | */, 0 /* | */, 3 /* | */, 3 /*  | */, 3 /*  | */, 3 /*  | */, 3 /*  |  */, 3 /*  |  */, 3 /*   |   */, 0 /*   |    */, 3 /*     | */, 3 /* | */, 0 /* | */],
-        /* cbZWJ           | */ [3 /* | */, 3 /*  | */, 0 /* | */, 3 /* | */, 3 /*  | */, 3 /*  | */, 3 /*  | */, 3 /*  |  */, 3 /*  |  */, 3 /*   |   */, 0 /*   |    */, 3 /*     | */, 0 /* | */, 0 /* | */],
+        /* | leading       -> trailing codepoint                                                                                                                                             */
+        /* v             |   Other  |  Control |  Extend  |    RI    |  Prepend |  HangulL |  HangulV |  HangulT | HangulLV | HangulLVT | InCBLinker | InCBConsonant |  ExtPic  |    ZWJ   | */
+        /* Other         | */ [_ /* | */, _ /* | */, 0 /* | */, _ /* | */, _ /* | */, _ /* | */, _ /* | */, _ /* | */, _ /* | */, _ /*  |  */, 0 /*  |   */, _ /*    | */, _ /* | */, 0 /* | */],
+        /* Control       | */ [_ /* | */, _ /* | */, _ /* | */, _ /* | */, _ /* | */, _ /* | */, _ /* | */, _ /* | */, _ /* | */, _ /*  |  */, _ /*  |   */, _ /*    | */, _ /* | */, _ /* | */],
+        /* Extend        | */ [_ /* | */, _ /* | */, 0 /* | */, _ /* | */, _ /* | */, _ /* | */, _ /* | */, _ /* | */, _ /* | */, _ /*  |  */, 0 /*  |   */, _ /*    | */, _ /* | */, 0 /* | */],
+        /* RI            | */ [_ /* | */, _ /* | */, 0 /* | */, 1 /* | */, _ /* | */, _ /* | */, _ /* | */, _ /* | */, _ /* | */, _ /*  |  */, 0 /*  |   */, _ /*    | */, _ /* | */, 0 /* | */],
+        /* Prepend       | */ [0 /* | */, _ /* | */, 0 /* | */, 0 /* | */, 0 /* | */, 0 /* | */, 0 /* | */, 0 /* | */, 0 /* | */, 0 /*  |  */, 0 /*  |   */, 0 /*    | */, 0 /* | */, 0 /* | */],
+        /* HangulL       | */ [_ /* | */, _ /* | */, 0 /* | */, _ /* | */, _ /* | */, 0 /* | */, 0 /* | */, _ /* | */, 0 /* | */, 0 /*  |  */, 0 /*  |   */, _ /*    | */, _ /* | */, 0 /* | */],
+        /* HangulV       | */ [_ /* | */, _ /* | */, 0 /* | */, _ /* | */, _ /* | */, _ /* | */, 0 /* | */, 0 /* | */, _ /* | */, _ /*  |  */, 0 /*  |   */, _ /*    | */, _ /* | */, 0 /* | */],
+        /* HangulT       | */ [_ /* | */, _ /* | */, 0 /* | */, _ /* | */, _ /* | */, _ /* | */, _ /* | */, 0 /* | */, _ /* | */, _ /*  |  */, 0 /*  |   */, _ /*    | */, _ /* | */, 0 /* | */],
+        /* HangulLV      | */ [_ /* | */, _ /* | */, 0 /* | */, _ /* | */, _ /* | */, _ /* | */, 0 /* | */, 0 /* | */, _ /* | */, _ /*  |  */, 0 /*  |   */, _ /*    | */, _ /* | */, 0 /* | */],
+        /* HangulLVT     | */ [_ /* | */, _ /* | */, 0 /* | */, _ /* | */, _ /* | */, _ /* | */, _ /* | */, 0 /* | */, _ /* | */, _ /*  |  */, 0 /*  |   */, _ /*    | */, _ /* | */, 0 /* | */],
+        /* InCBLinker    | */ [_ /* | */, _ /* | */, 0 /* | */, _ /* | */, _ /* | */, _ /* | */, _ /* | */, _ /* | */, _ /* | */, _ /*  |  */, 0 /*  |   */, 0 /*    | */, _ /* | */, 0 /* | */],
+        /* InCBConsonant | */ [_ /* | */, _ /* | */, 0 /* | */, _ /* | */, _ /* | */, _ /* | */, _ /* | */, _ /* | */, _ /* | */, _ /*  |  */, 0 /*  |   */, _ /*    | */, _ /* | */, 0 /* | */],
+        /* ExtPic        | */ [_ /* | */, _ /* | */, 0 /* | */, _ /* | */, _ /* | */, _ /* | */, _ /* | */, _ /* | */, _ /* | */, _ /*  |  */, 0 /*  |   */, _ /*    | */, _ /* | */, 0 /* | */],
+        /* ZWJ           | */ [_ /* | */, _ /* | */, 0 /* | */, _ /* | */, _ /* | */, _ /* | */, _ /* | */, _ /* | */, _ /* | */, _ /*  |  */, 0 /*  |   */, _ /*    | */, 0 /* | */, 0 /* | */],
     ],
     // Once we have encountered a Regional Indicator pair we'll enter this table.
-    // It's a copy of the base table, but further Regional Indicator joins are forbidden.
+    // It's a copy of the base table, but instead of RI × RI, we're RI ÷ RI.
     [
-        /* | leading       -> trailing codepoint                                                                                                                                                            */
-        /* v               |  cbOther | cbControl | cbExtend |   cbRI   | cbPrepend | cbHangulL | cbHangulV | cbHangulT | cbHangulLV | cbHangulLVT | cbInCBLinker | cbInCBConsonant | cbExtPic |   cbZWJ  | */
-        /* cbOther         | */ [3 /* | */, 3 /*  | */, 0 /* | */, 3 /* | */, 3 /*  | */, 3 /*  | */, 3 /*  | */, 3 /*  |  */, 3 /*  |  */, 3 /*   |   */, 0 /*   |    */, 3 /*     | */, 3 /* | */, 0 /* | */],
-        /* cbControl       | */ [3 /* | */, 3 /*  | */, 3 /* | */, 3 /* | */, 3 /*  | */, 3 /*  | */, 3 /*  | */, 3 /*  |  */, 3 /*  |  */, 3 /*   |   */, 3 /*   |    */, 3 /*     | */, 3 /* | */, 3 /* | */],
-        /* cbExtend        | */ [3 /* | */, 3 /*  | */, 0 /* | */, 3 /* | */, 3 /*  | */, 3 /*  | */, 3 /*  | */, 3 /*  |  */, 3 /*  |  */, 3 /*   |   */, 0 /*   |    */, 3 /*     | */, 3 /* | */, 0 /* | */],
-        /* cbRI            | */ [3 /* | */, 3 /*  | */, 0 /* | */, 3 /* | */, 3 /*  | */, 3 /*  | */, 3 /*  | */, 3 /*  |  */, 3 /*  |  */, 3 /*   |   */, 0 /*   |    */, 3 /*     | */, 3 /* | */, 0 /* | */],
-        /* cbPrepend       | */ [0 /* | */, 3 /*  | */, 0 /* | */, 0 /* | */, 0 /*  | */, 0 /*  | */, 0 /*  | */, 0 /*  |  */, 0 /*  |  */, 0 /*   |   */, 0 /*   |    */, 0 /*     | */, 0 /* | */, 0 /* | */],
-        /* cbHangulL       | */ [3 /* | */, 3 /*  | */, 0 /* | */, 3 /* | */, 3 /*  | */, 0 /*  | */, 0 /*  | */, 3 /*  |  */, 0 /*  |  */, 0 /*   |   */, 0 /*   |    */, 3 /*     | */, 3 /* | */, 0 /* | */],
-        /* cbHangulV       | */ [3 /* | */, 3 /*  | */, 0 /* | */, 3 /* | */, 3 /*  | */, 3 /*  | */, 0 /*  | */, 0 /*  |  */, 3 /*  |  */, 3 /*   |   */, 0 /*   |    */, 3 /*     | */, 3 /* | */, 0 /* | */],
-        /* cbHangulT       | */ [3 /* | */, 3 /*  | */, 0 /* | */, 3 /* | */, 3 /*  | */, 3 /*  | */, 3 /*  | */, 0 /*  |  */, 3 /*  |  */, 3 /*   |   */, 0 /*   |    */, 3 /*     | */, 3 /* | */, 0 /* | */],
-        /* cbHangulLV      | */ [3 /* | */, 3 /*  | */, 0 /* | */, 3 /* | */, 3 /*  | */, 3 /*  | */, 0 /*  | */, 0 /*  |  */, 3 /*  |  */, 3 /*   |   */, 0 /*   |    */, 3 /*     | */, 3 /* | */, 0 /* | */],
-        /* cbHangulLVT     | */ [3 /* | */, 3 /*  | */, 0 /* | */, 3 /* | */, 3 /*  | */, 3 /*  | */, 3 /*  | */, 0 /*  |  */, 3 /*  |  */, 3 /*   |   */, 0 /*   |    */, 3 /*     | */, 3 /* | */, 0 /* | */],
-        /* cbInCBLinker    | */ [3 /* | */, 3 /*  | */, 0 /* | */, 3 /* | */, 3 /*  | */, 3 /*  | */, 3 /*  | */, 3 /*  |  */, 3 /*  |  */, 3 /*   |   */, 0 /*   |    */, 0 /*     | */, 3 /* | */, 0 /* | */],
-        /* cbInCBConsonant | */ [3 /* | */, 3 /*  | */, 0 /* | */, 3 /* | */, 3 /*  | */, 3 /*  | */, 3 /*  | */, 3 /*  |  */, 3 /*  |  */, 3 /*   |   */, 0 /*   |    */, 3 /*     | */, 3 /* | */, 0 /* | */],
-        /* cbExtPic        | */ [3 /* | */, 3 /*  | */, 0 /* | */, 3 /* | */, 3 /*  | */, 3 /*  | */, 3 /*  | */, 3 /*  |  */, 3 /*  |  */, 3 /*   |   */, 0 /*   |    */, 3 /*     | */, 3 /* | */, 0 /* | */],
-        /* cbZWJ           | */ [3 /* | */, 3 /*  | */, 0 /* | */, 3 /* | */, 3 /*  | */, 3 /*  | */, 3 /*  | */, 3 /*  |  */, 3 /*  |  */, 3 /*   |   */, 0 /*   |    */, 3 /*     | */, 0 /* | */, 0 /* | */],
-    ]
+        /* | leading       -> trailing codepoint                                                                                                                                             */
+        /* v             |   Other  |  Control |  Extend  |    RI    |  Prepend |  HangulL |  HangulV |  HangulT | HangulLV | HangulLVT | InCBLinker | InCBConsonant |  ExtPic  |    ZWJ   | */
+        /* Other         | */ [_ /* | */, _ /* | */, 0 /* | */, _ /* | */, _ /* | */, _ /* | */, _ /* | */, _ /* | */, _ /* | */, _ /*  |  */, 0 /*  |   */, _ /*    | */, _ /* | */, 0 /* | */],
+        /* Control       | */ [_ /* | */, _ /* | */, _ /* | */, _ /* | */, _ /* | */, _ /* | */, _ /* | */, _ /* | */, _ /* | */, _ /*  |  */, _ /*  |   */, _ /*    | */, _ /* | */, _ /* | */],
+        /* Extend        | */ [_ /* | */, _ /* | */, 0 /* | */, _ /* | */, _ /* | */, _ /* | */, _ /* | */, _ /* | */, _ /* | */, _ /*  |  */, 0 /*  |   */, _ /*    | */, _ /* | */, 0 /* | */],
+        /* RI            | */ [_ /* | */, _ /* | */, 0 /* | */, _ /* | */, _ /* | */, _ /* | */, _ /* | */, _ /* | */, _ /* | */, _ /*  |  */, 0 /*  |   */, _ /*    | */, _ /* | */, 0 /* | */],
+        /* Prepend       | */ [0 /* | */, _ /* | */, 0 /* | */, 0 /* | */, 0 /* | */, 0 /* | */, 0 /* | */, 0 /* | */, 0 /* | */, 0 /*  |  */, 0 /*  |   */, 0 /*    | */, 0 /* | */, 0 /* | */],
+        /* HangulL       | */ [_ /* | */, _ /* | */, 0 /* | */, _ /* | */, _ /* | */, 0 /* | */, 0 /* | */, _ /* | */, 0 /* | */, 0 /*  |  */, 0 /*  |   */, _ /*    | */, _ /* | */, 0 /* | */],
+        /* HangulV       | */ [_ /* | */, _ /* | */, 0 /* | */, _ /* | */, _ /* | */, _ /* | */, 0 /* | */, 0 /* | */, _ /* | */, _ /*  |  */, 0 /*  |   */, _ /*    | */, _ /* | */, 0 /* | */],
+        /* HangulT       | */ [_ /* | */, _ /* | */, 0 /* | */, _ /* | */, _ /* | */, _ /* | */, _ /* | */, 0 /* | */, _ /* | */, _ /*  |  */, 0 /*  |   */, _ /*    | */, _ /* | */, 0 /* | */],
+        /* HangulLV      | */ [_ /* | */, _ /* | */, 0 /* | */, _ /* | */, _ /* | */, _ /* | */, 0 /* | */, 0 /* | */, _ /* | */, _ /*  |  */, 0 /*  |   */, _ /*    | */, _ /* | */, 0 /* | */],
+        /* HangulLVT     | */ [_ /* | */, _ /* | */, 0 /* | */, _ /* | */, _ /* | */, _ /* | */, _ /* | */, 0 /* | */, _ /* | */, _ /*  |  */, 0 /*  |   */, _ /*    | */, _ /* | */, 0 /* | */],
+        /* InCBLinker    | */ [_ /* | */, _ /* | */, 0 /* | */, _ /* | */, _ /* | */, _ /* | */, _ /* | */, _ /* | */, _ /* | */, _ /*  |  */, 0 /*  |   */, 0 /*    | */, _ /* | */, 0 /* | */],
+        /* InCBConsonant | */ [_ /* | */, _ /* | */, 0 /* | */, _ /* | */, _ /* | */, _ /* | */, _ /* | */, _ /* | */, _ /* | */, _ /*  |  */, 0 /*  |   */, _ /*    | */, _ /* | */, 0 /* | */],
+        /* ExtPic        | */ [_ /* | */, _ /* | */, 0 /* | */, _ /* | */, _ /* | */, _ /* | */, _ /* | */, _ /* | */, _ /* | */, _ /*  |  */, 0 /*  |   */, _ /*    | */, _ /* | */, 0 /* | */],
+        /* ZWJ           | */ [_ /* | */, _ /* | */, 0 /* | */, _ /* | */, _ /* | */, _ /* | */, _ /* | */, _ /* | */, _ /* | */, _ /*  |  */, 0 /*  |   */, _ /*    | */, 0 /* | */, 0 /* | */],
+    ],
 ];
 
 if (args.Length != 1)
@@ -197,6 +207,7 @@ buf.Append("}\n");
 buf.Append("// clang-format on\n");
 
 Console.Write(buf);
+return;
 
 // This reads the given ucd.nounihan.grouped.xml file and extracts the
 // CharacterWidth and ClusterBreak properties for all codepoints.
@@ -256,7 +267,7 @@ static Ucd ExtractValuesFromUcd(string path)
                 "T" => ClusterBreak.HangulT, // Hangul Syllable Type T
                 "LV" => ClusterBreak.HangulLV, // Hangul Syllable Type LV
                 "LVT" => ClusterBreak.HangulLVT, // Hangul Syllable Type LVT
-                _ => throw new Exception($"Unrecognized GCB {graphemeClusterBreak} for {firstCp} to {lastCp}")
+                _ => throw new Exception($"Unrecognized GCB {graphemeClusterBreak} for U+{firstCp:X4} to U+{lastCp:X4}")
             };
 
             if (extendedPictographic == "Y")
@@ -267,7 +278,7 @@ static Ucd ExtractValuesFromUcd(string path)
                 if (cb != ClusterBreak.Other)
                 {
                     throw new Exception(
-                        $"Unexpected GCB {graphemeClusterBreak} with ExtPict=Y for {firstCp} to {lastCp}");
+                        $"Unexpected GCB {graphemeClusterBreak} with ExtPict=Y for U+{firstCp:X4} to U+{lastCp:X4}");
                 }
 
                 cb = ClusterBreak.ExtPic;
@@ -278,7 +289,7 @@ static Ucd ExtractValuesFromUcd(string path)
                 "None" or "Extend" => cb,
                 "Linker" => ClusterBreak.InCBLinker,
                 "Consonant" => ClusterBreak.InCBConsonant,
-                _ => throw new Exception($"Unrecognized InCB {indicConjunctBreak} for {firstCp} to {lastCp}")
+                _ => throw new Exception($"Unrecognized InCB {indicConjunctBreak} for U+{firstCp:X4} to U+{lastCp:X4}")
             };
 
             var width = eastAsian switch
@@ -286,24 +297,43 @@ static Ucd ExtractValuesFromUcd(string path)
                 "N" or "Na" or "H" => CharacterWidth.Narrow, // Half-width, Narrow, Neutral
                 "F" or "W" => CharacterWidth.Wide, // Wide, Full-width
                 "A" => CharacterWidth.Ambiguous, // Ambiguous
-                _ => throw new Exception($"Unrecognized ea {eastAsian} for {firstCp} to {lastCp}")
+                _ => throw new Exception($"Unrecognized ea {eastAsian} for U+{firstCp:X4} to U+{lastCp:X4}")
             };
 
             // There's no "ea" attribute for "zero width" so we need to do that ourselves. This matches:
             //   Me: Mark, enclosing
             //   Mn: Mark, non-spacing
             //   Cf: Control, format
-            if (generalCategory == "Me" || generalCategory == "Mn" || generalCategory == "Cf")
+            switch (generalCategory)
             {
-                width = CharacterWidth.ZeroWidth;
+                case "Cf" when cb == ClusterBreak.Control:
+                    // A significant portion of Cf characters are not just gc=Cf (= commonly considered zero-width),
+                    // but also GCB=CN (= does not join). This is a bit of a problem for terminals,
+                    // because they don't support zero-width graphemes, as zero-width columns can't exist.
+                    // So, we turn all of them into Extend, which is roughly how wcswidth() would treat them.
+                    cb = ClusterBreak.Extend;
+                    width = CharacterWidth.ZeroWidth;
+                    break;
+                case "Me" or "Mn" or "Cf":
+                    width = CharacterWidth.ZeroWidth;
+                    break;
             }
 
             Fill(firstCp, lastCp, TrieValue(cb, width));
         }
     }
 
-    // Box-drawing and block elements are ambiguous according to their EastAsian attribute,
-    // but by convention terminals always consider them to be narrow.
+    // U+00AD: Soft Hyphen
+    // A soft hyphen is a hint that a word break is allowed at that position.
+    // By default, the glyph is supposed to be invisible, and only if
+    // a word break occurs, the text renderer should display a hyphen.
+    // A terminal does not support computerized typesetting, but unlike the other
+    // gc=Cf cases we give it a Narrow width, because that matches wcswidth().
+    Fill(0x00AD, 0x00AD, TrieValue(ClusterBreak.Control, CharacterWidth.Narrow));
+
+    // U+2500 to U+257F: Box Drawing block
+    // U+2580 to U+259F: Block Elements block
+    // By default, CharacterWidth.Ambiguous, but by convention .Narrow in terminals.
     Fill(0x2500, 0x259F, TrieValue(ClusterBreak.Other, CharacterWidth.Narrow));
 
     return new Ucd
@@ -312,16 +342,16 @@ static Ucd ExtractValuesFromUcd(string path)
         Values = values.ToList(),
     };
 
+    // Packs the arguments into a single integer that's stored as-is in the final trie stage.
+    TrieType TrieValue(ClusterBreak cb, CharacterWidth width)
+    {
+        return (TrieType)cb | (TrieType)width << 6;
+    }
+
     void Fill(int first, int last, TrieType value)
     {
         Array.Fill(values, value, first, last - first + 1);
     }
-}
-
-// Packs the arguments into a single integer that's stored as-is in the final trie stage.
-static TrieType TrieValue(ClusterBreak cb, CharacterWidth width)
-{
-    return (TrieType)((byte)(cb) | (byte)(width) << 6);
 }
 
 // Because each item in the list of 2D rule tables only uses 2 bits and not all 8 in each byte,
@@ -404,7 +434,7 @@ static Trie BuildTrie(List<TrieType> uncompressed, Span<int> shifts)
     var cumulativeShift = 0;
     var stages = new List<Stage>();
 
-    for (int i = 0; i < shifts.Length; i++)
+    for (var i = 0; i < shifts.Length; i++)
     {
         var shift = shifts[i];
         var chunkSize = 1 << shift;
@@ -426,18 +456,19 @@ static Trie BuildTrie(List<TrieType> uncompressed, Span<int> shifts)
                 var haystack = CollectionsMarshal.AsSpan(compressed);
                 var needle = key.AsSpan();
                 var existing = FindExisting(haystack, needle);
+
                 if (existing >= 0)
                 {
                     offset = (TrieType)existing;
-                    cache[key] = offset;
                 }
                 else
                 {
                     var overlap = MeasureOverlap(CollectionsMarshal.AsSpan(compressed), needle);
                     compressed.AddRange(needle[overlap..]);
                     offset = (TrieType)(compressed.Count - needle.Length);
-                    cache[key] = offset;
                 }
+
+                cache[key] = offset;
             }
 
             offsets.Add(offset);
@@ -507,7 +538,7 @@ static int MeasureOverlap(ReadOnlySpan<TrieType> prev, ReadOnlySpan<TrieType> ne
     return 0;
 }
 
-enum CharacterWidth
+internal enum CharacterWidth
 {
     ZeroWidth,
     Narrow,
@@ -515,7 +546,7 @@ enum CharacterWidth
     Ambiguous
 }
 
-enum ClusterBreak
+internal enum ClusterBreak
 {
     Other,         // GB999
     Control,       // GB3, GB4, GB5 -- includes CR, LF
@@ -533,13 +564,13 @@ enum ClusterBreak
     ZWJ,           // GB9, GB11
 }
 
-class Ucd
+internal class Ucd
 {
     public required string Description;
     public required List<TrieType> Values;
 }
 
-class Stage
+internal class Stage
 {
     public required List<TrieType> Values;
     public required int Index;
@@ -548,7 +579,7 @@ class Stage
     public required int Bits;
 }
 
-class Trie
+internal class Trie
 {
     public required List<Stage> Stages;
     public required int TotalSize;
@@ -556,7 +587,7 @@ class Trie
 
 // Because you can't put a Span<TrieType> into a Dictionary.
 // This works around that by simply keeping a reference to the List<TrieType> around.
-struct ReadOnlyTrieTypeSpan(List<TrieType> list, int start, int length)
+internal readonly struct ReadOnlyTrieTypeSpan(List<TrieType> list, int start, int length)
 {
     public ReadOnlySpan<TrieType> AsSpan() => CollectionsMarshal.AsSpan(list).Slice(start, length);
 

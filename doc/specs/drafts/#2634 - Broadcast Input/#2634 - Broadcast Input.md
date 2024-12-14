@@ -346,7 +346,7 @@ asked for these features, then it's inevitable that our users will too 😉
     panes, not just key strokes. But which actions would those be? Moving the
     selection anchors? Copy doesn't really make sense. Paste _does_ though.
     Maybe the open find dialog / next&prev search match actions?
-  - This probably would require it's own spec.
+  - This probably would require its own spec.
 * [iterm2#6007] - Different stripe color for different broadcast modes
   - Have one color to indicate when broadcasting in `global` scope, another in
     `tab` scope, a third in `pane` scope.

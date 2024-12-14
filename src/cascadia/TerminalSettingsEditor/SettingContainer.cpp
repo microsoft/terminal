@@ -12,7 +12,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
     DependencyProperty SettingContainer::_HeaderProperty{ nullptr };
     DependencyProperty SettingContainer::_HelpTextProperty{ nullptr };
+    DependencyProperty SettingContainer::_FontIconGlyphProperty{ nullptr };
     DependencyProperty SettingContainer::_CurrentValueProperty{ nullptr };
+    DependencyProperty SettingContainer::_CurrentValueTemplateProperty{ nullptr };
     DependencyProperty SettingContainer::_HasSettingValueProperty{ nullptr };
     DependencyProperty SettingContainer::_SettingOverrideSourceProperty{ nullptr };
     DependencyProperty SettingContainer::_StartExpandedProperty{ nullptr };
@@ -45,14 +47,32 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                     xaml_typename<Editor::SettingContainer>(),
                     PropertyMetadata{ box_value(L"") });
         }
+        if (!_FontIconGlyphProperty)
+        {
+            _FontIconGlyphProperty =
+                DependencyProperty::Register(
+                    L"FontIconGlyph",
+                    xaml_typename<hstring>(),
+                    xaml_typename<Editor::SettingContainer>(),
+                    PropertyMetadata{ box_value(L"") });
+        }
         if (!_CurrentValueProperty)
         {
             _CurrentValueProperty =
                 DependencyProperty::Register(
                     L"CurrentValue",
-                    xaml_typename<hstring>(),
+                    xaml_typename<IInspectable>(),
                     xaml_typename<Editor::SettingContainer>(),
-                    PropertyMetadata{ box_value(L"") });
+                    PropertyMetadata{ nullptr });
+        }
+        if (!_CurrentValueTemplateProperty)
+        {
+            _CurrentValueTemplateProperty =
+                DependencyProperty::Register(
+                    L"CurrentValueTemplate",
+                    xaml_typename<Windows::UI::Xaml::DataTemplate>(),
+                    xaml_typename<Editor::SettingContainer>(),
+                    PropertyMetadata{ nullptr });
         }
         if (!_HasSettingValueProperty)
         {

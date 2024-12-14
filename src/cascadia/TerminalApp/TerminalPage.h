@@ -9,7 +9,6 @@
 #include "AppCommandlineArgs.h"
 #include "RenameWindowRequestedArgs.g.h"
 #include "RequestMoveContentArgs.g.h"
-#include "RequestReceiveContentArgs.g.h"
 #include "LaunchPositionRequest.g.h"
 #include "Toast.h"
 
@@ -66,19 +65,6 @@ namespace winrt::TerminalApp::implementation
         RequestMoveContentArgs(const winrt::hstring window, const winrt::hstring content, uint32_t tabIndex) :
             _Window{ window },
             _Content{ content },
-            _TabIndex{ tabIndex } {};
-    };
-
-    struct RequestReceiveContentArgs : RequestReceiveContentArgsT<RequestReceiveContentArgs>
-    {
-        WINRT_PROPERTY(uint64_t, SourceWindow);
-        WINRT_PROPERTY(uint64_t, TargetWindow);
-        WINRT_PROPERTY(uint32_t, TabIndex);
-
-    public:
-        RequestReceiveContentArgs(const uint64_t src, const uint64_t tgt, const uint32_t tabIndex) :
-            _SourceWindow{ src },
-            _TargetWindow{ tgt },
             _TabIndex{ tabIndex } {};
     };
 
@@ -155,11 +141,10 @@ namespace winrt::TerminalApp::implementation
         void ShowKeyboardServiceWarning() const;
         winrt::hstring KeyboardServiceDisabledText();
 
-        safe_void_coroutine IdentifyWindow();
+        void IdentifyWindow();
         void ActionSaved(winrt::hstring input, winrt::hstring name, winrt::hstring keyChord);
         void ActionSaveFailed(winrt::hstring message);
-        safe_void_coroutine RenameFailed();
-        safe_void_coroutine ShowTerminalWorkingDirectory();
+        void ShowTerminalWorkingDirectory();
 
         safe_void_coroutine ProcessStartupActions(Windows::Foundation::Collections::IVector<Microsoft::Terminal::Settings::Model::ActionAndArgs> actions,
                                                   const bool initial,
@@ -176,8 +161,8 @@ namespace winrt::TerminalApp::implementation
 
         bool OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, const bool down);
 
-        safe_void_coroutine AttachContent(Windows::Foundation::Collections::IVector<Microsoft::Terminal::Settings::Model::ActionAndArgs> args, uint32_t tabIndex);
-        safe_void_coroutine SendContentToOther(winrt::TerminalApp::RequestReceiveContentArgs args);
+        void AttachContent(Windows::Foundation::Collections::IVector<Microsoft::Terminal::Settings::Model::ActionAndArgs> args, uint32_t tabIndex);
+        void SendContentToOther(winrt::TerminalApp::RequestReceiveContentArgs args);
 
         uint32_t NumberOfTabs() const;
 
@@ -278,7 +263,6 @@ namespace winrt::TerminalApp::implementation
         std::shared_ptr<Toast> _windowIdToast{ nullptr };
         std::shared_ptr<Toast> _actionSavedToast{ nullptr };
         std::shared_ptr<Toast> _actionSaveFailedToast{ nullptr };
-        std::shared_ptr<Toast> _windowRenameFailedToast{ nullptr };
         std::shared_ptr<Toast> _windowCwdToast{ nullptr };
 
         winrt::Windows::UI::Xaml::Controls::TextBox::LayoutUpdated_revoker _renamerLayoutUpdatedRevoker;
@@ -432,7 +416,7 @@ namespace winrt::TerminalApp::implementation
         bool _IsUriSupported(const winrt::Windows::Foundation::Uri& parsedUri);
 
         void _ShowCouldNotOpenDialog(winrt::hstring reason, winrt::hstring uri);
-        bool _CopyText(const bool dismissSelection, const bool singleLine, const Windows::Foundation::IReference<Microsoft::Terminal::Control::CopyFormat>& formats);
+        bool _CopyText(const bool dismissSelection, const bool singleLine, const bool withControlSequences, const Windows::Foundation::IReference<Microsoft::Terminal::Control::CopyFormat>& formats);
 
         safe_void_coroutine _SetTaskbarProgressHandler(const IInspectable sender, const IInspectable eventArgs);
 
@@ -499,12 +483,6 @@ namespace winrt::TerminalApp::implementation
 
         void _TryMoveTab(const uint32_t currentTabIndex, const int32_t suggestedNewTabIndex);
 
-        bool _shouldMouseVanish{ false };
-        bool _isMouseHidden{ false };
-        Windows::UI::Core::CoreCursor _defaultPointerCursor{ nullptr };
-        void _HidePointerCursorHandler(const IInspectable& sender, const IInspectable& eventArgs);
-        void _RestorePointerCursorHandler(const IInspectable& sender, const IInspectable& eventArgs);
-
         void _PreviewAction(const Microsoft::Terminal::Settings::Model::ActionAndArgs& args);
         void _PreviewActionHandler(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::Command& args);
         void _EndPreview();
@@ -552,12 +530,12 @@ namespace winrt::TerminalApp::implementation
         Windows::Foundation::IAsyncOperation<Windows::Foundation::Collections::IVectorView<winrt::Microsoft::Management::Deployment::MatchResult>> _FindPackageAsync(hstring query);
 
         void _WindowSizeChanged(const IInspectable sender, const winrt::Microsoft::Terminal::Control::WindowSizeChangedEventArgs args);
-        safe_void_coroutine _windowPropertyChanged(const IInspectable& sender, const winrt::Windows::UI::Xaml::Data::PropertyChangedEventArgs& args);
+        void _windowPropertyChanged(const IInspectable& sender, const winrt::Windows::UI::Xaml::Data::PropertyChangedEventArgs& args);
 
         void _onTabDragStarting(const winrt::Microsoft::UI::Xaml::Controls::TabView& sender, const winrt::Microsoft::UI::Xaml::Controls::TabViewTabDragStartingEventArgs& e);
         void _onTabStripDragOver(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::DragEventArgs& e);
-        safe_void_coroutine _onTabStripDrop(winrt::Windows::Foundation::IInspectable sender, winrt::Windows::UI::Xaml::DragEventArgs e);
-        safe_void_coroutine _onTabDroppedOutside(winrt::Windows::Foundation::IInspectable sender, winrt::Microsoft::UI::Xaml::Controls::TabViewTabDroppedOutsideEventArgs e);
+        void _onTabStripDrop(winrt::Windows::Foundation::IInspectable sender, winrt::Windows::UI::Xaml::DragEventArgs e);
+        void _onTabDroppedOutside(winrt::Windows::Foundation::IInspectable sender, winrt::Microsoft::UI::Xaml::Controls::TabViewTabDroppedOutsideEventArgs e);
 
         void _DetachPaneFromWindow(std::shared_ptr<Pane> pane);
         void _DetachTabFromWindow(const winrt::com_ptr<TabBase>& terminalTab);
@@ -593,5 +571,4 @@ namespace winrt::TerminalApp::implementation
 namespace winrt::TerminalApp::factory_implementation
 {
     BASIC_FACTORY(TerminalPage);
-    BASIC_FACTORY(RequestReceiveContentArgs);
 }

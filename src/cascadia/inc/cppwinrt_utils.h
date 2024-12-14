@@ -208,7 +208,7 @@ public:                                                                         
                                                                                           \
 protected:                                                                                \
     type _##name{ __VA_ARGS__ };                                                          \
-    void _set##name(const type& value)                                                    \
+    void _set##name(const type& value) noexcept(noexcept(_##name = value))                \
     {                                                                                     \
         _##name = value;                                                                  \
     };

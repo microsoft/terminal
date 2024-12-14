@@ -4,11 +4,17 @@
 #include "pch.h"
 #include "WindowEmperor.h"
 
-#include "../inc/WindowingBehavior.h"
-#include "../../types/inc/utils.hpp"
-#include "../WinRTUtils/inc/WtExeUtils.h"
+#include <CoreWindow.h>
+#include <LibraryResources.h>
+#include <ScopedResourceLoader.h>
+#include <WtExeUtils.h>
+#include <til/hash.h>
+
+#include "AppHost.h"
 #include "resource.h"
-#include "NotificationIcon.h"
+#include "VirtualDesktopUtils.h"
+#include "../../types/inc/User32Utils.hpp"
+#include "../../types/inc/utils.hpp"
 
 using namespace winrt;
 using namespace winrt::Microsoft::Terminal;
@@ -18,599 +24,1022 @@ using namespace ::Microsoft::Console;
 using namespace std::chrono_literals;
 using VirtualKeyModifiers = winrt::Windows::System::VirtualKeyModifiers;
 
-#define TERMINAL_MESSAGE_CLASS_NAME L"TERMINAL_MESSAGE_CLASS"
+#ifdef _WIN64
+static constexpr ULONG_PTR TERMINAL_HANDOFF_MAGIC = 0x4c414e494d524554; // 'TERMINAL'
+#else
+static constexpr ULONG_PTR TERMINAL_HANDOFF_MAGIC = 0x4d524554; // 'TERM'
+#endif
+
 extern "C" IMAGE_DOS_HEADER __ImageBase;
 
-WindowEmperor::WindowEmperor() noexcept :
-    _app{}
+// A convenience function around CommandLineToArgv.
+static std::vector<winrt::hstring> commandlineToArgArray(const wchar_t* commandLine)
 {
-    _manager.FindTargetWindowRequested([this](const winrt::Windows::Foundation::IInspectable& /*sender*/,
-                                              const winrt::Microsoft::Terminal::Remoting::FindTargetWindowArgs& findWindowArgs) {
-        {
-            const auto targetWindow = _app.Logic().FindTargetWindow(findWindowArgs.Args().Commandline());
-            findWindowArgs.ResultTargetWindow(targetWindow.WindowId());
-            findWindowArgs.ResultTargetWindowName(targetWindow.WindowName());
-        }
-    });
+    int argc = 0;
+    const wil::unique_hlocal_ptr<LPWSTR> argv{ CommandLineToArgvW(commandLine, &argc) };
+    argc = std::max(argc, 0);
 
-    _dispatcher = winrt::Windows::System::DispatcherQueue::GetForCurrentThread();
+    std::vector<winrt::hstring> args;
+    args.reserve(argc);
+    for (int i = 0; i < argc; i++)
+    {
+        args.emplace_back(argv.get()[i]);
+    }
+    return args;
 }
 
-void _buildArgsFromCommandline(std::vector<winrt::hstring>& args)
+// Returns the length of a double-null encoded string *excluding* the trailing double-null character.
+static std::wstring_view stringFromDoubleNullTerminated(const wchar_t* beg)
 {
-    if (auto commandline{ GetCommandLineW() })
-    {
-        auto argc = 0;
+    auto end = beg;
 
-        // Get the argv, and turn them into a hstring array to pass to the app.
-        wil::unique_any<LPWSTR*, decltype(&::LocalFree), ::LocalFree> argv{ CommandLineToArgvW(commandline, &argc) };
-        if (argv)
+    for (; *end; end += wcsnlen(end, SIZE_T_MAX) + 1)
+    {
+    }
+
+    return { beg, end };
+}
+
+// Appends an uint32_t to a byte vector.
+static void serializeUint32(std::vector<uint8_t>& out, uint32_t value)
+{
+    out.insert(out.end(), reinterpret_cast<const uint8_t*>(&value), reinterpret_cast<const uint8_t*>(&value) + sizeof(value));
+}
+
+// Parses an uint32_t from the input iterator. Performs bounds-checks.
+// Returns an iterator that points past it.
+static const uint8_t* deserializeUint32(const uint8_t* it, const uint8_t* end, uint32_t& val)
+{
+    if (static_cast<size_t>(end - it) < sizeof(uint32_t))
+    {
+        throw std::out_of_range("Not enough data for uint32_t");
+    }
+    val = *reinterpret_cast<const uint32_t*>(it);
+    return it + sizeof(uint32_t);
+}
+
+// Writes an uint32_t length prefix, followed by the string data, to the output vector.
+static void serializeString(std::vector<uint8_t>& out, std::wstring_view str)
+{
+    const auto ptr = reinterpret_cast<const uint8_t*>(str.data());
+    const auto len = gsl::narrow<uint32_t>(str.size());
+    serializeUint32(out, len);
+    out.insert(out.end(), ptr, ptr + len * sizeof(wchar_t));
+}
+
+// Parses the next string from the input iterator. Performs bounds-checks.
+// Returns an iterator that points past it.
+static const uint8_t* deserializeString(const uint8_t* it, const uint8_t* end, std::wstring_view& str)
+{
+    uint32_t len;
+    it = deserializeUint32(it, end, len);
+
+    if (static_cast<size_t>(end - it) < len * sizeof(wchar_t))
+    {
+        throw std::out_of_range("Not enough data for string content");
+    }
+
+    str = { reinterpret_cast<const wchar_t*>(it), len };
+    return it + len * sizeof(wchar_t);
+}
+
+struct Handoff
+{
+    std::wstring_view args;
+    std::wstring_view env;
+    std::wstring_view cwd;
+    uint32_t show;
+};
+
+// Serializes all relevant parameters to a byte blob for a WM_COPYDATA message.
+// This allows us to hand off an invocation to an existing instance of the Terminal.
+static std::vector<uint8_t> serializeHandoffPayload(int nCmdShow)
+{
+    const auto args = GetCommandLineW();
+    const wil::unique_environstrings_ptr envMem{ GetEnvironmentStringsW() };
+    const auto env = stringFromDoubleNullTerminated(envMem.get());
+    const auto cwd = wil::GetCurrentDirectoryW<std::wstring>();
+
+    std::vector<uint8_t> out;
+    serializeString(out, args);
+    serializeString(out, env);
+    serializeString(out, cwd);
+    serializeUint32(out, static_cast<uint32_t>(nCmdShow));
+    return out;
+}
+
+// Counterpart to serializeHandoffPayload.
+static Handoff deserializeHandoffPayload(const uint8_t* beg, const uint8_t* end)
+{
+    Handoff result{};
+    auto it = beg;
+    it = deserializeString(it, end, result.args);
+    it = deserializeString(it, end, result.env);
+    it = deserializeString(it, end, result.cwd);
+    it = deserializeUint32(it, end, result.show);
+    return result;
+}
+
+// Either acquires unique ownership over the given `className` mutex,
+// or attempts to pass the commandline to the existing instance.
+static wil::unique_mutex acquireMutexOrAttemptHandoff(const wchar_t* className, int nCmdShow)
+{
+    // If the process that owns the mutex has not finished creating the window yet,
+    // FindWindowW will return nullptr. We'll retry a few times just in case.
+    // At the 1.5x growth rate, this will retry up to ~30s in total.
+    for (DWORD sleep = 50; sleep < 10000; sleep += sleep / 2)
+    {
+        wil::unique_mutex mutex{ CreateMutexW(nullptr, TRUE, className) };
+        if (GetLastError() == ERROR_ALREADY_EXISTS)
         {
-            for (auto& elem : wil::make_range(argv.get(), argc))
+            mutex.reset();
+        }
+        if (mutex)
+        {
+            return mutex;
+        }
+
+        // I found that FindWindow() with no other filters is substantially faster than
+        // using FindWindowEx() and restricting the search to just HWND_MESSAGE windows.
+        // In both cases it's quite fast though at ~1us/op vs ~3us/op (good old Win32 <3).
+        if (const auto hwnd = FindWindowW(className, nullptr))
+        {
+            auto payload = serializeHandoffPayload(nCmdShow);
+            const COPYDATASTRUCT cds{
+                .dwData = TERMINAL_HANDOFF_MAGIC,
+                .cbData = gsl::narrow<DWORD>(payload.size()),
+                .lpData = payload.data(),
+            };
+
+            // Allow the existing instance to gain foreground rights.
+            DWORD processId = 0;
+            if (GetWindowThreadProcessId(hwnd, &processId) && processId)
             {
-                args.emplace_back(elem);
+                AllowSetForegroundWindow(processId);
+            }
+
+            if (SendMessageTimeoutW(hwnd, WM_COPYDATA, 0, reinterpret_cast<LPARAM>(&cds), SMTO_ABORTIFHUNG | SMTO_ERRORONEXIT, 5000, nullptr))
+            {
+                return {};
             }
         }
+
+        Sleep(sleep);
     }
-    if (args.empty())
+
+    return {};
+}
+
+HWND WindowEmperor::GetMainWindow() const noexcept
+{
+    _assertIsMainThread();
+    return _window.get();
+}
+
+AppHost* WindowEmperor::GetWindowById(uint64_t id) const noexcept
+{
+    _assertIsMainThread();
+
+    for (const auto& window : _windows)
     {
-        args.emplace_back(L"wt.exe");
+        if (window->Logic().WindowProperties().WindowId() == id)
+        {
+            return window.get();
+        }
     }
+    return nullptr;
+}
+
+AppHost* WindowEmperor::GetWindowByName(std::wstring_view name) const noexcept
+{
+    _assertIsMainThread();
+
+    for (const auto& window : _windows)
+    {
+        if (window->Logic().WindowProperties().WindowName() == name)
+        {
+            return window.get();
+        }
+    }
+    return nullptr;
+}
+
+void WindowEmperor::CreateNewWindow(winrt::TerminalApp::WindowRequestedArgs args)
+{
+    _assertIsMainThread();
+
+    uint64_t id = args.Id();
+    bool needsNewId = id == 0;
+    uint64_t newId = 0;
+
+    for (const auto& host : _windows)
+    {
+        const auto existingId = host->Logic().WindowProperties().WindowId();
+        newId = std::max(newId, existingId);
+        needsNewId |= existingId == id;
+    }
+
+    if (needsNewId)
+    {
+        args.Id(newId + 1);
+    }
+
+    auto host = std::make_shared<AppHost>(this, _app.Logic(), std::move(args));
+    host->Initialize();
+    _windows.emplace_back(std::move(host));
+}
+
+AppHost* WindowEmperor::_mostRecentWindow() const noexcept
+{
+    int64_t max = INT64_MIN;
+    AppHost* mostRecent = nullptr;
+
+    for (const auto& w : _windows)
+    {
+        const auto lastActivatedTime = w->GetLastActivatedTime();
+        if (lastActivatedTime > max)
+        {
+            max = lastActivatedTime;
+            mostRecent = w.get();
+        }
+    }
+
+    return mostRecent;
 }
 
 void WindowEmperor::HandleCommandlineArgs(int nCmdShow)
 {
-    std::vector<winrt::hstring> args;
-    _buildArgsFromCommandline(args);
-    const auto cwd{ wil::GetCurrentDirectoryW<std::wstring>() };
+    std::wstring windowClassName;
+    windowClassName.reserve(47); // "Windows Terminal Preview Admin 0123456789012345"
+#if defined(WT_BRANDING_RELEASE)
+    windowClassName.append(L"Windows Terminal");
+#elif defined(WT_BRANDING_PREVIEW)
+    windowClassName.append(L"Windows Terminal Preview");
+#elif defined(WT_BRANDING_CANARY)
+    windowClassName.append(L"Windows Terminal Canary");
+#else
+    windowClassName.append(L"Windows Terminal Dev");
+#endif
+    if (Utils::IsRunningElevated())
+    {
+        windowClassName.append(L" Admin");
+    }
+    if (!IsPackaged())
+    {
+        const auto path = wil::GetModuleFileNameW<std::wstring>(nullptr);
+        const auto hash = til::hash(path);
+#ifdef _WIN64
+        fmt::format_to(std::back_inserter(windowClassName), FMT_COMPILE(L" {:016x}"), hash);
+#else
+        fmt::format_to(std::back_inserter(windowClassName), FMT_COMPILE(L" {:08x}"), hash);
+#endif
+    }
+
+    // Windows Terminal is a single-instance application. Either acquire ownership
+    // over the mutex, or hand off the command line to the existing instance.
+    const auto mutex = acquireMutexOrAttemptHandoff(windowClassName.c_str(), nCmdShow);
+    if (!mutex)
+    {
+        // The command line has been handed off. We can now exit.
+        // We do it with TerminateProcess() primarily to avoid WinUI shutdown issues.
+        TerminateProcess(GetCurrentProcess(), gsl::narrow_cast<UINT>(0));
+        __assume(false);
+    }
+
+    _app = winrt::TerminalApp::App{};
+    _app.Logic().ReloadSettings();
+
+    _createMessageWindow(windowClassName.c_str());
+    _setupGlobalHotkeys();
+    _checkWindowsForNotificationIcon();
+
+    // When the settings change, we'll want to update our global hotkeys
+    // and our notification icon based on the new settings.
+    _app.Logic().SettingsChanged([this](auto&&, const TerminalApp::SettingsLoadEventArgs& args) {
+        if (SUCCEEDED(args.Result()))
+        {
+            _assertIsMainThread();
+            _setupGlobalHotkeys();
+            _checkWindowsForNotificationIcon();
+        }
+    });
 
     {
-        // ALWAYS change the _real_ CWD of the Terminal to system32, so that we
-        // don't lock the directory we were spawned in.
-        std::wstring system32{};
-        if (SUCCEEDED_LOG(wil::GetSystemDirectoryW<std::wstring>(system32)))
+        const wil::unique_environstrings_ptr envMem{ GetEnvironmentStringsW() };
+        const auto env = stringFromDoubleNullTerminated(envMem.get());
+        const auto cwd = wil::GetCurrentDirectoryW<std::wstring>();
+        const auto showCmd = gsl::narrow_cast<uint32_t>(nCmdShow);
+
+        // Restore persisted windows.
+        const auto state = ApplicationState::SharedInstance();
+        const auto layouts = state.PersistedWindowLayouts();
+        if (layouts && layouts.Size() > 0)
         {
-            LOG_IF_WIN32_BOOL_FALSE(SetCurrentDirectoryW(system32.c_str()));
+            _needsPersistenceCleanup = true;
+
+            uint32_t startIdx = 0;
+            for (const auto layout : layouts)
+            {
+                hstring args[] = { L"wt", L"-w", L"new", L"-s", winrt::to_hstring(startIdx) };
+                _dispatchCommandline({ args, cwd, showCmd, env });
+                startIdx += 1;
+            }
+        }
+
+        // Create another window if needed: There aren't any yet, or we got an explicit command line.
+        const auto args = commandlineToArgArray(GetCommandLineW());
+        if (_windows.empty() || args.size() != 1)
+        {
+            _dispatchCommandline({ args, cwd, showCmd, env });
+        }
+
+        // If we created no windows, e.g. because the args are "/?" we can just exit now.
+        _postQuitMessageIfNeeded();
+    }
+
+    // ALWAYS change the _real_ CWD of the Terminal to system32,
+    // so that we don't lock the directory we were spawned in.
+    if (std::wstring system32; SUCCEEDED_LOG(wil::GetSystemDirectoryW(system32)))
+    {
+        LOG_IF_WIN32_BOOL_FALSE(SetCurrentDirectoryW(system32.c_str()));
+    }
+
+    // The first CoreWindow is created implicitly by XAML and parented to the
+    // first XAML island. We parent it to our initial window for 2 reasons:
+    // * On Windows 10 the CoreWindow will show up as a visible window on the taskbar
+    //   due to a WinUI bug, and this will hide it, because our initial window is hidden.
+    // * When we DestroyWindow() the island it will destroy the CoreWindow,
+    //   and it's not possible to recreate it. That's also a WinUI bug.
+    if (const auto coreWindow = winrt::Windows::UI::Core::CoreWindow::GetForCurrentThread())
+    {
+        if (const auto interop = coreWindow.try_as<ICoreWindowInterop>())
+        {
+            HWND coreHandle = nullptr;
+            if (SUCCEEDED(interop->get_WindowHandle(&coreHandle)) && coreHandle)
+            {
+                SetParent(coreHandle, _window.get());
+            }
         }
     }
 
-    // GetEnvironmentStringsW() returns a double-null terminated string.
-    // The hstring(wchar_t*) constructor however only works for regular null-terminated strings.
-    // Due to that we need to manually search for the terminator.
-    winrt::hstring env;
+    // Main message loop. It pumps all windows.
+    bool loggedInteraction = false;
+    MSG msg{};
+    while (GetMessageW(&msg, nullptr, 0, 0))
     {
-        const wil::unique_environstrings_ptr strings{ GetEnvironmentStringsW() };
-        const auto beg = strings.get();
-        auto end = beg;
-
-        for (; *end; end += wcsnlen(end, SIZE_T_MAX) + 1)
+        // FYI: For the key-down/up messages the lowest bit indicates if it's up.
+        if ((msg.message & ~1) == WM_KEYDOWN || (msg.message & ~1) == WM_SYSKEYDOWN)
         {
+            if (!loggedInteraction)
+            {
+                TraceLoggingWrite(
+                    g_hWindowsTerminalProvider,
+                    "SessionBecameInteractive",
+                    TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                    TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
+                loggedInteraction = true;
+            }
+
+            const bool keyDown = msg.message & 1;
+            if (
+                // GH#638: The Xaml input stack doesn't allow an application to suppress the "caret browsing"
+                // dialog experience triggered when you press F7. Official recommendation from the Xaml
+                // team is to catch F7 before we hand it off.
+                (msg.wParam == VK_F7 && keyDown) ||
+                // GH#6421: System XAML will never send an Alt KeyUp event. Same thing here.
+                (msg.wParam == VK_MENU && !keyDown) ||
+                // GH#7125: System XAML will show a system dialog on Alt Space.
+                // We want to handle it ourselves and there's no way to suppress it.
+                // It almost seems like there's a pattern here...
+                (msg.wParam == VK_SPACE && msg.message == WM_SYSKEYDOWN))
+            {
+                if (const auto w = _mostRecentWindow())
+                {
+                    const auto vkey = gsl::narrow_cast<uint32_t>(msg.wParam);
+                    const auto scanCode = gsl::narrow_cast<uint8_t>(msg.lParam >> 16);
+                    w->OnDirectKeyEvent(vkey, scanCode, keyDown);
+                    continue;
+                }
+            }
         }
 
-        env = winrt::hstring{ beg, gsl::narrow<uint32_t>(end - beg) };
+        TranslateMessage(&msg);
+        DispatchMessageW(&msg);
     }
 
-    const Remoting::CommandlineArgs eventArgs{ args, cwd, gsl::narrow_cast<uint32_t>(nCmdShow), std::move(env) };
-    const auto isolatedMode{ _app.Logic().IsolatedMode() };
-    const auto result = _manager.ProposeCommandline(eventArgs, isolatedMode);
-    int exitCode = 0;
+    _finalizeSessionPersistence();
 
-    if (result.ShouldCreateWindow())
+    if (_notificationIconShown)
     {
-        _createNewWindowThread(Remoting::WindowRequestedArgs{ result, eventArgs });
-        _becomeMonarch();
-        WaitForWindows();
-    }
-    else
-    {
-        const auto res = _app.Logic().GetParseCommandlineMessage(eventArgs.Commandline());
-        if (!res.Message.empty())
-        {
-            AppHost::s_DisplayMessageBox(res);
-        }
-        exitCode = res.ExitCode;
+        Shell_NotifyIconW(NIM_DELETE, &_notificationIcon);
     }
 
     // There's a mysterious crash in XAML on Windows 10 if you just let _app get destroyed (GH#15410).
     // We also need to ensure that all UI threads exit before WindowEmperor leaves the scope on the main thread (MSFT:46744208).
     // Both problems can be solved and the shutdown accelerated by using TerminateProcess.
     // std::exit(), etc., cannot be used here, because those use ExitProcess for unpackaged applications.
-    TerminateProcess(GetCurrentProcess(), gsl::narrow_cast<UINT>(exitCode));
+    TerminateProcess(GetCurrentProcess(), gsl::narrow_cast<UINT>(0));
     __assume(false);
 }
 
-void WindowEmperor::WaitForWindows()
+void WindowEmperor::_dispatchCommandline(winrt::TerminalApp::CommandlineArgs args)
 {
-    MSG message{};
-    while (GetMessageW(&message, nullptr, 0, 0))
+    const auto exitCode = args.ExitCode();
+
+    if (const auto msg = args.ExitMessage(); !msg.empty())
     {
-        TranslateMessage(&message);
-        DispatchMessage(&message);
-    }
-
-    _finalizeSessionPersistence();
-    TerminateProcess(GetCurrentProcess(), 0);
-}
-
-void WindowEmperor::_createNewWindowThread(const Remoting::WindowRequestedArgs& args)
-{
-    Remoting::Peasant peasant{ _manager.CreatePeasant(args) };
-    std::shared_ptr<WindowThread> window{ nullptr };
-
-    // FIRST: Attempt to reheat an existing window that we refrigerated for
-    // later. If we have an existing unused window, then we don't need to create
-    // a new WindowThread & HWND for this request.
-    { // Add a scope to minimize lock duration.
-        auto fridge{ _oldThreads.lock() };
-        if (!fridge->empty())
-        {
-            // Look at that, a refrigerated thread ready to be used. Let's use that!
-            window = std::move(fridge->back());
-            fridge->pop_back();
-        }
-    }
-
-    // Did we find one?
-    if (window)
-    {
-        // Cool! Let's increment the number of active windows, and re-heat it.
-        _windowThreadInstances.fetch_add(1, std::memory_order_relaxed);
-
-        window->Microwave(args, peasant);
-        // This will unblock the event we're waiting on in KeepWarm, and the
-        // window thread (started below) will continue through it's loop
+        _showMessageBox(msg, exitCode != 0);
         return;
     }
 
-    // At this point, there weren't any pending refrigerated threads we could
-    // just use. That's fine. Let's just go create a new one.
-
-    window = std::make_shared<WindowThread>(_app.Logic(), args, _manager, peasant);
-
-    std::weak_ptr<WindowEmperor> weakThis{ weak_from_this() };
-
-    // Increment our count of window instances _now_, immediately. We're
-    // starting a window now, we shouldn't exit (due to having 0 windows) till
-    // this window has a chance to actually start.
-    // * We can't just put the window immediately into _windows right now,
-    //   because there are multiple async places where we iterate over all
-    //   _windows assuming that they have initialized and we can call methods
-    //   that might hit the TerminalPage.
-    // * If we don't somehow track this window now, before it has been actually
-    //   started, there's a possible race. As an example, it would be possible
-    //   to drag a tab out of the single window, which would create a new
-    //   window, but have the original window exit before the new window has
-    //   started, causing the app to exit.
-    // Hence: increment the number of total windows now.
-    _windowThreadInstances.fetch_add(1, std::memory_order_relaxed);
-
-    std::thread t([weakThis, window]() {
-        try
-        {
-            window->CreateHost();
-
-            if (auto self{ weakThis.lock() })
-            {
-                self->_windowStartedHandlerPostXAML(window);
-            }
-            while (window->KeepWarm())
-            {
-                // Now that the window is ready to go, we can add it to our list of windows,
-                // because we know it will be well behaved.
-                //
-                // Be sure to only modify the list of windows under lock.
-
-                if (auto self{ weakThis.lock() })
-                {
-                    auto lockedWindows{ self->_windows.lock() };
-                    lockedWindows->push_back(window);
-                }
-                auto removeWindow = wil::scope_exit([&]() {
-                    if (auto self{ weakThis.lock() })
-                    {
-                        self->_removeWindow(window->PeasantID());
-                    }
-                });
-
-                auto decrementWindowCount = wil::scope_exit([&]() {
-                    if (auto self{ weakThis.lock() })
-                    {
-                        self->_decrementWindowCount();
-                    }
-                });
-
-                window->RunMessagePump();
-
-                // Manually trigger the cleanup callback. This will ensure that we
-                // remove the window from our list of windows, before we release the
-                // AppHost (and subsequently, the host's Logic() member that we use
-                // elsewhere).
-                removeWindow.reset();
-
-                // On Windows 11, we DONT want to refrigerate the window. There,
-                // we can just close it like normal. Break out of the loop, so
-                // we don't try to put this window in the fridge.
-                if (Utils::IsWindows11())
-                {
-                    decrementWindowCount.reset();
-                    break;
-                }
-                else
-                {
-                    window->Refrigerate();
-                    decrementWindowCount.reset();
-
-                    if (auto self{ weakThis.lock() })
-                    {
-                        auto fridge{ self->_oldThreads.lock() };
-                        fridge->push_back(window);
-                    }
-                }
-            }
-
-            // Now that we no longer care about this thread's window, let it
-            // release it's app host and flush the rest of the XAML queue.
-            window->RundownForExit();
-        }
-        CATCH_LOG()
-    });
-    LOG_IF_FAILED(SetThreadDescription(t.native_handle(), L"Window Thread"));
-
-    t.detach();
-}
-
-// Handler for a WindowThread's Started event, which it raises once the window
-// thread starts and XAML is ready to go on that thread. Set up some callbacks
-// now that we know this window is set up and ready to go.
-// Q: Why isn't adding these callbacks just a part of _createNewWindowThread?
-// A: Until the thread actually starts, the AppHost (and its Logic()) haven't
-// been ctor'd or initialized, so trying to add callbacks immediately will A/V
-void WindowEmperor::_windowStartedHandlerPostXAML(const std::shared_ptr<WindowThread>& sender)
-{
-    // Add a callback to the window's logic to let us know when the window's
-    // quake mode state changes. We'll use this to check if we need to add
-    // or remove the notification icon.
-    sender->Logic().IsQuakeWindowChanged({ this, &WindowEmperor::_windowIsQuakeWindowChanged });
-    sender->UpdateSettingsRequested({ this, &WindowEmperor::_windowRequestUpdateSettings });
-
-    // DON'T Summon the window to the foreground, since we might not _currently_ be in
-    // the foreground, but we should act like the new window is.
-    //
-    // If you summon here, the resulting code will call ShowWindow(SW_SHOW) on
-    // the Terminal window, making it visible BEFORE the XAML island is actually
-    // ready to be drawn. We want to wait till the app's Initialized event
-    // before we make the window visible.
-}
-
-void WindowEmperor::_removeWindow(uint64_t senderID)
-{
-    auto lockedWindows{ _windows.lock() };
-
-    // find the window in _windows who's peasant's Id matches the peasant's Id
-    // and remove it
-    std::erase_if(*lockedWindows, [&](const auto& w) {
-        return w->PeasantID() == senderID;
-    });
-}
-
-void WindowEmperor::_decrementWindowCount()
-{
-    // When we run out of windows, exit our process if and only if:
-    // * We're not allowed to run headless OR
-    // * we've explicitly been told to "quit", which should fully exit the Terminal.
-    const bool quitWhenLastWindowExits{ !_app.Logic().AllowHeadless() };
-    const bool noMoreWindows{ _windowThreadInstances.fetch_sub(1, std::memory_order_relaxed) == 1 };
-    if (noMoreWindows &&
-        (_quitting || quitWhenLastWindowExits))
+    if (exitCode != 0)
     {
-        _close();
+        return;
+    }
+
+    const auto parsedTarget = args.TargetWindow();
+    WindowingMode windowingBehavior = WindowingMode::UseNew;
+    uint64_t windowId = 0;
+    winrt::hstring windowName;
+
+    // Figure out the windowing behavior the caller wants
+    // and get the sanitized window ID (if any) and window name (if any).
+    if (parsedTarget.empty())
+    {
+        windowingBehavior = _app.Logic().Settings().GlobalSettings().WindowingBehavior();
+    }
+    else if (const auto opt = til::parse_signed<int64_t>(parsedTarget, 10))
+    {
+        // Negative window IDs map to WindowingMode::UseNew.
+        if (*opt > 0)
+        {
+            windowId = gsl::narrow_cast<uint64_t>(*opt);
+        }
+        else if (*opt == 0)
+        {
+            windowingBehavior = WindowingMode::UseExisting;
+        }
+    }
+    else if (parsedTarget == L"last")
+    {
+        windowingBehavior = WindowingMode::UseExisting;
+    }
+    // A window name of "new" maps to WindowingMode::UseNew.
+    else if (parsedTarget != L"new")
+    {
+        windowName = parsedTarget;
+    }
+
+    AppHost* window = nullptr;
+
+    // Map from the windowing behavior, ID, and name to a window.
+    if (windowId)
+    {
+        window = GetWindowById(windowId);
+    }
+    else if (!windowName.empty())
+    {
+        window = GetWindowByName(windowName);
+    }
+    else
+    {
+        switch (windowingBehavior)
+        {
+        case WindowingMode::UseAnyExisting:
+            window = _mostRecentWindow();
+            break;
+        case WindowingMode::UseExisting:
+            _dispatchCommandlineCurrentDesktop(std::move(args));
+            return;
+        default:
+            break;
+        }
+    }
+
+    if (window)
+    {
+        window->DispatchCommandline(std::move(args));
+    }
+    else
+    {
+        winrt::TerminalApp::WindowRequestedArgs request{ windowId, std::move(args) };
+        request.WindowName(std::move(windowName));
+        CreateNewWindow(std::move(request));
     }
 }
 
-// Method Description:
-// - Set up all sorts of handlers now that we've determined that we're a process
-//   that will end up hosting the windows. These include:
-//   - Setting up a message window to handle hotkeys and notification icon
-//     invokes.
-//   - Setting up the global hotkeys.
-//   - Setting up the notification icon.
-//   - Setting up callbacks for when the settings change.
-//   - Setting up callbacks for when the number of windows changes.
-//   - Setting up the throttled func for layout persistence. Arguments:
-// - <none>
-void WindowEmperor::_becomeMonarch()
+// This is an implementation-detail of _dispatchCommandline().
+safe_void_coroutine WindowEmperor::_dispatchCommandlineCurrentDesktop(winrt::TerminalApp::CommandlineArgs args)
 {
-    // Add a callback to the window manager so that when the Monarch wants a new
-    // window made, they come to us
-    _manager.RequestNewWindow([this](auto&&, const Remoting::WindowRequestedArgs& args) {
-        _createNewWindowThread(args);
-    });
+    std::weak_ptr<AppHost> mostRecentWeak;
 
-    _createMessageWindow();
-
-    _setupGlobalHotkeys();
-
-    // When the settings change, we'll want to update our global hotkeys and our
-    // notification icon based on the new settings.
-    _app.Logic().SettingsChanged([this](auto&&, const TerminalApp::SettingsLoadEventArgs& args) {
-        if (SUCCEEDED(args.Result()))
-        {
-            _setupGlobalHotkeys();
-            _checkWindowsForNotificationIcon();
-        }
-    });
-
-    // On startup, immediately check if we need to show the notification icon.
-    _checkWindowsForNotificationIcon();
-
-    // Set the number of open windows (so we know if we are the last window)
-    // and subscribe for updates if there are any changes to that number.
-
-    _revokers.WindowCreated = _manager.WindowCreated(winrt::auto_revoke, { this, &WindowEmperor::_numberOfWindowsChanged });
-    _revokers.WindowClosed = _manager.WindowClosed(winrt::auto_revoke, { this, &WindowEmperor::_numberOfWindowsChanged });
-
-    // If a previous session of Windows Terminal stored buffer_*.txt files, then we need to clean all those up on exit
-    // that aren't needed anymore, even if the user disabled the ShouldUsePersistedLayout() setting in the meantime.
+    if (winrt::guid currentDesktop; VirtualDesktopUtils::GetCurrentVirtualDesktopId(reinterpret_cast<GUID*>(&currentDesktop)))
     {
-        const auto state = ApplicationState::SharedInstance();
-        const auto layouts = state.PersistedWindowLayouts();
-        _requiresPersistenceCleanupOnExit = layouts && layouts.Size() > 0;
+        int64_t max = INT64_MIN;
+        for (const auto& w : _windows)
+        {
+            const auto lastActivatedTime = w->GetLastActivatedTime();
+            const auto desktopId = co_await w->GetVirtualDesktopId();
+            if (desktopId == currentDesktop && lastActivatedTime > max)
+            {
+                max = lastActivatedTime;
+                mostRecentWeak = w;
+            }
+        }
+    }
+
+    // GetVirtualDesktopId(), as current implemented, should always return on the main thread.
+    _assertIsMainThread();
+
+    const auto mostRecent = mostRecentWeak.lock();
+    auto window = mostRecent.get();
+
+    if (!window)
+    {
+        window = _mostRecentWindow();
+    }
+
+    if (window)
+    {
+        window->DispatchCommandline(std::move(args));
+    }
+    else
+    {
+        CreateNewWindow(winrt::TerminalApp::WindowRequestedArgs{ 0, std::move(args) });
     }
 }
 
-// sender and args are always nullptr
-void WindowEmperor::_numberOfWindowsChanged(const winrt::Windows::Foundation::IInspectable&,
-                                            const winrt::Windows::Foundation::IInspectable&)
+bool WindowEmperor::_summonWindow(const SummonWindowSelectionArgs& args) const
 {
-    // If we closed out the quake window, and don't otherwise need the tray
-    // icon, let's get rid of it.
-    _checkWindowsForNotificationIcon();
+    AppHost* window = nullptr;
+
+    if (args.WindowID)
+    {
+        for (const auto& w : _windows)
+        {
+            if (w->Logic().WindowProperties().WindowId() == args.WindowID)
+            {
+                window = w.get();
+                break;
+            }
+        }
+    }
+    else if (!args.WindowName.empty())
+    {
+        for (const auto& w : _windows)
+        {
+            if (w->Logic().WindowProperties().WindowName() == args.WindowName)
+            {
+                window = w.get();
+                break;
+            }
+        }
+    }
+    else
+    {
+        window = _mostRecentWindow();
+    }
+
+    if (!window)
+    {
+        return false;
+    }
+
+    window->HandleSummon(args.SummonBehavior);
+    return true;
 }
 
-#pragma endregion
+void WindowEmperor::_summonAllWindows() const
+{
+    TerminalApp::SummonWindowBehavior args;
+    args.ToggleVisibility(false);
+
+    for (const auto& window : _windows)
+    {
+        window->HandleSummon(args);
+    }
+}
 
 #pragma region WindowProc
 
 static WindowEmperor* GetThisFromHandle(HWND const window) noexcept
 {
-    const auto data = GetWindowLongPtr(window, GWLP_USERDATA);
+    const auto data = GetWindowLongPtrW(window, GWLP_USERDATA);
     return reinterpret_cast<WindowEmperor*>(data);
 }
+
 [[nodiscard]] LRESULT __stdcall WindowEmperor::_wndProc(HWND const window, UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept
 {
-    WINRT_ASSERT(window);
+    if (const auto that = GetThisFromHandle(window))
+    {
+        return that->_messageHandler(window, message, wparam, lparam);
+    }
 
     if (WM_NCCREATE == message)
     {
-        auto cs = reinterpret_cast<CREATESTRUCT*>(lparam);
-        WindowEmperor* that = static_cast<WindowEmperor*>(cs->lpCreateParams);
-        WINRT_ASSERT(that);
-        WINRT_ASSERT(!that->_window);
-        that->_window = wil::unique_hwnd(window);
-        SetWindowLongPtr(that->_window.get(), GWLP_USERDATA, reinterpret_cast<LONG_PTR>(that));
-    }
-    else if (WindowEmperor* that = GetThisFromHandle(window))
-    {
-        return that->_messageHandler(message, wparam, lparam);
+        const auto cs = reinterpret_cast<CREATESTRUCT*>(lparam);
+        const auto that = static_cast<WindowEmperor*>(cs->lpCreateParams);
+        that->_window.reset(window);
+        SetWindowLongPtrW(window, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(that));
     }
 
-    return DefWindowProc(window, message, wparam, lparam);
-}
-void WindowEmperor::_createMessageWindow()
-{
-    WNDCLASS wc{};
-    wc.hCursor = LoadCursor(nullptr, IDC_ARROW);
-    wc.hInstance = reinterpret_cast<HINSTANCE>(&__ImageBase);
-    wc.lpszClassName = TERMINAL_MESSAGE_CLASS_NAME;
-    wc.style = CS_HREDRAW | CS_VREDRAW;
-    wc.lpfnWndProc = WindowEmperor::_wndProc;
-    wc.hIcon = LoadIconW(wc.hInstance, MAKEINTRESOURCEW(IDI_APPICON));
-    RegisterClass(&wc);
-    WINRT_ASSERT(!_window);
-
-    WINRT_VERIFY(CreateWindow(wc.lpszClassName,
-                              L"Windows Terminal",
-                              0,
-                              CW_USEDEFAULT,
-                              CW_USEDEFAULT,
-                              CW_USEDEFAULT,
-                              CW_USEDEFAULT,
-                              HWND_MESSAGE,
-                              nullptr,
-                              wc.hInstance,
-                              this));
+    return DefWindowProcW(window, message, wparam, lparam);
 }
 
-LRESULT WindowEmperor::_messageHandler(UINT const message, WPARAM const wParam, LPARAM const lParam) noexcept
+void WindowEmperor::_createMessageWindow(const wchar_t* className)
 {
-    // use C++11 magic statics to make sure we only do this once.
-    // This won't change over the lifetime of the application
-    static const UINT WM_TASKBARCREATED = []() { return RegisterWindowMessageW(L"TaskbarCreated"); }();
+    const auto instance = reinterpret_cast<HINSTANCE>(&__ImageBase);
+    const auto icon = LoadIconW(instance, MAKEINTRESOURCEW(IDI_APPICON));
 
-    switch (message)
-    {
-    case WM_HOTKEY:
-    {
-        _hotkeyPressed(static_cast<long>(wParam));
-        return 0;
-    }
-    case CM_NOTIFY_FROM_NOTIFICATION_AREA:
-    {
-        switch (LOWORD(lParam))
-        {
-        case NIN_SELECT:
-        case NIN_KEYSELECT:
-        {
-            _notificationIcon->NotificationIconPressed();
-            return 0;
-        }
-        case WM_CONTEXTMENU:
-        {
-            const til::point eventPoint{ GET_X_LPARAM(wParam), GET_Y_LPARAM(wParam) };
-            _notificationIcon->ShowContextMenu(eventPoint, _manager.GetPeasantInfos());
-            return 0;
-        }
-        }
-        break;
-    }
-    case WM_MENUCOMMAND:
-    {
-        _notificationIcon->MenuItemSelected((HMENU)lParam, (UINT)wParam);
-        return 0;
-    }
-    default:
-    {
-        // We'll want to receive this message when explorer.exe restarts
-        // so that we can re-add our icon to the notification area.
-        // This unfortunately isn't a switch case because we register the
-        // message at runtime.
-        if (message == WM_TASKBARCREATED)
-        {
-            _notificationIcon->ReAddNotificationIcon();
-            return 0;
-        }
-    }
-    }
-    return DefWindowProc(_window.get(), message, wParam, lParam);
+    const WNDCLASS wc{
+        .lpfnWndProc = &_wndProc,
+        .hInstance = instance,
+        .hIcon = icon,
+        .lpszClassName = className,
+    };
+    RegisterClassW(&wc);
+
+    WM_TASKBARCREATED = RegisterWindowMessageW(L"TaskbarCreated");
+
+    // NOTE: This cannot be a HWND_MESSAGE window as otherwise we don't
+    // receive any HWND_BROADCAST messages, like WM_QUERYENDSESSION.
+    // NOTE: Before CreateWindowExW() returns it invokes our WM_NCCREATE
+    // message handler, which then stores the HWND in this->_window.
+    WINRT_VERIFY(CreateWindowExW(
+        /* dwExStyle    */ 0,
+        /* lpClassName  */ className,
+        /* lpWindowName */ L"Windows Terminal",
+        /* dwStyle      */ 0,
+        /* X            */ 0,
+        /* Y            */ 0,
+        /* nWidth       */ 0,
+        /* nHeight      */ 0,
+        /* hWndParent   */ nullptr,
+        /* hMenu        */ nullptr,
+        /* hInstance    */ instance,
+        /* lpParam      */ this));
+
+    _notificationIcon.cbSize = sizeof(NOTIFYICONDATA);
+    _notificationIcon.hWnd = _window.get();
+    _notificationIcon.uID = 1;
+    _notificationIcon.uFlags = NIF_MESSAGE | NIF_TIP | NIF_SHOWTIP | NIF_ICON;
+    _notificationIcon.uCallbackMessage = WM_NOTIFY_FROM_NOTIFICATION_AREA;
+    _notificationIcon.hIcon = icon;
+    _notificationIcon.uVersion = NOTIFYICON_VERSION_4;
+
+    // AppName happens to be in the ContextMenu's Resources, see GH#12264
+    const ScopedResourceLoader loader{ L"TerminalApp/ContextMenu" };
+    const auto appNameLoc = loader.GetLocalizedString(L"AppName");
+    StringCchCopy(_notificationIcon.szTip, ARRAYSIZE(_notificationIcon.szTip), appNameLoc.c_str());
 }
 
-// Close the Terminal application. This will exit the main thread for the
-// emperor itself. We should probably only ever be called when we have no
-// windows left, and we don't want to keep running anymore. This will discard
-// all our refrigerated windows. If we try to use XAML on Windows 10 after this,
-// we'll undoubtedly crash.
-safe_void_coroutine WindowEmperor::_close()
+void WindowEmperor::_postQuitMessageIfNeeded() const
 {
-    // Important! Switch back to the main thread for the emperor. That way, the
-    // quit will go to the emperor's message pump.
-    co_await wil::resume_foreground(_dispatcher);
-    PostQuitMessage(0);
+    if (_messageBoxCount <= 0 && _windows.empty() && !_app.Logic().Settings().GlobalSettings().AllowHeadless())
+    {
+        PostQuitMessage(0);
+    }
+}
+
+safe_void_coroutine WindowEmperor::_showMessageBox(winrt::hstring message, bool error)
+{
+    // Prevent the main loop from exiting until the message box is closed.
+    // Once the loop exits, the app exits, and the message box will be closed.
+    _messageBoxCount += 1;
+    const auto decrement = wil::scope_exit([hwnd = _window.get()]() noexcept {
+        PostMessageW(hwnd, WM_MESSAGE_BOX_CLOSED, 0, 0);
+    });
+
+    // We must yield to a background thread, because MessageBoxW() is a blocking call, and we can't
+    // block the main thread. That would prevent us from servicing WM_COPYDATA messages and similar.
+    co_await winrt::resume_background();
+
+    const auto messageTitle = error ? IDS_ERROR_DIALOG_TITLE : IDS_HELP_DIALOG_TITLE;
+    const auto messageIcon = error ? MB_ICONERROR : MB_ICONWARNING;
+    // The dialog cannot have our _window as the parent, because that one is always hidden/invisible.
+    // TODO:GH#4134: polish this dialog more, to make the text more like msiexec /?
+    MessageBoxW(nullptr, message.c_str(), GetStringResource(messageTitle).c_str(), MB_OK | messageIcon);
+}
+
+LRESULT WindowEmperor::_messageHandler(HWND window, UINT const message, WPARAM const wParam, LPARAM const lParam) noexcept
+{
+    try
+    {
+        switch (message)
+        {
+        case WM_CLOSE_TERMINAL_WINDOW:
+        {
+            const auto host = reinterpret_cast<AppHost*>(lParam);
+            auto it = _windows.begin();
+            const auto end = _windows.end();
+
+            for (; it != end; ++it)
+            {
+                if (host == it->get())
+                {
+                    host->Close();
+                    _windows.erase(it);
+                    break;
+                }
+            }
+
+            _postQuitMessageIfNeeded();
+            return 0;
+        }
+        case WM_MESSAGE_BOX_CLOSED:
+            // Counterpart specific to _showMessageBox().
+            _messageBoxCount -= 1;
+            _postQuitMessageIfNeeded();
+            return 0;
+        case WM_IDENTIFY_ALL_WINDOWS:
+            for (const auto& host : _windows)
+            {
+                host->Logic().IdentifyWindow();
+            }
+            return 0;
+        case WM_NOTIFY_FROM_NOTIFICATION_AREA:
+            switch (LOWORD(lParam))
+            {
+            case NIN_SELECT:
+            case NIN_KEYSELECT:
+            {
+                SummonWindowSelectionArgs args;
+                args.SummonBehavior.MoveToCurrentDesktop(false);
+                args.SummonBehavior.ToMonitor(winrt::TerminalApp::MonitorBehavior::InPlace);
+                args.SummonBehavior.ToggleVisibility(false);
+                std::ignore = _summonWindow(std::move(args));
+                break;
+            }
+            case WM_CONTEXTMENU:
+                _notificationAreaMenuRequested(wParam);
+                break;
+            default:
+                break;
+            }
+            return 0;
+        case WM_WINDOWPOSCHANGING:
+        {
+            // No, we really don't want this window to be visible. It hides the buggy CoreWindow that XAML creates.
+            // We can't make it a HWND_MESSAGE window, because then we don't get WM_QUERYENDSESSION messages.
+            const auto wp = reinterpret_cast<WINDOWPOS*>(lParam);
+            wp->flags &= ~SWP_SHOWWINDOW;
+            return 0;
+        }
+        case WM_MENUCOMMAND:
+            _notificationAreaMenuClicked(wParam, lParam);
+            return 0;
+        case WM_SETTINGCHANGE:
+            // Currently, we only support checking when the OS theme changes. In that case, wParam is 0.
+            // GH#15102: Re-evaluate when we decide to reload env vars.
+            //
+            // ImmersiveColorSet seems to be the notification that the OS theme
+            // changed. If that happens, let the app know, so it can hot-reload
+            // themes, color schemes that might depend on the OS theme
+            if (wParam == 0 && lParam != 0 && wcscmp(reinterpret_cast<const wchar_t*>(lParam), L"ImmersiveColorSet") == 0)
+            {
+                // GH#15732: Don't update the settings, unless the theme
+                // _actually_ changed. ImmersiveColorSet gets sent more often
+                // than just on a theme change. It notably gets sent when the PC
+                // is locked, or the UAC prompt opens.
+                const auto isCurrentlyDark = Theme::IsSystemInDarkTheme();
+                if (isCurrentlyDark != _currentSystemThemeIsDark)
+                {
+                    _currentSystemThemeIsDark = isCurrentlyDark;
+                    _app.Logic().ReloadSettings();
+                }
+            }
+            return 0;
+        case WM_COPYDATA:
+            if (const auto cds = reinterpret_cast<COPYDATASTRUCT*>(lParam); cds->dwData == TERMINAL_HANDOFF_MAGIC)
+            {
+                const auto handoff = deserializeHandoffPayload(static_cast<const uint8_t*>(cds->lpData), static_cast<const uint8_t*>(cds->lpData) + cds->cbData);
+                const winrt::hstring args{ handoff.args };
+                const winrt::hstring env{ handoff.env };
+                const winrt::hstring cwd{ handoff.cwd };
+                const auto argv = commandlineToArgArray(args.c_str());
+                _dispatchCommandline({ argv, cwd, gsl::narrow_cast<uint32_t>(handoff.show), env });
+            }
+            return 0;
+        case WM_HOTKEY:
+            _hotkeyPressed(static_cast<long>(wParam));
+            return 0;
+        case WM_QUERYENDSESSION:
+            // For WM_QUERYENDSESSION and WM_ENDSESSION, refer to:
+            // https://docs.microsoft.com/en-us/windows/win32/rstmgr/guidelines-for-applications
+            if (lParam == ENDSESSION_CLOSEAPP)
+            {
+                // ENDSESSION_CLOSEAPP: The application is using a file that must be replaced,
+                // the system is being serviced, or system resources are exhausted.
+                RegisterApplicationRestart(nullptr, RESTART_NO_CRASH | RESTART_NO_HANG);
+                return TRUE;
+            }
+            return FALSE;
+        case WM_ENDSESSION:
+            _forcePersistence = true;
+            PostQuitMessage(0);
+            return 0;
+        default:
+            // We'll want to receive this message when explorer.exe restarts
+            // so that we can re-add our icon to the notification area.
+            // This unfortunately isn't a switch case because we register the
+            // message at runtime.
+            if (message == WM_TASKBARCREATED)
+            {
+                _notificationIconShown = false;
+                _checkWindowsForNotificationIcon();
+                return 0;
+            }
+        }
+    }
+    catch (...)
+    {
+        LOG_CAUGHT_EXCEPTION();
+    }
+
+    return DefWindowProcW(window, message, wParam, lParam);
 }
 
 void WindowEmperor::_finalizeSessionPersistence() const
 {
     const auto state = ApplicationState::SharedInstance();
 
+    if (_forcePersistence || _app.Logic().Settings().GlobalSettings().ShouldUsePersistedLayout())
+    {
+        state.PersistedWindowLayouts(nullptr);
+        for (const auto& w : _windows)
+        {
+            w->Logic().PersistState();
+        }
+    }
+
     // Ensure to write the state.json before we TerminateProcess()
     state.Flush();
 
-    if (!_requiresPersistenceCleanupOnExit)
+    if (_needsPersistenceCleanup)
     {
+        // Get the "buffer_{guid}.txt" files that we expect to be there
+        std::unordered_set<winrt::guid> sessionIds;
+        if (const auto layouts = state.PersistedWindowLayouts())
+        {
+            for (const auto& windowLayout : layouts)
+            {
+                for (const auto& actionAndArgs : windowLayout.TabLayout())
+                {
+                    const auto args = actionAndArgs.Args();
+                    NewTerminalArgs terminalArgs{ nullptr };
+
+                    if (const auto tabArgs = args.try_as<NewTabArgs>())
+                    {
+                        terminalArgs = tabArgs.ContentArgs().try_as<NewTerminalArgs>();
+                    }
+                    else if (const auto paneArgs = args.try_as<SplitPaneArgs>())
+                    {
+                        terminalArgs = paneArgs.ContentArgs().try_as<NewTerminalArgs>();
+                    }
+
+                    if (terminalArgs)
+                    {
+                        sessionIds.emplace(terminalArgs.SessionId());
+                    }
+                }
+            }
+        }
+
+        // Remove the "buffer_{guid}.txt" files that shouldn't be there
+        // e.g. "buffer_FD40D746-163E-444C-B9B2-6A3EA2B26722.txt"
+        {
+            const std::filesystem::path settingsDirectory{ std::wstring_view{ CascadiaSettings::SettingsDirectory() } };
+            const auto filter = settingsDirectory / L"buffer_*";
+            WIN32_FIND_DATAW ffd;
+
+            // This could also use std::filesystem::directory_iterator.
+            // I was just slightly bothered by how it doesn't have a O(1) .filename()
+            // function, even though the underlying Win32 APIs provide it for free.
+            // Both work fine.
+            const wil::unique_hfind handle{ FindFirstFileExW(filter.c_str(), FindExInfoBasic, &ffd, FindExSearchNameMatch, nullptr, FIND_FIRST_EX_LARGE_FETCH) };
+            if (!handle)
+            {
+                return;
+            }
+
+            do
+            {
+                const auto nameLen = wcsnlen_s(&ffd.cFileName[0], ARRAYSIZE(ffd.cFileName));
+                const std::wstring_view name{ &ffd.cFileName[0], nameLen };
+
+                if (nameLen != 47)
+                {
+                    continue;
+                }
+
+                wchar_t guidStr[39];
+                guidStr[0] = L'{';
+                memcpy(&guidStr[1], name.data() + 7, 36 * sizeof(wchar_t));
+                guidStr[37] = L'}';
+                guidStr[38] = L'\0';
+
+                const auto id = Utils::GuidFromString(&guidStr[0]);
+                if (!sessionIds.contains(id))
+                {
+                    std::filesystem::remove(settingsDirectory / name);
+                }
+            } while (FindNextFileW(handle.get(), &ffd));
+        }
+    }
+}
+
+void WindowEmperor::_notificationAreaMenuRequested(const WPARAM wParam)
+{
+    const auto menu = CreatePopupMenu();
+    if (!menu)
+    {
+        assert(false);
         return;
     }
 
-    // Get the "buffer_{guid}.txt" files that we expect to be there
-    std::unordered_set<winrt::guid> sessionIds;
-    if (const auto layouts = state.PersistedWindowLayouts())
+    static constexpr MENUINFO mi{
+        .cbSize = sizeof(MENUINFO),
+        .fMask = MIM_STYLE | MIM_APPLYTOSUBMENUS | MIM_MENUDATA,
+        .dwStyle = MNS_NOTIFYBYPOS,
+    };
+    SetMenuInfo(menu, &mi);
+
+    // The "Focus Terminal" menu item.
+    AppendMenuW(menu, MF_STRING, 0, RS_(L"NotificationIconFocusTerminal").c_str());
+    AppendMenuW(menu, MF_SEPARATOR, 0, L"");
+
+    // A submenu to focus a specific window. Lists all windows that we manage.
+    if (const auto submenu = CreatePopupMenu())
     {
-        for (const auto& windowLayout : layouts)
+        static constexpr MENUINFO submenuInfo{
+            .cbSize = sizeof(MENUINFO),
+            .fMask = MIM_MENUDATA,
+            .dwStyle = MNS_NOTIFYBYPOS,
+        };
+        SetMenuInfo(submenu, &submenuInfo);
+
+        std::wstring displayText;
+        displayText.reserve(64);
+
+        for (const auto& host : _windows)
         {
-            for (const auto& actionAndArgs : windowLayout.TabLayout())
+            const auto logic = host->Logic();
+            const auto props = logic.WindowProperties();
+            const auto id = props.WindowId();
+
+            displayText.clear();
+            fmt::format_to(std::back_inserter(displayText), L"#{}", id);
+            if (const auto title = logic.Title(); !title.empty())
             {
-                const auto args = actionAndArgs.Args();
-                NewTerminalArgs terminalArgs{ nullptr };
-
-                if (const auto tabArgs = args.try_as<NewTabArgs>())
-                {
-                    terminalArgs = tabArgs.ContentArgs().try_as<NewTerminalArgs>();
-                }
-                else if (const auto paneArgs = args.try_as<SplitPaneArgs>())
-                {
-                    terminalArgs = paneArgs.ContentArgs().try_as<NewTerminalArgs>();
-                }
-
-                if (terminalArgs)
-                {
-                    sessionIds.emplace(terminalArgs.SessionId());
-                }
+                fmt::format_to(std::back_inserter(displayText), L": {}", title);
             }
+            if (const auto name = props.WindowName(); !name.empty())
+            {
+                fmt::format_to(std::back_inserter(displayText), L" [{}]", name);
+            }
+
+            AppendMenuW(submenu, MF_STRING, gsl::narrow_cast<UINT_PTR>(id), displayText.c_str());
         }
+
+        AppendMenuW(menu, MF_POPUP, reinterpret_cast<UINT_PTR>(submenu), RS_(L"NotificationIconWindowSubmenu").c_str());
     }
 
-    // Remove the "buffer_{guid}.txt" files that shouldn't be there
-    // e.g. "buffer_FD40D746-163E-444C-B9B2-6A3EA2B26722.txt"
+    // We'll need to set our window to the foreground before calling
+    // TrackPopupMenuEx or else the menu won't dismiss when clicking away.
+    SetForegroundWindow(_window.get());
+
+    // User can select menu items with the left and right buttons.
+    const auto rightAlign = GetSystemMetrics(SM_MENUDROPALIGNMENT) != 0;
+    const UINT uFlags = TPM_RIGHTBUTTON | (rightAlign ? TPM_RIGHTALIGN : TPM_LEFTALIGN);
+    TrackPopupMenuEx(menu, uFlags, GET_X_LPARAM(wParam), GET_Y_LPARAM(wParam), _window.get(), nullptr);
+
+    if (_currentWindowMenu)
     {
-        const std::filesystem::path settingsDirectory{ std::wstring_view{ CascadiaSettings::SettingsDirectory() } };
-        const auto filter = settingsDirectory / L"buffer_*";
-        WIN32_FIND_DATAW ffd;
-
-        // This could also use std::filesystem::directory_iterator.
-        // I was just slightly bothered by how it doesn't have a O(1) .filename()
-        // function, even though the underlying Win32 APIs provide it for free.
-        // Both work fine.
-        const wil::unique_hfind handle{ FindFirstFileExW(filter.c_str(), FindExInfoBasic, &ffd, FindExSearchNameMatch, nullptr, FIND_FIRST_EX_LARGE_FETCH) };
-        if (!handle)
-        {
-            return;
-        }
-
-        do
-        {
-            const auto nameLen = wcsnlen_s(&ffd.cFileName[0], ARRAYSIZE(ffd.cFileName));
-            const std::wstring_view name{ &ffd.cFileName[0], nameLen };
-
-            if (nameLen != 47)
-            {
-                continue;
-            }
-
-            wchar_t guidStr[39];
-            guidStr[0] = L'{';
-            memcpy(&guidStr[1], name.data() + 7, 36 * sizeof(wchar_t));
-            guidStr[37] = L'}';
-            guidStr[38] = L'\0';
-
-            const auto id = Utils::GuidFromString(&guidStr[0]);
-            if (!sessionIds.contains(id))
-            {
-                std::filesystem::remove(settingsDirectory / name);
-            }
-        } while (FindNextFileW(handle.get(), &ffd));
+        // This will recursively destroy the submenu(s) as well.
+        DestroyMenu(_currentWindowMenu);
     }
+    _currentWindowMenu = menu;
+}
+
+void WindowEmperor::_notificationAreaMenuClicked(const WPARAM wParam, const LPARAM lParam) const
+{
+    const auto menu = reinterpret_cast<HMENU>(lParam);
+    const auto menuItemIndex = LOWORD(wParam);
+    const auto windowId = GetMenuItemID(menu, menuItemIndex);
+
+    // _notificationAreaMenuRequested constructs each menu item with an ID
+    // that is either 0 for "Focus Terminal" or >0 for a specific window ID.
+    // This works well for us because valid window IDs are always >0.
+    SummonWindowSelectionArgs args;
+    args.WindowID = windowId;
+    args.SummonBehavior.ToggleVisibility(false);
+    args.SummonBehavior.MoveToCurrentDesktop(false);
+    args.SummonBehavior.ToMonitor(winrt::TerminalApp::MonitorBehavior::InPlace);
+    std::ignore = _summonWindow(std::move(args));
 }
 
 #pragma endregion
 #pragma region GlobalHotkeys
-
-// Method Description:
-// - Called when the monarch failed to summon a window for a given set of
-//   SummonWindowSelectionArgs. In this case, we should create the specified
-//   window ourselves.
-// - This is to support the scenario like `globalSummon(Name="_quake")` being
-//   used to summon the window if it already exists, or create it if it doesn't.
-// Arguments:
-// - args: Contains information on how we should name the window
-// Return Value:
-// - <none>
-static safe_void_coroutine _createNewTerminalWindow(Settings::Model::GlobalSummonArgs args)
-{
-    // Hop to the BG thread
-    co_await winrt::resume_background();
-
-    // This will get us the correct exe for dev/preview/release. If you
-    // don't stick this in a local, it'll get mangled by ShellExecute. I
-    // have no idea why.
-    const auto exePath{ GetWtExePath() };
-
-    // If we weren't given a name, then just use new to force the window to be
-    // unnamed.
-    winrt::hstring cmdline{
-        fmt::format(FMT_COMPILE(L"-w {}"),
-                    args.Name().empty() ? L"new" :
-                                          args.Name())
-    };
-
-    SHELLEXECUTEINFOW seInfo{ 0 };
-    seInfo.cbSize = sizeof(seInfo);
-    seInfo.fMask = SEE_MASK_NOASYNC;
-    seInfo.lpVerb = L"open";
-    seInfo.lpFile = exePath.c_str();
-    seInfo.lpParameters = cmdline.c_str();
-    seInfo.nShow = SW_SHOWNORMAL;
-    LOG_IF_WIN32_BOOL_FALSE(ShellExecuteExW(&seInfo));
-
-    co_return;
-}
 
 void WindowEmperor::_hotkeyPressed(const long hotkeyIndex)
 {
@@ -620,42 +1049,48 @@ void WindowEmperor::_hotkeyPressed(const long hotkeyIndex)
     }
 
     const auto& summonArgs = til::at(_hotkeys, hotkeyIndex);
-    Remoting::SummonWindowSelectionArgs args{ summonArgs.Name() };
 
     // desktop:any - MoveToCurrentDesktop=false, OnCurrentDesktop=false
     // desktop:toCurrent - MoveToCurrentDesktop=true, OnCurrentDesktop=false
     // desktop:onCurrent - MoveToCurrentDesktop=false, OnCurrentDesktop=true
-    args.OnCurrentDesktop(summonArgs.Desktop() == Settings::Model::DesktopBehavior::OnCurrent);
-    args.SummonBehavior().MoveToCurrentDesktop(summonArgs.Desktop() == Settings::Model::DesktopBehavior::ToCurrent);
-    args.SummonBehavior().ToggleVisibility(summonArgs.ToggleVisibility());
-    args.SummonBehavior().DropdownDuration(summonArgs.DropdownDuration());
+    SummonWindowSelectionArgs args;
+    args.WindowName = summonArgs.Name();
+    args.OnCurrentDesktop = summonArgs.Desktop() == DesktopBehavior::OnCurrent;
+    args.SummonBehavior.MoveToCurrentDesktop(summonArgs.Desktop() == DesktopBehavior::ToCurrent);
+    args.SummonBehavior.ToggleVisibility(summonArgs.ToggleVisibility());
+    args.SummonBehavior.DropdownDuration(summonArgs.DropdownDuration());
 
     switch (summonArgs.Monitor())
     {
-    case Settings::Model::MonitorBehavior::Any:
-        args.SummonBehavior().ToMonitor(Remoting::MonitorBehavior::InPlace);
+    case MonitorBehavior::Any:
+        args.SummonBehavior.ToMonitor(TerminalApp::MonitorBehavior::InPlace);
         break;
-    case Settings::Model::MonitorBehavior::ToCurrent:
-        args.SummonBehavior().ToMonitor(Remoting::MonitorBehavior::ToCurrent);
+    case MonitorBehavior::ToCurrent:
+        args.SummonBehavior.ToMonitor(TerminalApp::MonitorBehavior::ToCurrent);
         break;
-    case Settings::Model::MonitorBehavior::ToMouse:
-        args.SummonBehavior().ToMonitor(Remoting::MonitorBehavior::ToMouse);
+    case MonitorBehavior::ToMouse:
+        args.SummonBehavior.ToMonitor(TerminalApp::MonitorBehavior::ToMouse);
         break;
     }
 
-    _manager.SummonWindow(args);
-    if (args.FoundMatch())
+    if (_summonWindow(args))
     {
-        // Excellent, the window was found. We have nothing else to do here.
+        return;
     }
-    else
+
+    hstring argv[] = { L"wt", L"-w", summonArgs.Name() };
+    if (argv[2].empty())
     {
-        // We should make the window ourselves.
-        _createNewTerminalWindow(summonArgs);
+        argv[2] = L"new";
     }
+
+    const wil::unique_environstrings_ptr envMem{ GetEnvironmentStringsW() };
+    const auto env = stringFromDoubleNullTerminated(envMem.get());
+    const auto cwd = wil::GetCurrentDirectoryW<std::wstring>();
+    _dispatchCommandline({ argv, cwd, SW_SHOWDEFAULT, std::move(env) });
 }
 
-bool WindowEmperor::_registerHotKey(const int index, const winrt::Microsoft::Terminal::Control::KeyChord& hotkey) noexcept
+void WindowEmperor::_registerHotKey(const int index, const winrt::Microsoft::Terminal::Control::KeyChord& hotkey) noexcept
 {
     const auto vkey = hotkey.Vkey();
     auto hotkeyFlags = MOD_NOREPEAT;
@@ -669,22 +1104,7 @@ bool WindowEmperor::_registerHotKey(const int index, const winrt::Microsoft::Ter
 
     // TODO GH#8888: We should display a warning of some kind if this fails.
     // This can fail if something else already bound this hotkey.
-    const auto result = ::RegisterHotKey(_window.get(), index, hotkeyFlags, vkey);
-    LOG_LAST_ERROR_IF(!result);
-    TraceLoggingWrite(g_hWindowsTerminalProvider,
-                      "RegisterHotKey",
-                      TraceLoggingDescription("Emitted when setting hotkeys"),
-                      TraceLoggingInt64(index, "index", "the index of the hotkey to add"),
-                      TraceLoggingUInt64(vkey, "vkey", "the key"),
-                      TraceLoggingUInt64(WI_IsFlagSet(hotkeyFlags, MOD_WIN), "win", "is WIN in the modifiers"),
-                      TraceLoggingUInt64(WI_IsFlagSet(hotkeyFlags, MOD_ALT), "alt", "is ALT in the modifiers"),
-                      TraceLoggingUInt64(WI_IsFlagSet(hotkeyFlags, MOD_CONTROL), "control", "is CONTROL in the modifiers"),
-                      TraceLoggingUInt64(WI_IsFlagSet(hotkeyFlags, MOD_SHIFT), "shift", "is SHIFT in the modifiers"),
-                      TraceLoggingBool(result, "succeeded", "true if we succeeded"),
-                      TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-                      TraceLoggingKeyword(TIL_KEYWORD_TRACE));
-
-    return result;
+    LOG_IF_WIN32_BOOL_FALSE(::RegisterHotKey(_window.get(), index, hotkeyFlags, vkey));
 }
 
 // Method Description:
@@ -693,31 +1113,11 @@ bool WindowEmperor::_registerHotKey(const int index, const winrt::Microsoft::Ter
 // - <none>
 void WindowEmperor::_unregisterHotKey(const int index) noexcept
 {
-    TraceLoggingWrite(
-        g_hWindowsTerminalProvider,
-        "UnregisterHotKey",
-        TraceLoggingDescription("Emitted when clearing previously set hotkeys"),
-        TraceLoggingInt64(index, "index", "the index of the hotkey to remove"),
-        TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-        TraceLoggingKeyword(TIL_KEYWORD_TRACE));
-
     LOG_IF_WIN32_BOOL_FALSE(::UnregisterHotKey(_window.get(), index));
 }
 
-safe_void_coroutine WindowEmperor::_setupGlobalHotkeys()
+void WindowEmperor::_setupGlobalHotkeys()
 {
-    // The hotkey MUST be registered on the main thread. It will fail otherwise!
-    co_await wil::resume_foreground(_dispatcher);
-
-    if (!_window)
-    {
-        // MSFT:36797001 There's a surprising number of hits of this callback
-        // getting triggered during teardown. As a best practice, we really
-        // should make sure _window exists before accessing it on any coroutine.
-        // We might be getting called back after the app already began getting
-        // cleaned up.
-        co_return;
-    }
     // Unregister all previously registered hotkeys.
     //
     // RegisterHotKey(), will not unregister hotkeys automatically.
@@ -736,17 +1136,8 @@ safe_void_coroutine WindowEmperor::_setupGlobalHotkeys()
     {
         if (auto summonArgs = cmd.ActionAndArgs().Args().try_as<Settings::Model::GlobalSummonArgs>())
         {
-            auto index = gsl::narrow_cast<int>(_hotkeys.size());
-            const auto succeeded = _registerHotKey(index, keyChord);
-
-            TraceLoggingWrite(g_hWindowsTerminalProvider,
-                              "AppHost_setupGlobalHotkey",
-                              TraceLoggingDescription("Emitted when setting a single hotkey"),
-                              TraceLoggingInt64(index, "index", "the index of the hotkey to add"),
-                              TraceLoggingWideString(cmd.Name().c_str(), "name", "the name of the command"),
-                              TraceLoggingBoolean(succeeded, "succeeded", "true if we succeeded"),
-                              TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-                              TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+            const auto index = gsl::narrow_cast<int>(_hotkeys.size());
+            _registerHotKey(index, keyChord);
             _hotkeys.emplace_back(summonArgs);
         }
     }
@@ -755,29 +1146,6 @@ safe_void_coroutine WindowEmperor::_setupGlobalHotkeys()
 #pragma endregion
 
 #pragma region NotificationIcon
-// Method Description:
-// - Creates a Notification Icon and hooks up its handlers
-// Arguments:
-// - <none>
-// Return Value:
-// - <none>
-void WindowEmperor::_createNotificationIcon()
-{
-    _notificationIcon = std::make_unique<NotificationIcon>(_window.get());
-    _notificationIcon->SummonWindowRequested([this](auto& args) { _manager.SummonWindow(args); });
-}
-
-// Method Description:
-// - Deletes our notification icon if we have one.
-// Arguments:
-// - <none>
-// Return Value:
-// - <none>
-void WindowEmperor::_destroyNotificationIcon()
-{
-    _notificationIcon->RemoveIconFromNotificationArea();
-    _notificationIcon = nullptr;
-}
 
 void WindowEmperor::_checkWindowsForNotificationIcon()
 {
@@ -799,60 +1167,36 @@ void WindowEmperor::_checkWindowsForNotificationIcon()
     // themselves getting the new settings, only ask the app logic for the
     // RequestsTrayIcon setting value, and combine that with the result of each
     // window (which won't change during a settings reload).
-    bool needsIcon = _app.Logic().RequestsTrayIcon();
+    const auto globals = _app.Logic().Settings().GlobalSettings();
+    auto needsIcon = globals.AlwaysShowNotificationIcon() || globals.MinimizeToNotificationArea();
+    if (!needsIcon)
     {
-        auto windows{ _windows.lock_shared() };
-        for (const auto& _windowThread : *windows)
+        for (const auto& host : _windows)
         {
-            needsIcon |= _windowThread->Logic().IsQuakeWindow();
+            needsIcon |= host->Logic().IsQuakeWindow();
         }
+    }
+
+    if (_notificationIconShown == needsIcon)
+    {
+        return;
     }
 
     if (needsIcon)
     {
-        _showNotificationIconRequested();
+        Shell_NotifyIconW(NIM_ADD, &_notificationIcon);
+        Shell_NotifyIconW(NIM_SETVERSION, &_notificationIcon);
     }
     else
     {
-        _hideNotificationIconRequested();
-    }
-}
-
-void WindowEmperor::_showNotificationIconRequested()
-{
-    if (!_notificationIcon)
-    {
-        _createNotificationIcon();
-    }
-}
-
-void WindowEmperor::_hideNotificationIconRequested()
-{
-    // Destroy it only if our settings allow it
-    if (_notificationIcon)
-    {
+        Shell_NotifyIconW(NIM_DELETE, &_notificationIcon);
         // If we no longer want the tray icon, but we did have one, then quick
         // re-summon all our windows, so they don't get lost when the icon
         // disappears forever.
-        _manager.SummonAllWindows();
-
-        _destroyNotificationIcon();
+        _summonAllWindows();
     }
-}
-#pragma endregion
 
-// A callback to the window's logic to let us know when the window's
-// quake mode state changes. We'll use this to check if we need to add
-// or remove the notification icon.
-safe_void_coroutine WindowEmperor::_windowIsQuakeWindowChanged(winrt::Windows::Foundation::IInspectable sender,
-                                                               winrt::Windows::Foundation::IInspectable args)
-{
-    co_await wil::resume_foreground(this->_dispatcher);
-    _checkWindowsForNotificationIcon();
+    _notificationIconShown = needsIcon;
 }
-safe_void_coroutine WindowEmperor::_windowRequestUpdateSettings()
-{
-    // We MUST be on the main thread to update the settings. We will crash when trying to enumerate fragment extensions otherwise.
-    co_await wil::resume_foreground(this->_dispatcher);
-    _app.Logic().ReloadSettings();
-}
+
+#pragma endregion
