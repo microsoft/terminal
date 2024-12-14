@@ -2158,7 +2158,7 @@ std::wstring TextBuffer::GetPlainText(const CopyRequest& req) const
         const auto& row = GetRowByOffset(iRow);
         const auto& [rowBeg, rowEnd, addLineBreak] = _RowCopyHelper(req, iRow, row);
 
-        // save selected text
+        // save selected text (exclusive end)
         selectedText += row.GetText(rowBeg, rowEnd);
 
         if (addLineBreak && iRow != req.end.y)

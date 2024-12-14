@@ -356,12 +356,26 @@ namespace TerminalCoreUnitTests
             GetTextBuffer(term).GetCursor().SetPosition({ 7, 11 });
             term.Write(burrito);
 
+            // Text buffer should look like this:
+            // -------------
+            // |     A      |
+            // |            |
+            // |    🌯      |
+            // |       🌯   |
+            // |        B   |
+            // -------------
+            // A: selection anchor
+            // B: selection end
+            // The boundaries of the selection should cut through
+            //  the middle of the burritos, but the selection
+            //  should expand to encompass each burrito entirely.
+
             // Simulate ALT + click at (x,y) = (5,8)
             term.SetSelectionAnchor({ 5, 8 });
             term.SetBlockSelection(true);
 
-            // Simulate move to (x,y) = (7,12)
-            term.SetSelectionEnd({ 7, 12 });
+            // Simulate move to (x,y) = (8,12)
+            term.SetSelectionEnd({ 8, 12 });
 
             // Simulate renderer calling TriggerSelection and acquiring selection area
             auto selectionSpans = term.GetSelectionSpans();
@@ -376,18 +390,18 @@ namespace TerminalCoreUnitTests
                 if (rowValue == 10)
                 {
                     VERIFY_ARE_EQUAL((til::point{ 4, rowValue }), sp.start);
-                    VERIFY_ARE_EQUAL((til::point{ 7, rowValue }), sp.end);
+                    VERIFY_ARE_EQUAL((til::point{ 8, rowValue }), sp.end);
                 }
                 else if (rowValue == 11)
                 {
                     VERIFY_ARE_EQUAL((til::point{ 5, rowValue }), sp.start);
-                    VERIFY_ARE_EQUAL((til::point{ 7, rowValue }), sp.end);
+                    VERIFY_ARE_EQUAL((til::point{ 9, rowValue }), sp.end);
                 }
                 else
                 {
                     // Verify all lines
                     VERIFY_ARE_EQUAL((til::point{ 5, rowValue }), sp.start);
-                    VERIFY_ARE_EQUAL((til::point{ 7, rowValue }), sp.end);
+                    VERIFY_ARE_EQUAL((til::point{ 8, rowValue }), sp.end);
                 }
 
                 rowValue++;
@@ -489,7 +503,7 @@ namespace TerminalCoreUnitTests
             term.SetSelectionEnd({ 21, 10 });
 
             // Validate selection area
-            ValidateLinearSelection(term, { 4, 10 }, { gsl::narrow<til::CoordType>(4 + text.size()), 10 });
+            ValidateLinearSelection(term, { 4, 10 }, { 33, 10 });
         }
 
         TEST_METHOD(DoubleClickDrag_Left)
@@ -518,7 +532,7 @@ namespace TerminalCoreUnitTests
             term.SetSelectionEnd({ 5, 10 });
 
             // Validate selection area
-            ValidateLinearSelection(term, { 4, 10 }, { gsl::narrow<til::CoordType>(4 + text.size()), 10 });
+            ValidateLinearSelection(term, { 4, 10 }, { 33, 10 });
         }
 
         TEST_METHOD(TripleClick_GeneralCase)
@@ -614,7 +628,7 @@ namespace TerminalCoreUnitTests
                 //       start            click      finish
                 term.SetSelectionEnd({ 21, 10 }, Terminal::SelectionExpansion::Word);
 
-                // Validate selection area: "doubleClickMe dragThroughHere " selected
+                // Validate selection area: "doubleClickMe dragThroughHere" selected
                 ValidateLinearSelection(term, { 4, 10 }, { 33, 10 });
             }
 
@@ -628,7 +642,7 @@ namespace TerminalCoreUnitTests
                 term.SetSelectionEnd({ 21, 10 }, Terminal::SelectionExpansion::Line);
 
                 // Validate selection area: "doubleClickMe dragThroughHere..." selected
-                ValidateLinearSelection(term, { 4, 10 }, { term.GetViewport().RightExclusive(), 10 });
+                ValidateLinearSelection(term, { 4, 10 }, { 100, 10 });
             }
 
             Log::Comment(L"Step 5: Shift+Double-Click at \"dragThroughHere\"");
@@ -636,8 +650,9 @@ namespace TerminalCoreUnitTests
                 // Simulate Shift+DoubleClick at (x,y) = (21,10)
                 //
                 // buffer: doubleClickMe dragThroughHere anotherWord
-                //         ^                ^            ^
-                //       start            click        finish
+                //         ^                ^           ^
+                //       start            click       finish
+                // NOTE: end is exclusive, so finish should point to the spot AFTER "dragThroughHere"
                 term.SetSelectionEnd({ 21, 10 }, Terminal::SelectionExpansion::Word);
 
                 // Validate selection area: "doubleClickMe dragThroughHere" selected
@@ -650,24 +665,25 @@ namespace TerminalCoreUnitTests
                 // Since we were preceded by a double-click, we're in "word" expansion mode
                 //
                 // buffer: doubleClickMe dragThroughHere anotherWord
-                //         ^                                 ^
-                //       start                             finish (boundary)
+                //         ^                              ^
+                //       start                          finish
                 term.SetSelectionEnd({ 35, 10 });
 
-                // Validate selection area: "doubleClickMe dragThroughHere..." selected
-                ValidateLinearSelection(term, { 4, 10 }, { gsl::narrow<til::CoordType>(4 + text.size()), 10 });
+                // Validate selection area: "doubleClickMe dragThroughHere anotherWord" selected
+                ValidateLinearSelection(term, { 4, 10 }, { 45, 10 });
             }
 
             Log::Comment(L"Step 7: Drag back to \"dragThroughHere\"");
             {
                 // Simulate drag to (x,y) = (21,10)
+                // Should still be in "word" expansion mode!
                 //
                 // buffer: doubleClickMe dragThroughHere anotherWord
-                //         ^                ^           ^
-                //       start             drag       finish
+                //         ^                ^
+                //       start            finish
                 term.SetSelectionEnd({ 21, 10 });
 
-                // Validate selection area: "doubleClickMe dragThroughHere " selected
+                // Validate selection area: "doubleClickMe dragThroughHere" selected
                 ValidateLinearSelection(term, { 4, 10 }, { 33, 10 });
             }
 
@@ -676,8 +692,8 @@ namespace TerminalCoreUnitTests
                 // Simulate drag to (x,y) = (25,10)
                 //
                 // buffer: doubleClickMe dragThroughHere anotherWord
-                //         ^                    ^       ^
-                //       start                 drag   finish
+                //         ^                    ^
+                //       start                finish
                 term.SetSelectionEnd({ 25, 10 });
 
                 // Validate selection area: "doubleClickMe dragThroughHere" still selected
@@ -705,7 +721,9 @@ namespace TerminalCoreUnitTests
                 term.SetSelectionEnd({ 5, 10 });
 
                 // Validate selection area
-                // NOTE: Pivot should be (10, 10)
+                // NOTES:
+                // - Pivot should be (10, 10)
+                // - though end is generally exclusive, since we moved behind the pivot, end is actually inclusive
                 ValidateLinearSelection(term, { 5, 10 }, { 10, 10 });
             }
 

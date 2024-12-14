@@ -201,6 +201,11 @@ til::CoordType Terminal::_ScrollToPoints(const til::point coordStart, const til:
     return _VisibleStartIndex();
 }
 
+// Method Description:
+// - selects the region from coordStart to coordEnd
+// Arguments:
+// - coordStart - The start point (inclusive)
+// - coordEnd - The end point (inclusive)
 void Terminal::SelectNewRegion(const til::point coordStart, const til::point coordEnd)
 {
     const auto newScrollOffset = _ScrollToPoints(coordStart, coordEnd);
