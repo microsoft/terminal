@@ -121,6 +121,8 @@ namespace winrt::TerminalApp::implementation
         bool FocusMode() const;
         bool Fullscreen() const;
         bool AlwaysOnTop() const;
+        bool ShowTabsFullscreen() const;
+        void SetShowTabsFullscreen(bool newShowTabsFullscreen);
         void SetFullscreen(bool);
         void SetFocusMode(const bool inFocusMode);
         void Maximized(bool newMaximized);
@@ -229,6 +231,7 @@ namespace winrt::TerminalApp::implementation
         bool _isFullscreen{ false };
         bool _isMaximized{ false };
         bool _isAlwaysOnTop{ false };
+        bool _showTabsFullscreen{ false };
 
         std::optional<uint32_t> _loadFromPersistedLayoutIdx{};
 

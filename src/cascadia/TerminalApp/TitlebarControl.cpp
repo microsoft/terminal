@@ -12,6 +12,8 @@
 
 #include "TitlebarControl.g.cpp"
 
+using namespace winrt::Windows::UI::Xaml;
+
 namespace winrt::TerminalApp::implementation
 {
     TitlebarControl::TitlebarControl(uint64_t handle) :
@@ -75,6 +77,11 @@ namespace winrt::TerminalApp::implementation
         {
             ContentRoot().MaxWidth(maxWidth);
         }
+    }
+
+    void TitlebarControl::FullscreenChanged(const bool fullscreen)
+    {
+        MinMaxCloseControl().Visibility(fullscreen ? Visibility::Collapsed : Visibility::Visible);
     }
 
     void TitlebarControl::_OnMaximizeOrRestore(byte flag)

@@ -193,6 +193,7 @@ void AppHost::Initialize()
 
     _window->SetAlwaysOnTop(_windowLogic.GetInitialAlwaysOnTop());
     _window->SetAutoHideWindow(_windowLogic.AutoHideWindow());
+    _window->SetShowTabsFullscreen(_windowLogic.GetInitialShowTabsFullscreen());
 
     // MORE EVENT HANDLERS HERE!
     // MAKE SURE THEY ARE ALL:
@@ -1023,6 +1024,7 @@ void AppHost::_HandleSettingsChanged(const winrt::Windows::Foundation::IInspecta
 
     _window->SetMinimizeToNotificationAreaBehavior(_windowLogic.GetMinimizeToNotificationArea());
     _window->SetAutoHideWindow(_windowLogic.AutoHideWindow());
+    _window->SetShowTabsFullscreen(_windowLogic.ShowTabsFullscreen());
     _updateTheme();
 }
 

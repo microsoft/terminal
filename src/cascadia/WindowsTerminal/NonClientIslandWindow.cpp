@@ -1129,7 +1129,7 @@ void NonClientIslandWindow::_SetIsBorderless(const bool borderlessEnabled)
 
 // Method Description:
 // - Enable or disable fullscreen mode. When entering fullscreen mode, we'll
-//   need to manually hide the entire titlebar.
+//   need to check whether to hide the titlebar.
 // - See also IslandWindow::_SetIsFullscreen, which does additional work.
 // Arguments:
 // - fullscreenEnabled: If true, we're entering fullscreen mode. If false, we're leaving.
@@ -1138,10 +1138,7 @@ void NonClientIslandWindow::_SetIsBorderless(const bool borderlessEnabled)
 void NonClientIslandWindow::_SetIsFullscreen(const bool fullscreenEnabled)
 {
     IslandWindow::_SetIsFullscreen(fullscreenEnabled);
-    if (_titlebar)
-    {
-        _titlebar.Visibility(_IsTitlebarVisible() ? Visibility::Visible : Visibility::Collapsed);
-    }
+    _UpdateTitlebarVisibility();
     // GH#4224 - When the auto-hide taskbar setting is enabled, then we don't
     // always get another window message to trigger us to remove the drag bar.
     // So, make sure to update the size of the drag region here, so that it
@@ -1149,16 +1146,42 @@ void NonClientIslandWindow::_SetIsFullscreen(const bool fullscreenEnabled)
     _ResizeDragBarWindow();
 }
 
+void NonClientIslandWindow::SetShowTabsFullscreen(const bool newShowTabsFullscreen)
+{
+    IslandWindow::SetShowTabsFullscreen(newShowTabsFullscreen);
+
+    // don't waste time recalculating UI elements if we're not
+    // in fullscreen state - this setting doesn't affect other
+    // window states
+    if (_fullscreen)
+    {
+        _UpdateTitlebarVisibility();
+    }
+}
+
+void NonClientIslandWindow::_UpdateTitlebarVisibility()
+{
+    if (!_titlebar)
+    {
+        return;
+    }
+
+    const auto showTitlebar = _IsTitlebarVisible();
+    _titlebar.Visibility(showTitlebar ? Visibility::Visible : Visibility::Collapsed);
+    _titlebar.FullscreenChanged(_fullscreen);
+}
+
 // Method Description:
-// - Returns true if the titlebar is visible. For things like fullscreen mode,
-//   borderless mode (aka "focus mode"), this will return false.
+// - Returns true if the titlebar is visible. For borderless mode (aka "focus mode"),
+//   this will return false. For fullscreen, this will return false unless the user
+//   has enabled fullscreen tabs.
 // Arguments:
 // - <none>
 // Return Value:
 // - true iff the titlebar is visible
 bool NonClientIslandWindow::_IsTitlebarVisible() const
 {
-    return !(_fullscreen || _borderless);
+    return !_borderless && (!_fullscreen || _showTabsFullscreen);
 }
 
 void NonClientIslandWindow::SetTitlebarBackground(winrt::Windows::UI::Xaml::Media::Brush brush)

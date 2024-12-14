@@ -2276,6 +2276,14 @@
     <value>Display a shield in the title bar when Windows Terminal is running as Administrator</value>
     <comment>Header for a control to toggle displaying a shield in the title bar of the app. "Admin" refers to elevated sessions like "run as Admin"</comment>
   </data>
+  <data name="Globals_ShowTabsFullscreen.Header" xml:space="preserve">
+    <value>Show tabs in full screen</value>
+    <comment>Header for a control to toggle if the app should show the tabs when in full screen state.</comment>
+  </data>
+  <data name="Globals_ShowTabsFullscreen.HelpText" xml:space="preserve">
+    <value>When enabled, the tab bar will be visible when the app is full screen.</value>
+    <comment>A description for what the "show tabs in full screen" setting does.</comment>
+  </data>
   <data name="Profile_PathTranslationStyle.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Path translation</value>
     <comment>Name for a control to select how file and directory paths are translated.</comment>

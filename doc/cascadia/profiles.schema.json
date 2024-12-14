@@ -2537,6 +2537,11 @@
           "description": "When set to true, the Terminal's tab row will display a shield icon when the Terminal is running with administrator privileges",
           "type": "boolean"
         },
+        "showTabsFullscreen": {
+          "default": false,
+          "description": "When set to true, tabs remain visible in fullscreen mode. When set to false, tabs will be hidden when entering fullscreen mode.",
+          "type": "boolean"
+        },
         "useAcrylicInTabRow": {
           "default": false,
           "description": "When set to true, the tab row will have an acrylic material background with 50% opacity.",

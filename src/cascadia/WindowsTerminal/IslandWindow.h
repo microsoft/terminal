@@ -46,6 +46,7 @@ public:
     void FullscreenChanged(const bool fullscreen);
     void SetAlwaysOnTop(const bool alwaysOnTop);
     void ShowWindowChanged(const bool showOrHide);
+    virtual void SetShowTabsFullscreen(const bool newShowTabsFullscreen);
 
     void FlashTaskbar();
     void SetTaskbarProgress(const size_t state, const size_t progress);
@@ -105,6 +106,7 @@ protected:
     bool _borderless{ false };
     bool _alwaysOnTop{ false };
     bool _fullscreen{ false };
+    bool _showTabsFullscreen{ false };
     bool _fWasMaximizedBeforeFullscreen{ false };
     RECT _rcWindowBeforeFullscreen{};
     RECT _rcWorkBeforeFullscreen{};
@@ -112,6 +114,7 @@ protected:
 
     virtual void _SetIsBorderless(const bool borderlessEnabled);
     virtual void _SetIsFullscreen(const bool fullscreenEnabled);
+
     void _RestoreFullscreenPosition(const RECT& rcWork);
     void _SetFullscreenPosition(const RECT& rcMonitor, const RECT& rcWork);
 

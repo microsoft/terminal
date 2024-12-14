@@ -46,6 +46,7 @@ public:
     void OnApplicationThemeChanged(const winrt::Windows::UI::Xaml::ElementTheme& requestedTheme) override;
 
     void SetTitlebarBackground(winrt::Windows::UI::Xaml::Media::Brush brush);
+    void SetShowTabsFullscreen(const bool newShowTabsFullscreen) override;
 
     virtual void UseMica(const bool newValue, const double titlebarOpacity) override;
 
@@ -92,6 +93,7 @@ private:
     void _UpdateFrameMargins() const noexcept;
     void _UpdateMaximizedState();
     void _UpdateIslandPosition(const UINT windowWidth, const UINT windowHeight);
+    void _UpdateTitlebarVisibility();
 
     struct Revokers
     {
