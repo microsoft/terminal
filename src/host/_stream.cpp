@@ -97,17 +97,6 @@ static void AdjustCursorPosition(SCREEN_INFORMATION& screenInfo, _In_ til::point
         coordCursor.y = bufferSize.height - 1;
     }
 
-    const auto cursorMovedPastViewport = coordCursor.y > screenInfo.GetViewport().BottomInclusive();
-
-    // if at right or bottom edge of window, scroll right or down one char.
-    if (cursorMovedPastViewport)
-    {
-        til::point WindowOrigin;
-        WindowOrigin.x = 0;
-        WindowOrigin.y = coordCursor.y - screenInfo.GetViewport().BottomInclusive();
-        LOG_IF_FAILED(screenInfo.SetViewportOrigin(false, WindowOrigin, true));
-    }
-
     LOG_IF_FAILED(screenInfo.SetCursorPosition(coordCursor, false));
 }
 
@@ -166,6 +155,8 @@ void WriteCharsLegacy(SCREEN_INFORMATION& screenInfo, const std::wstring_view& t
 
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     auto writer = gci.GetVtWriterForBuffer(&screenInfo);
+
+    const auto snap = screenInfo.SnapOnOutput();
 
     // If we enter this if condition, then someone wrote text in VT mode and now switched to non-VT mode.
     // Since the Console APIs don't support delayed EOL wrapping, we need to first put the cursor back
@@ -342,6 +333,8 @@ void WriteCharsVT(SCREEN_INFORMATION& screenInfo, const std::wstring_view& str)
     // When switch between the main and alt-buffer SCREEN_INFORMATION::GetActiveBuffer()
     // may change, so get the VtIo reference now, just in case.
     auto writer = gci.GetVtWriterForBuffer(&screenInfo);
+
+    const auto snap = screenInfo.SnapOnOutput();
 
     stateMachine.ProcessString(str);
 
