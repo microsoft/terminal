@@ -1186,7 +1186,7 @@ void NonClientIslandWindow::_UpdateTitlebarVisibility()
 // Arguments:
 // - <none>
 // Return Value:
-// - true if the titlebar is visible
+// - true iff the titlebar is visible
 bool NonClientIslandWindow::_IsTitlebarVisible() const
 {
     return !_borderless && (!_fullscreen || _showTabsFullscreen);
