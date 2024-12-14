@@ -886,6 +886,10 @@
     <value>Farbschema</value>
     <comment>Header for a control to select the scheme (or set) of colors used in the session. This is selected from a list of options managed by the user.</comment>
   </data>
+  <data name="Profile_ColorScheme.HelpText" xml:space="preserve">
+    <value>Erweitern, um den Vordergrund-, Hintergrund- und Auswahlhintergrund außer Kraft zu setzen.</value>
+    <comment>Help text for a control to select the scheme (or set) of colors used in the session. Directs the user to expand the control to access overrides for certain values in the color scheme.</comment>
+  </data>
   <data name="Profile_Commandline.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Befehlszeile</value>
     <comment>Name for a control to determine commandline executable (i.e. a .exe file) to run when a terminal session of this profile is launched.</comment>
@@ -1112,6 +1116,10 @@
   <data name="Profile_IconBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Symbol</value>
     <comment>Name for a control to determine what icon can be used to represent this profile. This is not necessarily a file path, but can be one.</comment>
+  </data>
+  <data name="Profile_IconEmojiBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Symbol</value>
+    <comment>Name for a control to determine what icon can be used to represent this profile.</comment>
   </data>
   <data name="Profile_Icon.HelpText" xml:space="preserve">
     <value>Emoji- oder Bilddateipfad des im Profil verwendeten Symbols.</value>
@@ -1916,6 +1924,149 @@
   <data name="Profile_ProportionalFontFaces.Header" xml:space="preserve">
     <value>Proportionale Schriftarten:</value>
     <comment>This is a label that is followed by a list of proportional fonts.</comment>
+  </data>
+  <data name="Profile_BellSoundPreviewDefault" xml:space="preserve">
+    <value>Standardsystemsound</value>
+    <comment>The value shown for the default value for bell sound.</comment>
+  </data>
+  <data name="Profile_BellSoundPreviewMultiple" xml:space="preserve">
+    <value>Mehrere Sounds</value>
+    <comment>The value shown for when the "bell sound" setting is set to multiple values.</comment>
+  </data>
+  <data name="Profile_BellSound.Header" xml:space="preserve">
+    <value>Klingelton</value>
+    <comment>Header for a control to determine what sound the app uses to notify the user. "Bell" is the common term in terminals for the BEL character (like the metal device used to chime).</comment>
+  </data>
+  <data name="Profile_BellSound.HelpText" xml:space="preserve">
+    <value>Steuert, welcher Sound wiedergegeben wird, wenn die Anwendung ein BEL Zeichen ausgibt. "Glockenbenachrichtigungsstil" muss "Hörbar" enthalten.</value>
+    <comment>A description for what the "bell sound" setting does. Presented near "Profile_BellSound". "Bell notification style" and "audible" come from "Profile_BellStyle" and "Profile_BellStyleAudible.Content" respectively.{Locked="BEL"}</comment>
+  </data>
+  <data name="Profile_AddBellSound.Text" xml:space="preserve">
+    <value>Sound hinzufügen</value>
+    <comment>Text label for a button that adds a sound to the bell sound list. Presented near "Profile_BellSound"</comment>
+  </data>
+  <data name="Profile_BellSoundBrowse.Content" xml:space="preserve">
+    <value>Durchsuchen…</value>
+    <comment>Text label for a button that opens a file picker to select a sound file to use for the bell sound. Presented near "Profile_BellSound".</comment>
+  </data>
+  <data name="Profile_BellSoundInfo.Text" xml:space="preserve">
+    <value>Wenn mehrere Sounds definiert sind, wird beim Empfang des BEL-Zeichens einer nach dem Zufallsprinzip ausgewählt.</value>
+    <comment>{Locked="BEL"} Text block displayed near "Profile_BellSound".</comment>
+  </data>
+  <data name="Profile_BellSoundNotFound" xml:space="preserve">
+    <value>⚠️ Datei nicht gefunden</value>
+  </data>
+  <data name="Profile_BellSoundAudioPreview.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Sound wiedergeben</value>
+    <comment>Tooltip for a button that plays the selected sound when pressed.</comment>
+  </data>
+  <data name="Profile_BellSoundDelete.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Löschen</value>
+    <comment>Tooltip for a button that deletes the selected sound when pressed.</comment>
+  </data>
+  <data name="Profile_BellSoundAudioPreview.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Sound wiedergeben</value>
+    <comment>Screen reader name for a button that plays the selected sound when pressed.</comment>
+  </data>
+  <data name="Profile_BellSoundDelete.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Löschen</value>
+    <comment>Screen reader name for a button that deletes the selected sound when pressed.</comment>
+  </data>
+  <data name="Profile_TabColor.Header" xml:space="preserve">
+    <value>Registerkartenfarbe</value>
+    <comment>Header for a control to determine the color of the tab.</comment>
+  </data>
+  <data name="Profile_Foreground.Header" xml:space="preserve">
+    <value>Vordergrund</value>
+    <comment>Header for a control to determine the foreground color of text.</comment>
+  </data>
+  <data name="Profile_Background.Header" xml:space="preserve">
+    <value>Hintergrund</value>
+    <comment>Header for a control to determine the background color of text.</comment>
+  </data>
+  <data name="Profile_SelectionBackground.Header" xml:space="preserve">
+    <value>Hintergrund der Auswahl</value>
+    <comment>Header for a control to determine the background color of selected text.</comment>
+  </data>
+  <data name="Profile_CursorColor.Header" xml:space="preserve">
+    <value>Cursorfarbe</value>
+    <comment>Header for a control to determine the color of the cursor.</comment>
+  </data>
+  <data name="Profile_Foreground.HelpText" xml:space="preserve">
+    <value>Überschreibt die Vordergrundfarbe aus dem Farbschema.</value>
+    <comment>A description for what the "foreground" setting does. Presented near "Profile_Foreground".</comment>
+  </data>
+  <data name="Profile_CursorColor.HelpText" xml:space="preserve">
+    <value>Überschreibt die Cursorfarbe aus dem Farbschema.</value>
+    <comment>A description for what the "cursor color" setting does. Presented near "Profile_CursorColor".</comment>
+  </data>
+  <data name="Profile_Background.HelpText" xml:space="preserve">
+    <value>Überschreibt die Hintergrundfarbe aus dem Farbschema.</value>
+    <comment>A description for what the "background" setting does. Presented near "Profile_Background".</comment>
+  </data>
+  <data name="Profile_SelectionBackground.HelpText" xml:space="preserve">
+    <value>Überschreibt die Hintergrundfarbe der Auswahl aus dem Farbschema.</value>
+    <comment>A description for what the "selection background" setting does. Presented near "Profile_SelectionBackground".</comment>
+  </data>
+  <data name="NullableColorPicker_MoreColorsButton.Content" xml:space="preserve">
+    <value>Weitere Farben...</value>
+    <comment>Text label for a button that allows the user to select from more colors in a new window. {Locked="..."}</comment>
+  </data>
+  <data name="NullableColorPicker_ColorPickerContentDialog.Title" xml:space="preserve">
+    <value>Farbe wählen</value>
+    <comment>Title displayed on a content dialog directing the user to pick a color.</comment>
+  </data>
+  <data name="NullableColorPicker_ColorPickerContentDialog.PrimaryButtonText" xml:space="preserve">
+    <value>OK</value>
+    <comment>Button label for the color picker content dialog. Used as confirmation to apply the selected color.</comment>
+  </data>
+  <data name="NullableColorPicker_ColorPickerContentDialog.SecondaryButtonText" xml:space="preserve">
+    <value>Abbrechen</value>
+    <comment>Text label for secondary button the color picker content dialog. When clicked, the operation of selecting a color is cancelled by the user.</comment>
+  </data>
+  <data name="Profile_CursorColor_NullableColorPicker.NullColorButtonLabel" xml:space="preserve">
+    <value>Cursorfarbe aus Farbschema verwenden</value>
+    <comment>Label for a button directing the user to use the cursor color defined in the terminal's current color scheme.</comment>
+  </data>
+  <data name="Profile_Foreground_NullableColorPicker.NullColorButtonLabel" xml:space="preserve">
+    <value>Vordergrundfarbe aus Farbschema verwenden</value>
+    <comment>Label for a button directing the user to use the foreground color defined in the terminal's current color scheme.</comment>
+  </data>
+  <data name="Profile_Background_NullableColorPicker.NullColorButtonLabel" xml:space="preserve">
+    <value>Hintergrundfarbe aus Farbschema verwenden</value>
+    <comment>Label for a button directing the user to use the background color defined in the terminal's current color scheme.</comment>
+  </data>
+  <data name="Profile_SelectionBackground_NullableColorPicker.NullColorButtonLabel" xml:space="preserve">
+    <value>Auswahlhintergrundfarbe aus Farbschema verwenden</value>
+    <comment>Label for a button directing the user to use the selection background color defined in the terminal's current color scheme.</comment>
+  </data>
+  <data name="Profile_IconTypeNone" xml:space="preserve">
+    <value>Keine</value>
+    <comment>An option to choose from for the "icon style" dropdown. When selected, there will be no icon for the profile.</comment>
+  </data>
+  <data name="Profile_IconTypeImage" xml:space="preserve">
+    <value>Datei</value>
+    <comment>An option to choose from for the "icon style" dropdown. When selected, a custom image can set for the profile's icon.</comment>
+  </data>
+  <data name="Profile_IconTypeEmoji" xml:space="preserve">
+    <value>Emoji</value>
+    <comment>An option to choose from for the "icon style" dropdown. When selected, an emoji can be set for the profile's icon.</comment>
+  </data>
+  <data name="Profile_IconTypeFontIcon" xml:space="preserve">
+    <value>Integriertes Symbol</value>
+    <comment>An option to choose from for the "icon style" dropdown. When selected, the user can choose from several preselected options to set the profile's icon.</comment>
+  </data>
+  <data name="Profile_IconEmojiBox.PlaceholderText" xml:space="preserve">
+    <value>Verwenden Sie "WIN + PUNKT", um die Emojiauswahl zu öffnen.</value>
+    <comment>"Win + period" refers to the OS key binding to open the emoji picker.</comment>
+  </data>
+  <data name="Profile_IconType.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Symboltyp</value>
+    <comment>Accessible name for a control allowing the user to select the type of icon they would like to use.</comment>
+  </data>
+  <data name="Profile_BuiltInIcon.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Symbol</value>
+    <comment>Accessible name for a control allowing the user to select the icon from a list of built in icons.</comment>
   </data>
   <data name="Nav_NewTabMenu.Content" xml:space="preserve">
     <value>Menü „Neue Registerkarte“</value>
