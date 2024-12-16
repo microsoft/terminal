@@ -64,6 +64,7 @@ qof
 qps
 quickfix
 rclt
+regexes
 reimplementation
 Remappings
 reserialization
