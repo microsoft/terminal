@@ -24,7 +24,11 @@
 #include <VersionHelpers.h>
 #include <wincodec.h>
 
+#if __has_include(<gsl/gsl_util>)
 #include <gsl/gsl_util>
+#else
+#include <gsl/util>
+#endif
 #include <gsl/pointers>
 #include <wil/com.h>
 #include <wil/filesystem.h>

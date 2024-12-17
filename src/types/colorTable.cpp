@@ -255,7 +255,7 @@ void Utils::InitializeVT340ColorTable(const std::span<COLORREF> table) noexcept
 // - table: a color table to be filled
 // Return Value:
 // - <none>
-constexpr void Utils::InitializeExtendedColorTable(const std::span<COLORREF> table, const bool monochrome) noexcept
+void Utils::InitializeExtendedColorTable(const std::span<COLORREF> table, const bool monochrome) noexcept
 {
     if (table.size() >= 256)
     {

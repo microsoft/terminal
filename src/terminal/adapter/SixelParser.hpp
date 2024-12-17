@@ -104,7 +104,7 @@ namespace Microsoft::Console::VirtualTerminal
         size_t _colorsUsed = 0;
         size_t _colorsAvailable = 0;
         bool _colorTableChanged = false;
-        IndexedPixel _foregroundPixel = 0;
+        IndexedPixel _foregroundPixel = {};
 
         void _initImageBuffer();
         void _resizeImageBuffer(const til::CoordType requiredHeight);
