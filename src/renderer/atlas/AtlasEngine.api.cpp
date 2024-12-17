@@ -7,7 +7,6 @@
 #include "Backend.h"
 #include "../../buffer/out/textBuffer.hpp"
 #include "../base/FontCache.h"
-#include <cassert>
 
 // #### NOTE ####
 // If you see any code in here that contains "_r." you might be seeing a race condition.
