@@ -30,7 +30,9 @@
 #include <gsl/util>
 #endif
 #include <gsl/pointers>
+#if __has_include(<gsl/narrow>)
 #include <gsl/narrow>
+#endif
 #include <wil/com.h>
 #include <wil/filesystem.h>
 #include <wil/stl.h>
