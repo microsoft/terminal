@@ -567,10 +567,11 @@ void VtIo::Writer::WriteUTF16(std::wstring_view str) const
 
     // C++23's resize_and_overwrite is too valuable to not use.
     // It reduce the CPU overhead by roughly half.
-#if !defined(_HAS_CXX23) || !_HAS_CXX23
+#if !defined(__cpp_lib_string_resize_and_overwrite) && _MSVC_STL_UPDATE >= 202111L
 #define resize_and_overwrite _Resize_and_overwrite
+#elif !defined(__cpp_lib_string_resize_and_overwrite)
+#error "rely on resize_and_overwrite"
 #endif
-
     // NOTE: Throwing inside resize_and_overwrite invokes undefined behavior.
     _io->_back.resize_and_overwrite(totalUTF8Cap, [&](char* buf, const size_t) noexcept {
         const auto len = WideCharToMultiByte(CP_UTF8, 0, str.data(), gsl::narrow_cast<int>(incomingUTF16Len), buf + existingUTF8Len, gsl::narrow_cast<int>(incomingUTF8Cap), nullptr, nullptr);

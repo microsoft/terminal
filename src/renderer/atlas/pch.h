@@ -13,6 +13,7 @@
 #include <span>
 #include <string_view>
 #include <vector>
+#include <cassert>
 
 #include <d2d1_3.h>
 #include <d3d11_2.h>
