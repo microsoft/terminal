@@ -567,26 +567,18 @@ void VtIo::Writer::WriteUTF16(std::wstring_view str) const
 
     // C++23's resize_and_overwrite is too valuable to not use.
     // It reduce the CPU overhead by roughly half.
-#if !defined(__cpp_lib_string_resize_and_overwrite)
-#if defined(_MSVC_STL_UPDATE)
-    // NOTE: Throwing inside resize_and_overwrite invokes undefined behavior.
-    _io->_back._Resize_and_overwrite(totalUTF8Cap, [&](char* buf, const size_t) noexcept {
-        const auto len = WideCharToMultiByte(CP_UTF8, 0, str.data(), gsl::narrow_cast<int>(incomingUTF16Len), buf + existingUTF8Len, gsl::narrow_cast<int>(incomingUTF8Cap), nullptr, nullptr);
-        return existingUTF8Len + std::max(0, len);
-    });
-#else
-    auto& back = _io->_back;
-    back.resize(totalUTF8Cap);
-    const auto len = WideCharToMultiByte(CP_UTF8, 0, str.data(), gsl::narrow_cast<int>(incomingUTF16Len), back.data() + existingUTF8Len, gsl::narrow_cast<int>(incomingUTF8Cap), nullptr, nullptr);
-    back.resize(existingUTF8Len + std::max(0, len));
+#if !defined(__cpp_lib_string_resize_and_overwrite) && _MSVC_STL_UPDATE >= 202111L
+#define resize_and_overwrite _Resize_and_overwrite
+#elif !defined(__cpp_lib_string_resize_and_overwrite)
+#error "rely on resize_and_overwrite"
 #endif
-#else
     // NOTE: Throwing inside resize_and_overwrite invokes undefined behavior.
     _io->_back.resize_and_overwrite(totalUTF8Cap, [&](char* buf, const size_t) noexcept {
         const auto len = WideCharToMultiByte(CP_UTF8, 0, str.data(), gsl::narrow_cast<int>(incomingUTF16Len), buf + existingUTF8Len, gsl::narrow_cast<int>(incomingUTF8Cap), nullptr, nullptr);
         return existingUTF8Len + std::max(0, len);
     });
-#endif
+
+#undef resize_and_overwrite
 }
 
 // When DISABLE_NEWLINE_AUTO_RETURN is not set (Bad! Don't do it!) we'll do newline translation for you.
