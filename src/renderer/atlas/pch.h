@@ -25,15 +25,8 @@
 #include <VersionHelpers.h>
 #include <wincodec.h>
 
-#if __has_include(<gsl/gsl_util>)
 #include <gsl/gsl_util>
-#else
-#include <gsl/util>
-#endif
 #include <gsl/pointers>
-#if __has_include(<gsl/narrow>)
-#include <gsl/narrow>
-#endif
 #include <wil/com.h>
 #include <wil/filesystem.h>
 #include <wil/stl.h>
