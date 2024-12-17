@@ -165,7 +165,7 @@ namespace Microsoft::Console::Render
         // It's important the pool is first so it can be given to the others on construction.
         std::pmr::unsynchronized_pool_resource _pool;
         std::pmr::vector<std::pmr::wstring> _polyStrings;
-        std::pmr::vector<std::pmr::basic_string<char32_t>> _polyWidths;
+        std::pmr::vector<std::pmr::vector<int>> _polyWidths;
 
         std::vector<DWORD> _imageMask;
 

@@ -362,7 +362,7 @@ bool GdiEngine::FontHasWesternScript(HDC hdc)
             polyString.back() &= softFontCharMask;
             polyWidth.push_back(gsl::narrow<int>(cluster.GetColumns()) * coordFontSize.width);
             cchCharWidths += polyWidth.back();
-            polyWidth.append(text.size() - 1, 0);
+            polyWidth.resize(polyWidth.size() + text.size() - 1);
         }
 
         // Detect and convert for raster font...
@@ -419,7 +419,7 @@ bool GdiEngine::FontHasWesternScript(HDC hdc)
         pPolyTextLine->rcl.top = pPolyTextLine->y + topOffset;
         pPolyTextLine->rcl.right = pPolyTextLine->rcl.left + (til::CoordType)cchCharWidths;
         pPolyTextLine->rcl.bottom = pPolyTextLine->y + coordFontSize.height - bottomOffset;
-        pPolyTextLine->pdx = reinterpret_cast<int*>(polyWidth.data());
+        pPolyTextLine->pdx = polyWidth.data();
 
         if (trimLeft)
         {
