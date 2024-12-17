@@ -30,6 +30,7 @@
 #include <gsl/util>
 #endif
 #include <gsl/pointers>
+#include <gsl/narrow>
 #include <wil/com.h>
 #include <wil/filesystem.h>
 #include <wil/stl.h>

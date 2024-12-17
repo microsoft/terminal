@@ -71,6 +71,7 @@
 #include <gsl/util>
 #endif
 #include <gsl/pointers>
+#include <gsl/narrow>
 
 // CppCoreCheck
 #include <CppCoreCheck/Warnings.h>
