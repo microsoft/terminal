@@ -74,7 +74,7 @@ class SelectionTests
                 VERIFY_ARE_EQUAL(span.end.y, sRectangleLineNumber);
 
                 VERIFY_ARE_EQUAL(span.start.x, m_pSelection->_d->srSelectionRect.left);
-                VERIFY_ARE_EQUAL(span.end.x, m_pSelection->_d->srSelectionRect.right);
+                VERIFY_ARE_EQUAL(span.end.x, m_pSelection->_d->srSelectionRect.right + 1);
             }
         }
     }
@@ -149,7 +149,9 @@ class SelectionTests
         {
             auto& span{ selectionSpans[0] };
             VERIFY_ARE_EQUAL(start, span.start, L"start");
-            VERIFY_ARE_EQUAL(end, span.end, L"end");
+
+            const til::point exclusiveEnd{ end.x + 1, end.y };
+            VERIFY_ARE_EQUAL(exclusiveEnd, span.end, L"end");
         }
     }
 

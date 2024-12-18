@@ -163,6 +163,7 @@ CBN
 cbt
 Ccc
 CCCBB
+CCCDDD
 cch
 CCHAR
 CCmd
@@ -369,6 +370,7 @@ DColor
 dcommon
 DComposition
 dde
+DDDCCC
 DDESHARE
 DDevice
 DEADCHAR

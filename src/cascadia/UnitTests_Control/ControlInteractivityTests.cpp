@@ -438,21 +438,23 @@ namespace ControlUnitTests
         // The viewport is on row 21, so the selection will be on:
         // {(5, 5)+(0, 21)} to {(5, 5)+(0, 21)}
         til::point expectedAnchor{ 5, 26 };
+        til::point expectedEnd{ 6, 26 }; // add 1 to x-coordinate because end is exclusive
         VERIFY_ARE_EQUAL(expectedAnchor, core->_terminal->GetSelectionAnchor());
-        VERIFY_ARE_EQUAL(expectedAnchor, core->_terminal->GetSelectionEnd());
+        VERIFY_ARE_EQUAL(expectedEnd, core->_terminal->GetSelectionEnd());
 
         Log::Comment(L"Scroll up a line, with the left mouse button selected");
         interactivity->MouseWheel(modifiers,
                                   WHEEL_DELTA,
                                   cursorPosition1.to_core_point(),
                                   leftMouseDown);
-
+        // TODO CARLOS
         Log::Comment(L"Verify the location of the selection");
         // The viewport is now on row 20, so the selection will be on:
-        // {(5, 5)+(0, 20)} to {(5, 5)+(0, 21)}
-        til::point newExpectedAnchor{ 5, 25 };
+        // {(5 + 1, 5)+(0, 20)} to {(5, 5)+(0, 21)}
+        // NOTE: newExpectedAnchor should be expectedEnd moved up one row
+        til::point newExpectedAnchor{ 6, 25 };
         // Remember, the anchor is always before the end in the buffer. So yes,
-        // se started the selection on 5,26, but now that's the end.
+        // we started the selection on 5,26, but now that's the end.
         VERIFY_ARE_EQUAL(newExpectedAnchor, core->_terminal->GetSelectionAnchor());
         VERIFY_ARE_EQUAL(expectedAnchor, core->_terminal->GetSelectionEnd());
     }
@@ -628,7 +630,7 @@ namespace ControlUnitTests
         Log::Comment(L"Verify that it started on the first cell we clicked on, not the one we dragged to");
         til::point expectedAnchor{ 0, 0 };
         VERIFY_ARE_EQUAL(expectedAnchor, core->_terminal->GetSelectionAnchor());
-        til::point expectedEnd{ 2, 0 };
+        til::point expectedEnd{ 3, 0 }; // add 1 to x-coordinate because end is exclusive
         VERIFY_ARE_EQUAL(expectedEnd, core->_terminal->GetSelectionEnd());
 
         interactivity->PointerReleased(noMouseDown,
@@ -798,8 +800,9 @@ namespace ControlUnitTests
         // The viewport is on row (historySize + 5), so the selection will be on:
         // {(5, (historySize+5))+(0, 21)} to {(5, (historySize+5))+(0, 21)}
         til::point expectedAnchor{ 5, settings->HistorySize() + 5 };
+        til::point expectedEnd{ 6, expectedAnchor.y }; // add 1 to x-coordinate because end is exclusive
         VERIFY_ARE_EQUAL(expectedAnchor, core->_terminal->GetSelectionAnchor());
-        VERIFY_ARE_EQUAL(expectedAnchor, core->_terminal->GetSelectionEnd());
+        VERIFY_ARE_EQUAL(expectedEnd, core->_terminal->GetSelectionEnd());
 
         Log::Comment(L"Output a line of text");
         conn->WriteInput(winrt_wstring_to_array_view(L"Foo\r\n"));
@@ -807,6 +810,7 @@ namespace ControlUnitTests
         Log::Comment(L"Verify the location of the selection");
         // The selection should now be 1 row lower
         expectedAnchor.y -= 1;
+        expectedEnd.y -= 1;
         {
             const auto anchor{ core->_terminal->GetSelectionAnchor() };
             const auto end{ core->_terminal->GetSelectionEnd() };
@@ -815,7 +819,7 @@ namespace ControlUnitTests
             Log::Comment(fmt::format(L"end:({},{})", end.x, end.y).c_str());
 
             VERIFY_ARE_EQUAL(expectedAnchor, anchor);
-            VERIFY_ARE_EQUAL(expectedAnchor, end);
+            VERIFY_ARE_EQUAL(expectedEnd, end);
         }
         VERIFY_ARE_EQUAL(scrollbackLength - 1, core->_terminal->GetScrollOffset());
 
@@ -825,6 +829,7 @@ namespace ControlUnitTests
         Log::Comment(L"Verify the location of the selection");
         // The selection should now be 1 row lower
         expectedAnchor.y -= 1;
+        expectedEnd.y -= 1;
         {
             const auto anchor{ core->_terminal->GetSelectionAnchor() };
             const auto end{ core->_terminal->GetSelectionEnd() };
@@ -833,7 +838,7 @@ namespace ControlUnitTests
             Log::Comment(fmt::format(L"end:({},{})", end.x, end.y).c_str());
 
             VERIFY_ARE_EQUAL(expectedAnchor, anchor);
-            VERIFY_ARE_EQUAL(expectedAnchor, end);
+            VERIFY_ARE_EQUAL(expectedEnd, end);
         }
         VERIFY_ARE_EQUAL(scrollbackLength - 2, core->_terminal->GetScrollOffset());
 
@@ -858,15 +863,17 @@ namespace ControlUnitTests
             Log::Comment(fmt::format(L"anchor:({},{})", anchor.x, anchor.y).c_str());
             Log::Comment(fmt::format(L"end:({},{})", end.x, end.y).c_str());
 
+            // Selection was updated, but we didn't highlight a full cell
             VERIFY_ARE_EQUAL(expectedAnchor, anchor);
             VERIFY_ARE_EQUAL(expectedAnchor, end);
         }
 
-        Log::Comment(L"Output a line ant move the mouse a little to update the selection, all at once");
+        Log::Comment(L"Output a line and move the mouse a little to update the selection, all at once");
         // Same as above. The viewport has moved, so the mouse is still over the
         // same character, even though it's at a new offset.
         conn->WriteInput(winrt_wstring_to_array_view(L"Foo\r\n"));
         expectedAnchor.y -= 1;
+        expectedEnd.y -= 1;
         VERIFY_ARE_EQUAL(scrollbackLength - 3, core->_terminal->GetScrollOffset());
         interactivity->PointerMoved(leftMouseDown,
                                     WM_LBUTTONDOWN, //pointerUpdateKind
@@ -883,7 +890,7 @@ namespace ControlUnitTests
             Log::Comment(fmt::format(L"end:({},{})", end.x, end.y).c_str());
 
             VERIFY_ARE_EQUAL(expectedAnchor, anchor);
-            VERIFY_ARE_EQUAL(expectedAnchor, end);
+            VERIFY_ARE_EQUAL(expectedEnd, end);
         }
 
         // Output enough text for the selection to get pushed off the buffer

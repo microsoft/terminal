@@ -2432,11 +2432,11 @@ void TextBufferTests::GetTextRects()
     std::vector<til::inclusive_rect> expected{};
     if (blockSelection)
     {
-        expected.push_back({ 1, 0, 7, 0 });
-        expected.push_back({ 1, 1, 8, 1 }); // expand right
-        expected.push_back({ 1, 2, 7, 2 });
-        expected.push_back({ 0, 3, 7, 3 }); // expand left
-        expected.push_back({ 1, 4, 7, 4 });
+        expected.push_back({ 1, 0, 8, 0 });
+        expected.push_back({ 1, 1, 9, 1 }); // expand right
+        expected.push_back({ 1, 2, 8, 2 });
+        expected.push_back({ 0, 3, 8, 3 }); // do not expand
+        expected.push_back({ 1, 4, 8, 4 });
     }
     else
     {
@@ -2444,11 +2444,11 @@ void TextBufferTests::GetTextRects()
         expected.push_back({ 0, 1, 19, 1 });
         expected.push_back({ 0, 2, 19, 2 });
         expected.push_back({ 0, 3, 19, 3 });
-        expected.push_back({ 0, 4, 7, 4 });
+        expected.push_back({ 0, 4, 8, 4 });
     }
 
     til::point start{ 1, 0 };
-    til::point end{ 7, 4 };
+    til::point end{ 8, 4 };
     const auto result = _buffer->GetTextRects(start, end, blockSelection, false);
     VERIFY_ARE_EQUAL(expected.size(), result.size());
     for (size_t i = 0; i < expected.size(); ++i)
@@ -2494,8 +2494,9 @@ void TextBufferTests::GetPlainText()
                                                        L"  3  " };
         WriteLinesToBuffer(bufferText, *_buffer);
 
-        // simulate a selection from origin to {4,4}
-        constexpr til::point_span selection = { { 0, 0 }, { 4, 4 } };
+        // simulate a selection from origin to {5,4}
+        // Remember! End is exclusive!
+        constexpr til::point_span selection = { { 0, 0 }, { 5, 4 } };
 
         const auto req = TextBuffer::CopyRequest{ *_buffer, selection.start, selection.end, blockSelection, includeCRLF, trimTrailingWhitespace, false };
         const auto result = _buffer->GetPlainText(req);
@@ -2589,8 +2590,9 @@ void TextBufferTests::GetPlainText()
         // |     |
         // |_____|
 
-        // simulate a selection from origin to {4,5}
-        constexpr til::point_span selection = { { 0, 0 }, { 4, 5 } };
+        // simulate a selection from origin to {5,5}
+        // Remember! End is exclusive!
+        constexpr til::point_span selection = { { 0, 0 }, { 5, 5 } };
 
         const auto formatWrappedRows = blockSelection;
         const auto req = TextBuffer::CopyRequest{ *_buffer, selection.start, selection.end, blockSelection, includeCRLF, trimTrailingWhitespace, formatWrappedRows };
