@@ -1927,12 +1927,10 @@ const std::vector<til::inclusive_rect> TextBuffer::GetTextRects(til::point start
 {
     std::vector<til::inclusive_rect> textRects;
 
-    const auto bufferSize = GetSize();
-
     // (0,0) is the top-left of the screen
     // the physically "higher" coordinate is closer to the top-left
     // the physically "lower" coordinate is closer to the bottom-right
-    const auto [higherCoord, lowerCoord] = bufferSize.CompareInBounds(start, end) <= 0 ?
+    const auto [higherCoord, lowerCoord] = start <= end ?
                                                std::make_tuple(start, end) :
                                                std::make_tuple(end, start);
 
@@ -1953,6 +1951,7 @@ const std::vector<til::inclusive_rect> TextBuffer::GetTextRects(til::point start
         }
         else
         {
+            const auto bufferSize = GetSize();
             textRow.left = (row == higherCoord.y) ? higherCoord.x : bufferSize.Left();
             textRow.right = (row == lowerCoord.y) ? lowerCoord.x : bufferSize.RightInclusive();
         }

@@ -43,24 +43,19 @@ void Selection::_RegenerateSelectionSpans() const
     endSelectionAnchor.x = (_d->coordSelectionAnchor.x == _d->srSelectionRect.left) ? _d->srSelectionRect.right : _d->srSelectionRect.left;
     endSelectionAnchor.y = (_d->coordSelectionAnchor.y == _d->srSelectionRect.top) ? _d->srSelectionRect.bottom : _d->srSelectionRect.top;
 
-    // GH #18106: Conhost uses an inclusive range for selection,
-    //    but GetTextSpans() needs an exclusive range.
+    // GH #18106: Conhost and Terminal share most of the selection code.
+    //    Both now store the selection data as a half-open range [start, end),
+    //     where "end" is the bottom-right-most point.
+    //    Note that Conhost defines start/end as "start was set in time before end",
+    //     whereas above (and in Terminal) we're treating start/end as "start is physically before end".
+    //    We want Conhost to still operate as an inclusive range.
+    //    To make it "feel" inclusive, we need to adjust the "end" endpoint
+    //     by incrementing it by one, so that the "end" endpoint is rendered
+    //     and handled as selected.
     const auto blockSelection = !IsLineSelection();
     const auto& buffer = screenInfo.GetTextBuffer();
     auto startSelectionAnchor = _d->coordSelectionAnchor;
-    if (blockSelection)
-    {
-        auto& targetEndpoint = startSelectionAnchor.x <= endSelectionAnchor.x ? endSelectionAnchor : startSelectionAnchor;
-        if (targetEndpoint.x != buffer.GetSize().RightInclusive())
-        {
-            buffer.GetSize().IncrementInBounds(targetEndpoint);
-        }
-    }
-    else
-    {
-        buffer.GetSize().IncrementInExclusiveBounds(startSelectionAnchor <= endSelectionAnchor ? endSelectionAnchor : startSelectionAnchor);
-    }
-
+    buffer.GetSize().IncrementInExclusiveBounds(startSelectionAnchor.x <= endSelectionAnchor.x ? endSelectionAnchor : startSelectionAnchor);
     _lastSelectionSpans = buffer.GetTextSpans(startSelectionAnchor,
                                               endSelectionAnchor,
                                               blockSelection,
