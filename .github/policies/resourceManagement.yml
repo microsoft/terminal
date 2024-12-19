@@ -609,7 +609,7 @@ configuration:
       then:
       - removeLabel:
           label: Needs-Tag-Fix
-    - description: Add "In-PR" label to isses that are referenced in a PR
+    - description: Add "In-PR" label to issues that are referenced in a PR
       if:
       - payloadType: Pull_Request
       then:
@@ -777,7 +777,7 @@ configuration:
           pattern: Severity-
       - labelSync:
           pattern: Impact-
-    - description: Comments with "/dup", "/dupe", or "/duplicate" targetting another repo will close the issue as a duplicate and remove "Needs-" labels
+    - description: Comments with "/dup", "/dupe", or "/duplicate" targeting another repo will close the issue as a duplicate and remove "Needs-" labels
       if:
       - payloadType: Issue_Comment
       - commentContains:
