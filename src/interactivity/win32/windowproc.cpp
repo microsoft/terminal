@@ -251,6 +251,7 @@ static constexpr TsfDataProvider s_tsfDataProvider;
             return FALSE;
         }
 
+        // Format our final suggestion for consumption.
         UnlockConsole();
         return TRUE;
     }
@@ -875,26 +876,31 @@ bool Window::_HandleGetDpiScaledSize(UINT dpiNew, _Inout_ SIZE* pSizeNew) const
     til::size fontSizeNew = fontInfoNew.GetSize();
 
     // The provided size is the window rect, which includes non-client area
-    // (caption bars, resize borders, scroll bars, etc). To scale the client
-    // area by the new/previous font sizes, the non-client area size is removed
-    // from the rect here and added back at the end.
+    // (caption bars, resize borders, scroll bars, etc). We want to scale the
+    // client area separately from the non-client area. The client area will be
+    // scaled using the new/old font sizes, so that the size of the grid (rows/
+    // columns) does not change.
 
-    // Expand an empty rect by the size of the current non-client area (using
-    // the window's current DPI). This gives us the size of the non client area.
-    // Reduce the provided size by the non-client area size, which gives us the
-    // new client area size at the previous DPI.
+    // Subtract the size of the window's current non-client area from the
+    // provided size. This gives us the new client area size at the previous DPI.
     til::rect rc;
     s_ExpandRectByNonClientSize(hwnd, dpiCurrent, &rc);
     pSizeNew->cx -= rc.width();
     pSizeNew->cy -= rc.height();
 
-    // Scale the size of the client rect by the change in font size.
+    // Scale the size of the client rect by the new/old font sizes.
     pSizeNew->cx = MulDiv(pSizeNew->cx, fontSizeNew.width, fontSizeCurrent.width);
     pSizeNew->cy = MulDiv(pSizeNew->cy, fontSizeNew.height, fontSizeCurrent.height);
 
-    // Expand the scaled client size by the non-client area (using the new DPI).
+    // Add the size of the non-client area at the new DPI to the final size,
+    // getting the new window rect (the output of this function).
     rc = { 0, 0, pSizeNew->cx, pSizeNew->cy };
     s_ExpandRectByNonClientSize(hwnd, dpiNew, &rc);
+
+    // Write the final size to the out parameter.
+    // If not Maximized/Arranged (snapped), this will determine the size of the
+    // rect in the WM_DPICHANGED message. Otherwise, the provided size is the
+    // normal position (restored, last non-Maximized/Arranged).
     pSizeNew->cx = rc.width();
     pSizeNew->cy = rc.height();
 

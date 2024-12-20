@@ -966,9 +966,9 @@ void Window::s_CalculateWindowRect(const til::size coordWindowInChars,
 
 // Expands a rect by the size of the non-client area (caption bar, resize borders,
 // scroll bars, etc), which depends on the window styles and DPI
-void Window:: s_ExpandRectByNonClientSize(HWND const hWnd,
-                                          UINT dpi,
-                                          _Inout_ til::rect* const prectWindow)
+void Window::s_ExpandRectByNonClientSize(HWND const hWnd,
+                                         UINT dpi,
+                                         _Inout_ til::rect* const prectWindow)
 {
     DWORD dwStyle = GetWindowStyle(hWnd);
     DWORD dwExStyle = GetWindowExStyle(hWnd);
