@@ -57,7 +57,7 @@ DEFINE_ENUM_FLAG_OPERATORS(winrt::Microsoft::Terminal::Control::MouseButtonState
 //   the current foreground window, but still on top of another Terminal window in the background.
 static void hideCursorUntilMoved()
 {
-    static CoreCursor previousCursor{ nullptr };
+    static bool cursorIsHidden;
     static const auto shouldVanish = []() {
         BOOL shouldVanish = TRUE;
         SystemParametersInfoW(SPI_GETMOUSEVANISH, 0, &shouldVanish, 0);
@@ -68,16 +68,16 @@ static void hideCursorUntilMoved()
 
         const auto window = CoreWindow::GetForCurrentThread();
         static constexpr auto releaseCapture = [](CoreWindow window, PointerEventArgs) {
-            if (previousCursor)
+            if (cursorIsHidden)
             {
                 window.ReleasePointerCapture();
             }
         };
         static constexpr auto restoreCursor = [](CoreWindow window, PointerEventArgs) {
-            if (previousCursor)
+            if (cursorIsHidden)
             {
-                window.PointerCursor(previousCursor);
-                previousCursor = nullptr;
+                cursorIsHidden = false;
+                window.PointerCursor(CoreCursor{ CoreCursorType::Arrow, 0 });
             }
         };
 
@@ -90,20 +90,14 @@ static void hideCursorUntilMoved()
         return true;
     }();
 
-    if (shouldVanish && !previousCursor)
+    if (shouldVanish && !cursorIsHidden)
     {
         try
         {
             const auto window = CoreWindow::GetForCurrentThread();
-
-            previousCursor = window.PointerCursor();
-            if (!previousCursor)
-            {
-                return;
-            }
-
             window.PointerCursor(nullptr);
             window.SetPointerCapture();
+            cursorIsHidden = true;
         }
         catch (...)
         {
