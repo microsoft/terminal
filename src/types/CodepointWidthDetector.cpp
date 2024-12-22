@@ -846,16 +846,6 @@ bool CodepointWidthDetector::_graphemeNext(GraphemeState& s, const std::wstring_
                 {
                     w = _ambiguousWidth;
                 }
-
-                // U+FE0F Variation Selector-16 is used to turn unqualified Emojis into qualified ones.
-                // By convention, this turns them from being ambiguous width (= narrow) into wide ones.
-                // We achieve this here by explicitly giving this codepoint a wide width.
-                // Later down below we'll clamp width back to <= 2.
-                if (cp == 0xFE0F)
-                {
-                    w = 2;
-                }
-
                 width += w;
             }
 
@@ -943,16 +933,6 @@ bool CodepointWidthDetector::_graphemePrev(GraphemeState& s, const std::wstring_
                 {
                     w = _ambiguousWidth;
                 }
-
-                // U+FE0F Variation Selector-16 is used to turn unqualified Emojis into qualified ones.
-                // By convention, this turns them from being ambiguous width (= narrow) into wide ones.
-                // We achieve this here by explicitly giving this codepoint a wide width.
-                // Later down below we'll clamp width back to <= 2.
-                if (cp == 0xFE0F)
-                {
-                    w = 2;
-                }
-
                 width += w;
             }
 
@@ -1100,7 +1080,6 @@ bool CodepointWidthDetector::_graphemePrevWcswidth(GraphemeState& s, const std::
             {
                 w = _ambiguousWidth;
             }
-
             width += w;
 
             const auto hasWidth = width != 0;
