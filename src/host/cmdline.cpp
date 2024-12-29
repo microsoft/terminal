@@ -41,9 +41,12 @@ int DelimiterClass(wchar_t wch) noexcept
         return 1;
     }
     const auto& delimiters = ServiceLocator::LocateGlobals().WordDelimiters;
-    if (std::find(delimiters.begin(), delimiters.end(), wch) != delimiters.end())
+    if (!delimiters.empty())
     {
-        return 2;
+        if (std::find(delimiters.begin(), delimiters.end(), wch) != delimiters.end())
+        {
+            return 2;
+        }
     }
     return 0;
 }
