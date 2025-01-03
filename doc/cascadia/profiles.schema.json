@@ -2907,7 +2907,7 @@
         },
         "experimental.rightClickContextMenu": {
           "default": false,
-          "description": "When set to true, right-clicking on the terminal will show a context menu. When set to false, right-click will copy",
+          "description": "When set to true, right-click will show a context menu. When set to false, right-click will paste.",
           "type": "boolean"
         },
         "experimental.repositionCursorWithMouse": {
