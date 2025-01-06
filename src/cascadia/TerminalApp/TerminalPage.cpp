@@ -2735,12 +2735,25 @@ namespace winrt::TerminalApp::implementation
     safe_void_coroutine TerminalPage::_PasteFromClipboardHandler(const IInspectable /*sender*/, const PasteFromClipboardEventArgs eventArgs)
     try
     {
+        // Checking here if we are currently renaming any tab so that we should not paste content into our tab.
+        for (const auto item : _tabs)
+        {
+            if (const auto tabItem = item.try_as<TerminalTab>())
+            {
+                if (tabItem->InRename())
+                {
+                    co_return;
+                }
+            }
+        }
+
+        const auto data = Clipboard::GetContent();
         // The old Win32 clipboard API as used below is somewhere in the order of 300-1000x faster than
         // the WinRT one on average, depending on CPU load. Don't use the WinRT clipboard API if you can.
         const auto weakThis = get_weak();
         const auto dispatcher = Dispatcher();
         const auto globalSettings = _settings.GlobalSettings();
-
+ 
         // GetClipboardData might block for up to 30s for delay-rendered contents.
         co_await winrt::resume_background();
 
