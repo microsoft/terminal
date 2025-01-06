@@ -432,9 +432,6 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
     void ExtensionPalette::_close()
     {
         Visibility(Visibility::Collapsed);
-
-        // Clear the text box each time we close the dialog. This is consistent with VsCode.
-        _queryBox().Text(winrt::hstring{});
     }
 
     ChatMessage::ChatMessage(winrt::hstring content, bool isQuery) :
