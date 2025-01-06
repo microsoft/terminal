@@ -413,13 +413,8 @@ void WindowEmperor::HandleCommandlineArgs(int nCmdShow)
                 // It almost seems like there's a pattern here...
                 (msg.wParam == VK_SPACE && msg.message == WM_SYSKEYDOWN))
             {
-                if (const auto w = _mostRecentWindow())
-                {
-                    const auto vkey = gsl::narrow_cast<uint32_t>(msg.wParam);
-                    const auto scanCode = gsl::narrow_cast<uint8_t>(msg.lParam >> 16);
-                    w->OnDirectKeyEvent(vkey, scanCode, keyDown);
-                    continue;
-                }
+                _dispatchSpecialKey(msg);
+                continue;
             }
         }
 
@@ -440,6 +435,40 @@ void WindowEmperor::HandleCommandlineArgs(int nCmdShow)
     // std::exit(), etc., cannot be used here, because those use ExitProcess for unpackaged applications.
     TerminateProcess(GetCurrentProcess(), gsl::narrow_cast<UINT>(0));
     __assume(false);
+}
+
+void WindowEmperor::_dispatchSpecialKey(MSG& msg) const
+{
+    const auto hwnd = msg.hwnd;
+    AppHost* window = nullptr;
+
+    // Just in case someone has targed a specific HWND,
+    // we'll try to dispatch it to the corresponding class.
+    // Usually this will not find anything because under WinUI the hidden CoreInput
+    // window is responsible for all input handling (for whatever reason).
+    for (const auto& h : _windows)
+    {
+        const auto w = h->GetWindow();
+        if (w && w->GetHandle() == hwnd)
+        {
+            window = h.get();
+            break;
+        }
+    }
+
+    if (!window)
+    {
+        window = _mostRecentWindow();
+        if (!window)
+        {
+            return;
+        }
+    }
+
+    const auto vkey = gsl::narrow_cast<uint32_t>(msg.wParam);
+    const auto scanCode = gsl::narrow_cast<uint8_t>(msg.lParam >> 16);
+    const bool keyDown = msg.message & 1;
+    window->OnDirectKeyEvent(vkey, scanCode, keyDown);
 }
 
 void WindowEmperor::_dispatchCommandline(winrt::TerminalApp::CommandlineArgs args)
@@ -826,14 +855,10 @@ LRESULT WindowEmperor::_messageHandler(HWND window, UINT const message, WPARAM c
         case WM_QUERYENDSESSION:
             // For WM_QUERYENDSESSION and WM_ENDSESSION, refer to:
             // https://docs.microsoft.com/en-us/windows/win32/rstmgr/guidelines-for-applications
-            if (lParam == ENDSESSION_CLOSEAPP)
-            {
-                // ENDSESSION_CLOSEAPP: The application is using a file that must be replaced,
-                // the system is being serviced, or system resources are exhausted.
-                RegisterApplicationRestart(nullptr, RESTART_NO_CRASH | RESTART_NO_HANG);
-                return TRUE;
-            }
-            return FALSE;
+            // ENDSESSION_CLOSEAPP: The application is using a file that must be replaced,
+            // the system is being serviced, or system resources are exhausted.
+            RegisterApplicationRestart(nullptr, RESTART_NO_CRASH | RESTART_NO_HANG);
+            return TRUE;
         case WM_ENDSESSION:
             _forcePersistence = true;
             PostQuitMessage(0);
