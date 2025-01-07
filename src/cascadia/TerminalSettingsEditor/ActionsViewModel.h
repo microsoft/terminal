@@ -128,7 +128,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         CommandViewModel(winrt::Microsoft::Terminal::Settings::Model::Command cmd,
                          std::vector<Control::KeyChord> keyChordList,
                          const Windows::Foundation::Collections::IObservableVector<hstring>& availableActions,
-                         const Editor::ActionsViewModel actionsPageVM);
+                         const Editor::ActionsViewModel actionsPageVM,
+                         const Windows::Foundation::Collections::IMap<Model::ShortcutAction, winrt::hstring>& availableShortcutActionsAndNames);
 
         winrt::hstring Name();
         void Name(const winrt::hstring& newName);
@@ -159,6 +160,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         weak_ref<Editor::ActionsViewModel> _actionsPageVM{ nullptr };
         void _RegisterKeyChordVMEvents(Editor::KeyChordViewModel kcVM);
         void _RegisterActionArgsVMEvents(Editor::ActionArgsViewModel actionArgsVM);
+        Windows::Foundation::Collections::IMap<Model::ShortcutAction, winrt::hstring> _AvailableActionsAndNamesMap;
     };
 
     struct ActionArgsViewModel : ActionArgsViewModelT<ActionArgsViewModel>, ViewModelHelper<ActionArgsViewModel>
@@ -236,6 +238,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Model::CascadiaSettings _Settings;
         Windows::Foundation::Collections::IObservableVector<hstring> _AvailableActionAndArgs;
         Windows::Foundation::Collections::IMap<hstring, Model::ActionAndArgs> _AvailableActionMap;
+        Windows::Foundation::Collections::IMap<Model::ShortcutAction, winrt::hstring> _AvailableActionsAndNamesMap;
 
         void _MakeCommandVMsHelper();
 

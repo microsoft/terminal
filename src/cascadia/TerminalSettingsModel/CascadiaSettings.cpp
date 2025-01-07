@@ -8,6 +8,8 @@
 #include "DefaultTerminal.h"
 #include "FileUtils.h"
 
+#include "AllShortcutActions.h"
+
 #include <LibraryResources.h>
 #include <VersionHelpers.h>
 #include <WtExeUtils.h>
@@ -979,6 +981,19 @@ winrt::hstring CascadiaSettings::ApplicationVersion()
 
     return RS_(L"ApplicationVersionUnknown");
 }
+
+winrt::Windows::Foundation::Collections::IMap<Model::ShortcutAction, winrt::hstring> CascadiaSettings::AvailableShortcutActionsAndNames()
+{
+    std::map<ShortcutAction, winrt::hstring> availableShortcutActionsAndNames;
+
+#define ON_ALL_ACTIONS(action) availableShortcutActionsAndNames.emplace(ShortcutAction::action, RS_(L## #action));
+    ALL_SHORTCUT_ACTIONS
+    // Don't include internal actions here
+#undef ON_ALL_ACTIONS
+
+    return single_threaded_map(std::move(availableShortcutActionsAndNames));
+}
+
 
 // Method Description:
 // - Determines if we're on an OS platform that supports

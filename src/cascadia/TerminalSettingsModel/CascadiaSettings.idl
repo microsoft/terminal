@@ -20,6 +20,8 @@ namespace Microsoft.Terminal.Settings.Model
         static String ApplicationDisplayName { get; };
         static String ApplicationVersion { get; };
 
+        static Windows.Foundation.Collections.IMap<Microsoft.Terminal.Settings.Model.ShortcutAction, String> AvailableShortcutActionsAndNames { get; };
+
         CascadiaSettings(String userJSON, String inboxJSON);
 
         CascadiaSettings Copy();

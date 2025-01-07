@@ -108,10 +108,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
-    CommandViewModel::CommandViewModel(Command cmd, std::vector<Control::KeyChord> keyChordList, const IObservableVector<hstring>& availableActions, const Editor::ActionsViewModel actionsPageVM) :
+    CommandViewModel::CommandViewModel(Command cmd, std::vector<Control::KeyChord> keyChordList, const IObservableVector<hstring>& availableActions, const Editor::ActionsViewModel actionsPageVM, const Windows::Foundation::Collections::IMap<Model::ShortcutAction, winrt::hstring>& availableShortcutActionsAndNames) :
         _command{ cmd },
         _AvailableActions { availableActions },
-        _actionsPageVM{ actionsPageVM }
+        _actionsPageVM{ actionsPageVM },
+        _AvailableActionsAndNamesMap{ availableShortcutActionsAndNames }
     {
         std::vector<Editor::KeyChordViewModel> keyChordVMs;
         for (const auto keys : keyChordList)
@@ -124,8 +125,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         CurrentAction(cmd.Name());
 
         std::vector<hstring> shortcutActions;
-        shortcutActions.emplace_back(L"Send Input");
-        shortcutActions.emplace_back(L"Close Tab");
+        for (const auto [_, name] : _AvailableActionsAndNamesMap)
+        {
+            shortcutActions.emplace_back(name);
+        }
         _AvailableShortcutActions = single_threaded_observable_vector(std::move(shortcutActions));
 
         ActionArgsVM(make<ActionArgsViewModel>(cmd.ActionAndArgs()));
@@ -401,6 +404,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         std::sort(begin(availableActionAndArgs), end(availableActionAndArgs));
         _AvailableActionAndArgs = single_threaded_observable_vector(std::move(availableActionAndArgs));
 
+        _AvailableActionsAndNamesMap = _Settings.AvailableShortcutActionsAndNames();
+
         // Convert the key bindings from our settings into a view model representation
         const auto& keyBindingMap{ _Settings.ActionMap().KeyBindings() };
         std::vector<Editor::KeyBindingViewModel> keyBindingList;
@@ -423,7 +428,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             {
                 keyChordList.emplace_back(keys);
             }
-            auto cmdVM{ make_self<CommandViewModel>(cmd, keyChordList, _AvailableActionAndArgs, *this) };
+            auto cmdVM{ make_self<CommandViewModel>(cmd, keyChordList, _AvailableActionAndArgs, *this, _AvailableActionsAndNamesMap) };
             _RegisterCmdVMEvents(cmdVM);
             commandList.push_back(*cmdVM);
         }
