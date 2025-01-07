@@ -769,12 +769,6 @@
   <data name="WindowRenamer.CloseButtonContent" xml:space="preserve">
     <value>Cancel</value>
   </data>
-  <data name="RenameFailedToast.Title" xml:space="preserve">
-    <value>Failed to rename window</value>
-  </data>
-  <data name="RenameFailedToast.Subtitle" xml:space="preserve">
-    <value>Another window with that name already exists</value>
-  </data>
   <data name="WindowMaximizeButtonToolTip" xml:space="preserve">
     <value>Maximize</value>
   </data>

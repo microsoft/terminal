@@ -5,11 +5,11 @@
       <AdditionalIncludeDirectories>$(MSBuildThisFileDirectory)..\..\inc\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>$(MSBuildThisFileDirectory)..\..\runtimes\win10-$(ConptyNativePlatform)\lib\uap10.0\conpty.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(MSBuildThisFileDirectory)..\..\runtimes\win-$(ConptyNativePlatform)\lib\uap10.0\conpty.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ReferenceCopyLocalPaths Include="$(MSBuildThisFileDirectory)..\..\runtimes\win10-$(ConptyNativePlatform)\native\conpty.dll" />
+    <ReferenceCopyLocalPaths Include="$(MSBuildThisFileDirectory)..\..\runtimes\win-$(ConptyNativePlatform)\native\conpty.dll" />
     <ReferenceCopyLocalPaths Condition="'$(ConptyRequiresx86Host)'=='true'" Include="$(MSBuildThisFileDirectory)\runtimes\x86\OpenConsole.exe">
       <DestinationSubDirectory>x86\</DestinationSubDirectory>
     </ReferenceCopyLocalPaths>
