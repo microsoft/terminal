@@ -38,15 +38,19 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         DEPENDENCY_PROPERTY(hstring, FontIconGlyph);
         DEPENDENCY_PROPERTY(Windows::Foundation::IInspectable, CurrentValue);
         DEPENDENCY_PROPERTY(Windows::UI::Xaml::DataTemplate, CurrentValueTemplate);
+        DEPENDENCY_PROPERTY(hstring, CurrentValueAccessibleName);
         DEPENDENCY_PROPERTY(bool, HasSettingValue);
         DEPENDENCY_PROPERTY(bool, StartExpanded);
         DEPENDENCY_PROPERTY(IInspectable, SettingOverrideSource);
 
     private:
         static void _InitializeProperties();
+        static void _OnCurrentValueChanged(const Windows::UI::Xaml::DependencyObject& d, const Windows::UI::Xaml::DependencyPropertyChangedEventArgs& e);
         static void _OnHasSettingValueChanged(const Windows::UI::Xaml::DependencyObject& d, const Windows::UI::Xaml::DependencyPropertyChangedEventArgs& e);
         static hstring _GenerateOverrideMessage(const IInspectable& settingOrigin);
+        hstring _GenerateAccessibleName();
         void _UpdateOverrideSystem();
+        void _UpdateCurrentValueAutoProp();
     };
 }
 

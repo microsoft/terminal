@@ -186,7 +186,9 @@
                           Style="{StaticResource ComboBoxSettingStyle}" />
             </local:SettingContainer>
 
+            <!--  Launch Size  -->
             <local:SettingContainer x:Uid="Globals_LaunchSize"
+                                    CurrentValue="{x:Bind ViewModel.LaunchSizeCurrentValue, Mode=OneWay}"
                                     Style="{StaticResource ExpanderSettingContainerStyle}">
                 <Grid ColumnSpacing="10"
                       RowSpacing="10">

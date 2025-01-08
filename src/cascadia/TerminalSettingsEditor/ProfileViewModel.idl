@@ -118,6 +118,8 @@ namespace Microsoft.Terminal.Settings.Editor
         IInspectable CurrentBuiltInIcon;
         Windows.Foundation.Collections.IVector<IInspectable> BuiltInIcons { get; };
 
+        String TabTitlePreview { get; };
+
         void CreateUnfocusedAppearance();
         void DeleteUnfocusedAppearance();
 

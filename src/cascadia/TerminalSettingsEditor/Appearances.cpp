@@ -221,6 +221,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 // box, prevent it from ever being changed again.
                 _NotifyChanges(L"UseDesktopBGImage", L"BackgroundImageSettingsVisible");
             }
+            else if (viewModelProperty == L"BackgroundImageAlignment")
+            {
+                _NotifyChanges(L"BackgroundImageAlignmentCurrentValue");
+            }
             else if (viewModelProperty == L"Foreground")
             {
                 _NotifyChanges(L"ForegroundPreview");
@@ -910,6 +914,44 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     void AppearanceViewModel::SetBackgroundImagePath(winrt::hstring path)
     {
         BackgroundImagePath(path);
+    }
+
+    hstring AppearanceViewModel::BackgroundImageAlignmentCurrentValue() const
+    {
+        const auto alignment = BackgroundImageAlignment();
+        hstring alignmentResourceKey = L"Profile_BackgroundImageAlignment";
+        if (alignment == (ConvergedAlignment::Vertical_Center | ConvergedAlignment::Horizontal_Center))
+        {
+            alignmentResourceKey = alignmentResourceKey + L"Center";
+        }
+        else
+        {
+            // Append vertical alignment to the resource key
+            switch (alignment & static_cast<ConvergedAlignment>(0x0F))
+            {
+            case ConvergedAlignment::Vertical_Bottom:
+                alignmentResourceKey = alignmentResourceKey + L"Bottom";
+                break;
+            case ConvergedAlignment::Vertical_Top:
+                alignmentResourceKey = alignmentResourceKey + L"Top";
+                break;
+            }
+
+            // Append horizontal alignment to the resource key
+            switch (alignment & static_cast<ConvergedAlignment>(0xF0))
+            {
+            case ConvergedAlignment::Horizontal_Left:
+                alignmentResourceKey = alignmentResourceKey + L"Left";
+                break;
+            case ConvergedAlignment::Horizontal_Right:
+                alignmentResourceKey = alignmentResourceKey + L"Right";
+                break;
+            }
+        }
+        alignmentResourceKey = alignmentResourceKey + L"/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip";
+
+        // We can't use the RS_ macro here because the resource key is dynamic
+        return GetLibraryResourceString(alignmentResourceKey);
     }
 
     bool AppearanceViewModel::UseDesktopBGImage()
