@@ -37,8 +37,8 @@ extends:
       akvName: $(SigningAKVName)
       authCertName: $(SigningAuthCertName)
       signCertName: $(SigningSignCertName)
-      useManagedIdentity: $[ coalesce(variables['SigningUseManagedIdentity'], 'false') ]
-      clientId: $[ variables['SigningOriginalClientId'] ]
+      useManagedIdentity: $(SigningUseManagedIdentity)
+      clientId: $(SigningOriginalClientId)
     publishSymbolsToPublic: true
     publishVpackToWindows: false
     symbolExpiryTime: 15

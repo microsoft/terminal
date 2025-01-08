@@ -85,8 +85,8 @@ extends:
       akvName: $(SigningAKVName)
       authCertName: $(SigningAuthCertName)
       signCertName: $(SigningSignCertName)
-      useManagedIdentity: $[ coalesce(variables['SigningUseManagedIdentity'], 'false') ]
-      clientId: $[ variables['SigningOriginalClientId'] ]
+      useManagedIdentity: $(SigningUseManagedIdentity)
+      clientId: $(SigningOriginalClientId)
     terminalInternalPackageVersion: ${{ parameters.terminalInternalPackageVersion }}
     publishSymbolsToPublic: ${{ parameters.publishSymbolsToPublic }}
     publishVpackToWindows: ${{ parameters.publishVpackToWindows }}
