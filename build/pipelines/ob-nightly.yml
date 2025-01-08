@@ -37,6 +37,8 @@ extends:
       akvName: $(SigningAKVName)
       authCertName: $(SigningAuthCertName)
       signCertName: $(SigningSignCertName)
+      useManagedIdentity: $(SigningUseManagedIdentity)
+      clientId: $(SigningOriginalClientId)
     publishSymbolsToPublic: true
     publishVpackToWindows: false
     symbolExpiryTime: 15
