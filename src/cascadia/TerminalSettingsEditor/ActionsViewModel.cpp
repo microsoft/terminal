@@ -134,20 +134,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         ActionArgsVM(make<ActionArgsViewModel>(cmd.ActionAndArgs()));
         _RegisterActionArgsVMEvents(_ActionArgsVM);
 
-        const auto shortcutAction = cmd.ActionAndArgs().Action();
-        switch (shortcutAction)
-        {
-        case ShortcutAction::SendInput:
-            ProposedShortcutAction(winrt::box_value(L"Send Input"));
-            CurrentShortcutAction(L"Send Input");
-            break;
-        case ShortcutAction::CloseTab:
-            ProposedShortcutAction(winrt::box_value(L"Close Tab"));
-            CurrentShortcutAction(L"Close Tab");
-            break;
-        default:
-            break;
-        }
+        const auto shortcutActionString = _AvailableActionsAndNamesMap.Lookup(cmd.ActionAndArgs().Action());
+        ProposedShortcutAction(winrt::box_value(shortcutActionString));
+        CurrentShortcutAction(shortcutActionString);
         ActionArgsVM(make<ActionArgsViewModel>(cmd.ActionAndArgs()));
 
         // Add a property changed handler to our own property changed event.
