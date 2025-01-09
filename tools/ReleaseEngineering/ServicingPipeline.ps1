@@ -105,48 +105,59 @@ Function Get-GraphQlProjectNumberGivenName($Organization, $Name) {
 
 Function Get-GraphQlProjectWithNodes($Organization, $Number) {
     # It's terrible, but it pulls *all* of the info we need all at once!
-    $Project = Invoke-GitHubGraphQlApi -Query '
-    query($organization: String! $number: Int!) {
-        organization(login: $organization) {
-            projectV2(number: $number) {
-                id
-                number
-                title
-                fields(first:20){
-                    nodes {
-                        ... on ProjectV2FieldCommon { id name }
-                        ... on ProjectV2SingleSelectField { options { id name } }
-                    }
-                }
-                items {
-                    nodes {
-                        id
-                        status: fieldValueByName(name: "Status") {
-                            ... on ProjectV2ItemFieldSingleSelectValue { name }
+    $cursor = ""
+    $hasMore = $true
+    $nodes = @()
+    While ($hasMore) {
+        $Project = Invoke-GitHubGraphQlApi -Query '
+        query($organization: String!, $number: Int!, $after: String) {
+            organization(login: $organization) {
+                projectV2(number: $number) {
+                    id
+                    number
+                    title
+                    fields(first:20){
+                        nodes {
+                            ... on ProjectV2FieldCommon { id name }
+                            ... on ProjectV2SingleSelectField { options { id name } }
                         }
-                        content {
-                            ... on Issue {
-                                number
-                                closedByPullRequestsReferences(first: 8) {
-                                    ... on PullRequestConnection {
-                                        nodes {
-                                            number
-                                            mergeCommit { oid }
+                    }
+                    items(first: 100, after: $after) {
+                        pageInfo { hasNextPage endCursor }
+                        nodes {
+                            id
+                            status: fieldValueByName(name: "Status") {
+                                ... on ProjectV2ItemFieldSingleSelectValue { name }
+                            }
+                            content {
+                                ... on Issue {
+                                    number
+                                    closedByPullRequestsReferences(first: 8) {
+                                        ... on PullRequestConnection {
+                                            nodes {
+                                                number
+                                                mergeCommit { oid }
+                                            }
                                         }
                                     }
                                 }
-                            }
-                            ... on PullRequest {
-                                number
-                                mergeCommit { oid }
+                                ... on PullRequest {
+                                    number
+                                    mergeCommit { oid }
+                                }
                             }
                         }
                     }
                 }
             }
         }
+        ' -Variables @{ organization = $Organization; number = $Number; after = $cursor }
+
+        $n += $Project.organization.projectV2.items.nodes
+        $cursor = $Project.organization.projectV2.items.pageInfo.endCursor
+        $hasMore = $Project.organization.projectV2.items.pageInfo.hasNextPage
     }
-    ' -Variables @{ organization = $Organization; number = $Number }
+    $Project.organization.projectV2.items.nodes = $n
     $Project
 }
 
