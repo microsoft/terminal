@@ -244,14 +244,7 @@ static constexpr TsfDataProvider s_tsfDataProvider;
 
     case WM_GETDPISCALEDSIZE:
     {
-        SIZE* pSizeNew = (SIZE*)lParam;
-        UINT dpiNew = (WORD)wParam;
-        if (!_HandleGetDpiScaledSize(dpiNew, pSizeNew))
-        {
-            return FALSE;
-        }
-
-        // Format our final suggestion for consumption.
+        LRESULT result = _HandleGetDpiScaledSize((WORD)wParam, (SIZE*)lParam);
         UnlockConsole();
         return TRUE;
     }
@@ -857,7 +850,7 @@ void Window::_HandleWindowPosChanged(const LPARAM lParam)
 // choose the size at the new DPI (overriding the default, linearly scaled).
 //
 // This is used to keep the rows and columns from changing when the DPI changes.
-bool Window::_HandleGetDpiScaledSize(UINT dpiNew, _Inout_ SIZE* pSizeNew) const
+LRESULT Window::_HandleGetDpiScaledSize(UINT dpiNew, _Inout_ SIZE* pSizeNew) const
 {
     // Get the current DPI and font size.
     HWND hwnd = GetWindowHandle();
@@ -871,6 +864,7 @@ bool Window::_HandleGetDpiScaledSize(UINT dpiNew, _Inout_ SIZE* pSizeNew) const
     if (!SUCCEEDED(ServiceLocator::LocateGlobals().pRender->GetProposedFont(
             dpiNew, fontInfoDesired, fontInfoNew)))
     {
+        // On failure, return FALSE, which scales the window linearly for DPI.
         return false;
     }
     til::size fontSizeNew = fontInfoNew.GetSize();
@@ -904,6 +898,9 @@ bool Window::_HandleGetDpiScaledSize(UINT dpiNew, _Inout_ SIZE* pSizeNew) const
     pSizeNew->cx = rc.width();
     pSizeNew->cy = rc.height();
 
+    // Return true. The next WM_DPICHANGED (if at this DPI) should contain a
+    // rect with the size we picked here. (If we change to another DPI than this
+    // one we'll get another WM_GETDPISCALEDSIZE before changing DPI).
     return true;
 }
 

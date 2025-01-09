@@ -984,7 +984,7 @@ void Window::s_ExpandRectByNonClientSize(HWND const hWnd,
     }
     if (WI_IsFlagSet(dwStyle, WS_VSCROLL))
     {
-        prectWindow->bottom += ServiceLocator::LocateHighDpiApi<WindowDpiApi>()->GetSystemMetricsForDpi(SM_CXVSCROLL, dpi);
+        prectWindow->right += ServiceLocator::LocateHighDpiApi<WindowDpiApi>()->GetSystemMetricsForDpi(SM_CXVSCROLL, dpi);
     }
 }
 

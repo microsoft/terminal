@@ -135,7 +135,7 @@ namespace Microsoft::Console::Interactivity::Win32
         void _HandleDrop(const WPARAM wParam) const;
         [[nodiscard]] HRESULT _HandlePaint() const;
         void _HandleWindowPosChanged(const LPARAM lParam);
-        bool _HandleGetDpiScaledSize(UINT dpiNew, _Inout_ SIZE* pSizeNew) const;
+        LRESULT _HandleGetDpiScaledSize(UINT dpiNew, _Inout_ SIZE* pSizeNew) const;
 
         // Accessibility/UI Automation
         [[nodiscard]] LRESULT _HandleGetObject(const HWND hwnd,
