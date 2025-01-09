@@ -244,9 +244,10 @@ static constexpr TsfDataProvider s_tsfDataProvider;
 
     case WM_GETDPISCALEDSIZE:
     {
-        LRESULT result = _HandleGetDpiScaledSize((WORD)wParam, (SIZE*)lParam);
+        const LRESULT result = _HandleGetDpiScaledSize(
+            static_cast<WORD>(wParam), static_cast<SIZE*>(lParam));
         UnlockConsole();
-        return TRUE;
+        return result;
     }
 
     case WM_DPICHANGED:
