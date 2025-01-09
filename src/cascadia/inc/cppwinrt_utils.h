@@ -315,14 +315,24 @@ try
     uintptr_t count{ 0 };
     double t[4]{ 0. }; // left, top, right, bottom
     wchar_t buf[17];
+    std::wstring buf;
+    auto& errnoRef = errno; // Nonzero cost, pay it once
     for (const auto& token : til::split_iterator{ padding, L',' })
     {
-        const auto l{ std::min(token.size(), std::extent_v<decltype(buf)> - 1) };
-#pragma warning(suppress : 26459) // You called an STL function '...' with a raw pointer parameter at position '...' that may be unsafe ... (stl.1).
-        std::copy_n(token.data(), l, &buf[0]); // the length of buf is controlled for above
-        til::at(buf, l) = L'\0';
-        til::at(t, count++) = std::wcstod(&buf[0], nullptr);
-        if (count >= 4)
+        buf.assign(token);
+        // wcstod handles whitespace prefix (which is ignored) & stops the
+        // scan when first char outside the range of radix is encountered.
+        // We'll be permissive till the extent that stod function allows us to be by default
+        // Ex. a value like 100.3#535w2 will be read as 100.3, but ;df25 will fail
+        errnoRef = 0;
+        wchar_t* end;
+        const auto val{ std::wcstod(buf.c_str(), &end) };
+        if (end != buf.c_str() && errnoRef != ERANGE)
+        {
+            til::at(t, count) = val;
+        }
+
+        if (++count >= 4)
         {
             break;
         }
