@@ -2,9 +2,11 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Natvis Include="$(SolutionDir)tools\ConsoleTypes.natvis" />
+    <Natvis Include="$(MSBuildThisFileDirectory)..\..\natvis\wil.natvis" />
   </ItemGroup>
   <ItemGroup>
     <PRIResource Include="Resources\en-US\Resources.resw" />
+    <PRIResource Include="Resources\en-US\ContextMenu.resw" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="init.cpp" />
@@ -21,9 +23,6 @@
     <ClCompile Include="ColorHelper.cpp" />
     <ClCompile Include="DebugTapConnection.cpp" />
     <ClCompile Include="Jumplist.cpp" />
-    <ClCompile Include="Tab.cpp">
-      <Filter>tab</Filter>
-    </ClCompile>
     <ClCompile Include="FilteredCommand.cpp">
       <Filter>commandPalette</Filter>
     </ClCompile>
@@ -44,6 +43,8 @@
     </ClCompile>
     <ClCompile Include="Toast.cpp" />
     <ClCompile Include="LanguageProfileNotifier.cpp" />
+    <ClCompile Include="Monarch.cpp" />
+    <ClCompile Include="Peasant.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
@@ -58,9 +59,6 @@
     <ClInclude Include="DebugTapConnection.h" />
     <ClInclude Include="ColorHelper.h" />
     <ClInclude Include="Jumplist.h" />
-    <ClInclude Include="Tab.h">
-      <Filter>tab</Filter>
-    </ClInclude>
     <ClInclude Include="FilteredCommand.h">
       <Filter>commandPalette</Filter>
     </ClInclude>
@@ -81,6 +79,9 @@
     </ClInclude>
     <ClInclude Include="Toast.h" />
     <ClInclude Include="LanguageProfileNotifier.h" />
+    <ClInclude Include="WindowsPackageManagerFactory.h" />
+    <ClInclude Include="Monarch.h" />
+    <ClInclude Include="Peasant.h" />
   </ItemGroup>
   <ItemGroup>
     <Midl Include="AppLogic.idl">
@@ -91,10 +92,6 @@
     </Midl>
     <Midl Include="ShortcutActionDispatch.idl">
       <Filter>settings</Filter>
-    </Midl>
-    <Midl Include="IDirectKeyListener.idl" />
-    <Midl Include="SettingsTab.idl">
-      <Filter>tab</Filter>
     </Midl>
     <Midl Include="TerminalTab.idl">
       <Filter>tab</Filter>
@@ -110,9 +107,11 @@
     </Midl>
     <Midl Include="PaletteItemTemplateSelector.idl" />
     <Midl Include="TabBase.idl" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="packages.config" />
+    <Midl Include="TerminalWindow.idl" />
+    <Midl Include="TaskbarState.idl" />
+    <Midl Include="IPaneContent.idl" />
+    <Midl Include="TerminalSettingsCache.idl" />
+    <Midl Include="Monarch.idl" />
   </ItemGroup>
   <ItemGroup>
     <Page Include="MinMaxCloseControl.xaml">
@@ -151,6 +150,9 @@
     <Page Include="HighlightedTextControl.xaml">
       <Filter>highlightedText</Filter>
     </Page>
+    <Page Include="AboutDialog.xaml" />
+    <Page Include="SuggestionsControl.xaml" />
+    <Page Include="SnippetsPaneContent.xaml" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="app">

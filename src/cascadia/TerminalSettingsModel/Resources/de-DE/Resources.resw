@@ -328,6 +328,9 @@
     <value>Einstellungsdatei öffnen (JSON)</value>
     <comment>{Locked="JSON"}. "JSON" is the extension of the file that will be opened.</comment>
   </data>
+  <data name="SettingsFileOpenInExplorerCommandKey" xml:space="preserve">
+    <value>Öffnen des Einstellungsdateiverzeichnisses</value>
+  </data>
   <data name="OpenTabColorPickerCommandKey" xml:space="preserve">
     <value>Registerkartenfarbe festlegen...</value>
   </data>
@@ -733,5 +736,8 @@
   </data>
   <data name="QuickFixCommandKey" xml:space="preserve">
     <value>Menü zur schnellen Problembehebung öffnen</value>
+  </data>
+  <data name="OpenCWDCommandKey" xml:space="preserve">
+    <value>Aktuelles Arbeitsverzeichnis öffnen</value>
   </data>
 </root>

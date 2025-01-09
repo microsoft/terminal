@@ -221,6 +221,30 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 // box, prevent it from ever being changed again.
                 _NotifyChanges(L"UseDesktopBGImage", L"BackgroundImageSettingsVisible");
             }
+            else if (viewModelProperty == L"Foreground")
+            {
+                _NotifyChanges(L"ForegroundPreview");
+            }
+            else if (viewModelProperty == L"Background")
+            {
+                _NotifyChanges(L"BackgroundPreview");
+            }
+            else if (viewModelProperty == L"SelectionBackground")
+            {
+                _NotifyChanges(L"SelectionBackgroundPreview");
+            }
+            else if (viewModelProperty == L"CursorColor")
+            {
+                _NotifyChanges(L"CursorColorPreview");
+            }
+            else if (viewModelProperty == L"DarkColorSchemeName" || viewModelProperty == L"LightColorSchemeName")
+            {
+                _NotifyChanges(L"CurrentColorScheme");
+            }
+            else if (viewModelProperty == L"CurrentColorScheme")
+            {
+                _NotifyChanges(L"ForegroundPreview", L"BackgroundPreview", L"SelectionBackgroundPreview", L"CursorColorPreview");
+            }
         });
 
         // Cache the original BG image path. If the user clicks "Use desktop
@@ -928,7 +952,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _NotifyChanges(L"CurrentColorScheme");
     }
 
-    Editor::ColorSchemeViewModel AppearanceViewModel::CurrentColorScheme()
+    Editor::ColorSchemeViewModel AppearanceViewModel::CurrentColorScheme() const
     {
         const auto schemeName{ DarkColorSchemeName() };
         const auto allSchemes{ SchemesList() };
@@ -948,6 +972,42 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         DarkColorSchemeName(val.Name());
         LightColorSchemeName(val.Name());
+    }
+
+    static inline Windows::UI::Color _getColorPreview(const IReference<Microsoft::Terminal::Core::Color>& modelVal, Windows::UI::Color deducedVal)
+    {
+        if (modelVal)
+        {
+            // user defined an override value
+            return Windows::UI::Color{
+                .A = 255,
+                .R = modelVal.Value().R,
+                .G = modelVal.Value().G,
+                .B = modelVal.Value().B
+            };
+        }
+        // set to null --> deduce value from color scheme
+        return deducedVal;
+    }
+
+    Windows::UI::Color AppearanceViewModel::ForegroundPreview() const
+    {
+        return _getColorPreview(_appearance.Foreground(), CurrentColorScheme().ForegroundColor().Color());
+    }
+
+    Windows::UI::Color AppearanceViewModel::BackgroundPreview() const
+    {
+        return _getColorPreview(_appearance.Background(), CurrentColorScheme().BackgroundColor().Color());
+    }
+
+    Windows::UI::Color AppearanceViewModel::SelectionBackgroundPreview() const
+    {
+        return _getColorPreview(_appearance.SelectionBackground(), CurrentColorScheme().SelectionBackgroundColor().Color());
+    }
+
+    Windows::UI::Color AppearanceViewModel::CursorColorPreview() const
+    {
+        return _getColorPreview(_appearance.CursorColor(), CurrentColorScheme().CursorColor().Color());
     }
 
     DependencyProperty Appearances::_AppearanceProperty{ nullptr };

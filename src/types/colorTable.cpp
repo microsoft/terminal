@@ -247,6 +247,9 @@ void Utils::InitializeVT340ColorTable(const std::span<COLORREF> table) noexcept
     }
 }
 
+#pragma warning(push)
+#pragma warning(disable : 26497) // This is a false positive in audit mode.
+
 // Function Description:
 // - Fill color table entries from 16 to 255 with the default colors used by
 //   modern terminals. This includes a range of colors from a 6x6x6 color cube
@@ -255,7 +258,7 @@ void Utils::InitializeVT340ColorTable(const std::span<COLORREF> table) noexcept
 // - table: a color table to be filled
 // Return Value:
 // - <none>
-constexpr void Utils::InitializeExtendedColorTable(const std::span<COLORREF> table, const bool monochrome) noexcept
+void Utils::InitializeExtendedColorTable(const std::span<COLORREF> table, const bool monochrome) noexcept
 {
     if (table.size() >= 256)
     {
@@ -278,6 +281,8 @@ constexpr void Utils::InitializeExtendedColorTable(const std::span<COLORREF> tab
         }
     }
 }
+
+#pragma warning(pop)
 
 #pragma warning(push)
 #pragma warning(disable : 26447) // This is a false positive.
