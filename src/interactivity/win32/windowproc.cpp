@@ -866,7 +866,7 @@ LRESULT Window::_HandleGetDpiScaledSize(UINT dpiNew, _Inout_ SIZE* pSizeNew) con
             dpiNew, fontInfoDesired, fontInfoNew)))
     {
         // On failure, return FALSE, which scales the window linearly for DPI.
-        return false;
+        return FALSE;
     }
     til::size fontSizeNew = fontInfoNew.GetSize();
 
@@ -902,7 +902,7 @@ LRESULT Window::_HandleGetDpiScaledSize(UINT dpiNew, _Inout_ SIZE* pSizeNew) con
     // Return true. The next WM_DPICHANGED (if at this DPI) should contain a
     // rect with the size we picked here. (If we change to another DPI than this
     // one we'll get another WM_GETDPISCALEDSIZE before changing DPI).
-    return true;
+    return TRUE;
 }
 
 // Routine Description:
