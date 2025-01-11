@@ -244,47 +244,10 @@ static constexpr TsfDataProvider s_tsfDataProvider;
 
     case WM_GETDPISCALEDSIZE:
     {
-        // This message will send us the DPI we're about to be changed to.
-        // Our goal is to use it to try to figure out the Window Rect that we'll need at that DPI to maintain
-        // the same client rendering that we have now.
-
-        // First retrieve the new DPI and the current DPI.
-        const auto dpiProposed = (WORD)wParam;
-
-        // Now we need to get what the font size *would be* if we had this new DPI. We need to ask the renderer about that.
-        const auto& fiCurrent = ScreenInfo.GetCurrentFont();
-        FontInfoDesired fiDesired(fiCurrent);
-        FontInfo fiProposed(L"", 0, 0, { 0, 0 }, 0);
-
-        const auto hr = g.pRender->GetProposedFont(dpiProposed, fiDesired, fiProposed);
-        // fiProposal will be updated by the renderer for this new font.
-        // GetProposedFont can fail if there's no render engine yet.
-        // This can happen if we're headless.
-        // Just assume that the font is 1x1 in that case.
-        const auto coordFontProposed = SUCCEEDED(hr) ? fiProposed.GetSize() : til::size{ 1, 1 };
-
-        // Then from that font size, we need to calculate the client area.
-        // Then from the client area we need to calculate the window area (using the proposed DPI scalar here as well.)
-
-        // Retrieve the additional parameters we need for the math call based on the current window & buffer properties.
-        const auto viewport = ScreenInfo.GetViewport();
-        auto coordWindowInChars = viewport.Dimensions();
-
-        const auto coordBufferSize = ScreenInfo.GetTextBuffer().GetSize().Dimensions();
-
-        // Now call the math calculation for our proposed size.
-        til::rect rectProposed;
-        s_CalculateWindowRect(coordWindowInChars, dpiProposed, coordFontProposed, coordBufferSize, hWnd, &rectProposed);
-
-        // Prepare where we're going to keep our final suggestion.
-        const auto pSuggestionSize = (SIZE*)lParam;
-
-        pSuggestionSize->cx = rectProposed.width();
-        pSuggestionSize->cy = rectProposed.height();
-
-        // Format our final suggestion for consumption.
+        const auto result = _HandleGetDpiScaledSize(
+            static_cast<WORD>(wParam), reinterpret_cast<SIZE*>(lParam));
         UnlockConsole();
-        return TRUE;
+        return result;
     }
 
     case WM_DPICHANGED:
@@ -882,6 +845,64 @@ void Window::_HandleWindowPosChanged(const LPARAM lParam)
         // now that operations are complete, save the new rectangle size as the last seen value
         _rcClientLast = rcNew;
     }
+}
+
+// WM_GETDPISCALEDSIZE is sent prior to the window changing DPI, allowing us to
+// choose the size at the new DPI (overriding the default, linearly scaled).
+//
+// This is used to keep the rows and columns from changing when the DPI changes.
+LRESULT Window::_HandleGetDpiScaledSize(UINT dpiNew, _Inout_ SIZE* pSizeNew) const
+{
+    // Get the current DPI and font size.
+    HWND hwnd = GetWindowHandle();
+    UINT dpiCurrent = ServiceLocator::LocateHighDpiApi<WindowDpiApi>()->GetDpiForWindow(hwnd);
+    const auto& fontInfoCurrent = GetScreenInfo().GetCurrentFont();
+    til::size fontSizeCurrent = fontInfoCurrent.GetSize();
+
+    // Scale the current font to the new DPI and get the new font size.
+    FontInfoDesired fontInfoDesired(fontInfoCurrent);
+    FontInfo fontInfoNew(L"", 0, 0, { 0, 0 }, 0);
+    if (!SUCCEEDED(ServiceLocator::LocateGlobals().pRender->GetProposedFont(
+            dpiNew, fontInfoDesired, fontInfoNew)))
+    {
+        // On failure, return FALSE, which scales the window linearly for DPI.
+        return FALSE;
+    }
+    til::size fontSizeNew = fontInfoNew.GetSize();
+
+    // The provided size is the window rect, which includes non-client area
+    // (caption bars, resize borders, scroll bars, etc). We want to scale the
+    // client area separately from the non-client area. The client area will be
+    // scaled using the new/old font sizes, so that the size of the grid (rows/
+    // columns) does not change.
+
+    // Subtract the size of the window's current non-client area from the
+    // provided size. This gives us the new client area size at the previous DPI.
+    til::rect rc;
+    s_ExpandRectByNonClientSize(hwnd, dpiCurrent, &rc);
+    pSizeNew->cx -= rc.width();
+    pSizeNew->cy -= rc.height();
+
+    // Scale the size of the client rect by the new/old font sizes.
+    pSizeNew->cx = MulDiv(pSizeNew->cx, fontSizeNew.width, fontSizeCurrent.width);
+    pSizeNew->cy = MulDiv(pSizeNew->cy, fontSizeNew.height, fontSizeCurrent.height);
+
+    // Add the size of the non-client area at the new DPI to the final size,
+    // getting the new window rect (the output of this function).
+    rc = { 0, 0, pSizeNew->cx, pSizeNew->cy };
+    s_ExpandRectByNonClientSize(hwnd, dpiNew, &rc);
+
+    // Write the final size to the out parameter.
+    // If not Maximized/Arranged (snapped), this will determine the size of the
+    // rect in the WM_DPICHANGED message. Otherwise, the provided size is the
+    // normal position (restored, last non-Maximized/Arranged).
+    pSizeNew->cx = rc.width();
+    pSizeNew->cy = rc.height();
+
+    // Return true. The next WM_DPICHANGED (if at this DPI) should contain a
+    // rect with the size we picked here. (If we change to another DPI than this
+    // one we'll get another WM_GETDPISCALEDSIZE before changing DPI).
+    return TRUE;
 }
 
 // Routine Description:

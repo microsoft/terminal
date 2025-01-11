@@ -135,6 +135,7 @@ namespace Microsoft::Console::Interactivity::Win32
         void _HandleDrop(const WPARAM wParam) const;
         [[nodiscard]] HRESULT _HandlePaint() const;
         void _HandleWindowPosChanged(const LPARAM lParam);
+        LRESULT _HandleGetDpiScaledSize(UINT dpiNew, _Inout_ SIZE* pSizeNew) const;
 
         // Accessibility/UI Automation
         [[nodiscard]] LRESULT _HandleGetObject(const HWND hwnd,
@@ -173,6 +174,9 @@ namespace Microsoft::Console::Interactivity::Win32
                                           const til::size coordBufferSize,
                                           _In_opt_ HWND const hWnd,
                                           _Inout_ til::rect* const prectWindow);
+        static void s_ExpandRectByNonClientSize(HWND const hWnd,
+                                                UINT dpi,
+                                                _Inout_ til::rect* const prectWindow);
 
         static void s_ReinitializeFontsForDPIChange();
 
