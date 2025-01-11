@@ -964,6 +964,30 @@ void Window::s_CalculateWindowRect(const til::size coordWindowInChars,
     prectWindow->bottom = prectWindow->top + rectProposed.height();
 }
 
+// Expands a rect by the size of the non-client area (caption bar, resize borders,
+// scroll bars, etc), which depends on the window styles and DPI
+void Window::s_ExpandRectByNonClientSize(HWND const hWnd,
+                                         UINT dpi,
+                                         _Inout_ til::rect* const prectWindow)
+{
+    DWORD dwStyle = GetWindowStyle(hWnd);
+    DWORD dwExStyle = GetWindowExStyle(hWnd);
+    BOOL fMenu = FALSE;
+
+    ServiceLocator::LocateWindowMetrics<WindowMetrics>()->AdjustWindowRectEx(
+        prectWindow, dwStyle, fMenu, dwExStyle, dpi);
+
+    // Note: AdjustWindowRectEx does not account for scroll bars :(.
+    if (WI_IsFlagSet(dwStyle, WS_HSCROLL))
+    {
+        prectWindow->bottom += ServiceLocator::LocateHighDpiApi<WindowDpiApi>()->GetSystemMetricsForDpi(SM_CYHSCROLL, dpi);
+    }
+    if (WI_IsFlagSet(dwStyle, WS_VSCROLL))
+    {
+        prectWindow->right += ServiceLocator::LocateHighDpiApi<WindowDpiApi>()->GetSystemMetricsForDpi(SM_CXVSCROLL, dpi);
+    }
+}
+
 til::rect Window::GetWindowRect() const noexcept
 {
     RECT rc{};
