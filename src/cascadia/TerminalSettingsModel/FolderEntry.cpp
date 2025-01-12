@@ -3,11 +3,6 @@
 
 #include "pch.h"
 #include "FolderEntry.h"
-#include "ProfileEntry.h"
-#include "SeparatorEntry.h"
-#include "RemainingProfilesEntry.h"
-#include "MatchProfilesEntry.h"
-#include "ActionEntry.h"
 #include "JsonUtils.h"
 #include "TerminalSettingsSerializationHelpers.h"
 
