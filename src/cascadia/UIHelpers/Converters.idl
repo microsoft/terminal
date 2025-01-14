@@ -27,5 +27,9 @@ namespace Microsoft.Terminal.UI
         static Windows.UI.Xaml.Media.SolidColorBrush ColorToBrush(Windows.UI.Color color);
         static Double FontWeightToDouble(Windows.UI.Text.FontWeight fontWeight);
         static Double MaxValueFromPaddingString(String paddingString);
+
+        // Unboxing
+        static String UnboxString(Object value);
+        static UInt32 UnboxUInt32(Object value);
     }
 }

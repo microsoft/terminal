@@ -6,6 +6,7 @@
 #include "ActionsViewModel.g.h"
 #include "KeyBindingViewModel.g.h"
 #include "CommandViewModel.g.h"
+#include "ArgWrapper.g.h"
 #include "ActionArgsViewModel.g.h"
 #include "KeyChordViewModel.g.h"
 #include "ModifyKeyBindingEventArgs.g.h"
@@ -163,6 +164,36 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Windows::Foundation::Collections::IMap<Model::ShortcutAction, winrt::hstring> _AvailableActionsAndNamesMap;
     };
 
+    struct ArgWrapper : ArgWrapperT<ArgWrapper>, ViewModelHelper<ArgWrapper>
+    {
+    public:
+        ArgWrapper(const winrt::hstring& type, const Windows::Foundation::IInspectable& value)
+        {
+            Value(value);
+            _type = type;
+        };
+
+        winrt::hstring Type()
+        {
+            return _type;
+        }
+
+        void StringBindBack(const winrt::hstring& newValue)
+        {
+            Value(box_value(newValue));
+        }
+
+        void DoubleBindBack(const double newValue)
+        {
+            Value(box_value(static_cast<uint32_t>(newValue)));
+        }
+
+        VIEW_MODEL_OBSERVABLE_PROPERTY(Windows::Foundation::IInspectable, Value, nullptr);
+
+    private:
+        winrt::hstring _type;
+    };
+
     struct ActionArgsViewModel : ActionArgsViewModelT<ActionArgsViewModel>, ViewModelHelper<ActionArgsViewModel>
     {
     public:
@@ -174,6 +205,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         uint32_t UInt32Arg1() { return _UInt32Arg1; }
         void UInt32Arg1(const uint32_t newUInt32Arg1);
 
+        WINRT_PROPERTY(Windows::Foundation::Collections::IObservableVector<Editor::ArgWrapper>, ArgValues, nullptr);
         VIEW_MODEL_OBSERVABLE_PROPERTY(Microsoft::Terminal::Settings::Model::ShortcutAction, ShortcutActionType, Microsoft::Terminal::Settings::Model::ShortcutAction::AddMark);
 
     private:

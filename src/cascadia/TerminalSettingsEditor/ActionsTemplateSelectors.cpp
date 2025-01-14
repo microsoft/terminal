@@ -4,6 +4,7 @@
 #include "pch.h"
 #include "ActionsTemplateSelectors.h"
 #include "ActionsTemplateSelectors.g.cpp"
+#include "ArgsTemplateSelectors.g.cpp"
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
@@ -32,6 +33,41 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 return SendInputTemplate();
             case Microsoft::Terminal::Settings::Model::ShortcutAction::CloseTab:
                 return CloseTabTemplate();
+            }
+        }
+        return nullptr;
+    }
+
+    Windows::UI::Xaml::DataTemplate ArgsTemplateSelectors::SelectTemplateCore(const winrt::Windows::Foundation::IInspectable& item, const winrt::Windows::UI::Xaml::DependencyObject& /*container*/)
+    {
+        return SelectTemplateCore(item);
+    }
+
+    // Method Description:
+    // - This method is called once command palette decides how to render a filtered command.
+    //   Currently we support two ways to render command, that depend on its palette item type:
+    //   - For TabPalette item we render an icon, a title, and some tab-related indicators like progress bar (as defined by TabItemTemplate)
+    //   - All other items are currently rendered with icon, title and optional key-chord (as defined by GeneralItemTemplate)
+    // Arguments:
+    // - item - an instance of filtered command to render
+    // Return Value:
+    // - data template to use for rendering
+    Windows::UI::Xaml::DataTemplate ArgsTemplateSelectors::SelectTemplateCore(const winrt::Windows::Foundation::IInspectable& item)
+    {
+        if (const auto argWrapper{ item.try_as<Microsoft::Terminal::Settings::Editor::ArgWrapper>() })
+        {
+            const auto argType = argWrapper.Type();
+            if (argType == L"winrt::hstring")
+            {
+                return StringTemplate();
+            }
+            else if (argType == L"uint32_t")
+            {
+                return UInt32Template();
+            }
+            else if (argType == L"Windows::Foundation::IReference<uint32_t>")
+            {
+                return UInt32Template();
             }
         }
         return nullptr;

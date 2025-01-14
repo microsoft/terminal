@@ -74,12 +74,21 @@ namespace Microsoft.Terminal.Settings.Editor
         void AddKeybinding_Click();
     }
 
+    runtimeclass ArgWrapper : Windows.UI.Xaml.Data.INotifyPropertyChanged
+    {
+        String Type { get; };
+        IInspectable Value;
+        void StringBindBack(String newValue);
+        void DoubleBindBack(Double newValue);
+    }
+
     runtimeclass ActionArgsViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged
     {
         Microsoft.Terminal.Settings.Model.ShortcutAction ShortcutActionType;
         // Args
         String StringArg1;
         UInt32 UInt32Arg1;
+        IObservableVector<ArgWrapper> ArgValues;
     }
 
     runtimeclass KeyChordViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged

@@ -109,4 +109,15 @@ namespace winrt::Microsoft::Terminal::UI::implementation
 
         return maxVal;
     }
+
+    // Unboxing
+    winrt::hstring Converters::UnboxString(const Windows::Foundation::IInspectable& value)
+    {
+        return winrt::unbox_value<winrt::hstring>(value);
+    }
+
+    uint32_t Converters::UnboxUInt32(const Windows::Foundation::IInspectable& value)
+    {
+        return winrt::unbox_value<uint32_t>(value);
+    }
 }

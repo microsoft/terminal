@@ -29,6 +29,10 @@ namespace winrt::Microsoft::Terminal::UI::implementation
         static winrt::Windows::UI::Xaml::Media::SolidColorBrush ColorToBrush(winrt::Windows::UI::Color color);
         static double FontWeightToDouble(winrt::Windows::UI::Text::FontWeight fontWeight);
         static double MaxValueFromPaddingString(const winrt::hstring& paddingString);
+
+        // Unboxing
+        static winrt::hstring UnboxString(const Windows::Foundation::IInspectable& value);
+        static uint32_t UnboxUInt32(const Windows::Foundation::IInspectable& value);
     };
 }
 

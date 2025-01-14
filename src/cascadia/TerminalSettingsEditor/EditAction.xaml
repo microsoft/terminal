@@ -235,6 +235,29 @@
             <local:ActionsTemplateSelectors x:Key="ActionsTemplateSelector"
                                             SendInputTemplate="{StaticResource SendInputTemplate}"
                                             CloseTabTemplate="{StaticResource CloseTabTemplate}"/>
+
+            <DataTemplate x:Key="UInt32Template"
+                          x:DataType="local:ArgWrapper">
+                <StackPanel Orientation="Horizontal">
+                    <muxc:NumberBox Value="{x:Bind mtu:Converters.UnboxUInt32(Value), Mode=TwoWay, BindBack=DoubleBindBack}"
+                                    Style="{StaticResource NumberBoxSettingStyle}"
+                                    Minimum="0"
+                                    Maximum="999"
+                                    LargeChange="1"
+                                    SmallChange="1"/>
+                </StackPanel>
+            </DataTemplate>
+
+            <DataTemplate x:Key="StringTemplate"
+                          x:DataType="local:ArgWrapper">
+                <StackPanel Orientation="Horizontal">
+                    <TextBox Text="{x:Bind mtu:Converters.UnboxString(Value), Mode=TwoWay, BindBack=StringBindBack}" />
+                </StackPanel>
+            </DataTemplate>
+
+            <local:ArgsTemplateSelectors x:Key="ArgsTemplateSelector"
+                                         UInt32Template="{StaticResource UInt32Template}"
+                                         StringTemplate="{StaticResource StringTemplate}" />
         </ResourceDictionary>
     </Page.Resources>
 
@@ -253,9 +276,8 @@
                       SelectedItem="{x:Bind ViewModel.ProposedShortcutAction, Mode=TwoWay}"
                       IsEnabled="{x:Bind ViewModel.IsUserAction}"
                       Visibility="{x:Bind ViewModel.IsUserAction}"/>
-            <ContentControl Content="{x:Bind ViewModel.ActionArgsVM, Mode=OneWay}"
-                            ContentTemplateSelector="{StaticResource ActionsTemplateSelector}"
-                            Visibility="{x:Bind ViewModel.IsUserAction}"/>
+            <muxc:ItemsRepeater ItemsSource="{x:Bind ViewModel.ActionArgsVM.ArgValues, Mode=OneWay}"
+                                ItemTemplate="{StaticResource ArgsTemplateSelector}" />
             <ListView ItemTemplate="{StaticResource KeyChordTemplate}"
                       ItemsSource="{x:Bind ViewModel.KeyChordViewModelList, Mode=OneWay}"
                       SelectionMode="None">

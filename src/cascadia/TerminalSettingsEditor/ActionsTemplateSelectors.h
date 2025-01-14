@@ -4,6 +4,7 @@
 #pragma once
 
 #include "ActionsTemplateSelectors.g.h"
+#include "ArgsTemplateSelectors.g.h"
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
@@ -17,9 +18,21 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         WINRT_PROPERTY(winrt::Windows::UI::Xaml::DataTemplate, SendInputTemplate);
         WINRT_PROPERTY(winrt::Windows::UI::Xaml::DataTemplate, CloseTabTemplate);
     };
+
+    struct ArgsTemplateSelectors : ArgsTemplateSelectorsT<ArgsTemplateSelectors>
+    {
+        ArgsTemplateSelectors() = default;
+
+        Windows::UI::Xaml::DataTemplate SelectTemplateCore(const winrt::Windows::Foundation::IInspectable&, const winrt::Windows::UI::Xaml::DependencyObject&);
+        Windows::UI::Xaml::DataTemplate SelectTemplateCore(const winrt::Windows::Foundation::IInspectable&);
+
+        WINRT_PROPERTY(winrt::Windows::UI::Xaml::DataTemplate, UInt32Template);
+        WINRT_PROPERTY(winrt::Windows::UI::Xaml::DataTemplate, StringTemplate);
+    };
 }
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::factory_implementation
 {
     BASIC_FACTORY(ActionsTemplateSelectors);
+    BASIC_FACTORY(ArgsTemplateSelectors);
 }

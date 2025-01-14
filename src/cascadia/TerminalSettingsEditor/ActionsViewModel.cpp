@@ -6,6 +6,7 @@
 #include "ActionsViewModel.g.cpp"
 #include "KeyBindingViewModel.g.cpp"
 #include "CommandViewModel.g.cpp"
+#include "ArgWrapper.g.cpp"
 #include "ActionArgsViewModel.g.cpp"
 #include "KeyChordViewModel.g.cpp"
 #include "LibraryResources.h"
@@ -147,6 +148,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             {
                 // todo: maybe just put this logic in the ProposedShortcutAction setter?
                 // todo: need a translator between string and enum
+                // todo: need a 'default arg struct' generator?
                 Model::ActionAndArgs newActionAndArgs{};
                 const auto actionString = unbox_value<hstring>(ProposedShortcutAction());
                 if (actionString == L"Send Input")
@@ -245,23 +247,27 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         const auto shortcutAction = actionAndArgs.Action();
         ShortcutActionType(shortcutAction);
         const auto shortcutArgs = actionAndArgs.Args();
-        switch (shortcutAction)
+        if (shortcutArgs)
         {
-        case ShortcutAction::SendInput:
-        {
-            const auto sendInputArgs = shortcutArgs.as<Model::SendInputArgs>();
-            _StringArg1 = sendInputArgs.Input();
-            break;
-        }
-        case ShortcutAction::CloseTab:
-        {
-            const auto closeTabArgs = shortcutArgs.as<Model::CloseTabArgs>();
-            const auto closeTabIndex = closeTabArgs.Index() ? closeTabArgs.Index().Value() : 0;
-            _UInt32Arg1 = closeTabIndex;
-            break;
-        }
-        default:
-            break;
+            const auto shortcutArgsNumItems = shortcutArgs.GetArgCount();
+            std::vector<Editor::ArgWrapper> argValues;
+            for (uint32_t i = 0; i < shortcutArgsNumItems; i++)
+            {
+                const auto argType = shortcutArgs.GetArgDescriptionAt(i).Type;
+                const auto item = make<ArgWrapper>(argType, shortcutArgs.GetArgAt(i));
+                item.PropertyChanged([&](const IInspectable& sender, const PropertyChangedEventArgs& args) {
+                    const auto itemProperty{ args.PropertyName() };
+                    if (itemProperty == L"Value")
+                    {
+                        const auto argWrapper = sender.as<Microsoft::Terminal::Settings::Editor::ArgWrapper>();
+                        const auto newValue = argWrapper.Value();
+                        // todo: this works but for some reason we have to hit "Save" twice (just for the first time...)?
+                        _actionAndArgs.Args().SetArgAt(i, newValue);
+                    }
+                });
+                argValues.push_back(item);
+            }
+            _ArgValues = single_threaded_observable_vector(std::move(argValues));
         }
     }
 
@@ -393,7 +399,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         std::sort(begin(availableActionAndArgs), end(availableActionAndArgs));
         _AvailableActionAndArgs = single_threaded_observable_vector(std::move(availableActionAndArgs));
 
-        _AvailableActionsAndNamesMap = _Settings.AvailableShortcutActionsAndNames();
+        _AvailableActionsAndNamesMap = Model::CascadiaSettings::AvailableShortcutActionsAndNames();
 
         // Convert the key bindings from our settings into a view model representation
         const auto& keyBindingMap{ _Settings.ActionMap().KeyBindings() };
