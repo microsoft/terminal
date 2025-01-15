@@ -198,7 +198,8 @@ int WindowThread::_messagePump()
             TraceLoggingWrite(
                 g_hWindowsTerminalProvider,
                 "SessionBecameInteractive",
-                TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                TraceLoggingDescription("Event emitted when the session was interacted with"),
+                TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
                 TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
             _loggedInteraction = true;
         }
