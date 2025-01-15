@@ -815,7 +815,7 @@ void AppHost::_WindowActivated(bool activated)
 {
     _windowLogic.WindowActivated(activated);
 
-    if (activated && _isWindowInitialized != WindowInitializedState::NotInitialized)
+    if (activated)
     {
         QueryPerformanceCounter(&_lastActivatedTime);
         _virtualDesktopId = {};
