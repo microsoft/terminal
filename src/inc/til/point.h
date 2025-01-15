@@ -322,6 +322,42 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                 func(y, x1, x2);
             }
         }
+
+        // Similar to iterate_rows above, but the "end" point is exclusive
+        // and RightExclusive (aka "width") is an allowable coordinate
+        constexpr void iterate_rows_exclusive(til::CoordType width, auto&& func) const
+        {
+            // Copy the members so that the compiler knows it doesn't
+            // need to re-read them on every loop iteration.
+            const auto w = width;
+            auto ax = std::clamp(start.x, 0, w);
+            auto ay = start.y;
+            auto bx = std::clamp(end.x, 0, w);
+            auto by = end.y;
+
+            // if start is at RightExclusive,
+            // treat it as (0, y+1) (left-most point on next line)
+            if (ax == w)
+            {
+                ay++;
+                ax = 0;
+            }
+
+            // if end is on left boundary,
+            // treat it as (w, y-1) (RightExclusive on previous line)
+            if (bx == 0)
+            {
+                by--;
+                bx = w;
+            }
+
+            for (auto y = ay; y <= by; ++y)
+            {
+                const auto x1 = y != ay ? 0 : ax;
+                const auto x2 = y != by ? w : bx;
+                func(y, x1, x2);
+            }
+        }
     };
 }
 

@@ -60,7 +60,7 @@ class SearchTests
         const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
         auto coordEndExpected = coordStartExpected;
-        coordEndExpected.x += 1;
+        coordEndExpected.x += 2;
 
         VERIFY_IS_TRUE(s.SelectCurrent());
         VERIFY_ARE_EQUAL(coordStartExpected, gci.renderData.GetSelectionAnchor());
