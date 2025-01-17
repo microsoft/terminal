@@ -409,9 +409,9 @@ void Terminal::ExpandSelectionToWord()
         const auto& buffer = _activeBuffer();
         auto selection{ _selection.write() };
         wil::hide_name _selection;
-        selection->start = buffer.GetWordStart(selection->start, _wordDelimiters);
+        selection->start = buffer.GetWordStart2(selection->start, _wordDelimiters, false);
         selection->pivot = selection->start;
-        selection->end = buffer.GetWordEnd(selection->end, _wordDelimiters);
+        selection->end = buffer.GetWordEnd2(selection->end, _wordDelimiters, false);
 
         // if we're targeting both endpoints, instead just target "end"
         if (WI_IsFlagSet(_selectionEndpoint, SelectionEndpoint::Start) && WI_IsFlagSet(_selectionEndpoint, SelectionEndpoint::End))

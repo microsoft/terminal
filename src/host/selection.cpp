@@ -55,7 +55,7 @@ void Selection::_RegenerateSelectionSpans() const
     const auto blockSelection = !IsLineSelection();
     const auto& buffer = screenInfo.GetTextBuffer();
     auto startSelectionAnchor = _d->coordSelectionAnchor;
-    buffer.GetSize().IncrementInExclusiveBounds(startSelectionAnchor.x <= endSelectionAnchor.x ? endSelectionAnchor : startSelectionAnchor);
+    buffer.GetSize().IncrementInExclusiveBounds(startSelectionAnchor <= endSelectionAnchor ? endSelectionAnchor : startSelectionAnchor);
     _lastSelectionSpans = buffer.GetTextSpans(startSelectionAnchor,
                                               endSelectionAnchor,
                                               blockSelection,

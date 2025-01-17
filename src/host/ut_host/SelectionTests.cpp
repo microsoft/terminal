@@ -141,16 +141,16 @@ class SelectionTests
         }
     }
 
-    void VerifyGetSelectionSpans_LineMode(const til::point start, const til::point end)
+    void VerifyGetSelectionSpans_LineMode(const til::point inclusiveStart, const til::point inclusiveEnd)
     {
         const auto selectionSpans = m_pSelection->GetSelectionSpans();
 
         if (VERIFY_ARE_EQUAL(1u, selectionSpans.size()))
         {
             auto& span{ selectionSpans[0] };
-            VERIFY_ARE_EQUAL(start, span.start, L"start");
+            VERIFY_ARE_EQUAL(inclusiveStart, span.start, L"start");
 
-            const til::point exclusiveEnd{ end.x + 1, end.y };
+            const til::point exclusiveEnd{ inclusiveEnd.x + 1, inclusiveEnd.y };
             VERIFY_ARE_EQUAL(exclusiveEnd, span.end, L"end");
         }
     }
