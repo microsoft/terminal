@@ -55,7 +55,16 @@ void Selection::_RegenerateSelectionSpans() const
     const auto blockSelection = !IsLineSelection();
     const auto& buffer = screenInfo.GetTextBuffer();
     auto startSelectionAnchor = _d->coordSelectionAnchor;
-    buffer.GetSize().IncrementInExclusiveBounds(startSelectionAnchor <= endSelectionAnchor ? endSelectionAnchor : startSelectionAnchor);
+    if (blockSelection)
+    {
+        // Compare x-values when we're in block selection!
+        buffer.GetSize().IncrementInExclusiveBounds(startSelectionAnchor.x <= endSelectionAnchor.x ? endSelectionAnchor : startSelectionAnchor);
+    }
+    else
+    {
+        // General comparison for line selection.
+        buffer.GetSize().IncrementInExclusiveBounds(startSelectionAnchor <= endSelectionAnchor ? endSelectionAnchor : startSelectionAnchor);
+    }
     _lastSelectionSpans = buffer.GetTextSpans(startSelectionAnchor,
                                               endSelectionAnchor,
                                               blockSelection,
