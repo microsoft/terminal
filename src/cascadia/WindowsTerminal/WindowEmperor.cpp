@@ -387,6 +387,9 @@ void WindowEmperor::HandleCommandlineArgs(int nCmdShow)
     MSG msg{};
     while (GetMessageW(&msg, nullptr, 0, 0))
     {
+        // This is `if (WM_KEYDOWN || WM_KEYUP || WM_SYSKEYDOWN || WM_SYSKEYUP)`.
+        // It really doesn't need to be written that obtuse, but it at
+        // least nicely mirrors our `keyDown = msg.message & 1` logic.
         // FYI: For the key-down/up messages the lowest bit indicates if it's up.
         if ((msg.message & ~1) == WM_KEYDOWN || (msg.message & ~1) == WM_SYSKEYDOWN)
         {
@@ -401,7 +404,7 @@ void WindowEmperor::HandleCommandlineArgs(int nCmdShow)
                 loggedInteraction = true;
             }
 
-            const bool keyDown = msg.message & 1;
+            const bool keyDown = (msg.message & 1) == 0;
             if (
                 // GH#638: The Xaml input stack doesn't allow an application to suppress the "caret browsing"
                 // dialog experience triggered when you press F7. Official recommendation from the Xaml
@@ -438,15 +441,13 @@ void WindowEmperor::HandleCommandlineArgs(int nCmdShow)
     __assume(false);
 }
 
-void WindowEmperor::_dispatchSpecialKey(MSG& msg) const
+void WindowEmperor::_dispatchSpecialKey(const MSG& msg) const
 {
-    const auto hwnd = msg.hwnd;
+    // Each CoreInput window is a child of our IslandWindow.
+    // We can figure out the IslandWindow HWND via GetAncestor().
+    const auto hwnd = GetAncestor(msg.hwnd, GA_ROOT);
     AppHost* window = nullptr;
 
-    // Just in case someone has targed a specific HWND,
-    // we'll try to dispatch it to the corresponding class.
-    // Usually this will not find anything because under WinUI the hidden CoreInput
-    // window is responsible for all input handling (for whatever reason).
     for (const auto& h : _windows)
     {
         const auto w = h->GetWindow();
@@ -457,6 +458,7 @@ void WindowEmperor::_dispatchSpecialKey(MSG& msg) const
         }
     }
 
+    // Fallback.
     if (!window)
     {
         window = _mostRecentWindow();
@@ -468,7 +470,7 @@ void WindowEmperor::_dispatchSpecialKey(MSG& msg) const
 
     const auto vkey = gsl::narrow_cast<uint32_t>(msg.wParam);
     const auto scanCode = gsl::narrow_cast<uint8_t>(msg.lParam >> 16);
-    const bool keyDown = msg.message & 1;
+    const bool keyDown = (msg.message & 1) == 0;
     window->OnDirectKeyEvent(vkey, scanCode, keyDown);
 }
 

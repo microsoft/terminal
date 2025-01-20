@@ -50,7 +50,7 @@ private:
     AppHost* _mostRecentWindow() const noexcept;
     bool _summonWindow(const SummonWindowSelectionArgs& args) const;
     void _summonAllWindows() const;
-    void _dispatchSpecialKey(MSG& msg) const;
+    void _dispatchSpecialKey(const MSG& msg) const;
     void _dispatchCommandline(winrt::TerminalApp::CommandlineArgs args);
     safe_void_coroutine _dispatchCommandlineCurrentDesktop(winrt::TerminalApp::CommandlineArgs args);
     LRESULT _messageHandler(HWND window, UINT message, WPARAM wParam, LPARAM lParam) noexcept;
