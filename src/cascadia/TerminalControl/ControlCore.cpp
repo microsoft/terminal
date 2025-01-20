@@ -483,7 +483,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             {
                 // Ask the hosting application to give us a new connection.
                 RestartTerminalRequested.raise(*this, nullptr);
-                SendInput(L"reset\n");
+                _terminal->HardReset();
                 return true;
             }
         }

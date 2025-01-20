@@ -71,6 +71,14 @@ void Terminal::CreateFromSettings(ICoreSettings settings,
     UpdateSettings(settings);
 }
 
+void Terminal::HardReset()
+{
+
+    IStateMachineEngine& baseEngine = _stateMachine->Engine();
+    const auto lock = LockForReading();
+    baseEngine.ActionEscDispatch(VTID("c"));
+}
+
 // Method Description:
 // - Update our internal properties to match the new values in the provided
 //   CoreSettings object.
