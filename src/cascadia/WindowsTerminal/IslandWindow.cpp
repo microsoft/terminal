@@ -50,7 +50,7 @@ void IslandWindow::HideCursor() noexcept
         BOOL shouldVanish = TRUE;
         SystemParametersInfoW(SPI_GETMOUSEVANISH, 0, &shouldVanish, 0);
         return shouldVanish != FALSE;
-    };
+    }();
 
     if (!_cursorHidden && shouldVanish)
     {
