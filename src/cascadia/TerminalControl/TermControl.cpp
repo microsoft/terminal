@@ -47,66 +47,6 @@ constexpr std::wstring_view StateCollapsed{ L"Collapsed" };
 DEFINE_ENUM_FLAG_OPERATORS(winrt::Microsoft::Terminal::Control::CopyFormat);
 DEFINE_ENUM_FLAG_OPERATORS(winrt::Microsoft::Terminal::Control::MouseButtonState);
 
-// WinUI 3's UIElement.ProtectedCursor property allows someone to set the cursor on a per-element basis.
-// This would allow us to hide the cursor when the TermControl has input focus and someone starts typing.
-// Unfortunately, no equivalent exists for WinUI 2 so we fake it with the CoreWindow.
-// There are 3 downsides:
-// * SetPointerCapture() is global state and may interfere with other components.
-// * You can't start dragging the cursor (for text selection) while it's still hidden.
-// * The CoreWindow covers the union of all window rectangles, so the cursor is hidden even if it's outside
-//   the current foreground window, but still on top of another Terminal window in the background.
-static void hideCursorUntilMoved()
-{
-    static bool cursorIsHidden;
-    static const auto shouldVanish = []() {
-        BOOL shouldVanish = TRUE;
-        SystemParametersInfoW(SPI_GETMOUSEVANISH, 0, &shouldVanish, 0);
-        if (!shouldVanish)
-        {
-            return false;
-        }
-
-        const auto window = CoreWindow::GetForCurrentThread();
-        static constexpr auto releaseCapture = [](CoreWindow window, PointerEventArgs) {
-            if (cursorIsHidden)
-            {
-                window.ReleasePointerCapture();
-            }
-        };
-        static constexpr auto restoreCursor = [](CoreWindow window, PointerEventArgs) {
-            if (cursorIsHidden)
-            {
-                cursorIsHidden = false;
-                window.PointerCursor(CoreCursor{ CoreCursorType::Arrow, 0 });
-            }
-        };
-
-        winrt::Windows::Foundation::TypedEventHandler<CoreWindow, PointerEventArgs> releaseCaptureHandler{ releaseCapture };
-        std::ignore = window.PointerMoved(releaseCaptureHandler);
-        std::ignore = window.PointerPressed(releaseCaptureHandler);
-        std::ignore = window.PointerReleased(releaseCaptureHandler);
-        std::ignore = window.PointerWheelChanged(releaseCaptureHandler);
-        std::ignore = window.PointerCaptureLost(restoreCursor);
-        return true;
-    }();
-
-    if (shouldVanish && !cursorIsHidden)
-    {
-        try
-        {
-            const auto window = CoreWindow::GetForCurrentThread();
-            window.PointerCursor(nullptr);
-            window.SetPointerCapture();
-            cursorIsHidden = true;
-        }
-        catch (...)
-        {
-            // Swallow the 0x80070057 "Failed to get pointer information." exception that randomly occurs.
-            // Curiously, it doesn't happen during the PointerCursor() but during the SetPointerCapture() call (thanks, WinUI).
-        }
-    }
-}
-
 // InputPane::GetForCurrentView() does not reliably work for XAML islands,
 // as it assumes that there's a 1:1 relationship between windows and threads.
 //
@@ -1550,8 +1490,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             return;
         }
-
-        hideCursorUntilMoved();
 
         const auto ch = e.Character();
         const auto keyStatus = e.KeyStatus();

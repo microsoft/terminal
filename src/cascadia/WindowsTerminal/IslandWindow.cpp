@@ -26,6 +26,48 @@ using VirtualKeyModifiers = winrt::Windows::System::VirtualKeyModifiers;
 #define XAML_HOSTING_WINDOW_CLASS_NAME L"CASCADIA_HOSTING_WINDOW_CLASS"
 #define IDM_SYSTEM_MENU_BEGIN 0x1000
 
+// WinUI doesn't support the "Hide cursor on input" setting which is why all the modern Windows apps
+// are broken in that respect. We want to support it though, so we implement an imitation of it here.
+// We use the classic ShowCursor() API to hide it on keydown and show it on a select few messages.
+// WinUI's SetPointerCapture() cannot be used for this, because it races with internal WinUI code
+// calling that function and has proven itself to be very unreliable in practice.
+//
+// With UWP half the input stack got split off, and so most input events get rerouted through
+// the CoreInput child window running in another thread (aka InputHost aka Windows.UI.Input).
+// HideCursor() is called by WindowEmperor because WM_KEYDOWN is otherwise sent directly to that
+// CoreInput window. Same for WM_POINTERUPDATE which we use to reliably detect cursor movement.
+// WM_ACTIVATE on the other hand is only sent to each specific window and cannot be hooked by
+// inspecting the MSG struct coming from GetMessage. That's why the code must be here.
+// Best not think about this too much...
+bool IslandWindow::IsCursorHidden() noexcept
+{
+    return _cursorHidden;
+}
+
+void IslandWindow::HideCursor() noexcept
+{
+    static const auto shouldVanish = []() noexcept {
+        BOOL shouldVanish = TRUE;
+        SystemParametersInfoW(SPI_GETMOUSEVANISH, 0, &shouldVanish, 0);
+        return shouldVanish != FALSE;
+    };
+
+    if (!_cursorHidden && shouldVanish)
+    {
+        ShowCursor(FALSE);
+        _cursorHidden = true;
+    }
+}
+
+void IslandWindow::ShowCursorMaybe(const UINT message) noexcept
+{
+    if (_cursorHidden && (message == WM_ACTIVATE || message == WM_POINTERUPDATE))
+    {
+        _cursorHidden = false;
+        ShowCursor(TRUE);
+    }
+}
+
 IslandWindow::IslandWindow() noexcept :
     _interopWindowHandle{ nullptr },
     _rootGrid{ nullptr },
@@ -425,6 +467,11 @@ void IslandWindow::_OnGetMinMaxInfo(const WPARAM /*wParam*/, const LPARAM lParam
 
 [[nodiscard]] LRESULT IslandWindow::MessageHandler(UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept
 {
+    if (IsCursorHidden())
+    {
+        ShowCursorMaybe(message);
+    }
+
     switch (message)
     {
     case WM_GETMINMAXINFO:

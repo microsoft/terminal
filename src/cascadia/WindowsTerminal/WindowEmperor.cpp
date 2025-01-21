@@ -417,6 +417,16 @@ void WindowEmperor::HandleCommandlineArgs(int nCmdShow)
                 _dispatchSpecialKey(msg);
                 continue;
             }
+
+            if (msg.message == WM_KEYDOWN)
+            {
+                IslandWindow::HideCursor();
+            }
+        }
+
+        if (IslandWindow::IsCursorHidden())
+        {
+            IslandWindow::ShowCursorMaybe(msg.message);
         }
 
         TranslateMessage(&msg);
