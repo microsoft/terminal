@@ -610,7 +610,9 @@ void SixelParser::_updateTextColors()
     // the text output as well.
     if (_conformanceLevel <= 3 && _maxColors > 2 && _colorTableChanged) [[unlikely]]
     {
-        for (IndexType tableIndex = 0; tableIndex < _maxColors; tableIndex++)
+        // _maxColors is 64-bit and tableIndex is 8-bit. If _maxColors is higher
+        // than the 8-bit integer limit, we will loop indefinitely.
+        for (IndexType tableIndex = 0; tableIndex < (saturated_cast<uint8_t>(_maxColors)); tableIndex++)
         {
             _dispatcher.SetColorTableEntry(tableIndex, _colorFromIndex(tableIndex));
         }
