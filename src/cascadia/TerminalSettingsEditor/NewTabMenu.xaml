@@ -31,7 +31,17 @@
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
+                                <!--
+                                    BODGY: We want two columns of content:
+                                    1. the identifier (e.g. profile name), aligned left
+                                    2. the buttons (e.g. reorder, delete), aligned right
+                                    There's a bug in WinUI 2 for Windows 10 where these nested columns are treated as "auto" instead
+                                    of *-sized. To work around this, we can set the width of the first column's content to
+                                    StandardControlMaxWidth. The first column will be clipped as necessary to make space for the second column,
+                                    resulting in the desired layout.
+                                -->
                                 <ContentPresenter Grid.Column="0"
+                                                  Width="{StaticResource StandardControlMaxWidth}"
                                                   Content="{TemplateBinding Content}" />
                                 <StackPanel Grid.Column="1"
                                             Orientation="Horizontal"
@@ -127,7 +137,17 @@
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
+                    <!--
+                        BODGY: We want two columns of content:
+                        1. the identifier (e.g. profile name), aligned left
+                        2. the buttons (e.g. reorder, delete), aligned right
+                        There's a bug in WinUI 2 for Windows 10 where these nested columns are treated as "auto" instead
+                        of *-sized. To work around this, we can set the width of the first column's content to
+                        StandardControlMaxWidth. The first column will be clipped as necessary to make space for the second column,
+                        resulting in the desired layout.
+                    -->
                     <StackPanel Grid.Column="0"
+                                Width="{StaticResource StandardControlMaxWidth}"
                                 Orientation="Horizontal">
                         <IconSourceElement Width="16"
                                            Height="16"
