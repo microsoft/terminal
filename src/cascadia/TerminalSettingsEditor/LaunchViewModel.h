@@ -24,6 +24,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         winrt::Windows::Foundation::IInspectable CurrentLanguage();
         void CurrentLanguage(const winrt::Windows::Foundation::IInspectable& tag);
 
+        winrt::hstring LaunchSizeCurrentValue() const;
         winrt::hstring LaunchParametersCurrentValue();
         double InitialPosX();
         double InitialPosY();

@@ -62,6 +62,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             {
                 _NotifyChanges(L"LaunchParametersCurrentValue");
             }
+            else if (viewModelProperty == L"InitialCols" || viewModelProperty == L"InitialRows")
+            {
+                _NotifyChanges(L"LaunchSizeCurrentValue");
+            }
         });
     }
 
@@ -203,6 +207,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             _Settings.GlobalSettings().Language(currentLanguage);
         }
+    }
+
+    winrt::hstring LaunchViewModel::LaunchSizeCurrentValue() const
+    {
+        return winrt::hstring{ fmt::format(FMT_COMPILE(L"{} × {}"), InitialCols(), InitialRows()) };
     }
 
     winrt::hstring LaunchViewModel::LaunchParametersCurrentValue()

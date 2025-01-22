@@ -282,6 +282,7 @@
            TargetType="local:SettingContainer">
         <Setter Property="MaxWidth" Value="1000" />
         <Setter Property="IsTabStop" Value="False" />
+        <Setter Property="AutomationProperties.AccessibilityView" Value="Raw" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="local:SettingContainer">
@@ -333,6 +334,7 @@
            TargetType="local:SettingContainer">
         <Setter Property="MaxWidth" Value="1000" />
         <Setter Property="IsTabStop" Value="False" />
+        <Setter Property="AutomationProperties.AccessibilityView" Value="Raw" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="local:SettingContainer">
@@ -383,6 +385,7 @@
            TargetType="local:SettingContainer">
         <Setter Property="MaxWidth" Value="1000" />
         <Setter Property="IsTabStop" Value="False" />
+        <Setter Property="AutomationProperties.AccessibilityView" Value="Raw" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="local:SettingContainer">

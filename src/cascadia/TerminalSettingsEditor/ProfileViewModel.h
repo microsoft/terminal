@@ -115,6 +115,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         bool RepositionCursorWithMouseAvailable() const noexcept;
 
         bool Orphaned() const;
+        hstring TabTitlePreview() const;
 
         til::typed_event<Editor::ProfileViewModel, Editor::DeleteProfileEventArgs> DeleteProfileRequested;
 

@@ -125,6 +125,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         bool BackgroundImageSettingsVisible();
         void SetBackgroundImageOpacityFromPercentageValue(double percentageValue);
         void SetBackgroundImagePath(winrt::hstring path);
+        hstring BackgroundImageAlignmentCurrentValue() const;
 
         void ClearColorScheme();
         Editor::ColorSchemeViewModel CurrentColorScheme() const;
