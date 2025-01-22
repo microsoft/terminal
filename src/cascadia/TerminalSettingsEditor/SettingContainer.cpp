@@ -15,6 +15,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     DependencyProperty SettingContainer::_FontIconGlyphProperty{ nullptr };
     DependencyProperty SettingContainer::_CurrentValueProperty{ nullptr };
     DependencyProperty SettingContainer::_CurrentValueTemplateProperty{ nullptr };
+    DependencyProperty SettingContainer::_CurrentValueAccessibleNameProperty{ nullptr };
     DependencyProperty SettingContainer::_HasSettingValueProperty{ nullptr };
     DependencyProperty SettingContainer::_SettingOverrideSourceProperty{ nullptr };
     DependencyProperty SettingContainer::_StartExpandedProperty{ nullptr };
@@ -63,7 +64,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                     L"CurrentValue",
                     xaml_typename<IInspectable>(),
                     xaml_typename<Editor::SettingContainer>(),
-                    PropertyMetadata{ nullptr });
+                    PropertyMetadata{ nullptr, PropertyChangedCallback{ &SettingContainer::_OnCurrentValueChanged } });
         }
         if (!_CurrentValueTemplateProperty)
         {
@@ -73,6 +74,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                     xaml_typename<Windows::UI::Xaml::DataTemplate>(),
                     xaml_typename<Editor::SettingContainer>(),
                     PropertyMetadata{ nullptr });
+        }
+        if (!_CurrentValueAccessibleNameProperty)
+        {
+            _CurrentValueAccessibleNameProperty =
+                DependencyProperty::Register(
+                    L"CurrentValueAccessibleName",
+                    xaml_typename<Windows::UI::Xaml::DataTemplate>(),
+                    xaml_typename<Editor::SettingContainer>(),
+                    PropertyMetadata{ box_value(L""), PropertyChangedCallback{ &SettingContainer::_OnCurrentValueChanged } });
         }
         if (!_HasSettingValueProperty)
         {
@@ -101,6 +111,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                     xaml_typename<Editor::SettingContainer>(),
                     PropertyMetadata{ box_value(false) });
         }
+    }
+
+    void SettingContainer::_OnCurrentValueChanged(const Windows::UI::Xaml::DependencyObject& d, const Windows::UI::Xaml::DependencyPropertyChangedEventArgs& /*e*/)
+    {
+        const auto& obj{ d.try_as<Editor::SettingContainer>() };
+        get_self<SettingContainer>(obj)->_UpdateCurrentValueAutoProp();
     }
 
     void SettingContainer::_OnHasSettingValueChanged(const DependencyObject& d, const DependencyPropertyChangedEventArgs& /*args*/)
@@ -174,14 +190,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         for (const auto& obj : base)
         {
-            // apply header as name (automation property)
-            if (const auto& header{ Header() })
-            {
-                if (const auto headerText{ header.try_as<hstring>() })
-                {
-                    Automation::AutomationProperties::SetName(obj, *headerText);
-                }
-            }
+            // apply header and current value as name (automation property)
+            Automation::AutomationProperties::SetName(obj, _GenerateAccessibleName());
 
             // apply help text as tooltip and full description (automation property)
             if (const auto& helpText{ HelpText() }; !helpText.empty())
@@ -247,6 +257,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
+    void SettingContainer::_UpdateCurrentValueAutoProp()
+    {
+        if (const auto& child{ GetTemplateChild(L"Expander") })
+        {
+            if (const auto& expander{ child.try_as<Microsoft::UI::Xaml::Controls::Expander>() })
+            {
+                Automation::AutomationProperties::SetName(expander, _GenerateAccessibleName());
+            }
+        }
+    }
+
     // Method Description:
     // - Helper function for generating the override message
     // Arguments:
@@ -278,5 +299,38 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             return hstring{ RS_fmt(L"SettingContainer_OverrideMessageFragmentExtension", source) };
         }
         return RS_(L"SettingContainer_OverrideMessageBaseLayer");
+    }
+
+    // Method Description:
+    // - Helper function for generating the accessible name
+    // Return Value:
+    // - text specifying the accessible name. Includes header and current value, if available.
+    hstring SettingContainer::_GenerateAccessibleName()
+    {
+        hstring name{};
+        if (const auto& header{ Header() })
+        {
+            if (const auto headerText{ header.try_as<hstring>() })
+            {
+                name = *headerText;
+            }
+
+            // append current value to the name, if it exists
+            if (const auto currentValAccessibleName{ CurrentValueAccessibleName() }; !currentValAccessibleName.empty())
+            {
+                // prefer CurrentValueAccessibleName, if it exists
+                name = name + L": " + currentValAccessibleName;
+            }
+            else if (const auto& currentVal{ CurrentValue() })
+            {
+                // the accessible name was not defined, so try to
+                // extract the value directly from the CurrentValue property
+                if (const auto currentValText{ currentVal.try_as<hstring>() })
+                {
+                    name = name + L": " + *currentValText;
+                }
+            }
+        }
+        return name;
     }
 }

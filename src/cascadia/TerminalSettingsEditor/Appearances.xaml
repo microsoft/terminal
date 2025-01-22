@@ -73,6 +73,7 @@
             <!--  This currently only display the Dark color scheme, even if the user has a pair of schemes set.  -->
             <local:SettingContainer x:Uid="Profile_ColorScheme"
                                     ClearSettingValue="{x:Bind Appearance.ClearColorScheme}"
+                                    CurrentValueAccessibleName="{x:Bind Appearance.CurrentColorScheme.Name, Mode=OneWay}"
                                     HasSettingValue="{x:Bind Appearance.HasDarkColorSchemeName, Mode=OneWay}"
                                     SettingOverrideSource="{x:Bind Appearance.DarkColorSchemeNameOverrideSource, Mode=OneWay}"
                                     Style="{StaticResource ExpanderSettingContainerStyleWithComplexPreview}">
@@ -209,6 +210,7 @@
                                                 x:Uid="Profile_Foreground"
                                                 ClearSettingValue="{x:Bind Appearance.ClearForeground}"
                                                 CurrentValue="{x:Bind Appearance.ForegroundPreview, Mode=OneWay}"
+                                                CurrentValueAccessibleName="{x:Bind Appearance.ForegroundPreview, Converter={StaticResource ColorToStringConverter}, Mode=OneWay}"
                                                 CurrentValueTemplate="{StaticResource ColorPreviewTemplate}"
                                                 HasSettingValue="{x:Bind Appearance.HasForeground, Mode=OneWay}"
                                                 SettingOverrideSource="{x:Bind Appearance.ForegroundOverrideSource, Mode=OneWay}"
@@ -224,6 +226,7 @@
                                                 x:Uid="Profile_Background"
                                                 ClearSettingValue="{x:Bind Appearance.ClearBackground}"
                                                 CurrentValue="{x:Bind Appearance.BackgroundPreview, Mode=OneWay}"
+                                                CurrentValueAccessibleName="{x:Bind Appearance.BackgroundPreview, Converter={StaticResource ColorToStringConverter}, Mode=OneWay}"
                                                 CurrentValueTemplate="{StaticResource ColorPreviewTemplate}"
                                                 HasSettingValue="{x:Bind Appearance.HasBackground, Mode=OneWay}"
                                                 SettingOverrideSource="{x:Bind Appearance.BackgroundOverrideSource, Mode=OneWay}"
@@ -239,6 +242,7 @@
                                                 x:Uid="Profile_SelectionBackground"
                                                 ClearSettingValue="{x:Bind Appearance.ClearSelectionBackground}"
                                                 CurrentValue="{x:Bind Appearance.SelectionBackgroundPreview, Mode=OneWay}"
+                                                CurrentValueAccessibleName="{x:Bind Appearance.SelectionBackgroundPreview, Converter={StaticResource ColorToStringConverter}, Mode=OneWay}"
                                                 CurrentValueTemplate="{StaticResource ColorPreviewTemplate}"
                                                 HasSettingValue="{x:Bind Appearance.HasSelectionBackground, Mode=OneWay}"
                                                 SettingOverrideSource="{x:Bind Appearance.SelectionBackgroundOverrideSource, Mode=OneWay}"
@@ -508,6 +512,7 @@
                                     x:Uid="Profile_CursorColor"
                                     ClearSettingValue="{x:Bind Appearance.ClearCursorColor}"
                                     CurrentValue="{x:Bind Appearance.CursorColorPreview, Mode=OneWay}"
+                                    CurrentValueAccessibleName="{x:Bind Appearance.CursorColorPreview, Converter={StaticResource ColorToStringConverter}, Mode=OneWay}"
                                     CurrentValueTemplate="{StaticResource ColorPreviewTemplate}"
                                     HasSettingValue="{x:Bind Appearance.HasCursorColor, Mode=OneWay}"
                                     SettingOverrideSource="{x:Bind Appearance.CursorColorOverrideSource, Mode=OneWay}"
@@ -568,6 +573,7 @@
             <!--  Background Image Alignment  -->
             <local:SettingContainer x:Uid="Profile_BackgroundImageAlignment"
                                     ClearSettingValue="{x:Bind Appearance.ClearBackgroundImageAlignment}"
+                                    CurrentValue="{x:Bind Appearance.BackgroundImageAlignmentCurrentValue, Mode=OneWay}"
                                     HasSettingValue="{x:Bind Appearance.HasBackgroundImageAlignment, Mode=OneWay}"
                                     SettingOverrideSource="{x:Bind Appearance.BackgroundImageAlignmentOverrideSource, Mode=OneWay}"
                                     Style="{StaticResource ExpanderSettingContainerStyle}"
