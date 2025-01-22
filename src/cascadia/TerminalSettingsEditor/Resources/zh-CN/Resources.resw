@@ -517,7 +517,7 @@
     <comment>A description for what the "show titlebar" setting does. Presented near "Globals_ShowTitlebar.Header".</comment>
   </data>
   <data name="Globals_AcrylicTabRow.Header" xml:space="preserve">
-    <value>在选项卡行中使用亚克力材料</value>
+    <value>在选项卡行中使用亚克力效果</value>
     <comment>Header for a control to toggle whether "acrylic material" is used. "Acrylic material" is a Microsoft-specific term: https://docs.microsoft.com/en-us/windows/apps/design/style/acrylic</comment>
   </data>
   <data name="Globals_ShowTitleInTitlebar.Header" xml:space="preserve">
@@ -1250,7 +1250,7 @@
     <comment>Button label that deletes the unfocused appearance for this profile.</comment>
   </data>
   <data name="Profile_UseAcrylic.Header" xml:space="preserve">
-    <value>启用亚克力材料</value>
+    <value>启用亚克力效果</value>
     <comment>Header for a control to toggle the use of acrylic material for the background. "Acrylic material" is a Microsoft-specific term: https://docs.microsoft.com/en-us/windows/apps/design/style/acrylic</comment>
   </data>
   <data name="Profile_UseAcrylic.HelpText" xml:space="preserve">
@@ -2265,7 +2265,7 @@
     <comment>Additional text for a control to toggle adding a set of key bindings that can be used to apply coloring to selected text in a terminal session. Presented near "Globals_EnableColorSelection.Header".</comment>
   </data>
   <data name="Globals_EnableUnfocusedAcrylic.Header" xml:space="preserve">
-    <value>允许非聚焦窗口使用亚克力材料</value>
+    <value>允许非聚焦窗口使用亚克力效果</value>
     <comment>Header for a control to toggle allowing unfocused windows to have an acrylic background.</comment>
   </data>
   <data name="Globals_ShowAdminShield.Header" xml:space="preserve">
