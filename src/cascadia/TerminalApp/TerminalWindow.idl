@@ -122,7 +122,6 @@ namespace TerminalApp
         event Windows.Foundation.TypedEventHandler<Object, Object> IdentifyWindowsRequested;
         event Windows.Foundation.TypedEventHandler<Object, Object> IsQuakeWindowChanged;
         event Windows.Foundation.TypedEventHandler<Object, Object> SummonWindowRequested;
-        event Windows.Foundation.TypedEventHandler<Object, Object> CloseRequested;
         event Windows.Foundation.TypedEventHandler<Object, Object> OpenSystemMenu;
         event Windows.Foundation.TypedEventHandler<Object, Object> QuitRequested;
         event Windows.Foundation.TypedEventHandler<Object, TerminalApp.SystemMenuChangeArgs> SystemMenuChangeRequested;
