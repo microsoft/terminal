@@ -94,5 +94,6 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_PROFILE_SETTING(Boolean, ForceVTInput);
         INHERITABLE_PROFILE_SETTING(Boolean, AllowVtChecksumReport);
         INHERITABLE_PROFILE_SETTING(Boolean, AllowKeypadMode);
+        INHERITABLE_PROFILE_SETTING(Boolean, AllowVtClipboardWrite);
     }
 }

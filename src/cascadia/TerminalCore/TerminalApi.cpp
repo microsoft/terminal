@@ -116,7 +116,10 @@ unsigned int Terminal::GetConsoleOutputCP() const noexcept
 
 void Terminal::CopyToClipboard(wil::zwstring_view content)
 {
-    _pfnCopyToClipboard(content);
+    if (_clipboardOperationsAllowed)
+    {
+        _pfnCopyToClipboard(content);
+    }
 }
 
 // Method Description:
