@@ -314,7 +314,6 @@ try
 {
     uintptr_t count{ 0 };
     double t[4]{ 0. }; // left, top, right, bottom
-    wchar_t buf[17];
     std::wstring buf;
     auto& errnoRef = errno; // Nonzero cost, pay it once
     for (const auto& token : til::split_iterator{ padding, L',' })
