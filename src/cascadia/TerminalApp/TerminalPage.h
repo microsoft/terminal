@@ -182,7 +182,6 @@ namespace winrt::TerminalApp::implementation
         til::typed_event<IInspectable, IInspectable> SummonWindowRequested;
         til::typed_event<IInspectable, winrt::Microsoft::Terminal::Control::WindowSizeChangedEventArgs> WindowSizeChanged;
 
-        til::typed_event<IInspectable, IInspectable> CloseRequested;
         til::typed_event<IInspectable, IInspectable> OpenSystemMenu;
         til::typed_event<IInspectable, IInspectable> QuitRequested;
         til::typed_event<IInspectable, winrt::Microsoft::Terminal::Control::ShowWindowArgs> ShowWindowChanged;

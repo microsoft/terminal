@@ -119,7 +119,7 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandleCloseWindow(const IInspectable& /*sender*/,
                                           const ActionEventArgs& args)
     {
-        CloseRequested.raise(nullptr, nullptr);
+        CloseWindow();
         args.Handled(true);
     }
 

@@ -89,6 +89,7 @@ void Terminal::UpdateSettings(ICoreSettings settings)
     _trimBlockSelection = settings.TrimBlockSelection();
     _autoMarkPrompts = settings.AutoMarkPrompts();
     _rainbowSuggestions = settings.RainbowSuggestions();
+    _clipboardOperationsAllowed = settings.AllowVtClipboardWrite();
 
     if (_stateMachine)
     {
