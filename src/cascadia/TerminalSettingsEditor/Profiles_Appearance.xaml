@@ -152,7 +152,7 @@
                                             Grid.Column="0"
                                             LargeChange="10"
                                             Maximum="100"
-                                            Minimum="1"
+                                            Minimum="0"
                                             SmallChange="1"
                                             Style="{StaticResource PaddingNumberBoxStyle}"
                                             Value="{x:Bind Profile.LeftPadding, Mode=TwoWay}" />
@@ -161,7 +161,7 @@
                                             Grid.Column="1"
                                             LargeChange="10"
                                             Maximum="100"
-                                            Minimum="1"
+                                            Minimum="0"
                                             SmallChange="1"
                                             Style="{StaticResource PaddingNumberBoxStyle}"
                                             Value="{x:Bind Profile.TopPadding, Mode=TwoWay}" />
@@ -170,7 +170,7 @@
                                             Grid.Column="2"
                                             LargeChange="10"
                                             Maximum="100"
-                                            Minimum="1"
+                                            Minimum="0"
                                             SmallChange="1"
                                             Style="{StaticResource PaddingNumberBoxStyle}"
                                             Value="{x:Bind Profile.RightPadding, Mode=TwoWay}" />
@@ -179,7 +179,7 @@
                                             Grid.Column="1"
                                             LargeChange="10"
                                             Maximum="100"
-                                            Minimum="1"
+                                            Minimum="0"
                                             SmallChange="1"
                                             Style="{StaticResource PaddingNumberBoxStyle}"
                                             Value="{x:Bind Profile.BottomPadding, Mode=TwoWay}" />
