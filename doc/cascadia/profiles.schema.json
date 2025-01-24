@@ -2373,11 +2373,6 @@
           "description": "When set to true, Windows Terminal will run in the background. This allows globalSummon and quakeMode actions to work even when no windows are open.",
           "type": "boolean"
         },
-        "compatibility.allowDECRQCRA": {
-          "default": false,
-          "description": "When set to true, the terminal will support the DECRQCRA (Request Checksum of Rectangular Area) escape sequence.",
-          "type": "boolean"
-        },
         "compatibility.textMeasurement": {
           "default": "graphemes",
           "description": "This changes the way incoming text is grouped into cells. The \"graphemes\" option is the most modern and Unicode-correct way to do so, while \"wcswidth\" is a common approach on UNIX, and \"console\" replicates the way it used to work on Windows.",
@@ -2724,6 +2719,16 @@
         "compatibility.reloadEnvironmentVariables": {
           "default": true,
           "description": "When set to true, when opening a new tab or pane it will get reloaded environment variables.",
+          "type": "boolean"
+        },
+        "compatibility.allowDECRQCRA": {
+          "default": false,
+          "description": "When set to true, the terminal will support the DECRQCRA (Request Checksum of Rectangular Area) escape sequence.",
+          "type": "boolean"
+        },
+        "compatibility.allowOSC52": {
+          "default": true,
+          "description": "When set to true, VT applications will be allowed to set the contents of the local clipboard using OSC 52 (Manipulate Selection Data).",
           "type": "boolean"
         },
         "unfocusedAppearance": {
