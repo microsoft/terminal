@@ -14,6 +14,10 @@ class IslandWindow :
     public BaseWindow<IslandWindow>
 {
 public:
+    static bool IsCursorHidden() noexcept;
+    static void HideCursor() noexcept;
+    static void ShowCursorMaybe(const UINT message) noexcept;
+
     IslandWindow() noexcept;
     virtual ~IslandWindow() override;
 
@@ -143,7 +147,7 @@ protected:
     bool _minimizeToNotificationArea{ false };
 
     std::unordered_map<UINT, SystemMenuItemInfo> _systemMenuItems;
-    UINT _systemMenuNextItemId;
+    UINT _systemMenuNextItemId = 0;
     void _resetSystemMenu();
 
 private:
@@ -154,4 +158,6 @@ private:
     // though the total height will take into account the non-client area
     // and the requirements of components hosted in the client area
     static constexpr float minimumHeight = 0;
+
+    inline static bool _cursorHidden;
 };

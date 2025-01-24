@@ -488,6 +488,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return _profile.Orphaned();
     }
 
+    hstring ProfileViewModel::TabTitlePreview() const
+    {
+        if (const auto tabTitle{ TabTitle() }; !tabTitle.empty())
+        {
+            return tabTitle;
+        }
+        return RS_(L"Profile_TabTitleNone");
+    }
+
     Editor::AppearanceViewModel ProfileViewModel::DefaultAppearance()
     {
         return _defaultAppearanceViewModel;

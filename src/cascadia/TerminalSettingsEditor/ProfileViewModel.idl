@@ -118,6 +118,8 @@ namespace Microsoft.Terminal.Settings.Editor
         IInspectable CurrentBuiltInIcon;
         Windows.Foundation.Collections.IVector<IInspectable> BuiltInIcons { get; };
 
+        String TabTitlePreview { get; };
+
         void CreateUnfocusedAppearance();
         void DeleteUnfocusedAppearance();
 
@@ -155,5 +157,6 @@ namespace Microsoft.Terminal.Settings.Editor
         OBSERVABLE_PROJECTED_PROFILE_SETTING(String, AnswerbackMessage);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, RainbowSuggestions);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Microsoft.Terminal.Control.PathTranslationStyle, PathTranslationStyle);
+        OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, AllowVtClipboardWrite);
     }
 }

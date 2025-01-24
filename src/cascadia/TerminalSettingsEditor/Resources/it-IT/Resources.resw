@@ -2312,4 +2312,8 @@
   <data name="Profile_Source_Orphaned.HelpText" xml:space="preserve">
     <value>Indica il software che ha creato originariamente questo profilo.</value>
   </data>
+  <data name="Profile_TabTitleNone" xml:space="preserve">
+    <value>Nessuno</value>
+    <comment>Text displayed when the tab title is not defined.</comment>
+  </data>
 </root>

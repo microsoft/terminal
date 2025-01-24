@@ -22,6 +22,7 @@ namespace Microsoft.Terminal.Core
 
         Boolean ForceVTInput;
         Boolean AllowVtChecksumReport;
+        Boolean AllowVtClipboardWrite;
         Boolean TrimBlockSelection;
         Boolean DetectURLs;
 

@@ -19,6 +19,7 @@ namespace Microsoft.Terminal.Settings.Editor
         IInspectable CurrentDefaultInputScope;
         IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> DefaultInputScopeList { get; };
 
+        String LaunchSizeCurrentValue { get; };
         String LaunchParametersCurrentValue { get; };
         Double InitialPosX;
         Double InitialPosY;

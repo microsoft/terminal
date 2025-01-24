@@ -40,6 +40,7 @@ namespace Microsoft.Terminal.Settings.Editor
 
         Boolean UseDesktopBGImage;
         Boolean BackgroundImageSettingsVisible { get; };
+        String BackgroundImageAlignmentCurrentValue { get; };
 
         void ClearColorScheme();
         ColorSchemeViewModel CurrentColorScheme;
