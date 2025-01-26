@@ -442,12 +442,12 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             TerminalOutput.raise(L"\r\n");
             TerminalOutput.raise(ctrlCText);
         }
-        // If the command or file is invalid, display appropriate message
-        else if (hr == HRESULT_FROM_WIN32(ERROR_BAD_COMMAND) || hr == HRESULT_FROM_WIN32(ERROR_FILE_NOT_FOUND))
+        // If the requested executable was not found, display appropriate message
+        else if (hr == HRESULT_FROM_WIN32(ERROR_FILE_NOT_FOUND))
         {
-            const auto badCommandText = RS_fmt(L"BadCommandOrFile", _commandline);
+            const auto fileNotFoundText = RS_(L"FileNotFound");
             TerminalOutput.raise(L"\r\n");
-            TerminalOutput.raise(badCommandText);
+            TerminalOutput.raise(fileNotFoundText);
         }
 
 
