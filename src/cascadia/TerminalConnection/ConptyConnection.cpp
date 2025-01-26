@@ -428,6 +428,28 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             TerminalOutput.raise(L"\r\n");
             TerminalOutput.raise(badPathText);
         }
+        // If the requested action requires elevation, display appropriate message
+        else if (hr == HRESULT_FROM_WIN32(ERROR_ELEVATION_REQUIRED))
+        {
+            const auto elevationText = RS_(L"ElevationRequired");
+            TerminalOutput.raise(L"\r\n");
+            TerminalOutput.raise(elevationText);
+        }
+        // If a stop signal (ctrl+c) is detected, display appropriate message
+        else if (hr == HRESULT_FROM_NT(STATUS_CONTROL_C_EXIT))
+        {
+            const auto ctrlCText = RS_(L"CtrlCToClose");
+            TerminalOutput.raise(L"\r\n");
+            TerminalOutput.raise(ctrlCText);
+        }
+        // If the command or file is invalid, display appropriate message
+        else if (hr == HRESULT_FROM_WIN32(ERROR_BAD_COMMAND) || hr == HRESULT_FROM_WIN32(ERROR_FILE_NOT_FOUND))
+        {
+            const auto badCommandText = RS_fmt(L"BadCommandOrFile", _commandline);
+            TerminalOutput.raise(L"\r\n");
+            TerminalOutput.raise(badCommandText);
+        }
+
 
         _transitionToState(ConnectionState::Failed);
 
