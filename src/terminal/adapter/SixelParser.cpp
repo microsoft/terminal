@@ -237,6 +237,7 @@ void SixelParser::_executeNextLine()
     _imageCursor.y += _sixelHeight;
     _availablePixelHeight -= _sixelHeight;
     _resizeImageBuffer(_sixelHeight);
+    _fillImageBackgroundWhenScrolled();
 }
 
 void SixelParser::_executeMoveToHome()
@@ -342,10 +343,11 @@ void SixelParser::_initRasterAttributes(const VTInt macroParameter, const Dispat
     // By default, the filled area will cover the maximum extent allowed.
     _backgroundSize = { til::CoordTypeMax, til::CoordTypeMax };
 
-    // If the requested background area can not initially be filled, we'll
-    // handle the rest of it on demand when the image is resized. But this
-    // will be determined later in the _fillImageBackground method.
-    _resizeFillRequired = false;
+    // If the image ends up extending beyond the bottom of the page, we may need
+    // to perform additional background filling as the screen is scrolled, which
+    // requires us to track the area filled so far. This will be initialized, if
+    // necessary, in the _fillImageBackground method below.
+    _filledBackgroundHeight = std::nullopt;
 }
 
 void SixelParser::_updateRasterAttributes(const VTParameters& rasterAttributes)
@@ -652,10 +654,6 @@ void SixelParser::_resizeImageBuffer(const til::CoordType requiredHeight)
     {
         static constexpr auto transparentPixel = IndexedPixel{ .transparent = true };
         _imageBuffer.resize(requiredSize, transparentPixel);
-        if (_resizeFillRequired)
-        {
-            _fillImageBackground(requiredHeight);
-        }
     }
 }
 
@@ -667,13 +665,17 @@ void SixelParser::_fillImageBackground()
 
         // When a background fill is requested, we prefill the buffer with the 0
         // color index, up to the boundaries set by the raster attributes (or if
-        // none were given, up to the page boundaries). If the requested height
-        // is more than the available height, we'll continue filling the rest of
-        // it on demand when the image is resized (see above).
+        // none were given, up to the page boundaries). The actual image output
+        // isn't limited by the background dimensions though.
         const auto backgroundHeight = std::min(_backgroundSize.height, _availablePixelHeight);
         _resizeImageBuffer(backgroundHeight);
         _fillImageBackground(backgroundHeight);
-        _resizeFillRequired = _backgroundSize.height > _availablePixelHeight;
+        // When the image extends beyond the page boundaries, and the screen is
+        // scrolled, we also need to fill the newly exposed lines, so we keep a
+        // record of the area filled so far. Initially this is considered to be
+        // the available height, even if it wasn't all filled to start with.
+        _filledBackgroundHeight = _imageCursor.y + _availablePixelHeight;
+        _fillImageBackgroundWhenScrolled();
     }
 }
 
@@ -689,6 +691,33 @@ void SixelParser::_fillImageBackground(const int backgroundHeight)
         std::advance(dst, _imageMaxWidth);
     }
     _imageWidth = std::max(_imageWidth, backgroundWidth);
+}
+
+void SixelParser::_fillImageBackgroundWhenScrolled()
+{
+    // If _filledBackgroundHeight is set, that means a background fill has been
+    // requested, and we need to extend that area whenever the image is about to
+    // overrun it. The newly filled area is a multiple of the cell height (this
+    // is to match the behavior of the original hardware terminals).
+    const auto imageHeight = _imageCursor.y + _sixelHeight;
+    if (_filledBackgroundHeight && imageHeight > _filledBackgroundHeight) [[unlikely]]
+    {
+        _filledBackgroundHeight = (imageHeight + _cellSize.height - 1) / _cellSize.height * _cellSize.height;
+        const auto additionalFillHeight = _filledBackgroundHeight.value() - _imageCursor.y;
+        _resizeImageBuffer(additionalFillHeight);
+        _fillImageBackground(additionalFillHeight);
+    }
+}
+
+void SixelParser::_decreaseFilledBackgroundHeight(const int decreasedHeight)
+{
+    // Sometimes the top of the image buffer may be clipped (e.g. when the image
+    // scrolls off the top of a margin area). When that occurs, our record of
+    // the filled height will need to be decreased to account for the new start.
+    if (_filledBackgroundHeight) [[unlikely]]
+    {
+        _filledBackgroundHeight = _filledBackgroundHeight.value() - decreasedHeight;
+    }
 }
 
 void SixelParser::_writeToImageBuffer(int sixelValue, int repeatCount)
@@ -731,11 +760,13 @@ void SixelParser::_eraseImageBufferRows(const int rowCount, const til::CoordType
     const auto bufferOffsetEnd = bufferOffset + pixelCount * _imageMaxWidth;
     if (static_cast<size_t>(bufferOffsetEnd) >= _imageBuffer.size()) [[unlikely]]
     {
+        _decreaseFilledBackgroundHeight(_imageCursor.y);
         _imageBuffer.clear();
         _imageCursor.y = 0;
     }
     else
     {
+        _decreaseFilledBackgroundHeight(pixelCount);
         _imageBuffer.erase(_imageBuffer.begin() + bufferOffset, _imageBuffer.begin() + bufferOffsetEnd);
         _imageCursor.y -= pixelCount;
     }
