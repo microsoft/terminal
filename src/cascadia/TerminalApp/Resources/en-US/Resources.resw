@@ -211,6 +211,9 @@
   <data name="SplitPaneText" xml:space="preserve">
     <value>Split pane</value>
   </data>
+  <data name="SplitPaneToolTipText" xml:space="preserve">
+    <value>Right click for split directions - right/down/up/left</value>
+  </data>
   <data name="SplitPaneDownText" xml:space="preserve">
     <value>Split pane down</value>
   </data>
