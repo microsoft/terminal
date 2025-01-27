@@ -61,9 +61,6 @@ COOKED_READ_DATA::COOKED_READ_DATA(_In_ InputBuffer* const pInputBuffer,
     THROW_IF_FAILED(_screenInfo.GetMainBuffer().AllocateIoHandle(ConsoleHandleData::HandleType::Output, GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, _tempHandle));
 #endif
 
-    const auto cursorPos = _getViewportCursorPosition();
-    _originInViewport = cursorPos;
-
     if (!initialData.empty())
     {
         // The console API around `nInitialChars` in `CONSOLE_READCONSOLE_CONTROL` is pretty weird.
@@ -94,6 +91,7 @@ COOKED_READ_DATA::COOKED_READ_DATA(_In_ InputBuffer* const pInputBuffer,
         // It replicates part of the _redisplay() logic to layout the text at various
         // starting positions until it finds one that matches the current cursor position.
 
+        const auto cursorPos = _getViewportCursorPosition();
         const auto size = _screenInfo.GetVtPageArea().Dimensions();
 
         // Guess the initial cursor position based on the string length, assuming that 1 char = 1 column.
@@ -285,10 +283,17 @@ bool COOKED_READ_DATA::Read(const bool isUnicode, size_t& numBytes, ULONG& contr
 
 // Printing wide glyphs at the end of a row results in a forced line wrap and a padding whitespace to be inserted.
 // When the text buffer resizes these padding spaces may vanish and the _distanceCursor and _distanceEnd measurements become inaccurate.
-// To fix this, this function is called before a resize and will clear the input line. Afterwards, RedrawAfterResize() will restore it.
+// To fix this, this function is called before a resize and will clear the input line. Afterward, RedrawAfterResize() will restore it.
 void COOKED_READ_DATA::EraseBeforeResize()
 {
+    // If we've already erased the buffer, we don't need to do it again.
     if (_redrawPending)
+    {
+        return;
+    }
+
+    // If we don't have an origin, we've never had user input, and consequently there's nothing to erase.
+    if (!_originInViewport)
     {
         return;
     }
@@ -300,7 +305,7 @@ void COOKED_READ_DATA::EraseBeforeResize()
     // This uses the buffer APIs directly, so that we don't emit unnecessary VT into ConPTY's output.
     auto& textBuffer = _screenInfo.GetTextBuffer();
     auto& cursor = textBuffer.GetCursor();
-    auto cursorPos = _originInViewport;
+    auto cursorPos = *_originInViewport;
     _screenInfo.GetVtPageArea().ConvertFromOrigin(&cursorPos);
     cursor.SetPosition(cursorPos);
 }
@@ -316,7 +321,10 @@ void COOKED_READ_DATA::RedrawAfterResize()
     _redrawPending = false;
 
     // Get the new cursor position after the reflow, since it may have changed.
-    _originInViewport = _getViewportCursorPosition();
+    if (_originInViewport)
+    {
+        _originInViewport = _getViewportCursorPosition();
+    }
 
     // Ensure that we don't use any scroll sequences or try to clear previous pager contents.
     // They have all been erased with the CSI J above.
@@ -348,7 +356,7 @@ bool COOKED_READ_DATA::PresentingPopup() const noexcept
     return !_popups.empty();
 }
 
-til::point_span COOKED_READ_DATA::GetBoundaries() const noexcept
+til::point_span COOKED_READ_DATA::GetBoundaries() noexcept
 {
     const auto viewport = _screenInfo.GetViewport();
     const auto virtualViewport = _screenInfo.GetVtPageArea();
@@ -357,7 +365,7 @@ til::point_span COOKED_READ_DATA::GetBoundaries() const noexcept
     const til::point max{ viewport.RightInclusive(), viewport.BottomInclusive() };
 
     // Convert from VT-viewport-relative coordinate space back to the console one.
-    auto beg = _originInViewport;
+    auto beg = _getOriginInViewport();
     virtualViewport.ConvertFromOrigin(&beg);
 
     // Since the pager may be longer than the viewport is tall, we need to clamp the coordinates to still remain within
@@ -831,6 +839,20 @@ til::point COOKED_READ_DATA::_getViewportCursorPosition() const noexcept
     return cursorPos;
 }
 
+// Some applications initiate a read on stdin and _then_ print the prompt prefix to stdout.
+// While that's not correct (because it's a race condition), we can make it significantly
+// less bad by delaying the calculation of the origin until we actually need it.
+// This turns it from a race between application and terminal into a race between
+// application and user, which is much less likely to hit.
+til::point COOKED_READ_DATA::_getOriginInViewport() noexcept
+{
+    if (!_originInViewport)
+    {
+        _originInViewport.emplace(_getViewportCursorPosition());
+    }
+    return *_originInViewport;
+}
+
 void COOKED_READ_DATA::_replace(size_t offset, size_t remove, const wchar_t* input, size_t count)
 {
     const auto size = _buffer.size();
@@ -885,7 +907,8 @@ void COOKED_READ_DATA::_redisplay()
     }
 
     const auto size = _screenInfo.GetVtPageArea().Dimensions();
-    auto originInViewportFinal = _originInViewport;
+    auto originInViewport = _getOriginInViewport();
+    auto originInViewportFinal = originInViewport;
     til::point cursorPositionFinal;
     til::point pagerPromptEnd;
     std::vector<Line> lines;
@@ -894,7 +917,7 @@ void COOKED_READ_DATA::_redisplay()
     // and if MSVC says that then that must be true.
     for (;;)
     {
-        cursorPositionFinal = { _originInViewport.x, 0 };
+        cursorPositionFinal = { originInViewport.x, 0 };
 
         // Construct the first line manually so that it starts at the correct horizontal position.
         LayoutResult res{ .column = cursorPositionFinal.x };
@@ -1057,8 +1080,8 @@ void COOKED_READ_DATA::_redisplay()
         if (gsl::narrow_cast<til::CoordType>(lines.size()) > size.height && originInViewportFinal.x != 0)
         {
             lines.clear();
-            _originInViewport.x = 0;
             _bufferDirtyBeg = 0;
+            originInViewport.x = 0;
             originInViewportFinal = {};
             continue;
         }
@@ -1092,7 +1115,7 @@ void COOKED_READ_DATA::_redisplay()
     if (_clearPending)
     {
         _clearPending = false;
-        _appendCUP(output, _originInViewport);
+        _appendCUP(output, originInViewport);
         output.append(L"\x1b[J");
     }
 
@@ -1111,7 +1134,7 @@ void COOKED_READ_DATA::_redisplay()
     // The check for origin == {0,0} is important because it ensures that we "own" the entire viewport and
     // that scrolling our contents doesn't scroll away the user's output that may still be in the viewport.
     // (Anything below the origin is assumed to belong to us.)
-    if (const auto delta = pagerContentTop - _pagerContentTop; delta != 0 && _originInViewport == til::point{})
+    if (const auto delta = pagerContentTop - _pagerContentTop; delta != 0 && originInViewport == til::point{})
     {
         const auto deltaAbs = abs(delta);
         til::CoordType beg = 0;
@@ -1179,7 +1202,7 @@ void COOKED_READ_DATA::_redisplay()
 
         for (til::CoordType i = 0; i < pagerHeight; i++)
         {
-            const auto row = std::min(_originInViewport.y + i, size.height - 1);
+            const auto row = std::min(originInViewport.y + i, size.height - 1);
 
             // If the last write left the cursor at the end of a line, the next write will start at the beginning of the next line.
             // This avoids needless calls to _appendCUP. The reason it's here and not at the end of the loop is similar to how
@@ -1223,7 +1246,7 @@ void COOKED_READ_DATA::_redisplay()
 
         if (pagerHeight < pagerHeightPrevious)
         {
-            const auto row = std::min(_originInViewport.y + pagerHeight, size.height - 1);
+            const auto row = std::min(originInViewport.y + pagerHeight, size.height - 1);
             _appendCUP(output, { 0, row });
             output.append(L"\x1b[K");
 
