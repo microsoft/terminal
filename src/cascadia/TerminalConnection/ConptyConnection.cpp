@@ -435,13 +435,6 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             TerminalOutput.raise(L"\r\n");
             TerminalOutput.raise(elevationText);
         }
-        // If a stop signal (ctrl+c) is detected, display appropriate message
-        else if (hr == HRESULT_FROM_NT(STATUS_CONTROL_C_EXIT))
-        {
-            const auto ctrlCText = RS_(L"CtrlCToClose");
-            TerminalOutput.raise(L"\r\n");
-            TerminalOutput.raise(ctrlCText);
-        }
         // If the requested executable was not found, display appropriate message
         else if (hr == HRESULT_FROM_WIN32(ERROR_FILE_NOT_FOUND))
         {

@@ -223,9 +223,6 @@
   <data name="ElevationRequired" xml:space="preserve">
     <value>The requested operation requires elevation.</value>
   </data>
-  <data name="CtrlCToClose" xml:space="preserve">
-    <value>The application terminated as a result of a CTRL+C.</value>
-  </data>
   <data name="FileNotFound" xml:space="preserve">
     <value>The system cannot find the file specified.</value>
   </data>
