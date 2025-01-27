@@ -447,7 +447,7 @@ namespace ControlUnitTests
                                   WHEEL_DELTA,
                                   cursorPosition1.to_core_point(),
                                   leftMouseDown);
-        // TODO CARLOS
+
         Log::Comment(L"Verify the location of the selection");
         // The viewport is now on row 20, so the selection will be on:
         // {(5 + 1, 5)+(0, 20)} to {(5, 5)+(0, 21)}
