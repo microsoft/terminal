@@ -221,6 +221,34 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 // box, prevent it from ever being changed again.
                 _NotifyChanges(L"UseDesktopBGImage", L"BackgroundImageSettingsVisible");
             }
+            else if (viewModelProperty == L"BackgroundImageAlignment")
+            {
+                _NotifyChanges(L"BackgroundImageAlignmentCurrentValue");
+            }
+            else if (viewModelProperty == L"Foreground")
+            {
+                _NotifyChanges(L"ForegroundPreview");
+            }
+            else if (viewModelProperty == L"Background")
+            {
+                _NotifyChanges(L"BackgroundPreview");
+            }
+            else if (viewModelProperty == L"SelectionBackground")
+            {
+                _NotifyChanges(L"SelectionBackgroundPreview");
+            }
+            else if (viewModelProperty == L"CursorColor")
+            {
+                _NotifyChanges(L"CursorColorPreview");
+            }
+            else if (viewModelProperty == L"DarkColorSchemeName" || viewModelProperty == L"LightColorSchemeName")
+            {
+                _NotifyChanges(L"CurrentColorScheme");
+            }
+            else if (viewModelProperty == L"CurrentColorScheme")
+            {
+                _NotifyChanges(L"ForegroundPreview", L"BackgroundPreview", L"SelectionBackgroundPreview", L"CursorColorPreview");
+            }
         });
 
         // Cache the original BG image path. If the user clicks "Use desktop
@@ -888,6 +916,44 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         BackgroundImagePath(path);
     }
 
+    hstring AppearanceViewModel::BackgroundImageAlignmentCurrentValue() const
+    {
+        const auto alignment = BackgroundImageAlignment();
+        hstring alignmentResourceKey = L"Profile_BackgroundImageAlignment";
+        if (alignment == (ConvergedAlignment::Vertical_Center | ConvergedAlignment::Horizontal_Center))
+        {
+            alignmentResourceKey = alignmentResourceKey + L"Center";
+        }
+        else
+        {
+            // Append vertical alignment to the resource key
+            switch (alignment & static_cast<ConvergedAlignment>(0x0F))
+            {
+            case ConvergedAlignment::Vertical_Bottom:
+                alignmentResourceKey = alignmentResourceKey + L"Bottom";
+                break;
+            case ConvergedAlignment::Vertical_Top:
+                alignmentResourceKey = alignmentResourceKey + L"Top";
+                break;
+            }
+
+            // Append horizontal alignment to the resource key
+            switch (alignment & static_cast<ConvergedAlignment>(0xF0))
+            {
+            case ConvergedAlignment::Horizontal_Left:
+                alignmentResourceKey = alignmentResourceKey + L"Left";
+                break;
+            case ConvergedAlignment::Horizontal_Right:
+                alignmentResourceKey = alignmentResourceKey + L"Right";
+                break;
+            }
+        }
+        alignmentResourceKey = alignmentResourceKey + L"/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip";
+
+        // We can't use the RS_ macro here because the resource key is dynamic
+        return GetLibraryResourceString(alignmentResourceKey);
+    }
+
     bool AppearanceViewModel::UseDesktopBGImage()
     {
         return BackgroundImagePath() == L"desktopWallpaper";
@@ -928,7 +994,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _NotifyChanges(L"CurrentColorScheme");
     }
 
-    Editor::ColorSchemeViewModel AppearanceViewModel::CurrentColorScheme()
+    Editor::ColorSchemeViewModel AppearanceViewModel::CurrentColorScheme() const
     {
         const auto schemeName{ DarkColorSchemeName() };
         const auto allSchemes{ SchemesList() };
@@ -948,6 +1014,42 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         DarkColorSchemeName(val.Name());
         LightColorSchemeName(val.Name());
+    }
+
+    static inline Windows::UI::Color _getColorPreview(const IReference<Microsoft::Terminal::Core::Color>& modelVal, Windows::UI::Color deducedVal)
+    {
+        if (modelVal)
+        {
+            // user defined an override value
+            return Windows::UI::Color{
+                .A = 255,
+                .R = modelVal.Value().R,
+                .G = modelVal.Value().G,
+                .B = modelVal.Value().B
+            };
+        }
+        // set to null --> deduce value from color scheme
+        return deducedVal;
+    }
+
+    Windows::UI::Color AppearanceViewModel::ForegroundPreview() const
+    {
+        return _getColorPreview(_appearance.Foreground(), CurrentColorScheme().ForegroundColor().Color());
+    }
+
+    Windows::UI::Color AppearanceViewModel::BackgroundPreview() const
+    {
+        return _getColorPreview(_appearance.Background(), CurrentColorScheme().BackgroundColor().Color());
+    }
+
+    Windows::UI::Color AppearanceViewModel::SelectionBackgroundPreview() const
+    {
+        return _getColorPreview(_appearance.SelectionBackground(), CurrentColorScheme().SelectionBackgroundColor().Color());
+    }
+
+    Windows::UI::Color AppearanceViewModel::CursorColorPreview() const
+    {
+        return _getColorPreview(_appearance.CursorColor(), CurrentColorScheme().CursorColor().Color());
     }
 
     DependencyProperty Appearances::_AppearanceProperty{ nullptr };
@@ -1052,22 +1154,18 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void Appearances::FontFaceBox_LostFocus(const IInspectable& sender, const RoutedEventArgs&)
     {
-        const auto appearance = Appearance();
-        const auto fontSpec = sender.as<AutoSuggestBox>().Text();
-
-        if (fontSpec.empty())
-        {
-            appearance.ClearFontFace();
-        }
-        else
-        {
-            appearance.FontFace(fontSpec);
-        }
+        _updateFontName(sender.as<AutoSuggestBox>().Text());
     }
 
-    void Appearances::FontFaceBox_SuggestionChosen(const AutoSuggestBox& sender, const AutoSuggestBoxSuggestionChosenEventArgs& args)
+    void Appearances::FontFaceBox_QuerySubmitted(const AutoSuggestBox& sender, const AutoSuggestBoxQuerySubmittedEventArgs& args)
     {
-        const auto font = unbox_value<Editor::Font>(args.SelectedItem());
+        // When pressing Enter within the input line, this callback will be invoked with no suggestion.
+        const auto font = unbox_value_or<Editor::Font>(args.ChosenSuggestion(), nullptr);
+        if (!font)
+        {
+            return;
+        }
+
         const auto fontName = font.Name();
         auto fontSpec = sender.Text();
 
@@ -1084,6 +1182,22 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
 
         sender.Text(fontSpec);
+
+        // Normally we'd just update the model property in LostFocus above, but because WinUI is the Ralph Wiggum
+        // among the UI frameworks, it raises the LostFocus event _before_ the QuerySubmitted event.
+        // So, when you press Save, the model will have the wrong font face string, because LostFocus was raised too early.
+        // Also, this causes the first tab in the application to be focused, so when you press Enter it'll switch tabs.
+        //
+        // You can't just assign focus back to the AutoSuggestBox, because the FocusState() within the GotFocus event handler
+        // contains random values. This prevents us from avoiding the IsSuggestionListOpen(true) in our GotFocus event handler.
+        // You can't just do IsSuggestionListOpen(false) either, because you can show the list with that property but not hide it.
+        // So, we update the model manually and assign focus to the parent container.
+        //
+        // BUT you can't just focus the parent container, because of a weird interaction with AutoSuggestBox where it'll refuse to lose
+        // focus if you picked a suggestion that matches the current fontSpec. So, we unfocus it first and then focus the parent container.
+        _updateFontName(fontSpec);
+        sender.Focus(FocusState::Unfocused);
+        FontFaceContainer().Focus(FocusState::Programmatic);
     }
 
     void Appearances::FontFaceBox_TextChanged(const AutoSuggestBox& sender, const AutoSuggestBoxTextChangedEventArgs& args)
@@ -1104,6 +1218,19 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         filter = til::trim(filter, L' ');
         _updateFontNameFilter(filter);
+    }
+
+    void Appearances::_updateFontName(hstring fontSpec)
+    {
+        const auto appearance = Appearance();
+        if (fontSpec.empty())
+        {
+            appearance.ClearFontFace();
+        }
+        else
+        {
+            appearance.FontFace(std::move(fontSpec));
+        }
     }
 
     void Appearances::_updateFontNameFilter(std::wstring_view filter)

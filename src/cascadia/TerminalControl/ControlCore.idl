@@ -106,6 +106,7 @@ namespace Microsoft.Terminal.Control
         UInt64 SwapChainHandle { get; };
 
         Windows.Foundation.Size FontSize { get; };
+        Windows.Foundation.Size FontSizeInDips { get; };
         UInt16 FontWeight { get; };
         Single Opacity { get; };
         Boolean UseAcrylic { get; };
@@ -176,6 +177,8 @@ namespace Microsoft.Terminal.Control
         void ContextMenuSelectOutput();
         Boolean ShouldShowSelectCommand();
         Boolean ShouldShowSelectOutput();
+
+        void OpenCWD();
 
         void ClearQuickFix();
 

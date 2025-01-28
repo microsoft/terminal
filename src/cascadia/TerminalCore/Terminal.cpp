@@ -89,6 +89,7 @@ void Terminal::UpdateSettings(ICoreSettings settings)
     _trimBlockSelection = settings.TrimBlockSelection();
     _autoMarkPrompts = settings.AutoMarkPrompts();
     _rainbowSuggestions = settings.RainbowSuggestions();
+    _clipboardOperationsAllowed = settings.AllowVtClipboardWrite();
 
     if (_stateMachine)
     {
@@ -1565,7 +1566,7 @@ std::wstring Terminal::CurrentCommand() const
 
 void Terminal::SerializeMainBuffer(const wchar_t* destination) const
 {
-    _mainBuffer->Serialize(destination);
+    _mainBuffer->SerializeToPath(destination);
 }
 
 void Terminal::ColorSelection(const TextAttribute& attr, winrt::Microsoft::Terminal::Core::MatchMode matchMode)

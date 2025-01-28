@@ -125,10 +125,16 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         bool BackgroundImageSettingsVisible();
         void SetBackgroundImageOpacityFromPercentageValue(double percentageValue);
         void SetBackgroundImagePath(winrt::hstring path);
+        hstring BackgroundImageAlignmentCurrentValue() const;
 
         void ClearColorScheme();
-        Editor::ColorSchemeViewModel CurrentColorScheme();
+        Editor::ColorSchemeViewModel CurrentColorScheme() const;
         void CurrentColorScheme(const Editor::ColorSchemeViewModel& val);
+
+        Windows::UI::Color ForegroundPreview() const;
+        Windows::UI::Color BackgroundPreview() const;
+        Windows::UI::Color SelectionBackgroundPreview() const;
+        Windows::UI::Color CursorColorPreview() const;
 
         WINRT_PROPERTY(bool, IsDefault, false);
 
@@ -153,6 +159,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         OBSERVABLE_PROJECTED_SETTING(_appearance, BackgroundImageAlignment);
         OBSERVABLE_PROJECTED_SETTING(_appearance, IntenseTextStyle);
         OBSERVABLE_PROJECTED_SETTING(_appearance, AdjustIndistinguishableColors);
+        OBSERVABLE_PROJECTED_SETTING(_appearance, Foreground);
+        OBSERVABLE_PROJECTED_SETTING(_appearance, Background);
+        OBSERVABLE_PROJECTED_SETTING(_appearance, SelectionBackground);
+        OBSERVABLE_PROJECTED_SETTING(_appearance, CursorColor);
         WINRT_OBSERVABLE_PROPERTY(Windows::Foundation::Collections::IObservableVector<Editor::ColorSchemeViewModel>, SchemesList, _propertyChangedHandlers, nullptr);
 
     private:
@@ -187,7 +197,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         void FontFaceBox_GotFocus(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& e);
         void FontFaceBox_LostFocus(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& e);
-        void FontFaceBox_SuggestionChosen(const winrt::Windows::UI::Xaml::Controls::AutoSuggestBox&, const winrt::Windows::UI::Xaml::Controls::AutoSuggestBoxSuggestionChosenEventArgs&);
+        void FontFaceBox_QuerySubmitted(const winrt::Windows::UI::Xaml::Controls::AutoSuggestBox&, const winrt::Windows::UI::Xaml::Controls::AutoSuggestBoxQuerySubmittedEventArgs&);
         void FontFaceBox_TextChanged(const winrt::Windows::UI::Xaml::Controls::AutoSuggestBox&, const winrt::Windows::UI::Xaml::Controls::AutoSuggestBoxTextChangedEventArgs&);
         void DeleteFontKeyValuePair_Click(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& e);
         safe_void_coroutine BackgroundImage_Click(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& e);
@@ -222,9 +232,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Windows::Foundation::Collections::IObservableVector<winrt::hstring> _FontFeaturesNames;
         std::wstring _fontNameFilter;
         bool _ShowAllFonts = false;
+        bool _suppressFontFaceBoxList = false;
 
         static void _ViewModelChanged(const Windows::UI::Xaml::DependencyObject& d, const Windows::UI::Xaml::DependencyPropertyChangedEventArgs& e);
 
+        void _updateFontName(winrt::hstring fontSpec);
         void _updateFontNameFilter(std::wstring_view filter);
         void _updateFilteredFontList();
         void _UpdateBIAlignmentControl(const int32_t val);

@@ -189,6 +189,9 @@
   <data name="TabCloseSubMenu" xml:space="preserve">
     <value>Fechar</value>
   </data>
+  <data name="TabMoveSubMenu" xml:space="preserve">
+    <value>Mover guia</value>
+  </data>
   <data name="TabCloseAfter" xml:space="preserve">
     <value>Fechar guias à direita</value>
   </data>
@@ -722,12 +725,6 @@
   <data name="WindowRenamer.CloseButtonContent" xml:space="preserve">
     <value>Cancelar</value>
   </data>
-  <data name="RenameFailedToast.Title" xml:space="preserve">
-    <value>Falha ao renomear janela</value>
-  </data>
-  <data name="RenameFailedToast.Subtitle" xml:space="preserve">
-    <value>Já existe outra janela com esse nome</value>
-  </data>
   <data name="WindowMaximizeButtonToolTip" xml:space="preserve">
     <value>Maximizar</value>
   </data>
@@ -932,5 +929,11 @@
   </data>
   <data name="CloseSnippetsPaneButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Fechar o painel</value>
+  </data>
+  <data name="TabMoveLeft" xml:space="preserve">
+    <value>Mover para a esquerda</value>
+  </data>
+  <data name="TabMoveRight" xml:space="preserve">
+    <value>Mover para a direita</value>
   </data>
 </root>

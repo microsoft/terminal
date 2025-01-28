@@ -33,6 +33,7 @@ namespace Microsoft.Terminal.Settings.Model
 
         Profile Profile;
         Int32 ProfileIndex;
+        String Icon;
     }
 
     [default_interface] runtimeclass ActionEntry : NewTabMenuEntry
@@ -40,6 +41,7 @@ namespace Microsoft.Terminal.Settings.Model
         ActionEntry();
 
         String ActionId;
+        String Icon;
     }
 
     enum FolderEntryInlining
@@ -59,6 +61,7 @@ namespace Microsoft.Terminal.Settings.Model
         Boolean AllowEmpty;
 
         IVector<NewTabMenuEntry> Entries();
+        IVector<NewTabMenuEntry> RawEntries;
     }
 
     [default_interface] unsealed runtimeclass ProfileCollectionEntry : NewTabMenuEntry

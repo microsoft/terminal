@@ -193,6 +193,9 @@
   <data name="TabCloseSubMenu" xml:space="preserve">
     <value>Ćļôŝέ !</value>
   </data>
+  <data name="TabMoveSubMenu" xml:space="preserve">
+    <value>Μòνë ťäв !!</value>
+  </data>
   <data name="TabCloseAfter" xml:space="preserve">
     <value>Ċĺοşέ ţаъş ťό ŧђé яΐğђт !!! !!! </value>
   </data>
@@ -730,12 +733,6 @@
   <data name="WindowRenamer.CloseButtonContent" xml:space="preserve">
     <value>Сªⁿċĕĺ !</value>
   </data>
-  <data name="RenameFailedToast.Title" xml:space="preserve">
-    <value>₣âιļĕđ ŧо ѓëňąмë щϊπδǿω !!! !!! </value>
-  </data>
-  <data name="RenameFailedToast.Subtitle" xml:space="preserve">
-    <value>Άņόтĥěŗ ẃїлðοω ẁιťĥ ťћаť пâmě ăļřéàδў ёжìśŧѕ !!! !!! !!! !!! !</value>
-  </data>
   <data name="WindowMaximizeButtonToolTip" xml:space="preserve">
     <value>Μą×ìmϊżé !!</value>
   </data>
@@ -940,5 +937,11 @@
   </data>
   <data name="CloseSnippetsPaneButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Ćℓǿŝé ρдŉé !!!</value>
+  </data>
+  <data name="TabMoveLeft" xml:space="preserve">
+    <value>Μŏνê ĺэƒť !!!</value>
+  </data>
+  <data name="TabMoveRight" xml:space="preserve">
+    <value>Мóνε яίģнŧ !!!</value>
   </data>
 </root>

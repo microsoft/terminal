@@ -434,11 +434,12 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::SplitType)
 
 JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::SettingsTarget)
 {
-    JSON_MAPPINGS(4) = {
+    JSON_MAPPINGS(5) = {
         pair_type{ "settingsFile", ValueType::SettingsFile },
         pair_type{ "defaultsFile", ValueType::DefaultsFile },
         pair_type{ "allFiles", ValueType::AllFiles },
         pair_type{ "settingsUI", ValueType::SettingsUI },
+        pair_type{ "directory", ValueType::Directory }
     };
 };
 
@@ -719,8 +720,8 @@ struct ::Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<::winr
         if (isIndexed16)
         {
             const auto indexStr = string.substr(1);
-            const auto idx = til::to_ulong(indexStr, 16);
-            color.r = gsl::narrow_cast<uint8_t>(std::min(idx, 15ul));
+            const auto idx = til::parse_unsigned<uint8_t>(indexStr, 16);
+            color.r = std::min<uint8_t>(idx.value_or(255), 15);
         }
         else
         {
@@ -788,5 +789,15 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Control::DefaultInputScope)
     JSON_MAPPINGS(2) = {
         pair_type{ "default", ValueType::Default },
         pair_type{ "alphanumericHalfWidth", ValueType::AlphanumericHalfWidth },
+    };
+};
+
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Control::PathTranslationStyle)
+{
+    static constexpr std::array<pair_type, 4> mappings = {
+        pair_type{ "none", ValueType::None },
+        pair_type{ "wsl", ValueType::WSL },
+        pair_type{ "cygwin", ValueType::Cygwin },
+        pair_type{ "msys2", ValueType::MSYS2 },
     };
 };

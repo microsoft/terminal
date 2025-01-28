@@ -320,7 +320,7 @@ public:
     til::point SelectionEndForRendering() const;
     const SelectionEndpoint SelectionEndpointTarget() const noexcept;
 
-    TextCopyData RetrieveSelectedTextFromBuffer(const bool singleLine, const bool html = false, const bool rtf = false) const;
+    TextCopyData RetrieveSelectedTextFromBuffer(const bool singleLine, const bool withControlSequences = false, const bool html = false, const bool rtf = false) const;
 #pragma endregion
 
 #ifndef NDEBUG
@@ -413,6 +413,7 @@ private:
     Microsoft::Console::Types::Viewport _mutableViewport;
     til::CoordType _scrollbackLines = 0;
     bool _detectURLs = false;
+    bool _clipboardOperationsAllowed = true;
 
     til::size _altBufferSize;
     std::optional<til::size> _deferredResize;

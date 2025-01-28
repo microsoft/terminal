@@ -189,6 +189,9 @@
   <data name="TabCloseSubMenu" xml:space="preserve">
     <value>Закрыть</value>
   </data>
+  <data name="TabMoveSubMenu" xml:space="preserve">
+    <value>Переместить вкладку</value>
+  </data>
   <data name="TabCloseAfter" xml:space="preserve">
     <value>Закрыть вкладки справа</value>
   </data>
@@ -722,12 +725,6 @@
   <data name="WindowRenamer.CloseButtonContent" xml:space="preserve">
     <value>Отмена</value>
   </data>
-  <data name="RenameFailedToast.Title" xml:space="preserve">
-    <value>Не удалось переименовать окно</value>
-  </data>
-  <data name="RenameFailedToast.Subtitle" xml:space="preserve">
-    <value>Окно с таким именем уже существует</value>
-  </data>
   <data name="WindowMaximizeButtonToolTip" xml:space="preserve">
     <value>Развернуть</value>
   </data>
@@ -932,5 +929,11 @@
   </data>
   <data name="CloseSnippetsPaneButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Закрыть панель</value>
+  </data>
+  <data name="TabMoveLeft" xml:space="preserve">
+    <value>Влево</value>
+  </data>
+  <data name="TabMoveRight" xml:space="preserve">
+    <value>Вправо</value>
   </data>
 </root>

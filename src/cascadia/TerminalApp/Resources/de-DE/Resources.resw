@@ -192,6 +192,9 @@
   <data name="TabCloseSubMenu" xml:space="preserve">
     <value>Schließen</value>
   </data>
+  <data name="TabMoveSubMenu" xml:space="preserve">
+    <value>Registerkarte verschieben</value>
+  </data>
   <data name="TabCloseAfter" xml:space="preserve">
     <value>Tabs nach rechts schließen</value>
   </data>
@@ -725,12 +728,6 @@
   <data name="WindowRenamer.CloseButtonContent" xml:space="preserve">
     <value>Abbrechen</value>
   </data>
-  <data name="RenameFailedToast.Title" xml:space="preserve">
-    <value>Das Fenster konnte nicht umbenannt werden</value>
-  </data>
-  <data name="RenameFailedToast.Subtitle" xml:space="preserve">
-    <value>Ein anderes Fenster mit diesem Namen existiert bereits</value>
-  </data>
   <data name="WindowMaximizeButtonToolTip" xml:space="preserve">
     <value>Maximieren</value>
   </data>
@@ -935,5 +932,11 @@
   </data>
   <data name="CloseSnippetsPaneButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Bereich schließen</value>
+  </data>
+  <data name="TabMoveLeft" xml:space="preserve">
+    <value>Nach links</value>
+  </data>
+  <data name="TabMoveRight" xml:space="preserve">
+    <value>Nach rechts</value>
   </data>
 </root>

@@ -189,6 +189,9 @@
   <data name="TabCloseSubMenu" xml:space="preserve">
     <value>關閉</value>
   </data>
+  <data name="TabMoveSubMenu" xml:space="preserve">
+    <value>移動索引標籤</value>
+  </data>
   <data name="TabCloseAfter" xml:space="preserve">
     <value>關閉右側的索引標籤</value>
   </data>
@@ -722,12 +725,6 @@
   <data name="WindowRenamer.CloseButtonContent" xml:space="preserve">
     <value>取消</value>
   </data>
-  <data name="RenameFailedToast.Title" xml:space="preserve">
-    <value>無法重新命名視窗</value>
-  </data>
-  <data name="RenameFailedToast.Subtitle" xml:space="preserve">
-    <value>已存在另一個具有該名稱的視窗</value>
-  </data>
   <data name="WindowMaximizeButtonToolTip" xml:space="preserve">
     <value>最大化</value>
   </data>
@@ -932,5 +929,11 @@
   </data>
   <data name="CloseSnippetsPaneButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>關閉窗格</value>
+  </data>
+  <data name="TabMoveLeft" xml:space="preserve">
+    <value>左移</value>
+  </data>
+  <data name="TabMoveRight" xml:space="preserve">
+    <value>右移</value>
   </data>
 </root>

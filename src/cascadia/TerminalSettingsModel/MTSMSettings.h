@@ -68,7 +68,6 @@ Author(s):
     X(bool, EnableUnfocusedAcrylic, "compatibility.enableUnfocusedAcrylic", true)                                                                                                                     \
     X(winrt::Windows::Foundation::Collections::IVector<Model::NewTabMenuEntry>, NewTabMenu, "newTabMenu", winrt::single_threaded_vector<Model::NewTabMenuEntry>({ Model::RemainingProfilesEntry{} })) \
     X(bool, AllowHeadless, "compatibility.allowHeadless", false)                                                                                                                                      \
-    X(bool, IsolatedMode, "compatibility.isolatedMode", false)                                                                                                                                        \
     X(hstring, SearchWebDefaultQueryUrl, "searchWebDefaultQueryUrl", L"https://www.bing.com/search?q=%22%s%22")
 
 // Also add these settings to:
@@ -102,7 +101,9 @@ Author(s):
     X(bool, RainbowSuggestions, "experimental.rainbowSuggestions", false)                                                                                      \
     X(bool, ForceVTInput, "compatibility.input.forceVT", false)                                                                                                \
     X(bool, AllowVtChecksumReport, "compatibility.allowDECRQCRA", false)                                                                                       \
-    X(bool, AllowKeypadMode, "compatibility.allowDECNKM", false)
+    X(bool, AllowVtClipboardWrite, "compatibility.allowOSC52", true)                                                                                           \
+    X(bool, AllowKeypadMode, "compatibility.allowDECNKM", false)                                                                                               \
+    X(Microsoft::Terminal::Control::PathTranslationStyle, PathTranslationStyle, "pathTranslationStyle", Microsoft::Terminal::Control::PathTranslationStyle::None)
 
 // Intentionally omitted Profile settings:
 // * Name

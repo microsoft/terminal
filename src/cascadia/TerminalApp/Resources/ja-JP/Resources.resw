@@ -190,6 +190,9 @@
   <data name="TabCloseSubMenu" xml:space="preserve">
     <value>閉じる</value>
   </data>
+  <data name="TabMoveSubMenu" xml:space="preserve">
+    <value>タブの移動</value>
+  </data>
   <data name="TabCloseAfter" xml:space="preserve">
     <value>タブを右側に閉じる</value>
   </data>
@@ -723,12 +726,6 @@
   <data name="WindowRenamer.CloseButtonContent" xml:space="preserve">
     <value>キャンセル</value>
   </data>
-  <data name="RenameFailedToast.Title" xml:space="preserve">
-    <value>ウィンドウの名前を変更できませんでした</value>
-  </data>
-  <data name="RenameFailedToast.Subtitle" xml:space="preserve">
-    <value>その名前の別のウィンドウがすでに存在します</value>
-  </data>
   <data name="WindowMaximizeButtonToolTip" xml:space="preserve">
     <value>最大化</value>
   </data>
@@ -933,5 +930,11 @@
   </data>
   <data name="CloseSnippetsPaneButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>ウィンドウを閉じる</value>
+  </data>
+  <data name="TabMoveLeft" xml:space="preserve">
+    <value>左へ移動</value>
+  </data>
+  <data name="TabMoveRight" xml:space="preserve">
+    <value>右へ移動</value>
   </data>
 </root>

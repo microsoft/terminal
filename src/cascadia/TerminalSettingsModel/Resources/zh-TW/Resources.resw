@@ -328,6 +328,9 @@
     <value>開啟設定檔案 (JSON)</value>
     <comment>{Locked="JSON"}. "JSON" is the extension of the file that will be opened.</comment>
   </data>
+  <data name="SettingsFileOpenInExplorerCommandKey" xml:space="preserve">
+    <value>開啟設定檔案目錄</value>
+  </data>
   <data name="OpenTabColorPickerCommandKey" xml:space="preserve">
     <value>設定索引標籤色彩...</value>
   </data>
@@ -733,5 +736,8 @@
   </data>
   <data name="QuickFixCommandKey" xml:space="preserve">
     <value>開啟快速修正功能表</value>
+  </data>
+  <data name="OpenCWDCommandKey" xml:space="preserve">
+    <value>開啟目前的工作目錄</value>
   </data>
 </root>

@@ -264,12 +264,12 @@ whatever client application (`cmd`, `powershell`, `bash`, `vim`) that is
 connected to it. WT doesn't know when the user is typing in commands to the
 shell, or if the user is just typing in text in `emacs` or something. There's no
 way for the terminal to know that. It's _typically_ the client application's
-responsibility to save it's own command history. `bash` and `powershell` both do
+responsibility to save its own command history. `bash` and `powershell` both do
 a pretty good job of saving this to another file to restore across sessions,
 while `cmd.exe` doesn't.
 
 Windows is a messy world and this model gets a little tricky here. `cmd.exe`
-isn't actually managing it's own command history _at all_. `conhost` is doing
+isn't actually managing its own command history _at all_. `conhost` is doing
 that work on behalf of the client applications. Some long time ago someone
 thought it would be a good idea to have the `readline` functionality baked
 directly into the console host. Whether that was a good idea or not remains to

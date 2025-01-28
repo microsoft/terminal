@@ -5,9 +5,9 @@
 #include "TerminalWindow.h"
 
 #include "AppLogic.h"
-#include "../inc/WindowingBehavior.h"
 
 #include <LibraryResources.h>
+#include <til/env.h>
 
 #include "TerminalWindow.g.cpp"
 #include "SettingsLoadEventArgs.g.cpp"
@@ -169,9 +169,9 @@ namespace winrt::TerminalApp::implementation
                 }
                 _root->SetStartupActions(actions);
             }
-            else
+            else if (_appArgs)
             {
-                _root->SetStartupActions(_appArgs.GetStartupActions());
+                _root->SetStartupActions(_appArgs->ParsedArgs().GetStartupActions());
             }
         }
 
@@ -181,7 +181,7 @@ namespace winrt::TerminalApp::implementation
         // to register a handler to hear about the requests first and is all ready to receive
         // them before the COM server registers itself. Otherwise, the request might come
         // in and be routed to an event with no handlers or a non-ready Page.
-        if (_appArgs.IsHandoffListener())
+        if (_appArgs && _appArgs->ParsedArgs().IsHandoffListener())
         {
             _root->SetInboundListener(true);
         }
@@ -219,6 +219,7 @@ namespace winrt::TerminalApp::implementation
         _root->Loaded({ get_weak(), &TerminalWindow::_OnLoaded });
         _root->Initialized({ get_weak(), &TerminalWindow::_pageInitialized });
         _root->WindowSizeChanged({ get_weak(), &TerminalWindow::_WindowSizeChanged });
+        _root->RenameWindowRequested({ get_weak(), &TerminalWindow::_RenameWindowRequested });
         _root->Create();
 
         AppLogic::Current()->SettingsChanged({ get_weak(), &TerminalWindow::UpdateSettingsHandler });
@@ -569,7 +570,7 @@ namespace winrt::TerminalApp::implementation
         // --focusMode on the commandline here, and the mode in the settings.
         // Below, we'll also account for if focus mode was persisted into the
         // session for restoration.
-        bool focusMode = _appArgs.GetLaunchMode().value_or(_settings.GlobalSettings().LaunchMode()) == LaunchMode::FocusMode;
+        bool focusMode = _appArgs && _appArgs->ParsedArgs().GetLaunchMode().value_or(_settings.GlobalSettings().LaunchMode()) == LaunchMode::FocusMode;
 
         const auto scale = static_cast<float>(dpi) / static_cast<float>(USER_DEFAULT_SCREEN_DPI);
         if (const auto layout = LoadPersistedLayout())
@@ -589,13 +590,13 @@ namespace winrt::TerminalApp::implementation
             }
         }
 
-        if (_appArgs.GetSize().has_value() || (proposedSize.Width == 0 && proposedSize.Height == 0))
+        if ((_appArgs && _appArgs->ParsedArgs().GetSize().has_value()) || (proposedSize.Width == 0 && proposedSize.Height == 0))
         {
             // Use the default profile to determine how big of a window we need.
             const auto settings{ TerminalSettings::CreateWithNewTerminalArgs(_settings, nullptr, nullptr) };
 
             const til::size emptySize{};
-            const auto commandlineSize = _appArgs.GetSize().value_or(emptySize);
+            const auto commandlineSize = _appArgs ? _appArgs->ParsedArgs().GetSize().value_or(emptySize) : til::size{};
             proposedSize = TermControl::GetProposedDimensions(settings.DefaultSettings(),
                                                               dpi,
                                                               commandlineSize.width,
@@ -668,7 +669,7 @@ namespace winrt::TerminalApp::implementation
         // GH#4620/#5801 - If the user passed --maximized or --fullscreen on the
         // commandline, then use that to override the value from the settings.
         const auto valueFromSettings = _settings.GlobalSettings().LaunchMode();
-        const auto valueFromCommandlineArgs = _appArgs.GetLaunchMode();
+        const auto valueFromCommandlineArgs = _appArgs ? _appArgs->ParsedArgs().GetLaunchMode() : std::nullopt;
         if (const auto layout = LoadPersistedLayout())
         {
             if (layout.LaunchMode())
@@ -704,9 +705,9 @@ namespace winrt::TerminalApp::implementation
         }
 
         // Commandline args trump everything except for content bounds (tear-out)
-        if (_appArgs.GetPosition().has_value())
+        if (_appArgs && _appArgs->ParsedArgs().GetPosition().has_value())
         {
-            initialPosition = _appArgs.GetPosition().value();
+            initialPosition = _appArgs->ParsedArgs().GetPosition().value();
         }
 
         if (_contentBounds)
@@ -715,11 +716,10 @@ namespace winrt::TerminalApp::implementation
             // that to determine the initial position of the window. This is
             // used when the user is dragging a tab out of the window, to create
             // a new window.
-            //
-            // contentBounds is in screen pixels, but that's okay! we want to
-            // return screen pixels out of here. Nailed it.
-            const til::rect bounds = { til::math::rounding, _contentBounds.Value() };
-            initialPosition = { bounds.left, bounds.top };
+            // BODY: Technically we aren't guaranteed to be within the XAML stack right now to have a "current view".
+            const auto scale = static_cast<float>(DisplayInformation::GetForCurrentView().RawPixelsPerViewPixel());
+            const auto bounds = _contentBounds.Value();
+            initialPosition = { lroundf(bounds.X * scale), lroundf(bounds.Y * scale) };
         }
         return {
             initialPosition.X ? initialPosition.X.Value() : defaultInitialX,
@@ -743,7 +743,7 @@ namespace winrt::TerminalApp::implementation
         return !_contentBounds &&
                !hadPersistedPosition &&
                _settings.GlobalSettings().CenterOnLaunch() &&
-               !_appArgs.GetPosition().has_value();
+               (_appArgs && !_appArgs->ParsedArgs().GetPosition().has_value());
     }
 
     // Method Description:
@@ -767,51 +767,36 @@ namespace winrt::TerminalApp::implementation
 
     // This may be called on a background thread, or the main thread, but almost
     // definitely not on OUR UI thread.
-    safe_void_coroutine TerminalWindow::UpdateSettings(winrt::TerminalApp::SettingsLoadEventArgs args)
+    void TerminalWindow::UpdateSettings(winrt::TerminalApp::SettingsLoadEventArgs args)
     {
-        // GH#17620: We have a bug somewhere where a window doesn't get unregistered from the window list.
-        // This causes UpdateSettings calls where the thread dispatcher is already null.
-        const auto dispatcher = _root->Dispatcher();
-        if (!dispatcher)
+        _settings = args.NewSettings();
+
+        // Update the settings in TerminalPage
+        // We're on our UI thread right now, so this is safe
+        _root->SetSettings(_settings, true);
+
+        // Bubble the notification up to the AppHost, now that we've updated our _settings.
+        SettingsChanged.raise(*this, args);
+
+        if (FAILED(args.Result()))
         {
-            co_return;
+            const winrt::hstring titleKey = USES_RESOURCE(L"ReloadJsonParseErrorTitle");
+            const winrt::hstring textKey = USES_RESOURCE(L"ReloadJsonParseErrorText");
+            _ShowLoadErrorsDialog(titleKey,
+                                  textKey,
+                                  gsl::narrow_cast<HRESULT>(args.Result()),
+                                  args.ExceptionText());
+            return;
         }
-
-        const auto weakThis{ get_weak() };
-        co_await wil::resume_foreground(dispatcher);
-
-        // Back on our UI thread...
-        if (auto logic{ weakThis.get() })
+        else if (args.Result() == S_FALSE)
         {
-            _settings = args.NewSettings();
-
-            // Update the settings in TerminalPage
-            // We're on our UI thread right now, so this is safe
-            _root->SetSettings(_settings, true);
-
-            // Bubble the notification up to the AppHost, now that we've updated our _settings.
-            SettingsChanged.raise(*this, args);
-
-            if (FAILED(args.Result()))
-            {
-                const winrt::hstring titleKey = USES_RESOURCE(L"ReloadJsonParseErrorTitle");
-                const winrt::hstring textKey = USES_RESOURCE(L"ReloadJsonParseErrorText");
-                _ShowLoadErrorsDialog(titleKey,
-                                      textKey,
-                                      gsl::narrow_cast<HRESULT>(args.Result()),
-                                      args.ExceptionText());
-                co_return;
-            }
-            else if (args.Result() == S_FALSE)
-            {
-                _ShowLoadWarningsDialog(args.Warnings());
-            }
-            else if (args.Result() == S_OK)
-            {
-                DismissDialog();
-            }
-            _RefreshThemeRoutine();
+            _ShowLoadWarningsDialog(args.Warnings());
         }
+        else if (args.Result() == S_OK)
+        {
+            DismissDialog();
+        }
+        _RefreshThemeRoutine();
     }
 
     void TerminalWindow::_OpenSettingsUI()
@@ -973,19 +958,6 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    // Method Description:
-    // - Returns true if we should exit the application before even starting the
-    //   window. We might want to do this if we're displaying an error message or
-    //   the version string, or if we want to open the settings file.
-    // Arguments:
-    // - <none>
-    // Return Value:
-    // - true iff we should exit the application before even starting the window
-    bool TerminalWindow::ShouldExitEarly()
-    {
-        return _appArgs.ShouldExitEarly();
-    }
-
     bool TerminalWindow::FocusMode() const
     {
         return _root ? _root->FocusMode() : false;
@@ -1038,34 +1010,33 @@ namespace winrt::TerminalApp::implementation
     // Return Value:
     // - the result of the first command who's parsing returned a non-zero code,
     //   or 0. (see TerminalWindow::_ParseArgs)
-    int32_t TerminalWindow::SetStartupCommandline(array_view<const winrt::hstring> args,
-                                                  winrt::hstring cwd,
-                                                  winrt::hstring env)
+    int32_t TerminalWindow::SetStartupCommandline(TerminalApp::CommandlineArgs args)
     {
-        _WindowProperties->SetInitialCwd(std::move(cwd));
-        _WindowProperties->VirtualEnvVars(std::move(env));
+        _appArgs = winrt::get_self<CommandlineArgs>(args);
+        auto& parsedArgs = _appArgs->ParsedArgs();
+
+        _WindowProperties->SetInitialCwd(_appArgs->CurrentDirectory());
+        _WindowProperties->VirtualEnvVars(_appArgs->CurrentEnvironment());
 
         // This is called in AppHost::ctor(), before we've created the window
         // (or called TerminalWindow::Initialize)
-        const auto result = _appArgs.ParseArgs(args);
-        if (result == 0)
+        if (_appArgs->ExitCode() == 0)
         {
             // If the size of the arguments list is 1,
             // then it contains only the executable name and no other arguments.
-            _hasCommandLineArguments = args.size() > 1;
-            _appArgs.ValidateStartupCommands();
+            _hasCommandLineArguments = _appArgs->CommandlineRef().size() > 1;
 
             // DON'T pass the args into the page yet. It doesn't exist yet.
             // Instead, we'll handle that in Initialize, when we first instantiate the page.
         }
 
         // If we have a -s param passed to us to load a saved layout, cache that now.
-        if (const auto idx = _appArgs.GetPersistedLayoutIdx())
+        if (const auto idx = parsedArgs.GetPersistedLayoutIdx())
         {
             SetPersistedLayoutIdx(idx.value());
         }
 
-        return result;
+        return _appArgs->ExitCode();
     }
 
     void TerminalWindow::SetStartupContent(const winrt::hstring& content,
@@ -1097,43 +1068,24 @@ namespace winrt::TerminalApp::implementation
     // Return Value:
     // - the result of the first command who's parsing returned a non-zero code,
     //   or 0. (see TerminalWindow::_ParseArgs)
-    int32_t TerminalWindow::ExecuteCommandline(array_view<const winrt::hstring> args,
-                                               const winrt::hstring& cwd,
-                                               const winrt::hstring& env)
+    int32_t TerminalWindow::ExecuteCommandline(TerminalApp::CommandlineArgs args)
     {
-        ::TerminalApp::AppCommandlineArgs appArgs;
-        auto result = appArgs.ParseArgs(args);
-        if (result == 0)
+        _appArgs = winrt::get_self<CommandlineArgs>(args);
+
+        if (_appArgs->ExitCode() == 0)
         {
-            auto actions = winrt::single_threaded_vector<ActionAndArgs>(std::move(appArgs.GetStartupActions()));
+            auto& parsedArgs = _appArgs->ParsedArgs();
+            auto actions = winrt::single_threaded_vector<ActionAndArgs>(std::move(parsedArgs.GetStartupActions()));
 
-            _root->ProcessStartupActions(actions, false, cwd, env);
+            _root->ProcessStartupActions(actions, false, _appArgs->CurrentDirectory(), _appArgs->CurrentEnvironment());
 
-            if (appArgs.IsHandoffListener())
+            if (parsedArgs.IsHandoffListener())
             {
                 _root->SetInboundListener(true);
             }
         }
         // Return the result of parsing with commandline, though it may or may not be used.
-        return result;
-    }
-
-    // Method Description:
-    // - If there were any errors parsing the commandline that was used to
-    //   initialize the terminal, this will return a string containing that
-    //   message. If there were no errors, this message will be blank.
-    // - If the user requested help on any command (using --help), this will
-    //   contain the help message.
-    // - If the user requested the version number (using --version), this will
-    //   contain the version string.
-    // Arguments:
-    // - <none>
-    // Return Value:
-    // - the help text or error message for the provided commandline, if one
-    //   exists, otherwise the empty string.
-    winrt::hstring TerminalWindow::ParseCommandlineMessage()
-    {
-        return winrt::to_hstring(_appArgs.GetExitMessage());
+        return _appArgs->ExitCode();
     }
 
     void TerminalWindow::SetPersistedLayoutIdx(const uint32_t idx)
@@ -1202,14 +1154,6 @@ namespace winrt::TerminalApp::implementation
         if (_root)
         {
             _root->IdentifyWindow();
-        }
-    }
-
-    void TerminalWindow::RenameFailed()
-    {
-        if (_root)
-        {
-            _root->RenameFailed();
         }
     }
 
@@ -1368,6 +1312,11 @@ namespace winrt::TerminalApp::implementation
         WindowSizeChanged.raise(*this, args);
     }
 
+    void TerminalWindow::_RenameWindowRequested(const IInspectable&, const winrt::TerminalApp::RenameWindowRequestedArgs args)
+    {
+        WindowName(args.ProposedName());
+    }
+
     winrt::hstring WindowProperties::WindowName() const noexcept
     {
         return _WindowName;
@@ -1428,7 +1377,7 @@ namespace winrt::TerminalApp::implementation
 
     bool WindowProperties::IsQuakeWindow() const noexcept
     {
-        return _WindowName == QuakeWindowName;
+        return _WindowName == L"_quake";
     }
 
 };
