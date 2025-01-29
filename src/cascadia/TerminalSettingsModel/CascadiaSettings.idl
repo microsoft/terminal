@@ -5,6 +5,7 @@ import "GlobalAppSettings.idl";
 import "Profile.idl";
 import "TerminalWarnings.idl";
 import "DefaultTerminal.idl";
+import "ActionArgs.idl";
 
 namespace Microsoft.Terminal.Settings.Model
 {
@@ -21,6 +22,7 @@ namespace Microsoft.Terminal.Settings.Model
         static String ApplicationVersion { get; };
 
         static Windows.Foundation.Collections.IMap<Microsoft.Terminal.Settings.Model.ShortcutAction, String> AvailableShortcutActionsAndNames { get; };
+        static IActionArgs GetEmptyArgsForAction(Microsoft.Terminal.Settings.Model.ShortcutAction shortcutAction);
 
         CascadiaSettings(String userJSON, String inboxJSON);
 

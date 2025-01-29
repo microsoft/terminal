@@ -126,9 +126,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         CurrentAction(cmd.Name());
 
         std::vector<hstring> shortcutActions;
-        for (const auto [_, name] : _AvailableActionsAndNamesMap)
+        for (const auto [action, name] : _AvailableActionsAndNamesMap)
         {
             shortcutActions.emplace_back(name);
+            _NameToActionMap.emplace(name, action);
         }
         _AvailableShortcutActions = single_threaded_observable_vector(std::move(shortcutActions));
 
@@ -147,21 +148,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             if (viewModelProperty == L"ProposedShortcutAction")
             {
                 // todo: maybe just put this logic in the ProposedShortcutAction setter?
-                // todo: need a translator between string and enum
                 // todo: need a 'default arg struct' generator?
-                Model::ActionAndArgs newActionAndArgs{};
                 const auto actionString = unbox_value<hstring>(ProposedShortcutAction());
-                if (actionString == L"Send Input")
-                {
-                    newActionAndArgs.Action(Model::ShortcutAction::SendInput);
-                    newActionAndArgs.Args(Model::SendInputArgs{ L"" });
-                }
-                else if (actionString == L"Close Tab")
-                {
-                    const uint32_t index{ 0 };
-                    newActionAndArgs.Action(Model::ShortcutAction::CloseTab);
-                    newActionAndArgs.Args(Model::CloseTabArgs{ index });
-                }
+                const auto actionEnum = _NameToActionMap.at(actionString);
+                Model::ActionAndArgs newActionAndArgs{ actionEnum, CascadiaSettings::GetEmptyArgsForAction(actionEnum) };
                 _command.ActionAndArgs(newActionAndArgs);
                 ActionArgsVM(make<ActionArgsViewModel>(newActionAndArgs));
             }
@@ -253,20 +243,24 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             std::vector<Editor::ArgWrapper> argValues;
             for (uint32_t i = 0; i < shortcutArgsNumItems; i++)
             {
-                const auto argType = shortcutArgs.GetArgDescriptionAt(i).Type;
-                const auto item = make<ArgWrapper>(argType, shortcutArgs.GetArgAt(i));
-                item.PropertyChanged([&](const IInspectable& sender, const PropertyChangedEventArgs& args) {
-                    const auto itemProperty{ args.PropertyName() };
-                    if (itemProperty == L"Value")
-                    {
-                        const auto argWrapper = sender.as<Microsoft::Terminal::Settings::Editor::ArgWrapper>();
-                        const auto newValue = argWrapper.Value();
-                        // todo: this works but for some reason we have to hit "Save" twice (just for the first time...)?
-                        _actionAndArgs.Args().SetArgAt(i, newValue);
-                    }
-                });
-                argValues.push_back(item);
+                const auto argAtIndex = shortcutArgs.GetArgAt(i);
+                if (argAtIndex)
+                {
+                    const auto argType = shortcutArgs.GetArgDescriptionAt(i).Type;
+                    const auto item = make<ArgWrapper>(argType, argAtIndex);
+                    item.PropertyChanged([&, i](const IInspectable& sender, const PropertyChangedEventArgs& args) {
+                        const auto itemProperty{ args.PropertyName() };
+                        if (itemProperty == L"Value")
+                        {
+                            const auto argWrapper = sender.as<Microsoft::Terminal::Settings::Editor::ArgWrapper>();
+                            const auto newValue = argWrapper.Value();
+                            _actionAndArgs.Args().SetArgAt(i, newValue);
+                        }
+                    });
+                    argValues.push_back(item);
+                }
             }
+
             _ArgValues = single_threaded_observable_vector(std::move(argValues));
         }
     }

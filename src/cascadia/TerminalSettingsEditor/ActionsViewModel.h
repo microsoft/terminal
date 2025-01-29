@@ -162,6 +162,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void _RegisterKeyChordVMEvents(Editor::KeyChordViewModel kcVM);
         void _RegisterActionArgsVMEvents(Editor::ActionArgsViewModel actionArgsVM);
         Windows::Foundation::Collections::IMap<Model::ShortcutAction, winrt::hstring> _AvailableActionsAndNamesMap;
+        std::unordered_map<winrt::hstring, Model::ShortcutAction> _NameToActionMap;
     };
 
     struct ArgWrapper : ArgWrapperT<ArgWrapper>, ViewModelHelper<ArgWrapper>

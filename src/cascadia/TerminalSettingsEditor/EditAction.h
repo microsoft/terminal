@@ -19,6 +19,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         til::property_changed_event PropertyChanged;
 
         WINRT_OBSERVABLE_PROPERTY(Editor::CommandViewModel, ViewModel, PropertyChanged.raise, nullptr);
+
+    private:
+        friend struct EditActionT<EditAction>; // for Xaml to bind events
+        Windows::UI::Xaml::DataTemplate _listItemTemplate;
+        winrt::Microsoft::Terminal::Settings::Editor::ArgsTemplateSelectors _itemTemplateSelector{ nullptr };
+        void _choosingItemContainer(const Windows::UI::Xaml::Controls::ListViewBase& sender, const Windows::UI::Xaml::Controls::ChoosingItemContainerEventArgs& args);
     };
 }
 

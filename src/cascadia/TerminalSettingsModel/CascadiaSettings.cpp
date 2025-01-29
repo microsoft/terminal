@@ -994,6 +994,18 @@ winrt::Windows::Foundation::Collections::IMap<Model::ShortcutAction, winrt::hstr
     return single_threaded_map(std::move(availableShortcutActionsAndNames));
 }
 
+Model::IActionArgs CascadiaSettings::GetEmptyArgsForAction(Model::ShortcutAction shortcutAction)
+{
+    switch (shortcutAction)
+    {
+    case Model::ShortcutAction::SendInput:
+        return winrt::make<SendInputArgs>();
+    case Model::ShortcutAction::MovePane:
+        return winrt::make<MovePaneArgs>();
+    default:
+        return nullptr;
+    }
+}
 
 // Method Description:
 // - Determines if we're on an OS platform that supports

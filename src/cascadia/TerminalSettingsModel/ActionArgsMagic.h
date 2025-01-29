@@ -76,7 +76,7 @@ struct InitListPlaceholder
 #define EQUALS_ARGS(type, name, jsonKey, required, ...) \
     &&(otherAsUs->_##name == _##name)
 
-// getter and setter for each property by name
+// getter and setter for each property by index
 #define GET_ARG_BY_INDEX(type, name, jsonKey, required, ...) \
     if (index == curIndex++)                                 \
     {                                                        \
@@ -86,7 +86,7 @@ struct InitListPlaceholder
         }                                                    \
         else                                                 \
         {                                                    \
-            return nullptr;                                  \
+            return winrt::box_value(type{ __VA_ARGS__ });    \
         }                                                    \
     }
 
@@ -138,7 +138,7 @@ struct InitListPlaceholder
 //   * GlobalSummonArgs has the QuakeModeFromJson helper
 
 #define ACTION_ARG_BODY(className, argsMacro)                    \
-    className() = default;                                       \
+    className() { argsMacro(APPEND_ARG_DESCRIPTION) };           \
     className(                                                   \
         argsMacro(CTOR_PARAMS) InitListPlaceholder = {}) :       \
         argsMacro(CTOR_INIT) _placeholder{} {                    \
