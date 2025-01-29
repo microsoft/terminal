@@ -105,8 +105,6 @@ struct InitListPlaceholder
 // is used as the conditional for the validation here.
 #define FROM_JSON_ARGS(type, name, jsonKey, required, ...)                                                \
     JsonUtils::GetValueForKey(json, jsonKey, args->_##name);                                              \
-    args->_argCount += 1;                                                                                 \
-    args->_argDescriptions.push_back({ L## #name, L## #type, std::wstring(L## #required) != L"false" });  \
     if (required)                                                                                         \
     {                                                                                                     \
         return { nullptr, { SettingsLoadWarnings::MissingRequiredParameter } };                           \
@@ -148,7 +146,6 @@ struct InitListPlaceholder
                                                                  \
 private:                                                         \
     InitListPlaceholder _placeholder;                            \
-    uint32_t _argCount{ 0 };                                     \
     std::vector<ArgDescription> _argDescriptions;                \
                                                                  \
 public:                                                          \
@@ -183,7 +180,6 @@ public:                                                          \
     {                                                            \
         auto copy{ winrt::make_self<className>() };              \
         argsMacro(COPY_ARGS);                                    \
-        copy->_argCount = _argCount;                             \
         copy->_argDescriptions = _argDescriptions;               \
         return *copy;                                            \
     }                                                            \

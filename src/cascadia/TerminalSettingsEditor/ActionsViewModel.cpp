@@ -244,21 +244,18 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             for (uint32_t i = 0; i < shortcutArgsNumItems; i++)
             {
                 const auto argAtIndex = shortcutArgs.GetArgAt(i);
-                if (argAtIndex)
-                {
-                    const auto argType = shortcutArgs.GetArgDescriptionAt(i).Type;
-                    const auto item = make<ArgWrapper>(argType, argAtIndex);
-                    item.PropertyChanged([&, i](const IInspectable& sender, const PropertyChangedEventArgs& args) {
-                        const auto itemProperty{ args.PropertyName() };
-                        if (itemProperty == L"Value")
-                        {
-                            const auto argWrapper = sender.as<Microsoft::Terminal::Settings::Editor::ArgWrapper>();
-                            const auto newValue = argWrapper.Value();
-                            _actionAndArgs.Args().SetArgAt(i, newValue);
-                        }
-                    });
-                    argValues.push_back(item);
-                }
+                const auto argType = shortcutArgs.GetArgDescriptionAt(i).Type;
+                const auto item = make<ArgWrapper>(argType, argAtIndex);
+                item.PropertyChanged([&, i](const IInspectable& sender, const PropertyChangedEventArgs& args) {
+                    const auto itemProperty{ args.PropertyName() };
+                    if (itemProperty == L"Value")
+                    {
+                        const auto argWrapper = sender.as<Microsoft::Terminal::Settings::Editor::ArgWrapper>();
+                        const auto newValue = argWrapper.Value();
+                        _actionAndArgs.Args().SetArgAt(i, newValue);
+                    }
+                });
+                argValues.push_back(item);
             }
 
             _ArgValues = single_threaded_observable_vector(std::move(argValues));
