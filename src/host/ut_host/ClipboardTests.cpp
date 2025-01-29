@@ -84,7 +84,7 @@ class ClipboardTests
         const auto& screenInfo = gci.GetActiveOutputBuffer();
         const auto& buffer = screenInfo.GetTextBuffer();
 
-        constexpr til::point_span selection = { { 0, 0 }, { 14, 3 } };
+        constexpr til::point_span selection = { { 0, 0 }, { 15, 3 } };
         const auto req = TextBuffer::CopyRequest::FromConfig(buffer, selection.start, selection.end, false, !fLineSelection, false);
         return buffer.GetPlainText(req);
     }
