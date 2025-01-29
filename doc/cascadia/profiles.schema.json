@@ -2913,7 +2913,7 @@
         },
         "experimental.rightClickContextMenu": {
           "default": false,
-          "description": "When set to true, right-clicking on the terminal will show a context menu. When set to false, right-click will copy",
+          "description": "When true, right-click shows a context menu; otherwise, it pastes from the clipboard or copies selection.",
           "type": "boolean"
         },
         "experimental.repositionCursorWithMouse": {

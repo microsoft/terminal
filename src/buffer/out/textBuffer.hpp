@@ -170,9 +170,15 @@ public:
     void TriggerScroll();
     void TriggerScroll(const til::point delta);
     void TriggerNewTextNotification(const std::wstring_view newText);
+    void TriggerSelection();
 
     til::point GetWordStart(const til::point target, const std::wstring_view wordDelimiters, bool accessibilityMode = false, std::optional<til::point> limitOptional = std::nullopt) const;
     til::point GetWordEnd(const til::point target, const std::wstring_view wordDelimiters, bool accessibilityMode = false, std::optional<til::point> limitOptional = std::nullopt) const;
+
+    til::point GetWordStart2(til::point pos, const std::wstring_view wordDelimiters, bool includeWhitespace, std::optional<til::point> limitOptional = std::nullopt) const;
+    til::point GetWordEnd2(til::point pos, const std::wstring_view wordDelimiters, bool includeWhitespace, std::optional<til::point> limitOptional = std::nullopt) const;
+
+    bool IsWordBoundary(const til::point pos, const std::wstring_view wordDelimiters) const;
     bool MoveToNextWord(til::point& pos, const std::wstring_view wordDelimiters, std::optional<til::point> limitOptional = std::nullopt) const;
     bool MoveToPreviousWord(til::point& pos, const std::wstring_view wordDelimiters) const;
 
@@ -180,6 +186,8 @@ public:
     til::point GetGlyphEnd(const til::point pos, bool accessibilityMode = false, std::optional<til::point> limitOptional = std::nullopt) const;
     bool MoveToNextGlyph(til::point& pos, bool allowBottomExclusive = false, std::optional<til::point> limitOptional = std::nullopt) const;
     bool MoveToPreviousGlyph(til::point& pos, std::optional<til::point> limitOptional = std::nullopt) const;
+    bool MoveToNextGlyph2(til::point& pos, std::optional<til::point> limitOptional = std::nullopt) const;
+    bool MoveToPreviousGlyph2(til::point& pos, std::optional<til::point> limitOptional = std::nullopt) const;
 
     const std::vector<til::inclusive_rect> GetTextRects(til::point start, til::point end, bool blockSelection, bool bufferCoordinates) const;
     std::vector<til::point_span> GetTextSpans(til::point start, til::point end, bool blockSelection, bool bufferCoordinates) const;
@@ -322,6 +330,8 @@ private:
     void _SetFirstRowIndex(const til::CoordType FirstRowIndex) noexcept;
     void _ExpandTextRow(til::inclusive_rect& selectionRow) const;
     DelimiterClass _GetDelimiterClassAt(const til::point pos, const std::wstring_view wordDelimiters) const;
+    til::point _GetDelimiterClassRunStart(til::point pos, const std::wstring_view wordDelimiters) const;
+    til::point _GetDelimiterClassRunEnd(til::point pos, const std::wstring_view wordDelimiters) const;
     til::point _GetWordStartForAccessibility(const til::point target, const std::wstring_view wordDelimiters) const;
     til::point _GetWordStartForSelection(const til::point target, const std::wstring_view wordDelimiters) const;
     til::point _GetWordEndForAccessibility(const til::point target, const std::wstring_view wordDelimiters, const til::point limit) const;

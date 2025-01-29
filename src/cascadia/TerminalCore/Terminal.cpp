@@ -478,7 +478,7 @@ bool Terminal::ShouldSendAlternateScroll(const unsigned int uiButton,
 // - The position relative to the viewport
 std::wstring Terminal::GetHyperlinkAtViewportPosition(const til::point viewportPos)
 {
-    return GetHyperlinkAtBufferPosition(_ConvertToBufferCell(viewportPos));
+    return GetHyperlinkAtBufferPosition(_ConvertToBufferCell(viewportPos, false));
 }
 
 std::wstring Terminal::GetHyperlinkAtBufferPosition(const til::point bufferPos)
@@ -502,12 +502,8 @@ std::wstring Terminal::GetHyperlinkAtBufferPosition(const til::point bufferPos)
         result = GetHyperlinkIntervalFromViewportPosition(viewportPos);
         if (result.has_value())
         {
-            // GetPlainText and _ConvertToBufferCell work with inclusive coordinates, but interval's
-            // stop point is (horizontally) exclusive, so let's just update it.
-            result->stop.x--;
-
-            result->start = _ConvertToBufferCell(result->start);
-            result->stop = _ConvertToBufferCell(result->stop);
+            result->start = _ConvertToBufferCell(result->start, false);
+            result->stop = _ConvertToBufferCell(result->stop, true);
         }
     }
     else
@@ -544,7 +540,7 @@ std::wstring Terminal::GetHyperlinkAtBufferPosition(const til::point bufferPos)
 // - The hyperlink ID
 uint16_t Terminal::GetHyperlinkIdAtViewportPosition(const til::point viewportPos)
 {
-    return _activeBuffer().GetCellDataAt(_ConvertToBufferCell(viewportPos))->TextAttr().GetHyperlinkId();
+    return _activeBuffer().GetCellDataAt(_ConvertToBufferCell(viewportPos, false))->TextAttr().GetHyperlinkId();
 }
 
 // Method description:
@@ -1466,7 +1462,6 @@ PointTree Terminal::_getPatterns(til::CoordType beg, til::CoordType end) const
                 // PointTree uses half-open ranges and viewport-relative coordinates.
                 range.start.y -= beg;
                 range.end.y -= beg;
-                range.end.x++;
                 intervals.push_back(PointTree::interval(range.start, range.end, 0));
             } while (uregex_findNext(re.get(), &status));
         }
