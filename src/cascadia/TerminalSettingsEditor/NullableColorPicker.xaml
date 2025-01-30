@@ -94,12 +94,9 @@
         </ResourceDictionary>
     </UserControl.Resources>
 
-    <Grid ColumnSpacing="5">
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="Auto" />
-            <ColumnDefinition Width="Auto" />
-        </Grid.ColumnDefinitions>
-
+    <StackPanel x:Name="ContentStackPanel"
+                Spacing="5"
+                Orientation="Horizontal">
         <ContentDialog x:Name="ColorPickerDialog"
                        x:Uid="NullableColorPicker_ColorPickerContentDialog"
                        DefaultButton="Primary"
@@ -119,37 +116,61 @@
                               Orientation="Horizontal" />
         </ContentDialog>
 
-        <ContentPresenter Grid.Column="0"
-                          Content="{x:Bind ColorSchemeVM, Mode=OneWay}"
+        <ContentPresenter Content="{x:Bind ColorSchemeVM, Mode=OneWay}"
                           ContentTemplate="{StaticResource ColorSchemeTemplate}" />
 
-        <StackPanel Grid.Column="1"
-                    Spacing="5">
-            <ToggleButton AutomationProperties.Name="{x:Bind NullColorButtonLabel}"
-                          Click="NullColorButton_Clicked"
-                          IsChecked="{x:Bind IsNull(CurrentColor), Mode=OneWay}">
-                <Grid ColumnSpacing="5">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="*" />
-                    </Grid.ColumnDefinitions>
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <StackPanel Spacing="5">
+                <ToggleButton AutomationProperties.Name="{x:Bind NullColorButtonLabel}"
+                              Click="NullColorButton_Clicked"
+                              IsChecked="{x:Bind IsNull(CurrentColor), Mode=OneWay}">
+                    <Grid ColumnSpacing="5">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
 
-                    <Border Grid.Column="0"
-                            Width="20"
-                            Height="20"
-                            Background="{x:Bind mtu:Converters.ColorToBrush(NullColorPreview), Mode=OneWay}"
-                            BorderThickness="1"
-                            CornerRadius="{ThemeResource ControlCornerRadius}" />
+                        <Border Grid.Column="0"
+                                Width="20"
+                                Height="20"
+                                Background="{x:Bind mtu:Converters.ColorToBrush(NullColorPreview), Mode=OneWay}"
+                                BorderThickness="1"
+                                CornerRadius="{ThemeResource ControlCornerRadius}" />
 
-                    <TextBlock Grid.Column="1"
-                               Text="{x:Bind NullColorButtonLabel}" />
-                </Grid>
-            </ToggleButton>
+                        <TextBlock Grid.Column="1"
+                                   Text="{x:Bind NullColorButtonLabel}" />
+                    </Grid>
+                </ToggleButton>
 
-            <Button x:Uid="NullableColorPicker_MoreColorsButton"
-                    HorizontalAlignment="Stretch"
-                    Click="MoreColors_Clicked" />
-        </StackPanel>
-    </Grid>
+                <Button x:Uid="NullableColorPicker_MoreColorsButton"
+                        HorizontalAlignment="Stretch"
+                        Click="MoreColors_Clicked" />
+            </StackPanel>
+        </Grid>
+
+        <VisualStateManager.VisualStateGroups>
+            <VisualStateGroup>
+                <VisualState x:Name="Narrow">
+                    <VisualState.StateTriggers>
+                        <AdaptiveTrigger MinWindowWidth="0"/>
+                    </VisualState.StateTriggers>
+                    <VisualState.Setters>
+                        <Setter Target="ContentStackPanel.Orientation" Value="Vertical"/>
+                    </VisualState.Setters>
+                </VisualState>
+                <VisualState x:Name="Wide">
+                    <VisualState.StateTriggers>
+                        <AdaptiveTrigger MinWindowWidth="600"/>
+                    </VisualState.StateTriggers>
+                    <VisualState.Setters>
+                        <Setter Target="ContentStackPanel.Orientation" Value="Horizontal"/>
+                    </VisualState.Setters>
+                </VisualState>
+            </VisualStateGroup>
+        </VisualStateManager.VisualStateGroups>
+    </StackPanel>
 
 </UserControl>
