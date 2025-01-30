@@ -568,6 +568,10 @@
     <value>DECRQCRA 허용(Request Checksum of Rectangular Area)</value>
     <comment>{Locked="DECRQCRA"}{Locked="Request Checksum of Rectangular Area"}Header for a control to toggle support for the DECRQCRA control sequence.</comment>
   </data>
+  <data name="Profile_AllowVtClipboardWrite.Header" xml:space="preserve">
+    <value>OSC 52(Manipulate Selection Data)가 클립보드에 쓸 수 있도록 허용</value>
+    <comment>{Locked="OSC 52"}{Locked="Manipulate Selection Data"}Header for a control to toggle support for applications to change the contents of the Windows system clipboard.</comment>
+  </data>
   <data name="Globals_AllowHeadless.Header" xml:space="preserve">
     <value>Windows 터미널 백그라운드에서 실행하도록 허용</value>
     <comment>Header for a control to toggle support for Windows Terminal to run in the background.</comment>

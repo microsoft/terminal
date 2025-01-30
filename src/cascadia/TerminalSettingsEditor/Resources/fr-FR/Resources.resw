@@ -568,6 +568,10 @@
     <value>Autoriser les DECRQCRA (Request Checksum of Rectangular Area)</value>
     <comment>{Locked="DECRQCRA"}{Locked="Request Checksum of Rectangular Area"}Header for a control to toggle support for the DECRQCRA control sequence.</comment>
   </data>
+  <data name="Profile_AllowVtClipboardWrite.Header" xml:space="preserve">
+    <value>Autoriser OSC 52 (Manipulate Selection Data) à écrire dans le Presse-papiers</value>
+    <comment>{Locked="OSC 52"}{Locked="Manipulate Selection Data"}Header for a control to toggle support for applications to change the contents of the Windows system clipboard.</comment>
+  </data>
   <data name="Globals_AllowHeadless.Header" xml:space="preserve">
     <value>Autoriser Terminal Windows à s’exécuter en arrière-plan</value>
     <comment>Header for a control to toggle support for Windows Terminal to run in the background.</comment>
