@@ -3,19 +3,12 @@
 
 namespace Microsoft.Terminal.Settings.Editor
 {
-    [default_interface] runtimeclass ActionsTemplateSelectors : Windows.UI.Xaml.Controls.DataTemplateSelector
-    {
-        ActionsTemplateSelectors();
-
-        Windows.UI.Xaml.DataTemplate SendInputTemplate;
-        Windows.UI.Xaml.DataTemplate CloseTabTemplate;
-    }
-
     [default_interface] runtimeclass ArgsTemplateSelectors : Windows.UI.Xaml.Controls.DataTemplateSelector
     {
         ArgsTemplateSelectors();
 
         Windows.UI.Xaml.DataTemplate UInt32Template;
         Windows.UI.Xaml.DataTemplate StringTemplate;
+        Windows.UI.Xaml.DataTemplate BoolTemplate;
     }
 }

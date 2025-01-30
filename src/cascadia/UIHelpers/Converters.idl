@@ -31,5 +31,6 @@ namespace Microsoft.Terminal.UI
         // Unboxing
         static String UnboxString(Object value);
         static UInt32 UnboxUInt32(Object value);
+        static Boolean UnboxBool(Object value);
     }
 }

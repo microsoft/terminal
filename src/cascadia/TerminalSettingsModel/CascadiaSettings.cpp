@@ -1002,6 +1002,10 @@ Model::IActionArgs CascadiaSettings::GetEmptyArgsForAction(Model::ShortcutAction
         return winrt::make<SendInputArgs>();
     case Model::ShortcutAction::MovePane:
         return winrt::make<MovePaneArgs>();
+    case Model::ShortcutAction::CopyText:
+        return winrt::make<CopyTextArgs>();
+    case Model::ShortcutAction::SetFocusMode:
+        return winrt::make<SetFocusModeArgs>();
     default:
         return nullptr;
     }

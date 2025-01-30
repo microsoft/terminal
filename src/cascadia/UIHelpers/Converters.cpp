@@ -120,4 +120,9 @@ namespace winrt::Microsoft::Terminal::UI::implementation
     {
         return winrt::unbox_value<uint32_t>(value);
     }
+
+    bool Converters::UnboxBool(const Windows::Foundation::IInspectable& value)
+    {
+        return winrt::unbox_value<bool>(value);
+    }
 }

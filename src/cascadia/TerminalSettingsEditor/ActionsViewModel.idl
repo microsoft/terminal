@@ -77,9 +77,11 @@ namespace Microsoft.Terminal.Settings.Editor
     runtimeclass ArgWrapper : Windows.UI.Xaml.Data.INotifyPropertyChanged
     {
         String Type { get; };
+        Boolean Required { get; };
         IInspectable Value;
         void StringBindBack(String newValue);
         void DoubleBindBack(Double newValue);
+        void BoolBindBack(Windows.Foundation.IReference<Boolean> newValue);
     }
 
     runtimeclass ActionArgsViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged

@@ -244,8 +244,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             for (uint32_t i = 0; i < shortcutArgsNumItems; i++)
             {
                 const auto argAtIndex = shortcutArgs.GetArgAt(i);
-                const auto argType = shortcutArgs.GetArgDescriptionAt(i).Type;
-                const auto item = make<ArgWrapper>(argType, argAtIndex);
+                const auto argDescription = shortcutArgs.GetArgDescriptionAt(i);
+                const auto argType = argDescription.Type;
+                const auto argRequired = argDescription.Required;
+                const auto item = make<ArgWrapper>(argType, argRequired, argAtIndex);
                 item.PropertyChanged([&, i](const IInspectable& sender, const PropertyChangedEventArgs& args) {
                     const auto itemProperty{ args.PropertyName() };
                     if (itemProperty == L"Value")

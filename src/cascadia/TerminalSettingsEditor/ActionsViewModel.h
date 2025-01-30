@@ -168,15 +168,21 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     struct ArgWrapper : ArgWrapperT<ArgWrapper>, ViewModelHelper<ArgWrapper>
     {
     public:
-        ArgWrapper(const winrt::hstring& type, const Windows::Foundation::IInspectable& value)
+        ArgWrapper(const winrt::hstring& type, const bool required, const Windows::Foundation::IInspectable& value)
         {
             Value(value);
             _type = type;
+            _required = required;
         };
 
         winrt::hstring Type()
         {
             return _type;
+        }
+
+        bool Required()
+        {
+            return _required;
         }
 
         void StringBindBack(const winrt::hstring& newValue)
@@ -189,10 +195,24 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             Value(box_value(static_cast<uint32_t>(newValue)));
         }
 
+        void BoolBindBack(const Windows::Foundation::IReference<bool> newValue)
+        {
+            // todo: bool doesn't work fully - 3-state checkbox not working? possibly because it's binding to a bool
+            if (newValue)
+            {
+                Value(box_value(newValue));
+            }
+            else
+            {
+                Value(nullptr);
+            }
+        }
+
         VIEW_MODEL_OBSERVABLE_PROPERTY(Windows::Foundation::IInspectable, Value, nullptr);
 
     private:
         winrt::hstring _type;
+        bool _required;
     };
 
     struct ActionArgsViewModel : ActionArgsViewModelT<ActionArgsViewModel>, ViewModelHelper<ActionArgsViewModel>
@@ -213,6 +233,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Model::ActionAndArgs _actionAndArgs{ nullptr };
         winrt::hstring _StringArg1;
         uint32_t _UInt32Arg1;
+        bool _BoolArg1;
     };
 
     struct KeyChordViewModel : KeyChordViewModelT<KeyChordViewModel>, ViewModelHelper<KeyChordViewModel>

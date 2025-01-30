@@ -219,26 +219,12 @@
                     </Grid>
                 </ListViewItem>
             </DataTemplate>
-            <DataTemplate x:Key="SendInputTemplate"
-                          x:DataType="local:ActionArgsViewModel">
-                <TextBox Text="{x:Bind StringArg1, Mode=TwoWay}" />
-            </DataTemplate>
-            <DataTemplate x:Key="CloseTabTemplate"
-                          x:DataType="local:ActionArgsViewModel">
-                <muxc:NumberBox Value="{x:Bind UInt32Arg1, Mode=TwoWay}"
-                                Style="{StaticResource NumberBoxSettingStyle}"
-                                Minimum="0"
-                                Maximum="999"
-                                LargeChange="1"
-                                SmallChange="1"/>
-            </DataTemplate>
-            <local:ActionsTemplateSelectors x:Key="ActionsTemplateSelector"
-                                            SendInputTemplate="{StaticResource SendInputTemplate}"
-                                            CloseTabTemplate="{StaticResource CloseTabTemplate}"/>
+
             <DataTemplate x:Key="ListItemTemplate"
                           x:DataType="local:ArgWrapper">
                 <ListViewItem HorizontalContentAlignment="Stretch" />
             </DataTemplate>
+
             <DataTemplate x:Key="UInt32Template"
                           x:DataType="local:ArgWrapper">
                 <ListViewItem>
@@ -262,9 +248,20 @@
                 </ListViewItem>
             </DataTemplate>
 
+            <DataTemplate x:Key="BoolTemplate"
+                          x:DataType="local:ArgWrapper">
+                <ListViewItem>
+                    <StackPanel Orientation="Horizontal">
+                        <CheckBox IsChecked="{x:Bind mtu:Converters.UnboxBool(Value), Mode=TwoWay, BindBack=BoolBindBack}"
+                                  IsThreeState="True" />
+                    </StackPanel>
+                </ListViewItem>
+            </DataTemplate>
+
             <local:ArgsTemplateSelectors x:Key="ArgsTemplateSelector"
                                          UInt32Template="{StaticResource UInt32Template}"
-                                         StringTemplate="{StaticResource StringTemplate}" />
+                                         StringTemplate="{StaticResource StringTemplate}"
+                                         BoolTemplate="{StaticResource BoolTemplate}" />
         </ResourceDictionary>
     </Page.Resources>
 
