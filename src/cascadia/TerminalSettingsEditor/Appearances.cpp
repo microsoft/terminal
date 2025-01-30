@@ -927,7 +927,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         else
         {
             // Append vertical alignment to the resource key
-            switch (alignment & static_cast<ConvergedAlignment>(0x0F))
+            switch (alignment & static_cast<ConvergedAlignment>(0xF0))
             {
             case ConvergedAlignment::Vertical_Bottom:
                 alignmentResourceKey = alignmentResourceKey + L"Bottom";
@@ -938,7 +938,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             }
 
             // Append horizontal alignment to the resource key
-            switch (alignment & static_cast<ConvergedAlignment>(0xF0))
+            switch (alignment & static_cast<ConvergedAlignment>(0x0F))
             {
             case ConvergedAlignment::Horizontal_Left:
                 alignmentResourceKey = alignmentResourceKey + L"Left";
