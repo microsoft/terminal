@@ -95,8 +95,8 @@
     </UserControl.Resources>
 
     <StackPanel x:Name="ContentStackPanel"
-                Spacing="5"
-                Orientation="Horizontal">
+                Orientation="Horizontal"
+                Spacing="5">
         <ContentDialog x:Name="ColorPickerDialog"
                        x:Uid="NullableColorPicker_ColorPickerContentDialog"
                        DefaultButton="Primary"
@@ -155,18 +155,18 @@
             <VisualStateGroup>
                 <VisualState x:Name="Narrow">
                     <VisualState.StateTriggers>
-                        <AdaptiveTrigger MinWindowWidth="0"/>
+                        <AdaptiveTrigger MinWindowWidth="0" />
                     </VisualState.StateTriggers>
                     <VisualState.Setters>
-                        <Setter Target="ContentStackPanel.Orientation" Value="Vertical"/>
+                        <Setter Target="ContentStackPanel.Orientation" Value="Vertical" />
                     </VisualState.Setters>
                 </VisualState>
                 <VisualState x:Name="Wide">
                     <VisualState.StateTriggers>
-                        <AdaptiveTrigger MinWindowWidth="600"/>
+                        <AdaptiveTrigger MinWindowWidth="600" />
                     </VisualState.StateTriggers>
                     <VisualState.Setters>
-                        <Setter Target="ContentStackPanel.Orientation" Value="Horizontal"/>
+                        <Setter Target="ContentStackPanel.Orientation" Value="Horizontal" />
                     </VisualState.Setters>
                 </VisualState>
             </VisualStateGroup>
