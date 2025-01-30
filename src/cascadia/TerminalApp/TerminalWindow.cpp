@@ -289,6 +289,11 @@ namespace winrt::TerminalApp::implementation
         return _settings.GlobalSettings().AlwaysOnTop();
     }
 
+    bool TerminalWindow::GetInitialShowTabsFullscreen()
+    {
+        return _settings.GlobalSettings().ShowTabsFullscreen();
+    }
+
     bool TerminalWindow::GetMinimizeToNotificationArea()
     {
         return _settings.GlobalSettings().MinimizeToNotificationArea();
@@ -979,6 +984,11 @@ namespace winrt::TerminalApp::implementation
     bool TerminalWindow::AlwaysOnTop() const
     {
         return _root ? _root->AlwaysOnTop() : false;
+    }
+
+    bool TerminalWindow::ShowTabsFullscreen() const
+    {
+        return _root ? _root->ShowTabsFullscreen() : false;
     }
 
     void TerminalWindow::SetSettingsStartupArgs(const std::vector<ActionAndArgs>& actions)

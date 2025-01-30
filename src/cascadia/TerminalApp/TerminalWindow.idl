@@ -69,6 +69,7 @@ namespace TerminalApp
         void Maximized(Boolean newMaximized);
         Boolean AlwaysOnTop { get; };
         Boolean AutoHideWindow { get; };
+        Boolean ShowTabsFullscreen { get; };
 
         void IdentifyWindow();
         void SetPersistedLayoutIdx(UInt32 idx);
@@ -82,6 +83,7 @@ namespace TerminalApp
         Microsoft.Terminal.Settings.Model.LaunchMode GetLaunchMode();
         Boolean GetShowTabsInTitlebar();
         Boolean GetInitialAlwaysOnTop();
+        Boolean GetInitialShowTabsFullscreen();
         Single CalcSnappedDimension(Boolean widthOrHeight, Single dimension);
         void TitlebarClicked();
         void CloseWindow();
