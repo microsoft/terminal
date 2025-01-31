@@ -267,22 +267,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
-    void ActionArgsViewModel::StringArg1(const winrt::hstring& newStringArg1)
-    {
-        _StringArg1 = newStringArg1;
-        // todo: translate between "StringArg1" and whatever the actual arg is for this action
-        _actionAndArgs.Args().as<Model::SendInputArgs>().Input(_StringArg1);
-        _NotifyChanges(L"StringArg1");
-    }
-
-    void ActionArgsViewModel::UInt32Arg1(const uint32_t newUInt32Arg1)
-    {
-        _UInt32Arg1 = newUInt32Arg1;
-        // todo: translate between "UInt32Arg1" and whatever the actual arg is for this action
-        _actionAndArgs.Args().as<Model::CloseTabArgs>().Index(_UInt32Arg1);
-        _NotifyChanges(L"UInt32Arg1");
-    }
-
     KeyChordViewModel::KeyChordViewModel(Control::KeyChord currentKeys)
     {
         CurrentKeys(currentKeys);

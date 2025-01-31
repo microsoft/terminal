@@ -87,9 +87,6 @@ namespace Microsoft.Terminal.Settings.Editor
     runtimeclass ActionArgsViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged
     {
         Microsoft.Terminal.Settings.Model.ShortcutAction ShortcutActionType;
-        // Args
-        String StringArg1;
-        UInt32 UInt32Arg1;
         IObservableVector<ArgWrapper> ArgValues;
     }
 

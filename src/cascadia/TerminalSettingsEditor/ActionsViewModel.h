@@ -220,12 +220,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     public:
         ActionArgsViewModel(const Microsoft::Terminal::Settings::Model::ActionAndArgs actionAndArgs);
 
-        winrt::hstring StringArg1() { return _StringArg1; }
-        void StringArg1(const winrt::hstring& newStringArg1);
-
-        uint32_t UInt32Arg1() { return _UInt32Arg1; }
-        void UInt32Arg1(const uint32_t newUInt32Arg1);
-
         WINRT_PROPERTY(Windows::Foundation::Collections::IObservableVector<Editor::ArgWrapper>, ArgValues, nullptr);
         VIEW_MODEL_OBSERVABLE_PROPERTY(Microsoft::Terminal::Settings::Model::ShortcutAction, ShortcutActionType, Microsoft::Terminal::Settings::Model::ShortcutAction::AddMark);
 
