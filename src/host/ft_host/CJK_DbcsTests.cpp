@@ -1182,7 +1182,7 @@ void DbcsTests::TestDbcsBisect()
 // NOTE: This is a change in behavior from the legacy behavior.
 // V1 console would allow a lead byte to be stored in the final cell and then display it improperly.
 // It would also allow this data to be read back.
-// I believe this was a long standing bug because every other API entry fastidiously checked that it wasn't possible to
+// I believe this was a long-standing bug because every other API entry fastidiously checked that it wasn't possible to
 // "bisect" a cell and all sorts of portions of the rest of the console code try to enforce that bisects across lines can't happen.
 // For the most recent revision of the V2 console (approx November 2018), we're trying to make sure that the TextBuffer's internal state
 // is always correct at insert (instead of correcting it on every read).

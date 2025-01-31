@@ -58,7 +58,14 @@ namespace winrt::Microsoft::Terminal::UI::implementation
     // Misc
     winrt::Windows::UI::Text::FontWeight Converters::DoubleToFontWeight(double value)
     {
-        return winrt::Windows::UI::Text::FontWeight{ base::ClampedNumeric<uint16_t>(value) };
+        uint16_t val = 400;
+
+        if (value >= 1.0 && value <= 1000.0)
+        {
+            val = gsl::narrow_cast<uint16_t>(lrint(value));
+        }
+
+        return winrt::Windows::UI::Text::FontWeight{ val };
     }
 
     winrt::Windows::UI::Xaml::Media::SolidColorBrush Converters::ColorToBrush(const winrt::Windows::UI::Color color)
@@ -69,37 +76,5 @@ namespace winrt::Microsoft::Terminal::UI::implementation
     double Converters::FontWeightToDouble(const winrt::Windows::UI::Text::FontWeight fontWeight)
     {
         return fontWeight.Weight;
-    }
-
-    double Converters::MaxValueFromPaddingString(const winrt::hstring& paddingString)
-    {
-        std::wstring buffer;
-        double maxVal = 0;
-
-        auto& errnoRef = errno; // Nonzero cost, pay it once
-
-        // Get padding values till we run out of delimiter separated values in the stream
-        // Non-numeral values detected will default to 0
-        // std::stod will throw invalid_argument exception if the input is an invalid double value
-        // std::stod will throw out_of_range exception if the input value is more than DBL_MAX
-        for (const auto& part : til::split_iterator{ std::wstring_view{ paddingString }, L',' })
-        {
-            buffer.assign(part);
-
-            // wcstod handles whitespace prefix (which is ignored) & stops the
-            // scan when first char outside the range of radix is encountered.
-            // We'll be permissive till the extent that stod function allows us to be by default
-            // Ex. a value like 100.3#535w2 will be read as 100.3, but ;df25 will fail
-            errnoRef = 0;
-            wchar_t* end;
-            const double val = wcstod(buffer.c_str(), &end);
-
-            if (end != buffer.c_str() && errnoRef != ERANGE)
-            {
-                maxVal = std::max(maxVal, val);
-            }
-        }
-
-        return maxVal;
     }
 }

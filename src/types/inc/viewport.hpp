@@ -41,20 +41,26 @@ namespace Microsoft::Console::Types
         til::point Origin() const noexcept;
         til::point BottomRightInclusive() const noexcept;
         til::point BottomRightExclusive() const noexcept;
+        til::point BottomInclusiveRightExclusive() const noexcept;
         til::point EndExclusive() const noexcept;
         til::size Dimensions() const noexcept;
 
         bool IsInBounds(const Viewport& other) const noexcept;
         bool IsInBounds(const til::point pos, bool allowEndExclusive = false) const noexcept;
+        bool IsInExclusiveBounds(const til::point pos) const noexcept;
 
         void Clamp(til::point& pos) const;
         Viewport Clamp(const Viewport& other) const noexcept;
 
         bool IncrementInBounds(til::point& pos, bool allowEndExclusive = false) const noexcept;
         bool DecrementInBounds(til::point& pos, bool allowEndExclusive = false) const noexcept;
+        bool IncrementInExclusiveBounds(til::point& pos) const noexcept;
+        bool DecrementInExclusiveBounds(til::point& pos) const noexcept;
         int CompareInBounds(const til::point first, const til::point second, bool allowEndExclusive = false) const noexcept;
+        int CompareInExclusiveBounds(const til::point first, const til::point second) const noexcept;
 
         bool WalkInBounds(til::point& pos, const til::CoordType delta, bool allowEndExclusive = false) const noexcept;
+        bool WalkInExclusiveBounds(til::point& pos, const til::CoordType delta) const noexcept;
         til::point GetWalkOrigin(const til::CoordType delta) const noexcept;
         static til::CoordType DetermineWalkDirection(const Viewport& source, const Viewport& target) noexcept;
 

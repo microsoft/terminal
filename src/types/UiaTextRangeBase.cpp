@@ -972,7 +972,7 @@ CATCH_RETURN();
 // Return Value:
 // - the text that the UiaTextRange encompasses
 #pragma warning(push)
-#pragma warning(disable : 26447) // compiler isn't filtering throws inside the try/catch
+#pragma warning(disable : 26440) // The function ... can be declared as noexcept.
 std::wstring UiaTextRangeBase::_getTextValue(til::CoordType maxLength) const
 {
     std::wstring textData{};
@@ -987,13 +987,12 @@ std::wstring UiaTextRangeBase::_getTextValue(til::CoordType maxLength) const
 
         // TODO GH#5406: create a different UIA parent object for each TextBuffer
         // nvaccess/nvda#11428: Ensure our endpoints are in bounds
-        THROW_HR_IF(E_FAIL, !bufferSize.IsInBounds(_start, true) || !bufferSize.IsInBounds(_end, true));
+        auto isValid = [&](const til::point& point) {
+            return bufferSize.IsInExclusiveBounds(point) || point == bufferSize.EndExclusive();
+        };
+        THROW_HR_IF(E_FAIL, !isValid(_start) || !isValid(_end));
 
-        // convert _end to be inclusive
-        auto inclusiveEnd = _end;
-        bufferSize.DecrementInBounds(inclusiveEnd, true);
-
-        const auto req = TextBuffer::CopyRequest{ buffer, _start, inclusiveEnd, _blockRange, true, false, false, true };
+        const auto req = TextBuffer::CopyRequest{ buffer, _start, _end, _blockRange, true, false, false, true };
         auto plainText = buffer.GetPlainText(req);
 
         if (plainText.size() > maxLengthAsSize)

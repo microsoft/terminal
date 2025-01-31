@@ -194,9 +194,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     //     Windows Clipboard (CascadiaWin32:main.cpp).
     // Arguments:
     // - singleLine: collapse all of the text to one line
+    // - withControlSequences: if enabled, the copied plain text contains color/style ANSI escape codes from the selection
     // - formats: which formats to copy (defined by action's CopyFormatting arg). nullptr
     //             if we should defer which formats are copied to the global setting
     bool ControlInteractivity::CopySelectionToClipboard(bool singleLine,
+                                                        bool withControlSequences,
                                                         const Windows::Foundation::IReference<CopyFormat>& formats)
     {
         if (_core)
@@ -213,7 +215,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // Mark the current selection as copied
             _selectionNeedsToBeCopied = false;
 
-            return _core->CopySelectionToClipboard(singleLine, formats);
+            return _core->CopySelectionToClipboard(singleLine, withControlSequences, formats);
         }
 
         return false;
@@ -239,7 +241,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                               const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
                                               const Core::Point pixelPosition)
     {
-        const auto terminalPosition = _getTerminalPosition(til::point{ pixelPosition });
+        const auto terminalPosition = _getTerminalPosition(til::point{ pixelPosition }, true);
 
         const auto altEnabled = modifiers.IsAltPressed();
         const auto shiftEnabled = modifiers.IsShiftPressed();
@@ -312,7 +314,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             else
             {
                 // Try to copy the text and clear the selection
-                const auto successfulCopy = CopySelectionToClipboard(shiftEnabled, nullptr);
+                const auto successfulCopy = CopySelectionToClipboard(shiftEnabled, false, nullptr);
                 _core->ClearSelection();
                 if (_core->CopyOnSelect() || !successfulCopy)
                 {
@@ -324,7 +326,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
-    void ControlInteractivity::TouchPressed(const Core::Point contactPoint)
+    void ControlInteractivity::TouchPressed(const winrt::Windows::Foundation::Point contactPoint)
     {
         _touchAnchor = contactPoint;
     }
@@ -336,7 +338,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                             const Core::Point pixelPosition,
                                             const bool pointerPressedInBounds)
     {
-        const auto terminalPosition = _getTerminalPosition(til::point{ pixelPosition });
+        const auto terminalPosition = _getTerminalPosition(til::point{ pixelPosition }, true);
         // Returning true from this function indicates that the caller should do no further processing of this movement.
         bool handledCompletely = false;
 
@@ -370,7 +372,19 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                     // _touchdown_ point here. We want to start the selection
                     // from where the user initially clicked, not where they are
                     // now.
-                    _core->SetSelectionAnchor(_getTerminalPosition(til::point{ touchdownPoint }));
+                    auto termPos = _getTerminalPosition(til::point{ touchdownPoint }, false);
+                    if (dx < 0)
+                    {
+                        // _getTerminalPosition(_, false) will floor the x-value,
+                        //   meaning that the selection will start on the left-side
+                        //   of the current cell. This is great if the use is dragging
+                        //   towards the right.
+                        // If the user is dragging towards the left (dx < 0),
+                        //   we want to select the current cell, so place the anchor on the right
+                        //   side of the current cell.
+                        termPos.x++;
+                    }
+                    _core->SetSelectionAnchor(termPos);
 
                     // stop tracking the touchdown point
                     _singleClickTouchdownPos = std::nullopt;
@@ -384,7 +398,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return handledCompletely;
     }
 
-    void ControlInteractivity::TouchMoved(const Core::Point newTouchPoint,
+    void ControlInteractivity::TouchMoved(const winrt::Windows::Foundation::Point newTouchPoint,
                                           const bool focused)
     {
         if (focused &&
@@ -426,7 +440,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                                const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
                                                const Core::Point pixelPosition)
     {
-        const auto terminalPosition = _getTerminalPosition(til::point{ pixelPosition });
+        const auto terminalPosition = _getTerminalPosition(til::point{ pixelPosition }, false);
         // Short-circuit isReadOnly check to avoid warning dialog
         if (!_core->IsInReadOnlyMode() && _canSendVTMouseInput(modifiers))
         {
@@ -445,7 +459,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // IMPORTANT!
             // DO NOT clear the selection here!
             // Otherwise, the selection will be cleared immediately after you make it.
-            CopySelectionToClipboard(false, nullptr);
+            CopySelectionToClipboard(false, false, nullptr);
         }
 
         _singleClickTouchdownPos = std::nullopt;
@@ -473,7 +487,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                           const Core::Point pixelPosition,
                                           const Control::MouseButtonState buttonState)
     {
-        const auto terminalPosition = _getTerminalPosition(til::point{ pixelPosition });
+        const auto terminalPosition = _getTerminalPosition(til::point{ pixelPosition }, true);
 
         // Short-circuit isReadOnly check to avoid warning dialog.
         //
@@ -660,7 +674,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - cursorPosition: in pixels, relative to the origin of the control
     void ControlInteractivity::SetEndSelectionPoint(const Core::Point pixelPosition)
     {
-        _core->SetEndSelectionPoint(_getTerminalPosition(til::point{ pixelPosition }));
+        _core->SetEndSelectionPoint(_getTerminalPosition(til::point{ pixelPosition }, true));
         _selectionNeedsToBeCopied = true;
     }
 
@@ -670,12 +684,22 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // Arguments:
     // - pixelPosition: the (x,y) position of a given point (i.e.: mouse cursor).
     //    NOTE: origin (0,0) is top-left.
+    // - roundToNearestCell: if true, round the x-value. Otherwise, floor it (standard int division)
     // Return Value:
     // - the corresponding viewport terminal position for the given Point parameter
-    til::point ControlInteractivity::_getTerminalPosition(const til::point pixelPosition)
+    til::point ControlInteractivity::_getTerminalPosition(const til::point pixelPosition, bool roundToNearestCell)
     {
         // Get the size of the font, which is in pixels
-        const til::size fontSize{ _core->GetFont().GetSize() };
+        const auto fontSize{ _core->GetFont().GetSize() };
+
+        if (roundToNearestCell)
+        {
+            // GH#5099: round the x-value to the nearest cell
+            til::point result;
+            result.x = gsl::narrow_cast<til::CoordType>(std::round(gsl::narrow_cast<double>(pixelPosition.x) / fontSize.width));
+            result.y = pixelPosition.y / fontSize.height;
+            return result;
+        }
         // Convert the location in pixels to characters within the current viewport.
         return pixelPosition / fontSize;
     }
@@ -724,17 +748,5 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     ::Microsoft::Console::Render::IRenderData* ControlInteractivity::GetRenderData() const
     {
         return _core->GetRenderData();
-    }
-
-    // Method Description:
-    // - Used by the TermControl to know if it should translate drag-dropped
-    //   paths into WSL-friendly paths.
-    // Arguments:
-    // - <none>
-    // Return Value:
-    // - true if the connection we were created with was a WSL profile.
-    bool ControlInteractivity::ManglePathsForWsl()
-    {
-        return _core->Settings().ProfileSource() == L"Windows.Terminal.Wsl";
     }
 }

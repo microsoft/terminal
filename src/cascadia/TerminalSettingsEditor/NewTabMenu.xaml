@@ -1,0 +1,490 @@
+<!--
+    Copyright (c) Microsoft Corporation. All rights reserved. Licensed under
+    the MIT License. See LICENSE in the project root for license information.
+-->
+<Page x:Class="Microsoft.Terminal.Settings.Editor.NewTabMenu"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+      xmlns:local="using:Microsoft.Terminal.Settings.Editor"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+      xmlns:model="using:Microsoft.Terminal.Settings.Model"
+      xmlns:mtu="using:Microsoft.Terminal.UI"
+      xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
+      mc:Ignorable="d">
+
+    <Page.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="CommonResources.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+
+            <!--  Wrapper for NewTabMenuEntry that adds buttons to the ListView entries  -->
+            <Style x:Key="NewTabMenuEntryControlsWrapper"
+                   TargetType="ContentControl">
+                <Setter Property="IsTabStop" Value="False" />
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="ContentControl">
+                            <Grid XYFocusKeyboardNavigation="Enabled">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <!--
+                                    BODGY: We want two columns of content:
+                                    1. the identifier (e.g. profile name), aligned left
+                                    2. the buttons (e.g. reorder, delete), aligned right
+                                    There's a bug in WinUI 2 for Windows 10 where these nested columns are treated as "auto" instead
+                                    of *-sized. To work around this, we can set the width of the first column's content to
+                                    StandardControlMaxWidth. The first column will be clipped as necessary to make space for the second column,
+                                    resulting in the desired layout.
+                                -->
+                                <ContentPresenter Grid.Column="0"
+                                                  Width="{StaticResource StandardControlMaxWidth}"
+                                                  Content="{TemplateBinding Content}" />
+                                <StackPanel Grid.Column="1"
+                                            Orientation="Horizontal"
+                                            Spacing="5">
+                                    <!--  Reorder: Up  -->
+                                    <Button x:Uid="NewTabMenuEntry_ReorderUp"
+                                            Click="ReorderEntry_Clicked"
+                                            DataContext="{TemplateBinding DataContext}"
+                                            Style="{StaticResource ExtraSmallButtonStyle}"
+                                            Tag="Up">
+                                        <FontIcon FontSize="{StaticResource StandardIconSize}"
+                                                  Glyph="&#xF0AD;" />
+                                    </Button>
+                                    <!--  Reorder: Down  -->
+                                    <Button x:Uid="NewTabMenuEntry_ReorderDown"
+                                            Click="ReorderEntry_Clicked"
+                                            DataContext="{TemplateBinding DataContext}"
+                                            Style="{StaticResource ExtraSmallButtonStyle}"
+                                            Tag="Down">
+                                        <FontIcon FontSize="{StaticResource StandardIconSize}"
+                                                  Glyph="&#xF0AE;" />
+                                    </Button>
+                                    <!--  Delete Entry  -->
+                                    <Button x:Uid="NewTabMenuEntry_Delete"
+                                            Click="DeleteEntry_Clicked"
+                                            DataContext="{TemplateBinding DataContext}"
+                                            Style="{StaticResource DeleteExtraSmallButtonStyle}">
+                                        <FontIcon FontSize="{StaticResource StandardIconSize}"
+                                                  Glyph="&#xE74D;" />
+                                    </Button>
+                                </StackPanel>
+                            </Grid>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <DataTemplate x:Key="ProfileEntryTemplate"
+                          x:DataType="local:ProfileEntryViewModel">
+                <ContentControl AutomationProperties.Name="{x:Bind ProfileEntry.Profile.Name, Mode=OneWay}"
+                                DataContext="{Binding Mode=OneWay}"
+                                Style="{StaticResource NewTabMenuEntryControlsWrapper}">
+                    <StackPanel Orientation="Horizontal"
+                                Spacing="10">
+                        <IconSourceElement Width="16"
+                                           Height="16"
+                                           VerticalAlignment="Center"
+                                           IconSource="{x:Bind mtu:IconPathConverter.IconSourceWUX(ProfileEntry.Profile.EvaluatedIcon), Mode=OneTime}" />
+                        <TextBlock VerticalAlignment="Center"
+                                   Text="{x:Bind ProfileEntry.Profile.Name, Mode=OneWay}" />
+                    </StackPanel>
+                </ContentControl>
+            </DataTemplate>
+
+            <DataTemplate x:Key="ActionEntryTemplate"
+                          x:DataType="local:ActionEntryViewModel">
+                <ContentControl AutomationProperties.Name="{x:Bind DisplayText, Mode=OneWay}"
+                                DataContext="{Binding Mode=OneWay}"
+                                Style="{StaticResource NewTabMenuEntryControlsWrapper}">
+                    <StackPanel Orientation="Horizontal">
+                        <IconSourceElement Width="16"
+                                           Height="16"
+                                           Margin="0,0,10,0"
+                                           VerticalAlignment="Center"
+                                           IconSource="{x:Bind mtu:IconPathConverter.IconSourceWUX(Icon), Mode=OneWay}"
+                                           Visibility="{x:Bind mtu:Converters.StringNotEmptyToVisibility(Icon), Mode=OneWay}" />
+                        <TextBlock VerticalAlignment="Center"
+                                   Text="{x:Bind DisplayText, Mode=OneWay}" />
+                    </StackPanel>
+                </ContentControl>
+            </DataTemplate>
+
+            <DataTemplate x:Key="SeparatorEntryTemplate"
+                          x:DataType="local:SeparatorEntryViewModel">
+                <ContentControl x:Uid="NewTabMenuEntry_SeparatorItem"
+                                DataContext="{Binding Mode=OneWay}"
+                                Style="{StaticResource NewTabMenuEntryControlsWrapper}">
+                    <TextBlock x:Uid="NewTabMenuEntry_Separator"
+                               VerticalAlignment="Center"
+                               FontStyle="Italic" />
+                </ContentControl>
+            </DataTemplate>
+
+            <DataTemplate x:Key="FolderEntryTemplate"
+                          x:DataType="local:FolderEntryViewModel">
+                <!--
+                    Most of this was copied from NewTabMenuEntryControlsWrapper.
+                    We really just added the Edit button here.
+                -->
+                <Grid AutomationProperties.Name="{x:Bind Name, Mode=OneWay}"
+                      XYFocusKeyboardNavigation="Enabled">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <!--
+                        BODGY: We want two columns of content:
+                        1. the identifier (e.g. profile name), aligned left
+                        2. the buttons (e.g. reorder, delete), aligned right
+                        There's a bug in WinUI 2 for Windows 10 where these nested columns are treated as "auto" instead
+                        of *-sized. To work around this, we can set the width of the first column's content to
+                        StandardControlMaxWidth. The first column will be clipped as necessary to make space for the second column,
+                        resulting in the desired layout.
+                    -->
+                    <StackPanel Grid.Column="0"
+                                Width="{StaticResource StandardControlMaxWidth}"
+                                Orientation="Horizontal">
+                        <IconSourceElement Width="16"
+                                           Height="16"
+                                           Margin="0,0,10,0"
+                                           VerticalAlignment="Center"
+                                           IconSource="{x:Bind mtu:IconPathConverter.IconSourceWUX(Icon), Mode=OneWay}"
+                                           Visibility="{x:Bind mtu:Converters.StringNotEmptyToVisibility(Icon), Mode=OneWay}" />
+                        <TextBlock VerticalAlignment="Center"
+                                   Text="{x:Bind Name, Mode=OneWay}" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="1"
+                                Orientation="Horizontal"
+                                Spacing="5">
+                        <Button x:Uid="NewTabMenuEntry_EditFolder"
+                                Click="EditEntry_Clicked"
+                                DataContext="{Binding Mode=OneWay}"
+                                Style="{StaticResource ExtraSmallButtonStyle}">
+                            <FontIcon FontSize="{StaticResource StandardIconSize}"
+                                      Glyph="&#xE70F;" />
+                        </Button>
+                        <Button x:Uid="NewTabMenuEntry_ReorderUp"
+                                Click="ReorderEntry_Clicked"
+                                DataContext="{Binding Mode=OneWay}"
+                                Style="{StaticResource ExtraSmallButtonStyle}"
+                                Tag="Up">
+                            <FontIcon FontSize="{StaticResource StandardIconSize}"
+                                      Glyph="&#xF0AD;" />
+                        </Button>
+                        <Button x:Uid="NewTabMenuEntry_ReorderDown"
+                                Click="ReorderEntry_Clicked"
+                                DataContext="{Binding Mode=OneWay}"
+                                Style="{StaticResource ExtraSmallButtonStyle}"
+                                Tag="Down">
+                            <FontIcon FontSize="{StaticResource StandardIconSize}"
+                                      Glyph="&#xF0AE;" />
+                        </Button>
+                        <Button x:Uid="NewTabMenuEntry_Delete"
+                                Click="DeleteEntry_Clicked"
+                                DataContext="{Binding Mode=OneWay}"
+                                Style="{StaticResource DeleteExtraSmallButtonStyle}">
+                            <FontIcon FontSize="{StaticResource StandardIconSize}"
+                                      Glyph="&#xE74D;" />
+                        </Button>
+                    </StackPanel>
+                </Grid>
+            </DataTemplate>
+
+            <DataTemplate x:Key="MatchProfilesEntryTemplate"
+                          x:DataType="local:MatchProfilesEntryViewModel">
+                <ContentControl AutomationProperties.Name="{x:Bind DisplayText, Mode=OneWay}"
+                                DataContext="{Binding Mode=OneWay}"
+                                Style="{StaticResource NewTabMenuEntryControlsWrapper}">
+                    <TextBlock VerticalAlignment="Center"
+                               FontStyle="Italic"
+                               Text="{x:Bind DisplayText, Mode=OneWay}" />
+                </ContentControl>
+            </DataTemplate>
+
+            <DataTemplate x:Key="RemainingProfilesEntryTemplate"
+                          x:DataType="local:RemainingProfilesEntryViewModel">
+                <ContentControl x:Uid="NewTabMenuEntry_RemainingProfilesItem"
+                                DataContext="{Binding Mode=OneWay}"
+                                Style="{StaticResource NewTabMenuEntryControlsWrapper}">
+                    <TextBlock x:Uid="NewTabMenuEntry_RemainingProfiles"
+                               VerticalAlignment="Center"
+                               FontStyle="Italic" />
+                </ContentControl>
+            </DataTemplate>
+
+            <local:NewTabMenuEntryTemplateSelector x:Key="NewTabMenuEntryTemplateSelector"
+                                                   ActionEntryTemplate="{StaticResource ActionEntryTemplate}"
+                                                   FolderEntryTemplate="{StaticResource FolderEntryTemplate}"
+                                                   MatchProfilesEntryTemplate="{StaticResource MatchProfilesEntryTemplate}"
+                                                   ProfileEntryTemplate="{StaticResource ProfileEntryTemplate}"
+                                                   RemainingProfilesEntryTemplate="{StaticResource RemainingProfilesEntryTemplate}"
+                                                   SeparatorEntryTemplate="{StaticResource SeparatorEntryTemplate}" />
+        </ResourceDictionary>
+    </Page.Resources>
+
+    <Grid Margin="{StaticResource SettingStackMargin}"
+          RowSpacing="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!--  Folder Picker Dialog: used to select a folder to move entries to  -->
+        <ContentDialog x:Name="FolderPickerDialog"
+                       x:Uid="NewTabMenu_FolderPickerDialog"
+                       x:Load="False"
+                       DefaultButton="Primary"
+                       Opened="FolderPickerDialog_Opened"
+                       PrimaryButtonClick="FolderPickerDialog_PrimaryButtonClick">
+            <muxc:TreeView x:Name="FolderTreeView"
+                           ItemsSource="{x:Bind ViewModel.FolderTree, Mode=OneWay}"
+                           SelectedItem="{x:Bind ViewModel.CurrentFolderTreeViewSelectedItem, Mode=TwoWay}"
+                           SelectionMode="Single">
+                <muxc:TreeView.ItemTemplate>
+                    <DataTemplate x:DataType="local:FolderTreeViewEntry">
+                        <muxc:TreeViewItem AutomationProperties.Name="{x:Bind Name, Mode=OneWay}"
+                                           IsExpanded="True"
+                                           ItemsSource="{x:Bind Children, Mode=OneWay}">
+                            <StackPanel AutomationProperties.Name="{x:Bind Name, Mode=OneWay}"
+                                        Orientation="Horizontal">
+                                <IconSourceElement Width="16"
+                                                   Height="16"
+                                                   Margin="0,0,10,0"
+                                                   VerticalAlignment="Center"
+                                                   IconSource="{x:Bind mtu:IconPathConverter.IconSourceWUX(Icon), Mode=OneWay}"
+                                                   Visibility="{x:Bind mtu:Converters.StringNotEmptyToVisibility(Icon), Mode=OneWay}" />
+                                <TextBlock VerticalAlignment="Center"
+                                           Text="{x:Bind Name, Mode=OneWay}" />
+                            </StackPanel>
+                        </muxc:TreeViewItem>
+                    </DataTemplate>
+                </muxc:TreeView.ItemTemplate>
+            </muxc:TreeView>
+        </ContentDialog>
+
+        <!--  New Tab Menu Content  -->
+        <StackPanel Grid.Row="0"
+                    MaxWidth="{StaticResource StandardControlMaxWidth}"
+                    Spacing="10">
+            <Border Height="300"
+                    MaxWidth="{StaticResource StandardControlMaxWidth}"
+                    Margin="0,12,0,0"
+                    BorderBrush="{ThemeResource SystemControlForegroundBaseMediumLowBrush}"
+                    BorderThickness="1"
+                    CornerRadius="{ThemeResource ControlCornerRadius}">
+                <ListView x:Name="NewTabMenuListView"
+                          AllowDrop="True"
+                          CanDragItems="True"
+                          CanReorderItems="True"
+                          ItemTemplateSelector="{StaticResource NewTabMenuEntryTemplateSelector}"
+                          ItemsSource="{x:Bind ViewModel.CurrentView, Mode=OneWay}"
+                          SelectionMode="Multiple" />
+            </Border>
+
+            <!--  General Controls  -->
+            <StackPanel Orientation="Horizontal"
+                        Spacing="10">
+                <Button x:Name="MoveToFolderButton"
+                        Click="MoveMultiple_Click"
+                        IsEnabled="False">
+                    <StackPanel Orientation="Horizontal">
+                        <FontIcon FontSize="{StaticResource StandardIconSize}"
+                                  Glyph="&#xE8DE;" />
+                        <TextBlock x:Uid="NewTabMenu_MoveToFolderTextBlock"
+                                   Margin="10,0,0,0" />
+                    </StackPanel>
+                </Button>
+                <Button x:Name="DeleteMultipleButton"
+                        Click="DeleteMultiple_Click"
+                        IsEnabled="False"
+                        Style="{StaticResource DeleteButtonStyle}">
+                    <StackPanel Orientation="Horizontal">
+                        <FontIcon FontSize="{StaticResource StandardIconSize}"
+                                  Glyph="&#xE74D;" />
+                        <TextBlock x:Uid="NewTabMenu_DeleteMultipleTextBlock"
+                                   Margin="10,0,0,0" />
+                    </StackPanel>
+                </Button>
+            </StackPanel>
+        </StackPanel>
+
+        <!--  Folder View Controls  -->
+        <StackPanel Grid.Row="1"
+                    MaxWidth="{StaticResource StandardControlMaxWidth}"
+                    Visibility="{x:Bind ViewModel.IsFolderView, Mode=OneWay}">
+            <TextBlock x:Uid="NewTabMenu_CurrentFolderTextBlock"
+                       Style="{StaticResource TextBlockSubHeaderStyle}" />
+
+            <!--  TODO CARLOS: Icon  -->
+            <!--  Once PR #17965 merges, we can add that kind of control to set an icon  -->
+
+            <!--  Name  -->
+            <local:SettingContainer x:Uid="NewTabMenu_CurrentFolderName"
+                                    Grid.Row="0"
+                                    CurrentValue="{x:Bind ViewModel.CurrentFolderName, Mode=OneWay}"
+                                    Style="{StaticResource ExpanderSettingContainerStyle}">
+                <TextBox Style="{StaticResource TextBoxSettingStyle}"
+                         Text="{x:Bind ViewModel.CurrentFolderName, Mode=TwoWay}" />
+            </local:SettingContainer>
+
+            <!--  Inlining  -->
+            <local:SettingContainer x:Uid="NewTabMenu_CurrentFolderInlining"
+                                    Grid.Row="1">
+                <ToggleSwitch IsOn="{x:Bind ViewModel.CurrentFolderInlining, Mode=TwoWay}"
+                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+            </local:SettingContainer>
+
+            <!--  Allow Empty  -->
+            <local:SettingContainer x:Uid="NewTabMenu_CurrentFolderAllowEmpty"
+                                    Grid.Row="2">
+                <ToggleSwitch IsOn="{x:Bind ViewModel.CurrentFolderAllowEmpty, Mode=TwoWay}"
+                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+            </local:SettingContainer>
+        </StackPanel>
+
+        <!--  Add Entries  -->
+        <StackPanel Grid.Row="2">
+            <TextBlock x:Uid="NewTabMenu_AddEntriesTextBlock"
+                       Style="{StaticResource TextBlockSubHeaderStyle}" />
+
+            <!--  Add Profile  -->
+            <local:SettingContainer x:Uid="NewTabMenu_AddProfile"
+                                    FontIconGlyph="&#xE756;"
+                                    Style="{StaticResource SettingContainerWithIcon}">
+
+                <StackPanel Orientation="Horizontal"
+                            Spacing="5">
+                    <!--  Select profile to add  -->
+                    <ComboBox x:Name="AddProfileComboBox"
+                              MinWidth="{StaticResource StandardBoxMinWidth}"
+                              ItemsSource="{x:Bind ViewModel.AvailableProfiles, Mode=OneWay}"
+                              SelectedItem="{x:Bind ViewModel.SelectedProfile, Mode=TwoWay}">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate x:DataType="model:Profile">
+                                <Grid HorizontalAlignment="Stretch"
+                                      ColumnSpacing="8">
+
+                                    <Grid.ColumnDefinitions>
+                                        <!--  icon  -->
+                                        <ColumnDefinition Width="16" />
+                                        <!--  profile name  -->
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <IconSourceElement Grid.Column="0"
+                                                       Width="16"
+                                                       Height="16"
+                                                       IconSource="{x:Bind mtu:IconPathConverter.IconSourceWUX(EvaluatedIcon), Mode=OneTime}" />
+
+                                    <TextBlock Grid.Column="1"
+                                               Text="{x:Bind Name}" />
+                                </Grid>
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+
+                    <Button x:Name="AddProfileButton"
+                            x:Uid="NewTabMenu_AddProfileButton"
+                            HorizontalAlignment="Stretch"
+                            VerticalAlignment="Stretch"
+                            Click="AddProfileButton_Clicked">
+                        <Button.Content>
+                            <FontIcon FontSize="{StaticResource StandardIconSize}"
+                                      Glyph="&#xE710;" />
+                        </Button.Content>
+                    </Button>
+                </StackPanel>
+            </local:SettingContainer>
+
+            <!--  Add Separator  -->
+            <local:SettingContainer x:Uid="NewTabMenu_AddSeparator"
+                                    FontIconGlyph="&#xE76f;"
+                                    Style="{StaticResource SettingContainerWithIcon}">
+                <Button x:Name="AddSeparatorButton"
+                        x:Uid="NewTabMenu_AddSeparatorButton"
+                        HorizontalAlignment="Stretch"
+                        VerticalAlignment="Stretch"
+                        Click="AddSeparatorButton_Clicked">
+                    <Button.Content>
+                        <FontIcon FontSize="{StaticResource StandardIconSize}"
+                                  Glyph="&#xE710;" />
+                    </Button.Content>
+                </Button>
+            </local:SettingContainer>
+
+            <!--  Add Folder  -->
+            <local:SettingContainer x:Uid="NewTabMenu_AddFolder"
+                                    FontIconGlyph="&#xF12B;"
+                                    Style="{StaticResource SettingContainerWithIcon}">
+                <StackPanel Orientation="Horizontal"
+                            Spacing="5">
+                    <TextBox x:Name="FolderNameTextBox"
+                             x:Uid="NewTabMenu_AddFolder_FolderName"
+                             MinWidth="{StaticResource StandardBoxMinWidth}"
+                             KeyDown="AddFolderNameTextBox_KeyDown"
+                             Text="{x:Bind ViewModel.AddFolderName, Mode=TwoWay}"
+                             TextChanged="AddFolderNameTextBox_TextChanged" />
+                    <Button x:Name="AddFolderButton"
+                            x:Uid="NewTabMenu_AddFolderButton"
+                            HorizontalAlignment="Stretch"
+                            VerticalAlignment="Stretch"
+                            Click="AddFolderButton_Clicked"
+                            IsEnabled="False">
+                        <Button.Content>
+                            <FontIcon FontSize="{StaticResource StandardIconSize}"
+                                      Glyph="&#xE710;" />
+                        </Button.Content>
+                    </Button>
+                </StackPanel>
+            </local:SettingContainer>
+
+            <!--  Add Match Profiles  -->
+            <local:SettingContainer x:Uid="NewTabMenu_AddMatchProfiles"
+                                    FontIconGlyph="&#xE748;"
+                                    Style="{StaticResource ExpanderSettingContainerStyleWithIcon}">
+                <StackPanel Spacing="10">
+                    <TextBox x:Uid="NewTabMenu_AddMatchProfiles_Name"
+                             Text="{x:Bind ViewModel.ProfileMatcherName, Mode=TwoWay}" />
+                    <TextBox x:Uid="NewTabMenu_AddMatchProfiles_Source"
+                             Text="{x:Bind ViewModel.ProfileMatcherSource, Mode=TwoWay}" />
+                    <TextBox x:Uid="NewTabMenu_AddMatchProfiles_Commandline"
+                             Text="{x:Bind ViewModel.ProfileMatcherCommandline, Mode=TwoWay}" />
+                    <Button x:Name="AddMatchProfilesButton"
+                            Click="AddMatchProfilesButton_Clicked">
+                        <Button.Content>
+                            <StackPanel Orientation="Horizontal">
+                                <FontIcon FontSize="{StaticResource StandardIconSize}"
+                                          Glyph="&#xE710;" />
+                                <TextBlock x:Uid="NewTabMenu_AddMatchProfilesTextBlock"
+                                           Style="{StaticResource IconButtonTextBlockStyle}" />
+                            </StackPanel>
+                        </Button.Content>
+                    </Button>
+                </StackPanel>
+            </local:SettingContainer>
+
+            <!--  Add Remaining Profiles  -->
+            <local:SettingContainer x:Uid="NewTabMenu_AddRemainingProfiles"
+                                    FontIconGlyph="&#xE902;"
+                                    Style="{StaticResource SettingContainerWithIcon}">
+                <Button x:Name="AddRemainingProfilesButton"
+                        x:Uid="NewTabMenu_AddRemainingProfilesButton"
+                        HorizontalAlignment="Stretch"
+                        VerticalAlignment="Stretch"
+                        Click="AddRemainingProfilesButton_Clicked"
+                        IsEnabled="{x:Bind ViewModel.IsRemainingProfilesEntryMissing, Mode=OneWay}">
+                    <Button.Content>
+                        <FontIcon FontSize="{StaticResource StandardIconSize}"
+                                  Glyph="&#xE710;" />
+                    </Button.Content>
+                </Button>
+            </local:SettingContainer>
+        </StackPanel>
+    </Grid>
+</Page>

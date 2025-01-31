@@ -116,7 +116,7 @@ try
                     const auto lock = publicTerminal->_terminal->LockForWriting();
                     if (publicTerminal->_terminal->IsSelectionActive())
                     {
-                        const auto bufferData = publicTerminal->_terminal->RetrieveSelectedTextFromBuffer(false, true, true);
+                        const auto bufferData = publicTerminal->_terminal->RetrieveSelectedTextFromBuffer(false, false, true, true);
                         LOG_IF_FAILED(publicTerminal->_CopyTextToSystemClipboard(bufferData.plainText, bufferData.html, bufferData.rtf));
                         publicTerminal->_ClearSelection();
                         return 0;
@@ -1090,11 +1090,6 @@ til::rect HwndTerminal::GetBounds() const noexcept
 til::rect HwndTerminal::GetPadding() const noexcept
 {
     return {};
-}
-
-float HwndTerminal::GetScaleFactor() const noexcept
-{
-    return static_cast<float>(_currentDpi) / static_cast<float>(USER_DEFAULT_SCREEN_DPI);
 }
 
 void HwndTerminal::ChangeViewport(const til::inclusive_rect& NewWindow)

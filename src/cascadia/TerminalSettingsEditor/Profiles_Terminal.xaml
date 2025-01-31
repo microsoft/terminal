@@ -60,6 +60,15 @@
                               Style="{StaticResource ToggleSwitchInExpanderStyle}" />
             </local:SettingContainer>
 
+            <!--  Allow VT Clipboard Writing  -->
+            <local:SettingContainer x:Uid="Profile_AllowVtClipboardWrite"
+                                    ClearSettingValue="{x:Bind Profile.ClearAllowVtClipboardWrite}"
+                                    HasSettingValue="{x:Bind Profile.HasAllowVtClipboardWrite, Mode=OneWay}"
+                                    SettingOverrideSource="{x:Bind Profile.AllowVtClipboardWriteOverrideSource, Mode=OneWay}">
+                <ToggleSwitch IsOn="{x:Bind Profile.AllowVtClipboardWrite, Mode=TwoWay}"
+                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+            </local:SettingContainer>
+
             <!--  Answerback Message  -->
             <local:SettingContainer x:Uid="Profile_AnswerbackMessage"
                                     ClearSettingValue="{x:Bind Profile.ClearAnswerbackMessage}"

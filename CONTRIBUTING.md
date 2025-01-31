@@ -158,7 +158,7 @@ Once you've discussed your proposed feature/fix/etc. with a team member, and you
 
 ### Testing
 
-Testing is a key component in the development workflow. Both Windows Terminal and Windows Console use TAEF(the Test Authoring and Execution Framework) as the main framework for testing.
+Testing is a key component in the development workflow. Both Windows Terminal and Windows Console use TAEF (the Test Authoring and Execution Framework) as the main framework for testing.
 
 If your changes affect existing test cases, or you're working on brand new features and also the accompanying test cases, see [TAEF](./doc/TAEF.md) for more information about how to validate your work locally.
 

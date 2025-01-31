@@ -61,6 +61,7 @@ namespace Microsoft.Terminal.Settings.Model
         Boolean AllowEmpty;
 
         IVector<NewTabMenuEntry> Entries();
+        IVector<NewTabMenuEntry> RawEntries;
     }
 
     [default_interface] unsealed runtimeclass ProfileCollectionEntry : NewTabMenuEntry

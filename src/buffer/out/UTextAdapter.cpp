@@ -411,16 +411,13 @@ Microsoft::Console::ICU::unique_uregex Microsoft::Console::ICU::CreateRegex(cons
     return unique_uregex{ re };
 }
 
-// Returns an inclusive point range given a text start and end position.
+// Returns a half-open [beg,end) range given a text start and end position.
 // This function is designed to be used with uregex_start64/uregex_end64.
 til::point_span Microsoft::Console::ICU::BufferRangeFromMatch(UText* ut, URegularExpression* re)
 {
     UErrorCode status = U_ZERO_ERROR;
     const auto nativeIndexBeg = uregex_start64(re, 0, &status);
-    auto nativeIndexEnd = uregex_end64(re, 0, &status);
-
-    // The parameters are given as a half-open [beg,end) range, but the point_span we return in closed [beg,end].
-    nativeIndexEnd--;
+    const auto nativeIndexEnd = uregex_end64(re, 0, &status);
 
     const auto& textBuffer = *static_cast<const TextBuffer*>(ut->context);
     til::point_span ret;
@@ -439,7 +436,7 @@ til::point_span Microsoft::Console::ICU::BufferRangeFromMatch(UText* ut, URegula
     if (utextAccess(ut, nativeIndexEnd, true))
     {
         const auto y = accessCurrentRow(ut);
-        ret.end.x = textBuffer.GetRowByOffset(y).GetTrailingColumnAtCharOffset(ut->chunkOffset);
+        ret.end.x = textBuffer.GetRowByOffset(y).GetLeadingColumnAtCharOffset(ut->chunkOffset);
         ret.end.y = y;
     }
     else

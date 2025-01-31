@@ -1557,7 +1557,7 @@ BOOL PreviewUpdate(
             LoadString(ghInstance, IDS_FONTSIZE, wszBuf, ARRAYSIZE(wszBuf));
             StringCchPrintf(wszText,
                             ARRAYSIZE(wszText),
-                            wszBuf,
+                            wszBuf, // CodeQL [SM01734] Pulled from a resource file and cannot be a string literal
                             MIN_PIXEL_HEIGHT,
                             MAX_PIXEL_HEIGHT);
 
