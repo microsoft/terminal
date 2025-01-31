@@ -8,7 +8,7 @@ where:
 configuration:
   resourceManagementConfiguration:
     scheduledSearches:
-    - description: "Needs-Author-Feedback" and "No-Recent-Activity" issues are closed after 3 days of inactivity
+    - description: "Needs-Author-Feedback"  and "No-Recent-Activity" issues are closed after 3 days of inactivity
       frequencies:
       - hourly:
           hour: 3
