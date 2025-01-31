@@ -648,6 +648,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void SetArgAt(uint32_t /*index*/, IInspectable /*value*/)
         {
         }
+        void SetAllArgsToDefault()
+        {
+        }
     };
 
     struct SplitPaneArgs : public SplitPaneArgsT<SplitPaneArgs>
@@ -755,6 +758,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void SetArgAt(uint32_t /*index*/, IInspectable /*value*/)
         {
         }
+        void SetAllArgsToDefault()
+        {
+        }
     };
 
     struct NewWindowArgs : public NewWindowArgsT<NewWindowArgs>
@@ -818,6 +824,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             return nullptr;
         }
         void SetArgAt(uint32_t /*index*/, IInspectable /*value*/)
+        {
+        }
+        void SetAllArgsToDefault()
         {
         }
     };
@@ -972,6 +981,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             return nullptr;
         }
         void SetArgAt(uint32_t /*index*/, IInspectable /*value*/)
+        {
+        }
+        void SetAllArgsToDefault()
         {
         }
     };

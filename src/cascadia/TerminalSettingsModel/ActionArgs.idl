@@ -23,6 +23,7 @@ namespace Microsoft.Terminal.Settings.Model
         ArgDescription GetArgDescriptionAt(UInt32 index);
         IInspectable GetArgAt(UInt32 index);
         void SetArgAt(UInt32 index, Object value);
+        void SetAllArgsToDefault();
     };
 
     interface IActionEventArgs

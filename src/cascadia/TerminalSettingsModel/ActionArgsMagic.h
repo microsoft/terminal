@@ -86,7 +86,7 @@ struct InitListPlaceholder
         }                                                    \
         else                                                 \
         {                                                    \
-            return winrt::box_value(type{ __VA_ARGS__ });    \
+            return nullptr;                                  \
         }                                                    \
     }
 
@@ -95,6 +95,9 @@ struct InitListPlaceholder
     {                                                        \
         _##name = winrt::unbox_value<type>(value);           \
     }
+
+#define SET_ARG_TO_DEFAULT(type, name, jsonKey, required, ...) \
+    _##name = static_cast<type>(__VA_ARGS__);
 
 // JSON deserialization. If the parameter is required to pass any validation,
 // add that as the `required` parameter here, as the body of a conditional
@@ -207,4 +210,8 @@ public:                                                          \
     {                                                            \
         uint32_t curIndex{ 0 };                                  \
         argsMacro(SET_ARG_BY_INDEX)                              \
+    }                                                            \
+    void SetAllArgsToDefault()                                   \
+    {                                                            \
+        argsMacro(SET_ARG_TO_DEFAULT)                            \
     }
