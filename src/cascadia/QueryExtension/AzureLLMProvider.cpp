@@ -145,30 +145,48 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
             // Send the request
             try
             {
-                const auto response = _httpClient.SendRequestAsync(request).get();
-                // Parse out the suggestion from the response
-                const auto string{ response.Content().ReadAsStringAsync().get() };
-                const auto jsonResult{ WDJ::JsonObject::Parse(string) };
-                if (jsonResult.HasKey(errorString))
+                const auto sendRequestOperation = _httpClient.SendRequestAsync(request);
+
+                // if the caller cancels this operation, make sure to cancel the http request as well
+                auto cancellationToken{ co_await winrt::get_cancellation_token() };
+                cancellationToken.callback([sendRequestOperation] {
+                    sendRequestOperation.Cancel();
+                });
+
+                if (sendRequestOperation.wait_for(std::chrono::seconds(5)) == AsyncStatus::Completed)
                 {
-                    const auto errorObject = jsonResult.GetNamedObject(errorString);
-                    message = errorObject.GetNamedString(messageString);
-                    errorType = ErrorTypes::FromProvider;
-                }
-                else
-                {
-                    if (_verifyModelIsValidHelper(jsonResult))
+                    // Parse out the suggestion from the response
+                    const auto response = sendRequestOperation.GetResults();
+                    const auto string{ co_await response.Content().ReadAsStringAsync() };
+                    const auto jsonResult{ WDJ::JsonObject::Parse(string) };
+                    if (jsonResult.HasKey(errorString))
                     {
-                        const auto choices = jsonResult.GetNamedArray(L"choices");
-                        const auto firstChoice = choices.GetAt(0).GetObject();
-                        const auto messageObject = firstChoice.GetNamedObject(messageString);
-                        message = messageObject.GetNamedString(contentString);
+                        const auto errorObject = jsonResult.GetNamedObject(errorString);
+                        message = errorObject.GetNamedString(messageString);
+                        errorType = ErrorTypes::FromProvider;
                     }
                     else
                     {
-                        message = RS_(L"InvalidModelMessage");
-                        errorType = ErrorTypes::InvalidModel;
+                        if (_verifyModelIsValidHelper(jsonResult))
+                        {
+                            const auto choices = jsonResult.GetNamedArray(L"choices");
+                            const auto firstChoice = choices.GetAt(0).GetObject();
+                            const auto messageObject = firstChoice.GetNamedObject(messageString);
+                            message = messageObject.GetNamedString(contentString);
+                        }
+                        else
+                        {
+                            message = RS_(L"InvalidModelMessage");
+                            errorType = ErrorTypes::InvalidModel;
+                        }
                     }
+                }
+                else
+                {
+                    // if the http request takes too long, cancel the http request and return an error
+                    sendRequestOperation.Cancel();
+                    message = RS_(L"UnknownErrorMessage");
+                    errorType = ErrorTypes::Unknown;
                 }
             }
             catch (...)
