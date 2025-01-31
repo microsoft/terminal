@@ -241,7 +241,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                               const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
                                               const Core::Point pixelPosition)
     {
-        const auto terminalPosition = _getTerminalPosition(til::point{ pixelPosition }, true);
+        // Follow-up from GH#18106:
+        //  We DO NOT want to round to the nearest cell _unless_ we're selecting text.
+        const auto terminalPosition = _getTerminalPosition(til::point{ pixelPosition }, false);
 
         const auto altEnabled = modifiers.IsAltPressed();
         const auto shiftEnabled = modifiers.IsShiftPressed();
@@ -285,7 +287,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             }
             const auto isOnOriginalPosition = _lastMouseClickPosNoSelection == pixelPosition;
 
-            _core->LeftClickOnTerminal(terminalPosition,
+            // Follow-up from GH#18106:
+            //  We DO NOT want to round to the nearest cell _unless_ we're selecting text.
+            _core->LeftClickOnTerminal(_getTerminalPosition(til::point{ pixelPosition }, true),
                                        multiClickMapper,
                                        altEnabled,
                                        shiftEnabled,
