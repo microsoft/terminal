@@ -3474,8 +3474,10 @@ namespace winrt::TerminalApp::implementation
         // for nulls
         if (const auto& connection{ _duplicateConnectionForRestart(paneContent) })
         {
+            auto previousConnection = paneContent.GetTermControl().Connection();
             paneContent.GetTermControl().Connection(connection);
             connection.Start();
+            previousConnection.Close();
         }
     }
 
