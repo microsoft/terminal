@@ -467,7 +467,7 @@
                                 <FontIcon Margin="0,0,-1,-1"
                                           HorizontalAlignment="Right"
                                           VerticalAlignment="Bottom"
-                                          FontFamily="Segoe Fluent Icons"
+                                          FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
                                           FontSize="12"
                                           Foreground="{TemplateBinding BorderBrush}"
                                           Glyph="&#xE73D;"
