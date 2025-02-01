@@ -2276,6 +2276,14 @@
     <value>Exibir um escudo na barra de título quando o Terminal do Windows estiver sendo executado como Administrador</value>
     <comment>Header for a control to toggle displaying a shield in the title bar of the app. "Admin" refers to elevated sessions like "run as Admin"</comment>
   </data>
+  <data name="Globals_ShowTabsFullscreen.Header" xml:space="preserve">
+    <value>Mostrar as guias em tela inteira</value>
+    <comment>Header for a control to toggle if the app should show the tabs when in full screen state.</comment>
+  </data>
+  <data name="Globals_ShowTabsFullscreen.HelpText" xml:space="preserve">
+    <value>Quando habilitada, a barra de guias ficará visível quando o aplicativo estiver em tela inteira.</value>
+    <comment>A description for what the "show tabs in full screen" setting does.</comment>
+  </data>
   <data name="Profile_PathTranslationStyle.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Tradução de caminho</value>
     <comment>Name for a control to select how file and directory paths are translated.</comment>
