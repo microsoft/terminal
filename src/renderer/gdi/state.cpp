@@ -128,6 +128,9 @@ GdiEngine::~GdiEngine()
     // We need the advanced graphics mode in order to set a transform.
     SetGraphicsMode(hdcNewMemoryContext, GM_ADVANCED);
 
+    // We set the bitmap stretching mode to improve the Sixel image quality.
+    SetStretchBltMode(hdcNewMemoryContext, COLORONCOLOR);
+
     // If we had an existing memory context stored, release it before proceeding.
     if (nullptr != _hdcMemoryContext)
     {
