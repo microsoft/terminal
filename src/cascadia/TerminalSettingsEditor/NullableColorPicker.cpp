@@ -81,7 +81,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                     L"NullColorButtonLabel",
                     xaml_typename<hstring>(),
                     xaml_typename<Editor::NullableColorPicker>(),
-                    PropertyMetadata{ box_value(RS_(L"NullableColorPicker_DefaultNullColorButtonLabel")) });
+                    PropertyMetadata{ nullptr });
         }
         if (!_NullColorPreviewProperty)
         {

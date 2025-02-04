@@ -215,7 +215,8 @@
                                                 HasSettingValue="{x:Bind Appearance.HasForeground, Mode=OneWay}"
                                                 SettingOverrideSource="{x:Bind Appearance.ForegroundOverrideSource, Mode=OneWay}"
                                                 Style="{StaticResource ExpanderSettingContainerStyleWithComplexPreview}">
-                            <local:NullableColorPicker ColorSchemeVM="{x:Bind Appearance.CurrentColorScheme, Mode=OneWay}"
+                            <local:NullableColorPicker x:Uid="Profile_Foreground_NullableColorPicker"
+                                                       ColorSchemeVM="{x:Bind Appearance.CurrentColorScheme, Mode=OneWay}"
                                                        CurrentColor="{x:Bind Appearance.Foreground, Mode=TwoWay}"
                                                        NullColorPreview="{x:Bind Appearance.CurrentColorScheme.ForegroundColor.Color, Mode=OneWay}" />
                         </local:SettingContainer>
@@ -230,7 +231,8 @@
                                                 HasSettingValue="{x:Bind Appearance.HasBackground, Mode=OneWay}"
                                                 SettingOverrideSource="{x:Bind Appearance.BackgroundOverrideSource, Mode=OneWay}"
                                                 Style="{StaticResource ExpanderSettingContainerStyleWithComplexPreview}">
-                            <local:NullableColorPicker ColorSchemeVM="{x:Bind Appearance.CurrentColorScheme, Mode=OneWay}"
+                            <local:NullableColorPicker x:Uid="Profile_Background_NullableColorPicker"
+                                                       ColorSchemeVM="{x:Bind Appearance.CurrentColorScheme, Mode=OneWay}"
                                                        CurrentColor="{x:Bind Appearance.Background, Mode=TwoWay}"
                                                        NullColorPreview="{x:Bind Appearance.CurrentColorScheme.BackgroundColor.Color, Mode=OneWay}" />
                         </local:SettingContainer>
@@ -245,7 +247,8 @@
                                                 HasSettingValue="{x:Bind Appearance.HasSelectionBackground, Mode=OneWay}"
                                                 SettingOverrideSource="{x:Bind Appearance.SelectionBackgroundOverrideSource, Mode=OneWay}"
                                                 Style="{StaticResource ExpanderSettingContainerStyleWithComplexPreview}">
-                            <local:NullableColorPicker ColorSchemeVM="{x:Bind Appearance.CurrentColorScheme, Mode=OneWay}"
+                            <local:NullableColorPicker x:Uid="Profile_SelectionBackground_NullableColorPicker"
+                                                       ColorSchemeVM="{x:Bind Appearance.CurrentColorScheme, Mode=OneWay}"
                                                        CurrentColor="{x:Bind Appearance.SelectionBackground, Mode=TwoWay}"
                                                        NullColorPreview="{x:Bind Appearance.CurrentColorScheme.SelectionBackgroundColor.Color, Mode=OneWay}" />
                         </local:SettingContainer>
@@ -514,7 +517,8 @@
                                     HasSettingValue="{x:Bind Appearance.HasCursorColor, Mode=OneWay}"
                                     SettingOverrideSource="{x:Bind Appearance.CursorColorOverrideSource, Mode=OneWay}"
                                     Style="{StaticResource ExpanderSettingContainerStyleWithComplexPreview}">
-                <local:NullableColorPicker ColorSchemeVM="{x:Bind Appearance.CurrentColorScheme, Mode=OneWay}"
+                <local:NullableColorPicker x:Uid="Profile_CursorColor_NullableColorPicker"
+                                           ColorSchemeVM="{x:Bind Appearance.CurrentColorScheme, Mode=OneWay}"
                                            CurrentColor="{x:Bind Appearance.CursorColor, Mode=TwoWay}"
                                            NullColorPreview="{x:Bind Appearance.CurrentColorScheme.CursorColor.Color, Mode=OneWay}" />
             </local:SettingContainer>
