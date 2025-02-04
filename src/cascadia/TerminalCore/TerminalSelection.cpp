@@ -601,19 +601,16 @@ void Terminal::SelectHyperlink(const SearchDirection dir)
     {
         return;
     }
-    else
-    {
-        auto selection{ _selection.write() };
-        wil::hide_name _selection;
-        selection->start = result->first;
-        selection->pivot = result->first;
-        selection->end = result->second;
-        _selectionIsTargetingUrl = true;
-        _selectionEndpoint = SelectionEndpoint::End;
-    }
+    auto selection{ _selection.write() };
+    wil::hide_name _selection;
+    selection->start = result->first;
+    selection->pivot = result->first;
+    selection->end = result->second;
+    _selectionIsTargetingUrl = true;
+    _selectionEndpoint = SelectionEndpoint::End;
 
     // 4. Scroll to the selected area (if necessary)
-    _ScrollToPoint(_selection->end);
+    _ScrollToPoint(selection->end);
 }
 
 Terminal::UpdateSelectionParams Terminal::ConvertKeyEventToUpdateSelectionParams(const ControlKeyStates mods, const WORD vkey) const noexcept
