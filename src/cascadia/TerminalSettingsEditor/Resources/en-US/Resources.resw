@@ -2033,19 +2033,19 @@
     <comment>Text label for secondary button the color picker content dialog. When clicked, the operation of selecting a color is cancelled by the user.</comment>
   </data>
   <data name="Profile_CursorColor_NullableColorPicker.NullColorButtonLabel" xml:space="preserve">
-    <value>Use cursor color from color scheme</value>
+    <value>Use scheme color</value>
     <comment>Label for a button directing the user to use the cursor color defined in the terminal's current color scheme.</comment>
   </data>
   <data name="Profile_Foreground_NullableColorPicker.NullColorButtonLabel" xml:space="preserve">
-    <value>Use foreground color from color scheme</value>
+    <value>Use scheme color</value>
     <comment>Label for a button directing the user to use the foreground color defined in the terminal's current color scheme.</comment>
   </data>
   <data name="Profile_Background_NullableColorPicker.NullColorButtonLabel" xml:space="preserve">
-    <value>Use background color from color scheme</value>
+    <value>Use scheme color</value>
     <comment>Label for a button directing the user to use the background color defined in the terminal's current color scheme.</comment>
   </data>
   <data name="Profile_SelectionBackground_NullableColorPicker.NullColorButtonLabel" xml:space="preserve">
-    <value>Use selection background color from color scheme</value>
+    <value>Use scheme color</value>
     <comment>Label for a button directing the user to use the selection background color defined in the terminal's current color scheme.</comment>
   </data>
   <data name="Profile_IconTypeNone" xml:space="preserve">
