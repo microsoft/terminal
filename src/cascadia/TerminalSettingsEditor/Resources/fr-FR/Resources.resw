@@ -2276,6 +2276,14 @@
     <value>Afficher un bouclier dans la barre de titre lorsque Terminal Windows s’exécute en tant qu’administrateur</value>
     <comment>Header for a control to toggle displaying a shield in the title bar of the app. "Admin" refers to elevated sessions like "run as Admin"</comment>
   </data>
+  <data name="Globals_ShowTabsFullscreen.Header" xml:space="preserve">
+    <value>Afficher les onglets en mode plein écran</value>
+    <comment>Header for a control to toggle if the app should show the tabs when in full screen state.</comment>
+  </data>
+  <data name="Globals_ShowTabsFullscreen.HelpText" xml:space="preserve">
+    <value>Lorsque cette option est activée, la barre d’onglets est visible lorsque l’application est en plein écran.</value>
+    <comment>A description for what the "show tabs in full screen" setting does.</comment>
+  </data>
   <data name="Profile_PathTranslationStyle.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Traduction du chemin d’accès</value>
     <comment>Name for a control to select how file and directory paths are translated.</comment>

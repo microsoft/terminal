@@ -82,6 +82,29 @@
         //   - "background"
         //   - "cursorColor"
         {
+            "name": "Ottosson",
+            "background": "#000000",
+            "foreground": "#bebebe",
+            "cursorColor": "#ffffff",
+            "selectionBackground": "#92a4fd",
+            "black": "#000000",
+            "red": "#be2c21",
+            "green": "#3fae3a",
+            "yellow": "#be9a4a",
+            "blue": "#204dbe",
+            "purple": "#bb54be",
+            "cyan": "#00a7b2",
+            "white": "#bebebe",
+            "brightBlack": "#808080",
+            "brightRed": "#ff3e30",
+            "brightGreen": "#58ea51",
+            "brightYellow": "#ffc944",
+            "brightBlue": "#2f6aff",
+            "brightPurple": "#fc74ff",
+            "brightCyan": "#00e1f0",
+            "brightWhite": "#ffffff"
+        },
+        {
             "name": "Campbell",
             "foreground": "#CCCCCC",
             "background": "#0C0C0C",

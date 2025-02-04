@@ -2276,6 +2276,14 @@
     <value>當 Windows 終端機 以系統管理員身分執行時，在標題欄中顯示遮罩</value>
     <comment>Header for a control to toggle displaying a shield in the title bar of the app. "Admin" refers to elevated sessions like "run as Admin"</comment>
   </data>
+  <data name="Globals_ShowTabsFullscreen.Header" xml:space="preserve">
+    <value>以全螢幕顯示索引標籤</value>
+    <comment>Header for a control to toggle if the app should show the tabs when in full screen state.</comment>
+  </data>
+  <data name="Globals_ShowTabsFullscreen.HelpText" xml:space="preserve">
+    <value>啟用時，當應用程式使用全螢幕時，將會顯示索引標籤。</value>
+    <comment>A description for what the "show tabs in full screen" setting does.</comment>
+  </data>
   <data name="Profile_PathTranslationStyle.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>路徑翻譯</value>
     <comment>Name for a control to select how file and directory paths are translated.</comment>
