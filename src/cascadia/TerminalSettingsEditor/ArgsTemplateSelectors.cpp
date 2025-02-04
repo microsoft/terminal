@@ -36,7 +36,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             }
             else if (argType == L"bool")
             {
-                return BoolTemplate();
+                if (argWrapper.Required())
+                {
+                    return BoolTemplate();
+                }
+                else
+                {
+                    return BoolOptionalTemplate();
+                }
             }
             else if (argType == L"Windows::Foundation::IReference<uint32_t>")
             {

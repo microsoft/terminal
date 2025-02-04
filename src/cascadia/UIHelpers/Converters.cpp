@@ -125,4 +125,13 @@ namespace winrt::Microsoft::Terminal::UI::implementation
     {
         return winrt::unbox_value<bool>(value);
     }
+
+    winrt::Windows::Foundation::IReference<bool> Converters::UnboxBoolOptional(const Windows::Foundation::IInspectable& value)
+    {
+        if (!value)
+        {
+            return nullptr;
+        }
+        return winrt::unbox_value<winrt::Windows::Foundation::IReference<bool>>(value);
+    }
 }

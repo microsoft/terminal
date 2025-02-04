@@ -153,7 +153,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 const auto emptyArgs = CascadiaSettings::GetEmptyArgsForAction(actionEnum);
                 // todo: for sendInput, where "input" is a required argument, this will set it to an empty string which does not satisfy the requirement
                 // i.e. if the user hits "save" immediately after switching to sendInput as the action (without adding something to the input field), they'll get an error
-                emptyArgs.SetAllArgsToDefault();
+                emptyArgs.SetRequiredArgsToDefault();
                 Model::ActionAndArgs newActionAndArgs{ actionEnum, emptyArgs };
                 _command.ActionAndArgs(newActionAndArgs);
                 ActionArgsVM(make<ActionArgsViewModel>(newActionAndArgs));

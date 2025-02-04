@@ -252,7 +252,16 @@
                           x:DataType="local:ArgWrapper">
                 <ListViewItem>
                     <StackPanel Orientation="Horizontal">
-                        <CheckBox IsChecked="{x:Bind mtu:Converters.UnboxBool(Value), Mode=TwoWay, BindBack=BoolBindBack}"
+                        <CheckBox IsChecked="{x:Bind mtu:Converters.UnboxBool(Value), Mode=TwoWay, BindBack=BoolBindBack}" />
+                    </StackPanel>
+                </ListViewItem>
+            </DataTemplate>
+
+            <DataTemplate x:Key="BoolOptionalTemplate"
+                          x:DataType="local:ArgWrapper">
+                <ListViewItem>
+                    <StackPanel Orientation="Horizontal">
+                        <CheckBox IsChecked="{x:Bind mtu:Converters.UnboxBoolOptional(Value), Mode=TwoWay, BindBack=BoolBindBack}"
                                   IsThreeState="True" />
                     </StackPanel>
                 </ListViewItem>
@@ -261,7 +270,8 @@
             <local:ArgsTemplateSelectors x:Key="ArgsTemplateSelector"
                                          UInt32Template="{StaticResource UInt32Template}"
                                          StringTemplate="{StaticResource StringTemplate}"
-                                         BoolTemplate="{StaticResource BoolTemplate}" />
+                                         BoolTemplate="{StaticResource BoolTemplate}"
+                                         BoolOptionalTemplate="{StaticResource BoolOptionalTemplate}" />
         </ResourceDictionary>
     </Page.Resources>
 

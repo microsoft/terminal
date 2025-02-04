@@ -17,6 +17,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         WINRT_PROPERTY(winrt::Windows::UI::Xaml::DataTemplate, UInt32Template);
         WINRT_PROPERTY(winrt::Windows::UI::Xaml::DataTemplate, StringTemplate);
         WINRT_PROPERTY(winrt::Windows::UI::Xaml::DataTemplate, BoolTemplate);
+        WINRT_PROPERTY(winrt::Windows::UI::Xaml::DataTemplate, BoolOptionalTemplate);
     };
 }
 

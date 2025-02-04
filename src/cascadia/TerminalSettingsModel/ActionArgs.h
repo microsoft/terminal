@@ -651,6 +651,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void SetAllArgsToDefault()
         {
         }
+        void SetRequiredArgsToDefault()
+        {
+        }
     };
 
     struct SplitPaneArgs : public SplitPaneArgsT<SplitPaneArgs>
@@ -761,6 +764,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void SetAllArgsToDefault()
         {
         }
+        void SetRequiredArgsToDefault()
+        {
+        }
     };
 
     struct NewWindowArgs : public NewWindowArgsT<NewWindowArgs>
@@ -827,6 +833,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         {
         }
         void SetAllArgsToDefault()
+        {
+        }
+        void SetRequiredArgsToDefault()
         {
         }
     };
@@ -984,6 +993,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         {
         }
         void SetAllArgsToDefault()
+        {
+        }
+        void SetRequiredArgsToDefault()
         {
         }
     };
