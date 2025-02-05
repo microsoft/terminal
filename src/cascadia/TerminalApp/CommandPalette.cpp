@@ -530,6 +530,26 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    // Method Description:
+    // - This event is called when the user's mouse pointer enters an individual
+    //   item from the list. We'll get the item that was hovered and "preview"
+    //   the command that the user hovered.
+    // 
+    // Arguments:
+    // - args: a PointerRoutedEventArgs who's PointerEntered() item will be previewed.
+    // Return Value:
+    // - <none>
+    void CommandPalette::_listItemPointerEntered(const Windows::Foundation::IInspectable& sender,
+                                                 const Windows::UI::Xaml::Input::PointerRoutedEventArgs& /*args*/)
+    {
+        // TODO
+        // 1. retrieve the item that the pointer entered
+        // 2. filter the cmd it represents
+        // 3. preview it
+    }
+
+    // TODO behaviour when the pointer exits
+
     void CommandPalette::_listItemSelectionChanged(const Windows::Foundation::IInspectable& /*sender*/, const Windows::UI::Xaml::Controls::SelectionChangedEventArgs& e)
     {
         // We don't care about...

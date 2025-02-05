@@ -356,6 +356,7 @@
                       ContainerContentChanging="_containerContentChanging"
                       IsItemClickEnabled="True"
                       ItemClick="_listItemClicked"
+					  PointerEntered="_listItemPointerEntered"
                       ItemsSource="{x:Bind FilteredActions}"
                       SelectionChanged="_listItemSelectionChanged"
                       SelectionMode="Single"
