@@ -537,28 +537,47 @@ namespace winrt::TerminalApp::implementation
     //   to tab command for this tab, but not dismiss the switcher.
     //
     // Arguments:
-    // - args: a PointerRoutedEventArgs who's PointerEntered() item will be previewed.
+    // - sender: the UI element that raised the event.
     // Return Value:
     // - <none>
-    void CommandPalette::_listItemPointerEntered(const winrt::Windows::Foundation::IInspectable& /*sender*/,
-                                                 const winrt::Windows::UI::Xaml::Input::PointerRoutedEventArgs& args)
+    void CommandPalette::_listItemPointerEntered(const winrt::Windows::Foundation::IInspectable& sender,
+                                                 const winrt::Windows::UI::Xaml::Input::PointerRoutedEventArgs& /*args*/)
     {
-        // find the listViewItem
-        auto dependencyObject = args.OriginalSource().try_as<winrt::Windows::UI::Xaml::DependencyObject>();
-        winrt::Windows::UI::Xaml::Controls::ListViewItem listViewItem{ nullptr };
-        do
-        {
-            if (listViewItem = dependencyObject.try_as<winrt::Windows::UI::Xaml::Controls::ListViewItem>())
-            {
-                break;
-            }
-        } while (dependencyObject = winrt::Windows::UI::Xaml::Media::VisualTreeHelper::GetParent(dependencyObject));
-
-        // preview iff we're in ActionMode and (TODO) in a submenu (i.e. _nestedActionStack is nonempty)
+        auto listViewItem = sender.try_as<winrt::Windows::UI::Xaml::Controls::ListViewItem>();
         if (_currentMode == CommandPaletteMode::ActionMode && listViewItem)
         {
             const auto enteredItem = listViewItem.Content();
             if (const auto filteredCommand{ enteredItem.try_as<winrt::TerminalApp::FilteredCommand>() })
+            {
+                // only preview submenu items (TODO unsure about this as a requirement? for now we only preview color schemes)
+                if (_nestedActionStack.Size() > 0)
+                {
+                    if (const auto actionPaletteItem{ filteredCommand.Item().try_as<winrt::TerminalApp::ActionPaletteItem>() })
+                    {
+                        PreviewAction.raise(*this, actionPaletteItem.Command());
+                    }
+                }
+            }
+        }
+    }
+
+    // Method Description:
+    // - This event is called when the user's mouse pointer exits an individual
+    //   item from the list. We'll fall back to previewing the selected item rather
+    //   than the hovered one.
+    //
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void CommandPalette::_listItemPointerExited(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+                                                const winrt::Windows::UI::Xaml::Input::PointerRoutedEventArgs& /*args*/)
+    {
+        // retrieve the current selected command
+        const auto selectedCommand = _filteredActionsView().SelectedItem();
+        if (const auto filteredCommand{ selectedCommand.try_as<winrt::TerminalApp::FilteredCommand>() })
+        {
+            if (_currentMode == CommandPaletteMode::ActionMode && filteredCommand)
             {
                 if (const auto actionPaletteItem{ filteredCommand.Item().try_as<winrt::TerminalApp::ActionPaletteItem>() })
                 {
@@ -567,24 +586,6 @@ namespace winrt::TerminalApp::implementation
             }
         }
     }
-
-    void CommandPalette::_listItemPointerExited(const winrt::Windows::Foundation::IInspectable& /*sender*/,
-                                                const winrt::Windows::UI::Xaml::Input::PointerRoutedEventArgs& /*args*/)
-    {
-        // retrieve the current selected command
-        const auto selectedCommand = _filteredActionsView().SelectedItem();
-        const auto filteredCommand = selectedCommand.try_as<winrt::TerminalApp::FilteredCommand>();
-
-        // if in ActionMode, preview the selected command
-        if (_currentMode == CommandPaletteMode::ActionMode && filteredCommand)
-        {
-            if (const auto actionPaletteItem = filteredCommand.Item().try_as<winrt::TerminalApp::ActionPaletteItem>())
-            {
-                PreviewAction.raise(*this, actionPaletteItem.Command());
-            }
-        }
-    }
-
 
     void CommandPalette::_listItemSelectionChanged(const Windows::Foundation::IInspectable& /*sender*/, const Windows::UI::Xaml::Controls::SelectionChangedEventArgs& e)
     {
@@ -1362,6 +1363,10 @@ namespace winrt::TerminalApp::implementation
         else
         {
             itemContainer.DataContext(args.Item());
+
+            // attach the pointer event handlers to the container
+            itemContainer.PointerEntered({ this, &CommandPalette::_listItemPointerEntered });
+            itemContainer.PointerExited({ this, &CommandPalette::_listItemPointerExited });
         }
     }
 
