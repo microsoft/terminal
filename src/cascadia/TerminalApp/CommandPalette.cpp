@@ -568,7 +568,23 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    // TODO behaviour when the pointer exits
+    void CommandPalette::_listItemPointerExited(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+                                                const winrt::Windows::UI::Xaml::Input::PointerRoutedEventArgs& /*args*/)
+    {
+        // retrieve the current selected command
+        const auto selectedCommand = _filteredActionsView().SelectedItem();
+        const auto filteredCommand = selectedCommand.try_as<winrt::TerminalApp::FilteredCommand>();
+
+        // if in ActionMode, preview the selected command
+        if (_currentMode == CommandPaletteMode::ActionMode && filteredCommand)
+        {
+            if (const auto actionPaletteItem = filteredCommand.Item().try_as<winrt::TerminalApp::ActionPaletteItem>())
+            {
+                PreviewAction.raise(*this, actionPaletteItem.Command());
+            }
+        }
+    }
+
 
     void CommandPalette::_listItemSelectionChanged(const Windows::Foundation::IInspectable& /*sender*/, const Windows::UI::Xaml::Controls::SelectionChangedEventArgs& e)
     {

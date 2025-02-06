@@ -357,6 +357,7 @@
                       IsItemClickEnabled="True"
                       ItemClick="_listItemClicked"
 					  PointerEntered="_listItemPointerEntered"
+                      PointerExited="_listItemPointerExited"
                       ItemsSource="{x:Bind FilteredActions}"
                       SelectionChanged="_listItemSelectionChanged"
                       SelectionMode="Single"
