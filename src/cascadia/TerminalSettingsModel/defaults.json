@@ -584,9 +584,6 @@
         // Visual Adjustments
         { "command": { "action": "adjustFontSize", "delta": 1 }, "id": "Terminal.IncreaseFontSize" },
         { "command": { "action": "adjustFontSize", "delta": -1 }, "id": "Terminal.DecreaseFontSize" },
-        { "command": { "action": "adjustFontSize", "delta": 1 }, "id": "Terminal.IncreaseFontSize" },
-        { "command": { "action": "adjustFontSize", "delta": -1 }, "id": "Terminal.DecreaseFontSize" },
-        { "command": "resetFontSize", "id": "Terminal.ResetFontSize" },
         { "command": "resetFontSize", "id": "Terminal.ResetFontSize" },
 
         // Other commands
@@ -663,8 +660,8 @@
         { "keys": "ctrl+shift+,", "id": "Terminal.OpenSettingsFile" },
         { "keys": "ctrl+alt+,", "id": "Terminal.OpenDefaultSettingsFile" },
         { "keys": "ctrl+shift+f", "id": "Terminal.FindText" },
-        { "keys":"ctrl+shift+p", "id": "Terminal.ToggleCommandPalette" },
-        { "keys":"win+sc(41)", "id": "Terminal.QuakeMode" },
+        { "keys": "ctrl+shift+p", "id": "Terminal.ToggleCommandPalette" },
+        { "keys": "win+sc(41)", "id": "Terminal.QuakeMode" },
         { "keys": "alt+space", "id": "Terminal.OpenSystemMenu" },
         { "keys": "ctrl+shift+period", "id": "Terminal.Suggestions" },
 
