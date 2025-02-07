@@ -40,7 +40,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     X(FileSource::Local, Windows::Foundation::Collections::IVector<Model::WindowLayout>, PersistedWindowLayouts, "persistedWindowLayouts")                                \
     X(FileSource::Shared, Windows::Foundation::Collections::IVector<hstring>, RecentCommands, "recentCommands")                                                           \
     X(FileSource::Shared, Windows::Foundation::Collections::IVector<winrt::Microsoft::Terminal::Settings::Model::InfoBarMessage>, DismissedMessages, "dismissedMessages") \
-    X(FileSource::Local, Windows::Foundation::Collections::IVector<hstring>, AllowedCommandlines, "allowedCommandlines")
+    X(FileSource::Local, Windows::Foundation::Collections::IVector<hstring>, AllowedCommandlines, "allowedCommandlines")                                                  \
+    X(FileSource::Shared, bool, LastStartOnUserLoginStateSyncedWithOS, "lastStartOnUserLoginStateSyncedWithOS")
 
     struct WindowLayout : WindowLayoutT<WindowLayout>
     {
@@ -77,6 +78,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     void name(const type& value) noexcept;
         MTSM_APPLICATION_STATE_FIELDS(MTSM_APPLICATION_STATE_GEN)
 #undef MTSM_APPLICATION_STATE_GEN
+
+        bool HasLastStartOnUserloginStateSyncedWithOS() const noexcept;
 
     private:
         struct state_t

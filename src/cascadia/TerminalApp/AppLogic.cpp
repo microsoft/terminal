@@ -363,8 +363,31 @@ namespace winrt::TerminalApp::implementation
             co_return;
         }
 
+
         const auto tryEnableStartupTask = _settings.GlobalSettings().StartOnUserLogin();
         const auto task = co_await StartupTask::GetAsync(StartupTaskName);
+
+        auto taskState = task.State();
+        // If user has not set in json:
+        //  If user has enabled in settings - enable in user settings
+        //  If user has disabled in settings - disable in user settings (can this happen?)
+        // If user has enabled in json:
+        //  If user has enabled in settings - no change
+        //  If policy has enabled in settings - no change
+        //  If user has disabled in settings - disable in json
+        //  If policy has disabled in settings - disable in json
+        // If user has disabled in json:
+        //  If user has enabled in settings - enable in json
+        //  If policy has enabled in settings - enable in json
+        //  If user has disabled in settings - no change
+        //  If policy has disabled in settings - no change
+        //
+        //... track json state transition
+        // if user goes from enabled to diabled, try to disable in settings
+        // if user goes from disabled to enabled, try to enable in settings
+        // can we detect if RequestEnable succeeded?
+        std::optional<bool> newFinalStartupTaskState;
+        std::optional<bool> newFinalUserSettingsValue;
 
         switch (task.State())
         {
