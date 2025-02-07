@@ -330,7 +330,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     MTSM_APPLICATION_STATE_FIELDS(MTSM_APPLICATION_STATE_GEN)
 #undef MTSM_APPLICATION_STATE_GEN
 
-    bool ApplicationState::HasLastStartOnUserloginStateSyncedWithOS() const noexcept
+    bool ApplicationState::HasLastStartOnUserLoginStateSyncedWithOS() const noexcept
     {
         const auto state = _state.lock_shared();
         return state->LastStartOnUserLoginStateSyncedWithOS.has_value();

@@ -79,7 +79,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         MTSM_APPLICATION_STATE_FIELDS(MTSM_APPLICATION_STATE_GEN)
 #undef MTSM_APPLICATION_STATE_GEN
 
-        bool HasLastStartOnUserloginStateSyncedWithOS() const noexcept;
+        bool HasLastStartOnUserLoginStateSyncedWithOS() const noexcept;
 
     private:
         struct state_t

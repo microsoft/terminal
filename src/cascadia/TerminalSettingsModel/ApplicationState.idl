@@ -40,7 +40,7 @@ namespace Microsoft.Terminal.Settings.Model
         Windows.Foundation.Collections.IVector<InfoBarMessage> DismissedMessages;
         Windows.Foundation.Collections.IVector<String> AllowedCommandlines;
 
-        Boolean LastStartOnUserloginStateSyncedWithOS;
-        Boolean HasLastStartOnUserloginStateSyncedWithOS();
+        Boolean LastStartOnUserLoginStateSyncedWithOS;
+        Boolean HasLastStartOnUserLoginStateSyncedWithOS();
     }
 }
