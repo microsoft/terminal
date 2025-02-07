@@ -363,7 +363,6 @@ namespace winrt::TerminalApp::implementation
             co_return;
         }
 
-        const auto tryEnableStartupTask = _settings.GlobalSettings().StartOnUserLogin();
         const auto task = co_await StartupTask::GetAsync(StartupTaskName);
 
         // If user has not set in json:
@@ -417,7 +416,7 @@ namespace winrt::TerminalApp::implementation
                 break;
             }
 
-            if (newFinalUserSettingsValue.has_value())
+            if (newFinalUserSettingsValue.has_value() && newFinalUserSettingsValue != userRequestedStartupTaskState)
             {
                 _settings.GlobalSettings().StartOnUserLogin(*newFinalUserSettingsValue);
                 appState.LastStartOnUserLoginStateSyncedWithOS(*newFinalUserSettingsValue);
