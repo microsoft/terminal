@@ -53,6 +53,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     DEFINE_ENUM_MAP(Microsoft::Terminal::Core::AdjustTextMode, AdjustIndistinguishableColors);
     DEFINE_ENUM_MAP(Microsoft::Terminal::Control::PathTranslationStyle, PathTranslationStyle);
 
+    // Actions
+    DEFINE_ENUM_MAP(Microsoft::Terminal::Settings::Model::ResizeDirection, ResizeDirection);
+
     // FontWeight is special because the JsonUtils::ConversionTrait for it
     // creates a FontWeight object, but we need to use the uint16_t value.
     winrt::Windows::Foundation::Collections::IMap<winrt::hstring, uint16_t> EnumMappings::FontWeight()
