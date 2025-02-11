@@ -49,6 +49,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             {
                 return UInt32Template();
             }
+            else if (argType == L"Model::ResizeDirection")
+            {
+                return EnumTemplate();
+            }
             else if (argType == L"Windows::Foundation::IReference<Control::CopyFormat>")
             {
                 return nullptr;

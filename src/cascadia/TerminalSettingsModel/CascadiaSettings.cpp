@@ -998,6 +998,10 @@ Model::IActionArgs CascadiaSettings::GetEmptyArgsForAction(Model::ShortcutAction
 {
     switch (shortcutAction)
     {
+    case Model::ShortcutAction::SwitchToTab:
+        return winrt::make<SwitchToTabArgs>();
+    case Model::ShortcutAction::ResizePane:
+        return winrt::make<ResizePaneArgs>();
     case Model::ShortcutAction::SendInput:
         return winrt::make<SendInputArgs>();
     case Model::ShortcutAction::MovePane:

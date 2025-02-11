@@ -168,36 +168,20 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     struct ArgWrapper : ArgWrapperT<ArgWrapper>, ViewModelHelper<ArgWrapper>
     {
     public:
-        ArgWrapper(const winrt::hstring& type, const bool required, const Windows::Foundation::IInspectable& value)
-        {
-            Value(value);
-            _type = type;
-            _required = required;
-        };
+        ArgWrapper(const winrt::hstring& type, const bool required, const Windows::Foundation::IInspectable& value);
 
-        winrt::hstring Type()
-        {
-            return _type;
-        }
+        winrt::hstring Type() const noexcept { return _type; };
 
-        bool Required()
-        {
-            return _required;
-        }
+        bool Required() const noexcept { return _required; };
 
-        void StringBindBack(const winrt::hstring& newValue)
-        {
-            Value(box_value(newValue));
-        }
+        Windows::Foundation::Collections::IObservableVector<Microsoft::Terminal::Settings::Editor::EnumEntry> EnumList() const noexcept { return _EnumList; };
 
-        void DoubleBindBack(const double newValue)
-        {
-            Value(box_value(static_cast<uint32_t>(newValue)));
-        }
+        void StringBindBack(const winrt::hstring& newValue) { Value(box_value(newValue)); };
+
+        void DoubleBindBack(const double newValue) { Value(box_value(static_cast<uint32_t>(newValue))); };
 
         void BoolBindBack(const Windows::Foundation::IReference<bool> newValue)
         {
-            // todo: bool doesn't work fully - 3-state checkbox not working? possibly because it's binding to a bool
             if (newValue)
             {
                 Value(box_value(newValue));
@@ -208,11 +192,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             }
         }
 
+        // We cannot use the macro here because we need to implement additional logic for the setter
+        Windows::Foundation::IInspectable EnumValue() const noexcept { return _EnumValue; };
+        void EnumValue(const Windows::Foundation::IInspectable& value);
+
         VIEW_MODEL_OBSERVABLE_PROPERTY(Windows::Foundation::IInspectable, Value, nullptr);
 
     private:
         winrt::hstring _type;
         bool _required;
+        Windows::Foundation::IInspectable _EnumValue{ nullptr };
+        Windows::Foundation::Collections::IObservableVector<Microsoft::Terminal::Settings::Editor::EnumEntry> _EnumList;
     };
 
     struct ActionArgsViewModel : ActionArgsViewModelT<ActionArgsViewModel>, ViewModelHelper<ActionArgsViewModel>

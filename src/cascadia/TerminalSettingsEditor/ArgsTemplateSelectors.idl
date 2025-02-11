@@ -11,5 +11,6 @@ namespace Microsoft.Terminal.Settings.Editor
         Windows.UI.Xaml.DataTemplate StringTemplate;
         Windows.UI.Xaml.DataTemplate BoolTemplate;
         Windows.UI.Xaml.DataTemplate BoolOptionalTemplate;
+        Windows.UI.Xaml.DataTemplate EnumTemplate;
     }
 }

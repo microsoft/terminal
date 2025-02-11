@@ -11,6 +11,7 @@
 #include "KeyChordViewModel.g.cpp"
 #include "LibraryResources.h"
 #include "../TerminalSettingsModel/AllShortcutActions.h"
+#include "EnumEntry.h"
 
 using namespace winrt::Windows::Foundation;
 using namespace winrt::Windows::Foundation::Collections;
@@ -21,6 +22,23 @@ using namespace winrt::Windows::UI::Xaml::Controls;
 using namespace winrt::Windows::UI::Xaml::Data;
 using namespace winrt::Windows::UI::Xaml::Navigation;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
+
+#define INITIALIZE_ENUM_LIST_AND_VALUE(enumMappingsName, enumType, resourceSectionAndType, resourceProperty)                                                \
+    std::vector<winrt::Microsoft::Terminal::Settings::Editor::EnumEntry> enumList;                                                                          \
+    const auto mappings = winrt::Microsoft::Terminal::Settings::Model::EnumMappings::enumMappingsName();                                                    \
+    const auto unboxedValue = unbox_value<enumType>(value);                                                                                                 \
+    for (const auto [enumKey, enumValue] : mappings)                                                                                                        \
+    {                                                                                                                                                       \
+        const auto enumName = LocalizedNameForEnumName(resourceSectionAndType, enumKey, resourceProperty);                                                  \
+        auto entry = winrt::make<winrt::Microsoft::Terminal::Settings::Editor::implementation::EnumEntry>(enumName, winrt::box_value<enumType>(enumValue)); \
+        enumList.emplace_back(entry);                                                                                                                       \
+        if (unboxedValue == enumValue)                                                                                                                      \
+        {                                                                                                                                                   \
+        EnumValue(entry);                                                                                                                                   \
+        }                                                                                                                                                   \
+    }                                                                                                                                                       \
+    std::sort(enumList.begin(), enumList.end(), EnumEntryReverseComparator<enumType>());                                                                    \
+    _EnumList = winrt::single_threaded_observable_vector<winrt::Microsoft::Terminal::Settings::Editor::EnumEntry>(std::move(enumList));
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
@@ -153,7 +171,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 const auto emptyArgs = CascadiaSettings::GetEmptyArgsForAction(actionEnum);
                 // todo: for sendInput, where "input" is a required argument, this will set it to an empty string which does not satisfy the requirement
                 // i.e. if the user hits "save" immediately after switching to sendInput as the action (without adding something to the input field), they'll get an error
-                emptyArgs.SetRequiredArgsToDefault();
+                emptyArgs.SetAllArgsToDefault();
                 Model::ActionAndArgs newActionAndArgs{ actionEnum, emptyArgs };
                 _command.ActionAndArgs(newActionAndArgs);
                 ActionArgsVM(make<ActionArgsViewModel>(newActionAndArgs));
@@ -232,6 +250,26 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 //todo: this is a placeholder, don't know if there's any events we need to listen to
             }
         });
+    }
+
+    ArgWrapper::ArgWrapper(const winrt::hstring& type, const bool required, const Windows::Foundation::IInspectable& value)
+    {
+        Value(value);
+        _type = type;
+        _required = required;
+        if (_type == L"Model::ResizeDirection")
+        {
+            INITIALIZE_ENUM_LIST_AND_VALUE(ResizeDirection, Model::ResizeDirection, L"Actions_ResizeDirection", L"Content");
+        }
+    }
+
+    void ArgWrapper::EnumValue(const Windows::Foundation::IInspectable& enumValue)
+    {
+        if (_EnumValue != enumValue)
+        {
+            _EnumValue = enumValue;
+            Value(enumValue.as<Editor::EnumEntry>().EnumValue());
+        }
     }
 
     ActionArgsViewModel::ActionArgsViewModel(const Model::ActionAndArgs actionAndArgs) :

@@ -1844,6 +1844,26 @@
     <value>Action</value>
     <comment>Label for a control that sets the action of a key binding.</comment>
   </data>
+  <data name="Actions_ResizeDirectionNone.Content" xml:space="preserve">
+    <value>None</value>
+    <comment>An option to choose from for the "resize direction". None option.</comment>
+  </data>
+  <data name="Actions_ResizeDirectionLeft.Content" xml:space="preserve">
+    <value>Left</value>
+    <comment>An option to choose from for the "resize direction". Left option.</comment>
+  </data>
+  <data name="Actions_ResizeDirectionRight.Content" xml:space="preserve">
+    <value>Right</value>
+    <comment>An option to choose from for the "resize direction". Right option.</comment>
+  </data>
+  <data name="Actions_ResizeDirectionUp.Content" xml:space="preserve">
+    <value>Up</value>
+    <comment>An option to choose from for the "resize direction". Up option.</comment>
+  </data>
+  <data name="Actions_ResizeDirectionDown.Content" xml:space="preserve">
+    <value>Down</value>
+    <comment>An option to choose from for the "resize direction". Down option.</comment>
+  </data>
   <data name="ShortcutAction_SendInput" xml:space="preserve">
     <value>Send input</value>
     <comment>One of the possible shortcut action types. This represents the "Send input" action.</comment>

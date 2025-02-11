@@ -267,11 +267,30 @@
                 </ListViewItem>
             </DataTemplate>
 
+            <DataTemplate x:Key="EnumComboBoxTemplate"
+                          x:DataType="local:EnumEntry">
+                <TextBlock Text="{x:Bind EnumName, Mode=OneWay}" />
+            </DataTemplate>
+
+            <DataTemplate x:Key="EnumTemplate"
+                          x:DataType="local:ArgWrapper">
+                <ListViewItem>
+                    <StackPanel Orientation="Horizontal">
+                        <ComboBox ItemTemplate="{StaticResource EnumComboBoxTemplate}"
+                                  ItemsSource="{x:Bind EnumList, Mode=OneWay}"
+                                  SelectedItem="{x:Bind EnumValue, Mode=TwoWay}"
+                                  Style="{StaticResource ComboBoxSettingStyle}" />
+                    </StackPanel>
+                </ListViewItem>
+            </DataTemplate>
+
             <local:ArgsTemplateSelectors x:Key="ArgsTemplateSelector"
                                          UInt32Template="{StaticResource UInt32Template}"
                                          StringTemplate="{StaticResource StringTemplate}"
                                          BoolTemplate="{StaticResource BoolTemplate}"
-                                         BoolOptionalTemplate="{StaticResource BoolOptionalTemplate}" />
+                                         BoolOptionalTemplate="{StaticResource BoolOptionalTemplate}"
+                                         EnumTemplate="{StaticResource EnumTemplate}" />
+
         </ResourceDictionary>
     </Page.Resources>
 
