@@ -2344,32 +2344,35 @@
     <value>This option is managed by enterprise policy and cannot be changed here.</value>
     <comment>This is displayed in concordance with Globals_StartOnUserLogin if the enterprise administrator has taken control of this setting.</comment>
   </data>
-  <data name="Globals_ActiveExtensionsHeader.Text" xml:space="preserve">
+  <data name="Extensions_ActiveExtensionsHeader.Text" xml:space="preserve">
     <value>Active Extensions</value>
   </data>
-  <data name="Globals_ModifiedProfilesHeader.Text" xml:space="preserve">
+  <data name="Extensions_ModifiedProfilesHeader.Text" xml:space="preserve">
     <value>Modified Profiles</value>
   </data>
-  <data name="Globals_AddedProfilesHeader.Text" xml:space="preserve">
+  <data name="Extensions_AddedProfilesHeader.Text" xml:space="preserve">
     <value>Added Profiles</value>
   </data>
-  <data name="Globals_AddedColorSchemesHeader.Text" xml:space="preserve">
+  <data name="Extensions_AddedColorSchemesHeader.Text" xml:space="preserve">
     <value>Added Color Schemes</value>
   </data>
-  <data name="Globals_NoActiveExtensionsDisclaimer.Text" xml:space="preserve">
+  <data name="Extensions_NoActiveExtensionsDisclaimer.Text" xml:space="preserve">
     <value>None</value>
     <comment>Text displayed when no extensions are available. Shown in place of a list of entries.</comment>
   </data>
-  <data name="Globals_NoProfilesModifiedDisclaimer.Text" xml:space="preserve">
+  <data name="Extensions_NoModifiedProfilesDisclaimer.Text" xml:space="preserve">
     <value>None</value>
     <comment>Text displayed when no profiles were modified. Shown in place of a list of entries.</comment>
   </data>
-  <data name="Globals_NoSchemesAddedDisclaimer.Text" xml:space="preserve">
+  <data name="Extensions_NoAddedColorSchemesDisclaimer.Text" xml:space="preserve">
     <value>None</value>
     <comment>Text displayed when no color schemes were added. Shown in place of a list of entries.</comment>
   </data>
-  <data name="Globals_NoProfilesAddedDisclaimer.Text" xml:space="preserve">
+  <data name="Extensions_NoAddedProfilesDisclaimer.Text" xml:space="preserve">
     <value>None</value>
     <comment>Text displayed when no profiles were added. Shown in place of a list of entries.</comment>
+  </data>
+  <data name="Extensions_Disclaimer.Content" xml:space="preserve">
+    <value>Learn more about fragment extensions.</value>
   </data>
 </root>

@@ -159,8 +159,7 @@
             <muxc:NavigationViewItem x:Uid="Nav_Extensions"
                                      Tag="Extensions_Nav">
                 <muxc:NavigationViewItem.Icon>
-                    <FontIcon Glyph="&#xE74C;" />
-                    <!--  Alternative: Puzzle - EA86  -->
+                    <FontIcon Glyph="&#xEA86;" />
                 </muxc:NavigationViewItem.Icon>
             </muxc:NavigationViewItem>
 

@@ -730,7 +730,7 @@ void SettingsLoader::_parseFragment(const winrt::hstring& source, const std::str
 
     Json::StreamWriterBuilder styledWriter;
     styledWriter["indentation"] = "    ";
-    styledWriter["commentStyle"] = "All"; // TODO CARLOS: can be set to "None" for no comments; is that something we want?
+    styledWriter["commentStyle"] = "All";
     auto fragmentSettings = winrt::make_self<FragmentSettings>(source, hstring{ til::u8u16(Json::writeString(styledWriter, json.root)) });
 
     settings.clear();

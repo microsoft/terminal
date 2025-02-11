@@ -25,10 +25,6 @@
                 <Setter Property="FontStyle" Value="Italic" />
             </Style>
 
-            <!--
-                TODO CARLOS: scrolling is weird. ManipulationMode is possibly related.
-                I want to automatically scroll when we pass an edge.
-            -->
             <Style x:Key="CodeBlockStyle"
                    TargetType="TextBlock">
                 <Setter Property="FontFamily" Value="Cascadia Mono, Consolas" />
@@ -257,11 +253,17 @@
 
     <StackPanel Spacing="20"
                 Style="{StaticResource SettingsStackStyle}">
+
+        <!--Disclaimer and resources-->
+        <!--TODO CARLOS: placed in weird spot when the window is wider-->
+        <HyperlinkButton x:Uid="Extensions_Disclaimer"
+                         NavigateUri="https://learn.microsoft.com/en-us/windows/terminal/json-fragment-extensions"/>
+
         <StackPanel>
             <!--  Grouping: Active Extensions  -->
-            <TextBlock x:Uid="Globals_ActiveExtensionsHeader"
+            <TextBlock x:Uid="Extensions_ActiveExtensionsHeader"
                        Style="{StaticResource TextBlockSubHeaderStyle}" />
-            <TextBlock x:Uid="Globals_NoActiveExtensionsDisclaimer"
+            <TextBlock x:Uid="Extensions_NoActiveExtensionsDisclaimer"
                        Style="{StaticResource ItalicDisclaimerStyle}"
                        Visibility="{x:Bind ViewModel.NoActiveExtensions, Mode=OneWay}" />
             <ItemsControl ItemTemplate="{StaticResource FragmentSettingsTemplate}"
@@ -270,9 +272,9 @@
 
         <StackPanel>
             <!--  Grouping: Modified Profiles  -->
-            <TextBlock x:Uid="Globals_ModifiedProfilesHeader"
+            <TextBlock x:Uid="Extensions_ModifiedProfilesHeader"
                        Style="{StaticResource TextBlockSubHeaderStyle}" />
-            <TextBlock x:Uid="Globals_NoProfilesModifiedDisclaimer"
+            <TextBlock x:Uid="Extensions_NoModifiedProfilesDisclaimer"
                        Style="{StaticResource ItalicDisclaimerStyle}"
                        Visibility="{x:Bind ViewModel.NoProfilesModified, Mode=OneWay}" />
             <ItemsControl ItemTemplate="{StaticResource FragmentProfileViewModelTemplate}"
@@ -281,9 +283,9 @@
 
         <StackPanel>
             <!--  Grouping: Added Profiles  -->
-            <TextBlock x:Uid="Globals_AddedProfilesHeader"
+            <TextBlock x:Uid="Extensions_AddedProfilesHeader"
                        Style="{StaticResource TextBlockSubHeaderStyle}" />
-            <TextBlock x:Uid="Globals_NoProfilesAddedDisclaimer"
+            <TextBlock x:Uid="Extensions_NoAddedProfilesDisclaimer"
                        Style="{StaticResource ItalicDisclaimerStyle}"
                        Visibility="{x:Bind ViewModel.NoProfilesAdded, Mode=OneWay}" />
             <ItemsControl ItemTemplate="{StaticResource FragmentProfileViewModelTemplate}"
@@ -292,9 +294,9 @@
 
         <StackPanel>
             <!--  Grouping: Added Color Schemes  -->
-            <TextBlock x:Uid="Globals_AddedColorSchemesHeader"
+            <TextBlock x:Uid="Extensions_AddedColorSchemesHeader"
                        Style="{StaticResource TextBlockSubHeaderStyle}" />
-            <TextBlock x:Uid="Globals_NoSchemesAddedDisclaimer"
+            <TextBlock x:Uid="Extensions_NoAddedColorSchemesDisclaimer"
                        Style="{StaticResource ItalicDisclaimerStyle}"
                        Visibility="{x:Bind ViewModel.NoSchemesAdded, Mode=OneWay}" />
             <ItemsControl ItemTemplate="{StaticResource FragmentColorSchemeViewModelTemplate}"
