@@ -998,18 +998,44 @@ Model::IActionArgs CascadiaSettings::GetEmptyArgsForAction(Model::ShortcutAction
 {
     switch (shortcutAction)
     {
+    case Model::ShortcutAction::CopyText:
+        return winrt::make<CopyTextArgs>();
+    case Model::ShortcutAction::MovePane:
+        return winrt::make<MovePaneArgs>();
     case Model::ShortcutAction::SwitchToTab:
         return winrt::make<SwitchToTabArgs>();
     case Model::ShortcutAction::ResizePane:
         return winrt::make<ResizePaneArgs>();
+    case Model::ShortcutAction::MoveFocus:
+        return winrt::make<MoveFocusArgs>();
+    case Model::ShortcutAction::SwapPane:
+        return winrt::make<SwapPaneArgs>();
+    case Model::ShortcutAction::AdjustFontSize:
+        return winrt::make<AdjustFontSizeArgs>();
     case Model::ShortcutAction::SendInput:
         return winrt::make<SendInputArgs>();
-    case Model::ShortcutAction::MovePane:
-        return winrt::make<MovePaneArgs>();
-    case Model::ShortcutAction::CopyText:
-        return winrt::make<CopyTextArgs>();
+    case Model::ShortcutAction::OpenSettings:
+        return winrt::make<OpenSettingsArgs>();
     case Model::ShortcutAction::SetFocusMode:
         return winrt::make<SetFocusModeArgs>();
+    case Model::ShortcutAction::SetFullScreen:
+        return winrt::make<SetFullScreenArgs>();
+    case Model::ShortcutAction::SetMaximized:
+        return winrt::make<SetMaximizedArgs>();
+    case Model::ShortcutAction::SetColorScheme:
+        return winrt::make<SetColorSchemeArgs>();
+    case Model::ShortcutAction::RenameTab:
+        return winrt::make<RenameTabArgs>();
+    case Model::ShortcutAction::ExecuteCommandline:
+        return winrt::make<ExecuteCommandlineArgs>();
+    case Model::ShortcutAction::CloseOtherTabs:
+        return winrt::make<CloseOtherTabsArgs>();
+    case Model::ShortcutAction::CloseTabsAfter:
+        return winrt::make<CloseTabsAfterArgs>();
+    case Model::ShortcutAction::CloseTab:
+        return winrt::make<CloseTabArgs>();
+    case Model::ShortcutAction::MoveTab:
+        return winrt::make<MoveTabArgs>();
     default:
         return nullptr;
     }

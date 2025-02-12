@@ -52,6 +52,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         // Actions
         static winrt::Windows::Foundation::Collections::IMap<winrt::hstring, winrt::Microsoft::Terminal::Settings::Model::ResizeDirection> ResizeDirection();
+        static winrt::Windows::Foundation::Collections::IMap<winrt::hstring, winrt::Microsoft::Terminal::Settings::Model::FocusDirection> FocusDirection();
+        static winrt::Windows::Foundation::Collections::IMap<winrt::hstring, winrt::Microsoft::Terminal::Settings::Model::SettingsTarget> SettingsTarget();
+        static winrt::Windows::Foundation::Collections::IMap<winrt::hstring, winrt::Microsoft::Terminal::Settings::Model::MoveTabDirection> MoveTabDirection();
     };
 }
 

@@ -26,15 +26,19 @@ using namespace winrt::Microsoft::Terminal::Settings::Model;
 #define INITIALIZE_ENUM_LIST_AND_VALUE(enumMappingsName, enumType, resourceSectionAndType, resourceProperty)                                                \
     std::vector<winrt::Microsoft::Terminal::Settings::Editor::EnumEntry> enumList;                                                                          \
     const auto mappings = winrt::Microsoft::Terminal::Settings::Model::EnumMappings::enumMappingsName();                                                    \
-    const auto unboxedValue = unbox_value<enumType>(value);                                                                                                 \
+    enumType unboxedValue;                                                                                                                                  \
+    if (value)                                                                                                                                              \
+    {                                                                                                                                                       \
+        unboxedValue = unbox_value<enumType>(value);                                                                                                        \
+    }                                                                                                                                                       \
     for (const auto [enumKey, enumValue] : mappings)                                                                                                        \
     {                                                                                                                                                       \
         const auto enumName = LocalizedNameForEnumName(resourceSectionAndType, enumKey, resourceProperty);                                                  \
         auto entry = winrt::make<winrt::Microsoft::Terminal::Settings::Editor::implementation::EnumEntry>(enumName, winrt::box_value<enumType>(enumValue)); \
         enumList.emplace_back(entry);                                                                                                                       \
-        if (unboxedValue == enumValue)                                                                                                                      \
+        if (value && unboxedValue == enumValue)                                                                                                             \
         {                                                                                                                                                   \
-        EnumValue(entry);                                                                                                                                   \
+            EnumValue(entry);                                                                                                                               \
         }                                                                                                                                                   \
     }                                                                                                                                                       \
     std::sort(enumList.begin(), enumList.end(), EnumEntryReverseComparator<enumType>());                                                                    \
@@ -261,6 +265,22 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             INITIALIZE_ENUM_LIST_AND_VALUE(ResizeDirection, Model::ResizeDirection, L"Actions_ResizeDirection", L"Content");
         }
+        else if (_type == L"Model::FocusDirection")
+        {
+            INITIALIZE_ENUM_LIST_AND_VALUE(FocusDirection, Model::FocusDirection, L"Actions_FocusDirection", L"Content");
+        }
+        else if (_type == L"SettingsTarget")
+        {
+            INITIALIZE_ENUM_LIST_AND_VALUE(SettingsTarget, Model::SettingsTarget, L"Actions_SettingsTarget", L"Content");
+        }
+        else if (_type == L"MoveTabDirection")
+        {
+            INITIALIZE_ENUM_LIST_AND_VALUE(MoveTabDirection, Model::MoveTabDirection, L"Actions_MoveTabDirection", L"Content");
+        }
+        // todo:
+        // copyformat (flags)
+        // color (weird type), optional color
+        // optional uint32 (kinda defaults it to 0 right now which is incorrect...)
     }
 
     void ArgWrapper::EnumValue(const Windows::Foundation::IInspectable& enumValue)

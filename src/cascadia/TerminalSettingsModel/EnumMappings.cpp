@@ -55,6 +55,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     // Actions
     DEFINE_ENUM_MAP(Microsoft::Terminal::Settings::Model::ResizeDirection, ResizeDirection);
+    DEFINE_ENUM_MAP(Microsoft::Terminal::Settings::Model::FocusDirection, FocusDirection);
+    DEFINE_ENUM_MAP(Microsoft::Terminal::Settings::Model::SettingsTarget, SettingsTarget);
+    DEFINE_ENUM_MAP(Microsoft::Terminal::Settings::Model::MoveTabDirection, MoveTabDirection);
 
     // FontWeight is special because the JsonUtils::ConversionTrait for it
     // creates a FontWeight object, but we need to use the uint16_t value.

@@ -34,6 +34,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             {
                 return UInt32Template();
             }
+            else if (argType == L"float")
+            {
+                return FloatTemplate();
+            }
             else if (argType == L"bool")
             {
                 if (argWrapper.Required())
@@ -49,7 +53,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             {
                 return UInt32Template();
             }
-            else if (argType == L"Model::ResizeDirection")
+            else if (argType == L"Model::ResizeDirection" || argType == L"Model::FocusDirection" || argType == L"SettingsTarget" || argType == L"MoveTabDirection")
             {
                 return EnumTemplate();
             }

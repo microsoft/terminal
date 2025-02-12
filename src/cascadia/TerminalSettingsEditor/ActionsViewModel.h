@@ -180,6 +180,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         void DoubleBindBack(const double newValue) { Value(box_value(static_cast<uint32_t>(newValue))); };
 
+        void DoubleOptionalBindBack(const double newValue) { Value(box_value(static_cast<uint32_t>(newValue))); };
+
+        void FloatBindBack(const double newValue) { Value(box_value(static_cast<float>(newValue))); };
+
         void BoolBindBack(const Windows::Foundation::IReference<bool> newValue)
         {
             if (newValue)

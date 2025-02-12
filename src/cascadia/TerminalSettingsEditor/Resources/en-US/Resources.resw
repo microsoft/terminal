@@ -1864,13 +1864,81 @@
     <value>Down</value>
     <comment>An option to choose from for the "resize direction". Down option.</comment>
   </data>
-  <data name="ShortcutAction_SendInput" xml:space="preserve">
-    <value>Send input</value>
-    <comment>One of the possible shortcut action types. This represents the "Send input" action.</comment>
+  <data name="Actions_FocusDirectionNone.Content" xml:space="preserve">
+    <value>None</value>
+    <comment>An option to choose from for the "focus direction". None option.</comment>
   </data>
-  <data name="ShortcutAction_CloseTab" xml:space="preserve">
-    <value>Close tab</value>
-    <comment>One of the possible shortcut action types. This represents the "Close tab" action.</comment>
+  <data name="Actions_FocusDirectionLeft.Content" xml:space="preserve">
+    <value>Left</value>
+    <comment>An option to choose from for the "focus direction". Left option.</comment>
+  </data>
+  <data name="Actions_FocusDirectionRight.Content" xml:space="preserve">
+    <value>Right</value>
+    <comment>An option to choose from for the "focus direction". Right option.</comment>
+  </data>
+  <data name="Actions_FocusDirectionUp.Content" xml:space="preserve">
+    <value>Up</value>
+    <comment>An option to choose from for the "focus direction". Up option.</comment>
+  </data>
+  <data name="Actions_FocusDirectionDown.Content" xml:space="preserve">
+    <value>Down</value>
+    <comment>An option to choose from for the "focus direction". Down option.</comment>
+  </data>
+  <data name="Actions_FocusDirectionPrevious.Content" xml:space="preserve">
+    <value>Previous</value>
+    <comment>An option to choose from for the "focus direction". Previous option.</comment>
+  </data>
+  <data name="Actions_FocusDirectionPreviousInOrder.Content" xml:space="preserve">
+    <value>Previous In Order</value>
+    <comment>An option to choose from for the "focus direction". Previous in order option.</comment>
+  </data>
+  <data name="Actions_FocusDirectionNextInOrder.Content" xml:space="preserve">
+    <value>Next In Order</value>
+    <comment>An option to choose from for the "focus direction". Next in order option.</comment>
+  </data>
+  <data name="Actions_FocusDirectionFirst.Content" xml:space="preserve">
+    <value>First</value>
+    <comment>An option to choose from for the "focus direction". First option.</comment>
+  </data>
+  <data name="Actions_FocusDirectionParent.Content" xml:space="preserve">
+    <value>Parent</value>
+    <comment>An option to choose from for the "focus direction". Parent option.</comment>
+  </data>
+  <data name="Actions_FocusDirectionChild.Content" xml:space="preserve">
+    <value>Child</value>
+    <comment>An option to choose from for the "focus direction". Child option.</comment>
+  </data>
+  <data name="Actions_SettingsTargetSettingsFile.Content" xml:space="preserve">
+    <value>Settings File</value>
+    <comment>An option to choose from for the "settings target". Targets the settings file.</comment>
+  </data>
+  <data name="Actions_SettingsTargetDefaultsFile.Content" xml:space="preserve">
+    <value>Defaults File</value>
+    <comment>An option to choose from for the "settings target". Targets the defaults file.</comment>
+  </data>
+  <data name="Actions_SettingsTargetAllFiles.Content" xml:space="preserve">
+    <value>All Files</value>
+    <comment>An option to choose from for the "settings target". Targets all files.</comment>
+  </data>
+  <data name="Actions_SettingsTargetSettingsUI.Content" xml:space="preserve">
+    <value>Settings UI</value>
+    <comment>An option to choose from for the "settings target". Targets the settings UI.</comment>
+  </data>
+  <data name="Actions_SettingsTargetDirectory.Content" xml:space="preserve">
+    <value>Directory</value>
+    <comment>An option to choose from for the "settings target". Targets the directory.</comment>
+  </data>
+  <data name="Actions_MoveTabDirectionNone.Content" xml:space="preserve">
+    <value>None</value>
+    <comment>An option to choose from for the "move tab direction". No movement.</comment>
+  </data>
+  <data name="Actions_MoveTabDirectionForward.Content" xml:space="preserve">
+    <value>Forward</value>
+    <comment>An option to choose from for the "move tab direction". Moves the tab forward.</comment>
+  </data>
+  <data name="Actions_MoveTabDirectionBackward.Content" xml:space="preserve">
+    <value>Backward</value>
+    <comment>An option to choose from for the "move tab direction". Moves the tab backward.</comment>
   </data>
   <data name="KeyChordListener.[using:Windows.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve">
     <value>Input your desired keyboard shortcut.</value>

@@ -34,5 +34,8 @@ namespace Microsoft.Terminal.Settings.Model
 
         // Actions
         static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.Settings.Model.ResizeDirection> ResizeDirection { get; };
+        static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.Settings.Model.FocusDirection> FocusDirection { get; };
+        static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.Settings.Model.SettingsTarget> SettingsTarget { get; };
+        static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.Settings.Model.MoveTabDirection> MoveTabDirection { get; };
     }
 }

@@ -15,6 +15,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Windows::UI::Xaml::DataTemplate SelectTemplateCore(const winrt::Windows::Foundation::IInspectable&);
 
         WINRT_PROPERTY(winrt::Windows::UI::Xaml::DataTemplate, UInt32Template);
+        WINRT_PROPERTY(winrt::Windows::UI::Xaml::DataTemplate, UInt32OptionalTemplate);
+        WINRT_PROPERTY(winrt::Windows::UI::Xaml::DataTemplate, FloatTemplate);
         WINRT_PROPERTY(winrt::Windows::UI::Xaml::DataTemplate, StringTemplate);
         WINRT_PROPERTY(winrt::Windows::UI::Xaml::DataTemplate, BoolTemplate);
         WINRT_PROPERTY(winrt::Windows::UI::Xaml::DataTemplate, BoolOptionalTemplate);

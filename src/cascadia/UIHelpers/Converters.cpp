@@ -121,6 +121,24 @@ namespace winrt::Microsoft::Terminal::UI::implementation
         return winrt::unbox_value<uint32_t>(value);
     }
 
+    uint32_t Converters::UnboxUInt32Optional(const Windows::Foundation::IInspectable& value)
+    {
+        const auto unboxed = winrt::unbox_value<winrt::Windows::Foundation::IReference<uint32_t>>(value);
+        if (unboxed)
+        {
+            return unboxed.Value();
+        }
+        else
+        {
+            return 0;
+        }
+    }
+
+    float Converters::UnboxFloat(const Windows::Foundation::IInspectable& value)
+    {
+        return winrt::unbox_value<float>(value);
+    }
+
     bool Converters::UnboxBool(const Windows::Foundation::IInspectable& value)
     {
         return winrt::unbox_value<bool>(value);

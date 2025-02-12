@@ -239,6 +239,34 @@
                 </ListViewItem>
             </DataTemplate>
 
+            <DataTemplate x:Key="UInt32OptionalTemplate"
+                          x:DataType="local:ArgWrapper">
+                <ListViewItem>
+                    <StackPanel Orientation="Horizontal">
+                        <muxc:NumberBox Value="{x:Bind mtu:Converters.UnboxUInt32Optional(Value), Mode=TwoWay, BindBack=DoubleOptionalBindBack}"
+                                        Style="{StaticResource NumberBoxSettingStyle}"
+                                        Minimum="0"
+                                        Maximum="999"
+                                        LargeChange="1"
+                                        SmallChange="1"/>
+                    </StackPanel>
+                </ListViewItem>
+            </DataTemplate>
+
+            <DataTemplate x:Key="FloatTemplate"
+                          x:DataType="local:ArgWrapper">
+                <ListViewItem>
+                    <StackPanel Orientation="Horizontal">
+                        <muxc:NumberBox Value="{x:Bind mtu:Converters.UnboxFloat(Value), Mode=TwoWay, BindBack=FloatBindBack}"
+                                        Style="{StaticResource NumberBoxSettingStyle}"
+                                        Minimum="0"
+                                        Maximum="999"
+                                        LargeChange="1"
+                                        SmallChange="1"/>
+                    </StackPanel>
+                </ListViewItem>
+            </DataTemplate>
+
             <DataTemplate x:Key="StringTemplate"
                           x:DataType="local:ArgWrapper">
                 <ListViewItem>
@@ -286,6 +314,8 @@
 
             <local:ArgsTemplateSelectors x:Key="ArgsTemplateSelector"
                                          UInt32Template="{StaticResource UInt32Template}"
+                                         UInt32OptionalTemplate="{StaticResource UInt32OptionalTemplate}"
+                                         FloatTemplate="{StaticResource FloatTemplate}"
                                          StringTemplate="{StaticResource StringTemplate}"
                                          BoolTemplate="{StaticResource BoolTemplate}"
                                          BoolOptionalTemplate="{StaticResource BoolOptionalTemplate}"
