@@ -78,6 +78,8 @@ namespace winrt::TerminalApp::implementation
 
         Windows::Foundation::Collections::IVector<winrt::TerminalApp::FilteredCommand> _commandsToFilter();
 
+        winrt::Windows::UI::Xaml::DispatcherTimer _pointerExitTimer{ nullptr }; // timer to debounce pointer exit events (used to smooth preview transitions)
+
         bool _lastFilterTextWasEmpty{ true };
 
         void _populateCommands();

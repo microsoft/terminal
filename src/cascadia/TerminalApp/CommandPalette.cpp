@@ -543,6 +543,12 @@ namespace winrt::TerminalApp::implementation
     void CommandPalette::_listItemPointerEntered(const winrt::Windows::Foundation::IInspectable& sender,
                                                  const winrt::Windows::UI::Xaml::Input::PointerRoutedEventArgs& /*args*/)
     {
+        // cancel any pending exit timer to prevent an unwanted preview revert
+        if (_pointerExitTimer)
+        {
+            _pointerExitTimer.Stop();
+        }
+
         auto listViewItem = sender.try_as<winrt::Windows::UI::Xaml::Controls::ListViewItem>();
         if (_currentMode == CommandPaletteMode::ActionMode && listViewItem)
         {
@@ -554,7 +560,7 @@ namespace winrt::TerminalApp::implementation
                 {
                     if (const auto actionPaletteItem{ filteredCommand.Item().try_as<winrt::TerminalApp::ActionPaletteItem>() })
                     {
-                        // preview the hovered scheme
+                        // immediately preview the hovered scheme
                         PreviewAction.raise(*this, actionPaletteItem.Command());
                     }
                 }
@@ -564,8 +570,9 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - This event is called when the user's mouse pointer exits an individual
-    //   item from the list. We'll fall back to previewing the selected item rather
-    //   than the hovered one.
+    //   item from the list. We then revert to previewing the selected item rather
+    //   than the hovered one, using a short delay (via a DispatcherTimer) to smooth
+    //   transitions when rapidly moving between items.
     //
     // Arguments:
     // - <none>
@@ -574,19 +581,32 @@ namespace winrt::TerminalApp::implementation
     void CommandPalette::_listItemPointerExited(const winrt::Windows::Foundation::IInspectable& /*sender*/,
                                                 const winrt::Windows::UI::Xaml::Input::PointerRoutedEventArgs& /*args*/)
     {
-        // retrieve the current selected command
-        const auto selectedCommand = _filteredActionsView().SelectedItem();
-        if (const auto filteredCommand{ selectedCommand.try_as<winrt::TerminalApp::FilteredCommand>() })
+        // if there is no exit timer, create one
+        if (!_pointerExitTimer)
         {
-            if (_currentMode == CommandPaletteMode::ActionMode && filteredCommand)
-            {
-                if (const auto actionPaletteItem{ filteredCommand.Item().try_as<winrt::TerminalApp::ActionPaletteItem>() })
+            _pointerExitTimer = winrt::Windows::UI::Xaml::DispatcherTimer();
+            _pointerExitTimer.Interval(std::chrono::milliseconds(10));
+            _pointerExitTimer.Tick([this](auto const&, auto const&) {
+
+                // when the timer ticks, revert the preview to the selected command
+                const auto selectedCommand = _filteredActionsView().SelectedItem();
+                if (const auto filteredCommand{ selectedCommand.try_as<winrt::TerminalApp::FilteredCommand>() })
                 {
-                    // preview the selected command's scheme
-                    PreviewAction.raise(*this, actionPaletteItem.Command());
+                    if (_currentMode == CommandPaletteMode::ActionMode && filteredCommand)
+                    {
+                        if (const auto actionPaletteItem{ filteredCommand.Item().try_as<winrt::TerminalApp::ActionPaletteItem>() })
+                        {
+                            PreviewAction.raise(*this, actionPaletteItem.Command());
+                        }
+                    }
                 }
-            }
+                _pointerExitTimer.Stop();
+            });
         }
+
+        // restart the timer
+        _pointerExitTimer.Stop();
+        _pointerExitTimer.Start();
     }
 
     void CommandPalette::_listItemSelectionChanged(const Windows::Foundation::IInspectable& /*sender*/, const Windows::UI::Xaml::Controls::SelectionChangedEventArgs& e)
