@@ -549,11 +549,12 @@ namespace winrt::TerminalApp::implementation
             const auto enteredItem = listViewItem.Content();
             if (const auto filteredCommand{ enteredItem.try_as<winrt::TerminalApp::FilteredCommand>() })
             {
-                // only preview submenu items (TODO unsure about this as a requirement? for now we only preview color schemes)
+                // only preview submenu items (unsure about this as a requirement since for now we only preview color schemes)
                 if (_nestedActionStack.Size() > 0)
                 {
                     if (const auto actionPaletteItem{ filteredCommand.Item().try_as<winrt::TerminalApp::ActionPaletteItem>() })
                     {
+                        // preview the hovered scheme
                         PreviewAction.raise(*this, actionPaletteItem.Command());
                     }
                 }
@@ -581,6 +582,7 @@ namespace winrt::TerminalApp::implementation
             {
                 if (const auto actionPaletteItem{ filteredCommand.Item().try_as<winrt::TerminalApp::ActionPaletteItem>() })
                 {
+                    // preview the selected command's scheme
                     PreviewAction.raise(*this, actionPaletteItem.Command());
                 }
             }
@@ -1271,6 +1273,11 @@ namespace winrt::TerminalApp::implementation
 
         ParentCommandName(L"");
         _currentNestedCommands.Clear();
+
+        PreviewAction.raise(*this, nullptr);
+
+        // cancel previews triggered by mouse pointer events
+        _filteredActionsView().SelectedIndex(-1);
         PreviewAction.raise(*this, nullptr);
     }
 
