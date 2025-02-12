@@ -30,6 +30,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             {
                 return StringTemplate();
             }
+            else if (argType == L"int32_t")
+            {
+                return Int32Template();
+            }
             else if (argType == L"uint32_t")
             {
                 return UInt32Template();
@@ -51,9 +55,20 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             }
             else if (argType == L"Windows::Foundation::IReference<uint32_t>")
             {
-                return UInt32Template();
+                return UInt32OptionalTemplate();
             }
-            else if (argType == L"Model::ResizeDirection" || argType == L"Model::FocusDirection" || argType == L"SettingsTarget" || argType == L"MoveTabDirection")
+            else if (argType == L"Model::ResizeDirection" ||
+                     argType == L"Model::FocusDirection" ||
+                     argType == L"SettingsTarget" ||
+                     argType == L"MoveTabDirection" ||
+                     argType == L"Microsoft::Terminal::Control::ScrollToMarkDirection" ||
+                     argType == L"CommandPaletteLaunchMode" ||
+                     argType == L"SuggestionsSource" ||
+                     argType == L"FindMatchDirection" ||
+                     argType == L"Model::DesktopBehavior" ||
+                     argType == L"Model::MonitorBehavior" ||
+                     argType == L"winrt::Microsoft::Terminal::Control::ClearBufferType" ||
+                     argType == L"SelectOutputDirection")
             {
                 return EnumTemplate();
             }

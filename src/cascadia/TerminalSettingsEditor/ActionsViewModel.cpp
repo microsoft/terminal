@@ -277,10 +277,46 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             INITIALIZE_ENUM_LIST_AND_VALUE(MoveTabDirection, Model::MoveTabDirection, L"Actions_MoveTabDirection", L"Content");
         }
+        else if (_type == L"Microsoft::Terminal::Control::ScrollToMarkDirection")
+        {
+            INITIALIZE_ENUM_LIST_AND_VALUE(ScrollToMarkDirection, Control::ScrollToMarkDirection, L"Actions_ScrollToMarkDirection", L"Content");
+        }
+        else if (_type == L"CommandPaletteLaunchMode")
+        {
+            INITIALIZE_ENUM_LIST_AND_VALUE(CommandPaletteLaunchMode, Model::CommandPaletteLaunchMode, L"Actions_CommandPaletteLaunchMode", L"Content");
+        }
+        else if (_type == L"SuggestionsSource")
+        {
+            INITIALIZE_ENUM_LIST_AND_VALUE(SuggestionsSource, Model::SuggestionsSource, L"Actions_SuggestionsSource", L"Content");
+        }
+        else if (_type == L"FindMatchDirection")
+        {
+            INITIALIZE_ENUM_LIST_AND_VALUE(FindMatchDirection, Model::FindMatchDirection, L"Actions_FindMatchDirection", L"Content");
+        }
+        else if (_type == L"Model::DesktopBehavior")
+        {
+            INITIALIZE_ENUM_LIST_AND_VALUE(DesktopBehavior, Model::DesktopBehavior, L"Actions_DesktopBehavior", L"Content");
+        }
+        else if (_type == L"Model::MonitorBehavior")
+        {
+            INITIALIZE_ENUM_LIST_AND_VALUE(MonitorBehavior, Model::MonitorBehavior, L"Actions_MonitorBehavior", L"Content");
+        }
+        else if (_type == L"winrt::Microsoft::Terminal::Control::ClearBufferType")
+        {
+            INITIALIZE_ENUM_LIST_AND_VALUE(ClearBufferType, Control::ClearBufferType, L"Actions_ClearBufferType", L"Content");
+        }
+        else if (_type == L"SelectOutputDirection")
+        {
+            INITIALIZE_ENUM_LIST_AND_VALUE(SelectOutputDirection, Model::SelectOutputDirection, L"Actions_SelectOutputDirection", L"Content");
+        }
         // todo:
-        // copyformat (flags)
-        // color (weird type), optional color
+        // INewContentArgs (future?)
+        // multiple actions (future?)
+        // copyformat, suggestions source (flags)
+        // color (weird type), optional color (add mark, set tab color)
         // optional uint32 (kinda defaults it to 0 right now which is incorrect...)
+        // optional enum (tab switcher mode) - can set to null
+        // selection color
     }
 
     void ArgWrapper::EnumValue(const Windows::Foundation::IInspectable& enumValue)

@@ -225,6 +225,20 @@
                 <ListViewItem HorizontalContentAlignment="Stretch" />
             </DataTemplate>
 
+            <DataTemplate x:Key="Int32Template"
+                          x:DataType="local:ArgWrapper">
+                <ListViewItem>
+                    <StackPanel Orientation="Horizontal">
+                        <muxc:NumberBox Value="{x:Bind mtu:Converters.UnboxInt32(Value), Mode=TwoWay, BindBack=DoubleBindBack}"
+                                        Style="{StaticResource NumberBoxSettingStyle}"
+                                        Minimum="0"
+                                        Maximum="999"
+                                        LargeChange="1"
+                                        SmallChange="1"/>
+                    </StackPanel>
+                </ListViewItem>
+            </DataTemplate>
+
             <DataTemplate x:Key="UInt32Template"
                           x:DataType="local:ArgWrapper">
                 <ListViewItem>
@@ -313,6 +327,7 @@
             </DataTemplate>
 
             <local:ArgsTemplateSelectors x:Key="ArgsTemplateSelector"
+                                         Int32Template="{StaticResource Int32Template}"
                                          UInt32Template="{StaticResource UInt32Template}"
                                          UInt32OptionalTemplate="{StaticResource UInt32OptionalTemplate}"
                                          FloatTemplate="{StaticResource FloatTemplate}"

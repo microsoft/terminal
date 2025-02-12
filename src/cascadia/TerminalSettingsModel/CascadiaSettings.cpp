@@ -1036,6 +1036,36 @@ Model::IActionArgs CascadiaSettings::GetEmptyArgsForAction(Model::ShortcutAction
         return winrt::make<CloseTabArgs>();
     case Model::ShortcutAction::MoveTab:
         return winrt::make<MoveTabArgs>();
+    case Model::ShortcutAction::ScrollUp:
+        return winrt::make<ScrollUpArgs>();
+    case Model::ShortcutAction::ScrollDown:
+        return winrt::make<ScrollDownArgs>();
+    case Model::ShortcutAction::ScrollToMark:
+        return winrt::make<ScrollToMarkArgs>();
+    case Model::ShortcutAction::ToggleCommandPalette:
+        return winrt::make<ToggleCommandPaletteArgs>();
+    case Model::ShortcutAction::Suggestions:
+        return winrt::make<SuggestionsArgs>();
+    case Model::ShortcutAction::FindMatch:
+        return winrt::make<FindMatchArgs>();
+    case Model::ShortcutAction::RenameWindow:
+        return winrt::make<RenameWindowArgs>();
+    case Model::ShortcutAction::SearchForText:
+        return winrt::make<SearchForTextArgs>();
+    case Model::ShortcutAction::GlobalSummon:
+        return winrt::make<GlobalSummonArgs>();
+    case Model::ShortcutAction::FocusPane:
+        return winrt::make<FocusPaneArgs>();
+    case Model::ShortcutAction::ExportBuffer:
+        return winrt::make<ExportBufferArgs>();
+    case Model::ShortcutAction::ClearBuffer:
+        return winrt::make<ClearBufferArgs>();
+    case Model::ShortcutAction::AdjustOpacity:
+        return winrt::make<AdjustOpacityArgs>();
+    case Model::ShortcutAction::SelectCommand:
+        return winrt::make<SelectCommandArgs>();
+    case Model::ShortcutAction::SelectOutput:
+        return winrt::make<SelectOutputArgs>();
     default:
         return nullptr;
     }

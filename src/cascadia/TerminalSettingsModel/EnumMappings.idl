@@ -37,5 +37,13 @@ namespace Microsoft.Terminal.Settings.Model
         static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.Settings.Model.FocusDirection> FocusDirection { get; };
         static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.Settings.Model.SettingsTarget> SettingsTarget { get; };
         static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.Settings.Model.MoveTabDirection> MoveTabDirection { get; };
+        static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.Control.ScrollToMarkDirection> ScrollToMarkDirection { get; };
+        static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.Settings.Model.CommandPaletteLaunchMode> CommandPaletteLaunchMode { get; };
+        static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.Settings.Model.SuggestionsSource> SuggestionsSource { get; };
+        static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.Settings.Model.FindMatchDirection> FindMatchDirection { get; };
+        static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.Settings.Model.DesktopBehavior> DesktopBehavior { get; };
+        static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.Settings.Model.MonitorBehavior> MonitorBehavior { get; };
+        static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.Control.ClearBufferType> ClearBufferType { get; };
+        static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.Settings.Model.SelectOutputDirection> SelectOutputDirection { get; };
     }
 }

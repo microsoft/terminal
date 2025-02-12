@@ -32,6 +32,7 @@ namespace winrt::Microsoft::Terminal::UI::implementation
 
         // Unboxing
         static winrt::hstring UnboxString(const Windows::Foundation::IInspectable& value);
+        static int32_t UnboxInt32(const Windows::Foundation::IInspectable& value);
         static uint32_t UnboxUInt32(const Windows::Foundation::IInspectable& value);
         static uint32_t UnboxUInt32Optional(const Windows::Foundation::IInspectable& value);
         static float UnboxFloat(const Windows::Foundation::IInspectable& value);

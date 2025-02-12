@@ -116,6 +116,11 @@ namespace winrt::Microsoft::Terminal::UI::implementation
         return winrt::unbox_value<winrt::hstring>(value);
     }
 
+    int32_t Converters::UnboxInt32(const Windows::Foundation::IInspectable& value)
+    {
+        return winrt::unbox_value<int32_t>(value);
+    }
+
     uint32_t Converters::UnboxUInt32(const Windows::Foundation::IInspectable& value)
     {
         return winrt::unbox_value<uint32_t>(value);
