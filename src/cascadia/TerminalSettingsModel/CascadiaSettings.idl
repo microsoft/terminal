@@ -38,6 +38,7 @@ namespace Microsoft.Terminal.Settings.Model
         Profile DuplicateProfile(Profile sourceProfile);
 
         ActionMap ActionMap { get; };
+        Windows.Foundation.Collections.IVectorView<FragmentSettings> FragmentExtensions { get; };
 
         IVectorView<SettingsLoadWarnings> Warnings { get; };
         Windows.Foundation.IReference<SettingsLoadErrors> GetLoadingError { get; };
@@ -55,5 +56,26 @@ namespace Microsoft.Terminal.Settings.Model
         DefaultTerminal CurrentDefaultTerminal;
 
         void ExpandCommands();
+    }
+
+    [default_interface] runtimeclass FragmentProfileEntry
+    {
+        Guid ProfileGuid { get; };
+        String Json { get; };
+    }
+
+    [default_interface] runtimeclass FragmentColorSchemeEntry
+    {
+        String ColorSchemeName { get; };
+        String Json { get; };
+    }
+
+    [default_interface] runtimeclass FragmentSettings
+    {
+        String Source { get; };
+        String Json { get; };
+        Windows.Foundation.Collections.IVectorView<FragmentProfileEntry> ModifiedProfilesView { get; };
+        Windows.Foundation.Collections.IVectorView<FragmentProfileEntry> NewProfilesView { get; };
+        Windows.Foundation.Collections.IVectorView<FragmentColorSchemeEntry> ColorSchemesView { get; };
     }
 }

@@ -684,6 +684,10 @@
     <value>Actions</value>
     <comment>Header for the "actions" menu item. This navigates to a page that lets you see and modify commands, key bindings, and actions that can be done in the app.</comment>
   </data>
+  <data name="Nav_Extensions.Content" xml:space="preserve">
+    <value>Extensions</value>
+    <comment>Header for the "extensions" menu item. This navigates to a page that lets you see and modify extensions for the app.</comment>
+  </data>
   <data name="Profile_OpacitySlider.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Background opacity</value>
     <comment>Name for a control to determine the level of opacity for the background of the control. The user can choose to make the background of the app more or less opaque.</comment>
@@ -2331,5 +2335,36 @@
   <data name="Profile_TabTitleNone" xml:space="preserve">
     <value>None</value>
     <comment>Text displayed when the tab title is not defined.</comment>
+  </data>
+  <data name="Extensions_ActiveExtensionsHeader.Text" xml:space="preserve">
+    <value>Active Extensions</value>
+  </data>
+  <data name="Extensions_ModifiedProfilesHeader.Text" xml:space="preserve">
+    <value>Modified Profiles</value>
+  </data>
+  <data name="Extensions_AddedProfilesHeader.Text" xml:space="preserve">
+    <value>Added Profiles</value>
+  </data>
+  <data name="Extensions_AddedColorSchemesHeader.Text" xml:space="preserve">
+    <value>Added Color Schemes</value>
+  </data>
+  <data name="Extensions_NoActiveExtensionsDisclaimer.Text" xml:space="preserve">
+    <value>None</value>
+    <comment>Text displayed when no extensions are available. Shown in place of a list of entries.</comment>
+  </data>
+  <data name="Extensions_NoModifiedProfilesDisclaimer.Text" xml:space="preserve">
+    <value>None</value>
+    <comment>Text displayed when no profiles were modified. Shown in place of a list of entries.</comment>
+  </data>
+  <data name="Extensions_NoAddedColorSchemesDisclaimer.Text" xml:space="preserve">
+    <value>None</value>
+    <comment>Text displayed when no color schemes were added. Shown in place of a list of entries.</comment>
+  </data>
+  <data name="Extensions_NoAddedProfilesDisclaimer.Text" xml:space="preserve">
+    <value>None</value>
+    <comment>Text displayed when no profiles were added. Shown in place of a list of entries.</comment>
+  </data>
+  <data name="Extensions_Disclaimer.Content" xml:space="preserve">
+    <value>Learn more about fragment extensions.</value>
   </data>
 </root>

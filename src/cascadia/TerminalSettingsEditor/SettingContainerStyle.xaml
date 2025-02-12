@@ -301,8 +301,8 @@
                                 <StackPanel Grid.Column="0"
                                             Style="{StaticResource StackPanelInExpanderStyle}">
                                     <StackPanel Orientation="Horizontal">
-                                        <TextBlock Style="{StaticResource SettingsPageItemHeaderStyle}"
-                                                   Text="{TemplateBinding Header}" />
+                                        <ContentPresenter Content="{TemplateBinding Header}"
+                                                          Style="{StaticResource SettingsPageItemHeaderStyle}" />
                                         <Button x:Name="ResetButton"
                                                 Style="{StaticResource SettingContainerResetButtonStyle}">
                                             <FontIcon Glyph="&#xE845;"
