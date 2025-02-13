@@ -206,7 +206,7 @@
     <value>ウィンドウを閉じる</value>
   </data>
   <data name="SplitTabText" xml:space="preserve">
-    <value>[分割] タブ</value>
+    <value>タブを分割</value>
   </data>
   <data name="SplitPaneText" xml:space="preserve">
     <value>ウィンドウを分割する</value>
@@ -224,7 +224,7 @@
     <value>リセット</value>
   </data>
   <data name="RenameTabText" xml:space="preserve">
-    <value>[名前の変更] タブ</value>
+    <value>タブ名を変更</value>
   </data>
   <data name="DuplicateTabText" xml:space="preserve">
     <value>タブを複製する</value>
