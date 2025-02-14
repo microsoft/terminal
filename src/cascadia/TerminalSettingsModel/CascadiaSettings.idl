@@ -8,6 +8,12 @@ import "DefaultTerminal.idl";
 
 namespace Microsoft.Terminal.Settings.Model
 {
+    enum FragmentScope
+    {
+        User,
+        Machine
+    };
+
     [default_interface] runtimeclass CascadiaSettings {
         static CascadiaSettings LoadDefaults();
         static CascadiaSettings LoadAll();
@@ -68,11 +74,13 @@ namespace Microsoft.Terminal.Settings.Model
     {
         String ColorSchemeName { get; };
         String Json { get; };
+        Boolean Conflict { get; };
     }
 
     [default_interface] runtimeclass FragmentSettings
     {
         String Source { get; };
+        FragmentScope Scope { get; };
         String Json { get; };
         Windows.Foundation.Collections.IVectorView<FragmentProfileEntry> ModifiedProfilesView { get; };
         Windows.Foundation.Collections.IVectorView<FragmentProfileEntry> NewProfilesView { get; };

@@ -40,22 +40,11 @@
             </Style>
 
             <DataTemplate x:Key="FragmentSettingsTemplate"
-                          x:DataType="model:FragmentSettings">
-                <local:SettingContainer Header="{x:Bind Source}"
-                                        Style="{StaticResource ExpanderSettingContainerStyleWithComplexPreview}">
-                    <local:SettingContainer.CurrentValue>
-                        <ToggleSwitch Loaded="ExtensionLoaded"
-                                      Style="{StaticResource ToggleSwitchInExpanderStyle}"
-                                      Tag="{x:Bind Source}"
-                                      Toggled="ExtensionToggled" />
-                    </local:SettingContainer.CurrentValue>
-                    <local:SettingContainer.Content>
-                        <ScrollViewer Style="{StaticResource CodeBlockScrollViewerStyle}">
-                            <TextBlock Style="{StaticResource CodeBlockStyle}"
-                                       Text="{x:Bind Json, Mode=OneWay}" />
-                        </ScrollViewer>
-                    </local:SettingContainer.Content>
-                </local:SettingContainer>
+                          x:DataType="local:FragmentExtensionViewModel">
+                <Button Click="FragmentNavigator_Click"
+                        Content="{x:Bind Fragment.Source}"
+                        Style="{StaticResource NavigatorButtonStyle}"
+                        Tag="{x:Bind}" />
             </DataTemplate>
 
             <DataTemplate x:Key="FragmentProfileViewModelTemplate"
@@ -72,8 +61,10 @@
                             <TextBlock Text="{x:Bind Profile.Name, Mode=OneWay}" />
 
                             <Button x:Name="NavigateToProfileButton"
-                                    Click="{x:Bind AttemptNavigateToProfile}"
-                                    Style="{StaticResource SettingContainerResetButtonStyle}">
+                                    x:Uid="Extensions_NavigateToProfileButton"
+                                    Click="NavigateToProfile_Click"
+                                    Style="{StaticResource SettingContainerResetButtonStyle}"
+                                    Tag="{x:Bind Profile.Guid}">
                                 <FontIcon Glyph="&#xE8A7;"
                                           Style="{StaticResource SettingContainerFontIconStyle}" />
                             </Button>
@@ -233,8 +224,10 @@
                             <ContentPresenter Content="{x:Bind ColorSchemeVM, Mode=OneWay}"
                                               ContentTemplate="{StaticResource ColorSchemeVMTemplate}" />
                             <Button x:Name="NavigateToColorSchemeButton"
-                                    Click="{x:Bind AttemptNavigateToColorScheme}"
-                                    Style="{StaticResource SettingContainerResetButtonStyle}">
+                                    x:Uid="Extensions_NavigateToColorSchemeButton"
+                                    Click="NavigateToColorScheme_Click"
+                                    Style="{StaticResource SettingContainerResetButtonStyle}"
+                                    Tag="{x:Bind ColorSchemeVM}">
                                 <FontIcon Glyph="&#xE8A7;"
                                           Style="{StaticResource SettingContainerFontIconStyle}" />
                             </Button>
@@ -254,52 +247,94 @@
     <StackPanel Spacing="20"
                 Style="{StaticResource SettingsStackStyle}">
 
-        <!--Disclaimer and resources-->
-        <!--TODO CARLOS: placed in weird spot when the window is wider-->
-        <HyperlinkButton x:Uid="Extensions_Disclaimer"
-                         NavigateUri="https://learn.microsoft.com/en-us/windows/terminal/json-fragment-extensions"/>
+        <!--  [Root View Only]  -->
+        <!--  Set margin.bottom to -20 because the next stack panel gets the 20 from the root's spacing property  -->
+        <StackPanel MaxWidth="{StaticResource StandardControlMaxWidth}"
+                    Margin="0,0,0,-20"
+                    Visibility="{x:Bind mtu:Converters.InvertedBooleanToVisibility(ViewModel.IsExtensionView), Mode=OneWay}">
 
-        <StackPanel>
+            <!--  Learn more about fragment extensions  -->
+            <HyperlinkButton x:Uid="Extensions_DisclaimerHyperlink"
+                             NavigateUri="https://learn.microsoft.com/en-us/windows/terminal/json-fragment-extensions" />
+
             <!--  Grouping: Active Extensions  -->
             <TextBlock x:Uid="Extensions_ActiveExtensionsHeader"
                        Style="{StaticResource TextBlockSubHeaderStyle}" />
             <TextBlock x:Uid="Extensions_NoActiveExtensionsDisclaimer"
                        Style="{StaticResource ItalicDisclaimerStyle}"
                        Visibility="{x:Bind ViewModel.NoActiveExtensions, Mode=OneWay}" />
-            <ItemsControl ItemTemplate="{StaticResource FragmentSettingsTemplate}"
+            <ItemsControl IsTabStop="False"
+                          ItemTemplate="{StaticResource FragmentSettingsTemplate}"
                           ItemsSource="{x:Bind ViewModel.FragmentExtensions, Mode=OneWay}" />
         </StackPanel>
 
+        <!--  [Extension View Only]  -->
+        <!--  Set margin.top to -20 because the previous stack panel gets the 20 from the root's spacing property  -->
+        <StackPanel MaxWidth="{StaticResource StandardControlMaxWidth}"
+                    Margin="0,-20,0,0"
+                    Visibility="{x:Bind ViewModel.IsExtensionView, Mode=OneWay}">
+
+            <!--  Extension JSON  -->
+            <local:SettingContainer Header="{x:Bind ViewModel.CurrentExtensionSource, Mode=OneWay}"
+                                    Style="{StaticResource ExpanderSettingContainerStyleWithComplexPreview}">
+                <local:SettingContainer.CurrentValue>
+                    <ToggleSwitch Loaded="ExtensionLoaded"
+                                  Style="{StaticResource ToggleSwitchInExpanderStyle}"
+                                  Tag="{x:Bind ViewModel.CurrentExtensionSource, Mode=OneWay}"
+                                  Toggled="ExtensionToggled" />
+                </local:SettingContainer.CurrentValue>
+                <local:SettingContainer.Content>
+                    <StackPanel>
+                        <!--  Scope  -->
+                        <local:SettingContainer x:Uid="Extensions_Scope"
+                                                Content="{x:Bind ViewModel.CurrentExtensionScope, Mode=OneWay}"
+                                                Style="{StaticResource SettingContainerWithTextContent}" />
+                        <!--  JSON  -->
+                        <local:SettingContainer x:Uid="Extensions_Json"
+                                                Style="{StaticResource ExpanderSettingContainerStyle}">
+                            <ScrollViewer Style="{StaticResource CodeBlockScrollViewerStyle}">
+                                <TextBlock Style="{StaticResource CodeBlockStyle}"
+                                           Text="{x:Bind ViewModel.CurrentExtensionJson, Mode=OneWay}" />
+                            </ScrollViewer>
+                        </local:SettingContainer>
+                    </StackPanel>
+                </local:SettingContainer.Content>
+            </local:SettingContainer>
+        </StackPanel>
+
+        <!--  Grouping: Modified Profiles  -->
         <StackPanel>
-            <!--  Grouping: Modified Profiles  -->
             <TextBlock x:Uid="Extensions_ModifiedProfilesHeader"
                        Style="{StaticResource TextBlockSubHeaderStyle}" />
             <TextBlock x:Uid="Extensions_NoModifiedProfilesDisclaimer"
                        Style="{StaticResource ItalicDisclaimerStyle}"
                        Visibility="{x:Bind ViewModel.NoProfilesModified, Mode=OneWay}" />
-            <ItemsControl ItemTemplate="{StaticResource FragmentProfileViewModelTemplate}"
+            <ItemsControl IsTabStop="False"
+                          ItemTemplate="{StaticResource FragmentProfileViewModelTemplate}"
                           ItemsSource="{x:Bind ViewModel.ProfilesModified, Mode=OneWay}" />
         </StackPanel>
 
+        <!--  Grouping: Added Profiles  -->
         <StackPanel>
-            <!--  Grouping: Added Profiles  -->
             <TextBlock x:Uid="Extensions_AddedProfilesHeader"
                        Style="{StaticResource TextBlockSubHeaderStyle}" />
             <TextBlock x:Uid="Extensions_NoAddedProfilesDisclaimer"
                        Style="{StaticResource ItalicDisclaimerStyle}"
                        Visibility="{x:Bind ViewModel.NoProfilesAdded, Mode=OneWay}" />
-            <ItemsControl ItemTemplate="{StaticResource FragmentProfileViewModelTemplate}"
+            <ItemsControl IsTabStop="False"
+                          ItemTemplate="{StaticResource FragmentProfileViewModelTemplate}"
                           ItemsSource="{x:Bind ViewModel.ProfilesAdded, Mode=OneWay}" />
         </StackPanel>
 
+        <!--  Grouping: Added Color Schemes  -->
         <StackPanel>
-            <!--  Grouping: Added Color Schemes  -->
             <TextBlock x:Uid="Extensions_AddedColorSchemesHeader"
                        Style="{StaticResource TextBlockSubHeaderStyle}" />
             <TextBlock x:Uid="Extensions_NoAddedColorSchemesDisclaimer"
                        Style="{StaticResource ItalicDisclaimerStyle}"
                        Visibility="{x:Bind ViewModel.NoSchemesAdded, Mode=OneWay}" />
-            <ItemsControl ItemTemplate="{StaticResource FragmentColorSchemeViewModelTemplate}"
+            <ItemsControl IsTabStop="False"
+                          ItemTemplate="{StaticResource FragmentColorSchemeViewModelTemplate}"
                           ItemsSource="{x:Bind ViewModel.ColorSchemesAdded, Mode=OneWay}" />
         </StackPanel>
     </StackPanel>

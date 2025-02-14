@@ -246,7 +246,7 @@ void SettingsLoader::FindFragmentsAndMergeIntoUserSettings()
 {
     ParsedSettings fragmentSettings;
 
-    const auto parseAndLayerFragmentFiles = [&](const std::filesystem::path& path, const winrt::hstring& source) {
+    const auto parseAndLayerFragmentFiles = [&](const std::filesystem::path& path, const winrt::hstring& source, FragmentScope scope, bool layerFragment) {
         for (const auto& fragmentExt : std::filesystem::directory_iterator{ path })
         {
             if (fragmentExt.path().extension() == jsonExtension)
@@ -256,7 +256,7 @@ void SettingsLoader::FindFragmentsAndMergeIntoUserSettings()
                     const auto content = til::io::read_file_as_utf8_string_if_exists(fragmentExt.path());
                     if (!content.empty())
                     {
-                        _parseFragment(source, content, fragmentSettings);
+                        _parseFragment(source, content, fragmentSettings, scope, layerFragment);
                     }
                 }
                 CATCH_LOG();
@@ -278,9 +278,12 @@ void SettingsLoader::FindFragmentsAndMergeIntoUserSettings()
                 const auto filename = fragmentExtFolder.path().filename();
                 const auto& source = filename.native();
 
-                if (!_ignoredNamespaces.contains(std::wstring_view{ source }) && fragmentExtFolder.is_directory())
+                if (fragmentExtFolder.is_directory())
                 {
-                    parseAndLayerFragmentFiles(fragmentExtFolder.path(), winrt::hstring{ source });
+                    parseAndLayerFragmentFiles(fragmentExtFolder.path(),
+                                               winrt::hstring{ source },
+                                               rfid == FOLDERID_LocalAppData ? FragmentScope::User : FragmentScope::Machine, // scope
+                                               !_ignoredNamespaces.contains(std::wstring_view{ source })); // layerFragment
                 }
             }
         }
@@ -313,10 +316,6 @@ void SettingsLoader::FindFragmentsAndMergeIntoUserSettings()
     for (const auto& ext : extensions)
     {
         const auto packageName = ext.Package().Id().FamilyName();
-        if (_ignoredNamespaces.contains(std::wstring_view{ packageName }))
-        {
-            continue;
-        }
 
         // Likewise, getting the public folder from an extension is an async operation.
         auto foundFolder = extractValueFromTaskWithoutMainThreadAwait(ext.GetPublicFolderAsync());
@@ -334,7 +333,12 @@ void SettingsLoader::FindFragmentsAndMergeIntoUserSettings()
 
         if (std::filesystem::is_directory(path))
         {
-            parseAndLayerFragmentFiles(path, packageName);
+            // MSIX does not support machine-wide scope
+            // See https://github.com/microsoft/winget-cli/discussions/1983
+            parseAndLayerFragmentFiles(path,
+                                       packageName,
+                                       FragmentScope::User,
+                                       _ignoredNamespaces.contains(std::wstring_view{ packageName })); // layerFragment
         }
     }
 }
@@ -345,7 +349,7 @@ void SettingsLoader::FindFragmentsAndMergeIntoUserSettings()
 void SettingsLoader::MergeFragmentIntoUserSettings(const winrt::hstring& source, const std::string_view& content)
 {
     ParsedSettings fragmentSettings;
-    _parseFragment(source, content, fragmentSettings);
+    _parseFragment(source, content, fragmentSettings, FragmentScope::User, true);
 }
 
 // Call this method before passing SettingsLoader to the CascadiaSettings constructor.
@@ -724,14 +728,16 @@ void SettingsLoader::_parse(const OriginTag origin, const winrt::hstring& source
 
 // Just like _parse, but is to be used for fragment files, which don't support anything but color
 // schemes and profiles. Additionally this function supports profiles which specify an "updates" key.
-void SettingsLoader::_parseFragment(const winrt::hstring& source, const std::string_view& content, ParsedSettings& settings)
+// - scope: The scope of the fragment file (user or machine).
+// - applyToSettings: If true, the parsed settings will be applied to the user settings. Otherwise, load the fragment for the settings UI, but don't apply it.
+void SettingsLoader::_parseFragment(const winrt::hstring& source, const std::string_view& content, ParsedSettings& settings, FragmentScope scope, bool applyToSettings)
 {
     auto json = _parseJson(content);
 
     Json::StreamWriterBuilder styledWriter;
     styledWriter["indentation"] = "    ";
     styledWriter["commentStyle"] = "All";
-    auto fragmentSettings = winrt::make_self<FragmentSettings>(source, hstring{ til::u8u16(Json::writeString(styledWriter, json.root)) });
+    auto fragmentSettings = winrt::make_self<FragmentSettings>(source, hstring{ til::u8u16(Json::writeString(styledWriter, json.root)) }, scope);
 
     settings.clear();
 
@@ -745,20 +751,26 @@ void SettingsLoader::_parseFragment(const winrt::hstring& source, const std::str
                 if (const auto scheme = ColorScheme::FromJson(schemeJson))
                 {
                     scheme->Origin(OriginTag::Fragment);
-                    // Don't add the color scheme to the Fragment's GlobalSettings; that will
-                    // cause layering issues later. Add them to a staging area for later processing.
-                    // (search for STAGED COLORS to find the next step)
-                    settings.colorSchemes.emplace(scheme->Name(), std::move(scheme));
+                    if (applyToSettings)
+                    {
+                        // Don't add the color scheme to the Fragment's GlobalSettings; that will
+                        // cause layering issues later. Add them to a staging area for later processing.
+                        // (search for STAGED COLORS to find the next step)
+                        settings.colorSchemes.emplace(scheme->Name(), std::move(scheme));
+                    }
                     fragmentSettings->ColorSchemes().Append(winrt::make<FragmentColorSchemeEntry>(scheme->Name(), hstring{ til::u8u16(Json::writeString(styledWriter, schemeJson)) }));
                 }
             }
             CATCH_LOG()
         }
 
-        // Parse out actions from the fragment. Manually opt-out of keybinding
-        // parsing - fragments shouldn't be allowed to bind actions to keys
-        // directly. We may want to revisit circa GH#2205
-        settings.globals->LayerActionsFrom(json.root, OriginTag::Fragment, false);
+        if (applyToSettings)
+        {
+            // Parse out actions from the fragment. Manually opt-out of keybinding
+            // parsing - fragments shouldn't be allowed to bind actions to keys
+            // directly. We may want to revisit circa GH#2205
+            settings.globals->LayerActionsFrom(json.root, OriginTag::Fragment, false);
+        }
     }
 
     {
@@ -777,12 +789,18 @@ void SettingsLoader::_parseFragment(const winrt::hstring& source, const std::str
                 auto profile = _parseProfile(OriginTag::Fragment, source, profileJson);
                 if (const auto guid = profile->Guid(); profile->HasGuid() && guid != winrt::guid{})
                 {
-                    _appendProfile(std::move(profile), guid, settings);
+                    if (applyToSettings)
+                    {
+                        _appendProfile(std::move(profile), guid, settings);
+                    }
                     fragmentSettings->NewProfiles().Append(winrt::make<FragmentProfileEntry>(guid, hstring{ til::u8u16(Json::writeString(styledWriter, profileJson)) }));
                 }
                 else if (const auto guid = profile->Updates(); guid != winrt::guid{})
                 {
-                    _appendProfile(std::move(profile), guid, settings);
+                    if (applyToSettings)
+                    {
+                        _appendProfile(std::move(profile), guid, settings);
+                    }
                     fragmentSettings->ModifiedProfiles().Append(winrt::make<FragmentProfileEntry>(guid, hstring{ til::u8u16(Json::writeString(styledWriter, profileJson)) }));
                 }
             }
@@ -790,38 +808,48 @@ void SettingsLoader::_parseFragment(const winrt::hstring& source, const std::str
         }
     }
 
-    for (const auto& fragmentProfile : settings.profiles)
+    if (applyToSettings)
     {
-        if (const auto updates = fragmentProfile->Updates(); updates != winrt::guid{})
+        for (const auto& fragmentProfile : settings.profiles)
         {
-            if (const auto it = userSettings.profilesByGuid.find(updates); it != userSettings.profilesByGuid.end())
+            if (const auto updates = fragmentProfile->Updates(); updates != winrt::guid{})
             {
-                it->second->AddMostImportantParent(fragmentProfile);
+                if (const auto it = userSettings.profilesByGuid.find(updates); it != userSettings.profilesByGuid.end())
+                {
+                    it->second->AddMostImportantParent(fragmentProfile);
+                }
+            }
+            else
+            {
+                _addUserProfileParent(fragmentProfile);
             }
         }
-        else
-        {
-            _addUserProfileParent(fragmentProfile);
-        }
-    }
 
-    // STAGED COLORS are processed here: we merge them into the partially-loaded
-    // settings directly so that we can resolve conflicts between user-generated
-    // color schemes and fragment-originated ones.
-    for (const auto& [_, fragmentColorScheme] : settings.colorSchemes)
-    {
-        if (_addOrMergeUserColorScheme(fragmentColorScheme))
+        // STAGED COLORS are processed here: we merge them into the partially-loaded
+        // settings directly so that we can resolve conflicts between user-generated
+        // color schemes and fragment-originated ones.
+        for (const auto& [_, fragmentColorScheme] : settings.colorSchemes)
         {
-            // TODO CARLOS:
-            //  1. fragmentColorScheme might be renamed? We should update the reference in fragmentExtensions
-            //  2. not sure what we want to do about the ones that weren't added; maybe mark it for the UI?
+            if (!_addOrMergeUserColorScheme(fragmentColorScheme))
+            {
+                // Color scheme wasn't added because it conflicted with a non-user created scheme.
+                // Mark the fragment's color scheme as conflicting.
+                for (auto schemeEntry : fragmentSettings->ColorSchemes())
+                {
+                    if (schemeEntry.ColorSchemeName() == fragmentColorScheme->Name())
+                    {
+                        get_self<FragmentColorSchemeEntry>(schemeEntry)->Conflict(true);
+                        break;
+                    }
+                }
+            }
         }
-    }
 
-    // Add the parsed fragment globals as a parent of the user's settings.
-    // Later, in FinalizeInheritance, this will result in the action map from
-    // the fragments being applied before the user's own settings.
-    userSettings.globals->AddLeastImportantParent(settings.globals);
+        // Add the parsed fragment globals as a parent of the user's settings.
+        // Later, in FinalizeInheritance, this will result in the action map from
+        // the fragments being applied before the user's own settings.
+        userSettings.globals->AddLeastImportantParent(settings.globals);
+    }
     fragmentExtensions.emplace_back(std::move(*fragmentSettings));
 }
 

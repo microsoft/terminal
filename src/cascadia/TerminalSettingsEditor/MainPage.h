@@ -70,6 +70,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void _Navigate(hstring clickedItemTag, BreadcrumbSubPage subPage);
         void _Navigate(const Editor::ProfileViewModel& profile, BreadcrumbSubPage subPage);
         void _Navigate(const Editor::NewTabMenuEntryViewModel& ntmEntryVM, BreadcrumbSubPage subPage);
+        void _Navigate(const Editor::FragmentExtensionViewModel& extVM, BreadcrumbSubPage subPage);
         void _NavigateToProfileHandler(const IInspectable& sender, winrt::guid profileGuid);
         void _NavigateToColorSchemeHandler(const IInspectable& sender, const IInspectable& args);
 
@@ -78,10 +79,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         winrt::Microsoft::Terminal::Settings::Editor::ColorSchemesPageViewModel _colorSchemesPageVM{ nullptr };
         winrt::Microsoft::Terminal::Settings::Editor::NewTabMenuViewModel _newTabMenuPageVM{ nullptr };
+        winrt::Microsoft::Terminal::Settings::Editor::ExtensionsViewModel _extensionsVM{ nullptr };
 
         Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker _profileViewModelChangedRevoker;
         Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker _colorSchemesPageViewModelChangedRevoker;
         Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker _ntmViewModelChangedRevoker;
+        Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker _extensionsViewModelChangedRevoker;
     };
 }
 

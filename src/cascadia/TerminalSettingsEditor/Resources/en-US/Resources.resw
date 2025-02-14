@@ -2372,7 +2372,35 @@
     <value>None</value>
     <comment>Text displayed when no profiles were added. Shown in place of a list of entries.</comment>
   </data>
-  <data name="Extensions_Disclaimer.Content" xml:space="preserve">
-    <value>Learn more about fragment extensions.</value>
+  <data name="Extensions_DisclaimerHyperlink.Content" xml:space="preserve">
+    <value>Learn more about fragment extensions</value>
+  </data>
+  <data name="Extensions_NavigateToProfileButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Navigate to profile</value>
+  </data>
+  <data name="Extensions_NavigateToProfileButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Navigate to profile</value>
+  </data>
+  <data name="Extensions_NavigateToColorSchemeButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Navigate to color scheme</value>
+  </data>
+  <data name="Extensions_NavigateToColorSchemeButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Navigate to color scheme</value>
+  </data>
+  <data name="Extensions_ScopeUser" xml:space="preserve">
+    <value>Current User</value>
+    <comment>Label for the installation scope of an extension.</comment>
+  </data>
+  <data name="Extensions_ScopeSystem" xml:space="preserve">
+    <value>All Users</value>
+    <comment>Label for the installation scope of an extension</comment>
+  </data>
+  <data name="Extensions_Scope.Header" xml:space="preserve">
+    <value>Scope</value>
+    <comment>Header for the installation scope of the extension</comment>
+  </data>
+  <data name="Extensions_Json.Header" xml:space="preserve">
+    <value>JSON</value>
+    <comment>{Locked="JSON"}</comment>
   </data>
 </root>

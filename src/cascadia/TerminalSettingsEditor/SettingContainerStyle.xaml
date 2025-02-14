@@ -228,6 +228,45 @@
         </Setter>
     </Style>
 
+    <!--  A basic setting container displaying immutable text as content  -->
+    <Style x:Key="SettingContainerWithTextContent"
+           TargetType="local:SettingContainer">
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="local:SettingContainer">
+                    <Grid AutomationProperties.Name="{TemplateBinding Header}"
+                          Style="{StaticResource NonExpanderGrid}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0"
+                                    Style="{StaticResource StackPanelInExpanderStyle}">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Style="{StaticResource SettingsPageItemHeaderStyle}"
+                                           Text="{TemplateBinding Header}" />
+                                <Button x:Name="ResetButton"
+                                        Style="{StaticResource SettingContainerResetButtonStyle}">
+                                    <FontIcon Glyph="&#xE845;"
+                                              Style="{StaticResource SettingContainerFontIconStyle}" />
+                                </Button>
+                            </StackPanel>
+                            <TextBlock x:Name="HelpTextBlock"
+                                       Style="{StaticResource SettingsPageItemDescriptionStyle}"
+                                       Text="{TemplateBinding HelpText}" />
+                        </StackPanel>
+                        <TextBlock Grid.Column="1"
+                                   Margin="0,0,8,0"
+                                   HorizontalAlignment="Right"
+                                   VerticalAlignment="Center"
+                                   Style="{ThemeResource SecondaryTextBlockStyle}"
+                                   Text="{TemplateBinding Content}" />
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
     <!--
         A setting container for a setting that has no additional options.
         Includes space for an icon on the left side of the header.
