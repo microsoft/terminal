@@ -1118,6 +1118,14 @@ void TextBuffer::TriggerNewTextNotification(const std::wstring_view newText)
     }
 }
 
+void TextBuffer::TriggerSelection()
+{
+    if (_isActiveBuffer && _renderer)
+    {
+        _renderer->TriggerSelection();
+    }
+}
+
 // Method Description:
 // - get delimiter class for buffer cell position
 // - used for double click selection and uia word navigation
@@ -1130,6 +1138,213 @@ DelimiterClass TextBuffer::_GetDelimiterClassAt(const til::point pos, const std:
 {
     const auto realPos = ScreenToBufferPosition(pos);
     return GetRowByOffset(realPos.y).DelimiterClassAt(realPos.x, wordDelimiters);
+}
+
+til::point TextBuffer::GetWordStart2(til::point pos, const std::wstring_view wordDelimiters, bool includeWhitespace, std::optional<til::point> limitOptional) const
+{
+    const auto bufferSize{ GetSize() };
+    const auto limit{ limitOptional.value_or(bufferSize.BottomInclusiveRightExclusive()) };
+
+    if (pos < bufferSize.Origin())
+    {
+        // can't move further back, so return early at origin
+        return bufferSize.Origin();
+    }
+    else if (pos >= limit)
+    {
+        // clamp to limit,
+        // but still do movement
+        pos = limit;
+    }
+
+    // Consider the delimiter classes represented as these chars:
+    // - ControlChar:   "_"
+    // - DelimiterChar: "D"
+    // - RegularChar:   "C"
+    // Expected results ("|" is the position):
+    //   includeWhitespace: true     false
+    //     CCC___|   -->   |CCC___  CCC|___
+    //     DDD___|   -->   |DDD___  DDD|___
+    //     ___CCC|   -->   ___|CCC  ___|CCC
+    //     DDDCCC|   -->   DDD|CCC  DDD|CCC
+    //     ___DDD|   -->   ___|DDD  ___|DDD
+    //     CCCDDD|   -->   CCC|DDD  CCC|DDD
+    // So the heuristic we use is:
+    // 1. move to the beginning of the delimiter class run
+    // 2. (includeWhitespace) if we were on a ControlChar, go back one more delimiter class run
+    const auto initialDelimiter = bufferSize.IsInBounds(pos) ? _GetDelimiterClassAt(pos, wordDelimiters) : DelimiterClass::ControlChar;
+    pos = _GetDelimiterClassRunStart(pos, wordDelimiters);
+    if (!includeWhitespace || pos.x == bufferSize.Left())
+    {
+        // Special case:
+        // we're at the left boundary (and end of a delimiter class run),
+        // we already know we can't wrap, so return early
+        return pos;
+    }
+    else if (initialDelimiter == DelimiterClass::ControlChar)
+    {
+        bufferSize.DecrementInExclusiveBounds(pos);
+        pos = _GetDelimiterClassRunStart(pos, wordDelimiters);
+    }
+    return pos;
+}
+
+til::point TextBuffer::GetWordEnd2(til::point pos, const std::wstring_view wordDelimiters, bool includeWhitespace, std::optional<til::point> limitOptional) const
+{
+    const auto bufferSize{ GetSize() };
+    const auto limit{ limitOptional.value_or(bufferSize.BottomInclusiveRightExclusive()) };
+
+    if (pos >= limit)
+    {
+        // can't move further forward,
+        // so return early at limit
+        return limit;
+    }
+    else if (const auto origin{ bufferSize.Origin() }; pos < origin)
+    {
+        // clamp to origin,
+        // but still do movement
+        pos = origin;
+    }
+
+    // Consider the delimiter classes represented as these chars:
+    // - ControlChar:   "_"
+    // - DelimiterChar: "D"
+    // - RegularChar:   "C"
+    // Expected results ("|" is the position):
+    //   includeWhitespace: true     false
+    //     |CCC___   -->   CCC___|  CCC|___
+    //     |DDD___   -->   DDD___|  DDD|___
+    //     |___CCC   -->   ___|CCC  ___|CCC
+    //     |DDDCCC   -->   DDD|CCC  DDD|CCC
+    //     |___DDD   -->   ___|DDD  ___|DDD
+    //     |CCCDDD   -->   CCC|DDD  CCC|DDD
+    // So the heuristic we use is:
+    // 1. move to the end of the delimiter class run
+    // 2. (includeWhitespace) if the next delimiter class run is a ControlChar, go forward one more delimiter class run
+    pos = _GetDelimiterClassRunEnd(pos, wordDelimiters);
+    if (!includeWhitespace || pos.x == bufferSize.RightExclusive())
+    {
+        // Special case:
+        // we're at the right boundary (and end of a delimiter class run),
+        // we already know we can't wrap, so return early
+        return pos;
+    }
+
+    if (const auto nextDelimClass = bufferSize.IsInBounds(pos) ? _GetDelimiterClassAt(pos, wordDelimiters) : DelimiterClass::ControlChar;
+        nextDelimClass == DelimiterClass::ControlChar)
+    {
+        return _GetDelimiterClassRunEnd(pos, wordDelimiters);
+    }
+    return pos;
+}
+
+bool TextBuffer::IsWordBoundary(const til::point pos, const std::wstring_view wordDelimiters) const
+{
+    const auto bufferSize = GetSize();
+    if (!bufferSize.IsInExclusiveBounds(pos))
+    {
+        // not in bounds
+        return false;
+    }
+
+    // buffer boundaries are always word boundaries
+    if (pos == bufferSize.Origin() || pos == bufferSize.BottomInclusiveRightExclusive())
+    {
+        return true;
+    }
+
+    // at beginning of the row, but we didn't wrap
+    if (pos.x == bufferSize.Left())
+    {
+        const auto& row = GetRowByOffset(pos.y - 1);
+        if (!row.WasWrapForced())
+        {
+            return true;
+        }
+    }
+
+    // at end of the row, but we didn't wrap
+    if (pos.x == bufferSize.RightExclusive())
+    {
+        const auto& row = GetRowByOffset(pos.y);
+        if (!row.WasWrapForced())
+        {
+            return true;
+        }
+    }
+
+    // we can treat text as contiguous,
+    // use DecrementInBounds (not exclusive) here
+    auto prevPos = pos;
+    bufferSize.DecrementInBounds(prevPos);
+    const auto prevDelimiterClass = _GetDelimiterClassAt(prevPos, wordDelimiters);
+
+    // if we changed delimiter class
+    // and the current delimiter class is not a control char,
+    // we're at a word boundary
+    const auto currentDelimiterClass = _GetDelimiterClassAt(pos, wordDelimiters);
+    return prevDelimiterClass != currentDelimiterClass && currentDelimiterClass != DelimiterClass::ControlChar;
+}
+
+til::point TextBuffer::_GetDelimiterClassRunStart(til::point pos, const std::wstring_view wordDelimiters) const
+{
+    const auto bufferSize = GetSize();
+    const auto initialDelimClass = bufferSize.IsInBounds(pos) ? _GetDelimiterClassAt(pos, wordDelimiters) : DelimiterClass::ControlChar;
+    for (auto nextPos = pos; nextPos != bufferSize.Origin(); pos = nextPos)
+    {
+        bufferSize.DecrementInExclusiveBounds(nextPos);
+
+        if (nextPos.x == bufferSize.RightExclusive())
+        {
+            // wrapped onto previous line,
+            // check if it was forced to wrap
+            const auto& row = GetRowByOffset(nextPos.y);
+            if (!row.WasWrapForced())
+            {
+                return pos;
+            }
+        }
+        else if (_GetDelimiterClassAt(nextPos, wordDelimiters) != initialDelimClass)
+        {
+            // if we changed delim class, we're done (don't apply move)
+            return pos;
+        }
+    }
+    return pos;
+}
+
+// Method Description:
+// - Get the exclusive position for the end of the current delimiter class run
+// Arguments:
+// - pos - the buffer position being within the current delimiter class
+// - wordDelimiters - what characters are we considering for the separation of words
+til::point TextBuffer::_GetDelimiterClassRunEnd(til::point pos, const std::wstring_view wordDelimiters) const
+{
+    const auto bufferSize = GetSize();
+    const auto initialDelimClass = bufferSize.IsInBounds(pos) ? _GetDelimiterClassAt(pos, wordDelimiters) : DelimiterClass::ControlChar;
+    for (auto nextPos = pos; nextPos != bufferSize.BottomInclusiveRightExclusive(); pos = nextPos)
+    {
+        bufferSize.IncrementInExclusiveBounds(nextPos);
+
+        if (nextPos.x == bufferSize.Left())
+        {
+            // wrapped onto next line,
+            // check if it was forced to wrap or switched delimiter class
+            const auto& row = GetRowByOffset(pos.y);
+            if (!row.WasWrapForced() || _GetDelimiterClassAt(nextPos, wordDelimiters) != initialDelimClass)
+            {
+                return pos;
+            }
+        }
+        else if (bufferSize.IsInBounds(nextPos) && _GetDelimiterClassAt(nextPos, wordDelimiters) != initialDelimClass)
+        {
+            // if we changed delim class,
+            // apply the move and return
+            return nextPos;
+        }
+    }
+    return pos;
 }
 
 // Method Description:
@@ -1520,13 +1735,14 @@ til::point TextBuffer::GetGlyphStart(const til::point pos, std::optional<til::po
     const auto limit{ limitOptional.value_or(bufferSize.EndExclusive()) };
 
     // Clamp pos to limit
-    if (bufferSize.CompareInBounds(resultPos, limit, true) > 0)
+    if (resultPos > limit)
     {
-        resultPos = limit;
+        return limit;
     }
 
-    // limit is exclusive, so we need to move back to be within valid bounds
-    if (resultPos != limit && GetCellDataAt(resultPos)->DbcsAttr() == DbcsAttribute::Trailing)
+    // if we're on a trailing byte, move to the leading byte
+    if (bufferSize.IsInBounds(resultPos) &&
+        GetCellDataAt(resultPos)->DbcsAttr() == DbcsAttribute::Trailing)
     {
         bufferSize.DecrementInBounds(resultPos, true);
     }
@@ -1548,12 +1764,13 @@ til::point TextBuffer::GetGlyphEnd(const til::point pos, bool accessibilityMode,
     const auto limit{ limitOptional.value_or(bufferSize.EndExclusive()) };
 
     // Clamp pos to limit
-    if (bufferSize.CompareInBounds(resultPos, limit, true) > 0)
+    if (resultPos > limit)
     {
-        resultPos = limit;
+        return limit;
     }
 
-    if (resultPos != limit && GetCellDataAt(resultPos)->DbcsAttr() == DbcsAttribute::Leading)
+    if (bufferSize.IsInBounds(resultPos) &&
+        GetCellDataAt(resultPos)->DbcsAttr() == DbcsAttribute::Leading)
     {
         bufferSize.IncrementInBounds(resultPos, true);
     }
@@ -1610,6 +1827,31 @@ bool TextBuffer::MoveToNextGlyph(til::point& pos, bool allowExclusiveEnd, std::o
     return success;
 }
 
+bool TextBuffer::MoveToNextGlyph2(til::point& pos, std::optional<til::point> limitOptional) const
+{
+    const auto bufferSize = GetSize();
+    const auto limit{ limitOptional.value_or(bufferSize.BottomInclusiveRightExclusive()) };
+
+    if (pos >= limit)
+    {
+        // Corner Case: we're on/past the limit
+        // Clamp us to the limit
+        pos = limit;
+        return false;
+    }
+
+    // Try to move forward, but if we hit the buffer boundary, we fail to move.
+    const bool success = bufferSize.IncrementInExclusiveBounds(pos);
+    if (success &&
+        bufferSize.IsInBounds(pos) &&
+        GetCellDataAt(pos)->DbcsAttr() == DbcsAttribute::Trailing)
+    {
+        // Move again if we're on a wide glyph
+        bufferSize.IncrementInExclusiveBounds(pos);
+    }
+    return success;
+}
+
 // Method Description:
 // - Update pos to be the beginning of the previous glyph/character. This is used for accessibility
 // Arguments:
@@ -1642,6 +1884,31 @@ bool TextBuffer::MoveToPreviousGlyph(til::point& pos, std::optional<til::point> 
     return success;
 }
 
+bool TextBuffer::MoveToPreviousGlyph2(til::point& pos, std::optional<til::point> limitOptional) const
+{
+    const auto bufferSize = GetSize();
+    const auto limit{ limitOptional.value_or(bufferSize.BottomInclusiveRightExclusive()) };
+
+    if (pos >= limit)
+    {
+        // Corner Case: we're on/past the limit
+        // Clamp us to the limit
+        pos = limit;
+        return false;
+    }
+
+    // Try to move backward, but if we hit the buffer boundary, we fail to move.
+    const bool success = bufferSize.DecrementInExclusiveBounds(pos);
+    if (success &&
+        bufferSize.IsInBounds(pos) &&
+        GetCellDataAt(pos)->DbcsAttr() == DbcsAttribute::Trailing)
+    {
+        // Move again if we're on a wide glyph
+        bufferSize.DecrementInExclusiveBounds(pos);
+    }
+    return success;
+}
+
 // Method Description:
 // - Determines the line-by-line rectangles based on two COORDs
 // - expands the rectangles to support wide glyphs
@@ -1660,12 +1927,10 @@ const std::vector<til::inclusive_rect> TextBuffer::GetTextRects(til::point start
 {
     std::vector<til::inclusive_rect> textRects;
 
-    const auto bufferSize = GetSize();
-
     // (0,0) is the top-left of the screen
     // the physically "higher" coordinate is closer to the top-left
     // the physically "lower" coordinate is closer to the bottom-right
-    const auto [higherCoord, lowerCoord] = bufferSize.CompareInBounds(start, end) <= 0 ?
+    const auto [higherCoord, lowerCoord] = start <= end ?
                                                std::make_tuple(start, end) :
                                                std::make_tuple(end, start);
 
@@ -1686,6 +1951,7 @@ const std::vector<til::inclusive_rect> TextBuffer::GetTextRects(til::point start
         }
         else
         {
+            const auto bufferSize = GetSize();
             textRow.left = (row == higherCoord.y) ? higherCoord.x : bufferSize.Left();
             textRow.right = (row == lowerCoord.y) ? lowerCoord.x : bufferSize.RightInclusive();
         }
@@ -1710,7 +1976,7 @@ const std::vector<til::inclusive_rect> TextBuffer::GetTextRects(til::point start
 // - Else if a blockSelection, returns spans corresponding to each line in the block selection
 // Arguments:
 // - start: beginning of the text region of interest (inclusive)
-// - end: the other end of the text region of interest (inclusive)
+// - end: the other end of the text region of interest (exclusive)
 // - blockSelection: when enabled, get spans for each line covered by the block
 // - bufferCoordinates: when enabled, treat the coordinates as relative to
 //                      the buffer rather than the screen.
@@ -1780,31 +2046,17 @@ void TextBuffer::_ExpandTextRow(til::inclusive_rect& textRow) const
 
     // expand left side of rect
     til::point targetPoint{ textRow.left, textRow.top };
-    if (GetCellDataAt(targetPoint)->DbcsAttr() == DbcsAttribute::Trailing)
+    if (bufferSize.IsInBounds(targetPoint) && GetCellDataAt(targetPoint)->DbcsAttr() == DbcsAttribute::Trailing)
     {
-        if (targetPoint.x == bufferSize.Left())
-        {
-            bufferSize.IncrementInBounds(targetPoint);
-        }
-        else
-        {
-            bufferSize.DecrementInBounds(targetPoint);
-        }
+        bufferSize.DecrementInExclusiveBounds(targetPoint);
         textRow.left = targetPoint.x;
     }
 
     // expand right side of rect
     targetPoint = { textRow.right, textRow.bottom };
-    if (GetCellDataAt(targetPoint)->DbcsAttr() == DbcsAttribute::Leading)
+    if (bufferSize.IsInBounds(targetPoint) && GetCellDataAt(targetPoint)->DbcsAttr() == DbcsAttribute::Trailing)
     {
-        if (targetPoint.x == bufferSize.RightInclusive())
-        {
-            bufferSize.DecrementInBounds(targetPoint);
-        }
-        else
-        {
-            bufferSize.IncrementInBounds(targetPoint);
-        }
+        bufferSize.IncrementInExclusiveBounds(targetPoint);
         textRow.right = targetPoint.x;
     }
 }
@@ -1821,8 +2073,8 @@ size_t TextBuffer::SpanLength(const til::point coordStart, const til::point coor
 // - Retrieves the plain text data between the specified coordinates.
 // Arguments:
 // - trimTrailingWhitespace - remove the trailing whitespace at the end of the result.
-// - start - where to start getting text (should be at or prior to "end")
-// - end - where to end getting text
+// - start - where to start getting text (should be at or prior to "end") (inclusive)
+// - end - where to end getting text (exclusive)
 // Return Value:
 // - Just the text.
 std::wstring TextBuffer::GetPlainText(const til::point start, const til::point end) const
@@ -1851,7 +2103,7 @@ std::tuple<til::CoordType, til::CoordType, bool> TextBuffer::_RowCopyHelper(cons
         const auto maxX = req.bufferCoordinates ? req.maxX : ScreenToBufferLineInclusive(til::point{ req.maxX, iRow }, lineRendition).x;
 
         rowBeg = minX;
-        rowEnd = maxX + 1; // +1 to get an exclusive end
+        rowEnd = maxX;
     }
     else
     {
@@ -1860,7 +2112,7 @@ std::tuple<til::CoordType, til::CoordType, bool> TextBuffer::_RowCopyHelper(cons
         const auto end = req.bufferCoordinates ? req.end : ScreenToBufferLineInclusive(req.end, lineRendition);
 
         rowBeg = iRow != beg.y ? 0 : beg.x;
-        rowEnd = iRow != end.y ? row.GetReadableColumnCount() : end.x + 1; // +1 to get an exclusive end
+        rowEnd = iRow != end.y ? row.GetReadableColumnCount() : end.x;
     }
 
     // Our selection mechanism doesn't stick to glyph boundaries at the moment.
@@ -1905,7 +2157,7 @@ std::wstring TextBuffer::GetPlainText(const CopyRequest& req) const
         const auto& row = GetRowByOffset(iRow);
         const auto& [rowBeg, rowEnd, addLineBreak] = _RowCopyHelper(req, iRow, row);
 
-        // save selected text
+        // save selected text (exclusive end)
         selectedText += row.GetText(rowBeg, rowEnd);
 
         if (addLineBreak && iRow != req.end.y)

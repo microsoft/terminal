@@ -53,9 +53,9 @@ static const std::wstring_view globalAppearanceTag{ L"GlobalAppearance_Nav" };
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
-    static Editor::ProfileViewModel _viewModelForProfile(const Model::Profile& profile, const Model::CascadiaSettings& appSettings)
+    static Editor::ProfileViewModel _viewModelForProfile(const Model::Profile& profile, const Model::CascadiaSettings& appSettings, const Windows::UI::Core::CoreDispatcher& dispatcher)
     {
-        return winrt::make<implementation::ProfileViewModel>(profile, appSettings);
+        return winrt::make<implementation::ProfileViewModel>(profile, appSettings, dispatcher);
     }
 
     MainPage::MainPage(const CascadiaSettings& settings) :
@@ -407,7 +407,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 }
                 else if (currentPage == ProfileSubPage::Advanced)
                 {
-                    contentFrame().Navigate(xaml_typename<Editor::Profiles_Advanced>(), profile);
+                    contentFrame().Navigate(xaml_typename<Editor::Profiles_Advanced>(), winrt::make<implementation::NavigateToProfileArgs>(profile, *this));
                     const auto crumb = winrt::make<Breadcrumb>(breadcrumbTag, RS_(L"Profile_Advanced/Header"), BreadcrumbSubPage::Profile_Advanced);
                     _breadcrumbs.Append(crumb);
                     SettingsMainPage_ScrollViewer().ScrollToVerticalOffset(0);
@@ -479,7 +479,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
         else if (clickedItemTag == globalProfileTag)
         {
-            auto profileVM{ _viewModelForProfile(_settingsClone.ProfileDefaults(), _settingsClone) };
+            auto profileVM{ _viewModelForProfile(_settingsClone.ProfileDefaults(), _settingsClone, Dispatcher()) };
             profileVM.SetupAppearances(_colorSchemesPageVM.AllColorSchemes());
             profileVM.IsBaseLayer(true);
 
@@ -681,7 +681,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             if (!profile.Deleted())
             {
-                auto profileVM = _viewModelForProfile(profile, _settingsClone);
+                auto profileVM = _viewModelForProfile(profile, _settingsClone, Dispatcher());
                 profileVM.SetupAppearances(_colorSchemesPageVM.AllColorSchemes());
                 auto navItem = _CreateProfileNavViewItem(profileVM);
                 _menuItemSource.Append(navItem);
@@ -737,7 +737,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     void MainPage::_CreateAndNavigateToNewProfile(const uint32_t index, const Model::Profile& profile)
     {
         const auto newProfile{ profile ? profile : _settingsClone.CreateNewProfile() };
-        const auto profileViewModel{ _viewModelForProfile(newProfile, _settingsClone) };
+        const auto profileViewModel{ _viewModelForProfile(newProfile, _settingsClone, Dispatcher()) };
         profileViewModel.SetupAppearances(_colorSchemesPageVM.AllColorSchemes());
         const auto navItem{ _CreateProfileNavViewItem(profileViewModel) };
 
@@ -784,9 +784,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             if (auto menuItem{ weakMenuItem.get() })
             {
                 const auto& tag{ menuItem.Tag().as<Editor::ProfileViewModel>() };
-                if (args.PropertyName() == L"Icon")
+                if (args.PropertyName() == L"Icon" || args.PropertyName() == L"EvaluatedIcon")
                 {
-                    menuItem.Icon(UI::IconPathConverter::IconWUX(tag.Icon()));
+                    menuItem.Icon(UI::IconPathConverter::IconWUX(tag.EvaluatedIcon()));
                 }
                 else if (args.PropertyName() == L"Name")
                 {

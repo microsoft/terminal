@@ -163,6 +163,7 @@ CBN
 cbt
 Ccc
 CCCBB
+CCCDDD
 cch
 CCHAR
 CCmd
@@ -171,6 +172,7 @@ CCom
 CConsole
 CCRT
 cdd
+cds
 CELLSIZE
 cfae
 cfie
@@ -213,6 +215,7 @@ codepages
 codepath
 coinit
 colorizing
+COLORONCOLOR
 COLORREFs
 colorschemes
 colorspec
@@ -280,6 +283,8 @@ contypes
 conwinuserrefs
 coordnew
 COPYCOLOR
+COPYDATA
+COPYDATASTRUCT
 CORESYSTEM
 cotaskmem
 countof
@@ -366,6 +371,7 @@ DColor
 dcommon
 DComposition
 dde
+DDDCCC
 DDESHARE
 DDevice
 DEADCHAR
@@ -567,6 +573,7 @@ EOK
 EPres
 EQU
 ERASEBKGND
+ERRORONEXIT
 ESFCIB
 esrp
 ESV
@@ -837,6 +844,7 @@ IFACEMETHODIMP
 ification
 IGNORELANGUAGE
 iid
+IInput
 IIo
 ILC
 ILCo
@@ -856,6 +864,7 @@ inkscape
 INLINEPREFIX
 inproc
 Inputkeyinfo
+inputpaneinterop
 Inputreadhandledata
 INPUTSCOPE
 INSERTMODE
@@ -1348,6 +1357,7 @@ PNMLINK
 pntm
 POBJECT
 Podcast
+POINTERUPDATE
 POINTSLIST
 policheck
 POLYTEXTW
