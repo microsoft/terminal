@@ -168,13 +168,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     struct ArgWrapper : ArgWrapperT<ArgWrapper>, ViewModelHelper<ArgWrapper>
     {
     public:
-        ArgWrapper(const winrt::hstring& type, const bool required, const Windows::Foundation::IInspectable& value);
+        ArgWrapper(const winrt::hstring& name, const winrt::hstring& type, const bool required, const Windows::Foundation::IInspectable& value);
+
+        winrt::hstring Name() const noexcept { return _name; };
 
         winrt::hstring Type() const noexcept { return _type; };
 
         bool Required() const noexcept { return _required; };
 
         Windows::Foundation::Collections::IObservableVector<Microsoft::Terminal::Settings::Editor::EnumEntry> EnumList() const noexcept { return _EnumList; };
+
+        Windows::Foundation::Collections::IObservableVector<Microsoft::Terminal::Settings::Editor::FlagEntry> FlagList() const noexcept { return _FlagList; };
 
         void StringBindBack(const winrt::hstring& newValue) { Value(box_value(newValue)); };
 
@@ -203,10 +207,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         VIEW_MODEL_OBSERVABLE_PROPERTY(Windows::Foundation::IInspectable, Value, nullptr);
 
     private:
+        winrt::hstring _name;
         winrt::hstring _type;
         bool _required;
         Windows::Foundation::IInspectable _EnumValue{ nullptr };
         Windows::Foundation::Collections::IObservableVector<Microsoft::Terminal::Settings::Editor::EnumEntry> _EnumList;
+        Windows::Foundation::Collections::IObservableVector<Microsoft::Terminal::Settings::Editor::FlagEntry> _FlagList;
     };
 
     struct ActionArgsViewModel : ActionArgsViewModelT<ActionArgsViewModel>, ViewModelHelper<ActionArgsViewModel>

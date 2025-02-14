@@ -7,6 +7,7 @@ namespace Microsoft.Terminal.Settings.Editor
     {
         ArgsTemplateSelectors();
 
+        Windows.UI.Xaml.DataTemplate NoArgTemplate;
         Windows.UI.Xaml.DataTemplate Int32Template;
         Windows.UI.Xaml.DataTemplate UInt32Template;
         Windows.UI.Xaml.DataTemplate UInt32OptionalTemplate;
@@ -15,5 +16,6 @@ namespace Microsoft.Terminal.Settings.Editor
         Windows.UI.Xaml.DataTemplate BoolTemplate;
         Windows.UI.Xaml.DataTemplate BoolOptionalTemplate;
         Windows.UI.Xaml.DataTemplate EnumTemplate;
+        Windows.UI.Xaml.DataTemplate FlagTemplate;
     }
 }

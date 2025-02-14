@@ -225,10 +225,18 @@
                 <ListViewItem HorizontalContentAlignment="Stretch" />
             </DataTemplate>
 
+            <DataTemplate x:Key="NoArgTemplate"
+                          x:DataType="local:ArgWrapper">
+                <ListViewItem />
+            </DataTemplate>
+
             <DataTemplate x:Key="Int32Template"
                           x:DataType="local:ArgWrapper">
                 <ListViewItem>
-                    <StackPanel Orientation="Horizontal">
+                    <StackPanel Orientation="Horizontal"
+                                Spacing="8">
+                        <TextBlock Text="{x:Bind Name}"
+                                   VerticalAlignment="Center" />
                         <muxc:NumberBox Value="{x:Bind mtu:Converters.UnboxInt32(Value), Mode=TwoWay, BindBack=DoubleBindBack}"
                                         Style="{StaticResource NumberBoxSettingStyle}"
                                         Minimum="0"
@@ -242,7 +250,10 @@
             <DataTemplate x:Key="UInt32Template"
                           x:DataType="local:ArgWrapper">
                 <ListViewItem>
-                    <StackPanel Orientation="Horizontal">
+                    <StackPanel Orientation="Horizontal"
+                                Spacing="8">
+                        <TextBlock Text="{x:Bind Name}"
+                                   VerticalAlignment="Center" />
                         <muxc:NumberBox Value="{x:Bind mtu:Converters.UnboxUInt32(Value), Mode=TwoWay, BindBack=DoubleBindBack}"
                                         Style="{StaticResource NumberBoxSettingStyle}"
                                         Minimum="0"
@@ -256,7 +267,10 @@
             <DataTemplate x:Key="UInt32OptionalTemplate"
                           x:DataType="local:ArgWrapper">
                 <ListViewItem>
-                    <StackPanel Orientation="Horizontal">
+                    <StackPanel Orientation="Horizontal"
+                                Spacing="8">
+                        <TextBlock Text="{x:Bind Name}"
+                                   VerticalAlignment="Center" />
                         <muxc:NumberBox Value="{x:Bind mtu:Converters.UnboxUInt32Optional(Value), Mode=TwoWay, BindBack=DoubleOptionalBindBack}"
                                         Style="{StaticResource NumberBoxSettingStyle}"
                                         Minimum="0"
@@ -270,7 +284,10 @@
             <DataTemplate x:Key="FloatTemplate"
                           x:DataType="local:ArgWrapper">
                 <ListViewItem>
-                    <StackPanel Orientation="Horizontal">
+                    <StackPanel Orientation="Horizontal"
+                                Spacing="8">
+                        <TextBlock Text="{x:Bind Name}"
+                                   VerticalAlignment="Center" />
                         <muxc:NumberBox Value="{x:Bind mtu:Converters.UnboxFloat(Value), Mode=TwoWay, BindBack=FloatBindBack}"
                                         Style="{StaticResource NumberBoxSettingStyle}"
                                         Minimum="0"
@@ -284,7 +301,10 @@
             <DataTemplate x:Key="StringTemplate"
                           x:DataType="local:ArgWrapper">
                 <ListViewItem>
-                    <StackPanel Orientation="Horizontal">
+                    <StackPanel Orientation="Horizontal"
+                                Spacing="8">
+                        <TextBlock Text="{x:Bind Name}"
+                                   VerticalAlignment="Center" />
                         <TextBox Text="{x:Bind mtu:Converters.UnboxString(Value), Mode=TwoWay, BindBack=StringBindBack}" />
                     </StackPanel>
                 </ListViewItem>
@@ -293,7 +313,10 @@
             <DataTemplate x:Key="BoolTemplate"
                           x:DataType="local:ArgWrapper">
                 <ListViewItem>
-                    <StackPanel Orientation="Horizontal">
+                    <StackPanel Orientation="Horizontal"
+                                Spacing="8">
+                        <TextBlock Text="{x:Bind Name}"
+                                   VerticalAlignment="Center" />
                         <CheckBox IsChecked="{x:Bind mtu:Converters.UnboxBool(Value), Mode=TwoWay, BindBack=BoolBindBack}" />
                     </StackPanel>
                 </ListViewItem>
@@ -302,7 +325,10 @@
             <DataTemplate x:Key="BoolOptionalTemplate"
                           x:DataType="local:ArgWrapper">
                 <ListViewItem>
-                    <StackPanel Orientation="Horizontal">
+                    <StackPanel Orientation="Horizontal"
+                                Spacing="8">
+                        <TextBlock Text="{x:Bind Name}"
+                                   VerticalAlignment="Center" />
                         <CheckBox IsChecked="{x:Bind mtu:Converters.UnboxBoolOptional(Value), Mode=TwoWay, BindBack=BoolBindBack}"
                                   IsThreeState="True" />
                     </StackPanel>
@@ -317,7 +343,10 @@
             <DataTemplate x:Key="EnumTemplate"
                           x:DataType="local:ArgWrapper">
                 <ListViewItem>
-                    <StackPanel Orientation="Horizontal">
+                    <StackPanel Orientation="Horizontal"
+                                Spacing="8">
+                        <TextBlock Text="{x:Bind Name}"
+                                   VerticalAlignment="Center" />
                         <ComboBox ItemTemplate="{StaticResource EnumComboBoxTemplate}"
                                   ItemsSource="{x:Bind EnumList, Mode=OneWay}"
                                   SelectedItem="{x:Bind EnumValue, Mode=TwoWay}"
@@ -326,7 +355,31 @@
                 </ListViewItem>
             </DataTemplate>
 
+            <DataTemplate x:Key="FlagItemTemplate"
+                          x:DataType="local:FlagEntry">
+                <StackPanel Orientation="Horizontal"
+                            Spacing="8">
+                    <CheckBox IsChecked="{x:Bind IsSet, Mode=TwoWay}"/>
+                    <TextBlock Text="{x:Bind FlagName, Mode=OneWay}" />
+                </StackPanel>
+            </DataTemplate>
+
+            <DataTemplate x:Key="FlagTemplate"
+                          x:DataType="local:ArgWrapper">
+                <ListViewItem>
+                    <StackPanel Orientation="Horizontal"
+                                Spacing="8">
+                        <TextBlock Text="{x:Bind Name}"
+                                   VerticalAlignment="Center" />
+                        <ListView ItemTemplate="{StaticResource FlagItemTemplate}"
+                                  SelectionMode="None"
+                                  ItemsSource="{x:Bind FlagList, Mode=OneWay}" />
+                    </StackPanel>
+                </ListViewItem>
+            </DataTemplate>
+
             <local:ArgsTemplateSelectors x:Key="ArgsTemplateSelector"
+                                         NoArgTemplate="{StaticResource NoArgTemplate}"
                                          Int32Template="{StaticResource Int32Template}"
                                          UInt32Template="{StaticResource UInt32Template}"
                                          UInt32OptionalTemplate="{StaticResource UInt32OptionalTemplate}"
@@ -334,7 +387,8 @@
                                          StringTemplate="{StaticResource StringTemplate}"
                                          BoolTemplate="{StaticResource BoolTemplate}"
                                          BoolOptionalTemplate="{StaticResource BoolOptionalTemplate}"
-                                         EnumTemplate="{StaticResource EnumTemplate}" />
+                                         EnumTemplate="{StaticResource EnumTemplate}"
+                                         FlagTemplate="{StaticResource FlagTemplate}" />
 
         </ResourceDictionary>
     </Page.Resources>
@@ -358,7 +412,9 @@
                       ChoosingItemContainer="_choosingItemContainer"
                       SelectionMode="None"
                       AllowDrop="False"
-                      CanReorderItems="False" />
+                      CanDragItems="False"
+                      CanReorderItems="False">
+            </ListView>
             <ListView ItemTemplate="{StaticResource KeyChordTemplate}"
                       ItemsSource="{x:Bind ViewModel.KeyChordViewModelList, Mode=OneWay}"
                       SelectionMode="None">

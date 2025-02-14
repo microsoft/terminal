@@ -63,7 +63,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                      argType == L"MoveTabDirection" ||
                      argType == L"Microsoft::Terminal::Control::ScrollToMarkDirection" ||
                      argType == L"CommandPaletteLaunchMode" ||
-                     argType == L"SuggestionsSource" ||
                      argType == L"FindMatchDirection" ||
                      argType == L"Model::DesktopBehavior" ||
                      argType == L"Model::MonitorBehavior" ||
@@ -72,11 +71,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             {
                 return EnumTemplate();
             }
+            else if (argType == L"SuggestionsSource")
+            {
+                return FlagTemplate();
+            }
             else if (argType == L"Windows::Foundation::IReference<Control::CopyFormat>")
             {
                 return nullptr;
             }
         }
-        return nullptr;
+        return NoArgTemplate();
     }
 }

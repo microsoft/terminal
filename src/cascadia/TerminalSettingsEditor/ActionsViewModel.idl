@@ -78,11 +78,13 @@ namespace Microsoft.Terminal.Settings.Editor
 
     runtimeclass ArgWrapper : Windows.UI.Xaml.Data.INotifyPropertyChanged
     {
+        String Name { get; };
         String Type { get; };
         Boolean Required { get; };
         IInspectable Value;
         IInspectable EnumValue;
         Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> EnumList { get; };
+        Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.FlagEntry> FlagList { get; };
         void StringBindBack(String newValue);
         void DoubleBindBack(Double newValue);
         void DoubleOptionalBindBack(Double newValue);

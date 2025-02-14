@@ -44,6 +44,37 @@ using namespace winrt::Microsoft::Terminal::Settings::Model;
     std::sort(enumList.begin(), enumList.end(), EnumEntryReverseComparator<enumType>());                                                                    \
     _EnumList = winrt::single_threaded_observable_vector<winrt::Microsoft::Terminal::Settings::Editor::EnumEntry>(std::move(enumList));
 
+#define INITIALIZE_FLAG_LIST_AND_VALUE(enumMappingsName, enumType, resourceSectionAndType, resourceProperty)                                                           \
+    std::vector<winrt::Microsoft::Terminal::Settings::Editor::FlagEntry> flagList;                                                                                     \
+    const auto mappings = winrt::Microsoft::Terminal::Settings::Model::EnumMappings::enumMappingsName();                                                               \
+    enumType unboxedValue;                                                                                                                                             \
+    if (value)                                                                                                                                                         \
+    {                                                                                                                                                                  \
+        unboxedValue = unbox_value<enumType>(value);                                                                                                                   \
+    }                                                                                                                                                                  \
+    for (const auto [flagKey, flagValue] : mappings)                                                                                                                   \
+    {                                                                                                                                                                  \
+        if (flagKey != L"all" && flagKey != L"none")                                                                                                                   \
+        {                                                                                                                                                              \
+            const auto flagName = LocalizedNameForEnumName(resourceSectionAndType, flagKey, resourceProperty);                                                         \
+            bool isSet = value ? WI_IsAnyFlagSet(unboxedValue, flagValue) : false;                                                                                     \
+            auto entry = winrt::make<winrt::Microsoft::Terminal::Settings::Editor::implementation::FlagEntry>(flagName, winrt::box_value<enumType>(flagValue), isSet); \
+            entry.PropertyChanged([&, flagValue](const IInspectable& sender, const PropertyChangedEventArgs& args) {                                                   \
+                const auto itemProperty{ args.PropertyName() };                                                                                                        \
+                if (itemProperty == L"IsSet")                                                                                                                          \
+                {                                                                                                                                                      \
+                    const auto flagWrapper = sender.as<Microsoft::Terminal::Settings::Editor::FlagEntry>();                                                            \
+                    auto unboxed = unbox_value<enumType>(_Value);                                                                                                      \
+                    flagWrapper.IsSet() ? WI_SetAllFlags(unboxed, flagValue) : WI_ClearAllFlags(unboxed, flagValue);                                                   \
+                    Value(box_value(unboxed));                                                                                                                         \
+                }                                                                                                                                                      \
+            });                                                                                                                                                        \
+            flagList.emplace_back(entry);                                                                                                                              \
+        }                                                                                                                                                              \
+    }                                                                                                                                                                  \
+    std::sort(flagList.begin(), flagList.end(), FlagEntryReverseComparator<enumType>());                                                                               \
+    _FlagList = winrt::single_threaded_observable_vector<winrt::Microsoft::Terminal::Settings::Editor::FlagEntry>(std::move(flagList));
+
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
     KeyBindingViewModel::KeyBindingViewModel(const IObservableVector<hstring>& availableActions) :
@@ -175,7 +206,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 const auto emptyArgs = CascadiaSettings::GetEmptyArgsForAction(actionEnum);
                 // todo: for sendInput, where "input" is a required argument, this will set it to an empty string which does not satisfy the requirement
                 // i.e. if the user hits "save" immediately after switching to sendInput as the action (without adding something to the input field), they'll get an error
-                emptyArgs.SetAllArgsToDefault();
+                if (emptyArgs)
+                {
+                    emptyArgs.SetAllArgsToDefault();
+                }
                 Model::ActionAndArgs newActionAndArgs{ actionEnum, emptyArgs };
                 _command.ActionAndArgs(newActionAndArgs);
                 ActionArgsVM(make<ActionArgsViewModel>(newActionAndArgs));
@@ -256,9 +290,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         });
     }
 
-    ArgWrapper::ArgWrapper(const winrt::hstring& type, const bool required, const Windows::Foundation::IInspectable& value)
+    ArgWrapper::ArgWrapper(const winrt::hstring& name, const winrt::hstring& type, const bool required, const Windows::Foundation::IInspectable& value)
     {
         Value(value);
+        _name = name;
         _type = type;
         _required = required;
         if (_type == L"Model::ResizeDirection")
@@ -287,7 +322,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
         else if (_type == L"SuggestionsSource")
         {
-            INITIALIZE_ENUM_LIST_AND_VALUE(SuggestionsSource, Model::SuggestionsSource, L"Actions_SuggestionsSource", L"Content");
+            INITIALIZE_FLAG_LIST_AND_VALUE(SuggestionsSource, Model::SuggestionsSource, L"Actions_SuggestionsSource", L"Content");
         }
         else if (_type == L"FindMatchDirection")
         {
@@ -324,7 +359,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         if (_EnumValue != enumValue)
         {
             _EnumValue = enumValue;
-            Value(enumValue.as<Editor::EnumEntry>().EnumValue());
+            Value(_EnumValue.as<Editor::EnumEntry>().EnumValue());
         }
     }
 
@@ -342,9 +377,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             {
                 const auto argAtIndex = shortcutArgs.GetArgAt(i);
                 const auto argDescription = shortcutArgs.GetArgDescriptionAt(i);
+                const auto argName = argDescription.Name;
                 const auto argType = argDescription.Type;
                 const auto argRequired = argDescription.Required;
-                const auto item = make<ArgWrapper>(argType, argRequired, argAtIndex);
+                const auto item = make<ArgWrapper>(argName, argType, argRequired, argAtIndex);
                 item.PropertyChanged([&, i](const IInspectable& sender, const PropertyChangedEventArgs& args) {
                     const auto itemProperty{ args.PropertyName() };
                     if (itemProperty == L"Value")
