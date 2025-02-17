@@ -14,6 +14,8 @@ using namespace winrt::Windows::Foundation;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
 using namespace winrt::Windows::UI::Xaml::Data;
 
+static constexpr std::wstring_view StartupTaskName = L"StartTerminalOnLoginTask";
+
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
     // For ComboBox an empty SelectedItem string denotes no selection.
@@ -38,8 +40,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         L"zh-Hant",
     };
 
-    LaunchViewModel::LaunchViewModel(Model::CascadiaSettings settings) :
-        _Settings{ settings }
+    LaunchViewModel::LaunchViewModel(Model::CascadiaSettings settings, const Windows::UI::Core::CoreDispatcher& dispatcher) :
+        _Settings{ settings },
+        _dispatcher{ dispatcher }
     {
         _useDefaultLaunchPosition = isnan(InitialPosX()) && isnan(InitialPosY());
 
@@ -364,5 +367,90 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     winrt::Windows::Foundation::Collections::IObservableVector<Model::DefaultTerminal> LaunchViewModel::DefaultTerminals() const
     {
         return _Settings.DefaultTerminals();
+    }
+
+    safe_void_coroutine LaunchViewModel::PrepareStartOnUserLoginSettings()
+    {
+        if (!StartOnUserLoginAvailable())
+        {
+            co_return;
+        }
+
+        auto strongThis{ get_strong() };
+        co_await winrt::resume_background();
+        const auto task = co_await winrt::Windows::ApplicationModel::StartupTask::GetAsync(StartupTaskName);
+        _startOnUserLoginTask = std::move(task);
+        co_await wil::resume_foreground(strongThis->_dispatcher);
+        _NotifyChanges(L"StartOnUserLoginConfigurable", L"StartOnUserLoginStatefulHelpText", L"StartOnUserLogin");
+    }
+
+    bool LaunchViewModel::StartOnUserLoginAvailable()
+    {
+        return IsPackaged();
+    }
+
+    bool LaunchViewModel::StartOnUserLoginConfigurable()
+    {
+        if (!_startOnUserLoginTask)
+        {
+            return false;
+        }
+        namespace WAM = winrt::Windows::ApplicationModel;
+        const auto state{ _startOnUserLoginTask.State() };
+        return state == WAM::StartupTaskState::Disabled || state == WAM::StartupTaskState::Enabled;
+    }
+
+    winrt::hstring LaunchViewModel::StartOnUserLoginStatefulHelpText()
+    {
+        if (!_startOnUserLoginTask)
+        {
+            return {};
+        }
+        namespace WAM = winrt::Windows::ApplicationModel;
+        const auto state{ _startOnUserLoginTask.State() };
+        switch (state)
+        {
+        case WAM::StartupTaskState::Enabled:
+        case WAM::StartupTaskState::Disabled:
+            return L"Configurable - User has not set one way or the other";
+        case WAM::StartupTaskState::EnabledByPolicy:
+        case WAM::StartupTaskState::DisabledByPolicy:
+            return L"Not configurable - machine policy";
+        case WAM::StartupTaskState::DisabledByUser:
+            return L"User disabled in task manager...";
+        default:
+            return L"UNKNOWN???";
+        }
+    }
+
+    bool LaunchViewModel::StartOnUserLogin()
+    {
+        if (!_startOnUserLoginTask)
+        {
+            return false;
+        }
+        namespace WAM = winrt::Windows::ApplicationModel;
+        const auto state{ _startOnUserLoginTask.State() };
+        return state == WAM::StartupTaskState::Enabled || state == WAM::StartupTaskState::EnabledByPolicy;
+    }
+
+    safe_void_coroutine LaunchViewModel::StartOnUserLogin(bool enable)
+    {
+        if (!_startOnUserLoginTask)
+        {
+            co_return;
+        }
+        auto strongThis{ get_strong() };
+        co_await winrt::resume_background();
+        if (enable)
+        {
+            co_await _startOnUserLoginTask.RequestEnableAsync();
+        }
+        else
+        {
+            _startOnUserLoginTask.Disable();
+        }
+        co_await wil::resume_foreground(strongThis->_dispatcher);
+        _NotifyChanges(L"StartOnUserLoginConfigurable", L"StartOnUserLoginStatefulHelpText", L"StartOnUserLogin");
     }
 }

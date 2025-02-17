@@ -163,8 +163,11 @@
             </local:SettingContainer>
 
             <!--  Start on User Login  -->
-            <local:SettingContainer x:Uid="Globals_StartOnUserLogin">
+            <local:SettingContainer x:Uid="Globals_StartOnUserLogin"
+                                    HelpText="{x:Bind ViewModel.StartOnUserLoginStatefulHelpText, Mode=OneWay}"
+                                    Visibility="{x:Bind ViewModel.StartOnUserLoginAvailable, Mode=OneTime}">
                 <ToggleSwitch IsOn="{x:Bind ViewModel.StartOnUserLogin, Mode=TwoWay}"
+                              IsEnabled="{x:Bind ViewModel.StartOnUserLoginConfigurable, Mode=OneWay}"
                               Style="{StaticResource ToggleSwitchInExpanderStyle}" />
             </local:SettingContainer>
 

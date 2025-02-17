@@ -81,8 +81,6 @@ static winrt::hstring _GetErrorText(SettingsLoadErrors error)
     return _GetMessageText(static_cast<uint32_t>(error), settingsLoadErrorsLabels);
 }
 
-static constexpr std::wstring_view StartupTaskName = L"StartTerminalOnLoginTask";
-
 namespace winrt::TerminalApp::implementation
 {
     // Function Description:

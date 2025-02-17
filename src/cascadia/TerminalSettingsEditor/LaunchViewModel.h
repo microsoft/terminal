@@ -6,13 +6,14 @@
 #include "LaunchViewModel.g.h"
 #include "ViewModelHelpers.h"
 #include "Utils.h"
+#include <cppwinrt_utils.h>
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
     struct LaunchViewModel : LaunchViewModelT<LaunchViewModel>, ViewModelHelper<LaunchViewModel>
     {
     public:
-        LaunchViewModel(Model::CascadiaSettings settings);
+        LaunchViewModel(Model::CascadiaSettings settings, const Windows::UI::Core::CoreDispatcher& dispatcher);
 
         // LanguageDisplayConverter maps the given BCP 47 tag to a localized string.
         // For instance "en-US" produces "English (United States)", while "de-DE" produces
@@ -51,9 +52,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         GETSET_BINDABLE_ENUM_SETTING(WindowingBehavior, Model::WindowingMode, _Settings.GlobalSettings().WindowingBehavior);
 
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_Settings.GlobalSettings(), CenterOnLaunch);
-        PERMANENT_OBSERVABLE_PROJECTED_SETTING(_Settings.GlobalSettings(), StartOnUserLogin);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_Settings.GlobalSettings(), InitialRows);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_Settings.GlobalSettings(), InitialCols);
+
+        safe_void_coroutine PrepareStartOnUserLoginSettings();
+        bool StartOnUserLoginAvailable();
+        bool StartOnUserLoginConfigurable();
+        winrt::hstring StartOnUserLoginStatefulHelpText();
+        bool StartOnUserLogin();
+        safe_void_coroutine StartOnUserLogin(bool enable);
 
     private:
         Model::CascadiaSettings _Settings;
@@ -63,6 +70,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         winrt::Windows::Foundation::Collections::IObservableVector<winrt::Microsoft::Terminal::Settings::Editor::EnumEntry> _LaunchModeList;
         winrt::Windows::Foundation::Collections::IMap<Model::LaunchMode, winrt::Microsoft::Terminal::Settings::Editor::EnumEntry> _LaunchModeMap;
+
+        winrt::Windows::ApplicationModel::StartupTask _startOnUserLoginTask{ nullptr };
+
+        Windows::UI::Core::CoreDispatcher _dispatcher;
     };
 };
 
