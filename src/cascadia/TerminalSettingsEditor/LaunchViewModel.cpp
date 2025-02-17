@@ -402,25 +402,24 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     winrt::hstring LaunchViewModel::StartOnUserLoginStatefulHelpText()
     {
-        if (!_startOnUserLoginTask)
+        if (_startOnUserLoginTask)
         {
-            return {};
+            namespace WAM = winrt::Windows::ApplicationModel;
+            const auto state{ _startOnUserLoginTask.State() };
+            switch (state)
+            {
+            case WAM::StartupTaskState::EnabledByPolicy:
+            case WAM::StartupTaskState::DisabledByPolicy:
+                return RS_(L"Globals_StartOnUserLogin_UnavailableByPolicy");
+            case WAM::StartupTaskState::DisabledByUser:
+                return RS_(L"Globals_StartOnUserLogin_DisabledByUser");
+            case WAM::StartupTaskState::Enabled:
+            case WAM::StartupTaskState::Disabled:
+            default:
+                break; // fall through to the common case (no task, not configured, etc.)
+            }
         }
-        namespace WAM = winrt::Windows::ApplicationModel;
-        const auto state{ _startOnUserLoginTask.State() };
-        switch (state)
-        {
-        case WAM::StartupTaskState::Enabled:
-        case WAM::StartupTaskState::Disabled:
-            return L"Configurable - User has not set one way or the other";
-        case WAM::StartupTaskState::EnabledByPolicy:
-        case WAM::StartupTaskState::DisabledByPolicy:
-            return L"Not configurable - machine policy";
-        case WAM::StartupTaskState::DisabledByUser:
-            return L"User disabled in task manager...";
-        default:
-            return L"UNKNOWN???";
-        }
+        return RS_(L"Globals_StartOnUserLogin/HelpText");
     }
 
     bool LaunchViewModel::StartOnUserLogin()
