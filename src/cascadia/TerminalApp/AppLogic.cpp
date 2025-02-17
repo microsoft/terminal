@@ -353,103 +353,6 @@ namespace winrt::TerminalApp::implementation
     }
     CATCH_LOG()
 
-    safe_void_coroutine AppLogic::_ApplyStartupTaskStateChange()
-    try
-    {
-        // First, make sure we're running in a packaged context. This method
-        // won't work, and will crash mysteriously if we're running unpackaged.
-        if (!IsPackaged())
-        {
-            co_return;
-        }
-
-        const auto task = co_await StartupTask::GetAsync(StartupTaskName);
-
-        // If user has not set in json:
-        //  If user has enabled in settings - enable in user settings
-        //  If user has disabled in settings - disable in user settings (can this happen?)
-        // If user has enabled in json:
-        //  If user has enabled in settings - no change
-        //  If policy has enabled in settings - no change
-        //  If user has disabled in settings - disable in json
-        //  If policy has disabled in settings - disable in json
-        // If user has disabled in json:
-        //  If user has enabled in settings - enable in json
-        //  If policy has enabled in settings - enable in json
-        //  If user has disabled in settings - no change
-        //  If policy has disabled in settings - no change
-        //
-        //... track json state transition
-        // if user goes from enabled to diabled, try to disable in settings
-        // if user goes from disabled to enabled, try to enable in settings
-        // can we detect if RequestEnable succeeded?
-        auto appState{ ApplicationState::SharedInstance() };
-        std::optional<bool> userRequestedStartupTaskState;
-        if (_settings.GlobalSettings().HasStartOnUserLogin())
-        {
-            userRequestedStartupTaskState.emplace(_settings.GlobalSettings().StartOnUserLogin());
-        }
-
-        std::optional<bool> lastSyncedStartupTaskState;
-        if (appState.HasLastStartOnUserLoginStateSyncedWithOS())
-        {
-            lastSyncedStartupTaskState.emplace(appState.LastStartOnUserLoginStateSyncedWithOS());
-        }
-
-        if (userRequestedStartupTaskState == lastSyncedStartupTaskState)
-        {
-            // The user has not changed their state since we last checked (this could also indicate no state ever set);
-            // propagate changes from the OS down to the user settings file.
-            std::optional<bool> newFinalUserSettingsValue;
-            switch (task.State())
-            {
-            case StartupTaskState::Enabled: // user or Terminal enabled it
-            case StartupTaskState::EnabledByPolicy: // policy enabled it globally
-                newFinalUserSettingsValue = true;
-                break;
-            case StartupTaskState::DisabledByPolicy: // policy disabled it globally
-            case StartupTaskState::DisabledByUser: // user turned it off in Task Manager
-                newFinalUserSettingsValue = false;
-                break;
-            case StartupTaskState::Disabled: // never set
-            default:
-                break;
-            }
-
-            if (newFinalUserSettingsValue.has_value() && newFinalUserSettingsValue != userRequestedStartupTaskState)
-            {
-                _settings.GlobalSettings().StartOnUserLogin(*newFinalUserSettingsValue);
-                appState.LastStartOnUserLoginStateSyncedWithOS(*newFinalUserSettingsValue);
-                // TODO SAVE SETTINGS AND IGNORE NEXT RELOAD???
-            }
-        }
-        else
-        {
-            // The user changed their state since we last checked;
-            // propagate changes from the user up to the OS.
-            if (userRequestedStartupTaskState == true /* explicit comparison fails for nullopt */)
-            {
-                auto newState{ co_await task.RequestEnableAsync() };
-                if (newState != StartupTaskState::Enabled)
-                {
-                    // We could not enable it. It was disabled by policy. Disable it.
-                    _settings.GlobalSettings().StartOnUserLogin(false);
-                    appState.LastStartOnUserLoginStateSyncedWithOS(false);
-                }
-                else
-                {
-                    appState.LastStartOnUserLoginStateSyncedWithOS(true);
-                }
-            }
-            else if (userRequestedStartupTaskState == false /* explicit comparison fails for nullopt */)
-            {
-                task.Disable();
-                appState.LastStartOnUserLoginStateSyncedWithOS(false);
-            }
-        }
-    }
-    CATCH_LOG();
-
     // Method Description:
     // - Reloads the settings from the settings.json file.
     // - When this is called the first time, this initializes our settings. See
@@ -509,7 +412,6 @@ namespace winrt::TerminalApp::implementation
         // TerminalSettings object.
 
         _ApplyLanguageSettingChange();
-        _ApplyStartupTaskStateChange();
         _ProcessLazySettingsChanges();
 
         auto warnings{ winrt::multi_threaded_vector<SettingsLoadWarnings>() };
@@ -536,7 +438,6 @@ namespace winrt::TerminalApp::implementation
         // Both LoadSettings and ReloadSettings are supposed to call this function,
         // but LoadSettings skips it, so that the UI starts up faster.
         // Now that the UI is present we can do them with a less significant UX impact.
-        _ApplyStartupTaskStateChange();
         _ProcessLazySettingsChanges();
 
         FILETIME creationTime, exitTime, kernelTime, userTime, now;
