@@ -79,7 +79,11 @@ using namespace Microsoft::Console::Interactivity;
                                         const HANDLE OutHandle,
                                         _In_opt_ const HANDLE SignalHandle)
 {
-    FAIL_FAST_IF_MSG(_initialized, "Someone attempted to double-_Initialize VtIo");
+    if (_state != State::Uninitialized)
+    {
+        assert(false); // Don't call initialize twice.
+        return E_UNEXPECTED;
+    }
 
     _hInput.reset(InHandle);
     _hOutput.reset(OutHandle);
@@ -95,47 +99,33 @@ using namespace Microsoft::Console::Interactivity;
         }
     }
 
+    // - Create and start the signal thread. The signal thread can be created
+    //      independent of the i/o threads, and doesn't require a client first
+    //      attaching to the console. We need to create it first and foremost,
+    //      because it's possible that a terminal application could
+    //      CreatePseudoConsole, then ClosePseudoConsole without ever attaching a
+    //      client. Should that happen, we still need to exit.
+    if (IsValidHandle(_hSignal.get()))
+    {
+        try
+        {
+            _pPtySignalInputThread = std::make_unique<PtySignalInputThread>(std::move(_hSignal));
+
+            // Start it if it was successfully created.
+            RETURN_IF_FAILED(_pPtySignalInputThread->Start());
+        }
+        CATCH_RETURN();
+    }
+
     // The only way we're initialized is if the args said we're in conpty mode.
     // If the args say so, then at least one of in, out, or signal was specified
-    _initialized = true;
-    return S_OK;
-}
-
-// Method Description:
-// - Create the VtEngine and the VtInputThread for this console.
-// MUST BE DONE AFTER CONSOLE IS INITIALIZED, to make sure we've gotten the
-//  buffer size from the attached client application.
-// Arguments:
-// - <none>
-// Return Value:
-//  S_OK if we initialized successfully,
-//  S_FALSE if VtIo hasn't been initialized (or we're not in conpty mode)
-//  otherwise an appropriate HRESULT indicating failure.
-[[nodiscard]] HRESULT VtIo::CreateIoHandlers() noexcept
-{
-    if (!_initialized)
-    {
-        return S_FALSE;
-    }
-
-    // SetWindowVisibility uses the console lock to protect access to _pVtRenderEngine.
-    assert(ServiceLocator::LocateGlobals().getConsoleInformation().IsConsoleLocked());
-
-    try
-    {
-        if (IsValidHandle(_hInput.get()))
-        {
-            _pVtInputThread = std::make_unique<VtInputThread>(std::move(_hInput), _lookingForCursorPosition);
-        }
-    }
-    CATCH_RETURN();
-
+    _state = State::Initialized;
     return S_OK;
 }
 
 bool VtIo::IsUsingVt() const
 {
-    return _initialized;
+    return _state != State::Uninitialized;
 }
 
 // Routine Description:
@@ -151,50 +141,64 @@ bool VtIo::IsUsingVt() const
 [[nodiscard]] HRESULT VtIo::StartIfNeeded()
 {
     // If we haven't been set up, do nothing (because there's nothing to start)
-    if (!_initialized)
+    if (_state != State::Initialized)
     {
         return S_FALSE;
     }
 
+    _state = State::Starting;
+
+    // SetWindowVisibility uses the console lock to protect access to _pVtRenderEngine.
+    assert(ServiceLocator::LocateGlobals().getConsoleInformation().IsConsoleLocked());
+
+    try
+    {
+        if (IsValidHandle(_hInput.get()))
+        {
+            _pVtInputThread = std::make_unique<VtInputThread>(std::move(_hInput), _lookingForCursorPosition);
+        }
+    }
+    CATCH_RETURN();
+
     if (_pVtInputThread)
     {
         LOG_IF_FAILED(_pVtInputThread->Start());
-    }
 
-    {
-        Writer writer{ this };
-
-        // MSFT: 15813316
-        // If the terminal application wants us to inherit the cursor position,
-        // we're going to emit a VT sequence to ask for the cursor position.
-        // If we get a response, the InteractDispatch will call SetCursorPosition,
-        // which will call to our VtIo::SetCursorPosition method.
-        //
-        // By sending the request before sending the DA1 one, we can simply
-        // wait for the DA1 response below and effectively wait for both.
-        if (_lookingForCursorPosition)
         {
-            writer.WriteUTF8("\x1b[6n"); // Cursor Position Report (DSR CPR)
+            Writer writer{ this };
+
+            // MSFT: 15813316
+            // If the terminal application wants us to inherit the cursor position,
+            // we're going to emit a VT sequence to ask for the cursor position.
+            // If we get a response, the InteractDispatch will call SetCursorPosition,
+            // which will call to our VtIo::SetCursorPosition method.
+            //
+            // By sending the request before sending the DA1 one, we can simply
+            // wait for the DA1 response below and effectively wait for both.
+            if (_lookingForCursorPosition)
+            {
+                writer.WriteUTF8("\x1b[6n"); // Cursor Position Report (DSR CPR)
+            }
+
+            // GH#4999 - Send a sequence to the connected terminal to request
+            // win32-input-mode from them. This will enable the connected terminal to
+            // send us full INPUT_RECORDs as input. If the terminal doesn't understand
+            // this sequence, it'll just ignore it.
+            writer.WriteUTF8(
+                "\x1b[c" // DA1 Report (Primary Device Attributes)
+                "\x1b[?1004h" // Focus Event Mode
+                "\x1b[?9001h" // Win32 Input Mode
+            );
+
+            writer.Submit();
         }
 
-        // GH#4999 - Send a sequence to the connected terminal to request
-        // win32-input-mode from them. This will enable the connected terminal to
-        // send us full INPUT_RECORDs as input. If the terminal doesn't understand
-        // this sequence, it'll just ignore it.
-        writer.WriteUTF8(
-            "\x1b[c" // DA1 Report (Primary Device Attributes)
-            "\x1b[?1004h" // Focus Event Mode
-            "\x1b[?9001h" // Win32 Input Mode
-        );
-
-        writer.Submit();
-    }
-
-    {
-        // Allow the input thread to momentarily gain the console lock.
-        auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-        const auto suspension = gci.SuspendLock();
-        _deviceAttributes = _pVtInputThread->WaitUntilDA1(3000);
+        {
+            // Allow the input thread to momentarily gain the console lock.
+            auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+            const auto suspension = gci.SuspendLock();
+            _deviceAttributes = _pVtInputThread->WaitUntilDA1(3000);
+        }
     }
 
     if (_pPtySignalInputThread)
@@ -208,6 +212,17 @@ bool VtIo::IsUsingVt() const
         _pPtySignalInputThread->ConnectConsole();
     }
 
+    if (_state != State::Starting)
+    {
+        // Here's where we _could_ call CloseConsoleProcessState(), but this function
+        // only gets get called once when the first client connects and CONSOLE_INITIALIZED
+        // is not set yet. The process list may already contain that first client,
+        // but since it hasn't finished connecting yet, it won't react to a CTRL_CLOSE_EVENT.
+        // Instead, we return an error here which will abort the connection setup.
+        return E_FAIL;
+    }
+
+    _state = State::Running;
     return S_OK;
 }
 
@@ -244,46 +259,20 @@ void VtIo::CreatePseudoWindow()
     }
 }
 
-// Method Description:
-// - Create and start the signal thread. The signal thread can be created
-//      independent of the i/o threads, and doesn't require a client first
-//      attaching to the console. We need to create it first and foremost,
-//      because it's possible that a terminal application could
-//      CreatePseudoConsole, then ClosePseudoConsole without ever attaching a
-//      client. Should that happen, we still need to exit.
-// Arguments:
-// - <none>
-// Return Value:
-// - S_FALSE if we're not in VtIo mode,
-//   S_OK if we succeeded,
-//   otherwise an appropriate HRESULT indicating failure.
-[[nodiscard]] HRESULT VtIo::CreateAndStartSignalThread() noexcept
-{
-    if (!_initialized)
-    {
-        return S_FALSE;
-    }
-
-    // If we were passed a signal handle, try to open it and make a signal reading thread.
-    if (IsValidHandle(_hSignal.get()))
-    {
-        try
-        {
-            _pPtySignalInputThread = std::make_unique<PtySignalInputThread>(std::move(_hSignal));
-
-            // Start it if it was successfully created.
-            RETURN_IF_FAILED(_pPtySignalInputThread->Start());
-        }
-        CATCH_RETURN();
-    }
-
-    return S_OK;
-}
-
 void VtIo::SendCloseEvent()
 {
     LockConsole();
     const auto unlock = wil::scope_exit([] { UnlockConsole(); });
+
+    // If we're still in the process of starting up, and we're asked to shut down
+    // (broken pipe), `VtIo::StartIfNeeded()` will handle the cleanup for us.
+    // This can happen during the call to `WaitUntilDA1`, because we relinquish
+    // ownership of the console lock.
+    if (_state == State::Starting)
+    {
+        _state = State::StartupFailed;
+        return;
+    }
 
     // This function is called when the ConPTY signal pipe is closed (PtySignalInputThread) and when the input
     // pipe is closed (VtIo). Usually these two happen at about the same time. This if condition is a bit of
