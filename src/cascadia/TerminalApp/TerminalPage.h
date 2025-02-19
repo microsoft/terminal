@@ -121,6 +121,8 @@ namespace winrt::TerminalApp::implementation
         bool FocusMode() const;
         bool Fullscreen() const;
         bool AlwaysOnTop() const;
+        bool ShowTabsFullscreen() const;
+        void SetShowTabsFullscreen(bool newShowTabsFullscreen);
         void SetFullscreen(bool);
         void SetFocusMode(const bool inFocusMode);
         void Maximized(bool newMaximized);
@@ -182,7 +184,6 @@ namespace winrt::TerminalApp::implementation
         til::typed_event<IInspectable, IInspectable> SummonWindowRequested;
         til::typed_event<IInspectable, winrt::Microsoft::Terminal::Control::WindowSizeChangedEventArgs> WindowSizeChanged;
 
-        til::typed_event<IInspectable, IInspectable> CloseRequested;
         til::typed_event<IInspectable, IInspectable> OpenSystemMenu;
         til::typed_event<IInspectable, IInspectable> QuitRequested;
         til::typed_event<IInspectable, winrt::Microsoft::Terminal::Control::ShowWindowArgs> ShowWindowChanged;
@@ -229,6 +230,7 @@ namespace winrt::TerminalApp::implementation
         bool _isFullscreen{ false };
         bool _isMaximized{ false };
         bool _isAlwaysOnTop{ false };
+        bool _showTabsFullscreen{ false };
 
         std::optional<uint32_t> _loadFromPersistedLayoutIdx{};
 

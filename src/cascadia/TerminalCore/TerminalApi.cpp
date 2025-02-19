@@ -140,7 +140,10 @@ unsigned int Terminal::GetInputCodePage() const noexcept
 
 void Terminal::CopyToClipboard(wil::zwstring_view content)
 {
-    _pfnCopyToClipboard(content);
+    if (_clipboardOperationsAllowed)
+    {
+        _pfnCopyToClipboard(content);
+    }
 }
 
 // Method Description:

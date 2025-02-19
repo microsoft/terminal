@@ -193,6 +193,7 @@ void AppHost::Initialize()
 
     _window->SetAlwaysOnTop(_windowLogic.GetInitialAlwaysOnTop());
     _window->SetAutoHideWindow(_windowLogic.AutoHideWindow());
+    _window->SetShowTabsFullscreen(_windowLogic.GetInitialShowTabsFullscreen());
 
     // MORE EVENT HANDLERS HERE!
     // MAKE SURE THEY ARE ALL:
@@ -213,9 +214,6 @@ void AppHost::Initialize()
     _windowCallbacks.WindowCloseButtonClicked = _window->WindowCloseButtonClicked([this]() {
         _windowLogic.CloseWindow();
     });
-    // If the user requests a close in another way handle the same as if the 'X'
-    // was clicked.
-    _revokers.CloseRequested = _windowLogic.CloseRequested(winrt::auto_revoke, { this, &AppHost::_CloseRequested });
 
     // Add an event handler to plumb clicks in the titlebar area down to the
     // application layer.
@@ -1023,6 +1021,7 @@ void AppHost::_HandleSettingsChanged(const winrt::Windows::Foundation::IInspecta
 
     _window->SetMinimizeToNotificationAreaBehavior(_windowLogic.GetMinimizeToNotificationArea());
     _window->SetAutoHideWindow(_windowLogic.AutoHideWindow());
+    _window->SetShowTabsFullscreen(_windowLogic.ShowTabsFullscreen());
     _updateTheme();
 }
 

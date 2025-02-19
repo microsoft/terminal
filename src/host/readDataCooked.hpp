@@ -36,7 +36,7 @@ public:
     void SetInsertMode(bool insertMode) noexcept;
     bool IsEmpty() const noexcept;
     bool PresentingPopup() const noexcept;
-    til::point_span GetBoundaries() const noexcept;
+    til::point_span GetBoundaries() noexcept;
 
 private:
     static constexpr size_t CommandNumberMaxInputLength = 5;
@@ -129,6 +129,7 @@ private:
     void _handlePostCharInputLoop(bool isUnicode, size_t& numBytes, ULONG& controlKeyState);
     void _transitionState(State state) noexcept;
     til::point _getViewportCursorPosition() const noexcept;
+    til::point _getOriginInViewport() noexcept;
     void _replace(size_t offset, size_t remove, const wchar_t* input, size_t count);
     void _replace(const std::wstring_view& str);
     std::wstring_view _slice(size_t from, size_t to) const noexcept;
@@ -166,7 +167,7 @@ private:
     bool _redrawPending = false;
     bool _clearPending = false;
 
-    til::point _originInViewport;
+    std::optional<til::point> _originInViewport;
     // This value is in the pager coordinate space. (0,0) is the first character of the
     // first line, independent on where the prompt actually appears on the screen.
     // The coordinate is "end exclusive", so the last character is 1 in front of it.

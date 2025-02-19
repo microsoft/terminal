@@ -568,6 +568,10 @@
     <value>Разрешить DECRQCRA (Request Checksum of Rectangular Area)</value>
     <comment>{Locked="DECRQCRA"}{Locked="Request Checksum of Rectangular Area"}Header for a control to toggle support for the DECRQCRA control sequence.</comment>
   </data>
+  <data name="Profile_AllowVtClipboardWrite.Header" xml:space="preserve">
+    <value>Разрешить OSC 52 (Manipulate Selection Data) запись в буфер обмена</value>
+    <comment>{Locked="OSC 52"}{Locked="Manipulate Selection Data"}Header for a control to toggle support for applications to change the contents of the Windows system clipboard.</comment>
+  </data>
   <data name="Globals_AllowHeadless.Header" xml:space="preserve">
     <value>Разрешить запуск терминала Windows в фоновом режиме</value>
     <comment>Header for a control to toggle support for Windows Terminal to run in the background.</comment>
@@ -2025,19 +2029,19 @@
     <comment>Text label for secondary button the color picker content dialog. When clicked, the operation of selecting a color is cancelled by the user.</comment>
   </data>
   <data name="Profile_CursorColor_NullableColorPicker.NullColorButtonLabel" xml:space="preserve">
-    <value>Использовать цвет курсора из цветовой схемы</value>
+    <value>Использовать цвет схемы</value>
     <comment>Label for a button directing the user to use the cursor color defined in the terminal's current color scheme.</comment>
   </data>
   <data name="Profile_Foreground_NullableColorPicker.NullColorButtonLabel" xml:space="preserve">
-    <value>Использовать цвет переднего плана из цветовой схемы</value>
+    <value>Использовать цвет схемы</value>
     <comment>Label for a button directing the user to use the foreground color defined in the terminal's current color scheme.</comment>
   </data>
   <data name="Profile_Background_NullableColorPicker.NullColorButtonLabel" xml:space="preserve">
-    <value>Использовать цвет фона из цветовой схемы</value>
+    <value>Использовать цвет схемы</value>
     <comment>Label for a button directing the user to use the background color defined in the terminal's current color scheme.</comment>
   </data>
   <data name="Profile_SelectionBackground_NullableColorPicker.NullColorButtonLabel" xml:space="preserve">
-    <value>Использовать выбранный цвет фона из цветовой схемы</value>
+    <value>Использовать цвет схемы</value>
     <comment>Label for a button directing the user to use the selection background color defined in the terminal's current color scheme.</comment>
   </data>
   <data name="Profile_IconTypeNone" xml:space="preserve">
@@ -2272,6 +2276,14 @@
     <value>Отображать экран в заголовке, когда Терминал Windows от имени администратора</value>
     <comment>Header for a control to toggle displaying a shield in the title bar of the app. "Admin" refers to elevated sessions like "run as Admin"</comment>
   </data>
+  <data name="Globals_ShowTabsFullscreen.Header" xml:space="preserve">
+    <value>Показывать вкладки в полноэкранном режиме</value>
+    <comment>Header for a control to toggle if the app should show the tabs when in full screen state.</comment>
+  </data>
+  <data name="Globals_ShowTabsFullscreen.HelpText" xml:space="preserve">
+    <value>Если этот параметр включен, панель вкладок будет отображаться, когда приложение будет полноэкранным.</value>
+    <comment>A description for what the "show tabs in full screen" setting does.</comment>
+  </data>
   <data name="Profile_PathTranslationStyle.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Преобразование пути</value>
     <comment>Name for a control to select how file and directory paths are translated.</comment>
@@ -2311,5 +2323,9 @@
   </data>
   <data name="Profile_Source_Orphaned.HelpText" xml:space="preserve">
     <value>Указывает программное обеспечение, которое изначально создало этот профиль.</value>
+  </data>
+  <data name="Profile_TabTitleNone" xml:space="preserve">
+    <value>Нет</value>
+    <comment>Text displayed when the tab title is not defined.</comment>
   </data>
 </root>

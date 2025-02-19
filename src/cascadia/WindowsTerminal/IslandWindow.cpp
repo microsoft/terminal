@@ -895,6 +895,11 @@ void IslandWindow::ShowWindowChanged(const bool showOrHide)
     }
 }
 
+void IslandWindow::SetShowTabsFullscreen(const bool newShowTabsFullscreen)
+{
+    _showTabsFullscreen = newShowTabsFullscreen;
+}
+
 // Method Description
 // - Flash the taskbar icon, indicating to the user that something needs their attention
 void IslandWindow::FlashTaskbar()

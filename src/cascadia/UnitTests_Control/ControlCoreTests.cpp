@@ -419,7 +419,7 @@ namespace ControlUnitTests
             const auto& start = core->_terminal->GetSelectionAnchor();
             const auto& end = core->_terminal->GetSelectionEnd();
             const til::point expectedStart{ 17, 0 };
-            const til::point expectedEnd{ 23, 0 };
+            const til::point expectedEnd{ 24, 0 };
             VERIFY_ARE_EQUAL(expectedStart, start);
             VERIFY_ARE_EQUAL(expectedEnd, end);
         }
@@ -440,7 +440,7 @@ namespace ControlUnitTests
             const auto& start = core->_terminal->GetSelectionAnchor();
             const auto& end = core->_terminal->GetSelectionEnd();
             const til::point expectedStart{ 17, 4 };
-            const til::point expectedEnd{ 23, 4 };
+            const til::point expectedEnd{ 24, 4 };
             VERIFY_ARE_EQUAL(expectedStart, start);
             VERIFY_ARE_EQUAL(expectedEnd, end);
         }
@@ -450,7 +450,7 @@ namespace ControlUnitTests
             const auto& start = core->_terminal->GetSelectionAnchor();
             const auto& end = core->_terminal->GetSelectionEnd();
             const til::point expectedStart{ 17, 0 };
-            const til::point expectedEnd{ 23, 0 };
+            const til::point expectedEnd{ 24, 0 };
             VERIFY_ARE_EQUAL(expectedStart, start);
             VERIFY_ARE_EQUAL(expectedEnd, end);
         }
@@ -460,7 +460,7 @@ namespace ControlUnitTests
             const auto& start = core->_terminal->GetSelectionAnchor();
             const auto& end = core->_terminal->GetSelectionEnd();
             const til::point expectedStart{ 17, 4 };
-            const til::point expectedEnd{ 23, 4 };
+            const til::point expectedEnd{ 24, 4 };
             VERIFY_ARE_EQUAL(expectedStart, start);
             VERIFY_ARE_EQUAL(expectedEnd, end);
         }
@@ -502,7 +502,7 @@ namespace ControlUnitTests
             const auto& start = core->_terminal->GetSelectionAnchor();
             const auto& end = core->_terminal->GetSelectionEnd();
             const til::point expectedStart{ 24, 0 }; // The character after the prompt
-            const til::point expectedEnd{ 21, 3 }; // x = the end of the text
+            const til::point expectedEnd{ 22, 3 }; // x = the end of the text + 1 (exclusive end)
             VERIFY_ARE_EQUAL(expectedStart, start);
             VERIFY_ARE_EQUAL(expectedEnd, end);
         }
@@ -663,7 +663,7 @@ namespace ControlUnitTests
             const auto& start = core->_terminal->GetSelectionAnchor();
             const auto& end = core->_terminal->GetSelectionEnd();
             const til::point expectedStart{ 20, 4 }; // The character after the prompt
-            const til::point expectedEnd{ 26, 34 }; // x = the end of the text
+            const til::point expectedEnd{ 27, 34 }; // x = the end of the text + 1 (exclusive end)
             VERIFY_ARE_EQUAL(expectedStart, start);
             VERIFY_ARE_EQUAL(expectedEnd, end);
         }
@@ -673,7 +673,7 @@ namespace ControlUnitTests
             const auto& start = core->_terminal->GetSelectionAnchor();
             const auto& end = core->_terminal->GetSelectionEnd();
             const til::point expectedStart{ 24, 0 }; // The character after the prompt
-            const til::point expectedEnd{ 21, 3 }; // x = the end of the text
+            const til::point expectedEnd{ 22, 3 }; // x = the end of the text + 1 (exclusive end)
             VERIFY_ARE_EQUAL(expectedStart, start);
             VERIFY_ARE_EQUAL(expectedEnd, end);
         }
@@ -731,7 +731,7 @@ namespace ControlUnitTests
             const auto& start = core->_terminal->GetSelectionAnchor();
             const auto& end = core->_terminal->GetSelectionEnd();
             const til::point expectedStart{ 20, 4 }; // The character after the prompt
-            const til::point expectedEnd{ 29, 34 }; // x = the end of the text
+            const til::point expectedEnd{ 30, 34 }; // x = the end of the text + 1 (exclusive end)
             VERIFY_ARE_EQUAL(expectedStart, start);
             VERIFY_ARE_EQUAL(expectedEnd, end);
         }
@@ -741,7 +741,7 @@ namespace ControlUnitTests
             const auto& start = core->_terminal->GetSelectionAnchor();
             const auto& end = core->_terminal->GetSelectionEnd();
             const til::point expectedStart{ 24, 0 }; // The character after the prompt
-            const til::point expectedEnd{ 21, 3 }; // x = the end of the text
+            const til::point expectedEnd{ 22, 3 }; // x = the end of the text + 1 (exclusive end)
             VERIFY_ARE_EQUAL(expectedStart, start);
             VERIFY_ARE_EQUAL(expectedEnd, end);
         }
@@ -804,7 +804,7 @@ namespace ControlUnitTests
             const auto& start = core->_terminal->GetSelectionAnchor();
             const auto& end = core->_terminal->GetSelectionEnd();
             const til::point expectedStart{ 1, 1 };
-            const til::point expectedEnd{ 1, 2 };
+            const til::point expectedEnd{ 2, 2 };
             VERIFY_ARE_EQUAL(expectedStart, start);
             VERIFY_ARE_EQUAL(expectedEnd, end);
         }

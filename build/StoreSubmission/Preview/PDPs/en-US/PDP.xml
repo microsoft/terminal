@@ -54,14 +54,11 @@ This is an open source project and we welcome community participation. To partic
     <!-- _locComment_text="{MaxLength=255} App DevStudio" -->
   </DevStudio>
   <ReleaseNotes _locID="App_ReleaseNotes">
-    <!-- _locComment_text="{MaxLength=1500} {Locked=__VERSION_NUMBER__} App Release Note" -->Version __VERSION_NUMBER__
+    <!-- _locComment_text="{MaxLength=1500} {Locked=__VERSION_NUMBER__}{Locked=wt.exe} App Release Note" -->Version __VERSION_NUMBER__
 
-- We've rewritten how console applications are hosted inside Terminal! Please report any bugs you encounter.
-- Terminal now supports Sixels!
-- You can now open a docked panel containing snippets of commands you have saved to use later
-- Command Prompt users on the latest Windows 11 release may see a "quick tip" icon that suggests installable software from WinGet
-- Selected text will now be much more visible (and customizable!)
-- A number of reliabilty bugs, convenience issues and annoyances have been fixed.
+- We've added dozens of settings to the UI that once only existed in the JSON file, including a new page for customizing the layout of your New Tab menu!
+- We have rearchitected window management to improve reliability; please file any bugs you encounter with the wt.exe alias
+- Profiles now show an icon if they've been hidden or refer to programs which were uninstalled.
 
 Please see our GitHub releases page for additional details.
   </ReleaseNotes>
