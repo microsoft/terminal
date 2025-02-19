@@ -256,7 +256,7 @@ void SettingsLoader::FindFragmentsAndMergeIntoUserSettings()
                     const auto content = til::io::read_file_as_utf8_string_if_exists(fragmentExt.path());
                     if (!content.empty())
                     {
-                        _parseFragment(source, content, fragmentSettings, scope, layerFragment);
+                        _parseFragment(source, content, fragmentSettings, scope, fragmentExt.path().filename().wstring(), layerFragment);
                     }
                 }
                 CATCH_LOG();
@@ -338,7 +338,7 @@ void SettingsLoader::FindFragmentsAndMergeIntoUserSettings()
             parseAndLayerFragmentFiles(path,
                                        packageName,
                                        FragmentScope::User,
-                                       _ignoredNamespaces.contains(std::wstring_view{ packageName })); // layerFragment
+                                       !_ignoredNamespaces.contains(std::wstring_view{ packageName })); // layerFragment
         }
     }
 }
@@ -349,7 +349,7 @@ void SettingsLoader::FindFragmentsAndMergeIntoUserSettings()
 void SettingsLoader::MergeFragmentIntoUserSettings(const winrt::hstring& source, const std::string_view& content)
 {
     ParsedSettings fragmentSettings;
-    _parseFragment(source, content, fragmentSettings, FragmentScope::User, true);
+    _parseFragment(source, content, fragmentSettings, FragmentScope::User, hstring{ L"filename.json" }, true);
 }
 
 // Call this method before passing SettingsLoader to the CascadiaSettings constructor.
@@ -729,15 +729,16 @@ void SettingsLoader::_parse(const OriginTag origin, const winrt::hstring& source
 // Just like _parse, but is to be used for fragment files, which don't support anything but color
 // schemes and profiles. Additionally this function supports profiles which specify an "updates" key.
 // - scope: The scope of the fragment file (user or machine).
+// - jsonFilename: The filename of the JSON file being parsed.
 // - applyToSettings: If true, the parsed settings will be applied to the user settings. Otherwise, load the fragment for the settings UI, but don't apply it.
-void SettingsLoader::_parseFragment(const winrt::hstring& source, const std::string_view& content, ParsedSettings& settings, FragmentScope scope, bool applyToSettings)
+void SettingsLoader::_parseFragment(const winrt::hstring& source, const std::string_view& content, ParsedSettings& settings, FragmentScope scope, std::wstring_view jsonFilename, bool applyToSettings)
 {
     auto json = _parseJson(content);
 
     Json::StreamWriterBuilder styledWriter;
     styledWriter["indentation"] = "    ";
     styledWriter["commentStyle"] = "All";
-    auto fragmentSettings = winrt::make_self<FragmentSettings>(source, hstring{ til::u8u16(Json::writeString(styledWriter, json.root)) }, scope);
+    auto fragmentSettings = winrt::make_self<FragmentSettings>(source, hstring{ til::u8u16(Json::writeString(styledWriter, json.root)) }, hstring{ jsonFilename }, scope);
 
     settings.clear();
 

@@ -144,7 +144,7 @@ Model::CascadiaSettings CascadiaSettings::Copy() const
 
 Model::FragmentSettings FragmentSettings::Copy() const
 {
-    auto fragment{ winrt::make_self<FragmentSettings>(_source, _json, _scope) };
+    auto fragment{ winrt::make_self<FragmentSettings>(_source, _json, _jsonSource, _scope) };
 
     std::vector<Model::FragmentProfileEntry> modifiedProfiles;
     modifiedProfiles.reserve(_modifiedProfiles.Size());

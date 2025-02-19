@@ -119,17 +119,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _extensionsVM = *extensionsVMImpl;
         _extensionsViewModelChangedRevoker = _extensionsVM.PropertyChanged(winrt::auto_revoke, [=](auto&&, const PropertyChangedEventArgs& args) {
             const auto settingName{ args.PropertyName() };
-            if (settingName == L"CurrentExtension")
+            if (settingName == L"CurrentExtensionSource")
             {
-                if (const auto& currentExtension = _extensionsVM.CurrentExtension())
+                if (const auto& currentExtensionSource = _extensionsVM.CurrentExtensionSource(); currentExtensionSource != hstring{})
                 {
-                    const auto crumb = winrt::make<Breadcrumb>(box_value(currentExtension), currentExtension.Fragment().Source(), BreadcrumbSubPage::Extensions_Extension);
+                    const auto crumb = winrt::make<Breadcrumb>(box_value(currentExtensionSource), currentExtensionSource, BreadcrumbSubPage::Extensions_Extension);
                     _breadcrumbs.Append(crumb);
                     SettingsMainPage_ScrollViewer().ScrollToVerticalOffset(0);
                 }
                 else
                 {
-                    // If we don't have a current folder, we're at the root of the Extensions page
+                    // If we don't have a current extension source, we're at the root of the Extensions page
                     _breadcrumbs.Clear();
                     const auto crumb = winrt::make<Breadcrumb>(box_value(extensionsTag), RS_(L"Nav_Extensions/Content"), BreadcrumbSubPage::None);
                     _breadcrumbs.Append(crumb);
@@ -206,11 +206,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                         {
                             if (const auto& breadcrumbStringTag{ crumb->Tag().try_as<hstring>() })
                             {
-                                if (stringTag == breadcrumbStringTag)
+                                if (stringTag == breadcrumbStringTag || (crumb->SubPage() == BreadcrumbSubPage::Extensions_Extension && stringTag == extensionsTag))
                                 {
                                     // found the one that was selected before the refresh
+                                    // If the subpage was Extensions_Extension, we need to navigate to the Extensions page (stringTag is the CurrentExtensionSource)
                                     SettingsNav().SelectedItem(item);
-                                    _Navigate(*stringTag, crumb->SubPage());
+                                    _Navigate(*breadcrumbStringTag, crumb->SubPage());
                                     return;
                                 }
                             }
@@ -222,17 +223,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                                     // _Navigate() will handle trying to find the right subpage
                                     SettingsNav().SelectedItem(item);
                                     _Navigate(breadcrumbFolderEntry, BreadcrumbSubPage::NewTabMenu_Folder);
-                                    return;
-                                }
-                            }
-                            else if (const auto& breadcrumbExtensionTag{ crumb->Tag().try_as<Editor::FragmentExtensionViewModel>() })
-                            {
-                                if (stringTag == extensionsTag)
-                                {
-                                    // navigate to the Extensions page,
-                                    // _Navigate() will handle trying to find the right subpage
-                                    SettingsNav().SelectedItem(item);
-                                    _Navigate(breadcrumbExtensionTag, BreadcrumbSubPage::Extensions_Extension);
                                     return;
                                 }
                             }
@@ -484,13 +474,39 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 _breadcrumbs.Append(crumb);
             }
         }
-        else if (clickedItemTag == extensionsTag)
+        else if (clickedItemTag == extensionsTag || subPage == BreadcrumbSubPage::Extensions_Extension)
         {
-            if (_extensionsVM.CurrentExtension())
+            if (subPage == BreadcrumbSubPage::Extensions_Extension)
             {
-                // Setting CurrentExtension triggers the PropertyChanged event,
+                bool found = false;
+                for (const auto& fragExtVM : _extensionsVM.CurrentExtensionFragments())
+                {
+                    // clickedItemTag may be an extension source. Check if it exists.
+                    if (fragExtVM.as<Editor::FragmentExtensionViewModel>().Fragment().Source() == clickedItemTag)
+                    {
+                        // Add "Extensions" main breadcrumb first
+                        contentFrame().Navigate(xaml_typename<Editor::Extensions>(), _extensionsVM);
+                        const auto crumb = winrt::make<Breadcrumb>(box_value(extensionsTag), RS_(L"Nav_Extensions/Content"), BreadcrumbSubPage::None);
+                        _breadcrumbs.Append(crumb);
+
+                        // Take advantage of the PropertyChanged event to navigate
+                        // to the correct extension and build the breadcrumbs as we go
+                        _extensionsVM.CurrentExtensionSource(clickedItemTag);
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found)
+                {
+                    // Couldn't find the extension, so navigate back to the Extensions page
+                    _extensionsVM.CurrentExtensionSource(hstring{});
+                }
+            }
+            else if (_extensionsVM.CurrentExtensionSource() != hstring{})
+            {
+                // Setting CurrentExtensionSource triggers the PropertyChanged event,
                 // which will navigate to the correct page and update the breadcrumbs appropriately
-                _extensionsVM.CurrentExtension(nullptr);
+                _extensionsVM.CurrentExtensionSource(hstring{});
             }
             else
             {
@@ -629,40 +645,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
-    void MainPage::_Navigate(const Editor::FragmentExtensionViewModel& extVM, BreadcrumbSubPage subPage)
-    {
-        _PreNavigateHelper();
-
-        contentFrame().Navigate(xaml_typename<Editor::Extensions>(), _extensionsVM);
-        const auto crumb = winrt::make<Breadcrumb>(box_value(extensionsTag), RS_(L"Nav_Extensions/Content"), BreadcrumbSubPage::None);
-        _breadcrumbs.Append(crumb);
-
-        if (subPage == BreadcrumbSubPage::None)
-        {
-            _extensionsVM.CurrentExtension(nullptr);
-        }
-        else if (subPage == BreadcrumbSubPage::Extensions_Extension && extVM)
-        {
-            bool found{ false };
-            for (const auto& ext : _extensionsVM.FragmentExtensions())
-            {
-                if (ext.Fragment().Source() == extVM.Fragment().Source())
-                {
-                    // Take advantage of the PropertyChanged event to navigate
-                    // to the correct extension and build the breadcrumbs as we go
-                    _extensionsVM.CurrentExtension(ext);
-                    found = true;
-                    break;
-                }
-            }
-            if (!found)
-            {
-                // Couldn't find a match, just go back to the root
-                _extensionsVM.CurrentExtension(nullptr);
-            }
-        }
-    }
-
     void MainPage::OpenJsonTapped(const IInspectable& /*sender*/, const Windows::UI::Xaml::Input::TappedRoutedEventArgs& /*args*/)
     {
         const auto window = CoreWindow::GetForCurrentThread();
@@ -708,10 +690,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             else if (const auto ntmEntryViewModel = tag.try_as<NewTabMenuEntryViewModel>())
             {
                 _Navigate(*ntmEntryViewModel, subPage);
-            }
-            else if (const auto extensionViewModel = tag.try_as<FragmentExtensionViewModel>())
-            {
-                _Navigate(*extensionViewModel, subPage);
             }
             else
             {

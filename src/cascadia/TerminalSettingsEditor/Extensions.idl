@@ -14,10 +14,8 @@ namespace Microsoft.Terminal.Settings.Editor
     [default_interface] runtimeclass ExtensionsViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged
     {
         // Properties
-        // TODO CARLOS: Replace "CurrentExtensionX" by just exposing them off of FragmentExtensionViewModel
-        FragmentExtensionViewModel CurrentExtension;
-        String CurrentExtensionSource { get; };
-        String CurrentExtensionJson { get; };
+        String CurrentExtensionSource;
+        IVector<Object> CurrentExtensionFragments { get; };
         String CurrentExtensionScope { get; };
         Boolean IsExtensionView { get; };
         Boolean NoActiveExtensions { get; };
@@ -26,10 +24,10 @@ namespace Microsoft.Terminal.Settings.Editor
         Boolean NoSchemesAdded { get; };
 
         // Views
-        Windows.Foundation.Collections.IVectorView<FragmentExtensionViewModel> FragmentExtensions { get; };
-        Windows.Foundation.Collections.IObservableVector<FragmentProfileViewModel> ProfilesModified { get; };
-        Windows.Foundation.Collections.IObservableVector<FragmentProfileViewModel> ProfilesAdded { get; };
-        Windows.Foundation.Collections.IObservableVector<FragmentColorSchemeViewModel> ColorSchemesAdded { get; };
+        IObservableVector<ExtensionPackageViewModel> ExtensionPackages { get; };
+        IObservableVector<FragmentProfileViewModel> ProfilesModified { get; };
+        IObservableVector<FragmentProfileViewModel> ProfilesAdded { get; };
+        IObservableVector<FragmentColorSchemeViewModel> ColorSchemesAdded { get; };
 
         // Methods
         void UpdateSettings(Microsoft.Terminal.Settings.Model.CascadiaSettings settings, ColorSchemesPageViewModel colorSchemesPageVM);
@@ -40,15 +38,19 @@ namespace Microsoft.Terminal.Settings.Editor
         event Windows.Foundation.TypedEventHandler<Object, ColorSchemeViewModel> NavigateToColorSchemeRequested;
     }
 
+    [default_interface] runtimeclass ExtensionPackageViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged
+    {
+        String Source { get; };
+        Boolean Enabled { get; };
+        String AccessibleName { get; };
+    }
+
     [default_interface] runtimeclass FragmentExtensionViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged
     {
         Microsoft.Terminal.Settings.Model.FragmentSettings Fragment { get; };
-        Windows.Foundation.Collections.IVectorView<FragmentProfileViewModel> ProfilesModified { get; };
-        Windows.Foundation.Collections.IVectorView<FragmentProfileViewModel> ProfilesAdded { get; };
-        Windows.Foundation.Collections.IVectorView<FragmentColorSchemeViewModel> ColorSchemesAdded { get; };
-
-        // TODO CARLOS: JSON should be an IVector (requires settings model changes)
-        String Json { get; };
+        IVectorView<FragmentProfileViewModel> ProfilesModified { get; };
+        IVectorView<FragmentProfileViewModel> ProfilesAdded { get; };
+        IVectorView<FragmentColorSchemeViewModel> ColorSchemesAdded { get; };
     }
 
     [default_interface] runtimeclass FragmentProfileViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged

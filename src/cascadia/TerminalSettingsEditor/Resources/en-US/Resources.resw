@@ -2399,8 +2399,8 @@
     <value>Scope</value>
     <comment>Header for the installation scope of the extension</comment>
   </data>
-  <data name="Extensions_Json.Header" xml:space="preserve">
-    <value>JSON</value>
-    <comment>{Locked="JSON"}</comment>
+  <data name="Extension_StateDisabled.Text" xml:space="preserve">
+    <value>Disabled</value>
+    <comment>Text displayed when an extension is disabled</comment>
   </data>
 </root>

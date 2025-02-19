@@ -39,12 +39,26 @@
                 <Setter Property="VerticalScrollBarVisibility" Value="Disabled" />
             </Style>
 
-            <DataTemplate x:Key="FragmentSettingsTemplate"
-                          x:DataType="local:FragmentExtensionViewModel">
-                <Button Click="FragmentNavigator_Click"
-                        Content="{x:Bind Fragment.Source}"
+            <DataTemplate x:Key="ExtensionNavigatorTemplate"
+                          x:DataType="local:ExtensionPackageViewModel">
+                <Button AutomationProperties.Name="{x:Bind AccessibleName}"
+                        Click="ExtensionNavigator_Click"
                         Style="{StaticResource NavigatorButtonStyle}"
-                        Tag="{x:Bind}" />
+                        Tag="{x:Bind Source}">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0"
+                                   Text="{x:Bind Source}" />
+                        <TextBlock x:Uid="Extension_StateDisabled"
+                                   Grid.Column="1"
+                                   HorizontalAlignment="Right"
+                                   Style="{StaticResource SecondaryTextBlockStyle}"
+                                   Visibility="{x:Bind mtu:Converters.InvertedBooleanToVisibility(Enabled)}" />
+                    </Grid>
+                </Button>
             </DataTemplate>
 
             <DataTemplate x:Key="FragmentProfileViewModelTemplate"
@@ -77,6 +91,21 @@
                         </ScrollViewer>
                     </local:SettingContainer.Content>
                 </local:SettingContainer>
+            </DataTemplate>
+
+            <DataTemplate x:Key="JsonTemplate"
+                          x:DataType="local:FragmentExtensionViewModel">
+                <!--  This styling matches that of ExpanderSettingContainerStyle for consistency  -->
+                <muxc:Expander MinHeight="64"
+                               Margin="0,4,0,0"
+                               HorizontalAlignment="Stretch"
+                               HorizontalContentAlignment="Stretch"
+                               Header="{x:Bind Fragment.JsonSource}">
+                    <ScrollViewer Style="{StaticResource CodeBlockScrollViewerStyle}">
+                        <TextBlock Style="{StaticResource CodeBlockStyle}"
+                                   Text="{x:Bind Fragment.Json}" />
+                    </ScrollViewer>
+                </muxc:Expander>
             </DataTemplate>
 
             <!--
@@ -264,8 +293,8 @@
                        Style="{StaticResource ItalicDisclaimerStyle}"
                        Visibility="{x:Bind ViewModel.NoActiveExtensions, Mode=OneWay}" />
             <ItemsControl IsTabStop="False"
-                          ItemTemplate="{StaticResource FragmentSettingsTemplate}"
-                          ItemsSource="{x:Bind ViewModel.FragmentExtensions, Mode=OneWay}" />
+                          ItemTemplate="{StaticResource ExtensionNavigatorTemplate}"
+                          ItemsSource="{x:Bind ViewModel.ExtensionPackages}" />
         </StackPanel>
 
         <!--  [Extension View Only]  -->
@@ -273,9 +302,9 @@
         <StackPanel MaxWidth="{StaticResource StandardControlMaxWidth}"
                     Margin="0,-20,0,0"
                     Visibility="{x:Bind ViewModel.IsExtensionView, Mode=OneWay}">
-
-            <!--  Extension JSON  -->
+            <!--  Extension Status  -->
             <local:SettingContainer Header="{x:Bind ViewModel.CurrentExtensionSource, Mode=OneWay}"
+                                    StartExpanded="True"
                                     Style="{StaticResource ExpanderSettingContainerStyleWithComplexPreview}">
                 <local:SettingContainer.CurrentValue>
                     <ToggleSwitch Loaded="ExtensionLoaded"
@@ -288,15 +317,12 @@
                         <!--  Scope  -->
                         <local:SettingContainer x:Uid="Extensions_Scope"
                                                 Content="{x:Bind ViewModel.CurrentExtensionScope, Mode=OneWay}"
+                                                IsTabStop="False"
                                                 Style="{StaticResource SettingContainerWithTextContent}" />
                         <!--  JSON  -->
-                        <local:SettingContainer x:Uid="Extensions_Json"
-                                                Style="{StaticResource ExpanderSettingContainerStyle}">
-                            <ScrollViewer Style="{StaticResource CodeBlockScrollViewerStyle}">
-                                <TextBlock Style="{StaticResource CodeBlockStyle}"
-                                           Text="{x:Bind ViewModel.CurrentExtensionJson, Mode=OneWay}" />
-                            </ScrollViewer>
-                        </local:SettingContainer>
+                        <ItemsControl IsTabStop="False"
+                                      ItemTemplate="{StaticResource JsonTemplate}"
+                                      ItemsSource="{x:Bind ViewModel.CurrentExtensionFragments, Mode=OneWay}" />
                     </StackPanel>
                 </local:SettingContainer.Content>
             </local:SettingContainer>
