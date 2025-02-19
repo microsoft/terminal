@@ -430,12 +430,10 @@ OutputCellIterator ROW::WriteCells(OutputCellIterator it, const til::CoordType c
 
     auto currentColor = it->TextAttr();
     uint16_t colorUses = 0;
-    auto colorStarts = gsl::narrow_cast<uint16_t>(columnBegin);
+    auto colorStarts = columnBegin;
     auto currentIndex = colorStarts;
 
-    // finalColumnInRow is 32-bit and currentIndex is 16-bit. If finalColumnInRow is higher
-    // than the 16-bit integer limit, we will loop indefinitely.
-    while (it && currentIndex <= saturated_cast<uint16_t>(finalColumnInRow))
+    while (it && currentIndex <= finalColumnInRow)
     {
         // Fill the color if the behavior isn't set to keeping the current color.
         if (it->TextAttrBehavior() != TextAttributeBehavior::Current)
