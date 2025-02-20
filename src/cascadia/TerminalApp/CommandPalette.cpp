@@ -555,14 +555,10 @@ namespace winrt::TerminalApp::implementation
             const auto enteredItem = listViewItem.Content();
             if (const auto filteredCommand{ enteredItem.try_as<winrt::TerminalApp::FilteredCommand>() })
             {
-                // only preview submenu items (unsure about this as a requirement since for now we only preview color schemes)
-                if (_nestedActionStack.Size() > 0)
+                if (const auto actionPaletteItem{ filteredCommand.Item().try_as<winrt::TerminalApp::ActionPaletteItem>() })
                 {
-                    if (const auto actionPaletteItem{ filteredCommand.Item().try_as<winrt::TerminalApp::ActionPaletteItem>() })
-                    {
-                        // immediately preview the hovered scheme
-                        PreviewAction.raise(*this, actionPaletteItem.Command());
-                    }
+                    // immediately preview the hovered command
+                    PreviewAction.raise(*this, actionPaletteItem.Command());
                 }
             }
         }
