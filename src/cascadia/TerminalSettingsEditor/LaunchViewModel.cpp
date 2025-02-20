@@ -368,6 +368,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return _Settings.DefaultTerminals();
     }
 
+    bool LaunchViewModel::StartOnUserLoginAvailable()
+    {
+        return IsPackaged();
+    }
+
     safe_void_coroutine LaunchViewModel::PrepareStartOnUserLoginSettings()
     {
         if (!StartOnUserLoginAvailable())
@@ -381,11 +386,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _NotifyChanges(L"StartOnUserLoginConfigurable", L"StartOnUserLoginStatefulHelpText", L"StartOnUserLogin");
     }
 
-    bool LaunchViewModel::StartOnUserLoginAvailable()
-    {
-        return IsPackaged();
-    }
-
     bool LaunchViewModel::StartOnUserLoginConfigurable()
     {
         if (!_startOnUserLoginTask)
@@ -394,6 +394,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
         namespace WAM = winrt::Windows::ApplicationModel;
         const auto state{ _startOnUserLoginTask.State() };
+        // Terminal cannot change the state of the login task if it is any of the "ByUser" or "ByPolicy" states.
         return state == WAM::StartupTaskState::Disabled || state == WAM::StartupTaskState::Enabled;
     }
 
