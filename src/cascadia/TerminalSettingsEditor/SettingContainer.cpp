@@ -43,7 +43,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                     L"HelpText",
                     xaml_typename<hstring>(),
                     xaml_typename<Editor::SettingContainer>(),
-                    PropertyMetadata{ box_value(L"") });
+                    PropertyMetadata{ box_value(L""), PropertyChangedCallback{ &SettingContainer::_OnHelpTextChanged } });
         }
         if (!_CurrentValueProperty)
         {
@@ -90,48 +90,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         get_self<SettingContainer>(obj)->_UpdateOverrideSystem();
     }
 
-    void SettingContainer::OnApplyTemplate()
+    void SettingContainer::_OnHelpTextChanged(const DependencyObject& d, const DependencyPropertyChangedEventArgs& /*args*/)
     {
-        if (const auto& child{ GetTemplateChild(L"ResetButton") })
-        {
-            if (const auto& button{ child.try_as<Controls::Button>() })
-            {
-                // Apply click handler for the reset button.
-                // When clicked, we dispatch the bound ClearSettingValue event,
-                // resulting in inheriting the setting value from the parent.
-                button.Click([=](auto&&, auto&&) {
-                    ClearSettingValue.raise(*this, nullptr);
+        // update visibility for override message and reset button
+        const auto& obj{ d.try_as<Editor::SettingContainer>() };
+        get_self<SettingContainer>(obj)->_UpdateHelpText();
+    }
 
-                    // move the focus to the child control
-                    if (const auto& content{ Content() })
-                    {
-                        if (const auto& control{ content.try_as<Controls::Control>() })
-                        {
-                            control.Focus(FocusState::Programmatic);
-                            return;
-                        }
-                        else if (const auto& panel{ content.try_as<Controls::Panel>() })
-                        {
-                            for (const auto& panelChild : panel.Children())
-                            {
-                                if (const auto& panelControl{ panelChild.try_as<Controls::Control>() })
-                                {
-                                    panelControl.Focus(FocusState::Programmatic);
-                                    return;
-                                }
-                            }
-                        }
-                        // if we get here, we didn't find something to reasonably focus to.
-                    }
-                });
-
-                // apply name (automation property)
-                Automation::AutomationProperties::SetName(child, RS_(L"SettingContainer_OverrideMessageBaseLayer"));
-            }
-        }
-
-        _UpdateOverrideSystem();
-
+    void SettingContainer::_UpdateHelpText()
+    {
         // Get the correct base to apply automation properties to
         std::vector<DependencyObject> base;
         base.reserve(2);
@@ -183,6 +150,50 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 textBlock.Visibility(textBlockHidden ? Visibility::Collapsed : Visibility::Visible);
             }
         }
+    }
+
+    void SettingContainer::OnApplyTemplate()
+    {
+        if (const auto& child{ GetTemplateChild(L"ResetButton") })
+        {
+            if (const auto& button{ child.try_as<Controls::Button>() })
+            {
+                // Apply click handler for the reset button.
+                // When clicked, we dispatch the bound ClearSettingValue event,
+                // resulting in inheriting the setting value from the parent.
+                button.Click([=](auto&&, auto&&) {
+                    ClearSettingValue.raise(*this, nullptr);
+
+                    // move the focus to the child control
+                    if (const auto& content{ Content() })
+                    {
+                        if (const auto& control{ content.try_as<Controls::Control>() })
+                        {
+                            control.Focus(FocusState::Programmatic);
+                            return;
+                        }
+                        else if (const auto& panel{ content.try_as<Controls::Panel>() })
+                        {
+                            for (const auto& panelChild : panel.Children())
+                            {
+                                if (const auto& panelControl{ panelChild.try_as<Controls::Control>() })
+                                {
+                                    panelControl.Focus(FocusState::Programmatic);
+                                    return;
+                                }
+                            }
+                        }
+                        // if we get here, we didn't find something to reasonably focus to.
+                    }
+                });
+
+                // apply name (automation property)
+                Automation::AutomationProperties::SetName(child, RS_(L"SettingContainer_OverrideMessageBaseLayer"));
+            }
+        }
+
+        _UpdateOverrideSystem();
+        _UpdateHelpText();
     }
 
     void SettingContainer::SetExpanded(bool expanded)

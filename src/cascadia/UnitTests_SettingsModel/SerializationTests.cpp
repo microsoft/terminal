@@ -118,7 +118,6 @@ namespace SettingsModelUnitTests
                 "tabWidthMode": "equal",
                 "tabSwitcherMode": "mru",
 
-                "startOnUserLogin": false,
                 "theme": "system",
                 "snapToGridOnResize": true,
                 "disableAnimations": false,

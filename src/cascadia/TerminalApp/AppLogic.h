@@ -103,7 +103,6 @@ namespace winrt::TerminalApp::implementation
                                                                        const Microsoft::Terminal::Settings::Model::WindowingMode& windowingBehavior);
 
         void _ApplyLanguageSettingChange() noexcept;
-        safe_void_coroutine _ApplyStartupTaskStateChange();
 
         [[nodiscard]] HRESULT _TryLoadSettings() noexcept;
         void _ProcessLazySettingsChanges();

@@ -2473,11 +2473,6 @@
           "minimum": 1,
           "type": "integer"
         },
-        "startOnUserLogin": {
-          "default": false,
-          "description": "When set to true, this enables the launch of Terminal at startup. Setting this to false will disable the startup task entry. If the Terminal startup task entry is disabled either by org policy or by user action this setting will have no effect.",
-          "type": "boolean"
-        },
         "firstWindowPreference": {
           "default": "defaultProfile",
           "description": "Defines what behavior the terminal takes when it starts. \"defaultProfile\" will have the terminal launch with one tab of the default profile, and \"persistedWindowLayout\" will cause the terminal to save its layout on close and reload it on open.",

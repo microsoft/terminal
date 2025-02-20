@@ -51,7 +51,6 @@ Author(s):
     X(Model::LaunchMode, LaunchMode, "launchMode", LaunchMode::DefaultMode)                                                                                                                           \
     X(bool, SnapToGridOnResize, "snapToGridOnResize", true)                                                                                                                                           \
     X(bool, DebugFeaturesEnabled, "debugFeatures", debugFeaturesDefault)                                                                                                                              \
-    X(bool, StartOnUserLogin, "startOnUserLogin", false)                                                                                                                                              \
     X(bool, AlwaysOnTop, "alwaysOnTop", false)                                                                                                                                                        \
     X(bool, AutoHideWindow, "autoHideWindow", false)                                                                                                                                                  \
     X(Model::TabSwitcherMode, TabSwitcherMode, "tabSwitcherMode", Model::TabSwitcherMode::InOrder)                                                                                                    \

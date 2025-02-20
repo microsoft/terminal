@@ -43,8 +43,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     private:
         static void _InitializeProperties();
         static void _OnHasSettingValueChanged(const Windows::UI::Xaml::DependencyObject& d, const Windows::UI::Xaml::DependencyPropertyChangedEventArgs& e);
+        static void _OnHelpTextChanged(const Windows::UI::Xaml::DependencyObject& d, const Windows::UI::Xaml::DependencyPropertyChangedEventArgs& e);
         static hstring _GenerateOverrideMessage(const IInspectable& settingOrigin);
         void _UpdateOverrideSystem();
+        void _UpdateHelpText();
     };
 }
 
