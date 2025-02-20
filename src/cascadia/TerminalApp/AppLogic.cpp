@@ -81,8 +81,6 @@ static winrt::hstring _GetErrorText(SettingsLoadErrors error)
     return _GetMessageText(static_cast<uint32_t>(error), settingsLoadErrorsLabels);
 }
 
-static constexpr std::wstring_view StartupTaskName = L"StartTerminalOnLoginTask";
-
 namespace winrt::TerminalApp::implementation
 {
     // Function Description:
@@ -357,40 +355,6 @@ namespace winrt::TerminalApp::implementation
     }
     CATCH_LOG()
 
-    safe_void_coroutine AppLogic::_ApplyStartupTaskStateChange()
-    try
-    {
-        // First, make sure we're running in a packaged context. This method
-        // won't work, and will crash mysteriously if we're running unpackaged.
-        if (!IsPackaged())
-        {
-            co_return;
-        }
-
-        const auto tryEnableStartupTask = _settings.GlobalSettings().StartOnUserLogin();
-        const auto task = co_await StartupTask::GetAsync(StartupTaskName);
-
-        switch (task.State())
-        {
-        case StartupTaskState::Disabled:
-            if (tryEnableStartupTask)
-            {
-                co_await task.RequestEnableAsync();
-            }
-            break;
-        case StartupTaskState::DisabledByUser:
-            // TODO: GH#6254: define UX for other StartupTaskStates
-            break;
-        case StartupTaskState::Enabled:
-            if (!tryEnableStartupTask)
-            {
-                task.Disable();
-            }
-            break;
-        }
-    }
-    CATCH_LOG();
-
     // Method Description:
     // - Reloads the settings from the settings.json file.
     // - When this is called the first time, this initializes our settings. See
@@ -440,7 +404,6 @@ namespace winrt::TerminalApp::implementation
         }
 
         _ApplyLanguageSettingChange();
-        _ApplyStartupTaskStateChange();
         _ProcessLazySettingsChanges();
 
         if (initialLoad)
@@ -477,7 +440,6 @@ namespace winrt::TerminalApp::implementation
         // Both LoadSettings and ReloadSettings are supposed to call this function,
         // but LoadSettings skips it, so that the UI starts up faster.
         // Now that the UI is present we can do them with a less significant UX impact.
-        _ApplyStartupTaskStateChange();
         _ProcessLazySettingsChanges();
 
         FILETIME creationTime, exitTime, kernelTime, userTime, now;
