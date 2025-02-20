@@ -407,7 +407,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             {
             case WAM::StartupTaskState::EnabledByPolicy:
             case WAM::StartupTaskState::DisabledByPolicy:
-                return RS_(L"Globals_StartOnUserLogin_UnavailableByPolicy");
+                return winrt::hstring{ L"\uE72E " } /*lock icon*/ + RS_(L"Globals_StartOnUserLogin_UnavailableByPolicy");
             case WAM::StartupTaskState::DisabledByUser:
                 return RS_(L"Globals_StartOnUserLogin_DisabledByUser");
             case WAM::StartupTaskState::Enabled:
