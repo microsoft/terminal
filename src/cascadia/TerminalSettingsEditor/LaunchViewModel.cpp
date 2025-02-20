@@ -403,8 +403,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         if (_startOnUserLoginTask)
         {
             namespace WAM = winrt::Windows::ApplicationModel;
-            const auto state{ _startOnUserLoginTask.State() };
-            switch (state)
+            switch (_startOnUserLoginTask.State())
             {
             case WAM::StartupTaskState::EnabledByPolicy:
             case WAM::StartupTaskState::DisabledByPolicy:
@@ -437,6 +436,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             co_return;
         }
+
         auto strongThis{ get_strong() };
         if (enable)
         {
@@ -446,6 +446,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             _startOnUserLoginTask.Disable();
         }
+        // Any of these could have changed in response to an attempt to enable (e.g. it was disabled in task manager since our last check)
         _NotifyChanges(L"StartOnUserLoginConfigurable", L"StartOnUserLoginStatefulHelpText", L"StartOnUserLogin");
     }
 }
