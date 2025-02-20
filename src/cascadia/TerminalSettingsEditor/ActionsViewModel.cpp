@@ -373,10 +373,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // todo:
         // INewContentArgs (future?)
         // multiple actions (future?)
+        // selection color (future?)
+        //     all the "future" ones deal with arg types that have multiple values within them
+        //     INewContentArgs is a bunch of args, selection color has color and IsIndex16, etc
         // copyformat (optional flags)
         // optional uint32 (kinda defaults it to 0 right now which is incorrect...)
         // optional enum (tab switcher mode) - can set to null
-        // selection color
     }
 
     void ArgWrapper::EnumValue(const Windows::Foundation::IInspectable& enumValue)
