@@ -19,7 +19,7 @@ namespace Microsoft::Console::VirtualTerminal
     public:
         constexpr CharSet(const std::initializer_list<std::pair<wchar_t, wchar_t>> replacements)
         {
-            for (size_t i = L'\0'; i < _translationTable.size(); i++)
+            for (wchar_t i = L'\0'; i < _translationTable.size(); i++)
                 _translationTable.at(i) = BaseChar + i;
             for (auto replacement : replacements)
                 _translationTable.at(replacement.first - BaseChar) = replacement.second;
