@@ -378,6 +378,36 @@
                 </ListViewItem>
             </DataTemplate>
 
+            <DataTemplate x:Key="TerminalCoreColorOptionalTemplate"
+                          x:DataType="local:ArgWrapper">
+                <ListViewItem>
+                    <StackPanel Orientation="Horizontal"
+                                Spacing="8">
+                        <TextBlock Text="{x:Bind Name}"
+                                   VerticalAlignment="Center" />
+                        <local:NullableColorPicker x:Uid="Actions_NullableColorPicker"
+                                                   CurrentColor="{x:Bind UnboxTerminalCoreColorOptional(Value), Mode=TwoWay, BindBack=TerminalCoreColorBindBack}"
+                                                   ColorSchemeVM="{x:Bind DefaultColorScheme, Mode=OneWay}"
+                                                   NullColorPreview="{x:Bind DefaultColorScheme.ForegroundColor.Color, Mode=OneWay}"/>
+                    </StackPanel>
+                </ListViewItem>
+            </DataTemplate>
+
+            <DataTemplate x:Key="WindowsUIColorOptionalTemplate"
+                          x:DataType="local:ArgWrapper">
+                <ListViewItem>
+                    <StackPanel Orientation="Horizontal"
+                                Spacing="8">
+                        <TextBlock Text="{x:Bind Name}"
+                                   VerticalAlignment="Center" />
+                        <local:NullableColorPicker x:Uid="Actions_NullableColorPicker"
+                                                   CurrentColor="{x:Bind UnboxWindowsUIColorOptional(Value), Mode=TwoWay, BindBack=WindowsUIColorBindBack}"
+                                                   ColorSchemeVM="{x:Bind DefaultColorScheme, Mode=OneWay}"
+                                                   NullColorPreview="{x:Bind DefaultColorScheme.ForegroundColor.Color, Mode=OneWay}"/>
+                    </StackPanel>
+                </ListViewItem>
+            </DataTemplate>
+
             <local:ArgsTemplateSelectors x:Key="ArgsTemplateSelector"
                                          NoArgTemplate="{StaticResource NoArgTemplate}"
                                          Int32Template="{StaticResource Int32Template}"
@@ -388,7 +418,9 @@
                                          BoolTemplate="{StaticResource BoolTemplate}"
                                          BoolOptionalTemplate="{StaticResource BoolOptionalTemplate}"
                                          EnumTemplate="{StaticResource EnumTemplate}"
-                                         FlagTemplate="{StaticResource FlagTemplate}" />
+                                         FlagTemplate="{StaticResource FlagTemplate}"
+                                         TerminalCoreColorOptionalTemplate="{StaticResource TerminalCoreColorOptionalTemplate}"
+                                         WindowsUIColorOptionalTemplate="{StaticResource WindowsUIColorOptionalTemplate}" />
 
         </ResourceDictionary>
     </Page.Resources>

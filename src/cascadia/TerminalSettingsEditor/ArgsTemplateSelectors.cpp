@@ -75,6 +75,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             {
                 return FlagTemplate();
             }
+            else if (argType == L"Windows::Foundation::IReference<Microsoft::Terminal::Core::Color>")
+            {
+                return TerminalCoreColorOptionalTemplate();
+            }
+            else if (argType == L"Windows::Foundation::IReference<Windows::UI::Color>")
+            {
+                return WindowsUIColorOptionalTemplate();
+            }
             else if (argType == L"Windows::Foundation::IReference<Control::CopyFormat>")
             {
                 return nullptr;

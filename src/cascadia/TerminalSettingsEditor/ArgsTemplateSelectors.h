@@ -24,6 +24,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         WINRT_PROPERTY(winrt::Windows::UI::Xaml::DataTemplate, BoolOptionalTemplate);
         WINRT_PROPERTY(winrt::Windows::UI::Xaml::DataTemplate, EnumTemplate);
         WINRT_PROPERTY(winrt::Windows::UI::Xaml::DataTemplate, FlagTemplate);
+        WINRT_PROPERTY(winrt::Windows::UI::Xaml::DataTemplate, TerminalCoreColorOptionalTemplate);
+        WINRT_PROPERTY(winrt::Windows::UI::Xaml::DataTemplate, WindowsUIColorOptionalTemplate);
     };
 }
 

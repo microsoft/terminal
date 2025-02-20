@@ -131,6 +131,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                          const Windows::Foundation::Collections::IObservableVector<hstring>& availableActions,
                          const Editor::ActionsViewModel actionsPageVM,
                          const Windows::Foundation::Collections::IMap<Model::ShortcutAction, winrt::hstring>& availableShortcutActionsAndNames);
+        void Initialize();
 
         winrt::hstring Name();
         void Name(const winrt::hstring& newName);
@@ -148,6 +149,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         void AddKeybinding_Click();
 
+        til::typed_event<IInspectable, Editor::ArgWrapper> PropagateColorSchemeRequested;
+
         VIEW_MODEL_OBSERVABLE_PROPERTY(hstring, CurrentAction);
         VIEW_MODEL_OBSERVABLE_PROPERTY(IInspectable, ProposedShortcutAction);
         VIEW_MODEL_OBSERVABLE_PROPERTY(hstring, CurrentShortcutAction);
@@ -158,6 +161,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     private:
         winrt::Microsoft::Terminal::Settings::Model::Command _command;
+        std::vector<Control::KeyChord> _keyChordList;
         weak_ref<Editor::ActionsViewModel> _actionsPageVM{ nullptr };
         void _RegisterKeyChordVMEvents(Editor::KeyChordViewModel kcVM);
         void _RegisterActionArgsVMEvents(Editor::ActionArgsViewModel actionArgsVM);
@@ -169,6 +173,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
     public:
         ArgWrapper(const winrt::hstring& name, const winrt::hstring& type, const bool required, const Windows::Foundation::IInspectable& value);
+        void Initialize();
 
         winrt::hstring Name() const noexcept { return _name; };
 
@@ -200,10 +205,81 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             }
         }
 
+        winrt::Windows::Foundation::IReference<Microsoft::Terminal::Core::Color> UnboxTerminalCoreColorOptional(const Windows::Foundation::IInspectable& value)
+        {
+            if (value)
+            {
+                return unbox_value<Windows::Foundation::IReference<Microsoft::Terminal::Core::Color>>(value);
+            }
+            else
+            {
+                return nullptr;
+            }
+        }
+
+        void TerminalCoreColorBindBack(const winrt::Windows::Foundation::IReference<Microsoft::Terminal::Core::Color> newValue)
+        {
+            if (newValue)
+            {
+                Value(box_value(newValue));
+            }
+            else
+            {
+                Value(nullptr);
+            }
+        }
+
+        winrt::Windows::Foundation::IReference<Microsoft::Terminal::Core::Color> UnboxWindowsUIColorOptional(const Windows::Foundation::IInspectable& value)
+        {
+            if (value)
+            {
+                const auto winUIColor = unbox_value<Windows::Foundation::IReference<Windows::UI::Color>>(value).Value();
+                const Microsoft::Terminal::Core::Color terminalColor{ winUIColor.R, winUIColor.G, winUIColor.B, winUIColor.A };
+                return Windows::Foundation::IReference<Microsoft::Terminal::Core::Color>{ terminalColor };
+            }
+            else
+            {
+                return nullptr;
+            }
+        }
+
+        void WindowsUIColorBindBack(const winrt::Windows::Foundation::IReference<Microsoft::Terminal::Core::Color> newValue)
+        {
+            if (newValue)
+            {
+                const auto terminalCoreColor = unbox_value<Windows::Foundation::IReference<Microsoft::Terminal::Core::Color>>(newValue).Value();
+                const Windows::UI::Color winuiColor{
+                    .A = terminalCoreColor.A,
+                    .R = terminalCoreColor.R,
+                    .G = terminalCoreColor.G,
+                    .B = terminalCoreColor.B
+                };
+                // only set to the new value if our current value is not the same
+                // unfortunately the Value setter does not do this check properly since
+                // we create a whole new IReference even for the same underlying color
+                if (_Value)
+                {
+                    const auto currentValue = unbox_value<Windows::Foundation::IReference<Windows::UI::Color>>(_Value).Value();
+                    if (currentValue == winuiColor)
+                    {
+                        return;
+                    }
+                }
+                Value(box_value(Windows::Foundation::IReference<Windows::UI::Color>{ winuiColor }));
+            }
+            else
+            {
+                Value(nullptr);
+            }
+        }
+
         // We cannot use the macro here because we need to implement additional logic for the setter
         Windows::Foundation::IInspectable EnumValue() const noexcept { return _EnumValue; };
         void EnumValue(const Windows::Foundation::IInspectable& value);
 
+        til::typed_event<IInspectable, Editor::ArgWrapper> ColorSchemeRequested;
+
+        VIEW_MODEL_OBSERVABLE_PROPERTY(Editor::ColorSchemeViewModel, DefaultColorScheme, nullptr);
         VIEW_MODEL_OBSERVABLE_PROPERTY(Windows::Foundation::IInspectable, Value, nullptr);
 
     private:
@@ -219,6 +295,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
     public:
         ActionArgsViewModel(const Microsoft::Terminal::Settings::Model::ActionAndArgs actionAndArgs);
+        void Initialize();
+
+        til::typed_event<IInspectable, Editor::ArgWrapper> PropagateColorSchemeRequested;
 
         WINRT_PROPERTY(Windows::Foundation::Collections::IObservableVector<Editor::ArgWrapper>, ArgValues, nullptr);
         VIEW_MODEL_OBSERVABLE_PROPERTY(Microsoft::Terminal::Settings::Model::ShortcutAction, ShortcutActionType, Microsoft::Terminal::Settings::Model::ShortcutAction::AddMark);
@@ -302,6 +381,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void _CmdVMPropertyChangedHandler(const IInspectable& sender, const Windows::UI::Xaml::Data::PropertyChangedEventArgs& args);
         void _CmdVMEditRequestedHandler(const Editor::CommandViewModel& senderVM, const IInspectable& args);
         void _CmdVMDeleteRequestedHandler(const Editor::CommandViewModel& senderVM, const IInspectable& args);
+        void _CmdVMPropagateColorSchemeRequestedHandler(const IInspectable& sender, const Editor::ArgWrapper& wrapper);
     };
 }
 

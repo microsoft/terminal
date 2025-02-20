@@ -12,6 +12,7 @@
 #include "LibraryResources.h"
 #include "../TerminalSettingsModel/AllShortcutActions.h"
 #include "EnumEntry.h"
+#include "ColorSchemeViewModel.h"
 
 using namespace winrt::Windows::Foundation;
 using namespace winrt::Windows::Foundation::Collections;
@@ -27,37 +28,38 @@ using namespace winrt::Microsoft::Terminal::Settings::Model;
     std::vector<winrt::Microsoft::Terminal::Settings::Editor::EnumEntry> enumList;                                                                          \
     const auto mappings = winrt::Microsoft::Terminal::Settings::Model::EnumMappings::enumMappingsName();                                                    \
     enumType unboxedValue;                                                                                                                                  \
-    if (value)                                                                                                                                              \
+    if (_Value)                                                                                                                                             \
     {                                                                                                                                                       \
-        unboxedValue = unbox_value<enumType>(value);                                                                                                        \
+        unboxedValue = unbox_value<enumType>(_Value);                                                                                                       \
     }                                                                                                                                                       \
     for (const auto [enumKey, enumValue] : mappings)                                                                                                        \
     {                                                                                                                                                       \
         const auto enumName = LocalizedNameForEnumName(resourceSectionAndType, enumKey, resourceProperty);                                                  \
         auto entry = winrt::make<winrt::Microsoft::Terminal::Settings::Editor::implementation::EnumEntry>(enumName, winrt::box_value<enumType>(enumValue)); \
         enumList.emplace_back(entry);                                                                                                                       \
-        if (value && unboxedValue == enumValue)                                                                                                             \
+        if (_Value && unboxedValue == enumValue)                                                                                                            \
         {                                                                                                                                                   \
             EnumValue(entry);                                                                                                                               \
         }                                                                                                                                                   \
     }                                                                                                                                                       \
     std::sort(enumList.begin(), enumList.end(), EnumEntryReverseComparator<enumType>());                                                                    \
-    _EnumList = winrt::single_threaded_observable_vector<winrt::Microsoft::Terminal::Settings::Editor::EnumEntry>(std::move(enumList));
+    _EnumList = winrt::single_threaded_observable_vector<winrt::Microsoft::Terminal::Settings::Editor::EnumEntry>(std::move(enumList));                     \
+    _NotifyChanges(L"EnumList", L"EnumValue");
 
 #define INITIALIZE_FLAG_LIST_AND_VALUE(enumMappingsName, enumType, resourceSectionAndType, resourceProperty)                                                           \
     std::vector<winrt::Microsoft::Terminal::Settings::Editor::FlagEntry> flagList;                                                                                     \
     const auto mappings = winrt::Microsoft::Terminal::Settings::Model::EnumMappings::enumMappingsName();                                                               \
     enumType unboxedValue;                                                                                                                                             \
-    if (value)                                                                                                                                                         \
+    if (_Value)                                                                                                                                                        \
     {                                                                                                                                                                  \
-        unboxedValue = unbox_value<enumType>(value);                                                                                                                   \
+        unboxedValue = unbox_value<enumType>(_Value);                                                                                                                  \
     }                                                                                                                                                                  \
     for (const auto [flagKey, flagValue] : mappings)                                                                                                                   \
     {                                                                                                                                                                  \
         if (flagKey != L"all" && flagKey != L"none")                                                                                                                   \
         {                                                                                                                                                              \
             const auto flagName = LocalizedNameForEnumName(resourceSectionAndType, flagKey, resourceProperty);                                                         \
-            bool isSet = value ? WI_IsAnyFlagSet(unboxedValue, flagValue) : false;                                                                                     \
+            bool isSet = _Value ? WI_IsAnyFlagSet(unboxedValue, flagValue) : false;                                                                                    \
             auto entry = winrt::make<winrt::Microsoft::Terminal::Settings::Editor::implementation::FlagEntry>(flagName, winrt::box_value<enumType>(flagValue), isSet); \
             entry.PropertyChanged([&, flagValue](const IInspectable& sender, const PropertyChangedEventArgs& args) {                                                   \
                 const auto itemProperty{ args.PropertyName() };                                                                                                        \
@@ -73,7 +75,8 @@ using namespace winrt::Microsoft::Terminal::Settings::Model;
         }                                                                                                                                                              \
     }                                                                                                                                                                  \
     std::sort(flagList.begin(), flagList.end(), FlagEntryReverseComparator<enumType>());                                                                               \
-    _FlagList = winrt::single_threaded_observable_vector<winrt::Microsoft::Terminal::Settings::Editor::FlagEntry>(std::move(flagList));
+    _FlagList = winrt::single_threaded_observable_vector<winrt::Microsoft::Terminal::Settings::Editor::FlagEntry>(std::move(flagList));                                \
+    _NotifyChanges(L"FlagList", L"Value");
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
@@ -164,19 +167,24 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     CommandViewModel::CommandViewModel(Command cmd, std::vector<Control::KeyChord> keyChordList, const IObservableVector<hstring>& availableActions, const Editor::ActionsViewModel actionsPageVM, const Windows::Foundation::Collections::IMap<Model::ShortcutAction, winrt::hstring>& availableShortcutActionsAndNames) :
         _command{ cmd },
+        _keyChordList{ keyChordList },
         _AvailableActions { availableActions },
         _actionsPageVM{ actionsPageVM },
         _AvailableActionsAndNamesMap{ availableShortcutActionsAndNames }
     {
+    }
+
+    void CommandViewModel::Initialize()
+    {
         std::vector<Editor::KeyChordViewModel> keyChordVMs;
-        for (const auto keys : keyChordList)
+        for (const auto keys : _keyChordList)
         {
             auto kcVM{ make<KeyChordViewModel>(keys) };
             _RegisterKeyChordVMEvents(kcVM);
             keyChordVMs.push_back(kcVM);
         }
         _KeyChordViewModelList = single_threaded_observable_vector(std::move(keyChordVMs));
-        CurrentAction(cmd.Name());
+        CurrentAction(_command.Name());
 
         std::vector<hstring> shortcutActions;
         for (const auto [action, name] : _AvailableActionsAndNamesMap)
@@ -186,13 +194,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
         _AvailableShortcutActions = single_threaded_observable_vector(std::move(shortcutActions));
 
-        ActionArgsVM(make<ActionArgsViewModel>(cmd.ActionAndArgs()));
-        _RegisterActionArgsVMEvents(_ActionArgsVM);
-
-        const auto shortcutActionString = _AvailableActionsAndNamesMap.Lookup(cmd.ActionAndArgs().Action());
+        const auto shortcutActionString = _AvailableActionsAndNamesMap.Lookup(_command.ActionAndArgs().Action());
         ProposedShortcutAction(winrt::box_value(shortcutActionString));
         CurrentShortcutAction(shortcutActionString);
-        ActionArgsVM(make<ActionArgsViewModel>(cmd.ActionAndArgs()));
+        const auto actionArgsVM = make_self<ActionArgsViewModel>(_command.ActionAndArgs());
+        _RegisterActionArgsVMEvents(*actionArgsVM);
+        actionArgsVM->Initialize();
+        ActionArgsVM(*actionArgsVM);
 
         // Add a property changed handler to our own property changed event.
         // This allows us to create a new ActionArgsVM when the shortcut action changes
@@ -212,7 +220,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 }
                 Model::ActionAndArgs newActionAndArgs{ actionEnum, emptyArgs };
                 _command.ActionAndArgs(newActionAndArgs);
-                ActionArgsVM(make<ActionArgsViewModel>(newActionAndArgs));
+                const auto actionArgsVM = make_self<ActionArgsViewModel>(newActionAndArgs);
+                _RegisterActionArgsVMEvents(*actionArgsVM);
+                actionArgsVM->Initialize();
+                ActionArgsVM(*actionArgsVM);
             }
         });
     }
@@ -288,6 +299,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 //todo: this is a placeholder, don't know if there's any events we need to listen to
             }
         });
+        actionArgsVM.PropagateColorSchemeRequested([this](const IInspectable& /*sender*/, const Editor::ArgWrapper& wrapper) {
+            if (wrapper)
+            {
+                PropagateColorSchemeRequested.raise(*this, wrapper);
+            }
+        });
     }
 
     ArgWrapper::ArgWrapper(const winrt::hstring& name, const winrt::hstring& type, const bool required, const Windows::Foundation::IInspectable& value)
@@ -296,6 +313,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _name = name;
         _type = type;
         _required = required;
+    }
+
+    void ArgWrapper::Initialize()
+    {
         if (_type == L"Model::ResizeDirection")
         {
             INITIALIZE_ENUM_LIST_AND_VALUE(ResizeDirection, Model::ResizeDirection, L"Actions_ResizeDirection", L"Content");
@@ -344,11 +365,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             INITIALIZE_ENUM_LIST_AND_VALUE(SelectOutputDirection, Model::SelectOutputDirection, L"Actions_SelectOutputDirection", L"Content");
         }
+        else if (_type == L"Windows::Foundation::IReference<Microsoft::Terminal::Core::Color>" ||
+                 _type == L"Windows::Foundation::IReference<Windows::UI::Color>")
+        {
+            ColorSchemeRequested.raise(*this, *this);
+        }
         // todo:
         // INewContentArgs (future?)
         // multiple actions (future?)
-        // copyformat, suggestions source (flags)
-        // color (weird type), optional color (add mark, set tab color)
+        // copyformat (optional flags)
         // optional uint32 (kinda defaults it to 0 right now which is incorrect...)
         // optional enum (tab switcher mode) - can set to null
         // selection color
@@ -366,9 +391,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     ActionArgsViewModel::ActionArgsViewModel(const Model::ActionAndArgs actionAndArgs) :
         _actionAndArgs{ actionAndArgs }
     {
-        const auto shortcutAction = actionAndArgs.Action();
+    }
+
+    void ActionArgsViewModel::Initialize()
+    {
+        const auto shortcutAction = _actionAndArgs.Action();
         ShortcutActionType(shortcutAction);
-        const auto shortcutArgs = actionAndArgs.Args();
+        const auto shortcutArgs = _actionAndArgs.Args();
         if (shortcutArgs)
         {
             const auto shortcutArgsNumItems = shortcutArgs.GetArgCount();
@@ -380,8 +409,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 const auto argName = argDescription.Name;
                 const auto argType = argDescription.Type;
                 const auto argRequired = argDescription.Required;
-                const auto item = make<ArgWrapper>(argName, argType, argRequired, argAtIndex);
-                item.PropertyChanged([&, i](const IInspectable& sender, const PropertyChangedEventArgs& args) {
+                const auto item = make_self<ArgWrapper>(argName, argType, argRequired, argAtIndex);
+                item->PropertyChanged([&, i](const IInspectable& sender, const PropertyChangedEventArgs& args) {
                     const auto itemProperty{ args.PropertyName() };
                     if (itemProperty == L"Value")
                     {
@@ -390,7 +419,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                         _actionAndArgs.Args().SetArgAt(i, newValue);
                     }
                 });
-                argValues.push_back(item);
+                item->ColorSchemeRequested([&](const IInspectable& /*sender*/, const Editor::ArgWrapper& wrapper) {
+                    if (wrapper)
+                    {
+                        PropagateColorSchemeRequested.raise(*this, wrapper);
+                    }
+                });
+                item->Initialize();
+                argValues.push_back(*item);
             }
 
             _ArgValues = single_threaded_observable_vector(std::move(argValues));
@@ -535,6 +571,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             }
             auto cmdVM{ make_self<CommandViewModel>(cmd, keyChordList, _AvailableActionAndArgs, *this, _AvailableActionsAndNamesMap) };
             _RegisterCmdVMEvents(cmdVM);
+            cmdVM->Initialize();
             commandList.push_back(*cmdVM);
         }
 
@@ -899,6 +936,23 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         CurrentPage(ActionsSubPage::Base);
     }
 
+    void ActionsViewModel::_CmdVMPropagateColorSchemeRequestedHandler(const IInspectable& /*senderVM*/, const Editor::ArgWrapper& wrapper)
+    {
+        if (wrapper)
+        {
+            const auto schemes = _Settings.GlobalSettings().ColorSchemes();
+            const auto defaultAppearanceSchemeName = _Settings.ProfileDefaults().DefaultAppearance().LightColorSchemeName();
+            for (const auto [name, scheme] : schemes)
+            {
+                if (name == defaultAppearanceSchemeName)
+                {
+                    const auto schemeVM = winrt::make<ColorSchemeViewModel>(scheme, nullptr, _Settings);
+                    wrapper.DefaultColorScheme(schemeVM);
+                }
+            }
+        }
+    }
+
     // Method Description:
     // - performs a search on KeyBindingList by key chord.
     // Arguments:
@@ -936,5 +990,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         cmdVM->EditRequested({ this, &ActionsViewModel::_CmdVMEditRequestedHandler });
         cmdVM->DeleteRequested({ this, &ActionsViewModel::_CmdVMDeleteRequestedHandler });
         cmdVM->PropertyChanged({ this, &ActionsViewModel::_CmdVMPropertyChangedHandler });
+        cmdVM->PropagateColorSchemeRequested({ this, &ActionsViewModel::_CmdVMPropagateColorSchemeRequestedHandler });
     }
 }

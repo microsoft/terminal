@@ -2052,6 +2052,10 @@
     <value>Next</value>
     <comment>An option to choose from for the "select output direction". Selects the next output.</comment>
   </data>
+  <data name="Actions_NullableColorPicker.NullColorButtonLabel" xml:space="preserve">
+    <value>No color</value>
+    <comment>Label for a button directing the user to opt out of choosing a color.</comment>
+  </data>
   <data name="KeyChordListener.[using:Windows.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve">
     <value>Input your desired keyboard shortcut.</value>
     <comment>Help text directing users how to use the "KeyChordListener" control. Pressing a keyboard shortcut will be recorded by this control.</comment>

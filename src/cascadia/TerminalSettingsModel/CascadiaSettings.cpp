@@ -1066,6 +1066,10 @@ Model::IActionArgs CascadiaSettings::GetEmptyArgsForAction(Model::ShortcutAction
         return winrt::make<SelectCommandArgs>();
     case Model::ShortcutAction::SelectOutput:
         return winrt::make<SelectOutputArgs>();
+    case Model::ShortcutAction::AddMark:
+        return winrt::make<AddMarkArgs>();
+    case Model::ShortcutAction::SetTabColor:
+        return winrt::make<SetTabColorArgs>();
     default:
         return nullptr;
     }

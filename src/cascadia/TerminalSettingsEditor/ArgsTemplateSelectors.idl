@@ -17,5 +17,7 @@ namespace Microsoft.Terminal.Settings.Editor
         Windows.UI.Xaml.DataTemplate BoolOptionalTemplate;
         Windows.UI.Xaml.DataTemplate EnumTemplate;
         Windows.UI.Xaml.DataTemplate FlagTemplate;
+        Windows.UI.Xaml.DataTemplate TerminalCoreColorOptionalTemplate;
+        Windows.UI.Xaml.DataTemplate WindowsUIColorOptionalTemplate;
     }
 }
