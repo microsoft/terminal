@@ -381,7 +381,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
 
         auto strongThis{ get_strong() };
-        const auto task = co_await winrt::Windows::ApplicationModel::StartupTask::GetAsync(StartupTaskName);
+        auto task{ co_await winrt::Windows::ApplicationModel::StartupTask::GetAsync(StartupTaskName) };
         _startOnUserLoginTask = std::move(task);
         _NotifyChanges(L"StartOnUserLoginConfigurable", L"StartOnUserLoginStatefulHelpText", L"StartOnUserLogin");
     }
