@@ -401,7 +401,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         if (clickedItemTag == launchTag)
         {
-            contentFrame().Navigate(xaml_typename<Editor::Launch>(), winrt::make<LaunchViewModel>(_settingsClone, Dispatcher()));
+            contentFrame().Navigate(xaml_typename<Editor::Launch>(), winrt::make<LaunchViewModel>(_settingsClone));
             const auto crumb = winrt::make<Breadcrumb>(box_value(clickedItemTag), RS_(L"Nav_Launch/Content"), BreadcrumbSubPage::None);
             _breadcrumbs.Append(crumb);
         }

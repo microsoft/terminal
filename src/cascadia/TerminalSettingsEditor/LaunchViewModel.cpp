@@ -40,9 +40,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         L"zh-Hant",
     };
 
-    LaunchViewModel::LaunchViewModel(Model::CascadiaSettings settings, const Windows::UI::Core::CoreDispatcher& dispatcher) :
-        _Settings{ settings },
-        _dispatcher{ dispatcher }
+    LaunchViewModel::LaunchViewModel(Model::CascadiaSettings settings) :
+        _Settings{ settings }
     {
         _useDefaultLaunchPosition = isnan(InitialPosX()) && isnan(InitialPosY());
 
@@ -377,10 +376,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
 
         auto strongThis{ get_strong() };
-        co_await winrt::resume_background();
         const auto task = co_await winrt::Windows::ApplicationModel::StartupTask::GetAsync(StartupTaskName);
         _startOnUserLoginTask = std::move(task);
-        co_await wil::resume_foreground(strongThis->_dispatcher);
         _NotifyChanges(L"StartOnUserLoginConfigurable", L"StartOnUserLoginStatefulHelpText", L"StartOnUserLogin");
     }
 
@@ -440,7 +437,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             co_return;
         }
         auto strongThis{ get_strong() };
-        co_await winrt::resume_background();
         if (enable)
         {
             co_await _startOnUserLoginTask.RequestEnableAsync();
@@ -449,7 +445,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             _startOnUserLoginTask.Disable();
         }
-        co_await wil::resume_foreground(strongThis->_dispatcher);
         _NotifyChanges(L"StartOnUserLoginConfigurable", L"StartOnUserLoginStatefulHelpText", L"StartOnUserLogin");
     }
 }

@@ -13,7 +13,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     struct LaunchViewModel : LaunchViewModelT<LaunchViewModel>, ViewModelHelper<LaunchViewModel>
     {
     public:
-        LaunchViewModel(Model::CascadiaSettings settings, const Windows::UI::Core::CoreDispatcher& dispatcher);
+        LaunchViewModel(Model::CascadiaSettings settings);
 
         // LanguageDisplayConverter maps the given BCP 47 tag to a localized string.
         // For instance "en-US" produces "English (United States)", while "de-DE" produces
@@ -72,8 +72,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         winrt::Windows::Foundation::Collections::IMap<Model::LaunchMode, winrt::Microsoft::Terminal::Settings::Editor::EnumEntry> _LaunchModeMap;
 
         winrt::Windows::ApplicationModel::StartupTask _startOnUserLoginTask{ nullptr };
-
-        Windows::UI::Core::CoreDispatcher _dispatcher;
     };
 };
 
