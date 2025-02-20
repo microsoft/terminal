@@ -549,7 +549,7 @@ namespace winrt::TerminalApp::implementation
             _pointerExitTimer.Stop();
         }
 
-        auto listViewItem = sender.try_as<winrt::Windows::UI::Xaml::Controls::ListViewItem>();
+        const auto listViewItem = sender.try_as<winrt::Windows::UI::Xaml::Controls::ListViewItem>();
         if (_currentMode == CommandPaletteMode::ActionMode && listViewItem)
         {
             const auto enteredItem = listViewItem.Content();
