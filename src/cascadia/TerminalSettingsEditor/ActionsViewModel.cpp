@@ -405,16 +405,16 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return winrt::unbox_value<uint32_t>(value);
     }
 
-    uint32_t ArgWrapper::UnboxUInt32Optional(const Windows::Foundation::IInspectable& value)
+    float ArgWrapper::UnboxUInt32Optional(const Windows::Foundation::IInspectable& value)
     {
         const auto unboxed = winrt::unbox_value<winrt::Windows::Foundation::IReference<uint32_t>>(value);
         if (unboxed)
         {
-            return unboxed.Value();
+            return static_cast<float>(unboxed.Value());
         }
         else
         {
-            return 0;
+            return NAN;
         }
     }
 
@@ -463,14 +463,26 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Value(box_value(newValue));
     }
 
-    void ArgWrapper::DoubleBindBack(const double newValue)
+    void ArgWrapper::Int32BindBack(const double newValue)
+    {
+        Value(box_value(static_cast<int32_t>(newValue)));
+    }
+
+    void ArgWrapper::UInt32BindBack(const double newValue)
     {
         Value(box_value(static_cast<uint32_t>(newValue)));
     }
 
-    void ArgWrapper::DoubleOptionalBindBack(const double newValue)
+    void ArgWrapper::UInt32OptionalBindBack(const double newValue)
     {
-        Value(box_value(static_cast<uint32_t>(newValue)));
+        if (!isnan(newValue))
+        {
+            Value(box_value(static_cast<uint32_t>(newValue)));
+        }
+        else
+        {
+            Value(nullptr);
+        }
     }
 
     void ArgWrapper::FloatBindBack(const double newValue)

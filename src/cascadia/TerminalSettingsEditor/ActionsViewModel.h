@@ -189,16 +189,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         winrt::hstring UnboxString(const Windows::Foundation::IInspectable& value);
         int32_t UnboxInt32(const Windows::Foundation::IInspectable& value);
         uint32_t UnboxUInt32(const Windows::Foundation::IInspectable& value);
-        uint32_t UnboxUInt32Optional(const Windows::Foundation::IInspectable& value);
+        float UnboxUInt32Optional(const Windows::Foundation::IInspectable& value);
         float UnboxFloat(const Windows::Foundation::IInspectable& value);
         winrt::Windows::Foundation::IReference<bool> UnboxBoolOptional(const Windows::Foundation::IInspectable& value);
         winrt::Windows::Foundation::IReference<Microsoft::Terminal::Core::Color> UnboxTerminalCoreColorOptional(const Windows::Foundation::IInspectable& value);
         winrt::Windows::Foundation::IReference<Microsoft::Terminal::Core::Color> UnboxWindowsUIColorOptional(const Windows::Foundation::IInspectable& value);
 
-        // Bind back functions
+        // bind back functions
         void StringBindBack(const winrt::hstring& newValue);
-        void DoubleBindBack(const double newValue);
-        void DoubleOptionalBindBack(const double newValue);
+        void Int32BindBack(const double newValue);
+        void UInt32BindBack(const double newValue);
+        void UInt32OptionalBindBack(const double newValue);
         void FloatBindBack(const double newValue);
         void BoolBindBack(const Windows::Foundation::IReference<bool> newValue);
         void TerminalCoreColorBindBack(const winrt::Windows::Foundation::IReference<Microsoft::Terminal::Core::Color> newValue);

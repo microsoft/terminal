@@ -237,7 +237,7 @@
                                 Spacing="8">
                         <TextBlock Text="{x:Bind Name}"
                                    VerticalAlignment="Center" />
-                        <muxc:NumberBox Value="{x:Bind UnboxInt32(Value), Mode=TwoWay, BindBack=DoubleBindBack}"
+                        <muxc:NumberBox Value="{x:Bind UnboxInt32(Value), Mode=TwoWay, BindBack=Int32BindBack}"
                                         Style="{StaticResource NumberBoxSettingStyle}"
                                         Minimum="0"
                                         Maximum="999"
@@ -254,7 +254,7 @@
                                 Spacing="8">
                         <TextBlock Text="{x:Bind Name}"
                                    VerticalAlignment="Center" />
-                        <muxc:NumberBox Value="{x:Bind UnboxUInt32(Value), Mode=TwoWay, BindBack=DoubleBindBack}"
+                        <muxc:NumberBox Value="{x:Bind UnboxUInt32(Value), Mode=TwoWay, BindBack=UInt32BindBack}"
                                         Style="{StaticResource NumberBoxSettingStyle}"
                                         Minimum="0"
                                         Maximum="999"
@@ -271,7 +271,7 @@
                                 Spacing="8">
                         <TextBlock Text="{x:Bind Name}"
                                    VerticalAlignment="Center" />
-                        <muxc:NumberBox Value="{x:Bind UnboxUInt32Optional(Value), Mode=TwoWay, BindBack=DoubleOptionalBindBack}"
+                        <muxc:NumberBox Value="{x:Bind UnboxUInt32Optional(Value), Mode=TwoWay, BindBack=UInt32OptionalBindBack}"
                                         Style="{StaticResource NumberBoxSettingStyle}"
                                         Minimum="0"
                                         Maximum="999"
