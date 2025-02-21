@@ -18,6 +18,7 @@ dcs
 deselection
 dialytika
 diffing
+Dimidium
 dje
 downsides
 dze
