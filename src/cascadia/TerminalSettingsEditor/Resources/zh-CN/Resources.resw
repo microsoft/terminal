@@ -2328,4 +2328,12 @@
     <value>无</value>
     <comment>Text displayed when the tab title is not defined.</comment>
   </data>
+  <data name="Globals_StartOnUserLogin_DisabledByUser" xml:space="preserve">
+    <value>已在 Windows 设置的“启动应用”部分禁用自动启动。</value>
+    <comment>{Locked="Windows"}This is displayed in concordance with Globals_StartOnUserLogin if the user has disabled the setting outside of the application.</comment>
+  </data>
+  <data name="Globals_StartOnUserLogin_UnavailableByPolicy" xml:space="preserve">
+    <value>此选项由企业策略管理，无法在此处更改。</value>
+    <comment>This is displayed in concordance with Globals_StartOnUserLogin if the enterprise administrator has taken control of this setting.</comment>
+  </data>
 </root>

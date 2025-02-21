@@ -2328,4 +2328,12 @@
     <value>Keine</value>
     <comment>Text displayed when the tab title is not defined.</comment>
   </data>
+  <data name="Globals_StartOnUserLogin_DisabledByUser" xml:space="preserve">
+    <value>Der automatische Start wurde im Abschnitt "Start-Apps" der einstellungen für Windows deaktiviert.</value>
+    <comment>{Locked="Windows"}This is displayed in concordance with Globals_StartOnUserLogin if the user has disabled the setting outside of the application.</comment>
+  </data>
+  <data name="Globals_StartOnUserLogin_UnavailableByPolicy" xml:space="preserve">
+    <value>Diese Option wird durch eine Unternehmensrichtlinie verwaltet und kann hier nicht geändert werden.</value>
+    <comment>This is displayed in concordance with Globals_StartOnUserLogin if the enterprise administrator has taken control of this setting.</comment>
+  </data>
 </root>
