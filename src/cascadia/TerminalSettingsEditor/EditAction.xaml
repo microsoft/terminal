@@ -310,18 +310,6 @@
                 </ListViewItem>
             </DataTemplate>
 
-            <DataTemplate x:Key="BoolTemplate"
-                          x:DataType="local:ArgWrapper">
-                <ListViewItem>
-                    <StackPanel Orientation="Horizontal"
-                                Spacing="8">
-                        <TextBlock Text="{x:Bind Name}"
-                                   VerticalAlignment="Center" />
-                        <CheckBox IsChecked="{x:Bind UnboxBool(Value), Mode=TwoWay, BindBack=BoolBindBack}" />
-                    </StackPanel>
-                </ListViewItem>
-            </DataTemplate>
-
             <DataTemplate x:Key="BoolOptionalTemplate"
                           x:DataType="local:ArgWrapper">
                 <ListViewItem>
@@ -415,7 +403,6 @@
                                          UInt32OptionalTemplate="{StaticResource UInt32OptionalTemplate}"
                                          FloatTemplate="{StaticResource FloatTemplate}"
                                          StringTemplate="{StaticResource StringTemplate}"
-                                         BoolTemplate="{StaticResource BoolTemplate}"
                                          BoolOptionalTemplate="{StaticResource BoolOptionalTemplate}"
                                          EnumTemplate="{StaticResource EnumTemplate}"
                                          FlagTemplate="{StaticResource FlagTemplate}"

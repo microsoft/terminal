@@ -423,11 +423,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return winrt::unbox_value<float>(value);
     }
 
-    bool ArgWrapper::UnboxBool(const Windows::Foundation::IInspectable& value)
-    {
-        return winrt::unbox_value<bool>(value);
-    }
-
     winrt::Windows::Foundation::IReference<bool> ArgWrapper::UnboxBoolOptional(const Windows::Foundation::IInspectable& value)
     {
         if (!value)
