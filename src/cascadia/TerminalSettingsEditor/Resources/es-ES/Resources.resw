@@ -1993,4 +1993,12 @@
   <data name="Profile_Source_Orphaned.HelpText" xml:space="preserve">
     <value>Indica el software que creó originalmente este perfil.</value>
   </data>
+  <data name="Globals_StartOnUserLogin_DisabledByUser" xml:space="preserve">
+    <value>Se ha deshabilitado el inicio automático en la sección Aplicaciones de inicio de Windows configuración.</value>
+    <comment>{Locked="Windows"}This is displayed in concordance with Globals_StartOnUserLogin if the user has disabled the setting outside of the application.</comment>
+  </data>
+  <data name="Globals_StartOnUserLogin_UnavailableByPolicy" xml:space="preserve">
+    <value>Esta opción está administrada por una directiva de empresa y no se puede cambiar aquí.</value>
+    <comment>This is displayed in concordance with Globals_StartOnUserLogin if the enterprise administrator has taken control of this setting.</comment>
+  </data>
 </root>

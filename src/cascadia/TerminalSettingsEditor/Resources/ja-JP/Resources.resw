@@ -1993,4 +1993,12 @@
   <data name="Profile_Source_Orphaned.HelpText" xml:space="preserve">
     <value>このプロファイルを最初に作成したソフトウェアを示します。</value>
   </data>
+  <data name="Globals_StartOnUserLogin_DisabledByUser" xml:space="preserve">
+    <value>Windows 設定の [スタートアップ アプリ] セクションで、自動スタートアップが無効になっています。</value>
+    <comment>{Locked="Windows"}This is displayed in concordance with Globals_StartOnUserLogin if the user has disabled the setting outside of the application.</comment>
+  </data>
+  <data name="Globals_StartOnUserLogin_UnavailableByPolicy" xml:space="preserve">
+    <value>このオプションはエンタープライズ ポリシーによって管理されているため、ここで変更することはできません。</value>
+    <comment>This is displayed in concordance with Globals_StartOnUserLogin if the enterprise administrator has taken control of this setting.</comment>
+  </data>
 </root>

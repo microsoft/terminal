@@ -1993,4 +1993,12 @@
   <data name="Profile_Source_Orphaned.HelpText" xml:space="preserve">
     <value>指示原始建立此配置檔的軟體。</value>
   </data>
+  <data name="Globals_StartOnUserLogin_DisabledByUser" xml:space="preserve">
+    <value>已在 Windows 設定的 [啟動應用程式] 區段中停用自動啟動。</value>
+    <comment>{Locked="Windows"}This is displayed in concordance with Globals_StartOnUserLogin if the user has disabled the setting outside of the application.</comment>
+  </data>
+  <data name="Globals_StartOnUserLogin_UnavailableByPolicy" xml:space="preserve">
+    <value>此選項由企業原則管理，無法在此變更。</value>
+    <comment>This is displayed in concordance with Globals_StartOnUserLogin if the enterprise administrator has taken control of this setting.</comment>
+  </data>
 </root>
