@@ -176,106 +176,34 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void Initialize();
 
         winrt::hstring Name() const noexcept { return _name; };
-
         winrt::hstring Type() const noexcept { return _type; };
-
         bool Required() const noexcept { return _required; };
-
-        Windows::Foundation::Collections::IObservableVector<Microsoft::Terminal::Settings::Editor::EnumEntry> EnumList() const noexcept { return _EnumList; };
-
-        Windows::Foundation::Collections::IObservableVector<Microsoft::Terminal::Settings::Editor::FlagEntry> FlagList() const noexcept { return _FlagList; };
-
-        void StringBindBack(const winrt::hstring& newValue) { Value(box_value(newValue)); };
-
-        void DoubleBindBack(const double newValue) { Value(box_value(static_cast<uint32_t>(newValue))); };
-
-        void DoubleOptionalBindBack(const double newValue) { Value(box_value(static_cast<uint32_t>(newValue))); };
-
-        void FloatBindBack(const double newValue) { Value(box_value(static_cast<float>(newValue))); };
-
-        void BoolBindBack(const Windows::Foundation::IReference<bool> newValue)
-        {
-            if (newValue)
-            {
-                Value(box_value(newValue));
-            }
-            else
-            {
-                Value(nullptr);
-            }
-        }
-
-        winrt::Windows::Foundation::IReference<Microsoft::Terminal::Core::Color> UnboxTerminalCoreColorOptional(const Windows::Foundation::IInspectable& value)
-        {
-            if (value)
-            {
-                return unbox_value<Windows::Foundation::IReference<Microsoft::Terminal::Core::Color>>(value);
-            }
-            else
-            {
-                return nullptr;
-            }
-        }
-
-        void TerminalCoreColorBindBack(const winrt::Windows::Foundation::IReference<Microsoft::Terminal::Core::Color> newValue)
-        {
-            if (newValue)
-            {
-                Value(box_value(newValue));
-            }
-            else
-            {
-                Value(nullptr);
-            }
-        }
-
-        winrt::Windows::Foundation::IReference<Microsoft::Terminal::Core::Color> UnboxWindowsUIColorOptional(const Windows::Foundation::IInspectable& value)
-        {
-            if (value)
-            {
-                const auto winUIColor = unbox_value<Windows::Foundation::IReference<Windows::UI::Color>>(value).Value();
-                const Microsoft::Terminal::Core::Color terminalColor{ winUIColor.R, winUIColor.G, winUIColor.B, winUIColor.A };
-                return Windows::Foundation::IReference<Microsoft::Terminal::Core::Color>{ terminalColor };
-            }
-            else
-            {
-                return nullptr;
-            }
-        }
-
-        void WindowsUIColorBindBack(const winrt::Windows::Foundation::IReference<Microsoft::Terminal::Core::Color> newValue)
-        {
-            if (newValue)
-            {
-                const auto terminalCoreColor = unbox_value<Windows::Foundation::IReference<Microsoft::Terminal::Core::Color>>(newValue).Value();
-                const Windows::UI::Color winuiColor{
-                    .A = terminalCoreColor.A,
-                    .R = terminalCoreColor.R,
-                    .G = terminalCoreColor.G,
-                    .B = terminalCoreColor.B
-                };
-                // only set to the new value if our current value is not the same
-                // unfortunately the Value setter does not do this check properly since
-                // we create a whole new IReference even for the same underlying color
-                if (_Value)
-                {
-                    const auto currentValue = unbox_value<Windows::Foundation::IReference<Windows::UI::Color>>(_Value).Value();
-                    if (currentValue == winuiColor)
-                    {
-                        return;
-                    }
-                }
-                Value(box_value(Windows::Foundation::IReference<Windows::UI::Color>{ winuiColor }));
-            }
-            else
-            {
-                Value(nullptr);
-            }
-        }
 
         // We cannot use the macro here because we need to implement additional logic for the setter
         Windows::Foundation::IInspectable EnumValue() const noexcept { return _EnumValue; };
         void EnumValue(const Windows::Foundation::IInspectable& value);
+        Windows::Foundation::Collections::IObservableVector<Microsoft::Terminal::Settings::Editor::EnumEntry> EnumList() const noexcept { return _EnumList; };
+        Windows::Foundation::Collections::IObservableVector<Microsoft::Terminal::Settings::Editor::FlagEntry> FlagList() const noexcept { return _FlagList; };
+
+        // unboxing functions
+        winrt::hstring UnboxString(const Windows::Foundation::IInspectable& value);
+        int32_t UnboxInt32(const Windows::Foundation::IInspectable& value);
+        uint32_t UnboxUInt32(const Windows::Foundation::IInspectable& value);
+        uint32_t UnboxUInt32Optional(const Windows::Foundation::IInspectable& value);
+        float UnboxFloat(const Windows::Foundation::IInspectable& value);
+        bool UnboxBool(const Windows::Foundation::IInspectable& value);
+        winrt::Windows::Foundation::IReference<bool> UnboxBoolOptional(const Windows::Foundation::IInspectable& value);
+        winrt::Windows::Foundation::IReference<Microsoft::Terminal::Core::Color> UnboxTerminalCoreColorOptional(const Windows::Foundation::IInspectable& value);
+        winrt::Windows::Foundation::IReference<Microsoft::Terminal::Core::Color> UnboxWindowsUIColorOptional(const Windows::Foundation::IInspectable& value);
+
+        // Bind back functions
+        void StringBindBack(const winrt::hstring& newValue);
+        void DoubleBindBack(const double newValue);
+        void DoubleOptionalBindBack(const double newValue);
+        void FloatBindBack(const double newValue);
+        void BoolBindBack(const Windows::Foundation::IReference<bool> newValue);
+        void TerminalCoreColorBindBack(const winrt::Windows::Foundation::IReference<Microsoft::Terminal::Core::Color> newValue);
+        void WindowsUIColorBindBack(const winrt::Windows::Foundation::IReference<Microsoft::Terminal::Core::Color> newValue);
 
         til::typed_event<IInspectable, Editor::ArgWrapper> ColorSchemeRequested;
 

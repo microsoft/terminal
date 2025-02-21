@@ -390,6 +390,153 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
+    winrt::hstring ArgWrapper::UnboxString(const Windows::Foundation::IInspectable& value)
+    {
+        return winrt::unbox_value<winrt::hstring>(value);
+    }
+
+    int32_t ArgWrapper::UnboxInt32(const Windows::Foundation::IInspectable& value)
+    {
+        return winrt::unbox_value<int32_t>(value);
+    }
+
+    uint32_t ArgWrapper::UnboxUInt32(const Windows::Foundation::IInspectable& value)
+    {
+        return winrt::unbox_value<uint32_t>(value);
+    }
+
+    uint32_t ArgWrapper::UnboxUInt32Optional(const Windows::Foundation::IInspectable& value)
+    {
+        const auto unboxed = winrt::unbox_value<winrt::Windows::Foundation::IReference<uint32_t>>(value);
+        if (unboxed)
+        {
+            return unboxed.Value();
+        }
+        else
+        {
+            return 0;
+        }
+    }
+
+    float ArgWrapper::UnboxFloat(const Windows::Foundation::IInspectable& value)
+    {
+        return winrt::unbox_value<float>(value);
+    }
+
+    bool ArgWrapper::UnboxBool(const Windows::Foundation::IInspectable& value)
+    {
+        return winrt::unbox_value<bool>(value);
+    }
+
+    winrt::Windows::Foundation::IReference<bool> ArgWrapper::UnboxBoolOptional(const Windows::Foundation::IInspectable& value)
+    {
+        if (!value)
+        {
+            return nullptr;
+        }
+        return winrt::unbox_value<winrt::Windows::Foundation::IReference<bool>>(value);
+    }
+
+    winrt::Windows::Foundation::IReference<Microsoft::Terminal::Core::Color> ArgWrapper::UnboxTerminalCoreColorOptional(const Windows::Foundation::IInspectable& value)
+    {
+        if (value)
+        {
+            return unbox_value<Windows::Foundation::IReference<Microsoft::Terminal::Core::Color>>(value);
+        }
+        else
+        {
+            return nullptr;
+        }
+    }
+
+    winrt::Windows::Foundation::IReference<Microsoft::Terminal::Core::Color> ArgWrapper::UnboxWindowsUIColorOptional(const Windows::Foundation::IInspectable& value)
+    {
+        if (value)
+        {
+            const auto winUIColor = unbox_value<Windows::Foundation::IReference<Windows::UI::Color>>(value).Value();
+            const Microsoft::Terminal::Core::Color terminalColor{ winUIColor.R, winUIColor.G, winUIColor.B, winUIColor.A };
+            return Windows::Foundation::IReference<Microsoft::Terminal::Core::Color>{ terminalColor };
+        }
+        else
+        {
+            return nullptr;
+        }
+    }
+
+    void ArgWrapper::StringBindBack(const winrt::hstring& newValue)
+    {
+        Value(box_value(newValue));
+    }
+
+    void ArgWrapper::DoubleBindBack(const double newValue)
+    {
+        Value(box_value(static_cast<uint32_t>(newValue)));
+    }
+
+    void ArgWrapper::DoubleOptionalBindBack(const double newValue)
+    {
+        Value(box_value(static_cast<uint32_t>(newValue)));
+    }
+
+    void ArgWrapper::FloatBindBack(const double newValue)
+    {
+        Value(box_value(static_cast<float>(newValue)));
+    }
+
+    void ArgWrapper::BoolBindBack(const Windows::Foundation::IReference<bool> newValue)
+    {
+        if (newValue)
+        {
+            Value(box_value(newValue));
+        }
+        else
+        {
+            Value(nullptr);
+        }
+    }
+
+    void ArgWrapper::TerminalCoreColorBindBack(const winrt::Windows::Foundation::IReference<Microsoft::Terminal::Core::Color> newValue)
+    {
+        if (newValue)
+        {
+            Value(box_value(newValue));
+        }
+        else
+        {
+            Value(nullptr);
+        }
+    }
+
+    void ArgWrapper::WindowsUIColorBindBack(const winrt::Windows::Foundation::IReference<Microsoft::Terminal::Core::Color> newValue)
+    {
+        if (newValue)
+        {
+            const auto terminalCoreColor = unbox_value<Windows::Foundation::IReference<Microsoft::Terminal::Core::Color>>(newValue).Value();
+            const Windows::UI::Color winuiColor{
+                .A = terminalCoreColor.A,
+                .R = terminalCoreColor.R,
+                .G = terminalCoreColor.G,
+                .B = terminalCoreColor.B
+            };
+            // only set to the new value if our current value is not the same
+            // unfortunately the Value setter does not do this check properly since
+            // we create a whole new IReference even for the same underlying color
+            if (_Value)
+            {
+                const auto currentValue = unbox_value<Windows::Foundation::IReference<Windows::UI::Color>>(_Value).Value();
+                if (currentValue == winuiColor)
+                {
+                    return;
+                }
+            }
+            Value(box_value(Windows::Foundation::IReference<Windows::UI::Color>{ winuiColor }));
+        }
+        else
+        {
+            Value(nullptr);
+        }
+    }
+
     ActionArgsViewModel::ActionArgsViewModel(const Model::ActionAndArgs actionAndArgs) :
         _actionAndArgs{ actionAndArgs }
     {

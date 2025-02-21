@@ -237,7 +237,7 @@
                                 Spacing="8">
                         <TextBlock Text="{x:Bind Name}"
                                    VerticalAlignment="Center" />
-                        <muxc:NumberBox Value="{x:Bind mtu:Converters.UnboxInt32(Value), Mode=TwoWay, BindBack=DoubleBindBack}"
+                        <muxc:NumberBox Value="{x:Bind UnboxInt32(Value), Mode=TwoWay, BindBack=DoubleBindBack}"
                                         Style="{StaticResource NumberBoxSettingStyle}"
                                         Minimum="0"
                                         Maximum="999"
@@ -254,7 +254,7 @@
                                 Spacing="8">
                         <TextBlock Text="{x:Bind Name}"
                                    VerticalAlignment="Center" />
-                        <muxc:NumberBox Value="{x:Bind mtu:Converters.UnboxUInt32(Value), Mode=TwoWay, BindBack=DoubleBindBack}"
+                        <muxc:NumberBox Value="{x:Bind UnboxUInt32(Value), Mode=TwoWay, BindBack=DoubleBindBack}"
                                         Style="{StaticResource NumberBoxSettingStyle}"
                                         Minimum="0"
                                         Maximum="999"
@@ -271,7 +271,7 @@
                                 Spacing="8">
                         <TextBlock Text="{x:Bind Name}"
                                    VerticalAlignment="Center" />
-                        <muxc:NumberBox Value="{x:Bind mtu:Converters.UnboxUInt32Optional(Value), Mode=TwoWay, BindBack=DoubleOptionalBindBack}"
+                        <muxc:NumberBox Value="{x:Bind UnboxUInt32Optional(Value), Mode=TwoWay, BindBack=DoubleOptionalBindBack}"
                                         Style="{StaticResource NumberBoxSettingStyle}"
                                         Minimum="0"
                                         Maximum="999"
@@ -288,7 +288,7 @@
                                 Spacing="8">
                         <TextBlock Text="{x:Bind Name}"
                                    VerticalAlignment="Center" />
-                        <muxc:NumberBox Value="{x:Bind mtu:Converters.UnboxFloat(Value), Mode=TwoWay, BindBack=FloatBindBack}"
+                        <muxc:NumberBox Value="{x:Bind UnboxFloat(Value), Mode=TwoWay, BindBack=FloatBindBack}"
                                         Style="{StaticResource NumberBoxSettingStyle}"
                                         Minimum="0"
                                         Maximum="999"
@@ -305,7 +305,7 @@
                                 Spacing="8">
                         <TextBlock Text="{x:Bind Name}"
                                    VerticalAlignment="Center" />
-                        <TextBox Text="{x:Bind mtu:Converters.UnboxString(Value), Mode=TwoWay, BindBack=StringBindBack}" />
+                        <TextBox Text="{x:Bind UnboxString(Value), Mode=TwoWay, BindBack=StringBindBack}" />
                     </StackPanel>
                 </ListViewItem>
             </DataTemplate>
@@ -317,7 +317,7 @@
                                 Spacing="8">
                         <TextBlock Text="{x:Bind Name}"
                                    VerticalAlignment="Center" />
-                        <CheckBox IsChecked="{x:Bind mtu:Converters.UnboxBool(Value), Mode=TwoWay, BindBack=BoolBindBack}" />
+                        <CheckBox IsChecked="{x:Bind UnboxBool(Value), Mode=TwoWay, BindBack=BoolBindBack}" />
                     </StackPanel>
                 </ListViewItem>
             </DataTemplate>
@@ -329,7 +329,7 @@
                                 Spacing="8">
                         <TextBlock Text="{x:Bind Name}"
                                    VerticalAlignment="Center" />
-                        <CheckBox IsChecked="{x:Bind mtu:Converters.UnboxBoolOptional(Value), Mode=TwoWay, BindBack=BoolBindBack}"
+                        <CheckBox IsChecked="{x:Bind UnboxBoolOptional(Value), Mode=TwoWay, BindBack=BoolBindBack}"
                                   IsThreeState="True" />
                     </StackPanel>
                 </ListViewItem>
