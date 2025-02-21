@@ -57,8 +57,6 @@ namespace Microsoft::Console::VirtualTerminal
         static wchar_t SanitizeUCS2(wchar_t ch);
 
         [[nodiscard]] HRESULT Initialize(const ConsoleArguments* const pArgs);
-        [[nodiscard]] HRESULT CreateAndStartSignalThread() noexcept;
-        [[nodiscard]] HRESULT CreateIoHandlers() noexcept;
 
         bool IsUsingVt() const;
         [[nodiscard]] HRESULT StartIfNeeded();
@@ -69,6 +67,15 @@ namespace Microsoft::Console::VirtualTerminal
         void CreatePseudoWindow();
 
     private:
+        enum class State : uint8_t
+        {
+            Uninitialized,
+            Initialized,
+            Starting,
+            StartupFailed,
+            Running,
+        };
+
         [[nodiscard]] HRESULT _Initialize(const HANDLE InHandle, const HANDLE OutHandle, _In_opt_ const HANDLE SignalHandle);
 
         void _uncork();
@@ -77,7 +84,7 @@ namespace Microsoft::Console::VirtualTerminal
         // After CreateIoHandlers is called, these will be invalid.
         wil::unique_hfile _hInput;
         wil::unique_hfile _hOutput;
-        // After CreateAndStartSignalThread is called, this will be invalid.
+        // After Initialize is called, this will be invalid.
         wil::unique_hfile _hSignal;
 
         std::unique_ptr<Microsoft::Console::VtInputThread> _pVtInputThread;
@@ -96,7 +103,7 @@ namespace Microsoft::Console::VirtualTerminal
         bool _writerRestoreCursor = false;
         bool _writerTainted = false;
 
-        bool _initialized = false;
+        State _state = State::Uninitialized;
         bool _lookingForCursorPosition = false;
         bool _closeEventSent = false;
         int _corked = 0;
