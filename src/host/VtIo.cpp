@@ -215,7 +215,7 @@ bool VtIo::IsUsingVt() const
     if (_state != State::Starting)
     {
         // Here's where we _could_ call CloseConsoleProcessState(), but this function
-        // only gets get called once when the first client connects and CONSOLE_INITIALIZED
+        // only gets called once when the first client connects and CONSOLE_INITIALIZED
         // is not set yet. The process list may already contain that first client,
         // but since it hasn't finished connecting yet, it won't react to a CTRL_CLOSE_EVENT.
         // Instead, we return an error here which will abort the connection setup.
