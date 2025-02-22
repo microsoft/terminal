@@ -2328,4 +2328,12 @@
     <value>Nessuno</value>
     <comment>Text displayed when the tab title is not defined.</comment>
   </data>
+  <data name="Globals_StartOnUserLogin_DisabledByUser" xml:space="preserve">
+    <value>L'avvio automatico è stato disabilitato nella sezione App di avvio delle impostazioni Windows.</value>
+    <comment>{Locked="Windows"}This is displayed in concordance with Globals_StartOnUserLogin if the user has disabled the setting outside of the application.</comment>
+  </data>
+  <data name="Globals_StartOnUserLogin_UnavailableByPolicy" xml:space="preserve">
+    <value>Questa opzione è gestita da criteri aziendali e non può essere modificata qui.</value>
+    <comment>This is displayed in concordance with Globals_StartOnUserLogin if the enterprise administrator has taken control of this setting.</comment>
+  </data>
 </root>

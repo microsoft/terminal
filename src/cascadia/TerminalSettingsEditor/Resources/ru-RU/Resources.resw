@@ -2328,4 +2328,12 @@
     <value>Нет</value>
     <comment>Text displayed when the tab title is not defined.</comment>
   </data>
+  <data name="Globals_StartOnUserLogin_DisabledByUser" xml:space="preserve">
+    <value>Автоматическая загрузка отключена в разделе "Приложения запуска" Windows параметрах.</value>
+    <comment>{Locked="Windows"}This is displayed in concordance with Globals_StartOnUserLogin if the user has disabled the setting outside of the application.</comment>
+  </data>
+  <data name="Globals_StartOnUserLogin_UnavailableByPolicy" xml:space="preserve">
+    <value>Этот параметр управляется политикой предприятия и не может быть изменен здесь.</value>
+    <comment>This is displayed in concordance with Globals_StartOnUserLogin if the enterprise administrator has taken control of this setting.</comment>
+  </data>
 </root>
