@@ -340,7 +340,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                             const Core::Point pixelPosition,
                                             const bool pointerPressedInBounds)
     {
-        const auto terminalPosition = _getTerminalPosition(til::point{ pixelPosition }, true);
+        const auto terminalPosition = _getTerminalPosition(til::point{ pixelPosition }, false);
         // Returning true from this function indicates that the caller should do no further processing of this movement.
         bool handledCompletely = false;
 
@@ -489,7 +489,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                           const Core::Point pixelPosition,
                                           const Control::MouseButtonState buttonState)
     {
-        const auto terminalPosition = _getTerminalPosition(til::point{ pixelPosition }, true);
+        const auto terminalPosition = _getTerminalPosition(til::point{ pixelPosition }, false);
 
         // Short-circuit isReadOnly check to avoid warning dialog.
         //
