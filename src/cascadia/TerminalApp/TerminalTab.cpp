@@ -851,6 +851,9 @@ namespace winrt::TerminalApp::implementation
     {
         ASSERT_UI_THREAD();
 
+        // Don't forget to call the overridden function. :)
+        TabBase::Shutdown();
+
         if (_rootPane)
         {
             _rootPane->Shutdown();
