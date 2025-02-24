@@ -1988,6 +1988,12 @@ namespace winrt::TerminalApp::implementation
             actions.insert(actions.end(), std::make_move_iterator(tabActions.begin()), std::make_move_iterator(tabActions.end()));
         }
 
+        // Avoid persisting a window with zero tabs, because `BuildStartupActions` happened to return an empty vector.
+        if (actions.empty())
+        {
+            return;
+        }
+
         // if the focused tab was not the last tab, restore that
         auto idx = _GetFocusedTabIndex();
         if (idx && idx != tabCount - 1)
