@@ -158,6 +158,8 @@ namespace winrt::TerminalApp::implementation
         // Set this tab's icon to the icon from the content
         _UpdateTabIcon(*newTabImpl);
 
+        // This is necessary, because WinUI does not have support for middle clicks.
+        // Its Tapped event doesn't provide the information what button was used either.
         tabViewItem.PointerPressed({ this, &TerminalPage::_OnTabPointerPressed });
         tabViewItem.PointerReleased({ this, &TerminalPage::_OnTabPointerReleased });
         tabViewItem.PointerExited({ this, &TerminalPage::_OnTabPointerExited });
@@ -903,16 +905,36 @@ namespace winrt::TerminalApp::implementation
         if (_tabPointerMiddleButtonPressed && !eventArgs.GetCurrentPoint(nullptr).Properties().IsMiddleButtonPressed())
         {
             _tabPointerMiddleButtonPressed = false;
-            if (const auto tabViewItem{ sender.try_as<MUX::Controls::TabViewItem>() })
+            if (auto tabViewItem = sender.try_as<MUX::Controls::TabViewItem>())
             {
                 tabViewItem.ReleasePointerCapture(eventArgs.Pointer());
-                auto tab = _GetTabByTabViewItem(tabViewItem);
-                if (!_tabPointerMiddleButtonExited && tab)
+                if (!_tabPointerMiddleButtonExited)
                 {
-                    _HandleCloseTabRequested(tab);
+                    _OnTabPointerReleasedCloseTab(std::move(tabViewItem));
                 }
             }
             eventArgs.Handled(true);
+        }
+    }
+
+    safe_void_coroutine TerminalPage::_OnTabPointerReleasedCloseTab(winrt::Microsoft::UI::Xaml::Controls::TabViewItem sender)
+    {
+        const auto tab = _GetTabByTabViewItem(sender);
+        if (!tab)
+        {
+            co_return;
+        }
+
+        // WinUI asynchronously updates its tab view items, so it may happen that we're given a
+        // `TabViewItem` that still contains a `TabBase` which has actually already been removed.
+        // First we must yield once, to flush out whatever TabView is currently doing.
+        const auto strong = get_strong();
+        co_await wil::resume_foreground(Dispatcher());
+
+        // `tab.Shutdown()` in `_RemoveTab()` sets the content to null = This checks if the tab is closed.
+        if (tab.Content())
+        {
+            _HandleCloseTabRequested(tab);
         }
     }
 
