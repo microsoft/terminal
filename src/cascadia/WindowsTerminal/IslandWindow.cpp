@@ -95,6 +95,7 @@ void IslandWindow::Close()
 
     if (_source)
     {
+        // BODGY
         // WinUI will strongly hold onto the first DesktopWindowXamlSource that is created.
         // If we don't manually set the Content() to null first, closing that first window
         // will leak all of its contents permanently.
