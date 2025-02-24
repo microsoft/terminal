@@ -905,7 +905,7 @@ namespace winrt::TerminalApp::implementation
         if (_tabPointerMiddleButtonPressed && !eventArgs.GetCurrentPoint(nullptr).Properties().IsMiddleButtonPressed())
         {
             _tabPointerMiddleButtonPressed = false;
-            if (auto tabViewItem = sender.try_as<MUX::Controls::TabViewItem>())
+            if (auto tabViewItem{ sender.try_as<MUX::Controls::TabViewItem>() })
             {
                 tabViewItem.ReleasePointerCapture(eventArgs.Pointer());
                 if (!_tabPointerMiddleButtonExited)
