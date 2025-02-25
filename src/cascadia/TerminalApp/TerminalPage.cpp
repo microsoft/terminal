@@ -62,7 +62,6 @@ namespace winrt::TerminalApp::implementation
     TerminalPage::TerminalPage(TerminalApp::WindowProperties properties, const TerminalApp::ContentManager& manager) :
         _tabs{ winrt::single_threaded_observable_vector<TerminalApp::TabBase>() },
         _mruTabs{ winrt::single_threaded_observable_vector<TerminalApp::TabBase>() },
-        _startupActions{ winrt::single_threaded_vector<ActionAndArgs>() },
         _manager{ manager },
         _hostingHwnd{},
         _WindowProperties{ std::move(properties) }
@@ -297,7 +296,7 @@ namespace winrt::TerminalApp::implementation
         // GH#12267: Don't forget about defterm handoff here. If we're being
         // created for embedding, then _yea_, we don't need to handoff to an
         // elevated window.
-        if (!_startupActions || IsRunningElevated() || _shouldStartInboundListener || _startupActions.Size() == 0)
+        if (_startupActions.empty() || IsRunningElevated() || _shouldStartInboundListener)
         {
             // there aren't startup actions, or we're elevated. In that case, go for it.
             return false;
@@ -375,7 +374,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void TerminalPage::HandoffToElevated(const CascadiaSettings& settings)
     {
-        if (!_startupActions)
+        if (_startupActions.empty())
         {
             return;
         }
@@ -489,7 +488,7 @@ namespace winrt::TerminalApp::implementation
         {
             _startupState = StartupState::InStartup;
 
-            ProcessStartupActions(_startupActions, true);
+            ProcessStartupActions(std::move(_startupActions), true);
 
             // If we were told that the COM server needs to be started to listen for incoming
             // default application connections, start it now.
@@ -546,80 +545,56 @@ namespace winrt::TerminalApp::implementation
     //   nt -d .` from inside another directory to work as expected.
     // Return Value:
     // - <none>
-    safe_void_coroutine TerminalPage::ProcessStartupActions(Windows::Foundation::Collections::IVector<ActionAndArgs> actions,
-                                                            const bool initial,
-                                                            const winrt::hstring cwd,
-                                                            const winrt::hstring env)
+    safe_void_coroutine TerminalPage::ProcessStartupActions(std::vector<ActionAndArgs> actions, const bool initial, const winrt::hstring cwd, const winrt::hstring env)
     {
-        auto weakThis{ get_weak() };
-
-        // Handle it on a subsequent pass of the UI thread.
-        co_await wil::resume_foreground(Dispatcher(), CoreDispatcherPriority::Normal);
+        const auto strong = get_strong();
 
         // If the caller provided a CWD, "switch" to that directory, then switch
-        // back once we're done. This looks weird though, because we have to set
-        // up the scope_exit _first_. We'll release the scope_exit if we don't
-        // actually need it.
-
+        // back once we're done.
         auto originalVirtualCwd{ _WindowProperties.VirtualWorkingDirectory() };
-        auto restoreCwd = wil::scope_exit([&originalVirtualCwd, this]() {
-            // ignore errors, we'll just power on through. We'd rather do
-            // something rather than fail silently if the directory doesn't
-            // actually exist.
-            _WindowProperties.VirtualWorkingDirectory(originalVirtualCwd);
-        });
-
-        // Literally the same thing with env vars too
         auto originalVirtualEnv{ _WindowProperties.VirtualEnvVars() };
-        auto restoreEnv = wil::scope_exit([&originalVirtualEnv, this]() {
-            _WindowProperties.VirtualEnvVars(originalVirtualEnv);
+        auto restoreCwd = wil::scope_exit([&]() {
+            if (!cwd.empty())
+            {
+                // ignore errors, we'll just power on through. We'd rather do
+                // something rather than fail silently if the directory doesn't
+                // actually exist.
+                _WindowProperties.VirtualWorkingDirectory(originalVirtualCwd);
+                _WindowProperties.VirtualEnvVars(originalVirtualEnv);
+            }
         });
+        _WindowProperties.VirtualWorkingDirectory(cwd);
+        _WindowProperties.VirtualEnvVars(env);
 
-        if (cwd.empty())
+        for (size_t i = 0; i < actions.size(); ++i)
         {
-            // We didn't actually need to change the virtual CWD, so we don't
-            // need to restore it
-            restoreCwd.release();
-        }
-        else
-        {
-            _WindowProperties.VirtualWorkingDirectory(cwd);
-        }
-
-        if (env.empty())
-        {
-            restoreEnv.release();
-        }
-        else
-        {
-            _WindowProperties.VirtualEnvVars(env);
-        }
-
-        if (auto page{ weakThis.get() })
-        {
-            for (const auto& action : actions)
+            if (i != 0)
             {
-                if (auto page{ weakThis.get() })
-                {
-                    _actionDispatch->DoAction(action);
-                }
-                else
-                {
-                    co_return;
-                }
+                // Each action may rely on the XAML layout of a preceding action.
+                // Most importantly, this is the case for the combination of NewTab + SplitPane,
+                // as the former appears to only have a layout size after at least 1 resume_foreground,
+                // while the latter relies on that information. This is also why it uses Low priority.
+                //
+                // Curiously, this does not seem to be required when using startupActions, but only when
+                // tearing out a tab (this currently creates a new window with injected startup actions).
+                // This indicates that this is really more of an architectural issue and not a fundamental one.
+                co_await wil::resume_foreground(Dispatcher(), CoreDispatcherPriority::Low);
             }
 
-            // GH#6586: now that we're done processing all startup commands,
-            // focus the active control. This will work as expected for both
-            // commandline invocations and for `wt` action invocations.
-            if (const auto& terminalTab{ _GetFocusedTabImpl() })
+            _actionDispatch->DoAction(actions[i]);
+        }
+
+        // GH#6586: now that we're done processing all startup commands,
+        // focus the active control. This will work as expected for both
+        // commandline invocations and for `wt` action invocations.
+        if (const auto& terminalTab{ _GetFocusedTabImpl() })
+        {
+            if (const auto& content{ terminalTab->GetActiveContent() })
             {
-                if (const auto& content{ terminalTab->GetActiveContent() })
-                {
-                    content.Focus(FocusState::Programmatic);
-                }
+                content.Focus(FocusState::Programmatic);
             }
         }
+
         if (initial)
         {
             _CompleteInitialization();
@@ -3664,13 +3639,9 @@ namespace winrt::TerminalApp::implementation
     // - actions: a list of Actions to process on startup.
     // Return Value:
     // - <none>
-    void TerminalPage::SetStartupActions(std::vector<ActionAndArgs>& actions)
+    void TerminalPage::SetStartupActions(std::vector<ActionAndArgs> actions)
     {
-        // The fastest way to copy all the actions out of the std::vector and
-        // put them into a winrt::IVector is by making a copy, then moving the
-        // copy into the winrt vector ctor.
-        auto listCopy = actions;
-        _startupActions = winrt::single_threaded_vector<ActionAndArgs>(std::move(listCopy));
+        _startupActions = std::move(actions);
     }
 
     // Routine Description:
