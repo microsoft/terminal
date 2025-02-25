@@ -184,8 +184,6 @@ namespace winrt::TerminalApp::implementation
         // this as a MTA, before the app is Create()'d
         WINRT_ASSERT(_loadedInitialSettings);
 
-        _ApplyLanguageSettingChange();
-
         TraceLoggingWrite(
             g_hTerminalAppProvider,
             "AppCreated",
@@ -435,6 +433,10 @@ namespace winrt::TerminalApp::implementation
             _settings.LogSettingChanges(true);
         }
 
+        _ApplyLanguageSettingChange();
+        _ApplyStartupTaskStateChange();
+        _ProcessLazySettingsChanges();
+
         if (initialLoad)
         {
             // Register for directory change notification.
@@ -444,10 +446,6 @@ namespace winrt::TerminalApp::implementation
 
         // Here, we successfully reloaded the settings, and created a new
         // TerminalSettings object.
-
-        _ApplyLanguageSettingChange();
-        _ApplyStartupTaskStateChange();
-        _ProcessLazySettingsChanges();
 
         auto warnings{ winrt::multi_threaded_vector<SettingsLoadWarnings>() };
         for (auto&& warn : _warnings)
