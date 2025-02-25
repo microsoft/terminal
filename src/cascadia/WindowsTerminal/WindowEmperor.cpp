@@ -744,7 +744,7 @@ void WindowEmperor::_createMessageWindow(const wchar_t* className)
 bool WindowEmperor::_shouldSkipClosingWindows() const
 {
     const auto globalSettings = _app.Logic().Settings().GlobalSettings();
-    const auto windowLimit = globalSettings.ShouldUsePersistedLayout() ? 1 : 0;
+    const size_t windowLimit = globalSettings.ShouldUsePersistedLayout() ? 1 : 0;
     return _windows.size() <= windowLimit;
 }
 
@@ -759,7 +759,7 @@ bool WindowEmperor::_shouldSkipClosingWindows() const
 void WindowEmperor::_postQuitMessageIfNeeded() const
 {
     const auto globalSettings = _app.Logic().Settings().GlobalSettings();
-    const auto windowLimit = globalSettings.ShouldUsePersistedLayout() ? 1 : 0;
+    const size_t windowLimit = globalSettings.ShouldUsePersistedLayout() ? 1 : 0;
 
     if (_messageBoxCount <= 0 && _windows.size() <= windowLimit && !globalSettings.AllowHeadless())
     {
