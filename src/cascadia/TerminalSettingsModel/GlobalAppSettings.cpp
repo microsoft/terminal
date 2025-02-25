@@ -94,11 +94,7 @@ winrt::com_ptr<GlobalAppSettings> GlobalAppSettings::Copy() const
     }
     if (_DisabledProfileSources)
     {
-        globals->_DisabledProfileSources = winrt::single_threaded_vector<hstring>();
-        for (const auto& src : *_DisabledProfileSources)
-        {
-            globals->_DisabledProfileSources->Append(src);
-        }
+        globals->_DisabledProfileSources = winrt::single_threaded_vector<hstring>(std::move(wil::to_vector(*globals->_DisabledProfileSources)));
     }
 
     for (const auto& parent : _parents)
