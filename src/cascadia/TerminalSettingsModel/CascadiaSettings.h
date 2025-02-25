@@ -74,6 +74,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         ParsedSettings inboxSettings;
         ParsedSettings userSettings;
         std::vector<Model::FragmentSettings> fragmentExtensions;
+        std::vector<Model::FragmentSettings> dynamicProfileGeneratorExtensions;
         bool duplicateProfile = false;
 
     private:
@@ -132,6 +133,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         winrt::Windows::Foundation::Collections::IObservableVector<Model::Profile> ActiveProfiles() const noexcept;
         Model::ActionMap ActionMap() const noexcept;
         winrt::Windows::Foundation::Collections::IVectorView<Model::FragmentSettings> FragmentExtensions() const noexcept;
+        winrt::Windows::Foundation::Collections::IVectorView<Model::FragmentSettings> DynamicProfileGenerators() const noexcept;
         void WriteSettingsToDisk();
         Json::Value ToJson() const;
         Model::Profile ProfileDefaults() const;
@@ -190,6 +192,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         winrt::Windows::Foundation::Collections::IObservableVector<Model::Profile> _allProfiles = winrt::single_threaded_observable_vector<Model::Profile>();
         winrt::Windows::Foundation::Collections::IObservableVector<Model::Profile> _activeProfiles = winrt::single_threaded_observable_vector<Model::Profile>();
         winrt::Windows::Foundation::Collections::IVector<Model::FragmentSettings> _fragmentExtensions = winrt::single_threaded_vector<Model::FragmentSettings>();
+        winrt::Windows::Foundation::Collections::IVector<Model::FragmentSettings> _dynamicProfileGeneratorExtensions = winrt::single_threaded_vector<Model::FragmentSettings>();
         std::set<std::string> _themesChangeLog{};
 
         // load errors

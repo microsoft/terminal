@@ -991,31 +991,51 @@ bool SettingsLoader::_addOrMergeUserColorScheme(const winrt::com_ptr<implementat
 void SettingsLoader::_executeGenerator(const IDynamicProfileGenerator& generator)
 {
     const auto generatorNamespace = generator.GetNamespace();
-    if (_ignoredNamespaces.contains(generatorNamespace))
-    {
-        return;
-    }
-
-    const auto previousSize = inboxSettings.profiles.size();
-
+    std::vector<winrt::com_ptr<implementation::Profile>> generatedProfiles;
     try
     {
-        generator.GenerateProfiles(inboxSettings.profiles);
+        generator.GenerateProfiles(generatedProfiles);
     }
     CATCH_LOG_MSG("Dynamic Profile Namespace: \"%.*s\"", gsl::narrow<int>(generatorNamespace.size()), generatorNamespace.data())
 
+    // These are needed for the FragmentSettings object
+    std::vector<Model::FragmentProfileEntry> profileEntries;
+    Json::Value profilesListJson{ Json::ValueType::arrayValue };
+    Json::StreamWriterBuilder styledWriter;
+    styledWriter["indentation"] = "    ";
+
     // If the generator produced some profiles we're going to give them default attributes.
     // By setting the Origin/Source/etc. here, we deduplicate some code and ensure they aren't missing accidentally.
-    if (inboxSettings.profiles.size() > previousSize)
+    const winrt::hstring source{ generatorNamespace };
+    for (const auto& profile : generatedProfiles)
     {
-        const winrt::hstring source{ generatorNamespace };
+        profile->Origin(OriginTag::Generated);
+        profile->Source(source);
 
-        for (const auto& profile : std::span(inboxSettings.profiles).subspan(previousSize))
+        const auto profileJson = profile->ToJson();
+        profilesListJson.append(profileJson);
+        profileEntries.push_back(winrt::make<FragmentProfileEntry>(profile->Guid(), hstring{ til::u8u16(Json::writeString(styledWriter, profileJson)) }));
+    }
+
+    if (!_ignoredNamespaces.contains(generatorNamespace))
+    {
+        // Add generated profiles to the user settings
+        for (auto& profile : generatedProfiles)
         {
-            profile->Origin(OriginTag::Generated);
-            profile->Source(source);
+            inboxSettings.profiles.push_back(profile);
         }
     }
+
+    // Manually construct the JSON for the FragmentSettings object
+    Json::Value json{ Json::ValueType::objectValue };
+    json[JsonKey(ProfilesKey)] = profilesListJson;
+
+    auto generatorExtension = winrt::make_self<FragmentSettings>(hstring{ generatorNamespace }, hstring{ til::u8u16(Json::writeString(styledWriter, json)) }, hstring{ L"settings.json" }, FragmentScope::Machine);
+    for (const auto& entry : profileEntries)
+    {
+        generatorExtension->NewProfiles().Append(entry);
+    }
+    dynamicProfileGeneratorExtensions.emplace_back(*generatorExtension);
 }
 
 // Method Description:
@@ -1308,6 +1328,7 @@ CascadiaSettings::CascadiaSettings(SettingsLoader&& loader) :
     _warnings = winrt::single_threaded_vector(std::move(warnings));
     _themesChangeLog = std::move(loader.userSettings.themesChangeLog);
     _fragmentExtensions = winrt::single_threaded_vector(std::move(loader.fragmentExtensions));
+    _dynamicProfileGeneratorExtensions = winrt::single_threaded_vector(std::move(loader.dynamicProfileGeneratorExtensions));
 
     _resolveDefaultProfile();
     _resolveNewTabMenuProfiles();

@@ -124,6 +124,17 @@ Model::CascadiaSettings CascadiaSettings::Copy() const
             }
             settings->_fragmentExtensions = winrt::single_threaded_vector(std::move(fragmentExtensions));
         }
+
+        // copy dynamic profile generators
+        {
+            std::vector<Model::FragmentSettings> dynamicProfileGenerators;
+            dynamicProfileGenerators.reserve(_dynamicProfileGeneratorExtensions.Size());
+            for (const auto& fragment : _dynamicProfileGeneratorExtensions)
+            {
+                dynamicProfileGenerators.emplace_back(get_self<FragmentSettings>(fragment)->Copy());
+            }
+            settings->_dynamicProfileGeneratorExtensions = winrt::single_threaded_vector(std::move(dynamicProfileGenerators));
+        }
     }
 
     // load errors
@@ -218,6 +229,11 @@ IObservableVector<Model::Profile> CascadiaSettings::ActiveProfiles() const noexc
 IVectorView<Model::FragmentSettings> CascadiaSettings::FragmentExtensions() const noexcept
 {
     return _fragmentExtensions.GetView();
+}
+
+IVectorView<Model::FragmentSettings> CascadiaSettings::DynamicProfileGenerators() const noexcept
+{
+    return _dynamicProfileGeneratorExtensions.GetView();
 }
 
 // Method Description:

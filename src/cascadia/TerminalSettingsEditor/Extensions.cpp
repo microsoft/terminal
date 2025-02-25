@@ -111,14 +111,25 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _extensionSources.clear();
         _CurrentExtensionSource.clear();
 
-        std::vector<Editor::FragmentExtensionViewModel> fragmentExtensions;
-        fragmentExtensions.reserve(settings.FragmentExtensions().Size());
+        std::vector<Model::FragmentSettings> extensions;
+        extensions.reserve(settings.FragmentExtensions().Size() + settings.DynamicProfileGenerators().Size());
+        for (auto ext : settings.FragmentExtensions())
+        {
+            extensions.push_back(ext);
+        }
+        for (auto ext : settings.DynamicProfileGenerators())
+        {
+            extensions.push_back(ext);
+        }
+
+        std::vector<Editor::FragmentExtensionViewModel> extensionVMs;
+        extensionVMs.reserve(extensions.size());
 
         // these vectors track components all extensions successfully added
         std::vector<Editor::FragmentProfileViewModel> profilesModifiedTotal;
         std::vector<Editor::FragmentProfileViewModel> profilesAddedTotal;
         std::vector<Editor::FragmentColorSchemeViewModel> colorSchemesAddedTotal;
-        for (const auto&& fragExt : settings.FragmentExtensions())
+        for (const auto& fragExt : extensions)
         {
             const auto extensionEnabled = GetExtensionState(fragExt.Source());
 
@@ -173,10 +184,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             }
 
             _extensionSources.insert(fragExt.Source());
-            fragmentExtensions.push_back(winrt::make<FragmentExtensionViewModel>(fragExt, currentProfilesModified, currentProfilesAdded, currentColorSchemesAdded));
+            extensionVMs.push_back(winrt::make<FragmentExtensionViewModel>(fragExt, currentProfilesModified, currentProfilesAdded, currentColorSchemesAdded));
         }
 
-        _fragmentExtensions = single_threaded_observable_vector<Editor::FragmentExtensionViewModel>(std::move(fragmentExtensions));
+        _fragmentExtensions = single_threaded_observable_vector<Editor::FragmentExtensionViewModel>(std::move(extensionVMs));
         _profilesModifiedView = single_threaded_observable_vector<Editor::FragmentProfileViewModel>(std::move(profilesModifiedTotal));
         _profilesAddedView = single_threaded_observable_vector<Editor::FragmentProfileViewModel>(std::move(profilesAddedTotal));
         _colorSchemesAddedView = single_threaded_observable_vector<Editor::FragmentColorSchemeViewModel>(std::move(colorSchemesAddedTotal));
