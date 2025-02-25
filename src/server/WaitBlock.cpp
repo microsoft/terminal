@@ -223,9 +223,11 @@ bool ConsoleWaitBlock::Notify(const WaitTerminationReason TerminationReason)
             a->NumBytes = gsl::narrow<ULONG>(NumBytes);
         }
 
-        LOG_IF_FAILED(_WaitReplyMessage.ReleaseMessageBuffers());
+        _WaitReplyMessage.ReleaseMessageBuffers();
 
-        LOG_IF_FAILED(Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals().pDeviceComm->CompleteIo(&_WaitReplyMessage.Complete));
+        // This call fails when the server pipe is closed on us,
+        // which results in log spam in practice.
+        std::ignore = Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals().pDeviceComm->CompleteIo(&_WaitReplyMessage.Complete);
 
         fRetVal = true;
     }
