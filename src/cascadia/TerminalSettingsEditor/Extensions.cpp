@@ -7,6 +7,7 @@
 #include "ExtensionPackageViewModel.g.cpp"
 #include "ExtensionsViewModel.g.cpp"
 #include "FragmentProfileViewModel.g.cpp"
+#include "ExtensionPackageTemplateSelector.g.cpp"
 
 #include <LibraryResources.h>
 #include "..\WinRTUtils\inc\Utils.h"
@@ -22,6 +23,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     Extensions::Extensions()
     {
         InitializeComponent();
+
+        _extensionPackageTemplateSelector = Resources().Lookup(box_value(L"ExtensionPackageTemplateSelector")).as<Editor::ExtensionPackageTemplateSelector>();
     }
 
     void Extensions::OnNavigatedTo(const NavigationEventArgs& e)
@@ -29,24 +32,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _ViewModel = e.Parameter().as<Editor::ExtensionsViewModel>();
     }
 
-    void Extensions::ExtensionLoaded(const IInspectable& sender, const RoutedEventArgs& /*args*/)
-    {
-        const auto& toggleSwitch = sender.as<Controls::ToggleSwitch>();
-        const auto& extensionSource = toggleSwitch.Tag().as<hstring>();
-        toggleSwitch.IsOn(_ViewModel.GetExtensionState(extensionSource));
-    }
-
-    void Extensions::ExtensionToggled(const IInspectable& sender, const RoutedEventArgs& /*args*/)
-    {
-        const auto& toggleSwitch = sender.as<Controls::ToggleSwitch>();
-        const auto& extensionSource = toggleSwitch.Tag().as<hstring>();
-        _ViewModel.SetExtensionState(extensionSource, toggleSwitch.IsOn());
-    }
-
     void Extensions::ExtensionNavigator_Click(const IInspectable& sender, const RoutedEventArgs& /*args*/)
     {
-        const auto source = sender.as<Controls::Button>().Tag().as<hstring>();
-        _ViewModel.CurrentExtensionSource(source);
+        const auto extPkgVM = sender.as<Controls::Button>().Tag().as<Editor::ExtensionPackageViewModel>();
+        _ViewModel.CurrentExtensionPackage(extPkgVM);
     }
 
     void Extensions::NavigateToProfile_Click(const IInspectable& sender, const RoutedEventArgs& /*args*/)
@@ -69,20 +58,18 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         PropertyChanged([this](auto&&, const PropertyChangedEventArgs& args) {
             const auto viewModelProperty{ args.PropertyName() };
-            if (viewModelProperty == L"CurrentExtensionSource")
+            if (viewModelProperty == L"CurrentExtensionPackage")
             {
-                // Update the views to reflect the current extension source, if one is selected.
+                // Update the views to reflect the current extension package, if one is selected.
                 // Otherwise, show components from all extensions
                 _profilesModifiedView.Clear();
                 _profilesAddedView.Clear();
                 _colorSchemesAddedView.Clear();
 
-                const auto currentExtensionSource = CurrentExtensionSource();
-                for (const auto& ext : _fragmentExtensions)
-                {
-                    // No extension selected --> show all enabled extension components
-                    // Otherwise, only show the ones for the selected extension
-                    if (const auto extSrc = ext.Fragment().Source(); (currentExtensionSource.empty() && GetExtensionState(extSrc)) || extSrc == currentExtensionSource)
+                // Helper lambda to add the contents of an extension package to the current view
+                auto addPackageContentsToView = [&](const Editor::ExtensionPackageViewModel& extPkg) {
+                    auto extPkgVM = get_self<ExtensionPackageViewModel>(extPkg);
+                    for (const auto& ext : extPkgVM->FragmentExtensions())
                     {
                         for (const auto& profile : ext.ProfilesModified())
                         {
@@ -97,9 +84,21 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                             _colorSchemesAddedView.Append(scheme);
                         }
                     }
+                };
+
+                if (const auto currentExtensionPackage = CurrentExtensionPackage())
+                {
+                    addPackageContentsToView(currentExtensionPackage);
+                }
+                else
+                {
+                    for (const auto& extPkg : _extensionPackages)
+                    {
+                        addPackageContentsToView(extPkg);
+                    }
                 }
 
-                _NotifyChanges(L"IsExtensionView", L"CurrentExtensionFragments");
+                _NotifyChanges(L"IsExtensionView");
             }
         });
     }
@@ -108,134 +107,86 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         _settings = settings;
         _colorSchemesPageVM = colorSchemesPageVM;
-        _extensionSources.clear();
-        _CurrentExtensionSource.clear();
+        _CurrentExtensionPackage = nullptr;
 
-        std::vector<Model::FragmentSettings> extensions;
-        extensions.reserve(settings.FragmentExtensions().Size() + settings.DynamicProfileGenerators().Size());
-        for (auto ext : settings.FragmentExtensions())
-        {
-            extensions.push_back(ext);
-        }
-        for (auto ext : settings.DynamicProfileGenerators())
-        {
-            extensions.push_back(ext);
-        }
-
-        std::vector<Editor::FragmentExtensionViewModel> extensionVMs;
-        extensionVMs.reserve(extensions.size());
+        std::vector<Model::ExtensionPackage> extensions = wil::to_vector(settings.Extensions());
 
         // these vectors track components all extensions successfully added
+        std::vector<Editor::ExtensionPackageViewModel> extensionPackages;
         std::vector<Editor::FragmentProfileViewModel> profilesModifiedTotal;
         std::vector<Editor::FragmentProfileViewModel> profilesAddedTotal;
         std::vector<Editor::FragmentColorSchemeViewModel> colorSchemesAddedTotal;
-        for (const auto& fragExt : extensions)
+        for (const auto& extPkg : extensions)
         {
-            const auto extensionEnabled = GetExtensionState(fragExt.Source());
-
-            // these vectors track everything the current extension attempted to bring in
-            std::vector<Editor::FragmentProfileViewModel> currentProfilesModified;
-            std::vector<Editor::FragmentProfileViewModel> currentProfilesAdded;
-            std::vector<Editor::FragmentColorSchemeViewModel> currentColorSchemesAdded;
-
-            for (const auto&& entry : fragExt.ModifiedProfilesView())
+            auto extPkgVM = winrt::make_self<ExtensionPackageViewModel>(extPkg, settings);
+            extensionPackages.push_back(*extPkgVM);
+            for (const auto& fragExt : extPkg.FragmentsView())
             {
-                // Ensure entry successfully modifies a profile before creating and registering the object
-                if (const auto& deducedProfile = _settings.FindProfile(entry.ProfileGuid()))
-                {
-                    auto vm = winrt::make<FragmentProfileViewModel>(entry, fragExt, deducedProfile);
-                    currentProfilesModified.push_back(vm);
-                    if (extensionEnabled)
-                    {
-                        profilesModifiedTotal.push_back(vm);
-                    }
-                }
-            }
+                const auto extensionEnabled = GetExtensionState(fragExt.Source(), _settings);
 
-            for (const auto&& entry : fragExt.NewProfilesView())
-            {
-                // Ensure entry successfully points to a profile before creating and registering the object.
-                // The profile may have been removed by the user.
-                if (const auto& deducedProfile = _settings.FindProfile(entry.ProfileGuid()))
-                {
-                    auto vm = winrt::make<FragmentProfileViewModel>(entry, fragExt, deducedProfile);
-                    currentProfilesAdded.push_back(vm);
-                    if (extensionEnabled)
-                    {
-                        profilesAddedTotal.push_back(vm);
-                    }
-                }
-            }
+                // these vectors track everything the current extension attempted to bring in
+                std::vector<Editor::FragmentProfileViewModel> currentProfilesModified;
+                std::vector<Editor::FragmentProfileViewModel> currentProfilesAdded;
+                std::vector<Editor::FragmentColorSchemeViewModel> currentColorSchemesAdded;
 
-            for (const auto&& entry : fragExt.ColorSchemesView())
-            {
-                for (const auto& schemeVM : _colorSchemesPageVM.AllColorSchemes())
+                for (const auto&& entry : fragExt.ModifiedProfilesView())
                 {
-                    if (schemeVM.Name() == entry.ColorSchemeName())
+                    // Ensure entry successfully modifies a profile before creating and registering the object
+                    if (const auto& deducedProfile = _settings.FindProfile(entry.ProfileGuid()))
                     {
-                        auto vm = winrt::make<FragmentColorSchemeViewModel>(entry, fragExt, schemeVM);
-                        currentColorSchemesAdded.push_back(vm);
+                        auto vm = winrt::make<FragmentProfileViewModel>(entry, fragExt, deducedProfile);
+                        currentProfilesModified.push_back(vm);
                         if (extensionEnabled)
                         {
-                            colorSchemesAddedTotal.push_back(vm);
+                            profilesModifiedTotal.push_back(vm);
                         }
                     }
                 }
-            }
 
-            _extensionSources.insert(fragExt.Source());
-            extensionVMs.push_back(winrt::make<FragmentExtensionViewModel>(fragExt, currentProfilesModified, currentProfilesAdded, currentColorSchemesAdded));
+                for (const auto&& entry : fragExt.NewProfilesView())
+                {
+                    // Ensure entry successfully points to a profile before creating and registering the object.
+                    // The profile may have been removed by the user.
+                    if (const auto& deducedProfile = _settings.FindProfile(entry.ProfileGuid()))
+                    {
+                        auto vm = winrt::make<FragmentProfileViewModel>(entry, fragExt, deducedProfile);
+                        currentProfilesAdded.push_back(vm);
+                        if (extensionEnabled)
+                        {
+                            profilesAddedTotal.push_back(vm);
+                        }
+                    }
+                }
+
+                for (const auto&& entry : fragExt.ColorSchemesView())
+                {
+                    for (const auto& schemeVM : _colorSchemesPageVM.AllColorSchemes())
+                    {
+                        if (schemeVM.Name() == entry.ColorSchemeName())
+                        {
+                            auto vm = winrt::make<FragmentColorSchemeViewModel>(entry, fragExt, schemeVM);
+                            currentColorSchemesAdded.push_back(vm);
+                            if (extensionEnabled)
+                            {
+                                colorSchemesAddedTotal.push_back(vm);
+                            }
+                        }
+                    }
+                }
+                extPkgVM->FragmentExtensions().Append(winrt::make<FragmentExtensionViewModel>(fragExt, currentProfilesModified, currentProfilesAdded, currentColorSchemesAdded));
+            }
         }
 
-        _fragmentExtensions = single_threaded_observable_vector<Editor::FragmentExtensionViewModel>(std::move(extensionVMs));
+        _extensionPackages = single_threaded_observable_vector<Editor::ExtensionPackageViewModel>(std::move(extensionPackages));
         _profilesModifiedView = single_threaded_observable_vector<Editor::FragmentProfileViewModel>(std::move(profilesModifiedTotal));
         _profilesAddedView = single_threaded_observable_vector<Editor::FragmentProfileViewModel>(std::move(profilesAddedTotal));
         _colorSchemesAddedView = single_threaded_observable_vector<Editor::FragmentColorSchemeViewModel>(std::move(colorSchemesAddedTotal));
     }
 
-    IVector<IInspectable> ExtensionsViewModel::CurrentExtensionFragments() const noexcept
-    {
-        std::vector<IInspectable> fragmentExtensionVMs;
-        for (auto&& extVM : _fragmentExtensions)
-        {
-            if (_CurrentExtensionSource.empty() || extVM.Fragment().Source() == _CurrentExtensionSource)
-            {
-                fragmentExtensionVMs.push_back(extVM);
-            }
-        }
-        return winrt::single_threaded_vector<IInspectable>(std::move(fragmentExtensionVMs));
-    }
-
-    hstring ExtensionsViewModel::CurrentExtensionScope() const noexcept
-    {
-        if (!_CurrentExtensionSource.empty())
-        {
-            for (auto&& extVM : _fragmentExtensions)
-            {
-                const auto& fragExt = extVM.Fragment();
-                if (fragExt.Source() == _CurrentExtensionSource)
-                {
-                    return fragExt.Scope() == Model::FragmentScope::User ? RS_(L"Extensions_ScopeUser") : RS_(L"Extensions_ScopeSystem");
-                }
-            }
-        }
-        return hstring{};
-    }
-
-    IObservableVector<Editor::ExtensionPackageViewModel> ExtensionsViewModel::ExtensionPackages() const noexcept
-    {
-        std::vector<Editor::ExtensionPackageViewModel> extensionPackages;
-        for (auto&& extSrc : _extensionSources)
-        {
-            extensionPackages.push_back(winrt::make<ExtensionPackageViewModel>(extSrc, GetExtensionState(extSrc)));
-        }
-        return winrt::single_threaded_observable_vector<Editor::ExtensionPackageViewModel>(std::move(extensionPackages));
-    }
-
     // Returns true if the extension is enabled, false otherwise
-    bool ExtensionsViewModel::GetExtensionState(hstring extensionSource) const
+    bool ExtensionsViewModel::GetExtensionState(hstring extensionSource, const Model::CascadiaSettings& settings)
     {
-        if (const auto& disabledExtensions = _DisabledProfileSources())
+        if (const auto& disabledExtensions = settings.GlobalSettings().DisabledProfileSources())
         {
             uint32_t ignored;
             return !disabledExtensions.IndexOf(extensionSource, ignored);
@@ -245,12 +196,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     }
 
     // Enable/Disable an extension
-    void ExtensionsViewModel::SetExtensionState(hstring extensionSource, bool enableExt)
+    void ExtensionsViewModel::SetExtensionState(hstring extensionSource, const Model::CascadiaSettings& settings, bool enableExt)
     {
         // get the current status of the extension
         uint32_t idx;
         bool currentlyEnabled = true;
-        const auto& disabledExtensions = _DisabledProfileSources();
+        const auto& disabledExtensions = settings.GlobalSettings().DisabledProfileSources();
         if (disabledExtensions)
         {
             currentlyEnabled = !disabledExtensions.IndexOf(extensionSource, idx);
@@ -265,7 +216,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             if (!disabledExtensions && !enableExt)
             {
                 std::vector<hstring> disabledProfileSources{ extensionSource };
-                _settings.GlobalSettings().DisabledProfileSources(single_threaded_vector<hstring>(std::move(disabledProfileSources)));
+                settings.GlobalSettings().DisabledProfileSources(single_threaded_vector<hstring>(std::move(disabledProfileSources)));
                 return;
             }
 
@@ -292,12 +243,50 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         NavigateToColorSchemeRequested.raise(*this, nullptr);
     }
 
+    hstring ExtensionPackageViewModel::Scope() const noexcept
+    {
+        return _package.Scope() == Model::FragmentScope::User ? RS_(L"Extensions_ScopeUser") : RS_(L"Extensions_ScopeSystem");
+    }
+
+    bool ExtensionPackageViewModel::Enabled() const
+    {
+        return ExtensionsViewModel::GetExtensionState(_package.Source(), _settings);
+    }
+
+    void ExtensionPackageViewModel::Enabled(bool val)
+    {
+        if (Enabled() != val)
+        {
+            ExtensionsViewModel::SetExtensionState(_package.Source(), _settings, val);
+            _NotifyChanges(L"Enabled");
+        }
+    }
+
     hstring ExtensionPackageViewModel::AccessibleName() const noexcept
     {
-        if (_enabled)
+        if (Enabled())
         {
-            return _source;
+            return _package.Source();
         }
-        return hstring{ fmt::format(L"{}: {}", _source, RS_(L"Extension_StateDisabled/Text")) };
+        return hstring{ fmt::format(L"{}: {}", _package.Source(), RS_(L"Extension_StateDisabled/Text")) };
+    }
+
+    DataTemplate ExtensionPackageTemplateSelector::SelectTemplateCore(const IInspectable& item, const DependencyObject& /*container*/)
+    {
+        return SelectTemplateCore(item);
+    }
+
+    DataTemplate ExtensionPackageTemplateSelector::SelectTemplateCore(const IInspectable& item)
+    {
+        if (const auto extPkgVM = item.try_as<Editor::ExtensionPackageViewModel>())
+        {
+            if (!extPkgVM.Package().DisplayName().empty())
+            {
+                return ComplexTemplate();
+            }
+            return DefaultTemplate();
+        }
+        assert(false);
+        return nullptr;
     }
 }
