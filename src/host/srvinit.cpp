@@ -991,7 +991,7 @@ DWORD WINAPI ConsoleIoThread(LPVOID lpParameter)
     {
         if (ReplyMsg != nullptr)
         {
-            LOG_IF_FAILED(ReplyMsg->ReleaseMessageBuffers());
+            ReplyMsg->ReleaseMessageBuffers();
         }
 
         // TODO: 9115192 correct mixed NTSTATUS/HRESULT

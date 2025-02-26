@@ -1984,16 +1984,22 @@ namespace winrt::TerminalApp::implementation
             auto tab{ weakTab.get() };
             if (page && tab)
             {
-                if (args.PropertyName() == L"Title")
+                const auto propertyName = args.PropertyName();
+                if (propertyName == L"Title")
                 {
                     page->_UpdateTitle(*tab);
                 }
-                else if (args.PropertyName() == L"Content")
+                else if (propertyName == L"Content")
                 {
                     if (*tab == page->_GetFocusedTab())
                     {
-                        page->_tabContent.Children().Clear();
-                        page->_tabContent.Children().Append(tab->Content());
+                        const auto children = page->_tabContent.Children();
+
+                        children.Clear();
+                        if (auto content = tab->Content())
+                        {
+                            page->_tabContent.Children().Append(std::move(content));
+                        }
 
                         tab->Focus(FocusState::Programmatic);
                     }
