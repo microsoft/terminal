@@ -114,10 +114,11 @@ Model::CascadiaSettings CascadiaSettings::Copy() const
         settings->_allProfiles = winrt::single_threaded_observable_vector(std::move(allProfiles));
         settings->_activeProfiles = winrt::single_threaded_observable_vector(std::move(activeProfiles));
 
-        // fragment extensions and dynamic profile generators don't need a deep clone
+        // fragment extensions, dynamic profile generators, and extension packages don't need a deep clone
         // because they're fully immutable. We can just copy the reference over instead.
         settings->_fragmentExtensions = _fragmentExtensions;
         settings->_dynamicProfileGeneratorExtensions = _dynamicProfileGeneratorExtensions;
+        settings->_extensionPackages = _extensionPackages;
     }
 
     // load errors
@@ -178,14 +179,9 @@ IObservableVector<Model::Profile> CascadiaSettings::ActiveProfiles() const noexc
     return _activeProfiles;
 }
 
-IVectorView<Model::FragmentSettings> CascadiaSettings::FragmentExtensions() const noexcept
+IVectorView<Model::ExtensionPackage> CascadiaSettings::Extensions() const noexcept
 {
-    return _fragmentExtensions.GetView();
-}
-
-IVectorView<Model::FragmentSettings> CascadiaSettings::DynamicProfileGenerators() const noexcept
-{
-    return _dynamicProfileGeneratorExtensions.GetView();
+    return _extensionPackages.GetView();
 }
 
 // Method Description:
