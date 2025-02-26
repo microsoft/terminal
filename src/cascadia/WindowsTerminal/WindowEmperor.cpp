@@ -354,7 +354,10 @@ void WindowEmperor::HandleCommandlineArgs(int nCmdShow)
         }
 
         // If we created no windows, e.g. because the args are "/?" we can just exit now.
-        _postQuitMessageIfNeeded();
+        if (_windows.empty())
+        {
+            _postQuitMessageIfNeeded();
+        }
     }
 
     // ALWAYS change the _real_ CWD of the Terminal to system32,
@@ -735,9 +738,30 @@ void WindowEmperor::_createMessageWindow(const wchar_t* className)
     StringCchCopy(_notificationIcon.szTip, ARRAYSIZE(_notificationIcon.szTip), appNameLoc.c_str());
 }
 
+// Counterpart to _postQuitMessageIfNeeded:
+// If it returns true, don't close that last window, if any.
+// This ensures we persist the last window.
+bool WindowEmperor::_shouldSkipClosingWindows() const
+{
+    const auto globalSettings = _app.Logic().Settings().GlobalSettings();
+    const size_t windowLimit = globalSettings.ShouldUsePersistedLayout() ? 1 : 0;
+    return _windows.size() <= windowLimit;
+}
+
+// Posts a WM_QUIT as soon as we have no reason to exist anymore.
+// That basically means no windows [^1] and no message boxes.
+//
+// [^1] Unless:
+// * We've been asked to persist the last remaining window
+//   in which case we exit with 1 remaining window.
+// * We're allowed to be headless
+//   in which case we never exit.
 void WindowEmperor::_postQuitMessageIfNeeded() const
 {
-    if (_messageBoxCount <= 0 && _windows.empty() && !_app.Logic().Settings().GlobalSettings().AllowHeadless())
+    const auto globalSettings = _app.Logic().Settings().GlobalSettings();
+    const size_t windowLimit = globalSettings.ShouldUsePersistedLayout() ? 1 : 0;
+
+    if (_messageBoxCount <= 0 && _windows.size() <= windowLimit && !globalSettings.AllowHeadless())
     {
         PostQuitMessage(0);
     }
@@ -771,17 +795,20 @@ LRESULT WindowEmperor::_messageHandler(HWND window, UINT const message, WPARAM c
         {
         case WM_CLOSE_TERMINAL_WINDOW:
         {
-            const auto host = reinterpret_cast<AppHost*>(lParam);
-            auto it = _windows.begin();
-            const auto end = _windows.end();
-
-            for (; it != end; ++it)
+            if (!_shouldSkipClosingWindows())
             {
-                if (host == it->get())
+                const auto host = reinterpret_cast<AppHost*>(lParam);
+                auto it = _windows.begin();
+                const auto end = _windows.end();
+
+                for (; it != end; ++it)
                 {
-                    host->Close();
-                    _windows.erase(it);
-                    break;
+                    if (host == it->get())
+                    {
+                        host->Close();
+                        _windows.erase(it);
+                        break;
+                    }
                 }
             }
 
