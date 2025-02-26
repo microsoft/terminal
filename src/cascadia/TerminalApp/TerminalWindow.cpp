@@ -1054,12 +1054,8 @@ namespace winrt::TerminalApp::implementation
     {
         _contentBounds = bounds;
 
-        const auto& args = _contentStringToActions(content, true);
-
-        for (const auto& action : args)
-        {
-            _initialContentArgs.push_back(action);
-        }
+        const auto args = _contentStringToActions(content, true);
+        _initialContentArgs = wil::to_vector(args);
     }
 
     // Method Description:
@@ -1085,7 +1081,7 @@ namespace winrt::TerminalApp::implementation
         if (_appArgs->ExitCode() == 0)
         {
             auto& parsedArgs = _appArgs->ParsedArgs();
-            auto actions = winrt::single_threaded_vector<ActionAndArgs>(std::move(parsedArgs.GetStartupActions()));
+            auto& actions = parsedArgs.GetStartupActions();
 
             _root->ProcessStartupActions(actions, false, _appArgs->CurrentDirectory(), _appArgs->CurrentEnvironment());
 
@@ -1200,7 +1196,7 @@ namespace winrt::TerminalApp::implementation
     {
         try
         {
-            const auto& args = ActionAndArgs::Deserialize(content);
+            const auto args = ActionAndArgs::Deserialize(content);
             if (args == nullptr ||
                 args.Size() == 0)
             {
@@ -1244,9 +1240,9 @@ namespace winrt::TerminalApp::implementation
 
             const bool replaceFirstWithNewTab = tabIndex >= _root->NumberOfTabs();
 
-            const auto& args = _contentStringToActions(content, replaceFirstWithNewTab);
+            auto args = _contentStringToActions(content, replaceFirstWithNewTab);
 
-            _root->AttachContent(args, tabIndex);
+            _root->AttachContent(std::move(args), tabIndex);
         }
     }
     void TerminalWindow::SendContentToOther(winrt::TerminalApp::RequestReceiveContentArgs args)
