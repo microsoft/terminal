@@ -29,7 +29,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         WINRT_PROPERTY(Editor::ExtensionsViewModel, ViewModel, nullptr);
 
     private:
-        Editor::ExtensionPackageTemplateSelector _extensionPackageTemplateSelector;
+        Editor::ExtensionPackageTemplateSelector _extensionPackageIdentifierTemplateSelector;
     };
 
     struct ExtensionsViewModel : ExtensionsViewModelT<ExtensionsViewModel>, ViewModelHelper<ExtensionsViewModel>
@@ -38,6 +38,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         ExtensionsViewModel(const Model::CascadiaSettings& settings, const Editor::ColorSchemesPageViewModel& colorSchemesPageVM);
 
         // Properties
+        Windows::UI::Xaml::DataTemplate CurrentExtensionPackageIdentifierTemplate() const;
         bool IsExtensionView() const noexcept { return _CurrentExtensionPackage != nullptr; }
         bool NoExtensionPackages() const noexcept { return _extensionPackages.Size() == 0; }
         bool NoProfilesModified() const noexcept { return _profilesModifiedView.Size() == 0; }
@@ -62,6 +63,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         til::typed_event<IInspectable, Editor::ColorSchemeViewModel> NavigateToColorSchemeRequested;
 
         VIEW_MODEL_OBSERVABLE_PROPERTY(Editor::ExtensionPackageViewModel, CurrentExtensionPackage, nullptr);
+        WINRT_PROPERTY(Editor::ExtensionPackageTemplateSelector, ExtensionPackageIdentifierTemplateSelector, nullptr);
 
     private:
         Model::CascadiaSettings _settings;
@@ -85,6 +87,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         bool Enabled() const;
         void Enabled(bool val);
         hstring AccessibleName() const noexcept;
+        hstring AccessibleNameWithStatus() const noexcept;
         Windows::Foundation::Collections::IObservableVector<Editor::FragmentExtensionViewModel> FragmentExtensions() { return _fragmentExtensions; }
 
     private:

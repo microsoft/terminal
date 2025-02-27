@@ -24,12 +24,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         InitializeComponent();
 
-        _extensionPackageTemplateSelector = Resources().Lookup(box_value(L"ExtensionPackageTemplateSelector")).as<Editor::ExtensionPackageTemplateSelector>();
+        _extensionPackageIdentifierTemplateSelector = Resources().Lookup(box_value(L"ExtensionPackageIdentifierTemplateSelector")).as<Editor::ExtensionPackageTemplateSelector>();
     }
 
     void Extensions::OnNavigatedTo(const NavigationEventArgs& e)
     {
         _ViewModel = e.Parameter().as<Editor::ExtensionsViewModel>();
+        get_self<ExtensionsViewModel>(_ViewModel)->ExtensionPackageIdentifierTemplateSelector(_extensionPackageIdentifierTemplateSelector);
     }
 
     void Extensions::ExtensionNavigator_Click(const IInspectable& sender, const RoutedEventArgs& /*args*/)
@@ -98,7 +99,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                     }
                 }
 
-                _NotifyChanges(L"IsExtensionView");
+                _NotifyChanges(L"IsExtensionView", L"CurrentExtensionPackageIdentifierTemplate");
             }
         });
     }
@@ -183,6 +184,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _colorSchemesAddedView = single_threaded_observable_vector<Editor::FragmentColorSchemeViewModel>(std::move(colorSchemesAddedTotal));
     }
 
+    Windows::UI::Xaml::DataTemplate ExtensionsViewModel::CurrentExtensionPackageIdentifierTemplate() const
+    {
+        return _ExtensionPackageIdentifierTemplateSelector.SelectTemplate(CurrentExtensionPackage());
+    }
+
     // Returns true if the extension is enabled, false otherwise
     bool ExtensionsViewModel::GetExtensionState(hstring extensionSource, const Model::CascadiaSettings& settings)
     {
@@ -262,13 +268,28 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
+    // Returns the accessible name for the extension package in the following format:
+    //   "<DisplayName?>, <Source>"
     hstring ExtensionPackageViewModel::AccessibleName() const noexcept
+    {
+        hstring name;
+        const auto source = _package.Source();
+        if (const auto displayName = _package.DisplayName(); !displayName.empty())
+        {
+            return hstring{ fmt::format(FMT_COMPILE(L"{}, {}"), displayName, source) };
+        }
+        return source;
+    }
+
+    // Returns the accessible name for the extension package with the disabled state (if disabled) in the following format:
+    //   "<DisplayName?>, <Source>: <Disabled?>"
+    hstring ExtensionPackageViewModel::AccessibleNameWithStatus() const noexcept
     {
         if (Enabled())
         {
-            return _package.Source();
+            return AccessibleName();
         }
-        return hstring{ fmt::format(L"{}: {}", _package.Source(), RS_(L"Extension_StateDisabled/Text")) };
+        return hstring{ fmt::format(FMT_COMPILE(L"{}: {}"), AccessibleName(), RS_(L"Extension_StateDisabled/Text")) };
     }
 
     DataTemplate ExtensionPackageTemplateSelector::SelectTemplateCore(const IInspectable& item, const DependencyObject& /*container*/)
@@ -286,7 +307,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             }
             return DefaultTemplate();
         }
-        assert(false);
         return nullptr;
     }
 }

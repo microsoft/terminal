@@ -123,7 +123,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             {
                 if (const auto& currentExtensionPackage = _extensionsVM.CurrentExtensionPackage())
                 {
-                    const auto crumb = winrt::make<Breadcrumb>(box_value(currentExtensionPackage), currentExtensionPackage.Package().Source(), BreadcrumbSubPage::Extensions_Extension);
+                    const auto& pkg = currentExtensionPackage.Package();
+                    const auto label = pkg.DisplayName().empty() ? pkg.Source() : pkg.DisplayName();
+                    const auto crumb = winrt::make<Breadcrumb>(box_value(currentExtensionPackage), label, BreadcrumbSubPage::Extensions_Extension);
                     _breadcrumbs.Append(crumb);
                     SettingsMainPage_ScrollViewer().ScrollToVerticalOffset(0);
                 }

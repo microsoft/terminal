@@ -15,6 +15,7 @@ namespace Microsoft.Terminal.Settings.Editor
     {
         // Properties
         ExtensionPackageViewModel CurrentExtensionPackage;
+        Windows.UI.Xaml.DataTemplate CurrentExtensionPackageIdentifierTemplate { get; };
         Boolean IsExtensionView { get; };
         Boolean NoExtensionPackages { get; };
         Boolean NoProfilesModified { get; };
@@ -40,6 +41,7 @@ namespace Microsoft.Terminal.Settings.Editor
         Boolean Enabled;
         String Scope { get; };
         String AccessibleName { get; };
+        String AccessibleNameWithStatus { get; };
         IVector<FragmentExtensionViewModel> FragmentExtensions { get; };
     }
 

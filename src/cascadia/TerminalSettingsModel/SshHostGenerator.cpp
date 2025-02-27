@@ -7,6 +7,7 @@
 #include "../../inc/DefaultSettings.h"
 
 #include "DynamicProfileUtils.h"
+#include <LibraryResources.h>
 
 static constexpr std::wstring_view SshHostGeneratorNamespace{ L"Windows.Terminal.SSH" };
 
@@ -130,6 +131,16 @@ using namespace winrt::Microsoft::Terminal::Settings::Model;
 std::wstring_view SshHostGenerator::GetNamespace() const noexcept
 {
     return SshHostGeneratorNamespace;
+}
+
+std::wstring_view SshHostGenerator::GetDisplayName() const noexcept
+{
+    return RS_(L"SshHostGeneratorDisplayName");
+}
+
+std::wstring_view SshHostGenerator::GetIcon() const noexcept
+{
+    return _getProfileIconPath();
 }
 
 // Method Description:

@@ -39,9 +39,47 @@
                 <Setter Property="VerticalScrollBarVisibility" Value="Disabled" />
             </Style>
 
-            <local:ExtensionPackageTemplateSelector x:Key="ExtensionPackageTemplateSelector"
-                                                    DefaultTemplate="{StaticResource DefaultExtensionNavigatorTemplate}"
-                                                    ComplexTemplate="{StaticResource ComplexExtensionNavigatorTemplate}" />
+            <local:ExtensionPackageTemplateSelector x:Key="ExtensionPackageIdentifierTemplateSelector"
+                                                    ComplexTemplate="{StaticResource ComplexExtensionIdentifierTemplate}"
+                                                    DefaultTemplate="{StaticResource DefaultExtensionIdentifierTemplate}" />
+
+            <DataTemplate x:Key="DefaultExtensionIdentifierTemplate"
+                          x:DataType="local:ExtensionPackageViewModel">
+                <TextBlock Text="{x:Bind Package.Source}" />
+            </DataTemplate>
+
+            <DataTemplate x:Key="ComplexExtensionIdentifierTemplate"
+                          x:DataType="local:ExtensionPackageViewModel">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <IconSourceElement Grid.Row="0"
+                                       Grid.RowSpan="2"
+                                       Grid.Column="0"
+                                       Width="32"
+                                       Height="32"
+                                       Margin="0,0,8,0"
+                                       IconSource="{x:Bind mtu:IconPathConverter.IconSourceWUX(Package.Icon)}" />
+                    <TextBlock Grid.Row="0"
+                               Grid.Column="1"
+                               Text="{x:Bind Package.DisplayName}" />
+                    <TextBlock Grid.Row="1"
+                               Grid.Column="1"
+                               Style="{StaticResource SettingsPageItemDescriptionStyle}"
+                               Text="{x:Bind Package.Source}" />
+                </Grid>
+            </DataTemplate>
+
+            <local:ExtensionPackageTemplateSelector x:Key="ExtensionPackageNavigatorTemplateSelector"
+                                                    ComplexTemplate="{StaticResource ComplexExtensionNavigatorTemplate}"
+                                                    DefaultTemplate="{StaticResource DefaultExtensionNavigatorTemplate}" />
 
             <DataTemplate x:Key="DefaultExtensionNavigatorTemplate"
                           x:DataType="local:ExtensionPackageViewModel">
@@ -55,8 +93,9 @@
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
 
-                        <TextBlock Grid.Column="0"
-                                   Text="{x:Bind Package.Source}"/>
+                        <ContentPresenter Content="{x:Bind}"
+                                          ContentTemplate="{StaticResource DefaultExtensionIdentifierTemplate}" />
+
                         <TextBlock x:Uid="Extension_StateDisabled"
                                    Grid.Column="1"
                                    HorizontalAlignment="Right"
@@ -69,39 +108,21 @@
 
             <DataTemplate x:Key="ComplexExtensionNavigatorTemplate"
                           x:DataType="local:ExtensionPackageViewModel">
-                <Button AutomationProperties.Name="{x:Bind AccessibleName}"
+                <Button AutomationProperties.Name="{x:Bind AccessibleNameWithStatus}"
                         Click="ExtensionNavigator_Click"
                         Style="{StaticResource NavigatorButtonStyle}"
                         Tag="{x:Bind}">
                     <Grid>
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto" />
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                        </Grid.RowDefinitions>
 
-                        <IconSourceElement Grid.Column="0"
-                                           Grid.Row="0"
-                                           Grid.RowSpan="2"
-                                           Width="32"
-                                           Height="32"
-                                           Margin="0,0,8,0"
-                                           IconSource="{x:Bind mtu:IconPathConverter.IconSourceWUX(Package.Icon)}"/>
-                        <TextBlock Grid.Column="1"
-                                   Grid.Row="0"
-                                   Text="{x:Bind Package.DisplayName}"/>
-                        <TextBlock Grid.Column="1"
-                                   Grid.Row="1"
-                                   Style="{StaticResource SettingsPageItemDescriptionStyle}"
-                                   Text="{x:Bind Package.Source}" />
+                        <ContentPresenter Content="{x:Bind}"
+                                          ContentTemplate="{StaticResource ComplexExtensionIdentifierTemplate}" />
+
                         <TextBlock x:Uid="Extension_StateDisabled"
-                                   Grid.Column="2"
-                                   Grid.Row="0"
-                                   Grid.RowSpan="2"
+                                   Grid.Column="1"
                                    HorizontalAlignment="Right"
                                    VerticalAlignment="Center"
                                    Style="{StaticResource SecondaryTextBlockStyle}"
@@ -142,14 +163,19 @@
                 </local:SettingContainer>
             </DataTemplate>
 
+            <!--  This styling matches that of ExpanderSettingContainerStyle for consistency  -->
+            <Style x:Key="ExpanderStyle"
+                   TargetType="muxc:Expander">
+                <Setter Property="MinHeight" Value="64" />
+                <Setter Property="Margin" Value="0,4,0,0" />
+                <Setter Property="HorizontalAlignment" Value="Stretch" />
+                <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            </Style>
+
             <DataTemplate x:Key="JsonTemplate"
                           x:DataType="local:FragmentExtensionViewModel">
-                <!--  This styling matches that of ExpanderSettingContainerStyle for consistency  -->
-                <muxc:Expander MinHeight="64"
-                               Margin="0,4,0,0"
-                               HorizontalAlignment="Stretch"
-                               HorizontalContentAlignment="Stretch"
-                               Header="{x:Bind Fragment.JsonSource}">
+                <muxc:Expander Header="{x:Bind Fragment.JsonSource}"
+                               Style="{StaticResource ExpanderStyle}">
                     <ScrollViewer Style="{StaticResource CodeBlockScrollViewerStyle}">
                         <TextBlock Style="{StaticResource CodeBlockStyle}"
                                    Text="{x:Bind Fragment.Json}" />
@@ -342,7 +368,7 @@
                        Style="{StaticResource ItalicDisclaimerStyle}"
                        Visibility="{x:Bind ViewModel.NoExtensionPackages, Mode=OneWay}" />
             <ItemsControl IsTabStop="False"
-                          ItemTemplateSelector="{StaticResource ExtensionPackageTemplateSelector}"
+                          ItemTemplateSelector="{StaticResource ExtensionPackageNavigatorTemplateSelector}"
                           ItemsSource="{x:Bind ViewModel.ExtensionPackages}" />
         </StackPanel>
 
@@ -352,15 +378,36 @@
                     Margin="0,-20,0,0"
                     Visibility="{x:Bind ViewModel.IsExtensionView, Mode=OneWay}">
             <!--  Extension Status  -->
-            <local:SettingContainer Header="{x:Bind ViewModel.CurrentExtensionPackage.Package.Source, Mode=OneWay}"
-                                    StartExpanded="True"
-                                    Style="{StaticResource ExpanderSettingContainerStyleWithComplexPreview}">
-                <local:SettingContainer.CurrentValue>
-                    <ToggleSwitch Style="{StaticResource ToggleSwitchInExpanderStyle}"
-                                  Tag="{x:Bind ViewModel.CurrentExtensionPackage.Package.Source, Mode=OneWay}"
-                                  IsOn="{x:Bind ViewModel.CurrentExtensionPackage.Enabled, Mode=TwoWay}" />
-                </local:SettingContainer.CurrentValue>
-                <local:SettingContainer.Content>
+            <muxc:Expander AutomationProperties.Name="{x:Bind ViewModel.CurrentExtensionPackage.AccessibleName, Mode=OneWay}"
+                           IsExpanded="True"
+                           Style="{StaticResource ExpanderStyle}">
+                <muxc:Expander.Header>
+                    <Grid MinHeight="64">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <!--
+                            BODGY
+                            Theoretically, you could use a ContentTemplateSelector directly. However, that doesn't work.
+                            For some reason, we just get the object type's ToString called and the selector gets nullptr as a parameter.
+                            Adding the template as a view model property is a workaround.
+                        -->
+                        <ContentPresenter Grid.Column="0"
+                                          VerticalAlignment="Center"
+                                          Content="{x:Bind ViewModel.CurrentExtensionPackage, Mode=OneWay}"
+                                          ContentTemplate="{x:Bind ViewModel.CurrentExtensionPackageIdentifierTemplate, Mode=OneWay}" />
+
+                        <ToggleSwitch Grid.Column="1"
+                                      Margin="0"
+                                      AutomationProperties.Name="{x:Bind ViewModel.CurrentExtensionPackage.AccessibleName, Mode=OneWay}"
+                                      IsOn="{x:Bind ViewModel.CurrentExtensionPackage.Enabled, Mode=TwoWay}"
+                                      Style="{StaticResource ToggleSwitchInExpanderStyle}"
+                                      Tag="{x:Bind ViewModel.CurrentExtensionPackage.Package.Source, Mode=OneWay}" />
+                    </Grid>
+                </muxc:Expander.Header>
+                <muxc:Expander.Content>
                     <StackPanel>
                         <!--  Scope  -->
                         <local:SettingContainer x:Uid="Extensions_Scope"
@@ -372,8 +419,8 @@
                                       ItemTemplate="{StaticResource JsonTemplate}"
                                       ItemsSource="{x:Bind ViewModel.CurrentExtensionPackage.FragmentExtensions, Mode=OneWay}" />
                     </StackPanel>
-                </local:SettingContainer.Content>
-            </local:SettingContainer>
+                </muxc:Expander.Content>
+            </muxc:Expander>
         </StackPanel>
 
         <!--  Grouping: Modified Profiles  -->
