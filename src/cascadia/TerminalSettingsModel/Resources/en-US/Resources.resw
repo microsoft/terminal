@@ -740,4 +740,24 @@
   <data name="OpenCWDCommandKey" xml:space="preserve">
     <value>Open current working directory</value>
   </data>
+  <data name="WslDistroGeneratorDisplayName" xml:space="preserve">
+    <value>WSL Distro Profile Generator</value>
+    <comment>The display name of a dynamic profile generator for WSL distros</comment>
+  </data>
+  <data name="PowershellCoreProfileGeneratorDisplayName" xml:space="preserve">
+    <value>PowerShell Profile Generator</value>
+    <comment>The display name of a dynamic profile generator for PowerShell</comment>
+  </data>
+  <data name="AzureCloudShellGeneratorDisplayName" xml:space="preserve">
+    <value>Azure Cloud Shell Profile Generator</value>
+    <comment>The display name of a dynamic profile generator for Azure Cloud Shell</comment>
+  </data>
+  <data name="VisualStudioGeneratorDisplayName" xml:space="preserve">
+    <value>Visual Studio Profile Generator</value>
+    <comment>The display name of a dynamic profile generator for Visual Studio</comment>
+  </data>
+  <data name="SshHostGeneratorDisplayName" xml:space="preserve">
+    <value>SSH Host Profile Generator</value>
+    <comment>The display name of a dynamic profile generator for SSH hosts</comment>
+  </data>
 </root>

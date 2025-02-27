@@ -1038,21 +1038,25 @@ void SettingsLoader::_executeGenerator(const IDynamicProfileGenerator& generator
 
     auto generatorExtension = winrt::make_self<FragmentSettings>(hstring{ generatorNamespace }, hstring{ til::u8u16(Json::writeString(styledWriter, json)) }, hstring{ L"settings.json" });
     generatorExtension->NewProfiles(winrt::single_threaded_vector<Model::FragmentProfileEntry>(std::move(profileEntries)));
-    _registerFragment(std::move(*generatorExtension), FragmentScope::Machine);
+    auto extPkg = _registerFragment(std::move(*generatorExtension), FragmentScope::Machine);
+    extPkg->DisplayName(hstring{ generator.GetDisplayName() });
+    extPkg->Icon(hstring{ generator.GetIcon() });
 }
 
-void SettingsLoader::_registerFragment(const winrt::Microsoft::Terminal::Settings::Model::FragmentSettings& fragment, FragmentScope scope)
+winrt::com_ptr<ExtensionPackage> SettingsLoader::_registerFragment(const winrt::Microsoft::Terminal::Settings::Model::FragmentSettings& fragment, FragmentScope scope)
 {
     const auto src = fragment.Source();
-    if (extensionPackageMap[src])
+    if (auto extPkg = extensionPackageMap[src])
     {
-        extensionPackageMap[src]->Fragments().Append(fragment);
+        extPkg->Fragments().Append(fragment);
+        return extPkg;
     }
     else
     {
-        auto extension = winrt::make_self<ExtensionPackage>(src, scope);
-        extension->Fragments().Append(fragment);
-        extensionPackageMap[src] = extension;
+        auto newExtPkg = winrt::make_self<ExtensionPackage>(src, scope);
+        newExtPkg->Fragments().Append(fragment);
+        extensionPackageMap[src] = newExtPkg;
+        return newExtPkg;
     }
 }
 
