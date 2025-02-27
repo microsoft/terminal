@@ -61,7 +61,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                      argType == L"Model::DesktopBehavior" ||
                      argType == L"Model::MonitorBehavior" ||
                      argType == L"winrt::Microsoft::Terminal::Control::ClearBufferType" ||
-                     argType == L"SelectOutputDirection")
+                     argType == L"SelectOutputDirection" ||
+                     argType == L"Windows::Foundation::IReference<TabSwitcherMode>")
             {
                 return EnumTemplate();
             }
@@ -79,7 +80,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             }
             else if (argType == L"Windows::Foundation::IReference<Control::CopyFormat>")
             {
-                return nullptr;
+                return FlagTemplate();
             }
         }
         return NoArgTemplate();

@@ -1070,6 +1070,10 @@ Model::IActionArgs CascadiaSettings::GetEmptyArgsForAction(Model::ShortcutAction
         return winrt::make<AddMarkArgs>();
     case Model::ShortcutAction::SetTabColor:
         return winrt::make<SetTabColorArgs>();
+    case Model::ShortcutAction::PrevTab:
+        return winrt::make<PrevTabArgs>();
+    case Model::ShortcutAction::NextTab:
+        return winrt::make<NextTabArgs>();
     default:
         return nullptr;
     }

@@ -46,10 +46,38 @@ using namespace winrt::Microsoft::Terminal::Settings::Model;
     _EnumList = winrt::single_threaded_observable_vector<winrt::Microsoft::Terminal::Settings::Editor::EnumEntry>(std::move(enumList));                     \
     _NotifyChanges(L"EnumList", L"EnumValue");
 
+#define INITIALIZE_NULLABLE_ENUM_LIST_AND_VALUE(enumMappingsName, enumType, resourceSectionAndType, resourceProperty)                                       \
+    std::vector<winrt::Microsoft::Terminal::Settings::Editor::EnumEntry> enumList;                                                                          \
+    const auto mappings = winrt::Microsoft::Terminal::Settings::Model::EnumMappings::enumMappingsName();                                                    \
+    enumType unboxedValue;                                                                                                                                  \
+    auto nullEntry = winrt::make<winrt::Microsoft::Terminal::Settings::Editor::implementation::EnumEntry>(RS_(L"Actions_NullEnumValue"), nullptr);          \
+    if (_Value)                                                                                                                                             \
+    {                                                                                                                                                       \
+        unboxedValue = unbox_value<enumType>(_Value);                                                                                                       \
+    }                                                                                                                                                       \
+    else                                                                                                                                                    \
+    {                                                                                                                                                       \
+        EnumValue(nullEntry);                                                                                                                               \
+    }                                                                                                                                                       \
+    for (const auto [enumKey, enumValue] : mappings)                                                                                                        \
+    {                                                                                                                                                       \
+        const auto enumName = LocalizedNameForEnumName(resourceSectionAndType, enumKey, resourceProperty);                                                  \
+        auto entry = winrt::make<winrt::Microsoft::Terminal::Settings::Editor::implementation::EnumEntry>(enumName, winrt::box_value<enumType>(enumValue)); \
+        enumList.emplace_back(entry);                                                                                                                       \
+        if (_Value && unboxedValue == enumValue)                                                                                                            \
+        {                                                                                                                                                   \
+            EnumValue(entry);                                                                                                                               \
+        }                                                                                                                                                   \
+    }                                                                                                                                                       \
+    std::sort(enumList.begin(), enumList.end(), EnumEntryReverseComparator<enumType>());                                                                    \
+    enumList.emplace_back(nullEntry);                                                                                                                       \
+    _EnumList = winrt::single_threaded_observable_vector<winrt::Microsoft::Terminal::Settings::Editor::EnumEntry>(std::move(enumList));                     \
+    _NotifyChanges(L"EnumList", L"EnumValue");
+
 #define INITIALIZE_FLAG_LIST_AND_VALUE(enumMappingsName, enumType, resourceSectionAndType, resourceProperty)                                                           \
     std::vector<winrt::Microsoft::Terminal::Settings::Editor::FlagEntry> flagList;                                                                                     \
     const auto mappings = winrt::Microsoft::Terminal::Settings::Model::EnumMappings::enumMappingsName();                                                               \
-    enumType unboxedValue;                                                                                                                                             \
+    enumType unboxedValue{ 0 };                                                                                                                                        \
     if (_Value)                                                                                                                                                        \
     {                                                                                                                                                                  \
         unboxedValue = unbox_value<enumType>(_Value);                                                                                                                  \
@@ -59,7 +87,7 @@ using namespace winrt::Microsoft::Terminal::Settings::Model;
         if (flagKey != L"all" && flagKey != L"none")                                                                                                                   \
         {                                                                                                                                                              \
             const auto flagName = LocalizedNameForEnumName(resourceSectionAndType, flagKey, resourceProperty);                                                         \
-            bool isSet = _Value ? WI_IsAnyFlagSet(unboxedValue, flagValue) : false;                                                                                    \
+            bool isSet = WI_IsAnyFlagSet(unboxedValue, flagValue);                                                                                                     \
             auto entry = winrt::make<winrt::Microsoft::Terminal::Settings::Editor::implementation::FlagEntry>(flagName, winrt::box_value<enumType>(flagValue), isSet); \
             entry.PropertyChanged([&, flagValue](const IInspectable& sender, const PropertyChangedEventArgs& args) {                                                   \
                 const auto itemProperty{ args.PropertyName() };                                                                                                        \
@@ -75,6 +103,79 @@ using namespace winrt::Microsoft::Terminal::Settings::Model;
         }                                                                                                                                                              \
     }                                                                                                                                                                  \
     std::sort(flagList.begin(), flagList.end(), FlagEntryReverseComparator<enumType>());                                                                               \
+    _FlagList = winrt::single_threaded_observable_vector<winrt::Microsoft::Terminal::Settings::Editor::FlagEntry>(std::move(flagList));                                \
+    _NotifyChanges(L"FlagList", L"Value");
+
+#define INITIALIZE_NULLABLE_FLAG_LIST_AND_VALUE(enumMappingsName, enumType, resourceSectionAndType, resourceProperty)                                                  \
+    std::vector<winrt::Microsoft::Terminal::Settings::Editor::FlagEntry> flagList;                                                                                     \
+    const auto mappings = winrt::Microsoft::Terminal::Settings::Model::EnumMappings::enumMappingsName();                                                               \
+    enumType unboxedValue{ 0 };                                                                                                                                        \
+    auto nullEntry = winrt::make<winrt::Microsoft::Terminal::Settings::Editor::implementation::FlagEntry>(RS_(L"Actions_NullEnumValue"), nullptr, true);               \
+    if (_Value)                                                                                                                                                        \
+    {                                                                                                                                                                  \
+        if (const auto unboxedRef = unbox_value<Windows::Foundation::IReference<enumType>>(_Value))                                                                    \
+        {                                                                                                                                                              \
+            unboxedValue = unboxedRef.Value();                                                                                                                         \
+            nullEntry.IsSet(false);                                                                                                                                    \
+        }                                                                                                                                                              \
+    }                                                                                                                                                                  \
+    for (const auto [flagKey, flagValue] : mappings)                                                                                                                   \
+    {                                                                                                                                                                  \
+        if (flagKey != L"all" && flagKey != L"none")                                                                                                                   \
+        {                                                                                                                                                              \
+            const auto flagName = LocalizedNameForEnumName(resourceSectionAndType, flagKey, resourceProperty);                                                         \
+            bool isSet = WI_IsAnyFlagSet(unboxedValue, flagValue);                                                                                                     \
+            auto entry = winrt::make<winrt::Microsoft::Terminal::Settings::Editor::implementation::FlagEntry>(flagName, winrt::box_value<enumType>(flagValue), isSet); \
+            entry.PropertyChanged([&, flagValue, nullEntry](const IInspectable& sender, const PropertyChangedEventArgs& args) {                                        \
+                const auto itemProperty{ args.PropertyName() };                                                                                                        \
+                if (itemProperty == L"IsSet")                                                                                                                          \
+                {                                                                                                                                                      \
+                    const auto flagWrapper = sender.as<Microsoft::Terminal::Settings::Editor::FlagEntry>();                                                            \
+                    enumType unboxedValue{ 0 };                                                                                                                        \
+                    auto unboxedRef = unbox_value<Windows::Foundation::IReference<enumType>>(_Value);                                                                  \
+                    if (unboxedRef)                                                                                                                                    \
+                    {                                                                                                                                                  \
+                        unboxedValue = unboxedRef.Value();                                                                                                             \
+                    }                                                                                                                                                  \
+                    if (flagWrapper.IsSet())                                                                                                                           \
+                    {                                                                                                                                                  \
+                        nullEntry.IsSet(false);                                                                                                                        \
+                        WI_SetAllFlags(unboxedValue, flagValue);                                                                                                       \
+                    }                                                                                                                                                  \
+                    else                                                                                                                                               \
+                    {                                                                                                                                                  \
+                        WI_ClearAllFlags(unboxedValue, flagValue);                                                                                                     \
+                    }                                                                                                                                                  \
+                    Value(box_value(unboxedValue));                                                                                                                    \
+                }                                                                                                                                                      \
+            });                                                                                                                                                        \
+            flagList.emplace_back(entry);                                                                                                                              \
+        }                                                                                                                                                              \
+    }                                                                                                                                                                  \
+    std::sort(flagList.begin(), flagList.end(), FlagEntryReverseComparator<enumType>());                                                                               \
+    nullEntry.PropertyChanged([&](const IInspectable& sender, const PropertyChangedEventArgs& args) {                                                                  \
+        const auto itemProperty{ args.PropertyName() };                                                                                                                \
+        if (itemProperty == L"IsSet")                                                                                                                                  \
+        {                                                                                                                                                              \
+            const auto flagWrapper = sender.as<Microsoft::Terminal::Settings::Editor::FlagEntry>();                                                                    \
+            if (flagWrapper.IsSet())                                                                                                                                   \
+            {                                                                                                                                                          \
+                for (const auto flagEntry : _FlagList)                                                                                                                 \
+                {                                                                                                                                                      \
+                    if (flagEntry.FlagName() != RS_(L"Actions_NullEnumValue"))                                                                                         \
+                    {                                                                                                                                                  \
+                        flagEntry.IsSet(false);                                                                                                                        \
+                    }                                                                                                                                                  \
+                }                                                                                                                                                      \
+                Value(box_value(Windows::Foundation::IReference<enumType>(nullptr)));                                                                                  \
+            }                                                                                                                                                          \
+            else                                                                                                                                                       \
+            {                                                                                                                                                          \
+                Value(box_value(Windows::Foundation::IReference<enumType>(enumType{ 0 })));                                                                            \
+            }                                                                                                                                                          \
+        }                                                                                                                                                              \
+    });                                                                                                                                                                \
+    flagList.emplace_back(nullEntry);                                                                                                                                  \
     _FlagList = winrt::single_threaded_observable_vector<winrt::Microsoft::Terminal::Settings::Editor::FlagEntry>(std::move(flagList));                                \
     _NotifyChanges(L"FlagList", L"Value");
 
@@ -307,12 +408,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         });
     }
 
-    ArgWrapper::ArgWrapper(const winrt::hstring& name, const winrt::hstring& type, const bool required, const Windows::Foundation::IInspectable& value)
+    ArgWrapper::ArgWrapper(const winrt::hstring& name, const winrt::hstring& type, const bool required, const Windows::Foundation::IInspectable& value) :
+        _name{ name },
+        _type{ type },
+        _required{ required }
     {
         Value(value);
-        _name = name;
-        _type = type;
-        _required = required;
     }
 
     void ArgWrapper::Initialize()
@@ -365,6 +466,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             INITIALIZE_ENUM_LIST_AND_VALUE(SelectOutputDirection, Model::SelectOutputDirection, L"Actions_SelectOutputDirection", L"Content");
         }
+        else if (_type == L"Windows::Foundation::IReference<TabSwitcherMode>")
+        {
+            INITIALIZE_NULLABLE_ENUM_LIST_AND_VALUE(TabSwitcherMode, Model::TabSwitcherMode, L"Actions_TabSwitcherMode", L"Content");
+        }
+        else if (_type == L"Windows::Foundation::IReference<Control::CopyFormat>")
+        {
+            INITIALIZE_NULLABLE_FLAG_LIST_AND_VALUE(CopyFormat, Control::CopyFormat, L"Actions_CopyFormat", L"Content");
+        }
         else if (_type == L"Windows::Foundation::IReference<Microsoft::Terminal::Core::Color>" ||
                  _type == L"Windows::Foundation::IReference<Windows::UI::Color>")
         {
@@ -376,9 +485,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // selection color (future?)
         //     all the "future" ones deal with arg types that have multiple values within them
         //     INewContentArgs is a bunch of args, selection color has color and IsIndex16, etc
-        // copyformat (optional flags)
-        // optional uint32 (kinda defaults it to 0 right now which is incorrect...)
-        // optional enum (tab switcher mode) - can set to null
     }
 
     void ArgWrapper::EnumValue(const Windows::Foundation::IInspectable& enumValue)

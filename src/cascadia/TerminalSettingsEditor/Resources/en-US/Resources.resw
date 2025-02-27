@@ -1848,6 +1848,18 @@
     <value>Action</value>
     <comment>Label for a control that sets the action of a key binding.</comment>
   </data>
+  <data name="Actions_NullEnumValue" xml:space="preserve">
+    <value>Null (use global setting)</value>
+    <comment>An option to choose from for nullable enums. Clears the enum value.</comment>
+  </data>
+  <data name="Actions_CopyFormatHtml.Content" xml:space="preserve">
+    <value>HTML</value>
+    <comment>An option to choose from for the "copy format". Copies content in HTML format.</comment>
+  </data>
+  <data name="Actions_CopyFormatRtf.Content" xml:space="preserve">
+    <value>RTF</value>
+    <comment>An option to choose from for the "copy format". Copies content in Rich Text Format (RTF).</comment>
+  </data>
   <data name="Actions_ResizeDirectionNone.Content" xml:space="preserve">
     <value>None</value>
     <comment>An option to choose from for the "resize direction". None option.</comment>
@@ -2051,6 +2063,18 @@
   <data name="Actions_SelectOutputDirectionNext.Content" xml:space="preserve">
     <value>Next</value>
     <comment>An option to choose from for the "select output direction". Selects the next output.</comment>
+  </data>
+  <data name="Actions_TabSwitcherModeMru.Content" xml:space="preserve">
+    <value>Most Recently Used</value>
+    <comment>An option to choose from for the "tab switcher mode". Switches tabs based on most recently used order.</comment>
+  </data>
+  <data name="Actions_TabSwitcherModeInOrder.Content" xml:space="preserve">
+    <value>In Order</value>
+    <comment>An option to choose from for the "tab switcher mode". Switches tabs in sequential order.</comment>
+  </data>
+  <data name="Actions_TabSwitcherModeDisabled.Content" xml:space="preserve">
+    <value>Disabled</value>
+    <comment>An option to choose from for the "tab switcher mode". Disables tab switching.</comment>
   </data>
   <data name="Actions_NullableColorPicker.NullColorButtonLabel" xml:space="preserve">
     <value>No color</value>
