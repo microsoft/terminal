@@ -266,10 +266,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
-    CommandViewModel::CommandViewModel(Command cmd, std::vector<Control::KeyChord> keyChordList, const IObservableVector<hstring>& availableActions, const Editor::ActionsViewModel actionsPageVM, const Windows::Foundation::Collections::IMap<Model::ShortcutAction, winrt::hstring>& availableShortcutActionsAndNames) :
+    CommandViewModel::CommandViewModel(Command cmd, std::vector<Control::KeyChord> keyChordList, const Editor::ActionsViewModel actionsPageVM, const Windows::Foundation::Collections::IMap<Model::ShortcutAction, winrt::hstring>& availableShortcutActionsAndNames) :
         _command{ cmd },
         _keyChordList{ keyChordList },
-        _AvailableActions { availableActions },
         _actionsPageVM{ actionsPageVM },
         _AvailableActionsAndNamesMap{ availableShortcutActionsAndNames }
     {
@@ -285,7 +284,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             keyChordVMs.push_back(kcVM);
         }
         _KeyChordViewModelList = single_threaded_observable_vector(std::move(keyChordVMs));
-        CurrentAction(_command.Name());
 
         std::vector<hstring> shortcutActions;
         for (const auto [action, name] : _AvailableActionsAndNamesMap)
@@ -297,7 +295,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         const auto shortcutActionString = _AvailableActionsAndNamesMap.Lookup(_command.ActionAndArgs().Action());
         ProposedShortcutAction(winrt::box_value(shortcutActionString));
-        CurrentShortcutAction(shortcutActionString);
         const auto actionArgsVM = make_self<ActionArgsViewModel>(_command.ActionAndArgs());
         _RegisterActionArgsVMEvents(*actionArgsVM);
         actionArgsVM->Initialize();
@@ -309,7 +306,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             const auto viewModelProperty{ args.PropertyName() };
             if (viewModelProperty == L"ProposedShortcutAction")
             {
-                // todo: maybe just put this logic in the ProposedShortcutAction setter?
                 const auto actionString = unbox_value<hstring>(ProposedShortcutAction());
                 const auto actionEnum = _NameToActionMap.at(actionString);
                 const auto emptyArgs = CascadiaSettings::GetEmptyArgsForAction(actionEnum);
@@ -336,7 +332,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void CommandViewModel::Name(const winrt::hstring& newName)
     {
-        // todo: the actions page needs to reorder the action list after the namechange
         _command.Name(newName);
     }
 
@@ -384,8 +379,21 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             kcVM.ModifyKeyChordRequested([actionsPageVM](const Editor::KeyChordViewModel& sender, const Editor::ModifyKeyChordEventArgs& args) {
                 actionsPageVM.AttemptModifyKeyChord(sender, args);
             });
-            kcVM.DeleteKeyChordRequested([actionsPageVM](const Editor::KeyChordViewModel& /*sender*/, const Control::KeyChord& args) {
-                // todo: remove the sender from our list, remove flyout
+            kcVM.DeleteKeyChordRequested([&, actionsPageVM](const Editor::KeyChordViewModel& sender, const Control::KeyChord& args) {
+                _keyChordList.erase(
+                    std::remove_if(
+                        _keyChordList.begin(),
+                        _keyChordList.end(),
+                        [&](const Control::KeyChord& kc) { return kc == args; }),
+                    _keyChordList.end());
+                for (uint32_t i = 0; i < _KeyChordViewModelList.Size(); i++)
+                {
+                    if (_KeyChordViewModelList.GetAt(i) == sender)
+                    {
+                        KeyChordViewModelList().RemoveAt(i);
+                        break;
+                    }
+                }
                 actionsPageVM.AttemptDeleteKeyChord(args);
             });
         }
@@ -393,13 +401,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void CommandViewModel::_RegisterActionArgsVMEvents(Editor::ActionArgsViewModel actionArgsVM)
     {
-        actionArgsVM.PropertyChanged([this](auto&&, const PropertyChangedEventArgs& args) {
-            const auto viewModelProperty{ args.PropertyName() };
-            if (viewModelProperty == L"ProposedShortcutAction")
-            {
-                //todo: this is a placeholder, don't know if there's any events we need to listen to
-            }
-        });
         actionArgsVM.PropagateColorSchemeRequested([this](const IInspectable& /*sender*/, const Editor::ArgWrapper& wrapper) {
             if (wrapper)
             {
@@ -480,11 +481,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             ColorSchemeRequested.raise(*this, *this);
         }
         // todo:
-        // INewContentArgs (future?)
-        // multiple actions (future?)
-        // selection color (future?)
-        //     all the "future" ones deal with arg types that have multiple values within them
-        //     INewContentArgs is a bunch of args, selection color has color and IsIndex16, etc
+        //      INewContentArgs
+        //      multiple actions
+        //      selection color
+        // the above arg types aren't implemented yet - they all have multiple values within them
+        // and require a different approach to binding/displaying. INewContentArgs is a bunch of args
+        // in one object, selected color has color and IsIndex16, multiple actions is... multiple actions:
     }
 
     void ArgWrapper::EnumValue(const Windows::Foundation::IInspectable& enumValue)
@@ -760,20 +762,20 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // We want to re-initialize our CommandList, but we want to make sure
         // we still have the same CurrentCommand as before (if that command still exists)
 
-        // Store the name of the current command (todo: this should update to use ID in the final implementation)
-        const auto currentCommandName = CurrentCommand() ? CurrentCommand().Name() : hstring{};
+        // Store the ID of the current command
+        const auto currentCommandID = CurrentCommand() ? CurrentCommand().ID() : hstring{};
 
-        // Re-initialize the color scheme list
+        // Re-initialize the command vm list
         _MakeCommandVMsHelper();
 
-        // Re-select the previously selected scheme if it exists
-        if (!currentCommandName.empty())
+        // Re-select the previously selected command if it exists
+        if (!currentCommandID.empty())
         {
             const auto it = _CommandList.First();
             while (it.HasCurrent())
             {
                 auto cmd = *it;
-                if (cmd.Name() == currentCommandName)
+                if (cmd.ID() == currentCommandID)
                 {
                     CurrentCommand(cmd);
                     break;
@@ -831,7 +833,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             {
                 keyChordList.emplace_back(keys);
             }
-            auto cmdVM{ make_self<CommandViewModel>(cmd, keyChordList, _AvailableActionAndArgs, *this, _AvailableActionsAndNamesMap) };
+            auto cmdVM{ make_self<CommandViewModel>(cmd, keyChordList, *this, _AvailableActionsAndNamesMap) };
             _RegisterCmdVMEvents(cmdVM);
             cmdVM->Initialize();
             commandList.push_back(*cmdVM);
@@ -1192,7 +1194,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void ActionsViewModel::_CmdVMDeleteRequestedHandler(const Editor::CommandViewModel& senderVM, const IInspectable& /*args*/)
     {
-        // todo: the page needs to update with the new list of commands
+        for (uint32_t i = 0; i < _CommandList.Size(); i++)
+        {
+            if (_CommandList.GetAt(i) == senderVM)
+            {
+                CommandList().RemoveAt(i);
+                break;
+            }
+        }
         _Settings.ActionMap().DeleteUserCommand(senderVM.ID());
         CurrentCommand(nullptr);
         CurrentPage(ActionsSubPage::Base);

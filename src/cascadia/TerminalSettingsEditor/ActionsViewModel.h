@@ -128,7 +128,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     public:
         CommandViewModel(winrt::Microsoft::Terminal::Settings::Model::Command cmd,
                          std::vector<Control::KeyChord> keyChordList,
-                         const Windows::Foundation::Collections::IObservableVector<hstring>& availableActions,
                          const Editor::ActionsViewModel actionsPageVM,
                          const Windows::Foundation::Collections::IMap<Model::ShortcutAction, winrt::hstring>& availableShortcutActionsAndNames);
         void Initialize();
@@ -151,11 +150,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         til::typed_event<IInspectable, Editor::ArgWrapper> PropagateColorSchemeRequested;
 
-        VIEW_MODEL_OBSERVABLE_PROPERTY(hstring, CurrentAction);
         VIEW_MODEL_OBSERVABLE_PROPERTY(IInspectable, ProposedShortcutAction);
-        VIEW_MODEL_OBSERVABLE_PROPERTY(hstring, CurrentShortcutAction);
         VIEW_MODEL_OBSERVABLE_PROPERTY(Editor::ActionArgsViewModel, ActionArgsVM, nullptr);
-        WINRT_PROPERTY(Windows::Foundation::Collections::IObservableVector<hstring>, AvailableActions, nullptr);
         WINRT_PROPERTY(Windows::Foundation::Collections::IObservableVector<hstring>, AvailableShortcutActions, nullptr);
         WINRT_PROPERTY(Windows::Foundation::Collections::IObservableVector<Editor::KeyChordViewModel>, KeyChordViewModelList, nullptr);
 
@@ -232,9 +228,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     private:
         Model::ActionAndArgs _actionAndArgs{ nullptr };
-        winrt::hstring _StringArg1;
-        uint32_t _UInt32Arg1;
-        bool _BoolArg1;
     };
 
     struct KeyChordViewModel : KeyChordViewModelT<KeyChordViewModel>, ViewModelHelper<KeyChordViewModel>

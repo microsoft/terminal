@@ -31,7 +31,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         const auto dataTemplate = _itemTemplateSelector.SelectTemplate(args.Item());
         const auto itemContainer = args.ItemContainer();
 
-        // todo: do we need the same caching logic as in command palette?
         if (!itemContainer || itemContainer.ContentTemplate() != dataTemplate)
         {
             ElementFactoryGetArgs factoryArgs{};

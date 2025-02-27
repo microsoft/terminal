@@ -413,30 +413,45 @@
     </Page.Resources>
 
     <Border MaxWidth="{StaticResource StandardControlMaxWidth}">
-        <StackPanel MaxWidth="600"
-                    HorizontalAlignment="Left"
-                    Spacing="8"
-                    Style="{StaticResource SettingsStackStyle}">
+        <Grid MaxWidth="600"
+              HorizontalAlignment="Left"
+              Style="{StaticResource SettingsStackStyle}"
+              RowSpacing="8">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
             <TextBox Text="{x:Bind ViewModel.Name, Mode=TwoWay}"
-                     IsEnabled="{x:Bind ViewModel.IsUserAction}"/>
-            <TextBox Text="{x:Bind ViewModel.ID, Mode=TwoWay}"
-                     IsEnabled="{x:Bind ViewModel.IsUserAction}"/>
-            <ComboBox Grid.Column="0"
-                      VerticalAlignment="Center"
+                     IsEnabled="{x:Bind ViewModel.IsUserAction}"
+                     Grid.Row="0"
+                     Grid.Column="1"/>
+            <ComboBox VerticalAlignment="Center"
                       ItemsSource="{x:Bind ViewModel.AvailableShortcutActions, Mode=OneWay}"
                       SelectedItem="{x:Bind ViewModel.ProposedShortcutAction, Mode=TwoWay}"
                       IsEnabled="{x:Bind ViewModel.IsUserAction}"
-                      Visibility="{x:Bind ViewModel.IsUserAction}"/>
+                      Grid.Row="1"
+                      Grid.Column="1"/>
             <ListView ItemsSource="{x:Bind ViewModel.ActionArgsVM.ArgValues, Mode=OneWay}"
                       ChoosingItemContainer="_choosingItemContainer"
                       SelectionMode="None"
                       AllowDrop="False"
                       CanDragItems="False"
-                      CanReorderItems="False">
+                      CanReorderItems="False"
+                      Grid.Row="2"
+                      Grid.Column="1">
             </ListView>
             <ListView ItemTemplate="{StaticResource KeyChordTemplate}"
                       ItemsSource="{x:Bind ViewModel.KeyChordViewModelList, Mode=OneWay}"
-                      SelectionMode="None">
+                      SelectionMode="None"
+                      Grid.Row="3"
+                      Grid.Column="1">
                 <ListView.Header>
                     <Button Click="{x:Bind ViewModel.AddKeybinding_Click}">
                         <TextBlock x:Uid="Actions_AddKeyChord" />
@@ -444,7 +459,9 @@
                 </ListView.Header>
             </ListView>
             <Button Style="{StaticResource DeleteButtonStyle}"
-                    IsEnabled="{x:Bind ViewModel.IsUserAction}">
+                    IsEnabled="{x:Bind ViewModel.IsUserAction}"
+                    Grid.Row="4"
+                    Grid.Column="1">
                 <Button.Content>
                     <StackPanel Orientation="Horizontal">
                         <FontIcon FontSize="{StaticResource StandardIconSize}"
@@ -464,6 +481,6 @@
                     </Flyout>
                 </Button.Flyout>
             </Button>
-        </StackPanel>
+        </Grid>
     </Border>
 </Page>

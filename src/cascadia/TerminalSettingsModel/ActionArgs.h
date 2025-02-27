@@ -818,7 +818,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
         uint32_t GetArgCount() const
         {
-            return 2; // todo: is this correct? or should we return the number of args in INewContentArgs?
+            return 2;
         }
         Model::ArgDescription GetArgDescriptionAt(uint32_t /*index*/) const
         {
