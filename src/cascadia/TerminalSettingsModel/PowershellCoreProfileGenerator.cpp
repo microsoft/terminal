@@ -15,6 +15,7 @@
 #include <winrt/Windows.Management.Deployment.h>
 #include <appmodel.h>
 #include <shlobj.h>
+#include <LibraryResources.h>
 
 static constexpr std::wstring_view POWERSHELL_PFN{ L"Microsoft.PowerShell_8wekyb3d8bbwe" };
 static constexpr std::wstring_view POWERSHELL_PREVIEW_PFN{ L"Microsoft.PowerShellPreview_8wekyb3d8bbwe" };
@@ -292,6 +293,16 @@ static constexpr winrt::guid PowershellCoreGuid{ 0x574e775e, 0x4f2a, 0x5b96, { 0
 std::wstring_view PowershellCoreProfileGenerator::GetNamespace() const noexcept
 {
     return PowershellCoreGeneratorNamespace;
+}
+
+std::wstring_view PowershellCoreProfileGenerator::GetDisplayName() const noexcept
+{
+    return RS_(L"PowershellCoreProfileGeneratorDisplayName");
+}
+
+std::wstring_view PowershellCoreProfileGenerator::GetIcon() const noexcept
+{
+    return POWERSHELL_ICON;
 }
 
 // Method Description:

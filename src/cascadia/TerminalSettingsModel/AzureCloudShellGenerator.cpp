@@ -8,6 +8,7 @@
 
 #include "../../inc/DefaultSettings.h"
 #include "DynamicProfileUtils.h"
+#include <LibraryResources.h>
 
 using namespace ::Microsoft::Terminal::Settings::Model;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
@@ -16,6 +17,11 @@ using namespace winrt::Microsoft::Terminal::TerminalConnection;
 std::wstring_view AzureCloudShellGenerator::GetNamespace() const noexcept
 {
     return AzureGeneratorNamespace;
+}
+
+std::wstring_view AzureCloudShellGenerator::GetDisplayName() const noexcept
+{
+    return RS_(L"AzureCloudShellGeneratorDisplayName");
 }
 
 // Method Description:

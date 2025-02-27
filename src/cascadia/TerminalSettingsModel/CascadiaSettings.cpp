@@ -114,26 +114,15 @@ Model::CascadiaSettings CascadiaSettings::Copy() const
         settings->_allProfiles = winrt::single_threaded_observable_vector(std::move(allProfiles));
         settings->_activeProfiles = winrt::single_threaded_observable_vector(std::move(activeProfiles));
 
-        // copy fragment extensions
+        // copy extension packages
         {
-            std::vector<Model::FragmentSettings> fragmentExtensions;
-            fragmentExtensions.reserve(_fragmentExtensions.Size());
-            for (const auto& fragment : _fragmentExtensions)
+            std::vector<Model::ExtensionPackage> extensions;
+            extensions.reserve(_extensionPackages.Size());
+            for (const auto& extension : _extensionPackages)
             {
-                fragmentExtensions.emplace_back(get_self<FragmentSettings>(fragment)->Copy());
+                extensions.emplace_back(get_self<ExtensionPackage>(extension)->Copy());
             }
-            settings->_fragmentExtensions = winrt::single_threaded_vector(std::move(fragmentExtensions));
-        }
-
-        // copy dynamic profile generators
-        {
-            std::vector<Model::FragmentSettings> dynamicProfileGenerators;
-            dynamicProfileGenerators.reserve(_dynamicProfileGeneratorExtensions.Size());
-            for (const auto& fragment : _dynamicProfileGeneratorExtensions)
-            {
-                dynamicProfileGenerators.emplace_back(get_self<FragmentSettings>(fragment)->Copy());
-            }
-            settings->_dynamicProfileGeneratorExtensions = winrt::single_threaded_vector(std::move(dynamicProfileGenerators));
+            settings->_extensionPackages = winrt::single_threaded_vector(std::move(extensions));
         }
     }
 
@@ -155,7 +144,7 @@ Model::CascadiaSettings CascadiaSettings::Copy() const
 
 Model::FragmentSettings FragmentSettings::Copy() const
 {
-    auto fragment{ winrt::make_self<FragmentSettings>(_source, _json, _jsonSource, _scope) };
+    auto fragment{ winrt::make_self<FragmentSettings>(_source, _json, _jsonSource) };
 
     std::vector<Model::FragmentProfileEntry> modifiedProfiles;
     modifiedProfiles.reserve(_modifiedProfiles.Size());
@@ -182,6 +171,20 @@ Model::FragmentSettings FragmentSettings::Copy() const
     fragment->_colorSchemes = winrt::single_threaded_observable_vector(std::move(colorSchemes));
 
     return *fragment;
+}
+
+Model::ExtensionPackage ExtensionPackage::Copy() const
+{
+    auto extPkg{ winrt::make_self<ExtensionPackage>(_source, _scope) };
+    extPkg->Icon(_Icon);
+    extPkg->DisplayName(_DisplayName);
+
+    for (const auto& frag : _fragments)
+    {
+        extPkg->Fragments().Append(get_self<FragmentSettings>(frag)->Copy());
+    }
+
+    return *extPkg;
 }
 
 // Method Description:
@@ -226,14 +229,9 @@ IObservableVector<Model::Profile> CascadiaSettings::ActiveProfiles() const noexc
     return _activeProfiles;
 }
 
-IVectorView<Model::FragmentSettings> CascadiaSettings::FragmentExtensions() const noexcept
+IVectorView<Model::ExtensionPackage> CascadiaSettings::Extensions() const noexcept
 {
-    return _fragmentExtensions.GetView();
-}
-
-IVectorView<Model::FragmentSettings> CascadiaSettings::DynamicProfileGenerators() const noexcept
-{
-    return _dynamicProfileGeneratorExtensions.GetView();
+    return _extensionPackages.GetView();
 }
 
 // Method Description:

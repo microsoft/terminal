@@ -9,6 +9,7 @@
 #include "FragmentExtensionViewModel.g.h"
 #include "FragmentProfileViewModel.g.h"
 #include "FragmentColorSchemeViewModel.g.h"
+#include "ExtensionPackageTemplateSelector.g.h"
 #include "ViewModelHelpers.h"
 #include "Utils.h"
 
@@ -20,14 +21,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Extensions();
 
         void OnNavigatedTo(const Windows::UI::Xaml::Navigation::NavigationEventArgs& e);
-        void ExtensionLoaded(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& args);
-        void ExtensionToggled(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& args);
 
         void ExtensionNavigator_Click(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& args);
         void NavigateToProfile_Click(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& args);
         void NavigateToColorScheme_Click(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& args);
 
         WINRT_PROPERTY(Editor::ExtensionsViewModel, ViewModel, nullptr);
+
+    private:
+        Editor::ExtensionPackageTemplateSelector _extensionPackageIdentifierTemplateSelector;
     };
 
     struct ExtensionsViewModel : ExtensionsViewModelT<ExtensionsViewModel>, ViewModelHelper<ExtensionsViewModel>
@@ -36,57 +38,62 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         ExtensionsViewModel(const Model::CascadiaSettings& settings, const Editor::ColorSchemesPageViewModel& colorSchemesPageVM);
 
         // Properties
-        bool IsExtensionView() const noexcept { return _CurrentExtensionSource != hstring{}; }
-        Windows::Foundation::Collections::IVector<IInspectable> CurrentExtensionFragments() const noexcept;
-        hstring CurrentExtensionScope() const noexcept;
-        bool NoActiveExtensions() const noexcept { return _fragmentExtensions.Size() == 0; }
+        Windows::UI::Xaml::DataTemplate CurrentExtensionPackageIdentifierTemplate() const;
+        bool IsExtensionView() const noexcept { return _CurrentExtensionPackage != nullptr; }
+        bool NoExtensionPackages() const noexcept { return _extensionPackages.Size() == 0; }
         bool NoProfilesModified() const noexcept { return _profilesModifiedView.Size() == 0; }
         bool NoProfilesAdded() const noexcept { return _profilesAddedView.Size() == 0; }
         bool NoSchemesAdded() const noexcept { return _colorSchemesAddedView.Size() == 0; }
 
         // Views
-        Windows::Foundation::Collections::IObservableVector<Editor::ExtensionPackageViewModel> ExtensionPackages() const noexcept;
+        Windows::Foundation::Collections::IObservableVector<Editor::ExtensionPackageViewModel> ExtensionPackages() const noexcept { return _extensionPackages; }
         Windows::Foundation::Collections::IObservableVector<Editor::FragmentProfileViewModel> ProfilesModified() const noexcept { return _profilesModifiedView; }
         Windows::Foundation::Collections::IObservableVector<Editor::FragmentProfileViewModel> ProfilesAdded() const noexcept { return _profilesAddedView; }
         Windows::Foundation::Collections::IObservableVector<Editor::FragmentColorSchemeViewModel> ColorSchemesAdded() const noexcept { return _colorSchemesAddedView; }
 
         // Methods
         void UpdateSettings(const Model::CascadiaSettings& settings, const Editor::ColorSchemesPageViewModel& colorSchemesPageVM);
-        bool GetExtensionState(hstring extensionSource) const;
-        void SetExtensionState(hstring extensionSource, bool enableExt);
         void NavigateToProfile(const guid profileGuid);
         void NavigateToColorScheme(const Editor::ColorSchemeViewModel& schemeVM);
+
+        static bool GetExtensionState(hstring extensionSource, const Model::CascadiaSettings& settings);
+        static void SetExtensionState(hstring extensionSource, const Model::CascadiaSettings& settings, bool enableExt);
 
         til::typed_event<IInspectable, guid> NavigateToProfileRequested;
         til::typed_event<IInspectable, Editor::ColorSchemeViewModel> NavigateToColorSchemeRequested;
 
-        VIEW_MODEL_OBSERVABLE_PROPERTY(hstring, CurrentExtensionSource);
+        VIEW_MODEL_OBSERVABLE_PROPERTY(Editor::ExtensionPackageViewModel, CurrentExtensionPackage, nullptr);
+        WINRT_PROPERTY(Editor::ExtensionPackageTemplateSelector, ExtensionPackageIdentifierTemplateSelector, nullptr);
 
     private:
         Model::CascadiaSettings _settings;
         Editor::ColorSchemesPageViewModel _colorSchemesPageVM;
-        std::unordered_set<hstring> _extensionSources;
-        Windows::Foundation::Collections::IVector<Editor::FragmentExtensionViewModel> _fragmentExtensions;
+        Windows::Foundation::Collections::IObservableVector<Editor::ExtensionPackageViewModel> _extensionPackages;
         Windows::Foundation::Collections::IObservableVector<Editor::FragmentProfileViewModel> _profilesModifiedView;
         Windows::Foundation::Collections::IObservableVector<Editor::FragmentProfileViewModel> _profilesAddedView;
         Windows::Foundation::Collections::IObservableVector<Editor::FragmentColorSchemeViewModel> _colorSchemesAddedView;
-
-        Windows::Foundation::Collections::IVector<hstring> _DisabledProfileSources() const noexcept { return _settings.GlobalSettings().DisabledProfileSources(); }
     };
 
     struct ExtensionPackageViewModel : ExtensionPackageViewModelT<ExtensionPackageViewModel>, ViewModelHelper<ExtensionPackageViewModel>
     {
     public:
-        ExtensionPackageViewModel(hstring source, bool enabled) :
-            _source{ source },
-            _enabled{ enabled } {}
-        hstring Source() const noexcept { return _source; }
-        bool Enabled() const noexcept { return _enabled; }
+        ExtensionPackageViewModel(const Model::ExtensionPackage& pkg, const Model::CascadiaSettings& settings) :
+            _package{ pkg },
+            _settings{ settings },
+            _fragmentExtensions{ single_threaded_observable_vector<Editor::FragmentExtensionViewModel>() } {}
+
+        Model::ExtensionPackage Package() const noexcept { return _package; }
+        hstring Scope() const noexcept;
+        bool Enabled() const;
+        void Enabled(bool val);
         hstring AccessibleName() const noexcept;
+        hstring AccessibleNameWithStatus() const noexcept;
+        Windows::Foundation::Collections::IObservableVector<Editor::FragmentExtensionViewModel> FragmentExtensions() { return _fragmentExtensions; }
 
     private:
-        hstring _source;
-        bool _enabled;
+        Model::ExtensionPackage _package;
+        Model::CascadiaSettings _settings;
+        Windows::Foundation::Collections::IObservableVector<Editor::FragmentExtensionViewModel> _fragmentExtensions;
     };
 
     struct FragmentExtensionViewModel : FragmentExtensionViewModelT<FragmentExtensionViewModel>, ViewModelHelper<FragmentExtensionViewModel>
@@ -124,6 +131,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Model::Profile Profile() const { return _deducedProfile; };
         hstring SourceName() const { return _fragment.Source(); }
         hstring Json() const { return _entry.Json(); }
+        hstring AccessibleName() const noexcept;
 
     private:
         Model::FragmentProfileEntry _entry;
@@ -142,15 +150,29 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Editor::ColorSchemeViewModel ColorSchemeVM() const { return _deducedSchemeVM; };
         hstring SourceName() const { return _fragment.Source(); }
         hstring Json() const { return _entry.Json(); }
+        hstring AccessibleName() const noexcept;
 
     private:
         Model::FragmentColorSchemeEntry _entry;
         Model::FragmentSettings _fragment;
         Editor::ColorSchemeViewModel _deducedSchemeVM;
     };
+
+    struct ExtensionPackageTemplateSelector : public ExtensionPackageTemplateSelectorT<ExtensionPackageTemplateSelector>
+    {
+    public:
+        ExtensionPackageTemplateSelector() = default;
+
+        Windows::UI::Xaml::DataTemplate SelectTemplateCore(const Windows::Foundation::IInspectable& item, const Windows::UI::Xaml::DependencyObject& container);
+        Windows::UI::Xaml::DataTemplate SelectTemplateCore(const Windows::Foundation::IInspectable& item);
+
+        WINRT_PROPERTY(Windows::UI::Xaml::DataTemplate, DefaultTemplate, nullptr);
+        WINRT_PROPERTY(Windows::UI::Xaml::DataTemplate, ComplexTemplate, nullptr);
+    };
 };
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::factory_implementation
 {
     BASIC_FACTORY(Extensions);
+    BASIC_FACTORY(ExtensionPackageTemplateSelector);
 }
