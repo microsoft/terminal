@@ -179,13 +179,18 @@
         <Setter Property="FontFamily" Value="Segoe UI, Segoe Fluent Icons, Segoe MDL2 Assets" />
     </Style>
 
+    <Style x:Key="SettingContainerCurrentValueTextBlockStyle"
+           BasedOn="{StaticResource SettingsPageItemDescriptionStyle}"
+           TargetType="TextBlock">
+        <Setter Property="MaxWidth" Value="250" />
+        <Setter Property="Margin" Value="0,0,-16,0" />
+        <Setter Property="HorizontalAlignment" Value="Right" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="FontFamily" Value="Segoe UI, Segoe Fluent Icons, Segoe MDL2 Assets" />
+    </Style>
+
     <DataTemplate x:Key="ExpanderSettingContainerStringPreviewTemplate">
-        <TextBlock MaxWidth="250"
-                   Margin="0,0,-16,0"
-                   HorizontalAlignment="Right"
-                   VerticalAlignment="Center"
-                   FontFamily="Segoe UI, Segoe Fluent Icons, Segoe MDL2 Assets"
-                   Style="{StaticResource SettingsPageItemDescriptionStyle}"
+        <TextBlock Style="{StaticResource SettingContainerCurrentValueTextBlockStyle}"
                    Text="{Binding}" />
     </DataTemplate>
 

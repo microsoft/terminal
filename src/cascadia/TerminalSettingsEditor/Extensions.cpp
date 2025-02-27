@@ -25,6 +25,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         InitializeComponent();
 
         _extensionPackageIdentifierTemplateSelector = Resources().Lookup(box_value(L"ExtensionPackageIdentifierTemplateSelector")).as<Editor::ExtensionPackageTemplateSelector>();
+
+        Automation::AutomationProperties::SetName(ActiveExtensionsList(), RS_(L"Extensions_ActiveExtensionsHeader/Text"));
+        Automation::AutomationProperties::SetName(ModifiedProfilesList(), RS_(L"Extensions_ModifiedProfilesHeader/Text"));
+        Automation::AutomationProperties::SetName(AddedProfilesList(), RS_(L"Extensions_AddedProfilesHeader/Text"));
+        Automation::AutomationProperties::SetName(AddedColorSchemesList(), RS_(L"Extensions_AddedColorSchemesHeader/Text"));
     }
 
     void Extensions::OnNavigatedTo(const NavigationEventArgs& e)
@@ -299,6 +304,16 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             return AccessibleName();
         }
         return hstring{ fmt::format(FMT_COMPILE(L"{}: {}"), AccessibleName(), RS_(L"Extension_StateDisabled/Text")) };
+    }
+
+    hstring FragmentProfileViewModel::AccessibleName() const noexcept
+    {
+        return hstring{ fmt::format(FMT_COMPILE(L"{}, {}"), Profile().Name(), SourceName()) };
+    }
+
+    hstring FragmentColorSchemeViewModel::AccessibleName() const noexcept
+    {
+        return hstring{ fmt::format(FMT_COMPILE(L"{}, {}"), ColorSchemeVM().Name(), SourceName()) };
     }
 
     DataTemplate ExtensionPackageTemplateSelector::SelectTemplateCore(const IInspectable& item, const DependencyObject& /*container*/)

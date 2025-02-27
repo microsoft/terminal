@@ -131,6 +131,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Model::Profile Profile() const { return _deducedProfile; };
         hstring SourceName() const { return _fragment.Source(); }
         hstring Json() const { return _entry.Json(); }
+        hstring AccessibleName() const noexcept;
 
     private:
         Model::FragmentProfileEntry _entry;
@@ -149,6 +150,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Editor::ColorSchemeViewModel ColorSchemeVM() const { return _deducedSchemeVM; };
         hstring SourceName() const { return _fragment.Source(); }
         hstring Json() const { return _entry.Json(); }
+        hstring AccessibleName() const noexcept;
 
     private:
         Model::FragmentColorSchemeEntry _entry;
