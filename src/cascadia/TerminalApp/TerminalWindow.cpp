@@ -354,7 +354,7 @@ namespace winrt::TerminalApp::implementation
         // If two sources call ShowDialog() simultaneously, it may happen that both enter the above loop,
         // but it's crucial that only one of them continues below as only 1 dialog can be shown at a time.
         // Thankfully, everything runs on the UI thread, so only 1 caller will exit the above loop at a time.
-        // So, if s_activeDialog is still set at this point, we must've lost the race.
+        // So, if s_activeDialog is still set at this point, we must have lost the race.
         if (s_activeDialog)
         {
             co_return ContentDialogResult::None;
