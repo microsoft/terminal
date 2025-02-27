@@ -287,7 +287,7 @@ namespace TerminalAppLocalTests
             NewTabArgs args{ newTerminalArgs };
             ActionAndArgs newTabAction{ ShortcutAction::NewTab, args };
             // push the arg onto the front
-            page->_startupActions.Append(newTabAction);
+            page->_startupActions.push_back(std::move(newTabAction));
             Log::Comment(L"Added a single newTab action");
 
             auto app = ::winrt::Windows::UI::Xaml::Application::Current();
