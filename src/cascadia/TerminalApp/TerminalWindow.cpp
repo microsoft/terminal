@@ -316,7 +316,8 @@ namespace winrt::TerminalApp::implementation
     // WinUI can't show 2 dialogs simultaneously. Yes, really. If you do, you get an exception.
     // As such, we must dismiss whatever dialog is currently being shown.
     //
-    // This limit is of course per-thread and not per-window. Yes... really.
+    // This limit is of course per-thread and not per-window. Yes... really. See:
+    //   https://github.com/microsoft/microsoft-ui-xaml/issues/794
     // The consequence is that we use a static variable to keep track of the shown dialog.
     static ContentDialog s_activeDialog{ nullptr };
 
