@@ -238,6 +238,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         friend struct TermControlT<TermControl>; // friend our parent so it can bind private event handlers
         friend struct TsfDataProvider;
 
+        static Windows::UI::ViewManagement::AccessibilitySettings _accessibilitySettings;
+
         // NOTE: _uiaEngine must be ordered before _core.
         //
         // ControlCore::AttachUiaEngine receives a IRenderEngine as a raw pointer, which we own.
@@ -362,7 +364,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         };
         bool _InitializeTerminal(const InitializeReason reason);
         safe_void_coroutine _restoreInBackground();
-        void _SetFontSize(int fontSize);
         void _TappedHandler(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::Input::TappedRoutedEventArgs& e);
         void _KeyDownHandler(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::Input::KeyRoutedEventArgs& e);
         void _KeyUpHandler(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::Input::KeyRoutedEventArgs& e);
@@ -393,8 +394,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         void _SwapChainSizeChanged(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::SizeChangedEventArgs& e);
         void _SwapChainScaleChanged(const Windows::UI::Xaml::Controls::SwapChainPanel& sender, const Windows::Foundation::IInspectable& args);
-
-        void _TerminalTabColorChanged(const std::optional<til::color> color);
 
         void _ScrollPositionChanged(const IInspectable& sender, const Control::ScrollPositionChangedArgs& args);
 
