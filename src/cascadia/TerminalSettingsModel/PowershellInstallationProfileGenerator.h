@@ -3,14 +3,15 @@ Copyright (c) Microsoft Corporation
 Licensed under the MIT license.
 
 Module Name:
-- WslDistroGenerator
+- PowershellInstallationProfileGenerator
 
 Abstract:
-- This is the dynamic profile generator for WSL distros. Enumerates all the
-  installed WSL distros to create profiles for them.
+- This is the dynamic profile generator for a PowerShell stub. Checks if pwsh is
+  installed, and if it is NOT installed, creates a profile that installs the
+  latest PowerShell.
 
 Author(s):
-- Mike Griese - August 2019
+- Carlos Zamora - March 2025
 
 --*/
 
@@ -20,9 +21,10 @@ Author(s):
 
 namespace winrt::Microsoft::Terminal::Settings::Model
 {
-    class WslDistroGenerator final : public IDynamicProfileGenerator
+    class PowershellInstallationProfileGenerator final : public IDynamicProfileGenerator
     {
     public:
+        static std::wstring_view Namespace;
         std::wstring_view GetNamespace() const noexcept override;
         std::wstring_view GetDisplayName() const noexcept override;
         std::wstring_view GetIcon() const noexcept override;

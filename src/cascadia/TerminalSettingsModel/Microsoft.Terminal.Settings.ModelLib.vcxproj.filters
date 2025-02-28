@@ -15,6 +15,9 @@
     <ClCompile Include="PowershellCoreProfileGenerator.cpp">
       <Filter>profileGeneration</Filter>
     </ClCompile>
+    <ClCompile Include="PowershellInstallationProfileGenerator.cpp">
+      <Filter>profileGeneration</Filter>
+    </ClCompile>
     <ClCompile Include="WslDistroGenerator.cpp">
       <Filter>profileGeneration</Filter>
     </ClCompile>
@@ -55,6 +58,9 @@
       <Filter>profileGeneration</Filter>
     </ClInclude>
     <ClInclude Include="PowershellCoreProfileGenerator.h">
+      <Filter>profileGeneration</Filter>
+    </ClInclude>
+    <ClInclude Include="PowershellInstallationProfileGenerator.h">
       <Filter>profileGeneration</Filter>
     </ClInclude>
     <ClInclude Include="WslDistroGenerator.h">
