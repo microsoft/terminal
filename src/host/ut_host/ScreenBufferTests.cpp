@@ -44,7 +44,6 @@ class ScreenBufferTests
 
         m_state->InitEvents();
         m_state->PrepareGlobalFont({ 1, 1 });
-        m_state->PrepareGlobalRenderer();
         m_state->PrepareGlobalInputBuffer();
         m_state->PrepareGlobalScreenBuffer();
 
@@ -54,7 +53,6 @@ class ScreenBufferTests
     TEST_CLASS_CLEANUP(ClassCleanup)
     {
         m_state->CleanupGlobalScreenBuffer();
-        m_state->CleanupGlobalRenderer();
         m_state->CleanupGlobalInputBuffer();
 
         delete m_state;
@@ -581,8 +579,6 @@ void ScreenBufferTests::TestResetClearTabStops()
     // Reset the screen buffer to test the defaults.
     m_state->CleanupNewTextBufferInfo();
     m_state->CleanupGlobalScreenBuffer();
-    m_state->CleanupGlobalRenderer();
-    m_state->PrepareGlobalRenderer();
     m_state->PrepareGlobalScreenBuffer();
     m_state->PrepareNewTextBufferInfo();
 

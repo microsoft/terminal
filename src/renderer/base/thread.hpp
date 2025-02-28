@@ -21,30 +21,21 @@ namespace Microsoft::Console::Render
     class RenderThread
     {
     public:
-        RenderThread();
+        RenderThread(Renderer* renderer);
         ~RenderThread();
-
-        [[nodiscard]] HRESULT Initialize(Renderer* const pRendererParent) noexcept;
 
         void NotifyPaint() noexcept;
         void EnablePainting() noexcept;
-        void DisablePainting() noexcept;
-        void WaitForPaintCompletionAndDisable(const DWORD dwTimeoutMs) noexcept;
+        void WaitForPaintCompletionAndDisable() noexcept;
 
     private:
         static DWORD WINAPI s_ThreadProc(_In_ LPVOID lpParameter);
         DWORD WINAPI _ThreadProc();
 
-        HANDLE _hThread;
-        HANDLE _hEvent;
-
-        HANDLE _hPaintEnabledEvent;
-        HANDLE _hPaintCompletedEvent;
-
-        Renderer* _pRenderer; // Non-ownership pointer
-
-        bool _fKeepRunning;
-        std::atomic<bool> _fNextFrameRequested;
-        std::atomic<bool> _fWaiting;
+        Renderer* renderer;
+        wil::slim_event_auto_reset _event;
+        wil::srwlock _threadMutex;
+        wil::unique_handle _thread;
+        std::atomic<bool> _keepRunning{ false };
     };
 }

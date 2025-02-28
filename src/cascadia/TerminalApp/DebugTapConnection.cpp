@@ -60,9 +60,12 @@ namespace winrt::Microsoft::TerminalApp::implementation
 
     DebugTapConnection::DebugTapConnection(ITerminalConnection wrappedConnection)
     {
-        _outputRevoker = wrappedConnection.TerminalOutput(winrt::auto_revoke, { this, &DebugTapConnection::_OutputHandler });
-        _stateChangedRevoker = wrappedConnection.StateChanged(winrt::auto_revoke, [this](auto&& /*s*/, auto&& /*e*/) {
-            StateChanged.raise(*this, nullptr);
+        _outputRevoker = wrappedConnection.TerminalOutput(winrt::auto_revoke, { get_weak(), &DebugTapConnection::_OutputHandler });
+        _stateChangedRevoker = wrappedConnection.StateChanged(winrt::auto_revoke, [weak = get_weak()](auto&& /*s*/, auto&& /*e*/) {
+            if (const auto self = weak.get())
+            {
+                self->StateChanged.raise(*self, nullptr);
+            }
         });
         _wrappedConnection = wrappedConnection;
     }
