@@ -78,6 +78,7 @@ private:
     bool _forcePersistence = false;
     bool _needsPersistenceCleanup = false;
     std::optional<bool> _currentSystemThemeIsDark;
+    int32_t _windowCount = 0;
     int32_t _messageBoxCount = 0;
 
 #ifdef NDEBUG
