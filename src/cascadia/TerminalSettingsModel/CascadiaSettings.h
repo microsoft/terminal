@@ -121,7 +121,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void _appendProfile(winrt::com_ptr<Profile>&& profile, const winrt::guid& guid, ParsedSettings& settings);
         void _addUserProfileParent(const winrt::com_ptr<implementation::Profile>& profile);
         bool _addOrMergeUserColorScheme(const winrt::com_ptr<implementation::ColorScheme>& colorScheme);
-        void _executeGenerator(const IDynamicProfileGenerator& generator);
+        void _executeGenerator(IDynamicProfileGenerator& generator);
+        void _cleanupPowerShellInstaller(bool isPowerShellInstalled);
         winrt::com_ptr<implementation::ExtensionPackage> _registerFragment(const winrt::Microsoft::Terminal::Settings::Model::FragmentSettings& fragment, FragmentScope scope);
 
         std::unordered_set<winrt::hstring, til::transparent_hstring_hash, til::transparent_hstring_equal_to> _ignoredNamespaces;
@@ -235,14 +236,13 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     public:
         FragmentProfileEntry(winrt::guid profileGuid, hstring json) :
             _profileGuid{ profileGuid },
-            _json{ json } {}
+            _Json{ json } {}
 
         winrt::guid ProfileGuid() const noexcept { return _profileGuid; }
-        hstring Json() const noexcept { return _json; }
+        WINRT_PROPERTY(hstring, Json);
 
     private:
         winrt::guid _profileGuid;
-        hstring _json;
     };
 
     struct FragmentColorSchemeEntry : FragmentColorSchemeEntryT<FragmentColorSchemeEntry>
@@ -270,7 +270,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             _filename{ filename } {}
 
         hstring Source() const noexcept { return _source; }
-        hstring Json() const noexcept { return _json; }
         hstring Filename() const noexcept { return _filename; }
         Windows::Foundation::Collections::IVector<Model::FragmentProfileEntry> ModifiedProfiles() const noexcept { return _modifiedProfiles; }
         void ModifiedProfiles(const Windows::Foundation::Collections::IVector<Model::FragmentProfileEntry>& modifiedProfiles) noexcept { _modifiedProfiles = modifiedProfiles; }
@@ -278,7 +277,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void NewProfiles(const Windows::Foundation::Collections::IVector<Model::FragmentProfileEntry>& newProfiles) noexcept { _newProfiles = newProfiles; }
         Windows::Foundation::Collections::IVector<Model::FragmentColorSchemeEntry> ColorSchemes() const noexcept { return _colorSchemes; }
         void ColorSchemes(const Windows::Foundation::Collections::IVector<Model::FragmentColorSchemeEntry>& colorSchemes) noexcept { _colorSchemes = colorSchemes; }
+        WINRT_PROPERTY(hstring, Json);
 
+    public:
         // views
         Windows::Foundation::Collections::IVectorView<Model::FragmentProfileEntry> ModifiedProfilesView() const noexcept { return _modifiedProfiles ? _modifiedProfiles.GetView() : nullptr; }
         Windows::Foundation::Collections::IVectorView<Model::FragmentProfileEntry> NewProfilesView() const noexcept { return _newProfiles ? _newProfiles.GetView() : nullptr; }
@@ -286,7 +287,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     private:
         hstring _source;
-        hstring _json;
         hstring _filename;
         Windows::Foundation::Collections::IVector<Model::FragmentProfileEntry> _modifiedProfiles;
         Windows::Foundation::Collections::IVector<Model::FragmentProfileEntry> _newProfiles;

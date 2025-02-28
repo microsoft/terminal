@@ -77,6 +77,16 @@ namespace winrt::TerminalApp::implementation
             }
             const auto settings{ TerminalSettings::CreateWithNewTerminalArgs(_settings, newTerminalArgs, *_bindings) };
 
+            if (profile.Source() == L"Windows.Terminal.InstallPowerShell")
+            {
+                TraceLoggingWrite(
+                    g_hTerminalAppProvider,
+                    "InstallPowerShellStubInvoked",
+                    TraceLoggingDescription("Event emitted when the 'Install Latest PowerShell' stub was invoked"),
+                    TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+                    TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
+            }
+
             // Try to handle auto-elevation
             if (_maybeElevate(newTerminalArgs, settings, profile))
             {
