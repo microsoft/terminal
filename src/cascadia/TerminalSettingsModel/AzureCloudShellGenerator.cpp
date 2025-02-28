@@ -31,7 +31,7 @@ std::wstring_view AzureCloudShellGenerator::GetDisplayName() const noexcept
 // - <none>
 // Return Value:
 // - a vector with the Azure Cloud Shell connection profile, if available.
-void AzureCloudShellGenerator::GenerateProfiles(std::vector<winrt::com_ptr<implementation::Profile>>& profiles) const
+void AzureCloudShellGenerator::GenerateProfiles(std::vector<winrt::com_ptr<implementation::Profile>>& profiles)
 {
     if (AzureConnection::IsAzureConnectionAvailable())
     {
