@@ -583,7 +583,6 @@ namespace winrt::TerminalApp::implementation
             _pointerExitTimer = winrt::Windows::UI::Xaml::DispatcherTimer();
             _pointerExitTimer.Interval(std::chrono::milliseconds(10));
             _pointerExitTimer.Tick([this](auto const&, auto const&) {
-
                 // when the timer ticks, revert the preview to the selected command
                 const auto selectedCommand = _filteredActionsView().SelectedItem();
                 if (const auto filteredCommand{ selectedCommand.try_as<winrt::TerminalApp::FilteredCommand>() })
