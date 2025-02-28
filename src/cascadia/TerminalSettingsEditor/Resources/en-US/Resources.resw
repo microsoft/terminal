@@ -1792,6 +1792,22 @@
     <value>Delete action</value>
     <comment>Button label that deletes the selected action.</comment>
   </data>
+  <data name="Actions_Name.Text" xml:space="preserve">
+    <value>Action name</value>
+    <comment>Label for the text box that edits the action name.</comment>
+  </data>
+  <data name="Actions_ShortcutAction.Text" xml:space="preserve">
+    <value>Action type</value>
+    <comment>Label for the combo box that edits the action type.</comment>
+  </data>
+  <data name="Actions_Arguments.Text" xml:space="preserve">
+    <value>Additional arguments</value>
+    <comment>Label for the list of editable arguments for the currently selected action.</comment>
+  </data>
+  <data name="Actions_Keybindings.Text" xml:space="preserve">
+    <value>Keybindings</value>
+    <comment>Label for the list of editable keybindings for the current command.</comment>
+  </data>
   <data name="Actions_AddKeyChord.Text" xml:space="preserve">
     <value>Add keybinding</value>
     <comment>Button label that adds a keybinding to the current action.</comment>

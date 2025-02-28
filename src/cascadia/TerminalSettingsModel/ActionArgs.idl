@@ -24,7 +24,6 @@ namespace Microsoft.Terminal.Settings.Model
         IInspectable GetArgAt(UInt32 index);
         void SetArgAt(UInt32 index, Object value);
         void SetAllArgsToDefault();
-        void SetRequiredArgsToDefault();
     };
 
     interface IActionEventArgs

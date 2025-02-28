@@ -122,6 +122,8 @@
                 </ResourceDictionary>
             </ResourceDictionary.ThemeDictionaries>
 
+            <GridLength x:Key="ArgumentNameWidth">148</GridLength>
+
             <!--  Styles  -->
             <Style x:Key="KeyBindingContainerStyle"
                    BasedOn="{StaticResource DefaultListViewItemStyle}"
@@ -233,93 +235,123 @@
             <DataTemplate x:Key="Int32Template"
                           x:DataType="local:ArgWrapper">
                 <ListViewItem>
-                    <StackPanel Orientation="Horizontal"
-                                Spacing="8">
+                    <Grid ColumnSpacing="8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="{StaticResource ArgumentNameWidth}" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
                         <TextBlock Text="{x:Bind Name}"
-                                   VerticalAlignment="Center" />
+                                   VerticalAlignment="Center"
+                                   Grid.Column="0"/>
                         <muxc:NumberBox Value="{x:Bind UnboxInt32(Value), Mode=TwoWay, BindBack=Int32BindBack}"
                                         Style="{StaticResource NumberBoxSettingStyle}"
                                         Minimum="0"
                                         Maximum="999"
                                         LargeChange="1"
-                                        SmallChange="1"/>
-                    </StackPanel>
+                                        SmallChange="1"
+                                        Grid.Column="1"/>
+                    </Grid>
                 </ListViewItem>
             </DataTemplate>
 
             <DataTemplate x:Key="UInt32Template"
                           x:DataType="local:ArgWrapper">
                 <ListViewItem>
-                    <StackPanel Orientation="Horizontal"
-                                Spacing="8">
+                    <Grid ColumnSpacing="8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="{StaticResource ArgumentNameWidth}" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
                         <TextBlock Text="{x:Bind Name}"
-                                   VerticalAlignment="Center" />
+                                   VerticalAlignment="Center"
+                                   Grid.Column="0"/>
                         <muxc:NumberBox Value="{x:Bind UnboxUInt32(Value), Mode=TwoWay, BindBack=UInt32BindBack}"
                                         Style="{StaticResource NumberBoxSettingStyle}"
                                         Minimum="0"
                                         Maximum="999"
                                         LargeChange="1"
-                                        SmallChange="1"/>
-                    </StackPanel>
+                                        SmallChange="1"
+                                        Grid.Column="1"/>
+                    </Grid>
                 </ListViewItem>
             </DataTemplate>
 
             <DataTemplate x:Key="UInt32OptionalTemplate"
                           x:DataType="local:ArgWrapper">
                 <ListViewItem>
-                    <StackPanel Orientation="Horizontal"
-                                Spacing="8">
+                    <Grid ColumnSpacing="8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="{StaticResource ArgumentNameWidth}" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
                         <TextBlock Text="{x:Bind Name}"
-                                   VerticalAlignment="Center" />
+                                   VerticalAlignment="Center"
+                                   Grid.Column="0"/>
                         <muxc:NumberBox Value="{x:Bind UnboxUInt32Optional(Value), Mode=TwoWay, BindBack=UInt32OptionalBindBack}"
                                         Style="{StaticResource NumberBoxSettingStyle}"
                                         Minimum="0"
                                         Maximum="999"
                                         LargeChange="1"
-                                        SmallChange="1"/>
-                    </StackPanel>
+                                        SmallChange="1"
+                                        Grid.Column="1"/>
+                    </Grid>
                 </ListViewItem>
             </DataTemplate>
 
             <DataTemplate x:Key="FloatTemplate"
                           x:DataType="local:ArgWrapper">
                 <ListViewItem>
-                    <StackPanel Orientation="Horizontal"
-                                Spacing="8">
+                    <Grid ColumnSpacing="8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="{StaticResource ArgumentNameWidth}" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
                         <TextBlock Text="{x:Bind Name}"
-                                   VerticalAlignment="Center" />
+                                   VerticalAlignment="Center"
+                                   Grid.Column="0"/>
                         <muxc:NumberBox Value="{x:Bind UnboxFloat(Value), Mode=TwoWay, BindBack=FloatBindBack}"
                                         Style="{StaticResource NumberBoxSettingStyle}"
                                         Minimum="0"
                                         Maximum="999"
                                         LargeChange="1"
-                                        SmallChange="1"/>
-                    </StackPanel>
+                                        SmallChange="1"
+                                        Grid.Column="1"/>
+                    </Grid>
                 </ListViewItem>
             </DataTemplate>
 
             <DataTemplate x:Key="StringTemplate"
                           x:DataType="local:ArgWrapper">
                 <ListViewItem>
-                    <StackPanel Orientation="Horizontal"
-                                Spacing="8">
+                    <Grid ColumnSpacing="8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="{StaticResource ArgumentNameWidth}" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
                         <TextBlock Text="{x:Bind Name}"
-                                   VerticalAlignment="Center" />
-                        <TextBox Text="{x:Bind UnboxString(Value), Mode=TwoWay, BindBack=StringBindBack}" />
-                    </StackPanel>
+                                   VerticalAlignment="Center"
+                                   Grid.Column="0"/>
+                        <TextBox Text="{x:Bind UnboxString(Value), Mode=TwoWay, BindBack=StringBindBack}"
+                                 Grid.Column="1"/>
+                    </Grid>
                 </ListViewItem>
             </DataTemplate>
 
             <DataTemplate x:Key="BoolOptionalTemplate"
                           x:DataType="local:ArgWrapper">
                 <ListViewItem>
-                    <StackPanel Orientation="Horizontal"
-                                Spacing="8">
+                    <Grid ColumnSpacing="8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="{StaticResource ArgumentNameWidth}" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
                         <TextBlock Text="{x:Bind Name}"
-                                   VerticalAlignment="Center" />
+                                   VerticalAlignment="Center"
+                                   Grid.Column="0"/>
                         <CheckBox IsChecked="{x:Bind UnboxBoolOptional(Value), Mode=TwoWay, BindBack=BoolBindBack}"
-                                  IsThreeState="True" />
-                    </StackPanel>
+                                  IsThreeState="True"
+                                  Grid.Column="1"/>
+                    </Grid>
                 </ListViewItem>
             </DataTemplate>
 
@@ -331,68 +363,96 @@
             <DataTemplate x:Key="EnumTemplate"
                           x:DataType="local:ArgWrapper">
                 <ListViewItem>
-                    <StackPanel Orientation="Horizontal"
-                                Spacing="8">
+                    <Grid ColumnSpacing="8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="{StaticResource ArgumentNameWidth}" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
                         <TextBlock Text="{x:Bind Name}"
-                                   VerticalAlignment="Center" />
+                                   VerticalAlignment="Center"
+                                   Grid.Column="0"/>
                         <ComboBox ItemTemplate="{StaticResource EnumComboBoxTemplate}"
                                   ItemsSource="{x:Bind EnumList, Mode=OneWay}"
                                   SelectedItem="{x:Bind EnumValue, Mode=TwoWay}"
-                                  Style="{StaticResource ComboBoxSettingStyle}" />
-                    </StackPanel>
+                                  Style="{StaticResource ComboBoxSettingStyle}"
+                                  Grid.Column="1"/>
+                    </Grid>
                 </ListViewItem>
             </DataTemplate>
 
             <DataTemplate x:Key="FlagItemTemplate"
                           x:DataType="local:FlagEntry">
-                <StackPanel Orientation="Horizontal"
-                            Spacing="8">
-                    <CheckBox IsChecked="{x:Bind IsSet, Mode=TwoWay}"/>
-                    <TextBlock Text="{x:Bind FlagName, Mode=OneWay}" />
-                </StackPanel>
+                <Grid ColumnSpacing="8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <CheckBox IsChecked="{x:Bind IsSet, Mode=TwoWay}"
+                              Grid.Column="0"/>
+                    <TextBlock Text="{x:Bind FlagName, Mode=OneWay}"
+                               Grid.Column="1"/>
+                </Grid>
             </DataTemplate>
 
             <DataTemplate x:Key="FlagTemplate"
                           x:DataType="local:ArgWrapper">
                 <ListViewItem>
-                    <StackPanel Orientation="Horizontal"
-                                Spacing="8">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="{StaticResource ArgumentNameWidth}" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
                         <TextBlock Text="{x:Bind Name}"
-                                   VerticalAlignment="Center" />
+                                   VerticalAlignment="Center"
+                                   Grid.Column="0"/>
                         <ListView ItemTemplate="{StaticResource FlagItemTemplate}"
                                   SelectionMode="None"
-                                  ItemsSource="{x:Bind FlagList, Mode=OneWay}" />
-                    </StackPanel>
+                                  ItemsSource="{x:Bind FlagList, Mode=OneWay}"
+                                  Grid.Column="1"
+                                  HorizontalAlignment="Left"
+                                  Padding="-8,0,0,0"
+                                  Margin="0"/>
+                    </Grid>
                 </ListViewItem>
             </DataTemplate>
 
             <DataTemplate x:Key="TerminalCoreColorOptionalTemplate"
                           x:DataType="local:ArgWrapper">
                 <ListViewItem>
-                    <StackPanel Orientation="Horizontal"
-                                Spacing="8">
+                    <Grid ColumnSpacing="8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="{StaticResource ArgumentNameWidth}" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
                         <TextBlock Text="{x:Bind Name}"
-                                   VerticalAlignment="Center" />
+                                   VerticalAlignment="Center"
+                                   Grid.Column="0"/>
                         <local:NullableColorPicker x:Uid="Actions_NullableColorPicker"
                                                    CurrentColor="{x:Bind UnboxTerminalCoreColorOptional(Value), Mode=TwoWay, BindBack=TerminalCoreColorBindBack}"
                                                    ColorSchemeVM="{x:Bind DefaultColorScheme, Mode=OneWay}"
-                                                   NullColorPreview="{x:Bind DefaultColorScheme.ForegroundColor.Color, Mode=OneWay}"/>
-                    </StackPanel>
+                                                   NullColorPreview="{x:Bind DefaultColorScheme.ForegroundColor.Color, Mode=OneWay}"
+                                                   Grid.Column="1"/>
+                    </Grid>
                 </ListViewItem>
             </DataTemplate>
 
             <DataTemplate x:Key="WindowsUIColorOptionalTemplate"
                           x:DataType="local:ArgWrapper">
                 <ListViewItem>
-                    <StackPanel Orientation="Horizontal"
-                                Spacing="8">
+                    <Grid ColumnSpacing="8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="{StaticResource ArgumentNameWidth}" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
                         <TextBlock Text="{x:Bind Name}"
-                                   VerticalAlignment="Center" />
+                                   VerticalAlignment="Center"
+                                   Grid.Column="0"/>
                         <local:NullableColorPicker x:Uid="Actions_NullableColorPicker"
                                                    CurrentColor="{x:Bind UnboxWindowsUIColorOptional(Value), Mode=TwoWay, BindBack=WindowsUIColorBindBack}"
                                                    ColorSchemeVM="{x:Bind DefaultColorScheme, Mode=OneWay}"
-                                                   NullColorPreview="{x:Bind DefaultColorScheme.ForegroundColor.Color, Mode=OneWay}"/>
-                    </StackPanel>
+                                                   NullColorPreview="{x:Bind DefaultColorScheme.ForegroundColor.Color, Mode=OneWay}"
+                                                   Grid.Column="1"/>
+                    </Grid>
                 </ListViewItem>
             </DataTemplate>
 
@@ -416,7 +476,8 @@
         <Grid MaxWidth="600"
               HorizontalAlignment="Left"
               Style="{StaticResource SettingsStackStyle}"
-              RowSpacing="8">
+              RowSpacing="8"
+              ColumnSpacing="16">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
@@ -428,16 +489,28 @@
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
+            <TextBlock x:Uid="Actions_Name"
+                       VerticalAlignment="Center"
+                       Grid.Column="0"
+                       Grid.Row="0"/>
             <TextBox Text="{x:Bind ViewModel.Name, Mode=TwoWay}"
                      IsEnabled="{x:Bind ViewModel.IsUserAction}"
                      Grid.Row="0"
                      Grid.Column="1"/>
+            <TextBlock x:Uid="Actions_ShortcutAction"
+                       VerticalAlignment="Center"
+                       Grid.Column="0"
+                       Grid.Row="1"/>
             <ComboBox VerticalAlignment="Center"
                       ItemsSource="{x:Bind ViewModel.AvailableShortcutActions, Mode=OneWay}"
                       SelectedItem="{x:Bind ViewModel.ProposedShortcutAction, Mode=TwoWay}"
                       IsEnabled="{x:Bind ViewModel.IsUserAction}"
                       Grid.Row="1"
                       Grid.Column="1"/>
+            <TextBlock x:Uid="Actions_Arguments"
+                       VerticalAlignment="Center"
+                       Grid.Column="0"
+                       Grid.Row="2"/>
             <ListView ItemsSource="{x:Bind ViewModel.ActionArgsVM.ArgValues, Mode=OneWay}"
                       ChoosingItemContainer="_choosingItemContainer"
                       SelectionMode="None"
@@ -447,6 +520,10 @@
                       Grid.Row="2"
                       Grid.Column="1">
             </ListView>
+            <TextBlock x:Uid="Actions_Keybindings"
+                       VerticalAlignment="Center"
+                       Grid.Column="0"
+                       Grid.Row="3"/>
             <ListView ItemTemplate="{StaticResource KeyChordTemplate}"
                       ItemsSource="{x:Bind ViewModel.KeyChordViewModelList, Mode=OneWay}"
                       SelectionMode="None"
@@ -461,7 +538,7 @@
             <Button Style="{StaticResource DeleteButtonStyle}"
                     IsEnabled="{x:Bind ViewModel.IsUserAction}"
                     Grid.Row="4"
-                    Grid.Column="1">
+                    Grid.Column="0">
                 <Button.Content>
                     <StackPanel Orientation="Horizontal">
                         <FontIcon FontSize="{StaticResource StandardIconSize}"

@@ -646,12 +646,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
         void SetArgAt(uint32_t /*index*/, IInspectable /*value*/)
         {
+            throw winrt::hresult_not_implemented();
         }
         void SetAllArgsToDefault()
         {
-        }
-        void SetRequiredArgsToDefault()
-        {
+            throw winrt::hresult_not_implemented();
         }
     };
 
@@ -759,12 +758,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
         void SetArgAt(uint32_t /*index*/, IInspectable /*value*/)
         {
+            throw winrt::hresult_not_implemented();
         }
         void SetAllArgsToDefault()
         {
-        }
-        void SetRequiredArgsToDefault()
-        {
+            throw winrt::hresult_not_implemented();
         }
     };
 
@@ -830,12 +828,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
         void SetArgAt(uint32_t /*index*/, IInspectable /*value*/)
         {
+            throw winrt::hresult_not_implemented();
         }
         void SetAllArgsToDefault()
         {
-        }
-        void SetRequiredArgsToDefault()
-        {
+            throw winrt::hresult_not_implemented();
         }
     };
 
@@ -990,12 +987,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
         void SetArgAt(uint32_t /*index*/, IInspectable /*value*/)
         {
+            throw winrt::hresult_not_implemented();
         }
         void SetAllArgsToDefault()
         {
-        }
-        void SetRequiredArgsToDefault()
-        {
+            throw winrt::hresult_not_implemented();
         }
     };
 

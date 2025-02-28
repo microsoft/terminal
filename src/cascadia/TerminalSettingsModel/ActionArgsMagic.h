@@ -106,12 +106,6 @@ struct InitListPlaceholder
 #define SET_ARG_TO_DEFAULT(type, name, jsonKey, required, ...) \
     _##name = static_cast<type>(__VA_ARGS__);
 
-#define SET_REQUIRED_ARG_TO_DEFAULT(type, name, jsonKey, required, ...) \
-    if (std::wstring_view(L## #required) != L"false")                   \
-    {                                                                   \
-        _##name = static_cast<type>(__VA_ARGS__);                       \
-    }
-
 // JSON deserialization. If the parameter is required to pass any validation,
 // add that as the `required` parameter here, as the body of a conditional
 // EX: For the RESIZE_PANE_ARGS
@@ -227,8 +221,4 @@ public:                                                          \
     void SetAllArgsToDefault()                                   \
     {                                                            \
         argsMacro(SET_ARG_TO_DEFAULT)                            \
-    }                                                            \
-    void SetRequiredArgsToDefault()                              \
-    {                                                            \
-        argsMacro(SET_REQUIRED_ARG_TO_DEFAULT)                   \
     }

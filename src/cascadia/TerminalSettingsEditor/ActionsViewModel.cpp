@@ -486,7 +486,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         //      selection color
         // the above arg types aren't implemented yet - they all have multiple values within them
         // and require a different approach to binding/displaying. INewContentArgs is a bunch of args
-        // in one object, selected color has color and IsIndex16, multiple actions is... multiple actions:
+        // in one object, selected color has color and IsIndex16, multiple actions is... multiple actions
     }
 
     void ArgWrapper::EnumValue(const Windows::Foundation::IInspectable& enumValue)
