@@ -928,9 +928,18 @@ void WindowEmperor::_finalizeSessionPersistence() const
 {
     const auto state = ApplicationState::SharedInstance();
 
-    if (_forcePersistence || _app.Logic().Settings().GlobalSettings().ShouldUsePersistedLayout())
+    // If the user started this session with persistence enabled, but then disabled it,
+    // we still need to ensure of course that we clear it out on exit.
+    // In other words, the persisted state must always be nulled out here.
+    //
+    // We check if there's any first, in order to avoid setting the dirty flag on the state.
+    if (state.PersistedWindowLayouts())
     {
         state.PersistedWindowLayouts(nullptr);
+    }
+
+    if (_forcePersistence || _app.Logic().Settings().GlobalSettings().ShouldUsePersistedLayout())
+    {
         for (const auto& w : _windows)
         {
             w->Logic().PersistState();
