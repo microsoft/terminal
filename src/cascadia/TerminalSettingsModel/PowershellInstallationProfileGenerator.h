@@ -3,15 +3,15 @@ Copyright (c) Microsoft Corporation
 Licensed under the MIT license.
 
 Module Name:
-- AzureCloudShellGenerator
+- PowershellInstallationProfileGenerator
 
 Abstract:
-- This is the dynamic profile generator for the azure cloud shell connector.
-  Checks if the Azure Cloud shell is available on this platform, and if it is,
-  creates a profile to be able to launch it.
+- This is the dynamic profile generator for a PowerShell stub. Checks if pwsh is
+  installed, and if it is NOT installed, creates a profile that installs the
+  latest PowerShell.
 
 Author(s):
-- Mike Griese - August 2019
+- Carlos Zamora - March 2025
 
 --*/
 
@@ -21,12 +21,13 @@ Author(s):
 
 namespace winrt::Microsoft::Terminal::Settings::Model
 {
-    class AzureCloudShellGenerator final : public IDynamicProfileGenerator
+    class PowershellInstallationProfileGenerator final : public IDynamicProfileGenerator
     {
     public:
+        static std::wstring_view Namespace;
         std::wstring_view GetNamespace() const noexcept override;
         std::wstring_view GetDisplayName() const noexcept override;
-        std::wstring_view GetIcon() const noexcept override { return {}; };
+        std::wstring_view GetIcon() const noexcept override;
         void GenerateProfiles(std::vector<winrt::com_ptr<implementation::Profile>>& profiles) override;
     };
 };

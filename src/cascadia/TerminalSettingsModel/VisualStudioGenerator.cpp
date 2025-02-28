@@ -22,7 +22,7 @@ std::wstring_view VisualStudioGenerator::GetDisplayName() const noexcept
     return RS_(L"VisualStudioGeneratorDisplayName");
 }
 
-void VisualStudioGenerator::GenerateProfiles(std::vector<winrt::com_ptr<implementation::Profile>>& profiles) const
+void VisualStudioGenerator::GenerateProfiles(std::vector<winrt::com_ptr<implementation::Profile>>& profiles)
 {
     const auto instances = VsSetupConfiguration::QueryInstances();
 

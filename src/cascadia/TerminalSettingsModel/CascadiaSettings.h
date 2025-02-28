@@ -123,7 +123,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void _appendProfile(winrt::com_ptr<Profile>&& profile, const winrt::guid& guid, ParsedSettings& settings);
         void _addUserProfileParent(const winrt::com_ptr<implementation::Profile>& profile);
         bool _addOrMergeUserColorScheme(const winrt::com_ptr<implementation::ColorScheme>& colorScheme);
-        void _executeGenerator(const IDynamicProfileGenerator& generator);
+        void _executeGenerator(IDynamicProfileGenerator& generator);
+        void _cleanupPowerShellInstaller(bool isPowerShellInstalled);
         winrt::com_ptr<implementation::ExtensionPackage> _registerFragment(const winrt::Microsoft::Terminal::Settings::Model::FragmentSettings& fragment, FragmentScope scope);
 
         std::unordered_set<winrt::hstring, til::transparent_hstring_hash, til::transparent_hstring_equal_to> _ignoredNamespaces;
@@ -237,14 +238,13 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     public:
         FragmentProfileEntry(winrt::guid profileGuid, hstring json) :
             _profileGuid{ profileGuid },
-            _json{ json } {}
+            _Json{ json } {}
 
         winrt::guid ProfileGuid() const noexcept { return _profileGuid; }
-        hstring Json() const noexcept { return _json; }
+        WINRT_PROPERTY(hstring, Json);
 
     private:
         winrt::guid _profileGuid;
-        hstring _json;
     };
 
     struct FragmentColorSchemeEntry : FragmentColorSchemeEntryT<FragmentColorSchemeEntry>
@@ -268,7 +268,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     public:
         FragmentSettings(hstring source, hstring json, hstring jsonSource) :
             _source{ source },
-            _json{ json },
+            _Json{ json },
             _jsonSource{ jsonSource },
             _modifiedProfiles{ winrt::single_threaded_vector<Model::FragmentProfileEntry>() },
             _newProfiles{ winrt::single_threaded_vector<Model::FragmentProfileEntry>() },
@@ -277,12 +277,13 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         Model::FragmentSettings Copy() const;
 
         hstring Source() const noexcept { return _source; }
-        hstring Json() const noexcept { return _json; }
         hstring JsonSource() const noexcept { return _jsonSource; }
         Windows::Foundation::Collections::IVector<Model::FragmentProfileEntry> ModifiedProfiles() const noexcept { return _modifiedProfiles; }
         Windows::Foundation::Collections::IVector<Model::FragmentProfileEntry> NewProfiles() const noexcept { return _newProfiles; }
         Windows::Foundation::Collections::IVector<Model::FragmentColorSchemeEntry> ColorSchemes() const noexcept { return _colorSchemes; }
+        WINRT_PROPERTY(hstring, Json);
 
+    public:
         // views
         Windows::Foundation::Collections::IVectorView<Model::FragmentProfileEntry> ModifiedProfilesView() const noexcept { return _modifiedProfiles.GetView(); }
         Windows::Foundation::Collections::IVectorView<Model::FragmentProfileEntry> NewProfilesView() const noexcept { return _newProfiles.GetView(); }
@@ -290,7 +291,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     private:
         hstring _source;
-        hstring _json;
         hstring _jsonSource;
         Windows::Foundation::Collections::IVector<Model::FragmentProfileEntry> _modifiedProfiles;
         Windows::Foundation::Collections::IVector<Model::FragmentProfileEntry> _newProfiles;

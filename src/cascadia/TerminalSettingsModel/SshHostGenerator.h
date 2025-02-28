@@ -26,7 +26,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model
         std::wstring_view GetNamespace() const noexcept override;
         std::wstring_view GetDisplayName() const noexcept override;
         std::wstring_view GetIcon() const noexcept override;
-        void GenerateProfiles(std::vector<winrt::com_ptr<implementation::Profile>>& profiles) const override;
+        void GenerateProfiles(std::vector<winrt::com_ptr<implementation::Profile>>& profiles) override;
 
     private:
         static const std::wregex _configKeyValueRegex;
