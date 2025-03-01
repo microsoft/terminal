@@ -340,6 +340,19 @@ If you would like to ask a question that you feel doesn't warrant an issue
 
 ## Prerequisites
 
+You can configure your environment to build Terminal in one of two ways:
+
+### Using WinGet configuration file
+
+After cloning the repository, you can use the [configuration file](.config/configuration.winget)
+to set up your environment. To run the configuration file, you can either double-click the file from file explorer or run the following command:
+
+```powershell
+winget configure .config\configuration.winget
+```
+
+### Manual configuration
+
 * You must be running Windows 10 2004 (build >= 10.0.19041.0) or later to run
   Windows Terminal
 * You must [enable Developer Mode in the Windows Settings
