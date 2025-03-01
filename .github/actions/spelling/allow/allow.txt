@@ -11,6 +11,7 @@ colorbrewer
 commandlines
 consvc
 copyable
+CText
 dalet
 dcs
 deselection
