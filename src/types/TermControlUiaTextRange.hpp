@@ -56,8 +56,8 @@ namespace Microsoft::Terminal
         IFACEMETHODIMP Clone(_Outptr_result_maybenull_ ITextRangeProvider** ppRetVal) override;
 
     protected:
-        void _TranslatePointToScreen(til::point* clientPoint) const override;
-        void _TranslatePointFromScreen(til::point* screenPoint) const override;
+        void _TranslatePointToScreen(til::point& clientPoint) const override;
+        void _TranslatePointFromScreen(til::point& screenPoint) const override;
         til::size _getScreenFontSize() const noexcept override;
     };
 }

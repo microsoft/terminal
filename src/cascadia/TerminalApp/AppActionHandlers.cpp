@@ -118,7 +118,7 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandleCloseWindow(const IInspectable& /*sender*/,
                                           const ActionEventArgs& args)
     {
-        CloseRequested.raise(nullptr, nullptr);
+        CloseWindow();
         args.Handled(true);
     }
 
@@ -238,6 +238,32 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    // * Helper to try and get a ProfileIndex out of a NewTerminalArgs out of a
+    //   NewContentArgs. For the new tab and split pane action, we want to _not_
+    //   handle the event if an invalid profile index was passed.
+    //
+    // Return value:
+    // * True if the args are NewTerminalArgs, and the profile index was out of bounds.
+    // * False otherwise.
+    static bool _shouldBailForInvalidProfileIndex(const CascadiaSettings& settings, const INewContentArgs& args)
+    {
+        if (!args)
+        {
+            return false;
+        }
+        if (const auto& terminalArgs{ args.try_as<NewTerminalArgs>() })
+        {
+            if (const auto index = terminalArgs.ProfileIndex())
+            {
+                if (gsl::narrow<uint32_t>(index.Value()) >= settings.ActiveProfiles().Size())
+                {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     void TerminalPage::_HandleSplitPane(const IInspectable& sender,
                                         const ActionEventArgs& args)
     {
@@ -247,16 +273,10 @@ namespace winrt::TerminalApp::implementation
         }
         else if (const auto& realArgs = args.ActionArgs().try_as<SplitPaneArgs>())
         {
-            if (const auto& newTerminalArgs{ realArgs.TerminalArgs() })
+            if (_shouldBailForInvalidProfileIndex(_settings, realArgs.ContentArgs()))
             {
-                if (const auto index = realArgs.TerminalArgs().ProfileIndex())
-                {
-                    if (gsl::narrow<uint32_t>(index.Value()) >= _settings.ActiveProfiles().Size())
-                    {
-                        args.Handled(false);
-                        return;
-                    }
-                }
+                args.Handled(false);
+                return;
             }
 
             const auto& duplicateFromTab{ realArgs.SplitMode() == SplitType::Duplicate ? _GetFocusedTab() : nullptr };
@@ -266,8 +286,8 @@ namespace winrt::TerminalApp::implementation
             _SplitPane(terminalTab,
                        realArgs.SplitDirection(),
                        // This is safe, we're already filtering so the value is (0, 1)
-                       ::base::saturated_cast<float>(realArgs.SplitSize()),
-                       _MakePane(realArgs.TerminalArgs(), duplicateFromTab));
+                       realArgs.SplitSize(),
+                       _MakePane(realArgs.ContentArgs(), duplicateFromTab));
             args.Handled(true);
         }
     }
@@ -445,19 +465,13 @@ namespace winrt::TerminalApp::implementation
         }
         else if (const auto& realArgs = args.ActionArgs().try_as<NewTabArgs>())
         {
-            if (const auto& newTerminalArgs{ realArgs.TerminalArgs() })
+            if (_shouldBailForInvalidProfileIndex(_settings, realArgs.ContentArgs()))
             {
-                if (const auto index = newTerminalArgs.ProfileIndex())
-                {
-                    if (gsl::narrow<uint32_t>(index.Value()) >= _settings.ActiveProfiles().Size())
-                    {
-                        args.Handled(false);
-                        return;
-                    }
-                }
+                args.Handled(false);
+                return;
             }
 
-            LOG_IF_FAILED(_OpenNewTab(realArgs.TerminalArgs()));
+            LOG_IF_FAILED(_OpenNewTab(realArgs.ContentArgs()));
             args.Handled(true);
         }
     }
@@ -534,7 +548,7 @@ namespace winrt::TerminalApp::implementation
     {
         if (const auto& realArgs = args.ActionArgs().try_as<CopyTextArgs>())
         {
-            const auto handled = _CopyText(realArgs.DismissSelection(), realArgs.SingleLine(), realArgs.CopyFormatting());
+            const auto handled = _CopyText(realArgs.DismissSelection(), realArgs.SingleLine(), realArgs.WithControlSequences(), realArgs.CopyFormatting());
             args.Handled(handled);
         }
     }
@@ -738,13 +752,11 @@ namespace winrt::TerminalApp::implementation
     {
         if (const auto& realArgs = actionArgs.ActionArgs().try_as<ExecuteCommandlineArgs>())
         {
-            auto actions = winrt::single_threaded_vector<ActionAndArgs>(
-                TerminalPage::ConvertExecuteCommandlineToActions(realArgs));
-
-            if (actions.Size() != 0)
+            auto actions = ConvertExecuteCommandlineToActions(realArgs);
+            if (!actions.empty())
             {
                 actionArgs.Handled(true);
-                ProcessStartupActions(actions, false);
+                ProcessStartupActions(std::move(actions), false);
             }
         }
     }
@@ -869,8 +881,23 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Important: Don't take the param by reference, since we'll be doing work
     // on another thread.
-    fire_and_forget TerminalPage::_OpenNewWindow(const NewTerminalArgs newTerminalArgs)
+    safe_void_coroutine TerminalPage::_OpenNewWindow(const INewContentArgs newContentArgs)
     {
+        auto terminalArgs{ newContentArgs.try_as<NewTerminalArgs>() };
+
+        // Do nothing for non-terminal panes.
+        //
+        // Theoretically, we could define a `IHasCommandline` interface, and
+        // stick `ToCommandline` on that interface, for any kind of pane that
+        // wants to be convertable to a wt commandline.
+        //
+        // Another idea we're thinking about is just `wt do {literal json for an
+        // action}`, which might be less leaky
+        if (terminalArgs == nullptr)
+        {
+            co_return;
+        }
+
         // Hop to the BG thread
         co_await winrt::resume_background();
 
@@ -881,11 +908,8 @@ namespace winrt::TerminalApp::implementation
 
         // Build the commandline to pass to wt for this set of NewTerminalArgs
         // `-w -1` will ensure a new window is created.
-        winrt::hstring cmdline{
-            fmt::format(L"-w -1 new-tab {}",
-                        newTerminalArgs ? newTerminalArgs.ToCommandline().c_str() :
-                                          L"")
-        };
+        const auto commandline = terminalArgs.ToCommandline();
+        winrt::hstring cmdline{ fmt::format(FMT_COMPILE(L"-w -1 new-tab {}"), commandline) };
 
         // Build the args to ShellExecuteEx. We need to use ShellExecuteEx so we
         // can pass the SEE_MASK_NOASYNC flag. That flag allows us to safely
@@ -909,29 +933,32 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandleNewWindow(const IInspectable& /*sender*/,
                                         const ActionEventArgs& actionArgs)
     {
-        NewTerminalArgs newTerminalArgs{ nullptr };
+        INewContentArgs newContentArgs{ nullptr };
         // If the caller provided NewTerminalArgs, then try to use those
         if (actionArgs)
         {
             if (const auto& realArgs = actionArgs.ActionArgs().try_as<NewWindowArgs>())
             {
-                newTerminalArgs = realArgs.TerminalArgs();
+                newContentArgs = realArgs.ContentArgs();
             }
         }
         // Otherwise, if no NewTerminalArgs were provided, then just use a
         // default-constructed one. The default-constructed one implies that
         // nothing about the launch should be modified (just use the default
         // profile).
-        if (!newTerminalArgs)
+        if (!newContentArgs)
         {
-            newTerminalArgs = NewTerminalArgs();
+            newContentArgs = NewTerminalArgs{};
         }
 
-        const auto profile{ _settings.GetProfileForArgs(newTerminalArgs) };
+        if (const auto& terminalArgs{ newContentArgs.try_as<NewTerminalArgs>() })
+        {
+            const auto profile{ _settings.GetProfileForArgs(terminalArgs) };
+            terminalArgs.Profile(::Microsoft::Console::Utils::GuidToString(profile.Guid()));
+        }
 
         // Manually fill in the evaluated profile.
-        newTerminalArgs.Profile(::Microsoft::Console::Utils::GuidToString(profile.Guid()));
-        _OpenNewWindow(newTerminalArgs);
+        _OpenNewWindow(newContentArgs);
         actionArgs.Handled(true);
     }
 
@@ -1076,14 +1103,14 @@ namespace winrt::TerminalApp::implementation
                 {
                     if (const auto& realArgs = args.ActionArgs().try_as<SearchForTextArgs>())
                     {
-                        queryUrl = realArgs.QueryUrl().c_str();
+                        queryUrl = std::wstring_view{ realArgs.QueryUrl() };
                     }
                 }
 
                 // use global default if query URL is unspecified
                 if (queryUrl.empty())
                 {
-                    queryUrl = _settings.GlobalSettings().SearchWebDefaultQueryUrl().c_str();
+                    queryUrl = std::wstring_view{ _settings.GlobalSettings().SearchWebDefaultQueryUrl() };
                 }
 
                 constexpr std::wstring_view queryToken{ L"%s" };
@@ -1096,6 +1123,16 @@ namespace winrt::TerminalApp::implementation
                 _OpenHyperlinkHandler(termControl, shortcut);
                 args.Handled(true);
             }
+        }
+    }
+
+    void TerminalPage::_HandleOpenCWD(const IInspectable& /*sender*/,
+                                      const ActionEventArgs& args)
+    {
+        if (const auto& control{ _GetActiveControl() })
+        {
+            control.OpenCWD();
+            args.Handled(true);
         }
     }
 
@@ -1216,7 +1253,7 @@ namespace winrt::TerminalApp::implementation
             if (const auto& realArgs = args.ActionArgs().try_as<AdjustOpacityArgs>())
             {
                 const auto res = _ApplyToActiveControls([&](auto& control) {
-                    control.AdjustOpacity(realArgs.Opacity() / 100.0, realArgs.Relative());
+                    control.AdjustOpacity(realArgs.Opacity() / 100.0f, realArgs.Relative());
                 });
                 args.Handled(res);
             }
@@ -1230,6 +1267,113 @@ namespace winrt::TerminalApp::implementation
         {
             control.SelectAll();
             args.Handled(true);
+        }
+    }
+
+    void TerminalPage::_HandleSaveSnippet(const IInspectable& /*sender*/,
+                                          const ActionEventArgs& args)
+    {
+        if constexpr (!Feature_SaveSnippet::IsEnabled())
+        {
+            return;
+        }
+
+        if (args)
+        {
+            if (const auto& realArgs = args.ActionArgs().try_as<SaveSnippetArgs>())
+            {
+                auto commandLine = realArgs.Commandline();
+                if (commandLine.empty())
+                {
+                    if (const auto termControl{ _GetActiveControl() })
+                    {
+                        if (termControl.HasSelection())
+                        {
+                            const auto selections{ termControl.SelectedText(true) };
+                            const auto selection = std::accumulate(selections.begin(), selections.end(), std::wstring());
+                            commandLine = selection;
+                        }
+                    }
+                }
+
+                if (commandLine.empty())
+                {
+                    ActionSaveFailed(L"CommandLine is Required");
+                    return;
+                }
+
+                try
+                {
+                    KeyChord keyChord = nullptr;
+                    if (!realArgs.KeyChord().empty())
+                    {
+                        keyChord = KeyChordSerialization::FromString(winrt::to_hstring(realArgs.KeyChord()));
+                    }
+                    _settings.GlobalSettings().ActionMap().AddSendInputAction(realArgs.Name(), commandLine, keyChord);
+                    _settings.WriteSettingsToDisk();
+                    ActionSaved(commandLine, realArgs.Name(), realArgs.KeyChord());
+                }
+                catch (const winrt::hresult_error& ex)
+                {
+                    auto code = ex.code();
+                    auto message = ex.message();
+                    ActionSaveFailed(message);
+                    args.Handled(true);
+                    return;
+                }
+
+                args.Handled(true);
+            }
+        }
+    }
+
+    void TerminalPage::ActionSaved(winrt::hstring input, winrt::hstring name, winrt::hstring keyChord)
+    {
+        // If we haven't ever loaded the TeachingTip, then do so now and
+        // create the toast for it.
+        if (_actionSavedToast == nullptr)
+        {
+            if (auto tip{ FindName(L"ActionSavedToast").try_as<MUX::Controls::TeachingTip>() })
+            {
+                _actionSavedToast = std::make_shared<Toast>(tip);
+                // Make sure to use the weak ref when setting up this
+                // callback.
+                tip.Closed({ get_weak(), &TerminalPage::_FocusActiveControl });
+            }
+        }
+        _UpdateTeachingTipTheme(ActionSavedToast().try_as<winrt::Windows::UI::Xaml::FrameworkElement>());
+
+        SavedActionName(name);
+        SavedActionKeyChord(keyChord);
+        SavedActionCommandLine(input);
+
+        if (_actionSavedToast != nullptr)
+        {
+            _actionSavedToast->Open();
+        }
+    }
+
+    void TerminalPage::ActionSaveFailed(winrt::hstring message)
+    {
+        // If we haven't ever loaded the TeachingTip, then do so now and
+        // create the toast for it.
+        if (_actionSaveFailedToast == nullptr)
+        {
+            if (auto tip{ FindName(L"ActionSaveFailedToast").try_as<MUX::Controls::TeachingTip>() })
+            {
+                _actionSaveFailedToast = std::make_shared<Toast>(tip);
+                // Make sure to use the weak ref when setting up this
+                // callback.
+                tip.Closed({ get_weak(), &TerminalPage::_FocusActiveControl });
+            }
+        }
+        _UpdateTeachingTipTheme(ActionSaveFailedToast().try_as<winrt::Windows::UI::Xaml::FrameworkElement>());
+
+        ActionSaveFailedMessage().Text(message);
+
+        if (_actionSaveFailedToast != nullptr)
+        {
+            _actionSaveFailedToast->Open();
         }
     }
 
@@ -1299,64 +1443,87 @@ namespace winrt::TerminalApp::implementation
         {
             if (const auto& realArgs = args.ActionArgs().try_as<SuggestionsArgs>())
             {
-                const auto source = realArgs.Source();
-                std::vector<Command> commandsCollection;
-                Control::CommandHistoryContext context{ nullptr };
-                winrt::hstring currentCommandline = L"";
-
-                // If the user wanted to use the current commandline to filter results,
-                //    OR they wanted command history (or some other source that
-                //       requires context from the control)
-                // then get that here.
-                const bool shouldGetContext = realArgs.UseCommandline() ||
-                                              WI_IsFlagSet(source, SuggestionsSource::CommandHistory);
-                if (shouldGetContext)
-                {
-                    if (const auto& control{ _GetActiveControl() })
-                    {
-                        context = control.CommandHistory();
-                        if (context)
-                        {
-                            currentCommandline = context.CurrentCommandline();
-                        }
-                    }
-                }
-
-                // Aggregate all the commands from the different sources that
-                // the user selected.
-
-                // Tasks are all the sendInput commands the user has saved in
-                // their settings file. Ask the ActionMap for those.
-                if (WI_IsFlagSet(source, SuggestionsSource::Tasks))
-                {
-                    const auto tasks = _settings.GlobalSettings().ActionMap().FilterToSendInput(currentCommandline);
-                    for (const auto& t : tasks)
-                    {
-                        commandsCollection.push_back(t);
-                    }
-                }
-
-                // Command History comes from the commands in the buffer,
-                // assuming the user has enabled shell integration. Get those
-                // from the active control.
-                if (WI_IsFlagSet(source, SuggestionsSource::CommandHistory) &&
-                    context != nullptr)
-                {
-                    const auto recentCommands = Command::HistoryToCommands(context.History(), currentCommandline, false);
-                    for (const auto& t : recentCommands)
-                    {
-                        commandsCollection.push_back(t);
-                    }
-                }
-
-                // Open the palette with all these commands in it.
-                _OpenSuggestions(_GetActiveControl(),
-                                 winrt::single_threaded_vector<Command>(std::move(commandsCollection)),
-                                 SuggestionsMode::Palette,
-                                 currentCommandline);
+                _doHandleSuggestions(realArgs);
                 args.Handled(true);
             }
         }
+    }
+
+    safe_void_coroutine TerminalPage::_doHandleSuggestions(SuggestionsArgs realArgs)
+    {
+        const auto source = realArgs.Source();
+        std::vector<Command> commandsCollection;
+        Control::CommandHistoryContext context{ nullptr };
+        winrt::hstring currentCommandline;
+        winrt::hstring currentWorkingDirectory;
+
+        // If the user wanted to use the current commandline to filter results,
+        //    OR they wanted command history (or some other source that
+        //       requires context from the control)
+        // then get that here.
+        const bool shouldGetContext = realArgs.UseCommandline() ||
+                                      WI_IsAnyFlagSet(source, SuggestionsSource::CommandHistory | SuggestionsSource::QuickFixes);
+        if (const auto& control{ _GetActiveControl() })
+        {
+            currentWorkingDirectory = control.CurrentWorkingDirectory();
+
+            if (shouldGetContext)
+            {
+                context = control.CommandHistory();
+                if (context)
+                {
+                    currentCommandline = context.CurrentCommandline();
+                }
+            }
+        }
+
+        // Aggregate all the commands from the different sources that
+        // the user selected.
+
+        if (WI_IsFlagSet(source, SuggestionsSource::QuickFixes) &&
+            context != nullptr &&
+            context.QuickFixes() != nullptr)
+        {
+            // \ue74c --> OEM icon
+            const auto recentCommands = Command::HistoryToCommands(context.QuickFixes(), hstring{}, false, hstring{ L"\ue74c" });
+            for (const auto& t : recentCommands)
+            {
+                commandsCollection.push_back(t);
+            }
+        }
+
+        // Tasks are all the sendInput commands the user has saved in
+        // their settings file. Ask the ActionMap for those.
+        if (WI_IsFlagSet(source, SuggestionsSource::Tasks))
+        {
+            const auto tasks = co_await _settings.GlobalSettings().ActionMap().FilterToSnippets(currentCommandline, currentWorkingDirectory);
+            // ----- we may be on a background thread here -----
+            for (const auto& t : tasks)
+            {
+                commandsCollection.push_back(t);
+            }
+        }
+
+        // Command History comes from the commands in the buffer,
+        // assuming the user has enabled shell integration. Get those
+        // from the active control.
+        if (WI_IsFlagSet(source, SuggestionsSource::CommandHistory) &&
+            context != nullptr)
+        {
+            const auto recentCommands = Command::HistoryToCommands(context.History(), currentCommandline, false, hstring{ L"\ue81c" });
+            for (const auto& t : recentCommands)
+            {
+                commandsCollection.push_back(t);
+            }
+        }
+
+        co_await wil::resume_foreground(Dispatcher());
+
+        // Open the palette with all these commands in it.
+        _OpenSuggestions(_GetActiveControl(),
+                         winrt::single_threaded_vector<Command>(std::move(commandsCollection)),
+                         SuggestionsMode::Palette,
+                         currentCommandline);
     }
 
     void TerminalPage::_HandleColorSelection(const IInspectable& /*sender*/,
@@ -1418,7 +1585,7 @@ namespace winrt::TerminalApp::implementation
         args.Handled(true);
     }
 
-    void TerminalPage::_HandleOpenScratchpad(const IInspectable& /*sender*/,
+    void TerminalPage::_HandleOpenScratchpad(const IInspectable& sender,
                                              const ActionEventArgs& args)
     {
         if (Feature_ScratchpadPane::IsEnabled())
@@ -1431,7 +1598,7 @@ namespace winrt::TerminalApp::implementation
             scratchPane->GetRoot().KeyDown({ this, &TerminalPage::_KeyDownHandler });
 
             const auto resultPane = std::make_shared<Pane>(*scratchPane);
-            _SplitPane(_GetFocusedTabImpl(), SplitDirection::Automatic, 0.5f, resultPane);
+            _SplitPane(_senderOrFocusedTab(sender), SplitDirection::Automatic, 0.5f, resultPane);
             args.Handled(true);
         }
     }
@@ -1441,5 +1608,15 @@ namespace winrt::TerminalApp::implementation
     {
         _ShowAboutDialog();
         args.Handled(true);
+    }
+
+    void TerminalPage::_HandleQuickFix(const IInspectable& /*sender*/,
+                                       const ActionEventArgs& args)
+    {
+        if (const auto& control{ _GetActiveControl() })
+        {
+            const auto handled = control.OpenQuickFixMenu();
+            args.Handled(handled);
+        }
     }
 }

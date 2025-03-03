@@ -31,6 +31,15 @@ namespace SettingsModelUnitTests
     class CommandTests;
 };
 
+static constexpr std::string_view NameKey{ "name" };
+static constexpr std::string_view IDKey{ "id" };
+static constexpr std::string_view IconKey{ "icon" };
+static constexpr std::string_view ActionKey{ "command" };
+static constexpr std::string_view IterateOnKey{ "iterateOn" };
+static constexpr std::string_view CommandsKey{ "commands" };
+static constexpr std::string_view KeysKey{ "keys" };
+static constexpr std::string_view DescriptionKey{ "description" };
+
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
     struct Command : CommandT<Command>
@@ -40,8 +49,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         static winrt::com_ptr<Command> FromJson(const Json::Value& json,
                                                 std::vector<SettingsLoadWarnings>& warnings,
-                                                const OriginTag origin,
-                                                const bool parseKeys = true);
+                                                const OriginTag origin);
+
+        static winrt::com_ptr<Command> FromSnippetJson(const Json::Value& json);
 
         static void ExpandCommands(Windows::Foundation::Collections::IMap<winrt::hstring, Model::Command>& commands,
                                    Windows::Foundation::Collections::IVectorView<Model::Profile> profiles,
@@ -51,6 +61,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                                                            const Json::Value& json,
                                                            const OriginTag origin);
         Json::Value ToJson() const;
+        void LogSettingChanges(std::set<std::string>& changes);
 
         bool HasNestedCommands() const;
         bool IsNestedCommand() const noexcept;
@@ -61,11 +72,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         hstring Name() const noexcept;
         void Name(const hstring& name);
 
-        Control::KeyChord Keys() const noexcept;
-        hstring KeyChordText() const noexcept;
-        std::vector<Control::KeyChord> KeyMappings() const noexcept;
-        void RegisterKey(const Control::KeyChord& keys);
-        void EraseKey(const Control::KeyChord& keys);
+        hstring ID() const noexcept;
+        void GenerateID();
+        bool IDWasGenerated();
 
         hstring IconPath() const noexcept;
         void IconPath(const hstring& val);
@@ -73,17 +82,20 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         static Windows::Foundation::Collections::IVector<Model::Command> ParsePowerShellMenuComplete(winrt::hstring json, int32_t replaceLength);
         static Windows::Foundation::Collections::IVector<Model::Command> HistoryToCommands(Windows::Foundation::Collections::IVector<winrt::hstring> history,
                                                                                            winrt::hstring currentCommandline,
-                                                                                           bool directories);
+                                                                                           bool directories,
+                                                                                           hstring iconPath);
 
         WINRT_PROPERTY(ExpandCommandType, IterateOn, ExpandCommandType::None);
         WINRT_PROPERTY(Model::ActionAndArgs, ActionAndArgs);
         WINRT_PROPERTY(OriginTag, Origin);
+        WINRT_PROPERTY(winrt::hstring, Description, L"");
 
     private:
         Json::Value _originalJson;
         Windows::Foundation::Collections::IMap<winrt::hstring, Model::Command> _subcommands{ nullptr };
-        std::vector<Control::KeyChord> _keyMappings;
         std::optional<std::wstring> _name;
+        std::wstring _ID;
+        bool _IDWasGenerated{ false };
         std::optional<std::wstring> _iconPath;
         bool _nestedCommand{ false };
 

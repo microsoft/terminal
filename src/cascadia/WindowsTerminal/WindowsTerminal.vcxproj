@@ -20,6 +20,7 @@
     <TerminalCppWinrt>true</TerminalCppWinrt>
     <TerminalThemeHelpers>true</TerminalThemeHelpers>
     <TerminalMUX>true</TerminalMUX>
+    <TerminalWinGetInterop>true</TerminalWinGetInterop>
   </PropertyGroup>
 
   <Import Project="..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
@@ -50,13 +51,10 @@
     <ClInclude Include="resource.h" />
     <ClInclude Include="AppHost.h" />
     <ClInclude Include="BaseWindow.h" />
-    <ClInclude Include="CustomWindowMessages.h" />
     <ClInclude Include="IslandWindow.h" />
     <ClInclude Include="NonClientIslandWindow.h" />
-    <ClInclude Include="NotificationIcon.h" />
     <ClInclude Include="VirtualDesktopUtils.h" />
     <ClInclude Include="WindowEmperor.h" />
-    <ClInclude Include="WindowThread.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp">
@@ -66,10 +64,8 @@
     <ClCompile Include="AppHost.cpp" />
     <ClCompile Include="IslandWindow.cpp" />
     <ClCompile Include="NonClientIslandWindow.cpp" />
-    <ClCompile Include="NotificationIcon.cpp" />
     <ClCompile Include="VirtualDesktopUtils.cpp" />
     <ClCompile Include="WindowEmperor.cpp" />
-    <ClCompile Include="WindowThread.cpp" />
     <ClCompile Include="icon.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -86,11 +82,9 @@
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalConnection\TerminalConnection.vcxproj" />
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalSettingsModel\dll\Microsoft.Terminal.Settings.Model.vcxproj" />
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\UIHelpers\UIHelpers.vcxproj" />
-
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalApp\dll\TerminalApp.vcxproj" />
-    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\Remoting\dll\Microsoft.Terminal.Remoting.vcxproj" />
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalSettingsEditor\Microsoft.Terminal.Settings.Editor.vcxproj" />
-
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\UIMarkdown\UIMarkdown.vcxproj" />
     <ProjectReference Include="$(OpenConsoleDir)src\types\lib\types.vcxproj" />
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\WinRTUtils\WinRTUtils.vcxproj">
       <Project>{CA5CAD1A-039A-4929-BA2A-8BEB2E4106FE}</Project>
@@ -136,7 +130,7 @@
   -->
   <ItemDefinitionGroup>
     <Link>
-        <GenerateWindowsMetadata>false</GenerateWindowsMetadata>
+      <GenerateWindowsMetadata>false</GenerateWindowsMetadata>
     </Link>
   </ItemDefinitionGroup>
 
@@ -169,6 +163,41 @@
     </ItemGroup>
 
   </Target>
+
+  <PropertyGroup>
+    <PrepareForRunDependsOn Condition="'$(BuildingInsideVisualStudio)'=='true'">_WTPrepareUnpackagedLayoutForRun;$(PrepareForRunDependsOn)</PrepareForRunDependsOn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <WTFullXamlAssets Include="$(OutDir)\_xaml\resources.pri" />
+    <WTFullXamlAssets Include="$(OutDir)\_xaml\Microsoft.UI.Xaml.dll" />
+  </ItemGroup>
+  <Target Name="_GetFullFatXamlAssets" Inputs="@(AppxPackageRegistration)" Outputs="@(WTFullXamlAssets)">
+    <ItemGroup>
+      <CurrentXamlPackage Include="@(AppxPackageRegistration)"
+        Condition="'%(AppxPackageRegistration.Architecture)'=='$(Platform)' AND
+        $([System.String]::new('%(AppxPackageRegistration.Filename)').StartsWith('Microsoft.UI.Xaml'))" />
+    </ItemGroup>
+    <MakeDir Directories="$(OutDir)\_xaml" />
+    <Exec Command="tar.exe -x -C &quot;$(OutDir)\_xaml&quot; -f &quot;@(CurrentXamlPackage)&quot;" />
+  </Target>
+  <Target Name="_WTCalculateUnpackagedRunFiles" DependsOnTargets="CopyFilesToOutputDirectory;_GetFullFatXamlAssets">
+    <CallTarget Targets="GetPackagingOutputs">
+      <Output TaskParameter="TargetOutputs" ItemName="WTPackagingOutputsFromDependencyProjects" />
+    </CallTarget>
+    <ItemGroup>
+      <DependencyPriFiles Include="@(WTPackagingOutputsFromDependencyProjects->Distinct())" Condition="'%(WTPackagingOutputsFromDependencyProjects.Extension)'=='.pri' and '%(WTPackagingOutputsFromDependencyProjects.Filename)'!='Microsoft.UI.Xaml'"/>
+      <DependencyPriFiles Include="@(WTFullXamlAssets)" Condition="'%(WTFullXamlAssets.Extension)'=='.pri'" />
+      <DependencyExecutables Include="@(WTFullXamlAssets)" Condition="'%(WTFullXamlAssets.Extension)'=='.dll'" />
+      <DependencyExecutables Include="$(OutDir)\..\OpenConsole.exe" />
+    </ItemGroup>
+  </Target>
+  <Target Name="_WTPrepareUnpackagedLayoutForRun" Inputs="@(DependencyPriFiles);@(DependencyExecutables)" Outputs="$(OutDir)\stamp" DependsOnTargets="_WTCalculateUnpackagedRunFiles">
+    <Copy SourceFiles="@(DependencyExecutables)" DestinationFolder="$(OutDir)" UseHardlinksIfPossible="true" SkipUnchangedFiles="true" />
+    <Exec Command="pwsh.exe -noprofile -c &quot;$(OpenConsoleDir)\build\scripts\Merge-PriFiles.ps1&quot; -Path &quot;@(DependencyPriFiles, '&quot;, &quot;')&quot; -OutputPath &quot;$(OutDir)resources.pri&quot;" />
+    <Touch Files="$(OutDir)\stamp" AlwaysCreate="true" />
+  </Target>
+
   <Import Project="$(OpenConsoleDir)\build\rules\GenerateSxsManifestsFromWinmds.targets" />
   <Import Project="$(OpenConsoleDir)src\common.nugetversions.targets" />
 

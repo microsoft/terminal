@@ -26,22 +26,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         });
         this->CharacterReceived({ this, &SearchBoxControl::_CharacterHandler });
         this->KeyDown({ this, &SearchBoxControl::_KeyDownHandler });
-        this->RegisterPropertyChangedCallback(UIElement::VisibilityProperty(), [this](auto&&, auto&&) {
-            // Once the control is visible again we trigger SearchChanged event.
-            // We do this since we probably have a value from the previous search,
-            // and in such case logically the search changes from "nothing" to this value.
-            // A good example for SearchChanged event consumer is Terminal Control.
-            // Once the Search Box is open we want the Terminal Control
-            // to immediately perform the search with the value appearing in the box.
-            if (Visibility() == Visibility::Visible)
-            {
-                SearchChanged.raise(TextBox().Text(), _GoForward(), _CaseSensitive());
-            }
-        });
 
         _focusableElements.insert(TextBox());
         _focusableElements.insert(CloseButton());
         _focusableElements.insert(CaseSensitivityButton());
+        _focusableElements.insert(RegexButton());
         _focusableElements.insert(GoForwardButton());
         _focusableElements.insert(GoBackwardButton());
 
@@ -166,10 +155,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // search box remains in Visible state (though not really *visible*) during the
             // first load. So, we only need to apply this check here (after checking that
             // we're done initializing).
-            if (Visibility() == Visibility::Visible)
+            if (IsOpen())
             {
                 callback();
                 return;
+            }
+
+            // Stop ongoing close animation if any
+            if (CloseAnimation().GetCurrentState() == Media::Animation::ClockState::Active)
+            {
+                CloseAnimation().Stop();
             }
 
             VisualStateManager::GoToState(*this, L"Opened", false);
@@ -207,6 +202,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
+    bool SearchBoxControl::IsOpen()
+    {
+        return Visibility() == Visibility::Visible && CloseAnimation().GetCurrentState() != Media::Animation::ClockState::Active;
+    }
+
+    winrt::hstring SearchBoxControl::Text()
+    {
+        return TextBox().Text();
+    }
+
     // Method Description:
     // - Check if the current search direction is forward
     // Arguments:
@@ -214,21 +219,26 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // Return Value:
     // - bool: the current search direction, determined by the
     //         states of the two direction buttons
-    bool SearchBoxControl::_GoForward()
+    bool SearchBoxControl::GoForward()
     {
         return GoForwardButton().IsChecked().GetBoolean();
     }
 
     // Method Description:
-    // - Check if the current search is case sensitive
+    // - Check if the current search is case-sensitive
     // Arguments:
     // - <none>
     // Return Value:
-    // - bool: whether the current search is case sensitive (case button is checked )
+    // - bool: whether the current search is case-sensitive (case button is checked )
     //   or not
-    bool SearchBoxControl::_CaseSensitive()
+    bool SearchBoxControl::CaseSensitive()
     {
         return CaseSensitivityButton().IsChecked().GetBoolean();
+    }
+
+    bool SearchBoxControl::RegularExpression()
+    {
+        return RegexButton().IsChecked().GetBoolean();
     }
 
     // Method Description:
@@ -252,11 +262,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             const auto state = CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Shift);
             if (WI_IsFlagSet(state, CoreVirtualKeyStates::Down))
             {
-                Search.raise(TextBox().Text(), !_GoForward(), _CaseSensitive());
+                Search.raise(Text(), !GoForward(), CaseSensitive(), RegularExpression());
             }
             else
             {
-                Search.raise(TextBox().Text(), _GoForward(), _CaseSensitive());
+                Search.raise(Text(), GoForward(), CaseSensitive(), RegularExpression());
             }
             e.Handled(true);
         }
@@ -347,7 +357,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         // kick off search
-        Search.raise(TextBox().Text(), _GoForward(), _CaseSensitive());
+        Search.raise(Text(), GoForward(), CaseSensitive(), RegularExpression());
     }
 
     // Method Description:
@@ -368,7 +378,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         // kick off search
-        Search.raise(TextBox().Text(), _GoForward(), _CaseSensitive());
+        Search.raise(Text(), GoForward(), CaseSensitive(), RegularExpression());
     }
 
     // Method Description:
@@ -406,7 +416,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - <none>
     void SearchBoxControl::TextBoxTextChanged(winrt::Windows::Foundation::IInspectable const& /*sender*/, winrt::Windows::UI::Xaml::RoutedEventArgs const& /*e*/)
     {
-        SearchChanged.raise(TextBox().Text(), _GoForward(), _CaseSensitive());
+        SearchChanged.raise(Text(), GoForward(), CaseSensitive(), RegularExpression());
     }
 
     // Method Description:
@@ -418,7 +428,28 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - <none>
     void SearchBoxControl::CaseSensitivityButtonClicked(winrt::Windows::Foundation::IInspectable const& /*sender*/, winrt::Windows::UI::Xaml::RoutedEventArgs const& /*e*/)
     {
-        SearchChanged.raise(TextBox().Text(), _GoForward(), _CaseSensitive());
+        SearchChanged.raise(Text(), GoForward(), CaseSensitive(), RegularExpression());
+    }
+
+    void SearchBoxControl::RegexButtonClicked(winrt::Windows::Foundation::IInspectable const& /*sender*/, winrt::Windows::UI::Xaml::RoutedEventArgs const& /*e*/)
+    {
+        SearchChanged.raise(Text(), GoForward(), CaseSensitive(), RegularExpression());
+    }
+
+    // Method Description:
+    // - Handler for searchbox pointer-pressed.
+    // - Marks pointer events as handled so they don't bubble up to the terminal.
+    void SearchBoxControl::SearchBoxPointerPressedHandler(winrt::Windows::Foundation::IInspectable const& /*sender*/, winrt::Windows::UI::Xaml::Input::PointerRoutedEventArgs const& e)
+    {
+        e.Handled(true);
+    }
+
+    // Method Description:
+    // - Handler for searchbox pointer-released.
+    // - Marks pointer events as handled so they don't bubble up to the terminal.
+    void SearchBoxControl::SearchBoxPointerReleasedHandler(winrt::Windows::Foundation::IInspectable const& /*sender*/, winrt::Windows::UI::Xaml::Input::PointerRoutedEventArgs const& e)
+    {
+        e.Handled(true);
     }
 
     // Method Description:
@@ -456,7 +487,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
         else
         {
-            currentString = fmt::format(L"{}", currentMatch + 1);
+            currentString = fmt::to_wstring(currentMatch + 1);
         }
 
         if (totalMatches > MaximumTotalResultsToShowInStatus)
@@ -465,10 +496,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
         else
         {
-            totalString = fmt::format(L"{}", totalMatches);
+            totalString = fmt::to_wstring(totalMatches);
         }
 
-        return winrt::hstring{ fmt::format(RS_(L"TermControl_NumResults").c_str(), currentString, totalString) };
+        return winrt::hstring{ RS_fmt(L"TermControl_NumResults", currentString, totalString) };
     }
 
     // Method Description:
@@ -495,7 +526,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     double SearchBoxControl::_GetStatusMaxWidth()
     {
         const auto fontSize = StatusBox().FontSize();
-        const auto maxLength = std::max({ _TextWidth(_FormatStatus(-1, -1), fontSize),
+        const auto maxLength = std::max({ _TextWidth(RS_(L"SearchRegexInvalid"), fontSize),
+                                          _TextWidth(_FormatStatus(-1, -1), fontSize),
                                           _TextWidth(_FormatStatus(0, -1), fontSize),
                                           _TextWidth(_FormatStatus(MaximumTotalResultsToShowInStatus, MaximumTotalResultsToShowInStatus - 1), fontSize),
                                           _TextWidth(_FormatStatus(MaximumTotalResultsToShowInStatus + 1, MaximumTotalResultsToShowInStatus - 1), fontSize),
@@ -512,25 +544,24 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - currentMatch - the index of the current match (0-based)
     // Return Value:
     // - <none>
-    void SearchBoxControl::SetStatus(int32_t totalMatches, int32_t currentMatch)
+    void SearchBoxControl::SetStatus(int32_t totalMatches, int32_t currentMatch, bool searchRegexInvalid)
     {
-        const auto status = _FormatStatus(totalMatches, currentMatch);
+        hstring status;
+        if (searchRegexInvalid)
+        {
+            status = RS_(L"SearchRegexInvalid");
+        }
+        else
+        {
+            status = _FormatStatus(totalMatches, currentMatch);
+        }
         StatusBox().Text(status);
     }
 
     // Method Description:
-    // - Enables / disables results navigation buttons
-    // Arguments:
-    // - enable: if true, the buttons should be enabled
-    // Return Value:
-    // - <none>
-    void SearchBoxControl::NavigationEnabled(bool enabled)
+    // - Removes the status message in the status box.
+    void SearchBoxControl::ClearStatus()
     {
-        GoBackwardButton().IsEnabled(enabled);
-        GoForwardButton().IsEnabled(enabled);
-    }
-    bool SearchBoxControl::NavigationEnabled()
-    {
-        return GoBackwardButton().IsEnabled() || GoForwardButton().IsEnabled();
+        StatusBox().Text(L"");
     }
 }

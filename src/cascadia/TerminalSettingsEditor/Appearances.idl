@@ -17,30 +17,17 @@ import "ColorSchemesPageViewModel.idl";
 
 namespace Microsoft.Terminal.Settings.Editor
 {
-    runtimeclass Font : Windows.Foundation.IStringable
+    runtimeclass Font
     {
         String Name { get; };
         String LocalizedName { get; };
-        Windows.Foundation.Collections.IMap<String, String> FontAxesTagsAndNames { get; };
-        Windows.Foundation.Collections.IMap<String, String> FontFeaturesTagsAndNames { get; };
     }
 
-    // We have to make this because we cannot bind an IObservableMap to a ListView in XAML (in c++)
-    // So instead we make an IObservableVector of these AxisKeyValuePair objects
-    runtimeclass AxisKeyValuePair : Windows.UI.Xaml.Data.INotifyPropertyChanged
+    runtimeclass FontKeyValuePair
     {
-        AxisKeyValuePair(String axisKey, Single axisValue, Windows.Foundation.Collections.IMap<String, Single> baseMap, Windows.Foundation.Collections.IMap<String, String> tagToNameMap);
-        String AxisKey;
-        Single AxisValue;
-        Int32 AxisIndex;
-    }
-
-    runtimeclass FeatureKeyValuePair : Windows.UI.Xaml.Data.INotifyPropertyChanged
-    {
-        FeatureKeyValuePair(String featureKey, UInt32 featureValue, Windows.Foundation.Collections.IMap<String, UInt32> baseMap, Windows.Foundation.Collections.IMap<String, String> tagToNameMap);
-        String FeatureKey;
-        UInt32 FeatureValue;
-        Int32 FeatureIndex;
+        UInt32 Key { get; };
+        String KeyDisplayString { get; };
+        Single Value;
     }
 
     runtimeclass AppearanceViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged
@@ -53,34 +40,35 @@ namespace Microsoft.Terminal.Settings.Editor
 
         Boolean UseDesktopBGImage;
         Boolean BackgroundImageSettingsVisible { get; };
+        String BackgroundImageAlignmentCurrentValue { get; };
 
         void ClearColorScheme();
         ColorSchemeViewModel CurrentColorScheme;
-        Windows.Foundation.Collections.IObservableVector<ColorSchemeViewModel> SchemesList;
+        IObservableVector<ColorSchemeViewModel> SchemesList;
+
+        Windows.UI.Color ForegroundPreview { get; };
+        Windows.UI.Color BackgroundPreview { get; };
+        Windows.UI.Color SelectionBackgroundPreview { get; };
+        Windows.UI.Color CursorColorPreview { get; };
 
         String MissingFontFaces { get; };
         String ProportionalFontFaces { get; };
         Boolean HasPowerlineCharacters { get; };
 
-        void AddNewAxisKeyValuePair();
-        void DeleteAxisKeyValuePair(String key);
-        void InitializeFontAxesVector();
-        Boolean AreFontAxesAvailable { get; };
-        Boolean CanFontAxesBeAdded { get; };
-        Windows.Foundation.Collections.IObservableVector<AxisKeyValuePair> FontAxesVector;
-        OBSERVABLE_PROJECTED_APPEARANCE_SETTING(Windows.Foundation.Collections.IMap<String COMMA Single>, FontAxes);
+        IObservableVector<FontKeyValuePair> FontAxes { get; };
+        Boolean HasFontAxes { get; };
+        void ClearFontAxes();
+        Object FontAxesOverrideSource { get; };
 
-        void AddNewFeatureKeyValuePair();
-        void DeleteFeatureKeyValuePair(String key);
-        void InitializeFontFeaturesVector();
-        Boolean AreFontFeaturesAvailable { get; };
-        Boolean CanFontFeaturesBeAdded { get; };
-        Windows.Foundation.Collections.IObservableVector<FeatureKeyValuePair> FontFeaturesVector;
-        OBSERVABLE_PROJECTED_APPEARANCE_SETTING(Windows.Foundation.Collections.IMap<String COMMA UInt32>, FontFeatures);
+        IObservableVector<FontKeyValuePair> FontFeatures { get; };
+        Boolean HasFontFeatures { get; };
+        void ClearFontFeatures();
+        Object FontFeaturesOverrideSource { get; };
 
         OBSERVABLE_PROJECTED_APPEARANCE_SETTING(String, FontFace);
         OBSERVABLE_PROJECTED_APPEARANCE_SETTING(Single, FontSize);
         OBSERVABLE_PROJECTED_APPEARANCE_SETTING(Double, LineHeight);
+        OBSERVABLE_PROJECTED_APPEARANCE_SETTING(Double, CellWidth);
         OBSERVABLE_PROJECTED_APPEARANCE_SETTING(Windows.UI.Text.FontWeight, FontWeight);
         OBSERVABLE_PROJECTED_APPEARANCE_SETTING(Boolean, EnableBuiltinGlyphs);
         OBSERVABLE_PROJECTED_APPEARANCE_SETTING(Boolean, EnableColorGlyphs);
@@ -91,11 +79,16 @@ namespace Microsoft.Terminal.Settings.Editor
         OBSERVABLE_PROJECTED_APPEARANCE_SETTING(Microsoft.Terminal.Core.CursorStyle, CursorShape);
         OBSERVABLE_PROJECTED_APPEARANCE_SETTING(UInt32, CursorHeight);
         OBSERVABLE_PROJECTED_APPEARANCE_SETTING(String, BackgroundImagePath);
-        OBSERVABLE_PROJECTED_APPEARANCE_SETTING(Double, BackgroundImageOpacity);
+        OBSERVABLE_PROJECTED_APPEARANCE_SETTING(Single, BackgroundImageOpacity);
         OBSERVABLE_PROJECTED_APPEARANCE_SETTING(Windows.UI.Xaml.Media.Stretch, BackgroundImageStretchMode);
         OBSERVABLE_PROJECTED_APPEARANCE_SETTING(Microsoft.Terminal.Settings.Model.ConvergedAlignment, BackgroundImageAlignment);
         OBSERVABLE_PROJECTED_APPEARANCE_SETTING(Microsoft.Terminal.Settings.Model.IntenseStyle, IntenseTextStyle);
         OBSERVABLE_PROJECTED_APPEARANCE_SETTING(Microsoft.Terminal.Core.AdjustTextMode, AdjustIndistinguishableColors);
+
+        OBSERVABLE_PROJECTED_APPEARANCE_SETTING(Windows.Foundation.IReference<Microsoft.Terminal.Core.Color>, Foreground);
+        OBSERVABLE_PROJECTED_APPEARANCE_SETTING(Windows.Foundation.IReference<Microsoft.Terminal.Core.Color>, Background);
+        OBSERVABLE_PROJECTED_APPEARANCE_SETTING(Windows.Foundation.IReference<Microsoft.Terminal.Core.Color>, SelectionBackground);
+        OBSERVABLE_PROJECTED_APPEARANCE_SETTING(Windows.Foundation.IReference<Microsoft.Terminal.Core.Color>, CursorColor);
     }
 
     [default_interface] runtimeclass Appearances : Windows.UI.Xaml.Controls.UserControl, Windows.UI.Xaml.Data.INotifyPropertyChanged
@@ -106,24 +99,24 @@ namespace Microsoft.Terminal.Settings.Editor
         IHostedInWindow WindowRoot;
         static Windows.UI.Xaml.DependencyProperty AppearanceProperty { get; };
 
-        Windows.Foundation.Collections.IObservableVector<Font> FilteredFontList { get; };
+        IObservableVector<Font> FilteredFontList { get; };
         Boolean ShowAllFonts;
 
         IInspectable CurrentCursorShape;
         Boolean IsVintageCursor { get; };
-        Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> CursorShapeList { get; };
+        IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> CursorShapeList { get; };
 
         IInspectable CurrentAdjustIndistinguishableColors;
-        Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> AdjustIndistinguishableColorsList { get; };
+        IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> AdjustIndistinguishableColorsList { get; };
 
         IInspectable CurrentBackgroundImageStretchMode;
-        Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> BackgroundImageStretchModeList { get; };
+        IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> BackgroundImageStretchModeList { get; };
 
         IInspectable CurrentFontWeight;
         Boolean IsCustomFontWeight { get; };
-        Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> FontWeightList { get; };
+        IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> FontWeightList { get; };
 
         IInspectable CurrentIntenseTextStyle;
-        Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> IntenseTextStyleList { get; };
+        IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> IntenseTextStyleList { get; };
     }
 }

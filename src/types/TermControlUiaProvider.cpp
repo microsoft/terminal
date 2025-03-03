@@ -140,14 +140,11 @@ til::size TermControlUiaProvider::GetFontSize() const noexcept
     return _controlInfo->GetFontSize();
 }
 
-til::rect TermControlUiaProvider::GetPadding() const noexcept
+til::point TermControlUiaProvider::GetContentOrigin() const noexcept
 {
-    return _controlInfo->GetPadding();
-}
-
-double TermControlUiaProvider::GetScaleFactor() const noexcept
-{
-    return _controlInfo->GetScaleFactor();
+    const auto bounds = _controlInfo->GetBounds();
+    const auto padding = _controlInfo->GetPadding();
+    return { bounds.left + padding.left, bounds.top + padding.top };
 }
 
 void TermControlUiaProvider::ChangeViewport(const til::inclusive_rect& NewWindow)
@@ -160,14 +157,8 @@ HRESULT TermControlUiaProvider::GetSelectionRange(_In_ IRawElementProviderSimple
     RETURN_HR_IF_NULL(E_INVALIDARG, ppUtr);
     *ppUtr = nullptr;
 
-    const auto start = _pData->GetSelectionAnchor();
-
-    // we need to make end exclusive
-    auto end = _pData->GetSelectionEnd();
-    _pData->GetTextBuffer().GetSize().IncrementInBounds(end, true);
-
     TermControlUiaTextRange* result = nullptr;
-    RETURN_IF_FAILED(MakeAndInitialize<TermControlUiaTextRange>(&result, _pData, pProvider, start, end, _pData->IsBlockSelection(), wordDelimiters));
+    RETURN_IF_FAILED(MakeAndInitialize<TermControlUiaTextRange>(&result, _pData, pProvider, _pData->GetSelectionAnchor(), _pData->GetSelectionEnd(), _pData->IsBlockSelection(), wordDelimiters));
     *ppUtr = result;
     return S_OK;
 }

@@ -8,6 +8,7 @@
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
       xmlns:local="using:TerminalApp"
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+      xmlns:mtu="using:Microsoft.Terminal.UI"
       xmlns:mux="using:Microsoft.UI.Xaml.Controls"
       Background="Transparent"
       mc:Ignorable="d">
@@ -179,11 +180,6 @@
                          IsLightDismissEnabled="True"
                          Subtitle="{x:Bind WindowProperties.WindowNameForDisplay, Mode=OneWay}" />
 
-        <mux:TeachingTip x:Name="RenameFailedToast"
-                         x:Uid="RenameFailedToast"
-                         x:Load="False"
-                         IsLightDismissEnabled="True" />
-
         <mux:TeachingTip x:Name="WindowRenamer"
                          x:Uid="WindowRenamer"
                          Title="{x:Bind WindowProperties.WindowIdForDisplay}"
@@ -204,5 +200,43 @@
                          Title="{x:Bind WindowProperties.VirtualWorkingDirectory, Mode=OneWay}"
                          x:Load="False"
                          IsLightDismissEnabled="True" />
+
+        <mux:TeachingTip x:Name="ActionSavedToast"
+                         x:Uid="ActionSavedToast"
+                         Title="Action Saved"
+                         HorizontalAlignment="Stretch"
+                         x:Load="False"
+                         IsLightDismissEnabled="True">
+            <mux:TeachingTip.Content>
+                <StackPanel HorizontalAlignment="Stretch"
+                            Orientation="Vertical">
+                    <TextBlock x:Name="ActionSavedNameText"
+                               Visibility="{x:Bind mtu:Converters.StringNotEmptyToVisibility(SavedActionName), Mode=OneWay}">
+                        <Run Text="Name: " />
+                        <Run Text="{x:Bind SavedActionName, Mode=OneWay}" />
+                    </TextBlock>
+                    <TextBlock x:Name="ActionSavedKeyChordText"
+                               Visibility="{x:Bind mtu:Converters.StringNotEmptyToVisibility(SavedActionKeyChord), Mode=OneWay}">
+                        <Run Text="Key Chord: " />
+                        <Run Text="{x:Bind SavedActionKeyChord, Mode=OneWay}" />
+                    </TextBlock>
+                    <TextBlock x:Name="ActionSavedCommandLineText"
+                               Visibility="{x:Bind mtu:Converters.StringNotEmptyToVisibility(SavedActionCommandLine), Mode=OneWay}">
+                        <Run Text="Input: " />
+                        <Run Text="{x:Bind SavedActionCommandLine, Mode=OneWay}" />
+                    </TextBlock>
+                </StackPanel>
+            </mux:TeachingTip.Content>
+        </mux:TeachingTip>
+        <mux:TeachingTip x:Name="ActionSaveFailedToast"
+                         x:Uid="ActionSaveFailedToast"
+                         Title="Action Save Failed"
+                         x:Load="False"
+                         IsLightDismissEnabled="True">
+            <mux:TeachingTip.Content>
+                <TextBlock x:Name="ActionSaveFailedMessage"
+                           Text="" />
+            </mux:TeachingTip.Content>
+        </mux:TeachingTip>
     </Grid>
 </Page>

@@ -16,7 +16,6 @@ Revision History:
 
 #pragma once
 
-#include "conimeinfo.h"
 #include "CursorBlinker.hpp"
 #include "IIoProvider.hpp"
 #include "readDataCooked.hpp"
@@ -91,6 +90,9 @@ public:
     // the following fields are used for ansi-unicode translation
     UINT CP = 0;
     UINT OutputCP = 0;
+    // the VT RIS sequence uses these default values to reset the code pages
+    UINT DefaultCP = 0;
+    UINT DefaultOutputCP = 0;
 
     ULONG CtrlFlags = 0; // indicates outstanding ctrl requests
     ULONG LimitingProcessId = 0;
@@ -98,15 +100,16 @@ public:
     CPINFO CPInfo = {};
     CPINFO OutputCPInfo = {};
 
-    ConsoleImeInfo ConsoleIme;
-
     void LockConsole() noexcept;
     void UnlockConsole() noexcept;
     til::recursive_ticket_lock_suspension SuspendLock() noexcept;
     bool IsConsoleLocked() const noexcept;
     ULONG GetCSRecursionCount() const noexcept;
 
-    Microsoft::Console::VirtualTerminal::VtIo* GetVtIo();
+    Microsoft::Console::VirtualTerminal::VtIo* GetVtIo() noexcept;
+    Microsoft::Console::VirtualTerminal::VtIo::Writer GetVtWriter() noexcept;
+    Microsoft::Console::VirtualTerminal::VtIo::Writer GetVtWriterForBuffer(const SCREEN_INFORMATION* context) noexcept;
+    bool IsInVtIoMode() const noexcept;
 
     SCREEN_INFORMATION& GetActiveOutputBuffer() override;
     const SCREEN_INFORMATION& GetActiveOutputBuffer() const override;
@@ -115,7 +118,6 @@ public:
 
     InputBuffer* const GetActiveInputBuffer() const override;
 
-    bool IsInVtIoMode() const;
     bool HasPendingCookedRead() const noexcept;
     bool HasPendingPopup() const noexcept;
     const COOKED_READ_DATA& CookedReadData() const noexcept;

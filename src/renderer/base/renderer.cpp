@@ -56,6 +56,11 @@ Renderer::~Renderer()
     _pThread.reset();
 }
 
+IRenderData* Renderer::GetRenderData() const noexcept
+{
+    return _pData;
+}
+
 // Routine Description:
 // - Walks through the console data structures to compose a new frame based on the data that has changed since last call and outputs it to the connected rendering engine.
 // Arguments:
@@ -64,42 +69,76 @@ Renderer::~Renderer()
 // - HRESULT S_OK, GDI error, Safe Math error, or state/argument errors.
 [[nodiscard]] HRESULT Renderer::PaintFrame()
 {
+    auto tries = maxRetriesForRenderEngine;
+    while (tries > 0)
+    {
+        if (_destructing)
+        {
+            return S_FALSE;
+        }
+
+        // BODGY: Optimally we would want to retry per engine, but that causes different
+        // problems (intermittent inconsistent states between text renderer and UIA output,
+        // not being able to lock the cursor location, etc.).
+        const auto hr = _PaintFrame();
+        if (SUCCEEDED(hr))
+        {
+            break;
+        }
+
+        LOG_HR_IF(hr, hr != E_PENDING);
+
+        if (--tries == 0)
+        {
+            // Stop trying.
+            _pThread->DisablePainting();
+            if (_pfnRendererEnteredErrorState)
+            {
+                _pfnRendererEnteredErrorState();
+            }
+            // If there's no callback, we still don't want to FAIL_FAST: the renderer going black
+            // isn't near as bad as the entire application aborting. We're a component. We shouldn't
+            // abort applications that host us.
+            return S_FALSE;
+        }
+
+        // Add a bit of backoff.
+        // Sleep 150ms, 300ms, 450ms before failing out and disabling the renderer.
+        Sleep(renderBackoffBaseTimeMilliseconds * (maxRetriesForRenderEngine - tries));
+    }
+
+    return S_OK;
+}
+
+[[nodiscard]] HRESULT Renderer::_PaintFrame() noexcept
+{
+    {
+        _pData->LockConsole();
+        auto unlock = wil::scope_exit([&]() {
+            _pData->UnlockConsole();
+        });
+
+        // Last chance check if anything scrolled without an explicit invalidate notification since the last frame.
+        _CheckViewportAndScroll();
+
+        _invalidateCurrentCursor(); // Invalidate the previous cursor position.
+        _invalidateOldComposition();
+
+        _updateCursorInfo();
+        _compositionCache.reset();
+
+        _invalidateCurrentCursor(); // Invalidate the new cursor position.
+        _prepareNewComposition();
+
+        FOREACH_ENGINE(pEngine)
+        {
+            RETURN_IF_FAILED(_PaintFrameForEngine(pEngine));
+        }
+    }
+
     FOREACH_ENGINE(pEngine)
     {
-        auto tries = maxRetriesForRenderEngine;
-        while (tries > 0)
-        {
-            if (_destructing)
-            {
-                return S_FALSE;
-            }
-
-            const auto hr = _PaintFrameForEngine(pEngine);
-            if (SUCCEEDED(hr))
-            {
-                break;
-            }
-
-            LOG_HR_IF(hr, hr != E_PENDING);
-
-            if (--tries == 0)
-            {
-                // Stop trying.
-                _pThread->DisablePainting();
-                if (_pfnRendererEnteredErrorState)
-                {
-                    _pfnRendererEnteredErrorState();
-                }
-                // If there's no callback, we still don't want to FAIL_FAST: the renderer going black
-                // isn't near as bad as the entire application aborting. We're a component. We shouldn't
-                // abort applications that host us.
-                return S_FALSE;
-            }
-
-            // Add a bit of backoff.
-            // Sleep 150ms, 300ms, 450ms before failing out and disabling the renderer.
-            Sleep(renderBackoffBaseTimeMilliseconds * (maxRetriesForRenderEngine - tries));
-        }
+        RETURN_IF_FAILED(pEngine->Present());
     }
 
     return S_OK;
@@ -109,14 +148,6 @@ Renderer::~Renderer()
 try
 {
     FAIL_FAST_IF_NULL(pEngine); // This is a programming error. Fail fast.
-
-    _pData->LockConsole();
-    auto unlock = wil::scope_exit([&]() {
-        _pData->UnlockConsole();
-    });
-
-    // Last chance check if anything scrolled without an explicit invalidate notification since the last frame.
-    _CheckViewportAndScroll();
 
     // Try to start painting a frame
     const auto hr = pEngine->StartPaint();
@@ -157,9 +188,6 @@ try
     // 2. Paint Rows of Text
     _PaintBufferOutput(pEngine);
 
-    // 3. Paint overlays that reside above the text buffer
-    _PaintOverlays(pEngine);
-
     // 4. Paint Selection
     _PaintSelection(pEngine);
 
@@ -171,12 +199,6 @@ try
 
     // Force scope exit end paint to finish up collecting information and possibly painting
     endPaint.reset();
-
-    // Force scope exit unlock to let go of global lock so other threads can run
-    unlock.reset();
-
-    // Trigger out-of-lock presentation for renderers that can support it
-    RETURN_IF_FAILED(pEngine->Present());
 
     // As we leave the scope, EndPaint will be called (declared above)
     return S_OK;
@@ -252,48 +274,7 @@ void Renderer::TriggerRedraw(const Viewport& region)
 // - <none>
 void Renderer::TriggerRedraw(const til::point* const pcoord)
 {
-    TriggerRedraw(Viewport::FromCoord(*pcoord)); // this will notify to paint if we need it.
-}
-
-// Routine Description:
-// - Called when the cursor has moved in the buffer. Allows for RenderEngines to
-//      differentiate between cursor movements and other invalidates.
-//   Visual Renderers (ex GDI) should invalidate the position, while the VT
-//      engine ignores this. See MSFT:14711161.
-// Arguments:
-// - pcoord: The buffer-space position of the cursor.
-// Return Value:
-// - <none>
-void Renderer::TriggerRedrawCursor(const til::point* const pcoord)
-{
-    // We first need to make sure the cursor position is within the buffer,
-    // otherwise testing for a double width character can throw an exception.
-    const auto& buffer = _pData->GetTextBuffer();
-    if (buffer.GetSize().IsInBounds(*pcoord))
-    {
-        // We then calculate the region covered by the cursor. This requires
-        // converting the buffer coordinates to an equivalent range of screen
-        // cells for the cursor, taking line rendition into account.
-        const auto lineRendition = buffer.GetLineRendition(pcoord->y);
-        const auto cursorWidth = _pData->IsCursorDoubleWidth() ? 2 : 1;
-        til::inclusive_rect cursorRect = { pcoord->x, pcoord->y, pcoord->x + cursorWidth - 1, pcoord->y };
-        cursorRect = BufferToScreenLine(cursorRect, lineRendition);
-
-        // That region is then clipped within the viewport boundaries and we
-        // only trigger a redraw if the resulting region is not empty.
-        auto view = _pData->GetViewport();
-        auto updateRect = til::rect{ cursorRect };
-        if (view.TrimToViewport(&updateRect))
-        {
-            view.ConvertToOrigin(&updateRect);
-            FOREACH_ENGINE(pEngine)
-            {
-                LOG_IF_FAILED(pEngine->InvalidateCursor(&updateRect));
-            }
-
-            NotifyPaintFrame();
-        }
-    }
+    TriggerRedraw(Viewport::FromDimensions(*pcoord, { 1, 1 })); // this will notify to paint if we need it.
 }
 
 // Routine Description:
@@ -335,19 +316,6 @@ void Renderer::TriggerTeardown() noexcept
 {
     // We need to shut down the paint thread on teardown.
     _pThread->WaitForPaintCompletionAndDisable(INFINITE);
-
-    // Then walk through and do one final paint on the caller's thread.
-    FOREACH_ENGINE(pEngine)
-    {
-        auto fEngineRequestsRepaint = false;
-        auto hr = pEngine->PrepareForTeardown(&fEngineRequestsRepaint);
-        LOG_IF_FAILED(hr);
-
-        if (SUCCEEDED(hr) && fEngineRequestsRepaint)
-        {
-            LOG_IF_FAILED(_PaintFrameForEngine(pEngine));
-        }
-    }
 }
 
 // Routine Description:
@@ -357,37 +325,71 @@ void Renderer::TriggerTeardown() noexcept
 // Return Value:
 // - <none>
 void Renderer::TriggerSelection()
+try
 {
-    try
+    const auto spans = _pData->GetSelectionSpans();
+    if (spans.size() != _lastSelectionPaintSize || (!spans.empty() && _lastSelectionPaintSpan != til::point_span{ spans.front().start, spans.back().end }))
     {
-        // Get selection rectangles
-        auto rects = _GetSelectionRects();
-        auto searchSelections = _GetSearchSelectionRects();
+        std::vector<til::rect> newSelectionViewportRects;
 
-        // Make a viewport representing the coordinates that are currently presentable.
-        const til::rect viewport{ _pData->GetViewport().Dimensions() };
-
-        // Restrict all previous selection rectangles to inside the current viewport bounds
-        for (auto& sr : _previousSelection)
+        _lastSelectionPaintSize = spans.size();
+        if (_lastSelectionPaintSize)
         {
-            sr &= viewport;
+            _lastSelectionPaintSpan = til::point_span{ spans.front().start, spans.back().end };
+
+            const auto& buffer = _pData->GetTextBuffer();
+            const auto bufferWidth = buffer.GetSize().Width();
+            const til::rect vp{ _viewport.ToExclusive() };
+            for (auto&& sp : spans)
+            {
+                sp.iterate_rows_exclusive(bufferWidth, [&](til::CoordType row, til::CoordType min, til::CoordType max) {
+                    const auto shift = buffer.GetLineRendition(row) != LineRendition::SingleWidth ? 1 : 0;
+                    min <<= shift;
+                    max <<= shift;
+                    til::rect r{ min, row, max, row + 1 };
+                    newSelectionViewportRects.emplace_back(r.to_origin(vp));
+                });
+            }
         }
 
         FOREACH_ENGINE(pEngine)
         {
-            LOG_IF_FAILED(pEngine->InvalidateSelection(_previousSearchSelection));
-            LOG_IF_FAILED(pEngine->InvalidateSelection(_previousSelection));
-            LOG_IF_FAILED(pEngine->InvalidateSelection(searchSelections));
-            LOG_IF_FAILED(pEngine->InvalidateSelection(rects));
+            LOG_IF_FAILED(pEngine->InvalidateSelection(_lastSelectionRectsByViewport));
+            LOG_IF_FAILED(pEngine->InvalidateSelection(newSelectionViewportRects));
         }
 
-        _previousSelection = std::move(rects);
-        _previousSearchSelection = std::move(searchSelections);
+        std::exchange(_lastSelectionRectsByViewport, newSelectionViewportRects);
 
         NotifyPaintFrame();
     }
-    CATCH_LOG();
 }
+CATCH_LOG()
+
+// Routine Description:
+// - Called when the search highlight areas in the console have changed.
+void Renderer::TriggerSearchHighlight(const std::vector<til::point_span>& oldHighlights)
+try
+{
+    // no need to invalidate focused search highlight separately as they are
+    // included in (all) search highlights.
+    const auto newHighlights = _pData->GetSearchHighlights();
+
+    if (oldHighlights.empty() && newHighlights.empty())
+    {
+        return;
+    }
+
+    const auto& buffer = _pData->GetTextBuffer();
+
+    FOREACH_ENGINE(pEngine)
+    {
+        LOG_IF_FAILED(pEngine->InvalidateHighlight(oldHighlights, buffer));
+        LOG_IF_FAILED(pEngine->InvalidateHighlight(newHighlights, buffer));
+    }
+
+    NotifyPaintFrame();
+}
+CATCH_LOG()
 
 // Routine Description:
 // - Called when we want to check if the viewport has moved and scroll accordingly if so.
@@ -419,6 +421,25 @@ bool Renderer::_CheckViewportAndScroll()
     }
 
     _ScrollPreviousSelection(coordDelta);
+
+    // The cursor may have moved out of or into the viewport. Update the .inViewport property.
+    {
+        const auto view = ScreenToBufferLine(srNewViewport, _currentCursorOptions.lineRendition);
+        auto coordCursor = _currentCursorOptions.coordCursor;
+
+        // `coordCursor` was stored in viewport-relative while `view` is in absolute coordinates.
+        // --> Turn it back into the absolute coordinates with the help of the viewport.
+        // We have to use the new viewport, because _ScrollPreviousSelection adjusts the cursor position to match the new one.
+        coordCursor.y += srNewViewport.top;
+
+        // Note that we allow the X coordinate to be outside the left border by 1 position,
+        // because the cursor could still be visible if the focused character is double width.
+        const auto xInRange = coordCursor.x >= view.left - 1 && coordCursor.x <= view.right;
+        const auto yInRange = coordCursor.y >= view.top && coordCursor.y <= view.bottom;
+
+        _currentCursorOptions.inViewport = xInRange && yInRange;
+    }
+
     return true;
 }
 
@@ -456,32 +477,6 @@ void Renderer::TriggerScroll(const til::point* const pcoordDelta)
     _ScrollPreviousSelection(*pcoordDelta);
 
     NotifyPaintFrame();
-}
-
-// Routine Description:
-// - Called when the text buffer is about to circle its backing buffer.
-//      A renderer might want to get painted before that happens.
-// Arguments:
-// - <none>
-// Return Value:
-// - <none>
-void Renderer::TriggerFlush(const bool circling)
-{
-    const auto rects = _GetSelectionRects();
-
-    FOREACH_ENGINE(pEngine)
-    {
-        auto fEngineRequestsRepaint = false;
-        auto hr = pEngine->InvalidateFlush(circling, &fEngineRequestsRepaint);
-        LOG_IF_FAILED(hr);
-
-        LOG_IF_FAILED(pEngine->InvalidateSelection(rects));
-
-        if (SUCCEEDED(hr) && fEngineRequestsRepaint)
-        {
-            LOG_IF_FAILED(_PaintFrameForEngine(pEngine));
-        }
-    }
 }
 
 // Routine Description:
@@ -642,7 +637,6 @@ void Renderer::EnablePainting()
     // When the renderer is constructed, the initial viewport won't be available yet,
     // but once EnablePainting is called it should be safe to retrieve.
     _viewport = _pData->GetViewport();
-    _forceUpdateViewport = true;
 
     // When running the unit tests, we may be using a render without a render thread.
     if (_pThread)
@@ -689,6 +683,8 @@ void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
     // It can move left/right or top/bottom depending on how the viewport is scrolled
     // relative to the entire buffer.
     const auto view = _pData->GetViewport();
+    const auto compositionRow = _compositionCache ? _compositionCache->absoluteOrigin.y : -1;
+    const auto& activeComposition = _pData->GetActiveComposition();
 
     // This is effectively the number of cells on the visible screen that need to be redrawn.
     // The origin is always 0, 0 because it represents the screen itself, not the underlying buffer.
@@ -719,14 +715,60 @@ void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
         const auto redraw = Viewport::Intersect(dirty, view);
 
         // Retrieve the text buffer so we can read information out of it.
-        const auto& buffer = _pData->GetTextBuffer();
-
+        auto& buffer = _pData->GetTextBuffer();
         // Now walk through each row of text that we need to redraw.
         for (auto row = redraw.Top(); row < redraw.BottomExclusive(); row++)
         {
             // Calculate the boundaries of a single line. This is from the left to right edge of the dirty
             // area in width and exactly 1 tall.
             const auto screenLine = til::inclusive_rect{ redraw.Left(), row, redraw.RightInclusive(), row };
+            const auto& r = buffer.GetRowByOffset(row);
+
+            // Draw the active composition.
+            // We have to use some tricks here with const_cast, because the code after it relies on TextBufferCellIterator,
+            // which isn't compatible with the scratchpad row. This forces us to back up and modify the actual row `r`.
+            ROW* rowBackup = nullptr;
+            if (row == compositionRow)
+            {
+                auto& scratch = buffer.GetScratchpadRow();
+                scratch.CopyFrom(r);
+                rowBackup = &scratch;
+
+                std::wstring_view text{ activeComposition.text };
+                RowWriteState state{
+                    .columnLimit = r.GetReadableColumnCount(),
+                    .columnEnd = _compositionCache->absoluteOrigin.x,
+                };
+
+                size_t off = 0;
+                for (const auto& range : activeComposition.attributes)
+                {
+                    const auto len = range.len;
+                    auto attr = range.attr;
+
+                    // Use the color at the cursor if TSF didn't specify any explicit color.
+                    if (attr.GetBackground().IsDefault())
+                    {
+                        attr.SetBackground(_compositionCache->baseAttribute.GetBackground());
+                    }
+                    if (attr.GetForeground().IsDefault())
+                    {
+                        attr.SetForeground(_compositionCache->baseAttribute.GetForeground());
+                    }
+
+                    state.text = text.substr(off, len);
+                    state.columnBegin = state.columnEnd;
+                    const_cast<ROW&>(r).ReplaceText(state);
+                    const_cast<ROW&>(r).ReplaceAttributes(state.columnBegin, state.columnEnd, attr);
+                    off += len;
+                }
+            }
+            const auto restore = wil::scope_exit([&] {
+                if (rowBackup)
+                {
+                    const_cast<ROW&>(r).CopyFrom(*rowBackup);
+                }
+            });
 
             // Convert the screen coordinates of the line to an equivalent
             // range of buffer cells, taking line rendition into account.
@@ -755,6 +797,13 @@ void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
 
             // Ask the helper to paint through this specific line.
             _PaintBufferOutputHelper(pEngine, it, screenPosition, lineWrapped);
+
+            // Paint any image content on top of the text.
+            const auto imageSlice = buffer.GetRowByOffset(row).GetImageSlice();
+            if (imageSlice) [[unlikely]]
+            {
+                LOG_IF_FAILED(pEngine->PaintImageSlice(*imageSlice, screenPosition.y, view.Left()));
+            }
         }
     }
 }
@@ -1044,58 +1093,155 @@ bool Renderer::_isInHoveredInterval(const til::point coordTarget) const noexcept
 // - <none>
 // Return Value:
 // - nullopt if the cursor is off or out-of-frame, otherwise a CursorOptions
-[[nodiscard]] std::optional<CursorOptions> Renderer::_GetCursorInfo()
+void Renderer::_updateCursorInfo()
 {
-    if (_pData->IsCursorVisible())
+    // Get cursor position in buffer
+    auto coordCursor = _pData->GetCursorPosition();
+
+    // GH#3166: Only draw the cursor if it's actually in the viewport. It
+    // might be on the line that's in that partially visible row at the
+    // bottom of the viewport, the space that's not quite a full line in
+    // height. Since we don't draw that text, we shouldn't draw the cursor
+    // there either.
+
+    // The cursor is never rendered as double height, so we don't care about
+    // the exact line rendition - only whether it's double width or not.
+    const auto doubleWidth = _pData->GetTextBuffer().IsDoubleWidthLine(coordCursor.y);
+    const auto lineRendition = doubleWidth ? LineRendition::DoubleWidth : LineRendition::SingleWidth;
+
+    // We need to convert the screen coordinates of the viewport to an
+    // equivalent range of buffer cells, taking line rendition into account.
+    const auto viewport = _pData->GetViewport().ToInclusive();
+    const auto view = ScreenToBufferLine(viewport, lineRendition);
+
+    // Note that we allow the X coordinate to be outside the left border by 1 position,
+    // because the cursor could still be visible if the focused character is double width.
+    const auto xInRange = coordCursor.x >= view.left - 1 && coordCursor.x <= view.right;
+    const auto yInRange = coordCursor.y >= view.top && coordCursor.y <= view.bottom;
+
+    // Adjust cursor Y offset to viewport.
+    // The viewport X offset is saved in the options and handled with a transform.
+    coordCursor.y -= view.top;
+
+    const auto cursorColor = _renderSettings.GetColorTableEntry(TextColor::CURSOR_COLOR);
+    const auto useColor = cursorColor != INVALID_COLOR;
+
+    _currentCursorOptions.coordCursor = coordCursor;
+    _currentCursorOptions.viewportLeft = viewport.left;
+    _currentCursorOptions.lineRendition = lineRendition;
+    _currentCursorOptions.ulCursorHeightPercent = _pData->GetCursorHeight();
+    _currentCursorOptions.cursorPixelWidth = _pData->GetCursorPixelWidth();
+    _currentCursorOptions.fIsDoubleWidth = _pData->IsCursorDoubleWidth();
+    _currentCursorOptions.cursorType = _pData->GetCursorStyle();
+    _currentCursorOptions.fUseColor = useColor;
+    _currentCursorOptions.cursorColor = cursorColor;
+    _currentCursorOptions.isVisible = _pData->IsCursorVisible();
+    _currentCursorOptions.isOn = _currentCursorOptions.isVisible && _pData->IsCursorOn();
+    _currentCursorOptions.inViewport = xInRange && yInRange;
+}
+
+void Renderer::_invalidateCurrentCursor() const
+{
+    if (!_currentCursorOptions.inViewport || !_currentCursorOptions.isOn)
     {
-        // Get cursor position in buffer
-        auto coordCursor = _pData->GetCursorPosition();
+        return;
+    }
 
-        // GH#3166: Only draw the cursor if it's actually in the viewport. It
-        // might be on the line that's in that partially visible row at the
-        // bottom of the viewport, the space that's not quite a full line in
-        // height. Since we don't draw that text, we shouldn't draw the cursor
-        // there either.
+    const auto& buffer = _pData->GetTextBuffer();
+    const auto view = buffer.GetSize();
+    const auto coord = _currentCursorOptions.coordCursor;
 
-        // The cursor is never rendered as double height, so we don't care about
-        // the exact line rendition - only whether it's double width or not.
-        const auto doubleWidth = _pData->GetTextBuffer().IsDoubleWidthLine(coordCursor.y);
-        const auto lineRendition = doubleWidth ? LineRendition::DoubleWidth : LineRendition::SingleWidth;
+    const auto lineRendition = _currentCursorOptions.lineRendition;
+    const auto cursorWidth = _currentCursorOptions.fIsDoubleWidth ? 2 : 1;
+    const auto x = coord.x - _viewport.Left();
 
-        // We need to convert the screen coordinates of the viewport to an
-        // equivalent range of buffer cells, taking line rendition into account.
-        const auto view = ScreenToBufferLine(_pData->GetViewport().ToInclusive(), lineRendition);
+    til::rect rect{ x, coord.y, x + cursorWidth, coord.y + 1 };
+    rect = BufferToScreenLine(rect, lineRendition);
 
-        // Note that we allow the X coordinate to be outside the left border by 1 position,
-        // because the cursor could still be visible if the focused character is double width.
-        const auto xInRange = coordCursor.x >= view.left - 1 && coordCursor.x <= view.right;
-        const auto yInRange = coordCursor.y >= view.top && coordCursor.y <= view.bottom;
-        if (xInRange && yInRange)
+    if (view.TrimToViewport(&rect))
+    {
+        FOREACH_ENGINE(pEngine)
         {
-            // Adjust cursor Y offset to viewport.
-            // The viewport X offset is saved in the options and handled with a transform.
-            coordCursor.y -= view.top;
-
-            auto cursorColor = _renderSettings.GetColorTableEntry(TextColor::CURSOR_COLOR);
-            auto useColor = cursorColor != INVALID_COLOR;
-
-            // Build up the cursor parameters including position, color, and drawing options
-            CursorOptions options;
-            options.coordCursor = coordCursor;
-            options.viewportLeft = _pData->GetViewport().Left();
-            options.lineRendition = lineRendition;
-            options.ulCursorHeightPercent = _pData->GetCursorHeight();
-            options.cursorPixelWidth = _pData->GetCursorPixelWidth();
-            options.fIsDoubleWidth = _pData->IsCursorDoubleWidth();
-            options.cursorType = _pData->GetCursorStyle();
-            options.fUseColor = useColor;
-            options.cursorColor = cursorColor;
-            options.isOn = _pData->IsCursorOn();
-
-            return { options };
+            LOG_IF_FAILED(pEngine->InvalidateCursor(&rect));
         }
     }
-    return std::nullopt;
+}
+
+// If we had previously drawn a composition at the previous cursor position
+// we need to invalidate the entire line because who knows what changed.
+// (It's possible to figure that out, but not worth the effort right now.)
+void Renderer::_invalidateOldComposition() const
+{
+    if (!_compositionCache || !_currentCursorOptions.inViewport)
+    {
+        return;
+    }
+
+    const auto& buffer = _pData->GetTextBuffer();
+    const auto view = buffer.GetSize();
+    const auto coord = _currentCursorOptions.coordCursor;
+
+    til::rect rect{ 0, coord.y, til::CoordTypeMax, coord.y + 1 };
+    if (view.TrimToViewport(&rect))
+    {
+        FOREACH_ENGINE(pEngine)
+        {
+            LOG_IF_FAILED(pEngine->Invalidate(&rect));
+        }
+    }
+}
+
+// Invalidate the line that the active TSF composition is on,
+// so that _PaintBufferOutput() actually gets a chance to draw it.
+void Renderer::_prepareNewComposition()
+{
+    if (_pData->GetActiveComposition().text.empty())
+    {
+        return;
+    }
+
+    const auto viewport = _pData->GetViewport();
+    const auto coordCursor = _pData->GetCursorPosition();
+
+    til::rect line{ 0, coordCursor.y, til::CoordTypeMax, coordCursor.y + 1 };
+    if (viewport.TrimToViewport(&line))
+    {
+        viewport.ConvertToOrigin(&line);
+
+        FOREACH_ENGINE(pEngine)
+        {
+            LOG_IF_FAILED(pEngine->Invalidate(&line));
+        }
+
+        auto& buffer = _pData->GetTextBuffer();
+        auto& scratch = buffer.GetScratchpadRow();
+        const auto& activeComposition = _pData->GetActiveComposition();
+
+        std::wstring_view text{ activeComposition.text };
+        RowWriteState state{
+            .columnLimit = buffer.GetRowByOffset(line.top).GetReadableColumnCount(),
+        };
+
+        state.text = text.substr(0, activeComposition.cursorPos);
+        scratch.ReplaceText(state);
+        const auto cursorOffset = state.columnEnd;
+
+        state.text = text.substr(activeComposition.cursorPos);
+        state.columnBegin = state.columnEnd;
+        scratch.ReplaceText(state);
+
+        // Ideally the text is inserted at the position of the cursor (`coordCursor`),
+        // but if we got more text than fits into the remaining space until the end of the line,
+        // then we'll insert the text aligned to the end of the line.
+        const auto remaining = state.columnLimit - state.columnEnd;
+        const auto beg = std::clamp(coordCursor.x, 0, remaining);
+
+        const auto baseAttribute = buffer.GetRowByOffset(coordCursor.y).GetAttrByColumn(coordCursor.x);
+        _compositionCache.emplace(til::point{ beg, coordCursor.y }, baseAttribute);
+
+        // Fake-move the cursor to where it needs to be in the active composition.
+        _currentCursorOptions.coordCursor.x = std::min(beg + cursorOffset, line.right - 1);
+    }
 }
 
 // Routine Description:
@@ -1106,10 +1252,9 @@ bool Renderer::_isInHoveredInterval(const til::point coordTarget) const noexcept
 // - <none>
 void Renderer::_PaintCursor(_In_ IRenderEngine* const pEngine)
 {
-    const auto cursorInfo = _GetCursorInfo();
-    if (cursorInfo.has_value())
+    if (_currentCursorOptions.inViewport && _currentCursorOptions.isVisible)
     {
-        LOG_IF_FAILED(pEngine->PaintCursor(cursorInfo.value()));
+        LOG_IF_FAILED(pEngine->PaintCursor(_currentCursorOptions));
     }
 }
 
@@ -1127,72 +1272,11 @@ void Renderer::_PaintCursor(_In_ IRenderEngine* const pEngine)
 [[nodiscard]] HRESULT Renderer::_PrepareRenderInfo(_In_ IRenderEngine* const pEngine)
 {
     RenderFrameInfo info;
-    info.cursorInfo = _GetCursorInfo();
-    return pEngine->PrepareRenderInfo(info);
-}
-
-// Routine Description:
-// - Paint helper to draw text that overlays the main buffer to provide user interactivity regions
-// - This supports IME composition.
-// Arguments:
-// - engine - The render engine that we're targeting.
-// - overlay - The overlay to draw.
-// Return Value:
-// - <none>
-void Renderer::_PaintOverlay(IRenderEngine& engine,
-                             const RenderOverlay& overlay)
-{
-    try
-    {
-        // Now get the overlay's viewport and adjust it to where it is supposed to be relative to the window.
-        auto srCaView = overlay.region.ToExclusive();
-        srCaView.top += overlay.origin.y;
-        srCaView.bottom += overlay.origin.y;
-        srCaView.left += overlay.origin.x;
-        srCaView.right += overlay.origin.x;
-
-        std::span<const til::rect> dirtyAreas;
-        LOG_IF_FAILED(engine.GetDirtyArea(dirtyAreas));
-
-        for (const auto& rect : dirtyAreas)
-        {
-            if (const auto viewDirty = rect & srCaView)
-            {
-                for (auto iRow = viewDirty.top; iRow < viewDirty.bottom; iRow++)
-                {
-                    const til::point target{ viewDirty.left, iRow };
-                    const auto source = target - overlay.origin;
-
-                    auto it = overlay.buffer.GetCellLineDataAt(source);
-
-                    _PaintBufferOutputHelper(&engine, it, target, false);
-                }
-            }
-        }
-    }
-    CATCH_LOG();
-}
-
-// Routine Description:
-// - Paint helper to draw the composition string portion of the IME.
-// - This specifically is the string that appears at the cursor on the input line showing what the user is currently typing.
-// - See also: Generic Paint IME helper method.
-// Arguments:
-// - <none>
-// Return Value:
-// - <none>
-void Renderer::_PaintOverlays(_In_ IRenderEngine* const pEngine)
-{
-    try
-    {
-        const auto overlays = _pData->GetOverlays();
-
-        for (const auto& overlay : overlays)
-        {
-            _PaintOverlay(*pEngine, overlay);
-        }
-    }
-    CATCH_LOG();
+    info.searchHighlights = _pData->GetSearchHighlights();
+    info.searchHighlightFocused = _pData->GetSearchHighlightFocused();
+    info.selectionSpans = _pData->GetSelectionSpans();
+    info.selectionBackground = _renderSettings.GetColorTableEntry(TextColor::SELECTION_BACKGROUND);
+    return pEngine->PrepareRenderInfo(std::move(info));
 }
 
 // Routine Description:
@@ -1208,33 +1292,15 @@ void Renderer::_PaintSelection(_In_ IRenderEngine* const pEngine)
         std::span<const til::rect> dirtyAreas;
         LOG_IF_FAILED(pEngine->GetDirtyArea(dirtyAreas));
 
-        // Get selection rectangles
-        const auto rectangles = _GetSelectionRects();
-        const auto searchRectangles = _GetSearchSelectionRects();
-
-        std::vector<til::rect> dirtySearchRectangles;
-        for (auto& dirtyRect : dirtyAreas)
+        for (auto&& dirtyRect : dirtyAreas)
         {
-            for (const auto& sr : searchRectangles)
+            for (const auto& rect : _lastSelectionRectsByViewport)
             {
-                if (const auto rectCopy = sr & dirtyRect)
-                {
-                    dirtySearchRectangles.emplace_back(rectCopy);
-                }
-            }
-
-            for (const auto& rect : rectangles)
-            {
-                if (const auto rectCopy = rect & dirtyRect)
+                if (const auto rectCopy{ rect & dirtyRect })
                 {
                     LOG_IF_FAILED(pEngine->PaintSelection(rectCopy));
                 }
             }
-        }
-
-        if (!dirtySearchRectangles.empty())
-        {
-            LOG_IF_FAILED(pEngine->PaintSelections(std::move(dirtySearchRectangles)));
         }
     }
     CATCH_LOG();
@@ -1275,54 +1341,6 @@ void Renderer::_PaintSelection(_In_ IRenderEngine* const pEngine)
     return pEngine->ScrollFrame();
 }
 
-// Routine Description:
-// - Helper to determine the selected region of the buffer.
-// Return Value:
-// - A vector of rectangles representing the regions to select, line by line.
-std::vector<til::rect> Renderer::_GetSelectionRects() const
-{
-    const auto& buffer = _pData->GetTextBuffer();
-    auto rects = _pData->GetSelectionRects();
-    // Adjust rectangles to viewport
-    auto view = _pData->GetViewport();
-
-    std::vector<til::rect> result;
-    result.reserve(rects.size());
-
-    for (auto rect : rects)
-    {
-        // Convert buffer offsets to the equivalent range of screen cells
-        // expected by callers, taking line rendition into account.
-        const auto lineRendition = buffer.GetLineRendition(rect.Top());
-        rect = Viewport::FromInclusive(BufferToScreenLine(rect.ToInclusive(), lineRendition));
-        result.emplace_back(view.ConvertToOrigin(rect).ToExclusive());
-    }
-
-    return result;
-}
-
-std::vector<til::rect> Renderer::_GetSearchSelectionRects() const
-{
-    const auto& buffer = _pData->GetTextBuffer();
-    auto rects = _pData->GetSearchSelectionRects();
-    // Adjust rectangles to viewport
-    auto view = _pData->GetViewport();
-
-    std::vector<til::rect> result;
-    result.reserve(rects.size());
-
-    for (auto rect : rects)
-    {
-        // Convert buffer offsets to the equivalent range of screen cells
-        // expected by callers, taking line rendition into account.
-        const auto lineRendition = buffer.GetLineRendition(rect.Top());
-        rect = Viewport::FromInclusive(BufferToScreenLine(rect.ToInclusive(), lineRendition));
-        result.emplace_back(view.ConvertToOrigin(rect).ToExclusive());
-    }
-
-    return result;
-}
-
 // Method Description:
 // - Offsets all of the selection rectangles we might be holding onto
 //   as the previously selected area. If the whole viewport scrolls,
@@ -1336,10 +1354,12 @@ void Renderer::_ScrollPreviousSelection(const til::point delta)
 {
     if (delta != til::point{ 0, 0 })
     {
-        for (auto& rc : _previousSelection)
+        for (auto& rc : _lastSelectionRectsByViewport)
         {
             rc += delta;
         }
+
+        _currentCursorOptions.coordCursor += delta;
     }
 }
 
@@ -1361,6 +1381,7 @@ void Renderer::AddRenderEngine(_In_ IRenderEngine* const pEngine)
         if (!p)
         {
             p = pEngine;
+            _forceUpdateViewport = true;
             return;
         }
     }

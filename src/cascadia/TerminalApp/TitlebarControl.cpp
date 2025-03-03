@@ -12,6 +12,8 @@
 
 #include "TitlebarControl.g.cpp"
 
+using namespace winrt::Windows::UI::Xaml;
+
 namespace winrt::TerminalApp::implementation
 {
     TitlebarControl::TitlebarControl(uint64_t handle) :
@@ -44,12 +46,12 @@ namespace winrt::TerminalApp::implementation
         });
     }
 
-    double TitlebarControl::CaptionButtonWidth()
+    float TitlebarControl::CaptionButtonWidth()
     {
         // Divide by three, since we know there are only three buttons. When
         // Windows 12 comes along and adds another, we can update this /s
-        static auto width{ MinMaxCloseControl().ActualWidth() / 3.0 };
-        return width;
+        const auto minMaxCloseWidth = MinMaxCloseControl().ActualWidth();
+        return static_cast<float>(minMaxCloseWidth) / 3.0f;
     }
 
     IInspectable TitlebarControl::Content()
@@ -75,6 +77,11 @@ namespace winrt::TerminalApp::implementation
         {
             ContentRoot().MaxWidth(maxWidth);
         }
+    }
+
+    void TitlebarControl::FullscreenChanged(const bool fullscreen)
+    {
+        MinMaxCloseControl().Visibility(fullscreen ? Visibility::Collapsed : Visibility::Visible);
     }
 
     void TitlebarControl::_OnMaximizeOrRestore(byte flag)
@@ -134,7 +141,7 @@ namespace winrt::TerminalApp::implementation
     {
         MinMaxCloseControl().PressButton(button);
     }
-    winrt::fire_and_forget TitlebarControl::ClickButton(CaptionButton button)
+    safe_void_coroutine TitlebarControl::ClickButton(CaptionButton button)
     {
         // GH#8587: Handle this on the _next_ pass of the UI thread. If we
         // handle this immediately, then we'll accidentally leave the button in

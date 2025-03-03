@@ -11,6 +11,8 @@
 #include "DWriteTextAnalysis.h"
 #include "../../interactivity/win32/CustomWindowMessages.h"
 
+#include "../types/inc/ColorFix.hpp"
+
 // #### NOTE ####
 // This file should only contain methods that are only accessed by the caller of Present() (the "Renderer" class).
 // Basically this file poses the "synchronization" point between the concurrently running
@@ -18,6 +20,7 @@
 // and thus may access both _r and _api.
 
 #pragma warning(disable : 4100) // '...': unreferenced formal parameter
+#pragma warning(disable : 4127) // conditional expression is constant
 // Disable a bunch of warnings which get in the way of writing performant code.
 #pragma warning(disable : 26429) // Symbol 'data' is never tested for nullness, it can be marked as not_null (f.23).
 #pragma warning(disable : 26446) // Prefer to use gsl::at() instead of unchecked subscript operator (bounds.4).
@@ -73,9 +76,8 @@ try
         _handleSettingsUpdate();
     }
 
-    if (ATLAS_DEBUG_DISABLE_PARTIAL_INVALIDATION || _hackTriggerRedrawAll)
+    if constexpr (ATLAS_DEBUG_DISABLE_PARTIAL_INVALIDATION)
     {
-        _hackTriggerRedrawAll = false;
         _api.invalidatedRows = invalidatedRowsAll;
         _api.scrollOffset = 0;
     }
@@ -129,7 +131,8 @@ try
     };
     _p.invalidatedRows = _api.invalidatedRows;
     _p.cursorRect = {};
-    _p.scrollOffset = _api.scrollOffset;
+    _p.scrollOffsetX = _api.viewportOffset.x;
+    _p.scrollDeltaY = _api.scrollOffset;
 
     // This if condition serves 2 purposes:
     // * By setting top/bottom to the full height we ensure that we call Present() without
@@ -144,7 +147,11 @@ try
         _p.MarkAllAsDirty();
     }
 
-    if (const auto offset = _p.scrollOffset)
+#if ATLAS_DEBUG_CONTINUOUS_REDRAW
+    _p.MarkAllAsDirty();
+#endif
+
+    if (const auto offset = _p.scrollDeltaY)
     {
         if (offset < 0)
         {
@@ -243,10 +250,6 @@ try
         }
     }
 
-#if ATLAS_DEBUG_CONTINUOUS_REDRAW
-    _p.MarkAllAsDirty();
-#endif
-
     return S_OK;
 }
 CATCH_RETURN()
@@ -255,6 +258,14 @@ CATCH_RETURN()
 try
 {
     _flushBufferLine();
+
+    for (const auto r : _p.rows)
+    {
+        if (r->bitmap.revision != 0 && !r->bitmap.active)
+        {
+            r->bitmap = {};
+        }
+    }
 
     // PaintCursor() is only called when the cursor is visible, but we need to invalidate the cursor area
     // even if it isn't. Otherwise a transition from a visible to an invisible cursor wouldn't be rendered.
@@ -273,20 +284,54 @@ try
 }
 CATCH_RETURN()
 
-[[nodiscard]] HRESULT AtlasEngine::PrepareForTeardown(_Out_ bool* const pForcePaint) noexcept
-{
-    RETURN_HR_IF_NULL(E_INVALIDARG, pForcePaint);
-    *pForcePaint = false;
-    return S_OK;
-}
-
 [[nodiscard]] HRESULT AtlasEngine::ScrollFrame() noexcept
 {
     return S_OK;
 }
 
-[[nodiscard]] HRESULT AtlasEngine::PrepareRenderInfo(const RenderFrameInfo& info) noexcept
+[[nodiscard]] HRESULT AtlasEngine::PrepareRenderInfo(RenderFrameInfo info) noexcept
 {
+    // remove the highlighted regions that falls outside of the dirty region
+    {
+        // get the buffer origin relative to the viewport, and use it to calculate
+        // the dirty region to be relative to the buffer origin
+        const til::CoordType offsetX = _api.viewportOffset.x;
+        const til::CoordType offsetY = _api.viewportOffset.y;
+        const til::point bufferOrigin{ -offsetX, -offsetY };
+        const auto dr = _api.dirtyRect.to_origin(bufferOrigin);
+
+        _api.searchHighlights = til::point_span_subspan_within_rect(info.searchHighlights, dr);
+
+        // do the same for the focused search highlight
+        if (info.searchHighlightFocused)
+        {
+            const auto focusedStartY = info.searchHighlightFocused->start.y;
+            const auto focusedEndY = info.searchHighlightFocused->end.y;
+            const auto isFocusedInside = (focusedStartY >= dr.top && focusedStartY < dr.bottom) || (focusedEndY >= dr.top && focusedEndY < dr.bottom) || (focusedStartY < dr.top && focusedEndY >= dr.bottom);
+            if (isFocusedInside)
+            {
+                _api.searchHighlightFocused = { info.searchHighlightFocused, 1 };
+            }
+        }
+
+        _api.selectionSpans = til::point_span_subspan_within_rect(info.selectionSpans, dr);
+
+        const u32 newSelectionColor{ static_cast<COLORREF>(info.selectionBackground) | 0xff000000 };
+        if (_api.s->misc->selectionColor != newSelectionColor)
+        {
+            auto misc = _api.s.write()->misc.write();
+            misc->selectionColor = newSelectionColor;
+            // Select a black or white foreground based on the perceptual lightness of the background.
+            misc->selectionForeground = ColorFix::GetLuminosity(newSelectionColor) < 0.5f ? 0xffffffff : 0xff000000;
+
+            // We copied the selection colors into _p during StartPaint, which happened just before PrepareRenderInfo
+            // This keeps their generations in sync.
+            auto pm = _p.s.write()->misc.write();
+            pm->selectionColor = misc->selectionColor;
+            pm->selectionForeground = misc->selectionForeground;
+        }
+    }
+
     return S_OK;
 }
 
@@ -297,7 +342,7 @@ CATCH_RETURN()
 
 [[nodiscard]] HRESULT AtlasEngine::PrepareLineTransform(const LineRendition lineRendition, const til::CoordType targetRow, const til::CoordType viewportLeft) noexcept
 {
-    const auto y = gsl::narrow_cast<u16>(clamp<til::CoordType>(targetRow, 0, _p.s->viewportCellCount.y));
+    const auto y = gsl::narrow_cast<u16>(clamp<til::CoordType>(targetRow, 0, _p.s->viewportCellCount.y - 1));
     _p.rows[y]->lineRendition = lineRendition;
     _api.lineRendition = lineRendition;
     return S_OK;
@@ -308,10 +353,131 @@ CATCH_RETURN()
     return S_OK;
 }
 
+void AtlasEngine::_fillColorBitmap(const size_t y, const size_t x1, const size_t x2, const u32 fgColor, const u32 bgColor) noexcept
+{
+    const auto bitmap = _p.colorBitmap.begin() + _p.colorBitmapRowStride * y;
+    const auto shift = gsl::narrow_cast<u8>(_p.rows[y]->lineRendition != LineRendition::SingleWidth);
+    auto beg = bitmap + (x1 << shift);
+    auto end = bitmap + (x2 << shift);
+
+    const u32 colors[] = {
+        u32ColorPremultiply(bgColor),
+        fgColor,
+    };
+
+    // This fills the color in the background bitmap, and then in the foreground bitmap.
+    for (size_t i = 0; i < 2; ++i)
+    {
+        const auto color = colors[i];
+
+        for (auto it = beg; it != end; ++it)
+        {
+            if (*it != color)
+            {
+                _p.colorBitmapGenerations[i].bump();
+                std::fill(it, end, color);
+                break;
+            }
+        }
+
+        // go to the same range in the same row, but in the foreground bitmap
+        beg += _p.colorBitmapDepthStride;
+        end += _p.colorBitmapDepthStride;
+    }
+}
+
+// Method Description:
+// - Applies the given highlighting colors to the columns in the highlighted regions within a given range.
+// - Resumes from the last partially painted region if any.
+// Arguments:
+// - highlights: the list of highlighted regions (yet to be painted)
+// - row: the row for which highlighted regions are to be painted
+// - begX: the starting (inclusive) column to paint from (in Buffer coord)
+// - endX: the ending (exclusive) column to paint up to (in Buffer coord)
+// - fgColor: the foreground highlight color
+// - bgColor: the background highlight color
+// Returns:
+// - S_OK if we painted successfully, else an appropriate HRESULT error code
+[[nodiscard]] HRESULT AtlasEngine::_drawHighlighted(std::span<const til::point_span>& highlights, const u16 row, const u16 begX, const u16 endX, const u32 fgColor, const u32 bgColor) noexcept
+try
+{
+    if (highlights.empty())
+    {
+        return S_OK;
+    }
+
+    const til::CoordType y = row;
+    const til::CoordType x1 = begX;
+    const til::CoordType x2 = endX;
+    const auto offset = til::point{ _api.viewportOffset.x, _api.viewportOffset.y };
+    auto it = highlights.begin();
+    const auto itEnd = highlights.end();
+    auto hiStart = it->start - offset;
+    auto hiEnd = it->end - offset;
+
+    // Nothing to paint if we haven't reached the row where the highlight region begins
+    if (y < hiStart.y)
+    {
+        return S_OK;
+    }
+
+    // We might have painted a multi-line highlight region in the last call,
+    // so we need to make sure we paint the whole region before moving on to
+    // the next region.
+    if (y > hiStart.y)
+    {
+        const auto isFinalRow = y == hiEnd.y;
+        const auto end = isFinalRow ? std::min(hiEnd.x, x2) : x2;
+        _fillColorBitmap(row, x1, end, fgColor, bgColor);
+
+        // Return early if we couldn't paint the whole region (either this was not the last row, or
+        // it was the last row but the highlight ends outside of our x range.)
+        // We will resume from here in the next call.
+        if (!isFinalRow || hiEnd.x > x2)
+        {
+            return S_OK;
+        }
+
+        ++it;
+    }
+
+    // Pick a highlighted region and (try) to paint it
+    while (it != itEnd)
+    {
+        hiStart = it->start - offset;
+        hiEnd = it->end - offset;
+
+        const auto isStartInside = y == hiStart.y && hiStart.x < x2;
+        const auto isEndInside = y == hiEnd.y && hiEnd.x <= x2;
+        if (isStartInside && isEndInside)
+        {
+            _fillColorBitmap(row, hiStart.x, static_cast<size_t>(hiEnd.x), fgColor, bgColor);
+            ++it;
+        }
+        else
+        {
+            // Paint the region partially if start is within the range.
+            if (isStartInside)
+            {
+                const auto start = std::max(x1, hiStart.x);
+                _fillColorBitmap(y, start, x2, fgColor, bgColor);
+            }
+
+            break;
+        }
+    }
+
+    // Shorten the list by removing processed regions
+    highlights = { it, itEnd };
+
+    return S_OK;
+}
+CATCH_RETURN()
+
 [[nodiscard]] HRESULT AtlasEngine::PaintBufferLine(std::span<const Cluster> clusters, til::point coord, const bool fTrimLeft, const bool lineWrapped) noexcept
 try
 {
-    const auto y = gsl::narrow_cast<u16>(clamp<int>(coord.y, 0, _p.s->viewportCellCount.y));
+    const auto y = gsl::narrow_cast<u16>(clamp<int>(coord.y, 0, _p.s->viewportCellCount.y - 1));
 
     if (_api.lastPaintBufferLineCoord.y != y)
     {
@@ -319,7 +485,7 @@ try
     }
 
     const auto shift = gsl::narrow_cast<u8>(_api.lineRendition != LineRendition::SingleWidth);
-    const auto x = gsl::narrow_cast<u16>(clamp<int>(coord.x - (_p.s->viewportOffset.x >> shift), 0, _p.s->viewportCellCount.x));
+    const auto x = gsl::narrow_cast<u16>(clamp<int>(coord.x - (_api.viewportOffset.x >> shift), 0, _p.s->viewportCellCount.x));
     auto columnEnd = x;
 
     // _api.bufferLineColumn contains 1 more item than _api.bufferLine, as it represents the
@@ -345,34 +511,13 @@ try
         _api.bufferLineColumn.emplace_back(columnEnd);
     }
 
-    {
-        const auto row = _p.colorBitmap.begin() + _p.colorBitmapRowStride * y;
-        auto beg = row + (static_cast<size_t>(x) << shift);
-        auto end = row + (static_cast<size_t>(columnEnd) << shift);
+    // Apply the current foreground and background colors to the cells
+    _fillColorBitmap(y, x, columnEnd, _api.currentForeground, _api.currentBackground);
 
-        const u32 colors[] = {
-            u32ColorPremultiply(_api.currentBackground),
-            _api.currentForeground,
-        };
-
-        for (size_t i = 0; i < 2; ++i)
-        {
-            const auto color = colors[i];
-
-            for (auto it = beg; it != end; ++it)
-            {
-                if (*it != color)
-                {
-                    _p.colorBitmapGenerations[i].bump();
-                    std::fill(it, end, color);
-                    break;
-                }
-            }
-
-            beg += _p.colorBitmapDepthStride;
-            end += _p.colorBitmapDepthStride;
-        }
-    }
+    // Apply the highlighting colors to the highlighted cells
+    RETURN_IF_FAILED(_drawHighlighted(_api.searchHighlights, y, x, columnEnd, highlightFg, highlightBg));
+    RETURN_IF_FAILED(_drawHighlighted(_api.searchHighlightFocused, y, x, columnEnd, highlightFocusFg, highlightFocusBg));
+    RETURN_IF_FAILED(_drawHighlighted(_api.selectionSpans, y, x, columnEnd, _p.s->misc->selectionForeground, _p.s->misc->selectionColor));
 
     _api.lastPaintBufferLineCoord = { x, y };
     return S_OK;
@@ -383,8 +528,8 @@ CATCH_RETURN()
 try
 {
     const auto shift = gsl::narrow_cast<u8>(_api.lineRendition != LineRendition::SingleWidth);
-    const auto x = std::max(0, coordTarget.x - (_p.s->viewportOffset.x >> shift));
-    const auto y = gsl::narrow_cast<u16>(clamp<til::CoordType>(coordTarget.y, 0, _p.s->viewportCellCount.y));
+    const auto x = std::max(0, coordTarget.x - (_api.viewportOffset.x >> shift));
+    const auto y = gsl::narrow_cast<u16>(clamp<til::CoordType>(coordTarget.y, 0, _p.s->viewportCellCount.y - 1));
     const auto from = gsl::narrow_cast<u16>(clamp<til::CoordType>(x << shift, 0, _p.s->viewportCellCount.x - 1));
     const auto to = gsl::narrow_cast<u16>(clamp<size_t>((x + cchLine) << shift, from, _p.s->viewportCellCount.x));
     const auto glColor = gsl::narrow_cast<u32>(gridlineColor) | 0xff000000;
@@ -394,63 +539,54 @@ try
 }
 CATCH_RETURN()
 
-[[nodiscard]] HRESULT AtlasEngine::PaintSelection(const til::rect& rect) noexcept
+[[nodiscard]] HRESULT AtlasEngine::PaintImageSlice(const ImageSlice& imageSlice, const til::CoordType targetRow, const til::CoordType viewportLeft) noexcept
 try
 {
-    // Unfortunately there's no step after Renderer::_PaintBufferOutput that
-    // would inform us that it's done with the last AtlasEngine::PaintBufferLine.
-    // As such we got to call _flushBufferLine() here just to be sure.
-    _flushBufferLine();
+    const auto y = clamp<til::CoordType>(targetRow, 0, _p.s->viewportCellCount.y - 1);
+    const auto row = _p.rows[y];
+    const auto revision = imageSlice.Revision();
+    const auto srcWidth = std::max(0, imageSlice.PixelWidth());
+    const auto srcCellSize = imageSlice.CellSize();
+    auto& b = row->bitmap;
 
-    const auto y = gsl::narrow_cast<u16>(clamp<til::CoordType>(rect.top, 0, _p.s->viewportCellCount.y));
-    const auto from = gsl::narrow_cast<u16>(clamp<til::CoordType>(rect.left, 0, _p.s->viewportCellCount.x - 1));
-    const auto to = gsl::narrow_cast<u16>(clamp<til::CoordType>(rect.right, from, _p.s->viewportCellCount.x));
-
-    auto& row = *_p.rows[y];
-    row.selectionFrom = from;
-    row.selectionTo = to;
-
-    _p.dirtyRectInPx.left = std::min(_p.dirtyRectInPx.left, from * _p.s->font->cellSize.x);
-    _p.dirtyRectInPx.top = std::min(_p.dirtyRectInPx.top, y * _p.s->font->cellSize.y);
-    _p.dirtyRectInPx.right = std::max(_p.dirtyRectInPx.right, to * _p.s->font->cellSize.x);
-    _p.dirtyRectInPx.bottom = std::max(_p.dirtyRectInPx.bottom, _p.dirtyRectInPx.top + _p.s->font->cellSize.y);
-    return S_OK;
-}
-CATCH_RETURN()
-
-[[nodiscard]] HRESULT AtlasEngine::PaintSelections(const std::vector<til::rect>& rects) noexcept
-try
-{
-    if (rects.empty())
+    // If this row's ImageSlice has changed we need to update our snapshot.
+    // Theoretically another _p.rows[y]->bitmap may have this particular revision already,
+    // but that can only happen if we're scrolling _and_ the entire viewport was invalidated.
+    if (b.revision != revision)
     {
-        return S_OK;
-    }
+        const auto srcHeight = std::max(0, srcCellSize.height);
+        const auto pixels = imageSlice.Pixels();
+        const auto expectedSize = gsl::narrow_cast<size_t>(srcWidth) * gsl::narrow_cast<size_t>(srcHeight);
 
-    for (const auto& rect : rects)
-    {
-        const auto y = gsl::narrow_cast<u16>(clamp<til::CoordType>(rect.top, 0, _p.s->viewportCellCount.y));
-        const auto from = gsl::narrow_cast<u16>(clamp<til::CoordType>(rect.left, 0, _p.s->viewportCellCount.x - 1));
-        const auto to = gsl::narrow_cast<u16>(clamp<til::CoordType>(rect.right, from, _p.s->viewportCellCount.x));
-
-        if (rect.bottom <= 0 || rect.top >= _p.s->viewportCellCount.y)
+        // Sanity check.
+        if (pixels.size() != expectedSize)
         {
-            continue;
+            assert(false);
+            return S_OK;
         }
 
-        const auto bg = &_p.backgroundBitmap[_p.colorBitmapRowStride * y];
-        const auto fg = &_p.foregroundBitmap[_p.colorBitmapRowStride * y];
-        std::fill(bg + from, bg + to, 0xff3296ff);
-        std::fill(fg + from, fg + to, 0xff000000);
+        if (b.source.size() != pixels.size())
+        {
+            b.source = Buffer<u32, 32>{ pixels.size() };
+        }
+
+        memcpy(b.source.data(), pixels.data(), pixels.size_bytes());
+        b.revision = revision;
+        b.sourceSize.x = srcWidth;
+        b.sourceSize.y = srcHeight;
     }
 
-    for (int i = 0; i < 2; ++i)
-    {
-        _p.colorBitmapGenerations[i].bump();
-    }
-
+    b.targetOffset = (imageSlice.ColumnOffset() - viewportLeft);
+    b.targetWidth = srcWidth / srcCellSize.width;
+    b.active = true;
     return S_OK;
 }
 CATCH_RETURN()
+
+[[nodiscard]] HRESULT AtlasEngine::PaintSelection(const til::rect& rect) noexcept
+{
+    return S_OK;
+}
 
 [[nodiscard]] HRESULT AtlasEngine::PaintCursor(const CursorOptions& options) noexcept
 try
@@ -479,7 +615,7 @@ try
         const auto top = options.coordCursor.y;
         const auto bottom = top + 1;
         const auto shift = gsl::narrow_cast<u8>(_p.rows[top]->lineRendition != LineRendition::SingleWidth);
-        auto left = options.coordCursor.x - (_p.s->viewportOffset.x >> shift);
+        auto left = options.coordCursor.x - (_api.viewportOffset.x >> shift);
         auto right = left + cursorWidth;
 
         left <<= shift;
@@ -527,10 +663,18 @@ try
         _api.currentForeground = gsl::narrow_cast<u32>(fg);
         _api.attributes = attributes;
     }
-    else if (textAttributes.BackgroundIsDefault() && bg != _api.s->misc->backgroundColor)
+    else
     {
-        _api.s.write()->misc.write()->backgroundColor = bg;
-        _p.s.write()->misc.write()->backgroundColor = bg;
+        if (textAttributes.BackgroundIsDefault() && bg != _api.s->misc->backgroundColor)
+        {
+            _api.s.write()->misc.write()->backgroundColor = bg;
+            _p.s.write()->misc.write()->backgroundColor = bg;
+        }
+
+        if (textAttributes.GetForeground().IsDefault() && fg != _api.s->misc->foregroundColor)
+        {
+            _api.s.write()->misc.write()->foregroundColor = fg;
+        }
     }
 
     return S_OK;
@@ -610,8 +754,6 @@ void AtlasEngine::_recreateFontDependentResources()
             _api.textFormatAxes[i] = { fontAxisValues.data(), fontAxisValues.size() };
         }
     }
-
-    _hackWantsBuiltinGlyphs = _p.s->font->builtinGlyphs && !_hackIsBackendD2D;
 }
 
 void AtlasEngine::_recreateCellCountDependentResources()
@@ -672,17 +814,12 @@ void AtlasEngine::_flushBufferLine()
     // This would seriously blow us up otherwise.
     Expects(_api.bufferLineColumn.size() == _api.bufferLine.size() + 1);
 
+    const auto builtinGlyphs = _p.s->font->builtinGlyphs;
     const auto beg = _api.bufferLine.data();
     const auto len = _api.bufferLine.size();
     size_t segmentBeg = 0;
     size_t segmentEnd = 0;
     bool custom = false;
-
-    if (!_hackWantsBuiltinGlyphs)
-    {
-        _mapRegularText(0, len);
-        return;
-    }
 
     while (segmentBeg < len)
     {
@@ -696,7 +833,7 @@ void AtlasEngine::_flushBufferLine()
                 codepoint = til::combine_surrogates(codepoint, beg[i++]);
             }
 
-            const auto c = BuiltinGlyphs::IsBuiltinGlyph(codepoint) || BuiltinGlyphs::IsSoftFontChar(codepoint);
+            const auto c = (builtinGlyphs && BuiltinGlyphs::IsBuiltinGlyph(codepoint)) || BuiltinGlyphs::IsSoftFontChar(codepoint);
             if (custom != c)
             {
                 break;

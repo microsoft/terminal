@@ -22,12 +22,13 @@ namespace TerminalApp
     {
         TitlebarControl(UInt64 parentWindowHandle);
         void SetWindowVisualState(WindowVisualState visualState);
+        void FullscreenChanged(Boolean fullscreen);
 
         void HoverButton(CaptionButton button);
         void PressButton(CaptionButton button);
         void ClickButton(CaptionButton button);
         void ReleaseButtons();
-        Double CaptionButtonWidth { get; };
+        Single CaptionButtonWidth { get; };
 
         IInspectable Content;
         Windows.UI.Xaml.Controls.Border DragBar { get; };

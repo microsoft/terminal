@@ -65,29 +65,14 @@ UiaTracing::~UiaTracing() noexcept
 
 std::wstring UiaTracing::_getValue(const ScreenInfoUiaProviderBase& siup) noexcept
 {
-    std::wstringstream stream;
-    stream << "_id: " << siup.GetId();
-    return stream.str();
+    return fmt::format(FMT_COMPILE(L"_id:{}"), siup.GetId());
 }
 
 std::wstring UiaTracing::_getValue(const UiaTextRangeBase& utr) noexcept
-try
 {
     const auto start = utr.GetEndpoint(TextPatternRangeEndpoint_Start);
     const auto end = utr.GetEndpoint(TextPatternRangeEndpoint_End);
-
-    std::wstringstream stream;
-    stream << " _id: " << utr.GetId();
-    stream << " _start: { " << start.x << ", " << start.y << " }";
-    stream << " _end: { " << end.x << ", " << end.y << " }";
-    stream << " _degenerate: " << utr.IsDegenerate();
-    stream << " _wordDelimiters: " << utr._wordDelimiters;
-    stream << " content: " << utr._getTextValue();
-    return stream.str();
-}
-catch (...)
-{
-    return {};
+    return fmt::format(FMT_COMPILE(L"_id:{} _start:{},{} _end:{},{} _degenerate:{} _wordDelimiters:{} content:{}"), utr.GetId(), start.x, start.y, end.x, end.y, utr.IsDegenerate(), utr._wordDelimiters, utr._getTextValue());
 }
 
 std::wstring UiaTracing::_getValue(const TextPatternRangeEndpoint endpoint) noexcept
@@ -485,7 +470,7 @@ void UiaTracing::TextProvider::get_ProviderOptions(const ScreenInfoUiaProviderBa
     EnsureRegistration();
     if (TraceLoggingProviderEnabled(g_UiaProviderTraceProvider, WINEVENT_LEVEL_VERBOSE, TIL_KEYWORD_TRACE))
     {
-        auto getOptions = [options]() {
+        static constexpr auto getOptions = [](ProviderOptions options) {
             switch (options)
             {
             case ProviderOptions_ServerSideProvider:
@@ -499,7 +484,7 @@ void UiaTracing::TextProvider::get_ProviderOptions(const ScreenInfoUiaProviderBa
             g_UiaProviderTraceProvider,
             "ScreenInfoUiaProvider::get_ProviderOptions",
             TraceLoggingValue(_getValue(siup).c_str(), "base"),
-            TraceLoggingValue(getOptions(), "providerOptions"),
+            TraceLoggingValue(getOptions(options), "providerOptions"),
             TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
             TraceLoggingKeyword(TIL_KEYWORD_TRACE));
     }
@@ -510,7 +495,7 @@ void UiaTracing::TextProvider::GetPatternProvider(const ScreenInfoUiaProviderBas
     EnsureRegistration();
     if (TraceLoggingProviderEnabled(g_UiaProviderTraceProvider, WINEVENT_LEVEL_VERBOSE, TIL_KEYWORD_TRACE))
     {
-        auto getPattern = [patternId]() {
+        static constexpr auto getPattern = [](PATTERNID patternId) {
             switch (patternId)
             {
             case UIA_TextPatternId:
@@ -524,7 +509,7 @@ void UiaTracing::TextProvider::GetPatternProvider(const ScreenInfoUiaProviderBas
             g_UiaProviderTraceProvider,
             "ScreenInfoUiaProvider::get_ProviderOptions",
             TraceLoggingValue(_getValue(siup).c_str(), "base"),
-            TraceLoggingValue(getPattern(), "patternId"),
+            TraceLoggingValue(getPattern(patternId), "patternId"),
             TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
             TraceLoggingKeyword(TIL_KEYWORD_TRACE));
     }
@@ -535,7 +520,7 @@ void UiaTracing::TextProvider::GetPropertyValue(const ScreenInfoUiaProviderBase&
     EnsureRegistration();
     if (TraceLoggingProviderEnabled(g_UiaProviderTraceProvider, WINEVENT_LEVEL_VERBOSE, TIL_KEYWORD_TRACE))
     {
-        auto getProperty = [propertyId]() {
+        static constexpr auto getProperty = [](PROPERTYID propertyId) {
             switch (propertyId)
             {
             case UIA_ControlTypePropertyId:
@@ -565,7 +550,7 @@ void UiaTracing::TextProvider::GetPropertyValue(const ScreenInfoUiaProviderBase&
             g_UiaProviderTraceProvider,
             "ScreenInfoUiaProvider::GetPropertyValue",
             TraceLoggingValue(_getValue(siup).c_str(), "base"),
-            TraceLoggingValue(getProperty(), "propertyId"),
+            TraceLoggingValue(getProperty(propertyId), "propertyId"),
             TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
             TraceLoggingKeyword(TIL_KEYWORD_TRACE));
     }
@@ -677,17 +662,15 @@ void UiaTracing::TextProvider::RangeFromPoint(const ScreenInfoUiaProviderBase& s
     EnsureRegistration();
     if (TraceLoggingProviderEnabled(g_UiaProviderTraceProvider, WINEVENT_LEVEL_VERBOSE, TIL_KEYWORD_TRACE))
     {
-        auto getPoint = [point]() {
-            std::wstringstream stream;
-            stream << "{ " << point.x << ", " << point.y << " }";
-            return stream.str();
+        static constexpr auto getPoint = [](const UiaPoint& point) {
+            return fmt::format(FMT_COMPILE(L"{},{}"), (int)point.x, (int)point.y);
         };
 
         TraceLoggingWrite(
             g_UiaProviderTraceProvider,
             "ScreenInfoUiaProvider::RangeFromPoint",
             TraceLoggingValue(_getValue(siup).c_str(), "base"),
-            TraceLoggingValue(getPoint().c_str(), "uiaPoint"),
+            TraceLoggingValue(getPoint(point).c_str(), "uiaPoint"),
             TraceLoggingValue(_getValue(result).c_str(), "result (utr)"),
             TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
             TraceLoggingKeyword(TIL_KEYWORD_TRACE));
@@ -714,7 +697,7 @@ void UiaTracing::TextProvider::get_SupportedTextSelection(const ScreenInfoUiaPro
     EnsureRegistration();
     if (TraceLoggingProviderEnabled(g_UiaProviderTraceProvider, WINEVENT_LEVEL_VERBOSE, TIL_KEYWORD_TRACE))
     {
-        auto getResult = [result]() {
+        static constexpr auto getResult = [](SupportedTextSelection result) {
             switch (result)
             {
             case SupportedTextSelection_Single:
@@ -728,7 +711,7 @@ void UiaTracing::TextProvider::get_SupportedTextSelection(const ScreenInfoUiaPro
             g_UiaProviderTraceProvider,
             "ScreenInfoUiaProvider::get_SupportedTextSelection",
             TraceLoggingValue(_getValue(siup).c_str(), "base"),
-            TraceLoggingValue(getResult(), "result"),
+            TraceLoggingValue(getResult(result), "result"),
             TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
             TraceLoggingKeyword(TIL_KEYWORD_TRACE));
     }

@@ -48,6 +48,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         std::unordered_map<winrt::hstring, winrt::com_ptr<implementation::ColorScheme>> colorSchemes;
         std::unordered_map<winrt::hstring, winrt::hstring> colorSchemeRemappings;
         bool fixupsAppliedDuringLoad{ false };
+        std::set<std::string> themesChangeLog;
 
         void clear();
     };
@@ -95,7 +96,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void _addOrMergeUserColorScheme(const winrt::com_ptr<implementation::ColorScheme>& colorScheme);
         void _executeGenerator(const IDynamicProfileGenerator& generator);
 
-        std::unordered_set<std::wstring_view> _ignoredNamespaces;
+        std::unordered_set<winrt::hstring, til::transparent_hstring_hash, til::transparent_hstring_equal_to> _ignoredNamespaces;
+        std::set<std::string> themesChangeLog;
         // See _getNonUserOriginProfiles().
         size_t _userProfileCount = 0;
     };
@@ -112,7 +114,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         static winrt::hstring ApplicationDisplayName();
         static winrt::hstring ApplicationVersion();
         static bool IsPortableMode();
-        static void ExportFile(winrt::hstring path, winrt::hstring content);
 
         CascadiaSettings() noexcept = default;
         CascadiaSettings(const winrt::hstring& userJSON, const winrt::hstring& inboxJSON);
@@ -151,6 +152,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         void ExpandCommands();
 
+        void LogSettingChanges(bool isJsonLoad) const;
+
     private:
         static const std::filesystem::path& _settingsPath();
         static const std::filesystem::path& _releaseSettingsPath();
@@ -181,6 +184,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         winrt::com_ptr<implementation::Profile> _baseLayerProfile = winrt::make_self<implementation::Profile>();
         winrt::Windows::Foundation::Collections::IObservableVector<Model::Profile> _allProfiles = winrt::single_threaded_observable_vector<Model::Profile>();
         winrt::Windows::Foundation::Collections::IObservableVector<Model::Profile> _activeProfiles = winrt::single_threaded_observable_vector<Model::Profile>();
+        std::set<std::string> _themesChangeLog{};
 
         // load errors
         winrt::Windows::Foundation::Collections::IVector<Model::SettingsLoadWarnings> _warnings = winrt::single_threaded_vector<Model::SettingsLoadWarnings>();

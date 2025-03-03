@@ -50,7 +50,6 @@ SOURCES = \
     ..\UiaTextRange.cpp \
     ..\window.cpp \
     ..\windowdpiapi.cpp \
-    ..\windowime.cpp \
     ..\windowio.cpp \
     ..\WindowMetrics.cpp \
     ..\windowproc.cpp \

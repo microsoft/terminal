@@ -67,7 +67,6 @@ SOURCES = \
     ..\outputStream.cpp \
     ..\stream.cpp    \
     ..\dbcs.cpp      \
-    ..\convarea.cpp  \
     ..\screenInfo.cpp \
     ..\_output.cpp   \
     ..\_stream.cpp   \
@@ -83,8 +82,6 @@ SOURCES = \
     ..\writeData.cpp \
     ..\renderData.cpp \
     ..\renderFontDefaults.cpp \
-    ..\conareainfo.cpp \
-    ..\conimeinfo.cpp \
     ..\ConsoleArguments.cpp \
 
 
@@ -135,6 +132,7 @@ TARGETLIBS = \
     $(ONECOREUAP_EXTERNAL_SDK_LIB_PATH)\dxgi.lib \
     $(ONECOREUAP_EXTERNAL_SDK_LIB_PATH)\d3d11.lib \
     $(MODERNCORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\api-ms-win-mm-playsound-l1.lib \
+    $(MODERNCORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\ext-ms-win-imm-l1-1-0.lib \
     $(ONECORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\ext-ms-win-dwmapi-ext-l1.lib \
     $(MINCORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\ext-ms-win-gdi-dc-l1.lib \
     $(MINCORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\ext-ms-win-gdi-dc-create-l1.lib \
@@ -198,6 +196,7 @@ DELAYLOAD = \
     api-ms-win-core-com-l1.dll; \
     api-ms-win-core-registry-l2.dll; \
     api-ms-win-mm-playsound-l1.dll; \
+    ext-ms-win-imm-l1-1-0.lib; \
     api-ms-win-shcore-obsolete-l1.dll; \
     api-ms-win-shcore-scaling-l1.dll; \
     api-ms-win-shell-dataobject-l1.dll; \

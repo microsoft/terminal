@@ -18,7 +18,7 @@ rem The opencon root is at ...\open\tools\, without the last 7 chars ('\tools\')
 set OPENCON=%OPENCON_TOOLS:~0,-7%
 
 rem Add nuget to PATH
-set PATH=%PATH%%OPENCON%\dep\nuget;
+set PATH=%OPENCON%\dep\nuget;%PATH%
 
 rem Run nuget restore so you can use vswhere
 nuget restore %OPENCON%\OpenConsole.sln -Verbosity quiet
@@ -116,7 +116,7 @@ shift
 goto :ARGS_LOOP
 
 :POST_ARGS_LOOP
-set TAEF=%OPENCON%\packages\Microsoft.Taef.10.60.210621002\build\Binaries\%ARCH%\TE.exe
+set TAEF=%OPENCON%\packages\Microsoft.Taef.10.93.240607003\build\Binaries\%ARCH%\TE.exe
 rem Set this envvar so setup won't repeat itself
 set OpenConBuild=true
 

@@ -237,13 +237,23 @@ MODULE_SETUP(ModuleSetup)
     // to the one that belongs to the CMD.exe in the new OpenConsole.exe window.
     VERIFY_WIN32_BOOL_SUCCEEDED_RETURN(FreeConsole());
 
-    VERIFY_WIN32_BOOL_SUCCEEDED_RETURN(AttachConsole(dwFindPid));
+    BOOL attached = FALSE;
 
     int tries = 0;
     DWORD delay;
     // This will wait for up to 32s in total (from 10ms to 163840ms)
     for (delay = 10; delay < 30000u; delay *= 2)
     {
+        if (!attached)
+        {
+            attached = AttachConsole(dwFindPid);
+            if (!attached)
+            {
+                WaitForSingleObject(GetCurrentThread(), delay);
+                continue;
+            }
+        }
+
         tries++;
         Log::Comment(NoThrowString().Format(L"Attempt #%d to confirm we've attached", tries));
 
@@ -281,6 +291,7 @@ MODULE_SETUP(ModuleSetup)
         }
     };
 
+    VERIFY_WIN32_BOOL_SUCCEEDED_RETURN(attached, L"Make sure successfully attached to the console");
     VERIFY_IS_LESS_THAN(delay, 30000u, L"Make sure we set up the new console in time");
 
     return true;

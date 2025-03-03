@@ -6,6 +6,7 @@
 #include "WexTestClass.h"
 #include "../textBuffer.hpp"
 #include "../../renderer/inc/DummyRenderer.hpp"
+#include "../search.h"
 
 template<>
 class WEX::TestExecution::VerifyOutputTraits<std::vector<til::point_span>>
@@ -36,28 +37,28 @@ class UTextAdapterTests
     TEST_METHOD(Unicode)
     {
         DummyRenderer renderer;
-        TextBuffer buffer{ til::size{ 24, 1 }, TextAttribute{}, 0, false, renderer };
+        TextBuffer buffer{ til::size{ 24, 1 }, TextAttribute{}, 0, false, &renderer };
 
         RowWriteState state{
             .text = L"abc 𝒶𝒷𝒸 abc ネコちゃん",
         };
-        buffer.Write(0, TextAttribute{}, state);
+        buffer.Replace(0, TextAttribute{}, state);
         VERIFY_IS_TRUE(state.text.empty());
 
         static constexpr auto s = [](til::CoordType beg, til::CoordType end) -> til::point_span {
             return { { beg, 0 }, { end, 0 } };
         };
 
-        auto expected = std::vector{ s(0, 2), s(8, 10) };
-        auto actual = buffer.SearchText(L"abc", false);
+        auto expected = std::vector{ s(0, 3), s(8, 11) };
+        auto actual = buffer.SearchText(L"abc", SearchFlag::None);
         VERIFY_ARE_EQUAL(expected, actual);
 
-        expected = std::vector{ s(5, 5) };
-        actual = buffer.SearchText(L"𝒷", false);
+        expected = std::vector{ s(5, 6) };
+        actual = buffer.SearchText(L"𝒷", SearchFlag::None);
         VERIFY_ARE_EQUAL(expected, actual);
 
-        expected = std::vector{ s(12, 15) };
-        actual = buffer.SearchText(L"ネコ", false);
+        expected = std::vector{ s(12, 16) };
+        actual = buffer.SearchText(L"ネコ", SearchFlag::None);
         VERIFY_ARE_EQUAL(expected, actual);
     }
 };

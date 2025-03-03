@@ -45,6 +45,15 @@ namespace SettingsModelUnitTests
         // this test that includes synthesizing GUIDS for profiles without GUIDs
         // set
 
+        const auto parseAndVerifyProfile = [](const std::string profile, const bool hasGuid) {
+            const auto profileAsJson = VerifyParseSucceeded(profile);
+            const auto profileParsed = implementation::Profile::FromJson(profileAsJson);
+
+            VERIFY_ARE_EQUAL(profileParsed->HasGuid(), hasGuid);
+            return profileParsed;
+        };
+
+        // Invalid GUID Values
         const std::string profileWithoutGuid{ R"({
                                               "name" : "profile0"
                                               })" };
@@ -55,37 +64,50 @@ namespace SettingsModelUnitTests
                                               "name" : "profile2",
                                               "guid" : null
                                               })" };
+        const std::string profileWithHyphenlessGuid{ R"({
+                                              "name" : "profile4",
+                                              "guid" : "{6239A42C1DE449A380BDE8FDD045185C}"
+                                              })" };
+        const std::string profileWithRawGuid{ R"({
+                                              "name" : "profile4",
+                                              "guid" : "6239a42c-1de4-49a3-80bd-e8fdd045185c"
+                                              })" };
+        const std::string profileWithGuidFormatP{ R"({
+                                              "name" : "profile4",
+                                              "guid" : "(6239a42c-1de4-49a3-80bd-e8fdd045185c)\\"
+                                              })" };
+        // Valid GUIDs
         const std::string profileWithNullGuid{ R"({
                                               "name" : "profile3",
                                               "guid" : "{00000000-0000-0000-0000-000000000000}"
                                               })" };
-        const std::string profileWithGuid{ R"({
+        const std::string profileWithGuidFormatB{ R"({
                                               "name" : "profile4",
                                               "guid" : "{6239a42c-1de4-49a3-80bd-e8fdd045185c}"
                                               })" };
+        const std::string profileWithGuidUpperCaseFormatB{ R"({
+                                              "name" : "profile4",
+                                              "guid" : "{6239A42C-1DE4-49A3-80BD-E8FDD045185C}"
+                                              })" };
 
-        const auto profile0Json = VerifyParseSucceeded(profileWithoutGuid);
-        const auto profile1Json = VerifyParseSucceeded(secondProfileWithoutGuid);
-        const auto profile2Json = VerifyParseSucceeded(profileWithNullForGuid);
-        const auto profile3Json = VerifyParseSucceeded(profileWithNullGuid);
-        const auto profile4Json = VerifyParseSucceeded(profileWithGuid);
+        parseAndVerifyProfile(profileWithoutGuid, false);
+        parseAndVerifyProfile(secondProfileWithoutGuid, false);
 
-        const auto profile0 = implementation::Profile::FromJson(profile0Json);
-        const auto profile1 = implementation::Profile::FromJson(profile1Json);
-        const auto profile2 = implementation::Profile::FromJson(profile2Json);
-        const auto profile3 = implementation::Profile::FromJson(profile3Json);
-        const auto profile4 = implementation::Profile::FromJson(profile4Json);
-        const winrt::guid cmdGuid = Utils::GuidFromString(L"{6239a42c-1de4-49a3-80bd-e8fdd045185c}");
+        // The following crash JSON parsing
+        VERIFY_THROWS(parseAndVerifyProfile(profileWithHyphenlessGuid, false), std::exception);
+        VERIFY_THROWS(parseAndVerifyProfile(profileWithRawGuid, false), std::exception);
+        VERIFY_THROWS(parseAndVerifyProfile(profileWithGuidFormatP, false), std::exception);
+
+        const auto parsedNullGuidProfile = parseAndVerifyProfile(profileWithNullGuid, true);
+        const auto parsedGuidProfileFormatB = parseAndVerifyProfile(profileWithGuidFormatB, true);
+        const auto parsedGuidProfileUpperCaseFormatB = parseAndVerifyProfile(profileWithGuidUpperCaseFormatB, true);
+
         const winrt::guid nullGuid{};
+        const winrt::guid cmdGuid = Utils::GuidFromString(L"{6239a42c-1de4-49a3-80bd-e8fdd045185c}");
 
-        VERIFY_IS_FALSE(profile0->HasGuid());
-        VERIFY_IS_FALSE(profile1->HasGuid());
-        VERIFY_IS_FALSE(profile2->HasGuid());
-        VERIFY_IS_TRUE(profile3->HasGuid());
-        VERIFY_IS_TRUE(profile4->HasGuid());
-
-        VERIFY_ARE_EQUAL(profile3->Guid(), nullGuid);
-        VERIFY_ARE_EQUAL(profile4->Guid(), cmdGuid);
+        VERIFY_ARE_EQUAL(parsedNullGuidProfile->Guid(), nullGuid);
+        VERIFY_ARE_EQUAL(parsedGuidProfileFormatB->Guid(), cmdGuid);
+        VERIFY_ARE_EQUAL(parsedGuidProfileUpperCaseFormatB->Guid(), cmdGuid);
     }
 
     void ProfileTests::LayerProfileProperties()

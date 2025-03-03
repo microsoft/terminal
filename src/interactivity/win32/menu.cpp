@@ -576,6 +576,8 @@ void Menu::s_PropertiesUpdate(PCONSOLE_STATE_INFO pStateInfo)
     TextAttribute::SetLegacyDefaultAttributes(pStateInfo->ScreenAttributes);
     // And recalculate the position of the default colors in the color table.
     gci.CalculateDefaultColorIndices();
+    // Then save these values as the new default render settings.
+    gci.SaveDefaultRenderSettings();
 
     // Set the screen info's default text attributes to defaults -
     ScreenInfo.SetDefaultAttributes({}, TextAttribute{ gci.GetPopupFillAttribute() });
@@ -594,8 +596,6 @@ void Menu::s_PropertiesUpdate(PCONSOLE_STATE_INFO pStateInfo)
     // Since edit keys are global state only stored once in the registry, post the message to the queue to reload
     // those properties specifically from the registry in case they were changed.
     ServiceLocator::LocateConsoleWindow<Window>()->PostUpdateExtendedEditKeys();
-
-    gci.ConsoleIme.RefreshAreaAttributes();
 
     gci.SetInterceptCopyPaste(!!pStateInfo->InterceptCopyPaste);
 }

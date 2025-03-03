@@ -1,6 +1,8 @@
 ACLs
 ADMINS
 advapi
+akv
+AKV
 altform
 altforms
 appendwttlogging
@@ -14,6 +16,7 @@ autoexec
 backplating
 bitmaps
 BOMs
+checkcflags
 COMPUTERNAME
 CPLs
 cpptools
@@ -32,6 +35,7 @@ DWINRT
 enablewttlogging
 HOMESHARE
 Intelli
+issecret
 IVisual
 libucrt
 libucrtd
@@ -74,6 +78,7 @@ sid
 Skype
 SRW
 sxs
+symbolrequestprod
 Sysinternals
 sysnative
 systemroot
@@ -99,3 +104,4 @@ wtl
 wtt
 wttlog
 Xamarin
+xfgcheck

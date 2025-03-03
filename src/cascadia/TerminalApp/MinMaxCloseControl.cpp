@@ -116,6 +116,9 @@ namespace winrt::TerminalApp::implementation
 
         switch (visualState)
         {
+        case WindowVisualState::WindowVisualStateIconified:
+            // Iconified (aka minimized) state should preserve the active window styling
+            break;
         case WindowVisualState::WindowVisualStateMaximized:
             VisualStateManager::GoToState(MaximizeButton(), L"WindowStateMaximized", false);
 
@@ -124,9 +127,7 @@ namespace winrt::TerminalApp::implementation
             CloseButton().Height(maximizedHeight);
             MaximizeToolTip().Text(RS_(L"WindowRestoreDownButtonToolTip"));
             break;
-
         case WindowVisualState::WindowVisualStateNormal:
-        case WindowVisualState::WindowVisualStateIconified:
         default:
             VisualStateManager::GoToState(MaximizeButton(), L"WindowStateNormal", false);
 

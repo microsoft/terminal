@@ -5,9 +5,11 @@
 
 #include <til/rle.h>
 
+#include "ImageSlice.hpp"
 #include "LineRendition.hpp"
 #include "OutputCell.hpp"
 #include "OutputCellIterator.hpp"
+#include "Marks.hpp"
 
 class ROW;
 class TextBuffer;
@@ -69,7 +71,7 @@ struct RowCopyTextFromState
 // into a ROW's text this class can tell you what cell that pointer belongs to.
 struct CharToColumnMapper
 {
-    CharToColumnMapper(const wchar_t* chars, const uint16_t* charOffsets, ptrdiff_t lastCharOffset, til::CoordType currentColumn) noexcept;
+    CharToColumnMapper(const wchar_t* chars, const uint16_t* charOffsets, ptrdiff_t lastCharOffset, til::CoordType currentColumn, til::CoordType columnCount) noexcept;
 
     til::CoordType GetLeadingColumnAt(ptrdiff_t targetOffset) noexcept;
     til::CoordType GetTrailingColumnAt(ptrdiff_t offset) noexcept;
@@ -83,8 +85,9 @@ private:
 
     const wchar_t* _chars;
     const uint16_t* _charOffsets;
-    ptrdiff_t _lastCharOffset;
+    ptrdiff_t _charsLength;
     til::CoordType _currentColumn;
+    til::CoordType _columnCount;
 };
 
 class ROW final
@@ -131,7 +134,6 @@ public:
     til::CoordType GetReadableColumnCount() const noexcept;
 
     void Reset(const TextAttribute& attr) noexcept;
-    void TransferAttributes(const til::small_rle<TextAttribute, uint16_t, 1>& attr, til::CoordType newWidth);
     void CopyFrom(const ROW& source);
 
     til::CoordType NavigateToPrevious(til::CoordType column) const noexcept;
@@ -151,6 +153,9 @@ public:
     const til::small_rle<TextAttribute, uint16_t, 1>& Attributes() const noexcept;
     TextAttribute GetAttrByColumn(til::CoordType column) const;
     std::vector<uint16_t> GetHyperlinks() const;
+    ImageSlice* SetImageSlice(ImageSlice::Pointer imageSlice) noexcept;
+    const ImageSlice* GetImageSlice() const noexcept;
+    ImageSlice* GetMutableImageSlice() noexcept;
     uint16_t size() const noexcept;
     til::CoordType GetLastNonSpaceColumn() const noexcept;
     til::CoordType MeasureLeft() const noexcept;
@@ -166,6 +171,11 @@ public:
 
     auto AttrBegin() const noexcept { return _attr.begin(); }
     auto AttrEnd() const noexcept { return _attr.end(); }
+
+    const std::optional<ScrollbarData>& GetScrollbarData() const noexcept;
+    void SetScrollbarData(std::optional<ScrollbarData> data) noexcept;
+    void StartPrompt() noexcept;
+    void EndOutput(std::optional<unsigned int> error) noexcept;
 
 #ifdef UNIT_TESTING
     friend constexpr bool operator==(const ROW& a, const ROW& b) noexcept;
@@ -225,8 +235,6 @@ private:
     static constexpr uint16_t CharOffsetsTrailer = 0x8000;
     static constexpr uint16_t CharOffsetsMask = 0x7fff;
 
-    template<typename T>
-    static constexpr uint16_t _clampedUint16(T v) noexcept;
     template<typename T>
     constexpr uint16_t _clampedColumn(T v) const noexcept;
     template<typename T>
@@ -299,6 +307,11 @@ private:
     bool _wrapForced = false;
     // Occurs when the user runs out of text to support a double byte character and we're forced to the next line
     bool _doubleBytePadded = false;
+
+    std::optional<ScrollbarData> _promptData = std::nullopt;
+
+    // Stores any image content covering the row.
+    ImageSlice::Pointer _imageSlice;
 };
 
 #ifdef UNIT_TESTING

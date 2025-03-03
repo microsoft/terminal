@@ -29,6 +29,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         static winrt::Windows::Foundation::Collections::IMap<winrt::hstring, winrt::Windows::UI::Xaml::ElementTheme> ElementTheme();
         static winrt::Windows::Foundation::Collections::IMap<winrt::hstring, NewTabPosition> NewTabPosition();
         static winrt::Windows::Foundation::Collections::IMap<winrt::hstring, winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode> TabViewWidthMode();
+        static winrt::Windows::Foundation::Collections::IMap<winrt::hstring, winrt::Microsoft::Terminal::Control::DefaultInputScope> DefaultInputScope();
         static winrt::Windows::Foundation::Collections::IMap<winrt::hstring, FirstWindowPreference> FirstWindowPreference();
         static winrt::Windows::Foundation::Collections::IMap<winrt::hstring, LaunchMode> LaunchMode();
         static winrt::Windows::Foundation::Collections::IMap<winrt::hstring, TabSwitcherMode> TabSwitcherMode();
@@ -36,6 +37,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         static winrt::Windows::Foundation::Collections::IMap<winrt::hstring, WindowingMode> WindowingMode();
         static winrt::Windows::Foundation::Collections::IMap<winrt::hstring, winrt::Microsoft::Terminal::Core::MatchMode> MatchMode();
         static winrt::Windows::Foundation::Collections::IMap<winrt::hstring, winrt::Microsoft::Terminal::Control::GraphicsAPI> GraphicsAPI();
+        static winrt::Windows::Foundation::Collections::IMap<winrt::hstring, winrt::Microsoft::Terminal::Control::TextMeasurement> TextMeasurement();
 
         // Profile Settings
         static winrt::Windows::Foundation::Collections::IMap<winrt::hstring, CloseOnExitMode> CloseOnExitMode();
@@ -46,6 +48,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         static winrt::Windows::Foundation::Collections::IMap<winrt::hstring, uint16_t> FontWeight();
         static winrt::Windows::Foundation::Collections::IMap<winrt::hstring, winrt::Microsoft::Terminal::Settings::Model::IntenseStyle> IntenseTextStyle();
         static winrt::Windows::Foundation::Collections::IMap<winrt::hstring, winrt::Microsoft::Terminal::Core::AdjustTextMode> AdjustIndistinguishableColors();
+        static winrt::Windows::Foundation::Collections::IMap<winrt::hstring, winrt::Microsoft::Terminal::Control::PathTranslationStyle> PathTranslationStyle();
     };
 }
 

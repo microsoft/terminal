@@ -38,6 +38,15 @@ enum class UnderlineStyle
     Max = DashedUnderlined
 };
 
+// We only need a few bits, but uint8_t apparently doesn't satisfy std::has_unique_object_representations_v
+enum class MarkKind : uint16_t
+{
+    None = 0,
+    Prompt = 1,
+    Command = 2,
+    Output = 3,
+};
+
 class TextAttribute final
 {
 public:
@@ -46,7 +55,8 @@ public:
         _foreground{},
         _background{},
         _hyperlinkId{ 0 },
-        _underlineColor{}
+        _underlineColor{},
+        _markKind{ MarkKind::None }
     {
     }
 
@@ -55,7 +65,8 @@ public:
         _foreground{ gsl::at(s_legacyForegroundColorMap, wLegacyAttr & FG_ATTRS) },
         _background{ gsl::at(s_legacyBackgroundColorMap, (wLegacyAttr & BG_ATTRS) >> 4) },
         _hyperlinkId{ 0 },
-        _underlineColor{}
+        _underlineColor{},
+        _markKind{ MarkKind::None }
     {
     }
 
@@ -66,7 +77,8 @@ public:
         _foreground{ rgbForeground },
         _background{ rgbBackground },
         _hyperlinkId{ 0 },
-        _underlineColor{ rgbUnderline }
+        _underlineColor{ rgbUnderline },
+        _markKind{ MarkKind::None }
     {
     }
 
@@ -75,12 +87,12 @@ public:
         _foreground{ foreground },
         _background{ background },
         _hyperlinkId{ hyperlinkId },
-        _underlineColor{ underlineColor }
+        _underlineColor{ underlineColor },
+        _markKind{ MarkKind::None }
     {
     }
 
     static void SetLegacyDefaultAttributes(const WORD defaultAttributes) noexcept;
-    static TextAttribute StripErroneousVT16VersionsOfLegacyDefaults(const TextAttribute& attribute) noexcept;
     WORD GetLegacyAttributes() const noexcept;
 
     bool IsTopHorizontalDisplayed() const noexcept;
@@ -133,6 +145,15 @@ public:
     constexpr CharacterAttributes GetCharacterAttributes() const noexcept
     {
         return _attrs;
+    }
+
+    constexpr void SetMarkAttributes(const MarkKind attrs) noexcept
+    {
+        _markKind = attrs;
+    }
+    constexpr MarkKind GetMarkAttributes() const noexcept
+    {
+        return _markKind;
     }
 
     bool IsHyperlink() const noexcept;
@@ -202,6 +223,7 @@ private:
     TextColor _foreground; // sizeof: 4, alignof: 1
     TextColor _background; // sizeof: 4, alignof: 1
     TextColor _underlineColor; // sizeof: 4, alignof: 1
+    MarkKind _markKind; // sizeof: 2, alignof: 1
 
 #ifdef UNIT_TESTING
     friend class TextBufferTests;

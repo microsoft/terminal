@@ -52,11 +52,11 @@ typedef struct _PseudoConsole
 #ifndef PSEUDOCONSOLE_INHERIT_CURSOR
 #define PSEUDOCONSOLE_INHERIT_CURSOR (0x1)
 #endif
-#ifndef PSEUDOCONSOLE_RESIZE_QUIRK
-#define PSEUDOCONSOLE_RESIZE_QUIRK (0x2)
-#endif
-#ifndef PSEUDOCONSOLE_WIN32_INPUT_MODE
-#define PSEUDOCONSOLE_WIN32_INPUT_MODE (0x4)
+#ifndef PSEUDOCONSOLE_GLYPH_WIDTH__MASK
+#define PSEUDOCONSOLE_GLYPH_WIDTH__MASK 0x18
+#define PSEUDOCONSOLE_GLYPH_WIDTH_GRAPHEMES 0x08
+#define PSEUDOCONSOLE_GLYPH_WIDTH_WCSWIDTH 0x10
+#define PSEUDOCONSOLE_GLYPH_WIDTH_CONSOLE 0x18
 #endif
 
 // Implementations of the various PseudoConsole functions.
@@ -71,7 +71,7 @@ HRESULT _ResizePseudoConsole(_In_ const PseudoConsole* const pPty, _In_ const CO
 HRESULT _ClearPseudoConsole(_In_ const PseudoConsole* const pPty);
 HRESULT _ShowHidePseudoConsole(_In_ const PseudoConsole* const pPty, const bool show);
 HRESULT _ReparentPseudoConsole(_In_ const PseudoConsole* const pPty, _In_ const HWND newParent);
-void _ClosePseudoConsoleMembers(_In_ PseudoConsole* pPty, _In_ DWORD dwMilliseconds);
+void _ClosePseudoConsoleMembers(_In_ PseudoConsole* pPty);
 
 HRESULT WINAPI ConptyCreatePseudoConsoleAsUser(_In_ HANDLE hToken,
                                                _In_ COORD size,

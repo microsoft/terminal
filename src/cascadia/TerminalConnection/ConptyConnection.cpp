@@ -5,8 +5,7 @@
 #include "ConptyConnection.h"
 
 #include <conpty-static.h>
-#include <til/string.h>
-#include <winternl.h>
+#include <winmeta.h>
 
 #include "CTerminalHandoff.h"
 #include "LibraryResources.h"
@@ -15,10 +14,6 @@
 #include "ConptyConnection.g.cpp"
 
 using namespace ::Microsoft::Console;
-using namespace std::string_view_literals;
-
-// Format is: "DecimalResult (HexadecimalForm)"
-static constexpr auto _errorFormat = L"{0} ({0:#010x})"sv;
 
 // Notes:
 // There is a number of ways that the Conpty connection can be terminated (voluntarily or not):
@@ -33,29 +28,6 @@ static constexpr auto _errorFormat = L"{0} ({0:#010x})"sv;
 
 namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 {
-    // Function Description:
-    // - creates some basic anonymous pipes and passes them to CreatePseudoConsole
-    // Arguments:
-    // - size: The size of the conpty to create, in characters.
-    // - phInput: Receives the handle to the newly-created anonymous pipe for writing input to the conpty.
-    // - phOutput: Receives the handle to the newly-created anonymous pipe for reading the output of the conpty.
-    // - phPc: Receives a token value to identify this conpty
-#pragma warning(suppress : 26430) // This statement sufficiently checks the out parameters. Analyzer cannot find this.
-    static HRESULT _CreatePseudoConsoleAndPipes(const COORD size, const DWORD dwFlags, HANDLE* phInput, HANDLE* phOutput, HPCON* phPC) noexcept
-    {
-        RETURN_HR_IF(E_INVALIDARG, phPC == nullptr || phInput == nullptr || phOutput == nullptr);
-
-        wil::unique_hfile outPipeOurSide, outPipePseudoConsoleSide;
-        wil::unique_hfile inPipeOurSide, inPipePseudoConsoleSide;
-
-        RETURN_IF_WIN32_BOOL_FALSE(CreatePipe(&inPipePseudoConsoleSide, &inPipeOurSide, nullptr, 0));
-        RETURN_IF_WIN32_BOOL_FALSE(CreatePipe(&outPipeOurSide, &outPipePseudoConsoleSide, nullptr, 0));
-        RETURN_IF_FAILED(ConptyCreatePseudoConsole(size, inPipePseudoConsoleSide.get(), outPipePseudoConsoleSide.get(), dwFlags, phPC));
-        *phInput = inPipeOurSide.release();
-        *phOutput = outPipeOurSide.release();
-        return S_OK;
-    }
-
     // Function Description:
     // - launches the client application attached to the new pseudoconsole
     HRESULT ConptyConnection::_LaunchAttachedClient() noexcept
@@ -101,7 +73,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                 std::set<std::wstring, til::env_key_sorter> keys{};
                 for (const auto item : _environment)
                 {
-                    keys.insert(item.Key().c_str());
+                    keys.insert(std::wstring{ item.Key() });
                 }
                 // add additional env vars
                 for (const auto& key : keys)
@@ -174,31 +146,13 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     }
     CATCH_RETURN();
 
-    ConptyConnection::ConptyConnection(const HANDLE hSig,
-                                       const HANDLE hIn,
-                                       const HANDLE hOut,
-                                       const HANDLE hRef,
-                                       const HANDLE hServerProcess,
-                                       const HANDLE hClientProcess,
-                                       TERMINAL_STARTUP_INFO startupInfo) :
-        _rows{ 25 },
-        _cols{ 80 },
-        _inPipe{ hIn },
-        _outPipe{ hOut }
+    // Who decided that?
+#pragma warning(suppress : 26455) // Default constructor should not throw. Declare it 'noexcept' (f.6).
+    ConptyConnection::ConptyConnection() :
+        _writeOverlappedEvent{ CreateEventExW(nullptr, nullptr, CREATE_EVENT_MANUAL_RESET, EVENT_ALL_ACCESS) }
     {
-        THROW_IF_FAILED(ConptyPackPseudoConsole(hServerProcess, hRef, hSig, &_hPC));
-        _piClient.hProcess = hClientProcess;
-
-        _startupInfo.title = winrt::hstring{ startupInfo.pszTitle, SysStringLen(startupInfo.pszTitle) };
-        _startupInfo.iconPath = winrt::hstring{ startupInfo.pszIconPath, SysStringLen(startupInfo.pszIconPath) };
-        _startupInfo.iconIndex = startupInfo.iconIndex;
-        _startupInfo.showWindow = startupInfo.wShowWindow;
-
-        try
-        {
-            _commandline = _commandlineFromProcess(hClientProcess);
-        }
-        CATCH_LOG()
+        THROW_LAST_ERROR_IF(!_writeOverlappedEvent);
+        _writeOverlapped.hEvent = _writeOverlappedEvent.get();
     }
 
     // Function Description:
@@ -257,11 +211,39 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             _cols = unbox_prop_or<uint32_t>(settings, L"initialCols", _cols);
             _sessionId = unbox_prop_or<winrt::guid>(settings, L"sessionId", _sessionId);
             _environment = settings.TryLookup(L"environment").try_as<Windows::Foundation::Collections::ValueSet>();
-            _inheritCursor = unbox_prop_or<bool>(settings, L"inheritCursor", _inheritCursor);
             _profileGuid = unbox_prop_or<winrt::guid>(settings, L"profileGuid", _profileGuid);
 
-            const auto& initialEnvironment{ unbox_prop_or<winrt::hstring>(settings, L"initialEnvironment", L"") };
+            _flags = 0;
 
+            // If we're using an existing buffer, we want the new connection
+            // to reuse the existing cursor. When not setting this flag, the
+            // PseudoConsole sends a clear screen VT code which our renderer
+            // interprets into making all the previous lines be outside the
+            // current viewport.
+            const auto inheritCursor = unbox_prop_or<bool>(settings, L"inheritCursor", false);
+            if (inheritCursor)
+            {
+                _flags |= PSEUDOCONSOLE_INHERIT_CURSOR;
+            }
+
+            const auto textMeasurement = unbox_prop_or<winrt::hstring>(settings, L"textMeasurement", winrt::hstring{});
+            if (!textMeasurement.empty())
+            {
+                if (textMeasurement == L"graphemes")
+                {
+                    _flags |= PSEUDOCONSOLE_GLYPH_WIDTH_GRAPHEMES;
+                }
+                else if (textMeasurement == L"wcswidth")
+                {
+                    _flags |= PSEUDOCONSOLE_GLYPH_WIDTH_WCSWIDTH;
+                }
+                else if (textMeasurement == L"console")
+                {
+                    _flags |= PSEUDOCONSOLE_GLYPH_WIDTH_CONSOLE;
+                }
+            }
+
+            const auto& initialEnvironment{ unbox_prop_or<winrt::hstring>(settings, L"initialEnvironment", L"") };
             const bool reloadEnvironmentVariables = unbox_prop_or<bool>(settings, L"reloadEnvironmentVariables", false);
 
             if (reloadEnvironmentVariables)
@@ -290,6 +272,52 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         }
     }
 
+    static wil::unique_hfile duplicateHandle(const HANDLE in)
+    {
+        wil::unique_hfile h;
+        THROW_IF_WIN32_BOOL_FALSE(DuplicateHandle(GetCurrentProcess(), in, GetCurrentProcess(), h.addressof(), 0, FALSE, DUPLICATE_SAME_ACCESS));
+        return h;
+    }
+
+    // Misdiagnosis: out is being tested right in the first line.
+#pragma warning(suppress : 26430) // Symbol 'out' is not tested for nullness on all paths (f.23).
+    void ConptyConnection::InitializeFromHandoff(HANDLE* in, HANDLE* out, HANDLE signal, HANDLE reference, HANDLE server, HANDLE client, const TERMINAL_STARTUP_INFO* startupInfo)
+    {
+        THROW_HR_IF(E_UNEXPECTED, !in || !out || !startupInfo);
+
+        _sessionId = Utils::CreateGuid();
+
+        auto pipe = Utils::CreateOverlappedPipe(PIPE_ACCESS_DUPLEX, 128 * 1024);
+        auto pipeClientClone = duplicateHandle(pipe.client.get());
+
+        auto ownedSignal = duplicateHandle(signal);
+        auto ownedReference = duplicateHandle(reference);
+        auto ownedServer = duplicateHandle(server);
+        auto ownedClient = duplicateHandle(client);
+
+        THROW_IF_FAILED(ConptyPackPseudoConsole(ownedServer.get(), ownedReference.get(), ownedSignal.get(), &_hPC));
+        ownedServer.release();
+        ownedReference.release();
+        ownedSignal.release();
+
+        _piClient.hProcess = ownedClient.release();
+
+        _startupInfo.title = winrt::hstring{ startupInfo->pszTitle, SysStringLen(startupInfo->pszTitle) };
+        _startupInfo.iconPath = winrt::hstring{ startupInfo->pszIconPath, SysStringLen(startupInfo->pszIconPath) };
+        _startupInfo.iconIndex = startupInfo->iconIndex;
+        _startupInfo.showWindow = startupInfo->wShowWindow;
+
+        try
+        {
+            _commandline = _commandlineFromProcess(_piClient.hProcess);
+        }
+        CATCH_LOG()
+
+        _pipe = std::move(pipe.server);
+        *in = pipe.client.release();
+        *out = pipeClientClone.release();
+    }
+
     winrt::hstring ConptyConnection::Commandline() const
     {
         return _commandline;
@@ -314,21 +342,11 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
         // If we do not have pipes already, then this is a fresh connection... not an inbound one that is a received
         // handoff from an already-started PTY process.
-        if (!_inPipe)
+        if (!_pipe)
         {
-            DWORD flags = PSEUDOCONSOLE_RESIZE_QUIRK;
-
-            // If we're using an existing buffer, we want the new connection
-            // to reuse the existing cursor. When not setting this flag, the
-            // PseudoConsole sends a clear screen VT code which our renderer
-            // interprets into making all the previous lines be outside the
-            // current viewport.
-            if (_inheritCursor)
-            {
-                flags |= PSEUDOCONSOLE_INHERIT_CURSOR;
-            }
-
-            THROW_IF_FAILED(_CreatePseudoConsoleAndPipes(til::unwrap_coord_size(dimensions), flags, &_inPipe, &_outPipe, &_hPC));
+            auto pipe = Utils::CreateOverlappedPipe(PIPE_ACCESS_DUPLEX, 128 * 1024);
+            THROW_IF_FAILED(ConptyCreatePseudoConsole(til::unwrap_coord_size(dimensions), pipe.client.get(), pipe.client.get(), _flags, &_hPC));
+            _pipe = std::move(pipe.server);
 
             if (_initialParentHwnd != 0)
             {
@@ -400,16 +418,13 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         const auto hr = wil::ResultFromCaughtException();
 
         // GH#11556 - make sure to format the error code to this string as an UNSIGNED int
-        winrt::hstring failureText{ fmt::format(std::wstring_view{ RS_(L"ProcessFailedToLaunch") },
-                                                fmt::format(_errorFormat, static_cast<unsigned int>(hr)),
-                                                _commandline) };
+        const auto failureText = RS_fmt(L"ProcessFailedToLaunch", _formatStatus(hr), _commandline);
         TerminalOutput.raise(failureText);
 
         // If the path was invalid, let's present an informative message to the user
         if (hr == HRESULT_FROM_WIN32(ERROR_DIRECTORY))
         {
-            winrt::hstring badPathText{ fmt::format(std::wstring_view{ RS_(L"BadPathText") },
-                                                    _startingDirectory) };
+            const auto badPathText = RS_fmt(L"BadPathText", _startingDirectory);
             TerminalOutput.raise(L"\r\n");
             TerminalOutput.raise(badPathText);
         }
@@ -429,14 +444,17 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         try
         {
             // GH#11556 - make sure to format the error code to this string as an UNSIGNED int
-            winrt::hstring exitText{ fmt::format(std::wstring_view{ RS_(L"ProcessExited") }, fmt::format(_errorFormat, status)) };
-            TerminalOutput.raise(L"\r\n");
-            TerminalOutput.raise(exitText);
-            TerminalOutput.raise(L"\r\n");
-            TerminalOutput.raise(RS_(L"CtrlDToClose"));
-            TerminalOutput.raise(L"\r\n");
+            const auto msg1 = RS_fmt(L"ProcessExited", _formatStatus(status));
+            const auto msg2 = RS_(L"CtrlDToClose");
+            const auto msg = fmt::format(FMT_COMPILE(L"\r\n{}\r\n{}\r\n"), msg1, msg2);
+            TerminalOutput.raise(msg);
         }
         CATCH_LOG();
+    }
+
+    std::wstring ConptyConnection::_formatStatus(uint32_t status)
+    {
+        return fmt::format(FMT_COMPILE(L"{0} ({0:#010x})"), status);
     }
 
     // Method Description:
@@ -455,17 +473,53 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     }
     CATCH_LOG()
 
-    void ConptyConnection::WriteInput(const hstring& data)
+    void ConptyConnection::WriteInput(const winrt::array_view<const char16_t> buffer)
     {
+        const auto data = winrt_array_to_wstring_view(buffer);
+
         if (!_isConnected())
         {
             return;
         }
 
-        // convert from UTF-16LE to UTF-8 as ConPty expects UTF-8
-        // TODO GH#3378 reconcile and unify UTF-8 converters
-        auto str = winrt::to_string(data);
-        LOG_IF_WIN32_BOOL_FALSE(WriteFile(_inPipe.get(), str.c_str(), (DWORD)str.length(), nullptr, nullptr));
+        // Ensure a linear and predictable write order, even across multiple threads.
+        // A ticket lock is the perfect fit for this as it acts as first-come-first-serve.
+        std::lock_guard guard{ _writeLock };
+
+        if (_writePending)
+        {
+            _writePending = false;
+
+            DWORD read;
+            if (!GetOverlappedResult(_pipe.get(), &_writeOverlapped, &read, TRUE))
+            {
+                // Not much we can do when the wait fails. This will kill the connection.
+                LOG_LAST_ERROR();
+                _hPC.reset();
+                return;
+            }
+        }
+
+        if (FAILED_LOG(til::u16u8(data, _writeBuffer)))
+        {
+            return;
+        }
+
+        if (!WriteFile(_pipe.get(), _writeBuffer.data(), gsl::narrow_cast<DWORD>(_writeBuffer.length()), nullptr, &_writeOverlapped))
+        {
+            switch (const auto gle = GetLastError())
+            {
+            case ERROR_BROKEN_PIPE:
+                _hPC.reset();
+                break;
+            case ERROR_IO_PENDING:
+                _writePending = true;
+                break;
+            default:
+                LOG_WIN32(gle);
+                break;
+            }
+        }
     }
 
     void ConptyConnection::Resize(uint32_t rows, uint32_t columns)
@@ -477,6 +531,14 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         if (_isConnected())
         {
             THROW_IF_FAILED(ConptyResizePseudoConsole(_hPC.get(), { Utils::ClampToShortMax(columns, 1), Utils::ClampToShortMax(rows, 1) }));
+        }
+    }
+
+    void ConptyConnection::ResetSize()
+    {
+        if (_isConnected())
+        {
+            THROW_IF_FAILED(ConptyResizePseudoConsole(_hPC.get(), { Utils::ClampToShortMax(_cols, 1), Utils::ClampToShortMax(_rows, 1) }));
         }
     }
 
@@ -524,23 +586,17 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     {
         _transitionToState(ConnectionState::Closing);
 
-        // .reset()ing either of these two will signal ConPTY to send out a CTRL_CLOSE_EVENT to all attached clients.
-        // FYI: The other members of this class are concurrently read by the _hOutputThread
-        // thread running in the background and so they're not safe to be .reset().
+        // This will signal ConPTY to send out a CTRL_CLOSE_EVENT to all attached clients.
+        // Once they're all disconnected it'll close its half of the pipes.
         _hPC.reset();
-        _inPipe.reset();
 
         if (_hOutputThread)
         {
-            // Loop around `CancelSynchronousIo()` just in case the signal to shut down was missed.
-            // This may happen if we called `CancelSynchronousIo()` while not being stuck
-            // in `ReadFile()` and if OpenConsole refuses to exit in a timely manner.
+            // Loop around `CancelIoEx()` just in case the signal to shut down was missed.
             for (;;)
             {
-                // ConptyConnection::Close() blocks the UI thread, because `_TerminalOutputHandlers` might indirectly
-                // reference UI objects like `ControlCore`. CancelSynchronousIo() allows us to have the background
-                // thread exit as fast as possible by aborting any ongoing writes coming from OpenConsole.
-                CancelSynchronousIo(_hOutputThread.get());
+                // The output thread may be stuck waiting for the OVERLAPPED to be signaled.
+                CancelIoEx(_pipe.get(), nullptr);
 
                 // Waiting for the output thread to exit ensures that all pending TerminalOutput.raise()
                 // calls have returned and won't notify our caller (ControlCore) anymore. This ensures that
@@ -550,17 +606,15 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                 {
                     break;
                 }
-
-                LOG_LAST_ERROR();
             }
         }
 
-        // Now that the background thread is done, we can safely clean up the other system objects, without
-        // race conditions, or fear of deadlocking ourselves (e.g. by calling CloseHandle() on _outPipe).
-        _outPipe.reset();
         _hOutputThread.reset();
         _piClient.reset();
+        _pipe.reset();
 
+        // The output thread should have already transitioned us to Closed.
+        // This exists just in case there was no output thread.
         _transitionToState(ConnectionState::Closed);
     }
     CATCH_LOG()
@@ -603,68 +657,102 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         // won't wait for us, and the known exit points _do_.
         auto strongThis{ get_strong() };
 
-        // process the data of the output pipe in a loop
-        while (true)
+        const auto cleanup = wil::scope_exit([this]() noexcept {
+            _LastConPtyClientDisconnected();
+        });
+
+        const wil::unique_event overlappedEvent{ CreateEventExW(nullptr, nullptr, CREATE_EVENT_MANUAL_RESET, EVENT_ALL_ACCESS) };
+        OVERLAPPED overlapped{ .hEvent = overlappedEvent.get() };
+        bool overlappedPending = false;
+        char buffer[128 * 1024];
+        DWORD read = 0;
+
+        til::u8state u8State;
+        std::wstring wstr;
+
+        // If we use overlapped IO We want to queue ReadFile() calls before processing the
+        // string, because TerminalOutput.raise() may take a while (relatively speaking).
+        // That's why the loop looks a little weird as it starts a read, processes the
+        // previous string, and finally converts the previous read to the next string.
+        for (;;)
         {
-            DWORD read{};
-
-            const auto readFail{ !ReadFile(_outPipe.get(), _buffer.data(), gsl::narrow_cast<DWORD>(_buffer.size()), &read, nullptr) };
-
-            // When we call CancelSynchronousIo() in Close() this is the branch that's taken and gets us out of here.
-            if (_isStateAtOrBeyond(ConnectionState::Closing))
+            // When we have a `wstr` that's ready for processing we must do so without blocking.
+            // Otherwise, whatever the user typed will be delayed until the next IO operation.
+            // With overlapped IO that's not a problem because the ReadFile() calls won't block.
+            if (!ReadFile(_pipe.get(), &buffer[0], sizeof(buffer), &read, &overlapped))
             {
-                return 0;
-            }
-
-            if (readFail) // reading failed (we must check this first, because read will also be 0.)
-            {
-                // EXIT POINT
-                const auto lastError = GetLastError();
-                if (lastError == ERROR_BROKEN_PIPE)
+                if (GetLastError() != ERROR_IO_PENDING)
                 {
-                    _LastConPtyClientDisconnected();
-                    return S_OK;
+                    break;
                 }
-                else
+                overlappedPending = true;
+            }
+
+            // wstr can be empty in two situations:
+            // * The previous call to til::u8u16 failed.
+            // * We're using overlapped IO, and it's the first iteration.
+            if (!wstr.empty())
+            {
+                if (!_receivedFirstByte)
                 {
-                    _indicateExitWithStatus(HRESULT_FROM_WIN32(lastError)); // print a message
-                    _transitionToState(ConnectionState::Failed);
-                    return gsl::narrow_cast<DWORD>(HRESULT_FROM_WIN32(lastError));
-                }
-            }
-
-            const auto result{ til::u8u16(std::string_view{ _buffer.data(), read }, _u16Str, _u8State) };
-            if (FAILED(result))
-            {
-                // EXIT POINT
-                _indicateExitWithStatus(result); // print a message
-                _transitionToState(ConnectionState::Failed);
-                return gsl::narrow_cast<DWORD>(result);
-            }
-
-            if (_u16Str.empty())
-            {
-                return 0;
-            }
-
-            if (!_receivedFirstByte)
-            {
-                const auto now = std::chrono::high_resolution_clock::now();
-                const std::chrono::duration<double> delta = now - _startTime;
+                    const auto now = std::chrono::high_resolution_clock::now();
+                    const std::chrono::duration<double> delta = now - _startTime;
 
 #pragma warning(suppress : 26477 26485 26494 26482 26446) // We don't control TraceLoggingWrite
-                TraceLoggingWrite(g_hTerminalConnectionProvider,
-                                  "ReceivedFirstByte",
-                                  TraceLoggingDescription("An event emitted when the connection receives the first byte"),
-                                  TraceLoggingGuid(_sessionId, "SessionGuid", "The WT_SESSION's GUID"),
-                                  TraceLoggingFloat64(delta.count(), "Duration"),
-                                  TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
-                                  TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
-                _receivedFirstByte = true;
+                    TraceLoggingWrite(g_hTerminalConnectionProvider,
+                                      "ReceivedFirstByte",
+                                      TraceLoggingDescription("An event emitted when the connection receives the first byte"),
+                                      TraceLoggingGuid(_sessionId, "SessionGuid", "The WT_SESSION's GUID"),
+                                      TraceLoggingFloat64(delta.count(), "Duration"),
+                                      TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+                                      TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
+                    _receivedFirstByte = true;
+                }
+
+                try
+                {
+                    TerminalOutput.raise(wstr);
+                }
+                CATCH_LOG();
             }
 
-            // Pass the output to our registered event handlers
-            TerminalOutput.raise(_u16Str);
+            // Here's the counterpart to the start of the loop. We processed whatever was in `wstr`,
+            // so blocking synchronously on the pipe is now possible.
+            // If we used overlapped IO, we need to wait for the ReadFile() to complete.
+            // If we didn't, we can now safely block on our ReadFile() call.
+            if (overlappedPending)
+            {
+                overlappedPending = false;
+                if (FAILED(Utils::GetOverlappedResultSameThread(&overlapped, &read)))
+                {
+                    break;
+                }
+            }
+
+            // winsock2 (WSA) handles of the \Device\Afd type are transparently compatible with
+            // ReadFile() and the WSARecv() documentations contains this important information:
+            // > For byte streams, zero bytes having been read [..] indicates graceful closure and that no more bytes will ever be read.
+            // --> Exit if we've read 0 bytes.
+            if (read == 0)
+            {
+                break;
+            }
+
+            if (_isStateAtOrBeyond(ConnectionState::Closing))
+            {
+                break;
+            }
+
+            TraceLoggingWrite(
+                g_hTerminalConnectionProvider,
+                "ReadFile",
+                TraceLoggingCountedUtf8String(&buffer[0], read, "buffer"),
+                TraceLoggingGuid(_sessionId, "session"),
+                TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+
+            // If we hit a parsing error, eat it. It's bad utf-8, we can't do anything with it.
+            FAILED_LOG(til::u8u16({ &buffer[0], gsl::narrow_cast<size_t>(read) }, wstr, u8State));
         }
 
         return 0;
@@ -677,14 +765,15 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
     void ConptyConnection::closePseudoConsoleAsync(HPCON hPC) noexcept
     {
-        ::ConptyClosePseudoConsoleTimeout(hPC, 0);
+        ::ConptyClosePseudoConsole(hPC);
     }
 
-    HRESULT ConptyConnection::NewHandoff(HANDLE in, HANDLE out, HANDLE signal, HANDLE ref, HANDLE server, HANDLE client, TERMINAL_STARTUP_INFO startupInfo) noexcept
+    HRESULT ConptyConnection::NewHandoff(HANDLE* in, HANDLE* out, HANDLE signal, HANDLE reference, HANDLE server, HANDLE client, const TERMINAL_STARTUP_INFO* startupInfo) noexcept
     try
     {
-        _newConnectionHandlers(winrt::make<ConptyConnection>(signal, in, out, ref, server, client, startupInfo));
-
+        auto conn = winrt::make_self<ConptyConnection>();
+        conn->InitializeFromHandoff(in, out, signal, reference, server, client, startupInfo);
+        _newConnectionHandlers(*std::move(conn));
         return S_OK;
     }
     CATCH_RETURN()
@@ -712,7 +801,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     //   be awaiting our destruction breaks the deadlock.
     // Arguments:
     // - connection: the final living reference to an outgoing connection
-    winrt::fire_and_forget ConptyConnection::final_release(std::unique_ptr<ConptyConnection> connection)
+    safe_void_coroutine ConptyConnection::final_release(std::unique_ptr<ConptyConnection> connection)
     {
         co_await winrt::resume_background(); // move to background
         connection.reset(); // explicitly destruct

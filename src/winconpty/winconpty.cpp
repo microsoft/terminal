@@ -93,7 +93,7 @@ static bool _HandleIsValid(HANDLE h) noexcept
     return (h != INVALID_HANDLE_VALUE) && (h != nullptr);
 }
 
-HRESULT _CreatePseudoConsole(const HANDLE hToken,
+HRESULT _CreatePseudoConsole(HANDLE hToken,
                              const COORD size,
                              const HANDLE hInput,
                              const HANDLE hOutput,
@@ -107,6 +107,12 @@ HRESULT _CreatePseudoConsole(const HANDLE hToken,
     if (size.X == 0 || size.Y == 0)
     {
         return E_INVALIDARG;
+    }
+
+    // CreateProcessAsUserW expects the token to be either valid or null.
+    if (hToken == INVALID_HANDLE_VALUE)
+    {
+        hToken = nullptr;
     }
 
     wil::unique_handle serverHandle;
@@ -132,21 +138,40 @@ HRESULT _CreatePseudoConsole(const HANDLE hToken,
     RETURN_IF_WIN32_BOOL_FALSE(CreatePipe(signalPipeConhostSide.addressof(), signalPipeOurSide.addressof(), &sa, 0));
     RETURN_IF_WIN32_BOOL_FALSE(SetHandleInformation(signalPipeConhostSide.get(), HANDLE_FLAG_INHERIT, HANDLE_FLAG_INHERIT));
 
+    const BOOL bInheritCursor = (dwFlags & PSEUDOCONSOLE_INHERIT_CURSOR) == PSEUDOCONSOLE_INHERIT_CURSOR;
+
+    const wchar_t* textMeasurement;
+    switch (dwFlags & PSEUDOCONSOLE_GLYPH_WIDTH__MASK)
+    {
+    case PSEUDOCONSOLE_GLYPH_WIDTH_GRAPHEMES:
+        textMeasurement = L"--textMeasurement graphemes ";
+        break;
+    case PSEUDOCONSOLE_GLYPH_WIDTH_WCSWIDTH:
+        textMeasurement = L"--textMeasurement wcswidth ";
+        break;
+    case PSEUDOCONSOLE_GLYPH_WIDTH_CONSOLE:
+        textMeasurement = L"--textMeasurement console ";
+        break;
+    default:
+        textMeasurement = L"";
+        break;
+    }
+
+    const auto conhostPath = _ConsoleHostPath();
+
     // GH4061: Ensure that the path to executable in the format is escaped so C:\Program.exe cannot collide with C:\Program Files
     // This is plenty of space to hold the formatted string
-    wchar_t cmd[MAX_PATH]{};
-    const BOOL bInheritCursor = (dwFlags & PSEUDOCONSOLE_INHERIT_CURSOR) == PSEUDOCONSOLE_INHERIT_CURSOR;
-    const BOOL bResizeQuirk = (dwFlags & PSEUDOCONSOLE_RESIZE_QUIRK) == PSEUDOCONSOLE_RESIZE_QUIRK;
-    swprintf_s(cmd,
-               MAX_PATH,
-               L"\"%s\" --headless %s%s--width %hd --height %hd --signal 0x%tx --server 0x%tx",
-               _ConsoleHostPath(),
-               bInheritCursor ? L"--inheritcursor " : L"",
-               bResizeQuirk ? L"--resizeQuirk " : L"",
-               size.X,
-               size.Y,
-               std::bit_cast<uintptr_t>(signalPipeConhostSide.get()),
-               std::bit_cast<uintptr_t>(serverHandle.get()));
+    wil::unique_process_heap_string cmd;
+    RETURN_IF_FAILED(wil::str_printf_nothrow(
+        cmd,
+        L"\"%s\" --headless %s%s--width %hd --height %hd --signal 0x%tx --server 0x%tx",
+        conhostPath,
+        bInheritCursor ? L"--inheritcursor " : L"",
+        textMeasurement,
+        size.X,
+        size.Y,
+        std::bit_cast<uintptr_t>(signalPipeConhostSide.get()),
+        std::bit_cast<uintptr_t>(serverHandle.get())));
 
     STARTUPINFOEXW siEx{ 0 };
     siEx.StartupInfo.cb = sizeof(STARTUPINFOEXW);
@@ -188,7 +213,8 @@ HRESULT _CreatePseudoConsole(const HANDLE hToken,
                                                          nullptr,
                                                          nullptr));
     wil::unique_process_information pi;
-    { // wow64 disabled filesystem redirection scope
+    {
+        // wow64 disabled filesystem redirection scope
 #if defined(BUILD_WOW6432)
         PVOID RedirectionFlag;
         RETURN_IF_NTSTATUS_FAILED(RtlWow64EnableFsRedirectionEx(
@@ -198,35 +224,20 @@ HRESULT _CreatePseudoConsole(const HANDLE hToken,
             RtlWow64EnableFsRedirectionEx(RedirectionFlag, &RedirectionFlag);
         });
 #endif
-        if (hToken == INVALID_HANDLE_VALUE || hToken == nullptr)
-        {
-            // Call create process
-            RETURN_IF_WIN32_BOOL_FALSE(CreateProcessW(_ConsoleHostPath(),
-                                                      cmd,
-                                                      nullptr,
-                                                      nullptr,
-                                                      TRUE,
-                                                      EXTENDED_STARTUPINFO_PRESENT,
-                                                      nullptr,
-                                                      nullptr,
-                                                      &siEx.StartupInfo,
-                                                      pi.addressof()));
-        }
-        else
-        {
-            // Call create process
-            RETURN_IF_WIN32_BOOL_FALSE(CreateProcessAsUserW(hToken,
-                                                            _ConsoleHostPath(),
-                                                            cmd,
-                                                            nullptr,
-                                                            nullptr,
-                                                            TRUE,
-                                                            EXTENDED_STARTUPINFO_PRESENT,
-                                                            nullptr,
-                                                            nullptr,
-                                                            &siEx.StartupInfo,
-                                                            pi.addressof()));
-        }
+
+        // Call create process
+        RETURN_IF_WIN32_BOOL_FALSE(CreateProcessAsUserW(
+            hToken,
+            conhostPath,
+            cmd.get(),
+            nullptr,
+            nullptr,
+            TRUE,
+            EXTENDED_STARTUPINFO_PRESENT,
+            nullptr,
+            nullptr,
+            &siEx.StartupInfo,
+            pi.addressof()));
     }
 
     pPty->hSignal = signalPipeOurSide.release();
@@ -348,38 +359,24 @@ HRESULT _ReparentPseudoConsole(_In_ const PseudoConsole* const pPty, _In_ const 
 //      HPCON via the API).
 // Arguments:
 // - pPty: A pointer to a PseudoConsole struct.
-// - wait: If true, waits for conhost/OpenConsole to exit first.
 // Return Value:
 // - <none>
-void _ClosePseudoConsoleMembers(_In_ PseudoConsole* pPty, _In_ DWORD dwMilliseconds)
+void _ClosePseudoConsoleMembers(_In_ PseudoConsole* pPty)
 {
     if (pPty != nullptr)
     {
-        // See MSFT:19918626
-        // First break the signal pipe - this will trigger conhost to tear itself down
         if (_HandleIsValid(pPty->hSignal))
         {
             CloseHandle(pPty->hSignal);
             pPty->hSignal = nullptr;
         }
-        // The reference handle ensures that conhost keeps running unless ClosePseudoConsole is called.
-        // We have to call it before calling WaitForSingleObject however in order to not deadlock,
-        // Due to conhost waiting for all clients to disconnect, while we wait for conhost to exit.
         if (_HandleIsValid(pPty->hPtyReference))
         {
             CloseHandle(pPty->hPtyReference);
             pPty->hPtyReference = nullptr;
         }
-        // Then, wait on the conhost process before killing it.
-        // We do this to make sure the conhost finishes flushing any output it
-        //      has yet to send before we hard kill it.
         if (_HandleIsValid(pPty->hConPtyProcess))
         {
-            if (dwMilliseconds)
-            {
-                WaitForSingleObject(pPty->hConPtyProcess, dwMilliseconds);
-            }
-
             CloseHandle(pPty->hConPtyProcess);
             pPty->hConPtyProcess = nullptr;
         }
@@ -395,11 +392,11 @@ void _ClosePseudoConsoleMembers(_In_ PseudoConsole* pPty, _In_ DWORD dwMilliseco
 // - wait: If true, waits for conhost/OpenConsole to exit first.
 // Return Value:
 // - <none>
-static void _ClosePseudoConsole(_In_ PseudoConsole* pPty, _In_ DWORD dwMilliseconds) noexcept
+static void _ClosePseudoConsole(_In_ PseudoConsole* pPty) noexcept
 {
     if (pPty != nullptr)
     {
-        _ClosePseudoConsoleMembers(pPty, dwMilliseconds);
+        _ClosePseudoConsoleMembers(pPty);
         HeapFree(GetProcessHeap(), 0, pPty);
     }
 }
@@ -460,7 +457,7 @@ extern "C" HRESULT WINAPI ConptyCreatePseudoConsoleAsUser(_In_ HANDLE hToken,
     auto pPty = (PseudoConsole*)HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(PseudoConsole));
     RETURN_IF_NULL_ALLOC(pPty);
     auto cleanupPty = wil::scope_exit([&]() noexcept {
-        _ClosePseudoConsole(pPty, 0);
+        _ClosePseudoConsole(pPty);
     });
 
     wil::unique_handle duplicatedInput;
@@ -557,19 +554,7 @@ extern "C" HRESULT WINAPI ConptyReleasePseudoConsole(_In_ HPCON hPC)
 // Waits for conhost/OpenConsole to exit first.
 extern "C" VOID WINAPI ConptyClosePseudoConsole(_In_ HPCON hPC)
 {
-    _ClosePseudoConsole((PseudoConsole*)hPC, INFINITE);
-}
-
-// Function Description:
-// Closes the conpty and all associated state.
-// Client applications attached to the conpty will also behave as though the
-//      console window they were running in was closed.
-// This can fail if the conhost hosting the pseudoconsole failed to be
-//      terminated, or if the pseudoconsole was already terminated.
-// Doesn't wait for conhost/OpenConsole to exit.
-extern "C" VOID WINAPI ConptyClosePseudoConsoleTimeout(_In_ HPCON hPC, _In_ DWORD dwMilliseconds)
-{
-    _ClosePseudoConsole((PseudoConsole*)hPC, dwMilliseconds);
+    _ClosePseudoConsole((PseudoConsole*)hPC);
 }
 
 // NOTE: This one is not defined in the Windows headers but is

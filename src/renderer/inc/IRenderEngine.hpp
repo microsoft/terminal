@@ -22,6 +22,7 @@ Author(s):
 #include "IRenderData.hpp"
 #include "RenderSettings.hpp"
 #include "../../buffer/out/LineRendition.hpp"
+#include "../../buffer/out/ImageSlice.hpp"
 
 #pragma warning(push)
 #pragma warning(disable : 4100) // '...': unreferenced formal parameter
@@ -29,7 +30,10 @@ namespace Microsoft::Console::Render
 {
     struct RenderFrameInfo
     {
-        std::optional<CursorOptions> cursorInfo;
+        std::span<const til::point_span> searchHighlights;
+        const til::point_span* searchHighlightFocused;
+        std::span<const til::point_span> selectionSpans;
+        til::color selectionBackground;
     };
 
     enum class GridLines
@@ -60,25 +64,24 @@ namespace Microsoft::Console::Render
         [[nodiscard]] virtual bool RequiresContinuousRedraw() noexcept = 0;
         virtual void WaitUntilCanRender() noexcept = 0;
         [[nodiscard]] virtual HRESULT Present() noexcept = 0;
-        [[nodiscard]] virtual HRESULT PrepareForTeardown(_Out_ bool* pForcePaint) noexcept = 0;
         [[nodiscard]] virtual HRESULT ScrollFrame() noexcept = 0;
         [[nodiscard]] virtual HRESULT Invalidate(const til::rect* psrRegion) noexcept = 0;
         [[nodiscard]] virtual HRESULT InvalidateCursor(const til::rect* psrRegion) noexcept = 0;
         [[nodiscard]] virtual HRESULT InvalidateSystem(const til::rect* prcDirtyClient) noexcept = 0;
-        [[nodiscard]] virtual HRESULT InvalidateSelection(const std::vector<til::rect>& rectangles) noexcept = 0;
+        [[nodiscard]] virtual HRESULT InvalidateSelection(std::span<const til::rect> selections) noexcept = 0;
+        [[nodiscard]] virtual HRESULT InvalidateHighlight(std::span<const til::point_span> highlights, const TextBuffer& buffer) noexcept = 0;
         [[nodiscard]] virtual HRESULT InvalidateScroll(const til::point* pcoordDelta) noexcept = 0;
         [[nodiscard]] virtual HRESULT InvalidateAll() noexcept = 0;
-        [[nodiscard]] virtual HRESULT InvalidateFlush(_In_ const bool circled, _Out_ bool* const pForcePaint) noexcept = 0;
         [[nodiscard]] virtual HRESULT InvalidateTitle(std::wstring_view proposedTitle) noexcept = 0;
         [[nodiscard]] virtual HRESULT NotifyNewText(const std::wstring_view newText) noexcept = 0;
-        [[nodiscard]] virtual HRESULT PrepareRenderInfo(const RenderFrameInfo& info) noexcept = 0;
+        [[nodiscard]] virtual HRESULT PrepareRenderInfo(RenderFrameInfo info) noexcept = 0;
         [[nodiscard]] virtual HRESULT ResetLineTransform() noexcept = 0;
         [[nodiscard]] virtual HRESULT PrepareLineTransform(LineRendition lineRendition, til::CoordType targetRow, til::CoordType viewportLeft) noexcept = 0;
         [[nodiscard]] virtual HRESULT PaintBackground() noexcept = 0;
         [[nodiscard]] virtual HRESULT PaintBufferLine(std::span<const Cluster> clusters, til::point coord, bool fTrimLeft, bool lineWrapped) noexcept = 0;
         [[nodiscard]] virtual HRESULT PaintBufferGridLines(GridLineSet lines, COLORREF gridlineColor, COLORREF underlineColor, size_t cchLine, til::point coordTarget) noexcept = 0;
+        [[nodiscard]] virtual HRESULT PaintImageSlice(const ImageSlice& imageSlice, til::CoordType targetRow, til::CoordType viewportLeft) noexcept = 0;
         [[nodiscard]] virtual HRESULT PaintSelection(const til::rect& rect) noexcept = 0;
-        [[nodiscard]] virtual HRESULT PaintSelections(const std::vector<til::rect>& rects) noexcept = 0;
         [[nodiscard]] virtual HRESULT PaintCursor(const CursorOptions& options) noexcept = 0;
         [[nodiscard]] virtual HRESULT UpdateDrawingBrushes(const TextAttribute& textAttributes, const RenderSettings& renderSettings, gsl::not_null<IRenderData*> pData, bool usingSoftFont, bool isSettingDefaultBrushes) noexcept = 0;
         [[nodiscard]] virtual HRESULT UpdateFont(const FontInfoDesired& FontInfoDesired, _Out_ FontInfo& FontInfo) noexcept = 0;

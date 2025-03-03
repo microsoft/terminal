@@ -8,6 +8,7 @@
 #include "HashUtils.h"
 
 #include <LibraryResources.h>
+#include <til/static_map.h>
 
 static constexpr std::string_view AdjustFontSizeKey{ "adjustFontSize" };
 static constexpr std::string_view CloseOtherPanesKey{ "closeOtherPanes" };
@@ -98,59 +99,60 @@ static constexpr std::string_view RestartConnectionKey{ "restartConnection" };
 static constexpr std::string_view ToggleBroadcastInputKey{ "toggleBroadcastInput" };
 static constexpr std::string_view OpenScratchpadKey{ "experimental.openScratchpad" };
 static constexpr std::string_view OpenAboutKey{ "openAbout" };
+static constexpr std::string_view QuickFixKey{ "quickFix" };
+static constexpr std::string_view OpenCWDKey{ "openCWD" };
 
 static constexpr std::string_view ActionKey{ "action" };
 
 // This key is reserved to remove a keybinding, instead of mapping it to an action.
 static constexpr std::string_view UnboundKey{ "unbound" };
 
-#define KEY_TO_ACTION_PAIR(action) { action##Key, ShortcutAction::action },
-#define ACTION_TO_KEY_PAIR(action) { ShortcutAction::action, action##Key },
-#define ACTION_TO_SERIALIZERS_PAIR(action) { ShortcutAction::action, { action##Args::FromJson, action##Args::ToJson } },
-
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
     using namespace ::Microsoft::Terminal::Settings::Model;
 
-    // Specifically use a map here over an unordered_map. We want to be able to
-    // iterate over these entries in-order when we're serializing the keybindings.
-    // HERE BE DRAGONS:
-    // These are string_views that are being used as keys. These string_views are
-    // just pointers to other strings. This could be dangerous, if the map outlived
-    // the actual strings being pointed to. However, since both these strings and
-    // the map are all const for the lifetime of the app, we have nothing to worry
-    // about here.
-    const std::map<std::string_view, ShortcutAction, std::less<>> ActionAndArgs::ActionKeyNamesMap{
+    using ParseActionFunction = FromJsonResult (*)(const Json::Value&);
+    using SerializeActionFunction = Json::Value (*)(const IActionArgs&);
+
+    using KeyToActionPair = std::pair<std::string_view, ShortcutAction>;
+    using ActionToKeyPair = std::pair<ShortcutAction, std::string_view>;
+    using SerializersPair = std::pair<ParseActionFunction, SerializeActionFunction>;
+    using ActionToSerializersPair = std::pair<ShortcutAction, SerializersPair>;
+
+#define KEY_TO_ACTION_PAIR(action) KeyToActionPair{ action##Key, ShortcutAction::action },
+#define ACTION_TO_KEY_PAIR(action) ActionToKeyPair{ ShortcutAction::action, action##Key },
+#define ACTION_TO_SERIALIZERS_PAIR(action) ActionToSerializersPair{ ShortcutAction::action, { action##Args::FromJson, action##Args::ToJson } },
+
+    static constexpr til::static_map ActionKeyNamesMap{
 #define ON_ALL_ACTIONS(action) KEY_TO_ACTION_PAIR(action)
         ALL_SHORTCUT_ACTIONS
+    // Don't include the INTERNAL_SHORTCUT_ACTIONS here
 #undef ON_ALL_ACTIONS
     };
 
-    static const std::map<ShortcutAction, std::string_view, std::less<>> ActionToStringMap{
+    static constexpr til::static_map ActionToStringMap{
 #define ON_ALL_ACTIONS(action) ACTION_TO_KEY_PAIR(action)
         ALL_SHORTCUT_ACTIONS
+    // Don't include the INTERNAL_SHORTCUT_ACTIONS here
 #undef ON_ALL_ACTIONS
     };
-
-    using ParseResult = std::tuple<IActionArgs, std::vector<SettingsLoadWarnings>>;
-    using ParseActionFunction = std::function<ParseResult(const Json::Value&)>;
-    using SerializeActionFunction = std::function<Json::Value(IActionArgs)>;
 
     // This is a map of ShortcutAction->{function<IActionArgs(Json::Value)>, function<Json::Value(IActionArgs)>. It holds
     // a set of (de)serializer functions that can be used to (de)serialize an IActionArgs
     // from json. Each type of IActionArgs that can accept arbitrary args should be
     // placed into this map, with the corresponding deserializer function as the
     // value.
-    static const std::unordered_map<ShortcutAction, std::pair<ParseActionFunction, SerializeActionFunction>> argSerializerMap{
+    static constexpr til::static_map argSerializerMap{
 
         // These are special cases.
         // - QuakeMode: deserializes into a GlobalSummon, so we don't need a serializer
         // - Invalid: has no args
-        { ShortcutAction::QuakeMode, { GlobalSummonArgs::QuakeModeFromJson, nullptr } },
-        { ShortcutAction::Invalid, { nullptr, nullptr } },
+        ActionToSerializersPair{ ShortcutAction::QuakeMode, { &GlobalSummonArgs::QuakeModeFromJson, nullptr } },
+        ActionToSerializersPair{ ShortcutAction::Invalid, { nullptr, nullptr } },
 
 #define ON_ALL_ACTIONS_WITH_ARGS(action) ACTION_TO_SERIALIZERS_PAIR(action)
         ALL_SHORTCUT_ACTIONS_WITH_ARGS
+    // Don't include the INTERNAL_SHORTCUT_ACTIONS here
 #undef ON_ALL_ACTIONS_WITH_ARGS
     };
 
@@ -194,8 +196,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         // Try matching the command to one we have. If we can't find the
         // action name in our list of names, let's just unbind that key.
-        const auto found = ActionAndArgs::ActionKeyNamesMap.find(actionString);
-        return found != ActionAndArgs::ActionKeyNamesMap.end() ? found->second : ShortcutAction::Invalid;
+        const auto found = ActionKeyNamesMap.find(actionString);
+        return found != ActionKeyNamesMap.end() ? found->second : ShortcutAction::Invalid;
     }
 
     // Method Description:
@@ -340,7 +342,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     winrt::hstring ActionAndArgs::GenerateName() const
     {
         // Sentinel used to indicate this command must ALWAYS be generated by GenerateName
-        static const winrt::hstring MustGenerate{ L"" };
+        static const winrt::hstring MustGenerate;
         // Use a magic static to initialize this map, because we won't be able
         // to load the resources at _init_, only at runtime.
         static const auto GeneratedActionNames = []() {
@@ -389,6 +391,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 { ShortcutAction::TabSearch, RS_(L"TabSearchCommandKey") },
                 { ShortcutAction::ToggleAlwaysOnTop, RS_(L"ToggleAlwaysOnTopCommandKey") },
                 { ShortcutAction::ToggleCommandPalette, MustGenerate },
+                { ShortcutAction::SaveSnippet, MustGenerate },
                 { ShortcutAction::Suggestions, MustGenerate },
                 { ShortcutAction::ToggleFocusMode, RS_(L"ToggleFocusModeCommandKey") },
                 { ShortcutAction::SetFocusMode, MustGenerate },
@@ -434,6 +437,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 { ShortcutAction::ToggleBroadcastInput, RS_(L"ToggleBroadcastInputCommandKey") },
                 { ShortcutAction::OpenScratchpad, RS_(L"OpenScratchpadKey") },
                 { ShortcutAction::OpenAbout, RS_(L"OpenAboutCommandKey") },
+                { ShortcutAction::QuickFix, RS_(L"QuickFixCommandKey") },
+                { ShortcutAction::OpenCWD, RS_(L"OpenCWDCommandKey") },
             };
         }();
 
@@ -447,7 +452,37 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
 
         const auto found = GeneratedActionNames.find(_Action);
-        return found != GeneratedActionNames.end() ? found->second : L"";
+        return found != GeneratedActionNames.end() ? found->second : winrt::hstring{};
+    }
+
+    // Function Description:
+    // - This will generate an ID for this ActionAndArgs, based on the ShortcutAction and the Args
+    // - It will always create the same ID if the ShortcutAction and the Args are the same
+    // - Note: this should only be called for User-created actions
+    // - Example: The "SendInput 'abc'" action will have the generated ID "User.sendInput.<hash of 'abc'>"
+    // Return Value:
+    // - The ID, based on the ShortcutAction and the Args
+    winrt::hstring ActionAndArgs::GenerateID() const
+    {
+        if (_Action != ShortcutAction::Invalid)
+        {
+            auto actionKeyString = ActionToStringMap.find(_Action)->second;
+            auto result = fmt::format(FMT_COMPILE(L"User.{}"), winrt::to_hstring(actionKeyString));
+            if (_Args)
+            {
+                // If there are args, we need to append the hash of the args
+                // However, to make it a little more presentable we
+                // 1. truncate the hash to 32 bits
+                // 2. convert it to a hex string
+                // there is a _tiny_ chance of collision because of the truncate but unlikely for
+                // the number of commands a user is expected to have
+                const auto argsHash32 = static_cast<uint32_t>(_Args.Hash() & 0xFFFFFFFF);
+                // {0:X} formats the truncated hash to an uppercase hex string
+                fmt::format_to(std::back_inserter(result), FMT_COMPILE(L".{:X}"), argsHash32);
+            }
+            return winrt::hstring{ result };
+        }
+        return {};
     }
 
     winrt::hstring ActionAndArgs::Serialize(const winrt::Windows::Foundation::Collections::IVector<Model::ActionAndArgs>& args)

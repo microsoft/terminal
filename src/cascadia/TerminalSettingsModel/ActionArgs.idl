@@ -63,7 +63,8 @@ namespace Microsoft.Terminal.Settings.Model
         SettingsFile = 0,
         DefaultsFile,
         AllFiles,
-        SettingsUI
+        SettingsUI,
+        Directory
     };
 
     enum MoveTabDirection
@@ -119,13 +120,26 @@ namespace Microsoft.Terminal.Settings.Model
         Tasks = 0x1,
         CommandHistory = 0x2,
         DirectoryHistory = 0x4,
+        QuickFixes = 0x8,
         All = 0xffffffff,
     };
 
-    [default_interface] runtimeclass NewTerminalArgs {
+    interface INewContentArgs {
+        String Type { get; };
+        Boolean Equals(INewContentArgs other);
+        UInt64 Hash();
+        INewContentArgs Copy();
+        String GenerateName();
+    };
+
+    runtimeclass BaseContentArgs : [default] INewContentArgs {
+        BaseContentArgs();
+        BaseContentArgs(String type);
+    };
+
+    runtimeclass NewTerminalArgs : INewContentArgs {
         NewTerminalArgs();
         NewTerminalArgs(Int32 profileIndex);
-        NewTerminalArgs Copy();
 
         String Commandline;
         String StartingDirectory;
@@ -153,10 +167,7 @@ namespace Microsoft.Terminal.Settings.Model
 
         UInt64 ContentId{ get; set; };
 
-        Boolean Equals(NewTerminalArgs other);
-        String GenerateName();
         String ToCommandline();
-        UInt64 Hash();
     };
 
     [default_interface] runtimeclass ActionEventArgs : IActionEventArgs
@@ -170,13 +181,14 @@ namespace Microsoft.Terminal.Settings.Model
         CopyTextArgs();
         Boolean DismissSelection { get; };
         Boolean SingleLine { get; };
+        Boolean WithControlSequences { get; };
         Windows.Foundation.IReference<Microsoft.Terminal.Control.CopyFormat> CopyFormatting { get; };
     };
 
     [default_interface] runtimeclass NewTabArgs : IActionArgs
     {
-        NewTabArgs(NewTerminalArgs terminalArgs);
-        NewTerminalArgs TerminalArgs { get; };
+        NewTabArgs(INewContentArgs contentArgs);
+        INewContentArgs ContentArgs { get; };
     };
 
     [default_interface] runtimeclass MovePaneArgs : IActionArgs
@@ -216,20 +228,22 @@ namespace Microsoft.Terminal.Settings.Model
 
     [default_interface] runtimeclass SendInputArgs : IActionArgs
     {
+        SendInputArgs(String input);
+
         String Input { get; };
     };
 
     [default_interface] runtimeclass SplitPaneArgs : IActionArgs
     {
-        SplitPaneArgs(SplitType splitMode, SplitDirection split, Double size, NewTerminalArgs terminalArgs);
-        SplitPaneArgs(SplitDirection split, Double size, NewTerminalArgs terminalArgs);
-        SplitPaneArgs(SplitDirection split, NewTerminalArgs terminalArgs);
+        SplitPaneArgs(SplitType splitMode, SplitDirection split, Single size, INewContentArgs contentArgs);
+        SplitPaneArgs(SplitDirection split, Single size, INewContentArgs contentArgs);
+        SplitPaneArgs(SplitDirection split, INewContentArgs contentArgs);
         SplitPaneArgs(SplitType splitMode);
 
         SplitDirection SplitDirection { get; };
-        NewTerminalArgs TerminalArgs { get; };
+        INewContentArgs ContentArgs { get; };
         SplitType SplitMode { get; };
-        Double SplitSize { get; };
+        Single SplitSize { get; };
     };
 
     [default_interface] runtimeclass OpenSettingsArgs : IActionArgs
@@ -345,10 +359,19 @@ namespace Microsoft.Terminal.Settings.Model
         FindMatchDirection Direction { get; };
     };
 
+    [default_interface] runtimeclass SaveSnippetArgs : IActionArgs
+    {
+        SaveSnippetArgs();
+        SaveSnippetArgs(String Name, String Commandline, String KeyChord);
+        String Name;
+        String Commandline;
+        String KeyChord;
+    };
+
     [default_interface] runtimeclass NewWindowArgs : IActionArgs
     {
-        NewWindowArgs(NewTerminalArgs terminalArgs);
-        NewTerminalArgs TerminalArgs { get; };
+        NewWindowArgs(INewContentArgs contentArgs);
+        INewContentArgs ContentArgs { get; };
     };
 
     [default_interface] runtimeclass PrevTabArgs : IActionArgs

@@ -152,7 +152,8 @@ void TerminalApiTest::CursorVisibility()
     VERIFY_IS_TRUE(term._mainBuffer->GetCursor().IsOn());
     VERIFY_IS_TRUE(term._mainBuffer->GetCursor().IsBlinkingAllowed());
 
-    term.GetTextBuffer().GetCursor().SetIsVisible(false);
+    auto& textBuffer = term.GetBufferAndViewport().buffer;
+    textBuffer.GetCursor().SetIsVisible(false);
     VERIFY_IS_FALSE(term._mainBuffer->GetCursor().IsVisible());
     VERIFY_IS_TRUE(term._mainBuffer->GetCursor().IsOn());
     VERIFY_IS_TRUE(term._mainBuffer->GetCursor().IsBlinkingAllowed());

@@ -24,6 +24,13 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         static_assert(std::is_unsigned_v<UnderlyingType>);
 
     public:
+        static constexpr enumset from_bits(UnderlyingType data) noexcept
+        {
+            enumset result;
+            result._data = data;
+            return result;
+        }
+
         // Method Description:
         // - Constructs a new bitset with the given list of positions set to true.
         TIL_ENUMSET_VARARG

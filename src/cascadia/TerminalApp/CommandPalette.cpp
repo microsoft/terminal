@@ -359,7 +359,7 @@ namespace winrt::TerminalApp::implementation
             _switchToMode(CommandPaletteMode::CommandlineMode);
             e.Handled(true);
         }
-        else if (key == VirtualKey::C && ctrlDown)
+        else if ((key == VirtualKey::C || key == VirtualKey::Insert) && ctrlDown)
         {
             _searchBox().CopySelectionToClipboard();
             e.Handled(true);
@@ -626,7 +626,7 @@ namespace winrt::TerminalApp::implementation
             automationPeer.RaiseNotificationEvent(
                 Automation::Peers::AutomationNotificationKind::ActionCompleted,
                 Automation::Peers::AutomationNotificationProcessing::CurrentThenMostRecent,
-                fmt::format(std::wstring_view{ RS_(L"CommandPalette_NestedCommandAnnouncement") }, ParentCommandName()),
+                RS_fmt(L"CommandPalette_NestedCommandAnnouncement", ParentCommandName()),
                 L"CommandPaletteNestingLevelChanged" /* unique name for this notification category */);
         }
     }
@@ -879,7 +879,7 @@ namespace winrt::TerminalApp::implementation
                     Automation::Peers::AutomationNotificationKind::ActionCompleted,
                     Automation::Peers::AutomationNotificationProcessing::ImportantMostRecent,
                     currentNeedleHasResults ?
-                        winrt::hstring{ fmt::format(std::wstring_view{ RS_(L"CommandPalette_MatchesAvailable") }, _filteredActions.Size()) } :
+                        winrt::hstring{ RS_fmt(L"CommandPalette_MatchesAvailable", _filteredActions.Size()) } :
                         NoMatchesText(), // what to announce if results were found
                     L"CommandPaletteResultAnnouncement" /* unique name for this group of notifications */);
             }
@@ -950,21 +950,27 @@ namespace winrt::TerminalApp::implementation
     void CommandPalette::SetActionMap(const Microsoft::Terminal::Settings::Model::IActionMapView& actionMap)
     {
         _actionMap = actionMap;
+        _populateCommands();
     }
 
-    void CommandPalette::SetCommands(const Collections::IVector<Command>& actions)
+    void CommandPalette::_populateCommands()
     {
         _allCommands.Clear();
-        for (const auto& action : actions)
+        if (_actionMap)
         {
-            auto actionPaletteItem{ winrt::make<winrt::TerminalApp::implementation::ActionPaletteItem>(action) };
-            auto filteredCommand{ winrt::make<FilteredCommand>(actionPaletteItem) };
-            _allCommands.Append(filteredCommand);
-        }
+            const auto expandedCommands{ _actionMap.ExpandedCommands() };
+            for (const auto& action : expandedCommands)
+            {
+                const auto keyChordText{ KeyChordSerialization::ToString(_actionMap.GetKeyBindingForAction(action.ID())) };
+                auto actionPaletteItem{ winrt::make<winrt::TerminalApp::implementation::ActionPaletteItem>(action, keyChordText) };
+                auto filteredCommand{ winrt::make<FilteredCommand>(actionPaletteItem) };
+                _allCommands.Append(filteredCommand);
+            }
 
-        if (Visibility() == Visibility::Visible && _currentMode == CommandPaletteMode::ActionMode)
-        {
-            _updateFilteredActions();
+            if (Visibility() == Visibility::Visible && _currentMode == CommandPaletteMode::ActionMode)
+            {
+                _updateFilteredActions();
+            }
         }
     }
 
@@ -1178,7 +1184,8 @@ namespace winrt::TerminalApp::implementation
         for (const auto& nameAndCommand : parentCommand.NestedCommands())
         {
             const auto action = nameAndCommand.Value();
-            auto nestedActionPaletteItem{ winrt::make<winrt::TerminalApp::implementation::ActionPaletteItem>(action) };
+            // nested commands cannot have keys bound to them, so just pass in the command and no keys
+            auto nestedActionPaletteItem{ winrt::make<winrt::TerminalApp::implementation::ActionPaletteItem>(action, winrt::hstring{}) };
             auto nestedFilteredCommand{ winrt::make<FilteredCommand>(nestedActionPaletteItem) };
             _currentNestedCommands.Append(nestedFilteredCommand);
         }
@@ -1197,8 +1204,6 @@ namespace winrt::TerminalApp::implementation
     {
         Visibility(Visibility::Collapsed);
 
-        PreviewAction.raise(*this, nullptr);
-
         // Reset visibility in case anchor mode tab switcher just finished.
         _searchBox().Visibility(Visibility::Visible);
 
@@ -1209,6 +1214,7 @@ namespace winrt::TerminalApp::implementation
 
         ParentCommandName(L"");
         _currentNestedCommands.Clear();
+        PreviewAction.raise(*this, nullptr);
     }
 
     void CommandPalette::EnableTabSwitcherMode(const uint32_t startIdx, TabSwitcherMode tabSwitcherMode)

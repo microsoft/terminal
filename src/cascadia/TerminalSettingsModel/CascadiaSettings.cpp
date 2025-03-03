@@ -103,7 +103,7 @@ Model::CascadiaSettings CascadiaSettings::Copy() const
             for (const auto& profile : targetProfiles)
             {
                 allProfiles.emplace_back(*profile);
-                if (!profile->Hidden())
+                if (!profile->Hidden() && !profile->Orphaned())
                 {
                     activeProfiles.emplace_back(*profile);
                 }
@@ -224,7 +224,7 @@ Model::Profile CascadiaSettings::CreateNewProfile()
     for (uint32_t candidateIndex = 0, count = _allProfiles.Size() + 1; candidateIndex < count; candidateIndex++)
     {
         // There is a theoretical unsigned integer wraparound, which is OK
-        newName = fmt::format(L"Profile {}", count + candidateIndex);
+        newName = fmt::format(FMT_COMPILE(L"Profile {}"), count + candidateIndex);
         if (std::none_of(begin(_allProfiles), end(_allProfiles), [&](auto&& profile) { return profile.Name() == newName; }))
         {
             break;
@@ -265,7 +265,7 @@ Model::Profile CascadiaSettings::DuplicateProfile(const Model::Profile& source)
 {
     THROW_HR_IF_NULL(E_INVALIDARG, source);
 
-    auto newName = fmt::format(L"{} ({})", source.Name(), RS_(L"CopySuffix"));
+    auto newName = fmt::format(FMT_COMPILE(L"{} ({})"), source.Name(), RS_(L"CopySuffix"));
 
     // Check if this name already exists and if so, append a number
     for (uint32_t candidateIndex = 0, count = _allProfiles.Size() + 1; candidateIndex < count; ++candidateIndex)
@@ -275,7 +275,7 @@ Model::Profile CascadiaSettings::DuplicateProfile(const Model::Profile& source)
             break;
         }
         // There is a theoretical unsigned integer wraparound, which is OK
-        newName = fmt::format(L"{} ({} {})", source.Name(), RS_(L"CopySuffix"), candidateIndex + 2);
+        newName = fmt::format(FMT_COMPILE(L"{} ({} {})"), source.Name(), RS_(L"CopySuffix"), candidateIndex + 2);
     }
 
     const auto duplicated = _createNewProfile(newName);
@@ -531,7 +531,9 @@ void CascadiaSettings::_validateMediaResources()
         // Explicitly just use the Icon here, not the EvaluatedIcon. We don't
         // want to blow up if we fell back to the commandline and the
         // commandline _isn't an icon_.
-        if (const auto icon = profile.Icon(); icon.size() > 2)
+        // GH #17943: "none" is a special value interpreted as "remove the icon"
+        static constexpr std::wstring_view HideIconValue{ L"none" };
+        if (const auto icon = profile.Icon(); icon.size() > 2 && icon != HideIconValue)
         {
             const auto iconPath{ wil::ExpandEnvironmentStringsW<std::wstring>(icon.c_str()) };
             try
@@ -1074,7 +1076,7 @@ void CascadiaSettings::_refreshDefaultTerminals()
     std::pair<std::vector<Model::DefaultTerminal>, Model::DefaultTerminal> result{ {}, nullptr };
     til::latch latch{ 1 };
 
-    std::ignore = [&]() -> winrt::fire_and_forget {
+    std::ignore = [&]() -> safe_void_coroutine {
         const auto cleanup = wil::scope_exit([&]() {
             latch.count_down();
         });
@@ -1085,15 +1087,6 @@ void CascadiaSettings::_refreshDefaultTerminals()
     latch.wait();
     _defaultTerminals = winrt::single_threaded_observable_vector(std::move(result.first));
     _currentDefaultTerminal = std::move(result.second);
-}
-
-void CascadiaSettings::ExportFile(winrt::hstring path, winrt::hstring content)
-{
-    try
-    {
-        WriteUTF8FileAtomic({ path.c_str() }, til::u16u8(content));
-    }
-    CATCH_LOG();
 }
 
 void CascadiaSettings::_validateThemeExists()

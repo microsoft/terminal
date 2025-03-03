@@ -1,0 +1,50 @@
+<!--
+    Copyright (c) Microsoft Corporation. All rights reserved. Licensed under
+    the MIT License. See LICENSE in the project root for license information.
+-->
+<Page x:Class="Microsoft.Terminal.Settings.Editor.Compatibility"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+      xmlns:local="using:Microsoft.Terminal.Settings.Editor"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+      xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
+      mc:Ignorable="d">
+
+    <Page.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="CommonResources.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+
+            <DataTemplate x:Key="EnumComboBoxTemplate"
+                          x:DataType="local:EnumEntry">
+                <TextBlock Text="{x:Bind EnumName}" />
+            </DataTemplate>
+        </ResourceDictionary>
+    </Page.Resources>
+
+    <StackPanel Style="{StaticResource SettingsStackStyle}">
+        <!--  Allow Headless  -->
+        <local:SettingContainer x:Uid="Globals_AllowHeadless">
+            <ToggleSwitch IsOn="{x:Bind ViewModel.AllowHeadless, Mode=TwoWay}"
+                          Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+        </local:SettingContainer>
+
+        <!--  Text Measurement  -->
+        <local:SettingContainer x:Uid="Globals_TextMeasurement">
+            <ComboBox AutomationProperties.AccessibilityView="Content"
+                      ItemTemplate="{StaticResource EnumComboBoxTemplate}"
+                      ItemsSource="{x:Bind ViewModel.TextMeasurementList}"
+                      SelectedItem="{x:Bind ViewModel.CurrentTextMeasurement, Mode=TwoWay}"
+                      Style="{StaticResource ComboBoxSettingStyle}" />
+        </local:SettingContainer>
+
+        <!--  Debug Features  -->
+        <local:SettingContainer x:Uid="Globals_DebugFeaturesEnabled"
+                                Visibility="{x:Bind ViewModel.DebugFeaturesAvailable}">
+            <ToggleSwitch IsOn="{x:Bind ViewModel.DebugFeaturesEnabled, Mode=TwoWay}"
+                          Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+        </local:SettingContainer>
+    </StackPanel>
+</Page>

@@ -20,8 +20,6 @@ SOURCES = \
     HistoryTests.cpp \
     UtilsTests.cpp \
     ConsoleArgumentsTests.cpp \
-    CodepointWidthDetectorTests.cpp \
-    DbcsTests.cpp \
     ScreenBufferTests.cpp \
     TextBufferIteratorTests.cpp \
     TextBufferTests.cpp \
@@ -32,8 +30,6 @@ SOURCES = \
     TitleTests.cpp \
     InputBufferTests.cpp \
     VtIoTests.cpp \
-    VtRendererTests.cpp \
-    ConptyOutputTests.cpp \
     ViewportTests.cpp \
     ConsoleArgumentsTests.cpp \
     ObjectTests.cpp \

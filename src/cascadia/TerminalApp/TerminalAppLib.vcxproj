@@ -25,6 +25,7 @@
   <PropertyGroup Label="NuGet Dependencies">
     <TerminalCppWinrt>true</TerminalCppWinrt>
     <TerminalMUX>true</TerminalMUX>
+    <TerminalWinGetInterop>true</TerminalWinGetInterop>
   </PropertyGroup>
   <Import Project="..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
   <Import Project="$(OpenConsoleDir)src\common.nugetversions.props" />
@@ -71,6 +72,12 @@
     <Page Include="SuggestionsControl.xaml">
       <SubType>Designer</SubType>
     </Page>
+    <Page Include="SnippetsPaneContent.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="MarkdownPaneContent.xaml">
+      <SubType>Designer</SubType>
+    </Page>
   </ItemGroup>
   <!-- ========================= Headers ======================== -->
   <ItemGroup>
@@ -84,12 +91,12 @@
     <ClInclude Include="MinMaxCloseControl.h">
       <DependentUpon>MinMaxCloseControl.xaml</DependentUpon>
     </ClInclude>
+    <ClInclude Include="Remoting.h">
+      <DependentUpon>Remoting.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="PaletteItemTemplateSelector.h">
       <DependentUpon>PaletteItemTemplateSelector.idl</DependentUpon>
       <SubType>Code</SubType>
-    </ClInclude>
-    <ClInclude Include="SettingsTab.h">
-      <DependentUpon>SettingsTab.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="PaletteItem.h" />
     <ClInclude Include="TabBase.h">
@@ -164,10 +171,23 @@
     <ClInclude Include="ScratchpadContent.h">
       <DependentUpon>TerminalPaneContent.idl</DependentUpon>
     </ClInclude>
+    <ClInclude Include="SnippetsPaneContent.h">
+      <DependentUpon>SnippetsPaneContent.xaml</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="SettingsPaneContent.h">
+      <DependentUpon>TerminalPaneContent.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="Toast.h" />
+    <ClInclude Include="TerminalSettingsCache.h">
+      <DependentUpon>TerminalSettingsCache.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="SuggestionsControl.h">
       <DependentUpon>SuggestionsControl.xaml</DependentUpon>
     </ClInclude>
+    <ClInclude Include="MarkdownPaneContent.h">
+      <DependentUpon>MarkdownPaneContent.xaml</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="WindowsPackageManagerFactory.h" />
   </ItemGroup>
   <!-- ========================= Cpp Files ======================== -->
   <ItemGroup>
@@ -181,12 +201,12 @@
     <ClCompile Include="MinMaxCloseControl.cpp">
       <DependentUpon>MinMaxCloseControl.xaml</DependentUpon>
     </ClCompile>
+    <ClCompile Include="Remoting.cpp">
+      <DependentUpon>Remoting.idl</DependentUpon>
+    </ClCompile>
     <ClCompile Include="PaletteItemTemplateSelector.cpp">
       <DependentUpon>PaletteItemTemplateSelector.idl</DependentUpon>
       <SubType>Code</SubType>
-    </ClCompile>
-    <ClCompile Include="SettingsTab.cpp">
-      <DependentUpon>SettingsTab.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="PaletteItem.cpp" />
     <ClCompile Include="TabBase.cpp">
@@ -272,13 +292,27 @@
       <DependentUpon>TerminalPaneContent.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="ScratchpadContent.cpp">
-      <DependentUpon>ScratchpadContent.idl</DependentUpon>
+      <DependentUpon>TerminalPaneContent.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="SnippetsPaneContent.cpp">
+      <DependentUpon>SnippetsPaneContent.xaml</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="SettingsPaneContent.cpp">
+      <DependentUpon>TerminalPaneContent.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
     <ClCompile Include="Toast.cpp" />
+    <ClCompile Include="TerminalSettingsCache.cpp">
+      <DependentUpon>TerminalSettingsCache.idl</DependentUpon>
+    </ClCompile>
     <ClCompile Include="SuggestionsControl.cpp">
       <DependentUpon>SuggestionsControl.xaml</DependentUpon>
     </ClCompile>
+    <ClCompile Include="MarkdownPaneContent.cpp">
+      <DependentUpon>MarkdownPaneContent.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </ClCompile>
+
   </ItemGroup>
   <!-- ========================= idl Files ======================== -->
   <ItemGroup>
@@ -292,10 +326,10 @@
     <Midl Include="App.idl">
       <DependentUpon>App.xaml</DependentUpon>
     </Midl>
+    <Midl Include="Remoting.idl" />
     <Midl Include="PaletteItemTemplateSelector.idl">
       <SubType>Designer</SubType>
     </Midl>
-    <Midl Include="SettingsTab.idl" />
     <Midl Include="PaletteItem.idl" />
     <Midl Include="ShortcutActionDispatch.idl" />
     <Midl Include="AppKeyBindings.idl" />
@@ -347,11 +381,21 @@
     </Midl>
     <Midl Include="FilteredCommand.idl" />
     <Midl Include="IPaneContent.idl" />
-    <Midl Include="TerminalPaneContent.idl" />
+    <Midl Include="TerminalPaneContent.idl">
+      <DependentUpon>TaskPaneContent.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Midl>
+    <Midl Include="TerminalSettingsCache.idl" />
+    <Midl Include="MarkdownPaneContent.idl">
+      <DependentUpon>MarkdownPaneContent.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Midl>
   </ItemGroup>
   <!-- ========================= Misc Files ======================== -->
   <ItemGroup>
-    <PRIResource Include="Resources\en-US\Resources.resw" />
+    <PRIResource Include="Resources\en-US\Resources.resw">
+      <SubType>Designer</SubType>
+    </PRIResource>
     <PRIResource Include="Resources\en-US\ContextMenu.resw" />
     <OCResourceDirectory Include="Resources" />
   </ItemGroup>
@@ -393,6 +437,11 @@
     </ProjectReference>
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\UIHelpers\UIHelpers.vcxproj">
       <Project>{6515F03F-E56D-4DB4-B23D-AC4FB80DB36F}</Project>
+    </ProjectReference>
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\UIMarkdown\UIMarkdown.vcxproj">
+      <Project>{7615F03F-E56D-4DB4-B23D-BD4FB80DB36F}</Project>
+      <Private>true</Private>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
 
   </ItemGroup>
@@ -437,6 +486,12 @@
       <Private>false</Private>
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
     </Reference>
+    <Reference Include="Microsoft.Terminal.UI.Markdown">
+      <HintPath>$(OpenConsoleCommonOutDir)Microsoft.Terminal.UI.Markdown\Microsoft.Terminal.UI.Markdown.winmd</HintPath>
+      <IsWinMDFile>true</IsWinMDFile>
+      <Private>false</Private>
+      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
+    </Reference>
     <Reference Include="$(WindowsSDK_MetadataPathVersioned)\Windows.UI.Xaml.Hosting.HostingContract\*\*.winmd">
       <WinMDFile>true</WinMDFile>
       <CopyLocal>false</CopyLocal>
@@ -460,10 +515,8 @@
   </ItemDefinitionGroup>
   <!-- ========================= Globals ======================== -->
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" />
-
   <!-- This -must- go after cppwinrt.build.post.props because that includes many VS-provided props including appcontainer.common.props, which stomps on what cppwinrt.targets did. -->
   <Import Project="$(OpenConsoleDir)src\common.nugetversions.targets" />
-
   <!--
     By default, the PRI file will contain resource paths beginning with the
     project name. Since we enabled XBF embedding, this *also* includes App.xbf.

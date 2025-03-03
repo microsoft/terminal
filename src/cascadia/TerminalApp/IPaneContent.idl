@@ -19,6 +19,7 @@ namespace TerminalApp
     interface IPaneContent
     {
         Windows.UI.Xaml.FrameworkElement GetRoot();
+        void UpdateSettings(Microsoft.Terminal.Settings.Model.CascadiaSettings settings);
 
         Windows.Foundation.Size MinimumSize { get; };
 
@@ -26,8 +27,11 @@ namespace TerminalApp
         UInt64 TaskbarState { get; };
         UInt64 TaskbarProgress { get; };
         Boolean ReadOnly { get; };
+        String Icon { get; };
+        Windows.Foundation.IReference<Windows.UI.Color> TabColor { get; };
+        Windows.UI.Xaml.Media.Brush BackgroundBrush { get; };
 
-        Microsoft.Terminal.Settings.Model.NewTerminalArgs GetNewTerminalArgs(BuildStartupKind kind);
+        Microsoft.Terminal.Settings.Model.INewContentArgs GetNewTerminalArgs(BuildStartupKind kind);
 
         void Focus(Windows.UI.Xaml.FocusState reason);
 

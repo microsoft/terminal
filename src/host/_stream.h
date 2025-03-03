@@ -20,11 +20,12 @@ Revision History:
 #include "writeData.hpp"
 
 void WriteCharsLegacy(SCREEN_INFORMATION& screenInfo, const std::wstring_view& str, til::CoordType* psScrollY);
+void WriteCharsVT(SCREEN_INFORMATION& screenInfo, const std::wstring_view& str);
+void WriteClearScreen(SCREEN_INFORMATION& screenInfo);
 
 // NOTE: console lock must be held when calling this routine
 // String has been translated to unicode at this point.
 [[nodiscard]] NTSTATUS DoWriteConsole(_In_reads_bytes_(pcbBuffer) const wchar_t* pwchBuffer,
                                       _Inout_ size_t* const pcbBuffer,
                                       SCREEN_INFORMATION& screenInfo,
-                                      bool requiresVtQuirk,
                                       std::unique_ptr<WriteData>& waiter);

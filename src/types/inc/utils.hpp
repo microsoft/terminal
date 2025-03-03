@@ -15,6 +15,12 @@ Author(s):
 
 namespace Microsoft::Console::Utils
 {
+    struct Pipe
+    {
+        wil::unique_hfile server;
+        wil::unique_hfile client;
+    };
+
     // Function Description:
     // - Returns -1, 0 or +1 to indicate the sign of the passed-in value.
     template<typename T>
@@ -24,6 +30,10 @@ namespace Microsoft::Console::Utils
     }
 
     bool IsValidHandle(const HANDLE handle) noexcept;
+    bool HandleWantsOverlappedIo(HANDLE handle) noexcept;
+    Pipe CreatePipe(DWORD bufferSize);
+    Pipe CreateOverlappedPipe(DWORD openMode, DWORD bufferSize);
+    HRESULT GetOverlappedResultSameThread(const OVERLAPPED* overlapped, DWORD* bytesTransferred) noexcept;
 
     // Function Description:
     // - Clamps a long in between `min` and `SHRT_MAX`
@@ -50,7 +60,9 @@ namespace Microsoft::Console::Utils
     std::optional<til::color> ColorFromXTermColor(const std::wstring_view wstr) noexcept;
     std::optional<til::color> ColorFromXParseColorSpec(const std::wstring_view wstr) noexcept;
     til::color ColorFromHLS(const int h, const int l, const int s) noexcept;
+    std::tuple<int, int, int> ColorToHLS(const til::color color) noexcept;
     til::color ColorFromRGB100(const int r, const int g, const int b) noexcept;
+    std::tuple<int, int, int> ColorToRGB100(const til::color color) noexcept;
 
     bool HexToUint(const wchar_t wch, unsigned int& value) noexcept;
     bool StringToUint(const std::wstring_view wstr, unsigned int& value);
@@ -113,6 +125,8 @@ namespace Microsoft::Console::Utils
     // in TerminalPage::_PasteFromClipboardHandler, but putting it here makes
     // testing easier.
     std::wstring_view TrimPaste(std::wstring_view textView) noexcept;
+
+    const wchar_t* FindActionableControlCharacter(const wchar_t* beg, const size_t len) noexcept;
 
     // Same deal, but in TerminalPage::_evaluatePathForCwd
     std::wstring EvaluateStartingDirectory(std::wstring_view cwd, std::wstring_view startingDirectory);

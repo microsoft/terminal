@@ -27,7 +27,7 @@ parameters:
   - name: pgoBuildMode
     displayName: "PGO Build Mode"
     type: string
-    default: Optimize
+    default: None # BODGY - OneBranch is on VS 17.10, which is known to be the worst
     values:
       - Optimize
       - Instrument
@@ -78,6 +78,17 @@ extends:
     buildConfigurations: ${{ parameters.buildConfigurations }}
     buildPlatforms: ${{ parameters.buildPlatforms }}
     codeSign: true
+    signingIdentity:
+      serviceName: $(SigningServiceName)
+      appId: $(SigningAppId)
+      tenantId: $(SigningTenantId)
+      akvName: $(SigningAKVName)
+      authCertName: $(SigningAuthCertName)
+      signCertName: $(SigningSignCertName)
+      useManagedIdentity: $(SigningUseManagedIdentity)
+      clientId: $(SigningOriginalClientId)
     terminalInternalPackageVersion: ${{ parameters.terminalInternalPackageVersion }}
     publishSymbolsToPublic: ${{ parameters.publishSymbolsToPublic }}
     publishVpackToWindows: ${{ parameters.publishVpackToWindows }}
+    symbolPublishingSubscription: $(SymbolPublishingServiceConnection)
+    symbolPublishingProject: $(SymbolPublishingProject)

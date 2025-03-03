@@ -1,0 +1,176 @@
+<!--
+    Copyright (c) Microsoft Corporation. All rights reserved. Licensed under
+    the MIT License. See LICENSE in the project root for license information.
+-->
+<UserControl x:Class="Microsoft.Terminal.Settings.Editor.NullableColorPicker"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:local="using:Microsoft.Terminal.Settings.Editor"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:model="using:Microsoft.Terminal.Settings.Model"
+             xmlns:mtu="using:Microsoft.Terminal.UI"
+             xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
+             mc:Ignorable="d">
+
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="CommonResources.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+
+            <DataTemplate x:Key="ColorPreviewChipTemplate"
+                          x:DataType="local:ColorTableEntry">
+                <ToggleButton Margin="0,0,4,4"
+                              AutomationProperties.Name="{x:Bind NameWithHexCode}"
+                              Background="{x:Bind mtu:Converters.ColorToBrush(Color)}"
+                              BorderBrush="{x:Bind local:NullableColorPicker.CalculateBorderBrush(Color), Mode=OneWay}"
+                              BorderThickness="2"
+                              Click="ColorChip_Clicked"
+                              DataContextChanged="ColorChip_DataContextChanged"
+                              Loaded="ColorChip_Loaded"
+                              Style="{StaticResource ColorToggleButtonStyle}"
+                              ToolTipService.ToolTip="{x:Bind NameWithHexCode}"
+                              Unloaded="ColorChip_Unloaded" />
+            </DataTemplate>
+
+            <DataTemplate x:Key="ColorSchemeTemplate"
+                          x:DataType="local:ColorSchemeViewModel">
+                <VariableSizedWrapGrid Name="ColorSchemeGrid"
+                                       HorizontalAlignment="Left"
+                                       MaximumRowsOrColumns="4"
+                                       Orientation="Horizontal"
+                                       XYFocusKeyboardNavigation="Enabled">
+                    <ContentControl Content="{x:Bind ColorEntryAt(0), Mode=OneWay}"
+                                    ContentTemplate="{StaticResource ColorPreviewChipTemplate}"
+                                    IsTabStop="False" />
+                    <ContentControl Content="{x:Bind ColorEntryAt(1), Mode=OneWay}"
+                                    ContentTemplate="{StaticResource ColorPreviewChipTemplate}"
+                                    IsTabStop="False" />
+                    <ContentControl Content="{x:Bind ColorEntryAt(2), Mode=OneWay}"
+                                    ContentTemplate="{StaticResource ColorPreviewChipTemplate}"
+                                    IsTabStop="False" />
+                    <ContentControl Content="{x:Bind ColorEntryAt(3), Mode=OneWay}"
+                                    ContentTemplate="{StaticResource ColorPreviewChipTemplate}"
+                                    IsTabStop="False" />
+                    <ContentControl Content="{x:Bind ColorEntryAt(4), Mode=OneWay}"
+                                    ContentTemplate="{StaticResource ColorPreviewChipTemplate}"
+                                    IsTabStop="False" />
+                    <ContentControl Content="{x:Bind ColorEntryAt(5), Mode=OneWay}"
+                                    ContentTemplate="{StaticResource ColorPreviewChipTemplate}"
+                                    IsTabStop="False" />
+                    <ContentControl Content="{x:Bind ColorEntryAt(6), Mode=OneWay}"
+                                    ContentTemplate="{StaticResource ColorPreviewChipTemplate}"
+                                    IsTabStop="False" />
+                    <ContentControl Content="{x:Bind ColorEntryAt(7), Mode=OneWay}"
+                                    ContentTemplate="{StaticResource ColorPreviewChipTemplate}"
+                                    IsTabStop="False" />
+                    <ContentControl Content="{x:Bind ColorEntryAt(8), Mode=OneWay}"
+                                    ContentTemplate="{StaticResource ColorPreviewChipTemplate}"
+                                    IsTabStop="False" />
+                    <ContentControl Content="{x:Bind ColorEntryAt(9), Mode=OneWay}"
+                                    ContentTemplate="{StaticResource ColorPreviewChipTemplate}"
+                                    IsTabStop="False" />
+                    <ContentControl Content="{x:Bind ColorEntryAt(10), Mode=OneWay}"
+                                    ContentTemplate="{StaticResource ColorPreviewChipTemplate}"
+                                    IsTabStop="False" />
+                    <ContentControl Content="{x:Bind ColorEntryAt(11), Mode=OneWay}"
+                                    ContentTemplate="{StaticResource ColorPreviewChipTemplate}"
+                                    IsTabStop="False" />
+                    <ContentControl Content="{x:Bind ColorEntryAt(12), Mode=OneWay}"
+                                    ContentTemplate="{StaticResource ColorPreviewChipTemplate}"
+                                    IsTabStop="False" />
+                    <ContentControl Content="{x:Bind ColorEntryAt(13), Mode=OneWay}"
+                                    ContentTemplate="{StaticResource ColorPreviewChipTemplate}"
+                                    IsTabStop="False" />
+                    <ContentControl Content="{x:Bind ColorEntryAt(14), Mode=OneWay}"
+                                    ContentTemplate="{StaticResource ColorPreviewChipTemplate}"
+                                    IsTabStop="False" />
+                    <ContentControl Content="{x:Bind ColorEntryAt(15), Mode=OneWay}"
+                                    ContentTemplate="{StaticResource ColorPreviewChipTemplate}"
+                                    IsTabStop="False" />
+                </VariableSizedWrapGrid>
+            </DataTemplate>
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <StackPanel x:Name="ContentStackPanel"
+                Orientation="Horizontal"
+                Spacing="5">
+        <ContentDialog x:Name="ColorPickerDialog"
+                       x:Uid="NullableColorPicker_ColorPickerContentDialog"
+                       DefaultButton="Primary"
+                       Opened="ColorPickerDialog_Opened"
+                       PrimaryButtonClick="ColorPickerDialog_PrimaryButtonClick"
+                       TabFocusNavigation="Cycle">
+            <muxc:ColorPicker x:Name="ColorPickerControl"
+                              Margin="0,0,0,-40"
+                              ColorSpectrumShape="Box"
+                              IsAlphaEnabled="False"
+                              IsAlphaSliderVisible="True"
+                              IsAlphaTextInputVisible="True"
+                              IsColorChannelTextInputVisible="False"
+                              IsColorSliderVisible="False"
+                              IsHexInputVisible="False"
+                              IsMoreButtonVisible="False"
+                              Orientation="Horizontal" />
+        </ContentDialog>
+
+        <ContentPresenter Content="{x:Bind ColorSchemeVM, Mode=OneWay}"
+                          ContentTemplate="{StaticResource ColorSchemeTemplate}" />
+
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <StackPanel Spacing="5">
+                <ToggleButton AutomationProperties.Name="{x:Bind NullColorButtonLabel}"
+                              Click="NullColorButton_Clicked"
+                              IsChecked="{x:Bind IsNull(CurrentColor), Mode=OneWay}">
+                    <Grid ColumnSpacing="5">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+
+                        <Border Grid.Column="0"
+                                Width="20"
+                                Height="20"
+                                Background="{x:Bind mtu:Converters.ColorToBrush(NullColorPreview), Mode=OneWay}"
+                                BorderThickness="1"
+                                CornerRadius="{ThemeResource ControlCornerRadius}" />
+
+                        <TextBlock Grid.Column="1"
+                                   Text="{x:Bind NullColorButtonLabel}" />
+                    </Grid>
+                </ToggleButton>
+
+                <Button x:Uid="NullableColorPicker_MoreColorsButton"
+                        HorizontalAlignment="Stretch"
+                        Click="MoreColors_Clicked" />
+            </StackPanel>
+        </Grid>
+
+        <VisualStateManager.VisualStateGroups>
+            <VisualStateGroup>
+                <VisualState x:Name="Narrow">
+                    <VisualState.StateTriggers>
+                        <AdaptiveTrigger MinWindowWidth="0" />
+                    </VisualState.StateTriggers>
+                    <VisualState.Setters>
+                        <Setter Target="ContentStackPanel.Orientation" Value="Vertical" />
+                    </VisualState.Setters>
+                </VisualState>
+                <VisualState x:Name="Wide">
+                    <VisualState.StateTriggers>
+                        <AdaptiveTrigger MinWindowWidth="600" />
+                    </VisualState.StateTriggers>
+                    <VisualState.Setters>
+                        <Setter Target="ContentStackPanel.Orientation" Value="Horizontal" />
+                    </VisualState.Setters>
+                </VisualState>
+            </VisualStateGroup>
+        </VisualStateManager.VisualStateGroups>
+    </StackPanel>
+
+</UserControl>

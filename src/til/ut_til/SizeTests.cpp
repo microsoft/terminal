@@ -147,26 +147,20 @@ class SizeTests
 
     TEST_METHOD(Boolean)
     {
-        const til::size empty;
-        VERIFY_IS_FALSE(!!empty);
+        SetVerifyOutput verifyOutputScope{ VerifyOutputSettings::LogOnlyFailures };
 
-        const til::size yOnly{ 0, 10 };
-        VERIFY_IS_FALSE(!!yOnly);
+        static constexpr til::CoordType values[] = { til::CoordTypeMin, -1, 0, 1, til::CoordTypeMax };
 
-        const til::size xOnly{ 10, 0 };
-        VERIFY_IS_FALSE(!!xOnly);
-
-        const til::size both{ 10, 10 };
-        VERIFY_IS_TRUE(!!both);
-
-        const til::size yNegative{ 10, -10 };
-        VERIFY_IS_FALSE(!!yNegative);
-
-        const til::size xNegative{ -10, 10 };
-        VERIFY_IS_FALSE(!!xNegative);
-
-        const til::size bothNegative{ -10, -10 };
-        VERIFY_IS_FALSE(!!bothNegative);
+        for (const auto width : values)
+        {
+            for (const auto height : values)
+            {
+                const til::size s{ width, height };
+                const auto expected = width > 0 && height > 0;
+                const auto actual = static_cast<bool>(s);
+                VERIFY_ARE_EQUAL(expected, actual);
+            }
+        }
     }
 
     TEST_METHOD(Addition)

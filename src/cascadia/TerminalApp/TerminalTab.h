@@ -42,7 +42,7 @@ namespace winrt::TerminalApp::implementation
                                                                           std::shared_ptr<Pane> newPane);
 
         void ToggleSplitOrientation();
-        void UpdateIcon(const winrt::hstring iconPath, const winrt::Microsoft::Terminal::Settings::Model::IconStyle iconStyle);
+        void UpdateIcon(const winrt::hstring& iconPath, const winrt::Microsoft::Terminal::Settings::Model::IconStyle iconStyle);
         void HideIcon(const bool hide);
 
         void ShowBellIndicator(const bool show);
@@ -58,7 +58,7 @@ namespace winrt::TerminalApp::implementation
         bool SwapPane(const winrt::Microsoft::Terminal::Settings::Model::FocusDirection& direction);
         bool FocusPane(const uint32_t id);
 
-        void UpdateSettings();
+        void UpdateSettings(const winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings& settings);
         void UpdateTitle();
 
         void Shutdown() override;
@@ -99,7 +99,7 @@ namespace winrt::TerminalApp::implementation
 
         til::typed_event<TerminalApp::TerminalPaneContent> RestartTerminalRequested;
 
-        til::event<winrt::delegate<>> ActivePaneChanged;
+        til::typed_event<TerminalApp::TerminalTab, IInspectable> ActivePaneChanged;
         til::event<winrt::delegate<>> TabRaiseVisualBell;
         til::typed_event<IInspectable, IInspectable> TaskbarProgressChanged;
 
@@ -134,7 +134,6 @@ namespace winrt::TerminalApp::implementation
             winrt::TerminalApp::IPaneContent::ConnectionStateChanged_revoker ConnectionStateChanged;
             winrt::TerminalApp::IPaneContent::ReadOnlyChanged_revoker ReadOnlyChanged;
             winrt::TerminalApp::IPaneContent::FocusRequested_revoker FocusRequested;
-            winrt::TerminalApp::IPaneContent::CloseRequested_revoker CloseRequested;
 
             // These events literally only apply if the content is a TermControl.
             winrt::Microsoft::Terminal::Control::TermControl::KeySent_revoker KeySent;
@@ -197,7 +196,6 @@ namespace winrt::TerminalApp::implementation
         void _splitTabClicked(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::RoutedEventArgs& e);
         void _closePaneClicked(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::RoutedEventArgs& e);
         void _exportTextClicked(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::RoutedEventArgs& e);
-        void _moveTabToNewWindowClicked(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::RoutedEventArgs& e);
         void _findClicked(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::RoutedEventArgs& e);
 
         void _bubbleRestartTerminalRequested(TerminalApp::TerminalPaneContent sender, const winrt::Windows::Foundation::IInspectable& args);

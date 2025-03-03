@@ -183,14 +183,14 @@
   <data name="Quit" xml:space="preserve">
     <value>Esci</value>
   </data>
-  <data name="CloseWindowWarningTitle" xml:space="preserve">
-    <value>Vuoi chiudere tutte le schede?</value>
-  </data>
   <data name="MultiplePanes" xml:space="preserve">
     <value>Più riquadri</value>
   </data>
   <data name="TabCloseSubMenu" xml:space="preserve">
-    <value>Chiudi...</value>
+    <value>Chiudi</value>
+  </data>
+  <data name="TabMoveSubMenu" xml:space="preserve">
+    <value>Sposta scheda</value>
   </data>
   <data name="TabCloseAfter" xml:space="preserve">
     <value>Chiudi schede a destra</value>
@@ -202,7 +202,7 @@
     <value>Chiudi scheda</value>
   </data>
   <data name="PaneClose" xml:space="preserve">
-    <value>Chiudi riquadro</value>
+    <value>Chiudi il riquadro</value>
   </data>
   <data name="SplitTabText" xml:space="preserve">
     <value>Dividi scheda</value>
@@ -214,10 +214,10 @@
     <value>Ricerca nel Web</value>
   </data>
   <data name="TabColorChoose" xml:space="preserve">
-    <value>Colore...</value>
+    <value>Cambia colore scheda</value>
   </data>
   <data name="TabColorCustomButton.Content" xml:space="preserve">
-    <value>Personalizzato...</value>
+    <value>Personalizzato</value>
   </data>
   <data name="TabColorClearButton.Content" xml:space="preserve">
     <value>Reimposta</value>
@@ -283,6 +283,15 @@
   <data name="CmdCommandArgDesc" xml:space="preserve">
     <value>Comando facoltativo, con argomenti, da generare nel nuovo pannello o scheda</value>
   </data>
+  <data name="SaveSnippetDesc" xml:space="preserve">
+    <value>Salva riga di comando come azione di input</value>
+  </data>
+  <data name="SaveSnippetArgDesc" xml:space="preserve">
+    <value>Un argomento facoltativo</value>
+  </data>
+  <data name="KeyChordArgDesc" xml:space="preserve">
+    <value>Un argomento facoltativo</value>
+  </data>
   <data name="CmdFocusTabDesc" xml:space="preserve">
     <value>Sposta lo stato attivo su un'altra scheda</value>
   </data>
@@ -331,6 +340,9 @@
   </data>
   <data name="CmdProfileArgDesc" xml:space="preserve">
     <value>Apri con il profilo specificato. Accetta il nome oppure il GUID di un profilo</value>
+  </data>
+  <data name="CmdSessionIdArgDesc" xml:space="preserve">
+    <value>Imposta la variabile di WT_SESSION; deve essere un GUID</value>
   </data>
   <data name="CmdSplitPaneDesc" xml:space="preserve">
     <value>Crea un nuovo riquadro suddiviso</value>
@@ -421,13 +433,13 @@
     <value>Apri nuova scheda</value>
   </data>
   <data name="NewPaneRun.Text" xml:space="preserve">
-    <value>ALT + clic per dividere la finestra corrente</value>
+    <value>ALT+CLIC per dividere la finestra corrente</value>
   </data>
   <data name="NewWindowRun.Text" xml:space="preserve">
-    <value>MAIUSC+clic per aprire una nuova finestra</value>
+    <value>MAIUSC+CLIC per aprire una nuova finestra</value>
   </data>
   <data name="ElevatedRun.Text" xml:space="preserve">
-    <value>CTRL+Clic per aprire come amministratore</value>
+    <value>CTRL+CLIC per aprire come amministratore</value>
   </data>
   <data name="WindowCloseButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Chiudi</value>
@@ -464,7 +476,7 @@
     <comment>This is the heading for a version number label</comment>
   </data>
   <data name="AboutDialog_GettingStartedLink.Content" xml:space="preserve">
-    <value>Attività iniziali</value>
+    <value>Introduzione</value>
     <comment>A hyperlink name for a guide on how to get started using Terminal</comment>
   </data>
   <data name="AboutDialog_SourceCodeLink.Content" xml:space="preserve">
@@ -484,7 +496,7 @@
     <comment>A hyperlink name for the Terminal's privacy policy</comment>
   </data>
   <data name="AboutDialog_ThirdPartyNoticesLink.Content" xml:space="preserve">
-    <value>Informative di terze parti</value>
+    <value>Comunicazioni di terze parti</value>
     <comment>A hyperlink name for the Terminal's third-party notices</comment>
   </data>
   <data name="QuitDialog.CloseButtonText" xml:space="preserve">
@@ -713,17 +725,11 @@
   <data name="WindowRenamer.CloseButtonContent" xml:space="preserve">
     <value>Annulla</value>
   </data>
-  <data name="RenameFailedToast.Title" xml:space="preserve">
-    <value>Non è stato possibile rinominare la finestra</value>
-  </data>
-  <data name="RenameFailedToast.Subtitle" xml:space="preserve">
-    <value>Un'altra finestra con questo nome esiste già</value>
-  </data>
   <data name="WindowMaximizeButtonToolTip" xml:space="preserve">
     <value>Ingrandisci</value>
   </data>
   <data name="WindowRestoreDownButtonToolTip" xml:space="preserve">
-    <value>Ripristina visualizzazione normale</value>
+    <value>Ripristina in basso</value>
   </data>
   <data name="CommandPaletteMenuItem" xml:space="preserve">
     <value>Riquadro comandi</value>
@@ -830,7 +836,7 @@
     <value>Vuoto</value>
   </data>
   <data name="ClosePaneText" xml:space="preserve">
-    <value>Chiudi riquadro</value>
+    <value>Chiudi il riquadro</value>
   </data>
   <data name="ClosePaneToolTip" xml:space="preserve">
     <value>Chiude il riquadro attivo se sono presenti più riquadri</value>
@@ -889,5 +895,45 @@
   </data>
   <data name="RestartConnectionToolTip" xml:space="preserve">
     <value>Riavvia la connessione al riquadro attivo</value>
+  </data>
+  <data name="SnippetPaneTitle.Text" xml:space="preserve">
+    <value>Frammenti</value>
+    <comment>Header for a page that includes small "snippets" of text for the user to enter</comment>
+  </data>
+  <data name="SnippetsFilterBox.PlaceholderText" xml:space="preserve">
+    <value>Filtra frammenti...</value>
+    <comment>Placeholder text for a text box to filter snippets (on the same page as the 'SnippetPaneTitle')</comment>
+  </data>
+  <data name="SnippetPlayButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Immettere questo comando</value>
+  </data>
+  <data name="SnippetPlayButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Immettere questo comando</value>
+  </data>
+  <data name="SnippetsPaneNoneFoundHeader.Text" xml:space="preserve">
+    <value>Non sono stati trovati frammenti nelle impostazioni.</value>
+    <comment>Text shown to user when no snippets are found in their settings</comment>
+  </data>
+  <data name="SnippetsPaneNoneFoundDetails.Text" xml:space="preserve">
+    <value>Aggiungi alcune azioni "Invia input" nelle impostazioni per visualizzarle qui.</value>
+    <comment>Additional information presented to the user to let them know they can add a "Send input" action in their setting to populate the snippets pane</comment>
+  </data>
+  <data name="ActionSavedToast.Title" xml:space="preserve">
+    <value>Azione salvata</value>
+  </data>
+  <data name="ActionSaveFailedToast.Title" xml:space="preserve">
+    <value>Salvataggio dell'azione non riuscito</value>
+  </data>
+  <data name="CloseSnippetsPaneButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Chiudi il riquadro</value>
+  </data>
+  <data name="CloseSnippetsPaneButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Chiudi il riquadro</value>
+  </data>
+  <data name="TabMoveLeft" xml:space="preserve">
+    <value>Sposta a sinistra</value>
+  </data>
+  <data name="TabMoveRight" xml:space="preserve">
+    <value>Sposta a destra</value>
   </data>
 </root>

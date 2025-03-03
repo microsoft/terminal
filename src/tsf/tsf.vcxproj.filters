@@ -15,58 +15,29 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="ConsoleTSF.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="contsf.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="TfCatUtil.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="TfConvArea.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="TfDispAttr.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="TfEditSession.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="TfTxtevCb.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="precomp.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Handle.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Implementation.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="ConsoleTSF.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="debug.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="globals.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="precomp.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="TfCatUtil.h">
+    <ClInclude Include="Handle.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="TfConvArea.h">
+    <ClInclude Include="Implementation.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="TfCtxtComp.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="TfDispAttr.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="TfEditSession.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Natvis Include="$(SolutionDir)tools\ConsoleTypes.natvis" />
+    <Natvis Include="$(MSBuildThisFileDirectory)..\..\natvis\wil.natvis" />
   </ItemGroup>
 </Project>

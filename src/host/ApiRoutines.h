@@ -55,6 +55,7 @@ public:
                                               INPUT_READ_HANDLE_DATA& readHandleState,
                                               const bool IsUnicode,
                                               const bool IsPeek,
+                                              const bool IsWaitAllowed,
                                               std::unique_ptr<IWaitRoutine>& waiter) noexcept override;
 
     [[nodiscard]] HRESULT ReadConsoleImpl(IConsoleInputObject& context,
@@ -72,13 +73,11 @@ public:
     [[nodiscard]] HRESULT WriteConsoleAImpl(IConsoleOutputObject& context,
                                             const std::string_view buffer,
                                             size_t& read,
-                                            bool requiresVtQuirk,
                                             std::unique_ptr<IWaitRoutine>& waiter) noexcept override;
 
     [[nodiscard]] HRESULT WriteConsoleWImpl(IConsoleOutputObject& context,
                                             const std::wstring_view buffer,
                                             size_t& read,
-                                            bool requiresVtQuirk,
                                             std::unique_ptr<IWaitRoutine>& waiter) noexcept override;
 
 #pragma region ThreadCreationInfo
@@ -93,7 +92,8 @@ public:
                                                          const WORD attribute,
                                                          const size_t lengthToWrite,
                                                          const til::point startingCoordinate,
-                                                         size_t& cellsModified) noexcept override;
+                                                         size_t& cellsModified,
+                                                         const bool enablePowershellShim = false) noexcept override;
 
     [[nodiscard]] HRESULT FillConsoleOutputCharacterAImpl(IConsoleOutputObject& OutContext,
                                                           const char character,

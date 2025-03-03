@@ -20,8 +20,10 @@ using namespace winrt::Microsoft::Terminal::TerminalConnection;
 namespace winrt::TerminalApp::implementation
 {
     TerminalPaneContent::TerminalPaneContent(const winrt::Microsoft::Terminal::Settings::Model::Profile& profile,
+                                             const TerminalApp::TerminalSettingsCache& cache,
                                              const winrt::Microsoft::Terminal::Control::TermControl& control) :
         _control{ control },
+        _cache{ cache },
         _profile{ profile }
     {
         _setupControlEvents();
@@ -76,11 +78,19 @@ namespace winrt::TerminalApp::implementation
             _bellPlayer = nullptr;
             _bellPlayerCreated = false;
         }
-
-        CloseRequested.raise(*this, nullptr);
     }
 
-    NewTerminalArgs TerminalPaneContent::GetNewTerminalArgs(const BuildStartupKind kind) const
+    winrt::hstring TerminalPaneContent::Icon() const
+    {
+        return _profile.EvaluatedIcon();
+    }
+
+    Windows::Foundation::IReference<winrt::Windows::UI::Color> TerminalPaneContent::TabColor() const noexcept
+    {
+        return _control.TabColor();
+    }
+
+    INewContentArgs TerminalPaneContent::GetNewTerminalArgs(const BuildStartupKind kind) const
     {
         NewTerminalArgs args{};
         const auto& controlSettings = _control.Settings();
@@ -184,8 +194,8 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - <none>
-    winrt::fire_and_forget TerminalPaneContent::_controlConnectionStateChangedHandler(const winrt::Windows::Foundation::IInspectable& sender,
-                                                                                      const winrt::Windows::Foundation::IInspectable& args)
+    safe_void_coroutine TerminalPaneContent::_controlConnectionStateChangedHandler(const winrt::Windows::Foundation::IInspectable& sender,
+                                                                                   const winrt::Windows::Foundation::IInspectable& args)
     {
         ConnectionStateChanged.raise(sender, args);
         auto newConnectionState = ConnectionState::Closed;
@@ -227,19 +237,20 @@ namespace winrt::TerminalApp::implementation
 
         if (_profile)
         {
-            if (_isDefTermSession && _profile.CloseOnExit() == CloseOnExitMode::Automatic)
-            {
-                // For 'automatic', we only care about the connection state if we were launched by Terminal
-                // Since we were launched via defterm, ignore the connection state (i.e. we treat the
-                // close on exit mode as 'always', see GH #13325 for discussion)
-                Close();
-            }
-
             const auto mode = _profile.CloseOnExit();
-            if ((mode == CloseOnExitMode::Always) ||
-                ((mode == CloseOnExitMode::Graceful || mode == CloseOnExitMode::Automatic) && newConnectionState == ConnectionState::Closed))
+
+            if (
+                // This one is obvious: If the user asked for "always" we do just that.
+                (mode == CloseOnExitMode::Always) ||
+                // Otherwise, and unless the user asked for the opposite of "always",
+                // close the pane when the connection closed gracefully (not failed).
+                (mode != CloseOnExitMode::Never && newConnectionState == ConnectionState::Closed) ||
+                // However, defterm handoff can result in Windows Terminal randomly opening which may be annoying,
+                // so by default we should at least always close the pane, even if the command failed.
+                // See GH #13325 for discussion.
+                (mode == CloseOnExitMode::Automatic && _isDefTermSession))
             {
-                Close();
+                CloseRequested.raise(nullptr, nullptr);
             }
         }
     }
@@ -289,7 +300,7 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    winrt::fire_and_forget TerminalPaneContent::_playBellSound(winrt::Windows::Foundation::Uri uri)
+    safe_void_coroutine TerminalPaneContent::_playBellSound(winrt::Windows::Foundation::Uri uri)
     {
         auto weakThis{ get_weak() };
         co_await wil::resume_foreground(_control.Dispatcher());
@@ -319,7 +330,7 @@ namespace winrt::TerminalApp::implementation
     void TerminalPaneContent::_closeTerminalRequestedHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/,
                                                              const winrt::Windows::Foundation::IInspectable& /*args*/)
     {
-        Close();
+        CloseRequested.raise(nullptr, nullptr);
     }
 
     void TerminalPaneContent::_restartTerminalRequestedHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/,
@@ -328,11 +339,12 @@ namespace winrt::TerminalApp::implementation
         RestartTerminalRequested.raise(*this, nullptr);
     }
 
-    void TerminalPaneContent::UpdateSettings(const TerminalSettingsCreateResult& settings,
-                                             const Profile& profile)
+    void TerminalPaneContent::UpdateSettings(const CascadiaSettings& /*settings*/)
     {
-        _profile = profile;
-        _control.UpdateControlSettings(settings.DefaultSettings(), settings.UnfocusedSettings());
+        if (const auto& settings{ _cache.TryLookup(_profile) })
+        {
+            _control.UpdateControlSettings(settings.DefaultSettings(), settings.UnfocusedSettings());
+        }
     }
 
     // Method Description:
@@ -342,6 +354,11 @@ namespace winrt::TerminalApp::implementation
     void TerminalPaneContent::MarkAsDefterm()
     {
         _isDefTermSession = true;
+    }
+
+    winrt::Windows::UI::Xaml::Media::Brush TerminalPaneContent::BackgroundBrush()
+    {
+        return _control.BackgroundBrush();
     }
 
     float TerminalPaneContent::SnapDownToGrid(const TerminalApp::PaneSnapDirection direction, const float sizeToSnap)

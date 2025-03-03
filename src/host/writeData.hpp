@@ -27,8 +27,7 @@ public:
     WriteData(SCREEN_INFORMATION& siContext,
               _In_reads_bytes_(cbContext) PCWCHAR pwchContext,
               const size_t cbContext,
-              const UINT uiOutputCodepage,
-              const bool requiresVtQuirk);
+              const UINT uiOutputCodepage);
     ~WriteData();
 
     void SetLeadByteAdjustmentStatus(const bool fLeadByteCaptured,
@@ -49,7 +48,6 @@ private:
     wchar_t* const _pwchContext;
     const size_t _cbContext;
     UINT const _uiOutputCodepage;
-    bool _requiresVtQuirk;
     bool _fLeadByteCaptured;
     bool _fLeadByteConsumed;
     size_t _cchUtf8Consumed;

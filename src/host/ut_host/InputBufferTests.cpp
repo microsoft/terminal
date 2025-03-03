@@ -219,22 +219,19 @@ class InputBufferTests
         }
     }
 
-    TEST_METHOD(InputBufferDoesNotCoalesceFullWidthChars)
+    TEST_METHOD(InputBufferDoesNotCoalesceSurrogatePairs)
     {
         InputBuffer inputBuffer;
-        WCHAR hiraganaA = 0x3042; // U+3042 hiragana A
-        auto record = MakeKeyEvent(true, 1, hiraganaA, 0, hiraganaA, 0);
 
-        // send a bunch of identical events
-        inputBuffer.Flush();
-        for (size_t i = 0; i < RECORD_INSERT_COUNT; ++i)
-        {
-            VERIFY_IS_GREATER_THAN(inputBuffer.Write(record), 0u);
-            VERIFY_ARE_EQUAL(inputBuffer._storage.back(), record);
-        }
+        // U+1F44D thumbs up emoji
+        inputBuffer.Write(MakeKeyEvent(true, 1, 0xD83D, 0, 0xD83D, 0));
+        inputBuffer.Write(MakeKeyEvent(true, 1, 0xDC4D, 0, 0xDC4D, 0));
+
+        // Should not coalesce despite otherwise matching perfectly.
+        inputBuffer.Write(MakeKeyEvent(true, 1, 0xDC4D, 0, 0xDC4D, 0));
 
         // The events shouldn't be coalesced
-        VERIFY_ARE_EQUAL(inputBuffer.GetNumberOfReadyEvents(), RECORD_INSERT_COUNT);
+        VERIFY_ARE_EQUAL(3u, inputBuffer.GetNumberOfReadyEvents());
     }
 
     TEST_METHOD(CanFlushAllOutput)
@@ -576,31 +573,6 @@ class InputBufferTests
                                            false,
                                            false,
                                            false));
-    }
-
-    TEST_METHOD(WritingToEmptyBufferSignalsWaitEvent)
-    {
-        InputBuffer inputBuffer;
-        auto record = MakeKeyEvent(true, 1, L'a', 0, L'a', 0);
-        auto inputEvent = record;
-        size_t eventsWritten;
-        auto waitEvent = false;
-        inputBuffer.Flush();
-        // write one event to an empty buffer
-        InputEventQueue storage;
-        storage.push_back(std::move(inputEvent));
-        inputBuffer._WriteBuffer(storage, eventsWritten, waitEvent);
-        VERIFY_IS_TRUE(waitEvent);
-        // write another, it shouldn't signal this time
-        auto record2 = MakeKeyEvent(true, 1, L'b', 0, L'b', 0);
-        auto inputEvent2 = record2;
-        // write another event to a non-empty buffer
-        waitEvent = false;
-        storage.clear();
-        storage.push_back(std::move(inputEvent2));
-        inputBuffer._WriteBuffer(storage, eventsWritten, waitEvent);
-
-        VERIFY_IS_FALSE(waitEvent);
     }
 
     TEST_METHOD(StreamReadingDeCoalesces)

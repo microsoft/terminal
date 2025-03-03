@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ProductDescription language="en-us" xmlns="http://schemas.microsoft.com/appx/2012/ProductDescription" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xml:lang="en-us" Release="">
+  <AppStoreName>
+    <!-- This is optional.  AppStoreName is typically extracted from your package's AppxManifest DisplayName property. -->
+    <!-- Uncomment (and localize) this Store name if your application package does not contain a localization for the DisplayName in this language. -->
+    <!-- Leaving this uncommented for a language that your application package DOES contain a DisplayName for will result in a submission failure with the API. -->
+    
+    <!-- Windows Terminal -->
+  </AppStoreName>
+  <Keywords>
+    <!-- Valid length: 30 character limit, up to 7 elements -->
+    <Keyword>
+      Terminal</Keyword>
+    <Keyword>
+      Consola</Keyword>
+    <Keyword>
+      
+    </Keyword>
+    <Keyword>
+      
+    </Keyword>
+    <Keyword>
+      
+    </Keyword>
+    <Keyword>
+      
+    </Keyword>
+    <Keyword>
+      
+    </Keyword>
+  </Keywords>
+  <Description>
+    Esta en la compilación de versión preliminar de la Terminal Windows, que contiene las últimas a medida que se desarrollan. Terminal Windows es una aplicación de terminal moderna, rápida, eficaz, eficiente y productiva para los usuarios de herramientas de línea de comandos y shells, como Símbolo del sistema, PowerShell y WSL. Entre las características principales se incluyen varias pestañas, paneles, compatibilidad con caracteres Unicode y UTF-8, un motor de representación de texto acelerado por GPU, y temas, estilos y configuraciones personalizados.
+
+Este es un proyecto de fuente abierta y animamos a la comunidad a participar. Para colaborar, visita https://github.com/microsoft/terminal </Description>
+  <ShortDescription>
+    <!-- Only used for games. This description appears in the Information section of the Game Hub on Xbox One, and helps customers understand more about your game. -->
+    
+  </ShortDescription>
+  <ShortTitle>
+    <!-- A shorter version of your product's name. If provided, this shorter name may appear in various places on Xbox One (during installation, in Achievements, etc.) in place of the full title of your product. -->
+    
+  </ShortTitle>
+  <SortTitle>
+    <!-- If your product could be alphabetized in different ways, you can enter another version here. This may help customers find the product more quickly when searching. -->
+    
+  </SortTitle>
+  <VoiceTitle>
+    <!-- An alternate name for your product that, if provided, may be used in the audio experience on Xbox One when using Kinect or a headset. -->
+    
+  </VoiceTitle>
+  <DevStudio>
+    <!-- Specify this value if you want to include a "Developed by" field in the listing. (The "Published by" field will list the publisher display name associated with your account, whether or not you provide a devStudio value.) -->
+    
+  </DevStudio>
+  <ReleaseNotes>
+    Versión __VERSION_NUMBER__
+
+- Hemos agregado decenas de configuraciones a la interfaz de usuario que solo existían una vez en el archivo JSON, incluida una página nueva para personalizar el diseño del menú Nueva pestaña.
+- Tenemos administración de ventanas rearchitecdas para mejorar la confiabilidad; envíe los errores que encuentre con el alias de wt.exe.
+- Ahora, los perfiles muestran un icono si se han ocultado o hacen referencia a programas que se han desinstalado.
+
+Consulte nuestra página de versiones de GitHub para obtener más detalles.
+  </ReleaseNotes>
+  <ScreenshotCaptions>
+    <!-- Valid length: 200 character limit, up to 9 elements per platform -->
+    <!-- Valid attributes: any of DesktopImage, MobileImage, XboxImage, SurfaceHubImage, and HoloLensImage -->
+    <Caption DesktopImage="acrylic-emoji.png">
+      
+    </Caption>
+    <Caption DesktopImage="panes.png">
+      
+    </Caption>
+    <Caption DesktopImage="htop.png">
+      
+    </Caption>
+  </ScreenshotCaptions>
+  <AdditionalAssets>
+    <!-- Valid elements:-->
+    <!--   HeroImage414x180, HeroImage846x468, HeroImage558x756, HeroImage414x468, HeroImage558x558, HeroImage2400x1200,-->
+    <!--   ScreenshotWXGA, ScreenshotHD720, ScreenshotWVGA, Doublewide, Panoramic, Square,-->
+    <!--   SmallMobileTile, SmallXboxLiveTile, LargeMobileTile, LargeXboxLiveTile, Tile,-->
+    <!--   DesktopIcon, Icon (use this value for the 1:1 300x300 pixels logo), AchievementIcon,-->
+    <!--   ChallengePromoIcon, RewardDisplayIcon, Icon150X150, Icon71X71,-->
+    <!--   BoxArt, BrandedKeyArt, PosterArt, FeaturedPromotionalArt, PromotionalArt16x9, TitledHeroArt-->
+    <!-- There is no content for any of these elements, just a single attribute called FileName. -->
+    <PosterArt FileName="Store Poster Art.png"/>
+    <BoxArt FileName="Store Box Art.png"/>
+    <PromotionalArt16x9 FileName="Store Thumbnail.png"/>
+  </AdditionalAssets>
+  <Trailers>
+    <!-- Maximum number of trailers permitted: 15 -->
+    <Trailer FileName="CC0605_CommandLine_Teaser_WEB_MASTER_H264_1080p_23.976_-16LKFS_-3dbTP_ST.mp4">
+      <Title>
+        La nueva Terminal Windows</Title>
+      <Images>
+        <!-- Current maximum of 1 image per trailer permitted. -->
+        <Image FileName="Store Thumbnail.png">
+          
+        </Image>
+      </Images>
+    </Trailer>
+  </Trailers>
+  <AppFeatures>
+    <!-- Valid length: 200 character limit, up to 20 elements -->
+    <AppFeature>
+      Varias pestañas</AppFeature>
+    <AppFeature>
+      Soporte completo de Unicode</AppFeature>
+    <AppFeature>
+      Representación de texto acelerada por GPU</AppFeature>
+    <AppFeature>
+      Totalmente personalizable</AppFeature>
+    <AppFeature>
+      Paneles de división</AppFeature>
+    <AppFeature>
+      
+    </AppFeature>
+    <AppFeature>
+      
+    </AppFeature>
+    <AppFeature>
+      
+    </AppFeature>
+    <AppFeature>
+      
+    </AppFeature>
+    <AppFeature>
+      
+    </AppFeature>
+    <AppFeature>
+      
+    </AppFeature>
+    <AppFeature>
+      
+    </AppFeature>
+    <AppFeature>
+      
+    </AppFeature>
+    <AppFeature>
+      
+    </AppFeature>
+    <AppFeature>
+      
+    </AppFeature>
+    <AppFeature>
+      
+    </AppFeature>
+    <AppFeature>
+      
+    </AppFeature>
+    <AppFeature>
+      
+    </AppFeature>
+    <AppFeature>
+      
+    </AppFeature>
+    <AppFeature>
+      
+    </AppFeature>
+  </AppFeatures>
+  <RecommendedHardware>
+    <!-- Valid length: 200 character limit, up to 11 elements -->
+    <Recommendation>
+      Teclado</Recommendation>
+  </RecommendedHardware>
+  <MinimumHardware>
+    <!-- Valid length: 200 character limit, up to 11 elements -->
+  </MinimumHardware>
+  <CopyrightAndTrademark>
+    Copyright (c) Microsoft Corporation</CopyrightAndTrademark>
+  <AdditionalLicenseTerms>
+    
+  </AdditionalLicenseTerms>
+  <WebsiteURL>
+    https://github.com/microsoft/terminal</WebsiteURL>
+  <SupportContactInfo>
+    https://github.com/microsoft/terminal/issues/new</SupportContactInfo>
+  <PrivacyPolicyURL>
+    https://go.microsoft.com/fwlink/?LinkID=521839</PrivacyPolicyURL>
+</ProductDescription>

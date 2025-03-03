@@ -284,10 +284,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         _HistorySize = profile.HistorySize();
         _SnapOnInput = profile.SnapOnInput();
         _AltGrAliasing = profile.AltGrAliasing();
+        _AnswerbackMessage = profile.AnswerbackMessage();
 
         // Fill in the remaining properties from the profile
         _ProfileName = profile.Name();
-        _ProfileSource = profile.Source();
 
         const auto fontInfo = profile.FontInfo();
         _FontFace = fontInfo.FontFace();
@@ -343,10 +343,13 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         _ShowMarks = Feature_ScrollbarMarks::IsEnabled() && profile.ShowMarks();
 
         _RightClickContextMenu = profile.RightClickContextMenu();
-
         _RepositionCursorWithMouse = profile.RepositionCursorWithMouse();
-
         _ReloadEnvironmentVariables = profile.ReloadEnvironmentVariables();
+        _RainbowSuggestions = profile.RainbowSuggestions();
+        _ForceVTInput = profile.ForceVTInput();
+        _AllowVtChecksumReport = profile.AllowVtChecksumReport();
+        _AllowVtClipboardWrite = profile.AllowVtClipboardWrite();
+        _PathTranslationStyle = profile.PathTranslationStyle();
     }
 
     // Method Description:
@@ -367,8 +370,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         _GraphicsAPI = globalSettings.GraphicsAPI();
         _DisablePartialInvalidation = globalSettings.DisablePartialInvalidation();
         _SoftwareRendering = globalSettings.SoftwareRendering();
+        _TextMeasurement = globalSettings.TextMeasurement();
+        _DefaultInputScope = globalSettings.DefaultInputScope();
         _UseBackgroundImageForWindow = globalSettings.UseBackgroundImageForWindow();
-        _ForceVTInput = globalSettings.ForceVTInput();
         _TrimBlockSelection = globalSettings.TrimBlockSelection();
         _DetectURLs = globalSettings.DetectURLs();
         _EnableUnfocusedAcrylic = globalSettings.EnableUnfocusedAcrylic();

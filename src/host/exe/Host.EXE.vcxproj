@@ -50,9 +50,6 @@
     <ProjectReference Include="..\..\renderer\gdi\lib\gdi.vcxproj">
       <Project>{1c959542-bac2-4e55-9a6d-13251914cbb9}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\..\renderer\vt\lib\vt.vcxproj">
-      <Project>{990f2657-8580-4828-943f-5dd657d11842}</Project>
-    </ProjectReference>
     <ProjectReference Include="..\..\server\lib\server.vcxproj">
       <Project>{18d09a24-8240-42d6-8cb6-236eee820262}</Project>
     </ProjectReference>
@@ -89,7 +86,7 @@
     </ClCompile>
     <Link>
       <AllowIsolation>true</AllowIsolation>
-      <AdditionalDependencies>WinMM.Lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>winmm.lib;imm32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->

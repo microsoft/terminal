@@ -118,7 +118,7 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="InitialJsonParseErrorText" xml:space="preserve">
-    <value>파일에서 설정을 로드 하지 못했습니다. 후행 쉼표를 포함 하 여 구문 오류가 있는지 확인 합니다.</value>
+    <value>파일에서 설정을 로드하지 못했습니다. 후행 쉼표를 포함하여 구문 오류가 있는지 확인합니다.</value>
   </data>
   <data name="MissingDefaultProfileText" xml:space="preserve">
     <value>첫 번째 프로필을 사용하여 프로필 목록에서 기본 프로필을 찾을 수 없습니다. "defaultProfile"이 프로필 중 하나의 GUID와 일치하는지 확인합니다.</value>
@@ -183,17 +183,17 @@
   <data name="Quit" xml:space="preserve">
     <value>끝내기</value>
   </data>
-  <data name="CloseWindowWarningTitle" xml:space="preserve">
-    <value>모든 탭을 닫으시겠습니까?</value>
-  </data>
   <data name="MultiplePanes" xml:space="preserve">
     <value>여러 창</value>
   </data>
   <data name="TabCloseSubMenu" xml:space="preserve">
-    <value>닫기...</value>
+    <value>닫기</value>
+  </data>
+  <data name="TabMoveSubMenu" xml:space="preserve">
+    <value>탭 이동</value>
   </data>
   <data name="TabCloseAfter" xml:space="preserve">
-    <value>오른쪽으로 탭 닫기</value>
+    <value>오른쪽에 있는 탭 닫기</value>
   </data>
   <data name="TabCloseOther" xml:space="preserve">
     <value>다른 탭 닫기</value>
@@ -214,10 +214,10 @@
     <value>웹 검색</value>
   </data>
   <data name="TabColorChoose" xml:space="preserve">
-    <value>색...</value>
+    <value>탭 색 변경</value>
   </data>
   <data name="TabColorCustomButton.Content" xml:space="preserve">
-    <value>사용자 정의...</value>
+    <value>사용자 지정</value>
   </data>
   <data name="TabColorClearButton.Content" xml:space="preserve">
     <value>다시 설정</value>
@@ -283,6 +283,15 @@
   <data name="CmdCommandArgDesc" xml:space="preserve">
     <value>새 탭 또는 창에서 생성되는 선택적 명령(인수 포함)</value>
   </data>
+  <data name="SaveSnippetDesc" xml:space="preserve">
+    <value>명령줄을 입력 동작으로 저장</value>
+  </data>
+  <data name="SaveSnippetArgDesc" xml:space="preserve">
+    <value>선택적 인수</value>
+  </data>
+  <data name="KeyChordArgDesc" xml:space="preserve">
+    <value>선택적 인수</value>
+  </data>
   <data name="CmdFocusTabDesc" xml:space="preserve">
     <value>다른 탭으로 포커스 이동</value>
   </data>
@@ -313,7 +322,7 @@
     <value>상위 창의 백분율로 크기를 지정합니다. (0,1) 사이 값만 유효합니다.</value>
   </data>
   <data name="CmdNewTabDesc" xml:space="preserve">
-    <value>새 작업 만들기</value>
+    <value>새 탭 만들기</value>
   </data>
   <data name="CmdNTDesc" xml:space="preserve">
     <value>"new-tab" 하위 명령의 별칭입니다.</value>
@@ -331,6 +340,9 @@
   </data>
   <data name="CmdProfileArgDesc" xml:space="preserve">
     <value>지정된 프로필로 엽니다. 프로필 이름 또는 GUID 허용</value>
+  </data>
+  <data name="CmdSessionIdArgDesc" xml:space="preserve">
+    <value>WT_SESSION 변수를 설정합니다. GUID여야 합니다.</value>
   </data>
   <data name="CmdSplitPaneDesc" xml:space="preserve">
     <value>새 분할 창 만들기</value>
@@ -454,7 +466,7 @@
     <value>정보</value>
   </data>
   <data name="AboutDialog.PrimaryButtonText" xml:space="preserve">
-    <value>피드백 보내기</value>
+    <value>의견 보내기</value>
   </data>
   <data name="AboutDialog.CloseButtonText" xml:space="preserve">
     <value>확인</value>
@@ -468,7 +480,7 @@
     <comment>A hyperlink name for a guide on how to get started using Terminal</comment>
   </data>
   <data name="AboutDialog_SourceCodeLink.Content" xml:space="preserve">
-    <value>소스 코드</value>
+    <value>원본 코드</value>
     <comment>A hyperlink name for the Terminal's documentation</comment>
   </data>
   <data name="AboutDialog_DocumentationLink.Content" xml:space="preserve">
@@ -480,11 +492,11 @@
     <comment>A hyperlink name for the Terminal's release notes</comment>
   </data>
   <data name="AboutDialog_PrivacyPolicyLink.Content" xml:space="preserve">
-    <value>개인정보 취급방침</value>
+    <value>개인정보 보호정책</value>
     <comment>A hyperlink name for the Terminal's privacy policy</comment>
   </data>
   <data name="AboutDialog_ThirdPartyNoticesLink.Content" xml:space="preserve">
-    <value>타사 통지 사항</value>
+    <value>타사 통지</value>
     <comment>A hyperlink name for the Terminal's third-party notices</comment>
   </data>
   <data name="QuitDialog.CloseButtonText" xml:space="preserve">
@@ -515,7 +527,7 @@
     <value>경고</value>
   </data>
   <data name="CloseReadOnlyDialog.Content" xml:space="preserve">
-    <value>읽기 전용 터미널을 닫으려고 합니다. 계속하시겠어요?</value>
+    <value>읽기 전용 터미널을 닫으려고 합니다. 계속하시겠습니까?</value>
   </data>
   <data name="LargePasteDialog.CloseButtonText" xml:space="preserve">
     <value>취소</value>
@@ -571,7 +583,7 @@
     <value>명령줄 구문 분석 오류:</value>
   </data>
   <data name="CommandPaletteControlName" xml:space="preserve">
-    <value>명령 도구 모음</value>
+    <value>명령 팔레트</value>
   </data>
   <data name="TabSwitcherControlName" xml:space="preserve">
     <value>탭 전환기</value>
@@ -607,7 +619,7 @@
     <comment>{0} will be replaced with a number.</comment>
   </data>
   <data name="CrimsonColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>심홍</value>
+    <value>진홍</value>
   </data>
   <data name="SteelBlueColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>강철색</value>
@@ -713,20 +725,14 @@
   <data name="WindowRenamer.CloseButtonContent" xml:space="preserve">
     <value>취소</value>
   </data>
-  <data name="RenameFailedToast.Title" xml:space="preserve">
-    <value>창 이름을 바꾸지 못함</value>
-  </data>
-  <data name="RenameFailedToast.Subtitle" xml:space="preserve">
-    <value>해당 이름으로 된 다른 창이 이미 있습니다</value>
-  </data>
   <data name="WindowMaximizeButtonToolTip" xml:space="preserve">
     <value>최대화</value>
   </data>
   <data name="WindowRestoreDownButtonToolTip" xml:space="preserve">
-    <value>아래로 복원</value>
+    <value>이전 크기로 복원</value>
   </data>
   <data name="CommandPaletteMenuItem" xml:space="preserve">
-    <value>명령 도구 모음</value>
+    <value>명령 팔레트</value>
   </data>
   <data name="NotificationIconFocusTerminal" xml:space="preserve">
     <value>포커스 터미널</value>
@@ -827,7 +833,7 @@
     <value>이 탭 닫기</value>
   </data>
   <data name="NewTabMenuFolderEmpty" xml:space="preserve">
-    <value>비어 있음...</value>
+    <value>비어 있음</value>
   </data>
   <data name="ClosePaneText" xml:space="preserve">
     <value>창 닫기</value>
@@ -840,13 +846,13 @@
     <comment>Text used to identify the reset button</comment>
   </data>
   <data name="MoveTabToNewWindowText" xml:space="preserve">
-    <value>새 창으로 탭 이동</value>
+    <value>탭을 새 창으로 이동</value>
   </data>
   <data name="MoveTabToNewWindowToolTip" xml:space="preserve">
     <value>탭을 새 창으로 이동 </value>
   </data>
   <data name="RunAsAdminFlyout.Text" xml:space="preserve">
-    <value>관리자로 실행</value>
+    <value>관리자 권한으로 실행</value>
     <comment>This text is displayed on context menu for profile entries in add new tab button.</comment>
   </data>
   <data name="TerminalPage_PaneMovedAnnouncement_ExistingTab" xml:space="preserve">
@@ -889,5 +895,45 @@
   </data>
   <data name="RestartConnectionToolTip" xml:space="preserve">
     <value>활성 창 연결 다시 시작</value>
+  </data>
+  <data name="SnippetPaneTitle.Text" xml:space="preserve">
+    <value>짧은 요약</value>
+    <comment>Header for a page that includes small "snippets" of text for the user to enter</comment>
+  </data>
+  <data name="SnippetsFilterBox.PlaceholderText" xml:space="preserve">
+    <value>코드 조각 필터링...</value>
+    <comment>Placeholder text for a text box to filter snippets (on the same page as the 'SnippetPaneTitle')</comment>
+  </data>
+  <data name="SnippetPlayButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>이 명령 입력</value>
+  </data>
+  <data name="SnippetPlayButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>이 명령 입력</value>
+  </data>
+  <data name="SnippetsPaneNoneFoundHeader.Text" xml:space="preserve">
+    <value>설정에서 코드 조각을 찾을 수 없습니다.</value>
+    <comment>Text shown to user when no snippets are found in their settings</comment>
+  </data>
+  <data name="SnippetsPaneNoneFoundDetails.Text" xml:space="preserve">
+    <value>설정에 "입력 보내기" 작업을 추가하여 여기에 표시합니다.</value>
+    <comment>Additional information presented to the user to let them know they can add a "Send input" action in their setting to populate the snippets pane</comment>
+  </data>
+  <data name="ActionSavedToast.Title" xml:space="preserve">
+    <value>작업을 저장함</value>
+  </data>
+  <data name="ActionSaveFailedToast.Title" xml:space="preserve">
+    <value>작업을 저장하지 못함</value>
+  </data>
+  <data name="CloseSnippetsPaneButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>창 닫기</value>
+  </data>
+  <data name="CloseSnippetsPaneButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>창 닫기</value>
+  </data>
+  <data name="TabMoveLeft" xml:space="preserve">
+    <value>왼쪽으로 이동</value>
+  </data>
+  <data name="TabMoveRight" xml:space="preserve">
+    <value>오른쪽으로 이동</value>
   </data>
 </root>

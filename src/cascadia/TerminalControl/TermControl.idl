@@ -53,7 +53,6 @@ namespace Microsoft.Terminal.Control
         Microsoft.Terminal.Control.IControlSettings Settings { get; };
 
         event Windows.Foundation.TypedEventHandler<Object, TitleChangedEventArgs> TitleChanged;
-        event Windows.Foundation.TypedEventHandler<Object, CopyToClipboardEventArgs> CopyToClipboard;
         event Windows.Foundation.TypedEventHandler<Object, PasteFromClipboardEventArgs> PasteFromClipboard;
         event Windows.Foundation.TypedEventHandler<Object, OpenHyperlinkEventArgs> OpenHyperlink;
         event Windows.Foundation.TypedEventHandler<Object, Object> SetTaskbarProgress;
@@ -64,16 +63,19 @@ namespace Microsoft.Terminal.Control
         event Windows.Foundation.TypedEventHandler<Object, Object> TabColorChanged;
         event Windows.Foundation.TypedEventHandler<Object, Object> ReadOnlyChanged;
         event Windows.Foundation.TypedEventHandler<Object, Object> FocusFollowMouseRequested;
+        event Windows.Foundation.TypedEventHandler<Object, WindowSizeChangedEventArgs> WindowSizeChanged;
 
         event Windows.Foundation.TypedEventHandler<Object, CompletionsChangedEventArgs> CompletionsChanged;
 
         event Windows.Foundation.TypedEventHandler<Object, KeySentEventArgs> KeySent;
         event Windows.Foundation.TypedEventHandler<Object, CharSentEventArgs> CharSent;
         event Windows.Foundation.TypedEventHandler<Object, StringSentEventArgs> StringSent;
+        event Windows.Foundation.TypedEventHandler<Object, SearchMissingCommandEventArgs> SearchMissingCommand;
 
 
         Microsoft.UI.Xaml.Controls.CommandBarFlyout ContextMenu { get; };
         Microsoft.UI.Xaml.Controls.CommandBarFlyout SelectionContextMenu { get; };
+        Windows.UI.Xaml.Controls.MenuFlyout QuickFixMenu { get; };
 
         event Windows.Foundation.TypedEventHandler<TermControl, Windows.UI.Xaml.RoutedEventArgs> Initialized;
         // This is an event handler forwarder for the underlying connection.
@@ -85,7 +87,7 @@ namespace Microsoft.Terminal.Control
         event Windows.Foundation.TypedEventHandler<Object, Object> CloseTerminalRequested;
         event Windows.Foundation.TypedEventHandler<Object, Object> RestartTerminalRequested;
 
-        Boolean CopySelectionToClipboard(Boolean dismissSelection, Boolean singleLine, Windows.Foundation.IReference<CopyFormat> formats);
+        Boolean CopySelectionToClipboard(Boolean dismissSelection, Boolean singleLine, Boolean withControlSequences, Windows.Foundation.IReference<CopyFormat> formats);
         void PasteTextFromClipboard();
         void SelectAll();
         Boolean ToggleBlockSelection();
@@ -95,6 +97,7 @@ namespace Microsoft.Terminal.Control
         void ClearBuffer(ClearBufferType clearType);
         void RestoreFromPath(String path);
         void PersistToPath(String path);
+        void OpenCWD();
         void Close();
         Windows.Foundation.Size CharacterDimensions { get; };
         Windows.Foundation.Size MinimumSize { get; };
@@ -126,14 +129,16 @@ namespace Microsoft.Terminal.Control
 
         String ReadEntireBuffer();
         CommandHistoryContext CommandHistory();
+        void UpdateWinGetSuggestions(Windows.Foundation.Collections.IVector<String> suggestions);
 
-        void AdjustOpacity(Double Opacity, Boolean relative);
+        void AdjustOpacity(Single Opacity, Boolean relative);
+        void PreviewInput(String text);
 
         // You'd think this should just be "Opacity", but UIElement already
         // defines an "Opacity", which we're actually not setting at all. We're
         // not overriding or changing _that_ value. Callers that want the
         // opacity set by the settings should call this instead.
-        Double BackgroundOpacity { get; };
+        Single BackgroundOpacity { get; };
 
         CursorDisplayState CursorVisibility;
 
@@ -142,8 +147,13 @@ namespace Microsoft.Terminal.Control
         void ColorSelection(SelectionColor fg, SelectionColor bg, Microsoft.Terminal.Core.MatchMode matchMode);
 
         Windows.Foundation.Point CursorPositionInDips { get; };
+        Double QuickFixButtonWidth { get; };
+        Double QuickFixButtonCollapsedWidth { get; };
 
         void ShowContextMenu();
+        Boolean OpenQuickFixMenu();
+        void RefreshQuickFixMenu();
+        void ClearQuickFix();
 
         void Detach();
     }

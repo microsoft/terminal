@@ -10,6 +10,6 @@ jobs:
     submodules: false
     clean: true
 
-  - powershell: |-
+  - pwsh: |-
       .\build\scripts\Invoke-FormattingCheck.ps1
     displayName: 'Run formatters'

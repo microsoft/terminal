@@ -59,10 +59,10 @@
     <Reference Include="System" />
     <Reference Include="System.Drawing" />
     <Reference Include="TE.Managed, Version=10.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <HintPath>$(TAEFPackagePathRoot)\lib\net45\TE.Managed.dll</HintPath>
+      <HintPath>$(TAEFPackagePathRoot)\lib\net452\TE.Managed.dll</HintPath>
     </Reference>
     <Reference Include="TE.Model.Managed, Version=10.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <HintPath>$(TAEFPackagePathRoot)\lib\net45\TE.Model.Managed.dll</HintPath>
+      <HintPath>$(TAEFPackagePathRoot)\lib\net452\TE.Model.Managed.dll</HintPath>
     </Reference>
     <Reference Include="UIAutomationClient" />
     <Reference Include="UIAutomationTypes" />
@@ -73,10 +73,10 @@
       <HintPath>$(SeleniumSupportPathRoot)\lib\net40\WebDriver.Support.dll</HintPath>
     </Reference>
     <Reference Include="Wex.Common.Managed, Version=10.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <HintPath>$(TAEFPackagePathRoot)\lib\net45\Wex.Common.Managed.dll</HintPath>
+      <HintPath>$(TAEFPackagePathRoot)\lib\net452\Wex.Common.Managed.dll</HintPath>
     </Reference>
     <Reference Include="Wex.Logger.Interop, Version=10.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <HintPath>$(TAEFPackagePathRoot)\lib\net45\Wex.Logger.Interop.dll</HintPath>
+      <HintPath>$(TAEFPackagePathRoot)\lib\net452\Wex.Logger.Interop.dll</HintPath>
     </Reference>
     <Reference Include="WindowsBase" />
   </ItemGroup>

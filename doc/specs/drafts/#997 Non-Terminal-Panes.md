@@ -70,7 +70,7 @@ With more possible controls in a pane than just a terminal, it's possible that
 crashes in those controls could impact the entire Terminal app's reliability.
 This would largely be out of our control, as we only author the TermControl.
 
-We may want to consider hosting each pane in it's own process, similar to how
+We may want to consider hosting each pane in its own process, similar to how
 moder browsers will host each tab in its own process, to help isolate tabs. This
 is a bigger discussion than the feature at hand, however.
 

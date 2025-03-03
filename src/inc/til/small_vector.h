@@ -652,7 +652,7 @@ namespace til
         reference emplace_back(Args&&... args)
         {
             const auto new_size = _ensure_fits(1);
-            const auto it = new (_data + _size) T(std::forward<Args>(args)...);
+            const auto it = std::construct_at(_data + _size, std::forward<Args>(args)...);
             _size = new_size;
             return *it;
         }
@@ -869,9 +869,10 @@ namespace til
             const auto new_size = _ensure_fits(count);
             const auto moveable = old_size - offset;
 
-            // An optimization for the most common vector type which is trivially constructible, destructible and copyable.
-            // This allows us to drop exception handlers (= no need to push onto the stack) and replace two moves with just one.
-            if constexpr (noexcept(func(begin())) && std::is_trivial_v<T>)
+            // An optimization for the most common vector type which is trivially and copyable and noexcept constructible.
+            // Compared to the complex form below, we don't need the 2 moves and 1 destroy, because is_trivially_copyable_v implies
+            // that we can just memmove() the items in one fell swoop. We don't need a try/catch either because func() is noexcept.
+            if constexpr (noexcept(func(begin())) && std::is_trivially_copyable_v<T>)
             {
                 _size = new_size;
 
@@ -930,7 +931,10 @@ namespace til
         T* _data;
         size_t _capacity;
         size_t _size;
-        T _buffer[N];
+        union
+        {
+            T _buffer[N];
+        };
     };
 }
 

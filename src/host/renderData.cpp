@@ -42,9 +42,9 @@ til::point RenderData::GetTextBufferEndPosition() const noexcept
 //   the appropriate windowing.
 // Return Value:
 // - Text buffer with cell information for display
-const TextBuffer& RenderData::GetTextBuffer() const noexcept
+TextBuffer& RenderData::GetTextBuffer() const noexcept
 {
-    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     return gci.GetActiveOutputBuffer().GetTextBuffer();
 }
 
@@ -59,32 +59,19 @@ const FontInfo& RenderData::GetFontInfo() const noexcept
 }
 
 // Method Description:
-// - Retrieves one rectangle per line describing the area of the viewport
+// - Retrieves one span per line describing the area of the viewport
 //   that should be highlighted in some way to represent a user-interactive selection
-// Return Value:
-// - Vector of Viewports describing the area selected
-std::vector<Viewport> RenderData::GetSelectionRects() noexcept
+std::span<const til::point_span> RenderData::GetSelectionSpans() const noexcept
 {
-    std::vector<Viewport> result;
-
-    try
-    {
-        for (const auto& select : Selection::Instance().GetSelectionRects())
-        {
-            result.emplace_back(Viewport::FromInclusive(select));
-        }
-    }
-    CATCH_LOG();
-
-    return result;
+    return Selection::Instance().GetSelectionSpans();
 }
 
 // Method Description:
 // - Retrieves one rectangle per line describing the area of the viewport
-//   that should be highlighted in some way to represent a user-interactive selection
+//   that should be highlighted
 // Return Value:
-// - Vector of Viewports describing the area selected
-std::vector<Viewport> RenderData::GetSearchSelectionRects() noexcept
+// - Vector of rects describing the highlighted area
+std::span<const til::point_span> RenderData::GetSearchHighlights() const noexcept
 {
     return {};
 }
@@ -134,7 +121,7 @@ bool RenderData::IsCursorVisible() const noexcept
 {
     const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     const auto& cursor = gci.GetActiveOutputBuffer().GetTextBuffer().GetCursor();
-    return cursor.IsVisible() && !cursor.IsPopupShown();
+    return cursor.IsVisible();
 }
 
 // Method Description:
@@ -208,47 +195,6 @@ CursorType RenderData::GetCursorStyle() const noexcept
 ULONG RenderData::GetCursorPixelWidth() const noexcept
 {
     return ServiceLocator::LocateGlobals().cursorPixelWidth;
-}
-
-// Routine Description:
-// - Retrieves overlays to be drawn on top of the main screen buffer area.
-// - Overlays are drawn from first to last
-//  (the highest overlay should be given last)
-// Return Value:
-// - Iterable set of overlays
-const std::vector<Microsoft::Console::Render::RenderOverlay> RenderData::GetOverlays() const noexcept
-{
-    std::vector<Microsoft::Console::Render::RenderOverlay> overlays;
-
-    try
-    {
-        // First retrieve the IME information and build overlays.
-        const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-        const auto& ime = gci.ConsoleIme;
-
-        for (const auto& composition : ime.ConvAreaCompStr)
-        {
-            // Only send the overlay to the renderer on request if it's not supposed to be hidden at this moment.
-            if (!composition.IsHidden())
-            {
-                // This is holding the data.
-                const auto& textBuffer = composition.GetTextBuffer();
-
-                // The origin of the text buffer above (top left corner) is supposed to sit at this
-                // point within the visible viewport of the current window.
-                const auto origin = composition.GetAreaBufferInfo().coordConView;
-
-                // This is the area of the viewport that is actually in use relative to the text buffer itself.
-                // (e.g. 0,0 is the origin of the text buffer above, not the placement within the visible viewport)
-                const auto used = Viewport::FromInclusive(composition.GetAreaBufferInfo().rcViewCaWindow);
-
-                overlays.emplace_back(Microsoft::Console::Render::RenderOverlay{ textBuffer, origin, used });
-            }
-        }
-    }
-    CATCH_LOG();
-
-    return overlays;
 }
 
 // Method Description:
@@ -381,8 +327,9 @@ void RenderData::SelectNewRegion(const til::point coordStart, const til::point c
     Selection::Instance().SelectNewRegion(coordStart, coordEnd);
 }
 
-void RenderData::SelectSearchRegions(std::vector<til::inclusive_rect> source)
+const til::point_span* RenderData::GetSearchHighlightFocused() const noexcept
 {
+    return nullptr;
 }
 
 // Routine Description:
@@ -408,7 +355,7 @@ const til::point RenderData::GetSelectionEnd() const noexcept
     //  - SelectionAnchor: the initial position where the selection was started
     //  - SelectionRect: the rectangular region denoting a portion of the buffer that is selected
 
-    // The following is an excerpt from Selection::s_GetSelectionRects
+    // The following is an excerpt from Selection::GetSelectionSpans
     // if the anchor (start of select) was in the top right or bottom left of the box,
     // we need to remove rectangular overlap in the middle.
     // e.g.

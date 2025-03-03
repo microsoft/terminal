@@ -37,9 +37,7 @@ winrt::hstring DefaultTerminal::Version() const
         return winrt::hstring{};
     }
 
-    fmt::wmemory_buffer buffer;
-    fmt::format_to(buffer, L"{}.{}.{}.{}", version.major, version.minor, version.build, version.revision);
-    return winrt::hstring{ buffer.data(), gsl::narrow_cast<winrt::hstring::size_type>(buffer.size()) };
+    return winrt::hstring{ fmt::format(FMT_COMPILE(L"{}.{}.{}.{}"), version.major, version.minor, version.build, version.revision) };
 }
 
 winrt::hstring DefaultTerminal::Author() const

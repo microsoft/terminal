@@ -186,23 +186,23 @@
   <data name="Quit" xml:space="preserve">
     <value>Beenden</value>
   </data>
-  <data name="CloseWindowWarningTitle" xml:space="preserve">
-    <value>Möchten Sie alle Registerkarten schließen?</value>
-  </data>
   <data name="MultiplePanes" xml:space="preserve">
     <value>Mehrere Bereiche</value>
   </data>
   <data name="TabCloseSubMenu" xml:space="preserve">
-    <value>Schließen...</value>
+    <value>Schließen</value>
+  </data>
+  <data name="TabMoveSubMenu" xml:space="preserve">
+    <value>Registerkarte verschieben</value>
   </data>
   <data name="TabCloseAfter" xml:space="preserve">
-    <value>Registerkarten auf der rechten Seite schließen</value>
+    <value>Tabs nach rechts schließen</value>
   </data>
   <data name="TabCloseOther" xml:space="preserve">
     <value>Andere Registerkarten schließen</value>
   </data>
   <data name="TabClose" xml:space="preserve">
-    <value>Registerkarte schließen</value>
+    <value>Tab schließen</value>
   </data>
   <data name="PaneClose" xml:space="preserve">
     <value>Bereich schließen</value>
@@ -211,16 +211,16 @@
     <value>Registerkarte teilen</value>
   </data>
   <data name="SplitPaneText" xml:space="preserve">
-    <value>Geteilter Bereich</value>
+    <value>Bereich teilen</value>
   </data>
   <data name="SearchWebText" xml:space="preserve">
     <value>Websuche</value>
   </data>
   <data name="TabColorChoose" xml:space="preserve">
-    <value>Farbe...</value>
+    <value>Registerkartenfarbe ändern</value>
   </data>
   <data name="TabColorCustomButton.Content" xml:space="preserve">
-    <value>Benutzerdefiniert...</value>
+    <value>Benutzerdefiniert</value>
   </data>
   <data name="TabColorClearButton.Content" xml:space="preserve">
     <value>Zurücksetzen</value>
@@ -229,7 +229,7 @@
     <value>Registerkarte umbenennen</value>
   </data>
   <data name="DuplicateTabText" xml:space="preserve">
-    <value>Registerkarte duplizieren</value>
+    <value>Registerkarte kopieren</value>
   </data>
   <data name="InvalidBackgroundImage" xml:space="preserve">
     <value>Profil mit einem ungültigen "backgroundImage" gefunden. Dieses Profil hat standardmäßig kein Hintergrundbild. Stellen Sie sicher, dass beim Festlegen eines "backgroundImage" der Wert ein gültiger Dateipfad zu einem Bild ist.</value>
@@ -286,6 +286,15 @@
   <data name="CmdCommandArgDesc" xml:space="preserve">
     <value>Ein optionaler Befehl mit Argumenten, der auf der neuen Registerkarte oder im neuen Bereich erscheinen soll</value>
   </data>
+  <data name="SaveSnippetDesc" xml:space="preserve">
+    <value>Befehlszeile als Eingabeaktion speichern</value>
+  </data>
+  <data name="SaveSnippetArgDesc" xml:space="preserve">
+    <value>Ein optionales Argument</value>
+  </data>
+  <data name="KeyChordArgDesc" xml:space="preserve">
+    <value>Ein optionales Argument</value>
+  </data>
   <data name="CmdFocusTabDesc" xml:space="preserve">
     <value>Fokus auf eine andere Registerkarte verschieben</value>
   </data>
@@ -334,6 +343,9 @@
   </data>
   <data name="CmdProfileArgDesc" xml:space="preserve">
     <value>Mit dem angegebenen Profil öffnen. Akzeptiert entweder den Namen oder die GUID eines Profils</value>
+  </data>
+  <data name="CmdSessionIdArgDesc" xml:space="preserve">
+    <value>Legt die WT_SESSION-Variable fest; muss eine GUID sein.</value>
   </data>
   <data name="CmdSplitPaneDesc" xml:space="preserve">
     <value>Erstellen eines neuen geteilten Bereichs</value>
@@ -487,7 +499,7 @@
     <comment>A hyperlink name for the Terminal's privacy policy</comment>
   </data>
   <data name="AboutDialog_ThirdPartyNoticesLink.Content" xml:space="preserve">
-    <value>Drittanbieter-Hinweise</value>
+    <value>Hinweise von Drittanbietern</value>
     <comment>A hyperlink name for the Terminal's third-party notices</comment>
   </data>
   <data name="QuitDialog.CloseButtonText" xml:space="preserve">
@@ -716,12 +728,6 @@
   <data name="WindowRenamer.CloseButtonContent" xml:space="preserve">
     <value>Abbrechen</value>
   </data>
-  <data name="RenameFailedToast.Title" xml:space="preserve">
-    <value>Das Fenster konnte nicht umbenannt werden</value>
-  </data>
-  <data name="RenameFailedToast.Subtitle" xml:space="preserve">
-    <value>Ein anderes Fenster mit diesem Namen existiert bereits</value>
-  </data>
   <data name="WindowMaximizeButtonToolTip" xml:space="preserve">
     <value>Maximieren</value>
   </data>
@@ -761,7 +767,7 @@
     <value>Suchen</value>
   </data>
   <data name="PlainText" xml:space="preserve">
-    <value>Nur Text</value>
+    <value>Unformatierter Text</value>
   </data>
   <data name="CloseOnExitInfoBar.Message" xml:space="preserve">
     <value>Das Beendigungsverhalten kann in den erweiterten Profileinstellungen konfiguriert werden.</value>
@@ -830,7 +836,7 @@
     <value>Diese Registerkarte schließen</value>
   </data>
   <data name="NewTabMenuFolderEmpty" xml:space="preserve">
-    <value>Leer...</value>
+    <value>Leer</value>
   </data>
   <data name="ClosePaneText" xml:space="preserve">
     <value>Bereich schließen</value>
@@ -892,5 +898,45 @@
   </data>
   <data name="RestartConnectionToolTip" xml:space="preserve">
     <value>Verbindung mit aktivem Bereich neu starten</value>
+  </data>
+  <data name="SnippetPaneTitle.Text" xml:space="preserve">
+    <value>Schnipsel</value>
+    <comment>Header for a page that includes small "snippets" of text for the user to enter</comment>
+  </data>
+  <data name="SnippetsFilterBox.PlaceholderText" xml:space="preserve">
+    <value>Codeausschnitte filtern...</value>
+    <comment>Placeholder text for a text box to filter snippets (on the same page as the 'SnippetPaneTitle')</comment>
+  </data>
+  <data name="SnippetPlayButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Geben Sie diesen Befehl ein.</value>
+  </data>
+  <data name="SnippetPlayButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Geben Sie diesen Befehl ein.</value>
+  </data>
+  <data name="SnippetsPaneNoneFoundHeader.Text" xml:space="preserve">
+    <value>In Ihren Einstellungen wurden keine Codeausschnitte gefunden.</value>
+    <comment>Text shown to user when no snippets are found in their settings</comment>
+  </data>
+  <data name="SnippetsPaneNoneFoundDetails.Text" xml:space="preserve">
+    <value>Fügen Sie einige Aktionen "Eingabe senden" in Ihren Einstellungen hinzu, damit sie hier angezeigt werden.</value>
+    <comment>Additional information presented to the user to let them know they can add a "Send input" action in their setting to populate the snippets pane</comment>
+  </data>
+  <data name="ActionSavedToast.Title" xml:space="preserve">
+    <value>Aktion gespeichert</value>
+  </data>
+  <data name="ActionSaveFailedToast.Title" xml:space="preserve">
+    <value>Fehler beim Speichern der Aktion</value>
+  </data>
+  <data name="CloseSnippetsPaneButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Bereich schließen</value>
+  </data>
+  <data name="CloseSnippetsPaneButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Bereich schließen</value>
+  </data>
+  <data name="TabMoveLeft" xml:space="preserve">
+    <value>Nach links</value>
+  </data>
+  <data name="TabMoveRight" xml:space="preserve">
+    <value>Nach rechts</value>
   </data>
 </root>

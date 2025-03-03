@@ -73,20 +73,6 @@ HRESULT CTerminalHandoff::s_StopListeningLocked()
 }
 
 // Routine Description:
-// - Helper to duplicate a handle to ourselves so we can keep holding onto it
-//   after the caller frees the original one.
-// Arguments:
-// - in - Handle to duplicate
-// - out - Where to place the duplicated value
-// Return Value:
-// - S_OK or Win32 error from `::DuplicateHandle`
-static HRESULT _duplicateHandle(const HANDLE in, HANDLE& out) noexcept
-{
-    RETURN_IF_WIN32_BOOL_FALSE(::DuplicateHandle(GetCurrentProcess(), in, GetCurrentProcess(), &out, 0, FALSE, DUPLICATE_SAME_ACCESS));
-    return S_OK;
-}
-
-// Routine Description:
 // - Receives the terminal handoff via COM from the other process,
 //   duplicates handles as COM will free those given on the way out,
 //   then fires off an event notifying the rest of the terminal that
@@ -102,7 +88,7 @@ static HRESULT _duplicateHandle(const HANDLE in, HANDLE& out) noexcept
 // - E_NOT_VALID_STATE if a event handler is not registered before calling. `::DuplicateHandle`
 //   error codes if we cannot manage to make our own copy of handles to retain. Or S_OK/error
 //   from the registered handler event function.
-HRESULT CTerminalHandoff::EstablishPtyHandoff(HANDLE in, HANDLE out, HANDLE signal, HANDLE ref, HANDLE server, HANDLE client, TERMINAL_STARTUP_INFO startupInfo)
+HRESULT CTerminalHandoff::EstablishPtyHandoff(HANDLE* in, HANDLE* out, HANDLE signal, HANDLE reference, HANDLE server, HANDLE client, const TERMINAL_STARTUP_INFO* startupInfo)
 {
     try
     {
@@ -120,19 +106,8 @@ HRESULT CTerminalHandoff::EstablishPtyHandoff(HANDLE in, HANDLE out, HANDLE sign
         // Report an error if no one registered a handoff function before calling this.
         THROW_HR_IF_NULL(E_NOT_VALID_STATE, localPfnHandoff);
 
-        // Duplicate the handles from what we received.
-        // The contract with COM specifies that any HANDLEs we receive from the caller belong
-        // to the caller and will be freed when we leave the scope of this method.
-        // Making our own duplicate copy ensures they hang around in our lifetime.
-        THROW_IF_FAILED(_duplicateHandle(in, in));
-        THROW_IF_FAILED(_duplicateHandle(out, out));
-        THROW_IF_FAILED(_duplicateHandle(signal, signal));
-        THROW_IF_FAILED(_duplicateHandle(ref, ref));
-        THROW_IF_FAILED(_duplicateHandle(server, server));
-        THROW_IF_FAILED(_duplicateHandle(client, client));
-
         // Call registered handler from when we started listening.
-        THROW_IF_FAILED(localPfnHandoff(in, out, signal, ref, server, client, startupInfo));
+        THROW_IF_FAILED(localPfnHandoff(in, out, signal, reference, server, client, startupInfo));
 
 #pragma warning(suppress : 26477)
         TraceLoggingWrite(

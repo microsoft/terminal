@@ -2,33 +2,18 @@
 // Licensed under the MIT license.
 
 #include "precomp.h"
-
 #include "srvinit.h"
 
 #include "dbcs.h"
 #include "handle.h"
 #include "registry.hpp"
 #include "renderFontDefaults.hpp"
-
-#include "ApiRoutines.h"
-
-#include "../types/inc/GlyphWidth.hpp"
-
-#include "../server/DeviceHandle.h"
-#include "../server/Entrypoints.h"
-#include "../server/IoSorter.h"
-
-#include "../interactivity/inc/ISystemConfigurationProvider.hpp"
-#include "../interactivity/inc/ServiceLocator.hpp"
 #include "../interactivity/base/ApiDetector.hpp"
 #include "../interactivity/base/RemoteConsoleControl.hpp"
-
-#include "renderData.hpp"
-#include "../renderer/base/renderer.hpp"
-
-#include "../inc/conint.h"
-
-#include "tracing.hpp"
+#include "../interactivity/inc/ServiceLocator.hpp"
+#include "../server/DeviceHandle.h"
+#include "../server/IoSorter.h"
+#include "../types/inc/CodepointWidthDetector.hpp"
 
 #if TIL_FEATURE_RECEIVEINCOMINGHANDOFF_ENABLED
 #include "ITerminalHandoff.h"
@@ -396,7 +381,6 @@ HRESULT ConsoleCreateIoThread(_In_ HANDLE Server,
     //      can start, so they're started below, in ConsoleAllocateConsole
     auto& gci = g.getConsoleInformation();
     RETURN_IF_FAILED(gci.GetVtIo()->Initialize(args));
-    RETURN_IF_FAILED(gci.GetVtIo()->CreateAndStartSignalThread());
 
     return S_OK;
 }
@@ -472,18 +456,7 @@ try
 
     wil::unique_handle signalPipeTheirSide;
     wil::unique_handle signalPipeOurSide;
-
-    wil::unique_handle inPipeTheirSide;
-    wil::unique_handle inPipeOurSide;
-
-    wil::unique_handle outPipeTheirSide;
-    wil::unique_handle outPipeOurSide;
-
     RETURN_IF_WIN32_BOOL_FALSE(CreatePipe(signalPipeOurSide.addressof(), signalPipeTheirSide.addressof(), nullptr, 0));
-
-    RETURN_IF_WIN32_BOOL_FALSE(CreatePipe(inPipeOurSide.addressof(), inPipeTheirSide.addressof(), nullptr, 0));
-
-    RETURN_IF_WIN32_BOOL_FALSE(CreatePipe(outPipeTheirSide.addressof(), outPipeOurSide.addressof(), nullptr, 0));
 
     TraceLoggingWrite(g_hConhostV2EventTraceProvider,
                       "SrvInit_ReceiveHandoff_OpenedPipes",
@@ -506,7 +479,7 @@ try
 
     const auto serverProcess = GetCurrentProcess();
 
-    ::Microsoft::WRL::ComPtr<ITerminalHandoff2> handoff;
+    ::Microsoft::WRL::ComPtr<ITerminalHandoff3> handoff;
 
     TraceLoggingWrite(g_hConhostV2EventTraceProvider,
                       "SrvInit_PrepareToCreateDelegationTerminal",
@@ -581,26 +554,26 @@ try
 
     myStartupInfo.wShowWindow = settings.GetShowWindow();
 
-    RETURN_IF_FAILED(handoff->EstablishPtyHandoff(inPipeTheirSide.get(),
-                                                  outPipeTheirSide.get(),
+    wil::unique_handle inPipeOurSide;
+    wil::unique_handle outPipeOurSide;
+    RETURN_IF_FAILED(handoff->EstablishPtyHandoff(inPipeOurSide.addressof(),
+                                                  outPipeOurSide.addressof(),
                                                   signalPipeTheirSide.get(),
                                                   refHandle.get(),
                                                   serverProcess,
                                                   clientProcess.get(),
-                                                  myStartupInfo));
+                                                  &myStartupInfo));
 
     TraceLoggingWrite(g_hConhostV2EventTraceProvider,
                       "SrvInit_DelegateToTerminalSucceeded",
                       TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
                       TraceLoggingKeyword(TIL_KEYWORD_TRACE));
 
-    inPipeTheirSide.reset();
-    outPipeTheirSide.reset();
     signalPipeTheirSide.reset();
 
     // GH#13211 - Make sure the terminal obeys the resizing quirk. Otherwise,
     // defterm connections to the Terminal are going to have weird resizing.
-    const auto commandLine = fmt::format(FMT_COMPILE(L" --headless --resizeQuirk --signal {:#x}"),
+    const auto commandLine = fmt::format(FMT_COMPILE(L" --headless --signal {:#x}"),
                                          (int64_t)signalPipeOurSide.release());
 
     ConsoleArguments consoleArgs(commandLine, inPipeOurSide.release(), outPipeOurSide.release());
@@ -867,23 +840,25 @@ PWSTR TranslateConsoleTitle(_In_ PCWSTR pwszConsoleTitle, const BOOL fUnexpand, 
     // No matter what, create a renderer.
     try
     {
-        g.pRender = nullptr;
+        if (!gci.IsInVtIoMode())
+        {
+            auto renderThread = std::make_unique<RenderThread>();
+            // stash a local pointer to the thread here -
+            // We're going to give ownership of the thread to the Renderer,
+            //      but the thread also need to be told who its renderer is,
+            //      and we can't do that until the renderer is constructed.
+            auto* const localPointerToThread = renderThread.get();
 
-        auto renderThread = std::make_unique<RenderThread>();
-        // stash a local pointer to the thread here -
-        // We're going to give ownership of the thread to the Renderer,
-        //      but the thread also need to be told who its renderer is,
-        //      and we can't do that until the renderer is constructed.
-        auto* const localPointerToThread = renderThread.get();
+            g.pRender = new Renderer(gci.GetRenderSettings(), &gci.renderData, nullptr, 0, std::move(renderThread));
 
-        g.pRender = new Renderer(gci.GetRenderSettings(), &gci.renderData, nullptr, 0, std::move(renderThread));
+            THROW_IF_FAILED(localPointerToThread->Initialize(g.pRender));
 
-        THROW_IF_FAILED(localPointerToThread->Initialize(g.pRender));
-
-        // Set up the renderer to be used to calculate the width of a glyph,
-        //      should we be unable to figure out its width another way.
-        auto pfn = std::bind(&Renderer::IsGlyphWideByFont, static_cast<Renderer*>(g.pRender), std::placeholders::_1);
-        SetGlyphWidthFallback(pfn);
+            // Set up the renderer to be used to calculate the width of a glyph,
+            //      should we be unable to figure out its width another way.
+            CodepointWidthDetector::Singleton().SetFallbackMethod([](const std::wstring_view& glyph) {
+                return ServiceLocator::LocateGlobals().pRender->IsGlyphWideByFont(glyph);
+            });
+        }
     }
     catch (...)
     {
@@ -901,7 +876,10 @@ PWSTR TranslateConsoleTitle(_In_ PCWSTR pwszConsoleTitle, const BOOL fUnexpand, 
     }
 
     // Allow the renderer to paint once the rest of the console is hooked up.
-    g.pRender->EnablePainting();
+    if (g.pRender)
+    {
+        g.pRender->EnablePainting();
+    }
 
     if (SUCCEEDED_NTSTATUS(Status) && ConsoleConnectionDeservesVisibleWindow(p))
     {
@@ -966,27 +944,11 @@ PWSTR TranslateConsoleTitle(_In_ PCWSTR pwszConsoleTitle, const BOOL fUnexpand, 
     // We'll need the size of the screen buffer in the vt i/o initialization
     if (SUCCEEDED_NTSTATUS(Status))
     {
-        auto hr = gci.GetVtIo()->CreateIoHandlers();
-        if (hr == S_FALSE)
-        {
-            // We're not in VT I/O mode, this is fine.
-        }
-        else if (SUCCEEDED(hr))
-        {
-            // Actually start the VT I/O threads
-            hr = gci.GetVtIo()->StartIfNeeded();
-            // Don't convert S_FALSE to an NTSTATUS - the equivalent NTSTATUS
-            //      is treated as an error
-            if (hr != S_FALSE)
-            {
-                Status = NTSTATUS_FROM_HRESULT(hr);
-            }
-            else
-            {
-                Status = ERROR_SUCCESS;
-            }
-        }
-        else
+        // Actually start the VT I/O threads
+        auto hr = gci.GetVtIo()->StartIfNeeded();
+        // Don't convert S_FALSE to an NTSTATUS - the equivalent NTSTATUS
+        //      is treated as an error
+        if (FAILED(hr))
         {
             Status = NTSTATUS_FROM_HRESULT(hr);
         }
@@ -1029,7 +991,7 @@ DWORD WINAPI ConsoleIoThread(LPVOID lpParameter)
     {
         if (ReplyMsg != nullptr)
         {
-            LOG_IF_FAILED(ReplyMsg->ReleaseMessageBuffers());
+            ReplyMsg->ReleaseMessageBuffers();
         }
 
         // TODO: 9115192 correct mixed NTSTATUS/HRESULT

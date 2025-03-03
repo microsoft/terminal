@@ -31,7 +31,6 @@ namespace winrt::TerminalApp::implementation
 
         Windows::Foundation::Collections::IObservableVector<winrt::TerminalApp::FilteredCommand> FilteredActions();
 
-        void SetCommands(const Windows::Foundation::Collections::IVector<Microsoft::Terminal::Settings::Model::Command>& actions);
         void SetTabs(const Windows::Foundation::Collections::IObservableVector<winrt::TerminalApp::TabBase>& tabs, const Windows::Foundation::Collections::IObservableVector<winrt::TerminalApp::TabBase>& mruTabs);
         void SetActionMap(const Microsoft::Terminal::Settings::Model::IActionMapView& actionMap);
 
@@ -80,6 +79,8 @@ namespace winrt::TerminalApp::implementation
         Windows::Foundation::Collections::IVector<winrt::TerminalApp::FilteredCommand> _commandsToFilter();
 
         bool _lastFilterTextWasEmpty{ true };
+
+        void _populateCommands();
 
         void _filterTextChanged(const Windows::Foundation::IInspectable& sender,
                                 const Windows::UI::Xaml::RoutedEventArgs& args);

@@ -35,7 +35,6 @@ typedef struct _TerminalTheme
     COLORREF DefaultBackground;
     COLORREF DefaultForeground;
     COLORREF DefaultSelectionBackground;
-    float SelectionBackgroundAlpha;
     uint32_t CursorStyle; // This will be converted to DispatchTypes::CursorStyle (size_t), but C# cannot marshal an enum type and have it fit in a size_t.
     COLORREF ColorTable[16];
 } TerminalTheme, *LPTerminalTheme;
@@ -146,7 +145,6 @@ private:
     // Inherited via IControlAccessibilityInfo
     til::size GetFontSize() const noexcept override;
     til::rect GetBounds() const noexcept override;
-    double GetScaleFactor() const noexcept override;
     void ChangeViewport(const til::inclusive_rect& NewWindow) override;
     HRESULT GetHostUiaProvider(IRawElementProviderSimple** provider) noexcept override;
     til::rect GetPadding() const noexcept override;

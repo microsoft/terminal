@@ -141,7 +141,7 @@
       <SDLCheck>true</SDLCheck>
       <PrecompiledHeaderFile>precomp.h</PrecompiledHeaderFile>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-      <AdditionalIncludeDirectories>$(SolutionDir)\src\inc;$(SolutionDir)\dep;$(SolutionDir)\dep\Console;$(SolutionDir)\dep\gsl\include;$(SolutionDir)\dep\Win32K;$(SolutionDir)\oss\chromium;$(SolutionDir)\oss\dynamic_bitset;$(SolutionDir)\oss\fmt\include;$(SolutionDir)\oss\interval_tree;$(SolutionDir)\oss\libpopcnt;$(SolutionDir)\oss\pcg\include;%(AdditionalIncludeDirectories);</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)\src\inc;$(SolutionDir)\dep;$(SolutionDir)\dep\Console;$(SolutionDir)\dep\Win32K;$(SolutionDir)\oss\chromium;$(SolutionDir)\oss\interval_tree;$(SolutionDir)\oss\pcg\include;%(AdditionalIncludeDirectories);</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <MinimalRebuild>false</MinimalRebuild>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
@@ -150,7 +150,17 @@
       <RemoveUnreferencedCodeData>true</RemoveUnreferencedCodeData>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
-      <AdditionalOptions>%(AdditionalOptions) /utf-8 /Zc:__cplusplus /Zc:__STDC__ /Zc:enumTypes /Zc:externConstexpr /Zc:templateScope /Zc:throwingNew</AdditionalOptions>
+      <!--
+        Conformance options that are off by default at the time of writing:
+          /Zc:__cplusplus    Enable the __cplusplus macro to report the supported standard.
+          /Zc:__STDC__       Enable the __STDC__ macro to report the C standard is supported.
+          /Zc:enumTypes      Enable Standard C++ rules for enum type deduction.
+          /Zc:inline         Remove unreferenced functions or data if they're COMDAT or have internal linkage only.
+          /Zc:templateScope  Enforce Standard C++ template parameter shadowing rules.
+          /Zc:throwingNew    Assume operator new throws on failure.
+        /diagnostics:caret   Places ^^^^^ under the exact location of the issue. The default only shows the line number.
+      -->
+      <AdditionalOptions>%(AdditionalOptions) /utf-8 /Zc:__cplusplus /Zc:__STDC__ /Zc:enumTypes /Zc:inline /Zc:templateScope /Zc:throwingNew /diagnostics:caret</AdditionalOptions>
       <ControlFlowGuard>Guard</ControlFlowGuard>
     </ClCompile>
     <ResourceCompile>
@@ -231,8 +241,6 @@
     <EnableCppCoreCheck>true</EnableCppCoreCheck>
     <RunCodeAnalysis>true</RunCodeAnalysis>
     <CAExcludePath>$(CAExcludePath);$(SolutionDir)\dep;$(SolutionDir)\oss;$(SolutionDir)\packages</CAExcludePath>
-    <OpenConsoleVcpkgConfiguration>Release</OpenConsoleVcpkgConfiguration>
-    <OpenConsoleTppVcpkgConfiguration>Release</OpenConsoleTppVcpkgConfiguration>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)'=='AuditMode'">
     <ClCompile>
@@ -258,13 +266,35 @@
     </Link>
   </ItemDefinitionGroup>
 
-  <!-- Sanity check: Make sure the user followed the README and initialized git submodules. -->
-  <Target Name="EnsureSubmodulesExist" BeforeTargets="PrepareForBuild">
-    <PropertyGroup>
-      <ErrorText>This project references git submodule(s) that are missing on this computer. Use `git submodule update --init --recursive` to download them.  For more information, see https://github.com/microsoft/terminal#building-the-code. </ErrorText>
-    </PropertyGroup>
-    <Error Condition="!Exists('$(SolutionDir)\dep\gsl\README.md')" Text="$([System.String]::Format('$(ErrorText)'))" />
-  </Target>
-
   <Import Project="$(MSBuildThisFileDirectory)..\build\rules\Branding.targets" />
+
+  <PropertyGroup Label="vcpkg">
+    <VcpkgEnableManifest>true</VcpkgEnableManifest>
+
+    <!-- Set this here so that it doesn't get overwritten with "uwp" -->
+    <VcpkgOSTarget>windows</VcpkgOSTarget>
+    <VcpkgUseStatic>true</VcpkgUseStatic>
+
+    <!-- BODGY - work around DD#2302065. vcpkg now validates target triplets, and is *case-sensitive* -->
+    <VcpkgPlatformTarget Condition="'$(Platform)'=='ARM64'">arm64</VcpkgPlatformTarget>
+
+    <VcpkgAdditionalInstallOptions>--x-feature=terminal</VcpkgAdditionalInstallOptions>
+    <!--
+      Since we link everything statically, we don't need to copy anything.
+      This saves running a powershell script for every project.
+    -->
+    <VcpkgApplocalDeps>false</VcpkgApplocalDeps>
+    <VcpkgInstalledDir>$(SolutionDir)\obj\$(Platform)\vcpkg</VcpkgInstalledDir>
+    <VcpkgRoot Condition="'$(VcpkgRoot)'==''">$(VCPKG_ROOT)</VcpkgRoot>
+    <!-- VsInstallRoot is set by Visual Studio and MSBuild -->
+    <VcpkgRoot Condition="'$(VcpkgRoot)'==''">$(VsInstallRoot)\VC\vcpkg</VcpkgRoot>
+    <VcpkgRoot Condition="'$(VcpkgRoot)'=='' or !Exists('$(VcpkgRoot)\vcpkg.exe')">$(SolutionDir)\dep\vcpkg</VcpkgRoot>
+
+    <CAExcludePath>$(CAExcludePath);$(VcpkgInstalledDir)</CAExcludePath>
+
+    <!-- For now, don't allow global-per-user installs of vcpkg -->
+    <VCPkgLocalAppDataDisabled>true</VCPkgLocalAppDataDisabled>
+  </PropertyGroup>
+
+  <Import Project="$(VcpkgRoot)/scripts/buildsystems/msbuild/vcpkg.props" Condition="'$(MSBuildProjectExtension)'=='.vcxproj'" />
 </Project>

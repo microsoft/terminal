@@ -18,18 +18,23 @@ namespace Microsoft.Terminal.Control
         Direct3D11,
     };
 
+    enum TextMeasurement
+    {
+        Graphemes,
+        Wcswidth,
+        Console,
+    };
+
+    enum DefaultInputScope
+    {
+        Default,
+        AlphanumericHalfWidth,
+    };
+
     runtimeclass FontSizeChangedArgs
     {
         Int32 Width { get; };
         Int32 Height { get; };
-    }
-
-    runtimeclass CopyToClipboardEventArgs
-    {
-        String Text { get; };
-        String Html { get; };
-        String Rtf { get; };
-        Windows.Foundation.IReference<CopyFormat> Formats { get; };
     }
 
     runtimeclass ContextMenuRequestedEventArgs
@@ -83,15 +88,14 @@ namespace Microsoft.Terminal.Control
 
     runtimeclass TransparencyChangedEventArgs
     {
-        Double Opacity { get; };
+        Single Opacity { get; };
     }
 
-    runtimeclass FoundResultsArgs
+    enum SearchState
     {
-        Boolean FoundMatch { get; };
-        Int32 TotalMatches { get; };
-        Int32 CurrentMatch { get; };
-    }
+        Inactive = 0,
+        Active = 1,
+    };
 
     runtimeclass ShowWindowArgs
     {
@@ -127,5 +131,17 @@ namespace Microsoft.Terminal.Control
     runtimeclass StringSentEventArgs
     {
         String Text { get; };
+    }
+
+    runtimeclass SearchMissingCommandEventArgs
+    {
+        String MissingCommand { get; };
+        Int32 BufferRow { get; };
+    }
+
+    runtimeclass WindowSizeChangedEventArgs
+    {
+        Int32 Width;
+        Int32 Height;
     }
 }

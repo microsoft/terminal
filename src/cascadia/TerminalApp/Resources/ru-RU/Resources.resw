@@ -183,20 +183,20 @@
   <data name="Quit" xml:space="preserve">
     <value>Выход</value>
   </data>
-  <data name="CloseWindowWarningTitle" xml:space="preserve">
-    <value>Закрыть все вкладки?</value>
-  </data>
   <data name="MultiplePanes" xml:space="preserve">
     <value>Несколько областей</value>
   </data>
   <data name="TabCloseSubMenu" xml:space="preserve">
     <value>Закрыть</value>
   </data>
+  <data name="TabMoveSubMenu" xml:space="preserve">
+    <value>Переместить вкладку</value>
+  </data>
   <data name="TabCloseAfter" xml:space="preserve">
     <value>Закрыть вкладки справа</value>
   </data>
   <data name="TabCloseOther" xml:space="preserve">
-    <value>Закрыть другие вкладки</value>
+    <value>Закрыть остальные вкладки</value>
   </data>
   <data name="TabClose" xml:space="preserve">
     <value>Закрыть вкладку</value>
@@ -214,10 +214,10 @@
     <value>Поиск в Интернете</value>
   </data>
   <data name="TabColorChoose" xml:space="preserve">
-    <value>Цвет...</value>
+    <value>Изменить цвет вкладки</value>
   </data>
   <data name="TabColorCustomButton.Content" xml:space="preserve">
-    <value>Настраиваемый...</value>
+    <value>Настраиваемый</value>
   </data>
   <data name="TabColorClearButton.Content" xml:space="preserve">
     <value>Сбросить</value>
@@ -283,6 +283,15 @@
   <data name="CmdCommandArgDesc" xml:space="preserve">
     <value>Необязательная команда, с аргументами, которая создается на новой вкладке или области</value>
   </data>
+  <data name="SaveSnippetDesc" xml:space="preserve">
+    <value>Сохранение командной строки в качестве действия ввода</value>
+  </data>
+  <data name="SaveSnippetArgDesc" xml:space="preserve">
+    <value>Необязательный аргумент</value>
+  </data>
+  <data name="KeyChordArgDesc" xml:space="preserve">
+    <value>Необязательный аргумент</value>
+  </data>
   <data name="CmdFocusTabDesc" xml:space="preserve">
     <value>Переместить фокус на другую вкладку</value>
   </data>
@@ -331,6 +340,9 @@
   </data>
   <data name="CmdProfileArgDesc" xml:space="preserve">
     <value>Открыть с помощью данного профиля. Принимается имя или GUID профиля</value>
+  </data>
+  <data name="CmdSessionIdArgDesc" xml:space="preserve">
+    <value>Задает переменную WT_SESSION; должно быть GUID</value>
   </data>
   <data name="CmdSplitPaneDesc" xml:space="preserve">
     <value>Создать новую область разделения</value>
@@ -464,7 +476,7 @@
     <comment>This is the heading for a version number label</comment>
   </data>
   <data name="AboutDialog_GettingStartedLink.Content" xml:space="preserve">
-    <value>Начало работы</value>
+    <value>Приступая к работе</value>
     <comment>A hyperlink name for a guide on how to get started using Terminal</comment>
   </data>
   <data name="AboutDialog_SourceCodeLink.Content" xml:space="preserve">
@@ -484,7 +496,7 @@
     <comment>A hyperlink name for the Terminal's privacy policy</comment>
   </data>
   <data name="AboutDialog_ThirdPartyNoticesLink.Content" xml:space="preserve">
-    <value>Уведомления сторонних производителей</value>
+    <value>Уведомления третьих лиц</value>
     <comment>A hyperlink name for the Terminal's third-party notices</comment>
   </data>
   <data name="QuitDialog.CloseButtonText" xml:space="preserve">
@@ -713,17 +725,11 @@
   <data name="WindowRenamer.CloseButtonContent" xml:space="preserve">
     <value>Отмена</value>
   </data>
-  <data name="RenameFailedToast.Title" xml:space="preserve">
-    <value>Не удалось переименовать окно</value>
-  </data>
-  <data name="RenameFailedToast.Subtitle" xml:space="preserve">
-    <value>Окно с таким именем уже существует</value>
-  </data>
   <data name="WindowMaximizeButtonToolTip" xml:space="preserve">
     <value>Развернуть</value>
   </data>
   <data name="WindowRestoreDownButtonToolTip" xml:space="preserve">
-    <value>Восстановить размер</value>
+    <value>Кнопка "Свернуть в окно"</value>
   </data>
   <data name="CommandPaletteMenuItem" xml:space="preserve">
     <value>Палитра команд</value>
@@ -827,7 +833,7 @@
     <value>Закрыть эту вкладку</value>
   </data>
   <data name="NewTabMenuFolderEmpty" xml:space="preserve">
-    <value>Пусто...</value>
+    <value>Очистить</value>
   </data>
   <data name="ClosePaneText" xml:space="preserve">
     <value>Закрыть панель</value>
@@ -889,5 +895,45 @@
   </data>
   <data name="RestartConnectionToolTip" xml:space="preserve">
     <value>Перезапустить соединение с активной панелью.</value>
+  </data>
+  <data name="SnippetPaneTitle.Text" xml:space="preserve">
+    <value>Фрагменты</value>
+    <comment>Header for a page that includes small "snippets" of text for the user to enter</comment>
+  </data>
+  <data name="SnippetsFilterBox.PlaceholderText" xml:space="preserve">
+    <value>Фильтровать фрагменты...</value>
+    <comment>Placeholder text for a text box to filter snippets (on the same page as the 'SnippetPaneTitle')</comment>
+  </data>
+  <data name="SnippetPlayButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Ввести эту команду</value>
+  </data>
+  <data name="SnippetPlayButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Ввести эту команду</value>
+  </data>
+  <data name="SnippetsPaneNoneFoundHeader.Text" xml:space="preserve">
+    <value>Фрагменты не найдены в ваших параметрах.</value>
+    <comment>Text shown to user when no snippets are found in their settings</comment>
+  </data>
+  <data name="SnippetsPaneNoneFoundDetails.Text" xml:space="preserve">
+    <value>Добавьте в параметры некоторые действия "Отправить входные данные", чтобы они отображались здесь.</value>
+    <comment>Additional information presented to the user to let them know they can add a "Send input" action in their setting to populate the snippets pane</comment>
+  </data>
+  <data name="ActionSavedToast.Title" xml:space="preserve">
+    <value>Действие сохранено</value>
+  </data>
+  <data name="ActionSaveFailedToast.Title" xml:space="preserve">
+    <value>Не удалось сохранить действие</value>
+  </data>
+  <data name="CloseSnippetsPaneButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Закрыть панель</value>
+  </data>
+  <data name="CloseSnippetsPaneButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Закрыть панель</value>
+  </data>
+  <data name="TabMoveLeft" xml:space="preserve">
+    <value>Влево</value>
+  </data>
+  <data name="TabMoveRight" xml:space="preserve">
+    <value>Вправо</value>
   </data>
 </root>

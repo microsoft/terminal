@@ -28,11 +28,22 @@ extends:
     official: true
     branding: Canary
     buildTerminal: true
-    pgoBuildMode: Optimize
+    pgoBuildMode: None # BODGY - OneBranch is on VS 17.10, which is known to be the worst
     codeSign: true
+    signingIdentity:
+      serviceName: $(SigningServiceName)
+      appId: $(SigningAppId)
+      tenantId: $(SigningTenantId)
+      akvName: $(SigningAKVName)
+      authCertName: $(SigningAuthCertName)
+      signCertName: $(SigningSignCertName)
+      useManagedIdentity: $(SigningUseManagedIdentity)
+      clientId: $(SigningOriginalClientId)
     publishSymbolsToPublic: true
     publishVpackToWindows: false
     symbolExpiryTime: 15
+    symbolPublishingSubscription: $(SymbolPublishingServiceConnection)
+    symbolPublishingProject: $(SymbolPublishingProject)
     ${{ if eq(true, parameters.publishToAzure) }}:
       extraPublishJobs:
         - template: build/pipelines/templates-v2/job-deploy-to-azure-storage.yml@self

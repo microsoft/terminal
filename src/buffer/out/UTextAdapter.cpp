@@ -6,19 +6,87 @@
 
 #include "textBuffer.hpp"
 
+// All of these are somewhat annoying when trying to implement RefcountBuffer.
+// You can't stuff a unique_ptr into ut->q (= void*) after all.
+#pragma warning(disable : 26402) // Return a scoped object instead of a heap-allocated if it has a move constructor (r.3).
+#pragma warning(disable : 26403) // Reset or explicitly delete an owner<T> pointer '...' (r.3).
+#pragma warning(disable : 26409) // Avoid calling new and delete explicitly, use std::make_unique<T> instead (r.11).
+
 struct RowRange
 {
     til::CoordType begin;
     til::CoordType end;
 };
 
+struct RefcountBuffer
+{
+    size_t references;
+    size_t capacity;
+    wchar_t data[1];
+
+    static RefcountBuffer* EnsureCapacityForOverwrite(RefcountBuffer* buffer, size_t capacity)
+    {
+        // We must not just ensure that `buffer` has at least `capacity`, but also that its reference count is <= 1, because otherwise we would resize a shared buffer.
+        if (buffer != nullptr && buffer->references <= 1 && buffer->capacity >= capacity)
+        {
+            return buffer;
+        }
+
+        const auto oldCapacity = buffer ? buffer->capacity << 1 : 0;
+        const auto newCapacity = std::max(capacity + 128, oldCapacity);
+        const auto newBuffer = static_cast<RefcountBuffer*>(::operator new(sizeof(RefcountBuffer) - sizeof(data) + newCapacity * sizeof(wchar_t)));
+
+        if (!newBuffer)
+        {
+            return nullptr;
+        }
+
+        if (buffer)
+        {
+            buffer->Release();
+        }
+
+        // Copying the old buffer's data is not necessary because utextAccess() will scribble right over it.
+        newBuffer->references = 1;
+        newBuffer->capacity = newCapacity;
+        return newBuffer;
+    }
+
+    void AddRef() noexcept
+    {
+        // With our usage patterns, either of these two would indicate
+        // an unbalanced AddRef/Release or a memory corruption.
+        assert(references > 0 && references < 1000);
+        references++;
+    }
+
+    void Release() noexcept
+    {
+        // With our usage patterns, either of these two would indicate
+        // an unbalanced AddRef/Release or a memory corruption.
+        assert(references > 0 && references < 1000);
+        if (--references == 0)
+        {
+            ::operator delete(this);
+        }
+    }
+};
+
 constexpr size_t& accessLength(UText* ut) noexcept
 {
+    static_assert(sizeof(ut->p) == sizeof(size_t));
     return *std::bit_cast<size_t*>(&ut->p);
+}
+
+constexpr RefcountBuffer*& accessBuffer(UText* ut) noexcept
+{
+    static_assert(sizeof(ut->q) == sizeof(RefcountBuffer*));
+    return *std::bit_cast<RefcountBuffer**>(&ut->q);
 }
 
 constexpr RowRange& accessRowRange(UText* ut) noexcept
 {
+    static_assert(sizeof(ut->a) == sizeof(RowRange));
     return *std::bit_cast<RowRange*>(&ut->a);
 }
 
@@ -56,11 +124,16 @@ static UText* U_CALLCONV utextClone(UText* dest, const UText* src, UBool deep, U
     }
 
     dest = utext_setup(dest, 0, status);
-    if (*status <= U_ZERO_ERROR)
+    if (*status > U_ZERO_ERROR)
     {
-        memcpy(dest, src, sizeof(UText));
+        return dest;
     }
 
+    memcpy(dest, src, sizeof(UText));
+    if (const auto buf = accessBuffer(dest))
+    {
+        buf->AddRef();
+    }
     return dest;
 }
 
@@ -82,7 +155,9 @@ try
 
         for (til::CoordType y = range.begin; y < range.end; ++y)
         {
-            length += textBuffer.GetRowByOffset(y).GetText().size();
+            const auto& row = textBuffer.GetRowByOffset(y);
+            // Later down below we'll add a newline to the text if !wasWrapForced, so we need to account for that here.
+            length += row.GetText().size() + !row.WasWrapForced();
         }
 
         accessLength(ut) = length;
@@ -111,12 +186,9 @@ catch (...)
 static UBool U_CALLCONV utextAccess(UText* ut, int64_t nativeIndex, UBool forward) noexcept
 try
 {
-    if (nativeIndex < 0)
-    {
-        nativeIndex = 0;
-    }
-
     auto neededIndex = nativeIndex;
+    // This will make it simpler for us to search the row that contains the nativeIndex,
+    // because we'll now only need to check for `start<=index<limit` and nothing else.
     if (!forward)
     {
         neededIndex--;
@@ -124,13 +196,17 @@ try
 
     const auto& textBuffer = *static_cast<const TextBuffer*>(ut->context);
     const auto range = accessRowRange(ut);
-    auto start = ut->chunkNativeStart;
-    auto limit = ut->chunkNativeLimit;
-    auto y = accessCurrentRow(ut);
-    std::wstring_view text;
+    const auto startOld = ut->chunkNativeStart;
+    const auto limitOld = ut->chunkNativeLimit;
+    auto start = startOld;
+    auto limit = limitOld;
 
-    if (neededIndex < start || neededIndex >= limit)
+    if (neededIndex < startOld || neededIndex >= limitOld)
     {
+        auto y = accessCurrentRow(ut);
+        std::wstring_view text;
+        bool wasWrapForced = false;
+
         if (neededIndex < start)
         {
             do
@@ -138,12 +214,16 @@ try
                 --y;
                 if (y < range.begin)
                 {
-                    return false;
+                    break;
                 }
 
-                text = textBuffer.GetRowByOffset(y).GetText();
+                const auto& row = textBuffer.GetRowByOffset(y);
+                text = row.GetText();
+                wasWrapForced = row.WasWrapForced();
+
                 limit = start;
-                start -= text.size();
+                // Later down below we'll add a newline to the text if !wasWrapForced, so we need to account for that here.
+                start -= text.size() + !wasWrapForced;
             } while (neededIndex < start);
         }
         else
@@ -153,35 +233,63 @@ try
                 ++y;
                 if (y >= range.end)
                 {
-                    return false;
+                    break;
                 }
 
-                text = textBuffer.GetRowByOffset(y).GetText();
+                const auto& row = textBuffer.GetRowByOffset(y);
+                text = row.GetText();
+                wasWrapForced = row.WasWrapForced();
+
                 start = limit;
-                limit += text.size();
+                // Later down below we'll add a newline to the text if !wasWrapForced, so we need to account for that here.
+                limit += text.size() + !wasWrapForced;
             } while (neededIndex >= limit);
         }
 
-        accessCurrentRow(ut) = y;
-        ut->chunkNativeStart = start;
-        ut->chunkNativeLimit = limit;
-        ut->chunkLength = gsl::narrow_cast<int32_t>(text.size());
+        assert(start >= 0);
+        // If we have already calculated the total length we can also assert that the limit is in range.
+        assert(ut->p == nullptr || static_cast<size_t>(limit) <= accessLength(ut));
+
+        // Even if we went out-of-bounds, we still need to update the chunkContents to contain the first/last chunk.
+        if (limit != limitOld)
+        {
+            if (!wasWrapForced)
+            {
+                const auto newSize = text.size() + 1;
+                const auto buffer = RefcountBuffer::EnsureCapacityForOverwrite(accessBuffer(ut), newSize);
+
+                memcpy(&buffer->data[0], text.data(), text.size() * sizeof(wchar_t));
+                til::at(buffer->data, text.size()) = L'\n';
+
+                text = { &buffer->data[0], newSize };
+                accessBuffer(ut) = buffer;
+            }
+
+            accessCurrentRow(ut) = y;
+            ut->chunkNativeStart = start;
+            ut->chunkNativeLimit = limit;
+            ut->chunkLength = gsl::narrow_cast<int32_t>(text.size());
 #pragma warning(suppress : 26490) // Don't use reinterpret_cast (type.1).
-        ut->chunkContents = reinterpret_cast<const char16_t*>(text.data());
-        ut->nativeIndexingLimit = ut->chunkLength;
+            ut->chunkContents = reinterpret_cast<const char16_t*>(text.data());
+            ut->nativeIndexingLimit = ut->chunkLength;
+        }
     }
 
-    auto offset = gsl::narrow_cast<int32_t>(nativeIndex - start);
-
+    // The ICU documentation is a little bit misleading. It states:
+    // > @param forward    [...] If true, start<=index<limit. If false, [...] start<index<=limit.
+    // but that's just for finding the target chunk. The chunkOffset is not actually constrained to that!
+    // std::clamp will perform a<=b<=c, which is what we want.
+    const auto clampedIndex = std::clamp(nativeIndex, start, limit);
+    auto offset = gsl::narrow_cast<int32_t>(clampedIndex - start);
     // Don't leave the offset on a trailing surrogate pair. See U16_SET_CP_START.
     // This assumes that the TextBuffer contains valid UTF-16 which may theoretically not be the case.
     if (offset > 0 && offset < ut->chunkLength && U16_IS_TRAIL(til::at(ut->chunkContents, offset)))
     {
         offset--;
     }
-
     ut->chunkOffset = offset;
-    return true;
+
+    return neededIndex >= start && neededIndex < limit;
 }
 catch (...)
 {
@@ -256,18 +364,32 @@ catch (...)
     return 0;
 }
 
+static void U_CALLCONV utextClose(UText* ut) noexcept
+{
+    if (const auto buffer = accessBuffer(ut))
+    {
+        buffer->Release();
+    }
+}
+
 static constexpr UTextFuncs utextFuncs{
     .tableSize = sizeof(UTextFuncs),
     .clone = utextClone,
     .nativeLength = utextNativeLength,
     .access = utextAccess,
+    .close = utextClose,
 };
 
 // Creates a UText from the given TextBuffer that spans rows [rowBeg,RowEnd).
-UText Microsoft::Console::ICU::UTextFromTextBuffer(const TextBuffer& textBuffer, til::CoordType rowBeg, til::CoordType rowEnd) noexcept
+Microsoft::Console::ICU::unique_utext Microsoft::Console::ICU::UTextFromTextBuffer(const TextBuffer& textBuffer, til::CoordType rowBeg, til::CoordType rowEnd) noexcept
 {
 #pragma warning(suppress : 26477) // Use 'nullptr' rather than 0 or NULL (es.47).
-    UText ut = UTEXT_INITIALIZER;
+    unique_utext ut{ UTEXT_INITIALIZER };
+
+    UErrorCode status = U_ZERO_ERROR;
+    utext_setup(&ut, 0, &status);
+    FAIL_FAST_IF(status > U_ZERO_ERROR);
+
     ut.providerProperties = (1 << UTEXT_PROVIDER_LENGTH_IS_EXPENSIVE) | (1 << UTEXT_PROVIDER_STABLE_CHUNKS);
     ut.pFuncs = &utextFuncs;
     ut.context = &textBuffer;
@@ -289,16 +411,13 @@ Microsoft::Console::ICU::unique_uregex Microsoft::Console::ICU::CreateRegex(cons
     return unique_uregex{ re };
 }
 
-// Returns an inclusive point range given a text start and end position.
+// Returns a half-open [beg,end) range given a text start and end position.
 // This function is designed to be used with uregex_start64/uregex_end64.
 til::point_span Microsoft::Console::ICU::BufferRangeFromMatch(UText* ut, URegularExpression* re)
 {
     UErrorCode status = U_ZERO_ERROR;
     const auto nativeIndexBeg = uregex_start64(re, 0, &status);
-    auto nativeIndexEnd = uregex_end64(re, 0, &status);
-
-    // The parameters are given as a half-open [beg,end) range, but the point_span we return in closed [beg,end].
-    nativeIndexEnd--;
+    const auto nativeIndexEnd = uregex_end64(re, 0, &status);
 
     const auto& textBuffer = *static_cast<const TextBuffer*>(ut->context);
     til::point_span ret;
@@ -317,7 +436,7 @@ til::point_span Microsoft::Console::ICU::BufferRangeFromMatch(UText* ut, URegula
     if (utextAccess(ut, nativeIndexEnd, true))
     {
         const auto y = accessCurrentRow(ut);
-        ret.end.x = textBuffer.GetRowByOffset(y).GetTrailingColumnAtCharOffset(ut->chunkOffset);
+        ret.end.x = textBuffer.GetRowByOffset(y).GetLeadingColumnAtCharOffset(ut->chunkOffset);
         ret.end.y = y;
     }
     else

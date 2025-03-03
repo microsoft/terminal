@@ -41,6 +41,7 @@ ForEach ($pair in $Languages.GetEnumerator()) {
 	$writerSettings = [System.Xml.XmlWriterSettings]::new()
 	$writerSettings.NewLineChars = "`r`n"
 	$writerSettings.Indent = $true
+	$writerSettings.Encoding = [System.Text.UTF8Encoding]::new($false) # suppress the BOM
 	$writer = [System.Xml.XmlWriter]::Create($ResPath, $writerSettings)
 	$XmlDocument.Save($writer)
 	$writer.Flush()

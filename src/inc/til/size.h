@@ -39,7 +39,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
         constexpr explicit operator bool() const noexcept
         {
-            return (width > 0) & (height > 0);
+            return width > 0 && height > 0;
         }
 
         constexpr size operator+(const size other) const

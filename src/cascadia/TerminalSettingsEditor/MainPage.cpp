@@ -6,6 +6,7 @@
 #include "MainPage.g.cpp"
 #include "Launch.h"
 #include "Interaction.h"
+#include "Compatibility.h"
 #include "Rendering.h"
 #include "RenderingViewModel.h"
 #include "Actions.h"
@@ -16,6 +17,7 @@
 #include "AddProfile.h"
 #include "InteractionViewModel.h"
 #include "LaunchViewModel.h"
+#include "NewTabMenuViewModel.h"
 #include "..\types\inc\utils.hpp"
 #include <..\WinRTUtils\inc\Utils.h>
 
@@ -39,7 +41,9 @@ using namespace winrt::Windows::Foundation::Collections;
 static const std::wstring_view launchTag{ L"Launch_Nav" };
 static const std::wstring_view interactionTag{ L"Interaction_Nav" };
 static const std::wstring_view renderingTag{ L"Rendering_Nav" };
+static const std::wstring_view compatibilityTag{ L"Compatibility_Nav" };
 static const std::wstring_view actionsTag{ L"Actions_Nav" };
+static const std::wstring_view newTabMenuTag{ L"NewTabMenu_Nav" };
 static const std::wstring_view globalProfileTag{ L"GlobalProfile_Nav" };
 static const std::wstring_view addProfileTag{ L"AddProfile" };
 static const std::wstring_view colorSchemesTag{ L"ColorSchemes_Nav" };
@@ -47,9 +51,9 @@ static const std::wstring_view globalAppearanceTag{ L"GlobalAppearance_Nav" };
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
-    static Editor::ProfileViewModel _viewModelForProfile(const Model::Profile& profile, const Model::CascadiaSettings& appSettings)
+    static Editor::ProfileViewModel _viewModelForProfile(const Model::Profile& profile, const Model::CascadiaSettings& appSettings, const Windows::UI::Core::CoreDispatcher& dispatcher)
     {
-        return winrt::make<implementation::ProfileViewModel>(profile, appSettings);
+        return winrt::make<implementation::ProfileViewModel>(profile, appSettings, dispatcher);
     }
 
     MainPage::MainPage(const CascadiaSettings& settings) :
@@ -58,6 +62,28 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         InitializeComponent();
         _UpdateBackgroundForMica();
+
+        _newTabMenuPageVM = winrt::make<NewTabMenuViewModel>(_settingsClone);
+        _ntmViewModelChangedRevoker = _newTabMenuPageVM.PropertyChanged(winrt::auto_revoke, [this](auto&&, const PropertyChangedEventArgs& args) {
+            const auto settingName{ args.PropertyName() };
+            if (settingName == L"CurrentFolder")
+            {
+                if (const auto& currentFolder = _newTabMenuPageVM.CurrentFolder())
+                {
+                    const auto crumb = winrt::make<Breadcrumb>(box_value(currentFolder), currentFolder.Name(), BreadcrumbSubPage::NewTabMenu_Folder);
+                    _breadcrumbs.Append(crumb);
+                    SettingsMainPage_ScrollViewer().ScrollToVerticalOffset(0);
+                }
+                else
+                {
+                    // If we don't have a current folder, we're at the root of the NTM
+                    _breadcrumbs.Clear();
+                    const auto crumb = winrt::make<Breadcrumb>(box_value(newTabMenuTag), RS_(L"Nav_NewTabMenu/Content"), BreadcrumbSubPage::None);
+                    _breadcrumbs.Append(crumb);
+                }
+                contentFrame().Navigate(xaml_typename<Editor::NewTabMenu>(), _newTabMenuPageVM);
+            }
+        });
 
         _colorSchemesPageVM = winrt::make<ColorSchemesPageViewModel>(_settingsClone);
         _colorSchemesPageViewModelChangedRevoker = _colorSchemesPageVM.PropertyChanged(winrt::auto_revoke, [=](auto&&, const PropertyChangedEventArgs& args) {
@@ -134,12 +160,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _InitializeProfilesList();
         // Update the Nav State with the new version of the settings
         _colorSchemesPageVM.UpdateSettings(_settingsClone);
+        _newTabMenuPageVM.UpdateSettings(_settingsClone);
 
         // We'll update the profile in the _profilesNavState whenever we actually navigate to one
 
         // now that the menuItems are repopulated,
         // refresh the current page using the breadcrumb data we collected before the refresh
-        if (const auto& crumb{ lastBreadcrumb.try_as<Breadcrumb>() })
+        if (const auto& crumb{ lastBreadcrumb.try_as<Breadcrumb>() }; crumb && crumb->Tag())
         {
             for (const auto& item : _menuItemSource)
             {
@@ -156,6 +183,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                                     // found the one that was selected before the refresh
                                     SettingsNav().SelectedItem(item);
                                     _Navigate(*stringTag, crumb->SubPage());
+                                    return;
+                                }
+                            }
+                            else if (const auto& breadcrumbFolderEntry{ crumb->Tag().try_as<Editor::FolderEntryViewModel>() })
+                            {
+                                if (stringTag == newTabMenuTag)
+                                {
+                                    // navigate to the NewTabMenu page,
+                                    // _Navigate() will handle trying to find the right subpage
+                                    SettingsNav().SelectedItem(item);
+                                    _Navigate(breadcrumbFolderEntry, BreadcrumbSubPage::NewTabMenu_Folder);
                                     return;
                                 }
                             }
@@ -339,9 +377,16 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                     _breadcrumbs.Append(crumb);
                     SettingsMainPage_ScrollViewer().ScrollToVerticalOffset(0);
                 }
+                else if (currentPage == ProfileSubPage::Terminal)
+                {
+                    contentFrame().Navigate(xaml_typename<Editor::Profiles_Terminal>(), profile);
+                    const auto crumb = winrt::make<Breadcrumb>(breadcrumbTag, RS_(L"Profile_Terminal/Header"), BreadcrumbSubPage::Profile_Terminal);
+                    _breadcrumbs.Append(crumb);
+                    SettingsMainPage_ScrollViewer().ScrollToVerticalOffset(0);
+                }
                 else if (currentPage == ProfileSubPage::Advanced)
                 {
-                    contentFrame().Navigate(xaml_typename<Editor::Profiles_Advanced>(), profile);
+                    contentFrame().Navigate(xaml_typename<Editor::Profiles_Advanced>(), winrt::make<implementation::NavigateToProfileArgs>(profile, *this));
                     const auto crumb = winrt::make<Breadcrumb>(breadcrumbTag, RS_(L"Profile_Advanced/Header"), BreadcrumbSubPage::Profile_Advanced);
                     _breadcrumbs.Append(crumb);
                     SettingsMainPage_ScrollViewer().ScrollToVerticalOffset(0);
@@ -372,15 +417,37 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             const auto crumb = winrt::make<Breadcrumb>(box_value(clickedItemTag), RS_(L"Nav_Rendering/Content"), BreadcrumbSubPage::None);
             _breadcrumbs.Append(crumb);
         }
+        else if (clickedItemTag == compatibilityTag)
+        {
+            contentFrame().Navigate(xaml_typename<Editor::Compatibility>(), winrt::make<CompatibilityViewModel>(_settingsClone.GlobalSettings()));
+            const auto crumb = winrt::make<Breadcrumb>(box_value(clickedItemTag), RS_(L"Nav_Compatibility/Content"), BreadcrumbSubPage::None);
+            _breadcrumbs.Append(crumb);
+        }
         else if (clickedItemTag == actionsTag)
         {
             contentFrame().Navigate(xaml_typename<Editor::Actions>(), winrt::make<ActionsViewModel>(_settingsClone));
             const auto crumb = winrt::make<Breadcrumb>(box_value(clickedItemTag), RS_(L"Nav_Actions/Content"), BreadcrumbSubPage::None);
             _breadcrumbs.Append(crumb);
         }
+        else if (clickedItemTag == newTabMenuTag)
+        {
+            if (_newTabMenuPageVM.CurrentFolder())
+            {
+                // Setting CurrentFolder triggers the PropertyChanged event,
+                // which will navigate to the correct page and update the breadcrumbs appropriately
+                _newTabMenuPageVM.CurrentFolder(nullptr);
+            }
+            else
+            {
+                // Navigate to the NewTabMenu page
+                contentFrame().Navigate(xaml_typename<Editor::NewTabMenu>(), _newTabMenuPageVM);
+                const auto crumb = winrt::make<Breadcrumb>(box_value(clickedItemTag), RS_(L"Nav_NewTabMenu/Content"), BreadcrumbSubPage::None);
+                _breadcrumbs.Append(crumb);
+            }
+        }
         else if (clickedItemTag == globalProfileTag)
         {
-            auto profileVM{ _viewModelForProfile(_settingsClone.ProfileDefaults(), _settingsClone) };
+            auto profileVM{ _viewModelForProfile(_settingsClone.ProfileDefaults(), _settingsClone, Dispatcher()) };
             profileVM.SetupAppearances(_colorSchemesPageVM.AllColorSchemes());
             profileVM.IsBaseLayer(true);
 
@@ -394,6 +461,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             if (subPage == BreadcrumbSubPage::Profile_Appearance)
             {
                 profileVM.CurrentPage(ProfileSubPage::Appearance);
+            }
+            else if (subPage == BreadcrumbSubPage::Profile_Terminal)
+            {
+                profileVM.CurrentPage(ProfileSubPage::Terminal);
             }
             else if (subPage == BreadcrumbSubPage::Profile_Advanced)
             {
@@ -438,6 +509,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         _SetupProfileEventHandling(profile);
 
+        if (profile.Orphaned())
+        {
+            contentFrame().Navigate(xaml_typename<Editor::Profiles_Base_Orphaned>(), winrt::make<implementation::NavigateToProfileArgs>(profile, *this));
+            const auto crumb = winrt::make<Breadcrumb>(box_value(profile), profile.Name(), BreadcrumbSubPage::None);
+            _breadcrumbs.Append(crumb);
+            profile.CurrentPage(ProfileSubPage::Base);
+            return;
+        }
+
         contentFrame().Navigate(xaml_typename<Editor::Profiles_Base>(), winrt::make<implementation::NavigateToProfileArgs>(profile, *this));
         const auto crumb = winrt::make<Breadcrumb>(box_value(profile), profile.Name(), BreadcrumbSubPage::None);
         _breadcrumbs.Append(crumb);
@@ -452,9 +532,46 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             profile.CurrentPage(ProfileSubPage::Appearance);
         }
+        else if (subPage == BreadcrumbSubPage::Profile_Terminal)
+        {
+            profile.CurrentPage(ProfileSubPage::Terminal);
+        }
         else if (subPage == BreadcrumbSubPage::Profile_Advanced)
         {
             profile.CurrentPage(ProfileSubPage::Advanced);
+        }
+    }
+
+    void MainPage::_Navigate(const Editor::NewTabMenuEntryViewModel& ntmEntryVM, BreadcrumbSubPage subPage)
+    {
+        _PreNavigateHelper();
+
+        contentFrame().Navigate(xaml_typename<Editor::NewTabMenu>(), _newTabMenuPageVM);
+        const auto crumb = winrt::make<Breadcrumb>(box_value(newTabMenuTag), RS_(L"Nav_NewTabMenu/Content"), BreadcrumbSubPage::None);
+        _breadcrumbs.Append(crumb);
+
+        if (subPage == BreadcrumbSubPage::None)
+        {
+            _newTabMenuPageVM.CurrentFolder(nullptr);
+        }
+        else if (const auto& folderEntryVM = ntmEntryVM.try_as<Editor::FolderEntryViewModel>(); subPage == BreadcrumbSubPage::NewTabMenu_Folder && folderEntryVM)
+        {
+            // The given ntmEntryVM doesn't exist anymore since the whole tree had to be recreated.
+            // Instead, let's look for a match by name and navigate to it.
+            if (const auto& folderPath = _newTabMenuPageVM.FindFolderPathByName(folderEntryVM.Name()); folderPath.Size() > 0)
+            {
+                for (const auto& step : folderPath)
+                {
+                    // Take advantage of the PropertyChanged event to navigate
+                    // to the correct folder and build the breadcrumbs as we go
+                    _newTabMenuPageVM.CurrentFolder(step);
+                }
+            }
+            else
+            {
+                // If we couldn't find a reasonable match, just go back to the root
+                _newTabMenuPageVM.CurrentFolder(nullptr);
+            }
         }
     }
 
@@ -481,6 +598,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void MainPage::SaveButton_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*args*/)
     {
+        _settingsClone.LogSettingChanges(false);
         _settingsClone.WriteSettingsToDisk();
     }
 
@@ -498,6 +616,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             if (const auto profileViewModel = tag.try_as<ProfileViewModel>())
             {
                 _Navigate(*profileViewModel, subPage);
+            }
+            else if (const auto ntmEntryViewModel = tag.try_as<NewTabMenuEntryViewModel>())
+            {
+                _Navigate(*ntmEntryViewModel, subPage);
             }
             else
             {
@@ -527,7 +649,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             if (!profile.Deleted())
             {
-                auto profileVM = _viewModelForProfile(profile, _settingsClone);
+                auto profileVM = _viewModelForProfile(profile, _settingsClone, Dispatcher());
                 profileVM.SetupAppearances(_colorSchemesPageVM.AllColorSchemes());
                 auto navItem = _CreateProfileNavViewItem(profileVM);
                 _menuItemSource.Append(navItem);
@@ -583,7 +705,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     void MainPage::_CreateAndNavigateToNewProfile(const uint32_t index, const Model::Profile& profile)
     {
         const auto newProfile{ profile ? profile : _settingsClone.CreateNewProfile() };
-        const auto profileViewModel{ _viewModelForProfile(newProfile, _settingsClone) };
+        const auto profileViewModel{ _viewModelForProfile(newProfile, _settingsClone, Dispatcher()) };
         profileViewModel.SetupAppearances(_colorSchemesPageVM.AllColorSchemes());
         const auto navItem{ _CreateProfileNavViewItem(profileViewModel) };
 
@@ -597,6 +719,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _Navigate(profileViewModel, BreadcrumbSubPage::None);
     }
 
+    static MUX::Controls::InfoBadge _createGlyphIconBadge(wil::zwstring_view glyph)
+    {
+        MUX::Controls::InfoBadge badge;
+        MUX::Controls::FontIconSource icon;
+        icon.FontFamily(winrt::Windows::UI::Xaml::Media::FontFamily{ L"Segoe Fluent Icons, Segoe MDL2 Assets" });
+        icon.FontSize(12);
+        icon.Glyph(glyph);
+        badge.IconSource(icon);
+        return badge;
+    }
+
     MUX::Controls::NavigationViewItem MainPage::_CreateProfileNavViewItem(const Editor::ProfileViewModel& profile)
     {
         MUX::Controls::NavigationViewItem profileNavItem;
@@ -604,19 +737,32 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         profileNavItem.Tag(box_value<Editor::ProfileViewModel>(profile));
         profileNavItem.Icon(UI::IconPathConverter::IconWUX(profile.EvaluatedIcon()));
 
+        if (profile.Orphaned())
+        {
+            profileNavItem.InfoBadge(_createGlyphIconBadge(L"\xE7BA") /* Warning Triangle */);
+        }
+        else if (profile.Hidden())
+        {
+            profileNavItem.InfoBadge(_createGlyphIconBadge(L"\xED1A") /* Hide */);
+        }
+
         // Update the menu item when the icon/name changes
         auto weakMenuItem{ make_weak(profileNavItem) };
         profile.PropertyChanged([weakMenuItem](const auto&, const WUX::Data::PropertyChangedEventArgs& args) {
             if (auto menuItem{ weakMenuItem.get() })
             {
                 const auto& tag{ menuItem.Tag().as<Editor::ProfileViewModel>() };
-                if (args.PropertyName() == L"Icon")
+                if (args.PropertyName() == L"Icon" || args.PropertyName() == L"EvaluatedIcon")
                 {
-                    menuItem.Icon(UI::IconPathConverter::IconWUX(tag.Icon()));
+                    menuItem.Icon(UI::IconPathConverter::IconWUX(tag.EvaluatedIcon()));
                 }
                 else if (args.PropertyName() == L"Name")
                 {
                     menuItem.Content(box_value(tag.Name()));
+                }
+                else if (args.PropertyName() == L"Hidden")
+                {
+                    menuItem.InfoBadge(tag.Hidden() ? _createGlyphIconBadge(L"\xED1A") /* Hide */ : nullptr);
                 }
             }
         });
@@ -681,6 +827,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     // can have mica too.
     void MainPage::_UpdateBackgroundForMica()
     {
+        // If we're in high contrast mode, don't override the theme.
+        if (Windows::UI::ViewManagement::AccessibilitySettings accessibilitySettings; accessibilitySettings.HighContrast())
+        {
+            return;
+        }
+
         bool isMicaAvailable = false;
 
         // Check to see if our hosting window supports Mica at all. We'll check
@@ -699,17 +851,23 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             }
         }
 
-        if (!isMicaAvailable)
-        {
-            return;
-        }
-
         const auto& theme = _settingsSource.GlobalSettings().CurrentTheme();
-        const auto& requestedTheme = _settingsSource.GlobalSettings().CurrentTheme().RequestedTheme();
+        const bool hasThemeForSettings{ theme.Settings() != nullptr };
+        const auto& appTheme = theme.RequestedTheme();
+        const auto& requestedTheme = (hasThemeForSettings) ? theme.Settings().RequestedTheme() : appTheme;
 
         RequestedTheme(requestedTheme);
 
-        const auto bgKey = (theme.Window() != nullptr && theme.Window().UseMica()) ?
+        // Mica gets it's appearance from the app's theme, not necessarily the
+        // Page's theme. In the case of dark app, light settings, mica will be a
+        // dark color, and the text will also be dark, making the UI _very_ hard
+        // to read. (and similarly in the inverse situation).
+        //
+        // To mitigate this, don't set the transparent background in the case
+        // that our theme is different than the app's.
+        const bool actuallyUseMica = isMicaAvailable && (appTheme == requestedTheme);
+
+        const auto bgKey = (theme.Window() != nullptr && theme.Window().UseMica()) && actuallyUseMica ?
                                L"SettingsPageMicaBackground" :
                                L"SettingsPageBackground";
 

@@ -11,9 +11,8 @@ namespace Microsoft.Terminal.Settings.Model
         Boolean IsKeyChordExplicitlyUnbound(Microsoft.Terminal.Control.KeyChord keys);
 
         Command GetActionByKeyChord(Microsoft.Terminal.Control.KeyChord keys);
-
-        Microsoft.Terminal.Control.KeyChord GetKeyBindingForAction(ShortcutAction action);
-        [method_name("GetKeyBindingForActionWithArgs")] Microsoft.Terminal.Control.KeyChord GetKeyBindingForAction(ShortcutAction action, IActionArgs actionArgs);
+        Command GetActionByID(String cmdID);
+        Microsoft.Terminal.Control.KeyChord GetKeyBindingForAction(String cmdID);
 
         Windows.Foundation.Collections.IMapView<String, ActionAndArgs> AvailableActions { get; };
 
@@ -23,7 +22,7 @@ namespace Microsoft.Terminal.Settings.Model
 
         IVector<Command> ExpandedCommands { get; };
 
-        IVector<Command> FilterToSendInput(String CurrentCommandline);
+        Windows.Foundation.IAsyncOperation<IVector<Command> > FilterToSnippets(String CurrentCommandline, String CurrentWorkingDirectory);
     };
 
     [default_interface] runtimeclass ActionMap : IActionMapView
@@ -32,5 +31,6 @@ namespace Microsoft.Terminal.Settings.Model
         void DeleteKeyBinding(Microsoft.Terminal.Control.KeyChord keys);
 
         void RegisterKeyBinding(Microsoft.Terminal.Control.KeyChord keys, ActionAndArgs action);
+        void AddSendInputAction(String name, String input, Microsoft.Terminal.Control.KeyChord keys);
     }
 }

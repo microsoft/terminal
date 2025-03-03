@@ -14,6 +14,7 @@ DLLDEF                  =
 
 SOURCES = \
     $(SOURCES) \
+    CodepointWidthDetectorTests.cpp \
     UuidTests.cpp \
     UtilsTests.cpp \
     DefaultResource.rc \

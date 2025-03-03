@@ -102,17 +102,25 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         Model::IAppearanceConfig DefaultAppearance();
         Model::FontConfig FontInfo();
 
-        winrt::hstring EvaluatedIcon();
-
         static std::wstring NormalizeCommandLine(LPCWSTR commandLine);
 
         void _FinalizeInheritance() override;
 
-        // Special fields
+        void LogSettingChanges(std::set<std::string>& changes, const std::string_view& context) const;
+
+        // EvaluatedIcon depends on Icon. It allows us to grab the
+        //   icon from an exe path.
+        // As a result, we can't use the INHERITABLE_SETTING macro for Icon,
+        //   as we manually have to set/unset _evaluatedIcon when Icon changes.
+        winrt::hstring EvaluatedIcon();
         hstring Icon() const;
         void Icon(const hstring& value);
+        bool HasIcon() const;
+        Model::Profile IconOverrideSource();
+        void ClearIcon();
 
         WINRT_PROPERTY(bool, Deleted, false);
+        WINRT_PROPERTY(bool, Orphaned, false);
         WINRT_PROPERTY(OriginTag, Origin, OriginTag::None);
         WINRT_PROPERTY(guid, Updates);
 
@@ -126,12 +134,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         INHERITABLE_SETTING(Model::Profile, bool, Hidden, false);
         INHERITABLE_SETTING(Model::Profile, guid, Guid, _GenerateGuidForProfile(Name(), Source()));
         INHERITABLE_SETTING(Model::Profile, hstring, Padding, DEFAULT_PADDING);
-        // Icon is _very special_ because we want to customize its setter
-        _BASE_INHERITABLE_SETTING(Model::Profile, std::optional<hstring>, Icon, L"\uE756");
 
     public:
 #define PROFILE_SETTINGS_INITIALIZE(type, name, jsonKey, ...) \
-    INHERITABLE_SETTING(Model::Profile, type, name, ##__VA_ARGS__)
+    INHERITABLE_SETTING_WITH_LOGGING(Model::Profile, type, name, jsonKey, ##__VA_ARGS__)
         MTSM_PROFILE_SETTINGS(PROFILE_SETTINGS_INITIALIZE)
 #undef PROFILE_SETTINGS_INITIALIZE
 
@@ -139,13 +145,19 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         Model::IAppearanceConfig _DefaultAppearance{ winrt::make<AppearanceConfig>(weak_ref<Model::Profile>(*this)) };
         Model::FontConfig _FontInfo{ winrt::make<FontConfig>(weak_ref<Model::Profile>(*this)) };
 
+        std::optional<hstring> _Icon{ std::nullopt };
         std::optional<winrt::hstring> _evaluatedIcon{ std::nullopt };
+        std::set<std::string> _changeLog;
 
         static std::wstring EvaluateStartingDirectory(const std::wstring& directory);
 
         static guid _GenerateGuidForProfile(const std::wstring_view& name, const std::wstring_view& source) noexcept;
 
         winrt::hstring _evaluateIcon() const;
+        std::optional<hstring> _getIconImpl() const;
+        Model::Profile _getIconOverrideSourceImpl() const;
+        void _logSettingSet(const std::string_view& setting);
+        void _logSettingIfSet(const std::string_view& setting, const bool isSet);
 
         friend class SettingsModelUnitTests::DeserializationTests;
         friend class SettingsModelUnitTests::ProfileTests;

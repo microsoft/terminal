@@ -15,8 +15,6 @@
     <ClCompile Include="ApiRoutinesTests.cpp" />
     <ClCompile Include="ClipboardTests.cpp" />
     <ClCompile Include="ConsoleArgumentsTests.cpp" />
-    <ClCompile Include="CodepointWidthDetectorTests.cpp" />
-    <ClCompile Include="DbcsTests.cpp" />
     <ClCompile Include="HistoryTests.cpp" />
     <ClCompile Include="InitTests.cpp" />
     <ClCompile Include="ObjectTests.cpp" />
@@ -31,8 +29,6 @@
     <ClCompile Include="InputBufferTests.cpp" />
     <ClCompile Include="ViewportTests.cpp" />
     <ClCompile Include="VtIoTests.cpp" />
-    <ClCompile Include="VtRendererTests.cpp" />
-    <ClCompile Include="ConptyOutputTests.cpp" />
     <ClCompile Include="..\precomp.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
@@ -46,9 +42,6 @@
     </ProjectReference>
     <ProjectReference Include="..\..\renderer\atlas\atlas.vcxproj">
       <Project>{8222900C-8B6C-452A-91AC-BE95DB04B95F}</Project>
-    </ProjectReference>
-    <ProjectReference Include="..\..\renderer\vt\ut_lib\vt.unittest.vcxproj">
-      <Project>{990F2657-8580-4828-943F-5DD657D11843}</Project>
     </ProjectReference>
     <ProjectReference Include="..\..\interactivity\base\lib\InteractivityBase.vcxproj">
       <Project>{06ec74cb-9a12-429c-b551-8562ec964846}</Project>
@@ -94,7 +87,7 @@
       <AdditionalIncludeDirectories>..;$(SolutionDir)src\inc;$(SolutionDir)src\inc\test;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>WinMM.Lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>winmm.lib;imm32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->

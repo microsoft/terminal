@@ -5,10 +5,8 @@
 #include "Row.hpp"
 
 #include <isa_availability.h>
-#include <til/unicode.h>
 
-#include "textBuffer.hpp"
-#include "../../types/inc/GlyphWidth.hpp"
+#include "../../types/inc/CodepointWidthDetector.hpp"
 
 // It would be nice to add checked array access in the future, but it's a little annoying to do so without impacting
 // performance (including Debug performance). Other languages are a little bit more ergonomic there than C++.
@@ -82,11 +80,12 @@ constexpr OutIt copy_n_small(InIt first, Diff count, OutIt dest)
     return dest;
 }
 
-CharToColumnMapper::CharToColumnMapper(const wchar_t* chars, const uint16_t* charOffsets, ptrdiff_t lastCharOffset, til::CoordType currentColumn) noexcept :
+CharToColumnMapper::CharToColumnMapper(const wchar_t* chars, const uint16_t* charOffsets, ptrdiff_t charsLength, til::CoordType currentColumn, til::CoordType columnCount) noexcept :
     _chars{ chars },
     _charOffsets{ charOffsets },
-    _lastCharOffset{ lastCharOffset },
-    _currentColumn{ currentColumn }
+    _charsLength{ charsLength },
+    _currentColumn{ currentColumn },
+    _columnCount{ columnCount }
 {
 }
 
@@ -94,7 +93,7 @@ CharToColumnMapper::CharToColumnMapper(const wchar_t* chars, const uint16_t* cha
 // This function in particular returns the glyph's first column.
 til::CoordType CharToColumnMapper::GetLeadingColumnAt(ptrdiff_t targetOffset) noexcept
 {
-    targetOffset = clamp(targetOffset, 0, _lastCharOffset);
+    targetOffset = clamp(targetOffset, 0, _charsLength);
 
     // This code needs to fulfill two conditions on top of the obvious (a forward/backward search):
     // A: We never want to stop on a column that is marked with CharOffsetsTrailer (= "GetLeadingColumn").
@@ -132,10 +131,14 @@ til::CoordType CharToColumnMapper::GetLeadingColumnAt(ptrdiff_t targetOffset) no
 til::CoordType CharToColumnMapper::GetTrailingColumnAt(ptrdiff_t offset) noexcept
 {
     auto col = GetLeadingColumnAt(offset);
-    // This loop is a little redundant with the forward search loop in GetLeadingColumnAt()
-    // but it's realistically not worth caring about this. This code is not a bottleneck.
-    for (; WI_IsFlagSet(_charOffsets[col + 1], CharOffsetsTrailer); ++col)
+
+    if (col < _columnCount)
     {
+        // This loop is a little redundant with the forward search loop in GetLeadingColumnAt()
+        // but it's realistically not worth caring about this. This code is not a bottleneck.
+        for (; WI_IsFlagSet(_charOffsets[col + 1], CharOffsetsTrailer); ++col)
+        {
+        }
     }
     return col;
 }
@@ -227,9 +230,11 @@ void ROW::Reset(const TextAttribute& attr) noexcept
     // Constructing and then moving objects into place isn't free.
     // Modifying the existing object is _much_ faster.
     *_attr.runs().unsafe_shrink_to_size(1) = til::rle_pair{ attr, _columnCount };
+    _imageSlice = nullptr;
     _lineRendition = LineRendition::SingleWidth;
     _wrapForced = false;
     _doubleBytePadded = false;
+    _promptData = std::nullopt;
     _init();
 }
 
@@ -348,12 +353,6 @@ void ROW::_init() noexcept
 #pragma warning(push)
 }
 
-void ROW::TransferAttributes(const til::small_rle<TextAttribute, uint16_t, 1>& attr, til::CoordType newWidth)
-{
-    _attr = attr;
-    _attr.resize_trailing_extent(gsl::narrow<uint16_t>(newWidth));
-}
-
 void ROW::CopyFrom(const ROW& source)
 {
     _lineRendition = source._lineRendition;
@@ -365,7 +364,8 @@ void ROW::CopyFrom(const ROW& source)
     };
     CopyTextFrom(state);
 
-    TransferAttributes(source.Attributes(), _columnCount);
+    _attr = source.Attributes();
+    _attr.resize_trailing_extent(_columnCount);
 }
 
 // Returns the previous possible cursor position, preceding the given column.
@@ -572,6 +572,7 @@ void ROW::ReplaceAttributes(const til::CoordType beginIndex, const til::CoordTyp
 void ROW::ReplaceCharacters(til::CoordType columnBegin, til::CoordType width, const std::wstring_view& chars)
 try
 {
+    assert(width >= 1 && width <= 2);
     WriteHelper h{ *this, columnBegin, _columnCount, chars };
     if (!h.IsValid())
     {
@@ -670,56 +671,91 @@ catch (...)
 
 [[msvc::forceinline]] void ROW::WriteHelper::_replaceTextUnicode(size_t ch, std::wstring_view::const_iterator it) noexcept
 {
-    const auto end = chars.end();
+    auto& cwd = CodepointWidthDetector::Singleton();
 
-    while (it != end)
+    // Check if the new text joins with the existing contents of the row to form a single grapheme cluster.
+    if (it == chars.begin())
     {
-        unsigned int width = 1;
-        auto ptr = &*it;
-        const auto wch = *ptr;
-        size_t advance = 1;
-
-        ++it;
-
-        // Even in our slow-path we can avoid calling IsGlyphFullWidth if the current character is ASCII.
-        // It also allows us to skip the surrogate pair decoding at the same time.
-        if (wch >= 0x80)
+        auto colPrev = colBeg;
+        while (colPrev > 0 && row._uncheckedIsTrailer(--colPrev))
         {
-            if (til::is_surrogate(wch))
+        }
+
+        const auto chPrev = row._uncheckedCharOffset(colPrev);
+        const std::wstring_view charsPrev{ row._chars.data() + chPrev, ch - chPrev };
+
+        GraphemeState state;
+        cwd.GraphemeNext(state, charsPrev);
+        cwd.GraphemeNext(state, chars);
+
+        if (state.len > 0)
+        {
+            colBegDirty = colPrev;
+            colEnd = colPrev;
+
+            const auto width = std::max(1, state.width);
+            const auto colEndNew = gsl::narrow_cast<uint16_t>(colEnd + width);
+            if (colEndNew > colLimit)
             {
-                if (it != end && til::is_leading_surrogate(wch) && til::is_trailing_surrogate(*it))
-                {
-                    advance = 2;
-                    ++it;
-                }
-                else
-                {
-                    ptr = &UNICODE_REPLACEMENT;
-                }
+                colEndDirty = colLimit;
+                charsConsumed = ch - chBeg;
+                return;
             }
 
-            width = IsGlyphFullWidth({ ptr, advance }) + 1u;
-        }
+            // Fill our char-offset buffer with 1 entry containing the mapping from the
+            // current column (colEnd) to the start of the glyph in the string (ch)...
+            til::at(row._charOffsets, colEnd++) = gsl::narrow_cast<uint16_t>(chPrev);
+            // ...followed by 0-N entries containing an indication that the
+            // columns are just a wide-glyph extension of the preceding one.
+            while (colEnd < colEndNew)
+            {
+                til::at(row._charOffsets, colEnd++) = gsl::narrow_cast<uint16_t>(chPrev | CharOffsetsTrailer);
+            }
 
-        const auto colEndNew = gsl::narrow_cast<uint16_t>(colEnd + width);
-        if (colEndNew > colLimit)
+            ch += state.len;
+            it += state.len;
+        }
+    }
+    else
+    {
+        // The non-ASCII character we have encountered may be a combining mark, like "a^" which is then displayed as "â".
+        // In order to recognize both characters as a single grapheme, we need to back up by 1 ASCII character
+        // and let MeasureNext() find the next proper grapheme boundary.
+        --colEnd;
+        --ch;
+        --it;
+    }
+
+    if (const auto end = chars.end(); it != end)
+    {
+        GraphemeState state{ .beg = &*it };
+
+        do
         {
-            colEndDirty = colLimit;
-            charsConsumed = ch - chBeg;
-            return;
-        }
+            cwd.GraphemeNext(state, chars);
 
-        // Fill our char-offset buffer with 1 entry containing the mapping from the
-        // current column (colEnd) to the start of the glyph in the string (ch)...
-        til::at(row._charOffsets, colEnd++) = gsl::narrow_cast<uint16_t>(ch);
-        // ...followed by 0-N entries containing an indication that the
-        // columns are just a wide-glyph extension of the preceding one.
-        while (colEnd < colEndNew)
-        {
-            til::at(row._charOffsets, colEnd++) = gsl::narrow_cast<uint16_t>(ch | CharOffsetsTrailer);
-        }
+            const auto width = std::max(1, state.width);
+            const auto colEndNew = gsl::narrow_cast<uint16_t>(colEnd + width);
+            if (colEndNew > colLimit)
+            {
+                colEndDirty = colLimit;
+                charsConsumed = ch - chBeg;
+                return;
+            }
 
-        ch += advance;
+            // Fill our char-offset buffer with 1 entry containing the mapping from the
+            // current column (colEnd) to the start of the glyph in the string (ch)...
+            til::at(row._charOffsets, colEnd++) = gsl::narrow_cast<uint16_t>(ch);
+            // ...followed by 0-N entries containing an indication that the
+            // columns are just a wide-glyph extension of the preceding one.
+            while (colEnd < colEndNew)
+            {
+                til::at(row._charOffsets, colEnd++) = gsl::narrow_cast<uint16_t>(ch | CharOffsetsTrailer);
+            }
+
+            ch += state.len;
+            it += state.len;
+        } while (it != end);
     }
 
     colEndDirty = colEnd;
@@ -918,7 +954,7 @@ const til::small_rle<TextAttribute, uint16_t, 1>& ROW::Attributes() const noexce
 
 TextAttribute ROW::GetAttrByColumn(const til::CoordType column) const
 {
-    return _attr.at(_clampedUint16(column));
+    return _attr.at(_clampedColumn(column));
 }
 
 std::vector<uint16_t> ROW::GetHyperlinks() const
@@ -934,6 +970,28 @@ std::vector<uint16_t> ROW::GetHyperlinks() const
     return ids;
 }
 
+ImageSlice* ROW::SetImageSlice(ImageSlice::Pointer imageSlice) noexcept
+{
+    _imageSlice = std::move(imageSlice);
+    return GetMutableImageSlice();
+}
+
+const ImageSlice* ROW::GetImageSlice() const noexcept
+{
+    return _imageSlice.get();
+}
+
+ImageSlice* ROW::GetMutableImageSlice() noexcept
+{
+    const auto ptr = _imageSlice.get();
+    if (!ptr)
+    {
+        return nullptr;
+    }
+    ptr->BumpRevision();
+    return ptr;
+}
+
 uint16_t ROW::size() const noexcept
 {
     return _columnCount;
@@ -944,14 +1002,15 @@ uint16_t ROW::size() const noexcept
 til::CoordType ROW::GetLastNonSpaceColumn() const noexcept
 {
     const auto text = GetText();
-    const auto beg = text.begin();
-    const auto end = text.end();
+    const auto beg = text.data();
+    const auto end = beg + text.size();
+#pragma warning(suppress : 26429) // Symbol 'it' is never tested for nullness, it can be marked as not_null (f.23).
     auto it = end;
 
     for (; it != beg; --it)
     {
         // it[-1] is safe as `it` is always greater than `beg` (loop invariant).
-        if (til::at(it, -1) != L' ')
+        if (it[-1] != L' ')
         {
             break;
         }
@@ -1060,9 +1119,12 @@ std::wstring_view ROW::GetText() const noexcept
     return { _chars.data(), width };
 }
 
+// Arguments:
+// - columnBegin: inclusive
+// - columnEnd: exclusive
 std::wstring_view ROW::GetText(til::CoordType columnBegin, til::CoordType columnEnd) const noexcept
 {
-    const til::CoordType columns = _columnCount;
+    const auto columns = GetReadableColumnCount();
     const auto colBeg = clamp(columnBegin, 0, columns);
     const auto colEnd = clamp(columnEnd, colBeg, columns);
     const size_t chBeg = _uncheckedCharOffset(gsl::narrow_cast<size_t>(colBeg));
@@ -1099,12 +1161,6 @@ DelimiterClass ROW::DelimiterClassAt(til::CoordType column, const std::wstring_v
     {
         return DelimiterClass::RegularChar;
     }
-}
-
-template<typename T>
-constexpr uint16_t ROW::_clampedUint16(T v) noexcept
-{
-    return static_cast<uint16_t>(clamp(v, 0, 65535));
 }
 
 template<typename T>
@@ -1171,13 +1227,55 @@ T ROW::_adjustForward(T column) const noexcept
 }
 
 // Creates a CharToColumnMapper given an offset into _chars.data().
-// In other words, for a 120 column ROW with just ASCII text, the offset should be [0,120).
+// In other words, for a 120 column ROW with just ASCII text, the offset should be [0,120].
 CharToColumnMapper ROW::_createCharToColumnMapper(ptrdiff_t offset) const noexcept
 {
     const auto charsSize = _charSize();
-    const auto lastChar = gsl::narrow_cast<ptrdiff_t>(charsSize - 1);
+    const auto lastChar = gsl::narrow_cast<ptrdiff_t>(charsSize);
     // We can sort of guess what column belongs to what offset because BMP glyphs are very common and
     // UTF-16 stores them in 1 char. In other words, usually a ROW will have N chars for N columns.
     const auto guessedColumn = gsl::narrow_cast<til::CoordType>(clamp(offset, 0, _columnCount));
-    return CharToColumnMapper{ _chars.data(), _charOffsets.data(), lastChar, guessedColumn };
+    return CharToColumnMapper{ _chars.data(), _charOffsets.data(), lastChar, guessedColumn, _columnCount };
+}
+
+const std::optional<ScrollbarData>& ROW::GetScrollbarData() const noexcept
+{
+    return _promptData;
+}
+void ROW::SetScrollbarData(std::optional<ScrollbarData> data) noexcept
+{
+    _promptData = data;
+}
+
+void ROW::StartPrompt() noexcept
+{
+    if (!_promptData.has_value())
+    {
+        // You'd be tempted to write:
+        //
+        // _promptData = ScrollbarData{
+        //     .category = MarkCategory::Prompt,
+        //     .color = std::nullopt,
+        //     .exitCode = std::nullopt,
+        // };
+        //
+        // But that's not very optimal! Read this thread for a breakdown of how
+        // weird std::optional can be some times:
+        //
+        // https://github.com/microsoft/terminal/pull/16937#discussion_r1553660833
+
+        _promptData.emplace(MarkCategory::Prompt);
+    }
+}
+
+void ROW::EndOutput(std::optional<unsigned int> error) noexcept
+{
+    if (_promptData.has_value())
+    {
+        _promptData->exitCode = error;
+        if (error.has_value())
+        {
+            _promptData->category = *error == 0 ? MarkCategory::Success : MarkCategory::Error;
+        }
+    }
 }

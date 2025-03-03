@@ -53,6 +53,11 @@ namespace Microsoft.Terminal.Settings.Model
         UInt8 UnfocusedTabOpacity { get; };
     }
 
+    runtimeclass SettingsTheme
+    {
+        Windows.UI.Xaml.ElementTheme RequestedTheme { get; };
+    }
+
     runtimeclass WindowTheme {
         Windows.UI.Xaml.ElementTheme RequestedTheme { get; };
         Boolean UseMica { get; };
@@ -82,6 +87,9 @@ namespace Microsoft.Terminal.Settings.Model
         // window.* Namespace
         WindowTheme Window { get; };
 
+        // settings.* Namespace
+        SettingsTheme Settings { get; };
+            
         // tabRow.* Namespace
         TabRowTheme TabRow { get; };
 

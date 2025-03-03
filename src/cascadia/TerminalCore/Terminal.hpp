@@ -15,6 +15,7 @@
 #include "../../types/inc/GlyphWidth.hpp"
 #include "../../cascadia/terminalcore/ITerminalInput.hpp"
 
+#include <til/generational.h>
 #include <til/ticket_lock.h>
 #include <til/winrt.h>
 
@@ -47,7 +48,6 @@ namespace TerminalCoreUnitTests
 {
     class TerminalBufferTests;
     class TerminalApiTest;
-    class ConptyRoundtripTests;
     class ScrollTest;
 };
 #endif
@@ -94,7 +94,7 @@ public:
     void UpdateAppearance(const winrt::Microsoft::Terminal::Core::ICoreAppearance& appearance);
     void SetFontInfo(const FontInfo& fontInfo);
     void SetCursorStyle(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::CursorStyle cursorStyle);
-    void EraseScrollback();
+    void SetVtChecksumReportSupport(const bool enabled);
     bool IsXtermBracketedPasteModeEnabled() const noexcept;
     std::wstring_view GetWorkingDirectory() noexcept;
 
@@ -117,34 +117,34 @@ public:
     RenderSettings& GetRenderSettings() noexcept;
     const RenderSettings& GetRenderSettings() const noexcept;
 
-    const std::vector<ScrollMark>& GetScrollMarks() const noexcept;
-    void AddMark(const ScrollMark& mark,
-                 const til::point& start,
-                 const til::point& end,
-                 const bool fromUi);
+    std::vector<ScrollMark> GetMarkRows() const;
+    std::vector<MarkExtents> GetMarkExtents() const;
+    void AddMarkFromUI(ScrollbarData mark, til::CoordType y);
 
     til::property<bool> AlwaysNotifyOnBufferRotation;
 
-    std::wstring_view CurrentCommand() const;
+    std::wstring CurrentCommand() const;
+
     void SerializeMainBuffer(const wchar_t* destination) const;
 
 #pragma region ITerminalApi
     // These methods are defined in TerminalApi.cpp
     void ReturnResponse(const std::wstring_view response) override;
     Microsoft::Console::VirtualTerminal::StateMachine& GetStateMachine() noexcept override;
-    TextBuffer& GetTextBuffer() noexcept override;
-    til::rect GetViewport() const noexcept override;
+    BufferState GetBufferAndViewport() noexcept override;
     void SetViewportPosition(const til::point position) noexcept override;
-    void SetTextAttributes(const TextAttribute& attrs) noexcept override;
     void SetSystemMode(const Mode mode, const bool enabled) noexcept override;
     bool GetSystemMode(const Mode mode) const noexcept override;
+    void ReturnAnswerback() override;
     void WarningBell() override;
     void SetWindowTitle(const std::wstring_view title) override;
     CursorType GetUserDefaultCursorStyle() const noexcept override;
-    bool ResizeWindow(const til::CoordType width, const til::CoordType height) noexcept override;
-    void SetConsoleOutputCP(const unsigned int codepage) noexcept override;
-    unsigned int GetConsoleOutputCP() const noexcept override;
-    void CopyToClipboard(std::wstring_view content) override;
+    bool ResizeWindow(const til::CoordType width, const til::CoordType height) override;
+    void SetCodePage(const unsigned int codepage) noexcept override;
+    void ResetCodePage() noexcept override;
+    unsigned int GetOutputCodePage() const noexcept override;
+    unsigned int GetInputCodePage() const noexcept override;
+    void CopyToClipboard(wil::zwstring_view content) override;
     void SetTaskbarProgress(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::TaskbarState state, const size_t progress) override;
     void SetWorkingDirectory(std::wstring_view uri) override;
     void PlayMidiNote(const int noteNumber, const int velocity, const std::chrono::microseconds duration) override;
@@ -152,23 +152,19 @@ public:
     void UseAlternateScreenBuffer(const TextAttribute& attrs) override;
     void UseMainScreenBuffer() override;
 
-    void MarkPrompt(const ScrollMark& mark) override;
-    void MarkCommandStart() override;
-    void MarkOutputStart() override;
-    void MarkCommandFinish(std::optional<unsigned int> error) override;
-
-    bool IsConsolePty() const noexcept override;
     bool IsVtInputEnabled() const noexcept override;
     void NotifyAccessibilityChange(const til::rect& changedRect) noexcept override;
     void NotifyBufferRotation(const int delta) override;
 
     void InvokeCompletions(std::wstring_view menuJson, unsigned int replaceLength) override;
 
+    void SearchMissingCommand(const std::wstring_view command) override;
+
 #pragma endregion
 
     void ClearMark();
     void ClearAllMarks();
-    til::color GetColorForMark(const ScrollMark& mark) const;
+    til::color GetColorForMark(const ScrollbarData& markData) const;
 
 #pragma region ITerminalInput
     // These methods are defined in Terminal.cpp
@@ -194,7 +190,7 @@ public:
 #pragma region IRenderData
     Microsoft::Console::Types::Viewport GetViewport() noexcept override;
     til::point GetTextBufferEndPosition() const noexcept override;
-    const TextBuffer& GetTextBuffer() const noexcept override;
+    TextBuffer& GetTextBuffer() const noexcept override;
     const FontInfo& GetFontInfo() const noexcept override;
 
     void LockConsole() noexcept override;
@@ -208,20 +204,19 @@ public:
     ULONG GetCursorPixelWidth() const noexcept override;
     CursorType GetCursorStyle() const noexcept override;
     bool IsCursorDoubleWidth() const override;
-    const std::vector<Microsoft::Console::Render::RenderOverlay> GetOverlays() const noexcept override;
     const bool IsGridLineDrawingAllowed() noexcept override;
     const std::wstring GetHyperlinkUri(uint16_t id) const override;
     const std::wstring GetHyperlinkCustomId(uint16_t id) const override;
     const std::vector<size_t> GetPatternId(const til::point location) const override;
 
     std::pair<COLORREF, COLORREF> GetAttributeColors(const TextAttribute& attr) const noexcept override;
-    std::vector<Microsoft::Console::Types::Viewport> GetSelectionRects() noexcept override;
-    std::vector<Microsoft::Console::Types::Viewport> GetSearchSelectionRects() noexcept override;
+    std::span<const til::point_span> GetSelectionSpans() const noexcept override;
+    std::span<const til::point_span> GetSearchHighlights() const noexcept override;
+    const til::point_span* GetSearchHighlightFocused() const noexcept override;
     const bool IsSelectionActive() const noexcept override;
     const bool IsBlockSelection() const noexcept override;
     void ClearSelection() override;
     void SelectNewRegion(const til::point coordStart, const til::point coordEnd) override;
-    void SelectSearchRegions(std::vector<til::inclusive_rect> source) override;
     const til::point GetSelectionAnchor() const noexcept override;
     const til::point GetSelectionEnd() const noexcept override;
     const std::wstring_view GetConsoleTitle() const noexcept override;
@@ -231,13 +226,18 @@ public:
     void SetWriteInputCallback(std::function<void(std::wstring_view)> pfn) noexcept;
     void SetWarningBellCallback(std::function<void()> pfn) noexcept;
     void SetTitleChangedCallback(std::function<void(std::wstring_view)> pfn) noexcept;
-    void SetCopyToClipboardCallback(std::function<void(std::wstring_view)> pfn) noexcept;
+    void SetCopyToClipboardCallback(std::function<void(wil::zwstring_view)> pfn) noexcept;
     void SetScrollPositionChangedCallback(std::function<void(const int, const int, const int)> pfn) noexcept;
-    void SetCursorPositionChangedCallback(std::function<void()> pfn) noexcept;
     void TaskbarProgressChangedCallback(std::function<void()> pfn) noexcept;
     void SetShowWindowCallback(std::function<void(bool)> pfn) noexcept;
     void SetPlayMidiNoteCallback(std::function<void(const int, const int, const std::chrono::microseconds)> pfn) noexcept;
     void CompletionsChangedCallback(std::function<void(std::wstring_view, unsigned int)> pfn) noexcept;
+    void SetSearchMissingCommandCallback(std::function<void(std::wstring_view, const til::CoordType)> pfn) noexcept;
+    void SetClearQuickFixCallback(std::function<void()> pfn) noexcept;
+    void SetWindowSizeChangedCallback(std::function<void(int32_t, int32_t)> pfn) noexcept;
+    void SetSearchHighlights(const std::vector<til::point_span>& highlights) noexcept;
+    void SetSearchHighlightFocused(size_t focusedIdx) noexcept;
+    void ScrollToSearchHighlight(til::CoordType searchScrollOffset);
 
     void BlinkCursor() noexcept;
     void SetCursorOn(const bool isOn) noexcept;
@@ -253,6 +253,7 @@ public:
     const size_t GetTaskbarProgress() const noexcept;
 
     void ColorSelection(const TextAttribute& attr, winrt::Microsoft::Terminal::Core::MatchMode matchMode);
+    void PreviewText(std::wstring_view input);
 
 #pragma region TextSelection
     // These methods are defined in TerminalSelection.cpp
@@ -319,7 +320,7 @@ public:
     til::point SelectionEndForRendering() const;
     const SelectionEndpoint SelectionEndpointTarget() const noexcept;
 
-    TextCopyData RetrieveSelectedTextFromBuffer(const bool singleLine, const bool html = false, const bool rtf = false) const;
+    TextCopyData RetrieveSelectedTextFromBuffer(const bool singleLine, const bool withControlSequences = false, const bool html = false, const bool rtf = false) const;
 #pragma endregion
 
 #ifndef NDEBUG
@@ -330,7 +331,7 @@ private:
     std::function<void(std::wstring_view)> _pfnWriteInput;
     std::function<void()> _pfnWarningBell;
     std::function<void(std::wstring_view)> _pfnTitleChanged;
-    std::function<void(std::wstring_view)> _pfnCopyToClipboard;
+    std::function<void(wil::zwstring_view)> _pfnCopyToClipboard;
 
     // I've specifically put this instance here as it requires
     //   alignas(std::hardware_destructive_interference_size)
@@ -341,11 +342,13 @@ private:
     til::recursive_ticket_lock _readWriteLock;
 
     std::function<void(const int, const int, const int)> _pfnScrollPositionChanged;
-    std::function<void()> _pfnCursorPositionChanged;
     std::function<void()> _pfnTaskbarProgressChanged;
     std::function<void(bool)> _pfnShowWindowChanged;
     std::function<void(const int, const int, const std::chrono::microseconds)> _pfnPlayMidiNote;
     std::function<void(std::wstring_view, unsigned int)> _pfnCompletionsChanged;
+    std::function<void(std::wstring_view, const til::CoordType)> _pfnSearchMissingCommand;
+    std::function<void()> _pfnClearQuickFix;
+    std::function<void(int32_t, int32_t)> _pfnWindowSizeChanged;
 
     RenderSettings _renderSettings;
     std::unique_ptr<::Microsoft::Console::VirtualTerminal::StateMachine> _stateMachine;
@@ -354,6 +357,12 @@ private:
     std::optional<std::wstring> _title;
     std::wstring _startingTitle;
     std::optional<til::color> _startingTabColor;
+
+    std::vector<til::point_span> _searchHighlights;
+    size_t _searchHighlightFocused = 0;
+
+    mutable std::vector<til::point_span> _lastSelectionSpans;
+    mutable til::generation_t _lastSelectionGeneration{};
 
     CursorType _defaultCursorShape = CursorType::Legacy;
 
@@ -364,12 +373,14 @@ private:
     bool _suppressApplicationTitle = false;
     bool _trimBlockSelection = false;
     bool _autoMarkPrompts = false;
+    bool _rainbowSuggestions = false;
 
     size_t _taskbarState = 0;
     size_t _taskbarProgress = 0;
 
     size_t _hyperlinkPatternId = 0;
 
+    std::wstring _answerbackMessage;
     std::wstring _workingDirectory;
 
     // This default fake font value is only used to check if the font is a raster font.
@@ -380,15 +391,15 @@ private:
     // the pivot is the til::point that remains selected when you extend a selection in any direction
     //   this is particularly useful when a word selection is extended over its starting point
     //   see TerminalSelection.cpp for more information
-    struct SelectionAnchors
+    struct SelectionInfo
     {
         til::point start;
         til::point end;
         til::point pivot;
+        bool blockSelection = false;
+        bool active = false;
     };
-    std::optional<SelectionAnchors> _selection;
-    std::vector<til::inclusive_rect> _searchSelections;
-    bool _blockSelection = false;
+    til::generational<SelectionInfo> _selection{};
     std::wstring _wordDelimiters;
     SelectionExpansion _multiClickSelectionMode = SelectionExpansion::Char;
     SelectionInteractionMode _selectionMode = SelectionInteractionMode::None;
@@ -402,6 +413,7 @@ private:
     Microsoft::Console::Types::Viewport _mutableViewport;
     til::CoordType _scrollbackLines = 0;
     bool _detectURLs = false;
+    bool _clipboardOperationsAllowed = true;
 
     til::size _altBufferSize;
     std::optional<til::size> _deferredResize;
@@ -435,15 +447,6 @@ private:
     };
     std::optional<KeyEventCodes> _lastKeyEventCodes;
 
-    enum class PromptState : uint32_t
-    {
-        None = 0,
-        Prompt,
-        Command,
-        Output,
-    };
-    PromptState _currentPromptState{ PromptState::None };
-
     static WORD _ScanCodeFromVirtualKey(const WORD vkey) noexcept;
     static WORD _VirtualKeyFromScanCode(const WORD scanCode) noexcept;
     static WORD _VirtualKeyFromCharacter(const wchar_t ch) noexcept;
@@ -462,11 +465,9 @@ private:
     Microsoft::Console::Types::Viewport _GetVisibleViewport() const noexcept;
 
     void _PreserveUserScrollOffset(const int viewportDelta) noexcept;
+    til::CoordType _ScrollToPoints(const til::point coordStart, const til::point coordEnd);
 
     void _NotifyScrollEvent();
-
-    void _NotifyTerminalCursorPositionChanged() noexcept;
-
     bool _inAltBuffer() const noexcept;
     TextBuffer& _activeBuffer() const noexcept;
     void _updateUrlDetection();
@@ -474,23 +475,21 @@ private:
 
 #pragma region TextSelection
     // These methods are defined in TerminalSelection.cpp
-    std::vector<til::inclusive_rect> _GetSelectionRects() const noexcept;
-    std::vector<til::inclusive_rect> _GetSearchSelectionRects(Microsoft::Console::Types::Viewport viewport) const noexcept;
     std::vector<til::point_span> _GetSelectionSpans() const noexcept;
     std::pair<til::point, til::point> _PivotSelection(const til::point targetPos, bool& targetStart) const noexcept;
     std::pair<til::point, til::point> _ExpandSelectionAnchors(std::pair<til::point, til::point> anchors) const;
-    til::point _ConvertToBufferCell(const til::point viewportPos) const;
+    til::point _ConvertToBufferCell(const til::point viewportPos, bool allowRightExclusive) const;
     void _ScrollToPoint(const til::point pos);
     void _MoveByChar(SelectionDirection direction, til::point& pos);
     void _MoveByWord(SelectionDirection direction, til::point& pos);
     void _MoveByViewport(SelectionDirection direction, til::point& pos) noexcept;
     void _MoveByBuffer(SelectionDirection direction, til::point& pos) noexcept;
+    void _SetSelectionEnd(SelectionInfo* selection, const til::point position, std::optional<SelectionExpansion> newExpansionMode = std::nullopt);
 #pragma endregion
 
 #ifdef UNIT_TESTING
     friend class TerminalCoreUnitTests::TerminalBufferTests;
     friend class TerminalCoreUnitTests::TerminalApiTest;
-    friend class TerminalCoreUnitTests::ConptyRoundtripTests;
     friend class TerminalCoreUnitTests::ScrollTest;
 #endif
 };

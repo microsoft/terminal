@@ -24,14 +24,12 @@
 WriteData::WriteData(SCREEN_INFORMATION& siContext,
                      _In_reads_bytes_(cbContext) PCWCHAR pwchContext,
                      const size_t cbContext,
-                     const UINT uiOutputCodepage,
-                     const bool requiresVtQuirk) :
+                     const UINT uiOutputCodepage) :
     IWaitRoutine(ReplyDataType::Write),
     _siContext(siContext),
     _pwchContext(THROW_IF_NULL_ALLOC(reinterpret_cast<wchar_t*>(new byte[cbContext]))),
     _cbContext(cbContext),
     _uiOutputCodepage(uiOutputCodepage),
-    _requiresVtQuirk(requiresVtQuirk),
     _fLeadByteCaptured(false),
     _fLeadByteConsumed(false),
     _cchUtf8Consumed(0)
@@ -126,7 +124,6 @@ bool WriteData::Notify(const WaitTerminationReason TerminationReason,
     auto Status = DoWriteConsole(_pwchContext,
                                  &cbContext,
                                  _siContext,
-                                 _requiresVtQuirk,
                                  waiter);
 
     if (Status == CONSOLE_STATUS_WAIT)

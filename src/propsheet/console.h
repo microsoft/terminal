@@ -196,13 +196,9 @@ void Undo(HWND hControlWindow);
 
   #define DBGFONTS(_params_)
   #define DBGFONTS2(_params_)
-  #define DBGCHARS(_params_)
-  #define DBGOUTPUT(_params_)
 #else
   #define DBGFONTS(_params_)
   #define DBGFONTS2(_params_)
-  #define DBGCHARS(_params_)
-  #define DBGOUTPUT(_params_)
 #endif
 // clang-format on
 
