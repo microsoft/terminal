@@ -224,6 +224,7 @@ namespace Microsoft::Console::VirtualTerminal
             ResetCursorColor = 112,
             ResetHighlightColor = 117,
             FinalTermAction = 133,
+            AccessibilityAction = 200,
             VsCodeAction = 633,
             ITerm2Action = 1337,
             WTAction = 9001,

@@ -72,6 +72,9 @@ public:
 
     void SearchMissingCommand(std::wstring_view missingCommand) override;
 
+    void SetAccessibilityEngineState(bool enable) override;
+    void DispatchAccessibilityAnnouncement(std::wstring_view announcement) override;
+
 private:
     Microsoft::Console::IIoProvider& _io;
 };
