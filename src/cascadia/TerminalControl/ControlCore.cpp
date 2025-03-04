@@ -137,6 +137,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         auto pfnWindowSizeChanged = [this](auto&& PH1, auto&& PH2) { _terminalWindowSizeChanged(std::forward<decltype(PH1)>(PH1), std::forward<decltype(PH2)>(PH2)); };
         _terminal->SetWindowSizeChangedCallback(pfnWindowSizeChanged);
 
+        auto pfnSetAccessibilityEngineState = [this](auto&& PH1) { _terminalSetAccessibilityEngineState(std::forward<decltype(PH1)>(PH1)); };
+        _terminal->SetAccessibilityEngineStateCallback(pfnSetAccessibilityEngineState);
+
+        auto pfnDispatchAccessibilityAnnouncement = [this](auto&& PH1) { _terminalDispatchAccessibilityAnnouncement(std::forward<decltype(PH1)>(PH1)); };
+        _terminal->SetDispatchAccessibilityAnnouncementCallback(pfnDispatchAccessibilityAnnouncement);
+
         // MSFT 33353327: Initialize the renderer in the ctor instead of Initialize().
         // We need the renderer to be ready to accept new engines before the SwapChainPanel is ready to go.
         // If we wait, a screen reader may try to get the AutomationPeer (aka the UIA Engine), and we won't be able to attach
@@ -1657,6 +1663,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void ControlCore::_terminalSearchMissingCommand(std::wstring_view missingCommand, const til::CoordType& bufferRow)
     {
         SearchMissingCommand.raise(*this, make<implementation::SearchMissingCommandEventArgs>(hstring{ missingCommand }, bufferRow));
+    }
+
+    void ControlCore::_terminalSetAccessibilityEngineState(const bool enabled)
+    {
+        SetAccessibilityEngineState.raise(*this, enabled);
+    }
+
+    void ControlCore::_terminalDispatchAccessibilityAnnouncement(std::wstring_view announcement)
+    {
+        DispatchAccessibilityAnnouncement.raise(*this, hstring{ announcement });
     }
 
     void ControlCore::OpenCWD()

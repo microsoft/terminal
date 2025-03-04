@@ -168,12 +168,23 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     void ControlInteractivity::LostFocus()
     {
+        SetAccessibilityEngineState(false);
+        _core->LostFocus();
+    }
+
+    void ControlInteractivity::SetAccessibilityEngineState(bool enabled)
+    {
         if (_uiaEngine.get())
         {
-            THROW_IF_FAILED(_uiaEngine->Disable());
+            if (enabled)
+            {
+                THROW_IF_FAILED(_uiaEngine->Enable());
+            }
+            else
+            {
+                THROW_IF_FAILED(_uiaEngine->Disable());
+            }
         }
-
-        _core->LostFocus();
     }
 
     // Method Description

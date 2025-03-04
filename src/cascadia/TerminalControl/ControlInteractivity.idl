@@ -22,6 +22,7 @@ namespace Microsoft.Terminal.Control
         void Initialize();
         void GotFocus();
         void LostFocus();
+        void SetAccessibilityEngineState(Boolean enabled);
 
         UInt64 Id { get; };
 

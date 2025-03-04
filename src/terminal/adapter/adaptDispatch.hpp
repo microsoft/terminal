@@ -150,6 +150,8 @@ namespace Microsoft::Console::VirtualTerminal
 
         void DoFinalTermAction(const std::wstring_view string) override;
 
+        void DoAccessibilityAction(const std::wstring_view string) override;
+
         void DoVsCodeAction(const std::wstring_view string) override;
 
         void DoWTAction(const std::wstring_view string) override;

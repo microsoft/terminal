@@ -441,6 +441,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void _showContextMenuAt(const winrt::Windows::Foundation::Point& controlRelativePos);
 
         void _bubbleSearchMissingCommand(const IInspectable& sender, const Control::SearchMissingCommandEventArgs& args);
+        void _setAccessibilityEngineState(const IInspectable& sender, bool enabled);
+        void _dispatchAccessibilityAnnouncement(const IInspectable& sender, const hstring announcement) const;
         winrt::fire_and_forget _bubbleWindowSizeChanged(const IInspectable& sender, Control::WindowSizeChangedEventArgs args);
         til::CoordType _calculateSearchScrollOffset() const;
 
@@ -474,6 +476,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             Control::ControlCore::CompletionsChanged_revoker CompletionsChanged;
             Control::ControlCore::RestartTerminalRequested_revoker RestartTerminalRequested;
             Control::ControlCore::SearchMissingCommand_revoker SearchMissingCommand;
+            Control::ControlCore::SetAccessibilityEngineState_revoker SetAccessibilityEngineState;
+            Control::ControlCore::DispatchAccessibilityAnnouncement_revoker DispatchAccessibilityAnnouncement;
             Control::ControlCore::RefreshQuickFixUI_revoker RefreshQuickFixUI;
             Control::ControlCore::WindowSizeChanged_revoker WindowSizeChanged;
 

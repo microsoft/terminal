@@ -687,6 +687,13 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         TabulationStopReport = 2
     };
 
+    enum class AccessibilityEventType : VTInt
+    {
+        StopAnnouncingOutput = 0,
+        ResumeAnnouncingOutput = 1,
+        AnnounceText = 2
+    };
+
     constexpr VTInt s_sDECCOLMSetColumns = 132;
     constexpr VTInt s_sDECCOLMResetColumns = 80;
 

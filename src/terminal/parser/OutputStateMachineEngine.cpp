@@ -853,6 +853,11 @@ bool OutputStateMachineEngine::ActionOscDispatch(const size_t parameter, const s
         _dispatch->DoVsCodeAction(string);
         break;
     }
+    case OscActionCodes::AccessibilityAction:
+    {
+        _dispatch->DoAccessibilityAction(string);
+        break;
+    }
     case OscActionCodes::WTAction:
     {
         _dispatch->DoWTAction(string);

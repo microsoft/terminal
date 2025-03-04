@@ -40,6 +40,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         void GotFocus();
         void LostFocus();
+        void SetAccessibilityEngineState(bool enabled);
         void UpdateSettings();
         void Initialize();
         Control::ControlCore Core();

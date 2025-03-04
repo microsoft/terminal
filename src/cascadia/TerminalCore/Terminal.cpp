@@ -1253,6 +1253,16 @@ void Microsoft::Terminal::Core::Terminal::SetClearQuickFixCallback(std::function
     _pfnClearQuickFix.swap(pfn);
 }
 
+void Terminal::SetAccessibilityEngineStateCallback(std::function<void(bool)> pfn) noexcept
+{
+    _pfnSetAccessibilityEngineState.swap(pfn);
+}
+
+void Terminal::SetDispatchAccessibilityAnnouncementCallback(std::function<void(std::wstring_view)> pfn) noexcept
+{
+    _pfnDispatchAccessibilityAnnouncement.swap(pfn);
+}
+
 // Method Description:
 // - Stores the search highlighted regions in the terminal
 void Terminal::SetSearchHighlights(const std::vector<til::point_span>& highlights) noexcept

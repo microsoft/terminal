@@ -148,6 +148,8 @@ public:
 
     virtual void DoFinalTermAction(const std::wstring_view string) = 0;
 
+    virtual void DoAccessibilityAction(const std::wstring_view string) = 0;
+
     virtual void DoVsCodeAction(const std::wstring_view string) = 0;
 
     virtual void DoWTAction(const std::wstring_view string) = 0;

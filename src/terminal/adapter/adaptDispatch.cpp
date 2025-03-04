@@ -3646,6 +3646,52 @@ void AdaptDispatch::DoFinalTermAction(const std::wstring_view string)
 }
 
 // Method Description:
+// - Performs an accessibility action
+// - Not actually used in conhost
+// Arguments:
+// - string: contains the parameters that define which action we do
+void AdaptDispatch::DoAccessibilityAction(const std::wstring_view string)
+{
+    const auto parts = Utils::SplitString(string, L';');
+    unsigned int action = 0;
+
+    if (parts.size() < 1 || !Utils::StringToUint(til::at(parts, 0), action))
+    {
+        return;
+    }
+
+    // A helper function to make the UIA provider dispatch an announcement
+    // stored in parts[1]
+    auto dispatchAnnouncement = [&]() {
+        if (parts.size() > 1)
+        {
+            _api.DispatchAccessibilityAnnouncement(til::at(parts, 1));
+        }
+    };
+
+    // The structure of the message is as follows:
+    // `e]200;
+    // 0:     AccessibilityEventType;
+    // 1:     optional announcement;
+    switch (static_cast<DispatchTypes::AccessibilityEventType>(action))
+    {
+    case DispatchTypes::AccessibilityEventType::StopAnnouncingOutput:
+        _api.SetAccessibilityEngineState(false);
+        dispatchAnnouncement();
+        break;
+    case DispatchTypes::AccessibilityEventType::ResumeAnnouncingOutput:
+        _api.SetAccessibilityEngineState(true);
+        dispatchAnnouncement();
+        break;
+    case DispatchTypes::AccessibilityEventType::AnnounceText:
+        dispatchAnnouncement();
+        break;
+    default:
+        return;
+    }
+}
+
+// Method Description:
 // - Performs a VsCode action
 // - Currently, the actions we support are:
 //   * Completions: An experimental protocol for passing shell completion

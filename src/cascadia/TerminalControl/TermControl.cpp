@@ -307,6 +307,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _revokers.CompletionsChanged = _core.CompletionsChanged(winrt::auto_revoke, { get_weak(), &TermControl::_bubbleCompletionsChanged });
         _revokers.RestartTerminalRequested = _core.RestartTerminalRequested(winrt::auto_revoke, { get_weak(), &TermControl::_bubbleRestartTerminalRequested });
         _revokers.SearchMissingCommand = _core.SearchMissingCommand(winrt::auto_revoke, { get_weak(), &TermControl::_bubbleSearchMissingCommand });
+        _revokers.SetAccessibilityEngineState = _core.SetAccessibilityEngineState(winrt::auto_revoke, { get_weak(), &TermControl::_setAccessibilityEngineState });
+        _revokers.DispatchAccessibilityAnnouncement = _core.DispatchAccessibilityAnnouncement(winrt::auto_revoke, { get_weak(), &TermControl::_dispatchAccessibilityAnnouncement });
         _revokers.WindowSizeChanged = _core.WindowSizeChanged(winrt::auto_revoke, { get_weak(), &TermControl::_bubbleWindowSizeChanged });
 
         _revokers.PasteFromClipboard = _interactivity.PasteFromClipboard(winrt::auto_revoke, { get_weak(), &TermControl::_bubblePasteFromClipboard });
@@ -4077,6 +4079,32 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         _quickFixBufferPos = args.BufferRow();
         SearchMissingCommand.raise(*this, args);
+    }
+
+    void TermControl::_setAccessibilityEngineState(const IInspectable& /*sender*/, bool enabled)
+    {
+        _interactivity.SetAccessibilityEngineState(enabled);
+    }
+
+    void TermControl::_dispatchAccessibilityAnnouncement(const IInspectable& /*sender*/, const hstring announcement) const
+    {
+        if (_automationPeer)
+        {
+            if (auto dispatcher = Dispatcher())
+            {
+                dispatcher.RunAsync(Windows::UI::Core::CoreDispatcherPriority::Normal, [automationPeer{ _automationPeer }, announcement]() {
+                    try
+                    {
+                        automationPeer.RaiseNotificationEvent(
+                            AutomationNotificationKind::Other,
+                            AutomationNotificationProcessing::All,
+                            announcement,
+                            L"AccessibilityAnnouncement" /* unique name for this group of notifications */);
+                    }
+                    CATCH_LOG();
+                });
+            }
+        }
     }
 
     winrt::fire_and_forget TermControl::_bubbleWindowSizeChanged(const IInspectable& /*sender*/, Control::WindowSizeChangedEventArgs args)

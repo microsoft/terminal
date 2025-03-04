@@ -454,3 +454,11 @@ void ConhostInternalGetSet::SearchMissingCommand(std::wstring_view /*missingComm
 {
     // Not implemented for conhost.
 }
+void ConhostInternalGetSet::SetAccessibilityEngineState(bool /*enable*/)
+{
+    // Not implemented for conhost.
+}
+void ConhostInternalGetSet::DispatchAccessibilityAnnouncement(std::wstring_view /*announcement*/)
+{
+    // Not implemented for conhost.
+}
