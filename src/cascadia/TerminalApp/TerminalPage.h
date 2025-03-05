@@ -121,12 +121,14 @@ namespace winrt::TerminalApp::implementation
         bool FocusMode() const;
         bool Fullscreen() const;
         bool AlwaysOnTop() const;
+        bool ShowTabsFullscreen() const;
+        void SetShowTabsFullscreen(bool newShowTabsFullscreen);
         void SetFullscreen(bool);
         void SetFocusMode(const bool inFocusMode);
         void Maximized(bool newMaximized);
         void RequestSetMaximized(bool newMaximized);
 
-        void SetStartupActions(std::vector<Microsoft::Terminal::Settings::Model::ActionAndArgs>& actions);
+        void SetStartupActions(std::vector<Microsoft::Terminal::Settings::Model::ActionAndArgs> actions);
 
         void SetInboundListener(bool isEmbedding);
         static std::vector<Microsoft::Terminal::Settings::Model::ActionAndArgs> ConvertExecuteCommandlineToActions(const Microsoft::Terminal::Settings::Model::ExecuteCommandlineArgs& args);
@@ -144,7 +146,7 @@ namespace winrt::TerminalApp::implementation
         void ActionSaveFailed(winrt::hstring message);
         void ShowTerminalWorkingDirectory();
 
-        safe_void_coroutine ProcessStartupActions(Windows::Foundation::Collections::IVector<Microsoft::Terminal::Settings::Model::ActionAndArgs> actions,
+        safe_void_coroutine ProcessStartupActions(std::vector<Microsoft::Terminal::Settings::Model::ActionAndArgs> actions,
                                                   const bool initial,
                                                   const winrt::hstring cwd = winrt::hstring{},
                                                   const winrt::hstring env = winrt::hstring{});
@@ -228,6 +230,7 @@ namespace winrt::TerminalApp::implementation
         bool _isFullscreen{ false };
         bool _isMaximized{ false };
         bool _isAlwaysOnTop{ false };
+        bool _showTabsFullscreen{ false };
 
         std::optional<uint32_t> _loadFromPersistedLayoutIdx{};
 
@@ -252,7 +255,7 @@ namespace winrt::TerminalApp::implementation
         winrt::Windows::UI::Xaml::Controls::Grid::LayoutUpdated_revoker _layoutUpdatedRevoker;
         StartupState _startupState{ StartupState::NotInitialized };
 
-        Windows::Foundation::Collections::IVector<Microsoft::Terminal::Settings::Model::ActionAndArgs> _startupActions;
+        std::vector<Microsoft::Terminal::Settings::Model::ActionAndArgs> _startupActions;
         bool _shouldStartInboundListener{ false };
         bool _isEmbeddingInboundListener{ false };
 
@@ -430,6 +433,7 @@ namespace winrt::TerminalApp::implementation
         bool _tabPointerMiddleButtonExited{ false };
         void _OnTabPointerPressed(const IInspectable& sender, const Windows::UI::Xaml::Input::PointerRoutedEventArgs& eventArgs);
         void _OnTabPointerReleased(const IInspectable& sender, const Windows::UI::Xaml::Input::PointerRoutedEventArgs& eventArgs);
+        safe_void_coroutine _OnTabPointerReleasedCloseTab(winrt::Microsoft::UI::Xaml::Controls::TabViewItem sender);
         void _OnTabPointerEntered(const IInspectable& sender, const Windows::UI::Xaml::Input::PointerRoutedEventArgs& eventArgs);
         void _OnTabPointerExited(const IInspectable& sender, const Windows::UI::Xaml::Input::PointerRoutedEventArgs& eventArgs);
 

@@ -568,6 +568,10 @@
     <value>Àłℓöω DECRQCRA (Request Checksum of Rectangular Area) !!! !!! !!! !!! !!! </value>
     <comment>{Locked="DECRQCRA"}{Locked="Request Checksum of Rectangular Area"}Header for a control to toggle support for the DECRQCRA control sequence.</comment>
   </data>
+  <data name="Profile_AllowVtClipboardWrite.Header" xml:space="preserve">
+    <value>Ãľļōẅ OSC 52 (Manipulate Selection Data) ŧõ щѓιţе ŧő тĥē ćℓįрвöăѓđ !!! !!! !!! !!! !!! !!! !</value>
+    <comment>{Locked="OSC 52"}{Locked="Manipulate Selection Data"}Header for a control to toggle support for applications to change the contents of the Windows system clipboard.</comment>
+  </data>
   <data name="Globals_AllowHeadless.Header" xml:space="preserve">
     <value>Ǻℓĺŏщ Ẁιйđòώѕ Тёŗмїⁿàļ тǿ řϋŋ ϊň тђě ьąςќġѓőůήď !!! !!! !!! !!! !!</value>
     <comment>Header for a control to toggle support for Windows Terminal to run in the background.</comment>
@@ -2029,19 +2033,19 @@
     <comment>Text label for secondary button the color picker content dialog. When clicked, the operation of selecting a color is cancelled by the user.</comment>
   </data>
   <data name="Profile_CursorColor_NullableColorPicker.NullColorButtonLabel" xml:space="preserve">
-    <value>Ùŝë ćυŗšθг çσľōř ƒŗōm ĉöŀøя śĉнзмé !!! !!! !!! !</value>
+    <value>Ùŝë ŝčĥзмё çσľōř !!! !</value>
     <comment>Label for a button directing the user to use the cursor color defined in the terminal's current color scheme.</comment>
   </data>
   <data name="Profile_Foreground_NullableColorPicker.NullColorButtonLabel" xml:space="preserve">
-    <value>Ŭŝě ƒθгęĝѓóϋňď ćǿłõѓ ƒŕõм сöℓòя şçĥέмё !!! !!! !!! !!</value>
+    <value>Ŭŝě şςђęmε ¢оłöř !!! !</value>
     <comment>Label for a button directing the user to use the foreground color defined in the terminal's current color scheme.</comment>
   </data>
   <data name="Profile_Background_NullableColorPicker.NullColorButtonLabel" xml:space="preserve">
-    <value>Ůśĕ вäćкģŗòŭиð ćôℓοѓ ƒŕǿm čòℓôѓ śςĥëmē !!! !!! !!! !!</value>
+    <value>Ůśĕ śĉħемë ¢ōĺóř !!! !</value>
     <comment>Label for a button directing the user to use the background color defined in the terminal's current color scheme.</comment>
   </data>
   <data name="Profile_SelectionBackground_NullableColorPicker.NullColorButtonLabel" xml:space="preserve">
-    <value>Ůŝë śęŀ℮çťïòл ьαćкğŕόµńđ çøłôř ƒŗоm ¢οłõг ş¢нέмё !!! !!! !!! !!! !!</value>
+    <value>Ůŝë śĉћ℮mĕ çòĺőг !!! !</value>
     <comment>Label for a button directing the user to use the selection background color defined in the terminal's current color scheme.</comment>
   </data>
   <data name="Profile_IconTypeNone" xml:space="preserve">
@@ -2276,6 +2280,14 @@
     <value>Đįŝрļãу ã ŝħĭěļð ίπ ŧђê ţîťłë ъãѓ щћэπ Ẅīήđθщş Ţĕřмïńāľ ίѕ ŕůπŉïηģ åš Àδмιήίŝтяàтοґ !!! !!! !!! !!! !!! !!! !!! !!! </value>
     <comment>Header for a control to toggle displaying a shield in the title bar of the app. "Admin" refers to elevated sessions like "run as Admin"</comment>
   </data>
+  <data name="Globals_ShowTabsFullscreen.Header" xml:space="preserve">
+    <value>Şĥбω ťãьŝ іή ƒūļℓ šĉґééл !!! !!! !</value>
+    <comment>Header for a control to toggle if the app should show the tabs when in full screen state.</comment>
+  </data>
+  <data name="Globals_ShowTabsFullscreen.HelpText" xml:space="preserve">
+    <value>Шнèŋ ěπǻьłéđ, тнĕ ŧªв вář ẁϊℓł ь℮ νìşίьĺę шћеň τћé άрр íś ƒûĺĺ şčŗёеņ. !!! !!! !!! !!! !!! !!! !!!</value>
+    <comment>A description for what the "show tabs in full screen" setting does.</comment>
+  </data>
   <data name="Profile_PathTranslationStyle.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Ρǻţħ τґãñşĺαŧîσй !!! !</value>
     <comment>Name for a control to select how file and directory paths are translated.</comment>
@@ -2319,5 +2331,13 @@
   <data name="Profile_TabTitleNone" xml:space="preserve">
     <value>Ŋøиє !</value>
     <comment>Text displayed when the tab title is not defined.</comment>
+  </data>
+  <data name="Globals_StartOnUserLogin_DisabledByUser" xml:space="preserve">
+    <value>Åΰťόмåтίĉ śţдѓтΰρ ћăş ьěёή δіѕªъľēð ïй ťĥ℮ Ŝťǻřťúφ Āρφŝ ѕěĉŧϊōη бƒ Windows ŝεтţīŋĝś. !!! !!! !!! !!! !!! !!! !!! !!! !</value>
+    <comment>{Locked="Windows"}This is displayed in concordance with Globals_StartOnUserLogin if the user has disabled the setting outside of the application.</comment>
+  </data>
+  <data name="Globals_StartOnUserLogin_UnavailableByPolicy" xml:space="preserve">
+    <value>Ţĥîŝ όρтįοñ íş мαпªģéð ъý ĕŋτéřрŗĭšз рôľĩсу алð çąňηōт ье ċħâήğèď ћēяē. !!! !!! !!! !!! !!! !!! !!!</value>
+    <comment>This is displayed in concordance with Globals_StartOnUserLogin if the enterprise administrator has taken control of this setting.</comment>
   </data>
 </root>

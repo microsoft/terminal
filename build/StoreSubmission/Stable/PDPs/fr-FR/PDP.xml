@@ -56,14 +56,14 @@ Il s’agit d’un projet open source et nous encourageons la participation à l
   <ReleaseNotes>
     Version __VERSION_NUMBER__
 
-- Le terminal mémorisera désormais le contenu de la fenêtre lorsque vous utiliserez la restauration de session.
-- Vous pouvez désormais utiliser plusieurs polices en même temps.
-- Les personnages dessinés en boîte sont désormais rendus avec une perfection de pixel.
-- L'expérience d'utilisation d'un IME dans le Terminal a été considérablement améliorée.
-- Les schémas de couleurs à l'intérieur de votre fichier JSON seront désormais beaucoup plus simples.
-- Un certain nombre de bugs concernant la gestion des URL, les lignes à double largeur, le retour à la ligne, etc. ont été corrigés.
+– Nous avons réécrit la manière dont les applications de console sont hébergées dans Terminal ! Veuillez signaler tout bogue que vous rencontrez.
+– Terminal prend désormais en charge Sixels !
+– Vous pouvez maintenant ouvrir un panneau ancré contenant des extraits de commandes que vous avez enregistrées pour les utiliser ultérieurement
+– Les utilisateurs de l’invite de commande sur la dernière version de Windows 11 peuvent voir une icône « astuce rapide » qui suggère un logiciel installable à partir de WinGet
+– Le texte sélectionné sera désormais beaucoup plus visible (et personnalisable !)
+– Un certain nombre de bogues de fiabilité, de problèmes de commodité et de désagréments ont été corrigés.
 
-Veuillez consulter notre page de versions GitHub pour plus de détails.
+Veuillez consulter notre page des versions GitHub pour découvrir d’autres détails.
   </ReleaseNotes>
   <ScreenshotCaptions>
     <!-- Valid length: 200 character limit, up to 9 elements per platform -->

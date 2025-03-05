@@ -89,6 +89,7 @@ namespace winrt::TerminalApp::implementation
         bool Fullscreen() const;
         void Maximized(bool newMaximized);
         bool AlwaysOnTop() const;
+        bool ShowTabsFullscreen() const;
         bool AutoHideWindow();
         void IdentifyWindow();
 
@@ -106,6 +107,7 @@ namespace winrt::TerminalApp::implementation
         Microsoft::Terminal::Settings::Model::LaunchMode GetLaunchMode();
         bool GetShowTabsInTitlebar();
         bool GetInitialAlwaysOnTop();
+        bool GetInitialShowTabsFullscreen();
         float CalcSnappedDimension(const bool widthOrHeight, const float dimension) const;
 
         Windows::UI::Xaml::UIElement GetRoot() noexcept;
@@ -165,8 +167,6 @@ namespace winrt::TerminalApp::implementation
         // ALSO: If you add any UIElements as roots here, make sure they're
         // updated in _ApplyTheme. The root currently is _root.
         winrt::com_ptr<TerminalPage> _root{ nullptr };
-        winrt::Windows::UI::Xaml::Controls::ContentDialog _dialog{ nullptr };
-        std::shared_mutex _dialogLock;
 
         wil::com_ptr<CommandlineArgs> _appArgs{ nullptr };
         bool _hasCommandLineArguments{ false };

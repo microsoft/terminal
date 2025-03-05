@@ -137,14 +137,15 @@ ConDrvDeviceComm::~ConDrvDeviceComm() = default;
     // See: https://msdn.microsoft.com/en-us/library/windows/desktop/aa363216(v=vs.85).aspx
     // Written is unused but cannot be nullptr because we aren't using overlapped.
     DWORD cbWritten = 0;
-    RETURN_IF_WIN32_BOOL_FALSE(DeviceIoControl(_Server.get(),
-                                               dwIoControlCode,
-                                               pInBuffer,
-                                               cbInBufferSize,
-                                               pOutBuffer,
-                                               cbOutBufferSize,
-                                               &cbWritten,
-                                               nullptr));
+    RETURN_IF_WIN32_BOOL_FALSE_EXPECTED(DeviceIoControl(
+        _Server.get(),
+        dwIoControlCode,
+        pInBuffer,
+        cbInBufferSize,
+        pOutBuffer,
+        cbOutBufferSize,
+        &cbWritten,
+        nullptr));
 
     return S_OK;
 }

@@ -241,7 +241,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                               const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
                                               const Core::Point pixelPosition)
     {
-        const auto terminalPosition = _getTerminalPosition(til::point{ pixelPosition }, true);
+        // Un-rounded coordinates; we only round when selecting text
+        const auto terminalPosition = _getTerminalPosition(til::point{ pixelPosition }, false);
 
         const auto altEnabled = modifiers.IsAltPressed();
         const auto shiftEnabled = modifiers.IsShiftPressed();
@@ -285,7 +286,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             }
             const auto isOnOriginalPosition = _lastMouseClickPosNoSelection == pixelPosition;
 
-            _core->LeftClickOnTerminal(terminalPosition,
+            // Rounded coordinates for text selection
+            _core->LeftClickOnTerminal(_getTerminalPosition(til::point{ pixelPosition }, true),
                                        multiClickMapper,
                                        altEnabled,
                                        shiftEnabled,
@@ -338,7 +340,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                             const Core::Point pixelPosition,
                                             const bool pointerPressedInBounds)
     {
-        const auto terminalPosition = _getTerminalPosition(til::point{ pixelPosition }, true);
+        const auto terminalPosition = _getTerminalPosition(til::point{ pixelPosition }, false);
         // Returning true from this function indicates that the caller should do no further processing of this movement.
         bool handledCompletely = false;
 
@@ -487,7 +489,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                           const Core::Point pixelPosition,
                                           const Control::MouseButtonState buttonState)
     {
-        const auto terminalPosition = _getTerminalPosition(til::point{ pixelPosition }, true);
+        const auto terminalPosition = _getTerminalPosition(til::point{ pixelPosition }, false);
 
         // Short-circuit isReadOnly check to avoid warning dialog.
         //
