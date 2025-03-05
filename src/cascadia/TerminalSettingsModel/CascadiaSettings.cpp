@@ -429,6 +429,7 @@ void CascadiaSettings::_validateSettings()
     _validateColorSchemesInCommands();
     _validateThemeExists();
     _validateProfileEnvironmentVariables();
+    _validateRegexes();
 }
 
 // Method Description:
@@ -581,6 +582,49 @@ void CascadiaSettings::_validateProfileEnvironmentVariables()
             }
         }
     }
+}
+
+static void _validateRegex(const winrt::hstring& regex, IVector<Model::SettingsLoadWarnings>& warnings)
+{
+    try
+    {
+        std::wregex{ regex.cbegin(), regex.cend() };
+    }
+    catch (std::regex_error)
+    {
+        warnings.Append(Model::SettingsLoadWarnings::InvalidRegex);
+    }
+}
+
+static void _validateNTMEntries(const IVector<Model::NewTabMenuEntry>& entries, IVector<Model::SettingsLoadWarnings>& warnings)
+{
+    for (const auto& ntmEntry : entries)
+    {
+        if (const auto& folderEntry = ntmEntry.try_as<Model::FolderEntry>())
+        {
+            _validateNTMEntries(folderEntry.RawEntries(), warnings);
+        }
+        if (const auto& matchProfilesEntry = ntmEntry.try_as<Model::MatchProfilesEntry>())
+        {
+            if (const auto nameRegex = matchProfilesEntry.Name(); !nameRegex.empty())
+            {
+                _validateRegex(nameRegex, warnings);
+            }
+            if (const auto commandlineRegex = matchProfilesEntry.Commandline(); !commandlineRegex.empty())
+            {
+                _validateRegex(commandlineRegex, warnings);
+            }
+            if (const auto sourceRegex = matchProfilesEntry.Source(); !sourceRegex.empty())
+            {
+                _validateRegex(sourceRegex, warnings);
+            }
+        }
+    }
+}
+
+void CascadiaSettings::_validateRegexes()
+{
+    _validateNTMEntries(_globals->NewTabMenu(), _warnings);
 }
 
 // Method Description:
