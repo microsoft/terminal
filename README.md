@@ -404,7 +404,7 @@ Please review these brief docs below about our coding practices.
 > any of our documentation files anywhere in the repository (or write some new
 > ones!)
 
-This is a work in progress as we learn what we'll need to provide people in
+This is a work in progress as we learn what we will need to provide people in
 order to be effective contributors to our project.
 
 * [Coding Style](./doc/STYLE.md)
@@ -425,3 +425,5 @@ additional questions or comments.
 [conduct-FAQ]: https://opensource.microsoft.com/codeofconduct/faq/
 [conduct-email]: mailto:opencode@microsoft.com
 [store-install-link]: https://aka.ms/terminal
+
+<!-- Test edit for open source contribution -->
