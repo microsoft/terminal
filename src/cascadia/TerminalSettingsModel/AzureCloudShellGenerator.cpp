@@ -8,6 +8,7 @@
 
 #include "../../inc/DefaultSettings.h"
 #include "DynamicProfileUtils.h"
+#include <LibraryResources.h>
 
 using namespace ::Microsoft::Terminal::Settings::Model;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
@@ -18,6 +19,11 @@ std::wstring_view AzureCloudShellGenerator::GetNamespace() const noexcept
     return AzureGeneratorNamespace;
 }
 
+std::wstring_view AzureCloudShellGenerator::GetDisplayName() const noexcept
+{
+    return RS_(L"AzureCloudShellGeneratorDisplayName");
+}
+
 // Method Description:
 // - Checks if the Azure Cloud shell is available on this platform, and if it
 //   is, creates a profile to be able to launch it.
@@ -25,7 +31,7 @@ std::wstring_view AzureCloudShellGenerator::GetNamespace() const noexcept
 // - <none>
 // Return Value:
 // - a vector with the Azure Cloud Shell connection profile, if available.
-void AzureCloudShellGenerator::GenerateProfiles(std::vector<winrt::com_ptr<implementation::Profile>>& profiles) const
+void AzureCloudShellGenerator::GenerateProfiles(std::vector<winrt::com_ptr<implementation::Profile>>& profiles)
 {
     if (AzureConnection::IsAzureConnectionAvailable())
     {

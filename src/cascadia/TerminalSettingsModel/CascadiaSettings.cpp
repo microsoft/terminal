@@ -113,6 +113,17 @@ Model::CascadiaSettings CascadiaSettings::Copy() const
         settings->_globals = _globals->Copy();
         settings->_allProfiles = winrt::single_threaded_observable_vector(std::move(allProfiles));
         settings->_activeProfiles = winrt::single_threaded_observable_vector(std::move(activeProfiles));
+
+        // copy extension packages
+        {
+            std::vector<Model::ExtensionPackage> extensions;
+            extensions.reserve(_extensionPackages.Size());
+            for (const auto& extension : _extensionPackages)
+            {
+                extensions.emplace_back(get_self<ExtensionPackage>(extension)->Copy());
+            }
+            settings->_extensionPackages = winrt::single_threaded_vector(std::move(extensions));
+        }
     }
 
     // load errors
@@ -129,6 +140,51 @@ Model::CascadiaSettings CascadiaSettings::Copy() const
     settings->_currentDefaultTerminal = _currentDefaultTerminal;
 
     return *settings;
+}
+
+Model::FragmentSettings FragmentSettings::Copy() const
+{
+    auto fragment{ winrt::make_self<FragmentSettings>(_source, _Json, _jsonSource) };
+
+    std::vector<Model::FragmentProfileEntry> modifiedProfiles;
+    modifiedProfiles.reserve(_modifiedProfiles.Size());
+    for (const auto& entry : _modifiedProfiles)
+    {
+        modifiedProfiles.emplace_back(winrt::make<FragmentProfileEntry>(entry.ProfileGuid(), entry.Json()));
+    }
+    fragment->_modifiedProfiles = winrt::single_threaded_observable_vector(std::move(modifiedProfiles));
+
+    std::vector<Model::FragmentProfileEntry> newProfiles;
+    newProfiles.reserve(_newProfiles.Size());
+    for (const auto& entry : _newProfiles)
+    {
+        newProfiles.emplace_back(winrt::make<FragmentProfileEntry>(entry.ProfileGuid(), entry.Json()));
+    }
+    fragment->_newProfiles = winrt::single_threaded_observable_vector(std::move(newProfiles));
+
+    std::vector<Model::FragmentColorSchemeEntry> colorSchemes;
+    colorSchemes.reserve(_colorSchemes.Size());
+    for (const auto& entry : _colorSchemes)
+    {
+        colorSchemes.emplace_back(winrt::make<FragmentColorSchemeEntry>(entry.ColorSchemeName(), entry.Json()));
+    }
+    fragment->_colorSchemes = winrt::single_threaded_observable_vector(std::move(colorSchemes));
+
+    return *fragment;
+}
+
+Model::ExtensionPackage ExtensionPackage::Copy() const
+{
+    auto extPkg{ winrt::make_self<ExtensionPackage>(_source, _scope) };
+    extPkg->Icon(_Icon);
+    extPkg->DisplayName(_DisplayName);
+
+    for (const auto& frag : _fragments)
+    {
+        extPkg->Fragments().Append(get_self<FragmentSettings>(frag)->Copy());
+    }
+
+    return *extPkg;
 }
 
 // Method Description:
@@ -171,6 +227,11 @@ IObservableVector<Model::Profile> CascadiaSettings::AllProfiles() const noexcept
 IObservableVector<Model::Profile> CascadiaSettings::ActiveProfiles() const noexcept
 {
     return _activeProfiles;
+}
+
+IVectorView<Model::ExtensionPackage> CascadiaSettings::Extensions() const noexcept
+{
+    return _extensionPackages.GetView();
 }
 
 // Method Description:

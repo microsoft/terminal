@@ -6,6 +6,7 @@
 #include "VisualStudioGenerator.h"
 #include "VsDevCmdGenerator.h"
 #include "VsDevShellGenerator.h"
+#include <LibraryResources.h>
 
 using namespace winrt::Microsoft::Terminal::Settings::Model;
 
@@ -16,7 +17,12 @@ std::wstring_view VisualStudioGenerator::GetNamespace() const noexcept
     return Namespace;
 }
 
-void VisualStudioGenerator::GenerateProfiles(std::vector<winrt::com_ptr<implementation::Profile>>& profiles) const
+std::wstring_view VisualStudioGenerator::GetDisplayName() const noexcept
+{
+    return RS_(L"VisualStudioGeneratorDisplayName");
+}
+
+void VisualStudioGenerator::GenerateProfiles(std::vector<winrt::com_ptr<implementation::Profile>>& profiles)
 {
     const auto instances = VsSetupConfiguration::QueryInstances();
 

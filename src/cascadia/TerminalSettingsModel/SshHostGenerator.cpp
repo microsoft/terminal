@@ -7,6 +7,7 @@
 #include "../../inc/DefaultSettings.h"
 
 #include "DynamicProfileUtils.h"
+#include <LibraryResources.h>
 
 static constexpr std::wstring_view SshHostGeneratorNamespace{ L"Windows.Terminal.SSH" };
 
@@ -132,13 +133,23 @@ std::wstring_view SshHostGenerator::GetNamespace() const noexcept
     return SshHostGeneratorNamespace;
 }
 
+std::wstring_view SshHostGenerator::GetDisplayName() const noexcept
+{
+    return RS_(L"SshHostGeneratorDisplayName");
+}
+
+std::wstring_view SshHostGenerator::GetIcon() const noexcept
+{
+    return _getProfileIconPath();
+}
+
 // Method Description:
 // - Generate a list of profiles for each detected OpenSSH host.
 // Arguments:
 // - <none>
 // Return Value:
 // - <A list of SSH host profiles.>
-void SshHostGenerator::GenerateProfiles(std::vector<winrt::com_ptr<implementation::Profile>>& profiles) const
+void SshHostGenerator::GenerateProfiles(std::vector<winrt::com_ptr<implementation::Profile>>& profiles)
 {
     std::wstring sshExePath;
     if (_tryFindSshExePath(sshExePath))

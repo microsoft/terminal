@@ -19,6 +19,7 @@
 #if TIL_FEATURE_DYNAMICSSHPROFILES_ENABLED
 #include "SshHostGenerator.h"
 #endif
+#include "PowershellInstallationProfileGenerator.h"
 
 #include "ApplicationState.h"
 #include "DefaultTerminal.h"
@@ -178,13 +179,77 @@ SettingsLoader::SettingsLoader(const std::string_view& userJSON, const std::stri
 // (meaning profiles specified by the application rather by the user).
 void SettingsLoader::GenerateProfiles()
 {
-    _executeGenerator(PowershellCoreProfileGenerator{});
-    _executeGenerator(WslDistroGenerator{});
-    _executeGenerator(AzureCloudShellGenerator{});
-    _executeGenerator(VisualStudioGenerator{});
+    PowershellCoreProfileGenerator powerShellGenerator{};
+    _executeGenerator(powerShellGenerator);
+
+    WslDistroGenerator wslGenerator{};
+    _executeGenerator(wslGenerator);
+
+    AzureCloudShellGenerator acsGenerator{};
+    _executeGenerator(acsGenerator);
+
+    VisualStudioGenerator vsGenerator{};
+    _executeGenerator(vsGenerator);
+
 #if TIL_FEATURE_DYNAMICSSHPROFILES_ENABLED
-    _executeGenerator(SshHostGenerator{});
+    SshHostGenerator sshGenerator{};
+    _executeGenerator(sshGenerator);
 #endif
+
+    PowershellInstallationProfileGenerator pwshInstallationGenerator{};
+    _executeGenerator(pwshInstallationGenerator);
+
+    _cleanupPowerShellInstaller(!powerShellGenerator.GetPowerShellInstances().empty());
+}
+
+// Retrieve the "Install Latest PowerShell" profile and...
+// - add a comment to the JSON to indicate it's conditionally applied
+// - (if PowerShell is installed) mark it for deletion
+void SettingsLoader::_cleanupPowerShellInstaller(bool isPowerShellInstalled)
+{
+    const hstring pwshInstallerNamespace{ PowershellInstallationProfileGenerator::Namespace };
+    if (extensionPackageMap.contains(pwshInstallerNamespace))
+    {
+        if (const auto& fragExtList = extensionPackageMap[pwshInstallerNamespace]->Fragments(); fragExtList.Size() > 0)
+        {
+            Json::StreamWriterBuilder styledWriter;
+            styledWriter["indentation"] = "    ";
+            styledWriter["commentStyle"] = "All";
+
+            auto fragExt = get_self<FragmentSettings>(fragExtList.GetAt(0));
+
+            // We want the comment to be the first thing in the object,
+            // "closeOnExit" is the first property, so target that.
+            auto fragExtJson = _parseJSON(til::u16u8(fragExt->Json()));
+            fragExtJson[JsonKey(ProfilesKey)][0]["closeOnExit"].setComment(til::u16u8(fmt::format(FMT_COMPILE(L"// {}"), RS_(L"PowerShellInstallationProfileJsonComment"))), Json::CommentPlacement::commentBefore);
+            fragExt->Json(hstring{ til::u8u16(Json::writeString(styledWriter, fragExtJson)) });
+
+            if (const auto& profileEntryList = fragExt->NewProfilesView(); profileEntryList.Size() > 0)
+            {
+                auto profileEntry = get_self<FragmentProfileEntry>(profileEntryList.GetAt(0));
+
+                // We want the comment to be the first thing in the object,
+                // "closeOnExit" is the first property, so target that.
+                auto profileJson = _parseJSON(til::u16u8(profileEntry->Json()));
+                profileJson["closeOnExit"].setComment(til::u16u8(fmt::format(FMT_COMPILE(L"// {}"), RS_(L"PowerShellInstallationProfileJsonComment"))), Json::CommentPlacement::commentBefore);
+                profileEntry->Json(hstring{ til::u8u16(Json::writeString(styledWriter, profileJson)) });
+
+                // If PowerShell is installed, mark the installer profile for deletion
+                if (isPowerShellInstalled)
+                {
+                    const auto profileGuid = profileEntryList.GetAt(0).ProfileGuid();
+                    for (const auto& profile : userSettings.profiles)
+                    {
+                        if (profile->Guid() == profileGuid)
+                        {
+                            profile->Deleted(true);
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
 // A new settings.json gets a special treatment:
@@ -246,7 +311,7 @@ void SettingsLoader::FindFragmentsAndMergeIntoUserSettings()
 {
     ParsedSettings fragmentSettings;
 
-    const auto parseAndLayerFragmentFiles = [&](const std::filesystem::path& path, const winrt::hstring& source) {
+    const auto parseAndLayerFragmentFiles = [&](const std::filesystem::path& path, const winrt::hstring& source, FragmentScope scope, bool layerFragment) {
         for (const auto& fragmentExt : std::filesystem::directory_iterator{ path })
         {
             if (fragmentExt.path().extension() == jsonExtension)
@@ -256,7 +321,7 @@ void SettingsLoader::FindFragmentsAndMergeIntoUserSettings()
                     const auto content = til::io::read_file_as_utf8_string_if_exists(fragmentExt.path());
                     if (!content.empty())
                     {
-                        _parseFragment(source, content, fragmentSettings);
+                        _parseFragment(source, content, fragmentSettings, scope, fragmentExt.path().filename().wstring(), layerFragment);
                     }
                 }
                 CATCH_LOG();
@@ -278,9 +343,12 @@ void SettingsLoader::FindFragmentsAndMergeIntoUserSettings()
                 const auto filename = fragmentExtFolder.path().filename();
                 const auto& source = filename.native();
 
-                if (!_ignoredNamespaces.contains(std::wstring_view{ source }) && fragmentExtFolder.is_directory())
+                if (fragmentExtFolder.is_directory())
                 {
-                    parseAndLayerFragmentFiles(fragmentExtFolder.path(), winrt::hstring{ source });
+                    parseAndLayerFragmentFiles(fragmentExtFolder.path(),
+                                               winrt::hstring{ source },
+                                               rfid == FOLDERID_LocalAppData ? FragmentScope::User : FragmentScope::Machine, // scope
+                                               !_ignoredNamespaces.contains(std::wstring_view{ source })); // layerFragment
                 }
             }
         }
@@ -312,11 +380,8 @@ void SettingsLoader::FindFragmentsAndMergeIntoUserSettings()
 
     for (const auto& ext : extensions)
     {
-        const auto packageName = ext.Package().Id().FamilyName();
-        if (_ignoredNamespaces.contains(std::wstring_view{ packageName }))
-        {
-            continue;
-        }
+        const auto& package = ext.Package();
+        const auto packageName = package.Id().FamilyName();
 
         // Likewise, getting the public folder from an extension is an async operation.
         auto foundFolder = extractValueFromTaskWithoutMainThreadAwait(ext.GetPublicFolderAsync());
@@ -334,7 +399,16 @@ void SettingsLoader::FindFragmentsAndMergeIntoUserSettings()
 
         if (std::filesystem::is_directory(path))
         {
-            parseAndLayerFragmentFiles(path, packageName);
+            // MSIX does not support machine-wide scope
+            // See https://github.com/microsoft/winget-cli/discussions/1983
+            parseAndLayerFragmentFiles(path,
+                                       packageName,
+                                       FragmentScope::User,
+                                       !_ignoredNamespaces.contains(std::wstring_view{ packageName })); // layerFragment
+
+            auto extPkg = extensionPackageMap[packageName];
+            extPkg->Icon(package.Logo().AbsoluteUri());
+            extPkg->DisplayName(package.DisplayName());
         }
     }
 }
@@ -345,7 +419,7 @@ void SettingsLoader::FindFragmentsAndMergeIntoUserSettings()
 void SettingsLoader::MergeFragmentIntoUserSettings(const winrt::hstring& source, const std::string_view& content)
 {
     ParsedSettings fragmentSettings;
-    _parseFragment(source, content, fragmentSettings);
+    _parseFragment(source, content, fragmentSettings, FragmentScope::User, hstring{ L"filename.json" }, true);
 }
 
 // Call this method before passing SettingsLoader to the CascadiaSettings constructor.
@@ -724,9 +798,17 @@ void SettingsLoader::_parse(const OriginTag origin, const winrt::hstring& source
 
 // Just like _parse, but is to be used for fragment files, which don't support anything but color
 // schemes and profiles. Additionally this function supports profiles which specify an "updates" key.
-void SettingsLoader::_parseFragment(const winrt::hstring& source, const std::string_view& content, ParsedSettings& settings)
+// - scope: The scope of the fragment file (user or machine).
+// - jsonFilename: The filename of the JSON file being parsed.
+// - applyToSettings: If true, the parsed settings will be applied to the user settings. Otherwise, load the fragment for the settings UI, but don't apply it.
+void SettingsLoader::_parseFragment(const winrt::hstring& source, const std::string_view& content, ParsedSettings& settings, FragmentScope scope, std::wstring_view jsonFilename, bool applyToSettings)
 {
     auto json = _parseJson(content);
+
+    Json::StreamWriterBuilder styledWriter;
+    styledWriter["indentation"] = "    ";
+    styledWriter["commentStyle"] = "All";
+    auto fragmentSettings = winrt::make_self<FragmentSettings>(source, hstring{ til::u8u16(Json::writeString(styledWriter, json.root)) }, hstring{ jsonFilename });
 
     settings.clear();
 
@@ -740,19 +822,26 @@ void SettingsLoader::_parseFragment(const winrt::hstring& source, const std::str
                 if (const auto scheme = ColorScheme::FromJson(schemeJson))
                 {
                     scheme->Origin(OriginTag::Fragment);
-                    // Don't add the color scheme to the Fragment's GlobalSettings; that will
-                    // cause layering issues later. Add them to a staging area for later processing.
-                    // (search for STAGED COLORS to find the next step)
-                    settings.colorSchemes.emplace(scheme->Name(), std::move(scheme));
+                    if (applyToSettings)
+                    {
+                        // Don't add the color scheme to the Fragment's GlobalSettings; that will
+                        // cause layering issues later. Add them to a staging area for later processing.
+                        // (search for STAGED COLORS to find the next step)
+                        settings.colorSchemes.emplace(scheme->Name(), std::move(scheme));
+                    }
+                    fragmentSettings->ColorSchemes().Append(winrt::make<FragmentColorSchemeEntry>(scheme->Name(), hstring{ til::u8u16(Json::writeString(styledWriter, schemeJson)) }));
                 }
             }
             CATCH_LOG()
         }
 
-        // Parse out actions from the fragment. Manually opt-out of keybinding
-        // parsing - fragments shouldn't be allowed to bind actions to keys
-        // directly. We may want to revisit circa GH#2205
-        settings.globals->LayerActionsFrom(json.root, OriginTag::Fragment, false);
+        if (applyToSettings)
+        {
+            // Parse out actions from the fragment. Manually opt-out of keybinding
+            // parsing - fragments shouldn't be allowed to bind actions to keys
+            // directly. We may want to revisit circa GH#2205
+            settings.globals->LayerActionsFrom(json.root, OriginTag::Fragment, false);
+        }
     }
 
     {
@@ -764,48 +853,75 @@ void SettingsLoader::_parseFragment(const winrt::hstring& source, const std::str
         {
             try
             {
-                auto profile = _parseProfile(OriginTag::Fragment, source, profileJson);
                 // GH#9962: Discard Guid-less, Name-less profiles, but...
                 // allow ones with an Updates field, as those are special for fragments.
                 // We need to make sure to only call Guid() if HasGuid() is true,
                 // as Guid() will dynamically generate a return value otherwise.
-                const auto guid = profile->HasGuid() ? profile->Guid() : profile->Updates();
-                if (guid != winrt::guid{})
+                auto profile = _parseProfile(OriginTag::Fragment, source, profileJson);
+                if (const auto guid = profile->Guid(); profile->HasGuid() && guid != winrt::guid{})
                 {
-                    _appendProfile(std::move(profile), guid, settings);
+                    if (applyToSettings)
+                    {
+                        _appendProfile(std::move(profile), guid, settings);
+                    }
+                    fragmentSettings->NewProfiles().Append(winrt::make<FragmentProfileEntry>(guid, hstring{ til::u8u16(Json::writeString(styledWriter, profileJson)) }));
+                }
+                else if (const auto guid = profile->Updates(); guid != winrt::guid{})
+                {
+                    if (applyToSettings)
+                    {
+                        _appendProfile(std::move(profile), guid, settings);
+                    }
+                    fragmentSettings->ModifiedProfiles().Append(winrt::make<FragmentProfileEntry>(guid, hstring{ til::u8u16(Json::writeString(styledWriter, profileJson)) }));
                 }
             }
             CATCH_LOG()
         }
     }
 
-    for (const auto& fragmentProfile : settings.profiles)
+    if (applyToSettings)
     {
-        if (const auto updates = fragmentProfile->Updates(); updates != winrt::guid{})
+        for (const auto& fragmentProfile : settings.profiles)
         {
-            if (const auto it = userSettings.profilesByGuid.find(updates); it != userSettings.profilesByGuid.end())
+            if (const auto updates = fragmentProfile->Updates(); updates != winrt::guid{})
             {
-                it->second->AddMostImportantParent(fragmentProfile);
+                if (const auto it = userSettings.profilesByGuid.find(updates); it != userSettings.profilesByGuid.end())
+                {
+                    it->second->AddMostImportantParent(fragmentProfile);
+                }
+            }
+            else
+            {
+                _addUserProfileParent(fragmentProfile);
             }
         }
-        else
+
+        // STAGED COLORS are processed here: we merge them into the partially-loaded
+        // settings directly so that we can resolve conflicts between user-generated
+        // color schemes and fragment-originated ones.
+        for (const auto& [_, fragmentColorScheme] : settings.colorSchemes)
         {
-            _addUserProfileParent(fragmentProfile);
+            if (!_addOrMergeUserColorScheme(fragmentColorScheme))
+            {
+                // Color scheme wasn't added because it conflicted with a non-user created scheme.
+                // Mark the fragment's color scheme as conflicting.
+                for (auto schemeEntry : fragmentSettings->ColorSchemes())
+                {
+                    if (schemeEntry.ColorSchemeName() == fragmentColorScheme->Name())
+                    {
+                        get_self<FragmentColorSchemeEntry>(schemeEntry)->Conflict(true);
+                        break;
+                    }
+                }
+            }
         }
-    }
 
-    // STAGED COLORS are processed here: we merge them into the partially-loaded
-    // settings directly so that we can resolve conflicts between user-generated
-    // color schemes and fragment-originated ones.
-    for (const auto& fragmentColorScheme : settings.colorSchemes)
-    {
-        _addOrMergeUserColorScheme(fragmentColorScheme.second);
+        // Add the parsed fragment globals as a parent of the user's settings.
+        // Later, in FinalizeInheritance, this will result in the action map from
+        // the fragments being applied before the user's own settings.
+        userSettings.globals->AddLeastImportantParent(settings.globals);
     }
-
-    // Add the parsed fragment globals as a parent of the user's settings.
-    // Later, in FinalizeInheritance, this will result in the action map from
-    // the fragments being applied before the user's own settings.
-    userSettings.globals->AddLeastImportantParent(settings.globals);
+    _registerFragment(std::move(*fragmentSettings), scope);
 }
 
 SettingsLoader::JsonSettings SettingsLoader::_parseJson(const std::string_view& content)
@@ -905,7 +1021,8 @@ void SettingsLoader::_addUserProfileParent(const winrt::com_ptr<implementation::
     }
 }
 
-void SettingsLoader::_addOrMergeUserColorScheme(const winrt::com_ptr<implementation::ColorScheme>& newScheme)
+// returns true if the scheme was successfully added, otherwise false
+bool SettingsLoader::_addOrMergeUserColorScheme(const winrt::com_ptr<implementation::ColorScheme>& newScheme)
 {
     // On entry, all the user color schemes have been loaded. Therefore, any insertions of inbox or fragment schemes
     // will fail; we can leverage this to detect when they are equivalent and delete the user's duplicate copies.
@@ -931,40 +1048,82 @@ void SettingsLoader::_addOrMergeUserColorScheme(const winrt::com_ptr<implementat
                 userSettings.colorSchemeRemappings.emplace(newScheme->Name(), newName);
                 // And re-add it to the end.
                 userSettings.colorSchemes.emplace(newName, std::move(existingScheme));
+                return true;
             }
         }
+        return false;
     }
+    return true;
 }
 
 // As the name implies it executes a generator.
 // Generated profiles are added to .inboxSettings. Used by GenerateProfiles().
-void SettingsLoader::_executeGenerator(const IDynamicProfileGenerator& generator)
+void SettingsLoader::_executeGenerator(IDynamicProfileGenerator& generator)
 {
     const auto generatorNamespace = generator.GetNamespace();
-    if (_ignoredNamespaces.contains(generatorNamespace))
-    {
-        return;
-    }
-
-    const auto previousSize = inboxSettings.profiles.size();
-
+    std::vector<winrt::com_ptr<implementation::Profile>> generatedProfiles;
     try
     {
-        generator.GenerateProfiles(inboxSettings.profiles);
+        generator.GenerateProfiles(generatedProfiles);
     }
     CATCH_LOG_MSG("Dynamic Profile Namespace: \"%.*s\"", gsl::narrow<int>(generatorNamespace.size()), generatorNamespace.data())
 
+    // These are needed for the FragmentSettings object
+    std::vector<Model::FragmentProfileEntry> profileEntries;
+    Json::Value profilesListJson{ Json::ValueType::arrayValue };
+    Json::StreamWriterBuilder styledWriter;
+    styledWriter["indentation"] = "    ";
+
     // If the generator produced some profiles we're going to give them default attributes.
     // By setting the Origin/Source/etc. here, we deduplicate some code and ensure they aren't missing accidentally.
-    if (inboxSettings.profiles.size() > previousSize)
+    const winrt::hstring source{ generatorNamespace };
+    for (const auto& profile : generatedProfiles)
     {
-        const winrt::hstring source{ generatorNamespace };
+        profile->Origin(OriginTag::Generated);
+        profile->Source(source);
 
-        for (const auto& profile : std::span(inboxSettings.profiles).subspan(previousSize))
+        const auto profileJson = profile->ToJson();
+        profilesListJson.append(profileJson);
+        profileEntries.push_back(winrt::make<FragmentProfileEntry>(profile->Guid(), hstring{ til::u8u16(Json::writeString(styledWriter, profileJson)) }));
+    }
+
+    if (!_ignoredNamespaces.contains(generatorNamespace))
+    {
+        // Add generated profiles to the user settings
+        for (auto& profile : generatedProfiles)
         {
-            profile->Origin(OriginTag::Generated);
-            profile->Source(source);
+            inboxSettings.profiles.push_back(profile);
         }
+    }
+
+    // Manually construct the JSON for the FragmentSettings object
+    Json::Value json{ Json::ValueType::objectValue };
+    json[JsonKey(ProfilesKey)] = profilesListJson;
+
+    auto generatorExtension = winrt::make_self<FragmentSettings>(hstring{ generatorNamespace }, hstring{ til::u8u16(Json::writeString(styledWriter, json)) }, hstring{ L"settings.json" });
+    for (const auto& entry : profileEntries)
+    {
+        generatorExtension->NewProfiles().Append(entry);
+    }
+    auto extPkg = _registerFragment(std::move(*generatorExtension), FragmentScope::Machine);
+    extPkg->DisplayName(hstring{ generator.GetDisplayName() });
+    extPkg->Icon(hstring{ generator.GetIcon() });
+}
+
+winrt::com_ptr<ExtensionPackage> SettingsLoader::_registerFragment(const winrt::Microsoft::Terminal::Settings::Model::FragmentSettings& fragment, FragmentScope scope)
+{
+    const auto src = fragment.Source();
+    if (auto extPkg = extensionPackageMap[src])
+    {
+        extPkg->Fragments().Append(fragment);
+        return extPkg;
+    }
+    else
+    {
+        auto newExtPkg = winrt::make_self<ExtensionPackage>(src, scope);
+        newExtPkg->Fragments().Append(fragment);
+        extensionPackageMap[src] = newExtPkg;
+        return newExtPkg;
     }
 }
 
@@ -1258,6 +1417,11 @@ CascadiaSettings::CascadiaSettings(SettingsLoader&& loader) :
     _warnings = winrt::single_threaded_vector(std::move(warnings));
     _themesChangeLog = std::move(loader.userSettings.themesChangeLog);
 
+    for (auto [_, extPkg] : loader.extensionPackageMap)
+    {
+        _extensionPackages.Append(extPkg->Copy());
+    }
+
     _resolveDefaultProfile();
     _resolveNewTabMenuProfiles();
     _validateSettings();
@@ -1491,7 +1655,11 @@ void CascadiaSettings::_resolveNewTabMenuProfiles() const
     auto activeProfileCount = gsl::narrow_cast<int>(_activeProfiles.Size());
     for (auto profileIndex = 0; profileIndex < activeProfileCount; profileIndex++)
     {
-        remainingProfilesMap.emplace(profileIndex, _activeProfiles.GetAt(profileIndex));
+        const auto& profile = _activeProfiles.GetAt(profileIndex);
+        if (!profile.Deleted())
+        {
+            remainingProfilesMap.emplace(profileIndex, _activeProfiles.GetAt(profileIndex));
+        }
     }
 
     // We keep track of the "remaining profiles" - those that have not yet been resolved

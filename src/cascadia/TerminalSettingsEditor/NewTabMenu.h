@@ -42,7 +42,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         WINRT_OBSERVABLE_PROPERTY(Editor::NewTabMenuViewModel, ViewModel, _PropertyChangedHandlers, nullptr);
 
     private:
-        Editor::NewTabMenuEntryTemplateSelector _entryTemplateSelector{ nullptr };
         Editor::NewTabMenuEntryViewModel _draggedEntry{ nullptr };
 
         void _ScrollToEntry(const Editor::NewTabMenuEntryViewModel& entry);
