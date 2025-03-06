@@ -27,7 +27,7 @@
     "/src/tools/ansi-color/",
     "/src/tools/ColorTool/",
     "/scratch/",
-    "Scratch.sln",
+    "Scratch.sln"
   ],
   "SuffixFilters": [
     ".dbb",

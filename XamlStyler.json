@@ -37,5 +37,5 @@
     "ThicknessSeparator": 2,
     "ThicknessAttributes": "Margin, Padding, BorderThickness, ThumbnailClipMargin",
     "FormatOnSave": true,
-    "CommentPadding": 2,
+    "CommentPadding": 2
 }
