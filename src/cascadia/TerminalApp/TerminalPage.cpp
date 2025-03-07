@@ -9,6 +9,7 @@
 #include <TerminalCore/ControlKeyStates.hpp>
 #include <til/latch.h>
 #include <Utils.h>
+#include <fmt/chrono.h>
 
 #include "../../types/inc/utils.hpp"
 #include "App.h"
@@ -26,7 +27,7 @@
 #include "RequestMoveContentArgs.g.cpp"
 #include "LaunchPositionRequest.g.cpp"
 
-#include "Blackbox.cpp"
+#include "Blackbox.h"
 
 using namespace winrt;
 using namespace winrt::Microsoft::Management::Deployment;
@@ -1324,22 +1325,6 @@ namespace winrt::TerminalApp::implementation
         {
             valueSet.Insert(L"sessionId", Windows::Foundation::PropertyValue::CreateGuid(id));
         }
-
-        auto _b{ std::make_shared<Blackbox>(L"c:\\users\\dustin\\desktop\\foo.cast") };
-        _b->Start();
-        connection.TerminalOutput([bbox = _b](const winrt::hstring& h) {
-            bbox->Log(h);
-        });
-        connection.StateChanged([bbox = _b](auto&& sender, auto&&) {
-            if (auto c = sender.try_as<ITerminalConnection>())
-            {
-                auto st = c.State();
-                if (st == ConnectionState::Failed || st == ConnectionState::Closed)
-                {
-                    bbox->Close();
-                }
-            }
-        });
 
         connection.Initialize(valueSet);
 
@@ -3232,6 +3217,21 @@ namespace winrt::TerminalApp::implementation
         return nullptr;
     }
 
+    winrt::Windows::Foundation::IInspectable TerminalPage::_StartRecording(const winrt::Microsoft::Terminal::Control::TermControl& control, const winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection& connection)
+    {
+        auto rec{ winrt::make_self<ConnectionRecorder>() };
+        std::time_t t = std::time(nullptr);
+        auto filename = fmt::format(FMT_COMPILE(L"{}\\Desktop\\Recordings\\{}-{:%Y%m%dT%H%M%S%z}.cast"),
+                                    wil::GetEnvironmentVariableW<std::wstring>(L"USERPROFILE"),
+                                    L"ProfileName",
+                                    fmt::localtime(t));
+        (void)control;
+        rec->Path(filename);
+        rec->Connection(connection);
+        rec->Start();
+        return *rec;
+    }
+
     TermControl TerminalPage::_SetupControl(const TermControl& term)
     {
         // GH#12515: ConPTY assumes it's hidden at the start. If we're not, let it know now.
@@ -3345,6 +3345,12 @@ namespace winrt::TerminalApp::implementation
             const auto idStr = Utils::GuidToPlainString(sessionId);
             const auto path = fmt::format(FMT_COMPILE(L"{}\\buffer_{}.txt"), settingsDir, idStr);
             control.RestoreFromPath(path);
+        }
+
+        if (true /* record on startup */)
+        {
+            auto recorder = _StartRecording(control, connection);
+            _manager.AddRecorderForCore(control.ContentId(), recorder);
         }
 
         auto paneContent{ winrt::make<TerminalPaneContent>(profile, _terminalSettingsCache, control) };
@@ -3480,6 +3486,12 @@ namespace winrt::TerminalApp::implementation
         if (const auto& connection{ _duplicateConnectionForRestart(paneContent) })
         {
             paneContent.GetTermControl().Connection(connection);
+            if (auto recorder{ _manager.RecorderForCore(paneContent.GetTermControl().ContentId()) }; recorder)
+            {
+                auto rec = winrt::get_self<ConnectionRecorder>(recorder);
+                // CHANGE HORSES MID-RACE
+                rec->Connection(connection);
+            }
             connection.Start();
         }
     }

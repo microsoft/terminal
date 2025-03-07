@@ -455,6 +455,9 @@ namespace winrt::TerminalApp::implementation
         winrt::Microsoft::Terminal::Control::TermControl _SetupControl(const winrt::Microsoft::Terminal::Control::TermControl& term);
         winrt::Microsoft::Terminal::Control::TermControl _AttachControlToContent(const uint64_t& contentGuid);
 
+        winrt::Windows::Foundation::IInspectable _StartRecording(const winrt::Microsoft::Terminal::Control::TermControl& control,
+                                                                 const winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection& connection);
+
         TerminalApp::IPaneContent _makeSettingsContent();
         std::shared_ptr<Pane> _MakeTerminalPane(const Microsoft::Terminal::Settings::Model::NewTerminalArgs& newTerminalArgs = nullptr,
                                                 const winrt::TerminalApp::TabBase& sourceTab = nullptr,

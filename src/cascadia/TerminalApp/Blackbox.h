@@ -1,3 +1,5 @@
+#include <til/spsc.h>
+
 struct Blackbox : public std::enable_shared_from_this<Blackbox>
 {
     struct Record
@@ -35,19 +37,16 @@ struct Blackbox : public std::enable_shared_from_this<Blackbox>
         HSTRING string{ nullptr };
     };
 
-    Blackbox(std::wstring_view filePath) :
-        _filePath{ filePath }
-    {
-    }
+    Blackbox() { }
 
     ~Blackbox()
     {
         Close();
     }
 
-    void Start()
+    void Start(wil::zwstring_view filePath)
     {
-        _file.reset(CreateFileW(_filePath.c_str(), GENERIC_WRITE, FILE_SHARE_READ, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr));
+        _file.reset(CreateFileW(filePath.c_str(), GENERIC_WRITE, FILE_SHARE_READ, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr));
         THROW_LAST_ERROR_IF(!_file);
 
         _start = std::chrono::high_resolution_clock::now();
@@ -107,8 +106,26 @@ private:
     std::chrono::high_resolution_clock::time_point _start;
     til::spsc::producer<Record> _chan{ nullptr };
     bool _closed{ false };
-    std::wstring _filePath;
     wil::unique_hfile _file;
 };
 
-#pragma warning(pop)
+struct ConnectionRecorder : public winrt::implements<ConnectionRecorder, winrt::Windows::Foundation::IInspectable>
+{
+    ConnectionRecorder();
+    void Connection(const winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection&);
+    void Path(std::wstring_view path);
+    void Start();
+    void Stop();
+
+private:
+    bool _started{ false };
+    std::shared_ptr<Blackbox> _blackbox;
+    std::wstring _filePath;
+    winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection _connection{ nullptr };
+
+    struct
+    {
+        winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection::StateChanged_revoker stateChanged;
+        winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection::TerminalOutput_revoker output;
+    } _connectionEvents;
+};

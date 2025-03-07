@@ -40,8 +40,12 @@ namespace winrt::TerminalApp::implementation
 
         void Detach(const Microsoft::Terminal::Control::TermControl& control);
 
+        void AddRecorderForCore(uint64_t id, const winrt::Windows::Foundation::IInspectable& recorder);
+        winrt::Windows::Foundation::IInspectable RecorderForCore(uint64_t id);
+
     private:
         std::unordered_map<uint64_t, Microsoft::Terminal::Control::ControlInteractivity> _content;
+        std::unordered_map<uint64_t, winrt::Windows::Foundation::IInspectable> _contentRecorders;
 
         void _closedHandler(const winrt::Windows::Foundation::IInspectable& sender,
                             const winrt::Windows::Foundation::IInspectable& e);

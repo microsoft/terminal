@@ -85,6 +85,8 @@ namespace
     }
 }
 
+#pragma warning(pop)
+
 void Blackbox::Thread(til::spsc::consumer<Record> rx)
 {
     Record queue[16];
@@ -114,4 +116,38 @@ void Blackbox::Thread(til::spsc::consumer<Record> rx)
         }
     } while (true);
     _file.reset();
+}
+
+ConnectionRecorder::ConnectionRecorder() :
+    _blackbox{ std::make_shared<Blackbox>() }
+{
+}
+
+void ConnectionRecorder::Connection(const winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection& connection)
+{
+    _connectionEvents.output = connection.TerminalOutput(winrt::auto_revoke, [this, strong = get_strong()](const winrt::hstring& output) {
+        this->_blackbox->Log(output);
+    });
+    _connectionEvents.stateChanged = connection.StateChanged(winrt::auto_revoke, [this, strong = get_strong()](auto&&, auto&&) {
+
+    });
+    _connection = connection;
+}
+
+void ConnectionRecorder::Path(std::wstring_view path)
+{
+    _filePath = path;
+}
+
+void ConnectionRecorder::Start()
+{
+    if (!std::exchange(_started, true))
+    {
+        _blackbox->Start(_filePath);
+    }
+}
+
+void ConnectionRecorder::Stop()
+{
+    _blackbox->Close();
 }

@@ -13,6 +13,9 @@ namespace TerminalApp
 
         Microsoft.Terminal.Control.ControlInteractivity TryLookupCore(UInt64 id);
         void Detach(Microsoft.Terminal.Control.TermControl control);
+
+	void AddRecorderForCore(UInt64 id, Object recorder);
+	Object RecorderForCore(UInt64 id);
     }
 
     [default_interface] runtimeclass RenameWindowRequestedArgs

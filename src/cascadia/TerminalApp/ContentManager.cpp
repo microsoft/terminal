@@ -48,6 +48,21 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    void ContentManager::AddRecorderForCore(uint64_t id, const winrt::Windows::Foundation::IInspectable& recorder)
+    {
+        _contentRecorders.insert_or_assign(id, recorder);
+    }
+
+    winrt::Windows::Foundation::IInspectable ContentManager::RecorderForCore(uint64_t id)
+    {
+        const auto it = _contentRecorders.find(id);
+        if (it != _contentRecorders.end())
+        {
+            return it->second;
+        }
+        return { nullptr };
+    }
+
     void ContentManager::_closedHandler(const winrt::Windows::Foundation::IInspectable& sender,
                                         const winrt::Windows::Foundation::IInspectable&)
     {
@@ -55,6 +70,7 @@ namespace winrt::TerminalApp::implementation
         {
             const auto& contentId{ content.Id() };
             _content.erase(contentId);
+            _contentRecorders.erase(contentId);
         }
     }
 }
