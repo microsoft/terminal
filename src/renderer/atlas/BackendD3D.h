@@ -252,6 +252,7 @@ namespace Microsoft::Console::Render::Atlas
         [[nodiscard]] ATLAS_ATTR_COLD AtlasGlyphEntry* _drawGlyph(const RenderingPayload& p, const ShapedRow& row, AtlasFontFaceEntry& fontFaceEntry, u32 glyphIndex);
         AtlasGlyphEntry* _drawBuiltinGlyph(const RenderingPayload& p, const ShapedRow& row, AtlasFontFaceEntry& fontFaceEntry, u32 glyphIndex);
         ShadingType _drawSoftFontGlyph(const RenderingPayload& p, const D2D1_RECT_F& rect, u32 glyphIndex);
+        ShadingType _drawVGA816Glyph(const RenderingPayload& p, const D2D1_RECT_F& rect, u32 glyphIndex);
         void _drawGlyphAtlasAllocate(const RenderingPayload& p, stbrp_rect& rect);
         static AtlasGlyphEntry* _drawGlyphAllocateEntry(const ShapedRow& row, AtlasFontFaceEntry& fontFaceEntry, u32 glyphIndex);
         static void _splitDoubleHeightGlyph(const RenderingPayload& p, const ShapedRow& row, AtlasFontFaceEntry& fontFaceEntry, AtlasGlyphEntry* glyphEntry);
@@ -308,6 +309,7 @@ namespace Microsoft::Console::Render::Atlas
         wil::com_ptr<ID2D1SolidColorBrush> _emojiBrush;
         wil::com_ptr<ID2D1SolidColorBrush> _brush;
         wil::com_ptr<ID2D1Bitmap1> _softFontBitmap;
+        wil::com_ptr<ID2D1Bitmap1> _vgaBitmap;
         bool _d2dBeganDrawing = false;
         bool _fontChangedResetGlyphAtlas = false;
 

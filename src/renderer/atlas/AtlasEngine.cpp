@@ -833,7 +833,7 @@ void AtlasEngine::_flushBufferLine()
                 codepoint = til::combine_surrogates(codepoint, beg[i++]);
             }
 
-            const auto c = (builtinGlyphs && BuiltinGlyphs::IsBuiltinGlyph(codepoint)) || BuiltinGlyphs::IsSoftFontChar(codepoint);
+            const auto c = (builtinGlyphs && BuiltinGlyphs::IsBuiltinGlyph(codepoint)) || BuiltinGlyphs::IsSoftFontChar(codepoint) || (codepoint >= 0 && codepoint <= 255);
             if (custom != c)
             {
                 break;
@@ -850,7 +850,27 @@ void AtlasEngine::_flushBufferLine()
             }
             else
             {
+#if 0
                 _mapRegularText(segmentBeg, segmentEnd);
+#endif
+
+                auto& row = *_p.rows[_api.lastPaintBufferLineCoord.y];
+                auto initialIndicesCount = row.glyphIndices.size();
+                const auto shift = gsl::narrow_cast<u8>(row.lineRendition != LineRendition::SingleWidth);
+                const auto colors = _p.foregroundBitmap.begin() + _p.colorBitmapRowStride * _api.lastPaintBufferLineCoord.y;
+                const auto l = segmentEnd - segmentBeg;
+
+                row.glyphIndices.insert(row.glyphIndices.end(), l, 0);
+                row.glyphAdvances.insert(row.glyphAdvances.end(), l, static_cast<f32>(_p.s->font->cellSize.x));
+                row.glyphOffsets.insert(row.glyphOffsets.end(), l, {});
+
+                for (size_t i = segmentBeg; i < segmentEnd; ++i)
+                {
+                    const auto col = _api.bufferLineColumn[i];
+                    row.colors.emplace_back(colors[static_cast<size_t>(col) << shift]);
+                }
+
+                row.mappings.emplace_back(nullptr, gsl::narrow_cast<u32>(initialIndicesCount), gsl::narrow_cast<u32>(row.glyphIndices.size()));
             }
         }
 

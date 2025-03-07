@@ -526,9 +526,53 @@ void AtlasEngine::_resolveTransparencySettings() noexcept
     }
 }
 
+#include "../../pixfont/vga_rgba.c"
+
 [[nodiscard]] HRESULT AtlasEngine::_updateFont(const FontInfoDesired& fontInfoDesired, FontInfo& fontInfo, const std::unordered_map<std::wstring_view, float>& features, const std::unordered_map<std::wstring_view, float>& axes) noexcept
 try
 {
+    {
+        const auto font = _api.s.write()->font.write();
+        float scale = (float)font->dpi / 96.f;
+        font->cellSize = {
+            gsl::narrow<u16>(lrintf(10.f * scale)),
+            gsl::narrow<u16>(lrintf(20.f * scale)),
+        };
+        const auto& cs = font->cellSize;
+        auto lineWidth = gsl::narrow<u16>(lrintf(1.f * scale));
+        font->fontName = L"VGA 8x16";
+        font->fontSize = 20;
+        font->advanceWidth = cs.x;
+        font->baseline = cs.y;
+        font->gridTop = { 0, 1 };
+        font->gridBottom = { gsl::narrow<u16>(cs.y - lineWidth), lineWidth };
+        font->gridLeft = { 0, lineWidth };
+        font->gridRight = { gsl::narrow<u16>(cs.x - lineWidth), lineWidth };
+        font->underline = { gsl::narrow<u16>(cs.y - lineWidth), lineWidth };
+        font->strikethrough = { gsl::narrow<u16>(cs.x - lineWidth), lineWidth };
+        font->doubleUnderline[0] = { gsl::narrow<u16>(cs.y - lineWidth), lineWidth };
+        font->doubleUnderline[1] = { gsl::narrow<u16>(cs.y - lineWidth * 3), lineWidth };
+        font->overline = { 0, lineWidth };
+        font->antialiasingMode = AntialiasingMode::Aliased;
+        font->builtinGlyphs = true;
+        font->colorGlyphs = false;
+        font->thinLineWidth = lineWidth;
+        const auto buf = reinterpret_cast<const uint8_t*>(&font_rgb[0]);
+        font->bitmapFontInfo = BitmapFontInfo{
+            .bitmap = { buf, buf + font_rgb_len },
+            .glyphSize = { 10, 20 },
+            .bitmapSizeInCharacters = { 32, 8 },
+            .glyphResidence = {
+                0xFFFFFFFFFFFFFFFFULL,
+                0xFFFFFFFFFFFFFFFFULL,
+                0xFFFFFFFFFFFFFFFFULL,
+                0xFFFFFFFFFFFFFFFFULL,
+            },
+        };
+        fontInfo.SetFromEngine(L"VGA 8x16", FF_MODERN, 400, false, { font->cellSize.x, font->cellSize.y }, { 10, 20 });
+        return S_OK;
+    }
+
     std::vector<DWRITE_FONT_FEATURE> fontFeatures;
     if (!features.empty())
     {
@@ -900,3 +944,60 @@ void AtlasEngine::_resolveFontMetrics(const FontInfoDesired& fontInfoDesired, Fo
     _api.s.write()->font.write()->fontCollection = std::move(collection);
     return true;
 }
+
+struct bdflex
+{
+    enum tok
+    {
+        LIT,
+        NUM,
+
+        START,
+        FONT,
+        SIZE,
+        FONTBBOX,
+
+        STARTPROP,
+        FONTASC,
+        FONTDSC,
+        ENDPROP,
+
+        CHARS,
+
+        STARTCHAR,
+        ENCODING,
+        SWIDTH,
+        DWIDTH,
+        BBX,
+        BITMAP,
+        ENDCHAR,
+
+        ENDFONT,
+        END,
+    };
+    size_t off; // position of ch
+
+    std::tuple<size_t, std::string_view> item;
+    std::string_view input;
+
+public:
+    std::string_view next()
+    {
+        if (off >= input.size())
+        {
+            return {};
+        }
+
+        const auto st = off;
+        for (; off < input.size() && !isspace(til::at(input, off)); ++off)
+            ;
+        auto p = input.substr(st, off - st);
+        for (; off < input.size() && isspace(til::at(input, off)); ++off)
+            ;
+        return p;
+    }
+    int e()
+    {
+        bdflex::*(bdflex::*)(int);
+    }
+};

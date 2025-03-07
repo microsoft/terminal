@@ -351,6 +351,7 @@ void BackendD3D::_updateFontDependents(const RenderingPayload& p)
     }
 
     _softFontBitmap.reset();
+    _vgaBitmap.reset();
 }
 
 void BackendD3D::_d2dRenderTargetUpdateFontSettings(const RenderingPayload& p) const noexcept
@@ -1602,6 +1603,10 @@ BackendD3D::AtlasGlyphEntry* BackendD3D::_drawBuiltinGlyph(const RenderingPayloa
     {
         shadingType = _drawSoftFontGlyph(p, r, glyphIndex);
     }
+    else if (glyphIndex <= 255)
+    {
+        shadingType = _drawVGA816Glyph(p, r, glyphIndex);
+    }
     else
     {
         // This code works in tandem with SHADING_TYPE_TEXT_BUILTIN_GLYPH in our pixel shader.
@@ -1692,6 +1697,47 @@ BackendD3D::ShadingType BackendD3D::_drawSoftFontGlyph(const RenderingPayload& p
 
     const auto interpolation = p.s->font->antialiasingMode == AntialiasingMode::Aliased ? D2D1_INTERPOLATION_MODE_NEAREST_NEIGHBOR : D2D1_INTERPOLATION_MODE_HIGH_QUALITY_CUBIC;
     _d2dRenderTarget->DrawBitmap(_softFontBitmap.get(), &rect, 1, interpolation, nullptr, nullptr);
+    return ShadingType::TextGrayscale;
+}
+
+BackendD3D::ShadingType BackendD3D::_drawVGA816Glyph(const RenderingPayload& p, const D2D1_RECT_F& rect, u32 glyphIndex)
+{
+    const auto font = p.s->font;
+    const BitmapFontInfo& bfi = p.s->font->bitmapFontInfo;
+    const auto width = static_cast<size_t>(bfi.glyphSize.x);
+    const auto height = static_cast<size_t>(bfi.glyphSize.y);
+
+    if (!_vgaBitmap)
+    {
+        const D2D1_SIZE_U size{
+            static_cast<UINT32>(bfi.glyphSize.x * bfi.bitmapSizeInCharacters.x),
+            static_cast<UINT32>(bfi.glyphSize.y * bfi.bitmapSizeInCharacters.y),
+        };
+        const D2D1_BITMAP_PROPERTIES1 bitmapProperties{
+            .pixelFormat = { DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED },
+            .dpiX = static_cast<f32>(96),
+            .dpiY = static_cast<f32>(96),
+        };
+        THROW_IF_FAILED(_d2dRenderTarget->CreateBitmap(size, nullptr, 0, &bitmapProperties, _vgaBitmap.addressof()));
+        const D2D1_RECT_U fillr{
+            0, 0, size.width, size.height
+        };
+	/* we have the entire bitmap right now, why not just blast the entire thing into D2D bitmap? */
+        _vgaBitmap->CopyFromMemory(&fillr, bfi.bitmap.data(), size.width * sizeof(u32));
+    }
+
+    _d2dRenderTarget->PushAxisAlignedClip(&rect, D2D1_ANTIALIAS_MODE_ALIASED);
+    const auto restoreD2D = wil::scope_exit([&]() {
+        _d2dRenderTarget->PopAxisAlignedClip();
+    });
+
+    D2D1_RECT_F srcRect{
+        static_cast<float>((glyphIndex % bfi.bitmapSizeInCharacters.x) * width),
+        static_cast<float>((glyphIndex / bfi.bitmapSizeInCharacters.x) * height),
+        static_cast<float>((glyphIndex % bfi.bitmapSizeInCharacters.x) * width + width),
+        static_cast<float>((glyphIndex / bfi.bitmapSizeInCharacters.x) * height + height),
+    };
+    _d2dRenderTarget->DrawBitmap(_vgaBitmap.get(), &rect, 1, D2D1_INTERPOLATION_MODE_NEAREST_NEIGHBOR, &srcRect, nullptr);
     return ShadingType::TextGrayscale;
 }
 

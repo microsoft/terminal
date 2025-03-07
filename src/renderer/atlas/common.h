@@ -346,6 +346,14 @@ namespace Microsoft::Console::Render::Atlas
         u16 height = 0;
     };
 
+    struct BitmapFontInfo
+    {
+        std::vector<uint8_t> bitmap;
+        u16x2 glyphSize;
+        u16x2 bitmapSizeInCharacters;
+        std::array<uint64_t, 256 / 64> glyphResidence;
+    };
+
     struct FontSettings
     {
         wil::com_ptr<IDWriteFontCollection> fontCollection;
@@ -379,6 +387,8 @@ namespace Microsoft::Console::Render::Atlas
 
         std::vector<uint16_t> softFontPattern;
         til::size softFontCellSize;
+
+        BitmapFontInfo bitmapFontInfo;
     };
 
     struct CursorSettings
