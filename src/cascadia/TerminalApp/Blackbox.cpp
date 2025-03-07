@@ -80,7 +80,7 @@ namespace
     }
 }
 
-struct Blackbox
+struct Blackbox : public std::enable_shared_from_this<Blackbox>
 {
     struct Record
     {
@@ -132,15 +132,15 @@ struct Blackbox
         _file.reset(CreateFileW(_filePath.c_str(), GENERIC_WRITE, FILE_SHARE_READ, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr));
         THROW_LAST_ERROR_IF(!_file);
 
-        auto s{ fmt::format(R"-({{"version": 2, "width": 120, "height": 30}})-"
-                            "\n") };
-        WriteFile(_file.get(), s.data(), (DWORD)s.size(), nullptr, nullptr);
-
         _start = std::chrono::high_resolution_clock::now();
         auto [tx, rx] = til::spsc::channel<Record>(1024);
         _chan = std::move(tx);
 
-        _thread = std::thread([this, rx = std::move(rx)]() mutable {
+        auto s{ fmt::format(R"-({{"version": 2, "width": 120, "height": 30}})-"
+                            "\n") };
+        WriteFile(_file.get(), s.data(), (DWORD)s.size(), nullptr, nullptr);
+
+        _thread = std::thread([this, strong = shared_from_this(), rx = std::move(rx)]() mutable {
             Thread(std::move(rx));
         });
     }
