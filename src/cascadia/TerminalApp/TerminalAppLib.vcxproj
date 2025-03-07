@@ -84,6 +84,7 @@
     <ClInclude Include="ActionPaletteItem.h" />
     <ClInclude Include="App.base.h" />
     <ClInclude Include="AppCommandlineArgs.h" />
+    <ClInclude Include="Blackbox.h" />
     <ClInclude Include="Commandline.h" />
     <ClInclude Include="CommandLinePaletteItem.h" />
     <ClInclude Include="Jumplist.h" />
@@ -193,6 +194,7 @@
   <ItemGroup>
     <ClCompile Include="ActionPaletteItem.cpp" />
     <ClCompile Include="CommandLinePaletteItem.cpp" />
+    <ClCompile Include="Blackbox.cpp" />
     <ClCompile Include="init.cpp" />
     <ClCompile Include="AppCommandlineArgs.cpp" />
     <ClCompile Include="Commandline.cpp" />
