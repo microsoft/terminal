@@ -57,12 +57,12 @@ namespace winrt::TerminalApp::implementation
     struct RequestMoveContentArgs : RequestMoveContentArgsT<RequestMoveContentArgs>
     {
         WINRT_PROPERTY(winrt::hstring, Window);
-        WINRT_PROPERTY(winrt::hstring, Content);
+        WINRT_PROPERTY(winrt::Windows::Foundation::IInspectable, Content);
         WINRT_PROPERTY(uint32_t, TabIndex);
         WINRT_PROPERTY(Windows::Foundation::IReference<Windows::Foundation::Point>, WindowPosition);
 
     public:
-        RequestMoveContentArgs(const winrt::hstring window, const winrt::hstring content, uint32_t tabIndex) :
+        RequestMoveContentArgs(const winrt::hstring window, const winrt::Windows::Foundation::IInspectable& content, uint32_t tabIndex) :
             _Window{ window },
             _Content{ content },
             _TabIndex{ tabIndex } {};
@@ -161,7 +161,7 @@ namespace winrt::TerminalApp::implementation
 
         bool OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, const bool down);
 
-        void AttachContent(Windows::Foundation::Collections::IVector<Microsoft::Terminal::Settings::Model::ActionAndArgs> args, uint32_t tabIndex);
+        void AttachContent(const winrt::Windows::Foundation::IInspectable& content, uint32_t tabIndex);
         void SendContentToOther(winrt::TerminalApp::RequestReceiveContentArgs args);
 
         uint32_t NumberOfTabs() const;
@@ -539,7 +539,7 @@ namespace winrt::TerminalApp::implementation
 
         void _DetachPaneFromWindow(std::shared_ptr<Pane> pane);
         void _DetachTabFromWindow(const winrt::com_ptr<TabBase>& terminalTab);
-        void _MoveContent(std::vector<winrt::Microsoft::Terminal::Settings::Model::ActionAndArgs>&& actions,
+        void _MoveContent(const winrt::Windows::Foundation::IInspectable& content,
                           const winrt::hstring& windowName,
                           const uint32_t tabIndex,
                           const std::optional<winrt::Windows::Foundation::Point>& dragPoint = std::nullopt);

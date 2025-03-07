@@ -26,35 +26,23 @@ namespace winrt::TerminalApp::implementation
                                                     const TerminalConnection::ITerminalConnection& connection)
     {
         ControlInteractivity content{ settings, unfocusedAppearance, connection };
-        content.Closed({ get_weak(), &ContentManager::_closedHandler });
-
-        _content.emplace(content.Id(), content);
-
         return content;
     }
 
     ControlInteractivity ContentManager::TryLookupCore(uint64_t id)
     {
-        const auto it = _content.find(id);
-        return it != _content.end() ? it->second : ControlInteractivity{ nullptr };
+        (void)id;
+        return ControlInteractivity{ nullptr };
     }
 
     void ContentManager::Detach(const Microsoft::Terminal::Control::TermControl& control)
     {
-        const auto contentId{ control.ContentId() };
-        if (const auto& content{ TryLookupCore(contentId) })
-        {
-            control.Detach();
-        }
+        (void)control;
     }
 
     void ContentManager::_closedHandler(const winrt::Windows::Foundation::IInspectable& sender,
                                         const winrt::Windows::Foundation::IInspectable&)
     {
-        if (const auto& content{ sender.try_as<winrt::Microsoft::Terminal::Control::ControlInteractivity>() })
-        {
-            const auto& contentId{ content.Id() };
-            _content.erase(contentId);
-        }
+        (void)sender;
     }
 }

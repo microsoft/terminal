@@ -2720,6 +2720,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     void TermControl::Detach()
     {
+#if 0
         _revokers = {};
 
         Control::ControlInteractivity old{ nullptr };
@@ -2727,6 +2728,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         old.Detach();
 
         _detached = true;
+#endif
     }
 
     // Method Description:

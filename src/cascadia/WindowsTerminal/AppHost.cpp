@@ -1317,7 +1317,7 @@ void AppHost::_handleMoveContent(const winrt::Windows::Foundation::IInspectable&
     }
     else
     {
-        _windowManager->CreateNewWindow(winrt::TerminalApp::WindowRequestedArgs{ sanitizedWindowName, args.Content(), windowBoundsReference });
+        //_windowManager->CreateNewWindow(winrt::TerminalApp::WindowRequestedArgs{ sanitizedWindowName, args.Content(), windowBoundsReference });
     }
 }
 

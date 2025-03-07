@@ -2112,8 +2112,8 @@ namespace winrt::TerminalApp::implementation
                 {
                     auto startupActions = pane->BuildStartupActions(0, 1, BuildStartupKind::MovePane);
                     _DetachPaneFromWindow(pane);
-                    _MoveContent(std::move(startupActions.args), windowId, tabIdx);
                     focusedTab->DetachPane();
+                    //_MoveContent(std::move(startupActions.args), windowId, tabIdx);
 
                     if (auto autoPeer = Automation::Peers::FrameworkElementAutomationPeer::FromElement(*this))
                     {
@@ -2214,15 +2214,13 @@ namespace winrt::TerminalApp::implementation
     //   this.
     // - `actions` will be emptied into a winrt IVector as a part of this method
     //   and should be expected to be empty after this call.
-    void TerminalPage::_MoveContent(std::vector<Settings::Model::ActionAndArgs>&& actions,
+    void TerminalPage::_MoveContent(const winrt::IInspectable& content,
                                     const winrt::hstring& windowName,
                                     const uint32_t tabIndex,
                                     const std::optional<winrt::Windows::Foundation::Point>& dragPoint)
     {
-        const auto winRtActions{ winrt::single_threaded_vector<ActionAndArgs>(std::move(actions)) };
-        const auto str{ ActionAndArgs::Serialize(winRtActions) };
         const auto request = winrt::make_self<RequestMoveContentArgs>(windowName,
-                                                                      str,
+                                                                      content,
                                                                       tabIndex);
         if (dragPoint.has_value())
         {
@@ -2252,10 +2250,9 @@ namespace winrt::TerminalApp::implementation
 
             if (tab)
             {
-                auto startupActions = tab->BuildStartupActions(BuildStartupKind::Content);
                 _DetachTabFromWindow(tab);
-                _MoveContent(std::move(startupActions), windowId, 0);
                 _RemoveTab(*tab);
+                _MoveContent(tab.as<ITabBase>(), windowId, 0);
                 if (auto autoPeer = Automation::Peers::FrameworkElementAutomationPeer::FromElement(*this))
                 {
                     const auto tabTitle = tab->Title();
@@ -2334,51 +2331,17 @@ namespace winrt::TerminalApp::implementation
     //   reattach instead of create new content, so this method simply needs to
     //   parse the JSON and pump it into our action handler. Almost the same as
     //   doing something like `wt -w 0 nt`.
-    void TerminalPage::AttachContent(IVector<Settings::Model::ActionAndArgs> args, uint32_t tabIndex)
+    void TerminalPage::AttachContent(const winrt::IInspectable& content, uint32_t tabIndex)
     {
-        if (args == nullptr ||
-            args.Size() == 0)
+        if (!content)
         {
             return;
         }
 
-        const auto& firstAction = args.GetAt(0);
-        const bool firstIsSplitPane{ firstAction.Action() == ShortcutAction::SplitPane };
-
-        // `splitPane` allows the user to specify which tab to split. In that
-        // case, split specifically the requested pane.
-        //
-        // If there's not enough tabs, then just turn this pane into a new tab.
-        //
-        // If the first action is `newTab`, the index is always going to be 0,
-        // so don't do anything in that case.
-        if (firstIsSplitPane && tabIndex < _tabs.Size())
+        if (auto tab{ content.try_as<TabBase>() }; tab)
         {
-            _SelectTab(tabIndex);
-        }
-
-        for (const auto& action : args)
-        {
-            _actionDispatch->DoAction(action);
-        }
-
-        // After handling all the actions, then re-check the tabIndex. We might
-        // have been called as a part of a tab drag/drop. In that case, the
-        // tabIndex is actually relevant, and we need to move the tab we just
-        // made into position.
-        if (!firstIsSplitPane && tabIndex != -1)
-        {
-            // Move the currently active tab to the requested index Use the
-            // currently focused tab index, because we don't know if the new tab
-            // opened at the end of the list, or adjacent to the previously
-            // active tab. This is affected by the user's "newTabPosition"
-            // setting.
-            if (const auto focusedTabIndex = _GetFocusedTabIndex())
-            {
-                const auto source = *focusedTabIndex;
-                _TryMoveTab(source, tabIndex);
-            }
-            // else: This shouldn't really be possible, because the tab we _just_ opened should be active.
+            auto impl = _GetTerminalTabImpl(*tab);
+            _InitializeTab(impl, tabIndex);
         }
     }
 
@@ -5286,12 +5249,13 @@ namespace winrt::TerminalApp::implementation
                                                const uint32_t tabIndex,
                                                std::optional<winrt::Windows::Foundation::Point> dragPoint)
     {
-        auto startupActions = _stashed.draggedTab->BuildStartupActions(BuildStartupKind::Content);
+        ITabBase tab = *_stashed.draggedTab;
+
         _DetachTabFromWindow(_stashed.draggedTab);
 
-        _MoveContent(std::move(startupActions), windowId, tabIndex, dragPoint);
         // _RemoveTab will make sure to null out the _stashed.draggedTab
         _RemoveTab(*_stashed.draggedTab);
+        _MoveContent(tab, windowId, tabIndex, dragPoint);
     }
 
     /// <summary>

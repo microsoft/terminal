@@ -141,7 +141,7 @@ namespace winrt::TerminalApp::implementation
         bool IsQuakeWindow() const noexcept { return _WindowProperties->IsQuakeWindow(); }
         TerminalApp::WindowProperties WindowProperties() { return *_WindowProperties; }
 
-        void AttachContent(winrt::hstring content, uint32_t tabIndex);
+        void AttachContent(const winrt::Windows::Foundation::IInspectable& content, uint32_t tabIndex);
         void SendContentToOther(winrt::TerminalApp::RequestReceiveContentArgs args);
 
         // -------------------------------- WinRT Events ---------------------------------

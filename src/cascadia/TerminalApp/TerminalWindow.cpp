@@ -1253,7 +1253,7 @@ namespace winrt::TerminalApp::implementation
         return nullptr;
     }
 
-    void TerminalWindow::AttachContent(winrt::hstring content, uint32_t tabIndex)
+    void TerminalWindow::AttachContent(const winrt::IInspectable& content, uint32_t tabIndex)
     {
         if (_root)
         {
@@ -1265,11 +1265,8 @@ namespace winrt::TerminalApp::implementation
             // If the first action is `newTab`, the index is always going to be 0,
             // so don't do anything in that case.
 
-            const bool replaceFirstWithNewTab = tabIndex >= _root->NumberOfTabs();
-
-            auto args = _contentStringToActions(content, replaceFirstWithNewTab);
-
-            _root->AttachContent(std::move(args), tabIndex);
+            //const bool replaceFirstWithNewTab = tabIndex >= _root->NumberOfTabs();
+            _root->AttachContent(content, tabIndex);
         }
     }
     void TerminalWindow::SendContentToOther(winrt::TerminalApp::RequestReceiveContentArgs args)

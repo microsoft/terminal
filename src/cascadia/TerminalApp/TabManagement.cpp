@@ -101,8 +101,6 @@ namespace winrt::TerminalApp::implementation
     // - insertPosition: Optional parameter to indicate the position of tab.
     void TerminalPage::_InitializeTab(winrt::com_ptr<TerminalTab> newTabImpl, uint32_t insertPosition)
     {
-        newTabImpl->Initialize();
-
         // If insert position is not passed, calculate it
         if (insertPosition == -1)
         {
@@ -211,6 +209,7 @@ namespace winrt::TerminalApp::implementation
         if (pane)
         {
             auto newTabImpl = winrt::make_self<TerminalTab>(pane);
+            newTabImpl->Initialize();
             _InitializeTab(newTabImpl, insertPosition);
             return *newTabImpl;
         }
@@ -443,7 +442,7 @@ namespace winrt::TerminalApp::implementation
 
         // Removing the tab from the collection should destroy its control and disconnect its connection,
         // but it doesn't always do so. The UI tree may still be holding the control and preventing its destruction.
-        tab.Shutdown();
+        // DH TODO DH TODO tab.Shutdown();
 
         uint32_t mruIndex{};
         if (_mruTabs.IndexOf(tab, mruIndex))

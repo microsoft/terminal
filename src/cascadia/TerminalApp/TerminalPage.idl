@@ -22,7 +22,7 @@ namespace TerminalApp
     [default_interface] runtimeclass RequestMoveContentArgs
     {
         String Window { get; };
-        String Content { get; };
+        Object Content { get; };
         UInt32 TabIndex { get; };
         Windows.Foundation.IReference<Windows.Foundation.Point> WindowPosition { get; };
     };
