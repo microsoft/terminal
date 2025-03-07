@@ -46,12 +46,12 @@ struct Blackbox : public std::enable_shared_from_this<Blackbox>
 
     void Start(wil::zwstring_view filePath)
     {
-        _file.reset(CreateFileW(filePath.c_str(), GENERIC_WRITE, FILE_SHARE_READ, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr));
-        THROW_LAST_ERROR_IF(!_file);
-
         _start = std::chrono::high_resolution_clock::now();
         auto [tx, rx] = til::spsc::channel<Record>(1024);
         _chan = std::move(tx);
+
+        _file.reset(CreateFileW(filePath.c_str(), GENERIC_WRITE, FILE_SHARE_READ, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr));
+        THROW_LAST_ERROR_IF(!_file);
 
         auto s{ fmt::format(R"-({{"version": 2, "width": 120, "height": 30}})-"
                             "\n") };
@@ -92,7 +92,7 @@ struct Blackbox : public std::enable_shared_from_this<Blackbox>
             }
 
             // we may be getting destructed on the Thread thread.
-            if (_thread.get_id() != std::this_thread::get_id())
+            if (_thread.get_id() != std::this_thread::get_id() && _thread.joinable())
             {
                 _thread.join(); // flush
             }
@@ -112,20 +112,22 @@ private:
 struct ConnectionRecorder : public winrt::implements<ConnectionRecorder, winrt::Windows::Foundation::IInspectable>
 {
     ConnectionRecorder();
+    ~ConnectionRecorder() noexcept;
     void Connection(const winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection&);
     void Path(std::wstring_view path);
     void Start();
     void Stop();
 
 private:
-    bool _started{ false };
-    std::shared_ptr<Blackbox> _blackbox;
-    std::wstring _filePath;
-    winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection _connection{ nullptr };
-
     struct
     {
         winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection::StateChanged_revoker stateChanged;
         winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection::TerminalOutput_revoker output;
     } _connectionEvents;
+
+    winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection _connection{ nullptr };
+
+    bool _started{ false };
+    std::shared_ptr<Blackbox> _blackbox;
+    std::wstring _filePath;
 };

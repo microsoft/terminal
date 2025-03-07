@@ -123,12 +123,19 @@ ConnectionRecorder::ConnectionRecorder() :
 {
 }
 
+ConnectionRecorder::~ConnectionRecorder() noexcept
+{
+    _connectionEvents = {}; // disconnect all event handlers
+    _connection = { nullptr }; // release connection handle
+    _blackbox->Close();
+}
+
 void ConnectionRecorder::Connection(const winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection& connection)
 {
-    _connectionEvents.output = connection.TerminalOutput(winrt::auto_revoke, [this, strong = get_strong()](const winrt::hstring& output) {
+    _connectionEvents.output = connection.TerminalOutput(winrt::auto_revoke, [this](const winrt::hstring& output) {
         this->_blackbox->Log(output);
     });
-    _connectionEvents.stateChanged = connection.StateChanged(winrt::auto_revoke, [this, strong = get_strong()](auto&&, auto&&) {
+    _connectionEvents.stateChanged = connection.StateChanged(winrt::auto_revoke, [this](auto&&, auto&&) {
 
     });
     _connection = connection;
