@@ -132,12 +132,14 @@ ConnectionRecorder::~ConnectionRecorder() noexcept
 
 void ConnectionRecorder::Connection(const winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection& connection)
 {
-    _connectionEvents.output = connection.TerminalOutput(winrt::auto_revoke, [this](const winrt::hstring& output) {
-        this->_blackbox->Log(output);
+    _connectionEvents.output = connection.TerminalOutput(winrt::auto_revoke, [blackbox = _blackbox](const winrt::hstring& output) {
+        blackbox->Log(output);
     });
+#if 0
     _connectionEvents.stateChanged = connection.StateChanged(winrt::auto_revoke, [this](auto&&, auto&&) {
 
     });
+#endif
     _connection = connection;
 }
 

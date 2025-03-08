@@ -119,15 +119,15 @@ struct ConnectionRecorder : public winrt::implements<ConnectionRecorder, winrt::
     void Stop();
 
 private:
+    bool _started{ false };
+    std::shared_ptr<Blackbox> _blackbox;
+    std::wstring _filePath;
+
+    winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection _connection{ nullptr };
+
     struct
     {
         winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection::StateChanged_revoker stateChanged;
         winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection::TerminalOutput_revoker output;
     } _connectionEvents;
-
-    winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection _connection{ nullptr };
-
-    bool _started{ false };
-    std::shared_ptr<Blackbox> _blackbox;
-    std::wstring _filePath;
 };
