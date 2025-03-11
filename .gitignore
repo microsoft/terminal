@@ -291,3 +291,4 @@ profiles.json
 msix/
 *.msix
 *.msixbundle
+0001-Fix-Find-menu-with-selection.patch
