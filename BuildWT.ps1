@@ -14,7 +14,7 @@ param(
 )
 
 Import-Module .\tools\OpenConsole.psm1
-Set-MsBuildDevEnvironment
+Set-MsBuildDevEnvironment -Prerelease
 
 if ($DistClean) {
     Write-Host "Performing DistClean operation..."
