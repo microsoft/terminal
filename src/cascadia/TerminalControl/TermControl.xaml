@@ -81,6 +81,10 @@
                               x:Uid="SelectOutputWithSelectionButton"
                               Click="_SelectOutputHandler"
                               Icon="AlignLeft" />
+                <AppBarButton x:Name="SearchCommandSelectionButton"
+                              x:Uid="SearchCommandSelectionButton"
+                              Click="_SearchCommandHandler"
+                              Icon="Find" />
             </mux:CommandBarFlyout.SecondaryCommands>
         </mux:CommandBarFlyout>
 
