@@ -600,7 +600,6 @@ namespace winrt::TerminalApp::implementation
         }
 
         // restart the timer
-        _pointerExitTimer.Stop();
         _pointerExitTimer.Start();
     }
 
