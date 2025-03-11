@@ -221,10 +221,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         ActionArgsViewModel(const Microsoft::Terminal::Settings::Model::ActionAndArgs actionAndArgs);
         void Initialize();
 
+        bool HasArgs() const noexcept;
+
         til::typed_event<IInspectable, Editor::ArgWrapper> PropagateColorSchemeRequested;
 
         WINRT_PROPERTY(Windows::Foundation::Collections::IObservableVector<Editor::ArgWrapper>, ArgValues, nullptr);
-        VIEW_MODEL_OBSERVABLE_PROPERTY(Microsoft::Terminal::Settings::Model::ShortcutAction, ShortcutActionType, Microsoft::Terminal::Settings::Model::ShortcutAction::AddMark);
 
     private:
         Model::ActionAndArgs _actionAndArgs{ nullptr };

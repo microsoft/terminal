@@ -510,7 +510,8 @@
             <TextBlock x:Uid="Actions_Arguments"
                        VerticalAlignment="Center"
                        Grid.Column="0"
-                       Grid.Row="2"/>
+                       Grid.Row="2"
+                       Visibility="{x:Bind ViewModel.ActionArgsVM.HasArgs, Mode=OneWay}"/>
             <ListView ItemsSource="{x:Bind ViewModel.ActionArgsVM.ArgValues, Mode=OneWay}"
                       ChoosingItemContainer="_choosingItemContainer"
                       SelectionMode="None"

@@ -659,8 +659,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void ActionArgsViewModel::Initialize()
     {
-        const auto shortcutAction = _actionAndArgs.Action();
-        ShortcutActionType(shortcutAction);
         const auto shortcutArgs = _actionAndArgs.Args();
         if (shortcutArgs)
         {
@@ -695,6 +693,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
             _ArgValues = single_threaded_observable_vector(std::move(argValues));
         }
+    }
+
+    bool ActionArgsViewModel::HasArgs() const noexcept
+    {
+        return _actionAndArgs.Args() != nullptr;
     }
 
     KeyChordViewModel::KeyChordViewModel(Control::KeyChord currentKeys)

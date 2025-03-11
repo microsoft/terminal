@@ -114,7 +114,7 @@ namespace Microsoft.Terminal.Settings.Editor
 
     runtimeclass ActionArgsViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged
     {
-        Microsoft.Terminal.Settings.Model.ShortcutAction ShortcutActionType;
+        Boolean HasArgs { get; };
         IObservableVector<ArgWrapper> ArgValues;
         event Windows.Foundation.TypedEventHandler<Object, ArgWrapper> PropagateColorSchemeRequested;
     }
