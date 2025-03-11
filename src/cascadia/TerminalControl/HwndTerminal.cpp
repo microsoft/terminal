@@ -206,14 +206,10 @@ HRESULT HwndTerminal::Initialize()
     _terminal = std::make_unique<::Microsoft::Terminal::Core::Terminal>();
     const auto lock = _terminal->LockForWriting();
 
-    auto renderThread = std::make_unique<::Microsoft::Console::Render::RenderThread>();
-    auto* const localPointerToThread = renderThread.get();
     auto& renderSettings = _terminal->GetRenderSettings();
     renderSettings.SetColorTableEntry(TextColor::DEFAULT_BACKGROUND, RGB(12, 12, 12));
     renderSettings.SetColorTableEntry(TextColor::DEFAULT_FOREGROUND, RGB(204, 204, 204));
-    _renderer = std::make_unique<::Microsoft::Console::Render::Renderer>(renderSettings, _terminal.get(), nullptr, 0, std::move(renderThread));
-    RETURN_HR_IF_NULL(E_POINTER, localPointerToThread);
-    RETURN_IF_FAILED(localPointerToThread->Initialize(_renderer.get()));
+    _renderer = std::make_unique<::Microsoft::Console::Render::Renderer>(renderSettings, _terminal.get());
 
     auto engine = std::make_unique<::Microsoft::Console::Render::AtlasEngine>();
     RETURN_IF_FAILED(engine->SetHwnd(_hwnd.get()));
@@ -234,7 +230,7 @@ HRESULT HwndTerminal::Initialize()
 
     _terminal->Create({ 80, 25 }, 9001, *_renderer);
     _terminal->SetWriteInputCallback([=](std::wstring_view input) noexcept { _WriteTextToConnection(input); });
-    localPointerToThread->EnablePainting();
+    _renderer->EnablePainting();
 
     _multiClickTime = std::chrono::milliseconds{ GetDoubleClickTime() };
 

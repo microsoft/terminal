@@ -393,7 +393,58 @@ VOID ConIoSrvComm::HandleFocusEvent(const CIS_EVENT* const Event)
             {
                 // Wait for the currently running paint operation, if any,
                 // and prevent further attempts to render.
-                Renderer->WaitForPaintCompletionAndDisable(1000);
+                //
+                // When rendering takes place via DirectX, and a console application
+                // currently owns the screen, and a new console application is launched (or
+                // the user switches to another console application), the new application
+                // cannot take over the screen until the active one relinquishes it. This
+                // blocking mechanism goes as follows:
+                //
+                // 1. The console input thread of the new console application connects to
+                // ConIoSrv;
+                // 2. While servicing the new connection request, ConIoSrv sends an event to
+                // the active application letting it know that it has lost focus;
+                // 3.1 ConIoSrv waits for a reply from the client application;
+                // 3.2 Meanwhile, the active application receives the focus event and calls
+                // this method, waiting for the current paint operation to
+                // finish.
+                //
+                // This means that the new application is waiting on the connection request
+                // reply from ConIoSrv, ConIoSrv is waiting on the active application to
+                // acknowledge the lost focus event to reply to the new application, and the
+                // console input thread in the active application is waiting on the renderer
+                // thread to finish its current paint operation.
+                //
+                // Question: what should happen if the wait on the paint operation times
+                // out?
+                //
+                // There are three options:
+                //
+                // 1. On timeout, the active console application could reply with an error
+                // message and terminate itself, effectively relinquishing control of the
+                // display;
+                //
+                // 2. ConIoSrv itself could time out on waiting for a reply, and forcibly
+                // terminate the active console application;
+                //
+                // 3. Let the wait time out and let the user deal with it. Because the wait
+                // occurs on a single iteration of the renderer thread, it seemed to me that
+                // the likelihood of failure is extremely small, especially since the client
+                // console application that the active conhost instance is servicing has no
+                // say over what happens in the renderer thread, only by proxy. Thus, the
+                // chance of failure (timeout) is minimal and since the OneCoreUAP console
+                // is not a massively used piece of software, it didn’t seem that it would
+                // be a good use of time to build the requisite infrastructure to deal with
+                // a timeout here, at least not for now. In case of a timeout DirectX will
+                // catch the mistake of a new application attempting to acquire the display
+                // while another one still owns it and will flag it as a DWM bug. Right now,
+                // the active application will wait one second for the paint operation to
+                // finish.
+                //
+                // TODO: MSFT: 11833883 - Determine action when wait on paint operation via
+                //       DirectX on OneCoreUAP times out while switching console
+                //       applications.
+                Renderer->WaitForPaintCompletionAndDisable();
 
                 // Relinquish control of the graphics device (only one
                 // DirectX application may control the device at any one

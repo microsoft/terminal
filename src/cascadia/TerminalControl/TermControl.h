@@ -243,7 +243,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // ControlCore::AttachUiaEngine receives a IRenderEngine as a raw pointer, which we own.
         // We must ensure that we first destroy the ControlCore before the UiaEngine instance
         // in order to safely resolve this unsafe pointer dependency. Otherwise a deallocated
-        // IRenderEngine is accessed when ControlCore calls Renderer::TriggerTeardown.
+        // IRenderEngine is accessed when ControlCore calls Renderer::WaitForPaintCompletionAndDisable.
         // (C++ class members are destroyed in reverse order.)
         // Further, the TermControlAutomationPeer must be destructed after _uiaEngine!
         Control::TermControlAutomationPeer _automationPeer{ nullptr };
