@@ -16,7 +16,7 @@ static std::shared_mutex _mtx;
 
 // This is the callback that will be called when a connection is received.
 // Call this once during startup and don't ever change it again (race condition).
-void CTerminalHandoff::s_setCallback(NewHandoffFunction callback)
+void CTerminalHandoff::s_setCallback(NewHandoffFunction callback) noexcept
 {
     _pfnHandoff = callback;
 }

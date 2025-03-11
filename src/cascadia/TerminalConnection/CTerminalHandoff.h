@@ -38,7 +38,7 @@ struct __declspec(uuid(__CLSID_CTerminalHandoff))
 
 #pragma endregion
 
-    static void s_setCallback(NewHandoffFunction callback);
+    static void s_setCallback(NewHandoffFunction callback) noexcept;
     static HRESULT s_StartListening();
 
 private:
