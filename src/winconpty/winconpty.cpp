@@ -359,7 +359,6 @@ HRESULT _ReparentPseudoConsole(_In_ const PseudoConsole* const pPty, _In_ const 
 //      HPCON via the API).
 // Arguments:
 // - pPty: A pointer to a PseudoConsole struct.
-// - wait: If true, waits for conhost/OpenConsole to exit first.
 // Return Value:
 // - <none>
 void _ClosePseudoConsoleMembers(_In_ PseudoConsole* pPty)

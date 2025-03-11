@@ -176,6 +176,7 @@
         <Setter Property="LineHeight" Value="16" />
         <Setter Property="Foreground" Value="{ThemeResource SubgroupHeaderBrush}" />
         <Setter Property="TextWrapping" Value="WrapWholeWords" />
+        <Setter Property="FontFamily" Value="Segoe UI, Segoe Fluent Icons, Segoe MDL2 Assets" />
     </Style>
 
     <DataTemplate x:Key="ExpanderSettingContainerStringPreviewTemplate">

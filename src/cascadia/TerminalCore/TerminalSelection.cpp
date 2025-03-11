@@ -437,7 +437,8 @@ void Terminal::SelectHyperlink(const SearchDirection dir)
     }
 
     // 0. Useful tools/vars
-    const auto bufferSize = _activeBuffer().GetSize();
+    const auto& buffer = _activeBuffer();
+    const auto bufferSize = buffer.GetSize();
     const auto viewportHeight = _GetMutableViewport().Height();
 
     // The patterns are stored relative to the "search area". Initially, this search area will be the viewport,
@@ -504,8 +505,18 @@ void Terminal::SelectHyperlink(const SearchDirection dir)
     };
 
     // 1. Look for the hyperlink
-    til::point searchStart = dir == SearchDirection::Forward ? _selection->start : til::point{ bufferSize.Left(), _VisibleStartIndex() };
-    til::point searchEnd = dir == SearchDirection::Forward ? til::point{ bufferSize.RightInclusive(), _VisibleEndIndex() } : _selection->start;
+    til::point searchStart;
+    til::point searchEnd;
+    if (dir == SearchDirection::Forward)
+    {
+        searchStart = _selection->start;
+        searchEnd = til::point{ bufferSize.RightInclusive(), _VisibleEndIndex() };
+    }
+    else
+    {
+        searchStart = til::point{ bufferSize.Left(), _VisibleStartIndex() };
+        searchEnd = _selection->start;
+    }
 
     // 1.A) Try searching the current viewport (no scrolling required)
     auto resultList = _patternIntervalTree.findContained(convertToSearchArea(searchStart), convertToSearchArea(searchEnd));
@@ -547,27 +558,81 @@ void Terminal::SelectHyperlink(const SearchDirection dir)
                 searchArea = Viewport::FromDimensions(searchStart, { searchEnd.x + 1, searchEnd.y + 1 });
             }
         }
-
-        // 1.C) Nothing was found. Bail!
-        if (!result.has_value())
-        {
-            return;
-        }
     }
 
-    // 2. Select the hyperlink
+    // 2. We found a hyperlink from the pattern tree. Look for embedded hyperlinks too!
+    // Use the result (if one was found) to narrow down the search.
+    if (dir == SearchDirection::Forward)
     {
-        auto selection{ _selection.write() };
-        wil::hide_name _selection;
-        selection->start = result->first;
-        selection->pivot = result->first;
-        selection->end = result->second;
-        _selectionIsTargetingUrl = true;
-        _selectionEndpoint = SelectionEndpoint::End;
+        searchStart = _selection->start;
+        searchEnd = (result ? result->first : buffer.GetLastNonSpaceCharacter());
+    }
+    else
+    {
+        searchStart = (result ? result->second : bufferSize.Origin());
+        searchEnd = _selection->start;
     }
 
-    // 3. Scroll to the selected area (if necessary)
-    _ScrollToPoint(_selection->end);
+    // Careful! Selection can point to RightExclusive(), which doesn't contain data!
+    // Clamp to be safe.
+    auto initialPos = dir == SearchDirection::Forward ? searchStart : searchEnd;
+    bufferSize.Clamp(initialPos);
+    auto iter = buffer.GetCellDataAt(initialPos);
+    while (dir == SearchDirection::Forward ? iter.Pos() < searchEnd : iter.Pos() > searchStart)
+    {
+        // Don't let us select the same hyperlink again
+        if (iter.Pos() < _selection->start || iter.Pos() > _selection->end)
+        {
+            if (auto attr = iter->TextAttr(); attr.IsHyperlink())
+            {
+                // Found an embedded hyperlink!
+                const auto hyperlinkId = attr.GetHyperlinkId();
+
+                // Expand the start to include the entire hyperlink
+                TextBufferCellIterator hyperlinkStartIter{ buffer, iter.Pos() };
+                while (hyperlinkStartIter.Pos() > searchStart && attr.IsHyperlink() && attr.GetHyperlinkId() == hyperlinkId)
+                {
+                    --hyperlinkStartIter;
+                    attr = hyperlinkStartIter->TextAttr();
+                }
+                if (hyperlinkStartIter.Pos() != bufferSize.Origin())
+                {
+                    // undo a move to be inclusive
+                    ++hyperlinkStartIter;
+                }
+
+                // Expand the end to include the entire hyperlink
+                // No need to undo a move! We'll decrement in the next step anyways.
+                TextBufferCellIterator hyperlinkEndIter{ buffer, iter.Pos() };
+                attr = hyperlinkEndIter->TextAttr();
+                while (hyperlinkEndIter.Pos() < searchEnd && attr.IsHyperlink() && attr.GetHyperlinkId() == hyperlinkId)
+                {
+                    ++hyperlinkEndIter;
+                    attr = hyperlinkEndIter->TextAttr();
+                }
+
+                result = { hyperlinkStartIter.Pos(), hyperlinkEndIter.Pos() };
+                break;
+            }
+        }
+        iter += dir == SearchDirection::Forward ? 1 : -1;
+    }
+
+    // 3. Select the hyperlink, if one exists
+    if (!result.has_value())
+    {
+        return;
+    }
+    auto selection{ _selection.write() };
+    wil::hide_name _selection;
+    selection->start = result->first;
+    selection->pivot = result->first;
+    selection->end = result->second;
+    _selectionIsTargetingUrl = true;
+    _selectionEndpoint = SelectionEndpoint::End;
+
+    // 4. Scroll to the selected area (if necessary)
+    _ScrollToPoint(selection->end);
 }
 
 Terminal::UpdateSelectionParams Terminal::ConvertKeyEventToUpdateSelectionParams(const ControlKeyStates mods, const WORD vkey) const noexcept

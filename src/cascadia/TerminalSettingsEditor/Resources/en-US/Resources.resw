@@ -2592,4 +2592,12 @@
     <value>None</value>
     <comment>Text displayed when the tab title is not defined.</comment>
   </data>
+  <data name="Globals_StartOnUserLogin_DisabledByUser" xml:space="preserve">
+    <value>Automatic startup has been disabled in the Startup Apps section of Windows settings.</value>
+    <comment>{Locked="Windows"}This is displayed in concordance with Globals_StartOnUserLogin if the user has disabled the setting outside of the application.</comment>
+  </data>
+  <data name="Globals_StartOnUserLogin_UnavailableByPolicy" xml:space="preserve">
+    <value>This option is managed by enterprise policy and cannot be changed here.</value>
+    <comment>This is displayed in concordance with Globals_StartOnUserLogin if the enterprise administrator has taken control of this setting.</comment>
+  </data>
 </root>

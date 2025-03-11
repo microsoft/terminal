@@ -25,7 +25,6 @@
 
     // Miscellaneous
     "confirmCloseAllTabs": true,
-    "startOnUserLogin": false,
     "theme": "dark",
     "snapToGridOnResize": true,
     "disableAnimations": false,
@@ -81,6 +80,29 @@
         //   - "foreground"
         //   - "background"
         //   - "cursorColor"
+        {
+            "name": "Dimidium",
+            "background": "#141414",
+            "foreground": "#BAB7B6",
+            "cursorColor": "#37E57B",
+            "selectionBackground": "#FFFFFF",
+            "black": "#000000",
+            "red": "#CF494C",
+            "green": "#60B442",
+            "yellow": "#DB9C11",
+            "blue": "#0575D8",
+            "purple": "#AF5ED2",
+            "cyan": "#1DB6BB",
+            "white": "#BAB7B6",
+            "brightBlack": "#817E7E",
+            "brightRed": "#FF643B",
+            "brightGreen": "#37E57B",
+            "brightYellow": "#FCCD1A",
+            "brightBlue": "#688DFD",
+            "brightPurple": "#ED6FE9",
+            "brightCyan": "#32E0FB",
+            "brightWhite": "#D3D8D9"
+        },
         {
             "name": "Ottosson",
             "background": "#000000",
