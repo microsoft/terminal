@@ -780,12 +780,12 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
     void ConptyConnection::StartInboundListener()
     {
-        THROW_IF_FAILED(CTerminalHandoff::s_StartListening(&ConptyConnection::NewHandoff));
-    }
+        static const auto init = []() noexcept {
+            CTerminalHandoff::s_setCallback(&ConptyConnection::NewHandoff);
+            return true;
+        }();
 
-    void ConptyConnection::StopInboundListener()
-    {
-        THROW_IF_FAILED(CTerminalHandoff::s_StopListening());
+        CTerminalHandoff::s_StartListening();
     }
 
     // Function Description:

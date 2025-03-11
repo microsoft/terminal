@@ -38,11 +38,11 @@ struct __declspec(uuid(__CLSID_CTerminalHandoff))
 
 #pragma endregion
 
-    static HRESULT s_StartListening(NewHandoffFunction pfnHandoff);
-    static HRESULT s_StopListening();
+    static void s_setCallback(NewHandoffFunction callback);
+    static HRESULT s_StartListening();
 
 private:
-    static HRESULT s_StopListeningLocked();
+    static HRESULT s_StopListening();
 };
 
 // Disable warnings from the CoCreatableClass macro as the value it provides for
