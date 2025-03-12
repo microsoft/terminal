@@ -26,14 +26,16 @@ namespace Microsoft::Console::Render
 
         void NotifyPaint() noexcept;
         void EnablePainting() noexcept;
-        void WaitForPaintCompletionAndDisable() noexcept;
+        void DisablePainting() noexcept;
+        void TriggerTeardown() noexcept;
 
     private:
         static DWORD WINAPI s_ThreadProc(_In_ LPVOID lpParameter);
         DWORD WINAPI _ThreadProc();
 
         Renderer* renderer;
-        wil::slim_event_auto_reset _event;
+        wil::slim_event_manual_reset _enable;
+        wil::slim_event_auto_reset _redraw;
         wil::srwlock _threadMutex;
         wil::unique_handle _thread;
         std::atomic<bool> _keepRunning{ false };

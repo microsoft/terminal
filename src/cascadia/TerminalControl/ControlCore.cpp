@@ -236,14 +236,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         Close();
 
         // See notes about the _renderer member in the header file.
-        _renderer->WaitForPaintCompletionAndDisable();
+        _renderer->TriggerTeardown();
     }
 
     void ControlCore::Detach()
     {
         // Disable the renderer, so that it doesn't try to start any new frames
         // for our engines while we're not attached to anything.
-        _renderer->WaitForPaintCompletionAndDisable();
+        _renderer->TriggerTeardown();
 
         // Clear out any throttled funcs that we had wired up to run on this UI
         // thread. These will be recreated in _setupDispatcherAndCallbacks, when
@@ -1910,7 +1910,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         const auto weakThis{ get_weak() };
 
-        // Concurrent read of _dispatcher is safe, because Detach() calls WaitForPaintCompletionAndDisable()
+        // Concurrent read of _dispatcher is safe, because Detach() calls TriggerTeardown()
         // which blocks until this call returns. _dispatcher will only be changed afterwards.
         co_await wil::resume_foreground(_dispatcher);
 

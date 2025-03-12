@@ -63,6 +63,7 @@ IRenderData* Renderer::GetRenderData() const noexcept
         if (--tries == 0)
         {
             // Stop trying.
+            _thread.DisablePainting();
             if (_pfnRendererEnteredErrorState)
             {
                 _pfnRendererEnteredErrorState();
@@ -270,6 +271,19 @@ void Renderer::TriggerRedrawAll(const bool backgroundChanged, const bool frameCh
     {
         _pfnFrameColorChanged();
     }
+}
+
+// Method Description:
+// - Called when the host is about to die, to give the renderer one last chance
+//      to paint before the host exits.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void Renderer::TriggerTeardown() noexcept
+{
+    // We need to shut down the paint thread on teardown.
+    _thread.TriggerTeardown();
 }
 
 // Routine Description:
@@ -592,17 +606,6 @@ void Renderer::EnablePainting()
     // but once EnablePainting is called it should be safe to retrieve.
     _viewport = _pData->GetViewport();
     _thread.EnablePainting();
-}
-
-// Routine Description:
-// - Waits for the current paint operation to complete, if any, up to the specified timeout.
-// - Resets an event in the render thread that precludes it from advancing, thus disabling rendering.
-// - If no paint operation is currently underway, returns immediately.
-// Return Value:
-// - <none>
-void Renderer::WaitForPaintCompletionAndDisable()
-{
-    _thread.WaitForPaintCompletionAndDisable();
 }
 
 // Routine Description:

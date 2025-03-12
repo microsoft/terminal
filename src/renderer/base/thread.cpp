@@ -17,7 +17,7 @@ RenderThread::RenderThread(Renderer* renderer) :
 
 RenderThread::~RenderThread()
 {
-    WaitForPaintCompletionAndDisable();
+    TriggerTeardown();
 }
 
 DWORD WINAPI RenderThread::s_ThreadProc(_In_ LPVOID lpParameter)
@@ -30,24 +30,20 @@ DWORD WINAPI RenderThread::_ThreadProc()
 {
     while (true)
     {
+        _enable.wait();
+
         // Between waiting on _hEvent and calling PaintFrame() there should be a minimal delay,
         // so that a key press progresses to a drawing operation as quickly as possible.
         // As such, we wait for the renderer to complete _before_ waiting on _hEvent.
         renderer->WaitUntilCanRender();
 
-        _event.wait();
+        _redraw.wait();
         if (!_keepRunning.load(std::memory_order_relaxed))
         {
             break;
         }
 
-        const auto hr = renderer->PaintFrame();
-        if (hr == S_FALSE)
-        {
-            break;
-        }
-
-        LOG_IF_FAILED(hr);
+        LOG_IF_FAILED(renderer->PaintFrame());
     }
 
     return S_OK;
@@ -55,7 +51,7 @@ DWORD WINAPI RenderThread::_ThreadProc()
 
 void RenderThread::NotifyPaint() noexcept
 {
-    _event.SetEvent();
+    _redraw.SetEvent();
 }
 
 // Spawns a new rendering thread if none exists yet.
@@ -63,39 +59,46 @@ void RenderThread::EnablePainting() noexcept
 {
     const auto guard = _threadMutex.lock_exclusive();
 
-    // Check if we already got a thread.
-    if (_thread)
+    _enable.SetEvent();
+
+    if (!_thread)
     {
-        return;
-    }
+        _keepRunning.store(true, std::memory_order_relaxed);
 
-    _keepRunning.store(true, std::memory_order_relaxed);
+        _thread.reset(CreateThread(nullptr, 0, s_ThreadProc, this, 0, nullptr));
+        THROW_LAST_ERROR_IF(!_thread);
 
-    _thread.reset(CreateThread(nullptr, 0, s_ThreadProc, this, 0, nullptr));
-    THROW_LAST_ERROR_IF(!_thread);
-
-    // SetThreadDescription only works on 1607 and higher. If we cannot find it,
-    // then it's no big deal. Just skip setting the description.
-    const auto func = GetProcAddressByFunctionDeclaration(GetModuleHandleW(L"kernel32.dll"), SetThreadDescription);
-    if (func)
-    {
-        LOG_IF_FAILED(func(_thread.get(), L"Rendering Output Thread"));
+        // SetThreadDescription only works on 1607 and higher. If we cannot find it,
+        // then it's no big deal. Just skip setting the description.
+        const auto func = GetProcAddressByFunctionDeclaration(GetModuleHandleW(L"kernel32.dll"), SetThreadDescription);
+        if (func)
+        {
+            LOG_IF_FAILED(func(_thread.get(), L"Rendering Output Thread"));
+        }
     }
 }
 
+void RenderThread::DisablePainting() noexcept
+{
+    _enable.ResetEvent();
+}
+
 // Stops the rendering thread, and waits for it to finish.
-void RenderThread::WaitForPaintCompletionAndDisable() noexcept
+void RenderThread::TriggerTeardown() noexcept
 {
     const auto guard = _threadMutex.lock_exclusive();
 
-    // The render thread first waits for the event and then checks _keepRunning. By doing it
-    // in reverse order here, we ensure that it's impossible for the render thread to miss this.
-    _keepRunning.store(false, std::memory_order_relaxed);
-    _event.SetEvent();
-
     if (_thread)
     {
+        // The render thread first waits for the event and then checks _keepRunning. By doing it
+        // in reverse order here, we ensure that it's impossible for the render thread to miss this.
+        _keepRunning.store(false, std::memory_order_relaxed);
+        _redraw.SetEvent();
+        _enable.SetEvent();
+
         WaitForSingleObject(_thread.get(), INFINITE);
         _thread.reset();
     }
+
+    DisablePainting();
 }

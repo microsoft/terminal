@@ -39,6 +39,7 @@ namespace Microsoft::Console::Render
         void TriggerRedraw(const Microsoft::Console::Types::Viewport& region);
         void TriggerRedraw(const til::point* const pcoord);
         void TriggerRedrawAll(const bool backgroundChanged = false, const bool frameChanged = false);
+        void TriggerTeardown() noexcept;
 
         void TriggerSelection();
         void TriggerSearchHighlight(const std::vector<til::point_span>& oldHighlights);
@@ -64,7 +65,6 @@ namespace Microsoft::Console::Render
         bool IsGlyphWideByFont(const std::wstring_view glyph);
 
         void EnablePainting();
-        void WaitForPaintCompletionAndDisable();
         void WaitUntilCanRender();
 
         void AddRenderEngine(_In_ IRenderEngine* const pEngine);

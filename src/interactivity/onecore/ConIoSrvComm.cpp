@@ -444,7 +444,7 @@ VOID ConIoSrvComm::HandleFocusEvent(const CIS_EVENT* const Event)
                 // TODO: MSFT: 11833883 - Determine action when wait on paint operation via
                 //       DirectX on OneCoreUAP times out while switching console
                 //       applications.
-                Renderer->WaitForPaintCompletionAndDisable();
+                Renderer->TriggerTeardown();
 
                 // Relinquish control of the graphics device (only one
                 // DirectX application may control the device at any one
