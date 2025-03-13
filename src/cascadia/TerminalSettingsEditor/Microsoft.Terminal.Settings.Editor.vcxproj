@@ -125,6 +125,10 @@
       <DependentUpon>NewTabMenuViewModel.idl</DependentUpon>
       <SubType>Code</SubType>
     </ClInclude>
+    <ClInclude Include="Extensions.h">
+      <DependentUpon>Extensions.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </ClInclude>
     <ClInclude Include="Profiles_Base.h">
       <DependentUpon>Profiles_Base.xaml</DependentUpon>
       <SubType>Code</SubType>
@@ -197,6 +201,9 @@
       <SubType>Designer</SubType>
     </Page>
     <Page Include="MainPage.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Extensions.xaml">
       <SubType>Designer</SubType>
     </Page>
     <Page Include="Profiles_Base.xaml">
@@ -309,6 +316,10 @@
       <DependentUpon>NewTabMenuViewModel.idl</DependentUpon>
       <SubType>Code</SubType>
     </ClCompile>
+    <ClCompile Include="Extensions.cpp">
+      <DependentUpon>Extensions.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </ClCompile>
     <ClCompile Include="Profiles_Base.cpp">
       <DependentUpon>Profiles_Base.xaml</DependentUpon>
       <SubType>Code</SubType>
@@ -408,6 +419,10 @@
     <Midl Include="GlobalAppearanceViewModel.idl" />
     <Midl Include="LaunchViewModel.idl" />
     <Midl Include="NewTabMenuViewModel.idl" />
+    <Midl Include="Extensions.idl">
+      <DependentUpon>Extensions.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Midl>
     <Midl Include="Profiles_Base.idl">
       <DependentUpon>Profiles_Base.xaml</DependentUpon>
       <SubType>Code</SubType>

@@ -59,7 +59,7 @@
                                 <IconSourceElement Grid.Column="0"
                                                    Width="16"
                                                    Height="16"
-                                                   IconSource="{x:Bind mtu:IconPathConverter.IconSourceWUX(Icon), Mode=OneTime}" />
+                                                   IconSource="{x:Bind mtu:IconPathConverter.IconSourceWUX(EvaluatedIcon), Mode=OneTime}" />
 
                                 <TextBlock Grid.Column="1"
                                            Text="{x:Bind Name}" />
