@@ -574,7 +574,8 @@ try
         }
 
         const auto cpt = gsl::narrow_cast<DWORD>(points.size());
-        return PolyBezier(_hdcMemoryContext, points.data(), cpt);
+        RETURN_HR_IF(E_FAIL, !PolyBezier(_hdcMemoryContext, points.data(), cpt));
+        return S_OK;
     };
 
     if (lines.test(GridLines::Left))
