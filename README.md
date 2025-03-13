@@ -344,8 +344,8 @@ You can configure your environment to build Terminal in one of two ways:
 
 ### Using WinGet configuration file
 
-After cloning the repository, you can use the [configuration file](.config/configuration.winget)
-to set up your environment. To run the configuration file, you can either double-click the file from file explorer or run the following command:
+After cloning the repository, you can use a [WinGet configuration file](https://learn.microsoft.com/en-us/windows/package-manager/configuration/#use-a-winget-configuration-file-to-configure-your-machine)
+to set up your environment. The [default configuration file](.config/configuration.winget) installs Visual Studio 2022 Community & rest of the required tools. There are two other variants of the configuration file available in the [.config](.config) directory for Enterprise & Professional editions of Visual Studio 2022. To run the default configuration file, you can either double-click the file from explorer or run the following command:
 
 ```powershell
 winget configure .config\configuration.winget
