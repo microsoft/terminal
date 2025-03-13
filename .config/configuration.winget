@@ -6,6 +6,7 @@ properties:
       directives:
         description: Enable Developer Mode
         allowPrerelease: true
+        securityContext: elevated
       settings:
         Ensure: Present
     - resource: Microsoft.WinGet.DSC/WinGetPackage
