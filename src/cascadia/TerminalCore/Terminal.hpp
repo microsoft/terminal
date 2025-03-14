@@ -5,6 +5,7 @@
 
 #include <conattrs.hpp>
 
+#include "../../terminal/adapter/adaptDispatch.hpp"
 #include "../../inc/DefaultSettings.h"
 #include "../../buffer/out/textBuffer.hpp"
 #include "../../renderer/inc/IRenderData.hpp"
@@ -176,6 +177,8 @@ public:
     [[nodiscard]] HRESULT UserResize(const til::size viewportSize) noexcept override;
     void UserScrollViewport(const int viewTop) override;
     int GetScrollOffset() noexcept override;
+
+    void HardReset();
 
     void TrySnapOnInput() override;
     bool IsTrackingMouseInput() const noexcept;
