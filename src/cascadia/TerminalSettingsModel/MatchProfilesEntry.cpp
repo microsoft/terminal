@@ -55,19 +55,39 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         // value of the function we consider the null value to be "false".
         auto isMatching = std::optional<bool>{};
 
+        auto isMatch = [](std::wstring_view regex, std::wstring_view text) {
+            if (text.empty())
+            {
+                return false;
+            }
+
+            std::wregex re;
+            try
+            {
+                re = { regex.cbegin(), regex.cend() };
+            }
+            catch (std::regex_error)
+            {
+                // invalid regex
+                return false;
+            }
+
+            return std::regex_match(text.cbegin(), text.cend(), re);
+        };
+
         if (!_Name.empty())
         {
-            isMatching = { isMatching.value_or(true) && _Name == profile.Name() };
+            isMatching = { isMatching.value_or(true) && isMatch(_Name, profile.Name()) };
         }
 
         if (!_Source.empty())
         {
-            isMatching = { isMatching.value_or(true) && _Source == profile.Source() };
+            isMatching = { isMatching.value_or(true) && isMatch(_Source, profile.Source()) };
         }
 
         if (!_Commandline.empty())
         {
-            isMatching = { isMatching.value_or(true) && _Commandline == profile.Commandline() };
+            isMatching = { isMatching.value_or(true) && isMatch(_Commandline, profile.Commandline()) };
         }
 
         return isMatching.value_or(false);
