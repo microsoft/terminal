@@ -1288,9 +1288,7 @@ namespace winrt::TerminalApp::implementation
         ParentCommandName(L"");
         _currentNestedCommands.Clear();
 
-        PreviewAction.raise(*this, nullptr);
-
-        // cancel previews triggered by mouse pointer events
+        // Revert any preview 
         _filteredActionsView().SelectedIndex(-1);
         PreviewAction.raise(*this, nullptr);
     }
