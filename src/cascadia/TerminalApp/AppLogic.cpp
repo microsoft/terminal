@@ -337,8 +337,16 @@ namespace winrt::TerminalApp::implementation
     void AppLogic::_ApplyLanguageSettingChange() noexcept
     try
     {
+        const auto language = _settings.GlobalSettings().Language();
+
         if (!IsPackaged())
         {
+            if (!language.empty())
+            {
+                // We cannot use the packaged app API, PrimaryLanguageOverride, but we *can* tell the resource loader
+                // to set the Language for all loaded resources to the user's preferred language.
+                winrt::Windows::ApplicationModel::Resources::Core::ResourceContext::SetGlobalQualifierValue(L"Language", language);
+            }
             return;
         }
 
@@ -346,8 +354,6 @@ namespace winrt::TerminalApp::implementation
 
         // NOTE: PrimaryLanguageOverride throws if this instance is unpackaged.
         const auto primaryLanguageOverride = ApplicationLanguages::PrimaryLanguageOverride();
-        const auto language = _settings.GlobalSettings().Language();
-
         if (primaryLanguageOverride != language)
         {
             ApplicationLanguages::PrimaryLanguageOverride(language);

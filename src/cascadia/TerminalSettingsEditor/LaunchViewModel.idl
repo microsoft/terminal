@@ -12,7 +12,6 @@ namespace Microsoft.Terminal.Settings.Editor
         LaunchViewModel(Microsoft.Terminal.Settings.Model.CascadiaSettings settings);
 
         static String LanguageDisplayConverter(String tag);
-        Boolean LanguageSelectorAvailable { get; };
         Windows.Foundation.Collections.IObservableVector<String> LanguageList { get; };
         IInspectable CurrentLanguage;
 
