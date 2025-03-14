@@ -1288,7 +1288,7 @@ namespace winrt::TerminalApp::implementation
         ParentCommandName(L"");
         _currentNestedCommands.Clear();
 
-        // Revert any preview 
+        // revert any preview
         _filteredActionsView().SelectedIndex(-1);
         PreviewAction.raise(*this, nullptr);
     }
