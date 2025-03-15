@@ -530,6 +530,79 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    // Method Description:
+    // - This event is called when the user's mouse pointer enters an individual
+    //   item from the list. We'll get the item that was hovered and "preview"
+    //   the command that the user hovered. To do that, we'll dispatch the switch
+    //   to tab command for this tab, but not dismiss the switcher.
+    //
+    // Arguments:
+    // - sender: the UI element that raised the event.
+    // Return Value:
+    // - <none>
+    void CommandPalette::_listItemPointerEntered(const winrt::Windows::Foundation::IInspectable& sender,
+                                                 const winrt::Windows::UI::Xaml::Input::PointerRoutedEventArgs& /*args*/)
+    {
+        // cancel any pending exit timer to prevent an unwanted preview revert
+        if (_pointerExitTimer)
+        {
+            _pointerExitTimer.Stop();
+        }
+
+        const auto listViewItem = sender.try_as<winrt::Windows::UI::Xaml::Controls::ListViewItem>();
+        if (_currentMode == CommandPaletteMode::ActionMode && listViewItem)
+        {
+            const auto enteredItem = listViewItem.Content();
+            if (const auto filteredCommand{ enteredItem.try_as<winrt::TerminalApp::FilteredCommand>() })
+            {
+                if (const auto actionPaletteItem{ filteredCommand.Item().try_as<winrt::TerminalApp::ActionPaletteItem>() })
+                {
+                    // immediately preview the hovered command
+                    PreviewAction.raise(*this, actionPaletteItem.Command());
+                }
+            }
+        }
+    }
+
+    // Method Description:
+    // - This event is called when the user's mouse pointer exits an individual
+    //   item from the list. We then revert to previewing the selected item rather
+    //   than the hovered one, using a short delay (via a DispatcherTimer) to smooth
+    //   transitions when rapidly moving between items.
+    //
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void CommandPalette::_listItemPointerExited(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+                                                const winrt::Windows::UI::Xaml::Input::PointerRoutedEventArgs& /*args*/)
+    {
+        // if there is no exit timer, create one
+        if (!_pointerExitTimer)
+        {
+            _pointerExitTimer = winrt::Windows::UI::Xaml::DispatcherTimer();
+            _pointerExitTimer.Interval(std::chrono::milliseconds(10));
+            _pointerExitTimer.Tick([this](auto const&, auto const&) {
+                // when the timer ticks, revert the preview to the selected command
+                const auto selectedCommand = _filteredActionsView().SelectedItem();
+                if (const auto filteredCommand{ selectedCommand.try_as<winrt::TerminalApp::FilteredCommand>() })
+                {
+                    if (_currentMode == CommandPaletteMode::ActionMode && filteredCommand)
+                    {
+                        if (const auto actionPaletteItem{ filteredCommand.Item().try_as<winrt::TerminalApp::ActionPaletteItem>() })
+                        {
+                            PreviewAction.raise(*this, actionPaletteItem.Command());
+                        }
+                    }
+                }
+                _pointerExitTimer.Stop();
+            });
+        }
+
+        // restart the timer
+        _pointerExitTimer.Start();
+    }
+
     void CommandPalette::_listItemSelectionChanged(const Windows::Foundation::IInspectable& /*sender*/, const Windows::UI::Xaml::Controls::SelectionChangedEventArgs& e)
     {
         // We don't care about...
@@ -1214,6 +1287,9 @@ namespace winrt::TerminalApp::implementation
 
         ParentCommandName(L"");
         _currentNestedCommands.Clear();
+
+        // revert any preview
+        _filteredActionsView().SelectedIndex(-1);
         PreviewAction.raise(*this, nullptr);
     }
 
@@ -1306,6 +1382,10 @@ namespace winrt::TerminalApp::implementation
         else
         {
             itemContainer.DataContext(args.Item());
+
+            // attach the pointer event handlers to the container
+            itemContainer.PointerEntered({ this, &CommandPalette::_listItemPointerEntered });
+            itemContainer.PointerExited({ this, &CommandPalette::_listItemPointerExited });
         }
     }
 
