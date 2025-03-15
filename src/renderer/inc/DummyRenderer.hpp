@@ -18,7 +18,7 @@ class DummyRenderer final : public Microsoft::Console::Render::Renderer
 {
 public:
     DummyRenderer(Microsoft::Console::Render::IRenderData* pData = nullptr) :
-        Microsoft::Console::Render::Renderer(_renderSettings, pData, nullptr, 0, nullptr) {}
+        Microsoft::Console::Render::Renderer(_renderSettings, pData) {}
 
     Microsoft::Console::Render::RenderSettings _renderSettings;
 };
