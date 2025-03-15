@@ -73,7 +73,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             //
             // To alleviate, make sure to disable the UIA engine and remove it,
             // and ALSO disable the renderer. Core.Detach will take care of the
-            // WaitForPaintCompletionAndDisable (which will stop the renderer
+            // TriggerTeardown (which will stop the renderer
             // after all current engines are done painting).
             //
             // Simply disabling the UIA engine is not enough, because it's
