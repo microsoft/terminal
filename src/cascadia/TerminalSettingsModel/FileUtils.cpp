@@ -8,6 +8,8 @@
 #include <shlobj.h>
 #include <WtExeUtils.h>
 
+#define ENV_WT_BASE_SETTINGS_PATH L"WT_BASE_SETTINGS_PATH"
+
 static constexpr std::wstring_view UnpackagedSettingsFolderName{ L"Microsoft\\Windows Terminal\\" };
 static constexpr std::wstring_view ReleaseSettingsFolder{ L"Packages\\Microsoft.WindowsTerminal_8wekyb3d8bbwe\\LocalState\\" };
 static constexpr std::wstring_view PortableModeMarkerFile{ L".portable" };
@@ -30,6 +32,14 @@ namespace winrt::Microsoft::Terminal::Settings::Model
     std::filesystem::path GetBaseSettingsPath()
     {
         static auto baseSettingsPath = []() {
+            try
+            {
+                std::filesystem::path envSettingsPath{ wil::GetEnvironmentVariableW<std::wstring>(ENV_WT_BASE_SETTINGS_PATH) };
+                std::filesystem::create_directories(envSettingsPath);
+                return envSettingsPath;
+            }
+            CATCH_LOG()
+
             if (!IsPackaged() && IsPortableMode())
             {
                 std::filesystem::path modulePath{ wil::GetModuleFileNameW<std::wstring>(wil::GetModuleInstanceHandle()) };
@@ -64,6 +74,14 @@ namespace winrt::Microsoft::Terminal::Settings::Model
     std::filesystem::path GetReleaseSettingsPath()
     {
         static std::filesystem::path baseSettingsPath = []() {
+            try
+            {
+                std::filesystem::path envSettingsPath{ wil::GetEnvironmentVariableW<std::wstring>(ENV_WT_BASE_SETTINGS_PATH) };
+                std::filesystem::create_directories(envSettingsPath);
+                return envSettingsPath;
+            }
+            CATCH_LOG()
+
             wil::unique_cotaskmem_string localAppDataFolder;
             // We're using KF_FLAG_NO_PACKAGE_REDIRECTION to ensure that we always get the
             // user's actual local AppData directory.
