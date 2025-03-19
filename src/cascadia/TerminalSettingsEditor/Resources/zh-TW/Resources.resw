@@ -568,13 +568,13 @@
     <value>允許 DECRQCRA (Request Checksum of Rectangular Area)</value>
     <comment>{Locked="DECRQCRA"}{Locked="Request Checksum of Rectangular Area"}Header for a control to toggle support for the DECRQCRA control sequence.</comment>
   </data>
+  <data name="Profile_AllowVtClipboardWrite.Header" xml:space="preserve">
+    <value>允許 OSC 52 (Manipulate Selection Data) 寫入剪貼簿</value>
+    <comment>{Locked="OSC 52"}{Locked="Manipulate Selection Data"}Header for a control to toggle support for applications to change the contents of the Windows system clipboard.</comment>
+  </data>
   <data name="Globals_AllowHeadless.Header" xml:space="preserve">
     <value>允許 Windows 終端機 在背景執行</value>
     <comment>Header for a control to toggle support for Windows Terminal to run in the background.</comment>
-  </data>
-  <data name="Globals_IsolatedMode.Header" xml:space="preserve">
-    <value>強制每個視窗在自己的處理程式中執行</value>
-    <comment>Header for a control to toggle making each window be its own process.</comment>
   </data>
   <data name="Globals_DebugFeaturesEnabled.Header" xml:space="preserve">
     <value>啟用偵錯功能</value>
@@ -591,10 +591,6 @@
   <data name="Globals_AllowHeadless.HelpText" xml:space="preserve">
     <value>這可允許全域傳送與「受擷取模式」等動作運作，即使沒有開啟視窗也可運作。</value>
     <comment>Additional description for what the "allow headless" setting does. Presented near "Globals_AllowHeadless.Header".</comment>
-  </data>
-  <data name="Globals_IsolatedMode.HelpText" xml:space="preserve">
-    <value>某些功能將無法正常運作，包括但不限於全域快捷鍵、索引標籤拖放以及 wt.exe 窗口目標。</value>
-    <comment>{Locked="wt.exe"} Additional description for what the "isolated mode" setting does. Presented near "Globals_IsolatedMode.Header".</comment>
   </data>
   <data name="Globals_TabWidthMode.Header" xml:space="preserve">
     <value>索引標籤寬度模式</value>
@@ -1956,5 +1952,45 @@
   <data name="Globals_ShowAdminShield.Header" xml:space="preserve">
     <value>當 Windows 終端機 以系統管理員身分執行時，在標題欄中顯示遮罩</value>
     <comment>Header for a control to toggle displaying a shield in the title bar of the app. "Admin" refers to elevated sessions like "run as Admin"</comment>
+  </data>
+  <data name="Profile_PathTranslationStyle.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>路徑翻譯</value>
+    <comment>Name for a control to select how file and directory paths are translated.</comment>
+  </data>
+  <data name="Profile_PathTranslationStyle.Header" xml:space="preserve">
+    <value>路徑翻譯</value>
+    <comment>Name for a control to select how file and directory paths are translated.</comment>
+  </data>
+  <data name="Profile_PathTranslationStyle.HelpText" xml:space="preserve">
+    <value>控制在拖放操作期間如何翻譯檔案和目錄路徑。</value>
+    <comment>A description for what the "path translation" setting does. Presented near "Profile_PathTranslationStyle.Header".</comment>
+  </data>
+  <data name="Profile_PathTranslationStyleNone.Content" xml:space="preserve">
+    <value>無</value>
+    <comment>An option to choose from for the "path translation" setting.</comment>
+  </data>
+  <data name="Profile_PathTranslationStyleWsl.Content" xml:space="preserve">
+    <value>WSL (C:\ -&gt; /mnt/c)</value>
+    <comment>{Locked="WSL","C:\","/mnt/c"} An option to choose from for the "path translation" setting.</comment>
+  </data>
+  <data name="Profile_PathTranslationStyleCygwin.Content" xml:space="preserve">
+    <value>Cygwin (C:\ -&gt; /cygdrive/c)</value>
+    <comment>{Locked="Cygwin","C:\","/cygdrive/c"} An option to choose from for the "path translation" setting.</comment>
+  </data>
+  <data name="Profile_PathTranslationStyleMsys2.Content" xml:space="preserve">
+    <value>MSYS2 (C:\ -&gt; /c)</value>
+    <comment>{Locked="MSYS2","C:\","/c"} An option to choose from for the "path translation" setting.</comment>
+  </data>
+  <data name="Profile_Delete_Orphaned.Header" xml:space="preserve">
+    <value>已不再偵測到設定檔</value>
+  </data>
+  <data name="Profile_Delete_Orphaned.HelpText" xml:space="preserve">
+    <value>這個自動偵測到的配置檔似乎已卸載。您對它的變更會被保留，但是在重新安裝之前無法使用。</value>
+  </data>
+  <data name="Profile_Source_Orphaned.Header" xml:space="preserve">
+    <value>原始來源</value>
+  </data>
+  <data name="Profile_Source_Orphaned.HelpText" xml:space="preserve">
+    <value>指示原始建立此配置檔的軟體。</value>
   </data>
 </root>

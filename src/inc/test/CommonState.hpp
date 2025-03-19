@@ -66,20 +66,6 @@ public:
         m_pFontInfo = { L"Consolas", 0, 0, coordFontSize, 0 };
     }
 
-    void PrepareGlobalRenderer()
-    {
-        Globals& g = Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals();
-        CONSOLE_INFORMATION& gci = g.getConsoleInformation();
-        g.pRender = new Microsoft::Console::Render::Renderer(gci.GetRenderSettings(), &gci.renderData, nullptr, 0, nullptr);
-    }
-
-    void CleanupGlobalRenderer()
-    {
-        Globals& g = Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals();
-        delete g.pRender;
-        g.pRender = nullptr;
-    }
-
     void PrepareGlobalScreenBuffer(const til::CoordType viewWidth = s_csWindowWidth,
                                    const til::CoordType viewHeight = s_csWindowHeight,
                                    const til::CoordType bufferWidth = s_csBufferWidth,

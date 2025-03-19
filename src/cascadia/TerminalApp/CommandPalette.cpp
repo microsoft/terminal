@@ -359,7 +359,7 @@ namespace winrt::TerminalApp::implementation
             _switchToMode(CommandPaletteMode::CommandlineMode);
             e.Handled(true);
         }
-        else if (key == VirtualKey::C && ctrlDown)
+        else if ((key == VirtualKey::C || key == VirtualKey::Insert) && ctrlDown)
         {
             _searchBox().CopySelectionToClipboard();
             e.Handled(true);

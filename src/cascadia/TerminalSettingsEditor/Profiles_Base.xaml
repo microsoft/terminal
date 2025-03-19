@@ -159,16 +159,13 @@
 
             <Button x:Name="AppearanceNavigator"
                     Click="Appearance_Click"
-                    Style="{StaticResource NavigatorButtonStyle}">
-                Appearance
-            </Button>
+                    Style="{StaticResource NavigatorButtonStyle}" />
+            <Button x:Name="TerminalNavigator"
+                    Click="Terminal_Click"
+                    Style="{StaticResource NavigatorButtonStyle}" />
             <Button x:Name="AdvancedNavigator"
                     Click="Advanced_Click"
-                    Style="{StaticResource NavigatorButtonStyle}">
-                <TextBlock HorizontalAlignment="Left"
-                           VerticalAlignment="Center"
-                           Text="Advanced" />
-            </Button>
+                    Style="{StaticResource NavigatorButtonStyle}" />
             <!--  Delete Button  -->
             <Border MaxWidth="{StaticResource StandardControlMaxWidth}">
                 <Button x:Name="DeleteButton"

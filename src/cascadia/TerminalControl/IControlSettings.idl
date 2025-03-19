@@ -21,6 +21,14 @@ namespace Microsoft.Terminal.Control
         Aliased
     };
 
+    enum PathTranslationStyle
+    {
+        None = 0,
+        WSL,
+        Cygwin,
+        MSYS2
+    };
+
     // Class Description:
     // TerminalSettings encapsulates all settings that control the
     //      TermControl's behavior. In these settings there is both the entirety
@@ -30,7 +38,6 @@ namespace Microsoft.Terminal.Control
                                Microsoft.Terminal.Control.IControlAppearance
     {
         String ProfileName;
-        String ProfileSource;
 
         Boolean EnableUnfocusedAcrylic { get; };
         Guid SessionId { get; };
@@ -68,6 +75,8 @@ namespace Microsoft.Terminal.Control
         Boolean UseBackgroundImageForWindow { get; };
         Boolean RightClickContextMenu { get; };
         Boolean RepositionCursorWithMouse { get; };
+
+        PathTranslationStyle PathTranslationStyle { get; };
 
         // NOTE! When adding something here, make sure to update ControlProperties.h too!
     };

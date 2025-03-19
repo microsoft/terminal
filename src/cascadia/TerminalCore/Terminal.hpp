@@ -94,6 +94,7 @@ public:
     void UpdateAppearance(const winrt::Microsoft::Terminal::Core::ICoreAppearance& appearance);
     void SetFontInfo(const FontInfo& fontInfo);
     void SetCursorStyle(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::CursorStyle cursorStyle);
+    void SetVtChecksumReportSupport(const bool enabled);
     bool IsXtermBracketedPasteModeEnabled() const noexcept;
     std::wstring_view GetWorkingDirectory() noexcept;
 
@@ -408,6 +409,7 @@ private:
     Microsoft::Console::Types::Viewport _mutableViewport;
     til::CoordType _scrollbackLines = 0;
     bool _detectURLs = false;
+    bool _clipboardOperationsAllowed = true;
 
     til::size _altBufferSize;
     std::optional<til::size> _deferredResize;

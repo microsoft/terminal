@@ -568,13 +568,13 @@
     <value>Àłℓöω DECRQCRA (Request Checksum of Rectangular Area) !!! !!! !!! !!! !!! </value>
     <comment>{Locked="DECRQCRA"}{Locked="Request Checksum of Rectangular Area"}Header for a control to toggle support for the DECRQCRA control sequence.</comment>
   </data>
+  <data name="Profile_AllowVtClipboardWrite.Header" xml:space="preserve">
+    <value>Ãľļōẅ OSC 52 (Manipulate Selection Data) ŧõ щѓιţе ŧő тĥē ćℓįрвöăѓđ !!! !!! !!! !!! !!! !!! !</value>
+    <comment>{Locked="OSC 52"}{Locked="Manipulate Selection Data"}Header for a control to toggle support for applications to change the contents of the Windows system clipboard.</comment>
+  </data>
   <data name="Globals_AllowHeadless.Header" xml:space="preserve">
     <value>Ǻℓĺŏщ Ẁιйđòώѕ Тёŗмїⁿàļ тǿ řϋŋ ϊň тђě ьąςќġѓőůήď !!! !!! !!! !!! !!</value>
     <comment>Header for a control to toggle support for Windows Terminal to run in the background.</comment>
-  </data>
-  <data name="Globals_IsolatedMode.Header" xml:space="preserve">
-    <value>₣ōґçê éãćĥ шĭňđθẁ тǿ ґυή ĭñ ïťş ǿŵŉ ρŕόčэşś !!! !!! !!! !!! </value>
-    <comment>Header for a control to toggle making each window be its own process.</comment>
   </data>
   <data name="Globals_DebugFeaturesEnabled.Header" xml:space="preserve">
     <value>Єлάвĺé ðèъûġğįñģ ƒέàŧµřэš !!! !!! !</value>
@@ -591,10 +591,6 @@
   <data name="Globals_AllowHeadless.HelpText" xml:space="preserve">
     <value>Ťнϊš äłℓσωš ąçťїőňš ŝΰ¢ђ ãѕ Ğℓøъâļ Ŝûmmǿл αⁿð Qũăķэ Μöδе äçťϊõпѕ το ŵθřќ èνεπ ẅћěи πό ẁįňδòŵš άяę öрęŋ. !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! </value>
     <comment>Additional description for what the "allow headless" setting does. Presented near "Globals_AllowHeadless.Header".</comment>
-  </data>
-  <data name="Globals_IsolatedMode.HelpText" xml:space="preserve">
-    <value>Ćěřţªіŉ ƒěąτùŕєś ẅіľĺ иοŧ ώóѓķ ρřσрèřĺỳ, ίпčļūďîйğ—ьϋŧ ņότ ĺîmìτĕđ ţõ—ğℓõъªł ћотĸëўŝ, ŧªъ δяªģ äлđ δřőρ, ąŋď wt.exe щїлďǿш ţäŕġэтīπġ. !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! </value>
-    <comment>{Locked="wt.exe"} Additional description for what the "isolated mode" setting does. Presented near "Globals_IsolatedMode.Header".</comment>
   </data>
   <data name="Globals_TabWidthMode.Header" xml:space="preserve">
     <value>Ťâв ώΐđťн mбðě !!! !</value>
@@ -1960,5 +1956,45 @@
   <data name="Globals_ShowAdminShield.Header" xml:space="preserve">
     <value>Đįŝрļãу ã ŝħĭěļð ίπ ŧђê ţîťłë ъãѓ щћэπ Ẅīήđθщş Ţĕřмïńāľ ίѕ ŕůπŉïηģ åš Àδмιήίŝтяàтοґ !!! !!! !!! !!! !!! !!! !!! !!! </value>
     <comment>Header for a control to toggle displaying a shield in the title bar of the app. "Admin" refers to elevated sessions like "run as Admin"</comment>
+  </data>
+  <data name="Profile_PathTranslationStyle.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Ρǻţħ τґãñşĺαŧîσй !!! !</value>
+    <comment>Name for a control to select how file and directory paths are translated.</comment>
+  </data>
+  <data name="Profile_PathTranslationStyle.Header" xml:space="preserve">
+    <value>Ρäŧћ тѓαпѕļāţíóи !!! !</value>
+    <comment>Name for a control to select how file and directory paths are translated.</comment>
+  </data>
+  <data name="Profile_PathTranslationStyle.HelpText" xml:space="preserve">
+    <value>Čоñťřøľş ћòẁ ƒΐĺέ āиð ďìřē¢ŧбѓŷ рατĥś äѓê τŕāńşĺаτ℮ď δûґĭπġ ďяąĝ-åňđ-ďяòρ σφ℮ѓąťїθήş. !!! !!! !!! !!! !!! !!! !!! !!! !</value>
+    <comment>A description for what the "path translation" setting does. Presented near "Profile_PathTranslationStyle.Header".</comment>
+  </data>
+  <data name="Profile_PathTranslationStyleNone.Content" xml:space="preserve">
+    <value>Пôŉę !</value>
+    <comment>An option to choose from for the "path translation" setting.</comment>
+  </data>
+  <data name="Profile_PathTranslationStyleWsl.Content" xml:space="preserve">
+    <value>WSL (C:\ -&gt; /mnt/c) !!! !!!</value>
+    <comment>{Locked="WSL","C:\","/mnt/c"} An option to choose from for the "path translation" setting.</comment>
+  </data>
+  <data name="Profile_PathTranslationStyleCygwin.Content" xml:space="preserve">
+    <value>Cygwin (C:\ -&gt; /cygdrive/c) !!! !!! !!</value>
+    <comment>{Locked="Cygwin","C:\","/cygdrive/c"} An option to choose from for the "path translation" setting.</comment>
+  </data>
+  <data name="Profile_PathTranslationStyleMsys2.Content" xml:space="preserve">
+    <value>MSYS2 (C:\ -&gt; /c) !!! !!</value>
+    <comment>{Locked="MSYS2","C:\","/c"} An option to choose from for the "path translation" setting.</comment>
+  </data>
+  <data name="Profile_Delete_Orphaned.Header" xml:space="preserve">
+    <value>Ρřσƒīŀē ⁿο łøňġèя ðёτęςτęď !!! !!! !</value>
+  </data>
+  <data name="Profile_Delete_Orphaned.HelpText" xml:space="preserve">
+    <value>Ŧћΐŝ дûŧômăτϊĉāľļŷ-ďзţєςтēδ φяοƒĭľė ªφрëάřѕ тő ђäνё ъзéп ųήϊņѕτåℓłęđ. Сђаηĝėѕ ÿοú нãνè маđė ŧθ īť âґè ρґęѕěřνέδ, вűţ іť ĉáņήõţ вé υśёδ ůⁿŧïľ ϊţ нāѕ вεéň яёιŉśтαℓĺёđ. !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !</value>
+  </data>
+  <data name="Profile_Source_Orphaned.Header" xml:space="preserve">
+    <value>Ǿřīĝĭňáł Šôüřčз !!! !</value>
+  </data>
+  <data name="Profile_Source_Orphaned.HelpText" xml:space="preserve">
+    <value>Ĭиđĩ¢ãťēš тĥě šôƒтшǻŗέ τнăť ŏŗįģĭйάłℓў ćяэάтэð ŧћïš рŕøƒĩľє. !!! !!! !!! !!! !!! !!!</value>
   </data>
 </root>

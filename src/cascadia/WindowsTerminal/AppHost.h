@@ -178,7 +178,6 @@ private:
         winrt::Microsoft::Terminal::Remoting::Peasant::AttachRequested_revoker AttachRequested;
 
         winrt::TerminalApp::TerminalWindow::Initialized_revoker Initialized;
-        winrt::TerminalApp::TerminalWindow::CloseRequested_revoker CloseRequested;
         winrt::TerminalApp::TerminalWindow::RequestedThemeChanged_revoker RequestedThemeChanged;
         winrt::TerminalApp::TerminalWindow::FullscreenChanged_revoker FullscreenChanged;
         winrt::TerminalApp::TerminalWindow::FocusModeChanged_revoker FocusModeChanged;

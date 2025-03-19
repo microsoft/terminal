@@ -568,13 +568,13 @@
     <value>Разрешить DECRQCRA (Request Checksum of Rectangular Area)</value>
     <comment>{Locked="DECRQCRA"}{Locked="Request Checksum of Rectangular Area"}Header for a control to toggle support for the DECRQCRA control sequence.</comment>
   </data>
+  <data name="Profile_AllowVtClipboardWrite.Header" xml:space="preserve">
+    <value>Разрешить OSC 52 (Manipulate Selection Data) запись в буфер обмена</value>
+    <comment>{Locked="OSC 52"}{Locked="Manipulate Selection Data"}Header for a control to toggle support for applications to change the contents of the Windows system clipboard.</comment>
+  </data>
   <data name="Globals_AllowHeadless.Header" xml:space="preserve">
     <value>Разрешить запуск терминала Windows в фоновом режиме</value>
     <comment>Header for a control to toggle support for Windows Terminal to run in the background.</comment>
-  </data>
-  <data name="Globals_IsolatedMode.Header" xml:space="preserve">
-    <value>Принудительное выполнение каждого окна в отдельном процессе</value>
-    <comment>Header for a control to toggle making each window be its own process.</comment>
   </data>
   <data name="Globals_DebugFeaturesEnabled.Header" xml:space="preserve">
     <value>Включить функции отладки</value>
@@ -591,10 +591,6 @@
   <data name="Globals_AllowHeadless.HelpText" xml:space="preserve">
     <value>Это позволяет выполнять такие действия, как глобальный вызов и режим землетрясения, даже если ни одно окно не открыто.</value>
     <comment>Additional description for what the "allow headless" setting does. Presented near "Globals_AllowHeadless.Header".</comment>
-  </data>
-  <data name="Globals_IsolatedMode.HelpText" xml:space="preserve">
-    <value>Некоторые функции будут работать неправильно, включая глобальные сочетания клавиш, перетаскивание вкладок и wt.exe нацеливание окна.</value>
-    <comment>{Locked="wt.exe"} Additional description for what the "isolated mode" setting does. Presented near "Globals_IsolatedMode.Header".</comment>
   </data>
   <data name="Globals_TabWidthMode.Header" xml:space="preserve">
     <value>Режим ширины вкладки</value>
@@ -1956,5 +1952,45 @@
   <data name="Globals_ShowAdminShield.Header" xml:space="preserve">
     <value>Отображать экран в заголовке, когда Терминал Windows от имени администратора</value>
     <comment>Header for a control to toggle displaying a shield in the title bar of the app. "Admin" refers to elevated sessions like "run as Admin"</comment>
+  </data>
+  <data name="Profile_PathTranslationStyle.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Преобразование пути</value>
+    <comment>Name for a control to select how file and directory paths are translated.</comment>
+  </data>
+  <data name="Profile_PathTranslationStyle.Header" xml:space="preserve">
+    <value>Преобразование пути</value>
+    <comment>Name for a control to select how file and directory paths are translated.</comment>
+  </data>
+  <data name="Profile_PathTranslationStyle.HelpText" xml:space="preserve">
+    <value>Управляет преобразованием путей к файлам и каталогам во время операций перетаскивания.</value>
+    <comment>A description for what the "path translation" setting does. Presented near "Profile_PathTranslationStyle.Header".</comment>
+  </data>
+  <data name="Profile_PathTranslationStyleNone.Content" xml:space="preserve">
+    <value>Нет</value>
+    <comment>An option to choose from for the "path translation" setting.</comment>
+  </data>
+  <data name="Profile_PathTranslationStyleWsl.Content" xml:space="preserve">
+    <value>WSL (C:\ -&gt; /mnt/c)</value>
+    <comment>{Locked="WSL","C:\","/mnt/c"} An option to choose from for the "path translation" setting.</comment>
+  </data>
+  <data name="Profile_PathTranslationStyleCygwin.Content" xml:space="preserve">
+    <value>Cygwin (C:\ -&gt; /cygdrive/c)</value>
+    <comment>{Locked="Cygwin","C:\","/cygdrive/c"} An option to choose from for the "path translation" setting.</comment>
+  </data>
+  <data name="Profile_PathTranslationStyleMsys2.Content" xml:space="preserve">
+    <value>MSYS2 (C:\ -&gt; /c)</value>
+    <comment>{Locked="MSYS2","C:\","/c"} An option to choose from for the "path translation" setting.</comment>
+  </data>
+  <data name="Profile_Delete_Orphaned.Header" xml:space="preserve">
+    <value>Профиль больше не обнаруживается</value>
+  </data>
+  <data name="Profile_Delete_Orphaned.HelpText" xml:space="preserve">
+    <value>Похоже, этот автоматически обнаруженный профиль удален. Внесенные вами изменения сохранены, но их нельзя использовать до переустановки.</value>
+  </data>
+  <data name="Profile_Source_Orphaned.Header" xml:space="preserve">
+    <value>Первоисточник</value>
+  </data>
+  <data name="Profile_Source_Orphaned.HelpText" xml:space="preserve">
+    <value>Указывает программное обеспечение, которое изначально создало этот профиль.</value>
   </data>
 </root>

@@ -73,7 +73,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             //
             // To alleviate, make sure to disable the UIA engine and remove it,
             // and ALSO disable the renderer. Core.Detach will take care of the
-            // WaitForPaintCompletionAndDisable (which will stop the renderer
+            // TriggerTeardown (which will stop the renderer
             // after all current engines are done painting).
             //
             // Simply disabling the UIA engine is not enough, because it's
@@ -724,18 +724,5 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     ::Microsoft::Console::Render::IRenderData* ControlInteractivity::GetRenderData() const
     {
         return _core->GetRenderData();
-    }
-
-    // Method Description:
-    // - Used by the TermControl to know if it should translate drag-dropped
-    //   paths into WSL-friendly paths.
-    // Arguments:
-    // - <none>
-    // Return Value:
-    // - true if the connection we were created with was a WSL profile.
-    bool ControlInteractivity::ManglePathsForWsl()
-    {
-        const auto source{ _core->Settings().ProfileSource() };
-        return til::equals_insensitive_ascii(source, L"Windows.Terminal.Wsl") || til::equals_insensitive_ascii(source, L"Microsoft.WSL");
     }
 }

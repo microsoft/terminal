@@ -89,6 +89,12 @@ void Terminal::UpdateSettings(ICoreSettings settings)
     _trimBlockSelection = settings.TrimBlockSelection();
     _autoMarkPrompts = settings.AutoMarkPrompts();
     _rainbowSuggestions = settings.RainbowSuggestions();
+    _clipboardOperationsAllowed = settings.AllowVtClipboardWrite();
+
+    if (_stateMachine)
+    {
+        SetVtChecksumReportSupport(settings.AllowVtChecksumReport());
+    }
 
     _getTerminalInput().ForceDisableWin32InputMode(settings.ForceVTInput());
 
@@ -210,6 +216,12 @@ void Terminal::SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle)
 {
     auto& engine = reinterpret_cast<OutputStateMachineEngine&>(_stateMachine->Engine());
     engine.Dispatch().SetCursorStyle(cursorStyle);
+}
+
+void Terminal::SetVtChecksumReportSupport(const bool enabled)
+{
+    auto& engine = reinterpret_cast<OutputStateMachineEngine&>(_stateMachine->Engine());
+    engine.Dispatch().SetVtChecksumReportSupport(enabled);
 }
 
 bool Terminal::IsXtermBracketedPasteModeEnabled() const noexcept
