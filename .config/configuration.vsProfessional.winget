@@ -6,6 +6,7 @@ properties:
       directives:
         description: Enable Developer Mode
         allowPrerelease: true
+        # Requires elevation for the set operation
         securityContext: elevated
       settings:
         Ensure: Present
@@ -13,6 +14,7 @@ properties:
       id: powershell
       directives:
         description: Install PowerShell 7
+        # Requires elevation for the set operation (i.e., installation)
         securityContext: elevated
       settings:
         id: Microsoft.PowerShell
@@ -21,6 +23,7 @@ properties:
       id: vsPackage
       directives:
         description: Install Visual Studio 2022 Professional (any edition is OK)
+        # Requires elevation for the set operation (i.e., installation)
         securityContext: elevated
       settings:
         id: Microsoft.VisualStudio.2022.Professional
@@ -31,6 +34,7 @@ properties:
       directives:
         description: Install required VS workloads from project .vsconfig file
         allowPrerelease: true
+        # Requires elevation for the get and set operations
         securityContext: elevated
       settings:
         productId: Microsoft.VisualStudio.Product.Professional
