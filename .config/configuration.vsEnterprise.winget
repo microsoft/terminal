@@ -13,6 +13,7 @@ properties:
       id: powershell
       directives:
         description: Install PowerShell 7
+        securityContext: elevated
       settings:
         id: Microsoft.PowerShell
         source: winget
@@ -20,6 +21,7 @@ properties:
       id: vsPackage
       directives:
         description: Install Visual Studio 2022 Enterprise (any edition is OK)
+        securityContext: elevated
       settings:
         id: Microsoft.VisualStudio.2022.Enterprise
         source: winget
