@@ -24,6 +24,8 @@ using namespace ::Microsoft::Console;
 using namespace std::chrono_literals;
 using VirtualKeyModifiers = winrt::Windows::System::VirtualKeyModifiers;
 
+#define ENV_WT_BASE_SETTINGS_PATH L"WT_BASE_SETTINGS_PATH"
+
 #ifdef _WIN64
 static constexpr ULONG_PTR TERMINAL_HANDOFF_MAGIC = 0x4c414e494d524554; // 'TERMINAL'
 #else
@@ -296,6 +298,18 @@ void WindowEmperor::HandleCommandlineArgs(int nCmdShow)
         fmt::format_to(std::back_inserter(windowClassName), FMT_COMPILE(L" {:08x}"), hash);
 #endif
     }
+
+    try
+    {
+        const auto settingsPath = wil::GetEnvironmentVariableW<std::wstring>(ENV_WT_BASE_SETTINGS_PATH);
+        const auto settingsHash = til::hash(settingsPath);
+#ifdef _WIN64
+        fmt::format_to(std::back_inserter(windowClassName), FMT_COMPILE(L" {:016x}"), settingsHash);
+#else
+        fmt::format_to(std::back_inserter(windowClassName), FMT_COMPILE(L" {:08x}"), settingsHash);
+#endif
+    }
+    CATCH_LOG()
 
     // Windows Terminal is a single-instance application. Either acquire ownership
     // over the mutex, or hand off the command line to the existing instance.
