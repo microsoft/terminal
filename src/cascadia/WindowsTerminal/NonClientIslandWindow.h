@@ -37,6 +37,7 @@ public:
 
     virtual til::rect GetNonClientFrame(UINT dpi) const noexcept override;
     virtual til::size GetTotalNonClientExclusiveSize(UINT dpi) const noexcept override;
+    [[nodiscard]] float GetTitleBarPhysicalRenderHeight() const noexcept;
 
     void Initialize() override;
 
