@@ -175,6 +175,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void _validateColorSchemesInCommands() const;
         bool _hasInvalidColorScheme(const Model::Command& command) const;
         void _validateThemeExists();
+        void _validateRegexes();
 
         void _researchOnLoad();
 
