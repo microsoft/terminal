@@ -101,6 +101,8 @@
 // The compiler doesn't like that. --> Suppress the warning.
 #pragma warning(push)
 #pragma warning(disable: 4324) // structure was padded due to alignment specifier
+// undefine BUILD_WINDOWS so that wrl/event.h doesn't include wrl/internalevent.h
+#undef BUILD_WINDOWS
 #include <wrl.h>
 #pragma warning(pop)
 
