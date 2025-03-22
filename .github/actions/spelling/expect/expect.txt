@@ -1945,6 +1945,7 @@ VPACKMANIFESTDIRECTORY
 VPR
 VREDRAW
 vsc
+vsconfig
 vscprintf
 VSCROLL
 vsdevshell
