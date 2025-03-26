@@ -1,0 +1,17 @@
+{
+  "name": "fmt",
+  "version": "11.1.4",
+  "description": "{fmt} is an open-source formatting library providing a fast and safe alternative to C stdio and C++ iostreams.",
+  "homepage": "https://github.com/fmtlib/fmt",
+  "license": "MIT",
+  "dependencies": [
+    {
+      "name": "vcpkg-cmake",
+      "host": true
+    },
+    {
+      "name": "vcpkg-cmake-config",
+      "host": true
+    }
+  ]
+}

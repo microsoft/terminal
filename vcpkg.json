@@ -16,7 +16,7 @@
   "overrides": [
     {
       "name": "fmt",
-      "version": "11.0.2"
+      "version": "11.1.4"
     },
     {
       "name": "ms-gsl",
@@ -31,5 +31,8 @@
       "version": "2.4.2"
     }
   ],
-  "builtin-baseline": "fe1cde61e971d53c9687cf9a46308f8f55da19fa"
+  "builtin-baseline": "fe1cde61e971d53c9687cf9a46308f8f55da19fa",
+  "vcpkg-configuration": {
+    "overlay-ports": [ "./dep/vcpkg-overlay-ports" ]
+  }
 }
