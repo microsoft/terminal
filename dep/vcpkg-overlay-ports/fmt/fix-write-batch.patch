@@ -1,0 +1,13 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 88c12148..967b53dd 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -260,7 +260,7 @@ if (FMT_MASTER_PROJECT AND CMAKE_GENERATOR MATCHES "Visual Studio")
+   join(netfxpath
+        "C:\\Program Files\\Reference Assemblies\\Microsoft\\Framework\\"
+        ".NETFramework\\v4.0")
+-  file(WRITE run-msbuild.bat "
++  file(WRITE "${CMAKE_BINARY_DIR}/run-msbuild.bat" "
+     ${MSBUILD_SETUP}
+     ${CMAKE_MAKE_PROGRAM} -p:FrameworkPathOverride=\"${netfxpath}\" %*")
+ endif ()
