@@ -649,6 +649,7 @@ FONTSTRING
 FONTTYPE
 FONTWIDTH
 FONTWINDOW
+foob
 FORCEOFFFEEDBACK
 FORCEONFEEDBACK
 FRAMECHANGED
@@ -666,9 +667,11 @@ fuzzer
 fuzzmain
 fuzzmap
 fuzzwrapper
+fuzzyfinder
 fwdecl
 fwe
 fwlink
+fzf
 gci
 gcx
 gdi
@@ -1246,6 +1249,7 @@ onecoreuuid
 ONECOREWINDOWS
 onehalf
 oneseq
+oob
 openbash
 opencode
 opencon
