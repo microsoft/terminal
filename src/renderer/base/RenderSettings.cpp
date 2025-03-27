@@ -113,6 +113,13 @@ COLORREF RenderSettings::GetColorTableEntry(const size_t tableIndex) const
 }
 
 // Routine Description:
+// - Returns one color table entry to the value saved in SaveDefaultSettings.
+void RenderSettings::RestoreDefaultColorTableEntry(const size_t tableIndex)
+{
+    _colorTable.at(tableIndex) = _defaultColorTable.at(tableIndex);
+}
+
+// Routine Description:
 // - Sets the position in the color table for the given color alias and updates the color.
 // Arguments:
 // - alias - The color alias to update.

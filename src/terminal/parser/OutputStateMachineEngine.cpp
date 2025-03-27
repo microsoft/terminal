@@ -810,10 +810,18 @@ bool OutputStateMachineEngine::ActionOscDispatch(const size_t parameter, const s
         }
         break;
     }
+    case OscActionCodes::ResetForegroundColor:
+    case OscActionCodes::ResetBackgroundColor:
     case OscActionCodes::ResetCursorColor:
+    case OscActionCodes::ResetHighlightColor:
+    // **CANNOT BE CHAINED** in xterm; ignored if chained (!)
+    // xterm allows chaining 104 (reset color index); if chained, only reset the colors within
+    // if not chained, reset all colors
+    // gets weird in conhost - we use aliases to set the dfault bg/fg in default config
+    // so overwriting the aliases makes the background **white** instead
     {
         // The reset codes for xterm dynamic resources are the set codes + 100
-        _dispatch->SetXtermColorResource(parameter - 100u, INVALID_COLOR);
+        _dispatch->ResetXtermColorResource(parameter - 100u);
         break;
     }
     case OscActionCodes::Hyperlink:

@@ -1401,6 +1401,11 @@ public:
         _xtermResourcesRequested.push_back(resource);
     }
 
+    void ResetXtermColorResource(const size_t resource) override
+    {
+        _xtermResourcesReset.push_back(resource);
+    }
+
     void SetClipboard(wil::zwstring_view content) noexcept override
     {
         _copyContent = content;
@@ -1476,6 +1481,7 @@ public:
     std::vector<size_t> _xtermResourcesChanged;
     std::vector<DWORD> _xtermResourceValues;
     std::vector<size_t> _xtermResourcesRequested;
+    std::vector<size_t> _xtermResourcesReset;
     bool _setColorTableEntry;
     std::vector<size_t> _colorTableEntriesRequested;
     bool _hyperlinkMode;
@@ -3218,6 +3224,21 @@ class StateMachineExternalTest final
         VERIFY_ARE_EQUAL(0u, pDispatch->_xtermResourcesChanged.size());
         VERIFY_ARE_EQUAL(1u, pDispatch->_xtermResourcesRequested.size());
         VERIFY_ARE_EQUAL(11u, pDispatch->_xtermResourcesRequested[0]);
+        pDispatch->ClearState();
+    }
+
+    TEST_METHOD(TestOscXtermResourceReset)
+    {
+        auto dispatch = std::make_unique<StatefulDispatch>();
+        auto pDispatch = dispatch.get();
+        auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
+        StateMachine mach(std::move(engine));
+
+        mach.ProcessString(L"\033]110\033\\");
+        VERIFY_ARE_EQUAL(0u, pDispatch->_xtermResourcesChanged.size());
+        VERIFY_ARE_EQUAL(0u, pDispatch->_xtermResourcesRequested.size());
+        VERIFY_ARE_EQUAL(0u, pDispatch->_xtermResourcesReset.size());
+        VERIFY_ARE_EQUAL(10u, pDispatch->_xtermResourcesReset[0]);
         pDispatch->ClearState();
     }
 
