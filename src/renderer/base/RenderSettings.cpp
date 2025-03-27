@@ -166,6 +166,11 @@ size_t RenderSettings::GetColorAliasIndex(const ColorAlias alias) const noexcept
     return gsl::at(_colorAliasIndices, static_cast<size_t>(alias));
 }
 
+void RenderSettings::RestoreDefaultColorAliasIndex(const ColorAlias alias) noexcept
+{
+    gsl::at(_colorAliasIndices, static_cast<size_t>(alias)) = gsl::at(_defaultColorAliasIndices, static_cast<size_t>(alias));
+}
+
 // Routine Description:
 // - Calculates the RGB colors of a given text attribute, using the current
 //   color table configuration and active render settings.

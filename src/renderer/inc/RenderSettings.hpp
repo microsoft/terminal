@@ -42,6 +42,7 @@ namespace Microsoft::Console::Render
         COLORREF GetColorAlias(const ColorAlias alias) const;
         void SetColorAliasIndex(const ColorAlias alias, const size_t tableIndex) noexcept;
         size_t GetColorAliasIndex(const ColorAlias alias) const noexcept;
+        void RestoreDefaultColorAliasIndex(const ColorAlias alias) noexcept;
         std::pair<COLORREF, COLORREF> GetAttributeColors(const TextAttribute& attr) const noexcept;
         std::pair<COLORREF, COLORREF> GetAttributeColorsWithAlpha(const TextAttribute& attr) const noexcept;
         COLORREF GetAttributeUnderlineColor(const TextAttribute& attr) const noexcept;

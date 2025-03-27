@@ -3370,10 +3370,10 @@ void AdaptDispatch::ResetXtermColorResource(const size_t resource)
     const auto& oscMapping = XtermResourceColorTableMappings.at(mappingIndex);
     if (oscMapping.ColorTableIndex > 0)
     {
-        if (oscMapping.AliasIndex >= 0) [[unlikely]]
+        if (oscMapping.AliasIndex >= 0)
         {
             // If this color reset applies to an aliased color, point the alias back at the original color
-            _renderSettings.SetColorAliasIndex(static_cast<ColorAlias>(oscMapping.AliasIndex), oscMapping.ColorTableIndex);
+            _renderSettings.RestoreDefaultColorAliasIndex(static_cast<ColorAlias>(oscMapping.AliasIndex));
         }
 
         ResetColorTableEntry(oscMapping.ColorTableIndex);
