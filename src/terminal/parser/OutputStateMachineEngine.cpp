@@ -810,18 +810,44 @@ bool OutputStateMachineEngine::ActionOscDispatch(const size_t parameter, const s
         }
         break;
     }
+    case OscActionCodes::ResetColor:
+    {
+        // xterm allows parameters for 104 (reset color index); if there are 1..n parameters, reset color[param_1]...color[param_n]
+        // if there are no parameters, reset all colors
+        if (string.empty())
+        {
+            // reset all colors (TODO)
+        }
+        else
+        {
+            for (auto&& c : til::split_iterator{ string, L';' })
+            {
+                if (const auto index{ til::parse_unsigned<size_t>(c, 10) }; index)
+                {
+                    _dispatch->ResetColorTableEntry(*index);
+                }
+                else
+                {
+                    // xterm bails out if it encounters an unparseable color index
+                    // gnome-terminal does not; it keeps going
+                    break;
+                }
+            }
+        }
+        break;
+    }
     case OscActionCodes::ResetForegroundColor:
     case OscActionCodes::ResetBackgroundColor:
     case OscActionCodes::ResetCursorColor:
     case OscActionCodes::ResetHighlightColor:
-    // **CANNOT BE CHAINED** in xterm; ignored if chained (!)
-    // xterm allows chaining 104 (reset color index); if chained, only reset the colors within
-    // if not chained, reset all colors
-    // gets weird in conhost - we use aliases to set the dfault bg/fg in default config
-    // so overwriting the aliases makes the background **white** instead
     {
-        // The reset codes for xterm dynamic resources are the set codes + 100
-        _dispatch->ResetXtermColorResource(parameter - 100u);
+        // **CANNOT BE CHAINED** like osc 10;11;12 in xterm; ignored if multiple params (!)
+        // **CAN** be chained in gnome-terminal (who should we follow?)
+        if (string.empty())
+        {
+            // The reset codes for xterm dynamic resources are the set codes + 100
+            _dispatch->ResetXtermColorResource(parameter - 100u);
+        }
         break;
     }
     case OscActionCodes::Hyperlink:

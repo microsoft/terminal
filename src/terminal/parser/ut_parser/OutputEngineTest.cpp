@@ -1390,6 +1390,11 @@ public:
         _colorTableEntriesRequested.push_back(tableIndex);
     }
 
+    void ResetColorTableEntry(const size_t tableIndex) noexcept override
+    {
+        _colorTableEntriesReset.push_back(tableIndex);
+    }
+
     void SetXtermColorResource(const size_t resource, const DWORD color) override
     {
         _xtermResourcesChanged.push_back(resource);
@@ -1484,6 +1489,7 @@ public:
     std::vector<size_t> _xtermResourcesReset;
     bool _setColorTableEntry;
     std::vector<size_t> _colorTableEntriesRequested;
+    std::vector<size_t> _colorTableEntriesReset;
     bool _hyperlinkMode;
     std::wstring _copyContent;
     std::wstring _uri;

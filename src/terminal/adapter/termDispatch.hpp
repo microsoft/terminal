@@ -71,6 +71,7 @@ public:
     void TabSet(const VTParameter /*setType*/) override {} // DECST8C
     void SetColorTableEntry(const size_t /*tableIndex*/, const DWORD /*color*/) override {} // OSCSetColorTable
     void RequestColorTableEntry(const size_t /*tableIndex*/) override {} // OSCGetColorTable
+    void ResetColorTableEntry(const size_t /*tableIndex*/) override {} // OSCResetColorTable
     void SetXtermColorResource(const size_t /*resource*/, const DWORD /*color*/) override {} // OSCSetDefaultForeground, OSCSetDefaultBackground, OSCSetCursorColor
     void RequestXtermColorResource(const size_t /*resource*/) override {} // OSCGetDefaultForeground, OSCGetDefaultBackground, OSCGetCursorColor
     void ResetXtermColorResource(const size_t /*resource*/) override {}; // OSCResetForegroundColor, OSCResetBackgroundColor, OSCResetCursorColor, OSCResetHighlightColor
