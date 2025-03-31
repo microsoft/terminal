@@ -52,10 +52,9 @@ jobs:
       itemPattern: '**/*.pdb'
       targetPath: '$(Build.SourcesDirectory)/bin'
 
-  - powershell: |-
-      Get-PackageProvider -Name NuGet -ForceBootstrap
-      Install-Module -Verbose -AllowClobber -Force Az.Accounts, Az.Storage, Az.Network, Az.Resources, Az.Compute
-    displayName: Install Azure Module Dependencies
+  - template: steps-install-powershell-modules.yml
+    parameters:
+      modules: [Az.Accounts, Az.Storage, Az.Network, Az.Resources, Az.Compute]
 
   # Transit the Azure token from the Service Connection into a secret variable for the rest of the pipeline to use.
   - task: AzurePowerShell@5
