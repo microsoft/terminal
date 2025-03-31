@@ -25,7 +25,7 @@ variables:
 extends:
   template: templates-v2/pipeline-onebranch-full-release-build.yml
   parameters:
-    official: true
+    official: false
     branding: Canary
     buildTerminal: true
     pgoBuildMode: None # BODGY - OneBranch is on VS 17.10, which is known to be the worst
@@ -44,6 +44,7 @@ extends:
     symbolExpiryTime: 15
     symbolPublishingSubscription: $(SymbolPublishingServiceConnection)
     symbolPublishingProject: $(SymbolPublishingProject)
+    buildPlatforms: [x64]
     ${{ if eq(true, parameters.publishToAzure) }}:
       extraPublishJobs:
         - template: build/pipelines/templates-v2/job-deploy-to-azure-storage.yml@self

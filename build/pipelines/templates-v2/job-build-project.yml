@@ -115,6 +115,10 @@ jobs:
     clean: true
     submodules: true
     persistCredentials: True
+  - template: steps-install-powershell-modules.yml
+    parameters:
+      modules: [Az.Accounts, Az.Storage, Az.Network, Az.Resources, Az.Compute]
+
 
   # This generates either nothing for BuildTargetParameter, or /t:X;Y;Z, to control targets later.
   - pwsh: |-
