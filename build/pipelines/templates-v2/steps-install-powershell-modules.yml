@@ -6,10 +6,10 @@ parameters:
 steps:
   - pwsh: |-
       Register-PSResourceRepository -Name TerminalDependencies -Uri https://pkgs.dev.azure.com/shine-oss/terminal/_packaging/TerminalDependencies/nuget/v2 -Trusted -ErrorAction:Ignore
-      Install-PSResource -Repository TerminalDependencies -Name ${{ join(',',parameters.modules) }} -Confirm:$false -Debug -Verbose
+      Install-PSResource -Repository TerminalDependencies -Name ${{ join(',',parameters.modules) }} -Debug -Verbose -Confirm:$false
     displayName: Install Modules for PowerShell 7+
 
   - powershell: |-
       Register-PSResourceRepository -Name TerminalDependencies -Uri https://pkgs.dev.azure.com/shine-oss/terminal/_packaging/TerminalDependencies/nuget/v2 -Trusted -ErrorAction:Ignore
-      Install-PSResource -Repository TerminalDependencies -Name ${{ join(',',parameters.modules) }} -Confirm:$false -Debug -Verbose
+      Install-PSResource -Repository TerminalDependencies -Name ${{ join(',',parameters.modules) }} -Debug -Verbose -Confirm:$false
     displayName: Install Modules for PowerShell 5.1
