@@ -79,6 +79,7 @@ extends:
   parameters:
     featureFlags:
       WindowsHostVersion: 1ESWindows2022
+      Network: R1
     platform:
       name: 'windows_undocked'
       product: 'Windows Terminal'
