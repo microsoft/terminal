@@ -75,11 +75,6 @@ jobs:
       }
     displayName: "Wrangle Unpackaged builds into place, rename"
 
-  - powershell: |-
-      Get-PackageProvider -Name NuGet -ForceBootstrap
-      Install-Module -Verbose -AllowClobber -Force Az.Accounts, Az.Storage, Az.Network, Az.Resources, Az.Compute
-    displayName: Install Azure Module Dependencies
-
   - task: AzureFileCopy@6
     displayName: Publish to Storage Account
     inputs:
