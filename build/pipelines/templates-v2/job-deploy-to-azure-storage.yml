@@ -75,18 +75,13 @@ jobs:
       }
     displayName: "Wrangle Unpackaged builds into place, rename"
 
-  - powershell: |-
-      Get-PackageProvider -Name NuGet -ForceBootstrap
-      Install-Module -Verbose -AllowClobber -Force Az.Accounts, Az.Storage, Az.Network, Az.Resources, Az.Compute
-    displayName: Install Azure Module Dependencies
-
-  - task: AzureFileCopy@6
+  - task: AzurePowerShell@5
     displayName: Publish to Storage Account
     inputs:
-      sourcePath: _out/*
-      Destination: AzureBlob
       azureSubscription: ${{ parameters.subscription }}
-      storage: ${{ parameters.storageAccount }}
-      ContainerName: ${{ parameters.storageContainer }}
-      AdditionalArgumentsForBlobCopy: "--content-type application/octet-stream"
-
+      azurePowerShellVersion: LatestVersion
+      pwsh: true
+      ScriptType: InlineScript
+      Inline: |-
+        $Env:AZCOPY_AUTO_LOGIN_TYPE="PSCRED"
+        & AzCopy copy "_out\*" "https://${{ parameters.storageAccount }}.blob.core.windows.net/${{ parameters.storageContainer }}/" --content-type application/octet-stream

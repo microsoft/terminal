@@ -87,6 +87,7 @@ autoscrolling
 Autowrap
 AVerify
 awch
+AZCOPY
 azurecr
 AZZ
 backgrounded
@@ -1427,6 +1428,7 @@ propvar
 propvariant
 propvarutil
 psa
+PSCRED
 PSECURITY
 pseudoconsole
 pseudoterminal
