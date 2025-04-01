@@ -79,7 +79,7 @@ extends:
   parameters:
     featureFlags:
       WindowsHostVersion:
-        Version: 1ESWindows2022
+        Version: 2022
         Network: R1
     platform:
       name: 'windows_undocked'
