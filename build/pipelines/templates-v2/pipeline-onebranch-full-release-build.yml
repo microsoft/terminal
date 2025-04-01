@@ -78,7 +78,7 @@ extends:
     template: v2/Microsoft.NonOfficial.yml@templates
   parameters:
     featureFlags:
-      WindowsHostVersion: 1ESWindows2022
+      WindowsHostVersion: 2022
       Network: R1
     platform:
       name: 'windows_undocked'
