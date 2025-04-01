@@ -83,4 +83,5 @@ jobs:
       pwsh: true
       ScriptType: InlineScript
       Inline: |-
+        $Env:AZCOPY_AUTO_LOGIN_TYPE="PSCRED"
         & AzCopy copy "_out\*" "https://${{ parameters.storageAccount }}.blob.core.windows.net/${{ parameters.storageContainer }}/" --content-type application/octet-stream
