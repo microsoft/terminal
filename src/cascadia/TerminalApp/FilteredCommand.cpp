@@ -5,6 +5,7 @@
 #include "CommandPalette.h"
 #include "HighlightedText.h"
 #include <LibraryResources.h>
+#include "fzf/fzf.h"
 
 #include "FilteredCommand.g.cpp"
 
@@ -57,15 +58,16 @@ namespace winrt::TerminalApp::implementation
         if (filter != _Filter)
         {
             Filter(filter);
-            HighlightedName(_computeHighlightedName());
             Weight(_computeWeight());
+            HighlightedName(_computeHighlightedName());
         }
     }
 
     // Method Description:
     // - Looks up the filter characters within the item name.
-    // Iterating through the filter and the item name it tries to associate the next filter character
-    // with the first appearance of this character in the item name suffix.
+    // Using the fzf algorithm to traceback from the maximum score to highlight the chars with the
+    // optimal match. (Preference is given to word boundaries, consecutive chars and special characters
+    // while penalties are given for gaps)
     //
     // E.g., for filter="c l t s" and name="close all tabs after this", the match will be "CLose TabS after this".
     //
@@ -77,85 +79,45 @@ namespace winrt::TerminalApp::implementation
     //
     // E.g., ("CL", true) ("ose ", false), ("T", true), ("ab", false), ("S", true), ("after this", false)
     //
-    // TODO: we probably need to merge this logic with _getWeight computation?
-    //
     // Return Value:
     // - The HighlightedText object initialized with the segments computed according to the algorithm above.
     winrt::TerminalApp::HighlightedText FilteredCommand::_computeHighlightedName()
     {
         const auto segments = winrt::single_threaded_observable_vector<winrt::TerminalApp::HighlightedTextSegment>();
         auto commandName = _Item.Name();
-        auto isProcessingMatchedSegment = false;
-        uint32_t nextOffsetToReport = 0;
-        uint32_t currentOffset = 0;
 
-        for (const auto searchChar : _Filter)
+        if (Weight() == 0)
         {
-            const WCHAR searchCharAsString[] = { searchChar, L'\0' };
-            while (true)
-            {
-                if (currentOffset == commandName.size())
-                {
-                    // There are still unmatched filter characters but we finished scanning the name.
-                    // In this case we return the entire item name as unmatched
-                    auto entireNameSegment{ winrt::make<HighlightedTextSegment>(commandName, false) };
-                    segments.Clear();
-                    segments.Append(entireNameSegment);
-                    return winrt::make<HighlightedText>(segments);
-                }
-
-                // GH#9941: search should be locale-aware as well
-                // We use the same comparison method as upon sorting to guarantee consistent behavior
-                const WCHAR currentCharAsString[] = { commandName[currentOffset], L'\0' };
-                auto isCurrentCharMatched = lstrcmpi(searchCharAsString, currentCharAsString) == 0;
-                if (isProcessingMatchedSegment != isCurrentCharMatched)
-                {
-                    // We reached the end of the region (matched character came after a series of unmatched or vice versa).
-                    // Conclude the segment and add it to the list.
-                    // Skip segment if it is empty (might happen when the first character of the name is matched)
-                    auto sizeToReport = currentOffset - nextOffsetToReport;
-                    if (sizeToReport > 0)
-                    {
-                        winrt::hstring segment{ commandName.data() + nextOffsetToReport, sizeToReport };
-                        auto highlightedSegment{ winrt::make<HighlightedTextSegment>(segment, isProcessingMatchedSegment) };
-                        segments.Append(highlightedSegment);
-                        nextOffsetToReport = currentOffset;
-                    }
-                    isProcessingMatchedSegment = isCurrentCharMatched;
-                }
-
-                currentOffset++;
-
-                if (isCurrentCharMatched)
-                {
-                    // We have matched this filter character, let's move to matching the next filter char
-                    break;
-                }
-            }
+            segments.Append(winrt::TerminalApp::HighlightedTextSegment(commandName, false));
+            return winrt::make<HighlightedText>(segments);
         }
 
-        // Either the filter or the item name were fully processed.
-        // If we were in the middle of the matched segment - add it.
-        if (isProcessingMatchedSegment)
+        auto pattern = fzf::matcher::ParsePattern(Filter());
+        auto positions = fzf::matcher::GetPositions(commandName, pattern);
+        // positions are returned is sorted pairs by search term. E.g. sp anta {5,4,11,10,9,8}
+        // sorting these in ascending order so it is easier to build the text segments
+        std::ranges::sort(positions, std::less<>());
+        // a position can be matched in multiple terms, removed duplicates to simplify segments
+        positions.erase(std::unique(positions.begin(), positions.end()), positions.end());
+        size_t lastPosition = 0;
+        for (auto position : positions)
         {
-            auto sizeToReport = currentOffset - nextOffsetToReport;
-            if (sizeToReport > 0)
+            if (position > lastPosition)
             {
-                winrt::hstring segment{ commandName.data() + nextOffsetToReport, sizeToReport };
-                auto highlightedSegment{ winrt::make<HighlightedTextSegment>(segment, true) };
-                segments.Append(highlightedSegment);
-                nextOffsetToReport = currentOffset;
+                hstring nonMatchSegment{ commandName.data() + lastPosition, static_cast<unsigned>(position - lastPosition) };
+                segments.Append(winrt::TerminalApp::HighlightedTextSegment(nonMatchSegment, false));
             }
+
+            hstring matchSegment{ commandName.data() + position, 1 };
+            segments.Append(winrt::TerminalApp::HighlightedTextSegment(matchSegment, true));
+
+            lastPosition = position + 1;
         }
 
-        // Now create a segment for all remaining characters.
-        // We will have remaining characters as long as the filter is shorter than the item name.
-        auto sizeToReport = commandName.size() - nextOffsetToReport;
-        if (sizeToReport > 0)
+        if (lastPosition < commandName.size())
         {
-            winrt::hstring segment{ commandName.data() + nextOffsetToReport, sizeToReport };
-            auto highlightedSegment{ winrt::make<HighlightedTextSegment>(segment, false) };
-            segments.Append(highlightedSegment);
+            hstring segment{ commandName.data() + lastPosition, static_cast<unsigned>(commandName.size() - lastPosition) };
+            segments.Append(winrt::TerminalApp::HighlightedTextSegment(segment, false));
         }
 
         return winrt::make<HighlightedText>(segments);
@@ -164,37 +126,50 @@ namespace winrt::TerminalApp::implementation
     // Function Description:
     // - Calculates a "weighting" by which should be used to order a item
     //   name relative to other names, given a specific search string.
-    //   Currently, this is based off of two factors:
-    //   * The weight is incremented once for each matched character of the
-    //     search text.
-    //   * If a matching character from the search text was found at the start
-    //     of a word in the name, then we increment the weight again.
-    //     * For example, for a search string "sp", we want "Split Pane" to
-    //       appear in the list before "Close Pane"
-    //   * Consecutive matches will be weighted higher than matches with
-    //     characters in between the search characters.
-    // - This will return 0 if the item should not be shown. If all the
-    //   characters of search text appear in order in `name`, then this function
-    //   will return a positive number. There can be any number of characters
-    //   separating consecutive characters in searchText.
-    //   * For example:
-    //      "name": "New Tab"
-    //      "name": "Close Tab"
-    //      "name": "Close Pane"
-    //      "name": "[-] Split Horizontal"
-    //      "name": "[ | ] Split Vertical"
-    //      "name": "Next Tab"
-    //      "name": "Prev Tab"
-    //      "name": "Open Settings"
-    //      "name": "Open Media Controls"
-    //   * "open" should return both "**Open** Settings" and "**Open** Media Controls".
-    //   * "Tab" would return "New **Tab**", "Close **Tab**", "Next **Tab**" and "Prev
-    //     **Tab**".
-    //   * "P" would return "Close **P**ane", "[-] S**p**lit Horizontal", "[ | ]
-    //     S**p**lit Vertical", "**P**rev Tab", "O**p**en Settings" and "O**p**en Media
-    //     Controls".
-    //   * "sv" would return "[ | ] Split Vertical" (by matching the **S** in
-    //     "Split", then the **V** in "Vertical").
+    //   Currently, this uses a derivative of the fzf implementation of the Smith Waterman algorithm:
+    // - This will return 0 if the item should not be shown.
+    //
+    // Factors that affect a score (Taken from the fzf repository)
+    // Scoring criteria
+    // ----------------
+    // 
+    // - We prefer matches at special positions, such as the start of a word, or
+    //   uppercase character in camelCase words.
+    //   - Note everything is converted to lower case so this does not apply
+    // 
+    // - That is, we prefer an occurrence of the pattern with more characters
+    //   matching at special positions, even if the total match length is longer.
+    //     e.g. "fuzzyfinder" vs. "fuzzy-finder" on "ff"
+    //                             ````````````
+    // - Also, if the first character in the pattern appears at one of the special
+    //   positions, the bonus point for the position is multiplied by a constant
+    //   as it is extremely likely that the first character in the typed pattern
+    //   has more significance than the rest.
+    //     e.g. "fo-bar" vs. "foob-r" on "br"
+    //           ``````
+    // - But since fzf is still a fuzzy finder, not an acronym finder, we should also
+    //   consider the total length of the matched substring. This is why we have the
+    //   gap penalty. The gap penalty increases as the length of the gap (distance
+    //   between the matching characters) increases, so the effect of the bonus is
+    //   eventually cancelled at some point.
+    //     e.g. "fuzzyfinder" vs. "fuzzy-blurry-finder" on "ff"
+    //           ```````````
+    // - Consequently, it is crucial to find the right balance between the bonus
+    //   and the gap penalty. The parameters were chosen that the bonus is cancelled
+    //   when the gap size increases beyond 8 characters.
+    // 
+    // - The bonus mechanism can have the undesirable side effect where consecutive
+    //   matches are ranked lower than the ones with gaps.
+    //     e.g. "foobar" vs. "foo-bar" on "foob"
+    //                        ```````
+    // - To correct this anomaly, we also give extra bonus point to each character
+    //   in a consecutive matching chunk.
+    //     e.g. "foobar" vs. "foo-bar" on "foob"
+    //           ``````
+    // - The amount of consecutive bonus is primarily determined by the bonus of the
+    //   first character in the chunk.
+    //     e.g. "foobar" vs. "out-of-bound" on "oob"
+    //                        ````````````
     // Arguments:
     // - searchText: the string of text to search for in `name`
     // - name: the name to check
@@ -202,30 +177,9 @@ namespace winrt::TerminalApp::implementation
     // - the relative weight of this match
     int FilteredCommand::_computeWeight()
     {
-        auto result = 0;
-        auto isNextSegmentWordBeginning = true;
-
-        for (const auto& segment : _HighlightedName.Segments())
-        {
-            const auto& segmentText = segment.TextSegment();
-            const auto segmentSize = segmentText.size();
-
-            if (segment.IsHighlighted())
-            {
-                // Give extra point for each consecutive match
-                result += (segmentSize <= 1) ? segmentSize : 1 + 2 * (segmentSize - 1);
-
-                // Give extra point if this segment is at the beginning of a word
-                if (isNextSegmentWordBeginning)
-                {
-                    result++;
-                }
-            }
-
-            isNextSegmentWordBeginning = segmentSize > 0 && segmentText[segmentSize - 1] == L' ';
-        }
-
-        return result;
+        auto pattern = fzf::matcher::ParsePattern(Filter());
+        auto score = fzf::matcher::GetScore(Item().Name(), pattern);
+        return score;
     }
 
     // Function Description:
