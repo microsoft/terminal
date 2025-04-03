@@ -1,5 +1,12 @@
 steps:
-- task: NuGetToolInstaller@1
-  displayName: Use NuGet 6.6.1
-  inputs:
-    versionSpec: 6.6.1
+- ${{ if eq(variables['System.CollectionId'], 'cb55739e-4afe-46a3-970f-1b49d8ee7564') }}:
+  - pwsh: |-
+      Write-Host "Assuming NuGet is already installed..."
+      & nuget.exe help
+    displayName: Assume NuGet is fine
+
+- ${{ else }}:
+  - task: NuGetToolInstaller@1
+    displayName: Use NuGet 6.6.1
+    inputs:
+      versionSpec: 6.6.1
