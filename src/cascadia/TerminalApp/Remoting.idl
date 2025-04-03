@@ -39,7 +39,6 @@ namespace TerminalApp
 
         UInt64 SourceWindow { get; };
         UInt64 TargetWindow { get; };
-        UInt64 LocalState { get; };
         UInt32 TabIndex { get; };
     };
 

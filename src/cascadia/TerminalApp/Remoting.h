@@ -44,7 +44,6 @@ namespace winrt::TerminalApp::implementation
     {
         WINRT_PROPERTY(uint64_t, SourceWindow);
         WINRT_PROPERTY(uint64_t, TargetWindow);
-        WINRT_PROPERTY(uint64_t, LocalState);
         WINRT_PROPERTY(uint32_t, TabIndex);
 
     public:
