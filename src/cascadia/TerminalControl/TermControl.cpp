@@ -97,6 +97,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             /* WSL */ L"/mnt/",
             /* Cygwin */ L"/cygdrive/",
             /* MSYS2 */ L"/",
+            /* MinGW */ {},
         };
         static constexpr wil::zwstring_view sSingleQuoteEscape = L"'\\''";
         static constexpr auto cchSingleQuoteEscape = sSingleQuoteEscape.size();
@@ -117,6 +118,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             fullPath.replace(pos, 1, sSingleQuoteEscape);
             // Arithmetic overflow cannot occur here.
             pos += cchSingleQuoteEscape;
+        }
+
+        if (translationStyle == PathTranslationStyle::MinGW)
+        {
+            return;
         }
 
         if (fullPath.size() >= 2 && fullPath.at(1) == L':')

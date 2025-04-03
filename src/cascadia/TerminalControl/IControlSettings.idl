@@ -26,7 +26,8 @@ namespace Microsoft.Terminal.Control
         None = 0,
         WSL,
         Cygwin,
-        MSYS2
+        MSYS2,
+        MinGW,
     };
 
     // Class Description:
