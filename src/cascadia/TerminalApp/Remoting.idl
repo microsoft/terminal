@@ -11,6 +11,7 @@ namespace TerminalApp
         Int32 ExitCode { get; };
         String ExitMessage { get; };
         String TargetWindow { get; };
+        String LocalState { get; };
 
         String[] Commandline;
         String CurrentDirectory { get; };
@@ -38,6 +39,7 @@ namespace TerminalApp
 
         UInt64 SourceWindow { get; };
         UInt64 TargetWindow { get; };
+        UInt64 LocalState { get; };
         UInt32 TabIndex { get; };
     };
 

@@ -158,6 +158,9 @@ void AppCommandlineArgs::_buildParser()
         _shouldExitEarly = true;
     };
     _app.add_flag_function("-v,--version", versionCallback, RS_A(L"CmdVersionDesc"));
+    _app.add_option("-L,--localstate",
+                    _localState,
+                    RS_A(L"CmdLocalStateArgDesc"));
 
     // Launch mode related flags
     //   -M,--maximized: Maximizes the window on launch
@@ -1198,9 +1201,15 @@ void AppCommandlineArgs::FullResetState()
     _isHandoffListener = false;
 
     _windowTarget = {};
+    _localState = {};
 }
 
 std::string_view AppCommandlineArgs::GetTargetWindow() const noexcept
 {
     return _windowTarget;
+}
+
+std::string_view AppCommandlineArgs::GetLocalState() const noexcept
+{
+    return _localState;
 }
