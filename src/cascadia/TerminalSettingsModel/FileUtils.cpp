@@ -34,9 +34,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model
         static auto baseSettingsPath = []() {
             try
             {
-                std::filesystem::path envSettingsPath{ wil::GetEnvironmentVariableW<std::wstring>(ENV_WT_BASE_SETTINGS_PATH) };
-                std::filesystem::create_directories(envSettingsPath);
-                return envSettingsPath;
+                std::filesystem::path envSettingsPath{ wil::TryGetEnvironmentVariableW<std::wstring>(ENV_WT_BASE_SETTINGS_PATH) };
+                if (!envSettingsPath.empty())
+                {
+                    std::filesystem::create_directories(envSettingsPath);
+                    return envSettingsPath;
+                }
             }
             CATCH_LOG()
 
@@ -76,9 +79,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model
         static std::filesystem::path baseSettingsPath = []() {
             try
             {
-                std::filesystem::path envSettingsPath{ wil::GetEnvironmentVariableW<std::wstring>(ENV_WT_BASE_SETTINGS_PATH) };
-                std::filesystem::create_directories(envSettingsPath);
-                return envSettingsPath;
+                std::filesystem::path envSettingsPath{ wil::TryGetEnvironmentVariableW<std::wstring>(ENV_WT_BASE_SETTINGS_PATH) };
+                if (!envSettingsPath.empty())
+                {
+                    std::filesystem::create_directories(envSettingsPath);
+                    return envSettingsPath;
+                }
             }
             CATCH_LOG()
 
