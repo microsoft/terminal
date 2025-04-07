@@ -3254,8 +3254,15 @@ class StateMachineExternalTest final
         VERIFY_ARE_EQUAL(10u, pDispatch->_xtermResourcesReset[0]);
         pDispatch->ClearState();
 
+        mach.ProcessString(L"\033]111;\033\\"); // dangling ;
+        VERIFY_ARE_EQUAL(0u, pDispatch->_xtermResourcesChanged.size());
+        VERIFY_ARE_EQUAL(0u, pDispatch->_xtermResourcesRequested.size());
+        VERIFY_ARE_EQUAL(1u, pDispatch->_xtermResourcesReset.size());
+        VERIFY_ARE_EQUAL(11u, pDispatch->_xtermResourcesReset[0]);
+        pDispatch->ClearState();
+
         mach.ProcessString(L"\033]111;110\033\\");
-        // NOTE: this is xterm behavior - ignore the sequence if any params exist
+        // NOTE: this is xterm behavior - ignore the entire sequence if any params exist
         VERIFY_ARE_EQUAL(0u, pDispatch->_xtermResourcesChanged.size());
         VERIFY_ARE_EQUAL(0u, pDispatch->_xtermResourcesRequested.size());
         VERIFY_ARE_EQUAL(0u, pDispatch->_xtermResourcesReset.size());

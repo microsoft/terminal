@@ -827,7 +827,7 @@ bool OutputStateMachineEngine::ActionOscDispatch(const size_t parameter, const s
                 else
                 {
                     // NOTE: xterm stops at the first unparseable index
-                    // whereas gnome-terminal keeps going. What should we
+                    // whereas libvte keeps going. What should we
                     // do?
                     break;
                 }
@@ -840,8 +840,8 @@ bool OutputStateMachineEngine::ActionOscDispatch(const size_t parameter, const s
     case OscActionCodes::ResetCursorColor:
     case OscActionCodes::ResetHighlightColor:
     {
-        // NOTE: xterm does not allow 110;111;112 in a single request,
-        // whereas gnome-terminal does. What should we do here?
+        // NOTE: xterm ignores the request if there's any parameters
+        // whereas libvte resets the first one
         if (string.empty())
         {
             // The reset codes for xterm dynamic resources are the set codes + 100
