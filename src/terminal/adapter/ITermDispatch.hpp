@@ -78,6 +78,7 @@ public:
     virtual void TabSet(const VTParameter setType) = 0; // DECST8C
     virtual void SetColorTableEntry(const size_t tableIndex, const DWORD color) = 0; // OSCSetColorTable
     virtual void RequestColorTableEntry(const size_t tableIndex) = 0; // OSCGetColorTable
+    virtual void ResetColorTable() = 0; // OSCResetColorTable
     virtual void ResetColorTableEntry(const size_t tableIndex) = 0; // OSCResetColorTable
     virtual void SetXtermColorResource(const size_t resource, const DWORD color) = 0; // OSCSetDefaultForeground, OSCSetDefaultBackground, OSCSetCursorColor
     virtual void RequestXtermColorResource(const size_t resource) = 0; // OSCGetDefaultForeground, OSCGetDefaultBackground, OSCGetCursorColor

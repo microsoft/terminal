@@ -3292,13 +3292,24 @@ void AdaptDispatch::RequestColorTableEntry(const size_t tableIndex)
     }
 }
 
+void AdaptDispatch::ResetColorTable()
+{
+    _renderSettings.RestoreDefaultColorTableEntries(0, 256);
+    if (_renderer)
+    {
+        // This is a pessimization, because it's unlikely that the frame or background changed,
+        // but let's tell the renderer that both changed anyway.
+        _renderer->TriggerRedrawAll(true, true);
+    }
+}
+
 // Method Description:
 // - Restores a single color table entry to its default user-specified value
 // Arguments:
 // - tableIndex: The VT color table index
 void AdaptDispatch::ResetColorTableEntry(const size_t tableIndex)
 {
-    _renderSettings.RestoreDefaultColorTableEntry(tableIndex);
+    _renderSettings.RestoreDefaultColorTableEntries(tableIndex, 1);
 
     if (_renderer)
     {

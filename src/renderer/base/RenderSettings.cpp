@@ -114,9 +114,9 @@ COLORREF RenderSettings::GetColorTableEntry(const size_t tableIndex) const
 
 // Routine Description:
 // - Returns one color table entry to the value saved in SaveDefaultSettings.
-void RenderSettings::RestoreDefaultColorTableEntry(const size_t tableIndex)
+void RenderSettings::RestoreDefaultColorTableEntries(const size_t startIndex, const size_t count)
 {
-    _colorTable.at(tableIndex) = _defaultColorTable.at(tableIndex);
+    std::copy_n(&_defaultColorTable.at(startIndex), count, &_colorTable.at(startIndex));
 }
 
 // Routine Description:

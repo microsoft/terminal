@@ -37,7 +37,7 @@ namespace Microsoft::Console::Render
         void ResetColorTable() noexcept;
         void SetColorTableEntry(const size_t tableIndex, const COLORREF color);
         COLORREF GetColorTableEntry(const size_t tableIndex) const;
-        void RestoreDefaultColorTableEntry(const size_t tableIndex);
+        void RestoreDefaultColorTableEntries(const size_t startIndex, const size_t count);
         void SetColorAlias(const ColorAlias alias, const size_t tableIndex, const COLORREF color);
         COLORREF GetColorAlias(const ColorAlias alias) const;
         void SetColorAliasIndex(const ColorAlias alias, const size_t tableIndex) noexcept;

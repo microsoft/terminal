@@ -812,11 +812,9 @@ bool OutputStateMachineEngine::ActionOscDispatch(const size_t parameter, const s
     }
     case OscActionCodes::ResetColor:
     {
-        // xterm allows parameters for 104 (reset color index); if there are 1..n parameters, reset color[param_1]...color[param_n]
-        // if there are no parameters, reset all colors
         if (string.empty())
         {
-            // reset all colors (TODO)
+            _dispatch->ResetColorTable();
         }
         else
         {
@@ -828,8 +826,9 @@ bool OutputStateMachineEngine::ActionOscDispatch(const size_t parameter, const s
                 }
                 else
                 {
-                    // xterm bails out if it encounters an unparseable color index
-                    // gnome-terminal does not; it keeps going
+                    // ERRATA: xterm stops at the first unparseable index
+                    // whereas gnome-terminal keeps going. What should we
+                    // do?
                     break;
                 }
             }
@@ -841,8 +840,8 @@ bool OutputStateMachineEngine::ActionOscDispatch(const size_t parameter, const s
     case OscActionCodes::ResetCursorColor:
     case OscActionCodes::ResetHighlightColor:
     {
-        // **CANNOT BE CHAINED** like osc 10;11;12 in xterm; ignored if multiple params (!)
-        // **CAN** be chained in gnome-terminal (who should we follow?)
+        // ERRATA: xterm does not allow 110;111;112 in a single request,
+        // whereas gnome-terminal does. What should we do here?
         if (string.empty())
         {
             // The reset codes for xterm dynamic resources are the set codes + 100
