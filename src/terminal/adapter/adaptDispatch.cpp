@@ -3297,7 +3297,7 @@ void AdaptDispatch::ResetColorTable()
     _renderSettings.RestoreDefaultColorTableEntries(0, 256);
     if (_renderer)
     {
-        // This is a pessimization, because it's unlikely that the frame or background changed,
+        // This is pessimistic because it's unlikely that the frame or background changed,
         // but let's tell the renderer that both changed anyway.
         _renderer->TriggerRedrawAll(true, true);
     }
