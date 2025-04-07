@@ -3255,7 +3255,7 @@ class StateMachineExternalTest final
         pDispatch->ClearState();
 
         mach.ProcessString(L"\033]111;110\033\\");
-        // ERRATA: this is xterm behavior - ignore the sequence if any params exist
+        // NOTE: this is xterm behavior - ignore the sequence if any params exist
         VERIFY_ARE_EQUAL(0u, pDispatch->_xtermResourcesChanged.size());
         VERIFY_ARE_EQUAL(0u, pDispatch->_xtermResourcesRequested.size());
         VERIFY_ARE_EQUAL(0u, pDispatch->_xtermResourcesReset.size());
@@ -3274,7 +3274,6 @@ class StateMachineExternalTest final
         VERIFY_ARE_EQUAL(0u, pDispatch->_colorTableEntriesReset.size());
         VERIFY_ARE_EQUAL(0u, pDispatch->_colorTableEntriesRequested.size());
         VERIFY_ARE_EQUAL(0u, pDispatch->_xtermResourcesReset.size());
-        //VERIFY_ARE_EQUAL(10u, pDispatch->_xtermResourcesReset[0]);
         pDispatch->ClearState();
 
         mach.ProcessString(L"\033]104;1;3;5;7;9\033\\");
@@ -3289,7 +3288,7 @@ class StateMachineExternalTest final
         VERIFY_ARE_EQUAL(9u, pDispatch->_colorTableEntriesReset[4]);
         pDispatch->ClearState();
 
-        // ERRATA: xterm behavior - stop after first failed parse
+        // NOTE: xterm behavior - stop after first failed parse
         mach.ProcessString(L"\033]104;1;a;3\033\\");
         VERIFY_IS_FALSE(pDispatch->_resetAllColors);
         VERIFY_IS_FALSE(pDispatch->_setColorTableEntry);

@@ -826,7 +826,7 @@ bool OutputStateMachineEngine::ActionOscDispatch(const size_t parameter, const s
                 }
                 else
                 {
-                    // ERRATA: xterm stops at the first unparseable index
+                    // NOTE: xterm stops at the first unparseable index
                     // whereas gnome-terminal keeps going. What should we
                     // do?
                     break;
@@ -840,7 +840,7 @@ bool OutputStateMachineEngine::ActionOscDispatch(const size_t parameter, const s
     case OscActionCodes::ResetCursorColor:
     case OscActionCodes::ResetHighlightColor:
     {
-        // ERRATA: xterm does not allow 110;111;112 in a single request,
+        // NOTE: xterm does not allow 110;111;112 in a single request,
         // whereas gnome-terminal does. What should we do here?
         if (string.empty())
         {
