@@ -3310,7 +3310,6 @@ class StateMachineExternalTest final
         VERIFY_ARE_EQUAL(0u, pDispatch->_colorTableEntriesReset.size());
         VERIFY_ARE_EQUAL(0u, pDispatch->_colorTableEntriesRequested.size());
         VERIFY_ARE_EQUAL(0u, pDispatch->_xtermResourcesReset.size());
-        //VERIFY_ARE_EQUAL(10u, pDispatch->_xtermResourcesReset[0]);
         pDispatch->ClearState();
     }
 
