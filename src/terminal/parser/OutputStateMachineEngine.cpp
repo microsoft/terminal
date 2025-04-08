@@ -826,9 +826,7 @@ bool OutputStateMachineEngine::ActionOscDispatch(const size_t parameter, const s
                 }
                 else
                 {
-                    // NOTE: xterm stops at the first unparseable index
-                    // whereas libvte keeps going. What should we
-                    // do?
+                    // NOTE: xterm stops at the first unparseable index whereas VTE keeps going.
                     break;
                 }
             }
@@ -840,8 +838,7 @@ bool OutputStateMachineEngine::ActionOscDispatch(const size_t parameter, const s
     case OscActionCodes::ResetCursorColor:
     case OscActionCodes::ResetHighlightColor:
     {
-        // NOTE: xterm ignores the request if there's any parameters
-        // whereas libvte resets the first one
+        // NOTE: xterm ignores the request if there's any parameters whereas VTE resets the provided index and ignores the rest
         if (string.empty())
         {
             // The reset codes for xterm dynamic resources are the set codes + 100
