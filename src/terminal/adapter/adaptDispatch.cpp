@@ -3294,7 +3294,7 @@ void AdaptDispatch::RequestColorTableEntry(const size_t tableIndex)
 
 void AdaptDispatch::ResetColorTable()
 {
-    _renderSettings.RestoreDefaultColorTableEntries(0, 256);
+    _renderSettings.RestoreDefaultIndexed256ColorTable();
     if (_renderer)
     {
         // This is pessimistic because it's unlikely that the frame or background changed,
@@ -3309,7 +3309,7 @@ void AdaptDispatch::ResetColorTable()
 // - tableIndex: The VT color table index
 void AdaptDispatch::ResetColorTableEntry(const size_t tableIndex)
 {
-    _renderSettings.RestoreDefaultColorTableEntries(tableIndex, 1);
+    _renderSettings.RestoreDefaultColorTableEntry(tableIndex);
 
     if (_renderer)
     {

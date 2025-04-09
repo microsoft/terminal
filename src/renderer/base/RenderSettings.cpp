@@ -113,10 +113,17 @@ COLORREF RenderSettings::GetColorTableEntry(const size_t tableIndex) const
 }
 
 // Routine Description:
-// - Restores a range of color table entries to the values saved in SaveDefaultSettings.
-void RenderSettings::RestoreDefaultColorTableEntries(const size_t startIndex, const size_t count)
+// - Restores all of the xterm-addressable colors to the ones saved in SaveDefaultSettings.
+void RenderSettings::RestoreDefaultIndexed256ColorTable()
 {
-    std::copy_n(&_defaultColorTable.at(startIndex), count, &_colorTable.at(startIndex));
+    std::copy_n(_defaultColorTable.begin(), 256, _colorTable.begin());
+}
+
+// Routine Description:
+// - Restores a color table entry to the value saved in SaveDefaultSettings.
+void RenderSettings::RestoreDefaultColorTableEntry(const size_t tableIndex)
+{
+    _colorTable.at(tableIndex) = _defaultColorTable.at(tableIndex);
 }
 
 // Routine Description:
