@@ -113,6 +113,20 @@ COLORREF RenderSettings::GetColorTableEntry(const size_t tableIndex) const
 }
 
 // Routine Description:
+// - Restores all of the xterm-addressable colors to the ones saved in SaveDefaultSettings.
+void RenderSettings::RestoreDefaultIndexed256ColorTable()
+{
+    std::copy_n(_defaultColorTable.begin(), 256, _colorTable.begin());
+}
+
+// Routine Description:
+// - Restores a color table entry to the value saved in SaveDefaultSettings.
+void RenderSettings::RestoreDefaultColorTableEntry(const size_t tableIndex)
+{
+    _colorTable.at(tableIndex) = _defaultColorTable.at(tableIndex);
+}
+
+// Routine Description:
 // - Sets the position in the color table for the given color alias and updates the color.
 // Arguments:
 // - alias - The color alias to update.
@@ -157,6 +171,11 @@ void RenderSettings::SetColorAliasIndex(const ColorAlias alias, const size_t tab
 size_t RenderSettings::GetColorAliasIndex(const ColorAlias alias) const noexcept
 {
     return gsl::at(_colorAliasIndices, static_cast<size_t>(alias));
+}
+
+void RenderSettings::RestoreDefaultColorAliasIndex(const ColorAlias alias) noexcept
+{
+    gsl::at(_colorAliasIndices, static_cast<size_t>(alias)) = gsl::at(_defaultColorAliasIndices, static_cast<size_t>(alias));
 }
 
 // Routine Description:
