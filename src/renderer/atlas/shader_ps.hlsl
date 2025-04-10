@@ -12,7 +12,6 @@ cbuffer ConstBuffer : register(b0)
     float4 gammaRatios;
     float enhancedContrast;
     float underlineWidth;
-    float doubleUnderlineWidth;
     float curlyLineHalfHeight;
     float shadedGlyphDotSize;
 }
@@ -171,19 +170,15 @@ Output main(PSData data) : SV_Target
     }
     case SHADING_TYPE_CURLY_LINE:
     {
-        // The curly line has the same thickness as a double underline.
-        // We halve it to make the math a bit easier.
-        float strokeWidthHalf = doubleUnderlineWidth * data.renditionScale.y * 0.5f;
+        // The curly line has the same thickness as an underline.
+        // We halve it to get the stroke width and make the math a bit easier.
+        float strokeWidthHalf = underlineWidth * data.renditionScale.y * 0.5f;
         float center = curlyLineHalfHeight * data.renditionScale.y;
         float amplitude = center - strokeWidthHalf;
-        // We multiply the frequency by pi/2 to get a sine wave which has an integer period.
-        // This makes every period of the wave look exactly the same.
-        float frequency = 1.57079632679489661923f / (curlyLineHalfHeight * data.renditionScale.x);
-        // At very small sizes, like when the wave is just 3px tall and 1px wide, it'll look too fat and/or blurry.
-        // Because we multiplied our frequency with pi, the extrema of the curve and its intersections with the
-        // centerline always occur right between two pixels. This causes both to be lit with the same color.
-        // By adding a small phase shift, we can break this symmetry up. It'll make the wave look a lot more crispy.
-        float phase = 1.57079632679489661923f;
+        // This calculates a frequency that results in one 1 period per cell.
+        float frequency = (4.0f * 1.57079632679489661923f) / (backgroundCellSize.x * data.renditionScale.x);
+        // This shifts the wave so that the peak is in the middle of the cell.
+        float phase = 3.0f * 1.57079632679489661923f;
         float sine = sin(data.position.x * frequency + phase);
         // We use the distance to the sine curve as its alpha value - the closer the more opaque.
         // To give it a smooth appearance we don't want to simply calculate the vertical distance to the curve:
