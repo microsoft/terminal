@@ -24,6 +24,8 @@ using namespace ::Microsoft::Console;
 using namespace std::chrono_literals;
 using VirtualKeyModifiers = winrt::Windows::System::VirtualKeyModifiers;
 
+#define ENV_WT_BASE_SETTINGS_PATH L"WT_BASE_SETTINGS_PATH"
+
 #ifdef _WIN64
 static constexpr ULONG_PTR TERMINAL_HANDOFF_MAGIC = 0x4c414e494d524554; // 'TERMINAL'
 #else
@@ -297,6 +299,26 @@ void WindowEmperor::HandleCommandlineArgs(int nCmdShow)
 #endif
     }
 
+    const wil::unique_environstrings_ptr envMem{ GetEnvironmentStringsW() };
+    const auto env = stringFromDoubleNullTerminated(envMem.get());
+    const auto cwd = wil::GetCurrentDirectoryW<std::wstring>();
+    const auto showCmd = gsl::narrow_cast<uint32_t>(nCmdShow);
+    const auto args = commandlineToArgArray(GetCommandLineW());
+    winrt::TerminalApp::CommandlineArgs cmdArgs{ args, cwd, showCmd, env };
+
+    try
+    {
+        const auto settingsPath = cmdArgs.LocalState().c_str();
+        SetEnvironmentVariableW(ENV_WT_BASE_SETTINGS_PATH, settingsPath);
+        const auto settingsHash = til::hash(settingsPath);
+#ifdef _WIN64
+        fmt::format_to(std::back_inserter(windowClassName), FMT_COMPILE(L" {:016x}"), settingsHash);
+#else
+        fmt::format_to(std::back_inserter(windowClassName), FMT_COMPILE(L" {:08x}"), settingsHash);
+#endif
+    }
+    CATCH_LOG()
+
     // Windows Terminal is a single-instance application. Either acquire ownership
     // over the mutex, or hand off the command line to the existing instance.
     const auto mutex = acquireMutexOrAttemptHandoff(windowClassName.c_str(), nCmdShow);
@@ -327,11 +349,6 @@ void WindowEmperor::HandleCommandlineArgs(int nCmdShow)
     });
 
     {
-        const wil::unique_environstrings_ptr envMem{ GetEnvironmentStringsW() };
-        const auto env = stringFromDoubleNullTerminated(envMem.get());
-        const auto cwd = wil::GetCurrentDirectoryW<std::wstring>();
-        const auto showCmd = gsl::narrow_cast<uint32_t>(nCmdShow);
-
         // Restore persisted windows.
         const auto state = ApplicationState::SharedInstance();
         const auto layouts = state.PersistedWindowLayouts();
@@ -342,15 +359,16 @@ void WindowEmperor::HandleCommandlineArgs(int nCmdShow)
             uint32_t startIdx = 0;
             for (const auto layout : layouts)
             {
-                hstring args[] = { L"wt", L"-w", L"new", L"-s", winrt::to_hstring(startIdx) };
-                _dispatchCommandline({ args, cwd, showCmd, env });
+                hstring _args[] = { L"wt", L"-w", L"new", L"-s", winrt::to_hstring(startIdx) };
+                _dispatchCommandline({ _args, cwd, showCmd, env });
                 startIdx += 1;
             }
         }
 
         // Create another window if needed: There aren't any yet, or we got an explicit command line.
-        const auto args = commandlineToArgArray(GetCommandLineW());
-        if (_windows.empty() || args.size() != 1)
+        if (_windows.empty() ||
+           (args.size() > 1 && cmdArgs.LocalState().empty()) ||
+            args.size() > 3) // LocalState is 2 additional strings
         {
             _dispatchCommandline({ args, cwd, showCmd, env });
         }

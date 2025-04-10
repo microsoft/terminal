@@ -1198,9 +1198,15 @@ void AppCommandlineArgs::FullResetState()
     _isHandoffListener = false;
 
     _windowTarget = {};
+    _localState = {};
 }
 
 std::string_view AppCommandlineArgs::GetTargetWindow() const noexcept
 {
     return _windowTarget;
+}
+
+std::string_view AppCommandlineArgs::GetLocalState() const noexcept
+{
+    return _localState;
 }
