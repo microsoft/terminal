@@ -230,6 +230,7 @@
                               VerticalScrollMode="Enabled"
                               Visibility="Visible">
                     <TextBlock x:Name="_descriptionComment"
+                               Margin="0,0,20,0"
                                IsTextSelectionEnabled="True"
                                TextWrapping="WrapWholeWords" />
                 </ScrollViewer>
