@@ -214,9 +214,11 @@ namespace Microsoft::Console::VirtualTerminal
             SetHighlightColor = 17,
             DECSWT_SetWindowTitle = 21,
             SetClipboard = 52,
-            ResetForegroundColor = 110, // Not implemented
-            ResetBackgroundColor = 111, // Not implemented
+            ResetColor = 104,
+            ResetForegroundColor = 110,
+            ResetBackgroundColor = 111,
             ResetCursorColor = 112,
+            ResetHighlightColor = 117,
             FinalTermAction = 133,
             VsCodeAction = 633,
             ITerm2Action = 1337,
