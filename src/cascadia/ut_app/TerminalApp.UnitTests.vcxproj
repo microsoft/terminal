@@ -24,6 +24,7 @@
     <ClCompile Include="ColorHelperTests.cpp" />
 
     <ClCompile Include="JsonUtilsTests.cpp" />
+    <ClCompile Include="FzfTests.cpp" />
 
     <ClCompile Include="precomp.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
