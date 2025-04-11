@@ -810,10 +810,40 @@ bool OutputStateMachineEngine::ActionOscDispatch(const size_t parameter, const s
         }
         break;
     }
-    case OscActionCodes::ResetCursorColor:
+    case OscActionCodes::ResetColor:
     {
-        // The reset codes for xterm dynamic resources are the set codes + 100
-        _dispatch->SetXtermColorResource(parameter - 100u, INVALID_COLOR);
+        if (string.empty())
+        {
+            _dispatch->ResetColorTable();
+        }
+        else
+        {
+            for (auto&& c : til::split_iterator{ string, L';' })
+            {
+                if (const auto index{ til::parse_unsigned<size_t>(c, 10) }; index)
+                {
+                    _dispatch->ResetColorTableEntry(*index);
+                }
+                else
+                {
+                    // NOTE: xterm stops at the first unparseable index whereas VTE keeps going.
+                    break;
+                }
+            }
+        }
+        break;
+    }
+    case OscActionCodes::ResetForegroundColor:
+    case OscActionCodes::ResetBackgroundColor:
+    case OscActionCodes::ResetCursorColor:
+    case OscActionCodes::ResetHighlightColor:
+    {
+        // NOTE: xterm ignores the request if there's any parameters whereas VTE resets the provided index and ignores the rest
+        if (string.empty())
+        {
+            // The reset codes for xterm dynamic resources are the set codes + 100
+            _dispatch->ResetXtermColorResource(parameter - 100u);
+        }
         break;
     }
     case OscActionCodes::Hyperlink:

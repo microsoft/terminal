@@ -3292,6 +3292,40 @@ void AdaptDispatch::RequestColorTableEntry(const size_t tableIndex)
     }
 }
 
+void AdaptDispatch::ResetColorTable()
+{
+    _renderSettings.RestoreDefaultIndexed256ColorTable();
+    if (_renderer)
+    {
+        // This is pessimistic because it's unlikely that the frame or background changed,
+        // but let's tell the renderer that both changed anyway.
+        _renderer->TriggerRedrawAll(true, true);
+    }
+}
+
+// Method Description:
+// - Restores a single color table entry to its default user-specified value
+// Arguments:
+// - tableIndex: The VT color table index
+void AdaptDispatch::ResetColorTableEntry(const size_t tableIndex)
+{
+    _renderSettings.RestoreDefaultColorTableEntry(tableIndex);
+
+    if (_renderer)
+    {
+        // If we're updating the background color, we need to let the renderer
+        // know, since it may want to repaint the window background to match.
+        const auto backgroundIndex = _renderSettings.GetColorAliasIndex(ColorAlias::DefaultBackground);
+        const auto backgroundChanged = (tableIndex == backgroundIndex);
+
+        // Similarly for the frame color, the tab may need to be repainted.
+        const auto frameIndex = _renderSettings.GetColorAliasIndex(ColorAlias::FrameBackground);
+        const auto frameChanged = (tableIndex == frameIndex);
+
+        _renderer->TriggerRedrawAll(backgroundChanged, frameChanged);
+    }
+}
+
 // Method Description:
 // - Sets one Xterm Color Resource such as Default Foreground, Background, Cursor
 void AdaptDispatch::SetXtermColorResource(const size_t resource, const DWORD color)
@@ -3335,6 +3369,25 @@ void AdaptDispatch::RequestXtermColorResource(const size_t resource)
             // Scale values up to match xterm's 16-bit color report format.
             _ReturnOscResponse(fmt::format(FMT_COMPILE(L"{};rgb:{:04x}/{:04x}/{:04x}"), resource, c.r * 0x0101, c.g * 0x0101, c.b * 0x0101));
         }
+    }
+}
+
+// Method Description:
+// - Restores to the original user-provided value one Xterm Color Resource such as Default Foreground, Background, Cursor
+void AdaptDispatch::ResetXtermColorResource(const size_t resource)
+{
+    assert(resource >= 10);
+    const auto mappingIndex = resource - 10;
+    const auto& oscMapping = XtermResourceColorTableMappings.at(mappingIndex);
+    if (oscMapping.ColorTableIndex > 0)
+    {
+        if (oscMapping.AliasIndex >= 0)
+        {
+            // If this color reset applies to an aliased color, point the alias back at the original color
+            _renderSettings.RestoreDefaultColorAliasIndex(static_cast<ColorAlias>(oscMapping.AliasIndex));
+        }
+
+        ResetColorTableEntry(oscMapping.ColorTableIndex);
     }
 }
 
