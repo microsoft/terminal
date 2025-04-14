@@ -443,7 +443,6 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             TerminalOutput.raise(fileNotFoundText);
         }
 
-
         _transitionToState(ConnectionState::Failed);
 
         // Tear down any state we may have accumulated.
