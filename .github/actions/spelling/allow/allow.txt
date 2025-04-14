@@ -9,6 +9,7 @@ CMMI
 colorbrewer
 consvc
 copyable
+CText
 dalet
 dcs
 deselection
