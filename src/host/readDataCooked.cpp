@@ -1119,12 +1119,33 @@ void COOKED_READ_DATA::_redisplay()
         output.append(L"\x1b[J");
     }
 
-    // Disable the cursor when opening a popup, reenable it when closing them.
+    // Backup the attributes (DECSC) and disable the cursor when opening a popup (DECTCEM).
+    // Restore the attributes (DECRC) reenable the cursor when closing them (DECTCEM).
     if (const auto popupOpened = !_popups.empty(); _popupOpened != popupOpened)
     {
-        wchar_t buf[] = L"\x1b[?25l";
-        buf[5] = popupOpened ? 'l' : 'h';
-        output.append(&buf[0], 6);
+        wchar_t buf[] =
+            // Back/restore cursor position & attributes (commonly supported)
+            L"\u001b7"
+            // Show/hide cursor (commonly supported)
+            "\u001b[?25l"
+            // The popup code uses XTPUSHSGR (CSI # {) / XTPOPSGR (CSI # }) to draw the popups in the popup-colors,
+            // while properly restoring the previous VT attributes. On terminals that support them, the following
+            // won't do anything. On other terminals however, it'll reset the attributes to default.
+            // This is important as the first thing the popup drawing code uses CSI K to erase the previous contents
+            // and CSI m to reset the attributes on terminals that don't support XTPUSHSGR/XTPOPSGR. In order for
+            // the first CSI K to behave as if there had a previous CSI m, we must emit an initial CSI m here.
+            // (rarely supported)
+            "\x1b[#{\x1b[m\x1b[#}";
+
+        buf[1] = popupOpened ? '7' : '8';
+        buf[7] = popupOpened ? 'l' : 'h';
+
+        // When the popup closes we skip the XTPUSHSGR/XTPOPSGR sequence. This is crucial because we
+        // use DECRC to restore the cursor position and attributes with a widely supported sequence.
+        // If we emited that XTPUSHSGR/XTPOPSGR sequence it would reset the attributes again.
+        const size_t len = popupOpened ? 19 : 8;
+
+        output.append(buf, len);
         _popupOpened = popupOpened;
     }
 
@@ -1595,10 +1616,10 @@ void COOKED_READ_DATA::_popupDrawPrompt(std::vector<Line>& lines, const til::Coo
     str.append(suffix);
 
     std::wstring line;
-    line.append(L"\x1b[K");
+    line.append(L"\x1b[#{\x1b[K");
     _appendPopupAttr(line);
     const auto res = _layoutLine(line, str, 0, 0, width);
-    line.append(L"\x1b[m");
+    line.append(L"\x1b[m\x1b[#}");
 
     lines.emplace_back(std::move(line), 0, 0, res.column);
 }
@@ -1654,7 +1675,7 @@ void COOKED_READ_DATA::_popupDrawCommandList(std::vector<Line>& lines, const til
         const auto selected = index == cl.selected && !stackedCommandNumberPopup;
 
         std::wstring line;
-        line.append(L"\x1b[K");
+        line.append(L"\x1b[#{\x1b[K");
         _appendPopupAttr(line);
 
         wchar_t scrollbarChar = L' ';
@@ -1681,7 +1702,7 @@ void COOKED_READ_DATA::_popupDrawCommandList(std::vector<Line>& lines, const til
         }
         else
         {
-            line.append(L"\x1b[m ");
+            line.append(L"\x1b[m\x1b[#} ");
         }
 
         fmt::format_to(std::back_inserter(line), FMT_COMPILE(L"{:{}}: "), index, indexWidth);
@@ -1690,7 +1711,7 @@ void COOKED_READ_DATA::_popupDrawCommandList(std::vector<Line>& lines, const til
 
         if (selected)
         {
-            line.append(L"\x1b[m");
+            line.append(L"\x1b[m\x1b[#}");
         }
 
         line.append(L"\r\n");
