@@ -1142,7 +1142,7 @@ void COOKED_READ_DATA::_redisplay()
 
         // When the popup closes we skip the XTPUSHSGR/XTPOPSGR sequence. This is crucial because we
         // use DECRC to restore the cursor position and attributes with a widely supported sequence.
-        // If we emited that XTPUSHSGR/XTPOPSGR sequence it would reset the attributes again.
+        // If we emitted that XTPUSHSGR/XTPOPSGR sequence it would reset the attributes again.
         const size_t len = popupOpened ? 19 : 8;
 
         output.append(buf, len);
