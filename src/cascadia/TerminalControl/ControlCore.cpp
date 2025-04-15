@@ -2868,6 +2868,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 // coloring other matches, then we need to make sure those get redrawn,
                 // too.
                 _renderer->TriggerRedrawAll();
+                _updateSelectionUI();
             }
         }
     }

@@ -2061,14 +2061,6 @@ void TextBuffer::_ExpandTextRow(til::inclusive_rect& textRow) const
     }
 }
 
-size_t TextBuffer::SpanLength(const til::point coordStart, const til::point coordEnd) const
-{
-    const auto bufferSize = GetSize();
-    // The coords are inclusive, so to get the (inclusive) length we add 1.
-    const auto length = bufferSize.CompareInBounds(coordEnd, coordStart) + 1;
-    return gsl::narrow<size_t>(length);
-}
-
 // Routine Description:
 // - Retrieves the plain text data between the specified coordinates.
 // Arguments:
