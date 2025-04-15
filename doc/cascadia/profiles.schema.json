@@ -3115,12 +3115,13 @@
         },
         "pathTranslationStyle": {
           "default": "none",
-          "description": "Controls how file paths are transformed when they are dragged and dropped on the terminal. Possible values are \"none\", \"wsl\", \"cygwin\" and \"msys2\".",
+          "description": "Controls how file paths are transformed when they are dragged and dropped on the terminal. Possible values are \"none\", \"wsl\", \"cygwin\", \"msys2\" and \"mingw\".",
           "enum": [
             "none",
             "wsl",
             "cygwin",
-            "msys2"
+            "msys2",
+            "mingw"
           ],
           "type": "string"
         }
