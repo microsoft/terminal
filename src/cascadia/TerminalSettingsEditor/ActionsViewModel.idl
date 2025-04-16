@@ -163,5 +163,6 @@ namespace Microsoft.Terminal.Settings.Editor
         void AttemptDeleteKeyChord(Microsoft.Terminal.Control.KeyChord keys);
 
         IObservableVector<CommandViewModel> CommandList { get; };
+        void CmdListItemClicked(IInspectable sender, Windows.UI.Xaml.Controls.ItemClickEventArgs args);
     }
 }

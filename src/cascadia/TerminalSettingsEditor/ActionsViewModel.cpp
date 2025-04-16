@@ -890,6 +890,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return _CurrentCommand;
     }
 
+    void ActionsViewModel::CmdListItemClicked(const IInspectable& /*sender*/, const winrt::Windows::UI::Xaml::Controls::ItemClickEventArgs& e)
+    {
+        if (const auto item = e.ClickedItem())
+        {
+            CurrentCommand(item.try_as<Editor::CommandViewModel>());
+            CurrentPage(ActionsSubPage::Edit);
+        }
+    }
+
     void ActionsViewModel::AttemptModifyKeyChord(const Editor::KeyChordViewModel& senderVM, const Editor::ModifyKeyChordEventArgs& args)
     {
         auto applyChangesToSettingsModel = [=]() {

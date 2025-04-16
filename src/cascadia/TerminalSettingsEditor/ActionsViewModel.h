@@ -269,6 +269,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         void CurrentCommand(const Editor::CommandViewModel& newCommand);
         Editor::CommandViewModel CurrentCommand();
+        void CmdListItemClicked(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::Controls::ItemClickEventArgs& e);
 
         void AttemptModifyKeyChord(const Editor::KeyChordViewModel& senderVM, const Editor::ModifyKeyChordEventArgs& args);
         void AttemptDeleteKeyChord(const Control::KeyChord& keys);

@@ -137,24 +137,6 @@
                 <Setter Property="HorizontalAlignment" Value="Right" />
                 <Setter Property="VerticalAlignment" Value="Center" />
             </Style>
-            <x:Int32 x:Key="EditButtonSize">32</x:Int32>
-            <x:Double x:Key="EditButtonIconSize">15</x:Double>
-            <Style x:Key="EditButtonStyle"
-                   BasedOn="{StaticResource DefaultButtonStyle}"
-                   TargetType="Button">
-                <Setter Property="Padding" Value="0" />
-                <Setter Property="VerticalAlignment" Value="Center" />
-                <Setter Property="Height" Value="{StaticResource EditButtonSize}" />
-                <Setter Property="Width" Value="{StaticResource EditButtonSize}" />
-            </Style>
-            <Style x:Key="AccentEditButtonStyle"
-                   BasedOn="{StaticResource AccentButtonStyle}"
-                   TargetType="Button">
-                <Setter Property="Padding" Value="3" />
-                <Setter Property="VerticalAlignment" Value="Center" />
-                <Setter Property="Height" Value="{StaticResource EditButtonSize}" />
-                <Setter Property="Width" Value="{StaticResource EditButtonSize}" />
-            </Style>
 
             <!--  Converters & Misc.  -->
             <SolidColorBrush x:Key="ActionContainerBackgroundEditing"
@@ -187,50 +169,6 @@
                         <TextBlock Grid.Column="0"
                                    Style="{StaticResource KeyBindingNameTextBlockStyle}"
                                    Text="{x:Bind Name, Mode=OneWay}" />
-
-                        <!--  Edit Button  -->
-                        <Button x:Uid="Actions_EditButton"
-                                Grid.Column="2"
-                                Background="Transparent"
-                                Click="{x:Bind Edit_Click}"
-                                Style="{StaticResource EditButtonStyle}">
-                            <Button.Content>
-                                <FontIcon FontSize="{StaticResource EditButtonIconSize}"
-                                          Glyph="&#xE70F;" />
-                            </Button.Content>
-                            <Button.Resources>
-                                <ResourceDictionary>
-                                    <ResourceDictionary.ThemeDictionaries>
-                                        <ResourceDictionary x:Key="Light">
-                                            <SolidColorBrush x:Key="ButtonForegroundPointerOver"
-                                                             Color="{StaticResource SystemAccentColor}" />
-                                            <SolidColorBrush x:Key="ButtonForegroundPressed"
-                                                             Color="{StaticResource SystemAccentColor}" />
-                                        </ResourceDictionary>
-                                        <ResourceDictionary x:Key="Dark">
-                                            <SolidColorBrush x:Key="ButtonForegroundPointerOver"
-                                                             Color="{StaticResource SystemAccentColor}" />
-                                            <SolidColorBrush x:Key="ButtonForegroundPressed"
-                                                             Color="{StaticResource SystemAccentColor}" />
-                                        </ResourceDictionary>
-                                        <ResourceDictionary x:Key="HighContrast">
-                                            <SolidColorBrush x:Key="ButtonBackground"
-                                                             Color="{ThemeResource SystemColorButtonFaceColor}" />
-                                            <SolidColorBrush x:Key="ButtonBackgroundPointerOver"
-                                                             Color="{ThemeResource SystemColorHighlightColor}" />
-                                            <SolidColorBrush x:Key="ButtonBackgroundPressed"
-                                                             Color="{ThemeResource SystemColorHighlightColor}" />
-                                            <SolidColorBrush x:Key="ButtonForeground"
-                                                             Color="{ThemeResource SystemColorButtonTextColor}" />
-                                            <SolidColorBrush x:Key="ButtonForegroundPointerOver"
-                                                             Color="{ThemeResource SystemColorHighlightTextColor}" />
-                                            <SolidColorBrush x:Key="ButtonForegroundPressed"
-                                                             Color="{ThemeResource SystemColorHighlightTextColor}" />
-                                        </ResourceDictionary>
-                                    </ResourceDictionary.ThemeDictionaries>
-                                </ResourceDictionary>
-                            </Button.Resources>
-                        </Button>
                     </Grid>
                 </ListViewItem>
             </DataTemplate>
@@ -257,9 +195,10 @@
 
             <!--  Keybindings  -->
             <ListView x:Name="CommandsListView"
+                      IsItemClickEnabled="True"
                       ItemTemplate="{StaticResource CommandTemplate}"
                       ItemsSource="{x:Bind ViewModel.CommandList, Mode=OneWay}"
-                      SelectionMode="None" />
+                      ItemClick="{x:Bind ViewModel.CmdListItemClicked}"/>
         </StackPanel>
     </Border>
 </Page>

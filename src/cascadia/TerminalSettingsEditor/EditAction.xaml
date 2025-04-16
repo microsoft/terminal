@@ -475,7 +475,6 @@
     <Border MaxWidth="{StaticResource StandardControlMaxWidth}">
         <Grid MaxWidth="600"
               HorizontalAlignment="Left"
-              Style="{StaticResource SettingsStackStyle}"
               RowSpacing="8"
               ColumnSpacing="16">
             <Grid.RowDefinitions>
