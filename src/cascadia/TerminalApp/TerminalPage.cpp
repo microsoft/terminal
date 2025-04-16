@@ -694,8 +694,11 @@ namespace winrt::TerminalApp::implementation
                 _WindowProperties.VirtualEnvVars(originalVirtualEnv);
             }
         });
-        _WindowProperties.VirtualWorkingDirectory(cwd);
-        _WindowProperties.VirtualEnvVars(env);
+        if (!cwd.empty())
+        {
+            _WindowProperties.VirtualWorkingDirectory(cwd);
+            _WindowProperties.VirtualEnvVars(env);
+        }
 
         for (size_t i = 0; i < actions.size(); ++i)
         {
