@@ -11,8 +11,7 @@
 using namespace winrt::Microsoft::Terminal::Settings::Model;
 
 std::wstring_view VisualStudioGenerator::Namespace{ L"Windows.Terminal.VisualStudio" };
-// TODO CARLOS: Can we get the plain Visual Studio logo that looks like this: |><| ?
-static constexpr std::wstring_view IconHighRes{ L"ms-appx:///ProfileIcons/vs-pwsh.scale-200.png" };
+static constexpr std::wstring_view IconPath{ L"ms-appx:///ProfileGeneratorIcons/VisualStudio.png" };
 
 std::wstring_view VisualStudioGenerator::GetNamespace() const noexcept
 {
@@ -26,7 +25,7 @@ std::wstring_view VisualStudioGenerator::GetDisplayName() const noexcept
 
 std::wstring_view VisualStudioGenerator::GetIcon() const noexcept
 {
-    return IconHighRes;
+    return IconPath;
 }
 
 void VisualStudioGenerator::GenerateProfiles(std::vector<winrt::com_ptr<implementation::Profile>>& profiles) const
