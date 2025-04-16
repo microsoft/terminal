@@ -30,6 +30,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model
     public:
         virtual ~IDynamicProfileGenerator() = default;
         virtual std::wstring_view GetNamespace() const noexcept = 0;
+        virtual std::wstring_view GetDisplayName() const noexcept = 0;
+        virtual std::wstring_view GetIcon() const noexcept = 0;
         virtual void GenerateProfiles(std::vector<winrt::com_ptr<implementation::Profile>>& profiles) const = 0;
     };
 };
