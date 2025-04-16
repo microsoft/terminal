@@ -14,6 +14,7 @@ static constexpr std::wstring_view WslHomeDirectory{ L"~" };
 static constexpr std::wstring_view DockerDistributionPrefix{ L"docker-desktop" };
 static constexpr std::wstring_view RancherDistributionPrefix{ L"rancher-desktop" };
 static constexpr std::wstring_view IconPath{ L"ms-appx:///ProfileIcons/{9acb9455-ca41-5af7-950f-6bca1bc9722f}.png" };
+static constexpr std::wstring_view IconPathHighRes{ L"ms-appx:///ProfileIcons/{9acb9455-ca41-5af7-950f-6bca1bc9722f}.scale-200.png" };
 
 // The WSL entries are structured as such:
 // HKCU\Software\Microsoft\Windows\CurrentVersion\Lxss
@@ -56,7 +57,7 @@ std::wstring_view WslDistroGenerator::GetDisplayName() const noexcept
 
 std::wstring_view WslDistroGenerator::GetIcon() const noexcept
 {
-    return IconPath;
+    return IconPathHighRes;
 }
 
 static winrt::com_ptr<implementation::Profile> makeProfile(const std::wstring& distName)
