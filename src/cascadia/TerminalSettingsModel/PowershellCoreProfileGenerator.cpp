@@ -21,6 +21,7 @@ static constexpr std::wstring_view POWERSHELL_PFN{ L"Microsoft.PowerShell_8wekyb
 static constexpr std::wstring_view POWERSHELL_PREVIEW_PFN{ L"Microsoft.PowerShellPreview_8wekyb3d8bbwe" };
 static constexpr std::wstring_view PWSH_EXE{ L"pwsh.exe" };
 static constexpr std::wstring_view POWERSHELL_ICON{ L"ms-appx:///ProfileIcons/pwsh.png" };
+static constexpr std::wstring_view POWERSHELL_ICON_HIGH_RES{ L"ms-appx:///ProfileIcons/pwsh.scale-200.png" };
 static constexpr std::wstring_view POWERSHELL_PREVIEW_ICON{ L"ms-appx:///ProfileIcons/pwsh-preview.png" };
 static constexpr std::wstring_view POWERSHELL_PREFERRED_PROFILE_NAME{ L"PowerShell" };
 
@@ -302,7 +303,7 @@ std::wstring_view PowershellCoreProfileGenerator::GetDisplayName() const noexcep
 
 std::wstring_view PowershellCoreProfileGenerator::GetIcon() const noexcept
 {
-    return POWERSHELL_ICON;
+    return POWERSHELL_ICON_HIGH_RES;
 }
 
 // Method Description:

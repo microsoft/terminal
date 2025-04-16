@@ -14,6 +14,8 @@ using namespace ::Microsoft::Terminal::Settings::Model;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
 using namespace winrt::Microsoft::Terminal::TerminalConnection;
 
+std::wstring_view PROFILE_ICON_PATH_HIGH_RES{ L"ms-appx:///ProfileIcons/{b453ae62-4e3d-5e58-b989-0a998ec441b8}.scale-200.png" };
+
 std::wstring_view AzureCloudShellGenerator::GetNamespace() const noexcept
 {
     return AzureGeneratorNamespace;
@@ -22,6 +24,11 @@ std::wstring_view AzureCloudShellGenerator::GetNamespace() const noexcept
 std::wstring_view AzureCloudShellGenerator::GetDisplayName() const noexcept
 {
     return RS_(L"AzureCloudShellGeneratorDisplayName");
+}
+
+std::wstring_view AzureCloudShellGenerator::GetIcon() const noexcept
+{
+    return PROFILE_ICON_PATH_HIGH_RES;
 }
 
 // Method Description:
