@@ -20,6 +20,8 @@ using namespace winrt::Windows::UI::Xaml::Navigation;
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
+    static constexpr std::wstring_view ExtensionPageId{ L"page.extensions" };
+
     Extensions::Extensions()
     {
         InitializeComponent();
@@ -38,6 +40,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         auto vmImpl = get_self<ExtensionsViewModel>(_ViewModel);
         vmImpl->ExtensionPackageIdentifierTemplateSelector(_extensionPackageIdentifierTemplateSelector);
         vmImpl->LazyLoadExtensions();
+        vmImpl->MarkAsVisited();
     }
 
     void Extensions::ExtensionNavigator_Click(const IInspectable& sender, const RoutedEventArgs& /*args*/)
@@ -214,6 +217,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return _ExtensionPackageIdentifierTemplateSelector.SelectTemplate(CurrentExtensionPackage());
     }
 
+    bool ExtensionsViewModel::DisplayBadge() const noexcept
+    {
+        return !Model::ApplicationState::SharedInstance().BadgeDismissed(ExtensionPageId);
+    }
+
     // Returns true if the extension is enabled, false otherwise
     bool ExtensionsViewModel::GetExtensionState(hstring extensionSource, const Model::CascadiaSettings& settings)
     {
@@ -272,6 +280,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         _colorSchemesPageVM.CurrentScheme(schemeVM);
         NavigateToColorSchemeRequested.raise(*this, nullptr);
+    }
+
+    void ExtensionsViewModel::MarkAsVisited()
+    {
+        Model::ApplicationState::SharedInstance().DismissBadge(ExtensionPageId);
+        _NotifyChanges(L"DisplayBadge");
     }
 
     hstring ExtensionPackageViewModel::Scope() const noexcept
