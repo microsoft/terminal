@@ -309,6 +309,35 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         _throttler();
     }
 
+    bool ApplicationState::DismissBadge(const hstring& badgeId)
+    {
+        bool inserted{ false };
+        {
+            const auto state = _state.lock();
+            if (!state->DismissedBadges)
+            {
+                state->DismissedBadges = std::unordered_set<hstring>{};
+            }
+            if (!state->DismissedBadges->contains(badgeId))
+            {
+                state->DismissedBadges->insert(badgeId);
+                inserted = true;
+            }
+        }
+        _throttler();
+        return inserted;
+    }
+
+    bool ApplicationState::BadgeDismissed(const hstring& badgeId) const
+    {
+        const auto state = _state.lock_shared();
+        if (state->DismissedBadges)
+        {
+            return state->DismissedBadges->contains(badgeId);
+        }
+        return false;
+    }
+
     // Generate all getter/setters
 #define MTSM_APPLICATION_STATE_GEN(source, type, name, key, ...) \
     type ApplicationState::name() const noexcept                 \

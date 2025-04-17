@@ -33,6 +33,8 @@ namespace Microsoft.Terminal.Settings.Model
         void Reset();
 
         void AppendPersistedWindowLayout(WindowLayout layout);
+        Boolean DismissBadge(String badgeId);
+        Boolean BadgeDismissed(String badgeId);
 
         String SettingsHash;
         Windows.Foundation.Collections.IVector<WindowLayout> PersistedWindowLayouts;

@@ -44,6 +44,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         bool NoProfilesModified() const noexcept { return _profilesModifiedView.Size() == 0; }
         bool NoProfilesAdded() const noexcept { return _profilesAddedView.Size() == 0; }
         bool NoSchemesAdded() const noexcept { return _colorSchemesAddedView.Size() == 0; }
+        bool DisplayBadge() const noexcept;
 
         // Views
         Windows::Foundation::Collections::IObservableVector<Editor::ExtensionPackageViewModel> ExtensionPackages() const noexcept { return _extensionPackages; }
@@ -55,6 +56,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void UpdateSettings(const Model::CascadiaSettings& settings, const Editor::ColorSchemesPageViewModel& colorSchemesPageVM);
         void NavigateToProfile(const guid profileGuid);
         void NavigateToColorScheme(const Editor::ColorSchemeViewModel& schemeVM);
+        void MarkAsVisited();
 
         static bool GetExtensionState(hstring extensionSource, const Model::CascadiaSettings& settings);
         static void SetExtensionState(hstring extensionSource, const Model::CascadiaSettings& settings, bool enableExt);
