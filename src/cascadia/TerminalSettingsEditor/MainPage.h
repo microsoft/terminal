@@ -45,6 +45,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         winrt::Windows::UI::Xaml::Media::Brush BackgroundBrush();
 
         Windows::Foundation::Collections::IObservableVector<IInspectable> Breadcrumbs() noexcept;
+        Editor::ExtensionsViewModel ExtensionsVM() const noexcept { return _extensionsVM; }
 
         til::typed_event<Windows::Foundation::IInspectable, Model::SettingsTarget> OpenJson;
 
