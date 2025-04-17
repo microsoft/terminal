@@ -238,10 +238,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     public:
         FragmentProfileEntry(winrt::guid profileGuid, hstring json) :
             _profileGuid{ profileGuid },
-            _Json{ json } {}
+            Json{ json } {}
 
         winrt::guid ProfileGuid() const noexcept { return _profileGuid; }
-        WINRT_PROPERTY(hstring, Json);
+        til::property<hstring> Json;
 
     private:
         winrt::guid _profileGuid;
