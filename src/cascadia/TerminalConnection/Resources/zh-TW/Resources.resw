@@ -209,7 +209,7 @@
   </data>
   <data name="CtrlDToClose" xml:space="preserve">
     <value>您現在可以使用 Ctrl+D 關閉此終端機，或按 Enter 重新啟動。</value>
-	  <comment>"Ctrl+D" and "Enter" represent keys the user will press (control+D and Enter).</comment>
+    <comment>"Ctrl+D" and "Enter" represent keys the user will press (control+D and Enter).</comment>
   </data>
   <data name="ProcessFailedToLaunch" xml:space="preserve">
     <value>[啟動 `{1}' 時發生錯誤 {0}]</value>
@@ -219,5 +219,11 @@
   <data name="BadPathText" xml:space="preserve">
     <value>無法存取開始目錄 "{0}"</value>
     <comment>The first argument {0} is a path to a directory on the filesystem, as provided by the user.</comment>
+  </data>
+  <data name="ElevationRequired" xml:space="preserve">
+    <value>要求的操作需要提高權限。</value>
+  </data>
+  <data name="FileNotFound" xml:space="preserve">
+    <value>系統找不到指定的檔案。</value>
   </data>
 </root>
