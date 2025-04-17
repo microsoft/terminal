@@ -9,7 +9,7 @@
 #include <LibraryResources.h>
 
 static constexpr std::wstring_view POWERSHELL_ICON{ L"ms-appx:///ProfileIcons/pwsh.png" };
-static constexpr std::wstring_view POWERSHELL_ICON_64{ L"ms-appx:///ProfileIcons/Powershell_black_64.png" };
+static constexpr std::wstring_view GENERATOR_POWERSHELL_ICON{ L"ms-appx:///ProfileGeneratorIcons/PowerShell.png" };
 
 namespace winrt::Microsoft::Terminal::Settings::Model
 {
@@ -27,13 +27,13 @@ namespace winrt::Microsoft::Terminal::Settings::Model
 
     std::wstring_view PowershellInstallationProfileGenerator::GetIcon() const noexcept
     {
-        return POWERSHELL_ICON_64;
+        return GENERATOR_POWERSHELL_ICON;
     }
 
     void PowershellInstallationProfileGenerator::GenerateProfiles(std::vector<winrt::com_ptr<implementation::Profile>>& profiles)
     {
         auto profile{ CreateDynamicProfile(RS_(L"PowerShellInstallationProfileName")) };
-        profile->Commandline(winrt::hstring{ fmt::format(FMT_COMPILE(L"cmd /k winget install --interactive --id Microsoft.PowerShell & echo. & echo {} & exit"), RS_(L"PowerShellInstallationInstallerGuidance")) });
+        profile->Commandline(winrt::hstring{ fmt::format(FMT_COMPILE(L"cmd /k winget install --interactive --id Microsoft.PowerShell --source winget & echo. & echo {} & exit"), RS_(L"PowerShellInstallationInstallerGuidance")) });
         profile->Icon(winrt::hstring{ POWERSHELL_ICON });
         profile->CloseOnExit(CloseOnExitMode::Never);
 

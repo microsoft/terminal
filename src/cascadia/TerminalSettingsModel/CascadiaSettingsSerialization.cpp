@@ -179,8 +179,21 @@ SettingsLoader::SettingsLoader(const std::string_view& userJSON, const std::stri
 // (meaning profiles specified by the application rather by the user).
 void SettingsLoader::GenerateProfiles()
 {
-    PowershellCoreProfileGenerator powerShellGenerator{};
-    _executeGenerator(powerShellGenerator);
+    {
+        PowershellCoreProfileGenerator powerShellGenerator{};
+        _executeGenerator(powerShellGenerator);
+
+        const auto isPowerShellInstalled = !powerShellGenerator.GetPowerShellInstances().empty();
+        if (!isPowerShellInstalled)
+        {
+            // Only generate the installer stub profile if PowerShell isn't installed.
+            PowershellInstallationProfileGenerator pwshInstallationGenerator{};
+            _executeGenerator(pwshInstallationGenerator);
+        }
+
+        // Regardless of running the installer's generator, we need to do some cleanup still.
+        _cleanupPowerShellInstaller(isPowerShellInstalled);
+    }
 
     WslDistroGenerator wslGenerator{};
     _executeGenerator(wslGenerator);
@@ -195,11 +208,6 @@ void SettingsLoader::GenerateProfiles()
     SshHostGenerator sshGenerator{};
     _executeGenerator(sshGenerator);
 #endif
-
-    PowershellInstallationProfileGenerator pwshInstallationGenerator{};
-    _executeGenerator(pwshInstallationGenerator);
-
-    _cleanupPowerShellInstaller(!powerShellGenerator.GetPowerShellInstances().empty());
 }
 
 // Retrieve the "Install Latest PowerShell" profile and...
