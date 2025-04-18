@@ -53,14 +53,40 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return !(_invalidName || _invalidCommandline || _invalidSource);
     }
 
+#define DEFINE_VALIDATE_FUNCTION(name)                                              \
+    void MatchProfilesEntry::_validate##name() noexcept                             \
+    {                                                                               \
+        _invalid##name = false;                                                     \
+        if (_##name.empty())                                                        \
+        {                                                                           \
+            /* empty field is valid*/                                               \
+            _invalid##name = true;                                                  \
+            return;                                                                 \
+        }                                                                           \
+        UErrorCode status = U_ZERO_ERROR;                                           \
+        _##name##Regex = ::Microsoft::Console::ICU::CreateRegex(_##name, 0, &status); \
+        if (U_FAILURE(status))                                                      \
+        {                                                                           \
+            _invalid##name = true;                                                  \
+            _##name##Regex.reset();                                                 \
+        }                                                                           \
+    }
+
+    DEFINE_VALIDATE_FUNCTION(Name);
+    DEFINE_VALIDATE_FUNCTION(Commandline);
+    DEFINE_VALIDATE_FUNCTION(Source);
+
     bool MatchProfilesEntry::MatchesProfile(const Model::Profile& profile)
     {
-        auto isMatch = [](const std::wregex& regex, std::wstring_view text) {
+        auto isMatch = [](const ::Microsoft::Console::ICU::unique_uregex& regex, std::wstring_view text) {
             if (text.empty())
             {
                 return false;
             }
-            return std::regex_match(text.cbegin(), text.cend(), regex);
+            UErrorCode status = U_ZERO_ERROR;
+            uregex_setText(regex.get(), reinterpret_cast<const UChar*>(text.data()), static_cast<int32_t>(text.size()), &status);
+            const auto match = uregex_matches(regex.get(), 0, &status);
+            return status == U_ZERO_ERROR && match;
         };
 
         if (!_Name.empty() && isMatch(_NameRegex, profile.Name()))

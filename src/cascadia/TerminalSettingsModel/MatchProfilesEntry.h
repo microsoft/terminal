@@ -17,39 +17,29 @@ Author(s):
 
 #include "ProfileCollectionEntry.h"
 #include "MatchProfilesEntry.g.h"
+#include "..\buffer\out\UTextAdapter.h"
 
 // This macro defines the getter and setter for a regex property.
 // The setter tries to instantiate the regex immediately and caches
 // it if successful. If it fails, it sets a boolean flag to track that
 // it failed.
-#define MATCH_PROFILE_REGEX_PROPERTY(name)                         \
-public:                                                            \
-    hstring name() const noexcept                                  \
-    {                                                              \
-        return _##name;                                            \
-    }                                                              \
-    void name(const hstring& value) noexcept                       \
-    {                                                              \
-        _##name = value;                                           \
-        _validate##name();                                         \
-    }                                                              \
-                                                                   \
-private:                                                           \
-    void _validate##name() noexcept                                \
-    {                                                              \
-        _invalid##name = false;                                    \
-        try                                                        \
-        {                                                          \
-            _##name##Regex = { _##name.cbegin(), _##name.cend() }; \
-        }                                                          \
-        catch (std::regex_error)                                   \
-        {                                                          \
-            _invalid##name = true;                                 \
-        }                                                          \
-    }                                                              \
-                                                                   \
-    hstring _##name;                                               \
-    std::wregex _##name##Regex;                                    \
+#define DEFINE_MATCH_PROFILE_REGEX_PROPERTY(name)            \
+public:                                                      \
+    hstring name() const noexcept                            \
+    {                                                        \
+        return _##name;                                      \
+    }                                                        \
+    void name(const hstring& value) noexcept                 \
+    {                                                        \
+        _##name = value;                                     \
+        _validate##name();                                   \
+    }                                                        \
+                                                             \
+private:                                                     \
+    void _validate##name() noexcept;                         \
+                                                             \
+    hstring _##name;                                         \
+    ::Microsoft::Console::ICU::unique_uregex _##name##Regex; \
     bool _invalid##name{ false };
 
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
@@ -67,9 +57,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         bool ValidateRegexes() const;
         bool MatchesProfile(const Model::Profile& profile);
 
-        MATCH_PROFILE_REGEX_PROPERTY(Name);
-        MATCH_PROFILE_REGEX_PROPERTY(Commandline);
-        MATCH_PROFILE_REGEX_PROPERTY(Source);
+        DEFINE_MATCH_PROFILE_REGEX_PROPERTY(Name)
+        DEFINE_MATCH_PROFILE_REGEX_PROPERTY(Commandline)
+        DEFINE_MATCH_PROFILE_REGEX_PROPERTY(Source)
     };
 }
 
