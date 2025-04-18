@@ -183,16 +183,19 @@ void SettingsLoader::GenerateProfiles()
         PowershellCoreProfileGenerator powerShellGenerator{};
         _executeGenerator(powerShellGenerator);
 
-        const auto isPowerShellInstalled = !powerShellGenerator.GetPowerShellInstances().empty();
-        if (!isPowerShellInstalled)
+        if (Feature_PowerShellInstallerProfileGenerator::IsEnabled())
         {
-            // Only generate the installer stub profile if PowerShell isn't installed.
-            PowershellInstallationProfileGenerator pwshInstallationGenerator{};
-            _executeGenerator(pwshInstallationGenerator);
+            const auto isPowerShellInstalled = !powerShellGenerator.GetPowerShellInstances().empty();
+            if (!isPowerShellInstalled)
+            {
+                // Only generate the installer stub profile if PowerShell isn't installed.
+                PowershellInstallationProfileGenerator pwshInstallationGenerator{};
+                _executeGenerator(pwshInstallationGenerator);
+            }
+            
+            // Regardless of running the installer's generator, we need to do some cleanup still.
+            _cleanupPowerShellInstaller(isPowerShellInstalled);
         }
-
-        // Regardless of running the installer's generator, we need to do some cleanup still.
-        _cleanupPowerShellInstaller(isPowerShellInstalled);
     }
 
     WslDistroGenerator wslGenerator{};
