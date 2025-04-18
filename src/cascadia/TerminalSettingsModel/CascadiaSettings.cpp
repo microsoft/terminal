@@ -4,6 +4,7 @@
 #include "pch.h"
 #include "CascadiaSettings.h"
 #include "CascadiaSettings.g.cpp"
+#include "MatchProfilesEntry.h"
 
 #include "DefaultTerminal.h"
 #include "FileUtils.h"
@@ -584,47 +585,35 @@ void CascadiaSettings::_validateProfileEnvironmentVariables()
     }
 }
 
-static void _validateRegex(const winrt::hstring& regex, IVector<Model::SettingsLoadWarnings>& warnings)
-{
-    try
-    {
-        std::wregex{ regex.cbegin(), regex.cend() };
-    }
-    catch (std::regex_error)
-    {
-        warnings.Append(Model::SettingsLoadWarnings::InvalidRegex);
-    }
-}
-
-static void _validateNTMEntries(const IVector<Model::NewTabMenuEntry>& entries, IVector<Model::SettingsLoadWarnings>& warnings)
+// Returns true if all regexes in the new tab menu are valid, false otherwise
+static bool _validateNTMEntries(const IVector<Model::NewTabMenuEntry>& entries)
 {
     for (const auto& ntmEntry : entries)
     {
         if (const auto& folderEntry = ntmEntry.try_as<Model::FolderEntry>())
         {
-            _validateNTMEntries(folderEntry.RawEntries(), warnings);
+            if (!_validateNTMEntries(folderEntry.RawEntries()))
+            {
+                return false;
+            }
         }
         if (const auto& matchProfilesEntry = ntmEntry.try_as<Model::MatchProfilesEntry>())
         {
-            if (const auto nameRegex = matchProfilesEntry.Name(); !nameRegex.empty())
+            if (!winrt::get_self<Model::implementation::MatchProfilesEntry>(matchProfilesEntry)->ValidateRegexes())
             {
-                _validateRegex(nameRegex, warnings);
-            }
-            if (const auto commandlineRegex = matchProfilesEntry.Commandline(); !commandlineRegex.empty())
-            {
-                _validateRegex(commandlineRegex, warnings);
-            }
-            if (const auto sourceRegex = matchProfilesEntry.Source(); !sourceRegex.empty())
-            {
-                _validateRegex(sourceRegex, warnings);
+                return false;
             }
         }
     }
+    return true;
 }
 
 void CascadiaSettings::_validateRegexes()
 {
-    _validateNTMEntries(_globals->NewTabMenu(), _warnings);
+    if (!_validateNTMEntries(_globals->NewTabMenu()))
+    {
+        _warnings.Append(SettingsLoadWarnings::InvalidRegex);
+    }
 }
 
 // Method Description:

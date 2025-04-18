@@ -36,61 +36,46 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         auto entry = winrt::make_self<MatchProfilesEntry>();
 
         JsonUtils::GetValueForKey(json, NameKey, entry->_Name);
+        entry->_validateName();
+
         JsonUtils::GetValueForKey(json, CommandlineKey, entry->_Commandline);
+        entry->_validateCommandline();
+
         JsonUtils::GetValueForKey(json, SourceKey, entry->_Source);
+        entry->_validateSource();
 
         return entry;
     }
 
+    // Returns true if all regexes are valid, false otherwise
+    bool MatchProfilesEntry::ValidateRegexes() const
+    {
+        return !(_invalidName || _invalidCommandline || _invalidSource);
+    }
+
     bool MatchProfilesEntry::MatchesProfile(const Model::Profile& profile)
     {
-        // We use an optional here instead of a simple bool directly, since there is no
-        // sensible default value for the desired semantics: the first property we want
-        // to match on should always be applied (so one would set "true" as a default),
-        // but if none of the properties are set, the default return value should be false
-        // since this entry type is expected to behave like a positive match/whitelist.
-        //
-        // The easiest way to deal with this neatly is to use an optional, then for any
-        // property to match we consider a null value to be "true", and for the return
-        // value of the function we consider the null value to be "false".
-        auto isMatching = std::optional<bool>{};
-
-        auto isMatch = [](std::wstring_view regex, std::wstring_view text) {
+        auto isMatch = [](const std::wregex& regex, std::wstring_view text) {
             if (text.empty())
             {
                 return false;
             }
-
-            std::wregex re;
-            try
-            {
-                re = { regex.cbegin(), regex.cend() };
-            }
-            catch (std::regex_error)
-            {
-                // invalid regex
-                return false;
-            }
-
-            return std::regex_match(text.cbegin(), text.cend(), re);
+            return std::regex_match(text.cbegin(), text.cend(), regex);
         };
 
-        if (!_Name.empty())
+        if (!_Name.empty() && isMatch(_NameRegex, profile.Name()))
         {
-            isMatching = { isMatching.value_or(true) && isMatch(_Name, profile.Name()) };
+            return true;
         }
-
-        if (!_Source.empty())
+        else if (!_Source.empty() && isMatch(_SourceRegex, profile.Source()))
         {
-            isMatching = { isMatching.value_or(true) && isMatch(_Source, profile.Source()) };
+            return true;
         }
-
-        if (!_Commandline.empty())
+        else if (!_Commandline.empty() && isMatch(_CommandlineRegex, profile.Commandline()))
         {
-            isMatching = { isMatching.value_or(true) && isMatch(_Commandline, profile.Commandline()) };
+            return true;
         }
-
-        return isMatching.value_or(false);
+        return false;
     }
 
     Model::NewTabMenuEntry MatchProfilesEntry::Copy() const
