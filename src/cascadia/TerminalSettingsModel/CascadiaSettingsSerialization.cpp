@@ -315,7 +315,8 @@ void SettingsLoader::FindFragmentsAndMergeIntoUserSettings()
 
     for (const auto& ext : extensions)
     {
-        const auto packageName = ext.Package().Id().FamilyName();
+        const auto& package = ext.Package();
+        const auto packageName = package.Id().FamilyName();
 
         // Likewise, getting the public folder from an extension is an async operation.
         auto foundFolder = extractValueFromTaskWithoutMainThreadAwait(ext.GetPublicFolderAsync());
@@ -339,6 +340,10 @@ void SettingsLoader::FindFragmentsAndMergeIntoUserSettings()
                                        packageName,
                                        FragmentScope::User,
                                        !_ignoredNamespaces.contains(std::wstring_view{ packageName })); // layerFragment
+
+            auto extPkg = extensionPackageMap[packageName];
+            extPkg->Icon(package.Logo().AbsoluteUri());
+            extPkg->DisplayName(package.DisplayName());
         }
     }
 }
@@ -738,7 +743,7 @@ void SettingsLoader::_parseFragment(const winrt::hstring& source, const std::str
     Json::StreamWriterBuilder styledWriter;
     styledWriter["indentation"] = "    ";
     styledWriter["commentStyle"] = "All";
-    auto fragmentSettings = winrt::make_self<FragmentSettings>(source, hstring{ til::u8u16(Json::writeString(styledWriter, json.root)) }, hstring{ jsonFilename }, scope);
+    auto fragmentSettings = winrt::make_self<FragmentSettings>(source, hstring{ til::u8u16(Json::writeString(styledWriter, json.root)) }, hstring{ jsonFilename });
 
     settings.clear();
 
@@ -851,7 +856,7 @@ void SettingsLoader::_parseFragment(const winrt::hstring& source, const std::str
         // the fragments being applied before the user's own settings.
         userSettings.globals->AddLeastImportantParent(settings.globals);
     }
-    fragmentExtensions.emplace_back(std::move(*fragmentSettings));
+    _registerFragment(std::move(*fragmentSettings), scope);
 }
 
 SettingsLoader::JsonSettings SettingsLoader::_parseJson(const std::string_view& content)
@@ -1030,12 +1035,31 @@ void SettingsLoader::_executeGenerator(const IDynamicProfileGenerator& generator
     Json::Value json{ Json::ValueType::objectValue };
     json[JsonKey(ProfilesKey)] = profilesListJson;
 
-    auto generatorExtension = winrt::make_self<FragmentSettings>(hstring{ generatorNamespace }, hstring{ til::u8u16(Json::writeString(styledWriter, json)) }, hstring{ L"settings.json" }, FragmentScope::Machine);
+    auto generatorExtension = winrt::make_self<FragmentSettings>(hstring{ generatorNamespace }, hstring{ til::u8u16(Json::writeString(styledWriter, json)) }, hstring{ L"settings.json" });
     for (const auto& entry : profileEntries)
     {
         generatorExtension->NewProfiles().Append(entry);
     }
-    dynamicProfileGeneratorExtensions.emplace_back(*generatorExtension);
+    auto extPkg = _registerFragment(std::move(*generatorExtension), FragmentScope::Machine);
+    extPkg->DisplayName(hstring{ generator.GetDisplayName() });
+    extPkg->Icon(hstring{ generator.GetIcon() });
+}
+
+winrt::com_ptr<ExtensionPackage> SettingsLoader::_registerFragment(const winrt::Microsoft::Terminal::Settings::Model::FragmentSettings& fragment, FragmentScope scope)
+{
+    const auto src = fragment.Source();
+    if (auto extPkg = extensionPackageMap[src])
+    {
+        extPkg->Fragments().Append(fragment);
+        return extPkg;
+    }
+    else
+    {
+        auto newExtPkg = winrt::make_self<ExtensionPackage>(src, scope);
+        newExtPkg->Fragments().Append(fragment);
+        extensionPackageMap[src] = newExtPkg;
+        return newExtPkg;
+    }
 }
 
 // Method Description:
@@ -1327,8 +1351,11 @@ CascadiaSettings::CascadiaSettings(SettingsLoader&& loader) :
     _activeProfiles = winrt::single_threaded_observable_vector(std::move(activeProfiles));
     _warnings = winrt::single_threaded_vector(std::move(warnings));
     _themesChangeLog = std::move(loader.userSettings.themesChangeLog);
-    _fragmentExtensions = winrt::single_threaded_vector(std::move(loader.fragmentExtensions));
-    _dynamicProfileGeneratorExtensions = winrt::single_threaded_vector(std::move(loader.dynamicProfileGeneratorExtensions));
+
+    for (auto [_, extPkg] : loader.extensionPackageMap)
+    {
+        _extensionPackages.Append(extPkg->Copy());
+    }
 
     _resolveDefaultProfile();
     _resolveNewTabMenuProfiles();

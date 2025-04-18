@@ -70,6 +70,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void _Navigate(hstring clickedItemTag, BreadcrumbSubPage subPage);
         void _Navigate(const Editor::ProfileViewModel& profile, BreadcrumbSubPage subPage);
         void _Navigate(const Editor::NewTabMenuEntryViewModel& ntmEntryVM, BreadcrumbSubPage subPage);
+        void _Navigate(const Editor::ExtensionPackageViewModel& extPkgVM, BreadcrumbSubPage subPage);
         void _NavigateToProfileHandler(const IInspectable& sender, winrt::guid profileGuid);
         void _NavigateToColorSchemeHandler(const IInspectable& sender, const IInspectable& args);
 
