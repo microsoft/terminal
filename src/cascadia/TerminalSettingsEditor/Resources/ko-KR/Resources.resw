@@ -1981,6 +1981,10 @@
     <value>MSYS2(C:\ -&gt; /c)</value>
     <comment>{Locked="MSYS2","C:\","/c"} An option to choose from for the "path translation" setting.</comment>
   </data>
+  <data name="Profile_PathTranslationStyleMinGW.Content" xml:space="preserve">
+    <value>MinGW(C:\ -&gt; C:/)</value>
+    <comment>{Locked="MinGW","C:\","C:/"} An option to choose from for the "path translation" setting.</comment>
+  </data>
   <data name="Profile_Delete_Orphaned.Header" xml:space="preserve">
     <value>프로필이 더 이상 검색되지 않음</value>
   </data>
