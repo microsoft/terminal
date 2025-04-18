@@ -1,0 +1,69 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+import "ColorSchemesPageViewModel.idl";
+
+namespace Microsoft.Terminal.Settings.Editor
+{
+    [default_interface] runtimeclass Extensions : Windows.UI.Xaml.Controls.Page
+    {
+        Extensions();
+        ExtensionsViewModel ViewModel { get; };
+    }
+
+    [default_interface] runtimeclass ExtensionsViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged
+    {
+        // Properties
+        String CurrentExtensionSource;
+        IVector<Object> CurrentExtensionFragments { get; };
+        String CurrentExtensionScope { get; };
+        Boolean IsExtensionView { get; };
+        Boolean NoActiveExtensions { get; };
+        Boolean NoProfilesModified { get; };
+        Boolean NoProfilesAdded { get; };
+        Boolean NoSchemesAdded { get; };
+
+        // Views
+        IObservableVector<ExtensionPackageViewModel> ExtensionPackages { get; };
+        IObservableVector<FragmentProfileViewModel> ProfilesModified { get; };
+        IObservableVector<FragmentProfileViewModel> ProfilesAdded { get; };
+        IObservableVector<FragmentColorSchemeViewModel> ColorSchemesAdded { get; };
+
+        // Methods
+        void UpdateSettings(Microsoft.Terminal.Settings.Model.CascadiaSettings settings, ColorSchemesPageViewModel colorSchemesPageVM);
+        Boolean GetExtensionState(String extensionSource);
+        void SetExtensionState(String extensionSource, Boolean enableExt);
+
+        event Windows.Foundation.TypedEventHandler<Object, Guid> NavigateToProfileRequested;
+        event Windows.Foundation.TypedEventHandler<Object, ColorSchemeViewModel> NavigateToColorSchemeRequested;
+    }
+
+    [default_interface] runtimeclass ExtensionPackageViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged
+    {
+        String Source { get; };
+        Boolean Enabled { get; };
+        String AccessibleName { get; };
+    }
+
+    [default_interface] runtimeclass FragmentExtensionViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged
+    {
+        Microsoft.Terminal.Settings.Model.FragmentSettings Fragment { get; };
+        IVectorView<FragmentProfileViewModel> ProfilesModified { get; };
+        IVectorView<FragmentProfileViewModel> ProfilesAdded { get; };
+        IVectorView<FragmentColorSchemeViewModel> ColorSchemesAdded { get; };
+    }
+
+    [default_interface] runtimeclass FragmentProfileViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged
+    {
+        Microsoft.Terminal.Settings.Model.Profile Profile { get; };
+        String SourceName { get; };
+        String Json { get; };
+    }
+
+    [default_interface] runtimeclass FragmentColorSchemeViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged
+    {
+        ColorSchemeViewModel ColorSchemeVM { get; };
+        String SourceName { get; };
+        String Json { get; };
+    }
+}
