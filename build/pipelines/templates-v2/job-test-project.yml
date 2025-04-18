@@ -58,6 +58,23 @@ jobs:
         filePath: build\scripts\Run-Tests.ps1
         arguments: -MatchPattern '*feature.test*.dll' -Platform '$(OutputBuildPlatform)' -Configuration '$(BuildConfiguration)' -LogPath '${{ parameters.testLogPath }}' -Root "$(Terminal.BinDir)"
 
+    # Load-bearing: This needs to be Windows PowerShell, not pwsh, due to Add-AppxPackage not working in pwsh.
+    - powershell: |-
+        $deps = Get-ChildItem -Recurse "$(Terminal.BinDir)/_testDeps"
+        $deps | % {
+          Write-Host "Installing $($_.FullName)..."
+          Add-AppxPackage -Path $_.FullName -ErrorAction:Ignore
+        }
+      displayName: 'Install LocalTest Dependencies'
+
+    - task: PowerShell@2
+      displayName: 'Run Local Tests'
+      inputs:
+        targetType: filePath
+        filePath: build\scripts\Run-Tests.ps1
+        arguments: -MatchPattern '*LocalTests*.dll' -Platform '$(OutputBuildPlatform)' -Configuration '$(BuildConfiguration)' -LogPath '${{ parameters.testLogPath }}' -Root "$(Terminal.BinDir)"
+      condition: and(succeeded(), ne(variables['PGOBuildMode'], 'Instrument'))
+
   - task: PowerShell@2
     displayName: 'Convert Test Logs from WTL to xUnit format'
     condition: always()
