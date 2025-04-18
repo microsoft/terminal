@@ -229,7 +229,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model
 #endif
 
 #if defined(_M_ARM64) // no point in looking for WOA if we're not on ARM64
-        _accumulateTraditionalLayoutPowerShellInstancesInDirectory(L"%ProgramFiles(Arm)%\\PowerShell", PowerShellFlags::WOWARM, versions);
+        _accumulateTraditionalLayoutPowerShellInstancesInDirectory(L"%ProgramFiles(Arm)%\\PowerShell", PowershellCoreProfileGenerator::PowerShellFlags::WOWARM, versions);
 #endif
 
         _accumulateStorePowerShellInstances(versions);
