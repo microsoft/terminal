@@ -24,6 +24,7 @@ namespace winrt::TerminalApp::implementation
         int32_t ExitCode() const noexcept;
         winrt::hstring ExitMessage() const;
         winrt::hstring TargetWindow() const;
+        winrt::hstring LocalState() const;
 
         void Commandline(const winrt::array_view<const winrt::hstring>& value);
         winrt::com_array<winrt::hstring> Commandline();

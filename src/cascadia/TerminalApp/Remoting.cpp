@@ -53,6 +53,11 @@ namespace winrt::TerminalApp::implementation
         return winrt::to_hstring(_parsed.GetTargetWindow());
     }
 
+    winrt::hstring CommandlineArgs::LocalState() const
+    {
+        return winrt::to_hstring(_parsed.GetLocalState());
+    }
+
     void CommandlineArgs::Commandline(const winrt::array_view<const winrt::hstring>& value)
     {
         _args = { value.begin(), value.end() };
