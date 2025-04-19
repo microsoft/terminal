@@ -684,6 +684,10 @@
     <value>Actions</value>
     <comment>Header for the "actions" menu item. This navigates to a page that lets you see and modify commands, key bindings, and actions that can be done in the app.</comment>
   </data>
+  <data name="Nav_Extensions.Content" xml:space="preserve">
+    <value>Extensions</value>
+    <comment>Header for the "extensions" menu item. This navigates to a page that lets you see and modify extensions for the app.</comment>
+  </data>
   <data name="Profile_OpacitySlider.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Background opacity</value>
     <comment>Name for a control to determine the level of opacity for the background of the control. The user can choose to make the background of the app more or less opaque.</comment>
@@ -2343,5 +2347,64 @@
   <data name="Globals_StartOnUserLogin_UnavailableByPolicy" xml:space="preserve">
     <value>This option is managed by enterprise policy and cannot be changed here.</value>
     <comment>This is displayed in concordance with Globals_StartOnUserLogin if the enterprise administrator has taken control of this setting.</comment>
+  </data>
+  <data name="Extensions_ActiveExtensionsHeader.Text" xml:space="preserve">
+    <value>Active Extensions</value>
+  </data>
+  <data name="Extensions_ModifiedProfilesHeader.Text" xml:space="preserve">
+    <value>Modified Profiles</value>
+  </data>
+  <data name="Extensions_AddedProfilesHeader.Text" xml:space="preserve">
+    <value>Added Profiles</value>
+  </data>
+  <data name="Extensions_AddedColorSchemesHeader.Text" xml:space="preserve">
+    <value>Added Color Schemes</value>
+  </data>
+  <data name="Extensions_NoActiveExtensionsDisclaimer.Text" xml:space="preserve">
+    <value>None</value>
+    <comment>Text displayed when no extensions are available. Shown in place of a list of entries.</comment>
+  </data>
+  <data name="Extensions_NoModifiedProfilesDisclaimer.Text" xml:space="preserve">
+    <value>None</value>
+    <comment>Text displayed when no profiles were modified. Shown in place of a list of entries.</comment>
+  </data>
+  <data name="Extensions_NoAddedColorSchemesDisclaimer.Text" xml:space="preserve">
+    <value>None</value>
+    <comment>Text displayed when no color schemes were added. Shown in place of a list of entries.</comment>
+  </data>
+  <data name="Extensions_NoAddedProfilesDisclaimer.Text" xml:space="preserve">
+    <value>None</value>
+    <comment>Text displayed when no profiles were added. Shown in place of a list of entries.</comment>
+  </data>
+  <data name="Extensions_DisclaimerHyperlink.Content" xml:space="preserve">
+    <value>Learn more about fragment extensions</value>
+  </data>
+  <data name="Extensions_NavigateToProfileButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Navigate to profile</value>
+  </data>
+  <data name="Extensions_NavigateToProfileButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Navigate to profile</value>
+  </data>
+  <data name="Extensions_NavigateToColorSchemeButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Navigate to color scheme</value>
+  </data>
+  <data name="Extensions_NavigateToColorSchemeButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Navigate to color scheme</value>
+  </data>
+  <data name="Extensions_ScopeUser" xml:space="preserve">
+    <value>Current User</value>
+    <comment>Label for the installation scope of an extension.</comment>
+  </data>
+  <data name="Extensions_ScopeSystem" xml:space="preserve">
+    <value>All Users</value>
+    <comment>Label for the installation scope of an extension</comment>
+  </data>
+  <data name="Extensions_Scope.Header" xml:space="preserve">
+    <value>Scope</value>
+    <comment>Header for the installation scope of the extension</comment>
+  </data>
+  <data name="Extension_StateDisabled.Text" xml:space="preserve">
+    <value>Disabled</value>
+    <comment>Text displayed when an extension is disabled</comment>
   </data>
 </root>
