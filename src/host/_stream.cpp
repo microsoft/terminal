@@ -415,30 +415,9 @@ void WriteClearScreen(SCREEN_INFORMATION& screenInfo)
 // - pwchBuffer - wide character text to be inserted into buffer
 // - pcbBuffer - byte count of pwchBuffer on the way in, number of bytes consumed on the way out.
 // - screenInfo - Screen Information class to write the text into at the current cursor position
-// - ppWaiter - If writing to the console is blocked for whatever reason, this will be filled with a pointer to context
-//              that can be used by the server to resume the call at a later time.
-// Return Value:
-// - STATUS_SUCCESS if OK.
-// - CONSOLE_STATUS_WAIT if we couldn't finish now and need to be called back later (see ppWaiter).
-// - Or a suitable NTSTATUS format error code for memory/string/math failures.
-[[nodiscard]] NTSTATUS DoWriteConsole(_In_reads_bytes_(*pcbBuffer) PCWCHAR pwchBuffer,
-                                      _Inout_ size_t* const pcbBuffer,
-                                      SCREEN_INFORMATION& screenInfo,
-                                      std::unique_ptr<WriteData>& waiter)
+[[nodiscard]] HRESULT DoWriteConsole(SCREEN_INFORMATION& screenInfo, std::wstring_view str)
 try
 {
-    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    if (WI_IsAnyFlagSet(gci.Flags, (CONSOLE_SUSPENDED | CONSOLE_SELECTING | CONSOLE_SCROLLBAR_TRACKING)))
-    {
-        waiter = std::make_unique<WriteData>(screenInfo,
-                                             pwchBuffer,
-                                             *pcbBuffer,
-                                             gci.OutputCP);
-        return CONSOLE_STATUS_WAIT;
-    }
-
-    const std::wstring_view str{ pwchBuffer, *pcbBuffer / sizeof(WCHAR) };
-
     if (WI_IsAnyFlagClear(screenInfo.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING | ENABLE_PROCESSED_OUTPUT))
     {
         WriteCharsLegacy(screenInfo, str, nullptr);
@@ -447,55 +426,9 @@ try
     {
         WriteCharsVT(screenInfo, str);
     }
-
-    return STATUS_SUCCESS;
+    return S_OK;
 }
-NT_CATCH_RETURN()
-
-// Routine Description:
-// - This method performs the actual work of attempting to write to the console, converting data types as necessary
-//   to adapt from the server types to the legacy internal host types.
-// - It operates on Unicode data only. It's assumed the text is translated by this point.
-// Arguments:
-// - OutContext - the console output object to write the new text into
-// - pwsTextBuffer - wide character text buffer provided by client application to insert
-// - cchTextBufferLength - text buffer counted in characters
-// - pcchTextBufferRead - character count of the number of characters we were able to insert before returning
-// - ppWaiter - If we are blocked from writing now and need to wait, this is filled with contextual data for the server to restore the call later
-// Return Value:
-// - S_OK if successful.
-// - S_OK if we need to wait (check if ppWaiter is not nullptr).
-// - Or a suitable HRESULT code for math/string/memory failures.
-[[nodiscard]] HRESULT WriteConsoleWImplHelper(IConsoleOutputObject& context,
-                                              const std::wstring_view buffer,
-                                              size_t& read,
-                                              std::unique_ptr<WriteData>& waiter) noexcept
-{
-    try
-    {
-        // Set out variables in case we exit early.
-        read = 0;
-        waiter.reset();
-
-        // Convert characters to bytes to give to DoWriteConsole.
-        size_t cbTextBufferLength;
-        RETURN_IF_FAILED(SizeTMult(buffer.size(), sizeof(wchar_t), &cbTextBufferLength));
-
-        auto Status = DoWriteConsole(const_cast<wchar_t*>(buffer.data()), &cbTextBufferLength, context, waiter);
-
-        // Convert back from bytes to characters for the resulting string length written.
-        read = cbTextBufferLength / sizeof(wchar_t);
-
-        if (Status == CONSOLE_STATUS_WAIT)
-        {
-            FAIL_FAST_IF_NULL(waiter.get());
-            Status = STATUS_SUCCESS;
-        }
-
-        RETURN_NTSTATUS(Status);
-    }
-    CATCH_RETURN();
-}
+CATCH_RETURN()
 
 // Routine Description:
 // - Writes non-Unicode formatted data into the given console output object.
@@ -514,13 +447,12 @@ NT_CATCH_RETURN()
 [[nodiscard]] HRESULT ApiRoutines::WriteConsoleAImpl(IConsoleOutputObject& context,
                                                      const std::string_view buffer,
                                                      size_t& read,
-                                                     std::unique_ptr<IWaitRoutine>& waiter) noexcept
+                                                     CONSOLE_API_MSG* pWaitReplyMessage) noexcept
 {
     try
     {
         // Ensure output variables are initialized.
         read = 0;
-        waiter.reset();
 
         if (buffer.empty())
         {
@@ -620,67 +552,63 @@ NT_CATCH_RETURN()
             wstr.resize((dbcsLength + mbPtrLength) / sizeof(wchar_t));
         }
 
-        // Hold the specific version of the waiter locally so we can tinker with it if we have to store additional context.
-        std::unique_ptr<WriteData> writeDataWaiter{};
-
-        // Make the W version of the call
-        size_t wcBufferWritten{};
-        const auto hr{ WriteConsoleWImplHelper(screenInfo, wstr, wcBufferWritten, writeDataWaiter) };
-
-        // If there is no waiter, process the byte count now.
-        if (nullptr == writeDataWaiter.get())
+        auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        if (WI_IsAnyFlagSet(gci.Flags, (CONSOLE_SUSPENDED | CONSOLE_SELECTING | CONSOLE_SCROLLBAR_TRACKING)))
         {
-            // Calculate how many bytes of the original A buffer were consumed in the W version of the call to satisfy mbBufferRead.
-            // For UTF-8 conversions, we've already returned this information above.
-            if (CP_UTF8 != codepage)
-            {
-                size_t mbBufferRead{};
+            const auto waiter = new WriteData(screenInfo, std::move(wstr), gci.OutputCP);
 
-                // Start by counting the number of A bytes we used in printing our W string to the screen.
-                try
-                {
-                    mbBufferRead = GetALengthFromW(codepage, { wstr.data(), wcBufferWritten });
-                }
-                CATCH_LOG();
-
-                // If we captured a byte off the string this time around up above, it means we didn't feed
-                // it into the WriteConsoleW above, and therefore its consumption isn't accounted for
-                // in the count we just made. Add +1 to compensate.
-                if (leadByteCaptured)
-                {
-                    mbBufferRead++;
-                }
-
-                // If we consumed an internally-stored lead byte this time around up above, it means that we
-                // fed a byte into WriteConsoleW that wasn't a part of this particular call's request.
-                // We need to -1 to compensate and tell the caller the right number of bytes consumed this request.
-                if (leadByteConsumed)
-                {
-                    mbBufferRead--;
-                }
-
-                read = mbBufferRead;
-            }
-        }
-        else
-        {
             // If there is a waiter, then we need to stow some additional information in the wait structure so
             // we can synthesize the correct byte count later when the wait routine is triggered.
             if (CP_UTF8 != codepage)
             {
                 // For non-UTF8 codepages, save the lead byte captured/consumed data so we can +1 or -1 the final decoded count
                 // in the WaitData::Notify method later.
-                writeDataWaiter->SetLeadByteAdjustmentStatus(leadByteCaptured, leadByteConsumed);
+                waiter->SetLeadByteAdjustmentStatus(leadByteCaptured, leadByteConsumed);
             }
             else
             {
                 // For UTF8 codepages, just remember the consumption count from the UTF-8 parser.
-                writeDataWaiter->SetUtf8ConsumedCharacters(read);
+                waiter->SetUtf8ConsumedCharacters(read);
             }
+
+            std::ignore = ConsoleWaitQueue::s_CreateWait(pWaitReplyMessage, waiter);
+            return CONSOLE_STATUS_WAIT;
         }
 
-        // Give back the waiter now that we're done with tinkering with it.
-        waiter.reset(writeDataWaiter.release());
+        // Make the W version of the call
+        const auto hr = DoWriteConsole(screenInfo, wstr);
+
+        // Calculate how many bytes of the original A buffer were consumed in the W version of the call to satisfy mbBufferRead.
+        // For UTF-8 conversions, we've already returned this information above.
+        if (CP_UTF8 != codepage)
+        {
+            size_t mbBufferRead{};
+
+            // Start by counting the number of A bytes we used in printing our W string to the screen.
+            try
+            {
+                mbBufferRead = GetALengthFromW(codepage, wstr);
+            }
+            CATCH_LOG();
+
+            // If we captured a byte off the string this time around up above, it means we didn't feed
+            // it into the WriteConsoleW above, and therefore its consumption isn't accounted for
+            // in the count we just made. Add +1 to compensate.
+            if (leadByteCaptured)
+            {
+                mbBufferRead++;
+            }
+
+            // If we consumed an internally-stored lead byte this time around up above, it means that we
+            // fed a byte into WriteConsoleW that wasn't a part of this particular call's request.
+            // We need to -1 to compensate and tell the caller the right number of bytes consumed this request.
+            if (leadByteConsumed)
+            {
+                mbBufferRead--;
+            }
+
+            read = mbBufferRead;
+        }
 
         return hr;
     }
@@ -703,20 +631,24 @@ NT_CATCH_RETURN()
 [[nodiscard]] HRESULT ApiRoutines::WriteConsoleWImpl(IConsoleOutputObject& context,
                                                      const std::wstring_view buffer,
                                                      size_t& read,
-                                                     std::unique_ptr<IWaitRoutine>& waiter) noexcept
+                                                     CONSOLE_API_MSG* pWaitReplyMessage) noexcept
 {
     try
     {
         LockConsole();
         auto unlock = wil::scope_exit([&] { UnlockConsole(); });
 
-        std::unique_ptr<WriteData> writeDataWaiter;
-        RETURN_IF_FAILED(WriteConsoleWImplHelper(context.GetActiveBuffer(), buffer, read, writeDataWaiter));
+        auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        if (WI_IsAnyFlagSet(gci.Flags, (CONSOLE_SUSPENDED | CONSOLE_SELECTING | CONSOLE_SCROLLBAR_TRACKING)))
+        {
+            std::ignore = ConsoleWaitQueue::s_CreateWait(pWaitReplyMessage, new WriteData(context, std::wstring{ buffer }, gci.OutputCP));
+            return CONSOLE_STATUS_WAIT;
+        }
 
-        // Transfer specific waiter pointer into the generic interface wrapper.
-        waiter.reset(writeDataWaiter.release());
-
-        return S_OK;
+        read = 0;
+        auto Status = DoWriteConsole(context, buffer);
+        read = buffer.size();
+        return Status;
     }
     CATCH_RETURN();
 }

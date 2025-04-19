@@ -173,7 +173,6 @@ constexpr T saturate(auto val)
 
     const auto pInputReadHandleData = pHandleData->GetClientInput();
 
-    std::unique_ptr<IWaitRoutine> waiter;
     InputEventQueue outEvents;
     auto hr = m->_pApiRoutines->GetConsoleInputImpl(
         *pInputBuffer,
@@ -183,7 +182,7 @@ constexpr T saturate(auto val)
         a->Unicode,
         fIsPeek,
         fIsWaitAllowed,
-        waiter);
+        m);
 
     // We must return the number of records in the message payload (to alert the client)
     // as well as in the message headers (below in SetReplyInformation) to alert the driver.
@@ -192,14 +191,10 @@ constexpr T saturate(auto val)
     size_t cbWritten;
     LOG_IF_FAILED(SizeTMult(outEvents.size(), sizeof(INPUT_RECORD), &cbWritten));
 
-    if (waiter)
+    if (hr == CONSOLE_STATUS_WAIT)
     {
-        hr = ConsoleWaitQueue::s_CreateWait(m, waiter.release());
-        if (SUCCEEDED(hr))
-        {
-            *pbReplyPending = TRUE;
-            hr = CONSOLE_STATUS_WAIT;
-        }
+        hr = S_OK;
+        *pbReplyPending = TRUE;
     }
     else
     {
@@ -290,14 +285,13 @@ constexpr T saturate(auto val)
     // across multiple calls when we are simulating a command prompt input line for the client application.
     const auto pInputReadHandleData = HandleData->GetClientInput();
 
-    std::unique_ptr<IWaitRoutine> waiter;
     size_t cbWritten;
 
     const std::span<char> outputBuffer(reinterpret_cast<char*>(pvBuffer), cbBufferSize);
     auto hr = m->_pApiRoutines->ReadConsoleImpl(*pInputBuffer,
                                                 outputBuffer,
                                                 cbWritten, // We must set the reply length in bytes.
-                                                waiter,
+                                                m,
                                                 initialData,
                                                 exeView,
                                                 *pInputReadHandleData,
@@ -308,15 +302,10 @@ constexpr T saturate(auto val)
 
     LOG_IF_FAILED(SizeTToULong(cbWritten, &a->NumBytes));
 
-    if (nullptr != waiter.get())
+    if (hr == CONSOLE_STATUS_WAIT)
     {
-        // If we received a waiter, we need to queue the wait and not reply.
-        hr = ConsoleWaitQueue::s_CreateWait(m, waiter.release());
-
-        if (SUCCEEDED(hr))
-        {
-            *pbReplyPending = TRUE;
-        }
+        hr = S_OK;
+        *pbReplyPending = TRUE;
     }
     else
     {
@@ -355,7 +344,6 @@ constexpr T saturate(auto val)
     ULONG cbBufferSize;
     RETURN_IF_FAILED(m->GetInputBuffer(&pvBuffer, &cbBufferSize));
 
-    std::unique_ptr<IWaitRoutine> waiter;
     size_t cbRead;
 
     // We have to hold onto the HR from the call and return it.
@@ -373,7 +361,7 @@ constexpr T saturate(auto val)
             TraceLoggingUInt32(a->NumBytes, "NumBytes"),
             TraceLoggingCountedWideString(buffer.data(), static_cast<ULONG>(buffer.size()), "Buffer"));
 
-        hr = m->_pApiRoutines->WriteConsoleWImpl(*pScreenInfo, buffer, cchInputRead, waiter);
+        hr = m->_pApiRoutines->WriteConsoleWImpl(*pScreenInfo, buffer, cchInputRead, m);
 
         // We must set the reply length in bytes. Convert back from characters.
         LOG_IF_FAILED(SizeTMult(cchInputRead, sizeof(wchar_t), &cbRead));
@@ -388,7 +376,7 @@ constexpr T saturate(auto val)
             TraceLoggingUInt32(a->NumBytes, "NumBytes"),
             TraceLoggingCountedString(buffer.data(), static_cast<ULONG>(buffer.size()), "Buffer"));
 
-        hr = m->_pApiRoutines->WriteConsoleAImpl(*pScreenInfo, buffer, cchInputRead, waiter);
+        hr = m->_pApiRoutines->WriteConsoleAImpl(*pScreenInfo, buffer, cchInputRead, m);
 
         // Reply length is already in bytes (chars), don't need to convert.
         cbRead = cchInputRead;
@@ -397,14 +385,10 @@ constexpr T saturate(auto val)
     // We must return the byte length of the read data in the message.
     LOG_IF_FAILED(SizeTToULong(cbRead, &a->NumBytes));
 
-    if (nullptr != waiter.get())
+    if (hr == CONSOLE_STATUS_WAIT)
     {
-        // If we received a waiter, we need to queue the wait and not reply.
-        hr = ConsoleWaitQueue::s_CreateWait(m, waiter.release());
-        if (SUCCEEDED(hr))
-        {
-            *pbReplyPending = TRUE;
-        }
+        hr = S_OK;
+        *pbReplyPending = TRUE;
     }
     else
     {
