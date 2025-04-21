@@ -191,7 +191,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         winrt::com_ptr<implementation::Profile> _baseLayerProfile = winrt::make_self<implementation::Profile>();
         winrt::Windows::Foundation::Collections::IObservableVector<Model::Profile> _allProfiles = winrt::single_threaded_observable_vector<Model::Profile>();
         winrt::Windows::Foundation::Collections::IObservableVector<Model::Profile> _activeProfiles = winrt::single_threaded_observable_vector<Model::Profile>();
-        winrt::Windows::Foundation::Collections::IVector<Model::FragmentSettings> _fragmentExtensions = winrt::single_threaded_vector<Model::FragmentSettings>();
+        winrt::Windows::Foundation::Collections::IVector<Model::FragmentSettings> _fragmentExtensions;
         winrt::Windows::Foundation::Collections::IVector<Model::FragmentSettings> _dynamicProfileGeneratorExtensions = winrt::single_threaded_vector<Model::FragmentSettings>();
         std::set<std::string> _themesChangeLog{};
 
@@ -247,10 +247,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             _source{ source },
             _json{ json },
             _jsonSource{ jsonSource },
-            _scope{ scope },
-            _modifiedProfiles{ winrt::single_threaded_vector<Model::FragmentProfileEntry>() },
-            _newProfiles{ winrt::single_threaded_vector<Model::FragmentProfileEntry>() },
-            _colorSchemes{ winrt::single_threaded_vector<Model::FragmentColorSchemeEntry>() } {}
+            _scope{ scope } {}
 
         Model::FragmentSettings Copy() const;
 
@@ -259,13 +256,16 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         hstring Json() const noexcept { return _json; }
         hstring JsonSource() const noexcept { return _jsonSource; }
         Windows::Foundation::Collections::IVector<Model::FragmentProfileEntry> ModifiedProfiles() const noexcept { return _modifiedProfiles; }
+        void ModifiedProfiles(const Windows::Foundation::Collections::IVector<Model::FragmentProfileEntry>& modifiedProfiles) noexcept { _modifiedProfiles = modifiedProfiles; }
         Windows::Foundation::Collections::IVector<Model::FragmentProfileEntry> NewProfiles() const noexcept { return _newProfiles; }
+        void NewProfiles(const Windows::Foundation::Collections::IVector<Model::FragmentProfileEntry>& newProfiles) noexcept { _newProfiles = newProfiles; }
         Windows::Foundation::Collections::IVector<Model::FragmentColorSchemeEntry> ColorSchemes() const noexcept { return _colorSchemes; }
+        void ColorSchemes(const Windows::Foundation::Collections::IVector<Model::FragmentColorSchemeEntry>& colorSchemes) noexcept { _colorSchemes = colorSchemes; }
 
         // views
-        Windows::Foundation::Collections::IVectorView<Model::FragmentProfileEntry> ModifiedProfilesView() const noexcept { return _modifiedProfiles.GetView(); }
-        Windows::Foundation::Collections::IVectorView<Model::FragmentProfileEntry> NewProfilesView() const noexcept { return _newProfiles.GetView(); }
-        Windows::Foundation::Collections::IVectorView<Model::FragmentColorSchemeEntry> ColorSchemesView() const noexcept { return _colorSchemes.GetView(); }
+        Windows::Foundation::Collections::IVectorView<Model::FragmentProfileEntry> ModifiedProfilesView() const noexcept { return _modifiedProfiles ? _modifiedProfiles.GetView() : nullptr; }
+        Windows::Foundation::Collections::IVectorView<Model::FragmentProfileEntry> NewProfilesView() const noexcept { return _newProfiles ? _newProfiles.GetView() : nullptr; }
+        Windows::Foundation::Collections::IVectorView<Model::FragmentColorSchemeEntry> ColorSchemesView() const noexcept { return _colorSchemes ? _colorSchemes.GetView() : nullptr; }
 
     private:
         hstring _source;

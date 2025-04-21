@@ -246,17 +246,18 @@ void SettingsLoader::FindFragmentsAndMergeIntoUserSettings()
 {
     ParsedSettings fragmentSettings;
 
-    const auto parseAndLayerFragmentFiles = [&](const std::filesystem::path& path, const winrt::hstring& source, FragmentScope scope, bool layerFragment) {
+    const auto parseAndLayerFragmentFiles = [&](const std::filesystem::path& path, const winrt::hstring& source, FragmentScope scope, bool applyToSettings) {
         for (const auto& fragmentExt : std::filesystem::directory_iterator{ path })
         {
-            if (fragmentExt.path().extension() == jsonExtension)
+            const auto fragExtPath = fragmentExt.path();
+            if (fragExtPath.extension() == jsonExtension)
             {
                 try
                 {
-                    const auto content = til::io::read_file_as_utf8_string_if_exists(fragmentExt.path());
+                    const auto content = til::io::read_file_as_utf8_string_if_exists(fragExtPath);
                     if (!content.empty())
                     {
-                        _parseFragment(source, content, fragmentSettings, scope, fragmentExt.path().filename().wstring(), layerFragment);
+                        _parseFragment(source, content, fragmentSettings, scope, fragExtPath.filename().wstring(), applyToSettings);
                     }
                 }
                 CATCH_LOG();
@@ -283,7 +284,7 @@ void SettingsLoader::FindFragmentsAndMergeIntoUserSettings()
                     parseAndLayerFragmentFiles(fragmentExtFolder.path(),
                                                winrt::hstring{ source },
                                                rfid == FOLDERID_LocalAppData ? FragmentScope::User : FragmentScope::Machine, // scope
-                                               !_ignoredNamespaces.contains(std::wstring_view{ source })); // layerFragment
+                                               !_ignoredNamespaces.contains(std::wstring_view{ source })); // applyToSettings
                 }
             }
         }
@@ -338,7 +339,7 @@ void SettingsLoader::FindFragmentsAndMergeIntoUserSettings()
             parseAndLayerFragmentFiles(path,
                                        packageName,
                                        FragmentScope::User,
-                                       !_ignoredNamespaces.contains(std::wstring_view{ packageName })); // layerFragment
+                                       !_ignoredNamespaces.contains(std::wstring_view{ packageName })); // applyToSettings
         }
     }
 }
@@ -349,7 +350,7 @@ void SettingsLoader::FindFragmentsAndMergeIntoUserSettings()
 void SettingsLoader::MergeFragmentIntoUserSettings(const winrt::hstring& source, const std::string_view& content)
 {
     ParsedSettings fragmentSettings;
-    _parseFragment(source, content, fragmentSettings, FragmentScope::User, hstring{ L"filename.json" }, true);
+    _parseFragment(source, content, fragmentSettings, FragmentScope::User, L"filename.json", true);
 }
 
 // Call this method before passing SettingsLoader to the CascadiaSettings constructor.
@@ -745,6 +746,7 @@ void SettingsLoader::_parseFragment(const winrt::hstring& source, const std::str
     {
         settings.globals = winrt::make_self<GlobalAppSettings>();
 
+        std::vector<Model::FragmentColorSchemeEntry> fragmentColorSchemes;
         for (const auto& schemeJson : json.colorSchemes)
         {
             try
@@ -759,11 +761,12 @@ void SettingsLoader::_parseFragment(const winrt::hstring& source, const std::str
                         // (search for STAGED COLORS to find the next step)
                         settings.colorSchemes.emplace(scheme->Name(), std::move(scheme));
                     }
-                    fragmentSettings->ColorSchemes().Append(winrt::make<FragmentColorSchemeEntry>(scheme->Name(), hstring{ til::u8u16(Json::writeString(styledWriter, schemeJson)) }));
+                    fragmentColorSchemes.emplace_back(winrt::make<FragmentColorSchemeEntry>(scheme->Name(), hstring{ til::u8u16(Json::writeString(styledWriter, schemeJson)) }));
                 }
             }
             CATCH_LOG()
         }
+        fragmentSettings->ColorSchemes(fragmentColorSchemes.empty() ? nullptr : single_threaded_vector<Model::FragmentColorSchemeEntry>(std::move(fragmentColorSchemes)));
 
         if (applyToSettings)
         {
@@ -779,6 +782,8 @@ void SettingsLoader::_parseFragment(const winrt::hstring& source, const std::str
         settings.profiles.reserve(size);
         settings.profilesByGuid.reserve(size);
 
+        std::vector<Model::FragmentProfileEntry> newProfiles;
+        std::vector<Model::FragmentProfileEntry> modifiedProfiles;
         for (const auto& profileJson : json.profilesList)
         {
             try
@@ -788,25 +793,21 @@ void SettingsLoader::_parseFragment(const winrt::hstring& source, const std::str
                 // We need to make sure to only call Guid() if HasGuid() is true,
                 // as Guid() will dynamically generate a return value otherwise.
                 auto profile = _parseProfile(OriginTag::Fragment, source, profileJson);
-                if (const auto guid = profile->Guid(); profile->HasGuid() && guid != winrt::guid{})
+                const auto guid = profile->HasGuid() ? profile->Guid() : profile->Updates();
+                auto destinationSet = profile->HasGuid() ? newProfiles : modifiedProfiles;
+                if (guid != winrt::guid{})
                 {
                     if (applyToSettings)
                     {
                         _appendProfile(std::move(profile), guid, settings);
                     }
-                    fragmentSettings->NewProfiles().Append(winrt::make<FragmentProfileEntry>(guid, hstring{ til::u8u16(Json::writeString(styledWriter, profileJson)) }));
-                }
-                else if (const auto guid = profile->Updates(); guid != winrt::guid{})
-                {
-                    if (applyToSettings)
-                    {
-                        _appendProfile(std::move(profile), guid, settings);
-                    }
-                    fragmentSettings->ModifiedProfiles().Append(winrt::make<FragmentProfileEntry>(guid, hstring{ til::u8u16(Json::writeString(styledWriter, profileJson)) }));
+                    destinationSet.emplace_back(winrt::make<FragmentProfileEntry>(guid, hstring{ til::u8u16(Json::writeString(styledWriter, profileJson)) }));
                 }
             }
             CATCH_LOG()
         }
+        fragmentSettings->NewProfiles(newProfiles.empty() ? nullptr : single_threaded_vector<Model::FragmentProfileEntry>(std::move(newProfiles)));
+        fragmentSettings->ModifiedProfiles(modifiedProfiles.empty() ? nullptr : single_threaded_vector<Model::FragmentProfileEntry>(std::move(modifiedProfiles)));
     }
 
     if (applyToSettings)
@@ -1031,10 +1032,7 @@ void SettingsLoader::_executeGenerator(const IDynamicProfileGenerator& generator
     json[JsonKey(ProfilesKey)] = profilesListJson;
 
     auto generatorExtension = winrt::make_self<FragmentSettings>(hstring{ generatorNamespace }, hstring{ til::u8u16(Json::writeString(styledWriter, json)) }, hstring{ L"settings.json" }, FragmentScope::Machine);
-    for (const auto& entry : profileEntries)
-    {
-        generatorExtension->NewProfiles().Append(entry);
-    }
+    generatorExtension->NewProfiles(winrt::single_threaded_vector<Model::FragmentProfileEntry>(std::move(profileEntries)));
     dynamicProfileGeneratorExtensions.emplace_back(*generatorExtension);
 }
 

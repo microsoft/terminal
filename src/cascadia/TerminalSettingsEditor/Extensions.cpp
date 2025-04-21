@@ -138,46 +138,55 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             std::vector<Editor::FragmentProfileViewModel> currentProfilesAdded;
             std::vector<Editor::FragmentColorSchemeViewModel> currentColorSchemesAdded;
 
-            for (const auto&& entry : fragExt.ModifiedProfilesView())
+            if (fragExt.ModifiedProfilesView())
             {
-                // Ensure entry successfully modifies a profile before creating and registering the object
-                if (const auto& deducedProfile = _settings.FindProfile(entry.ProfileGuid()))
+                for (const auto&& entry : fragExt.ModifiedProfilesView())
                 {
-                    auto vm = winrt::make<FragmentProfileViewModel>(entry, fragExt, deducedProfile);
-                    currentProfilesModified.push_back(vm);
-                    if (extensionEnabled)
+                    // Ensure entry successfully modifies a profile before creating and registering the object
+                    if (const auto& deducedProfile = _settings.FindProfile(entry.ProfileGuid()))
                     {
-                        profilesModifiedTotal.push_back(vm);
-                    }
-                }
-            }
-
-            for (const auto&& entry : fragExt.NewProfilesView())
-            {
-                // Ensure entry successfully points to a profile before creating and registering the object.
-                // The profile may have been removed by the user.
-                if (const auto& deducedProfile = _settings.FindProfile(entry.ProfileGuid()))
-                {
-                    auto vm = winrt::make<FragmentProfileViewModel>(entry, fragExt, deducedProfile);
-                    currentProfilesAdded.push_back(vm);
-                    if (extensionEnabled)
-                    {
-                        profilesAddedTotal.push_back(vm);
-                    }
-                }
-            }
-
-            for (const auto&& entry : fragExt.ColorSchemesView())
-            {
-                for (const auto& schemeVM : _colorSchemesPageVM.AllColorSchemes())
-                {
-                    if (schemeVM.Name() == entry.ColorSchemeName())
-                    {
-                        auto vm = winrt::make<FragmentColorSchemeViewModel>(entry, fragExt, schemeVM);
-                        currentColorSchemesAdded.push_back(vm);
+                        auto vm = winrt::make<FragmentProfileViewModel>(entry, fragExt, deducedProfile);
+                        currentProfilesModified.push_back(vm);
                         if (extensionEnabled)
                         {
-                            colorSchemesAddedTotal.push_back(vm);
+                            profilesModifiedTotal.push_back(vm);
+                        }
+                    }
+                }
+            }
+
+            if (fragExt.NewProfilesView())
+            {
+                for (const auto&& entry : fragExt.NewProfilesView())
+                {
+                    // Ensure entry successfully points to a profile before creating and registering the object.
+                    // The profile may have been removed by the user.
+                    if (const auto& deducedProfile = _settings.FindProfile(entry.ProfileGuid()))
+                    {
+                        auto vm = winrt::make<FragmentProfileViewModel>(entry, fragExt, deducedProfile);
+                        currentProfilesAdded.push_back(vm);
+                        if (extensionEnabled)
+                        {
+                            profilesAddedTotal.push_back(vm);
+                        }
+                    }
+                }
+            }
+
+            if (fragExt.ColorSchemesView())
+            {
+                for (const auto&& entry : fragExt.ColorSchemesView())
+                {
+                    for (const auto& schemeVM : _colorSchemesPageVM.AllColorSchemes())
+                    {
+                        if (schemeVM.Name() == entry.ColorSchemeName())
+                        {
+                            auto vm = winrt::make<FragmentColorSchemeViewModel>(entry, fragExt, schemeVM);
+                            currentColorSchemesAdded.push_back(vm);
+                            if (extensionEnabled)
+                            {
+                                colorSchemesAddedTotal.push_back(vm);
+                            }
                         }
                     }
                 }

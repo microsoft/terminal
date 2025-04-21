@@ -157,29 +157,38 @@ Model::FragmentSettings FragmentSettings::Copy() const
 {
     auto fragment{ winrt::make_self<FragmentSettings>(_source, _json, _jsonSource, _scope) };
 
-    std::vector<Model::FragmentProfileEntry> modifiedProfiles;
-    modifiedProfiles.reserve(_modifiedProfiles.Size());
-    for (const auto& entry : _modifiedProfiles)
+    if (_modifiedProfiles)
     {
-        modifiedProfiles.emplace_back(winrt::make<FragmentProfileEntry>(entry.ProfileGuid(), entry.Json()));
+        std::vector<Model::FragmentProfileEntry> modifiedProfiles;
+        modifiedProfiles.reserve(_modifiedProfiles.Size());
+        for (const auto& entry : _modifiedProfiles)
+        {
+            modifiedProfiles.emplace_back(winrt::make<FragmentProfileEntry>(entry.ProfileGuid(), entry.Json()));
+        }
+        fragment->_modifiedProfiles = winrt::single_threaded_vector(std::move(modifiedProfiles));
     }
-    fragment->_modifiedProfiles = winrt::single_threaded_observable_vector(std::move(modifiedProfiles));
 
-    std::vector<Model::FragmentProfileEntry> newProfiles;
-    newProfiles.reserve(_newProfiles.Size());
-    for (const auto& entry : _newProfiles)
+    if (_newProfiles)
     {
-        newProfiles.emplace_back(winrt::make<FragmentProfileEntry>(entry.ProfileGuid(), entry.Json()));
+        std::vector<Model::FragmentProfileEntry> newProfiles;
+        newProfiles.reserve(_newProfiles.Size());
+        for (const auto& entry : _newProfiles)
+        {
+            newProfiles.emplace_back(winrt::make<FragmentProfileEntry>(entry.ProfileGuid(), entry.Json()));
+        }
+        fragment->_newProfiles = winrt::single_threaded_vector(std::move(newProfiles));
     }
-    fragment->_newProfiles = winrt::single_threaded_observable_vector(std::move(newProfiles));
 
-    std::vector<Model::FragmentColorSchemeEntry> colorSchemes;
-    colorSchemes.reserve(_colorSchemes.Size());
-    for (const auto& entry : _colorSchemes)
+    if (_colorSchemes)
     {
-        colorSchemes.emplace_back(winrt::make<FragmentColorSchemeEntry>(entry.ColorSchemeName(), entry.Json()));
+        std::vector<Model::FragmentColorSchemeEntry> colorSchemes;
+        colorSchemes.reserve(_colorSchemes.Size());
+        for (const auto& entry : _colorSchemes)
+        {
+            colorSchemes.emplace_back(winrt::make<FragmentColorSchemeEntry>(entry.ColorSchemeName(), entry.Json()));
+        }
+        fragment->_colorSchemes = winrt::single_threaded_vector(std::move(colorSchemes));
     }
-    fragment->_colorSchemes = winrt::single_threaded_observable_vector(std::move(colorSchemes));
 
     return *fragment;
 }
