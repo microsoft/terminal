@@ -192,7 +192,7 @@ void SettingsLoader::GenerateProfiles()
                 PowershellInstallationProfileGenerator pwshInstallationGenerator{};
                 _executeGenerator(pwshInstallationGenerator);
             }
-            
+
             // Regardless of running the installer's generator, we need to do some cleanup still.
             _cleanupPowerShellInstaller(isPowerShellInstalled);
         }

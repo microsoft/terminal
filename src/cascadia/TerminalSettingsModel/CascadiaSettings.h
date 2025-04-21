@@ -266,7 +266,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     public:
         FragmentSettings(hstring source, hstring json, hstring filename) :
             _source{ source },
-            _json{ json },
+            _Json{ json },
             _filename{ filename } {}
 
         hstring Source() const noexcept { return _source; }
