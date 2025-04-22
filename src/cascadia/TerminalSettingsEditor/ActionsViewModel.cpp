@@ -24,6 +24,22 @@ using namespace winrt::Windows::UI::Xaml::Data;
 using namespace winrt::Windows::UI::Xaml::Navigation;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
 
+// todo:
+//      INewContentArgs
+//      multiple actions
+//      selection color
+// the above arg types aren't implemented yet - they all have multiple values within them
+// and require a different approach to binding/displaying. INewContentArgs is a bunch of args
+// in one object, selected color has color and IsIndex16, multiple actions is... multiple actions
+// for now, do not support these shortcut actions in the new action editor
+inline const std::set<winrt::Microsoft::Terminal::Settings::Model::ShortcutAction> UnimplementedShortcutActions = {
+    winrt::Microsoft::Terminal::Settings::Model::ShortcutAction::NewTab,
+    winrt::Microsoft::Terminal::Settings::Model::ShortcutAction::SplitPane,
+    winrt::Microsoft::Terminal::Settings::Model::ShortcutAction::NewWindow,
+    winrt::Microsoft::Terminal::Settings::Model::ShortcutAction::MultipleActions,
+    winrt::Microsoft::Terminal::Settings::Model::ShortcutAction::ColorSelection
+};
+
 #define INITIALIZE_ENUM_LIST_AND_VALUE(enumMappingsName, enumType, resourceSectionAndType, resourceProperty)                                                \
     std::vector<winrt::Microsoft::Terminal::Settings::Editor::EnumEntry> enumList;                                                                          \
     const auto mappings = winrt::Microsoft::Terminal::Settings::Model::EnumMappings::enumMappingsName();                                                    \
@@ -480,13 +496,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             ColorSchemeRequested.raise(*this, *this);
         }
-        // todo:
-        //      INewContentArgs
-        //      multiple actions
-        //      selection color
-        // the above arg types aren't implemented yet - they all have multiple values within them
-        // and require a different approach to binding/displaying. INewContentArgs is a bunch of args
-        // in one object, selected color has color and IsIndex16, multiple actions is... multiple actions
     }
 
     void ArgWrapper::EnumValue(const Windows::Foundation::IInspectable& enumValue)
@@ -813,6 +822,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _AvailableActionAndArgs = single_threaded_observable_vector(std::move(availableActionAndArgs));
 
         _AvailableActionsAndNamesMap = Model::CascadiaSettings::AvailableShortcutActionsAndNames();
+        for (const auto unimplemented : UnimplementedShortcutActions)
+        {
+            _AvailableActionsAndNamesMap.Remove(unimplemented);
+        }
 
         // Convert the key bindings from our settings into a view model representation
         const auto& keyBindingMap{ _Settings.ActionMap().KeyBindings() };
@@ -831,15 +844,18 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         commandList.reserve(allCommands.Size());
         for (const auto& cmd : allCommands)
         {
-            std::vector<Control::KeyChord> keyChordList;
-            for (const auto& keys : _Settings.ActionMap().AllKeyBindingsForAction(cmd.ID()))
+            if (!UnimplementedShortcutActions.contains(cmd.ActionAndArgs().Action()))
             {
-                keyChordList.emplace_back(keys);
+                std::vector<Control::KeyChord> keyChordList;
+                for (const auto& keys : _Settings.ActionMap().AllKeyBindingsForAction(cmd.ID()))
+                {
+                    keyChordList.emplace_back(keys);
+                }
+                auto cmdVM{ make_self<CommandViewModel>(cmd, keyChordList, *this, _AvailableActionsAndNamesMap) };
+                _RegisterCmdVMEvents(cmdVM);
+                cmdVM->Initialize();
+                commandList.push_back(*cmdVM);
             }
-            auto cmdVM{ make_self<CommandViewModel>(cmd, keyChordList, *this, _AvailableActionsAndNamesMap) };
-            _RegisterCmdVMEvents(cmdVM);
-            cmdVM->Initialize();
-            commandList.push_back(*cmdVM);
         }
 
         std::sort(begin(keyBindingList), end(keyBindingList), KeyBindingViewModelComparator{});
