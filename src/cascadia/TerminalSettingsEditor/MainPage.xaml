@@ -162,8 +162,8 @@
                     <FontIcon Glyph="&#xEA86;" />
                 </muxc:NavigationViewItem.Icon>
                 <muxc:NavigationViewItem.InfoBadge>
-                    <muxc:InfoBadge Visibility="{x:Bind ExtensionsVM.DisplayBadge, Mode=OneWay}"
-                                    Value="1" />
+                    <muxc:InfoBadge Style="{StaticResource NewInfoBadge}"
+                                    Visibility="{x:Bind ExtensionsVM.DisplayBadge, Mode=OneWay}" />
                 </muxc:NavigationViewItem.InfoBadge>
             </muxc:NavigationViewItem>
 

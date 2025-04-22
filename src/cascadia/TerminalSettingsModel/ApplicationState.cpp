@@ -318,11 +318,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             {
                 state->DismissedBadges = std::unordered_set<hstring>{};
             }
-            if (!state->DismissedBadges->contains(badgeId))
-            {
-                state->DismissedBadges->insert(badgeId);
-                inserted = true;
-            }
+            inserted = state->DismissedBadges->insert(badgeId).second;
         }
         _throttler();
         return inserted;

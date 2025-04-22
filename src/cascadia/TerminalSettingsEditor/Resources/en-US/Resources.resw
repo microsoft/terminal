@@ -2403,4 +2403,8 @@
     <value>Disabled</value>
     <comment>Text displayed when an extension is disabled</comment>
   </data>
+  <data name="NewInfoBadgeTextBlock.Text" xml:space="preserve">
+    <value>NEW</value>
+    <comment>Text is used on an info badge for new navigation items. Must be all caps.</comment>
+  </data>
 </root>
