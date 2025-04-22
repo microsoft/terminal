@@ -1352,7 +1352,7 @@ CascadiaSettings::CascadiaSettings(SettingsLoader&& loader) :
 
     for (auto [_, extPkg] : loader.extensionPackageMap)
     {
-        _extensionPackages.Append(extPkg->Copy());
+        _extensionPackages.Append(*extPkg);
     }
 
     _resolveDefaultProfile();

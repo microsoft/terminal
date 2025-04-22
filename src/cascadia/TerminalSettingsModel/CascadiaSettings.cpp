@@ -114,10 +114,8 @@ Model::CascadiaSettings CascadiaSettings::Copy() const
         settings->_allProfiles = winrt::single_threaded_observable_vector(std::move(allProfiles));
         settings->_activeProfiles = winrt::single_threaded_observable_vector(std::move(activeProfiles));
 
-        // fragment extensions, dynamic profile generators, and extension packages don't need a deep clone
+        // extension packages don't need a deep clone
         // because they're fully immutable. We can just copy the reference over instead.
-        settings->_fragmentExtensions = _fragmentExtensions;
-        settings->_dynamicProfileGeneratorExtensions = _dynamicProfileGeneratorExtensions;
         settings->_extensionPackages = _extensionPackages;
     }
 
