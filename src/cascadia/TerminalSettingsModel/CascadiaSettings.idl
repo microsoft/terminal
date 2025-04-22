@@ -83,7 +83,7 @@ namespace Microsoft.Terminal.Settings.Model
         String Source { get; };
         FragmentScope Scope { get; };
         String Json { get; };
-        String JsonSource { get; };
+        String Filename { get; };
         Windows.Foundation.Collections.IVectorView<FragmentProfileEntry> ModifiedProfilesView { get; };
         Windows.Foundation.Collections.IVectorView<FragmentProfileEntry> NewProfilesView { get; };
         Windows.Foundation.Collections.IVectorView<FragmentColorSchemeEntry> ColorSchemesView { get; };

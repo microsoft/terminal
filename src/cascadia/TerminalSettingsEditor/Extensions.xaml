@@ -100,7 +100,7 @@
                                Margin="0,4,0,0"
                                HorizontalAlignment="Stretch"
                                HorizontalContentAlignment="Stretch"
-                               Header="{x:Bind Fragment.JsonSource}">
+                               Header="{x:Bind Fragment.Filename}">
                     <ScrollViewer Style="{StaticResource CodeBlockScrollViewerStyle}">
                         <TextBlock Style="{StaticResource CodeBlockStyle}"
                                    Text="{x:Bind Fragment.Json}" />

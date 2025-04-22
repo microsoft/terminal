@@ -243,18 +243,16 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     struct FragmentSettings : FragmentSettingsT<FragmentSettings>
     {
     public:
-        FragmentSettings(hstring source, hstring json, hstring jsonSource, FragmentScope scope) :
+        FragmentSettings(hstring source, hstring json, hstring filename, FragmentScope scope) :
             _source{ source },
             _json{ json },
-            _jsonSource{ jsonSource },
+            _filename{ filename },
             _scope{ scope } {}
-
-        Model::FragmentSettings Copy() const;
 
         hstring Source() const noexcept { return _source; }
         FragmentScope Scope() const noexcept { return _scope; }
         hstring Json() const noexcept { return _json; }
-        hstring JsonSource() const noexcept { return _jsonSource; }
+        hstring Filename() const noexcept { return _filename; }
         Windows::Foundation::Collections::IVector<Model::FragmentProfileEntry> ModifiedProfiles() const noexcept { return _modifiedProfiles; }
         void ModifiedProfiles(const Windows::Foundation::Collections::IVector<Model::FragmentProfileEntry>& modifiedProfiles) noexcept { _modifiedProfiles = modifiedProfiles; }
         Windows::Foundation::Collections::IVector<Model::FragmentProfileEntry> NewProfiles() const noexcept { return _newProfiles; }
@@ -270,7 +268,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     private:
         hstring _source;
         hstring _json;
-        hstring _jsonSource;
+        hstring _filename;
         FragmentScope _scope;
         Windows::Foundation::Collections::IVector<Model::FragmentProfileEntry> _modifiedProfiles;
         Windows::Foundation::Collections::IVector<Model::FragmentProfileEntry> _newProfiles;
