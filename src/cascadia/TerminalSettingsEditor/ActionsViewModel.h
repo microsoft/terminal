@@ -266,6 +266,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         void OnAutomationPeerAttached();
         void AddNewKeybinding();
+        void AddNewCommand();
 
         void CurrentCommand(const Editor::CommandViewModel& newCommand);
         Editor::CommandViewModel CurrentCommand();

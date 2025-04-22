@@ -35,6 +35,7 @@ namespace Microsoft.Terminal.Settings.Model
     [default_interface] runtimeclass Command : ISettingsModelObject
     {
         Command();
+        static Command NewUserCommand();
 
         String Name;
         String ID;

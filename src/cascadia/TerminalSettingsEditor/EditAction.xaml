@@ -550,9 +550,9 @@
                 <Button.Flyout>
                     <Flyout>
                         <StackPanel>
-                            <TextBlock x:Uid="Actions_DeleteConfirmationMessage"
+                            <TextBlock x:Uid="Actions_CommandDeleteConfirmationMessage"
                                        Style="{StaticResource CustomFlyoutTextStyle}" />
-                            <Button x:Uid="Actions_DeleteConfirmationButton"
+                            <Button x:Uid="Actions_CommandDeleteConfirmationButton"
                                     Click="{x:Bind ViewModel.Delete_Click}" />
                         </StackPanel>
                     </Flyout>

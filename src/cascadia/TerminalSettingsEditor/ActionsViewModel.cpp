@@ -880,6 +880,22 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         FocusContainer.raise(*this, *kbdVM);
     }
 
+    void ActionsViewModel::AddNewCommand()
+    {
+        // construct a command using the first shortcut action from our list
+        const auto shortcutAction = _AvailableActionsAndNamesMap.First().Current().Key();
+        const auto args = CascadiaSettings::GetEmptyArgsForAction(shortcutAction);
+        const auto newCmd = Model::Command::NewUserCommand();
+        newCmd.ActionAndArgs(Model::ActionAndArgs{ shortcutAction, args });
+        _Settings.ActionMap().AddAction(newCmd, nullptr);
+        auto cmdVM{ make_self<CommandViewModel>(newCmd, std::vector<Control::KeyChord>{}, *this, _AvailableActionsAndNamesMap) };
+        _RegisterCmdVMEvents(cmdVM);
+        cmdVM->Initialize();
+        _CommandList.Append(*cmdVM);
+        CurrentCommand(*cmdVM);
+        CurrentPage(ActionsSubPage::Edit);
+    }
+
     void ActionsViewModel::CurrentCommand(const Editor::CommandViewModel& newCommand)
     {
         _CurrentCommand = newCommand;

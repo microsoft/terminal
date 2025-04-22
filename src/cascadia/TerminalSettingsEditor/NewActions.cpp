@@ -33,6 +33,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void NewActions::AddNew_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*eventArgs*/)
     {
-        //_ViewModel.AddNewKeybinding();
+        _ViewModel.AddNewCommand();
     }
 }

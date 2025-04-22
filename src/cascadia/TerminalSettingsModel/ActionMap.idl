@@ -29,6 +29,7 @@ namespace Microsoft.Terminal.Settings.Model
 
     [default_interface] runtimeclass ActionMap : IActionMapView
     {
+        void AddAction(Command cmd, Microsoft.Terminal.Control.KeyChord keys);
         void RebindKeys(Microsoft.Terminal.Control.KeyChord oldKeys, Microsoft.Terminal.Control.KeyChord newKeys);
         void DeleteKeyBinding(Microsoft.Terminal.Control.KeyChord keys);
         void DeleteUserCommand(String cmdID);

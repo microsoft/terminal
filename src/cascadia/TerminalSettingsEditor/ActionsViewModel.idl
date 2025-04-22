@@ -150,6 +150,7 @@ namespace Microsoft.Terminal.Settings.Editor
 
         void OnAutomationPeerAttached();
         void AddNewKeybinding();
+        void AddNewCommand();
 
         IObservableVector<KeyBindingViewModel> KeyBindingList { get; };
         event Windows.Foundation.TypedEventHandler<Object, Object> FocusContainer;

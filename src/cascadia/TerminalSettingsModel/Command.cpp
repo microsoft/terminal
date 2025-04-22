@@ -28,6 +28,13 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
     Command::Command() = default;
 
+    Model::Command Command::NewUserCommand()
+    {
+        auto newCmd{ winrt::make_self<Command>() };
+        newCmd->_Origin = OriginTag::User;
+        return *newCmd;
+    }
+
     com_ptr<Command> Command::Copy() const
     {
         auto command{ winrt::make_self<Command>() };
@@ -136,6 +143,20 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     bool Command::IDWasGenerated()
     {
         return _IDWasGenerated;
+    }
+
+    Model::ActionAndArgs Command::ActionAndArgs() const noexcept
+    {
+        return _ActionAndArgs;
+    }
+
+    void Command::ActionAndArgs(const Model::ActionAndArgs& value) noexcept
+    {
+        _ActionAndArgs = value;
+        if (_IDWasGenerated)
+        {
+            GenerateID();
+        }
     }
 
     void Command::Name(const hstring& value)
