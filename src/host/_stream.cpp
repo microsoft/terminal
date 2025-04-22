@@ -269,17 +269,26 @@ void WriteCharsLegacy(SCREEN_INFORMATION& screenInfo, const std::wstring_view& t
             case UNICODE_LINEFEED:
             {
                 auto pos = cursor.GetPosition();
-                if (WI_IsFlagClear(screenInfo.OutputMode, DISABLE_NEWLINE_AUTO_RETURN) && pos.x != 0)
+
+                // If DISABLE_NEWLINE_AUTO_RETURN is not set, any LF behaves like a CRLF.
+                if (WI_IsFlagClear(screenInfo.OutputMode, DISABLE_NEWLINE_AUTO_RETURN))
                 {
                     pos.x = 0;
-                    // This causes the current \n to be replaced with a \r\n in the ConPTY VT output.
-                    wch = 0;
-                    lastCharWrapped = true;
+
+                    // Setting wch=0 and lastCharWrapped=true will cause the code at the end
+                    // of the loop to emit a CRLF. However, we only do this if the preceding
+                    // character isn't already a CR. We don't want to emit CR CR LF after all.
+                    if (it == beg || it[-1] != '\r')
+                    {
+                        wch = 0;
+                        lastCharWrapped = true;
+                    }
                 }
 
                 textBuffer.GetMutableRowByOffset(pos.y).SetWrapForced(false);
                 pos.y = pos.y + 1;
                 AdjustCursorPosition(screenInfo, pos, psScrollY);
+
                 break;
             }
             case UNICODE_CARRIAGERETURN:
