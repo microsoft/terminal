@@ -86,6 +86,15 @@ ConsoleWaitBlock::~ConsoleWaitBlock()
 [[nodiscard]] HRESULT ConsoleWaitBlock::s_CreateWait(_Inout_ CONSOLE_API_MSG* const pWaitReplyMessage,
                                                      _In_ IWaitRoutine* const pWaiter)
 {
+    if (!pWaitReplyMessage || !pWaiter)
+    {
+        if (pWaiter)
+        {
+            delete pWaiter;
+        }
+        return E_INVALIDARG;
+    }
+
     const auto ProcessData = pWaitReplyMessage->GetProcessHandle();
     FAIL_FAST_IF_NULL(ProcessData);
 
