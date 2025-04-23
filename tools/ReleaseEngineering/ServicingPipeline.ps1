@@ -267,9 +267,18 @@ $StatusRejectOptionId = $StatusField.options | Where-Object name -eq $script:Rej
 $StatusDoneOptionId = $StatusField.options | Where-Object name -eq $script:DoneStatusName | Select-Object -Expand id
 
 # Create ServicingCards out of each node, but filter out the ones with no commits.
-$cards = $Project.organization.projectV2.items.nodes | ForEach-Object { [ServicingCard]::new($_) } | Where-Object { -Not [String]::IsNullOrEmpty($_.Commit) }
-$commitGroups = $cards | Group-Object Commit
+$cards = $Project.organization.projectV2.items.nodes | ForEach-Object { [ServicingCard]::new($_) }
 
+$incompleteCards = $cards | Where-Object { [String]::IsNullOrEmpty($_.Commit) -And $_.Status -Eq ([ServicingStatus]::ToCherryPick) }
+If ($incompleteCards.Length -Gt 0) {
+    Write-Host "Cards to cherry pick are not associated with commits:"
+    $incompleteCards | ForEach-Object {
+        Write-Host " - $($_.Format())"
+    }
+    Write-Host ""
+}
+
+$commitGroups = $cards | Where-Object { -Not [String]::IsNullOrEmpty($_.Commit) } | Group-Object Commit
 $commits = New-Object System.Collections.ArrayList
 $finalCardsForCommit = [System.Collections.Generic.Dictionary[String, ServicingCard[]]]::new()
 
@@ -287,6 +296,11 @@ $commitGroups | ForEach-Object {
             $finalCardsForCommit[$_.Name] = $_.Group
         }
     }
+}
+
+If ($commits.Count -Eq 0) {
+    Write-Host "Nothing to do."
+    Exit
 }
 
 $sortedAllCommits = & git rev-list --no-walk=sorted $commits
