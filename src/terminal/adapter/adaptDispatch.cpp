@@ -1910,6 +1910,19 @@ void AdaptDispatch::_ModeParamsHelper(const DispatchTypes::ModeParams param, con
     case DispatchTypes::ModeParams::XTERM_BracketedPasteMode:
         _api.SetSystemMode(ITerminalApi::Mode::BracketedPaste, enable);
         break;
+    case DispatchTypes::ModeParams::SO_SynchronizedOutput:
+        if (_renderer)
+        {
+            if (enable)
+            {
+                _renderer->SynchronizedOutputBegin();
+            }
+            else
+            {
+                _renderer->SynchronizedOutputEnd();
+            }
+        }
+        break;
     case DispatchTypes::ModeParams::GCM_GraphemeClusterMode:
         break;
     case DispatchTypes::ModeParams::W32IM_Win32InputMode:

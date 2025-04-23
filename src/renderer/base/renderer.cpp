@@ -4,8 +4,6 @@
 #include "precomp.h"
 #include "renderer.hpp"
 
-#pragma hdrstop
-
 using namespace Microsoft::Console::Render;
 using namespace Microsoft::Console::Types;
 
@@ -94,6 +92,11 @@ IRenderData* Renderer::GetRenderData() const noexcept
         auto unlock = wil::scope_exit([&]() {
             _pData->UnlockConsole();
         });
+
+        if (_isSynchronizingOutput)
+        {
+            _synchronizeWithOutput();
+        }
 
         // Last chance check if anything scrolled without an explicit invalidate notification since the last frame.
         _CheckViewportAndScroll();
@@ -186,6 +189,71 @@ void Renderer::NotifyPaintFrame() noexcept
 {
     // The thread will provide throttling for us.
     _thread.NotifyPaint();
+}
+
+// NOTE: You must be holding the console lock when calling this function.
+void Renderer::SynchronizedOutputBegin() noexcept
+{
+    // Kick the render thread into calling `_synchronizeWithOutput()`.
+    _isSynchronizingOutput = true;
+}
+
+// NOTE: You must be holding the console lock when calling this function.
+void Renderer::SynchronizedOutputEnd() noexcept
+{
+    // Unblock `_synchronizeWithOutput()` from the `WaitOnAddress` call.
+    _isSynchronizingOutput = false;
+    WakeByAddressSingle(&_isSynchronizingOutput);
+
+    // It's crucial to give the render thread at least a chance to gain the lock.
+    // Otherwise, a VT application could continuously spam DECSET 2026 (Synchronized Output) and
+    // essentially drop our renderer to 10 FPS, because `_isSynchronizingOutput` is always true.
+    //
+    // Obviously calling LockConsole/UnlockConsole here is an awful, ugly hack,
+    // since there's no guarantee that this is the same lock as the one the VT parser uses.
+    // But the alternative is Denial-Of-Service of the render thread.
+    //
+    // Note that this causes raw throughput of DECSET 2026 to be comparatively low, but that's fine.
+    // Apps that use DECSET 2026 don't produce that sequence continuously, but rather at a fixed rate.
+    _pData->UnlockConsole();
+    _pData->LockConsole();
+}
+
+void Renderer::_synchronizeWithOutput() noexcept
+{
+    constexpr DWORD timeout = 100;
+
+    UINT64 start = 0;
+    DWORD elapsed = 0;
+    bool wrong = false;
+
+    QueryUnbiasedInterruptTime(&start);
+
+    // Wait for `_isSynchronizingOutput` to be set to false or for a timeout to occur.
+    while (true)
+    {
+        // We can't call a blocking function while holding the console lock, so release it temporarily.
+        _pData->UnlockConsole();
+        const auto ok = WaitOnAddress(&_isSynchronizingOutput, &wrong, sizeof(_isSynchronizingOutput), timeout - elapsed);
+        _pData->LockConsole();
+
+        if (!ok || !_isSynchronizingOutput)
+        {
+            break;
+        }
+
+        UINT64 now;
+        QueryUnbiasedInterruptTime(&now);
+        elapsed = static_cast<DWORD>((now - start) / 10000);
+        if (elapsed >= timeout)
+        {
+            break;
+        }
+    }
+
+    // If a timeout occurred, `_isSynchronizingOutput` may still be true.
+    // Set it to false now to skip calling `_synchronizeWithOutput()` on the next frame.
+    _isSynchronizingOutput = false;
 }
 
 // Routine Description:
