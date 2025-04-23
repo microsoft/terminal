@@ -246,11 +246,11 @@ Class ServicingCard {
             ([ServicingItemType]::Redacted)    { "`u{25ec}" } # triangle with dot
             Default                            { "`u{2b24}" }
         }
-        $numberWithLink = ""
+        $localTitle = $this.Title
         If ($this.Number -Gt 0) {
-            $numberWithLink = " (`e]8;;https://github.com/microsoft/terminal/issues/$($this.Number)`e\#$($this.Number)`e]8;;`e\)"
+            $localTitle = "[`e]8;;https://github.com/microsoft/terminal/issues/{1}`e\Link`e]8;;`e\] {0} (#{1})" -f ($this.Title, $this.Number)
         }
-        Return "{0}{1}`e[m ({2}) {3}{4}" -f ($color, $symbol, $this.Status, $this.Title, $numberWithLink)
+        Return "{0}{1}`e[m ({2}) {3}" -f ($color, $symbol, $this.Status, $localTitle)
     }
 }
 
