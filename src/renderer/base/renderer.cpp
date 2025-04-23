@@ -4,10 +4,6 @@
 #include "precomp.h"
 #include "renderer.hpp"
 
-#include <til/atomic.h>
-
-#pragma hdrstop
-
 using namespace Microsoft::Console::Render;
 using namespace Microsoft::Console::Types;
 
