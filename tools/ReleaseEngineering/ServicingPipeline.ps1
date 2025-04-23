@@ -126,6 +126,7 @@ Function Get-GraphQlProjectWithNodes($Organization, $Number) {
                         pageInfo { hasNextPage endCursor }
                         nodes {
                             id
+                            type
                             title: fieldValueByName(name: "Title") {
                                 ... on ProjectV2ItemFieldTextValue { text }
                             }
@@ -174,12 +175,32 @@ Enum ServicingStatus {
     Rejected
 }
 
+Enum ServicingItemType {
+    Unknown
+    DraftIssue
+    Issue
+    PullRequest
+    Redacted
+}
+
 Class ServicingCard {
     [String]$Id
     [String]$Title
     [String]$Commit
     [ServicingStatus]$Status
-    static [ServicingStatus]StatusFromName($name) {
+    [ServicingItemType]$Type
+    static [ServicingItemType]TypeFromString($name) {
+        $v = Switch -Exact ($name) {
+            "DRAFT_ISSUE"    { [ServicingItemType]::DraftIssue }
+            "ISSUE"          { [ServicingItemType]::Issue }
+            "PULL_REQUEST"   { [ServicingItemType]::PullRequest }
+            "REDACTED"       { [ServicingItemType]::Redacted }
+            Default          { [ServicingItemType]::Unknown }
+        }
+        Return $v
+    }
+
+    static [ServicingStatus]StatusFromString($name) {
         $v = Switch -Exact ($name) {
             "To Consider"    { [ServicingStatus]::ToConsider }
             "To Cherry Pick" { [ServicingStatus]::ToCherryPick }
@@ -200,7 +221,8 @@ Class ServicingCard {
         } ElseIf (-Not [String]::IsNullOrEmpty($node.content.closedByPullRequestsReferences.nodes.mergeCommit.oid)) {
             $this.Commit = $node.content.closedByPullRequestsReferences.nodes.mergeCommit.oid
         }
-        $this.Status = [ServicingCard]::StatusFromName($node.status.name)
+        $this.Status = [ServicingCard]::StatusFromString($node.status.name)
+        $this.Type = [ServicingCard]::TypeFromString($node.type)
     }
 
     [string]Format() {
@@ -211,9 +233,16 @@ Class ServicingCard {
             ([ServicingStatus]::Validated)    { "`e[38:5:126m" }
             ([ServicingStatus]::Shipped)      { "`e[38:5:92m" }
             ([ServicingStatus]::Rejected)     { "`e[38:5:160m" }
-            Default                           { "foo`e[m" }
+            Default                           { "`e[m" }
         }
-        Return "{0}`u{2b24}`e[m ({2}) {1}" -f ($color, $this.Title, $this.Status)
+        $symbol = Switch -Exact ($this.Type) {
+            ([ServicingItemType]::DraftIssue)  { "`u{25cb}" } # white circle
+            ([ServicingItemType]::Issue)       { "`u{2b24}" } # black circle
+            ([ServicingItemType]::PullRequest) { "`u{25c0}" } # black left triangle
+            ([ServicingItemType]::Redacted)    { "`u{25ec}" } # triangle with dot
+            Default                            { "`u{2b24}" }
+        }
+        Return "{0}{1}`e[m ({2}) {3}" -f ($color, $symbol, $this.Status, $this.Title)
     }
 }
 
