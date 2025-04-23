@@ -185,6 +185,7 @@ Enum ServicingItemType {
 
 Class ServicingCard {
     [String]$Id
+    [Int]$Number
     [String]$Title
     [String]$Commit
     [ServicingStatus]$Status
@@ -221,6 +222,9 @@ Class ServicingCard {
         } ElseIf (-Not [String]::IsNullOrEmpty($node.content.closedByPullRequestsReferences.nodes.mergeCommit.oid)) {
             $this.Commit = $node.content.closedByPullRequestsReferences.nodes.mergeCommit.oid
         }
+        If (-Not [String]::IsNullOrEmpty($node.content.number)) {
+            $this.Number = [Int]$node.content.number
+        }
         $this.Status = [ServicingCard]::StatusFromString($node.status.name)
         $this.Type = [ServicingCard]::TypeFromString($node.type)
     }
@@ -242,7 +246,11 @@ Class ServicingCard {
             ([ServicingItemType]::Redacted)    { "`u{25ec}" } # triangle with dot
             Default                            { "`u{2b24}" }
         }
-        Return "{0}{1}`e[m ({2}) {3}" -f ($color, $symbol, $this.Status, $this.Title)
+        $numberWithLink = ""
+        If ($this.Number -Gt 0) {
+            $numberWithLink = " (`e]8;;https://github.com/microsoft/terminal/issues/$($this.Number)`e\#$($this.Number)`e]8;;`e\)"
+        }
+        Return "{0}{1}`e[m ({2}) {3}{4}" -f ($color, $symbol, $this.Status, $this.Title, $numberWithLink)
     }
 }
 
@@ -302,6 +310,15 @@ $incompleteCards = $cards | Where-Object { [String]::IsNullOrEmpty($_.Commit) -A
 If ($incompleteCards.Length -Gt 0) {
     Write-Host "Cards to cherry pick are not associated with commits:"
     $incompleteCards | ForEach-Object {
+        Write-Host " - $($_.Format())"
+    }
+    Write-Host ""
+}
+
+$considerCards = $cards | Where-Object { [String]::IsNullOrEmpty($_.Commit) -And $_.Status -Eq ([ServicingStatus]::ToConsider) }
+If ($considerCards.Length -Gt 0) {
+    Write-Host "`e[7m CONSIDERATION QUEUE `e[27m"
+    $considerCards | ForEach-Object {
         Write-Host " - $($_.Format())"
     }
     Write-Host ""
