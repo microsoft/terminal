@@ -92,7 +92,10 @@ IRenderData* Renderer::GetRenderData() const noexcept
             _pData->UnlockConsole();
         });
 
-        _synchronizeWithOutput();
+        if (_isSynchronizingOutput)
+        {
+            _synchronizeWithOutput();
+        }
 
         // Last chance check if anything scrolled without an explicit invalidate notification since the last frame.
         _CheckViewportAndScroll();
@@ -190,62 +193,66 @@ void Renderer::NotifyPaintFrame() noexcept
 // NOTE: You must be holding the console lock when calling this function.
 void Renderer::SynchronizedOutputBegin() noexcept
 {
-    // We don't permit VT applications to reset the render deadline infinitely by continuously sending DECSET 2026.
-    if (_synchronizedOutputDeadline.load(std::memory_order_relaxed) != 0)
-    {
-        return;
-    }
-
-    uint64_t now;
-    QueryUnbiasedInterruptTime(&now);
-
-    constexpr uint64_t deadlineDelay = 100 * 10000; // 100ms in 100ns units
-    _synchronizedOutputDeadline.store(now + deadlineDelay, std::memory_order_relaxed);
+    // Kick the render thread into calling `_synchronizeWithOutput()`.
+    _isSynchronizingOutput = true;
 }
 
 // NOTE: You must be holding the console lock when calling this function.
 void Renderer::SynchronizedOutputEnd() noexcept
 {
-    _thread.NotifyPaint();
+    // Unblock `_synchronizeWithOutput()` from the `WaitOnAddress` call.
+    _isSynchronizingOutput = false;
+    WakeByAddressSingle(&_isSynchronizingOutput);
 
-    _synchronizedOutputDeadline.store(0, std::memory_order_relaxed);
-    til::atomic_notify_one(_synchronizedOutputDeadline);
+    // It's crucial to give the render thread at least a chance to gain the lock.
+    // Otherwise, a VT application could continuously spam DECSET 2026 (Synchronized Output) and
+    // essentially drop our renderer to 10 FPS, because `_isSynchronizingOutput` is always true.
+    //
+    // Obviously calling LockConsole/UnlockConsole here is an awful, ugly hack,
+    // since there's no guarantee that this is the same lock as the one the VT parser uses.
+    // But the alternative is Denial-Of-Service of the render thread.
+    //
+    // Note that this causes raw throughput of DECSET 2026 to be comparatively low, but that's fine.
+    // Apps that use DECSET 2026 don't produce that sequence continuously, but rather at a fixed rate.
+    _pData->UnlockConsole();
+    _pData->LockConsole();
 }
 
 void Renderer::_synchronizeWithOutput() noexcept
 {
-    const auto deadline = _synchronizedOutputDeadline.load(std::memory_order_relaxed);
-    if (deadline != 0)
+    constexpr DWORD timeout = 100;
+
+    UINT64 start = 0;
+    DWORD elapsed = 0;
+    bool wrong = false;
+
+    QueryUnbiasedInterruptTime(&start);
+
+    // Wait for `_isSynchronizingOutput` to be set to false or for a timeout to occur.
+    while (true)
     {
-        _synchronizeWithOutputSlow(deadline);
-    }
-}
+        // We can't call a blocking function while holding the console lock, so release it temporarily.
+        _pData->UnlockConsole();
+        const auto ok = WaitOnAddress(&_isSynchronizingOutput, &wrong, sizeof(_isSynchronizingOutput), timeout - elapsed);
+        _pData->LockConsole();
 
-void Renderer::_synchronizeWithOutputSlow(uint64_t deadline) noexcept
-{
-    _pData->UnlockConsole();
-
-    while (deadline != 0)
-    {
-        uint64_t now;
-        QueryUnbiasedInterruptTime(&now);
-
-        // If either the deadline has already passed (now is greater), or...
-        if (static_cast<int64_t>(deadline - now) < 0 ||
-            // ...if a timeout occurs during `WaitOnAddress`...
-            !til::atomic_wait(_synchronizedOutputDeadline, deadline, static_cast<DWORD>((deadline - now) / 10000)))
+        if (!ok || !_isSynchronizingOutput)
         {
-            // ...we abort waiting.
-            // By resetting the deadline, we skip all this on the next frame.
-            // This ensures that the deadline only applies once.
-            _synchronizedOutputDeadline.store(0, std::memory_order_relaxed);
             break;
         }
 
-        deadline = _synchronizedOutputDeadline.load(std::memory_order_relaxed);
+        UINT64 now;
+        QueryUnbiasedInterruptTime(&now);
+        elapsed = static_cast<DWORD>((now - start) / 10000);
+        if (elapsed >= timeout)
+        {
+            break;
+        }
     }
 
-    _pData->LockConsole();
+    // If a timeout occurred, `_isSynchronizingOutput` may still be true.
+    // Set it to false now to skip calling `_synchronizeWithOutput()` on the next frame.
+    _isSynchronizingOutput = false;
 }
 
 // Routine Description:
