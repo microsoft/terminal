@@ -37,6 +37,7 @@ using namespace winrt::Windows::System;
 using namespace winrt::Windows::UI::Xaml::Controls;
 using namespace winrt::Windows::Foundation::Collections;
 
+static const std::wstring_view openJsonTag{ L"OpenJson_Nav" };
 static const std::wstring_view launchTag{ L"Launch_Nav" };
 static const std::wstring_view interactionTag{ L"Interaction_Nav" };
 static const std::wstring_view renderingTag{ L"Rendering_Nav" };
@@ -288,6 +289,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
             if (const auto navString = clickedItemContainer.Tag().try_as<hstring>())
             {
+                if (*navString == openJsonTag)
+                {
+                    const auto window = CoreWindow::GetForCurrentThread();
+                    const auto rAltState = window.GetKeyState(VirtualKey::RightMenu);
+                    const auto lAltState = window.GetKeyState(VirtualKey::LeftMenu);
+                    const auto altPressed = WI_IsFlagSet(lAltState, CoreVirtualKeyStates::Down) ||
+                                            WI_IsFlagSet(rAltState, CoreVirtualKeyStates::Down);
+                    const auto target = altPressed ? SettingsTarget::DefaultsFile : SettingsTarget::SettingsFile;
+                    OpenJson.raise(nullptr, target);
+                    return;
+                }
                 _Navigate(*navString, BreadcrumbSubPage::None);
             }
             else if (const auto profile = clickedItemContainer.Tag().try_as<Editor::ProfileViewModel>())
@@ -478,27 +490,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         else if (subPage == BreadcrumbSubPage::Profile_Advanced)
         {
             profile.CurrentPage(ProfileSubPage::Advanced);
-        }
-    }
-
-    void MainPage::OpenJsonTapped(const IInspectable& /*sender*/, const Windows::UI::Xaml::Input::TappedRoutedEventArgs& /*args*/)
-    {
-        const auto window = CoreWindow::GetForCurrentThread();
-        const auto rAltState = window.GetKeyState(VirtualKey::RightMenu);
-        const auto lAltState = window.GetKeyState(VirtualKey::LeftMenu);
-        const auto altPressed = WI_IsFlagSet(lAltState, CoreVirtualKeyStates::Down) ||
-                                WI_IsFlagSet(rAltState, CoreVirtualKeyStates::Down);
-
-        const auto target = altPressed ? SettingsTarget::DefaultsFile : SettingsTarget::SettingsFile;
-        OpenJson.raise(nullptr, target);
-    }
-
-    void MainPage::OpenJsonKeyDown(const IInspectable& /*sender*/, const Windows::UI::Xaml::Input::KeyRoutedEventArgs& args)
-    {
-        if (args.Key() == VirtualKey::Enter || args.Key() == VirtualKey::Space)
-        {
-            const auto target = args.KeyStatus().IsMenuKeyDown ? SettingsTarget::DefaultsFile : SettingsTarget::SettingsFile;
-            OpenJson.raise(nullptr, target);
         }
     }
 
