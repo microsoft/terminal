@@ -34,7 +34,7 @@ DWORD WINAPI RenderThread::_ThreadProc()
 
         // Between waiting on _hEvent and calling PaintFrame() there should be a minimal delay,
         // so that a key press progresses to a drawing operation as quickly as possible.
-        // As such, we wait for the renderer to complete _before_ waiting on _hEvent.
+        // As such, we wait for the renderer to complete _before_ waiting on `_redraw`.
         renderer->WaitUntilCanRender();
 
         _redraw.wait();
@@ -78,6 +78,8 @@ void RenderThread::EnablePainting() noexcept
     }
 }
 
+// This function is meant to only be called by `Renderer`. You should use `TriggerTeardown()` instead,
+// even if you plan to call `EnablePainting()` later, because that ensures proper synchronization.
 void RenderThread::DisablePainting() noexcept
 {
     _enable.ResetEvent();

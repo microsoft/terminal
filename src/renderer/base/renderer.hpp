@@ -35,6 +35,8 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT PaintFrame();
 
         void NotifyPaintFrame() noexcept;
+        void SynchronizedOutputBegin() noexcept;
+        void SynchronizedOutputEnd() noexcept;
         void TriggerSystemRedraw(const til::rect* const prcDirtyClient);
         void TriggerRedraw(const Microsoft::Console::Types::Viewport& region);
         void TriggerRedraw(const til::point* const pcoord);
@@ -91,6 +93,7 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] HRESULT _PaintFrame() noexcept;
         [[nodiscard]] HRESULT _PaintFrameForEngine(_In_ IRenderEngine* const pEngine) noexcept;
+        void _synchronizeWithOutput() noexcept;
         bool _CheckViewportAndScroll();
         [[nodiscard]] HRESULT _PaintBackground(_In_ IRenderEngine* const pEngine);
         void _PaintBufferOutput(_In_ IRenderEngine* const pEngine);
@@ -124,6 +127,7 @@ namespace Microsoft::Console::Render
         std::function<void()> _pfnBackgroundColorChanged;
         std::function<void()> _pfnFrameColorChanged;
         std::function<void()> _pfnRendererEnteredErrorState;
+        bool _isSynchronizingOutput = false;
         bool _forceUpdateViewport = false;
 
         til::point_span _lastSelectionPaintSpan{};
