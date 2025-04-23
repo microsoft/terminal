@@ -4,6 +4,8 @@
 #include "precomp.h"
 #include "renderer.hpp"
 
+#include <til/atomic.h>
+
 #pragma hdrstop
 
 using namespace Microsoft::Console::Render;
@@ -89,6 +91,8 @@ IRenderData* Renderer::GetRenderData() const noexcept
         auto unlock = wil::scope_exit([&]() {
             _pData->UnlockConsole();
         });
+
+        _synchronizeWithOutput();
 
         // Last chance check if anything scrolled without an explicit invalidate notification since the last frame.
         _CheckViewportAndScroll();
@@ -181,6 +185,67 @@ void Renderer::NotifyPaintFrame() noexcept
 {
     // The thread will provide throttling for us.
     _thread.NotifyPaint();
+}
+
+// NOTE: You must be holding the console lock when calling this function.
+void Renderer::SynchronizedOutputBegin() noexcept
+{
+    // We don't permit VT applications to reset the render deadline infinitely by continuously sending DECSET 2026.
+    if (_synchronizedOutputDeadline.load(std::memory_order_relaxed) != 0)
+    {
+        return;
+    }
+
+    uint64_t now;
+    QueryUnbiasedInterruptTime(&now);
+
+    constexpr uint64_t deadlineDelay = 100 * 10000; // 100ms in 100ns units
+    _synchronizedOutputDeadline.store(now + deadlineDelay, std::memory_order_relaxed);
+}
+
+// NOTE: You must be holding the console lock when calling this function.
+void Renderer::SynchronizedOutputEnd() noexcept
+{
+    _thread.NotifyPaint();
+
+    _synchronizedOutputDeadline.store(0, std::memory_order_relaxed);
+    til::atomic_notify_one(_synchronizedOutputDeadline);
+}
+
+void Renderer::_synchronizeWithOutput() noexcept
+{
+    const auto deadline = _synchronizedOutputDeadline.load(std::memory_order_relaxed);
+    if (deadline != 0)
+    {
+        _synchronizeWithOutputSlow(deadline);
+    }
+}
+
+void Renderer::_synchronizeWithOutputSlow(uint64_t deadline) noexcept
+{
+    _pData->UnlockConsole();
+
+    while (deadline != 0)
+    {
+        uint64_t now;
+        QueryUnbiasedInterruptTime(&now);
+
+        // If either the deadline has already passed (now is greater), or...
+        if (static_cast<int64_t>(deadline - now) < 0 ||
+            // ...if a timeout occurs during `WaitOnAddress`...
+            !til::atomic_wait(_synchronizedOutputDeadline, deadline, static_cast<DWORD>((deadline - now) / 10000)))
+        {
+            // ...we abort waiting.
+            // By resetting the deadline, we skip all this on the next frame.
+            // This ensures that the deadline only applies once.
+            _synchronizedOutputDeadline.store(0, std::memory_order_relaxed);
+            break;
+        }
+
+        deadline = _synchronizedOutputDeadline.load(std::memory_order_relaxed);
+    }
+
+    _pData->LockConsole();
 }
 
 // Routine Description:
