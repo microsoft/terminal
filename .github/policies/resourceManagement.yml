@@ -8,7 +8,7 @@ where:
 configuration:
   resourceManagementConfiguration:
     scheduledSearches:
-    - description: "Needs-Author-Feedback" and "No-Recent-Activity" issues are closed after 3 days of inactivity
+    - description: '"Needs-Author-Feedback" and "No-Recent-Activity" issues are closed after 3 days of inactivity'
       frequencies:
       - hourly:
           hour: 3
@@ -23,7 +23,7 @@ configuration:
           days: 3
       actions:
       - closeIssue
-    - description: "Needs-Author-Feedback" issues are labelled "No-Recent-Activity" after 4 days of inactivity
+    - description: '"Needs-Author-Feedback" issues are labelled "No-Recent-Activity" after 4 days of inactivity'
       frequencies:
       - hourly:
           hour: 3
@@ -41,7 +41,7 @@ configuration:
           label: No-Recent-Activity
       - addReply:
           reply: This issue has been automatically marked as stale because it has been marked as requiring author feedback but has not had any activity for **4 days**. It will be closed if no further activity occurs **within 3 days of this comment**.
-    - description: "Resolution-Duplicate" issues are closed after 1 day of inactivity
+    - description: '"Resolution-Duplicate" issues are closed after 1 day of inactivity'
       frequencies:
       - hourly:
           hour: 3
@@ -56,7 +56,7 @@ configuration:
       - addReply:
           reply: This issue has been marked as duplicate and has not had any activity for **1 day**. It will be closed for housekeeping purposes.
       - closeIssue
-    - description: "Needs-Author-Feedback" and "No-Recent-Activity" PRs are closed after 7 days of inactivity
+    - description: '"Needs-Author-Feedback" and "No-Recent-Activity" PRs are closed after 7 days of inactivity'
       frequencies:
       - hourly:
           hour: 3
