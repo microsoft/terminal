@@ -315,7 +315,7 @@ If ($incompleteCards.Length -Gt 0) {
     Write-Host ""
 }
 
-$considerCards = $cards | Where-Object { [String]::IsNullOrEmpty($_.Commit) -And $_.Status -Eq ([ServicingStatus]::ToConsider) }
+$considerCards = $cards | Where-Object Status -Eq ([ServicingStatus]::ToConsider)
 If ($considerCards.Length -Gt 0) {
     Write-Host "`e[7m CONSIDERATION QUEUE `e[27m"
     $considerCards | ForEach-Object {
