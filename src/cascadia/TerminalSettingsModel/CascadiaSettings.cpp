@@ -177,8 +177,13 @@ IObservableVector<Model::Profile> CascadiaSettings::ActiveProfiles() const noexc
     return _activeProfiles;
 }
 
-IVectorView<Model::ExtensionPackage> CascadiaSettings::Extensions() const noexcept
+IVectorView<Model::ExtensionPackage> CascadiaSettings::Extensions()
 {
+    if (!_extensionPackages)
+    {
+        // Lazy load the ExtensionPackage objects
+        _extensionPackages = winrt::single_threaded_vector<Model::ExtensionPackage>(std::move(SettingsLoader::LoadExtensionPackages()));
+    }
     return _extensionPackages.GetView();
 }
 

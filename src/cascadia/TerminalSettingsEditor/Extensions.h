@@ -52,6 +52,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Windows::Foundation::Collections::IObservableVector<Editor::FragmentColorSchemeViewModel> ColorSchemesAdded() const noexcept { return _colorSchemesAddedView; }
 
         // Methods
+        void LazyLoadExtensions();
         void UpdateSettings(const Model::CascadiaSettings& settings, const Editor::ColorSchemesPageViewModel& colorSchemesPageVM);
         void NavigateToProfile(const guid profileGuid);
         void NavigateToColorScheme(const Editor::ColorSchemeViewModel& schemeVM);
@@ -72,6 +73,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Windows::Foundation::Collections::IObservableVector<Editor::FragmentProfileViewModel> _profilesModifiedView;
         Windows::Foundation::Collections::IObservableVector<Editor::FragmentProfileViewModel> _profilesAddedView;
         Windows::Foundation::Collections::IObservableVector<Editor::FragmentColorSchemeViewModel> _colorSchemesAddedView;
+        bool _extensionsLoaded;
     };
 
     struct ExtensionPackageViewModel : ExtensionPackageViewModelT<ExtensionPackageViewModel>, ViewModelHelper<ExtensionPackageViewModel>
