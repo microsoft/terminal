@@ -25,7 +25,8 @@ namespace Microsoft::Console::Render
             AlwaysDistinguishableColors,
             IntenseIsBold,
             IntenseIsBright,
-            ScreenReversed
+            ScreenReversed,
+            SynchronizedOutput,
         };
 
         RenderSettings() noexcept;

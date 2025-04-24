@@ -143,7 +143,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // the UIA Engine to the renderer. This prevents us from signaling changes to the cursor or buffer.
         {
             // Now create the renderer and initialize the render thread.
-            const auto& renderSettings = _terminal->GetRenderSettings();
+            auto& renderSettings = _terminal->GetRenderSettings();
             _renderer = std::make_unique<::Microsoft::Console::Render::Renderer>(renderSettings, _terminal.get());
 
             _renderer->SetBackgroundColorChangedCallback([this]() { _rendererBackgroundColorChanged(); });

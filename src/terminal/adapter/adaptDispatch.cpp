@@ -1911,16 +1911,10 @@ void AdaptDispatch::_ModeParamsHelper(const DispatchTypes::ModeParams param, con
         _api.SetSystemMode(ITerminalApi::Mode::BracketedPaste, enable);
         break;
     case DispatchTypes::ModeParams::SO_SynchronizedOutput:
+        _renderSettings.SetRenderMode(RenderSettings::Mode::SynchronizedOutput, enable);
         if (_renderer)
         {
-            if (enable)
-            {
-                _renderer->SynchronizedOutputBegin();
-            }
-            else
-            {
-                _renderer->SynchronizedOutputEnd();
-            }
+            _renderer->SynchronizedOutputChanged();
         }
         break;
     case DispatchTypes::ModeParams::GCM_GraphemeClusterMode:
@@ -2060,6 +2054,9 @@ void AdaptDispatch::RequestMode(const DispatchTypes::ModeParams param)
         break;
     case DispatchTypes::ModeParams::XTERM_BracketedPasteMode:
         state = mapTemp(_api.GetSystemMode(ITerminalApi::Mode::BracketedPaste));
+        break;
+    case DispatchTypes::ModeParams::SO_SynchronizedOutput:
+        state = mapTemp(_renderSettings.GetRenderMode(RenderSettings::Mode::SynchronizedOutput));
         break;
     case DispatchTypes::ModeParams::GCM_GraphemeClusterMode:
         state = mapPerm(CodepointWidthDetector::Singleton().GetMode() == TextMeasurementMode::Graphemes);
@@ -3046,6 +3043,7 @@ void AdaptDispatch::HardReset()
     if (_renderer)
     {
         _renderer->TriggerRedrawAll(true, true);
+        _renderer->SynchronizedOutputChanged();
     }
 
     // Cursor to 1,1 - the Soft Reset guarantees this is absolute
