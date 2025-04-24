@@ -3047,6 +3047,7 @@ void AdaptDispatch::HardReset()
     if (_renderer)
     {
         _renderer->TriggerRedrawAll(true, true);
+        _renderer->SynchronizedOutputChanged();
     }
 
     // Cursor to 1,1 - the Soft Reset guarantees this is absolute
