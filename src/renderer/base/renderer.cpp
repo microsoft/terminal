@@ -25,7 +25,7 @@ static constexpr auto renderBackoffBaseTimeMilliseconds{ 150 };
 // - pData - The interface to console data structures required for rendering
 // Return Value:
 // - An instance of a Renderer.
-Renderer::Renderer(const RenderSettings& renderSettings, IRenderData* pData) :
+Renderer::Renderer(RenderSettings& renderSettings, IRenderData* pData) :
     _renderSettings(renderSettings),
     _pData(pData)
 {
@@ -187,31 +187,36 @@ void Renderer::NotifyPaintFrame() noexcept
 }
 
 // NOTE: You must be holding the console lock when calling this function.
-void Renderer::SynchronizedOutputBegin() noexcept
+void Renderer::SynchronizedOutputChanged() noexcept
 {
-    // Kick the render thread into calling `_synchronizeWithOutput()`.
-    _isSynchronizingOutput = true;
-}
+    const auto so = _renderSettings.GetRenderMode(RenderSettings::Mode::SynchronizedOutput);
+    if (_isSynchronizingOutput == so)
+    {
+        return;
+    }
 
-// NOTE: You must be holding the console lock when calling this function.
-void Renderer::SynchronizedOutputEnd() noexcept
-{
-    // Unblock `_synchronizeWithOutput()` from the `WaitOnAddress` call.
-    _isSynchronizingOutput = false;
-    WakeByAddressSingle(&_isSynchronizingOutput);
+    // If `_isSynchronizingOutput` is true, it'll kick the
+    // render thread into calling `_synchronizeWithOutput()`...
+    _isSynchronizingOutput = so;
 
-    // It's crucial to give the render thread at least a chance to gain the lock.
-    // Otherwise, a VT application could continuously spam DECSET 2026 (Synchronized Output) and
-    // essentially drop our renderer to 10 FPS, because `_isSynchronizingOutput` is always true.
-    //
-    // Obviously calling LockConsole/UnlockConsole here is an awful, ugly hack,
-    // since there's no guarantee that this is the same lock as the one the VT parser uses.
-    // But the alternative is Denial-Of-Service of the render thread.
-    //
-    // Note that this causes raw throughput of DECSET 2026 to be comparatively low, but that's fine.
-    // Apps that use DECSET 2026 don't produce that sequence continuously, but rather at a fixed rate.
-    _pData->UnlockConsole();
-    _pData->LockConsole();
+    if (!_isSynchronizingOutput)
+    {
+        // ...otherwise, unblock `_synchronizeWithOutput()` from the `WaitOnAddress` call.
+        WakeByAddressSingle(&_isSynchronizingOutput);
+
+        // It's crucial to give the render thread at least a chance to gain the lock.
+        // Otherwise, a VT application could continuously spam DECSET 2026 (Synchronized Output) and
+        // essentially drop our renderer to 10 FPS, because `_isSynchronizingOutput` is always true.
+        //
+        // Obviously calling LockConsole/UnlockConsole here is an awful, ugly hack,
+        // since there's no guarantee that this is the same lock as the one the VT parser uses.
+        // But the alternative is Denial-Of-Service of the render thread.
+        //
+        // Note that this causes raw throughput of DECSET 2026 to be comparatively low, but that's fine.
+        // Apps that use DECSET 2026 don't produce that sequence continuously, but rather at a fixed rate.
+        _pData->UnlockConsole();
+        _pData->LockConsole();
+    }
 }
 
 void Renderer::_synchronizeWithOutput() noexcept
@@ -249,6 +254,7 @@ void Renderer::_synchronizeWithOutput() noexcept
     // If a timeout occurred, `_isSynchronizingOutput` may still be true.
     // Set it to false now to skip calling `_synchronizeWithOutput()` on the next frame.
     _isSynchronizingOutput = false;
+    _renderSettings.SetRenderMode(RenderSettings::Mode::SynchronizedOutput, false);
 }
 
 // Routine Description:
