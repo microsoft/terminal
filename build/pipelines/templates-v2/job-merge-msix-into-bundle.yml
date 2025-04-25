@@ -147,6 +147,10 @@ jobs:
         ValidateSignature: true
         Verbosity: 'Verbose'
 
+  - pwsh: |-
+      tar -c -v --format=zip -f "$(JobOutputDirectory)/GroupPolicyTemplates_$(XES_APPXMANIFESTVERSION).zip" -C "$(Build.SourcesDirectory)/policies" *
+    displayName: Package GPO Templates
+
   - ${{ parameters.afterBuildSteps }}
 
   - ${{ if eq(parameters.publishArtifacts, true) }}:
