@@ -28,15 +28,14 @@ namespace Microsoft::Console::Render
     class Renderer
     {
     public:
-        Renderer(const RenderSettings& renderSettings, IRenderData* pData);
+        Renderer(RenderSettings& renderSettings, IRenderData* pData);
 
         IRenderData* GetRenderData() const noexcept;
 
         [[nodiscard]] HRESULT PaintFrame();
 
         void NotifyPaintFrame() noexcept;
-        void SynchronizedOutputBegin() noexcept;
-        void SynchronizedOutputEnd() noexcept;
+        void SynchronizedOutputChanged() noexcept;
         void TriggerSystemRedraw(const til::rect* const prcDirtyClient);
         void TriggerRedraw(const Microsoft::Console::Types::Viewport& region);
         void TriggerRedraw(const til::point* const pcoord);
@@ -113,7 +112,7 @@ namespace Microsoft::Console::Render
         void _prepareNewComposition();
         [[nodiscard]] HRESULT _PrepareRenderInfo(_In_ IRenderEngine* const pEngine);
 
-        const RenderSettings& _renderSettings;
+        RenderSettings& _renderSettings;
         std::array<IRenderEngine*, 2> _engines{};
         IRenderData* _pData = nullptr; // Non-ownership pointer
         static constexpr size_t _firstSoftFontChar = 0xEF20;

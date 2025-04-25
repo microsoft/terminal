@@ -46,9 +46,9 @@ void RenderSettings::RestoreDefaultSettings() noexcept
 {
     _colorTable = _defaultColorTable;
     _colorAliasIndices = _defaultColorAliasIndices;
-    // For now, DECSCNM is the only render mode we need to reset. The others are
-    // all user preferences that can't be changed programmatically.
-    _renderMode.reset(Mode::ScreenReversed);
+    // DECSCNM and Synchronized Output are the only render mode we need to reset.
+    // The others are all user preferences that can't be changed programmatically.
+    _renderMode.reset(Mode::ScreenReversed, Mode::SynchronizedOutput);
 }
 
 // Routine Description:
