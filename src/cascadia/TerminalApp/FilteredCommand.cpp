@@ -38,15 +38,17 @@ namespace winrt::TerminalApp::implementation
         _Item = item;
         _Filter = L"";
         _Weight = 0;
-        _HighlightedName = _computeHighlightedName();
+
+        const auto pattern = fzf::matcher::ParsePattern(Filter());
+        _HighlightedName = _computeHighlightedName(pattern);
 
         // Recompute the highlighted name if the item name changes
-        _itemChangedRevoker = _Item.PropertyChanged(winrt::auto_revoke, [weakThis{ get_weak() }](auto& /*sender*/, auto& e) {
+        _itemChangedRevoker = _Item.PropertyChanged(winrt::auto_revoke, [weakThis{ get_weak() },pattern](auto& /*sender*/, auto& e) {
             auto filteredCommand{ weakThis.get() };
             if (filteredCommand && e.PropertyName() == L"Name")
             {
-                filteredCommand->HighlightedName(filteredCommand->_computeHighlightedName());
-                filteredCommand->Weight(filteredCommand->_computeWeight());
+                filteredCommand->HighlightedName(filteredCommand->_computeHighlightedName(pattern));
+                filteredCommand->Weight(filteredCommand->_computeWeight( pattern));
             }
         });
     }
@@ -58,8 +60,9 @@ namespace winrt::TerminalApp::implementation
         if (filter != _Filter)
         {
             Filter(filter);
-            Weight(_computeWeight());
-            HighlightedName(_computeHighlightedName());
+            const auto pattern = fzf::matcher::ParsePattern(Filter());
+            Weight(_computeWeight(pattern));
+            HighlightedName(_computeHighlightedName(pattern));
         }
     }
 
@@ -81,7 +84,7 @@ namespace winrt::TerminalApp::implementation
     //
     // Return Value:
     // - The HighlightedText object initialized with the segments computed according to the algorithm above.
-    winrt::TerminalApp::HighlightedText FilteredCommand::_computeHighlightedName()
+    winrt::TerminalApp::HighlightedText FilteredCommand::_computeHighlightedName(const fzf::matcher::Pattern& pattern)
     {
         const auto segments = winrt::single_threaded_observable_vector<winrt::TerminalApp::HighlightedTextSegment>();
         auto commandName = _Item.Name();
@@ -92,7 +95,6 @@ namespace winrt::TerminalApp::implementation
             return winrt::make<HighlightedText>(segments);
         }
 
-        auto pattern = fzf::matcher::ParsePattern(Filter());
         auto positions = fzf::matcher::GetPositions(commandName, pattern);
         // positions are returned is sorted pairs by search term. E.g. sp anta {5,4,11,10,9,8}
         // sorting these in ascending order so it is easier to build the text segments
@@ -175,9 +177,8 @@ namespace winrt::TerminalApp::implementation
     // - name: the name to check
     // Return Value:
     // - the relative weight of this match
-    int FilteredCommand::_computeWeight()
+    int FilteredCommand::_computeWeight(const fzf::matcher::Pattern& pattern)
     {
-        auto pattern = fzf::matcher::ParsePattern(Filter());
         auto score = fzf::matcher::GetScore(Item().Name(), pattern);
         return score;
     }

@@ -52,6 +52,16 @@ namespace TerminalAppUnitTests
         TEST_METHOD(MatchWithGapThatMatchesOnTheFirstCharWillNoLongerHigherScoreThanConsecutiveCharsWhenTheGapIs11_2CharPattern);
         TEST_METHOD(MatchWithGapThatMatchesOnTheFirstCharWillNoLongerHigherScoreThanConsecutiveCharsWhenTheGapIs11_3CharPattern_1ConsecutiveChar);
         TEST_METHOD(MatchWithGapThatMatchesOnTheFirstCharWillNoLongerHigherScoreThanConsecutiveCharsWhenTheGapIs5_NoConsecutiveChars_3CharPattern);
+        TEST_METHOD(Russian_CaseMisMatch);
+        TEST_METHOD(Russian_CaseMatch);
+        TEST_METHOD(English_CaseMatch);
+        TEST_METHOD(English_CaseMisMatch);
+        TEST_METHOD(French_CaseMatch);
+        TEST_METHOD(French_CaseMisMatch);
+        TEST_METHOD(German_CaseMatch);
+        TEST_METHOD(German_CaseMisMatch_MultipleCodePoints);
+        TEST_METHOD(Greek_CaseMisMatch);
+        TEST_METHOD(Greek_CaseMatch);
     };
 
     void AssertScoreAndPositions(std::wstring_view patternText, std::wstring_view text, int expectedScore, std::vector<int> expectedPositions)
@@ -101,6 +111,104 @@ namespace TerminalAppUnitTests
             L"/man1/zshcompctl.1",
             ScoreMatch * 4 + BonusBoundary * BonusFirstCharMultiplier + BonusFirstCharMultiplier * BonusConsecutive * 3,
             { 9, 8, 7, 6 });
+    }
+
+    void FzfTests::Russian_CaseMisMatch()
+    {
+        AssertScoreAndPositions(
+            L"новая",
+            L"Новая вкладка",
+            ScoreMatch * 5 + BonusBoundary * BonusFirstCharMultiplier + BonusConsecutive * BonusFirstCharMultiplier * 4,
+            { 4, 3, 2, 1, 0 });
+    }
+
+    void FzfTests::Russian_CaseMatch()
+    {
+        AssertScoreAndPositions(
+            L"Новая",
+            L"Новая вкладка",
+            ScoreMatch * 5 + BonusBoundary * BonusFirstCharMultiplier + BonusConsecutive * BonusFirstCharMultiplier * 4,
+            { 4, 3, 2, 1, 0 });
+    }
+
+    void FzfTests::German_CaseMatch()
+    {
+        AssertScoreAndPositions(
+            L"fuß",
+            L"Fußball",
+            ScoreMatch * 3 + BonusBoundary * BonusFirstCharMultiplier + BonusConsecutive * BonusFirstCharMultiplier * 2,
+            { 2, 1, 0 });
+    }
+
+    void FzfTests::German_CaseMisMatch_MultipleCodePoints()
+    {
+        //This doesn't currently pass, I think I need to update the matcher to use U16_NEXT and then update the backtrace to normalize back to u16 positions
+        BEGIN_TEST_METHOD_PROPERTIES()
+            TEST_METHOD_PROPERTY(L"Ignore", L"true")
+        END_TEST_METHOD_PROPERTIES()
+
+        AssertScoreAndPositions(
+            L"fuss",
+            L"Fußball",
+            //I think ScoreMatch * 4 is correct in this case since it matches 4 codepoints pattern??? fuss
+            ScoreMatch * 4 + BonusBoundary * BonusFirstCharMultiplier + BonusConsecutive * BonusFirstCharMultiplier * 3,
+            //Only 3 positions in the text were matched
+            { 2, 1, 0 });
+    }
+
+    void FzfTests::French_CaseMatch()
+    {
+        AssertScoreAndPositions(
+            L"Éco",
+            L"École",
+            ScoreMatch * 3 + BonusBoundary * BonusFirstCharMultiplier + BonusConsecutive * BonusFirstCharMultiplier * 2,
+            { 2, 1, 0 });
+    }
+
+    void FzfTests::French_CaseMisMatch()
+    {
+        AssertScoreAndPositions(
+            L"Éco",
+            L"école",
+            ScoreMatch * 3 + BonusBoundary * BonusFirstCharMultiplier + BonusConsecutive * BonusFirstCharMultiplier * 2,
+            { 2, 1, 0 });
+    }
+
+    void FzfTests::Greek_CaseMatch()
+    {
+        AssertScoreAndPositions(
+            L"λόγος",
+            L"λόγος",
+            ScoreMatch * 5 + BonusBoundary * BonusFirstCharMultiplier + BonusConsecutive * BonusFirstCharMultiplier * 4,
+            { 4, 3, 2, 1, 0 });
+    }
+
+    void FzfTests::Greek_CaseMisMatch()
+    {
+        //I think this tests validates folding (σ, ς)
+        AssertScoreAndPositions(
+            L"λόγοσ",
+            L"λόγος",
+            ScoreMatch * 5 + BonusBoundary * BonusFirstCharMultiplier + BonusConsecutive * BonusFirstCharMultiplier * 4,
+            { 4, 3, 2, 1, 0 });
+    }
+
+    void FzfTests::English_CaseMatch()
+    {
+        AssertScoreAndPositions(
+            L"Newer",
+            L"Newer tab",
+            ScoreMatch * 5 + BonusBoundary * BonusFirstCharMultiplier + BonusConsecutive * BonusFirstCharMultiplier * 4,
+            { 4, 3, 2, 1, 0 });
+    }
+
+    void FzfTests::English_CaseMisMatch()
+    {
+        AssertScoreAndPositions(
+            L"newer",
+            L"Newer tab",
+            ScoreMatch * 5 + BonusBoundary * BonusFirstCharMultiplier + BonusConsecutive * BonusFirstCharMultiplier * 4,
+            { 4, 3, 2, 1, 0 });
     }
 
     void FzfTests::MatchOnNonWordChars_CaseInSensitive()

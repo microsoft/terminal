@@ -5,6 +5,7 @@
 
 #include "HighlightedTextControl.h"
 #include "FilteredCommand.g.h"
+#include "fzf/fzf.h"
 
 // fwdecl unittest classes
 namespace TerminalAppLocalTests
@@ -33,8 +34,8 @@ namespace winrt::TerminalApp::implementation
         void _constructFilteredCommand(const winrt::TerminalApp::PaletteItem& item);
 
     private:
-        winrt::TerminalApp::HighlightedText _computeHighlightedName();
-        int _computeWeight();
+        winrt::TerminalApp::HighlightedText _computeHighlightedName(const fzf::matcher::Pattern& pattern);
+        int _computeWeight(const fzf::matcher::Pattern& pattern);
         Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker _itemChangedRevoker;
 
         friend class TerminalAppLocalTests::FilteredCommandTests;
