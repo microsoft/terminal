@@ -1027,7 +1027,7 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - Responds to the TabView control's Selection Changed event (to move a
-    //      new terminal control into focus) when not in in the middle of a tab rearrangement.
+    //      new terminal control into focus) when not in the middle of a tab rearrangement.
     // Arguments:
     // - sender: the control that originated this event
     // - eventArgs: the event's constituent arguments
