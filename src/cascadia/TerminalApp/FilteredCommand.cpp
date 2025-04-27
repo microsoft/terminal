@@ -86,7 +86,7 @@ namespace winrt::TerminalApp::implementation
     // - The HighlightedText object initialized with the segments computed according to the algorithm above.
     winrt::TerminalApp::HighlightedText FilteredCommand::_computeHighlightedName(const fzf::matcher::Pattern& pattern)
     {
-        const auto segments = winrt::single_threaded_observable_vector<winrt::TerminalApp::HighlightedTextSegment>();
+        auto segments = winrt::single_threaded_observable_vector<winrt::TerminalApp::HighlightedTextSegment>();
         auto commandName = _Item.Name();
 
         if (Weight() == 0)
@@ -98,28 +98,53 @@ namespace winrt::TerminalApp::implementation
         auto positions = fzf::matcher::GetPositions(commandName, pattern);
         // positions are returned is sorted pairs by search term. E.g. sp anta {5,4,11,10,9,8}
         // sorting these in ascending order so it is easier to build the text segments
-        std::ranges::sort(positions, std::less<>());
+        std::ranges::sort(positions);
         // a position can be matched in multiple terms, removed duplicates to simplify segments
         positions.erase(std::unique(positions.begin(), positions.end()), positions.end());
-        size_t lastPosition = 0;
-        for (auto position : positions)
+
+        std::vector<std::pair<size_t, size_t>> runs;
+        if (!positions.empty())
         {
-            if (position > lastPosition)
+            size_t runStart = positions[0];
+            size_t runEnd = runStart;
+            for (size_t i = 1; i < positions.size(); ++i)
             {
-                hstring nonMatchSegment{ commandName.data() + lastPosition, static_cast<unsigned>(position - lastPosition) };
-                segments.Append(winrt::TerminalApp::HighlightedTextSegment(nonMatchSegment, false));
+                if (positions[i] == runEnd + 1)
+                {
+                    runEnd = positions[i];
+                }
+                else
+                {
+                    runs.emplace_back(runStart, runEnd);
+                    runStart = positions[i];
+                    runEnd = runStart;
+                }
             }
-
-            hstring matchSegment{ commandName.data() + position, 1 };
-            segments.Append(winrt::TerminalApp::HighlightedTextSegment(matchSegment, true));
-
-            lastPosition = position + 1;
+            runs.emplace_back(runStart, runEnd);
         }
 
-        if (lastPosition < commandName.size())
+        size_t lastPos = 0;
+        for (auto [start, end] : runs)
         {
-            hstring segment{ commandName.data() + lastPosition, static_cast<unsigned>(commandName.size() - lastPosition) };
-            segments.Append(winrt::TerminalApp::HighlightedTextSegment(segment, false));
+            if (start > lastPos)
+            {
+                hstring nonMatch{ commandName.data() + lastPos,
+                                  static_cast<unsigned>(start - lastPos) };
+                segments.Append(winrt::TerminalApp::HighlightedTextSegment(nonMatch, false));
+            }
+
+            hstring matchSeg{ commandName.data() + start,
+                              static_cast<unsigned>(end - start + 1) };
+            segments.Append(winrt::TerminalApp::HighlightedTextSegment(matchSeg, true));
+
+            lastPos = end + 1;
+        }
+
+        if (lastPos < commandName.size())
+        {
+            hstring tail{ commandName.data() + lastPos,
+                          static_cast<unsigned>(commandName.size() - lastPos) };
+            segments.Append(winrt::TerminalApp::HighlightedTextSegment(tail, false));
         }
 
         return winrt::make<HighlightedText>(segments);

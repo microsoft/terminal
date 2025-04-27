@@ -56,15 +56,19 @@ namespace TerminalAppUnitTests
         TEST_METHOD(Russian_CaseMatch);
         TEST_METHOD(English_CaseMatch);
         TEST_METHOD(English_CaseMisMatch);
+        TEST_METHOD(SurrogatePair);
         TEST_METHOD(French_CaseMatch);
         TEST_METHOD(French_CaseMisMatch);
         TEST_METHOD(German_CaseMatch);
-        TEST_METHOD(German_CaseMisMatch_MultipleCodePoints);
+        TEST_METHOD(German_CaseMisMatch_FoldResultsInMultipleCodePoints);
         TEST_METHOD(Greek_CaseMisMatch);
         TEST_METHOD(Greek_CaseMatch);
+        TEST_METHOD(SurrogatePair_ToUtf16Pos_ConsecutiveChars);
+        TEST_METHOD(SurrogatePair_ToUtf16Pos_PreferConsecutiveChars);
+        TEST_METHOD(SurrogatePair_ToUtf16Pos_GapAndBoundary);
     };
 
-    void AssertScoreAndPositions(std::wstring_view patternText, std::wstring_view text, int expectedScore, std::vector<int> expectedPositions)
+    void AssertScoreAndPositions(std::wstring_view patternText, std::wstring_view text, int expectedScore, std::vector<int16_t> expectedPositions)
     {
         auto pattern = fzf::matcher::ParsePattern(patternText);
         auto score = fzf::matcher::GetScore(text, pattern);
@@ -140,9 +144,10 @@ namespace TerminalAppUnitTests
             { 2, 1, 0 });
     }
 
-    void FzfTests::German_CaseMisMatch_MultipleCodePoints()
+    void FzfTests::German_CaseMisMatch_FoldResultsInMultipleCodePoints()
     {
-        //This doesn't currently pass, I think I need to update the matcher to use U16_NEXT and then update the backtrace to normalize back to u16 positions
+        //This doesn't currently pass, I think ucase_toFullFolding would give the number of code points that resulted from the fold.
+        //I wasn't sure how to reference that
         BEGIN_TEST_METHOD_PROPERTIES()
             TEST_METHOD_PROPERTY(L"Ignore", L"true")
         END_TEST_METHOD_PROPERTIES()
@@ -209,6 +214,42 @@ namespace TerminalAppUnitTests
             L"Newer tab",
             ScoreMatch * 5 + BonusBoundary * BonusFirstCharMultiplier + BonusConsecutive * BonusFirstCharMultiplier * 4,
             { 4, 3, 2, 1, 0 });
+    }
+
+    void FzfTests::SurrogatePair()
+    {
+        AssertScoreAndPositions(
+            L"N😀ewer",
+            L"N😀ewer tab",
+            ScoreMatch * 6 + BonusBoundary * BonusFirstCharMultiplier + BonusConsecutive * BonusFirstCharMultiplier * 5,
+            { 6, 5, 4, 3, 2, 1, 0 });
+    }
+
+    void FzfTests::SurrogatePair_ToUtf16Pos_ConsecutiveChars()
+    {
+        AssertScoreAndPositions(
+            L"N𠀋N😀𝄞e𐐷",
+            L"N𠀋N😀𝄞e𐐷 tab",
+            ScoreMatch * 7 + BonusBoundary * BonusFirstCharMultiplier + BonusConsecutive * BonusFirstCharMultiplier * 6,
+            { 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0 });
+    }
+
+    void FzfTests::SurrogatePair_ToUtf16Pos_PreferConsecutiveChars()
+    {
+        AssertScoreAndPositions(
+            L"𠀋😀",
+            L"N𠀋😀wer 😀b𐐷 ",
+            ScoreMatch * 2 + BonusConsecutive * 2,
+            {4, 3, 2, 1});
+    }
+
+    void FzfTests::SurrogatePair_ToUtf16Pos_GapAndBoundary()
+    {
+        AssertScoreAndPositions(
+            L"𠀋😀",
+            L"N𠀋wer 😀b𐐷 ",
+            ScoreMatch * 2 + ScoreGapStart + ScoreGapExtension * 3 + BonusBoundary,
+            {8, 7, 2, 1});
     }
 
     void FzfTests::MatchOnNonWordChars_CaseInSensitive()

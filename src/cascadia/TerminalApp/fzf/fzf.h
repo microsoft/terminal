@@ -2,6 +2,7 @@
 
 #include <string>
 #include <vector>
+#include <icu.h>
 
 namespace fzf
 {
@@ -9,19 +10,19 @@ namespace fzf
     {
         struct FzfResult
         {
-            int Start;
-            int End;
-            int Score;
+            int32_t Start;
+            int32_t End;
+            int16_t Score;
         };
 
         class Pattern
         {
         public:
-            std::vector<std::wstring> terms;
+            std::vector<std::vector<UChar32>> terms;
         };
 
-        std::vector<int> GetPositions(std::wstring_view text, const Pattern& pattern);
+        std::vector<int32_t> GetPositions(std::wstring_view text, const Pattern& pattern);
         Pattern ParsePattern(const std::wstring_view patternStr);
-        int GetScore(std::wstring_view text, const Pattern& pattern);
+        int16_t GetScore(std::wstring_view text, const Pattern& pattern);
     }
 }

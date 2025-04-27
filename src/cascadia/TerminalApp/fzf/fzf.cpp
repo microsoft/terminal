@@ -1,20 +1,19 @@
 #include "pch.h"
 #include "fzf.h"
 #include <algorithm>
-#include <icu.h>
 
 namespace fzf
 {
     namespace matcher
     {
-        constexpr int ScoreMatch = 16;
-        constexpr int ScoreGapStart = -3;
-        constexpr int ScoreGapExtension = -1;
-        constexpr int BoundaryBonus = ScoreMatch / 2;
-        constexpr int NonWordBonus = ScoreMatch / 2;
-        constexpr int CamelCaseBonus = BoundaryBonus + ScoreGapExtension;
-        constexpr int BonusConsecutive = -(ScoreGapStart + ScoreGapExtension);
-        constexpr int BonusFirstCharMultiplier = 2;
+        constexpr int16_t ScoreMatch = 16;
+        constexpr int16_t ScoreGapStart = -3;
+        constexpr int16_t ScoreGapExtension = -1;
+        constexpr int16_t BoundaryBonus = ScoreMatch / 2;
+        constexpr int16_t NonWordBonus = ScoreMatch / 2;
+        constexpr int16_t CamelCaseBonus = BoundaryBonus + ScoreGapExtension;
+        constexpr int16_t BonusConsecutive = -(ScoreGapStart + ScoreGapExtension);
+        constexpr int16_t BonusFirstCharMultiplier = 2;
 
         enum CharClass : uint8_t
         {
@@ -34,21 +33,22 @@ namespace fzf
         {
             size_t end = input.size();
             while (end > 0 && input[end - 1] == L' ')
+            {
                 --end;
+            }
             return input.substr(0, end);
         }
 
-        wchar_t FoldCase(wchar_t c) noexcept
+        UChar32 FoldCase(UChar32 c) noexcept
         {
-            return static_cast<wchar_t>(u_foldCase(c, U_FOLD_CASE_DEFAULT));
+            return u_foldCase(c, U_FOLD_CASE_DEFAULT);
         }
 
-        int IndexOfChar(std::wstring_view input, const wchar_t searchChar, int startIndex)
+        int32_t IndexOfChar(const std::vector<UChar32>& input, const UChar32 searchChar, int32_t startIndex)
         {
-            const wchar_t foldedSearch = FoldCase(searchChar);
-            for (int i = startIndex; i < static_cast<int>(input.size()); ++i)
+            for (int32_t i = startIndex; i < static_cast<int32_t>(input.size()); ++i)
             {
-                if (FoldCase(input[i]) == foldedSearch)
+                if (input[i] == searchChar)
                 {
                     return i;
                 }
@@ -56,31 +56,43 @@ namespace fzf
             return -1;
         }
 
-        int FuzzyIndexOf(std::wstring_view input, std::wstring_view pattern)
+        int32_t FuzzyIndexOf(const std::vector<UChar32>& input, const std::vector<UChar32>& pattern)
         {
-            int idx = 0;
-            int firstIdx = 0;
-            for (size_t patternIndex = 0; patternIndex < pattern.size(); patternIndex++)
+            int32_t idx = 0;
+            int32_t firstIdx = 0;
+            for (int32_t pi = 0; pi < pattern.size(); ++pi)
             {
-                idx = IndexOfChar(input, pattern[patternIndex], idx);
+                idx = IndexOfChar(input, pattern[pi], idx);
                 if (idx < 0)
+                {
                     return -1;
-                if (patternIndex == 0 && idx > 0)
+                }
+
+                if (pi == 0 && idx > 0)
+                {
                     firstIdx = idx - 1;
+                }
+
                 idx++;
             }
             return firstIdx;
         }
 
-        int CalculateBonus(CharClass prevClass, CharClass currentClass)
+        int16_t CalculateBonus(CharClass prevClass, CharClass currentClass)
         {
             if (prevClass == NonWord && currentClass != NonWord)
+            {
                 return BoundaryBonus;
+            }
             if ((prevClass == CharLower && currentClass == CharUpper) ||
                 (prevClass != Digit && currentClass == Digit))
+            {
                 return CamelCaseBonus;
+            }
             if (currentClass == NonWord)
+            {
                 return NonWordBonus;
+            }
             return 0;
         }
 
@@ -95,84 +107,97 @@ namespace fzf
             return lut;
         }();
 
-        CharClass ClassOf(wchar_t ch)
+        CharClass ClassOf(UChar32 ch)
         {
             return s_charClassLut[u_charType(ch)];
         }
 
-        FzfResult FzfFuzzyMatchV2(std::wstring_view text, std::wstring_view pattern, std::vector<int>* pos)
+        FzfResult FzfFuzzyMatchV2(const std::vector<UChar32>& text, const std::vector<UChar32>& pattern, std::vector<int32_t>* pos)
         {
-            size_t patternSize = pattern.size();
-            size_t textSize = text.size();
+            int32_t patternSize = static_cast<int32_t>(pattern.size());
+            int32_t textSize = static_cast<int32_t>(text.size());
 
             if (patternSize == 0)
+            {
                 return { 0, 0, 0 };
+            }
 
-            int firstIndexOf = FuzzyIndexOf(text, pattern);
+            std::vector<UChar32> foldedText;
+            foldedText.reserve(text.size());
+            for (auto cp : text)
+            {
+                auto foldedCp = u_foldCase(cp, U_FOLD_CASE_DEFAULT);
+                foldedText.push_back(foldedCp);
+            }
+
+            int32_t firstIndexOf = FuzzyIndexOf(foldedText, pattern);
             if (firstIndexOf < 0)
+            {
                 return { -1, -1, 0 };
+            }
 
-            auto initialScores = std::vector<int>(textSize);
-            auto consecutiveScores = std::vector<int>(textSize);
-            auto firstOccurrenceOfEachChar = std::vector<int>(patternSize);
-            int maxScore = 0;
-            int maxScorePos = 0;
-            size_t patternIndex = 0;
-            int lastIndex = 0;
-            wchar_t firstPatternChar = pattern[0];
-            wchar_t currentPatternChar = pattern[0];
-            int previousInitialScore = 0;
+            auto initialScores = std::vector<int16_t>(textSize);
+            auto consecutiveScores = std::vector<int16_t>(textSize);
+            auto firstOccurrenceOfEachChar = std::vector<int32_t>(patternSize);
+            auto bonusesSpan = std::vector<int16_t>(textSize);
+
+            int16_t maxScore = 0;
+            int32_t maxScorePos = 0;
+            int32_t patternIndex = 0;
+            int32_t lastIndex = 0;
+            UChar32 firstPatternChar = pattern[0];
+            UChar32 currentPatternChar = pattern[0];
+            int16_t previousInitialScore = 0;
             CharClass previousClass = NonWord;
             bool inGap = false;
 
-            auto textCopy = std::wstring{ text };
-            std::ranges::transform(textCopy, textCopy.begin(), [](wchar_t c) {
-                return FoldCase(c);
-            });
-            std::wstring_view lowerText(textCopy.data(), textCopy.size());
-            std::wstring_view lowerTextSlice = lowerText.substr(firstIndexOf, textCopy.size() - firstIndexOf);
-            auto initialScoresSlice = std::span<int>(initialScores).subspan(firstIndexOf);
-            auto consecutiveScoresSlice = std::span<int>(consecutiveScores).subspan(firstIndexOf);
-            auto bonusesSpan = std::vector<int>(textSize);
-            auto bonusesSlice = std::span<int>(bonusesSpan).subspan(firstIndexOf, textSize - firstIndexOf);
+            std::span<const UChar32> lowerText(foldedText);
+            auto lowerTextSlice = lowerText.subspan(firstIndexOf);
+            auto initialScoresSlice = std::span(initialScores).subspan(firstIndexOf);
+            auto consecutiveScoresSlice = std::span(consecutiveScores).subspan(firstIndexOf);
+            auto bonusesSlice = std::span(bonusesSpan).subspan(firstIndexOf, textSize - firstIndexOf);
 
-            for (size_t i = 0; i < lowerTextSlice.size(); i++)
+            for (int32_t i = 0; i < lowerTextSlice.size(); i++)
             {
-                wchar_t currentChar = lowerTextSlice[i];
+                UChar32 currentChar = lowerTextSlice[i];
                 CharClass currentClass = ClassOf(currentChar);
-                int bonus = CalculateBonus(previousClass, currentClass);
+                int16_t bonus = CalculateBonus(previousClass, currentClass);
                 bonusesSlice[i] = bonus;
                 previousClass = currentClass;
 
-                auto lowerPatternChar = FoldCase(currentPatternChar);
-                if (currentChar == lowerPatternChar)
+                //currentPatternChar was already folded in ParsePattern
+                if (currentChar == currentPatternChar)
                 {
                     if (patternIndex < pattern.size())
                     {
-                        firstOccurrenceOfEachChar[patternIndex] = firstIndexOf + static_cast<int>(i);
+                        firstOccurrenceOfEachChar[patternIndex] = firstIndexOf + static_cast<int32_t>(i);
                         patternIndex++;
                         if (patternIndex < patternSize)
+                        {
                             currentPatternChar = pattern[patternIndex];
+                        }
                     }
-                    lastIndex = firstIndexOf + static_cast<int>(i);
+                    lastIndex = firstIndexOf + static_cast<int32_t>(i);
                 }
                 if (currentChar == firstPatternChar)
                 {
-                    int score = ScoreMatch + bonus * BonusFirstCharMultiplier;
+                    int16_t score = ScoreMatch + bonus * BonusFirstCharMultiplier;
                     initialScoresSlice[i] = score;
                     consecutiveScoresSlice[i] = 1;
                     if (patternSize == 1 && (score > maxScore))
                     {
                         maxScore = score;
-                        maxScorePos = firstIndexOf + static_cast<int>(i);
+                        maxScorePos = firstIndexOf + static_cast<int32_t>(i);
                         if (bonus == BoundaryBonus)
+                        {
                             break;
+                        }
                     }
                     inGap = false;
                 }
                 else
                 {
-                    initialScoresSlice[i] = inGap ? std::max(previousInitialScore + ScoreGapExtension, 0) : std::max(previousInitialScore + ScoreGapStart, 0);
+                    initialScoresSlice[i] = inGap ? std::max<int16_t>(previousInitialScore + ScoreGapExtension, 0) : std::max<int16_t>(previousInitialScore + ScoreGapStart, 0);
                     consecutiveScoresSlice[i] = 0;
                     inGap = true;
                 }
@@ -180,63 +205,82 @@ namespace fzf
             }
 
             if (patternIndex != pattern.size())
+            {
                 return { -1, -1, 0 };
+            }
 
             if (pattern.size() == 1)
             {
                 if (pos)
+                {
                     pos->push_back(maxScorePos);
-                return { maxScorePos, maxScorePos + 1, maxScore };
+                }
+                int32_t end = maxScorePos + 1;
+                return { maxScorePos, end, maxScore };
             }
 
-            int firstOccurrenceOfFirstChar = firstOccurrenceOfEachChar[0];
-            int width = lastIndex - firstOccurrenceOfFirstChar + 1;
-            auto scoreMatrix = std::vector<int>(width * patternSize);
-            std::copy_n(initialScores.begin() + firstOccurrenceOfFirstChar,
-                        width,
-                        scoreMatrix.begin());
-            auto scoreSpan = std::span<int>(scoreMatrix);
+            int32_t firstOccurrenceOfFirstChar = firstOccurrenceOfEachChar[0];
+            int32_t width = lastIndex - firstOccurrenceOfFirstChar + 1;
+            int32_t rows = static_cast<int32_t>(pattern.size());
             auto consecutiveCharMatrixSize = width * patternSize;
-            auto consecutiveCharMatrix = std::vector<int>(consecutiveCharMatrixSize);
-            std::copy(consecutiveScores.begin() + firstOccurrenceOfFirstChar,
-                      consecutiveScores.begin() + lastIndex,
-                      consecutiveCharMatrix.begin());
-            auto consecutiveCharMatrixSpan = std::span<int>(consecutiveCharMatrix);
 
-            std::wstring_view patternSliceStr = pattern.substr(1);
-            for (size_t off = 0; off < patternSize - 1; off++)
+            std::vector<int16_t> scoreMatrix(width * rows);
+            std::copy_n(
+                initialScores.begin() + firstOccurrenceOfFirstChar,
+                width,
+                scoreMatrix.begin());
+            auto scoreSpan = std::span<int16_t>(scoreMatrix);
+
+            std::vector<int16_t> consecutiveCharMatrix(width * rows);
+            std::copy_n(
+                consecutiveScores.begin() + firstOccurrenceOfFirstChar,
+                width,
+                consecutiveCharMatrix.begin());
+            auto consecutiveCharMatrixSpan = std::span(consecutiveCharMatrix);
+
+            auto patternSliceStr = std::span(pattern).subspan(1);
+
+            for (int32_t off = 0; off < patternSize - 1; off++)
             {
-                int patternCharOffset = firstOccurrenceOfEachChar[off + 1];
+                auto patternCharOffset = firstOccurrenceOfEachChar[off + 1];
+                auto sliceLen = lastIndex - patternCharOffset + 1;
                 currentPatternChar = patternSliceStr[off];
                 patternIndex = off + 1;
-                size_t row = patternIndex * width;
+                int32_t row = patternIndex * width;
                 inGap = false;
-                std::wstring_view textSlice = lowerText.substr(patternCharOffset, lastIndex - patternCharOffset + 1);
-                std::span<int> bonusSlice(bonusesSpan.begin() + patternCharOffset, textSlice.size());
-                std::span<int> consecutiveCharMatrixSlice = consecutiveCharMatrixSpan.subspan(row + patternCharOffset - firstOccurrenceOfFirstChar, textSlice.size());
-                std::span<int> consecutiveCharMatrixDiagonalSlice = consecutiveCharMatrixSpan.subspan(
+                auto tmp = lowerText.subspan(patternCharOffset, sliceLen);
+                std::span<const UChar32> textSlice = lowerText.subspan(patternCharOffset, sliceLen);
+                std::span<int16_t> bonusSlice(bonusesSpan.begin() + patternCharOffset, textSlice.size());
+                std::span<int16_t> consecutiveCharMatrixSlice = consecutiveCharMatrixSpan.subspan(row + patternCharOffset - firstOccurrenceOfFirstChar, textSlice.size());
+                std::span<int16_t> consecutiveCharMatrixDiagonalSlice = consecutiveCharMatrixSpan.subspan(
                     +row + patternCharOffset - firstOccurrenceOfFirstChar - 1 - width, textSlice.size());
-                std::span<int> scoreMatrixSlice = scoreSpan.subspan(row + patternCharOffset - firstOccurrenceOfFirstChar, textSlice.size());
-                std::span<int> scoreMatrixDiagonalSlice = scoreSpan.subspan(row + patternCharOffset - firstOccurrenceOfFirstChar - 1 - width, textSlice.size());
-                std::span<int> scoreMatrixLeftSlice = scoreSpan.subspan(row + patternCharOffset - firstOccurrenceOfFirstChar - 1, textSlice.size());
+                std::span<int16_t> scoreMatrixSlice = scoreSpan.subspan(row + patternCharOffset - firstOccurrenceOfFirstChar, textSlice.size());
+                std::span<int16_t> scoreMatrixDiagonalSlice = scoreSpan.subspan(row + patternCharOffset - firstOccurrenceOfFirstChar - 1 - width, textSlice.size());
+                std::span<int16_t> scoreMatrixLeftSlice = scoreSpan.subspan(row + patternCharOffset - firstOccurrenceOfFirstChar - 1, textSlice.size());
                 if (!scoreMatrixLeftSlice.empty())
-                    scoreMatrixLeftSlice[0] = 0;
-                for (size_t j = 0; j < textSlice.size(); j++)
                 {
-                    wchar_t currentChar = textSlice[j];
-                    int column = patternCharOffset + static_cast<int>(j);
-                    int score = inGap ? scoreMatrixLeftSlice[j] + ScoreGapExtension : scoreMatrixLeftSlice[j] + ScoreGapStart;
-                    int diagonalScore = 0;
-                    int consecutive = 0;
+                    scoreMatrixLeftSlice[0] = 0;
+                }
+                for (int32_t j = 0; j < textSlice.size(); j++)
+                {
+                    UChar32 currentChar = textSlice[j];
+                    int32_t column = patternCharOffset + static_cast<int32_t>(j);
+                    int16_t score = inGap ? scoreMatrixLeftSlice[j] + ScoreGapExtension : scoreMatrixLeftSlice[j] + ScoreGapStart;
+                    int16_t diagonalScore = 0;
+                    int16_t consecutive = 0;
                     if (currentChar == currentPatternChar)
                     {
                         diagonalScore = scoreMatrixDiagonalSlice[j] + ScoreMatch;
-                        int bonus = bonusSlice[j];
+                        int16_t bonus = bonusSlice[j];
                         consecutive = consecutiveCharMatrixDiagonalSlice[j] + 1;
                         if (bonus == BoundaryBonus)
+                        {
                             consecutive = 1;
+                        }
                         else if (consecutive > 1)
-                            bonus = std::max({ bonus, BonusConsecutive, static_cast<int>(bonusesSpan[(column - consecutive) + 1]) });
+                        {
+                            bonus = std::max({ bonus, BonusConsecutive, (bonusesSpan[column - consecutive + 1]) });
+                        }
                         if (diagonalScore + bonus < score)
                         {
                             diagonalScore += bonusSlice[j];
@@ -249,7 +293,7 @@ namespace fzf
                     }
                     consecutiveCharMatrixSlice[j] = consecutive;
                     inGap = (diagonalScore < score);
-                    int cellScore = std::max(0, std::max(diagonalScore, score));
+                    int16_t cellScore = std::max(int16_t{0}, std::max(diagonalScore, score));
                     if (off == patternSize - 2 && cellScore > maxScore)
                     {
                         maxScore = cellScore;
@@ -259,35 +303,43 @@ namespace fzf
                 }
             }
 
-            int currentColIndex = maxScorePos;
+            int32_t currentColIndex = maxScorePos;
             if (pos)
             {
                 patternIndex = patternSize - 1;
                 bool preferCurrentMatch = true;
                 while (true)
                 {
-                    size_t rowStartIndex = patternIndex * width;
+                    int32_t rowStartIndex = patternIndex * width;
                     int colOffset = currentColIndex - firstOccurrenceOfFirstChar;
                     int cellScore = scoreMatrix[rowStartIndex + colOffset];
                     int diagonalCellScore = 0, leftCellScore = 0;
 
                     if (patternIndex > 0 && currentColIndex >= firstOccurrenceOfEachChar[patternIndex])
+                    {
                         diagonalCellScore = scoreMatrix[rowStartIndex - width + colOffset - 1];
+                    }
                     if (currentColIndex > firstOccurrenceOfEachChar[patternIndex])
+                    {
                         leftCellScore = scoreMatrix[rowStartIndex + colOffset - 1];
+                    }
 
                     if (cellScore > diagonalCellScore &&
                         (cellScore > leftCellScore || (cellScore == leftCellScore && preferCurrentMatch)))
                     {
                         pos->push_back(currentColIndex);
                         if (patternIndex == 0)
+                        {
                             break;
+                        }
                         patternIndex--;
                     }
 
                     currentColIndex--;
                     if (rowStartIndex + colOffset >= consecutiveCharMatrixSize)
+                    {
                         break;
+                    }
 
                     preferCurrentMatch = (consecutiveCharMatrix[rowStartIndex + colOffset] > 1) ||
                                          ((rowStartIndex + width + colOffset + 1 <
@@ -295,50 +347,105 @@ namespace fzf
                                           (consecutiveCharMatrix[rowStartIndex + width + colOffset + 1] > 0));
                 }
             }
-            return { currentColIndex, maxScorePos + 1, maxScore };
+            int32_t end = maxScorePos + 1;
+            return { currentColIndex, end, maxScore };
         }
 
         int BonusAt(std::wstring_view input, int idx)
         {
             if (idx == 0)
+            {
                 return BoundaryBonus;
+            }
             return CalculateBonus(ClassOf(input[idx - 1]), ClassOf(input[idx]));
+        }
+
+        int32_t utf32Length(std::wstring_view str)
+        {
+            return u_countChar32(reinterpret_cast<const UChar*>(str.data()), static_cast<int32_t>(str.size()));
+        }
+
+        static std::vector<UChar32> ConvertUtf16ToCodePoints(
+            std::wstring_view text,
+            bool fold,
+            std::vector<int32_t>* utf16OffsetsOut = nullptr)
+        {
+            const UChar* data = reinterpret_cast<const UChar*>(text.data());
+            int32_t dataLen = static_cast<int32_t>(text.size());
+            int32_t cpCount = utf32Length(text);
+
+            std::vector<UChar32> out;
+            out.reserve(cpCount);
+
+            if (utf16OffsetsOut)
+            {
+                utf16OffsetsOut->clear();
+                utf16OffsetsOut->reserve(cpCount);
+            }
+
+            int32_t src = 0;
+            while (src < dataLen)
+            {
+                auto startUnit = src;
+                if (utf16OffsetsOut)
+                {
+                    utf16OffsetsOut->push_back(startUnit);
+                }
+
+                UChar32 cp;
+                U16_NEXT(data, src, dataLen, cp);
+
+                if (fold)
+                {
+                    cp = u_foldCase(cp, U_FOLD_CASE_DEFAULT);
+                }
+
+                out.push_back(cp);
+            }
+
+            return out;
         }
 
         Pattern ParsePattern(const std::wstring_view patternStr)
         {
             Pattern patObj;
             if (patternStr.empty())
+            {
                 return patObj;
-
-            std::wstring_view trimmedPatternStr = TrimStart(patternStr);
-            trimmedPatternStr = TrimSuffixSpaces(trimmedPatternStr);
-            size_t pos = 0, found;
-            while ((found = trimmedPatternStr.find(L' ', pos)) != std::wstring::npos)
-            {
-                std::wstring term = std::wstring{ trimmedPatternStr.substr(pos, found - pos) };
-                std::ranges::transform(term, term.begin(), FoldCase);
-                patObj.terms.push_back(term);
-                pos = found + 1;
             }
-            if (pos < trimmedPatternStr.size())
+
+            auto trimmed = TrimStart(patternStr);
+            trimmed = TrimSuffixSpaces(trimmed);
+
+            size_t pos = 0;
+            while (pos < trimmed.size())
             {
-                std::wstring term = std::wstring{ trimmedPatternStr.substr(pos) };
-                std::ranges::transform(term, term.begin(), FoldCase);
-                patObj.terms.push_back(term);
+                size_t found = trimmed.find(L' ', pos);
+                auto slice = (found == std::wstring_view::npos) ? trimmed.substr(pos) : trimmed.substr(pos, found - pos);
+
+                patObj.terms.push_back(ConvertUtf16ToCodePoints(slice, true));
+
+                if (found == std::wstring_view::npos)
+                {
+                    break;
+                }
+                pos = found + 1;
             }
 
             return patObj;
         }
 
-        int GetScore(std::wstring_view text, const Pattern& pattern)
+        int16_t GetScore(std::wstring_view text, const Pattern& pattern)
         {
             if (pattern.terms.empty())
+            {
                 return 1;
-            int totalScore = 0;
+            }
+            int16_t totalScore = 0;
             for (const auto& term : pattern.terms)
             {
-                FzfResult res = FzfFuzzyMatchV2(text, term, nullptr);
+                auto textCodePoints = ConvertUtf16ToCodePoints(text, false);
+                FzfResult res = FzfFuzzyMatchV2(textCodePoints, term, nullptr);
                 if (res.Start >= 0)
                 {
                     totalScore += res.Score;
@@ -351,12 +458,41 @@ namespace fzf
             return totalScore;
         }
 
-        std::vector<int> GetPositions(std::wstring_view text, const Pattern& pattern)
+        static std::vector<int32_t> MapCodepointsToUtf16(
+            std::vector<int32_t> const& cpPos,
+            std::vector<int32_t> const& cpMap,
+            size_t dataLen)
         {
-            std::vector<int> result;
+            std::vector<int32_t> utf16pos;
+            utf16pos.reserve(cpPos.size() * 2);
+
+            for (int32_t cpIndex : cpPos)
+            {
+                int32_t start = cpMap[cpIndex];
+                int32_t end = cpIndex + int32_t{ 1 } < static_cast<int32_t>(cpMap.size()) ? cpMap[cpIndex + 1] : static_cast<int32_t>(dataLen);
+
+                for (int32_t cu = end - 1; cu >= start; --cu)
+                {
+                    utf16pos.push_back(cu);
+                }
+            }
+            return utf16pos;
+        }
+
+        std::vector<int32_t> GetPositions(std::wstring_view text, const Pattern& pattern)
+        {
+            std::vector<int32_t> result;
             for (const auto& termSet : pattern.terms)
             {
-                FzfResult algResult = FzfFuzzyMatchV2(text, termSet, &result);
+                std::vector<int32_t> codePointPos;
+                std::vector<int32_t> utf16map;
+                auto textCodePoints = ConvertUtf16ToCodePoints(text, false, &utf16map);
+                FzfResult algResult = FzfFuzzyMatchV2(textCodePoints, termSet, &codePointPos);
+                auto tmp = MapCodepointsToUtf16(codePointPos, utf16map, text.size());
+                for (auto t : tmp)
+                {
+                    result.push_back(t);
+                }
                 if (algResult.Score == 0)
                 {
                     return {};
