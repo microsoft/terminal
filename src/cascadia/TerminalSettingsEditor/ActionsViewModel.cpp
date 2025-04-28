@@ -25,17 +25,13 @@ using namespace winrt::Windows::UI::Xaml::Navigation;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
 
 // todo:
-//      INewContentArgs
 //      multiple actions
 //      selection color
 // the above arg types aren't implemented yet - they all have multiple values within them
-// and require a different approach to binding/displaying. INewContentArgs is a bunch of args
-// in one object, selected color has color and IsIndex16, multiple actions is... multiple actions
+// and require a different approach to binding/displaying. Selection color has color and IsIndex16,
+// multiple actions is... multiple actions
 // for now, do not support these shortcut actions in the new action editor
 inline const std::set<winrt::Microsoft::Terminal::Settings::Model::ShortcutAction> UnimplementedShortcutActions = {
-    winrt::Microsoft::Terminal::Settings::Model::ShortcutAction::NewTab,
-    winrt::Microsoft::Terminal::Settings::Model::ShortcutAction::SplitPane,
-    winrt::Microsoft::Terminal::Settings::Model::ShortcutAction::NewWindow,
     winrt::Microsoft::Terminal::Settings::Model::ShortcutAction::MultipleActions,
     winrt::Microsoft::Terminal::Settings::Model::ShortcutAction::ColorSelection
 };
@@ -325,12 +321,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 const auto actionString = unbox_value<hstring>(ProposedShortcutAction());
                 const auto actionEnum = _NameToActionMap.at(actionString);
                 const auto emptyArgs = CascadiaSettings::GetEmptyArgsForAction(actionEnum);
-                // todo: for sendInput, where "input" is a required argument, this will set it to an empty string which does not satisfy the requirement
+                // todo: probably need some better default values for empty args
+                // eg. for sendInput, where "input" is a required argument, "input" gets set to an empty string which does not satisfy the requirement
                 // i.e. if the user hits "save" immediately after switching to sendInput as the action (without adding something to the input field), they'll get an error
-                if (emptyArgs)
-                {
-                    emptyArgs.SetAllArgsToDefault();
-                }
+                // there are some other cases as well
                 Model::ActionAndArgs newActionAndArgs{ actionEnum, emptyArgs };
                 _command.ActionAndArgs(newActionAndArgs);
                 const auto actionArgsVM = make_self<ActionArgsViewModel>(newActionAndArgs);
@@ -483,6 +477,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             INITIALIZE_ENUM_LIST_AND_VALUE(SelectOutputDirection, Model::SelectOutputDirection, L"Actions_SelectOutputDirection", L"Content");
         }
+        else if (_type == L"Model::SplitDirection")
+        {
+            INITIALIZE_ENUM_LIST_AND_VALUE(SplitDirection, Model::SplitDirection, L"Actions_SplitDirection", L"Content");
+        }
+        else if (_type == L"SplitType")
+        {
+            INITIALIZE_ENUM_LIST_AND_VALUE(SplitType, Model::SplitType, L"Actions_SplitType", L"Content");
+        }
         else if (_type == L"Windows::Foundation::IReference<TabSwitcherMode>")
         {
             INITIALIZE_NULLABLE_ENUM_LIST_AND_VALUE(TabSwitcherMode, Model::TabSwitcherMode, L"Actions_TabSwitcherMode", L"Content");
@@ -512,9 +514,27 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return winrt::unbox_value<winrt::hstring>(value);
     }
 
+    winrt::hstring ArgWrapper::UnboxGuid(const Windows::Foundation::IInspectable& value)
+    {
+        return winrt::to_hstring(winrt::unbox_value<winrt::guid>(value));
+    }
+
     int32_t ArgWrapper::UnboxInt32(const Windows::Foundation::IInspectable& value)
     {
         return winrt::unbox_value<int32_t>(value);
+    }
+
+    float ArgWrapper::UnboxInt32Optional(const Windows::Foundation::IInspectable& value)
+    {
+        const auto unboxed = winrt::unbox_value<winrt::Windows::Foundation::IReference<int32_t>>(value);
+        if (unboxed)
+        {
+            return static_cast<float>(unboxed.Value());
+        }
+        else
+        {
+            return NAN;
+        }
     }
 
     uint32_t ArgWrapper::UnboxUInt32(const Windows::Foundation::IInspectable& value)
@@ -533,6 +553,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             return NAN;
         }
+    }
+
+    float ArgWrapper::UnboxUInt64(const Windows::Foundation::IInspectable& value)
+    {
+        return static_cast<float>(winrt::unbox_value<uint64_t>(value));
     }
 
     float ArgWrapper::UnboxFloat(const Windows::Foundation::IInspectable& value)
@@ -580,9 +605,27 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Value(box_value(newValue));
     }
 
+    void ArgWrapper::GuidBindBack(const winrt::hstring& newValue)
+    {
+        // todo: probably need some validation?
+        Value(box_value(winrt::guid{ newValue }));
+    }
+
     void ArgWrapper::Int32BindBack(const double newValue)
     {
         Value(box_value(static_cast<int32_t>(newValue)));
+    }
+
+    void ArgWrapper::Int32OptionalBindBack(const double newValue)
+    {
+        if (!isnan(newValue))
+        {
+            Value(box_value(static_cast<int32_t>(newValue)));
+        }
+        else
+        {
+            Value(nullptr);
+        }
     }
 
     void ArgWrapper::UInt32BindBack(const double newValue)
@@ -600,6 +643,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             Value(nullptr);
         }
+    }
+
+    void ArgWrapper::UInt64BindBack(const double newValue)
+    {
+        Value(box_value(static_cast<uint64_t>(newValue)));
     }
 
     void ArgWrapper::FloatBindBack(const double newValue)

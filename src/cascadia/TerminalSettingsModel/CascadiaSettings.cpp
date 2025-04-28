@@ -1074,6 +1074,12 @@ Model::IActionArgs CascadiaSettings::GetEmptyArgsForAction(Model::ShortcutAction
         return winrt::make<PrevTabArgs>();
     case Model::ShortcutAction::NextTab:
         return winrt::make<NextTabArgs>();
+    case Model::ShortcutAction::NewTab:
+        return winrt::make<NewTabArgs>();
+    case Model::ShortcutAction::NewWindow:
+        return winrt::make<NewWindowArgs>();
+    case Model::ShortcutAction::SplitPane:
+        return winrt::make<SplitPaneArgs>();
     default:
         return nullptr;
     }

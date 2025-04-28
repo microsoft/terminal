@@ -287,6 +287,28 @@ protected:                                                                  \
     X(winrt::Microsoft::Terminal::Core::MatchMode, MatchMode, "matchMode", false, winrt::Microsoft::Terminal::Core::MatchMode::None)
 
 ////////////////////////////////////////////////////////////////////////////////
+#define NEW_TERMINAL_ARGS(X)                                                                                           \
+    X(winrt::hstring, Commandline, "commandline", false, L"")                                                          \
+    X(winrt::hstring, StartingDirectory, "startingDirectory", false, L"")                                              \
+    X(winrt::hstring, TabTitle, "tabTitle", false, L"")                                                                \
+    X(Windows::Foundation::IReference<Windows::UI::Color>, TabColor, "tabColor", false, nullptr)                       \
+    X(Windows::Foundation::IReference<int32_t>, ProfileIndex, "index", false, nullptr)                                 \
+    X(winrt::hstring, Profile, "profile", false, L"")                                                                  \
+    X(winrt::guid, SessionId, "sessionId", false, winrt::guid{})                                                       \
+    X(bool, AppendCommandLine, "appendCommandLine", false, false)                                                      \
+    X(Windows::Foundation::IReference<bool>, SuppressApplicationTitle, "suppressApplicationTitle", false, nullptr)     \
+    X(winrt::hstring, ColorScheme, "colorScheme", args->SchemeName().empty(), L"")                                     \
+    X(Windows::Foundation::IReference<bool>, Elevate, "elevate", false, nullptr)                                       \
+    X(Windows::Foundation::IReference<bool>, ReloadEnvironmentVariables, "reloadEnvironmentVariables", false, nullptr) \
+    X(uint64_t, ContentId, "__content", false, 0)
+
+////////////////////////////////////////////////////////////////////////////////
+#define SPLIT_PANE_ARGS(X)                                                               \
+    X(Model::SplitDirection, SplitDirection, "split", false, SplitDirection::Automatic)  \
+    X(SplitType, SplitMode, "splitMode", false, SplitType::Manual)                       \
+    X(float, SplitSize, "size", false, 0.5f)
+
+////////////////////////////////////////////////////////////////////////////////
 
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
@@ -358,41 +380,14 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // assumptions made in the macro.
     struct NewTerminalArgs : public NewTerminalArgsT<NewTerminalArgs>
     {
-        NewTerminalArgs() = default;
-        NewTerminalArgs(int32_t& profileIndex) :
-            _ProfileIndex{ profileIndex } {};
-
+        PARTIAL_ACTION_ARG_BODY(NewTerminalArgs, NEW_TERMINAL_ARGS);
         ACTION_ARG(winrt::hstring, Type, L"");
 
-        ACTION_ARG(winrt::hstring, Commandline, L"");
-        ACTION_ARG(winrt::hstring, StartingDirectory, L"");
-        ACTION_ARG(winrt::hstring, TabTitle, L"");
-        ACTION_ARG(Windows::Foundation::IReference<Windows::UI::Color>, TabColor, nullptr);
-        ACTION_ARG(Windows::Foundation::IReference<int32_t>, ProfileIndex, nullptr);
-        ACTION_ARG(winrt::hstring, Profile, L"");
-        ACTION_ARG(winrt::guid, SessionId, winrt::guid{});
-        ACTION_ARG(bool, AppendCommandLine, false);
-        ACTION_ARG(Windows::Foundation::IReference<bool>, SuppressApplicationTitle, nullptr);
-        ACTION_ARG(winrt::hstring, ColorScheme);
-        ACTION_ARG(Windows::Foundation::IReference<bool>, Elevate, nullptr);
-        ACTION_ARG(Windows::Foundation::IReference<bool>, ReloadEnvironmentVariables, nullptr);
-        ACTION_ARG(uint64_t, ContentId);
-
-        static constexpr std::string_view CommandlineKey{ "commandline" };
-        static constexpr std::string_view StartingDirectoryKey{ "startingDirectory" };
-        static constexpr std::string_view TabTitleKey{ "tabTitle" };
-        static constexpr std::string_view TabColorKey{ "tabColor" };
-        static constexpr std::string_view ProfileIndexKey{ "index" };
-        static constexpr std::string_view ProfileKey{ "profile" };
-        static constexpr std::string_view SessionIdKey{ "sessionId" };
-        static constexpr std::string_view AppendCommandLineKey{ "appendCommandLine" };
-        static constexpr std::string_view SuppressApplicationTitleKey{ "suppressApplicationTitle" };
-        static constexpr std::string_view ColorSchemeKey{ "colorScheme" };
-        static constexpr std::string_view ElevateKey{ "elevate" };
-        static constexpr std::string_view ReloadEnvironmentVariablesKey{ "reloadEnvironmentVariables" };
-        static constexpr std::string_view ContentKey{ "__content" };
-
     public:
+        NewTerminalArgs(int32_t& profileIndex) :
+            _ProfileIndex{ profileIndex } {
+            NEW_TERMINAL_ARGS(APPEND_ARG_DESCRIPTION);
+        };
         hstring GenerateName() const;
         hstring ToCommandline() const;
 
@@ -431,7 +426,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             JsonUtils::GetValueForKey(json, ColorSchemeKey, args->_ColorScheme);
             JsonUtils::GetValueForKey(json, ElevateKey, args->_Elevate);
             JsonUtils::GetValueForKey(json, ReloadEnvironmentVariablesKey, args->_ReloadEnvironmentVariables);
-            JsonUtils::GetValueForKey(json, ContentKey, args->_ContentId);
+            JsonUtils::GetValueForKey(json, ContentIdKey, args->_ContentId);
             return *args;
         }
         static Json::Value ToJson(const Model::NewTerminalArgs& val)
@@ -453,7 +448,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             JsonUtils::SetValueForKey(json, ColorSchemeKey, args->_ColorScheme);
             JsonUtils::SetValueForKey(json, ElevateKey, args->_Elevate);
             JsonUtils::SetValueForKey(json, ReloadEnvironmentVariablesKey, args->_ReloadEnvironmentVariables);
-            JsonUtils::SetValueForKey(json, ContentKey, args->_ContentId);
+            JsonUtils::SetValueForKey(json, ContentIdKey, args->_ContentId);
             return json;
         }
         Model::NewTerminalArgs Copy() const
@@ -471,6 +466,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             copy->_Elevate = _Elevate;
             copy->_ReloadEnvironmentVariables = _ReloadEnvironmentVariables;
             copy->_ContentId = _ContentId;
+            copy->_argDescriptions = _argDescriptions;
             return *copy;
         }
         size_t Hash() const
@@ -589,7 +585,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         NewTabArgs() = default;
         NewTabArgs(const Model::INewContentArgs& terminalArgs) :
             _ContentArgs{ terminalArgs } {};
-        WINRT_PROPERTY(Model::INewContentArgs, ContentArgs, nullptr);
+        WINRT_PROPERTY(Model::INewContentArgs, ContentArgs, Model::NewTerminalArgs{});
 
     public:
         hstring GenerateName() const;
@@ -634,52 +630,52 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
         uint32_t GetArgCount() const
         {
-            return 2;
+            return _ContentArgs.as<NewTerminalArgs>()->GetArgCount();
         }
-        Model::ArgDescription GetArgDescriptionAt(uint32_t /*index*/) const
+        Model::ArgDescription GetArgDescriptionAt(uint32_t index) const
         {
-            return {};
+            return _ContentArgs.as<NewTerminalArgs>()->GetArgDescriptionAt(index);
         }
-        IInspectable GetArgAt(uint32_t /*index*/) const
+        IInspectable GetArgAt(uint32_t index) const
         {
-            return nullptr;
+            return _ContentArgs.as<NewTerminalArgs>()->GetArgAt(index);
         }
-        void SetArgAt(uint32_t /*index*/, IInspectable /*value*/)
+        void SetArgAt(uint32_t index, IInspectable value)
         {
-            throw winrt::hresult_not_implemented();
-        }
-        void SetAllArgsToDefault()
-        {
-            throw winrt::hresult_not_implemented();
+            _ContentArgs.as<NewTerminalArgs>()->SetArgAt(index, value);
         }
     };
 
     struct SplitPaneArgs : public SplitPaneArgsT<SplitPaneArgs>
     {
-        SplitPaneArgs() = default;
+        SplitPaneArgs() {
+            SPLIT_PANE_ARGS(APPEND_ARG_DESCRIPTION)
+        };
         SplitPaneArgs(SplitType splitMode, SplitDirection direction, float size, const Model::INewContentArgs& terminalArgs) :
             _SplitMode{ splitMode },
             _SplitDirection{ direction },
             _SplitSize{ size },
-            _ContentArgs{ terminalArgs } {};
+            _ContentArgs{ terminalArgs } {
+            SPLIT_PANE_ARGS(APPEND_ARG_DESCRIPTION)
+        };
         SplitPaneArgs(SplitDirection direction, float size, const Model::INewContentArgs& terminalArgs) :
             _SplitDirection{ direction },
             _SplitSize{ size },
-            _ContentArgs{ terminalArgs } {};
+            _ContentArgs{ terminalArgs } {
+            SPLIT_PANE_ARGS(APPEND_ARG_DESCRIPTION)
+        };
         SplitPaneArgs(SplitDirection direction, const Model::INewContentArgs& terminalArgs) :
             _SplitDirection{ direction },
-            _ContentArgs{ terminalArgs } {};
+            _ContentArgs{ terminalArgs } {
+            SPLIT_PANE_ARGS(APPEND_ARG_DESCRIPTION)
+        };
         SplitPaneArgs(SplitType splitMode) :
-            _SplitMode{ splitMode } {};
+            _SplitMode{ splitMode } {
+            SPLIT_PANE_ARGS(APPEND_ARG_DESCRIPTION)
+        };
 
-        ACTION_ARG(Model::SplitDirection, SplitDirection, SplitDirection::Automatic);
-        WINRT_PROPERTY(Model::INewContentArgs, ContentArgs, nullptr);
-        ACTION_ARG(SplitType, SplitMode, SplitType::Manual);
-        ACTION_ARG(float, SplitSize, 0.5f);
-
-        static constexpr std::string_view SplitKey{ "split" };
-        static constexpr std::string_view SplitModeKey{ "splitMode" };
-        static constexpr std::string_view SplitSizeKey{ "size" };
+        SPLIT_PANE_ARGS(DECLARE_ARGS);
+        WINRT_PROPERTY(Model::INewContentArgs, ContentArgs, Model::NewTerminalArgs{});
 
     public:
         hstring GenerateName() const;
@@ -701,7 +697,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         {
             // LOAD BEARING: Not using make_self here _will_ break you in the future!
             auto args = winrt::make_self<SplitPaneArgs>();
-            JsonUtils::GetValueForKey(json, SplitKey, args->_SplitDirection);
+            JsonUtils::GetValueForKey(json, SplitDirectionKey, args->_SplitDirection);
             JsonUtils::GetValueForKey(json, SplitModeKey, args->_SplitMode);
             JsonUtils::GetValueForKey(json, SplitSizeKey, args->_SplitSize);
             if (args->SplitSize() >= 1 || args->SplitSize() <= 0)
@@ -721,7 +717,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             }
             const auto args{ get_self<SplitPaneArgs>(val) };
             auto json{ ContentArgsToJson(args->_ContentArgs) };
-            JsonUtils::SetValueForKey(json, SplitKey, args->_SplitDirection);
+            JsonUtils::SetValueForKey(json, SplitDirectionKey, args->_SplitDirection);
             JsonUtils::SetValueForKey(json, SplitModeKey, args->_SplitMode);
             JsonUtils::SetValueForKey(json, SplitSizeKey, args->_SplitSize);
             return json;
@@ -733,6 +729,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             copy->_ContentArgs = _ContentArgs.Copy();
             copy->_SplitMode = _SplitMode;
             copy->_SplitSize = _SplitSize;
+            copy->_argDescriptions = _argDescriptions;
             return *copy;
         }
         size_t Hash() const
@@ -746,24 +743,57 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
         uint32_t GetArgCount() const
         {
-            return 4;
+            if (const auto newTermArgs = _ContentArgs.try_as<NewTerminalArgs>())
+            {
+                return newTermArgs->GetArgCount() + gsl::narrow<uint32_t>(_argDescriptions.size());
+            }
+            else
+            {
+                return gsl::narrow<uint32_t>(_argDescriptions.size());
+            }
         }
-        Model::ArgDescription GetArgDescriptionAt(uint32_t /*index*/) const
+        Model::ArgDescription GetArgDescriptionAt(uint32_t index) const
         {
-            return {};
+            const auto additionalArgCount = gsl::narrow<uint32_t>(_argDescriptions.size());
+            if (index < additionalArgCount)
+            {
+                return _argDescriptions.at(index);
+            }
+            else
+            {
+                return _ContentArgs.as<NewTerminalArgs>()->GetArgDescriptionAt(index - additionalArgCount);
+            }
         }
-        IInspectable GetArgAt(uint32_t /*index*/) const
+        IInspectable GetArgAt(uint32_t index) const
         {
+            const auto additionalArgCount = gsl::narrow<uint32_t>(_argDescriptions.size());
+            if (index < additionalArgCount)
+            {
+                uint32_t curIndex{ 0 };
+                SPLIT_PANE_ARGS(GET_ARG_BY_INDEX);
+            }
+            else
+            {
+                return _ContentArgs.as<NewTerminalArgs>()->GetArgAt(index - additionalArgCount);
+            }
             return nullptr;
         }
-        void SetArgAt(uint32_t /*index*/, IInspectable /*value*/)
+        void SetArgAt(uint32_t index, IInspectable value)
         {
-            throw winrt::hresult_not_implemented();
+            const auto additionalArgCount = gsl::narrow<uint32_t>(_argDescriptions.size());
+            if (index < additionalArgCount)
+            {
+                uint32_t curIndex{ 0 };
+                SPLIT_PANE_ARGS(SET_ARG_BY_INDEX);
+            }
+            else
+            {
+                _ContentArgs.as<NewTerminalArgs>()->SetArgAt(index - additionalArgCount, value);
+            }
         }
-        void SetAllArgsToDefault()
-        {
-            throw winrt::hresult_not_implemented();
-        }
+
+    private:
+        std::vector<ArgDescription> _argDescriptions;
     };
 
     struct NewWindowArgs : public NewWindowArgsT<NewWindowArgs>
@@ -771,7 +801,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         NewWindowArgs() = default;
         NewWindowArgs(const Model::INewContentArgs& terminalArgs) :
             _ContentArgs{ terminalArgs } {};
-        WINRT_PROPERTY(Model::INewContentArgs, ContentArgs, nullptr);
+        WINRT_PROPERTY(Model::INewContentArgs, ContentArgs, Model::NewTerminalArgs{});
 
     public:
         hstring GenerateName() const;
@@ -816,23 +846,19 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
         uint32_t GetArgCount() const
         {
-            return 2;
+            return _ContentArgs.as<NewTerminalArgs>()->GetArgCount();
         }
-        Model::ArgDescription GetArgDescriptionAt(uint32_t /*index*/) const
+        Model::ArgDescription GetArgDescriptionAt(uint32_t index) const
         {
-            return {};
+            return _ContentArgs.as<NewTerminalArgs>()->GetArgDescriptionAt(index);
         }
-        IInspectable GetArgAt(uint32_t /*index*/) const
+        IInspectable GetArgAt(uint32_t index) const
         {
-            return nullptr;
+            return _ContentArgs.as<NewTerminalArgs>()->GetArgAt(index);
         }
-        void SetArgAt(uint32_t /*index*/, IInspectable /*value*/)
+        void SetArgAt(uint32_t index, IInspectable value)
         {
-            throw winrt::hresult_not_implemented();
-        }
-        void SetAllArgsToDefault()
-        {
-            throw winrt::hresult_not_implemented();
+            _ContentArgs.as<NewTerminalArgs>()->SetArgAt(index, value);
         }
     };
 
@@ -986,10 +1012,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             return nullptr;
         }
         void SetArgAt(uint32_t /*index*/, IInspectable /*value*/)
-        {
-            throw winrt::hresult_not_implemented();
-        }
-        void SetAllArgsToDefault()
         {
             throw winrt::hresult_not_implemented();
         }

@@ -298,6 +298,50 @@
                 </ListViewItem>
             </DataTemplate>
 
+            <DataTemplate x:Key="UInt64Template"
+                          x:DataType="local:ArgWrapper">
+                <ListViewItem>
+                    <Grid ColumnSpacing="8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="{StaticResource ArgumentNameWidth}" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="{x:Bind Name}"
+                                   VerticalAlignment="Center"
+                                   Grid.Column="0"/>
+                        <muxc:NumberBox Value="{x:Bind UnboxUInt64(Value), Mode=TwoWay, BindBack=UInt64BindBack}"
+                                        Style="{StaticResource NumberBoxSettingStyle}"
+                                        Minimum="0"
+                                        Maximum="999"
+                                        LargeChange="1"
+                                        SmallChange="1"
+                                        Grid.Column="1"/>
+                    </Grid>
+                </ListViewItem>
+            </DataTemplate>
+
+            <DataTemplate x:Key="Int32OptionalTemplate"
+                          x:DataType="local:ArgWrapper">
+                <ListViewItem>
+                    <Grid ColumnSpacing="8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="{StaticResource ArgumentNameWidth}" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="{x:Bind Name}"
+                                   VerticalAlignment="Center"
+                                   Grid.Column="0"/>
+                        <muxc:NumberBox Value="{x:Bind UnboxInt32Optional(Value), Mode=TwoWay, BindBack=Int32OptionalBindBack}"
+                                        Style="{StaticResource NumberBoxSettingStyle}"
+                                        Minimum="0"
+                                        Maximum="999"
+                                        LargeChange="1"
+                                        SmallChange="1"
+                                        Grid.Column="1"/>
+                    </Grid>
+                </ListViewItem>
+            </DataTemplate>
+
             <DataTemplate x:Key="FloatTemplate"
                           x:DataType="local:ArgWrapper">
                 <ListViewItem>
@@ -332,6 +376,23 @@
                                    VerticalAlignment="Center"
                                    Grid.Column="0"/>
                         <TextBox Text="{x:Bind UnboxString(Value), Mode=TwoWay, BindBack=StringBindBack}"
+                                 Grid.Column="1"/>
+                    </Grid>
+                </ListViewItem>
+            </DataTemplate>
+
+            <DataTemplate x:Key="GuidTemplate"
+                          x:DataType="local:ArgWrapper">
+                <ListViewItem>
+                    <Grid ColumnSpacing="8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="{StaticResource ArgumentNameWidth}" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="{x:Bind Name}"
+                                   VerticalAlignment="Center"
+                                   Grid.Column="0"/>
+                        <TextBox Text="{x:Bind UnboxGuid(Value), Mode=TwoWay, BindBack=GuidBindBack}"
                                  Grid.Column="1"/>
                     </Grid>
                 </ListViewItem>
@@ -459,10 +520,13 @@
             <local:ArgsTemplateSelectors x:Key="ArgsTemplateSelector"
                                          NoArgTemplate="{StaticResource NoArgTemplate}"
                                          Int32Template="{StaticResource Int32Template}"
+                                         Int32OptionalTemplate="{StaticResource Int32OptionalTemplate}"
                                          UInt32Template="{StaticResource UInt32Template}"
                                          UInt32OptionalTemplate="{StaticResource UInt32OptionalTemplate}"
+                                         UInt64Template="{StaticResource UInt64Template}"
                                          FloatTemplate="{StaticResource FloatTemplate}"
                                          StringTemplate="{StaticResource StringTemplate}"
+                                         GuidTemplate="{StaticResource GuidTemplate}"
                                          BoolOptionalTemplate="{StaticResource BoolOptionalTemplate}"
                                          EnumTemplate="{StaticResource EnumTemplate}"
                                          FlagTemplate="{StaticResource FlagTemplate}"

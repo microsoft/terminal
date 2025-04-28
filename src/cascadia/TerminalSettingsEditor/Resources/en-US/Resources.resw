@@ -1884,6 +1884,42 @@
     <value>RTF</value>
     <comment>An option to choose from for the "copy format". Copies content in Rich Text Format (RTF).</comment>
   </data>
+  <data name="Actions_SplitDirectionAuto.Content" xml:space="preserve">
+    <value>Automatic</value>
+    <comment>An option to choose from for the "split direction". Automatically determines the split direction.</comment>
+  </data>
+  <data name="Actions_SplitDirectionUp.Content" xml:space="preserve">
+    <value>Up</value>
+    <comment>An option to choose from for the "split direction". Splits upward.</comment>
+  </data>
+  <data name="Actions_SplitDirectionRight.Content" xml:space="preserve">
+    <value>Right</value>
+    <comment>An option to choose from for the "split direction". Splits to the right.</comment>
+  </data>
+  <data name="Actions_SplitDirectionDown.Content" xml:space="preserve">
+    <value>Down</value>
+    <comment>An option to choose from for the "split direction". Splits downward.</comment>
+  </data>
+  <data name="Actions_SplitDirectionLeft.Content" xml:space="preserve">
+    <value>Left</value>
+    <comment>An option to choose from for the "split direction". Splits to the left.</comment>
+  </data>
+  <data name="Actions_SplitDirectionVertical.Content" xml:space="preserve">
+    <value>Vertical</value>
+    <comment>An option to choose from for the "split direction". Splits to the left.</comment>
+  </data>
+  <data name="Actions_SplitDirectionHorizontal.Content" xml:space="preserve">
+    <value>Horizontal</value>
+    <comment>An option to choose from for the "split direction". Splits to the left.</comment>
+  </data>
+  <data name="Actions_SplitTypeManual.Content" xml:space="preserve">
+    <value>Manual</value>
+    <comment>An option to choose from for the "split type". Creates a manual split.</comment>
+  </data>
+  <data name="Actions_SplitTypeDuplicate.Content" xml:space="preserve">
+    <value>Duplicate</value>
+    <comment>An option to choose from for the "split type". Creates a split by duplicating the current session.</comment>
+  </data>
   <data name="Actions_ResizeDirectionNone.Content" xml:space="preserve">
     <value>None</value>
     <comment>An option to choose from for the "resize direction". None option.</comment>

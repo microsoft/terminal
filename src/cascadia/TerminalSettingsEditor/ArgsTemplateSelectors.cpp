@@ -30,6 +30,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             {
                 return StringTemplate();
             }
+            else if (argType == L"winrt::guid")
+            {
+                return GuidTemplate();
+            }
             else if (argType == L"int32_t")
             {
                 return Int32Template();
@@ -38,14 +42,23 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             {
                 return UInt32Template();
             }
+            else if (argType == L"uint64_t")
+            {
+                return UInt64Template();
+            }
             else if (argType == L"float")
             {
                 return FloatTemplate();
             }
-            else if (argType == L"bool")
+            else if (argType == L"bool" ||
+                     argType == L"Windows::Foundation::IReference<bool>")
             {
                 // we don't have any bool args that are required, so just use the optional template for all of them
                 return BoolOptionalTemplate();
+            }
+            else if (argType == L"Windows::Foundation::IReference<int32_t>")
+            {
+                return Int32OptionalTemplate();
             }
             else if (argType == L"Windows::Foundation::IReference<uint32_t>")
             {
@@ -62,7 +75,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                      argType == L"Model::MonitorBehavior" ||
                      argType == L"winrt::Microsoft::Terminal::Control::ClearBufferType" ||
                      argType == L"SelectOutputDirection" ||
-                     argType == L"Windows::Foundation::IReference<TabSwitcherMode>")
+                     argType == L"Windows::Foundation::IReference<TabSwitcherMode>" ||
+                     argType == L"Model::SplitDirection" ||
+                     argType == L"SplitType")
             {
                 return EnumTemplate();
             }

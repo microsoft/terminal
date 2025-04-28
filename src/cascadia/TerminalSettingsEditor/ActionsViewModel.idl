@@ -91,9 +91,12 @@ namespace Microsoft.Terminal.Settings.Editor
 
         // unboxing functions
         String UnboxString(Object value);
+        String UnboxGuid(Object value);
         UInt32 UnboxInt32(Object value);
+        Single UnboxInt32Optional(Object value);
         UInt32 UnboxUInt32(Object value);
         Single UnboxUInt32Optional(Object value);
+        Single UnboxUInt64(Object value);
         Single UnboxFloat(Object value);
         Windows.Foundation.IReference<Boolean> UnboxBoolOptional(Object value);
         Windows.Foundation.IReference<Microsoft.Terminal.Core.Color> UnboxTerminalCoreColorOptional(Object value);
@@ -101,9 +104,12 @@ namespace Microsoft.Terminal.Settings.Editor
 
         // bind back functions
         void StringBindBack(String newValue);
+        void GuidBindBack(String newValue);
         void Int32BindBack(Double newValue);
+        void Int32OptionalBindBack(Double newValue);
         void UInt32BindBack(Double newValue);
         void UInt32OptionalBindBack(Double newValue);
+        void UInt64BindBack(Double newValue);
         void FloatBindBack(Double newValue);
         void BoolBindBack(Windows.Foundation.IReference<Boolean> newValue);
         void TerminalCoreColorBindBack(Windows.Foundation.IReference<Microsoft.Terminal.Core.Color> newValue);

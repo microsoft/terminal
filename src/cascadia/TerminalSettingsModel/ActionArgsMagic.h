@@ -77,17 +77,17 @@ struct InitListPlaceholder
     &&(otherAsUs->_##name == _##name)
 
 // getter and setter for each property by index
-#define GET_ARG_BY_INDEX(type, name, jsonKey, required, ...) \
-    if (index == curIndex++)                                 \
-    {                                                        \
-        if (_##name.has_value())                             \
-        {                                                    \
-            return winrt::box_value(_##name.value());        \
-        }                                                    \
-        else                                                 \
-        {                                                    \
-            return nullptr;                                  \
-        }                                                    \
+#define GET_ARG_BY_INDEX(type, name, jsonKey, required, ...)         \
+    if (index == curIndex++)                                         \
+    {                                                                \
+        if (_##name.has_value())                                     \
+        {                                                            \
+            return winrt::box_value(_##name.value());                \
+        }                                                            \
+        else                                                         \
+        {                                                            \
+            return winrt::box_value(static_cast<type>(__VA_ARGS__)); \
+        }                                                            \
     }
 
 #define SET_ARG_BY_INDEX(type, name, jsonKey, required, ...) \
@@ -102,9 +102,6 @@ struct InitListPlaceholder
             _##name = std::nullopt;                          \
         }                                                    \
     }
-
-#define SET_ARG_TO_DEFAULT(type, name, jsonKey, required, ...) \
-    _##name = static_cast<type>(__VA_ARGS__);
 
 // JSON deserialization. If the parameter is required to pass any validation,
 // add that as the `required` parameter here, as the body of a conditional
@@ -217,8 +214,38 @@ public:                                                          \
     {                                                            \
         uint32_t curIndex{ 0 };                                  \
         argsMacro(SET_ARG_BY_INDEX)                              \
-    }                                                            \
-    void SetAllArgsToDefault()                                   \
-    {                                                            \
-        argsMacro(SET_ARG_TO_DEFAULT)                            \
+    }
+
+#define PARTIAL_ACTION_ARG_BODY(className, argsMacro)          \
+    className(){ argsMacro(APPEND_ARG_DESCRIPTION) };          \
+    className(                                                 \
+        argsMacro(CTOR_PARAMS) InitListPlaceholder = {}) :     \
+        argsMacro(CTOR_INIT) _placeholder{} {                  \
+            argsMacro(APPEND_ARG_DESCRIPTION)                  \
+        };                                                     \
+    argsMacro(DECLARE_ARGS);                                   \
+                                                               \
+private:                                                       \
+    InitListPlaceholder _placeholder;                          \
+    std::vector<ArgDescription> _argDescriptions;              \
+                                                               \
+public:                                                        \
+    uint32_t GetArgCount() const                               \
+    {                                                          \
+        return gsl::narrow<uint32_t>(_argDescriptions.size()); \
+    }                                                          \
+    ArgDescription GetArgDescriptionAt(uint32_t index) const   \
+    {                                                          \
+        return _argDescriptions.at(index);                     \
+    }                                                          \
+    IInspectable GetArgAt(uint32_t index) const                \
+    {                                                          \
+        uint32_t curIndex{ 0 };                                \
+        argsMacro(GET_ARG_BY_INDEX)                            \
+        return nullptr;                                        \
+    }                                                          \
+    void SetArgAt(uint32_t index, IInspectable value)          \
+    {                                                          \
+        uint32_t curIndex{ 0 };                                \
+        argsMacro(SET_ARG_BY_INDEX)                            \
     }
