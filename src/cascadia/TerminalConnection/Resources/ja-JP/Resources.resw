@@ -209,7 +209,7 @@
   </data>
   <data name="CtrlDToClose" xml:space="preserve">
     <value>このターミナルを Ctrl+D で閉じるか、Enter キーを押して再起動できます。</value>
-	  <comment>"Ctrl+D" and "Enter" represent keys the user will press (control+D and Enter).</comment>
+    <comment>"Ctrl+D" and "Enter" represent keys the user will press (control+D and Enter).</comment>
   </data>
   <data name="ProcessFailedToLaunch" xml:space="preserve">
     <value>['{1}' の起動時にエラー {0} が発生しました]</value>
@@ -219,5 +219,11 @@
   <data name="BadPathText" xml:space="preserve">
     <value>先頭のディレクトリ "{0}" にアクセスできませんでした</value>
     <comment>The first argument {0} is a path to a directory on the filesystem, as provided by the user.</comment>
+  </data>
+  <data name="ElevationRequired" xml:space="preserve">
+    <value>要求された操作には、権限の昇格が必要です。</value>
+  </data>
+  <data name="FileNotFound" xml:space="preserve">
+    <value>指定されたファイルが見つかりません。</value>
   </data>
 </root>

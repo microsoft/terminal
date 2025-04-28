@@ -36,7 +36,6 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         WORD ShowWindow() const noexcept;
 
         static void StartInboundListener();
-        static void StopInboundListener();
 
         static winrt::event_token NewConnection(const NewConnectionHandler& handler);
         static void NewConnection(const winrt::event_token& token);

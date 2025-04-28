@@ -471,15 +471,22 @@ bool InputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParameter
         // We catch it here and store the information for later retrieval.
         if (_deviceAttributes.load(std::memory_order_relaxed) == 0)
         {
-            til::enumset<DeviceAttribute, uint64_t> attributes;
+            til::enumset<DeviceAttribute, uint64_t> attributes{ DeviceAttribute::__some__ };
 
             // The first parameter denotes the conformance level.
-            if (parameters.at(0).value() >= 61)
+            const auto len = parameters.size();
+            if (len >= 2 && parameters.at(0).value() >= 61)
             {
-                parameters.subspan(1).for_each([&](auto p) {
-                    attributes.set(static_cast<DeviceAttribute>(p));
-                    return true;
-                });
+                // NOTE: VTParameters::for_each will replace empty spans with a single default value.
+                // This means we could not distinguish between no parameters and a single default parameter.
+                for (size_t i = 1; i < len; i++)
+                {
+                    const auto value = parameters.at(i).value();
+                    if (value > 0 && value < 64)
+                    {
+                        attributes.set(static_cast<DeviceAttribute>(value));
+                    }
+                }
             }
 
             _deviceAttributes.fetch_or(attributes.bits(), std::memory_order_relaxed);
