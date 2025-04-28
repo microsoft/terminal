@@ -1571,10 +1571,10 @@ void Terminal::SerializeMainBuffer(const wchar_t* destination) const
 
 void Terminal::ColorSelection(const TextAttribute& attr, winrt::Microsoft::Terminal::Core::MatchMode matchMode)
 {
-    const auto colorSelection = [this](const til::point coordStart, const til::point coordEnd, const TextAttribute& attr) {
+    const auto colorSelection = [this](const til::point coordStartInclusive, const til::point coordEndExclusive, const TextAttribute& attr) {
         auto& textBuffer = _activeBuffer();
-        const auto spanLength = textBuffer.SpanLength(coordStart, coordEnd);
-        textBuffer.Write(OutputCellIterator(attr, spanLength), coordStart);
+        const auto spanLength = textBuffer.GetSize().CompareInBounds(coordEndExclusive, coordStartInclusive, true);
+        textBuffer.Write(OutputCellIterator(attr, spanLength), coordStartInclusive);
     };
 
     for (const auto [start, end] : _GetSelectionSpans())

@@ -183,8 +183,8 @@
             <!--  The OpenJson item needs both Tapped and KeyDown handler  -->
             <muxc:NavigationViewItem x:Name="OpenJsonNavItem"
                                      x:Uid="Nav_OpenJSON"
-                                     KeyDown="OpenJsonKeyDown"
-                                     Tapped="OpenJsonTapped">
+                                     SelectsOnInvoked="False"
+                                     Tag="OpenJson_Nav">
                 <muxc:NavigationViewItem.Icon>
                     <FontIcon Glyph="&#xE713;" />
                 </muxc:NavigationViewItem.Icon>

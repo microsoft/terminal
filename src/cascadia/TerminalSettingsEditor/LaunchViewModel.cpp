@@ -82,16 +82,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return language.NativeName();
     }
 
-    // Returns whether the language selector is available/shown.
-    //
-    // winrt::Windows::Globalization::ApplicationLanguages::PrimaryLanguageOverride()
-    // doesn't work for unpackaged applications. The corresponding code in TerminalApp is disabled.
-    // It would be confusing for our users if we presented a dysfunctional language selector.
-    bool LaunchViewModel::LanguageSelectorAvailable()
-    {
-        return IsPackaged();
-    }
-
     // Returns the list of languages the user may override the application language with.
     // The returned list are BCP 47 language tags like {"und", "en-US", "de-DE", "es-ES", ...}.
     // "und" is short for "undefined" and is synonymous for "Use system language" in this code.
@@ -99,12 +89,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         if (_languageList)
         {
-            return _languageList;
-        }
-
-        if (!LanguageSelectorAvailable())
-        {
-            _languageList = {};
             return _languageList;
         }
 
@@ -179,19 +163,24 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             return _currentLanguage;
         }
 
-        if (!LanguageSelectorAvailable())
+        winrt::hstring currentLanguage;
+        if (IsPackaged())
         {
-            _currentLanguage = {};
-            return _currentLanguage;
+            // NOTE: PrimaryLanguageOverride throws if this instance is unpackaged.
+            currentLanguage = winrt::Windows::Globalization::ApplicationLanguages::PrimaryLanguageOverride();
+        }
+        else
+        {
+            if (_Settings.GlobalSettings().HasLanguage())
+            {
+                currentLanguage = _Settings.GlobalSettings().Language();
+            }
         }
 
-        // NOTE: PrimaryLanguageOverride throws if this instance is unpackaged.
-        auto currentLanguage = winrt::Windows::Globalization::ApplicationLanguages::PrimaryLanguageOverride();
         if (currentLanguage.empty())
         {
             currentLanguage = systemLanguageTag;
         }
-
         _currentLanguage = winrt::box_value(currentLanguage);
         return _currentLanguage;
     }

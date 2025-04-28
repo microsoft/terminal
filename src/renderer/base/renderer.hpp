@@ -28,19 +28,14 @@ namespace Microsoft::Console::Render
     class Renderer
     {
     public:
-        Renderer(const RenderSettings& renderSettings,
-                 IRenderData* pData,
-                 _In_reads_(cEngines) IRenderEngine** const pEngine,
-                 const size_t cEngines,
-                 std::unique_ptr<RenderThread> thread);
-
-        ~Renderer();
+        Renderer(RenderSettings& renderSettings, IRenderData* pData);
 
         IRenderData* GetRenderData() const noexcept;
 
         [[nodiscard]] HRESULT PaintFrame();
 
         void NotifyPaintFrame() noexcept;
+        void SynchronizedOutputChanged() noexcept;
         void TriggerSystemRedraw(const til::rect* const prcDirtyClient);
         void TriggerRedraw(const Microsoft::Console::Types::Viewport& region);
         void TriggerRedraw(const til::point* const pcoord);
@@ -71,7 +66,6 @@ namespace Microsoft::Console::Render
         bool IsGlyphWideByFont(const std::wstring_view glyph);
 
         void EnablePainting();
-        void WaitForPaintCompletionAndDisable(const DWORD dwTimeoutMs);
         void WaitUntilCanRender();
 
         void AddRenderEngine(_In_ IRenderEngine* const pEngine);
@@ -80,7 +74,6 @@ namespace Microsoft::Console::Render
         void SetBackgroundColorChangedCallback(std::function<void()> pfn);
         void SetFrameColorChangedCallback(std::function<void()> pfn);
         void SetRendererEnteredErrorStateCallback(std::function<void()> pfn);
-        void ResetErrorStateAndResume();
 
         void UpdateHyperlinkHoveredId(uint16_t id) noexcept;
         void UpdateLastHoveredInterval(const std::optional<interval_tree::IntervalTree<til::point, size_t>::interval>& newInterval);
@@ -99,6 +92,7 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] HRESULT _PaintFrame() noexcept;
         [[nodiscard]] HRESULT _PaintFrameForEngine(_In_ IRenderEngine* const pEngine) noexcept;
+        void _synchronizeWithOutput() noexcept;
         bool _CheckViewportAndScroll();
         [[nodiscard]] HRESULT _PaintBackground(_In_ IRenderEngine* const pEngine);
         void _PaintBufferOutput(_In_ IRenderEngine* const pEngine);
@@ -118,26 +112,29 @@ namespace Microsoft::Console::Render
         void _prepareNewComposition();
         [[nodiscard]] HRESULT _PrepareRenderInfo(_In_ IRenderEngine* const pEngine);
 
-        const RenderSettings& _renderSettings;
+        RenderSettings& _renderSettings;
         std::array<IRenderEngine*, 2> _engines{};
         IRenderData* _pData = nullptr; // Non-ownership pointer
-        std::unique_ptr<RenderThread> _pThread;
         static constexpr size_t _firstSoftFontChar = 0xEF20;
         size_t _lastSoftFontChar = 0;
         uint16_t _hyperlinkHoveredId = 0;
         std::optional<interval_tree::IntervalTree<til::point, size_t>::interval> _hoveredInterval;
         Microsoft::Console::Types::Viewport _viewport;
-        CursorOptions _currentCursorOptions;
+        CursorOptions _currentCursorOptions{};
         std::optional<CompositionCache> _compositionCache;
         std::vector<Cluster> _clusterBuffer;
         std::function<void()> _pfnBackgroundColorChanged;
         std::function<void()> _pfnFrameColorChanged;
         std::function<void()> _pfnRendererEnteredErrorState;
-        bool _destructing = false;
+        bool _isSynchronizingOutput = false;
         bool _forceUpdateViewport = false;
 
         til::point_span _lastSelectionPaintSpan{};
         size_t _lastSelectionPaintSize{};
         std::vector<til::rect> _lastSelectionRectsByViewport{};
+
+        // Ordered last, so that it gets destroyed first.
+        // This ensures that the render thread stops accessing us.
+        RenderThread _thread{ this };
     };
 }

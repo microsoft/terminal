@@ -209,7 +209,7 @@
   </data>
   <data name="CtrlDToClose" xml:space="preserve">
     <value>You can now close this terminal with Ctrl+D, or press Enter to restart.</value>
-	  <comment>"Ctrl+D" and "Enter" represent keys the user will press (control+D and Enter).</comment>
+    <comment>"Ctrl+D" and "Enter" represent keys the user will press (control+D and Enter).</comment>
   </data>
   <data name="ProcessFailedToLaunch" xml:space="preserve">
     <value>[error {0} when launching `{1}']</value>
@@ -219,5 +219,11 @@
   <data name="BadPathText" xml:space="preserve">
     <value>Could not access starting directory "{0}"</value>
     <comment>The first argument {0} is a path to a directory on the filesystem, as provided by the user.</comment>
+  </data>
+  <data name="ElevationRequired" xml:space="preserve">
+    <value>The requested operation requires elevation.</value>
+  </data>
+  <data name="FileNotFound" xml:space="preserve">
+    <value>The system cannot find the file specified.</value>
   </data>
 </root>
