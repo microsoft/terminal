@@ -435,29 +435,6 @@ namespace fzf
             return patObj;
         }
 
-        int16_t GetScore(std::wstring_view text, const Pattern& pattern)
-        {
-            if (pattern.terms.empty())
-            {
-                return 1;
-            }
-            int16_t totalScore = 0;
-            for (const auto& term : pattern.terms)
-            {
-                auto textCodePoints = ConvertUtf16ToCodePoints(text, false);
-                FzfResult res = FzfFuzzyMatchV2(textCodePoints, term, nullptr);
-                if (res.Start >= 0)
-                {
-                    totalScore += res.Score;
-                }
-                else
-                {
-                    return 0;
-                }
-            }
-            return totalScore;
-        }
-
         static std::vector<int32_t> MapCodepointsToUtf16(
             std::vector<int32_t> const& cpPos,
             std::vector<int32_t> const& cpMap,
@@ -479,28 +456,35 @@ namespace fzf
             return utf16pos;
         }
 
-        std::vector<int32_t> GetPositions(std::wstring_view text, const Pattern& pattern)
+        std::optional<MatchResult> Match(std::wstring_view text, const Pattern& pattern)
         {
-            std::vector<int32_t> result;
-            for (const auto& termSet : pattern.terms)
+            if (pattern.terms.empty())
             {
-                std::vector<int32_t> codePointPos;
-                std::vector<int32_t> utf16map;
-                auto textCodePoints = ConvertUtf16ToCodePoints(text, false, &utf16map);
-                FzfResult algResult = FzfFuzzyMatchV2(textCodePoints, termSet, &codePointPos);
-                auto tmp = MapCodepointsToUtf16(codePointPos, utf16map, text.size());
-                for (auto t : tmp)
-                {
-                    result.push_back(t);
-                }
-                if (algResult.Score == 0)
-                {
-                    return {};
-                }
+                return MatchResult{};;
             }
-            return result;
-        }
 
+            int16_t totalScore = 0;
+            std::vector<int32_t> pos;
+            for (const auto& term : pattern.terms)
+            {
+                std::vector<int32_t> utf16map;
+                std::vector<int32_t> codePointPos;
+                auto textCodePoints = ConvertUtf16ToCodePoints(text, false, &utf16map);
+                FzfResult res = FzfFuzzyMatchV2(textCodePoints, term, &codePointPos);
+                if (res.Score <= 0)
+                {
+                    return std::nullopt;
+                }
+
+                auto termUtf16Pos = MapCodepointsToUtf16(codePointPos, utf16map, text.size());
+                for (auto t : termUtf16Pos)
+                {
+                    pos.push_back(t);
+                }
+                totalScore += res.Score;
+            }
+            return MatchResult{totalScore, pos};
+        }
     }
 
 }

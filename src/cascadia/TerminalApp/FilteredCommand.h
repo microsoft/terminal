@@ -34,6 +34,7 @@ namespace winrt::TerminalApp::implementation
         void _constructFilteredCommand(const winrt::TerminalApp::PaletteItem& item);
 
     private:
+        void _update();
         winrt::TerminalApp::HighlightedText _computeHighlightedName(const fzf::matcher::Pattern& pattern);
         int _computeWeight(const fzf::matcher::Pattern& pattern);
         Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker _itemChangedRevoker;

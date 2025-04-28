@@ -40,15 +40,14 @@ namespace winrt::TerminalApp::implementation
         _Weight = 0;
 
         const auto pattern = fzf::matcher::ParsePattern(Filter());
-        _HighlightedName = _computeHighlightedName(pattern);
+        _update();
 
         // Recompute the highlighted name if the item name changes
         _itemChangedRevoker = _Item.PropertyChanged(winrt::auto_revoke, [weakThis{ get_weak() },pattern](auto& /*sender*/, auto& e) {
             auto filteredCommand{ weakThis.get() };
             if (filteredCommand && e.PropertyName() == L"Name")
             {
-                filteredCommand->HighlightedName(filteredCommand->_computeHighlightedName(pattern));
-                filteredCommand->Weight(filteredCommand->_computeWeight( pattern));
+                filteredCommand->_update();
             }
         });
     }
@@ -60,152 +59,79 @@ namespace winrt::TerminalApp::implementation
         if (filter != _Filter)
         {
             Filter(filter);
-            const auto pattern = fzf::matcher::ParsePattern(Filter());
-            Weight(_computeWeight(pattern));
-            HighlightedName(_computeHighlightedName(pattern));
+            _update();
         }
     }
 
-    // Method Description:
-    // - Looks up the filter characters within the item name.
-    // Using the fzf algorithm to traceback from the maximum score to highlight the chars with the
-    // optimal match. (Preference is given to word boundaries, consecutive chars and special characters
-    // while penalties are given for gaps)
-    //
-    // E.g., for filter="c l t s" and name="close all tabs after this", the match will be "CLose TabS after this".
-    //
-    // The item name is then split into segments (groupings of matched and non matched characters).
-    //
-    // E.g., the segments were the example above will be "CL", "ose ", "T", "ab", "S", "after this".
-    //
-    // The segments matching the filter characters are marked as highlighted.
-    //
-    // E.g., ("CL", true) ("ose ", false), ("T", true), ("ab", false), ("S", true), ("after this", false)
-    //
-    // Return Value:
-    // - The HighlightedText object initialized with the segments computed according to the algorithm above.
-    winrt::TerminalApp::HighlightedText FilteredCommand::_computeHighlightedName(const fzf::matcher::Pattern& pattern)
+    void FilteredCommand::_update()
     {
+        auto pattern = fzf::matcher::ParsePattern(Filter());
         auto segments = winrt::single_threaded_observable_vector<winrt::TerminalApp::HighlightedTextSegment>();
         auto commandName = _Item.Name();
-
-        if (Weight() == 0)
+        auto weight = 0;
+        if (auto match = fzf::matcher::Match(commandName, pattern); !match)
         {
             segments.Append(winrt::TerminalApp::HighlightedTextSegment(commandName, false));
-            return winrt::make<HighlightedText>(segments);
         }
-
-        auto positions = fzf::matcher::GetPositions(commandName, pattern);
-        // positions are returned is sorted pairs by search term. E.g. sp anta {5,4,11,10,9,8}
-        // sorting these in ascending order so it is easier to build the text segments
-        std::ranges::sort(positions);
-        // a position can be matched in multiple terms, removed duplicates to simplify segments
-        positions.erase(std::unique(positions.begin(), positions.end()), positions.end());
-
-        std::vector<std::pair<size_t, size_t>> runs;
-        if (!positions.empty())
+        else
         {
-            size_t runStart = positions[0];
-            size_t runEnd = runStart;
-            for (size_t i = 1; i < positions.size(); ++i)
-            {
-                if (positions[i] == runEnd + 1)
-                {
-                    runEnd = positions[i];
-                }
-                else
-                {
-                    runs.emplace_back(runStart, runEnd);
-                    runStart = positions[i];
-                    runEnd = runStart;
-                }
-            }
-            runs.emplace_back(runStart, runEnd);
-        }
+            auto& matchResult = *match;
+            weight = matchResult.Score;
+            auto positions = matchResult.Pos;
+            // positions are returned is sorted pairs by search term. E.g. sp anta {5,4,11,10,9,8}
+            // sorting these in ascending order so it is easier to build the text segments
+            std::ranges::sort(positions);
+            // a position can be matched in multiple terms, removed duplicates to simplify segments
+            positions.erase(std::unique(positions.begin(), positions.end()), positions.end());
 
-        size_t lastPos = 0;
-        for (auto [start, end] : runs)
-        {
-            if (start > lastPos)
+            std::vector<std::pair<size_t, size_t>> runs;
+            if (!positions.empty())
             {
-                hstring nonMatch{ commandName.data() + lastPos,
-                                  static_cast<unsigned>(start - lastPos) };
-                segments.Append(winrt::TerminalApp::HighlightedTextSegment(nonMatch, false));
+                size_t runStart = positions[0];
+                size_t runEnd = runStart;
+                for (size_t i = 1; i < positions.size(); ++i)
+                {
+                    if (positions[i] == runEnd + 1)
+                    {
+                        runEnd = positions[i];
+                    }
+                    else
+                    {
+                        runs.emplace_back(runStart, runEnd);
+                        runStart = positions[i];
+                        runEnd = runStart;
+                    }
+                }
+                runs.emplace_back(runStart, runEnd);
             }
 
-            hstring matchSeg{ commandName.data() + start,
-                              static_cast<unsigned>(end - start + 1) };
-            segments.Append(winrt::TerminalApp::HighlightedTextSegment(matchSeg, true));
+            size_t lastPos = 0;
+            for (auto [start, end] : runs)
+            {
+                if (start > lastPos)
+                {
+                    hstring nonMatch{ commandName.data() + lastPos,
+                                      static_cast<unsigned>(start - lastPos) };
+                    segments.Append(winrt::TerminalApp::HighlightedTextSegment(nonMatch, false));
+                }
 
-            lastPos = end + 1;
+                hstring matchSeg{ commandName.data() + start,
+                                  static_cast<unsigned>(end - start + 1) };
+                segments.Append(winrt::TerminalApp::HighlightedTextSegment(matchSeg, true));
+
+                lastPos = end + 1;
+            }
+
+            if (lastPos < commandName.size())
+            {
+                hstring tail{ commandName.data() + lastPos,
+                              static_cast<unsigned>(commandName.size() - lastPos) };
+                segments.Append(winrt::TerminalApp::HighlightedTextSegment(tail, false));
+            }
         }
 
-        if (lastPos < commandName.size())
-        {
-            hstring tail{ commandName.data() + lastPos,
-                          static_cast<unsigned>(commandName.size() - lastPos) };
-            segments.Append(winrt::TerminalApp::HighlightedTextSegment(tail, false));
-        }
-
-        return winrt::make<HighlightedText>(segments);
-    }
-
-    // Function Description:
-    // - Calculates a "weighting" by which should be used to order a item
-    //   name relative to other names, given a specific search string.
-    //   Currently, this uses a derivative of the fzf implementation of the Smith Waterman algorithm:
-    // - This will return 0 if the item should not be shown.
-    //
-    // Factors that affect a score (Taken from the fzf repository)
-    // Scoring criteria
-    // ----------------
-    // 
-    // - We prefer matches at special positions, such as the start of a word, or
-    //   uppercase character in camelCase words.
-    //   - Note everything is converted to lower case so this does not apply
-    // 
-    // - That is, we prefer an occurrence of the pattern with more characters
-    //   matching at special positions, even if the total match length is longer.
-    //     e.g. "fuzzyfinder" vs. "fuzzy-finder" on "ff"
-    //                             ````````````
-    // - Also, if the first character in the pattern appears at one of the special
-    //   positions, the bonus point for the position is multiplied by a constant
-    //   as it is extremely likely that the first character in the typed pattern
-    //   has more significance than the rest.
-    //     e.g. "fo-bar" vs. "foob-r" on "br"
-    //           ``````
-    // - But since fzf is still a fuzzy finder, not an acronym finder, we should also
-    //   consider the total length of the matched substring. This is why we have the
-    //   gap penalty. The gap penalty increases as the length of the gap (distance
-    //   between the matching characters) increases, so the effect of the bonus is
-    //   eventually cancelled at some point.
-    //     e.g. "fuzzyfinder" vs. "fuzzy-blurry-finder" on "ff"
-    //           ```````````
-    // - Consequently, it is crucial to find the right balance between the bonus
-    //   and the gap penalty. The parameters were chosen that the bonus is cancelled
-    //   when the gap size increases beyond 8 characters.
-    // 
-    // - The bonus mechanism can have the undesirable side effect where consecutive
-    //   matches are ranked lower than the ones with gaps.
-    //     e.g. "foobar" vs. "foo-bar" on "foob"
-    //                        ```````
-    // - To correct this anomaly, we also give extra bonus point to each character
-    //   in a consecutive matching chunk.
-    //     e.g. "foobar" vs. "foo-bar" on "foob"
-    //           ``````
-    // - The amount of consecutive bonus is primarily determined by the bonus of the
-    //   first character in the chunk.
-    //     e.g. "foobar" vs. "out-of-bound" on "oob"
-    //                        ````````````
-    // Arguments:
-    // - searchText: the string of text to search for in `name`
-    // - name: the name to check
-    // Return Value:
-    // - the relative weight of this match
-    int FilteredCommand::_computeWeight(const fzf::matcher::Pattern& pattern)
-    {
-        auto score = fzf::matcher::GetScore(Item().Name(), pattern);
-        return score;
+        HighlightedName(winrt::make<HighlightedText>(segments));
+        Weight(weight);
     }
 
     // Function Description:

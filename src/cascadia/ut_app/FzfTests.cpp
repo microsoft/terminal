@@ -71,8 +71,14 @@ namespace TerminalAppUnitTests
     void AssertScoreAndPositions(std::wstring_view patternText, std::wstring_view text, int expectedScore, std::vector<int16_t> expectedPositions)
     {
         auto pattern = fzf::matcher::ParsePattern(patternText);
-        auto score = fzf::matcher::GetScore(text, pattern);
-        auto positions = fzf::matcher::GetPositions(text, pattern);
+        auto match = fzf::matcher::Match(text, pattern);
+        if (expectedScore == 0 && expectedPositions.size() == 0)
+        {
+            VERIFY_ARE_EQUAL(std::nullopt, match);
+            return;
+        }
+        auto score = match->Score;
+        auto positions = match->Pos;
         VERIFY_ARE_EQUAL(expectedScore, score);
         VERIFY_ARE_EQUAL(expectedPositions.size(), positions.size());
         for (auto i = 0; i < expectedPositions.size(); i++)
