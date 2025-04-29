@@ -8,6 +8,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:local="using:TerminalApp"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:mtu="using:Microsoft.Terminal.UI"
              xmlns:mux="using:Microsoft.UI.Xaml.Controls"
              mc:Ignorable="d">
 
@@ -51,7 +52,11 @@
                      Grid.Column="0"
                      Margin="4"
                      PlaceholderText="Enter a path to a markdown file..."
-                     Text="Z:\dev\simple-test.md" />
+                     Text="Z:\dev\simple-test.md">
+                <TextBox.ContextFlyout>
+                    <mtu:TextMenuFlyout />
+                </TextBox.ContextFlyout>
+            </TextBox>
             <StackPanel Grid.Column="1"
                         Orientation="Horizontal">
                 <Button Margin="4"
@@ -105,7 +110,11 @@
                      FontFamily="Cascadia Code"
                      IsSpellCheckEnabled="False"
                      Text="{x:Bind FileContents, Mode=TwoWay}"
-                     Visibility="{x:Bind Editing}" />
+                     Visibility="{x:Bind Editing}">
+                <TextBox.ContextFlyout>
+                    <mtu:TextMenuFlyout />
+                </TextBox.ContextFlyout>
+            </TextBox>
 
             <ScrollViewer x:Name="_scrollViewer"
                           Grid.Column="1"

@@ -284,7 +284,11 @@
                      IsSpellCheckEnabled="False"
                      PlaceholderText="{x:Bind SearchBoxPlaceholderText, Mode=OneWay}"
                      Text=""
-                     TextChanged="_filterTextChanged" />
+                     TextChanged="_filterTextChanged">
+                <TextBox.ContextFlyout>
+                    <mtu:TextMenuFlyout />
+                </TextBox.ContextFlyout>
+            </TextBox>
 
             <TextBlock x:Name="_prefixCharacter"
                        Grid.Row="0"
