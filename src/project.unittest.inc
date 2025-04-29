@@ -32,6 +32,7 @@ INCLUDES = \
 TARGETLIBS = \
     $(TARGETLIBS) \
     $(ONECORE_EXTERNAL_SDK_LIB_VPATH_L)\onecore.lib \
+    $(ONECORE_EXTERNAL_SDK_LIB_PATH)\ntdll.lib \
     $(ONECORESDKTOOLS_INTERNAL_LIB_PATH_L)\WexTest\Cue\Wex.Common.lib \
     $(ONECORESDKTOOLS_INTERNAL_LIB_PATH_L)\WexTest\Cue\Wex.Logger.lib \
     $(ONECORESDKTOOLS_INTERNAL_LIB_PATH_L)\WexTest\Cue\Te.Common.lib \
