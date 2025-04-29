@@ -4,7 +4,7 @@
 # -------------------------------------
 
 # Pull our dependencies from vcpkg. This includes gsl - if you run into errors
-# from a missing gsl, make sure you go build onecore/window/vcpkg first.
+# from a missing gsl or fmt, make sure you go build .../console/vcpkg first.
 
 !include $(PROJECT_ROOT)\core\console\vcpkg\consume.inc
 
