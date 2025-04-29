@@ -186,18 +186,20 @@ bool ImageSlice::_copyCells(const ImageSlice& srcSlice, const til::CoordType src
     }
 
     // The used destination before and after the written area must be erased.
-    if (dstUsedBegin < dstWriteBegin)
+    // If this results in the entire range being erased, we return true to let
+    // the caller know that the slice should be deleted.
+    if (dstUsedBegin < dstWriteBegin && _eraseCells(dstUsedBegin, dstWriteBegin))
     {
-        _eraseCells(dstUsedBegin, dstWriteBegin);
+        return true;
     }
-    if (dstUsedEnd > dstWriteEnd)
+    if (dstUsedEnd > dstWriteEnd && _eraseCells(dstWriteEnd, dstUsedEnd))
     {
-        _eraseCells(dstWriteEnd, dstUsedEnd);
+        return true;
     }
 
-    // If the beginning column is now not less than the end, that means the
-    // content has been entirely erased, so we return true to let the caller
-    // know that the slice should be deleted.
+    // At this point, if the beginning column is not less than the end, that
+    // means this was an empty slice into which nothing was copied, so we can
+    // again return true to let the caller know it should be deleted.
     return _columnBegin >= _columnEnd;
 }
 
