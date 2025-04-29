@@ -20,6 +20,8 @@ using namespace winrt::Windows::UI::Xaml::Navigation;
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
+    static constexpr std::wstring_view ExtensionPageId{ L"page.extensions" };
+
     Extensions::Extensions()
     {
         InitializeComponent();
@@ -35,7 +37,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     void Extensions::OnNavigatedTo(const NavigationEventArgs& e)
     {
         _ViewModel = e.Parameter().as<Editor::ExtensionsViewModel>();
-        get_self<ExtensionsViewModel>(_ViewModel)->ExtensionPackageIdentifierTemplateSelector(_extensionPackageIdentifierTemplateSelector);
+        auto vmImpl = get_self<ExtensionsViewModel>(_ViewModel);
+        vmImpl->ExtensionPackageIdentifierTemplateSelector(_extensionPackageIdentifierTemplateSelector);
+        vmImpl->LazyLoadExtensions();
+        vmImpl->MarkAsVisited();
     }
 
     void Extensions::ExtensionNavigator_Click(const IInspectable& sender, const RoutedEventArgs& /*args*/)
@@ -58,7 +63,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     ExtensionsViewModel::ExtensionsViewModel(const Model::CascadiaSettings& settings, const Editor::ColorSchemesPageViewModel& colorSchemesPageVM) :
         _settings{ settings },
-        _colorSchemesPageVM{ colorSchemesPageVM }
+        _colorSchemesPageVM{ colorSchemesPageVM },
+        _extensionsLoaded{ false }
     {
         UpdateSettings(settings, colorSchemesPageVM);
 
@@ -114,8 +120,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _settings = settings;
         _colorSchemesPageVM = colorSchemesPageVM;
         _CurrentExtensionPackage = nullptr;
+    }
 
-        std::vector<Model::ExtensionPackage> extensions = wil::to_vector(settings.Extensions());
+    void ExtensionsViewModel::LazyLoadExtensions()
+    {
+        if (_extensionsLoaded)
+        {
+            return;
+        }
+        std::vector<Model::ExtensionPackage> extensions = wil::to_vector(_settings.Extensions());
 
         // these vectors track components all extensions successfully added
         std::vector<Editor::ExtensionPackageViewModel> extensionPackages;
@@ -124,7 +137,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         std::vector<Editor::FragmentColorSchemeViewModel> colorSchemesAddedTotal;
         for (const auto& extPkg : extensions)
         {
-            auto extPkgVM = winrt::make_self<ExtensionPackageViewModel>(extPkg, settings);
+            auto extPkgVM = winrt::make_self<ExtensionPackageViewModel>(extPkg, _settings);
             extensionPackages.push_back(*extPkgVM);
             for (const auto& fragExt : extPkg.FragmentsView())
             {
@@ -196,11 +209,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _profilesModifiedView = single_threaded_observable_vector<Editor::FragmentProfileViewModel>(std::move(profilesModifiedTotal));
         _profilesAddedView = single_threaded_observable_vector<Editor::FragmentProfileViewModel>(std::move(profilesAddedTotal));
         _colorSchemesAddedView = single_threaded_observable_vector<Editor::FragmentColorSchemeViewModel>(std::move(colorSchemesAddedTotal));
+        _extensionsLoaded = true;
     }
 
     Windows::UI::Xaml::DataTemplate ExtensionsViewModel::CurrentExtensionPackageIdentifierTemplate() const
     {
         return _ExtensionPackageIdentifierTemplateSelector.SelectTemplate(CurrentExtensionPackage());
+    }
+
+    bool ExtensionsViewModel::DisplayBadge() const noexcept
+    {
+        return !Model::ApplicationState::SharedInstance().BadgeDismissed(ExtensionPageId);
     }
 
     // Returns true if the extension is enabled, false otherwise
@@ -261,6 +280,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         _colorSchemesPageVM.CurrentScheme(schemeVM);
         NavigateToColorSchemeRequested.raise(*this, nullptr);
+    }
+
+    void ExtensionsViewModel::MarkAsVisited()
+    {
+        Model::ApplicationState::SharedInstance().DismissBadge(ExtensionPageId);
+        _NotifyChanges(L"DisplayBadge");
     }
 
     hstring ExtensionPackageViewModel::Scope() const noexcept

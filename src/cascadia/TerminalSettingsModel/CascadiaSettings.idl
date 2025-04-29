@@ -74,7 +74,6 @@ namespace Microsoft.Terminal.Settings.Model
     {
         String ColorSchemeName { get; };
         String Json { get; };
-        Boolean Conflict { get; };
     }
 
     [default_interface] runtimeclass FragmentSettings

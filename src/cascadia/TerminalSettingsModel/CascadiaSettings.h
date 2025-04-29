@@ -82,12 +82,14 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     struct SettingsLoader
     {
         static SettingsLoader Default(const std::string_view& userJSON, const std::string_view& inboxJSON);
+        static std::vector<Model::ExtensionPackage> LoadExtensionPackages();
         SettingsLoader(const std::string_view& userJSON, const std::string_view& inboxJSON);
 
         void GenerateProfiles();
+        void GenerateExtensionPackagesFromProfileGenerators();
         void ApplyRuntimeInitialSettings();
         void MergeInboxIntoUserSettings();
-        void FindFragmentsAndMergeIntoUserSettings();
+        void FindFragmentsAndMergeIntoUserSettings(bool generateExtensionPackages);
         void MergeFragmentIntoUserSettings(const winrt::hstring& source, const std::string_view& content);
         void FinalizeLayering();
         bool DisableDeletedProfiles();
@@ -108,6 +110,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             const Json::Value& profilesList;
             const Json::Value& themes;
         };
+        struct ParseFragmentMetadata
+        {
+            std::wstring_view jsonFilename;
+            FragmentScope scope;
+        };
+        SettingsLoader() = default;
 
         static std::pair<size_t, size_t> _lineAndColumnFromPosition(const std::string_view& string, const size_t position);
         static void _rethrowSerializationExceptionWithLocationInfo(const JsonUtils::DeserializationError& e, const std::string_view& settingsString);
@@ -115,15 +123,16 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         static const Json::Value& _getJSONValue(const Json::Value& json, const std::string_view& key) noexcept;
         std::span<const winrt::com_ptr<implementation::Profile>> _getNonUserOriginProfiles() const;
         void _parse(const OriginTag origin, const winrt::hstring& source, const std::string_view& content, ParsedSettings& settings);
-        void _parseFragment(const winrt::hstring& source, const std::string_view& content, ParsedSettings& settings, FragmentScope scope, std::wstring_view jsonFilename, bool applyToSettings);
+        void _parseFragment(const winrt::hstring& source, const std::string_view& content, ParsedSettings& settings, const std::optional<ParseFragmentMetadata>& fragmentMeta);
         static JsonSettings _parseJson(const std::string_view& content);
         static winrt::com_ptr<implementation::Profile> _parseProfile(const OriginTag origin, const winrt::hstring& source, const Json::Value& profileJson);
         void _appendProfile(winrt::com_ptr<Profile>&& profile, const winrt::guid& guid, ParsedSettings& settings);
         void _addUserProfileParent(const winrt::com_ptr<implementation::Profile>& profile);
         bool _addOrMergeUserColorScheme(const winrt::com_ptr<implementation::ColorScheme>& colorScheme);
-        void _executeGenerator(IDynamicProfileGenerator& generator);
-        void _cleanupPowerShellInstaller(bool isPowerShellInstalled);
+        static void _executeGenerator(IDynamicProfileGenerator& generator, std::vector<winrt::com_ptr<implementation::Profile>>& profilesList);
+        void _patchInstallPowerShellProfile();
         winrt::com_ptr<implementation::ExtensionPackage> _registerFragment(const winrt::Microsoft::Terminal::Settings::Model::FragmentSettings& fragment, FragmentScope scope);
+        Json::StreamWriterBuilder _getJsonStyledWriter();
 
         std::unordered_set<winrt::hstring, til::transparent_hstring_hash, til::transparent_hstring_equal_to> _ignoredNamespaces;
         std::set<std::string> themesChangeLog;
@@ -156,7 +165,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         winrt::Windows::Foundation::Collections::IObservableVector<Model::Profile> AllProfiles() const noexcept;
         winrt::Windows::Foundation::Collections::IObservableVector<Model::Profile> ActiveProfiles() const noexcept;
         Model::ActionMap ActionMap() const noexcept;
-        winrt::Windows::Foundation::Collections::IVectorView<Model::ExtensionPackage> Extensions() const noexcept;
+        winrt::Windows::Foundation::Collections::IVectorView<Model::ExtensionPackage> Extensions();
         void WriteSettingsToDisk();
         Json::Value ToJson() const;
         Model::Profile ProfileDefaults() const;
@@ -214,7 +223,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         winrt::com_ptr<implementation::Profile> _baseLayerProfile = winrt::make_self<implementation::Profile>();
         winrt::Windows::Foundation::Collections::IObservableVector<Model::Profile> _allProfiles = winrt::single_threaded_observable_vector<Model::Profile>();
         winrt::Windows::Foundation::Collections::IObservableVector<Model::Profile> _activeProfiles = winrt::single_threaded_observable_vector<Model::Profile>();
-        winrt::Windows::Foundation::Collections::IVector<Model::ExtensionPackage> _extensionPackages = winrt::single_threaded_vector<Model::ExtensionPackage>();
+        winrt::Windows::Foundation::Collections::IVector<Model::ExtensionPackage> _extensionPackages = nullptr;
         std::set<std::string> _themesChangeLog{};
 
         // load errors
@@ -254,7 +263,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         hstring ColorSchemeName() const noexcept { return _schemeName; }
         hstring Json() const noexcept { return _json; }
-        WINRT_PROPERTY(bool, Conflict, false);
 
     private:
         hstring _schemeName;

@@ -610,7 +610,7 @@ void SixelParser::_updateTextColors()
     // the text output as well.
     if (_conformanceLevel <= 3 && _maxColors > 2 && _colorTableChanged) [[unlikely]]
     {
-        for (IndexType tableIndex = 0; tableIndex < _maxColors; tableIndex++)
+        for (IndexType tableIndex = 0; _maxColors <= 16 && tableIndex < _maxColors; tableIndex++)
         {
             _dispatcher.SetColorTableEntry(tableIndex, _colorFromIndex(tableIndex));
         }

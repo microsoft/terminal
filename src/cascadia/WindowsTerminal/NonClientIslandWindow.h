@@ -27,13 +27,13 @@ public:
     static constexpr const int topBorderVisibleHeight = 1;
 
     NonClientIslandWindow(const winrt::Windows::UI::Xaml::ElementTheme& requestedTheme) noexcept;
-    ~NonClientIslandWindow() override;
+    ~NonClientIslandWindow();
 
     virtual void Close() override;
     void MakeWindow() noexcept override;
     virtual void OnSize(const UINT width, const UINT height) override;
 
-    [[nodiscard]] virtual LRESULT MessageHandler(UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept override;
+    [[nodiscard]] virtual LRESULT MessageHandler(UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept;
 
     virtual til::rect GetNonClientFrame(UINT dpi) const noexcept override;
     virtual til::size GetTotalNonClientExclusiveSize(UINT dpi) const noexcept override;

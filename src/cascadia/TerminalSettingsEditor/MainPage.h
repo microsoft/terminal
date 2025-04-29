@@ -30,8 +30,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         void UpdateSettings(const Model::CascadiaSettings& settings);
 
-        void OpenJsonKeyDown(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::Input::KeyRoutedEventArgs& args);
-        void OpenJsonTapped(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::Input::TappedRoutedEventArgs& args);
         void SettingsNav_Loaded(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& args);
         void SettingsNav_ItemInvoked(const Microsoft::UI::Xaml::Controls::NavigationView& sender, const Microsoft::UI::Xaml::Controls::NavigationViewItemInvokedEventArgs& args);
         void SaveButton_Click(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& args);
@@ -45,6 +43,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         winrt::Windows::UI::Xaml::Media::Brush BackgroundBrush();
 
         Windows::Foundation::Collections::IObservableVector<IInspectable> Breadcrumbs() noexcept;
+        Editor::ExtensionsViewModel ExtensionsVM() const noexcept { return _extensionsVM; }
 
         til::typed_event<Windows::Foundation::IInspectable, Model::SettingsTarget> OpenJson;
 

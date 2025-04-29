@@ -209,7 +209,7 @@
   </data>
   <data name="CtrlDToClose" xml:space="preserve">
     <value>È ora possibile chiudere il terminale con CTRL+D oppure premere INVIO per riavviarlo.</value>
-	  <comment>"Ctrl+D" and "Enter" represent keys the user will press (control+D and Enter).</comment>
+    <comment>"Ctrl+D" and "Enter" represent keys the user will press (control+D and Enter).</comment>
   </data>
   <data name="ProcessFailedToLaunch" xml:space="preserve">
     <value>[errore {0} durante l'avvio di `{1}']</value>
@@ -219,5 +219,11 @@
   <data name="BadPathText" xml:space="preserve">
     <value>Non è possibile accedere alla directory di avvio "{0}"</value>
     <comment>The first argument {0} is a path to a directory on the filesystem, as provided by the user.</comment>
+  </data>
+  <data name="ElevationRequired" xml:space="preserve">
+    <value>Per l'operazione richiesta è necessaria l'elevazione dei privilegi.</value>
+  </data>
+  <data name="FileNotFound" xml:space="preserve">
+    <value>Impossibile trovare il file specificato.</value>
   </data>
 </root>

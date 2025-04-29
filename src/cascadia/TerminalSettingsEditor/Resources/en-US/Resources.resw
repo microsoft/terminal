@@ -2320,6 +2320,10 @@
     <value>MSYS2 (C:\ -> /c)</value>
     <comment>{Locked="MSYS2","C:\","/c"} An option to choose from for the "path translation" setting.</comment>
   </data>
+  <data name="Profile_PathTranslationStyleMinGW.Content" xml:space="preserve">
+    <value>MinGW (C:\ -> C:/)</value>
+    <comment>{Locked="MinGW","C:\","C:/"} An option to choose from for the "path translation" setting.</comment>
+  </data>
   <data name="Profile_Delete_Orphaned.Header" xml:space="preserve">
     <value>Profile no longer detected</value>
   </data>
@@ -2402,5 +2406,9 @@
   <data name="Extension_StateDisabled.Text" xml:space="preserve">
     <value>Disabled</value>
     <comment>Text displayed when an extension is disabled</comment>
+  </data>
+  <data name="NewInfoBadgeTextBlock.Text" xml:space="preserve">
+    <value>NEW</value>
+    <comment>Text is used on an info badge for new navigation items. Must be all caps.</comment>
   </data>
 </root>

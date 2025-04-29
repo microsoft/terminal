@@ -1163,7 +1163,8 @@ public:
         _hyperlinkMode{ false },
         _options{ s_cMaxOptions, static_cast<DispatchTypes::GraphicsOptions>(s_uiGraphicsCleared) }, // fill with cleared option
         _colorTable{},
-        _setColorTableEntry{ false }
+        _setColorTableEntry{ false },
+        _resetAllColors{ false }
     {
     }
 
@@ -1390,6 +1391,16 @@ public:
         _colorTableEntriesRequested.push_back(tableIndex);
     }
 
+    void ResetColorTable() noexcept override
+    {
+        _resetAllColors = true;
+    }
+
+    void ResetColorTableEntry(const size_t tableIndex) noexcept override
+    {
+        _colorTableEntriesReset.push_back(tableIndex);
+    }
+
     void SetXtermColorResource(const size_t resource, const DWORD color) override
     {
         _xtermResourcesChanged.push_back(resource);
@@ -1399,6 +1410,11 @@ public:
     void RequestXtermColorResource(const size_t resource) override
     {
         _xtermResourcesRequested.push_back(resource);
+    }
+
+    void ResetXtermColorResource(const size_t resource) override
+    {
+        _xtermResourcesReset.push_back(resource);
     }
 
     void SetClipboard(wil::zwstring_view content) noexcept override
@@ -1476,8 +1492,11 @@ public:
     std::vector<size_t> _xtermResourcesChanged;
     std::vector<DWORD> _xtermResourceValues;
     std::vector<size_t> _xtermResourcesRequested;
+    std::vector<size_t> _xtermResourcesReset;
     bool _setColorTableEntry;
     std::vector<size_t> _colorTableEntriesRequested;
+    bool _resetAllColors;
+    std::vector<size_t> _colorTableEntriesReset;
     bool _hyperlinkMode;
     std::wstring _copyContent;
     std::wstring _uri;
@@ -3218,6 +3237,79 @@ class StateMachineExternalTest final
         VERIFY_ARE_EQUAL(0u, pDispatch->_xtermResourcesChanged.size());
         VERIFY_ARE_EQUAL(1u, pDispatch->_xtermResourcesRequested.size());
         VERIFY_ARE_EQUAL(11u, pDispatch->_xtermResourcesRequested[0]);
+        pDispatch->ClearState();
+    }
+
+    TEST_METHOD(TestOscXtermResourceReset)
+    {
+        auto dispatch = std::make_unique<StatefulDispatch>();
+        auto pDispatch = dispatch.get();
+        auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
+        StateMachine mach(std::move(engine));
+
+        mach.ProcessString(L"\033]110\033\\");
+        VERIFY_ARE_EQUAL(0u, pDispatch->_xtermResourcesChanged.size());
+        VERIFY_ARE_EQUAL(0u, pDispatch->_xtermResourcesRequested.size());
+        VERIFY_ARE_EQUAL(1u, pDispatch->_xtermResourcesReset.size());
+        VERIFY_ARE_EQUAL(10u, pDispatch->_xtermResourcesReset[0]);
+        pDispatch->ClearState();
+
+        mach.ProcessString(L"\033]111;\033\\"); // dangling ;
+        VERIFY_ARE_EQUAL(0u, pDispatch->_xtermResourcesChanged.size());
+        VERIFY_ARE_EQUAL(0u, pDispatch->_xtermResourcesRequested.size());
+        VERIFY_ARE_EQUAL(1u, pDispatch->_xtermResourcesReset.size());
+        VERIFY_ARE_EQUAL(11u, pDispatch->_xtermResourcesReset[0]);
+        pDispatch->ClearState();
+
+        mach.ProcessString(L"\033]111;110\033\\");
+        // NOTE: this is xterm behavior - ignore the entire sequence if any params exist
+        VERIFY_ARE_EQUAL(0u, pDispatch->_xtermResourcesChanged.size());
+        VERIFY_ARE_EQUAL(0u, pDispatch->_xtermResourcesRequested.size());
+        VERIFY_ARE_EQUAL(0u, pDispatch->_xtermResourcesReset.size());
+        pDispatch->ClearState();
+    }
+
+    TEST_METHOD(TestOscColorTableReset)
+    {
+        auto dispatch = std::make_unique<StatefulDispatch>();
+        auto pDispatch = dispatch.get();
+        auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
+        StateMachine mach(std::move(engine));
+
+        mach.ProcessString(L"\033]104\033\\");
+        VERIFY_IS_TRUE(pDispatch->_resetAllColors);
+        VERIFY_ARE_EQUAL(0u, pDispatch->_colorTableEntriesReset.size());
+        VERIFY_ARE_EQUAL(0u, pDispatch->_colorTableEntriesRequested.size());
+        VERIFY_ARE_EQUAL(0u, pDispatch->_xtermResourcesReset.size());
+        pDispatch->ClearState();
+
+        mach.ProcessString(L"\033]104;1;3;5;7;9\033\\");
+        VERIFY_IS_FALSE(pDispatch->_resetAllColors);
+        VERIFY_ARE_EQUAL(5u, pDispatch->_colorTableEntriesReset.size());
+        VERIFY_ARE_EQUAL(0u, pDispatch->_colorTableEntriesRequested.size());
+        VERIFY_ARE_EQUAL(0u, pDispatch->_xtermResourcesReset.size());
+        VERIFY_ARE_EQUAL(1u, pDispatch->_colorTableEntriesReset[0]);
+        VERIFY_ARE_EQUAL(3u, pDispatch->_colorTableEntriesReset[1]);
+        VERIFY_ARE_EQUAL(5u, pDispatch->_colorTableEntriesReset[2]);
+        VERIFY_ARE_EQUAL(7u, pDispatch->_colorTableEntriesReset[3]);
+        VERIFY_ARE_EQUAL(9u, pDispatch->_colorTableEntriesReset[4]);
+        pDispatch->ClearState();
+
+        // NOTE: xterm behavior - stop after first failed parse
+        mach.ProcessString(L"\033]104;1;a;3\033\\");
+        VERIFY_IS_FALSE(pDispatch->_resetAllColors);
+        VERIFY_IS_FALSE(pDispatch->_setColorTableEntry);
+        VERIFY_ARE_EQUAL(1u, pDispatch->_colorTableEntriesReset.size());
+        VERIFY_ARE_EQUAL(0u, pDispatch->_colorTableEntriesRequested.size());
+        VERIFY_ARE_EQUAL(0u, pDispatch->_xtermResourcesReset.size());
+        VERIFY_ARE_EQUAL(1u, pDispatch->_colorTableEntriesReset[0]);
+        pDispatch->ClearState();
+
+        mach.ProcessString(L"\033]104;;;\033\\");
+        VERIFY_IS_FALSE(pDispatch->_setColorTableEntry);
+        VERIFY_ARE_EQUAL(0u, pDispatch->_colorTableEntriesReset.size());
+        VERIFY_ARE_EQUAL(0u, pDispatch->_colorTableEntriesRequested.size());
+        VERIFY_ARE_EQUAL(0u, pDispatch->_xtermResourcesReset.size());
         pDispatch->ClearState();
     }
 
