@@ -1679,6 +1679,7 @@ SMARTQUOTE
 SMTO
 snapcx
 snapcy
+snk
 SOLIDBOX
 Solutiondir
 somefile
