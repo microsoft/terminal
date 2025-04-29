@@ -38,7 +38,9 @@ namespace Microsoft.Terminal.Settings.Model
         static Command NewUserCommand();
 
         String Name;
+        Boolean HasName();
         String ID;
+        void GenerateID();
 
         String Description { get; };
 

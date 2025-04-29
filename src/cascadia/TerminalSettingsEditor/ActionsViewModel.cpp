@@ -331,12 +331,20 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 _RegisterActionArgsVMEvents(*actionArgsVM);
                 actionArgsVM->Initialize();
                 ActionArgsVM(*actionArgsVM);
+                if (_IsNewCommand)
+                {
+                    _command.GenerateID();
+                }
             }
         });
     }
 
     winrt::hstring CommandViewModel::Name()
     {
+        if (_IsNewCommand && !_command.HasName())
+        {
+            return L"";
+        }
         return _command.Name();
     }
 
@@ -417,6 +425,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 PropagateColorSchemeRequested.raise(*this, wrapper);
             }
         });
+        if (_IsNewCommand)
+        {
+            // for new commands, make sure we generate a new ID everytime any arg value changes
+            actionArgsVM.WrapperValueChanged([this](const IInspectable& /*sender*/, const IInspectable& /*args*/) {
+                _command.GenerateID();
+            });
+        }
     }
 
     ArgWrapper::ArgWrapper(const winrt::hstring& name, const winrt::hstring& type, const bool required, const Windows::Foundation::IInspectable& value) :
@@ -736,6 +751,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                         const auto argWrapper = sender.as<Microsoft::Terminal::Settings::Editor::ArgWrapper>();
                         const auto newValue = argWrapper.Value();
                         _actionAndArgs.Args().SetArgAt(i, newValue);
+                        WrapperValueChanged.raise(*this, nullptr);
                     }
                 });
                 item->ColorSchemeRequested([&](const IInspectable& /*sender*/, const Editor::ArgWrapper& wrapper) {
@@ -846,6 +862,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             {
                 // we didn't find the previously selected command
                 CurrentCommand(nullptr);
+                CurrentPage(ActionsSubPage::Base);
             }
         }
         else
@@ -853,6 +870,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             // didn't have a command,
             // so skip over looking through the command
             CurrentCommand(nullptr);
+            CurrentPage(ActionsSubPage::Base);
         }
     }
 
@@ -946,13 +964,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void ActionsViewModel::AddNewCommand()
     {
+        const auto newCmd = Model::Command::NewUserCommand();
         // construct a command using the first shortcut action from our list
         const auto shortcutAction = _AvailableActionsAndNamesMap.First().Current().Key();
         const auto args = CascadiaSettings::GetEmptyArgsForAction(shortcutAction);
-        const auto newCmd = Model::Command::NewUserCommand();
         newCmd.ActionAndArgs(Model::ActionAndArgs{ shortcutAction, args });
         _Settings.ActionMap().AddAction(newCmd, nullptr);
         auto cmdVM{ make_self<CommandViewModel>(newCmd, std::vector<Control::KeyChord>{}, *this, _AvailableActionsAndNamesMap) };
+        cmdVM->IsNewCommand(true);
         _RegisterCmdVMEvents(cmdVM);
         cmdVM->Initialize();
         _CommandList.Append(*cmdVM);

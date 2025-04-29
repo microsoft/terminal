@@ -67,6 +67,9 @@ namespace Microsoft.Terminal.Settings.Editor
         // action args
         ActionArgsViewModel ActionArgsVM { get; };
 
+        // View-model specific
+        Boolean IsNewCommand;
+
         // UI side (command list page)
         void Edit_Click();
 
@@ -122,6 +125,7 @@ namespace Microsoft.Terminal.Settings.Editor
     {
         Boolean HasArgs { get; };
         IObservableVector<ArgWrapper> ArgValues;
+        event Windows.Foundation.TypedEventHandler<Object, Object> WrapperValueChanged;
         event Windows.Foundation.TypedEventHandler<Object, ArgWrapper> PropagateColorSchemeRequested;
     }
 

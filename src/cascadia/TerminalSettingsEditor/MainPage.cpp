@@ -468,7 +468,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             _breadcrumbs.Append(crumb);
             contentFrame().Navigate(xaml_typename<Editor::NewActions>(), _actionsVM);
 
-            if (subPage == BreadcrumbSubPage::Actions_Edit)
+            if (subPage == BreadcrumbSubPage::Actions_Edit && _actionsVM.CurrentCommand() != nullptr)
             {
                 _actionsVM.CurrentPage(ActionsSubPage::Edit);
             }

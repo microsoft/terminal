@@ -154,6 +154,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         VIEW_MODEL_OBSERVABLE_PROPERTY(Editor::ActionArgsViewModel, ActionArgsVM, nullptr);
         WINRT_PROPERTY(Windows::Foundation::Collections::IObservableVector<hstring>, AvailableShortcutActions, nullptr);
         WINRT_PROPERTY(Windows::Foundation::Collections::IObservableVector<Editor::KeyChordViewModel>, KeyChordViewModelList, nullptr);
+        WINRT_PROPERTY(bool, IsNewCommand, false);
 
     private:
         winrt::Microsoft::Terminal::Settings::Model::Command _command;
@@ -229,6 +230,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         bool HasArgs() const noexcept;
 
+        til::typed_event<IInspectable, IInspectable> WrapperValueChanged;
         til::typed_event<IInspectable, Editor::ArgWrapper> PropagateColorSchemeRequested;
 
         WINRT_PROPERTY(Windows::Foundation::Collections::IObservableVector<Editor::ArgWrapper>, ArgValues, nullptr);

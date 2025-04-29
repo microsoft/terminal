@@ -153,10 +153,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     void Command::ActionAndArgs(const Model::ActionAndArgs& value) noexcept
     {
         _ActionAndArgs = value;
-        if (_IDWasGenerated)
-        {
-            GenerateID();
-        }
     }
 
     void Command::Name(const hstring& value)

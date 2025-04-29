@@ -556,7 +556,8 @@
                        VerticalAlignment="Center"
                        Grid.Column="0"
                        Grid.Row="0"/>
-            <TextBox Text="{x:Bind ViewModel.Name, Mode=TwoWay}"
+            <TextBox x:Uid="Actions_NameEntryBox"
+                     Text="{x:Bind ViewModel.Name, Mode=TwoWay}"
                      IsEnabled="{x:Bind ViewModel.IsUserAction}"
                      Grid.Row="0"
                      Grid.Column="1"/>

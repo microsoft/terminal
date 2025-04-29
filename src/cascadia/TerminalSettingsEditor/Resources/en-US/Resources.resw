@@ -1796,6 +1796,10 @@
     <value>Action name</value>
     <comment>Label for the text box that edits the action name.</comment>
   </data>
+  <data name="Actions_NameEntryBox.PlaceholderText" xml:space="preserve">
+    <value>Action name</value>
+    <comment>Placeholder text for the text box where the user can edit the action name.</comment>
+  </data>
   <data name="Actions_ShortcutAction.Text" xml:space="preserve">
     <value>Action type</value>
     <comment>Label for the combo box that edits the action type.</comment>
