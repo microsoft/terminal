@@ -14,8 +14,11 @@ using namespace ::winrt::Windows::UI::Xaml::Input;
 
 using MenuFlyoutItemClick = void (*)(IInspectable const&, RoutedEventArgs const&);
 
+constexpr auto NullSymbol = static_cast<Symbol>(0);
+
 namespace winrt::Microsoft::Terminal::UI::implementation
 {
+#pragma warning(suppress : 26455) // Default constructor should not throw. Declare it 'noexcept' (f.6).
     TextMenuFlyout::TextMenuFlyout()
     {
         // Most of the initialization is delayed until the first call to MenuFlyout_Opening.
@@ -66,7 +69,7 @@ namespace winrt::Microsoft::Terminal::UI::implementation
             {
                 items.emplace_back(_createMenuItem(Symbol::Paste, RS_(L"Paste"), { this, &TextMenuFlyout::Paste_Click }, VirtualKeyModifiers::Control, VirtualKey::V));
             }
-            items.emplace_back(_createMenuItem(Symbol(0), RS_(L"SelectAll"), { this, &TextMenuFlyout::SelectAll_Click }, VirtualKeyModifiers::Control, VirtualKey::A));
+            items.emplace_back(_createMenuItem(NullSymbol, RS_(L"SelectAll"), { this, &TextMenuFlyout::SelectAll_Click }, VirtualKeyModifiers::Control, VirtualKey::A));
 
             Items().ReplaceAll({ items.data(), gsl::narrow_cast<uint32_t>(items.size()) });
         }
@@ -186,7 +189,10 @@ namespace winrt::Microsoft::Terminal::UI::implementation
         accel.Key(key);
 
         MenuFlyoutItem item;
-        item.Icon(SymbolIcon{ std::move(symbol) });
+        if (symbol != NullSymbol)
+        {
+            item.Icon(SymbolIcon{ std::move(symbol) });
+        }
         item.Text(std::move(text));
         item.Click(std::move(click));
         item.KeyboardAccelerators().Append(std::move(accel));
