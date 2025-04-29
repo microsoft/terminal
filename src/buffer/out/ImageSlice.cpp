@@ -212,10 +212,19 @@ void ImageSlice::EraseBlock(TextBuffer& buffer, const til::rect rect)
     }
 }
 
-void ImageSlice::EraseCells(TextBuffer& buffer, const til::point at, const size_t distance)
+void ImageSlice::EraseCells(TextBuffer& buffer, const til::point at, const til::CoordType distance)
 {
-    auto& row = buffer.GetMutableRowByOffset(at.y);
-    EraseCells(row, at.x, gsl::narrow_cast<til::CoordType>(at.x + distance));
+    auto x = at.x;
+    auto y = at.y;
+    auto distanceRemaining = distance;
+    while (distanceRemaining > 0)
+    {
+        auto& row = buffer.GetMutableRowByOffset(y);
+        EraseCells(row, x, x + distanceRemaining);
+        distanceRemaining -= (static_cast<til::CoordType>(row.size()) - x);
+        x = 0;
+        y++;
+    }
 }
 
 void ImageSlice::EraseCells(ROW& row, const til::CoordType columnBegin, const til::CoordType columnEnd)
