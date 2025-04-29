@@ -32,6 +32,7 @@ namespace winrt::TerminalApp::implementation
     void SnippetsPaneContent::_updateFilteredCommands()
     {
         const auto& queryString = _filterBox().Text();
+        auto pattern = std::make_shared<fzf::matcher::Pattern>(fzf::matcher::ParsePattern(queryString));
 
         // DON'T replace the itemSource here. If you do, it'll un-expand all the
         // nested items the user has expanded. Instead, just update the filter.
@@ -39,7 +40,7 @@ namespace winrt::TerminalApp::implementation
         for (const auto& t : _allTasks)
         {
             auto impl = winrt::get_self<implementation::FilteredTask>(t);
-            impl->UpdateFilter(queryString);
+            impl->UpdateFilter(pattern);
         }
     }
 

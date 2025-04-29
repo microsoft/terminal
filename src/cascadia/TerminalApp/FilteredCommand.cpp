@@ -36,14 +36,12 @@ namespace winrt::TerminalApp::implementation
     void FilteredCommand::_constructFilteredCommand(const winrt::TerminalApp::PaletteItem& item)
     {
         _Item = item;
-        _Filter = L"";
         _Weight = 0;
 
-        const auto pattern = fzf::matcher::ParsePattern(Filter());
         _update();
 
         // Recompute the highlighted name if the item name changes
-        _itemChangedRevoker = _Item.PropertyChanged(winrt::auto_revoke, [weakThis{ get_weak() },pattern](auto& /*sender*/, auto& e) {
+        _itemChangedRevoker = _Item.PropertyChanged(winrt::auto_revoke, [weakThis{ get_weak() }](auto& /*sender*/, auto& e) {
             auto filteredCommand{ weakThis.get() };
             if (filteredCommand && e.PropertyName() == L"Name")
             {
@@ -52,24 +50,27 @@ namespace winrt::TerminalApp::implementation
         });
     }
 
-    void FilteredCommand::UpdateFilter(const winrt::hstring& filter)
+    void FilteredCommand::UpdateFilter(std::shared_ptr<fzf::matcher::Pattern> pattern)
     {
         // If the filter was not changed we want to prevent the re-computation of matching
         // that might result in triggering a notification event
-        if (filter != _Filter)
+        if (pattern != _pattern)
         {
-            Filter(filter);
+            _pattern = pattern;
             _update();
         }
     }
 
     void FilteredCommand::_update()
     {
-        auto pattern = fzf::matcher::ParsePattern(Filter());
         auto segments = winrt::single_threaded_observable_vector<winrt::TerminalApp::HighlightedTextSegment>();
         auto commandName = _Item.Name();
         auto weight = 0;
-        if (auto match = fzf::matcher::Match(commandName, pattern); !match)
+        if (!_pattern || !_pattern->terms.empty())
+        {
+            segments.Append(winrt::TerminalApp::HighlightedTextSegment(commandName, false));
+        }
+        else if (auto match = fzf::matcher::Match(commandName, *_pattern.get()); !match)
         {
             segments.Append(winrt::TerminalApp::HighlightedTextSegment(commandName, false));
         }
