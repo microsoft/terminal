@@ -294,13 +294,11 @@ protected:                                                                  \
     X(Windows::Foundation::IReference<Windows::UI::Color>, TabColor, "tabColor", false, nullptr)                       \
     X(Windows::Foundation::IReference<int32_t>, ProfileIndex, "index", false, nullptr)                                 \
     X(winrt::hstring, Profile, "profile", false, L"")                                                                  \
-    X(winrt::guid, SessionId, "sessionId", false, winrt::guid{})                                                       \
     X(bool, AppendCommandLine, "appendCommandLine", false, false)                                                      \
     X(Windows::Foundation::IReference<bool>, SuppressApplicationTitle, "suppressApplicationTitle", false, nullptr)     \
     X(winrt::hstring, ColorScheme, "colorScheme", args->SchemeName().empty(), L"")                                     \
     X(Windows::Foundation::IReference<bool>, Elevate, "elevate", false, nullptr)                                       \
-    X(Windows::Foundation::IReference<bool>, ReloadEnvironmentVariables, "reloadEnvironmentVariables", false, nullptr) \
-    X(uint64_t, ContentId, "__content", false, 0)
+    X(Windows::Foundation::IReference<bool>, ReloadEnvironmentVariables, "reloadEnvironmentVariables", false, nullptr)
 
 ////////////////////////////////////////////////////////////////////////////////
 #define SPLIT_PANE_ARGS(X)                                                               \
@@ -382,6 +380,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         PARTIAL_ACTION_ARG_BODY(NewTerminalArgs, NEW_TERMINAL_ARGS);
         ACTION_ARG(winrt::hstring, Type, L"");
+        ACTION_ARG(winrt::guid, SessionId, winrt::guid{});
+        ACTION_ARG(uint64_t, ContentId);
+
+        static constexpr std::string_view SessionIdKey{ "sessionId" };
+        static constexpr std::string_view ContentKey{ "__content" };
 
     public:
         NewTerminalArgs(int32_t& profileIndex) :
@@ -426,7 +429,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             JsonUtils::GetValueForKey(json, ColorSchemeKey, args->_ColorScheme);
             JsonUtils::GetValueForKey(json, ElevateKey, args->_Elevate);
             JsonUtils::GetValueForKey(json, ReloadEnvironmentVariablesKey, args->_ReloadEnvironmentVariables);
-            JsonUtils::GetValueForKey(json, ContentIdKey, args->_ContentId);
+            JsonUtils::GetValueForKey(json, ContentKey, args->_ContentId);
             return *args;
         }
         static Json::Value ToJson(const Model::NewTerminalArgs& val)
@@ -448,7 +451,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             JsonUtils::SetValueForKey(json, ColorSchemeKey, args->_ColorScheme);
             JsonUtils::SetValueForKey(json, ElevateKey, args->_Elevate);
             JsonUtils::SetValueForKey(json, ReloadEnvironmentVariablesKey, args->_ReloadEnvironmentVariables);
-            JsonUtils::SetValueForKey(json, ContentIdKey, args->_ContentId);
+            JsonUtils::SetValueForKey(json, ContentKey, args->_ContentId);
             return json;
         }
         Model::NewTerminalArgs Copy() const
