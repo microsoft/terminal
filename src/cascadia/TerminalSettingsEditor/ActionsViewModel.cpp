@@ -355,7 +355,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void CommandViewModel::Name(const winrt::hstring& newName)
     {
-        _command.Name(newName);
+        if (!newName.empty())
+        {
+            _command.Name(newName);
+        }
     }
 
     winrt::hstring CommandViewModel::ID()
