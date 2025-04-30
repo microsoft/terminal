@@ -51,7 +51,7 @@ inline const std::set<winrt::Microsoft::Terminal::Settings::Model::ShortcutActio
         enumList.emplace_back(entry);                                                                                                                       \
         if (_Value && unboxedValue == enumValue)                                                                                                            \
         {                                                                                                                                                   \
-            EnumValue(entry);                                                                                                                               \
+            _EnumValue = entry;                                                                                                                             \
         }                                                                                                                                                   \
     }                                                                                                                                                       \
     std::sort(enumList.begin(), enumList.end(), EnumEntryReverseComparator<enumType>());                                                                    \
@@ -69,7 +69,7 @@ inline const std::set<winrt::Microsoft::Terminal::Settings::Model::ShortcutActio
     }                                                                                                                                                       \
     else                                                                                                                                                    \
     {                                                                                                                                                       \
-        EnumValue(nullEntry);                                                                                                                               \
+        _EnumValue = nullEntry;                                                                                                                             \
     }                                                                                                                                                       \
     for (const auto [enumKey, enumValue] : mappings)                                                                                                        \
     {                                                                                                                                                       \
@@ -78,7 +78,7 @@ inline const std::set<winrt::Microsoft::Terminal::Settings::Model::ShortcutActio
         enumList.emplace_back(entry);                                                                                                                       \
         if (_Value && unboxedValue == enumValue)                                                                                                            \
         {                                                                                                                                                   \
-            EnumValue(entry);                                                                                                                               \
+            _EnumValue = entry;                                                                                                                             \
         }                                                                                                                                                   \
     }                                                                                                                                                       \
     std::sort(enumList.begin(), enumList.end(), EnumEntryReverseComparator<enumType>());                                                                    \
@@ -116,7 +116,7 @@ inline const std::set<winrt::Microsoft::Terminal::Settings::Model::ShortcutActio
     }                                                                                                                                                                  \
     std::sort(flagList.begin(), flagList.end(), FlagEntryReverseComparator<enumType>());                                                                               \
     _FlagList = winrt::single_threaded_observable_vector<winrt::Microsoft::Terminal::Settings::Editor::FlagEntry>(std::move(flagList));                                \
-    _NotifyChanges(L"FlagList", L"Value");
+    _NotifyChanges(L"FlagList");
 
 #define INITIALIZE_NULLABLE_FLAG_LIST_AND_VALUE(enumMappingsName, enumType, resourceSectionAndType, resourceProperty)                                                  \
     std::vector<winrt::Microsoft::Terminal::Settings::Editor::FlagEntry> flagList;                                                                                     \
@@ -189,7 +189,7 @@ inline const std::set<winrt::Microsoft::Terminal::Settings::Model::ShortcutActio
     });                                                                                                                                                                \
     flagList.emplace_back(nullEntry);                                                                                                                                  \
     _FlagList = winrt::single_threaded_observable_vector<winrt::Microsoft::Terminal::Settings::Editor::FlagEntry>(std::move(flagList));                                \
-    _NotifyChanges(L"FlagList", L"Value");
+    _NotifyChanges(L"FlagList");
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
@@ -307,10 +307,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         const auto shortcutActionString = _AvailableActionsAndNamesMap.Lookup(_command.ActionAndArgs().Action());
         ProposedShortcutAction(winrt::box_value(shortcutActionString));
-        const auto actionArgsVM = make_self<ActionArgsViewModel>(_command.ActionAndArgs());
-        _RegisterActionArgsVMEvents(*actionArgsVM);
-        actionArgsVM->Initialize();
-        ActionArgsVM(*actionArgsVM);
+        _CreateAndInitializeActionArgsVMHelper();
 
         // Add a property changed handler to our own property changed event.
         // This allows us to create a new ActionArgsVM when the shortcut action changes
@@ -327,14 +324,16 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 // there are some other cases as well
                 Model::ActionAndArgs newActionAndArgs{ actionEnum, emptyArgs };
                 _command.ActionAndArgs(newActionAndArgs);
-                const auto actionArgsVM = make_self<ActionArgsViewModel>(newActionAndArgs);
-                _RegisterActionArgsVMEvents(*actionArgsVM);
-                actionArgsVM->Initialize();
-                ActionArgsVM(*actionArgsVM);
                 if (_IsNewCommand)
                 {
                     _command.GenerateID();
                 }
+                else if (!IsUserAction())
+                {
+                    _ReplaceCommandWithUserCopy();
+                    return;
+                }
+                _CreateAndInitializeActionArgsVMHelper();
             }
         });
     }
@@ -440,6 +439,35 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 _command.GenerateID();
             });
         }
+        else if (!IsUserAction())
+        {
+            actionArgsVM.WrapperValueChanged([this](const IInspectable& /*sender*/, const IInspectable& /*args*/) {
+                _ReplaceCommandWithUserCopy();
+            });
+        }
+    }
+
+    void CommandViewModel::_ReplaceCommandWithUserCopy()
+    {
+        // the user is attempting to edit an in-box action
+        // to handle this, we create a new command with the new values that has the same ID as the in-box action
+        // swap out our underlying command with the copy, tell the ActionsVM that the copy needs to be added to the action map
+        if (const auto actionsPageVM{ _actionsPageVM.get() })
+        {
+            const auto newCmd = Model::Command::CopyAsUserCommand(_command);
+            _command = newCmd;
+            actionsPageVM.AttemptAddCopiedCommand(_command);
+            _CreateAndInitializeActionArgsVMHelper();
+        }
+    }
+
+    void CommandViewModel::_CreateAndInitializeActionArgsVMHelper()
+    {
+        const auto actionArgsVM = make_self<ActionArgsViewModel>(_command.ActionAndArgs());
+        _RegisterActionArgsVMEvents(*actionArgsVM);
+        actionArgsVM->Initialize();
+        ActionArgsVM(*actionArgsVM);
+        _NotifyChanges(L"DisplayName");
     }
 
     ArgWrapper::ArgWrapper(const winrt::hstring& name, const winrt::hstring& type, const bool required, const Windows::Foundation::IInspectable& value) :
@@ -625,27 +653,40 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void ArgWrapper::StringBindBack(const winrt::hstring& newValue)
     {
-        Value(box_value(newValue));
+        if (UnboxString(_Value) != newValue)
+        {
+            Value(box_value(newValue));
+        }
     }
 
     void ArgWrapper::GuidBindBack(const winrt::hstring& newValue)
     {
-        // todo: probably need some validation?
-        Value(box_value(winrt::guid{ newValue }));
+        if (UnboxGuid(_Value) != newValue)
+        {
+            // todo: probably need some validation?
+            Value(box_value(winrt::guid{ newValue }));
+        }
     }
 
     void ArgWrapper::Int32BindBack(const double newValue)
     {
-        Value(box_value(static_cast<int32_t>(newValue)));
+        if (UnboxInt32(_Value) != newValue)
+        {
+            Value(box_value(static_cast<int32_t>(newValue)));
+        }
     }
 
     void ArgWrapper::Int32OptionalBindBack(const double newValue)
     {
         if (!isnan(newValue))
         {
-            Value(box_value(static_cast<int32_t>(newValue)));
+            const auto currentValue = UnboxInt32Optional(_Value);
+            if (isnan(currentValue) || static_cast<int32_t>(currentValue) != static_cast<int32_t>(newValue))
+            {
+                Value(box_value(static_cast<int32_t>(newValue)));
+            }
         }
-        else
+        else if (!_Value)
         {
             Value(nullptr);
         }
@@ -653,16 +694,23 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void ArgWrapper::UInt32BindBack(const double newValue)
     {
-        Value(box_value(static_cast<uint32_t>(newValue)));
+        if (UnboxUInt32(_Value) != newValue)
+        {
+            Value(box_value(static_cast<uint32_t>(newValue)));
+        }
     }
 
     void ArgWrapper::UInt32OptionalBindBack(const double newValue)
     {
         if (!isnan(newValue))
         {
-            Value(box_value(static_cast<uint32_t>(newValue)));
+            const auto currentValue = UnboxUInt32Optional(_Value);
+            if (isnan(currentValue) || static_cast<uint32_t>(currentValue) != static_cast<uint32_t>(newValue))
+            {
+                Value(box_value(static_cast<uint32_t>(newValue)));
+            }
         }
-        else
+        else if (!_Value)
         {
             Value(nullptr);
         }
@@ -670,21 +718,31 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void ArgWrapper::UInt64BindBack(const double newValue)
     {
-        Value(box_value(static_cast<uint64_t>(newValue)));
+        if (UnboxUInt64(_Value) != newValue)
+        {
+            Value(box_value(static_cast<uint64_t>(newValue)));
+        }
     }
 
     void ArgWrapper::FloatBindBack(const double newValue)
     {
-        Value(box_value(static_cast<float>(newValue)));
+        if (UnboxFloat(_Value) != newValue)
+        {
+            Value(box_value(static_cast<float>(newValue)));
+        }
     }
 
-    void ArgWrapper::BoolBindBack(const Windows::Foundation::IReference<bool> newValue)
+    void ArgWrapper::BoolOptionalBindBack(const Windows::Foundation::IReference<bool> newValue)
     {
         if (newValue)
         {
-            Value(box_value(newValue));
+            const auto currentValue = UnboxBoolOptional(_Value);
+            if (!currentValue || currentValue.Value() != newValue.Value())
+            {
+                Value(box_value(newValue));
+            }
         }
-        else
+        else if (_Value)
         {
             Value(nullptr);
         }
@@ -694,9 +752,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         if (newValue)
         {
-            Value(box_value(newValue));
+            const auto currentValue = UnboxTerminalCoreColorOptional(_Value);
+            if (!currentValue || currentValue.Value() != newValue.Value())
+            {
+                Value(box_value(newValue));
+            }
         }
-        else
+        else if (_Value)
         {
             Value(nullptr);
         }
@@ -726,7 +788,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             }
             Value(box_value(Windows::Foundation::IReference<Windows::UI::Color>{ winuiColor }));
         }
-        else
+        else if (_Value)
         {
             Value(nullptr);
         }
@@ -1095,6 +1157,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         // Update the settings model
         _Settings.ActionMap().AddKeyBinding(keys, cmdID);
+    }
+
+    void ActionsViewModel::AttemptAddCopiedCommand(const Model::Command& newCommand)
+    {
+        // The command VM calls this when the user has edited an in-box action
+        // newCommand is a copy of the in-box action that was edited, but with OriginTag::User
+        // add it to the action map
+        _Settings.ActionMap().AddAction(newCommand, nullptr);
     }
 
     void ActionsViewModel::_KeyBindingViewModelPropertyChangedHandler(const IInspectable& sender, const Windows::UI::Xaml::Data::PropertyChangedEventArgs& args)

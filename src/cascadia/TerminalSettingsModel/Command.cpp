@@ -35,6 +35,14 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return *newCmd;
     }
 
+    Model::Command Command::CopyAsUserCommand(Model::Command originalCmd)
+    {
+        auto command{ winrt::get_self<Command>(originalCmd) };
+        auto copy{ command->Copy() };
+        copy->_Origin = OriginTag::User;
+        return *copy;
+    }
+
     com_ptr<Command> Command::Copy() const
     {
         auto command{ winrt::make_self<Command>() };

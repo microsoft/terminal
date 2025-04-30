@@ -53,7 +53,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             else if (argType == L"bool" ||
                      argType == L"Windows::Foundation::IReference<bool>")
             {
-                // we don't have any bool args that are required, so just use the optional template for all of them
                 return BoolOptionalTemplate();
             }
             else if (argType == L"Windows::Foundation::IReference<int32_t>")

@@ -61,7 +61,6 @@ namespace Microsoft.Terminal.Settings.Editor
         String Name;
         String ID;
         Boolean IsUserAction { get; };
-        // icon
         // keybindings
         IObservableVector<KeyChordViewModel> KeyChordViewModelList { get; };
         // action args
@@ -115,7 +114,7 @@ namespace Microsoft.Terminal.Settings.Editor
         void UInt32OptionalBindBack(Double newValue);
         void UInt64BindBack(Double newValue);
         void FloatBindBack(Double newValue);
-        void BoolBindBack(Windows.Foundation.IReference<Boolean> newValue);
+        void BoolOptionalBindBack(Windows.Foundation.IReference<Boolean> newValue);
         void TerminalCoreColorBindBack(Windows.Foundation.IReference<Microsoft.Terminal.Core.Color> newValue);
         void WindowsUIColorBindBack(Windows.Foundation.IReference<Microsoft.Terminal.Core.Color> newValue);
 
@@ -173,6 +172,7 @@ namespace Microsoft.Terminal.Settings.Editor
         void AttemptAddKeyChord(Microsoft.Terminal.Control.KeyChord keys, String cmdID);
         void AttemptModifyKeyChord(KeyChordViewModel senderVM, ModifyKeyChordEventArgs args);
         void AttemptDeleteKeyChord(Microsoft.Terminal.Control.KeyChord keys);
+        void AttemptAddCopiedCommand(Microsoft.Terminal.Settings.Model.Command newCommand);
 
         IObservableVector<CommandViewModel> CommandList { get; };
         void CmdListItemClicked(IInspectable sender, Windows.UI.Xaml.Controls.ItemClickEventArgs args);

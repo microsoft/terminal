@@ -36,6 +36,7 @@ namespace Microsoft.Terminal.Settings.Model
     {
         Command();
         static Command NewUserCommand();
+        static Command CopyAsUserCommand(Command originalCmd);
 
         String Name;
         Boolean HasName();

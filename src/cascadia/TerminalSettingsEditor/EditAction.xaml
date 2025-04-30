@@ -409,7 +409,7 @@
                         <TextBlock Text="{x:Bind Name}"
                                    VerticalAlignment="Center"
                                    Grid.Column="0"/>
-                        <CheckBox IsChecked="{x:Bind UnboxBoolOptional(Value), Mode=TwoWay, BindBack=BoolBindBack}"
+                        <CheckBox IsChecked="{x:Bind UnboxBoolOptional(Value), Mode=TwoWay, BindBack=BoolOptionalBindBack}"
                                   IsThreeState="True"
                                   Grid.Column="1"/>
                     </Grid>
@@ -556,9 +556,8 @@
                        VerticalAlignment="Center"
                        Grid.Column="0"
                        Grid.Row="0"/>
-            <TextBox x:Uid="Actions_NameEntryBox"
-                     Text="{x:Bind ViewModel.Name, Mode=TwoWay}"
-                     IsEnabled="{x:Bind ViewModel.IsUserAction}"
+            <TextBox Text="{x:Bind ViewModel.Name, Mode=TwoWay}"
+                     PlaceholderText="{x:Bind ViewModel.DisplayName, Mode=OneWay}"
                      Grid.Row="0"
                      Grid.Column="1"/>
             <TextBlock x:Uid="Actions_ShortcutAction"
@@ -568,7 +567,6 @@
             <ComboBox VerticalAlignment="Center"
                       ItemsSource="{x:Bind ViewModel.AvailableShortcutActions, Mode=OneWay}"
                       SelectedItem="{x:Bind ViewModel.ProposedShortcutAction, Mode=TwoWay}"
-                      IsEnabled="{x:Bind ViewModel.IsUserAction}"
                       Grid.Row="1"
                       Grid.Column="1"/>
             <TextBlock x:Uid="Actions_Arguments"

@@ -163,6 +163,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         weak_ref<Editor::ActionsViewModel> _actionsPageVM{ nullptr };
         void _RegisterKeyChordVMEvents(Editor::KeyChordViewModel kcVM);
         void _RegisterActionArgsVMEvents(Editor::ActionArgsViewModel actionArgsVM);
+        void _ReplaceCommandWithUserCopy();
+        void _CreateAndInitializeActionArgsVMHelper();
         Windows::Foundation::Collections::IMap<Model::ShortcutAction, winrt::hstring> _AvailableActionsAndNamesMap;
         std::unordered_map<winrt::hstring, Model::ShortcutAction> _NameToActionMap;
     };
@@ -205,7 +207,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void UInt32OptionalBindBack(const double newValue);
         void UInt64BindBack(const double newValue);
         void FloatBindBack(const double newValue);
-        void BoolBindBack(const Windows::Foundation::IReference<bool> newValue);
+        void BoolOptionalBindBack(const Windows::Foundation::IReference<bool> newValue);
         void TerminalCoreColorBindBack(const winrt::Windows::Foundation::IReference<Microsoft::Terminal::Core::Color> newValue);
         void WindowsUIColorBindBack(const winrt::Windows::Foundation::IReference<Microsoft::Terminal::Core::Color> newValue);
 
@@ -284,6 +286,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void AttemptModifyKeyChord(const Editor::KeyChordViewModel& senderVM, const Editor::ModifyKeyChordEventArgs& args);
         void AttemptDeleteKeyChord(const Control::KeyChord& keys);
         void AttemptAddKeyChord(const Control::KeyChord& keys, const winrt::hstring& cmdID);
+        void AttemptAddCopiedCommand(const Model::Command& newCommand);
 
         til::typed_event<IInspectable, IInspectable> FocusContainer;
         til::typed_event<IInspectable, IInspectable> UpdateBackground;

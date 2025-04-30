@@ -46,6 +46,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         Command();
         static Model::Command NewUserCommand();
+        static Model::Command CopyAsUserCommand(Model::Command originalCmd);
         com_ptr<Command> Copy() const;
 
         static winrt::com_ptr<Command> FromJson(const Json::Value& json,
