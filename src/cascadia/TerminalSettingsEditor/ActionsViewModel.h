@@ -28,7 +28,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         bool operator()(const Editor::CommandViewModel& lhs, const Editor::CommandViewModel& rhs) const
         {
-            return lhs.Name() < rhs.Name();
+            return lhs.DisplayName() < rhs.DisplayName();
         }
     };
 
@@ -132,6 +132,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                          const Windows::Foundation::Collections::IMap<Model::ShortcutAction, winrt::hstring>& availableShortcutActionsAndNames);
         void Initialize();
 
+        winrt::hstring DisplayName();
         winrt::hstring Name();
         void Name(const winrt::hstring& newName);
 

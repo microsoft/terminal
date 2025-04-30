@@ -68,6 +68,7 @@ namespace Microsoft.Terminal.Settings.Editor
         ActionArgsViewModel ActionArgsVM { get; };
 
         // View-model specific
+        String DisplayName { get; };
         Boolean IsNewCommand;
 
         // UI side (command list page)

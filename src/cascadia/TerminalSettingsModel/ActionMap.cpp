@@ -597,6 +597,17 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         const auto newID = senderCmd.ID();
         if (newID != oldID)
         {
+            if (const auto foundCmd{ _GetActionByID(newID) })
+            {
+                if (foundCmd.ActionAndArgs() != senderCmd.ActionAndArgs())
+                {
+                    // we found a command that has the same ID as this one, but that command has different ActionAndArgs
+                    // this means that foundCommand's action and/or args have been changed since its ID was generated,
+                    // generate a new one for it
+                    // Note: this is recursive! Found command's ID being changed lands us back in here to resolve any cascading collisions
+                    foundCmd.GenerateID();
+                }
+            }
             // update _ActionMap with the ID change
             _ActionMap.erase(oldID);
             _ActionMap.emplace(newID, senderCmd);

@@ -339,13 +339,18 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         });
     }
 
+    winrt::hstring CommandViewModel::DisplayName()
+    {
+        return _command.Name();
+    }
+
     winrt::hstring CommandViewModel::Name()
     {
-        if (_IsNewCommand && !_command.HasName())
+        if (_command.HasName())
         {
-            return L"";
+            return _command.Name();
         }
-        return _command.Name();
+        return L"";
     }
 
     void CommandViewModel::Name(const winrt::hstring& newName)
