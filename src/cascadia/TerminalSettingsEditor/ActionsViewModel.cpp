@@ -398,11 +398,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         if (const auto actionsPageVM{ _actionsPageVM.get() })
         {
             const auto id = ID();
-            kcVM.AddKeyChordRequested([actionsPageVM, id](const Editor::KeyChordViewModel& /*sender*/, const Control::KeyChord& args) {
-                actionsPageVM.AttemptAddKeyChord(args, id);
+            kcVM.AddKeyChordRequested([actionsPageVM, id](const Editor::KeyChordViewModel& sender, const Control::KeyChord& keys) {
+                actionsPageVM.AttemptAddOrModifyKeyChord(sender, id, keys, nullptr);
             });
-            kcVM.ModifyKeyChordRequested([actionsPageVM](const Editor::KeyChordViewModel& sender, const Editor::ModifyKeyChordEventArgs& args) {
-                actionsPageVM.AttemptModifyKeyChord(sender, args);
+            kcVM.ModifyKeyChordRequested([actionsPageVM, id](const Editor::KeyChordViewModel& sender, const Editor::ModifyKeyChordEventArgs& args) {
+                actionsPageVM.AttemptAddOrModifyKeyChord(sender, id, args.NewKeys(), args.OldKeys());
             });
             kcVM.DeleteKeyChordRequested([&, actionsPageVM](const Editor::KeyChordViewModel& sender, const Control::KeyChord& args) {
                 _keyChordList.erase(
@@ -883,6 +883,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                                                                 _ProposedKeys) }; // NewKeys
             ModifyKeyChordRequested.raise(*this, *args);
         }
+        else
+        {
+            // no changes being requested, toggle edit mode
+            ToggleEditMode();
+        }
     }
 
     void KeyChordViewModel::CancelChanges()
@@ -1068,28 +1073,47 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
-    void ActionsViewModel::AttemptModifyKeyChord(const Editor::KeyChordViewModel& senderVM, const Editor::ModifyKeyChordEventArgs& args)
+    void ActionsViewModel::AttemptDeleteKeyChord(const Control::KeyChord& keys)
+    {
+        // Update the settings model
+        if (keys)
+        {
+            _Settings.ActionMap().DeleteKeyBinding(keys);
+        }
+    }
+
+    void ActionsViewModel::AttemptAddOrModifyKeyChord(const Editor::KeyChordViewModel& senderVM, winrt::hstring commandID, const Control::KeyChord& newKeys, const Control::KeyChord& oldKeys)
     {
         auto applyChangesToSettingsModel = [=]() {
-            // If the key chord was changed,
-            // update the settings model and view model appropriately
-            // NOTE: we still need to update the view model if we're working with a newly added action
-            if (args.OldKeys().Modifiers() != args.NewKeys().Modifiers() || args.OldKeys().Vkey() != args.NewKeys().Vkey())
+            // update settings model
+            if (oldKeys)
             {
-                // update settings model
-                _Settings.ActionMap().RebindKeys(args.OldKeys(), args.NewKeys());
+                // if oldKeys is not null, this is a rebinding
+                // delete oldKeys and then add newKeys
+                _Settings.ActionMap().DeleteKeyBinding(oldKeys);
+            }
+            if (!Model::KeyChordSerialization::ToString(newKeys).empty())
+            {
+                _Settings.ActionMap().AddKeyBinding(newKeys, commandID);
 
                 // update view model
                 auto senderVMImpl{ get_self<KeyChordViewModel>(senderVM) };
-                senderVMImpl->CurrentKeys(args.NewKeys());
+                senderVMImpl->CurrentKeys(newKeys);
             }
+
+            // reset the flyout if it's there
+            if (const auto flyout = senderVM.AcceptChangesFlyout())
+            {
+                flyout.Hide();
+                senderVM.AcceptChangesFlyout(nullptr);
+            }
+            // toggle edit mode
+            senderVM.ToggleEditMode();
         };
 
-        bool conflictFound{ false };
-        const auto& conflictingCmd{ _Settings.ActionMap().GetActionByKeyChord(args.NewKeys()) };
+        const auto& conflictingCmd{ _Settings.ActionMap().GetActionByKeyChord(newKeys) };
         if (conflictingCmd)
         {
-            conflictFound = true;
             // We're about to overwrite another key chord.
             // Display a confirmation dialog.
             TextBlock errorMessageTB{};
@@ -1106,17 +1130,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             Button acceptBTN{};
             acceptBTN.Content(box_value(RS_(L"Actions_RenameConflictConfirmationAcceptButton")));
             acceptBTN.Click([=](auto&, auto&) {
-                // remove conflicting key binding from list view
-                const auto containerIndex{ _GetContainerIndexByKeyChord(args.NewKeys()) };
-                _KeyBindingList.RemoveAt(*containerIndex);
-
-                // remove flyout
-                senderVM.AcceptChangesFlyout().Hide();
-                senderVM.AcceptChangesFlyout(nullptr);
-
                 // update settings model and view model
                 applyChangesToSettingsModel();
-                senderVM.ToggleEditMode();
             });
 
             StackPanel flyoutStack{};
@@ -1129,34 +1144,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             acceptChangesFlyout.Content(flyoutStack);
             senderVM.AcceptChangesFlyout(acceptChangesFlyout);
         }
-
-        // if there was a conflict, the flyout we created will handle whether changes need to be propagated
-        // otherwise, go ahead and apply the changes
-        if (!conflictFound)
+        else
         {
             // update settings model and view model
             applyChangesToSettingsModel();
-
-            // We NEED to toggle the edit mode here,
-            // so that if nothing changed, we still exit
-            // edit mode.
-            senderVM.ToggleEditMode();
-
-            // also reset the flyout
-            senderVM.AcceptChangesFlyout(nullptr);
         }
-    }
-
-    void ActionsViewModel::AttemptDeleteKeyChord(const Control::KeyChord& keys)
-    {
-        // Update the settings model
-        _Settings.ActionMap().DeleteKeyBinding(keys);
-    }
-
-    void ActionsViewModel::AttemptAddKeyChord(const Control::KeyChord& keys, const winrt::hstring& cmdID)
-    {
-        // Update the settings model
-        _Settings.ActionMap().AddKeyBinding(keys, cmdID);
     }
 
     void ActionsViewModel::AttemptAddCopiedCommand(const Model::Command& newCommand)

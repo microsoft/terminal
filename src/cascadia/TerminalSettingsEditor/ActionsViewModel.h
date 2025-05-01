@@ -283,9 +283,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Editor::CommandViewModel CurrentCommand();
         void CmdListItemClicked(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::Controls::ItemClickEventArgs& e);
 
-        void AttemptModifyKeyChord(const Editor::KeyChordViewModel& senderVM, const Editor::ModifyKeyChordEventArgs& args);
         void AttemptDeleteKeyChord(const Control::KeyChord& keys);
-        void AttemptAddKeyChord(const Control::KeyChord& keys, const winrt::hstring& cmdID);
+        void AttemptAddOrModifyKeyChord(const Editor::KeyChordViewModel& senderVM, winrt::hstring commandID, const Control::KeyChord& newKeys, const Control::KeyChord& oldKeys);
         void AttemptAddCopiedCommand(const Model::Command& newCommand);
 
         til::typed_event<IInspectable, IInspectable> FocusContainer;

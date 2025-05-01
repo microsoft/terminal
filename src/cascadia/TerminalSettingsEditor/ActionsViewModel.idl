@@ -169,8 +169,7 @@ namespace Microsoft.Terminal.Settings.Editor
         ActionsSubPage CurrentPage;
         CommandViewModel CurrentCommand;
 
-        void AttemptAddKeyChord(Microsoft.Terminal.Control.KeyChord keys, String cmdID);
-        void AttemptModifyKeyChord(KeyChordViewModel senderVM, ModifyKeyChordEventArgs args);
+        void AttemptAddOrModifyKeyChord(KeyChordViewModel senderVM, String commandID, Microsoft.Terminal.Control.KeyChord newKeys, Microsoft.Terminal.Control.KeyChord oldKeys);
         void AttemptDeleteKeyChord(Microsoft.Terminal.Control.KeyChord keys);
         void AttemptAddCopiedCommand(Microsoft.Terminal.Settings.Model.Command newCommand);
 
