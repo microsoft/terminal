@@ -122,7 +122,7 @@ private:
     std::optional<til::point> _lastMouseClickPos;
     std::optional<til::point> _singleClickTouchdownPos;
 
-    bool _tsfInitialized{ false };
+    Microsoft::Console::TSF::Handle _tsfHandle;
     TsfDataProvider _tsfDataProvider;
 
     friend HRESULT _stdcall CreateTerminal(HWND parentHwnd, _Out_ void** hwnd, _Out_ void** terminal);

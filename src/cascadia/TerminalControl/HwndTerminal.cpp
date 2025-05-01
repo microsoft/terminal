@@ -19,12 +19,6 @@ using namespace ::Microsoft::Terminal::Core;
 
 static LPCWSTR term_window_class = L"HwndTerminalClass";
 
-static Microsoft::Console::TSF::Handle& ThreadTSFHandle()
-{
-    thread_local auto t_tsf = Microsoft::Console::TSF::Handle::Create();
-    return t_tsf;
-}
-
 STDMETHODIMP HwndTerminal::TsfDataProvider::QueryInterface(REFIID, void**) noexcept
 {
     return E_NOTIMPL;
@@ -321,10 +315,10 @@ try
 {
     // As a rule, detach resources from the Terminal before shutting them down.
     // This ensures that teardown is reentrant.
-    if (_tsfInitialized)
+    if (_tsfHandle)
     {
-        ThreadTSFHandle().Unfocus(&_tsfDataProvider);
-        _tsfInitialized = false;
+        _tsfHandle.Unfocus(&_tsfDataProvider);
+        _tsfHandle = {};
     }
 
     // Shut down the renderer (and therefore the thread) before we implode
@@ -1030,9 +1024,10 @@ void __stdcall TerminalSetFocus(void* terminal)
 
 void HwndTerminal::_FocusTSF() noexcept
 {
-    if (!std::exchange(_tsfInitialized, true))
+    if (!_tsfHandle)
     {
-        ThreadTSFHandle().AssociateFocus(&_tsfDataProvider);
+        _tsfHandle = Microsoft::Console::TSF::Handle::Create();
+        _tsfHandle.AssociateFocus(&_tsfDataProvider);
     }
 }
 
