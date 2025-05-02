@@ -122,8 +122,9 @@ private:
     std::optional<til::point> _lastMouseClickPos;
     std::optional<til::point> _singleClickTouchdownPos;
 
+    // _tsfHandle uses _tsfDataProvider. Destructors run from bottom to top; this maintains correct destruction order.
+    TsfDataProvider _tsfDataProvider{ this };
     Microsoft::Console::TSF::Handle _tsfHandle;
-    TsfDataProvider _tsfDataProvider;
 
     friend HRESULT _stdcall CreateTerminal(HWND parentHwnd, _Out_ void** hwnd, _Out_ void** terminal);
     friend HRESULT _stdcall TerminalTriggerResize(_In_ void* terminal, _In_ til::CoordType width, _In_ til::CoordType height, _Out_ til::size* dimensions);

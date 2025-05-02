@@ -63,8 +63,8 @@ RECT HwndTerminal::TsfDataProvider::GetCursorPosition()
     til::size fontSize;
     {
         const auto lock = _terminal->_terminal->LockForReading();
-        cursorPos = _terminal->_terminal->GetCursorPosition();
-        fontSize = _terminal->_actualFont.GetSize();
+        cursorPos = _terminal->_terminal->GetCursorPosition(); // measured in terminal cells
+        fontSize = _terminal->_actualFont.GetSize(); // measured in pixels, not DIP
     }
     POINT ptSuggestion = {
         .x = cursorPos.x * fontSize.width,
@@ -73,6 +73,7 @@ RECT HwndTerminal::TsfDataProvider::GetCursorPosition()
 
     ClientToScreen(GetHwnd(), &ptSuggestion);
 
+    // Final measurement should be in pixels
     return {
         .left = ptSuggestion.x,
         .top = ptSuggestion.y,
@@ -243,8 +244,7 @@ HwndTerminal::HwndTerminal(HWND parentHwnd) noexcept :
     _uiaProvider{ nullptr },
     _currentDpi{ USER_DEFAULT_SCREEN_DPI },
     _pfnWriteCallback{ nullptr },
-    _multiClickTime{ 500 }, // this will be overwritten by the windows system double-click time
-    _tsfDataProvider{ this }
+    _multiClickTime{ 500 } // this will be overwritten by the windows system double-click time
 {
     auto hInstance = wil::GetModuleInstanceHandle();
 
@@ -315,11 +315,7 @@ try
 {
     // As a rule, detach resources from the Terminal before shutting them down.
     // This ensures that teardown is reentrant.
-    if (_tsfHandle)
-    {
-        _tsfHandle.Unfocus(&_tsfDataProvider);
-        _tsfHandle = {};
-    }
+    _tsfHandle = {};
 
     // Shut down the renderer (and therefore the thread) before we implode
     _renderer.reset();
