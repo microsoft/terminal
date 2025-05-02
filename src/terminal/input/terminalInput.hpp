@@ -110,7 +110,7 @@ namespace Microsoft::Console::VirtualTerminal
 #pragma region MouseInput
         [[nodiscard]] static OutputType _GenerateDefaultSequence(til::point position, unsigned int button, bool isHover, short modifierKeyState, short delta);
         [[nodiscard]] static OutputType _GenerateUtf8Sequence(til::point position, unsigned int button, bool isHover, short modifierKeyState, short delta);
-        [[nodiscard]] static OutputType _GenerateSGRSequence(til::point position, unsigned int button, bool isDown, bool isHover, short modifierKeyState, short delta);
+        [[nodiscard]] static OutputType _GenerateSGRSequence(til::point position, unsigned int button, bool isRelease, bool isHover, short modifierKeyState, short delta);
 
         [[nodiscard]] OutputType _makeAlternateScrollOutput(short delta) const;
 
