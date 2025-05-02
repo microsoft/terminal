@@ -19,6 +19,79 @@ using namespace ::Microsoft::Terminal::Core;
 
 static LPCWSTR term_window_class = L"HwndTerminalClass";
 
+STDMETHODIMP HwndTerminal::TsfDataProvider::QueryInterface(REFIID, void**) noexcept
+{
+    return E_NOTIMPL;
+}
+
+ULONG STDMETHODCALLTYPE HwndTerminal::TsfDataProvider::AddRef() noexcept
+{
+    return 1;
+}
+
+ULONG STDMETHODCALLTYPE HwndTerminal::TsfDataProvider::Release() noexcept
+{
+    return 1;
+}
+
+HWND HwndTerminal::TsfDataProvider::GetHwnd()
+{
+    return _terminal->GetHwnd();
+}
+
+RECT HwndTerminal::TsfDataProvider::GetViewport()
+{
+    const auto hwnd = GetHwnd();
+
+    RECT rc;
+    GetClientRect(hwnd, &rc);
+
+    // https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-getclientrect
+    // > The left and top members are zero. The right and bottom members contain the width and height of the window.
+    // --> We can turn the client rect into a screen-relative rect by adding the left/top position.
+    ClientToScreen(hwnd, reinterpret_cast<POINT*>(&rc));
+    rc.right += rc.left;
+    rc.bottom += rc.top;
+
+    return rc;
+}
+
+RECT HwndTerminal::TsfDataProvider::GetCursorPosition()
+{
+    // Convert from columns/rows to pixels.
+    til::point cursorPos;
+    til::size fontSize;
+    {
+        const auto lock = _terminal->_terminal->LockForReading();
+        cursorPos = _terminal->_terminal->GetCursorPosition(); // measured in terminal cells
+        fontSize = _terminal->_actualFont.GetSize(); // measured in pixels, not DIP
+    }
+    POINT ptSuggestion = {
+        .x = cursorPos.x * fontSize.width,
+        .y = cursorPos.y * fontSize.height,
+    };
+
+    ClientToScreen(GetHwnd(), &ptSuggestion);
+
+    // Final measurement should be in pixels
+    return {
+        .left = ptSuggestion.x,
+        .top = ptSuggestion.y,
+        .right = ptSuggestion.x + fontSize.width,
+        .bottom = ptSuggestion.y + fontSize.height,
+    };
+}
+
+void HwndTerminal::TsfDataProvider::HandleOutput(std::wstring_view text)
+{
+    _terminal->_WriteTextToConnection(text);
+}
+
+Microsoft::Console::Render::Renderer* HwndTerminal::TsfDataProvider::GetRenderer()
+{
+    return _terminal->_renderer.get();
+}
+
 // This magic flag is "documented" at https://msdn.microsoft.com/en-us/library/windows/desktop/ms646301(v=vs.85).aspx
 // "If the high-order bit is 1, the key is down; otherwise, it is up."
 static constexpr short KeyPressed{ gsl::narrow_cast<short>(0x8000) };
@@ -242,6 +315,7 @@ try
 {
     // As a rule, detach resources from the Terminal before shutting them down.
     // This ensures that teardown is reentrant.
+    _tsfHandle = {};
 
     // Shut down the renderer (and therefore the thread) before we implode
     _renderer.reset();
@@ -940,6 +1014,16 @@ void __stdcall TerminalSetFocus(void* terminal)
     if (auto uiaEngine = publicTerminal->_uiaEngine.get())
     {
         LOG_IF_FAILED(uiaEngine->Enable());
+    }
+    publicTerminal->_FocusTSF();
+}
+
+void HwndTerminal::_FocusTSF() noexcept
+{
+    if (!_tsfHandle)
+    {
+        _tsfHandle = Microsoft::Console::TSF::Handle::Create();
+        _tsfHandle.AssociateFocus(&_tsfDataProvider);
     }
 }
 

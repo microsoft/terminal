@@ -6,6 +6,7 @@
 #include "../../buffer/out/textBuffer.hpp"
 #include "../../renderer/inc/FontInfoDesired.hpp"
 #include "../../types/IControlAccessibilityInfo.h"
+#include "../../tsf/Handle.h"
 
 namespace Microsoft::Console::Render::Atlas
 {
@@ -85,6 +86,21 @@ public:
     static LRESULT CALLBACK HwndTerminalWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept;
 
 private:
+    struct TsfDataProvider : public Microsoft::Console::TSF::IDataProvider
+    {
+        TsfDataProvider(HwndTerminal* t) :
+            _terminal(t) {}
+        virtual ~TsfDataProvider() = default;
+        STDMETHODIMP TsfDataProvider::QueryInterface(REFIID, void**) noexcept override;
+        ULONG STDMETHODCALLTYPE TsfDataProvider::AddRef() noexcept override;
+        ULONG STDMETHODCALLTYPE TsfDataProvider::Release() noexcept override;
+        HWND GetHwnd() override;
+        RECT GetViewport() override;
+        RECT GetCursorPosition() override;
+        void HandleOutput(std::wstring_view text) override;
+        Microsoft::Console::Render::Renderer* GetRenderer() override;
+        HwndTerminal* _terminal;
+    };
     wil::unique_hwnd _hwnd;
     FontInfoDesired _desiredFont;
     FontInfo _actualFont;
@@ -105,6 +121,10 @@ private:
     std::chrono::steady_clock::time_point _lastMouseClickTimestamp{};
     std::optional<til::point> _lastMouseClickPos;
     std::optional<til::point> _singleClickTouchdownPos;
+
+    // _tsfHandle uses _tsfDataProvider. Destructors run from bottom to top; this maintains correct destruction order.
+    TsfDataProvider _tsfDataProvider{ this };
+    Microsoft::Console::TSF::Handle _tsfHandle;
 
     friend HRESULT _stdcall CreateTerminal(HWND parentHwnd, _Out_ void** hwnd, _Out_ void** terminal);
     friend HRESULT _stdcall TerminalTriggerResize(_In_ void* terminal, _In_ til::CoordType width, _In_ til::CoordType height, _Out_ til::size* dimensions);
@@ -128,6 +148,8 @@ private:
     HRESULT _CopyTextToSystemClipboard(const std::wstring& text, const std::string& htmlData, const std::string& rtfData) const;
     HRESULT _CopyToSystemClipboard(const std::string& stringToCopy, LPCWSTR lpszFormat) const;
     void _PasteTextFromClipboard() noexcept;
+
+    void _FocusTSF() noexcept;
 
     const unsigned int _NumberOfClicks(til::point clickPos, std::chrono::steady_clock::time_point clickTime) noexcept;
     HRESULT _StartSelection(LPARAM lParam) noexcept;
