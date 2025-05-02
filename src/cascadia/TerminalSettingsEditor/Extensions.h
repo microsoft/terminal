@@ -18,6 +18,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     struct Extensions : public HasScrollViewer<Extensions>, ExtensionsT<Extensions>
     {
     public:
+        Windows::UI::Xaml::Thickness CalculateMargin(bool hidden);
+
         Extensions();
 
         void OnNavigatedTo(const Windows::UI::Xaml::Navigation::NavigationEventArgs& e);

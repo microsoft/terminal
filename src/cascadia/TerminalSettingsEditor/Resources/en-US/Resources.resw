@@ -2360,24 +2360,8 @@
   <data name="Extensions_AddedColorSchemesHeader.Text" xml:space="preserve">
     <value>Added Color Schemes</value>
   </data>
-  <data name="Extensions_NoActiveExtensionsDisclaimer.Text" xml:space="preserve">
-    <value>None</value>
-    <comment>Text displayed when no extensions are available. Shown in place of a list of entries.</comment>
-  </data>
-  <data name="Extensions_NoModifiedProfilesDisclaimer.Text" xml:space="preserve">
-    <value>None</value>
-    <comment>Text displayed when no profiles were modified. Shown in place of a list of entries.</comment>
-  </data>
-  <data name="Extensions_NoAddedColorSchemesDisclaimer.Text" xml:space="preserve">
-    <value>None</value>
-    <comment>Text displayed when no color schemes were added. Shown in place of a list of entries.</comment>
-  </data>
-  <data name="Extensions_NoAddedProfilesDisclaimer.Text" xml:space="preserve">
-    <value>None</value>
-    <comment>Text displayed when no profiles were added. Shown in place of a list of entries.</comment>
-  </data>
   <data name="Extensions_DisclaimerHyperlink.Content" xml:space="preserve">
-    <value>Learn more about fragment extensions</value>
+    <value>Learn more about extensions</value>
   </data>
   <data name="Extensions_NavigateToProfileButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Navigate to profile</value>

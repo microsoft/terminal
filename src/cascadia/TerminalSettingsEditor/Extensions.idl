@@ -9,6 +9,8 @@ namespace Microsoft.Terminal.Settings.Editor
     {
         Extensions();
         ExtensionsViewModel ViewModel { get; };
+
+        Windows.UI.Xaml.Thickness CalculateMargin(Boolean hidden);
     }
 
     [default_interface] runtimeclass ExtensionsViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged

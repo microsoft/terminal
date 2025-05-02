@@ -271,6 +271,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
+    Thickness Extensions::CalculateMargin(bool hidden)
+    {
+        return ThicknessHelper::FromLengths(/*left*/ 0,
+                                            /*top*/ hidden ? 0 : 20,
+                                            /*right*/ 0,
+                                            /*bottom*/ 0);
+    }
+
     void ExtensionsViewModel::NavigateToProfile(const guid profileGuid)
     {
         NavigateToProfileRequested.raise(*this, profileGuid);
