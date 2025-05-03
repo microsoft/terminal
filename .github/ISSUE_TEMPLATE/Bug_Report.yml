@@ -22,7 +22,7 @@ body:
 - type: input
   attributes:
     label: Windows build number
-    placeholder: "10.0.22621.0"
+    placeholder: "10.0.26100.0"
     description: |
       Please run `ver` or `[Environment]::OSVersion`.
   validations:
