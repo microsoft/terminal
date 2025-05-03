@@ -133,3 +133,4 @@ Resources/(?!en)
 ^\Qsrc/terminal/parser/ft_fuzzwrapper/run.bat\E$
 ^\Qsrc/tools/lnkd/lnkd.bat\E$
 ^\Qsrc/tools/pixels/pixels.bat\E$
+^\Qsrc/cascadia/ut_app/FzfTests.cpp\E$

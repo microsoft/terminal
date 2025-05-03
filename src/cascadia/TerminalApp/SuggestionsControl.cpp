@@ -936,12 +936,15 @@ namespace winrt::TerminalApp::implementation
         auto commandsToFilter = _commandsToFilter();
 
         {
+            auto pattern = std::make_shared<fzf::matcher::Pattern>(fzf::matcher::ParsePattern(searchText));
+
             for (const auto& action : commandsToFilter)
             {
                 // Update filter for all commands
                 // This will modify the highlighting but will also lead to re-computation of weight (and consequently sorting).
                 // Pay attention that it already updates the highlighting in the UI
-                action.UpdateFilter(searchText);
+                auto impl = winrt::get_self<implementation::FilteredCommand>(action);
+                impl->UpdateFilter(pattern);
 
                 // if there is active search we skip commands with 0 weight
                 if (searchText.empty() || action.Weight() > 0)
