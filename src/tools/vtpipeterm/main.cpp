@@ -1,12 +1,20 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
+#ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
+#endif
 #define NOMINMAX
 #include <Windows.h>
 
+#ifndef __INSIDE_WINDOWS
 #define CONPTY_IMPEXP
 #include <conpty-static.h>
+#else // Building inside Windows, just use the kernel32 ones.
+#define ConptyCreatePseudoConsole CreatePseudoConsole
+#define ConptyReleasePseudoConsole ReleasePseudoConsole
+#define ConptyResizePseudoConsole ResizePseudoConsole
+#endif
 
 #include <wil/win32_helpers.h>
 

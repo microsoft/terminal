@@ -99,7 +99,7 @@ public:
 
         TerminalInput::StringType str;
         str.append(std::wstring_view{ buffer });
-        str[str.size() - 1] = IsButtonDown(uiButton) ? L'M' : L'm';
+        str[str.size() - 1] = IsButtonUp(uiButton) ? L'm' : L'M';
         return str;
     }
 
@@ -182,23 +182,18 @@ public:
         return result;
     }
 
-    bool IsButtonDown(unsigned int uiButton)
+    bool IsButtonUp(unsigned int uiButton)
     {
-        auto fIsDown = false;
         switch (uiButton)
         {
-        case WM_LBUTTONDBLCLK:
-        case WM_LBUTTONDOWN:
-        case WM_RBUTTONDOWN:
-        case WM_RBUTTONDBLCLK:
-        case WM_MBUTTONDOWN:
-        case WM_MBUTTONDBLCLK:
-        case WM_MOUSEWHEEL:
-        case WM_MOUSEHWHEEL:
-            fIsDown = true;
-            break;
+        case WM_LBUTTONUP:
+        case WM_RBUTTONUP:
+        case WM_MBUTTONUP:
+        case WM_XBUTTONUP:
+            return true;
+        default:
+            return false;
         }
-        return fIsDown;
     }
 
     /* From winuser.h - Needed to manually specify the test properties

@@ -2825,6 +2825,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const auto fontSize = settings.FontSize();
         const auto fontWeight = settings.FontWeight();
         const auto fontFace = settings.FontFace();
+        const auto cellWidth = CSSLengthPercentage::FromString(settings.CellWidth().c_str());
+        const auto cellHeight = CSSLengthPercentage::FromString(settings.CellHeight().c_str());
         const auto scrollState = settings.ScrollState();
         const auto padding = settings.Padding();
 
@@ -2836,6 +2838,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         //      not, but DX doesn't use that info at all.
         //      The Codepage is additionally not actually used by the DX engine at all.
         FontInfoDesired desiredFont{ fontFace, 0, fontWeight.Weight, fontSize, CP_UTF8 };
+        desiredFont.SetCellSize(cellWidth, cellHeight);
         FontInfo actualFont{ fontFace, 0, fontWeight.Weight, desiredFont.GetEngineSize(), CP_UTF8, false };
 
         // Create a DX engine and initialize it with our font and DPI. We'll
