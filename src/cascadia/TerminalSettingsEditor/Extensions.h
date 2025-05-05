@@ -88,6 +88,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             _settings{ settings },
             _fragmentExtensions{ single_threaded_observable_vector<Editor::FragmentExtensionViewModel>() } {}
 
+        static bool SortAscending(const Editor::ExtensionPackageViewModel& lhs, const Editor::ExtensionPackageViewModel& rhs);
+
         Model::ExtensionPackage Package() const noexcept { return _package; }
         hstring Scope() const noexcept;
         bool Enabled() const;
@@ -134,6 +136,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             _fragment{ fragment },
             _deducedProfile{ deducedProfile } {}
 
+        static bool SortAscending(const Editor::FragmentProfileViewModel& lhs, const Editor::FragmentProfileViewModel& rhs);
+
         Model::Profile Profile() const { return _deducedProfile; };
         hstring SourceName() const { return _fragment.Source(); }
         hstring Json() const { return _entry.Json(); }
@@ -152,6 +156,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             _entry{ entry },
             _fragment{ fragment },
             _deducedSchemeVM{ deducedSchemeVM } {}
+
+        static bool SortAscending(const Editor::FragmentColorSchemeViewModel& lhs, const Editor::FragmentColorSchemeViewModel& rhs);
 
         Editor::ColorSchemeViewModel ColorSchemeVM() const { return _deducedSchemeVM; };
         hstring SourceName() const { return _fragment.Source(); }

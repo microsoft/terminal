@@ -74,9 +74,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             {
                 // Update the views to reflect the current extension package, if one is selected.
                 // Otherwise, show components from all extensions
-                _profilesModifiedView.Clear();
-                _profilesAddedView.Clear();
-                _colorSchemesAddedView.Clear();
+                std::vector<Editor::FragmentProfileViewModel> profilesModifiedTotal;
+                std::vector<Editor::FragmentProfileViewModel> profilesAddedTotal;
+                std::vector<Editor::FragmentColorSchemeViewModel> colorSchemesAddedTotal;
 
                 // Helper lambda to add the contents of an extension package to the current view
                 auto addPackageContentsToView = [&](const Editor::ExtensionPackageViewModel& extPkg) {
@@ -85,15 +85,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                     {
                         for (const auto& profile : ext.ProfilesModified())
                         {
-                            _profilesModifiedView.Append(profile);
+                            profilesModifiedTotal.push_back(profile);
                         }
                         for (const auto& profile : ext.ProfilesAdded())
                         {
-                            _profilesAddedView.Append(profile);
+                            profilesAddedTotal.push_back(profile);
                         }
                         for (const auto& scheme : ext.ColorSchemesAdded())
                         {
-                            _colorSchemesAddedView.Append(scheme);
+                            colorSchemesAddedTotal.push_back(scheme);
                         }
                     }
                 };
@@ -109,6 +109,16 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                         addPackageContentsToView(extPkg);
                     }
                 }
+
+                // sort the lists linguistically for nicer presentation
+                std::sort(profilesModifiedTotal.begin(), profilesModifiedTotal.end(), FragmentProfileViewModel::SortAscending);
+                std::sort(profilesAddedTotal.begin(), profilesAddedTotal.end(), FragmentProfileViewModel::SortAscending);
+                std::sort(colorSchemesAddedTotal.begin(), colorSchemesAddedTotal.end(), FragmentColorSchemeViewModel::SortAscending);
+
+                // update the WinRT lists bound to UI
+                _profilesModifiedView = winrt::single_threaded_observable_vector(std::move(profilesModifiedTotal));
+                _profilesAddedView = winrt::single_threaded_observable_vector(std::move(profilesAddedTotal));
+                _colorSchemesAddedView = winrt::single_threaded_observable_vector(std::move(colorSchemesAddedTotal));
 
                 _NotifyChanges(L"IsExtensionView", L"CurrentExtensionPackageIdentifierTemplate");
             }
@@ -138,7 +148,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         for (const auto& extPkg : extensions)
         {
             auto extPkgVM = winrt::make_self<ExtensionPackageViewModel>(extPkg, _settings);
-            extensionPackages.push_back(*extPkgVM);
             for (const auto& fragExt : extPkg.FragmentsView())
             {
                 const auto extensionEnabled = GetExtensionState(fragExt.Source(), _settings);
@@ -201,9 +210,22 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                         }
                     }
                 }
+
+                // sort the lists linguistically for nicer presentation
+                std::sort(currentProfilesModified.begin(), currentProfilesModified.end(), FragmentProfileViewModel::SortAscending);
+                std::sort(currentProfilesAdded.begin(), currentProfilesAdded.end(), FragmentProfileViewModel::SortAscending);
+                std::sort(currentColorSchemesAdded.begin(), currentColorSchemesAdded.end(), FragmentColorSchemeViewModel::SortAscending);
+
                 extPkgVM->FragmentExtensions().Append(winrt::make<FragmentExtensionViewModel>(fragExt, currentProfilesModified, currentProfilesAdded, currentColorSchemesAdded));
             }
+            extensionPackages.push_back(*extPkgVM);
         }
+
+        // sort the lists linguistically for nicer presentation
+        std::sort(extensionPackages.begin(), extensionPackages.end(), ExtensionPackageViewModel::SortAscending);
+        std::sort(profilesModifiedTotal.begin(), profilesModifiedTotal.end(), FragmentProfileViewModel::SortAscending);
+        std::sort(profilesAddedTotal.begin(), profilesAddedTotal.end(), FragmentProfileViewModel::SortAscending);
+        std::sort(colorSchemesAddedTotal.begin(), colorSchemesAddedTotal.end(), FragmentColorSchemeViewModel::SortAscending);
 
         _extensionPackages = single_threaded_observable_vector<Editor::ExtensionPackageViewModel>(std::move(extensionPackages));
         _profilesModifiedView = single_threaded_observable_vector<Editor::FragmentProfileViewModel>(std::move(profilesModifiedTotal));
@@ -296,6 +318,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _NotifyChanges(L"DisplayBadge");
     }
 
+    bool ExtensionPackageViewModel::SortAscending(const Editor::ExtensionPackageViewModel& lhs, const Editor::ExtensionPackageViewModel& rhs)
+    {
+        auto getKey = [&](const Editor::ExtensionPackageViewModel& pkgVM) {
+            const auto pkg = pkgVM.Package();
+            const auto displayName = pkg.DisplayName();
+            return displayName.empty() ? pkg.Source() : displayName;
+        };
+
+        return til::compare_linguistic_insensitive(getKey(lhs), getKey(rhs)) < 0;
+    }
+
     hstring ExtensionPackageViewModel::Scope() const noexcept
     {
         return _package.Scope() == Model::FragmentScope::User ? RS_(L"Extensions_ScopeUser") : RS_(L"Extensions_ScopeSystem");
@@ -339,9 +372,19 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return hstring{ fmt::format(FMT_COMPILE(L"{}: {}"), AccessibleName(), RS_(L"Extension_StateDisabled/Text")) };
     }
 
+    bool FragmentProfileViewModel::SortAscending(const Editor::FragmentProfileViewModel& lhs, const Editor::FragmentProfileViewModel& rhs)
+    {
+        return til::compare_linguistic_insensitive(lhs.Profile().Name(), rhs.Profile().Name()) < 0;
+    }
+
     hstring FragmentProfileViewModel::AccessibleName() const noexcept
     {
         return hstring{ fmt::format(FMT_COMPILE(L"{}, {}"), Profile().Name(), SourceName()) };
+    }
+
+    bool FragmentColorSchemeViewModel::SortAscending(const Editor::FragmentColorSchemeViewModel& lhs, const Editor::FragmentColorSchemeViewModel& rhs)
+    {
+        return til::compare_linguistic_insensitive(lhs.ColorSchemeVM().Name(), rhs.ColorSchemeVM().Name()) < 0;
     }
 
     hstring FragmentColorSchemeViewModel::AccessibleName() const noexcept
