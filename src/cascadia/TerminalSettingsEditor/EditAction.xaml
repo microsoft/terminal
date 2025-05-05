@@ -175,18 +175,24 @@
                                        Text="{x:Bind KeyChordText, Mode=OneWay}"
                                        TextWrapping="WrapWholeWords"/>
                         </Button>
-                        <StackPanel Orientation="Horizontal"
-                                    Spacing="8"
-                                    Grid.Column="0"
-                                    Visibility="{x:Bind IsInEditMode, Mode=OneWay}">
+                        <Grid Grid.Column="0"
+                              ColumnSpacing="8"
+                              Visibility="{x:Bind IsInEditMode, Mode=OneWay}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
                             <!--  Edit Mode: Key Chord Listener  -->
                             <local:KeyChordListener Keys="{x:Bind ProposedKeys, Mode=TwoWay}"
-                                                    Style="{StaticResource KeyChordEditorStyle}"/>
+                                                    Style="{StaticResource KeyChordEditorStyle}"
+                                                    Grid.Column="0"/>
 
                             <!--  Cancel editing the action  -->
                             <Button x:Uid="Actions_CancelButton"
                                     Style="{StaticResource EditButtonStyle}"
-                                    Click="{x:Bind CancelChanges}">
+                                    Click="{x:Bind CancelChanges}"
+                                    Grid.Column="1">
                                 <FontIcon FontSize="{StaticResource EditButtonIconSize}"
                                           Glyph="&#xE711;" />
                             </Button>
@@ -195,11 +201,12 @@
                             <Button x:Uid="Actions_AcceptButton"
                                     Style="{StaticResource AccentEditButtonStyle}"
                                     Click="{x:Bind AttemptAcceptChanges}"
-                                    Flyout="{x:Bind AcceptChangesFlyout, Mode=OneWay}">
+                                    Flyout="{x:Bind AcceptChangesFlyout, Mode=OneWay}"
+                                    Grid.Column="2">
                                 <FontIcon FontSize="{StaticResource EditButtonIconSize}"
                                           Glyph="&#xE8FB;" />
                             </Button>
-                        </StackPanel>
+                        </Grid>
                         <Button Grid.Column="1"
                                 Margin="8,0,0,0"
                                 Style="{StaticResource DeleteSmallButtonStyle}">
@@ -443,15 +450,17 @@
 
             <DataTemplate x:Key="FlagItemTemplate"
                           x:DataType="local:FlagEntry">
-                <Grid ColumnSpacing="8">
+                <Grid>
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="40" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
                     <CheckBox IsChecked="{x:Bind IsSet, Mode=TwoWay}"
-                              Grid.Column="0"/>
+                              Grid.Column="0" />
                     <TextBlock Text="{x:Bind FlagName, Mode=OneWay}"
-                               Grid.Column="1"/>
+                               Grid.Column="1"
+                               VerticalAlignment="Center"
+                               Padding="0,0,0,4"/>
                 </Grid>
             </DataTemplate>
 
@@ -461,7 +470,7 @@
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="{StaticResource ArgumentNameWidth}" />
-                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
                         </Grid.ColumnDefinitions>
                         <TextBlock Text="{x:Bind Name}"
                                    VerticalAlignment="Center"
@@ -581,7 +590,8 @@
                       CanDragItems="False"
                       CanReorderItems="False"
                       Grid.Row="2"
-                      Grid.Column="1">
+                      Grid.Column="1"
+                      Margin="-28,0,0,0">
             </ListView>
             <TextBlock x:Uid="Actions_Keybindings"
                        VerticalAlignment="Center"
