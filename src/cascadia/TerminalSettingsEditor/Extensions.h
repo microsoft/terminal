@@ -90,6 +90,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         static bool SortAscending(const Editor::ExtensionPackageViewModel& lhs, const Editor::ExtensionPackageViewModel& rhs);
 
+        void UpdateSettings(const Model::CascadiaSettings& settings);
         Model::ExtensionPackage Package() const noexcept { return _package; }
         hstring Scope() const noexcept;
         bool Enabled() const;

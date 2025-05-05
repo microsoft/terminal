@@ -73,7 +73,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             if (viewModelProperty == L"CurrentExtensionPackage")
             {
                 // Update the views to reflect the current extension package, if one is selected.
-                // Otherwise, show components from all extensions
+                // Otherwise, show components from all enabled extensions
                 std::vector<Editor::FragmentProfileViewModel> profilesModifiedTotal;
                 std::vector<Editor::FragmentProfileViewModel> profilesAddedTotal;
                 std::vector<Editor::FragmentColorSchemeViewModel> colorSchemesAddedTotal;
@@ -106,7 +106,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 {
                     for (const auto& extPkg : _extensionPackages)
                     {
-                        addPackageContentsToView(extPkg);
+                        if (extPkg.Enabled())
+                        {
+                            addPackageContentsToView(extPkg);
+                        }
                     }
                 }
 
@@ -130,6 +133,16 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _settings = settings;
         _colorSchemesPageVM = colorSchemesPageVM;
         _CurrentExtensionPackage = nullptr;
+
+        // The extension packages may not be loaded yet because we want to wait until we actually navigate to the page to do so.
+        // In that case, omit "updating" them. They'll get the proper references when we lazy load them.
+        if (_extensionPackages)
+        {
+            for (const auto& extPkg : _extensionPackages)
+            {
+                get_self<ExtensionPackageViewModel>(extPkg)->UpdateSettings(_settings);
+            }
+        }
     }
 
     void ExtensionsViewModel::LazyLoadExtensions()
@@ -217,6 +230,16 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 std::sort(currentColorSchemesAdded.begin(), currentColorSchemesAdded.end(), FragmentColorSchemeViewModel::SortAscending);
 
                 extPkgVM->FragmentExtensions().Append(winrt::make<FragmentExtensionViewModel>(fragExt, currentProfilesModified, currentProfilesAdded, currentColorSchemesAdded));
+                extPkgVM->PropertyChanged([&](auto&&, const PropertyChangedEventArgs& args) {
+                    const auto viewModelProperty{ args.PropertyName() };
+                    if (viewModelProperty == L"Enabled" && !CurrentExtensionPackage())
+                    {
+                        // If Enabled was changed, propagate the change to the ExtensionsViewModel.
+                        // Only do this if we're on the root Extensions page! That's where we only show
+                        // content from enabled extensions. Otherwise, save time and skip over this.
+                        _NotifyChanges(L"CurrentExtensionPackage");
+                    }
+                });
             }
             extensionPackages.push_back(*extPkgVM);
         }
@@ -327,6 +350,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         };
 
         return til::compare_linguistic_insensitive(getKey(lhs), getKey(rhs)) < 0;
+    }
+
+    void ExtensionPackageViewModel::UpdateSettings(const Model::CascadiaSettings& settings)
+    {
+        const auto oldEnabled = Enabled();
+        _settings = settings;
+        if (oldEnabled != Enabled())
+        {
+            // The enabled state of the extension has changed, notify the UI
+            _NotifyChanges(L"Enabled");
+        }
     }
 
     hstring ExtensionPackageViewModel::Scope() const noexcept
