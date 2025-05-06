@@ -78,6 +78,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Windows::Foundation::Collections::IObservableVector<Editor::FragmentProfileViewModel> _profilesAddedView;
         Windows::Foundation::Collections::IObservableVector<Editor::FragmentColorSchemeViewModel> _colorSchemesAddedView;
         bool _extensionsLoaded;
+
+        void _UpdateListViews(bool updateProfilesModified, bool updateProfilesAdded, bool updateColorSchemesAdded);
     };
 
     struct ExtensionPackageViewModel : ExtensionPackageViewModelT<ExtensionPackageViewModel>, ViewModelHelper<ExtensionPackageViewModel>
@@ -91,12 +93,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         static bool SortAscending(const Editor::ExtensionPackageViewModel& lhs, const Editor::ExtensionPackageViewModel& rhs);
 
         void UpdateSettings(const Model::CascadiaSettings& settings);
+
         Model::ExtensionPackage Package() const noexcept { return _package; }
         hstring Scope() const noexcept;
         bool Enabled() const;
         void Enabled(bool val);
         hstring AccessibleName() const noexcept;
-        hstring AccessibleNameWithStatus() const noexcept;
         Windows::Foundation::Collections::IObservableVector<Editor::FragmentExtensionViewModel> FragmentExtensions() { return _fragmentExtensions; }
 
     private:

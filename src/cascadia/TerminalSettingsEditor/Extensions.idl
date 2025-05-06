@@ -44,7 +44,6 @@ namespace Microsoft.Terminal.Settings.Editor
         Boolean Enabled;
         String Scope { get; };
         String AccessibleName { get; };
-        String AccessibleNameWithStatus { get; };
         IVector<FragmentExtensionViewModel> FragmentExtensions { get; };
     }
 
