@@ -18,6 +18,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     struct Extensions : public HasScrollViewer<Extensions>, ExtensionsT<Extensions>
     {
     public:
+        Windows::UI::Xaml::Thickness CalculateMargin(bool hidden);
+
         Extensions();
 
         void OnNavigatedTo(const Windows::UI::Xaml::Navigation::NavigationEventArgs& e);
@@ -76,6 +78,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Windows::Foundation::Collections::IObservableVector<Editor::FragmentProfileViewModel> _profilesAddedView;
         Windows::Foundation::Collections::IObservableVector<Editor::FragmentColorSchemeViewModel> _colorSchemesAddedView;
         bool _extensionsLoaded;
+
+        void _UpdateListViews(bool updateProfilesModified, bool updateProfilesAdded, bool updateColorSchemesAdded);
     };
 
     struct ExtensionPackageViewModel : ExtensionPackageViewModelT<ExtensionPackageViewModel>, ViewModelHelper<ExtensionPackageViewModel>
@@ -86,12 +90,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             _settings{ settings },
             _fragmentExtensions{ single_threaded_observable_vector<Editor::FragmentExtensionViewModel>() } {}
 
+        static bool SortAscending(const Editor::ExtensionPackageViewModel& lhs, const Editor::ExtensionPackageViewModel& rhs);
+
+        void UpdateSettings(const Model::CascadiaSettings& settings);
+
         Model::ExtensionPackage Package() const noexcept { return _package; }
         hstring Scope() const noexcept;
         bool Enabled() const;
         void Enabled(bool val);
         hstring AccessibleName() const noexcept;
-        hstring AccessibleNameWithStatus() const noexcept;
         Windows::Foundation::Collections::IObservableVector<Editor::FragmentExtensionViewModel> FragmentExtensions() { return _fragmentExtensions; }
 
     private:
@@ -132,6 +139,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             _fragment{ fragment },
             _deducedProfile{ deducedProfile } {}
 
+        static bool SortAscending(const Editor::FragmentProfileViewModel& lhs, const Editor::FragmentProfileViewModel& rhs);
+
         Model::Profile Profile() const { return _deducedProfile; };
         hstring SourceName() const { return _fragment.Source(); }
         hstring Json() const { return _entry.Json(); }
@@ -150,6 +159,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             _entry{ entry },
             _fragment{ fragment },
             _deducedSchemeVM{ deducedSchemeVM } {}
+
+        static bool SortAscending(const Editor::FragmentColorSchemeViewModel& lhs, const Editor::FragmentColorSchemeViewModel& rhs);
 
         Editor::ColorSchemeViewModel ColorSchemeVM() const { return _deducedSchemeVM; };
         hstring SourceName() const { return _fragment.Source(); }

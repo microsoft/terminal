@@ -15,6 +15,12 @@
     <Version>0.1</Version>
   </PropertyGroup>
   
+  <PropertyGroup Condition="'$(WindowsTerminalOfficialBuild)'=='true'">
+    <SignAssembly>true</SignAssembly>
+    <DelaySign>true</DelaySign>
+    <AssemblyOriginatorKeyFile>..\..\..\build\config\272MSSharedLibSN2048.snk</AssemblyOriginatorKeyFile>
+  </PropertyGroup>
+
   <ItemGroup>
     <AdditionalFiles Include="$(MSBuildThisFileDirectory)stylecop.json">
       <Visible>true</Visible>
