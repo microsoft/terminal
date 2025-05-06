@@ -19,6 +19,7 @@
 #if TIL_FEATURE_DYNAMICSSHPROFILES_ENABLED
 #include "SshHostGenerator.h"
 #endif
+#include "PowershellInstallationProfileGenerator.h"
 
 #include "ApplicationState.h"
 #include "DefaultTerminal.h"
@@ -209,26 +210,58 @@ Json::StreamWriterBuilder SettingsLoader::_getJsonStyledWriter()
 // (meaning profiles specified by the application rather by the user).
 void SettingsLoader::GenerateProfiles()
 {
-    auto generateProfiles = [&](const IDynamicProfileGenerator& generator) {
+    auto generateProfiles = [&](IDynamicProfileGenerator& generator) {
         if (!_ignoredNamespaces.contains(generator.GetNamespace()))
         {
             _executeGenerator(generator, inboxSettings.profiles);
         }
     };
 
-    generateProfiles(PowershellCoreProfileGenerator{});
-    generateProfiles(WslDistroGenerator{});
-    generateProfiles(AzureCloudShellGenerator{});
-    generateProfiles(VisualStudioGenerator{});
+    {
+        PowershellCoreProfileGenerator powerShellGenerator{};
+        generateProfiles(powerShellGenerator);
+
+        if (Feature_PowerShellInstallerProfileGenerator::IsEnabled())
+        {
+            if (!powerShellGenerator.GetPowerShellInstances().empty())
+            {
+                // If PowerShell is installed, mark the installer profile for deletion
+                const winrt::guid profileGuid{ L"{965a10f2-b0f2-55dc-a3c2-2ddbf639bf89}" };
+                for (const auto& profile : userSettings.profiles)
+                {
+                    if (profile->Guid() == profileGuid)
+                    {
+                        profile->Deleted(true);
+                        break;
+                    }
+                }
+            }
+            else
+            {
+                // Only generate the installer stub profile if PowerShell isn't installed.
+                PowershellInstallationProfileGenerator pwshInstallationGenerator{};
+                generateProfiles(pwshInstallationGenerator);
+            }
+        }
+    }
+    WslDistroGenerator wslGenerator{};
+    generateProfiles(wslGenerator);
+
+    AzureCloudShellGenerator acsGenerator{};
+    generateProfiles(acsGenerator);
+
+    VisualStudioGenerator vsGenerator{};
+    generateProfiles(vsGenerator);
 #if TIL_FEATURE_DYNAMICSSHPROFILES_ENABLED
-    generateProfiles(SshHostGenerator{});
+    SshHostGenerator sshGenerator{};
+    generateProfiles(sshGenerator);
 #endif
 }
 
 // Generate ExtensionPackage objects from the profile generators.
 void SettingsLoader::GenerateExtensionPackagesFromProfileGenerators()
 {
-    auto generateExtensionPackages = [&](const IDynamicProfileGenerator& generator) {
+    auto generateExtensionPackages = [&](IDynamicProfileGenerator& generator) {
         std::vector<winrt::com_ptr<implementation::Profile>> profilesList;
         _executeGenerator(generator, profilesList);
 
@@ -255,15 +288,58 @@ void SettingsLoader::GenerateExtensionPackagesFromProfileGenerators()
         extPkg->Icon(hstring{ generator.GetIcon() });
     };
 
-    // TODO CARLOS: is there a way to deduplicate this list?
-    // Is it even worth it if we're adding special logic for the PwshInstallerGenerator PR?
-    generateExtensionPackages(PowershellCoreProfileGenerator{});
-    generateExtensionPackages(WslDistroGenerator{});
-    generateExtensionPackages(AzureCloudShellGenerator{});
-    generateExtensionPackages(VisualStudioGenerator{});
+    PowershellCoreProfileGenerator powerShellGenerator{};
+    generateExtensionPackages(powerShellGenerator);
+
+    if (Feature_PowerShellInstallerProfileGenerator::IsEnabled())
+    {
+        PowershellInstallationProfileGenerator pwshInstallationGenerator{};
+        generateExtensionPackages(pwshInstallationGenerator);
+        _patchInstallPowerShellProfile();
+    }
+
+    WslDistroGenerator wslGenerator{};
+    generateExtensionPackages(wslGenerator);
+
+    AzureCloudShellGenerator acsGenerator{};
+    generateExtensionPackages(acsGenerator);
+
+    VisualStudioGenerator vsGenerator{};
+    generateExtensionPackages(vsGenerator);
 #if TIL_FEATURE_DYNAMICSSHPROFILES_ENABLED
-    generateExtensionPackages(SshHostGenerator{});
+    SshHostGenerator sshGenerator{};
+    generateExtensionPackages(sshGenerator);
 #endif
+}
+
+// Retrieve the "Install Latest PowerShell" profile and add a comment to the JSON to indicate it's conditionally applied
+void SettingsLoader::_patchInstallPowerShellProfile()
+{
+    const hstring pwshInstallerNamespace{ PowershellInstallationProfileGenerator::Namespace };
+    if (extensionPackageMap.contains(pwshInstallerNamespace))
+    {
+        if (const auto& fragExtList = extensionPackageMap[pwshInstallerNamespace]->Fragments(); fragExtList.Size() > 0)
+        {
+            auto fragExt = get_self<FragmentSettings>(fragExtList.GetAt(0));
+
+            // We want the comment to be the first thing in the object,
+            // "closeOnExit" is the first property, so target that.
+            auto fragExtJson = _parseJSON(til::u16u8(fragExt->Json()));
+            fragExtJson[JsonKey(ProfilesKey)][0]["closeOnExit"].setComment(til::u16u8(fmt::format(FMT_COMPILE(L"// {}"), RS_(L"PowerShellInstallationProfileJsonComment"))), Json::CommentPlacement::commentBefore);
+            fragExt->Json(hstring{ til::u8u16(Json::writeString(_getJsonStyledWriter(), fragExtJson)) });
+
+            if (const auto& profileEntryList = fragExt->NewProfilesView(); profileEntryList.Size() > 0)
+            {
+                auto profileEntry = get_self<FragmentProfileEntry>(profileEntryList.GetAt(0));
+
+                // We want the comment to be the first thing in the object,
+                // "closeOnExit" is the first property, so target that.
+                auto profileJson = _parseJSON(til::u16u8(profileEntry->Json()));
+                profileJson["closeOnExit"].setComment(til::u16u8(fmt::format(FMT_COMPILE(L"// {}"), RS_(L"PowerShellInstallationProfileJsonComment"))), Json::CommentPlacement::commentBefore);
+                profileEntry->Json(hstring{ til::u8u16(Json::writeString(_getJsonStyledWriter(), profileJson)) });
+            }
+        }
+    }
 }
 
 // A new settings.json gets a special treatment:
@@ -1084,7 +1160,7 @@ bool SettingsLoader::_addOrMergeUserColorScheme(const winrt::com_ptr<implementat
 
 // As the name implies it executes a generator.
 // Generated profiles are added to .inboxSettings. Used by GenerateProfiles().
-void SettingsLoader::_executeGenerator(const IDynamicProfileGenerator& generator, std::vector<winrt::com_ptr<implementation::Profile>>& profilesList)
+void SettingsLoader::_executeGenerator(IDynamicProfileGenerator& generator, std::vector<winrt::com_ptr<implementation::Profile>>& profilesList)
 {
     const auto generatorNamespace = generator.GetNamespace();
     const auto previousSize = profilesList.size();
@@ -1648,7 +1724,11 @@ void CascadiaSettings::_resolveNewTabMenuProfiles() const
     auto activeProfileCount = gsl::narrow_cast<int>(_activeProfiles.Size());
     for (auto profileIndex = 0; profileIndex < activeProfileCount; profileIndex++)
     {
-        remainingProfilesMap.emplace(profileIndex, _activeProfiles.GetAt(profileIndex));
+        const auto& profile = _activeProfiles.GetAt(profileIndex);
+        if (!profile.Deleted())
+        {
+            remainingProfilesMap.emplace(profileIndex, _activeProfiles.GetAt(profileIndex));
+        }
     }
 
     // We keep track of the "remaining profiles" - those that have not yet been resolved
