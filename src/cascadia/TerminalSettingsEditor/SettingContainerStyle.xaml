@@ -134,6 +134,7 @@
     </Style>
 
     <Style x:Key="SettingContainerResetButtonStyle"
+           BasedOn="{StaticResource DefaultButtonStyle}"
            TargetType="Button">
         <Setter Property="Margin" Value="5,0,0,0" />
         <Setter Property="Height" Value="19" />
@@ -179,13 +180,18 @@
         <Setter Property="FontFamily" Value="Segoe UI, Segoe Fluent Icons, Segoe MDL2 Assets" />
     </Style>
 
+    <Style x:Key="SettingContainerCurrentValueTextBlockStyle"
+           BasedOn="{StaticResource SettingsPageItemDescriptionStyle}"
+           TargetType="TextBlock">
+        <Setter Property="MaxWidth" Value="250" />
+        <Setter Property="Margin" Value="0,0,-16,0" />
+        <Setter Property="HorizontalAlignment" Value="Right" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="FontFamily" Value="Segoe UI, Segoe Fluent Icons, Segoe MDL2 Assets" />
+    </Style>
+
     <DataTemplate x:Key="ExpanderSettingContainerStringPreviewTemplate">
-        <TextBlock MaxWidth="250"
-                   Margin="0,0,-16,0"
-                   HorizontalAlignment="Right"
-                   VerticalAlignment="Center"
-                   FontFamily="Segoe UI, Segoe Fluent Icons, Segoe MDL2 Assets"
-                   Style="{StaticResource SettingsPageItemDescriptionStyle}"
+        <TextBlock Style="{StaticResource SettingContainerCurrentValueTextBlockStyle}"
                    Text="{Binding}" />
     </DataTemplate>
 
@@ -222,6 +228,45 @@
                                           HorizontalAlignment="Right"
                                           VerticalAlignment="Center"
                                           Content="{TemplateBinding Content}" />
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!--  A basic setting container displaying immutable text as content  -->
+    <Style x:Key="SettingContainerWithTextContent"
+           TargetType="local:SettingContainer">
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="local:SettingContainer">
+                    <Grid AutomationProperties.Name="{TemplateBinding Header}"
+                          Style="{StaticResource NonExpanderGrid}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0"
+                                    Style="{StaticResource StackPanelInExpanderStyle}">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Style="{StaticResource SettingsPageItemHeaderStyle}"
+                                           Text="{TemplateBinding Header}" />
+                                <Button x:Name="ResetButton"
+                                        Style="{StaticResource SettingContainerResetButtonStyle}">
+                                    <FontIcon Glyph="&#xE845;"
+                                              Style="{StaticResource SettingContainerFontIconStyle}" />
+                                </Button>
+                            </StackPanel>
+                            <TextBlock x:Name="HelpTextBlock"
+                                       Style="{StaticResource SettingsPageItemDescriptionStyle}"
+                                       Text="{TemplateBinding HelpText}" />
+                        </StackPanel>
+                        <TextBlock Grid.Column="1"
+                                   Margin="0,0,8,0"
+                                   HorizontalAlignment="Right"
+                                   VerticalAlignment="Center"
+                                   Style="{ThemeResource SecondaryTextBlockStyle}"
+                                   Text="{TemplateBinding Content}" />
                     </Grid>
                 </ControlTemplate>
             </Setter.Value>
@@ -302,8 +347,7 @@
                                 <StackPanel Grid.Column="0"
                                             Style="{StaticResource StackPanelInExpanderStyle}">
                                     <StackPanel Orientation="Horizontal">
-                                        <TextBlock Style="{StaticResource SettingsPageItemHeaderStyle}"
-                                                   Text="{TemplateBinding Header}" />
+                                        <ContentPresenter Content="{TemplateBinding Header}" />
                                         <Button x:Name="ResetButton"
                                                 Style="{StaticResource SettingContainerResetButtonStyle}">
                                             <FontIcon Glyph="&#xE845;"

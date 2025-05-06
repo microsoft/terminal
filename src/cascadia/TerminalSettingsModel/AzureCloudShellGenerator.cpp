@@ -8,14 +8,27 @@
 
 #include "../../inc/DefaultSettings.h"
 #include "DynamicProfileUtils.h"
+#include <LibraryResources.h>
 
 using namespace ::Microsoft::Terminal::Settings::Model;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
 using namespace winrt::Microsoft::Terminal::TerminalConnection;
 
+std::wstring_view GENERATOR_ICON_PATH{ L"ms-appx:///ProfileGeneratorIcons/AzureCloudShell.png" };
+
 std::wstring_view AzureCloudShellGenerator::GetNamespace() const noexcept
 {
     return AzureGeneratorNamespace;
+}
+
+std::wstring_view AzureCloudShellGenerator::GetDisplayName() const noexcept
+{
+    return RS_(L"AzureCloudShellGeneratorDisplayName");
+}
+
+std::wstring_view AzureCloudShellGenerator::GetIcon() const noexcept
+{
+    return GENERATOR_ICON_PATH;
 }
 
 // Method Description:
