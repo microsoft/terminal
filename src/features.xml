@@ -100,6 +100,11 @@
         <description>Enables the dynamic profile generator for OpenSSH config files</description>
         <id>9031</id>
         <stage>AlwaysDisabled</stage>
+        <alwaysEnabledBrandingTokens>
+            <brandingToken>Dev</brandingToken>
+            <brandingToken>Canary</brandingToken>
+            <brandingToken>Preview</brandingToken>
+        </alwaysEnabledBrandingTokens>
     </feature>
 
     <feature>
