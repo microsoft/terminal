@@ -180,6 +180,13 @@
                     HorizontalAlignment="Left"
                     Spacing="8"
                     Style="{StaticResource SettingsStackStyle}">
+            <TextBlock Style="{StaticResource DisclaimerStyle}"
+                       TextWrapping="WrapWholeWords">
+                    <Hyperlink NavigateUri="https://learn.microsoft.com/en-us/windows/terminal/customize-settings/actions"
+                               TextDecorations="None">
+                        <Run x:Uid="Actions_Disclaimer" />
+                    </Hyperlink>
+            </TextBlock>
             <!--  Add New Button  -->
             <Button x:Name="AddNewButton"
                     Click="AddNew_Click">
