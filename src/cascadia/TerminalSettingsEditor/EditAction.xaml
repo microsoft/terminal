@@ -609,7 +609,7 @@
                 </ListView.Header>
             </ListView>
             <Button Style="{StaticResource DeleteButtonStyle}"
-                    IsEnabled="{x:Bind ViewModel.IsUserAction}"
+                    IsEnabled="{x:Bind ViewModel.IsUserAction, Mode=OneWay}"
                     Grid.Row="4"
                     Grid.Column="0">
                 <Button.Content>

@@ -330,7 +330,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 }
                 else if (!IsUserAction())
                 {
-                    _ReplaceCommandWithUserCopy();
+                    _ReplaceCommandWithUserCopy(true);
                     return;
                 }
                 _CreateAndInitializeActionArgsVMHelper();
@@ -426,28 +426,37 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void CommandViewModel::_RegisterActionArgsVMEvents(Editor::ActionArgsViewModel actionArgsVM)
     {
-        actionArgsVM.PropagateColorSchemeRequested([this](const IInspectable& /*sender*/, const Editor::ArgWrapper& wrapper) {
-            if (wrapper)
+        actionArgsVM.PropagateColorSchemeRequested([weakThis = get_weak()](const IInspectable& /*sender*/, const Editor::ArgWrapper& wrapper) {
+            if (auto weak = weakThis.get())
             {
-                PropagateColorSchemeRequested.raise(*this, wrapper);
+                if (wrapper)
+                {
+                    weak->PropagateColorSchemeRequested.raise(*weak, wrapper);
+                }
             }
         });
         if (_IsNewCommand)
         {
             // for new commands, make sure we generate a new ID everytime any arg value changes
-            actionArgsVM.WrapperValueChanged([this](const IInspectable& /*sender*/, const IInspectable& /*args*/) {
-                _command.GenerateID();
+            actionArgsVM.WrapperValueChanged([weakThis = get_weak()](const IInspectable& /*sender*/, const IInspectable& /*args*/) {
+                if (auto weak = weakThis.get())
+                {
+                    weak->_command.GenerateID();
+                }
             });
         }
         else if (!IsUserAction())
         {
-            actionArgsVM.WrapperValueChanged([this](const IInspectable& /*sender*/, const IInspectable& /*args*/) {
-                _ReplaceCommandWithUserCopy();
+            actionArgsVM.WrapperValueChanged([weakThis = get_weak()](const IInspectable& /*sender*/, const IInspectable& /*args*/) {
+                if (auto weak = weakThis.get())
+                {
+                    weak->_ReplaceCommandWithUserCopy(false);
+                }
             });
         }
     }
 
-    void CommandViewModel::_ReplaceCommandWithUserCopy()
+    void CommandViewModel::_ReplaceCommandWithUserCopy(bool reinitialize)
     {
         // the user is attempting to edit an in-box action
         // to handle this, we create a new command with the new values that has the same ID as the in-box action
@@ -457,7 +466,19 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             const auto newCmd = Model::Command::CopyAsUserCommand(_command);
             _command = newCmd;
             actionsPageVM.AttemptAddCopiedCommand(_command);
-            _CreateAndInitializeActionArgsVMHelper();
+            if (reinitialize)
+            {
+                // full reinitialize needed, recreate the action args VM
+                // (this happens when the shortcut action is being changed on an in-box action)
+                _CreateAndInitializeActionArgsVMHelper();
+            }
+            else
+            {
+                // no need to reinitialize, just swap out the underlying data model
+                // (this happens when an additional argument is being changed on an in-box action)
+                auto actionArgsVMImpl{ get_self<ActionArgsViewModel>(_ActionArgsVM) };
+                actionArgsVMImpl->ReplaceActionAndArgs(_command.ActionAndArgs());
+            }
         }
     }
 
@@ -814,20 +835,26 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 const auto argType = argDescription.Type;
                 const auto argRequired = argDescription.Required;
                 const auto item = make_self<ArgWrapper>(argName, argType, argRequired, argAtIndex);
-                item->PropertyChanged([&, i](const IInspectable& sender, const PropertyChangedEventArgs& args) {
-                    const auto itemProperty{ args.PropertyName() };
-                    if (itemProperty == L"Value")
+                item->PropertyChanged([weakThis = get_weak(), i](const IInspectable& sender, const PropertyChangedEventArgs& args) {
+                    if (auto weak = weakThis.get())
                     {
-                        const auto argWrapper = sender.as<Microsoft::Terminal::Settings::Editor::ArgWrapper>();
-                        const auto newValue = argWrapper.Value();
-                        _actionAndArgs.Args().SetArgAt(i, newValue);
-                        WrapperValueChanged.raise(*this, nullptr);
+                        const auto itemProperty{ args.PropertyName() };
+                        if (itemProperty == L"Value")
+                        {
+                            const auto argWrapper = sender.as<Microsoft::Terminal::Settings::Editor::ArgWrapper>();
+                            const auto newValue = argWrapper.Value();
+                            weak->_actionAndArgs.Args().SetArgAt(i, newValue);
+                            weak->WrapperValueChanged.raise(*weak, nullptr);
+                        }
                     }
                 });
-                item->ColorSchemeRequested([&](const IInspectable& /*sender*/, const Editor::ArgWrapper& wrapper) {
-                    if (wrapper)
+                item->ColorSchemeRequested([weakThis = get_weak()](const IInspectable& /*sender*/, const Editor::ArgWrapper& wrapper) {
+                    if (auto weak = weakThis.get())
                     {
-                        PropagateColorSchemeRequested.raise(*this, wrapper);
+                        if (wrapper)
+                        {
+                            weak->PropagateColorSchemeRequested.raise(*weak, wrapper);
+                        }
                     }
                 });
                 item->Initialize();
@@ -841,6 +868,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     bool ActionArgsViewModel::HasArgs() const noexcept
     {
         return _actionAndArgs.Args() != nullptr;
+    }
+
+    void ActionArgsViewModel::ReplaceActionAndArgs(Model::ActionAndArgs newActionAndArgs)
+    {
+        _actionAndArgs = newActionAndArgs;
     }
 
     KeyChordViewModel::KeyChordViewModel(Control::KeyChord currentKeys)

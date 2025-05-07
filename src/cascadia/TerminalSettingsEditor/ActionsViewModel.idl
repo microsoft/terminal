@@ -68,7 +68,6 @@ namespace Microsoft.Terminal.Settings.Editor
 
         // View-model specific
         String DisplayName { get; };
-        Boolean IsNewCommand;
 
         // UI side (command list page)
         void Edit_Click();

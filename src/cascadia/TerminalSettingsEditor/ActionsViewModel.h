@@ -163,7 +163,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         weak_ref<Editor::ActionsViewModel> _actionsPageVM{ nullptr };
         void _RegisterKeyChordVMEvents(Editor::KeyChordViewModel kcVM);
         void _RegisterActionArgsVMEvents(Editor::ActionArgsViewModel actionArgsVM);
-        void _ReplaceCommandWithUserCopy();
+        void _ReplaceCommandWithUserCopy(bool reinitialize);
         void _CreateAndInitializeActionArgsVMHelper();
         Windows::Foundation::Collections::IMap<Model::ShortcutAction, winrt::hstring> _AvailableActionsAndNamesMap;
         std::unordered_map<winrt::hstring, Model::ShortcutAction> _NameToActionMap;
@@ -232,6 +232,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void Initialize();
 
         bool HasArgs() const noexcept;
+        void ReplaceActionAndArgs(Model::ActionAndArgs newActionAndArgs);
 
         til::typed_event<IInspectable, IInspectable> WrapperValueChanged;
         til::typed_event<IInspectable, Editor::ArgWrapper> PropagateColorSchemeRequested;
