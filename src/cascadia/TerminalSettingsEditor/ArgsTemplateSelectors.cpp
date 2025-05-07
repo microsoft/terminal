@@ -50,8 +50,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             {
                 return FloatTemplate();
             }
-            else if (argType == L"bool" ||
-                     argType == L"Windows::Foundation::IReference<bool>")
+            else if (argType == L"bool")
+            {
+                return BoolTemplate();
+            }
+            else if (argType == L"Windows::Foundation::IReference<bool>")
             {
                 return BoolOptionalTemplate();
             }

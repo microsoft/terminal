@@ -100,6 +100,7 @@ namespace Microsoft.Terminal.Settings.Editor
         Single UnboxUInt32Optional(Object value);
         Single UnboxUInt64(Object value);
         Single UnboxFloat(Object value);
+        Boolean UnboxBool(Object value);
         Windows.Foundation.IReference<Boolean> UnboxBoolOptional(Object value);
         Windows.Foundation.IReference<Microsoft.Terminal.Core.Color> UnboxTerminalCoreColorOptional(Object value);
         Windows.Foundation.IReference<Microsoft.Terminal.Core.Color> UnboxWindowsUIColorOptional(Object value);

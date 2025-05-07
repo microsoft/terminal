@@ -405,6 +405,24 @@
                 </ListViewItem>
             </DataTemplate>
 
+            <DataTemplate x:Key="BoolTemplate"
+                          x:DataType="local:ArgWrapper">
+                <ListViewItem>
+                    <Grid ColumnSpacing="8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="{StaticResource ArgumentNameWidth}" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="{x:Bind Name}"
+                                   VerticalAlignment="Center"
+                                   Grid.Column="0"/>
+                        <CheckBox IsChecked="{x:Bind UnboxBool(Value), Mode=TwoWay, BindBack=BoolOptionalBindBack}"
+                                  IsThreeState="True"
+                                  Grid.Column="1"/>
+                    </Grid>
+                </ListViewItem>
+            </DataTemplate>
+
             <DataTemplate x:Key="BoolOptionalTemplate"
                           x:DataType="local:ArgWrapper">
                 <ListViewItem>
@@ -536,6 +554,7 @@
                                          FloatTemplate="{StaticResource FloatTemplate}"
                                          StringTemplate="{StaticResource StringTemplate}"
                                          GuidTemplate="{StaticResource GuidTemplate}"
+                                         BoolTemplate="{StaticResource BoolTemplate}"
                                          BoolOptionalTemplate="{StaticResource BoolOptionalTemplate}"
                                          EnumTemplate="{StaticResource EnumTemplate}"
                                          FlagTemplate="{StaticResource FlagTemplate}"

@@ -194,6 +194,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         float UnboxUInt32Optional(const Windows::Foundation::IInspectable& value);
         float UnboxUInt64(const Windows::Foundation::IInspectable& value);
         float UnboxFloat(const Windows::Foundation::IInspectable& value);
+        bool UnboxBool(const Windows::Foundation::IInspectable& value);
         winrt::Windows::Foundation::IReference<bool> UnboxBoolOptional(const Windows::Foundation::IInspectable& value);
         winrt::Windows::Foundation::IReference<Microsoft::Terminal::Core::Color> UnboxTerminalCoreColorOptional(const Windows::Foundation::IInspectable& value);
         winrt::Windows::Foundation::IReference<Microsoft::Terminal::Core::Color> UnboxWindowsUIColorOptional(const Windows::Foundation::IInspectable& value);
