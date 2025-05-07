@@ -303,6 +303,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             shortcutActions.emplace_back(name);
             _NameToActionMap.emplace(name, action);
         }
+        std::sort(shortcutActions.begin(), shortcutActions.end());
         _AvailableShortcutActions = single_threaded_observable_vector(std::move(shortcutActions));
 
         const auto shortcutActionString = _AvailableActionsAndNamesMap.Lookup(_command.ActionAndArgs().Action());
