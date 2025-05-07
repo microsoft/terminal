@@ -416,9 +416,8 @@
                         <TextBlock Text="{x:Bind Name}"
                                    VerticalAlignment="Center"
                                    Grid.Column="0"/>
-                        <CheckBox IsChecked="{x:Bind UnboxBool(Value), Mode=TwoWay, BindBack=BoolOptionalBindBack}"
-                                  IsThreeState="True"
-                                  Grid.Column="1"/>
+                        <ToggleSwitch IsOn="{x:Bind UnboxBool(Value), Mode=TwoWay, BindBack=BoolOptionalBindBack}"
+                                      Grid.Column="1"/>
                     </Grid>
                 </ListViewItem>
             </DataTemplate>
