@@ -563,11 +563,13 @@
         </ResourceDictionary>
     </Page.Resources>
 
-    <Border MaxWidth="{StaticResource StandardControlMaxWidth}">
+    <Border MaxWidth="{StaticResource StandardControlMaxWidth}"
+            Margin="{StaticResource SettingStackMargin}">
         <Grid MaxWidth="600"
               HorizontalAlignment="Left"
               RowSpacing="8"
-              ColumnSpacing="16">
+              ColumnSpacing="16"
+              Margin="{StaticResource SettingStackMargin}">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
@@ -582,11 +584,12 @@
             <TextBlock x:Uid="Actions_Name"
                        VerticalAlignment="Center"
                        Grid.Column="0"
-                       Grid.Row="0"/>
+                       Grid.Row="0" />
             <TextBox Text="{x:Bind ViewModel.Name, Mode=TwoWay}"
                      PlaceholderText="{x:Bind ViewModel.DisplayName, Mode=OneWay}"
                      Grid.Row="0"
-                     Grid.Column="1"/>
+                     Grid.Column="1"
+                     Width="300" />
             <TextBlock x:Uid="Actions_ShortcutAction"
                        VerticalAlignment="Center"
                        Grid.Column="0"

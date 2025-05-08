@@ -122,7 +122,7 @@
             <Style x:Key="KeyBindingContainerStyle"
                    BasedOn="{StaticResource DefaultListViewItemStyle}"
                    TargetType="ListViewItem">
-                <Setter Property="Padding" Value="4" />
+                <Setter Property="Padding" Value="12,4,4,4" />
                 <Setter Property="HorizontalContentAlignment" Value="Stretch" />
                 <Setter Property="XYFocusKeyboardNavigation" Value="Enabled" />
             </Style>
@@ -205,7 +205,8 @@
                       IsItemClickEnabled="True"
                       ItemTemplate="{StaticResource CommandTemplate}"
                       ItemsSource="{x:Bind ViewModel.CommandList, Mode=OneWay}"
-                      ItemClick="{x:Bind ViewModel.CmdListItemClicked}"/>
+                      ItemClick="{x:Bind ViewModel.CmdListItemClicked}"
+                      Margin="-8,0,0,0"/>
         </StackPanel>
     </Border>
 </Page>
