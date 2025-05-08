@@ -4,7 +4,6 @@
 #include "pch.h"
 #include "App.h"
 #include "App.g.cpp"
-#include <CoreWindow.h>
 
 using namespace winrt;
 using namespace winrt::Windows::ApplicationModel::Activation;
@@ -37,27 +36,6 @@ namespace winrt::TerminalApp::implementation
         if (!dispatcherQueue)
         {
             _windowsXamlManager = xaml::Hosting::WindowsXamlManager::InitializeForCurrentThread();
-
-            // As of Process Model v3, terminal windows are all created on their
-            // own threads, but we still initiate XAML for the App on the main
-            // thread. Thing is, just initializing XAML creates a CoreWindow for
-            // us. On Windows 10, that CoreWindow will show up as a visible
-            // window on the taskbar, unless we hide it manually. So, go get it
-            // and do the SW_HIDE thing on it.
-            if (const auto& coreWindow{ winrt::Windows::UI::Core::CoreWindow::GetForCurrentThread() })
-            {
-                if (const auto& interop{ coreWindow.try_as<ICoreWindowInterop>() })
-                {
-                    HWND coreHandle{ 0 };
-                    interop->get_WindowHandle(&coreHandle);
-                    if (coreHandle)
-                    {
-                        // This prevents an empty "DesktopWindowXamlSource" from
-                        // appearing on the taskbar
-                        ShowWindow(coreHandle, SW_HIDE);
-                    }
-                }
-            }
         }
         else
         {
@@ -69,31 +47,6 @@ namespace winrt::TerminalApp::implementation
     {
         static AppLogic logic;
         return logic;
-    }
-
-    void App::Close()
-    {
-        if (_bIsClosed)
-        {
-            return;
-        }
-
-        _bIsClosed = true;
-
-        if (_windowsXamlManager)
-        {
-            _windowsXamlManager.Close();
-        }
-        _windowsXamlManager = nullptr;
-
-        Exit();
-        {
-            MSG msg = {};
-            while (PeekMessageW(&msg, nullptr, 0, 0, PM_REMOVE))
-            {
-                ::DispatchMessageW(&msg);
-            }
-        }
     }
 
     /// <summary>

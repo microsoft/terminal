@@ -5,6 +5,7 @@
 #include "TermControl.h"
 
 #include <LibraryResources.h>
+#include <inputpaneinterop.h>
 
 #include "TermControlAutomationPeer.h"
 #include "../../renderer/atlas/AtlasEngine.h"
@@ -46,13 +47,44 @@ constexpr std::wstring_view StateCollapsed{ L"Collapsed" };
 DEFINE_ENUM_FLAG_OPERATORS(winrt::Microsoft::Terminal::Control::CopyFormat);
 DEFINE_ENUM_FLAG_OPERATORS(winrt::Microsoft::Terminal::Control::MouseButtonState);
 
+// InputPane::GetForCurrentView() does not reliably work for XAML islands,
+// as it assumes that there's a 1:1 relationship between windows and threads.
+//
+// During testing, I found that the input pane shows up when touching into the terminal even if
+// TryShow is never called. This surprised me, but I figured it's worth trying it without this.
+static void setInputPaneVisibility(HWND hwnd, bool visible)
+{
+    static const auto inputPaneInterop = []() {
+        return winrt::try_get_activation_factory<InputPane, IInputPaneInterop>();
+    }();
+
+    if (!inputPaneInterop)
+    {
+        return;
+    }
+
+    winrt::com_ptr<IInputPane2> inputPane;
+    if (FAILED(inputPaneInterop->GetForWindow(hwnd, winrt::guid_of<IInputPane2>(), inputPane.put_void())))
+    {
+        return;
+    }
+
+    bool result;
+    if (visible)
+    {
+        std::ignore = inputPane->TryShow(&result);
+    }
+    else
+    {
+        std::ignore = inputPane->TryHide(&result);
+    }
+}
+
 static Microsoft::Console::TSF::Handle& GetTSFHandle()
 {
-    // https://en.cppreference.com/w/cpp/language/storage_duration
-    // > Variables declared at block scope with the specifier static or thread_local
-    // > [...] are initialized the first time control passes through their declaration
-    // --> Lazy, per-(window-)thread initialization of the TSF handle
-    thread_local auto s_tsf = ::Microsoft::Console::TSF::Handle::Create();
+    // NOTE: If we ever go back to 1 thread per 1 window,
+    // you need to swap the `static` with a `thread_local`.
+    static auto s_tsf = ::Microsoft::Console::TSF::Handle::Create();
     return s_tsf;
 }
 
@@ -67,6 +99,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             /* WSL */ L"/mnt/",
             /* Cygwin */ L"/cygdrive/",
             /* MSYS2 */ L"/",
+            /* MinGW */ {},
         };
         static constexpr wil::zwstring_view sSingleQuoteEscape = L"'\\''";
         static constexpr auto cchSingleQuoteEscape = sSingleQuoteEscape.size();
@@ -87,6 +120,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             fullPath.replace(pos, 1, sSingleQuoteEscape);
             // Arithmetic overflow cannot occur here.
             pos += cchSingleQuoteEscape;
+        }
+
+        if (translationStyle == PathTranslationStyle::MinGW)
+        {
+            return;
         }
 
         if (fullPath.size() >= 2 && fullPath.at(1) == L':')
@@ -158,22 +196,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     RECT TsfDataProvider::GetViewport()
     {
-        const auto scaleFactor = static_cast<float>(DisplayInformation::GetForCurrentView().RawPixelsPerViewPixel());
-        const auto globalOrigin = CoreWindow::GetForCurrentThread().Bounds();
-        const auto localOrigin = _termControl->TransformToVisual(nullptr).TransformPoint({});
-        const auto size = _termControl->ActualSize();
-
-        const auto left = globalOrigin.X + localOrigin.X;
-        const auto top = globalOrigin.Y + localOrigin.Y;
-        const auto right = left + size.x;
-        const auto bottom = top + size.y;
-
-        return {
-            lroundf(left * scaleFactor),
-            lroundf(top * scaleFactor),
-            lroundf(right * scaleFactor),
-            lroundf(bottom * scaleFactor),
-        };
+        const auto hwnd = reinterpret_cast<HWND>(_termControl->OwningHwnd());
+        RECT clientRect;
+        GetWindowRect(hwnd, &clientRect);
+        return clientRect;
     }
 
     RECT TsfDataProvider::GetCursorPosition()
@@ -184,16 +210,19 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             return {};
         }
 
+        const auto hwnd = reinterpret_cast<HWND>(_termControl->OwningHwnd());
+        RECT clientRect;
+        GetWindowRect(hwnd, &clientRect);
+
         const auto scaleFactor = static_cast<float>(DisplayInformation::GetForCurrentView().RawPixelsPerViewPixel());
-        const auto globalOrigin = CoreWindow::GetForCurrentThread().Bounds();
         const auto localOrigin = _termControl->TransformToVisual(nullptr).TransformPoint({});
         const auto padding = _termControl->GetPadding();
         const auto cursorPosition = core->CursorPosition();
         const auto fontSize = core->FontSize();
 
         // fontSize is not in DIPs, so we need to first multiply by scaleFactor and then do the rest.
-        const auto left = (globalOrigin.X + localOrigin.X + static_cast<float>(padding.Left)) * scaleFactor + cursorPosition.X * fontSize.Width;
-        const auto top = (globalOrigin.Y + localOrigin.Y + static_cast<float>(padding.Top)) * scaleFactor + cursorPosition.Y * fontSize.Height;
+        const auto left = clientRect.left + (localOrigin.X + static_cast<float>(padding.Left)) * scaleFactor + cursorPosition.X * fontSize.Width;
+        const auto top = clientRect.top + (localOrigin.Y + static_cast<float>(padding.Top)) * scaleFactor + cursorPosition.Y * fontSize.Height;
         const auto right = left + fontSize.Width;
         const auto bottom = top + fontSize.Height;
 
@@ -776,40 +805,22 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - Given Settings having been updated, applies the settings to the current terminal.
     // Return Value:
     // - <none>
-    safe_void_coroutine TermControl::UpdateControlSettings(IControlSettings settings,
-                                                           IControlAppearance unfocusedAppearance)
+    void TermControl::UpdateControlSettings(IControlSettings settings, IControlAppearance unfocusedAppearance)
     {
-        auto weakThis{ get_weak() };
+        _core.UpdateSettings(settings, unfocusedAppearance);
 
-        // Dispatch a call to the UI thread to apply the new settings to the
-        // terminal.
-        co_await wil::resume_foreground(Dispatcher());
+        _UpdateSettingsFromUIThread();
 
-        if (auto strongThis{ weakThis.get() })
-        {
-            _core.UpdateSettings(settings, unfocusedAppearance);
-
-            _UpdateSettingsFromUIThread();
-
-            _UpdateAppearanceFromUIThread(_focused ? _core.FocusedAppearance() : _core.UnfocusedAppearance());
-        }
+        _UpdateAppearanceFromUIThread(_focused ? _core.FocusedAppearance() : _core.UnfocusedAppearance());
     }
 
     // Method Description:
     // - Dispatches a call to the UI thread and updates the appearance
     // Arguments:
     // - newAppearance: the new appearance to set
-    safe_void_coroutine TermControl::UpdateAppearance(IControlAppearance newAppearance)
+    void TermControl::UpdateAppearance(IControlAppearance newAppearance)
     {
-        auto weakThis{ get_weak() };
-
-        // Dispatch a call to the UI thread
-        co_await wil::resume_foreground(Dispatcher());
-
-        if (auto strongThis{ weakThis.get() })
-        {
-            _UpdateAppearanceFromUIThread(newAppearance);
-        }
+        _UpdateAppearanceFromUIThread(newAppearance);
     }
 
     // Method Description:
@@ -910,7 +921,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         auto settings{ _core.Settings() };
 
         // Apply padding as swapChainPanel's margin
-        const auto newMargin = ParseThicknessFromPadding(settings.Padding());
+        const auto newMargin = StringToXamlThickness(settings.Padding());
         SwapChainPanel().Margin(newMargin);
 
         // Apply settings for scrollbar
@@ -1494,8 +1505,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             return;
         }
 
-        HidePointerCursor.raise(*this, nullptr);
-
         const auto ch = e.Character();
         const auto keyStatus = e.KeyStatus();
         const auto scanCode = gsl::narrow_cast<WORD>(keyStatus.ScanCode);
@@ -1903,8 +1912,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                        const winrt::Microsoft::Terminal::Core::ControlKeyStates modifiers,
                                        const bool keyDown)
     {
-        const auto window = CoreWindow::GetForCurrentThread();
-
         // If the terminal translated the key, mark the event as handled.
         // This will prevent the system from trying to get the character out
         // of it and sending us a CharacterReceived event.
@@ -1939,6 +1946,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void TermControl::_TappedHandler(const IInspectable& /*sender*/, const TappedRoutedEventArgs& e)
     {
         Focus(FocusState::Pointer);
+
+        if (e.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Touch)
+        {
+            // Normally TSF would be responsible for showing the touch keyboard, but it's buggy for us:
+            // If you have focus on a TermControl and type on your physical keyboard then touching
+            // the TermControl will not show the touch keyboard ever again unless you focus another app.
+            // Why that happens is unclear, but it can be fixed by us showing it manually.
+            setInputPaneVisibility(reinterpret_cast<HWND>(OwningHwnd()), true);
+        }
+
         e.Handled(true);
     }
 
@@ -1962,12 +1979,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const auto ptr = args.Pointer();
         const auto point = args.GetCurrentPoint(*this);
         const auto type = ptr.PointerDeviceType();
-
-        // We also TryShow in GotFocusHandler, but this call is specifically
-        // for the case where the Terminal is in focus but the user closed the
-        // on-screen keyboard. This lets the user simply tap on the terminal
-        // again to bring it up.
-        InputPane::GetForCurrentView().TryShow();
 
         if (!_focused)
         {
@@ -2190,10 +2201,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - <unused>
     // Return Value:
     // - <none>
-    safe_void_coroutine TermControl::_coreTransparencyChanged(IInspectable /*sender*/,
-                                                              Control::TransparencyChangedEventArgs /*args*/)
+    void TermControl::_coreTransparencyChanged(IInspectable /*sender*/, Control::TransparencyChangedEventArgs /*args*/)
     {
-        co_await wil::resume_foreground(Dispatcher());
         try
         {
             _changeBackgroundOpacity();
@@ -2370,8 +2379,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         _focused = true;
-
-        InputPane::GetForCurrentView().TryShow();
 
         // GH#5421: Enable the UiaEngine before checking for the SearchBox
         // That way, new selections are notified to automation clients.
@@ -2683,6 +2690,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
+    void TermControl::OpenCWD()
+    {
+        _core.OpenCWD();
+    }
+
     void TermControl::Close()
     {
         if (!_IsClosing())
@@ -2821,6 +2833,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const auto fontSize = settings.FontSize();
         const auto fontWeight = settings.FontWeight();
         const auto fontFace = settings.FontFace();
+        const auto cellWidth = CSSLengthPercentage::FromString(settings.CellWidth().c_str());
+        const auto cellHeight = CSSLengthPercentage::FromString(settings.CellHeight().c_str());
         const auto scrollState = settings.ScrollState();
         const auto padding = settings.Padding();
 
@@ -2832,6 +2846,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         //      not, but DX doesn't use that info at all.
         //      The Codepage is additionally not actually used by the DX engine at all.
         FontInfoDesired desiredFont{ fontFace, 0, fontWeight.Weight, fontSize, CP_UTF8 };
+        desiredFont.SetCellSize(cellWidth, cellHeight);
         FontInfo actualFont{ fontFace, 0, fontWeight.Weight, desiredFont.GetEngineSize(), CP_UTF8, false };
 
         // Create a DX engine and initialize it with our font and DPI. We'll
@@ -2861,7 +2876,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         float height = rows * static_cast<float>(actualFontSize.height);
-        const auto thickness = ParseThicknessFromPadding(padding);
+        const auto thickness = StringToXamlThickness(padding);
         // GH#2061 - make sure to account for the size the padding _will be_ scaled to
         width += scale * static_cast<float>(thickness.Left + thickness.Right);
         height += scale * static_cast<float>(thickness.Top + thickness.Bottom);
@@ -2897,7 +2912,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             width += scrollbarSize;
         }
 
-        const auto thickness = ParseThicknessFromPadding(padding);
+        const auto thickness = StringToXamlThickness(padding);
         // GH#2061 - make sure to account for the size the padding _will be_ scaled to
         width += scale * static_cast<float>(thickness.Left + thickness.Right);
         height += scale * static_cast<float>(thickness.Top + thickness.Bottom);
@@ -2994,63 +3009,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void TermControl::WindowVisibilityChanged(const bool showOrHide)
     {
         _core.WindowVisibilityChanged(showOrHide);
-    }
-
-    // Method Description:
-    // - Create XAML Thickness object based on padding props provided.
-    //   Used for controlling the TermControl XAML Grid container's Padding prop.
-    // Arguments:
-    // - padding: 2D padding values
-    //      Single Double value provides uniform padding
-    //      Two Double values provide isometric horizontal & vertical padding
-    //      Four Double values provide independent padding for 4 sides of the bounding rectangle
-    // Return Value:
-    // - Windows::UI::Xaml::Thickness object
-    Windows::UI::Xaml::Thickness TermControl::ParseThicknessFromPadding(const hstring padding)
-    {
-        const auto singleCharDelim = L',';
-        std::wstringstream tokenStream(padding.c_str());
-        std::wstring token;
-        uint8_t paddingPropIndex = 0;
-        std::array<double, 4> thicknessArr = {};
-        size_t* idx = nullptr;
-
-        // Get padding values till we run out of delimiter separated values in the stream
-        //  or we hit max number of allowable values (= 4) for the bounding rectangle
-        // Non-numeral values detected will default to 0
-        // std::getline will not throw exception unless flags are set on the wstringstream
-        // std::stod will throw invalid_argument exception if the input is an invalid double value
-        // std::stod will throw out_of_range exception if the input value is more than DBL_MAX
-        try
-        {
-            for (; std::getline(tokenStream, token, singleCharDelim) && (paddingPropIndex < thicknessArr.size()); paddingPropIndex++)
-            {
-                // std::stod internally calls wcstod which handles whitespace prefix (which is ignored)
-                //  & stops the scan when first char outside the range of radix is encountered
-                // We'll be permissive till the extent that stod function allows us to be by default
-                // Ex. a value like 100.3#535w2 will be read as 100.3, but ;df25 will fail
-                thicknessArr[paddingPropIndex] = std::stod(token, idx);
-            }
-        }
-        catch (...)
-        {
-            // If something goes wrong, even if due to a single bad padding value, we'll reset the index & return default 0 padding
-            paddingPropIndex = 0;
-            LOG_CAUGHT_EXCEPTION();
-        }
-
-        switch (paddingPropIndex)
-        {
-        case 1:
-            return ThicknessHelper::FromUniformLength(thicknessArr[0]);
-        case 2:
-            return ThicknessHelper::FromLengths(thicknessArr[0], thicknessArr[1], thicknessArr[0], thicknessArr[1]);
-        // No case for paddingPropIndex = 3, since it's not a norm to provide just Left, Top & Right padding values leaving out Bottom
-        case 4:
-            return ThicknessHelper::FromLengths(thicknessArr[0], thicknessArr[1], thicknessArr[2], thicknessArr[3]);
-        default:
-            return Thickness();
-        }
     }
 
     // Method Description:
@@ -3998,14 +3956,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void TermControl::_contextMenuHandler(IInspectable /*sender*/,
                                           Control::ContextMenuRequestedEventArgs args)
     {
-        // Position the menu where the pointer is. This was the best way I found how.
-        const auto absolutePointerPos = CoreWindow::GetForCurrentThread().PointerPosition();
-        const auto absoluteWindowOrigin = CoreWindow::GetForCurrentThread().Bounds();
-        // Get the offset (margin + tabs, etc..) of the control within the window
-        const auto controlOrigin = TransformToVisual(nullptr).TransformPoint({});
+        const auto inverseScale = 1.0f / static_cast<float>(XamlRoot().RasterizationScale());
+        const auto padding = GetPadding();
+        const auto pos = args.Position();
         _showContextMenuAt({
-            absolutePointerPos.X - absoluteWindowOrigin.X - controlOrigin.X,
-            absolutePointerPos.Y - absoluteWindowOrigin.Y - controlOrigin.Y,
+            pos.X * inverseScale + static_cast<float>(padding.Left),
+            pos.Y * inverseScale + static_cast<float>(padding.Top),
         });
     }
 

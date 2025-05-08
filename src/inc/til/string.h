@@ -361,61 +361,71 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         _TIL_INLINEPREFIX constexpr std::optional<uint64_t> parse_u64(const std::basic_string_view<T, Traits>& str, int base = 0) noexcept
         {
             // We don't have to test ptr for nullability, as we only access it under either condition:
-            // * str.length() > 0, for determining the base
+            // * str.size() > 0, for determining the base
             // * ptr != end, when parsing the characters; if ptr is null, length will be 0 and thus end == ptr
 #pragma warning(push)
 #pragma warning(disable : 26429) // Symbol 'ptr' is never tested for nullness, it can be marked as not_null
 #pragma warning(disable : 26451) // Arithmetic overflow: Using operator '+' on a 4 byte value and then casting the result to a 8 byte value. [...]
 #pragma warning(disable : 26481) // Don't use pointer arithmetic. Use span instead
             auto ptr = str.data();
-            const auto end = ptr + str.length();
+            const auto end = ptr + str.size();
             uint64_t accumulator = 0;
-            uint64_t base64 = base;
+            uint64_t base_uint64 = base;
 
             if (base <= 0)
             {
-                base64 = 10;
+                base_uint64 = 10;
 
-                if (ptr != end && *ptr == '0')
+                if (str.size() >= 2 && *ptr == '0')
                 {
-                    base64 = 8;
+                    base_uint64 = 8;
                     ptr += 1;
 
-                    if (ptr != end && (*ptr == 'x' || *ptr == 'X'))
+                    // Shift to lowercase to make the comparison easier.
+                    const auto ch = *ptr | 0x20;
+
+                    if (ch == 'b')
                     {
-                        base64 = 16;
+                        base_uint64 = 2;
+                        ptr += 1;
+                    }
+                    else if (ch == 'x')
+                    {
+                        base_uint64 = 16;
                         ptr += 1;
                     }
                 }
             }
 
-            if (ptr == end)
+            if (ptr == end || base_uint64 > 36)
             {
                 return {};
             }
 
+            const auto max_before_mul = UINT64_MAX / base_uint64;
+
             for (;;)
             {
-                uint64_t value = 0;
-                if (*ptr >= '0' && *ptr <= '9')
-                {
-                    value = *ptr - '0';
-                }
-                else if (*ptr >= 'A' && *ptr <= 'F')
-                {
-                    value = *ptr - 'A' + 10;
-                }
-                else if (*ptr >= 'a' && *ptr <= 'f')
-                {
-                    value = *ptr - 'a' + 10;
-                }
-                else
-                {
-                    return {};
-                }
+                // Magic mapping from 0-9, A-Z, a-z to 0-35 go brrr. Invalid values are >35.
+                const uint64_t ch = *ptr;
+                const uint64_t sub = ch >= '0' && ch <= '9' ? (('0' - 1) & ~0x20) : (('A' - 1) & ~0x20) - 10;
+                // 'A' and 'a' reside at 0b...00001. By subtracting 1 we shift them to 0b...00000.
+                // We can then mask off 0b..1..... (= 0x20) to map a-z to A-Z.
+                // Once we subtract `sub`, all characters between Z and a will underflow.
+                // This results in A-Z and a-z mapping to 10-35.
+                const uint64_t value = ((ch - 1) & ~0x20) - sub;
 
-                const auto acc = accumulator * base64 + value;
-                if (acc < accumulator)
+                // This is where we'd be using __builtin_mul_overflow and __builtin_add_overflow,
+                // but when MSVC finally added support for it in v17.7, it had a different name,
+                // only worked on x86, and only for signed integers. So, we can't use it.
+                const auto acc = accumulator * base_uint64 + value;
+                if (
+                    // Check for invalid inputs.
+                    value >= base_uint64 ||
+                    // Check for multiplication overflow.
+                    accumulator > max_before_mul ||
+                    // Check for addition overflow.
+                    acc < accumulator)
                 {
                     return {};
                 }

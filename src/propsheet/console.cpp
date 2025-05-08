@@ -115,7 +115,7 @@ void SaveConsoleSettingsIfNeeded(const HWND hwnd)
                 LoadStringW(ghInstance, IDS_LINKERROR, awchBuffer, ARRAYSIZE(awchBuffer));
                 StringCchPrintf(szMessage,
                                 ARRAYSIZE(szMessage),
-                                awchBuffer,
+                                awchBuffer, // CodeQL [SM01734] Pulled from a resource file and cannot be a string literal
                                 gpStateInfo->LinkTitle);
                 LoadStringW(ghInstance, IDS_LINKERRCAP, awchBuffer, ARRAYSIZE(awchBuffer));
 

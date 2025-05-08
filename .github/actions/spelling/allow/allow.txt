@@ -11,11 +11,13 @@ colorbrewer
 commandlines
 consvc
 copyable
+CText
 dalet
 dcs
 deselection
 dialytika
 diffing
+Dimidium
 dje
 downsides
 dze
@@ -23,6 +25,7 @@ dzhe
 Emacspeak
 Fitt
 FTCS
+flac
 gantt
 gfm
 ghe

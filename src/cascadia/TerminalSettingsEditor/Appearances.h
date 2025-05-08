@@ -125,10 +125,16 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         bool BackgroundImageSettingsVisible();
         void SetBackgroundImageOpacityFromPercentageValue(double percentageValue);
         void SetBackgroundImagePath(winrt::hstring path);
+        hstring BackgroundImageAlignmentCurrentValue() const;
 
         void ClearColorScheme();
-        Editor::ColorSchemeViewModel CurrentColorScheme();
+        Editor::ColorSchemeViewModel CurrentColorScheme() const;
         void CurrentColorScheme(const Editor::ColorSchemeViewModel& val);
+
+        Windows::UI::Color ForegroundPreview() const;
+        Windows::UI::Color BackgroundPreview() const;
+        Windows::UI::Color SelectionBackgroundPreview() const;
+        Windows::UI::Color CursorColorPreview() const;
 
         WINRT_PROPERTY(bool, IsDefault, false);
 
@@ -153,6 +159,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         OBSERVABLE_PROJECTED_SETTING(_appearance, BackgroundImageAlignment);
         OBSERVABLE_PROJECTED_SETTING(_appearance, IntenseTextStyle);
         OBSERVABLE_PROJECTED_SETTING(_appearance, AdjustIndistinguishableColors);
+        OBSERVABLE_PROJECTED_SETTING(_appearance, Foreground);
+        OBSERVABLE_PROJECTED_SETTING(_appearance, Background);
+        OBSERVABLE_PROJECTED_SETTING(_appearance, SelectionBackground);
+        OBSERVABLE_PROJECTED_SETTING(_appearance, CursorColor);
         WINRT_OBSERVABLE_PROPERTY(Windows::Foundation::Collections::IObservableVector<Editor::ColorSchemeViewModel>, SchemesList, _propertyChangedHandlers, nullptr);
 
     private:

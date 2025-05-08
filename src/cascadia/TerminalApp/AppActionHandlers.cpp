@@ -118,7 +118,7 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandleCloseWindow(const IInspectable& /*sender*/,
                                           const ActionEventArgs& args)
     {
-        CloseRequested.raise(nullptr, nullptr);
+        CloseWindow();
         args.Handled(true);
     }
 
@@ -752,13 +752,11 @@ namespace winrt::TerminalApp::implementation
     {
         if (const auto& realArgs = actionArgs.ActionArgs().try_as<ExecuteCommandlineArgs>())
         {
-            auto actions = winrt::single_threaded_vector<ActionAndArgs>(
-                TerminalPage::ConvertExecuteCommandlineToActions(realArgs));
-
-            if (actions.Size() != 0)
+            auto actions = ConvertExecuteCommandlineToActions(realArgs);
+            if (!actions.empty())
             {
                 actionArgs.Handled(true);
-                ProcessStartupActions(actions, false);
+                ProcessStartupActions(std::move(actions), false);
             }
         }
     }
@@ -1125,6 +1123,16 @@ namespace winrt::TerminalApp::implementation
                 _OpenHyperlinkHandler(termControl, shortcut);
                 args.Handled(true);
             }
+        }
+    }
+
+    void TerminalPage::_HandleOpenCWD(const IInspectable& /*sender*/,
+                                      const ActionEventArgs& args)
+    {
+        if (const auto& control{ _GetActiveControl() })
+        {
+            control.OpenCWD();
+            args.Handled(true);
         }
     }
 

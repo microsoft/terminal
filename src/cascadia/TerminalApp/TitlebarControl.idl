@@ -22,6 +22,7 @@ namespace TerminalApp
     {
         TitlebarControl(UInt64 parentWindowHandle);
         void SetWindowVisualState(WindowVisualState visualState);
+        void FullscreenChanged(Boolean fullscreen);
 
         void HoverButton(CaptionButton button);
         void PressButton(CaptionButton button);

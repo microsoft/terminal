@@ -56,12 +56,12 @@ Este es un proyecto de fuente abierta y animamos a la comunidad a participar. Pa
   <ReleaseNotes>
     Versión __VERSION_NUMBER__
 
-- Terminal recordará ahora el contenido de la ventana cuando use la restauración de la sesión.
-- Ahora puede usar varias fuentes al mismo tiempo.
-- Los caracteres que dibujan recuadros ahora se representan con precisión de píxel.
-- Se ha mejorado significativamente la experiencia de utilizar un IME dentro de Terminal.
-- Las combinaciones de colores dentro del archivo JSON ahora serán mucho más sencillas.
-- Se han corregido varios errores relacionados con el control de direcciones URL, las filas de ancho doble, el ajuste de líneas y mucho más.
+- Hemos reescrito cómo se hospedan las aplicaciones de consola en Terminal. Informe de los errores que encuentre.
+- Terminal ahora admite síxeles.
+- Ahora puede abrir un panel acoplado que contenga fragmentos de comandos que haya guardado para usarlos más adelante
+- Los usuarios del símbolo del sistema de la versión más reciente de Windows 11 pueden ver un icono de "sugerencia rápida" que sugiere software instalable de WinGet
+- El texto seleccionado ahora será mucho más visible (y personalizable)
+- Se han corregido varios errores de fiabilidad, problemas de comodidad y molestias.
 
 Consulte la página de versiones de GitHub para más información.
   </ReleaseNotes>

@@ -78,6 +78,8 @@ namespace winrt::TerminalApp::implementation
 
         Windows::Foundation::Collections::IVector<winrt::TerminalApp::FilteredCommand> _commandsToFilter();
 
+        winrt::Windows::UI::Xaml::DispatcherTimer _pointerExitTimer{ nullptr }; // timer to debounce pointer exit events (used to smooth preview transitions)
+
         bool _lastFilterTextWasEmpty{ true };
 
         void _populateCommands();
@@ -102,6 +104,10 @@ namespace winrt::TerminalApp::implementation
         void _backdropPointerPressed(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::Input::PointerRoutedEventArgs& e);
 
         void _listItemClicked(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::Controls::ItemClickEventArgs& e);
+
+        void _listItemPointerEntered(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::Input::PointerRoutedEventArgs& args);
+
+        void _listItemPointerExited(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::Input::PointerRoutedEventArgs& args);
 
         void _listItemSelectionChanged(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::Controls::SelectionChangedEventArgs& e);
 

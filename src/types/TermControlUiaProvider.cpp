@@ -157,14 +157,8 @@ HRESULT TermControlUiaProvider::GetSelectionRange(_In_ IRawElementProviderSimple
     RETURN_HR_IF_NULL(E_INVALIDARG, ppUtr);
     *ppUtr = nullptr;
 
-    const auto start = _pData->GetSelectionAnchor();
-
-    // we need to make end exclusive
-    auto end = _pData->GetSelectionEnd();
-    _pData->GetTextBuffer().GetSize().IncrementInBounds(end, true);
-
     TermControlUiaTextRange* result = nullptr;
-    RETURN_IF_FAILED(MakeAndInitialize<TermControlUiaTextRange>(&result, _pData, pProvider, start, end, _pData->IsBlockSelection(), wordDelimiters));
+    RETURN_IF_FAILED(MakeAndInitialize<TermControlUiaTextRange>(&result, _pData, pProvider, _pData->GetSelectionAnchor(), _pData->GetSelectionEnd(), _pData->IsBlockSelection(), wordDelimiters));
     *ppUtr = result;
     return S_OK;
 }

@@ -64,6 +64,12 @@
                           Style="{StaticResource ToggleSwitchInExpanderStyle}" />
         </local:SettingContainer>
 
+        <!--  Show tabs in full screen  -->
+        <local:SettingContainer x:Uid="Globals_ShowTabsFullscreen">
+            <ToggleSwitch IsOn="{x:Bind ViewModel.ShowTabsFullscreen, Mode=TwoWay}"
+                          Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+        </local:SettingContainer>
+
         <!--  Show Acrylic in Tab Row  -->
         <local:SettingContainer x:Uid="Globals_AcrylicTabRow">
             <ToggleSwitch IsOn="{x:Bind ViewModel.UseAcrylicInTabRow, Mode=TwoWay}"

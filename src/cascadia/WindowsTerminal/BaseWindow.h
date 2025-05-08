@@ -3,14 +3,12 @@
 
 #pragma once
 
-#include "CustomWindowMessages.h"
-#include <wil/resource.h>
-
 template<typename T>
 class BaseWindow
 {
 public:
-    virtual ~BaseWindow() = 0;
+    static constexpr UINT CM_UPDATE_TITLE = WM_USER + 0;
+
     static T* GetThisFromHandle(HWND const window) noexcept
     {
         return reinterpret_cast<T*>(GetWindowLongPtr(window, GWLP_USERDATA));
@@ -38,7 +36,7 @@ public:
         return DefWindowProc(window, message, wparam, lparam);
     }
 
-    [[nodiscard]] virtual LRESULT MessageHandler(UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept
+    [[nodiscard]] LRESULT MessageHandler(UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept
     {
         switch (message)
         {
@@ -46,13 +44,6 @@ public:
         {
             return HandleDpiChange(_window.get(), wparam, lparam);
         }
-
-        case WM_DESTROY:
-        {
-            PostQuitMessage(0);
-            return 0;
-        }
-
         case WM_SIZE:
         {
             UINT width = LOWORD(lparam);
@@ -66,19 +57,19 @@ public:
                 if (_minimized)
                 {
                     _minimized = false;
-                    OnRestore();
+                    static_cast<T*>(this)->OnRestore();
                 }
 
                 // We always need to fire the resize event, even when we're transitioning from minimized.
                 // We might be transitioning directly from minimized to maximized, and we'll need
                 // to trigger any size-related content changes.
-                OnResize(width, height);
+                static_cast<T*>(this)->OnResize(width, height);
                 break;
             case SIZE_MINIMIZED:
                 if (!_minimized)
                 {
                     _minimized = true;
-                    OnMinimize();
+                    static_cast<T*>(this)->OnMinimize();
                 }
                 break;
             default:
@@ -116,10 +107,6 @@ public:
         _inDpiChange = false;
         return 0;
     }
-
-    virtual void OnResize(const UINT width, const UINT height) = 0;
-    virtual void OnMinimize() = 0;
-    virtual void OnRestore() = 0;
 
     RECT GetWindowRect() const noexcept
     {
@@ -212,13 +199,13 @@ protected:
 
     void _setupUserData()
     {
-        SetWindowLongPtr(_window.get(), GWLP_USERDATA, reinterpret_cast<LONG_PTR>(this));
+        SetWindowLongPtr(_window.get(), GWLP_USERDATA, reinterpret_cast<LONG_PTR>(static_cast<T*>(this)));
     }
     // Method Description:
     // - This method is called when the window receives the WM_NCCREATE message.
     // Return Value:
     // - The value returned from the window proc.
-    [[nodiscard]] virtual LRESULT OnNcCreate(WPARAM wParam, LPARAM lParam) noexcept
+    [[nodiscard]] LRESULT OnNcCreate(WPARAM wParam, LPARAM lParam) noexcept
     {
         _setupUserData();
 
@@ -228,8 +215,3 @@ protected:
         return DefWindowProc(_window.get(), WM_NCCREATE, wParam, lParam);
     };
 };
-
-template<typename T>
-inline BaseWindow<T>::~BaseWindow()
-{
-}

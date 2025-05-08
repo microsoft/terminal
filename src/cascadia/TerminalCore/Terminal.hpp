@@ -415,6 +415,7 @@ private:
     Microsoft::Console::Types::Viewport _mutableViewport;
     til::CoordType _scrollbackLines = 0;
     bool _detectURLs = false;
+    bool _clipboardOperationsAllowed = true;
 
     til::size _altBufferSize;
     std::optional<til::size> _deferredResize;
@@ -479,7 +480,7 @@ private:
     std::vector<til::point_span> _GetSelectionSpans() const noexcept;
     std::pair<til::point, til::point> _PivotSelection(const til::point targetPos, bool& targetStart) const noexcept;
     std::pair<til::point, til::point> _ExpandSelectionAnchors(std::pair<til::point, til::point> anchors) const;
-    til::point _ConvertToBufferCell(const til::point viewportPos) const;
+    til::point _ConvertToBufferCell(const til::point viewportPos, bool allowRightExclusive) const;
     void _ScrollToPoint(const til::point pos);
     void _MoveByChar(SelectionDirection direction, til::point& pos);
     void _MoveByWord(SelectionDirection direction, til::point& pos);

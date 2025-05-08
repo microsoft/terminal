@@ -31,7 +31,17 @@
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
+                                <!--
+                                    BODGY: We want two columns of content:
+                                    1. the identifier (e.g. profile name), aligned left
+                                    2. the buttons (e.g. reorder, delete), aligned right
+                                    There's a bug in WinUI 2 for Windows 10 where these nested columns are treated as "auto" instead
+                                    of *-sized. To work around this, we can set the width of the first column's content to
+                                    StandardControlMaxWidth. The first column will be clipped as necessary to make space for the second column,
+                                    resulting in the desired layout.
+                                -->
                                 <ContentPresenter Grid.Column="0"
+                                                  Width="{StaticResource StandardControlMaxWidth}"
                                                   Content="{TemplateBinding Content}" />
                                 <StackPanel Grid.Column="1"
                                             Orientation="Horizontal"
@@ -127,7 +137,17 @@
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
+                    <!--
+                        BODGY: We want two columns of content:
+                        1. the identifier (e.g. profile name), aligned left
+                        2. the buttons (e.g. reorder, delete), aligned right
+                        There's a bug in WinUI 2 for Windows 10 where these nested columns are treated as "auto" instead
+                        of *-sized. To work around this, we can set the width of the first column's content to
+                        StandardControlMaxWidth. The first column will be clipped as necessary to make space for the second column,
+                        resulting in the desired layout.
+                    -->
                     <StackPanel Grid.Column="0"
+                                Width="{StaticResource StandardControlMaxWidth}"
                                 Orientation="Horizontal">
                         <IconSourceElement Width="16"
                                            Height="16"
@@ -335,7 +355,8 @@
 
             <!--  Add Profile  -->
             <local:SettingContainer x:Uid="NewTabMenu_AddProfile"
-                                    FontIconGlyph="&#xE756;">
+                                    FontIconGlyph="&#xE756;"
+                                    Style="{StaticResource SettingContainerWithIcon}">
 
                 <StackPanel Orientation="Horizontal"
                             Spacing="5">
@@ -383,7 +404,8 @@
 
             <!--  Add Separator  -->
             <local:SettingContainer x:Uid="NewTabMenu_AddSeparator"
-                                    FontIconGlyph="&#xE76f;">
+                                    FontIconGlyph="&#xE76f;"
+                                    Style="{StaticResource SettingContainerWithIcon}">
                 <Button x:Name="AddSeparatorButton"
                         x:Uid="NewTabMenu_AddSeparatorButton"
                         HorizontalAlignment="Stretch"
@@ -398,7 +420,8 @@
 
             <!--  Add Folder  -->
             <local:SettingContainer x:Uid="NewTabMenu_AddFolder"
-                                    FontIconGlyph="&#xF12B;">
+                                    FontIconGlyph="&#xF12B;"
+                                    Style="{StaticResource SettingContainerWithIcon}">
                 <StackPanel Orientation="Horizontal"
                             Spacing="5">
                     <TextBox x:Name="FolderNameTextBox"
@@ -424,7 +447,7 @@
             <!--  Add Match Profiles  -->
             <local:SettingContainer x:Uid="NewTabMenu_AddMatchProfiles"
                                     FontIconGlyph="&#xE748;"
-                                    Style="{StaticResource ExpanderSettingContainerStyle}">
+                                    Style="{StaticResource ExpanderSettingContainerStyleWithIcon}">
                 <StackPanel Spacing="10">
                     <TextBox x:Uid="NewTabMenu_AddMatchProfiles_Name"
                              Text="{x:Bind ViewModel.ProfileMatcherName, Mode=TwoWay}" />
@@ -448,7 +471,8 @@
 
             <!--  Add Remaining Profiles  -->
             <local:SettingContainer x:Uid="NewTabMenu_AddRemainingProfiles"
-                                    FontIconGlyph="&#xE902;">
+                                    FontIconGlyph="&#xE902;"
+                                    Style="{StaticResource SettingContainerWithIcon}">
                 <Button x:Name="AddRemainingProfilesButton"
                         x:Uid="NewTabMenu_AddRemainingProfilesButton"
                         HorizontalAlignment="Stretch"

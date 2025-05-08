@@ -86,6 +86,15 @@ ConsoleWaitBlock::~ConsoleWaitBlock()
 [[nodiscard]] HRESULT ConsoleWaitBlock::s_CreateWait(_Inout_ CONSOLE_API_MSG* const pWaitReplyMessage,
                                                      _In_ IWaitRoutine* const pWaiter)
 {
+    if (!pWaitReplyMessage || !pWaiter)
+    {
+        if (pWaiter)
+        {
+            delete pWaiter;
+        }
+        return E_INVALIDARG;
+    }
+
     const auto ProcessData = pWaitReplyMessage->GetProcessHandle();
     FAIL_FAST_IF_NULL(ProcessData);
 
@@ -223,9 +232,11 @@ bool ConsoleWaitBlock::Notify(const WaitTerminationReason TerminationReason)
             a->NumBytes = gsl::narrow<ULONG>(NumBytes);
         }
 
-        LOG_IF_FAILED(_WaitReplyMessage.ReleaseMessageBuffers());
+        _WaitReplyMessage.ReleaseMessageBuffers();
 
-        LOG_IF_FAILED(Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals().pDeviceComm->CompleteIo(&_WaitReplyMessage.Complete));
+        // This call fails when the server pipe is closed on us,
+        // which results in log spam in practice.
+        std::ignore = Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals().pDeviceComm->CompleteIo(&_WaitReplyMessage.Complete);
 
         fRetVal = true;
     }
