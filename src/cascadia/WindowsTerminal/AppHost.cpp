@@ -1320,7 +1320,7 @@ void AppHost::_WindowMoved()
 void AppHost::_CloseRequested(const winrt::Windows::Foundation::IInspectable& /*sender*/,
                               const winrt::Windows::Foundation::IInspectable& /*args*/)
 {
-    if (_windowManager.GetNumberOfPeasants() <= 1)
+    if (_windowManager.GetNumberOfPeasants() <= 1 && !_appLogic.AllowHeadless())
     {
         _quit();
         return;
