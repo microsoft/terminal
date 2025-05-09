@@ -60,6 +60,7 @@ namespace Microsoft.Terminal.Settings.Editor
 
         void SetAcrylicOpacityPercentageValue(Double value);
 
+        String BellStylePreview { get; };
         Boolean IsBellStyleFlagSet(UInt32 flag);
         void SetBellStyleAudible(Windows.Foundation.IReference<Boolean> on);
         void SetBellStyleWindow(Windows.Foundation.IReference<Boolean> on);
@@ -87,12 +88,13 @@ namespace Microsoft.Terminal.Settings.Editor
         IInspectable CurrentPathTranslationStyle;
         Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> PathTranslationStyleList { get; };
 
+        String CurrentStartingDirectoryPreview { get; };
+        Boolean UseParentProcessDirectory;
+
         Boolean CanDeleteProfile { get; };
         Boolean FocusDeleteButton;
         Boolean IsBaseLayer;
         ProfileSubPage CurrentPage;
-        Boolean UseParentProcessDirectory;
-        Boolean UseCustomStartingDirectory { get; };
         AppearanceViewModel DefaultAppearance { get; };
         Guid OriginalProfileGuid { get; };
         Boolean HasUnfocusedAppearance { get; };
@@ -119,6 +121,7 @@ namespace Microsoft.Terminal.Settings.Editor
         Windows.Foundation.Collections.IVector<IInspectable> BuiltInIcons { get; };
 
         String TabTitlePreview { get; };
+        String AnswerbackMessagePreview { get; };
 
         void CreateUnfocusedAppearance();
         void DeleteUnfocusedAppearance();

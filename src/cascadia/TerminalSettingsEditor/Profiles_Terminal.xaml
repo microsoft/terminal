@@ -72,7 +72,7 @@
             <!--  Answerback Message  -->
             <local:SettingContainer x:Uid="Profile_AnswerbackMessage"
                                     ClearSettingValue="{x:Bind Profile.ClearAnswerbackMessage}"
-                                    CurrentValue="{x:Bind Profile.AnswerbackMessage, Mode=OneWay}"
+                                    CurrentValue="{x:Bind Profile.AnswerbackMessagePreview, Mode=OneWay}"
                                     HasSettingValue="{x:Bind Profile.HasAnswerbackMessage, Mode=OneWay}"
                                     SettingOverrideSource="{x:Bind Profile.AnswerbackMessageOverrideSource, Mode=OneWay}"
                                     Style="{StaticResource ExpanderSettingContainerStyle}">

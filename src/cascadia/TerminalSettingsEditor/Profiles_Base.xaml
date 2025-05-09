@@ -74,13 +74,13 @@
             <local:SettingContainer x:Name="StartingDirectoryContainer"
                                     x:Uid="Profile_StartingDirectory"
                                     ClearSettingValue="{x:Bind Profile.ClearStartingDirectory}"
-                                    CurrentValue="{x:Bind Profile.StartingDirectory, Mode=OneWay}"
+                                    CurrentValue="{x:Bind Profile.CurrentStartingDirectoryPreview, Mode=OneWay}"
                                     HasSettingValue="{x:Bind Profile.HasStartingDirectory, Mode=OneWay}"
                                     SettingOverrideSource="{x:Bind Profile.StartingDirectoryOverrideSource, Mode=OneWay}"
                                     Style="{StaticResource ExpanderSettingContainerStyle}">
                 <StackPanel Orientation="Vertical">
                     <TextBox x:Uid="Profile_StartingDirectoryBox"
-                             IsEnabled="{x:Bind Profile.UseCustomStartingDirectory, Mode=OneWay}"
+                             IsEnabled="{x:Bind mtu:Converters.InvertBoolean(Profile.UseParentProcessDirectory), Mode=OneWay}"
                              IsSpellCheckEnabled="False"
                              Style="{StaticResource TextBoxSettingStyle}"
                              Text="{x:Bind Profile.StartingDirectory, Mode=TwoWay}" />
@@ -89,7 +89,7 @@
                                 x:Uid="Profile_StartingDirectoryBrowse"
                                 Margin="0,10,10,0"
                                 Click="StartingDirectory_Click"
-                                IsEnabled="{x:Bind Profile.UseCustomStartingDirectory, Mode=OneWay}"
+                                IsEnabled="{x:Bind mtu:Converters.InvertBoolean(Profile.UseParentProcessDirectory), Mode=OneWay}"
                                 Style="{StaticResource BrowseButtonStyle}" />
                         <CheckBox x:Name="StartingDirectoryUseParentCheckbox"
                                   x:Uid="Profile_StartingDirectoryUseParentCheckbox"

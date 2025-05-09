@@ -71,7 +71,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             {
                 // notify listener that all starting directory related values might have changed
                 // NOTE: this is similar to what is done with BackgroundImagePath above
-                _NotifyChanges(L"UseParentProcessDirectory", L"UseCustomStartingDirectory");
+                _NotifyChanges(L"UseParentProcessDirectory", L"CurrentStartingDirectoryPreview");
             }
             else if (viewModelProperty == L"AntialiasingMode")
             {
@@ -83,7 +83,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             }
             else if (viewModelProperty == L"BellStyle")
             {
-                _NotifyChanges(L"IsBellStyleFlagSet");
+                _NotifyChanges(L"IsBellStyleFlagSet", L"BellStylePreview");
             }
             else if (viewModelProperty == L"ScrollState")
             {
@@ -138,6 +138,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             {
                 _parsedPadding = StringToXamlThickness(_profile.Padding());
                 _NotifyChanges(L"LeftPadding", L"TopPadding", L"RightPadding", L"BottomPadding");
+            }
+            else if (viewModelProperty == L"TabTitle")
+            {
+                _NotifyChanges(L"TabTitlePreview");
+            }
+            else if (viewModelProperty == L"AnswerbackMessage")
+            {
+                _NotifyChanges(L"AnswerbackMessagePreview");
             }
         });
 
@@ -413,6 +421,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return RS_(L"Profile_TabTitleNone");
     }
 
+    hstring ProfileViewModel::AnswerbackMessagePreview() const
+    {
+        if (const auto answerbackMessage{ AnswerbackMessage() }; !answerbackMessage.empty())
+        {
+            return answerbackMessage;
+        }
+        return RS_(L"Profile_AnswerbackMessageNone");
+    }
+
     Editor::AppearanceViewModel ProfileViewModel::DefaultAppearance()
     {
         return _defaultAppearanceViewModel;
@@ -470,18 +487,18 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return Feature_ScrollbarMarks::IsEnabled();
     }
 
-    bool ProfileViewModel::UseParentProcessDirectory()
+    hstring ProfileViewModel::CurrentStartingDirectoryPreview() const
     {
-        return StartingDirectory().empty();
+        if (UseParentProcessDirectory())
+        {
+            return RS_(L"Profile_StartingDirectoryUseParentCheckbox/Content");
+        }
+        return StartingDirectory();
     }
 
-    // This function simply returns the opposite of UseParentProcessDirectory.
-    // We bind the 'IsEnabled' parameters of the textbox and browse button
-    // to this because it needs to be the reverse of UseParentProcessDirectory
-    // but we don't want to create a whole new converter for inverting a boolean
-    bool ProfileViewModel::UseCustomStartingDirectory()
+    bool ProfileViewModel::UseParentProcessDirectory() const
     {
-        return !UseParentProcessDirectory();
+        return StartingDirectory().empty();
     }
 
     void ProfileViewModel::UseParentProcessDirectory(const bool useParent)
@@ -611,6 +628,49 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     bool ProfileViewModel::UsingImageIcon() const
     {
         return _currentIconType == _IconTypes.GetAt(3);
+    }
+
+    hstring ProfileViewModel::BellStylePreview() const
+    {
+        const auto bellStyle = BellStyle();
+        if (WI_AreAllFlagsSet(bellStyle, BellStyle::Audible | BellStyle::Window | BellStyle::Taskbar))
+        {
+            return RS_(L"Profile_BellStyleAll/Content");
+        }
+        else if (bellStyle == static_cast<Model::BellStyle>(0))
+        {
+            return RS_(L"Profile_BellStyleNone/Content");
+        }
+
+        std::vector<hstring> resultList;
+        resultList.reserve(3);
+        if (WI_IsFlagSet(bellStyle, BellStyle::Audible))
+        {
+            resultList.emplace_back(RS_(L"Profile_BellStyleAudible/Content"));
+        }
+        if (WI_IsFlagSet(bellStyle, BellStyle::Window))
+        {
+            resultList.emplace_back(RS_(L"Profile_BellStyleWindow/Content"));
+        }
+        if (WI_IsFlagSet(bellStyle, BellStyle::Taskbar))
+        {
+            resultList.emplace_back(RS_(L"Profile_BellStyleTaskbar/Content"));
+        }
+
+        // add in the commas
+        hstring result{};
+        for (auto&& entry : resultList)
+        {
+            if (result.empty())
+            {
+                result = entry;
+            }
+            else
+            {
+                result = result + L", " + entry;
+            }
+        }
+        return result;
     }
 
     bool ProfileViewModel::IsBellStyleFlagSet(const uint32_t flag)

@@ -38,6 +38,7 @@ namespace Microsoft.Terminal.Settings.Editor
         void SetBackgroundImageOpacityFromPercentageValue(Double percentageValue);
         void SetBackgroundImagePath(String path);
 
+        String CurrentBackgroundImagePath { get; };
         Boolean UseDesktopBGImage;
         Boolean BackgroundImageSettingsVisible { get; };
         String BackgroundImageAlignmentCurrentValue { get; };
