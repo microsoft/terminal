@@ -139,6 +139,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 _parsedPadding = StringToXamlThickness(_profile.Padding());
                 _NotifyChanges(L"LeftPadding", L"TopPadding", L"RightPadding", L"BottomPadding");
             }
+            else if (viewModelProperty == L"TabTitle")
+            {
+                _NotifyChanges(L"TabTitlePreview");
+            }
         });
 
         // Do the same for the starting directory
