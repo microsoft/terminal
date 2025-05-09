@@ -23,23 +23,23 @@ Author(s):
 // The setter tries to instantiate the regex immediately and caches
 // it if successful. If it fails, it sets a boolean flag to track that
 // it failed.
-#define DEFINE_MATCH_PROFILE_REGEX_PROPERTY(name)            \
-public:                                                      \
-    hstring name() const noexcept                            \
-    {                                                        \
-        return _##name;                                      \
-    }                                                        \
-    void name(const hstring& value) noexcept                 \
-    {                                                        \
-        _##name = value;                                     \
-        _validate##name();                                   \
-    }                                                        \
-                                                             \
-private:                                                     \
-    void _validate##name() noexcept;                         \
-                                                             \
-    hstring _##name;                                         \
-    til::ICU::unique_uregex _##name##Regex; \
+#define DEFINE_MATCH_PROFILE_REGEX_PROPERTY(name) \
+public:                                           \
+    hstring name() const noexcept                 \
+    {                                             \
+        return _##name;                           \
+    }                                             \
+    void name(const hstring& value) noexcept      \
+    {                                             \
+        _##name = value;                          \
+        _validate##name();                        \
+    }                                             \
+                                                  \
+private:                                          \
+    void _validate##name() noexcept;              \
+                                                  \
+    hstring _##name;                              \
+    til::ICU::unique_uregex _##name##Regex;       \
     bool _invalid##name{ false };
 
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
