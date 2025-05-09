@@ -60,6 +60,7 @@ namespace Microsoft.Terminal.Settings.Editor
 
         void SetAcrylicOpacityPercentageValue(Double value);
 
+        String BellStylePreview { get; };
         Boolean IsBellStyleFlagSet(UInt32 flag);
         void SetBellStyleAudible(Windows.Foundation.IReference<Boolean> on);
         void SetBellStyleWindow(Windows.Foundation.IReference<Boolean> on);

@@ -83,7 +83,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             }
             else if (viewModelProperty == L"BellStyle")
             {
-                _NotifyChanges(L"IsBellStyleFlagSet");
+                _NotifyChanges(L"IsBellStyleFlagSet", L"BellStylePreview");
             }
             else if (viewModelProperty == L"ScrollState")
             {
@@ -628,6 +628,52 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     bool ProfileViewModel::UsingImageIcon() const
     {
         return _currentIconType == _IconTypes.GetAt(3);
+    }
+
+    hstring ProfileViewModel::BellStylePreview() const
+    {
+        const auto bellStyle = BellStyle();
+        const bool isAudibleSet = WI_IsFlagSet(bellStyle, BellStyle::Audible);
+        const bool isWindowSet = WI_IsFlagSet(bellStyle, BellStyle::Window);
+        const bool isTaskbarSet = WI_IsFlagSet(bellStyle, BellStyle::Taskbar);
+        if (bellStyle == Model::BellStyle::All || (isAudibleSet && isWindowSet && isTaskbarSet))
+        {
+            return RS_(L"Profile_BellStyleAll/Content");
+        }
+        else if (bellStyle == static_cast<Model::BellStyle>(0))
+        {
+            return RS_(L"Profile_BellStyleNone/Content");
+        }
+
+        std::vector<hstring> resultList;
+        resultList.reserve(3);
+        if (isAudibleSet)
+        {
+            resultList.emplace_back(RS_(L"Profile_BellStyleAudible/Content"));
+        }
+        if (isWindowSet)
+        {
+            resultList.emplace_back(RS_(L"Profile_BellStyleWindow/Content"));
+        }
+        if (isTaskbarSet)
+        {
+            resultList.emplace_back(RS_(L"Profile_BellStyleTaskbar/Content"));
+        }
+
+        // add in the commas
+        hstring result{};
+        for (auto&& entry : resultList)
+        {
+            if (entry == resultList.front())
+            {
+                result = entry;
+            }
+            else
+            {
+                result = result + L", " + entry;
+            }
+        }
+        return result;
     }
 
     bool ProfileViewModel::IsBellStyleFlagSet(const uint32_t flag)

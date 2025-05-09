@@ -55,6 +55,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void SetupAppearances(Windows::Foundation::Collections::IObservableVector<Editor::ColorSchemeViewModel> schemesList);
 
         // bell style bits
+        hstring BellStylePreview() const;
         bool IsBellStyleFlagSet(const uint32_t flag);
         void SetBellStyleAudible(winrt::Windows::Foundation::IReference<bool> on);
         void SetBellStyleWindow(winrt::Windows::Foundation::IReference<bool> on);
