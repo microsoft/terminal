@@ -588,6 +588,10 @@ void CascadiaSettings::_validateProfileEnvironmentVariables()
 // Returns true if all regexes in the new tab menu are valid, false otherwise
 static bool _validateNTMEntries(const IVector<Model::NewTabMenuEntry>& entries)
 {
+    if (!entries)
+    {
+        return true;
+    }
     for (const auto& ntmEntry : entries)
     {
         if (const auto& folderEntry = ntmEntry.try_as<Model::FolderEntry>())
