@@ -633,10 +633,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     hstring ProfileViewModel::BellStylePreview() const
     {
         const auto bellStyle = BellStyle();
-        const bool isAudibleSet = WI_IsFlagSet(bellStyle, BellStyle::Audible);
-        const bool isWindowSet = WI_IsFlagSet(bellStyle, BellStyle::Window);
-        const bool isTaskbarSet = WI_IsFlagSet(bellStyle, BellStyle::Taskbar);
-        if (bellStyle == Model::BellStyle::All || (isAudibleSet && isWindowSet && isTaskbarSet))
+        if (WI_AreAllFlagsSet(bellStyle, BellStyle::Audible | BellStyle::Window | BellStyle::Taskbar))
         {
             return RS_(L"Profile_BellStyleAll/Content");
         }
@@ -647,15 +644,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         std::vector<hstring> resultList;
         resultList.reserve(3);
-        if (isAudibleSet)
+        if (WI_IsFlagSet(bellStyle, BellStyle::Audible))
         {
             resultList.emplace_back(RS_(L"Profile_BellStyleAudible/Content"));
         }
-        if (isWindowSet)
+        if (WI_IsFlagSet(bellStyle, BellStyle::Window))
         {
             resultList.emplace_back(RS_(L"Profile_BellStyleWindow/Content"));
         }
-        if (isTaskbarSet)
+        if (WI_IsFlagSet(bellStyle, BellStyle::Taskbar))
         {
             resultList.emplace_back(RS_(L"Profile_BellStyleTaskbar/Content"));
         }
@@ -664,7 +661,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         hstring result{};
         for (auto&& entry : resultList)
         {
-            if (entry == resultList.front())
+            if (result.empty())
             {
                 result = entry;
             }
