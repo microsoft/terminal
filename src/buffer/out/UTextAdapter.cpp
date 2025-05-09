@@ -400,17 +400,6 @@ Microsoft::Console::ICU::unique_utext Microsoft::Console::ICU::UTextFromTextBuff
     return ut;
 }
 
-Microsoft::Console::ICU::unique_uregex Microsoft::Console::ICU::CreateRegex(const std::wstring_view& pattern, uint32_t flags, UErrorCode* status) noexcept
-{
-#pragma warning(suppress : 26490) // Don't use reinterpret_cast (type.1).
-    const auto re = uregex_open(reinterpret_cast<const char16_t*>(pattern.data()), gsl::narrow_cast<int32_t>(pattern.size()), flags, nullptr, status);
-    // ICU describes the time unit as being dependent on CPU performance and "typically [in] the order of milliseconds",
-    // but this claim seems highly outdated already. On my CPU from 2021, a limit of 4096 equals roughly 600ms.
-    uregex_setTimeLimit(re, 4096, status);
-    uregex_setStackLimit(re, 4 * 1024 * 1024, status);
-    return unique_uregex{ re };
-}
-
 // Returns a half-open [beg,end) range given a text start and end position.
 // This function is designed to be used with uregex_start64/uregex_end64.
 til::point_span Microsoft::Console::ICU::BufferRangeFromMatch(UText* ut, URegularExpression* re)
