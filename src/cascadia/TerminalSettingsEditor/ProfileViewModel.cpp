@@ -143,6 +143,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             {
                 _NotifyChanges(L"TabTitlePreview");
             }
+            else if (viewModelProperty == L"AnswerbackMessage")
+            {
+                _NotifyChanges(L"AnswerbackMessagePreview");
+            }
         });
 
         // Do the same for the starting directory
@@ -415,6 +419,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             return tabTitle;
         }
         return RS_(L"Profile_TabTitleNone");
+    }
+
+    hstring ProfileViewModel::AnswerbackMessagePreview() const
+    {
+        if (const auto answerbackMessage{ AnswerbackMessage() }; !answerbackMessage.empty())
+        {
+            return answerbackMessage;
+        }
+        return RS_(L"Profile_AnswerbackMessageNone");
     }
 
     Editor::AppearanceViewModel ProfileViewModel::DefaultAppearance()

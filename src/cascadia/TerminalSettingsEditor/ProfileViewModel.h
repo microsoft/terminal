@@ -116,6 +116,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         bool Orphaned() const;
         hstring TabTitlePreview() const;
+        hstring AnswerbackMessagePreview() const;
 
         til::typed_event<Editor::ProfileViewModel, Editor::DeleteProfileEventArgs> DeleteProfileRequested;
 

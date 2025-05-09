@@ -120,6 +120,7 @@ namespace Microsoft.Terminal.Settings.Editor
         Windows.Foundation.Collections.IVector<IInspectable> BuiltInIcons { get; };
 
         String TabTitlePreview { get; };
+        String AnswerbackMessagePreview { get; };
 
         void CreateUnfocusedAppearance();
         void DeleteUnfocusedAppearance();

@@ -2348,4 +2348,8 @@
     <value>None</value>
     <comment>Text displayed when the background image path is not defined.</comment>
   </data>
+  <data name="Profile_AnswerbackMessageNone" xml:space="preserve">
+    <value>None</value>
+    <comment>Text displayed when the answerback message is not defined.</comment>
+  </data>
 </root>
