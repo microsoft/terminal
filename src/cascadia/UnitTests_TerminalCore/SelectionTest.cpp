@@ -549,6 +549,21 @@ namespace TerminalCoreUnitTests
             ValidateLinearSelection(term, { 0, 10 }, { term.GetViewport().RightExclusive(), 10 });
         }
 
+        TEST_METHOD(TripleClick_WrappedLine)
+        {
+            Terminal term{ Terminal::TestDummyMarker{} };
+            DummyRenderer renderer{ &term };
+            term.Create({ 10, 5 }, 0, renderer);
+            term.Write(L"ABCDEFGHIJKLMNOPQRSTUVWXYZ");
+
+            // Simulate click at (x,y) = (3,1)
+            auto clickPos = til::point{ 3, 1 };
+            term.MultiClickSelection(clickPos, Terminal::SelectionExpansion::Line);
+
+            // Validate selection area
+            ValidateLinearSelection(term, { 0, 0 }, { term.GetViewport().RightExclusive(), 2 });
+        }
+
         TEST_METHOD(TripleClickDrag_Horizontal)
         {
             Terminal term{ Terminal::TestDummyMarker{} };
