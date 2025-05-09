@@ -95,9 +95,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         bool UsingImageIcon() const;
 
         // starting directory
-        bool UseParentProcessDirectory();
+        hstring CurrentStartingDirectoryPreview() const;
+        bool UseParentProcessDirectory() const;
         void UseParentProcessDirectory(const bool useParent);
-        bool UseCustomStartingDirectory();
 
         // general profile knowledge
         winrt::guid OriginalProfileGuid() const noexcept;

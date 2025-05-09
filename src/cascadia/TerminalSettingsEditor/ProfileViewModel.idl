@@ -87,12 +87,13 @@ namespace Microsoft.Terminal.Settings.Editor
         IInspectable CurrentPathTranslationStyle;
         Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> PathTranslationStyleList { get; };
 
+        String CurrentStartingDirectoryPreview { get; };
+        Boolean UseParentProcessDirectory;
+
         Boolean CanDeleteProfile { get; };
         Boolean FocusDeleteButton;
         Boolean IsBaseLayer;
         ProfileSubPage CurrentPage;
-        Boolean UseParentProcessDirectory;
-        Boolean UseCustomStartingDirectory { get; };
         AppearanceViewModel DefaultAppearance { get; };
         Guid OriginalProfileGuid { get; };
         Boolean HasUnfocusedAppearance { get; };
