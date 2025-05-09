@@ -9,7 +9,7 @@ namespace til::ICU // Terminal Implementation Library. Also: "Today I Learned"
 {
     using unique_uregex = wistd::unique_ptr<URegularExpression, wil::function_deleter<decltype(&uregex_close), &uregex_close>>;
 
-    inline unique_uregex CreateRegex(const std::wstring_view& pattern, uint32_t flags, UErrorCode* status) noexcept
+    _TIL_INLINEPREFIX unique_uregex CreateRegex(const std::wstring_view& pattern, uint32_t flags, UErrorCode* status) noexcept
     {
         #pragma warning(suppress : 26490) // Don't use reinterpret_cast (type.1).
         const auto re = uregex_open(reinterpret_cast<const char16_t*>(pattern.data()), gsl::narrow_cast<int32_t>(pattern.size()), flags, nullptr, status);
