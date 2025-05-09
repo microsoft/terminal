@@ -53,23 +53,22 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return !(_invalidName || _invalidCommandline || _invalidSource);
     }
 
-#define DEFINE_VALIDATE_FUNCTION(name)                                              \
-    void MatchProfilesEntry::_validate##name() noexcept                             \
-    {                                                                               \
-        _invalid##name = false;                                                     \
-        if (_##name.empty())                                                        \
-        {                                                                           \
-            /* empty field is valid*/                                               \
-            _invalid##name = true;                                                  \
-            return;                                                                 \
-        }                                                                           \
-        UErrorCode status = U_ZERO_ERROR;                                           \
-        _##name##Regex = ::Microsoft::Console::ICU::CreateRegex(_##name, 0, &status); \
-        if (U_FAILURE(status))                                                      \
-        {                                                                           \
-            _invalid##name = true;                                                  \
-            _##name##Regex.reset();                                                 \
-        }                                                                           \
+#define DEFINE_VALIDATE_FUNCTION(name)                               \
+    void MatchProfilesEntry::_validate##name() noexcept              \
+    {                                                                \
+        _invalid##name = false;                                      \
+        if (_##name.empty())                                         \
+        {                                                            \
+            /* empty field is valid*/                                \
+            return;                                                  \
+        }                                                            \
+        UErrorCode status = U_ZERO_ERROR;                            \
+        _##name##Regex = til::ICU::CreateRegex(_##name, 0, &status); \
+        if (U_FAILURE(status))                                       \
+        {                                                            \
+            _invalid##name = true;                                   \
+            _##name##Regex.reset();                                  \
+        }                                                            \
     }
 
     DEFINE_VALIDATE_FUNCTION(Name);
@@ -78,7 +77,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     bool MatchProfilesEntry::MatchesProfile(const Model::Profile& profile)
     {
-        auto isMatch = [](const ::Microsoft::Console::ICU::unique_uregex& regex, std::wstring_view text) {
+        auto isMatch = [](const til::ICU::unique_uregex& regex, std::wstring_view text) {
             if (text.empty())
             {
                 return false;

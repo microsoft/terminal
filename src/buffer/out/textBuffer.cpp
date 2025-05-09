@@ -10,6 +10,7 @@
 #include "../../types/inc/CodepointWidthDetector.hpp"
 #include "../renderer/base/renderer.hpp"
 #include "../types/inc/utils.hpp"
+#include <til/regex.h>
 #include "search.h"
 
 // BODGY: Misdiagnosis in MSVC 17.11: Referencing global constants in the member
@@ -3361,7 +3362,7 @@ std::optional<std::vector<til::point_span>> TextBuffer::SearchText(const std::ws
     }
 
     UErrorCode status = U_ZERO_ERROR;
-    const auto re = ICU::CreateRegex(needle, icuFlags, &status);
+    const auto re = til::ICU::CreateRegex(needle, icuFlags, &status);
     if (status > U_ZERO_ERROR)
     {
         return std::nullopt;

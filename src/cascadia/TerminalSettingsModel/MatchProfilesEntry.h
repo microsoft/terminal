@@ -17,7 +17,7 @@ Author(s):
 
 #include "ProfileCollectionEntry.h"
 #include "MatchProfilesEntry.g.h"
-#include "..\buffer\out\UTextAdapter.h"
+#include <til/regex.h>
 
 // This macro defines the getter and setter for a regex property.
 // The setter tries to instantiate the regex immediately and caches
@@ -39,7 +39,7 @@ private:                                                     \
     void _validate##name() noexcept;                         \
                                                              \
     hstring _##name;                                         \
-    ::Microsoft::Console::ICU::unique_uregex _##name##Regex; \
+    til::ICU::unique_uregex _##name##Regex; \
     bool _invalid##name{ false };
 
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
