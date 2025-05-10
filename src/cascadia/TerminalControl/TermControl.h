@@ -479,6 +479,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // These are set up in _InitializeTerminal
             Control::ControlCore::RendererWarning_revoker RendererWarning;
             Control::ControlCore::SwapChainChanged_revoker SwapChainChanged;
+            Windows::UI::ViewManagement::AccessibilitySettings::HighContrastChanged_revoker HighContrastChanged;
 
             Control::ControlInteractivity::OpenHyperlink_revoker interactivityOpenHyperlink;
             Control::ControlInteractivity::ScrollPositionChanged_revoker interactivityScrollPositionChanged;

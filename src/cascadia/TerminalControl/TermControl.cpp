@@ -279,9 +279,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _core = _interactivity.Core();
 
         // If high contrast mode was changed, update the appearance appropriately.
-        _accessibilitySettings.HighContrastChanged([this](const Windows::UI::ViewManagement::AccessibilitySettings& a11ySettings, auto&&) {
-            _core.SetHighContrastInfo(a11ySettings.HighContrast());
-            _core.ApplyAppearance(_focused);
+        _core.SetHighContrastInfo(_accessibilitySettings.HighContrast());
+        _revokers.HighContrastChanged = _accessibilitySettings.HighContrastChanged(winrt::auto_revoke, [weakThis{ get_weak() }](const Windows::UI::ViewManagement::AccessibilitySettings& a11ySettings, auto&&) {
+            if (auto termControl = weakThis.get())
+            {
+                termControl->_core.SetHighContrastInfo(a11ySettings.HighContrast());
+                termControl->_core.ApplyAppearance(termControl->_focused);
+            }
         });
 
         // This event is specifically triggered by the renderer thread, a BG thread. Use a weak ref here.
