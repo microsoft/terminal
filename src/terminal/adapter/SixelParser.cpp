@@ -380,6 +380,15 @@ void SixelParser::_updateRasterAttributes(const VTParameters& rasterAttributes)
     // back to the dimensions from an earlier raster attributes command.
     _backgroundSize.width = width > 0 ? width : _backgroundSize.width;
     _backgroundSize.height = height > 0 ? height : _backgroundSize.height;
+
+    // If the aspect ratio has changed, the image height may increase, and that
+    // could potentially trigger a scroll requiring the background to be filled.
+    _fillImageBackgroundWhenScrolled();
+
+    // And while not documented, we know from testing on a VT330 that the raster
+    // attributes command should also trigger a carriage return. This applies
+    // regardless of whether the requested aspect ratio is valid or not.
+    _executeCarriageReturn();
 }
 
 void SixelParser::_scrollTextBuffer(Page& page, const int scrollAmount)
