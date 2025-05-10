@@ -8,6 +8,7 @@
                xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
                xmlns:local="using:TerminalApp"
                xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+               xmlns:mtu="using:Microsoft.Terminal.UI"
                xmlns:mux="using:Microsoft.UI.Xaml.Controls"
                x:Uid="AboutDialog"
                DefaultButton="Close"
@@ -17,6 +18,9 @@
 
     <StackPanel Orientation="Vertical">
         <TextBlock IsTextSelectionEnabled="True">
+            <TextBlock.ContextFlyout>
+                <mtu:TextMenuFlyout />
+            </TextBlock.ContextFlyout>
             <Run AutomationProperties.HeadingLevel="1"
                  Text="{x:Bind ApplicationDisplayName}" /> <LineBreak />
             <Run x:Uid="AboutDialog_VersionLabel" />
@@ -39,7 +43,7 @@
                         VerticalAlignment="Center"
                         Orientation="Vertical"
                         Visibility="{x:Bind UpdatesAvailable, Mode=OneWay}">
-                <TextBlock IsTextSelectionEnabled="False">
+                <TextBlock>
                     <Run x:Uid="AboutDialog_UpdateAvailableLabel" />
                 </TextBlock>
                 <!-- <Button x:Uid="AboutDialog_InstallUpdateButton"
@@ -59,4 +63,3 @@
                          Click="_ThirdPartyNoticesOnClick" />
     </StackPanel>
 </ContentDialog>
-

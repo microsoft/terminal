@@ -25,16 +25,15 @@
 
 #include <wil/cppwinrt.h>
 
-#include <winrt/Windows.ApplicationModel.Resources.h>
-#include <winrt/Windows.Foundation.h>
+#include <winrt/Windows.ApplicationModel.Resources.Core.h>
+#include <winrt/Windows.Foundation.Collections.h>
 
 #include <winrt/Windows.Graphics.Imaging.h>
 #include <Windows.Graphics.Imaging.Interop.h>
 
-#include <winrt/Windows.UI.Text.h>
 #include <winrt/Windows.UI.Xaml.Controls.h>
 #include <winrt/Windows.UI.Xaml.Markup.h>
-#include <winrt/Windows.UI.Xaml.Media.h>
+#include <winrt/Windows.UI.Xaml.Input.h>
 #include <winrt/Windows.UI.Xaml.Media.Imaging.h>
 
 #include <winrt/Microsoft.UI.Xaml.Controls.h>

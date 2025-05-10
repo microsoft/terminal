@@ -141,7 +141,11 @@
                      PlaceholderText="{x:Bind SearchBoxPlaceholderText, Mode=OneWay}"
                      Text=""
                      TextChanged="_filterTextChanged"
-                     Visibility="Collapsed" />
+                     Visibility="Collapsed">
+                <TextBox.ContextFlyout>
+                    <mtu:TextMenuFlyout />
+                </TextBox.ContextFlyout>
+            </TextBox>
 
             <StackPanel Grid.Row="1"
                         Margin="8,0,8,8"
@@ -224,7 +228,11 @@
                            FontSize="14"
                            FontWeight="Bold"
                            IsTextSelectionEnabled="True"
-                           TextWrapping="WrapWholeWords" />
+                           TextWrapping="WrapWholeWords">
+                    <TextBlock.ContextFlyout>
+                        <mtu:TextMenuFlyout />
+                    </TextBlock.ContextFlyout>
+                </TextBlock>
                 <ScrollViewer MaxHeight="64"
                               VerticalScrollBarVisibility="Visible"
                               VerticalScrollMode="Enabled"
@@ -232,7 +240,11 @@
                     <TextBlock x:Name="_descriptionComment"
                                Margin="0,0,20,0"
                                IsTextSelectionEnabled="True"
-                               TextWrapping="WrapWholeWords" />
+                               TextWrapping="WrapWholeWords">
+                        <TextBlock.ContextFlyout>
+                            <mtu:TextMenuFlyout />
+                        </TextBlock.ContextFlyout>
+                    </TextBlock>
                 </ScrollViewer>
             </StackPanel>
 

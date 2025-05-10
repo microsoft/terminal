@@ -78,6 +78,7 @@ namespace winrt::TerminalApp::implementation
     void MarkdownPaneContent::_loadText()
     {
         auto block = WUX::Controls::TextBlock();
+        block.ContextFlyout(winrt::Microsoft::Terminal::UI::TextMenuFlyout{});
         block.IsTextSelectionEnabled(true);
         block.FontFamily(WUX::Media::FontFamily{ L"Cascadia Code" });
         block.Text(FileContents());

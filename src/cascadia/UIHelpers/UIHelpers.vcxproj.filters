@@ -31,8 +31,18 @@
   </ItemGroup>
   <ItemGroup>
     <Midl Include="ResourceString.idl" />
+    <Midl Include="Converters.idl" />
+    <Midl Include="IconPathConverter.idl" />
+    <Midl Include="IDirectKeyListener.idl" />
+    <Midl Include="TextMenuFlyout.idl" />
   </ItemGroup>
   <ItemGroup>
     <Natvis Include="$(SolutionDir)tools\ConsoleTypes.natvis" />
+    <Natvis Include="$(MSBuildThisFileDirectory)..\..\natvis\wil.natvis" />
+  </ItemGroup>
+  <ItemGroup>
+    <PRIResource Include="Resources\en-US\Resources.resw">
+      <Filter>Resources\en-US</Filter>
+    </PRIResource>
   </ItemGroup>
 </Project>

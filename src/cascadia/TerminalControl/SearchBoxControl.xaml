@@ -4,6 +4,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:local="using:Microsoft.Terminal.Control"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:mtu="using:Microsoft.Terminal.UI"
              x:Name="Root"
              HorizontalAlignment="Stretch"
              VerticalAlignment="Top"
@@ -197,7 +198,11 @@
                  VerticalAlignment="Center"
                  IsSpellCheckEnabled="False"
                  KeyDown="TextBoxKeyDown"
-                 TextChanged="TextBoxTextChanged" />
+                 TextChanged="TextBoxTextChanged">
+            <TextBox.ContextFlyout>
+                <mtu:TextMenuFlyout />
+            </TextBox.ContextFlyout>
+        </TextBox>
 
         <TextBlock x:Name="StatusBox"
                    x:Uid="SearchBox_StatusBox"
