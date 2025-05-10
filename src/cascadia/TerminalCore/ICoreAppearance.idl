@@ -23,7 +23,8 @@ namespace Microsoft.Terminal.Core
     {
         Never,
         Indexed,
-        Always
+        Always,
+        Automatic
     };
 
     // TerminalCore declares its own Color struct to avoid depending
