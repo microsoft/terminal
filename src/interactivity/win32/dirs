@@ -1,3 +1,0 @@
-DIRS= \
-      lib \
-      ut_interactivity_win32 \

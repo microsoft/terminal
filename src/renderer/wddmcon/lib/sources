@@ -1,8 +1,0 @@
-!include ..\sources.inc
-
-# -------------------------------------
-# Program Information
-# -------------------------------------
-
-TARGETNAME = ConRenderWddmCon
-TARGETTYPE = LIBRARY

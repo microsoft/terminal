@@ -1,3 +1,0 @@
-BUILD_PASS2_CONSUMES= \
-    onecore\windows\core\console\open\src\tools\integrity\exeuwp|PASS2 \
-

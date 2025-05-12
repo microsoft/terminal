@@ -1,8 +1,0 @@
-!include ..\sources.inc
-
-# -------------------------------------
-# Program Information
-# -------------------------------------
-
-TARGETNAME              = ConServer
-TARGETTYPE              = LIBRARY

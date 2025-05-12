@@ -1,8 +1,0 @@
-DIRS=proxy \
-     exe \
-     lib \
-     ut_lib \
-     ut_host \
-     ft_host \
-     ft_integrity \
-     ft_uia \

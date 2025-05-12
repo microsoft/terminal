@@ -1,4 +1,0 @@
-DIRS=lib \
-     ft_fuzzer \
-     ft_fuzzwrapper \
-     ut_parser \

@@ -1,1 +1,0 @@
-#define CHAFA_CONTENT 300

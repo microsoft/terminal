@@ -1,9 +1,0 @@
-!include ..\sources.inc
-
-# -------------------------------------
-# Program Information
-# -------------------------------------
-
-TARGETNAME              = ConhostV2
-TARGETTYPE              = LIBRARY
-UMTYPE                  = windows

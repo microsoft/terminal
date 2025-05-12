@@ -1,6 +1,0 @@
-LIBRARY     Console
-
-EXPORTS
-            CPlApplet
-            DllGetClassObject PRIVATE
-            DllCanUnloadNow PRIVATE

@@ -1,4 +1,0 @@
-DIRS=parser \
-     adapter \
-     input
-
