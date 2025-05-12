@@ -64,6 +64,8 @@ private:
     void _registerHotKey(int index, const winrt::Microsoft::Terminal::Control::KeyChord& hotkey) noexcept;
     void _unregisterHotKey(int index) noexcept;
     void _setupGlobalHotkeys();
+    void _setupSessionPersistence(bool enabled);
+    void _persistState(const winrt::Microsoft::Terminal::Settings::Model::ApplicationState& state, bool serializeBuffer) const;
     void _finalizeSessionPersistence() const;
     void _checkWindowsForNotificationIcon();
 
@@ -77,6 +79,7 @@ private:
     bool _notificationIconShown = false;
     bool _forcePersistence = false;
     bool _needsPersistenceCleanup = false;
+    SafeDispatcherTimer _persistStateTimer;
     std::optional<bool> _currentSystemThemeIsDark;
     int32_t _windowCount = 0;
     int32_t _messageBoxCount = 0;
