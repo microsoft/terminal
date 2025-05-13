@@ -25,8 +25,7 @@ class WriteData : public IWaitRoutine
 {
 public:
     WriteData(SCREEN_INFORMATION& siContext,
-              _In_reads_bytes_(cbContext) PCWCHAR pwchContext,
-              const size_t cbContext,
+              std::wstring pwchContext,
               const UINT uiOutputCodepage);
     ~WriteData();
 
@@ -45,8 +44,7 @@ public:
 
 private:
     SCREEN_INFORMATION& _siContext;
-    wchar_t* const _pwchContext;
-    const size_t _cbContext;
+    std::wstring _pwchContext;
     UINT const _uiOutputCodepage;
     bool _fLeadByteCaptured;
     bool _fLeadByteConsumed;

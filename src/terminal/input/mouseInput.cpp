@@ -63,24 +63,19 @@ static constexpr bool _isWheelMsg(const unsigned int buttonCode) noexcept
 }
 
 // Routine Description:
-// - Determines if the input windows message code describes a button press
-//     (either down or doubleclick)
+// - Determines if the input windows message code describes a button release
 // Parameters:
 // - button - the message to decode.
 // Return value:
-// - true if button is a button down event
-static constexpr bool _isButtonDown(const unsigned int button) noexcept
+// - true if button is a button up event
+static constexpr bool _isButtonUp(const unsigned int button) noexcept
 {
     switch (button)
     {
-    case WM_LBUTTONDBLCLK:
-    case WM_LBUTTONDOWN:
-    case WM_RBUTTONDOWN:
-    case WM_RBUTTONDBLCLK:
-    case WM_MBUTTONDOWN:
-    case WM_MBUTTONDBLCLK:
-    case WM_MOUSEWHEEL:
-    case WM_MOUSEHWHEEL:
+    case WM_LBUTTONUP:
+    case WM_RBUTTONUP:
+    case WM_MBUTTONUP:
+    case WM_XBUTTONUP:
         return true;
     default:
         return false;
@@ -372,7 +367,7 @@ TerminalInput::OutputType TerminalInput::HandleMouse(const til::point position, 
                 // then we want to handle hovers with WM_MOUSEMOVE.
                 // However, if we're dragging (WM_MOUSEMOVE with a button pressed),
                 //      then use that pressed button instead.
-                return _GenerateSGRSequence(position, physicalButtonPressed ? realButton : button, _isButtonDown(realButton), isHover, modifierKeyState, delta);
+                return _GenerateSGRSequence(position, physicalButtonPressed ? realButton : button, _isButtonUp(button), isHover, modifierKeyState, delta);
             }
             else
             {
@@ -463,18 +458,18 @@ TerminalInput::OutputType TerminalInput::_GenerateUtf8Sequence(const til::point 
 // Parameters:
 // - position - The windows coordinates (top,left = 0,0) of the mouse event
 // - button - the message to decode. WM_MOUSEMOVE is used for mouse hovers with no buttons pressed.
-// - isDown - true if a mouse button was pressed.
+// - isRelease - true if a mouse button was released.
 // - isHover - true if the sequence is generated in response to a mouse hover
 // - modifierKeyState - the modifier keys pressed with this button
 // - delta - the amount that the scroll wheel changed (should be 0 unless button is a WM_MOUSE*WHEEL)
 // - ppwchSequence - On success, where to put the pointer to the generated sequence
 // - pcchLength - On success, where to put the length of the generated sequence
-TerminalInput::OutputType TerminalInput::_GenerateSGRSequence(const til::point position, const unsigned int button, const bool isDown, const bool isHover, const short modifierKeyState, const short delta)
+TerminalInput::OutputType TerminalInput::_GenerateSGRSequence(const til::point position, const unsigned int button, const bool isRelease, const bool isHover, const short modifierKeyState, const short delta)
 {
     // Format for SGR events is:
-    // "\x1b[<%d;%d;%d;%c", xButton, x+1, y+1, fButtonDown? 'M' : 'm'
+    // "\x1b[<%d;%d;%d;%c", xButton, x+1, y+1, isRelease? 'm' : 'M'
     const auto xbutton = _windowsButtonToSGREncoding(button, isHover, modifierKeyState, delta);
-    return fmt::format(FMT_COMPILE(L"{}<{};{};{}{}"), _csi, xbutton, position.x + 1, position.y + 1, isDown ? L'M' : L'm');
+    return fmt::format(FMT_COMPILE(L"{}<{};{};{}{}"), _csi, xbutton, position.x + 1, position.y + 1, isRelease ? L'm' : L'M');
 }
 
 // Routine Description:
