@@ -2278,7 +2278,7 @@ std::string TextBuffer::GenHTML(const CopyRequest& req,
                 fmt::format_to(std::back_inserter(htmlBuilder), FMT_COMPILE("color:{};"), fgHex);
                 fmt::format_to(std::back_inserter(htmlBuilder), FMT_COMPILE("background-color:{};"), bgHex);
 
-                if (isIntenseBold && attr.IsIntense())
+                if (attr.IsBold(isIntenseBold))
                 {
                     htmlBuilder += "font-weight:bold;";
                 }
@@ -2528,7 +2528,7 @@ std::string TextBuffer::GenRTF(const CopyRequest& req,
                 fmt::format_to(std::back_inserter(contentBuilder), FMT_COMPILE("\\cf{}"), fgIdx);
                 fmt::format_to(std::back_inserter(contentBuilder), FMT_COMPILE("\\chshdng0\\chcbpat{}"), bgIdx);
 
-                if (isIntenseBold && attr.IsIntense())
+                if (attr.IsBold(isIntenseBold))
                 {
                     contentBuilder += "\\b";
                 }
