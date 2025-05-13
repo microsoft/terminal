@@ -109,10 +109,12 @@ if ($Format) {
 # Build commands
 foreach ($Configuration in $Configurations) {
     foreach ($Platform in $Platforms) {
-        Invoke-OpenConsoleBuild /p:Configuration=$Configuration /p:Platform=$Platform /p:AdditionalOptions="/Zm$Zm" /maxcpucount:4
 
         if (-not $NoPackage) {
             Invoke-OpenConsoleBuild /p:Configuration=$Configuration /p:Platform=$Platform /p:AdditionalOptions="/Zm$Zm" /t:Terminal\CascadiaPackage /m
+        }
+        else {
+            Invoke-OpenConsoleBuild /p:Configuration=$Configuration /p:Platform=$Platform /p:AdditionalOptions="/Zm$Zm" /maxcpucount:4
         }
     }
 }
