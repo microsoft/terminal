@@ -56,6 +56,12 @@
     <Midl Include="ResourceString.idl" />
     <Midl Include="TextMenuFlyout.idl" />
   </ItemGroup>
+  <ItemGroup>
+    <PRIResource Include="Resources\en-US\Resources.resw">
+      <SubType>Designer</SubType>
+    </PRIResource>
+    <OCResourceDirectory Include="Resources" />
+  </ItemGroup>
   <!-- ========================= Project References ======================== -->
   <ItemGroup>
     <!--
@@ -70,9 +76,6 @@
       <Project>{CA5CAD1A-039A-4929-BA2A-8BEB2E4106FE}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <PRIResource Include="Resources\en-US\Resources.resw" />
   </ItemGroup>
   <ItemDefinitionGroup>
     <Link>

@@ -1,9 +1,17 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
 #pragma once
 
 #include "TextMenuFlyout.g.h"
 
 namespace winrt::Microsoft::Terminal::UI::implementation
 {
+    // This custom flyout exists because WinUI 2 only supports 1 text block flyout
+    // *per thread* not per window. If you have >1 window per 1 thread, as we do,
+    // the focus will just be delegated to the window the flyout was first opened in.
+    // Once the first window is gone, WinUI will either do nothing or crash.
+    // See: GH#18599
     struct TextMenuFlyout : TextMenuFlyoutT<TextMenuFlyout>
     {
         TextMenuFlyout();
