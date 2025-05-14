@@ -419,6 +419,7 @@ namespace winrt::TerminalApp::implementation
         auto buttonText = RS_(L"Ok");
 
         Controls::TextBlock warningsTextBlock;
+        warningsTextBlock.ContextFlyout(winrt::Microsoft::Terminal::UI::TextMenuFlyout{});
         // Make sure you can copy-paste
         warningsTextBlock.IsTextSelectionEnabled(true);
         // Make sure the lines of text wrap
@@ -468,6 +469,7 @@ namespace winrt::TerminalApp::implementation
         auto buttonText = RS_(L"Ok");
 
         Controls::TextBlock warningsTextBlock;
+        warningsTextBlock.ContextFlyout(winrt::Microsoft::Terminal::UI::TextMenuFlyout{});
         // Make sure you can copy-paste
         warningsTextBlock.IsTextSelectionEnabled(true);
         // Make sure the lines of text wrap
