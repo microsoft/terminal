@@ -3,9 +3,16 @@
 
 import "EnumEntry.idl";
 import "ColorSchemeViewModel.idl";
+import "MainPage.idl";
 
 namespace Microsoft.Terminal.Settings.Editor
 {
+    runtimeclass NavigateToCommandArgs
+    {
+        CommandViewModel Command { get; };
+        IHostedInWindow WindowRoot { get; };
+    }
+
     runtimeclass ModifyKeyBindingEventArgs
     {
         Microsoft.Terminal.Control.KeyChord OldKeys { get; };
@@ -78,18 +85,23 @@ namespace Microsoft.Terminal.Settings.Editor
         void Delete_Click();
         void AddKeybinding_Click();
         event Windows.Foundation.TypedEventHandler<Object, ArgWrapper> PropagateColorSchemeRequested;
+        event Windows.Foundation.TypedEventHandler<Object, ArgWrapper> PropagateColorSchemeNamesRequested;
+        event Windows.Foundation.TypedEventHandler<Object, ArgWrapper> PropagateWindowRootRequested;
     }
 
     runtimeclass ArgWrapper : Windows.UI.Xaml.Data.INotifyPropertyChanged
     {
         String Name { get; };
         String Type { get; };
+        Microsoft.Terminal.Settings.Model.ArgTag Tag { get; };
         Boolean Required { get; };
         IInspectable Value;
         IInspectable EnumValue;
         Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> EnumList { get; };
         Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.FlagEntry> FlagList { get; };
         ColorSchemeViewModel DefaultColorScheme;
+        Windows.Foundation.Collections.IVector<String> ColorSchemeNamesList;
+        IHostedInWindow WindowRoot;
 
         // unboxing functions
         String UnboxString(Object value);
@@ -118,7 +130,11 @@ namespace Microsoft.Terminal.Settings.Editor
         void TerminalCoreColorBindBack(Windows.Foundation.IReference<Microsoft.Terminal.Core.Color> newValue);
         void WindowsUIColorBindBack(Windows.Foundation.IReference<Microsoft.Terminal.Core.Color> newValue);
 
+        void Browse_Click(IInspectable sender, Windows.UI.Xaml.RoutedEventArgs args);
+
         event Windows.Foundation.TypedEventHandler<Object, ArgWrapper> ColorSchemeRequested;
+        event Windows.Foundation.TypedEventHandler<Object, ArgWrapper> ColorSchemeNamesRequested;
+        event Windows.Foundation.TypedEventHandler<Object, ArgWrapper> WindowRootRequested;
     }
 
     runtimeclass ActionArgsViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged
@@ -127,6 +143,8 @@ namespace Microsoft.Terminal.Settings.Editor
         IObservableVector<ArgWrapper> ArgValues;
         event Windows.Foundation.TypedEventHandler<Object, Object> WrapperValueChanged;
         event Windows.Foundation.TypedEventHandler<Object, ArgWrapper> PropagateColorSchemeRequested;
+        event Windows.Foundation.TypedEventHandler<Object, ArgWrapper> PropagateColorSchemeNamesRequested;
+        event Windows.Foundation.TypedEventHandler<Object, ArgWrapper> PropagateWindowRootRequested;
     }
 
     runtimeclass KeyChordViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged

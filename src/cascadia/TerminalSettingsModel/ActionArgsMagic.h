@@ -54,53 +54,53 @@ struct InitListPlaceholder
 // expanded. Pretty critical for tracking down extraneous commas, etc.
 
 // Property definitions, and JSON keys
-#define DECLARE_ARGS(type, name, jsonKey, required, ...)    \
+#define DECLARE_ARGS(type, name, jsonKey, required, tag, ...)    \
     static constexpr std::string_view name##Key{ jsonKey }; \
     ACTION_ARG(type, name, ##__VA_ARGS__);
 
 // Parameters to the non-default ctor
-#define CTOR_PARAMS(type, name, jsonKey, required, ...) \
+#define CTOR_PARAMS(type, name, jsonKey, required, tag, ...) \
     const type &name##Param,
 
 // initializers in the ctor
-#define CTOR_INIT(type, name, jsonKey, required, ...) \
+#define CTOR_INIT(type, name, jsonKey, required, tag, ...) \
     _##name{ name##Param },
 
 // append this argument's description to the internal vector
-#define APPEND_ARG_DESCRIPTION(type, name, jsonKey, required, ...)                                      \
-    _argDescriptions.push_back({ L## #name, L## #type, std::wstring_view(L## #required) != L"false" });
+#define APPEND_ARG_DESCRIPTION(type, name, jsonKey, required, tag, ...)                                      \
+    _argDescriptions.push_back({ L## #name, L## #type, std::wstring_view(L## #required) != L"false", tag });
 
 // check each property in the Equals() method. You'll note there's a stray
 // `true` in the definition of Equals() below, that's to deal with trailing
 // commas
-#define EQUALS_ARGS(type, name, jsonKey, required, ...) \
+#define EQUALS_ARGS(type, name, jsonKey, required, tag, ...) \
     &&(otherAsUs->_##name == _##name)
 
 // getter and setter for each property by index
-#define GET_ARG_BY_INDEX(type, name, jsonKey, required, ...)         \
-    if (index == curIndex++)                                         \
-    {                                                                \
-        if (_##name.has_value())                                     \
-        {                                                            \
-            return winrt::box_value(_##name.value());                \
-        }                                                            \
-        else                                                         \
-        {                                                            \
-            return winrt::box_value(static_cast<type>(__VA_ARGS__)); \
-        }                                                            \
+#define GET_ARG_BY_INDEX(type, name, jsonKey, required, tag, ...)         \
+    if (index == curIndex++)                                              \
+    {                                                                     \
+        if (_##name.has_value())                                          \
+        {                                                                 \
+            return winrt::box_value(_##name.value());                     \
+        }                                                                 \
+        else                                                              \
+        {                                                                 \
+            return winrt::box_value(static_cast<type>(__VA_ARGS__));      \
+        }                                                                 \
     }
 
-#define SET_ARG_BY_INDEX(type, name, jsonKey, required, ...) \
-    if (index == curIndex++)                                 \
-    {                                                        \
-        if (value)                                           \
-        {                                                    \
-            _##name = winrt::unbox_value<type>(value);       \
-        }                                                    \
-        else                                                 \
-        {                                                    \
-            _##name = std::nullopt;                          \
-        }                                                    \
+#define SET_ARG_BY_INDEX(type, name, jsonKey, required, tag, ...) \
+    if (index == curIndex++)                                      \
+    {                                                             \
+        if (value)                                                \
+        {                                                         \
+            _##name = winrt::unbox_value<type>(value);            \
+        }                                                         \
+        else                                                      \
+        {                                                         \
+            _##name = std::nullopt;                               \
+        }                                                         \
     }
 
 // JSON deserialization. If the parameter is required to pass any validation,
@@ -110,25 +110,25 @@ struct InitListPlaceholder
 // the bit
 //    args->ResizeDirection() == ResizeDirection::None
 // is used as the conditional for the validation here.
-#define FROM_JSON_ARGS(type, name, jsonKey, required, ...)                                                \
-    JsonUtils::GetValueForKey(json, jsonKey, args->_##name);                                              \
-    if (required)                                                                                         \
-    {                                                                                                     \
-        return { nullptr, { SettingsLoadWarnings::MissingRequiredParameter } };                           \
+#define FROM_JSON_ARGS(type, name, jsonKey, required, tag, ...)                                                \
+    JsonUtils::GetValueForKey(json, jsonKey, args->_##name);                                                   \
+    if (required)                                                                                              \
+    {                                                                                                          \
+        return { nullptr, { SettingsLoadWarnings::MissingRequiredParameter } };                                \
     }
 
 // JSON serialization
-#define TO_JSON_ARGS(type, name, jsonKey, required, ...) \
+#define TO_JSON_ARGS(type, name, jsonKey, required, tag, ...) \
     JsonUtils::SetValueForKey(json, jsonKey, args->_##name);
 
 // Copy each property in the Copy() method
-#define COPY_ARGS(type, name, jsonKey, required, ...) \
+#define COPY_ARGS(type, name, jsonKey, required, tag, ...) \
     copy->_##name = _##name;
 
 // hash each property in Hash(). You'll note there's a stray `0` in the
 // definition of Hash() below, that's to deal with trailing commas (or in this
 // case, leading.)
-#define HASH_ARGS(type, name, jsonKey, required, ...) \
+#define HASH_ARGS(type, name, jsonKey, required, tag, ...) \
     h.write(name());
 
 // Use ACTION_ARGS_STRUCT when you've got no other customizing to do.

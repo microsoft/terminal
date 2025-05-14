@@ -388,6 +388,48 @@
                 </ListViewItem>
             </DataTemplate>
 
+            <DataTemplate x:Key="ColorSchemeTemplate"
+                          x:DataType="local:ArgWrapper">
+                <ListViewItem>
+                    <Grid ColumnSpacing="8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="{StaticResource ArgumentNameWidth}" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="{x:Bind Name}"
+                                   VerticalAlignment="Center"
+                                   Grid.Column="0"/>
+                        <ComboBox ItemTemplate="{StaticResource EnumComboBoxTemplate}"
+                                  ItemsSource="{x:Bind EnumList, Mode=OneWay}"
+                                  SelectedItem="{x:Bind EnumValue, Mode=TwoWay}"
+                                  Style="{StaticResource ComboBoxSettingStyle}"
+                                  Grid.Column="1"/>
+                    </Grid>
+                </ListViewItem>
+            </DataTemplate>
+
+            <DataTemplate x:Key="FilePickerTemplate"
+                          x:DataType="local:ArgWrapper">
+                <ListViewItem>
+                    <Grid ColumnSpacing="8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="{StaticResource ArgumentNameWidth}" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="{x:Bind Name}"
+                                   VerticalAlignment="Center"
+                                   Grid.Column="0"/>
+                        <TextBox Text="{x:Bind UnboxString(Value), Mode=TwoWay, BindBack=StringBindBack}"
+                                 Grid.Column="1"/>
+                        <Button x:Uid="Actions_Browse"
+                                Click="{x:Bind Browse_Click}"
+                                Style="{StaticResource BrowseButtonStyle}"
+                                Grid.Column="2"/>
+                    </Grid>
+                </ListViewItem>
+            </DataTemplate>
+
             <DataTemplate x:Key="GuidTemplate"
                           x:DataType="local:ArgWrapper">
                 <ListViewItem>
@@ -552,6 +594,8 @@
                                          UInt64Template="{StaticResource UInt64Template}"
                                          FloatTemplate="{StaticResource FloatTemplate}"
                                          StringTemplate="{StaticResource StringTemplate}"
+                                         ColorSchemeTemplate="{StaticResource ColorSchemeTemplate}"
+                                         FilePickerTemplate="{StaticResource FilePickerTemplate}"
                                          GuidTemplate="{StaticResource GuidTemplate}"
                                          BoolTemplate="{StaticResource BoolTemplate}"
                                          BoolOptionalTemplate="{StaticResource BoolOptionalTemplate}"
@@ -589,6 +633,7 @@
                      PlaceholderText="{x:Bind ViewModel.DisplayName, Mode=OneWay}"
                      Grid.Row="0"
                      Grid.Column="1"
+                     HorizontalAlignment="Left"
                      Width="300" />
             <TextBlock x:Uid="Actions_ShortcutAction"
                        VerticalAlignment="Center"

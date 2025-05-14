@@ -4,6 +4,7 @@
 #pragma once
 
 #include "ActionsViewModel.g.h"
+#include "NavigateToCommandArgs.g.h"
 #include "KeyBindingViewModel.g.h"
 #include "CommandViewModel.g.h"
 #include "ArgWrapper.g.h"
@@ -30,6 +31,21 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             return lhs.DisplayName() < rhs.DisplayName();
         }
+    };
+
+    struct NavigateToCommandArgs : NavigateToCommandArgsT<NavigateToCommandArgs>
+    {
+    public:
+        NavigateToCommandArgs(CommandViewModel command, Editor::IHostedInWindow windowRoot) :
+            _Command(command),
+            _WindowRoot(windowRoot) {}
+
+        Editor::IHostedInWindow WindowRoot() const noexcept { return _WindowRoot; }
+        Editor::CommandViewModel Command() const noexcept { return _Command; }
+
+    private:
+        Editor::IHostedInWindow _WindowRoot;
+        Editor::CommandViewModel _Command{ nullptr };
     };
 
     struct ModifyKeyBindingEventArgs : ModifyKeyBindingEventArgsT<ModifyKeyBindingEventArgs>
@@ -150,6 +166,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void AddKeybinding_Click();
 
         til::typed_event<IInspectable, Editor::ArgWrapper> PropagateColorSchemeRequested;
+        til::typed_event<IInspectable, Editor::ArgWrapper> PropagateColorSchemeNamesRequested;
+        til::typed_event<IInspectable, Editor::ArgWrapper> PropagateWindowRootRequested;
 
         VIEW_MODEL_OBSERVABLE_PROPERTY(IInspectable, ProposedShortcutAction);
         VIEW_MODEL_OBSERVABLE_PROPERTY(Editor::ActionArgsViewModel, ActionArgsVM, nullptr);
@@ -172,11 +190,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     struct ArgWrapper : ArgWrapperT<ArgWrapper>, ViewModelHelper<ArgWrapper>
     {
     public:
-        ArgWrapper(const winrt::hstring& name, const winrt::hstring& type, const bool required, const Windows::Foundation::IInspectable& value);
+        ArgWrapper(const winrt::hstring& name, const winrt::hstring& type, const bool required, const Model::ArgTag tag, const Windows::Foundation::IInspectable& value);
         void Initialize();
 
         winrt::hstring Name() const noexcept { return _name; };
         winrt::hstring Type() const noexcept { return _type; };
+        Model::ArgTag Tag() const noexcept { return _tag; };
         bool Required() const noexcept { return _required; };
 
         // We cannot use the macro here because we need to implement additional logic for the setter
@@ -212,14 +231,26 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void TerminalCoreColorBindBack(const winrt::Windows::Foundation::IReference<Microsoft::Terminal::Core::Color> newValue);
         void WindowsUIColorBindBack(const winrt::Windows::Foundation::IReference<Microsoft::Terminal::Core::Color> newValue);
 
+        safe_void_coroutine Browse_Click(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& e);
+
+        // some argWrappers need to know additional information (like the default color scheme or the list of all color scheme names)
+        // to avoid populating all ArgWrappers with that information, instead we emit an event when we need that information
+        // (these events then get propagated up to the ActionsVM) and then the actionsVM will populate the value in us
+        // since there's an actionArgsVM above us and a commandVM above that, the event does get propagated through a few times but that's
+        // probably better than having every argWrapper contain the information by default
         til::typed_event<IInspectable, Editor::ArgWrapper> ColorSchemeRequested;
+        til::typed_event<IInspectable, Editor::ArgWrapper> ColorSchemeNamesRequested;
+        til::typed_event<IInspectable, Editor::ArgWrapper> WindowRootRequested;
 
         VIEW_MODEL_OBSERVABLE_PROPERTY(Editor::ColorSchemeViewModel, DefaultColorScheme, nullptr);
         VIEW_MODEL_OBSERVABLE_PROPERTY(Windows::Foundation::IInspectable, Value, nullptr);
+        WINRT_PROPERTY(Windows::Foundation::Collections::IVector<winrt::hstring>, ColorSchemeNamesList, nullptr);
+        WINRT_PROPERTY(Editor::IHostedInWindow, WindowRoot, nullptr);
 
     private:
         winrt::hstring _name;
         winrt::hstring _type;
+        Model::ArgTag _tag;
         bool _required;
         Windows::Foundation::IInspectable _EnumValue{ nullptr };
         Windows::Foundation::Collections::IObservableVector<Microsoft::Terminal::Settings::Editor::EnumEntry> _EnumList;
@@ -237,6 +268,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         til::typed_event<IInspectable, IInspectable> WrapperValueChanged;
         til::typed_event<IInspectable, Editor::ArgWrapper> PropagateColorSchemeRequested;
+        til::typed_event<IInspectable, Editor::ArgWrapper> PropagateColorSchemeNamesRequested;
+        til::typed_event<IInspectable, Editor::ArgWrapper> PropagateWindowRootRequested;
 
         WINRT_PROPERTY(Windows::Foundation::Collections::IObservableVector<Editor::ArgWrapper>, ArgValues, nullptr);
 
@@ -319,6 +352,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void _CmdVMEditRequestedHandler(const Editor::CommandViewModel& senderVM, const IInspectable& args);
         void _CmdVMDeleteRequestedHandler(const Editor::CommandViewModel& senderVM, const IInspectable& args);
         void _CmdVMPropagateColorSchemeRequestedHandler(const IInspectable& sender, const Editor::ArgWrapper& wrapper);
+        void _CmdVMPropagateColorSchemeNamesRequestedHandler(const IInspectable& sender, const Editor::ArgWrapper& wrapper);
     };
 }
 

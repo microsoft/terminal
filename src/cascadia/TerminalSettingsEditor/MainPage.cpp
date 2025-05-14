@@ -121,7 +121,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             {
                 if (_actionsVM.CurrentPage() == ActionsSubPage::Edit)
                 {
-                    contentFrame().Navigate(xaml_typename<Editor::EditAction>(), _actionsVM.CurrentCommand());
+                    contentFrame().Navigate(xaml_typename<Editor::EditAction>(), winrt::make<implementation::NavigateToCommandArgs>(_actionsVM.CurrentCommand(), *this));
                     const auto crumb = winrt::make<Breadcrumb>(box_value(newActionsTag), L"Edit Action...", BreadcrumbSubPage::Actions_Edit);
                     _breadcrumbs.Append(crumb);
                 }

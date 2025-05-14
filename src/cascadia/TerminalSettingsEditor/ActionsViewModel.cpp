@@ -13,6 +13,8 @@
 #include "../TerminalSettingsModel/AllShortcutActions.h"
 #include "EnumEntry.h"
 #include "ColorSchemeViewModel.h"
+#include <LibraryResources.h>
+#include "..\WinRTUtils\inc\Utils.h"
 
 using namespace winrt::Windows::Foundation;
 using namespace winrt::Windows::Foundation::Collections;
@@ -436,6 +438,24 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 }
             }
         });
+        actionArgsVM.PropagateColorSchemeNamesRequested([weakThis = get_weak()](const IInspectable& /*sender*/, const Editor::ArgWrapper& wrapper) {
+            if (auto weak = weakThis.get())
+            {
+                if (wrapper)
+                {
+                    weak->PropagateColorSchemeNamesRequested.raise(*weak, wrapper);
+                }
+            }
+        });
+        actionArgsVM.PropagateWindowRootRequested([weakThis = get_weak()](const IInspectable& /*sender*/, const Editor::ArgWrapper& wrapper) {
+            if (auto weak = weakThis.get())
+            {
+                if (wrapper)
+                {
+                    weak->PropagateWindowRootRequested.raise(*weak, wrapper);
+                }
+            }
+        });
         if (_IsNewCommand)
         {
             // for new commands, make sure we generate a new ID everytime any arg value changes
@@ -492,9 +512,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _NotifyChanges(L"DisplayName");
     }
 
-    ArgWrapper::ArgWrapper(const winrt::hstring& name, const winrt::hstring& type, const bool required, const Windows::Foundation::IInspectable& value) :
+    ArgWrapper::ArgWrapper(const winrt::hstring& name, const winrt::hstring& type, const bool required, const Model::ArgTag tag, const Windows::Foundation::IInspectable& value) :
         _name{ name },
         _type{ type },
+        _tag{ tag },
         _required{ required }
     {
         Value(value);
@@ -570,6 +591,57 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                  _type == L"Windows::Foundation::IReference<Windows::UI::Color>")
         {
             ColorSchemeRequested.raise(*this, *this);
+        }
+        else if (_tag == Model::ArgTag::ColorScheme)
+        {
+            // special case of string, emit an event letting the actionsVM know we need the list of color scheme names
+            ColorSchemeNamesRequested.raise(*this, *this);
+
+            // even though the arg type is technically a string, we want an enum list for color schemes specifically
+            std::vector<winrt::Microsoft::Terminal::Settings::Editor::EnumEntry> namesList;
+            const auto currentSchemeName = unbox_value<winrt::hstring>(_Value);
+            auto nullEntry = winrt::make<winrt::Microsoft::Terminal::Settings::Editor::implementation::EnumEntry>(RS_(L"Actions_NullEnumValue"), nullptr);
+            if (currentSchemeName.empty())
+            {
+                _EnumValue = nullEntry;
+            }
+            for (const auto colorSchemeName : _ColorSchemeNamesList)
+            {
+                // eventually we will want to use localized names for the enum entries, for now just use what the settings model gives us
+                auto entry = winrt::make<winrt::Microsoft::Terminal::Settings::Editor::implementation::EnumEntry>(colorSchemeName, winrt::box_value(colorSchemeName));
+                namesList.emplace_back(entry);
+                if (currentSchemeName == colorSchemeName)
+                {
+                    _EnumValue = entry;
+                }
+            }
+            std::sort(namesList.begin(), namesList.end(), EnumEntryReverseComparator<winrt::hstring>());
+            namesList.emplace_back(nullEntry);
+            _EnumList = winrt::single_threaded_observable_vector<winrt::Microsoft::Terminal::Settings::Editor::EnumEntry>(std::move(namesList));
+            _NotifyChanges(L"EnumList", L"EnumValue");
+        }
+    }
+
+    safe_void_coroutine ArgWrapper::Browse_Click(const IInspectable&, const RoutedEventArgs&)
+    {
+        WindowRootRequested.raise(*this, *this);
+        auto lifetime = get_strong();
+
+        static constexpr winrt::guid clientGuidFiles{ 0xbd00ae34, 0x839b, 0x43f6, { 0x8b, 0x94, 0x12, 0x37, 0x1a, 0xfe, 0xea, 0xb5 } };
+        const auto parentHwnd{ reinterpret_cast<HWND>(_WindowRoot.GetHostingWindow()) };
+        auto path = co_await OpenFilePicker(parentHwnd, [](auto&& dialog) {
+            THROW_IF_FAILED(dialog->SetClientGuid(clientGuidFiles));
+            try
+            {
+                auto folderShellItem{ winrt::capture<IShellItem>(&SHGetKnownFolderItem, FOLDERID_ComputerFolder, KF_FLAG_DEFAULT, nullptr) };
+                dialog->SetDefaultFolder(folderShellItem.get());
+            }
+            CATCH_LOG(); // non-fatal
+        });
+
+        if (!path.empty())
+        {
+            StringBindBack(path);
         }
     }
 
@@ -839,8 +911,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 const auto argDescription = shortcutArgs.GetArgDescriptionAt(i);
                 const auto argName = argDescription.Name;
                 const auto argType = argDescription.Type;
+                const auto argTag = argDescription.Tag;
                 const auto argRequired = argDescription.Required;
-                const auto item = make_self<ArgWrapper>(argName, argType, argRequired, argAtIndex);
+                const auto item = make_self<ArgWrapper>(argName, argType, argRequired, argTag, argAtIndex);
                 item->PropertyChanged([weakThis = get_weak(), i](const IInspectable& sender, const PropertyChangedEventArgs& args) {
                     if (auto weak = weakThis.get())
                     {
@@ -860,6 +933,24 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                         if (wrapper)
                         {
                             weak->PropagateColorSchemeRequested.raise(*weak, wrapper);
+                        }
+                    }
+                });
+                item->ColorSchemeNamesRequested([weakThis = get_weak()](const IInspectable& /*sender*/, const Editor::ArgWrapper& wrapper) {
+                    if (auto weak = weakThis.get())
+                    {
+                        if (wrapper)
+                        {
+                            weak->PropagateColorSchemeNamesRequested.raise(*weak, wrapper);
+                        }
+                    }
+                });
+                item->WindowRootRequested([weakThis = get_weak()](const IInspectable& /*sender*/, const Editor::ArgWrapper& wrapper) {
+                    if (auto weak = weakThis.get())
+                    {
+                        if (wrapper)
+                        {
+                            weak->PropagateWindowRootRequested.raise(*weak, wrapper);
                         }
                     }
                 });
@@ -1443,6 +1534,20 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
+    void ActionsViewModel::_CmdVMPropagateColorSchemeNamesRequestedHandler(const IInspectable& /*senderVM*/, const Editor::ArgWrapper& wrapper)
+    {
+        if (wrapper)
+        {
+            std::vector<winrt::hstring> namesList;
+            const auto schemes = _Settings.GlobalSettings().ColorSchemes();
+            for (const auto [name, _] : schemes)
+            {
+                namesList.emplace_back(name);
+            }
+            wrapper.ColorSchemeNamesList(winrt::single_threaded_vector<winrt::hstring>(std::move(namesList)));
+        }
+    }
+
     // Method Description:
     // - performs a search on KeyBindingList by key chord.
     // Arguments:
@@ -1481,5 +1586,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         cmdVM->DeleteRequested({ this, &ActionsViewModel::_CmdVMDeleteRequestedHandler });
         cmdVM->PropertyChanged({ this, &ActionsViewModel::_CmdVMPropertyChangedHandler });
         cmdVM->PropagateColorSchemeRequested({ this, &ActionsViewModel::_CmdVMPropagateColorSchemeRequestedHandler });
+        cmdVM->PropagateColorSchemeNamesRequested({ this, &ActionsViewModel::_CmdVMPropagateColorSchemeNamesRequestedHandler });
     }
 }

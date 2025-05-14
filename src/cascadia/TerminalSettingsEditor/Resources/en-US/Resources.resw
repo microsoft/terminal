@@ -2148,6 +2148,10 @@
     <value>No color</value>
     <comment>Label for a button directing the user to opt out of choosing a color.</comment>
   </data>
+  <data name="Actions_Browse.Content" xml:space="preserve">
+    <value>Browse...</value>
+    <comment>Button label that opens a file picker in a new window. The "..." is standard to mean it will open a new window.</comment>
+  </data>
   <data name="KeyChordListener.[using:Windows.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve">
     <value>Input your desired keyboard shortcut.</value>
     <comment>Help text directing users how to use the "KeyChordListener" control. Pressing a keyboard shortcut will be recorded by this control.</comment>

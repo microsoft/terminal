@@ -5,11 +5,19 @@ import "Command.idl";
 
 namespace Microsoft.Terminal.Settings.Model
 {
+    enum ArgTag
+    {
+        None = 0,
+        FilePath,
+        ColorScheme
+    };
+
     struct ArgDescription
     {
         String Name;
         String Type;
         Boolean Required;
+        ArgTag Tag;
     };
 
     interface IActionArgs

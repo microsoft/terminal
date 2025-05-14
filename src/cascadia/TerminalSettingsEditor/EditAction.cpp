@@ -21,7 +21,18 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void EditAction::OnNavigatedTo(const NavigationEventArgs& e)
     {
-        _ViewModel = e.Parameter().as<Editor::CommandViewModel>();
+        const auto args = e.Parameter().as<Editor::NavigateToCommandArgs>();
+        _ViewModel = args.Command();
+        _windowRoot = args.WindowRoot();
+        _ViewModel.PropagateWindowRootRequested([weakThis = get_weak()](const IInspectable& /*sender*/, const Editor::ArgWrapper& wrapper) {
+            if (auto weak = weakThis.get())
+            {
+                if (wrapper)
+                {
+                    wrapper.WindowRoot(weak->_windowRoot);
+                }
+            }
+        });
     }
 
     void EditAction::_choosingItemContainer(

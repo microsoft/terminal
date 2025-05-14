@@ -102,208 +102,208 @@ protected:                                                                  \
 // false, if we don't really care if the parameter is required or not.
 
 ////////////////////////////////////////////////////////////////////////////////
-#define COPY_TEXT_ARGS(X)                                               \
-    X(bool, DismissSelection, "dismissSelection", false, true)          \
-    X(bool, SingleLine, "singleLine", false, false)                     \
-    X(bool, WithControlSequences, "withControlSequences", false, false) \
-    X(Windows::Foundation::IReference<Control::CopyFormat>, CopyFormatting, "copyFormatting", false, nullptr)
+#define COPY_TEXT_ARGS(X)                                                             \
+    X(bool, DismissSelection, "dismissSelection", false, ArgTag::None, true)          \
+    X(bool, SingleLine, "singleLine", false, ArgTag::None, false)                     \
+    X(bool, WithControlSequences, "withControlSequences", false, ArgTag::None, false) \
+    X(Windows::Foundation::IReference<Control::CopyFormat>, CopyFormatting, "copyFormatting", false, ArgTag::None, nullptr)
 
 ////////////////////////////////////////////////////////////////////////////////
-#define MOVE_PANE_ARGS(X)                    \
-    X(uint32_t, TabIndex, "index", false, 0) \
-    X(winrt::hstring, Window, "window", false, L"")
+#define MOVE_PANE_ARGS(X)                                  \
+    X(uint32_t, TabIndex, "index", false, ArgTag::None, 0) \
+    X(winrt::hstring, Window, "window", false, ArgTag::None, L"")
 
 ////////////////////////////////////////////////////////////////////////////////
 #define SWITCH_TO_TAB_ARGS(X) \
-    X(uint32_t, TabIndex, "index", false, 0)
+    X(uint32_t, TabIndex, "index", false, ArgTag::None, 0)
 
 ////////////////////////////////////////////////////////////////////////////////
 #define RESIZE_PANE_ARGS(X) \
-    X(Model::ResizeDirection, ResizeDirection, "direction", args->ResizeDirection() == ResizeDirection::None, Model::ResizeDirection::None)
+    X(Model::ResizeDirection, ResizeDirection, "direction", args->ResizeDirection() == ResizeDirection::None, ArgTag::None, Model::ResizeDirection::None)
 
 ////////////////////////////////////////////////////////////////////////////////
 #define MOVE_FOCUS_ARGS(X) \
-    X(Model::FocusDirection, FocusDirection, "direction", args->FocusDirection() == Model::FocusDirection::None, Model::FocusDirection::None)
+    X(Model::FocusDirection, FocusDirection, "direction", args->FocusDirection() == Model::FocusDirection::None, ArgTag::None, Model::FocusDirection::None)
 
 ////////////////////////////////////////////////////////////////////////////////
 #define SWAP_PANE_ARGS(X) \
-    X(Model::FocusDirection, Direction, "direction", args->Direction() == Model::FocusDirection::None, Model::FocusDirection::None)
+    X(Model::FocusDirection, Direction, "direction", args->Direction() == Model::FocusDirection::None, ArgTag::None, Model::FocusDirection::None)
 
 ////////////////////////////////////////////////////////////////////////////////
 #define ADJUST_FONT_SIZE_ARGS(X) \
-    X(float, Delta, "delta", false, 0)
+    X(float, Delta, "delta", false, ArgTag::None, 0)
 
 ////////////////////////////////////////////////////////////////////////////////
 #define SEND_INPUT_ARGS(X) \
-    X(winrt::hstring, Input, "input", args->Input().empty(), L"")
+    X(winrt::hstring, Input, "input", args->Input().empty(), ArgTag::None, L"")
 
 ////////////////////////////////////////////////////////////////////////////////
 #define OPEN_SETTINGS_ARGS(X) \
-    X(SettingsTarget, Target, "target", false, SettingsTarget::SettingsFile)
+    X(SettingsTarget, Target, "target", false, ArgTag::None, SettingsTarget::SettingsFile)
 
 ////////////////////////////////////////////////////////////////////////////////
 #define SET_FOCUS_MODE_ARGS(X) \
-    X(bool, IsFocusMode, "isFocusMode", false, false)
+    X(bool, IsFocusMode, "isFocusMode", false, ArgTag::None, false)
 
 ////////////////////////////////////////////////////////////////////////////////
 #define SET_MAXIMIZED_ARGS(X) \
-    X(bool, IsMaximized, "isMaximized", false, false)
+    X(bool, IsMaximized, "isMaximized", false, ArgTag::None, false)
 
 ////////////////////////////////////////////////////////////////////////////////
 #define SET_FULL_SCREEN_ARGS(X) \
-    X(bool, IsFullScreen, "isFullScreen", false, false)
+    X(bool, IsFullScreen, "isFullScreen", false, ArgTag::None, false)
 
 ////////////////////////////////////////////////////////////////////////////////
 #define SET_MAXIMIZED_ARGS(X) \
-    X(bool, IsMaximized, "isMaximized", false, false)
+    X(bool, IsMaximized, "isMaximized", false, ArgTag::None, false)
 
 ////////////////////////////////////////////////////////////////////////////////
 #define SET_COLOR_SCHEME_ARGS(X) \
-    X(winrt::hstring, SchemeName, "colorScheme", args->SchemeName().empty(), L"")
+    X(winrt::hstring, SchemeName, "colorScheme", args->SchemeName().empty(), ArgTag::ColorScheme, L"")
 
 ////////////////////////////////////////////////////////////////////////////////
 #define SET_TAB_COLOR_ARGS(X) \
-    X(Windows::Foundation::IReference<Windows::UI::Color>, TabColor, "color", false, nullptr)
+    X(Windows::Foundation::IReference<Windows::UI::Color>, TabColor, "color", false, ArgTag::None, nullptr)
 
 ////////////////////////////////////////////////////////////////////////////////
 #define RENAME_TAB_ARGS(X) \
-    X(winrt::hstring, Title, "title", false, L"")
+    X(winrt::hstring, Title, "title", false, ArgTag::None, L"")
 
 ////////////////////////////////////////////////////////////////////////////////
 #define EXECUTE_COMMANDLINE_ARGS(X) \
-    X(winrt::hstring, Commandline, "commandline", args->Commandline().empty(), L"")
+    X(winrt::hstring, Commandline, "commandline", args->Commandline().empty(), ArgTag::None, L"")
 
 ////////////////////////////////////////////////////////////////////////////////
 #define CLOSE_OTHER_TABS_ARGS(X) \
-    X(Windows::Foundation::IReference<uint32_t>, Index, "index", false, nullptr)
+    X(Windows::Foundation::IReference<uint32_t>, Index, "index", false, ArgTag::None, nullptr)
 
 ////////////////////////////////////////////////////////////////////////////////
 #define CLOSE_TABS_AFTER_ARGS(X) \
-    X(Windows::Foundation::IReference<uint32_t>, Index, "index", false, nullptr)
+    X(Windows::Foundation::IReference<uint32_t>, Index, "index", false, ArgTag::None, nullptr)
 
 ////////////////////////////////////////////////////////////////////////////////
 #define CLOSE_TAB_ARGS(X) \
-    X(Windows::Foundation::IReference<uint32_t>, Index, "index", false, nullptr)
+    X(Windows::Foundation::IReference<uint32_t>, Index, "index", false, ArgTag::None, nullptr)
 
 ////////////////////////////////////////////////////////////////////////////////
 // Interestingly, the order MATTERS here. Window has to be BEFORE Direction,
 // because otherwise we won't have parsed the Window yet when we validate the
 // Direction.
-#define MOVE_TAB_ARGS(X)                            \
-    X(winrt::hstring, Window, "window", false, L"") \
-    X(MoveTabDirection, Direction, "direction", (args->Direction() == MoveTabDirection::None) && (args->Window().empty()), MoveTabDirection::None)
+#define MOVE_TAB_ARGS(X)                                          \
+    X(winrt::hstring, Window, "window", false, ArgTag::None, L"") \
+    X(MoveTabDirection, Direction, "direction", (args->Direction() == MoveTabDirection::None) && (args->Window().empty()), ArgTag::None, MoveTabDirection::None)
 
 // Other ideas:
 //  X(uint32_t, TabIndex, "index", false, 0) \ // target? source?
 
 ////////////////////////////////////////////////////////////////////////////////
 #define SCROLL_UP_ARGS(X) \
-    X(Windows::Foundation::IReference<uint32_t>, RowsToScroll, "rowsToScroll", false, nullptr)
+    X(Windows::Foundation::IReference<uint32_t>, RowsToScroll, "rowsToScroll", false, ArgTag::None, nullptr)
 
 ////////////////////////////////////////////////////////////////////////////////
 #define SCROLL_DOWN_ARGS(X) \
-    X(Windows::Foundation::IReference<uint32_t>, RowsToScroll, "rowsToScroll", false, nullptr)
+    X(Windows::Foundation::IReference<uint32_t>, RowsToScroll, "rowsToScroll", false, ArgTag::None, nullptr)
 
 ////////////////////////////////////////////////////////////////////////////////
 #define SCROLL_TO_MARK_ARGS(X) \
-    X(Microsoft::Terminal::Control::ScrollToMarkDirection, Direction, "direction", false, Microsoft::Terminal::Control::ScrollToMarkDirection::Previous)
+    X(Microsoft::Terminal::Control::ScrollToMarkDirection, Direction, "direction", false, ArgTag::None, Microsoft::Terminal::Control::ScrollToMarkDirection::Previous)
 
 ////////////////////////////////////////////////////////////////////////////////
 #define ADD_MARK_ARGS(X) \
-    X(Windows::Foundation::IReference<Microsoft::Terminal::Core::Color>, Color, "color", false, nullptr)
+    X(Windows::Foundation::IReference<Microsoft::Terminal::Core::Color>, Color, "color", false, ArgTag::None, nullptr)
 
 ////////////////////////////////////////////////////////////////////////////////
 #define TOGGLE_COMMAND_PALETTE_ARGS(X) \
-    X(CommandPaletteLaunchMode, LaunchMode, "launchMode", false, CommandPaletteLaunchMode::Action)
+    X(CommandPaletteLaunchMode, LaunchMode, "launchMode", false, ArgTag::None, CommandPaletteLaunchMode::Action)
 
 ////////////////////////////////////////////////////////////////////////////////
-#define SAVE_TASK_ARGS(X)                                                           \
-    X(winrt::hstring, Name, "name", false, L"")                                     \
-    X(winrt::hstring, Commandline, "commandline", args->Commandline().empty(), L"") \
-    X(winrt::hstring, KeyChord, "keyChord", false, L"")
+#define SAVE_TASK_ARGS(X)                                                                         \
+    X(winrt::hstring, Name, "name", false, ArgTag::None, L"")                                     \
+    X(winrt::hstring, Commandline, "commandline", args->Commandline().empty(), ArgTag::None, L"") \
+    X(winrt::hstring, KeyChord, "keyChord", false, ArgTag::None, L"")
 
 ////////////////////////////////////////////////////////////////////////////////
-#define SUGGESTIONS_ARGS(X)                                                 \
-    X(SuggestionsSource, Source, "source", false, SuggestionsSource::Tasks) \
-    X(bool, UseCommandline, "useCommandline", false, false)
+#define SUGGESTIONS_ARGS(X)                                                               \
+    X(SuggestionsSource, Source, "source", false, ArgTag::None, SuggestionsSource::Tasks) \
+    X(bool, UseCommandline, "useCommandline", false, ArgTag::None, false)
 
 ////////////////////////////////////////////////////////////////////////////////
 #define FIND_MATCH_ARGS(X) \
-    X(FindMatchDirection, Direction, "direction", args->Direction() == FindMatchDirection::None, FindMatchDirection::None)
+    X(FindMatchDirection, Direction, "direction", args->Direction() == FindMatchDirection::None, ArgTag::None, FindMatchDirection::None)
 
 ////////////////////////////////////////////////////////////////////////////////
 #define PREV_TAB_ARGS(X) \
-    X(Windows::Foundation::IReference<TabSwitcherMode>, SwitcherMode, "tabSwitcherMode", false, nullptr)
+    X(Windows::Foundation::IReference<TabSwitcherMode>, SwitcherMode, "tabSwitcherMode", false, ArgTag::None, nullptr)
 
 ////////////////////////////////////////////////////////////////////////////////
 #define NEXT_TAB_ARGS(X) \
-    X(Windows::Foundation::IReference<TabSwitcherMode>, SwitcherMode, "tabSwitcherMode", false, nullptr)
+    X(Windows::Foundation::IReference<TabSwitcherMode>, SwitcherMode, "tabSwitcherMode", false, ArgTag::None, nullptr)
 
 ////////////////////////////////////////////////////////////////////////////////
 #define RENAME_WINDOW_ARGS(X) \
-    X(winrt::hstring, Name, "name", false, L"")
+    X(winrt::hstring, Name, "name", false, ArgTag::None, L"")
 
 ////////////////////////////////////////////////////////////////////////////////
 #define SEARCH_FOR_TEXT_ARGS(X) \
-    X(winrt::hstring, QueryUrl, "queryUrl", false, L"")
+    X(winrt::hstring, QueryUrl, "queryUrl", false, ArgTag::None, L"")
 
 ////////////////////////////////////////////////////////////////////////////////
-#define GLOBAL_SUMMON_ARGS(X)                                                               \
-    X(winrt::hstring, Name, "name", false, L"")                                             \
-    X(Model::DesktopBehavior, Desktop, "desktop", false, Model::DesktopBehavior::ToCurrent) \
-    X(Model::MonitorBehavior, Monitor, "monitor", false, Model::MonitorBehavior::ToMouse)   \
-    X(bool, ToggleVisibility, "toggleVisibility", false, true)                              \
-    X(uint32_t, DropdownDuration, "dropdownDuration", false, 0)
+#define GLOBAL_SUMMON_ARGS(X)                                                                             \
+    X(winrt::hstring, Name, "name", false, ArgTag::None, L"")                                             \
+    X(Model::DesktopBehavior, Desktop, "desktop", false, ArgTag::None, Model::DesktopBehavior::ToCurrent) \
+    X(Model::MonitorBehavior, Monitor, "monitor", false, ArgTag::None, Model::MonitorBehavior::ToMouse)   \
+    X(bool, ToggleVisibility, "toggleVisibility", false, ArgTag::None, true)                              \
+    X(uint32_t, DropdownDuration, "dropdownDuration", false, ArgTag::None, 0)
 
 ////////////////////////////////////////////////////////////////////////////////
 #define FOCUS_PANE_ARGS(X) \
-    X(uint32_t, Id, "id", false, 0u)
+    X(uint32_t, Id, "id", false, ArgTag::None, 0u)
 
 ////////////////////////////////////////////////////////////////////////////////
 #define EXPORT_BUFFER_ARGS(X) \
-    X(winrt::hstring, Path, "path", false, L"")
+    X(winrt::hstring, Path, "path", false, ArgTag::FilePath, L"")
 
 ////////////////////////////////////////////////////////////////////////////////
 #define CLEAR_BUFFER_ARGS(X) \
-    X(winrt::Microsoft::Terminal::Control::ClearBufferType, Clear, "clear", false, winrt::Microsoft::Terminal::Control::ClearBufferType::All)
+    X(winrt::Microsoft::Terminal::Control::ClearBufferType, Clear, "clear", false, ArgTag::None, winrt::Microsoft::Terminal::Control::ClearBufferType::All)
 
 ////////////////////////////////////////////////////////////////////////////////
-#define ADJUST_OPACITY_ARGS(X)               \
-    X(int32_t, Opacity, "opacity", false, 0) \
-    X(bool, Relative, "relative", false, true)
+#define ADJUST_OPACITY_ARGS(X)                             \
+    X(int32_t, Opacity, "opacity", false, ArgTag::None, 0) \
+    X(bool, Relative, "relative", false, ArgTag::None, true)
 
 ////////////////////////////////////////////////////////////////////////////////
 #define SELECT_COMMAND_ARGS(X) \
-    X(SelectOutputDirection, Direction, "direction", false, SelectOutputDirection::Previous)
+    X(SelectOutputDirection, Direction, "direction", false, ArgTag::None, SelectOutputDirection::Previous)
 
 ////////////////////////////////////////////////////////////////////////////////
 #define SELECT_OUTPUT_ARGS(X) \
-    X(SelectOutputDirection, Direction, "direction", false, SelectOutputDirection::Previous)
+    X(SelectOutputDirection, Direction, "direction", false, ArgTag::None, SelectOutputDirection::Previous)
 
 ////////////////////////////////////////////////////////////////////////////////
-#define COLOR_SELECTION_ARGS(X)                                                                      \
-    X(winrt::Microsoft::Terminal::Control::SelectionColor, Foreground, "foreground", false, nullptr) \
-    X(winrt::Microsoft::Terminal::Control::SelectionColor, Background, "background", false, nullptr) \
-    X(winrt::Microsoft::Terminal::Core::MatchMode, MatchMode, "matchMode", false, winrt::Microsoft::Terminal::Core::MatchMode::None)
+#define COLOR_SELECTION_ARGS(X)                                                                                    \
+    X(winrt::Microsoft::Terminal::Control::SelectionColor, Foreground, "foreground", false, ArgTag::None, nullptr) \
+    X(winrt::Microsoft::Terminal::Control::SelectionColor, Background, "background", false, ArgTag::None, nullptr) \
+    X(winrt::Microsoft::Terminal::Core::MatchMode, MatchMode, "matchMode", false, ArgTag::None, winrt::Microsoft::Terminal::Core::MatchMode::None)
 
 ////////////////////////////////////////////////////////////////////////////////
-#define NEW_TERMINAL_ARGS(X)                                                                                           \
-    X(winrt::hstring, Commandline, "commandline", false, L"")                                                          \
-    X(winrt::hstring, StartingDirectory, "startingDirectory", false, L"")                                              \
-    X(winrt::hstring, TabTitle, "tabTitle", false, L"")                                                                \
-    X(Windows::Foundation::IReference<Windows::UI::Color>, TabColor, "tabColor", false, nullptr)                       \
-    X(Windows::Foundation::IReference<int32_t>, ProfileIndex, "index", false, nullptr)                                 \
-    X(winrt::hstring, Profile, "profile", false, L"")                                                                  \
-    X(Windows::Foundation::IReference<bool>, SuppressApplicationTitle, "suppressApplicationTitle", false, nullptr)     \
-    X(winrt::hstring, ColorScheme, "colorScheme", args->SchemeName().empty(), L"")                                     \
-    X(Windows::Foundation::IReference<bool>, Elevate, "elevate", false, nullptr)                                       \
-    X(Windows::Foundation::IReference<bool>, ReloadEnvironmentVariables, "reloadEnvironmentVariables", false, nullptr)
+#define NEW_TERMINAL_ARGS(X)                                                                                                                \
+    X(winrt::hstring, Commandline, "commandline", false, ArgTag::None, L"")                                                                 \
+    X(winrt::hstring, StartingDirectory, "startingDirectory", false, ArgTag::None, L"")                                                     \
+    X(winrt::hstring, TabTitle, "tabTitle", false, ArgTag::None, L"")                                                                       \
+    X(Windows::Foundation::IReference<Windows::UI::Color>, TabColor, "tabColor", false, ArgTag::None, nullptr)                              \
+    X(Windows::Foundation::IReference<int32_t>, ProfileIndex, "index", false, ArgTag::None, nullptr)                                        \
+    X(winrt::hstring, Profile, "profile", false, ArgTag::None, L"")                                                                         \
+    X(Windows::Foundation::IReference<bool>, SuppressApplicationTitle, "suppressApplicationTitle", false, ArgTag::None, nullptr)            \
+    X(winrt::hstring, ColorScheme, "colorScheme", args->SchemeName().empty(), ArgTag::ColorScheme, L"")                                     \
+    X(Windows::Foundation::IReference<bool>, Elevate, "elevate", false, ArgTag::None, nullptr)                                              \
+    X(Windows::Foundation::IReference<bool>, ReloadEnvironmentVariables, "reloadEnvironmentVariables", false, ArgTag::None, nullptr)
 
 ////////////////////////////////////////////////////////////////////////////////
-#define SPLIT_PANE_ARGS(X)                                                               \
-    X(Model::SplitDirection, SplitDirection, "split", false, SplitDirection::Automatic)  \
-    X(SplitType, SplitMode, "splitMode", false, SplitType::Manual)                       \
-    X(float, SplitSize, "size", false, 0.5f)
+#define SPLIT_PANE_ARGS(X)                                                                             \
+    X(Model::SplitDirection, SplitDirection, "split", false, ArgTag::None, SplitDirection::Automatic)  \
+    X(SplitType, SplitMode, "splitMode", false, ArgTag::None, SplitType::Manual)                       \
+    X(float, SplitSize, "size", false, ArgTag::None, 0.5f)
 
 ////////////////////////////////////////////////////////////////////////////////
 
