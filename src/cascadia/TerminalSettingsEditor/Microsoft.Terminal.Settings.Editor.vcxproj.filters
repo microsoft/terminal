@@ -29,6 +29,7 @@
     <Midl Include="LaunchViewModel.idl" />
     <Midl Include="EnumEntry.idl" />
     <Midl Include="SettingContainer.idl" />
+    <Midl Include="ArgsTemplateSelectors.idl" />
     <Midl Include="TerminalColorConverters.idl" />
     <Midl Include="NewTabMenuViewModel.idl" />
   </ItemGroup>
@@ -49,6 +50,8 @@
     <Page Include="Appearances.xaml" />
     <Page Include="Rendering.xaml" />
     <Page Include="Actions.xaml" />
+    <Page Include="NewActions.xaml" />
+    <Page Include="EditAction.xaml" />
     <Page Include="SettingContainerStyle.xaml" />
     <Page Include="AddProfile.xaml" />
     <Page Include="KeyChordListener.xaml" />

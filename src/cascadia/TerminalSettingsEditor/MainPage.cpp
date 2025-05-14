@@ -10,6 +10,7 @@
 #include "Rendering.h"
 #include "RenderingViewModel.h"
 #include "Actions.h"
+#include "NewActions.h"
 #include "ProfileViewModel.h"
 #include "GlobalAppearance.h"
 #include "GlobalAppearanceViewModel.h"
@@ -44,6 +45,7 @@ static const std::wstring_view interactionTag{ L"Interaction_Nav" };
 static const std::wstring_view renderingTag{ L"Rendering_Nav" };
 static const std::wstring_view compatibilityTag{ L"Compatibility_Nav" };
 static const std::wstring_view actionsTag{ L"Actions_Nav" };
+static const std::wstring_view newActionsTag{ L"NewActions_Nav" };
 static const std::wstring_view newTabMenuTag{ L"NewTabMenu_Nav" };
 static const std::wstring_view globalProfileTag{ L"GlobalProfile_Nav" };
 static const std::wstring_view addProfileTag{ L"AddProfile" };
@@ -112,6 +114,24 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             }
         });
 
+        _actionsVM = winrt::make<ActionsViewModel>(_settingsClone);
+        _actionsViewModelChangedRevoker = _actionsVM.PropertyChanged(winrt::auto_revoke, [=](auto&&, const PropertyChangedEventArgs& args) {
+            const auto settingName{ args.PropertyName() };
+            if (settingName == L"CurrentPage")
+            {
+                if (_actionsVM.CurrentPage() == ActionsSubPage::Edit)
+                {
+                    contentFrame().Navigate(xaml_typename<Editor::EditAction>(), winrt::make<implementation::NavigateToCommandArgs>(_actionsVM.CurrentCommand(), *this));
+                    const auto crumb = winrt::make<Breadcrumb>(box_value(newActionsTag), L"Edit Action...", BreadcrumbSubPage::Actions_Edit);
+                    _breadcrumbs.Append(crumb);
+                }
+                else if (_actionsVM.CurrentPage() == ActionsSubPage::Base)
+                {
+                    _Navigate(winrt::hstring{ newActionsTag }, BreadcrumbSubPage::None);
+                }
+            }
+        });
+
         // Make sure to initialize the profiles _after_ we have initialized the color schemes page VM, because we pass
         // that VM into the appearance VMs within the profiles
         _InitializeProfilesList();
@@ -161,6 +181,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _InitializeProfilesList();
         // Update the Nav State with the new version of the settings
         _colorSchemesPageVM.UpdateSettings(_settingsClone);
+        _actionsVM.UpdateSettings(_settingsClone);
         _newTabMenuPageVM.UpdateSettings(_settingsClone);
 
         // We'll update the profile in the _profilesNavState whenever we actually navigate to one
@@ -440,6 +461,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             contentFrame().Navigate(xaml_typename<Editor::Actions>(), winrt::make<ActionsViewModel>(_settingsClone));
             const auto crumb = winrt::make<Breadcrumb>(box_value(clickedItemTag), RS_(L"Nav_Actions/Content"), BreadcrumbSubPage::None);
             _breadcrumbs.Append(crumb);
+        }
+        else if (clickedItemTag == newActionsTag)
+        {
+            const auto crumb = winrt::make<Breadcrumb>(box_value(clickedItemTag), RS_(L"Nav_Actions/Content"), BreadcrumbSubPage::None);
+            _breadcrumbs.Append(crumb);
+            contentFrame().Navigate(xaml_typename<Editor::NewActions>(), _actionsVM);
+
+            if (subPage == BreadcrumbSubPage::Actions_Edit && _actionsVM.CurrentCommand() != nullptr)
+            {
+                _actionsVM.CurrentPage(ActionsSubPage::Edit);
+            }
         }
         else if (clickedItemTag == newTabMenuTag)
         {

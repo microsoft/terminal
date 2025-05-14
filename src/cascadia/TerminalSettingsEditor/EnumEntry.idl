@@ -8,4 +8,11 @@ namespace Microsoft.Terminal.Settings.Editor
         String EnumName { get; };
         IInspectable EnumValue { get; };
     }
+
+    [default_interface] runtimeclass FlagEntry : Windows.UI.Xaml.Data.INotifyPropertyChanged, Windows.Foundation.IStringable
+    {
+        String FlagName { get; };
+        IInspectable FlagValue { get; };
+        Boolean IsSet;
+    }
 }

@@ -1,0 +1,702 @@
+<!--
+    Copyright (c) Microsoft Corporation. All rights reserved. Licensed under
+    the MIT License. See LICENSE in the project root for license information.
+-->
+<Page x:Class="Microsoft.Terminal.Settings.Editor.EditAction"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+      xmlns:local="using:Microsoft.Terminal.Settings.Editor"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+      xmlns:mtu="using:Microsoft.Terminal.UI"
+      xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
+      mc:Ignorable="d">
+
+    <Page.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="CommonResources.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+            <!--  Theme Dictionary  -->
+            <ResourceDictionary.ThemeDictionaries>
+                <ResourceDictionary x:Key="Dark">
+                    <!--  KeyChordText styles  -->
+                    <Style x:Key="KeyChordBorderStyle"
+                           TargetType="Button">
+                        <Setter Property="BorderThickness" Value="1" />
+                        <Setter Property="CornerRadius" Value="1" />
+                        <Setter Property="Background" Value="{ThemeResource SystemAltMediumLowColor}" />
+                        <Setter Property="BorderBrush" Value="{ThemeResource SystemControlForegroundBaseMediumBrush}" />
+                        <!-- Override visual states -->
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="Button">
+                                    <Grid>
+                                        <VisualStateManager.VisualStateGroups>
+                                            <VisualStateGroup x:Name="CommonStates">
+                                                <VisualState x:Name="Normal" />
+                                                <VisualState x:Name="PointerOver">
+                                                    <Storyboard>
+                                                        <ObjectAnimationUsingKeyFrames Storyboard.TargetProperty="Background" Storyboard.TargetName="border">
+                                                            <DiscreteObjectKeyFrame KeyTime="0" Value="{ThemeResource SystemControlHighlightAccentRevealBackgroundBrush}"/>
+                                                        </ObjectAnimationUsingKeyFrames>
+                                                    </Storyboard>
+                                                </VisualState>
+                                                <VisualState x:Name="Pressed" />
+                                                <VisualState x:Name="Disabled" />
+                                            </VisualStateGroup>
+                                        </VisualStateManager.VisualStateGroups>
+
+                                        <!-- Define the appearance of the button -->
+                                        <Border x:Name="border"
+                                                Background="{TemplateBinding Background}"
+                                                BorderBrush="{TemplateBinding BorderBrush}"
+                                                BorderThickness="{TemplateBinding BorderThickness}"
+                                                CornerRadius="{TemplateBinding CornerRadius}">
+                                            <ContentPresenter HorizontalAlignment="Center"
+                                                              VerticalAlignment="Center" />
+                                        </Border>
+                                    </Grid>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+                    <Style x:Key="KeyChordTextBlockStyle"
+                           TargetType="TextBlock">
+                        <Setter Property="Foreground" Value="{ThemeResource SystemControlForegroundBaseMediumBrush}" />
+                    </Style>
+                </ResourceDictionary>
+                <ResourceDictionary x:Key="Light">
+                    <!--  KeyChordText styles  -->
+                    <Style x:Key="KeyChordBorderStyle"
+                           TargetType="Button">
+                        <Setter Property="BorderThickness" Value="1" />
+                        <Setter Property="CornerRadius" Value="1" />
+                        <Setter Property="Background" Value="{ThemeResource SystemAltMediumLowColor}" />
+                        <Setter Property="BorderBrush" Value="{ThemeResource SystemControlForegroundBaseMediumBrush}" />
+                        <!-- Override visual states -->
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="Button">
+                                    <Grid>
+                                        <VisualStateManager.VisualStateGroups>
+                                            <VisualStateGroup x:Name="CommonStates">
+                                                <VisualState x:Name="Normal" />
+                                                <VisualState x:Name="PointerOver">
+                                                    <Storyboard>
+                                                        <ObjectAnimationUsingKeyFrames Storyboard.TargetProperty="Background" Storyboard.TargetName="border">
+                                                            <DiscreteObjectKeyFrame KeyTime="0" Value="{ThemeResource SystemControlHighlightAccentRevealBackgroundBrush}"/>
+                                                        </ObjectAnimationUsingKeyFrames>
+                                                    </Storyboard>
+                                                </VisualState>
+                                                <VisualState x:Name="Pressed" />
+                                                <VisualState x:Name="Disabled" />
+                                            </VisualStateGroup>
+                                        </VisualStateManager.VisualStateGroups>
+
+                                        <!-- Define the appearance of the button -->
+                                        <Border x:Name="border"
+                                                Background="{TemplateBinding Background}"
+                                                BorderBrush="{TemplateBinding BorderBrush}"
+                                                BorderThickness="{TemplateBinding BorderThickness}"
+                                                CornerRadius="{TemplateBinding CornerRadius}">
+                                            <ContentPresenter HorizontalAlignment="Center"
+                                                              VerticalAlignment="Center" />
+                                        </Border>
+                                    </Grid>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+                    <Style x:Key="KeyChordTextBlockStyle"
+                           TargetType="TextBlock">
+                        <Setter Property="Foreground" Value="{ThemeResource SystemControlForegroundBaseMediumBrush}" />
+                    </Style>
+                </ResourceDictionary>
+                <ResourceDictionary x:Key="HighContrast">
+                    <!--  KeyChordText styles (use XAML defaults for High Contrast theme)  -->
+                    <Style x:Key="KeyChordBorderStyle"
+                           TargetType="Button" />
+                    <Style x:Key="KeyChordTextBlockStyle"
+                           TargetType="TextBlock" />
+                </ResourceDictionary>
+            </ResourceDictionary.ThemeDictionaries>
+
+            <GridLength x:Key="ArgumentNameWidth">148</GridLength>
+
+            <!--  Styles  -->
+            <Style x:Key="KeyBindingContainerStyle"
+                   BasedOn="{StaticResource DefaultListViewItemStyle}"
+                   TargetType="ListViewItem">
+                <Setter Property="Padding" Value="4" />
+                <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                <Setter Property="XYFocusKeyboardNavigation" Value="Enabled" />
+            </Style>
+            <Style x:Key="KeyChordEditorStyle"
+                   TargetType="local:KeyChordListener">
+                <Setter Property="HorizontalAlignment" Value="Left" />
+                <Setter Property="VerticalAlignment" Value="Center" />
+            </Style>
+            <x:Int32 x:Key="EditButtonSize">32</x:Int32>
+            <x:Double x:Key="EditButtonIconSize">15</x:Double>
+            <Style x:Key="EditButtonStyle"
+                   BasedOn="{StaticResource DefaultButtonStyle}"
+                   TargetType="Button">
+                <Setter Property="Padding" Value="0" />
+                <Setter Property="VerticalAlignment" Value="Center" />
+                <Setter Property="Height" Value="{StaticResource EditButtonSize}" />
+                <Setter Property="Width" Value="{StaticResource EditButtonSize}" />
+            </Style>
+            <Style x:Key="AccentEditButtonStyle"
+                   BasedOn="{StaticResource AccentButtonStyle}"
+                   TargetType="Button">
+                <Setter Property="Padding" Value="3" />
+                <Setter Property="VerticalAlignment" Value="Center" />
+                <Setter Property="Height" Value="{StaticResource EditButtonSize}" />
+                <Setter Property="Width" Value="{StaticResource EditButtonSize}" />
+            </Style>
+
+            <!--  Templates  -->
+            <DataTemplate x:Key="KeyChordTemplate"
+                          x:DataType="local:KeyChordViewModel">
+                <ListViewItem Style="{StaticResource KeyBindingContainerStyle}">
+                    <Grid Padding="2,0,2,0"
+                          VerticalAlignment="Center">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <Button Style="{ThemeResource KeyChordBorderStyle}"
+                                Click="{x:Bind ToggleEditMode}"
+                                Grid.Column="0"
+                                Visibility="{x:Bind mtu:Converters.InvertedBooleanToVisibility(IsInEditMode), Mode=OneWay}">
+                            <TextBlock FontSize="14"
+                                       Style="{ThemeResource KeyChordTextBlockStyle}"
+                                       Text="{x:Bind KeyChordText, Mode=OneWay}"
+                                       TextWrapping="WrapWholeWords"/>
+                        </Button>
+                        <Grid Grid.Column="0"
+                              ColumnSpacing="8"
+                              Visibility="{x:Bind IsInEditMode, Mode=OneWay}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <!--  Edit Mode: Key Chord Listener  -->
+                            <local:KeyChordListener Keys="{x:Bind ProposedKeys, Mode=TwoWay}"
+                                                    Style="{StaticResource KeyChordEditorStyle}"
+                                                    Grid.Column="0"/>
+
+                            <!--  Cancel editing the action  -->
+                            <Button x:Uid="Actions_CancelButton"
+                                    Style="{StaticResource EditButtonStyle}"
+                                    Click="{x:Bind CancelChanges}"
+                                    Grid.Column="1">
+                                <FontIcon FontSize="{StaticResource EditButtonIconSize}"
+                                          Glyph="&#xE711;" />
+                            </Button>
+
+                            <!--  Accept changes  -->
+                            <Button x:Uid="Actions_AcceptButton"
+                                    Style="{StaticResource AccentEditButtonStyle}"
+                                    Click="{x:Bind AttemptAcceptChanges}"
+                                    Flyout="{x:Bind AcceptChangesFlyout, Mode=OneWay}"
+                                    Grid.Column="2">
+                                <FontIcon FontSize="{StaticResource EditButtonIconSize}"
+                                          Glyph="&#xE8FB;" />
+                            </Button>
+                        </Grid>
+                        <Button Grid.Column="1"
+                                Margin="8,0,0,0"
+                                Style="{StaticResource DeleteSmallButtonStyle}">
+                            <Button.Content>
+                                <FontIcon FontSize="{StaticResource EditButtonIconSize}"
+                                          Glyph="&#xE74D;" />
+                            </Button.Content>
+                            <Button.Flyout>
+                                <Flyout>
+                                    <StackPanel>
+                                        <TextBlock x:Uid="Actions_DeleteConfirmationMessage"
+                                                   Style="{StaticResource CustomFlyoutTextStyle}" />
+                                        <Button x:Uid="Actions_DeleteConfirmationButton"
+                                                Click="{x:Bind DeleteKeyChord}" />
+                                    </StackPanel>
+                                </Flyout>
+                            </Button.Flyout>
+                        </Button>
+                    </Grid>
+                </ListViewItem>
+            </DataTemplate>
+
+            <DataTemplate x:Key="ListItemTemplate"
+                          x:DataType="local:ArgWrapper">
+                <ListViewItem HorizontalContentAlignment="Stretch" />
+            </DataTemplate>
+
+            <DataTemplate x:Key="NoArgTemplate"
+                          x:DataType="local:ArgWrapper">
+                <ListViewItem />
+            </DataTemplate>
+
+            <DataTemplate x:Key="Int32Template"
+                          x:DataType="local:ArgWrapper">
+                <ListViewItem>
+                    <Grid ColumnSpacing="8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="{StaticResource ArgumentNameWidth}" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="{x:Bind Name}"
+                                   VerticalAlignment="Center"
+                                   Grid.Column="0"/>
+                        <muxc:NumberBox Value="{x:Bind UnboxInt32(Value), Mode=TwoWay, BindBack=Int32BindBack}"
+                                        Style="{StaticResource NumberBoxSettingStyle}"
+                                        Minimum="0"
+                                        Maximum="999"
+                                        LargeChange="1"
+                                        SmallChange="1"
+                                        Grid.Column="1"/>
+                    </Grid>
+                </ListViewItem>
+            </DataTemplate>
+
+            <DataTemplate x:Key="UInt32Template"
+                          x:DataType="local:ArgWrapper">
+                <ListViewItem>
+                    <Grid ColumnSpacing="8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="{StaticResource ArgumentNameWidth}" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="{x:Bind Name}"
+                                   VerticalAlignment="Center"
+                                   Grid.Column="0"/>
+                        <muxc:NumberBox Value="{x:Bind UnboxUInt32(Value), Mode=TwoWay, BindBack=UInt32BindBack}"
+                                        Style="{StaticResource NumberBoxSettingStyle}"
+                                        Minimum="0"
+                                        Maximum="999"
+                                        LargeChange="1"
+                                        SmallChange="1"
+                                        Grid.Column="1"/>
+                    </Grid>
+                </ListViewItem>
+            </DataTemplate>
+
+            <DataTemplate x:Key="UInt32OptionalTemplate"
+                          x:DataType="local:ArgWrapper">
+                <ListViewItem>
+                    <Grid ColumnSpacing="8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="{StaticResource ArgumentNameWidth}" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="{x:Bind Name}"
+                                   VerticalAlignment="Center"
+                                   Grid.Column="0"/>
+                        <muxc:NumberBox Value="{x:Bind UnboxUInt32Optional(Value), Mode=TwoWay, BindBack=UInt32OptionalBindBack}"
+                                        Style="{StaticResource NumberBoxSettingStyle}"
+                                        Minimum="0"
+                                        Maximum="999"
+                                        LargeChange="1"
+                                        SmallChange="1"
+                                        Grid.Column="1"/>
+                    </Grid>
+                </ListViewItem>
+            </DataTemplate>
+
+            <DataTemplate x:Key="UInt64Template"
+                          x:DataType="local:ArgWrapper">
+                <ListViewItem>
+                    <Grid ColumnSpacing="8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="{StaticResource ArgumentNameWidth}" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="{x:Bind Name}"
+                                   VerticalAlignment="Center"
+                                   Grid.Column="0"/>
+                        <muxc:NumberBox Value="{x:Bind UnboxUInt64(Value), Mode=TwoWay, BindBack=UInt64BindBack}"
+                                        Style="{StaticResource NumberBoxSettingStyle}"
+                                        Minimum="0"
+                                        Maximum="999"
+                                        LargeChange="1"
+                                        SmallChange="1"
+                                        Grid.Column="1"/>
+                    </Grid>
+                </ListViewItem>
+            </DataTemplate>
+
+            <DataTemplate x:Key="Int32OptionalTemplate"
+                          x:DataType="local:ArgWrapper">
+                <ListViewItem>
+                    <Grid ColumnSpacing="8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="{StaticResource ArgumentNameWidth}" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="{x:Bind Name}"
+                                   VerticalAlignment="Center"
+                                   Grid.Column="0"/>
+                        <muxc:NumberBox Value="{x:Bind UnboxInt32Optional(Value), Mode=TwoWay, BindBack=Int32OptionalBindBack}"
+                                        Style="{StaticResource NumberBoxSettingStyle}"
+                                        Minimum="0"
+                                        Maximum="999"
+                                        LargeChange="1"
+                                        SmallChange="1"
+                                        Grid.Column="1"/>
+                    </Grid>
+                </ListViewItem>
+            </DataTemplate>
+
+            <DataTemplate x:Key="FloatTemplate"
+                          x:DataType="local:ArgWrapper">
+                <ListViewItem>
+                    <Grid ColumnSpacing="8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="{StaticResource ArgumentNameWidth}" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="{x:Bind Name}"
+                                   VerticalAlignment="Center"
+                                   Grid.Column="0"/>
+                        <muxc:NumberBox Value="{x:Bind UnboxFloat(Value), Mode=TwoWay, BindBack=FloatBindBack}"
+                                        Style="{StaticResource NumberBoxSettingStyle}"
+                                        Minimum="0"
+                                        Maximum="999"
+                                        LargeChange="1"
+                                        SmallChange="1"
+                                        Grid.Column="1"/>
+                    </Grid>
+                </ListViewItem>
+            </DataTemplate>
+
+            <DataTemplate x:Key="StringTemplate"
+                          x:DataType="local:ArgWrapper">
+                <ListViewItem>
+                    <Grid ColumnSpacing="8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="{StaticResource ArgumentNameWidth}" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="{x:Bind Name}"
+                                   VerticalAlignment="Center"
+                                   Grid.Column="0"/>
+                        <TextBox Text="{x:Bind UnboxString(Value), Mode=TwoWay, BindBack=StringBindBack}"
+                                 Grid.Column="1"/>
+                    </Grid>
+                </ListViewItem>
+            </DataTemplate>
+
+            <DataTemplate x:Key="ColorSchemeTemplate"
+                          x:DataType="local:ArgWrapper">
+                <ListViewItem>
+                    <Grid ColumnSpacing="8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="{StaticResource ArgumentNameWidth}" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="{x:Bind Name}"
+                                   VerticalAlignment="Center"
+                                   Grid.Column="0"/>
+                        <ComboBox ItemTemplate="{StaticResource EnumComboBoxTemplate}"
+                                  ItemsSource="{x:Bind EnumList, Mode=OneWay}"
+                                  SelectedItem="{x:Bind EnumValue, Mode=TwoWay}"
+                                  Style="{StaticResource ComboBoxSettingStyle}"
+                                  Grid.Column="1"/>
+                    </Grid>
+                </ListViewItem>
+            </DataTemplate>
+
+            <DataTemplate x:Key="FilePickerTemplate"
+                          x:DataType="local:ArgWrapper">
+                <ListViewItem>
+                    <Grid ColumnSpacing="8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="{StaticResource ArgumentNameWidth}" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="{x:Bind Name}"
+                                   VerticalAlignment="Center"
+                                   Grid.Column="0"/>
+                        <TextBox Text="{x:Bind UnboxString(Value), Mode=TwoWay, BindBack=StringBindBack}"
+                                 Grid.Column="1"/>
+                        <Button x:Uid="Actions_Browse"
+                                Click="{x:Bind Browse_Click}"
+                                Style="{StaticResource BrowseButtonStyle}"
+                                Grid.Column="2"/>
+                    </Grid>
+                </ListViewItem>
+            </DataTemplate>
+
+            <DataTemplate x:Key="GuidTemplate"
+                          x:DataType="local:ArgWrapper">
+                <ListViewItem>
+                    <Grid ColumnSpacing="8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="{StaticResource ArgumentNameWidth}" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="{x:Bind Name}"
+                                   VerticalAlignment="Center"
+                                   Grid.Column="0"/>
+                        <TextBox Text="{x:Bind UnboxGuid(Value), Mode=TwoWay, BindBack=GuidBindBack}"
+                                 Grid.Column="1"/>
+                    </Grid>
+                </ListViewItem>
+            </DataTemplate>
+
+            <DataTemplate x:Key="BoolTemplate"
+                          x:DataType="local:ArgWrapper">
+                <ListViewItem>
+                    <Grid ColumnSpacing="8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="{StaticResource ArgumentNameWidth}" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="{x:Bind Name}"
+                                   VerticalAlignment="Center"
+                                   Grid.Column="0"/>
+                        <ToggleSwitch IsOn="{x:Bind UnboxBool(Value), Mode=TwoWay, BindBack=BoolOptionalBindBack}"
+                                      Grid.Column="1"/>
+                    </Grid>
+                </ListViewItem>
+            </DataTemplate>
+
+            <DataTemplate x:Key="BoolOptionalTemplate"
+                          x:DataType="local:ArgWrapper">
+                <ListViewItem>
+                    <Grid ColumnSpacing="8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="{StaticResource ArgumentNameWidth}" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="{x:Bind Name}"
+                                   VerticalAlignment="Center"
+                                   Grid.Column="0"/>
+                        <CheckBox IsChecked="{x:Bind UnboxBoolOptional(Value), Mode=TwoWay, BindBack=BoolOptionalBindBack}"
+                                  IsThreeState="True"
+                                  Grid.Column="1"/>
+                    </Grid>
+                </ListViewItem>
+            </DataTemplate>
+
+            <DataTemplate x:Key="EnumComboBoxTemplate"
+                          x:DataType="local:EnumEntry">
+                <TextBlock Text="{x:Bind EnumName, Mode=OneWay}" />
+            </DataTemplate>
+
+            <DataTemplate x:Key="EnumTemplate"
+                          x:DataType="local:ArgWrapper">
+                <ListViewItem>
+                    <Grid ColumnSpacing="8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="{StaticResource ArgumentNameWidth}" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="{x:Bind Name}"
+                                   VerticalAlignment="Center"
+                                   Grid.Column="0"/>
+                        <ComboBox ItemTemplate="{StaticResource EnumComboBoxTemplate}"
+                                  ItemsSource="{x:Bind EnumList, Mode=OneWay}"
+                                  SelectedItem="{x:Bind EnumValue, Mode=TwoWay}"
+                                  Style="{StaticResource ComboBoxSettingStyle}"
+                                  Grid.Column="1"/>
+                    </Grid>
+                </ListViewItem>
+            </DataTemplate>
+
+            <DataTemplate x:Key="FlagItemTemplate"
+                          x:DataType="local:FlagEntry">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="40" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <CheckBox IsChecked="{x:Bind IsSet, Mode=TwoWay}"
+                              Grid.Column="0" />
+                    <TextBlock Text="{x:Bind FlagName, Mode=OneWay}"
+                               Grid.Column="1"
+                               VerticalAlignment="Center"
+                               Padding="0,0,0,4"/>
+                </Grid>
+            </DataTemplate>
+
+            <DataTemplate x:Key="FlagTemplate"
+                          x:DataType="local:ArgWrapper">
+                <ListViewItem>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="{StaticResource ArgumentNameWidth}" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="{x:Bind Name}"
+                                   VerticalAlignment="Center"
+                                   Grid.Column="0"/>
+                        <ListView ItemTemplate="{StaticResource FlagItemTemplate}"
+                                  SelectionMode="None"
+                                  ItemsSource="{x:Bind FlagList, Mode=OneWay}"
+                                  Grid.Column="1"
+                                  HorizontalAlignment="Left"
+                                  Padding="-8,0,0,0"
+                                  Margin="0"/>
+                    </Grid>
+                </ListViewItem>
+            </DataTemplate>
+
+            <DataTemplate x:Key="TerminalCoreColorOptionalTemplate"
+                          x:DataType="local:ArgWrapper">
+                <ListViewItem>
+                    <Grid ColumnSpacing="8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="{StaticResource ArgumentNameWidth}" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="{x:Bind Name}"
+                                   VerticalAlignment="Center"
+                                   Grid.Column="0"/>
+                        <local:NullableColorPicker x:Uid="Actions_NullableColorPicker"
+                                                   CurrentColor="{x:Bind UnboxTerminalCoreColorOptional(Value), Mode=TwoWay, BindBack=TerminalCoreColorBindBack}"
+                                                   ColorSchemeVM="{x:Bind DefaultColorScheme, Mode=OneWay}"
+                                                   NullColorPreview="{x:Bind DefaultColorScheme.ForegroundColor.Color, Mode=OneWay}"
+                                                   Grid.Column="1"/>
+                    </Grid>
+                </ListViewItem>
+            </DataTemplate>
+
+            <DataTemplate x:Key="WindowsUIColorOptionalTemplate"
+                          x:DataType="local:ArgWrapper">
+                <ListViewItem>
+                    <Grid ColumnSpacing="8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="{StaticResource ArgumentNameWidth}" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="{x:Bind Name}"
+                                   VerticalAlignment="Center"
+                                   Grid.Column="0"/>
+                        <local:NullableColorPicker x:Uid="Actions_NullableColorPicker"
+                                                   CurrentColor="{x:Bind UnboxWindowsUIColorOptional(Value), Mode=TwoWay, BindBack=WindowsUIColorBindBack}"
+                                                   ColorSchemeVM="{x:Bind DefaultColorScheme, Mode=OneWay}"
+                                                   NullColorPreview="{x:Bind DefaultColorScheme.ForegroundColor.Color, Mode=OneWay}"
+                                                   Grid.Column="1"/>
+                    </Grid>
+                </ListViewItem>
+            </DataTemplate>
+
+            <local:ArgsTemplateSelectors x:Key="ArgsTemplateSelector"
+                                         NoArgTemplate="{StaticResource NoArgTemplate}"
+                                         Int32Template="{StaticResource Int32Template}"
+                                         Int32OptionalTemplate="{StaticResource Int32OptionalTemplate}"
+                                         UInt32Template="{StaticResource UInt32Template}"
+                                         UInt32OptionalTemplate="{StaticResource UInt32OptionalTemplate}"
+                                         UInt64Template="{StaticResource UInt64Template}"
+                                         FloatTemplate="{StaticResource FloatTemplate}"
+                                         StringTemplate="{StaticResource StringTemplate}"
+                                         ColorSchemeTemplate="{StaticResource ColorSchemeTemplate}"
+                                         FilePickerTemplate="{StaticResource FilePickerTemplate}"
+                                         GuidTemplate="{StaticResource GuidTemplate}"
+                                         BoolTemplate="{StaticResource BoolTemplate}"
+                                         BoolOptionalTemplate="{StaticResource BoolOptionalTemplate}"
+                                         EnumTemplate="{StaticResource EnumTemplate}"
+                                         FlagTemplate="{StaticResource FlagTemplate}"
+                                         TerminalCoreColorOptionalTemplate="{StaticResource TerminalCoreColorOptionalTemplate}"
+                                         WindowsUIColorOptionalTemplate="{StaticResource WindowsUIColorOptionalTemplate}" />
+
+        </ResourceDictionary>
+    </Page.Resources>
+
+    <Border MaxWidth="{StaticResource StandardControlMaxWidth}"
+            Margin="{StaticResource SettingStackMargin}">
+        <Grid MaxWidth="600"
+              HorizontalAlignment="Left"
+              RowSpacing="8"
+              ColumnSpacing="16"
+              Margin="{StaticResource SettingStackMargin}">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <TextBlock x:Uid="Actions_Name"
+                       VerticalAlignment="Center"
+                       Grid.Column="0"
+                       Grid.Row="0" />
+            <TextBox Text="{x:Bind ViewModel.Name, Mode=TwoWay}"
+                     PlaceholderText="{x:Bind ViewModel.DisplayName, Mode=OneWay}"
+                     Grid.Row="0"
+                     Grid.Column="1"
+                     HorizontalAlignment="Left"
+                     Width="300" />
+            <TextBlock x:Uid="Actions_ShortcutAction"
+                       VerticalAlignment="Center"
+                       Grid.Column="0"
+                       Grid.Row="1"/>
+            <ComboBox VerticalAlignment="Center"
+                      ItemsSource="{x:Bind ViewModel.AvailableShortcutActions, Mode=OneWay}"
+                      SelectedItem="{x:Bind ViewModel.ProposedShortcutAction, Mode=TwoWay}"
+                      Grid.Row="1"
+                      Grid.Column="1"/>
+            <TextBlock x:Uid="Actions_Arguments"
+                       VerticalAlignment="Center"
+                       Grid.Column="0"
+                       Grid.Row="2"
+                       Visibility="{x:Bind ViewModel.ActionArgsVM.HasArgs, Mode=OneWay}"/>
+            <ListView ItemsSource="{x:Bind ViewModel.ActionArgsVM.ArgValues, Mode=OneWay}"
+                      ChoosingItemContainer="_choosingItemContainer"
+                      SelectionMode="None"
+                      AllowDrop="False"
+                      CanDragItems="False"
+                      CanReorderItems="False"
+                      Grid.Row="2"
+                      Grid.Column="1"
+                      Margin="-28,0,0,0">
+            </ListView>
+            <TextBlock x:Uid="Actions_Keybindings"
+                       VerticalAlignment="Center"
+                       Grid.Column="0"
+                       Grid.Row="3"/>
+            <ListView ItemTemplate="{StaticResource KeyChordTemplate}"
+                      ItemsSource="{x:Bind ViewModel.KeyChordViewModelList, Mode=OneWay}"
+                      SelectionMode="None"
+                      Grid.Row="3"
+                      Grid.Column="1">
+                <ListView.Header>
+                    <Button Click="{x:Bind ViewModel.AddKeybinding_Click}">
+                        <TextBlock x:Uid="Actions_AddKeyChord" />
+                    </Button>
+                </ListView.Header>
+            </ListView>
+            <Button Style="{StaticResource DeleteButtonStyle}"
+                    IsEnabled="{x:Bind ViewModel.IsUserAction, Mode=OneWay}"
+                    Grid.Row="4"
+                    Grid.Column="0">
+                <Button.Content>
+                    <StackPanel Orientation="Horizontal">
+                        <FontIcon FontSize="{StaticResource StandardIconSize}"
+                                  Glyph="&#xE74D;" />
+                        <TextBlock x:Uid="Actions_DeleteButton2"
+                                   Style="{StaticResource IconButtonTextBlockStyle}" />
+                    </StackPanel>
+                </Button.Content>
+                <Button.Flyout>
+                    <Flyout>
+                        <StackPanel>
+                            <TextBlock x:Uid="Actions_CommandDeleteConfirmationMessage"
+                                       Style="{StaticResource CustomFlyoutTextStyle}" />
+                            <Button x:Uid="Actions_CommandDeleteConfirmationButton"
+                                    Click="{x:Bind ViewModel.Delete_Click}" />
+                        </StackPanel>
+                    </Flyout>
+                </Button.Flyout>
+            </Button>
+        </Grid>
+    </Border>
+</Page>
