@@ -2105,7 +2105,7 @@
     <comment>Header for a control that adds any remaining profiles to the new tab menu.</comment>
   </data>
   <data name="NewTabMenu_AddMatchProfiles.HelpText" xml:space="preserve">
-    <value>Add a group of profiles that match at least one of the defined regex properties</value>
+    <value>Add a group of profiles that match at least one of the defined regular expression properties</value>
     <comment>Additional information for a control that adds a terminal profile matcher to the new tab menu. Presented near "NewTabMenu_AddMatchProfiles".</comment>
   </data>
   <data name="NewTabMenu_AddRemainingProfiles.HelpText" xml:space="preserve">
@@ -2121,15 +2121,15 @@
     <comment>Header for a control that adds a folder to the new tab menu.</comment>
   </data>
   <data name="NewTabMenu_AddMatchProfiles_Name.Header" xml:space="preserve">
-    <value>Profile name (Regex)</value>
+    <value>Profile name (regular expression)</value>
     <comment>Header for a text box used to define a regex for the names of profiles to add.</comment>
   </data>
   <data name="NewTabMenu_AddMatchProfiles_Source.Header" xml:space="preserve">
-    <value>Profile source (Regex)</value>
+    <value>Profile source (regular expression)</value>
     <comment>Header for a text box used to define a regex for the sources of profiles to add.</comment>
   </data>
   <data name="NewTabMenu_AddMatchProfiles_Commandline.Header" xml:space="preserve">
-    <value>Commandline (Regex)</value>
+    <value>Commandline (regular expression)</value>
     <comment>Header for a text box used to define a regex for the commandlines of profiles to add.</comment>
   </data>
   <data name="NewTabMenu_AddMatchProfilesTextBlock.Text" xml:space="preserve">
@@ -2362,7 +2362,7 @@
     <value>Clear cache</value>
   </data>
   <data name="Settings_ResetApplicationState.HelpText" xml:space="preserve">
-    <value>The cache stores data related to persisting sessions and automatic profile generation.</value>
+    <value>The cache stores data related to saved sessions and automatically generated profiles.</value>
   </data>
   <data name="Settings_ResetToDefaultSettingsButton.Content" xml:space="preserve">
     <value>Reset</value>
