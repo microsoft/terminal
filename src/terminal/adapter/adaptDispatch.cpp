@@ -160,13 +160,6 @@ void AdaptDispatch::_WriteToBuffer(const std::wstring_view string)
         }
         const auto textPositionAfter = state.text.data();
 
-        // TODO: A row should not be marked as wrapped just because we wrote the last column.
-        // It should be marked whenever we write _past_ it (above, _DoLineFeed call). See GH#15602.
-        if (wrapAtEOL && state.columnEnd >= state.columnLimit)
-        {
-            textBuffer.SetWrapForced(cursorPosition.y, true);
-        }
-
         if (state.columnBeginDirty != state.columnEndDirty)
         {
             const til::rect changedRect{ state.columnBeginDirty, cursorPosition.y, state.columnEndDirty, cursorPosition.y + 1 };
