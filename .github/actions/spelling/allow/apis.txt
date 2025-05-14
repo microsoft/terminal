@@ -292,4 +292,5 @@ xtree
 xutility
 YIcon
 YMax
+zstring
 zwstring
