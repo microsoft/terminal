@@ -925,9 +925,15 @@ void WindowEmperor::_finalizeSessionPersistence() const
 {
     const auto state = ApplicationState::SharedInstance();
 
-    if (_forcePersistence || _app.Logic().Settings().GlobalSettings().ShouldUsePersistedLayout())
+    // Calling an `ApplicationState` setter triggers a write to state.json.
+    // With this if condition we avoid an unnecessary write when persistence is disabled.
+    if (state.PersistedWindowLayouts())
     {
         state.PersistedWindowLayouts(nullptr);
+    }
+
+    if (_forcePersistence || _app.Logic().Settings().GlobalSettings().ShouldUsePersistedLayout())
+    {
         for (const auto& w : _windows)
         {
             w->Logic().PersistState();
