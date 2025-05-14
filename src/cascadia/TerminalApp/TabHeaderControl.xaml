@@ -9,6 +9,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:local="using:TerminalApp"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:mtu="using:Microsoft.Terminal.UI"
              xmlns:mux="using:Microsoft.UI.Xaml.Controls"
              MinHeight="16"
              mc:Ignorable="d">
@@ -67,6 +68,10 @@
                  IsSpellCheckEnabled="False"
                  LostFocus="RenameBoxLostFocusHandler"
                  MaxLength="1024"
-                 Visibility="Collapsed" />
+                 Visibility="Collapsed">
+            <TextBox.ContextFlyout>
+                <mtu:TextMenuFlyout />
+            </TextBox.ContextFlyout>
+        </TextBox>
     </StackPanel>
 </UserControl>

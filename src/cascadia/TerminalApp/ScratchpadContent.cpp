@@ -20,6 +20,7 @@ namespace winrt::TerminalApp::implementation
         _root.Background(bg.try_as<Media::Brush>());
 
         _box = winrt::Windows::UI::Xaml::Controls::TextBox{};
+        _box.ContextFlyout(winrt::Microsoft::Terminal::UI::TextMenuFlyout{});
         _box.Margin({ 10, 10, 10, 10 });
         _box.AcceptsReturn(true);
         _box.TextWrapping(TextWrapping::Wrap);
