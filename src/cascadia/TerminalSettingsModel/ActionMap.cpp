@@ -380,6 +380,15 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return _ResolvedKeyToActionMapCache.GetView();
     }
 
+    IVectorView<Model::Command> ActionMap::AllCommands()
+    {
+        if (!_ResolvedKeyToActionMapCache)
+        {
+            _RefreshKeyBindingCaches();
+        }
+        return _AllCommandsCache.GetView();
+    }
+
     void ActionMap::_RefreshKeyBindingCaches()
     {
         _CumulativeKeyToActionMapCache.clear();
@@ -387,6 +396,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         _CumulativeActionToKeyMapCache.clear();
         std::unordered_map<KeyChord, Model::Command, KeyChordHash, KeyChordEquality> globalHotkeys;
         std::unordered_map<KeyChord, Model::Command, KeyChordHash, KeyChordEquality> resolvedKeyToActionMap;
+        std::vector<Model::Command> allCommandsVector;
 
         _PopulateCumulativeKeyMaps(_CumulativeKeyToActionMapCache, _CumulativeActionToKeyMapCache);
         _PopulateCumulativeActionMap(_CumulativeIDToActionMapCache);
@@ -406,8 +416,14 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             }
         }
 
+        for (const auto& [_, cmd] : _CumulativeIDToActionMapCache)
+        {
+            allCommandsVector.emplace_back(cmd);
+        }
+
         _ResolvedKeyToActionMapCache = single_threaded_map(std::move(resolvedKeyToActionMap));
         _GlobalHotkeysCache = single_threaded_map(std::move(globalHotkeys));
+        _AllCommandsCache = single_threaded_vector(std::move(allCommandsVector));
     }
 
     com_ptr<ActionMap> ActionMap::Copy() const
@@ -421,7 +437,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         actionMap->_ActionMap.reserve(_ActionMap.size());
         for (const auto& [actionID, cmd] : _ActionMap)
         {
-            actionMap->_ActionMap.emplace(actionID, *winrt::get_self<Command>(cmd)->Copy());
+            const auto copiedCmd = winrt::get_self<Command>(cmd)->Copy();
+            actionMap->_ActionMap.emplace(actionID, *copiedCmd);
+            copiedCmd->IDChanged({ actionMap.get(), &ActionMap::_CommandIDChangedHandler });
         }
 
         // Name --> Command
@@ -541,6 +559,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                         }
                     }
                 }
+                cmd.IDChanged({ this, &ActionMap::_CommandIDChangedHandler });
                 _ActionMap.insert_or_assign(cmdID, cmd);
             }
         }
@@ -571,6 +590,44 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         const auto id = action == ShortcutAction::Invalid ? hstring{} : cmd.ID();
         _KeyMap.insert_or_assign(keys, id);
         _changeLog.emplace(KeysKey);
+    }
+
+    void ActionMap::_CommandIDChangedHandler(const Model::Command& senderCmd, const winrt::hstring& oldID)
+    {
+        const auto newID = senderCmd.ID();
+        if (newID != oldID)
+        {
+            if (const auto foundCmd{ _GetActionByID(newID) })
+            {
+                if (foundCmd.ActionAndArgs() != senderCmd.ActionAndArgs())
+                {
+                    // we found a command that has the same ID as this one, but that command has different ActionAndArgs
+                    // this means that foundCommand's action and/or args have been changed since its ID was generated,
+                    // generate a new one for it
+                    // Note: this is recursive! Found command's ID being changed lands us back in here to resolve any cascading collisions
+                    foundCmd.GenerateID();
+                }
+            }
+            // update _ActionMap with the ID change
+            _ActionMap.erase(oldID);
+            _ActionMap.emplace(newID, senderCmd);
+
+            // update _KeyMap so that all keys that pointed to the old ID now point to the new ID
+            std::unordered_set<KeyChord, KeyChordHash, KeyChordEquality> keysToRemap{};
+            for (const auto& [keys, cmdID] : _KeyMap)
+            {
+                if (cmdID == oldID)
+                {
+                    keysToRemap.insert(keys);
+                }
+            }
+            for (const auto& keys : keysToRemap)
+            {
+                _KeyMap.erase(keys);
+                _KeyMap.emplace(keys, newID);
+            }
+        }
+        _RefreshKeyBindingCaches();
     }
 
     // Method Description:
@@ -686,6 +743,24 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return nullptr;
     }
 
+    IVector<Control::KeyChord> ActionMap::AllKeyBindingsForAction(const winrt::hstring& cmdID)
+    {
+        if (!_ResolvedKeyToActionMapCache)
+        {
+            _RefreshKeyBindingCaches();
+        }
+
+        std::vector<Control::KeyChord> keybindingsList;
+        for (const auto& [key, ID] : _CumulativeKeyToActionMapCache)
+        {
+            if (ID == cmdID)
+            {
+                keybindingsList.emplace_back(key);
+            }
+        }
+        return single_threaded_vector(std::move(keybindingsList));
+    }
+
     // Method Description:
     // - Rebinds a key binding to a new key chord
     // Arguments:
@@ -741,6 +816,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
     }
 
+    void ActionMap::AddKeyBinding(Control::KeyChord keys, const winrt::hstring& cmdID)
+    {
+        _KeyMap.insert_or_assign(keys, cmdID);
+        _RefreshKeyBindingCaches();
+    }
+
     // Method Description:
     // - Add a new key binding
     // - If the key chord is already in use, the conflicting command is overwritten.
@@ -755,6 +836,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         cmd->ActionAndArgs(action);
         cmd->GenerateID();
         AddAction(*cmd, keys);
+    }
+
+    void ActionMap::DeleteUserCommand(const winrt::hstring& cmdID)
+    {
+        _ActionMap.erase(cmdID);
+        _RefreshKeyBindingCaches();
     }
 
     // This is a helper to aid in sorting commands by their `Name`s, alphabetically.

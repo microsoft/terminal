@@ -56,6 +56,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         Windows::Foundation::Collections::IMapView<hstring, Model::Command> NameMap();
         Windows::Foundation::Collections::IMapView<Control::KeyChord, Model::Command> GlobalHotkeys();
         Windows::Foundation::Collections::IMapView<Control::KeyChord, Model::Command> KeyBindings();
+        Windows::Foundation::Collections::IVectorView<Model::Command> AllCommands();
         com_ptr<ActionMap> Copy() const;
 
         // queries
@@ -63,6 +64,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         Model::Command GetActionByID(const winrt::hstring& cmdID) const;
         bool IsKeyChordExplicitlyUnbound(const Control::KeyChord& keys) const;
         Control::KeyChord GetKeyBindingForAction(const winrt::hstring& cmdID);
+        Windows::Foundation::Collections::IVector<Control::KeyChord> AllKeyBindingsForAction(const winrt::hstring& cmdID);
 
         // population
         void AddAction(const Model::Command& cmd, const Control::KeyChord& keys);
@@ -78,7 +80,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         // modification
         bool RebindKeys(const Control::KeyChord& oldKeys, const Control::KeyChord& newKeys);
         void DeleteKeyBinding(const Control::KeyChord& keys);
+        void AddKeyBinding(Control::KeyChord keys, const winrt::hstring& cmdID);
         void RegisterKeyBinding(Control::KeyChord keys, Model::ActionAndArgs action);
+        void DeleteUserCommand(const winrt::hstring& cmdID);
         void AddSendInputAction(winrt::hstring name, winrt::hstring input, const Control::KeyChord keys);
 
         Windows::Foundation::Collections::IVector<Model::Command> ExpandedCommands();
@@ -104,6 +108,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void _TryUpdateKeyChord(const Model::Command& cmd, const Control::KeyChord& keys);
 
         static std::unordered_map<hstring, Model::Command> _loadLocalSnippets(const std::filesystem::path& currentWorkingDirectory);
+
+        void _CommandIDChangedHandler(const Model::Command& senderCmd, const winrt::hstring& oldID);
 
         Windows::Foundation::Collections::IMap<hstring, Model::ActionAndArgs> _AvailableActionsCache{ nullptr };
         Windows::Foundation::Collections::IMap<hstring, Model::Command> _NameMapCache{ nullptr };
@@ -136,6 +142,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         // This is effectively a combination of _CumulativeKeyMapCache and _CumulativeActionMapCache and its purpose is so that
         // we can give the SUI a view of the key chords and the commands they map to
         Windows::Foundation::Collections::IMap<Control::KeyChord, Model::Command> _ResolvedKeyToActionMapCache{ nullptr };
+        Windows::Foundation::Collections::IVector<Model::Command> _AllCommandsCache{ nullptr };
 
         til::shared_mutex<std::unordered_map<std::filesystem::path, std::unordered_map<hstring, Model::Command>>> _cwdLocalSnippetsCache{};
 

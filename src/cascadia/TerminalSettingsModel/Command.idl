@@ -35,13 +35,17 @@ namespace Microsoft.Terminal.Settings.Model
     [default_interface] runtimeclass Command : ISettingsModelObject
     {
         Command();
+        static Command NewUserCommand();
+        static Command CopyAsUserCommand(Command originalCmd);
 
-        String Name { get; };
-        String ID { get; };
+        String Name;
+        Boolean HasName();
+        String ID;
+        void GenerateID();
 
         String Description { get; };
 
-        ActionAndArgs ActionAndArgs { get; };
+        ActionAndArgs ActionAndArgs;
 
         String IconPath;
 
@@ -51,5 +55,6 @@ namespace Microsoft.Terminal.Settings.Model
         static IVector<Command> ParsePowerShellMenuComplete(String json, Int32 replaceLength);
         static IVector<Command> HistoryToCommands(IVector<String> commandHistory, String commandline, Boolean directories, String iconPath);
 
+        event Windows.Foundation.TypedEventHandler<Command, String> IDChanged;
     }
 }

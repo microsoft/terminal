@@ -115,6 +115,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         static winrt::hstring ApplicationVersion();
         static bool IsPortableMode();
 
+        static Windows::Foundation::Collections::IMap<Model::ShortcutAction, winrt::hstring> AvailableShortcutActionsAndNames();
+        static Model::IActionArgs GetEmptyArgsForAction(Model::ShortcutAction shortcutAction);
+
         CascadiaSettings() noexcept = default;
         CascadiaSettings(const winrt::hstring& userJSON, const winrt::hstring& inboxJSON);
         CascadiaSettings(const std::string_view& userJSON, const std::string_view& inboxJSON = {});
