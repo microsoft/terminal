@@ -130,7 +130,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void _addUserProfileParent(const winrt::com_ptr<implementation::Profile>& profile);
         bool _addOrMergeUserColorScheme(const winrt::com_ptr<implementation::ColorScheme>& colorScheme);
         static void _executeGenerator(IDynamicProfileGenerator& generator, std::vector<winrt::com_ptr<implementation::Profile>>& profilesList);
-        void _patchInstallPowerShellProfile();
+        void _patchInstallPowerShellProfile(bool isPowerShellInstalled);
         winrt::com_ptr<implementation::ExtensionPackage> _registerFragment(const winrt::Microsoft::Terminal::Settings::Model::FragmentSettings& fragment, FragmentScope scope);
         Json::StreamWriterBuilder _getJsonStyledWriter();
 
