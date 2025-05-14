@@ -75,7 +75,7 @@ private:
     UINT WM_TASKBARCREATED = 0;
     HMENU _currentWindowMenu = nullptr;
     bool _notificationIconShown = false;
-    bool _forcePersistence = false;
+    bool _skipPersistence = false;
     bool _needsPersistenceCleanup = false;
     std::optional<bool> _currentSystemThemeIsDark;
     int32_t _windowCount = 0;
