@@ -544,6 +544,7 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         ALTERNATE_SCROLL = DECPrivateMode(1007),
         ASB_AlternateScreenBuffer = DECPrivateMode(1049),
         XTERM_BracketedPasteMode = DECPrivateMode(2004),
+        SO_SynchronizedOutput = DECPrivateMode(2026),
         GCM_GraphemeClusterMode = DECPrivateMode(2027),
         W32IM_Win32InputMode = DECPrivateMode(9001),
     };

@@ -71,8 +71,11 @@ public:
     void TabSet(const VTParameter /*setType*/) override {} // DECST8C
     void SetColorTableEntry(const size_t /*tableIndex*/, const DWORD /*color*/) override {} // OSCSetColorTable
     void RequestColorTableEntry(const size_t /*tableIndex*/) override {} // OSCGetColorTable
-    void SetXtermColorResource(const size_t /*resource*/, const DWORD /*color*/) override {} // OSCSetDefaultForeground, OSCSetDefaultBackground, OSCSetCursorColor, OSCResetCursorColor
+    void ResetColorTable() override {} // OSCResetColorTable
+    void ResetColorTableEntry(const size_t /*tableIndex*/) override {} // OSCResetColorTable
+    void SetXtermColorResource(const size_t /*resource*/, const DWORD /*color*/) override {} // OSCSetDefaultForeground, OSCSetDefaultBackground, OSCSetCursorColor
     void RequestXtermColorResource(const size_t /*resource*/) override {} // OSCGetDefaultForeground, OSCGetDefaultBackground, OSCGetCursorColor
+    void ResetXtermColorResource(const size_t /*resource*/) override {} // OSCResetForegroundColor, OSCResetBackgroundColor, OSCResetCursorColor, OSCResetHighlightColor
     void AssignColor(const DispatchTypes::ColorItem /*item*/, const VTInt /*fgIndex*/, const VTInt /*bgIndex*/) override {} // DECAC
 
     void EraseInDisplay(const DispatchTypes::EraseType /* eraseType*/) override {} // ED

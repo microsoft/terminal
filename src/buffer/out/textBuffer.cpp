@@ -2062,14 +2062,6 @@ void TextBuffer::_ExpandTextRow(til::inclusive_rect& textRow) const
     }
 }
 
-size_t TextBuffer::SpanLength(const til::point coordStart, const til::point coordEnd) const
-{
-    const auto bufferSize = GetSize();
-    // The coords are inclusive, so to get the (inclusive) length we add 1.
-    const auto length = bufferSize.CompareInBounds(coordEnd, coordStart) + 1;
-    return gsl::narrow<size_t>(length);
-}
-
 // Routine Description:
 // - Retrieves the plain text data between the specified coordinates.
 // Arguments:
@@ -2287,7 +2279,7 @@ std::string TextBuffer::GenHTML(const CopyRequest& req,
                 fmt::format_to(std::back_inserter(htmlBuilder), FMT_COMPILE("color:{};"), fgHex);
                 fmt::format_to(std::back_inserter(htmlBuilder), FMT_COMPILE("background-color:{};"), bgHex);
 
-                if (isIntenseBold && attr.IsIntense())
+                if (attr.IsBold(isIntenseBold))
                 {
                     htmlBuilder += "font-weight:bold;";
                 }
@@ -2537,7 +2529,7 @@ std::string TextBuffer::GenRTF(const CopyRequest& req,
                 fmt::format_to(std::back_inserter(contentBuilder), FMT_COMPILE("\\cf{}"), fgIdx);
                 fmt::format_to(std::back_inserter(contentBuilder), FMT_COMPILE("\\chshdng0\\chcbpat{}"), bgIdx);
 
-                if (isIntenseBold && attr.IsIntense())
+                if (attr.IsBold(isIntenseBold))
                 {
                     contentBuilder += "\\b";
                 }

@@ -199,8 +199,6 @@ public:
     std::wstring GetCustomIdFromId(uint16_t id) const;
     void CopyHyperlinkMaps(const TextBuffer& OtherBuffer);
 
-    size_t SpanLength(const til::point coordStart, const til::point coordEnd) const;
-
     std::wstring GetPlainText(til::point start, til::point end) const;
 
     struct CopyRequest

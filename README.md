@@ -340,6 +340,19 @@ If you would like to ask a question that you feel doesn't warrant an issue
 
 ## Prerequisites
 
+You can configure your environment to build Terminal in one of two ways:
+
+### Using WinGet configuration file
+
+After cloning the repository, you can use a [WinGet configuration file](https://learn.microsoft.com/en-us/windows/package-manager/configuration/#use-a-winget-configuration-file-to-configure-your-machine)
+to set up your environment. The [default configuration file](.config/configuration.winget) installs Visual Studio 2022 Community & rest of the required tools. There are two other variants of the configuration file available in the [.config](.config) directory for Enterprise & Professional editions of Visual Studio 2022. To run the default configuration file, you can either double-click the file from explorer or run the following command:
+
+```powershell
+winget configure .config\configuration.winget
+```
+
+### Manual configuration
+
 * You must be running Windows 10 2004 (build >= 10.0.19041.0) or later to run
   Windows Terminal
 * You must [enable Developer Mode in the Windows Settings

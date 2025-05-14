@@ -222,6 +222,7 @@ Stubless
 Subheader
 Subpage
 syscall
+syscolors
 SYSTEMBACKDROP
 TABROW
 TASKBARCREATED
@@ -289,4 +290,5 @@ xtree
 xutility
 YIcon
 YMax
+zstring
 zwstring
