@@ -963,39 +963,30 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         while (!directory.empty())
         {
             directories.push_back(directory);
-            const auto parentPath = directory.parent_path();
+            auto parentPath = directory.parent_path();
             if (directory == parentPath)
             {
                 break;
             }
-            directory = parentPath;
+            directory = std::move(parentPath);
         }
 
         {
             // Check if all the directories are already in the cache
             const auto& cache{ _cwdLocalSnippetsCache.lock_shared() };
-
-            bool allSnippetsCached = true;
-            for (const auto& dir : directories)
-            {
-                if (!cache->contains(dir))
-                {
-                    allSnippetsCached = false;
-                    break;
-                }
-            }
-            if (allSnippetsCached)
+            if (std::ranges::all_of(directories, [&](auto&& dir) { return cache->contains(dir); }))
             {
                 // Load snippets from directories in reverse order.
                 // This ensures that we prioritize snippets closer to the cwd.
                 // The map makes it easy to avoid duplicates.
                 std::unordered_map<hstring, Model::Command> localSnippetsMap;
-                for (decltype(directories)::reverse_iterator rit = directories.rbegin(); rit != directories.rend(); ++rit)
+                for (auto rit = directories.rbegin(); rit != directories.rend(); ++rit)
                 {
                     // register snippets from cache
-                    std::ranges::for_each(cache->at(*rit), [&localSnippetsMap](const auto& kvPair) {
-                        localSnippetsMap.insert_or_assign(kvPair.first, kvPair.second);
-                    });
+                    for (const auto& [name, snippet] : cache->at(*rit))
+                    {
+                        localSnippetsMap.insert_or_assign(name, snippet);
+                    }
                 }
 
                 std::vector<Model::Command> localSnippets;
@@ -1017,15 +1008,16 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         // The map makes it easy to avoid duplicates.
         const auto& cache{ _cwdLocalSnippetsCache.lock() };
         std::unordered_map<hstring, Model::Command> localSnippetsMap;
-        for (decltype(directories)::reverse_iterator rit = directories.rbegin(); rit != directories.rend(); ++rit)
+        for (auto rit = directories.rbegin(); rit != directories.rend(); ++rit)
         {
             const auto& dir = *rit;
             if (const auto cacheIterator = cache->find(dir); cacheIterator != cache->end())
             {
                 // register snippets from cache
-                std::ranges::for_each(cacheIterator->second, [&localSnippetsMap](const auto& kvPair) {
-                    localSnippetsMap.insert_or_assign(kvPair.first, kvPair.second);
-                });
+                for (const auto& [name, snippet] : cache->at(*rit))
+                {
+                    localSnippetsMap.insert_or_assign(name, snippet);
+                }
             }
             else
             {
