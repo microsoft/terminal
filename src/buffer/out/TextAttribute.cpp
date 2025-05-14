@@ -232,6 +232,11 @@ void TextAttribute::SetRightVerticalDisplayed(const bool isDisplayed) noexcept
     WI_UpdateFlag(_attrs, CharacterAttributes::RightGridline, isDisplayed);
 }
 
+bool TextAttribute::IsBold(const bool intenseIsBold) const noexcept
+{
+    return IsIntense() && (intenseIsBold || !_foreground.CanBeBrightened());
+}
+
 bool TextAttribute::IsIntense() const noexcept
 {
     return WI_IsFlagSet(_attrs, CharacterAttributes::Intense);

@@ -12,6 +12,7 @@
 #include "../../buffer/out/UTextAdapter.h"
 
 #include <til/hash.h>
+#include <til/regex.h>
 #include <winrt/Microsoft.Terminal.Core.h>
 
 using namespace winrt::Microsoft::Terminal::Core;
@@ -1375,7 +1376,7 @@ struct URegularExpressionInterner
     //
     // An alternative approach would be to not make this method thread-safe and give each
     // Terminal instance its own cache. I'm not sure which approach would have been better.
-    ICU::unique_uregex Intern(const std::wstring_view& pattern)
+    til::ICU::unique_uregex Intern(const std::wstring_view& pattern)
     {
         UErrorCode status = U_ZERO_ERROR;
 
@@ -1383,14 +1384,14 @@ struct URegularExpressionInterner
             const auto guard = _lock.lock_shared();
             if (const auto it = _cache.find(pattern); it != _cache.end())
             {
-                return ICU::unique_uregex{ uregex_clone(it->second.re.get(), &status) };
+                return til::ICU::unique_uregex{ uregex_clone(it->second.re.get(), &status) };
             }
         }
 
         // Even if the URegularExpression creation failed, we'll insert it into the cache, because there's no point in retrying.
         // (Apart from OOM but in that case this application will crash anyways in 3.. 2.. 1..)
-        auto re = ICU::CreateRegex(pattern, 0, &status);
-        ICU::unique_uregex clone{ uregex_clone(re.get(), &status) };
+        auto re = til::ICU::CreateRegex(pattern, 0, &status);
+        til::ICU::unique_uregex clone{ uregex_clone(re.get(), &status) };
         std::wstring key{ pattern };
 
         const auto guard = _lock.lock_exclusive();
@@ -1412,7 +1413,7 @@ struct URegularExpressionInterner
 private:
     struct CacheValue
     {
-        ICU::unique_uregex re;
+        til::ICU::unique_uregex re;
         size_t generation = 0;
     };
 

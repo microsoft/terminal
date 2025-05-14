@@ -944,4 +944,7 @@
   <data name="TabMoveRight" xml:space="preserve">
     <value>Move right</value>
   </data>
+  <data name="InvalidRegex" xml:space="preserve">
+    <value>An invalid regex was found.</value>
+  </data>
 </root>
