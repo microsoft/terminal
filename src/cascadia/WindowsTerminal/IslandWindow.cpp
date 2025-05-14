@@ -61,7 +61,10 @@ void IslandWindow::HideCursor() noexcept
 
 void IslandWindow::ShowCursorMaybe(const UINT message) noexcept
 {
-    if (_cursorHidden && (message == WM_ACTIVATE || message == WM_POINTERUPDATE))
+    if (_cursorHidden &&
+        (message == WM_ACTIVATE ||
+         message == WM_POINTERUPDATE ||
+         message == WM_NCPOINTERUPDATE))
     {
         _cursorHidden = false;
         ShowCursor(TRUE);

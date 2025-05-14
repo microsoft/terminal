@@ -55,6 +55,7 @@ static const std::array settingsLoadWarningsLabels{
     USES_RESOURCE(L"UnknownTheme"),
     USES_RESOURCE(L"DuplicateRemainingProfilesEntry"),
     USES_RESOURCE(L"InvalidUseOfContent"),
+    USES_RESOURCE(L"InvalidRegex"),
 };
 
 static_assert(settingsLoadWarningsLabels.size() == static_cast<size_t>(SettingsLoadWarnings::WARNINGS_SIZE));
@@ -265,11 +266,11 @@ namespace winrt::TerminalApp::implementation
         AppLogic::Current()->NotifyRootInitialized();
     }
 
-    void TerminalWindow::PersistState()
+    void TerminalWindow::PersistState(bool serializeBuffer)
     {
         if (_root)
         {
-            _root->PersistState();
+            _root->PersistState(serializeBuffer);
         }
     }
 

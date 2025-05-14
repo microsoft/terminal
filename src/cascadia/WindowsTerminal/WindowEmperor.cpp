@@ -314,6 +314,7 @@ void WindowEmperor::HandleCommandlineArgs(int nCmdShow)
     _createMessageWindow(windowClassName.c_str());
     _setupGlobalHotkeys();
     _checkWindowsForNotificationIcon();
+    _setupSessionPersistence(_app.Logic().Settings().GlobalSettings().ShouldUsePersistedLayout());
 
     // When the settings change, we'll want to update our global hotkeys
     // and our notification icon based on the new settings.
@@ -323,6 +324,7 @@ void WindowEmperor::HandleCommandlineArgs(int nCmdShow)
             _assertIsMainThread();
             _setupGlobalHotkeys();
             _checkWindowsForNotificationIcon();
+            _setupSessionPersistence(args.NewSettings().GlobalSettings().ShouldUsePersistedLayout());
         }
     });
 
@@ -922,17 +924,22 @@ LRESULT WindowEmperor::_messageHandler(HWND window, UINT const message, WPARAM c
     return DefWindowProcW(window, message, wParam, lParam);
 }
 
-void WindowEmperor::_finalizeSessionPersistence() const
+void WindowEmperor::_setupSessionPersistence(bool enabled)
 {
-    if (_skipPersistence)
+    if (!enabled)
     {
-        // We received WM_ENDSESSION and persisted the state.
-        // We don't need to persist it again.
+        _persistStateTimer.Stop();
         return;
     }
+    _persistStateTimer.Interval(std::chrono::minutes(5));
+    _persistStateTimer.Tick([&](auto&&, auto&&) {
+        _persistState(ApplicationState::SharedInstance(), false);
+    });
+    _persistStateTimer.Start();
+}
 
-    const auto state = ApplicationState::SharedInstance();
-
+void WindowEmperor::_persistState(const ApplicationState& state, bool serializeBuffer) const
+{
     // Calling an `ApplicationState` setter triggers a write to state.json.
     // With this if condition we avoid an unnecessary write when persistence is disabled.
     if (state.PersistedWindowLayouts())
@@ -944,12 +951,26 @@ void WindowEmperor::_finalizeSessionPersistence() const
     {
         for (const auto& w : _windows)
         {
-            w->Logic().PersistState();
+            w->Logic().PersistState(serializeBuffer);
         }
     }
 
-    // Ensure to write the state.json before we TerminateProcess()
+    // Ensure to write the state.json
     state.Flush();
+}
+
+void WindowEmperor::_finalizeSessionPersistence() const
+{
+    if (_skipPersistence)
+    {
+        // We received WM_ENDSESSION and persisted the state.
+        // We don't need to persist it again.
+        return;
+    }
+
+    const auto state = ApplicationState::SharedInstance();
+
+    _persistState(state, true);
 
     if (_needsPersistenceCleanup)
     {

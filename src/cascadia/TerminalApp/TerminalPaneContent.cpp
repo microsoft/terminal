@@ -141,7 +141,7 @@ namespace winrt::TerminalApp::implementation
             // "attach existing" rather than a "create"
             args.ContentId(_control.ContentId());
             break;
-        case BuildStartupKind::Persist:
+        case BuildStartupKind::PersistAll:
         {
             const auto connection = _control.Connection();
             const auto id = connection ? connection.SessionId() : winrt::guid{};
@@ -156,6 +156,7 @@ namespace winrt::TerminalApp::implementation
             }
             break;
         }
+        case BuildStartupKind::PersistLayout:
         default:
             break;
         }
