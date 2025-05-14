@@ -266,11 +266,11 @@ namespace winrt::TerminalApp::implementation
         AppLogic::Current()->NotifyRootInitialized();
     }
 
-    void TerminalWindow::PersistState()
+    void TerminalWindow::PersistState(bool serializeBuffer)
     {
         if (_root)
         {
-            _root->PersistState();
+            _root->PersistState(serializeBuffer);
         }
     }
 
