@@ -36,13 +36,13 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         auto entry = winrt::make_self<MatchProfilesEntry>();
 
         JsonUtils::GetValueForKey(json, NameKey, entry->_Name);
-        entry->_validateName();
+        entry->_validateAndPopulateNameRegex();
 
         JsonUtils::GetValueForKey(json, CommandlineKey, entry->_Commandline);
-        entry->_validateCommandline();
+        entry->_validateAndPopulateCommandlineRegex();
 
         JsonUtils::GetValueForKey(json, SourceKey, entry->_Source);
-        entry->_validateSource();
+        entry->_validateAndPopulateSourceRegex();
 
         return entry;
     }
@@ -53,22 +53,22 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return !(_invalidName || _invalidCommandline || _invalidSource);
     }
 
-#define DEFINE_VALIDATE_FUNCTION(name)                               \
-    void MatchProfilesEntry::_validate##name() noexcept              \
-    {                                                                \
-        _invalid##name = false;                                      \
-        if (_##name.empty())                                         \
-        {                                                            \
-            /* empty field is valid*/                                \
-            return;                                                  \
-        }                                                            \
-        UErrorCode status = U_ZERO_ERROR;                            \
-        _##name##Regex = til::ICU::CreateRegex(_##name, 0, &status); \
-        if (U_FAILURE(status))                                       \
-        {                                                            \
-            _invalid##name = true;                                   \
-            _##name##Regex.reset();                                  \
-        }                                                            \
+#define DEFINE_VALIDATE_FUNCTION(name)                                    \
+    void MatchProfilesEntry::_validateAndPopulate##name##Regex() noexcept \
+    {                                                                     \
+        _invalid##name = false;                                           \
+        if (_##name.empty())                                              \
+        {                                                                 \
+            /* empty field is valid*/                                     \
+            return;                                                       \
+        }                                                                 \
+        UErrorCode status = U_ZERO_ERROR;                                 \
+        _##name##Regex = til::ICU::CreateRegex(_##name, 0, &status);      \
+        if (U_FAILURE(status))                                            \
+        {                                                                 \
+            _invalid##name = true;                                        \
+            _##name##Regex.reset();                                       \
+        }                                                                 \
     }
 
     DEFINE_VALIDATE_FUNCTION(Name);
