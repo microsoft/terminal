@@ -41,6 +41,9 @@
     <ClCompile Include="HighlightedText.cpp">
       <Filter>highlightedText</Filter>
     </ClCompile>
+    <ClCompile Include="fzf/fzf.cpp">
+      <Filter>fzf</Filter>
+    </ClCompile>
     <ClCompile Include="Toast.cpp" />
     <ClCompile Include="LanguageProfileNotifier.cpp" />
     <ClCompile Include="Monarch.cpp" />
@@ -76,6 +79,12 @@
     </ClInclude>
     <ClInclude Include="HighlightedText.h">
       <Filter>highlightedText</Filter>
+    </ClInclude>
+    <ClInclude Include="fzf/fzf.h">
+      <Filter>fzf</Filter>
+    </ClInclude>
+    <ClInclude Include="fzf/LICENSE">
+      <Filter>fzf</Filter>
     </ClInclude>
     <ClInclude Include="Toast.h" />
     <ClInclude Include="LanguageProfileNotifier.h" />
@@ -175,6 +184,9 @@
     </Filter>
     <Filter Include="highlightedText">
       <UniqueIdentifier>{e490f626-547d-4b5b-b22d-c6d33c9e3210}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="fzf">
+      <UniqueIdentifier>{e4588ff4-c80a-40f7-be57-3e81f570a93d}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
