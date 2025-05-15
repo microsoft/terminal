@@ -10,7 +10,6 @@
 #include "Rendering.h"
 #include "RenderingViewModel.h"
 #include "Actions.h"
-#include "NewActions.h"
 #include "ProfileViewModel.h"
 #include "GlobalAppearance.h"
 #include "GlobalAppearanceViewModel.h"
@@ -45,7 +44,6 @@ static const std::wstring_view interactionTag{ L"Interaction_Nav" };
 static const std::wstring_view renderingTag{ L"Rendering_Nav" };
 static const std::wstring_view compatibilityTag{ L"Compatibility_Nav" };
 static const std::wstring_view actionsTag{ L"Actions_Nav" };
-static const std::wstring_view newActionsTag{ L"NewActions_Nav" };
 static const std::wstring_view newTabMenuTag{ L"NewTabMenu_Nav" };
 static const std::wstring_view globalProfileTag{ L"GlobalProfile_Nav" };
 static const std::wstring_view addProfileTag{ L"AddProfile" };
@@ -122,12 +120,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 if (_actionsVM.CurrentPage() == ActionsSubPage::Edit)
                 {
                     contentFrame().Navigate(xaml_typename<Editor::EditAction>(), winrt::make<implementation::NavigateToCommandArgs>(_actionsVM.CurrentCommand(), *this));
-                    const auto crumb = winrt::make<Breadcrumb>(box_value(newActionsTag), L"Edit Action...", BreadcrumbSubPage::Actions_Edit);
+                    const auto crumb = winrt::make<Breadcrumb>(box_value(actionsTag), L"Edit Action...", BreadcrumbSubPage::Actions_Edit);
                     _breadcrumbs.Append(crumb);
                 }
                 else if (_actionsVM.CurrentPage() == ActionsSubPage::Base)
                 {
-                    _Navigate(winrt::hstring{ newActionsTag }, BreadcrumbSubPage::None);
+                    _Navigate(winrt::hstring{ actionsTag }, BreadcrumbSubPage::None);
                 }
             }
         });
@@ -458,15 +456,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
         else if (clickedItemTag == actionsTag)
         {
-            contentFrame().Navigate(xaml_typename<Editor::Actions>(), winrt::make<ActionsViewModel>(_settingsClone));
             const auto crumb = winrt::make<Breadcrumb>(box_value(clickedItemTag), RS_(L"Nav_Actions/Content"), BreadcrumbSubPage::None);
             _breadcrumbs.Append(crumb);
-        }
-        else if (clickedItemTag == newActionsTag)
-        {
-            const auto crumb = winrt::make<Breadcrumb>(box_value(clickedItemTag), RS_(L"Nav_Actions/Content"), BreadcrumbSubPage::None);
-            _breadcrumbs.Append(crumb);
-            contentFrame().Navigate(xaml_typename<Editor::NewActions>(), _actionsVM);
+            contentFrame().Navigate(xaml_typename<Editor::Actions>(), _actionsVM);
 
             if (subPage == BreadcrumbSubPage::Actions_Edit && _actionsVM.CurrentCommand() != nullptr)
             {
