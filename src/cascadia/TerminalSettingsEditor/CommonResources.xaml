@@ -132,6 +132,11 @@
     <Style x:Key="TextBoxSettingStyle"
            BasedOn="{StaticResource DefaultTextBoxStyle}"
            TargetType="TextBox">
+        <Setter Property="ContextFlyout">
+            <Setter.Value>
+                <mtu:TextMenuFlyout />
+            </Setter.Value>
+        </Setter>
         <Setter Property="MinWidth" Value="{StaticResource StandardBoxMinWidth}" />
         <Setter Property="MaxWidth" Value="400" />
         <Setter Property="HorizontalAlignment" Value="Left" />

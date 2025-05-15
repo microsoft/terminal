@@ -2154,7 +2154,7 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    void TerminalPage::PersistState()
+    void TerminalPage::PersistState(bool serializeBuffer)
     {
         // This method may be called for a window even if it hasn't had a tab yet or lost all of them.
         // We shouldn't persist such windows.
@@ -2169,7 +2169,7 @@ namespace winrt::TerminalApp::implementation
         for (auto tab : _tabs)
         {
             auto t = winrt::get_self<implementation::TabBase>(tab);
-            auto tabActions = t->BuildStartupActions(BuildStartupKind::Persist);
+            auto tabActions = t->BuildStartupActions(serializeBuffer ? BuildStartupKind::PersistAll : BuildStartupKind::PersistLayout);
             actions.insert(actions.end(), std::make_move_iterator(tabActions.begin()), std::make_move_iterator(tabActions.end()));
         }
 

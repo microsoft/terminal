@@ -9,9 +9,11 @@ namespace Microsoft.Terminal.Settings.Editor
 {
     runtimeclass CompatibilityViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged
     {
-        CompatibilityViewModel(Microsoft.Terminal.Settings.Model.GlobalAppSettings globalSettings);
+        CompatibilityViewModel(Microsoft.Terminal.Settings.Model.CascadiaSettings settings);
 
         Boolean DebugFeaturesAvailable { get; };
+        void ResetApplicationState();
+        void ResetToDefaultSettings();
 
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, AllowHeadless);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, DebugFeaturesEnabled);

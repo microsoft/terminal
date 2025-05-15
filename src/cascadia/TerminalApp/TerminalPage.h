@@ -113,7 +113,7 @@ namespace winrt::TerminalApp::implementation
 
         safe_void_coroutine RequestQuit();
         safe_void_coroutine CloseWindow();
-        void PersistState();
+        void PersistState(bool serializeBuffer);
 
         void ToggleFocusMode();
         void ToggleFullscreen();

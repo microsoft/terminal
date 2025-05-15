@@ -71,7 +71,7 @@ namespace winrt::TerminalApp::implementation
 
         void Create();
 
-        void PersistState();
+        void PersistState(bool serializeBuffer);
 
         void UpdateSettings(winrt::TerminalApp::SettingsLoadEventArgs args);
 
