@@ -28,7 +28,7 @@ std::wstring_view VisualStudioGenerator::GetIcon() const noexcept
     return IconPath;
 }
 
-void VisualStudioGenerator::GenerateProfiles(std::vector<winrt::com_ptr<implementation::Profile>>& profiles) const
+void VisualStudioGenerator::GenerateProfiles(std::vector<winrt::com_ptr<implementation::Profile>>& profiles)
 {
     const auto instances = VsSetupConfiguration::QueryInstances();
 

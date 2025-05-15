@@ -239,7 +239,7 @@ static bool getWslNames(const wil::unique_hkey& wslRootKey,
 // - <none>
 // Return Value:
 // - A list of WSL profiles.
-void WslDistroGenerator::GenerateProfiles(std::vector<winrt::com_ptr<implementation::Profile>>& profiles) const
+void WslDistroGenerator::GenerateProfiles(std::vector<winrt::com_ptr<implementation::Profile>>& profiles)
 {
     auto wslRootKey{ openWslRegKey() };
     if (wslRootKey)
