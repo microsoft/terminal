@@ -287,22 +287,22 @@ protected:                                                                  \
     X(winrt::Microsoft::Terminal::Core::MatchMode, MatchMode, "matchMode", false, ArgTag::None, winrt::Microsoft::Terminal::Core::MatchMode::None)
 
 ////////////////////////////////////////////////////////////////////////////////
-#define NEW_TERMINAL_ARGS(X)                                                                                                                \
-    X(winrt::hstring, Commandline, "commandline", false, ArgTag::None, L"")                                                                 \
-    X(winrt::hstring, StartingDirectory, "startingDirectory", false, ArgTag::None, L"")                                                     \
-    X(winrt::hstring, TabTitle, "tabTitle", false, ArgTag::None, L"")                                                                       \
-    X(Windows::Foundation::IReference<Windows::UI::Color>, TabColor, "tabColor", false, ArgTag::None, nullptr)                              \
-    X(Windows::Foundation::IReference<int32_t>, ProfileIndex, "index", false, ArgTag::None, nullptr)                                        \
-    X(winrt::hstring, Profile, "profile", false, ArgTag::None, L"")                                                                         \
-    X(Windows::Foundation::IReference<bool>, SuppressApplicationTitle, "suppressApplicationTitle", false, ArgTag::None, nullptr)            \
-    X(winrt::hstring, ColorScheme, "colorScheme", args->SchemeName().empty(), ArgTag::ColorScheme, L"")                                     \
-    X(Windows::Foundation::IReference<bool>, Elevate, "elevate", false, ArgTag::None, nullptr)                                              \
+#define NEW_TERMINAL_ARGS(X)                                                                                                     \
+    X(winrt::hstring, Commandline, "commandline", false, ArgTag::None, L"")                                                      \
+    X(winrt::hstring, StartingDirectory, "startingDirectory", false, ArgTag::None, L"")                                          \
+    X(winrt::hstring, TabTitle, "tabTitle", false, ArgTag::None, L"")                                                            \
+    X(Windows::Foundation::IReference<Windows::UI::Color>, TabColor, "tabColor", false, ArgTag::None, nullptr)                   \
+    X(Windows::Foundation::IReference<int32_t>, ProfileIndex, "index", false, ArgTag::None, nullptr)                             \
+    X(winrt::hstring, Profile, "profile", false, ArgTag::None, L"")                                                              \
+    X(Windows::Foundation::IReference<bool>, SuppressApplicationTitle, "suppressApplicationTitle", false, ArgTag::None, nullptr) \
+    X(winrt::hstring, ColorScheme, "colorScheme", args->SchemeName().empty(), ArgTag::ColorScheme, L"")                          \
+    X(Windows::Foundation::IReference<bool>, Elevate, "elevate", false, ArgTag::None, nullptr)                                   \
     X(Windows::Foundation::IReference<bool>, ReloadEnvironmentVariables, "reloadEnvironmentVariables", false, ArgTag::None, nullptr)
 
 ////////////////////////////////////////////////////////////////////////////////
-#define SPLIT_PANE_ARGS(X)                                                                             \
-    X(Model::SplitDirection, SplitDirection, "split", false, ArgTag::None, SplitDirection::Automatic)  \
-    X(SplitType, SplitMode, "splitMode", false, ArgTag::None, SplitType::Manual)                       \
+#define SPLIT_PANE_ARGS(X)                                                                            \
+    X(Model::SplitDirection, SplitDirection, "split", false, ArgTag::None, SplitDirection::Automatic) \
+    X(SplitType, SplitMode, "splitMode", false, ArgTag::None, SplitType::Manual)                      \
     X(float, SplitSize, "size", false, ArgTag::None, 0.5f)
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -389,7 +389,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     public:
         NewTerminalArgs(int32_t& profileIndex) :
-            _ProfileIndex{ profileIndex } {
+            _ProfileIndex{ profileIndex }
+        {
             NEW_TERMINAL_ARGS(APPEND_ARG_DESCRIPTION);
         };
         hstring GenerateName() const;
@@ -652,7 +653,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     struct SplitPaneArgs : public SplitPaneArgsT<SplitPaneArgs>
     {
-        SplitPaneArgs() {
+        SplitPaneArgs(){
             SPLIT_PANE_ARGS(APPEND_ARG_DESCRIPTION)
         };
         SplitPaneArgs(SplitType splitMode, SplitDirection direction, float size, const Model::INewContentArgs& terminalArgs) :
@@ -660,23 +661,23 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             _SplitDirection{ direction },
             _SplitSize{ size },
             _ContentArgs{ terminalArgs } {
-            SPLIT_PANE_ARGS(APPEND_ARG_DESCRIPTION)
-        };
+                SPLIT_PANE_ARGS(APPEND_ARG_DESCRIPTION)
+            };
         SplitPaneArgs(SplitDirection direction, float size, const Model::INewContentArgs& terminalArgs) :
             _SplitDirection{ direction },
             _SplitSize{ size },
             _ContentArgs{ terminalArgs } {
-            SPLIT_PANE_ARGS(APPEND_ARG_DESCRIPTION)
-        };
+                SPLIT_PANE_ARGS(APPEND_ARG_DESCRIPTION)
+            };
         SplitPaneArgs(SplitDirection direction, const Model::INewContentArgs& terminalArgs) :
             _SplitDirection{ direction },
             _ContentArgs{ terminalArgs } {
-            SPLIT_PANE_ARGS(APPEND_ARG_DESCRIPTION)
-        };
+                SPLIT_PANE_ARGS(APPEND_ARG_DESCRIPTION)
+            };
         SplitPaneArgs(SplitType splitMode) :
             _SplitMode{ splitMode } {
-            SPLIT_PANE_ARGS(APPEND_ARG_DESCRIPTION)
-        };
+                SPLIT_PANE_ARGS(APPEND_ARG_DESCRIPTION)
+            };
 
         SPLIT_PANE_ARGS(DECLARE_ARGS);
         WINRT_PROPERTY(Model::INewContentArgs, ContentArgs, Model::NewTerminalArgs{});
