@@ -92,6 +92,7 @@ public:
 
     void UpdateSettings(winrt::Microsoft::Terminal::Core::ICoreSettings settings);
     void UpdateAppearance(const winrt::Microsoft::Terminal::Core::ICoreAppearance& appearance);
+    void SetHighContrastInfo(bool hc) noexcept;
     void SetFontInfo(const FontInfo& fontInfo);
     void SetCursorStyle(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::CursorStyle cursorStyle);
     void SetVtChecksumReportSupport(const bool enabled);
@@ -382,6 +383,7 @@ private:
 
     std::wstring _answerbackMessage;
     std::wstring _workingDirectory;
+    bool _highContrastMode = false;
 
     // This default fake font value is only used to check if the font is a raster font.
     // Otherwise, the font is changed to a real value with the renderer via TriggerFontChange.
