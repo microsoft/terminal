@@ -19,12 +19,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Automation::AutomationProperties::SetName(AddNewButton(), RS_(L"Actions_AddNewTextBlock/Text"));
     }
 
-    Automation::Peers::AutomationPeer Actions::OnCreateAutomationPeer()
-    {
-        _ViewModel.OnAutomationPeerAttached();
-        return nullptr;
-    }
-
     void Actions::OnNavigatedTo(const NavigationEventArgs& e)
     {
         _ViewModel = e.Parameter().as<Editor::ActionsViewModel>();
