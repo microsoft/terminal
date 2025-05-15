@@ -5,12 +5,32 @@ import "Command.idl";
 
 namespace Microsoft.Terminal.Settings.Model
 {
+    enum ArgTag
+    {
+        None = 0,
+        FilePath,
+        ColorScheme
+    };
+
+    struct ArgDescription
+    {
+        String Name;
+        String Type;
+        Boolean Required;
+        ArgTag Tag;
+    };
+
     interface IActionArgs
     {
         Boolean Equals(IActionArgs other);
         String GenerateName();
         IActionArgs Copy();
         UInt64 Hash();
+
+        UInt32 GetArgCount();
+        ArgDescription GetArgDescriptionAt(UInt32 index);
+        IInspectable GetArgAt(UInt32 index);
+        void SetArgAt(UInt32 index, Object value);
     };
 
     interface IActionEventArgs
@@ -168,6 +188,11 @@ namespace Microsoft.Terminal.Settings.Model
         UInt64 ContentId{ get; set; };
 
         String ToCommandline();
+
+        UInt32 GetArgCount();
+        ArgDescription GetArgDescriptionAt(UInt32 index);
+        IInspectable GetArgAt(UInt32 index);
+        void SetArgAt(UInt32 index, Object value);
     };
 
     [default_interface] runtimeclass ActionEventArgs : IActionEventArgs
@@ -230,7 +255,7 @@ namespace Microsoft.Terminal.Settings.Model
     {
         SendInputArgs(String input);
 
-        String Input { get; };
+        String Input;
     };
 
     [default_interface] runtimeclass SplitPaneArgs : IActionArgs
@@ -309,7 +334,7 @@ namespace Microsoft.Terminal.Settings.Model
     [default_interface] runtimeclass CloseTabArgs : IActionArgs
     {
         CloseTabArgs(UInt32 tabIndex);
-        Windows.Foundation.IReference<UInt32> Index { get; };
+        Windows.Foundation.IReference<UInt32> Index;
     };
 
     [default_interface] runtimeclass MoveTabArgs : IActionArgs
