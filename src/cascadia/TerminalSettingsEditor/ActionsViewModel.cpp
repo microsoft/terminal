@@ -921,7 +921,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
         else if (_currentKeys.Modifiers() != _ProposedKeys.Modifiers() || _currentKeys.Vkey() != _ProposedKeys.Vkey())
         {
-            const auto args{ make_self<ModifyKeyChordEventArgs>(_currentKeys,     // OldKeys
+            const auto args{ make_self<ModifyKeyChordEventArgs>(_currentKeys, // OldKeys
                                                                 _ProposedKeys) }; // NewKeys
             ModifyKeyChordRequested.raise(*this, *args);
         }

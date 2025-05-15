@@ -182,10 +182,10 @@
                     Style="{StaticResource SettingsStackStyle}">
             <TextBlock Style="{StaticResource DisclaimerStyle}"
                        TextWrapping="WrapWholeWords">
-                    <Hyperlink NavigateUri="https://learn.microsoft.com/en-us/windows/terminal/customize-settings/actions"
-                               TextDecorations="None">
-                        <Run x:Uid="Actions_Disclaimer" />
-                    </Hyperlink>
+                <Hyperlink NavigateUri="https://learn.microsoft.com/en-us/windows/terminal/customize-settings/actions"
+                           TextDecorations="None">
+                    <Run x:Uid="Actions_Disclaimer" />
+                </Hyperlink>
             </TextBlock>
             <!--  Add New Button  -->
             <Button x:Name="AddNewButton"
@@ -202,11 +202,11 @@
 
             <!--  Keybindings  -->
             <ListView x:Name="CommandsListView"
+                      Margin="-8,0,0,0"
                       IsItemClickEnabled="True"
-                      ItemTemplate="{StaticResource CommandTemplate}"
-                      ItemsSource="{x:Bind ViewModel.CommandList, Mode=OneWay}"
                       ItemClick="{x:Bind ViewModel.CmdListItemClicked}"
-                      Margin="-8,0,0,0"/>
+                      ItemTemplate="{StaticResource CommandTemplate}"
+                      ItemsSource="{x:Bind ViewModel.CommandList, Mode=OneWay}" />
         </StackPanel>
     </Border>
 </Page>
