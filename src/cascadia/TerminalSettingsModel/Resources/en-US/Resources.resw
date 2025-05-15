@@ -775,4 +775,274 @@
   <data name="PowerShellInstallationProfileJsonComment" xml:space="preserve">
     <value>This profile only appears if PowerShell is not installed</value>
   </data>
+  <data name="CopyText" xml:space="preserve">
+    <value>Copy Text</value>
+  </data>
+  <data name="PasteText" xml:space="preserve">
+    <value>Paste Text</value>
+  </data>
+  <data name="OpenNewTabDropdown" xml:space="preserve">
+    <value>Open New Tab Dropdown</value>
+  </data>
+  <data name="DuplicateTab" xml:space="preserve">
+    <value>Duplicate Tab</value>
+  </data>
+  <data name="NewTab" xml:space="preserve">
+    <value>New Tab</value>
+  </data>
+  <data name="CloseWindow" xml:space="preserve">
+    <value>Close Window</value>
+  </data>
+  <data name="CloseTab" xml:space="preserve">
+    <value>Close Tab</value>
+  </data>
+  <data name="ClosePane" xml:space="preserve">
+    <value>Close Pane</value>
+  </data>
+  <data name="NextTab" xml:space="preserve">
+    <value>Next Tab</value>
+  </data>
+  <data name="PrevTab" xml:space="preserve">
+    <value>Previous Tab</value>
+  </data>
+  <data name="SendInput" xml:space="preserve">
+    <value>Send Input</value>
+  </data>
+  <data name="SplitPane" xml:space="preserve">
+    <value>Split Pane</value>
+  </data>
+  <data name="ToggleSplitOrientation" xml:space="preserve">
+    <value>Toggle Split Orientation</value>
+  </data>
+  <data name="TogglePaneZoom" xml:space="preserve">
+    <value>Toggle Pane Zoom</value>
+  </data>
+  <data name="SwitchToTab" xml:space="preserve">
+    <value>Switch To Tab</value>
+  </data>
+  <data name="AdjustFontSize" xml:space="preserve">
+    <value>Adjust Font Size</value>
+  </data>
+  <data name="ResetFontSize" xml:space="preserve">
+    <value>Reset Font Size</value>
+  </data>
+  <data name="ScrollUp" xml:space="preserve">
+    <value>Scroll Up</value>
+  </data>
+  <data name="ScrollDown" xml:space="preserve">
+    <value>Scroll Down</value>
+  </data>
+  <data name="ScrollUpPage" xml:space="preserve">
+    <value>Scroll Up Page</value>
+  </data>
+  <data name="ScrollDownPage" xml:space="preserve">
+    <value>Scroll Down Page</value>
+  </data>
+  <data name="ScrollToTop" xml:space="preserve">
+    <value>Scroll To Top</value>
+  </data>
+  <data name="ScrollToBottom" xml:space="preserve">
+    <value>Scroll To Bottom</value>
+  </data>
+  <data name="ScrollToMark" xml:space="preserve">
+    <value>Scroll To Mark</value>
+  </data>
+  <data name="AddMark" xml:space="preserve">
+    <value>Add Mark</value>
+  </data>
+  <data name="ClearMark" xml:space="preserve">
+    <value>Clear Mark</value>
+  </data>
+  <data name="ClearAllMarks" xml:space="preserve">
+    <value>Clear All Marks</value>
+  </data>
+  <data name="ResizePane" xml:space="preserve">
+    <value>Resize Pane</value>
+  </data>
+  <data name="MoveFocus" xml:space="preserve">
+    <value>Move Focus</value>
+  </data>
+  <data name="MovePane" xml:space="preserve">
+    <value>Move Pane</value>
+  </data>
+  <data name="SwapPane" xml:space="preserve">
+    <value>Swap Pane</value>
+  </data>
+  <data name="Find" xml:space="preserve">
+    <value>Find</value>
+  </data>
+  <data name="ToggleShaderEffects" xml:space="preserve">
+    <value>Toggle Shader Effects</value>
+  </data>
+  <data name="ToggleFocusMode" xml:space="preserve">
+    <value>Toggle Focus Mode</value>
+  </data>
+  <data name="ToggleFullscreen" xml:space="preserve">
+    <value>Toggle Fullscreen</value>
+  </data>
+  <data name="ToggleAlwaysOnTop" xml:space="preserve">
+    <value>Toggle Always On Top</value>
+  </data>
+  <data name="OpenSettings" xml:space="preserve">
+    <value>Open Settings</value>
+  </data>
+  <data name="SetFocusMode" xml:space="preserve">
+    <value>Set Focus Mode</value>
+  </data>
+  <data name="SetFullScreen" xml:space="preserve">
+    <value>Set Full Screen</value>
+  </data>
+  <data name="SetMaximized" xml:space="preserve">
+    <value>Set Maximized</value>
+  </data>
+  <data name="SetColorScheme" xml:space="preserve">
+    <value>Set Color Scheme</value>
+  </data>
+  <data name="SetTabColor" xml:space="preserve">
+    <value>Set Tab Color</value>
+  </data>
+  <data name="OpenTabColorPicker" xml:space="preserve">
+    <value>Open Tab Color Picker</value>
+  </data>
+  <data name="RenameTab" xml:space="preserve">
+    <value>Rename Tab</value>
+  </data>
+  <data name="OpenTabRenamer" xml:space="preserve">
+    <value>Open Tab Renamer</value>
+  </data>
+  <data name="ExecuteCommandline" xml:space="preserve">
+    <value>Execute Command Line</value>
+  </data>
+  <data name="ToggleCommandPalette" xml:space="preserve">
+    <value>Toggle Command Palette</value>
+  </data>
+  <data name="CloseOtherTabs" xml:space="preserve">
+    <value>Close Other Tabs</value>
+  </data>
+  <data name="CloseTabsAfter" xml:space="preserve">
+    <value>Close Tabs After</value>
+  </data>
+  <data name="TabSearch" xml:space="preserve">
+    <value>Tab Search</value>
+  </data>
+  <data name="MoveTab" xml:space="preserve">
+    <value>Move Tab</value>
+  </data>
+  <data name="BreakIntoDebugger" xml:space="preserve">
+    <value>Break Into Debugger</value>
+  </data>
+  <data name="TogglePaneReadOnly" xml:space="preserve">
+    <value>Toggle Pane Read-Only</value>
+  </data>
+  <data name="EnablePaneReadOnly" xml:space="preserve">
+    <value>Enable Pane Read-Only</value>
+  </data>
+  <data name="DisablePaneReadOnly" xml:space="preserve">
+    <value>Disable Pane Read-Only</value>
+  </data>
+  <data name="FindMatch" xml:space="preserve">
+    <value>Find Match</value>
+  </data>
+  <data name="NewWindow" xml:space="preserve">
+    <value>New Window</value>
+  </data>
+  <data name="IdentifyWindow" xml:space="preserve">
+    <value>Identify Window</value>
+  </data>
+  <data name="IdentifyWindows" xml:space="preserve">
+    <value>Identify Windows</value>
+  </data>
+  <data name="RenameWindow" xml:space="preserve">
+    <value>Rename Window</value>
+  </data>
+  <data name="OpenWindowRenamer" xml:space="preserve">
+    <value>Open Window Renamer</value>
+  </data>
+  <data name="DisplayWorkingDirectory" xml:space="preserve">
+    <value>Display Working Directory</value>
+  </data>
+  <data name="SearchForText" xml:space="preserve">
+    <value>Search For Text</value>
+  </data>
+  <data name="GlobalSummon" xml:space="preserve">
+    <value>Global Summon</value>
+  </data>
+  <data name="QuakeMode" xml:space="preserve">
+    <value>Quake Mode</value>
+  </data>
+  <data name="FocusPane" xml:space="preserve">
+    <value>Focus Pane</value>
+  </data>
+  <data name="OpenSystemMenu" xml:space="preserve">
+    <value>Open System Menu</value>
+  </data>
+  <data name="ExportBuffer" xml:space="preserve">
+    <value>Export Buffer</value>
+  </data>
+  <data name="ClearBuffer" xml:space="preserve">
+    <value>Clear Buffer</value>
+  </data>
+  <data name="MultipleActions" xml:space="preserve">
+    <value>Multiple Actions</value>
+  </data>
+  <data name="Quit" xml:space="preserve">
+    <value>Quit</value>
+  </data>
+  <data name="AdjustOpacity" xml:space="preserve">
+    <value>Adjust Opacity</value>
+  </data>
+  <data name="RestoreLastClosed" xml:space="preserve">
+    <value>Restore Last Closed</value>
+  </data>
+  <data name="SelectAll" xml:space="preserve">
+    <value>Select All</value>
+  </data>
+  <data name="SelectCommand" xml:space="preserve">
+    <value>Select Command</value>
+  </data>
+  <data name="SelectOutput" xml:space="preserve">
+    <value>Select Output</value>
+  </data>
+  <data name="MarkMode" xml:space="preserve">
+    <value>Mark Mode</value>
+  </data>
+  <data name="ToggleBlockSelection" xml:space="preserve">
+    <value>Toggle Block Selection</value>
+  </data>
+  <data name="SwitchSelectionEndpoint" xml:space="preserve">
+    <value>Switch Selection Endpoint</value>
+  </data>
+  <data name="Suggestions" xml:space="preserve">
+    <value>Suggestions</value>
+  </data>
+  <data name="ColorSelection" xml:space="preserve">
+    <value>Color Selection</value>
+  </data>
+  <data name="ShowContextMenu" xml:space="preserve">
+    <value>Show Context Menu</value>
+  </data>
+  <data name="ExpandSelectionToWord" xml:space="preserve">
+    <value>Expand Selection To Word</value>
+  </data>
+  <data name="CloseOtherPanes" xml:space="preserve">
+    <value>Close Other Panes</value>
+  </data>
+  <data name="RestartConnection" xml:space="preserve">
+    <value>Restart Connection</value>
+  </data>
+  <data name="ToggleBroadcastInput" xml:space="preserve">
+    <value>Toggle Broadcast Input</value>
+  </data>
+  <data name="OpenScratchpad" xml:space="preserve">
+    <value>Open Scratchpad</value>
+  </data>
+  <data name="OpenAbout" xml:space="preserve">
+    <value>Open About</value>
+  </data>
+  <data name="QuickFix" xml:space="preserve">
+    <value>Quick Fix</value>
+  </data>
+  <data name="OpenCWD" xml:space="preserve">
+    <value>Open Current Working Directory</value>
+  </data>
 </root>
