@@ -44,6 +44,13 @@
     <ClInclude Include="Actions.h">
       <DependentUpon>Actions.xaml</DependentUpon>
     </ClInclude>
+    <ClInclude Include="ArgsTemplateSelectors.h">
+      <DependentUpon>ArgsTemplateSelectors.idl</DependentUpon>
+      <SubType>Code</SubType>
+    </ClInclude>
+    <ClInclude Include="EditAction.h">
+      <DependentUpon>EditAction.xaml</DependentUpon>
+    </ClInclude>
     <ClInclude Include="AddProfile.h">
       <DependentUpon>AddProfile.xaml</DependentUpon>
     </ClInclude>
@@ -167,6 +174,9 @@
     <Page Include="Actions.xaml">
       <SubType>Designer</SubType>
     </Page>
+    <Page Include="EditAction.xaml">
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="AddProfile.xaml">
       <SubType>Designer</SubType>
     </Page>
@@ -235,6 +245,13 @@
   <ItemGroup>
     <ClCompile Include="Actions.cpp">
       <DependentUpon>Actions.xaml</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="ArgsTemplateSelectors.cpp">
+      <DependentUpon>ArgsTemplateSelectors.idl</DependentUpon>
+      <SubType>Code</SubType>
+    </ClCompile>
+    <ClCompile Include="EditAction.cpp">
+      <DependentUpon>EditAction.xaml</DependentUpon>
     </ClCompile>
     <ClCompile Include="AddProfile.cpp">
       <DependentUpon>AddProfile.xaml</DependentUpon>
@@ -359,6 +376,13 @@
   <ItemGroup>
     <Midl Include="Actions.idl">
       <DependentUpon>Actions.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Midl>
+    <Midl Include="ArgsTemplateSelectors.idl">
+      <SubType>Designer</SubType>
+    </Midl>
+    <Midl Include="EditAction.idl">
+      <DependentUpon>EditAction.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>
     <Midl Include="AddProfile.idl">
