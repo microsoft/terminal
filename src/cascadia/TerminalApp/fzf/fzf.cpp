@@ -293,7 +293,7 @@ namespace fzf
                     }
                     consecutiveCharMatrixSlice[j] = consecutive;
                     inGap = (diagonalScore < score);
-                    int16_t cellScore = std::max(int16_t{0}, std::max(diagonalScore, score));
+                    int16_t cellScore = std::max(int16_t{ 0 }, std::max(diagonalScore, score));
                     if (off == patternSize - 2 && cellScore > maxScore)
                     {
                         maxScore = cellScore;
@@ -460,7 +460,8 @@ namespace fzf
         {
             if (pattern.terms.empty())
             {
-                return MatchResult{};;
+                return MatchResult{};
+                ;
             }
 
             int16_t totalScore = 0;
@@ -483,7 +484,7 @@ namespace fzf
                 }
                 totalScore += res.Score;
             }
-            return MatchResult{totalScore, pos};
+            return MatchResult{ totalScore, pos };
         }
     }
 

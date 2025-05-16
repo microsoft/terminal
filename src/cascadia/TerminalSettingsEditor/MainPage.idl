@@ -24,8 +24,7 @@ namespace Microsoft.Terminal.Settings.Editor
         ColorSchemes_Edit,
         NewTabMenu_Folder,
         Extensions_Extension,
-        Actions_Edit,
-        NewTabMenu_Folder
+        Actions_Edit
     };
 
     runtimeclass Breadcrumb : Windows.Foundation.IStringable
