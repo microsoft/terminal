@@ -936,4 +936,7 @@
   <data name="TabMoveRight" xml:space="preserve">
     <value>Mover para a direita</value>
   </data>
+  <data name="InvalidRegex" xml:space="preserve">
+    <value>Foi encontrada uma expressão regular inválida.</value>
+  </data>
 </root>
