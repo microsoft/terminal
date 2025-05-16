@@ -35,7 +35,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return *newCmd;
     }
 
-    Model::Command Command::CopyAsUserCommand(Model::Command originalCmd)
+    Model::Command Command::CopyAsUserCommand(const Model::Command& originalCmd)
     {
         auto command{ winrt::get_self<Command>(originalCmd) };
         auto copy{ command->Copy() };
@@ -151,16 +151,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     bool Command::IDWasGenerated()
     {
         return _IDWasGenerated;
-    }
-
-    Model::ActionAndArgs Command::ActionAndArgs() const noexcept
-    {
-        return _ActionAndArgs;
-    }
-
-    void Command::ActionAndArgs(const Model::ActionAndArgs& value) noexcept
-    {
-        _ActionAndArgs = value;
     }
 
     void Command::Name(const hstring& value)
