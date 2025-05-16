@@ -263,11 +263,11 @@ Installez la police manquante ou choisissez-en une autre.</value>
   </data>
   <data name="SearchCommandButton.Label" xml:space="preserve">
     <value>Rechercher...</value>
-    <comment>The label of a button for searching for the selected text</comment>
+    <comment>The label of a button for searching for the text</comment>
   </data>
   <data name="SearchCommandButton.ToolTipService.ToolTip" xml:space="preserve">
     <value>Rechercher</value>
-    <comment>The tooltip for a button for searching for the selected text</comment>
+    <comment>The tooltip for a button for searching for the text</comment>
   </data>
   <data name="SelectCommandButton.Label" xml:space="preserve">
     <value>Sélectionner la commande</value>

@@ -263,11 +263,11 @@
   </data>
   <data name="SearchCommandButton.Label" xml:space="preserve">
     <value>搜尋...</value>
-    <comment>The label of a button for searching for the selected text</comment>
+    <comment>The label of a button for searching for the text</comment>
   </data>
   <data name="SearchCommandButton.ToolTipService.ToolTip" xml:space="preserve">
     <value>尋找</value>
-    <comment>The tooltip for a button for searching for the selected text</comment>
+    <comment>The tooltip for a button for searching for the text</comment>
   </data>
   <data name="SelectCommandButton.Label" xml:space="preserve">
     <value>選取命令</value>

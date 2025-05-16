@@ -936,4 +936,7 @@
   <data name="TabMoveRight" xml:space="preserve">
     <value>Вправо</value>
   </data>
+  <data name="InvalidRegex" xml:space="preserve">
+    <value>Обнаружено недопустимое регулярное выражение.</value>
+  </data>
 </root>

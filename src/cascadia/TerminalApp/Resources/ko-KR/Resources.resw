@@ -936,4 +936,7 @@
   <data name="TabMoveRight" xml:space="preserve">
     <value>오른쪽으로 이동</value>
   </data>
+  <data name="InvalidRegex" xml:space="preserve">
+    <value>잘못된 정규식을 찾았습니다.</value>
+  </data>
 </root>
