@@ -60,7 +60,7 @@ namespace fzf
         {
             int32_t idx = 0;
             int32_t firstIdx = 0;
-            for (int32_t pi = 0; pi < pattern.size(); ++pi)
+            for (int32_t pi = 0; pi < static_cast<int32_t>(pattern.size()); ++pi)
             {
                 idx = IndexOfChar(input, pattern[pi], idx);
                 if (idx < 0)
@@ -157,7 +157,7 @@ namespace fzf
             auto consecutiveScoresSlice = std::span(consecutiveScores).subspan(firstIndexOf);
             auto bonusesSlice = std::span(bonusesSpan).subspan(firstIndexOf, textSize - firstIndexOf);
 
-            for (int32_t i = 0; i < lowerTextSlice.size(); i++)
+            for (int32_t i = 0; i < static_cast<int32_t>(lowerTextSlice.size()); i++)
             {
                 UChar32 currentChar = lowerTextSlice[i];
                 CharClass currentClass = ClassOf(currentChar);
@@ -168,7 +168,7 @@ namespace fzf
                 //currentPatternChar was already folded in ParsePattern
                 if (currentChar == currentPatternChar)
                 {
-                    if (patternIndex < pattern.size())
+                    if (patternIndex < static_cast<int32_t>(pattern.size()))
                     {
                         firstOccurrenceOfEachChar[patternIndex] = firstIndexOf + static_cast<int32_t>(i);
                         patternIndex++;
@@ -204,7 +204,7 @@ namespace fzf
                 previousInitialScore = initialScoresSlice[i];
             }
 
-            if (patternIndex != pattern.size())
+            if (patternIndex != static_cast<int32_t>(pattern.size()))
             {
                 return { -1, -1, 0 };
             }
@@ -261,7 +261,7 @@ namespace fzf
                 {
                     scoreMatrixLeftSlice[0] = 0;
                 }
-                for (int32_t j = 0; j < textSlice.size(); j++)
+                for (int32_t j = 0; j < static_cast<int32_t>(textSlice.size()); j++)
                 {
                     UChar32 currentChar = textSlice[j];
                     int32_t column = patternCharOffset + static_cast<int32_t>(j);

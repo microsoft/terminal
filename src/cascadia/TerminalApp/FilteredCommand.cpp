@@ -92,7 +92,7 @@ namespace winrt::TerminalApp::implementation
                 size_t runEnd = runStart;
                 for (size_t i = 1; i < positions.size(); ++i)
                 {
-                    if (positions[i] == runEnd + 1)
+                    if (positions[i] == static_cast<int32_t>(runEnd + 1))
                     {
                         runEnd = positions[i];
                     }
