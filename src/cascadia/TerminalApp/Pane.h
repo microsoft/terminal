@@ -131,7 +131,8 @@ public:
     void Close();
 
     std::shared_ptr<Pane> AttachPane(std::shared_ptr<Pane> pane,
-                                     winrt::Microsoft::Terminal::Settings::Model::SplitDirection splitType);
+                                     winrt::Microsoft::Terminal::Settings::Model::SplitDirection splitType,
+                                     const float splitSize = .5);
     std::shared_ptr<Pane> DetachPane(std::shared_ptr<Pane> pane);
 
     int GetLeafPaneCount() const noexcept;

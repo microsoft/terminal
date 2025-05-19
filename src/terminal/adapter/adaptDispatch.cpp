@@ -4790,3 +4790,25 @@ void AdaptDispatch::PlaySounds(const VTParameters parameters)
         _api.PlayMidiNote(noteNumber, noteNumber == 71 ? 0 : velocity, duration);
     });
 }
+
+ITermDispatch::StringHandler AdaptDispatch::EnterTmuxControl(const VTParameters parameters)
+{
+    if (parameters.size() != 1 || parameters.at(0).value() != 1000) {
+        return nullptr;
+    }
+
+    if (_tmuxControlHandlerProducer) {
+        const auto page = _pages.ActivePage();
+        return _tmuxControlHandlerProducer([this, page](auto s) {
+            PrintString(s);
+            _DoLineFeed(page, true, true);
+        });
+    }
+
+    return nullptr;
+}
+
+void AdaptDispatch::SetTmuxControlHandlerProducer(StringHandlerProducer producer)
+{
+    _tmuxControlHandlerProducer = producer;
+}
