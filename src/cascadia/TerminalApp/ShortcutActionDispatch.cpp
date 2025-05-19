@@ -3,6 +3,7 @@
 
 #include "pch.h"
 #include "ShortcutActionDispatch.h"
+#include "WtExeUtils.h"
 
 #include "ShortcutActionDispatch.g.cpp"
 
@@ -58,6 +59,8 @@ namespace winrt::TerminalApp::implementation
                 "ActionDispatched",
                 TraceLoggingDescription("Event emitted when an action was successfully performed"),
                 TraceLoggingValue(static_cast<int>(actionAndArgs.Action()), "Action"),
+                TraceLoggingValue(GetBranding(), "Branding"),
+                TraceLoggingValue(IsPackaged(), "IsPackaged"),
                 TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
                 TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
         }

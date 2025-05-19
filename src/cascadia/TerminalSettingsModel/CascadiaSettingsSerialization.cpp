@@ -1699,6 +1699,8 @@ void CascadiaSettings::LogSettingChanges(bool isJsonLoad) const
                               "JsonSettingsChanged",
                               TraceLoggingDescription("Event emitted when settings.json change"),
                               TraceLoggingValue(change.data()),
+                              TraceLoggingValue(GetBranding(), "Branding"),
+                              TraceLoggingValue(IsPackaged(), "IsPackaged"),
                               TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
                               TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
         }
@@ -1708,13 +1710,11 @@ void CascadiaSettings::LogSettingChanges(bool isJsonLoad) const
                               "UISettingsChanged",
                               TraceLoggingDescription("Event emitted when settings change via the UI"),
                               TraceLoggingValue(change.data()),
+                              TraceLoggingValue(GetBranding(), "Branding"),
+                              TraceLoggingValue(IsPackaged(), "IsPackaged"),
                               TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
                               TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
         }
-#else
-        OutputDebugStringA(isJsonLoad ? "JsonSettingsChanged - " : "UISettingsChanged - ");
-        OutputDebugStringA(change.data());
-        OutputDebugStringA("\n");
 #endif // !_DEBUG
     }
 }

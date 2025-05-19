@@ -403,6 +403,8 @@ void WindowEmperor::HandleCommandlineArgs(int nCmdShow)
                     g_hWindowsTerminalProvider,
                     "SessionBecameInteractive",
                     TraceLoggingDescription("Event emitted when the session was interacted with"),
+                    TraceLoggingValue(GetBranding(), "Branding"),
+                    TraceLoggingValue(IsPackaged(), "IsPackaged"),
                     TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
                     TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
                 loggedInteraction = true;
