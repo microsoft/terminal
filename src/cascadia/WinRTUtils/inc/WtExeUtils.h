@@ -25,19 +25,6 @@ _TIL_INLINEPREFIX bool IsPackaged()
     return isPackaged;
 }
 
-_TIL_INLINEPREFIX uint8_t GetBranding()
-{
-#if defined(WT_BRANDING_RELEASE)
-    return 3;
-#elif defined(WT_BRANDING_PREVIEW)
-    return 2;
-#elif defined(WT_BRANDING_CANARY)
-    return 1;
-#else
-    return 0;
-#endif
-}
-
 // Function Description:
 // - This is a helper to determine if we're running as a part of the Dev Build
 //   Package or the release package. We'll need to return different text, icons,
