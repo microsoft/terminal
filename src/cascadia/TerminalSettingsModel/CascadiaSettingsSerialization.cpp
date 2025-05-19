@@ -1652,11 +1652,6 @@ void CascadiaSettings::_resolveNewTabMenuProfilesSet(const IVector<Model::NewTab
 
 void CascadiaSettings::LogSettingChanges(bool isJsonLoad) const
 {
-#ifdef _DEBUG
-    // Skip logging if we're running in debug mode
-    return;
-#endif
-
     // Only do this if we're actually being sampled
     if (!TraceLoggingProviderEnabled(g_hSettingsModelProvider, 0, MICROSOFT_KEYWORD_MEASURES))
     {
