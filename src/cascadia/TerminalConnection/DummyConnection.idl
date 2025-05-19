@@ -1,0 +1,15 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+import "ITerminalConnection.idl";
+
+namespace Microsoft.Terminal.TerminalConnection
+{
+    [default_interface]
+    runtimeclass DummyConnection : ITerminalConnection
+    {
+        DummyConnection();
+        event TerminalOutputHandler TerminalInput;
+    };
+
+}

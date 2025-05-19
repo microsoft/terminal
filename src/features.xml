@@ -202,4 +202,16 @@
         <alwaysDisabledReleaseTokens/>
     </feature>
 
+    <feature>
+        <name>Feature_TmuxControl</name>
+        <description>Enables Tmux Control</description>
+        <id>3656</id>
+        <stage>AlwaysDisabled</stage>
+        <alwaysEnabledBrandingTokens>
+            <brandingToken>Dev</brandingToken>
+            <brandingToken>Canary</brandingToken>
+            <brandingToken>Preview</brandingToken>
+        </alwaysEnabledBrandingTokens>
+    </feature>
+
 </featureStaging>

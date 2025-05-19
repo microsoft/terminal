@@ -24,6 +24,9 @@ class Microsoft::Console::VirtualTerminal::ITermDispatch
 {
 public:
     using StringHandler = std::function<bool(const wchar_t)>;
+    using PrintHandler = std::function<void(const std::wstring_view)>;
+    // Use this get the StringHandler, meanwhile pass the function to give app a function to print message bypass the parser
+    using StringHandlerProducer = std::function<StringHandler(PrintHandler)>;
 
     enum class OptionalFeature
     {
@@ -192,6 +195,9 @@ public:
     virtual void PlaySounds(const VTParameters parameters) = 0; // DECPS
 
     virtual void SetOptionalFeatures(const til::enumset<OptionalFeature> features) = 0;
+
+    virtual StringHandler EnterTmuxControl(const VTParameters parameters) = 0; // tmux -CC
+    virtual void SetTmuxControlHandlerProducer(StringHandlerProducer producer) = 0; // tmux -CC
 };
 inline Microsoft::Console::VirtualTerminal::ITermDispatch::~ITermDispatch() = default;
 #pragma warning(pop)
