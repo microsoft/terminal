@@ -2105,7 +2105,7 @@
     <comment>Header for a control that adds any remaining profiles to the new tab menu.</comment>
   </data>
   <data name="NewTabMenu_AddMatchProfiles.HelpText" xml:space="preserve">
-    <value>Add a group of profiles that match at least one of the defined properties</value>
+    <value>Add a group of profiles that match at least one of the defined regular expression properties</value>
     <comment>Additional information for a control that adds a terminal profile matcher to the new tab menu. Presented near "NewTabMenu_AddMatchProfiles".</comment>
   </data>
   <data name="NewTabMenu_AddRemainingProfiles.HelpText" xml:space="preserve">
@@ -2121,15 +2121,15 @@
     <comment>Header for a control that adds a folder to the new tab menu.</comment>
   </data>
   <data name="NewTabMenu_AddMatchProfiles_Name.Header" xml:space="preserve">
-    <value>Profile name</value>
+    <value>Profile name (regular expression)</value>
     <comment>Header for a text box used to define a regex for the names of profiles to add.</comment>
   </data>
   <data name="NewTabMenu_AddMatchProfiles_Source.Header" xml:space="preserve">
-    <value>Profile source</value>
+    <value>Profile source (regular expression)</value>
     <comment>Header for a text box used to define a regex for the sources of profiles to add.</comment>
   </data>
   <data name="NewTabMenu_AddMatchProfiles_Commandline.Header" xml:space="preserve">
-    <value>Commandline</value>
+    <value>Commandline (regular expression)</value>
     <comment>Header for a text box used to define a regex for the commandlines of profiles to add.</comment>
   </data>
   <data name="NewTabMenu_AddMatchProfilesTextBlock.Text" xml:space="preserve">
@@ -2343,5 +2343,49 @@
   <data name="Globals_StartOnUserLogin_UnavailableByPolicy" xml:space="preserve">
     <value>This option is managed by enterprise policy and cannot be changed here.</value>
     <comment>This is displayed in concordance with Globals_StartOnUserLogin if the enterprise administrator has taken control of this setting.</comment>
+  </data>
+  <data name="NewTabMenu_AddMatchProfiles_Help.Content" xml:space="preserve">
+    <value>Learn more about regular expressions</value>
+  </data>
+  <data name="Appearance_BackgroundImageNone" xml:space="preserve">
+    <value>None</value>
+    <comment>Text displayed when the background image path is not defined.</comment>
+  </data>
+  <data name="Profile_AnswerbackMessageNone" xml:space="preserve">
+    <value>None</value>
+    <comment>Text displayed when the answerback message is not defined.</comment>
+  </data>
+  <data name="Settings_ResetToDefaultSettings.Header" xml:space="preserve">
+    <value>Reset to default settings</value>
+  </data>
+  <data name="Settings_ResetApplicationState.Header" xml:space="preserve">
+    <value>Clear cache</value>
+  </data>
+  <data name="Settings_ResetApplicationState.HelpText" xml:space="preserve">
+    <value>The cache stores data related to saved sessions and automatically generated profiles.</value>
+  </data>
+  <data name="Settings_ResetToDefaultSettingsButton.Content" xml:space="preserve">
+    <value>Reset</value>
+  </data>
+  <data name="Settings_ResetApplicationStateButton.Content" xml:space="preserve">
+    <value>Clear</value>
+  </data>
+  <data name="Settings_ResetToDefaultSettingsConfirmationMessageBody.Text" xml:space="preserve">
+    <value>This action is applied immediately and cannot be undone.</value>
+  </data>
+  <data name="Settings_ResetApplicationStateConfirmationMessageBody.Text" xml:space="preserve">
+    <value>This action is applied immediately and cannot be undone.</value>
+  </data>
+  <data name="Settings_ResetToDefaultSettingsConfirmationMessageHeader.Text" xml:space="preserve">
+    <value>Are you sure you want to reset your settings?</value>
+  </data>
+  <data name="Settings_ResetApplicationStateConfirmationMessageHeader.Text" xml:space="preserve">
+    <value>Are you sure you want to clear your cache?</value>
+  </data>
+  <data name="Settings_ResetToDefaultSettingsConfirmationButton.Content" xml:space="preserve">
+    <value>Yes, reset my settings</value>
+  </data>
+  <data name="Settings_ResetApplicationStateConfirmationButton.Content" xml:space="preserve">
+    <value>Yes, clear the cache</value>
   </data>
 </root>

@@ -431,7 +431,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
         else if (clickedItemTag == compatibilityTag)
         {
-            contentFrame().Navigate(xaml_typename<Editor::Compatibility>(), winrt::make<CompatibilityViewModel>(_settingsClone.GlobalSettings()));
+            contentFrame().Navigate(xaml_typename<Editor::Compatibility>(), winrt::make<CompatibilityViewModel>(_settingsClone));
             const auto crumb = winrt::make<Breadcrumb>(box_value(clickedItemTag), RS_(L"Nav_Compatibility/Content"), BreadcrumbSubPage::None);
             _breadcrumbs.Append(crumb);
         }

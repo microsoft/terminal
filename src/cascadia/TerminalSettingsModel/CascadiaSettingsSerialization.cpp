@@ -1345,6 +1345,21 @@ winrt::hstring CascadiaSettings::DefaultSettingsPath()
     return winrt::hstring{ path.native() };
 }
 
+void CascadiaSettings::ResetApplicationState() const
+{
+    auto state = ApplicationState::SharedInstance();
+    const auto hash = state.SettingsHash();
+    state.Reset();
+    state.SettingsHash(hash);
+    state.Flush();
+}
+
+void CascadiaSettings::ResetToDefaultSettings()
+{
+    ApplicationState::SharedInstance().Reset();
+    _writeSettingsToDisk(LoadStringResource(IDR_USER_DEFAULTS));
+}
+
 // Method Description:
 // - Write the current state of CascadiaSettings to our settings file
 // - Create a backup file with the current contents, if one does not exist
@@ -1355,19 +1370,21 @@ winrt::hstring CascadiaSettings::DefaultSettingsPath()
 // - <none>
 void CascadiaSettings::WriteSettingsToDisk()
 {
-    const auto settingsPath = _settingsPath();
-
     // write current settings to current settings file
     Json::StreamWriterBuilder wbuilder;
     wbuilder.settings_["enableYAMLCompatibility"] = true; // suppress spaces around colons
     wbuilder.settings_["indentation"] = "    ";
     wbuilder.settings_["precision"] = 6; // prevent values like 1.1000000000000001
 
-    FILETIME lastWriteTime{};
-    const auto styledString{ Json::writeString(wbuilder, ToJson()) };
-    til::io::write_utf8_string_to_file_atomic(settingsPath, styledString, &lastWriteTime);
+    _writeSettingsToDisk(Json::writeString(wbuilder, ToJson()));
+}
 
-    _hash = _calculateHash(styledString, lastWriteTime);
+void CascadiaSettings::_writeSettingsToDisk(std::string_view contents)
+{
+    FILETIME lastWriteTime{};
+    til::io::write_utf8_string_to_file_atomic(_settingsPath(), contents, &lastWriteTime);
+
+    _hash = _calculateHash(contents, lastWriteTime);
 
     // Persists the default terminal choice
     // GH#10003 - Only do this if _currentDefaultTerminal was actually initialized.

@@ -336,6 +336,7 @@ void WindowEmperor::HandleCommandlineArgs(int nCmdShow)
     _createMessageWindow(windowClassName.c_str());
     _setupGlobalHotkeys();
     _checkWindowsForNotificationIcon();
+    _setupSessionPersistence(_app.Logic().Settings().GlobalSettings().ShouldUsePersistedLayout());
 
     // When the settings change, we'll want to update our global hotkeys
     // and our notification icon based on the new settings.
@@ -345,6 +346,7 @@ void WindowEmperor::HandleCommandlineArgs(int nCmdShow)
             _assertIsMainThread();
             _setupGlobalHotkeys();
             _checkWindowsForNotificationIcon();
+            _setupSessionPersistence(args.NewSettings().GlobalSettings().ShouldUsePersistedLayout());
         }
     });
 
@@ -939,21 +941,46 @@ LRESULT WindowEmperor::_messageHandler(HWND window, UINT const message, WPARAM c
     return DefWindowProcW(window, message, wParam, lParam);
 }
 
+void WindowEmperor::_setupSessionPersistence(bool enabled)
+{
+    if (!enabled)
+    {
+        _persistStateTimer.Stop();
+        return;
+    }
+    _persistStateTimer.Interval(std::chrono::minutes(5));
+    _persistStateTimer.Tick([&](auto&&, auto&&) {
+        _persistState(ApplicationState::SharedInstance(), false);
+    });
+    _persistStateTimer.Start();
+}
+
+void WindowEmperor::_persistState(const ApplicationState& state, bool serializeBuffer) const
+{
+    // Calling an `ApplicationState` setter triggers a write to state.json.
+    // With this if condition we avoid an unnecessary write when persistence is disabled.
+    if (state.PersistedWindowLayouts())
+    {
+        state.PersistedWindowLayouts(nullptr);
+    }
+
+    if (_forcePersistence || _app.Logic().Settings().GlobalSettings().ShouldUsePersistedLayout())
+    {
+        for (const auto& w : _windows)
+        {
+            w->Logic().PersistState(serializeBuffer);
+        }
+    }
+
+    // Ensure to write the state.json
+    state.Flush();
+}
+
 void WindowEmperor::_finalizeSessionPersistence() const
 {
     const auto state = ApplicationState::SharedInstance();
 
-    if (_forcePersistence || _app.Logic().Settings().GlobalSettings().ShouldUsePersistedLayout())
-    {
-        state.PersistedWindowLayouts(nullptr);
-        for (const auto& w : _windows)
-        {
-            w->Logic().PersistState();
-        }
-    }
-
-    // Ensure to write the state.json before we TerminateProcess()
-    state.Flush();
+    _persistState(state, true);
 
     if (_needsPersistenceCleanup)
     {
