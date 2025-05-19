@@ -1652,11 +1652,13 @@ void CascadiaSettings::_resolveNewTabMenuProfilesSet(const IVector<Model::NewTab
 
 void CascadiaSettings::LogSettingChanges(bool isJsonLoad) const
 {
+#ifndef _DEBUG
     // Only do this if we're actually being sampled
     if (!TraceLoggingProviderEnabled(g_hSettingsModelProvider, 0, MICROSOFT_KEYWORD_MEASURES))
     {
         return;
     }
+#endif // !_DEBUG
 
     // aggregate setting changes
     std::set<std::string> changes;
