@@ -101,8 +101,8 @@ The scopes would work as follows:
   this tab.
   - **TODO!: FOR DISCUSSION**: Should this disable the tab's
       "broadcastToAllPanes" setting? Or should it leave that alone?
-* `"disableBroadcastInput"`: Set the global setting to false, the tab's setting
-  to false, and clear the set of panes being broadcasted to for this tab.
+* `"disableBroadcastInput"`: For this tab, set the global setting to false,
+  the tab's setting to false, and clear the set of panes being broadcasted.
   - **TODO!** This could also just be `"action": "toggleBroadcastInput",
     "scope": "none"`
 
