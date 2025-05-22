@@ -2101,7 +2101,7 @@
     <comment>Header for a control that adds any remaining profiles to the new tab menu.</comment>
   </data>
   <data name="NewTabMenu_AddMatchProfiles.HelpText" xml:space="preserve">
-    <value>添加至少匹配一个已定义属性的配置文件组</value>
+    <value>添加至少匹配一个定义正则表达式属性的配置文件组</value>
     <comment>Additional information for a control that adds a terminal profile matcher to the new tab menu. Presented near "NewTabMenu_AddMatchProfiles".</comment>
   </data>
   <data name="NewTabMenu_AddRemainingProfiles.HelpText" xml:space="preserve">
@@ -2117,15 +2117,15 @@
     <comment>Header for a control that adds a folder to the new tab menu.</comment>
   </data>
   <data name="NewTabMenu_AddMatchProfiles_Name.Header" xml:space="preserve">
-    <value>配置文件名称</value>
+    <value>配置文件名称(正则表达式)</value>
     <comment>Header for a text box used to define a regex for the names of profiles to add.</comment>
   </data>
   <data name="NewTabMenu_AddMatchProfiles_Source.Header" xml:space="preserve">
-    <value>配置文件源</value>
+    <value>配置文件来源(正则表达式)</value>
     <comment>Header for a text box used to define a regex for the sources of profiles to add.</comment>
   </data>
   <data name="NewTabMenu_AddMatchProfiles_Commandline.Header" xml:space="preserve">
-    <value>命令行</value>
+    <value>命令行(正则表达式)</value>
     <comment>Header for a text box used to define a regex for the commandlines of profiles to add.</comment>
   </data>
   <data name="NewTabMenu_AddMatchProfilesTextBlock.Text" xml:space="preserve">
@@ -2339,5 +2339,49 @@
   <data name="Globals_StartOnUserLogin_UnavailableByPolicy" xml:space="preserve">
     <value>此选项由企业策略管理，无法在此处更改。</value>
     <comment>This is displayed in concordance with Globals_StartOnUserLogin if the enterprise administrator has taken control of this setting.</comment>
+  </data>
+  <data name="NewTabMenu_AddMatchProfiles_Help.Content" xml:space="preserve">
+    <value>了解有关正则表达式的更多信息</value>
+  </data>
+  <data name="Appearance_BackgroundImageNone" xml:space="preserve">
+    <value>无</value>
+    <comment>Text displayed when the background image path is not defined.</comment>
+  </data>
+  <data name="Profile_AnswerbackMessageNone" xml:space="preserve">
+    <value>无</value>
+    <comment>Text displayed when the answerback message is not defined.</comment>
+  </data>
+  <data name="Settings_ResetToDefaultSettings.Header" xml:space="preserve">
+    <value>重置为默认设置</value>
+  </data>
+  <data name="Settings_ResetApplicationState.Header" xml:space="preserve">
+    <value>清除缓存</value>
+  </data>
+  <data name="Settings_ResetApplicationState.HelpText" xml:space="preserve">
+    <value>缓存会存储与已保存会话及自动生成的配置文件相关的数据。</value>
+  </data>
+  <data name="Settings_ResetToDefaultSettingsButton.Content" xml:space="preserve">
+    <value>重置</value>
+  </data>
+  <data name="Settings_ResetApplicationStateButton.Content" xml:space="preserve">
+    <value>清除</value>
+  </data>
+  <data name="Settings_ResetToDefaultSettingsConfirmationMessageBody.Text" xml:space="preserve">
+    <value>此作立即应用，无法撤消。</value>
+  </data>
+  <data name="Settings_ResetApplicationStateConfirmationMessageBody.Text" xml:space="preserve">
+    <value>此作立即应用，无法撤消。</value>
+  </data>
+  <data name="Settings_ResetToDefaultSettingsConfirmationMessageHeader.Text" xml:space="preserve">
+    <value>是否确实要重置设置?</value>
+  </data>
+  <data name="Settings_ResetApplicationStateConfirmationMessageHeader.Text" xml:space="preserve">
+    <value>是否确实要清除缓存?</value>
+  </data>
+  <data name="Settings_ResetToDefaultSettingsConfirmationButton.Content" xml:space="preserve">
+    <value>是，重置设置</value>
+  </data>
+  <data name="Settings_ResetApplicationStateConfirmationButton.Content" xml:space="preserve">
+    <value>是，清除缓存</value>
   </data>
 </root>

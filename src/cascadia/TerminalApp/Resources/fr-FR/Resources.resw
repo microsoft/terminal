@@ -210,6 +210,45 @@
   <data name="SplitPaneText" xml:space="preserve">
     <value>Fractionner le volet</value>
   </data>
+  <data name="SplitPaneToolTipText" xml:space="preserve">
+    <value>Cliquez avec le bouton droit pour afficher les directions de séparation – droite/bas/haut/gauche</value>
+  </data>
+  <data name="SplitPaneDownText" xml:space="preserve">
+    <value>Fractionner le volet vers le bas</value>
+  </data>
+  <data name="SplitPaneRightText" xml:space="preserve">
+    <value>Fractionner le volet à droite</value>
+  </data>
+  <data name="SplitPaneUpText" xml:space="preserve">
+    <value>Fractionner le volet vers le haut</value>
+  </data>
+  <data name="SplitPaneLeftText" xml:space="preserve">
+    <value>Fractionner le volet à gauche</value>
+  </data>
+  <data name="SplitPaneDuplicateText" xml:space="preserve">
+    <value>Dupliquer</value>
+  </data>
+  <data name="SwapPaneText" xml:space="preserve">
+    <value>Permuter le volet</value>
+  </data>
+  <data name="SwapPaneDownText" xml:space="preserve">
+    <value>Permuter le volet vers le bas</value>
+  </data>
+  <data name="SwapPaneRightText" xml:space="preserve">
+    <value>Permuter le volet à droite</value>
+  </data>
+  <data name="SwapPaneUpText" xml:space="preserve">
+    <value>Permuter le volet vers le haut</value>
+  </data>
+  <data name="SwapPaneLeftText" xml:space="preserve">
+    <value>Permuter le volet à gauche</value>
+  </data>
+  <data name="TogglePaneZoomText" xml:space="preserve">
+    <value>Basculer le zoom du volet</value>
+  </data>
+  <data name="CloseOtherPanesText" xml:space="preserve">
+    <value>Fermer les autres volets</value>
+  </data>
   <data name="SearchWebText" xml:space="preserve">
     <value>Recherche web</value>
   </data>
@@ -935,5 +974,8 @@
   </data>
   <data name="TabMoveRight" xml:space="preserve">
     <value>Déplacer vers la droite</value>
+  </data>
+  <data name="InvalidRegex" xml:space="preserve">
+    <value>Une expression régulière non valide a été trouvée.</value>
   </data>
 </root>

@@ -210,6 +210,45 @@
   <data name="SplitPaneText" xml:space="preserve">
     <value>분할 창</value>
   </data>
+  <data name="SplitPaneToolTipText" xml:space="preserve">
+    <value>오른쪽 클릭으로 방향 분할 - 오른쪽/아래쪽/위쪽/왼쪽</value>
+  </data>
+  <data name="SplitPaneDownText" xml:space="preserve">
+    <value>창 아래로 분할</value>
+  </data>
+  <data name="SplitPaneRightText" xml:space="preserve">
+    <value>창 오른쪽으로 분할</value>
+  </data>
+  <data name="SplitPaneUpText" xml:space="preserve">
+    <value>창 위로 분할</value>
+  </data>
+  <data name="SplitPaneLeftText" xml:space="preserve">
+    <value>창 왼쪽으로 분할</value>
+  </data>
+  <data name="SplitPaneDuplicateText" xml:space="preserve">
+    <value>중복</value>
+  </data>
+  <data name="SwapPaneText" xml:space="preserve">
+    <value>창 스왑</value>
+  </data>
+  <data name="SwapPaneDownText" xml:space="preserve">
+    <value>창 아래로 전환</value>
+  </data>
+  <data name="SwapPaneRightText" xml:space="preserve">
+    <value>창 오른쪽으로 전환</value>
+  </data>
+  <data name="SwapPaneUpText" xml:space="preserve">
+    <value>창 위로 전환</value>
+  </data>
+  <data name="SwapPaneLeftText" xml:space="preserve">
+    <value>창 왼쪽으로 전환</value>
+  </data>
+  <data name="TogglePaneZoomText" xml:space="preserve">
+    <value>창 확대/축소 토글</value>
+  </data>
+  <data name="CloseOtherPanesText" xml:space="preserve">
+    <value>다른 창 닫기</value>
+  </data>
   <data name="SearchWebText" xml:space="preserve">
     <value>웹 검색</value>
   </data>
@@ -935,5 +974,8 @@
   </data>
   <data name="TabMoveRight" xml:space="preserve">
     <value>오른쪽으로 이동</value>
+  </data>
+  <data name="InvalidRegex" xml:space="preserve">
+    <value>잘못된 정규식을 찾았습니다.</value>
   </data>
 </root>
