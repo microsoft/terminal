@@ -362,7 +362,7 @@ Essentially, the probabilistic elective monarchy will work in the following way:
     register.
 3. After registering as a server for `Monarch`s, attempt to create a `Monarch`
    using `winrt::create_instance`.
-4. Using that `Monarch`, ask it for it's PID.
+4. Using that `Monarch`, ask it for its PID.
    - If that PID is the same as the PID of the current process, then the window
      process knows that it is the monarch.
    - If that PID is some other process, then we know that we're not currently
