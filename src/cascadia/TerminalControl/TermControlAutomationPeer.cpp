@@ -305,7 +305,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     hstring TermControlAutomationPeer::GetNameCore() const
     {
-        // fallback to title if profile name is empty
+        // fall back to title if profile name is empty
         if (auto control{ _termControl.get() })
         {
             const auto profileName = control->GetProfileName();

@@ -151,11 +151,11 @@ void CascadiaSettings::LayerJson(const Json::Value& json)
     // repeat the same for Profiles...
 }
 ```
-For `defaults.json`, `_globals` will now hold all of the values set in `defaults.json`. If any settings were omitted from the `defaults.json`, `_globals` will fallback to its parent (a `GlobalAppSettings` consisting purely of system-defined values).
+For `defaults.json`, `_globals` will now hold all of the values set in `defaults.json`. If any settings were omitted from the `defaults.json`, `_globals` will fall back to its parent (a `GlobalAppSettings` consisting purely of system-defined values).
 
-For `settings.json`, `_globals` will only hold the values set in `settings.json`. If any settings were omitted from `settings.json`, `_globals` will fallback to its parent (the `GlobalAppSettings` built from `defaults.json`).
+For `settings.json`, `_globals` will only hold the values set in `settings.json`. If any settings were omitted from `settings.json`, `_globals` will fall back to its parent (the `GlobalAppSettings` built from `defaults.json`).
 
-This process becomes a bit more complex for `Profile` because it can fallback in the following order:
+This process becomes a bit more complex for `Profile` because it can fall back in the following order:
 1. `settings.json` profile
 2. `settings.json` `profiles.defaults`
 3. (if a dynamic profile) the hard-coded value in the dynamic profile generator

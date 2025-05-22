@@ -1327,7 +1327,7 @@ void AdaptDispatch::RequestChecksumRectangularArea(const VTInt id, const VTInt p
                 // As part of the checksum, we need to include the color indices of each
                 // cell, and in the case of default colors, those indices come from the
                 // color alias table. But if they're not in the bottom 16 range, we just
-                // fallback to using white on black (7 and 0).
+                // fall back to using white on black (7 and 0).
                 auto defaultFgIndex = _renderSettings.GetColorAliasIndex(ColorAlias::DefaultForeground);
                 auto defaultBgIndex = _renderSettings.GetColorAliasIndex(ColorAlias::DefaultBackground);
                 defaultFgIndex = defaultFgIndex < 16 ? defaultFgIndex : 7;

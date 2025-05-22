@@ -1352,7 +1352,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 return false;
             }
 
-            // use action's copyFormatting if it's present, else fallback to globally
+            // use action's copyFormatting if it's present, else fall back to globally
             // set copyFormatting.
             const auto copyFormats = formats != nullptr ? formats.Value() : _settings->CopyFormatting();
 
