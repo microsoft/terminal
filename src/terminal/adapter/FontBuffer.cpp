@@ -259,7 +259,7 @@ void FontBuffer::_prepareCharacterBuffer()
 {
     // If any of the attributes have changed since the last time characters
     // were downloaded, the font dimensions will need to be recalculated, and
-    // the buffer will need to be cleared. Otherwise we'll just be adding to
+    // the buffer will need to be cleared. Otherwise, we'll just be adding to
     // the existing font, assuming the current dimensions.
     if (_cellMatrix != _pendingCellMatrix ||
         _cellHeight != _pendingCellHeight ||

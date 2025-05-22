@@ -161,7 +161,7 @@ As far as actions, we're looking at something like:
     from the broadcast set. Otherwise, add all the panes from this tab to the
     broadcast set.
 * **D** toggle sending input to the current pane
-  * If this pane is in the broadcast set, remove it. Otherwise add it.
+  * If this pane is in the broadcast set, remove it. Otherwise, add it.
 This seems to break down into the following actions:
 
 ```json

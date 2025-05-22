@@ -861,7 +861,7 @@ void SettingsLoader::_appendProfile(winrt::com_ptr<Profile>&& profile, const win
 }
 
 // If the given ParsedSettings instance contains a profile with the given profile's GUID,
-// the profile is added as a parent. Otherwise a new child profile is created.
+// the profile is added as a parent. Otherwise, a new child profile is created.
 void SettingsLoader::_addUserProfileParent(const winrt::com_ptr<implementation::Profile>& profile)
 {
     if (const auto [it, inserted] = userSettings.profilesByGuid.emplace(profile->Guid(), nullptr); !inserted)

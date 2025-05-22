@@ -2690,7 +2690,7 @@ Pane::SnapSizeResult Pane::_CalcSnappedDimension(const bool widthOrHeight, const
 
 // Method Description:
 // - Increases size of given LayoutSizeNode to match next possible 'snap'. In case of leaf
-//   pane this means the next cell of the terminal. Otherwise it means that one of its children
+//   pane this means the next cell of the terminal. Otherwise, it means that one of its children
 //   advances (recursively). It expects the given node and its descendants to have either
 //   already snapped or minimum size.
 // Arguments:

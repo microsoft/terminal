@@ -268,7 +268,7 @@ try
     }
 
     // PaintCursor() is only called when the cursor is visible, but we need to invalidate the cursor area
-    // even if it isn't. Otherwise a transition from a visible to an invisible cursor wouldn't be rendered.
+    // even if it isn't. Otherwise, a transition from a visible to an invisible cursor wouldn't be rendered.
     if (const auto r = _api.invalidatedCursorArea; r.non_empty())
     {
         _p.dirtyRectInPx.left = std::min(_p.dirtyRectInPx.left, r.left * _p.s->font->cellSize.x);

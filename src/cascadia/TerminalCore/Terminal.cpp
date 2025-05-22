@@ -905,7 +905,7 @@ void Terminal::_StoreKeyEvent(const WORD vkey, const WORD scanCode) noexcept
 // Arguments:
 // - scanCode: The scan code.
 // Return Value:
-// - The key code matching the given scan code. Otherwise 0.
+// - The key code matching the given scan code. Otherwise, 0.
 WORD Terminal::_TakeVirtualKeyFromLastKeyEvent(const WORD scanCode) noexcept
 {
     const auto codes = _lastKeyEventCodes.value_or(KeyEventCodes{});

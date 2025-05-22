@@ -4186,7 +4186,7 @@ ITermDispatch::StringHandler AdaptDispatch::RequestSetting()
         {
             // Although we don't yet support any operations with parameter
             // prefixes, it's important that we still parse the prefix and
-            // include it in the ID. Otherwise we'll mistakenly respond to
+            // include it in the ID. Otherwise, we'll mistakenly respond to
             // prefixed queries that we don't actually recognise.
             const auto isParameterPrefix = ch >= L'<' && ch <= L'?';
             const auto isParameter = ch >= L'0' && ch < L'9';

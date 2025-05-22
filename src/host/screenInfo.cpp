@@ -1221,7 +1221,7 @@ void SCREEN_INFORMATION::_AdjustViewportSize(const til::rect* const prcClientNew
                                              const til::size* const pcoordSize)
 {
     // If the left is the only one that changed (and not the right
-    // also), then adjust from the left. Otherwise if the right
+    // also), then adjust from the left. Otherwise, if the right
     // changes or both changed, bias toward leaving the top-left
     // corner in place and resize from the bottom right.
     // --

@@ -663,7 +663,7 @@ CATCH_RETURN();
 // - pRetVal - the attributeId's sub-type for the first cell in the range (i.e. foreground color)
 // - attr - the text attribute we're checking
 // Return Value:
-// - true, if the attributeId is supported. false, otherwise.
+// - true, if the attributeId is supported. Otherwise, false.
 // - pRetVal is populated with the appropriate response relevant to the returned bool.
 bool UiaTextRangeBase::_initializeAttrQuery(TEXTATTRIBUTEID attributeId, VARIANT* pRetVal, const TextAttribute& attr) const
 {

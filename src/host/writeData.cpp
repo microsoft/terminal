@@ -79,7 +79,7 @@ void WriteData::SetUtf8ConsumedCharacters(const size_t cchUtf8Consumed)
 // - Called back at a later time to resume the writing operation when the output object becomes unblocked.
 // Arguments:
 // - TerminationReason - if this routine is called because a ctrl-c or ctrl-break was seen, this argument
-//                      contains CtrlC or CtrlBreak. If the owning thread is exiting, it will have ThreadDying. Otherwise 0.
+//                      contains CtrlC or CtrlBreak. If the owning thread is exiting, it will have ThreadDying. Otherwise, 0.
 // - fIsUnicode - Input data was in UCS-2 unicode or it needs to be converted with the current Output Codepage
 // - pReplyStatus - The status code to return to the client application that originally called the API (before it was queued to wait)
 // - pNumBytes - The number of bytes of data that the server/driver will need to transmit back to the client process
