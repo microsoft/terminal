@@ -397,7 +397,7 @@ std::tuple<VTInt, VTInt, VTInt> FontBuffer::_calculateDimensions() const
     }
 
     // Now we're going to test whether the dimensions are in range for a number
-    // of known terminals. We use the declared dimensions if given, otherwise
+    // of known terminals. We use the declared dimensions if given; otherwise,
     // estimate the size from the used sixel values. If comparing a sixel-based
     // height, though, we need to round up the target cell height to account for
     // the fact that our used height will always be a multiple of six.

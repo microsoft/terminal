@@ -3970,7 +3970,7 @@ namespace winrt::TerminalApp::implementation
     // Arguments:
     // - args: the ExecuteCommandlineArgs to synthesize a list of startup actions for.
     // Return Value:
-    // - an empty list if we failed to parse, otherwise a list of actions to execute.
+    // - an empty list if we failed to parse; otherwise, a list of actions to execute.
     std::vector<ActionAndArgs> TerminalPage::ConvertExecuteCommandlineToActions(const ExecuteCommandlineArgs& args)
     {
         ::TerminalApp::AppCommandlineArgs appArgs;

@@ -1102,7 +1102,7 @@ launch to use seems like an obvious next step. See also [#961].
     - `true` or `"always"`: always glom to the most recent window, regardless of
       desktop
     - `"sameDesktop"`: Only glom if there's an existing window on this virtual
-      desktop, otherwise create a new window
+      desktop; otherwise, create a new window
     - `false` or `"never"`: Never glom, always create a new window.
 
 

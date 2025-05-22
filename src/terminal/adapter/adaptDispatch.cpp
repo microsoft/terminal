@@ -1009,7 +1009,7 @@ void AdaptDispatch::_ChangeRectOrStreamAttributes(const til::rect& changeArea, c
     // top line is altered from the left offset up to the end of the line. The
     // bottom line is altered from the start up to the right offset. All the
     // lines in-between have their entire length altered. The right coordinate
-    // must be greater than the left, otherwise the operation is ignored.
+    // must be greater than the left; otherwise, the operation is ignored.
     else if (lineCount > 1 && changeRect.right > changeRect.left)
     {
         const auto pageWidth = page.Width();
@@ -2467,7 +2467,7 @@ bool AdaptDispatch::_DoLineFeed(const Page& page, const bool withReturn, const b
         _api.NotifyBufferRotation(1);
 
         // We trigger a scroll rather than a redraw, since that's more efficient,
-        // but we need to turn the cursor off before doing so, otherwise a ghost
+        // but we need to turn the cursor off before doing so; otherwise, a ghost
         // cursor can be left behind in the previous position.
         cursor.SetIsOn(false);
         textBuffer.TriggerScroll({ 0, -1 });
@@ -2881,7 +2881,7 @@ void AdaptDispatch::AcceptC1Controls(const bool enabled)
 void AdaptDispatch::SendC1Controls(const bool enabled)
 {
     // If this is an attempt to enable C1 controls, the input code page must be
-    // one of the DOCS choices (UTF-8 or ISO-8859-1), otherwise there's a risk
+    // one of the DOCS choices (UTF-8 or ISO-8859-1); otherwise, there's a risk
     // that those controls won't have a valid encoding.
     const auto codepage = _api.GetInputCodePage();
     if (enabled == false || codepage == CP_UTF8 || codepage == 28591)
@@ -3353,7 +3353,7 @@ void AdaptDispatch::SetXtermColorResource(const size_t resource, const DWORD col
 // Method Description:
 // - Reports the value of one Xterm Color Resource, if it is set.
 // Return Value:
-// True if handled successfully. False otherwise.
+// - true if handled successfully; otherwise, false.
 void AdaptDispatch::RequestXtermColorResource(const size_t resource)
 {
     assert(resource >= 10);
