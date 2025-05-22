@@ -77,7 +77,7 @@ private:
     UINT WM_TASKBARCREATED = 0;
     HMENU _currentWindowMenu = nullptr;
     bool _notificationIconShown = false;
-    bool _forcePersistence = false;
+    bool _skipPersistence = false;
     bool _needsPersistenceCleanup = false;
     SafeDispatcherTimer _persistStateTimer;
     std::optional<bool> _currentSystemThemeIsDark;
