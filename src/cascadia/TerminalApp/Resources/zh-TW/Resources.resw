@@ -210,6 +210,45 @@
   <data name="SplitPaneText" xml:space="preserve">
     <value>分割窗格</value>
   </data>
+  <data name="SplitPaneToolTipText" xml:space="preserve">
+    <value>以滑鼠右鍵按一下以選擇分割方向 - 右/下/上/左</value>
+  </data>
+  <data name="SplitPaneDownText" xml:space="preserve">
+    <value>向下分割窗格</value>
+  </data>
+  <data name="SplitPaneRightText" xml:space="preserve">
+    <value>向右分割窗格</value>
+  </data>
+  <data name="SplitPaneUpText" xml:space="preserve">
+    <value>向上分割窗格</value>
+  </data>
+  <data name="SplitPaneLeftText" xml:space="preserve">
+    <value>向左分割窗格</value>
+  </data>
+  <data name="SplitPaneDuplicateText" xml:space="preserve">
+    <value>複製</value>
+  </data>
+  <data name="SwapPaneText" xml:space="preserve">
+    <value>交換窗格</value>
+  </data>
+  <data name="SwapPaneDownText" xml:space="preserve">
+    <value>向下交換窗格</value>
+  </data>
+  <data name="SwapPaneRightText" xml:space="preserve">
+    <value>向右交換窗格</value>
+  </data>
+  <data name="SwapPaneUpText" xml:space="preserve">
+    <value>向上交換窗格</value>
+  </data>
+  <data name="SwapPaneLeftText" xml:space="preserve">
+    <value>向左交換窗格</value>
+  </data>
+  <data name="TogglePaneZoomText" xml:space="preserve">
+    <value>切換窗格縮放</value>
+  </data>
+  <data name="CloseOtherPanesText" xml:space="preserve">
+    <value>關閉其他窗格</value>
+  </data>
   <data name="SearchWebText" xml:space="preserve">
     <value>網頁搜尋</value>
   </data>
@@ -935,5 +974,8 @@
   </data>
   <data name="TabMoveRight" xml:space="preserve">
     <value>右移</value>
+  </data>
+  <data name="InvalidRegex" xml:space="preserve">
+    <value>發現無效的規則運算式。</value>
   </data>
 </root>
