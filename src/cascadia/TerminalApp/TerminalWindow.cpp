@@ -326,7 +326,7 @@ namespace winrt::TerminalApp::implementation
     // - Show a ContentDialog with buttons to take further action. Uses the
     //   FrameworkElements provided as the title and content of this dialog, and
     //   displays buttons (or a single button). Two buttons (primary and secondary)
-    //   will be displayed if this is an warning dialog for closing the terminal,
+    //   will be displayed if this is a warning dialog for closing the terminal,
     //   this allows the users to abandon the closing action. Otherwise, a single
     //   close button will be displayed.
     // - Only one dialog can be visible at a time. If another dialog is visible
