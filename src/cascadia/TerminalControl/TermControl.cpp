@@ -1017,7 +1017,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - Set up each layer's brush used to display the control's background.
     // - Respects the settings for acrylic, background image and opacity from
     //   _settings.
-    //   * If acrylic is not enabled, setup a solid color background; otherwise,
+    //   * If acrylic is not enabled, set up a solid color background; otherwise,
     //       use bgcolor as acrylic's tint
     // - Avoids image flickering and acrylic brush redraw if settings are changed
     //   but the appropriate brush is still in place.

@@ -1585,7 +1585,7 @@ void Pane::_CloseChildRoutine(const bool closeFirst)
         return;
     }
 
-    // Setup the animation
+    // Set up the animation
 
     auto removedChild = closeFirst ? _firstChild : _secondChild;
     auto remainingChild = closeFirst ? _secondChild : _firstChild;

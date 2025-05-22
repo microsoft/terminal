@@ -316,7 +316,7 @@ void FontBuffer::_addSixelValue(const VTInt value) noexcept
 {
     if (_currentChar < MAX_CHARS && _sixelColumn < _textWidth)
     {
-        // Each sixel updates six pixels of a single column, so we setup a bit
+        // Each sixel updates six pixels of a single column, so we set up a bit
         // mask for the column we want to update, and then set that bit in each
         // row for which there is a corresponding "on" bit in the input value.
         const auto outputColumnBit = (0x8000 >> (_sixelColumn + _textOffset));
