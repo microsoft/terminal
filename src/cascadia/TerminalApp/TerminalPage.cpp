@@ -2321,7 +2321,7 @@ namespace winrt::TerminalApp::implementation
     // for it. The Title change will be propagated upwards through the tab's
     // PropertyChanged event handler.
     void TerminalPage::_activePaneChanged(winrt::TerminalApp::TerminalTab sender,
-                                          Windows::Foundation::IInspectable args)
+                                          Windows::Foundation::IInspectable /*args*/)
     {
         if (const auto tab{ _GetTerminalTabImpl(sender) })
         {
@@ -5301,8 +5301,8 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    safe_void_coroutine TerminalPage::_onTabDroppedOutside(winrt::IInspectable sender,
-                                                           winrt::MUX::Controls::TabViewTabDroppedOutsideEventArgs e)
+    safe_void_coroutine TerminalPage::_onTabDroppedOutside(winrt::IInspectable /*sender*/,
+                                                           winrt::MUX::Controls::TabViewTabDroppedOutsideEventArgs /*e*/)
     {
         // Get the current pointer point from the CoreWindow
         const auto& pointerPoint{ CoreWindow::GetForCurrentThread().PointerPosition() };
