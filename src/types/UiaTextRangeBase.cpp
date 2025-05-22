@@ -568,7 +568,7 @@ try
             // - the anchors have been populated
             // This means that we've found a contiguous range where the text attribute was found.
             // No point in searching through the rest of the search space.
-            // TLDR: keep updating the second anchor and make the range wider until the attribute changes.
+            // TL;DR: keep updating the second anchor and make the range wider until the attribute changes.
             break;
         }
     }
