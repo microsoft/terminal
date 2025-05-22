@@ -1289,7 +1289,7 @@ namespace winrt::TerminalApp::implementation
             //
             // We need to do this here, to ensure we tell the ConptyConnection
             // the correct starting path. If we're being invoked from another
-            // terminal instance (e.g. wt -w 0 -d .), then we have switched our
+            // terminal instance (e.g. `wt -w 0 -d .`), then we have switched our
             // CWD to the provided path. We should treat the StartingDirectory
             // as relative to the current CWD.
             //
