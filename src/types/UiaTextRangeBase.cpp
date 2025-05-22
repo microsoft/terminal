@@ -1310,7 +1310,7 @@ til::CoordType UiaTextRangeBase::_getViewportHeight(const til::inclusive_rect& v
 {
     assert(viewport.bottom >= viewport.top);
     // + 1 because til::inclusive_rect is inclusive on both sides so subtracting top
-    // and bottom gets rid of 1 more then it should.
+    // and bottom gets rid of 1 more, then it should.
     return viewport.bottom - viewport.top + 1;
 }
 
