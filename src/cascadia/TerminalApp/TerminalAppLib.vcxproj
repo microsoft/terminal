@@ -177,6 +177,9 @@
     <ClInclude Include="SettingsPaneContent.h">
       <DependentUpon>TerminalPaneContent.idl</DependentUpon>
     </ClInclude>
+    <ClInclude Include="TmuxControl.h">
+      <DependentUpon>TerminalPage.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="Toast.h" />
     <ClInclude Include="TerminalSettingsCache.h">
       <DependentUpon>TerminalSettingsCache.idl</DependentUpon>
@@ -299,6 +302,9 @@
     </ClCompile>
     <ClCompile Include="SettingsPaneContent.cpp">
       <DependentUpon>TerminalPaneContent.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="TmuxControl.cpp">
+      <DependentUpon>TerminalPage.xaml</DependentUpon>
     </ClCompile>
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
     <ClCompile Include="Toast.cpp" />
