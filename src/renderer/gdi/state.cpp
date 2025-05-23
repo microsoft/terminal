@@ -560,7 +560,7 @@ GdiEngine::~GdiEngine()
 // Arguments:
 // - newTitle: the new string to use for the title of the window
 // Return Value:
-// -  S_OK if PostMessageW succeeded, otherwise E_FAIL
+// -  S_OK if PostMessageW succeeded; otherwise, E_FAIL
 [[nodiscard]] HRESULT GdiEngine::_DoUpdateTitle(_In_ const std::wstring_view /*newTitle*/) noexcept
 {
     // the CM_UPDATE_TITLE handler in windowproc will query the updated title.

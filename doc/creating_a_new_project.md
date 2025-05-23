@@ -6,7 +6,7 @@ When creating a new DLL, it was really helpful to reference an existing DLL's `.
 
 - [ ] Make sure to `<Import>` our pre props at the _top_ of the vcxproj, and our post props at the _bottom_ of the vcxproj.
 ```
-<!-- pre props --> 
+<!-- pre props -->
 <Import Project="..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
 <Import Project="$(OpenConsoleDir)src\cppwinrt.build.pre.props" />
 
@@ -35,7 +35,7 @@ DllGetActivationFactory = WINRT_GetActivationFactory    PRIVATE
 - _Note_: If your new library eventually rolls up as a reference to our Centennial Packaging project `CascadiaPackage`, you don't have to worry about manually adding your definitions to the `AppXManifest.xml` because the Centennial Packaging project automatically enumerates the reference tree of WinMDs and stitches that information into the `AppXManifest.xml`. However, if your new project does _not_ ultimately roll up to a packaging project that will automatically put the references into `AppXManifest`, you will have to add them in manually.
 
 ### Troubleshooting
-- If you hit an error that looks like this: 
+- If you hit an error that looks like this:
     ```
     X found processing metadata file ..\blah1\Microsoft.UI.Xaml.winmd, type already exists in file ..\blah\NewDLLProject\Microsoft.UI.Xaml.winmd.
     ```
@@ -51,4 +51,4 @@ DllGetActivationFactory = WINRT_GetActivationFactory    PRIVATE
 
 - If you hit a `Class not Registered` error, this might be because a class isn't getting registered in the app manifest. You can go check `src/cascadia/CascadiaPackage/bin/x64/Debug/AppX/AppXManifest.xml` to see if there exist entries to the classes of your newly created DLL. If the references aren't there, double check that you've added `<ProjectReference>` blocks to both `WindowsTerminal.vcxproj` and `TerminalApp.vcxproj`.
 
-- If you hit an extremely vague error along the lines of `Error in the DLL`, and right before that line you notice that your new DLL is loaded and unloaded right after each other, double check that your new DLL's definitions show up in the `AppXManifest.xml` file. If your new DLL is included as a reference to a project that rolls up to `CascadiaPackage`, double check that you've created a `.def` file for the project. Otherwise if your new project _does not_ roll up to a package that populates the `AppXManifest` references for you, you'll have to add those references yourself.
+- If you hit an extremely vague error along the lines of `Error in the DLL`, and right before that line you notice that your new DLL is loaded and unloaded right after each other, double check that your new DLL's definitions show up in the `AppXManifest.xml` file. If your new DLL is included as a reference to a project that rolls up to `CascadiaPackage`, double check that you've created a `.def` file for the project. Otherwise, if your new project _does not_ roll up to a package that populates the `AppXManifest` references for you, you'll have to add those references yourself.

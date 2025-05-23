@@ -217,7 +217,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             }
         }
 
-        // Couldn't find the selected item, fallback to first menu item
+        // Couldn't find the selected item, fall back to first menu item
         // This happens when the selected item was a profile which doesn't exist in the new configuration
         // We can use menuItemsSTL here because the only things they miss are profile entries.
         const auto& firstItem{ _menuItemSource.GetAt(0).as<MUX::Controls::NavigationViewItem>() };

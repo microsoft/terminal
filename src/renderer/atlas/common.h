@@ -265,7 +265,7 @@ namespace Microsoft::Console::Render::Atlas
 
     private:
         // These two functions don't need to use scoped objects or standard allocators,
-        // since this class is in fact an scoped allocator object itself.
+        // since this class is in fact a scoped allocator object itself.
 #pragma warning(push)
 #pragma warning(disable : 26402) // Return a scoped object instead of a heap-allocated if it has a move constructor (r.3).
 #pragma warning(disable : 26409) // Avoid calling new and delete explicitly, use std::make_unique<T> instead (r.11).

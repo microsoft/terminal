@@ -1017,7 +1017,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - Set up each layer's brush used to display the control's background.
     // - Respects the settings for acrylic, background image and opacity from
     //   _settings.
-    //   * If acrylic is not enabled, setup a solid color background, otherwise
+    //   * If acrylic is not enabled, set up a solid color background; otherwise,
     //       use bgcolor as acrylic's tint
     // - Avoids image flickering and acrylic brush redraw if settings are changed
     //   but the appropriate brush is still in place.
@@ -1882,7 +1882,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - vkey: The vkey of the key pressed.
     // - scanCode: The scan code of the key pressed.
     // - states: The Microsoft::Terminal::Core::ControlKeyStates representing the modifier key states.
-    // - keyDown: If true, the key was pressed, otherwise the key was released.
+    // - keyDown: If true, the key was pressed; otherwise, the key was released.
     bool TermControl::_TrySendKeyEvent(const WORD vkey,
                                        const WORD scanCode,
                                        const ControlKeyStates modifiers,
@@ -2966,7 +2966,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - Adjusts given dimension (width or height) so that it aligns to the character grid.
     //   The snap is always downward.
     // Arguments:
-    // - widthOrHeight: if true operates on width, otherwise on height
+    // - widthOrHeight: if true operates on width; otherwise, on height
     // - dimension: a dimension (width or height) to be snapped
     // Return Value:
     // - A dimension that would be aligned to the character grid.
