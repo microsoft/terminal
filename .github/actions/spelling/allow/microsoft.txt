@@ -82,6 +82,7 @@ symbolrequestprod
 Sysinternals
 sysnative
 systemroot
+TABBEDWINDOW
 taskkill
 tasklist
 tdbuildteamid
