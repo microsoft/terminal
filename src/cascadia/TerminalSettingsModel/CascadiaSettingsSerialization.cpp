@@ -27,6 +27,7 @@
 #include "ProfileEntry.h"
 #include "FolderEntry.h"
 #include "MatchProfilesEntry.h"
+#include "WtExeUtils.h"
 
 using namespace winrt::Windows::Foundation::Collections;
 using namespace winrt::Windows::ApplicationModel::AppExtensions;
@@ -1685,10 +1686,22 @@ void CascadiaSettings::LogSettingChanges(bool isJsonLoad) const
         changes.insert(change);
     }
 
+#if defined(WT_BRANDING_RELEASE)
+    constexpr uint8_t branding = 3;
+#elif defined(WT_BRANDING_PREVIEW)
+    constexpr uint8_t branding = 2;
+#elif defined(WT_BRANDING_CANARY)
+    constexpr uint8_t branding = 1;
+#else
+    constexpr uint8_t branding = 0;
+#endif
+    const uint8_t distribution = IsPackaged()     ? 2 :
+                                 IsPortableMode() ? 1 :
+                                                    0;
+
     // report changes
     for (const auto& change : changes)
     {
-#ifndef _DEBUG
         // A `isJsonLoad ? "JsonSettingsChanged" : "UISettingsChanged"`
         //   would be nice, but that apparently isn't allowed in the macro below.
         // Also, there's guidance to not send too much data all in one event,
@@ -1698,7 +1711,9 @@ void CascadiaSettings::LogSettingChanges(bool isJsonLoad) const
             TraceLoggingWrite(g_hSettingsModelProvider,
                               "JsonSettingsChanged",
                               TraceLoggingDescription("Event emitted when settings.json change"),
-                              TraceLoggingValue(change.data()),
+                              TraceLoggingValue(change.data(), "Setting"),
+                              TraceLoggingValue(branding, "Branding"),
+                              TraceLoggingValue(distribution, "Distribution"),
                               TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
                               TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
         }
@@ -1707,14 +1722,11 @@ void CascadiaSettings::LogSettingChanges(bool isJsonLoad) const
             TraceLoggingWrite(g_hSettingsModelProvider,
                               "UISettingsChanged",
                               TraceLoggingDescription("Event emitted when settings change via the UI"),
-                              TraceLoggingValue(change.data()),
+                              TraceLoggingValue(change.data(), "Setting"),
+                              TraceLoggingValue(branding, "Branding"),
+                              TraceLoggingValue(distribution, "Distribution"),
                               TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
                               TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
         }
-#else
-        OutputDebugStringA(isJsonLoad ? "JsonSettingsChanged - " : "UISettingsChanged - ");
-        OutputDebugStringA(change.data());
-        OutputDebugStringA("\n");
-#endif // !_DEBUG
     }
 }

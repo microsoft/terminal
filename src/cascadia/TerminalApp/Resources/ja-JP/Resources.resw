@@ -211,6 +211,45 @@
   <data name="SplitPaneText" xml:space="preserve">
     <value>ウィンドウを分割する</value>
   </data>
+  <data name="SplitPaneToolTipText" xml:space="preserve">
+    <value>分割する方向を右クリック - 右/下/上/左</value>
+  </data>
+  <data name="SplitPaneDownText" xml:space="preserve">
+    <value>下にペインを分割</value>
+  </data>
+  <data name="SplitPaneRightText" xml:space="preserve">
+    <value>右にペインを分割</value>
+  </data>
+  <data name="SplitPaneUpText" xml:space="preserve">
+    <value>上にペインを分割</value>
+  </data>
+  <data name="SplitPaneLeftText" xml:space="preserve">
+    <value>左にペインを分割</value>
+  </data>
+  <data name="SplitPaneDuplicateText" xml:space="preserve">
+    <value>複製</value>
+  </data>
+  <data name="SwapPaneText" xml:space="preserve">
+    <value>ウィンドウを入れ替える</value>
+  </data>
+  <data name="SwapPaneDownText" xml:space="preserve">
+    <value>下とペインを入れ替え</value>
+  </data>
+  <data name="SwapPaneRightText" xml:space="preserve">
+    <value>右とペインを入れ替え</value>
+  </data>
+  <data name="SwapPaneUpText" xml:space="preserve">
+    <value>上とペインを入れ替え</value>
+  </data>
+  <data name="SwapPaneLeftText" xml:space="preserve">
+    <value>左とペインを入れ替え</value>
+  </data>
+  <data name="TogglePaneZoomText" xml:space="preserve">
+    <value>ウィンドウのズームの切り替え</value>
+  </data>
+  <data name="CloseOtherPanesText" xml:space="preserve">
+    <value>他のウィンドウを閉じる</value>
+  </data>
   <data name="SearchWebText" xml:space="preserve">
     <value>Web 検索</value>
   </data>
@@ -936,5 +975,8 @@
   </data>
   <data name="TabMoveRight" xml:space="preserve">
     <value>右へ移動</value>
+  </data>
+  <data name="InvalidRegex" xml:space="preserve">
+    <value>無効な正規表現が見つかりました。</value>
   </data>
 </root>

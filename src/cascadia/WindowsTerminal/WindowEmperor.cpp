@@ -399,10 +399,24 @@ void WindowEmperor::HandleCommandlineArgs(int nCmdShow)
         {
             if (!loggedInteraction)
             {
+#if defined(WT_BRANDING_RELEASE)
+                constexpr uint8_t branding = 3;
+#elif defined(WT_BRANDING_PREVIEW)
+                constexpr uint8_t branding = 2;
+#elif defined(WT_BRANDING_CANARY)
+                constexpr uint8_t branding = 1;
+#else
+                constexpr uint8_t branding = 0;
+#endif
+                const uint8_t distribution = IsPackaged()                             ? 2 :
+                                             _app.Logic().Settings().IsPortableMode() ? 1 :
+                                                                                        0;
                 TraceLoggingWrite(
                     g_hWindowsTerminalProvider,
                     "SessionBecameInteractive",
                     TraceLoggingDescription("Event emitted when the session was interacted with"),
+                    TraceLoggingValue(branding, "Branding"),
+                    TraceLoggingValue(distribution, "Distribution"),
                     TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
                     TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
                 loggedInteraction = true;
@@ -899,7 +913,8 @@ LRESULT WindowEmperor::_messageHandler(HWND window, UINT const message, WPARAM c
             RegisterApplicationRestart(nullptr, RESTART_NO_CRASH | RESTART_NO_HANG);
             return TRUE;
         case WM_ENDSESSION:
-            _forcePersistence = true;
+            _finalizeSessionPersistence();
+            _skipPersistence = true;
             PostQuitMessage(0);
             return 0;
         default:
@@ -946,7 +961,7 @@ void WindowEmperor::_persistState(const ApplicationState& state, bool serializeB
         state.PersistedWindowLayouts(nullptr);
     }
 
-    if (_forcePersistence || _app.Logic().Settings().GlobalSettings().ShouldUsePersistedLayout())
+    if (_app.Logic().Settings().GlobalSettings().ShouldUsePersistedLayout())
     {
         for (const auto& w : _windows)
         {
@@ -960,6 +975,13 @@ void WindowEmperor::_persistState(const ApplicationState& state, bool serializeB
 
 void WindowEmperor::_finalizeSessionPersistence() const
 {
+    if (_skipPersistence)
+    {
+        // We received WM_ENDSESSION and persisted the state.
+        // We don't need to persist it again.
+        return;
+    }
+
     const auto state = ApplicationState::SharedInstance();
 
     _persistState(state, true);
