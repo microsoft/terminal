@@ -8,6 +8,12 @@ import "DefaultTerminal.idl";
 
 namespace Microsoft.Terminal.Settings.Model
 {
+    enum FragmentScope
+    {
+        User,
+        Machine
+    };
+
     [default_interface] runtimeclass CascadiaSettings {
         static CascadiaSettings LoadDefaults();
         static CascadiaSettings LoadAll();
@@ -40,6 +46,7 @@ namespace Microsoft.Terminal.Settings.Model
         Profile DuplicateProfile(Profile sourceProfile);
 
         ActionMap ActionMap { get; };
+        Windows.Foundation.Collections.IVectorView<ExtensionPackage> Extensions { get; };
 
         IVectorView<SettingsLoadWarnings> Warnings { get; };
         Windows.Foundation.IReference<SettingsLoadErrors> GetLoadingError { get; };
@@ -57,5 +64,36 @@ namespace Microsoft.Terminal.Settings.Model
         DefaultTerminal CurrentDefaultTerminal;
 
         void ExpandCommands();
+    }
+
+    runtimeclass FragmentProfileEntry
+    {
+        Guid ProfileGuid { get; };
+        String Json { get; };
+    }
+
+    runtimeclass FragmentColorSchemeEntry
+    {
+        String ColorSchemeName { get; };
+        String Json { get; };
+    }
+
+    runtimeclass FragmentSettings
+    {
+        String Source { get; };
+        String Json { get; };
+        String Filename { get; };
+        IVectorView<FragmentProfileEntry> ModifiedProfilesView { get; };
+        IVectorView<FragmentProfileEntry> NewProfilesView { get; };
+        IVectorView<FragmentColorSchemeEntry> ColorSchemesView { get; };
+    }
+
+    runtimeclass ExtensionPackage
+    {
+        String Source { get; };
+        String DisplayName { get; };
+        String Icon { get; };
+        FragmentScope Scope { get; };
+        IVectorView<FragmentSettings> FragmentsView { get; };
     }
 }

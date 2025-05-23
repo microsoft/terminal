@@ -6,14 +6,26 @@
 #include "VisualStudioGenerator.h"
 #include "VsDevCmdGenerator.h"
 #include "VsDevShellGenerator.h"
+#include <LibraryResources.h>
 
 using namespace winrt::Microsoft::Terminal::Settings::Model;
 
 std::wstring_view VisualStudioGenerator::Namespace{ L"Windows.Terminal.VisualStudio" };
+static constexpr std::wstring_view IconPath{ L"ms-appx:///ProfileGeneratorIcons/VisualStudio.png" };
 
 std::wstring_view VisualStudioGenerator::GetNamespace() const noexcept
 {
     return Namespace;
+}
+
+std::wstring_view VisualStudioGenerator::GetDisplayName() const noexcept
+{
+    return RS_(L"VisualStudioGeneratorDisplayName");
+}
+
+std::wstring_view VisualStudioGenerator::GetIcon() const noexcept
+{
+    return IconPath;
 }
 
 void VisualStudioGenerator::GenerateProfiles(std::vector<winrt::com_ptr<implementation::Profile>>& profiles) const
