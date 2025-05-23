@@ -66,19 +66,19 @@ namespace Microsoft.Terminal.Settings.Model
         void ExpandCommands();
     }
 
-    [default_interface] runtimeclass FragmentProfileEntry
+    runtimeclass FragmentProfileEntry
     {
         Guid ProfileGuid { get; };
         String Json { get; };
     }
 
-    [default_interface] runtimeclass FragmentColorSchemeEntry
+    runtimeclass FragmentColorSchemeEntry
     {
         String ColorSchemeName { get; };
         String Json { get; };
     }
 
-    [default_interface] runtimeclass FragmentSettings
+    runtimeclass FragmentSettings
     {
         String Source { get; };
         String Json { get; };
@@ -88,7 +88,7 @@ namespace Microsoft.Terminal.Settings.Model
         IVectorView<FragmentColorSchemeEntry> ColorSchemesView { get; };
     }
 
-    [default_interface] runtimeclass ExtensionPackage
+    runtimeclass ExtensionPackage
     {
         String Source { get; };
         String DisplayName { get; };

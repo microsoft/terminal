@@ -129,7 +129,7 @@ std::vector<Model::ExtensionPackage> SettingsLoader::LoadExtensionPackages()
 {
     SettingsLoader loader{};
     loader.GenerateExtensionPackagesFromProfileGenerators();
-    loader.FindFragmentsAndMergeIntoUserSettings(true);
+    loader.FindFragmentsAndMergeIntoUserSettings(true /*generateExtensionPackages*/);
 
     std::vector<Model::ExtensionPackage> extensionPackages;
     for (auto [_, extPkg] : loader.extensionPackageMap)
@@ -217,6 +217,8 @@ void SettingsLoader::GenerateProfiles()
         }
     };
 
+    // Generate profiles for each generator and add them to the inbox settings.
+    // Be sure to update the same list below.
     generateProfiles(PowershellCoreProfileGenerator{});
     generateProfiles(WslDistroGenerator{});
     generateProfiles(AzureCloudShellGenerator{});
@@ -256,8 +258,8 @@ void SettingsLoader::GenerateExtensionPackagesFromProfileGenerators()
         extPkg->Icon(hstring{ generator.GetIcon() });
     };
 
-    // TODO CARLOS: is there a way to deduplicate this list?
-    // Is it even worth it if we're adding special logic for the PwshInstallerGenerator PR?
+    // Generate extension package objects for each generator.
+    // Be sure to update the same list above.
     generateExtensionPackages(PowershellCoreProfileGenerator{});
     generateExtensionPackages(WslDistroGenerator{});
     generateExtensionPackages(AzureCloudShellGenerator{});
@@ -402,6 +404,14 @@ void SettingsLoader::FindFragmentsAndMergeIntoUserSettings(bool generateExtensio
     {
         const auto& package = ext.Package();
         const auto packageName = package.Id().FamilyName();
+
+        // If the extension was explicitly disabled, skip over it early to avoid the async API!
+        // NOTE: only do this if we're NOT generating extension packages. If we are, we need to get all the
+        //       package metadata anyway to display in the settings UI later.
+        if (!generateExtensionPackages && _ignoredNamespaces.contains(std::wstring_view{ packageName }))
+        {
+            continue;
+        }
 
         // Likewise, getting the public folder from an extension is an async operation.
         auto foundFolder = extractValueFromTaskWithoutMainThreadAwait(ext.GetPublicFolderAsync());
@@ -848,7 +858,7 @@ void SettingsLoader::_parseFragment(const winrt::hstring& source, const std::str
                     {
                         fragmentColorSchemes.emplace_back(winrt::make<FragmentColorSchemeEntry>(scheme->Name(), hstring{ til::u8u16(Json::writeString(_getJsonStyledWriter(), schemeJson)) }));
                     }
-                    else if (applyToUserSettings)
+                    if (applyToUserSettings)
                     {
                         // Don't add the color scheme to the Fragment's GlobalSettings; that will
                         // cause layering issues later. Add them to a staging area for later processing.
@@ -864,7 +874,7 @@ void SettingsLoader::_parseFragment(const winrt::hstring& source, const std::str
         {
             fragmentSettings->ColorSchemes(fragmentColorSchemes.empty() ? nullptr : single_threaded_vector<Model::FragmentColorSchemeEntry>(std::move(fragmentColorSchemes)));
         }
-        else if (applyToUserSettings)
+        if (applyToUserSettings)
         {
             // Parse out actions from the fragment. Manually opt-out of keybinding
             // parsing - fragments shouldn't be allowed to bind actions to keys
@@ -902,7 +912,7 @@ void SettingsLoader::_parseFragment(const winrt::hstring& source, const std::str
                     {
                         destinationSet->emplace_back(winrt::make<FragmentProfileEntry>(guid, hstring{ til::u8u16(Json::writeString(_getJsonStyledWriter(), profileJson)) }));
                     }
-                    else if (applyToUserSettings)
+                    if (applyToUserSettings)
                     {
                         _appendProfile(std::move(profile), guid, settings);
                     }
@@ -1048,7 +1058,7 @@ void SettingsLoader::_addUserProfileParent(const winrt::com_ptr<implementation::
     }
 }
 
-// returns true if the scheme was successfully added, otherwise false
+// returns whether the scheme was successfully added
 bool SettingsLoader::_addOrMergeUserColorScheme(const winrt::com_ptr<implementation::ColorScheme>& newScheme)
 {
     // On entry, all the user color schemes have been loaded. Therefore, any insertions of inbox or fragment schemes
@@ -1111,19 +1121,22 @@ void SettingsLoader::_executeGenerator(const IDynamicProfileGenerator& generator
 
 winrt::com_ptr<ExtensionPackage> SettingsLoader::_registerFragment(const winrt::Microsoft::Terminal::Settings::Model::FragmentSettings& fragment, FragmentScope scope)
 {
+    winrt::com_ptr<ExtensionPackage> extPkg{ nullptr };
     const auto src = fragment.Source();
-    if (auto extPkg = extensionPackageMap[src])
+    const auto found = extensionPackageMap.find(src);
+    if (found != extensionPackageMap.end())
     {
-        extPkg->Fragments().Append(fragment);
-        return extPkg;
+        // retrieve from extensionPackageMap
+        extPkg = found->second;
     }
     else
     {
-        auto newExtPkg = winrt::make_self<ExtensionPackage>(src, scope);
-        newExtPkg->Fragments().Append(fragment);
-        extensionPackageMap[src] = newExtPkg;
-        return newExtPkg;
+        // create a new entry in extensionPackageMap
+        const auto em = extensionPackageMap.emplace(src, winrt::make_self<ExtensionPackage>(src, scope));
+        extPkg = em.first->second;
     }
+    extPkg->Fragments().Append(fragment);
+    return extPkg;
 }
 
 // Method Description:
@@ -1198,7 +1211,7 @@ try
     loader.MergeInboxIntoUserSettings();
     // Fragments might reference user profiles created by a generator.
     // --> FindFragmentsAndMergeIntoUserSettings must be called after MergeInboxIntoUserSettings.
-    loader.FindFragmentsAndMergeIntoUserSettings(false);
+    loader.FindFragmentsAndMergeIntoUserSettings(false /*generateExtensionPackages*/);
     loader.FinalizeLayering();
 
     // DisableDeletedProfiles returns true whenever we encountered any new generated/dynamic profiles.

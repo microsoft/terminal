@@ -235,7 +235,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                                     // navigate to the NewTabMenu page,
                                     // _Navigate() will handle trying to find the right subpage
                                     SettingsNav().SelectedItem(item);
-                                    _Navigate(breadcrumbExtensionPackage, BreadcrumbSubPage::NewTabMenu_Folder);
+                                    _Navigate(breadcrumbExtensionPackage, BreadcrumbSubPage::Extensions_Extension);
                                     return;
                                 }
                             }
