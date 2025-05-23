@@ -651,7 +651,7 @@ try
     if (!isSettingDefaultBrushes)
     {
         auto attributes = FontRelevantAttributes::None;
-        WI_SetFlagIf(attributes, FontRelevantAttributes::Bold, textAttributes.IsIntense() && renderSettings.GetRenderMode(RenderSettings::Mode::IntenseIsBold));
+        WI_SetFlagIf(attributes, FontRelevantAttributes::Bold, textAttributes.IsBold(renderSettings.GetRenderMode(RenderSettings::Mode::IntenseIsBold)));
         WI_SetFlagIf(attributes, FontRelevantAttributes::Italic, textAttributes.IsItalic());
 
         if (_api.attributes != attributes)

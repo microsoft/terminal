@@ -72,6 +72,7 @@ WUX::Controls::RichTextBlock MarkdownToXaml::Convert(std::string_view markdownTe
 MarkdownToXaml::MarkdownToXaml(const winrt::hstring& baseUrl) :
     _baseUri{ baseUrl }
 {
+    _root.ContextFlyout(winrt::Microsoft::Terminal::UI::TextMenuFlyout{});
     _root.IsTextSelectionEnabled(true);
     _root.TextWrapping(WUX::TextWrapping::WrapWholeWords);
 }
@@ -155,6 +156,7 @@ void MarkdownToXaml::_EndParagraph() noexcept
 WUX::Controls::TextBlock MarkdownToXaml::_makeDefaultTextBlock()
 {
     WUX::Controls::TextBlock b{};
+    b.ContextFlyout(winrt::Microsoft::Terminal::UI::TextMenuFlyout{});
     b.IsTextSelectionEnabled(true);
     b.TextWrapping(WUX::TextWrapping::WrapWholeWords);
     return b;

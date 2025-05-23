@@ -165,6 +165,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         winrt::Windows::Foundation::Collections::IObservableVector<Model::Profile> ActiveProfiles() const noexcept;
         Model::ActionMap ActionMap() const noexcept;
         winrt::Windows::Foundation::Collections::IVectorView<Model::ExtensionPackage> Extensions();
+        void ResetApplicationState() const;
+        void ResetToDefaultSettings();
         void WriteSettingsToDisk();
         Json::Value ToJson() const;
         Model::Profile ProfileDefaults() const;
@@ -200,6 +202,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         winrt::com_ptr<implementation::Profile> _createNewProfile(const std::wstring_view& name) const;
         Model::Profile _getProfileForCommandLine(const winrt::hstring& commandLine) const;
         void _refreshDefaultTerminals();
+        void _writeSettingsToDisk(std::string_view contents);
 
         void _resolveDefaultProfile() const;
         void _resolveNewTabMenuProfiles() const;
@@ -213,6 +216,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void _validateColorSchemesInCommands() const;
         bool _hasInvalidColorScheme(const Model::Command& command) const;
         void _validateThemeExists();
+        void _validateRegexes();
 
         void _researchOnLoad();
 
