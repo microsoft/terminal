@@ -871,7 +871,7 @@ namespace til
 
             // An optimization for the most common vector type which is trivially and copyable and noexcept constructible.
             // Compared to the complex form below, we don't need the 2 moves and 1 destroy, because is_trivially_copyable_v implies
-            // that we can just memmove() the items in one fell swoop. We don't need a try/catch either because func() is noexcept.
+            // that we can just memmove() the items all at once. We don't need a try/catch either because func() is noexcept.
             if constexpr (noexcept(func(begin())) && std::is_trivially_copyable_v<T>)
             {
                 _size = new_size;
