@@ -502,6 +502,12 @@ try
         {
             for (const auto& ch : cluster.GetText())
             {
+                // Skip Unicode FSI (U+2068) and PDI (U+2069).
+                // TODO: #538 - Remove this once we have proper support for bidirectional text.
+                if (ch == 0x2068u || ch == 0x2069u)
+                {
+                    continue;
+                }
                 _api.bufferLine.emplace_back(ch);
                 _api.bufferLineColumn.emplace_back(columnEnd);
             }
