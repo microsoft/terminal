@@ -2389,7 +2389,9 @@ void AdaptDispatch::CarriageReturn()
 // Arguments:
 // - page - Target page on which the line feed is executed.
 // - withReturn - Set to true if a carriage return should be performed as well.
-// - wrapForced - Set to true is the line feed was the result of the line wrapping. if the viewport panned down. False if not.
+// - wrapForced - Set to true if the line feed was the result of the line wrapping.
+// Return Value:
+// - true if the viewport panned down; otherwise, false.
 bool AdaptDispatch::_DoLineFeed(const Page& page, const bool withReturn, const bool wrapForced)
 {
     auto& textBuffer = page.Buffer();
