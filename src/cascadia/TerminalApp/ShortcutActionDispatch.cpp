@@ -26,7 +26,7 @@ namespace winrt::TerminalApp::implementation
     // Arguments:
     // - actionAndArgs: the ShortcutAction and associated args to raise an event for.
     // Return Value:
-    // - true if we handled the event was handled, else false.
+    // - true if the event was handled, else false.
     bool ShortcutActionDispatch::DoAction(const winrt::Windows::Foundation::IInspectable& sender,
                                           const ActionAndArgs& actionAndArgs)
     {
