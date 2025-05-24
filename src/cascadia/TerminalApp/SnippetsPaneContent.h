@@ -77,7 +77,7 @@ namespace winrt::TerminalApp::implementation
             }
         }
 
-        void UpdateFilter(std::shared_ptr<fzf::matcher::Pattern> pattern)
+        void UpdateFilter(std::shared_ptr<fuzzy::Pattern> pattern)
         {
             _pattern = pattern;
             _filteredCommand->UpdateFilter(pattern);
@@ -109,7 +109,7 @@ namespace winrt::TerminalApp::implementation
         bool HasChildren() { return _children.Size() > 0; }
         winrt::Microsoft::Terminal::Settings::Model::Command Command() { return _command; }
         winrt::TerminalApp::FilteredCommand FilteredCommand() { return *_filteredCommand; }
-        std::shared_ptr<fzf::matcher::Pattern> _pattern;
+        std::shared_ptr<fuzzy::Pattern> _pattern;
 
         int32_t Row() { return HasChildren() ? 2 : 1; } // See the BODGY comment in the .XAML for explanation
 

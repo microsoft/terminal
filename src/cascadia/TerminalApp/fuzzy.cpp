@@ -3,14 +3,28 @@
 
 namespace fuzzy
 {
+    std::wstring_view trimSuffixSpaces(std::wstring_view input)
+    {
+        size_t end = input.size();
+        while (end > 0 && input[end - 1] == L' ')
+        {
+            --end;
+        }
+        return input.substr(0, end);
+    }
 
+    std::wstring_view trimStart(const std::wstring_view str)
+    {
+        const auto off = str.find_first_not_of(L' ');
+        return str.substr(std::min(off, str.size()));
+    }
 
     int32_t utf32Length(std::wstring_view str)
     {
         return u_countChar32(reinterpret_cast<const UChar*>(str.data()), static_cast<int32_t>(str.size()));
     }
 
-    static std::vector<UChar32> ConvertUtf16ToCodePoints(
+    static std::vector<UChar32> convertUtf16ToCodePoints(
         std::wstring_view text,
         std::vector<int32_t>* utf16OffsetsOut = nullptr)
     {
@@ -50,7 +64,7 @@ namespace fuzzy
         return a == b || (a == U'/' && b == U'\\') || (a == U'\\' && b == U'/');
     }
 
-    static int sep_bonus(UChar32 ch) noexcept
+    static int separatorbonus(UChar32 ch) noexcept
     {
         switch (ch)
         {
@@ -70,7 +84,7 @@ namespace fuzzy
         }
     }
 
-    static int char_score(UChar32 q, UChar32 qLow, std::optional<UChar32> prev, UChar32 t, UChar32 tLow, int seq) noexcept
+    static int charScore(UChar32 q, UChar32 qLow, std::optional<UChar32> prev, UChar32 t, UChar32 tLow, int seq) noexcept
     {
         if (!equalish(qLow, tLow))
         {
@@ -89,7 +103,7 @@ namespace fuzzy
 
         if (prev)
         {
-            if (int sb = sep_bonus(*prev); sb)
+            if (int sb = separatorbonus(*prev); sb)
             {
                 s += sb;
             }
@@ -105,99 +119,99 @@ namespace fuzzy
         return s;
     }
 
-    static std::optional<MatchResult> fuzzy_search(const std::vector<UChar32>& text, const std::vector<UChar32>& pattern)
+    static std::optional<MatchResult> scoreFuzzy(const std::vector<UChar32>& haystack, const std::vector<UChar32>& pattern)
     {
-        if (text.empty() || pattern.empty() || text.size() < pattern.size())
+        if (haystack.empty() || pattern.empty() || haystack.size() < pattern.size())
         {
             return std::nullopt;
         }
 
-        std::vector<UChar32> textLow;
-        textLow.reserve(text.size());
-        std::vector<UChar32> pattLow;
-        pattLow.reserve(pattern.size());
-        std::ranges::transform(text, std::back_inserter(textLow), [](UChar32 c) { return u_foldCase(c, U_FOLD_CASE_DEFAULT); });
-        std::ranges::transform(pattern, std::back_inserter(pattLow), [](UChar32 c) { return u_foldCase(c, U_FOLD_CASE_DEFAULT); });
+        std::vector<UChar32> targetLower;
+        targetLower.reserve(haystack.size());
+        std::vector<UChar32> queryLower;
+        queryLower.reserve(pattern.size());
+        std::ranges::transform(haystack, std::back_inserter(targetLower), [](UChar32 c) { return u_foldCase(c, U_FOLD_CASE_DEFAULT); });
+        std::ranges::transform(pattern, std::back_inserter(queryLower), [](UChar32 c) { return u_foldCase(c, U_FOLD_CASE_DEFAULT); });
 
         const size_t rows = pattern.size();
-        const size_t cols = text.size();
+        const size_t cols = haystack.size();
         const size_t area = rows * cols;
 
-        std::vector<int> score(area, 0);
-        std::vector<int> run(area, 0);
+        std::vector<int> scores(area, 0);
+        std::vector<int> matches(area, 0);
 
-        for (size_t qi = 0; qi < rows; ++qi)
+        for (size_t queryIndex = 0; queryIndex < rows; ++queryIndex)
         {
-            const size_t ro = qi * cols;
-            const size_t po = qi ? (qi - 1) * cols : 0;
+            const size_t queryIndexOffset = queryIndex * cols;
+            const size_t queryIndexPreviousOffset = queryIndex ? (queryIndex - 1) * cols : 0;
 
-            for (size_t ti = 0; ti < cols; ++ti)
+            for (size_t targetIndex = 0; targetIndex < cols; ++targetIndex)
             {
-                const size_t idx = ro + ti;
-                const size_t didx = (qi && ti) ? po + ti - 1 : 0;
+                const size_t currentIndex = queryIndexOffset + targetIndex;
+                const size_t diagIndex = (queryIndex && targetIndex) ? queryIndexPreviousOffset + targetIndex - 1 : 0;
 
-                int left = (ti ? score[idx - 1] : 0);
-                int diag = (qi && ti) ? score[didx] : 0;
-                int seq = (qi && ti) ? run[didx] : 0;
+                int leftScore = (targetIndex ? scores[currentIndex - 1] : 0);
+                int diagScore = (queryIndex && targetIndex) ? scores[diagIndex] : 0;
+                int matchesSequenceLen = (queryIndex && targetIndex) ? matches[diagIndex] : 0;
 
-                int s = 0;
-                if (diag || qi == 0)
+                int score = 0;
+                if (diagScore || queryIndex == 0)
                 {
-                    std::optional<UChar32> prev = ti ? std::optional<UChar32>{ text[ti - 1] } : std::nullopt;
-                    s = char_score(pattern[qi], pattLow[qi], prev, text[ti], textLow[ti], seq);
+                    std::optional<UChar32> previousTarget = targetIndex ? std::optional<UChar32>{ haystack[targetIndex - 1] } : std::nullopt;
+                    score = charScore(pattern[queryIndex], queryLower[queryIndex], previousTarget, haystack[targetIndex], targetLower[targetIndex], matchesSequenceLen);
                 }
 
-                bool ok = s && diag + s >= left;
+                bool ok = score && diagScore + score >= leftScore;
                 if (ok)
                 {
-                    run[idx] = seq + 1;
-                    score[idx] = diag + s;
+                    matches[currentIndex] = matchesSequenceLen + 1;
+                    scores[currentIndex] = diagScore + score;
                 }
                 else
                 {
-                    run[idx] = 0;
-                    score[idx] = left;
+                    matches[currentIndex] = 0;
+                    scores[currentIndex] = leftScore;
                 }
             }
         }
 
-        std::vector<int32_t> cpPos;
-        if (!pattern.empty() && !text.empty())
+        std::vector<int32_t> positions;
+        if (!pattern.empty() && !haystack.empty())
         {
-            size_t qi = rows - 1, ti = cols - 1;
+            size_t queryIndex = rows - 1, targetIndex = cols - 1;
             while (true)
             {
-                size_t idx = qi * cols + ti;
-                if (run[idx] == 0)
+                size_t currentIndex = queryIndex * cols + targetIndex;
+                if (matches[currentIndex] == 0)
                 {
-                    if (ti == 0)
+                    if (targetIndex == 0)
                     {
                         break;
                     }
-                    --ti;
+                    --targetIndex;
                 }
                 else
                 {
-                    cpPos.push_back(static_cast<int32_t>(ti));
-                    if (qi == 0 || ti == 0)
+                    positions.push_back(static_cast<int32_t>(targetIndex));
+                    if (queryIndex == 0 || targetIndex == 0)
                     {
                         break;
                     }
-                    --qi;
-                    --ti;
+                    --queryIndex;
+                    --targetIndex;
                 }
             }
-            std::ranges::reverse(cpPos);
+            std::ranges::reverse(positions);
         }
 
-        if (cpPos.empty())
+        if (positions.empty())
         {
             return std::nullopt;
         }
-        return MatchResult{ static_cast<int16_t>(score.back()), cpPos };
+        return MatchResult{ static_cast<int16_t>(scores.back()), positions };
     }
 
-    static std::vector<int32_t> MapCodepointsToUtf16(
+    static std::vector<int32_t> mapCodepointsToUtf16(
         std::vector<int32_t> const& cpPos,
         std::vector<int32_t> const& cpMap,
         size_t dataLen)
@@ -226,15 +240,15 @@ namespace fuzzy
         for (const auto& term : pattern.terms)
         {
             std::vector<int32_t> utf16map;
-            auto textCps = ConvertUtf16ToCodePoints(text, &utf16map);
+            auto textCps = convertUtf16ToCodePoints(text, &utf16map);
 
-            auto res = fuzzy_search(textCps, term);
+            auto res = scoreFuzzy(textCps, term);
             if (!res)
             {
                 return std::nullopt;
             }
 
-            auto termUtf16 = MapCodepointsToUtf16(res.value().Pos, utf16map, static_cast<int32_t>(text.size()));
+            auto termUtf16 = mapCodepointsToUtf16(res.value().Pos, utf16map, static_cast<int32_t>(text.size()));
             finalUtf16Pos.insert(finalUtf16Pos.end(),
                                  termUtf16.begin(),
                                  termUtf16.end());
@@ -242,22 +256,6 @@ namespace fuzzy
         }
 
         return MatchResult{ static_cast<int16_t>(totalScore), std::move(finalUtf16Pos) };
-    }
-
-    std::wstring_view TrimSuffixSpaces(std::wstring_view input)
-    {
-        size_t end = input.size();
-        while (end > 0 && input[end - 1] == L' ')
-        {
-            --end;
-        }
-        return input.substr(0, end);
-    }
-
-    std::wstring_view TrimStart(const std::wstring_view str)
-    {
-        const auto off = str.find_first_not_of(L' ');
-        return str.substr(std::min(off, str.size()));
     }
 
     Pattern ParsePattern(const std::wstring_view patternStr)
@@ -268,8 +266,8 @@ namespace fuzzy
             return patObj;
         }
 
-        auto trimmed = TrimStart(patternStr);
-        trimmed = TrimSuffixSpaces(trimmed);
+        auto trimmed = trimStart(patternStr);
+        trimmed = trimSuffixSpaces(trimmed);
 
         size_t pos = 0;
         while (pos < trimmed.size())
@@ -277,7 +275,7 @@ namespace fuzzy
             size_t found = trimmed.find(L' ', pos);
             auto slice = (found == std::wstring_view::npos) ? trimmed.substr(pos) : trimmed.substr(pos, found - pos);
 
-            patObj.terms.push_back(ConvertUtf16ToCodePoints(slice));
+            patObj.terms.push_back(convertUtf16ToCodePoints(slice));
 
             if (found == std::wstring_view::npos)
             {

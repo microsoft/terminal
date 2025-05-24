@@ -5,7 +5,7 @@
 
 #include "HighlightedTextControl.h"
 #include "FilteredCommand.g.h"
-#include "fzf/fzf.h"
+#include "fuzzy.h"
 
 // fwdecl unittest classes
 namespace TerminalAppLocalTests
@@ -20,7 +20,7 @@ namespace winrt::TerminalApp::implementation
         FilteredCommand() = default;
         FilteredCommand(const winrt::TerminalApp::PaletteItem& item);
 
-        virtual void UpdateFilter(std::shared_ptr<fzf::matcher::Pattern> pattern);
+        virtual void UpdateFilter(std::shared_ptr<fuzzy::Pattern> pattern);
 
         static int Compare(const winrt::TerminalApp::FilteredCommand& first, const winrt::TerminalApp::FilteredCommand& second);
 
@@ -33,7 +33,7 @@ namespace winrt::TerminalApp::implementation
         void _constructFilteredCommand(const winrt::TerminalApp::PaletteItem& item);
 
     private:
-        std::shared_ptr<fzf::matcher::Pattern> _pattern;
+        std::shared_ptr<fuzzy::Pattern> _pattern;
         void _update();
         Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker _itemChangedRevoker;
 

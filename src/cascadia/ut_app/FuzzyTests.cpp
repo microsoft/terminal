@@ -421,6 +421,8 @@ namespace TerminalAppUnitTests2
         //This is different than fzf
         //It is preferring the word boundaries over the consecutive chars 
         //This is odd because the word boundaries results in a lower score.  (Issue with backtracking?)
+        //VSCode describes this here
+        //https://github.com/microsoft/vscode/issues/170353
 
         //auto consecutiveMatch = (BaseScore + Separator) + (BaseScore + CaseMatch + (1 * Consecutive) + (BaseScore + CaseMatch + (2 * Consecutive)));
         auto wordBoundariesMatch = (BaseScore + StartOfString) + (BaseScore + Separator) + (BaseScore + Separator);

@@ -936,7 +936,7 @@ namespace winrt::TerminalApp::implementation
         auto commandsToFilter = _commandsToFilter();
 
         {
-            auto pattern = std::make_shared<fzf::matcher::Pattern>(fzf::matcher::ParsePattern(searchText));
+            auto pattern = std::make_shared<fuzzy::Pattern>(fuzzy::ParsePattern(searchText));
 
             for (const auto& action : commandsToFilter)
             {

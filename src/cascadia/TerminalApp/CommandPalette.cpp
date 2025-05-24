@@ -1174,7 +1174,7 @@ namespace winrt::TerminalApp::implementation
         }
         else if (_currentMode == CommandPaletteMode::TabSearchMode || _currentMode == CommandPaletteMode::ActionMode || _currentMode == CommandPaletteMode::CommandlineMode)
         {
-            auto pattern = std::make_shared<fzf::matcher::Pattern>(fzf::matcher::ParsePattern(searchText));
+            auto pattern = std::make_shared<fuzzy::Pattern>(fuzzy::ParsePattern(searchText));
 
             for (const auto& action : commandsToFilter)
             {

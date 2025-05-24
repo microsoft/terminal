@@ -5,7 +5,7 @@
 #include "CommandPalette.h"
 #include "HighlightedText.h"
 #include <LibraryResources.h>
-#include "fzf/fzf.h"
+#include "fuzzy.h"
 
 #include "FilteredCommand.g.cpp"
 
@@ -50,7 +50,7 @@ namespace winrt::TerminalApp::implementation
         });
     }
 
-    void FilteredCommand::UpdateFilter(std::shared_ptr<fzf::matcher::Pattern> pattern)
+    void FilteredCommand::UpdateFilter(std::shared_ptr<fuzzy::Pattern> pattern)
     {
         // If the filter was not changed we want to prevent the re-computation of matching
         // that might result in triggering a notification event
@@ -66,11 +66,11 @@ namespace winrt::TerminalApp::implementation
         auto segments = winrt::single_threaded_observable_vector<winrt::TerminalApp::HighlightedTextSegment>();
         auto commandName = _Item.Name();
         auto weight = 0;
-        if (!_pattern || !_pattern->terms.empty())
+        if (!_pattern || _pattern->terms.empty())
         {
             segments.Append(winrt::TerminalApp::HighlightedTextSegment(commandName, false));
         }
-        else if (auto match = fzf::matcher::Match(commandName, *_pattern.get()); !match)
+        else if (auto match = fuzzy::Match(commandName, *_pattern.get()); !match)
         {
             segments.Append(winrt::TerminalApp::HighlightedTextSegment(commandName, false));
         }
