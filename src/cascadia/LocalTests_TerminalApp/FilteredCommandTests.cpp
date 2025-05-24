@@ -44,7 +44,7 @@ namespace TerminalAppLocalTests
             {
                 Log::Comment(L"Testing command name segmentation with empty filter");
                 const auto filteredCommand = winrt::make_self<winrt::TerminalApp::implementation::FilteredCommand>(paletteItem);
-                filteredCommand->_pattern = std::make_shared<fzf::matcher::Pattern>(fzf::matcher::ParsePattern(L""));
+                filteredCommand->_pattern = std::make_shared<fuzzy::Pattern>(fuzzy::ParsePattern(L""));
                 filteredCommand->_update();
                 auto segments = filteredCommand->HighlightedName().Segments();
                 VERIFY_ARE_EQUAL(segments.Size(), 1u);
@@ -54,7 +54,7 @@ namespace TerminalAppLocalTests
             {
                 Log::Comment(L"Testing command name segmentation with filter equal to the string");
                 const auto filteredCommand = winrt::make_self<winrt::TerminalApp::implementation::FilteredCommand>(paletteItem);
-                filteredCommand->_pattern = std::make_shared<fzf::matcher::Pattern>(fzf::matcher::ParsePattern(L"AAAAAABBBBBBCCC"));
+                filteredCommand->_pattern = std::make_shared<fuzzy::Pattern>(fuzzy::ParsePattern(L"AAAAAABBBBBBCCC"));
                 filteredCommand->_update();
                 auto segments = filteredCommand->HighlightedName().Segments();
                 VERIFY_ARE_EQUAL(segments.Size(), 1u);
@@ -64,7 +64,7 @@ namespace TerminalAppLocalTests
             {
                 Log::Comment(L"Testing command name segmentation with filter with first character matching");
                 const auto filteredCommand = winrt::make_self<winrt::TerminalApp::implementation::FilteredCommand>(paletteItem);
-                filteredCommand->_pattern = std::make_shared<fzf::matcher::Pattern>(fzf::matcher::ParsePattern(L"A"));
+                filteredCommand->_pattern = std::make_shared<fuzzy::Pattern>(fuzzy::ParsePattern(L"A"));
                 filteredCommand->_update();
                 auto segments = filteredCommand->HighlightedName().Segments();
                 VERIFY_ARE_EQUAL(segments.Size(), 2u);
@@ -76,7 +76,7 @@ namespace TerminalAppLocalTests
             {
                 Log::Comment(L"Testing command name segmentation with filter with other case");
                 const auto filteredCommand = winrt::make_self<winrt::TerminalApp::implementation::FilteredCommand>(paletteItem);
-                filteredCommand->_pattern = std::make_shared<fzf::matcher::Pattern>(fzf::matcher::ParsePattern(L"a"));
+                filteredCommand->_pattern = std::make_shared<fuzzy::Pattern>(fuzzy::ParsePattern(L"a"));
                 filteredCommand->_update();
                 auto segments = filteredCommand->HighlightedName().Segments();
                 VERIFY_ARE_EQUAL(segments.Size(), 2u);
@@ -88,7 +88,7 @@ namespace TerminalAppLocalTests
             {
                 Log::Comment(L"Testing command name segmentation with filter matching several characters");
                 const auto filteredCommand = winrt::make_self<winrt::TerminalApp::implementation::FilteredCommand>(paletteItem);
-                filteredCommand->_pattern = std::make_shared<fzf::matcher::Pattern>(fzf::matcher::ParsePattern(L"ab"));
+                filteredCommand->_pattern = std::make_shared<fuzzy::Pattern>(fuzzy::ParsePattern(L"ab"));
                 filteredCommand->_update();
                 auto segments = filteredCommand->HighlightedName().Segments();
                 VERIFY_ARE_EQUAL(segments.Size(), 4u);
@@ -104,7 +104,7 @@ namespace TerminalAppLocalTests
             {
                 Log::Comment(L"Testing command name segmentation with non matching filter");
                 const auto filteredCommand = winrt::make_self<winrt::TerminalApp::implementation::FilteredCommand>(paletteItem);
-                filteredCommand->_pattern = std::make_shared<fzf::matcher::Pattern>(fzf::matcher::ParsePattern(L"abcd"));
+                filteredCommand->_pattern = std::make_shared<fuzzy::Pattern>(fuzzy::ParsePattern(L"abcd"));
                 filteredCommand->_update();
                 auto segments = filteredCommand->HighlightedName().Segments();
                 VERIFY_ARE_EQUAL(segments.Size(), 1u);
@@ -130,7 +130,7 @@ namespace TerminalAppLocalTests
             {
                 Log::Comment(L"Testing weight of command with empty filter");
                 const auto filteredCommand = winrt::make_self<winrt::TerminalApp::implementation::FilteredCommand>(paletteItem);
-                filteredCommand->_pattern = std::make_shared<fzf::matcher::Pattern>(fzf::matcher::ParsePattern(L""));
+                filteredCommand->_pattern = std::make_shared<fuzzy::Pattern>(fuzzy::ParsePattern(L""));
                 filteredCommand->_update();
                 auto weight = filteredCommand->Weight();
                 VERIFY_ARE_EQUAL(weight, 0);
@@ -138,7 +138,7 @@ namespace TerminalAppLocalTests
             {
                 Log::Comment(L"Testing weight of command with filter equal to the string");
                 const auto filteredCommand = winrt::make_self<winrt::TerminalApp::implementation::FilteredCommand>(paletteItem);
-                filteredCommand->_pattern = std::make_shared<fzf::matcher::Pattern>(fzf::matcher::ParsePattern(L"AAAAAABBBBBBCCC"));
+                filteredCommand->_pattern = std::make_shared<fuzzy::Pattern>(fuzzy::ParsePattern(L"AAAAAABBBBBBCCC"));
                 filteredCommand->_update();
                 auto weight = filteredCommand->Weight();
                 VERIFY_ARE_EQUAL(weight, 30); // 1 point for the first char and 2 points for the 14 consequent ones + 1 point for the beginning of the word
@@ -146,7 +146,7 @@ namespace TerminalAppLocalTests
             {
                 Log::Comment(L"Testing weight of command with filter with first character matching");
                 const auto filteredCommand = winrt::make_self<winrt::TerminalApp::implementation::FilteredCommand>(paletteItem);
-                filteredCommand->_pattern = std::make_shared<fzf::matcher::Pattern>(fzf::matcher::ParsePattern(L"A"));
+                filteredCommand->_pattern = std::make_shared<fuzzy::Pattern>(fuzzy::ParsePattern(L"A"));
                 filteredCommand->_update();
                 auto weight = filteredCommand->Weight();
                 VERIFY_ARE_EQUAL(weight, 2); // 1 point for the first char match + 1 point for the beginning of the word
@@ -154,7 +154,7 @@ namespace TerminalAppLocalTests
             {
                 Log::Comment(L"Testing weight of command with filter with other case");
                 const auto filteredCommand = winrt::make_self<winrt::TerminalApp::implementation::FilteredCommand>(paletteItem);
-                filteredCommand->_pattern = std::make_shared<fzf::matcher::Pattern>(fzf::matcher::ParsePattern(L"a"));
+                filteredCommand->_pattern = std::make_shared<fuzzy::Pattern>(fuzzy::ParsePattern(L"a"));
                 filteredCommand->_update();
                 auto weight = filteredCommand->Weight();
                 VERIFY_ARE_EQUAL(weight, 2); // 1 point for the first char match + 1 point for the beginning of the word
@@ -162,7 +162,7 @@ namespace TerminalAppLocalTests
             {
                 Log::Comment(L"Testing weight of command with filter matching several characters");
                 const auto filteredCommand = winrt::make_self<winrt::TerminalApp::implementation::FilteredCommand>(paletteItem);
-                filteredCommand->_pattern = std::make_shared<fzf::matcher::Pattern>(fzf::matcher::ParsePattern(L"ab"));
+                filteredCommand->_pattern = std::make_shared<fuzzy::Pattern>(fuzzy::ParsePattern(L"ab"));
                 filteredCommand->_update();
                 auto weight = filteredCommand->Weight();
                 VERIFY_ARE_EQUAL(weight, 3); // 1 point for the first char match + 1 point for the beginning of the word + 1 point for the match of "b"
@@ -188,11 +188,11 @@ namespace TerminalAppLocalTests
             {
                 Log::Comment(L"Testing comparison of commands with empty filter");
                 const auto filteredCommand = winrt::make_self<winrt::TerminalApp::implementation::FilteredCommand>(paletteItem);
-                filteredCommand->_pattern = std::make_shared<fzf::matcher::Pattern>(fzf::matcher::ParsePattern(L""));
+                filteredCommand->_pattern = std::make_shared<fuzzy::Pattern>(fuzzy::ParsePattern(L""));
                 filteredCommand->_update();
 
                 const auto filteredCommand2 = winrt::make_self<winrt::TerminalApp::implementation::FilteredCommand>(paletteItem2);
-                filteredCommand2->_pattern = std::make_shared<fzf::matcher::Pattern>(fzf::matcher::ParsePattern(L""));
+                filteredCommand2->_pattern = std::make_shared<fuzzy::Pattern>(fuzzy::ParsePattern(L""));
                 filteredCommand->_update();
 
                 VERIFY_ARE_EQUAL(filteredCommand->Weight(), filteredCommand2->Weight());
@@ -201,11 +201,11 @@ namespace TerminalAppLocalTests
             {
                 Log::Comment(L"Testing comparison of commands with different weights");
                 const auto filteredCommand = winrt::make_self<winrt::TerminalApp::implementation::FilteredCommand>(paletteItem);
-                filteredCommand->_pattern = std::make_shared<fzf::matcher::Pattern>(fzf::matcher::ParsePattern(L"B"));
+                filteredCommand->_pattern = std::make_shared<fuzzy::Pattern>(fuzzy::ParsePattern(L"B"));
                 filteredCommand->_update();
 
                 const auto filteredCommand2 = winrt::make_self<winrt::TerminalApp::implementation::FilteredCommand>(paletteItem2);
-                filteredCommand2->_pattern = std::make_shared<fzf::matcher::Pattern>(fzf::matcher::ParsePattern(L"B"));
+                filteredCommand2->_pattern = std::make_shared<fuzzy::Pattern>(fuzzy::ParsePattern(L"B"));
                 filteredCommand->_update();
 
                 VERIFY_IS_TRUE(filteredCommand->Weight() < filteredCommand2->Weight()); // Second command gets more points due to the beginning of the word

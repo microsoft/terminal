@@ -64,7 +64,7 @@ namespace fuzzy
         return a == b || (a == U'/' && b == U'\\') || (a == U'\\' && b == U'/');
     }
 
-    static int separatorbonus(UChar32 ch) noexcept
+    static int separatorBonus(UChar32 ch) noexcept
     {
         switch (ch)
         {
@@ -103,7 +103,7 @@ namespace fuzzy
 
         if (prev)
         {
-            if (int sb = separatorbonus(*prev); sb)
+            if (int sb = separatorBonus(*prev); sb)
             {
                 s += sb;
             }
