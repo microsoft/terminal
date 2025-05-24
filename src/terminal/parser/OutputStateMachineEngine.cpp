@@ -126,6 +126,11 @@ bool OutputStateMachineEngine::ActionExecuteFromEscape(const wchar_t wch)
 // - true iff we successfully dispatched the sequence.
 bool OutputStateMachineEngine::ActionPrint(const wchar_t wch)
 {
+    // Skip Unicode directional isolate characters (U+2066..U+2069).
+    if (wch >= wchar_t(0x2066) && wch <= wchar_t(0x2069))
+    {
+        return true;
+    }
     // Stash the last character of the string, if it's a graphical character
     if (wch >= AsciiChars::SPC)
     {
@@ -151,14 +156,31 @@ bool OutputStateMachineEngine::ActionPrintString(const std::wstring_view string)
         return true;
     }
 
+    // Skip Unicode directional isolate characters (U+2066..U+2069).
+    std::wstring filtered;
+    filtered.reserve(string.size());
+    for (const auto wch : string)
+    {
+        if (wch >= wchar_t(0x2066) && wch <= wchar_t(0x2069))
+        {
+            continue;
+        }
+        filtered.push_back(wch);
+    }
+
+    if (filtered.empty())
+    {
+        return true;
+    }
+
     // Stash the last character of the string, if it's a graphical character
-    const auto wch = string.back();
+    const auto wch = filtered.back();
     if (wch >= AsciiChars::SPC)
     {
         _lastPrintedChar = wch;
     }
 
-    _dispatch->PrintString(string); // call print
+    _dispatch->PrintString(filtered); // call print
 
     return true;
 }
