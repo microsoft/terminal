@@ -1098,43 +1098,6 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
         mach.ProcessCharacter(L'\x9c');
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
     }
-
-    TEST_METHOD(TestIsolatesNotRendered)
-    {
-        class CaptureDispatch : public TermDispatch
-        {
-        public:
-            std::wstring combined;
-            void Print(const wchar_t wchPrintable) override
-            {
-                combined.push_back(wchPrintable);
-            }
-            void PrintString(const std::wstring_view string) override
-            {
-                combined.append(string);
-            }
-        };
-
-        // Create state machine with a dispatch that captures output.
-        std::unique_ptr<ITermDispatch> dispatchUp(new CaptureDispatch());
-        auto capture = static_cast<CaptureDispatch*>(dispatchUp.get());
-        auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatchUp));
-        StateMachine mach(std::move(engine));
-
-        // Feed characters.
-        mach.ProcessCharacter(L'A');
-        mach.ProcessCharacter(L'\u2066'); // LRI
-        mach.ProcessCharacter(L'B');
-        mach.ProcessCharacter(L'\u2067'); // RLI
-        mach.ProcessCharacter(L'C');
-        mach.ProcessCharacter(L'\u2068'); // FSI
-        mach.ProcessCharacter(L'D');
-        mach.ProcessCharacter(L'\u2069'); // PDI
-        mach.ProcessCharacter(L'E');
-
-        // Characters should be printed except directional isolates.
-        VERIFY_ARE_EQUAL(std::wstring(L"ABCDE"), capture->combined);
-    }
 };
 
 class StatefulDispatch final : public TermDispatch

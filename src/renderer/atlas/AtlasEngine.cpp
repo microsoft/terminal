@@ -502,7 +502,15 @@ try
         {
             for (const auto& ch : cluster.GetText())
             {
-                _api.bufferLine.emplace_back(ch);
+                // Skip Unicode directional isolate characters (U+2066..U+2069).
+                if (ch >= L'\u2066' && ch <= L'\u2069')
+                {
+                    _api.bufferLine.emplace_back(L'\u200B');
+                }
+                else
+                {
+                    _api.bufferLine.emplace_back(ch);
+                }
                 _api.bufferLineColumn.emplace_back(columnEnd);
             }
             columnEnd += gsl::narrow_cast<u16>(cluster.GetColumns());
