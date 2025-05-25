@@ -502,7 +502,7 @@ try
         {
             for (const auto& ch : cluster.GetText())
             {
-                // Skip Unicode directional isolate characters (U+2066..U+2069).
+                // Render Unicode directional isolate characters (U+2066..U+2069) as zero-width spaces.
                 if (ch >= L'\u2066' && ch <= L'\u2069')
                 {
                     _api.bufferLine.emplace_back(L'\u200B');
