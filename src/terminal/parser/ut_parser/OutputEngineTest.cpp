@@ -1123,13 +1123,13 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
 
         // Feed characters.
         mach.ProcessCharacter(L'A');
-        mach.ProcessCharacter(wchar_t(0x2066)); // LRI
+        mach.ProcessCharacter(L'\u2066'); // LRI
         mach.ProcessCharacter(L'B');
-        mach.ProcessCharacter(wchar_t(0x2067)); // RLI
+        mach.ProcessCharacter(L'\u2067'); // RLI
         mach.ProcessCharacter(L'C');
-        mach.ProcessCharacter(wchar_t(0x2068)); // FSI
+        mach.ProcessCharacter(L'\u2068'); // FSI
         mach.ProcessCharacter(L'D');
-        mach.ProcessCharacter(wchar_t(0x2069)); // PDI
+        mach.ProcessCharacter(L'\u2069'); // PDI
         mach.ProcessCharacter(L'E');
 
         // Characters should be printed except directional isolates.

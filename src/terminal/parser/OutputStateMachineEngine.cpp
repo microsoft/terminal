@@ -127,7 +127,7 @@ bool OutputStateMachineEngine::ActionExecuteFromEscape(const wchar_t wch)
 bool OutputStateMachineEngine::ActionPrint(const wchar_t wch)
 {
     // Skip Unicode directional isolate characters (U+2066..U+2069).
-    if (wch >= wchar_t(0x2066) && wch <= wchar_t(0x2069))
+    if (wch >= L'\u2066' && wch <= L'\u2069')
     {
         return true;
     }
@@ -161,7 +161,7 @@ bool OutputStateMachineEngine::ActionPrintString(const std::wstring_view string)
     filtered.reserve(string.size());
     for (const auto wch : string)
     {
-        if (wch >= wchar_t(0x2066) && wch <= wchar_t(0x2069))
+        if (wch >= L'\u2066' && wch <= L'\u2069')
         {
             continue;
         }
