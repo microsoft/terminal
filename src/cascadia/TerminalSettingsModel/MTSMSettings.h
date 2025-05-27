@@ -147,7 +147,8 @@ Author(s):
     X(winrt::Microsoft::Terminal::Settings::Model::WindowTheme, Window, "window", nullptr)       \
     X(winrt::Microsoft::Terminal::Settings::Model::SettingsTheme, Settings, "settings", nullptr) \
     X(winrt::Microsoft::Terminal::Settings::Model::TabRowTheme, TabRow, "tabRow", nullptr)       \
-    X(winrt::Microsoft::Terminal::Settings::Model::TabTheme, Tab, "tab", nullptr)
+    X(winrt::Microsoft::Terminal::Settings::Model::TabTheme, Tab, "tab", nullptr) \
+    X(winrt::Microsoft::Terminal::Settings::Model::PaneTheme, Pane, "pane", nullptr)
 
 #define MTSM_THEME_WINDOW_SETTINGS(X)                                                                                              \
     X(winrt::Windows::UI::Xaml::ElementTheme, RequestedTheme, "applicationTheme", winrt::Windows::UI::Xaml::ElementTheme::Default) \
@@ -162,6 +163,11 @@ Author(s):
 #define MTSM_THEME_TABROW_SETTINGS(X)                                                             \
     X(winrt::Microsoft::Terminal::Settings::Model::ThemeColor, Background, "background", nullptr) \
     X(winrt::Microsoft::Terminal::Settings::Model::ThemeColor, UnfocusedBackground, "unfocusedBackground", nullptr)
+
+#define MTSM_THEME_PANE_SETTINGS(X) \
+    X(winrt::Microsoft::Terminal::Settings::Model::ThemeColor, ActiveBorderColor, "activeBorderColor", nullptr) \
+    X(winrt::Microsoft::Terminal::Settings::Model::ThemeColor, InactiveBorderColor, "inactiveBorderColor", nullptr) \
+    X(winrt::Microsoft::Terminal::Settings::Model::ThemeColor, BroadcastBorderColor, "broadcastBorderColor", nullptr)
 
 #define MTSM_THEME_TAB_SETTINGS(X)                                                                                                                     \
     X(winrt::Microsoft::Terminal::Settings::Model::ThemeColor, Background, "background", nullptr)                                                      \
