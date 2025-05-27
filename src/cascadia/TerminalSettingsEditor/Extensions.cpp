@@ -74,8 +74,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             const bool extensionPackageChanged = viewModelProperty == L"CurrentExtensionPackage";
             const bool profilesModifiedChanged = viewModelProperty == L"ProfilesModified";
             const bool profilesAddedChanged = viewModelProperty == L"ProfilesAdded";
-            const bool colorSchmesAddedChanged = viewModelProperty == L"ColorSchemesAdded";
-            if (extensionPackageChanged || (!IsExtensionView() && (profilesModifiedChanged || profilesAddedChanged || colorSchmesAddedChanged)))
+            const bool colorSchemesAddedChanged = viewModelProperty == L"ColorSchemesAdded";
+            if (extensionPackageChanged || (!IsExtensionView() && (profilesModifiedChanged || profilesAddedChanged || colorSchemesAddedChanged)))
             {
                 // Use these booleans to track which of our observable vectors need to be refreshed.
                 // This prevents a full refresh of the UI when enabling/disabling extensions.
@@ -83,7 +83,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 // Otherwise, just update the ones that we were notified about.
                 const bool updateProfilesModified = extensionPackageChanged || profilesModifiedChanged;
                 const bool updateProfilesAdded = extensionPackageChanged || profilesAddedChanged;
-                const bool updateColorSchemesAdded = extensionPackageChanged || colorSchmesAddedChanged;
+                const bool updateColorSchemesAdded = extensionPackageChanged || colorSchemesAddedChanged;
                 _UpdateListViews(updateProfilesModified, updateProfilesAdded, updateColorSchemesAdded);
 
                 if (extensionPackageChanged)
@@ -98,7 +98,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 {
                     _NotifyChanges(L"NoProfilesAdded");
                 }
-                else if (colorSchmesAddedChanged)
+                else if (colorSchemesAddedChanged)
                 {
                     _NotifyChanges(L"NoSchemesAdded");
                 }

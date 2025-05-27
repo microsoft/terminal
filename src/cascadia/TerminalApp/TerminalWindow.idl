@@ -59,7 +59,7 @@ namespace TerminalApp
         Boolean ShouldImmediatelyHandoffToElevated();
         void HandoffToElevated();
 
-        void PersistState();
+        void PersistState(Boolean serializeBuffer);
 
         Windows.UI.Xaml.UIElement GetRoot();
 

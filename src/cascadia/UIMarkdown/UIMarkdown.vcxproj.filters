@@ -25,14 +25,20 @@
     <ClCompile Include="pch.cpp">
       <Filter>Module</Filter>
     </ClCompile>
+    <ClCompile Include="MarkdownToXaml.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
+    <ClInclude Include="MarkdownToXaml.h" />
   </ItemGroup>
   <ItemGroup>
     <Midl Include="Builder.idl" />
   </ItemGroup>
   <ItemGroup>
     <Natvis Include="$(SolutionDir)tools\ConsoleTypes.natvis" />
+    <Natvis Include="$(MSBuildThisFileDirectory)..\..\natvis\wil.natvis" />
+  </ItemGroup>
+  <ItemGroup>
+    <Page Include="CodeBlock.xaml" />
   </ItemGroup>
 </Project>

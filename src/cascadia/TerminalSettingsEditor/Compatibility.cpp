@@ -12,8 +12,8 @@ using namespace winrt::Microsoft::Terminal::Settings::Model;
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
-    CompatibilityViewModel::CompatibilityViewModel(Model::GlobalAppSettings globalSettings) :
-        _GlobalSettings{ globalSettings }
+    CompatibilityViewModel::CompatibilityViewModel(Model::CascadiaSettings settings) :
+        _settings{ settings }
     {
         INITIALIZE_BINDABLE_ENUM_SETTING(TextMeasurement, TextMeasurement, winrt::Microsoft::Terminal::Control::TextMeasurement, L"Globals_TextMeasurement_", L"Text");
     }
@@ -21,6 +21,16 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     bool CompatibilityViewModel::DebugFeaturesAvailable() const noexcept
     {
         return Feature_DebugModeUI::IsEnabled();
+    }
+
+    void CompatibilityViewModel::ResetApplicationState()
+    {
+        _settings.ResetApplicationState();
+    }
+
+    void CompatibilityViewModel::ResetToDefaultSettings()
+    {
+        _settings.ResetToDefaultSettings();
     }
 
     Compatibility::Compatibility()
@@ -31,5 +41,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     void Compatibility::OnNavigatedTo(const NavigationEventArgs& e)
     {
         _ViewModel = e.Parameter().as<Editor::CompatibilityViewModel>();
+    }
+
+    void Compatibility::ResetApplicationStateButton_Click(const Windows::Foundation::IInspectable& /*sender*/, const Windows::UI::Xaml::RoutedEventArgs& /*e*/)
+    {
+        _ViewModel.ResetApplicationState();
+        ResetCacheFlyout().Hide();
     }
 }
