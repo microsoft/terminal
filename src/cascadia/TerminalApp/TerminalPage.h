@@ -519,7 +519,9 @@ namespace winrt::TerminalApp::implementation
 
         void _updateThemeColors();
         void _updateAllTabCloseButtons();
-        void _updatePaneResources(const winrt::Windows::UI::Xaml::ElementTheme& requestedTheme);
+        winrt::Windows::UI::Color _colorFromKey(const winrt::Windows::UI::Xaml::ResourceDictionary& resourceDictionary, const winrt::Windows::UI::Xaml::ElementTheme& requestedTheme, const winrt::Windows::Foundation::IInspectable& colorKey);
+        winrt::Windows::UI::Color _parseThemeColorToColor(const winrt::Microsoft::Terminal::Settings::Model::ThemeColor& colorToCopy, const winrt::Windows::UI::Xaml::ResourceDictionary& resourceDictionary, const winrt::Windows::UI::Xaml::ElementTheme& requestedTheme, const winrt::Windows::Foundation::IInspectable& colorKey);
+        void _updatePaneResources(const winrt::Windows::UI::Xaml::ElementTheme& requestedTheme, const winrt::Microsoft::Terminal::Settings::Model::ThemeColor& activeBorderColor, const winrt::Microsoft::Terminal::Settings::Model::ThemeColor& inactiveBorderColor, const winrt::Microsoft::Terminal::Settings::Model::ThemeColor& broadcastBorderColor);
 
         safe_void_coroutine _ControlCompletionsChangedHandler(const winrt::Windows::Foundation::IInspectable sender, const winrt::Microsoft::Terminal::Control::CompletionsChangedEventArgs args);
 

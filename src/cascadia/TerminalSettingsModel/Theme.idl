@@ -71,6 +71,12 @@ namespace Microsoft.Terminal.Settings.Model
         ThemeColor UnfocusedBackground { get; };
     }
 
+    runtimeclass PaneTheme {
+        ThemeColor ActiveBorderColor { get; };
+        ThemeColor InactiveBorderColor { get; };
+        ThemeColor BroadcastBorderColor { get; };
+    }
+
     runtimeclass TabTheme {
         ThemeColor Background { get; };
         ThemeColor UnfocusedBackground { get; };
@@ -92,6 +98,9 @@ namespace Microsoft.Terminal.Settings.Model
             
         // tabRow.* Namespace
         TabRowTheme TabRow { get; };
+
+        // pane.* Namespace
+        PaneTheme Pane { get; };
 
         // tab.* Namespace
         TabTheme Tab { get; };
