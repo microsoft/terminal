@@ -203,9 +203,7 @@ std::optional<std::wstring> CONSOLE_INFORMATION::UsePendingClipboardText()
     // Once the pending text has been used, we clear the variable to let the
     // CopyTextToClipboard method know that the last CM_UPDATE_CLIPBOARD message
     // has been processed, and future updates will require another message.
-    const auto clipboardText = _pendingClipboardText;
-    _pendingClipboardText.reset();
-    return clipboardText;
+    return std::exchange(_pendingClipboardText, {});
 }
 
 // Method Description:
