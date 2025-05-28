@@ -2259,23 +2259,37 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - <none>
     void ControlCore::ClearBuffer(Control::ClearBufferType clearType)
     {
-        std::wstring_view command;
-        switch (clearType)
-        {
-        case ClearBufferType::Screen:
-            command = L"\x1b[H\x1b[2J";
-            break;
-        case ClearBufferType::Scrollback:
-            command = L"\x1b[3J";
-            break;
-        case ClearBufferType::All:
-            command = L"\x1b[H\x1b[2J\x1b[3J";
-            break;
-        }
-
         {
             const auto lock = _terminal->LockForWriting();
-            _terminal->Write(command);
+            // In absolute buffer coordinates, including the scrollback (= Y is offset by the scrollback height).
+            const auto viewport = _terminal->GetViewport();
+            // The absolute cursor coordinate.
+            const auto cursor = _terminal->GetViewportRelativeCursorPosition();
+
+            // GH#18732: Users want the row the cursor is on to be preserved across clears.
+            std::wstring sequence;
+
+            if (clearType == ClearBufferType::Scrollback || clearType == ClearBufferType::All)
+            {
+                sequence.append(L"\x1b[3J");
+            }
+
+            if (clearType == ClearBufferType::Screen || clearType == ClearBufferType::All)
+            {
+                // Erase any viewport contents below (but not including) the cursor row.
+                if (cursor.x < viewport.Height())
+                {
+                    fmt::format_to(std::back_inserter(sequence), FMT_COMPILE(L"\x1b[{};1H\x1b[J"), cursor.y + 2);
+                }
+
+                // Erase any viewport contents above (but not including) the cursor row.
+                if (cursor.x > 0)
+                {
+                    fmt::format_to(std::back_inserter(sequence), FMT_COMPILE(L"\x1b[{}S\x1b[1;{}H"), cursor.y, cursor.x + 1);
+                }
+            }
+
+            _terminal->Write(sequence);
         }
 
         if (clearType == Control::ClearBufferType::Screen || clearType == Control::ClearBufferType::All)
@@ -2284,8 +2298,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             {
                 // Since the clearing of ConPTY occurs asynchronously, this call can result weird issues,
                 // where a console application still sees contents that we've already deleted, etc.
-                // The correct way would be for ConPTY to emit the appropriate CSI n J sequences.
-                conpty.ClearBuffer();
+                conpty.ClearBuffer(true);
             }
         }
     }
