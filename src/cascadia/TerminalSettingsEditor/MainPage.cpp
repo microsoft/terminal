@@ -232,7 +232,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                             {
                                 if (stringTag == extensionsTag)
                                 {
-                                    // navigate to the NewTabMenu page,
+                                    // navigate to the Extensions page,
                                     // _Navigate() will handle trying to find the right subpage
                                     SettingsNav().SelectedItem(item);
                                     _Navigate(breadcrumbExtensionPackage, BreadcrumbSubPage::Extensions_Extension);
