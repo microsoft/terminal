@@ -210,6 +210,45 @@
   <data name="SplitPaneText" xml:space="preserve">
     <value>Dividir painel</value>
   </data>
+  <data name="SplitPaneToolTipText" xml:space="preserve">
+    <value>Clique com o botão direito para obter direções de divisão - direita/para baixo/para cima/esquerda</value>
+  </data>
+  <data name="SplitPaneDownText" xml:space="preserve">
+    <value>Dividir painel para baixo</value>
+  </data>
+  <data name="SplitPaneRightText" xml:space="preserve">
+    <value>Dividir painel à direita</value>
+  </data>
+  <data name="SplitPaneUpText" xml:space="preserve">
+    <value>Dividir painel para cima</value>
+  </data>
+  <data name="SplitPaneLeftText" xml:space="preserve">
+    <value>Dividir painel à esquerda</value>
+  </data>
+  <data name="SplitPaneDuplicateText" xml:space="preserve">
+    <value>Duplicar</value>
+  </data>
+  <data name="SwapPaneText" xml:space="preserve">
+    <value>Painel de troca</value>
+  </data>
+  <data name="SwapPaneDownText" xml:space="preserve">
+    <value>Alternar painel para baixo</value>
+  </data>
+  <data name="SwapPaneRightText" xml:space="preserve">
+    <value>Alternar painel à direita</value>
+  </data>
+  <data name="SwapPaneUpText" xml:space="preserve">
+    <value>Alternar painel para cima</value>
+  </data>
+  <data name="SwapPaneLeftText" xml:space="preserve">
+    <value>Alternar painel para a esquerda</value>
+  </data>
+  <data name="TogglePaneZoomText" xml:space="preserve">
+    <value>Alternar o zoom do painel</value>
+  </data>
+  <data name="CloseOtherPanesText" xml:space="preserve">
+    <value>Fechar outros painéis</value>
+  </data>
   <data name="SearchWebText" xml:space="preserve">
     <value>Pesquisa na Web</value>
   </data>
@@ -935,5 +974,8 @@
   </data>
   <data name="TabMoveRight" xml:space="preserve">
     <value>Mover para a direita</value>
+  </data>
+  <data name="InvalidRegex" xml:space="preserve">
+    <value>Foi encontrada uma expressão regular inválida.</value>
   </data>
 </root>

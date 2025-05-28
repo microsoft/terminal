@@ -78,7 +78,9 @@ extends:
     template: v2/Microsoft.NonOfficial.yml@templates
   parameters:
     featureFlags:
-      WindowsHostVersion: 1ESWindows2022
+      WindowsHostVersion:
+        Version: 2022
+        Network: R1
     platform:
       name: 'windows_undocked'
       product: 'Windows Terminal'

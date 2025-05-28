@@ -41,7 +41,7 @@ public:
     static void CopyRow(const ROW& srcRow, ROW& dstRow);
     static void CopyCells(const ROW& srcRow, const til::CoordType srcColumn, ROW& dstRow, const til::CoordType dstColumnBegin, const til::CoordType dstColumnEnd);
     static void EraseBlock(TextBuffer& buffer, const til::rect rect);
-    static void EraseCells(TextBuffer& buffer, const til::point at, const size_t distance);
+    static void EraseCells(TextBuffer& buffer, const til::point at, const til::CoordType distance);
     static void EraseCells(ROW& row, const til::CoordType columnBegin, const til::CoordType columnEnd);
 
 private:

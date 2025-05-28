@@ -46,7 +46,20 @@
 
             <DataTemplate x:Key="DefaultExtensionIdentifierTemplate"
                           x:DataType="local:ExtensionPackageViewModel">
-                <TextBlock Text="{x:Bind Package.Source}" />
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+
+                    <FontIcon Grid.Column="0"
+                              Margin="0,0,8,0"
+                              FontSize="32"
+                              Glyph="&#xE74C;" />
+                    <TextBlock Grid.Column="1"
+                               VerticalAlignment="Center"
+                               Text="{x:Bind Package.Source}" />
+                </Grid>
             </DataTemplate>
 
             <DataTemplate x:Key="ComplexExtensionIdentifierTemplate"
@@ -97,19 +110,20 @@
                         <ContentPresenter Content="{x:Bind}"
                                           ContentTemplate="{StaticResource DefaultExtensionIdentifierTemplate}" />
 
-                        <TextBlock x:Uid="Extension_StateDisabled"
-                                   Grid.Column="1"
-                                   HorizontalAlignment="Right"
-                                   VerticalAlignment="Center"
-                                   Style="{StaticResource SecondaryTextBlockStyle}"
-                                   Visibility="{x:Bind mtu:Converters.InvertedBooleanToVisibility(Enabled)}" />
+                        <ToggleSwitch Grid.Column="1"
+                                      HorizontalAlignment="Right"
+                                      VerticalAlignment="Center"
+                                      AutomationProperties.Name="{x:Bind AccessibleName}"
+                                      IsOn="{x:Bind Enabled, Mode=TwoWay}"
+                                      Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+
                     </Grid>
                 </Button>
             </DataTemplate>
 
             <DataTemplate x:Key="ComplexExtensionNavigatorTemplate"
                           x:DataType="local:ExtensionPackageViewModel">
-                <Button AutomationProperties.Name="{x:Bind AccessibleNameWithStatus}"
+                <Button AutomationProperties.Name="{x:Bind AccessibleName}"
                         Click="ExtensionNavigator_Click"
                         Style="{StaticResource NavigatorButtonStyle}"
                         Tag="{x:Bind}">
@@ -122,12 +136,12 @@
                         <ContentPresenter Content="{x:Bind}"
                                           ContentTemplate="{StaticResource ComplexExtensionIdentifierTemplate}" />
 
-                        <TextBlock x:Uid="Extension_StateDisabled"
-                                   Grid.Column="1"
-                                   HorizontalAlignment="Right"
-                                   VerticalAlignment="Center"
-                                   Style="{StaticResource SecondaryTextBlockStyle}"
-                                   Visibility="{x:Bind mtu:Converters.InvertedBooleanToVisibility(Enabled)}" />
+                        <ToggleSwitch Grid.Column="1"
+                                      HorizontalAlignment="Right"
+                                      VerticalAlignment="Center"
+                                      AutomationProperties.Name="{x:Bind AccessibleName}"
+                                      IsOn="{x:Bind Enabled, Mode=TwoWay}"
+                                      Style="{StaticResource ToggleSwitchInExpanderStyle}" />
                     </Grid>
                 </Button>
             </DataTemplate>
@@ -374,13 +388,10 @@
         </ResourceDictionary>
     </Page.Resources>
 
-    <StackPanel Spacing="20"
-                Style="{StaticResource SettingsStackStyle}">
+    <StackPanel Style="{StaticResource SettingsStackStyle}">
 
         <!--  [Root View Only]  -->
-        <!--  Set margin.bottom to -20 because the next stack panel gets the 20 from the root's spacing property  -->
         <StackPanel MaxWidth="{StaticResource StandardControlMaxWidth}"
-                    Margin="0,0,0,-20"
                     Visibility="{x:Bind mtu:Converters.InvertedBooleanToVisibility(ViewModel.IsExtensionView), Mode=OneWay}">
 
             <!--  Learn more about fragment extensions  -->
@@ -390,9 +401,6 @@
             <!--  Grouping: Active Extensions  -->
             <TextBlock x:Uid="Extensions_ActiveExtensionsHeader"
                        Style="{StaticResource TextBlockSubHeaderStyle}" />
-            <TextBlock x:Uid="Extensions_NoActiveExtensionsDisclaimer"
-                       Style="{StaticResource ItalicDisclaimerStyle}"
-                       Visibility="{x:Bind ViewModel.NoExtensionPackages, Mode=OneWay}" />
             <ItemsControl x:Name="ActiveExtensionsList"
                           IsTabStop="False"
                           ItemTemplateSelector="{StaticResource ExtensionPackageNavigatorTemplateSelector}"
@@ -401,9 +409,7 @@
         </StackPanel>
 
         <!--  [Extension View Only]  -->
-        <!--  Set margin.top to -20 because the previous stack panel gets the 20 from the root's spacing property  -->
         <StackPanel MaxWidth="{StaticResource StandardControlMaxWidth}"
-                    Margin="0,-20,0,0"
                     Visibility="{x:Bind ViewModel.IsExtensionView, Mode=OneWay}">
             <!--  Extension Status  -->
             <muxc:Expander AutomationProperties.Name="{x:Bind ViewModel.CurrentExtensionPackage.AccessibleName, Mode=OneWay}"
@@ -452,42 +458,39 @@
         </StackPanel>
 
         <!--  Grouping: Modified Profiles  -->
-        <StackPanel>
+        <StackPanel Margin="{x:Bind CalculateMargin(ViewModel.NoProfilesModified), Mode=OneWay}"
+                    Visibility="{x:Bind mtu:Converters.InvertedBooleanToVisibility(ViewModel.NoProfilesModified), Mode=OneWay}">
             <TextBlock x:Uid="Extensions_ModifiedProfilesHeader"
                        Style="{StaticResource TextBlockSubHeaderStyle}" />
-            <TextBlock x:Uid="Extensions_NoModifiedProfilesDisclaimer"
-                       Style="{StaticResource ItalicDisclaimerStyle}"
-                       Visibility="{x:Bind ViewModel.NoProfilesModified, Mode=OneWay}" />
             <ItemsControl x:Name="ModifiedProfilesList"
                           IsTabStop="False"
                           ItemTemplate="{StaticResource FragmentProfileViewModelTemplate}"
-                          ItemsSource="{x:Bind ViewModel.ProfilesModified, Mode=OneWay}" />
+                          ItemsSource="{x:Bind ViewModel.ProfilesModified, Mode=OneWay}"
+                          XYFocusKeyboardNavigation="Enabled" />
         </StackPanel>
 
         <!--  Grouping: Added Profiles  -->
-        <StackPanel>
+        <StackPanel Margin="{x:Bind CalculateMargin(ViewModel.NoProfilesAdded), Mode=OneWay}"
+                    Visibility="{x:Bind mtu:Converters.InvertedBooleanToVisibility(ViewModel.NoProfilesAdded), Mode=OneWay}">
             <TextBlock x:Uid="Extensions_AddedProfilesHeader"
                        Style="{StaticResource TextBlockSubHeaderStyle}" />
-            <TextBlock x:Uid="Extensions_NoAddedProfilesDisclaimer"
-                       Style="{StaticResource ItalicDisclaimerStyle}"
-                       Visibility="{x:Bind ViewModel.NoProfilesAdded, Mode=OneWay}" />
             <ItemsControl x:Name="AddedProfilesList"
                           IsTabStop="False"
                           ItemTemplate="{StaticResource FragmentProfileViewModelTemplate}"
-                          ItemsSource="{x:Bind ViewModel.ProfilesAdded, Mode=OneWay}" />
+                          ItemsSource="{x:Bind ViewModel.ProfilesAdded, Mode=OneWay}"
+                          XYFocusKeyboardNavigation="Enabled" />
         </StackPanel>
 
         <!--  Grouping: Added Color Schemes  -->
-        <StackPanel>
+        <StackPanel Margin="{x:Bind CalculateMargin(ViewModel.NoProfilesAdded), Mode=OneWay}"
+                    Visibility="{x:Bind mtu:Converters.InvertedBooleanToVisibility(ViewModel.NoSchemesAdded), Mode=OneWay}">
             <TextBlock x:Uid="Extensions_AddedColorSchemesHeader"
                        Style="{StaticResource TextBlockSubHeaderStyle}" />
-            <TextBlock x:Uid="Extensions_NoAddedColorSchemesDisclaimer"
-                       Style="{StaticResource ItalicDisclaimerStyle}"
-                       Visibility="{x:Bind ViewModel.NoSchemesAdded, Mode=OneWay}" />
             <ItemsControl x:Name="AddedColorSchemesList"
                           IsTabStop="False"
                           ItemTemplate="{StaticResource FragmentColorSchemeViewModelTemplate}"
-                          ItemsSource="{x:Bind ViewModel.ColorSchemesAdded, Mode=OneWay}" />
+                          ItemsSource="{x:Bind ViewModel.ColorSchemesAdded, Mode=OneWay}"
+                          XYFocusKeyboardNavigation="Enabled" />
         </StackPanel>
     </StackPanel>
 </Page>

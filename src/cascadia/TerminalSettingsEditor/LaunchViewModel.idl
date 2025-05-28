@@ -10,7 +10,6 @@ namespace Microsoft.Terminal.Settings.Editor
     runtimeclass LaunchViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged
     {
         static String LanguageDisplayConverter(String tag);
-        Boolean LanguageSelectorAvailable { get; };
         Windows.Foundation.Collections.IObservableVector<String> LanguageList { get; };
         IInspectable CurrentLanguage;
 

@@ -103,7 +103,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void _TryUpdateActionMap(const Model::Command& cmd);
         void _TryUpdateKeyChord(const Model::Command& cmd, const Control::KeyChord& keys);
 
-        std::vector<Model::Command> _updateLocalSnippetCache(winrt::hstring currentWorkingDirectory);
+        static std::unordered_map<hstring, Model::Command> _loadLocalSnippets(const std::filesystem::path& currentWorkingDirectory);
 
         Windows::Foundation::Collections::IMap<hstring, Model::ActionAndArgs> _AvailableActionsCache{ nullptr };
         Windows::Foundation::Collections::IMap<hstring, Model::Command> _NameMapCache{ nullptr };
@@ -137,7 +137,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         // we can give the SUI a view of the key chords and the commands they map to
         Windows::Foundation::Collections::IMap<Control::KeyChord, Model::Command> _ResolvedKeyToActionMapCache{ nullptr };
 
-        til::shared_mutex<std::unordered_map<hstring, std::vector<Model::Command>>> _cwdLocalSnippetsCache{};
+        til::shared_mutex<std::unordered_map<std::filesystem::path, std::unordered_map<hstring, Model::Command>>> _cwdLocalSnippetsCache{};
 
         std::set<std::string> _changeLog;
 

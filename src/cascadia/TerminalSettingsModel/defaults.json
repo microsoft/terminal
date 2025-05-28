@@ -745,6 +745,7 @@
         { "keys": "ctrl+shift+pgup", "id": "Terminal.ScrollUpPage" },
         { "keys": "ctrl+shift+home", "id": "Terminal.ScrollToTop" },
         { "keys": "ctrl+shift+end", "id": "Terminal.ScrollToBottom" },
+        { "keys": "ctrl+shift+k", "id": "Terminal.ClearBuffer" },
 
         // Visual Adjustments
         { "keys": "ctrl+plus", "id": "Terminal.IncreaseFontSize" },

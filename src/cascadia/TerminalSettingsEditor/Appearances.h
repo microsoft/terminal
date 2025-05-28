@@ -120,9 +120,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void UpdateFontSetting(const FontKeyValuePair* kv);
 
         // background image
-        bool UseDesktopBGImage();
+        hstring CurrentBackgroundImagePath() const;
+        bool UseDesktopBGImage() const;
         void UseDesktopBGImage(const bool useDesktop);
-        bool BackgroundImageSettingsVisible();
+        bool BackgroundImageSettingsVisible() const;
         void SetBackgroundImageOpacityFromPercentageValue(double percentageValue);
         void SetBackgroundImagePath(winrt::hstring path);
         hstring BackgroundImageAlignmentCurrentValue() const;

@@ -916,14 +916,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         AddAction(*cmd, keys);
     }
 
-    // Update ActionMap's cache of actions for this directory. We'll look for a
-    // .wt.json in this directory. If it exists, we'll read it, parse it's JSON,
-    // then take all the sendInput actions in it and store them in our
-    // _cwdLocalSnippetsCache
-    std::vector<Model::Command> ActionMap::_updateLocalSnippetCache(winrt::hstring currentWorkingDirectory)
+    // Look for a .wt.json file in the given directory. If it exists,
+    // read it, parse it's JSON, and retrieve all the sendInput actions.
+    std::unordered_map<hstring, Model::Command> ActionMap::_loadLocalSnippets(const std::filesystem::path& currentWorkingDirectory)
     {
         // This returns an empty string if we fail to load the file.
-        std::filesystem::path localSnippetsPath{ std::wstring_view{ currentWorkingDirectory + L"\\.wt.json" } };
+        std::filesystem::path localSnippetsPath = currentWorkingDirectory / std::filesystem::path{ ".wt.json" };
         const auto data = til::io::read_file_as_utf8_string_if_exists(localSnippetsPath);
         if (data.empty())
         {
@@ -943,12 +941,13 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             return {};
         }
 
-        auto result = std::vector<Model::Command>();
+        std::unordered_map<hstring, Model::Command> result;
         if (auto actions{ root[JsonKey("snippets")] })
         {
             for (const auto& json : actions)
             {
-                result.push_back(*Command::FromSnippetJson(json));
+                const auto snippet = Command::FromSnippetJson(json);
+                result.insert_or_assign(snippet->Name(), *snippet);
             }
         }
         return result;
@@ -958,34 +957,89 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         winrt::hstring currentCommandline,
         winrt::hstring currentWorkingDirectory)
     {
+        // enumerate all the parent directories we want to import snippets from
+        std::filesystem::path directory{ std::wstring_view{ currentWorkingDirectory } };
+        std::vector<std::filesystem::path> directories;
+        while (!directory.empty())
         {
-            // Check if there are any cached commands in this directory.
-            const auto& cache{ _cwdLocalSnippetsCache.lock_shared() };
-
-            const auto cacheIterator = cache->find(currentWorkingDirectory);
-            if (cacheIterator != cache->end())
+            directories.push_back(directory);
+            auto parentPath = directory.parent_path();
+            if (directory == parentPath)
             {
-                // We found something in the cache! return it.
+                break;
+            }
+            directory = std::move(parentPath);
+        }
+
+        {
+            // Check if all the directories are already in the cache
+            const auto& cache{ _cwdLocalSnippetsCache.lock_shared() };
+            if (std::ranges::all_of(directories, [&](auto&& dir) { return cache->contains(dir); }))
+            {
+                // Load snippets from directories in reverse order.
+                // This ensures that we prioritize snippets closer to the cwd.
+                // The map makes it easy to avoid duplicates.
+                std::unordered_map<hstring, Model::Command> localSnippetsMap;
+                for (auto rit = directories.rbegin(); rit != directories.rend(); ++rit)
+                {
+                    // register snippets from cache
+                    for (const auto& [name, snippet] : cache->at(*rit))
+                    {
+                        localSnippetsMap.insert_or_assign(name, snippet);
+                    }
+                }
+
+                std::vector<Model::Command> localSnippets;
+                localSnippets.reserve(localSnippetsMap.size());
+                std::ranges::transform(localSnippetsMap,
+                                       std::back_inserter(localSnippets),
+                                       [](const auto& kvPair) { return kvPair.second; });
                 co_return winrt::single_threaded_vector<Model::Command>(_filterToSnippets(NameMap(),
                                                                                           currentCommandline,
-                                                                                          cacheIterator->second));
+                                                                                          localSnippets));
             }
         } // release the lock on the cache
 
         // Don't do I/O on the main thread
         co_await winrt::resume_background();
 
-        auto result = _updateLocalSnippetCache(currentWorkingDirectory);
-        if (!result.empty())
+        // Load snippets from directories in reverse order.
+        // This ensures that we prioritize snippets closer to the cwd.
+        // The map makes it easy to avoid duplicates.
+        const auto& cache{ _cwdLocalSnippetsCache.lock() };
+        std::unordered_map<hstring, Model::Command> localSnippetsMap;
+        for (auto rit = directories.rbegin(); rit != directories.rend(); ++rit)
         {
-            // We found something! Add it to the cache
-            auto cache{ _cwdLocalSnippetsCache.lock() };
-            cache->insert_or_assign(currentWorkingDirectory, result);
+            const auto& dir = *rit;
+            if (const auto cacheIterator = cache->find(dir); cacheIterator != cache->end())
+            {
+                // register snippets from cache
+                for (const auto& [name, snippet] : cache->at(*rit))
+                {
+                    localSnippetsMap.insert_or_assign(name, snippet);
+                }
+            }
+            else
+            {
+                // we don't have this directory in the cache, so we need to load it
+                auto result = _loadLocalSnippets(dir);
+                cache->insert_or_assign(dir, result);
+
+                // register snippets from cache
+                std::ranges::for_each(result, [&localSnippetsMap](const auto& kvPair) {
+                    localSnippetsMap.insert_or_assign(kvPair.first, kvPair.second);
+                });
+            }
         }
 
+        std::vector<Model::Command> localSnippets;
+        localSnippets.reserve(localSnippetsMap.size());
+        std::ranges::transform(localSnippetsMap,
+                               std::back_inserter(localSnippets),
+                               [](const auto& kvPair) { return kvPair.second; });
         co_return winrt::single_threaded_vector<Model::Command>(_filterToSnippets(NameMap(),
                                                                                   currentCommandline,
-                                                                                  result));
+                                                                                  localSnippets));
     }
 #pragma endregion
 }

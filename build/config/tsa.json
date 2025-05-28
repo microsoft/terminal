@@ -1,6 +1,6 @@
 {
     "instanceUrl": "https://microsoft.visualstudio.com",
     "projectName": "OS",
-    "areaPath": "OS\\Windows Client and Services\\WinPD\\DEEP-Developer Experience, Ecosystem and Partnerships\\SHINE\\Terminal",
+    "areaPath": "OS\\Windows Client and Services\\WinPD\\DFX-Developer Fundamentals and Experiences\\DEFT\\SHINE\\Terminal",
     "notificationAliases": ["condev@microsoft.com", "duhowett@microsoft.com"]
 }

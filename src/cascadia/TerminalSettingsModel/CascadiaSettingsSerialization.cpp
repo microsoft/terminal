@@ -27,6 +27,7 @@
 #include "ProfileEntry.h"
 #include "FolderEntry.h"
 #include "MatchProfilesEntry.h"
+#include "WtExeUtils.h"
 
 using namespace winrt::Windows::Foundation::Collections;
 using namespace winrt::Windows::ApplicationModel::AppExtensions;
@@ -124,6 +125,20 @@ SettingsLoader SettingsLoader::Default(const std::string_view& userJSON, const s
     return loader;
 }
 
+std::vector<Model::ExtensionPackage> SettingsLoader::LoadExtensionPackages()
+{
+    SettingsLoader loader{};
+    loader.GenerateExtensionPackagesFromProfileGenerators();
+    loader.FindFragmentsAndMergeIntoUserSettings(true /*generateExtensionPackages*/);
+
+    std::vector<Model::ExtensionPackage> extensionPackages;
+    for (auto [_, extPkg] : loader.extensionPackageMap)
+    {
+        extensionPackages.emplace_back(std::move(*extPkg));
+    }
+    return extensionPackages;
+}
+
 // The SettingsLoader class is an internal implementation detail of CascadiaSettings.
 // Member methods aren't safe against misuse and you need to ensure to call them in a specific order.
 // See CascadiaSettings::LoadAll() for a specific usage example.
@@ -174,16 +189,83 @@ SettingsLoader::SettingsLoader(const std::string_view& userJSON, const std::stri
     _userProfileCount = userSettings.profiles.size();
 }
 
+// This method is used to generate the JSON writer used for writing json in a styled format.
+// We use it a few times throughout the loader, so we lazy load it and cache it here.
+Json::StreamWriterBuilder SettingsLoader::_getJsonStyledWriter()
+{
+    static bool jsonWriterInitialized = false;
+    static Json::StreamWriterBuilder styledWriter;
+    if (!jsonWriterInitialized)
+    {
+        styledWriter["indentation"] = "    ";
+        styledWriter["commentStyle"] = "All";
+        styledWriter.settings_["enableYAMLCompatibility"] = true; // suppress spaces around colons
+        styledWriter.settings_["precision"] = 6; // prevent values like 1.1000000000000001
+        jsonWriterInitialized = true;
+    }
+    return styledWriter;
+}
+
 // Generate dynamic profiles and add them to the list of "inbox" profiles
 // (meaning profiles specified by the application rather by the user).
 void SettingsLoader::GenerateProfiles()
 {
-    _executeGenerator(PowershellCoreProfileGenerator{});
-    _executeGenerator(WslDistroGenerator{});
-    _executeGenerator(AzureCloudShellGenerator{});
-    _executeGenerator(VisualStudioGenerator{});
+    auto generateProfiles = [&](const IDynamicProfileGenerator& generator) {
+        if (!_ignoredNamespaces.contains(generator.GetNamespace()))
+        {
+            _executeGenerator(generator, inboxSettings.profiles);
+        }
+    };
+
+    // Generate profiles for each generator and add them to the inbox settings.
+    // Be sure to update the same list below.
+    generateProfiles(PowershellCoreProfileGenerator{});
+    generateProfiles(WslDistroGenerator{});
+    generateProfiles(AzureCloudShellGenerator{});
+    generateProfiles(VisualStudioGenerator{});
 #if TIL_FEATURE_DYNAMICSSHPROFILES_ENABLED
-    _executeGenerator(SshHostGenerator{});
+    generateProfiles(SshHostGenerator{});
+#endif
+}
+
+// Generate ExtensionPackage objects from the profile generators.
+void SettingsLoader::GenerateExtensionPackagesFromProfileGenerators()
+{
+    auto generateExtensionPackages = [&](const IDynamicProfileGenerator& generator) {
+        std::vector<winrt::com_ptr<implementation::Profile>> profilesList;
+        _executeGenerator(generator, profilesList);
+
+        // These are needed for the FragmentSettings object
+        std::vector<Model::FragmentProfileEntry> profileEntries;
+        Json::Value profilesListJson{ Json::ValueType::arrayValue };
+
+        for (const auto& profile : profilesList)
+        {
+            const auto profileJson = profile->ToJson();
+            profilesListJson.append(profileJson);
+            profileEntries.push_back(winrt::make<FragmentProfileEntry>(profile->Guid(), hstring{ til::u8u16(Json::writeString(_getJsonStyledWriter(), profileJson)) }));
+        }
+
+        // Manually construct the JSON for the FragmentSettings object
+        Json::Value json{ Json::ValueType::objectValue };
+        json[JsonKey(ProfilesKey)] = profilesListJson;
+
+        auto generatorExtension = winrt::make_self<FragmentSettings>(hstring{ generator.GetNamespace() }, hstring{ til::u8u16(Json::writeString(_getJsonStyledWriter(), json)) }, hstring{ L"settings.json" });
+        generatorExtension->NewProfiles(winrt::single_threaded_vector<Model::FragmentProfileEntry>(std::move(profileEntries)));
+
+        auto extPkg = _registerFragment(std::move(*generatorExtension), FragmentScope::Machine);
+        extPkg->DisplayName(hstring{ generator.GetDisplayName() });
+        extPkg->Icon(hstring{ generator.GetIcon() });
+    };
+
+    // Generate extension package objects for each generator.
+    // Be sure to update the same list above.
+    generateExtensionPackages(PowershellCoreProfileGenerator{});
+    generateExtensionPackages(WslDistroGenerator{});
+    generateExtensionPackages(AzureCloudShellGenerator{});
+    generateExtensionPackages(VisualStudioGenerator{});
+#if TIL_FEATURE_DYNAMICSSHPROFILES_ENABLED
+    generateExtensionPackages(SshHostGenerator{});
 #endif
 }
 
@@ -242,11 +324,11 @@ void SettingsLoader::MergeInboxIntoUserSettings()
 // merge them. Unfortunately however the "updates" key in fragment profiles make this impossible:
 // The targeted profile might be one that got created as part of SettingsLoader::MergeInboxIntoUserSettings.
 // Additionally the GUID in "updates" will conflict with existing GUIDs in .inboxSettings.
-void SettingsLoader::FindFragmentsAndMergeIntoUserSettings()
+void SettingsLoader::FindFragmentsAndMergeIntoUserSettings(bool generateExtensionPackages)
 {
     ParsedSettings fragmentSettings;
 
-    const auto parseAndLayerFragmentFiles = [&](const std::filesystem::path& path, const winrt::hstring& source, FragmentScope scope, bool applyToSettings) {
+    const auto parseAndLayerFragmentFiles = [&](const std::filesystem::path& path, const winrt::hstring& source, FragmentScope scope) {
         for (const auto& fragmentExt : std::filesystem::directory_iterator{ path })
         {
             const auto fragExtPath = fragmentExt.path();
@@ -257,7 +339,12 @@ void SettingsLoader::FindFragmentsAndMergeIntoUserSettings()
                     const auto content = til::io::read_file_as_utf8_string_if_exists(fragExtPath);
                     if (!content.empty())
                     {
-                        _parseFragment(source, content, fragmentSettings, scope, fragExtPath.filename().wstring(), applyToSettings);
+                        _parseFragment(source,
+                                       content,
+                                       fragmentSettings,
+                                       generateExtensionPackages ?
+                                           static_cast<std::optional<ParseFragmentMetadata>>(ParseFragmentMetadata{ fragExtPath.filename().wstring(), scope }) :
+                                           std::nullopt);
                     }
                 }
                 CATCH_LOG();
@@ -283,8 +370,7 @@ void SettingsLoader::FindFragmentsAndMergeIntoUserSettings()
                 {
                     parseAndLayerFragmentFiles(fragmentExtFolder.path(),
                                                winrt::hstring{ source },
-                                               rfid == FOLDERID_LocalAppData ? FragmentScope::User : FragmentScope::Machine, // scope
-                                               !_ignoredNamespaces.contains(std::wstring_view{ source })); // applyToSettings
+                                               rfid == FOLDERID_LocalAppData ? FragmentScope::User : FragmentScope::Machine); // scope
                 }
             }
         }
@@ -319,6 +405,14 @@ void SettingsLoader::FindFragmentsAndMergeIntoUserSettings()
         const auto& package = ext.Package();
         const auto packageName = package.Id().FamilyName();
 
+        // If the extension was explicitly disabled, skip over it early to avoid the async API!
+        // NOTE: only do this if we're NOT generating extension packages. If we are, we need to get all the
+        //       package metadata anyway to display in the settings UI later.
+        if (!generateExtensionPackages && _ignoredNamespaces.contains(std::wstring_view{ packageName }))
+        {
+            continue;
+        }
+
         // Likewise, getting the public folder from an extension is an async operation.
         auto foundFolder = extractValueFromTaskWithoutMainThreadAwait(ext.GetPublicFolderAsync());
         if (!foundFolder)
@@ -339,12 +433,14 @@ void SettingsLoader::FindFragmentsAndMergeIntoUserSettings()
             // See https://github.com/microsoft/winget-cli/discussions/1983
             parseAndLayerFragmentFiles(path,
                                        packageName,
-                                       FragmentScope::User,
-                                       !_ignoredNamespaces.contains(std::wstring_view{ packageName })); // applyToSettings
+                                       FragmentScope::User);
 
-            auto extPkg = extensionPackageMap[packageName];
-            extPkg->Icon(package.Logo().AbsoluteUri());
-            extPkg->DisplayName(package.DisplayName());
+            if (generateExtensionPackages)
+            {
+                auto extPkg = extensionPackageMap[packageName];
+                extPkg->Icon(package.Logo().AbsoluteUri());
+                extPkg->DisplayName(package.DisplayName());
+            }
         }
     }
 }
@@ -355,7 +451,7 @@ void SettingsLoader::FindFragmentsAndMergeIntoUserSettings()
 void SettingsLoader::MergeFragmentIntoUserSettings(const winrt::hstring& source, const std::string_view& content)
 {
     ParsedSettings fragmentSettings;
-    _parseFragment(source, content, fragmentSettings, FragmentScope::User, L"filename.json", true);
+    _parseFragment(source, content, fragmentSettings, std::nullopt);
 }
 
 // Call this method before passing SettingsLoader to the CascadiaSettings constructor.
@@ -734,23 +830,22 @@ void SettingsLoader::_parse(const OriginTag origin, const winrt::hstring& source
 
 // Just like _parse, but is to be used for fragment files, which don't support anything but color
 // schemes and profiles. Additionally this function supports profiles which specify an "updates" key.
-// - scope: The scope of the fragment file (user or machine).
-// - jsonFilename: The filename of the JSON file being parsed.
-// - applyToSettings: If true, the parsed settings will be applied to the user settings. Otherwise, load the fragment for the settings UI, but don't apply it.
-void SettingsLoader::_parseFragment(const winrt::hstring& source, const std::string_view& content, ParsedSettings& settings, FragmentScope scope, std::wstring_view jsonFilename, bool applyToSettings)
+// - fragmentMeta: If set, construct and register FragmentSettings objects. Provides metadata necessary for doing so.
+//                 Otherwise, completely skip over that extra work and apply parsed settings to the user settings, if allowed by disabledProfileSources ("_ignoredNamespaces").
+void SettingsLoader::_parseFragment(const winrt::hstring& source, const std::string_view& content, ParsedSettings& settings, const std::optional<ParseFragmentMetadata>& fragmentMeta)
 {
     auto json = _parseJson(content);
 
-    Json::StreamWriterBuilder styledWriter;
-    styledWriter["indentation"] = "    ";
-    styledWriter["commentStyle"] = "All";
-    auto fragmentSettings = winrt::make_self<FragmentSettings>(source, hstring{ til::u8u16(Json::writeString(styledWriter, json.root)) }, hstring{ jsonFilename });
+    const bool buildFragmentSettings = fragmentMeta.has_value();
+    const bool applyToUserSettings = !buildFragmentSettings && !_ignoredNamespaces.contains(std::wstring_view{ source });
+    winrt::com_ptr<implementation::FragmentSettings> fragmentSettings = buildFragmentSettings ?
+                                                                            winrt::make_self<FragmentSettings>(source, hstring{ til::u8u16(Json::writeString(_getJsonStyledWriter(), json.root)) }, hstring{ fragmentMeta->jsonFilename }) :
+                                                                            nullptr;
 
     settings.clear();
 
+    // Load GlobalAppSettings and ColorSchemes
     {
-        settings.globals = winrt::make_self<GlobalAppSettings>();
-
         std::vector<Model::FragmentColorSchemeEntry> fragmentColorSchemes;
         for (const auto& schemeJson : json.colorSchemes)
         {
@@ -759,33 +854,44 @@ void SettingsLoader::_parseFragment(const winrt::hstring& source, const std::str
                 if (const auto scheme = ColorScheme::FromJson(schemeJson))
                 {
                     scheme->Origin(OriginTag::Fragment);
-                    if (applyToSettings)
+                    if (buildFragmentSettings)
+                    {
+                        fragmentColorSchemes.emplace_back(winrt::make<FragmentColorSchemeEntry>(scheme->Name(), hstring{ til::u8u16(Json::writeString(_getJsonStyledWriter(), schemeJson)) }));
+                    }
+                    if (applyToUserSettings)
                     {
                         // Don't add the color scheme to the Fragment's GlobalSettings; that will
                         // cause layering issues later. Add them to a staging area for later processing.
                         // (search for STAGED COLORS to find the next step)
                         settings.colorSchemes.emplace(scheme->Name(), std::move(scheme));
                     }
-                    fragmentColorSchemes.emplace_back(winrt::make<FragmentColorSchemeEntry>(scheme->Name(), hstring{ til::u8u16(Json::writeString(styledWriter, schemeJson)) }));
                 }
             }
             CATCH_LOG()
         }
-        fragmentSettings->ColorSchemes(fragmentColorSchemes.empty() ? nullptr : single_threaded_vector<Model::FragmentColorSchemeEntry>(std::move(fragmentColorSchemes)));
 
-        if (applyToSettings)
+        if (buildFragmentSettings)
+        {
+            fragmentSettings->ColorSchemes(fragmentColorSchemes.empty() ? nullptr : single_threaded_vector<Model::FragmentColorSchemeEntry>(std::move(fragmentColorSchemes)));
+        }
+        if (applyToUserSettings)
         {
             // Parse out actions from the fragment. Manually opt-out of keybinding
             // parsing - fragments shouldn't be allowed to bind actions to keys
             // directly. We may want to revisit circa GH#2205
+            settings.globals = winrt::make_self<GlobalAppSettings>();
             settings.globals->LayerActionsFrom(json.root, OriginTag::Fragment, false);
         }
     }
 
+    // Load new and modified profiles
     {
-        const auto size = json.profilesList.size();
-        settings.profiles.reserve(size);
-        settings.profilesByGuid.reserve(size);
+        if (applyToUserSettings)
+        {
+            const auto size = json.profilesList.size();
+            settings.profiles.reserve(size);
+            settings.profilesByGuid.reserve(size);
+        }
 
         std::vector<Model::FragmentProfileEntry> newProfiles;
         std::vector<Model::FragmentProfileEntry> modifiedProfiles;
@@ -799,23 +905,31 @@ void SettingsLoader::_parseFragment(const winrt::hstring& source, const std::str
                 // as Guid() will dynamically generate a return value otherwise.
                 auto profile = _parseProfile(OriginTag::Fragment, source, profileJson);
                 const auto guid = profile->HasGuid() ? profile->Guid() : profile->Updates();
-                auto destinationSet = profile->HasGuid() ? newProfiles : modifiedProfiles;
+                auto destinationSet = profile->HasGuid() ? &newProfiles : &modifiedProfiles;
                 if (guid != winrt::guid{})
                 {
-                    if (applyToSettings)
+                    if (buildFragmentSettings)
+                    {
+                        destinationSet->emplace_back(winrt::make<FragmentProfileEntry>(guid, hstring{ til::u8u16(Json::writeString(_getJsonStyledWriter(), profileJson)) }));
+                    }
+                    if (applyToUserSettings)
                     {
                         _appendProfile(std::move(profile), guid, settings);
                     }
-                    destinationSet.emplace_back(winrt::make<FragmentProfileEntry>(guid, hstring{ til::u8u16(Json::writeString(styledWriter, profileJson)) }));
                 }
             }
             CATCH_LOG()
         }
-        fragmentSettings->NewProfiles(newProfiles.empty() ? nullptr : single_threaded_vector<Model::FragmentProfileEntry>(std::move(newProfiles)));
-        fragmentSettings->ModifiedProfiles(modifiedProfiles.empty() ? nullptr : single_threaded_vector<Model::FragmentProfileEntry>(std::move(modifiedProfiles)));
+        if (buildFragmentSettings)
+        {
+            fragmentSettings->NewProfiles(newProfiles.empty() ? nullptr : single_threaded_vector<Model::FragmentProfileEntry>(std::move(newProfiles)));
+            fragmentSettings->ModifiedProfiles(modifiedProfiles.empty() ? nullptr : single_threaded_vector<Model::FragmentProfileEntry>(std::move(modifiedProfiles)));
+            _registerFragment(std::move(*fragmentSettings), fragmentMeta->scope);
+        }
     }
 
-    if (applyToSettings)
+    // Merge profiles, color schemes, and globals into the user settings (aka inheritance)
+    if (applyToUserSettings)
     {
         for (const auto& fragmentProfile : settings.profiles)
         {
@@ -837,19 +951,7 @@ void SettingsLoader::_parseFragment(const winrt::hstring& source, const std::str
         // color schemes and fragment-originated ones.
         for (const auto& [_, fragmentColorScheme] : settings.colorSchemes)
         {
-            if (!_addOrMergeUserColorScheme(fragmentColorScheme))
-            {
-                // Color scheme wasn't added because it conflicted with a non-user created scheme.
-                // Mark the fragment's color scheme as conflicting.
-                for (auto schemeEntry : fragmentSettings->ColorSchemes())
-                {
-                    if (schemeEntry.ColorSchemeName() == fragmentColorScheme->Name())
-                    {
-                        get_self<FragmentColorSchemeEntry>(schemeEntry)->Conflict(true);
-                        break;
-                    }
-                }
-            }
+            _addOrMergeUserColorScheme(fragmentColorScheme);
         }
 
         // Add the parsed fragment globals as a parent of the user's settings.
@@ -857,7 +959,6 @@ void SettingsLoader::_parseFragment(const winrt::hstring& source, const std::str
         // the fragments being applied before the user's own settings.
         userSettings.globals->AddLeastImportantParent(settings.globals);
     }
-    _registerFragment(std::move(*fragmentSettings), scope);
 }
 
 SettingsLoader::JsonSettings SettingsLoader::_parseJson(const std::string_view& content)
@@ -957,7 +1058,7 @@ void SettingsLoader::_addUserProfileParent(const winrt::com_ptr<implementation::
     }
 }
 
-// returns true if the scheme was successfully added, otherwise false
+// returns whether the scheme was successfully added
 bool SettingsLoader::_addOrMergeUserColorScheme(const winrt::com_ptr<implementation::ColorScheme>& newScheme)
 {
     // On entry, all the user color schemes have been loaded. Therefore, any insertions of inbox or fragment schemes
@@ -994,70 +1095,48 @@ bool SettingsLoader::_addOrMergeUserColorScheme(const winrt::com_ptr<implementat
 
 // As the name implies it executes a generator.
 // Generated profiles are added to .inboxSettings. Used by GenerateProfiles().
-void SettingsLoader::_executeGenerator(const IDynamicProfileGenerator& generator)
+void SettingsLoader::_executeGenerator(const IDynamicProfileGenerator& generator, std::vector<winrt::com_ptr<implementation::Profile>>& profilesList)
 {
     const auto generatorNamespace = generator.GetNamespace();
-    std::vector<winrt::com_ptr<implementation::Profile>> generatedProfiles;
+    const auto previousSize = profilesList.size();
     try
     {
-        generator.GenerateProfiles(generatedProfiles);
+        generator.GenerateProfiles(profilesList);
     }
     CATCH_LOG_MSG("Dynamic Profile Namespace: \"%.*s\"", gsl::narrow<int>(generatorNamespace.size()), generatorNamespace.data())
 
-    // These are needed for the FragmentSettings object
-    std::vector<Model::FragmentProfileEntry> profileEntries;
-    Json::Value profilesListJson{ Json::ValueType::arrayValue };
-    Json::StreamWriterBuilder styledWriter;
-    styledWriter["indentation"] = "    ";
-
     // If the generator produced some profiles we're going to give them default attributes.
     // By setting the Origin/Source/etc. here, we deduplicate some code and ensure they aren't missing accidentally.
-    const winrt::hstring source{ generatorNamespace };
-    for (const auto& profile : generatedProfiles)
+    if (profilesList.size() > previousSize)
     {
-        profile->Origin(OriginTag::Generated);
-        profile->Source(source);
+        const winrt::hstring source{ generatorNamespace };
 
-        const auto profileJson = profile->ToJson();
-        profilesListJson.append(profileJson);
-        profileEntries.push_back(winrt::make<FragmentProfileEntry>(profile->Guid(), hstring{ til::u8u16(Json::writeString(styledWriter, profileJson)) }));
-    }
-
-    if (!_ignoredNamespaces.contains(generatorNamespace))
-    {
-        // Add generated profiles to the user settings
-        for (auto& profile : generatedProfiles)
+        for (const auto& profile : std::span(profilesList).subspan(previousSize))
         {
-            inboxSettings.profiles.push_back(profile);
+            profile->Origin(OriginTag::Generated);
+            profile->Source(source);
         }
     }
-
-    // Manually construct the JSON for the FragmentSettings object
-    Json::Value json{ Json::ValueType::objectValue };
-    json[JsonKey(ProfilesKey)] = profilesListJson;
-
-    auto generatorExtension = winrt::make_self<FragmentSettings>(hstring{ generatorNamespace }, hstring{ til::u8u16(Json::writeString(styledWriter, json)) }, hstring{ L"settings.json" });
-    generatorExtension->NewProfiles(winrt::single_threaded_vector<Model::FragmentProfileEntry>(std::move(profileEntries)));
-    auto extPkg = _registerFragment(std::move(*generatorExtension), FragmentScope::Machine);
-    extPkg->DisplayName(hstring{ generator.GetDisplayName() });
-    extPkg->Icon(hstring{ generator.GetIcon() });
 }
 
 winrt::com_ptr<ExtensionPackage> SettingsLoader::_registerFragment(const winrt::Microsoft::Terminal::Settings::Model::FragmentSettings& fragment, FragmentScope scope)
 {
+    winrt::com_ptr<ExtensionPackage> extPkg{ nullptr };
     const auto src = fragment.Source();
-    if (auto extPkg = extensionPackageMap[src])
+    const auto found = extensionPackageMap.find(src);
+    if (found != extensionPackageMap.end())
     {
-        extPkg->Fragments().Append(fragment);
-        return extPkg;
+        // retrieve from extensionPackageMap
+        extPkg = found->second;
     }
     else
     {
-        auto newExtPkg = winrt::make_self<ExtensionPackage>(src, scope);
-        newExtPkg->Fragments().Append(fragment);
-        extensionPackageMap[src] = newExtPkg;
-        return newExtPkg;
+        // create a new entry in extensionPackageMap
+        const auto em = extensionPackageMap.emplace(src, winrt::make_self<ExtensionPackage>(src, scope));
+        extPkg = em.first->second;
     }
+    extPkg->Fragments().Append(fragment);
+    return extPkg;
 }
 
 // Method Description:
@@ -1132,7 +1211,7 @@ try
     loader.MergeInboxIntoUserSettings();
     // Fragments might reference user profiles created by a generator.
     // --> FindFragmentsAndMergeIntoUserSettings must be called after MergeInboxIntoUserSettings.
-    loader.FindFragmentsAndMergeIntoUserSettings();
+    loader.FindFragmentsAndMergeIntoUserSettings(false /*generateExtensionPackages*/);
     loader.FinalizeLayering();
 
     // DisableDeletedProfiles returns true whenever we encountered any new generated/dynamic profiles.
@@ -1350,11 +1429,6 @@ CascadiaSettings::CascadiaSettings(SettingsLoader&& loader) :
     _warnings = winrt::single_threaded_vector(std::move(warnings));
     _themesChangeLog = std::move(loader.userSettings.themesChangeLog);
 
-    for (auto [_, extPkg] : loader.extensionPackageMap)
-    {
-        _extensionPackages.Append(*extPkg);
-    }
-
     _resolveDefaultProfile();
     _resolveNewTabMenuProfiles();
     _validateSettings();
@@ -1442,6 +1516,21 @@ winrt::hstring CascadiaSettings::DefaultSettingsPath()
     return winrt::hstring{ path.native() };
 }
 
+void CascadiaSettings::ResetApplicationState() const
+{
+    auto state = ApplicationState::SharedInstance();
+    const auto hash = state.SettingsHash();
+    state.Reset();
+    state.SettingsHash(hash);
+    state.Flush();
+}
+
+void CascadiaSettings::ResetToDefaultSettings()
+{
+    ApplicationState::SharedInstance().Reset();
+    _writeSettingsToDisk(LoadStringResource(IDR_USER_DEFAULTS));
+}
+
 // Method Description:
 // - Write the current state of CascadiaSettings to our settings file
 // - Create a backup file with the current contents, if one does not exist
@@ -1452,19 +1541,21 @@ winrt::hstring CascadiaSettings::DefaultSettingsPath()
 // - <none>
 void CascadiaSettings::WriteSettingsToDisk()
 {
-    const auto settingsPath = _settingsPath();
-
     // write current settings to current settings file
     Json::StreamWriterBuilder wbuilder;
     wbuilder.settings_["enableYAMLCompatibility"] = true; // suppress spaces around colons
     wbuilder.settings_["indentation"] = "    ";
     wbuilder.settings_["precision"] = 6; // prevent values like 1.1000000000000001
 
-    FILETIME lastWriteTime{};
-    const auto styledString{ Json::writeString(wbuilder, ToJson()) };
-    til::io::write_utf8_string_to_file_atomic(settingsPath, styledString, &lastWriteTime);
+    _writeSettingsToDisk(Json::writeString(wbuilder, ToJson()));
+}
 
-    _hash = _calculateHash(styledString, lastWriteTime);
+void CascadiaSettings::_writeSettingsToDisk(std::string_view contents)
+{
+    FILETIME lastWriteTime{};
+    til::io::write_utf8_string_to_file_atomic(_settingsPath(), contents, &lastWriteTime);
+
+    _hash = _calculateHash(contents, lastWriteTime);
 
     // Persists the default terminal choice
     // GH#10003 - Only do this if _currentDefaultTerminal was actually initialized.
@@ -1765,10 +1856,22 @@ void CascadiaSettings::LogSettingChanges(bool isJsonLoad) const
         changes.insert(change);
     }
 
+#if defined(WT_BRANDING_RELEASE)
+    constexpr uint8_t branding = 3;
+#elif defined(WT_BRANDING_PREVIEW)
+    constexpr uint8_t branding = 2;
+#elif defined(WT_BRANDING_CANARY)
+    constexpr uint8_t branding = 1;
+#else
+    constexpr uint8_t branding = 0;
+#endif
+    const uint8_t distribution = IsPackaged()     ? 2 :
+                                 IsPortableMode() ? 1 :
+                                                    0;
+
     // report changes
     for (const auto& change : changes)
     {
-#ifndef _DEBUG
         // A `isJsonLoad ? "JsonSettingsChanged" : "UISettingsChanged"`
         //   would be nice, but that apparently isn't allowed in the macro below.
         // Also, there's guidance to not send too much data all in one event,
@@ -1778,7 +1881,9 @@ void CascadiaSettings::LogSettingChanges(bool isJsonLoad) const
             TraceLoggingWrite(g_hSettingsModelProvider,
                               "JsonSettingsChanged",
                               TraceLoggingDescription("Event emitted when settings.json change"),
-                              TraceLoggingValue(change.data()),
+                              TraceLoggingValue(change.data(), "Setting"),
+                              TraceLoggingValue(branding, "Branding"),
+                              TraceLoggingValue(distribution, "Distribution"),
                               TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
                               TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
         }
@@ -1787,14 +1892,11 @@ void CascadiaSettings::LogSettingChanges(bool isJsonLoad) const
             TraceLoggingWrite(g_hSettingsModelProvider,
                               "UISettingsChanged",
                               TraceLoggingDescription("Event emitted when settings change via the UI"),
-                              TraceLoggingValue(change.data()),
+                              TraceLoggingValue(change.data(), "Setting"),
+                              TraceLoggingValue(branding, "Branding"),
+                              TraceLoggingValue(distribution, "Distribution"),
                               TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
                               TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
         }
-#else
-        OutputDebugStringA(isJsonLoad ? "JsonSettingsChanged - " : "UISettingsChanged - ");
-        OutputDebugStringA(change.data());
-        OutputDebugStringA("\n");
-#endif // !_DEBUG
     }
 }

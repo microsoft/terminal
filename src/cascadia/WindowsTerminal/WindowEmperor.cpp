@@ -246,6 +246,8 @@ void WindowEmperor::CreateNewWindow(winrt::TerminalApp::WindowRequestedArgs args
 
     auto host = std::make_shared<AppHost>(this, _app.Logic(), std::move(args));
     host->Initialize();
+
+    _windowCount += 1;
     _windows.emplace_back(std::move(host));
 }
 
@@ -312,6 +314,7 @@ void WindowEmperor::HandleCommandlineArgs(int nCmdShow)
     _createMessageWindow(windowClassName.c_str());
     _setupGlobalHotkeys();
     _checkWindowsForNotificationIcon();
+    _setupSessionPersistence(_app.Logic().Settings().GlobalSettings().ShouldUsePersistedLayout());
 
     // When the settings change, we'll want to update our global hotkeys
     // and our notification icon based on the new settings.
@@ -321,6 +324,7 @@ void WindowEmperor::HandleCommandlineArgs(int nCmdShow)
             _assertIsMainThread();
             _setupGlobalHotkeys();
             _checkWindowsForNotificationIcon();
+            _setupSessionPersistence(args.NewSettings().GlobalSettings().ShouldUsePersistedLayout());
         }
     });
 
@@ -354,10 +358,7 @@ void WindowEmperor::HandleCommandlineArgs(int nCmdShow)
         }
 
         // If we created no windows, e.g. because the args are "/?" we can just exit now.
-        if (_windows.empty())
-        {
-            _postQuitMessageIfNeeded();
-        }
+        _postQuitMessageIfNeeded();
     }
 
     // ALWAYS change the _real_ CWD of the Terminal to system32,
@@ -398,10 +399,24 @@ void WindowEmperor::HandleCommandlineArgs(int nCmdShow)
         {
             if (!loggedInteraction)
             {
+#if defined(WT_BRANDING_RELEASE)
+                constexpr uint8_t branding = 3;
+#elif defined(WT_BRANDING_PREVIEW)
+                constexpr uint8_t branding = 2;
+#elif defined(WT_BRANDING_CANARY)
+                constexpr uint8_t branding = 1;
+#else
+                constexpr uint8_t branding = 0;
+#endif
+                const uint8_t distribution = IsPackaged()                             ? 2 :
+                                             _app.Logic().Settings().IsPortableMode() ? 1 :
+                                                                                        0;
                 TraceLoggingWrite(
                     g_hWindowsTerminalProvider,
                     "SessionBecameInteractive",
                     TraceLoggingDescription("Event emitted when the session was interacted with"),
+                    TraceLoggingValue(branding, "Branding"),
+                    TraceLoggingValue(distribution, "Distribution"),
                     TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
                     TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
                 loggedInteraction = true;
@@ -738,30 +753,14 @@ void WindowEmperor::_createMessageWindow(const wchar_t* className)
     StringCchCopy(_notificationIcon.szTip, ARRAYSIZE(_notificationIcon.szTip), appNameLoc.c_str());
 }
 
-// Counterpart to _postQuitMessageIfNeeded:
-// If it returns true, don't close that last window, if any.
-// This ensures we persist the last window.
-bool WindowEmperor::_shouldSkipClosingWindows() const
-{
-    const auto globalSettings = _app.Logic().Settings().GlobalSettings();
-    const size_t windowLimit = globalSettings.ShouldUsePersistedLayout() ? 1 : 0;
-    return _windows.size() <= windowLimit;
-}
-
 // Posts a WM_QUIT as soon as we have no reason to exist anymore.
-// That basically means no windows [^1] and no message boxes.
-//
-// [^1] Unless:
-// * We've been asked to persist the last remaining window
-//   in which case we exit with 1 remaining window.
-// * We're allowed to be headless
-//   in which case we never exit.
+// That basically means no windows and no message boxes.
 void WindowEmperor::_postQuitMessageIfNeeded() const
 {
-    const auto globalSettings = _app.Logic().Settings().GlobalSettings();
-    const size_t windowLimit = globalSettings.ShouldUsePersistedLayout() ? 1 : 0;
-
-    if (_messageBoxCount <= 0 && _windows.size() <= windowLimit && !globalSettings.AllowHeadless())
+    if (
+        _messageBoxCount <= 0 &&
+        _windowCount <= 0 &&
+        !_app.Logic().Settings().GlobalSettings().AllowHeadless())
     {
         PostQuitMessage(0);
     }
@@ -795,8 +794,20 @@ LRESULT WindowEmperor::_messageHandler(HWND window, UINT const message, WPARAM c
         {
         case WM_CLOSE_TERMINAL_WINDOW:
         {
-            if (!_shouldSkipClosingWindows())
+            const auto globalSettings = _app.Logic().Settings().GlobalSettings();
+            // Keep the last window in the array so that we can persist it on exit.
+            // We check for AllowHeadless(), as that being true prevents us from ever quitting in the first place.
+            // (= If we avoided closing the last window you wouldn't be able to reach a headless state.)
+            const auto shouldKeepWindow =
+                _windows.size() == 1 &&
+                globalSettings.ShouldUsePersistedLayout() &&
+                !globalSettings.AllowHeadless();
+
+            if (!shouldKeepWindow)
             {
+                // Did the window counter get out of sync? It shouldn't.
+                assert(_windowCount == gsl::narrow_cast<int32_t>(_windows.size()));
+
                 const auto host = reinterpret_cast<AppHost*>(lParam);
                 auto it = _windows.begin();
                 const auto end = _windows.end();
@@ -812,6 +823,8 @@ LRESULT WindowEmperor::_messageHandler(HWND window, UINT const message, WPARAM c
                 }
             }
 
+            // Counterpart specific to CreateNewWindow().
+            _windowCount -= 1;
             _postQuitMessageIfNeeded();
             return 0;
         }
@@ -900,7 +913,8 @@ LRESULT WindowEmperor::_messageHandler(HWND window, UINT const message, WPARAM c
             RegisterApplicationRestart(nullptr, RESTART_NO_CRASH | RESTART_NO_HANG);
             return TRUE;
         case WM_ENDSESSION:
-            _forcePersistence = true;
+            _finalizeSessionPersistence();
+            _skipPersistence = true;
             PostQuitMessage(0);
             return 0;
         default:
@@ -924,21 +938,53 @@ LRESULT WindowEmperor::_messageHandler(HWND window, UINT const message, WPARAM c
     return DefWindowProcW(window, message, wParam, lParam);
 }
 
-void WindowEmperor::_finalizeSessionPersistence() const
+void WindowEmperor::_setupSessionPersistence(bool enabled)
 {
-    const auto state = ApplicationState::SharedInstance();
+    if (!enabled)
+    {
+        _persistStateTimer.Stop();
+        return;
+    }
+    _persistStateTimer.Interval(std::chrono::minutes(5));
+    _persistStateTimer.Tick([&](auto&&, auto&&) {
+        _persistState(ApplicationState::SharedInstance(), false);
+    });
+    _persistStateTimer.Start();
+}
 
-    if (_forcePersistence || _app.Logic().Settings().GlobalSettings().ShouldUsePersistedLayout())
+void WindowEmperor::_persistState(const ApplicationState& state, bool serializeBuffer) const
+{
+    // Calling an `ApplicationState` setter triggers a write to state.json.
+    // With this if condition we avoid an unnecessary write when persistence is disabled.
+    if (state.PersistedWindowLayouts())
     {
         state.PersistedWindowLayouts(nullptr);
+    }
+
+    if (_app.Logic().Settings().GlobalSettings().ShouldUsePersistedLayout())
+    {
         for (const auto& w : _windows)
         {
-            w->Logic().PersistState();
+            w->Logic().PersistState(serializeBuffer);
         }
     }
 
-    // Ensure to write the state.json before we TerminateProcess()
+    // Ensure to write the state.json
     state.Flush();
+}
+
+void WindowEmperor::_finalizeSessionPersistence() const
+{
+    if (_skipPersistence)
+    {
+        // We received WM_ENDSESSION and persisted the state.
+        // We don't need to persist it again.
+        return;
+    }
+
+    const auto state = ApplicationState::SharedInstance();
+
+    _persistState(state, true);
 
     if (_needsPersistenceCleanup)
     {

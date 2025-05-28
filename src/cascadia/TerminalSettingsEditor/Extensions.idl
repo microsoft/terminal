@@ -9,6 +9,8 @@ namespace Microsoft.Terminal.Settings.Editor
     {
         Extensions();
         ExtensionsViewModel ViewModel { get; };
+
+        Windows.UI.Xaml.Thickness CalculateMargin(Boolean hidden);
     }
 
     [default_interface] runtimeclass ExtensionsViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged
@@ -21,6 +23,7 @@ namespace Microsoft.Terminal.Settings.Editor
         Boolean NoProfilesModified { get; };
         Boolean NoProfilesAdded { get; };
         Boolean NoSchemesAdded { get; };
+        Boolean DisplayBadge { get; };
 
         // Views
         IVector<ExtensionPackageViewModel> ExtensionPackages { get; };
@@ -41,7 +44,6 @@ namespace Microsoft.Terminal.Settings.Editor
         Boolean Enabled;
         String Scope { get; };
         String AccessibleName { get; };
-        String AccessibleNameWithStatus { get; };
         IVector<FragmentExtensionViewModel> FragmentExtensions { get; };
     }
 
