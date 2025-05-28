@@ -120,7 +120,8 @@
                 </muxc:NavigationViewItem.Icon>
             </muxc:NavigationViewItem>
 
-            <muxc:NavigationViewItem x:Uid="Nav_ColorSchemes"
+            <muxc:NavigationViewItem x:Name="ColorSchemesNavItem"
+                                     x:Uid="Nav_ColorSchemes"
                                      Tag="ColorSchemes_Nav">
                 <muxc:NavigationViewItem.Icon>
                     <FontIcon Glyph="&#xE790;" />
@@ -153,6 +154,17 @@
                 <muxc:NavigationViewItem.Icon>
                     <FontIcon Glyph="&#xE71d;" />
                 </muxc:NavigationViewItem.Icon>
+            </muxc:NavigationViewItem>
+
+            <muxc:NavigationViewItem x:Uid="Nav_Extensions"
+                                     Tag="Extensions_Nav">
+                <muxc:NavigationViewItem.Icon>
+                    <FontIcon Glyph="&#xEA86;" />
+                </muxc:NavigationViewItem.Icon>
+                <muxc:NavigationViewItem.InfoBadge>
+                    <muxc:InfoBadge Style="{StaticResource NewInfoBadge}"
+                                    Visibility="{x:Bind ExtensionsVM.DisplayBadge, Mode=OneWay}" />
+                </muxc:NavigationViewItem.InfoBadge>
             </muxc:NavigationViewItem>
 
             <muxc:NavigationViewItemHeader x:Uid="Nav_Profiles" />

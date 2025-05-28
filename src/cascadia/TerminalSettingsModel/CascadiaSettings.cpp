@@ -4,6 +4,7 @@
 #include "pch.h"
 #include "CascadiaSettings.h"
 #include "CascadiaSettings.g.cpp"
+#include "MatchProfilesEntry.h"
 
 #include "DefaultTerminal.h"
 #include "FileUtils.h"
@@ -113,6 +114,10 @@ Model::CascadiaSettings CascadiaSettings::Copy() const
         settings->_globals = _globals->Copy();
         settings->_allProfiles = winrt::single_threaded_observable_vector(std::move(allProfiles));
         settings->_activeProfiles = winrt::single_threaded_observable_vector(std::move(activeProfiles));
+
+        // extension packages don't need a deep clone
+        // because they're fully immutable. We can just copy the reference over instead.
+        settings->_extensionPackages = _extensionPackages;
     }
 
     // load errors
@@ -171,6 +176,16 @@ IObservableVector<Model::Profile> CascadiaSettings::AllProfiles() const noexcept
 IObservableVector<Model::Profile> CascadiaSettings::ActiveProfiles() const noexcept
 {
     return _activeProfiles;
+}
+
+IVectorView<Model::ExtensionPackage> CascadiaSettings::Extensions()
+{
+    if (!_extensionPackages)
+    {
+        // Lazy load the ExtensionPackage objects
+        _extensionPackages = winrt::single_threaded_vector<Model::ExtensionPackage>(std::move(SettingsLoader::LoadExtensionPackages()));
+    }
+    return _extensionPackages.GetView();
 }
 
 // Method Description:
@@ -429,6 +444,7 @@ void CascadiaSettings::_validateSettings()
     _validateColorSchemesInCommands();
     _validateThemeExists();
     _validateProfileEnvironmentVariables();
+    _validateRegexes();
 }
 
 // Method Description:
@@ -580,6 +596,41 @@ void CascadiaSettings::_validateProfileEnvironmentVariables()
                 return;
             }
         }
+    }
+}
+
+// Returns true if all regexes in the new tab menu are valid, false otherwise
+static bool _validateNTMEntries(const IVector<Model::NewTabMenuEntry>& entries)
+{
+    if (!entries)
+    {
+        return true;
+    }
+    for (const auto& ntmEntry : entries)
+    {
+        if (const auto& folderEntry = ntmEntry.try_as<Model::FolderEntry>())
+        {
+            if (!_validateNTMEntries(folderEntry.RawEntries()))
+            {
+                return false;
+            }
+        }
+        if (const auto& matchProfilesEntry = ntmEntry.try_as<Model::MatchProfilesEntry>())
+        {
+            if (!winrt::get_self<Model::implementation::MatchProfilesEntry>(matchProfilesEntry)->ValidateRegexes())
+            {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+void CascadiaSettings::_validateRegexes()
+{
+    if (!_validateNTMEntries(_globals->NewTabMenu()))
+    {
+        _warnings.Append(SettingsLoadWarnings::InvalidRegex);
     }
 }
 

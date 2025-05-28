@@ -10,6 +10,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:local="using:Microsoft.Terminal.Control"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:mtu="using:Microsoft.Terminal.UI"
              xmlns:mux="using:Microsoft.UI.Xaml.Controls"
              HorizontalAlignment="Stretch"
              VerticalAlignment="Stretch"
@@ -51,6 +52,10 @@
                               x:Uid="SelectOutputButton"
                               Click="_SelectOutputHandler"
                               Icon="AlignLeft" />
+                <AppBarButton x:Name="SearchCommandButton"
+                              x:Uid="SearchCommandButton"
+                              Click="_SearchCommandHandler"
+                              Icon="Find" />
             </mux:CommandBarFlyout.SecondaryCommands>
         </mux:CommandBarFlyout>
 
@@ -64,10 +69,6 @@
                           Click="_PasteCommandHandler"
                           Icon="Paste" />
             <mux:CommandBarFlyout.SecondaryCommands>
-                <AppBarButton x:Name="SearchCommandButton"
-                              x:Uid="SearchCommandButton"
-                              Click="_SearchCommandHandler"
-                              Icon="Find" />
                 <AppBarButton x:Name="SelectCommandWithSelectionButton"
                               x:Uid="SelectCommandWithSelectionButton"
                               Click="_SelectCommandHandler">
@@ -81,6 +82,10 @@
                               x:Uid="SelectOutputWithSelectionButton"
                               Click="_SelectOutputHandler"
                               Icon="AlignLeft" />
+                <AppBarButton x:Name="SearchCommandSelectionButton"
+                              x:Uid="SearchCommandSelectionButton"
+                              Click="_SearchCommandHandler"
+                              Icon="Find" />
             </mux:CommandBarFlyout.SecondaryCommands>
         </mux:CommandBarFlyout>
 
@@ -1272,6 +1277,9 @@
                                          Placement="Mouse">
                                     <TextBlock IsTextSelectionEnabled="True"
                                                TextWrapping="Wrap">
+                                        <TextBlock.ContextFlyout>
+                                            <mtu:TextMenuFlyout />
+                                        </TextBlock.ContextFlyout>
                                         <Run x:Name="HoveredUri" /> <LineBreak />
                                         <Run x:Uid="HowToOpenRun"
                                              FontStyle="Italic" />

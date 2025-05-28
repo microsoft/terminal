@@ -68,14 +68,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         static bool _IsRemainingProfilesEntryMissing(const Windows::Foundation::Collections::IVector<Editor::NewTabMenuEntryViewModel>& entries);
         void _FolderPropertyChanged(const IInspectable& sender, const Windows::UI::Xaml::Data::PropertyChangedEventArgs& args);
-
-        void _PrintAll();
-#ifdef _DEBUG
-        void _PrintModel(Windows::Foundation::Collections::IVector<Model::NewTabMenuEntry> list, std::wstring prefix = L"");
-        void _PrintModel(const Model::NewTabMenuEntry& e, std::wstring prefix = L"");
-        void _PrintVM(Windows::Foundation::Collections::IVector<Editor::NewTabMenuEntryViewModel> list, std::wstring prefix = L"");
-        void _PrintVM(const Editor::NewTabMenuEntryViewModel& vm, std::wstring prefix = L"");
-#endif
     };
 
     struct FolderTreeViewEntry : FolderTreeViewEntryT<FolderTreeViewEntry>
