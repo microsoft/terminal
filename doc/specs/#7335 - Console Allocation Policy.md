@@ -331,7 +331,7 @@ Are there other allocation policies we need to consider?
     - requires coordination between tooling teams both within and without Microsoft (regarding any tool that operates on
       or produces PE files)
 
-- An exported symbol that shells can check for to determine whether to wait for the attached process to exit
+- An exported symbol that shells can check for in order to determine whether to wait for the attached process to exit
     - relies on shells to update and check for this
     - cracking an executable to look for symbols is probably the last thing shells want to do
         - we could provide an API to determine whether to wait or return?

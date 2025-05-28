@@ -1116,7 +1116,7 @@ bool Renderer::_isInHoveredInterval(const til::point coordTarget) const noexcept
 // Arguments:
 // - <none>
 // Return Value:
-// - nullopt if the cursor is off or out-of-frame, otherwise a CursorOptions
+// - nullopt if the cursor is off or out-of-frame; otherwise, a CursorOptions
 void Renderer::_updateCursorInfo()
 {
     // Get cursor position in buffer

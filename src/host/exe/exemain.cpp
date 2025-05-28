@@ -175,7 +175,7 @@ static bool ShouldUseLegacyConhost(const ConsoleArguments& args)
     {
         // setup status error
         hr = HRESULT_FROM_WIN32(GetLastError());
-        // fallback to V2 if conhostv1.dll cannot be loaded.
+        // fall back to V2 if conhostv1.dll cannot be loaded.
         useV2 = true;
     }
 

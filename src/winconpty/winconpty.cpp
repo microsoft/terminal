@@ -417,7 +417,7 @@ static void _ClosePseudoConsole(_In_ PseudoConsole* pPty) noexcept
 //  INHERIT_CURSOR: This will cause the created conpty to attempt to inherit the
 //      cursor position of the parent terminal application. This can be useful
 //      for applications like `ssh`, where ssh (currently running in a terminal)
-//      might want to create a pseudoterminal session for an child application
+//      might want to create a pseudoterminal session for a child application
 //      and the child inherit the cursor position of ssh.
 //      The created conpty will immediately emit a "Device Status Request" VT
 //      sequence to hOutput, that should be replied to on hInput in the format

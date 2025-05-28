@@ -1,4 +1,4 @@
-name: Publish to Winget
+name: Publish to WinGet
 
 on:
   release:
