@@ -300,7 +300,7 @@ void SettingsLoader::GenerateExtensionPackagesFromProfileGenerators()
         generateExtensionPackages.template operator()<PowershellInstallationProfileGenerator>();
         _patchInstallPowerShellProfile(isPowerShellInstalled);
     }
-    
+
     // Generate extension package objects for each generator.
     // Be sure to update the same list above.
     generateExtensionPackages.template operator()<WslDistroGenerator>();
