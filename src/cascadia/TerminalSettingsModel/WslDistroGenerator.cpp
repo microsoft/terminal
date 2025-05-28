@@ -8,10 +8,13 @@
 #include "../../inc/DefaultSettings.h"
 
 #include "DynamicProfileUtils.h"
+#include <LibraryResources.h>
 
 static constexpr std::wstring_view WslHomeDirectory{ L"~" };
 static constexpr std::wstring_view DockerDistributionPrefix{ L"docker-desktop" };
 static constexpr std::wstring_view RancherDistributionPrefix{ L"rancher-desktop" };
+static constexpr std::wstring_view IconPath{ L"ms-appx:///ProfileIcons/{9acb9455-ca41-5af7-950f-6bca1bc9722f}.png" };
+static constexpr std::wstring_view GeneratorIconPath{ L"ms-appx:///ProfileGeneratorIcons/WSL.png" };
 
 // The WSL entries are structured as such:
 // HKCU\Software\Microsoft\Windows\CurrentVersion\Lxss
@@ -47,6 +50,16 @@ std::wstring_view WslDistroGenerator::GetNamespace() const noexcept
     return WslGeneratorNamespace;
 }
 
+std::wstring_view WslDistroGenerator::GetDisplayName() const noexcept
+{
+    return RS_(L"WslDistroGeneratorDisplayName");
+}
+
+std::wstring_view WslDistroGenerator::GetIcon() const noexcept
+{
+    return GeneratorIconPath;
+}
+
 static winrt::com_ptr<implementation::Profile> makeProfile(const std::wstring& distName)
 {
     const auto WSLDistro{ CreateDynamicProfile(distName) };
@@ -65,7 +78,7 @@ static winrt::com_ptr<implementation::Profile> makeProfile(const std::wstring& d
     {
         WSLDistro->StartingDirectory(winrt::hstring{ DEFAULT_STARTING_DIRECTORY });
     }
-    WSLDistro->Icon(L"ms-appx:///ProfileIcons/{9acb9455-ca41-5af7-950f-6bca1bc9722f}.png");
+    WSLDistro->Icon(winrt::hstring{ IconPath });
     WSLDistro->PathTranslationStyle(winrt::Microsoft::Terminal::Control::PathTranslationStyle::WSL);
     return WSLDistro;
 }

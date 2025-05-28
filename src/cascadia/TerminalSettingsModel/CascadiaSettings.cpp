@@ -114,6 +114,10 @@ Model::CascadiaSettings CascadiaSettings::Copy() const
         settings->_globals = _globals->Copy();
         settings->_allProfiles = winrt::single_threaded_observable_vector(std::move(allProfiles));
         settings->_activeProfiles = winrt::single_threaded_observable_vector(std::move(activeProfiles));
+
+        // extension packages don't need a deep clone
+        // because they're fully immutable. We can just copy the reference over instead.
+        settings->_extensionPackages = _extensionPackages;
     }
 
     // load errors
@@ -172,6 +176,16 @@ IObservableVector<Model::Profile> CascadiaSettings::AllProfiles() const noexcept
 IObservableVector<Model::Profile> CascadiaSettings::ActiveProfiles() const noexcept
 {
     return _activeProfiles;
+}
+
+IVectorView<Model::ExtensionPackage> CascadiaSettings::Extensions()
+{
+    if (!_extensionPackages)
+    {
+        // Lazy load the ExtensionPackage objects
+        _extensionPackages = winrt::single_threaded_vector<Model::ExtensionPackage>(std::move(SettingsLoader::LoadExtensionPackages()));
+    }
+    return _extensionPackages.GetView();
 }
 
 // Method Description:
