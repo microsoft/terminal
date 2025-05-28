@@ -220,7 +220,7 @@ void Terminal::UpdateAppearance(const ICoreAppearance& appearance)
     _NotifyScrollEvent();
 }
 
-void Terminal::SetHighContrastInfo(bool hc) noexcept
+void Terminal::SetHighContrastMode(bool hc) noexcept
 {
     _highContrastMode = hc;
 }

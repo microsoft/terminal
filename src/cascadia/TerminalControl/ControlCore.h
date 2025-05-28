@@ -94,7 +94,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         void UpdateSettings(const Control::IControlSettings& settings, const IControlAppearance& newAppearance);
         void ApplyAppearance(const bool focused);
-        void SetHighContrastInfo(const bool enabled);
+        void SetHighContrastMode(const bool enabled);
         Control::IControlSettings Settings();
         Control::IControlAppearance FocusedAppearance() const;
         Control::IControlAppearance UnfocusedAppearance() const;

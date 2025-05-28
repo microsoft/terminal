@@ -279,11 +279,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _core = _interactivity.Core();
 
         // If high contrast mode was changed, update the appearance appropriately.
-        _core.SetHighContrastInfo(_accessibilitySettings.HighContrast());
+        _core.SetHighContrastMode(_accessibilitySettings.HighContrast());
         _revokers.HighContrastChanged = _accessibilitySettings.HighContrastChanged(winrt::auto_revoke, [weakThis{ get_weak() }](const Windows::UI::ViewManagement::AccessibilitySettings& a11ySettings, auto&&) {
             if (auto termControl = weakThis.get())
             {
-                termControl->_core.SetHighContrastInfo(a11ySettings.HighContrast());
+                termControl->_core.SetHighContrastMode(a11ySettings.HighContrast());
                 termControl->_core.ApplyAppearance(termControl->_focused);
             }
         });
