@@ -90,8 +90,6 @@ static Microsoft::Console::TSF::Handle& GetTSFHandle()
 
 namespace winrt::Microsoft::Terminal::Control::implementation
 {
-    Windows::UI::ViewManagement::AccessibilitySettings TermControl::_accessibilitySettings{};
-
     static void _translatePathInPlace(std::wstring& fullPath, PathTranslationStyle translationStyle)
     {
         static constexpr wil::zwstring_view s_pathPrefixes[] = {
@@ -272,7 +270,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _autoScrollVelocity{ 0 },
         _autoScrollingPointerPoint{ std::nullopt },
         _lastAutoScrollUpdateTime{ std::nullopt },
-        _searchBox{ nullptr }
+        _searchBox{ nullptr },
+        _accessibilitySettings{}
     {
         InitializeComponent();
 
