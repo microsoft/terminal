@@ -66,7 +66,7 @@ namespace winrt::TerminalApp::implementation
         auto segments = winrt::single_threaded_observable_vector<winrt::TerminalApp::HighlightedTextSegment>();
         auto commandName = _Item.Name();
         auto weight = 0;
-        if (!_pattern || !_pattern->terms.empty())
+        if (!_pattern || _pattern->terms.empty())
         {
             segments.Append(winrt::TerminalApp::HighlightedTextSegment(commandName, false));
         }
