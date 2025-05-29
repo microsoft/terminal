@@ -321,7 +321,7 @@
             <TextBlock x:Uid="NewTabMenu_CurrentFolderTextBlock"
                        Style="{StaticResource TextBlockSubHeaderStyle}" />
 
-            <!--  TODO CARLOS: Icon  -->
+            <!--  TODO GH #18281: Icon  -->
             <!--  Once PR #17965 merges, we can add that kind of control to set an icon  -->
 
             <!--  Name  -->

@@ -92,6 +92,14 @@ winrt::com_ptr<GlobalAppSettings> GlobalAppSettings::Copy() const
             globals->_NewTabMenu->Append(get_self<NewTabMenuEntry>(entry)->Copy());
         }
     }
+    if (_DisabledProfileSources)
+    {
+        globals->_DisabledProfileSources = winrt::single_threaded_vector<hstring>();
+        for (const auto& src : *_DisabledProfileSources)
+        {
+            globals->_DisabledProfileSources->Append(src);
+        }
+    }
 
     for (const auto& parent : _parents)
     {
