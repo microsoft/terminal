@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
+import "Extensions.idl";
+
 namespace Microsoft.Terminal.Settings.Editor
 {
     delegate void GithubAuthCompletedHandler(String result);
@@ -22,7 +24,8 @@ namespace Microsoft.Terminal.Settings.Editor
         Profile_Terminal,
         Profile_Advanced,
         ColorSchemes_Edit,
-        NewTabMenu_Folder
+        NewTabMenu_Folder,
+        Extensions_Extension
     };
 
     runtimeclass Breadcrumb : Windows.Foundation.IStringable
@@ -45,6 +48,7 @@ namespace Microsoft.Terminal.Settings.Editor
         void SetHostingWindow(UInt64 window);
 
         Windows.Foundation.Collections.IObservableVector<IInspectable> Breadcrumbs { get; };
+        ExtensionsViewModel ExtensionsVM { get; };
 
         Windows.UI.Xaml.Media.Brush BackgroundBrush { get; };
 
