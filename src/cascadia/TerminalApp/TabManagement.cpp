@@ -89,6 +89,7 @@ namespace winrt::TerminalApp::implementation
 
         // This call to _MakePane won't return nullptr, we already checked that
         // case above with the _maybeElevate call.
+        // _MakePane
         _CreateNewTabFromPane(_MakePane(newContentArgs, nullptr));
         return S_OK;
     }
