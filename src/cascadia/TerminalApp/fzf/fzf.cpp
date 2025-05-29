@@ -160,7 +160,7 @@ namespace fzf
             for (int32_t i = 0; i < lowerTextSlice.size(); i++)
             {
                 UChar32 currentChar = lowerTextSlice[i];
-                CharClass currentClass = ClassOf(currentChar);
+                CharClass currentClass = ClassOf(text[i + firstIndexOf]);
                 int16_t bonus = CalculateBonus(previousClass, currentClass);
                 bonusesSlice[i] = bonus;
                 previousClass = currentClass;

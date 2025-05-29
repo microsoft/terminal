@@ -34,6 +34,7 @@ namespace TerminalAppUnitTests
         TEST_METHOD(NonWordBonusBoundary_ConsecutiveChars);
         TEST_METHOD(MatchOnNonWordChars_CaseInSensitive);
         TEST_METHOD(MatchOnNonWordCharsWithGap);
+        TEST_METHOD(BonusForCamelCaseMatch);
         TEST_METHOD(BonusBoundaryAndFirstCharMultiplier);
         TEST_METHOD(MatchesAreCaseInSensitive);
         TEST_METHOD(MultipleTerms);
@@ -263,7 +264,11 @@ namespace TerminalAppUnitTests
         AssertScoreAndPositions(
             L"foo-b",
             L"xFoo-Bar Baz",
-            ScoreMatch * 5 + BonusConsecutive * 4 + BonusBoundary,
+            (ScoreMatch + BonusCamel123 * BonusFirstCharMultiplier) +
+                (ScoreMatch + BonusCamel123) +
+                (ScoreMatch + BonusCamel123) +
+                (ScoreMatch + BonusBoundary) +
+                (ScoreMatch + BonusNonWord),
             {5,4,3,2,1});
     }
 
@@ -272,7 +277,28 @@ namespace TerminalAppUnitTests
         AssertScoreAndPositions(
             L"12356",
             L"abc123 456",
-            ScoreMatch * 5 + BonusCamel123 * BonusFirstCharMultiplier + BonusCamel123 * 2 + BonusConsecutive + ScoreGapStart + ScoreGapExtension,
+            (ScoreMatch + BonusCamel123 * BonusFirstCharMultiplier) +
+                (ScoreMatch + BonusCamel123) +
+                (ScoreMatch + BonusCamel123) +
+                ScoreGapStart +
+                ScoreGapExtension +
+                ScoreMatch +
+                ScoreMatch + BonusConsecutive,
+            { 9, 8, 5, 4, 3 });
+    }
+
+    void FzfTests::BonusForCamelCaseMatch()
+    {
+        AssertScoreAndPositions(
+            L"def56",
+            L"abcDEF 456",
+            (ScoreMatch + BonusCamel123 * BonusFirstCharMultiplier) +
+                (ScoreMatch + BonusCamel123) +
+                (ScoreMatch + BonusCamel123) +
+                ScoreGapStart +
+                ScoreGapExtension +
+                ScoreMatch +
+                (ScoreMatch + BonusConsecutive),
             { 9, 8, 5, 4, 3 });
     }
 
@@ -341,7 +367,10 @@ namespace TerminalAppUnitTests
         AssertScoreAndPositions(
             L"bar",
             L"Foo Bar Bar",
-            ScoreMatch * 3 + BonusBoundary * BonusFirstCharMultiplier * 2,
+            (ScoreMatch + BonusBoundary * BonusFirstCharMultiplier) +
+                (ScoreMatch + BonusBoundary) +
+                (ScoreMatch + BonusBoundary),
+            //ScoreMatch * 3 + BonusBoundary * BonusFirstCharMultiplier * 2,
             { 6, 5, 4 });
     }
 
