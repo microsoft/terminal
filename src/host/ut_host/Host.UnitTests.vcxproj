@@ -78,7 +78,7 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\inc\CommonState.hpp" />
+    <ClInclude Include="..\..\inc\test\CommonState.hpp" />
     <ClInclude Include="..\precomp.h" />
     <ClInclude Include="UnicodeLiteral.hpp" />
   </ItemGroup>

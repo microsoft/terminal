@@ -210,6 +210,45 @@
   <data name="SplitPaneText" xml:space="preserve">
     <value>Suddividi riquadro</value>
   </data>
+  <data name="SplitPaneToolTipText" xml:space="preserve">
+    <value>Fai clic con il pulsante destro del mouse per le direzioni di divisione: destra/giù/su/sinistra</value>
+  </data>
+  <data name="SplitPaneDownText" xml:space="preserve">
+    <value>Dividi riquadro in giù</value>
+  </data>
+  <data name="SplitPaneRightText" xml:space="preserve">
+    <value>Dividi riquadro a destra</value>
+  </data>
+  <data name="SplitPaneUpText" xml:space="preserve">
+    <value>Dividi riquadro in su</value>
+  </data>
+  <data name="SplitPaneLeftText" xml:space="preserve">
+    <value>Dividi riquadro a sinistra</value>
+  </data>
+  <data name="SplitPaneDuplicateText" xml:space="preserve">
+    <value>Duplica</value>
+  </data>
+  <data name="SwapPaneText" xml:space="preserve">
+    <value>Scambia riquadro</value>
+  </data>
+  <data name="SwapPaneDownText" xml:space="preserve">
+    <value>Scambia riquadro in giù</value>
+  </data>
+  <data name="SwapPaneRightText" xml:space="preserve">
+    <value>Scambia riquadro a destra</value>
+  </data>
+  <data name="SwapPaneUpText" xml:space="preserve">
+    <value>Scambia riquadro in su</value>
+  </data>
+  <data name="SwapPaneLeftText" xml:space="preserve">
+    <value>Scambia riquadro a sinistra</value>
+  </data>
+  <data name="TogglePaneZoomText" xml:space="preserve">
+    <value>Attiva/disattiva zoom riquadro</value>
+  </data>
+  <data name="CloseOtherPanesText" xml:space="preserve">
+    <value>Chiudi altri riquadri</value>
+  </data>
   <data name="SearchWebText" xml:space="preserve">
     <value>Ricerca nel Web</value>
   </data>
@@ -935,5 +974,8 @@
   </data>
   <data name="TabMoveRight" xml:space="preserve">
     <value>Sposta a destra</value>
+  </data>
+  <data name="InvalidRegex" xml:space="preserve">
+    <value>È stata trovata un'espressione regolare non valida.</value>
   </data>
 </root>

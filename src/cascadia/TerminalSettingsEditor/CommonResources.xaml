@@ -1204,7 +1204,7 @@
         <Setter Property="HorizontalAlignment" Value="Stretch" />
         <Setter Property="CornerRadius" Value="{ThemeResource ControlCornerRadius}" />
         <Setter Property="VerticalAlignment" Value="Stretch" />
-        <Setter Property="HorizontalContentAlignment" Value="Left" />
+        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
         <Setter Property="VerticalContentAlignment" Value="Center" />
         <Setter Property="Template">
             <Setter.Value>
@@ -1227,7 +1227,8 @@
                                           Content="{TemplateBinding Content}"
                                           ContentTemplate="{TemplateBinding ContentTemplate}"
                                           ContentTransitions="{TemplateBinding ContentTransitions}" />
-                        <FontIcon Margin="20,0,8,0"
+                        <FontIcon Grid.Column="1"
+                                  Margin="20,0,8,0"
                                   HorizontalAlignment="Right"
                                   FontSize="10"
                                   FontWeight="Black"
@@ -1267,6 +1268,26 @@
                             </VisualStateGroup>
                         </VisualStateManager.VisualStateGroups>
                     </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="NewInfoBadge"
+           TargetType="muxc:InfoBadge">
+        <Setter Property="Padding" Value="5,1,5,2" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="muxc:InfoBadge">
+                    <Border x:Name="RootGrid"
+                            Padding="{TemplateBinding Padding}"
+                            Background="{TemplateBinding Background}"
+                            CornerRadius="{Binding RelativeSource={RelativeSource TemplatedParent}, Path=TemplateSettings.InfoBadgeCornerRadius}">
+                        <TextBlock x:Uid="NewInfoBadgeTextBlock"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center"
+                                   FontSize="10" />
+                    </Border>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>

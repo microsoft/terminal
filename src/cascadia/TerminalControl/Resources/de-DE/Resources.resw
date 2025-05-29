@@ -263,9 +263,17 @@ Installieren Sie entweder die fehlende Schriftart, oder wählen Sie eine andere 
   </data>
   <data name="SearchCommandButton.Label" xml:space="preserve">
     <value>Suchen...</value>
+    <comment>The label of a button for searching for the text</comment>
+  </data>
+  <data name="SearchCommandSelectionButton.Label" xml:space="preserve">
+    <value>Suchen...</value>
     <comment>The label of a button for searching for the selected text</comment>
   </data>
   <data name="SearchCommandButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Suchen</value>
+    <comment>The tooltip for a button for searching for the text</comment>
+  </data>
+  <data name="SearchCommandSelectionButton.ToolTipService.ToolTip" xml:space="preserve">
     <value>Suchen</value>
     <comment>The tooltip for a button for searching for the selected text</comment>
   </data>
