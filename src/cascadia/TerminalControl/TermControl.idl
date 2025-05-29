@@ -132,7 +132,6 @@ namespace Microsoft.Terminal.Control
         void UpdateWinGetSuggestions(Windows.Foundation.Collections.IVector<String> suggestions);
 
         void AdjustOpacity(Single Opacity, Boolean relative);
-        void ApplyHighContrastMode(Boolean highContrastMode);
         void PreviewInput(String text);
 
         // You'd think this should just be "Opacity", but UIElement already

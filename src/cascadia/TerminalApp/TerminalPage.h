@@ -270,7 +270,6 @@ namespace winrt::TerminalApp::implementation
 
         TerminalApp::WindowProperties _WindowProperties{ nullptr };
         PaneResources _paneResources;
-        Windows::UI::ViewManagement::AccessibilitySettings _accessibilitySettings{ nullptr };
 
         TerminalApp::ContentManager _manager{ nullptr };
 

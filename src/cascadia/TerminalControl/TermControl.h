@@ -180,7 +180,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void ColorScheme(const winrt::Microsoft::Terminal::Core::Scheme& scheme) const noexcept;
 
         void AdjustOpacity(const float opacity, const bool relative);
-        void ApplyHighContrastMode(const bool highContrastMode);
 
         bool RawWriteKeyEvent(const WORD vkey, const WORD scanCode, const winrt::Microsoft::Terminal::Core::ControlKeyStates modifiers, const bool keyDown);
         bool RawWriteChar(const wchar_t character, const WORD scanCode, const winrt::Microsoft::Terminal::Core::ControlKeyStates modifiers);
@@ -284,6 +283,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         bool _quickFixButtonCollapsible{ false };
         bool _quickFixesAvailable{ false };
         til::CoordType _quickFixBufferPos{};
+        Windows::UI::ViewManagement::AccessibilitySettings _accessibilitySettings;
 
         std::shared_ptr<ThrottledFuncLeading> _playWarningBell;
 

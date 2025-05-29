@@ -64,8 +64,7 @@ namespace winrt::TerminalApp::implementation
         _mruTabs{ winrt::single_threaded_observable_vector<TerminalApp::TabBase>() },
         _manager{ manager },
         _hostingHwnd{},
-        _WindowProperties{ std::move(properties) },
-        _accessibilitySettings{}
+        _WindowProperties{ std::move(properties) }
     {
         InitializeComponent();
         _WindowProperties.PropertyChanged({ get_weak(), &TerminalPage::_windowPropertyChanged });
@@ -1741,15 +1740,6 @@ namespace winrt::TerminalApp::implementation
                 }
             });
         }
-        // If high contrast mode was changed, update the appearance appropriately.
-        // Technically not a terminal event since we're listening to a11y settings,
-        //  but we need to set it up on each TermControl on its initialization so close enough.
-        _accessibilitySettings.HighContrastChanged([weak = get_weak(), weakTerm](const Windows::UI::ViewManagement::AccessibilitySettings& a11ySettings, auto&&) {
-            if (const auto& termControl{ weakTerm.get() })
-            {
-                termControl.ApplyHighContrastMode(a11ySettings.HighContrast());
-            }
-        });
     }
 
     // Method Description:
@@ -3241,8 +3231,6 @@ namespace winrt::TerminalApp::implementation
         {
             term.OwningHwnd(reinterpret_cast<uint64_t>(*_hostingHwnd));
         }
-
-        term.ApplyHighContrastMode(_accessibilitySettings.HighContrast());
 
         _RegisterTerminalEvents(term);
         return term;

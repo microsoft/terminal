@@ -270,11 +270,22 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _autoScrollVelocity{ 0 },
         _autoScrollingPointerPoint{ std::nullopt },
         _lastAutoScrollUpdateTime{ std::nullopt },
-        _searchBox{ nullptr }
+        _searchBox{ nullptr },
+        _accessibilitySettings{}
     {
         InitializeComponent();
 
         _core = _interactivity.Core();
+
+        // If high contrast mode was changed, update the appearance appropriately.
+        _core.SetHighContrastMode(_accessibilitySettings.HighContrast());
+        _revokers.HighContrastChanged = _accessibilitySettings.HighContrastChanged(winrt::auto_revoke, [weakThis{ get_weak() }](const Windows::UI::ViewManagement::AccessibilitySettings& a11ySettings, auto&&) {
+            if (auto termControl = weakThis.get())
+            {
+                termControl->_core.SetHighContrastMode(a11ySettings.HighContrast());
+                termControl->_core.ApplyAppearance(termControl->_focused);
+            }
+        });
 
         // This event is specifically triggered by the renderer thread, a BG thread. Use a weak ref here.
         _revokers.RendererEnteredErrorState = _core.RendererEnteredErrorState(winrt::auto_revoke, { get_weak(), &TermControl::_RendererEnteredErrorState });
@@ -3780,12 +3791,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void TermControl::AdjustOpacity(const float opacity, const bool relative)
     {
         _core.AdjustOpacity(opacity, relative);
-    }
-
-    void TermControl::ApplyHighContrastMode(const bool highContrastMode)
-    {
-        _core.SetHighContrastMode(highContrastMode);
-        _core.ApplyAppearance(_focused);
     }
 
     // - You'd think this should just be "Opacity", but UIElement already
