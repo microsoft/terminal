@@ -590,7 +590,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         NewTabArgs() = default;
         NewTabArgs(const Model::INewContentArgs& terminalArgs) :
             _ContentArgs{ terminalArgs } {};
-        WINRT_PROPERTY(Model::INewContentArgs, ContentArgs, nullptr);
+        WINRT_PROPERTY(Model::INewContentArgs, ContentArgs, Model::NewTerminalArgs{});
 
     public:
         hstring GenerateName() const;
@@ -687,7 +687,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             };
 
         SPLIT_PANE_ARGS(DECLARE_ARGS);
-        WINRT_PROPERTY(Model::INewContentArgs, ContentArgs, nullptr);
+        WINRT_PROPERTY(Model::INewContentArgs, ContentArgs, Model::NewTerminalArgs{});
 
     public:
         hstring GenerateName() const;
@@ -813,7 +813,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         NewWindowArgs() = default;
         NewWindowArgs(const Model::INewContentArgs& terminalArgs) :
             _ContentArgs{ terminalArgs } {};
-        WINRT_PROPERTY(Model::INewContentArgs, ContentArgs, nullptr);
+        WINRT_PROPERTY(Model::INewContentArgs, ContentArgs, Model::NewTerminalArgs{});
 
     public:
         hstring GenerateName() const;
