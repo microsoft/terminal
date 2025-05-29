@@ -590,7 +590,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         NewTabArgs() = default;
         NewTabArgs(const Model::INewContentArgs& terminalArgs) :
             _ContentArgs{ terminalArgs } {};
-        WINRT_PROPERTY(Model::INewContentArgs, ContentArgs, Model::NewTerminalArgs{});
+        WINRT_PROPERTY(Model::INewContentArgs, ContentArgs, nullptr);
 
     public:
         hstring GenerateName() const;
@@ -635,7 +635,14 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
         uint32_t GetArgCount() const
         {
-            return _ContentArgs.as<NewTerminalArgs>()->GetArgCount();
+            if (_ContentArgs)
+            {
+                if (const auto newTermArgs = _ContentArgs.try_as<NewTerminalArgs>())
+                {
+                    return newTermArgs->GetArgCount();
+                }
+            }
+            return 0;
         }
         Model::ArgDescription GetArgDescriptionAt(uint32_t index) const
         {
@@ -680,7 +687,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             };
 
         SPLIT_PANE_ARGS(DECLARE_ARGS);
-        WINRT_PROPERTY(Model::INewContentArgs, ContentArgs, Model::NewTerminalArgs{});
+        WINRT_PROPERTY(Model::INewContentArgs, ContentArgs, nullptr);
 
     public:
         hstring GenerateName() const;
@@ -748,14 +755,14 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
         uint32_t GetArgCount() const
         {
-            if (const auto newTermArgs = _ContentArgs.try_as<NewTerminalArgs>())
+            if (_ContentArgs)
             {
-                return newTermArgs->GetArgCount() + gsl::narrow<uint32_t>(_argDescriptions.size());
+                if (const auto newTermArgs = _ContentArgs.try_as<NewTerminalArgs>())
+                {
+                    return newTermArgs->GetArgCount() + gsl::narrow<uint32_t>(_argDescriptions.size());
+                }
             }
-            else
-            {
-                return gsl::narrow<uint32_t>(_argDescriptions.size());
-            }
+            return gsl::narrow<uint32_t>(_argDescriptions.size());
         }
         Model::ArgDescription GetArgDescriptionAt(uint32_t index) const
         {
@@ -806,7 +813,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         NewWindowArgs() = default;
         NewWindowArgs(const Model::INewContentArgs& terminalArgs) :
             _ContentArgs{ terminalArgs } {};
-        WINRT_PROPERTY(Model::INewContentArgs, ContentArgs, Model::NewTerminalArgs{});
+        WINRT_PROPERTY(Model::INewContentArgs, ContentArgs, nullptr);
 
     public:
         hstring GenerateName() const;
@@ -851,7 +858,14 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
         uint32_t GetArgCount() const
         {
-            return _ContentArgs.as<NewTerminalArgs>()->GetArgCount();
+            if (_ContentArgs)
+            {
+                if (const auto newTermArgs = _ContentArgs.try_as<NewTerminalArgs>())
+                {
+                    return newTermArgs->GetArgCount();
+                }
+            }
+            return 0;
         }
         Model::ArgDescription GetArgDescriptionAt(uint32_t index) const
         {
