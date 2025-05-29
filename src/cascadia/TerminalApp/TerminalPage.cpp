@@ -3242,7 +3242,7 @@ namespace winrt::TerminalApp::implementation
             term.OwningHwnd(reinterpret_cast<uint64_t>(*_hostingHwnd));
         }
 
-        term.SetHighContrastMode(_accessibilitySettings.HighContrast());
+        term.ApplyHighContrastMode(_accessibilitySettings.HighContrast());
 
         _RegisterTerminalEvents(term);
         return term;
