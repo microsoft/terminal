@@ -257,6 +257,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return get_self<ControlCore>(_termControl->_core);
     }
 
+    Windows::UI::ViewManagement::AccessibilitySettings TermControl::_GetAccessibilitySettings()
+    {
+        static Windows::UI::ViewManagement::AccessibilitySettings accessibilitySettings;
+        return accessibilitySettings;
+    }
+
     TermControl::TermControl(IControlSettings settings,
                              Control::IControlAppearance unfocusedAppearance,
                              TerminalConnection::ITerminalConnection connection) :
@@ -270,16 +276,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _autoScrollVelocity{ 0 },
         _autoScrollingPointerPoint{ std::nullopt },
         _lastAutoScrollUpdateTime{ std::nullopt },
-        _searchBox{ nullptr },
-        _accessibilitySettings{}
+        _searchBox{ nullptr }
     {
         InitializeComponent();
 
         _core = _interactivity.Core();
 
         // If high contrast mode was changed, update the appearance appropriately.
-        _core.SetHighContrastMode(_accessibilitySettings.HighContrast());
-        _revokers.HighContrastChanged = _accessibilitySettings.HighContrastChanged(winrt::auto_revoke, [weakThis{ get_weak() }](const Windows::UI::ViewManagement::AccessibilitySettings& a11ySettings, auto&&) {
+        _core.SetHighContrastMode(_GetAccessibilitySettings().HighContrast());
+        _revokers.HighContrastChanged = _GetAccessibilitySettings().HighContrastChanged(winrt::auto_revoke, [weakThis{ get_weak() }](const Windows::UI::ViewManagement::AccessibilitySettings& a11ySettings, auto&&) {
             if (auto termControl = weakThis.get())
             {
                 termControl->_core.SetHighContrastMode(a11ySettings.HighContrast());

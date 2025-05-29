@@ -283,7 +283,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         bool _quickFixButtonCollapsible{ false };
         bool _quickFixesAvailable{ false };
         til::CoordType _quickFixBufferPos{};
-        Windows::UI::ViewManagement::AccessibilitySettings _accessibilitySettings;
 
         std::shared_ptr<ThrottledFuncLeading> _playWarningBell;
 
@@ -414,6 +413,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         Core::Point _toTerminalOrigin(winrt::Windows::Foundation::Point cursorPosition);
 
         double _GetAutoScrollSpeed(double cursorDistanceFromBorder) const;
+        static Windows::UI::ViewManagement::AccessibilitySettings _GetAccessibilitySettings();
 
         void _Search(const winrt::hstring& text, const bool goForward, const bool caseSensitive, const bool regularExpression);
         void _SearchChanged(const winrt::hstring& text, const bool goForward, const bool caseSensitive, const bool regularExpression);
