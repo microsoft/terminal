@@ -150,7 +150,7 @@ std::wstring_view SshHostGenerator::GetIcon() const noexcept
 // - <none>
 // Return Value:
 // - <A list of SSH host profiles.>
-void SshHostGenerator::GenerateProfiles(std::vector<winrt::com_ptr<implementation::Profile>>& profiles) const
+void SshHostGenerator::GenerateProfiles(std::vector<winrt::com_ptr<implementation::Profile>>& profiles)
 {
     std::wstring sshExePath;
     if (_tryFindSshExePath(sshExePath))
