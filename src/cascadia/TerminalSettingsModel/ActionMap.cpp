@@ -819,6 +819,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     void ActionMap::AddKeyBinding(Control::KeyChord keys, const winrt::hstring& cmdID)
     {
         _KeyMap.insert_or_assign(keys, cmdID);
+        _changeLog.emplace(KeysKey);
         _RefreshKeyBindingCaches();
     }
 

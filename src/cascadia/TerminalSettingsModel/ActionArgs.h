@@ -289,7 +289,7 @@ protected:                                                                  \
 ////////////////////////////////////////////////////////////////////////////////
 #define NEW_TERMINAL_ARGS(X)                                                                                                     \
     X(winrt::hstring, Commandline, "commandline", false, ArgTypeHint::None, L"")                                                      \
-    X(winrt::hstring, StartingDirectory, "startingDirectory", false, ArgTypeHint::None, L"")                                          \
+    X(winrt::hstring, StartingDirectory, "startingDirectory", false, ArgTypeHint::FolderPath, L"")                                    \
     X(winrt::hstring, TabTitle, "tabTitle", false, ArgTypeHint::None, L"")                                                            \
     X(Windows::Foundation::IReference<Windows::UI::Color>, TabColor, "tabColor", false, ArgTypeHint::None, nullptr)                   \
     X(Windows::Foundation::IReference<int32_t>, ProfileIndex, "index", false, ArgTypeHint::None, nullptr)                             \
