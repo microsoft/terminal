@@ -79,7 +79,7 @@ namespace winrt::TerminalApp::implementation
 
         void UpdateFilter(std::shared_ptr<fzf::matcher::Pattern> pattern)
         {
-            _pattern = pattern;
+            _pattern = std::move(pattern);
             _filteredCommand->UpdateFilter(pattern);
             for (const auto& c : _children)
             {
