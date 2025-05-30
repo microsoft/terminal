@@ -500,17 +500,14 @@ try
     {
         for (const auto& cluster : clusters)
         {
-            for (const auto& ch : cluster.GetText())
+            for (auto ch : cluster.GetText())
             {
                 // Render Unicode directional isolate characters (U+2066..U+2069) as zero-width spaces.
                 if (ch >= L'\u2066' && ch <= L'\u2069')
                 {
-                    _api.bufferLine.emplace_back(L'\u200B');
+                    ch = L'\u200B';
                 }
-                else
-                {
-                    _api.bufferLine.emplace_back(ch);
-                }
+                _api.bufferLine.emplace_back(ch);
                 _api.bufferLineColumn.emplace_back(columnEnd);
             }
             columnEnd += gsl::narrow_cast<u16>(cluster.GetColumns());
