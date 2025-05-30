@@ -15,7 +15,7 @@ constexpr int16_t CamelCaseBonus = BoundaryBonus + ScoreGapExtension;
 constexpr int16_t BonusConsecutive = -(ScoreGapStart + ScoreGapExtension);
 constexpr int16_t BonusFirstCharMultiplier = 2;
 
-enum CharClass : uint8_t
+enum class CharClass : uint8_t
 {
     NonWord = 0,
     CharLower = 1,
@@ -80,16 +80,16 @@ static int32_t FuzzyIndexOf(const std::vector<UChar32>& input, const std::vector
 
 static int16_t CalculateBonus(CharClass prevClass, CharClass currentClass)
 {
-    if (prevClass == NonWord && currentClass != NonWord)
+    if (prevClass == CharClass::NonWord && currentClass != CharClass::NonWord)
     {
         return BoundaryBonus;
     }
-    if ((prevClass == CharLower && currentClass == CharUpper) ||
-        (prevClass != Digit && currentClass == Digit))
+    if ((prevClass == CharClass::CharLower && currentClass == CharClass::CharUpper) ||
+        (prevClass != CharClass::Digit && currentClass == CharClass::Digit))
     {
         return CamelCaseBonus;
     }
-    if (currentClass == NonWord)
+    if (currentClass == CharClass::NonWord)
     {
         return NonWordBonus;
     }
@@ -99,11 +99,11 @@ static int16_t CalculateBonus(CharClass prevClass, CharClass currentClass)
 static constexpr auto s_charClassLut = []() {
     std::array<CharClass, U_CHAR_CATEGORY_COUNT> lut{};
     lut.fill(CharClass::NonWord);
-    lut[U_UPPERCASE_LETTER] = CharUpper;
-    lut[U_LOWERCASE_LETTER] = CharLower;
-    lut[U_MODIFIER_LETTER] = CharLower;
-    lut[U_OTHER_LETTER] = CharLower;
-    lut[U_DECIMAL_DIGIT_NUMBER] = Digit;
+    lut[U_UPPERCASE_LETTER] = CharClass::CharUpper;
+    lut[U_LOWERCASE_LETTER] = CharClass::CharLower;
+    lut[U_MODIFIER_LETTER] = CharClass::CharLower;
+    lut[U_OTHER_LETTER] = CharClass::CharLower;
+    lut[U_DECIMAL_DIGIT_NUMBER] = CharClass::Digit;
     return lut;
 }();
 
@@ -148,7 +148,7 @@ static FzfResult FzfFuzzyMatchV2(const std::vector<UChar32>& text, const std::ve
     UChar32 firstPatternChar = pattern[0];
     UChar32 currentPatternChar = pattern[0];
     int16_t previousInitialScore = 0;
-    CharClass previousClass = NonWord;
+    CharClass previousClass = CharClass::NonWord;
     bool inGap = false;
 
     std::span<const UChar32> lowerText(foldedText);
