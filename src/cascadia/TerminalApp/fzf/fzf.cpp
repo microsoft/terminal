@@ -181,14 +181,14 @@ static FzfResult fzfFuzzyMatchV2(const std::vector<UChar32>& text, const std::ve
         {
             if (patternIndex < pattern.size())
             {
-                firstOccurrenceOfEachChar[patternIndex] = firstIndexOf + static_cast<int32_t>(i);
+                firstOccurrenceOfEachChar[patternIndex] = firstIndexOf + i;
                 patternIndex++;
                 if (patternIndex < patternSize)
                 {
                     currentPatternChar = pattern[patternIndex];
                 }
             }
-            lastIndex = firstIndexOf + static_cast<int32_t>(i);
+            lastIndex = firstIndexOf + i;
         }
         if (currentChar == firstPatternChar)
         {
@@ -198,7 +198,7 @@ static FzfResult fzfFuzzyMatchV2(const std::vector<UChar32>& text, const std::ve
             if (patternSize == 1 && (score > maxScore))
             {
                 maxScore = score;
-                maxScorePos = firstIndexOf + static_cast<int32_t>(i);
+                maxScorePos = firstIndexOf + i;
                 if (bonus == BoundaryBonus)
                 {
                     break;
@@ -208,7 +208,7 @@ static FzfResult fzfFuzzyMatchV2(const std::vector<UChar32>& text, const std::ve
         }
         else
         {
-            initialScoresSlice[i] = inGap ? std::max<int16_t>(previousInitialScore + ScoreGapExtension, 0) : std::max<int16_t>(previousInitialScore + ScoreGapStart, 0);
+            initialScoresSlice[i] = std::max<int16_t>(previousInitialScore + (inGap ? ScoreGapExtension : ScoreGapStart), 0);
             consecutiveScoresSlice[i] = 0;
             inGap = true;
         }
@@ -230,24 +230,18 @@ static FzfResult fzfFuzzyMatchV2(const std::vector<UChar32>& text, const std::ve
         return { maxScorePos, end, maxScore };
     }
 
-    int32_t firstOccurrenceOfFirstChar = firstOccurrenceOfEachChar[0];
-    int32_t width = lastIndex - firstOccurrenceOfFirstChar + 1;
-    int32_t rows = static_cast<int32_t>(pattern.size());
+    const auto firstOccurrenceOfFirstChar = firstOccurrenceOfEachChar[0];
+    const auto width = lastIndex - firstOccurrenceOfFirstChar + 1;
+    const auto rows = static_cast<int32_t>(pattern.size());
     auto consecutiveCharMatrixSize = width * patternSize;
 
     std::vector<int16_t> scoreMatrix(width * rows);
-    std::copy_n(
-        initialScores.begin() + firstOccurrenceOfFirstChar,
-        width,
-        scoreMatrix.begin());
-    auto scoreSpan = std::span<int16_t>(scoreMatrix);
+    std::copy_n(initialScores.begin() + firstOccurrenceOfFirstChar, width, scoreMatrix.begin());
+    std::span scoreSpan(scoreMatrix);
 
     std::vector<int16_t> consecutiveCharMatrix(width * rows);
-    std::copy_n(
-        consecutiveScores.begin() + firstOccurrenceOfFirstChar,
-        width,
-        consecutiveCharMatrix.begin());
-    auto consecutiveCharMatrixSpan = std::span(consecutiveCharMatrix);
+    std::copy_n(consecutiveScores.begin() + firstOccurrenceOfFirstChar, width, consecutiveCharMatrix.begin());
+    std::span consecutiveCharMatrixSpan(consecutiveCharMatrix);
 
     auto patternSliceStr = std::span(pattern).subspan(1);
 
@@ -259,23 +253,23 @@ static FzfResult fzfFuzzyMatchV2(const std::vector<UChar32>& text, const std::ve
         patternIndex = off + 1;
         int32_t row = patternIndex * width;
         inGap = false;
-        auto tmp = lowerText.subspan(patternCharOffset, sliceLen);
         std::span<const UChar32> textSlice = lowerText.subspan(patternCharOffset, sliceLen);
-        std::span<int16_t> bonusSlice(bonusesSpan.begin() + patternCharOffset, textSlice.size());
+        std::span bonusSlice(bonusesSpan.begin() + patternCharOffset, textSlice.size());
         std::span<int16_t> consecutiveCharMatrixSlice = consecutiveCharMatrixSpan.subspan(row + patternCharOffset - firstOccurrenceOfFirstChar, textSlice.size());
-        std::span<int16_t> consecutiveCharMatrixDiagonalSlice = consecutiveCharMatrixSpan.subspan(
-            +row + patternCharOffset - firstOccurrenceOfFirstChar - 1 - width, textSlice.size());
+        std::span<int16_t> consecutiveCharMatrixDiagonalSlice = consecutiveCharMatrixSpan.subspan(row + patternCharOffset - firstOccurrenceOfFirstChar - 1 - width, textSlice.size());
         std::span<int16_t> scoreMatrixSlice = scoreSpan.subspan(row + patternCharOffset - firstOccurrenceOfFirstChar, textSlice.size());
         std::span<int16_t> scoreMatrixDiagonalSlice = scoreSpan.subspan(row + patternCharOffset - firstOccurrenceOfFirstChar - 1 - width, textSlice.size());
         std::span<int16_t> scoreMatrixLeftSlice = scoreSpan.subspan(row + patternCharOffset - firstOccurrenceOfFirstChar - 1, textSlice.size());
+
         if (!scoreMatrixLeftSlice.empty())
         {
             scoreMatrixLeftSlice[0] = 0;
         }
+
         for (int32_t j = 0; j < textSlice.size(); j++)
         {
             UChar32 currentChar = textSlice[j];
-            int32_t column = patternCharOffset + static_cast<int32_t>(j);
+            int32_t column = patternCharOffset + j;
             int16_t score = inGap ? scoreMatrixLeftSlice[j] + ScoreGapExtension : scoreMatrixLeftSlice[j] + ScoreGapStart;
             int16_t diagonalScore = 0;
             int16_t consecutive = 0;
