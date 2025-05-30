@@ -112,11 +112,11 @@ namespace winrt::TerminalApp::implementation
             {
                 if (start > lastPos)
                 {
-                    hstring nonMatch { til::safe_slice_abs(commandName, lastPos, start) };
+                    hstring nonMatch{ til::safe_slice_abs(commandName, lastPos, start) };
                     segments.emplace_back(winrt::TerminalApp::HighlightedTextSegment(nonMatch, false));
                 }
 
-                hstring matchSeg { til::safe_slice_abs(commandName, start, end + 1) };
+                hstring matchSeg{ til::safe_slice_abs(commandName, start, end + 1) };
                 segments.emplace_back(winrt::TerminalApp::HighlightedTextSegment(matchSeg, true));
 
                 lastPos = end + 1;
@@ -124,7 +124,7 @@ namespace winrt::TerminalApp::implementation
 
             if (lastPos < commandName.size())
             {
-                hstring tail { til::safe_slice_abs(commandName, lastPos, SIZE_T_MAX) };
+                hstring tail{ til::safe_slice_abs(commandName, lastPos, SIZE_T_MAX) };
                 segments.emplace_back(winrt::TerminalApp::HighlightedTextSegment(tail, false));
             }
         }
