@@ -257,7 +257,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return get_self<ControlCore>(_termControl->_core);
     }
 
-    Windows::UI::ViewManagement::AccessibilitySettings TermControl::_GetAccessibilitySettings()
+    static Windows::UI::ViewManagement::AccessibilitySettings& _GetAccessibilitySettings()
     {
         static Windows::UI::ViewManagement::AccessibilitySettings accessibilitySettings;
         return accessibilitySettings;
