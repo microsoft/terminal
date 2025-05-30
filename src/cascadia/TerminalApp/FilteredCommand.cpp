@@ -148,9 +148,9 @@ namespace winrt::TerminalApp::implementation
 
         if (firstWeight == secondWeight)
         {
-            std::wstring_view firstName{ first.Item().Name() };
-            std::wstring_view secondName{ second.Item().Name() };
-            return lstrcmpi(firstName.data(), secondName.data()) < 0;
+            const auto firstName = first.Item().Name();
+            const auto secondName = second.Item().Name();
+            return til::compare_linguistic_insensitive(firstName, secondName) < 0;
         }
 
         return firstWeight > secondWeight;
