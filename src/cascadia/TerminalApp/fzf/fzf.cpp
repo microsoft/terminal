@@ -399,7 +399,7 @@ std::optional<MatchResult> fzf::matcher::Match(std::wstring_view text, const Pat
             return std::nullopt;
         }
 
-        // NOTE: This is O(n^2). The exectation is that our "n" is small.
+        // NOTE: This is O(n^2). The expectation is that our "n" is small.
         for (const auto t : codePointPos)
         {
             pos.push_back(countUtf16(textCodePoints, t));
