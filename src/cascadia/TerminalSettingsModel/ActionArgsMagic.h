@@ -68,7 +68,7 @@ struct InitListPlaceholder
 
 // append this argument's description to the internal vector
 #define APPEND_ARG_DESCRIPTION(type, name, jsonKey, required, tag, ...) \
-    _argDescriptions.push_back({ L## #name, L## #type, std::wstring_view(L## #required) != L"false", tag });
+    _argDescriptors.push_back({ L## #name, L## #type, std::wstring_view(L## #required) != L"false", tag });
 
 // check each property in the Equals() method. You'll note there's a stray
 // `true` in the definition of Equals() below, that's to deal with trailing
@@ -153,7 +153,7 @@ struct InitListPlaceholder
                                                                \
 private:                                                       \
     InitListPlaceholder _placeholder;                          \
-    std::vector<ArgDescription> _argDescriptions;              \
+    std::vector<ArgDescriptor> _argDescriptors;                \
                                                                \
 public:                                                        \
     hstring GenerateName() const;                              \
@@ -187,7 +187,7 @@ public:                                                        \
     {                                                          \
         auto copy{ winrt::make_self<className>() };            \
         argsMacro(COPY_ARGS);                                  \
-        copy->_argDescriptions = _argDescriptions;             \
+        copy->_argDescriptors = _argDescriptors;               \
         return *copy;                                          \
     }                                                          \
     size_t Hash() const                                        \
@@ -198,11 +198,11 @@ public:                                                        \
     }                                                          \
     uint32_t GetArgCount() const                               \
     {                                                          \
-        return gsl::narrow<uint32_t>(_argDescriptions.size()); \
+        return gsl::narrow<uint32_t>(_argDescriptors.size());  \
     }                                                          \
-    ArgDescription GetArgDescriptionAt(uint32_t index) const   \
+    ArgDescriptor GetArgDescriptorAt(uint32_t index) const     \
     {                                                          \
-        return _argDescriptions.at(index);                     \
+        return _argDescriptors.at(index);                      \
     }                                                          \
     IInspectable GetArgAt(uint32_t index) const                \
     {                                                          \
@@ -226,16 +226,16 @@ public:                                                        \
                                                                \
 private:                                                       \
     InitListPlaceholder _placeholder;                          \
-    std::vector<ArgDescription> _argDescriptions;              \
+    std::vector<ArgDescriptor> _argDescriptors;                \
                                                                \
 public:                                                        \
     uint32_t GetArgCount() const                               \
     {                                                          \
-        return gsl::narrow<uint32_t>(_argDescriptions.size()); \
+        return gsl::narrow<uint32_t>(_argDescriptors.size());  \
     }                                                          \
-    ArgDescription GetArgDescriptionAt(uint32_t index) const   \
+    ArgDescriptor GetArgDescriptorAt(uint32_t index) const     \
     {                                                          \
-        return _argDescriptions.at(index);                     \
+        return _argDescriptors.at(index);                      \
     }                                                          \
     IInspectable GetArgAt(uint32_t index) const                \
     {                                                          \
