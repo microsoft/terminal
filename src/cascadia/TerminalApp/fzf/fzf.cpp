@@ -44,7 +44,7 @@ static UChar32 FoldCase(UChar32 c) noexcept
     return u_foldCase(c, U_FOLD_CASE_DEFAULT);
 }
 
-static int32_t IndexOfChar(const std::vector<UChar32>& input, const UChar32 searchChar, int32_t startIndex)
+static int32_t trySkip(const std::vector<UChar32>& input, const UChar32 searchChar, int32_t startIndex)
 {
     for (int32_t i = startIndex; i < static_cast<int32_t>(input.size()); ++i)
     {
@@ -56,13 +56,14 @@ static int32_t IndexOfChar(const std::vector<UChar32>& input, const UChar32 sear
     return -1;
 }
 
-static int32_t FuzzyIndexOf(const std::vector<UChar32>& input, const std::vector<UChar32>& pattern)
+// Unlike the equivalent in fzf, this one does more than Unicode.
+static int32_t asciiFuzzyIndex(const std::vector<UChar32>& input, const std::vector<UChar32>& pattern)
 {
     int32_t idx = 0;
     int32_t firstIdx = 0;
     for (int32_t pi = 0; pi < pattern.size(); ++pi)
     {
-        idx = IndexOfChar(input, pattern[pi], idx);
+        idx = trySkip(input, pattern[pi], idx);
         if (idx < 0)
         {
             return -1;
@@ -78,7 +79,7 @@ static int32_t FuzzyIndexOf(const std::vector<UChar32>& input, const std::vector
     return firstIdx;
 }
 
-static int16_t CalculateBonus(CharClass prevClass, CharClass currentClass)
+static int16_t calculateBonus(CharClass prevClass, CharClass currentClass)
 {
     if (prevClass == CharClass::NonWord && currentClass != CharClass::NonWord)
     {
@@ -107,12 +108,12 @@ static constexpr auto s_charClassLut = []() {
     return lut;
 }();
 
-static CharClass ClassOf(UChar32 ch)
+static CharClass classOf(UChar32 ch)
 {
     return s_charClassLut[u_charType(ch)];
 }
 
-static FzfResult FzfFuzzyMatchV2(const std::vector<UChar32>& text, const std::vector<UChar32>& pattern, std::vector<int32_t>* pos)
+static FzfResult fzfFuzzyMatchV2(const std::vector<UChar32>& text, const std::vector<UChar32>& pattern, std::vector<int32_t>* pos)
 {
     int32_t patternSize = static_cast<int32_t>(pattern.size());
     int32_t textSize = static_cast<int32_t>(text.size());
@@ -130,7 +131,7 @@ static FzfResult FzfFuzzyMatchV2(const std::vector<UChar32>& text, const std::ve
         foldedText.push_back(foldedCp);
     }
 
-    int32_t firstIndexOf = FuzzyIndexOf(foldedText, pattern);
+    int32_t firstIndexOf = asciiFuzzyIndex(foldedText, pattern);
     if (firstIndexOf < 0)
     {
         return { -1, -1, 0 };
@@ -159,9 +160,9 @@ static FzfResult FzfFuzzyMatchV2(const std::vector<UChar32>& text, const std::ve
 
     for (int32_t i = 0; i < lowerTextSlice.size(); i++)
     {
-        UChar32 currentChar = lowerTextSlice[i];
-        CharClass currentClass = ClassOf(text[i + firstIndexOf]);
-        int16_t bonus = CalculateBonus(previousClass, currentClass);
+        const auto currentChar = lowerTextSlice[i];
+        const auto currentClass = classOf(text[i + firstIndexOf]);
+        const auto bonus = calculateBonus(previousClass, currentClass);
         bonusesSlice[i] = bonus;
         previousClass = currentClass;
 
@@ -462,7 +463,7 @@ std::optional<MatchResult> Match(std::wstring_view text, const Pattern& pattern)
         std::vector<int32_t> utf16map;
         std::vector<int32_t> codePointPos;
         auto textCodePoints = ConvertUtf16ToCodePoints(text, false, &utf16map);
-        FzfResult res = FzfFuzzyMatchV2(textCodePoints, term, &codePointPos);
+        FzfResult res = fzfFuzzyMatchV2(textCodePoints, term, &codePointPos);
         if (res.Score <= 0)
         {
             return std::nullopt;
