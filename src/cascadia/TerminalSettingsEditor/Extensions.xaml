@@ -42,6 +42,7 @@
 
             <local:ExtensionPackageTemplateSelector x:Key="ExtensionPackageIdentifierTemplateSelector"
                                                     ComplexTemplate="{StaticResource ComplexExtensionIdentifierTemplate}"
+                                                    ComplexTemplateWithFontIcon="{StaticResource ComplexExtensionIdentifierTemplateWithFontIcon}"
                                                     DefaultTemplate="{StaticResource DefaultExtensionIdentifierTemplate}" />
 
             <DataTemplate x:Key="DefaultExtensionIdentifierTemplate"
@@ -91,8 +92,37 @@
                 </Grid>
             </DataTemplate>
 
+            <DataTemplate x:Key="ComplexExtensionIdentifierTemplateWithFontIcon"
+                          x:DataType="local:ExtensionPackageViewModel">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <FontIcon Grid.Row="0"
+                              Grid.RowSpan="2"
+                              Grid.Column="0"
+                              Margin="0,0,8,0"
+                              FontSize="32"
+                              Glyph="{x:Bind Package.Icon}" />
+                    <TextBlock Grid.Row="0"
+                               Grid.Column="1"
+                               Text="{x:Bind Package.DisplayName}" />
+                    <TextBlock Grid.Row="1"
+                               Grid.Column="1"
+                               Style="{StaticResource SettingsPageItemDescriptionStyle}"
+                               Text="{x:Bind Package.Source}" />
+                </Grid>
+            </DataTemplate>
+
             <local:ExtensionPackageTemplateSelector x:Key="ExtensionPackageNavigatorTemplateSelector"
                                                     ComplexTemplate="{StaticResource ComplexExtensionNavigatorTemplate}"
+                                                    ComplexTemplateWithFontIcon="{StaticResource ComplexExtensionNavigatorTemplateWithFontIcon}"
                                                     DefaultTemplate="{StaticResource DefaultExtensionNavigatorTemplate}" />
 
             <DataTemplate x:Key="DefaultExtensionNavigatorTemplate"
@@ -135,6 +165,31 @@
 
                         <ContentPresenter Content="{x:Bind}"
                                           ContentTemplate="{StaticResource ComplexExtensionIdentifierTemplate}" />
+
+                        <ToggleSwitch Grid.Column="1"
+                                      HorizontalAlignment="Right"
+                                      VerticalAlignment="Center"
+                                      AutomationProperties.Name="{x:Bind AccessibleName}"
+                                      IsOn="{x:Bind Enabled, Mode=TwoWay}"
+                                      Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+                    </Grid>
+                </Button>
+            </DataTemplate>
+
+            <DataTemplate x:Key="ComplexExtensionNavigatorTemplateWithFontIcon"
+                          x:DataType="local:ExtensionPackageViewModel">
+                <Button AutomationProperties.Name="{x:Bind AccessibleName}"
+                        Click="ExtensionNavigator_Click"
+                        Style="{StaticResource NavigatorButtonStyle}"
+                        Tag="{x:Bind}">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <ContentPresenter Content="{x:Bind}"
+                                          ContentTemplate="{StaticResource ComplexExtensionIdentifierTemplateWithFontIcon}" />
 
                         <ToggleSwitch Grid.Column="1"
                                       HorizontalAlignment="Right"

@@ -13,7 +13,7 @@ static constexpr std::wstring_view SshHostGeneratorNamespace{ L"Windows.Terminal
 
 static constexpr std::wstring_view PROFILE_TITLE_PREFIX = L"SSH - ";
 static constexpr std::wstring_view PROFILE_ICON_PATH = L"ms-appx:///ProfileIcons/{550ce7b8-d500-50ad-8a1a-c400c3262db3}.png";
-static constexpr std::wstring_view GENERATOR_ICON_PATH = L"ms-appx:///ProfileGeneratorIcons/SSH.png";
+static constexpr std::wstring_view GENERATOR_ICON_PATH = L"\uEDA3";
 
 // OpenSSH is installed under System32 when installed via Optional Features
 static constexpr std::wstring_view SSH_EXE_PATH1 = L"%SystemRoot%\\System32\\OpenSSH\\ssh.exe";
