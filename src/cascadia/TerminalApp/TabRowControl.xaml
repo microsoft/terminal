@@ -132,6 +132,38 @@
                         </ResourceDictionary>
                     </mux:SplitButton.Resources>
                 </mux:SplitButton>
+                <mux:SplitButton x:Name="NewTmuxTabButton"
+                                 x:Uid="NewTmuxTabSplitButton"
+                                 Height="24"
+                                 Margin="0,4"
+                                 Padding="0"
+                                 HorizontalAlignment="Left"
+                                 VerticalAlignment="Stretch"
+                                 AllowDrop="False"
+                                 AutomationProperties.AccessibilityView="Control"
+                                 BorderThickness="0"
+                                 Content="&#xE710;"
+                                 FontFamily="{ThemeResource SymbolThemeFontFamily}"
+                                 FontSize="12"
+                                 Visibility="Collapsed">
+                    <mux:SplitButton.Flyout>
+                        <MenuFlyout x:Name="SplitMenu" Placement="BottomEdgeAlignedLeft">
+                            <MenuFlyoutItem Text="Horizontal Split">
+                                <MenuFlyoutItem.Icon>
+                                    <FontIcon Glyph="&#xE784;">
+                                    </FontIcon>
+                                </MenuFlyoutItem.Icon>
+                            </MenuFlyoutItem>
+                            <MenuFlyoutItem Text="Vertical Split">
+                                <MenuFlyoutItem.Icon>
+                                    <FontIcon Glyph="&#xE76F;">
+                                    </FontIcon>
+                                </MenuFlyoutItem.Icon>
+                            </MenuFlyoutItem>
+                        </MenuFlyout>
+                    </mux:SplitButton.Flyout>
+
+                </mux:SplitButton>
             </Grid>
         </mux:TabView.TabStripFooter>
 
