@@ -23,25 +23,40 @@ enum class CharClass : uint8_t
     Digit = 3,
 };
 
-static std::wstring_view TrimStart(const std::wstring_view str)
+static std::vector<UChar32> utf16ToUtf32(std::wstring_view text)
 {
-    const auto off = str.find_first_not_of(L' ');
-    return str.substr(std::min(off, str.size()));
+    const UChar* data = reinterpret_cast<const UChar*>(text.data());
+    int32_t dataLen = static_cast<int32_t>(text.size());
+    int32_t cpCount = u_countChar32(data, dataLen);
+
+    std::vector<UChar32> out(cpCount);
+
+    UErrorCode status = U_ZERO_ERROR;
+    u_strToUTF32(out.data(), static_cast<int32_t>(out.size()), nullptr, data, dataLen, &status);
+    THROW_HR_IF(E_UNEXPECTED, status > U_ZERO_ERROR);
+
+    return out;
 }
 
-static std::wstring_view TrimSuffixSpaces(std::wstring_view input)
+// Returns the number of UTF16 chars in the slice `str[0..off]`, where `str` is a UTF32 string.
+static int32_t countUtf16(const std::vector<UChar32>& str, int32_t off)
 {
-    size_t end = input.size();
-    while (end > 0 && input[end - 1] == L' ')
+    off = std::min(off, static_cast<int32_t>(str.size()));
+
+    int32_t count = 0;
+    for (int32_t i = 0; i < off; ++i)
     {
-        --end;
+        count += U16_LENGTH(str[i]);
     }
-    return input.substr(0, end);
+    return count;
 }
 
-static UChar32 FoldCase(UChar32 c) noexcept
+static void foldStringUtf32(std::vector<UChar32>& str)
 {
-    return u_foldCase(c, U_FOLD_CASE_DEFAULT);
+    for (auto& cp : str)
+    {
+        cp = u_foldCase(cp, U_FOLD_CASE_DEFAULT);
+    }
 }
 
 static int32_t trySkip(const std::vector<UChar32>& input, const UChar32 searchChar, int32_t startIndex)
@@ -123,13 +138,8 @@ static FzfResult fzfFuzzyMatchV2(const std::vector<UChar32>& text, const std::ve
         return { 0, 0, 0 };
     }
 
-    std::vector<UChar32> foldedText;
-    foldedText.reserve(text.size());
-    for (auto cp : text)
-    {
-        auto foldedCp = u_foldCase(cp, U_FOLD_CASE_DEFAULT);
-        foldedText.push_back(foldedCp);
-    }
+    auto foldedText = text;
+    foldStringUtf32(foldedText);
 
     int32_t firstIndexOf = asciiFuzzyIndex(foldedText, pattern);
     if (firstIndexOf < 0)
@@ -352,128 +362,55 @@ static FzfResult fzfFuzzyMatchV2(const std::vector<UChar32>& text, const std::ve
     return { currentColIndex, end, maxScore };
 }
 
-static int32_t utf32Length(std::wstring_view str)
-{
-    return u_countChar32(reinterpret_cast<const UChar*>(str.data()), static_cast<int32_t>(str.size()));
-}
-
-static std::vector<UChar32> ConvertUtf16ToCodePoints(
-    std::wstring_view text,
-    bool fold,
-    std::vector<int32_t>* utf16OffsetsOut = nullptr)
-{
-    const UChar* data = reinterpret_cast<const UChar*>(text.data());
-    int32_t dataLen = static_cast<int32_t>(text.size());
-    int32_t cpCount = utf32Length(text);
-
-    std::vector<UChar32> out;
-    out.reserve(cpCount);
-
-    if (utf16OffsetsOut)
-    {
-        utf16OffsetsOut->clear();
-        utf16OffsetsOut->reserve(cpCount);
-    }
-
-    int32_t src = 0;
-    while (src < dataLen)
-    {
-        auto startUnit = src;
-        if (utf16OffsetsOut)
-        {
-            utf16OffsetsOut->push_back(startUnit);
-        }
-
-        UChar32 cp;
-        U16_NEXT(data, src, dataLen, cp);
-
-        if (fold)
-        {
-            cp = u_foldCase(cp, U_FOLD_CASE_DEFAULT);
-        }
-
-        out.push_back(cp);
-    }
-
-    return out;
-}
-
 Pattern fzf::matcher::ParsePattern(const std::wstring_view patternStr)
 {
     Pattern patObj;
-    if (patternStr.empty())
-    {
-        return patObj;
-    }
-
-    auto trimmed = TrimStart(patternStr);
-    trimmed = TrimSuffixSpaces(trimmed);
-
     size_t pos = 0;
-    while (pos < trimmed.size())
+
+    while (true)
     {
-        size_t found = trimmed.find(L' ', pos);
-        auto slice = (found == std::wstring_view::npos) ? trimmed.substr(pos) : trimmed.substr(pos, found - pos);
-
-        patObj.terms.push_back(ConvertUtf16ToCodePoints(slice, true));
-
-        if (found == std::wstring_view::npos)
+        const auto beg = patternStr.find_first_not_of(L' ', pos);
+        if (beg == std::wstring_view::npos)
         {
-            break;
+            break; // No more non-space characters
         }
-        pos = found + 1;
+
+        const auto end = std::min(patternStr.size(), patternStr.find_first_of(L' ', beg));
+        const auto word = patternStr.substr(beg, end - beg);
+        auto codePoints = utf16ToUtf32(word);
+        foldStringUtf32(codePoints);
+        patObj.terms.push_back(std::move(codePoints));
+        pos = end;
     }
 
     return patObj;
 }
 
-static std::vector<int32_t> MapCodepointsToUtf16(
-    std::vector<int32_t> const& cpPos,
-    std::vector<int32_t> const& cpMap,
-    size_t dataLen)
-{
-    std::vector<int32_t> utf16pos;
-    utf16pos.reserve(cpPos.size() * 2);
-
-    for (int32_t cpIndex : cpPos)
-    {
-        int32_t start = cpMap[cpIndex];
-        int32_t end = cpIndex + int32_t{ 1 } < static_cast<int32_t>(cpMap.size()) ? cpMap[cpIndex + 1] : static_cast<int32_t>(dataLen);
-
-        for (int32_t cu = end - 1; cu >= start; --cu)
-        {
-            utf16pos.push_back(cu);
-        }
-    }
-    return utf16pos;
-}
-
-std::optional<MatchResult> Match(std::wstring_view text, const Pattern& pattern)
+std::optional<MatchResult> fzf::matcher::Match(std::wstring_view text, const Pattern& pattern)
 {
     if (pattern.terms.empty())
     {
         return MatchResult{};
-        ;
     }
 
     int32_t totalScore = 0;
     std::vector<int32_t> pos;
     for (const auto& term : pattern.terms)
     {
-        std::vector<int32_t> utf16map;
         std::vector<int32_t> codePointPos;
-        auto textCodePoints = ConvertUtf16ToCodePoints(text, false, &utf16map);
+        const auto textCodePoints = utf16ToUtf32(text);
         FzfResult res = fzfFuzzyMatchV2(textCodePoints, term, &codePointPos);
         if (res.Score <= 0)
         {
             return std::nullopt;
         }
 
-        auto termUtf16Pos = MapCodepointsToUtf16(codePointPos, utf16map, text.size());
-        for (auto t : termUtf16Pos)
+        // NOTE: This is O(n^2). The exectation is that our "n" is small.
+        for (const auto t : codePointPos)
         {
-            pos.push_back(t);
+            pos.push_back(countUtf16(textCodePoints, t));
         }
+
         totalScore += res.Score;
     }
     return MatchResult{ totalScore, pos };
