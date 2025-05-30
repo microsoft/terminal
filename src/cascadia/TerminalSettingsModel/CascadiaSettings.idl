@@ -5,6 +5,7 @@ import "GlobalAppSettings.idl";
 import "Profile.idl";
 import "TerminalWarnings.idl";
 import "DefaultTerminal.idl";
+import "ActionArgs.idl";
 
 namespace Microsoft.Terminal.Settings.Model
 {
@@ -13,6 +14,12 @@ namespace Microsoft.Terminal.Settings.Model
         User,
         Machine
     };
+
+    static runtimeclass ActionArgFactory
+    {
+        static Windows.Foundation.Collections.IMap<Microsoft.Terminal.Settings.Model.ShortcutAction, String> AvailableShortcutActionsAndNames { get; };
+        static IActionArgs GetEmptyArgsForAction(Microsoft.Terminal.Settings.Model.ShortcutAction shortcutAction);
+    }
 
     [default_interface] runtimeclass CascadiaSettings {
         static CascadiaSettings LoadDefaults();

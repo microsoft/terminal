@@ -4,10 +4,13 @@
 #include "pch.h"
 #include "CascadiaSettings.h"
 #include "CascadiaSettings.g.cpp"
+#include "ActionArgFactory.g.cpp"
 #include "MatchProfilesEntry.h"
 
 #include "DefaultTerminal.h"
 #include "FileUtils.h"
+
+#include "AllShortcutActions.h"
 
 #include <LibraryResources.h>
 #include <VersionHelpers.h>
@@ -52,6 +55,35 @@ std::string_view Model::implementation::LoadStringResource(int resourceID)
     const auto sz = SizeofResource(moduleInstanceHandle, resource);
     const auto ptr = LockResource(loaded);
     return { reinterpret_cast<const char*>(ptr), sz };
+}
+
+winrt::Windows::Foundation::Collections::IMap<Model::ShortcutAction, winrt::hstring> ActionArgFactory::AvailableShortcutActionsAndNames()
+{
+    std::map<ShortcutAction, winrt::hstring> availableShortcutActionsAndNames;
+
+#define ON_ALL_ACTIONS(action) availableShortcutActionsAndNames.emplace(ShortcutAction::action, RS_(L## #action));
+    ALL_SHORTCUT_ACTIONS
+    // Don't include internal actions here
+#undef ON_ALL_ACTIONS
+
+    return single_threaded_map(std::move(availableShortcutActionsAndNames));
+}
+
+Model::IActionArgs ActionArgFactory::GetEmptyArgsForAction(Model::ShortcutAction shortcutAction)
+{
+    switch (shortcutAction)
+    {
+#define ON_ALL_ACTIONS_WITH_ARGS(name) \
+    case Model::ShortcutAction::name:  \
+        return winrt::make<name##Args>();
+
+        ALL_SHORTCUT_ACTIONS_WITH_ARGS
+
+#undef ON_ALL_ACTIONS_WITH_ARGS
+
+    default:
+        return nullptr;
+    }
 }
 
 winrt::hstring CascadiaSettings::Hash() const noexcept
