@@ -19,6 +19,79 @@ using namespace ::Microsoft::Terminal::Core;
 
 static LPCWSTR term_window_class = L"HwndTerminalClass";
 
+STDMETHODIMP HwndTerminal::TsfDataProvider::QueryInterface(REFIID, void**) noexcept
+{
+    return E_NOTIMPL;
+}
+
+ULONG STDMETHODCALLTYPE HwndTerminal::TsfDataProvider::AddRef() noexcept
+{
+    return 1;
+}
+
+ULONG STDMETHODCALLTYPE HwndTerminal::TsfDataProvider::Release() noexcept
+{
+    return 1;
+}
+
+HWND HwndTerminal::TsfDataProvider::GetHwnd()
+{
+    return _terminal->GetHwnd();
+}
+
+RECT HwndTerminal::TsfDataProvider::GetViewport()
+{
+    const auto hwnd = GetHwnd();
+
+    RECT rc;
+    GetClientRect(hwnd, &rc);
+
+    // https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-getclientrect
+    // > The left and top members are zero. The right and bottom members contain the width and height of the window.
+    // --> We can turn the client rect into a screen-relative rect by adding the left/top position.
+    ClientToScreen(hwnd, reinterpret_cast<POINT*>(&rc));
+    rc.right += rc.left;
+    rc.bottom += rc.top;
+
+    return rc;
+}
+
+RECT HwndTerminal::TsfDataProvider::GetCursorPosition()
+{
+    // Convert from columns/rows to pixels.
+    til::point cursorPos;
+    til::size fontSize;
+    {
+        const auto lock = _terminal->_terminal->LockForReading();
+        cursorPos = _terminal->_terminal->GetCursorPosition(); // measured in terminal cells
+        fontSize = _terminal->_actualFont.GetSize(); // measured in pixels, not DIP
+    }
+    POINT ptSuggestion = {
+        .x = cursorPos.x * fontSize.width,
+        .y = cursorPos.y * fontSize.height,
+    };
+
+    ClientToScreen(GetHwnd(), &ptSuggestion);
+
+    // Final measurement should be in pixels
+    return {
+        .left = ptSuggestion.x,
+        .top = ptSuggestion.y,
+        .right = ptSuggestion.x + fontSize.width,
+        .bottom = ptSuggestion.y + fontSize.height,
+    };
+}
+
+void HwndTerminal::TsfDataProvider::HandleOutput(std::wstring_view text)
+{
+    _terminal->_WriteTextToConnection(text);
+}
+
+Microsoft::Console::Render::Renderer* HwndTerminal::TsfDataProvider::GetRenderer()
+{
+    return _terminal->_renderer.get();
+}
+
 // This magic flag is "documented" at https://msdn.microsoft.com/en-us/library/windows/desktop/ms646301(v=vs.85).aspx
 // "If the high-order bit is 1, the key is down; otherwise, it is up."
 static constexpr short KeyPressed{ gsl::narrow_cast<short>(0x8000) };
@@ -230,6 +303,7 @@ HRESULT HwndTerminal::Initialize()
 
     _terminal->Create({ 80, 25 }, 9001, *_renderer);
     _terminal->SetWriteInputCallback([=](std::wstring_view input) noexcept { _WriteTextToConnection(input); });
+    _terminal->SetCopyToClipboardCallback([=](wil::zwstring_view text) noexcept { _CopyTextToSystemClipboard(text, {}, {}); });
     _renderer->EnablePainting();
 
     _multiClickTime = std::chrono::milliseconds{ GetDoubleClickTime() };
@@ -242,10 +316,15 @@ try
 {
     // As a rule, detach resources from the Terminal before shutting them down.
     // This ensures that teardown is reentrant.
+    _tsfHandle = {};
 
     // Shut down the renderer (and therefore the thread) before we implode
     _renderer.reset();
     _renderEngine.reset();
+
+    // These two callbacks have a dangling reference to `this`; let's just clear them
+    _terminal->SetWriteInputCallback(nullptr);
+    _terminal->SetCopyToClipboardCallback(nullptr);
 
     if (auto localHwnd{ _hwnd.release() })
     {
@@ -893,6 +972,7 @@ void _stdcall TerminalSetTheme(void* terminal, TerminalTheme theme, LPCWSTR font
         publicTerminal->_terminal->SetCursorStyle(static_cast<Microsoft::Console::VirtualTerminal::DispatchTypes::CursorStyle>(theme.CursorStyle));
 
         publicTerminal->_desiredFont = { fontFamily, 0, DEFAULT_FONT_WEIGHT, static_cast<float>(fontSize), CP_UTF8 };
+        publicTerminal->_desiredFont.SetEnableBuiltinGlyphs(true);
         publicTerminal->_UpdateFont(newDpi);
     }
 
@@ -941,6 +1021,16 @@ void __stdcall TerminalSetFocus(void* terminal)
     {
         LOG_IF_FAILED(uiaEngine->Enable());
     }
+    publicTerminal->_FocusTSF();
+}
+
+void HwndTerminal::_FocusTSF() noexcept
+{
+    if (!_tsfHandle)
+    {
+        _tsfHandle = Microsoft::Console::TSF::Handle::Create();
+        _tsfHandle.AssociateFocus(&_tsfDataProvider);
+    }
 }
 
 void __stdcall TerminalKillFocus(void* terminal)
@@ -959,7 +1049,7 @@ void __stdcall TerminalKillFocus(void* terminal)
 // - text - selected text in plain-text format
 // - htmlData - selected text in HTML format
 // - rtfData - selected text in RTF format
-HRESULT HwndTerminal::_CopyTextToSystemClipboard(const std::wstring& text, const std::string& htmlData, const std::string& rtfData) const
+HRESULT HwndTerminal::_CopyTextToSystemClipboard(wil::zwstring_view text, wil::zstring_view htmlData, wil::zstring_view rtfData) const
 try
 {
     RETURN_HR_IF_NULL(E_NOT_VALID_STATE, _terminal);
@@ -1015,7 +1105,7 @@ CATCH_RETURN()
 // Arguments:
 // - stringToCopy - The string to copy
 // - lpszFormat - the name of the format
-HRESULT HwndTerminal::_CopyToSystemClipboard(const std::string& stringToCopy, LPCWSTR lpszFormat) const
+HRESULT HwndTerminal::_CopyToSystemClipboard(wil::zstring_view stringToCopy, LPCWSTR lpszFormat) const
 {
     const auto cbData = stringToCopy.size() + 1; // +1 for '\0'
     if (cbData)

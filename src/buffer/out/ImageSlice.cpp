@@ -186,18 +186,20 @@ bool ImageSlice::_copyCells(const ImageSlice& srcSlice, const til::CoordType src
     }
 
     // The used destination before and after the written area must be erased.
-    if (dstUsedBegin < dstWriteBegin)
+    // If this results in the entire range being erased, we return true to let
+    // the caller know that the slice should be deleted.
+    if (dstUsedBegin < dstWriteBegin && _eraseCells(dstUsedBegin, dstWriteBegin))
     {
-        _eraseCells(dstUsedBegin, dstWriteBegin);
+        return true;
     }
-    if (dstUsedEnd > dstWriteEnd)
+    if (dstUsedEnd > dstWriteEnd && _eraseCells(dstWriteEnd, dstUsedEnd))
     {
-        _eraseCells(dstWriteEnd, dstUsedEnd);
+        return true;
     }
 
-    // If the beginning column is now not less than the end, that means the
-    // content has been entirely erased, so we return true to let the caller
-    // know that the slice should be deleted.
+    // At this point, if the beginning column is not less than the end, that
+    // means this was an empty slice into which nothing was copied, so we can
+    // again return true to let the caller know it should be deleted.
     return _columnBegin >= _columnEnd;
 }
 
@@ -210,10 +212,19 @@ void ImageSlice::EraseBlock(TextBuffer& buffer, const til::rect rect)
     }
 }
 
-void ImageSlice::EraseCells(TextBuffer& buffer, const til::point at, const size_t distance)
+void ImageSlice::EraseCells(TextBuffer& buffer, const til::point at, const til::CoordType distance)
 {
-    auto& row = buffer.GetMutableRowByOffset(at.y);
-    EraseCells(row, at.x, gsl::narrow_cast<til::CoordType>(at.x + distance));
+    auto x = at.x;
+    auto y = at.y;
+    auto distanceRemaining = distance;
+    while (distanceRemaining > 0)
+    {
+        auto& row = buffer.GetMutableRowByOffset(y);
+        EraseCells(row, x, x + distanceRemaining);
+        distanceRemaining -= (static_cast<til::CoordType>(row.size()) - x);
+        x = 0;
+        y++;
+    }
 }
 
 void ImageSlice::EraseCells(ROW& row, const til::CoordType columnBegin, const til::CoordType columnEnd)

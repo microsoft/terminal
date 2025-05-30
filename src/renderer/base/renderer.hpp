@@ -28,13 +28,14 @@ namespace Microsoft::Console::Render
     class Renderer
     {
     public:
-        Renderer(const RenderSettings& renderSettings, IRenderData* pData);
+        Renderer(RenderSettings& renderSettings, IRenderData* pData);
 
         IRenderData* GetRenderData() const noexcept;
 
         [[nodiscard]] HRESULT PaintFrame();
 
         void NotifyPaintFrame() noexcept;
+        void SynchronizedOutputChanged() noexcept;
         void TriggerSystemRedraw(const til::rect* const prcDirtyClient);
         void TriggerRedraw(const Microsoft::Console::Types::Viewport& region);
         void TriggerRedraw(const til::point* const pcoord);
@@ -91,6 +92,7 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] HRESULT _PaintFrame() noexcept;
         [[nodiscard]] HRESULT _PaintFrameForEngine(_In_ IRenderEngine* const pEngine) noexcept;
+        void _synchronizeWithOutput() noexcept;
         bool _CheckViewportAndScroll();
         [[nodiscard]] HRESULT _PaintBackground(_In_ IRenderEngine* const pEngine);
         void _PaintBufferOutput(_In_ IRenderEngine* const pEngine);
@@ -110,7 +112,7 @@ namespace Microsoft::Console::Render
         void _prepareNewComposition();
         [[nodiscard]] HRESULT _PrepareRenderInfo(_In_ IRenderEngine* const pEngine);
 
-        const RenderSettings& _renderSettings;
+        RenderSettings& _renderSettings;
         std::array<IRenderEngine*, 2> _engines{};
         IRenderData* _pData = nullptr; // Non-ownership pointer
         static constexpr size_t _firstSoftFontChar = 0xEF20;
@@ -124,6 +126,7 @@ namespace Microsoft::Console::Render
         std::function<void()> _pfnBackgroundColorChanged;
         std::function<void()> _pfnFrameColorChanged;
         std::function<void()> _pfnRendererEnteredErrorState;
+        bool _isSynchronizingOutput = false;
         bool _forceUpdateViewport = false;
 
         til::point_span _lastSelectionPaintSpan{};

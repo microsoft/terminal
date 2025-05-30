@@ -210,6 +210,45 @@
   <data name="SplitPaneText" xml:space="preserve">
     <value>Разделить область</value>
   </data>
+  <data name="SplitPaneToolTipText" xml:space="preserve">
+    <value>Щелкните правой кнопкой мыши для направлений разделения — вправо, вниз, вверх, влево</value>
+  </data>
+  <data name="SplitPaneDownText" xml:space="preserve">
+    <value>Разделить панель вниз</value>
+  </data>
+  <data name="SplitPaneRightText" xml:space="preserve">
+    <value>Разделить панель вправо</value>
+  </data>
+  <data name="SplitPaneUpText" xml:space="preserve">
+    <value>Разделить панель вверх</value>
+  </data>
+  <data name="SplitPaneLeftText" xml:space="preserve">
+    <value>Разделить панель влево</value>
+  </data>
+  <data name="SplitPaneDuplicateText" xml:space="preserve">
+    <value>Дублировать</value>
+  </data>
+  <data name="SwapPaneText" xml:space="preserve">
+    <value>Переключить панель</value>
+  </data>
+  <data name="SwapPaneDownText" xml:space="preserve">
+    <value>Переключить панель вниз</value>
+  </data>
+  <data name="SwapPaneRightText" xml:space="preserve">
+    <value>Переключить панель вправо</value>
+  </data>
+  <data name="SwapPaneUpText" xml:space="preserve">
+    <value>Переключить панель вверх</value>
+  </data>
+  <data name="SwapPaneLeftText" xml:space="preserve">
+    <value>Переключить панель влево</value>
+  </data>
+  <data name="TogglePaneZoomText" xml:space="preserve">
+    <value>Переключить масштаб области</value>
+  </data>
+  <data name="CloseOtherPanesText" xml:space="preserve">
+    <value>Закрыть другие панели</value>
+  </data>
   <data name="SearchWebText" xml:space="preserve">
     <value>Поиск в Интернете</value>
   </data>
@@ -935,5 +974,8 @@
   </data>
   <data name="TabMoveRight" xml:space="preserve">
     <value>Вправо</value>
+  </data>
+  <data name="InvalidRegex" xml:space="preserve">
+    <value>Обнаружено недопустимое регулярное выражение.</value>
   </data>
 </root>

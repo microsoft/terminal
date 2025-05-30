@@ -143,7 +143,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // the UIA Engine to the renderer. This prevents us from signaling changes to the cursor or buffer.
         {
             // Now create the renderer and initialize the render thread.
-            const auto& renderSettings = _terminal->GetRenderSettings();
+            auto& renderSettings = _terminal->GetRenderSettings();
             _renderer = std::make_unique<::Microsoft::Console::Render::Renderer>(renderSettings, _terminal.get());
 
             _renderer->SetBackgroundColorChangedCallback([this]() { _rendererBackgroundColorChanged(); });
@@ -1831,9 +1831,23 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         FILETIME lastWriteTime;
+        FILETIME localFileTime;
         SYSTEMTIME lastWriteSystemTime;
-        if (!GetFileTime(file.get(), nullptr, nullptr, &lastWriteTime) ||
-            !FileTimeToSystemTime(&lastWriteTime, &lastWriteSystemTime))
+
+        // Get the last write time in UTC
+        if (!GetFileTime(file.get(), nullptr, nullptr, &lastWriteTime))
+        {
+            return;
+        }
+
+        // Convert UTC FILETIME to local FILETIME
+        if (!FileTimeToLocalFileTime(&lastWriteTime, &localFileTime))
+        {
+            return;
+        }
+
+        // Convert local FILETIME to SYSTEMTIME
+        if (!FileTimeToSystemTime(&localFileTime, &lastWriteSystemTime))
         {
             return;
         }
@@ -2854,6 +2868,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 // coloring other matches, then we need to make sure those get redrawn,
                 // too.
                 _renderer->TriggerRedrawAll();
+                _updateSelectionUI();
             }
         }
     }

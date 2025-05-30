@@ -96,6 +96,7 @@
             <!--  Bell Style  -->
             <local:SettingContainer x:Uid="Profile_BellStyle"
                                     ClearSettingValue="{x:Bind Profile.ClearBellStyle}"
+                                    CurrentValue="{x:Bind Profile.BellStylePreview, Mode=OneWay}"
                                     HasSettingValue="{x:Bind Profile.HasBellStyle, Mode=OneWay}"
                                     SettingOverrideSource="{x:Bind Profile.BellStyleOverrideSource, Mode=OneWay}"
                                     Style="{StaticResource ExpanderSettingContainerStyle}">

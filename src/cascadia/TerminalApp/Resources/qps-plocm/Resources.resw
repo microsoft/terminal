@@ -214,6 +214,45 @@
   <data name="SplitPaneText" xml:space="preserve">
     <value>Šрŀіт φªňë !!!</value>
   </data>
+  <data name="SplitPaneToolTipText" xml:space="preserve">
+    <value>Ґΐĝĥτ ςļìск ƒôŗ ѕрℓΐť δįяęčŧįόпŝ - гΐġћŧ/đôшň/µρ/ľëƒт !!! !!! !!! !!! !!! </value>
+  </data>
+  <data name="SplitPaneDownText" xml:space="preserve">
+    <value>Śφľīţ φǻńě ðбẃή !!! !</value>
+  </data>
+  <data name="SplitPaneRightText" xml:space="preserve">
+    <value>Śрĺїť рâйê řіġнţ !!! !</value>
+  </data>
+  <data name="SplitPaneUpText" xml:space="preserve">
+    <value>Ŝрļįŧ рâⁿë ūφ !!! </value>
+  </data>
+  <data name="SplitPaneLeftText" xml:space="preserve">
+    <value>Ѕрľîţ φâиè ļзƒţ !!! !</value>
+  </data>
+  <data name="SplitPaneDuplicateText" xml:space="preserve">
+    <value>Đύрľįčäтè !!!</value>
+  </data>
+  <data name="SwapPaneText" xml:space="preserve">
+    <value>Šŵάφ рąņё !!!</value>
+  </data>
+  <data name="SwapPaneDownText" xml:space="preserve">
+    <value>Ѕщǻφ ρåπê ďōщπ !!! !</value>
+  </data>
+  <data name="SwapPaneRightText" xml:space="preserve">
+    <value>Şώǻρ ρâпέ ŕïġђţ !!! !</value>
+  </data>
+  <data name="SwapPaneUpText" xml:space="preserve">
+    <value>Śωãр φàňє цр !!! </value>
+  </data>
+  <data name="SwapPaneLeftText" xml:space="preserve">
+    <value>Šŵªφ ρäήę łеƒť !!! !</value>
+  </data>
+  <data name="TogglePaneZoomText" xml:space="preserve">
+    <value>Тøģġľε φªηê żοбм !!! !</value>
+  </data>
+  <data name="CloseOtherPanesText" xml:space="preserve">
+    <value>Ċłǿѕē ōŧĥзŗ рάпèś !!! !!</value>
+  </data>
   <data name="SearchWebText" xml:space="preserve">
     <value>Ẅёв şĕаŕčĥ !!!</value>
   </data>
@@ -943,5 +982,8 @@
   </data>
   <data name="TabMoveRight" xml:space="preserve">
     <value>Мóνε яίģнŧ !!!</value>
+  </data>
+  <data name="InvalidRegex" xml:space="preserve">
+    <value>Дŉ ΐňνãľîδ ŗěğµℓдř ë×ρяēѕšιбή ẃăѕ ƒοůŉđ. !!! !!! !!! !!!</value>
   </data>
 </root>
