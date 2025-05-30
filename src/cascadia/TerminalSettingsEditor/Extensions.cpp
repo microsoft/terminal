@@ -500,6 +500,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             if (!extPkgVM.Package().DisplayName().empty())
             {
+                // Check if the first char of the icon is in the Segoe MDL2 Icons list
+                const auto ch = til::at(extPkgVM.Package().Icon(), 0);
+                if (ch >= L'\uE700' && ch <= L'\uF8FF')
+                {
+                    return ComplexTemplateWithFontIcon();
+                }
                 return ComplexTemplate();
             }
             return DefaultTemplate();

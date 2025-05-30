@@ -77,5 +77,6 @@ namespace Microsoft.Terminal.Settings.Editor
 
         Windows.UI.Xaml.DataTemplate DefaultTemplate;
         Windows.UI.Xaml.DataTemplate ComplexTemplate;
+        Windows.UI.Xaml.DataTemplate ComplexTemplateWithFontIcon;
     }
 }

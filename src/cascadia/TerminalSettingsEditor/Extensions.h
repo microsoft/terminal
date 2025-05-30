@@ -183,6 +183,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         WINRT_PROPERTY(Windows::UI::Xaml::DataTemplate, DefaultTemplate, nullptr);
         WINRT_PROPERTY(Windows::UI::Xaml::DataTemplate, ComplexTemplate, nullptr);
+        WINRT_PROPERTY(Windows::UI::Xaml::DataTemplate, ComplexTemplateWithFontIcon, nullptr);
     };
 };
 
