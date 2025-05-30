@@ -63,16 +63,17 @@ namespace winrt::TerminalApp::implementation
 
     void FilteredCommand::_update()
     {
-        auto segments = winrt::single_threaded_observable_vector<winrt::TerminalApp::HighlightedTextSegment>();
-        auto commandName = _Item.Name();
-        auto weight = 0;
+        std::vector<winrt::TerminalApp::HighlightedTextSegment> segments;
+        const auto commandName = _Item.Name();
+        int32_t weight = 0;
+
         if (!_pattern || _pattern->terms.empty())
         {
-            segments.Append(winrt::TerminalApp::HighlightedTextSegment(commandName, false));
+            segments.emplace_back(winrt::TerminalApp::HighlightedTextSegment(commandName, false));
         }
         else if (auto match = fzf::matcher::Match(commandName, *_pattern.get()); !match)
         {
-            segments.Append(winrt::TerminalApp::HighlightedTextSegment(commandName, false));
+            segments.emplace_back(winrt::TerminalApp::HighlightedTextSegment(commandName, false));
         }
         else
         {
@@ -111,27 +112,24 @@ namespace winrt::TerminalApp::implementation
             {
                 if (start > lastPos)
                 {
-                    hstring nonMatch{ commandName.data() + lastPos,
-                                      static_cast<unsigned>(start - lastPos) };
-                    segments.Append(winrt::TerminalApp::HighlightedTextSegment(nonMatch, false));
+                    hstring nonMatch { til::safe_slice_abs(commandName, lastPos, start) };
+                    segments.emplace_back(winrt::TerminalApp::HighlightedTextSegment(nonMatch, false));
                 }
 
-                hstring matchSeg{ commandName.data() + start,
-                                  static_cast<unsigned>(end - start + 1) };
-                segments.Append(winrt::TerminalApp::HighlightedTextSegment(matchSeg, true));
+                hstring matchSeg { til::safe_slice_abs(commandName, start, end + 1) };
+                segments.emplace_back(winrt::TerminalApp::HighlightedTextSegment(matchSeg, true));
 
                 lastPos = end + 1;
             }
 
             if (lastPos < commandName.size())
             {
-                hstring tail{ commandName.data() + lastPos,
-                              static_cast<unsigned>(commandName.size() - lastPos) };
-                segments.Append(winrt::TerminalApp::HighlightedTextSegment(tail, false));
+                hstring tail { til::safe_slice_abs(commandName, lastPos, SIZE_T_MAX) };
+                segments.emplace_back(winrt::TerminalApp::HighlightedTextSegment(tail, false));
             }
         }
 
-        HighlightedName(winrt::make<HighlightedText>(segments));
+        HighlightedName(winrt::make<HighlightedText>(winrt::single_threaded_observable_vector(std::move(segments))));
         Weight(weight);
     }
 
