@@ -150,6 +150,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Automation::AutomationProperties::SetHelpText(OpenJsonNavItem(), RS_(L"Nav_OpenJSON/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip"));
 
         _breadcrumbs = single_threaded_observable_vector<IInspectable>();
+
+        contentFrame().Navigated({ this, &MainPage::_OnNavigated });
     }
 
     // Method Description:
@@ -683,33 +685,68 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _settingsClone.WriteSettingsToDisk();
     }
 
+    void MainPage::BackButton_Click(winrt::Microsoft::UI::Xaml::Controls::NavigationView const& /*args*/, winrt::Microsoft::UI::Xaml::Controls::NavigationViewBackRequestedEventArgs const& /*sender*/)
+    {
+        if (!contentFrame().CanGoBack())
+        {
+            return;
+        }
+        const auto backStack = contentFrame().BackStack();
+        const auto previousFrame = backStack.GetAt(backStack.Size() - 1);
+        backStack.RemoveAt(backStack.Size() - 1); // 'simulate' navigating back (we need to manually do this so we can reuse the breadcrumbs logic)
+        if (_breadcrumbs.Size() > 1)
+        { // Navigate Via Breadcrumbs
+            _NavigatePreviousPageForBreadcrumb(_breadcrumbs.GetAt(_breadcrumbs.Size() - 2).try_as<Breadcrumb>());
+            return;
+        }
+        /*const auto param = previousFrame.Parameter().as <IPropertyValue>();
+        if (const auto g = param.try_as<Editor::GlobalAppearance>())
+        {
+        }
+        else if (const auto z = param.try_as<Editor::)*/
+        // TODO: get navString via tag? (i cant get the tag)...
+        // _Navigate(*navString, BreadcrumbSubPage::None);
+        // contentFrame().GoBack() -> Works but this wont achieve desired result with breadcrumbs being up to date
+    }
+
     void MainPage::ResetButton_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*args*/)
     {
         UpdateSettings(_settingsSource);
+    }
+
+    void MainPage::_NavigatePreviousPageForBreadcrumb(const winrt::impl::com_ref<Breadcrumb>& breadcrumb)
+    {
+        const auto tag = breadcrumb->Tag();
+        const auto subPage = breadcrumb->SubPage();
+        if (const auto profileViewModel = tag.try_as<ProfileViewModel>())
+        {
+            _Navigate(*profileViewModel, subPage);
+        }
+        else if (const auto ntmEntryViewModel = tag.try_as<NewTabMenuEntryViewModel>())
+        {
+            _Navigate(*ntmEntryViewModel, subPage);
+        }
+        else if (const auto extPkgViewModel = tag.try_as<ExtensionPackageViewModel>())
+        {
+            _Navigate(*extPkgViewModel, subPage);
+        }
+        else
+        {
+            _Navigate(tag.as<hstring>(), subPage);
+        }
+    }
+
+    void MainPage::_OnNavigated(const IInspectable& /*sender*/, const Windows::UI::Xaml::Navigation::INavigationEventArgs& /*args*/)
+    {
+        const auto settingsNav = SettingsNav();
+        settingsNav.IsBackEnabled(contentFrame().CanGoBack());
     }
 
     void MainPage::BreadcrumbBar_ItemClicked(const Microsoft::UI::Xaml::Controls::BreadcrumbBar& /*sender*/, const Microsoft::UI::Xaml::Controls::BreadcrumbBarItemClickedEventArgs& args)
     {
         if (gsl::narrow_cast<uint32_t>(args.Index()) < (_breadcrumbs.Size() - 1))
         {
-            const auto tag = args.Item().as<Breadcrumb>()->Tag();
-            const auto subPage = args.Item().as<Breadcrumb>()->SubPage();
-            if (const auto profileViewModel = tag.try_as<ProfileViewModel>())
-            {
-                _Navigate(*profileViewModel, subPage);
-            }
-            else if (const auto ntmEntryViewModel = tag.try_as<NewTabMenuEntryViewModel>())
-            {
-                _Navigate(*ntmEntryViewModel, subPage);
-            }
-            else if (const auto extPkgViewModel = tag.try_as<ExtensionPackageViewModel>())
-            {
-                _Navigate(*extPkgViewModel, subPage);
-            }
-            else
-            {
-                _Navigate(tag.as<hstring>(), subPage);
-            }
+            _NavigatePreviousPageForBreadcrumb(args.Item().as<Breadcrumb>());
         }
     }
 
