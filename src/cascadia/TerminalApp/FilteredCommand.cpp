@@ -81,8 +81,9 @@ namespace winrt::TerminalApp::implementation
             weight = matchResult.Score;
 
             size_t lastPos = 0;
-            for (auto [start, end] : matchResult.Runs)
+            for (const auto& run : matchResult.Runs)
             {
+                const auto& [start, end] = run;
                 if (start > lastPos)
                 {
                     hstring nonMatch{ til::safe_slice_abs(commandName, lastPos, start) };
