@@ -79,12 +79,8 @@ namespace winrt::TerminalApp::implementation
         {
             auto& matchResult = *match;
             weight = matchResult.Score;
+            //Positions are returned in ascending order and are unique
             auto positions = matchResult.Pos;
-            // positions are returned is sorted pairs by search term. E.g. sp anta {5,4,11,10,9,8}
-            // sorting these in ascending order so it is easier to build the text segments
-            std::ranges::sort(positions);
-            // a position can be matched in multiple terms, removed duplicates to simplify segments
-            positions.erase(std::unique(positions.begin(), positions.end()), positions.end());
 
             std::vector<std::pair<size_t, size_t>> runs;
             if (!positions.empty())

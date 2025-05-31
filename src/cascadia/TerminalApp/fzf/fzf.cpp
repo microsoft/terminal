@@ -38,19 +38,6 @@ static std::vector<UChar32> utf16ToUtf32(std::wstring_view text)
     return out;
 }
 
-// Returns the number of UTF16 chars in the slice `str[0..off]`, where `str` is a UTF32 string.
-static int32_t countUtf16(const std::vector<UChar32>& str, int32_t off)
-{
-    off = std::min(off, static_cast<int32_t>(str.size()));
-
-    int32_t count = 0;
-    for (int32_t i = 0; i < off; ++i)
-    {
-        count += U16_LENGTH(str[i]);
-    }
-    return count;
-}
-
 static void foldStringUtf32(std::vector<UChar32>& str)
 {
     for (auto& cp : str)
@@ -387,25 +374,46 @@ std::optional<MatchResult> fzf::matcher::Match(std::wstring_view text, const Pat
         return MatchResult{};
     }
 
+    const auto textCodePoints = utf16ToUtf32(text);
+
     int32_t totalScore = 0;
-    std::vector<int32_t> pos;
+    std::vector<int32_t> allUtf32Pos;
+
     for (const auto& term : pattern.terms)
     {
-        std::vector<int32_t> codePointPos;
-        const auto textCodePoints = utf16ToUtf32(text);
-        FzfResult res = fzfFuzzyMatchV2(textCodePoints, term, &codePointPos);
+        std::vector<int32_t> termPos;
+        FzfResult res = fzfFuzzyMatchV2(textCodePoints, term, &termPos);
         if (res.Score <= 0)
         {
             return std::nullopt;
         }
 
-        // NOTE: This is O(n^2). The expectation is that our "n" is small.
-        for (const auto t : codePointPos)
+        totalScore += res.Score;
+        allUtf32Pos.insert(allUtf32Pos.end(), termPos.begin(), termPos.end());
+    }
+
+    std::ranges::sort(allUtf32Pos);
+    allUtf32Pos.erase(std::ranges::unique(allUtf32Pos).begin(), allUtf32Pos.end());
+
+    std::size_t nextCodePointPos = 0;
+    int32_t utf16Offset = 0;
+
+    std::vector<int32_t> utf16Pos;
+    for (int32_t i = 0; i < static_cast<int32_t>(textCodePoints.size()); ++i)
+    {
+        if (nextCodePointPos < allUtf32Pos.size() && allUtf32Pos[nextCodePointPos] == i)
         {
-            pos.push_back(countUtf16(textCodePoints, t));
+            int width = U16_LENGTH(textCodePoints[i]);
+            for (int w = 0; w < width; ++w)
+            {
+                utf16Pos.push_back(utf16Offset + w);
+            }
+
+            ++nextCodePointPos;
         }
 
-        totalScore += res.Score;
+        utf16Offset += U16_LENGTH(textCodePoints[i]);
     }
-    return MatchResult{ totalScore, pos };
+
+    return MatchResult{ totalScore, utf16Pos };
 }
