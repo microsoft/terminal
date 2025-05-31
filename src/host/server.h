@@ -126,6 +126,8 @@ public:
 
     bool GetBracketedPasteMode() const noexcept;
     void SetBracketedPasteMode(const bool enabled) noexcept;
+    void CopyTextToClipboard(const std::wstring_view text);
+    std::optional<std::wstring> UsePendingClipboardText();
 
     void SetTitle(const std::wstring_view newTitle);
     void SetTitlePrefix(const std::wstring_view newTitlePrefix);
@@ -160,6 +162,7 @@ private:
     SCREEN_INFORMATION* pCurrentScreenBuffer = nullptr;
     COOKED_READ_DATA* _cookedReadData = nullptr; // non-ownership pointer
     bool _bracketedPasteMode = false;
+    std::optional<std::wstring> _pendingClipboardText;
 
     Microsoft::Console::VirtualTerminal::VtIo _vtIo;
     Microsoft::Console::CursorBlinker _blinker;

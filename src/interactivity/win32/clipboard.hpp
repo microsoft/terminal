@@ -29,6 +29,7 @@ namespace Microsoft::Console::Interactivity::Win32
     public:
         static Clipboard& Instance();
 
+        void CopyText(const std::wstring& text);
         void Copy(_In_ const bool fAlsoCopyFormatting = false);
         void Paste();
         void PasteDrop(HDROP drop);
