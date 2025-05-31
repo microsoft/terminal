@@ -69,7 +69,7 @@ namespace TerminalAppUnitTests
         TEST_METHOD(SurrogatePair_ToUtf16Pos_GapAndBoundary);
     };
 
-    void AssertScoreAndRuns(std::wstring_view patternText, std::wstring_view text, int expectedScore, std::vector<fzf::matcher::TextRun> expectedRuns)
+    void AssertScoreAndRuns(std::wstring_view patternText, std::wstring_view text, int expectedScore, const std::vector<fzf::matcher::TextRun>& expectedRuns)
     {
         const auto pattern = fzf::matcher::ParsePattern(patternText);
         const auto match = fzf::matcher::Match(text, pattern);

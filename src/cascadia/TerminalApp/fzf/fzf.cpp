@@ -115,14 +115,14 @@ static CharClass classOf(UChar32 ch)
     return s_charClassLut[u_charType(ch)];
 }
 
-static FzfResult fzfFuzzyMatchV2(const std::vector<UChar32>& text, const std::vector<UChar32>& pattern, std::vector<int32_t>* pos)
+static int32_t fzfFuzzyMatchV2(const std::vector<UChar32>& text, const std::vector<UChar32>& pattern, std::vector<int32_t>* pos)
 {
     int32_t patternSize = static_cast<int32_t>(pattern.size());
     int32_t textSize = static_cast<int32_t>(text.size());
 
     if (patternSize == 0)
     {
-        return { 0, 0, 0 };
+        return 0;
     }
 
     auto foldedText = text;
@@ -131,7 +131,7 @@ static FzfResult fzfFuzzyMatchV2(const std::vector<UChar32>& text, const std::ve
     int32_t firstIndexOf = asciiFuzzyIndex(foldedText, pattern);
     if (firstIndexOf < 0)
     {
-        return { -1, -1, 0 };
+        return 0;
     }
 
     auto initialScores = std::vector<int16_t>(textSize);
@@ -204,7 +204,7 @@ static FzfResult fzfFuzzyMatchV2(const std::vector<UChar32>& text, const std::ve
 
     if (patternIndex != pattern.size())
     {
-        return { -1, -1, 0 };
+        return 0;
     }
 
     if (pattern.size() == 1)
@@ -213,8 +213,7 @@ static FzfResult fzfFuzzyMatchV2(const std::vector<UChar32>& text, const std::ve
         {
             pos->push_back(maxScorePos);
         }
-        int32_t end = maxScorePos + 1;
-        return { maxScorePos, end, maxScore };
+        return maxScore;
     }
 
     const auto firstOccurrenceOfFirstChar = firstOccurrenceOfEachChar[0];
@@ -339,8 +338,7 @@ static FzfResult fzfFuzzyMatchV2(const std::vector<UChar32>& text, const std::ve
                                   (consecutiveCharMatrix[rowStartIndex + width + colOffset + 1] > 0));
         }
     }
-    int32_t end = maxScorePos + 1;
-    return { currentColIndex, end, maxScore };
+    return maxScore;
 }
 
 Pattern fzf::matcher::ParsePattern(const std::wstring_view patternStr)
@@ -382,13 +380,13 @@ std::optional<MatchResult> fzf::matcher::Match(std::wstring_view text, const Pat
     for (const auto& term : pattern.terms)
     {
         std::vector<int32_t> termPos;
-        FzfResult res = fzfFuzzyMatchV2(textCodePoints, term, &termPos);
-        if (res.Score <= 0)
+        auto score = fzfFuzzyMatchV2(textCodePoints, term, &termPos);
+        if (score <= 0)
         {
             return std::nullopt;
         }
 
-        totalScore += res.Score;
+        totalScore += score;
         allUtf32Pos.insert(allUtf32Pos.end(), termPos.begin(), termPos.end());
     }
 

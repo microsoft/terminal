@@ -5,13 +5,6 @@
 
 namespace fzf::matcher
 {
-    struct FzfResult
-    {
-        int32_t Start;
-        int32_t End;
-        int32_t Score;
-    };
-
     struct TextRun
     {
         int32_t Start;
