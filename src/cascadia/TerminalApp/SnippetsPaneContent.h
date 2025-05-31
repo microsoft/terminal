@@ -80,11 +80,11 @@ namespace winrt::TerminalApp::implementation
         void UpdateFilter(std::shared_ptr<fzf::matcher::Pattern> pattern)
         {
             _pattern = std::move(pattern);
-            _filteredCommand->UpdateFilter(pattern);
+            _filteredCommand->UpdateFilter(_pattern);
             for (const auto& c : _children)
             {
                 auto impl = winrt::get_self<implementation::FilteredTask>(c);
-                impl->UpdateFilter(pattern);
+                impl->UpdateFilter(_pattern);
             }
 
             PropertyChanged.raise(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"Visibility" });
