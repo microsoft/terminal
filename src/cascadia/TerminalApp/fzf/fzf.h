@@ -12,10 +12,16 @@ namespace fzf::matcher
         int32_t Score;
     };
 
+    struct TextRun
+    {
+        int32_t Start;
+        int32_t End;
+    };
+
     struct MatchResult
     {
         int32_t Score = 0;
-        std::vector<int32_t> Pos;
+        std::vector<TextRun> Runs;
     };
 
     struct Pattern

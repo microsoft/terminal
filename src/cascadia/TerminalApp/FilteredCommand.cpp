@@ -79,32 +79,9 @@ namespace winrt::TerminalApp::implementation
         {
             auto& matchResult = *match;
             weight = matchResult.Score;
-            //Positions are returned in ascending order and are unique
-            auto positions = matchResult.Pos;
-
-            std::vector<std::pair<size_t, size_t>> runs;
-            if (!positions.empty())
-            {
-                size_t runStart = positions[0];
-                size_t runEnd = runStart;
-                for (size_t i = 1; i < positions.size(); ++i)
-                {
-                    if (positions[i] == runEnd + 1)
-                    {
-                        runEnd = positions[i];
-                    }
-                    else
-                    {
-                        runs.emplace_back(runStart, runEnd);
-                        runStart = positions[i];
-                        runEnd = runStart;
-                    }
-                }
-                runs.emplace_back(runStart, runEnd);
-            }
 
             size_t lastPos = 0;
-            for (auto [start, end] : runs)
+            for (auto [start, end] : matchResult.Runs)
             {
                 if (start > lastPos)
                 {

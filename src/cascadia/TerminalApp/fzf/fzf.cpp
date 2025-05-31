@@ -395,25 +395,41 @@ std::optional<MatchResult> fzf::matcher::Match(std::wstring_view text, const Pat
     std::ranges::sort(allUtf32Pos);
     allUtf32Pos.erase(std::ranges::unique(allUtf32Pos).begin(), allUtf32Pos.end());
 
+    std::vector<TextRun> runs;
     std::size_t nextCodePointPos = 0;
     int32_t utf16Offset = 0;
 
-    std::vector<int32_t> utf16Pos;
-    for (int32_t i = 0; i < static_cast<int32_t>(textCodePoints.size()); ++i)
-    {
-        if (nextCodePointPos < allUtf32Pos.size() && allUtf32Pos[nextCodePointPos] == i)
-        {
-            int width = U16_LENGTH(textCodePoints[i]);
-            for (int w = 0; w < width; ++w)
-            {
-                utf16Pos.push_back(utf16Offset + w);
-            }
+    bool inRun = false;
+    int32_t runStart = 0;
 
-            ++nextCodePointPos;
+    for (int32_t cpIndex = 0; cpIndex < static_cast<int32_t>(textCodePoints.size()); cpIndex++)
+    {
+        const int32_t cp = textCodePoints[cpIndex];
+        const int32_t cpWidth = U16_LENGTH(cp);
+
+        const bool isMatch = (nextCodePointPos < allUtf32Pos.size() && allUtf32Pos[nextCodePointPos] == cpIndex);
+        if (isMatch)
+        {
+            if (!inRun)
+            {
+                runStart = utf16Offset;
+                inRun = true;
+            }
+            nextCodePointPos++;
+        }
+        else if (inRun)
+        {
+            runs.push_back({ runStart, utf16Offset - 1 });
+            inRun = false;
         }
 
-        utf16Offset += U16_LENGTH(textCodePoints[i]);
+        utf16Offset += cpWidth;
     }
 
-    return MatchResult{ totalScore, utf16Pos };
+    if (inRun)
+    {
+        runs.push_back({ runStart, utf16Offset - 1 });
+    }
+
+    return MatchResult{ totalScore, std::move(runs) };
 }

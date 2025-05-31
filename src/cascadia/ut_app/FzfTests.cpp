@@ -69,28 +69,33 @@ namespace TerminalAppUnitTests
         TEST_METHOD(SurrogatePair_ToUtf16Pos_GapAndBoundary);
     };
 
-    void AssertScoreAndPositions(std::wstring_view patternText, std::wstring_view text, int expectedScore, std::vector<int16_t> expectedPositions)
+    void AssertScoreAndRuns(std::wstring_view patternText, std::wstring_view text, int expectedScore, std::vector<fzf::matcher::TextRun> expectedRuns)
     {
-        auto pattern = fzf::matcher::ParsePattern(patternText);
-        auto match = fzf::matcher::Match(text, pattern);
-        if (expectedScore == 0 && expectedPositions.size() == 0)
+        const auto pattern = fzf::matcher::ParsePattern(patternText);
+        const auto match = fzf::matcher::Match(text, pattern);
+
+        if (expectedScore == 0 && expectedRuns.empty())
         {
             VERIFY_ARE_EQUAL(std::nullopt, match);
             return;
         }
-        auto score = match->Score;
-        auto positions = match->Pos;
-        VERIFY_ARE_EQUAL(expectedScore, score);
-        VERIFY_ARE_EQUAL(expectedPositions.size(), positions.size());
-        for (auto i = 0; i < expectedPositions.size(); i++)
+
+        VERIFY_IS_TRUE(match.has_value());
+        VERIFY_ARE_EQUAL(expectedScore, match->Score);
+
+        const auto& runs = match->Runs;
+        VERIFY_ARE_EQUAL(expectedRuns.size(), runs.size());
+
+        for (size_t i = 0; i < expectedRuns.size(); ++i)
         {
-            VERIFY_ARE_EQUAL(expectedPositions[i], positions[i]);
+            VERIFY_ARE_EQUAL(expectedRuns[i].Start, runs[i].Start);
+            VERIFY_ARE_EQUAL(expectedRuns[i].End, runs[i].End);
         }
     }
 
     void FzfTests::AllPatternCharsDoNotMatch()
     {
-        AssertScoreAndPositions(
+        AssertScoreAndRuns(
             L"fbb",
             L"foo bar",
             0,
@@ -99,56 +104,56 @@ namespace TerminalAppUnitTests
 
     void FzfTests::ConsecutiveChars()
     {
-        AssertScoreAndPositions(
+        AssertScoreAndRuns(
             L"oba",
             L"foobar",
             ScoreMatch * 3 + BonusConsecutive * 2,
-            { 2, 3, 4 });
+            { { 2, 4 } });
     }
 
     void FzfTests::ConsecutiveChars_FirstCharBonus()
     {
-        AssertScoreAndPositions(
+        AssertScoreAndRuns(
             L"foo",
             L"foobar",
             ScoreMatch * 3 + BonusBoundary * BonusFirstCharMultiplier + BonusConsecutive * BonusFirstCharMultiplier * 2,
-            { 0, 1, 2 });
+            { { 0, 2 } });
     }
 
     void FzfTests::NonWordBonusBoundary_ConsecutiveChars()
     {
-        AssertScoreAndPositions(
+        AssertScoreAndRuns(
             L"zshc",
             L"/man1/zshcompctl.1",
             ScoreMatch * 4 + BonusBoundary * BonusFirstCharMultiplier + BonusFirstCharMultiplier * BonusConsecutive * 3,
-            { 6, 7, 8, 9 });
+            { { 6, 9 } });
     }
 
     void FzfTests::Russian_CaseMisMatch()
     {
-        AssertScoreAndPositions(
+        AssertScoreAndRuns(
             L"новая",
             L"Новая вкладка",
             ScoreMatch * 5 + BonusBoundary * BonusFirstCharMultiplier + BonusConsecutive * BonusFirstCharMultiplier * 4,
-            { 0, 1, 2, 3, 4 });
+            { { 0, 4 } });
     }
 
     void FzfTests::Russian_CaseMatch()
     {
-        AssertScoreAndPositions(
+        AssertScoreAndRuns(
             L"Новая",
             L"Новая вкладка",
             ScoreMatch * 5 + BonusBoundary * BonusFirstCharMultiplier + BonusConsecutive * BonusFirstCharMultiplier * 4,
-            { 0, 1, 2, 3, 4 });
+            { { 0, 4 } });
     }
 
     void FzfTests::German_CaseMatch()
     {
-        AssertScoreAndPositions(
+        AssertScoreAndRuns(
             L"fuß",
             L"Fußball",
             ScoreMatch * 3 + BonusBoundary * BonusFirstCharMultiplier + BonusConsecutive * BonusFirstCharMultiplier * 2,
-            { 0, 1, 2 });
+            { { 0, 2 } });
     }
 
     void FzfTests::German_CaseMisMatch_FoldResultsInMultipleCodePoints()
@@ -159,109 +164,109 @@ namespace TerminalAppUnitTests
             TEST_METHOD_PROPERTY(L"Ignore", L"true")
         END_TEST_METHOD_PROPERTIES()
 
-        AssertScoreAndPositions(
+        AssertScoreAndRuns(
             L"fuss",
             L"Fußball",
             //I think ScoreMatch * 4 is correct in this case since it matches 4 codepoints pattern??? fuss
             ScoreMatch * 4 + BonusBoundary * BonusFirstCharMultiplier + BonusConsecutive * BonusFirstCharMultiplier * 3,
             //Only 3 positions in the text were matched
-            { 0, 1, 2 });
+            { { 0, 2 } });
     }
 
     void FzfTests::French_CaseMatch()
     {
-        AssertScoreAndPositions(
+        AssertScoreAndRuns(
             L"Éco",
             L"École",
             ScoreMatch * 3 + BonusBoundary * BonusFirstCharMultiplier + BonusConsecutive * BonusFirstCharMultiplier * 2,
-            { 0, 1, 2 });
+            { { 0, 2 } });
     }
 
     void FzfTests::French_CaseMisMatch()
     {
-        AssertScoreAndPositions(
+        AssertScoreAndRuns(
             L"Éco",
             L"école",
             ScoreMatch * 3 + BonusBoundary * BonusFirstCharMultiplier + BonusConsecutive * BonusFirstCharMultiplier * 2,
-            { 0, 1, 2 });
+            { { 0, 2 } });
     }
 
     void FzfTests::Greek_CaseMatch()
     {
-        AssertScoreAndPositions(
+        AssertScoreAndRuns(
             L"λόγος",
             L"λόγος",
             ScoreMatch * 5 + BonusBoundary * BonusFirstCharMultiplier + BonusConsecutive * BonusFirstCharMultiplier * 4,
-            { 0, 1, 2, 3, 4 });
+            { { 0, 4 } });
     }
 
     void FzfTests::Greek_CaseMisMatch()
     {
         //I think this tests validates folding (σ, ς)
-        AssertScoreAndPositions(
+        AssertScoreAndRuns(
             L"λόγοσ",
             L"λόγος",
             ScoreMatch * 5 + BonusBoundary * BonusFirstCharMultiplier + BonusConsecutive * BonusFirstCharMultiplier * 4,
-            { 0, 1, 2, 3, 4 });
+            { { 0, 4 } });
     }
 
     void FzfTests::English_CaseMatch()
     {
-        AssertScoreAndPositions(
+        AssertScoreAndRuns(
             L"Newer",
             L"Newer tab",
             ScoreMatch * 5 + BonusBoundary * BonusFirstCharMultiplier + BonusConsecutive * BonusFirstCharMultiplier * 4,
-            { 0, 1, 2, 3, 4 });
+            { { 0, 4 } });
     }
 
     void FzfTests::English_CaseMisMatch()
     {
-        AssertScoreAndPositions(
+        AssertScoreAndRuns(
             L"newer",
             L"Newer tab",
             ScoreMatch * 5 + BonusBoundary * BonusFirstCharMultiplier + BonusConsecutive * BonusFirstCharMultiplier * 4,
-            { 0, 1, 2, 3, 4 });
+            { { 0, 4 } });
     }
 
     void FzfTests::SurrogatePair()
     {
-        AssertScoreAndPositions(
+        AssertScoreAndRuns(
             L"N😀ewer",
             L"N😀ewer tab",
             ScoreMatch * 6 + BonusBoundary * BonusFirstCharMultiplier + BonusConsecutive * BonusFirstCharMultiplier * 5,
-            { 0, 1, 2, 3, 4, 5, 6 });
+            { { 0, 6 } });
     }
 
     void FzfTests::SurrogatePair_ToUtf16Pos_ConsecutiveChars()
     {
-        AssertScoreAndPositions(
+        AssertScoreAndRuns(
             L"N𠀋N😀𝄞e𐐷",
             L"N𠀋N😀𝄞e𐐷 tab",
             ScoreMatch * 7 + BonusBoundary * BonusFirstCharMultiplier + BonusConsecutive * BonusFirstCharMultiplier * 6,
-            { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 });
+            { { 0, 10 } });
     }
 
     void FzfTests::SurrogatePair_ToUtf16Pos_PreferConsecutiveChars()
     {
-        AssertScoreAndPositions(
+        AssertScoreAndRuns(
             L"𠀋😀",
             L"N𠀋😀wer 😀b𐐷 ",
             ScoreMatch * 2 + BonusConsecutive * 2,
-            { 1, 2, 3, 4 });
+            { { 1, 4 } });
     }
 
     void FzfTests::SurrogatePair_ToUtf16Pos_GapAndBoundary()
     {
-        AssertScoreAndPositions(
+        AssertScoreAndRuns(
             L"𠀋😀",
             L"N𠀋wer 😀b𐐷 ",
             ScoreMatch * 2 + ScoreGapStart + ScoreGapExtension * 3 + BonusBoundary,
-            { 1, 2, 7, 8 });
+            { { 1, 2 }, { 7, 8 } });
     }
 
     void FzfTests::MatchOnNonWordChars_CaseInSensitive()
     {
-        AssertScoreAndPositions(
+        AssertScoreAndRuns(
             L"foo-b",
             L"xFoo-Bar Baz",
             (ScoreMatch + BonusCamel123 * BonusFirstCharMultiplier) +
@@ -269,12 +274,12 @@ namespace TerminalAppUnitTests
                 (ScoreMatch + BonusCamel123) +
                 (ScoreMatch + BonusBoundary) +
                 (ScoreMatch + BonusNonWord),
-            { 1, 2, 3, 4, 5 });
+            { { 1, 5 } });
     }
 
     void FzfTests::MatchOnNonWordCharsWithGap()
     {
-        AssertScoreAndPositions(
+        AssertScoreAndRuns(
             L"12356",
             L"abc123 456",
             (ScoreMatch + BonusCamel123 * BonusFirstCharMultiplier) +
@@ -284,12 +289,12 @@ namespace TerminalAppUnitTests
                 ScoreGapExtension +
                 ScoreMatch +
                 ScoreMatch + BonusConsecutive,
-            { 3, 4, 5, 8, 9 });
+            { { 3, 5 }, { 8, 9 } });
     }
 
     void FzfTests::BonusForCamelCaseMatch()
     {
-        AssertScoreAndPositions(
+        AssertScoreAndRuns(
             L"def56",
             L"abcDEF 456",
             (ScoreMatch + BonusCamel123 * BonusFirstCharMultiplier) +
@@ -299,25 +304,25 @@ namespace TerminalAppUnitTests
                 ScoreGapExtension +
                 ScoreMatch +
                 (ScoreMatch + BonusConsecutive),
-            { 3, 4, 5, 8, 9 });
+            { { 3, 5 }, { 8, 9 } });
     }
 
     void FzfTests::BonusBoundaryAndFirstCharMultiplier()
     {
-        AssertScoreAndPositions(
+        AssertScoreAndRuns(
             L"fbb",
             L"foo bar baz",
             ScoreMatch * 3 + BonusBoundary * BonusFirstCharMultiplier + BonusBoundary * 2 + 2 * ScoreGapStart + 4 * ScoreGapExtension,
-            { 0, 4, 8 });
+            { { 0, 0 }, { 4, 4 }, { 8, 8 } });
     }
 
     void FzfTests::MatchesAreCaseInSensitive()
     {
-        AssertScoreAndPositions(
+        AssertScoreAndRuns(
             L"FBB",
             L"foo bar baz",
             ScoreMatch * 3 + BonusBoundary * BonusFirstCharMultiplier + BonusBoundary * 2 + 2 * ScoreGapStart + 4 * ScoreGapExtension,
-            { 0, 4, 8 });
+            { { 0, 0 }, { 4, 4 }, { 8, 8 } });
     }
 
     void FzfTests::MultipleTerms()
@@ -325,11 +330,11 @@ namespace TerminalAppUnitTests
         auto term1Score = ScoreMatch * 2 + BonusBoundary * BonusFirstCharMultiplier + (BonusFirstCharMultiplier * BonusConsecutive);
         auto term2Score = ScoreMatch * 4 + BonusBoundary * BonusFirstCharMultiplier + (BonusFirstCharMultiplier * BonusConsecutive) * 3;
 
-        AssertScoreAndPositions(
+        AssertScoreAndRuns(
             L"sp anta",
             L"Split Pane, split: horizontal, profile: SSH: Antares",
             term1Score + term2Score,
-            { 0, 1, 45, 46, 47, 48 });
+            { { 0, 1 }, { 45, 48 } });
     }
 
     void FzfTests::MultipleTerms_AllCharsMatch()
@@ -337,16 +342,16 @@ namespace TerminalAppUnitTests
         auto term1Score = ScoreMatch * 3 + BonusBoundary * BonusFirstCharMultiplier + (BonusFirstCharMultiplier * BonusConsecutive * 2);
         auto term2Score = term1Score;
 
-        AssertScoreAndPositions(
+        AssertScoreAndRuns(
             L"foo bar",
             L"foo bar",
             term1Score + term2Score,
-            { 0, 1, 2, 4, 5, 6 });
+            { { 0, 2 }, { 4, 6 } });
     }
 
     void FzfTests::MultipleTerms_NotAllTermsMatch()
     {
-        AssertScoreAndPositions(
+        AssertScoreAndRuns(
             L"sp anta zz",
             L"Split Pane, split: horizontal, profile: SSH: Antares",
             0,
@@ -355,50 +360,50 @@ namespace TerminalAppUnitTests
 
     void FzfTests::MatchesAreCaseInSensitive_BonusBoundary()
     {
-        AssertScoreAndPositions(
+        AssertScoreAndRuns(
             L"fbb",
             L"Foo Bar Baz",
             ScoreMatch * 3 + BonusBoundary * BonusFirstCharMultiplier + BonusBoundary * 2 + 2 * ScoreGapStart + 4 * ScoreGapExtension,
-            { 0, 4, 8 });
+            { { 0, 0 }, { 4, 4 }, { 8, 8 } });
     }
 
     void FzfTests::TraceBackWillPickTheFirstMatchIfBothHaveTheSameScore()
     {
-        AssertScoreAndPositions(
+        AssertScoreAndRuns(
             L"bar",
             L"Foo Bar Bar",
             (ScoreMatch + BonusBoundary * BonusFirstCharMultiplier) +
                 (ScoreMatch + BonusBoundary) +
                 (ScoreMatch + BonusBoundary),
             //ScoreMatch * 3 + BonusBoundary * BonusFirstCharMultiplier * 2,
-            { 4, 5, 6 });
+            { { 4, 6 } });
     }
 
     void FzfTests::TraceBackWillPickTheMatchWithTheHighestScore()
     {
-        AssertScoreAndPositions(
+        AssertScoreAndRuns(
             L"bar",
             L"Foo aBar Bar",
             ScoreMatch * 3 + BonusBoundary * BonusFirstCharMultiplier * 2,
-            { 9, 10, 11 });
+            { { 9, 11 } });
     }
 
     void FzfTests::TraceBackWillPickTheMatchWithTheHighestScore_Gaps()
     {
-        AssertScoreAndPositions(
+        AssertScoreAndRuns(
             L"bar",
             L"Boo Author Raz Bar",
             ScoreMatch * 3 + BonusBoundary * BonusFirstCharMultiplier + BonusConsecutive * BonusFirstCharMultiplier * 2,
-            { 15, 16, 17 });
+            { { 15, 17 } });
     }
 
     void FzfTests::TraceBackWillPickEarlierCharsWhenNoBonus()
     {
-        AssertScoreAndPositions(
+        AssertScoreAndRuns(
             L"clts",
             L"close all tabs after this",
             ScoreMatch * 4 + BonusBoundary * BonusFirstCharMultiplier + BonusFirstCharMultiplier * BonusConsecutive + ScoreGapStart + ScoreGapExtension * 7 + BonusBoundary + ScoreGapStart + ScoreGapExtension,
-            { 0, 1, 10, 13 });
+            { { 0, 1 }, { 10, 10 }, { 13, 13 } });
     }
 
     void FzfTests::ConsecutiveMatchWillScoreHigherThanMatchWithGapWhenBothDontHaveBonus()
@@ -406,17 +411,17 @@ namespace TerminalAppUnitTests
         auto consecutiveScore = ScoreMatch * 3 + BonusConsecutive * 2;
         auto gapScore = (ScoreMatch * 3) + ScoreGapStart + ScoreGapStart;
 
-        AssertScoreAndPositions(
+        AssertScoreAndRuns(
             L"oob",
             L"aoobar",
             consecutiveScore,
-            { 1, 2, 3 });
+            { { 1, 3 } });
 
-        AssertScoreAndPositions(
+        AssertScoreAndRuns(
             L"oob",
             L"aoaoabound",
             gapScore,
-            { 1, 3, 5 });
+            { { 1, 1 }, { 3, 3 }, { 5, 5 } });
 
         VERIFY_IS_GREATER_THAN(consecutiveScore, gapScore);
     }
@@ -426,17 +431,17 @@ namespace TerminalAppUnitTests
         auto consecutiveScore = ScoreMatch * 3 + BonusFirstCharMultiplier * BonusBoundary + BonusFirstCharMultiplier * BonusConsecutive * 2;
         auto gapScore = (ScoreMatch * 3) + (BonusBoundary * BonusFirstCharMultiplier) + ScoreGapStart + ScoreGapStart;
 
-        AssertScoreAndPositions(
+        AssertScoreAndRuns(
             L"oob",
             L"oobar",
             consecutiveScore,
-            { 0, 1, 2 });
+            { { 0, 2 } });
 
-        AssertScoreAndPositions(
+        AssertScoreAndRuns(
             L"oob",
             L"oaoabound",
             gapScore,
-            { 0, 2, 4 });
+            { { 0, 0 }, { 2, 2 }, { 4, 4 } });
 
         VERIFY_IS_GREATER_THAN(consecutiveScore, gapScore);
     }
@@ -446,17 +451,17 @@ namespace TerminalAppUnitTests
         auto consecutiveScore = ScoreMatch * 3 + BonusConsecutive * 2;
         auto gapScore = (ScoreMatch * 3) + (BonusBoundary * BonusFirstCharMultiplier) + (BonusBoundary * 2) + ScoreGapStart + (ScoreGapExtension * 2) + ScoreGapStart + ScoreGapExtension;
 
-        AssertScoreAndPositions(
+        AssertScoreAndRuns(
             L"oob",
             L"foobar",
             consecutiveScore,
-            { 1, 2, 3 });
+            { { 1, 3 } });
 
-        AssertScoreAndPositions(
+        AssertScoreAndRuns(
             L"oob",
             L"out-of-bound",
             gapScore,
-            { 0, 4, 7 });
+            { { 0, 0 }, { 4, 4 }, { 7, 7 } });
 
         VERIFY_IS_GREATER_THAN(gapScore, consecutiveScore);
     }
@@ -466,17 +471,17 @@ namespace TerminalAppUnitTests
         auto consecutiveScore = ScoreMatch * 2 + BonusConsecutive;
         auto gapScore = ScoreMatch * 2 + BonusBoundary * BonusFirstCharMultiplier + ScoreGapStart;
 
-        AssertScoreAndPositions(
+        AssertScoreAndRuns(
             L"ob",
             L"aobar",
             consecutiveScore,
-            { 1, 2 });
+            { { 1, 2 } });
 
-        AssertScoreAndPositions(
+        AssertScoreAndRuns(
             L"ob",
             L"oabar",
             gapScore,
-            { 0, 2 });
+            { { 0, 0 }, { 2, 2 } });
 
         VERIFY_IS_GREATER_THAN(gapScore, consecutiveScore);
     }
@@ -486,17 +491,17 @@ namespace TerminalAppUnitTests
         auto consecutiveScore = ScoreMatch * 2 + BonusConsecutive;
         auto gapScore = ScoreMatch * 2 + BonusBoundary * BonusFirstCharMultiplier + ScoreGapStart + ScoreGapExtension * 10;
 
-        AssertScoreAndPositions(
+        AssertScoreAndRuns(
             L"ob",
             L"aobar",
             consecutiveScore,
-            { 1, 2 });
+            { { 1, 2 } });
 
-        AssertScoreAndPositions(
+        AssertScoreAndRuns(
             L"ob",
             L"oaaaaaaaaaaabar",
             gapScore,
-            { 0, 12 });
+            { { 0, 0 }, { 12, 12 } });
 
         VERIFY_IS_GREATER_THAN(consecutiveScore, gapScore);
     }
@@ -506,17 +511,17 @@ namespace TerminalAppUnitTests
         auto consecutiveScore = ScoreMatch * 3 + BonusConsecutive * 2;
         auto gapScore = ScoreMatch * 3 + BonusBoundary * BonusFirstCharMultiplier + BonusConsecutive + ScoreGapStart + ScoreGapExtension * 10;
 
-        AssertScoreAndPositions(
+        AssertScoreAndRuns(
             L"oba",
             L"aobar",
             consecutiveScore,
-            { 1, 2, 3 });
+            { { 1, 3 } });
 
-        AssertScoreAndPositions(
+        AssertScoreAndRuns(
             L"oba",
             L"oaaaaaaaaaaabar",
             gapScore,
-            { 0, 12, 13 });
+            { { 0, 0 }, { 12, 13 } });
 
         VERIFY_IS_GREATER_THAN(consecutiveScore, gapScore);
     }
@@ -526,17 +531,17 @@ namespace TerminalAppUnitTests
         auto allConsecutiveScore = ScoreMatch * 3 + BonusConsecutive * 2;
         auto allBoundaryWithGapScore = ScoreMatch * 3 + BonusBoundary * BonusFirstCharMultiplier + ScoreGapStart + ScoreGapExtension + ScoreGapExtension + ScoreGapStart + ScoreGapExtension;
 
-        AssertScoreAndPositions(
+        AssertScoreAndRuns(
             L"oba",
             L"aobar",
             allConsecutiveScore,
-            { 1, 2, 3 });
+            { { 1, 3 } });
 
-        AssertScoreAndPositions(
+        AssertScoreAndRuns(
             L"oba",
             L"oaaabzzar",
             allBoundaryWithGapScore,
-            { 0, 4, 7 });
+            { { 0, 0 }, { 4, 4 }, { 7, 7 } });
 
         VERIFY_IS_GREATER_THAN(allConsecutiveScore, allBoundaryWithGapScore);
     }
@@ -546,17 +551,17 @@ namespace TerminalAppUnitTests
         auto consecutiveScore = ScoreMatch * 4 + BonusConsecutive * 3;
         auto gapScore = ScoreMatch * 4 + BonusBoundary * BonusFirstCharMultiplier + ScoreGapStart * 3;
 
-        AssertScoreAndPositions(
+        AssertScoreAndRuns(
             L"obar",
             L"aobar",
             consecutiveScore,
-            { 1, 2, 3, 4 });
+            { { 1, 4 } });
 
-        AssertScoreAndPositions(
+        AssertScoreAndRuns(
             L"obar",
             L"oabzazr",
             gapScore,
-            { 0, 2, 4, 6 });
+            { { 0, 0 }, { 2, 2 }, { 4, 4 }, { 6, 6 } });
 
         VERIFY_IS_GREATER_THAN(consecutiveScore, gapScore);
     }
