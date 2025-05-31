@@ -33,6 +33,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void SettingsNav_Loaded(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& args);
         void SettingsNav_ItemInvoked(const Microsoft::UI::Xaml::Controls::NavigationView& sender, const Microsoft::UI::Xaml::Controls::NavigationViewItemInvokedEventArgs& args);
         void SaveButton_Click(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& args);
+        void BackButton_Click(winrt::Microsoft::UI::Xaml::Controls::NavigationView const& args, winrt::Microsoft::UI::Xaml::Controls::NavigationViewBackRequestedEventArgs const& sender);
         void ResetButton_Click(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& args);
         void BreadcrumbBar_ItemClicked(const Microsoft::UI::Xaml::Controls::BreadcrumbBar& sender, const Microsoft::UI::Xaml::Controls::BreadcrumbBarItemClickedEventArgs& args);
 
@@ -72,6 +73,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void _Navigate(const Editor::ExtensionPackageViewModel& extPkgVM, BreadcrumbSubPage subPage);
         void _NavigateToProfileHandler(const IInspectable& sender, winrt::guid profileGuid);
         void _NavigateToColorSchemeHandler(const IInspectable& sender, const IInspectable& args);
+        void _NavigatePreviousPageForBreadcrumb(const winrt::impl::com_ref<Breadcrumb>& breadcrumb);
+        void _OnNavigated(const IInspectable& sender, const Windows::UI::Xaml::Navigation::INavigationEventArgs& args);
 
         void _UpdateBackgroundForMica();
         void _MoveXamlParsedNavItemsIntoItemSource();

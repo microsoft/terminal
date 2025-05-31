@@ -66,7 +66,8 @@
 
     <muxc:NavigationView x:Name="SettingsNav"
                          Background="{ThemeResource SettingsPageBackground}"
-                         IsBackButtonVisible="Collapsed"
+                         BackRequested="BackButton_Click"
+                         IsBackButtonVisible="Visible"
                          IsSettingsVisible="False"
                          ItemInvoked="SettingsNav_ItemInvoked"
                          Loaded="SettingsNav_Loaded"
