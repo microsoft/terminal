@@ -117,7 +117,7 @@ static CharClass classOf(UChar32 ch)
 
 static int32_t fzfFuzzyMatchV2(const std::vector<UChar32>& text, const std::vector<UChar32>& pattern, std::vector<int32_t>* pos)
 {
-    const auto patternSize = static_cast<int32_t>(patternSize);
+    const auto patternSize = static_cast<int32_t>(pattern.size());
     const auto textSize = static_cast<int32_t>(text.size());
 
     if (patternSize == 0)
