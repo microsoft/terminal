@@ -451,7 +451,7 @@
 
             <!--  Learn more about fragment extensions  -->
             <HyperlinkButton x:Uid="Extensions_DisclaimerHyperlink"
-                             NavigateUri="https://learn.microsoft.com/en-us/windows/terminal/json-fragment-extensions" />
+                             NavigateUri="https://go.microsoft.com/fwlink/?linkid=2321753" />
 
             <!--  Grouping: Active Extensions  -->
             <TextBlock x:Uid="Extensions_ActiveExtensionsHeader"
