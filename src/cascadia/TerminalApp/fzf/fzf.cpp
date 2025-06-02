@@ -14,6 +14,7 @@ constexpr int16_t NonWordBonus = ScoreMatch / 2;
 constexpr int16_t CamelCaseBonus = BoundaryBonus + ScoreGapExtension;
 constexpr int16_t BonusConsecutive = -(ScoreGapStart + ScoreGapExtension);
 constexpr int16_t BonusFirstCharMultiplier = 2;
+constexpr size_t npos = std::numeric_limits<size_t>::max();
 
 enum class CharClass : uint8_t
 {
@@ -46,29 +47,29 @@ static void foldStringUtf32(std::vector<UChar32>& str)
     }
 }
 
-static int32_t trySkip(const std::vector<UChar32>& input, const UChar32 searchChar, int32_t startIndex)
+static size_t trySkip(const std::vector<UChar32>& input, const UChar32 searchChar, size_t startIndex)
 {
-    for (int32_t i = startIndex; i < static_cast<int32_t>(input.size()); ++i)
+    for (size_t i = startIndex; i < input.size(); ++i)
     {
         if (input[i] == searchChar)
         {
             return i;
         }
     }
-    return -1;
+    return npos;
 }
 
 // Unlike the equivalent in fzf, this one does more than Unicode.
-static int32_t asciiFuzzyIndex(const std::vector<UChar32>& input, const std::vector<UChar32>& pattern)
+static size_t asciiFuzzyIndex(const std::vector<UChar32>& input, const std::vector<UChar32>& pattern)
 {
-    int32_t idx = 0;
-    int32_t firstIdx = 0;
+    size_t idx = 0;
+    size_t firstIdx = 0;
     for (size_t pi = 0; pi < pattern.size(); ++pi)
     {
         idx = trySkip(input, pattern[pi], idx);
-        if (idx < 0)
+        if (idx == npos)
         {
-            return -1;
+            return npos;
         }
 
         if (pi == 0 && idx > 0)
@@ -115,12 +116,9 @@ static CharClass classOf(UChar32 ch)
     return s_charClassLut[u_charType(ch)];
 }
 
-static int32_t fzfFuzzyMatchV2(const std::vector<UChar32>& text, const std::vector<UChar32>& pattern, std::vector<int32_t>* pos)
+static int32_t fzfFuzzyMatchV2(const std::vector<UChar32>& text, const std::vector<UChar32>& pattern, std::vector<size_t>* pos)
 {
-    const auto patternSize = static_cast<int32_t>(pattern.size());
-    const auto textSize = static_cast<int32_t>(text.size());
-
-    if (patternSize == 0)
+    if (pattern.size() == 0)
     {
         return 0;
     }
@@ -128,21 +126,21 @@ static int32_t fzfFuzzyMatchV2(const std::vector<UChar32>& text, const std::vect
     auto foldedText = text;
     foldStringUtf32(foldedText);
 
-    int32_t firstIndexOf = asciiFuzzyIndex(foldedText, pattern);
-    if (firstIndexOf < 0)
+    size_t firstIndexOf = asciiFuzzyIndex(foldedText, pattern);
+    if (firstIndexOf == npos)
     {
         return 0;
     }
 
-    auto initialScores = std::vector<int16_t>(textSize);
-    auto consecutiveScores = std::vector<int16_t>(textSize);
-    auto firstOccurrenceOfEachChar = std::vector<int32_t>(patternSize);
-    auto bonusesSpan = std::vector<int16_t>(textSize);
+    auto initialScores = std::vector<int16_t>(text.size());
+    auto consecutiveScores = std::vector<int16_t>(text.size());
+    auto firstOccurrenceOfEachChar = std::vector<size_t>(pattern.size());
+    auto bonusesSpan = std::vector<int16_t>(text.size());
 
     int16_t maxScore = 0;
-    int32_t maxScorePos = 0;
-    int32_t patternIndex = 0;
-    int32_t lastIndex = 0;
+    size_t maxScorePos = 0;
+    size_t patternIndex = 0;
+    size_t lastIndex = 0;
     UChar32 firstPatternChar = pattern[0];
     UChar32 currentPatternChar = pattern[0];
     int16_t previousInitialScore = 0;
@@ -153,9 +151,9 @@ static int32_t fzfFuzzyMatchV2(const std::vector<UChar32>& text, const std::vect
     auto lowerTextSlice = lowerText.subspan(firstIndexOf);
     auto initialScoresSlice = std::span(initialScores).subspan(firstIndexOf);
     auto consecutiveScoresSlice = std::span(consecutiveScores).subspan(firstIndexOf);
-    auto bonusesSlice = std::span(bonusesSpan).subspan(firstIndexOf, textSize - firstIndexOf);
+    auto bonusesSlice = std::span(bonusesSpan).subspan(firstIndexOf, text.size() - firstIndexOf);
 
-    for (int32_t i = 0; i < lowerTextSlice.size(); i++)
+    for (size_t i = 0; i < lowerTextSlice.size(); i++)
     {
         const auto currentChar = lowerTextSlice[i];
         const auto currentClass = classOf(text[i + firstIndexOf]);
@@ -166,11 +164,11 @@ static int32_t fzfFuzzyMatchV2(const std::vector<UChar32>& text, const std::vect
         //currentPatternChar was already folded in ParsePattern
         if (currentChar == currentPatternChar)
         {
-            if (patternIndex < patternSize)
+            if (patternIndex < pattern.size())
             {
                 firstOccurrenceOfEachChar[patternIndex] = firstIndexOf + i;
                 patternIndex++;
-                if (patternIndex < patternSize)
+                if (patternIndex < pattern.size())
                 {
                     currentPatternChar = pattern[patternIndex];
                 }
@@ -182,7 +180,7 @@ static int32_t fzfFuzzyMatchV2(const std::vector<UChar32>& text, const std::vect
             int16_t score = ScoreMatch + bonus * BonusFirstCharMultiplier;
             initialScoresSlice[i] = score;
             consecutiveScoresSlice[i] = 1;
-            if (patternSize == 1 && (score > maxScore))
+            if (pattern.size() == 1 && (score > maxScore))
             {
                 maxScore = score;
                 maxScorePos = firstIndexOf + i;
@@ -202,12 +200,12 @@ static int32_t fzfFuzzyMatchV2(const std::vector<UChar32>& text, const std::vect
         previousInitialScore = initialScoresSlice[i];
     }
 
-    if (patternIndex != patternSize)
+    if (patternIndex != pattern.size())
     {
         return 0;
     }
 
-    if (patternSize == 1)
+    if (pattern.size() == 1)
     {
         if (pos)
         {
@@ -218,8 +216,8 @@ static int32_t fzfFuzzyMatchV2(const std::vector<UChar32>& text, const std::vect
 
     const auto firstOccurrenceOfFirstChar = firstOccurrenceOfEachChar[0];
     const auto width = lastIndex - firstOccurrenceOfFirstChar + 1;
-    const auto rows = static_cast<int32_t>(pattern.size());
-    auto consecutiveCharMatrixSize = width * patternSize;
+    const auto rows = pattern.size();
+    auto consecutiveCharMatrixSize = width * pattern.size();
 
     std::vector<int16_t> scoreMatrix(width * rows);
     std::copy_n(initialScores.begin() + firstOccurrenceOfFirstChar, width, scoreMatrix.begin());
@@ -231,13 +229,13 @@ static int32_t fzfFuzzyMatchV2(const std::vector<UChar32>& text, const std::vect
 
     auto patternSliceStr = std::span(pattern).subspan(1);
 
-    for (int32_t off = 0; off < patternSize - 1; off++)
+    for (size_t off = 0; off < pattern.size() - 1; off++)
     {
         auto patternCharOffset = firstOccurrenceOfEachChar[off + 1];
         auto sliceLen = lastIndex - patternCharOffset + 1;
         currentPatternChar = patternSliceStr[off];
         patternIndex = off + 1;
-        int32_t row = patternIndex * width;
+        auto row = patternIndex * width;
         inGap = false;
         std::span<const UChar32> textSlice = lowerText.subspan(patternCharOffset, sliceLen);
         std::span bonusSlice(bonusesSpan.begin() + patternCharOffset, textSlice.size());
@@ -252,11 +250,11 @@ static int32_t fzfFuzzyMatchV2(const std::vector<UChar32>& text, const std::vect
             scoreMatrixLeftSlice[0] = 0;
         }
 
-        for (int32_t j = 0; j < textSlice.size(); j++)
+        for (size_t j = 0; j < textSlice.size(); j++)
         {
-            UChar32 currentChar = textSlice[j];
-            int32_t column = patternCharOffset + j;
-            int16_t score = inGap ? scoreMatrixLeftSlice[j] + ScoreGapExtension : scoreMatrixLeftSlice[j] + ScoreGapStart;
+            const auto currentChar = textSlice[j];
+            const auto column = patternCharOffset + j;
+            const int16_t score = inGap ? scoreMatrixLeftSlice[j] + ScoreGapExtension : scoreMatrixLeftSlice[j] + ScoreGapStart;
             int16_t diagonalScore = 0;
             int16_t consecutive = 0;
             if (currentChar == currentPatternChar)
@@ -285,7 +283,7 @@ static int32_t fzfFuzzyMatchV2(const std::vector<UChar32>& text, const std::vect
             consecutiveCharMatrixSlice[j] = consecutive;
             inGap = (diagonalScore < score);
             int16_t cellScore = std::max(int16_t{ 0 }, std::max(diagonalScore, score));
-            if (off == patternSize - 2 && cellScore > maxScore)
+            if (off + 2 == pattern.size() && cellScore > maxScore)
             {
                 maxScore = cellScore;
                 maxScorePos = column;
@@ -294,17 +292,18 @@ static int32_t fzfFuzzyMatchV2(const std::vector<UChar32>& text, const std::vect
         }
     }
 
-    int32_t currentColIndex = maxScorePos;
+    size_t currentColIndex = maxScorePos;
     if (pos)
     {
-        patternIndex = patternSize - 1;
+        patternIndex = pattern.size() - 1;
         bool preferCurrentMatch = true;
         while (true)
         {
-            int32_t rowStartIndex = patternIndex * width;
-            int colOffset = currentColIndex - firstOccurrenceOfFirstChar;
-            int cellScore = scoreMatrix[rowStartIndex + colOffset];
-            int diagonalCellScore = 0, leftCellScore = 0;
+            const auto rowStartIndex = patternIndex * width;
+            const auto colOffset = currentColIndex - firstOccurrenceOfFirstChar;
+            const auto cellScore = scoreMatrix[rowStartIndex + colOffset];
+            int32_t diagonalCellScore = 0;
+            int32_t leftCellScore = 0;
 
             if (patternIndex > 0 && currentColIndex >= firstOccurrenceOfEachChar[patternIndex])
             {
@@ -375,11 +374,11 @@ std::optional<MatchResult> fzf::matcher::Match(std::wstring_view text, const Pat
     const auto textCodePoints = utf16ToUtf32(text);
 
     int32_t totalScore = 0;
-    std::vector<int32_t> allUtf32Pos;
+    std::vector<size_t> allUtf32Pos;
 
     for (const auto& term : pattern.terms)
     {
-        std::vector<int32_t> termPos;
+        std::vector<size_t> termPos;
         auto score = fzfFuzzyMatchV2(textCodePoints, term, &termPos);
         if (score <= 0)
         {
@@ -395,15 +394,15 @@ std::optional<MatchResult> fzf::matcher::Match(std::wstring_view text, const Pat
 
     std::vector<TextRun> runs;
     std::size_t nextCodePointPos = 0;
-    int32_t utf16Offset = 0;
+    size_t utf16Offset = 0;
 
     bool inRun = false;
-    int32_t runStart = 0;
+    size_t runStart = 0;
 
-    for (int32_t cpIndex = 0; cpIndex < static_cast<int32_t>(textCodePoints.size()); cpIndex++)
+    for (size_t cpIndex = 0; cpIndex < textCodePoints.size(); cpIndex++)
     {
-        const int32_t cp = textCodePoints[cpIndex];
-        const int32_t cpWidth = U16_LENGTH(cp);
+        const auto cp = textCodePoints[cpIndex];
+        const size_t cpWidth = U16_LENGTH(cp);
 
         const bool isMatch = (nextCodePointPos < allUtf32Pos.size() && allUtf32Pos[nextCodePointPos] == cpIndex);
         if (isMatch)

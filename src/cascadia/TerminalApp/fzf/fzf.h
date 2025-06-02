@@ -7,8 +7,8 @@ namespace fzf::matcher
 {
     struct TextRun
     {
-        int32_t Start;
-        int32_t End;
+        size_t Start;
+        size_t End;
     };
 
     struct MatchResult
