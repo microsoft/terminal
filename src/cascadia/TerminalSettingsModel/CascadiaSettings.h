@@ -144,6 +144,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         ActionArgFactory() = default;
 
+        static winrt::hstring GetNameForAction(ShortcutAction action);
         static Windows::Foundation::Collections::IMap<Model::ShortcutAction, winrt::hstring> AvailableShortcutActionsAndNames();
         static Model::IActionArgs GetEmptyArgsForAction(Model::ShortcutAction shortcutAction);
     };

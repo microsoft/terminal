@@ -350,9 +350,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             }
         }
 
-        const auto actionsAndNames = ActionArgFactory::AvailableShortcutActionsAndNames();
-        const auto found = actionsAndNames.HasKey(_Action);
-        return found ? actionsAndNames.Lookup(_Action) : winrt::hstring{};
+        return ActionArgFactory::GetNameForAction(_Action);
     }
 
     // Function Description:

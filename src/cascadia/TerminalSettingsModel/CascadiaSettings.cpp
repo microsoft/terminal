@@ -57,11 +57,11 @@ std::string_view Model::implementation::LoadStringResource(int resourceID)
     return { reinterpret_cast<const char*>(ptr), sz };
 }
 
-winrt::Windows::Foundation::Collections::IMap<Model::ShortcutAction, winrt::hstring> ActionArgFactory::AvailableShortcutActionsAndNames()
+winrt::hstring ActionArgFactory::GetNameForAction(Model::ShortcutAction action)
 {
     // Use a magic static to initialize this map, because we won't be able
     // to load the resources at _init_, only at runtime.
-    static auto GeneratedActionNames = []() {
+    static auto actionNames = []() {
         return std::unordered_map<ShortcutAction, winrt::hstring>{
             { ShortcutAction::AdjustFontSize, RS_(L"AdjustFontSizeCommandKey") },
             { ShortcutAction::CloseOtherPanes, RS_(L"CloseOtherPanesCommandKey") },
@@ -156,7 +156,19 @@ winrt::Windows::Foundation::Collections::IMap<Model::ShortcutAction, winrt::hstr
         };
     }();
 
-    return winrt::single_threaded_map(std::move(GeneratedActionNames));
+    const auto found = actionNames.find(action);
+    return found != actionNames.end() ? found->second : winrt::hstring{};
+}
+
+winrt::Windows::Foundation::Collections::IMap<Model::ShortcutAction, winrt::hstring> ActionArgFactory::AvailableShortcutActionsAndNames()
+{
+    std::unordered_map<ShortcutAction, winrt::hstring> actionNames;
+#define ON_ALL_ACTIONS(action) actionNames.emplace(ShortcutAction::action, GetNameForAction(ShortcutAction::action));
+
+    ALL_SHORTCUT_ACTIONS
+
+#undef ON_ALL_ACTIONS_WITH_ARGS
+    return winrt::single_threaded_map(std::move(actionNames));
 }
 
 Model::IActionArgs ActionArgFactory::GetEmptyArgsForAction(Model::ShortcutAction shortcutAction)

@@ -17,6 +17,7 @@ namespace Microsoft.Terminal.Settings.Model
 
     static runtimeclass ActionArgFactory
     {
+        static String GetNameForAction(Microsoft.Terminal.Settings.Model.ShortcutAction action);
         static Windows.Foundation.Collections.IMap<Microsoft.Terminal.Settings.Model.ShortcutAction, String> AvailableShortcutActionsAndNames { get; };
         static IActionArgs GetEmptyArgsForAction(Microsoft.Terminal.Settings.Model.ShortcutAction shortcutAction);
     }
