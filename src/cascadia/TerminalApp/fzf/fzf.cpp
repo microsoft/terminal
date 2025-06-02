@@ -63,7 +63,7 @@ static int32_t asciiFuzzyIndex(const std::vector<UChar32>& input, const std::vec
 {
     int32_t idx = 0;
     int32_t firstIdx = 0;
-    for (int32_t pi = 0; pi < pattern.size(); ++pi)
+    for (size_t pi = 0; pi < pattern.size(); ++pi)
     {
         idx = trySkip(input, pattern[pi], idx);
         if (idx < 0)
@@ -117,8 +117,8 @@ static CharClass classOf(UChar32 ch)
 
 static int32_t fzfFuzzyMatchV2(const std::vector<UChar32>& text, const std::vector<UChar32>& pattern, std::vector<int32_t>* pos)
 {
-    int32_t patternSize = static_cast<int32_t>(pattern.size());
-    int32_t textSize = static_cast<int32_t>(text.size());
+    const auto patternSize = static_cast<int32_t>(patternSize);
+    const auto textSize = static_cast<int32_t>(text.size());
 
     if (patternSize == 0)
     {
@@ -166,7 +166,7 @@ static int32_t fzfFuzzyMatchV2(const std::vector<UChar32>& text, const std::vect
         //currentPatternChar was already folded in ParsePattern
         if (currentChar == currentPatternChar)
         {
-            if (patternIndex < pattern.size())
+            if (patternIndex < patternSize)
             {
                 firstOccurrenceOfEachChar[patternIndex] = firstIndexOf + i;
                 patternIndex++;
@@ -202,12 +202,12 @@ static int32_t fzfFuzzyMatchV2(const std::vector<UChar32>& text, const std::vect
         previousInitialScore = initialScoresSlice[i];
     }
 
-    if (patternIndex != pattern.size())
+    if (patternIndex != patternSize)
     {
         return 0;
     }
 
-    if (pattern.size() == 1)
+    if (patternSize == 1)
     {
         if (pos)
         {
