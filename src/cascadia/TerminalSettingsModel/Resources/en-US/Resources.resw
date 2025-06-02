@@ -740,116 +740,11 @@
   <data name="OpenCWDCommandKey" xml:space="preserve">
     <value>Open current working directory</value>
   </data>
-  <data name="CopyText" xml:space="preserve">
-    <value>Copy text</value>
-  </data>
-  <data name="PasteText" xml:space="preserve">
-    <value>Paste text</value>
-  </data>
-  <data name="OpenNewTabDropdown" xml:space="preserve">
-    <value>Open new tab dropdown</value>
-  </data>
-  <data name="DuplicateTab" xml:space="preserve">
-    <value>Duplicate tab</value>
-  </data>
-  <data name="NewTab" xml:space="preserve">
-    <value>New tab</value>
-  </data>
-  <data name="CloseWindow" xml:space="preserve">
-    <value>Close window</value>
-  </data>
   <data name="CloseTab" xml:space="preserve">
     <value>Close tab</value>
   </data>
-  <data name="ClosePane" xml:space="preserve">
-    <value>Close pane</value>
-  </data>
-  <data name="NextTab" xml:space="preserve">
-    <value>Next tab</value>
-  </data>
-  <data name="PrevTab" xml:space="preserve">
-    <value>Previous tab</value>
-  </data>
   <data name="SendInput" xml:space="preserve">
     <value>Send input</value>
-  </data>
-  <data name="SplitPane" xml:space="preserve">
-    <value>Split pane</value>
-  </data>
-  <data name="ToggleSplitOrientation" xml:space="preserve">
-    <value>Toggle split orientation</value>
-  </data>
-  <data name="TogglePaneZoom" xml:space="preserve">
-    <value>Toggle pane zoom</value>
-  </data>
-  <data name="SwitchToTab" xml:space="preserve">
-    <value>Switch to tab</value>
-  </data>
-  <data name="AdjustFontSize" xml:space="preserve">
-    <value>Adjust font size</value>
-  </data>
-  <data name="ResetFontSize" xml:space="preserve">
-    <value>Reset font size</value>
-  </data>
-  <data name="ScrollUp" xml:space="preserve">
-    <value>Scroll up</value>
-  </data>
-  <data name="ScrollDown" xml:space="preserve">
-    <value>Scroll down</value>
-  </data>
-  <data name="ScrollUpPage" xml:space="preserve">
-    <value>Scroll up page</value>
-  </data>
-  <data name="ScrollDownPage" xml:space="preserve">
-    <value>Scroll down page</value>
-  </data>
-  <data name="ScrollToTop" xml:space="preserve">
-    <value>Scroll to top</value>
-  </data>
-  <data name="ScrollToBottom" xml:space="preserve">
-    <value>Scroll to bottom</value>
-  </data>
-  <data name="ScrollToMark" xml:space="preserve">
-    <value>Scroll to mark</value>
-  </data>
-  <data name="AddMark" xml:space="preserve">
-    <value>Add mark</value>
-  </data>
-  <data name="ClearMark" xml:space="preserve">
-    <value>Clear mark</value>
-  </data>
-  <data name="ClearAllMarks" xml:space="preserve">
-    <value>Clear all marks</value>
-  </data>
-  <data name="ResizePane" xml:space="preserve">
-    <value>Resize pane</value>
-  </data>
-  <data name="MoveFocus" xml:space="preserve">
-    <value>Move focus</value>
-  </data>
-  <data name="MovePane" xml:space="preserve">
-    <value>Move pane</value>
-  </data>
-  <data name="SwapPane" xml:space="preserve">
-    <value>Swap pane</value>
-  </data>
-  <data name="Find" xml:space="preserve">
-    <value>Find</value>
-  </data>
-  <data name="ToggleShaderEffects" xml:space="preserve">
-    <value>Toggle shader effects</value>
-  </data>
-  <data name="ToggleFocusMode" xml:space="preserve">
-    <value>Toggle focus mode</value>
-  </data>
-  <data name="ToggleFullscreen" xml:space="preserve">
-    <value>Toggle fullscreen</value>
-  </data>
-  <data name="ToggleAlwaysOnTop" xml:space="preserve">
-    <value>Toggle always on top</value>
-  </data>
-  <data name="OpenSettings" xml:space="preserve">
-    <value>Open settings</value>
   </data>
   <data name="SetFocusMode" xml:space="preserve">
     <value>Set focus mode</value>
@@ -863,83 +758,23 @@
   <data name="SetColorScheme" xml:space="preserve">
     <value>Set color scheme</value>
   </data>
-  <data name="SetTabColor" xml:space="preserve">
-    <value>Set tab color</value>
-  </data>
-  <data name="OpenTabColorPicker" xml:space="preserve">
-    <value>Open tab color picker</value>
-  </data>
-  <data name="RenameTab" xml:space="preserve">
-    <value>Rename tab</value>
-  </data>
-  <data name="OpenTabRenamer" xml:space="preserve">
-    <value>Open tab renamer</value>
-  </data>
-  <data name="ExecuteCommandline" xml:space="preserve">
-    <value>Execute command line</value>
-  </data>
-  <data name="ToggleCommandPalette" xml:space="preserve">
-    <value>Toggle command palette</value>
-  </data>
   <data name="CloseOtherTabs" xml:space="preserve">
     <value>Close other tabs</value>
   </data>
   <data name="CloseTabsAfter" xml:space="preserve">
     <value>Close tabs after</value>
   </data>
-  <data name="TabSearch" xml:space="preserve">
-    <value>Tab search</value>
-  </data>
   <data name="MoveTab" xml:space="preserve">
     <value>Move tab</value>
-  </data>
-  <data name="BreakIntoDebugger" xml:space="preserve">
-    <value>Break into debugger</value>
-  </data>
-  <data name="TogglePaneReadOnly" xml:space="preserve">
-    <value>Toggle pane read-only</value>
-  </data>
-  <data name="EnablePaneReadOnly" xml:space="preserve">
-    <value>Enable pane read-only</value>
-  </data>
-  <data name="DisablePaneReadOnly" xml:space="preserve">
-    <value>Disable pane read-only</value>
   </data>
   <data name="FindMatch" xml:space="preserve">
     <value>Find match</value>
   </data>
-  <data name="NewWindow" xml:space="preserve">
-    <value>New window</value>
-  </data>
-  <data name="IdentifyWindow" xml:space="preserve">
-    <value>Identify window</value>
-  </data>
-  <data name="IdentifyWindows" xml:space="preserve">
-    <value>Identify windows</value>
-  </data>
-  <data name="RenameWindow" xml:space="preserve">
-    <value>Rename window</value>
-  </data>
-  <data name="OpenWindowRenamer" xml:space="preserve">
-    <value>Open window renamer</value>
-  </data>
-  <data name="DisplayWorkingDirectory" xml:space="preserve">
-    <value>Display working directory</value>
-  </data>
   <data name="SearchForText" xml:space="preserve">
     <value>Search for text</value>
   </data>
-  <data name="GlobalSummon" xml:space="preserve">
-    <value>Global summon</value>
-  </data>
-  <data name="QuakeMode" xml:space="preserve">
-    <value>Quake mode</value>
-  </data>
   <data name="FocusPane" xml:space="preserve">
     <value>Focus pane</value>
-  </data>
-  <data name="OpenSystemMenu" xml:space="preserve">
-    <value>Open system menu</value>
   </data>
   <data name="ExportBuffer" xml:space="preserve">
     <value>Export buffer</value>
@@ -950,17 +785,8 @@
   <data name="MultipleActions" xml:space="preserve">
     <value>Multiple actions</value>
   </data>
-  <data name="Quit" xml:space="preserve">
-    <value>Quit</value>
-  </data>
   <data name="AdjustOpacity" xml:space="preserve">
     <value>Adjust opacity</value>
-  </data>
-  <data name="RestoreLastClosed" xml:space="preserve">
-    <value>Restore last closed</value>
-  </data>
-  <data name="SelectAll" xml:space="preserve">
-    <value>Select all</value>
   </data>
   <data name="SelectCommand" xml:space="preserve">
     <value>Select command</value>
@@ -968,47 +794,11 @@
   <data name="SelectOutput" xml:space="preserve">
     <value>Select output</value>
   </data>
-  <data name="MarkMode" xml:space="preserve">
-    <value>Mark mode</value>
-  </data>
-  <data name="ToggleBlockSelection" xml:space="preserve">
-    <value>Toggle block selection</value>
-  </data>
-  <data name="SwitchSelectionEndpoint" xml:space="preserve">
-    <value>Switch selection endpoint</value>
-  </data>
   <data name="Suggestions" xml:space="preserve">
     <value>Suggestions</value>
   </data>
   <data name="ColorSelection" xml:space="preserve">
     <value>Color selection</value>
-  </data>
-  <data name="ShowContextMenu" xml:space="preserve">
-    <value>Show context menu</value>
-  </data>
-  <data name="ExpandSelectionToWord" xml:space="preserve">
-    <value>Expand selection to word</value>
-  </data>
-  <data name="CloseOtherPanes" xml:space="preserve">
-    <value>Close other panes</value>
-  </data>
-  <data name="RestartConnection" xml:space="preserve">
-    <value>Restart connection</value>
-  </data>
-  <data name="ToggleBroadcastInput" xml:space="preserve">
-    <value>Toggle broadcast input</value>
-  </data>
-  <data name="OpenScratchpad" xml:space="preserve">
-    <value>Open scratchpad</value>
-  </data>
-  <data name="OpenAbout" xml:space="preserve">
-    <value>Open about</value>
-  </data>
-  <data name="QuickFix" xml:space="preserve">
-    <value>Quick fix</value>
-  </data>
-  <data name="OpenCWD" xml:space="preserve">
-    <value>Open current working directory</value>
   </data>
   <data name="WslDistroGeneratorDisplayName" xml:space="preserve">
     <value>WSL Distribution Profile Generator</value>
