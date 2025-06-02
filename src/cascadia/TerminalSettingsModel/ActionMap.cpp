@@ -626,6 +626,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 _KeyMap.erase(keys);
                 _KeyMap.emplace(keys, newID);
             }
+            PropagateCommandIDChanged.raise(senderCmd, oldID);
         }
         _RefreshKeyBindingCaches();
     }

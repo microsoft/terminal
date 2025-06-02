@@ -25,6 +25,8 @@ namespace Microsoft.Terminal.Settings.Model
         IVector<Command> ExpandedCommands { get; };
 
         Windows.Foundation.IAsyncOperation<IVector<Command> > FilterToSnippets(String CurrentCommandline, String CurrentWorkingDirectory);
+
+        event Windows.Foundation.TypedEventHandler<Command, String> PropagateCommandIDChanged;
     };
 
     [default_interface] runtimeclass ActionMap : IActionMapView

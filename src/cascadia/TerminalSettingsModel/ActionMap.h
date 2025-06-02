@@ -91,6 +91,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         winrt::Windows::Foundation::IAsyncOperation<winrt::Windows::Foundation::Collections::IVector<Model::Command>> FilterToSnippets(winrt::hstring currentCommandline, winrt::hstring currentWorkingDirectory);
 
+        til::typed_event<Model::Command, winrt::hstring> PropagateCommandIDChanged;
+
     private:
         Model::Command _GetActionByID(const winrt::hstring& actionID) const;
         std::optional<winrt::hstring> _GetActionIdByKeyChordInternal(const Control::KeyChord& keys) const;
