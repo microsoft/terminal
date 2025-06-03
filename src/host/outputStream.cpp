@@ -280,9 +280,9 @@ unsigned int ConhostInternalGetSet::GetInputCodePage() const
 // - content - the text to be copied.
 // Return Value:
 // - <none>
-void ConhostInternalGetSet::CopyToClipboard(const wil::zwstring_view /*content*/)
+void ConhostInternalGetSet::CopyToClipboard(const wil::zwstring_view content)
 {
-    // TODO
+    ServiceLocator::LocateGlobals().getConsoleInformation().CopyTextToClipboard(content);
 }
 
 // Routine Description:
