@@ -57,7 +57,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     template<typename T>
     as_view_t<T> safe_slice_abs(const T& view, size_t beg, size_t end)
     {
-        const auto len = view.size();
+        const size_t len = view.size();
         end = std::min(end, len);
         beg = std::min(beg, end);
         return { view.data() + beg, end - beg };
@@ -66,7 +66,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     template<typename T>
     as_view_t<T> safe_slice_len(const T& view, size_t start, size_t count)
     {
-        const auto len = view.size();
+        const size_t len = view.size();
         start = std::min(start, len);
         count = std::min(count, len - start);
         return { view.data() + start, count };
