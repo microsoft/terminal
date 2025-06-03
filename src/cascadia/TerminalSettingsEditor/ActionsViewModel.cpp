@@ -907,8 +907,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         IsInEditMode(!_IsInEditMode);
         if (_IsInEditMode)
         {
-            // if we're in edit mode,
-            // - pre populate the text box with the current keys
+            // if we're in edit mode, populate the text box with the current keys
             ProposedKeys(_currentKeys);
         }
     }
