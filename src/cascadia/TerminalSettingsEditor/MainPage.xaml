@@ -2,17 +2,16 @@
     Copyright (c) Microsoft Corporation. All rights reserved. Licensed under
     the MIT License. See LICENSE in the project root for license information.
 -->
-<Page
-    x:Class="Microsoft.Terminal.Settings.Editor.MainPage"
-    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    xmlns:local="using:Microsoft.Terminal.Settings.Editor"
-    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    xmlns:mtu="using:Microsoft.Terminal.UI"
-    xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
-    xmlns:tsm="using:Microsoft.Terminal.Settings.Model"
-    mc:Ignorable="d">
+<Page x:Class="Microsoft.Terminal.Settings.Editor.MainPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+      xmlns:local="using:Microsoft.Terminal.Settings.Editor"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+      xmlns:mtu="using:Microsoft.Terminal.UI"
+      xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
+      xmlns:tsm="using:Microsoft.Terminal.Settings.Model"
+      mc:Ignorable="d">
 
     <Page.Resources>
         <ResourceDictionary>
@@ -43,30 +42,33 @@
 
                         <ResourceDictionary x:Key="HighContrast">
                             <!--  Define resources for HighContrast mode here  -->
-                            <StaticResource x:Key="SettingsPageBackground" ResourceKey="SystemColorWindowBrush" />
-                            <StaticResource x:Key="SettingsPageMicaBackground" ResourceKey="SystemColorWindowBrush" />
+                            <StaticResource x:Key="SettingsPageBackground"
+                                            ResourceKey="SystemColorWindowBrush" />
+                            <StaticResource x:Key="SettingsPageMicaBackground"
+                                            ResourceKey="SystemColorWindowBrush" />
                         </ResourceDictionary>
                     </ResourceDictionary.ThemeDictionaries>
                 </ResourceDictionary>
 
             </ResourceDictionary.MergedDictionaries>
 
-            <SolidColorBrush x:Key="NavigationViewExpandedPaneBackground" Color="Transparent" />
-            <SolidColorBrush x:Key="NavigationViewContentBackground" Color="Transparent" />
+            <SolidColorBrush x:Key="NavigationViewExpandedPaneBackground"
+                             Color="Transparent" />
+            <SolidColorBrush x:Key="NavigationViewContentBackground"
+                             Color="Transparent" />
 
             <Thickness x:Key="NavigationViewContentGridBorderThickness">0</Thickness>
             <Thickness x:Key="NavigationViewMinimalContentGridBorderThickness">0</Thickness>
         </ResourceDictionary>
     </Page.Resources>
 
-    <muxc:NavigationView
-        x:Name="SettingsNav"
-        Background="{ThemeResource SettingsPageBackground}"
-        IsBackButtonVisible="Collapsed"
-        IsSettingsVisible="False"
-        ItemInvoked="SettingsNav_ItemInvoked"
-        Loaded="SettingsNav_Loaded"
-        TabFocusNavigation="Cycle">
+    <muxc:NavigationView x:Name="SettingsNav"
+                         Background="{ThemeResource SettingsPageBackground}"
+                         IsBackButtonVisible="Collapsed"
+                         IsSettingsVisible="False"
+                         ItemInvoked="SettingsNav_ItemInvoked"
+                         Loaded="SettingsNav_Loaded"
+                         TabFocusNavigation="Cycle">
         <muxc:NavigationView.Resources>
             <ResourceDictionary>
                 <Thickness x:Key="NavigationViewHeaderMargin">0,4,0,0</Thickness>
@@ -74,11 +76,10 @@
         </muxc:NavigationView.Resources>
         <muxc:NavigationView.Header>
             <Grid Padding="16,0">
-                <muxc:BreadcrumbBar
-                    x:Name="NavigationBreadcrumbBar"
-                    MaxWidth="1000"
-                    ItemClicked="BreadcrumbBar_ItemClicked"
-                    ItemsSource="{x:Bind Breadcrumbs}">
+                <muxc:BreadcrumbBar x:Name="NavigationBreadcrumbBar"
+                                    MaxWidth="1000"
+                                    ItemClicked="BreadcrumbBar_ItemClicked"
+                                    ItemsSource="{x:Bind Breadcrumbs}">
                     <muxc:BreadcrumbBar.ItemTemplate>
                         <DataTemplate x:DataType="local:Breadcrumb">
                             <TextBlock Text="{x:Bind Label}" />
@@ -99,72 +100,79 @@
 
         <muxc:NavigationView.MenuItems>
 
-            <muxc:NavigationViewItem x:Uid="Nav_Launch" Tag="Launch_Nav">
+            <muxc:NavigationViewItem x:Uid="Nav_Launch"
+                                     Tag="Launch_Nav">
                 <muxc:NavigationViewItem.Icon>
                     <FontIcon Glyph="&#xE7B5;" />
                 </muxc:NavigationViewItem.Icon>
             </muxc:NavigationViewItem>
 
-            <muxc:NavigationViewItem x:Uid="Nav_Interaction" Tag="Interaction_Nav">
+            <muxc:NavigationViewItem x:Uid="Nav_Interaction"
+                                     Tag="Interaction_Nav">
                 <muxc:NavigationViewItem.Icon>
                     <FontIcon Glyph="&#xE7C9;" />
                 </muxc:NavigationViewItem.Icon>
             </muxc:NavigationViewItem>
 
-            <muxc:NavigationViewItem x:Uid="Nav_Appearance" Tag="GlobalAppearance_Nav">
+            <muxc:NavigationViewItem x:Uid="Nav_Appearance"
+                                     Tag="GlobalAppearance_Nav">
                 <muxc:NavigationViewItem.Icon>
                     <FontIcon Glyph="&#xE771;" />
                 </muxc:NavigationViewItem.Icon>
             </muxc:NavigationViewItem>
 
-            <muxc:NavigationViewItem
-                x:Name="ColorSchemesNavItem"
-                x:Uid="Nav_ColorSchemes"
-                Tag="ColorSchemes_Nav">
+            <muxc:NavigationViewItem x:Name="ColorSchemesNavItem"
+                                     x:Uid="Nav_ColorSchemes"
+                                     Tag="ColorSchemes_Nav">
                 <muxc:NavigationViewItem.Icon>
                     <FontIcon Glyph="&#xE790;" />
                 </muxc:NavigationViewItem.Icon>
             </muxc:NavigationViewItem>
 
-            <muxc:NavigationViewItem x:Uid="Nav_Rendering" Tag="Rendering_Nav">
+            <muxc:NavigationViewItem x:Uid="Nav_Rendering"
+                                     Tag="Rendering_Nav">
                 <muxc:NavigationViewItem.Icon>
                     <FontIcon Glyph="&#xE7F8;" />
                 </muxc:NavigationViewItem.Icon>
             </muxc:NavigationViewItem>
 
-            <muxc:NavigationViewItem x:Uid="Nav_Compatibility" Tag="Compatibility_Nav">
+            <muxc:NavigationViewItem x:Uid="Nav_Compatibility"
+                                     Tag="Compatibility_Nav">
                 <muxc:NavigationViewItem.Icon>
                     <FontIcon Glyph="&#xEC7A;" />
                 </muxc:NavigationViewItem.Icon>
             </muxc:NavigationViewItem>
 
-            <muxc:NavigationViewItem x:Uid="Nav_Actions" Tag="Actions_Nav">
+            <muxc:NavigationViewItem x:Uid="Nav_Actions"
+                                     Tag="Actions_Nav">
                 <muxc:NavigationViewItem.Icon>
                     <FontIcon Glyph="&#xE765;" />
                 </muxc:NavigationViewItem.Icon>
             </muxc:NavigationViewItem>
 
-            <muxc:NavigationViewItem x:Uid="Nav_NewTabMenu" Tag="NewTabMenu_Nav">
+            <muxc:NavigationViewItem x:Uid="Nav_NewTabMenu"
+                                     Tag="NewTabMenu_Nav">
                 <muxc:NavigationViewItem.Icon>
                     <FontIcon Glyph="&#xE71d;" />
                 </muxc:NavigationViewItem.Icon>
             </muxc:NavigationViewItem>
 
-            <muxc:NavigationViewItem x:Uid="Nav_Extensions" Tag="Extensions_Nav">
+            <muxc:NavigationViewItem x:Uid="Nav_Extensions"
+                                     Tag="Extensions_Nav">
                 <muxc:NavigationViewItem.Icon>
                     <FontIcon Glyph="&#xEA86;" />
                 </muxc:NavigationViewItem.Icon>
                 <muxc:NavigationViewItem.InfoBadge>
-                    <muxc:InfoBadge Style="{StaticResource NewInfoBadge}" Visibility="{x:Bind ExtensionsVM.DisplayBadge, Mode=OneWay}" />
+                    <muxc:InfoBadge Style="{StaticResource NewInfoBadge}"
+                                    Visibility="{x:Bind ExtensionsVM.DisplayBadge, Mode=OneWay}" />
                 </muxc:NavigationViewItem.InfoBadge>
             </muxc:NavigationViewItem>
 
             <muxc:NavigationViewItemHeader x:Uid="Nav_Profiles" />
 
-            <muxc:NavigationViewItem
-                x:Name="BaseLayerMenuItem"
-                x:Uid="Nav_ProfileDefaults"
-                Tag="GlobalProfile_Nav">
+            <muxc:NavigationViewItem x:Name="BaseLayerMenuItem"
+                                     x:Uid="Nav_ProfileDefaults"
+                                     Tag="GlobalProfile_Nav">
                 <muxc:NavigationViewItem.Icon>
                     <FontIcon Glyph="&#xE81E;" />
                 </muxc:NavigationViewItem.Icon>
@@ -174,11 +182,10 @@
 
         <muxc:NavigationView.FooterMenuItems>
             <!--  The OpenJson item needs both Tapped and KeyDown handler  -->
-            <muxc:NavigationViewItem
-                x:Name="OpenJsonNavItem"
-                x:Uid="Nav_OpenJSON"
-                SelectsOnInvoked="False"
-                Tag="OpenJson_Nav">
+            <muxc:NavigationViewItem x:Name="OpenJsonNavItem"
+                                     x:Uid="Nav_OpenJSON"
+                                     SelectsOnInvoked="False"
+                                     Tag="OpenJson_Nav">
                 <muxc:NavigationViewItem.Icon>
                     <FontIcon Glyph="&#xE713;" />
                 </muxc:NavigationViewItem.Icon>
@@ -190,11 +197,11 @@
                 <RowDefinition Height="*" />
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
-            <ScrollViewer x:Name="SettingsMainPage_ScrollViewer" Grid.Row="0">
-                <Frame
-                    x:Name="contentFrame"
-                    Grid.Row="0"
-                    Padding="16,0,16,48">
+            <ScrollViewer x:Name="SettingsMainPage_ScrollViewer"
+                          Grid.Row="0">
+                <Frame x:Name="contentFrame"
+                       Grid.Row="0"
+                       Padding="16,0,16,48">
                     <Frame.ContentTransitions>
                         <TransitionCollection>
                             <NavigationThemeTransition>
@@ -207,33 +214,28 @@
                 </Frame>
             </ScrollViewer>
             <!--  Explicitly set the background color on grid to prevent the navigation animation from overflowing it  -->
-            <Grid
-                Grid.Row="1"
-                Height="56"
-                BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}"
-                BorderThickness="0,1,0,0">
+            <Grid Grid.Row="1"
+                  Height="56"
+                  BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}"
+                  BorderThickness="0,1,0,0">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
-                <StackPanel
-                    Margin="32,0,0,0"
-                    HorizontalAlignment="Left"
-                    VerticalAlignment="Center"
-                    Orientation="Vertical">
-                    <TextBlock
-                        x:Uid="Settings_UnsavedSettingsWarning"
-                        Foreground="Goldenrod"
-                        TextAlignment="Left"
-                        Visibility="Collapsed" />
-                    <StackPanel
-                        VerticalAlignment="Center"
-                        Orientation="Horizontal"
-                        Spacing="4"
-                        Visibility="{x:Bind tsm:CascadiaSettings.IsPortableMode, Mode=OneTime}">
-                        <FontIcon
-                            FontFamily="{StaticResource SymbolThemeFontFamily}"
-                            Foreground="SlateBlue"
-                            Glyph="&#xE946;" />
+                <StackPanel Margin="32,0,0,0"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Center"
+                            Orientation="Vertical">
+                    <TextBlock x:Uid="Settings_UnsavedSettingsWarning"
+                               Foreground="Goldenrod"
+                               TextAlignment="Left"
+                               Visibility="Collapsed" />
+                    <StackPanel VerticalAlignment="Center"
+                                Orientation="Horizontal"
+                                Spacing="4"
+                                Visibility="{x:Bind tsm:CascadiaSettings.IsPortableMode, Mode=OneTime}">
+                        <FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}"
+                                  Foreground="SlateBlue"
+                                  Glyph="&#xE946;" />
                         <TextBlock Foreground="SlateBlue">
                             <Run x:Uid="Settings_PortableModeNote" />
                             <Hyperlink x:Uid="Settings_PortableModeInfoLink">
@@ -242,21 +244,18 @@
                         </TextBlock>
                     </StackPanel>
                 </StackPanel>
-                <StackPanel
-                    Margin="0,0,32,0"
-                    HorizontalAlignment="Right"
-                    VerticalAlignment="Center"
-                    Orientation="Horizontal">
-                    <Button
-                        x:Name="SaveButton"
-                        x:Uid="Settings_SaveSettingsButton"
-                        Click="SaveButton_Click"
-                        Style="{StaticResource AccentButtonStyle}" />
-                    <Button
-                        x:Name="ResetButton"
-                        x:Uid="Settings_ResetSettingsButton"
-                        Margin="8,0,0,0"
-                        Click="ResetButton_Click" />
+                <StackPanel Margin="0,0,32,0"
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Center"
+                            Orientation="Horizontal">
+                    <Button x:Name="SaveButton"
+                            x:Uid="Settings_SaveSettingsButton"
+                            Click="SaveButton_Click"
+                            Style="{StaticResource AccentButtonStyle}" />
+                    <Button x:Name="ResetButton"
+                            x:Uid="Settings_ResetSettingsButton"
+                            Margin="8,0,0,0"
+                            Click="ResetButton_Click" />
                 </StackPanel>
             </Grid>
         </Grid>
