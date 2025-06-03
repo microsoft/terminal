@@ -68,7 +68,7 @@ struct InitListPlaceholder
 
 // append this argument's description to the internal vector
 #define APPEND_ARG_DESCRIPTION(type, name, jsonKey, required, tag, ...) \
-    _argDescriptions.push_back({ L## #name, L## #type, std::wstring_view(L## #required) != L"false", tag });
+    _argDescriptors.push_back({ L## #name, L## #type, std::wstring_view(L## #required) != L"false", tag });
 
 // check each property in the Equals() method. You'll note there's a stray
 // `true` in the definition of Equals() below, that's to deal with trailing
@@ -142,108 +142,108 @@ struct InitListPlaceholder
 //   * NewTerminalArgs has a ToCommandline method it needs to additionally declare.
 //   * GlobalSummonArgs has the QuakeModeFromJson helper
 
-#define ACTION_ARG_BODY(className, argsMacro)                  \
-    className(){ argsMacro(APPEND_ARG_DESCRIPTION) };          \
-    className(                                                 \
-        argsMacro(CTOR_PARAMS) InitListPlaceholder = {}) :     \
-        argsMacro(CTOR_INIT) _placeholder{} {                  \
-            argsMacro(APPEND_ARG_DESCRIPTION)                  \
-        };                                                     \
-    argsMacro(DECLARE_ARGS);                                   \
-                                                               \
-private:                                                       \
-    InitListPlaceholder _placeholder;                          \
-    std::vector<ArgDescription> _argDescriptions;              \
-                                                               \
-public:                                                        \
-    hstring GenerateName() const;                              \
-    bool Equals(const IActionArgs& other)                      \
-    {                                                          \
-        auto otherAsUs = other.try_as<className>();            \
-        if (otherAsUs)                                         \
-        {                                                      \
-            return true argsMacro(EQUALS_ARGS);                \
-        }                                                      \
-        return false;                                          \
-    };                                                         \
-    static FromJsonResult FromJson(const Json::Value& json)    \
-    {                                                          \
-        auto args = winrt::make_self<className>();             \
-        argsMacro(FROM_JSON_ARGS);                             \
-        return { *args, {} };                                  \
-    }                                                          \
-    static Json::Value ToJson(const IActionArgs& val)          \
-    {                                                          \
-        if (!val)                                              \
-        {                                                      \
-            return {};                                         \
-        }                                                      \
-        Json::Value json{ Json::ValueType::objectValue };      \
-        const auto args{ get_self<className>(val) };           \
-        argsMacro(TO_JSON_ARGS);                               \
-        return json;                                           \
-    }                                                          \
-    IActionArgs Copy() const                                   \
-    {                                                          \
-        auto copy{ winrt::make_self<className>() };            \
-        argsMacro(COPY_ARGS);                                  \
-        copy->_argDescriptions = _argDescriptions;             \
-        return *copy;                                          \
-    }                                                          \
-    size_t Hash() const                                        \
-    {                                                          \
-        til::hasher h;                                         \
-        argsMacro(HASH_ARGS);                                  \
-        return h.finalize();                                   \
-    }                                                          \
-    uint32_t GetArgCount() const                               \
-    {                                                          \
-        return gsl::narrow<uint32_t>(_argDescriptions.size()); \
-    }                                                          \
-    ArgDescription GetArgDescriptionAt(uint32_t index) const   \
-    {                                                          \
-        return _argDescriptions.at(index);                     \
-    }                                                          \
-    IInspectable GetArgAt(uint32_t index) const                \
-    {                                                          \
-        uint32_t curIndex{ 0 };                                \
-        argsMacro(GET_ARG_BY_INDEX) return nullptr;            \
-    }                                                          \
-    void SetArgAt(uint32_t index, IInspectable value)          \
-    {                                                          \
-        uint32_t curIndex{ 0 };                                \
-        argsMacro(SET_ARG_BY_INDEX)                            \
+#define ACTION_ARG_BODY(className, argsMacro)                 \
+    className(){ argsMacro(APPEND_ARG_DESCRIPTION) };         \
+    className(                                                \
+        argsMacro(CTOR_PARAMS) InitListPlaceholder = {}) :    \
+        argsMacro(CTOR_INIT) _placeholder{} {                 \
+            argsMacro(APPEND_ARG_DESCRIPTION)                 \
+        };                                                    \
+    argsMacro(DECLARE_ARGS);                                  \
+                                                              \
+private:                                                      \
+    InitListPlaceholder _placeholder;                         \
+    std::vector<ArgDescriptor> _argDescriptors;               \
+                                                              \
+public:                                                       \
+    hstring GenerateName() const;                             \
+    bool Equals(const IActionArgs& other)                     \
+    {                                                         \
+        auto otherAsUs = other.try_as<className>();           \
+        if (otherAsUs)                                        \
+        {                                                     \
+            return true argsMacro(EQUALS_ARGS);               \
+        }                                                     \
+        return false;                                         \
+    };                                                        \
+    static FromJsonResult FromJson(const Json::Value& json)   \
+    {                                                         \
+        auto args = winrt::make_self<className>();            \
+        argsMacro(FROM_JSON_ARGS);                            \
+        return { *args, {} };                                 \
+    }                                                         \
+    static Json::Value ToJson(const IActionArgs& val)         \
+    {                                                         \
+        if (!val)                                             \
+        {                                                     \
+            return {};                                        \
+        }                                                     \
+        Json::Value json{ Json::ValueType::objectValue };     \
+        const auto args{ get_self<className>(val) };          \
+        argsMacro(TO_JSON_ARGS);                              \
+        return json;                                          \
+    }                                                         \
+    IActionArgs Copy() const                                  \
+    {                                                         \
+        auto copy{ winrt::make_self<className>() };           \
+        argsMacro(COPY_ARGS);                                 \
+        copy->_argDescriptors = _argDescriptors;              \
+        return *copy;                                         \
+    }                                                         \
+    size_t Hash() const                                       \
+    {                                                         \
+        til::hasher h;                                        \
+        argsMacro(HASH_ARGS);                                 \
+        return h.finalize();                                  \
+    }                                                         \
+    uint32_t GetArgCount() const                              \
+    {                                                         \
+        return gsl::narrow<uint32_t>(_argDescriptors.size()); \
+    }                                                         \
+    ArgDescriptor GetArgDescriptorAt(uint32_t index) const    \
+    {                                                         \
+        return _argDescriptors.at(index);                     \
+    }                                                         \
+    IInspectable GetArgAt(uint32_t index) const               \
+    {                                                         \
+        uint32_t curIndex{ 0 };                               \
+        argsMacro(GET_ARG_BY_INDEX) return nullptr;           \
+    }                                                         \
+    void SetArgAt(uint32_t index, IInspectable value)         \
+    {                                                         \
+        uint32_t curIndex{ 0 };                               \
+        argsMacro(SET_ARG_BY_INDEX)                           \
     }
 
-#define PARTIAL_ACTION_ARG_BODY(className, argsMacro)          \
-    className(){ argsMacro(APPEND_ARG_DESCRIPTION) };          \
-    className(                                                 \
-        argsMacro(CTOR_PARAMS) InitListPlaceholder = {}) :     \
-        argsMacro(CTOR_INIT) _placeholder{} {                  \
-            argsMacro(APPEND_ARG_DESCRIPTION)                  \
-        };                                                     \
-    argsMacro(DECLARE_ARGS);                                   \
-                                                               \
-private:                                                       \
-    InitListPlaceholder _placeholder;                          \
-    std::vector<ArgDescription> _argDescriptions;              \
-                                                               \
-public:                                                        \
-    uint32_t GetArgCount() const                               \
-    {                                                          \
-        return gsl::narrow<uint32_t>(_argDescriptions.size()); \
-    }                                                          \
-    ArgDescription GetArgDescriptionAt(uint32_t index) const   \
-    {                                                          \
-        return _argDescriptions.at(index);                     \
-    }                                                          \
-    IInspectable GetArgAt(uint32_t index) const                \
-    {                                                          \
-        uint32_t curIndex{ 0 };                                \
-        argsMacro(GET_ARG_BY_INDEX) return nullptr;            \
-    }                                                          \
-    void SetArgAt(uint32_t index, IInspectable value)          \
-    {                                                          \
-        uint32_t curIndex{ 0 };                                \
-        argsMacro(SET_ARG_BY_INDEX)                            \
+#define PARTIAL_ACTION_ARG_BODY(className, argsMacro)         \
+    className(){ argsMacro(APPEND_ARG_DESCRIPTION) };         \
+    className(                                                \
+        argsMacro(CTOR_PARAMS) InitListPlaceholder = {}) :    \
+        argsMacro(CTOR_INIT) _placeholder{} {                 \
+            argsMacro(APPEND_ARG_DESCRIPTION)                 \
+        };                                                    \
+    argsMacro(DECLARE_ARGS);                                  \
+                                                              \
+private:                                                      \
+    InitListPlaceholder _placeholder;                         \
+    std::vector<ArgDescriptor> _argDescriptors;               \
+                                                              \
+public:                                                       \
+    uint32_t GetArgCount() const                              \
+    {                                                         \
+        return gsl::narrow<uint32_t>(_argDescriptors.size()); \
+    }                                                         \
+    ArgDescriptor GetArgDescriptorAt(uint32_t index) const    \
+    {                                                         \
+        return _argDescriptors.at(index);                     \
+    }                                                         \
+    IInspectable GetArgAt(uint32_t index) const               \
+    {                                                         \
+        uint32_t curIndex{ 0 };                               \
+        argsMacro(GET_ARG_BY_INDEX) return nullptr;           \
+    }                                                         \
+    void SetArgAt(uint32_t index, IInspectable value)         \
+    {                                                         \
+        uint32_t curIndex{ 0 };                               \
+        argsMacro(SET_ARG_BY_INDEX)                           \
     }

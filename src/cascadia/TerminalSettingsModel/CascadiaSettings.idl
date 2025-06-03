@@ -15,6 +15,13 @@ namespace Microsoft.Terminal.Settings.Model
         Machine
     };
 
+    static runtimeclass ActionArgFactory
+    {
+        static String GetNameForAction(Microsoft.Terminal.Settings.Model.ShortcutAction action);
+        static Windows.Foundation.Collections.IMap<Microsoft.Terminal.Settings.Model.ShortcutAction, String> AvailableShortcutActionsAndNames { get; };
+        static IActionArgs GetEmptyArgsForAction(Microsoft.Terminal.Settings.Model.ShortcutAction shortcutAction);
+    }
+
     [default_interface] runtimeclass CascadiaSettings {
         static CascadiaSettings LoadDefaults();
         static CascadiaSettings LoadAll();
@@ -26,9 +33,6 @@ namespace Microsoft.Terminal.Settings.Model
 
         static String ApplicationDisplayName { get; };
         static String ApplicationVersion { get; };
-
-        static Windows.Foundation.Collections.IMap<Microsoft.Terminal.Settings.Model.ShortcutAction, String> AvailableShortcutActionsAndNames { get; };
-        static IActionArgs GetEmptyArgsForAction(Microsoft.Terminal.Settings.Model.ShortcutAction shortcutAction);
 
         CascadiaSettings(String userJSON, String inboxJSON);
 
