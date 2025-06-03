@@ -102,14 +102,14 @@ protected:                                                                  \
 // false, if we don't really care if the parameter is required or not.
 
 ////////////////////////////////////////////////////////////////////////////////
-#define COPY_TEXT_ARGS(X)                                                             \
+#define COPY_TEXT_ARGS(X)                                                                  \
     X(bool, DismissSelection, "dismissSelection", false, ArgTypeHint::None, true)          \
     X(bool, SingleLine, "singleLine", false, ArgTypeHint::None, false)                     \
     X(bool, WithControlSequences, "withControlSequences", false, ArgTypeHint::None, false) \
     X(Windows::Foundation::IReference<Control::CopyFormat>, CopyFormatting, "copyFormatting", false, ArgTypeHint::None, nullptr)
 
 ////////////////////////////////////////////////////////////////////////////////
-#define MOVE_PANE_ARGS(X)                                  \
+#define MOVE_PANE_ARGS(X)                                       \
     X(uint32_t, TabIndex, "index", false, ArgTypeHint::None, 0) \
     X(winrt::hstring, Window, "window", false, ArgTypeHint::None, L"")
 
@@ -189,7 +189,7 @@ protected:                                                                  \
 // Interestingly, the order MATTERS here. Window has to be BEFORE Direction,
 // because otherwise we won't have parsed the Window yet when we validate the
 // Direction.
-#define MOVE_TAB_ARGS(X)                                          \
+#define MOVE_TAB_ARGS(X)                                               \
     X(winrt::hstring, Window, "window", false, ArgTypeHint::None, L"") \
     X(MoveTabDirection, Direction, "direction", (args->Direction() == MoveTabDirection::None) && (args->Window().empty()), ArgTypeHint::None, MoveTabDirection::None)
 
@@ -217,13 +217,13 @@ protected:                                                                  \
     X(CommandPaletteLaunchMode, LaunchMode, "launchMode", false, ArgTypeHint::None, CommandPaletteLaunchMode::Action)
 
 ////////////////////////////////////////////////////////////////////////////////
-#define SAVE_TASK_ARGS(X)                                                                         \
+#define SAVE_TASK_ARGS(X)                                                                              \
     X(winrt::hstring, Name, "name", false, ArgTypeHint::None, L"")                                     \
     X(winrt::hstring, Commandline, "commandline", args->Commandline().empty(), ArgTypeHint::None, L"") \
     X(winrt::hstring, KeyChord, "keyChord", false, ArgTypeHint::None, L"")
 
 ////////////////////////////////////////////////////////////////////////////////
-#define SUGGESTIONS_ARGS(X)                                                               \
+#define SUGGESTIONS_ARGS(X)                                                                    \
     X(SuggestionsSource, Source, "source", false, ArgTypeHint::None, SuggestionsSource::Tasks) \
     X(bool, UseCommandline, "useCommandline", false, ArgTypeHint::None, false)
 
@@ -248,7 +248,7 @@ protected:                                                                  \
     X(winrt::hstring, QueryUrl, "queryUrl", false, ArgTypeHint::None, L"")
 
 ////////////////////////////////////////////////////////////////////////////////
-#define GLOBAL_SUMMON_ARGS(X)                                                                             \
+#define GLOBAL_SUMMON_ARGS(X)                                                                                  \
     X(winrt::hstring, Name, "name", false, ArgTypeHint::None, L"")                                             \
     X(Model::DesktopBehavior, Desktop, "desktop", false, ArgTypeHint::None, Model::DesktopBehavior::ToCurrent) \
     X(Model::MonitorBehavior, Monitor, "monitor", false, ArgTypeHint::None, Model::MonitorBehavior::ToMouse)   \
@@ -268,7 +268,7 @@ protected:                                                                  \
     X(winrt::Microsoft::Terminal::Control::ClearBufferType, Clear, "clear", false, ArgTypeHint::None, winrt::Microsoft::Terminal::Control::ClearBufferType::All)
 
 ////////////////////////////////////////////////////////////////////////////////
-#define ADJUST_OPACITY_ARGS(X)                             \
+#define ADJUST_OPACITY_ARGS(X)                                  \
     X(int32_t, Opacity, "opacity", false, ArgTypeHint::None, 0) \
     X(bool, Relative, "relative", false, ArgTypeHint::None, true)
 
@@ -281,13 +281,13 @@ protected:                                                                  \
     X(SelectOutputDirection, Direction, "direction", false, ArgTypeHint::None, SelectOutputDirection::Previous)
 
 ////////////////////////////////////////////////////////////////////////////////
-#define COLOR_SELECTION_ARGS(X)                                                                                    \
+#define COLOR_SELECTION_ARGS(X)                                                                                         \
     X(winrt::Microsoft::Terminal::Control::SelectionColor, Foreground, "foreground", false, ArgTypeHint::None, nullptr) \
     X(winrt::Microsoft::Terminal::Control::SelectionColor, Background, "background", false, ArgTypeHint::None, nullptr) \
     X(winrt::Microsoft::Terminal::Core::MatchMode, MatchMode, "matchMode", false, ArgTypeHint::None, winrt::Microsoft::Terminal::Core::MatchMode::None)
 
 ////////////////////////////////////////////////////////////////////////////////
-#define NEW_TERMINAL_ARGS(X)                                                                                                     \
+#define NEW_TERMINAL_ARGS(X)                                                                                                          \
     X(winrt::hstring, Commandline, "commandline", false, ArgTypeHint::None, L"")                                                      \
     X(winrt::hstring, StartingDirectory, "startingDirectory", false, ArgTypeHint::FolderPath, L"")                                    \
     X(winrt::hstring, TabTitle, "tabTitle", false, ArgTypeHint::None, L"")                                                            \
@@ -300,7 +300,7 @@ protected:                                                                  \
     X(Windows::Foundation::IReference<bool>, ReloadEnvironmentVariables, "reloadEnvironmentVariables", false, ArgTypeHint::None, nullptr)
 
 ////////////////////////////////////////////////////////////////////////////////
-#define SPLIT_PANE_ARGS(X)                                                                            \
+#define SPLIT_PANE_ARGS(X)                                                                                 \
     X(Model::SplitDirection, SplitDirection, "split", false, ArgTypeHint::None, SplitDirection::Automatic) \
     X(SplitType, SplitMode, "splitMode", false, ArgTypeHint::None, SplitType::Manual)                      \
     X(float, SplitSize, "size", false, ArgTypeHint::None, 0.5f)
