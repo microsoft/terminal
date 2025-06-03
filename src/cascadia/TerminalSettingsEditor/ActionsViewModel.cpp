@@ -233,7 +233,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             {
                 const auto actionString = unbox_value<hstring>(ProposedShortcutAction());
                 const auto actionEnum = _NameToActionMap.at(actionString);
-                const auto emptyArgs = CascadiaSettings::GetEmptyArgsForAction(actionEnum);
+                const auto emptyArgs = ActionArgFactory::GetEmptyArgsForAction(actionEnum);
                 // todo: probably need some better default values for empty args
                 // eg. for sendInput, where "input" is a required argument, "input" gets set to an empty string which does not satisfy the requirement
                 // i.e. if the user hits "save" immediately after switching to sendInput as the action (without adding something to the input field), they'll get an error
@@ -425,10 +425,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _NotifyChanges(L"DisplayName");
     }
 
-    ArgWrapper::ArgWrapper(const winrt::hstring& name, const winrt::hstring& type, const bool required, const Model::ArgTag tag, const Windows::Foundation::IInspectable& value) :
+    ArgWrapper::ArgWrapper(const winrt::hstring& name, const winrt::hstring& type, const bool required, const Model::ArgTypeHint typeHint, const Windows::Foundation::IInspectable& value) :
         _name{ name },
         _type{ type },
-        _tag{ tag },
+        _typeHint{ typeHint },
         _required{ required }
     {
         Value(value);
@@ -505,7 +505,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             ColorSchemeRequested.raise(*this, *this);
         }
-        else if (_tag == Model::ArgTag::ColorScheme)
+        else if (_typeHint == Model::ArgTypeHint::ColorScheme)
         {
             // special case of string, emit an event letting the actionsVM know we need the list of color scheme names
             ColorSchemeNamesRequested.raise(*this, *this);
@@ -813,7 +813,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void ActionArgsViewModel::Initialize()
     {
-        const auto shortcutArgs = _actionAndArgs.Args();
+        const auto shortcutArgs = _actionAndArgs.Args().as<Model::IActionArgsDescriptorAccess>();
         if (shortcutArgs)
         {
             const auto shortcutArgsNumItems = shortcutArgs.GetArgCount();
@@ -821,7 +821,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             for (uint32_t i = 0; i < shortcutArgsNumItems; i++)
             {
                 const auto argAtIndex = shortcutArgs.GetArgAt(i);
-                const auto argDescription = shortcutArgs.GetArgDescriptionAt(i);
+                const auto argDescription = shortcutArgs.GetArgDescriptorAt(i);
                 const auto argName = argDescription.Name;
                 const auto argType = argDescription.Type;
                 const auto argTag = argDescription.Tag;
@@ -835,7 +835,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                         {
                             const auto argWrapper = sender.as<Microsoft::Terminal::Settings::Editor::ArgWrapper>();
                             const auto newValue = argWrapper.Value();
-                            weak->_actionAndArgs.Args().SetArgAt(i, newValue);
+                            weak->_actionAndArgs.Args().as<Model::IActionArgsDescriptorAccess>().SetArgAt(i, newValue);
                             weak->WrapperValueChanged.raise(*weak, nullptr);
                         }
                     }
@@ -994,7 +994,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     void ActionsViewModel::_MakeCommandVMsHelper()
     {
         // Populate AvailableActionsAndNames
-        _AvailableActionsAndNamesMap = Model::CascadiaSettings::AvailableShortcutActionsAndNames();
+        _AvailableActionsAndNamesMap = Model::ActionArgFactory::AvailableShortcutActionsAndNames();
         for (const auto unimplemented : UnimplementedShortcutActions)
         {
             _AvailableActionsAndNamesMap.Remove(unimplemented);
@@ -1028,7 +1028,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         const auto newCmd = Model::Command::NewUserCommand();
         // construct a command using the first shortcut action from our list
         const auto shortcutAction = _AvailableActionsAndNamesMap.First().Current().Key();
-        const auto args = CascadiaSettings::GetEmptyArgsForAction(shortcutAction);
+        const auto args = ActionArgFactory::GetEmptyArgsForAction(shortcutAction);
         newCmd.ActionAndArgs(Model::ActionAndArgs{ shortcutAction, args });
         _Settings.ActionMap().AddAction(newCmd, nullptr);
         auto cmdVM{ make_self<CommandViewModel>(newCmd, std::vector<Control::KeyChord>{}, *this, _AvailableActionsAndNamesMap) };

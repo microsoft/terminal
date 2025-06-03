@@ -29,12 +29,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             if (argType == L"winrt::hstring")
             {
                 // string has some special cases - check the tag
-                const auto argTag = argWrapper.Tag();
-                if (argTag == Model::ArgTag::ColorScheme)
+                const auto argTag = argWrapper.TypeHint();
+                if (argTag == Model::ArgTypeHint::ColorScheme)
                 {
                     return ColorSchemeTemplate();
                 }
-                else if (argTag == Model::ArgTag::FilePath)
+                else if (argTag == Model::ArgTypeHint::FilePath)
                 {
                     return FilePickerTemplate();
                 }

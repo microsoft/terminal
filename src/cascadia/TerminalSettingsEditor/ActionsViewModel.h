@@ -100,12 +100,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     struct ArgWrapper : ArgWrapperT<ArgWrapper>, ViewModelHelper<ArgWrapper>
     {
     public:
-        ArgWrapper(const winrt::hstring& name, const winrt::hstring& type, const bool required, const Model::ArgTag tag, const Windows::Foundation::IInspectable& value);
+        ArgWrapper(const winrt::hstring& name, const winrt::hstring& type, const bool required, const Model::ArgTypeHint typeHint, const Windows::Foundation::IInspectable& value);
         void Initialize();
 
         winrt::hstring Name() const noexcept { return _name; };
         winrt::hstring Type() const noexcept { return _type; };
-        Model::ArgTag Tag() const noexcept { return _tag; };
+        Model::ArgTypeHint TypeHint() const noexcept { return _typeHint; };
         bool Required() const noexcept { return _required; };
 
         // We cannot use the macro here because we need to implement additional logic for the setter
@@ -160,7 +160,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     private:
         winrt::hstring _name;
         winrt::hstring _type;
-        Model::ArgTag _tag;
+        Model::ArgTypeHint _typeHint;
         bool _required;
         Windows::Foundation::IInspectable _EnumValue{ nullptr };
         Windows::Foundation::Collections::IObservableVector<Microsoft::Terminal::Settings::Editor::EnumEntry> _EnumList;

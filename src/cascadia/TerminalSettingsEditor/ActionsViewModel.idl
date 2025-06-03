@@ -50,7 +50,7 @@ namespace Microsoft.Terminal.Settings.Editor
     {
         String Name { get; };
         String Type { get; };
-        Microsoft.Terminal.Settings.Model.ArgTag Tag { get; };
+        Microsoft.Terminal.Settings.Model.ArgTypeHint TypeHint { get; };
         Boolean Required { get; };
         IInspectable Value;
         IInspectable EnumValue;
