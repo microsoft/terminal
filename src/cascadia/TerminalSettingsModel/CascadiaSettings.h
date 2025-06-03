@@ -18,6 +18,7 @@ Author(s):
 #pragma once
 
 #include "CascadiaSettings.g.h"
+#include "ActionArgFactory.g.h"
 #include "FragmentSettings.g.h"
 #include "FragmentProfileEntry.g.h"
 #include "FragmentColorSchemeEntry.g.h"
@@ -137,6 +138,15 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         std::set<std::string> themesChangeLog;
         // See _getNonUserOriginProfiles().
         size_t _userProfileCount = 0;
+    };
+
+    struct ActionArgFactory
+    {
+        ActionArgFactory() = default;
+
+        static winrt::hstring GetNameForAction(ShortcutAction action);
+        static Windows::Foundation::Collections::IMap<Model::ShortcutAction, winrt::hstring> AvailableShortcutActionsAndNames();
+        static Model::IActionArgs GetEmptyArgsForAction(Model::ShortcutAction shortcutAction);
     };
 
     struct CascadiaSettings : CascadiaSettingsT<CascadiaSettings>
@@ -309,4 +319,5 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 namespace winrt::Microsoft::Terminal::Settings::Model::factory_implementation
 {
     BASIC_FACTORY(CascadiaSettings);
+    BASIC_FACTORY(ActionArgFactory);
 }
