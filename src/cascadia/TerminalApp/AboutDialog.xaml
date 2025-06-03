@@ -29,8 +29,9 @@
 
         <StackPanel Orientation="Vertical">
             <StackPanel Padding="0,16,0,16"
-                        VerticalAlignment="Center" Spacing="8"
+                        VerticalAlignment="Center"
                         Orientation="Horizontal"
+                        Spacing="8"
                         Visibility="{x:Bind CheckingForUpdates, Mode=OneWay}">
                 <mux:ProgressRing Width="16"
                                   Height="16"
@@ -50,17 +51,18 @@
             </StackPanel>
         </StackPanel>
 
-        <StackPanel Margin="-12,0,0,0" Orientation="Vertical">
+        <StackPanel Margin="-12,0,0,0"
+                    Orientation="Vertical">
             <HyperlinkButton x:Uid="AboutDialog_SourceCodeLink"
-                  NavigateUri="https://go.microsoft.com/fwlink/?linkid=2203152" />
+                             NavigateUri="https://go.microsoft.com/fwlink/?linkid=2203152" />
             <HyperlinkButton x:Uid="AboutDialog_DocumentationLink"
-                  NavigateUri="https://go.microsoft.com/fwlink/?linkid=2125416" />
+                             NavigateUri="https://go.microsoft.com/fwlink/?linkid=2125416" />
             <HyperlinkButton x:Uid="AboutDialog_ReleaseNotesLink"
-                  NavigateUri="https://go.microsoft.com/fwlink/?linkid=2125417" />
+                             NavigateUri="https://go.microsoft.com/fwlink/?linkid=2125417" />
             <HyperlinkButton x:Uid="AboutDialog_PrivacyPolicyLink"
-                  NavigateUri="https://go.microsoft.com/fwlink/?linkid=2125418" />
+                             NavigateUri="https://go.microsoft.com/fwlink/?linkid=2125418" />
             <HyperlinkButton x:Uid="AboutDialog_ThirdPartyNoticesLink"
-                  Click="_ThirdPartyNoticesOnClick" />
-        </StackPanel>       
+                             Click="_ThirdPartyNoticesOnClick" />
+        </StackPanel>
     </StackPanel>
 </ContentDialog>
