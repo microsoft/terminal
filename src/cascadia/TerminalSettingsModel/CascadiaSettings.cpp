@@ -167,7 +167,7 @@ winrt::Windows::Foundation::Collections::IMap<Model::ShortcutAction, winrt::hstr
 
     ALL_SHORTCUT_ACTIONS
 
-#undef ON_ALL_ACTIONS_WITH_ARGS
+#undef ON_ALL_ACTIONS
     return winrt::single_threaded_map(std::move(actionNames));
 }
 
