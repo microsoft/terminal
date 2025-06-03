@@ -371,7 +371,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         });
         if (_IsNewCommand)
         {
-            // for new commands, make sure we generate a new ID everytime any arg value changes
+            // for new commands, make sure we generate a new ID every time any arg value changes
             actionArgsVM.WrapperValueChanged([weakThis = get_weak()](const IInspectable& /*sender*/, const IInspectable& /*args*/) {
                 if (auto weak = weakThis.get())
                 {
@@ -908,7 +908,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         if (_IsInEditMode)
         {
             // if we're in edit mode,
-            // - pre-populate the text box with the current keys
+            // - pre populate the text box with the current keys
             ProposedKeys(_currentKeys);
         }
     }
