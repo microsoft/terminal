@@ -2,14 +2,15 @@
     Copyright (c) Microsoft Corporation. All rights reserved. Licensed under
     the MIT License. See LICENSE in the project root for license information.
 -->
-<Application x:Class="TerminalApp.App"
-             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-             xmlns:local="using:TerminalApp"
-             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             xmlns:primitives="using:Microsoft.UI.Xaml.Controls.Primitives"
-             mc:Ignorable="d">
+<Application
+    x:Class="TerminalApp.App"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:local="using:TerminalApp"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:primitives="using:Microsoft.UI.Xaml.Controls.Primitives"
+    mc:Ignorable="d">
     <!--
         If you want to prove this works, then add `RequestedTheme="Light"` to
         the properties on the XamlApplication
@@ -19,8 +20,7 @@
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <!--  Include the MUX Controls resources  -->
-                <XamlControlsResources xmlns="using:Microsoft.UI.Xaml.Controls"
-                                       ControlsResourcesVersion="Version2" />
+                <XamlControlsResources xmlns="using:Microsoft.UI.Xaml.Controls" ControlsResourcesVersion="Version2" />
                 <ResourceDictionary>
 
                     <!--
@@ -31,8 +31,7 @@
                         appropriately for the theme, regardless of what we set the
                         RequestedTheme to
                     -->
-                    <Style x:Name="BackgroundGridThemeStyle"
-                           TargetType="Grid">
+                    <Style x:Name="BackgroundGridThemeStyle" TargetType="Grid">
                         <Setter Property="Background" Value="{ThemeResource ApplicationPageBackgroundThemeBrush}" />
                     </Style>
 
@@ -41,8 +40,7 @@
                         theme-dependent brush. SystemControlErrorTextForegroundBrush
                         is unfortunately static.
                     -->
-                    <SolidColorBrush x:Name="ErrorTextBrush"
-                                     Color="{ThemeResource SystemErrorTextColor}" />
+                    <SolidColorBrush x:Name="ErrorTextBrush" Color="{ThemeResource SystemErrorTextColor}" />
 
                     <!--  Suppress top padding  -->
                     <Thickness x:Key="TabViewHeaderPadding">0,0,0,0</Thickness>
@@ -70,8 +68,7 @@
                     <ThemeShadow x:Name="SharedShadow" />
 
                     <!--  Colored button which changes on hover/press  -->
-                    <Style x:Key="ColorButtonStyle"
-                           TargetType="Button">
+                    <Style x:Key="ColorButtonStyle" TargetType="Button">
                         <Setter Property="BackgroundSizing" Value="OuterBorderEdge" />
                         <Setter Property="BorderBrush" Value="{ThemeResource ButtonBorderBrush}" />
                         <Setter Property="BorderThickness" Value="{ThemeResource ButtonBorderThemeThickness}" />
@@ -84,57 +81,46 @@
                             <Setter.Value>
                                 <ControlTemplate TargetType="Button">
                                     <Grid>
-                                        <Border x:Name="ColorButtonBackground"
-                                                Background="{TemplateBinding Background}"
-                                                BackgroundSizing="{TemplateBinding BackgroundSizing}"
-                                                BorderBrush="{TemplateBinding BorderBrush}"
-                                                BorderThickness="{TemplateBinding BorderThickness}"
-                                                CornerRadius="{TemplateBinding CornerRadius}" />
+                                        <Border
+                                            x:Name="ColorButtonBackground"
+                                            Background="{TemplateBinding Background}"
+                                            BackgroundSizing="{TemplateBinding BackgroundSizing}"
+                                            BorderBrush="{TemplateBinding BorderBrush}"
+                                            BorderThickness="{TemplateBinding BorderThickness}"
+                                            CornerRadius="{TemplateBinding CornerRadius}" />
                                         <VisualStateManager.VisualStateGroups>
                                             <VisualStateGroup x:Name="CommonStates">
                                                 <VisualState x:Name="Normal" />
 
                                                 <VisualState x:Name="PointerOver">
                                                     <Storyboard>
-                                                        <ObjectAnimationUsingKeyFrames Storyboard.TargetName="ColorButtonBackground"
-                                                                                       Storyboard.TargetProperty="Opacity">
-                                                            <DiscreteObjectKeyFrame KeyTime="0"
-                                                                                    Value="0.9" />
+                                                        <ObjectAnimationUsingKeyFrames Storyboard.TargetName="ColorButtonBackground" Storyboard.TargetProperty="Opacity">
+                                                            <DiscreteObjectKeyFrame KeyTime="0" Value="0.9" />
                                                         </ObjectAnimationUsingKeyFrames>
-                                                        <ObjectAnimationUsingKeyFrames Storyboard.TargetName="ColorButtonBackground"
-                                                                                       Storyboard.TargetProperty="BorderBrush">
-                                                            <DiscreteObjectKeyFrame KeyTime="0"
-                                                                                    Value="{ThemeResource ButtonBorderBrushPointerOver}" />
+                                                        <ObjectAnimationUsingKeyFrames Storyboard.TargetName="ColorButtonBackground" Storyboard.TargetProperty="BorderBrush">
+                                                            <DiscreteObjectKeyFrame KeyTime="0" Value="{ThemeResource ButtonBorderBrushPointerOver}" />
                                                         </ObjectAnimationUsingKeyFrames>
                                                     </Storyboard>
                                                 </VisualState>
 
                                                 <VisualState x:Name="Pressed">
                                                     <Storyboard>
-                                                        <ObjectAnimationUsingKeyFrames Storyboard.TargetName="ColorButtonBackground"
-                                                                                       Storyboard.TargetProperty="Opacity">
-                                                            <DiscreteObjectKeyFrame KeyTime="0"
-                                                                                    Value="0.8" />
+                                                        <ObjectAnimationUsingKeyFrames Storyboard.TargetName="ColorButtonBackground" Storyboard.TargetProperty="Opacity">
+                                                            <DiscreteObjectKeyFrame KeyTime="0" Value="0.8" />
                                                         </ObjectAnimationUsingKeyFrames>
-                                                        <ObjectAnimationUsingKeyFrames Storyboard.TargetName="ColorButtonBackground"
-                                                                                       Storyboard.TargetProperty="BorderBrush">
-                                                            <DiscreteObjectKeyFrame KeyTime="0"
-                                                                                    Value="{ThemeResource ButtonBorderBrushPressed}" />
+                                                        <ObjectAnimationUsingKeyFrames Storyboard.TargetName="ColorButtonBackground" Storyboard.TargetProperty="BorderBrush">
+                                                            <DiscreteObjectKeyFrame KeyTime="0" Value="{ThemeResource ButtonBorderBrushPressed}" />
                                                         </ObjectAnimationUsingKeyFrames>
                                                     </Storyboard>
                                                 </VisualState>
 
                                                 <VisualState x:Name="Disabled">
                                                     <Storyboard>
-                                                        <ObjectAnimationUsingKeyFrames Storyboard.TargetName="ColorButtonBackground"
-                                                                                       Storyboard.TargetProperty="Background">
-                                                            <DiscreteObjectKeyFrame KeyTime="0"
-                                                                                    Value="{ThemeResource ButtonBackgroundDisabled}" />
+                                                        <ObjectAnimationUsingKeyFrames Storyboard.TargetName="ColorButtonBackground" Storyboard.TargetProperty="Background">
+                                                            <DiscreteObjectKeyFrame KeyTime="0" Value="{ThemeResource ButtonBackgroundDisabled}" />
                                                         </ObjectAnimationUsingKeyFrames>
-                                                        <ObjectAnimationUsingKeyFrames Storyboard.TargetName="ColorButtonBackground"
-                                                                                       Storyboard.TargetProperty="BorderBrush">
-                                                            <DiscreteObjectKeyFrame KeyTime="0"
-                                                                                    Value="{ThemeResource ButtonBorderBrushDisabled}" />
+                                                        <ObjectAnimationUsingKeyFrames Storyboard.TargetName="ColorButtonBackground" Storyboard.TargetProperty="BorderBrush">
+                                                            <DiscreteObjectKeyFrame KeyTime="0" Value="{ThemeResource ButtonBorderBrushDisabled}" />
                                                         </ObjectAnimationUsingKeyFrames>
                                                     </Storyboard>
                                                 </VisualState>
@@ -150,8 +136,7 @@
                         Remove all item animations from the suggestions UI and command
                         palette. They're entirely too slow to let that UI be usable.
                     -->
-                    <Style x:Key="NoAnimationsPlease"
-                           TargetType="ListView">
+                    <Style x:Key="NoAnimationsPlease" TargetType="ListView">
                         <Setter Property="ItemContainerTransitions">
                             <Setter.Value>
                                 <TransitionCollection>
@@ -185,17 +170,13 @@
                                 
                                 See GH #12356 for more history on the subject.
                             -->
-                            <SolidColorBrush x:Key="TabViewBackground"
-                                             Color="#2e2e2e" />
+                            <SolidColorBrush x:Key="TabViewBackground" Color="#2e2e2e" />
 
-                            <StaticResource x:Key="UnfocusedBorderBrush"
-                                            ResourceKey="TabViewBackground" />
+                            <StaticResource x:Key="UnfocusedBorderBrush" ResourceKey="TabViewBackground" />
 
-                            <SolidColorBrush x:Key="SettingsUiTabBrush"
-                                             Color="#0c0c0c" />
+                            <SolidColorBrush x:Key="SettingsUiTabBrush" Color="#0c0c0c" />
 
-                            <SolidColorBrush x:Key="BroadcastPaneBorderColor"
-                                             Color="{StaticResource SystemAccentColorDark2}" />
+                            <SolidColorBrush x:Key="BroadcastPaneBorderColor" Color="{StaticResource SystemAccentColorDark2}" />
                         </ResourceDictionary>
 
                         <ResourceDictionary x:Key="Light">
@@ -204,17 +185,13 @@
                             <!--
                                 GH #12398 has more history on this value, as well as GH #12400
                             -->
-                            <SolidColorBrush x:Key="TabViewBackground"
-                                             Color="#e8e8e8" />
+                            <SolidColorBrush x:Key="TabViewBackground" Color="#e8e8e8" />
 
-                            <StaticResource x:Key="UnfocusedBorderBrush"
-                                            ResourceKey="TabViewBackground" />
+                            <StaticResource x:Key="UnfocusedBorderBrush" ResourceKey="TabViewBackground" />
 
-                            <SolidColorBrush x:Key="SettingsUiTabBrush"
-                                             Color="#ffffff" />
+                            <SolidColorBrush x:Key="SettingsUiTabBrush" Color="#ffffff" />
 
-                            <SolidColorBrush x:Key="BroadcastPaneBorderColor"
-                                             Color="{StaticResource SystemAccentColorLight2}" />
+                            <SolidColorBrush x:Key="BroadcastPaneBorderColor" Color="{StaticResource SystemAccentColorLight2}" />
                         </ResourceDictionary>
 
                         <ResourceDictionary x:Key="HighContrast">
@@ -230,14 +207,11 @@
                                 
                                 SystemColorButtonFaceColorBrush is the default background color for WinUI's TabViewBackground under high contrast mode.
                             -->
-                            <StaticResource x:Key="TabViewBackground"
-                                            ResourceKey="SystemColorButtonFaceColorBrush" />
+                            <StaticResource x:Key="TabViewBackground" ResourceKey="SystemColorButtonFaceColorBrush" />
 
-                            <StaticResource x:Key="SettingsUiTabBrush"
-                                            ResourceKey="SystemControlBackgroundBaseLowBrush" />
+                            <StaticResource x:Key="SettingsUiTabBrush" ResourceKey="SystemControlBackgroundBaseLowBrush" />
 
-                            <SolidColorBrush x:Key="BroadcastPaneBorderColor"
-                                             Color="{StaticResource SystemColorHighlightColor}" />
+                            <SolidColorBrush x:Key="BroadcastPaneBorderColor" Color="{StaticResource SystemColorHighlightColor}" />
                         </ResourceDictionary>
 
                     </ResourceDictionary.ThemeDictionaries>
