@@ -24,6 +24,9 @@ class Microsoft::Console::VirtualTerminal::ITermDispatch
 {
 public:
     using StringHandler = std::function<bool(const wchar_t)>;
+    using PrintHandler = std::function<void(const std::wstring_view)>;
+    // Use this get the StringHandler, meanwhile pass the function to give app a function to print message bypass the parser
+    using StringHandlerProducer = std::function<StringHandler(PrintHandler)>;
 
 #pragma warning(push)
 #pragma warning(disable : 26432) // suppress rule of 5 violation on interface because tampering with this is fraught with peril
@@ -185,6 +188,9 @@ public:
     virtual StringHandler RestorePresentationState(const DispatchTypes::PresentationReportFormat format) = 0; // DECRSPS
 
     virtual void PlaySounds(const VTParameters parameters) = 0; // DECPS
+
+    virtual StringHandler EnterTmuxControl(const VTParameters parameters) = 0; // tmux -CC
+    virtual void SetTmuxControlHandlerProducer(StringHandlerProducer producer) = 0; // tmux -CC
 };
 inline Microsoft::Console::VirtualTerminal::ITermDispatch::~ITermDispatch() = default;
 #pragma warning(pop)
