@@ -17,6 +17,7 @@ Author(s):
 #pragma once
 
 #include "EnumEntry.g.h"
+#include "FlagEntry.g.h"
 #include "Utils.h"
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
@@ -54,5 +55,42 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         til::property_changed_event PropertyChanged;
         WINRT_OBSERVABLE_PROPERTY(winrt::hstring, EnumName, PropertyChanged.raise);
         WINRT_OBSERVABLE_PROPERTY(winrt::Windows::Foundation::IInspectable, EnumValue, PropertyChanged.raise);
+    };
+
+    template<typename T>
+    struct FlagEntryComparator
+    {
+        bool operator()(const Editor::FlagEntry& lhs, const Editor::FlagEntry& rhs) const
+        {
+            return lhs.FlagValue().as<T>() < rhs.FlagValue().as<T>();
+        }
+    };
+
+    template<typename T>
+    struct FlagEntryReverseComparator
+    {
+        bool operator()(const Editor::FlagEntry& lhs, const Editor::FlagEntry& rhs) const
+        {
+            return lhs.FlagValue().as<T>() > rhs.FlagValue().as<T>();
+        }
+    };
+
+    struct FlagEntry : FlagEntryT<FlagEntry>
+    {
+    public:
+        FlagEntry(const winrt::hstring flagName, const winrt::Windows::Foundation::IInspectable& flagValue, const bool isSet) :
+            _FlagName{ flagName },
+            _FlagValue{ flagValue },
+            _IsSet{ isSet } {}
+
+        hstring ToString()
+        {
+            return FlagName();
+        }
+
+        til::property_changed_event PropertyChanged;
+        WINRT_OBSERVABLE_PROPERTY(winrt::hstring, FlagName, PropertyChanged.raise);
+        WINRT_OBSERVABLE_PROPERTY(winrt::Windows::Foundation::IInspectable, FlagValue, PropertyChanged.raise);
+        WINRT_OBSERVABLE_PROPERTY(bool, IsSet, PropertyChanged.raise);
     };
 }
