@@ -14,7 +14,7 @@
     X(til::color, SelectionBackground, DEFAULT_FOREGROUND)                                                                \
     X(bool, IntenseIsBold)                                                                                                \
     X(bool, IntenseIsBright, true)                                                                                        \
-    X(winrt::Microsoft::Terminal::Core::AdjustTextMode, AdjustIndistinguishableColors, winrt::Microsoft::Terminal::Core::AdjustTextMode::Never)
+    X(winrt::Microsoft::Terminal::Core::AdjustTextMode, AdjustIndistinguishableColors, winrt::Microsoft::Terminal::Core::AdjustTextMode::Automatic)
 
 // --------------------------- Control Appearance ---------------------------
 //  All of these settings are defined in IControlAppearance.
