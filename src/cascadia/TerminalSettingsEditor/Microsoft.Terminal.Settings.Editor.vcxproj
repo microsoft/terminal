@@ -93,6 +93,10 @@
       <SubType>Code</SubType>
     </ClInclude>
     <ClInclude Include="SegoeFluentIconList.h" />
+    <ClInclude Include="SettingsCard.h">
+      <DependentUpon>SettingsCard.idl</DependentUpon>
+      <SubType>Code</SubType>
+    </ClInclude>
     <ClInclude Include="TerminalColorConverters.h">
       <DependentUpon>TerminalColorConverters.idl</DependentUpon>
       <SubType>Code</SubType>
@@ -230,6 +234,9 @@
     <Page Include="SettingContainerStyle.xaml">
       <Type>DefaultStyle</Type>
     </Page>
+    <Page Include="SettingsCard.xaml">
+      <Type>DefaultStyle</Type>
+    </Page>
   </ItemGroup>
   <!-- ========================= Cpp Files ======================== -->
   <ItemGroup>
@@ -282,6 +289,10 @@
     </ClCompile>
     <ClCompile Include="ActionsViewModel.cpp">
       <DependentUpon>ActionsViewModel.idl</DependentUpon>
+      <SubType>Code</SubType>
+    </ClCompile>
+    <ClCompile Include="SettingsCard.cpp">
+      <DependentUpon>SettingsCard.idl</DependentUpon>
       <SubType>Code</SubType>
     </ClCompile>
     <ClCompile Include="TerminalColorConverters.cpp">
@@ -448,6 +459,9 @@
       <SubType>Code</SubType>
     </Midl>
     <Midl Include="SettingContainer.idl">
+      <SubType>Code</SubType>
+    </Midl>
+    <Midl Include="SettingsCard.idl">
       <SubType>Code</SubType>
     </Midl>
   </ItemGroup>

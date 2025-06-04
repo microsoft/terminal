@@ -1,0 +1,41 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+namespace Microsoft.Terminal.Settings.Editor
+{
+    enum ContentAlignment
+    {
+        Right,
+        Left,
+        Vertical
+    };
+
+    [default_interface] runtimeclass SettingsCard : Windows.UI.Xaml.Controls.Primitives.ButtonBase
+    {
+        SettingsCard();
+
+        IInspectable Header;
+        static Windows.UI.Xaml.DependencyProperty HeaderProperty { get; };
+
+        IInspectable Description;
+        static Windows.UI.Xaml.DependencyProperty DescriptionProperty { get; };
+        
+        Windows.UI.Xaml.Controls.IconElement HeaderIcon;
+        static Windows.UI.Xaml.DependencyProperty HeaderIconProperty { get; };
+        
+        Windows.UI.Xaml.Controls.IconElement ActionIcon;
+        static Windows.UI.Xaml.DependencyProperty ActionIconProperty { get; };
+
+        String ActionIconToolTip;
+        static Windows.UI.Xaml.DependencyProperty ActionIconToolTipProperty { get; };
+        
+        Boolean IsClickEnabled;
+        static Windows.UI.Xaml.DependencyProperty IsClickEnabledProperty { get; };
+        
+        ContentAlignment ContentAlignment;
+        static Windows.UI.Xaml.DependencyProperty ContentAlignmentProperty { get; };
+
+        Boolean IsActionIconVisible;
+        static Windows.UI.Xaml.DependencyProperty IsActionIconVisibleProperty { get; };
+    };
+}

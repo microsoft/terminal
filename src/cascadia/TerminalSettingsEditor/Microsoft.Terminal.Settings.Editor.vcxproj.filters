@@ -28,9 +28,11 @@
     <Midl Include="GlobalAppearanceViewModel.idl" />
     <Midl Include="LaunchViewModel.idl" />
     <Midl Include="EnumEntry.idl" />
-    <Midl Include="SettingContainer.idl" />
     <Midl Include="TerminalColorConverters.idl" />
     <Midl Include="NewTabMenuViewModel.idl" />
+    <Midl Include="SettingContainer.idl">
+      <Filter>SettingContainers</Filter>
+    </Midl>
   </ItemGroup>
   <ItemGroup>
     <None Include="$(ProjectName).def" />
@@ -49,10 +51,24 @@
     <Page Include="Appearances.xaml" />
     <Page Include="Rendering.xaml" />
     <Page Include="Actions.xaml" />
-    <Page Include="SettingContainerStyle.xaml" />
     <Page Include="AddProfile.xaml" />
     <Page Include="KeyChordListener.xaml" />
     <Page Include="NullableColorPicker.xaml" />
     <Page Include="NewTabMenu.xaml" />
+    <Page Include="Compatibility.xaml" />
+    <Page Include="Extensions.xaml" />
+    <Page Include="Profiles_Base_Orphaned.xaml" />
+    <Page Include="Profiles_Terminal.xaml" />
+    <Page Include="SettingsCard.xaml">
+      <Filter>SettingContainers</Filter>
+    </Page>
+    <Page Include="SettingContainerStyle.xaml">
+      <Filter>SettingContainers</Filter>
+    </Page>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="SettingContainers">
+      <UniqueIdentifier>{4e97fe02-a5fb-44f2-80d1-fb78c39c75c3}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
 </Project>
