@@ -8,12 +8,12 @@ Since accessibility is a very broad area, this document is intended to present r
 ### First-party terminals
 For many years, Console Host (Conhost) was the only first-party terminal on Windows. In 2019, Windows Terminal was released to the world as an open source first-party terminal. Windows Terminal was distributed through the Microsoft Store and received regular updates throughout the year, much more frequently than Conhost. In October 2022, Windows Terminal was enabled as the default terminal on Windows.
 
-A significant amount of code is shared between Conhost and Windows Terminal to create the terminal area. To enable an accessible experience for this area, a shared UI Automation provider was introduced in 2019[^1], enabling accessibility tools to navigate and read contents from the terminal area. In 2020, Windows Terminal was updated to dispatch UIA events signaling when the cursor position, text output, or selection changed; this left the work of identifying what changed in the output to the attached screen reader application[^2]. In 2022, Windows Terminal was updated to dispatch UIA notifications with a payload of what text was written to the screen[^3]. 
+A significant amount of code is shared between Conhost and Windows Terminal to create the terminal area. To enable an accessible experience for this area, a shared UI Automation provider was introduced in 2019[^1], enabling accessibility tools to navigate and read contents from the terminal area. In 2020, Windows Terminal was updated to dispatch UIA events signaling when the cursor position, text output, or selection changed; this left the work of identifying what changed in the output to the attached screen reader application[^2]. In 2022, Windows Terminal was updated to dispatch UIA notifications with a payload of what text was written to the screen[^3].
 
 ### Internal Partners
 There are many first-party command-line applications on Windows. The following are a few examples of those that are regularly updated:
 - [**GitHub CLI**](https://cli.github.com/): a tool that can be used to query and interact with GitHub repos (open source)
-- [**Winget**](https://github.com/microsoft/winget-cli): a tool to install applications and other packages
+- [**WinGet**](https://github.com/microsoft/winget-cli): a tool to install applications and other packages
 - [**PSReadLine**](https://github.com/PowerShell/PSReadLine): a PowerShell module that enhances the input line experience
 - [**Windows Subsystem for Linux (WSL)**](https://learn.microsoft.com/en-us/windows/wsl/): a tool to manage and run GNU/Linux environments without a traditional virtual machine
 - [**PowerShell**](https://github.com/PowerShell/PowerShell): a cross-platform command-line shell (open source)
@@ -33,7 +33,7 @@ The following examples don't take over the entire viewport:
 - [**Oh My Posh**](https://ohmyposh.dev/): a tool to customize shell prompts
 - **git**: a tool for version control
 The following examples operate as command-line shells:
-- [**Bash**](https://www.gnu.org/software/bash/) is the default shell for most Linux distributions  
+- [**Bash**](https://www.gnu.org/software/bash/) is the default shell for most Linux distributions
 - [**Fish shell**](https://fishshell.com/) provides a rich shell experience with features like autosuggestion support and VGA colors
 - [**Z shell**](https://zsh.sourceforge.io/) is an extended Bourne shell
 
@@ -113,7 +113,7 @@ This issue is tracked by [megathread: Scrollbar Marks · Issue #11000](https://g
 ### Mark Mode support for degenerate range
 [PR #13053](https://github.com/microsoft/terminal/pull/13053) added support for mark mode in Windows Terminal. Mark mode allows users to create and modify selections by exclusively using the keyboard. However, screen reader users have reported it as a strange experience because it always has a cell of text selected; this results in the screen reader reading "x selected, y unselected" as opposed to the expected "x" when moving the cursor around.
 
-Unfortunately, the changes required to fix this are very extensive because selections are stored as two inclusive terminal coordinates, which makes it impossible to represent an empty selection. 
+Unfortunately, the changes required to fix this are very extensive because selections are stored as two inclusive terminal coordinates, which makes it impossible to represent an empty selection.
 
 This is tracked by [A11y: windows terminal emits selection/deselection events in mark mode when navigating with arrow keys · Issue #13447](https://github.com/microsoft/terminal/issues/13447).
 
@@ -158,7 +158,7 @@ In 2022, Windows Terminal added UI Automation notifications that contained a pay
 UIA notifications have provided many compatibility benefits since screen readers automatically read notifications they receive. Additionally, this has provided the possibility for major performance enhancements as screen readers may no longer be required to diff the text buffer and figure out what has changed. NVDA has prototyped listening to notifications and ignoring text changed events entirely[^7]. However, it reveals underlying challenges with this new model such as how to handle passwords. The proposals listed in this section are intended to have Windows Terminal achieve improved performance and accessibility quality.
 
 #### VT Screen Reader Control
-Some command-line applications are simply too difficult to create a consistent accessible experience. Applications that draw decorative content, for example, may have that content read by a screen reader. 
+Some command-line applications are simply too difficult to create a consistent accessible experience. Applications that draw decorative content, for example, may have that content read by a screen reader.
 
 In 2019, Daniel Imms wrote a spec proposing a VT sequence that can partially control the attached screen reader[^8]. This VT sequence consists of three main formats:
 1. Stop announcing incoming data to the screen reader. The screen reader will resume announcing incoming data if any key is pressed.

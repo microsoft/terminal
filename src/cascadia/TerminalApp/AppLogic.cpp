@@ -194,7 +194,7 @@ namespace winrt::TerminalApp::implementation
     // Method Description:
     // - Attempt to load the settings. If we fail for any reason, returns an error.
     // Return Value:
-    // - S_OK if we successfully parsed the settings, otherwise an appropriate HRESULT.
+    // - S_OK if we successfully parsed the settings; otherwise, an appropriate HRESULT.
     [[nodiscard]] HRESULT AppLogic::_TryLoadSettings() noexcept
     {
         auto hr = E_FAIL;

@@ -23,7 +23,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             // Arguments:
             // - handle: a HANDLE to the file to check
             // Return Value:
-            // - true if it had the expected permissions. False otherwise.
+            // - true if it had the expected permissions; otherwise, false.
             _TIL_INLINEPREFIX bool isOwnedByAdministrators(const HANDLE& handle)
             {
                 // If the file is owned by the administrators group, trust the
