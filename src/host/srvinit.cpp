@@ -463,7 +463,7 @@ try
                       TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
                       TraceLoggingKeyword(TIL_KEYWORD_TRACE));
 
-    wil::unique_handle clientProcess{ OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ | SYNCHRONIZE, TRUE, static_cast<DWORD>(connectMessage->Descriptor.Process)) };
+    wil::unique_handle clientProcess{ OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ | PROCESS_SET_INFORMATION | SYNCHRONIZE, TRUE, static_cast<DWORD>(connectMessage->Descriptor.Process)) };
     RETURN_LAST_ERROR_IF_NULL(clientProcess.get());
 
     TraceLoggingWrite(g_hConhostV2EventTraceProvider,
