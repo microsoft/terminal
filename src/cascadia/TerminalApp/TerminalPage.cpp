@@ -4689,10 +4689,13 @@ namespace winrt::TerminalApp::implementation
         }
 
         const auto theme = _settings.GlobalSettings().CurrentTheme();
-        auto requestedTheme{ theme.RequestedTheme() };
+        const auto paneActiveBorderColor = theme.Pane() ? theme.Pane().ActiveBorderColor() : nullptr;
+        const auto paneInactiveBorderColor = theme.Pane() ? theme.Pane().InactiveBorderColor() : nullptr;
+        const auto broadcastBorderColor = theme.Pane() ? theme.Pane().BroadcastBorderColor() : nullptr;
+        const auto requestedTheme{ theme.RequestedTheme() };
 
         {
-            _updatePaneResources(requestedTheme);
+            _updatePaneResources(requestedTheme, paneActiveBorderColor, paneInactiveBorderColor, broadcastBorderColor);
 
             for (const auto& tab : _tabs)
             {
@@ -4796,6 +4799,49 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+
+	Color TerminalPage::_colorFromKey(const ResourceDictionary& resourceDictionary, const ElementTheme& requestedTheme, const IInspectable& colorKey)
+	{
+        const auto colorFromResources = ThemeLookup(resourceDictionary, requestedTheme, colorKey);
+        // If SystemAccentColor is _not_ a Color for some reason, use
+        // Transparent as the color, so we don't do this process again on
+        // the next pane (by leaving s_focusedBorderBrush nullptr)
+        return winrt::unbox_value_or<Color>(colorFromResources, Colors::Black());
+	}
+
+	Color TerminalPage::_parseThemeColorToColor(
+		const ThemeColor& colorToCopy,
+        const ResourceDictionary& resourceDictionary,
+        const ElementTheme& requestedTheme,
+        const IInspectable& colorKey
+	)
+    {
+        switch (colorToCopy.ColorType())
+        {
+        case ThemeColorType::Accent:
+            return _colorFromKey(resourceDictionary, requestedTheme, colorKey);
+        case ThemeColorType::Color:
+            const auto rawColor = colorToCopy.Color();
+            return Color{
+                rawColor.A,
+                rawColor.R,
+                rawColor.G,
+                rawColor.B
+            };
+        case ThemeColorType::TerminalBackground:
+            const auto terminalBg = ThemeColor::FromTerminalBackground().Color();
+            return Color{
+                terminalBg.A,
+                terminalBg.R,
+                terminalBg.G,
+                terminalBg.B
+            };
+        default:
+            assert(false && "unknown type for color type in theme color"); // should never be reached
+            return winrt::Windows::UI::Color{};
+        }
+	}
+
     // Function Description:
     // - Attempts to load some XAML resources that Panes will need. This includes:
     //   * The Color they'll use for active Panes's borders - SystemAccentColor
@@ -4803,60 +4849,56 @@ namespace winrt::TerminalApp::implementation
     //     color of the titlebar)
     // Arguments:
     // - requestedTheme: this should be the currently active Theme for the app
+    // - activeBorderColor: the pane's border color for the application when it is active
+    // - inactiveBorderColor: the pane's border color for the application when it is inactive
+    // - broadcastBorderColor: the pane's border color for the application when it is broadcast
     // Return Value:
     // - <none>
-    void TerminalPage::_updatePaneResources(const winrt::Windows::UI::Xaml::ElementTheme& requestedTheme)
+    void TerminalPage::_updatePaneResources(const ElementTheme& requestedTheme, const ThemeColor& activeBorderColor, const ThemeColor& inactiveBorderColor, const ThemeColor& broadcastBorderColor)
     {
         const auto res = Application::Current().Resources();
         const auto accentColorKey = winrt::box_value(L"SystemAccentColor");
+        auto activeBrushColor = Colors::Black(), inactiveBrushColor = Colors::Black(), broadcastBrushColor = Colors::Black();
         if (res.HasKey(accentColorKey))
         {
-            const auto colorFromResources = ThemeLookup(res, requestedTheme, accentColorKey);
-            // If SystemAccentColor is _not_ a Color for some reason, use
-            // Transparent as the color, so we don't do this process again on
-            // the next pane (by leaving s_focusedBorderBrush nullptr)
-            auto actualColor = winrt::unbox_value_or<Color>(colorFromResources, Colors::Black());
-            _paneResources.focusedBorderBrush = SolidColorBrush(actualColor);
+            activeBrushColor = _colorFromKey(res, requestedTheme, accentColorKey);
         }
-        else
+        // Overwrites the accent above (or the black default color if there was no accent color)
+        if (activeBorderColor)
         {
-            // DON'T use Transparent here - if it's "Transparent", then it won't
-            // be able to hittest for clicks, and then clicking on the border
-            // will eat focus.
-            _paneResources.focusedBorderBrush = SolidColorBrush{ Colors::Black() };
+            activeBrushColor = _parseThemeColorToColor(activeBorderColor, res, requestedTheme, accentColorKey);
         }
-
+        // DON'T use Transparent here - if it's "Transparent", then it won't
+        // be able to hittest for clicks, and then clicking on the border
+        // will eat focus.
+        _paneResources.focusedBorderBrush = SolidColorBrush(activeBrushColor);
         const auto unfocusedBorderBrushKey = winrt::box_value(L"UnfocusedBorderBrush");
         if (res.HasKey(unfocusedBorderBrushKey))
         {
-            // MAKE SURE TO USE ThemeLookup, so that we get the correct resource for
-            // the requestedTheme, not just the value from the resources (which
-            // might not respect the settings' requested theme)
-            auto obj = ThemeLookup(res, requestedTheme, unfocusedBorderBrushKey);
-            _paneResources.unfocusedBorderBrush = obj.try_as<winrt::Windows::UI::Xaml::Media::SolidColorBrush>();
+            inactiveBrushColor = _colorFromKey(res, requestedTheme, unfocusedBorderBrushKey);
         }
-        else
+        // Overwrites the above (or the black default color if there was no unfocusedBorderBrushKey)
+        if (inactiveBorderColor)
         {
-            // DON'T use Transparent here - if it's "Transparent", then it won't
-            // be able to hittest for clicks, and then clicking on the border
-            // will eat focus.
-            _paneResources.unfocusedBorderBrush = SolidColorBrush{ Colors::Black() };
+            inactiveBrushColor = _parseThemeColorToColor(inactiveBorderColor, res, requestedTheme, unfocusedBorderBrushKey);
         }
-
+        // DON'T use Transparent here - if it's "Transparent", then it won't
+        // be able to hittest for clicks, and then clicking on the border
+        // will eat focus.
+        _paneResources.unfocusedBorderBrush = SolidColorBrush(inactiveBrushColor);
         const auto broadcastColorKey = winrt::box_value(L"BroadcastPaneBorderColor");
         if (res.HasKey(broadcastColorKey))
         {
-            // MAKE SURE TO USE ThemeLookup
-            auto obj = ThemeLookup(res, requestedTheme, broadcastColorKey);
-            _paneResources.broadcastBorderBrush = obj.try_as<winrt::Windows::UI::Xaml::Media::SolidColorBrush>();
+            _colorFromKey(res, requestedTheme, broadcastColorKey);
         }
-        else
+        if (broadcastBorderColor)
         {
-            // DON'T use Transparent here - if it's "Transparent", then it won't
-            // be able to hittest for clicks, and then clicking on the border
-            // will eat focus.
-            _paneResources.broadcastBorderBrush = SolidColorBrush{ Colors::Black() };
+            broadcastBrushColor = _parseThemeColorToColor(broadcastBorderColor, res, requestedTheme, broadcastColorKey);
         }
+        // DON'T use Transparent here - if it's "Transparent", then it won't
+        // be able to hittest for clicks, and then clicking on the border
+        // will eat focus.
+        _paneResources.broadcastBorderBrush = SolidColorBrush(broadcastBrushColor);
     }
 
     void TerminalPage::WindowActivated(const bool activated)
