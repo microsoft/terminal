@@ -35,7 +35,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
     ExtensionPalette::ExtensionPalette()
     {
         InitializeComponent();
-        
+
         _clearAndInitializeMessages(nullptr, nullptr);
         ControlName(RS_(L"ControlName"));
         QueryBoxPlaceholderText(RS_(L"CurrentShell"));
@@ -301,7 +301,6 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         }
     }
 
-
     // Method Description:
     // - This event is triggered when someone clicks anywhere in the bounds of
     //   the window that's _not_ the query palette UI. When that happens,
@@ -313,7 +312,6 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
     void ExtensionPalette::_rootPointerPressed(const Windows::Foundation::IInspectable& /*sender*/,
                                                const Windows::UI::Xaml::Input::PointerRoutedEventArgs& /*e*/)
     {
-        
         if (Visibility() != Visibility::Collapsed)
         {
             _close();
@@ -343,9 +341,8 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
     void ExtensionPalette::_lostFocusHandler(const Windows::Foundation::IInspectable& /*sender*/,
                                              const Windows::UI::Xaml::RoutedEventArgs& /*args*/)
     {
-
         const auto focusedElement = Input::FocusManager::GetFocusedElement(this->XamlRoot());
-        if(focusedElement && (focusedElement.try_as<RichTextBlock>() || focusedElement.try_as<MenuFlyoutPresenter>() || focusedElement.try_as<Popup>()))
+        if (focusedElement && (focusedElement.try_as<RichTextBlock>() || focusedElement.try_as<MenuFlyoutPresenter>() || focusedElement.try_as<Popup>()))
         {
             // The context menu for the message don't seem to be found when the the VisualTreeHelper walks the visual tree. So we check here
             // if one of the focused elements is a message or a context menu of one of those messages and return early to support
@@ -460,7 +457,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
     {
         _richBlock = Microsoft::Terminal::UI::Markdown::Builder::Convert(_messageContent, L"");
         _richBlock.IsTextSelectionEnabled(true);
-        _richBlock.ContextRequested({this, &ChatMessage::_chatMessageCopyRequested});
+        _richBlock.ContextRequested({ this, &ChatMessage::_chatMessageCopyRequested });
         _richBlock.AllowFocusWhenDisabled(true);
         _richBlock.AllowFocusOnInteraction(true);
         const auto resources = Application::Current().Resources();
@@ -502,7 +499,6 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         }
     }
 
-
     // Method Description:
     // - Handle the ContextFlyoutRequested Event
     //   * Should be handled according to the documentation
@@ -511,7 +507,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
     // Return Value:
     // - <none>
     void ChatMessage::_chatMessageCopyRequested(const Windows::Foundation::IInspectable& /*sender*/,
-                                                     const Windows::UI::Xaml::Input::ContextRequestedEventArgs& e)
+                                                const Windows::UI::Xaml::Input::ContextRequestedEventArgs& e)
     {
         e.Handled(true);
     }

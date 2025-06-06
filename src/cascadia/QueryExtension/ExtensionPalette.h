@@ -69,7 +69,6 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         void _chatMessageCopyRequested(const Windows::Foundation::IInspectable& /*sender*/,
                                        const Windows::UI::Xaml::Input::ContextRequestedEventArgs& e);
 
-
         TYPED_EVENT(RunCommandClicked, winrt::Microsoft::Terminal::Query::Extension::ChatMessage, winrt::hstring);
 
     private:
