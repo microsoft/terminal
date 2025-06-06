@@ -16,6 +16,7 @@ using namespace winrt::Windows::Foundation::Collections;
 using namespace winrt::Windows::UI::Core;
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Xaml::Controls;
+using namespace winrt::Windows::UI::Xaml::Controls::Primitives;
 using namespace winrt::Windows::System;
 namespace WWH = ::winrt::Windows::Web::Http;
 namespace WSS = ::winrt::Windows::Storage::Streams;
@@ -34,7 +35,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
     ExtensionPalette::ExtensionPalette()
     {
         InitializeComponent();
-
+        
         _clearAndInitializeMessages(nullptr, nullptr);
         ControlName(RS_(L"ControlName"));
         QueryBoxPlaceholderText(RS_(L"CurrentShell"));
@@ -300,6 +301,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         }
     }
 
+
     // Method Description:
     // - This event is triggered when someone clicks anywhere in the bounds of
     //   the window that's _not_ the query palette UI. When that happens,
@@ -311,6 +313,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
     void ExtensionPalette::_rootPointerPressed(const Windows::Foundation::IInspectable& /*sender*/,
                                                const Windows::UI::Xaml::Input::PointerRoutedEventArgs& /*e*/)
     {
+        
         if (Visibility() != Visibility::Collapsed)
         {
             _close();
@@ -340,6 +343,15 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
     void ExtensionPalette::_lostFocusHandler(const Windows::Foundation::IInspectable& /*sender*/,
                                              const Windows::UI::Xaml::RoutedEventArgs& /*args*/)
     {
+
+        const auto focusedElement = Input::FocusManager::GetFocusedElement(this->XamlRoot());
+        if(focusedElement && (focusedElement.try_as<RichTextBlock>() || focusedElement.try_as<MenuFlyoutPresenter>() || focusedElement.try_as<Popup>()))
+        {
+            // The context menu for the message don't seem to be found when the the VisualTreeHelper walks the visual tree. So we check here
+            // if one of the focused elements is a message or a context menu of one of those messages and return early to support
+            // copy/select all using a mouse
+            return;
+        }
         const auto flyout = _queryBox().ContextFlyout();
         if (flyout && flyout.IsOpen())
         {
@@ -404,6 +416,13 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         }
         else if (key == VirtualKey::C && ctrlDown)
         {
+            // Get the focused element. If it is a chat message copy its selection (if any) to the clipboard.
+            const auto focusedElement = Input::FocusManager::GetFocusedElement(this->XamlRoot());
+            if (focusedElement && focusedElement.try_as<RichTextBlock>())
+            {
+                const auto textBlock = focusedElement.as<RichTextBlock>();
+                textBlock.CopySelectionToClipboard();
+            }
             _queryBox().CopySelectionToClipboard();
             e.Handled(true);
         }
@@ -440,6 +459,10 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         _richBlock{ nullptr }
     {
         _richBlock = Microsoft::Terminal::UI::Markdown::Builder::Convert(_messageContent, L"");
+        _richBlock.IsTextSelectionEnabled(true);
+        _richBlock.ContextRequested({this, &ChatMessage::_chatMessageCopyRequested});
+        _richBlock.AllowFocusWhenDisabled(true);
+        _richBlock.AllowFocusOnInteraction(true);
         const auto resources = Application::Current().Resources();
         const auto textBrushObj = _isQuery ? resources.Lookup(box_value(L"TextOnAccentFillColorPrimaryBrush")) : resources.Lookup(box_value(L"TextFillColorPrimaryBrush"));
         if (const auto textBrush = textBrushObj.try_as<Windows::UI::Xaml::Media::SolidColorBrush>())
@@ -478,4 +501,19 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
             }
         }
     }
+
+
+    // Method Description:
+    // - Handle the ContextFlyoutRequested Event
+    //   * Should be handled according to the documentation
+    // Arguments:
+    // - Standard Event Args
+    // Return Value:
+    // - <none>
+    void ChatMessage::_chatMessageCopyRequested(const Windows::Foundation::IInspectable& /*sender*/,
+                                                     const Windows::UI::Xaml::Input::ContextRequestedEventArgs& e)
+    {
+        e.Handled(true);
+    }
+
 }
