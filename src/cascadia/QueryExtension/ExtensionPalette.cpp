@@ -344,9 +344,9 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         const auto focusedElement = Input::FocusManager::GetFocusedElement(this->XamlRoot());
         if (focusedElement && (focusedElement.try_as<RichTextBlock>() || focusedElement.try_as<MenuFlyoutPresenter>() || focusedElement.try_as<Popup>()))
         {
-            // The context menu for the message don't seem to be found when the the VisualTreeHelper walks the visual tree. So we check here
+            // The context menu for the message don't seem to be found when the VisualTreeHelper walks the visual tree. So we check here
             // if one of the focused elements is a message or a context menu of one of those messages and return early to support
-            // copy/select all using a mouse
+            // copy and select all using a mouse
             return;
         }
         const auto flyout = _queryBox().ContextFlyout();
