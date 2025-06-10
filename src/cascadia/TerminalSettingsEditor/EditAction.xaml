@@ -570,7 +570,6 @@
                                          FilePickerTemplate="{StaticResource FilePickerTemplate}"
                                          FlagTemplate="{StaticResource FlagTemplate}"
                                          FloatTemplate="{StaticResource FloatTemplate}"
-                                         GuidTemplate="{StaticResource GuidTemplate}"
                                          Int32OptionalTemplate="{StaticResource Int32OptionalTemplate}"
                                          Int32Template="{StaticResource Int32Template}"
                                          NoArgTemplate="{StaticResource NoArgTemplate}"
@@ -578,7 +577,6 @@
                                          TerminalCoreColorOptionalTemplate="{StaticResource TerminalCoreColorOptionalTemplate}"
                                          UInt32OptionalTemplate="{StaticResource UInt32OptionalTemplate}"
                                          UInt32Template="{StaticResource UInt32Template}"
-                                         UInt64Template="{StaticResource UInt64Template}"
                                          WindowsUIColorOptionalTemplate="{StaticResource WindowsUIColorOptionalTemplate}" />
 
         </ResourceDictionary>

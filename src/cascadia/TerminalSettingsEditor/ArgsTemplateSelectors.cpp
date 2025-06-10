@@ -42,10 +42,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 // no special handling required, just return the normal string template
                 return StringTemplate();
             }
-            else if (argType == L"winrt::guid")
-            {
-                return GuidTemplate();
-            }
             else if (argType == L"int32_t")
             {
                 return Int32Template();
@@ -53,10 +49,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             else if (argType == L"uint32_t")
             {
                 return UInt32Template();
-            }
-            else if (argType == L"uint64_t")
-            {
-                return UInt64Template();
             }
             else if (argType == L"float")
             {
