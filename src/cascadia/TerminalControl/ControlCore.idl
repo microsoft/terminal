@@ -67,6 +67,10 @@ namespace Microsoft.Terminal.Control
         Boolean SearchRegexInvalid;
     };
 
+    delegate Boolean TmuxDCSHandler(Char ch);
+    delegate void PrintHandler(String str);
+    delegate TmuxDCSHandler TmuxDCSHandlerProducer(PrintHandler print);
+
     [default_interface] runtimeclass SelectionColor
     {
         SelectionColor();
@@ -121,6 +125,7 @@ namespace Microsoft.Terminal.Control
                               Int16 scanCode,
                               Microsoft.Terminal.Core.ControlKeyStates modifiers);
         void SendInput(String text);
+        void SendOutput(String text);
         void PasteText(String text);
         void SelectAll();
         void ClearSelection();
@@ -179,6 +184,7 @@ namespace Microsoft.Terminal.Control
         Boolean ShouldShowSelectOutput();
 
         void OpenCWD();
+        void SetTmuxControlHandlerProducer(TmuxDCSHandlerProducer producer);
 
         void ClearQuickFix();
 

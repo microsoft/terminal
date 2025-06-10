@@ -18,6 +18,7 @@
 #include "ScratchpadContent.h"
 #include "SnippetsPaneContent.h"
 #include "MarkdownPaneContent.h"
+#include "TmuxControl.h"
 #include "TabRowControl.h"
 #include "Remoting.h"
 
@@ -104,6 +105,8 @@ namespace winrt::TerminalApp::implementation
             }
         }
         _hostingHwnd = hwnd;
+
+        _tmuxControl = std::make_unique<TmuxControl>(*this);
         return S_OK;
     }
 
@@ -3354,6 +3357,9 @@ namespace winrt::TerminalApp::implementation
             resultPane->ClearActive();
             original->SetActive();
         }
+        control.SetTmuxControlHandlerProducer([this, control](auto print) {
+            return _tmuxControl->TmuxControlHandlerProducer(control, print);
+        });
 
         return resultPane;
     }
