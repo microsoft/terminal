@@ -112,7 +112,7 @@ namespace Microsoft::Console::VirtualTerminal
         void _fillImageBackground();
         void _fillImageBackground(const int backgroundHeight);
         void _fillImageBackgroundWhenScrolled();
-        void _decreaseFilledBackgroundHeight(const int decreasedHeight);
+        void _decreaseFilledBackgroundHeight(const int decreasedHeight) noexcept;
         void _writeToImageBuffer(const int sixelValue, const int repeatCount);
         void _eraseImageBufferRows(const int rowCount, const til::CoordType startRow = 0) noexcept;
         void _maybeFlushImageBuffer(const bool endOfSequence = false);

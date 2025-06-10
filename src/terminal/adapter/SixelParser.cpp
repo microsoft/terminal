@@ -712,20 +712,20 @@ void SixelParser::_fillImageBackgroundWhenScrolled()
     if (_filledBackgroundHeight && imageHeight > _filledBackgroundHeight) [[unlikely]]
     {
         _filledBackgroundHeight = (imageHeight + _cellSize.height - 1) / _cellSize.height * _cellSize.height;
-        const auto additionalFillHeight = _filledBackgroundHeight.value() - _imageCursor.y;
+        const auto additionalFillHeight = *_filledBackgroundHeight - _imageCursor.y;
         _resizeImageBuffer(additionalFillHeight);
         _fillImageBackground(additionalFillHeight);
     }
 }
 
-void SixelParser::_decreaseFilledBackgroundHeight(const int decreasedHeight)
+void SixelParser::_decreaseFilledBackgroundHeight(const int decreasedHeight) noexcept
 {
     // Sometimes the top of the image buffer may be clipped (e.g. when the image
     // scrolls off the top of a margin area). When that occurs, our record of
     // the filled height will need to be decreased to account for the new start.
     if (_filledBackgroundHeight) [[unlikely]]
     {
-        _filledBackgroundHeight = _filledBackgroundHeight.value() - decreasedHeight;
+        _filledBackgroundHeight = *_filledBackgroundHeight - decreasedHeight;
     }
 }
 
