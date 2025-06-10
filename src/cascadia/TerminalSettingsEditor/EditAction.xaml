@@ -241,6 +241,7 @@
                 <ListViewItem />
             </DataTemplate>
 
+            <!-- Example shortcut action to test this template: Adjust Opacity -->
             <DataTemplate x:Key="Int32Template"
                           x:DataType="local:ArgWrapper">
                 <ListViewItem>
@@ -263,6 +264,7 @@
                 </ListViewItem>
             </DataTemplate>
 
+            <!-- Example shortcut action to test this template: Switch To Tab -->
             <DataTemplate x:Key="UInt32Template"
                           x:DataType="local:ArgWrapper">
                 <ListViewItem>
@@ -285,6 +287,7 @@
                 </ListViewItem>
             </DataTemplate>
 
+            <!-- Example shortcut action to test this template: Close Other Tabs -->
             <DataTemplate x:Key="UInt32OptionalTemplate"
                           x:DataType="local:ArgWrapper">
                 <ListViewItem>
@@ -307,28 +310,7 @@
                 </ListViewItem>
             </DataTemplate>
 
-            <DataTemplate x:Key="UInt64Template"
-                          x:DataType="local:ArgWrapper">
-                <ListViewItem>
-                    <Grid ColumnSpacing="8">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="{StaticResource ArgumentNameWidth}" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0"
-                                   VerticalAlignment="Center"
-                                   Text="{x:Bind Name}" />
-                        <muxc:NumberBox Grid.Column="1"
-                                        LargeChange="1"
-                                        Maximum="999"
-                                        Minimum="0"
-                                        SmallChange="1"
-                                        Style="{StaticResource NumberBoxSettingStyle}"
-                                        Value="{x:Bind UnboxUInt64(Value), Mode=TwoWay, BindBack=UInt64BindBack}" />
-                    </Grid>
-                </ListViewItem>
-            </DataTemplate>
-
+            <!-- Example shortcut action to test this template: Split Pane -->
             <DataTemplate x:Key="Int32OptionalTemplate"
                           x:DataType="local:ArgWrapper">
                 <ListViewItem>
@@ -351,6 +333,7 @@
                 </ListViewItem>
             </DataTemplate>
 
+            <!-- Example shortcut action to test this template: Adjust Font Size -->
             <DataTemplate x:Key="FloatTemplate"
                           x:DataType="local:ArgWrapper">
                 <ListViewItem>
@@ -373,6 +356,7 @@
                 </ListViewItem>
             </DataTemplate>
 
+            <!-- Example shortcut action to test this template: Send Input -->
             <DataTemplate x:Key="StringTemplate"
                           x:DataType="local:ArgWrapper">
                 <ListViewItem>
@@ -390,6 +374,7 @@
                 </ListViewItem>
             </DataTemplate>
 
+            <!-- Example shortcut action to test this template: Set Color Scheme -->
             <DataTemplate x:Key="ColorSchemeTemplate"
                           x:DataType="local:ArgWrapper">
                 <ListViewItem>
@@ -410,6 +395,7 @@
                 </ListViewItem>
             </DataTemplate>
 
+            <!-- Example shortcut action to test this template: Export Buffer -->
             <DataTemplate x:Key="FilePickerTemplate"
                           x:DataType="local:ArgWrapper">
                 <ListViewItem>
@@ -432,23 +418,7 @@
                 </ListViewItem>
             </DataTemplate>
 
-            <DataTemplate x:Key="GuidTemplate"
-                          x:DataType="local:ArgWrapper">
-                <ListViewItem>
-                    <Grid ColumnSpacing="8">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="{StaticResource ArgumentNameWidth}" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0"
-                                   VerticalAlignment="Center"
-                                   Text="{x:Bind Name}" />
-                        <TextBox Grid.Column="1"
-                                 Text="{x:Bind UnboxGuid(Value), Mode=TwoWay, BindBack=GuidBindBack}" />
-                    </Grid>
-                </ListViewItem>
-            </DataTemplate>
-
+            <!-- Example shortcut action to test this template: Set Focus Mode -->
             <DataTemplate x:Key="BoolTemplate"
                           x:DataType="local:ArgWrapper">
                 <ListViewItem>
@@ -466,6 +436,7 @@
                 </ListViewItem>
             </DataTemplate>
 
+            <!-- Example shortcut action to test this template: Split Pane -->
             <DataTemplate x:Key="BoolOptionalTemplate"
                           x:DataType="local:ArgWrapper">
                 <ListViewItem>
@@ -484,6 +455,7 @@
                 </ListViewItem>
             </DataTemplate>
 
+            <!-- Example shortcut action to test this template: Resize Pane -->
             <DataTemplate x:Key="EnumComboBoxTemplate"
                           x:DataType="local:EnumEntry">
                 <TextBlock Text="{x:Bind EnumName, Mode=OneWay}" />
@@ -509,6 +481,7 @@
                 </ListViewItem>
             </DataTemplate>
 
+            <!-- Example shortcut action to test this template: Copy Text -->
             <DataTemplate x:Key="FlagItemTemplate"
                           x:DataType="local:FlagEntry">
                 <Grid>
@@ -547,6 +520,7 @@
                 </ListViewItem>
             </DataTemplate>
 
+            <!-- Example shortcut action to test this template: Add Mark -->
             <DataTemplate x:Key="TerminalCoreColorOptionalTemplate"
                           x:DataType="local:ArgWrapper">
                 <ListViewItem>
@@ -567,6 +541,7 @@
                 </ListViewItem>
             </DataTemplate>
 
+            <!-- Example shortcut action to test this template: Set Tab Color -->
             <DataTemplate x:Key="WindowsUIColorOptionalTemplate"
                           x:DataType="local:ArgWrapper">
                 <ListViewItem>

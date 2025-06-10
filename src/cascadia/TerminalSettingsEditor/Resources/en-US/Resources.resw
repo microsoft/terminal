@@ -1788,7 +1788,7 @@
     <value>Delete the unfocused appearance for this profile.</value>
     <comment>A description for what the delete unfocused appearance button does.</comment>
   </data>
-  <data name="Actions_Disclaimer.Text" xml:space="preserve">
+  <data name="Actions_Disclaimer.Content" xml:space="preserve">
     <value>Learn more about actions</value>
     <comment>Disclaimer presented at the top of the actions page to redirect the user to documentation regarding actions.</comment>
   </data>

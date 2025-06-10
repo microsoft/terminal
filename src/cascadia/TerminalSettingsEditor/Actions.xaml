@@ -153,16 +153,6 @@
                         <Grid.ColumnDefinitions>
                             <!--  command name  -->
                             <ColumnDefinition Width="*" />
-                            <!--  key chord  -->
-                            <ColumnDefinition Width="150" />
-                            <!--  edit buttons  -->
-                            <!--
-                                This needs to be 112 because that is the width of the row of buttons in edit mode + padding.
-                                3 buttons: 32+32+32
-                                Padding:       8+ 8
-                                This allows the "edit" button to align with the "cancel" button seamlessly
-                            -->
-                            <ColumnDefinition Width="112" />
                         </Grid.ColumnDefinitions>
 
                         <!--  Command Name  -->
@@ -180,13 +170,10 @@
                     HorizontalAlignment="Left"
                     Spacing="8"
                     Style="{StaticResource SettingsStackStyle}">
-            <TextBlock Style="{StaticResource DisclaimerStyle}"
-                       TextWrapping="WrapWholeWords">
-                <Hyperlink NavigateUri="https://learn.microsoft.com/en-us/windows/terminal/customize-settings/actions"
-                           TextDecorations="None">
-                    <Run x:Uid="Actions_Disclaimer" />
-                </Hyperlink>
-            </TextBlock>
+            <HyperlinkButton x:Uid="Actions_Disclaimer"
+                             NavigateUri="https://learn.microsoft.com/en-us/windows/terminal/customize-settings/actions"
+                             Padding="0"
+                             Margin="0"/>
             <!--  Add New Button  -->
             <Button x:Name="AddNewButton"
                     Click="AddNew_Click">
