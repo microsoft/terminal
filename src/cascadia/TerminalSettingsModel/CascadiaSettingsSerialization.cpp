@@ -19,6 +19,7 @@
 #if TIL_FEATURE_DYNAMICSSHPROFILES_ENABLED
 #include "SshHostGenerator.h"
 #endif
+#include "PowershellInstallationProfileGenerator.h"
 
 #include "ApplicationState.h"
 #include "DefaultTerminal.h"
@@ -210,28 +211,58 @@ Json::StreamWriterBuilder SettingsLoader::_getJsonStyledWriter()
 // (meaning profiles specified by the application rather by the user).
 void SettingsLoader::GenerateProfiles()
 {
-    auto generateProfiles = [&](const IDynamicProfileGenerator& generator) {
+    auto generateProfiles = [&]<typename T>() {
+        T generator{};
         if (!_ignoredNamespaces.contains(generator.GetNamespace()))
         {
             _executeGenerator(generator, inboxSettings.profiles);
         }
+        return generator;
     };
+
+    bool isPowerShellInstalled;
+    {
+        auto powerShellGenerator = generateProfiles.template operator()<PowershellCoreProfileGenerator>();
+        isPowerShellInstalled = !powerShellGenerator.GetPowerShellInstances().empty();
+    }
+
+    if (Feature_PowerShellInstallerProfileGenerator::IsEnabled())
+    {
+        if (isPowerShellInstalled)
+        {
+            // PowerShell is installed, mark the installer profile for deletion (if found)
+            const winrt::guid profileGuid{ L"{965a10f2-b0f2-55dc-a3c2-2ddbf639bf89}" };
+            for (const auto& profile : userSettings.profiles)
+            {
+                if (profile->Guid() == profileGuid)
+                {
+                    profile->Deleted(true);
+                    break;
+                }
+            }
+        }
+        else
+        {
+            // PowerShell isn't installed --> generate the installer stub profile
+            generateProfiles.template operator()<PowershellInstallationProfileGenerator>();
+        }
+    }
 
     // Generate profiles for each generator and add them to the inbox settings.
     // Be sure to update the same list below.
-    generateProfiles(PowershellCoreProfileGenerator{});
-    generateProfiles(WslDistroGenerator{});
-    generateProfiles(AzureCloudShellGenerator{});
-    generateProfiles(VisualStudioGenerator{});
+    generateProfiles.template operator()<WslDistroGenerator>();
+    generateProfiles.template operator()<AzureCloudShellGenerator>();
+    generateProfiles.template operator()<VisualStudioGenerator>();
 #if TIL_FEATURE_DYNAMICSSHPROFILES_ENABLED
-    generateProfiles(SshHostGenerator{});
+    generateProfiles.template operator()<SshHostGenerator>();
 #endif
 }
 
 // Generate ExtensionPackage objects from the profile generators.
 void SettingsLoader::GenerateExtensionPackagesFromProfileGenerators()
 {
-    auto generateExtensionPackages = [&](const IDynamicProfileGenerator& generator) {
+    auto generateExtensionPackages = [&]<typename T>() {
+        T generator{};
         std::vector<winrt::com_ptr<implementation::Profile>> profilesList;
         _executeGenerator(generator, profilesList);
 
@@ -256,17 +287,67 @@ void SettingsLoader::GenerateExtensionPackagesFromProfileGenerators()
         auto extPkg = _registerFragment(std::move(*generatorExtension), FragmentScope::Machine);
         extPkg->DisplayName(hstring{ generator.GetDisplayName() });
         extPkg->Icon(hstring{ generator.GetIcon() });
+        return generator;
     };
+
+    bool isPowerShellInstalled;
+    {
+        auto powerShellGenerator = generateExtensionPackages.template operator()<PowershellCoreProfileGenerator>();
+        isPowerShellInstalled = !powerShellGenerator.GetPowerShellInstances().empty();
+    }
+    if (Feature_PowerShellInstallerProfileGenerator::IsEnabled())
+    {
+        generateExtensionPackages.template operator()<PowershellInstallationProfileGenerator>();
+        _patchInstallPowerShellProfile(isPowerShellInstalled);
+    }
 
     // Generate extension package objects for each generator.
     // Be sure to update the same list above.
-    generateExtensionPackages(PowershellCoreProfileGenerator{});
-    generateExtensionPackages(WslDistroGenerator{});
-    generateExtensionPackages(AzureCloudShellGenerator{});
-    generateExtensionPackages(VisualStudioGenerator{});
+    generateExtensionPackages.template operator()<WslDistroGenerator>();
+    generateExtensionPackages.template operator()<AzureCloudShellGenerator>();
+    generateExtensionPackages.template operator()<VisualStudioGenerator>();
 #if TIL_FEATURE_DYNAMICSSHPROFILES_ENABLED
-    generateExtensionPackages(SshHostGenerator{});
+    generateExtensionPackages.template operator()<SshHostGenerator>();
 #endif
+}
+
+// Retrieve the "Install Latest PowerShell" profile and add a comment to the JSON to indicate it's conditionally applied.
+// If PowerShell is installed, delete the profile from the extension package.
+void SettingsLoader::_patchInstallPowerShellProfile(bool isPowerShellInstalled)
+{
+    const hstring pwshInstallerNamespace{ PowershellInstallationProfileGenerator::Namespace };
+    if (extensionPackageMap.contains(pwshInstallerNamespace))
+    {
+        if (const auto& fragExtList = extensionPackageMap[pwshInstallerNamespace]->Fragments(); fragExtList.Size() > 0)
+        {
+            auto fragExt = get_self<FragmentSettings>(fragExtList.GetAt(0));
+
+            // We want the comment to be the first thing in the object,
+            // "closeOnExit" is the first property, so target that.
+            auto fragExtJson = _parseJSON(til::u16u8(fragExt->Json()));
+            fragExtJson[JsonKey(ProfilesKey)][0]["closeOnExit"].setComment(til::u16u8(fmt::format(FMT_COMPILE(L"// {}"), RS_(L"PowerShellInstallationProfileJsonComment"))), Json::CommentPlacement::commentBefore);
+            fragExt->Json(hstring{ til::u8u16(Json::writeString(_getJsonStyledWriter(), fragExtJson)) });
+
+            if (const auto& profileEntryList = fragExt->NewProfiles(); profileEntryList.Size() > 0)
+            {
+                if (isPowerShellInstalled)
+                {
+                    // PowerShell is installed, so the installer profile was marked for deletion in GenerateProfiles().
+                    // Remove the profile object from the fragment so it doesn't show up in the settings UI.
+                    profileEntryList.RemoveAt(0);
+                }
+                else
+                {
+                    // We want the comment to be the first thing in the object,
+                    // "closeOnExit" is the first property, so target that.
+                    auto profileEntry = get_self<FragmentProfileEntry>(profileEntryList.GetAt(0));
+                    auto profileJson = _parseJSON(til::u16u8(profileEntry->Json()));
+                    profileJson["closeOnExit"].setComment(til::u16u8(fmt::format(FMT_COMPILE(L"// {}"), RS_(L"PowerShellInstallationProfileJsonComment"))), Json::CommentPlacement::commentBefore);
+                    profileEntry->Json(hstring{ til::u8u16(Json::writeString(_getJsonStyledWriter(), profileJson)) });
+                }
+            }
+        }
+    }
 }
 
 // A new settings.json gets a special treatment:
@@ -1095,7 +1176,7 @@ bool SettingsLoader::_addOrMergeUserColorScheme(const winrt::com_ptr<implementat
 
 // As the name implies it executes a generator.
 // Generated profiles are added to .inboxSettings. Used by GenerateProfiles().
-void SettingsLoader::_executeGenerator(const IDynamicProfileGenerator& generator, std::vector<winrt::com_ptr<implementation::Profile>>& profilesList)
+void SettingsLoader::_executeGenerator(IDynamicProfileGenerator& generator, std::vector<winrt::com_ptr<implementation::Profile>>& profilesList)
 {
     const auto generatorNamespace = generator.GetNamespace();
     const auto previousSize = profilesList.size();
@@ -1679,7 +1760,11 @@ void CascadiaSettings::_resolveNewTabMenuProfiles() const
     auto activeProfileCount = gsl::narrow_cast<int>(_activeProfiles.Size());
     for (auto profileIndex = 0; profileIndex < activeProfileCount; profileIndex++)
     {
-        remainingProfilesMap.emplace(profileIndex, _activeProfiles.GetAt(profileIndex));
+        const auto& profile = _activeProfiles.GetAt(profileIndex);
+        if (!profile.Deleted())
+        {
+            remainingProfilesMap.emplace(profileIndex, _activeProfiles.GetAt(profileIndex));
+        }
     }
 
     // We keep track of the "remaining profiles" - those that have not yet been resolved
