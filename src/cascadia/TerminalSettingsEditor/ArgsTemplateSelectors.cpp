@@ -104,6 +104,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 return FlagTemplate();
             }
         }
-        return NoArgTemplate();
+        return nullptr;
     }
 }

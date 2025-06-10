@@ -236,11 +236,6 @@
                 <ListViewItem HorizontalContentAlignment="Stretch" />
             </DataTemplate>
 
-            <DataTemplate x:Key="NoArgTemplate"
-                          x:DataType="local:ArgWrapper">
-                <ListViewItem />
-            </DataTemplate>
-
             <!-- Example shortcut action to test this template: Adjust Opacity -->
             <DataTemplate x:Key="Int32Template"
                           x:DataType="local:ArgWrapper">
@@ -572,7 +567,6 @@
                                          FloatTemplate="{StaticResource FloatTemplate}"
                                          Int32OptionalTemplate="{StaticResource Int32OptionalTemplate}"
                                          Int32Template="{StaticResource Int32Template}"
-                                         NoArgTemplate="{StaticResource NoArgTemplate}"
                                          StringTemplate="{StaticResource StringTemplate}"
                                          TerminalCoreColorOptionalTemplate="{StaticResource TerminalCoreColorOptionalTemplate}"
                                          UInt32OptionalTemplate="{StaticResource UInt32OptionalTemplate}"
