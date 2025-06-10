@@ -23,6 +23,7 @@ Author(s):
 #include "WindowTheme.g.h"
 #include "TabRowTheme.g.h"
 #include "TabTheme.g.h"
+#include "PaneTheme.g.h"
 #include "ThemePair.g.h"
 #include "Theme.g.h"
 
@@ -85,6 +86,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     THEME_OBJECT(SettingsTheme, MTSM_THEME_SETTINGS_SETTINGS);
     THEME_OBJECT(TabRowTheme, MTSM_THEME_TABROW_SETTINGS);
     THEME_OBJECT(TabTheme, MTSM_THEME_TAB_SETTINGS);
+    THEME_OBJECT(PaneTheme, MTSM_THEME_PANE_SETTINGS);
 
     struct Theme : ThemeT<Theme>
     {
