@@ -83,6 +83,7 @@ function Set-MsbuildDevEnvironment
     switch ($env:PROCESSOR_ARCHITECTURE) {
         "amd64" { $arch = "x64" }
         "x86" { $arch = "x86" }
+        "arm64" { $arch = "arm64" }
         default { throw "Unknown architecture: $switch" }
     }
 
