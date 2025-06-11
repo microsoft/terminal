@@ -1,5 +1,38 @@
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT license.
+/*++
+Copyright (c) Microsoft Corporation
+Licensed under the MIT license.
+
+Module Name:
+- ActionsViewModel.h
+
+Abstract:
+- This contains the view models for everything related to the Actions pages (Actions.xaml and EditAction.xaml)
+- ActionsViewModel:
+    - Contains the "current page" enum, which dictates whether we're in the top-level Actions page or the EditAction page
+    - Contains the full command list, and keeps track of the "current command" that is being edited
+        - These are in the form of CommandViewModel(s)
+    - Handles modification to the list of commands, i.e. addition/deletion
+    - Listens to each CommandViewModel for key chord events for addition/modification/deletion of keychords
+- CommandViewModel:
+    - Constructed with a Model::Command object
+    - View model for each specific command item
+    - Contains higher-level detail about the command itself such as name, whether it is a user command, and the shortcut action type
+    - Contains an ActionArgsViewModel, which it creates according to the shortcut action type
+        - Recreates the ActionArgsViewModel whenever the shortcut action type changes
+    - Contains the full keybinding list, in the form of KeyChordViewModel(s)
+- ActionArgsViewModel:
+    - Constructed with a Model::ActionAndArgs object
+    - Contains a vector of ArgWrapper(s), one ArgWrapper for each arg
+    - Listens and propagates changes to the ArgWrappers
+- ArgWrapper:
+    - Wrapper for each argument
+    - Handles binding and bindback logic for the presentation and modification of the argument via the UI
+        - Has separate binding and bindback logic depending on the type of the argument
+- KeyChordViewModel:
+    - Constructed with a Control::KeyChord object
+    - Handles binding and bindback logic for the presentation and modification of a keybinding via the UI
+
+--*/
 
 #pragma once
 
