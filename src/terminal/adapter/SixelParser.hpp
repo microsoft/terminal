@@ -89,6 +89,7 @@ namespace Microsoft::Console::VirtualTerminal
         til::CoordType _pendingTextScrollCount = 0;
         til::size _backgroundSize;
         bool _backgroundFillRequired = false;
+        std::optional<til::CoordType> _filledBackgroundHeight;
 
         void _initColorMap(const VTParameter backgroundColor);
         void _defineColor(const VTParameters& colorParameters);
@@ -109,6 +110,9 @@ namespace Microsoft::Console::VirtualTerminal
         void _initImageBuffer();
         void _resizeImageBuffer(const til::CoordType requiredHeight);
         void _fillImageBackground();
+        void _fillImageBackground(const int backgroundHeight);
+        void _fillImageBackgroundWhenScrolled();
+        void _decreaseFilledBackgroundHeight(const int decreasedHeight) noexcept;
         void _writeToImageBuffer(const int sixelValue, const int repeatCount);
         void _eraseImageBufferRows(const int rowCount, const til::CoordType startRow = 0) noexcept;
         void _maybeFlushImageBuffer(const bool endOfSequence = false);
