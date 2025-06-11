@@ -22,6 +22,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         WINRT_PROPERTY(winrt::Windows::UI::Xaml::DataTemplate, StringTemplate);
         WINRT_PROPERTY(winrt::Windows::UI::Xaml::DataTemplate, ColorSchemeTemplate);
         WINRT_PROPERTY(winrt::Windows::UI::Xaml::DataTemplate, FilePickerTemplate);
+        WINRT_PROPERTY(winrt::Windows::UI::Xaml::DataTemplate, FolderPickerTemplate);
         WINRT_PROPERTY(winrt::Windows::UI::Xaml::DataTemplate, BoolTemplate);
         WINRT_PROPERTY(winrt::Windows::UI::Xaml::DataTemplate, BoolOptionalTemplate);
         WINRT_PROPERTY(winrt::Windows::UI::Xaml::DataTemplate, EnumTemplate);

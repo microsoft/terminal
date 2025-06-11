@@ -141,7 +141,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void TerminalCoreColorBindBack(const winrt::Windows::Foundation::IReference<Microsoft::Terminal::Core::Color> newValue);
         void WindowsUIColorBindBack(const winrt::Windows::Foundation::IReference<Microsoft::Terminal::Core::Color> newValue);
 
-        safe_void_coroutine Browse_Click(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& e);
+        safe_void_coroutine BrowseForFile_Click(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& e);
+        safe_void_coroutine BrowseForFolder_Click(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& e);
 
         // some argWrappers need to know additional information (like the default color scheme or the list of all color scheme names)
         // to avoid populating all ArgWrappers with that information, instead we emit an event when we need that information

@@ -87,7 +87,8 @@ namespace Microsoft.Terminal.Settings.Editor
         void TerminalCoreColorBindBack(Windows.Foundation.IReference<Microsoft.Terminal.Core.Color> newValue);
         void WindowsUIColorBindBack(Windows.Foundation.IReference<Microsoft.Terminal.Core.Color> newValue);
 
-        void Browse_Click(IInspectable sender, Windows.UI.Xaml.RoutedEventArgs args);
+        void BrowseForFile_Click(IInspectable sender, Windows.UI.Xaml.RoutedEventArgs args);
+        void BrowseForFolder_Click(IInspectable sender, Windows.UI.Xaml.RoutedEventArgs args);
 
         event Windows.Foundation.TypedEventHandler<Object, ArgWrapper> ColorSchemeRequested;
         event Windows.Foundation.TypedEventHandler<Object, ArgWrapper> ColorSchemeNamesRequested;

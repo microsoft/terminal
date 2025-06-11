@@ -535,7 +535,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
-    safe_void_coroutine ArgWrapper::Browse_Click(const IInspectable&, const RoutedEventArgs&)
+    safe_void_coroutine ArgWrapper::BrowseForFile_Click(const IInspectable&, const RoutedEventArgs&)
     {
         WindowRootRequested.raise(*this, *this);
         auto lifetime = get_strong();
@@ -550,6 +550,34 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 dialog->SetDefaultFolder(folderShellItem.get());
             }
             CATCH_LOG(); // non-fatal
+        });
+
+        if (!path.empty())
+        {
+            StringBindBack(path);
+        }
+    }
+
+    safe_void_coroutine ArgWrapper::BrowseForFolder_Click(const IInspectable&, const RoutedEventArgs&)
+    {
+        WindowRootRequested.raise(*this, *this);
+        auto lifetime = get_strong();
+
+        static constexpr winrt::guid clientGuidFolders{ 0xa611027, 0x42be, 0x4665, { 0xaf, 0xf1, 0x3f, 0x22, 0x26, 0xe9, 0xf7, 0x4d } };
+;
+        const auto parentHwnd{ reinterpret_cast<HWND>(_WindowRoot.GetHostingWindow()) };
+        auto path = co_await OpenFilePicker(parentHwnd, [](auto&& dialog) {
+            THROW_IF_FAILED(dialog->SetClientGuid(clientGuidFolders));
+            try
+            {
+                auto folderShellItem{ winrt::capture<IShellItem>(&SHGetKnownFolderItem, FOLDERID_ComputerFolder, KF_FLAG_DEFAULT, nullptr) };
+                dialog->SetDefaultFolder(folderShellItem.get());
+            }
+            CATCH_LOG(); // non-fatal
+
+            DWORD flags{};
+            THROW_IF_FAILED(dialog->GetOptions(&flags));
+            THROW_IF_FAILED(dialog->SetOptions(flags | FOS_PICKFOLDERS)); // folders only
         });
 
         if (!path.empty())

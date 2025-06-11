@@ -407,7 +407,8 @@
                     <Grid ColumnSpacing="8">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="{StaticResource ArgumentNameWidth}" />
-                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*"
+                                              MinWidth="196"/>
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
                         <TextBlock Grid.Column="0"
@@ -415,10 +416,37 @@
                                    Text="{x:Bind Name}"
                                    TextWrapping="WrapWholeWords"/>
                         <TextBox Grid.Column="1"
-                                 Text="{x:Bind UnboxString(Value), Mode=TwoWay, BindBack=StringBindBack}" />
+                                 Text="{x:Bind UnboxString(Value), Mode=TwoWay, BindBack=StringBindBack}"
+                                 TextWrapping="Wrap"/>
                         <Button x:Uid="Actions_Browse"
                                 Grid.Column="2"
-                                Click="{x:Bind Browse_Click}"
+                                Click="{x:Bind BrowseForFile_Click}"
+                                Style="{StaticResource BrowseButtonStyle}" />
+                    </Grid>
+                </ListViewItem>
+            </DataTemplate>
+
+            <!-- Example shortcut action to test this template: New Tab -->
+            <DataTemplate x:Key="FolderPickerTemplate"
+                          x:DataType="local:ArgWrapper">
+                <ListViewItem>
+                    <Grid ColumnSpacing="8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="{StaticResource ArgumentNameWidth}" />
+                            <ColumnDefinition Width="*"
+                                              MinWidth="196"/>
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0"
+                                   VerticalAlignment="Center"
+                                   Text="{x:Bind Name}"
+                                   TextWrapping="WrapWholeWords"/>
+                        <TextBox Grid.Column="1"
+                                 Text="{x:Bind UnboxString(Value), Mode=TwoWay, BindBack=StringBindBack}"
+                                 TextWrapping="Wrap"/>
+                        <Button x:Uid="Actions_Browse"
+                                Grid.Column="2"
+                                Click="{x:Bind BrowseForFolder_Click}"
                                 Style="{StaticResource BrowseButtonStyle}" />
                     </Grid>
                 </ListViewItem>
@@ -580,6 +608,7 @@
                                          ColorSchemeTemplate="{StaticResource ColorSchemeTemplate}"
                                          EnumTemplate="{StaticResource EnumTemplate}"
                                          FilePickerTemplate="{StaticResource FilePickerTemplate}"
+                                         FolderPickerTemplate="{StaticResource FolderPickerTemplate}"
                                          FlagTemplate="{StaticResource FlagTemplate}"
                                          FloatTemplate="{StaticResource FloatTemplate}"
                                          Int32OptionalTemplate="{StaticResource Int32OptionalTemplate}"

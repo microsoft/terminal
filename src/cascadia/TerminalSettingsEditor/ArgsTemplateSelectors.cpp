@@ -38,6 +38,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 {
                     return FilePickerTemplate();
                 }
+                else if (argTag == Model::ArgTypeHint::FolderPath)
+                {
+                    return FolderPickerTemplate();
+                }
 
                 // no special handling required, just return the normal string template
                 return StringTemplate();
