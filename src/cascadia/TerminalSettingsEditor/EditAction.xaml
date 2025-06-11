@@ -237,6 +237,7 @@
             </DataTemplate>
 
             <!-- Example shortcut action to test this template: Adjust Opacity -->
+            <!-- Currently that is the only Int32 arg, so just clamp the min/max values according to that -->
             <DataTemplate x:Key="Int32Template"
                           x:DataType="local:ArgWrapper">
                 <ListViewItem>
@@ -247,12 +248,13 @@
                         </Grid.ColumnDefinitions>
                         <TextBlock Grid.Column="0"
                                    VerticalAlignment="Center"
-                                   Text="{x:Bind Name}" />
+                                   Text="{x:Bind Name}"
+                                   TextWrapping="WrapWholeWords"/>
                         <muxc:NumberBox Grid.Column="1"
                                         LargeChange="1"
-                                        Maximum="999"
+                                        Maximum="100"
                                         Minimum="0"
-                                        SmallChange="1"
+                                        SmallChange="10"
                                         Style="{StaticResource NumberBoxSettingStyle}"
                                         Value="{x:Bind UnboxInt32(Value), Mode=TwoWay, BindBack=Int32BindBack}" />
                     </Grid>
@@ -270,7 +272,8 @@
                         </Grid.ColumnDefinitions>
                         <TextBlock Grid.Column="0"
                                    VerticalAlignment="Center"
-                                   Text="{x:Bind Name}" />
+                                   Text="{x:Bind Name}"
+                                   TextWrapping="WrapWholeWords"/>
                         <muxc:NumberBox Grid.Column="1"
                                         LargeChange="1"
                                         Maximum="999"
@@ -293,7 +296,8 @@
                         </Grid.ColumnDefinitions>
                         <TextBlock Grid.Column="0"
                                    VerticalAlignment="Center"
-                                   Text="{x:Bind Name}" />
+                                   Text="{x:Bind Name}"
+                                   TextWrapping="WrapWholeWords"/>
                         <muxc:NumberBox Grid.Column="1"
                                         LargeChange="1"
                                         Maximum="999"
@@ -316,7 +320,8 @@
                         </Grid.ColumnDefinitions>
                         <TextBlock Grid.Column="0"
                                    VerticalAlignment="Center"
-                                   Text="{x:Bind Name}" />
+                                   Text="{x:Bind Name}"
+                                   TextWrapping="WrapWholeWords"/>
                         <muxc:NumberBox Grid.Column="1"
                                         LargeChange="1"
                                         Maximum="999"
@@ -339,7 +344,8 @@
                         </Grid.ColumnDefinitions>
                         <TextBlock Grid.Column="0"
                                    VerticalAlignment="Center"
-                                   Text="{x:Bind Name}" />
+                                   Text="{x:Bind Name}"
+                                   TextWrapping="WrapWholeWords"/>
                         <muxc:NumberBox Grid.Column="1"
                                         LargeChange="1"
                                         Maximum="999"
@@ -358,13 +364,16 @@
                     <Grid ColumnSpacing="8">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="{StaticResource ArgumentNameWidth}" />
-                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto"
+                                              MinWidth="196" />
                         </Grid.ColumnDefinitions>
                         <TextBlock Grid.Column="0"
                                    VerticalAlignment="Center"
-                                   Text="{x:Bind Name}" />
+                                   Text="{x:Bind Name}"
+                                   TextWrapping="WrapWholeWords"/>
                         <TextBox Grid.Column="1"
-                                 Text="{x:Bind UnboxString(Value), Mode=TwoWay, BindBack=StringBindBack}" />
+                                 Text="{x:Bind UnboxString(Value), Mode=TwoWay, BindBack=StringBindBack}"
+                                 TextWrapping="Wrap"/>
                     </Grid>
                 </ListViewItem>
             </DataTemplate>
@@ -380,7 +389,8 @@
                         </Grid.ColumnDefinitions>
                         <TextBlock Grid.Column="0"
                                    VerticalAlignment="Center"
-                                   Text="{x:Bind Name}" />
+                                   Text="{x:Bind Name}"
+                                   TextWrapping="WrapWholeWords"/>
                         <ComboBox Grid.Column="1"
                                   ItemTemplate="{StaticResource EnumComboBoxTemplate}"
                                   ItemsSource="{x:Bind EnumList, Mode=OneWay}"
@@ -402,7 +412,8 @@
                         </Grid.ColumnDefinitions>
                         <TextBlock Grid.Column="0"
                                    VerticalAlignment="Center"
-                                   Text="{x:Bind Name}" />
+                                   Text="{x:Bind Name}"
+                                   TextWrapping="WrapWholeWords"/>
                         <TextBox Grid.Column="1"
                                  Text="{x:Bind UnboxString(Value), Mode=TwoWay, BindBack=StringBindBack}" />
                         <Button x:Uid="Actions_Browse"
@@ -424,7 +435,8 @@
                         </Grid.ColumnDefinitions>
                         <TextBlock Grid.Column="0"
                                    VerticalAlignment="Center"
-                                   Text="{x:Bind Name}" />
+                                   Text="{x:Bind Name}"
+                                   TextWrapping="WrapWholeWords"/>
                         <ToggleSwitch Grid.Column="1"
                                       IsOn="{x:Bind UnboxBool(Value), Mode=TwoWay, BindBack=BoolOptionalBindBack}" />
                     </Grid>
@@ -442,7 +454,8 @@
                         </Grid.ColumnDefinitions>
                         <TextBlock Grid.Column="0"
                                    VerticalAlignment="Center"
-                                   Text="{x:Bind Name}" />
+                                   Text="{x:Bind Name}"
+                                   TextWrapping="WrapWholeWords"/>
                         <CheckBox Grid.Column="1"
                                   IsChecked="{x:Bind UnboxBoolOptional(Value), Mode=TwoWay, BindBack=BoolOptionalBindBack}"
                                   IsThreeState="True" />
@@ -466,7 +479,8 @@
                         </Grid.ColumnDefinitions>
                         <TextBlock Grid.Column="0"
                                    VerticalAlignment="Center"
-                                   Text="{x:Bind Name}" />
+                                   Text="{x:Bind Name}"
+                                   TextWrapping="WrapWholeWords"/>
                         <ComboBox Grid.Column="1"
                                   ItemTemplate="{StaticResource EnumComboBoxTemplate}"
                                   ItemsSource="{x:Bind EnumList, Mode=OneWay}"
@@ -503,7 +517,8 @@
                         </Grid.ColumnDefinitions>
                         <TextBlock Grid.Column="0"
                                    VerticalAlignment="Center"
-                                   Text="{x:Bind Name}" />
+                                   Text="{x:Bind Name}"
+                                   TextWrapping="WrapWholeWords"/>
                         <ListView Grid.Column="1"
                                   Margin="0"
                                   Padding="-8,0,0,0"
@@ -526,7 +541,8 @@
                         </Grid.ColumnDefinitions>
                         <TextBlock Grid.Column="0"
                                    VerticalAlignment="Center"
-                                   Text="{x:Bind Name}" />
+                                   Text="{x:Bind Name}"
+                                   TextWrapping="WrapWholeWords"/>
                         <local:NullableColorPicker x:Uid="Actions_NullableColorPicker"
                                                    Grid.Column="1"
                                                    ColorSchemeVM="{x:Bind DefaultColorScheme, Mode=OneWay}"
@@ -547,7 +563,8 @@
                         </Grid.ColumnDefinitions>
                         <TextBlock Grid.Column="0"
                                    VerticalAlignment="Center"
-                                   Text="{x:Bind Name}" />
+                                   Text="{x:Bind Name}"
+                                   TextWrapping="WrapWholeWords"/>
                         <local:NullableColorPicker x:Uid="Actions_NullableColorPicker"
                                                    Grid.Column="1"
                                                    ColorSchemeVM="{x:Bind DefaultColorScheme, Mode=OneWay}"

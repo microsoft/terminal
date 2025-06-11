@@ -1881,7 +1881,7 @@
     <comment>Label for a control that sets the action of a key binding.</comment>
   </data>
   <data name="Actions_NullEnumValue" xml:space="preserve">
-    <value>Null (use global setting)</value>
+    <value>Use global setting</value>
     <comment>An option to choose from for nullable enums. Clears the enum value.</comment>
   </data>
   <data name="Actions_CopyFormatHtml.Content" xml:space="preserve">
