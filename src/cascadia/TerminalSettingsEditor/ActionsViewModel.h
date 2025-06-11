@@ -275,7 +275,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void _MakeCommandVMsHelper();
         void _RegisterCmdVMEvents(com_ptr<implementation::CommandViewModel>& cmdVM);
 
-        void _CmdVMPropertyChangedHandler(const IInspectable& sender, const Windows::UI::Xaml::Data::PropertyChangedEventArgs& args);
         void _CmdVMEditRequestedHandler(const Editor::CommandViewModel& senderVM, const IInspectable& args);
         void _CmdVMDeleteRequestedHandler(const Editor::CommandViewModel& senderVM, const IInspectable& args);
         void _CmdVMPropagateColorSchemeRequestedHandler(const IInspectable& sender, const Editor::ArgWrapper& wrapper);

@@ -1172,15 +1172,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _Settings.ActionMap().AddAction(newCommand, nullptr);
     }
 
-    void ActionsViewModel::_CmdVMPropertyChangedHandler(const IInspectable& sender, const Windows::UI::Xaml::Data::PropertyChangedEventArgs& args)
-    {
-        const auto senderVM{ sender.as<Editor::CommandViewModel>() };
-        const auto propertyName{ args.PropertyName() };
-        if (propertyName == L"ProposedAction")
-        {
-        }
-    }
-
     void ActionsViewModel::_CmdVMEditRequestedHandler(const Editor::CommandViewModel& senderVM, const IInspectable& /*args*/)
     {
         CurrentCommand(senderVM);
@@ -1237,7 +1228,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         cmdVM->EditRequested({ this, &ActionsViewModel::_CmdVMEditRequestedHandler });
         cmdVM->DeleteRequested({ this, &ActionsViewModel::_CmdVMDeleteRequestedHandler });
-        cmdVM->PropertyChanged({ this, &ActionsViewModel::_CmdVMPropertyChangedHandler });
         cmdVM->PropagateColorSchemeRequested({ this, &ActionsViewModel::_CmdVMPropagateColorSchemeRequestedHandler });
         cmdVM->PropagateColorSchemeNamesRequested({ this, &ActionsViewModel::_CmdVMPropagateColorSchemeNamesRequestedHandler });
     }
