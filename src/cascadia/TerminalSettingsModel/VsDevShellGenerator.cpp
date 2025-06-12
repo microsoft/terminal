@@ -8,10 +8,7 @@
 
 using namespace winrt::Microsoft::Terminal::Settings::Model;
 
-void VsDevShellGenerator::GenerateProfiles(
-    const VsSetupConfiguration::VsSetupInstance& instance,
-    bool hidden,
-    std::vector<winrt::com_ptr<implementation::Profile>>& profiles) const
+void VsDevShellGenerator::GenerateProfiles(const VsSetupConfiguration::VsSetupInstance& instance, bool hidden, std::vector<winrt::com_ptr<implementation::Profile>>& profiles) const
 {
     try
     {
@@ -69,7 +66,17 @@ std::wstring VsDevShellGenerator::GetProfileCommandLine(const VsSetupConfigurati
     commandLine.append(LR"("""; Enter-VsDevShell )");
     commandLine.append(instance.GetInstanceId());
 #if defined(_M_ARM64)
-    commandLine.append(LR"( -SkipAutomaticLocation -DevCmdArguments """-arch=arm64 -host_arch=arm64"""}")");
+    // This part stays constant no matter what
+    commandLine.append(LR"( -SkipAutomaticLocation -DevCmdArguments """-arch=arm64 -host_arch=)");
+    if (instance.VersionInRange(L"[17.4,"))
+    {
+        commandLine.append(LR"("arm64 """}")");
+    }
+    // If an old version of VS is installed without ARM64 host support
+    else
+    {
+        commandLine.append(LR"("x64 """}")");
+    }
 #elif defined(_M_AMD64)
     commandLine.append(LR"( -SkipAutomaticLocation -DevCmdArguments """-arch=x64 -host_arch=x64"""}")");
 #else
