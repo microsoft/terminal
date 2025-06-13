@@ -189,7 +189,7 @@ namespace winrt::TerminalApp::implementation
                                    const winrt::hstring& contentKey,
                                    HRESULT settingsLoadedResult,
                                    const winrt::hstring& exceptionText);
-        void _ShowLoadWarningsDialog(const Windows::Foundation::Collections::IVector<Microsoft::Terminal::Settings::Model::SettingsLoadWarnings>& warnings);
+        void _ShowLoadWarningsDialog(const Windows::Foundation::Collections::IVectorView<Microsoft::Terminal::Settings::Model::SettingsLoadWarnings>& warnings);
 
         bool _IsKeyboardServiceEnabled();
 

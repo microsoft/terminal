@@ -256,7 +256,11 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             // renaming one is (supposed to be) atomic.
             // Wait... "supposed to be"!? Well it's technically not always atomic,
             // but it's pretty darn close to it, so... better than nothing.
-            std::filesystem::rename(tmpPath, resolvedPath);
+            std::filesystem::rename(tmpPath, resolvedPath, ec);
+            if (ec)
+            {
+                THROW_WIN32_MSG(ec.value(), "failed to write to file");
+            }
         }
     } // io
 } // til
