@@ -3171,7 +3171,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             }
             CATCH_LOG();
 
-            if (items.Size() > 0)
+            if (items && items.Size() > 0)
             {
                 std::vector<std::wstring> fullPaths;
 
