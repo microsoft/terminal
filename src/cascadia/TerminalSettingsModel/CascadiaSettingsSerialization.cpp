@@ -1226,15 +1226,7 @@ try
     // settings string back to the file.
     if (mustWriteToDisk)
     {
-        try
-        {
-            settings->WriteSettingsToDisk();
-        }
-        catch (...)
-        {
-            LOG_CAUGHT_EXCEPTION();
-            settings->_warnings.Append(SettingsLoadWarnings::FailedToWriteToSettings);
-        }
+        settings->WriteSettingsToDisk();
     }
     else
     {
@@ -1539,7 +1531,7 @@ void CascadiaSettings::ResetToDefaultSettings()
 // - <none>
 // Return Value:
 // - <none>
-void CascadiaSettings::WriteSettingsToDisk()
+bool CascadiaSettings::WriteSettingsToDisk()
 {
     // write current settings to current settings file
     Json::StreamWriterBuilder wbuilder;
@@ -1547,7 +1539,17 @@ void CascadiaSettings::WriteSettingsToDisk()
     wbuilder.settings_["indentation"] = "    ";
     wbuilder.settings_["precision"] = 6; // prevent values like 1.1000000000000001
 
-    _writeSettingsToDisk(Json::writeString(wbuilder, ToJson()));
+    try
+    {
+        _writeSettingsToDisk(Json::writeString(wbuilder, ToJson()));
+    }
+    catch (...)
+    {
+        LOG_CAUGHT_EXCEPTION();
+        _warnings.Append(SettingsLoadWarnings::FailedToWriteToSettings);
+        return false;
+    }
+    return true;
 }
 
 void CascadiaSettings::_writeSettingsToDisk(std::string_view contents)
