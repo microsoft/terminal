@@ -55,6 +55,11 @@ namespace Microsoft::Console
             unsigned short show; // used as a bool, but passed as a ushort
         };
 
+        struct ClearBufferData
+        {
+            unsigned short keepCursorRow;
+        };
+
         struct SetParentData
         {
             uint64_t handle;
@@ -64,7 +69,7 @@ namespace Microsoft::Console
         [[nodiscard]] bool _GetData(_Out_writes_bytes_(cbBuffer) void* const pBuffer, const DWORD cbBuffer);
         void _DoResizeWindow(const ResizeWindowData& data);
         void _DoSetWindowParent(const SetParentData& data);
-        void _DoClearBuffer() const;
+        void _DoClearBuffer(bool keepCursorRow) const;
         void _DoShowHide(const ShowHideData& data);
         void _Shutdown();
 
