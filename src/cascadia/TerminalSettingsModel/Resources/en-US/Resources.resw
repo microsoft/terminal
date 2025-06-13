@@ -740,6 +740,66 @@
   <data name="OpenCWDCommandKey" xml:space="preserve">
     <value>Open current working directory</value>
   </data>
+  <data name="CloseTab" xml:space="preserve">
+    <value>Close tab</value>
+  </data>
+  <data name="SendInput" xml:space="preserve">
+    <value>Send input</value>
+  </data>
+  <data name="SetFocusMode" xml:space="preserve">
+    <value>Set focus mode</value>
+  </data>
+  <data name="SetFullScreen" xml:space="preserve">
+    <value>Set full screen</value>
+  </data>
+  <data name="SetMaximized" xml:space="preserve">
+    <value>Set maximized</value>
+  </data>
+  <data name="SetColorScheme" xml:space="preserve">
+    <value>Set color scheme</value>
+  </data>
+  <data name="CloseOtherTabs" xml:space="preserve">
+    <value>Close other tabs</value>
+  </data>
+  <data name="CloseTabsAfter" xml:space="preserve">
+    <value>Close tabs after</value>
+  </data>
+  <data name="MoveTab" xml:space="preserve">
+    <value>Move tab</value>
+  </data>
+  <data name="FindMatch" xml:space="preserve">
+    <value>Find match</value>
+  </data>
+  <data name="SearchForText" xml:space="preserve">
+    <value>Search for text</value>
+  </data>
+  <data name="FocusPane" xml:space="preserve">
+    <value>Focus pane</value>
+  </data>
+  <data name="ExportBuffer" xml:space="preserve">
+    <value>Export buffer</value>
+  </data>
+  <data name="ClearBuffer" xml:space="preserve">
+    <value>Clear buffer</value>
+  </data>
+  <data name="MultipleActions" xml:space="preserve">
+    <value>Multiple actions</value>
+  </data>
+  <data name="AdjustOpacity" xml:space="preserve">
+    <value>Adjust opacity</value>
+  </data>
+  <data name="SelectCommand" xml:space="preserve">
+    <value>Select command</value>
+  </data>
+  <data name="SelectOutput" xml:space="preserve">
+    <value>Select output</value>
+  </data>
+  <data name="Suggestions" xml:space="preserve">
+    <value>Suggestions</value>
+  </data>
+  <data name="ColorSelection" xml:space="preserve">
+    <value>Color selection</value>
+  </data>
   <data name="WslDistroGeneratorDisplayName" xml:space="preserve">
     <value>WSL Distribution Profile Generator</value>
     <comment>The display name of a dynamic profile generator for WSL distros</comment>
