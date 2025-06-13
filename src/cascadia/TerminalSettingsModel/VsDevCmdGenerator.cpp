@@ -46,14 +46,14 @@ std::wstring VsDevCmdGenerator::GetProfileCommandLine(const VsSetupConfiguration
     // setting the shell path so the path in the profile will be used instead.
 #if defined(_M_ARM64)
     commandLine.append(LR"(" -startdir=none -arch=arm64 -host_arch=)");
-	if (instance.VersionInRange(L"[17.4,"))
-	{
+    if (instance.VersionInRange(L"[17.4,"))
+    {
         commandLine.append(LR"(arm64)");
-	}
-	else
-	{
+    }
+    else
+    {
         commandLine.append(LR"(x64)");
-	}
+    }
 #elif defined(_M_AMD64)
     commandLine.append(LR"(" -startdir=none -arch=x64 -host_arch=x64)");
 #else

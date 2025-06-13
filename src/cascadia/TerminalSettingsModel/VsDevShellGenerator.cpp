@@ -57,7 +57,6 @@ std::wstring VsDevShellGenerator::GetProfileCommandLine(const VsSetupConfigurati
         commandLine.append(L"powershell.exe");
     }
 
-
     // The triple-quotes are a PowerShell path escape sequence that can safely be stored in a JSON object.
     // The "SkipAutomaticLocation" parameter will prevent "Enter-VsDevShell" from automatically setting the shell path
     // so the path in the profile will be used instead
