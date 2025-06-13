@@ -16,6 +16,7 @@ Author(s):
 #pragma once
 
 #include "ActionMap.g.h"
+#include "ActionArgFactory.g.h"
 #include "IInheritable.h"
 #include "Command.h"
 
@@ -45,6 +46,15 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         {
             return lhs.Equals(rhs);
         }
+    };
+
+    struct ActionArgFactory
+    {
+        ActionArgFactory() = default;
+
+        static winrt::hstring GetNameForAction(ShortcutAction action);
+        static Windows::Foundation::Collections::IMap<Model::ShortcutAction, winrt::hstring> AvailableShortcutActionsAndNames();
+        static Model::IActionArgs GetEmptyArgsForAction(Model::ShortcutAction shortcutAction);
     };
 
     struct ActionMap : ActionMapT<ActionMap>, IInheritable<ActionMap>
@@ -154,4 +164,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         friend class SettingsModelUnitTests::DeserializationTests;
         friend class SettingsModelUnitTests::TerminalSettingsTests;
     };
+}
+
+namespace winrt::Microsoft::Terminal::Settings::Model::factory_implementation
+{
+    BASIC_FACTORY(ActionArgFactory);
 }
