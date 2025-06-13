@@ -59,7 +59,18 @@ def clear_all():
 def sgr(code=0):
     csi('{}m'.format(code))
 
-def sgr_n(seq=[]):
+def sgr_n(seq=None):
+    """Apply multiple SGR (Select Graphic Rendition) parameters.
+
+    Parameters
+    ----------
+    seq : Iterable of int | None
+        Sequence of numeric SGR codes to emit. If ``None`` (default) an empty
+        sequence is assumed. A mutable default argument must be avoided to
+        prevent unwanted state sharing between calls.
+    """
+    if seq is None:
+        seq = []
     csi('{}m'.format(';'.join(str(code) for code in seq)))
 
 def tbc():
