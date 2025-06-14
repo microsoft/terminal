@@ -1452,7 +1452,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // Likewise, run the event handlers outside of lock (they could
         // be reentrant)
         Initialized.raise(*this, nullptr);
-        _core.SetTmuxControlHandlerProducer(_tmuxDCSHandlerProducer);
+
+        if (_tmuxDCSHandlerProducer)
+        {
+            _core.SetTmuxControlHandlerProducer(_tmuxDCSHandlerProducer);
+        }
         return true;
     }
 

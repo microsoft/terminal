@@ -1578,7 +1578,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     // Function Description:
     // - Gets the width of the terminal in lines of text. This is just the
-    //   widht of the viewport.
+    //   width of the viewport.
     // Return Value:
     // - The width of the terminal in lines of text
     int ControlCore::ViewWidth() const
