@@ -3,13 +3,13 @@
 
 #pragma once
 
-#include "DumyConnection.g.h"
+#include "DummyConnection.g.h"
 
 namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 {
-    struct DumyConnection : DumyConnectionT<DumyConnection>
+    struct DummyConnection : DummyConnectionT<DummyConnection>
     {
-        DumyConnection() noexcept;
+        DummyConnection() noexcept;
 
         void Start() noexcept;
         void WriteInput(const winrt::array_view<const char16_t> buffer);
@@ -30,5 +30,5 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
 namespace winrt::Microsoft::Terminal::TerminalConnection::factory_implementation
 {
-    BASIC_FACTORY(DumyConnection);
+    BASIC_FACTORY(DummyConnection);
 }
