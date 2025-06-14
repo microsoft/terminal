@@ -24,6 +24,8 @@ namespace winrt::TerminalApp::implementation
     public:
         TmuxControl(TerminalPage& page);
         StringHandler TmuxControlHandlerProducer(const winrt::Microsoft::Terminal::Control::TermControl control, const PrintHandler print);
+        bool ActiveTabIsTmuxControl();
+        void SplitActivePane(SplitDirection direction);
 
     private:
         static const std::wregex REG_BEGIN;
@@ -83,7 +85,7 @@ namespace winrt::TerminalApp::implementation
             CONFIG_ERROR,
             CONTINUE,
             EXIT,
-            EXTENEDED_OUTPUT,
+            EXTENDED_OUTPUT,
             LAYOUT_CHANGED,
             NOTHING,
             MESSAGE,
@@ -160,6 +162,22 @@ namespace winrt::TerminalApp::implementation
             bool ResultHandler(const std::wstring& result, TmuxControl& tmux) override;
 
             int sessionId{ -1 };
+        };
+
+        struct KillPane : public Command
+        {
+        public:
+            std::wstring GetCommand() override;
+
+            int paneId{ -1 };
+        };
+
+        struct KillWindow : public Command
+        {
+        public:
+            std::wstring GetCommand() override;
+
+            int windowId{ -1 };
         };
 
         struct ListPanes : public Command
@@ -252,7 +270,7 @@ namespace winrt::TerminalApp::implementation
         // Layout structs
         enum TmuxLayoutType : int
         {
-            SIGNLE_PANE,
+            SINGLE_PANE,
             SPLIT_HORIZONTAL,
             SPLIT_VERTICAL,
         };
@@ -268,7 +286,7 @@ namespace winrt::TerminalApp::implementation
 
         struct TmuxWindowLayout
         {
-            TmuxLayoutType type{ SIGNLE_PANE };
+            TmuxLayoutType type{ SINGLE_PANE };
             std::vector<TmuxPaneLayout> panes;
         };
 
@@ -281,7 +299,7 @@ namespace winrt::TerminalApp::implementation
             int history{ 2000 };
             bool active{ false };
             std::wstring name;
-            std::wstring layoutCsum;
+            std::wstring layoutChecksum;
             std::vector<TmuxWindowLayout> layout;
         };
 
@@ -300,13 +318,14 @@ namespace winrt::TerminalApp::implementation
             int windowId;
             int paneId;
             winrt::Microsoft::Terminal::Control::TermControl control;
-            bool initilized { false };
+            bool initialized { false };
         };
 
         // Private methods
         void _AttachSession();
         void _DetachSession();
         void _SetupProfile();
+        void _CreateNewTabMenu();
 
         float _ComputeSplitSize(int newSize, int originSize, SplitDirection direction) const;
         TerminalApp::TerminalTab _GetTab(int windowId) const;
@@ -332,9 +351,12 @@ namespace winrt::TerminalApp::implementation
         void _CapturePane(int paneId, int cursorX, int cursorY, int history);
         void _DiscoverPanes(int sessionId, int windowId, bool newWindow);
         void _DiscoverWindows(int sessionId);
+        void _KillPane(int paneId);
+        void _KillWindow(int windowId);
         void _ListWindow(int sessionId, int windowId);
         void _ListPanes(int windowId, int history);
         void _NewWindow();
+        void _OpenNewTerminalViaDropdown();
         void _ResizePane(int paneId, int width, int height);
         void _ResizeWindow(int windowId, int width, int height);
         void _SelectPane(int paneId);
@@ -351,10 +373,14 @@ namespace winrt::TerminalApp::implementation
         TerminalPage& _page;
         winrt::Microsoft::Terminal::Settings::Model::Profile _profile;
         winrt::Microsoft::Terminal::Control::TermControl _control { nullptr };
+        TerminalApp::TabBase _controlTab {nullptr};
         winrt::Windows::System::DispatcherQueue _dispatcherQueue{ nullptr };
 
         winrt::event_token _detachKeyDownRevoker;
         winrt::event_token _windowSizeChangedRevoker;
+        winrt::event_token _newTabClickRevoker;
+
+        ::winrt::Windows::UI::Xaml::Controls::MenuFlyoutItem _newTabMenu{};
 
         std::vector<wchar_t> _dcsBuffer;
         std::deque<std::unique_ptr<TmuxControl::Command>> _cmdQueue;

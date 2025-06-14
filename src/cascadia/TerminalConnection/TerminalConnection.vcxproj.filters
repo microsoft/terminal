@@ -15,7 +15,7 @@
   <ItemGroup>
     <ClCompile Include="pch.cpp" />
     <ClCompile Include="EchoConnection.cpp" />
-    <ClCompile Include="DumyConnection.cpp" />
+    <ClCompile Include="DummyConnection.cpp" />
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
     <ClCompile Include="AzureConnection.cpp" />
     <ClCompile Include="init.cpp" />
@@ -24,7 +24,7 @@
   <ItemGroup>
     <ClInclude Include="pch.h" />
     <ClInclude Include="EchoConnection.h" />
-    <ClInclude Include="DumyConnection.h" />
+    <ClInclude Include="DummyConnection.h" />
     <ClInclude Include="AzureConnection.h" />
     <ClInclude Include="AzureClientID.h" />
     <ClInclude Include="CTerminalHandoff.h" />
@@ -33,7 +33,7 @@
   <ItemGroup>
     <Midl Include="ITerminalConnection.idl" />
     <Midl Include="EchoConnection.idl" />
-    <Midl Include="DumyConnection.idl" />
+    <Midl Include="DummyConnection.idl" />
     <Midl Include="AzureConnection.idl" />
     <Midl Include="ConptyConnection.idl" />
     <Midl Include="ConnectionInformation.idl" />

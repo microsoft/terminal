@@ -177,6 +177,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         INHERITABLE_SETTING(Model::TerminalSettings, bool, RepositionCursorWithMouse, false);
 
         INHERITABLE_SETTING(Model::TerminalSettings, bool, ReloadEnvironmentVariables, true);
+        INHERITABLE_SETTING(Model::TerminalSettings, bool, AllowTmuxControl, false);
 
         INHERITABLE_SETTING(Model::TerminalSettings, Microsoft::Terminal::Control::PathTranslationStyle, PathTranslationStyle, Microsoft::Terminal::Control::PathTranslationStyle::None);
 
