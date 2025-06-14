@@ -5,11 +5,11 @@
 #include "AllShortcutActions.h"
 #include "ActionMap.h"
 #include "Command.h"
-#include "AllShortcutActions.h"
 #include <LibraryResources.h>
 #include <til/io.h>
 
 #include "ActionMap.g.cpp"
+#include "ActionArgFactory.g.cpp"
 
 using namespace winrt::Microsoft::Terminal::Settings::Model;
 using namespace winrt::Microsoft::Terminal::Control;
@@ -59,6 +59,138 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         hasher.write(action);
         return hasher.finalize();
+    }
+
+    winrt::hstring ActionArgFactory::GetNameForAction(Model::ShortcutAction action)
+    {
+        // Use a magic static to initialize this map, because we won't be able
+        // to load the resources at _init_, only at runtime.
+        static auto actionNames = []() {
+            return std::unordered_map<ShortcutAction, winrt::hstring>{
+                { ShortcutAction::AddMark, RS_(L"AddMarkCommandKey") },
+                { ShortcutAction::AdjustFontSize, RS_(L"AdjustFontSizeCommandKey") },
+                { ShortcutAction::AdjustOpacity, RS_(L"AdjustOpacity") },
+                { ShortcutAction::BreakIntoDebugger, RS_(L"BreakIntoDebuggerCommandKey") },
+                { ShortcutAction::ClearAllMarks, RS_(L"ClearAllMarksCommandKey") },
+                { ShortcutAction::ClearBuffer, RS_(L"ClearBuffer") },
+                { ShortcutAction::ClearMark, RS_(L"ClearMarkCommandKey") },
+                { ShortcutAction::CloseOtherPanes, RS_(L"CloseOtherPanesCommandKey") },
+                { ShortcutAction::CloseOtherTabs, RS_(L"CloseOtherTabs") },
+                { ShortcutAction::ClosePane, RS_(L"ClosePaneCommandKey") },
+                { ShortcutAction::CloseTab, RS_(L"CloseTab") },
+                { ShortcutAction::CloseTabsAfter, RS_(L"CloseTabsAfter") },
+                { ShortcutAction::CloseWindow, RS_(L"CloseWindowCommandKey") },
+                { ShortcutAction::ColorSelection, RS_(L"ColorSelection") },
+                { ShortcutAction::CopyText, RS_(L"CopyTextCommandKey") },
+                { ShortcutAction::DisplayWorkingDirectory, RS_(L"DisplayWorkingDirectoryCommandKey") },
+                { ShortcutAction::DisablePaneReadOnly, RS_(L"DisablePaneReadOnlyCommandKey") },
+                { ShortcutAction::DuplicateTab, RS_(L"DuplicateTabCommandKey") },
+                { ShortcutAction::EnablePaneReadOnly, RS_(L"EnablePaneReadOnlyCommandKey") },
+                { ShortcutAction::ExecuteCommandline, RS_(L"ExecuteCommandlineCommandKey") },
+                { ShortcutAction::ExportBuffer, RS_(L"ExportBuffer") },
+                { ShortcutAction::ExpandSelectionToWord, RS_(L"ExpandSelectionToWordCommandKey") },
+                { ShortcutAction::Find, RS_(L"FindCommandKey") },
+                { ShortcutAction::FindMatch, RS_(L"FindMatch") },
+                { ShortcutAction::FocusPane, RS_(L"FocusPane") },
+                { ShortcutAction::GlobalSummon, RS_(L"GlobalSummonCommandKey") },
+                { ShortcutAction::IdentifyWindow, RS_(L"IdentifyWindowCommandKey") },
+                { ShortcutAction::IdentifyWindows, RS_(L"IdentifyWindowsCommandKey") },
+                { ShortcutAction::MarkMode, RS_(L"MarkModeCommandKey") },
+                { ShortcutAction::MoveFocus, RS_(L"MoveFocusCommandKey") },
+                { ShortcutAction::MovePane, RS_(L"MovePaneCommandKey") },
+                { ShortcutAction::MoveTab, RS_(L"MoveTab") },
+                { ShortcutAction::MultipleActions, RS_(L"MultipleActions") },
+                { ShortcutAction::NewTab, RS_(L"NewTabCommandKey") },
+                { ShortcutAction::NewWindow, RS_(L"NewWindowCommandKey") },
+                { ShortcutAction::NextTab, RS_(L"NextTabCommandKey") },
+                { ShortcutAction::OpenAbout, RS_(L"OpenAboutCommandKey") },
+                { ShortcutAction::OpenCWD, RS_(L"OpenCWDCommandKey") },
+                { ShortcutAction::OpenNewTabDropdown, RS_(L"OpenNewTabDropdownCommandKey") },
+                { ShortcutAction::OpenScratchpad, RS_(L"OpenScratchpadKey") },
+                { ShortcutAction::OpenSettings, RS_(L"OpenSettingsUICommandKey") },
+                { ShortcutAction::OpenSystemMenu, RS_(L"OpenSystemMenuCommandKey") },
+                { ShortcutAction::OpenTabColorPicker, RS_(L"OpenTabColorPickerCommandKey") },
+                { ShortcutAction::OpenTabRenamer, RS_(L"OpenTabRenamerCommandKey") },
+                { ShortcutAction::OpenWindowRenamer, RS_(L"OpenWindowRenamerCommandKey") },
+                { ShortcutAction::PasteText, RS_(L"PasteTextCommandKey") },
+                { ShortcutAction::PrevTab, RS_(L"PrevTabCommandKey") },
+                { ShortcutAction::QuickFix, RS_(L"QuickFixCommandKey") },
+                { ShortcutAction::QuakeMode, RS_(L"QuakeModeCommandKey") },
+                { ShortcutAction::Quit, RS_(L"QuitCommandKey") },
+                { ShortcutAction::RenameTab, RS_(L"ResetTabNameCommandKey") },
+                { ShortcutAction::RenameWindow, RS_(L"ResetWindowNameCommandKey") },
+                { ShortcutAction::ResetFontSize, RS_(L"ResetFontSizeCommandKey") },
+                { ShortcutAction::RestartConnection, RS_(L"RestartConnectionKey") },
+                { ShortcutAction::ResizePane, RS_(L"ResizePaneCommandKey") },
+                { ShortcutAction::RestoreLastClosed, RS_(L"RestoreLastClosedCommandKey") },
+                { ShortcutAction::SaveSnippet, RS_(L"SaveSnippetNamePrefix") },
+                { ShortcutAction::ScrollDown, RS_(L"ScrollDownCommandKey") },
+                { ShortcutAction::ScrollDownPage, RS_(L"ScrollDownPageCommandKey") },
+                { ShortcutAction::ScrollToBottom, RS_(L"ScrollToBottomCommandKey") },
+                { ShortcutAction::ScrollToMark, RS_(L"ScrollToPreviousMarkCommandKey") },
+                { ShortcutAction::ScrollToTop, RS_(L"ScrollToTopCommandKey") },
+                { ShortcutAction::ScrollUp, RS_(L"ScrollUpCommandKey") },
+                { ShortcutAction::ScrollUpPage, RS_(L"ScrollUpPageCommandKey") },
+                { ShortcutAction::SearchForText, RS_(L"SearchForText") },
+                { ShortcutAction::SelectAll, RS_(L"SelectAllCommandKey") },
+                { ShortcutAction::SelectCommand, RS_(L"SelectCommand") },
+                { ShortcutAction::SelectOutput, RS_(L"SelectOutput") },
+                { ShortcutAction::SendInput, RS_(L"SendInput") },
+                { ShortcutAction::SetColorScheme, RS_(L"SetColorScheme") },
+                { ShortcutAction::SetFocusMode, RS_(L"SetFocusMode") },
+                { ShortcutAction::SetFullScreen, RS_(L"SetFullScreen") },
+                { ShortcutAction::SetMaximized, RS_(L"SetMaximized") },
+                { ShortcutAction::SetTabColor, RS_(L"ResetTabColorCommandKey") },
+                { ShortcutAction::ShowContextMenu, RS_(L"ShowContextMenuCommandKey") },
+                { ShortcutAction::SplitPane, RS_(L"SplitPaneCommandKey") },
+                { ShortcutAction::Suggestions, RS_(L"Suggestions") },
+                { ShortcutAction::SwapPane, RS_(L"SwapPaneCommandKey") },
+                { ShortcutAction::SwitchSelectionEndpoint, RS_(L"SwitchSelectionEndpointCommandKey") },
+                { ShortcutAction::SwitchToTab, RS_(L"SwitchToTabCommandKey") },
+                { ShortcutAction::TabSearch, RS_(L"TabSearchCommandKey") },
+                { ShortcutAction::ToggleAlwaysOnTop, RS_(L"ToggleAlwaysOnTopCommandKey") },
+                { ShortcutAction::ToggleBlockSelection, RS_(L"ToggleBlockSelectionCommandKey") },
+                { ShortcutAction::ToggleBroadcastInput, RS_(L"ToggleBroadcastInputCommandKey") },
+                { ShortcutAction::ToggleCommandPalette, RS_(L"ToggleCommandPaletteCommandKey") },
+                { ShortcutAction::ToggleFocusMode, RS_(L"ToggleFocusModeCommandKey") },
+                { ShortcutAction::ToggleFullscreen, RS_(L"ToggleFullscreenCommandKey") },
+                { ShortcutAction::TogglePaneReadOnly, RS_(L"TogglePaneReadOnlyCommandKey") },
+                { ShortcutAction::TogglePaneZoom, RS_(L"TogglePaneZoomCommandKey") },
+                { ShortcutAction::ToggleShaderEffects, RS_(L"ToggleShaderEffectsCommandKey") },
+                { ShortcutAction::ToggleSplitOrientation, RS_(L"ToggleSplitOrientationCommandKey") },
+            };
+        }();
+
+        const auto found = actionNames.find(action);
+        return found != actionNames.end() ? found->second : winrt::hstring{};
+    }
+
+    winrt::Windows::Foundation::Collections::IMap<Model::ShortcutAction, winrt::hstring> ActionArgFactory::AvailableShortcutActionsAndNames()
+    {
+        std::unordered_map<ShortcutAction, winrt::hstring> actionNames;
+#define ON_ALL_ACTIONS(action) actionNames.emplace(ShortcutAction::action, GetNameForAction(ShortcutAction::action));
+
+        ALL_SHORTCUT_ACTIONS
+
+#undef ON_ALL_ACTIONS
+        return winrt::single_threaded_map(std::move(actionNames));
+    }
+
+    Model::IActionArgs ActionArgFactory::GetEmptyArgsForAction(Model::ShortcutAction shortcutAction)
+    {
+        switch (shortcutAction)
+        {
+#define ON_ALL_ACTIONS_WITH_ARGS(name) \
+    case Model::ShortcutAction::name:  \
+        return winrt::make<name##Args>();
+
+            ALL_SHORTCUT_ACTIONS_WITH_ARGS
+
+#undef ON_ALL_ACTIONS_WITH_ARGS
+
+        default:
+            return nullptr;
+        }
     }
 
     // Method Description:
@@ -380,6 +512,15 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return _ResolvedKeyToActionMapCache.GetView();
     }
 
+    IVectorView<Model::Command> ActionMap::AllCommands()
+    {
+        if (!_ResolvedKeyToActionMapCache)
+        {
+            _RefreshKeyBindingCaches();
+        }
+        return _AllCommandsCache.GetView();
+    }
+
     void ActionMap::_RefreshKeyBindingCaches()
     {
         _CumulativeKeyToActionMapCache.clear();
@@ -387,6 +528,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         _CumulativeActionToKeyMapCache.clear();
         std::unordered_map<KeyChord, Model::Command, KeyChordHash, KeyChordEquality> globalHotkeys;
         std::unordered_map<KeyChord, Model::Command, KeyChordHash, KeyChordEquality> resolvedKeyToActionMap;
+        std::vector<Model::Command> allCommandsVector;
 
         _PopulateCumulativeKeyMaps(_CumulativeKeyToActionMapCache, _CumulativeActionToKeyMapCache);
         _PopulateCumulativeActionMap(_CumulativeIDToActionMapCache);
@@ -406,8 +548,14 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             }
         }
 
+        for (const auto& [_, cmd] : _CumulativeIDToActionMapCache)
+        {
+            allCommandsVector.emplace_back(cmd);
+        }
+
         _ResolvedKeyToActionMapCache = single_threaded_map(std::move(resolvedKeyToActionMap));
         _GlobalHotkeysCache = single_threaded_map(std::move(globalHotkeys));
+        _AllCommandsCache = single_threaded_vector(std::move(allCommandsVector));
     }
 
     com_ptr<ActionMap> ActionMap::Copy() const
@@ -421,7 +569,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         actionMap->_ActionMap.reserve(_ActionMap.size());
         for (const auto& [actionID, cmd] : _ActionMap)
         {
-            actionMap->_ActionMap.emplace(actionID, *winrt::get_self<Command>(cmd)->Copy());
+            const auto copiedCmd = winrt::get_self<Command>(cmd)->Copy();
+            actionMap->_ActionMap.emplace(actionID, *copiedCmd);
+            copiedCmd->IDChanged({ actionMap.get(), &ActionMap::_CommandIDChangedHandler });
         }
 
         // Name --> Command
@@ -541,6 +691,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                         }
                     }
                 }
+                cmd.IDChanged({ this, &ActionMap::_CommandIDChangedHandler });
                 _ActionMap.insert_or_assign(cmdID, cmd);
             }
         }
@@ -571,6 +722,45 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         const auto id = action == ShortcutAction::Invalid ? hstring{} : cmd.ID();
         _KeyMap.insert_or_assign(keys, id);
         _changeLog.emplace(KeysKey);
+    }
+
+    void ActionMap::_CommandIDChangedHandler(const Model::Command& senderCmd, const winrt::hstring& oldID)
+    {
+        const auto newID = senderCmd.ID();
+        if (newID != oldID)
+        {
+            if (const auto foundCmd{ _GetActionByID(newID) })
+            {
+                if (foundCmd.ActionAndArgs() != senderCmd.ActionAndArgs())
+                {
+                    // we found a command that has the same ID as this one, but that command has different ActionAndArgs
+                    // this means that foundCommand's action and/or args have been changed since its ID was generated,
+                    // generate a new one for it
+                    // Note: this is recursive! Found command's ID being changed lands us back in here to resolve any cascading collisions
+                    foundCmd.GenerateID();
+                }
+            }
+            // update _ActionMap with the ID change
+            _ActionMap.erase(oldID);
+            _ActionMap.emplace(newID, senderCmd);
+
+            // update _KeyMap so that all keys that pointed to the old ID now point to the new ID
+            std::unordered_set<KeyChord, KeyChordHash, KeyChordEquality> keysToRemap{};
+            for (const auto& [keys, cmdID] : _KeyMap)
+            {
+                if (cmdID == oldID)
+                {
+                    keysToRemap.insert(keys);
+                }
+            }
+            for (const auto& keys : keysToRemap)
+            {
+                _KeyMap.erase(keys);
+                _KeyMap.emplace(keys, newID);
+            }
+            PropagateCommandIDChanged.raise(senderCmd, oldID);
+        }
+        _RefreshKeyBindingCaches();
     }
 
     // Method Description:
@@ -686,6 +876,24 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return nullptr;
     }
 
+    IVector<Control::KeyChord> ActionMap::AllKeyBindingsForAction(const winrt::hstring& cmdID)
+    {
+        if (!_ResolvedKeyToActionMapCache)
+        {
+            _RefreshKeyBindingCaches();
+        }
+
+        std::vector<Control::KeyChord> keybindingsList;
+        for (const auto& [key, ID] : _CumulativeKeyToActionMapCache)
+        {
+            if (ID == cmdID)
+            {
+                keybindingsList.emplace_back(key);
+            }
+        }
+        return single_threaded_vector(std::move(keybindingsList));
+    }
+
     // Method Description:
     // - Rebinds a key binding to a new key chord
     // Arguments:
@@ -741,6 +949,13 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
     }
 
+    void ActionMap::AddKeyBinding(Control::KeyChord keys, const winrt::hstring& cmdID)
+    {
+        _KeyMap.insert_or_assign(keys, cmdID);
+        _changeLog.emplace(KeysKey);
+        _RefreshKeyBindingCaches();
+    }
+
     // Method Description:
     // - Add a new key binding
     // - If the key chord is already in use, the conflicting command is overwritten.
@@ -755,6 +970,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         cmd->ActionAndArgs(action);
         cmd->GenerateID();
         AddAction(*cmd, keys);
+    }
+
+    void ActionMap::DeleteUserCommand(const winrt::hstring& cmdID)
+    {
+        _ActionMap.erase(cmdID);
+        _RefreshKeyBindingCaches();
     }
 
     // This is a helper to aid in sorting commands by their `Name`s, alphabetically.
