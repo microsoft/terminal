@@ -279,15 +279,25 @@ namespace winrt::TerminalApp::implementation
                 return;
             }
 
-            const auto& duplicateFromTab{ realArgs.SplitMode() == SplitType::Duplicate ? _GetFocusedTab() : nullptr };
-
             const auto& terminalTab{ _senderOrFocusedTab(sender) };
-
-            _SplitPane(terminalTab,
+            const auto& duplicateFromTab { realArgs.SplitMode() == SplitType::Duplicate ? _GetFocusedTab() : nullptr };
+            // The tab is not focused yet if we just created the tab, hacky workaround want to get feedback on if ive missed a edge cas ebefore cleaning up
+            if (!duplicateFromTab && terminalTab.get())
+            {
+                _SplitPane(terminalTab,
+                       realArgs.SplitDirection(),
+                       // This is safe, we're already filtering so the value is (0, 1)
+                       realArgs.SplitSize(),
+                       _MakePane(realArgs.ContentArgs(), *terminalTab.get()));
+            }
+            else
+            {
+                _SplitPane(terminalTab,
                        realArgs.SplitDirection(),
                        // This is safe, we're already filtering so the value is (0, 1)
                        realArgs.SplitSize(),
                        _MakePane(realArgs.ContentArgs(), duplicateFromTab));
+            }
             args.Handled(true);
         }
     }
