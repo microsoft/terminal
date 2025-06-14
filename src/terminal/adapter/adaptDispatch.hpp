@@ -190,6 +190,9 @@ namespace Microsoft::Console::VirtualTerminal
 
         void SetVtChecksumReportSupport(const bool enabled) noexcept override;
 
+        StringHandler EnterTmuxControl(const VTParameters parameters) override; // tmux -CC
+        void SetTmuxControlHandlerProducer(StringHandlerProducer producer) override; // tmux -CC
+
     private:
         enum class Mode
         {
@@ -328,6 +331,7 @@ namespace Microsoft::Console::VirtualTerminal
         til::enumset<Mode> _modes{ Mode::PageCursorCoupling };
 
         SgrStack _sgrStack;
+        StringHandlerProducer _tmuxControlHandlerProducer { nullptr };
 
         void _SetUnderlineStyleHelper(const VTParameter option, TextAttribute& attr) noexcept;
         size_t _SetRgbColorsHelper(const VTParameters options,
