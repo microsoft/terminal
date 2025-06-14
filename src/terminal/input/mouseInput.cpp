@@ -269,7 +269,7 @@ static constexpr wchar_t _encodeDefaultCoordinate(const til::CoordType sCoordina
 // Parameters:
 // - <none>
 // Return value:
-// - true, if we are tracking mouse input. False, otherwise
+// - true, if we are tracking mouse input; otherwise, false.
 bool TerminalInput::IsTrackingMouseInput() const noexcept
 {
     return _inputMode.any(Mode::DefaultMouseTracking, Mode::ButtonEventMouseTracking, Mode::AnyEventMouseTracking);

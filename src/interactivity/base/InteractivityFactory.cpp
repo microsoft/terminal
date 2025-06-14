@@ -293,7 +293,7 @@ using namespace Microsoft::Console::Interactivity;
 // - hwnd: Receives the value of the newly created window's HWND.
 // - owner: the HWND that should be the initial owner of the pseudo window.
 // Return Value:
-// - STATUS_SUCCESS on success, otherwise an appropriate error.
+// - STATUS_SUCCESS on success; otherwise, an appropriate error.
 [[nodiscard]] NTSTATUS InteractivityFactory::CreatePseudoWindow(HWND& hwnd)
 {
     hwnd = nullptr;

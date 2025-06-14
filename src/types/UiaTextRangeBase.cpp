@@ -568,7 +568,7 @@ try
             // - the anchors have been populated
             // This means that we've found a contiguous range where the text attribute was found.
             // No point in searching through the rest of the search space.
-            // TLDR: keep updating the second anchor and make the range wider until the attribute changes.
+            // TL;DR: keep updating the second anchor and make the range wider until the attribute changes.
             break;
         }
     }
@@ -663,7 +663,7 @@ CATCH_RETURN();
 // - pRetVal - the attributeId's sub-type for the first cell in the range (i.e. foreground color)
 // - attr - the text attribute we're checking
 // Return Value:
-// - true, if the attributeId is supported. false, otherwise.
+// - true, if the attributeId is supported. Otherwise, false.
 // - pRetVal is populated with the appropriate response relevant to the returned bool.
 bool UiaTextRangeBase::_initializeAttrQuery(TEXTATTRIBUTEID attributeId, VARIANT* pRetVal, const TextAttribute& attr) const
 {
@@ -1310,7 +1310,7 @@ til::CoordType UiaTextRangeBase::_getViewportHeight(const til::inclusive_rect& v
 {
     assert(viewport.bottom >= viewport.top);
     // + 1 because til::inclusive_rect is inclusive on both sides so subtracting top
-    // and bottom gets rid of 1 more then it should.
+    // and bottom gets rid of 1 more, then it should.
     return viewport.bottom - viewport.top + 1;
 }
 
