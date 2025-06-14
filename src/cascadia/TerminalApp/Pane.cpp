@@ -697,12 +697,24 @@ bool Pane::SwapPanes(std::shared_ptr<Pane> first, std::shared_ptr<Pane> second)
         // Refocus the last pane if there was a pane focused
         if (const auto focus = first->GetActivePane())
         {
-            focus->_Focus();
+            // GH#18184: manually focus the pane and content.
+            //           _Focus() results in no-op because the pane was _lastActive
+            focus->GotFocus.raise(focus, FocusState::Programmatic);
+            if (const auto& lastContent{ focus->GetLastFocusedContent() })
+            {
+                lastContent.Focus(FocusState::Programmatic);
+            }
         }
 
         if (const auto focus = second->GetActivePane())
         {
-            focus->_Focus();
+            // GH#18184: manually focus the pane and content.
+            //           _Focus() results in no-op because the pane was _lastActive
+            focus->GotFocus.raise(focus, FocusState::Programmatic);
+            if (const auto& lastContent{ focus->GetLastFocusedContent() })
+            {
+                lastContent.Focus(FocusState::Programmatic);
+            }
         }
 
         return true;
