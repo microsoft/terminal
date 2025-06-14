@@ -449,6 +449,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         friend class ControlUnitTests::ControlCoreTests;
         friend class ControlUnitTests::ControlInteractivityTests;
+
         bool _inUnitTests{ false };
     };
 }

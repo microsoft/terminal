@@ -90,7 +90,7 @@ static Microsoft::Console::TSF::Handle& GetTSFHandle()
 
 namespace winrt::Microsoft::Terminal::Control::implementation
 {
-    static void _translatePathInPlace(std::wstring& fullPath, PathTranslationStyle translationStyle)
+    void TermControl::_translatePathInPlace(std::wstring& fullPath, PathTranslationStyle translationStyle)
     {
         static constexpr wil::zwstring_view s_pathPrefixes[] = {
             {},

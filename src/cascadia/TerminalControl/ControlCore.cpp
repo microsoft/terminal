@@ -20,6 +20,8 @@
 #include "../../renderer/uia/UiaRenderer.hpp"
 #include "../../types/inc/CodepointWidthDetector.hpp"
 
+#include "TermControl.h"
+
 #include "ControlCore.g.cpp"
 #include "SelectionColor.g.cpp"
 
@@ -1441,6 +1443,24 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         using namespace ::Microsoft::Console::Utils;
 
         auto filtered = FilterStringForPaste(hstr, CarriageReturnNewline | ControlCodes);
+        std::filesystem::path path{ filtered };
+
+        if (!path.empty() && _settings->PathTranslationStyle() != PathTranslationStyle::None)
+        {
+            filtered = path.wstring();
+            // Explorer puts paths wrapped in double quotes on the clipboard. The translation routine expects it to be without quotes.
+            if (!filtered.empty() && filtered.front() == '\"')
+            {
+                filtered.erase(0, 1);
+            }
+            if (!filtered.empty() && filtered.back() == '\"')
+            {
+                filtered.pop_back();
+            }
+
+            TermControl::_translatePathInPlace(filtered, _settings->PathTranslationStyle());
+        }
+
         if (BracketedPasteEnabled())
         {
             filtered.insert(0, L"\x1b[200~");
