@@ -14,13 +14,10 @@
         <ResourceDictionary x:Key="Light">
             <Style x:Key="SecondaryTextBlockStyle"
                    TargetType="TextBlock">
-                <Setter Property="Foreground" Value="{ThemeResource SystemBaseMediumColor}" />
+                <Setter Property="Foreground" Value="{ThemeResource TextFillColorSecondary}" />
             </Style>
             <SolidColorBrush x:Key="SubgroupHeaderBrush"
-                             Color="{StaticResource SystemBaseMediumColor}" />
-            <Color x:Key="CardStrokeColorDefault">#0F000000</Color>
-            <SolidColorBrush x:Key="CardStrokeColorDefaultBrush"
-                             Color="{StaticResource CardStrokeColorDefault}" />
+                             Color="{StaticResource TextFillColorSecondary}" />
             <StaticResource x:Key="ExpanderHeaderBorderBrush"
                             ResourceKey="CardStrokeColorDefaultBrush" />
 
@@ -83,13 +80,10 @@
         <ResourceDictionary x:Key="Dark">
             <Style x:Key="SecondaryTextBlockStyle"
                    TargetType="TextBlock">
-                <Setter Property="Foreground" Value="{ThemeResource SystemBaseMediumColor}" />
+                <Setter Property="Foreground" Value="{ThemeResource TextFillColorSecondary}" />
             </Style>
             <SolidColorBrush x:Key="SubgroupHeaderBrush"
-                             Color="{StaticResource SystemBaseMediumColor}" />
-            <Color x:Key="CardStrokeColorDefault">#19000000</Color>
-            <SolidColorBrush x:Key="CardStrokeColorDefaultBrush"
-                             Color="{StaticResource CardStrokeColorDefault}" />
+                             Color="{StaticResource TextFillColorSecondary}" />
             <StaticResource x:Key="ExpanderHeaderBorderBrush"
                             ResourceKey="CardStrokeColorDefaultBrush" />
 
@@ -136,9 +130,9 @@
     <Style x:Key="SettingContainerResetButtonStyle"
            BasedOn="{StaticResource DefaultButtonStyle}"
            TargetType="Button">
-        <Setter Property="Margin" Value="5,0,0,0" />
-        <Setter Property="Height" Value="19" />
-        <Setter Property="Width" Value="19" />
+        <Setter Property="Margin" Value="4,0,0,0" />
+        <Setter Property="Height" Value="20" />
+        <Setter Property="Width" Value="20" />
         <Setter Property="Padding" Value="0" />
         <Setter Property="BorderBrush" Value="Transparent" />
         <Setter Property="Background" Value="Transparent" />
@@ -147,7 +141,7 @@
     <Style x:Key="SettingContainerFontIconStyle"
            TargetType="FontIcon">
         <Setter Property="Foreground" Value="{ThemeResource SettingContainerResetButtonIconForeground}" />
-        <Setter Property="FontSize" Value="11" />
+        <Setter Property="FontSize" Value="12" />
         <Setter Property="FontFamily" Value="{ThemeResource SymbolThemeFontFamily}" />
     </Style>
 
@@ -183,7 +177,7 @@
     <Style x:Key="SettingContainerCurrentValueTextBlockStyle"
            BasedOn="{StaticResource SettingsPageItemDescriptionStyle}"
            TargetType="TextBlock">
-        <Setter Property="MaxWidth" Value="250" />
+        <Setter Property="MaxWidth" Value="248" />
         <Setter Property="Margin" Value="0,0,-16,0" />
         <Setter Property="HorizontalAlignment" Value="Right" />
         <Setter Property="VerticalAlignment" Value="Center" />
@@ -462,7 +456,7 @@
                                                Text="{TemplateBinding HelpText}" />
                                 </StackPanel>
                                 <ContentPresenter Grid.Column="1"
-                                                  MaxWidth="250"
+                                                  MaxWidth="248"
                                                   Margin="0,0,-16,0"
                                                   HorizontalAlignment="Right"
                                                   VerticalAlignment="Center"
