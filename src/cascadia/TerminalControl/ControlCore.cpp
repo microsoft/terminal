@@ -1443,11 +1443,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         using namespace ::Microsoft::Console::Utils;
 
         auto filtered = FilterStringForPaste(hstr, CarriageReturnNewline | ControlCodes);
-        std::filesystem::path path{ filtered };
-
-        if (!path.empty() && _settings->PathTranslationStyle() != PathTranslationStyle::None)
+        if (!filtered.empty() && _settings->PathTranslationStyle() != PathTranslationStyle::None)
         {
-            filtered = path.wstring();
             // Explorer puts paths wrapped in double quotes on the clipboard. The translation routine expects it to be without quotes.
             if (!filtered.empty() && filtered.front() == '\"')
             {
