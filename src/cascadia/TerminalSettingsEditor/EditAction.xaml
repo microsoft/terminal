@@ -161,7 +161,8 @@
             <!--  Templates  -->
             <DataTemplate x:Key="KeyChordTemplate"
                           x:DataType="local:KeyChordViewModel">
-                <ListViewItem Style="{StaticResource KeyBindingContainerStyle}">
+                <ListViewItem Style="{StaticResource KeyBindingContainerStyle}"
+                              IsTabStop="False">
                     <Grid Padding="2,0,2,0"
                           VerticalAlignment="Center">
                         <Grid.ColumnDefinitions>
@@ -677,7 +678,8 @@
                        Grid.Row="3"
                        Grid.Column="0"
                        VerticalAlignment="Center" />
-            <ListView Grid.Row="3"
+            <ListView x:Name="KeyChordListView"
+                      Grid.Row="3"
                       Grid.Column="1"
                       ItemTemplate="{StaticResource KeyChordTemplate}"
                       ItemsSource="{x:Bind ViewModel.KeyChordViewModelList, Mode=OneWay}"

@@ -111,6 +111,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         til::typed_event<IInspectable, Editor::ArgWrapper> PropagateColorSchemeRequested;
         til::typed_event<IInspectable, Editor::ArgWrapper> PropagateColorSchemeNamesRequested;
         til::typed_event<IInspectable, Editor::ArgWrapper> PropagateWindowRootRequested;
+        til::typed_event<IInspectable, IInspectable> FocusContainer;
 
         VIEW_MODEL_OBSERVABLE_PROPERTY(IInspectable, ProposedShortcutAction);
         VIEW_MODEL_OBSERVABLE_PROPERTY(Editor::ActionArgsViewModel, ActionArgsVM, nullptr);

@@ -311,16 +311,22 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void CommandViewModel::_RegisterKeyChordVMEvents(Editor::KeyChordViewModel kcVM)
     {
-        if (const auto actionsPageVM{ _actionsPageVM.get() })
-        {
-            const auto id = ID();
-            kcVM.AddKeyChordRequested([actionsPageVM, id](const Editor::KeyChordViewModel& sender, const Control::KeyChord& keys) {
+        const auto id = ID();
+        kcVM.AddKeyChordRequested([actionsPageVMWeakRef = _actionsPageVM, id](const Editor::KeyChordViewModel& sender, const Control::KeyChord& keys) {
+            if (const auto actionsPageVM{ actionsPageVMWeakRef.get() })
+            {
                 actionsPageVM.AttemptAddOrModifyKeyChord(sender, id, keys, nullptr);
-            });
-            kcVM.ModifyKeyChordRequested([actionsPageVM, id](const Editor::KeyChordViewModel& sender, const Editor::ModifyKeyChordEventArgs& args) {
+            }
+        });
+        kcVM.ModifyKeyChordRequested([actionsPageVMWeakRef = _actionsPageVM, id](const Editor::KeyChordViewModel& sender, const Editor::ModifyKeyChordEventArgs& args) {
+            if (const auto actionsPageVM{ actionsPageVMWeakRef.get() })
+            {
                 actionsPageVM.AttemptAddOrModifyKeyChord(sender, id, args.NewKeys(), args.OldKeys());
-            });
-            kcVM.DeleteKeyChordRequested([&, actionsPageVM](const Editor::KeyChordViewModel& sender, const Control::KeyChord& args) {
+            }
+        });
+        kcVM.DeleteKeyChordRequested([&, actionsPageVMWeakRef = _actionsPageVM](const Editor::KeyChordViewModel& sender, const Control::KeyChord& args) {
+            if (const auto actionsPageVM{ actionsPageVMWeakRef.get() })
+            {
                 _keyChordList.erase(
                     std::remove_if(
                         _keyChordList.begin(),
@@ -336,8 +342,22 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                     }
                 }
                 actionsPageVM.AttemptDeleteKeyChord(args);
-            });
-        }
+            }
+        });
+        kcVM.PropertyChanged([weakThis{ get_weak() }](const IInspectable& sender, const Windows::UI::Xaml::Data::PropertyChangedEventArgs& args) {
+            if (const auto self{ weakThis.get() })
+            {
+                const auto senderVM{ sender.as<Editor::KeyChordViewModel>() };
+                const auto propertyName{ args.PropertyName() };
+                if (propertyName == L"IsInEditMode")
+                {
+                    if (!senderVM.IsInEditMode())
+                    {
+                        self->FocusContainer.raise(*self, senderVM);
+                    }
+                }
+            }
+        });
     }
 
     void CommandViewModel::_RegisterActionArgsVMEvents(Editor::ActionArgsViewModel actionArgsVM)

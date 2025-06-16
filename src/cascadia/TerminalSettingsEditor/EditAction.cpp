@@ -33,6 +33,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 }
             }
         });
+        _ViewModel.FocusContainer([this](const auto& /*sender*/, const auto& args) {
+            if (auto kcVM{ args.try_as<KeyChordViewModel>() })
+            {
+                if (const auto& container = KeyChordListView().ContainerFromItem(*kcVM))
+                {
+                    container.as<Controls::ListViewItem>().Focus(FocusState::Programmatic);
+                }
+            }
+        });
     }
 
     void EditAction::_choosingItemContainer(

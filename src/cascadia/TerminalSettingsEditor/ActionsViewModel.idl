@@ -44,6 +44,7 @@ namespace Microsoft.Terminal.Settings.Editor
         event Windows.Foundation.TypedEventHandler<Object, ArgWrapper> PropagateColorSchemeRequested;
         event Windows.Foundation.TypedEventHandler<Object, ArgWrapper> PropagateColorSchemeNamesRequested;
         event Windows.Foundation.TypedEventHandler<Object, ArgWrapper> PropagateWindowRootRequested;
+        event Windows.Foundation.TypedEventHandler<Object, Object> FocusContainer;
     }
 
     runtimeclass ArgWrapper : Windows.UI.Xaml.Data.INotifyPropertyChanged
