@@ -193,6 +193,7 @@
 
                             <!--  Cancel editing the action  -->
                             <Button x:Uid="Actions_CancelButton"
+                                    AutomationProperties.Name="{x:Bind CancelButtonName}"
                                     Grid.Column="1"
                                     Click="{x:Bind CancelChanges}"
                                     Style="{StaticResource EditButtonStyle}">
@@ -202,6 +203,7 @@
 
                             <!--  Accept changes  -->
                             <Button x:Uid="Actions_AcceptButton"
+                                    AutomationProperties.Name="{x:Bind AcceptButtonName}"
                                     Grid.Column="2"
                                     Click="{x:Bind AttemptAcceptChanges}"
                                     Flyout="{x:Bind AcceptChangesFlyout, Mode=OneWay}"
@@ -212,6 +214,7 @@
                         </Grid>
                         <Button Grid.Column="1"
                                 Margin="8,0,0,0"
+                                AutomationProperties.Name="{x:Bind DeleteButtonName}"
                                 Style="{StaticResource DeleteSmallButtonStyle}">
                             <Button.Content>
                                 <FontIcon FontSize="{StaticResource EditButtonIconSize}"
