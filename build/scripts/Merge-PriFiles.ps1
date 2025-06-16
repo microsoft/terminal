@@ -16,10 +16,15 @@ Param(
     [Parameter(HelpMessage="Path to makepri.exe")]
     [ValidateScript({Test-Path $_ -Type Leaf})]
     [string]
-    $MakePriPath = "C:\Program Files (x86)\Windows Kits\10\bin\10.0.22621.0\x64\MakePri.exe"
+    $MakePriPath
 )
 
 $ErrorActionPreference = 'Stop'
+
+if (-not $MakePriPath) {
+  $winSdk10Root = $(Get-ItemPropertyValue -Path "HKLM:\SOFTWARE\Microsoft\Windows Kits\Installed Roots" -Name "KitsRoot10")
+  $MakePriPath = "$winSdk10Root\bin\10.0.22621.0\x64\MakePri.exe"
+}
 
 $tempDir = Join-Path ([System.IO.Path]::GetTempPath()) "tmp$([Convert]::ToString((Get-Random 65535),16).PadLeft(4,'0')).tmp"
 New-Item -ItemType Directory -Path $tempDir | Out-Null
