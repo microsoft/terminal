@@ -500,9 +500,8 @@ static bool _validateSingleMediaResource(std::wstring_view resource)
         }
 
         const auto scheme{ resourceUri.SchemeName() };
-        std::wstring_view schemeSv{ scheme };
         // Only file: URIs and ms-* URIs are permissible. http, https, ftp, gopher, etc. are not.
-        return til::equals_insensitive_ascii(scheme, L"file") || (schemeSv.size() > 3 && til::equals_insensitive_ascii(schemeSv.substr(0, 3), L"ms-"));
+        return til::equals_insensitive_ascii(scheme, L"file") || til::starts_with_insensitive_ascii(scheme, L"ms-");
     }
     catch (...)
     {
