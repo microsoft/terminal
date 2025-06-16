@@ -26,11 +26,11 @@ Abstract:
     - Listens and propagates changes to the ArgWrappers
 - ArgWrapper:
     - Wrapper for each argument
-    - Handles binding and bindback logic for the presentation and modification of the argument via the UI
-        - Has separate binding and bindback logic depending on the type of the argument
+    - Handles binding and bind back logic for the presentation and modification of the argument via the UI
+        - Has separate binding and bind back logic depending on the type of the argument
 - KeyChordViewModel:
     - Constructed with a Control::KeyChord object
-    - Handles binding and bindback logic for the presentation and modification of a keybinding via the UI
+    - Handles binding and bind back logic for the presentation and modification of a keybinding via the UI
 
 --*/
 
