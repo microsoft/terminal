@@ -235,6 +235,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void CancelChanges();
         void DeleteKeyChord();
 
+        // UIA Text
+        hstring CancelButtonName() const noexcept;
+        hstring AcceptButtonName() const noexcept;
+        hstring DeleteButtonName() const noexcept;
+
         VIEW_MODEL_OBSERVABLE_PROPERTY(bool, IsInEditMode, false);
         VIEW_MODEL_OBSERVABLE_PROPERTY(Control::KeyChord, ProposedKeys);
         VIEW_MODEL_OBSERVABLE_PROPERTY(winrt::hstring, KeyChordText);

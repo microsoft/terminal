@@ -118,6 +118,9 @@ namespace Microsoft.Terminal.Settings.Editor
         void AttemptAcceptChanges();
         void CancelChanges();
         void DeleteKeyChord();
+        String CancelButtonName { get; };
+        String AcceptButtonName { get; };
+        String DeleteButtonName { get; };
 
         event Windows.Foundation.TypedEventHandler<KeyChordViewModel, Microsoft.Terminal.Control.KeyChord> AddKeyChordRequested;
         event Windows.Foundation.TypedEventHandler<KeyChordViewModel, ModifyKeyChordEventArgs> ModifyKeyChordRequested;
