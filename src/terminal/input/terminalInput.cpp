@@ -171,7 +171,7 @@ TerminalInput::OutputType TerminalInput::HandleKey(const INPUT_RECORD& event)
     if (matchingLastKeyPress && !_inputMode.test(Mode::AutoRepeat))
     {
         // Note that we must return an empty string here to imply that we've handled
-        // the event, otherwise the key press can still end up being submitted.
+        // the event; otherwise, the key press can still end up being submitted.
         return _makeNoOutput();
     }
     _lastVirtualKeyCode = virtualKeyCode;

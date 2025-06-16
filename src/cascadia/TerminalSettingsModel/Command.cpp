@@ -165,7 +165,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // Arguments:
     // - json: The Json::Value representing the command object we should get the name for.
     // Return Value:
-    // - the empty string if we couldn't find a name, otherwise the command's name.
+    // - the empty string if we couldn't find a name; otherwise, the command's name.
     static std::optional<std::wstring> _nameFromJson(const Json::Value& json)
     {
         if (const auto name{ json[JsonKey(NameKey)] })
@@ -489,7 +489,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // - expandable: the Command to potentially turn into more commands
     // - profiles: A list of all the profiles that this command should be expanded on.
     // Return Value:
-    // - and empty vector if the command wasn't expandable, otherwise a list of
+    // - and empty vector if the command wasn't expandable; otherwise, a list of
     //   the newly-created commands.
     std::vector<Model::Command> Command::_expandCommand(Command* const expandable,
                                                         IVectorView<Model::Profile> profiles,

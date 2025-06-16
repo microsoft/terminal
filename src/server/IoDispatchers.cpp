@@ -486,7 +486,7 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleHandleConnectionRequest(_In_ PCONSOLE_API
         return pReceiveMsg;
     }
 
-    // For future code archeologists: GH#2988
+    // For future code archaeologists: GH#2988
     //
     // Here, the console calls ConsoleControl(ConsoleSetForeground,...) with a
     // flag depending on if the console is focused or not. This is surprisingly

@@ -30,7 +30,7 @@ namespace Microsoft::Console::VirtualTerminal
     public:
         // The original DEC terminals only supported 6K of memory, which is
         // probably a bit low for modern usage. But we also don't want to make
-        // this value too large, otherwise it could be used in a denial-of-
+        // this value too large; otherwise, it could be used in a denial-of-
         // service attack. So for now this is probably a sufficient limit, but
         // we may need to increase it in the future if we intend to support
         // macros containing sixel sequences.

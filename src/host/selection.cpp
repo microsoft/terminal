@@ -415,7 +415,7 @@ void Selection::ClearSelection(const bool fStartingNewSelection)
         // If we were using alternate selection, cancel it here before starting a new area.
         d->fUseAlternateSelection = false;
 
-        // Only unblock if we're not immediately starting a new selection. Otherwise stay blocked.
+        // Only unblock if we're not immediately starting a new selection. Otherwise, stay blocked.
         if (!fStartingNewSelection)
         {
             UnblockWriteConsole(CONSOLE_SELECTING);

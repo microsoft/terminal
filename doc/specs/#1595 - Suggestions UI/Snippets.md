@@ -529,7 +529,7 @@ their own workflows.
   * `--local`: Save to the `.wt.json` in the CWD, if there is one (or create
     one)
   * `--parent`: Save to the `.wt.json` in the first ancestor of the CWD, if
-    there is one. Otherwise create one here.
+    there is one. Otherwise, create one here.
   * `--settings`: Manually save to the settings file?
   * `--profile`: save to this profile???? Not sure if this is actually possible.
     Maybe with the `WT_SESSION_ID` env var to figure out which profile is in use

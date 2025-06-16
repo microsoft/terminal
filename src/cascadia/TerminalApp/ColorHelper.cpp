@@ -8,7 +8,7 @@ using namespace winrt::TerminalApp;
 // - color: this color is going to be examined whether it
 // is light or not
 // Return Value:
-// - true of light, false if dark
+// - true if light, false if dark
 bool ColorHelper::IsBrightColor(const winrt::Windows::UI::Color& color)
 {
     // https://www.w3.org/TR/AERT#color-contrast
