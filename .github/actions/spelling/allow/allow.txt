@@ -21,6 +21,7 @@ dze
 dzhe
 Emacspeak
 Fitt
+flac
 FTCS
 gantt
 ghe
@@ -56,6 +57,7 @@ ptys
 pwn
 pwshw
 qof
+QOL
 qps
 quickfix
 rclt
@@ -74,6 +76,7 @@ slnt
 stakeholders
 sustainability
 sxn
+Tencent
 TLDR
 tonos
 toolset
