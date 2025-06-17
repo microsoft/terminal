@@ -278,7 +278,7 @@ HRESULT _ResizePseudoConsole(_In_ const PseudoConsole* const pPty, _In_ const CO
 // Return Value:
 // - S_OK if the call succeeded, else an appropriate HRESULT for failing to
 //      write the clear message to the pty.
-HRESULT _ClearPseudoConsole(_In_ const PseudoConsole* const pPty, BOOL keepCursorRow)
+static HRESULT _ClearPseudoConsole(_In_ const PseudoConsole* const pPty, BOOL keepCursorRow) noexcept
 {
     if (pPty == nullptr)
     {
