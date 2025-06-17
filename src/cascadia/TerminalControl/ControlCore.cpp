@@ -2290,8 +2290,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 // Erase any viewport contents above (but not including) the cursor row.
                 if (cursor.y > 0)
                 {
-                    fmt::format_to(std::back_inserter(sequence), FMT_COMPILE(L"\x1b[H\x1b[{}M\x1b[1;{}H"), cursor.y, cursor.x + 1);
+                    // An SU sequence would be simpler than this DL sequence,
+                    // but SU isn't well standardized between terminals.
+                    // Generally speaking, it's best avoiding it.
+                    fmt::format_to(std::back_inserter(sequence), FMT_COMPILE(L"\x1b[H\x1b[{}M"), cursor.y);
                 }
+
+                fmt::format_to(std::back_inserter(sequence), FMT_COMPILE(L"\x1b[1;{}H"), cursor.x + 1);
             }
 
             _terminal->Write(sequence);
