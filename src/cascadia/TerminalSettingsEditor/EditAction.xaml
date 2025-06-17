@@ -161,8 +161,8 @@
             <!--  Templates  -->
             <DataTemplate x:Key="KeyChordTemplate"
                           x:DataType="local:KeyChordViewModel">
-                <ListViewItem Style="{StaticResource KeyBindingContainerStyle}"
-                              IsTabStop="False">
+                <ListViewItem IsTabStop="False"
+                              Style="{StaticResource KeyBindingContainerStyle}">
                     <Grid Padding="2,0,2,0"
                           VerticalAlignment="Center">
                         <Grid.ColumnDefinitions>
@@ -193,8 +193,8 @@
 
                             <!--  Cancel editing the action  -->
                             <Button x:Uid="Actions_CancelButton"
-                                    AutomationProperties.Name="{x:Bind CancelButtonName}"
                                     Grid.Column="1"
+                                    AutomationProperties.Name="{x:Bind CancelButtonName}"
                                     Click="{x:Bind CancelChanges}"
                                     Style="{StaticResource EditButtonStyle}">
                                 <FontIcon FontSize="{StaticResource EditButtonIconSize}"
@@ -203,8 +203,8 @@
 
                             <!--  Accept changes  -->
                             <Button x:Uid="Actions_AcceptButton"
-                                    AutomationProperties.Name="{x:Bind AcceptButtonName}"
                                     Grid.Column="2"
+                                    AutomationProperties.Name="{x:Bind AcceptButtonName}"
                                     Click="{x:Bind AttemptAcceptChanges}"
                                     Flyout="{x:Bind AcceptChangesFlyout, Mode=OneWay}"
                                     Style="{StaticResource AccentEditButtonStyle}">
@@ -237,265 +237,255 @@
 
             <DataTemplate x:Key="ListItemTemplate"
                           x:DataType="local:ArgWrapper">
-                <ListViewItem HorizontalContentAlignment="Stretch" />
+                <ListViewItem HorizontalContentAlignment="Stretch"
+                              IsTabStop="False" />
             </DataTemplate>
 
-            <!-- Example shortcut action to test this template: Adjust Opacity -->
-            <!-- Currently that is the only Int32 arg, so just clamp the min/max values according to that -->
+            <!--  Example shortcut action to test this template: Adjust Opacity  -->
+            <!--  Currently that is the only Int32 arg, so just clamp the min/max values according to that  -->
             <DataTemplate x:Key="Int32Template"
                           x:DataType="local:ArgWrapper">
-                <ListViewItem>
-                    <Grid ColumnSpacing="8">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="{StaticResource ArgumentNameWidth}" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0"
-                                   VerticalAlignment="Center"
-                                   Text="{x:Bind Name}"
-                                   TextWrapping="WrapWholeWords"/>
-                        <muxc:NumberBox Grid.Column="1"
-                                        LargeChange="1"
-                                        Maximum="100"
-                                        Minimum="0"
-                                        SmallChange="10"
-                                        Style="{StaticResource NumberBoxSettingStyle}"
-                                        Value="{x:Bind UnboxInt32(Value), Mode=TwoWay, BindBack=Int32BindBack}" />
-                    </Grid>
-                </ListViewItem>
+                <Grid ColumnSpacing="8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="{StaticResource ArgumentNameWidth}" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0"
+                               VerticalAlignment="Center"
+                               Text="{x:Bind Name}"
+                               TextWrapping="WrapWholeWords" />
+                    <muxc:NumberBox Grid.Column="1"
+                                    AutomationProperties.Name="{x:Bind Name}"
+                                    LargeChange="1"
+                                    Maximum="100"
+                                    Minimum="0"
+                                    SmallChange="10"
+                                    Style="{StaticResource NumberBoxSettingStyle}"
+                                    Value="{x:Bind UnboxInt32(Value), Mode=TwoWay, BindBack=Int32BindBack}" />
+                </Grid>
             </DataTemplate>
 
-            <!-- Example shortcut action to test this template: Switch To Tab -->
+            <!--  Example shortcut action to test this template: Switch To Tab  -->
             <DataTemplate x:Key="UInt32Template"
                           x:DataType="local:ArgWrapper">
-                <ListViewItem>
-                    <Grid ColumnSpacing="8">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="{StaticResource ArgumentNameWidth}" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0"
-                                   VerticalAlignment="Center"
-                                   Text="{x:Bind Name}"
-                                   TextWrapping="WrapWholeWords"/>
-                        <muxc:NumberBox Grid.Column="1"
-                                        LargeChange="1"
-                                        Maximum="999"
-                                        Minimum="0"
-                                        SmallChange="1"
-                                        Style="{StaticResource NumberBoxSettingStyle}"
-                                        Value="{x:Bind UnboxUInt32(Value), Mode=TwoWay, BindBack=UInt32BindBack}" />
-                    </Grid>
-                </ListViewItem>
+                <Grid ColumnSpacing="8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="{StaticResource ArgumentNameWidth}" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0"
+                               VerticalAlignment="Center"
+                               Text="{x:Bind Name}"
+                               TextWrapping="WrapWholeWords" />
+                    <muxc:NumberBox Grid.Column="1"
+                                    AutomationProperties.Name="{x:Bind Name}"
+                                    LargeChange="1"
+                                    Maximum="999"
+                                    Minimum="0"
+                                    SmallChange="1"
+                                    Style="{StaticResource NumberBoxSettingStyle}"
+                                    Value="{x:Bind UnboxUInt32(Value), Mode=TwoWay, BindBack=UInt32BindBack}" />
+                </Grid>
             </DataTemplate>
 
-            <!-- Example shortcut action to test this template: Close Other Tabs -->
+            <!--  Example shortcut action to test this template: Close Other Tabs  -->
             <DataTemplate x:Key="UInt32OptionalTemplate"
                           x:DataType="local:ArgWrapper">
-                <ListViewItem>
-                    <Grid ColumnSpacing="8">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="{StaticResource ArgumentNameWidth}" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0"
-                                   VerticalAlignment="Center"
-                                   Text="{x:Bind Name}"
-                                   TextWrapping="WrapWholeWords"/>
-                        <muxc:NumberBox Grid.Column="1"
-                                        LargeChange="1"
-                                        Maximum="999"
-                                        Minimum="0"
-                                        SmallChange="1"
-                                        Style="{StaticResource NumberBoxSettingStyle}"
-                                        Value="{x:Bind UnboxUInt32Optional(Value), Mode=TwoWay, BindBack=UInt32OptionalBindBack}" />
-                    </Grid>
-                </ListViewItem>
+                <Grid ColumnSpacing="8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="{StaticResource ArgumentNameWidth}" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0"
+                               VerticalAlignment="Center"
+                               Text="{x:Bind Name}"
+                               TextWrapping="WrapWholeWords" />
+                    <muxc:NumberBox Grid.Column="1"
+                                    AutomationProperties.Name="{x:Bind Name}"
+                                    LargeChange="1"
+                                    Maximum="999"
+                                    Minimum="0"
+                                    SmallChange="1"
+                                    Style="{StaticResource NumberBoxSettingStyle}"
+                                    Value="{x:Bind UnboxUInt32Optional(Value), Mode=TwoWay, BindBack=UInt32OptionalBindBack}" />
+                </Grid>
             </DataTemplate>
 
-            <!-- Example shortcut action to test this template: Split Pane -->
+            <!--  Example shortcut action to test this template: Split Pane  -->
             <DataTemplate x:Key="Int32OptionalTemplate"
                           x:DataType="local:ArgWrapper">
-                <ListViewItem>
-                    <Grid ColumnSpacing="8">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="{StaticResource ArgumentNameWidth}" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0"
-                                   VerticalAlignment="Center"
-                                   Text="{x:Bind Name}"
-                                   TextWrapping="WrapWholeWords"/>
-                        <muxc:NumberBox Grid.Column="1"
-                                        LargeChange="1"
-                                        Maximum="999"
-                                        Minimum="0"
-                                        SmallChange="1"
-                                        Style="{StaticResource NumberBoxSettingStyle}"
-                                        Value="{x:Bind UnboxInt32Optional(Value), Mode=TwoWay, BindBack=Int32OptionalBindBack}" />
-                    </Grid>
-                </ListViewItem>
+                <Grid ColumnSpacing="8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="{StaticResource ArgumentNameWidth}" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0"
+                               VerticalAlignment="Center"
+                               Text="{x:Bind Name}"
+                               TextWrapping="WrapWholeWords" />
+                    <muxc:NumberBox Grid.Column="1"
+                                    AutomationProperties.Name="{x:Bind Name}"
+                                    LargeChange="1"
+                                    Maximum="999"
+                                    Minimum="0"
+                                    SmallChange="1"
+                                    Style="{StaticResource NumberBoxSettingStyle}"
+                                    Value="{x:Bind UnboxInt32Optional(Value), Mode=TwoWay, BindBack=Int32OptionalBindBack}" />
+                </Grid>
             </DataTemplate>
 
-            <!-- Example shortcut action to test this template: Adjust Font Size -->
+            <!--  Example shortcut action to test this template: Adjust Font Size  -->
             <DataTemplate x:Key="FloatTemplate"
                           x:DataType="local:ArgWrapper">
-                <ListViewItem>
-                    <Grid ColumnSpacing="8">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="{StaticResource ArgumentNameWidth}" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0"
-                                   VerticalAlignment="Center"
-                                   Text="{x:Bind Name}"
-                                   TextWrapping="WrapWholeWords"/>
-                        <muxc:NumberBox Grid.Column="1"
-                                        LargeChange="1"
-                                        Maximum="999"
-                                        Minimum="0"
-                                        SmallChange="1"
-                                        Style="{StaticResource NumberBoxSettingStyle}"
-                                        Value="{x:Bind UnboxFloat(Value), Mode=TwoWay, BindBack=FloatBindBack}" />
-                    </Grid>
-                </ListViewItem>
+                <Grid ColumnSpacing="8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="{StaticResource ArgumentNameWidth}" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0"
+                               VerticalAlignment="Center"
+                               Text="{x:Bind Name}"
+                               TextWrapping="WrapWholeWords" />
+                    <muxc:NumberBox Grid.Column="1"
+                                    AutomationProperties.Name="{x:Bind Name}"
+                                    LargeChange="1"
+                                    Maximum="999"
+                                    Minimum="0"
+                                    SmallChange="1"
+                                    Style="{StaticResource NumberBoxSettingStyle}"
+                                    Value="{x:Bind UnboxFloat(Value), Mode=TwoWay, BindBack=FloatBindBack}" />
+                </Grid>
             </DataTemplate>
 
-            <!-- Example shortcut action to test this template: Send Input -->
+            <!--  Example shortcut action to test this template: Send Input  -->
             <DataTemplate x:Key="StringTemplate"
                           x:DataType="local:ArgWrapper">
-                <ListViewItem>
-                    <Grid ColumnSpacing="8">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="{StaticResource ArgumentNameWidth}" />
-                            <ColumnDefinition Width="Auto"
-                                              MinWidth="196" />
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0"
-                                   VerticalAlignment="Center"
-                                   Text="{x:Bind Name}"
-                                   TextWrapping="WrapWholeWords"/>
-                        <TextBox Grid.Column="1"
-                                 Text="{x:Bind UnboxString(Value), Mode=TwoWay, BindBack=StringBindBack}"
-                                 TextWrapping="Wrap"/>
-                    </Grid>
-                </ListViewItem>
+                <Grid ColumnSpacing="8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="{StaticResource ArgumentNameWidth}" />
+                        <ColumnDefinition Width="Auto"
+                                          MinWidth="196" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0"
+                               VerticalAlignment="Center"
+                               Text="{x:Bind Name}"
+                               TextWrapping="WrapWholeWords" />
+                    <TextBox Grid.Column="1"
+                             AutomationProperties.Name="{x:Bind Name}"
+                             Text="{x:Bind UnboxString(Value), Mode=TwoWay, BindBack=StringBindBack}"
+                             TextWrapping="Wrap" />
+                </Grid>
             </DataTemplate>
 
-            <!-- Example shortcut action to test this template: Set Color Scheme -->
+            <!--  Example shortcut action to test this template: Set Color Scheme  -->
             <DataTemplate x:Key="ColorSchemeTemplate"
                           x:DataType="local:ArgWrapper">
-                <ListViewItem>
-                    <Grid ColumnSpacing="8">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="{StaticResource ArgumentNameWidth}" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0"
-                                   VerticalAlignment="Center"
-                                   Text="{x:Bind Name}"
-                                   TextWrapping="WrapWholeWords"/>
-                        <ComboBox Grid.Column="1"
-                                  ItemTemplate="{StaticResource EnumComboBoxTemplate}"
-                                  ItemsSource="{x:Bind EnumList, Mode=OneWay}"
-                                  SelectedItem="{x:Bind EnumValue, Mode=TwoWay}"
-                                  Style="{StaticResource ComboBoxSettingStyle}" />
-                    </Grid>
-                </ListViewItem>
+                <Grid ColumnSpacing="8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="{StaticResource ArgumentNameWidth}" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0"
+                               VerticalAlignment="Center"
+                               Text="{x:Bind Name}"
+                               TextWrapping="WrapWholeWords" />
+                    <ComboBox Grid.Column="1"
+                              AutomationProperties.Name="{x:Bind Name}"
+                              ItemTemplate="{StaticResource EnumComboBoxTemplate}"
+                              ItemsSource="{x:Bind EnumList, Mode=OneWay}"
+                              SelectedItem="{x:Bind EnumValue, Mode=TwoWay}"
+                              Style="{StaticResource ComboBoxSettingStyle}" />
+                </Grid>
             </DataTemplate>
 
-            <!-- Example shortcut action to test this template: Export Buffer -->
+            <!--  Example shortcut action to test this template: Export Buffer  -->
             <DataTemplate x:Key="FilePickerTemplate"
                           x:DataType="local:ArgWrapper">
-                <ListViewItem>
-                    <Grid ColumnSpacing="8">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="{StaticResource ArgumentNameWidth}" />
-                            <ColumnDefinition Width="*"
-                                              MinWidth="196"/>
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0"
-                                   VerticalAlignment="Center"
-                                   Text="{x:Bind Name}"
-                                   TextWrapping="WrapWholeWords"/>
-                        <TextBox Grid.Column="1"
-                                 Text="{x:Bind UnboxString(Value), Mode=TwoWay, BindBack=StringBindBack}"
-                                 TextWrapping="Wrap"/>
-                        <Button x:Uid="Actions_Browse"
-                                Grid.Column="2"
-                                Click="{x:Bind BrowseForFile_Click}"
-                                Style="{StaticResource BrowseButtonStyle}" />
-                    </Grid>
-                </ListViewItem>
+                <Grid ColumnSpacing="8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="{StaticResource ArgumentNameWidth}" />
+                        <ColumnDefinition Width="*"
+                                          MinWidth="196" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0"
+                               VerticalAlignment="Center"
+                               Text="{x:Bind Name}"
+                               TextWrapping="WrapWholeWords" />
+                    <TextBox Grid.Column="1"
+                             AutomationProperties.Name="{x:Bind Name}"
+                             Text="{x:Bind UnboxString(Value), Mode=TwoWay, BindBack=StringBindBack}"
+                             TextWrapping="Wrap" />
+                    <Button x:Uid="Actions_Browse"
+                            Grid.Column="2"
+                            Click="{x:Bind BrowseForFile_Click}"
+                            Style="{StaticResource BrowseButtonStyle}" />
+                </Grid>
             </DataTemplate>
 
-            <!-- Example shortcut action to test this template: New Tab -->
+            <!--  Example shortcut action to test this template: New Tab  -->
             <DataTemplate x:Key="FolderPickerTemplate"
                           x:DataType="local:ArgWrapper">
-                <ListViewItem>
-                    <Grid ColumnSpacing="8">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="{StaticResource ArgumentNameWidth}" />
-                            <ColumnDefinition Width="*"
-                                              MinWidth="196"/>
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0"
-                                   VerticalAlignment="Center"
-                                   Text="{x:Bind Name}"
-                                   TextWrapping="WrapWholeWords"/>
-                        <TextBox Grid.Column="1"
-                                 Text="{x:Bind UnboxString(Value), Mode=TwoWay, BindBack=StringBindBack}"
-                                 TextWrapping="Wrap"/>
-                        <Button x:Uid="Actions_Browse"
-                                Grid.Column="2"
-                                Click="{x:Bind BrowseForFolder_Click}"
-                                Style="{StaticResource BrowseButtonStyle}" />
-                    </Grid>
-                </ListViewItem>
+                <Grid ColumnSpacing="8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="{StaticResource ArgumentNameWidth}" />
+                        <ColumnDefinition Width="*"
+                                          MinWidth="196" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0"
+                               VerticalAlignment="Center"
+                               Text="{x:Bind Name}"
+                               TextWrapping="WrapWholeWords" />
+                    <TextBox Grid.Column="1"
+                             AutomationProperties.Name="{x:Bind Name}"
+                             Text="{x:Bind UnboxString(Value), Mode=TwoWay, BindBack=StringBindBack}"
+                             TextWrapping="Wrap" />
+                    <Button x:Uid="Actions_Browse"
+                            Grid.Column="2"
+                            Click="{x:Bind BrowseForFolder_Click}"
+                            Style="{StaticResource BrowseButtonStyle}" />
+                </Grid>
             </DataTemplate>
 
-            <!-- Example shortcut action to test this template: Set Focus Mode -->
+            <!--  Example shortcut action to test this template: Set Focus Mode  -->
             <DataTemplate x:Key="BoolTemplate"
                           x:DataType="local:ArgWrapper">
-                <ListViewItem>
-                    <Grid ColumnSpacing="8">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="{StaticResource ArgumentNameWidth}" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0"
-                                   VerticalAlignment="Center"
-                                   Text="{x:Bind Name}"
-                                   TextWrapping="WrapWholeWords"/>
-                        <ToggleSwitch Grid.Column="1"
-                                      IsOn="{x:Bind UnboxBool(Value), Mode=TwoWay, BindBack=BoolOptionalBindBack}" />
-                    </Grid>
-                </ListViewItem>
+                <Grid ColumnSpacing="8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="{StaticResource ArgumentNameWidth}" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0"
+                               VerticalAlignment="Center"
+                               Text="{x:Bind Name}"
+                               TextWrapping="WrapWholeWords" />
+                    <ToggleSwitch Grid.Column="1"
+                                  AutomationProperties.Name="{x:Bind Name}"
+                                  IsOn="{x:Bind UnboxBool(Value), Mode=TwoWay, BindBack=BoolOptionalBindBack}" />
+                </Grid>
             </DataTemplate>
 
-            <!-- Example shortcut action to test this template: Split Pane -->
+            <!--  Example shortcut action to test this template: Split Pane  -->
             <DataTemplate x:Key="BoolOptionalTemplate"
                           x:DataType="local:ArgWrapper">
-                <ListViewItem>
-                    <Grid ColumnSpacing="8">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="{StaticResource ArgumentNameWidth}" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0"
-                                   VerticalAlignment="Center"
-                                   Text="{x:Bind Name}"
-                                   TextWrapping="WrapWholeWords"/>
-                        <CheckBox Grid.Column="1"
-                                  IsChecked="{x:Bind UnboxBoolOptional(Value), Mode=TwoWay, BindBack=BoolOptionalBindBack}"
-                                  IsThreeState="True" />
-                    </Grid>
-                </ListViewItem>
+                <Grid ColumnSpacing="8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="{StaticResource ArgumentNameWidth}" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0"
+                               VerticalAlignment="Center"
+                               Text="{x:Bind Name}"
+                               TextWrapping="WrapWholeWords" />
+                    <CheckBox Grid.Column="1"
+                              AutomationProperties.Name="{x:Bind Name}"
+                              IsChecked="{x:Bind UnboxBoolOptional(Value), Mode=TwoWay, BindBack=BoolOptionalBindBack}"
+                              IsThreeState="True" />
+                </Grid>
             </DataTemplate>
 
-            <!-- Example shortcut action to test this template: Resize Pane -->
+            <!--  Example shortcut action to test this template: Resize Pane  -->
             <DataTemplate x:Key="EnumComboBoxTemplate"
                           x:DataType="local:EnumEntry">
                 <TextBlock Text="{x:Bind EnumName, Mode=OneWay}" />
@@ -503,26 +493,25 @@
 
             <DataTemplate x:Key="EnumTemplate"
                           x:DataType="local:ArgWrapper">
-                <ListViewItem>
-                    <Grid ColumnSpacing="8">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="{StaticResource ArgumentNameWidth}" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0"
-                                   VerticalAlignment="Center"
-                                   Text="{x:Bind Name}"
-                                   TextWrapping="WrapWholeWords"/>
-                        <ComboBox Grid.Column="1"
-                                  ItemTemplate="{StaticResource EnumComboBoxTemplate}"
-                                  ItemsSource="{x:Bind EnumList, Mode=OneWay}"
-                                  SelectedItem="{x:Bind EnumValue, Mode=TwoWay}"
-                                  Style="{StaticResource ComboBoxSettingStyle}" />
-                    </Grid>
-                </ListViewItem>
+                <Grid ColumnSpacing="8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="{StaticResource ArgumentNameWidth}" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0"
+                               VerticalAlignment="Center"
+                               Text="{x:Bind Name}"
+                               TextWrapping="WrapWholeWords" />
+                    <ComboBox Grid.Column="1"
+                              AutomationProperties.Name="{x:Bind Name}"
+                              ItemTemplate="{StaticResource EnumComboBoxTemplate}"
+                              ItemsSource="{x:Bind EnumList, Mode=OneWay}"
+                              SelectedItem="{x:Bind EnumValue, Mode=TwoWay}"
+                              Style="{StaticResource ComboBoxSettingStyle}" />
+                </Grid>
             </DataTemplate>
 
-            <!-- Example shortcut action to test this template: Copy Text -->
+            <!--  Example shortcut action to test this template: Copy Text  -->
             <DataTemplate x:Key="FlagItemTemplate"
                           x:DataType="local:FlagEntry">
                 <Grid>
@@ -531,6 +520,7 @@
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
                     <CheckBox Grid.Column="0"
+                              AutomationProperties.Name="{x:Bind FlagName}"
                               IsChecked="{x:Bind IsSet, Mode=TwoWay}" />
                     <TextBlock Grid.Column="1"
                                Padding="0,0,0,4"
@@ -541,69 +531,66 @@
 
             <DataTemplate x:Key="FlagTemplate"
                           x:DataType="local:ArgWrapper">
-                <ListViewItem>
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="{StaticResource ArgumentNameWidth}" />
-                            <ColumnDefinition Width="*" />
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0"
-                                   VerticalAlignment="Center"
-                                   Text="{x:Bind Name}"
-                                   TextWrapping="WrapWholeWords"/>
-                        <ListView Grid.Column="1"
-                                  Margin="0"
-                                  Padding="-8,0,0,0"
-                                  HorizontalAlignment="Left"
-                                  ItemTemplate="{StaticResource FlagItemTemplate}"
-                                  ItemsSource="{x:Bind FlagList, Mode=OneWay}"
-                                  SelectionMode="None" />
-                    </Grid>
-                </ListViewItem>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="{StaticResource ArgumentNameWidth}" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0"
+                               VerticalAlignment="Center"
+                               Text="{x:Bind Name}"
+                               TextWrapping="WrapWholeWords" />
+                    <ListView Grid.Column="1"
+                              Margin="0"
+                              Padding="-8,0,0,0"
+                              HorizontalAlignment="Left"
+                              AutomationProperties.Name="{x:Bind Name}"
+                              ItemTemplate="{StaticResource FlagItemTemplate}"
+                              ItemsSource="{x:Bind FlagList, Mode=OneWay}"
+                              SelectionMode="None" />
+                </Grid>
             </DataTemplate>
 
-            <!-- Example shortcut action to test this template: Add Mark -->
+            <!--  Example shortcut action to test this template: Add Mark  -->
             <DataTemplate x:Key="TerminalCoreColorOptionalTemplate"
                           x:DataType="local:ArgWrapper">
-                <ListViewItem>
-                    <Grid ColumnSpacing="8">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="{StaticResource ArgumentNameWidth}" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0"
-                                   VerticalAlignment="Center"
-                                   Text="{x:Bind Name}"
-                                   TextWrapping="WrapWholeWords"/>
-                        <local:NullableColorPicker x:Uid="Actions_NullableColorPicker"
-                                                   Grid.Column="1"
-                                                   ColorSchemeVM="{x:Bind DefaultColorScheme, Mode=OneWay}"
-                                                   CurrentColor="{x:Bind UnboxTerminalCoreColorOptional(Value), Mode=TwoWay, BindBack=TerminalCoreColorBindBack}"
-                                                   NullColorPreview="{x:Bind DefaultColorScheme.ForegroundColor.Color, Mode=OneWay}" />
-                    </Grid>
-                </ListViewItem>
+                <Grid ColumnSpacing="8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="{StaticResource ArgumentNameWidth}" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0"
+                               VerticalAlignment="Center"
+                               Text="{x:Bind Name}"
+                               TextWrapping="WrapWholeWords" />
+                    <local:NullableColorPicker x:Uid="Actions_NullableColorPicker"
+                                               Grid.Column="1"
+                                               AutomationProperties.Name="{x:Bind Name}"
+                                               ColorSchemeVM="{x:Bind DefaultColorScheme, Mode=OneWay}"
+                                               CurrentColor="{x:Bind UnboxTerminalCoreColorOptional(Value), Mode=TwoWay, BindBack=TerminalCoreColorBindBack}"
+                                               NullColorPreview="{x:Bind DefaultColorScheme.ForegroundColor.Color, Mode=OneWay}" />
+                </Grid>
             </DataTemplate>
 
-            <!-- Example shortcut action to test this template: Set Tab Color -->
+            <!--  Example shortcut action to test this template: Set Tab Color  -->
             <DataTemplate x:Key="WindowsUIColorOptionalTemplate"
                           x:DataType="local:ArgWrapper">
-                <ListViewItem>
-                    <Grid ColumnSpacing="8">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="{StaticResource ArgumentNameWidth}" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0"
-                                   VerticalAlignment="Center"
-                                   Text="{x:Bind Name}"
-                                   TextWrapping="WrapWholeWords"/>
-                        <local:NullableColorPicker x:Uid="Actions_NullableColorPicker"
-                                                   Grid.Column="1"
-                                                   ColorSchemeVM="{x:Bind DefaultColorScheme, Mode=OneWay}"
-                                                   CurrentColor="{x:Bind UnboxWindowsUIColorOptional(Value), Mode=TwoWay, BindBack=WindowsUIColorBindBack}"
-                                                   NullColorPreview="{x:Bind DefaultColorScheme.ForegroundColor.Color, Mode=OneWay}" />
-                    </Grid>
-                </ListViewItem>
+                <Grid ColumnSpacing="8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="{StaticResource ArgumentNameWidth}" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0"
+                               VerticalAlignment="Center"
+                               Text="{x:Bind Name}"
+                               TextWrapping="WrapWholeWords" />
+                    <local:NullableColorPicker x:Uid="Actions_NullableColorPicker"
+                                               Grid.Column="1"
+                                               AutomationProperties.Name="{x:Bind Name}"
+                                               ColorSchemeVM="{x:Bind DefaultColorScheme, Mode=OneWay}"
+                                               CurrentColor="{x:Bind UnboxWindowsUIColorOptional(Value), Mode=TwoWay, BindBack=WindowsUIColorBindBack}"
+                                               NullColorPreview="{x:Bind DefaultColorScheme.ForegroundColor.Color, Mode=OneWay}" />
+                </Grid>
             </DataTemplate>
 
             <local:ArgsTemplateSelectors x:Key="ArgsTemplateSelector"
@@ -612,9 +599,9 @@
                                          ColorSchemeTemplate="{StaticResource ColorSchemeTemplate}"
                                          EnumTemplate="{StaticResource EnumTemplate}"
                                          FilePickerTemplate="{StaticResource FilePickerTemplate}"
-                                         FolderPickerTemplate="{StaticResource FolderPickerTemplate}"
                                          FlagTemplate="{StaticResource FlagTemplate}"
                                          FloatTemplate="{StaticResource FloatTemplate}"
+                                         FolderPickerTemplate="{StaticResource FolderPickerTemplate}"
                                          Int32OptionalTemplate="{StaticResource Int32OptionalTemplate}"
                                          Int32Template="{StaticResource Int32Template}"
                                          StringTemplate="{StaticResource StringTemplate}"

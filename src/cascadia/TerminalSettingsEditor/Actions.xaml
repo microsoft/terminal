@@ -171,9 +171,9 @@
                     Spacing="8"
                     Style="{StaticResource SettingsStackStyle}">
             <HyperlinkButton x:Uid="Actions_Disclaimer"
-                             NavigateUri="https://learn.microsoft.com/en-us/windows/terminal/customize-settings/actions"
+                             Margin="0"
                              Padding="0"
-                             Margin="0"/>
+                             NavigateUri="https://learn.microsoft.com/en-us/windows/terminal/customize-settings/actions" />
             <!--  Add New Button  -->
             <Button x:Name="AddNewButton"
                     Click="AddNew_Click">

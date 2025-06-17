@@ -584,7 +584,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         auto lifetime = get_strong();
 
         static constexpr winrt::guid clientGuidFolders{ 0xa611027, 0x42be, 0x4665, { 0xaf, 0xf1, 0x3f, 0x22, 0x26, 0xe9, 0xf7, 0x4d } };
-;
+        ;
         const auto parentHwnd{ reinterpret_cast<HWND>(_WindowRoot.GetHostingWindow()) };
         auto path = co_await OpenFilePicker(parentHwnd, [](auto&& dialog) {
             THROW_IF_FAILED(dialog->SetClientGuid(clientGuidFolders));
