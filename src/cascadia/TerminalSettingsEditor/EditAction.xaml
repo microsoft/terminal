@@ -540,14 +540,12 @@
                                VerticalAlignment="Center"
                                Text="{x:Bind Name}"
                                TextWrapping="WrapWholeWords" />
-                    <ListView Grid.Column="1"
-                              Margin="0"
-                              Padding="-8,0,0,0"
-                              HorizontalAlignment="Left"
-                              AutomationProperties.Name="{x:Bind Name}"
-                              ItemTemplate="{StaticResource FlagItemTemplate}"
-                              ItemsSource="{x:Bind FlagList, Mode=OneWay}"
-                              SelectionMode="None" />
+                    <ItemsControl Grid.Column="1"
+                                  Margin="0"
+                                  HorizontalAlignment="Left"
+                                  AutomationProperties.Name="{x:Bind Name}"
+                                  ItemTemplate="{StaticResource FlagItemTemplate}"
+                                  ItemsSource="{x:Bind FlagList, Mode=OneWay}" />
                 </Grid>
             </DataTemplate>
 
