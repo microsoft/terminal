@@ -182,7 +182,6 @@
                                    Grid.Column="1"
                                    Margin="12,0,12,6"
                                    FontFamily="Cascadia Mono, Consolas"
-                                   IsTextSelectionEnabled="False"
                                    Style="{ThemeResource BodyTextBlockStyle}"
                                    Text="{x:Bind Input}"
                                    Visibility="{Binding ElementName=rootItem, Path=IsSelected}" />
@@ -206,6 +205,10 @@
                     <!--  Define resources for HighContrast mode here  -->
                     <StaticResource x:Key="PageBackground"
                                     ResourceKey="SystemColorWindowColorBrush" />
+                    <StaticResource x:Key="PlayButtonHoveredColor"
+                                    ResourceKey="SystemColorHighlightColor" />
+                    <StaticResource x:Key="PlayButtonNormalColor"
+                                    ResourceKey="SystemColorHighlightColor" />
                 </ResourceDictionary>
 
             </ResourceDictionary.ThemeDictionaries>
@@ -259,7 +262,11 @@
                  Margin="8,0,8,8"
                  AllowFocusOnInteraction="True"
                  TextChanged="_filterTextChanged"
-                 Visibility="{x:Bind HasSnippets, Mode=OneWay}" />
+                 Visibility="{x:Bind HasSnippets, Mode=OneWay}">
+            <TextBox.ContextFlyout>
+                <mtu:TextMenuFlyout />
+            </TextBox.ContextFlyout>
+        </TextBox>
 
         <mux:TreeView x:Name="_treeView"
                       Grid.Row="2"

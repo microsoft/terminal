@@ -4,12 +4,10 @@
 #include "precomp.h"
 #include "inc/utils.hpp"
 
-#include <propsys.h>
+#include <til/string.h>
+#include <wil/token_helpers.h>
 
 #include "inc/colorTable.hpp"
-
-#include <wil/token_helpers.h>
-#include <til/string.h>
 
 using namespace Microsoft::Console;
 
@@ -196,7 +194,7 @@ try
     {
         auto prefix = std::wstring(string.substr(0, 4));
 
-        // The "rgb:" indicator should be case insensitive. To prevent possible issues under
+        // The "rgb:" indicator should be case-insensitive. To prevent possible issues under
         // different locales, transform only ASCII range latin characters.
         std::transform(prefix.begin(), prefix.end(), prefix.begin(), [](const auto x) {
             return x >= L'A' && x <= L'Z' ? static_cast<wchar_t>(std::towlower(x)) : x;
@@ -376,6 +374,32 @@ til::color Utils::ColorFromRGB100(const int r, const int g, const int b) noexcep
     return { red, green, blue };
 }
 
+// Function Description:
+// - Returns the RGB percentage components of a given til::color value.
+// Arguments:
+// - color: the color being queried
+// Return Value:
+// - a tuple containing the three components
+std::tuple<int, int, int> Utils::ColorToRGB100(const til::color color) noexcept
+{
+    // The color class components are in the range 0 to 255, so we
+    // need to scale them by 100/255 to obtain percentage values. We
+    // can optimise this conversion with a pre-created lookup table.
+    static constexpr auto scale255To100 = [] {
+        std::array<int8_t, 256> lut{};
+        for (size_t i = 0; i < std::size(lut); i++)
+        {
+            lut.at(i) = gsl::narrow_cast<uint8_t>((i * 100 + 128) / 255);
+        }
+        return lut;
+    }();
+
+    const auto red = til::at(scale255To100, color.r);
+    const auto green = til::at(scale255To100, color.g);
+    const auto blue = til::at(scale255To100, color.b);
+    return { red, green, blue };
+}
+
 // Routine Description:
 // - Constructs a til::color value from HLS components.
 // Arguments:
@@ -424,6 +448,62 @@ til::color Utils::ColorFromHLS(const int h, const int l, const int s) noexcept
         return { comp3, comp1, comp2 }; // green to cyan
     else
         return { comp3, comp2, comp1 }; // cyan to blue
+}
+
+// Function Description:
+// - Returns the HLS components of a given til::color value.
+// Arguments:
+// - color: the color being queried
+// Return Value:
+// - a tuple containing the three components
+std::tuple<int, int, int> Utils::ColorToHLS(const til::color color) noexcept
+{
+    const auto red = color.r / 255.f;
+    const auto green = color.g / 255.f;
+    const auto blue = color.b / 255.f;
+
+    // This calculation is based on the RGB to HSL algorithm described in
+    // Wikipedia: https://en.wikipedia.org/wiki/HSL_and_HSV#From_RGB
+    // We start by calculating the maximum and minimum component values.
+    const auto maxComp = std::max({ red, green, blue });
+    const auto minComp = std::min({ red, green, blue });
+
+    // The chroma value is the range of those components.
+    const auto chroma = maxComp - minComp;
+
+    // And the luma is the middle of the range. But we're actually calculating
+    // double that value here to save on a division.
+    const auto luma2 = (maxComp + minComp);
+
+    // The saturation is half the chroma value divided by min(luma, 1-luma),
+    // but since the luma is already doubled, we can use the chroma as is.
+    const auto divisor = std::min(luma2, 2.f - luma2);
+    const auto sat = divisor > 0 ? chroma / divisor : 0.f;
+
+    // Finally we calculate the hue, which is represented by the angle of a
+    // vector to a point in a color hexagon with blue, magenta, red, yellow,
+    // green, and cyan at its corners. As noted above, the DEC standard has
+    // blue at 0°, red at 120°, and green at 240°, which is slightly different
+    // from the way that hue is typically mapped in modern color models.
+    auto hue = 0.f;
+    if (chroma != 0)
+    {
+        if (maxComp == red)
+            hue = (green - blue) / chroma + 2.f; // magenta to yellow
+        else if (maxComp == green)
+            hue = (blue - red) / chroma + 4.f; // yellow to cyan
+        else if (maxComp == blue)
+            hue = (red - green) / chroma + 6.f; // cyan to magenta
+    }
+
+    // The hue value calculated above is essentially a fractional offset from the
+    // six hexagon corners, so it has to be scaled by 60 to get the angle value.
+    // Luma and saturation are percentages so must be scaled by 100, but our luma
+    // value is already doubled, so only needs to be scaled by 50.
+    const auto h = static_cast<int>(hue * 60.f + 0.5f) % 360;
+    const auto l = static_cast<int>(luma2 * 50.f + 0.5f);
+    const auto s = static_cast<int>(sat * 100.f + 0.5f);
+    return { h, l, s };
 }
 
 // Routine Description:
@@ -631,6 +711,208 @@ bool Utils::IsValidHandle(const HANDLE handle) noexcept
     return handle != nullptr && handle != INVALID_HANDLE_VALUE;
 }
 
+#define FileModeInformation (FILE_INFORMATION_CLASS)16
+
+#define FILE_PIPE_BYTE_STREAM_TYPE 0x00000000
+#define FILE_PIPE_BYTE_STREAM_MODE 0x00000000
+#define FILE_PIPE_QUEUE_OPERATION 0x00000000
+
+typedef struct _FILE_MODE_INFORMATION
+{
+    ULONG Mode;
+} FILE_MODE_INFORMATION, *PFILE_MODE_INFORMATION;
+
+extern "C" NTSTATUS NTAPI NtQueryInformationFile(
+    HANDLE FileHandle,
+    PIO_STATUS_BLOCK IoStatusBlock,
+    PVOID FileInformation,
+    ULONG Length,
+    FILE_INFORMATION_CLASS FileInformationClass);
+
+extern "C" NTSTATUS NTAPI NtCreateNamedPipeFile(
+    PHANDLE FileHandle,
+    ULONG DesiredAccess,
+    POBJECT_ATTRIBUTES ObjectAttributes,
+    PIO_STATUS_BLOCK IoStatusBlock,
+    ULONG ShareAccess,
+    ULONG CreateDisposition,
+    ULONG CreateOptions,
+    ULONG NamedPipeType,
+    ULONG ReadMode,
+    ULONG CompletionMode,
+    ULONG MaximumInstances,
+    ULONG InboundQuota,
+    ULONG OutboundQuota,
+    PLARGE_INTEGER DefaultTimeout);
+
+bool Utils::HandleWantsOverlappedIo(HANDLE handle) noexcept
+{
+    IO_STATUS_BLOCK statusBlock;
+    FILE_MODE_INFORMATION modeInfo;
+    const auto status = NtQueryInformationFile(handle, &statusBlock, &modeInfo, sizeof(modeInfo), FileModeInformation);
+    return status == 0 && WI_AreAllFlagsClear(modeInfo.Mode, FILE_SYNCHRONOUS_IO_ALERT | FILE_SYNCHRONOUS_IO_NONALERT);
+}
+
+// Creates an anonymous pipe. Behaves like PIPE_ACCESS_INBOUND,
+// meaning the .server is for reading and the .client is for writing.
+Utils::Pipe Utils::CreatePipe(DWORD bufferSize)
+{
+    wil::unique_hfile rx, tx;
+    THROW_IF_WIN32_BOOL_FALSE(::CreatePipe(rx.addressof(), tx.addressof(), nullptr, bufferSize));
+    return { std::move(rx), std::move(tx) };
+}
+
+// Creates an overlapped anonymous pipe. openMode should be either:
+// * PIPE_ACCESS_INBOUND
+// * PIPE_ACCESS_OUTBOUND
+// * PIPE_ACCESS_DUPLEX
+//
+// I know, I know. MSDN infamously says
+// > Asynchronous (overlapped) read and write operations are not supported by anonymous pipes.
+// but that's a lie. The only reason they're not supported is because the Win32
+// API doesn't have a parameter where you could pass FILE_FLAG_OVERLAPPED!
+// So, we'll simply use the underlying NT APIs instead.
+//
+// Most code on the internet suggests creating named pipes with a random name,
+// but usually conveniently forgets to mention that named pipes require strict ACLs.
+// https://stackoverflow.com/q/60645 for instance contains a lot of poor advice.
+// Anonymous pipes also cannot be discovered via NtQueryDirectoryFile inside the NPFS driver,
+// whereas running a tool like Sysinternals' PipeList will return all those semi-named pipes.
+//
+// The code below contains comments to create unidirectional pipes.
+Utils::Pipe Utils::CreateOverlappedPipe(DWORD openMode, DWORD bufferSize)
+{
+    LARGE_INTEGER timeout = { .QuadPart = -10'0000'0000 }; // 1 second
+    UNICODE_STRING emptyPath{};
+    IO_STATUS_BLOCK statusBlock;
+    OBJECT_ATTRIBUTES objectAttributes{
+        .Length = sizeof(OBJECT_ATTRIBUTES),
+        .ObjectName = &emptyPath,
+        .Attributes = OBJ_CASE_INSENSITIVE,
+    };
+    DWORD serverDesiredAccess = 0;
+    DWORD clientDesiredAccess = 0;
+    DWORD serverShareAccess = 0;
+    DWORD clientShareAccess = 0;
+
+    switch (openMode)
+    {
+    case PIPE_ACCESS_INBOUND:
+        serverDesiredAccess = SYNCHRONIZE | GENERIC_READ | FILE_WRITE_ATTRIBUTES;
+        clientDesiredAccess = SYNCHRONIZE | GENERIC_WRITE | FILE_READ_ATTRIBUTES;
+        serverShareAccess = FILE_SHARE_WRITE;
+        clientShareAccess = FILE_SHARE_READ;
+        break;
+    case PIPE_ACCESS_OUTBOUND:
+        serverDesiredAccess = SYNCHRONIZE | GENERIC_WRITE | FILE_READ_ATTRIBUTES;
+        clientDesiredAccess = SYNCHRONIZE | GENERIC_READ | FILE_WRITE_ATTRIBUTES;
+        serverShareAccess = FILE_SHARE_READ;
+        clientShareAccess = FILE_SHARE_WRITE;
+        break;
+    case PIPE_ACCESS_DUPLEX:
+        serverDesiredAccess = SYNCHRONIZE | GENERIC_READ | GENERIC_WRITE;
+        clientDesiredAccess = SYNCHRONIZE | GENERIC_READ | GENERIC_WRITE;
+        serverShareAccess = FILE_SHARE_READ | FILE_SHARE_WRITE;
+        clientShareAccess = FILE_SHARE_READ | FILE_SHARE_WRITE;
+        break;
+    default:
+        THROW_HR(E_UNEXPECTED);
+    }
+
+    // Cache a handle to the pipe driver.
+    static const auto pipeDirectory = []() {
+        UNICODE_STRING path = RTL_CONSTANT_STRING(L"\\Device\\NamedPipe\\");
+
+        OBJECT_ATTRIBUTES objectAttributes{
+            .Length = sizeof(OBJECT_ATTRIBUTES),
+            .ObjectName = &path,
+        };
+
+        wil::unique_hfile dir;
+        IO_STATUS_BLOCK statusBlock;
+        THROW_IF_NTSTATUS_FAILED(NtCreateFile(
+            /* FileHandle        */ dir.addressof(),
+            /* DesiredAccess     */ SYNCHRONIZE | GENERIC_READ,
+            /* ObjectAttributes  */ &objectAttributes,
+            /* IoStatusBlock     */ &statusBlock,
+            /* AllocationSize    */ nullptr,
+            /* FileAttributes    */ 0,
+            /* ShareAccess       */ FILE_SHARE_READ | FILE_SHARE_WRITE,
+            /* CreateDisposition */ FILE_OPEN,
+            /* CreateOptions     */ FILE_SYNCHRONOUS_IO_NONALERT,
+            /* EaBuffer          */ nullptr,
+            /* EaLength          */ 0));
+
+        return dir;
+    }();
+
+    wil::unique_hfile server;
+    objectAttributes.RootDirectory = pipeDirectory.get();
+    THROW_IF_NTSTATUS_FAILED(NtCreateNamedPipeFile(
+        /* FileHandle        */ server.addressof(),
+        /* DesiredAccess     */ serverDesiredAccess,
+        /* ObjectAttributes  */ &objectAttributes,
+        /* IoStatusBlock     */ &statusBlock,
+        /* ShareAccess       */ serverShareAccess,
+        /* CreateDisposition */ FILE_CREATE,
+        /* CreateOptions     */ 0, // would be FILE_SYNCHRONOUS_IO_NONALERT for a synchronous pipe
+        /* NamedPipeType     */ FILE_PIPE_BYTE_STREAM_TYPE,
+        /* ReadMode          */ FILE_PIPE_BYTE_STREAM_MODE,
+        /* CompletionMode    */ FILE_PIPE_QUEUE_OPERATION, // would be FILE_PIPE_COMPLETE_OPERATION for PIPE_NOWAIT
+        /* MaximumInstances  */ 1,
+        /* InboundQuota      */ bufferSize,
+        /* OutboundQuota     */ bufferSize,
+        /* DefaultTimeout    */ &timeout));
+
+    wil::unique_hfile client;
+    objectAttributes.RootDirectory = server.get();
+    THROW_IF_NTSTATUS_FAILED(NtCreateFile(
+        /* FileHandle        */ client.addressof(),
+        /* DesiredAccess     */ clientDesiredAccess,
+        /* ObjectAttributes  */ &objectAttributes,
+        /* IoStatusBlock     */ &statusBlock,
+        /* AllocationSize    */ nullptr,
+        /* FileAttributes    */ 0,
+        /* ShareAccess       */ clientShareAccess,
+        /* CreateDisposition */ FILE_OPEN,
+        /* CreateOptions     */ FILE_NON_DIRECTORY_FILE, // would include FILE_SYNCHRONOUS_IO_NONALERT for a synchronous pipe
+        /* EaBuffer          */ nullptr,
+        /* EaLength          */ 0));
+
+    return { std::move(server), std::move(client) };
+}
+
+// GetOverlappedResult() for professionals! Only for single-threaded use.
+//
+// GetOverlappedResult() used to have a neat optimization where it would only call WaitForSingleObject() if the state was STATUS_PENDING.
+// That got removed in Windows 7, because people kept starting a read/write on one thread and called GetOverlappedResult() on another.
+// When the OS sets Internal from STATUS_PENDING to 0 (= done) and then flags the hEvent, that doesn't happen atomically.
+// This results in a race condition if a OVERLAPPED is used across threads.
+HRESULT Utils::GetOverlappedResultSameThread(const OVERLAPPED* overlapped, DWORD* bytesTransferred) noexcept
+{
+    assert(overlapped != nullptr);
+    assert(overlapped->hEvent != nullptr);
+    assert(bytesTransferred != nullptr);
+
+    __assume(overlapped != nullptr);
+    __assume(overlapped->hEvent != nullptr);
+    __assume(bytesTransferred != nullptr);
+
+    if (overlapped->Internal == STATUS_PENDING)
+    {
+        if (WaitForSingleObjectEx(overlapped->hEvent, INFINITE, FALSE) != WAIT_OBJECT_0)
+        {
+            return HRESULT_FROM_WIN32(GetLastError());
+        }
+    }
+
+    // Assuming no multi-threading as per the function contract and
+    // now that we ensured that hEvent is set (= read/write done),
+    // we can safely read whatever want because nothing will set these concurrently.
+    *bytesTransferred = gsl::narrow_cast<DWORD>(overlapped->InternalHigh);
+    return HRESULT_FROM_NT(overlapped->Internal);
+}
+
 // Function Description:
 // - Generate a Version 5 UUID (specified in RFC4122 4.3)
 //   v5 UUIDs are stable given the same namespace and "name".
@@ -759,7 +1041,7 @@ std::tuple<std::wstring, std::wstring> Utils::MangleStartingDirectoryForWSL(std:
                         break; // just bail out.
                     }
 
-                    if (!til::equals_insensitive_ascii(executablePath.parent_path().c_str(), systemDirectory))
+                    if (!til::equals_insensitive_ascii(executablePath.parent_path().native(), systemDirectory))
                     {
                         break; // it wasn't in system32!
                     }
@@ -846,6 +1128,114 @@ std::wstring_view Utils::TrimPaste(std::wstring_view textView) noexcept
 
     return textView.substr(0, lastNonSpace + 1);
 }
+
+// Disable vectorization-unfriendly warnings.
+#pragma warning(push)
+#pragma warning(disable : 26429) // Symbol '...' is never tested for nullness, it can be marked as not_null (f.23).
+#pragma warning(disable : 26472) // Don't use a static_cast for arithmetic conversions. Use brace initialization, gsl::narrow_cast or gsl::narrow (type.1).
+#pragma warning(disable : 26481) // Don't use pointer arithmetic. Use span instead (bounds.1).
+#pragma warning(disable : 26490) // Don't use reinterpret_cast (type.1).
+
+// Returns true for C0 characters and C1 [single-character] CSI.
+constexpr bool isActionableFromGround(const wchar_t wch) noexcept
+{
+    // This is equivalent to:
+    //   return (wch <= 0x1f) || (wch >= 0x7f && wch <= 0x9f);
+    // It's written like this to get MSVC to emit optimal assembly for findActionableFromGround.
+    // It lacks the ability to turn boolean operators into binary operations and also happens
+    // to fail to optimize the printable-ASCII range check into a subtraction & comparison.
+    return (wch <= 0x1f) | (static_cast<wchar_t>(wch - 0x7f) <= 0x20);
+}
+
+const wchar_t* Utils::FindActionableControlCharacter(const wchar_t* beg, const size_t len) noexcept
+{
+    auto it = beg;
+
+    // The following vectorized code replicates isActionableFromGround which is equivalent to:
+    //   (wch <= 0x1f) || (wch >= 0x7f && wch <= 0x9f)
+    // or rather its more machine friendly equivalent:
+    //   (wch <= 0x1f) | ((wch - 0x7f) <= 0x20)
+#if defined(TIL_SSE_INTRINSICS)
+
+    for (const auto end = beg + (len & ~size_t{ 7 }); it < end; it += 8)
+    {
+        const auto wch = _mm_loadu_si128(reinterpret_cast<const __m128i*>(it));
+        const auto z = _mm_setzero_si128();
+
+        // Dealing with unsigned numbers in SSE2 is annoying because it has poor support for that.
+        // We'll use subtractions with saturation ("SubS") to work around that. A check like
+        // a < b can be implemented as "max(0, a - b) == 0" and "max(0, a - b)" is what "SubS" is.
+
+        // Check for (wch < 0x20)
+        auto a = _mm_subs_epu16(wch, _mm_set1_epi16(0x1f));
+        // Check for "((wch - 0x7f) <= 0x20)" by adding 0x10000-0x7f, which overflows to a
+        // negative number if "wch >= 0x7f" and then subtracting 0x9f-0x7f with saturation to an
+        // unsigned number (= can't go lower than 0), which results in all numbers up to 0x9f to be 0.
+        auto b = _mm_subs_epu16(_mm_add_epi16(wch, _mm_set1_epi16(static_cast<short>(0xff81))), _mm_set1_epi16(0x20));
+        a = _mm_cmpeq_epi16(a, z);
+        b = _mm_cmpeq_epi16(b, z);
+
+        const auto c = _mm_or_si128(a, b);
+        const auto mask = _mm_movemask_epi8(c);
+
+        if (mask)
+        {
+            unsigned long offset;
+            _BitScanForward(&offset, mask);
+            it += offset / 2;
+            return it;
+        }
+    }
+
+#elif defined(TIL_ARM_NEON_INTRINSICS)
+
+    uint64_t mask;
+
+    for (const auto end = beg + (len & ~size_t{ 7 });;)
+    {
+        if (it >= end)
+        {
+            goto plainSearch;
+        }
+
+        const auto wch = vld1q_u16(it);
+        const auto a = vcleq_u16(wch, vdupq_n_u16(0x1f));
+        const auto b = vcleq_u16(vsubq_u16(wch, vdupq_n_u16(0x7f)), vdupq_n_u16(0x20));
+        const auto c = vorrq_u16(a, b);
+
+        mask = vgetq_lane_u64(c, 0);
+        if (mask)
+        {
+            break;
+        }
+        it += 4;
+
+        mask = vgetq_lane_u64(c, 1);
+        if (mask)
+        {
+            break;
+        }
+        it += 4;
+    }
+
+    unsigned long offset;
+    _BitScanForward64(&offset, mask);
+    it += offset / 16;
+    return it;
+
+plainSearch:
+
+#endif
+
+#pragma loop(no_vector)
+    for (const auto end = beg + len; it < end && !isActionableFromGround(*it); ++it)
+    {
+    }
+
+    return it;
+}
+
+#pragma warning(pop)
 
 std::wstring Utils::EvaluateStartingDirectory(
     std::wstring_view currentDirectory,

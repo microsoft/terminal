@@ -246,8 +246,21 @@
     <comment>A description explaining how this control changes the app's language. {Locked="Windows"}</comment>
   </data>
   <data name="Globals_LanguageDefault" xml:space="preserve">
-    <value>Systemstandard verwenden</value>
+    <value>Standard</value>
     <comment>The app contains a control allowing users to choose the app's language. If this value is chosen, the language preference list of the system settings is used instead.</comment>
+  </data>
+  <data name="Globals_DefaultInputScope.Header" xml:space="preserve">
+    <value>Standard-IME-Eingabemodus</value>
+    <comment>The "input scope" of an IME tells it what type of characters should be available for input. A Chinese IME for instance may show English letters instead of Chinese ones. It's a technical term. We're using "input mode" instead of "input scope" to make it easier to understand for users.</comment>
+  </data>
+  <data name="Globals_DefaultInputScope.HelpText" xml:space="preserve">
+    <value>Informiert den IME, welche Sprache standardmäßig verwendet werden soll. Für Sprachen, die auf einem IME basieren und standardmäßig keine lateinischen Zeichen verwenden, kann diese Einstellung verwendet werden, um beim Start die Eingabe in Englisch zu erzwingen.</value>
+  </data>
+  <data name="Globals_DefaultInputScopeDefault.Content" xml:space="preserve">
+    <value>Standard</value>
+  </data>
+  <data name="Globals_DefaultInputScopeAlphanumericHalfWidth.Content" xml:space="preserve">
+    <value>Alphanumerische Halbbreite (Englisch)</value>
   </data>
   <data name="Globals_AlwaysShowTabs.Header" xml:space="preserve">
     <value>Registerkarten immer anzeigen</value>
@@ -280,6 +293,14 @@
   <data name="Globals_DetectURLs.Header" xml:space="preserve">
     <value>URLs automatisch erkennen und klickbar machen</value>
     <comment>Header for a control to toggle whether the terminal should automatically detect URLs and make them clickable, or not.</comment>
+  </data>
+  <data name="Globals_SearchWebDefaultQueryUrl.Header" xml:space="preserve">
+    <value>Standard-URL, die für die Aktion "Web suchen" verwendet werden soll</value>
+    <comment>Header for a control to set the query URL when using the "search web" action.</comment>
+  </data>
+  <data name="Globals_SearchWebDefaultQueryUrl.HelpText" xml:space="preserve">
+    <value>Der Platzhalter "%s" wird durch die Suchabfrage ersetzt.</value>
+    <comment>{Locked="%s"} Additional text presented near "Globals_SearchWebDefaultQueryUrl.Header".</comment>
   </data>
   <data name="Globals_TrimBlockSelection.Header" xml:space="preserve">
     <value>Leerzeichen am Ende einer rechteckigen Auswahl entfernen</value>
@@ -539,9 +560,37 @@
     <value>Immer im Vordergrund</value>
     <comment>Header for a control to toggle if the app will always be presented on top of other windows, or is treated normally (when disabled).</comment>
   </data>
+  <data name="Profile_ForceVTInput.Header" xml:space="preserve">
+    <value>Verwenden der Legacyeingabecodierung</value>
+    <comment>Header for a control to toggle legacy input encoding for the terminal.</comment>
+  </data>
+  <data name="Profile_AllowVtChecksumReport.Header" xml:space="preserve">
+    <value>DECRQCRA zulassen (Prüfsumme des rechteckigen Bereichs anfordern, Request Checksum of Rectangular Area)</value>
+    <comment>{Locked="DECRQCRA"}{Locked="Request Checksum of Rectangular Area"}Header for a control to toggle support for the DECRQCRA control sequence.</comment>
+  </data>
+  <data name="Profile_AllowVtClipboardWrite.Header" xml:space="preserve">
+    <value>Schreiben in die Zwischenablage durch OSC 52 (Manipulate Selection Data) zulassen</value>
+    <comment>{Locked="OSC 52"}{Locked="Manipulate Selection Data"}Header for a control to toggle support for applications to change the contents of the Windows system clipboard.</comment>
+  </data>
+  <data name="Globals_AllowHeadless.Header" xml:space="preserve">
+    <value>Ausführung von Windows Terminal im Hintergrund zulassen</value>
+    <comment>Header for a control to toggle support for Windows Terminal to run in the background.</comment>
+  </data>
+  <data name="Globals_DebugFeaturesEnabled.Header" xml:space="preserve">
+    <value>Debugfeatures aktivieren</value>
+    <comment>Header for a control to toggle debug features.</comment>
+  </data>
   <data name="Globals_AlwaysOnTop.HelpText" xml:space="preserve">
     <value>Terminal wird immer das oberste Fenster auf dem Desktop sein.</value>
     <comment>A description for what the "always on top" setting does. Presented near "Globals_AlwaysOnTop.Header".</comment>
+  </data>
+  <data name="Profile_ForceVTInput.HelpText" xml:space="preserve">
+    <value>Bestimmte Tastatureingaben in einigen Anwendungen funktionieren möglicherweise nicht mehr ordnungsgemäß, wenn diese Einstellung aktiviert ist.</value>
+    <comment>Additional description for what the "force vt input" setting does. Presented near "Globals_ForceVTInput.Header".</comment>
+  </data>
+  <data name="Globals_AllowHeadless.HelpText" xml:space="preserve">
+    <value>Auf diese Weise können Aktionen wie globale Korrektur- und Quakemodusaktionen auch dann funktionieren, wenn keine Fenster geöffnet sind.</value>
+    <comment>Additional description for what the "allow headless" setting does. Presented near "Globals_AllowHeadless.Header".</comment>
   </data>
   <data name="Globals_TabWidthMode.Header" xml:space="preserve">
     <value>Modus Registerkartenbreite</value>
@@ -611,6 +660,10 @@
     <value>Interaktion</value>
     <comment>Header for the "interaction" menu item. This navigates to a page that lets you see and modify settings related to the user's mouse and touch interactions with the app.</comment>
   </data>
+  <data name="Nav_Compatibility.Content" xml:space="preserve">
+    <value>Kompatibilität</value>
+    <comment>Header for the "compatibility" menu item. This navigates to a page that lets you see and modify settings related to compatibility with command line scenarios.</comment>
+  </data>
   <data name="Nav_Launch.Content" xml:space="preserve">
     <value>Starten</value>
     <comment>Header for the "startup" menu item. This navigates to a page that lets you see and modify settings related to the app's launch experience (i.e. screen position, mode, etc.)</comment>
@@ -631,6 +684,10 @@
     <value>Aktionen</value>
     <comment>Header for the "actions" menu item. This navigates to a page that lets you see and modify commands, key bindings, and actions that can be done in the app.</comment>
   </data>
+  <data name="Nav_Extensions.Content" xml:space="preserve">
+    <value>Erweiterungen</value>
+    <comment>Header for the "extensions" menu item. This navigates to a page that lets you see and modify extensions for the app.</comment>
+  </data>
   <data name="Profile_OpacitySlider.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Hintergrunddeckkraft</value>
     <comment>Name for a control to determine the level of opacity for the background of the control. The user can choose to make the background of the app more or less opaque.</comment>
@@ -646,6 +703,10 @@
   <data name="Profile_Advanced.Header" xml:space="preserve">
     <value>Erweitert</value>
     <comment>Header for a sub-page of profile settings focused on more advanced scenarios.</comment>
+  </data>
+  <data name="Profile_Terminal.Header" xml:space="preserve">
+    <value>Terminalemulation</value>
+    <comment>Header for a sub-page of profile settings focused on customizing the capabilities of the terminal.</comment>
   </data>
   <data name="Profile_AltGrAliasing.Header" xml:space="preserve">
     <value>AltGr-Aliasing</value>
@@ -833,6 +894,10 @@
     <value>Farbschema</value>
     <comment>Header for a control to select the scheme (or set) of colors used in the session. This is selected from a list of options managed by the user.</comment>
   </data>
+  <data name="Profile_ColorScheme.HelpText" xml:space="preserve">
+    <value>Erweitern, um den Vordergrund-, Hintergrund- und Auswahlhintergrund außer Kraft zu setzen.</value>
+    <comment>Help text for a control to select the scheme (or set) of colors used in the session. Directs the user to expand the control to access overrides for certain values in the color scheme.</comment>
+  </data>
   <data name="Profile_Commandline.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Befehlszeile</value>
     <comment>Name for a control to determine commandline executable (i.e. a .exe file) to run when a terminal session of this profile is launched.</comment>
@@ -932,17 +997,33 @@
     <value>Zeilenhöhe</value>
     <comment>Header for a control that sets the text line height.</comment>
   </data>
+  <data name="Profile_CellWidth.Header" xml:space="preserve">
+    <value>Zellenbreite</value>
+    <comment>Header for a control that sets the text character width.</comment>
+  </data>
   <data name="Profile_LineHeightBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Zeilenhöhe</value>
     <comment>Header for a control that sets the text line height.</comment>
+  </data>
+  <data name="Profile_CellWidthBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Zellenbreite</value>
+    <comment>Header for a control that sets the text character width.</comment>
   </data>
   <data name="Profile_LineHeight.HelpText" xml:space="preserve">
     <value>Überschreiben Sie die Zeilenhöhe des Terminals. Gemessen als Vielfaches des Schriftgrads. Der Standardwert hängt von Ihrer Schriftart ab und liegt in der Regel bei 1,2.</value>
     <comment>A description for what the "line height" setting does. Presented near "Profile_LineHeight".</comment>
   </data>
+  <data name="Profile_CellWidth.HelpText" xml:space="preserve">
+    <value>Überschreiben Sie die Zellenbreite des Terminals. Gemessen als Vielfaches des Schriftgrads. Der Standardwert hängt von Ihrer Schriftart ab und liegt in der Regel bei 0,6.</value>
+    <comment>A description for what the "cell width" setting does. Presented near "Profile_CellWidth".</comment>
+  </data>
   <data name="Profile_LineHeightBox.PlaceholderText" xml:space="preserve">
     <value>1.2</value>
     <comment>"1.2" is a decimal number.</comment>
+  </data>
+  <data name="Profile_CellWidthBox.PlaceholderText" xml:space="preserve">
+    <value>0,6</value>
+    <comment>"0.6" is a decimal number.</comment>
   </data>
   <data name="Profile_EnableBuiltinGlyphs.Header" xml:space="preserve">
     <value>Integrierte Glyphen</value>
@@ -1043,6 +1124,10 @@
   <data name="Profile_IconBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Symbol</value>
     <comment>Name for a control to determine what icon can be used to represent this profile. This is not necessarily a file path, but can be one.</comment>
+  </data>
+  <data name="Profile_IconEmojiBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Symbol</value>
+    <comment>Name for a control to determine what icon can be used to represent this profile.</comment>
   </data>
   <data name="Profile_Icon.HelpText" xml:space="preserve">
     <value>Emoji- oder Bilddateipfad des im Profil verwendeten Symbols.</value>
@@ -1539,6 +1624,10 @@
     <value>Text</value>
     <comment>Header for a group of settings that control the appearance of text in the app.</comment>
   </data>
+  <data name="Globals_WarningsHeader.Text" xml:space="preserve">
+    <value>Warnungen</value>
+    <comment>Header for a group of settings that control the warnings in the app.</comment>
+  </data>
   <data name="Profile_WindowHeader.Text" xml:space="preserve">
     <value>Fenster</value>
     <comment>Header for a group of settings that control the appearance of the window frame of the app.</comment>
@@ -1685,7 +1774,7 @@
   </data>
   <data name="Profile_CreateUnfocusedAppearanceButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Erscheinungsbild erstellen</value>
-    <comment>Name for a control which creates an the unfocused appearance settings for this profile. Text must match that of "Profile_AddAppearanceButton.Text".</comment>
+    <comment>Name for a control which creates the unfocused appearance settings for this profile. Text must match that of "Profile_AddAppearanceButton.Text".</comment>
   </data>
   <data name="Profile_CreateUnfocusedAppearanceButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Erstellen Sie ein unscharfes Erscheinungsbild für dieses Profil. So sieht das Profil aus, als ob es inaktiv ist.</value>
@@ -1693,7 +1782,7 @@
   </data>
   <data name="Profile_DeleteUnfocusedAppearanceButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Erscheinungsbild löschen</value>
-    <comment>Name for a control which deletes an the unfocused appearance settings for this profile.</comment>
+    <comment>Name for a control which deletes the unfocused appearance settings for this profile.</comment>
   </data>
   <data name="Profile_DeleteUnfocusedAppearanceButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Löschen Sie das unscharfe Erscheinungsbild für dieses Profil.</value>
@@ -1819,6 +1908,15 @@
     <value>Warnen, wenn mehrere Registerkarten geschlossen werden</value>
     <comment>Header for a control to toggle whether to show a confirm dialog box when closing the application with multiple tabs open.</comment>
   </data>
+  <data name="Globals_InputServiceWarning.Header" xml:space="preserve">
+    <value>Warnen, wenn „Dienst für Bildschirmtastatur und Handschrifteingabefeld“ deaktiviert ist</value>
+  </data>
+  <data name="Globals_WarnAboutLargePaste.Header" xml:space="preserve">
+    <value>Warnung beim Versuch, mehr als 5 KiB Zeichen einzufügen</value>
+  </data>
+  <data name="Globals_WarnAboutMultiLinePaste.Header" xml:space="preserve">
+    <value>Warnung beim Versuch, ein „Zeilenumbruch“-Zeichen einzufügen</value>
+  </data>
   <data name="Settings_PortableModeNote.Text" xml:space="preserve">
     <value>Windows-Terminal wird im portablen Modus ausgeführt.</value>
     <comment>A disclaimer that indicates that Terminal is running in a mode that saves settings to a different folder.</comment>
@@ -1834,5 +1932,503 @@
   <data name="Profile_ProportionalFontFaces.Header" xml:space="preserve">
     <value>Proportionale Schriftarten:</value>
     <comment>This is a label that is followed by a list of proportional fonts.</comment>
+  </data>
+  <data name="Profile_BellSoundPreviewDefault" xml:space="preserve">
+    <value>Standardsystemsound</value>
+    <comment>The value shown for the default value for bell sound.</comment>
+  </data>
+  <data name="Profile_BellSoundPreviewMultiple" xml:space="preserve">
+    <value>Mehrere Sounds</value>
+    <comment>The value shown for when the "bell sound" setting is set to multiple values.</comment>
+  </data>
+  <data name="Profile_BellSound.Header" xml:space="preserve">
+    <value>Klingelton</value>
+    <comment>Header for a control to determine what sound the app uses to notify the user. "Bell" is the common term in terminals for the BEL character (like the metal device used to chime).</comment>
+  </data>
+  <data name="Profile_BellSound.HelpText" xml:space="preserve">
+    <value>Steuert, welcher Sound wiedergegeben wird, wenn die Anwendung ein BEL Zeichen ausgibt. "Glockenbenachrichtigungsstil" muss "Hörbar" enthalten.</value>
+    <comment>A description for what the "bell sound" setting does. Presented near "Profile_BellSound". "Bell notification style" and "audible" come from "Profile_BellStyle" and "Profile_BellStyleAudible.Content" respectively.{Locked="BEL"}</comment>
+  </data>
+  <data name="Profile_AddBellSound.Text" xml:space="preserve">
+    <value>Sound hinzufügen</value>
+    <comment>Text label for a button that adds a sound to the bell sound list. Presented near "Profile_BellSound"</comment>
+  </data>
+  <data name="Profile_BellSoundBrowse.Content" xml:space="preserve">
+    <value>Durchsuchen…</value>
+    <comment>Text label for a button that opens a file picker to select a sound file to use for the bell sound. Presented near "Profile_BellSound".</comment>
+  </data>
+  <data name="Profile_BellSoundInfo.Text" xml:space="preserve">
+    <value>Wenn mehrere Sounds definiert sind, wird beim Empfang des BEL-Zeichens einer nach dem Zufallsprinzip ausgewählt.</value>
+    <comment>{Locked="BEL"} Text block displayed near "Profile_BellSound".</comment>
+  </data>
+  <data name="Profile_BellSoundNotFound" xml:space="preserve">
+    <value>⚠️ Datei nicht gefunden</value>
+  </data>
+  <data name="Profile_BellSoundAudioPreview.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Sound wiedergeben</value>
+    <comment>Tooltip for a button that plays the selected sound when pressed.</comment>
+  </data>
+  <data name="Profile_BellSoundDelete.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Löschen</value>
+    <comment>Tooltip for a button that deletes the selected sound when pressed.</comment>
+  </data>
+  <data name="Profile_BellSoundAudioPreview.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Sound wiedergeben</value>
+    <comment>Screen reader name for a button that plays the selected sound when pressed.</comment>
+  </data>
+  <data name="Profile_BellSoundDelete.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Löschen</value>
+    <comment>Screen reader name for a button that deletes the selected sound when pressed.</comment>
+  </data>
+  <data name="Profile_TabColor.Header" xml:space="preserve">
+    <value>Registerkartenfarbe</value>
+    <comment>Header for a control to determine the color of the tab.</comment>
+  </data>
+  <data name="Profile_Foreground.Header" xml:space="preserve">
+    <value>Vordergrund</value>
+    <comment>Header for a control to determine the foreground color of text.</comment>
+  </data>
+  <data name="Profile_Background.Header" xml:space="preserve">
+    <value>Hintergrund</value>
+    <comment>Header for a control to determine the background color of text.</comment>
+  </data>
+  <data name="Profile_SelectionBackground.Header" xml:space="preserve">
+    <value>Hintergrund der Auswahl</value>
+    <comment>Header for a control to determine the background color of selected text.</comment>
+  </data>
+  <data name="Profile_CursorColor.Header" xml:space="preserve">
+    <value>Cursorfarbe</value>
+    <comment>Header for a control to determine the color of the cursor.</comment>
+  </data>
+  <data name="Profile_Foreground.HelpText" xml:space="preserve">
+    <value>Überschreibt die Vordergrundfarbe aus dem Farbschema.</value>
+    <comment>A description for what the "foreground" setting does. Presented near "Profile_Foreground".</comment>
+  </data>
+  <data name="Profile_CursorColor.HelpText" xml:space="preserve">
+    <value>Überschreibt die Cursorfarbe aus dem Farbschema.</value>
+    <comment>A description for what the "cursor color" setting does. Presented near "Profile_CursorColor".</comment>
+  </data>
+  <data name="Profile_Background.HelpText" xml:space="preserve">
+    <value>Überschreibt die Hintergrundfarbe aus dem Farbschema.</value>
+    <comment>A description for what the "background" setting does. Presented near "Profile_Background".</comment>
+  </data>
+  <data name="Profile_SelectionBackground.HelpText" xml:space="preserve">
+    <value>Überschreibt die Hintergrundfarbe der Auswahl aus dem Farbschema.</value>
+    <comment>A description for what the "selection background" setting does. Presented near "Profile_SelectionBackground".</comment>
+  </data>
+  <data name="NullableColorPicker_MoreColorsButton.Content" xml:space="preserve">
+    <value>Weitere Farben...</value>
+    <comment>Text label for a button that allows the user to select from more colors in a new window. {Locked="..."}</comment>
+  </data>
+  <data name="NullableColorPicker_ColorPickerContentDialog.Title" xml:space="preserve">
+    <value>Farbe wählen</value>
+    <comment>Title displayed on a content dialog directing the user to pick a color.</comment>
+  </data>
+  <data name="NullableColorPicker_ColorPickerContentDialog.PrimaryButtonText" xml:space="preserve">
+    <value>OK</value>
+    <comment>Button label for the color picker content dialog. Used as confirmation to apply the selected color.</comment>
+  </data>
+  <data name="NullableColorPicker_ColorPickerContentDialog.SecondaryButtonText" xml:space="preserve">
+    <value>Abbrechen</value>
+    <comment>Text label for secondary button the color picker content dialog. When clicked, the operation of selecting a color is cancelled by the user.</comment>
+  </data>
+  <data name="Profile_CursorColor_NullableColorPicker.NullColorButtonLabel" xml:space="preserve">
+    <value>Schemafarbe verwenden</value>
+    <comment>Label for a button directing the user to use the cursor color defined in the terminal's current color scheme.</comment>
+  </data>
+  <data name="Profile_Foreground_NullableColorPicker.NullColorButtonLabel" xml:space="preserve">
+    <value>Schemafarbe verwenden</value>
+    <comment>Label for a button directing the user to use the foreground color defined in the terminal's current color scheme.</comment>
+  </data>
+  <data name="Profile_Background_NullableColorPicker.NullColorButtonLabel" xml:space="preserve">
+    <value>Schemafarbe verwenden</value>
+    <comment>Label for a button directing the user to use the background color defined in the terminal's current color scheme.</comment>
+  </data>
+  <data name="Profile_SelectionBackground_NullableColorPicker.NullColorButtonLabel" xml:space="preserve">
+    <value>Schemafarbe verwenden</value>
+    <comment>Label for a button directing the user to use the selection background color defined in the terminal's current color scheme.</comment>
+  </data>
+  <data name="Profile_IconTypeNone" xml:space="preserve">
+    <value>Keine</value>
+    <comment>An option to choose from for the "icon style" dropdown. When selected, there will be no icon for the profile.</comment>
+  </data>
+  <data name="Profile_IconTypeImage" xml:space="preserve">
+    <value>Datei</value>
+    <comment>An option to choose from for the "icon style" dropdown. When selected, a custom image can set for the profile's icon.</comment>
+  </data>
+  <data name="Profile_IconTypeEmoji" xml:space="preserve">
+    <value>Emoji</value>
+    <comment>An option to choose from for the "icon style" dropdown. When selected, an emoji can be set for the profile's icon.</comment>
+  </data>
+  <data name="Profile_IconTypeFontIcon" xml:space="preserve">
+    <value>Integriertes Symbol</value>
+    <comment>An option to choose from for the "icon style" dropdown. When selected, the user can choose from several preselected options to set the profile's icon.</comment>
+  </data>
+  <data name="Profile_IconEmojiBox.PlaceholderText" xml:space="preserve">
+    <value>Verwenden Sie "WIN + PUNKT", um die Emojiauswahl zu öffnen.</value>
+    <comment>"Win + period" refers to the OS key binding to open the emoji picker.</comment>
+  </data>
+  <data name="Profile_IconType.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Symboltyp</value>
+    <comment>Accessible name for a control allowing the user to select the type of icon they would like to use.</comment>
+  </data>
+  <data name="Profile_BuiltInIcon.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Symbol</value>
+    <comment>Accessible name for a control allowing the user to select the icon from a list of built in icons.</comment>
+  </data>
+  <data name="Nav_NewTabMenu.Content" xml:space="preserve">
+    <value>Menü „Neue Registerkarte“</value>
+    <comment>Header for the "new tab menu" menu item. This navigates to a page that lets you see and modify settings related to the app's new tab menu (i.e. profile ordering, nested folders, dividers, etc.)</comment>
+  </data>
+  <data name="NewTabMenuEntry_Separator.Text" xml:space="preserve">
+    <value>&lt;Trennzeichen&gt;</value>
+    <comment>{Locked="&lt;"}, {Locked="&gt;"} Text label for an entry that represents a visual separator in a list.</comment>
+  </data>
+  <data name="NewTabMenuEntry_RemainingProfiles.Text" xml:space="preserve">
+    <value>&lt;verbleibende Profile&gt;</value>
+    <comment>{Locked="&lt;"}{Locked="&gt;"} Text label for an entry that represents inserting any remaining profiles that have not been inserted.</comment>
+  </data>
+  <data name="NewTabMenuEntry_RemainingProfilesItem.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>&lt;verbleibende Profile&gt;</value>
+    <comment>{Locked="&lt;"}{Locked="&gt;"} Text label for an entry that represents inserting any remaining profiles that have not been inserted. Should match "NewTabMenuEntry_RemainingProfiles.Text".</comment>
+  </data>
+  <data name="NewTabMenu_AddProfile.Header" xml:space="preserve">
+    <value>Profil</value>
+    <comment>Header for a control that adds a terminal profile to the new tab menu.</comment>
+  </data>
+  <data name="NewTabMenu_AddMatchProfiles.Header" xml:space="preserve">
+    <value>Profilübereinstimmung</value>
+    <comment>Header for a control that adds a terminal profile matcher to the new tab menu. This entry adds profiles that match the given parameters.</comment>
+  </data>
+  <data name="NewTabMenu_AddRemainingProfiles.Header" xml:space="preserve">
+    <value>Verbleibende Profile</value>
+    <comment>Header for a control that adds any remaining profiles to the new tab menu.</comment>
+  </data>
+  <data name="NewTabMenu_AddMatchProfiles.HelpText" xml:space="preserve">
+    <value>Fügen Sie eine Gruppe von Profilen hinzu, die mindestens einer der definierten Eigenschaften für reguläre Ausdrücke entsprechen.</value>
+    <comment>Additional information for a control that adds a terminal profile matcher to the new tab menu. Presented near "NewTabMenu_AddMatchProfiles".</comment>
+  </data>
+  <data name="NewTabMenu_AddRemainingProfiles.HelpText" xml:space="preserve">
+    <value>Es kann nur ein Eintrag "Verbleibende Profile" vorhanden sein.</value>
+    <comment>Additional information for a control that adds any remaining profiles to the new tab menu. Presented near "NewTabMenu_AddRemainingProfiles".</comment>
+  </data>
+  <data name="NewTabMenu_AddSeparator.Header" xml:space="preserve">
+    <value>Trennzeichen</value>
+    <comment>Header for a control that adds a separator to the new tab menu.</comment>
+  </data>
+  <data name="NewTabMenu_AddFolder.Header" xml:space="preserve">
+    <value>Ordner</value>
+    <comment>Header for a control that adds a folder to the new tab menu.</comment>
+  </data>
+  <data name="NewTabMenu_AddMatchProfiles_Name.Header" xml:space="preserve">
+    <value>Profilname (regulärer Ausdruck)</value>
+    <comment>Header for a text box used to define a regex for the names of profiles to add.</comment>
+  </data>
+  <data name="NewTabMenu_AddMatchProfiles_Source.Header" xml:space="preserve">
+    <value>Profilquelle (regulärer Ausdruck)</value>
+    <comment>Header for a text box used to define a regex for the sources of profiles to add.</comment>
+  </data>
+  <data name="NewTabMenu_AddMatchProfiles_Commandline.Header" xml:space="preserve">
+    <value>Befehlszeile (regulärer Ausdruck)</value>
+    <comment>Header for a text box used to define a regex for the commandlines of profiles to add.</comment>
+  </data>
+  <data name="NewTabMenu_AddMatchProfilesTextBlock.Text" xml:space="preserve">
+    <value>Profilübereinstimmung hinzufügen</value>
+    <comment>Label for a button confirming to add the profile matcher to the new tab menu as an entry.</comment>
+  </data>
+  <data name="NewTabMenu_AddFolder_FolderName.PlaceholderText" xml:space="preserve">
+    <value>Ordnername</value>
+    <comment>Placeholder text for a text box control used to set the name of the folder.</comment>
+  </data>
+  <data name="NewTabMenu_DeleteMultipleTextBlock.Text" xml:space="preserve">
+    <value>Ausgewählte Einträge löschen</value>
+    <comment>Label for a button that can be used to delete any new tab menu entries that are currently selected</comment>
+  </data>
+  <data name="NewTabMenu_MoveToFolderTextBlock.Text" xml:space="preserve">
+    <value>Ausgewählte Einträge in Ordner verschieben...</value>
+    <comment>Label for a button that can be used to move any new tab menu entries that are currently selected into an existing folder</comment>
+  </data>
+  <data name="NewTabMenu_FolderPickerDialog.Title" xml:space="preserve">
+    <value>In Ordner verschieben</value>
+    <comment>Title displayed on a content dialog directing the user to pick a folder to move the selected entries to.</comment>
+  </data>
+  <data name="NewTabMenu_FolderPickerDialog.PrimaryButtonText" xml:space="preserve">
+    <value>OK</value>
+    <comment>Button label for the folder picker content dialog. Used as confirmation to pick the selected folder.</comment>
+  </data>
+  <data name="NewTabMenu_FolderPickerDialog.SecondaryButtonText" xml:space="preserve">
+    <value>Abbrechen</value>
+    <comment>Text label for the secondary button on the folder picker content dialog. When clicked, the operation of picking a folder is cancelled by the user.</comment>
+  </data>
+  <data name="NewTabMenu_RootFolderName" xml:space="preserve">
+    <value>&lt;root&gt;</value>
+    <comment>{Locked="&lt;"}{Locked="&gt;"} Text label for the name of the "root" folder. This is used to allow the user to select the root as a destination folder.</comment>
+  </data>
+  <data name="NewTabMenu_CurrentFolderTextBlock.Text" xml:space="preserve">
+    <value>Eigenschaften des aktuellen Ordners</value>
+    <comment>Header for a group of controls that can be used to modify the current folder entry's properties.</comment>
+  </data>
+  <data name="NewTabMenu_AddEntriesTextBlock.Text" xml:space="preserve">
+    <value>Eintrag hinzufügen</value>
+    <comment>Header for a group of controls that can be used to add an entry to the new tab menu</comment>
+  </data>
+  <data name="NewTabMenu_CurrentFolderName.Header" xml:space="preserve">
+    <value>Ordnername</value>
+    <comment>Header for a control that allows the user to modify the name of the current folder entry.</comment>
+  </data>
+  <data name="NewTabMenu_CurrentFolderInlining.Header" xml:space="preserve">
+    <value>Inlining zulassen</value>
+    <comment>Header for a control that allows the nested entries to be presented inline rather than with a folder.</comment>
+  </data>
+  <data name="NewTabMenu_CurrentFolderInlining.HelpText" xml:space="preserve">
+    <value>Wenn diese Option aktiviert ist, wird der Eintrag direkt angezeigt, wenn der Ordner nur einen einzigen Eintrag enthält, und es wird kein Ordner gerendert.</value>
+    <comment>Additional text displayed near "NewTabMenu_CurrentFolderInlining.Header".</comment>
+  </data>
+  <data name="NewTabMenu_CurrentFolderAllowEmpty.Header" xml:space="preserve">
+    <value>Leer zulassen</value>
+    <comment>Header for a control that allows the current folder entry to be empty.</comment>
+  </data>
+  <data name="NewTabMenu_CurrentFolderAllowEmpty.HelpText" xml:space="preserve">
+    <value>Wenn diese Option aktiviert ist, wird der Ordner weiterhin angezeigt, wenn er keine Einträge enthält. Andernfalls wird der Ordner nicht gerendert.</value>
+    <comment>Additional text displayed near "NewTabMenu_CurrentFolderAllowEmpty.Header".</comment>
+  </data>
+  <data name="NewTabMenu_ActionNotFound" xml:space="preserve">
+    <value>Aktions-ID nicht gefunden</value>
+    <comment>Displayed text for an entry who's action identifier wasn't found. The action ID is presented in the format "Action ID not found: &lt;actionID&gt;"</comment>
+  </data>
+  <data name="NewTabMenuEntry_ReorderUp.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Nach oben verschieben</value>
+    <comment>Accessible name for a button that reorders the entry to be moved up when clicked. Should match "NewTabMenuEntry_ReorderUp.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip".</comment>
+  </data>
+  <data name="NewTabMenuEntry_ReorderUp.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Nach oben verschieben</value>
+    <comment>Accessible name for a button that reorders the entry to be moved up when clicked. Should match "NewTabMenuEntry_ReorderUp.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name".</comment>
+  </data>
+  <data name="NewTabMenuEntry_ReorderDown.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Nach unten verschieben</value>
+    <comment>Accessible name for a button that reorders the entry to be moved down when clicked. Should match "NewTabMenuEntry_ReorderDown.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip".</comment>
+  </data>
+  <data name="NewTabMenuEntry_EditFolder.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Ordner bearbeiten</value>
+    <comment>Accessible name for a button that begins editing the folder when clicked. Should match "NewTabMenuEntry_EditFolder.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip".</comment>
+  </data>
+  <data name="NewTabMenuEntry_ReorderDown.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Nach unten verschieben</value>
+    <comment>Accessible name for a button that reorders the entry to be moved down when clicked. Should match "NewTabMenuEntry_ReorderDown.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name".</comment>
+  </data>
+  <data name="NewTabMenuEntry_EditFolder.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Ordner bearbeiten</value>
+    <comment>Accessible name for a button that begins editing the folder when clicked. Should match "NewTabMenuEntry_EditFolder.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name".</comment>
+  </data>
+  <data name="NewTabMenuEntry_Delete.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Löschen</value>
+    <comment>Accessible name for a button that deletes the entry when clicked. Should match "NewTabMenuEntry_Delete.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip"</comment>
+  </data>
+  <data name="NewTabMenuEntry_Delete.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Löschen</value>
+    <comment>Accessible name for a button that deletes the entry when clicked. Should match "NewTabMenuEntry_Delete.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name"</comment>
+  </data>
+  <data name="NewTabMenu_AddProfileButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Ausgewähltes Profil hinzufügen</value>
+    <comment>Tooltip for a button that adds the selected profile to the new tab menu.</comment>
+  </data>
+  <data name="NewTabMenu_AddSeparatorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Trennzeichen hinzufügen</value>
+    <comment>Tooltip for a button that adds a separator to the new tab menu.</comment>
+  </data>
+  <data name="NewTabMenu_AddFolderButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Ordner hinzufügen</value>
+    <comment>Tooltip for a button that adds a folder to the new tab menu.</comment>
+  </data>
+  <data name="NewTabMenu_AddRemainingProfilesButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Verbleibende Profile hinzufügen</value>
+    <comment>Tooltip for a button that adds an entry that represents the remaining profiles to the new tab menu.</comment>
+  </data>
+  <data name="NewTabMenuEntry_SeparatorItem.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>&lt;Trennzeichen&gt;</value>
+    <comment>{Locked="&lt;"}{Locked="&gt;"}Accessible name for an entry that represents a visual separator in a list. Should match "NewTabMenuEntry_Separator.Text".</comment>
+  </data>
+  <data name="Profile_AnswerbackMessage.Header" xml:space="preserve">
+    <value>ENQ-Antwort (ENQ, Request Terminal Status, Terminalstatus anfordern)</value>
+    <comment>{Locked=ENQ}{Locked="Request Terminal Status"} Header for a control to determine the response to the ENQ escape sequence. This is represented using a text box.</comment>
+  </data>
+  <data name="Profile_AnswerbackMessage.HelpText" xml:space="preserve">
+    <value>Die Antwort, die gesendet wird, wenn eine ENQ-Steuersequenz empfangen wird.</value>
+    <comment>{Locked=ENQ} A description for what the "ENQ response" setting does. Presented near "Profile_AnswerbackMessage".</comment>
+  </data>
+  <data name="Globals_DebugFeaturesEnabled.HelpText" xml:space="preserve">
+    <value>Nützlich für die Problembehandlung oder Entwicklung eines Terminals.</value>
+    <comment>Additional description for what the "debug features enabled" setting does. Presented near "Globals_DebugFeaturesEnabled.Header".</comment>
+  </data>
+  <data name="Profile_RainbowSuggestions.Header" xml:space="preserve">
+    <value>Experimentell: Eingabevorschläge in Regenbogenfarben anzeigen</value>
+    <comment>This is a label for a setting that, when enabled, applies a rainbow coloring to the preview text from the suggestions UI.</comment>
+  </data>
+  <data name="Globals_EnableColorSelection.Header" xml:space="preserve">
+    <value>Experimentell: Tastenzuordnungen zum Einfärben von ausgewähltem Text hinzufügen</value>
+    <comment>Header for a control to toggle adding a set of key bindings that can be used to apply coloring to selected text in a terminal session.</comment>
+  </data>
+  <data name="Globals_EnableColorSelection.HelpText" xml:space="preserve">
+    <value>Diese Tastenbindungen können den markierten Text oder alle Instanzen des markierten Texts mit einer angegebenen Farbe hervorheben.</value>
+    <comment>Additional text for a control to toggle adding a set of key bindings that can be used to apply coloring to selected text in a terminal session. Presented near "Globals_EnableColorSelection.Header".</comment>
+  </data>
+  <data name="Globals_EnableUnfocusedAcrylic.Header" xml:space="preserve">
+    <value>Acrylmaterial in unfokussierten Fenstern zulassen</value>
+    <comment>Header for a control to toggle allowing unfocused windows to have an acrylic background.</comment>
+  </data>
+  <data name="Globals_ShowAdminShield.Header" xml:space="preserve">
+    <value>Zeigt ein Schild in der Titelleiste an, wenn Windows Terminal als Administrator ausgeführt wird.</value>
+    <comment>Header for a control to toggle displaying a shield in the title bar of the app. "Admin" refers to elevated sessions like "run as Admin"</comment>
+  </data>
+  <data name="Globals_ShowTabsFullscreen.Header" xml:space="preserve">
+    <value>Registerkarten im Vollbildmodus anzeigen</value>
+    <comment>Header for a control to toggle if the app should show the tabs when in full screen state.</comment>
+  </data>
+  <data name="Globals_ShowTabsFullscreen.HelpText" xml:space="preserve">
+    <value>Wenn diese Option aktiviert ist, wird die Registerkartenleiste angezeigt, wenn sich die App im Vollbildmodus befindet.</value>
+    <comment>A description for what the "show tabs in full screen" setting does.</comment>
+  </data>
+  <data name="Profile_PathTranslationStyle.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Pfadübersetzung</value>
+    <comment>Name for a control to select how file and directory paths are translated.</comment>
+  </data>
+  <data name="Profile_PathTranslationStyle.Header" xml:space="preserve">
+    <value>Pfadübersetzung</value>
+    <comment>Name for a control to select how file and directory paths are translated.</comment>
+  </data>
+  <data name="Profile_PathTranslationStyle.HelpText" xml:space="preserve">
+    <value>Steuert, wie Datei- und Verzeichnispfade bei Drag &amp;amp; Drop-Vorgängen übersetzt werden.</value>
+    <comment>A description for what the "path translation" setting does. Presented near "Profile_PathTranslationStyle.Header".</comment>
+  </data>
+  <data name="Profile_PathTranslationStyleNone.Content" xml:space="preserve">
+    <value>Keine</value>
+    <comment>An option to choose from for the "path translation" setting.</comment>
+  </data>
+  <data name="Profile_PathTranslationStyleWsl.Content" xml:space="preserve">
+    <value>WSL (C:\ -&gt; /mnt/c)</value>
+    <comment>{Locked="WSL","C:\","/mnt/c"} An option to choose from for the "path translation" setting.</comment>
+  </data>
+  <data name="Profile_PathTranslationStyleCygwin.Content" xml:space="preserve">
+    <value>Cygwin (C:\ -&gt; /cygdrive/c)</value>
+    <comment>{Locked="Cygwin","C:\","/cygdrive/c"} An option to choose from for the "path translation" setting.</comment>
+  </data>
+  <data name="Profile_PathTranslationStyleMsys2.Content" xml:space="preserve">
+    <value>MSYS2 (C:\ -&gt; /c)</value>
+    <comment>{Locked="MSYS2","C:\","/c"} An option to choose from for the "path translation" setting.</comment>
+  </data>
+  <data name="Profile_PathTranslationStyleMinGW.Content" xml:space="preserve">
+    <value>MinGW (C:\ -&gt; C:/)</value>
+    <comment>{Locked="MinGW","C:\","C:/"} An option to choose from for the "path translation" setting.</comment>
+  </data>
+  <data name="Profile_Delete_Orphaned.Header" xml:space="preserve">
+    <value>Profil wird nicht mehr erkannt</value>
+  </data>
+  <data name="Profile_Delete_Orphaned.HelpText" xml:space="preserve">
+    <value>Dieses automatisch erkannte Profil wurde anscheinend deinstalliert. Änderungen, die Sie daran vorgenommen haben, bleiben erhalten, können aber erst verwendet werden, nachdem sie neu installiert wurde.</value>
+  </data>
+  <data name="Profile_Source_Orphaned.Header" xml:space="preserve">
+    <value>Ursprüngliche Quelle</value>
+  </data>
+  <data name="Profile_Source_Orphaned.HelpText" xml:space="preserve">
+    <value>Gibt die Software an, die dieses Profil ursprünglich erstellt hat.</value>
+  </data>
+  <data name="Profile_TabTitleNone" xml:space="preserve">
+    <value>Keine</value>
+    <comment>Text displayed when the tab title is not defined.</comment>
+  </data>
+  <data name="Globals_StartOnUserLogin_DisabledByUser" xml:space="preserve">
+    <value>Der automatische Start wurde im Abschnitt "Start-Apps" der einstellungen für Windows deaktiviert.</value>
+    <comment>{Locked="Windows"}This is displayed in concordance with Globals_StartOnUserLogin if the user has disabled the setting outside of the application.</comment>
+  </data>
+  <data name="Globals_StartOnUserLogin_UnavailableByPolicy" xml:space="preserve">
+    <value>Diese Option wird durch eine Unternehmensrichtlinie verwaltet und kann hier nicht geändert werden.</value>
+    <comment>This is displayed in concordance with Globals_StartOnUserLogin if the enterprise administrator has taken control of this setting.</comment>
+  </data>
+  <data name="Extensions_ActiveExtensionsHeader.Text" xml:space="preserve">
+    <value>Aktive Erweiterungen</value>
+  </data>
+  <data name="Extensions_ModifiedProfilesHeader.Text" xml:space="preserve">
+    <value>Geänderte Profile</value>
+  </data>
+  <data name="Extensions_AddedProfilesHeader.Text" xml:space="preserve">
+    <value>Hinzugefügte Profile</value>
+  </data>
+  <data name="Extensions_AddedColorSchemesHeader.Text" xml:space="preserve">
+    <value>Hinzugefügte Farbschemas</value>
+  </data>
+  <data name="Extensions_DisclaimerHyperlink.Content" xml:space="preserve">
+    <value>Weitere Informationen zu Erweiterungen</value>
+  </data>
+  <data name="Extensions_NavigateToProfileButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Zum Profil navigieren</value>
+  </data>
+  <data name="Extensions_NavigateToProfileButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Zum Profil navigieren</value>
+  </data>
+  <data name="Extensions_NavigateToColorSchemeButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Zum Farbschema navigieren</value>
+  </data>
+  <data name="Extensions_NavigateToColorSchemeButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Zum Farbschema navigieren</value>
+  </data>
+  <data name="Extensions_ScopeUser" xml:space="preserve">
+    <value>Aktueller Benutzer</value>
+    <comment>Label for the installation scope of an extension.</comment>
+  </data>
+  <data name="Extensions_ScopeSystem" xml:space="preserve">
+    <value>Alle Benutzer</value>
+    <comment>Label for the installation scope of an extension</comment>
+  </data>
+  <data name="Extensions_Scope.Header" xml:space="preserve">
+    <value>Bereich</value>
+    <comment>Header for the installation scope of the extension</comment>
+  </data>
+  <data name="NewInfoBadgeTextBlock.Text" xml:space="preserve">
+    <value>NEU</value>
+    <comment>Text is used on an info badge for new navigation items. Must be all caps.</comment>
+  </data>
+  <data name="NewTabMenu_AddMatchProfiles_Help.Content" xml:space="preserve">
+    <value>Weitere Informationen zu regulären Ausdrücken</value>
+  </data>
+  <data name="Appearance_BackgroundImageNone" xml:space="preserve">
+    <value>Keine</value>
+    <comment>Text displayed when the background image path is not defined.</comment>
+  </data>
+  <data name="Profile_AnswerbackMessageNone" xml:space="preserve">
+    <value>Keine</value>
+    <comment>Text displayed when the answerback message is not defined.</comment>
+  </data>
+  <data name="Settings_ResetToDefaultSettings.Header" xml:space="preserve">
+    <value>Auf Standardeinstellungen zurücksetzen</value>
+  </data>
+  <data name="Settings_ResetApplicationState.Header" xml:space="preserve">
+    <value>Cache löschen</value>
+  </data>
+  <data name="Settings_ResetApplicationState.HelpText" xml:space="preserve">
+    <value>Im Cache werden Daten gespeichert, die mit gespeicherten Sitzungen und automatisch generierten Profilen zusammenhängen.</value>
+  </data>
+  <data name="Settings_ResetToDefaultSettingsButton.Content" xml:space="preserve">
+    <value>Zurücksetzen</value>
+  </data>
+  <data name="Settings_ResetApplicationStateButton.Content" xml:space="preserve">
+    <value>Löschen</value>
+  </data>
+  <data name="Settings_ResetToDefaultSettingsConfirmationMessageBody.Text" xml:space="preserve">
+    <value>Diese Aktion wird sofort angewendet und kann nicht rückgängig gemacht werden.</value>
+  </data>
+  <data name="Settings_ResetApplicationStateConfirmationMessageBody.Text" xml:space="preserve">
+    <value>Diese Aktion wird sofort angewendet und kann nicht rückgängig gemacht werden.</value>
+  </data>
+  <data name="Settings_ResetToDefaultSettingsConfirmationMessageHeader.Text" xml:space="preserve">
+    <value>Möchten Sie Ihre Einstellungen zurücksetzen?</value>
+  </data>
+  <data name="Settings_ResetApplicationStateConfirmationMessageHeader.Text" xml:space="preserve">
+    <value>Möchten Sie den Cache wirklich löschen?</value>
+  </data>
+  <data name="Settings_ResetToDefaultSettingsConfirmationButton.Content" xml:space="preserve">
+    <value>Ja, meine Einstellungen zurücksetzen</value>
+  </data>
+  <data name="Settings_ResetApplicationStateConfirmationButton.Content" xml:space="preserve">
+    <value>Ja, Cache löschen</value>
   </data>
 </root>

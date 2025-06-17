@@ -4,6 +4,7 @@
 #include "pch.h"
 #include "CascadiaSettings.h"
 #include "CascadiaSettings.g.cpp"
+#include "MatchProfilesEntry.h"
 
 #include "DefaultTerminal.h"
 #include "FileUtils.h"
@@ -103,7 +104,7 @@ Model::CascadiaSettings CascadiaSettings::Copy() const
             for (const auto& profile : targetProfiles)
             {
                 allProfiles.emplace_back(*profile);
-                if (!profile->Hidden())
+                if (!profile->Hidden() && !profile->Orphaned())
                 {
                     activeProfiles.emplace_back(*profile);
                 }
@@ -113,6 +114,10 @@ Model::CascadiaSettings CascadiaSettings::Copy() const
         settings->_globals = _globals->Copy();
         settings->_allProfiles = winrt::single_threaded_observable_vector(std::move(allProfiles));
         settings->_activeProfiles = winrt::single_threaded_observable_vector(std::move(activeProfiles));
+
+        // extension packages don't need a deep clone
+        // because they're fully immutable. We can just copy the reference over instead.
+        settings->_extensionPackages = _extensionPackages;
     }
 
     // load errors
@@ -173,6 +178,16 @@ IObservableVector<Model::Profile> CascadiaSettings::ActiveProfiles() const noexc
     return _activeProfiles;
 }
 
+IVectorView<Model::ExtensionPackage> CascadiaSettings::Extensions()
+{
+    if (!_extensionPackages)
+    {
+        // Lazy load the ExtensionPackage objects
+        _extensionPackages = winrt::single_threaded_vector<Model::ExtensionPackage>(std::move(SettingsLoader::LoadExtensionPackages()));
+    }
+    return _extensionPackages.GetView();
+}
+
 // Method Description:
 // - Returns the globally configured keybindings
 // Arguments:
@@ -224,7 +239,7 @@ Model::Profile CascadiaSettings::CreateNewProfile()
     for (uint32_t candidateIndex = 0, count = _allProfiles.Size() + 1; candidateIndex < count; candidateIndex++)
     {
         // There is a theoretical unsigned integer wraparound, which is OK
-        newName = fmt::format(L"Profile {}", count + candidateIndex);
+        newName = fmt::format(FMT_COMPILE(L"Profile {}"), count + candidateIndex);
         if (std::none_of(begin(_allProfiles), end(_allProfiles), [&](auto&& profile) { return profile.Name() == newName; }))
         {
             break;
@@ -265,7 +280,7 @@ Model::Profile CascadiaSettings::DuplicateProfile(const Model::Profile& source)
 {
     THROW_HR_IF_NULL(E_INVALIDARG, source);
 
-    auto newName = fmt::format(L"{} ({})", source.Name(), RS_(L"CopySuffix"));
+    auto newName = fmt::format(FMT_COMPILE(L"{} ({})"), source.Name(), RS_(L"CopySuffix"));
 
     // Check if this name already exists and if so, append a number
     for (uint32_t candidateIndex = 0, count = _allProfiles.Size() + 1; candidateIndex < count; ++candidateIndex)
@@ -275,7 +290,7 @@ Model::Profile CascadiaSettings::DuplicateProfile(const Model::Profile& source)
             break;
         }
         // There is a theoretical unsigned integer wraparound, which is OK
-        newName = fmt::format(L"{} ({} {})", source.Name(), RS_(L"CopySuffix"), candidateIndex + 2);
+        newName = fmt::format(FMT_COMPILE(L"{} ({} {})"), source.Name(), RS_(L"CopySuffix"), candidateIndex + 2);
     }
 
     const auto duplicated = _createNewProfile(newName);
@@ -429,6 +444,7 @@ void CascadiaSettings::_validateSettings()
     _validateColorSchemesInCommands();
     _validateThemeExists();
     _validateProfileEnvironmentVariables();
+    _validateRegexes();
 }
 
 // Method Description:
@@ -472,6 +488,39 @@ void CascadiaSettings::_validateAllSchemesExist()
     }
 }
 
+static bool _validateSingleMediaResource(std::wstring_view resource)
+{
+    // URI
+    try
+    {
+        winrt::Windows::Foundation::Uri resourceUri{ resource };
+        if (!resourceUri)
+        {
+            return false;
+        }
+
+        const auto scheme{ resourceUri.SchemeName() };
+        // Only file: URIs and ms-* URIs are permissible. http, https, ftp, gopher, etc. are not.
+        return til::equals_insensitive_ascii(scheme, L"file") || til::starts_with_insensitive_ascii(scheme, L"ms-");
+    }
+    catch (...)
+    {
+        // fall through
+    }
+
+    // Not a URI? Try a path.
+    try
+    {
+        std::filesystem::path resourcePath{ resource };
+        return std::filesystem::exists(resourcePath);
+    }
+    catch (...)
+    {
+        // fall through
+    }
+    return false;
+}
+
 // Method Description:
 // - Ensures that all specified images resources (icons and background images) are valid URIs.
 //   This does not verify that the icon or background image files are encoded as an image.
@@ -485,24 +534,26 @@ void CascadiaSettings::_validateAllSchemesExist()
 //   we find any invalid icon images.
 void CascadiaSettings::_validateMediaResources()
 {
-    auto invalidBackground{ false };
-    auto invalidIcon{ false };
+    auto warnInvalidBackground{ false };
+    auto warnInvalidIcon{ false };
 
     for (auto profile : _allProfiles)
     {
         if (const auto path = profile.DefaultAppearance().ExpandedBackgroundImagePath(); !path.empty())
         {
-            // Attempt to convert the path to a URI, the ctor will throw if it's invalid/unparseable.
-            // This covers file paths on the machine, app data, URLs, and other resource paths.
-            try
+            if (!_validateSingleMediaResource(path))
             {
-                winrt::Windows::Foundation::Uri imagePath{ path };
-            }
-            catch (...)
-            {
-                // reset background image path
-                profile.DefaultAppearance().ClearBackgroundImagePath();
-                invalidBackground = true;
+                if (profile.DefaultAppearance().HasBackgroundImagePath())
+                {
+                    // Only warn and delete if the user set this at the top level (do not warn for fragments, just clear it)
+                    warnInvalidBackground = true;
+                    profile.DefaultAppearance().ClearBackgroundImagePath();
+                }
+                else
+                {
+                    // reset background image path (set it to blank as an override for any fragment value)
+                    profile.DefaultAppearance().BackgroundImagePath({});
+                }
             }
         }
 
@@ -510,17 +561,18 @@ void CascadiaSettings::_validateMediaResources()
         {
             if (const auto path = profile.UnfocusedAppearance().ExpandedBackgroundImagePath(); !path.empty())
             {
-                // Attempt to convert the path to a URI, the ctor will throw if it's invalid/unparseable.
-                // This covers file paths on the machine, app data, URLs, and other resource paths.
-                try
+                if (!_validateSingleMediaResource(path))
                 {
-                    winrt::Windows::Foundation::Uri imagePath{ path };
-                }
-                catch (...)
-                {
-                    // reset background image path
-                    profile.UnfocusedAppearance().ClearBackgroundImagePath();
-                    invalidBackground = true;
+                    if (profile.UnfocusedAppearance().HasBackgroundImagePath())
+                    {
+                        warnInvalidBackground = true;
+                        profile.UnfocusedAppearance().ClearBackgroundImagePath();
+                    }
+                    else
+                    {
+                        // reset background image path (set it to blank as an override for any fragment value)
+                        profile.UnfocusedAppearance().BackgroundImagePath({});
+                    }
                 }
             }
         }
@@ -531,27 +583,32 @@ void CascadiaSettings::_validateMediaResources()
         // Explicitly just use the Icon here, not the EvaluatedIcon. We don't
         // want to blow up if we fell back to the commandline and the
         // commandline _isn't an icon_.
-        if (const auto icon = profile.Icon(); icon.size() > 2)
+        // GH #17943: "none" is a special value interpreted as "remove the icon"
+        static constexpr std::wstring_view HideIconValue{ L"none" };
+        if (const auto icon = profile.Icon(); icon.size() > 2 && icon != HideIconValue)
         {
             const auto iconPath{ wil::ExpandEnvironmentStringsW<std::wstring>(icon.c_str()) };
-            try
+            if (!_validateSingleMediaResource(iconPath))
             {
-                winrt::Windows::Foundation::Uri imagePath{ iconPath };
-            }
-            catch (...)
-            {
-                profile.ClearIcon();
-                invalidIcon = true;
+                if (profile.HasIcon())
+                {
+                    warnInvalidIcon = true;
+                    profile.ClearIcon();
+                }
+                else
+                {
+                    profile.Icon({});
+                }
             }
         }
     }
 
-    if (invalidBackground)
+    if (warnInvalidBackground)
     {
         _warnings.Append(SettingsLoadWarnings::InvalidBackgroundImage);
     }
 
-    if (invalidIcon)
+    if (warnInvalidIcon)
     {
         _warnings.Append(SettingsLoadWarnings::InvalidIcon);
     }
@@ -578,6 +635,41 @@ void CascadiaSettings::_validateProfileEnvironmentVariables()
                 return;
             }
         }
+    }
+}
+
+// Returns true if all regexes in the new tab menu are valid, false otherwise
+static bool _validateNTMEntries(const IVector<Model::NewTabMenuEntry>& entries)
+{
+    if (!entries)
+    {
+        return true;
+    }
+    for (const auto& ntmEntry : entries)
+    {
+        if (const auto& folderEntry = ntmEntry.try_as<Model::FolderEntry>())
+        {
+            if (!_validateNTMEntries(folderEntry.RawEntries()))
+            {
+                return false;
+            }
+        }
+        if (const auto& matchProfilesEntry = ntmEntry.try_as<Model::MatchProfilesEntry>())
+        {
+            if (!winrt::get_self<Model::implementation::MatchProfilesEntry>(matchProfilesEntry)->ValidateRegexes())
+            {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+void CascadiaSettings::_validateRegexes()
+{
+    if (!_validateNTMEntries(_globals->NewTabMenu()))
+    {
+        _warnings.Append(SettingsLoadWarnings::InvalidRegex);
     }
 }
 
@@ -1074,7 +1166,7 @@ void CascadiaSettings::_refreshDefaultTerminals()
     std::pair<std::vector<Model::DefaultTerminal>, Model::DefaultTerminal> result{ {}, nullptr };
     til::latch latch{ 1 };
 
-    std::ignore = [&]() -> winrt::fire_and_forget {
+    std::ignore = [&]() -> safe_void_coroutine {
         const auto cleanup = wil::scope_exit([&]() {
             latch.count_down();
         });
@@ -1085,15 +1177,6 @@ void CascadiaSettings::_refreshDefaultTerminals()
     latch.wait();
     _defaultTerminals = winrt::single_threaded_observable_vector(std::move(result.first));
     _currentDefaultTerminal = std::move(result.second);
-}
-
-void CascadiaSettings::ExportFile(winrt::hstring path, winrt::hstring content)
-{
-    try
-    {
-        WriteUTF8FileAtomic({ path.c_str() }, til::u16u8(content));
-    }
-    CATCH_LOG();
 }
 
 void CascadiaSettings::_validateThemeExists()

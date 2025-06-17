@@ -192,6 +192,9 @@
   <data name="TabCloseSubMenu" xml:space="preserve">
     <value>Schließen</value>
   </data>
+  <data name="TabMoveSubMenu" xml:space="preserve">
+    <value>Registerkarte verschieben</value>
+  </data>
   <data name="TabCloseAfter" xml:space="preserve">
     <value>Tabs nach rechts schließen</value>
   </data>
@@ -209,6 +212,45 @@
   </data>
   <data name="SplitPaneText" xml:space="preserve">
     <value>Bereich teilen</value>
+  </data>
+  <data name="SplitPaneToolTipText" xml:space="preserve">
+    <value>Mit der rechten Maustaste klicken für Richtungen zum Teilen – rechts/unten/oben/links</value>
+  </data>
+  <data name="SplitPaneDownText" xml:space="preserve">
+    <value>Bereich nach unten teilen</value>
+  </data>
+  <data name="SplitPaneRightText" xml:space="preserve">
+    <value>Bereich nach rechts teilen</value>
+  </data>
+  <data name="SplitPaneUpText" xml:space="preserve">
+    <value>Bereich nach oben teilen</value>
+  </data>
+  <data name="SplitPaneLeftText" xml:space="preserve">
+    <value>Bereich nach links teilen</value>
+  </data>
+  <data name="SplitPaneDuplicateText" xml:space="preserve">
+    <value>Duplikat</value>
+  </data>
+  <data name="SwapPaneText" xml:space="preserve">
+    <value>Bereich austauschen</value>
+  </data>
+  <data name="SwapPaneDownText" xml:space="preserve">
+    <value>Bereich nach unten wechseln</value>
+  </data>
+  <data name="SwapPaneRightText" xml:space="preserve">
+    <value>Bereich nach rechts wechseln</value>
+  </data>
+  <data name="SwapPaneUpText" xml:space="preserve">
+    <value>Bereich nach oben wechseln</value>
+  </data>
+  <data name="SwapPaneLeftText" xml:space="preserve">
+    <value>Bereich nach links wechseln</value>
+  </data>
+  <data name="TogglePaneZoomText" xml:space="preserve">
+    <value>Zoomfenster umschalten</value>
+  </data>
+  <data name="CloseOtherPanesText" xml:space="preserve">
+    <value>Andere Bereiche schließen</value>
   </data>
   <data name="SearchWebText" xml:space="preserve">
     <value>Websuche</value>
@@ -725,12 +767,6 @@
   <data name="WindowRenamer.CloseButtonContent" xml:space="preserve">
     <value>Abbrechen</value>
   </data>
-  <data name="RenameFailedToast.Title" xml:space="preserve">
-    <value>Das Fenster konnte nicht umbenannt werden</value>
-  </data>
-  <data name="RenameFailedToast.Subtitle" xml:space="preserve">
-    <value>Ein anderes Fenster mit diesem Namen existiert bereits</value>
-  </data>
   <data name="WindowMaximizeButtonToolTip" xml:space="preserve">
     <value>Maximieren</value>
   </data>
@@ -935,5 +971,14 @@
   </data>
   <data name="CloseSnippetsPaneButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Bereich schließen</value>
+  </data>
+  <data name="TabMoveLeft" xml:space="preserve">
+    <value>Nach links</value>
+  </data>
+  <data name="TabMoveRight" xml:space="preserve">
+    <value>Nach rechts</value>
+  </data>
+  <data name="InvalidRegex" xml:space="preserve">
+    <value>Ein ungültiger regulärer Ausdruck wurde entdeckt.</value>
   </data>
 </root>

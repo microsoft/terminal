@@ -23,7 +23,6 @@
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="TerminalApiTest.cpp" />
-    <ClCompile Include="ConptyRoundtripTests.cpp" />
     <ClCompile Include="TerminalBufferTests.cpp" />
     <ClCompile Include="ScrollTest.cpp" />
     <ClCompile Include="TilWinRtHelpersTests.cpp" />
@@ -47,45 +46,6 @@
     <ProjectReference Include="..\TerminalCore\lib\TerminalCore-lib.vcxproj">
       <Project>{ca5cad1a-abcd-429c-b551-8562ec954746}</Project>
     </ProjectReference>
-
-    <!-- The following are all Console Host (host.lib) dependencies. We're
-      including them for the ConptyRoundtripTests, which instantiate a console
-      host, then user the output from conpty to dump directly into a Terminal,
-      and make sure the buffer contents align. -->
-
-    <ProjectReference Include="..\..\renderer\vt\ut_lib\vt.unittest.vcxproj">
-      <Project>{990F2657-8580-4828-943F-5DD657D11843}</Project>
-    </ProjectReference>
-    <ProjectReference Include="..\..\renderer\base\lib\base.vcxproj">
-      <Project>{af0a096a-8b3a-4949-81ef-7df8f0fee91f}</Project>
-    </ProjectReference>
-    <ProjectReference Include="$(OpenConsoleDir)\src\host\ut_lib\host.unittest.vcxproj">
-      <Project>{06ec74cb-9a12-429c-b551-8562ec954746}</Project>
-    </ProjectReference>
-    <ProjectReference Include="..\..\propslib\propslib.vcxproj">
-      <Project>{345fd5a4-b32b-4f29-bd1c-b033bd2c35cc}</Project>
-    </ProjectReference>
-    <ProjectReference Include="..\..\interactivity\base\lib\InteractivityBase.vcxproj">
-      <Project>{06ec74cb-9a12-429c-b551-8562ec964846}</Project>
-    </ProjectReference>
-    <ProjectReference Include="..\..\interactivity\win32\lib\win32.LIB.vcxproj">
-      <Project>{06ec74cb-9a12-429c-b551-8532ec964726}</Project>
-    </ProjectReference>
-    <ProjectReference Include="..\..\tsf\tsf.vcxproj">
-      <Project>{2fd12fbb-1ddb-46d8-b818-1023c624caca}</Project>
-    </ProjectReference>
-    <ProjectReference Include="..\..\server\lib\server.vcxproj">
-      <Project>{18d09a24-8240-42d6-8cb6-236eee820262}</Project>
-    </ProjectReference>
-    <ProjectReference Include="..\..\terminal\adapter\lib\adapter.vcxproj">
-      <Project>{dcf55140-ef6a-4736-a403-957e4f7430bb}</Project>
-    </ProjectReference>
-    <ProjectReference Include="..\..\internal\internal.vcxproj">
-      <Project>{ef3e32a7-5ff6-42b4-b6e2-96cd7d033f00}</Project>
-    </ProjectReference>
-    <ProjectReference Include="..\..\renderer\gdi\lib\gdi.vcxproj">
-      <Project>{1c959542-bac2-4e55-9a6d-13251914cbb9}</Project>
-    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="MockTermSettings.h" />
@@ -97,7 +57,7 @@
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>WindowsApp.lib;WinMM.Lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>WindowsApp.lib;winmm.Lib;imm32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->

@@ -16,11 +16,13 @@ namespace Microsoft::Console::TSF
 
     struct Implementation : ITfContextOwner, ITfContextOwnerCompositionSink, ITfTextEditSink
     {
+        static void SetDefaultScopeAlphanumericHalfWidth(bool enable) noexcept;
+
         virtual ~Implementation() = default;
 
         void Initialize();
         void Uninitialize() noexcept;
-        HWND FindWindowOfActiveTSF() const noexcept;
+        HWND FindWindowOfActiveTSF() noexcept;
         void AssociateFocus(IDataProvider* provider);
         void Focus(IDataProvider* provider);
         void Unfocus(IDataProvider* provider);
@@ -82,6 +84,26 @@ namespace Microsoft::Console::TSF
             }
         };
 
+        struct AnsiInputScope : ITfInputScope
+        {
+            explicit AnsiInputScope(Implementation* self) noexcept;
+            virtual ~AnsiInputScope() = default;
+
+            // IUnknown methods
+            STDMETHODIMP QueryInterface(REFIID riid, void** ppvObj) noexcept override;
+            ULONG STDMETHODCALLTYPE AddRef() noexcept override;
+            ULONG STDMETHODCALLTYPE Release() noexcept override;
+
+            // ITfInputScope methods
+            STDMETHODIMP GetInputScopes(InputScope** pprgInputScopes, UINT* pcCount) noexcept override;
+            STDMETHODIMP GetPhrase(BSTR** ppbstrPhrases, UINT* pcCount) noexcept override;
+            STDMETHODIMP GetRegularExpression(BSTR* pbstrRegExp) noexcept override;
+            STDMETHODIMP GetSRGS(BSTR* pbstrSRGS) noexcept override;
+            STDMETHODIMP GetXML(BSTR* pbstrXML) noexcept override;
+
+            Implementation* self = nullptr;
+        };
+
         [[nodiscard]] HRESULT _request(EditSessionProxyBase& session, DWORD flags) const;
         void _doCompositionUpdate(TfEditCookie ec);
         TextAttribute _textAttributeFromAtom(TfGuidAtom atom) const;
@@ -97,6 +119,7 @@ namespace Microsoft::Console::TSF
         wil::com_ptr<ITfThreadMgrEx> _threadMgrEx;
         wil::com_ptr<ITfDocumentMgr> _documentMgr;
         wil::com_ptr<ITfContext> _context;
+        wil::com_ptr<ITfContextOwnerCompositionServices> _ownerCompositionServices;
         wil::com_ptr<ITfSource> _contextSource;
         DWORD _cookieContextOwner = TF_INVALID_COOKIE;
         DWORD _cookieTextEditSink = TF_INVALID_COOKIE;
@@ -104,5 +127,8 @@ namespace Microsoft::Console::TSF
 
         EditSessionProxy<&Implementation::_doCompositionUpdate> _editSessionCompositionUpdate{ this };
         int _compositions = 0;
+
+        AnsiInputScope _ansiInputScope{ this };
+        inline static std::atomic<bool> _wantsAnsiInputScope{ false };
     };
 }

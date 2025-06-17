@@ -1,5 +1,47 @@
 # See https://github.com/check-spelling/check-spelling/wiki/Configuration-Examples:-patterns
 
+# Direct 2D/3D
+\b(?:d[23]d(?=[a-z])|D[23]D(?=[A-Z]))
+
+# x86/x64
+(?<=[a-z])x(?:86|64)
+
+# Windows Resources with accelerators
+\b[A-Z]&[a-z]+\b(?!;)
+
+# bug in check-spelling v0.0.24 (fixed later)
+\bok'd\b
+
+# Automatically suggested patterns
+
+# hit-count: 83 file-count: 18
+# C network byte conversions
+(?:\d|\bh)to(?!ken)(?=[a-z])|to(?=[adhiklpun]\()
+
+# hit-count: 59 file-count: 36
+# IServiceProvider / isAThing
+(?:\b|_)(?:(?:ns|)I|isA)(?=(?:[A-Z][a-z]{2,})+(?:[A-Z\d]|\b))
+
+# hit-count: 9 file-count: 6
+# Markdown anchor links
+\(#\S*?[a-zA-Z]\S*?\)
+
+# hit-count: 5 file-count: 5
+# libraries
+(?:\b|_)lib(?:re(?=office)|)(?!era[lt]|ero|ert(?:ies|y)|rar(?:i(?:an|es)|y))(?=[a-z])
+
+# hit-count: 3 file-count: 3
+# File extensions
+\*\.[+\w]+,
+
+# hit-count: 2 file-count: 1
+# kubernetes crd patterns
+^\s*pattern: .*$
+
+# hit-count: 1 file-count: 1
+# curl arguments
+\b(?:\\n|)curl(?:\.exe|)(?:\s+-[a-zA-Z]{1,2}\b)*(?:\s+-[a-zA-Z]{3,})(?:\s+-[a-zA-Z]+)*
+
 https?://\S+
 [Pp]ublicKeyToken="?[0-9a-fA-F]{16}"?
 (?:[{"]|UniqueIdentifier>)[0-9a-fA-F]{8}-(?:[0-9a-fA-F]{4}-){3}[0-9a-fA-F]{12}(?:[}"]|</UniqueIdentifier)
@@ -22,6 +64,7 @@ vcvars\w*
 ROY\sG\.\sBIV
 !(?:(?i)ESC)!\[
 !(?:(?i)CSI)!(?:\d+(?:;\d+|)m|[ABCDF])
+(?i)rgb:[a-z0-9]{2,4}/[a-z0-9]{2,4}/[a-z0-9]{2,4}
 
 # SSE intrinsics like "_mm_subs_epu16"
 \b_mm(?:|256|512)_\w+\b
@@ -57,7 +100,7 @@ equals_insensitive_ascii\("\w+", "\w+"
 # hit-count: 109 file-count: 62
 # Compiler flags (Unix, Java/Scala)
 # Use if you have things like `-Pdocker` and want to treat them as `docker`
-(?:^|[\t ,>"'`=(])-(?:D(?=[A-Z])|[WX]|f(?=[ms]))(?=[A-Z]{2,}|[A-Z][a-z]|[a-z]{2,})
+(?:^|[\t ,>"'`=(])-(?:D(?=[A-Z])|W(?!ork)|X|f(?=[ms]))(?=[A-Z]{2,}|[A-Z][a-z]|[a-z]{2,})
 
 # hit-count: 60 file-count: 35
 # version suffix <word>v#
@@ -133,19 +176,38 @@ mailto:[-a-zA-Z=;:/?%&0-9+@.]{3,}
 # to opt in
 \bto opt in\b
 
+# Questionably acceptable forms of `in to`
+# Personally, I prefer `log into`, but people object
+# https://www.tprteaching.com/log-into-log-in-to-login/
+\b(?:(?:[Ll]og(?:g(?=[a-z])|)|[Ss]ign)(?:ed|ing)?) in to\b
+
+# to opt in
+\bto opt in\b
 # acceptable duplicates
 # ls directory listings
-[-bcdlpsw](?:[-r][-w][-Ssx]){3}\s+\d+\s+\S+\s+\S+\s+\d+\s+
+[-bcdlpsw](?:[-r][-w][-SsTtx]){3}[\.+*]?\s+\d+\s+\S+\s+\S+\s+[.\d]+(?:[KMGT]|)\s+
 # mount
 \bmount\s+-t\s+(\w+)\s+\g{-1}\b
-# C types and repeated CSS values
-\s(auto|center|div|Guid|inherit|long|LONG|none|normal|solid|that|thin|transparent|very)(?: \g{-1})+\s
-# C struct
-\bstruct\s+(\w+)\s+\g{-1}\b
+# C/idl types, repeated CSS values, + English ...
+\s(auto|buffalo|center|div|Guid|GUID|inherit|long|LONG|none|normal|solid|that|thin|transparent|very)(?: \g{-1})+\s
+# C enum and struct
+\b(?:enum|struct)\s+(\w+)\s+\g{-1}\b
 # go templates
 \s(\w+)\s+\g{-1}\s+\`(?:graphql|inject|json|yaml):
 # doxygen / javadoc / .net
-(?:[\\@](?:brief|groupname|t?param|return|retval)|(?:public|private|\[Parameter(?:\(.+\)|)\])(?:\s+static|\s+override|\s+readonly)*)(?:\s+\{\w+\}|)\s+(\w+)\s+\g{-1}\s
+(?:[\\@](?:brief|defgroup|groupname|link|t?param|return|retval)|(?:public|private|\[Parameter(?:\(.+\)|)\])(?:\s+(?:static|override|readonly|required|virtual))*)(?:\s+\{\w+\}|)\s+(\w+)\s+\g{-1}\s
+
+# macOS file path
+(?:Contents\W+|(?!iOS)/)MacOS\b
+
+# Python package registry has incorrect spelling for macOS / Mac OS X
+"Operating System :: MacOS :: MacOS X"
+
+# "company" in Germany
+\bGmbH\b
+
+# IntelliJ
+\bIntelliJ\b
 
 # Commit message -- Signed-off-by and friends
 ^\s*(?:(?:Based-on-patch|Co-authored|Helped|Mentored|Reported|Reviewed|Signed-off)-by|Thanks-to): (?:[^<]*<[^>]*>|[^<]*)\s*$

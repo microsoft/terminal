@@ -44,11 +44,10 @@
                         <ResourceDictionary x:Key="HighContrast">
                             <!--  Define resources for HighContrast mode here  -->
                             <StaticResource x:Key="SettingsPageBackground"
-                                            ResourceKey="SystemColorWindowColorBrush" />
+                                            ResourceKey="SystemColorWindowBrush" />
                             <StaticResource x:Key="SettingsPageMicaBackground"
-                                            ResourceKey="SystemColorWindowColorBrush" />
+                                            ResourceKey="SystemColorWindowBrush" />
                         </ResourceDictionary>
-
                     </ResourceDictionary.ThemeDictionaries>
                 </ResourceDictionary>
 
@@ -121,7 +120,8 @@
                 </muxc:NavigationViewItem.Icon>
             </muxc:NavigationViewItem>
 
-            <muxc:NavigationViewItem x:Uid="Nav_ColorSchemes"
+            <muxc:NavigationViewItem x:Name="ColorSchemesNavItem"
+                                     x:Uid="Nav_ColorSchemes"
                                      Tag="ColorSchemes_Nav">
                 <muxc:NavigationViewItem.Icon>
                     <FontIcon Glyph="&#xE790;" />
@@ -135,11 +135,36 @@
                 </muxc:NavigationViewItem.Icon>
             </muxc:NavigationViewItem>
 
+            <muxc:NavigationViewItem x:Uid="Nav_Compatibility"
+                                     Tag="Compatibility_Nav">
+                <muxc:NavigationViewItem.Icon>
+                    <FontIcon Glyph="&#xEC7A;" />
+                </muxc:NavigationViewItem.Icon>
+            </muxc:NavigationViewItem>
+
             <muxc:NavigationViewItem x:Uid="Nav_Actions"
                                      Tag="Actions_Nav">
                 <muxc:NavigationViewItem.Icon>
                     <FontIcon Glyph="&#xE765;" />
                 </muxc:NavigationViewItem.Icon>
+            </muxc:NavigationViewItem>
+
+            <muxc:NavigationViewItem x:Uid="Nav_NewTabMenu"
+                                     Tag="NewTabMenu_Nav">
+                <muxc:NavigationViewItem.Icon>
+                    <FontIcon Glyph="&#xE71d;" />
+                </muxc:NavigationViewItem.Icon>
+            </muxc:NavigationViewItem>
+
+            <muxc:NavigationViewItem x:Uid="Nav_Extensions"
+                                     Tag="Extensions_Nav">
+                <muxc:NavigationViewItem.Icon>
+                    <FontIcon Glyph="&#xEA86;" />
+                </muxc:NavigationViewItem.Icon>
+                <muxc:NavigationViewItem.InfoBadge>
+                    <muxc:InfoBadge Style="{StaticResource NewInfoBadge}"
+                                    Visibility="{x:Bind ExtensionsVM.DisplayBadge, Mode=OneWay}" />
+                </muxc:NavigationViewItem.InfoBadge>
             </muxc:NavigationViewItem>
 
             <muxc:NavigationViewItemHeader x:Uid="Nav_Profiles" />
@@ -158,8 +183,8 @@
             <!--  The OpenJson item needs both Tapped and KeyDown handler  -->
             <muxc:NavigationViewItem x:Name="OpenJsonNavItem"
                                      x:Uid="Nav_OpenJSON"
-                                     KeyDown="OpenJsonKeyDown"
-                                     Tapped="OpenJsonTapped">
+                                     SelectsOnInvoked="False"
+                                     Tag="OpenJson_Nav">
                 <muxc:NavigationViewItem.Icon>
                     <FontIcon Glyph="&#xE713;" />
                 </muxc:NavigationViewItem.Icon>

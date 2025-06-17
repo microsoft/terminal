@@ -86,6 +86,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         INHERITABLE_SETTING(Model::TerminalSettings, bool, SnapOnInput, true);
         INHERITABLE_SETTING(Model::TerminalSettings, bool, AltGrAliasing, true);
+        INHERITABLE_SETTING(Model::TerminalSettings, hstring, AnswerbackMessage);
         INHERITABLE_SETTING(Model::TerminalSettings, til::color, CursorColor, DEFAULT_CURSOR_COLOR);
         INHERITABLE_SETTING(Model::TerminalSettings, Microsoft::Terminal::Core::CursorStyle, CursorShape, Core::CursorStyle::Vintage);
         INHERITABLE_SETTING(Model::TerminalSettings, uint32_t, CursorHeight, DEFAULT_CURSOR_HEIGHT);
@@ -93,8 +94,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         INHERITABLE_SETTING(Model::TerminalSettings, bool, CopyOnSelect, false);
         INHERITABLE_SETTING(Model::TerminalSettings, Microsoft::Terminal::Control::CopyFormat, CopyFormatting, 0);
         INHERITABLE_SETTING(Model::TerminalSettings, bool, FocusFollowMouse, false);
+        INHERITABLE_SETTING(Model::TerminalSettings, bool, AllowVtChecksumReport, false);
         INHERITABLE_SETTING(Model::TerminalSettings, bool, TrimBlockSelection, true);
         INHERITABLE_SETTING(Model::TerminalSettings, bool, DetectURLs, true);
+        INHERITABLE_SETTING(Model::TerminalSettings, bool, AllowVtClipboardWrite, true);
 
         INHERITABLE_SETTING(Model::TerminalSettings, Windows::Foundation::IReference<Microsoft::Terminal::Core::Color>, TabColor, nullptr);
 
@@ -117,7 +120,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         // ------------------------ End of Core Settings -----------------------
 
         INHERITABLE_SETTING(Model::TerminalSettings, hstring, ProfileName);
-        INHERITABLE_SETTING(Model::TerminalSettings, hstring, ProfileSource);
 
         INHERITABLE_SETTING(Model::TerminalSettings, guid, SessionId);
         INHERITABLE_SETTING(Model::TerminalSettings, bool, EnableUnfocusedAcrylic, false);
@@ -160,6 +162,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         INHERITABLE_SETTING(Model::TerminalSettings, bool, DisablePartialInvalidation, false);
         INHERITABLE_SETTING(Model::TerminalSettings, bool, SoftwareRendering, false);
         INHERITABLE_SETTING(Model::TerminalSettings, Microsoft::Terminal::Control::TextMeasurement, TextMeasurement);
+        INHERITABLE_SETTING(Model::TerminalSettings, Microsoft::Terminal::Control::DefaultInputScope, DefaultInputScope);
         INHERITABLE_SETTING(Model::TerminalSettings, bool, UseBackgroundImageForWindow, false);
         INHERITABLE_SETTING(Model::TerminalSettings, bool, ForceVTInput, false);
 
@@ -174,6 +177,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         INHERITABLE_SETTING(Model::TerminalSettings, bool, RepositionCursorWithMouse, false);
 
         INHERITABLE_SETTING(Model::TerminalSettings, bool, ReloadEnvironmentVariables, true);
+
+        INHERITABLE_SETTING(Model::TerminalSettings, Microsoft::Terminal::Control::PathTranslationStyle, PathTranslationStyle, Microsoft::Terminal::Control::PathTranslationStyle::None);
 
     private:
         std::optional<std::array<Microsoft::Terminal::Core::Color, COLOR_TABLE_SIZE>> _ColorTable;

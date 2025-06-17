@@ -20,8 +20,9 @@
 
   <PropertyGroup Label="NuGet Dependencies">
     <TerminalCppWinrt>true</TerminalCppWinrt>
+    <TerminalMUX>true</TerminalMUX>
   </PropertyGroup>
-  <Import Project="..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
+  <Import Project="$(SolutionDir)\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
   <Import Project="$(OpenConsoleDir)src\common.nugetversions.props" />
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.pre.props" />
 
@@ -155,14 +156,6 @@
 
   <!-- This -must- go after cppwinrt.build.post.props because that includes many VS-provided props including appcontainer.common.props, which stomps on what cppwinrt.targets did. -->
   <Import Project="$(OpenConsoleDir)src\common.nugetversions.targets" />
-
-  <Import Project="$(OpenConsoleDir)packages\Microsoft.UI.Xaml.2.7.3\build\native\Microsoft.UI.Xaml.targets" Condition="Exists('$(OpenConsoleDir)packages\Microsoft.UI.Xaml.2.7.3\build\native\Microsoft.UI.Xaml.targets')" />
-  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
-    <PropertyGroup>
-      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
-    </PropertyGroup>
-    <Error Condition="!Exists('$(OpenConsoleDir)packages\Microsoft.UI.Xaml.2.7.3\build\native\Microsoft.UI.Xaml.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(OpenConsoleDir)\packages\Microsoft.UI.Xaml.2.7.3\build\native\Microsoft.UI.Xaml.targets'))" />
-  </Target>
 
   <!--
     By default, the PRI file will contain resource paths beginning with the

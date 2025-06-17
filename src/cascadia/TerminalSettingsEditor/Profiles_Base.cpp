@@ -24,6 +24,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         Automation::AutomationProperties::SetName(DeleteButton(), RS_(L"Profile_DeleteButton/Text"));
         AppearanceNavigator().Content(box_value(RS_(L"Profile_Appearance/Header")));
+        TerminalNavigator().Content(box_value(RS_(L"Profile_Terminal/Header")));
         AdvancedNavigator().Content(box_value(RS_(L"Profile_Advanced/Header")));
     }
 
@@ -66,6 +67,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _Profile.CurrentPage(ProfileSubPage::Appearance);
     }
 
+    void Profiles_Base::Terminal_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*args*/)
+    {
+        _Profile.CurrentPage(ProfileSubPage::Terminal);
+    }
+
     void Profiles_Base::Advanced_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*args*/)
     {
         _Profile.CurrentPage(ProfileSubPage::Advanced);
@@ -76,7 +82,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         winrt::get_self<ProfileViewModel>(_Profile)->DeleteProfile();
     }
 
-    fire_and_forget Profiles_Base::Commandline_Click(const IInspectable&, const RoutedEventArgs&)
+    safe_void_coroutine Profiles_Base::Commandline_Click(const IInspectable&, const RoutedEventArgs&)
     {
         auto lifetime = get_strong();
 
@@ -106,7 +112,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
-    fire_and_forget Profiles_Base::Icon_Click(const IInspectable&, const RoutedEventArgs&)
+    safe_void_coroutine Profiles_Base::Icon_Click(const IInspectable&, const RoutedEventArgs&)
     {
         auto lifetime = get_strong();
 
@@ -118,7 +124,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
-    fire_and_forget Profiles_Base::StartingDirectory_Click(const IInspectable&, const RoutedEventArgs&)
+    safe_void_coroutine Profiles_Base::StartingDirectory_Click(const IInspectable&, const RoutedEventArgs&)
     {
         auto lifetime = get_strong();
         const auto parentHwnd{ reinterpret_cast<HWND>(_windowRoot.GetHostingWindow()) };
@@ -141,5 +147,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             _Profile.StartingDirectory(folder);
         }
+    }
+
+    Windows::UI::Xaml::Controls::IconSource Profiles_Base::BuiltInIconConverter(const IInspectable& iconVal)
+    {
+        return Microsoft::Terminal::UI::IconPathConverter::IconSourceWUX(unbox_value<hstring>(iconVal));
     }
 }

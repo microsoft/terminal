@@ -18,27 +18,27 @@ Author(s):
 
 namespace Microsoft::Console
 {
+    namespace VirtualTerminal
+    {
+        enum class DeviceAttribute : uint64_t;
+    }
+
     class VtInputThread
     {
     public:
         VtInputThread(_In_ wil::unique_hfile hPipe, const bool inheritCursor);
 
         [[nodiscard]] HRESULT Start();
-        static DWORD WINAPI StaticVtInputThreadProc(_In_ LPVOID lpParameter);
-        bool DoReadInput();
-        void SetLookingForDSR(const bool looking) noexcept;
+        til::enumset<VirtualTerminal::DeviceAttribute, uint64_t> WaitUntilDA1(DWORD timeout) const noexcept;
 
     private:
+        static DWORD WINAPI StaticVtInputThreadProc(_In_ LPVOID lpParameter);
         void _InputThread();
 
         wil::unique_hfile _hFile;
         wil::unique_handle _hThread;
-        DWORD _dwThreadId;
-
-        std::function<void(bool)> _pfnSetLookingForDSR;
+        DWORD _dwThreadId = 0;
 
         std::unique_ptr<Microsoft::Console::VirtualTerminal::StateMachine> _pInputStateMachine;
-        til::u8state _u8State;
-        std::wstring _wstr;
     };
 }

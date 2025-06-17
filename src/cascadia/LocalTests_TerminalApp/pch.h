@@ -28,11 +28,11 @@ Author(s):
 #endif
 
 #include <wil/cppwinrt.h>
-#include <unknwn.h>
+#include <Unknwn.h>
 #include <hstring.h>
 
 #include <WexTestClass.h>
-#include <json.h>
+#include <json/json.h>
 #include "consoletaeftemplates.hpp"
 #include "winrtTaefTemplates.hpp"
 
@@ -63,7 +63,7 @@ Author(s):
 #include <winrt/Microsoft.UI.Xaml.Controls.h>
 
 #include <regex>
-#include <CLI11/CLI11.hpp>
+#include <CLI/CLI.hpp>
 
 #include <shobjidl_core.h>
 

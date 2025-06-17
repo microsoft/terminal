@@ -765,6 +765,17 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         }
         RETURN_WIN32(ERROR_UNHANDLED_EXCEPTION);
     }
+
+    // Given an ordered span of til::point_span, returns the sub-span of all point spans that
+    // cover the given rectangle. This function **DOES NOT** change any of the point_spans.
+    // It is therefore possible that you will get a point_span whose start and/or end are
+    // outside the rectangle.
+    constexpr std::span<const til::point_span> point_span_subspan_within_rect(const std::span<const til::point_span>& pointSpan, const til::rect rect)
+    {
+        const auto beg = std::lower_bound(pointSpan.begin(), pointSpan.end(), rect.top, [](const auto& ps, const auto& drTop) { return ps.end.y < drTop; });
+        const auto end = std::upper_bound(beg, pointSpan.end(), rect.bottom, [](const auto& drBottom, const auto& ps) { return drBottom < ps.start.y; });
+        return { beg, end };
+    }
 }
 
 #ifdef __WEX_COMMON_H__

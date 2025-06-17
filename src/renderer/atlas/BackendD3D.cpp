@@ -229,7 +229,6 @@ void BackendD3D::Render(RenderingPayload& p)
     _drawBackground(p);
     _drawCursorBackground(p);
     _drawText(p);
-    _drawSelection(p);
     _debugShowDirty(p);
     _flushQuads(p);
 
@@ -589,7 +588,10 @@ void BackendD3D::_recreateConstBuffer(const RenderingPayload& p) const
         data.underlineWidth = p.s->font->underline.height;
         data.doubleUnderlineWidth = p.s->font->doubleUnderline[0].height;
         data.curlyLineHalfHeight = _curlyLineHalfHeight;
-        data.shadedGlyphDotSize = std::max(1.0f, std::roundf(std::max(p.s->font->cellSize.x / 16.0f, p.s->font->cellSize.y / 32.0f)));
+        // The lightLineWidth used for drawing the built-in glyphs is `cellSize.x / 6.0f`.
+        // So this ends up using a quarter line width for the dotted glyphs.
+        // We use half that for the `cellSize.y`, because usually cells have an aspect ratio of 1:2.
+        data.shadedGlyphDotSize = std::max(1.0f, std::roundf(std::max(p.s->font->cellSize.x / 12.0f, p.s->font->cellSize.y / 24.0f)));
         p.deviceContext->UpdateSubresource(_psConstantBuffer.get(), 0, nullptr, &data, 0, 0);
     }
 }
@@ -740,7 +742,7 @@ void BackendD3D::_d2dEndDrawing()
     }
 }
 
-void BackendD3D::_resetGlyphAtlas(const RenderingPayload& p)
+void BackendD3D::_resetGlyphAtlas(const RenderingPayload& p, u32 minWidth, u32 minHeight)
 {
     // The index returned by _BitScanReverse is undefined when the input is 0. We can simultaneously guard
     // against that and avoid unreasonably small textures, by clamping the min. texture size to `minArea`.
@@ -757,10 +759,8 @@ void BackendD3D::_resetGlyphAtlas(const RenderingPayload& p)
     // It's hard to say what the max. size of the cache should be. Optimally I think we should use as much
     // memory as is available, but the rendering code in this project is a big mess and so integrating
     // memory pressure feedback (RegisterVideoMemoryBudgetChangeNotificationEvent) is rather difficult.
-    // As an alternative I'm using 1.25x the size of the swap chain. The 1.25x is there to avoid situations, where
-    // we're locked into a state, where on every render pass we're starting with a half full atlas, drawing once,
-    // filling it with the remaining half and drawing again, requiring two rendering passes on each frame.
-    const auto maxAreaByFont = targetArea + targetArea / 4;
+    // As an alternative I'm using 2x the size of the swap chain. This fits a screen full of glyphs and sixels.
+    const auto maxAreaByFont = 2 * targetArea;
 
     auto area = std::min(maxAreaByFont, std::max(minAreaByFont, minAreaByGrowth));
     area = clamp(area, minArea, maxArea);
@@ -771,8 +771,21 @@ void BackendD3D::_resetGlyphAtlas(const RenderingPayload& p)
     // every time you resize the window by a pixel. Instead it only grows/shrinks by a factor of 2.
     unsigned long index;
     _BitScanReverse(&index, area - 1);
-    const auto u = static_cast<u16>(1u << ((index + 2) / 2));
-    const auto v = static_cast<u16>(1u << ((index + 1) / 2));
+    auto u = static_cast<u16>(1u << ((index + 2) / 2));
+    auto v = static_cast<u16>(1u << ((index + 1) / 2));
+
+    // However, if we're asked for a specific minimum size, round up the u/v to the next power of 2 of the given size.
+    // Because u/v cannot ever be less than sqrt(minArea), the _BitScanReverse() calls below cannot fail.
+    if (u < minWidth)
+    {
+        _BitScanReverse(&index, minWidth - 1);
+        u = 1u << (index + 1);
+    }
+    if (v < minHeight)
+    {
+        _BitScanReverse(&index, minHeight - 1);
+        v = 1u << (index + 1);
+    }
 
     if (u != _rectPacker.width || v != _rectPacker.height)
     {
@@ -796,6 +809,7 @@ void BackendD3D::_resetGlyphAtlas(const RenderingPayload& p)
     {
         glyphs.clear();
     }
+    _glyphAtlasBitmaps.clear();
 
     _d2dBeginDrawing();
     _d2dRenderTarget->Clear();
@@ -1088,7 +1102,7 @@ void BackendD3D::_drawText(RenderingPayload& p)
 {
     if (_fontChangedResetGlyphAtlas)
     {
-        _resetGlyphAtlas(p);
+        _resetGlyphAtlas(p, 0, 0);
     }
 
     til::CoordType dirtyTop = til::CoordTypeMax;
@@ -1187,6 +1201,11 @@ void BackendD3D::_drawText(RenderingPayload& p)
         if (!row->gridLineRanges.empty())
         {
             _drawGridlines(p, y);
+        }
+
+        if (row->bitmap.revision != 0)
+        {
+            _drawBitmap(p, row, y);
         }
 
         if (p.invalidatedRows.contains(y))
@@ -1685,7 +1704,7 @@ void BackendD3D::_drawGlyphAtlasAllocate(const RenderingPayload& p, stbrp_rect& 
 
     _d2dEndDrawing();
     _flushQuads(p);
-    _resetGlyphAtlas(p);
+    _resetGlyphAtlas(p, rect.w, rect.h);
 
     if (!stbrp_pack_rects(&_rectPacker, &rect, 1))
     {
@@ -1849,6 +1868,58 @@ void BackendD3D::_drawGridlines(const RenderingPayload& p, u16 y)
             }
         }
     }
+}
+
+void BackendD3D::_drawBitmap(const RenderingPayload& p, const ShapedRow* row, u16 y)
+{
+    const auto& b = row->bitmap;
+    auto ab = _glyphAtlasBitmaps.lookup(b.revision);
+    if (!ab)
+    {
+        stbrp_rect rect{
+            .w = p.s->font->cellSize.x * b.targetWidth,
+            .h = p.s->font->cellSize.y,
+        };
+        _drawGlyphAtlasAllocate(p, rect);
+        _d2dBeginDrawing();
+
+        const D2D1_SIZE_U size{
+            static_cast<UINT32>(b.sourceSize.x),
+            static_cast<UINT32>(b.sourceSize.y),
+        };
+        const D2D1_BITMAP_PROPERTIES bitmapProperties{
+            .pixelFormat = { DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED },
+            .dpiX = static_cast<f32>(p.s->font->dpi),
+            .dpiY = static_cast<f32>(p.s->font->dpi),
+        };
+        wil::com_ptr<ID2D1Bitmap> bitmap;
+        THROW_IF_FAILED(_d2dRenderTarget->CreateBitmap(size, b.source.data(), static_cast<UINT32>(b.sourceSize.x) * 4, &bitmapProperties, bitmap.addressof()));
+
+        const D2D1_RECT_F rectF{
+            static_cast<f32>(rect.x),
+            static_cast<f32>(rect.y),
+            static_cast<f32>(rect.x + rect.w),
+            static_cast<f32>(rect.y + rect.h),
+        };
+        _d2dRenderTarget->DrawBitmap(bitmap.get(), &rectF, 1, D2D1_BITMAP_INTERPOLATION_MODE_LINEAR);
+
+        ab = _glyphAtlasBitmaps.insert(b.revision).first;
+        ab->size.x = static_cast<u16>(rect.w);
+        ab->size.y = static_cast<u16>(rect.h);
+        ab->texcoord.x = static_cast<u16>(rect.x);
+        ab->texcoord.y = static_cast<u16>(rect.y);
+    }
+
+    const auto left = p.s->font->cellSize.x * (b.targetOffset - p.scrollOffsetX);
+    const auto top = p.s->font->cellSize.y * y;
+
+    _appendQuad() = {
+        .shadingType = static_cast<u16>(ShadingType::TextPassthrough),
+        .renditionScale = { 1, 1 },
+        .position = { static_cast<i16>(left), static_cast<i16>(top) },
+        .size = ab->size,
+        .texcoord = ab->texcoord,
+    };
 }
 
 void BackendD3D::_drawCursorBackground(const RenderingPayload& p)
@@ -2179,69 +2250,32 @@ size_t BackendD3D::_drawCursorForegroundSlowPath(const CursorRect& c, size_t off
     return addedInstances;
 }
 
-void BackendD3D::_drawSelection(const RenderingPayload& p)
-{
-    u16 y = 0;
-    u16 lastFrom = 0;
-    u16 lastTo = 0;
-
-    for (const auto& row : p.rows)
-    {
-        if (row->selectionTo > row->selectionFrom)
-        {
-            // If the current selection line matches the previous one, we can just extend the previous quad downwards.
-            // The way this is implemented isn't very smart, but we also don't have very many rows to iterate through.
-            if (row->selectionFrom == lastFrom && row->selectionTo == lastTo)
-            {
-                _getLastQuad().size.y += p.s->font->cellSize.y;
-            }
-            else
-            {
-                _appendQuad() = {
-                    .shadingType = static_cast<u16>(ShadingType::Selection),
-                    .position = {
-                        static_cast<i16>(p.s->font->cellSize.x * row->selectionFrom),
-                        static_cast<i16>(p.s->font->cellSize.y * y),
-                    },
-                    .size = {
-                        static_cast<u16>(p.s->font->cellSize.x * (row->selectionTo - row->selectionFrom)),
-                        static_cast<u16>(p.s->font->cellSize.y),
-                    },
-                    .color = p.s->misc->selectionColor,
-                };
-                lastFrom = row->selectionFrom;
-                lastTo = row->selectionTo;
-            }
-        }
-
-        y++;
-    }
-}
-
 void BackendD3D::_debugShowDirty(const RenderingPayload& p)
 {
 #if ATLAS_DEBUG_SHOW_DIRTY
+    if (p.dirtyRectInPx.empty())
+    {
+        return;
+    }
+
     _presentRects[_presentRectsPos] = p.dirtyRectInPx;
     _presentRectsPos = (_presentRectsPos + 1) % std::size(_presentRects);
 
     for (size_t i = 0; i < std::size(_presentRects); ++i)
     {
         const auto& rect = _presentRects[(_presentRectsPos + i) % std::size(_presentRects)];
-        if (rect.non_empty())
-        {
-            _appendQuad() = {
-                .shadingType = static_cast<u16>(ShadingType::Selection),
-                .position = {
-                    static_cast<i16>(rect.left),
-                    static_cast<i16>(rect.top),
-                },
-                .size = {
-                    static_cast<u16>(rect.right - rect.left),
-                    static_cast<u16>(rect.bottom - rect.top),
-                },
-                .color = til::colorbrewer::pastel1[i] | 0x1f000000,
-            };
-        }
+        _appendQuad() = {
+            .shadingType = static_cast<u16>(ShadingType::FilledRect),
+            .position = {
+                static_cast<i16>(rect.left),
+                static_cast<i16>(rect.top),
+            },
+            .size = {
+                static_cast<u16>(rect.right - rect.left),
+                static_cast<u16>(rect.bottom - rect.top),
+            },
+            .color = til::colorbrewer::pastel1[i] | 0x1f000000,
+        };
     }
 #endif
 }
@@ -2255,9 +2289,12 @@ void BackendD3D::_debugDumpRenderTarget(const RenderingPayload& p)
         std::filesystem::create_directories(_dumpRenderTargetBasePath);
     }
 
+    wil::com_ptr<ID3D11Texture2D> buffer;
+    THROW_IF_FAILED(p.swapChain.swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), reinterpret_cast<void**>(buffer.addressof())));
+
     wchar_t path[MAX_PATH];
     swprintf_s(path, L"%s\\%u_%08zu.png", &_dumpRenderTargetBasePath[0], GetCurrentProcessId(), _dumpRenderTargetCounter);
-    SaveTextureToPNG(p.deviceContext.get(), _swapChainManager.GetBuffer().get(), p.s->font->dpi, &path[0]);
+    WIC::SaveTextureToPNG(p.deviceContext.get(), buffer.get(), p.s->font->dpi, &path[0]);
     _dumpRenderTargetCounter++;
 #endif
 }

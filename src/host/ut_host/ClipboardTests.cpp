@@ -38,7 +38,6 @@ class ClipboardTests
     {
         m_state = new CommonState();
 
-        m_state->PrepareGlobalFont();
         m_state->PrepareGlobalInputBuffer();
         m_state->PrepareGlobalScreenBuffer();
 
@@ -49,7 +48,6 @@ class ClipboardTests
     {
         m_state->CleanupGlobalInputBuffer();
         m_state->CleanupGlobalScreenBuffer();
-        m_state->CleanupGlobalFont();
 
         return true;
     }
@@ -86,7 +84,7 @@ class ClipboardTests
         const auto& screenInfo = gci.GetActiveOutputBuffer();
         const auto& buffer = screenInfo.GetTextBuffer();
 
-        constexpr til::point_span selection = { { 0, 0 }, { 14, 3 } };
+        constexpr til::point_span selection = { { 0, 0 }, { 15, 3 } };
         const auto req = TextBuffer::CopyRequest::FromConfig(buffer, selection.start, selection.end, false, !fLineSelection, false);
         return buffer.GetPlainText(req);
     }

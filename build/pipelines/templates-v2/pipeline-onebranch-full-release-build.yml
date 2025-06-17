@@ -78,7 +78,9 @@ extends:
     template: v2/Microsoft.NonOfficial.yml@templates
   parameters:
     featureFlags:
-      WindowsHostVersion: 1ESWindows2022
+      WindowsHostVersion:
+        Version: 2022
+        Network: R1
     platform:
       name: 'windows_undocked'
       product: 'Windows Terminal'
@@ -106,11 +108,6 @@ extends:
       - stage: Build
         displayName: Build
         dependsOn: []
-        variables:
-          # This was set by the parent build, but we need to override it to select a specific compiler version
-          - template: ./build/pipelines/templates-v2/variables-onebranch-config.yml@self
-            parameters:
-              containerVersion: 1.0.02566.28
         jobs:
           - template: ./build/pipelines/templates-v2/job-build-project.yml@self
             parameters:
@@ -135,10 +132,7 @@ extends:
               codeSign: ${{ parameters.codeSign }}
               signingIdentity: ${{ parameters.signingIdentity }}
               beforeBuildSteps: # Right before we build, lay down the universal package and localizations
-                - task: PkgESSetupBuild@12
-                  displayName: Package ES - Setup Build
-                  inputs:
-                    disableOutputRedirect: true
+                - template: ./build/pipelines/templates-v2/steps-setup-versioning.yml@self
 
                 - task: UniversalPackages@0
                   displayName: Download terminal-internal Universal Package
@@ -172,10 +166,7 @@ extends:
                 codeSign: ${{ parameters.codeSign }}
                 signingIdentity: ${{ parameters.signingIdentity }}
                 beforeBuildSteps:
-                  - task: PkgESSetupBuild@12
-                    displayName: Package ES - Setup Build
-                    inputs:
-                      disableOutputRedirect: true
+                  - template: ./build/pipelines/templates-v2/steps-setup-versioning.yml@self
                   # WPF doesn't need the localizations or the universal package, but if it does... put them here.
 
       - stage: Package

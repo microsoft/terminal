@@ -127,17 +127,16 @@ std::pair<COLORREF, COLORREF> Terminal::GetAttributeColors(const TextAttribute& 
     return GetRenderSettings().GetAttributeColors(attr);
 }
 
-std::vector<Microsoft::Console::Types::Viewport> Terminal::GetSelectionRects() noexcept
+std::span<const til::point_span> Terminal::GetSelectionSpans() const noexcept
 try
 {
-    std::vector<Viewport> result;
-
-    for (const auto& lineRect : _GetSelectionRects())
+    if (_selection.generation() != _lastSelectionGeneration)
     {
-        result.emplace_back(Viewport::FromInclusive(lineRect));
+        _lastSelectionSpans = _GetSelectionSpans();
+        _lastSelectionGeneration = _selection.generation();
     }
 
-    return result;
+    return _lastSelectionSpans;
 }
 catch (...)
 {
@@ -202,6 +201,11 @@ til::CoordType Terminal::_ScrollToPoints(const til::point coordStart, const til:
     return _VisibleStartIndex();
 }
 
+// Method Description:
+// - selects the region from coordStart to coordEnd
+// Arguments:
+// - coordStart - The start point (inclusive)
+// - coordEnd - The end point (inclusive)
 void Terminal::SelectNewRegion(const til::point coordStart, const til::point coordEnd)
 {
     const auto newScrollOffset = _ScrollToPoints(coordStart, coordEnd);
@@ -211,6 +215,7 @@ void Terminal::SelectNewRegion(const til::point coordStart, const til::point coo
     const auto newCoordEnd = til::point{ coordEnd.x, coordEnd.y - newScrollOffset };
     SetSelectionAnchor(newCoordStart);
     SetSelectionEnd(newCoordEnd, SelectionExpansion::Char);
+    _activeBuffer().TriggerSelection();
 }
 
 const std::wstring_view Terminal::GetConsoleTitle() const noexcept

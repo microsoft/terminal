@@ -44,21 +44,13 @@ jobs:
     submodules: true
     persistCredentials: True
 
-  - task: PkgESSetupBuild@12
-    displayName: Package ES - Setup Build
-    inputs:
-      disableOutputRedirect: true
+  - template: steps-setup-versioning.yml
 
   - task: DownloadPipelineArtifact@2
     displayName: Download all PDBs from all prior build phases
     inputs:
       itemPattern: '**/*.pdb'
       targetPath: '$(Build.SourcesDirectory)/bin'
-
-  - powershell: |-
-      Get-PackageProvider -Name NuGet -ForceBootstrap
-      Install-Module -Verbose -AllowClobber -Force Az.Accounts, Az.Storage, Az.Network, Az.Resources, Az.Compute
-    displayName: Install Azure Module Dependencies
 
   # Transit the Azure token from the Service Connection into a secret variable for the rest of the pipeline to use.
   - task: AzurePowerShell@5

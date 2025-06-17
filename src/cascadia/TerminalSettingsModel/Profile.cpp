@@ -36,6 +36,7 @@ static constexpr std::string_view UnfocusedAppearanceKey{ "unfocusedAppearance" 
 
 static constexpr std::string_view LegacyAutoMarkPromptsKey{ "experimental.autoMarkPrompts" };
 static constexpr std::string_view LegacyShowMarksKey{ "experimental.showMarksOnScrollbar" };
+static constexpr std::string_view LegacyRightClickContextMenuKey{ "experimental.rightClickContextMenu" };
 
 Profile::Profile(guid guid) noexcept :
     _Guid(guid)
@@ -103,6 +104,7 @@ winrt::com_ptr<Profile> Profile::CopySettings() const
     const auto defaultAppearance = AppearanceConfig::CopyAppearance(winrt::get_self<AppearanceConfig>(_DefaultAppearance), weakProfile);
 
     profile->_Deleted = _Deleted;
+    profile->_Orphaned = _Orphaned;
     profile->_Updates = _Updates;
     profile->_Guid = _Guid;
     profile->_Name = _Name;
@@ -120,6 +122,18 @@ winrt::com_ptr<Profile> Profile::CopySettings() const
     profile->_##name = _##name;
     MTSM_PROFILE_SETTINGS(PROFILE_SETTINGS_COPY)
 #undef PROFILE_SETTINGS_COPY
+
+    // BellSound is an IVector<hstring>, so we need to manually copy it over
+    if (_BellSound)
+    {
+        std::vector<hstring> sounds;
+        sounds.reserve(_BellSound->Size());
+        for (const auto& sound : *_BellSound)
+        {
+            sounds.emplace_back(sound);
+        }
+        profile->_BellSound = single_threaded_vector(std::move(sounds));
+    }
 
     if (_UnfocusedAppearance)
     {
@@ -175,23 +189,32 @@ void Profile::LayerJson(const Json::Value& json)
     JsonUtils::GetValueForKey(json, NameKey, _Name);
     JsonUtils::GetValueForKey(json, UpdatesKey, _Updates);
     JsonUtils::GetValueForKey(json, GuidKey, _Guid);
-    JsonUtils::GetValueForKey(json, HiddenKey, _Hidden);
+
+    // Make sure Source is before Hidden! We use that to exclude false positives from the settings logger!
     JsonUtils::GetValueForKey(json, SourceKey, _Source);
+    JsonUtils::GetValueForKey(json, HiddenKey, _Hidden);
+    _logSettingIfSet(HiddenKey, _Hidden.has_value());
+
     JsonUtils::GetValueForKey(json, IconKey, _Icon);
+    _logSettingIfSet(IconKey, _Icon.has_value());
 
     // Padding was never specified as an integer, but it was a common working mistake.
     // Allow it to be permissive.
     JsonUtils::GetValueForKey(json, PaddingKey, _Padding, JsonUtils::OptionalConverter<hstring, JsonUtils::PermissiveStringConverter<std::wstring>>{});
+    _logSettingIfSet(PaddingKey, _Padding.has_value());
 
     JsonUtils::GetValueForKey(json, TabColorKey, _TabColor);
+    _logSettingIfSet(TabColorKey, _TabColor.has_value());
 
     // Try to load some legacy keys, to migrate them.
     // Done _before_ the MTSM_PROFILE_SETTINGS, which have the updated keys.
     JsonUtils::GetValueForKey(json, LegacyShowMarksKey, _ShowMarks);
     JsonUtils::GetValueForKey(json, LegacyAutoMarkPromptsKey, _AutoMarkPrompts);
+    JsonUtils::GetValueForKey(json, LegacyRightClickContextMenuKey, _RightClickContextMenu);
 
 #define PROFILE_SETTINGS_LAYER_JSON(type, name, jsonKey, ...) \
-    JsonUtils::GetValueForKey(json, jsonKey, _##name);
+    JsonUtils::GetValueForKey(json, jsonKey, _##name);        \
+    _logSettingIfSet(jsonKey, _##name.has_value());
 
     MTSM_PROFILE_SETTINGS(PROFILE_SETTINGS_LAYER_JSON)
 #undef PROFILE_SETTINGS_LAYER_JSON
@@ -208,6 +231,8 @@ void Profile::LayerJson(const Json::Value& json)
 
         unfocusedAppearance->LayerJson(json[JsonKey(UnfocusedAppearanceKey)]);
         _UnfocusedAppearance = *unfocusedAppearance;
+
+        _logSettingSet(UnfocusedAppearanceKey);
     }
 }
 
@@ -329,7 +354,7 @@ Json::Value Profile::ToJson() const
     // Recall: Icon isn't actually a setting in the MTSM_PROFILE_SETTINGS. We
     // defined it manually in Profile, so make sure we only serialize the Icon
     // if the user actually changed it here.
-    JsonUtils::SetValueForKey(json, IconKey, (writeBasicSettings && HasIcon()) ? Icon() : _Icon);
+    JsonUtils::SetValueForKey(json, IconKey, _Icon);
 
     // PermissiveStringConverter is unnecessary for serialization
     JsonUtils::SetValueForKey(json, PaddingKey, _Padding);
@@ -394,6 +419,61 @@ winrt::hstring Profile::_evaluateIcon() const
     // NormalizeCommandLine will return a string with embedded nulls after each
     // arg. We just want the first one.
     return winrt::hstring{ cmdline.c_str() };
+}
+
+bool Profile::HasIcon() const
+{
+    return _Icon.has_value();
+}
+
+winrt::Microsoft::Terminal::Settings::Model::Profile Profile::IconOverrideSource()
+{
+    for (const auto& parent : _parents)
+    {
+        if (auto source{ parent->_getIconOverrideSourceImpl() })
+        {
+            return source;
+        }
+    }
+    return nullptr;
+}
+
+void Profile::ClearIcon()
+{
+    _Icon = std::nullopt;
+    _evaluatedIcon = std::nullopt;
+}
+
+std::optional<winrt::hstring> Profile::_getIconImpl() const
+{
+    if (_Icon)
+    {
+        return _Icon;
+    }
+    for (const auto& parent : _parents)
+    {
+        if (auto val{ parent->_getIconImpl() })
+        {
+            return val;
+        }
+    }
+    return std::nullopt;
+}
+
+winrt::Microsoft::Terminal::Settings::Model::Profile Profile::_getIconOverrideSourceImpl() const
+{
+    if (_Icon)
+    {
+        return *this;
+    }
+    for (const auto& parent : _parents)
+    {
+        if (auto source{ parent->_getIconOverrideSourceImpl() })
+        {
+            return source;
+        }
+    }
+    return nullptr;
 }
 
 // Given a commandLine like the following:
@@ -517,4 +597,59 @@ std::wstring Profile::NormalizeCommandLine(LPCWSTR commandLine)
     }
 
     return normalized;
+}
+
+void Profile::_logSettingSet(const std::string_view& setting)
+{
+    _changeLog.emplace(setting);
+}
+
+void Profile::_logSettingIfSet(const std::string_view& setting, const bool isSet)
+{
+    if (isSet)
+    {
+        // make sure this matches defaults.json.
+        static constexpr winrt::guid DEFAULT_WINDOWS_POWERSHELL_GUID{ 0x61c54bbd, 0xc2c6, 0x5271, { 0x96, 0xe7, 0x00, 0x9a, 0x87, 0xff, 0x44, 0xbf } };
+        static constexpr winrt::guid DEFAULT_COMMAND_PROMPT_GUID{ 0x0caa0dad, 0x35be, 0x5f56, { 0xa8, 0xff, 0xaf, 0xce, 0xee, 0xaa, 0x61, 0x01 } };
+
+        // Exclude some false positives from userDefaults.json
+        // NOTE: we can't use the OriginTag here because it hasn't been set yet!
+        const bool isWinPow = _Guid.has_value() && *_Guid == DEFAULT_WINDOWS_POWERSHELL_GUID; //_Name.has_value() && til::equals_insensitive_ascii(*_Name, L"Windows PowerShell");
+        const bool isCmd = _Guid.has_value() && *_Guid == DEFAULT_COMMAND_PROMPT_GUID; //_Name.has_value() && til::equals_insensitive_ascii(*_Name, L"Command Prompt");
+        const bool isACS = _Name.has_value() && til::equals_insensitive_ascii(*_Name, L"Azure Cloud Shell");
+        const bool isWTDynamicProfile = _Source.has_value() && til::starts_with(*_Source, L"Windows.Terminal");
+        const bool settingHiddenToFalse = til::equals_insensitive_ascii(setting, HiddenKey) && _Hidden.has_value() && _Hidden == false;
+        const bool settingCommandlineToWinPow = til::equals_insensitive_ascii(setting, "commandline") && _Commandline.has_value() && til::equals_insensitive_ascii(*_Commandline, L"%SystemRoot%\\System32\\WindowsPowerShell\\v1.0\\powershell.exe");
+        const bool settingCommandlineToCmd = til::equals_insensitive_ascii(setting, "commandline") && _Commandline.has_value() && til::equals_insensitive_ascii(*_Commandline, L"%SystemRoot%\\System32\\cmd.exe");
+        // clang-format off
+        if (!(isWinPow && (settingHiddenToFalse || settingCommandlineToWinPow))
+            && !(isCmd && (settingHiddenToFalse || settingCommandlineToCmd))
+            && !(isACS && settingHiddenToFalse)
+            && !(isWTDynamicProfile && settingHiddenToFalse))
+        {
+            // clang-format on
+            _logSettingSet(setting);
+        }
+    }
+}
+
+void Profile::LogSettingChanges(std::set<std::string>& changes, const std::string_view& context) const
+{
+    for (const auto& setting : _changeLog)
+    {
+        changes.emplace(fmt::format(FMT_COMPILE("{}.{}"), context, setting));
+    }
+
+    std::string fontContext{ fmt::format(FMT_COMPILE("{}.{}"), context, FontInfoKey) };
+    winrt::get_self<implementation::FontConfig>(_FontInfo)->LogSettingChanges(changes, fontContext);
+
+    // We don't want to distinguish between "profile.defaultAppearance.*" and "profile.unfocusedAppearance.*" settings,
+    //   but we still want to aggregate all of the appearance settings from both appearances.
+    // Log them as "profile.appearance.*"
+    std::string appContext{ fmt::format(FMT_COMPILE("{}.{}"), context, "appearance") };
+    winrt::get_self<implementation::AppearanceConfig>(_DefaultAppearance)->LogSettingChanges(changes, appContext);
+    if (_UnfocusedAppearance)
+    {
+        winrt::get_self<implementation::AppearanceConfig>(*_UnfocusedAppearance)->LogSettingChanges(changes, appContext);
+    }
 }

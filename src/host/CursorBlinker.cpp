@@ -82,10 +82,8 @@ void CursorBlinker::TimerRoutine(SCREEN_INFORMATION& ScreenInfo) const noexcept
     auto& cursor = buffer.GetCursor();
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     auto* const pAccessibilityNotifier = ServiceLocator::LocateAccessibilityNotifier();
-    const auto inConpty{ gci.IsInVtIoMode() };
 
-    // GH#2988: ConPTY can now be focused, but it doesn't need to do any of this work either.
-    if (inConpty || !WI_IsFlagSet(gci.Flags, CONSOLE_HAS_FOCUS))
+    if (!WI_IsFlagSet(gci.Flags, CONSOLE_HAS_FOCUS))
     {
         goto DoScroll;
     }
@@ -165,6 +163,12 @@ DoScroll:
 //   guCaretBlinkTime is -1.
 void CursorBlinker::SetCaretTimer() const noexcept
 {
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    if (gci.IsInVtIoMode())
+    {
+        return;
+    }
+
     using filetime_duration = std::chrono::duration<int64_t, std::ratio<1, 10000000>>;
     static constexpr DWORD dwDefTimeout = 0x212;
 

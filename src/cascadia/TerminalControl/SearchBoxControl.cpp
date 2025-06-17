@@ -225,11 +225,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     }
 
     // Method Description:
-    // - Check if the current search is case sensitive
+    // - Check if the current search is case-sensitive
     // Arguments:
     // - <none>
     // Return Value:
-    // - bool: whether the current search is case sensitive (case button is checked )
+    // - bool: whether the current search is case-sensitive (case button is checked )
     //   or not
     bool SearchBoxControl::CaseSensitive()
     {
@@ -487,7 +487,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
         else
         {
-            currentString = fmt::format(L"{}", currentMatch + 1);
+            currentString = fmt::to_wstring(currentMatch + 1);
         }
 
         if (totalMatches > MaximumTotalResultsToShowInStatus)
@@ -496,10 +496,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
         else
         {
-            totalString = fmt::format(L"{}", totalMatches);
+            totalString = fmt::to_wstring(totalMatches);
         }
 
-        return winrt::hstring{ fmt::format(RS_(L"TermControl_NumResults").c_str(), currentString, totalString) };
+        return winrt::hstring{ RS_fmt(L"TermControl_NumResults", currentString, totalString) };
     }
 
     // Method Description:

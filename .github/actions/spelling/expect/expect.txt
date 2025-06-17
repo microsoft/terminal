@@ -2,14 +2,12 @@ aaaaabbb
 aabbcc
 ABANDONFONT
 abbcc
-ABCDEFGHIJKLMNOPQRSTUVWXY
 ABCF
 abgr
 ABORTIFHUNG
 ACCESSTOKEN
 acidev
 ACIOSS
-ACover
 acp
 actctx
 ACTCTXW
@@ -17,7 +15,8 @@ ADDALIAS
 ADDREF
 ADDSTRING
 ADDTOOL
-AFew
+adml
+admx
 AFill
 AFX
 AHelper
@@ -39,6 +38,7 @@ ANSISYS
 ANSISYSRC
 ANSISYSSC
 answerback
+ANSWERBACKMESSAGE
 antialiasing
 ANull
 anycpu
@@ -53,6 +53,7 @@ appium
 appletname
 applicationmodel
 APPLMODAL
+Applocal
 appmodel
 APPWINDOW
 APPXMANIFESTVERSION
@@ -65,7 +66,6 @@ ARRAYSIZE
 ARROWKEYS
 asan
 ASBSET
-asdfghjkl
 ASetting
 ASingle
 ASYNCDONTCARE
@@ -86,13 +86,14 @@ autoscrolling
 Autowrap
 AVerify
 awch
+AZCOPY
 azurecr
+AZZ
 backgrounded
 Backgrounder
 backgrounding
 backported
 backstory
-barbaz
 Bazz
 bbb
 bbccb
@@ -124,8 +125,10 @@ BKCOLOR
 BKGND
 Bksp
 Blt
+blu
 BLUESCROLL
 bmi
+bodgy
 BODGY
 BOLDFONT
 Borland
@@ -142,8 +145,8 @@ BTNFACE
 bufferout
 buffersize
 buflen
+buildsystems
 buildtransitive
-burriter
 BValue
 bytebuffer
 cac
@@ -162,6 +165,7 @@ CBN
 cbt
 Ccc
 CCCBB
+CCCDDD
 cch
 CCHAR
 CCmd
@@ -170,6 +174,7 @@ CCom
 CConsole
 CCRT
 cdd
+cds
 CELLSIZE
 cfae
 cfie
@@ -179,7 +184,6 @@ CFuzz
 cgscrn
 chafa
 changelists
-charinfo
 CHARSETINFO
 chh
 chshdng
@@ -213,6 +217,7 @@ codepages
 codepath
 coinit
 colorizing
+COLORONCOLOR
 COLORREFs
 colorschemes
 colorspec
@@ -220,6 +225,7 @@ colortable
 colortbl
 colortest
 colortool
+COLORVALUE
 combaseapi
 comctl
 commandline
@@ -264,7 +270,6 @@ consolegit
 consolehost
 CONSOLEIME
 consoleinternal
-Consoleroot
 CONSOLESETFOREGROUND
 consoletaeftemplates
 consoleuwp
@@ -280,6 +285,8 @@ contypes
 conwinuserrefs
 coordnew
 COPYCOLOR
+COPYDATA
+COPYDATASTRUCT
 CORESYSTEM
 cotaskmem
 countof
@@ -341,6 +348,7 @@ CXVIRTUALSCREEN
 CXVSCROLL
 CYFRAME
 CYFULLSCREEN
+cygdrive
 CYHSCROLL
 CYMIN
 CYPADDEDBORDER
@@ -360,11 +368,11 @@ DBGFONTS
 DBGOUTPUT
 dbh
 dblclk
+Dcd
 DColor
-DCOLORVALUE
 dcommon
-dcompiler
 DComposition
+DDDCCC
 dde
 DDESHARE
 DDevice
@@ -377,7 +385,7 @@ DECALN
 DECANM
 DECARM
 DECAUPSS
-DECAWM
+decawm
 DECBI
 DECBKM
 DECCARA
@@ -385,7 +393,7 @@ DECCIR
 DECCKM
 DECCKSR
 DECCOLM
-DECCRA
+deccra
 DECCTR
 DECDC
 DECDHL
@@ -397,7 +405,7 @@ DECEKBD
 DECERA
 DECFI
 DECFNK
-DECFRA
+decfra
 DECGCI
 DECGCR
 DECGNL
@@ -419,7 +427,7 @@ DECPCCM
 DECPCTERM
 DECPS
 DECRARA
-DECRC
+decrc
 DECREQTPARM
 DECRLM
 DECRPM
@@ -434,7 +442,7 @@ DECRSPS
 decrst
 DECSACE
 DECSASD
-DECSC
+decsc
 DECSCA
 DECSCNM
 DECSCPP
@@ -460,7 +468,6 @@ DECXCPR
 DEFAPP
 DEFAULTBACKGROUND
 DEFAULTFOREGROUND
-defaultsettings
 DEFAULTTONEAREST
 DEFAULTTONULL
 DEFAULTTOPRIMARY
@@ -473,7 +480,6 @@ DEFPUSHBUTTON
 defterm
 DELAYLOAD
 DELETEONRELEASE
-Delt
 depersist
 deprioritized
 deserializers
@@ -554,7 +560,6 @@ Efast
 efghijklmn
 EHsc
 EINS
-EJO
 ELEMENTNOTAVAILABLE
 EMPTYBOX
 enabledelayedexpansion
@@ -565,10 +570,12 @@ entrypoints
 ENU
 ENUMLOGFONT
 ENUMLOGFONTEX
+EOB
 EOK
 EPres
 EQU
 ERASEBKGND
+ERRORONEXIT
 ESFCIB
 esrp
 ESV
@@ -624,7 +631,6 @@ FINDDOWN
 FINDREGEX
 FINDSTRINGEXACT
 FINDUP
-FIter
 FITZPATRICK
 FIXEDFILEINFO
 Flg
@@ -645,6 +651,7 @@ FONTSTRING
 FONTTYPE
 FONTWIDTH
 FONTWINDOW
+foob
 FORCEOFFFEEDBACK
 FORCEONFEEDBACK
 FRAMECHANGED
@@ -662,9 +669,11 @@ fuzzer
 fuzzmain
 fuzzmap
 fuzzwrapper
+fuzzyfinder
 fwdecl
 fwe
 fwlink
+fzf
 gci
 gcx
 gdi
@@ -721,12 +730,12 @@ GETWHEELSCROLLLINES
 Gfun
 gfx
 GGI
+GHgh
 GHIJK
 GHIJKL
 gitcheckin
 gitfilters
 gitlab
-gitmodules
 gle
 GLOBALFOCUS
 GLYPHENTRY
@@ -784,6 +793,7 @@ HIWORD
 HKCU
 hkey
 hkl
+HKLM
 hlocal
 hlsl
 HMB
@@ -794,10 +804,8 @@ hmon
 homoglyph
 hostable
 hostlib
-Hostx
 HPA
 hpcon
-HPCON
 hpen
 HPR
 HProvider
@@ -825,7 +833,6 @@ HWNDPARENT
 iccex
 ICONERROR
 ICONINFORMATION
-IConsole
 ICONSTOP
 ICONWARNING
 IDCANCEL
@@ -838,13 +845,11 @@ IDR
 idth
 IDTo
 IDXGI
-IEnd
-IEnum
 IFACEMETHODIMP
 ification
 IGNORELANGUAGE
-IHosted
 iid
+IInput
 IIo
 ILC
 ILCo
@@ -856,7 +861,6 @@ inclusivity
 INCONTEXT
 INFOEX
 inheritcursor
-inheritfrom
 INITCOMMONCONTROLSEX
 INITDIALOG
 initguid
@@ -865,7 +869,9 @@ inkscape
 INLINEPREFIX
 inproc
 Inputkeyinfo
+inputpaneinterop
 Inputreadhandledata
+INPUTSCOPE
 INSERTMODE
 INTERACTIVITYBASE
 INTERCEPTCOPYPASTE
@@ -876,13 +882,9 @@ INVALIDARG
 INVALIDATERECT
 Ioctl
 ipch
-IProperty
 ipsp
-IShell
-ISwap
 iterm
 itermcolors
-ITerminal
 itf
 Ith
 IUI
@@ -891,7 +893,6 @@ ivalid
 IWIC
 IXP
 jconcpp
-JLO
 JOBOBJECT
 JOBOBJECTINFOCLASS
 JONGSEONG
@@ -915,6 +916,7 @@ Keymapping
 keyscan
 keystate
 keyups
+Kickstart
 KILLACTIVE
 KILLFOCUS
 kinda
@@ -946,10 +948,6 @@ LCONTROL
 LCTRL
 lcx
 LEFTALIGN
-libpopcnt
-libsancov
-libtickit
-licate
 LIMITTEXT
 LINEDOWN
 LINESELECTION
@@ -1021,7 +1019,6 @@ lstatus
 lstrcmp
 lstrcmpi
 LTEXT
-LTLTLTLTL
 ltsc
 LUID
 luma
@@ -1044,7 +1041,6 @@ MAPBITMAP
 MAPVIRTUALKEY
 MAPVK
 MAXDIMENSTRING
-maxing
 MAXSHORT
 maxval
 maxversiontested
@@ -1117,7 +1113,6 @@ msrc
 MSVCRTD
 MTSM
 Munged
-munges
 murmurhash
 muxes
 myapplet
@@ -1205,6 +1200,7 @@ nouicompat
 nounihan
 NOYIELD
 NOZORDER
+NPFS
 nrcs
 NSTATUS
 ntapi
@@ -1218,7 +1214,6 @@ ntlpcapi
 ntm
 ntrtl
 ntstatus
-NTSYSCALLAPI
 nttree
 nturtl
 ntuser
@@ -1234,6 +1229,7 @@ NUMSCROLL
 NUnit
 nupkg
 NVIDIA
+NVT
 OACR
 objbase
 ocolor
@@ -1255,6 +1251,7 @@ onecoreuuid
 ONECOREWINDOWS
 onehalf
 oneseq
+oob
 openbash
 opencode
 opencon
@@ -1263,7 +1260,6 @@ openconsoleproxy
 openps
 openvt
 ORIGINALFILENAME
-orking
 osc
 OSDEPENDSROOT
 OSG
@@ -1290,10 +1286,10 @@ PAINTSTRUCT
 PALPC
 pankaj
 parentable
-parms
 PATCOPY
 pathcch
 PATTERNID
+pbstr
 pcb
 pcch
 PCCHAR
@@ -1367,6 +1363,7 @@ PNMLINK
 pntm
 POBJECT
 Podcast
+POINTERUPDATE
 POINTSLIST
 policheck
 POLYTEXTW
@@ -1379,9 +1376,11 @@ POSTCHARBREAKS
 POSX
 POSXSCROLL
 POSYSCROLL
+ppbstr
 PPEB
 ppf
 ppidl
+pprg
 PPROC
 ppropvar
 ppsi
@@ -1396,6 +1395,7 @@ prealigned
 prect
 prefast
 preflighting
+prepopulate
 presorted
 PREVENTPINNING
 PREVIEWLABEL
@@ -1408,6 +1408,7 @@ processenv
 processhost
 PROCESSINFOCLASS
 PRODEXT
+Productize
 PROPERTYID
 PROPERTYKEY
 propertyval
@@ -1421,6 +1422,7 @@ propvar
 propvariant
 propvarutil
 psa
+PSCRED
 PSECURITY
 pseudoconsole
 pseudoterminal
@@ -1501,7 +1503,6 @@ REGSTR
 RELBINPATH
 remoting
 renamer
-renderengine
 rendersize
 reparented
 reparenting
@@ -1510,7 +1511,6 @@ replatformed
 Replymessage
 reportfileaccesses
 repositorypath
-Requiresx
 rerasterize
 rescap
 RESETCONTENT
@@ -1525,7 +1525,6 @@ rftp
 rgbi
 RGBQUAD
 rgbs
-rgci
 rgfae
 rgfte
 rgn
@@ -1538,7 +1537,6 @@ RIGHTALIGN
 RIGHTBUTTON
 riid
 ris
-RIS
 roadmap
 robomac
 rodata
@@ -1569,6 +1567,7 @@ rvpa
 RWIN
 rxvt
 safemath
+sancov
 sba
 SBCS
 SBCSDBCS
@@ -1603,6 +1602,7 @@ SELECTALL
 SELECTEDFONT
 SELECTSTRING
 Selfhosters
+Serbo
 SERVERDLL
 SETACTIVE
 SETBUDDYINT
@@ -1684,6 +1684,7 @@ SMARTQUOTE
 SMTO
 snapcx
 snapcy
+snk
 SOLIDBOX
 Solutiondir
 somefile
@@ -1697,6 +1698,7 @@ srcsrv
 SRCSRVTRG
 srctool
 srect
+SRGS
 srvinit
 srvpipe
 ssa
@@ -1709,7 +1711,6 @@ STARTUPINFOW
 STARTWPARMS
 STARTWPARMSA
 STARTWPARMSW
-stb
 stdafx
 STDAPI
 stdc
@@ -1728,12 +1729,11 @@ SUA
 subcompartment
 subkeys
 SUBLANG
-subsystemconsole
-subsystemwindows
 swapchain
 swapchainpanel
 SWMR
 SWP
+swrapped
 SYMED
 SYNCPAINT
 syscalls
@@ -1808,6 +1808,7 @@ texttests
 TFunction
 THUMBPOSITION
 THUMBTRACK
+tickit
 TIcon
 tilunittests
 titlebars
@@ -1830,8 +1831,6 @@ TOPDOWNDIB
 TOpt
 tosign
 touchpad
-Tpp
-Tpqrst
 tracelogging
 traceviewpp
 trackbar
@@ -1841,11 +1840,9 @@ Trd
 TREX
 triaged
 triaging
-Tribool
 TRIMZEROHEADINGS
 trx
 tsa
-tsattrs
 tsgr
 tsm
 TStr
@@ -1876,7 +1873,6 @@ uiacore
 uiautomationcore
 uielem
 UINTs
-ul
 uld
 uldash
 uldb
@@ -1935,7 +1931,6 @@ uxtheme
 Vanara
 vararg
 vclib
-vcprintf
 vcxitems
 vectorize
 VERCTRL
@@ -1975,11 +1970,8 @@ vswhere
 vtapp
 VTE
 VTID
-vtio
 vtmode
 vtpipeterm
-vtpt
-vtrenderer
 VTRGB
 VTRGBTo
 vtseq
@@ -1995,6 +1987,7 @@ wch
 wchars
 WCIA
 WCIW
+wcs
 WCSHELPER
 wcsrev
 wcswidth
@@ -2015,6 +2008,7 @@ WHelper
 wic
 WIDTHSCROLL
 Widthx
+Wiggum
 wil
 WImpl
 WINAPI
@@ -2068,14 +2062,12 @@ Winperf
 WInplace
 winres
 winrt
-wintelnet
 winternl
 winuser
 winuserp
 WINVER
 wistd
 wmain
-wmemory
 WMSZ
 wnd
 WNDALLOC
@@ -2086,6 +2078,8 @@ WNDCLASSW
 Wndproc
 WNegative
 WNull
+wordi
+wordiswrapped
 workarea
 WOutside
 WOWARM
@@ -2099,6 +2093,7 @@ WPrep
 WPresent
 wprp
 wprpi
+wrappe
 wregex
 writeback
 WRITECONSOLE
@@ -2119,7 +2114,6 @@ WTest
 WTEXT
 WTo
 wtof
-wtoi
 WTs
 WTSOFTFONT
 wtw
@@ -2142,6 +2136,7 @@ XBUTTONDOWN
 XBUTTONUP
 XCast
 XCENTER
+xchar
 xcopy
 XCount
 xdy
@@ -2160,7 +2155,6 @@ XResource
 xsi
 xstyler
 XSubstantial
-xtended
 XTest
 XTPOPSGR
 XTPUSHSGR
@@ -2169,16 +2163,15 @@ XTWINOPS
 xunit
 xutr
 XVIRTUALSCREEN
-XWalk
 yact
 YCast
 YCENTER
 YCount
+yizz
 YLimit
 YPan
 YSubstantial
 YVIRTUALSCREEN
-YWalk
 Zab
 zabcd
 Zabcdefghijklmn
@@ -2186,6 +2179,6 @@ Zabcdefghijklmnopqrstuvwxyz
 ZCmd
 ZCtrl
 ZWJs
-zxcvbnm
 ZYXWVU
 ZYXWVUTd
+zzf

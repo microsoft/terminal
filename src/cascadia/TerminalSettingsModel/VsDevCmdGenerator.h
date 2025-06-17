@@ -41,7 +41,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model
 
         std::wstring GetProfileIconPath() const
         {
-            return L"ms-appx:///ProfileIcons/{0caa0dad-35be-5f56-a8ff-afceeeaa6101}.png";
+            return L"ms-appx:///ProfileIcons/vs-cmd.png";
         }
 
         std::wstring GetProfileName(const VsSetupConfiguration::VsSetupInstance& instance) const;

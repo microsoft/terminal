@@ -286,6 +286,34 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return result;
     }
 
+    // This is substantially simpler than the normal FromJson. We just want to take something that looks like:
+    // {
+    //     "input": "bx",
+    //     "name": "Build project",
+    //     "description": "Build the project in the CWD"
+    // },
+    //
+    // and turn it into a sendInput action. No need to figure out what kind of
+    // action parser, or deal with nesting, or iterable commands or anything.
+    winrt::com_ptr<Command> Command::FromSnippetJson(const Json::Value& json)
+    {
+        auto result = winrt::make_self<Command>();
+        result->_Origin = OriginTag::Generated;
+
+        JsonUtils::GetValueForKey(json, IDKey, result->_ID);
+        JsonUtils::GetValueForKey(json, DescriptionKey, result->_Description);
+        JsonUtils::GetValueForKey(json, IconKey, result->_iconPath);
+        result->_name = _nameFromJson(json);
+
+        const auto action{ ShortcutAction::SendInput };
+        IActionArgs args{ nullptr };
+        std::vector<Microsoft::Terminal::Settings::Model::SettingsLoadWarnings> parseWarnings;
+        std::tie(args, parseWarnings) = SendInputArgs::FromJson(json);
+        result->_ActionAndArgs = winrt::make<implementation::ActionAndArgs>(action, args);
+
+        return result;
+    }
+
     // Function Description:
     // - Attempt to parse all the json objects in `json` into new Command
     //   objects, and add them to the map of commands.
@@ -699,7 +727,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 continue;
             }
             auto args = winrt::make_self<SendInputArgs>(
-                winrt::hstring{ fmt::format(L"{}{}{}", cdText, backspaces, line) });
+                winrt::hstring{ fmt::format(FMT_COMPILE(L"{}{}{}"), cdText, backspaces, line) });
 
             Model::ActionAndArgs actionAndArgs{ ShortcutAction::SendInput, *args };
 
@@ -712,5 +740,58 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
 
         return winrt::single_threaded_vector<Model::Command>(std::move(result));
+    }
+
+    void Command::LogSettingChanges(std::set<std::string>& changes)
+    {
+        if (_IterateOn != ExpandCommandType::None)
+        {
+            switch (_IterateOn)
+            {
+            case ExpandCommandType::Profiles:
+                changes.emplace(fmt::format(FMT_COMPILE("{}.{}"), IterateOnKey, "profiles"));
+                break;
+            case ExpandCommandType::ColorSchemes:
+                changes.emplace(fmt::format(FMT_COMPILE("{}.{}"), IterateOnKey, "schemes"));
+                break;
+            }
+        }
+
+        if (!_Description.empty())
+        {
+            changes.emplace(DescriptionKey);
+        }
+
+        if (IsNestedCommand())
+        {
+            changes.emplace(CommandsKey);
+        }
+        else
+        {
+            const auto json{ ActionAndArgs::ToJson(ActionAndArgs()) };
+            if (json.isString())
+            {
+                // covers actions w/out args
+                // - "command": "unbound" --> "unbound"
+                // - "command": "copy"    --> "copy"
+                changes.emplace(json.asString());
+            }
+            else
+            {
+                // covers actions w/ args
+                // - "command": { "action": "copy", "singleLine": true }                           --> "copy.singleLine"
+                // - "command": { "action": "copy", "singleLine": true, "dismissSelection": true } --> "copy.singleLine", "copy.dismissSelection"
+
+                const std::string shortcutActionName{ json[JsonKey("action")].asString() };
+
+                auto members = json.getMemberNames();
+                members.erase(std::remove_if(members.begin(), members.end(), [](const auto& member) { return member == "action"; }), members.end());
+
+                for (const auto& actionArg : members)
+                {
+                    changes.emplace(fmt::format(FMT_COMPILE("{}.{}"), shortcutActionName, actionArg));
+                }
+            }
+        }
     }
 }

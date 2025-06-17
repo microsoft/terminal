@@ -1,17 +1,17 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <root>
-  <!--
-    Microsoft ResX Schema
-
+  <!-- 
+    Microsoft ResX Schema 
+    
     Version 2.0
-
-    The primary goals of this format is to allow a simple XML format
-    that is mostly human readable. The generation and parsing of the
-    various data types are done through the TypeConverter classes
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
     associated with the data types.
-
+    
     Example:
-
+    
     ... ado.net/XML headers & schema ...
     <resheader name="resmimetype">text/microsoft-resx</resheader>
     <resheader name="version">2.0</resheader>
@@ -26,36 +26,36 @@
         <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
         <comment>This is a comment</comment>
     </data>
-
-    There are any number of "resheader" rows that contain simple
+                
+    There are any number of "resheader" rows that contain simple 
     name/value pairs.
-
-    Each data row contains a name, and value. The row also contains a
-    type or mimetype. Type corresponds to a .NET class that support
-    text/value conversion through the TypeConverter architecture.
-    Classes that don't support this are serialized and stored with the
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
     mimetype set.
-
-    The mimetype is used for serialized objects, and tells the
-    ResXResourceReader how to depersist the object. This is currently not
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
     extensible. For a given mimetype the value must be set accordingly:
-
-    Note - application/x-microsoft.net.object.binary.base64 is the format
-    that the ResXResourceWriter will generate, however the reader can
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
     read any of the formats listed below.
-
+    
     mimetype: application/x-microsoft.net.object.binary.base64
-    value   : The object must be serialized with
+    value   : The object must be serialized with 
             : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
             : and then encoded with base64 encoding.
-
+    
     mimetype: application/x-microsoft.net.object.soap.base64
-    value   : The object must be serialized with
+    value   : The object must be serialized with 
             : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
             : and then encoded with base64 encoding.
 
     mimetype: application/x-microsoft.net.object.bytearray.base64
-    value   : The object must be serialized into a byte array
+    value   : The object must be serialized into a byte array 
             : using a System.ComponentModel.TypeConverter
             : and then encoded with base64 encoding.
     -->
@@ -118,13 +118,13 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="SetColorSchemeParentCommandName" xml:space="preserve">
-    <value>配色パターンの選択</value>
+    <value>配色を選択...</value>
   </data>
   <data name="NewTabParentCommandName" xml:space="preserve">
-    <value>新しいタブ</value>
+    <value>新しいタブ...</value>
   </data>
   <data name="SplitPaneParentCommandName" xml:space="preserve">
-    <value>ウィンドウを分割する</value>
+    <value>ウィンドウの分割...</value>
   </data>
   <data name="SnippetsPaneCommandName" xml:space="preserve">
     <value>スニペット ウィンドウを開く</value>
@@ -328,8 +328,11 @@
     <value>設定ファイル (JSON) を開く</value>
     <comment>{Locked="JSON"}. "JSON" is the extension of the file that will be opened.</comment>
   </data>
+  <data name="SettingsFileOpenInExplorerCommandKey" xml:space="preserve">
+    <value>設定ファイルのディレクトリを開く</value>
+  </data>
   <data name="OpenTabColorPickerCommandKey" xml:space="preserve">
-    <value>タブの色の設定</value>
+    <value>タブの色を設定...</value>
   </data>
   <data name="PasteTextCommandKey" xml:space="preserve">
     <value>貼り付け</value>
@@ -351,7 +354,7 @@
     <value>タブのタイトルをリセット</value>
   </data>
   <data name="OpenTabRenamerCommandKey" xml:space="preserve">
-    <value>タブ タイトル名の変更</value>
+    <value>タブ名を変更</value>
   </data>
   <data name="ResizePaneCommandKey" xml:space="preserve">
     <value>ウィンドウのサイズの変更する</value>
@@ -445,16 +448,13 @@
     <value>最後のタブに切り替える</value>
   </data>
   <data name="TabSearchCommandKey" xml:space="preserve">
-    <value>タブの検索</value>
+    <value>タブを検索...</value>
   </data>
   <data name="ToggleAlwaysOnTopCommandKey" xml:space="preserve">
     <value>常に手前に表示するモードに切り替える</value>
   </data>
   <data name="ToggleCommandPaletteCommandKey" xml:space="preserve">
     <value>コマンド パレットに切り替える</value>
-  </data>
-  <data name="SuggestionsCommandHistoryCommandKey" xml:space="preserve">
-    <value>最近使ったコマンド</value>
   </data>
   <data name="SuggestionsCommandKey" xml:space="preserve">
     <value>候補を開く</value>
@@ -570,7 +570,7 @@
     <value>ターミナルの終了</value>
   </data>
   <data name="SetOpacityParentCommandName" xml:space="preserve">
-    <value>背景の不透明度の設定</value>
+    <value>背景の不透明度を設定...</value>
   </data>
   <data name="IncreaseOpacityCommandKey" xml:space="preserve">
     <value>背景の不透明度を {0}% 上げる</value>
@@ -733,5 +733,31 @@
   </data>
   <data name="SaveSnippetNamePrefix" xml:space="preserve">
     <value>スニペットの保存</value>
+  </data>
+  <data name="QuickFixCommandKey" xml:space="preserve">
+    <value>クイック修正メニューを開く</value>
+  </data>
+  <data name="OpenCWDCommandKey" xml:space="preserve">
+    <value>現在の作業ディレクトリを開く</value>
+  </data>
+  <data name="WslDistroGeneratorDisplayName" xml:space="preserve">
+    <value>WSL ディストリビューション プロファイル ジェネレーター</value>
+    <comment>The display name of a dynamic profile generator for WSL distros</comment>
+  </data>
+  <data name="PowershellCoreProfileGeneratorDisplayName" xml:space="preserve">
+    <value>PowerShell プロファイル ジェネレーター</value>
+    <comment>The display name of a dynamic profile generator for PowerShell</comment>
+  </data>
+  <data name="AzureCloudShellGeneratorDisplayName" xml:space="preserve">
+    <value>Azure Cloud Shell プロファイル ジェネレーター</value>
+    <comment>The display name of a dynamic profile generator for Azure Cloud Shell</comment>
+  </data>
+  <data name="VisualStudioGeneratorDisplayName" xml:space="preserve">
+    <value>Visual Studio プロファイル ジェネレーター</value>
+    <comment>The display name of a dynamic profile generator for Visual Studio</comment>
+  </data>
+  <data name="SshHostGeneratorDisplayName" xml:space="preserve">
+    <value>SSH ホスト プロファイル ジェネレーター</value>
+    <comment>The display name of a dynamic profile generator for SSH hosts</comment>
   </data>
 </root>

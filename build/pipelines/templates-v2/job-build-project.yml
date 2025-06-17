@@ -159,6 +159,8 @@ jobs:
       .\build\scripts\Generate-ThirdPartyNotices.ps1 -MarkdownNoticePath .\NOTICE.md -OutputPath .\src\cascadia\CascadiaPackage\NOTICE.html
     displayName: Generate NOTICE.html from NOTICE.md
 
+  - template: .\steps-install-vcpkg.yml
+
   - template: .\steps-restore-nuget.yml
 
   - pwsh: |-

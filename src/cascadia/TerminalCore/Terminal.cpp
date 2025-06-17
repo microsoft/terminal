@@ -12,6 +12,7 @@
 #include "../../buffer/out/UTextAdapter.h"
 
 #include <til/hash.h>
+#include <til/regex.h>
 #include <winrt/Microsoft.Terminal.Core.h>
 
 using namespace winrt::Microsoft::Terminal::Core;
@@ -52,14 +53,6 @@ void Terminal::Create(til::size viewportSize, til::CoordType scrollbackLines, Re
     auto dispatch = std::make_unique<AdaptDispatch>(*this, &renderer, _renderSettings, _terminalInput);
     auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
     _stateMachine = std::make_unique<StateMachine>(std::move(engine));
-
-    // Until we have a true pass-through mode (GH#1173), the decision as to
-    // whether C1 controls are interpreted or not is made at the conhost level.
-    // If they are being filtered out, then we will simply never receive them.
-    // But if they are being accepted by conhost, there's a chance they may get
-    // passed through in some situations, so it's important that our state
-    // machine is always prepared to accept them.
-    _stateMachine->SetParserMode(StateMachine::Mode::AlwaysAcceptC1, true);
 }
 
 // Method Description:
@@ -90,12 +83,19 @@ void Terminal::UpdateSettings(ICoreSettings settings)
 
     _snapOnInput = settings.SnapOnInput();
     _altGrAliasing = settings.AltGrAliasing();
+    _answerbackMessage = settings.AnswerbackMessage();
     _wordDelimiters = settings.WordDelimiters();
     _suppressApplicationTitle = settings.SuppressApplicationTitle();
     _startingTitle = settings.StartingTitle();
     _trimBlockSelection = settings.TrimBlockSelection();
     _autoMarkPrompts = settings.AutoMarkPrompts();
     _rainbowSuggestions = settings.RainbowSuggestions();
+    _clipboardOperationsAllowed = settings.AllowVtClipboardWrite();
+
+    if (_stateMachine)
+    {
+        SetVtChecksumReportSupport(settings.AllowVtChecksumReport());
+    }
 
     _getTerminalInput().ForceDisableWin32InputMode(settings.ForceVTInput());
 
@@ -107,6 +107,9 @@ void Terminal::UpdateSettings(ICoreSettings settings)
     {
         GetRenderSettings().SetColorTableEntry(TextColor::FRAME_BACKGROUND, til::color{ settings.TabColor().Value() });
     }
+
+    // Save the changes made above and in UpdateAppearance as the new default render settings.
+    GetRenderSettings().SaveDefaultSettings();
 
     if (!_startingTabColor && settings.StartingTabColor())
     {
@@ -140,7 +143,15 @@ void Terminal::UpdateAppearance(const ICoreAppearance& appearance)
     renderSettings.SetRenderMode(RenderSettings::Mode::IntenseIsBold, appearance.IntenseIsBold());
     renderSettings.SetRenderMode(RenderSettings::Mode::IntenseIsBright, appearance.IntenseIsBright());
 
-    switch (appearance.AdjustIndistinguishableColors())
+    // If AIC is set to Automatic,
+    // update the value based on if high contrast mode is enabled.
+    AdjustTextMode deducedAIC = appearance.AdjustIndistinguishableColors();
+    if (deducedAIC == AdjustTextMode::Automatic)
+    {
+        deducedAIC = _highContrastMode ? AdjustTextMode::Indexed : AdjustTextMode::Never;
+    }
+
+    switch (deducedAIC)
     {
     case AdjustTextMode::Always:
         renderSettings.SetRenderMode(RenderSettings::Mode::IndexedDistinguishableColors, false);
@@ -162,6 +173,8 @@ void Terminal::UpdateAppearance(const ICoreAppearance& appearance)
     renderSettings.SetColorAlias(ColorAlias::DefaultForeground, TextColor::DEFAULT_FOREGROUND, newForegroundColor);
     const til::color newCursorColor{ appearance.CursorColor() };
     renderSettings.SetColorTableEntry(TextColor::CURSOR_COLOR, newCursorColor);
+    const til::color newSelectionColor{ appearance.SelectionBackground() };
+    renderSettings.SetColorTableEntry(TextColor::SELECTION_BACKGROUND, newSelectionColor);
 
     for (auto i = 0; i < 16; i++)
     {
@@ -208,16 +221,21 @@ void Terminal::UpdateAppearance(const ICoreAppearance& appearance)
     _NotifyScrollEvent();
 }
 
+void Terminal::SetHighContrastMode(bool hc) noexcept
+{
+    _highContrastMode = hc;
+}
+
 void Terminal::SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle)
 {
     auto& engine = reinterpret_cast<OutputStateMachineEngine&>(_stateMachine->Engine());
     engine.Dispatch().SetCursorStyle(cursorStyle);
 }
 
-void Terminal::EraseScrollback()
+void Terminal::SetVtChecksumReportSupport(const bool enabled)
 {
     auto& engine = reinterpret_cast<OutputStateMachineEngine&>(_stateMachine->Engine());
-    engine.Dispatch().EraseInDisplay(DispatchTypes::EraseType::Scrollback);
+    engine.Dispatch().SetVtChecksumReportSupport(enabled);
 }
 
 bool Terminal::IsXtermBracketedPasteModeEnabled() const noexcept
@@ -474,7 +492,7 @@ bool Terminal::ShouldSendAlternateScroll(const unsigned int uiButton,
 // - The position relative to the viewport
 std::wstring Terminal::GetHyperlinkAtViewportPosition(const til::point viewportPos)
 {
-    return GetHyperlinkAtBufferPosition(_ConvertToBufferCell(viewportPos));
+    return GetHyperlinkAtBufferPosition(_ConvertToBufferCell(viewportPos, false));
 }
 
 std::wstring Terminal::GetHyperlinkAtBufferPosition(const til::point bufferPos)
@@ -498,12 +516,8 @@ std::wstring Terminal::GetHyperlinkAtBufferPosition(const til::point bufferPos)
         result = GetHyperlinkIntervalFromViewportPosition(viewportPos);
         if (result.has_value())
         {
-            // GetPlainText and _ConvertToBufferCell work with inclusive coordinates, but interval's
-            // stop point is (horizontally) exclusive, so let's just update it.
-            result->stop.x--;
-
-            result->start = _ConvertToBufferCell(result->start);
-            result->stop = _ConvertToBufferCell(result->stop);
+            result->start = _ConvertToBufferCell(result->start, false);
+            result->stop = _ConvertToBufferCell(result->stop, true);
         }
     }
     else
@@ -540,7 +554,7 @@ std::wstring Terminal::GetHyperlinkAtBufferPosition(const til::point bufferPos)
 // - The hyperlink ID
 uint16_t Terminal::GetHyperlinkIdAtViewportPosition(const til::point viewportPos)
 {
-    return _activeBuffer().GetCellDataAt(_ConvertToBufferCell(viewportPos))->TextAttr().GetHyperlinkId();
+    return _activeBuffer().GetCellDataAt(_ConvertToBufferCell(viewportPos, false))->TextAttr().GetHyperlinkId();
 }
 
 // Method description:
@@ -716,7 +730,7 @@ TerminalInput::OutputType Terminal::SendCharEvent(const wchar_t ch, const WORD s
         // * AND we're not in the alt buffer
         //
         // Then treat this line like it's a prompt mark.
-        if (_autoMarkPrompts)
+        if (_autoMarkPrompts && _mainBuffer && !_inAltBuffer())
         {
             // We need to be a little tricky here, to try and support folks that are
             // auto-marking prompts, but don't necessarily have the rest of shell
@@ -730,10 +744,10 @@ TerminalInput::OutputType Terminal::SendCharEvent(const wchar_t ch, const WORD s
             //
             // (TextBuffer::_createPromptMarkIfNeeded does that work for us)
 
-            const bool createdMark = _activeBuffer().StartOutput();
+            const bool createdMark = _mainBuffer->StartOutput();
             if (createdMark)
             {
-                _activeBuffer().ManuallyMarkRowAsPrompt(_activeBuffer().GetCursor().GetPosition().y);
+                _mainBuffer->ManuallyMarkRowAsPrompt(_mainBuffer->GetCursor().GetPosition().y);
 
                 // This changed the scrollbar marks - raise a notification to update them
                 _NotifyScrollEvent();
@@ -1139,6 +1153,11 @@ void Terminal::SetShowWindowCallback(std::function<void(bool)> pfn) noexcept
     _pfnShowWindowChanged.swap(pfn);
 }
 
+void Terminal::SetWindowSizeChangedCallback(std::function<void(int32_t, int32_t)> pfn) noexcept
+{
+    _pfnWindowSizeChanged.swap(pfn);
+}
+
 // Method Description:
 // - Allows setting a callback for playing MIDI notes.
 // Arguments:
@@ -1238,7 +1257,7 @@ void Microsoft::Terminal::Core::Terminal::CompletionsChangedCallback(std::functi
     _pfnCompletionsChanged.swap(pfn);
 }
 
-void Microsoft::Terminal::Core::Terminal::SetSearchMissingCommandCallback(std::function<void(std::wstring_view)> pfn) noexcept
+void Microsoft::Terminal::Core::Terminal::SetSearchMissingCommandCallback(std::function<void(std::wstring_view, const til::CoordType)> pfn) noexcept
 {
     _pfnSearchMissingCommand.swap(pfn);
 }
@@ -1259,16 +1278,20 @@ void Terminal::SetSearchHighlights(const std::vector<til::point_span>& highlight
 // Method Description:
 // - Stores the focused search highlighted region in the terminal
 // - If the region isn't empty, it will be brought into view
-void Terminal::SetSearchHighlightFocused(const size_t focusedIdx)
+void Terminal::SetSearchHighlightFocused(const size_t focusedIdx) noexcept
 {
     _assertLocked();
     _searchHighlightFocused = focusedIdx;
+}
 
-    // bring the focused region into the view if the index is in valid range
-    if (focusedIdx < _searchHighlights.size())
+void Terminal::ScrollToSearchHighlight(til::CoordType searchScrollOffset)
+{
+    if (_searchHighlightFocused < _searchHighlights.size())
     {
-        const auto focused = til::at(_searchHighlights, focusedIdx);
-        _ScrollToPoints(focused.start, focused.end);
+        const auto focused = til::at(_searchHighlights, _searchHighlightFocused);
+        const auto adjustedStart = til::point{ focused.start.x, std::max(0, focused.start.y - searchScrollOffset) };
+        const auto adjustedEnd = til::point{ focused.end.x, std::max(0, focused.end.y - searchScrollOffset) };
+        _ScrollToPoints(adjustedStart, adjustedEnd);
     }
 }
 
@@ -1280,8 +1303,8 @@ Scheme Terminal::GetColorScheme() const
     s.Foreground = til::color{ renderSettings.GetColorAlias(ColorAlias::DefaultForeground) };
     s.Background = til::color{ renderSettings.GetColorAlias(ColorAlias::DefaultBackground) };
 
-    // SelectionBackground is stored in the ControlAppearance
     s.CursorColor = til::color{ renderSettings.GetColorTableEntry(TextColor::CURSOR_COLOR) };
+    s.SelectionBackground = til::color{ renderSettings.GetColorTableEntry(TextColor::SELECTION_BACKGROUND) };
 
     s.Black = til::color{ renderSettings.GetColorTableEntry(TextColor::DARK_BLACK) };
     s.Red = til::color{ renderSettings.GetColorTableEntry(TextColor::DARK_RED) };
@@ -1327,6 +1350,7 @@ void Terminal::ApplyScheme(const Scheme& colorScheme)
     renderSettings.SetColorTableEntry(TextColor::BRIGHT_WHITE, til::color{ colorScheme.BrightWhite });
 
     renderSettings.SetColorTableEntry(TextColor::CURSOR_COLOR, til::color{ colorScheme.CursorColor });
+    renderSettings.SetColorTableEntry(TextColor::SELECTION_BACKGROUND, til::color{ colorScheme.SelectionBackground });
 
     // Tell the control that the scrollbar has somehow changed. Used as a
     // workaround to force the control to redraw any scrollbar marks whose color
@@ -1365,7 +1389,7 @@ struct URegularExpressionInterner
     //
     // An alternative approach would be to not make this method thread-safe and give each
     // Terminal instance its own cache. I'm not sure which approach would have been better.
-    ICU::unique_uregex Intern(const std::wstring_view& pattern)
+    til::ICU::unique_uregex Intern(const std::wstring_view& pattern)
     {
         UErrorCode status = U_ZERO_ERROR;
 
@@ -1373,14 +1397,14 @@ struct URegularExpressionInterner
             const auto guard = _lock.lock_shared();
             if (const auto it = _cache.find(pattern); it != _cache.end())
             {
-                return ICU::unique_uregex{ uregex_clone(it->second.re.get(), &status) };
+                return til::ICU::unique_uregex{ uregex_clone(it->second.re.get(), &status) };
             }
         }
 
         // Even if the URegularExpression creation failed, we'll insert it into the cache, because there's no point in retrying.
         // (Apart from OOM but in that case this application will crash anyways in 3.. 2.. 1..)
-        auto re = ICU::CreateRegex(pattern, 0, &status);
-        ICU::unique_uregex clone{ uregex_clone(re.get(), &status) };
+        auto re = til::ICU::CreateRegex(pattern, 0, &status);
+        til::ICU::unique_uregex clone{ uregex_clone(re.get(), &status) };
         std::wstring key{ pattern };
 
         const auto guard = _lock.lock_exclusive();
@@ -1402,7 +1426,7 @@ struct URegularExpressionInterner
 private:
     struct CacheValue
     {
-        ICU::unique_uregex re;
+        til::ICU::unique_uregex re;
         size_t generation = 0;
     };
 
@@ -1430,6 +1454,11 @@ PointTree Terminal::_getPatterns(til::CoordType beg, til::CoordType end) const
         LR"(\b(?:https?|ftp|file)://[-A-Za-z0-9+&@#/%?=~_|$!:,.;]*[A-Za-z0-9+&@#/%=~_|$])",
     };
 
+    if (!_detectURLs)
+    {
+        return {};
+    }
+
     auto text = ICU::UTextFromTextBuffer(_activeBuffer(), beg, end + 1);
     UErrorCode status = U_ZERO_ERROR;
     PointTree::interval_vector intervals;
@@ -1447,7 +1476,6 @@ PointTree Terminal::_getPatterns(til::CoordType beg, til::CoordType end) const
                 // PointTree uses half-open ranges and viewport-relative coordinates.
                 range.start.y -= beg;
                 range.end.y -= beg;
-                range.end.x++;
                 intervals.push_back(PointTree::interval(range.start, range.end, 0));
             } while (uregex_findNext(re.get(), &status));
         }
@@ -1552,15 +1580,15 @@ std::wstring Terminal::CurrentCommand() const
 
 void Terminal::SerializeMainBuffer(const wchar_t* destination) const
 {
-    _mainBuffer->Serialize(destination);
+    _mainBuffer->SerializeToPath(destination);
 }
 
 void Terminal::ColorSelection(const TextAttribute& attr, winrt::Microsoft::Terminal::Core::MatchMode matchMode)
 {
-    const auto colorSelection = [this](const til::point coordStart, const til::point coordEnd, const TextAttribute& attr) {
+    const auto colorSelection = [this](const til::point coordStartInclusive, const til::point coordEndExclusive, const TextAttribute& attr) {
         auto& textBuffer = _activeBuffer();
-        const auto spanLength = textBuffer.SpanLength(coordStart, coordEnd);
-        textBuffer.Write(OutputCellIterator(attr, spanLength), coordStart);
+        const auto spanLength = textBuffer.GetSize().CompareInBounds(coordEndExclusive, coordStartInclusive, true);
+        textBuffer.Write(OutputCellIterator(attr, spanLength), coordStartInclusive);
     };
 
     for (const auto [start, end] : _GetSelectionSpans())
@@ -1597,12 +1625,13 @@ void Terminal::ColorSelection(const TextAttribute& attr, winrt::Microsoft::Termi
 }
 
 // Method Description:
-// - Returns the position of the cursor relative to the active viewport
+// - Returns the position of the cursor relative to the visible viewport
 til::point Terminal::GetViewportRelativeCursorPosition() const noexcept
 {
     const auto absoluteCursorPosition{ GetCursorPosition() };
-    const auto viewport{ _GetMutableViewport() };
-    return absoluteCursorPosition - viewport.Origin();
+    const auto mutableViewport{ _GetMutableViewport() };
+    const auto relativeCursorPos = absoluteCursorPosition - mutableViewport.Origin();
+    return { relativeCursorPos.x, relativeCursorPos.y + _scrollOffset };
 }
 
 void Terminal::PreviewText(std::wstring_view input)
@@ -1611,6 +1640,12 @@ void Terminal::PreviewText(std::wstring_view input)
     static constexpr TextAttribute previewAttrs{ CharacterAttributes::Italics, TextColor{}, TextColor{}, 0u, TextColor{} };
 
     auto lock = LockForWriting();
+
+    if (_mainBuffer == nullptr)
+    {
+        return;
+    }
+
     if (input.empty())
     {
         snippetPreview.text = L"";

@@ -4,8 +4,6 @@
 #include "precomp.h"
 #include "renderer.hpp"
 
-#pragma hdrstop
-
 using namespace Microsoft::Console::Render;
 using namespace Microsoft::Console::Types;
 
@@ -25,35 +23,12 @@ static constexpr auto renderBackoffBaseTimeMilliseconds{ 150 };
 // - Creates a new renderer controller for a console.
 // Arguments:
 // - pData - The interface to console data structures required for rendering
-// - pEngine - The output engine for targeting each rendering frame
 // Return Value:
 // - An instance of a Renderer.
-Renderer::Renderer(const RenderSettings& renderSettings,
-                   IRenderData* pData,
-                   _In_reads_(cEngines) IRenderEngine** const rgpEngines,
-                   const size_t cEngines,
-                   std::unique_ptr<RenderThread> thread) :
+Renderer::Renderer(RenderSettings& renderSettings, IRenderData* pData) :
     _renderSettings(renderSettings),
-    _pData(pData),
-    _pThread{ std::move(thread) }
+    _pData(pData)
 {
-    for (size_t i = 0; i < cEngines; i++)
-    {
-        AddRenderEngine(rgpEngines[i]);
-    }
-}
-
-// Routine Description:
-// - Destroys an instance of a renderer
-// Arguments:
-// - <none>
-// Return Value:
-// - <none>
-Renderer::~Renderer()
-{
-    // RenderThread blocks until it has shut down.
-    _destructing = true;
-    _pThread.reset();
 }
 
 IRenderData* Renderer::GetRenderData() const noexcept
@@ -72,11 +47,6 @@ IRenderData* Renderer::GetRenderData() const noexcept
     auto tries = maxRetriesForRenderEngine;
     while (tries > 0)
     {
-        if (_destructing)
-        {
-            return S_FALSE;
-        }
-
         // BODGY: Optimally we would want to retry per engine, but that causes different
         // problems (intermittent inconsistent states between text renderer and UIA output,
         // not being able to lock the cursor location, etc.).
@@ -91,7 +61,7 @@ IRenderData* Renderer::GetRenderData() const noexcept
         if (--tries == 0)
         {
             // Stop trying.
-            _pThread->DisablePainting();
+            _thread.DisablePainting();
             if (_pfnRendererEnteredErrorState)
             {
                 _pfnRendererEnteredErrorState();
@@ -117,6 +87,11 @@ IRenderData* Renderer::GetRenderData() const noexcept
         auto unlock = wil::scope_exit([&]() {
             _pData->UnlockConsole();
         });
+
+        if (_isSynchronizingOutput)
+        {
+            _synchronizeWithOutput();
+        }
 
         // Last chance check if anything scrolled without an explicit invalidate notification since the last frame.
         _CheckViewportAndScroll();
@@ -207,12 +182,79 @@ CATCH_RETURN()
 
 void Renderer::NotifyPaintFrame() noexcept
 {
-    // If we're running in the unittests, we might not have a render thread.
-    if (_pThread)
+    // The thread will provide throttling for us.
+    _thread.NotifyPaint();
+}
+
+// NOTE: You must be holding the console lock when calling this function.
+void Renderer::SynchronizedOutputChanged() noexcept
+{
+    const auto so = _renderSettings.GetRenderMode(RenderSettings::Mode::SynchronizedOutput);
+    if (_isSynchronizingOutput == so)
     {
-        // The thread will provide throttling for us.
-        _pThread->NotifyPaint();
+        return;
     }
+
+    // If `_isSynchronizingOutput` is true, it'll kick the
+    // render thread into calling `_synchronizeWithOutput()`...
+    _isSynchronizingOutput = so;
+
+    if (!_isSynchronizingOutput)
+    {
+        // ...otherwise, unblock `_synchronizeWithOutput()` from the `WaitOnAddress` call.
+        WakeByAddressSingle(&_isSynchronizingOutput);
+
+        // It's crucial to give the render thread at least a chance to gain the lock.
+        // Otherwise, a VT application could continuously spam DECSET 2026 (Synchronized Output) and
+        // essentially drop our renderer to 10 FPS, because `_isSynchronizingOutput` is always true.
+        //
+        // Obviously calling LockConsole/UnlockConsole here is an awful, ugly hack,
+        // since there's no guarantee that this is the same lock as the one the VT parser uses.
+        // But the alternative is Denial-Of-Service of the render thread.
+        //
+        // Note that this causes raw throughput of DECSET 2026 to be comparatively low, but that's fine.
+        // Apps that use DECSET 2026 don't produce that sequence continuously, but rather at a fixed rate.
+        _pData->UnlockConsole();
+        _pData->LockConsole();
+    }
+}
+
+void Renderer::_synchronizeWithOutput() noexcept
+{
+    constexpr DWORD timeout = 100;
+
+    UINT64 start = 0;
+    DWORD elapsed = 0;
+    bool wrong = false;
+
+    QueryUnbiasedInterruptTime(&start);
+
+    // Wait for `_isSynchronizingOutput` to be set to false or for a timeout to occur.
+    while (true)
+    {
+        // We can't call a blocking function while holding the console lock, so release it temporarily.
+        _pData->UnlockConsole();
+        const auto ok = WaitOnAddress(&_isSynchronizingOutput, &wrong, sizeof(_isSynchronizingOutput), timeout - elapsed);
+        _pData->LockConsole();
+
+        if (!ok || !_isSynchronizingOutput)
+        {
+            break;
+        }
+
+        UINT64 now;
+        QueryUnbiasedInterruptTime(&now);
+        elapsed = static_cast<DWORD>((now - start) / 10000);
+        if (elapsed >= timeout)
+        {
+            break;
+        }
+    }
+
+    // If a timeout occurred, `_isSynchronizingOutput` may still be true.
+    // Set it to false now to skip calling `_synchronizeWithOutput()` on the next frame.
+    _isSynchronizingOutput = false;
+    _renderSettings.SetRenderMode(RenderSettings::Mode::SynchronizedOutput, false);
 }
 
 // Routine Description:
@@ -315,27 +357,7 @@ void Renderer::TriggerRedrawAll(const bool backgroundChanged, const bool frameCh
 void Renderer::TriggerTeardown() noexcept
 {
     // We need to shut down the paint thread on teardown.
-    _pThread->WaitForPaintCompletionAndDisable(INFINITE);
-
-    auto repaint = false;
-
-    // Then walk through and do one final paint on the caller's thread.
-    FOREACH_ENGINE(pEngine)
-    {
-        auto fEngineRequestsRepaint = false;
-        auto hr = pEngine->PrepareForTeardown(&fEngineRequestsRepaint);
-        LOG_IF_FAILED(hr);
-
-        repaint |= SUCCEEDED(hr) && fEngineRequestsRepaint;
-    }
-
-    // BODGY: The only time repaint is true is when VtEngine is used.
-    // Coincidentally VtEngine always runs alone, so if repaint is true, there's only a single engine
-    // to repaint anyways and there's no danger is accidentally repainting an engine that didn't want to.
-    if (repaint)
-    {
-        LOG_IF_FAILED(_PaintFrame());
-    }
+    _thread.TriggerTeardown();
 }
 
 // Routine Description:
@@ -345,32 +367,45 @@ void Renderer::TriggerTeardown() noexcept
 // Return Value:
 // - <none>
 void Renderer::TriggerSelection()
+try
 {
-    try
+    const auto spans = _pData->GetSelectionSpans();
+    if (spans.size() != _lastSelectionPaintSize || (!spans.empty() && _lastSelectionPaintSpan != til::point_span{ spans.front().start, spans.back().end }))
     {
-        // Get selection rectangles
-        auto rects = _GetSelectionRects();
+        std::vector<til::rect> newSelectionViewportRects;
 
-        // Make a viewport representing the coordinates that are currently presentable.
-        const til::rect viewport{ _pData->GetViewport().Dimensions() };
-
-        // Restrict all previous selection rectangles to inside the current viewport bounds
-        for (auto& sr : _previousSelection)
+        _lastSelectionPaintSize = spans.size();
+        if (_lastSelectionPaintSize)
         {
-            sr &= viewport;
+            _lastSelectionPaintSpan = til::point_span{ spans.front().start, spans.back().end };
+
+            const auto& buffer = _pData->GetTextBuffer();
+            const auto bufferWidth = buffer.GetSize().Width();
+            const til::rect vp{ _viewport.ToExclusive() };
+            for (auto&& sp : spans)
+            {
+                sp.iterate_rows_exclusive(bufferWidth, [&](til::CoordType row, til::CoordType min, til::CoordType max) {
+                    const auto shift = buffer.GetLineRendition(row) != LineRendition::SingleWidth ? 1 : 0;
+                    min <<= shift;
+                    max <<= shift;
+                    til::rect r{ min, row, max, row + 1 };
+                    newSelectionViewportRects.emplace_back(r.to_origin(vp));
+                });
+            }
         }
 
         FOREACH_ENGINE(pEngine)
         {
-            LOG_IF_FAILED(pEngine->InvalidateSelection(_previousSelection));
-            LOG_IF_FAILED(pEngine->InvalidateSelection(rects));
+            LOG_IF_FAILED(pEngine->InvalidateSelection(_lastSelectionRectsByViewport));
+            LOG_IF_FAILED(pEngine->InvalidateSelection(newSelectionViewportRects));
         }
 
-        _previousSelection = std::move(rects);
+        std::exchange(_lastSelectionRectsByViewport, newSelectionViewportRects);
+
         NotifyPaintFrame();
     }
-    CATCH_LOG();
 }
+CATCH_LOG()
 
 // Routine Description:
 // - Called when the search highlight areas in the console have changed.
@@ -435,8 +470,9 @@ bool Renderer::_CheckViewportAndScroll()
         auto coordCursor = _currentCursorOptions.coordCursor;
 
         // `coordCursor` was stored in viewport-relative while `view` is in absolute coordinates.
-        // --> Turn it back into the absolute coordinates with the help of the old viewport.
-        coordCursor.y += srOldViewport.top;
+        // --> Turn it back into the absolute coordinates with the help of the viewport.
+        // We have to use the new viewport, because _ScrollPreviousSelection adjusts the cursor position to match the new one.
+        coordCursor.y += srNewViewport.top;
 
         // Note that we allow the X coordinate to be outside the left border by 1 position,
         // because the cursor could still be visible if the focused character is double width.
@@ -483,38 +519,6 @@ void Renderer::TriggerScroll(const til::point* const pcoordDelta)
     _ScrollPreviousSelection(*pcoordDelta);
 
     NotifyPaintFrame();
-}
-
-// Routine Description:
-// - Called when the text buffer is about to circle its backing buffer.
-//      A renderer might want to get painted before that happens.
-// Arguments:
-// - <none>
-// Return Value:
-// - <none>
-void Renderer::TriggerFlush(const bool circling)
-{
-    const auto rects = _GetSelectionRects();
-    auto repaint = false;
-
-    FOREACH_ENGINE(pEngine)
-    {
-        auto fEngineRequestsRepaint = false;
-        auto hr = pEngine->InvalidateFlush(circling, &fEngineRequestsRepaint);
-        LOG_IF_FAILED(hr);
-
-        LOG_IF_FAILED(pEngine->InvalidateSelection(rects));
-
-        repaint |= SUCCEEDED(hr) && fEngineRequestsRepaint;
-    }
-
-    // BODGY: The only time repaint is true is when VtEngine is used.
-    // Coincidentally VtEngine always runs alone, so if repaint is true, there's only a single engine
-    // to repaint anyways and there's no danger is accidentally repainting an engine that didn't want to.
-    if (repaint)
-    {
-        LOG_IF_FAILED(_PaintFrame());
-    }
 }
 
 // Routine Description:
@@ -675,25 +679,7 @@ void Renderer::EnablePainting()
     // When the renderer is constructed, the initial viewport won't be available yet,
     // but once EnablePainting is called it should be safe to retrieve.
     _viewport = _pData->GetViewport();
-
-    // When running the unit tests, we may be using a render without a render thread.
-    if (_pThread)
-    {
-        _pThread->EnablePainting();
-    }
-}
-
-// Routine Description:
-// - Waits for the current paint operation to complete, if any, up to the specified timeout.
-// - Resets an event in the render thread that precludes it from advancing, thus disabling rendering.
-// - If no paint operation is currently underway, returns immediately.
-// Arguments:
-// - dwTimeoutMs - Milliseconds to wait for the current paint operation to complete, if any (can be INFINITE).
-// Return Value:
-// - <none>
-void Renderer::WaitForPaintCompletionAndDisable(const DWORD dwTimeoutMs)
-{
-    _pThread->WaitForPaintCompletionAndDisable(dwTimeoutMs);
+    _thread.EnablePainting();
 }
 
 // Routine Description:
@@ -837,7 +823,7 @@ void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
             _PaintBufferOutputHelper(pEngine, it, screenPosition, lineWrapped);
 
             // Paint any image content on top of the text.
-            const auto& imageSlice = buffer.GetRowByOffset(row).GetImageSlice();
+            const auto imageSlice = buffer.GetRowByOffset(row).GetImageSlice();
             if (imageSlice) [[unlikely]]
             {
                 LOG_IF_FAILED(pEngine->PaintImageSlice(*imageSlice, screenPosition.y, view.Left()));
@@ -1312,6 +1298,8 @@ void Renderer::_PaintCursor(_In_ IRenderEngine* const pEngine)
     RenderFrameInfo info;
     info.searchHighlights = _pData->GetSearchHighlights();
     info.searchHighlightFocused = _pData->GetSearchHighlightFocused();
+    info.selectionSpans = _pData->GetSelectionSpans();
+    info.selectionBackground = _renderSettings.GetColorTableEntry(TextColor::SELECTION_BACKGROUND);
     return pEngine->PrepareRenderInfo(std::move(info));
 }
 
@@ -1328,15 +1316,11 @@ void Renderer::_PaintSelection(_In_ IRenderEngine* const pEngine)
         std::span<const til::rect> dirtyAreas;
         LOG_IF_FAILED(pEngine->GetDirtyArea(dirtyAreas));
 
-        // Get selection rectangles
-        const auto rectangles = _GetSelectionRects();
-
-        std::vector<til::rect> dirtySearchRectangles;
-        for (auto& dirtyRect : dirtyAreas)
+        for (auto&& dirtyRect : dirtyAreas)
         {
-            for (const auto& rect : rectangles)
+            for (const auto& rect : _lastSelectionRectsByViewport)
             {
-                if (const auto rectCopy = rect & dirtyRect)
+                if (const auto rectCopy{ rect & dirtyRect })
                 {
                     LOG_IF_FAILED(pEngine->PaintSelection(rectCopy));
                 }
@@ -1381,32 +1365,6 @@ void Renderer::_PaintSelection(_In_ IRenderEngine* const pEngine)
     return pEngine->ScrollFrame();
 }
 
-// Routine Description:
-// - Helper to determine the selected region of the buffer.
-// Return Value:
-// - A vector of rectangles representing the regions to select, line by line.
-std::vector<til::rect> Renderer::_GetSelectionRects() const
-{
-    const auto& buffer = _pData->GetTextBuffer();
-    auto rects = _pData->GetSelectionRects();
-    // Adjust rectangles to viewport
-    auto view = _pData->GetViewport();
-
-    std::vector<til::rect> result;
-    result.reserve(rects.size());
-
-    for (auto rect : rects)
-    {
-        // Convert buffer offsets to the equivalent range of screen cells
-        // expected by callers, taking line rendition into account.
-        const auto lineRendition = buffer.GetLineRendition(rect.Top());
-        rect = Viewport::FromInclusive(BufferToScreenLine(rect.ToInclusive(), lineRendition));
-        result.emplace_back(view.ConvertToOrigin(rect).ToExclusive());
-    }
-
-    return result;
-}
-
 // Method Description:
 // - Offsets all of the selection rectangles we might be holding onto
 //   as the previously selected area. If the whole viewport scrolls,
@@ -1420,7 +1378,7 @@ void Renderer::_ScrollPreviousSelection(const til::point delta)
 {
     if (delta != til::point{ 0, 0 })
     {
-        for (auto& rc : _previousSelection)
+        for (auto& rc : _lastSelectionRectsByViewport)
         {
             rc += delta;
         }
@@ -1501,14 +1459,6 @@ void Renderer::SetFrameColorChangedCallback(std::function<void()> pfn)
 void Renderer::SetRendererEnteredErrorStateCallback(std::function<void()> pfn)
 {
     _pfnRendererEnteredErrorState = std::move(pfn);
-}
-
-// Method Description:
-// - Attempts to restart the renderer.
-void Renderer::ResetErrorStateAndResume()
-{
-    // because we're not stateful (we could be in the future), all we want to do is reenable painting.
-    EnablePainting();
 }
 
 void Renderer::UpdateHyperlinkHoveredId(uint16_t id) noexcept

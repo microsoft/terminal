@@ -25,6 +25,7 @@
   <PropertyGroup Label="NuGet Dependencies">
     <TerminalCppWinrt>true</TerminalCppWinrt>
     <TerminalMUX>true</TerminalMUX>
+    <TerminalWinGetInterop>true</TerminalWinGetInterop>
   </PropertyGroup>
   <Import Project="..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
   <Import Project="$(OpenConsoleDir)src\common.nugetversions.props" />
@@ -74,6 +75,9 @@
     <Page Include="SnippetsPaneContent.xaml">
       <SubType>Designer</SubType>
     </Page>
+    <Page Include="MarkdownPaneContent.xaml">
+      <SubType>Designer</SubType>
+    </Page>
   </ItemGroup>
   <!-- ========================= Headers ======================== -->
   <ItemGroup>
@@ -86,6 +90,9 @@
     <ClInclude Include="LanguageProfileNotifier.h" />
     <ClInclude Include="MinMaxCloseControl.h">
       <DependentUpon>MinMaxCloseControl.xaml</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="Remoting.h">
+      <DependentUpon>Remoting.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="PaletteItemTemplateSelector.h">
       <DependentUpon>PaletteItemTemplateSelector.idl</DependentUpon>
@@ -131,6 +138,7 @@
     </ClInclude>
     <ClInclude Include="FilteredCommand.h" />
     <ClInclude Include="Pane.h" />
+    <ClInclude Include="fzf/fzf.h" />
     <ClInclude Include="ColorHelper.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="ShortcutActionDispatch.h">
@@ -177,6 +185,10 @@
     <ClInclude Include="SuggestionsControl.h">
       <DependentUpon>SuggestionsControl.xaml</DependentUpon>
     </ClInclude>
+    <ClInclude Include="MarkdownPaneContent.h">
+      <DependentUpon>MarkdownPaneContent.xaml</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="WindowsPackageManagerFactory.h" />
   </ItemGroup>
   <!-- ========================= Cpp Files ======================== -->
   <ItemGroup>
@@ -190,6 +202,9 @@
     <ClCompile Include="MinMaxCloseControl.cpp">
       <DependentUpon>MinMaxCloseControl.xaml</DependentUpon>
     </ClCompile>
+    <ClCompile Include="Remoting.cpp">
+      <DependentUpon>Remoting.idl</DependentUpon>
+    </ClCompile>
     <ClCompile Include="PaletteItemTemplateSelector.cpp">
       <DependentUpon>PaletteItemTemplateSelector.idl</DependentUpon>
       <SubType>Code</SubType>
@@ -198,6 +213,7 @@
     <ClCompile Include="TabBase.cpp">
       <DependentUpon>TabBase.idl</DependentUpon>
     </ClCompile>
+    <ClCompile Include="fzf/fzf.cpp" />
     <ClCompile Include="TabPaletteItem.cpp" />
     <ClCompile Include="TaskbarState.cpp">
       <DependentUpon>TaskbarState.idl</DependentUpon>
@@ -294,6 +310,11 @@
     <ClCompile Include="SuggestionsControl.cpp">
       <DependentUpon>SuggestionsControl.xaml</DependentUpon>
     </ClCompile>
+    <ClCompile Include="MarkdownPaneContent.cpp">
+      <DependentUpon>MarkdownPaneContent.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </ClCompile>
+
   </ItemGroup>
   <!-- ========================= idl Files ======================== -->
   <ItemGroup>
@@ -307,6 +328,7 @@
     <Midl Include="App.idl">
       <DependentUpon>App.xaml</DependentUpon>
     </Midl>
+    <Midl Include="Remoting.idl" />
     <Midl Include="PaletteItemTemplateSelector.idl">
       <SubType>Designer</SubType>
     </Midl>
@@ -361,11 +383,15 @@
     </Midl>
     <Midl Include="FilteredCommand.idl" />
     <Midl Include="IPaneContent.idl" />
-    <Midl Include="TerminalPaneContent.idl" >
+    <Midl Include="TerminalPaneContent.idl">
       <DependentUpon>TaskPaneContent.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>
     <Midl Include="TerminalSettingsCache.idl" />
+    <Midl Include="MarkdownPaneContent.idl">
+      <DependentUpon>MarkdownPaneContent.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Midl>
   </ItemGroup>
   <!-- ========================= Misc Files ======================== -->
   <ItemGroup>
@@ -414,6 +440,11 @@
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\UIHelpers\UIHelpers.vcxproj">
       <Project>{6515F03F-E56D-4DB4-B23D-AC4FB80DB36F}</Project>
     </ProjectReference>
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\UIMarkdown\UIMarkdown.vcxproj">
+      <Project>{7615F03F-E56D-4DB4-B23D-BD4FB80DB36F}</Project>
+      <Private>true</Private>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
 
   </ItemGroup>
   <PropertyGroup>
@@ -453,6 +484,12 @@
     </Reference>
     <Reference Include="Microsoft.Terminal.Core">
       <HintPath>$(OpenConsoleCommonOutDir)TerminalCore\Microsoft.Terminal.Core.winmd</HintPath>
+      <IsWinMDFile>true</IsWinMDFile>
+      <Private>false</Private>
+      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
+    </Reference>
+    <Reference Include="Microsoft.Terminal.UI.Markdown">
+      <HintPath>$(OpenConsoleCommonOutDir)Microsoft.Terminal.UI.Markdown\Microsoft.Terminal.UI.Markdown.winmd</HintPath>
       <IsWinMDFile>true</IsWinMDFile>
       <Private>false</Private>
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>

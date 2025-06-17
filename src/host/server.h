@@ -90,6 +90,9 @@ public:
     // the following fields are used for ansi-unicode translation
     UINT CP = 0;
     UINT OutputCP = 0;
+    // the VT RIS sequence uses these default values to reset the code pages
+    UINT DefaultCP = 0;
+    UINT DefaultOutputCP = 0;
 
     ULONG CtrlFlags = 0; // indicates outstanding ctrl requests
     ULONG LimitingProcessId = 0;
@@ -103,7 +106,10 @@ public:
     bool IsConsoleLocked() const noexcept;
     ULONG GetCSRecursionCount() const noexcept;
 
-    Microsoft::Console::VirtualTerminal::VtIo* GetVtIo();
+    Microsoft::Console::VirtualTerminal::VtIo* GetVtIo() noexcept;
+    Microsoft::Console::VirtualTerminal::VtIo::Writer GetVtWriter() noexcept;
+    Microsoft::Console::VirtualTerminal::VtIo::Writer GetVtWriterForBuffer(const SCREEN_INFORMATION* context) noexcept;
+    bool IsInVtIoMode() const noexcept;
 
     SCREEN_INFORMATION& GetActiveOutputBuffer() override;
     const SCREEN_INFORMATION& GetActiveOutputBuffer() const override;
@@ -112,7 +118,6 @@ public:
 
     InputBuffer* const GetActiveInputBuffer() const override;
 
-    bool IsInVtIoMode() const;
     bool HasPendingCookedRead() const noexcept;
     bool HasPendingPopup() const noexcept;
     const COOKED_READ_DATA& CookedReadData() const noexcept;
@@ -121,6 +126,8 @@ public:
 
     bool GetBracketedPasteMode() const noexcept;
     void SetBracketedPasteMode(const bool enabled) noexcept;
+    void CopyTextToClipboard(const std::wstring_view text);
+    std::optional<std::wstring> UsePendingClipboardText();
 
     void SetTitle(const std::wstring_view newTitle);
     void SetTitlePrefix(const std::wstring_view newTitlePrefix);
@@ -155,15 +162,16 @@ private:
     SCREEN_INFORMATION* pCurrentScreenBuffer = nullptr;
     COOKED_READ_DATA* _cookedReadData = nullptr; // non-ownership pointer
     bool _bracketedPasteMode = false;
+    std::optional<std::wstring> _pendingClipboardText;
 
     Microsoft::Console::VirtualTerminal::VtIo _vtIo;
     Microsoft::Console::CursorBlinker _blinker;
     MidiAudio _midiAudio;
 };
 
-#define CONSOLE_STATUS_WAIT 0xC0030001
-#define CONSOLE_STATUS_READ_COMPLETE 0xC0030002
-#define CONSOLE_STATUS_WAIT_NO_BLOCK 0xC0030003
+#define CONSOLE_STATUS_WAIT ((HRESULT)0xC0030001)
+#define CONSOLE_STATUS_READ_COMPLETE ((HRESULT)0xC0030002)
+#define CONSOLE_STATUS_WAIT_NO_BLOCK ((HRESULT)0xC0030003)
 
 #include "../server/ObjectHandle.h"
 

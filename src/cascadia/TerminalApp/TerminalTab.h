@@ -91,6 +91,7 @@ namespace winrt::TerminalApp::implementation
         winrt::TerminalApp::TaskbarState GetCombinedTaskbarState() const;
 
         std::shared_ptr<Pane> GetRootPane() const { return _rootPane; }
+        std::vector<uint32_t> GetMruPanes() const { return _mruPanes; }
 
         winrt::TerminalApp::TerminalTabStatus TabStatus()
         {
@@ -196,7 +197,6 @@ namespace winrt::TerminalApp::implementation
         void _splitTabClicked(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::RoutedEventArgs& e);
         void _closePaneClicked(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::RoutedEventArgs& e);
         void _exportTextClicked(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::RoutedEventArgs& e);
-        void _moveTabToNewWindowClicked(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::RoutedEventArgs& e);
         void _findClicked(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::RoutedEventArgs& e);
 
         void _bubbleRestartTerminalRequested(TerminalApp::TerminalPaneContent sender, const winrt::Windows::Foundation::IInspectable& args);

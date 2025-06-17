@@ -23,22 +23,14 @@ class SearchTests
     TEST_CLASS_SETUP(ClassSetup)
     {
         m_state = new CommonState();
-
-        m_state->PrepareGlobalFont();
-        m_state->PrepareGlobalRenderer();
         m_state->PrepareGlobalScreenBuffer();
-
         return true;
     }
 
     TEST_CLASS_CLEANUP(ClassCleanup)
     {
         m_state->CleanupGlobalScreenBuffer();
-        m_state->CleanupGlobalRenderer();
-        m_state->CleanupGlobalFont();
-
         delete m_state;
-
         return true;
     }
 
@@ -62,7 +54,7 @@ class SearchTests
         const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
         auto coordEndExpected = coordStartExpected;
-        coordEndExpected.x += 1;
+        coordEndExpected.x += 2;
 
         VERIFY_IS_TRUE(s.SelectCurrent());
         VERIFY_ARE_EQUAL(coordStartExpected, gci.renderData.GetSelectionAnchor());

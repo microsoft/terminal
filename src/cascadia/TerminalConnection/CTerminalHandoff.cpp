@@ -14,6 +14,13 @@ static DWORD g_cTerminalHandoffRegistration = 0;
 // Mutex so we only do start/stop/establish one at a time.
 static std::shared_mutex _mtx;
 
+// This is the callback that will be called when a connection is received.
+// Call this once during startup and don't ever change it again (race condition).
+void CTerminalHandoff::s_setCallback(NewHandoffFunction callback) noexcept
+{
+    _pfnHandoff = callback;
+}
+
 // Routine Description:
 // - Starts listening for TerminalHandoff requests by registering
 //   our class and interface with COM.
@@ -21,23 +28,18 @@ static std::shared_mutex _mtx;
 // - pfnHandoff - Function to callback when a handoff is received
 // Return Value:
 // - S_OK, E_NOT_VALID_STATE (start called when already started) or relevant COM registration error.
-HRESULT CTerminalHandoff::s_StartListening(NewHandoffFunction pfnHandoff)
+HRESULT CTerminalHandoff::s_StartListening()
 try
 {
     std::unique_lock lock{ _mtx };
 
-    RETURN_HR_IF(E_NOT_VALID_STATE, _pfnHandoff != nullptr);
-
     const auto classFactory = Make<SimpleClassFactory<CTerminalHandoff>>();
-
-    RETURN_IF_NULL_ALLOC(classFactory);
+    RETURN_LAST_ERROR_IF_NULL(classFactory);
 
     ComPtr<IUnknown> unk;
     RETURN_IF_FAILED(classFactory.As(&unk));
 
     RETURN_IF_FAILED(CoRegisterClassObject(__uuidof(CTerminalHandoff), unk.Get(), CLSCTX_LOCAL_SERVER, REGCLS_SINGLEUSE, &g_cTerminalHandoffRegistration));
-
-    _pfnHandoff = pfnHandoff;
 
     return S_OK;
 }
@@ -53,15 +55,6 @@ CATCH_RETURN()
 HRESULT CTerminalHandoff::s_StopListening()
 {
     std::unique_lock lock{ _mtx };
-    return s_StopListeningLocked();
-}
-
-// See s_StopListening()
-HRESULT CTerminalHandoff::s_StopListeningLocked()
-{
-    RETURN_HR_IF_NULL(E_NOT_VALID_STATE, _pfnHandoff);
-
-    _pfnHandoff = nullptr;
 
     if (g_cTerminalHandoffRegistration)
     {
@@ -69,20 +62,6 @@ HRESULT CTerminalHandoff::s_StopListeningLocked()
         g_cTerminalHandoffRegistration = 0;
     }
 
-    return S_OK;
-}
-
-// Routine Description:
-// - Helper to duplicate a handle to ourselves so we can keep holding onto it
-//   after the caller frees the original one.
-// Arguments:
-// - in - Handle to duplicate
-// - out - Where to place the duplicated value
-// Return Value:
-// - S_OK or Win32 error from `::DuplicateHandle`
-static HRESULT _duplicateHandle(const HANDLE in, HANDLE& out) noexcept
-{
-    RETURN_IF_WIN32_BOOL_FALSE(::DuplicateHandle(GetCurrentProcess(), in, GetCurrentProcess(), &out, 0, FALSE, DUPLICATE_SAME_ACCESS));
     return S_OK;
 }
 
@@ -102,37 +81,19 @@ static HRESULT _duplicateHandle(const HANDLE in, HANDLE& out) noexcept
 // - E_NOT_VALID_STATE if a event handler is not registered before calling. `::DuplicateHandle`
 //   error codes if we cannot manage to make our own copy of handles to retain. Or S_OK/error
 //   from the registered handler event function.
-HRESULT CTerminalHandoff::EstablishPtyHandoff(HANDLE in, HANDLE out, HANDLE signal, HANDLE ref, HANDLE server, HANDLE client, TERMINAL_STARTUP_INFO startupInfo)
+HRESULT CTerminalHandoff::EstablishPtyHandoff(HANDLE* in, HANDLE* out, HANDLE signal, HANDLE reference, HANDLE server, HANDLE client, const TERMINAL_STARTUP_INFO* startupInfo)
 {
     try
     {
-        std::unique_lock lock{ _mtx };
-
-        // s_StopListeningLocked sets _pfnHandoff to nullptr.
-        // localPfnHandoff is tested for nullness below.
-#pragma warning(suppress : 26429) // Symbol '...' is never tested for nullness, it can be marked as not_null (f.23).
-        auto localPfnHandoff = _pfnHandoff;
-
         // Because we are REGCLS_SINGLEUSE... we need to `CoRevokeClassObject` after we handle this ONE call.
         // COM does not automatically clean that up for us. We must do it.
-        LOG_IF_FAILED(s_StopListeningLocked());
+        LOG_IF_FAILED(s_StopListening());
 
         // Report an error if no one registered a handoff function before calling this.
-        THROW_HR_IF_NULL(E_NOT_VALID_STATE, localPfnHandoff);
-
-        // Duplicate the handles from what we received.
-        // The contract with COM specifies that any HANDLEs we receive from the caller belong
-        // to the caller and will be freed when we leave the scope of this method.
-        // Making our own duplicate copy ensures they hang around in our lifetime.
-        THROW_IF_FAILED(_duplicateHandle(in, in));
-        THROW_IF_FAILED(_duplicateHandle(out, out));
-        THROW_IF_FAILED(_duplicateHandle(signal, signal));
-        THROW_IF_FAILED(_duplicateHandle(ref, ref));
-        THROW_IF_FAILED(_duplicateHandle(server, server));
-        THROW_IF_FAILED(_duplicateHandle(client, client));
+        THROW_HR_IF_NULL(E_NOT_VALID_STATE, _pfnHandoff);
 
         // Call registered handler from when we started listening.
-        THROW_IF_FAILED(localPfnHandoff(in, out, signal, ref, server, client, startupInfo));
+        THROW_IF_FAILED(_pfnHandoff(in, out, signal, reference, server, client, startupInfo));
 
 #pragma warning(suppress : 26477)
         TraceLoggingWrite(

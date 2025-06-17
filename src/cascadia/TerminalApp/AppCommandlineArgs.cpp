@@ -833,7 +833,7 @@ void AppCommandlineArgs::_resetStateToDefault()
 // Return Value:
 // - a list of Commandline objects, where each one represents a single
 //   commandline to parse.
-std::vector<Commandline> AppCommandlineArgs::BuildCommands(winrt::array_view<const winrt::hstring>& args)
+std::vector<Commandline> AppCommandlineArgs::BuildCommands(winrt::array_view<const winrt::hstring> args)
 {
     std::vector<Commandline> commands;
     commands.emplace_back(Commandline{});
@@ -983,7 +983,7 @@ bool AppCommandlineArgs::IsHandoffListener() const noexcept
 // Return Value:
 // - The help text, or an error message, generated from parsing the input
 //   provided by the user.
-const std::string& AppCommandlineArgs::GetExitMessage()
+const std::string& AppCommandlineArgs::GetExitMessage() const noexcept
 {
     return _exitMessage;
 }
@@ -1020,10 +1020,21 @@ void AppCommandlineArgs::ValidateStartupCommands()
     // handoff connection from the operating system.
     if (!_isHandoffListener)
     {
+        // If we only have a single x-save command, then set our target to the
+        // current terminal window. This will prevent us from spawning a new
+        // window just to save the commandline.
+        if (_startupActions.size() == 1 &&
+            _startupActions.front().Action() == ShortcutAction::SaveSnippet &&
+            _windowTarget.empty())
+        {
+            _windowTarget = "0";
+        }
         // If we parsed no commands, or the first command we've parsed is not a new
         // tab action, prepend a new-tab command to the front of the list.
-        if (_startupActions.empty() ||
-            _startupActions.front().Action() != ShortcutAction::NewTab)
+        // (also, we don't need to do this if the only action is a x-save)
+        else if (_startupActions.empty() ||
+                 (_startupActions.front().Action() != ShortcutAction::NewTab &&
+                  _startupActions.front().Action() != ShortcutAction::SaveSnippet))
         {
             // Build the NewTab action from the values we've parsed on the commandline.
             NewTerminalArgs newTerminalArgs{};
@@ -1069,7 +1080,7 @@ std::optional<til::size> AppCommandlineArgs::GetSize() const noexcept
 // - args: an array of strings to process as a commandline. These args can contain spaces
 // Return Value:
 // - 0 if the commandline was successfully parsed
-int AppCommandlineArgs::ParseArgs(winrt::array_view<const winrt::hstring>& args)
+int AppCommandlineArgs::ParseArgs(winrt::array_view<const winrt::hstring> args)
 {
     for (const auto& arg : args)
     {

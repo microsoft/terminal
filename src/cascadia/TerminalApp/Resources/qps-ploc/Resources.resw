@@ -193,6 +193,9 @@
   <data name="TabCloseSubMenu" xml:space="preserve">
     <value>Ćļôŝέ !</value>
   </data>
+  <data name="TabMoveSubMenu" xml:space="preserve">
+    <value>Μòνë ťäв !!</value>
+  </data>
   <data name="TabCloseAfter" xml:space="preserve">
     <value>Ċĺοşέ ţаъş ťό ŧђé яΐğђт !!! !!! </value>
   </data>
@@ -210,6 +213,45 @@
   </data>
   <data name="SplitPaneText" xml:space="preserve">
     <value>Šрŀіт φªňë !!!</value>
+  </data>
+  <data name="SplitPaneToolTipText" xml:space="preserve">
+    <value>Ґΐĝĥτ ςļìск ƒôŗ ѕрℓΐť δįяęčŧįόпŝ - гΐġћŧ/đôшň/µρ/ľëƒт !!! !!! !!! !!! !!! </value>
+  </data>
+  <data name="SplitPaneDownText" xml:space="preserve">
+    <value>Śφľīţ φǻńě ðбẃή !!! !</value>
+  </data>
+  <data name="SplitPaneRightText" xml:space="preserve">
+    <value>Śрĺїť рâйê řіġнţ !!! !</value>
+  </data>
+  <data name="SplitPaneUpText" xml:space="preserve">
+    <value>Ŝрļįŧ рâⁿë ūφ !!! </value>
+  </data>
+  <data name="SplitPaneLeftText" xml:space="preserve">
+    <value>Ѕрľîţ φâиè ļзƒţ !!! !</value>
+  </data>
+  <data name="SplitPaneDuplicateText" xml:space="preserve">
+    <value>Đύрľįčäтè !!!</value>
+  </data>
+  <data name="SwapPaneText" xml:space="preserve">
+    <value>Šŵάφ рąņё !!!</value>
+  </data>
+  <data name="SwapPaneDownText" xml:space="preserve">
+    <value>Ѕщǻφ ρåπê ďōщπ !!! !</value>
+  </data>
+  <data name="SwapPaneRightText" xml:space="preserve">
+    <value>Şώǻρ ρâпέ ŕïġђţ !!! !</value>
+  </data>
+  <data name="SwapPaneUpText" xml:space="preserve">
+    <value>Śωãр φàňє цр !!! </value>
+  </data>
+  <data name="SwapPaneLeftText" xml:space="preserve">
+    <value>Šŵªφ ρäήę łеƒť !!! !</value>
+  </data>
+  <data name="TogglePaneZoomText" xml:space="preserve">
+    <value>Тøģġľε φªηê żοбм !!! !</value>
+  </data>
+  <data name="CloseOtherPanesText" xml:space="preserve">
+    <value>Ċłǿѕē ōŧĥзŗ рάпèś !!! !!</value>
   </data>
   <data name="SearchWebText" xml:space="preserve">
     <value>Ẅёв şĕаŕčĥ !!!</value>
@@ -730,12 +772,6 @@
   <data name="WindowRenamer.CloseButtonContent" xml:space="preserve">
     <value>Сªⁿċĕĺ !</value>
   </data>
-  <data name="RenameFailedToast.Title" xml:space="preserve">
-    <value>₣âιļĕđ ŧо ѓëňąмë щϊπδǿω !!! !!! </value>
-  </data>
-  <data name="RenameFailedToast.Subtitle" xml:space="preserve">
-    <value>Άņόтĥěŗ ẃїлðοω ẁιťĥ ťћаť пâmě ăļřéàδў ёжìśŧѕ !!! !!! !!! !!! !</value>
-  </data>
   <data name="WindowMaximizeButtonToolTip" xml:space="preserve">
     <value>Μą×ìmϊżé !!</value>
   </data>
@@ -940,5 +976,14 @@
   </data>
   <data name="CloseSnippetsPaneButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Ćℓǿŝé ρдŉé !!!</value>
+  </data>
+  <data name="TabMoveLeft" xml:space="preserve">
+    <value>Μŏνê ĺэƒť !!!</value>
+  </data>
+  <data name="TabMoveRight" xml:space="preserve">
+    <value>Мóνε яίģнŧ !!!</value>
+  </data>
+  <data name="InvalidRegex" xml:space="preserve">
+    <value>Дŉ ΐňνãľîδ ŗěğµℓдř ë×ρяēѕšιбή ẃăѕ ƒοůŉđ. !!! !!! !!! !!!</value>
   </data>
 </root>

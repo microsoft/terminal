@@ -40,16 +40,9 @@ const TextAttribute& Page::Attributes() const noexcept
     return _buffer.GetCurrentAttributes();
 }
 
-void Page::SetAttributes(const TextAttribute& attr, ITerminalApi* api) const
+void Page::SetAttributes(const TextAttribute& attr) const noexcept
 {
     _buffer.SetCurrentAttributes(attr);
-    // If the api parameter was specified, we need to pass the new attributes
-    // through to the api. This occurs when there's a potential for the colors
-    // to be changed, which may require some legacy remapping in conhost.
-    if (api)
-    {
-        api->SetTextAttributes(attr);
-    }
 }
 
 til::size Page::Size() const noexcept

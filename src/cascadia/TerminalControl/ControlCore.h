@@ -94,6 +94,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         void UpdateSettings(const Control::IControlSettings& settings, const IControlAppearance& newAppearance);
         void ApplyAppearance(const bool focused);
+        void SetHighContrastMode(const bool enabled);
         Control::IControlSettings Settings();
         Control::IControlAppearance FocusedAppearance() const;
         Control::IControlAppearance UnfocusedAppearance() const;
@@ -123,7 +124,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         void SendInput(std::wstring_view wstr);
         void PasteText(const winrt::hstring& hstr);
-        bool CopySelectionToClipboard(bool singleLine, const Windows::Foundation::IReference<CopyFormat>& formats);
+        bool CopySelectionToClipboard(bool singleLine, bool withControlSequences, const Windows::Foundation::IReference<CopyFormat>& formats);
         void SelectAll();
         void ClearSelection();
         bool ToggleBlockSelection();
@@ -157,6 +158,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         void ClearQuickFix();
 
+        void OpenCWD();
+
 #pragma region ICoreState
         const size_t TaskbarState() const noexcept;
         const size_t TaskbarProgress() const noexcept;
@@ -188,6 +191,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         void ContextMenuSelectCommand();
         void ContextMenuSelectOutput();
+
+        winrt::hstring CurrentWorkingDirectory() const;
 #pragma endregion
 
 #pragma region ITerminalInput
@@ -223,11 +228,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void SetSelectionAnchor(const til::point position);
         void SetEndSelectionPoint(const til::point position);
 
-        SearchResults Search(const std::wstring_view& text, bool goForward, bool caseSensitive, bool regularExpression, bool reset);
+        SearchResults Search(SearchRequest request);
         const std::vector<til::point_span>& SearchResultRows() const noexcept;
         void ClearSearch();
-        void SnapSearchResultToSelection(bool snap) noexcept;
-        bool SnapSearchResultToSelection() const noexcept;
 
         void LeftClickOnTerminal(const til::point terminalPosition,
                                  const int numberOfClicks,
@@ -293,6 +296,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         til::typed_event<IInspectable, Control::CompletionsChangedEventArgs> CompletionsChanged;
         til::typed_event<IInspectable, Control::SearchMissingCommandEventArgs> SearchMissingCommand;
         til::typed_event<> RefreshQuickFixUI;
+        til::typed_event<IInspectable, Control::WindowSizeChangedEventArgs> WindowSizeChanged;
 
         til::typed_event<> CloseTerminalRequested;
         til::typed_event<> RestartTerminalRequested;
@@ -304,67 +308,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         struct SharedState
         {
             std::unique_ptr<til::debounced_func_trailing<>> outputIdle;
+            std::unique_ptr<til::debounced_func_trailing<bool>> focusChanged;
             std::shared_ptr<ThrottledFuncTrailing<Control::ScrollPositionChangedArgs>> updateScrollBar;
         };
 
-        std::atomic<bool> _initializedTerminal{ false };
-        bool _closing{ false };
-
-        TerminalConnection::ITerminalConnection _connection{ nullptr };
-        TerminalConnection::ITerminalConnection::TerminalOutput_revoker _connectionOutputEventRevoker;
-        TerminalConnection::ITerminalConnection::StateChanged_revoker _connectionStateChangedRevoker;
-
-        winrt::com_ptr<ControlSettings> _settings{ nullptr };
-
-        std::shared_ptr<::Microsoft::Terminal::Core::Terminal> _terminal{ nullptr };
-
-        // NOTE: _renderEngine must be ordered before _renderer.
-        //
-        // As _renderer has a dependency on _renderEngine (through a raw pointer)
-        // we must ensure the _renderer is deallocated first.
-        // (C++ class members are destroyed in reverse order.)
-        std::unique_ptr<::Microsoft::Console::Render::Atlas::AtlasEngine> _renderEngine{ nullptr };
-        std::unique_ptr<::Microsoft::Console::Render::Renderer> _renderer{ nullptr };
-
-        ::Search _searcher;
-        bool _snapSearchResultToSelection;
-
-        winrt::handle _lastSwapChainHandle{ nullptr };
-
-        FontInfoDesired _desiredFont;
-        FontInfo _actualFont;
-        bool _builtinGlyphs = true;
-        bool _colorGlyphs = true;
-        CSSLengthPercentage _cellWidth;
-        CSSLengthPercentage _cellHeight;
-
-        // storage location for the leading surrogate of a utf-16 surrogate pair
-        std::optional<wchar_t> _leadingSurrogate{ std::nullopt };
-
-        std::optional<til::point> _lastHoveredCell{ std::nullopt };
-        // Track the last hyperlink ID we hovered over
-        uint16_t _lastHoveredId{ 0 };
-
-        bool _isReadOnly{ false };
-
-        std::optional<interval_tree::IntervalTree<til::point, size_t>::interval> _lastHoveredInterval{ std::nullopt };
-
-        // These members represent the size of the surface that we should be
-        // rendering to.
-        float _panelWidth{ 0 };
-        float _panelHeight{ 0 };
-        float _compositionScale{ 0 };
-
-        uint64_t _owningHwnd{ 0 };
-
-        winrt::Windows::System::DispatcherQueue _dispatcher{ nullptr };
-        til::shared_mutex<SharedState> _shared;
-
-        til::point _contextMenuBufferPosition{ 0, 0 };
-
-        Windows::Foundation::Collections::IVector<hstring> _cachedQuickFixes{ nullptr };
-
         void _setupDispatcherAndCallbacks();
+        void _closeConnection();
 
         bool _setFontSizeUnderLock(float fontSize);
         void _updateFont();
@@ -387,18 +336,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void _terminalPlayMidiNote(const int noteNumber,
                                    const int velocity,
                                    const std::chrono::microseconds duration);
-        void _terminalSearchMissingCommand(std::wstring_view missingCommand);
+        void _terminalSearchMissingCommand(std::wstring_view missingCommand, const til::CoordType& bufferRow);
+        void _terminalWindowSizeChanged(int32_t width, int32_t height);
 
-        winrt::fire_and_forget _terminalCompletionsChanged(std::wstring_view menuJson, unsigned int replaceLength);
-
+        safe_void_coroutine _terminalCompletionsChanged(std::wstring_view menuJson, unsigned int replaceLength);
 #pragma endregion
-
-        MidiAudio _midiAudio;
-        winrt::Windows::System::DispatcherQueueTimer _midiAudioSkipTimer{ nullptr };
 
 #pragma region RendererCallbacks
         void _rendererWarning(const HRESULT hr, wil::zwstring_view parameter);
-        winrt::fire_and_forget _renderEngineSwapChainChanged(const HANDLE handle);
+        safe_void_coroutine _renderEngineSwapChainChanged(const HANDLE handle);
         void _rendererBackgroundColorChanged();
         void _rendererTabColorChanged();
 #pragma endregion
@@ -406,6 +352,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void _raiseReadOnlyWarning();
         void _updateAntiAliasingMode();
         void _connectionOutputHandler(const hstring& hstr);
+        void _connectionStateChangedHandler(const TerminalConnection::ITerminalConnection&, const Windows::Foundation::IInspectable&);
         void _updateHoveredCell(const std::optional<til::point> terminalPosition);
         void _setOpacity(const float opacity, const bool focused = true);
 
@@ -436,6 +383,70 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 #endif
             return _closing;
         }
+
+        // Caches responses generated by our VT parser (= improved batching).
+        std::wstring _pendingResponses;
+
+        // Font stuff.
+        FontInfoDesired _desiredFont;
+        FontInfo _actualFont;
+        bool _builtinGlyphs = true;
+        bool _colorGlyphs = true;
+        CSSLengthPercentage _cellWidth;
+        CSSLengthPercentage _cellHeight;
+
+        // Rendering stuff.
+        winrt::handle _lastSwapChainHandle{ nullptr };
+        uint64_t _owningHwnd{ 0 };
+        float _panelWidth{ 0 };
+        float _panelHeight{ 0 };
+        float _compositionScale{ 0 };
+
+        // Audio stuff.
+        MidiAudio _midiAudio;
+        winrt::Windows::System::DispatcherQueueTimer _midiAudioSkipTimer{ nullptr };
+
+        // Other stuff.
+        winrt::Windows::System::DispatcherQueue _dispatcher{ nullptr };
+        winrt::com_ptr<ControlSettings> _settings{ nullptr };
+        til::point _contextMenuBufferPosition{ 0, 0 };
+        Windows::Foundation::Collections::IVector<hstring> _cachedQuickFixes{ nullptr };
+        ::Search _searcher;
+        std::optional<interval_tree::IntervalTree<til::point, size_t>::interval> _lastHoveredInterval;
+        std::optional<wchar_t> _leadingSurrogate;
+        std::optional<til::point> _lastHoveredCell;
+        uint16_t _lastHoveredId{ 0 };
+        std::atomic<bool> _initializedTerminal{ false };
+        bool _isReadOnly{ false };
+        bool _closing{ false };
+
+        // ----------------------------------------------------------------------------------------
+        // These are ordered last to ensure they're destroyed first.
+        // This ensures that their respective contents stops taking dependency on the above.
+        // I recommend reading the following paragraphs in reverse order.
+        // ----------------------------------------------------------------------------------------
+
+        // ↑ This one is tricky - all of these are raw pointers:
+        //   1. _terminal depends on _renderer (for invalidations)
+        //   2. _renderer depends on _terminal (for IRenderData)
+        //      = circular dependency = architectural flaw (lifetime issues) = TODO
+        //   3. _renderer depends on _renderEngine (AtlasEngine)
+        // To solve the knot, we manually stop the renderer in the destructor,
+        // which breaks 2. We can proceed then proceed to break 1. and then 3.
+        std::unique_ptr<::Microsoft::Console::Render::Atlas::AtlasEngine> _renderEngine{ nullptr }; // 3.
+        std::unique_ptr<::Microsoft::Console::Render::Renderer> _renderer{ nullptr }; // 3.
+        std::shared_ptr<::Microsoft::Terminal::Core::Terminal> _terminal{ nullptr }; // 1.
+
+        // ↑ MOST IMPORTANTLY: `_outputIdle` takes dependency on the raw `this` pointer (necessarily).
+        // Destroying SharedState here will block until all pending `debounced_func_trailing` calls are completed.
+        til::shared_mutex<SharedState> _shared;
+
+        // ↑ Prevent any more unnecessary `_outputIdle` calls.
+        // Technically none of these members are destroyed here. Instead, the destructor will call Close()
+        // which calls _closeConnection() which in turn manually & safely destroys them in the correct order.
+        TerminalConnection::ITerminalConnection::TerminalOutput_revoker _connectionOutputEventRevoker;
+        TerminalConnection::ITerminalConnection::StateChanged_revoker _connectionStateChangedRevoker;
+        TerminalConnection::ITerminalConnection _connection{ nullptr };
 
         friend class ControlUnitTests::ControlCoreTests;
         friend class ControlUnitTests::ControlInteractivityTests;

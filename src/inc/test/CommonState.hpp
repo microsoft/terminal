@@ -35,7 +35,7 @@ public:
     CommonState() :
         m_heap(GetProcessHeap()),
         m_hrTextBufferInfo(E_FAIL),
-        m_pFontInfo(nullptr),
+        m_pFontInfo{ L"Consolas", 0, 0, { 8, 12 }, 0 },
         m_backupTextBufferInfo(),
         m_readHandle(nullptr)
     {
@@ -63,29 +63,7 @@ public:
 
     void PrepareGlobalFont(const til::size coordFontSize = { 8, 12 })
     {
-        m_pFontInfo = new FontInfo(L"Consolas", 0, 0, coordFontSize, 0);
-    }
-
-    void CleanupGlobalFont()
-    {
-        if (m_pFontInfo != nullptr)
-        {
-            delete m_pFontInfo;
-        }
-    }
-
-    void PrepareGlobalRenderer()
-    {
-        Globals& g = Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals();
-        CONSOLE_INFORMATION& gci = g.getConsoleInformation();
-        g.pRender = new Microsoft::Console::Render::Renderer(gci.GetRenderSettings(), &gci.renderData, nullptr, 0, nullptr);
-    }
-
-    void CleanupGlobalRenderer()
-    {
-        Globals& g = Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals();
-        delete g.pRender;
-        g.pRender = nullptr;
+        m_pFontInfo = { L"Consolas", 0, 0, coordFontSize, 0 };
     }
 
     void PrepareGlobalScreenBuffer(const til::CoordType viewWidth = s_csWindowWidth,
@@ -106,7 +84,7 @@ public:
         UINT uiCursorSize = 12;
 
         THROW_IF_FAILED(SCREEN_INFORMATION::CreateInstance(coordWindowSize,
-                                                           *m_pFontInfo,
+                                                           m_pFontInfo,
                                                            coordScreenBufferSize,
                                                            TextAttribute{},
                                                            TextAttribute{ FOREGROUND_BLUE | FOREGROUND_INTENSITY | BACKGROUND_RED },
@@ -238,7 +216,43 @@ public:
         for (til::CoordType iRow = 0; iRow < cRowsToFill; iRow++)
         {
             ROW& row = textBuffer.GetMutableRowByOffset(iRow);
-            FillRow(&row, iRow & 1);
+
+            // fill a row
+            // - Each row is populated with L"AB\u304bC\u304dDE      "
+            // - 7 characters, 6 spaces. 13 total
+            // - The characters take up first 9 columns. (The wide glyphs take up 2 columns each)
+            // - か = \x304b, き = \x304d
+
+            uint16_t column = 0;
+            for (const auto& ch : std::wstring_view{ L"AB\u304bC\u304dDE      " })
+            {
+                const uint16_t width = ch >= 0x80 ? 2 : 1;
+                row.ReplaceCharacters(column, width, { &ch, 1 });
+                column += width;
+            }
+
+            // A = bright red on dark gray
+            // This string starts at index 0
+            auto Attr = TextAttribute(FOREGROUND_RED | FOREGROUND_INTENSITY | BACKGROUND_INTENSITY);
+            row.SetAttrToEnd(0, Attr);
+
+            // BかC = dark gold on bright blue
+            // This string starts at index 1
+            Attr = TextAttribute(FOREGROUND_RED | FOREGROUND_GREEN | BACKGROUND_BLUE | BACKGROUND_INTENSITY);
+            row.SetAttrToEnd(1, Attr);
+
+            // き = bright white on dark purple
+            // This string starts at index 5
+            Attr = TextAttribute(FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY | BACKGROUND_RED | BACKGROUND_BLUE);
+            row.SetAttrToEnd(5, Attr);
+
+            // DE = black on dark green
+            // This string starts at index 7
+            Attr = TextAttribute(BACKGROUND_GREEN);
+            row.SetAttrToEnd(7, Attr);
+
+            // odd rows forced a wrap
+            row.SetWrapForced(iRow & 1);
         }
 
         textBuffer.GetCursor().SetYPosition(cRowsToFill);
@@ -252,54 +266,7 @@ public:
 private:
     HANDLE m_heap;
     HRESULT m_hrTextBufferInfo;
-    FontInfo* m_pFontInfo;
+    FontInfo m_pFontInfo;
     std::unique_ptr<TextBuffer> m_backupTextBufferInfo;
     std::unique_ptr<INPUT_READ_HANDLE_DATA> m_readHandle;
-
-    void FillRow(ROW* pRow, bool wrapForced)
-    {
-        // fill a row
-        // - Each row is populated with L"AB\u304bC\u304dDE      "
-        // - 7 characters, 6 spaces. 13 total
-        // - The characters take up first 9 columns. (The wide glyphs take up 2 columns each)
-        // - か = \x304b, き = \x304d
-
-        uint16_t column = 0;
-        for (const auto& ch : std::wstring_view{ L"AB\u304bC\u304dDE      " })
-        {
-            const uint16_t width = ch >= 0x80 ? 2 : 1;
-            pRow->ReplaceCharacters(column, width, { &ch, 1 });
-            column += width;
-        }
-
-        // A = bright red on dark gray
-        // This string starts at index 0
-        auto Attr = TextAttribute(FOREGROUND_RED | FOREGROUND_INTENSITY | BACKGROUND_INTENSITY);
-        pRow->SetAttrToEnd(0, Attr);
-
-        // BかC = dark gold on bright blue
-        // This string starts at index 1
-        Attr = TextAttribute(FOREGROUND_RED | FOREGROUND_GREEN | BACKGROUND_BLUE | BACKGROUND_INTENSITY);
-        pRow->SetAttrToEnd(1, Attr);
-
-        // き = bright white on dark purple
-        // This string starts at index 5
-        Attr = TextAttribute(FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY | BACKGROUND_RED | BACKGROUND_BLUE);
-        pRow->SetAttrToEnd(5, Attr);
-
-        // DE = black on dark green
-        // This string starts at index 7
-        Attr = TextAttribute(BACKGROUND_GREEN);
-        pRow->SetAttrToEnd(7, Attr);
-
-        // odd rows forced a wrap
-        if (wrapForced)
-        {
-            pRow->SetWrapForced(true);
-        }
-        else
-        {
-            pRow->SetWrapForced(false);
-        }
-    }
 };

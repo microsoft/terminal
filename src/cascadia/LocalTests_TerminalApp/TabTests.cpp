@@ -287,7 +287,7 @@ namespace TerminalAppLocalTests
             NewTabArgs args{ newTerminalArgs };
             ActionAndArgs newTabAction{ ShortcutAction::NewTab, args };
             // push the arg onto the front
-            page->_startupActions.Append(newTabAction);
+            page->_startupActions.push_back(std::move(newTabAction));
             Log::Comment(L"Added a single newTab action");
 
             auto app = ::winrt::Windows::UI::Xaml::Application::Current();
@@ -1288,12 +1288,6 @@ namespace TerminalAppLocalTests
         END_TEST_METHOD_PROPERTIES()
 
         auto page = _commonSetup();
-        page->RenameWindowRequested([&page](auto&&, auto&&) {
-            // In the real terminal, this would bounce up to the monarch and
-            // come back down. Instead, immediately call back to tell the terminal it failed.
-            page->RenameFailed();
-        });
-
         auto windowNameChanged = false;
 
         page->PropertyChanged([&page, &windowNameChanged](auto&&, const winrt::WUX::Data::PropertyChangedEventArgs& args) mutable {

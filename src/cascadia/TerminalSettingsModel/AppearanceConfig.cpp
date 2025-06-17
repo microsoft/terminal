@@ -90,27 +90,42 @@ Json::Value AppearanceConfig::ToJson() const
 void AppearanceConfig::LayerJson(const Json::Value& json)
 {
     JsonUtils::GetValueForKey(json, ForegroundKey, _Foreground);
+    _logSettingIfSet(ForegroundKey, _Foreground.has_value());
+
     JsonUtils::GetValueForKey(json, BackgroundKey, _Background);
+    _logSettingIfSet(BackgroundKey, _Background.has_value());
+
     JsonUtils::GetValueForKey(json, SelectionBackgroundKey, _SelectionBackground);
+    _logSettingIfSet(SelectionBackgroundKey, _SelectionBackground.has_value());
+
     JsonUtils::GetValueForKey(json, CursorColorKey, _CursorColor);
+    _logSettingIfSet(CursorColorKey, _CursorColor.has_value());
 
     JsonUtils::GetValueForKey(json, LegacyAcrylicTransparencyKey, _Opacity);
     JsonUtils::GetValueForKey(json, OpacityKey, _Opacity, JsonUtils::OptionalConverter<float, IntAsFloatPercentConversionTrait>{});
+    _logSettingIfSet(OpacityKey, _Opacity.has_value());
+
     if (json["colorScheme"].isString())
     {
         // to make the UI happy, set ColorSchemeName.
         JsonUtils::GetValueForKey(json, ColorSchemeKey, _DarkColorSchemeName);
         _LightColorSchemeName = _DarkColorSchemeName;
+        _logSettingSet(ColorSchemeKey);
     }
     else if (json["colorScheme"].isObject())
     {
         // to make the UI happy, set ColorSchemeName to whatever the dark value is.
         JsonUtils::GetValueForKey(json["colorScheme"], "dark", _DarkColorSchemeName);
         JsonUtils::GetValueForKey(json["colorScheme"], "light", _LightColorSchemeName);
+
+        _logSettingSet("colorScheme.dark");
+        _logSettingSet("colorScheme.light");
     }
 
 #define APPEARANCE_SETTINGS_LAYER_JSON(type, name, jsonKey, ...) \
-    JsonUtils::GetValueForKey(json, jsonKey, _##name);
+    JsonUtils::GetValueForKey(json, jsonKey, _##name);           \
+    _logSettingIfSet(jsonKey, _##name.has_value());
+
     MTSM_APPEARANCE_SETTINGS(APPEARANCE_SETTINGS_LAYER_JSON)
 #undef APPEARANCE_SETTINGS_LAYER_JSON
 }
@@ -148,11 +163,32 @@ winrt::hstring AppearanceConfig::ExpandedBackgroundImagePath()
         }
         else
         {
-            return winrt::hstring{ L"" };
+            return {};
         }
     }
     else
     {
         return winrt::hstring{ wil::ExpandEnvironmentStringsW<std::wstring>(path.c_str()) };
+    }
+}
+
+void AppearanceConfig::_logSettingSet(const std::string_view& setting)
+{
+    _changeLog.emplace(setting);
+}
+
+void AppearanceConfig::_logSettingIfSet(const std::string_view& setting, const bool isSet)
+{
+    if (isSet)
+    {
+        _logSettingSet(setting);
+    }
+}
+
+void AppearanceConfig::LogSettingChanges(std::set<std::string>& changes, const std::string_view& context) const
+{
+    for (const auto& setting : _changeLog)
+    {
+        changes.emplace(fmt::format(FMT_COMPILE("{}.{}"), context, setting));
     }
 }

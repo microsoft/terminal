@@ -54,6 +54,9 @@ namespace winrt::TerminalApp::implementation
         winrt::Windows::UI::Xaml::FocusState _focusState{ winrt::Windows::UI::Xaml::FocusState::Unfocused };
         winrt::Windows::UI::Xaml::Controls::MenuFlyoutItem _closeOtherTabsMenuItem{};
         winrt::Windows::UI::Xaml::Controls::MenuFlyoutItem _closeTabsAfterMenuItem{};
+        winrt::Windows::UI::Xaml::Controls::MenuFlyoutItem _moveToNewWindowMenuItem{};
+        winrt::Windows::UI::Xaml::Controls::MenuFlyoutItem _moveRightMenuItem{};
+        winrt::Windows::UI::Xaml::Controls::MenuFlyoutItem _moveLeftMenuItem{};
         winrt::TerminalApp::ShortcutActionDispatch _dispatch;
         Microsoft::Terminal::Settings::Model::IActionMapView _actionMap{ nullptr };
         winrt::hstring _keyChord{};
@@ -69,10 +72,9 @@ namespace winrt::TerminalApp::implementation
 
         virtual void _MakeTabViewItem();
 
+        void _AppendMoveMenuItems(winrt::Windows::UI::Xaml::Controls::MenuFlyout flyout);
         winrt::Windows::UI::Xaml::Controls::MenuFlyoutSubItem _AppendCloseMenuItems(winrt::Windows::UI::Xaml::Controls::MenuFlyout flyout);
-        void _EnableCloseMenuItems();
-        void _CloseTabsAfter();
-        void _CloseOtherTabs();
+        void _EnableMenuItems();
         void _UpdateSwitchToTabKeyChord();
         void _UpdateToolTip();
 

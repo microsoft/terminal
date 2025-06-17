@@ -14,12 +14,15 @@ namespace Microsoft.Terminal.Core
 
         Boolean SnapOnInput;
         Boolean AltGrAliasing;
+        String AnswerbackMessage;
 
         String StartingTitle;
         Boolean SuppressApplicationTitle;
         String WordDelimiters;
 
         Boolean ForceVTInput;
+        Boolean AllowVtChecksumReport;
+        Boolean AllowVtClipboardWrite;
         Boolean TrimBlockSelection;
         Boolean DetectURLs;
 

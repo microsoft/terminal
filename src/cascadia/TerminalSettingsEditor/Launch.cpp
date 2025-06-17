@@ -5,6 +5,7 @@
 #include "Launch.h"
 #include "Launch.g.cpp"
 #include "EnumEntry.h"
+#include "LaunchViewModel.h"
 
 #include <LibraryResources.h>
 
@@ -40,5 +41,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     void Launch::OnNavigatedTo(const NavigationEventArgs& e)
     {
         _ViewModel = e.Parameter().as<Editor::LaunchViewModel>();
+        auto innerViewModel{ winrt::get_self<Editor::implementation::LaunchViewModel>(_ViewModel) };
+        /* coroutine dispatch */ innerViewModel->PrepareStartOnUserLoginSettings();
     }
 }

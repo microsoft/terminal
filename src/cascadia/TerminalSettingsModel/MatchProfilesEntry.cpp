@@ -8,66 +8,107 @@
 #include "MatchProfilesEntry.g.cpp"
 
 using namespace Microsoft::Terminal::Settings::Model;
-using namespace winrt::Microsoft::Terminal::Settings::Model::implementation;
 
 static constexpr std::string_view NameKey{ "name" };
 static constexpr std::string_view CommandlineKey{ "commandline" };
 static constexpr std::string_view SourceKey{ "source" };
 
-MatchProfilesEntry::MatchProfilesEntry() noexcept :
-    MatchProfilesEntryT<MatchProfilesEntry, ProfileCollectionEntry>(NewTabMenuEntryType::MatchProfiles)
+namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
-}
-
-Json::Value MatchProfilesEntry::ToJson() const
-{
-    auto json = NewTabMenuEntry::ToJson();
-
-    JsonUtils::SetValueForKey(json, NameKey, _Name);
-    JsonUtils::SetValueForKey(json, CommandlineKey, _Commandline);
-    JsonUtils::SetValueForKey(json, SourceKey, _Source);
-
-    return json;
-}
-
-winrt::com_ptr<NewTabMenuEntry> MatchProfilesEntry::FromJson(const Json::Value& json)
-{
-    auto entry = winrt::make_self<MatchProfilesEntry>();
-
-    JsonUtils::GetValueForKey(json, NameKey, entry->_Name);
-    JsonUtils::GetValueForKey(json, CommandlineKey, entry->_Commandline);
-    JsonUtils::GetValueForKey(json, SourceKey, entry->_Source);
-
-    return entry;
-}
-
-bool MatchProfilesEntry::MatchesProfile(const Model::Profile& profile)
-{
-    // We use an optional here instead of a simple bool directly, since there is no
-    // sensible default value for the desired semantics: the first property we want
-    // to match on should always be applied (so one would set "true" as a default),
-    // but if none of the properties are set, the default return value should be false
-    // since this entry type is expected to behave like a positive match/whitelist.
-    //
-    // The easiest way to deal with this neatly is to use an optional, then for any
-    // property to match we consider a null value to be "true", and for the return
-    // value of the function we consider the null value to be "false".
-    auto isMatching = std::optional<bool>{};
-
-    if (!_Name.empty())
+    MatchProfilesEntry::MatchProfilesEntry() noexcept :
+        MatchProfilesEntryT<MatchProfilesEntry, ProfileCollectionEntry>(NewTabMenuEntryType::MatchProfiles)
     {
-        isMatching = { isMatching.value_or(true) && _Name == profile.Name() };
     }
 
-    if (!_Source.empty())
+    Json::Value MatchProfilesEntry::ToJson() const
     {
-        isMatching = { isMatching.value_or(true) && _Source == profile.Source() };
+        auto json = NewTabMenuEntry::ToJson();
+
+        JsonUtils::SetValueForKey(json, NameKey, _Name);
+        JsonUtils::SetValueForKey(json, CommandlineKey, _Commandline);
+        JsonUtils::SetValueForKey(json, SourceKey, _Source);
+
+        return json;
     }
 
-    if (!_Commandline.empty())
+    winrt::com_ptr<NewTabMenuEntry> MatchProfilesEntry::FromJson(const Json::Value& json)
     {
-        isMatching = { isMatching.value_or(true) && _Commandline == profile.Commandline() };
+        auto entry = winrt::make_self<MatchProfilesEntry>();
+
+        JsonUtils::GetValueForKey(json, NameKey, entry->_Name);
+        entry->_validateAndPopulateNameRegex();
+
+        JsonUtils::GetValueForKey(json, CommandlineKey, entry->_Commandline);
+        entry->_validateAndPopulateCommandlineRegex();
+
+        JsonUtils::GetValueForKey(json, SourceKey, entry->_Source);
+        entry->_validateAndPopulateSourceRegex();
+
+        return entry;
     }
 
-    return isMatching.value_or(false);
+    // Returns true if all regexes are valid, false otherwise
+    bool MatchProfilesEntry::ValidateRegexes() const
+    {
+        return !(_invalidName || _invalidCommandline || _invalidSource);
+    }
+
+#define DEFINE_VALIDATE_FUNCTION(name)                                    \
+    void MatchProfilesEntry::_validateAndPopulate##name##Regex() noexcept \
+    {                                                                     \
+        _invalid##name = false;                                           \
+        if (_##name.empty())                                              \
+        {                                                                 \
+            /* empty field is valid*/                                     \
+            return;                                                       \
+        }                                                                 \
+        UErrorCode status = U_ZERO_ERROR;                                 \
+        _##name##Regex = til::ICU::CreateRegex(_##name, 0, &status);      \
+        if (U_FAILURE(status))                                            \
+        {                                                                 \
+            _invalid##name = true;                                        \
+            _##name##Regex.reset();                                       \
+        }                                                                 \
+    }
+
+    DEFINE_VALIDATE_FUNCTION(Name);
+    DEFINE_VALIDATE_FUNCTION(Commandline);
+    DEFINE_VALIDATE_FUNCTION(Source);
+
+    bool MatchProfilesEntry::MatchesProfile(const Model::Profile& profile)
+    {
+        auto isMatch = [](const til::ICU::unique_uregex& regex, std::wstring_view text) {
+            if (text.empty())
+            {
+                return false;
+            }
+            UErrorCode status = U_ZERO_ERROR;
+            uregex_setText(regex.get(), reinterpret_cast<const UChar*>(text.data()), static_cast<int32_t>(text.size()), &status);
+            const auto match = uregex_matches(regex.get(), 0, &status);
+            return status == U_ZERO_ERROR && match;
+        };
+
+        if (!_Name.empty() && isMatch(_NameRegex, profile.Name()))
+        {
+            return true;
+        }
+        else if (!_Source.empty() && isMatch(_SourceRegex, profile.Source()))
+        {
+            return true;
+        }
+        else if (!_Commandline.empty() && isMatch(_CommandlineRegex, profile.Commandline()))
+        {
+            return true;
+        }
+        return false;
+    }
+
+    Model::NewTabMenuEntry MatchProfilesEntry::Copy() const
+    {
+        auto entry = winrt::make_self<MatchProfilesEntry>();
+        entry->_Name = _Name;
+        entry->_Commandline = _Commandline;
+        entry->_Source = _Source;
+        return *entry;
+    }
 }

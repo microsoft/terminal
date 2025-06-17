@@ -13,6 +13,7 @@
 #include "srvinit.h"
 
 #include "../interactivity/inc/ServiceLocator.hpp"
+#include "../interactivity/win32/CustomWindowMessages.h"
 #include "../types/inc/convert.hpp"
 
 using Microsoft::Console::Interactivity::ServiceLocator;
@@ -118,12 +119,28 @@ ErrorExit2:
     return Status;
 }
 
-VtIo* CONSOLE_INFORMATION::GetVtIo()
+VtIo* CONSOLE_INFORMATION::GetVtIo() noexcept
 {
     return &_vtIo;
 }
 
-bool CONSOLE_INFORMATION::IsInVtIoMode() const
+VtIo::Writer CONSOLE_INFORMATION::GetVtWriter() noexcept
+{
+    // If we're not ConPTY, we return an empty writer, which indicates to the caller to do nothing.
+    const auto ok = _vtIo.IsUsingVt();
+    return VtIo::Writer{ ok ? &_vtIo : nullptr };
+}
+
+VtIo::Writer CONSOLE_INFORMATION::GetVtWriterForBuffer(const SCREEN_INFORMATION* context) noexcept
+{
+    // If the given context is not the current screen buffer, we also return an empty writer.
+    // We check both for equality and the alt buffer, because we may switch between the main/alt
+    // buffer while processing the input and this method should return a valid writer in both cases.
+    const auto ok = _vtIo.IsUsingVt() && (pCurrentScreenBuffer == context || pCurrentScreenBuffer == context->GetAltBuffer());
+    return VtIo::Writer{ ok ? &_vtIo : nullptr };
+}
+
+bool CONSOLE_INFORMATION::IsInVtIoMode() const noexcept
 {
     return _vtIo.IsUsingVt();
 }
@@ -161,6 +178,32 @@ bool CONSOLE_INFORMATION::GetBracketedPasteMode() const noexcept
 void CONSOLE_INFORMATION::SetBracketedPasteMode(const bool enabled) noexcept
 {
     _bracketedPasteMode = enabled;
+}
+
+void CONSOLE_INFORMATION::CopyTextToClipboard(const std::wstring_view text)
+{
+    const auto window = ServiceLocator::LocateConsoleWindow();
+    if (window)
+    {
+        // The clipboard can only be updated from the main GUI thread, so we
+        // need to post a message to trigger the actual copy operation. But if
+        // the pending clipboard content is already set, a message would have
+        // already been posted, so there's no need to post another one.
+        const auto clipboardMessageSent = _pendingClipboardText.has_value();
+        _pendingClipboardText = text;
+        if (!clipboardMessageSent)
+        {
+            PostMessageW(window->GetWindowHandle(), CM_UPDATE_CLIPBOARD, 0, 0);
+        }
+    }
+}
+
+std::optional<std::wstring> CONSOLE_INFORMATION::UsePendingClipboardText()
+{
+    // Once the pending text has been used, we clear the variable to let the
+    // CopyTextToClipboard method know that the last CM_UPDATE_CLIPBOARD message
+    // has been processed, and future updates will require another message.
+    return std::exchange(_pendingClipboardText, {});
 }
 
 // Method Description:
@@ -215,20 +258,6 @@ InputBuffer* const CONSOLE_INFORMATION::GetActiveInputBuffer() const
 void CONSOLE_INFORMATION::SetTitle(const std::wstring_view newTitle)
 {
     _Title = std::wstring{ newTitle.begin(), newTitle.end() };
-
-    // Sanitize the input if we're in pty mode. No control chars - this string
-    //      will get emitted back to the TTY in a VT sequence, and we don't want
-    //      to embed control characters in that string. Note that we can't use
-    //      IsInVtIoMode for this test, because the VT I/O thread won't have
-    //      been created when the title is first set during startup.
-    if (ServiceLocator::LocateGlobals().launchArgs.InConptyMode())
-    {
-        _Title.erase(std::remove_if(_Title.begin(), _Title.end(), [](auto ch) {
-                         return ch < UNICODE_SPACE || (ch > UNICODE_DEL && ch < UNICODE_NBSP);
-                     }),
-                     _Title.end());
-    }
-
     _TitleAndPrefix = _Prefix + _Title;
 
     auto* const pRender = ServiceLocator::LocateGlobals().pRender;

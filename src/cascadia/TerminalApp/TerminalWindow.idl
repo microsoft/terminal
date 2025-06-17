@@ -52,16 +52,14 @@ namespace TerminalApp
 
         Boolean HasCommandlineArguments();
 
-        Int32 SetStartupCommandline(String[] commands, String cwd, String env);
+        Int32 SetStartupCommandline(CommandlineArgs args);
         void SetStartupContent(String json, Windows.Foundation.IReference<Windows.Foundation.Rect> bounds);
-        Int32 ExecuteCommandline(String[] commands, String cwd, String env);
-        String ParseCommandlineMessage { get; };
-        Boolean ShouldExitEarly { get; };
+        Int32 ExecuteCommandline(CommandlineArgs args);
 
         Boolean ShouldImmediatelyHandoffToElevated();
         void HandoffToElevated();
 
-        void PersistState();
+        void PersistState(Boolean serializeBuffer);
 
         Windows.UI.Xaml.UIElement GetRoot();
 
@@ -71,11 +69,10 @@ namespace TerminalApp
         void Maximized(Boolean newMaximized);
         Boolean AlwaysOnTop { get; };
         Boolean AutoHideWindow { get; };
+        Boolean ShowTabsFullscreen { get; };
 
         void IdentifyWindow();
         void SetPersistedLayoutIdx(UInt32 idx);
-
-        void RenameFailed();
         void RequestExitFullscreen();
 
         Windows.Foundation.Size GetLaunchDimensions(UInt32 dpi);
@@ -86,6 +83,7 @@ namespace TerminalApp
         Microsoft.Terminal.Settings.Model.LaunchMode GetLaunchMode();
         Boolean GetShowTabsInTitlebar();
         Boolean GetInitialAlwaysOnTop();
+        Boolean GetInitialShowTabsFullscreen();
         Single CalcSnappedDimension(Boolean widthOrHeight, Single dimension);
         void TitlebarClicked();
         void CloseWindow();
@@ -124,14 +122,13 @@ namespace TerminalApp
         event Windows.Foundation.TypedEventHandler<Object, Object> RaiseVisualBell;
         event Windows.Foundation.TypedEventHandler<Object, Object> SetTaskbarProgress;
         event Windows.Foundation.TypedEventHandler<Object, Object> IdentifyWindowsRequested;
-        event Windows.Foundation.TypedEventHandler<Object, RenameWindowRequestedArgs> RenameWindowRequested;
         event Windows.Foundation.TypedEventHandler<Object, Object> IsQuakeWindowChanged;
         event Windows.Foundation.TypedEventHandler<Object, Object> SummonWindowRequested;
-        event Windows.Foundation.TypedEventHandler<Object, Object> CloseRequested;
         event Windows.Foundation.TypedEventHandler<Object, Object> OpenSystemMenu;
         event Windows.Foundation.TypedEventHandler<Object, Object> QuitRequested;
         event Windows.Foundation.TypedEventHandler<Object, TerminalApp.SystemMenuChangeArgs> SystemMenuChangeRequested;
         event Windows.Foundation.TypedEventHandler<Object, Microsoft.Terminal.Control.ShowWindowArgs> ShowWindowChanged;
+        event Windows.Foundation.TypedEventHandler<Object, Microsoft.Terminal.Control.WindowSizeChangedEventArgs> WindowSizeChanged;
 
         event Windows.Foundation.TypedEventHandler<Object, SettingsLoadEventArgs> SettingsChanged;
 

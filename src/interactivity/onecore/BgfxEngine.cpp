@@ -48,11 +48,6 @@ BgfxEngine::BgfxEngine(PVOID SharedViewBase, LONG DisplayHeight, LONG DisplayWid
     return S_OK;
 }
 
-[[nodiscard]] HRESULT BgfxEngine::InvalidateSelection(const std::vector<til::rect>& /*rectangles*/) noexcept
-{
-    return S_OK;
-}
-
 [[nodiscard]] HRESULT BgfxEngine::InvalidateScroll(const til::point* /*pcoordDelta*/) noexcept
 {
     return S_OK;
@@ -61,12 +56,6 @@ BgfxEngine::BgfxEngine(PVOID SharedViewBase, LONG DisplayHeight, LONG DisplayWid
 [[nodiscard]] HRESULT BgfxEngine::InvalidateAll() noexcept
 {
     return S_OK;
-}
-
-[[nodiscard]] HRESULT BgfxEngine::PrepareForTeardown(_Out_ bool* const pForcePaint) noexcept
-{
-    *pForcePaint = false;
-    return S_FALSE;
 }
 
 [[nodiscard]] HRESULT BgfxEngine::StartPaint() noexcept

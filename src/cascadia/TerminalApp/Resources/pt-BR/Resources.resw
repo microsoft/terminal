@@ -189,6 +189,9 @@
   <data name="TabCloseSubMenu" xml:space="preserve">
     <value>Fechar</value>
   </data>
+  <data name="TabMoveSubMenu" xml:space="preserve">
+    <value>Mover guia</value>
+  </data>
   <data name="TabCloseAfter" xml:space="preserve">
     <value>Fechar guias à direita</value>
   </data>
@@ -206,6 +209,45 @@
   </data>
   <data name="SplitPaneText" xml:space="preserve">
     <value>Dividir painel</value>
+  </data>
+  <data name="SplitPaneToolTipText" xml:space="preserve">
+    <value>Clique com o botão direito para obter direções de divisão - direita/para baixo/para cima/esquerda</value>
+  </data>
+  <data name="SplitPaneDownText" xml:space="preserve">
+    <value>Dividir painel para baixo</value>
+  </data>
+  <data name="SplitPaneRightText" xml:space="preserve">
+    <value>Dividir painel à direita</value>
+  </data>
+  <data name="SplitPaneUpText" xml:space="preserve">
+    <value>Dividir painel para cima</value>
+  </data>
+  <data name="SplitPaneLeftText" xml:space="preserve">
+    <value>Dividir painel à esquerda</value>
+  </data>
+  <data name="SplitPaneDuplicateText" xml:space="preserve">
+    <value>Duplicar</value>
+  </data>
+  <data name="SwapPaneText" xml:space="preserve">
+    <value>Painel de troca</value>
+  </data>
+  <data name="SwapPaneDownText" xml:space="preserve">
+    <value>Alternar painel para baixo</value>
+  </data>
+  <data name="SwapPaneRightText" xml:space="preserve">
+    <value>Alternar painel à direita</value>
+  </data>
+  <data name="SwapPaneUpText" xml:space="preserve">
+    <value>Alternar painel para cima</value>
+  </data>
+  <data name="SwapPaneLeftText" xml:space="preserve">
+    <value>Alternar painel para a esquerda</value>
+  </data>
+  <data name="TogglePaneZoomText" xml:space="preserve">
+    <value>Alternar o zoom do painel</value>
+  </data>
+  <data name="CloseOtherPanesText" xml:space="preserve">
+    <value>Fechar outros painéis</value>
   </data>
   <data name="SearchWebText" xml:space="preserve">
     <value>Pesquisa na Web</value>
@@ -722,12 +764,6 @@
   <data name="WindowRenamer.CloseButtonContent" xml:space="preserve">
     <value>Cancelar</value>
   </data>
-  <data name="RenameFailedToast.Title" xml:space="preserve">
-    <value>Falha ao renomear janela</value>
-  </data>
-  <data name="RenameFailedToast.Subtitle" xml:space="preserve">
-    <value>Já existe outra janela com esse nome</value>
-  </data>
   <data name="WindowMaximizeButtonToolTip" xml:space="preserve">
     <value>Maximizar</value>
   </data>
@@ -932,5 +968,14 @@
   </data>
   <data name="CloseSnippetsPaneButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Fechar o painel</value>
+  </data>
+  <data name="TabMoveLeft" xml:space="preserve">
+    <value>Mover para a esquerda</value>
+  </data>
+  <data name="TabMoveRight" xml:space="preserve">
+    <value>Mover para a direita</value>
+  </data>
+  <data name="InvalidRegex" xml:space="preserve">
+    <value>Foi encontrada uma expressão regular inválida.</value>
   </data>
 </root>

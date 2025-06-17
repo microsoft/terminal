@@ -447,7 +447,7 @@ Another reason we shouldn't support keys being able to be lazy-bound to local
 snippets: It's entirely too easy for `malicious.exe` to create a file in
 `%HomePath%` that creates a snippet for `\u003pwn-your-machine.exe\r` (or
 similar). Any app can read your settings file, and it is again too easy for that
-malicious app to set it's own action `id` to the same as some other well-meaning
+malicious app to set its own action `id` to the same as some other well-meaning
 local snippet's ID which you DO have bound to a key.
 
 When we first load the snippets from the `.wt.json` file, we'll want to also ask
@@ -563,9 +563,9 @@ their own workflows.
   * We'd have inputs for the commandline, name, description.
   * Obviously, it'd be easy to have a "Add new" button (to open that dialog) on
     the snippets pane.
-  * We could have `wt save` open that dialog pre-populated, rather than just
+  * We could have `wt save` open that dialog prepopulated, rather than just
     saving the command directly.
-  * We could even also find a way to pre-populate that dialog with the recent
+  * We could even also find a way to prepopulate that dialog with the recent
     commands (from shell integration)!
 * As a potential v2.0 of the snippets file schema, we may look to the
   `.vscode/tasks.json` schema for inspiration. That file supports much more

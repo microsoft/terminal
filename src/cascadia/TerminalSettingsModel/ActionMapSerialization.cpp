@@ -78,7 +78,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             // Now check if this is a command block
             if (jsonBlock.isMember(JsonKey(CommandsKey)) || jsonBlock.isMember(JsonKey(ActionKey)))
             {
-                AddAction(*Command::FromJson(jsonBlock, warnings, origin), keys);
+                auto command = Command::FromJson(jsonBlock, warnings, origin);
+                command->LogSettingChanges(_changeLog);
+                AddAction(*command, keys);
 
                 if (jsonBlock.isMember(JsonKey(KeysKey)))
                 {
@@ -105,6 +107,28 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
                 // any existing keybinding with the same keychord in this layer will get overwritten
                 _KeyMap.insert_or_assign(keys, idJson);
+
+                if (!_changeLog.contains(KeysKey.data()))
+                {
+                    // Log "keys" field, but only if it's one that isn't in userDefaults.json
+                    static constexpr std::array<std::pair<std::wstring_view, std::string_view>, 3> userDefaultKbds{ { { L"Terminal.CopyToClipboard", "ctrl+c" },
+                                                                                                                      { L"Terminal.PasteFromClipboard", "ctrl+v" },
+                                                                                                                      { L"Terminal.DuplicatePaneAuto", "alt+shift+d" } } };
+                    bool isUserDefaultKbd = false;
+                    for (const auto& [id, kbd] : userDefaultKbds)
+                    {
+                        const auto keyJson{ jsonBlock.find(&*KeysKey.cbegin(), (&*KeysKey.cbegin()) + KeysKey.size()) };
+                        if (idJson == id && keyJson->asString() == kbd)
+                        {
+                            isUserDefaultKbd = true;
+                            break;
+                        }
+                    }
+                    if (!isUserDefaultKbd)
+                    {
+                        _changeLog.emplace(KeysKey);
+                    }
+                }
             }
         }
 
@@ -155,5 +179,13 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
 
         return keybindingsList;
+    }
+
+    void ActionMap::LogSettingChanges(std::set<std::string>& changes, const std::string_view& context) const
+    {
+        for (const auto& setting : _changeLog)
+        {
+            changes.emplace(fmt::format(FMT_COMPILE("{}.{}"), context, setting));
+        }
     }
 }

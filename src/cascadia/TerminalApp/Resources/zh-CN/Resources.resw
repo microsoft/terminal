@@ -189,6 +189,9 @@
   <data name="TabCloseSubMenu" xml:space="preserve">
     <value>关闭</value>
   </data>
+  <data name="TabMoveSubMenu" xml:space="preserve">
+    <value>移动选项卡</value>
+  </data>
   <data name="TabCloseAfter" xml:space="preserve">
     <value>关闭右侧标签页</value>
   </data>
@@ -206,6 +209,45 @@
   </data>
   <data name="SplitPaneText" xml:space="preserve">
     <value>拆分窗格</value>
+  </data>
+  <data name="SplitPaneToolTipText" xml:space="preserve">
+    <value>右键单击以查看拆分方向 - 右/下/上/左</value>
+  </data>
+  <data name="SplitPaneDownText" xml:space="preserve">
+    <value>向下拆分窗格</value>
+  </data>
+  <data name="SplitPaneRightText" xml:space="preserve">
+    <value>向右拆分窗格</value>
+  </data>
+  <data name="SplitPaneUpText" xml:space="preserve">
+    <value>向上拆分窗格</value>
+  </data>
+  <data name="SplitPaneLeftText" xml:space="preserve">
+    <value>向左拆分窗格</value>
+  </data>
+  <data name="SplitPaneDuplicateText" xml:space="preserve">
+    <value>复制</value>
+  </data>
+  <data name="SwapPaneText" xml:space="preserve">
+    <value>交换窗格</value>
+  </data>
+  <data name="SwapPaneDownText" xml:space="preserve">
+    <value>向下交换窗格</value>
+  </data>
+  <data name="SwapPaneRightText" xml:space="preserve">
+    <value>向右交换窗格</value>
+  </data>
+  <data name="SwapPaneUpText" xml:space="preserve">
+    <value>向上交换窗格</value>
+  </data>
+  <data name="SwapPaneLeftText" xml:space="preserve">
+    <value>向左交换窗格</value>
+  </data>
+  <data name="TogglePaneZoomText" xml:space="preserve">
+    <value>切换窗格缩放</value>
+  </data>
+  <data name="CloseOtherPanesText" xml:space="preserve">
+    <value>关闭其他窗格</value>
   </data>
   <data name="SearchWebText" xml:space="preserve">
     <value>网络搜索</value>
@@ -722,12 +764,6 @@
   <data name="WindowRenamer.CloseButtonContent" xml:space="preserve">
     <value>取消</value>
   </data>
-  <data name="RenameFailedToast.Title" xml:space="preserve">
-    <value>未能重命名窗口</value>
-  </data>
-  <data name="RenameFailedToast.Subtitle" xml:space="preserve">
-    <value>已存在另一个具有该名称的窗口</value>
-  </data>
   <data name="WindowMaximizeButtonToolTip" xml:space="preserve">
     <value>最大化</value>
   </data>
@@ -932,5 +968,14 @@
   </data>
   <data name="CloseSnippetsPaneButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>关闭窗格</value>
+  </data>
+  <data name="TabMoveLeft" xml:space="preserve">
+    <value>左移</value>
+  </data>
+  <data name="TabMoveRight" xml:space="preserve">
+    <value>右移</value>
+  </data>
+  <data name="InvalidRegex" xml:space="preserve">
+    <value>发现无效的正则表达式。</value>
   </data>
 </root>

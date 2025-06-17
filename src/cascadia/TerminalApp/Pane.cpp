@@ -697,12 +697,24 @@ bool Pane::SwapPanes(std::shared_ptr<Pane> first, std::shared_ptr<Pane> second)
         // Refocus the last pane if there was a pane focused
         if (const auto focus = first->GetActivePane())
         {
-            focus->_Focus();
+            // GH#18184: manually focus the pane and content.
+            //           _Focus() results in no-op because the pane was _lastActive
+            focus->GotFocus.raise(focus, FocusState::Programmatic);
+            if (const auto& lastContent{ focus->GetLastFocusedContent() })
+            {
+                lastContent.Focus(FocusState::Programmatic);
+            }
         }
 
         if (const auto focus = second->GetActivePane())
         {
-            focus->_Focus();
+            // GH#18184: manually focus the pane and content.
+            //           _Focus() results in no-op because the pane was _lastActive
+            focus->GotFocus.raise(focus, FocusState::Programmatic);
+            if (const auto& lastContent{ focus->GetLastFocusedContent() })
+            {
+                lastContent.Focus(FocusState::Programmatic);
+            }
         }
 
         return true;
@@ -1711,9 +1723,7 @@ void Pane::_SetupChildCloseHandlers()
 IPaneContent Pane::_takePaneContent()
 {
     _closeRequestedRevoker.revoke();
-    // we cannot return std::move(_content) because we don't want _content to be null,
-    // since _content gets accessed even after Close is called
-    return _content;
+    return std::move(_content);
 }
 
 // This method safely sets the content of the Pane. It'll ensure to revoke and
@@ -1723,9 +1733,9 @@ void Pane::_setPaneContent(IPaneContent content)
 {
     // The IPaneContent::Close() implementation may be buggy and raise the CloseRequested event again.
     // _takePaneContent() avoids this as it revokes the event handler.
-    if (_takePaneContent())
+    if (const auto c = _takePaneContent())
     {
-        _content.Close();
+        c.Close();
     }
 
     if (content)
@@ -2958,13 +2968,13 @@ bool Pane::ContainsReadOnly() const
 // - <none>
 void Pane::CollectTaskbarStates(std::vector<winrt::TerminalApp::TaskbarState>& states)
 {
-    if (_IsLeaf())
+    if (_content)
     {
         auto tbState{ winrt::make<winrt::TerminalApp::implementation::TaskbarState>(_content.TaskbarState(),
                                                                                     _content.TaskbarProgress()) };
         states.push_back(tbState);
     }
-    else
+    else if (_firstChild && _secondChild)
     {
         _firstChild->CollectTaskbarStates(states);
         _secondChild->CollectTaskbarStates(states);

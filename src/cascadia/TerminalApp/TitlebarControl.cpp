@@ -12,6 +12,8 @@
 
 #include "TitlebarControl.g.cpp"
 
+using namespace winrt::Windows::UI::Xaml;
+
 namespace winrt::TerminalApp::implementation
 {
     TitlebarControl::TitlebarControl(uint64_t handle) :
@@ -77,6 +79,11 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    void TitlebarControl::FullscreenChanged(const bool fullscreen)
+    {
+        MinMaxCloseControl().Visibility(fullscreen ? Visibility::Collapsed : Visibility::Visible);
+    }
+
     void TitlebarControl::_OnMaximizeOrRestore(byte flag)
     {
         POINT point1 = {};
@@ -134,7 +141,7 @@ namespace winrt::TerminalApp::implementation
     {
         MinMaxCloseControl().PressButton(button);
     }
-    winrt::fire_and_forget TitlebarControl::ClickButton(CaptionButton button)
+    safe_void_coroutine TitlebarControl::ClickButton(CaptionButton button)
     {
         // GH#8587: Handle this on the _next_ pass of the UI thread. If we
         // handle this immediately, then we'll accidentally leave the button in

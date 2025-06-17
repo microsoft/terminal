@@ -4,6 +4,7 @@
 #include "pch.h"
 
 #include <til/rand.h>
+#include <pcg_random.hpp>
 
 #include "../TerminalSettingsModel/CascadiaSettings.h"
 #include "../TerminalSettingsModel/TerminalSettings.h"
@@ -216,7 +217,7 @@ namespace SettingsModelUnitTests
         static constexpr std::array testCases{
             // Base test.
             TestCase{ L"cmd.exe", 0 },
-            // SearchPathW() normalization + case insensitive matching.
+            // SearchPathW() normalization + case-insensitive matching.
             TestCase{ L"cmd.exe /a", 1 },
             TestCase{ L"%SystemRoot%\\System32\\cmd.exe /A", 1 },
             // Test that we don't pick the equally long but different "/A /B" variant.

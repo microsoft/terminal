@@ -32,7 +32,7 @@ namespace Microsoft.Terminal.Control
 
         InteractivityAutomationPeer OnCreateAutomationPeer();
 
-        Boolean CopySelectionToClipboard(Boolean singleLine, Windows.Foundation.IReference<CopyFormat> formats);
+        Boolean CopySelectionToClipboard(Boolean singleLine, Boolean withControlSequences, Windows.Foundation.IReference<CopyFormat> formats);
         void RequestPasteTextFromClipboard();
         void SetEndSelectionPoint(Microsoft.Terminal.Core.Point point);
 
@@ -41,16 +41,16 @@ namespace Microsoft.Terminal.Control
                             UInt64 timestamp,
                             Microsoft.Terminal.Core.ControlKeyStates modifiers,
                             Microsoft.Terminal.Core.Point pixelPosition);
-        void TouchPressed(Microsoft.Terminal.Core.Point contactPoint);
+        void TouchPressed(Windows.Foundation.Point contactPoint);
 
-        void PointerMoved(MouseButtonState buttonState,
-                          UInt32 pointerUpdateKind,
-                          Microsoft.Terminal.Core.ControlKeyStates modifiers,
-                          Boolean focused,
-                          Microsoft.Terminal.Core.Point pixelPosition,
-                          Boolean pointerPressedInBounds);
+        Boolean PointerMoved(MouseButtonState buttonState,
+                             UInt32 pointerUpdateKind,
+                             Microsoft.Terminal.Core.ControlKeyStates modifiers,
+                             Boolean focused,
+                             Microsoft.Terminal.Core.Point pixelPosition,
+                             Boolean pointerPressedInBounds);
 
-        void TouchMoved(Microsoft.Terminal.Core.Point newTouchPoint,
+        void TouchMoved(Windows.Foundation.Point newTouchPoint,
                         Boolean focused);
 
         void PointerReleased(MouseButtonState buttonState,
@@ -65,8 +65,6 @@ namespace Microsoft.Terminal.Control
                            MouseButtonState state);
 
         void UpdateScrollbar(Single newValue);
-
-        Boolean ManglePathsForWsl { get; };
 
         event Windows.Foundation.TypedEventHandler<Object, OpenHyperlinkEventArgs> OpenHyperlink;
         event Windows.Foundation.TypedEventHandler<Object, ScrollPositionChangedArgs> ScrollPositionChanged;

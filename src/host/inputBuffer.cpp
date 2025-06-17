@@ -10,7 +10,6 @@
 #include "misc.h"
 #include "stream.h"
 #include "../interactivity/inc/ServiceLocator.hpp"
-#include "../types/inc/GlyphWidth.hpp"
 
 #define INPUT_BUFFER_DEFAULT_INPUT_MODE (ENABLE_LINE_INPUT | ENABLE_PROCESSED_INPUT | ENABLE_ECHO_INPUT | ENABLE_MOUSE_INPUT)
 
@@ -493,8 +492,7 @@ size_t InputBuffer::Prepend(const std::span<const INPUT_RECORD>& inEvents)
             return STATUS_SUCCESS;
         }
 
-        _vtInputShouldSuppress = true;
-        auto resetVtInputSuppress = wil::scope_exit([&]() { _vtInputShouldSuppress = false; });
+        const auto wakeup = _wakeupReadersOnExit();
 
         // read all of the records out of the buffer, then write the
         // prepend ones, then write the original set. We need to do it
@@ -504,34 +502,14 @@ size_t InputBuffer::Prepend(const std::span<const INPUT_RECORD>& inEvents)
         std::deque<INPUT_RECORD> existingStorage;
         existingStorage.swap(_storage);
 
-        // We will need this variable to pass to _WriteBuffer so it can attempt to determine wait status.
-        // However, because we swapped the storage out from under it with an empty deque, it will always
-        // return true after the first one (as it is filling the newly emptied backing deque.)
-        // Then after the second one, because we've inserted some input, it will always say false.
-        auto unusedWaitStatus = false;
-
         // write the prepend records
         size_t prependEventsWritten;
-        _WriteBuffer(inEvents, prependEventsWritten, unusedWaitStatus);
-        FAIL_FAST_IF(!(unusedWaitStatus));
+        _WriteBuffer(inEvents, prependEventsWritten);
 
         for (const auto& event : existingStorage)
         {
             _storage.push_back(event);
         }
-
-        // We need to set the wait event if there were 0 events in the
-        // input queue when we started.
-        // Because we did interesting manipulation of the wait queue
-        // in order to prepend, we can't trust what _WriteBuffer said
-        // and instead need to set the event if the original backing
-        // buffer (the one we swapped out at the top) was empty
-        // when this whole thing started.
-        if (existingStorage.empty())
-        {
-            ServiceLocator::LocateGlobals().hInputEvent.SetEvent();
-        }
-        WakeUpReadersWaitingForData();
 
         return prependEventsWritten;
     }
@@ -576,21 +554,9 @@ size_t InputBuffer::Write(const std::span<const INPUT_RECORD>& inEvents)
             return 0;
         }
 
-        _vtInputShouldSuppress = true;
-        auto resetVtInputSuppress = wil::scope_exit([&]() { _vtInputShouldSuppress = false; });
-
-        // Write to buffer.
+        const auto wakeup = _wakeupReadersOnExit();
         size_t EventsWritten;
-        bool SetWaitEvent;
-        _WriteBuffer(inEvents, EventsWritten, SetWaitEvent);
-
-        if (SetWaitEvent)
-        {
-            ServiceLocator::LocateGlobals().hInputEvent.SetEvent();
-        }
-
-        // Alert any writers waiting for space.
-        WakeUpReadersWaitingForData();
+        _WriteBuffer(inEvents, EventsWritten);
         return EventsWritten;
     }
     catch (...)
@@ -608,16 +574,8 @@ try
         return;
     }
 
-    const auto initiallyEmptyQueue = _storage.empty();
-
+    const auto wakeup = _wakeupReadersOnExit();
     _writeString(text);
-
-    if (initiallyEmptyQueue && !_storage.empty())
-    {
-        ServiceLocator::LocateGlobals().hInputEvent.SetEvent();
-    }
-
-    WakeUpReadersWaitingForData();
 }
 CATCH_LOG()
 
@@ -626,29 +584,26 @@ CATCH_LOG()
 // input buffer and the next application will suddenly get a "\x1b[I" sequence in their input. See GH#13238.
 void InputBuffer::WriteFocusEvent(bool focused) noexcept
 {
+    const auto wakeup = _wakeupReadersOnExit();
+
     if (IsInVirtualTerminalInputMode())
     {
         if (const auto out = _termInput.HandleFocus(focused))
         {
-            _HandleTerminalInputCallback(*out);
+            _writeString(*out);
         }
     }
     else
     {
-        // This is a mini-version of Write().
-        const auto wasEmpty = _storage.empty();
         _storage.push_back(SynthesizeFocusEvent(focused));
-        if (wasEmpty)
-        {
-            ServiceLocator::LocateGlobals().hInputEvent.SetEvent();
-        }
-        WakeUpReadersWaitingForData();
     }
 }
 
 // Returns true when mouse input started. You should then capture the mouse and produce further events.
 bool InputBuffer::WriteMouseEvent(til::point position, const unsigned int button, const short keyState, const short wheelDelta)
 {
+    const auto wakeup = _wakeupReadersOnExit();
+
     if (IsInVirtualTerminalInputMode())
     {
         // This magic flag is "documented" at https://msdn.microsoft.com/en-us/library/windows/desktop/ms646301(v=vs.85).aspx
@@ -670,7 +625,7 @@ bool InputBuffer::WriteMouseEvent(til::point position, const unsigned int button
 
         if (const auto out = _termInput.HandleMouse(position, button, keyState, wheelDelta, state))
         {
-            _HandleTerminalInputCallback(*out);
+            _writeString(*out);
             return true;
         }
     }
@@ -691,25 +646,38 @@ static bool IsPauseKey(const KEY_EVENT_RECORD& event)
     return ctrlButNotAlt && event.wVirtualKeyCode == L'S';
 }
 
+void InputBuffer::_wakeupReadersImpl(bool initiallyEmpty)
+{
+    if (!_storage.empty())
+    {
+        // It would be fine to call SetEvent() unconditionally,
+        // but technically we only need to ResetEvent() if the buffer is empty,
+        // and SetEvent() once it stopped being so, which is what this code does.
+        if (initiallyEmpty)
+        {
+            ServiceLocator::LocateGlobals().hInputEvent.SetEvent();
+        }
+
+        WakeUpReadersWaitingForData();
+    }
+}
+
 // Routine Description:
 // - Coalesces input events and transfers them to storage queue.
 // Arguments:
 // - inRecords - The events to store.
 // - eventsWritten - The number of events written since this function
 // was called.
-// - setWaitEvent - on exit, true if buffer became non-empty.
 // Return Value:
 // - None
 // Note:
 // - The console lock must be held when calling this routine.
 // - will throw on failure
-void InputBuffer::_WriteBuffer(const std::span<const INPUT_RECORD>& inEvents, _Out_ size_t& eventsWritten, _Out_ bool& setWaitEvent)
+void InputBuffer::_WriteBuffer(const std::span<const INPUT_RECORD>& inEvents, _Out_ size_t& eventsWritten)
 {
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
     eventsWritten = 0;
-    setWaitEvent = false;
-    const auto initiallyEmptyQueue = _storage.empty();
     const auto initialInEventsSize = inEvents.size();
     const auto vtInputMode = IsInVirtualTerminalInputMode();
 
@@ -740,7 +708,7 @@ void InputBuffer::_WriteBuffer(const std::span<const INPUT_RECORD>& inEvents, _O
             // GH#11682: TerminalInput::HandleKey can handle both KeyEvents and Focus events seamlessly
             if (const auto out = _termInput.HandleKey(inEvent))
             {
-                _HandleTerminalInputCallback(*out);
+                _writeString(*out);
                 eventsWritten++;
                 continue;
             }
@@ -759,10 +727,6 @@ void InputBuffer::_WriteBuffer(const std::span<const INPUT_RECORD>& inEvents, _O
         // At this point, the event was neither coalesced, nor processed by VT.
         _storage.push_back(inEvent);
         ++eventsWritten;
-    }
-    if (initiallyEmptyQueue && !_storage.empty())
-    {
-        setWaitEvent = true;
     }
 }
 
@@ -804,13 +768,9 @@ bool InputBuffer::_CoalesceEvent(const INPUT_RECORD& inEvent) noexcept
             (lastKey.wVirtualScanCode == inKey.wVirtualScanCode || WI_IsFlagSet(inKey.dwControlKeyState, NLS_IME_CONVERSION)) &&
             lastKey.uChar.UnicodeChar == inKey.uChar.UnicodeChar &&
             lastKey.dwControlKeyState == inKey.dwControlKeyState &&
-            // TODO:GH#8000 This behavior is an import from old conhost v1 and has been broken for decades.
-            // This is probably the outdated idea that any wide glyph is being represented by 2 characters (DBCS) and likely
-            // resulted from conhost originally being split into a ASCII/OEM and a DBCS variant with preprocessor flags.
-            // You can't update the repeat count of such a A,B pair, because they're stored as A,A,B,B (down-down, up-up).
-            // I believe the proper approach is to store pairs of characters as pairs, update their combined
-            // repeat count and only when they're being read de-coalesce them into their alternating form.
-            !IsGlyphFullWidth(inKey.uChar.UnicodeChar))
+            // A single repeat count cannot represent two INPUT_RECORDs simultaneously,
+            // and so it cannot represent a surrogate pair either.
+            !til::is_surrogate(inKey.uChar.UnicodeChar))
         {
             lastKey.wRepeatCount += inKey.wRepeatCount;
             return true;
@@ -829,36 +789,6 @@ bool InputBuffer::_CoalesceEvent(const INPUT_RECORD& inEvent) noexcept
 bool InputBuffer::IsInVirtualTerminalInputMode() const
 {
     return WI_IsFlagSet(InputMode, ENABLE_VIRTUAL_TERMINAL_INPUT);
-}
-
-// Routine Description:
-// - Handler for inserting key sequences into the buffer when the terminal emulation layer
-//   has determined a key can be converted appropriately into a sequence of inputs
-// Arguments:
-// - inEvents - Series of input records to insert into the buffer
-// Return Value:
-// - <none>
-void InputBuffer::_HandleTerminalInputCallback(const TerminalInput::StringType& text)
-{
-    try
-    {
-        if (text.empty())
-        {
-            return;
-        }
-
-        _writeString(text);
-
-        if (!_vtInputShouldSuppress)
-        {
-            ServiceLocator::LocateGlobals().hInputEvent.SetEvent();
-            WakeUpReadersWaitingForData();
-        }
-    }
-    catch (...)
-    {
-        LOG_HR(wil::ResultFromCaughtException());
-    }
 }
 
 void InputBuffer::_writeString(const std::wstring_view& text)

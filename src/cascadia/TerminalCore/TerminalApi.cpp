@@ -24,7 +24,6 @@ void Terminal::ReturnResponse(const std::wstring_view response)
 {
     if (_pfnWriteInput && !response.empty())
     {
-        const auto suspension = _readWriteLock.suspend();
         _pfnWriteInput(response);
     }
 }
@@ -39,25 +38,26 @@ ITerminalApi::BufferState Terminal::GetBufferAndViewport() noexcept
     return { _activeBuffer(), til::rect{ _GetMutableViewport().ToInclusive() }, !_inAltBuffer() };
 }
 
-void Terminal::SetViewportPosition(const til::point position) noexcept
+void Terminal::SetViewportPosition(til::point position) noexcept
 try
 {
     // The viewport is fixed at 0,0 for the alt buffer, so this is a no-op.
     if (!_inAltBuffer())
     {
+        const auto bufferSize = _mainBuffer->GetSize().Dimensions();
+        const auto viewSize = _GetMutableViewport().Dimensions();
+
+        // Ensure the given position is in bounds.
+        position.x = std::clamp(position.x, 0, bufferSize.width - viewSize.width);
+        position.y = std::clamp(position.y, 0, bufferSize.height - viewSize.height);
+
         const auto viewportDelta = position.y - _GetMutableViewport().Origin().y;
-        const auto dimensions = _GetMutableViewport().Dimensions();
-        _mutableViewport = Viewport::FromDimensions(position, dimensions);
+        _mutableViewport = Viewport::FromDimensions(position, viewSize);
         _PreserveUserScrollOffset(viewportDelta);
         _NotifyScrollEvent();
     }
 }
 CATCH_LOG()
-
-void Terminal::SetTextAttributes(const TextAttribute& attrs) noexcept
-{
-    _activeBuffer().SetCurrentAttributes(attrs);
-}
 
 void Terminal::SetSystemMode(const Mode mode, const bool enabled) noexcept
 {
@@ -71,6 +71,11 @@ bool Terminal::GetSystemMode(const Mode mode) const noexcept
     return _systemMode.test(mode);
 }
 
+void Terminal::ReturnAnswerback()
+{
+    ReturnResponse(_answerbackMessage);
+}
+
 void Terminal::WarningBell()
 {
     _pfnWarningBell();
@@ -81,7 +86,7 @@ void Terminal::SetWindowTitle(const std::wstring_view title)
     _assertLocked();
     if (!_suppressApplicationTitle)
     {
-        _title.emplace(title);
+        _title.emplace(title.empty() ? _startingTitle : title);
         _pfnTitleChanged(_title.value());
     }
 }
@@ -92,26 +97,53 @@ CursorType Terminal::GetUserDefaultCursorStyle() const noexcept
     return _defaultCursorShape;
 }
 
-bool Terminal::ResizeWindow(const til::CoordType /*width*/, const til::CoordType /*height*/) noexcept
+bool Terminal::ResizeWindow(const til::CoordType width, const til::CoordType height)
 {
     // TODO: This will be needed to support various resizing sequences. See also GH#1860.
+    _assertLocked();
+
+    if (width <= 0 || height <= 0 || width > SHRT_MAX || height > SHRT_MAX)
+    {
+        return false;
+    }
+
+    if (_pfnWindowSizeChanged)
+    {
+        _pfnWindowSizeChanged(width, height);
+        return true;
+    }
+
     return false;
 }
 
-void Terminal::SetConsoleOutputCP(const unsigned int /*codepage*/) noexcept
+void Terminal::SetCodePage(const unsigned int /*codepage*/) noexcept
 {
-    // TODO: This will be needed to support 8-bit charsets and DOCS sequences.
+    // Code pages are dealt with in ConHost, so this isn't needed.
 }
 
-unsigned int Terminal::GetConsoleOutputCP() const noexcept
+void Terminal::ResetCodePage() noexcept
 {
-    // TODO: See SetConsoleOutputCP above.
+    // There is nothing to reset, since the code page never changes.
+}
+
+unsigned int Terminal::GetOutputCodePage() const noexcept
+{
+    // See above. The code page is always UTF-8.
+    return CP_UTF8;
+}
+
+unsigned int Terminal::GetInputCodePage() const noexcept
+{
+    // See above. The code page is always UTF-8.
     return CP_UTF8;
 }
 
 void Terminal::CopyToClipboard(wil::zwstring_view content)
 {
-    _pfnCopyToClipboard(content);
+    if (_clipboardOperationsAllowed)
+    {
+        _pfnCopyToClipboard(content);
+    }
 }
 
 // Method Description:
@@ -310,11 +342,6 @@ void Terminal::ShowWindow(bool showOrHide)
     }
 }
 
-bool Terminal::IsConsolePty() const noexcept
-{
-    return false;
-}
-
 bool Terminal::IsVtInputEnabled() const noexcept
 {
     return false;
@@ -337,30 +364,33 @@ void Terminal::SearchMissingCommand(const std::wstring_view command)
 {
     if (_pfnSearchMissingCommand)
     {
-        _pfnSearchMissingCommand(command);
+        const auto bufferRow = GetCursorPosition().y;
+        _pfnSearchMissingCommand(command, bufferRow);
     }
 }
 
 void Terminal::NotifyBufferRotation(const int delta)
 {
     // Update our selection, so it doesn't move as the buffer is cycled
-    if (_selection)
+    if (_selection->active)
     {
+        auto selection{ _selection.write() };
+        wil::hide_name _selection;
         // If the end of the selection will be out of range after the move, we just
         // clear the selection. Otherwise we move both the start and end points up
         // by the given delta and clamp to the first row.
-        if (_selection->end.y < delta)
+        if (selection->end.y < delta)
         {
-            _selection.reset();
+            selection->active = false;
         }
         else
         {
             // Stash this, so we can make sure to update the pivot to match later.
-            const auto pivotWasStart = _selection->start == _selection->pivot;
-            _selection->start.y = std::max(_selection->start.y - delta, 0);
-            _selection->end.y = std::max(_selection->end.y - delta, 0);
+            const auto pivotWasStart = selection->start == selection->pivot;
+            selection->start.y = std::max(selection->start.y - delta, 0);
+            selection->end.y = std::max(selection->end.y - delta, 0);
             // Make sure to sync the pivot with whichever value is the right one.
-            _selection->pivot = pivotWasStart ? _selection->start : _selection->end;
+            selection->pivot = pivotWasStart ? selection->start : selection->end;
         }
     }
 

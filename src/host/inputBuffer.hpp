@@ -15,7 +15,6 @@
 namespace Microsoft::Console::Render
 {
     class Renderer;
-    class VtEngine;
 }
 
 class InputBuffer final : public ConsoleObjectHeader
@@ -85,17 +84,20 @@ private:
     bool _writePartialByteSequenceAvailable = false;
     Microsoft::Console::VirtualTerminal::TerminalInput _termInput;
 
-    // This flag is used in _HandleTerminalInputCallback
-    // If the InputBuffer leads to a _HandleTerminalInputCallback call,
-    //    we should suppress the wakeup functions.
-    // Otherwise, we should be calling them.
-    bool _vtInputShouldSuppress{ false };
+    // Wakes up readers waiting for data to be in the input buffer.
+    auto _wakeupReadersOnExit() noexcept
+    {
+        const auto initiallyEmpty = _storage.empty();
+        return wil::scope_exit([this, initiallyEmpty]() {
+            _wakeupReadersImpl(initiallyEmpty);
+        });
+    }
 
+    void _wakeupReadersImpl(bool initiallyEmpty);
     void _switchReadingMode(ReadingMode mode);
     void _switchReadingModeSlowPath(ReadingMode mode);
-    void _WriteBuffer(const std::span<const INPUT_RECORD>& inRecords, _Out_ size_t& eventsWritten, _Out_ bool& setWaitEvent);
+    void _WriteBuffer(const std::span<const INPUT_RECORD>& inRecords, _Out_ size_t& eventsWritten);
     bool _CoalesceEvent(const INPUT_RECORD& inEvent) noexcept;
-    void _HandleTerminalInputCallback(const Microsoft::Console::VirtualTerminal::TerminalInput::StringType& text);
     void _writeString(const std::wstring_view& text);
 
 #ifdef UNIT_TESTING

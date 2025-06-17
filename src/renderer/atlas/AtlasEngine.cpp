@@ -11,6 +11,8 @@
 #include "DWriteTextAnalysis.h"
 #include "../../interactivity/win32/CustomWindowMessages.h"
 
+#include "../types/inc/ColorFix.hpp"
+
 // #### NOTE ####
 // This file should only contain methods that are only accessed by the caller of Present() (the "Renderer" class).
 // Basically this file poses the "synchronization" point between the concurrently running
@@ -129,7 +131,8 @@ try
     };
     _p.invalidatedRows = _api.invalidatedRows;
     _p.cursorRect = {};
-    _p.scrollOffset = _api.scrollOffset;
+    _p.scrollOffsetX = _api.viewportOffset.x;
+    _p.scrollDeltaY = _api.scrollOffset;
 
     // This if condition serves 2 purposes:
     // * By setting top/bottom to the full height we ensure that we call Present() without
@@ -144,7 +147,11 @@ try
         _p.MarkAllAsDirty();
     }
 
-    if (const auto offset = _p.scrollOffset)
+#if ATLAS_DEBUG_CONTINUOUS_REDRAW
+    _p.MarkAllAsDirty();
+#endif
+
+    if (const auto offset = _p.scrollDeltaY)
     {
         if (offset < 0)
         {
@@ -243,10 +250,6 @@ try
         }
     }
 
-#if ATLAS_DEBUG_CONTINUOUS_REDRAW
-    _p.MarkAllAsDirty();
-#endif
-
     return S_OK;
 }
 CATCH_RETURN()
@@ -255,6 +258,14 @@ CATCH_RETURN()
 try
 {
     _flushBufferLine();
+
+    for (const auto r : _p.rows)
+    {
+        if (r->bitmap.revision != 0 && !r->bitmap.active)
+        {
+            r->bitmap = {};
+        }
+    }
 
     // PaintCursor() is only called when the cursor is visible, but we need to invalidate the cursor area
     // even if it isn't. Otherwise a transition from a visible to an invisible cursor wouldn't be rendered.
@@ -273,13 +284,6 @@ try
 }
 CATCH_RETURN()
 
-[[nodiscard]] HRESULT AtlasEngine::PrepareForTeardown(_Out_ bool* const pForcePaint) noexcept
-{
-    RETURN_HR_IF_NULL(E_INVALIDARG, pForcePaint);
-    *pForcePaint = false;
-    return S_OK;
-}
-
 [[nodiscard]] HRESULT AtlasEngine::ScrollFrame() noexcept
 {
     return S_OK;
@@ -289,18 +293,14 @@ CATCH_RETURN()
 {
     // remove the highlighted regions that falls outside of the dirty region
     {
-        const auto& highlights = info.searchHighlights;
-
         // get the buffer origin relative to the viewport, and use it to calculate
         // the dirty region to be relative to the buffer origin
-        const til::CoordType offsetX = _p.s->viewportOffset.x;
-        const til::CoordType offsetY = _p.s->viewportOffset.y;
+        const til::CoordType offsetX = _api.viewportOffset.x;
+        const til::CoordType offsetY = _api.viewportOffset.y;
         const til::point bufferOrigin{ -offsetX, -offsetY };
         const auto dr = _api.dirtyRect.to_origin(bufferOrigin);
 
-        const auto hiBeg = std::lower_bound(highlights.begin(), highlights.end(), dr.top, [](const auto& ps, const auto& drTop) { return ps.end.y < drTop; });
-        const auto hiEnd = std::upper_bound(hiBeg, highlights.end(), dr.bottom, [](const auto& drBottom, const auto& ps) { return drBottom < ps.start.y; });
-        _api.searchHighlights = { hiBeg, hiEnd };
+        _api.searchHighlights = til::point_span_subspan_within_rect(info.searchHighlights, dr);
 
         // do the same for the focused search highlight
         if (info.searchHighlightFocused)
@@ -312,6 +312,23 @@ CATCH_RETURN()
             {
                 _api.searchHighlightFocused = { info.searchHighlightFocused, 1 };
             }
+        }
+
+        _api.selectionSpans = til::point_span_subspan_within_rect(info.selectionSpans, dr);
+
+        const u32 newSelectionColor{ static_cast<COLORREF>(info.selectionBackground) | 0xff000000 };
+        if (_api.s->misc->selectionColor != newSelectionColor)
+        {
+            auto misc = _api.s.write()->misc.write();
+            misc->selectionColor = newSelectionColor;
+            // Select a black or white foreground based on the perceptual lightness of the background.
+            misc->selectionForeground = ColorFix::GetLuminosity(newSelectionColor) < 0.5f ? 0xffffffff : 0xff000000;
+
+            // We copied the selection colors into _p during StartPaint, which happened just before PrepareRenderInfo
+            // This keeps their generations in sync.
+            auto pm = _p.s.write()->misc.write();
+            pm->selectionColor = misc->selectionColor;
+            pm->selectionForeground = misc->selectionForeground;
         }
     }
 
@@ -325,7 +342,7 @@ CATCH_RETURN()
 
 [[nodiscard]] HRESULT AtlasEngine::PrepareLineTransform(const LineRendition lineRendition, const til::CoordType targetRow, const til::CoordType viewportLeft) noexcept
 {
-    const auto y = gsl::narrow_cast<u16>(clamp<til::CoordType>(targetRow, 0, _p.s->viewportCellCount.y));
+    const auto y = gsl::narrow_cast<u16>(clamp<til::CoordType>(targetRow, 0, _p.s->viewportCellCount.y - 1));
     _p.rows[y]->lineRendition = lineRendition;
     _api.lineRendition = lineRendition;
     return S_OK;
@@ -392,7 +409,7 @@ try
     const til::CoordType y = row;
     const til::CoordType x1 = begX;
     const til::CoordType x2 = endX;
-    const auto offset = til::point{ _p.s->viewportOffset.x, _p.s->viewportOffset.y };
+    const auto offset = til::point{ _api.viewportOffset.x, _api.viewportOffset.y };
     auto it = highlights.begin();
     const auto itEnd = highlights.end();
     auto hiStart = it->start - offset;
@@ -410,12 +427,13 @@ try
     if (y > hiStart.y)
     {
         const auto isFinalRow = y == hiEnd.y;
-        const auto end = isFinalRow ? std::min(hiEnd.x + 1, x2) : x2;
+        const auto end = isFinalRow ? std::min(hiEnd.x, x2) : x2;
         _fillColorBitmap(row, x1, end, fgColor, bgColor);
 
-        // Return early if we couldn't paint the whole region. We will resume
-        // from here in the next call.
-        if (!isFinalRow || end == x2)
+        // Return early if we couldn't paint the whole region (either this was not the last row, or
+        // it was the last row but the highlight ends outside of our x range.)
+        // We will resume from here in the next call.
+        if (!isFinalRow || hiEnd.x > x2)
         {
             return S_OK;
         }
@@ -430,10 +448,10 @@ try
         hiEnd = it->end - offset;
 
         const auto isStartInside = y == hiStart.y && hiStart.x < x2;
-        const auto isEndInside = y == hiEnd.y && hiEnd.x < x2;
+        const auto isEndInside = y == hiEnd.y && hiEnd.x <= x2;
         if (isStartInside && isEndInside)
         {
-            _fillColorBitmap(row, hiStart.x, static_cast<size_t>(hiEnd.x) + 1, fgColor, bgColor);
+            _fillColorBitmap(row, hiStart.x, static_cast<size_t>(hiEnd.x), fgColor, bgColor);
             ++it;
         }
         else
@@ -459,7 +477,7 @@ CATCH_RETURN()
 [[nodiscard]] HRESULT AtlasEngine::PaintBufferLine(std::span<const Cluster> clusters, til::point coord, const bool fTrimLeft, const bool lineWrapped) noexcept
 try
 {
-    const auto y = gsl::narrow_cast<u16>(clamp<int>(coord.y, 0, _p.s->viewportCellCount.y));
+    const auto y = gsl::narrow_cast<u16>(clamp<int>(coord.y, 0, _p.s->viewportCellCount.y - 1));
 
     if (_api.lastPaintBufferLineCoord.y != y)
     {
@@ -467,7 +485,7 @@ try
     }
 
     const auto shift = gsl::narrow_cast<u8>(_api.lineRendition != LineRendition::SingleWidth);
-    const auto x = gsl::narrow_cast<u16>(clamp<int>(coord.x - (_p.s->viewportOffset.x >> shift), 0, _p.s->viewportCellCount.x));
+    const auto x = gsl::narrow_cast<u16>(clamp<int>(coord.x - (_api.viewportOffset.x >> shift), 0, _p.s->viewportCellCount.x));
     auto columnEnd = x;
 
     // _api.bufferLineColumn contains 1 more item than _api.bufferLine, as it represents the
@@ -482,8 +500,13 @@ try
     {
         for (const auto& cluster : clusters)
         {
-            for (const auto& ch : cluster.GetText())
+            for (auto ch : cluster.GetText())
             {
+                // Render Unicode directional isolate characters (U+2066..U+2069) as zero-width spaces.
+                if (ch >= L'\u2066' && ch <= L'\u2069')
+                {
+                    ch = L'\u200B';
+                }
                 _api.bufferLine.emplace_back(ch);
                 _api.bufferLineColumn.emplace_back(columnEnd);
             }
@@ -499,6 +522,7 @@ try
     // Apply the highlighting colors to the highlighted cells
     RETURN_IF_FAILED(_drawHighlighted(_api.searchHighlights, y, x, columnEnd, highlightFg, highlightBg));
     RETURN_IF_FAILED(_drawHighlighted(_api.searchHighlightFocused, y, x, columnEnd, highlightFocusFg, highlightFocusBg));
+    RETURN_IF_FAILED(_drawHighlighted(_api.selectionSpans, y, x, columnEnd, _p.s->misc->selectionForeground, _p.s->misc->selectionColor));
 
     _api.lastPaintBufferLineCoord = { x, y };
     return S_OK;
@@ -509,8 +533,8 @@ CATCH_RETURN()
 try
 {
     const auto shift = gsl::narrow_cast<u8>(_api.lineRendition != LineRendition::SingleWidth);
-    const auto x = std::max(0, coordTarget.x - (_p.s->viewportOffset.x >> shift));
-    const auto y = gsl::narrow_cast<u16>(clamp<til::CoordType>(coordTarget.y, 0, _p.s->viewportCellCount.y));
+    const auto x = std::max(0, coordTarget.x - (_api.viewportOffset.x >> shift));
+    const auto y = gsl::narrow_cast<u16>(clamp<til::CoordType>(coordTarget.y, 0, _p.s->viewportCellCount.y - 1));
     const auto from = gsl::narrow_cast<u16>(clamp<til::CoordType>(x << shift, 0, _p.s->viewportCellCount.x - 1));
     const auto to = gsl::narrow_cast<u16>(clamp<size_t>((x + cchLine) << shift, from, _p.s->viewportCellCount.x));
     const auto glColor = gsl::narrow_cast<u32>(gridlineColor) | 0xff000000;
@@ -520,34 +544,54 @@ try
 }
 CATCH_RETURN()
 
-[[nodiscard]] HRESULT AtlasEngine::PaintImageSlice(const ImageSlice& /*imageSlice*/, const til::CoordType /*targetRow*/, const til::CoordType /*viewportLeft*/) noexcept
-{
-    return S_FALSE;
-}
-
-[[nodiscard]] HRESULT AtlasEngine::PaintSelection(const til::rect& rect) noexcept
+[[nodiscard]] HRESULT AtlasEngine::PaintImageSlice(const ImageSlice& imageSlice, const til::CoordType targetRow, const til::CoordType viewportLeft) noexcept
 try
 {
-    // Unfortunately there's no step after Renderer::_PaintBufferOutput that
-    // would inform us that it's done with the last AtlasEngine::PaintBufferLine.
-    // As such we got to call _flushBufferLine() here just to be sure.
-    _flushBufferLine();
+    const auto y = clamp<til::CoordType>(targetRow, 0, _p.s->viewportCellCount.y - 1);
+    const auto row = _p.rows[y];
+    const auto revision = imageSlice.Revision();
+    const auto srcWidth = std::max(0, imageSlice.PixelWidth());
+    const auto srcCellSize = imageSlice.CellSize();
+    auto& b = row->bitmap;
 
-    const auto y = gsl::narrow_cast<u16>(clamp<til::CoordType>(rect.top, 0, _p.s->viewportCellCount.y));
-    const auto from = gsl::narrow_cast<u16>(clamp<til::CoordType>(rect.left, 0, _p.s->viewportCellCount.x - 1));
-    const auto to = gsl::narrow_cast<u16>(clamp<til::CoordType>(rect.right, from, _p.s->viewportCellCount.x));
+    // If this row's ImageSlice has changed we need to update our snapshot.
+    // Theoretically another _p.rows[y]->bitmap may have this particular revision already,
+    // but that can only happen if we're scrolling _and_ the entire viewport was invalidated.
+    if (b.revision != revision)
+    {
+        const auto srcHeight = std::max(0, srcCellSize.height);
+        const auto pixels = imageSlice.Pixels();
+        const auto expectedSize = gsl::narrow_cast<size_t>(srcWidth) * gsl::narrow_cast<size_t>(srcHeight);
 
-    auto& row = *_p.rows[y];
-    row.selectionFrom = from;
-    row.selectionTo = to;
+        // Sanity check.
+        if (pixels.size() != expectedSize)
+        {
+            assert(false);
+            return S_OK;
+        }
 
-    _p.dirtyRectInPx.left = std::min(_p.dirtyRectInPx.left, from * _p.s->font->cellSize.x);
-    _p.dirtyRectInPx.top = std::min(_p.dirtyRectInPx.top, y * _p.s->font->cellSize.y);
-    _p.dirtyRectInPx.right = std::max(_p.dirtyRectInPx.right, to * _p.s->font->cellSize.x);
-    _p.dirtyRectInPx.bottom = std::max(_p.dirtyRectInPx.bottom, _p.dirtyRectInPx.top + _p.s->font->cellSize.y);
+        if (b.source.size() != pixels.size())
+        {
+            b.source = Buffer<u32, 32>{ pixels.size() };
+        }
+
+        memcpy(b.source.data(), pixels.data(), pixels.size_bytes());
+        b.revision = revision;
+        b.sourceSize.x = srcWidth;
+        b.sourceSize.y = srcHeight;
+    }
+
+    b.targetOffset = (imageSlice.ColumnOffset() - viewportLeft);
+    b.targetWidth = srcWidth / srcCellSize.width;
+    b.active = true;
     return S_OK;
 }
 CATCH_RETURN()
+
+[[nodiscard]] HRESULT AtlasEngine::PaintSelection(const til::rect& rect) noexcept
+{
+    return S_OK;
+}
 
 [[nodiscard]] HRESULT AtlasEngine::PaintCursor(const CursorOptions& options) noexcept
 try
@@ -576,7 +620,7 @@ try
         const auto top = options.coordCursor.y;
         const auto bottom = top + 1;
         const auto shift = gsl::narrow_cast<u8>(_p.rows[top]->lineRendition != LineRendition::SingleWidth);
-        auto left = options.coordCursor.x - (_p.s->viewportOffset.x >> shift);
+        auto left = options.coordCursor.x - (_api.viewportOffset.x >> shift);
         auto right = left + cursorWidth;
 
         left <<= shift;
@@ -612,7 +656,7 @@ try
     if (!isSettingDefaultBrushes)
     {
         auto attributes = FontRelevantAttributes::None;
-        WI_SetFlagIf(attributes, FontRelevantAttributes::Bold, textAttributes.IsIntense() && renderSettings.GetRenderMode(RenderSettings::Mode::IntenseIsBold));
+        WI_SetFlagIf(attributes, FontRelevantAttributes::Bold, textAttributes.IsBold(renderSettings.GetRenderMode(RenderSettings::Mode::IntenseIsBold)));
         WI_SetFlagIf(attributes, FontRelevantAttributes::Italic, textAttributes.IsItalic());
 
         if (_api.attributes != attributes)
@@ -624,10 +668,18 @@ try
         _api.currentForeground = gsl::narrow_cast<u32>(fg);
         _api.attributes = attributes;
     }
-    else if (textAttributes.BackgroundIsDefault() && bg != _api.s->misc->backgroundColor)
+    else
     {
-        _api.s.write()->misc.write()->backgroundColor = bg;
-        _p.s.write()->misc.write()->backgroundColor = bg;
+        if (textAttributes.BackgroundIsDefault() && bg != _api.s->misc->backgroundColor)
+        {
+            _api.s.write()->misc.write()->backgroundColor = bg;
+            _p.s.write()->misc.write()->backgroundColor = bg;
+        }
+
+        if (textAttributes.GetForeground().IsDefault() && fg != _api.s->misc->foregroundColor)
+        {
+            _api.s.write()->misc.write()->foregroundColor = fg;
+        }
     }
 
     return S_OK;

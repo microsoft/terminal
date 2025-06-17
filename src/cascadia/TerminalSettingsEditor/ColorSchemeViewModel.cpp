@@ -57,7 +57,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         if (IsDefaultScheme())
         {
-            return hstring{ fmt::format(L"{0} ({1})", Name(), RS_(L"ColorScheme_DefaultTag/Text")) };
+            return hstring{ fmt::format(FMT_COMPILE(L"{} ({})"), Name(), RS_(L"ColorScheme_DefaultTag/Text")) };
         }
         return Name();
     }

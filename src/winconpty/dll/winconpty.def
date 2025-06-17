@@ -4,7 +4,6 @@ EXPORTS
     ConptyCreatePseudoConsoleAsUser
     ConptyResizePseudoConsole
     ConptyClosePseudoConsole
-    ConptyClosePseudoConsoleTimeout
     ConptyClearPseudoConsole
     ConptyShowHidePseudoConsole
     ConptyReparentPseudoConsole
@@ -18,3 +17,4 @@ EXPORTS
     ResizePseudoConsole = ConptyResizePseudoConsole
     ClosePseudoConsole = ConptyClosePseudoConsole
     ClearPseudoConsole = ConptyClearPseudoConsole
+    ReleasePseudoConsole = ConptyReleasePseudoConsole

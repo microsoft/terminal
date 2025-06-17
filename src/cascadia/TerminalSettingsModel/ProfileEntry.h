@@ -28,6 +28,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         ProfileEntry() noexcept;
         explicit ProfileEntry(const winrt::hstring& profile) noexcept;
 
+        Model::NewTabMenuEntry Copy() const override;
+
         Json::Value ToJson() const override;
         static com_ptr<NewTabMenuEntry> FromJson(const Json::Value& json);
 
@@ -41,6 +43,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         WINRT_PROPERTY(Model::Profile, Profile);
         WINRT_PROPERTY(int, ProfileIndex);
+        WINRT_PROPERTY(winrt::hstring, Icon);
 
     private:
         winrt::hstring _ProfileName;

@@ -76,10 +76,6 @@ public:
     wil::unique_threadpool_wait handoffInboxConsoleExitWait;
     bool defaultTerminalMarkerCheckRequired = false;
 
-#ifdef UNIT_TESTING
-    void EnableConptyModeForTests(std::unique_ptr<Microsoft::Console::Render::VtEngine> vtRenderEngine, const bool resizeQuirk = false);
-#endif
-
 private:
     CONSOLE_INFORMATION ciConsoleInformation;
     ApiRoutines defaultApiRoutines;

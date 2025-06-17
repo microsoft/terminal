@@ -40,7 +40,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     X(FileSource::Local, Windows::Foundation::Collections::IVector<Model::WindowLayout>, PersistedWindowLayouts, "persistedWindowLayouts")                                \
     X(FileSource::Shared, Windows::Foundation::Collections::IVector<hstring>, RecentCommands, "recentCommands")                                                           \
     X(FileSource::Shared, Windows::Foundation::Collections::IVector<winrt::Microsoft::Terminal::Settings::Model::InfoBarMessage>, DismissedMessages, "dismissedMessages") \
-    X(FileSource::Local, Windows::Foundation::Collections::IVector<hstring>, AllowedCommandlines, "allowedCommandlines")
+    X(FileSource::Local, Windows::Foundation::Collections::IVector<hstring>, AllowedCommandlines, "allowedCommandlines")                                                  \
+    X(FileSource::Local, std::unordered_set<hstring>, DismissedBadges, "dismissedBadges")
 
     struct WindowLayout : WindowLayoutT<WindowLayout>
     {
@@ -70,6 +71,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         Json::Value ToJson(FileSource parseSource) const noexcept;
 
         void AppendPersistedWindowLayout(Model::WindowLayout layout);
+        bool DismissBadge(const hstring& badgeId);
+        bool BadgeDismissed(const hstring& badgeId) const;
 
         // State getters/setters
 #define MTSM_APPLICATION_STATE_GEN(source, type, name, key, ...) \
@@ -95,9 +98,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         Json::Value _toJsonWithBlob(Json::Value& root, FileSource parseSource) const noexcept;
 
-        std::optional<std::string> _readSharedContents() const;
+        std::string _readSharedContents() const;
         void _writeSharedContents(const std::string_view content) const;
-        std::optional<std::string> _readLocalContents() const;
+        std::string _readLocalContents() const;
         void _writeLocalContents(const std::string_view content) const;
     };
 }

@@ -41,6 +41,8 @@ namespace Microsoft.Terminal.Settings.Model
 
         // True if the user explicitly removed this Profile from settings.json.
         Boolean Deleted { get; };
+        // True if the user *kept* this Profile, but it disappeared from the system.
+        Boolean Orphaned { get; };
 
         // Helper for magically using a commandline for an icon for a profile
         // without an explicit icon.
@@ -73,6 +75,7 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_PROFILE_SETTING(Int32, HistorySize);
         INHERITABLE_PROFILE_SETTING(Boolean, SnapOnInput);
         INHERITABLE_PROFILE_SETTING(Boolean, AltGrAliasing);
+        INHERITABLE_PROFILE_SETTING(String, AnswerbackMessage);
         INHERITABLE_PROFILE_SETTING(BellStyle, BellStyle);
 
         INHERITABLE_PROFILE_SETTING(Windows.Foundation.Collections.IMap<String COMMA String>, EnvironmentVariables);
@@ -88,6 +91,11 @@ namespace Microsoft.Terminal.Settings.Model
 
         INHERITABLE_PROFILE_SETTING(Boolean, ReloadEnvironmentVariables);
         INHERITABLE_PROFILE_SETTING(Boolean, RainbowSuggestions);
+        INHERITABLE_PROFILE_SETTING(Boolean, ForceVTInput);
+        INHERITABLE_PROFILE_SETTING(Boolean, AllowVtChecksumReport);
+        INHERITABLE_PROFILE_SETTING(Boolean, AllowKeypadMode);
+        INHERITABLE_PROFILE_SETTING(Boolean, AllowVtClipboardWrite);
 
+        INHERITABLE_PROFILE_SETTING(Microsoft.Terminal.Control.PathTranslationStyle, PathTranslationStyle);
     }
 }

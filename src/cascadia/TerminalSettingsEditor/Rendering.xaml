@@ -41,13 +41,5 @@
             <ToggleSwitch IsOn="{x:Bind ViewModel.SoftwareRendering, Mode=TwoWay}"
                           Style="{StaticResource ToggleSwitchInExpanderStyle}" />
         </local:SettingContainer>
-
-        <local:SettingContainer x:Uid="Globals_TextMeasurement">
-            <ComboBox AutomationProperties.AccessibilityView="Content"
-                      ItemTemplate="{StaticResource EnumComboBoxTemplate}"
-                      ItemsSource="{x:Bind ViewModel.TextMeasurementList}"
-                      SelectedItem="{x:Bind ViewModel.CurrentTextMeasurement, Mode=TwoWay}"
-                      Style="{StaticResource ComboBoxSettingStyle}" />
-        </local:SettingContainer>
     </StackPanel>
 </Page>

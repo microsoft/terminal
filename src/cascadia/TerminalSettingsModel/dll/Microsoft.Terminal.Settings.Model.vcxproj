@@ -128,9 +128,6 @@
   </ItemGroup>
 
   <ItemDefinitionGroup>
-    <ClCompile>
-      <AdditionalIncludeDirectories>$(OpenConsoleDir)\dep\jsoncpp\json;%(AdditionalIncludeDirectories);</AdditionalIncludeDirectories>
-    </ClCompile>
     <Link>
       <AdditionalDependencies>%(AdditionalDependencies);user32.lib;$(IntDir)\..\Microsoft.Terminal.Settings.Model.lib\Microsoft.Terminal.Settings.Model.res</AdditionalDependencies>
       <!-- TSM Lib contains a DllMain that we need to force the use of. -->

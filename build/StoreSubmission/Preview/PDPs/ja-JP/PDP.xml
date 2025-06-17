@@ -56,7 +56,11 @@
   <ReleaseNotes>
     バージョン __VERSION_NUMBER__
 
-詳細については、GitHub リリースのページをご覧ください。
+- [新しいタブ] メニューのレイアウトをカスタマイズするための新しいページを含む、一度だけ JSON ファイルに存在した UI に多数の設定を追加しました。
+- 信頼性を向上させるためにウィンドウ管理を再選択しました。wt.exe エイリアスで発生したバグを報告してください
+- プロファイルが非表示になっているか、アンインストールされたプログラムを参照している場合にアイコンが表示されるようになりました。
+
+詳細については、GitHub リリース ページを参照してください。
   </ReleaseNotes>
   <ScreenshotCaptions>
     <!-- Valid length: 200 character limit, up to 9 elements per platform -->

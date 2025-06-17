@@ -84,7 +84,9 @@ namespace Microsoft::Console::Interactivity
 
         static Globals& LocateGlobals();
 
-        static HWND LocatePseudoWindow(const HWND owner = nullptr /*HWND_DESKTOP = 0*/);
+        static HWND LocatePseudoWindow();
+        static void SetPseudoWindowOwner(HWND owner);
+        static void SetPseudoWindowVisibility(bool showOrHide);
 
         ServiceLocator(const ServiceLocator&) = delete;
         ServiceLocator& operator=(const ServiceLocator&) = delete;

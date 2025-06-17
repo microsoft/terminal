@@ -3,7 +3,7 @@
 # - Console Virtual Terminal Parser Fuzzer
 # -------------------------------------
 
-!include $(PROJECT_ROOT)\vcpkg\consume.inc
+!include ..\..\..\..\..\vcpkg\consume.inc
 
 # This program will generate fuzz input for the parsing engine
 # and is to be used in conjunction with the fuzz wrapper tool.
@@ -27,6 +27,8 @@ TEST_CODE               = 1
 
 USE_UNICRT              = 1
 USE_MSVCRT              = 1
+NO_WCHAR_T              = 1 # use native wchar_t
+USE_CXX17_STD_BYTE      = 1 # Windows disables std::byte by default...
 
 USE_STL                 = 1
 STL_VER                 = STL_VER_CURRENT
@@ -47,6 +49,7 @@ C_DEFINES               = $(C_DEFINES) -DUNICODE -D_UNICODE
 
 USE_STD_CPP20           = 1
 MSC_WARNING_LEVEL       = /W4 /WX
+USER_C_FLAGS            = $(USER_C_FLAGS) /Zc:preprocessor /fp:contract /utf-8
 
 # -------------------------------------
 # Build System Settings
@@ -67,10 +70,7 @@ SOURCES = \
 
 INCLUDES = \
     ..\..\..\inc; \
-    $(CONSOLE_SRC_PATH)\..\oss\dynamic_bitset; \
-    $(CONSOLE_SRC_PATH)\..\oss\libpopcnt; \
     $(CONSOLE_SRC_PATH)\..\oss\chromium; \
-    $(CONSOLE_SRC_PATH)\..\oss\fmt\include; \
     $(CONSOLE_SRC_PATH)\..\oss\interval_tree; \
     $(INCLUDES) \
 
