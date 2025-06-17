@@ -33,6 +33,7 @@
     },
     "DynamicProfileSource": {
       "enum": [
+        "Microsoft.WSL",
         "Windows.Terminal.Wsl",
         "Windows.Terminal.Azure",
         "Windows.Terminal.PowershellCore",
