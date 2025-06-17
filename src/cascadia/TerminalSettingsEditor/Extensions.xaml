@@ -107,7 +107,7 @@
                     <FontIcon Grid.Row="0"
                               Grid.RowSpan="2"
                               Grid.Column="0"
-                              Margin="0,0,16,0"
+                              Margin="0,0,8,0"
                               FontSize="32"
                               Glyph="{x:Bind Package.Icon}" />
                     <TextBlock Grid.Row="0"
