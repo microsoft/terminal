@@ -26,8 +26,8 @@ dze
 dzhe
 Emacspeak
 Fitt
-FTCS
 flac
+FTCS
 gantt
 gfm
 ghe
@@ -68,8 +68,8 @@ Powerline
 ptys
 pwn
 pwshw
-QOL
 qof
+QOL
 qps
 Quarternary
 quickfix
@@ -90,6 +90,7 @@ stakeholders
 subpage
 sustainability
 sxn
+Tencent
 TLDR
 tonos
 toolset
