@@ -77,13 +77,14 @@ namespace winrt::TerminalApp::implementation
             }
         }
 
-        void UpdateFilter(const winrt::hstring& filter)
+        void UpdateFilter(std::shared_ptr<fzf::matcher::Pattern> pattern)
         {
-            _filteredCommand->UpdateFilter(filter);
+            _pattern = std::move(pattern);
+            _filteredCommand->UpdateFilter(_pattern);
             for (const auto& c : _children)
             {
                 auto impl = winrt::get_self<implementation::FilteredTask>(c);
-                impl->UpdateFilter(filter);
+                impl->UpdateFilter(_pattern);
             }
 
             PropertyChanged.raise(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"Visibility" });
@@ -108,6 +109,7 @@ namespace winrt::TerminalApp::implementation
         bool HasChildren() { return _children.Size() > 0; }
         winrt::Microsoft::Terminal::Settings::Model::Command Command() { return _command; }
         winrt::TerminalApp::FilteredCommand FilteredCommand() { return *_filteredCommand; }
+        std::shared_ptr<fzf::matcher::Pattern> _pattern;
 
         int32_t Row() { return HasChildren() ? 2 : 1; } // See the BODGY comment in the .XAML for explanation
 
@@ -117,7 +119,7 @@ namespace winrt::TerminalApp::implementation
         winrt::Windows::UI::Xaml::Visibility Visibility()
         {
             // Is there no filter, or do we match it?
-            if (_filteredCommand->Filter().empty() || _filteredCommand->Weight() > 0)
+            if ((!_pattern || _pattern->terms.empty() || _filteredCommand->Weight() > 0))
             {
                 return winrt::Windows::UI::Xaml::Visibility::Visible;
             }

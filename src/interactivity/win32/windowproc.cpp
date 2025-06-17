@@ -773,6 +773,15 @@ static constexpr TsfDataProvider s_tsfDataProvider;
     }
 #endif // DBG
 
+    case CM_UPDATE_CLIPBOARD:
+    {
+        if (const auto clipboardText = gci.UsePendingClipboardText())
+        {
+            Clipboard::Instance().CopyText(clipboardText.value());
+        }
+        break;
+    }
+
     case EVENT_CONSOLE_CARET:
     case EVENT_CONSOLE_UPDATE_REGION:
     case EVENT_CONSOLE_UPDATE_SIMPLE:
