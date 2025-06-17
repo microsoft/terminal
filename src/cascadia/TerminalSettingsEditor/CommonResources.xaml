@@ -87,8 +87,8 @@
                        Height="12"
                        VerticalAlignment="Center"
                        Fill="{Binding Converter={StaticResource ColorToBrushConverter}}"
-                       RadiusX="4"
-                       RadiusY="4" />
+                       RadiusX="2"
+                       RadiusY="2" />
             <TextBlock Grid.Column="1"
                        Margin="0,0,0,0"
                        HorizontalAlignment="Right"
