@@ -309,6 +309,16 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         KeyChordViewModelList().Append(*kbdVM);
     }
 
+    winrt::hstring CommandViewModel::ActionNameTextBoxAutomationPropName()
+    {
+        return RS_(L"Actions_Name/Text");
+    }
+
+    winrt::hstring CommandViewModel::ShortcutActionComboBoxAutomationPropName()
+    {
+        return RS_(L"Actions_ShortcutAction/Text");
+    }
+
     void CommandViewModel::_RegisterKeyChordVMEvents(Editor::KeyChordViewModel kcVM)
     {
         const auto id = ID();

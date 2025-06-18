@@ -645,6 +645,7 @@
                      Grid.Column="1"
                      Width="300"
                      HorizontalAlignment="Left"
+                     AutomationProperties.Name="{x:Bind ViewModel.ActionNameTextBoxAutomationPropName}"
                      PlaceholderText="{x:Bind ViewModel.DisplayName, Mode=OneWay}"
                      Text="{x:Bind ViewModel.Name, Mode=TwoWay}" />
             <TextBlock x:Uid="Actions_ShortcutAction"
@@ -654,6 +655,7 @@
             <ComboBox Grid.Row="1"
                       Grid.Column="1"
                       VerticalAlignment="Center"
+                      AutomationProperties.Name="{x:Bind ViewModel.ShortcutActionComboBoxAutomationPropName}"
                       ItemsSource="{x:Bind ViewModel.AvailableShortcutActions, Mode=OneWay}"
                       SelectedItem="{x:Bind ViewModel.ProposedShortcutAction, Mode=TwoWay}" />
             <TextBlock x:Uid="Actions_Arguments"

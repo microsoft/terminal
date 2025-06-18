@@ -108,6 +108,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         void AddKeybinding_Click();
 
+        // UIA text
+        winrt::hstring ActionNameTextBoxAutomationPropName();
+        winrt::hstring ShortcutActionComboBoxAutomationPropName();
+
         til::typed_event<IInspectable, Editor::ArgWrapper> PropagateColorSchemeRequested;
         til::typed_event<IInspectable, Editor::ArgWrapper> PropagateColorSchemeNamesRequested;
         til::typed_event<IInspectable, Editor::ArgWrapper> PropagateWindowRootRequested;
