@@ -23,7 +23,7 @@ namespace Microsoft.Terminal.Settings.Editor
     {
         // Settings Model side
         String Name;
-        String ID;
+        String ID { get; };
         Boolean IsUserAction { get; };
         // keybindings
         IObservableVector<KeyChordViewModel> KeyChordViewModelList { get; };

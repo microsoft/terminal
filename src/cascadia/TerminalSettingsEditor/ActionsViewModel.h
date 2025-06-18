@@ -96,8 +96,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void Name(const winrt::hstring& newName);
 
         winrt::hstring ID();
-        void ID(const winrt::hstring& newID);
-
         bool IsUserAction();
 
         void Edit_Click();

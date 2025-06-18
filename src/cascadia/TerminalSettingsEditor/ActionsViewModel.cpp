@@ -277,11 +277,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return _command.ID();
     }
 
-    void CommandViewModel::ID(const winrt::hstring& ID)
-    {
-        _command.ID(ID);
-    }
-
     bool CommandViewModel::IsUserAction()
     {
         return _command.Origin() == OriginTag::User;
