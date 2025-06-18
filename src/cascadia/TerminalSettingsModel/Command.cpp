@@ -157,7 +157,14 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         if (!_name.has_value() || _name.value() != value)
         {
-            _name = value;
+            if (value.empty())
+            {
+                _name = std::nullopt;
+            }
+            else
+            {
+                _name = value;
+            }
         }
     }
 

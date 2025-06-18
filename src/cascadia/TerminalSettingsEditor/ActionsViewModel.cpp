@@ -266,9 +266,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void CommandViewModel::Name(const winrt::hstring& newName)
     {
-        if (!newName.empty())
+        _command.Name(newName);
+        if (newName.empty())
         {
-            _command.Name(newName);
+            // if the name was cleared, refresh the DisplayName
+            _NotifyChanges(L"DisplayName");
         }
     }
 
