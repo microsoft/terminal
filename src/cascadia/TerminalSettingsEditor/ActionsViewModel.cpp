@@ -55,8 +55,7 @@ inline const std::set<winrt::Microsoft::Terminal::Settings::Model::ShortcutActio
         }                                                                                                                                                   \
     }                                                                                                                                                       \
     std::sort(enumList.begin(), enumList.end(), EnumEntryReverseComparator<enumType>());                                                                    \
-    _EnumList = winrt::single_threaded_observable_vector<winrt::Microsoft::Terminal::Settings::Editor::EnumEntry>(std::move(enumList));                     \
-    _NotifyChanges(L"EnumList", L"EnumValue");
+    _EnumList = winrt::single_threaded_observable_vector<winrt::Microsoft::Terminal::Settings::Editor::EnumEntry>(std::move(enumList));
 
 #define INITIALIZE_NULLABLE_ENUM_LIST_AND_VALUE(enumMappingsName, enumType, resourceSectionAndType, resourceProperty)                                       \
     std::vector<winrt::Microsoft::Terminal::Settings::Editor::EnumEntry> enumList;                                                                          \
@@ -83,8 +82,7 @@ inline const std::set<winrt::Microsoft::Terminal::Settings::Model::ShortcutActio
     }                                                                                                                                                       \
     std::sort(enumList.begin(), enumList.end(), EnumEntryReverseComparator<enumType>());                                                                    \
     enumList.emplace_back(nullEntry);                                                                                                                       \
-    _EnumList = winrt::single_threaded_observable_vector<winrt::Microsoft::Terminal::Settings::Editor::EnumEntry>(std::move(enumList));                     \
-    _NotifyChanges(L"EnumList", L"EnumValue");
+    _EnumList = winrt::single_threaded_observable_vector<winrt::Microsoft::Terminal::Settings::Editor::EnumEntry>(std::move(enumList));
 
 #define INITIALIZE_FLAG_LIST_AND_VALUE(enumMappingsName, enumType, resourceSectionAndType, resourceProperty)                                                           \
     std::vector<winrt::Microsoft::Terminal::Settings::Editor::FlagEntry> flagList;                                                                                     \
@@ -115,8 +113,7 @@ inline const std::set<winrt::Microsoft::Terminal::Settings::Model::ShortcutActio
         }                                                                                                                                                              \
     }                                                                                                                                                                  \
     std::sort(flagList.begin(), flagList.end(), FlagEntryReverseComparator<enumType>());                                                                               \
-    _FlagList = winrt::single_threaded_observable_vector<winrt::Microsoft::Terminal::Settings::Editor::FlagEntry>(std::move(flagList));                                \
-    _NotifyChanges(L"FlagList");
+    _FlagList = winrt::single_threaded_observable_vector<winrt::Microsoft::Terminal::Settings::Editor::FlagEntry>(std::move(flagList));
 
 #define INITIALIZE_NULLABLE_FLAG_LIST_AND_VALUE(enumMappingsName, enumType, resourceSectionAndType, resourceProperty)                                                  \
     std::vector<winrt::Microsoft::Terminal::Settings::Editor::FlagEntry> flagList;                                                                                     \
@@ -188,8 +185,7 @@ inline const std::set<winrt::Microsoft::Terminal::Settings::Model::ShortcutActio
         }                                                                                                                                                              \
     });                                                                                                                                                                \
     flagList.emplace_back(nullEntry);                                                                                                                                  \
-    _FlagList = winrt::single_threaded_observable_vector<winrt::Microsoft::Terminal::Settings::Editor::FlagEntry>(std::move(flagList));                                \
-    _NotifyChanges(L"FlagList");
+    _FlagList = winrt::single_threaded_observable_vector<winrt::Microsoft::Terminal::Settings::Editor::FlagEntry>(std::move(flagList));
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
