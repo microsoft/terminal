@@ -235,17 +235,12 @@
                 </ListViewItem>
             </DataTemplate>
 
-            <DataTemplate x:Key="ListItemTemplate"
-                          x:DataType="local:ArgWrapper">
-                <ListViewItem HorizontalContentAlignment="Stretch"
-                              IsTabStop="False" />
-            </DataTemplate>
-
             <!--  Example shortcut action to test this template: Adjust Opacity  -->
             <!--  Currently that is the only Int32 arg, so just clamp the min/max values according to that  -->
             <DataTemplate x:Key="Int32Template"
                           x:DataType="local:ArgWrapper">
-                <Grid ColumnSpacing="8">
+                <Grid Margin="0,4,0,4"
+                      ColumnSpacing="8">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="{StaticResource ArgumentNameWidth}" />
                         <ColumnDefinition Width="Auto" />
@@ -268,7 +263,8 @@
             <!--  Example shortcut action to test this template: Switch To Tab  -->
             <DataTemplate x:Key="UInt32Template"
                           x:DataType="local:ArgWrapper">
-                <Grid ColumnSpacing="8">
+                <Grid Margin="0,4,0,4"
+                      ColumnSpacing="8">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="{StaticResource ArgumentNameWidth}" />
                         <ColumnDefinition Width="Auto" />
@@ -291,7 +287,8 @@
             <!--  Example shortcut action to test this template: Close Other Tabs  -->
             <DataTemplate x:Key="UInt32OptionalTemplate"
                           x:DataType="local:ArgWrapper">
-                <Grid ColumnSpacing="8">
+                <Grid Margin="0,4,0,4"
+                      ColumnSpacing="8">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="{StaticResource ArgumentNameWidth}" />
                         <ColumnDefinition Width="Auto" />
@@ -314,7 +311,8 @@
             <!--  Example shortcut action to test this template: Split Pane  -->
             <DataTemplate x:Key="Int32OptionalTemplate"
                           x:DataType="local:ArgWrapper">
-                <Grid ColumnSpacing="8">
+                <Grid Margin="0,4,0,4"
+                      ColumnSpacing="8">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="{StaticResource ArgumentNameWidth}" />
                         <ColumnDefinition Width="Auto" />
@@ -337,7 +335,8 @@
             <!--  Example shortcut action to test this template: Adjust Font Size  -->
             <DataTemplate x:Key="FloatTemplate"
                           x:DataType="local:ArgWrapper">
-                <Grid ColumnSpacing="8">
+                <Grid Margin="0,4,0,4"
+                      ColumnSpacing="8">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="{StaticResource ArgumentNameWidth}" />
                         <ColumnDefinition Width="Auto" />
@@ -360,7 +359,8 @@
             <!--  Example shortcut action to test this template: Send Input  -->
             <DataTemplate x:Key="StringTemplate"
                           x:DataType="local:ArgWrapper">
-                <Grid ColumnSpacing="8">
+                <Grid Margin="0,4,0,4"
+                      ColumnSpacing="8">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="{StaticResource ArgumentNameWidth}" />
                         <ColumnDefinition Width="Auto"
@@ -380,7 +380,8 @@
             <!--  Example shortcut action to test this template: Set Color Scheme  -->
             <DataTemplate x:Key="ColorSchemeTemplate"
                           x:DataType="local:ArgWrapper">
-                <Grid ColumnSpacing="8">
+                <Grid Margin="0,4,0,4"
+                      ColumnSpacing="8">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="{StaticResource ArgumentNameWidth}" />
                         <ColumnDefinition Width="Auto" />
@@ -401,7 +402,8 @@
             <!--  Example shortcut action to test this template: Export Buffer  -->
             <DataTemplate x:Key="FilePickerTemplate"
                           x:DataType="local:ArgWrapper">
-                <Grid ColumnSpacing="8">
+                <Grid Margin="0,4,0,4"
+                      ColumnSpacing="8">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="{StaticResource ArgumentNameWidth}" />
                         <ColumnDefinition Width="*"
@@ -426,7 +428,8 @@
             <!--  Example shortcut action to test this template: New Tab  -->
             <DataTemplate x:Key="FolderPickerTemplate"
                           x:DataType="local:ArgWrapper">
-                <Grid ColumnSpacing="8">
+                <Grid Margin="0,4,0,4"
+                      ColumnSpacing="8">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="{StaticResource ArgumentNameWidth}" />
                         <ColumnDefinition Width="*"
@@ -451,7 +454,8 @@
             <!--  Example shortcut action to test this template: Set Focus Mode  -->
             <DataTemplate x:Key="BoolTemplate"
                           x:DataType="local:ArgWrapper">
-                <Grid ColumnSpacing="8">
+                <Grid Margin="0,4,0,4"
+                      ColumnSpacing="8">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="{StaticResource ArgumentNameWidth}" />
                         <ColumnDefinition Width="Auto" />
@@ -469,7 +473,8 @@
             <!--  Example shortcut action to test this template: Split Pane  -->
             <DataTemplate x:Key="BoolOptionalTemplate"
                           x:DataType="local:ArgWrapper">
-                <Grid ColumnSpacing="8">
+                <Grid Margin="0,4,0,4"
+                      ColumnSpacing="8">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="{StaticResource ArgumentNameWidth}" />
                         <ColumnDefinition Width="Auto" />
@@ -493,7 +498,8 @@
 
             <DataTemplate x:Key="EnumTemplate"
                           x:DataType="local:ArgWrapper">
-                <Grid ColumnSpacing="8">
+                <Grid Margin="0,4,0,4"
+                      ColumnSpacing="8">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="{StaticResource ArgumentNameWidth}" />
                         <ColumnDefinition Width="Auto" />
@@ -531,7 +537,7 @@
 
             <DataTemplate x:Key="FlagTemplate"
                           x:DataType="local:ArgWrapper">
-                <Grid>
+                <Grid Margin="0,4,0,4">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="{StaticResource ArgumentNameWidth}" />
                         <ColumnDefinition Width="*" />
@@ -552,7 +558,8 @@
             <!--  Example shortcut action to test this template: Add Mark  -->
             <DataTemplate x:Key="TerminalCoreColorOptionalTemplate"
                           x:DataType="local:ArgWrapper">
-                <Grid ColumnSpacing="8">
+                <Grid Margin="0,4,0,4"
+                      ColumnSpacing="8">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="{StaticResource ArgumentNameWidth}" />
                         <ColumnDefinition Width="Auto" />
@@ -573,7 +580,8 @@
             <!--  Example shortcut action to test this template: Set Tab Color  -->
             <DataTemplate x:Key="WindowsUIColorOptionalTemplate"
                           x:DataType="local:ArgWrapper">
-                <Grid ColumnSpacing="8">
+                <Grid Margin="0,4,0,4"
+                      ColumnSpacing="8">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="{StaticResource ArgumentNameWidth}" />
                         <ColumnDefinition Width="Auto" />
@@ -653,15 +661,11 @@
                        Grid.Column="0"
                        VerticalAlignment="Center"
                        Visibility="{x:Bind ViewModel.ActionArgsVM.HasArgs, Mode=OneWay}" />
-            <ListView Grid.Row="2"
-                      Grid.Column="1"
-                      Margin="-28,0,0,0"
-                      AllowDrop="False"
-                      CanDragItems="False"
-                      CanReorderItems="False"
-                      ChoosingItemContainer="_choosingItemContainer"
-                      ItemsSource="{x:Bind ViewModel.ActionArgsVM.ArgValues, Mode=OneWay}"
-                      SelectionMode="None" />
+            <ItemsControl Grid.Row="2"
+                          Grid.Column="1"
+                          IsTabStop="False"
+                          ItemTemplateSelector="{StaticResource ArgsTemplateSelector}"
+                          ItemsSource="{x:Bind ViewModel.ActionArgsVM.ArgValues, Mode=OneWay}" />
             <TextBlock x:Uid="Actions_Keybindings"
                        Grid.Row="3"
                        Grid.Column="0"
