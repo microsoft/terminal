@@ -218,16 +218,16 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _AvailableShortcutActions = single_threaded_observable_vector(std::move(shortcutActions));
 
         const auto shortcutActionString = _AvailableActionsAndNamesMap.Lookup(_command.ActionAndArgs().Action());
-        ProposedShortcutAction(winrt::box_value(shortcutActionString));
+        ProposedShortcutActionName(winrt::box_value(shortcutActionString));
         _CreateAndInitializeActionArgsVMHelper();
 
         // Add a property changed handler to our own property changed event.
         // This allows us to create a new ActionArgsVM when the shortcut action changes
         PropertyChanged([this](auto&&, const PropertyChangedEventArgs& args) {
             const auto viewModelProperty{ args.PropertyName() };
-            if (viewModelProperty == L"ProposedShortcutAction")
+            if (viewModelProperty == L"ProposedShortcutActionName")
             {
-                const auto actionString = unbox_value<hstring>(ProposedShortcutAction());
+                const auto actionString = unbox_value<hstring>(ProposedShortcutActionName());
                 const auto actionEnum = _NameToActionMap.at(actionString);
                 const auto emptyArgs = ActionArgFactory::GetEmptyArgsForAction(actionEnum);
                 // todo: probably need some better default values for empty args

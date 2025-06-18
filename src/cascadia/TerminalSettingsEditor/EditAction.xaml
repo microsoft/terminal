@@ -657,7 +657,7 @@
                       VerticalAlignment="Center"
                       AutomationProperties.Name="{x:Bind ViewModel.ShortcutActionComboBoxAutomationPropName}"
                       ItemsSource="{x:Bind ViewModel.AvailableShortcutActions, Mode=OneWay}"
-                      SelectedItem="{x:Bind ViewModel.ProposedShortcutAction, Mode=TwoWay}" />
+                      SelectedItem="{x:Bind ViewModel.ProposedShortcutActionName, Mode=TwoWay}" />
             <TextBlock x:Uid="Actions_Arguments"
                        Grid.Row="2"
                        Grid.Column="0"

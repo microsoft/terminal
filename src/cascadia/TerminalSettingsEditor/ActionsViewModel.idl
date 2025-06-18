@@ -38,7 +38,7 @@ namespace Microsoft.Terminal.Settings.Editor
 
         // UI side (edit command page)
         IObservableVector<String> AvailableShortcutActions { get; };
-        Object ProposedShortcutAction;
+        Object ProposedShortcutActionName;
         void Delete_Click();
         void AddKeybinding_Click();
         event Windows.Foundation.TypedEventHandler<Object, ArgWrapper> PropagateColorSchemeRequested;
