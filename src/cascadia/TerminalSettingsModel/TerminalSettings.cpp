@@ -350,6 +350,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         _AllowVtChecksumReport = profile.AllowVtChecksumReport();
         _AllowVtClipboardWrite = profile.AllowVtClipboardWrite();
         _PathTranslationStyle = profile.PathTranslationStyle();
+        _AllowTmuxControl = profile.AllowTmuxControl();
     }
 
     // Method Description:

@@ -273,6 +273,15 @@ namespace winrt::TerminalApp::implementation
         }
         else if (const auto& realArgs = args.ActionArgs().try_as<SplitPaneArgs>())
         {
+            if constexpr (Feature_TmuxControl::IsEnabled())
+            {
+                //Tmux control takes over
+                if (_tmuxControl && _tmuxControl->ActiveTabIsTmuxControl())
+                {
+                    return _tmuxControl->SplitActivePane(realArgs.SplitDirection());
+                }
+            }
+
             if (_shouldBailForInvalidProfileIndex(_settings, realArgs.ContentArgs()))
             {
                 args.Handled(false);
