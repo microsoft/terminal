@@ -93,7 +93,7 @@ void Terminal::UpdateSettings(ICoreSettings settings)
 
     if (_stateMachine)
     {
-        SetVtChecksumReportSupport(settings.AllowVtChecksumReport());
+        SetOptionalFeatures(settings);
     }
 
     _getTerminalInput().ForceDisableWin32InputMode(settings.ForceVTInput());
@@ -218,10 +218,13 @@ void Terminal::SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle)
     engine.Dispatch().SetCursorStyle(cursorStyle);
 }
 
-void Terminal::SetVtChecksumReportSupport(const bool enabled)
+void Terminal::SetOptionalFeatures(winrt::Microsoft::Terminal::Core::ICoreSettings settings)
 {
     auto& engine = reinterpret_cast<OutputStateMachineEngine&>(_stateMachine->Engine());
-    engine.Dispatch().SetVtChecksumReportSupport(enabled);
+    auto features = til::enumset<ITermDispatch::OptionalFeature>{};
+    features.set(ITermDispatch::OptionalFeature::ChecksumReport, settings.AllowVtChecksumReport());
+    features.set(ITermDispatch::OptionalFeature::ClipboardWrite, settings.AllowVtClipboardWrite());
+    engine.Dispatch().SetOptionalFeatures(features);
 }
 
 bool Terminal::IsXtermBracketedPasteModeEnabled() const noexcept
