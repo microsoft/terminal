@@ -35,6 +35,13 @@ static constexpr std::string_view LegacyConfirmCloseAllTabsKey{ "confirmCloseAll
 // - <none>
 // Return Value:
 // - <none>
+
+bool _useMicaAlt = false;
+
+bool GlobalAppSettings::UseMicaAlt() const
+{
+    return _useMicaAlt;
+}
 void GlobalAppSettings::_FinalizeInheritance()
 {
     for (const auto& parent : _parents)
@@ -208,6 +215,12 @@ void GlobalAppSettings::LayerJson(const Json::Value& json, const OriginTag origi
             }
         }
     }
+
+if (json.isMember("useMicaAlt"))
+    {
+    JsonUtils::GetValueForKey(json, "useMicaAlt", _useMicaAlt);
+    }
+
 }
 
 void GlobalAppSettings::LayerActionsFrom(const Json::Value& json, const OriginTag origin, const bool withKeybindings)

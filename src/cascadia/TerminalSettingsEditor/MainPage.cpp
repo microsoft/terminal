@@ -981,7 +981,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // that our theme is different than the app's.
         const bool actuallyUseMica = isMicaAvailable && (appTheme == requestedTheme);
 
-        const auto bgKey = (theme.Window() != nullptr && theme.Window().UseMica()) && actuallyUseMica ?
+        const auto bgKey = (theme.Window() != nullptr && theme.Window().UseMica()) || UseMicaAlt() && actuallyUseMica ?
                                L"SettingsPageMicaBackground" :
                                L"SettingsPageBackground";
 
