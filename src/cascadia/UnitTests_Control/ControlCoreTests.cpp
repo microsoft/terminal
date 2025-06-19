@@ -248,7 +248,7 @@ namespace ControlUnitTests
         _standardInit(core);
 
         Log::Comment(L"Print 40 rows of 'Foo', and a single row of 'Bar' "
-                     L"(leaving the cursor afer 'Bar')");
+                     L"(leaving the cursor after 'Bar')");
         for (auto i = 0; i < 40; ++i)
         {
             conn->WriteInput(winrt_wstring_to_array_view(L"Foo\r\n"));
@@ -285,7 +285,7 @@ namespace ControlUnitTests
         _standardInit(core);
 
         Log::Comment(L"Print 40 rows of 'Foo', and a single row of 'Bar' "
-                     L"(leaving the cursor afer 'Bar')");
+                     L"(leaving the cursor after 'Bar')");
         for (auto i = 0; i < 40; ++i)
         {
             conn->WriteInput(winrt_wstring_to_array_view(L"Foo\r\n"));
@@ -304,9 +304,9 @@ namespace ControlUnitTests
 
         Log::Comment(L"Check the buffer after the clear");
         VERIFY_ARE_EQUAL(20, core->_terminal->GetViewport().Height());
-        VERIFY_ARE_EQUAL(41, core->ScrollOffset());
+        VERIFY_ARE_EQUAL(21, core->ScrollOffset());
         VERIFY_ARE_EQUAL(20, core->ViewHeight());
-        VERIFY_ARE_EQUAL(61, core->BufferHeight());
+        VERIFY_ARE_EQUAL(41, core->BufferHeight());
 
         // In this test, we can't actually check if we cleared the buffer
         // contents. ConPTY will handle the actual clearing of the buffer
@@ -322,7 +322,7 @@ namespace ControlUnitTests
         _standardInit(core);
 
         Log::Comment(L"Print 40 rows of 'Foo', and a single row of 'Bar' "
-                     L"(leaving the cursor afer 'Bar')");
+                     L"(leaving the cursor after 'Bar')");
         for (auto i = 0; i < 40; ++i)
         {
             conn->WriteInput(winrt_wstring_to_array_view(L"Foo\r\n"));
