@@ -30,7 +30,7 @@ namespace TerminalApp
     {
         Boolean Reload { get; };
         UInt64 Result { get; };
-        IVector<Microsoft.Terminal.Settings.Model.SettingsLoadWarnings> Warnings { get; };
+        IVectorView<Microsoft.Terminal.Settings.Model.SettingsLoadWarnings> Warnings { get; };
         String ExceptionText { get; };
 
         Microsoft.Terminal.Settings.Model.CascadiaSettings NewSettings { get; };
