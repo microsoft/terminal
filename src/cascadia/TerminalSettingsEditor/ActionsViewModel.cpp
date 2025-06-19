@@ -55,7 +55,11 @@ inline const std::set<winrt::Microsoft::Terminal::Settings::Model::ShortcutActio
         }                                                                                                                                                   \
     }                                                                                                                                                       \
     std::sort(enumList.begin(), enumList.end(), EnumEntryReverseComparator<enumType>());                                                                    \
-    _EnumList = winrt::single_threaded_observable_vector<winrt::Microsoft::Terminal::Settings::Editor::EnumEntry>(std::move(enumList));
+    _EnumList = winrt::single_threaded_observable_vector<winrt::Microsoft::Terminal::Settings::Editor::EnumEntry>(std::move(enumList));                     \
+    if (!_EnumValue)                                                                                                                                        \
+    {                                                                                                                                                       \
+        _EnumValue = _EnumList.GetAt(0);                                                                                                                    \
+    }
 
 #define INITIALIZE_NULLABLE_ENUM_LIST_AND_VALUE(enumMappingsName, enumType, resourceSectionAndType, resourceProperty)                                       \
     std::vector<winrt::Microsoft::Terminal::Settings::Editor::EnumEntry> enumList;                                                                          \
