@@ -1140,6 +1140,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     void ActionsViewModel::AttemptDeleteKeyChord(const Control::KeyChord& keys)
     {
         // Update the settings model
+        assert(keys);
         if (keys)
         {
             _Settings.ActionMap().DeleteKeyBinding(keys);
