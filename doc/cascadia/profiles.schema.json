@@ -2018,6 +2018,12 @@
           "type": "boolean",
           "default": false
         },
+        "useMicaAlt": {
+        "description": "Enable the MicaAlt visual effect.",
+        "type": "boolean",
+        "default": false
+      },
+
         "experimental.rainbowFrame": {
           "description": "When enabled, the frame of the window will cycle through all the colors. Enabling this will override the `frame` and `unfocusedFrame` settings.",
           "type": "boolean",
