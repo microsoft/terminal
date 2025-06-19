@@ -189,16 +189,22 @@ inline const std::set<winrt::Microsoft::Terminal::Settings::Model::ShortcutActio
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
-    CommandViewModel::CommandViewModel(Command cmd, std::vector<Control::KeyChord> keyChordList, const Editor::ActionsViewModel actionsPageVM, const Windows::Foundation::Collections::IMap<Model::ShortcutAction, winrt::hstring>& availableShortcutActionsAndNames) :
+    CommandViewModel::CommandViewModel(Command cmd, std::vector<Control::KeyChord> keyChordList, const Editor::ActionsViewModel actionsPageVM) :
         _command{ cmd },
         _keyChordList{ keyChordList },
-        _actionsPageVM{ actionsPageVM },
-        _AvailableActionsAndNamesMap{ availableShortcutActionsAndNames }
+        _actionsPageVM{ actionsPageVM }
     {
     }
 
     void CommandViewModel::Initialize()
     {
+        const auto actionsPageVM{ _actionsPageVM.get() };
+        if (!actionsPageVM)
+        {
+            // The parent page is gone, just return early
+            return;
+        }
+        const auto shortcutActionsAndNames = actionsPageVM.AvailableShortcutActionsAndNames();
         std::vector<Editor::KeyChordViewModel> keyChordVMs;
         for (const auto keys : _keyChordList)
         {
@@ -209,43 +215,45 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _KeyChordViewModelList = single_threaded_observable_vector(std::move(keyChordVMs));
 
         std::vector<hstring> shortcutActions;
-        for (const auto [action, name] : _AvailableActionsAndNamesMap)
+        for (const auto [action, name] : shortcutActionsAndNames)
         {
             shortcutActions.emplace_back(name);
-            _NameToActionMap.emplace(name, action);
         }
         std::sort(shortcutActions.begin(), shortcutActions.end());
         _AvailableShortcutActions = single_threaded_observable_vector(std::move(shortcutActions));
 
-        const auto shortcutActionString = _AvailableActionsAndNamesMap.Lookup(_command.ActionAndArgs().Action());
+        const auto shortcutActionString = shortcutActionsAndNames.Lookup(_command.ActionAndArgs().Action());
         ProposedShortcutActionName(winrt::box_value(shortcutActionString));
         _CreateAndInitializeActionArgsVMHelper();
 
         // Add a property changed handler to our own property changed event.
         // This allows us to create a new ActionArgsVM when the shortcut action changes
         PropertyChanged([this](auto&&, const PropertyChangedEventArgs& args) {
-            const auto viewModelProperty{ args.PropertyName() };
-            if (viewModelProperty == L"ProposedShortcutActionName")
+            if (const auto actionsPageVM{ _actionsPageVM.get() })
             {
-                const auto actionString = unbox_value<hstring>(ProposedShortcutActionName());
-                const auto actionEnum = _NameToActionMap.at(actionString);
-                const auto emptyArgs = ActionArgFactory::GetEmptyArgsForAction(actionEnum);
-                // todo: probably need some better default values for empty args
-                // eg. for sendInput, where "input" is a required argument, "input" gets set to an empty string which does not satisfy the requirement
-                // i.e. if the user hits "save" immediately after switching to sendInput as the action (without adding something to the input field), they'll get an error
-                // there are some other cases as well
-                Model::ActionAndArgs newActionAndArgs{ actionEnum, emptyArgs };
-                _command.ActionAndArgs(newActionAndArgs);
-                if (_IsNewCommand)
+                const auto viewModelProperty{ args.PropertyName() };
+                if (viewModelProperty == L"ProposedShortcutActionName")
                 {
-                    _command.GenerateID();
+                    const auto actionString = unbox_value<hstring>(ProposedShortcutActionName());
+                    const auto actionEnum = actionsPageVM.NameToActionMap().Lookup(actionString);
+                    const auto emptyArgs = ActionArgFactory::GetEmptyArgsForAction(actionEnum);
+                    // todo: probably need some better default values for empty args
+                    // eg. for sendInput, where "input" is a required argument, "input" gets set to an empty string which does not satisfy the requirement
+                    // i.e. if the user hits "save" immediately after switching to sendInput as the action (without adding something to the input field), they'll get an error
+                    // there are some other cases as well
+                    Model::ActionAndArgs newActionAndArgs{ actionEnum, emptyArgs };
+                    _command.ActionAndArgs(newActionAndArgs);
+                    if (_IsNewCommand)
+                    {
+                        _command.GenerateID();
+                    }
+                    else if (!IsUserAction())
+                    {
+                        _ReplaceCommandWithUserCopy(true);
+                        return;
+                    }
+                    _CreateAndInitializeActionArgsVMHelper();
                 }
-                else if (!IsUserAction())
-                {
-                    _ReplaceCommandWithUserCopy(true);
-                    return;
-                }
-                _CreateAndInitializeActionArgsVMHelper();
             }
         });
     }
@@ -999,7 +1007,30 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     ActionsViewModel::ActionsViewModel(Model::CascadiaSettings settings) :
         _Settings{ settings }
     {
+        // Initialize the action->name and name->action maps before initializing the CommandVMs, they're going to need the maps
+        _AvailableActionsAndNamesMap = Model::ActionArgFactory::AvailableShortcutActionsAndNames();
+        for (const auto unimplemented : UnimplementedShortcutActions)
+        {
+            _AvailableActionsAndNamesMap.Remove(unimplemented);
+        }
+        std::unordered_map<winrt::hstring, Model::ShortcutAction> actionNames;
+        for (const auto [action, name] : _AvailableActionsAndNamesMap)
+        {
+            actionNames.emplace(name, action);
+        }
+        _NameToActionMap = winrt::single_threaded_map(std::move(actionNames));
+
         _MakeCommandVMsHelper();
+    }
+
+    Windows::Foundation::Collections::IMap<Model::ShortcutAction, winrt::hstring> ActionsViewModel::AvailableShortcutActionsAndNames()
+    {
+        return _AvailableActionsAndNamesMap;
+    }
+
+    Windows::Foundation::Collections::IMap<winrt::hstring, Model::ShortcutAction> ActionsViewModel::NameToActionMap()
+    {
+        return _NameToActionMap;
     }
 
     void ActionsViewModel::UpdateSettings(const Model::CascadiaSettings& settings)
@@ -1047,13 +1078,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void ActionsViewModel::_MakeCommandVMsHelper()
     {
-        // Populate AvailableActionsAndNames
-        _AvailableActionsAndNamesMap = Model::ActionArgFactory::AvailableShortcutActionsAndNames();
-        for (const auto unimplemented : UnimplementedShortcutActions)
-        {
-            _AvailableActionsAndNamesMap.Remove(unimplemented);
-        }
-
         const auto& allCommands{ _Settings.ActionMap().AllCommands() };
         std::vector<Editor::CommandViewModel> commandList;
         commandList.reserve(allCommands.Size());
@@ -1066,7 +1090,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 {
                     keyChordList.emplace_back(keys);
                 }
-                auto cmdVM{ make_self<CommandViewModel>(cmd, keyChordList, *this, _AvailableActionsAndNamesMap) };
+                auto cmdVM{ make_self<CommandViewModel>(cmd, keyChordList, *this) };
                 _RegisterCmdVMEvents(cmdVM);
                 cmdVM->Initialize();
                 commandList.push_back(*cmdVM);
@@ -1085,7 +1109,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         const auto args = ActionArgFactory::GetEmptyArgsForAction(shortcutAction);
         newCmd.ActionAndArgs(Model::ActionAndArgs{ shortcutAction, args });
         _Settings.ActionMap().AddAction(newCmd, nullptr);
-        auto cmdVM{ make_self<CommandViewModel>(newCmd, std::vector<Control::KeyChord>{}, *this, _AvailableActionsAndNamesMap) };
+        auto cmdVM{ make_self<CommandViewModel>(newCmd, std::vector<Control::KeyChord>{}, *this) };
         cmdVM->IsNewCommand(true);
         _RegisterCmdVMEvents(cmdVM);
         cmdVM->Initialize();

@@ -87,8 +87,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     public:
         CommandViewModel(winrt::Microsoft::Terminal::Settings::Model::Command cmd,
                          std::vector<Control::KeyChord> keyChordList,
-                         const Editor::ActionsViewModel actionsPageVM,
-                         const Windows::Foundation::Collections::IMap<Model::ShortcutAction, winrt::hstring>& availableShortcutActionsAndNames);
+                         const Editor::ActionsViewModel actionsPageVM);
         void Initialize();
 
         winrt::hstring DisplayName();
@@ -129,8 +128,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void _RegisterActionArgsVMEvents(Editor::ActionArgsViewModel actionArgsVM);
         void _ReplaceCommandWithUserCopy(bool reinitialize);
         void _CreateAndInitializeActionArgsVMHelper();
-        Windows::Foundation::Collections::IMap<Model::ShortcutAction, winrt::hstring> _AvailableActionsAndNamesMap;
-        std::unordered_map<winrt::hstring, Model::ShortcutAction> _NameToActionMap;
     };
 
     struct ArgWrapper : ArgWrapperT<ArgWrapper>, ViewModelHelper<ArgWrapper>
@@ -272,6 +269,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void AttemptAddOrModifyKeyChord(const Editor::KeyChordViewModel& senderVM, winrt::hstring commandID, const Control::KeyChord& newKeys, const Control::KeyChord& oldKeys);
         void AttemptAddCopiedCommand(const Model::Command& newCommand);
 
+        Windows::Foundation::Collections::IMap<Model::ShortcutAction, winrt::hstring> AvailableShortcutActionsAndNames();
+        Windows::Foundation::Collections::IMap<winrt::hstring, Model::ShortcutAction> NameToActionMap();
+
         WINRT_PROPERTY(Windows::Foundation::Collections::IObservableVector<Editor::CommandViewModel>, CommandList);
         WINRT_OBSERVABLE_PROPERTY(ActionsSubPage, CurrentPage, _propertyChangedHandlers, ActionsSubPage::Base);
 
@@ -279,6 +279,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Editor::CommandViewModel _CurrentCommand{ nullptr };
         Model::CascadiaSettings _Settings;
         Windows::Foundation::Collections::IMap<Model::ShortcutAction, winrt::hstring> _AvailableActionsAndNamesMap;
+        Windows::Foundation::Collections::IMap<winrt::hstring, Model::ShortcutAction> _NameToActionMap;
 
         void _MakeCommandVMsHelper();
         void _RegisterCmdVMEvents(com_ptr<implementation::CommandViewModel>& cmdVM);

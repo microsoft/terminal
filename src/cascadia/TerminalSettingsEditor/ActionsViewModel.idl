@@ -153,5 +153,8 @@ namespace Microsoft.Terminal.Settings.Editor
 
         IObservableVector<CommandViewModel> CommandList { get; };
         void CmdListItemClicked(IInspectable sender, Windows.UI.Xaml.Controls.ItemClickEventArgs args);
+
+        Windows.Foundation.Collections.IMap<Microsoft.Terminal.Settings.Model.ShortcutAction, String> AvailableShortcutActionsAndNames();
+        Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.Settings.Model.ShortcutAction> NameToActionMap();
     }
 }
