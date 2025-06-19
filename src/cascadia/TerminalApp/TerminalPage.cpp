@@ -3285,6 +3285,19 @@ namespace winrt::TerminalApp::implementation
                 {
                     controlSettings.DefaultSettings().StartingDirectory(workingDirectory);
                 }
+                // Copy Title and Color of tab you split
+                controlSettings.DefaultSettings().StartingTitle(terminalTab->Title());
+                const auto color = terminalTab->GetTabColor();
+                if (color.has_value())
+                {
+                    const auto& rawColor = color.value();
+                    controlSettings.DefaultSettings().StartingTabColor(
+                        winrt::Microsoft::Terminal::Core::Color{
+                            rawColor.R,
+                            rawColor.G,
+                            rawColor.B,
+                            rawColor.A });
+                }
             }
         }
         if (!profile)
