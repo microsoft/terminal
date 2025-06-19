@@ -21,9 +21,14 @@ Param(
 
 $ErrorActionPreference = 'Stop'
 
-if (-not $MakePriPath) {
-  $winSdk10Root = $(Get-ItemPropertyValue -Path "HKLM:\SOFTWARE\Microsoft\Windows Kits\Installed Roots" -Name "KitsRoot10")
+If (-not $MakePriPath) {
+  $winSdk10Root = $(Get-ItemPropertyValue -Path "HKLM:\Software\Microsoft\Windows Kits\Installed Roots" -Name "KitsRoot10")
   $MakePriPath = "$winSdk10Root\bin\10.0.22621.0\x64\MakePri.exe"
+}
+
+If ($null -Eq (Get-Item $MakePriPath -EA:SilentlyContinue)) {
+    Write-Error "Could not find MakePriPath.exe at `"$MakePriPath`".`nMake sure that -MakePriPath points to a valid SDK."
+    Exit 1
 }
 
 $tempDir = Join-Path ([System.IO.Path]::GetTempPath()) "tmp$([Convert]::ToString((Get-Random 65535),16).PadLeft(4,'0')).tmp"
