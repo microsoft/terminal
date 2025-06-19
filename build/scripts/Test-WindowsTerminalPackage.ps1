@@ -15,7 +15,7 @@ $ErrorActionPreference = "Stop"
 
 If (-not $WindowsKitPath) {
   $winSdk10Root = $(Get-ItemPropertyValue -Path "HKLM:\Software\Microsoft\Windows Kits\Installed Roots" -Name "KitsRoot10")
-  $WindowsKitPath = "$winSdk10Root/bin/10.0.22621.0"
+  $WindowsKitPath = "$winSdk10Root\bin\10.0.22621.0"
 }
 
 If ($null -Eq (Get-Item $WindowsKitPath -EA:SilentlyContinue)) {
