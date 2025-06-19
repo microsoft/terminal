@@ -1746,6 +1746,11 @@ namespace winrt::TerminalApp::implementation
         return _zoomedPane != nullptr;
     }
 
+    bool TerminalTab::InRename()
+    {
+        return _headerControl.InRename();
+    }
+
     TermControl _termControlFromPane(const auto& pane)
     {
         if (const auto content{ pane->GetContent() })
