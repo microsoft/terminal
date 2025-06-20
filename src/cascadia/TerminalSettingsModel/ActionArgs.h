@@ -56,6 +56,7 @@
 #include "JsonUtils.h"
 #include "HashUtils.h"
 #include "TerminalWarnings.h"
+#include "../WinRTUtils/inc/LibraryResources.h"
 
 #include "TerminalSettingsSerializationHelpers.h"
 

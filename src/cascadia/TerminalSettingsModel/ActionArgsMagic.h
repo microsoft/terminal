@@ -66,9 +66,15 @@ struct InitListPlaceholder
 #define CTOR_INIT(type, name, jsonKey, required, tag, ...) \
     _##name{ name##Param },
 
+#define STRINGIFY2(x) #x
+#define STRINGIFY(x) STRINGIFY2(x)
+#define WIDEN2(x) L##x
+#define WIDEN(x) WIDEN2(x)
+#define LOCALIZED_NAME(name) WIDEN(STRINGIFY(name##Localized))
+
 // append this argument's description to the internal vector
 #define APPEND_ARG_DESCRIPTION(type, name, jsonKey, required, tag, ...) \
-    _argDescriptors.push_back({ L## #name, L## #type, std::wstring_view(L## #required) != L"false", tag });
+    _argDescriptors.push_back({ RS_(LOCALIZED_NAME(name)), L## #type, std::wstring_view(L## #required) != L"false", tag });
 
 // check each property in the Equals() method. You'll note there's a stray
 // `true` in the definition of Equals() below, that's to deal with trailing
