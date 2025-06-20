@@ -149,7 +149,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         // unboxing functions
         winrt::hstring UnboxString(const Windows::Foundation::IInspectable& value);
-        winrt::hstring UnboxGuid(const Windows::Foundation::IInspectable& value);
         int32_t UnboxInt32(const Windows::Foundation::IInspectable& value);
         float UnboxInt32Optional(const Windows::Foundation::IInspectable& value);
         uint32_t UnboxUInt32(const Windows::Foundation::IInspectable& value);
@@ -163,7 +162,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         // bind back functions
         void StringBindBack(const winrt::hstring& newValue);
-        void GuidBindBack(const winrt::hstring& newValue);
         void Int32BindBack(const double newValue);
         void Int32OptionalBindBack(const double newValue);
         void UInt32BindBack(const double newValue);

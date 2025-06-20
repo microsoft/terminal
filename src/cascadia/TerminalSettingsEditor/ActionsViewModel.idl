@@ -67,7 +67,6 @@ namespace Microsoft.Terminal.Settings.Editor
 
         // unboxing functions
         String UnboxString(Object value);
-        String UnboxGuid(Object value);
         UInt32 UnboxInt32(Object value);
         Single UnboxInt32Optional(Object value);
         UInt32 UnboxUInt32(Object value);
@@ -81,7 +80,6 @@ namespace Microsoft.Terminal.Settings.Editor
 
         // bind back functions
         void StringBindBack(String newValue);
-        void GuidBindBack(String newValue);
         void Int32BindBack(Double newValue);
         void Int32OptionalBindBack(Double newValue);
         void UInt32BindBack(Double newValue);

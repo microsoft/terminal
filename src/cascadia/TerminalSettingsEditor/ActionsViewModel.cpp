@@ -24,7 +24,7 @@ using namespace winrt::Windows::UI::Xaml::Data;
 using namespace winrt::Windows::UI::Xaml::Navigation;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
 
-// todo:
+// TODO: GH 19056
 //      multiple actions
 //      selection color
 // the above arg types aren't implemented yet - they all have multiple values within them
@@ -241,7 +241,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                     const auto actionString = unbox_value<hstring>(ProposedShortcutActionName());
                     const auto actionEnum = actionsPageVM.NameToActionMap().Lookup(actionString);
                     const auto emptyArgs = ActionArgFactory::GetEmptyArgsForAction(actionEnum);
-                    // todo: probably need some better default values for empty args
+                    // TODO: GH 19056
+                    // probably need some better default values for empty args and/or validation
                     // eg. for sendInput, where "input" is a required argument, "input" gets set to an empty string which does not satisfy the requirement
                     // i.e. if the user hits "save" immediately after switching to sendInput as the action (without adding something to the input field), they'll get an error
                     // there are some other cases as well
@@ -635,11 +636,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return winrt::unbox_value<winrt::hstring>(value);
     }
 
-    winrt::hstring ArgWrapper::UnboxGuid(const Windows::Foundation::IInspectable& value)
-    {
-        return winrt::to_hstring(winrt::unbox_value<winrt::guid>(value));
-    }
-
     int32_t ArgWrapper::UnboxInt32(const Windows::Foundation::IInspectable& value)
     {
         return winrt::unbox_value<int32_t>(value);
@@ -731,15 +727,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         if (UnboxString(_Value) != newValue)
         {
             Value(box_value(newValue));
-        }
-    }
-
-    void ArgWrapper::GuidBindBack(const winrt::hstring& newValue)
-    {
-        if (UnboxGuid(_Value) != newValue)
-        {
-            // todo: probably need some validation?
-            Value(box_value(winrt::guid{ newValue }));
         }
     }
 
