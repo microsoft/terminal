@@ -820,4 +820,160 @@
     <value>SSH Host Profile Generator</value>
     <comment>The display name of a dynamic profile generator for SSH hosts</comment>
   </data>
+  <data name="DismissSelectionLocalized" xml:space="preserve">
+    <value>Dismiss Selection</value>
+  </data>
+  <data name="SingleLineLocalized" xml:space="preserve">
+    <value>Single Line</value>
+  </data>
+  <data name="WithControlSequencesLocalized" xml:space="preserve">
+    <value>With Control Sequences</value>
+  </data>
+  <data name="CopyFormattingLocalized" xml:space="preserve">
+    <value>Copy Formatting</value>
+  </data>
+  <data name="TabIndexLocalized" xml:space="preserve">
+    <value>Tab Index</value>
+  </data>
+  <data name="WindowLocalized" xml:space="preserve">
+    <value>Window</value>
+  </data>
+  <data name="ResizeDirectionLocalized" xml:space="preserve">
+    <value>Resize Direction</value>
+  </data>
+  <data name="FocusDirectionLocalized" xml:space="preserve">
+    <value>Focus Direction</value>
+  </data>
+  <data name="DirectionLocalized" xml:space="preserve">
+    <value>Direction</value>
+  </data>
+  <data name="DeltaLocalized" xml:space="preserve">
+    <value>Delta</value>
+  </data>
+  <data name="InputLocalized" xml:space="preserve">
+    <value>Input</value>
+  </data>
+  <data name="TargetLocalized" xml:space="preserve">
+    <value>Target</value>
+  </data>
+  <data name="IsFocusModeLocalized" xml:space="preserve">
+    <value>Is Focus Mode</value>
+  </data>
+  <data name="IsMaximizedLocalized" xml:space="preserve">
+    <value>Is Maximized</value>
+  </data>
+  <data name="IsFullScreenLocalized" xml:space="preserve">
+    <value>Is Full Screen</value>
+  </data>
+  <data name="SchemeNameLocalized" xml:space="preserve">
+    <value>Scheme Name</value>
+  </data>
+  <data name="TabColorLocalized" xml:space="preserve">
+    <value>Tab Color</value>
+  </data>
+  <data name="TitleLocalized" xml:space="preserve">
+    <value>Title</value>
+  </data>
+  <data name="CommandlineLocalized" xml:space="preserve">
+    <value>Commandline</value>
+  </data>
+  <data name="IndexLocalized" xml:space="preserve">
+    <value>Index</value>
+  </data>
+  <data name="RowsToScrollLocalized" xml:space="preserve">
+    <value>Rows To Scroll</value>
+  </data>
+  <data name="ColorLocalized" xml:space="preserve">
+    <value>Color</value>
+  </data>
+  <data name="LaunchModeLocalized" xml:space="preserve">
+    <value>Launch Mode</value>
+  </data>
+  <data name="NameLocalized" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="KeyChordLocalized" xml:space="preserve">
+    <value>Key Chord</value>
+  </data>
+  <data name="SourceLocalized" xml:space="preserve">
+    <value>Source</value>
+  </data>
+  <data name="UseCommandlineLocalized" xml:space="preserve">
+    <value>Use Commandline</value>
+  </data>
+  <data name="SwitcherModeLocalized" xml:space="preserve">
+    <value>Switcher Mode</value>
+  </data>
+  <data name="QueryUrlLocalized" xml:space="preserve">
+    <value>Query Url</value>
+  </data>
+  <data name="DesktopLocalized" xml:space="preserve">
+    <value>Desktop</value>
+  </data>
+  <data name="MonitorLocalized" xml:space="preserve">
+    <value>Monitor</value>
+  </data>
+  <data name="ToggleVisibilityLocalized" xml:space="preserve">
+    <value>Toggle Visibility</value>
+  </data>
+  <data name="DropdownDurationLocalized" xml:space="preserve">
+    <value>Dropdown Duration</value>
+  </data>
+  <data name="IdLocalized" xml:space="preserve">
+    <value>Id</value>
+  </data>
+  <data name="PathLocalized" xml:space="preserve">
+    <value>Path</value>
+  </data>
+  <data name="ClearLocalized" xml:space="preserve">
+    <value>Clear</value>
+  </data>
+  <data name="OpacityLocalized" xml:space="preserve">
+    <value>Opacity</value>
+  </data>
+  <data name="RelativeLocalized" xml:space="preserve">
+    <value>Relative</value>
+  </data>
+  <data name="ForegroundLocalized" xml:space="preserve">
+    <value>Foreground</value>
+  </data>
+  <data name="BackgroundLocalized" xml:space="preserve">
+    <value>Background</value>
+  </data>
+  <data name="MatchModeLocalized" xml:space="preserve">
+    <value>Match Mode</value>
+  </data>
+  <data name="StartingDirectoryLocalized" xml:space="preserve">
+    <value>Starting Directory</value>
+  </data>
+  <data name="TabTitleLocalized" xml:space="preserve">
+    <value>Tab Title</value>
+  </data>
+  <data name="ProfileIndexLocalized" xml:space="preserve">
+    <value>Profile Index</value>
+  </data>
+  <data name="ProfileLocalized" xml:space="preserve">
+    <value>Profile</value>
+  </data>
+  <data name="SuppressApplicationTitleLocalized" xml:space="preserve">
+    <value>Suppress Application Title</value>
+  </data>
+  <data name="ColorSchemeLocalized" xml:space="preserve">
+    <value>Color Scheme</value>
+  </data>
+  <data name="ElevateLocalized" xml:space="preserve">
+    <value>Elevate</value>
+  </data>
+  <data name="ReloadEnvironmentVariablesLocalized" xml:space="preserve">
+    <value>Reload Environment Variables</value>
+  </data>
+  <data name="SplitDirectionLocalized" xml:space="preserve">
+    <value>Split Direction</value>
+  </data>
+  <data name="SplitModeLocalized" xml:space="preserve">
+    <value>Split Mode</value>
+  </data>
+  <data name="SplitSizeLocalized" xml:space="preserve">
+    <value>Split Size</value>
+  </data>
 </root>
