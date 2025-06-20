@@ -144,6 +144,7 @@ namespace Microsoft.Terminal.Settings.Editor
 
         ActionsSubPage CurrentPage;
         CommandViewModel CurrentCommand;
+        Boolean DisplayBadge { get; };
 
         void AttemptAddOrModifyKeyChord(KeyChordViewModel senderVM, String commandID, Microsoft.Terminal.Control.KeyChord newKeys, Microsoft.Terminal.Control.KeyChord oldKeys);
         void AttemptDeleteKeyChord(Microsoft.Terminal.Control.KeyChord keys);

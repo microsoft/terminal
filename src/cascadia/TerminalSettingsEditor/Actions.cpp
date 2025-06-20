@@ -23,6 +23,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         _ViewModel = e.Parameter().as<Editor::ActionsViewModel>();
         _ViewModel.CurrentPage(ActionsSubPage::Base);
+        auto vmImpl = get_self<ActionsViewModel>(_ViewModel);
+        vmImpl->MarkAsVisited();
     }
 
     void Actions::AddNew_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*eventArgs*/)

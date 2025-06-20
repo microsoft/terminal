@@ -193,6 +193,8 @@ inline const std::set<winrt::Microsoft::Terminal::Settings::Model::ShortcutActio
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
+    static constexpr std::wstring_view ActionsPageId{ L"page.actions" };
+
     CommandViewModel::CommandViewModel(Command cmd, std::vector<Control::KeyChord> keyChordList, const Editor::ActionsViewModel actionsPageVM) :
         _command{ cmd },
         _keyChordList{ keyChordList },
@@ -1065,6 +1067,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             CurrentCommand(nullptr);
             CurrentPage(ActionsSubPage::Base);
         }
+    }
+
+    void ActionsViewModel::MarkAsVisited()
+    {
+        Model::ApplicationState::SharedInstance().DismissBadge(ActionsPageId);
+        _NotifyChanges(L"DisplayBadge");
+    }
+
+    bool ActionsViewModel::DisplayBadge() const noexcept
+    {
+        return !Model::ApplicationState::SharedInstance().BadgeDismissed(ActionsPageId);
     }
 
     void ActionsViewModel::_MakeCommandVMsHelper()

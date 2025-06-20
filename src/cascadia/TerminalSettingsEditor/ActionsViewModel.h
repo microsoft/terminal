@@ -256,6 +256,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     public:
         ActionsViewModel(Model::CascadiaSettings settings);
         void UpdateSettings(const Model::CascadiaSettings& settings);
+        void MarkAsVisited();
+        bool DisplayBadge() const noexcept;
 
         void AddNewCommand();
 
