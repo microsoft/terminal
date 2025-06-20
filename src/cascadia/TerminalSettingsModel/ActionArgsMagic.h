@@ -66,11 +66,11 @@ struct InitListPlaceholder
 #define CTOR_INIT(type, name, jsonKey, required, tag, ...) \
     _##name{ name##Param },
 
-#define STRINGIFY2(x) #x
-#define STRINGIFY(x) STRINGIFY2(x)
-#define WIDEN2(x) L##x
-#define WIDEN(x) WIDEN2(x)
-#define LOCALIZED_NAME(name) WIDEN(STRINGIFY(name##Localized))
+#define ARGDESC_STRINGIFY2(x) #x
+#define ARGDESC_STRINGIFY(x) ARGDESC_STRINGIFY2(x)
+#define ARGDESC_WIDEN2(x) L##x
+#define ARGDESC_WIDEN(x) ARGDESC_WIDEN2(x)
+#define LOCALIZED_NAME(name) ARGDESC_WIDEN(ARGDESC_STRINGIFY(name##Localized))
 
 // append this argument's description to the internal vector
 #define APPEND_ARG_DESCRIPTION(type, name, jsonKey, required, tag, ...) \
