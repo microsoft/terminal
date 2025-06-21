@@ -286,3 +286,4 @@ profiles.json
 
 # MSBuildCache
 /MSBuildCacheLogs/
+enc_temp_folder/
