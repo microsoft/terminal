@@ -460,9 +460,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         _richBlock = Microsoft::Terminal::UI::Markdown::Builder::Convert(_messageContent, L"");
         _richBlock.IsTextSelectionEnabled(true);
         _richBlock.ContextMenuOpening([this](const Windows::Foundation::IInspectable& /*sender*/, const Windows::UI::Xaml::Controls::ContextMenuEventArgs& e) {
-            // If the context menu is opening, we want to show the copy option
-            // and select all option if the message is not a query.
-
+            // If the context menu is opening we want to show our custom copy option
             MenuFlyout menuFlyout;
             Windows::UI::Xaml::Controls::FontIcon copyIcon;
             copyIcon.Glyph(L"\uE8C8"); // Copy icon
