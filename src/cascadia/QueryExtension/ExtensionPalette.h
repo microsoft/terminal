@@ -66,9 +66,6 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         bool IsQuery() const { return _isQuery; };
         winrt::hstring MessageContent() const { return _messageContent; };
         winrt::Windows::UI::Xaml::Controls::RichTextBlock RichBlock() const { return _richBlock; };
-        void _chatMessageCopyRequested(const Windows::Foundation::IInspectable& /*sender*/,
-                                       const Windows::UI::Xaml::Input::ContextRequestedEventArgs& e);
-
         TYPED_EVENT(RunCommandClicked, winrt::Microsoft::Terminal::Query::Extension::ChatMessage, winrt::hstring);
 
     private:

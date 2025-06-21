@@ -7,6 +7,8 @@
 #include "LibraryResources.h"
 #include <winrt/Windows.UI.Xaml.Media.Imaging.h>
 
+#include <winrt/Windows.ApplicationModel.DataTransfer.h>
+
 #include "ExtensionPalette.g.cpp"
 #include "ChatMessage.g.cpp"
 #include "GroupedChatMessages.g.cpp"
@@ -457,9 +459,38 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
     {
         _richBlock = Microsoft::Terminal::UI::Markdown::Builder::Convert(_messageContent, L"");
         _richBlock.IsTextSelectionEnabled(true);
-        _richBlock.ContextRequested({ this, &ChatMessage::_chatMessageCopyRequested });
+        _richBlock.ContextMenuOpening([this](const Windows::Foundation::IInspectable& /*sender*/, const Windows::UI::Xaml::Controls::ContextMenuEventArgs& e) {
+            // If the context menu is opening, we want to show the copy option
+            // and select all option if the message is not a query.
+
+            MenuFlyout menuFlyout;
+            Windows::UI::Xaml::Controls::FontIcon copyIcon;
+            copyIcon.Glyph(L"\uE8C8"); // Copy icon
+
+            auto copyItem = MenuFlyoutItem();
+            copyItem.Text(RS_(L"CopyMessage"));
+            copyItem.Icon(copyIcon);
+            copyItem.Click([this](auto&, auto&) {
+                const auto messageContent = this->MessageContent();
+
+                if (!messageContent.empty())
+                {
+                    // Create a DataPackage and set the content to the message content
+                    Windows::ApplicationModel::DataTransfer::DataPackage package{};
+                    package.SetText(messageContent);
+                    Windows::ApplicationModel::DataTransfer::Clipboard::SetContent(package);
+                }
+            });
+            menuFlyout.Items().Append(copyItem);
+
+            menuFlyout.ShouldConstrainToRootBounds(true);
+            menuFlyout.Placement(Windows::UI::Xaml::Controls::Primitives::FlyoutPlacementMode::BottomEdgeAlignedRight);
+            menuFlyout.ShowAt(_richBlock);
+            e.Handled(true);
+        });
         _richBlock.AllowFocusWhenDisabled(true);
         _richBlock.AllowFocusOnInteraction(true);
+
         const auto resources = Application::Current().Resources();
         const auto textBrushObj = _isQuery ? resources.Lookup(box_value(L"TextOnAccentFillColorPrimaryBrush")) : resources.Lookup(box_value(L"TextFillColorPrimaryBrush"));
         if (const auto textBrush = textBrushObj.try_as<Windows::UI::Xaml::Media::SolidColorBrush>())
@@ -498,18 +529,4 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
             }
         }
     }
-
-    // Method Description:
-    // - Handle the ContextFlyoutRequested Event
-    //   * Should be handled according to the documentation
-    // Arguments:
-    // - Standard Event Args
-    // Return Value:
-    // - <none>
-    void ChatMessage::_chatMessageCopyRequested(const Windows::Foundation::IInspectable& /*sender*/,
-                                                const Windows::UI::Xaml::Input::ContextRequestedEventArgs& e)
-    {
-        e.Handled(true);
-    }
-
 }
