@@ -3983,17 +3983,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void TermControl::_contextMenuHandler(IInspectable /*sender*/,
                                           Control::ContextMenuRequestedEventArgs args)
     {
-        // Position the menu where the pointer is. This was the best way I found how.
-        const til::point absolutePointerPos{ til::math::rounding, CoreWindow::GetForCurrentThread().PointerPosition() };
-        const til::point absoluteWindowOrigin{ til::math::rounding,
-                                               CoreWindow::GetForCurrentThread().Bounds().X,
-                                               CoreWindow::GetForCurrentThread().Bounds().Y };
-        // Get the offset (margin + tabs, etc..) of the control within the window
-        const til::point controlOrigin{ til::math::flooring,
-                                        this->TransformToVisual(nullptr).TransformPoint(Windows::Foundation::Point(0, 0)) };
-
-        const auto pos = (absolutePointerPos - absoluteWindowOrigin - controlOrigin);
-        _showContextMenuAt(pos);
+        const auto inverseScale = 1.0f / static_cast<float>(XamlRoot().RasterizationScale());
+        const auto padding = GetPadding();
+        const auto pos = args.Position();
+        _showContextMenuAt({
+            til::math::rounding,
+            pos.X * inverseScale + static_cast<float>(padding.Left),
+            pos.Y * inverseScale + static_cast<float>(padding.Top),
+        });
     }
 
     void TermControl::_showContextMenuAt(const til::point& controlRelativePos)
