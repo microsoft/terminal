@@ -32,13 +32,21 @@
       ]
     },
     "DynamicProfileSource": {
-      "enum": [
-        "Windows.Terminal.Wsl",
-        "Windows.Terminal.Azure",
-        "Windows.Terminal.PowershellCore",
-        "Windows.Terminal.VisualStudio"
-      ],
-      "type": "string"
+      "type": "string",
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "enum": [
+            "Microsoft.WSL",
+            "Windows.Terminal.Wsl",
+            "Windows.Terminal.Azure",
+            "Windows.Terminal.PowershellCore",
+            "Windows.Terminal.VisualStudio"
+          ]
+        }
+      ]
     },
     "BellStyle": {
       "oneOf": [
