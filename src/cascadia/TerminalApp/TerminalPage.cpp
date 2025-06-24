@@ -2303,7 +2303,7 @@ namespace winrt::TerminalApp::implementation
     // for it. The Title change will be propagated upwards through the tab's
     // PropertyChanged event handler.
     void TerminalPage::_activePaneChanged(winrt::TerminalApp::TerminalTab sender,
-                                          Windows::Foundation::IInspectable args)
+                                          Windows::Foundation::IInspectable /*args*/)
     {
         if (const auto tab{ _GetTerminalTabImpl(sender) })
         {
@@ -4165,6 +4165,13 @@ namespace winrt::TerminalApp::implementation
             }
         });
 
+        sui.ShowLoadWarningsDialog([weakThis{ get_weak() }](auto&& /*s*/, const Windows::Foundation::Collections::IVectorView<winrt::Microsoft::Terminal::Settings::Model::SettingsLoadWarnings>& warnings) {
+            if (auto page{ weakThis.get() })
+            {
+                page->ShowLoadWarningsDialog.raise(*page, warnings);
+            }
+        });
+
         return *settingsContent;
     }
 
@@ -5382,8 +5389,8 @@ namespace winrt::TerminalApp::implementation
         _sendDraggedTabToWindow(winrt::to_hstring(args.TargetWindow()), args.TabIndex(), std::nullopt);
     }
 
-    void TerminalPage::_onTabDroppedOutside(winrt::IInspectable sender,
-                                            winrt::MUX::Controls::TabViewTabDroppedOutsideEventArgs e)
+    void TerminalPage::_onTabDroppedOutside(winrt::IInspectable /*sender*/,
+                                            winrt::MUX::Controls::TabViewTabDroppedOutsideEventArgs /*e*/)
     {
         // Get the current pointer point from the CoreWindow
         const auto& pointerPoint{ CoreWindow::GetForCurrentThread().PointerPosition() };

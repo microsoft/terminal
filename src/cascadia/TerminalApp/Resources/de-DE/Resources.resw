@@ -213,6 +213,45 @@
   <data name="SplitPaneText" xml:space="preserve">
     <value>Bereich teilen</value>
   </data>
+  <data name="SplitPaneToolTipText" xml:space="preserve">
+    <value>Mit der rechten Maustaste klicken für Richtungen zum Teilen – rechts/unten/oben/links</value>
+  </data>
+  <data name="SplitPaneDownText" xml:space="preserve">
+    <value>Bereich nach unten teilen</value>
+  </data>
+  <data name="SplitPaneRightText" xml:space="preserve">
+    <value>Bereich nach rechts teilen</value>
+  </data>
+  <data name="SplitPaneUpText" xml:space="preserve">
+    <value>Bereich nach oben teilen</value>
+  </data>
+  <data name="SplitPaneLeftText" xml:space="preserve">
+    <value>Bereich nach links teilen</value>
+  </data>
+  <data name="SplitPaneDuplicateText" xml:space="preserve">
+    <value>Duplikat</value>
+  </data>
+  <data name="SwapPaneText" xml:space="preserve">
+    <value>Bereich austauschen</value>
+  </data>
+  <data name="SwapPaneDownText" xml:space="preserve">
+    <value>Bereich nach unten wechseln</value>
+  </data>
+  <data name="SwapPaneRightText" xml:space="preserve">
+    <value>Bereich nach rechts wechseln</value>
+  </data>
+  <data name="SwapPaneUpText" xml:space="preserve">
+    <value>Bereich nach oben wechseln</value>
+  </data>
+  <data name="SwapPaneLeftText" xml:space="preserve">
+    <value>Bereich nach links wechseln</value>
+  </data>
+  <data name="TogglePaneZoomText" xml:space="preserve">
+    <value>Zoomfenster umschalten</value>
+  </data>
+  <data name="CloseOtherPanesText" xml:space="preserve">
+    <value>Andere Bereiche schließen</value>
+  </data>
   <data name="SearchWebText" xml:space="preserve">
     <value>Websuche</value>
   </data>
@@ -938,5 +977,8 @@
   </data>
   <data name="TabMoveRight" xml:space="preserve">
     <value>Nach rechts</value>
+  </data>
+  <data name="InvalidRegex" xml:space="preserve">
+    <value>Ein ungültiger regulärer Ausdruck wurde entdeckt.</value>
   </data>
 </root>

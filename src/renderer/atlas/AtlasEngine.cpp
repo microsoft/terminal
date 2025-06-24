@@ -500,8 +500,13 @@ try
     {
         for (const auto& cluster : clusters)
         {
-            for (const auto& ch : cluster.GetText())
+            for (auto ch : cluster.GetText())
             {
+                // Render Unicode directional isolate characters (U+2066..U+2069) as zero-width spaces.
+                if (ch >= L'\u2066' && ch <= L'\u2069')
+                {
+                    ch = L'\u200B';
+                }
                 _api.bufferLine.emplace_back(ch);
                 _api.bufferLineColumn.emplace_back(columnEnd);
             }

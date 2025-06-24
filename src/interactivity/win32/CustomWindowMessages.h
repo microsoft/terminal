@@ -29,4 +29,6 @@
 #define CM_SET_KEYBOARD_LAYOUT   (WM_USER+19)
 #endif
 
+#define CM_UPDATE_CLIPBOARD      (WM_USER+20)
+
 // clang-format on

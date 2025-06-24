@@ -1297,11 +1297,6 @@ void AdaptDispatch::SelectAttributeChangeExtent(const DispatchTypes::ChangeExten
     }
 }
 
-void AdaptDispatch::SetVtChecksumReportSupport(const bool enabled) noexcept
-{
-    _vtChecksumReportEnabled = enabled;
-}
-
 // Routine Description:
 // - DECRQCRA - Computes and reports a checksum of the specified area of
 //   the buffer memory.
@@ -1318,7 +1313,7 @@ void AdaptDispatch::RequestChecksumRectangularArea(const VTInt id, const VTInt p
     // If this feature is not enabled, we'll just report a zero checksum.
     if constexpr (Feature_VtChecksumReport::IsEnabled())
     {
-        if (_vtChecksumReportEnabled)
+        if (_optionalFeatures.test(OptionalFeature::ChecksumReport))
         {
             // If the page number is 0, then we're meant to return a checksum of all
             // of the pages, but we have no need for that, so we'll just return 0.
@@ -1483,8 +1478,16 @@ void AdaptDispatch::DeviceAttributes()
     // 28 = Rectangular area operations
     // 32 = Text macros
     // 42 = ISO Latin-2 character set
+    // 52 = Clipboard access
 
-    _ReturnCsiResponse(L"?61;4;6;7;14;21;22;23;24;28;32;42c");
+    if (_optionalFeatures.test(OptionalFeature::ClipboardWrite))
+    {
+        _ReturnCsiResponse(L"?61;4;6;7;14;21;22;23;24;28;32;42;52c");
+    }
+    else
+    {
+        _ReturnCsiResponse(L"?61;4;6;7;14;21;22;23;24;28;32;42c");
+    }
 }
 
 // Routine Description:
@@ -4791,4 +4794,9 @@ void AdaptDispatch::PlaySounds(const VTParameters parameters)
         // we set the velocity to 0 (i.e. no volume).
         _api.PlayMidiNote(noteNumber, noteNumber == 71 ? 0 : velocity, duration);
     });
+}
+
+void AdaptDispatch::SetOptionalFeatures(const til::enumset<OptionalFeature> features) noexcept
+{
+    _optionalFeatures = features;
 }

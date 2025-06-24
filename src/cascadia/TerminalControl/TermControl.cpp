@@ -257,6 +257,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return get_self<ControlCore>(_termControl->_core);
     }
 
+    static Windows::UI::ViewManagement::AccessibilitySettings& _GetAccessibilitySettings()
+    {
+        static Windows::UI::ViewManagement::AccessibilitySettings accessibilitySettings;
+        return accessibilitySettings;
+    }
+
     TermControl::TermControl(IControlSettings settings,
                              Control::IControlAppearance unfocusedAppearance,
                              TerminalConnection::ITerminalConnection connection) :
@@ -275,6 +281,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         InitializeComponent();
 
         _core = _interactivity.Core();
+
+        // If high contrast mode was changed, update the appearance appropriately.
+        _core.SetHighContrastMode(_GetAccessibilitySettings().HighContrast());
+        _revokers.HighContrastChanged = _GetAccessibilitySettings().HighContrastChanged(winrt::auto_revoke, [weakThis{ get_weak() }](const Windows::UI::ViewManagement::AccessibilitySettings& a11ySettings, auto&&) {
+            if (auto termControl = weakThis.get())
+            {
+                termControl->_core.SetHighContrastMode(a11ySettings.HighContrast());
+                termControl->_core.ApplyAppearance(termControl->_focused);
+            }
+        });
 
         // This event is specifically triggered by the renderer thread, a BG thread. Use a weak ref here.
         _revokers.RendererEnteredErrorState = _core.RendererEnteredErrorState(winrt::auto_revoke, { get_weak(), &TermControl::_RendererEnteredErrorState });
@@ -3180,7 +3196,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             }
             CATCH_LOG();
 
-            if (items.Size() > 0)
+            if (items && items.Size() > 0)
             {
                 std::vector<std::wstring> fullPaths;
 

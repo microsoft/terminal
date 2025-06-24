@@ -94,7 +94,7 @@ void Terminal::UpdateSettings(ICoreSettings settings)
 
     if (_stateMachine)
     {
-        SetVtChecksumReportSupport(settings.AllowVtChecksumReport());
+        SetOptionalFeatures(settings);
     }
 
     _getTerminalInput().ForceDisableWin32InputMode(settings.ForceVTInput());
@@ -143,7 +143,15 @@ void Terminal::UpdateAppearance(const ICoreAppearance& appearance)
     renderSettings.SetRenderMode(RenderSettings::Mode::IntenseIsBold, appearance.IntenseIsBold());
     renderSettings.SetRenderMode(RenderSettings::Mode::IntenseIsBright, appearance.IntenseIsBright());
 
-    switch (appearance.AdjustIndistinguishableColors())
+    // If AIC is set to Automatic,
+    // update the value based on if high contrast mode is enabled.
+    AdjustTextMode deducedAIC = appearance.AdjustIndistinguishableColors();
+    if (deducedAIC == AdjustTextMode::Automatic)
+    {
+        deducedAIC = _highContrastMode ? AdjustTextMode::Indexed : AdjustTextMode::Never;
+    }
+
+    switch (deducedAIC)
     {
     case AdjustTextMode::Always:
         renderSettings.SetRenderMode(RenderSettings::Mode::IndexedDistinguishableColors, false);
@@ -213,16 +221,24 @@ void Terminal::UpdateAppearance(const ICoreAppearance& appearance)
     _NotifyScrollEvent();
 }
 
+void Terminal::SetHighContrastMode(bool hc) noexcept
+{
+    _highContrastMode = hc;
+}
+
 void Terminal::SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle)
 {
     auto& engine = reinterpret_cast<OutputStateMachineEngine&>(_stateMachine->Engine());
     engine.Dispatch().SetCursorStyle(cursorStyle);
 }
 
-void Terminal::SetVtChecksumReportSupport(const bool enabled)
+void Terminal::SetOptionalFeatures(winrt::Microsoft::Terminal::Core::ICoreSettings settings)
 {
     auto& engine = reinterpret_cast<OutputStateMachineEngine&>(_stateMachine->Engine());
-    engine.Dispatch().SetVtChecksumReportSupport(enabled);
+    auto features = til::enumset<ITermDispatch::OptionalFeature>{};
+    features.set(ITermDispatch::OptionalFeature::ChecksumReport, settings.AllowVtChecksumReport());
+    features.set(ITermDispatch::OptionalFeature::ClipboardWrite, settings.AllowVtClipboardWrite());
+    engine.Dispatch().SetOptionalFeatures(features);
 }
 
 bool Terminal::IsXtermBracketedPasteModeEnabled() const noexcept
