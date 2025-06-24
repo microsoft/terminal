@@ -195,25 +195,10 @@ int WindowThread::_messagePump()
 
         if (!_loggedInteraction && (message.message == WM_KEYDOWN || message.message == WM_SYSKEYDOWN))
         {
-#if defined(WT_BRANDING_RELEASE)
-            constexpr uint8_t branding = 3;
-#elif defined(WT_BRANDING_PREVIEW)
-            constexpr uint8_t branding = 2;
-#elif defined(WT_BRANDING_CANARY)
-            constexpr uint8_t branding = 1;
-#else
-            constexpr uint8_t branding = 0;
-#endif
-            const uint8_t distribution = IsPackaged()                          ? 2 :
-                                         _appLogic.Settings().IsPortableMode() ? 1 :
-                                                                                 0;
-
             TraceLoggingWrite(
                 g_hWindowsTerminalProvider,
                 "SessionBecameInteractive",
                 TraceLoggingDescription("Event emitted when the session was interacted with"),
-                TraceLoggingValue(branding, "Branding"),
-                TraceLoggingValue(distribution, "Distribution"),
                 TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
                 TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
             _loggedInteraction = true;
