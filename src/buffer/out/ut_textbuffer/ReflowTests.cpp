@@ -573,7 +573,7 @@ namespace
         TestCase{
             // This triggers the cursor being walked forward w/ newlines to maintain
             // distance from the last char in the buffer
-            L"SBCS, cursor at end of buffer, otherwise same as previous test",
+            L"SBCS, cursor at end of buffer; otherwise, same as previous test",
             {
                 TestBuffer{
                     { 6, 5 },
