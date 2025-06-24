@@ -316,7 +316,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         try
         {
             auto processImageName{ wil::QueryFullProcessImageNameW<std::wstring>(_piClient.hProcess) };
-            _clientName = std::filesystem::path{ processImageName }.filename().wstring();
+            _clientName = std::filesystem::path{ std::move(processImageName) }.filename().wstring();
         }
         CATCH_LOG()
 
