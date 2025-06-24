@@ -590,7 +590,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     void MainPage::SaveButton_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*args*/)
     {
         _settingsClone.LogSettingChanges(false);
-        _settingsClone.WriteSettingsToDisk();
+        if (!_settingsClone.WriteSettingsToDisk())
+        {
+            ShowLoadWarningsDialog.raise(*this, _settingsClone.Warnings());
+        }
     }
 
     void MainPage::ResetButton_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*args*/)

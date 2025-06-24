@@ -1056,15 +1056,7 @@ try
     // settings string back to the file.
     if (mustWriteToDisk)
     {
-        try
-        {
-            settings->WriteSettingsToDisk();
-        }
-        catch (...)
-        {
-            LOG_CAUGHT_EXCEPTION();
-            settings->_warnings.Append(SettingsLoadWarnings::FailedToWriteToSettings);
-        }
+        settings->WriteSettingsToDisk();
     }
     else
     {
@@ -1354,7 +1346,7 @@ winrt::hstring CascadiaSettings::DefaultSettingsPath()
 // - <none>
 // Return Value:
 // - <none>
-void CascadiaSettings::WriteSettingsToDisk()
+bool CascadiaSettings::WriteSettingsToDisk()
 {
     const auto settingsPath = _settingsPath();
 
@@ -1364,18 +1356,28 @@ void CascadiaSettings::WriteSettingsToDisk()
     wbuilder.settings_["indentation"] = "    ";
     wbuilder.settings_["precision"] = 6; // prevent values like 1.1000000000000001
 
-    FILETIME lastWriteTime{};
-    const auto styledString{ Json::writeString(wbuilder, ToJson()) };
-    til::io::write_utf8_string_to_file_atomic(settingsPath, styledString, &lastWriteTime);
-
-    _hash = _calculateHash(styledString, lastWriteTime);
-
-    // Persists the default terminal choice
-    // GH#10003 - Only do this if _currentDefaultTerminal was actually initialized.
-    if (_currentDefaultTerminal)
+    try
     {
-        DefaultTerminal::Current(_currentDefaultTerminal);
+        FILETIME lastWriteTime{};
+        const auto styledString{ Json::writeString(wbuilder, ToJson()) };
+        til::io::write_utf8_string_to_file_atomic(settingsPath, styledString, &lastWriteTime);
+
+        _hash = _calculateHash(styledString, lastWriteTime);
+
+        // Persists the default terminal choice
+        // GH#10003 - Only do this if _currentDefaultTerminal was actually initialized.
+        if (_currentDefaultTerminal)
+        {
+            DefaultTerminal::Current(_currentDefaultTerminal);
+        }
     }
+    catch (...)
+    {
+        LOG_CAUGHT_EXCEPTION();
+        _warnings.Append(SettingsLoadWarnings::FailedToWriteToSettings);
+        return false;
+    }
+    return true;
 }
 
 #ifndef NDEBUG

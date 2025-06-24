@@ -219,6 +219,7 @@ namespace winrt::TerminalApp::implementation
         _root->Initialized({ get_weak(), &TerminalWindow::_pageInitialized });
         _root->WindowSizeChanged({ get_weak(), &TerminalWindow::_WindowSizeChanged });
         _root->RenameWindowRequested({ get_weak(), &TerminalWindow::_RenameWindowRequested });
+        _root->ShowLoadWarningsDialog({ get_weak(), &TerminalWindow::_ShowLoadWarningsDialog });
         _root->Create();
 
         AppLogic::Current()->SettingsChanged({ get_weak(), &TerminalWindow::UpdateSettingsHandler });
@@ -476,7 +477,7 @@ namespace winrt::TerminalApp::implementation
     //   validating the settings.
     // - Only one dialog can be visible at a time. If another dialog is visible
     //   when this is called, nothing happens. See ShowDialog for details
-    void TerminalWindow::_ShowLoadWarningsDialog(const Windows::Foundation::Collections::IVector<SettingsLoadWarnings>& warnings)
+    void TerminalWindow::_ShowLoadWarningsDialog(const IInspectable&, const Windows::Foundation::Collections::IVectorView<SettingsLoadWarnings>& warnings)
     {
         auto title = RS_(L"SettingsValidateErrorTitle");
         auto buttonText = RS_(L"Ok");
@@ -536,7 +537,7 @@ namespace winrt::TerminalApp::implementation
         }
         else if (settingsLoadedResult == S_FALSE)
         {
-            _ShowLoadWarningsDialog(_initialLoadResult.Warnings());
+            _ShowLoadWarningsDialog(nullptr, _initialLoadResult.Warnings());
         }
     }
 
@@ -822,7 +823,7 @@ namespace winrt::TerminalApp::implementation
         }
         else if (args.Result() == S_FALSE)
         {
-            _ShowLoadWarningsDialog(args.Warnings());
+            _ShowLoadWarningsDialog(nullptr, args.Warnings());
         }
         else if (args.Result() == S_OK)
         {
