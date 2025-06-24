@@ -421,25 +421,21 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 }
             }
         });
-        if (_IsNewCommand)
-        {
-            // for new commands, make sure we generate a new ID every time any arg value changes
-            actionArgsVM.WrapperValueChanged([weakThis = get_weak()](const IInspectable& /*sender*/, const IInspectable& /*args*/) {
-                if (auto weak = weakThis.get())
+        actionArgsVM.WrapperValueChanged([weakThis = get_weak()](const IInspectable& /*sender*/, const IInspectable& /*args*/) {
+            if (auto weak = weakThis.get())
+            {
+                // for new commands, make sure we generate a new ID every time any arg value changes
+                if (weak->_IsNewCommand)
                 {
                     weak->_command.GenerateID();
                 }
-            });
-        }
-        else if (!IsUserAction())
-        {
-            actionArgsVM.WrapperValueChanged([weakThis = get_weak()](const IInspectable& /*sender*/, const IInspectable& /*args*/) {
-                if (auto weak = weakThis.get())
+                else if (!weak->IsUserAction())
                 {
                     weak->_ReplaceCommandWithUserCopy(false);
                 }
-            });
-        }
+                weak->_NotifyChanges(L"DisplayName");
+            }
+        });
     }
 
     void CommandViewModel::_ReplaceCommandWithUserCopy(bool reinitialize)
