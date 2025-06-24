@@ -4097,6 +4097,13 @@ namespace winrt::TerminalApp::implementation
             }
         });
 
+        sui.ShowLoadWarningsDialog([weakThis{ get_weak() }](auto&& /*s*/, const Windows::Foundation::Collections::IVectorView<winrt::Microsoft::Terminal::Settings::Model::SettingsLoadWarnings>& warnings) {
+            if (auto page{ weakThis.get() })
+            {
+                page->ShowLoadWarningsDialog.raise(*page, warnings);
+            }
+        });
+
         return *settingsContent;
     }
 

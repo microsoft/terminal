@@ -396,7 +396,7 @@ namespace winrt::TerminalApp::implementation
                 auto ev = winrt::make_self<SettingsLoadEventArgs>(true,
                                                                   static_cast<uint64_t>(_settingsLoadedResult),
                                                                   _settingsLoadExceptionText,
-                                                                  warnings,
+                                                                  warnings.GetView(),
                                                                   _settings);
                 SettingsChanged.raise(*this, *ev);
                 return;
@@ -428,7 +428,7 @@ namespace winrt::TerminalApp::implementation
         auto ev = winrt::make_self<SettingsLoadEventArgs>(!initialLoad,
                                                           _settingsLoadedResult,
                                                           _settingsLoadExceptionText,
-                                                          warnings,
+                                                          warnings.GetView(),
                                                           _settings);
         SettingsChanged.raise(*this, *ev);
     }
@@ -656,7 +656,7 @@ namespace winrt::TerminalApp::implementation
         auto ev = winrt::make_self<SettingsLoadEventArgs>(false,
                                                           _settingsLoadedResult,
                                                           _settingsLoadExceptionText,
-                                                          warnings,
+                                                          warnings.GetView(),
                                                           _settings);
 
         auto window = winrt::make_self<implementation::TerminalWindow>(*ev, _contentManager);
