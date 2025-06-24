@@ -20,6 +20,7 @@
 #include "StringSentEventArgs.g.h"
 #include "SearchMissingCommandEventArgs.g.h"
 #include "WindowSizeChangedEventArgs.g.h"
+#include "WriteToClipboardEventArgs.g.h"
 
 namespace winrt::Microsoft::Terminal::Control::implementation
 {
@@ -237,6 +238,32 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         WINRT_PROPERTY(int32_t, Width);
         WINRT_PROPERTY(int32_t, Height);
+    };
+
+    struct WriteToClipboardEventArgs : WriteToClipboardEventArgsT<WriteToClipboardEventArgs>
+    {
+        WriteToClipboardEventArgs(winrt::hstring&& plain, std::string&& html, std::string&& rtf) :
+            _plain(std::move(plain)),
+            _html(std::move(html)),
+            _rtf(std::move(rtf))
+        {
+        }
+
+        winrt::hstring Plain() const noexcept { return _plain; }
+        winrt::com_array<uint8_t> Html() noexcept { return _cast(_html); }
+        winrt::com_array<uint8_t> Rtf() noexcept { return _cast(_rtf); }
+
+    private:
+        static winrt::com_array<uint8_t> _cast(const std::string& str)
+        {
+            const auto beg = reinterpret_cast<const uint8_t*>(str.data());
+            const auto len = str.size();
+            return { beg, beg + len };
+        }
+
+        winrt::hstring _plain;
+        std::string _html;
+        std::string _rtf;
     };
 }
 

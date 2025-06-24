@@ -20,3 +20,4 @@
 #include "StringSentEventArgs.g.cpp"
 #include "SearchMissingCommandEventArgs.g.cpp"
 #include "WindowSizeChangedEventArgs.g.cpp"
+#include "WriteToClipboardEventArgs.g.cpp"

@@ -6,6 +6,7 @@ namespace Microsoft.Terminal.Control
     [flags]
     enum CopyFormat
     {
+        None = 0x0,
         HTML = 0x1,
         RTF = 0x2,
         All = 0xffffffff
@@ -143,5 +144,12 @@ namespace Microsoft.Terminal.Control
     {
         Int32 Width;
         Int32 Height;
+    }
+
+    runtimeclass WriteToClipboardEventArgs
+    {
+        String Plain { get; }; // UTF-16, as required by CF_UNICODETEXT
+        byte[] Html { get; }; // UTF-8, as required by "HTML Format"
+        byte[] Rtf { get; }; // UTF-8, as required by "Rich Text Format"
     }
 }
