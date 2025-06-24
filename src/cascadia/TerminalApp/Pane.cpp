@@ -1414,6 +1414,13 @@ void Pane::_CloseChild(const bool closeFirst)
 
         // take the control, profile, id and isDefTermSession of the pane that _wasn't_ closed.
         _setPaneContent(remainingChild->_takePaneContent());
+        if (!_content)
+        {
+            // GH#18071: our content is still null after taking the other pane's content,
+            //           so just notify our parent that we're closed.
+            Closed.raise(nullptr, nullptr);
+            return;
+        }
         _id = remainingChild->Id();
 
         // Revoke the old event handlers. Remove both the handlers for the panes
