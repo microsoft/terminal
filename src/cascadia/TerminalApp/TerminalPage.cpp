@@ -57,6 +57,121 @@ namespace winrt
     using VirtualKeyModifiers = Windows::System::VirtualKeyModifiers;
 }
 
+namespace clipboard
+{
+    wil::unique_close_clipboard_call open(HWND hwnd)
+    {
+        bool success = false;
+
+        // OpenClipboard may fail to acquire the internal lock --> retry.
+        for (DWORD sleep = 10;; sleep *= 2)
+        {
+            if (OpenClipboard(hwnd))
+            {
+                success = true;
+                break;
+            }
+            // 10 iterations
+            if (sleep > 10000)
+            {
+                break;
+            }
+            Sleep(sleep);
+        }
+
+        return wil::unique_close_clipboard_call{ success };
+    }
+
+    void write(wil::zwstring_view text, std::string_view html, std::string_view rtf)
+    {
+        static const auto regular = [](const UINT format, const void* src, const size_t bytes) {
+            wil::unique_hglobal handle{ THROW_LAST_ERROR_IF_NULL(GlobalAlloc(GMEM_MOVEABLE, bytes)) };
+
+            const auto locked = GlobalLock(handle.get());
+            memcpy(locked, src, bytes);
+            GlobalUnlock(handle.get());
+
+            THROW_LAST_ERROR_IF_NULL(SetClipboardData(format, handle.get()));
+            handle.release();
+        };
+        static const auto registered = [](const wchar_t* format, const void* src, size_t bytes) {
+            const auto id = RegisterClipboardFormatW(format);
+            if (!id)
+            {
+                LOG_LAST_ERROR();
+                return;
+            }
+            regular(id, src, bytes);
+        };
+
+        EmptyClipboard();
+
+        if (!text.empty())
+        {
+            // As per: https://learn.microsoft.com/en-us/windows/win32/dataxchg/standard-clipboard-formats
+            //   CF_UNICODETEXT: [...] A null character signals the end of the data.
+            // --> We add +1 to the length. This works because .c_str() is null-terminated.
+            regular(CF_UNICODETEXT, text.c_str(), (text.size() + 1) * sizeof(wchar_t));
+        }
+
+        if (!html.empty())
+        {
+            registered(L"HTML Format", html.data(), html.size());
+        }
+
+        if (!rtf.empty())
+        {
+            registered(L"Rich Text Format", rtf.data(), rtf.size());
+        }
+    }
+
+    winrt::hstring read()
+    {
+        // This handles most cases of pasting text as the OS converts most formats to CF_UNICODETEXT automatically.
+        if (const auto handle = GetClipboardData(CF_UNICODETEXT))
+        {
+            const wil::unique_hglobal_locked lock{ handle };
+            const auto str = static_cast<const wchar_t*>(lock.get());
+            if (!str)
+            {
+                return {};
+            }
+
+            const auto maxLen = GlobalSize(handle) / sizeof(wchar_t);
+            const auto len = wcsnlen(str, maxLen);
+            return winrt::hstring{ str, gsl::narrow_cast<uint32_t>(len) };
+        }
+
+        // We get CF_HDROP when a user copied a file with Ctrl+C in Explorer and pastes that into the terminal (among others).
+        if (const auto handle = GetClipboardData(CF_HDROP))
+        {
+            const wil::unique_hglobal_locked lock{ handle };
+            const auto drop = static_cast<HDROP>(lock.get());
+            if (!drop)
+            {
+                return {};
+            }
+
+            const auto cap = DragQueryFileW(drop, 0, nullptr, 0);
+            if (cap == 0)
+            {
+                return {};
+            }
+
+            auto buffer = winrt::impl::hstring_builder{ cap };
+            const auto len = DragQueryFileW(drop, 0, buffer.data(), cap + 1);
+            if (len == 0)
+            {
+                return {};
+            }
+
+            return buffer.to_hstring();
+        }
+
+        return {};
+    }
+} // namespace clipboard
+
 namespace winrt::TerminalApp::implementation
 {
     TerminalPage::TerminalPage(TerminalApp::WindowProperties properties, const TerminalApp::ContentManager& manager) :
@@ -1708,10 +1823,9 @@ namespace winrt::TerminalApp::implementation
         });
 
         term.ShowWindowChanged({ get_weak(), &TerminalPage::_ShowWindowChangedHandler });
-
         term.SearchMissingCommand({ get_weak(), &TerminalPage::_SearchMissingCommandHandler });
-
         term.WindowSizeChanged({ get_weak(), &TerminalPage::_WindowSizeChanged });
+        term.WriteToClipboard({ get_weak(), &TerminalPage::_copyToClipboard });
 
         // Don't even register for the event if the feature is compiled off.
         if constexpr (Feature_ShellCompletions::IsEnabled())
@@ -2643,75 +2757,6 @@ namespace winrt::TerminalApp::implementation
         return dimension;
     }
 
-    static wil::unique_close_clipboard_call _openClipboard(HWND hwnd)
-    {
-        bool success = false;
-
-        // OpenClipboard may fail to acquire the internal lock --> retry.
-        for (DWORD sleep = 10;; sleep *= 2)
-        {
-            if (OpenClipboard(hwnd))
-            {
-                success = true;
-                break;
-            }
-            // 10 iterations
-            if (sleep > 10000)
-            {
-                break;
-            }
-            Sleep(sleep);
-        }
-
-        return wil::unique_close_clipboard_call{ success };
-    }
-
-    static winrt::hstring _extractClipboard()
-    {
-        // This handles most cases of pasting text as the OS converts most formats to CF_UNICODETEXT automatically.
-        if (const auto handle = GetClipboardData(CF_UNICODETEXT))
-        {
-            const wil::unique_hglobal_locked lock{ handle };
-            const auto str = static_cast<const wchar_t*>(lock.get());
-            if (!str)
-            {
-                return {};
-            }
-
-            const auto maxLen = GlobalSize(handle) / sizeof(wchar_t);
-            const auto len = wcsnlen(str, maxLen);
-            return winrt::hstring{ str, gsl::narrow_cast<uint32_t>(len) };
-        }
-
-        // We get CF_HDROP when a user copied a file with Ctrl+C in Explorer and pastes that into the terminal (among others).
-        if (const auto handle = GetClipboardData(CF_HDROP))
-        {
-            const wil::unique_hglobal_locked lock{ handle };
-            const auto drop = static_cast<HDROP>(lock.get());
-            if (!drop)
-            {
-                return {};
-            }
-
-            const auto cap = DragQueryFileW(drop, 0, nullptr, 0);
-            if (cap == 0)
-            {
-                return {};
-            }
-
-            auto buffer = winrt::impl::hstring_builder{ cap };
-            const auto len = DragQueryFileW(drop, 0, buffer.data(), cap + 1);
-            if (len == 0)
-            {
-                return {};
-            }
-
-            return buffer.to_hstring();
-        }
-
-        return {};
-    }
-
     // Function Description:
     // - This function is called when the `TermControl` requests that we send
     //   it the clipboard's content.
@@ -2731,24 +2776,40 @@ namespace winrt::TerminalApp::implementation
         const auto weakThis = get_weak();
         const auto dispatcher = Dispatcher();
         const auto globalSettings = _settings.GlobalSettings();
+        const auto bracketedPaste = eventArgs.BracketedPasteEnabled();
 
         // GetClipboardData might block for up to 30s for delay-rendered contents.
         co_await winrt::resume_background();
 
         winrt::hstring text;
-        if (const auto clipboard = _openClipboard(nullptr))
+        uint32_t clipboardSequenceNumber = 0;
+
+        if (const auto clipboard = clipboard::open(nullptr))
         {
-            text = _extractClipboard();
+            text = clipboard::read();
+            clipboardSequenceNumber = GetClipboardSequenceNumber();
+        }
+        else
+        {
+            co_return;
         }
 
-        if (globalSettings.TrimPaste())
+        if (globalSettings.TrimPaste() &&
+            // If we're using bracketed paste mode, and the clipboard contents originate from us
+            // (= clipboard sequence number matches the last written one), don't trim the paste.
+            // Put inversely: Trim the contents if the sequence number changed OR if we're not using bracketed pastes.
+            (_copyToClipboardSequenceNumber.load(std::memory_order_relaxed) != clipboardSequenceNumber || !bracketedPaste))
         {
-            text = { Utils::TrimPaste(text) };
-            if (text.empty())
-            {
-                // Text is all white space, nothing to paste
-                co_return;
-            }
+            // NOTE: This has to be done in 2 steps, because technically speaking we
+            // may be the only holder of the hstring instance and assigning to it
+            // will first release the current memory and then assign the new value.
+            winrt::hstring trimmed{ Utils::TrimPaste(text) };
+            text = std::move(trimmed);
+        }
+
+        if (text.empty())
+        {
+            co_return;
         }
 
         // If the requesting terminal is in bracketed paste mode, then we don't need to warn about a multi-line paste.
@@ -2951,7 +3012,7 @@ namespace winrt::TerminalApp::implementation
     // - formats: dictate which formats need to be copied
     // Return Value:
     // - true iff we we able to copy text (if a selection was active)
-    bool TerminalPage::_CopyText(const bool dismissSelection, const bool singleLine, const bool withControlSequences, const Windows::Foundation::IReference<CopyFormat>& formats)
+    bool TerminalPage::_CopyText(const bool dismissSelection, const bool singleLine, const bool withControlSequences, const CopyFormat formats)
     {
         if (const auto& control{ _GetActiveControl() })
         {
@@ -3091,6 +3152,26 @@ namespace winrt::TerminalApp::implementation
             {
                 conpty.ResetSize();
             }
+        }
+    }
+
+    void TerminalPage::_copyToClipboard(const IInspectable, const WriteToClipboardEventArgs args)
+    {
+        const auto plain = args.Plain();
+        const auto html = args.Html();
+        const auto rtf = args.Rtf();
+
+        if (auto clipboard = clipboard::open(_hostingHwnd.value_or(nullptr)))
+        {
+            clipboard::write(
+                { plain.data(), plain.size() },
+                { reinterpret_cast<const char*>(html.data()), html.size() },
+                { reinterpret_cast<const char*>(rtf.data()), rtf.size() });
+
+            // `CloseClipboard` can still bump the sequence number,
+            // so we need to do this after dropping `clipboard`.
+            clipboard.reset();
+            _copyToClipboardSequenceNumber.store(GetClipboardSequenceNumber(), std::memory_order_relaxed);
         }
     }
 

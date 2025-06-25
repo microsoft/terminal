@@ -84,7 +84,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         bool CopySelectionToClipboard(bool singleLine,
                                       bool withControlSequences,
-                                      const Windows::Foundation::IReference<CopyFormat>& formats);
+                                      const CopyFormat formats);
         void RequestPasteTextFromClipboard();
         void SetEndSelectionPoint(const Core::Point pixelPosition);
 
