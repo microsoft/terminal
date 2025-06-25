@@ -33,7 +33,7 @@
                             <FontIcon FontSize="{StaticResource StandardIconSize}"
                                       Glyph="&#xE74D;" />
                             <TextBlock x:Uid="Profile_DeleteButton"
-                                       Margin="10,0,0,0" />
+                                       Margin="8,0,0,0" />
                         </StackPanel>
                     </Button.Content>
                 </Button>
