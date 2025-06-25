@@ -124,7 +124,13 @@ try
         }
         case PtySignal::ClearBuffer:
         {
-            _DoClearBuffer();
+            ClearBufferData msg = { 0 };
+            if (!_GetData(&msg, sizeof(msg)))
+            {
+                return S_OK;
+            }
+
+            _DoClearBuffer(msg.keepCursorRow != 0);
             break;
         }
         case PtySignal::ResizeWindow:
@@ -180,7 +186,7 @@ void PtySignalInputThread::_DoResizeWindow(const ResizeWindowData& data)
     _api.ResizeWindow(data.sx, data.sy);
 }
 
-void PtySignalInputThread::_DoClearBuffer() const
+void PtySignalInputThread::_DoClearBuffer(const bool keepCursorRow) const
 {
     LockConsole();
     auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
@@ -196,8 +202,11 @@ void PtySignalInputThread::_DoClearBuffer() const
 
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     auto& screenInfo = gci.GetActiveOutputBuffer();
-    auto& stateMachine = screenInfo.GetStateMachine();
-    stateMachine.ProcessString(L"\x1b[H\x1b[2J");
+    auto& tb = screenInfo.GetTextBuffer();
+    const auto cursor = tb.GetCursor().GetPosition();
+
+    tb.ClearScrollback(cursor.y, keepCursorRow ? 1 : 0);
+    tb.GetCursor().SetPosition({ keepCursorRow ? cursor.x : 0, 0 });
 }
 
 void PtySignalInputThread::_DoShowHide(const ShowHideData& data)
