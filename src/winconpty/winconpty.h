@@ -68,7 +68,6 @@ HRESULT _CreatePseudoConsole(const HANDLE hToken,
                              _Inout_ PseudoConsole* pPty);
 
 HRESULT _ResizePseudoConsole(_In_ const PseudoConsole* const pPty, _In_ const COORD size);
-HRESULT _ClearPseudoConsole(_In_ const PseudoConsole* const pPty);
 HRESULT _ShowHidePseudoConsole(_In_ const PseudoConsole* const pPty, const bool show);
 HRESULT _ReparentPseudoConsole(_In_ const PseudoConsole* const pPty, _In_ const HWND newParent);
 void _ClosePseudoConsoleMembers(_In_ PseudoConsole* pPty);
