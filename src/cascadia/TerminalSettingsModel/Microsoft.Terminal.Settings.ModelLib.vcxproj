@@ -90,6 +90,7 @@
       <DependentUpon>KeyChordSerialization.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="PowershellCoreProfileGenerator.h" />
+    <ClInclude Include="PowershellInstallationProfileGenerator.h" />
     <ClInclude Include="Profile.h">
       <DependentUpon>Profile.idl</DependentUpon>
     </ClInclude>
@@ -167,6 +168,7 @@
       <DependentUpon>KeyChordSerialization.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="PowershellCoreProfileGenerator.cpp" />
+    <ClCompile Include="PowershellInstallationProfileGenerator.cpp" />
     <ClCompile Include="Profile.cpp">
       <DependentUpon>Profile.idl</DependentUpon>
     </ClCompile>
