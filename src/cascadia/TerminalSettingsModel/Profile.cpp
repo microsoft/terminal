@@ -310,7 +310,7 @@ std::wstring Profile::EvaluateStartingDirectory(const std::wstring& directory)
 }
 
 // Function Description:
-// - Generates a unique guid for a profile, given the name. For an given name, will always return the same GUID.
+// - Generates a unique guid for a profile, given the name. For a given name, will always return the same GUID.
 // Arguments:
 // - name: The name to generate a unique GUID from
 // Return Value:

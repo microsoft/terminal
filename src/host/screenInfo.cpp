@@ -1221,7 +1221,7 @@ void SCREEN_INFORMATION::_AdjustViewportSize(const til::rect* const prcClientNew
                                              const til::size* const pcoordSize)
 {
     // If the left is the only one that changed (and not the right
-    // also), then adjust from the left. Otherwise if the right
+    // also), then adjust from the left. Otherwise, if the right
     // changes or both changed, bias toward leaving the top-left
     // corner in place and resize from the bottom right.
     // --
@@ -2407,7 +2407,7 @@ const FontInfo& SCREEN_INFORMATION::GetCurrentFont() const noexcept
 
 // Method Description:
 // - Gets the desired font of the screen buffer. If we try loading this font and
-//      have to fallback to another, then GetCurrentFont()!=GetDesiredFont().
+//      have to fall back to another, then GetCurrentFont()!=GetDesiredFont().
 //      We store this separately, so that if we need to reload the font, we can
 //      try again with our preferred font info (in the desired font info) instead
 //      of re-using the looked up value from before.

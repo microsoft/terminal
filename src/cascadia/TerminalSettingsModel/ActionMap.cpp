@@ -137,7 +137,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // Arguments:
     // - actionID: the internal ID associated with a Command
     // Return Value:
-    // - The command if it exists in this layer, otherwise nullptr
+    // - The command if it exists in this layer; otherwise, nullptr
     Model::Command ActionMap::_GetActionByID(const winrt::hstring& actionID) const
     {
         // Check current layer
@@ -699,7 +699,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // - oldKeys: the key binding that we are rebinding
     // - newKeys: the new key chord that is being used to replace oldKeys
     // Return Value:
-    // - true, if successful. False, otherwise.
+    // - true, if successful; otherwise, false.
     bool ActionMap::RebindKeys(const Control::KeyChord& oldKeys, const Control::KeyChord& newKeys)
     {
         const auto cmd{ GetActionByKeyChord(oldKeys) };

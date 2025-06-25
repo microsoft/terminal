@@ -50,6 +50,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         static void GithubAuthCompleted(const winrt::event_token& token);
 
         til::typed_event<Windows::Foundation::IInspectable, Model::SettingsTarget> OpenJson;
+        til::typed_event<Windows::Foundation::IInspectable, Windows::Foundation::Collections::IVectorView<Model::SettingsLoadWarnings>> ShowLoadWarningsDialog;
+
         til::typed_event<Windows::Foundation::IInspectable, Windows::Foundation::IInspectable> GithubAuthRequested;
 
         WINRT_PROPERTY(hstring, StartingPage, {});
