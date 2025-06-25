@@ -386,6 +386,15 @@ void WindowEmperor::HandleCommandlineArgs(int nCmdShow)
         }
     }
 
+    {
+        TerminalConnection::ConptyConnection::NewConnection([this](TerminalConnection::ConptyConnection conn) {
+            TerminalApp::CommandlineArgs args;
+            args.Connection(std::move(conn));
+            _dispatchCommandline(std::move(args));
+        });
+        TerminalConnection::ConptyConnection::StartInboundListener();
+    }
+
     // Main message loop. It pumps all windows.
     bool loggedInteraction = false;
     MSG msg{};

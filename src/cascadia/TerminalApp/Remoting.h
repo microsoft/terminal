@@ -20,7 +20,8 @@ namespace winrt::TerminalApp::implementation
         winrt::com_array<winrt::hstring>& CommandlineRef() noexcept;
 
         // These bits are exposed via WinRT:
-    public:
+        til::property<winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection> Connection;
+
         int32_t ExitCode() const noexcept;
         winrt::hstring ExitMessage() const;
         winrt::hstring TargetWindow() const;

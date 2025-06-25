@@ -8,6 +8,8 @@ namespace TerminalApp
         CommandlineArgs();
         CommandlineArgs(String[] args, String cwd, UInt32 showWindowCommand, String env);
 
+        Microsoft.Terminal.TerminalConnection.ITerminalConnection Connection;
+
         Int32 ExitCode { get; };
         String ExitMessage { get; };
         String TargetWindow { get; };
