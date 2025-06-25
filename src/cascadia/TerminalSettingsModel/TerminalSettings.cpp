@@ -305,7 +305,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         _StartingDirectory = profile.EvaluatedStartingDirectory();
 
-        // GH#2373: Use the tabTitle as the starting title if it exists, otherwise
+        // GH#2373: Use the tabTitle as the starting title if it exists; otherwise,
         // use the profile name
         _StartingTitle = !profile.TabTitle().empty() ? profile.TabTitle() : profile.Name();
 

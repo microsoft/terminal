@@ -45,7 +45,7 @@ static std::wstring Sanitize(std::wstring_view text)
 // Arguments:
 // - text: the string we're validating
 // Return Value:
-// - true, if the text is readable. false, otherwise.
+// - true, if the text is readable; otherwise, false.
 static constexpr bool IsReadable(std::wstring_view text)
 {
     for (const auto c : text)

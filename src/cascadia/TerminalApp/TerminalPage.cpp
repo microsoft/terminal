@@ -1404,7 +1404,7 @@ namespace winrt::TerminalApp::implementation
             //
             // We need to do this here, to ensure we tell the ConptyConnection
             // the correct starting path. If we're being invoked from another
-            // terminal instance (e.g. wt -w 0 -d .), then we have switched our
+            // terminal instance (e.g. `wt -w 0 -d .`), then we have switched our
             // CWD to the provided path. We should treat the StartingDirectory
             // as relative to the current CWD.
             //
@@ -4051,7 +4051,7 @@ namespace winrt::TerminalApp::implementation
     // Arguments:
     // - args: the ExecuteCommandlineArgs to synthesize a list of startup actions for.
     // Return Value:
-    // - an empty list if we failed to parse, otherwise a list of actions to execute.
+    // - an empty list if we failed to parse; otherwise, a list of actions to execute.
     std::vector<ActionAndArgs> TerminalPage::ConvertExecuteCommandlineToActions(const ExecuteCommandlineArgs& args)
     {
         ::TerminalApp::AppCommandlineArgs appArgs;
@@ -4243,6 +4243,13 @@ namespace winrt::TerminalApp::implementation
             if (auto page{ weakThis.get() })
             {
                 page->_LaunchSettings(e);
+            }
+        });
+
+        sui.ShowLoadWarningsDialog([weakThis{ get_weak() }](auto&& /*s*/, const Windows::Foundation::Collections::IVectorView<winrt::Microsoft::Terminal::Settings::Model::SettingsLoadWarnings>& warnings) {
+            if (auto page{ weakThis.get() })
+            {
+                page->ShowLoadWarningsDialog.raise(*page, warnings);
             }
         });
 

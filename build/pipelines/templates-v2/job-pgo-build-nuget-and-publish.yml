@@ -30,7 +30,7 @@ jobs:
   steps:
   - checkout: self
     clean: true
-    # It is important that this be 0, otherwise git will not fetch the branch ref names that the PGO rules require.
+    # It is important that this be 0; otherwise, git will not fetch the branch ref names that the PGO rules require.
     fetchDepth: 0
     submodules: false
     persistCredentials: false
