@@ -2282,7 +2282,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             if (clearType == ClearBufferType::Screen || clearType == ClearBufferType::All)
             {
                 // Erase any viewport contents below (but not including) the cursor row.
-                if (viewport.Height() - cursor.y > 0)
+                if (viewport.Height() - cursor.y > 1)
                 {
                     fmt::format_to(std::back_inserter(sequence), FMT_COMPILE(L"\x1b[{};1H\x1b[J"), cursor.y + 2);
                 }
