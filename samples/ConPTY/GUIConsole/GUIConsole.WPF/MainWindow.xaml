@@ -32,7 +32,7 @@
                BasedOn="{StaticResource TitleBarButtonStyle}"
                TargetType="{x:Type Button}">
             <Setter Property="Content" Value="&#xE10A;" />
-            <!--  Remove the default Button template's Triggers, otherwise they'll override our trigger below.  -->
+            <!--  Remove the default Button template's Triggers; otherwise, they'll override our trigger below.  -->
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="{x:Type Button}">

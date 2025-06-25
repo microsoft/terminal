@@ -23,7 +23,7 @@ In a similar vein, many fonts allow for setting variations on the font along cer
 
 ### Font features
 
-It is already possible to pass in a list of [font feature structs](https://docs.microsoft.com/en-us/windows/win32/api/dwrite/ns-dwrite-dwrite_font_feature) to DWrite for it to handle. A font feature struct contains only 2 things: 
+It is already possible to pass in a list of [font feature structs](https://docs.microsoft.com/en-us/windows/win32/api/dwrite/ns-dwrite-dwrite_font_feature) to DWrite for it to handle. A font feature struct contains only 2 things:
 
 1. A font feature tag
 2. A parameter value
@@ -78,7 +78,7 @@ Aside from additional parsing required for the settings file (which inherently o
 
 ### Compatibility
 
-Older versions of Windows may not have the DWrite updates that allow for defining font features and axes of variation. We must make sure to fallback to the current implementation in these cases.
+Older versions of Windows may not have the DWrite updates that allow for defining font features and axes of variation. We must make sure to fall back to the current implementation in these cases.
 
 ### Performance, Power, and Efficiency
 

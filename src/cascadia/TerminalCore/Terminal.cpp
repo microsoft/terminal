@@ -94,7 +94,7 @@ void Terminal::UpdateSettings(ICoreSettings settings)
 
     if (_stateMachine)
     {
-        SetVtChecksumReportSupport(settings.AllowVtChecksumReport());
+        SetOptionalFeatures(settings);
     }
 
     _getTerminalInput().ForceDisableWin32InputMode(settings.ForceVTInput());
@@ -232,10 +232,13 @@ void Terminal::SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle)
     engine.Dispatch().SetCursorStyle(cursorStyle);
 }
 
-void Terminal::SetVtChecksumReportSupport(const bool enabled)
+void Terminal::SetOptionalFeatures(winrt::Microsoft::Terminal::Core::ICoreSettings settings)
 {
     auto& engine = reinterpret_cast<OutputStateMachineEngine&>(_stateMachine->Engine());
-    engine.Dispatch().SetVtChecksumReportSupport(enabled);
+    auto features = til::enumset<ITermDispatch::OptionalFeature>{};
+    features.set(ITermDispatch::OptionalFeature::ChecksumReport, settings.AllowVtChecksumReport());
+    features.set(ITermDispatch::OptionalFeature::ClipboardWrite, settings.AllowVtClipboardWrite());
+    engine.Dispatch().SetOptionalFeatures(features);
 }
 
 bool Terminal::IsXtermBracketedPasteModeEnabled() const noexcept
@@ -466,7 +469,7 @@ void Terminal::TrySnapOnInput()
 // Parameters:
 // - <none>
 // Return value:
-// - true, if we are tracking mouse input. False, otherwise
+// - true, if we are tracking mouse input; otherwise, false.
 bool Terminal::IsTrackingMouseInput() const noexcept
 {
     return _getTerminalInput().IsTrackingMouseInput();
@@ -479,7 +482,7 @@ bool Terminal::IsTrackingMouseInput() const noexcept
 // Parameters:
 // - <none>
 // Return value:
-// - true, if we are tracking mouse input. False, otherwise
+// - true, if we are tracking mouse input; otherwise, false.
 bool Terminal::ShouldSendAlternateScroll(const unsigned int uiButton,
                                          const int32_t delta) const noexcept
 {
@@ -596,7 +599,7 @@ std::optional<PointTree::interval> Terminal::GetHyperlinkIntervalFromViewportPos
 // - vkey: The vkey of the last pressed key.
 // - scanCode: The scan code of the last pressed key.
 // - states: The Microsoft::Terminal::Core::ControlKeyStates representing the modifier key states.
-// - keyDown: If true, the key was pressed, otherwise the key was released.
+// - keyDown: If true, the key was pressed; otherwise, the key was released.
 // Return Value:
 // - true if we translated the key event, and it should not be processed any further.
 // - false if we did not translate the key, and it should be processed into a character.
@@ -918,7 +921,7 @@ void Terminal::_StoreKeyEvent(const WORD vkey, const WORD scanCode) noexcept
 // Arguments:
 // - scanCode: The scan code.
 // Return Value:
-// - The key code matching the given scan code. Otherwise 0.
+// - The key code matching the given scan code. Otherwise, 0.
 WORD Terminal::_TakeVirtualKeyFromLastKeyEvent(const WORD scanCode) noexcept
 {
     const auto codes = _lastKeyEventCodes.value_or(KeyEventCodes{});

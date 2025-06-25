@@ -415,7 +415,6 @@ public:
             auto& renderer = _testGetSet->_renderer;
             auto& renderSettings = renderer._renderSettings;
             auto adapter = std::make_unique<AdaptDispatch>(*_testGetSet, &renderer, renderSettings, _terminalInput);
-            adapter->SetVtChecksumReportSupport(true);
 
             fSuccess = adapter.get() != nullptr;
             if (fSuccess)
@@ -1737,11 +1736,15 @@ public:
         Log::Comment(L"Test 1: Verify normal response.");
         _testGetSet->PrepData();
         _pDispatch->DeviceAttributes();
+        _testGetSet->ValidateInputEvent(L"\x1b[?61;4;6;7;14;21;22;23;24;28;32;42;52c");
 
-        auto pwszExpectedResponse = L"\x1b[?61;4;6;7;14;21;22;23;24;28;32;42c";
-        _testGetSet->ValidateInputEvent(pwszExpectedResponse);
+        Log::Comment(L"Test 2: Verify response with clipboard disabled.");
+        _testGetSet->PrepData();
+        _pDispatch->SetOptionalFeatures({});
+        _pDispatch->DeviceAttributes();
+        _testGetSet->ValidateInputEvent(L"\x1b[?61;4;6;7;14;21;22;23;24;28;32;42c");
 
-        Log::Comment(L"Test 2: Verify failure when ReturnResponse doesn't work.");
+        Log::Comment(L"Test 3: Verify failure when ReturnResponse doesn't work.");
         _testGetSet->PrepData();
         _testGetSet->_returnResponseResult = FALSE;
 
@@ -2186,6 +2189,8 @@ public:
         };
 
         using namespace std::string_view_literals;
+
+        _pDispatch->SetOptionalFeatures(ITermDispatch::OptionalFeature::ChecksumReport);
 
         Log::Comment(L"Test 1: ASCII characters");
         outputText(L"A"sv);

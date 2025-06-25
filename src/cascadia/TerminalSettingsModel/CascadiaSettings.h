@@ -167,7 +167,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         winrt::Windows::Foundation::Collections::IVectorView<Model::ExtensionPackage> Extensions();
         void ResetApplicationState() const;
         void ResetToDefaultSettings();
-        void WriteSettingsToDisk();
+        bool WriteSettingsToDisk();
         Json::Value ToJson() const;
         Model::Profile ProfileDefaults() const;
         Model::Profile CreateNewProfile();

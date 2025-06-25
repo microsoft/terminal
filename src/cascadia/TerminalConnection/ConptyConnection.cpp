@@ -313,6 +313,13 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         }
         CATCH_LOG()
 
+        try
+        {
+            auto processImageName{ wil::QueryFullProcessImageNameW<std::wstring>(_piClient.hProcess) };
+            _clientName = std::filesystem::path{ std::move(processImageName) }.filename().wstring();
+        }
+        CATCH_LOG()
+
         _pipe = std::move(pipe.server);
         *in = pipe.client.release();
         *out = pipeClientClone.release();

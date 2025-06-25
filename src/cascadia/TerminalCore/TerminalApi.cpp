@@ -377,7 +377,7 @@ void Terminal::NotifyBufferRotation(const int delta)
         auto selection{ _selection.write() };
         wil::hide_name _selection;
         // If the end of the selection will be out of range after the move, we just
-        // clear the selection. Otherwise we move both the start and end points up
+        // clear the selection. Otherwise, we move both the start and end points up
         // by the given delta and clamp to the first row.
         if (selection->end.y < delta)
         {

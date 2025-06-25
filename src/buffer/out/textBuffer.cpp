@@ -2969,7 +2969,7 @@ void TextBuffer::_SerializeRow(const ROW& row, const til::CoordType startX, cons
 //   parameter and we'll calculate the position of the _end_ of those rows in
 //   the new buffer. The rows's new value is placed back into this parameter.
 // Return Value:
-// - S_OK if we successfully copied the contents to the new buffer, otherwise an appropriate HRESULT.
+// - S_OK if we successfully copied the contents to the new buffer; otherwise, an appropriate HRESULT.
 void TextBuffer::Reflow(TextBuffer& oldBuffer, TextBuffer& newBuffer, const Viewport* lastCharacterViewport, PositionInformation* positionInfo)
 {
     const auto& oldCursor = oldBuffer.GetCursor();
