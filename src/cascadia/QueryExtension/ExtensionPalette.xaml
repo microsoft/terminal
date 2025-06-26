@@ -318,6 +318,11 @@
                         <ListView.ItemContainerStyle>
                             <Style TargetType="ListViewItem">
                                 <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                <Setter Property="ContextFlyout">
+                                    <Setter.Value>
+                                        <mtu:TextMenuFlyout x:Name="test" />
+                                    </Setter.Value>
+                                </Setter>
                             </Style>
                         </ListView.ItemContainerStyle>
                     </ListView>
