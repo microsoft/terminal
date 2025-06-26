@@ -21,6 +21,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         til::property_changed_event PropertyChanged;
         WINRT_OBSERVABLE_PROPERTY(Editor::ActionsViewModel, ViewModel, PropertyChanged.raise, nullptr);
+
+    private:
+        winrt::Windows::UI::Xaml::FrameworkElement::LayoutUpdated_revoker _layoutUpdatedRevoker;
     };
 }
 

@@ -187,7 +187,7 @@
                 </Button.Content>
             </Button>
 
-            <!--  Keybindings  -->
+            <!--  Commands  -->
             <ListView x:Name="CommandsListView"
                       Margin="-8,0,0,0"
                       IsItemClickEnabled="True"

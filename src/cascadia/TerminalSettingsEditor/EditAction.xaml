@@ -641,7 +641,8 @@
                        Grid.Row="0"
                        Grid.Column="0"
                        VerticalAlignment="Center" />
-            <TextBox Grid.Row="0"
+            <TextBox x:Name="CommandNameTextBox"
+                     Grid.Row="0"
                      Grid.Column="1"
                      Width="300"
                      HorizontalAlignment="Left"
@@ -673,6 +674,7 @@
                        Grid.Column="0"
                        VerticalAlignment="Center" />
             <ListView x:Name="KeyChordListView"
+                      x:Uid="Actions_KeyBindingsListView"
                       Grid.Row="3"
                       Grid.Column="1"
                       ItemTemplate="{StaticResource KeyChordTemplate}"

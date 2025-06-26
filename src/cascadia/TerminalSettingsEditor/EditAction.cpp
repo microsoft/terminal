@@ -40,5 +40,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 }
             }
         });
+        _layoutUpdatedRevoker = LayoutUpdated(winrt::auto_revoke, [this](auto /*s*/, auto /*e*/) {
+            // Only let this succeed once.
+            _layoutUpdatedRevoker.revoke();
+
+            CommandNameTextBox().Focus(FocusState::Programmatic);
+        });
     }
 }

@@ -1808,6 +1808,10 @@
     <value>Action type</value>
     <comment>Label for the combo box that edits the action type.</comment>
   </data>
+  <data name="Actions_KeyBindingsListView.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Keybindings</value>
+    <comment>Name for a control which contains the list of keybindings for the current command.</comment>
+  </data>
   <data name="Actions_Arguments.Text" xml:space="preserve">
     <value>Additional arguments</value>
     <comment>Label for the list of editable arguments for the currently selected action.</comment>

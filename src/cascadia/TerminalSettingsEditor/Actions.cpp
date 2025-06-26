@@ -25,6 +25,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _ViewModel.CurrentPage(ActionsSubPage::Base);
         auto vmImpl = get_self<ActionsViewModel>(_ViewModel);
         vmImpl->MarkAsVisited();
+        _layoutUpdatedRevoker = LayoutUpdated(winrt::auto_revoke, [this](auto /*s*/, auto /*e*/) {
+            // Only let this succeed once.
+            _layoutUpdatedRevoker.revoke();
+
+            AddNewButton().Focus(FocusState::Programmatic);
+        });
     }
 
     void Actions::AddNew_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*eventArgs*/)
