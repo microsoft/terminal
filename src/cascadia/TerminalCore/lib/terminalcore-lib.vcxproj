@@ -7,22 +7,19 @@
     <TargetName>TerminalCore</TargetName>
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <RootNamespace>Microsoft.Terminal.Core</RootNamespace>
-
     <!-- sets a bunch of Windows Universal properties -->
     <OpenConsoleUniversalApp>true</OpenConsoleUniversalApp>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformMinVersion>10.0.26100.0</WindowsTargetPlatformMinVersion>
   </PropertyGroup>
-
   <PropertyGroup Label="NuGet Dependencies">
     <TerminalCppWinrt>true</TerminalCppWinrt>
   </PropertyGroup>
-
   <Import Project="..\..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
   <Import Project="$(OpenConsoleDir)src\common.nugetversions.props" />
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.pre.props" />
-
   <!-- DONT ADD NEW FILES HERE, ADD THEM TO terminalcore-common.vcxitems -->
   <Import Project="$(OpenConsoleDir)src\cascadia\TerminalCore\terminalcore-common.vcxitems" />
-
   <!-- ============================ References ============================  -->
   <ItemGroup>
     <ProjectReference Include="$(OpenConsoleDir)src\types\lib\types.vcxproj">
@@ -47,7 +44,6 @@
       <Project>{3c67784e-1453-49c2-9660-483e2cc7f7ad}</Project>
     </ProjectReference>
   </ItemGroup>
-
   <ItemGroup>
     <Midl Include="..\ICoreSettings.idl" />
     <Midl Include="..\ICoreAppearance.idl" />
@@ -65,10 +61,8 @@
       <AdditionalIncludeDirectories>$(WinRT_IncludePath)\..\cppwinrt\winrt;"$(OpenConsoleDir)src\cascadia\TerminalCore\Generated Files";%(AdditionalIncludeDirectories);</AdditionalIncludeDirectories>
     </ClCompile>
   </ItemDefinitionGroup>
-
   <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" />
-
   <!-- This -must- go after cppwinrt.build.post.props because that includes many VS-provided props including appcontainer.common.props, which stomps on what cppwinrt.targets did. -->
   <Import Project="$(OpenConsoleDir)src\common.nugetversions.targets" />
 </Project>

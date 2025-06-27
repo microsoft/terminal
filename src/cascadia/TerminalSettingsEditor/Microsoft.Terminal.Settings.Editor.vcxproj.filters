@@ -54,5 +54,9 @@
     <Page Include="KeyChordListener.xaml" />
     <Page Include="NullableColorPicker.xaml" />
     <Page Include="NewTabMenu.xaml" />
+    <Page Include="Compatibility.xaml" />
+    <Page Include="Extensions.xaml" />
+    <Page Include="Profiles_Base_Orphaned.xaml" />
+    <Page Include="Profiles_Terminal.xaml" />
   </ItemGroup>
 </Project>

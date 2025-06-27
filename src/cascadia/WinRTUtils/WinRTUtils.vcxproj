@@ -10,6 +10,8 @@
     <SubSystem>Console</SubSystem>
     <OpenConsoleUniversalApp>true</OpenConsoleUniversalApp>
     <CppWinRTGenerateWindowsMetadata>false</CppWinRTGenerateWindowsMetadata>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformMinVersion>10.0.26100.0</WindowsTargetPlatformMinVersion>
   </PropertyGroup>
   <PropertyGroup Label="NuGet Dependencies">
     <TerminalCppWinrt>true</TerminalCppWinrt>

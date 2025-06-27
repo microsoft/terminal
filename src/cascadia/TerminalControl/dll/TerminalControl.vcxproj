@@ -11,7 +11,6 @@
     <!-- sets a bunch of Windows Universal properties -->
     <OpenConsoleUniversalApp>true</OpenConsoleUniversalApp>
     <PgoTarget>true</PgoTarget>
-
     <!-- C++/WinRT sets the depth to 1 if there is a XAML file in the project
          Unfortunately for us, we need it to be 3. When the namespace merging
          depth is 1, Microsoft.Terminal.Control becomes "Microsoft",
@@ -21,13 +20,13 @@
          projects compile properly when they depend on this "Microsoft.winmd."
     -->
     <CppWinRTNamespaceMergeDepth>3</CppWinRTNamespaceMergeDepth>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformMinVersion>10.0.26100.0</WindowsTargetPlatformMinVersion>
   </PropertyGroup>
-
   <PropertyGroup Label="NuGet Dependencies">
     <TerminalCppWinrt>true</TerminalCppWinrt>
     <TerminalMUX>true</TerminalMUX>
   </PropertyGroup>
-
   <Import Project="..\..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
   <Import Project="$(OpenConsoleDir)src\common.nugetversions.props" />
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.pre.props" />
@@ -65,13 +64,11 @@
       <Private>true</Private>
       <CopyLocalSatelliteAssemblies>true</CopyLocalSatelliteAssemblies>
     </ProjectReference>
-
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\UIHelpers\UIHelpers.vcxproj">
       <Project>{6515F03F-E56D-4DB4-B23D-AC4FB80DB36F}</Project>
       <Private>false</Private>
     </ProjectReference>
   </ItemGroup>
-
   <ItemGroup>
     <!-- Manually add a reference to TerminalControl here. We need this so
     MDMERGE will know where the TermControl types are defined. However, we need
@@ -83,7 +80,6 @@
       <Private>false</Private>
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
     </Reference>
-
     <Reference Include="Microsoft.Terminal.TerminalConnection">
       <HintPath>$(OpenConsoleCommonOutDir)TerminalConnection\Microsoft.Terminal.TerminalConnection.winmd</HintPath>
       <IsWinMDFile>true</IsWinMDFile>
@@ -91,7 +87,6 @@
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
     </Reference>
   </ItemGroup>
-
   <ItemDefinitionGroup>
     <Link>
       <AdditionalDependencies>delayimp.lib;Uiautomationcore.lib;onecoreuap.lib;%(AdditionalDependencies)</AdditionalDependencies>
@@ -103,7 +98,6 @@
       -->
       <AdditionalOptions Condition="'$(Platform)'=='Win32'">/INCLUDE:_DllMain@12 %(AdditionalOptions)</AdditionalOptions>
       <AdditionalOptions Condition="'$(Platform)'!='Win32'">/INCLUDE:DllMain %(AdditionalOptions)</AdditionalOptions>
-
       <Reference>
         <!-- Do not propagate microsoft.ui.xaml upwards as a private dependency. -->
         <Private>false</Private>
@@ -111,7 +105,6 @@
     </Link>
   </ItemDefinitionGroup>
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" />
-
   <!-- This -must- go after cppwinrt.build.post.props because that includes many VS-provided props including appcontainer.common.props, which stomps on what cppwinrt.targets did. -->
   <Import Project="$(OpenConsoleDir)src\common.nugetversions.targets" />
 </Project>

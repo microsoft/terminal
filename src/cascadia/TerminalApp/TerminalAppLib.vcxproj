@@ -21,6 +21,8 @@
       We do this so we can delay the Settings UI DLL loading until absolutely necessary.
     -->
     <XamlCodeGenerationControlFlags>DoNotGenerateOtherProviders</XamlCodeGenerationControlFlags>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformMinVersion>10.0.26100.0</WindowsTargetPlatformMinVersion>
   </PropertyGroup>
   <PropertyGroup Label="NuGet Dependencies">
     <TerminalCppWinrt>true</TerminalCppWinrt>
@@ -314,7 +316,6 @@
       <DependentUpon>MarkdownPaneContent.xaml</DependentUpon>
       <SubType>Code</SubType>
     </ClCompile>
-
   </ItemGroup>
   <!-- ========================= idl Files ======================== -->
   <ItemGroup>
@@ -445,7 +446,6 @@
       <Private>true</Private>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
-
   </ItemGroup>
   <PropertyGroup>
     <!-- This is a hack to get the ARM64 CI build working. See

@@ -2,6 +2,7 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Natvis Include="$(SolutionDir)tools\ConsoleTypes.natvis" />
+    <Natvis Include="$(MSBuildThisFileDirectory)..\..\natvis\wil.natvis" />
   </ItemGroup>
   <ItemGroup>
     <PRIResource Include="Resources\en-US\Resources.resw" />
@@ -96,6 +97,8 @@
     </ClInclude>
     <ClInclude Include="ActionArgsMagic.h" />
     <ClInclude Include="NewTabMenuEntry.h" />
+    <ClInclude Include="resource.h" />
+    <ClInclude Include="ModelSerializationHelpers.h" />
   </ItemGroup>
   <ItemGroup>
     <Midl Include="ActionArgs.idl" />
@@ -115,9 +118,8 @@
     <Midl Include="DefaultTerminal.idl" />
     <Midl Include="ApplicationState.idl" />
     <Midl Include="NewTabMenuEntry.idl" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="packages.config" />
+    <Midl Include="Theme.idl" />
+    <Midl Include="ISettingsModelObject.idl" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="profileGeneration">
@@ -126,5 +128,8 @@
     <Filter Include="json">
       <UniqueIdentifier>{81a6314f-aa5b-4533-a499-13bc3a5c4af0}</UniqueIdentifier>
     </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="Microsoft.Terminal.Settings.Model.rc" />
   </ItemGroup>
 </Project>
