@@ -303,6 +303,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
+    winrt::hstring CommandViewModel::FirstKeyChordText()
+    {
+        if (_KeyChordViewModelList.Size() != 0)
+        {
+            return _KeyChordViewModelList.GetAt(0).KeyChordText();
+        }
+        return L"";
+    }
+
     winrt::hstring CommandViewModel::ID()
     {
         return _command.ID();

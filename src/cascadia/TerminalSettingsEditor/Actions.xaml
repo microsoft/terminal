@@ -153,12 +153,26 @@
                         <Grid.ColumnDefinitions>
                             <!--  command name  -->
                             <ColumnDefinition Width="*" />
+                            <!--  key chord  -->
+                            <ColumnDefinition Width="auto" />
                         </Grid.ColumnDefinitions>
 
                         <!--  Command Name  -->
                         <TextBlock Grid.Column="0"
                                    Style="{StaticResource KeyBindingNameTextBlockStyle}"
                                    Text="{x:Bind DisplayName, Mode=OneWay}" />
+                        <!--  Key Chord Text  -->
+                        <Border Grid.Column="1"
+                                Padding="2,0,2,0"
+                                HorizontalAlignment="Right"
+                                VerticalAlignment="Center"
+                                Style="{ThemeResource KeyChordBorderStyle}"
+                                Visibility="{x:Bind mtu:Converters.StringNotEmptyToVisibility(FirstKeyChordText)}">
+                            <TextBlock FontSize="14"
+                                       Style="{ThemeResource KeyChordTextBlockStyle}"
+                                       Text="{x:Bind FirstKeyChordText, Mode=OneWay}"
+                                       TextWrapping="WrapWholeWords" />
+                        </Border>
                     </Grid>
                 </ListViewItem>
             </DataTemplate>

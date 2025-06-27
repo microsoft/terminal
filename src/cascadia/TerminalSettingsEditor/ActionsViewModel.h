@@ -94,6 +94,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         winrt::hstring Name();
         void Name(const winrt::hstring& newName);
 
+        winrt::hstring FirstKeyChordText();
+
         winrt::hstring ID();
         bool IsUserAction();
 
