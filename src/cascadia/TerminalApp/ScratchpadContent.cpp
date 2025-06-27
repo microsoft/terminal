@@ -53,6 +53,11 @@ namespace winrt::TerminalApp::implementation
         return BaseContentArgs(L"scratchpad");
     }
 
+    // No refresh has to occur for ScratchpadContent so no implementation
+    void ScratchpadContent::IconRefresh() noexcept
+    {
+    }
+
     winrt::hstring ScratchpadContent::Icon() const
     {
         static constexpr std::wstring_view glyph{ L"\xe70b" }; // QuickNote

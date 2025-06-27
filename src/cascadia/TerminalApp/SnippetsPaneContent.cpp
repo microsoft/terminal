@@ -108,6 +108,11 @@ namespace winrt::TerminalApp::implementation
         return winrt::hstring{ glyph };
     }
 
+    // No need to perform an icon refresh
+    void SnippetsPaneContent::IconRefresh() noexcept
+    {
+    }
+
     winrt::WUX::Media::Brush SnippetsPaneContent::BackgroundBrush()
     {
         static const auto key = winrt::box_value(L"SettingsUiTabBrush");

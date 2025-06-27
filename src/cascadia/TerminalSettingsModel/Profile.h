@@ -80,7 +80,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     public:
         Profile() noexcept = default;
         Profile(guid guid) noexcept;
-
         void CreateUnfocusedAppearance();
         void DeleteUnfocusedAppearance();
 
@@ -115,9 +114,16 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         winrt::hstring EvaluatedIcon();
         hstring Icon() const;
         void Icon(const hstring& value);
+        Model::ProfileIcon IconV2() const;
+        void IconV2(const Model::ProfileIcon& value);
         bool HasIcon() const;
+        bool HasIconV2() const;
         Model::Profile IconOverrideSource();
+        Model::Profile IconV2OverrideSource();
         void ClearIcon();
+        void ClearIconV2();
+        static bool IsDarkMode();
+        void ResetEvaluated() noexcept;
 
         WINRT_PROPERTY(bool, Deleted, false);
         WINRT_PROPERTY(bool, Orphaned, false);
@@ -145,6 +151,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         Model::IAppearanceConfig _DefaultAppearance{ winrt::make<AppearanceConfig>(weak_ref<Model::Profile>(*this)) };
         Model::FontConfig _FontInfo{ winrt::make<FontConfig>(weak_ref<Model::Profile>(*this)) };
 
+        std::optional<Model::ProfileIcon> _IconV2;
         std::optional<hstring> _Icon{ std::nullopt };
         std::optional<winrt::hstring> _evaluatedIcon{ std::nullopt };
         std::set<std::string> _changeLog;
@@ -154,7 +161,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         static guid _GenerateGuidForProfile(const std::wstring_view& name, const std::wstring_view& source) noexcept;
 
         winrt::hstring _evaluateIcon() const;
-        std::optional<hstring> _getIconImpl() const;
+        std::optional<hstring> _getIconImpl(bool dark = false) const;
         Model::Profile _getIconOverrideSourceImpl() const;
         void _logSettingSet(const std::string_view& setting);
         void _logSettingIfSet(const std::string_view& setting, const bool isSet);

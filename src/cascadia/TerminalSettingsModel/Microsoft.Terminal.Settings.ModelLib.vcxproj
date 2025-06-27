@@ -92,7 +92,10 @@
     <ClInclude Include="PowershellCoreProfileGenerator.h" />
     <ClInclude Include="Profile.h">
       <DependentUpon>Profile.idl</DependentUpon>
-    </ClInclude>
+	</ClInclude>
+	<ClInclude Include="ProfileIcon.h">
+      <DependentUpon>ProfileIcon.idl</DependentUpon>
+	</ClInclude>
     <ClInclude Include="AppearanceConfig.h">
       <DependentUpon>AppearanceConfig.idl</DependentUpon>
     </ClInclude>
@@ -206,6 +209,9 @@
     <ClCompile Include="MatchProfilesEntry.cpp">
       <DependentUpon>NewTabMenuEntry.idl</DependentUpon>
     </ClCompile>
+	<ClCompile Include="ProfileIcon.cpp">
+      <DependentUpon>ProfileIcon.idl</DependentUpon>	  
+	</ClCompile>
     <ClCompile Include="VsDevCmdGenerator.cpp" />
     <ClCompile Include="VsDevShellGenerator.cpp" />
     <ClCompile Include="VsSetupConfiguration.cpp" />
@@ -221,6 +227,7 @@
     <Midl Include="CascadiaSettings.idl" />
     <Midl Include="ColorScheme.idl" />
     <Midl Include="NewTabMenuEntry.idl" />
+    <Midl Include="ProfileIcon.idl" />
     <Midl Include="Theme.idl" />
     <Midl Include="Command.idl" />
     <Midl Include="DefaultTerminal.idl" />
@@ -258,7 +265,6 @@
     <ProjectReference Include="$(OpenConsoleDir)src\internal\internal.vcxproj">
       <Project>{ef3e32a7-5ff6-42b4-b6e2-96cd7d033f00}</Project>
     </ProjectReference>
-
     <!-- For whatever reason, we can't include the TerminalControl and
     TerminalSettings projects' winmds via project references. So we'll have to
     manually include the winmds as References below
@@ -271,7 +277,6 @@
 
     We do still need to separately reference the winmds manually below, which is annoying.
     -->
-
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalControl\dll\TerminalControl.vcxproj">
       <!-- Private:true and ReferenceOutputAssembly:false, in combination with
       the manual reference to TerminalControl.winmd below make sure that this
@@ -280,7 +285,6 @@
       <Private>true</Private>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
-
   </ItemGroup>
   <ItemGroup>
     <!-- Manually add references to each of our dependent winmds. Mark them as private=false and CopyLocalSatelliteAssemblies=false, so that we don't
@@ -323,7 +327,6 @@
   <!-- ========================= Globals ======================== -->
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" />
   <Import Project="$(OpenConsoleDir)src\common.nugetversions.targets" />
-
   <!-- PowerShell version check, outputs error if the wrong version is installed. -->
   <Import Project="$(SolutionDir)build\rules\CollectWildcardResources.targets" />
   <Target Name="BeforeResourceCompile" Inputs="defaults.json;userDefaults.json;enableColorSelection.json" Outputs="Generated Files\defaults.json;Generated Files\userDefaults.json;Generated Files\enableColorSelection.json">
@@ -333,5 +336,4 @@
     <Exec Command="pwsh.exe -NoProfile -ExecutionPolicy Unrestricted &quot;$(OpenConsoleDir)\tools\CompressJson.ps1&quot; -JsonFile userDefaults.json -OutPath &quot;Generated Files\userDefaults.json&quot;" />
     <Exec Command="pwsh.exe -NoProfile -ExecutionPolicy Unrestricted &quot;$(OpenConsoleDir)\tools\CompressJson.ps1&quot; -JsonFile enableColorSelection.json -OutPath &quot;Generated Files\enableColorSelection.json&quot;" />
   </Target>
-
 </Project>

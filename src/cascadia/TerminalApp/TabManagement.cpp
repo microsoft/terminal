@@ -222,10 +222,15 @@ namespace winrt::TerminalApp::implementation
     //   tab's icon to that icon.
     // Arguments:
     // - tab: the Tab to update the title for.
-    void TerminalPage::_UpdateTabIcon(TerminalTab& tab)
+    // - isRefresh: Specified when the Icon is due to refresh due to a update e.g. Windows Theme Color Change, defaults to false
+    void TerminalPage::_UpdateTabIcon(TerminalTab& tab, bool isRefresh)
     {
         if (const auto content{ tab.GetActiveContent() })
         {
+            if (isRefresh)
+            {
+                content.IconRefresh();
+            }
             const auto& icon{ content.Icon() };
             const auto theme = _settings.GlobalSettings().CurrentTheme();
             const auto iconStyle = (theme && theme.Tab()) ? theme.Tab().IconStyle() : IconStyle::Default;

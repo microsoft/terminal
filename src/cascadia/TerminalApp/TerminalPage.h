@@ -332,7 +332,7 @@ namespace winrt::TerminalApp::implementation
         void _RegisterActionCallbacks();
 
         void _UpdateTitle(const TerminalTab& tab);
-        void _UpdateTabIcon(TerminalTab& tab);
+        void _UpdateTabIcon(TerminalTab& tab, bool isRefresh = false);
         void _UpdateTabView();
         void _UpdateTabWidthMode();
         void _SetBackgroundImage(const winrt::Microsoft::Terminal::Settings::Model::IAppearanceConfig& newAppearance);

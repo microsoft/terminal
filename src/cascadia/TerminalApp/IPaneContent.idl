@@ -36,6 +36,7 @@ namespace TerminalApp
 
         void Focus(Windows.UI.Xaml.FocusState reason);
 
+        void IconRefresh();
         void Close();
 
         event Windows.Foundation.TypedEventHandler<IPaneContent, Object> CloseRequested;

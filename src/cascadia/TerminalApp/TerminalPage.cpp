@@ -3561,7 +3561,7 @@ namespace winrt::TerminalApp::implementation
                 // Update the icon of the tab for the currently focused profile in that tab.
                 // Only do this for TerminalTabs. Other types of tabs won't have multiple panes
                 // and profiles so the Title and Icon will be set once and only once on init.
-                _UpdateTabIcon(*terminalTab);
+                _UpdateTabIcon(*terminalTab, true);
 
                 // Force the TerminalTab to re-grab its currently active control's title.
                 terminalTab->UpdateTitle();

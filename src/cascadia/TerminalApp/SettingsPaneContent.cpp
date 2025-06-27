@@ -61,6 +61,11 @@ namespace winrt::TerminalApp::implementation
         return winrt::hstring{ glyph };
     }
 
+    // No need to perform an icon refresh here
+    void SettingsPaneContent::IconRefresh() noexcept
+    {
+    }
+
     Windows::Foundation::IReference<winrt::Windows::UI::Color> SettingsPaneContent::TabColor() const noexcept
     {
         return nullptr;

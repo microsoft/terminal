@@ -80,6 +80,11 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    void TerminalPaneContent::IconRefresh() noexcept
+    {
+        _profile.ResetEvaluated();
+    }
+
     winrt::hstring TerminalPaneContent::Icon() const
     {
         return _profile.EvaluatedIcon();

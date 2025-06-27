@@ -1,0 +1,12 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+namespace Microsoft.Terminal.Settings.Model
+{
+    [default_interface] runtimeclass ProfileIcon
+    {
+        ProfileIcon();
+        String Dark;
+        String Light;
+    };
+}

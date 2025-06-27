@@ -4,6 +4,7 @@
 import "IAppearanceConfig.idl";
 import "ISettingsModelObject.idl";
 import "FontConfig.idl";
+import "ProfileIcon.idl";
 #include "IInheritable.idl.h"
 
 #define INHERITABLE_PROFILE_SETTING(Type, Name) \
@@ -38,6 +39,7 @@ namespace Microsoft.Terminal.Settings.Model
 
         void CreateUnfocusedAppearance();
         void DeleteUnfocusedAppearance();
+        void ResetEvaluated();
 
         // True if the user explicitly removed this Profile from settings.json.
         Boolean Deleted { get; };
@@ -54,6 +56,7 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_PROFILE_SETTING(Boolean, Hidden);
         INHERITABLE_PROFILE_SETTING(Guid, ConnectionType);
         INHERITABLE_PROFILE_SETTING(String, Icon);
+        INHERITABLE_PROFILE_SETTING(ProfileIcon, IconV2);
         INHERITABLE_PROFILE_SETTING(CloseOnExitMode, CloseOnExit);
         INHERITABLE_PROFILE_SETTING(String, TabTitle);
         INHERITABLE_PROFILE_SETTING(Windows.Foundation.IReference<Microsoft.Terminal.Core.Color>, TabColor);

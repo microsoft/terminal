@@ -183,6 +183,11 @@ namespace winrt::TerminalApp::implementation
         return *this;
     }
 
+    // Does nothing as Icon doesn't need to be refreshed for MarkdownPaneContent
+    void MarkdownPaneContent::IconRefresh() noexcept
+    {
+    }
+
     void MarkdownPaneContent::Close()
     {
         CloseRequested.raise(*this, nullptr);

@@ -11,6 +11,7 @@
 #include "FontConfig.h"
 
 #include "Profile.g.cpp"
+#include "ProfileIcon.h"
 
 #include <shellapi.h>
 
@@ -113,6 +114,7 @@ winrt::com_ptr<Profile> Profile::CopySettings() const
     profile->_TabColor = _TabColor;
     profile->_Padding = _Padding;
     profile->_Icon = _Icon;
+    profile->_IconV2 = _IconV2;
 
     profile->_Origin = _Origin;
     profile->_FontInfo = *fontInfo;
@@ -195,8 +197,20 @@ void Profile::LayerJson(const Json::Value& json)
     JsonUtils::GetValueForKey(json, HiddenKey, _Hidden);
     _logSettingIfSet(HiddenKey, _Hidden.has_value());
 
-    JsonUtils::GetValueForKey(json, IconKey, _Icon);
-    _logSettingIfSet(IconKey, _Icon.has_value());
+    const auto foundIconKey{ json.find(&*IconKey.cbegin(), (&*IconKey.cbegin()) + IconKey.size()) };
+    if (foundIconKey)
+    {
+        if (foundIconKey->isObject())
+        {
+            JsonUtils::GetValueForKey(json, IconKey, _IconV2);
+            _logSettingIfSet(IconKey, _IconV2.has_value());
+        }
+        else
+        {
+            JsonUtils::GetValueForKey(json, IconKey, _Icon);
+            _logSettingIfSet(IconKey, _Icon.has_value());
+        }
+    }
 
     // Padding was never specified as an integer, but it was a common working mistake.
     // Allow it to be permissive.
@@ -355,6 +369,10 @@ Json::Value Profile::ToJson() const
     // defined it manually in Profile, so make sure we only serialize the Icon
     // if the user actually changed it here.
     JsonUtils::SetValueForKey(json, IconKey, _Icon);
+    if (_IconV2)
+    {
+        JsonUtils::SetValueForKey(json, IconKey, _IconV2);
+    }
 
     // PermissiveStringConverter is unnecessary for serialization
     JsonUtils::SetValueForKey(json, PaddingKey, _Padding);
@@ -388,9 +406,27 @@ void Profile::Icon(const winrt::hstring& value)
     _evaluatedIcon = std::nullopt;
     _Icon = value;
 }
+
+winrt::Microsoft::Terminal::Settings::Model::ProfileIcon Profile::IconV2() const
+{
+    return _IconV2.has_value() ? *_IconV2 : winrt::Microsoft::Terminal::Settings::Model::ProfileIcon{};
+}
+
+void Profile::IconV2(const winrt::Microsoft::Terminal::Settings::Model::ProfileIcon& value)
+{
+    _evaluatedIcon = std::nullopt;
+    _IconV2 = value;
+}
+
+bool Profile::IsDarkMode()
+{
+    const auto theme = Application::Current().RequestedTheme();
+    return theme == ApplicationTheme::Dark;
+}
+
 winrt::hstring Profile::Icon() const
 {
-    const auto val{ _getIconImpl() };
+    const auto val{ _getIconImpl(IsDarkMode()) };
     return val ? *val : hstring{ L"\uE756" };
 }
 
@@ -404,9 +440,13 @@ winrt::hstring Profile::EvaluatedIcon()
     return *_evaluatedIcon;
 }
 
+void Profile::ResetEvaluated() noexcept
+{
+    _evaluatedIcon = std::nullopt;
+}
+
 winrt::hstring Profile::_evaluateIcon() const
 {
-    // If the profile has an icon, return it.
     if (!Icon().empty())
     {
         return Icon();
@@ -426,6 +466,11 @@ bool Profile::HasIcon() const
     return _Icon.has_value();
 }
 
+bool Profile::HasIconV2() const
+{
+    return _IconV2.has_value();
+}
+
 winrt::Microsoft::Terminal::Settings::Model::Profile Profile::IconOverrideSource()
 {
     for (const auto& parent : _parents)
@@ -438,21 +483,42 @@ winrt::Microsoft::Terminal::Settings::Model::Profile Profile::IconOverrideSource
     return nullptr;
 }
 
+winrt::Microsoft::Terminal::Settings::Model::Profile Profile::IconV2OverrideSource()
+{
+    return IconOverrideSource();
+}
+
 void Profile::ClearIcon()
 {
     _Icon = std::nullopt;
     _evaluatedIcon = std::nullopt;
 }
 
-std::optional<winrt::hstring> Profile::_getIconImpl() const
+void Profile::ClearIconV2()
 {
-    if (_Icon)
+    _IconV2 = std::nullopt;
+    _evaluatedIcon = std::nullopt;
+}
+
+std::optional<winrt::hstring> Profile::_getIconImpl(bool dark) const
+{
+    // Try dark, if dark doesnt exist fall back to light, if its not the object format i.e v2, use the standard string format (_Icon)
+    // if it is light and light icon is missing but dark is present, just use the dark icon
+    if (_IconV2.has_value() && ((dark && !_IconV2->Dark().empty()) || (!dark && _IconV2->Light().empty())))
+    {
+        return _IconV2->Dark();
+    }
+    else if (_IconV2.has_value() && !_IconV2->Light().empty())
+    {
+        return _IconV2->Light();
+    }
+    else if (_Icon)
     {
         return _Icon;
     }
     for (const auto& parent : _parents)
     {
-        if (auto val{ parent->_getIconImpl() })
+        if (auto val{ parent->_getIconImpl(dark) })
         {
             return val;
         }
@@ -462,7 +528,7 @@ std::optional<winrt::hstring> Profile::_getIconImpl() const
 
 winrt::Microsoft::Terminal::Settings::Model::Profile Profile::_getIconOverrideSourceImpl() const
 {
-    if (_Icon)
+    if (_Icon || (_IconV2.has_value() && (!_IconV2->Dark().empty() || !_IconV2->Light().empty())))
     {
         return *this;
     }
