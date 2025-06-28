@@ -546,6 +546,8 @@ namespace winrt::TerminalApp::implementation
         auto paneContent{ winrt::make<TerminalPaneContent> (_profile, _page._terminalSettingsCache, control) };
         auto pane = std::make_shared<Pane>(paneContent);
 
+        connection.Initialize(nullptr);
+
         control.Initialized([this, paneId](auto, auto) {
             auto search = _attachedPanes.find(paneId);
             if (search == _attachedPanes.end())
@@ -555,46 +557,9 @@ namespace winrt::TerminalApp::implementation
             search->second.initialized = true;
         });
 
-        control.CharSent([this, paneId](auto, auto& args) {
-            auto ch = args.Character();
-            std::wstring keys(1, static_cast<wchar_t>(ch));
-            _SendKey(paneId, keys);
-        });
-
-        control.KeySent([this, paneId](auto, auto& args) {
-            auto keyDown = args.KeyDown();
-            if (!keyDown)
-            {
-                return;
-            }
-
-            auto ch = static_cast<VirtualKey>(args.VKey());
-            std::wstring out = L"";
-            if (ch == VirtualKey::Up)
-            {
-                out = L"\033[A";
-            }
-            else if (ch == VirtualKey::Down)
-            {
-                out = L"\033[B";
-            }
-            else if (ch == VirtualKey::Right)
-            {
-                out = L"\033[C";
-            }
-            else if (ch == VirtualKey::Left)
-            {
-                out = L"\033[D";
-            }
-            else if (ch == VirtualKey::Tab)
-            {
-                out = L"\t";
-            }
-
-            if (out.size() > 0)
-            {
-                _SendKey(paneId, out);
-            }
+        connection.TerminalOutput([this, paneId](auto keys) {
+            std::wstring out{ keys };
+            _SendKey(paneId, out);
         });
 
         control.GotFocus([this, windowId, paneId](auto, auto) {
