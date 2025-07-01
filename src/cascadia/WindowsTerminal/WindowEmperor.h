@@ -52,10 +52,10 @@ private:
     void _summonAllWindows() const;
     void _dispatchSpecialKey(const MSG& msg) const;
     void _dispatchCommandline(winrt::TerminalApp::CommandlineArgs args);
+    void _dispatchCommandlineCommon(winrt::array_view<const winrt::hstring> args, std::wstring_view currentDirectory, std::wstring_view envString, uint32_t showWindowCommand);
     safe_void_coroutine _dispatchCommandlineCurrentDesktop(winrt::TerminalApp::CommandlineArgs args);
     LRESULT _messageHandler(HWND window, UINT message, WPARAM wParam, LPARAM lParam) noexcept;
     void _createMessageWindow(const wchar_t* className);
-    bool _shouldSkipClosingWindows() const;
     void _postQuitMessageIfNeeded() const;
     safe_void_coroutine _showMessageBox(winrt::hstring message, bool error);
     void _notificationAreaMenuRequested(WPARAM wParam);
