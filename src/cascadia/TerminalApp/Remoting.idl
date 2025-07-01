@@ -6,16 +6,16 @@ namespace TerminalApp
     runtimeclass CommandlineArgs
     {
         CommandlineArgs();
-        CommandlineArgs(String[] args, String cwd, UInt32 showWindowCommand, String env);
 
         Int32 ExitCode { get; };
         String ExitMessage { get; };
         String TargetWindow { get; };
 
+        Microsoft.Terminal.TerminalConnection.ITerminalConnection Connection;
         String[] Commandline;
-        String CurrentDirectory { get; };
-        UInt32 ShowWindowCommand { get; };
-        String CurrentEnvironment { get; };
+        String CurrentDirectory;
+        UInt32 ShowWindowCommand;
+        String CurrentEnvironment;
     };
 
     enum MonitorBehavior
