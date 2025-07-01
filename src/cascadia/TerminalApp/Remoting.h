@@ -13,21 +13,17 @@ namespace winrt::TerminalApp::implementation
 {
     struct CommandlineArgs : public CommandlineArgsT<CommandlineArgs>
     {
-        CommandlineArgs() = default;
-        CommandlineArgs(winrt::array_view<const winrt::hstring> args, winrt::hstring currentDirectory, uint32_t showWindowCommand, winrt::hstring envString);
-
         ::TerminalApp::AppCommandlineArgs& ParsedArgs() noexcept;
         winrt::com_array<winrt::hstring>& CommandlineRef() noexcept;
 
         // These bits are exposed via WinRT:
-    public:
         int32_t ExitCode() const noexcept;
         winrt::hstring ExitMessage() const;
         winrt::hstring TargetWindow() const;
 
+        til::property<winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection> Connection;
         void Commandline(const winrt::array_view<const winrt::hstring>& value);
         winrt::com_array<winrt::hstring> Commandline();
-
         til::property<winrt::hstring> CurrentDirectory;
         til::property<winrt::hstring> CurrentEnvironment;
         til::property<uint32_t> ShowWindowCommand{ static_cast<uint32_t>(SW_NORMAL) }; // SW_NORMAL is 1, 0 is SW_HIDE
@@ -86,11 +82,9 @@ namespace winrt::TerminalApp::implementation
 
         WINRT_PROPERTY(uint64_t, Id);
         WINRT_PROPERTY(winrt::hstring, WindowName);
-        WINRT_PROPERTY(TerminalApp::CommandlineArgs, Command);
+        WINRT_PROPERTY(TerminalApp::CommandlineArgs, Command, nullptr);
         WINRT_PROPERTY(winrt::hstring, Content);
         WINRT_PROPERTY(Windows::Foundation::IReference<Windows::Foundation::Rect>, InitialBounds);
-
-    private:
     };
 }
 

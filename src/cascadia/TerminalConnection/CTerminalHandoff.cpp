@@ -39,7 +39,7 @@ try
     ComPtr<IUnknown> unk;
     RETURN_IF_FAILED(classFactory.As(&unk));
 
-    RETURN_IF_FAILED(CoRegisterClassObject(__uuidof(CTerminalHandoff), unk.Get(), CLSCTX_LOCAL_SERVER, REGCLS_SINGLEUSE, &g_cTerminalHandoffRegistration));
+    RETURN_IF_FAILED(CoRegisterClassObject(__uuidof(CTerminalHandoff), unk.Get(), CLSCTX_LOCAL_SERVER, REGCLS_MULTIPLEUSE, &g_cTerminalHandoffRegistration));
 
     return S_OK;
 }
@@ -83,41 +83,19 @@ HRESULT CTerminalHandoff::s_StopListening()
 //   from the registered handler event function.
 HRESULT CTerminalHandoff::EstablishPtyHandoff(HANDLE* in, HANDLE* out, HANDLE signal, HANDLE reference, HANDLE server, HANDLE client, const TERMINAL_STARTUP_INFO* startupInfo)
 {
-    try
-    {
-        // Because we are REGCLS_SINGLEUSE... we need to `CoRevokeClassObject` after we handle this ONE call.
-        // COM does not automatically clean that up for us. We must do it.
-        LOG_IF_FAILED(s_StopListening());
+    // Report an error if no one registered a handoff function before calling this.
+    RETURN_HR_IF_NULL(E_NOT_VALID_STATE, _pfnHandoff);
 
-        // Report an error if no one registered a handoff function before calling this.
-        THROW_HR_IF_NULL(E_NOT_VALID_STATE, _pfnHandoff);
-
-        // Call registered handler from when we started listening.
-        THROW_IF_FAILED(_pfnHandoff(in, out, signal, reference, server, client, startupInfo));
+    // Call registered handler from when we started listening.
+    RETURN_IF_FAILED(_pfnHandoff(in, out, signal, reference, server, client, startupInfo));
 
 #pragma warning(suppress : 26477)
-        TraceLoggingWrite(
-            g_hTerminalConnectionProvider,
-            "ReceiveTerminalHandoff_Success",
-            TraceLoggingDescription("successfully received a terminal handoff"),
-            TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
-            TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
+    TraceLoggingWrite(
+        g_hTerminalConnectionProvider,
+        "ReceiveTerminalHandoff_Success",
+        TraceLoggingDescription("successfully received a terminal handoff"),
+        TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+        TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
 
-        return S_OK;
-    }
-    catch (...)
-    {
-        const auto hr = wil::ResultFromCaughtException();
-
-#pragma warning(suppress : 26477)
-        TraceLoggingWrite(
-            g_hTerminalConnectionProvider,
-            "ReceiveTerminalHandoff_Failed",
-            TraceLoggingDescription("failed while receiving a terminal handoff"),
-            TraceLoggingHResult(hr),
-            TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
-            TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
-
-        return hr;
-    }
+    return S_OK;
 }
