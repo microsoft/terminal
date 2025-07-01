@@ -756,7 +756,7 @@ namespace winrt::TerminalApp::implementation
             if (!actions.empty())
             {
                 actionArgs.Handled(true);
-                ProcessStartupActions(std::move(actions), false);
+                ProcessStartupActions(std::move(actions));
             }
         }
     }

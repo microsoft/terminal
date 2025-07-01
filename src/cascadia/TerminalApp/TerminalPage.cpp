@@ -7,7 +7,6 @@
 
 #include <LibraryResources.h>
 #include <TerminalCore/ControlKeyStates.hpp>
-#include <til/latch.h>
 #include <Utils.h>
 
 #include "../../types/inc/utils.hpp"
@@ -293,12 +292,11 @@ namespace winrt::TerminalApp::implementation
     // - true if we're not elevated but all relevant pane-spawning actions are elevated
     bool TerminalPage::ShouldImmediatelyHandoffToElevated(const CascadiaSettings& settings) const
     {
-        // GH#12267: Don't forget about defterm handoff here. If we're being
-        // created for embedding, then _yea_, we don't need to handoff to an
-        // elevated window.
-        if (_startupActions.empty() || IsRunningElevated() || _shouldStartInboundListener)
+        if (_startupActions.empty() || _startupConnection || IsRunningElevated())
         {
-            // there aren't startup actions, or we're elevated. In that case, go for it.
+            // No point in handing off if we got no startup actions, or we're already elevated.
+            // Also, we shouldn't need to elevate handoff ConPTY connections.
+            assert(!_startupConnection);
             return false;
         }
 
@@ -488,46 +486,16 @@ namespace winrt::TerminalApp::implementation
         {
             _startupState = StartupState::InStartup;
 
-            ProcessStartupActions(std::move(_startupActions), true);
-
-            // If we were told that the COM server needs to be started to listen for incoming
-            // default application connections, start it now.
-            // This MUST be done after we've registered the event listener for the new connections
-            // or the COM server might start receiving requests on another thread and dispatch
-            // them to nowhere.
-            _StartInboundListener();
-        }
-    }
-
-    // Routine Description:
-    // - Will start the listener for inbound console handoffs if we have already determined
-    //   that we should do so.
-    // NOTE: Must be after TerminalPage::_OnNewConnection has been connected up.
-    // Arguments:
-    // - <unused> - Looks at _shouldStartInboundListener
-    // Return Value:
-    // - <none> - May fail fast if setup fails as that would leave us in a weird state.
-    void TerminalPage::_StartInboundListener()
-    {
-        if (_shouldStartInboundListener)
-        {
-            _shouldStartInboundListener = false;
-
-            // Hook up inbound connection event handler
-            _newConnectionRevoker = ConptyConnection::NewConnection(winrt::auto_revoke, { this, &TerminalPage::_OnNewConnection });
-
-            try
+            if (_startupConnection)
             {
-                winrt::Microsoft::Terminal::TerminalConnection::ConptyConnection::StartInboundListener();
+                CreateTabFromConnection(std::move(_startupConnection));
             }
-            // If we failed to start the listener, it will throw.
-            // We don't want to fail fast here because if a peasant has some trouble with
-            // starting the listener, we don't want it to crash and take all its tabs down
-            // with it.
-            catch (...)
+            else if (!_startupActions.empty())
             {
-                LOG_CAUGHT_EXCEPTION();
+                ProcessStartupActions(std::move(_startupActions));
             }
+
+            _CompleteInitialization();
         }
     }
 
@@ -545,7 +513,7 @@ namespace winrt::TerminalApp::implementation
     //   nt -d .` from inside another directory to work as expected.
     // Return Value:
     // - <none>
-    safe_void_coroutine TerminalPage::ProcessStartupActions(std::vector<ActionAndArgs> actions, const bool initial, const winrt::hstring cwd, const winrt::hstring env)
+    safe_void_coroutine TerminalPage::ProcessStartupActions(std::vector<ActionAndArgs> actions, const winrt::hstring cwd, const winrt::hstring env)
     {
         const auto strong = get_strong();
 
@@ -597,11 +565,29 @@ namespace winrt::TerminalApp::implementation
                 content.Focus(FocusState::Programmatic);
             }
         }
+    }
 
-        if (initial)
+    void TerminalPage::CreateTabFromConnection(ITerminalConnection connection)
+    {
+        NewTerminalArgs newTerminalArgs;
+
+        if (const auto conpty = connection.try_as<ConptyConnection>())
         {
-            _CompleteInitialization();
+            newTerminalArgs.Commandline(conpty.Commandline());
+            newTerminalArgs.TabTitle(conpty.StartingTitle());
         }
+
+        // GH #12370: We absolutely cannot allow a defterm connection to
+        // auto-elevate. Defterm doesn't work for elevated scenarios in the
+        // first place. If we try accepting the connection, the spawning an
+        // elevated version of the Terminal with that profile... that's a
+        // recipe for disaster. We won't ever open up a tab in this window.
+        newTerminalArgs.Elevate(false);
+        const auto newPane = _MakePane(newTerminalArgs, nullptr, std::move(connection));
+        newPane->WalkTree([](const auto& pane) {
+            pane->FinalizeConfigurationGivenDefault();
+        });
+        _CreateNewTabFromPane(newPane);
     }
 
     // Method Description:
@@ -629,7 +615,7 @@ namespace winrt::TerminalApp::implementation
         // GH#12267: Make sure that we don't instantly close ourselves when
         // we're readying to accept a defterm connection. In that case, we don't
         // have a tab yet, but will once we're initialized.
-        if (_tabs.Size() == 0 && !_shouldStartInboundListener && !_isEmbeddingInboundListener)
+        if (_tabs.Size() == 0)
         {
             CloseWindowRequested.raise(*this, nullptr);
             co_return;
@@ -3653,25 +3639,9 @@ namespace winrt::TerminalApp::implementation
         _startupActions = std::move(actions);
     }
 
-    // Routine Description:
-    // - Notifies this Terminal Page that it should start the incoming connection
-    //   listener for command-line tools attempting to join this Terminal
-    //   through the default application channel.
-    // Arguments:
-    // - isEmbedding - True if COM started us to be a server. False if we're doing it of our own accord.
-    // Return Value:
-    // - <none>
-    void TerminalPage::SetInboundListener(bool isEmbedding)
+    void TerminalPage::SetStartupConnection(ITerminalConnection connection)
     {
-        _shouldStartInboundListener = true;
-        _isEmbeddingInboundListener = isEmbedding;
-
-        // If the page has already passed the NotInitialized state,
-        // then it is ready-enough for us to just start this immediately.
-        if (_startupState != StartupState::NotInitialized)
-        {
-            _StartInboundListener();
-        }
+        _startupConnection = std::move(connection);
     }
 
     winrt::TerminalApp::IDialogPresenter TerminalPage::DialogPresenter() const
@@ -4071,68 +4041,6 @@ namespace winrt::TerminalApp::implementation
         }
         _isMaximized = newMaximized;
         ChangeMaximizeRequested.raise(*this, nullptr);
-    }
-
-    HRESULT TerminalPage::_OnNewConnection(const ConptyConnection& connection)
-    {
-        _newConnectionRevoker.revoke();
-
-        // We need to be on the UI thread in order for _OpenNewTab to run successfully.
-        // HasThreadAccess will return true if we're currently on a UI thread and false otherwise.
-        // When we're on a COM thread, we'll need to dispatch the calls to the UI thread
-        // and wait on it hence the locking mechanism.
-        if (!Dispatcher().HasThreadAccess())
-        {
-            til::latch latch{ 1 };
-            auto finalVal = S_OK;
-
-            Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [&]() {
-                finalVal = _OnNewConnection(connection);
-                latch.count_down();
-            });
-
-            latch.wait();
-            return finalVal;
-        }
-
-        try
-        {
-            NewTerminalArgs newTerminalArgs;
-            newTerminalArgs.Commandline(connection.Commandline());
-            newTerminalArgs.TabTitle(connection.StartingTitle());
-            // GH #12370: We absolutely cannot allow a defterm connection to
-            // auto-elevate. Defterm doesn't work for elevated scenarios in the
-            // first place. If we try accepting the connection, the spawning an
-            // elevated version of the Terminal with that profile... that's a
-            // recipe for disaster. We won't ever open up a tab in this window.
-            newTerminalArgs.Elevate(false);
-            const auto newPane = _MakePane(newTerminalArgs, nullptr, connection);
-            newPane->WalkTree([](const auto& pane) {
-                pane->FinalizeConfigurationGivenDefault();
-            });
-            _CreateNewTabFromPane(newPane);
-
-            // Request a summon of this window to the foreground
-            SummonWindowRequested.raise(*this, nullptr);
-
-            // TEMPORARY SOLUTION
-            // If the connection has requested for the window to be maximized,
-            // manually maximize it here. Ideally, we should be _initializing_
-            // the session maximized, instead of manually maximizing it after initialization.
-            // However, because of the current way our defterm handoff works,
-            // we are unable to get the connection info before the terminal session
-            // has already started.
-
-            // Make sure that there were no other tabs already existing (in
-            // the case that we are in glomming mode), because we don't want
-            // to be maximizing other existing sessions that did not ask for it.
-            if (_tabs.Size() == 1 && connection.ShowWindow() == SW_SHOWMAXIMIZED)
-            {
-                RequestSetMaximized(true);
-            }
-            return S_OK;
-        }
-        CATCH_RETURN()
     }
 
     TerminalApp::IPaneContent TerminalPage::_makeSettingsContent()

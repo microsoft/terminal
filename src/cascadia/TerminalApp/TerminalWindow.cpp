@@ -151,38 +151,23 @@ namespace winrt::TerminalApp::implementation
         //   instead.
         // * if we have commandline arguments, Pass commandline args into the
         //   TerminalPage.
-        if (!_initialContentArgs.empty())
+        if (_startupConnection)
         {
-            _root->SetStartupActions(_initialContentArgs);
+            _root->SetStartupConnection(std::move(_startupConnection));
         }
-        else
+        else if (!_initialContentArgs.empty())
+        {
+            _root->SetStartupActions(std::move(_initialContentArgs));
+        }
+        else if (const auto& layout = LoadPersistedLayout())
         {
             // layout will only ever be non-null if there were >0 tabs persisted in
             // .TabLayout(). We can re-evaluate that as a part of TODO: GH#12633
-            if (const auto& layout = LoadPersistedLayout())
-            {
-                std::vector<Settings::Model::ActionAndArgs> actions;
-                for (const auto& a : layout.TabLayout())
-                {
-                    actions.emplace_back(a);
-                }
-                _root->SetStartupActions(actions);
-            }
-            else if (_appArgs)
-            {
-                _root->SetStartupActions(_appArgs->ParsedArgs().GetStartupActions());
-            }
+            _root->SetStartupActions(wil::to_vector(layout.TabLayout()));
         }
-
-        // Check if we were started as a COM server for inbound connections of console sessions
-        // coming out of the operating system default application feature. If so,
-        // tell TerminalPage to start the listener as we have to make sure it has the chance
-        // to register a handler to hear about the requests first and is all ready to receive
-        // them before the COM server registers itself. Otherwise, the request might come
-        // in and be routed to an event with no handlers or a non-ready Page.
-        if (_appArgs && _appArgs->ParsedArgs().IsHandoffListener())
+        else if (_appArgs)
         {
-            _root->SetInboundListener(true);
+            _root->SetStartupActions(_appArgs->ParsedArgs().GetStartupActions());
         }
 
         return _root->Initialize(hwnd);
@@ -1051,6 +1036,7 @@ namespace winrt::TerminalApp::implementation
     int32_t TerminalWindow::SetStartupCommandline(TerminalApp::CommandlineArgs args)
     {
         _appArgs = winrt::get_self<CommandlineArgs>(args);
+        _startupConnection = args.Connection();
         auto& parsedArgs = _appArgs->ParsedArgs();
 
         _WindowProperties->SetInitialCwd(_appArgs->CurrentDirectory());
@@ -1111,13 +1097,16 @@ namespace winrt::TerminalApp::implementation
             auto& parsedArgs = _appArgs->ParsedArgs();
             auto& actions = parsedArgs.GetStartupActions();
 
-            _root->ProcessStartupActions(actions, false, _appArgs->CurrentDirectory(), _appArgs->CurrentEnvironment());
-
-            if (parsedArgs.IsHandoffListener())
+            if (auto conn = args.Connection())
             {
-                _root->SetInboundListener(true);
+                _root->CreateTabFromConnection(std::move(conn));
+            }
+            else if (!actions.empty())
+            {
+                _root->ProcessStartupActions(actions, _appArgs->CurrentDirectory(), _appArgs->CurrentEnvironment());
             }
         }
+
         // Return the result of parsing with commandline, though it may or may not be used.
         return _appArgs->ExitCode();
     }

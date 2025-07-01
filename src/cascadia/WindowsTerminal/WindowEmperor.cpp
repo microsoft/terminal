@@ -343,20 +343,31 @@ void WindowEmperor::HandleCommandlineArgs(int nCmdShow)
             for (const auto layout : layouts)
             {
                 hstring args[] = { L"wt", L"-w", L"new", L"-s", winrt::to_hstring(startIdx) };
-                _dispatchCommandline({ args, cwd, showCmd, env });
+                _dispatchCommandlineCommon(args, cwd, env, showCmd);
                 startIdx += 1;
             }
         }
 
-        // Create another window if needed: There aren't any yet, or we got an explicit command line.
         const auto args = commandlineToArgArray(GetCommandLineW());
-        if (_windows.empty() || args.size() != 1)
-        {
-            _dispatchCommandline({ args, cwd, showCmd, env });
-        }
 
-        // If we created no windows, e.g. because the args are "/?" we can just exit now.
-        _postQuitMessageIfNeeded();
+        if (args.size() == 2 && args[1] == L"-Embedding")
+        {
+            // We were launched for ConPTY handoff. We have no windows and also don't want to exit.
+            //
+            // TODO: Here we could start a timer and exit after, say, 5 seconds
+            // if no windows are created. But that's a minor concern.
+        }
+        else
+        {
+            // Create another window if needed: There aren't any yet, OR we got an explicit command line.
+            if (_windows.empty() || args.size() != 1)
+            {
+                _dispatchCommandlineCommon(args, cwd, env, showCmd);
+            }
+
+            // If we created no windows, e.g. because the args are "/?" we can just exit now.
+            _postQuitMessageIfNeeded();
+        }
     }
 
     // ALWAYS change the _real_ CWD of the Terminal to system32,
@@ -382,6 +393,19 @@ void WindowEmperor::HandleCommandlineArgs(int nCmdShow)
                 SetParent(coreHandle, _window.get());
             }
         }
+    }
+
+    {
+        TerminalConnection::ConptyConnection::NewConnection([this](TerminalConnection::ConptyConnection conn) {
+            TerminalApp::CommandlineArgs args;
+            args.ShowWindowCommand(conn.ShowWindow());
+            args.Connection(std::move(conn));
+            _dispatchCommandline(std::move(args));
+            _summonWindow(SummonWindowSelectionArgs{
+                .SummonBehavior = nullptr,
+            });
+        });
+        TerminalConnection::ConptyConnection::StartInboundListener();
     }
 
     // Main message loop. It pumps all windows.
@@ -584,6 +608,16 @@ void WindowEmperor::_dispatchCommandline(winrt::TerminalApp::CommandlineArgs arg
         request.WindowName(std::move(windowName));
         CreateNewWindow(std::move(request));
     }
+}
+
+void WindowEmperor::_dispatchCommandlineCommon(winrt::array_view<const winrt::hstring> args, std::wstring_view currentDirectory, std::wstring_view envString, uint32_t showWindowCommand)
+{
+    winrt::TerminalApp::CommandlineArgs c;
+    c.Commandline(args);
+    c.CurrentDirectory(currentDirectory);
+    c.CurrentEnvironment(envString);
+    c.ShowWindowCommand(showWindowCommand);
+    _dispatchCommandline(std::move(c));
 }
 
 // This is an implementation-detail of _dispatchCommandline().
@@ -894,10 +928,8 @@ LRESULT WindowEmperor::_messageHandler(HWND window, UINT const message, WPARAM c
             {
                 const auto handoff = deserializeHandoffPayload(static_cast<const uint8_t*>(cds->lpData), static_cast<const uint8_t*>(cds->lpData) + cds->cbData);
                 const winrt::hstring args{ handoff.args };
-                const winrt::hstring env{ handoff.env };
-                const winrt::hstring cwd{ handoff.cwd };
                 const auto argv = commandlineToArgArray(args.c_str());
-                _dispatchCommandline({ argv, cwd, gsl::narrow_cast<uint32_t>(handoff.show), env });
+                _dispatchCommandlineCommon(argv, handoff.cwd, handoff.env, handoff.show);
             }
             return 0;
         case WM_HOTKEY:
@@ -1177,7 +1209,7 @@ void WindowEmperor::_hotkeyPressed(const long hotkeyIndex)
     const wil::unique_environstrings_ptr envMem{ GetEnvironmentStringsW() };
     const auto env = stringFromDoubleNullTerminated(envMem.get());
     const auto cwd = wil::GetCurrentDirectoryW<std::wstring>();
-    _dispatchCommandline({ argv, cwd, SW_SHOWDEFAULT, std::move(env) });
+    _dispatchCommandlineCommon(argv, cwd, env, SW_SHOWDEFAULT);
 }
 
 void WindowEmperor::_registerHotKey(const int index, const winrt::Microsoft::Terminal::Control::KeyChord& hotkey) noexcept
