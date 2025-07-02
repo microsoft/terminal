@@ -159,7 +159,7 @@ namespace Microsoft::Console::VirtualTerminal
     class InputStateMachineEngine : public IStateMachineEngine
     {
     public:
-        InputStateMachineEngine(std::unique_ptr<IInteractDispatch> pDispatch, std::function<void()> capturedCPR);
+        InputStateMachineEngine(std::unique_ptr<IInteractDispatch> pDispatch, std::function<void()> capturedCPR = nullptr);
 
         IInteractDispatch& GetDispatch() const noexcept;
         void CaptureNextCPR() noexcept;
