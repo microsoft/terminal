@@ -69,7 +69,7 @@ variables:
 extends:
   template: templates-v2/pipeline-onebranch-full-release-build.yml
   parameters:
-    official: true
+    official: false
     branding: ${{ parameters.branding }}
     buildTerminal: ${{ parameters.buildTerminal }}
     buildConPTY: ${{ parameters.buildConPTY }}
