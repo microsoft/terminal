@@ -27,7 +27,7 @@ namespace Microsoft::Console
     class VtInputThread
     {
     public:
-        VtInputThread(_In_ wil::unique_hfile hPipe, std::function<void()> capturedCPR);
+        VtInputThread(_In_ wil::unique_hfile hPipe, std::function<void()> capturedCPR = nullptr);
 
         [[nodiscard]] HRESULT Start();
         VirtualTerminal::InputStateMachineEngine& GetInputStateMachineEngine() const noexcept;
