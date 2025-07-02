@@ -63,6 +63,7 @@ void InteractDispatch::WriteString(const std::wstring_view string)
     if (!string.empty())
     {
         const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+#pragma warning(suppress : 26429) // Symbol 'inputBuffer' is never tested for nullness, it can be marked as not_null (f.23).
         const auto inputBuffer = gci.GetActiveInputBuffer();
 
         // The input *may* be keyboard input in which case we must call CharToKeyEvents.
