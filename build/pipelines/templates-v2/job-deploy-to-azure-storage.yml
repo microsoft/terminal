@@ -75,13 +75,13 @@ jobs:
       }
     displayName: "Wrangle Unpackaged builds into place, rename"
 
-  - task: AzurePowerShell@5
+  - task: AzureFileCopy@6
     displayName: Publish to Storage Account
     inputs:
+      sourcePath: _out/*
+      Destination: AzureBlob
       azureSubscription: ${{ parameters.subscription }}
-      azurePowerShellVersion: LatestVersion
-      pwsh: true
-      ScriptType: InlineScript
-      Inline: |-
-        $Env:AZCOPY_AUTO_LOGIN_TYPE="PSCRED"
-        & AzCopy copy "_out\*" "https://${{ parameters.storageAccount }}.blob.core.windows.net/${{ parameters.storageContainer }}/" --content-type application/octet-stream
+      storage: ${{ parameters.storageAccount }}
+      ContainerName: ${{ parameters.storageContainer }}
+      AdditionalArgumentsForBlobCopy: "--content-type application/octet-stream"
+
