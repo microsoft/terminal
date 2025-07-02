@@ -53,7 +53,6 @@ extends:
               ob_git_checkout: false # This job checks itself out
               ob_git_skip_checkout_none: true
               ob_outputDirectory: "$(Build.SourcesDirectory)/_none"
-            dependsOn: [PublishSymbols]
             storagePublicRootURL: $(AppInstallerRootURL)
             subscription: $(AzureSubscriptionName)
             storageAccount: $(AzureStorageAccount)
