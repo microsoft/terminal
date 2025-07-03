@@ -724,6 +724,9 @@ IStateMachineEngine::StringHandler OutputStateMachineEngine::ActionDcsDispatch(c
     case DcsActionCodes::DECRSPS_RestorePresentationState:
         handler = _dispatch->RestorePresentationState(parameters.at(0));
         break;
+    case DcsActionCodes::TMUX_ControlEnter:
+        handler = _dispatch->EnterTmuxControl(parameters);
+        break;
     default:
         handler = nullptr;
         break;
