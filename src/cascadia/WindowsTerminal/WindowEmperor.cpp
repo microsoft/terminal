@@ -49,7 +49,7 @@ static std::vector<winrt::hstring> commandlineToArgArray(const wchar_t* commandL
 }
 
 // Returns the length of a double-null encoded string *excluding* the trailing double-null character.
-static std::wstring_view stringFromDoubleNullTerminated(const wchar_t* beg)
+static wil::zwstring_view stringFromDoubleNullTerminated(const wchar_t* beg)
 {
     auto end = beg;
 
@@ -57,7 +57,7 @@ static std::wstring_view stringFromDoubleNullTerminated(const wchar_t* beg)
     {
     }
 
-    return { beg, end };
+    return { beg, gsl::narrow_cast<size_t>(end - beg) };
 }
 
 // Appends an uint32_t to a byte vector.
@@ -78,36 +78,39 @@ static const uint8_t* deserializeUint32(const uint8_t* it, const uint8_t* end, u
     return it + sizeof(uint32_t);
 }
 
-// Writes an uint32_t length prefix, followed by the string data, to the output vector.
-static void serializeString(std::vector<uint8_t>& out, std::wstring_view str)
+// Writes a null-terminated string to `out`: A uint32_t length prefix,
+// *including null byte*, followed by the string data, followed by the null-terminator.
+static void serializeString(std::vector<uint8_t>& out, wil::zwstring_view str)
 {
     const auto ptr = reinterpret_cast<const uint8_t*>(str.data());
-    const auto len = gsl::narrow<uint32_t>(str.size());
-    serializeUint32(out, len);
+    const auto len = str.size() + 1;
+    serializeUint32(out, gsl::narrow<uint32_t>(len));
     out.insert(out.end(), ptr, ptr + len * sizeof(wchar_t));
 }
 
-// Parses the next string from the input iterator. Performs bounds-checks.
+// Counter-part to `serializeString`. Performs bounds-checks.
 // Returns an iterator that points past it.
-static const uint8_t* deserializeString(const uint8_t* it, const uint8_t* end, std::wstring_view& str)
+static const uint8_t* deserializeString(const uint8_t* it, const uint8_t* end, wil::zwstring_view& str)
 {
     uint32_t len;
     it = deserializeUint32(it, end, len);
 
-    if (static_cast<size_t>(end - it) < len * sizeof(wchar_t))
+    const auto bytes = static_cast<size_t>(len) * sizeof(wchar_t);
+
+    if (bytes == 0 || static_cast<size_t>(end - it) < bytes)
     {
         throw std::out_of_range("Not enough data for string content");
     }
 
-    str = { reinterpret_cast<const wchar_t*>(it), len };
-    return it + len * sizeof(wchar_t);
+    str = { reinterpret_cast<const wchar_t*>(it), len - 1 };
+    return it + bytes;
 }
 
 struct Handoff
 {
-    std::wstring_view args;
-    std::wstring_view env;
-    std::wstring_view cwd;
+    wil::zwstring_view args;
+    wil::zwstring_view env;
+    wil::zwstring_view cwd;
     uint32_t show;
 };
 
@@ -612,7 +615,7 @@ void WindowEmperor::_dispatchCommandline(winrt::TerminalApp::CommandlineArgs arg
     }
 }
 
-void WindowEmperor::_dispatchCommandlineCommon(winrt::array_view<const winrt::hstring> args, std::wstring_view currentDirectory, std::wstring_view envString, uint32_t showWindowCommand)
+void WindowEmperor::_dispatchCommandlineCommon(winrt::array_view<const winrt::hstring> args, wil::zwstring_view currentDirectory, wil::zwstring_view envString, uint32_t showWindowCommand)
 {
     winrt::TerminalApp::CommandlineArgs c;
     c.Commandline(args);
@@ -929,8 +932,7 @@ LRESULT WindowEmperor::_messageHandler(HWND window, UINT const message, WPARAM c
             if (const auto cds = reinterpret_cast<COPYDATASTRUCT*>(lParam); cds->dwData == TERMINAL_HANDOFF_MAGIC)
             {
                 const auto handoff = deserializeHandoffPayload(static_cast<const uint8_t*>(cds->lpData), static_cast<const uint8_t*>(cds->lpData) + cds->cbData);
-                const winrt::hstring args{ handoff.args };
-                const auto argv = commandlineToArgArray(args.c_str());
+                const auto argv = commandlineToArgArray(handoff.args.c_str());
                 _dispatchCommandlineCommon(argv, handoff.cwd, handoff.env, handoff.show);
             }
             return 0;
