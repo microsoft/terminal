@@ -184,6 +184,9 @@ void PtySignalInputThread::_DoResizeWindow(const ResizeWindowData& data)
     }
 
     _api.ResizeWindow(data.sx, data.sy);
+
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    gci.GetVtIo()->RequestCursorPositionFromTerminal();
 }
 
 void PtySignalInputThread::_DoClearBuffer(const bool keepCursorRow) const
