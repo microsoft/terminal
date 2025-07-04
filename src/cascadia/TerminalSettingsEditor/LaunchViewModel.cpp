@@ -25,6 +25,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     static constexpr std::array appLanguageTags{
         L"en-US",
+        L"en-GB",
         L"de-DE",
         L"es-ES",
         L"fr-FR",
