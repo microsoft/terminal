@@ -88,6 +88,9 @@ extends:
       enabled: false
     globalSdl: # https://aka.ms/obpipelines/sdl
       enableCheckCFlags: false # CheckCFlags is broken and exploding our builds; to remove, :g/BAD-FLAGS/d
+      isNativeCode: true
+      prefast:
+        enabled: true
       asyncSdl:
         enabled: true
         tsaOptionsFile: 'build/config/tsa.json'
@@ -115,6 +118,8 @@ extends:
               variables:
                 ob_sdl_checkcflags_enabled: false # BAD-FLAGS
                 ob_sdl_xfgcheck_enabled: false # BAD-FLAGS
+                ob_sdl_prefast_runDuring: Build
+                ob_sdl_checkCompliantCompilerWarnings: true
                 ob_git_checkout: false # This job checks itself out
                 ob_git_skip_checkout_none: true
                 ob_outputDirectory: $(JobOutputDirectory)
@@ -153,6 +158,7 @@ extends:
                 variables:
                   ob_sdl_checkcflags_enabled: false # BAD-FLAGS
                   ob_sdl_xfgcheck_enabled: false # BAD-FLAGS
+                  ob_sdl_prefast_enabled: false # This is a C# build job
                   ob_git_checkout: false # This job checks itself out
                   ob_git_skip_checkout_none: true
                   ob_outputDirectory: $(JobOutputDirectory)
@@ -184,6 +190,7 @@ extends:
                 variables:
                   ob_sdl_checkcflags_enabled: false # BAD-FLAGS
                   ob_sdl_xfgcheck_enabled: false # BAD-FLAGS
+                  ob_sdl_prefast_enabled: false # This is a collection of powershell scripts
                   ob_git_checkout: false # This job checks itself out
                   ob_git_skip_checkout_none: true
                   ob_outputDirectory: $(JobOutputDirectory)
@@ -238,6 +245,7 @@ extends:
                 variables:
                   ob_sdl_checkcflags_enabled: false # BAD-FLAGS
                   ob_sdl_xfgcheck_enabled: false # BAD-FLAGS
+                  ob_sdl_prefast_enabled: false # This is a collection of powershell scripts
                   ob_git_checkout: false # This job checks itself out
                   ob_git_skip_checkout_none: true
                   ob_outputDirectory: $(JobOutputDirectory)
@@ -256,6 +264,7 @@ extends:
                 variables:
                   ob_sdl_checkcflags_enabled: false # BAD-FLAGS
                   ob_sdl_xfgcheck_enabled: false # BAD-FLAGS
+                  ob_sdl_prefast_enabled: false # This is a collection of powershell scripts
                   ob_git_checkout: false # This job checks itself out
                   ob_git_skip_checkout_none: true
                   ob_outputDirectory: $(JobOutputDirectory)
@@ -281,6 +290,7 @@ extends:
               variables:
                 ob_sdl_checkcflags_enabled: false # BAD-FLAGS
                 ob_sdl_xfgcheck_enabled: false # BAD-FLAGS
+                ob_sdl_prefast_enabled: false # This is a collection of powershell scripts
                 ob_git_checkout: false # This job checks itself out
                 ob_git_skip_checkout_none: true
                 ob_outputDirectory: $(Build.ArtifactStagingDirectory)
