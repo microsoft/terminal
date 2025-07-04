@@ -71,6 +71,18 @@ public:
     void GetRequiredConsoleSizeInPixels(_Out_ til::size* const pRequiredSize) const;
 
     void MakeCurrentCursorVisible();
+    void MakeCursorVisible(til::point position);
+    void SnapOnInput(WORD vkey);
+    auto SnapOnOutput()
+    {
+        const auto inBounds = _viewport.IsInBounds(_textBuffer->GetCursor().GetPosition());
+        return wil::scope_exit([this, inBounds]() {
+            if (inBounds)
+            {
+                _makeCursorVisible();
+            }
+        });
+    }
 
     void ClipToScreenBuffer(_Inout_ til::inclusive_rect* const psrClip) const;
 
@@ -184,8 +196,6 @@ public:
     void SetCursorDBMode(const bool DoubleCursor);
     [[nodiscard]] NTSTATUS SetCursorPosition(const til::point Position, const bool TurnOn);
 
-    void MakeCursorVisible(const til::point CursorPosition);
-
     [[nodiscard]] NTSTATUS UseAlternateScreenBuffer(const TextAttribute& initAttributes);
     void UseMainScreenBuffer();
 
@@ -230,6 +240,7 @@ private:
     void _CalculateViewportSize(const til::rect* const prcClientArea, _Out_ til::size* const pcoordSize);
     void _AdjustViewportSize(const til::rect* const prcClientNew, const til::rect* const prcClientOld, const til::size* const pcoordSize);
     void _InternalSetViewportSize(const til::size* pcoordSize, const bool fResizeFromTop, const bool fResizeFromLeft);
+    void _makeCursorVisible();
 
     static void s_CalculateScrollbarVisibility(const til::rect* const prcClientArea,
                                                const til::size* const pcoordBufferSize,
