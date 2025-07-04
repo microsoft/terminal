@@ -6,7 +6,7 @@
     <ProjectGuid>{37c995e0-2349-4154-8e77-4a52c0c7f46d}</ProjectGuid>
     <ProjectName>RenderingTests</ProjectName>
     <RootNamespace>RenderingTests</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.22621.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(SolutionDir)\src\common.build.pre.props" />
   <Import Project="$(SolutionDir)\src\common.nugetversions.props" />
