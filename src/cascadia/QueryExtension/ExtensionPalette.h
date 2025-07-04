@@ -56,7 +56,6 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         void _previewKeyDownHandler(const Windows::Foundation::IInspectable& sender,
                                     const Windows::UI::Xaml::Input::KeyRoutedEventArgs& e);
         void _setUpAIProviderInSettings(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& args);
-
         void _close();
     };
 
@@ -67,7 +66,6 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         bool IsQuery() const { return _isQuery; };
         winrt::hstring MessageContent() const { return _messageContent; };
         winrt::Windows::UI::Xaml::Controls::RichTextBlock RichBlock() const { return _richBlock; };
-
         TYPED_EVENT(RunCommandClicked, winrt::Microsoft::Terminal::Query::Extension::ChatMessage, winrt::hstring);
 
     private:
