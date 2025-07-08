@@ -9,6 +9,7 @@
 #include <ScopedResourceLoader.h>
 #include <WtExeUtils.h>
 #include <til/hash.h>
+#include <wil/token_helpers.h>
 
 #include "AppHost.h"
 #include "resource.h"
@@ -275,7 +276,7 @@ AppHost* WindowEmperor::_mostRecentWindow() const noexcept
 void WindowEmperor::HandleCommandlineArgs(int nCmdShow)
 {
     std::wstring windowClassName;
-    windowClassName.reserve(47); // "Windows Terminal Preview Admin 0123456789012345"
+    windowClassName.reserve(64); // "Windows Terminal Preview Admin 0123456789012345 0123456789012345"
 #if defined(WT_BRANDING_RELEASE)
     windowClassName.append(L"Windows Terminal");
 #elif defined(WT_BRANDING_PREVIEW)
@@ -293,6 +294,18 @@ void WindowEmperor::HandleCommandlineArgs(int nCmdShow)
     {
         const auto path = wil::GetModuleFileNameW<std::wstring>(nullptr);
         const auto hash = til::hash(path);
+#ifdef _WIN64
+        fmt::format_to(std::back_inserter(windowClassName), FMT_COMPILE(L" {:016x}"), hash);
+#else
+        fmt::format_to(std::back_inserter(windowClassName), FMT_COMPILE(L" {:08x}"), hash);
+#endif
+    }
+
+    {
+        wil::unique_handle processToken{ GetCurrentProcessToken() };
+        const auto userTokenInfo{ wil::get_token_information<TOKEN_USER>(processToken.get()) };
+        const auto sidLength{ GetLengthSid(userTokenInfo->User.Sid) };
+        const auto hash{ til::hash(userTokenInfo->User.Sid, sidLength) };
 #ifdef _WIN64
         fmt::format_to(std::back_inserter(windowClassName), FMT_COMPILE(L" {:016x}"), hash);
 #else
