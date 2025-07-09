@@ -10,6 +10,7 @@
     <SubSystem>Console</SubSystem>
     <!-- suppress a bunch of Windows Universal properties from cppwinrt.props -->
     <OpenConsoleUniversalApp>false</OpenConsoleUniversalApp>
+    <VersionInfoFileDescription>Windows Terminal Open Here Shell Extension</VersionInfoFileDescription>
   </PropertyGroup>
   <PropertyGroup Label="NuGet Dependencies">
     <TerminalCppWinrt>true</TerminalCppWinrt>
