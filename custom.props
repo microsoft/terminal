@@ -7,5 +7,8 @@
     <VersionMajor>1</VersionMajor>
     <VersionMinor>23</VersionMinor>
     <VersionInfoProductName>Windows Terminal</VersionInfoProductName>
+    <VersionInfoCulture>1033</VersionInfoCulture>
+    <!-- The default has a spacing problem -->
+    <VersionInfoCopyRight>\xa9 Microsoft Corporation. All rights reserved.</VersionInfoCopyRight>
   </PropertyGroup>
 </Project>
