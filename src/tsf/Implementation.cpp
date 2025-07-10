@@ -719,17 +719,12 @@ TextAttribute Implementation::_textAttributeFromAtom(TfGuidAtom atom) const
     // the others is likely not properly tested anyway, so we reject those cases.
     // After all, what behavior do we expect, if the IME sends e.g. foreground=blue,
     // without knowing whether our terminal theme already uses a blue background?
-    if (da.crText.type == da.crBk.type && da.crText.type == da.crLine.type)
+    if (da.crText.type != TF_CT_NONE && da.crText.type == da.crBk.type)
     {
-        if (da.crText.type != TF_CT_NONE)
-        {
-            attr.SetForeground(_colorFromDisplayAttribute(da.crText));
-        }
-        if (da.crBk.type != TF_CT_NONE)
-        {
-            attr.SetBackground(_colorFromDisplayAttribute(da.crBk));
-        }
-        if (da.crLine.type != TF_CT_NONE)
+        attr.SetForeground(_colorFromDisplayAttribute(da.crText));
+        attr.SetBackground(_colorFromDisplayAttribute(da.crBk));
+        // I'm not sure what the best way to handle this is.
+        if (da.crText.type == da.crLine.type)
         {
             attr.SetUnderlineColor(_colorFromDisplayAttribute(da.crLine));
         }
