@@ -216,7 +216,7 @@
                                         Orientation="Horizontal">
                                 <IconSourceElement Width="16"
                                                    Height="16"
-                                                   Margin="0,0,8,0"
+                                                   Margin="0,0,12,0"
                                                    IconSource="{x:Bind mtu:IconPathConverter.IconSourceWUX(Profile.EvaluatedIcon), Mode=OneWay}" />
 
                                 <TextBlock Text="{x:Bind Profile.Name, Mode=OneWay}" />
@@ -248,7 +248,6 @@
             <!--  This styling matches that of ExpanderSettingContainerStyle for consistency  -->
             <Style x:Key="ExpanderStyle"
                    TargetType="muxc:Expander">
-                <Setter Property="MaxWidth" Value="1000" />
                 <Setter Property="MinHeight" Value="64" />
                 <Setter Property="Margin" Value="0,4,0,0" />
                 <Setter Property="HorizontalAlignment" Value="Stretch" />
@@ -289,8 +288,8 @@
                           Padding="8"
                           VerticalAlignment="Center"
                           Background="{x:Bind mtu:Converters.ColorToBrush(BackgroundColor.Color), Mode=OneWay}"
-                          ColumnSpacing="1"
-                          CornerRadius="2"
+                          ColumnSpacing="2"
+                          CornerRadius="{StaticResource ControlCornerRadius}"
                           RowSpacing="1">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto" />
@@ -451,10 +450,12 @@
 
             <!--  Learn more about fragment extensions  -->
             <HyperlinkButton x:Uid="Extensions_DisclaimerHyperlink"
+                             Margin="-12,0,0,0"
                              NavigateUri="https://go.microsoft.com/fwlink/?linkid=2321753" />
 
             <!--  Grouping: Active Extensions  -->
             <TextBlock x:Uid="Extensions_ActiveExtensionsHeader"
+                       Margin="0,12,0,8"
                        Style="{StaticResource TextBlockSubHeaderStyle}" />
             <ItemsControl x:Name="ActiveExtensionsList"
                           IsTabStop="False"
@@ -513,9 +514,11 @@
         </StackPanel>
 
         <!--  Grouping: Modified Profiles  -->
-        <StackPanel Margin="{x:Bind CalculateMargin(ViewModel.NoProfilesModified), Mode=OneWay}"
+        <StackPanel MaxWidth="{StaticResource StandardControlMaxWidth}"
+                    Margin="{x:Bind CalculateMargin(ViewModel.NoProfilesModified), Mode=OneWay}"
                     Visibility="{x:Bind mtu:Converters.InvertedBooleanToVisibility(ViewModel.NoProfilesModified), Mode=OneWay}">
             <TextBlock x:Uid="Extensions_ModifiedProfilesHeader"
+                       Margin="0,0,0,8"
                        Style="{StaticResource TextBlockSubHeaderStyle}" />
             <ItemsControl x:Name="ModifiedProfilesList"
                           IsTabStop="False"
@@ -525,9 +528,11 @@
         </StackPanel>
 
         <!--  Grouping: Added Profiles  -->
-        <StackPanel Margin="{x:Bind CalculateMargin(ViewModel.NoProfilesAdded), Mode=OneWay}"
+        <StackPanel MaxWidth="{StaticResource StandardControlMaxWidth}"
+                    Margin="{x:Bind CalculateMargin(ViewModel.NoProfilesAdded), Mode=OneWay}"
                     Visibility="{x:Bind mtu:Converters.InvertedBooleanToVisibility(ViewModel.NoProfilesAdded), Mode=OneWay}">
             <TextBlock x:Uid="Extensions_AddedProfilesHeader"
+                       Margin="0,0,0,8"
                        Style="{StaticResource TextBlockSubHeaderStyle}" />
             <ItemsControl x:Name="AddedProfilesList"
                           IsTabStop="False"
@@ -537,9 +542,11 @@
         </StackPanel>
 
         <!--  Grouping: Added Color Schemes  -->
-        <StackPanel Margin="{x:Bind CalculateMargin(ViewModel.NoProfilesAdded), Mode=OneWay}"
+        <StackPanel MaxWidth="{StaticResource StandardControlMaxWidth}"
+                    Margin="{x:Bind CalculateMargin(ViewModel.NoProfilesAdded), Mode=OneWay}"
                     Visibility="{x:Bind mtu:Converters.InvertedBooleanToVisibility(ViewModel.NoSchemesAdded), Mode=OneWay}">
             <TextBlock x:Uid="Extensions_AddedColorSchemesHeader"
+                       Margin="0,0,0,8"
                        Style="{StaticResource TextBlockSubHeaderStyle}" />
             <ItemsControl x:Name="AddedColorSchemesList"
                           IsTabStop="False"
