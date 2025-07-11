@@ -170,8 +170,8 @@
 
                         <local:HighlightedTextControl Grid.Column="1"
                                                       HorizontalAlignment="Left"
-                                                      IsTabStop="False"
                                                       HighlightedRuns="{x:Bind FilteredCommand.NameHighlights, Mode=OneWay}"
+                                                      IsTabStop="False"
                                                       Text="{x:Bind FilteredCommand.Item.Name, Mode=OneWay}" />
 
                         <!--
