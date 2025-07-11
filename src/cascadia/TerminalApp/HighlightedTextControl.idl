@@ -8,8 +8,11 @@ namespace TerminalApp
     [default_interface] runtimeclass HighlightedTextControl : Windows.UI.Xaml.Controls.Control
     {
         HighlightedTextControl();
-        Windows.UI.Xaml.DependencyProperty TextProperty { get; };
+
         HighlightedText Text;
-        Windows.UI.Xaml.Controls.TextBlock TextView { get; };    
+        Windows.UI.Xaml.DependencyProperty TextProperty { get; };
+
+        Windows.UI.Xaml.Style TextBlockStyle;
+        Windows.UI.Xaml.DependencyProperty TextBlockStyleProperty { get; };
     }
 }
