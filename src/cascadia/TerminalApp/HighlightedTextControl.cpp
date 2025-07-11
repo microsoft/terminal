@@ -24,6 +24,7 @@ namespace winrt::TerminalApp::implementation
     // (https://docs.microsoft.com/en-us/windows/uwp/xaml-platform/custom-dependency-properties)
     DependencyProperty HighlightedTextControl::_TextBlockStyleProperty{ nullptr };
     DependencyProperty HighlightedTextControl::_TextProperty{ nullptr };
+    DependencyProperty HighlightedTextControl::_HighlightedRunsProperty{ nullptr };
 
     HighlightedTextControl::HighlightedTextControl()
     {
@@ -35,7 +36,7 @@ namespace winrt::TerminalApp::implementation
         static auto [[maybe_unused]] registered = [] {
             _TextProperty = DependencyProperty::Register(
                 L"Text",
-                xaml_typename<winrt::TerminalApp::HighlightedText>(),
+                xaml_typename<winrt::hstring>(),
                 xaml_typename<winrt::TerminalApp::HighlightedTextControl>(),
                 PropertyMetadata(nullptr, HighlightedTextControl::_onPropertyChanged));
 
@@ -45,16 +46,16 @@ namespace winrt::TerminalApp::implementation
                 xaml_typename<winrt::TerminalApp::HighlightedTextControl>(),
                 PropertyMetadata{ nullptr });
 
+            _HighlightedRunsProperty = DependencyProperty::Register(
+                L"HighlightedRuns",
+                xaml_typename<winrt::Windows::Foundation::Collections::IVector<winrt::TerminalApp::HighlightedRun>>(),
+                xaml_typename<winrt::TerminalApp::HighlightedTextControl>(),
+                PropertyMetadata(nullptr, HighlightedTextControl::_onPropertyChanged));
+
             return true;
         }();
     }
 
-    // Method Description:
-    // - This callback is triggered when the Text property is changed. Responsible for updating the view
-    // Arguments:
-    // - o - dependency object that was modified, expected to be an instance of this control
-    // - e - event arguments of the property changed event fired by the event system upon Text property change.
-    // The new value is expected to be an instance of HighlightedText
     void HighlightedTextControl::_onPropertyChanged(const DependencyObject& o, const DependencyPropertyChangedEventArgs& /*e*/)
     {
         const auto control = o.try_as<winrt::TerminalApp::HighlightedTextControl>();
@@ -77,29 +78,51 @@ namespace winrt::TerminalApp::implementation
             return;
         }
 
-        const auto highlightedText = Text();
+        const auto text = Text();
+        const auto runs = HighlightedRuns();
 
         // Replace all the runs on the TextBlock
-        // Use IsHighlighted to decide if the run should be highlighted.
+        // Use the runs to decide if the run should be highlighted.
         // To do - export the highlighting style into XAML
         const auto inlinesCollection = textBlock.Inlines();
         inlinesCollection.Clear();
 
-        if (highlightedText)
+        if (!text.empty())
         {
-            for (const auto& match : highlightedText.Segments())
+            size_t lastPos = 0;
+            if (runs && runs.Size())
             {
-                const auto matchText = match.TextSegment();
-                const auto fontWeight = match.IsHighlighted() ? FontWeights::Bold() : FontWeights::Normal();
+                for (const auto& [start, end] : runs)
+                {
+                    if (start > lastPos)
+                    {
+                        hstring nonMatch{ til::safe_slice_abs(text, lastPos, start) };
+                        Documents::Run run;
+                        run.Text(nonMatch);
+                        run.FontWeight(FontWeights::Normal());
+                        inlinesCollection.Append(run);
+                    }
 
+                    hstring matchSeg{ til::safe_slice_abs(text, start, end + 1) };
+                    Documents::Run run;
+                    run.Text(matchSeg);
+                    run.FontWeight(FontWeights::Bold());
+                    inlinesCollection.Append(run);
+
+                    lastPos = end + 1;
+                }
+            }
+
+            // This will also be true if there are no runs at all
+            if (lastPos < text.size())
+            {
+                // checking lastPos here prevents a needless deep copy of the whole text in the no-match case
+                hstring tail{ lastPos == 0 ? text : hstring{ til::safe_slice_abs(text, lastPos, SIZE_T_MAX) } };
                 Documents::Run run;
-                run.Text(matchText);
-                run.FontWeight(fontWeight);
+                run.Text(tail);
+                run.FontWeight(FontWeights::Normal());
                 inlinesCollection.Append(run);
             }
-        }
-        else
-        {
         }
     }
 }

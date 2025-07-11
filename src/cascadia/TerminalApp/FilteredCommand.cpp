@@ -3,7 +3,6 @@
 
 #include "pch.h"
 #include "CommandPalette.h"
-#include "HighlightedText.h"
 #include <LibraryResources.h>
 #include "fzf/fzf.h"
 
@@ -61,49 +60,40 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    void FilteredCommand::_update()
+    static std::tuple<std::vector<winrt::TerminalApp::HighlightedRun>, int32_t> _matchedSegmentsAndWeight(const std::shared_ptr<fzf::matcher::Pattern>& pattern, const winrt::hstring& haystack)
     {
-        std::vector<winrt::TerminalApp::HighlightedTextSegment> segments;
-        const auto commandName = _Item.Name();
+        std::vector<winrt::TerminalApp::HighlightedRun> segments;
         int32_t weight = 0;
 
-        if (!_pattern || _pattern->terms.empty())
+        if (pattern && !pattern->terms.empty())
         {
-            segments.emplace_back(winrt::TerminalApp::HighlightedTextSegment(commandName, false));
+            if (auto match = fzf::matcher::Match(haystack, *pattern.get()); match)
+            {
+                auto& matchResult = *match;
+                weight = matchResult.Score;
+                segments.resize(matchResult.Runs.size());
+                std::transform(matchResult.Runs.begin(), matchResult.Runs.end(), segments.begin(), [](auto&& run) -> winrt::TerminalApp::HighlightedRun {
+                    return { run.Start, run.End };
+                });
+            }
         }
-        else if (auto match = fzf::matcher::Match(commandName, *_pattern.get()); !match)
+        return { std::move(segments), weight };
+    }
+
+    void FilteredCommand::_update()
+    {
+        auto itemName = _Item.Name();
+        auto [segments, weight] = _matchedSegmentsAndWeight(_pattern, _Item.Name());
+
+        if (segments.empty())
         {
-            segments.emplace_back(winrt::TerminalApp::HighlightedTextSegment(commandName, false));
+            NameHighlights(nullptr);
         }
         else
         {
-            auto& matchResult = *match;
-            weight = matchResult.Score;
-
-            size_t lastPos = 0;
-            for (const auto& run : matchResult.Runs)
-            {
-                const auto& [start, end] = run;
-                if (start > lastPos)
-                {
-                    hstring nonMatch{ til::safe_slice_abs(commandName, lastPos, start) };
-                    segments.emplace_back(winrt::TerminalApp::HighlightedTextSegment(nonMatch, false));
-                }
-
-                hstring matchSeg{ til::safe_slice_abs(commandName, start, end + 1) };
-                segments.emplace_back(winrt::TerminalApp::HighlightedTextSegment(matchSeg, true));
-
-                lastPos = end + 1;
-            }
-
-            if (lastPos < commandName.size())
-            {
-                hstring tail{ til::safe_slice_abs(commandName, lastPos, SIZE_T_MAX) };
-                segments.emplace_back(winrt::TerminalApp::HighlightedTextSegment(tail, false));
-            }
+            NameHighlights(winrt::single_threaded_vector(std::move(segments)));
         }
 
-        HighlightedName(winrt::make<HighlightedText>(winrt::single_threaded_observable_vector(std::move(segments))));
         Weight(weight);
     }
 

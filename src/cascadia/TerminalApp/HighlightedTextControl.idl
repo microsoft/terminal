@@ -1,16 +1,23 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import "HighlightedText.idl";
-
 namespace TerminalApp
 {
+    struct HighlightedRun
+    {
+        UInt64 Start;
+        UInt64 End;
+    };
+
     [default_interface] runtimeclass HighlightedTextControl : Windows.UI.Xaml.Controls.Control
     {
         HighlightedTextControl();
 
-        HighlightedText Text;
+        String Text;
         Windows.UI.Xaml.DependencyProperty TextProperty { get; };
+
+        IVector<HighlightedRun> HighlightedRuns;
+        Windows.UI.Xaml.DependencyProperty HighlightedRunsProperty { get; };
 
         Windows.UI.Xaml.Style TextBlockStyle;
         Windows.UI.Xaml.DependencyProperty TextBlockStyleProperty { get; };

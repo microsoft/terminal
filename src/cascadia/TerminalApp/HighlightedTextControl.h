@@ -13,7 +13,8 @@ namespace winrt::TerminalApp::implementation
 
         void OnApplyTemplate();
 
-        DEPENDENCY_PROPERTY(TerminalApp::HighlightedText, Text);
+        DEPENDENCY_PROPERTY(winrt::hstring, Text);
+        DEPENDENCY_PROPERTY(winrt::Windows::Foundation::Collections::IVector<winrt::TerminalApp::HighlightedRun>, HighlightedRuns);
         DEPENDENCY_PROPERTY(winrt::Windows::UI::Xaml::Style, TextBlockStyle);
 
     private:
