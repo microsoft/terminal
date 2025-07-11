@@ -992,7 +992,7 @@ namespace winrt::TerminalApp::implementation
                         std::wstring commandDescription{ RS_(L"CommandPalette_ParsedCommandLine") };
                         for (const auto& command : commands)
                         {
-                            commandDescription += L"\n\t" + command.Args().GenerateName();
+                            commandDescription += L"\n\t" + command.Args().GenerateName(true); // localized
                         }
                         ParsedCommandLineText(commandDescription.data());
                     }
