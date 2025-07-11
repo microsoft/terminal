@@ -44,7 +44,7 @@ namespace winrt::TerminalApp::implementation
                 L"TextBlockStyle",
                 xaml_typename<winrt::Windows::UI::Xaml::Style>(),
                 xaml_typename<winrt::TerminalApp::HighlightedTextControl>(),
-                PropertyMetadata(nullptr, HighlightedTextControl::_onPropertyChanged));
+                PropertyMetadata{ nullptr });
 
             _HighlightedRunsProperty = DependencyProperty::Register(
                 L"HighlightedRuns",
