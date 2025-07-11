@@ -13,7 +13,8 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="local:HighlightedTextControl">
-                    <TextBlock x:Name="TextView" />
+                    <TextBlock x:Name="TextView"
+                               Style="{TemplateBinding TextBlockStyle}" />
                 </ControlTemplate>
             </Setter.Value>
         </Setter>

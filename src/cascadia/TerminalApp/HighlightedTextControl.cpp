@@ -77,8 +77,6 @@ namespace winrt::TerminalApp::implementation
             return;
         }
 
-        textBlock.Style(TextBlockStyle());
-
         const auto text = Text();
         const auto runs = HighlightedRuns();
 
