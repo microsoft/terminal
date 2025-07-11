@@ -26,11 +26,16 @@ namespace winrt::TerminalApp::implementation
     {
         // Recompute the highlighted name if the item name changes
         // Our Item will not change, so we don't need to update the revoker if it does.
-        _itemChangedRevoker = _Item.as<winrt::Windows::UI::Xaml::Data::INotifyPropertyChanged>().PropertyChanged(winrt::auto_revoke, [weakThis{ get_weak() }](auto& /*sender*/, auto& e) {
-            auto filteredCommand{ weakThis.get() };
-            if (filteredCommand && e.PropertyName() == L"Name")
+        _itemChangedRevoker = _Item.as<winrt::Windows::UI::Xaml::Data::INotifyPropertyChanged>().PropertyChanged(winrt::auto_revoke, [=](auto& /*sender*/, auto& e) {
+            const auto property{ e.PropertyName() };
+            if (property == L"Name")
             {
-                filteredCommand->_update();
+                _update();
+            }
+            else if (property == L"Subtitle")
+            {
+                _update();
+                PropertyChanged.raise(*this, winrt::Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"HasSubtitle" });
             }
         });
     }
@@ -44,6 +49,11 @@ namespace winrt::TerminalApp::implementation
             _pattern = pattern;
             _update();
         }
+    }
+
+    bool FilteredCommand::HasSubtitle()
+    {
+        return !_Item.Subtitle().empty();
     }
 
     static std::tuple<std::vector<winrt::TerminalApp::HighlightedRun>, int32_t> _matchedSegmentsAndWeight(const std::shared_ptr<fzf::matcher::Pattern>& pattern, const winrt::hstring& haystack)
@@ -68,7 +78,17 @@ namespace winrt::TerminalApp::implementation
 
     void FilteredCommand::_update()
     {
-        auto [segments, weight] = _matchedSegmentsAndWeight(_pattern, _Item.Name());
+        auto itemName = _Item.Name();
+        auto [segments, weight] = _matchedSegmentsAndWeight(_pattern, itemName);
+        decltype(segments) subtitleSegments;
+
+        if (HasSubtitle())
+        {
+            auto itemSubtitle = _Item.Subtitle();
+            int32_t subtitleWeight = 0;
+            std::tie(subtitleSegments, subtitleWeight) = _matchedSegmentsAndWeight(_pattern, itemSubtitle);
+            weight += subtitleWeight;
+        }
 
         if (segments.empty())
         {
@@ -77,6 +97,15 @@ namespace winrt::TerminalApp::implementation
         else
         {
             NameHighlights(winrt::single_threaded_vector(std::move(segments)));
+        }
+
+        if (subtitleSegments.empty())
+        {
+            SubtitleHighlights(nullptr);
+        }
+        else
+        {
+            SubtitleHighlights(winrt::single_threaded_vector(std::move(subtitleSegments)));
         }
 
         Weight(weight);
