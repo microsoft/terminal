@@ -71,11 +71,17 @@
                                       Height="16"
                                       Content="{x:Bind Item.ResolvedIcon, Mode=OneWay}" />
 
-                    <local:HighlightedTextControl Grid.Column="1"
-                                                  HorizontalAlignment="Left"
-                                                  HighlightedRuns="{x:Bind NameHighlights, Mode=OneWay}"
-                                                  Text="{x:Bind Item.Name, Mode=OneWay}" />
+                    <StackPanel Grid.Column="1"
+                                HorizontalAlignment="Left"
+                                Orientation="Vertical">
+                        <local:HighlightedTextControl HorizontalAlignment="Left"
+                                                      HighlightedRuns="{x:Bind NameHighlights, Mode=OneWay}"
+                                                      Text="{x:Bind Item.Name, Mode=OneWay}" />
+                        <local:HighlightedTextControl HorizontalAlignment="Left"
+                                                      HighlightedRuns="{x:Bind SubtitleHighlights, Mode=OneWay}"
+                                                      Text="{x:Bind Item.Subtitle, Mode=OneWay}" />
 
+                    </StackPanel>
                     <!--
                         The block for the key chord is only visible
                         when there's actual text set as the label.
@@ -122,10 +128,17 @@
                                       Height="16"
                                       Content="{x:Bind Item.ResolvedIcon, Mode=OneWay}" />
 
-                    <local:HighlightedTextControl Grid.Column="1"
-                                                  HorizontalAlignment="Left"
-                                                  HighlightedRuns="{x:Bind NameHighlights, Mode=OneWay}"
-                                                  Text="{x:Bind Item.Name, Mode=OneWay}" />
+                    <StackPanel Grid.Column="1"
+                                HorizontalAlignment="Left"
+                                Orientation="Vertical">
+                        <local:HighlightedTextControl HorizontalAlignment="Left"
+                                                      HighlightedRuns="{x:Bind NameHighlights, Mode=OneWay}"
+                                                      Text="{x:Bind Item.Name, Mode=OneWay}" />
+                        <local:HighlightedTextControl HorizontalAlignment="Left"
+                                                      HighlightedRuns="{x:Bind SubtitleHighlights, Mode=OneWay}"
+                                                      Text="{x:Bind Item.Subtitle, Mode=OneWay}" />
+
+                    </StackPanel>
 
                     <!--
                         The block for the key chord is only visible

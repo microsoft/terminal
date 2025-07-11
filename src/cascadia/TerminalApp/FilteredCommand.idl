@@ -13,6 +13,7 @@ namespace TerminalApp
 
         PaletteItem Item { get; };
         IVector<HighlightedRun> NameHighlights { get; };
+        IVector<HighlightedRun> SubtitleHighlights { get; };
         Int32 Weight;
     }
 }

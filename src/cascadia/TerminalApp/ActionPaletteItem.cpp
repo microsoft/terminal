@@ -22,6 +22,7 @@ namespace winrt::TerminalApp::implementation
         _Command(command)
     {
         Name(command.Name());
+        Subtitle(command.LanguageNeutralName());
         KeyChordText(keyChordText);
         Icon(command.IconPath());
     }

@@ -14,6 +14,7 @@ namespace winrt::TerminalApp::implementation
         til::property_changed_event PropertyChanged;
 
         WINRT_OBSERVABLE_PROPERTY(winrt::hstring, Name, PropertyChanged.raise);
+        WINRT_OBSERVABLE_PROPERTY(winrt::hstring, Subtitle, PropertyChanged.raise);
         WINRT_OBSERVABLE_PROPERTY(winrt::hstring, Icon, PropertyChanged.raise);
         WINRT_OBSERVABLE_PROPERTY(winrt::hstring, KeyChordText, PropertyChanged.raise);
     };

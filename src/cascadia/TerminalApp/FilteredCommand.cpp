@@ -60,6 +60,16 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    bool FilteredCommand::ShowSubtitle()
+    {
+        static bool shouldShow = true;
+        /* []() {
+            auto qv = winrt::Windows::ApplicationModel::Resources::Core::ResourceContext::GetForViewIndependentUse().QualifierValues();
+            return qv.TryLookup(L"Language") != L"en-US";
+        }();*/
+        return shouldShow;
+    }
+
     static std::tuple<std::vector<winrt::TerminalApp::HighlightedRun>, int32_t> _matchedSegmentsAndWeight(const std::shared_ptr<fzf::matcher::Pattern>& pattern, const winrt::hstring& haystack)
     {
         std::vector<winrt::TerminalApp::HighlightedRun> segments;
@@ -83,7 +93,16 @@ namespace winrt::TerminalApp::implementation
     void FilteredCommand::_update()
     {
         auto itemName = _Item.Name();
+        auto itemSubtitle = _Item.Subtitle();
         auto [segments, weight] = _matchedSegmentsAndWeight(_pattern, _Item.Name());
+        decltype(segments) subtitleSegments;
+
+        if (ShowSubtitle() && itemName != itemSubtitle)
+        {
+            int32_t subtitleWeight = 0;
+            std::tie(subtitleSegments, subtitleWeight) = _matchedSegmentsAndWeight(_pattern, _Item.Subtitle());
+            weight += subtitleWeight;
+        }
 
         if (segments.empty())
         {
@@ -92,6 +111,15 @@ namespace winrt::TerminalApp::implementation
         else
         {
             NameHighlights(winrt::single_threaded_vector(std::move(segments)));
+        }
+
+        if (subtitleSegments.empty())
+        {
+            SubtitleHighlights(nullptr);
+        }
+        else
+        {
+            SubtitleHighlights(winrt::single_threaded_vector(std::move(subtitleSegments)));
         }
 
         Weight(weight);
