@@ -3,8 +3,6 @@
 
 #pragma once
 
-#include "winrt/Microsoft.UI.Xaml.Controls.h"
-
 #include "HighlightedTextControl.g.h"
 
 namespace winrt::TerminalApp::implementation
@@ -13,16 +11,15 @@ namespace winrt::TerminalApp::implementation
     {
         HighlightedTextControl();
 
-        static Windows::UI::Xaml::DependencyProperty TextProperty();
+        void OnApplyTemplate();
 
-        winrt::TerminalApp::HighlightedText Text();
-        void Text(const winrt::TerminalApp::HighlightedText& value);
-
-        Windows::UI::Xaml::Controls::TextBlock TextView();
+        DEPENDENCY_PROPERTY(TerminalApp::HighlightedText, Text);
+        DEPENDENCY_PROPERTY(winrt::Windows::UI::Xaml::Style, TextBlockStyle);
 
     private:
-        static Windows::UI::Xaml::DependencyProperty _textProperty;
-        static void _onTextChanged(const Windows::UI::Xaml::DependencyObject& o, const Windows::UI::Xaml::DependencyPropertyChangedEventArgs& e);
+        static void _InitializeProperties();
+        static void _onPropertyChanged(const Windows::UI::Xaml::DependencyObject& o, const Windows::UI::Xaml::DependencyPropertyChangedEventArgs& e);
+        void _updateTextAndStyle();
     };
 }
 

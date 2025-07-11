@@ -156,7 +156,7 @@
     <Midl Include="CommandLinePaletteItem.idl">
       <Filter>commandPalette</Filter>
     </Midl>
-    <Page Include="HighlightedTextControl.xaml">
+    <Page Include="HighlightedTextControlStyle.xaml">
       <Filter>highlightedText</Filter>
     </Page>
     <Page Include="AboutDialog.xaml" />

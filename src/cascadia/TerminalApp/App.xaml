@@ -243,6 +243,8 @@
                     </ResourceDictionary.ThemeDictionaries>
 
                 </ResourceDictionary>
+
+                <ResourceDictionary Source="ms-resource:///Files/TerminalApp/HighlightedTextControlStyle.xaml" />
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
 
