@@ -76,10 +76,10 @@ static void EnsureAllResourcesArePresent(const ScopedResourceLoader& loader)
 
 #endif
 
-static ScopedResourceLoader GetLibraryResourceLoader()
+const ScopedResourceLoader& GetLibraryResourceLoader()
 try
 {
-    ScopedResourceLoader loader{ g_WinRTUtilsLibraryResourceScope };
+    static ScopedResourceLoader loader{ g_WinRTUtilsLibraryResourceScope };
 #ifdef _DEBUG
     EnsureAllResourcesArePresent(loader);
 #endif
