@@ -12,7 +12,7 @@ namespace TerminalApp
         FilteredCommand(PaletteItem item);
 
         PaletteItem Item { get; };
-        HighlightedText HighlightedName { get; };
+        IVector<HighlightedRun> NameHighlights { get; };
         Int32 Weight;
     }
 }

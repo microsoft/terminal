@@ -130,7 +130,6 @@
     <ClInclude Include="HighlightedTextControl.h">
       <DependentUpon>HighlightedTextControl.idl</DependentUpon>
     </ClInclude>
-    <ClInclude Include="HighlightedText.h" />
     <ClInclude Include="ColorPickupFlyout.h">
       <DependentUpon>ColorPickupFlyout.xaml</DependentUpon>
     </ClInclude>
@@ -250,7 +249,6 @@
     <ClCompile Include="HighlightedTextControl.cpp">
       <DependentUpon>HighlightedTextControl.idl</DependentUpon>
     </ClCompile>
-    <ClCompile Include="HighlightedText.cpp" />
     <ClCompile Include="ColorPickupFlyout.cpp">
       <DependentUpon>ColorPickupFlyout.xaml</DependentUpon>
     </ClCompile>
@@ -368,7 +366,6 @@
     <Midl Include="HighlightedTextControl.idl">
       <SubType>Code</SubType>
     </Midl>
-    <Midl Include="HighlightedText.idl" />
     <Midl Include="ColorPickupFlyout.idl">
       <DependentUpon>ColorPickupFlyout.xaml</DependentUpon>
       <SubType>Code</SubType>
