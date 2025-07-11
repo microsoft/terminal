@@ -8,7 +8,7 @@ namespace Microsoft.Terminal.Settings.Model
     interface IActionArgs
     {
         Boolean Equals(IActionArgs other);
-        String GenerateName();
+        String GenerateName(Boolean localized);
         IActionArgs Copy();
         UInt64 Hash();
     };
@@ -129,7 +129,7 @@ namespace Microsoft.Terminal.Settings.Model
         Boolean Equals(INewContentArgs other);
         UInt64 Hash();
         INewContentArgs Copy();
-        String GenerateName();
+        String GenerateName(Boolean localized);
     };
 
     runtimeclass BaseContentArgs : [default] INewContentArgs {

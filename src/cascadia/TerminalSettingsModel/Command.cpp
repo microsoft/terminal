@@ -108,6 +108,25 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
     }
 
+    hstring Command::LanguageNeutralName() const noexcept
+    {
+        if (_name.has_value())
+        {
+            // name was explicitly set, return that value.
+            return hstring{ _name.value() };
+        }
+        else if (_ActionAndArgs)
+        {
+            // generate a name from our action
+            return get_self<implementation::ActionAndArgs>(_ActionAndArgs)->GenerateLanguageNeutralName();
+        }
+        else
+        {
+            // we have no name
+            return {};
+        }
+    }
+
     hstring Command::ID() const noexcept
     {
         return hstring{ _ID };

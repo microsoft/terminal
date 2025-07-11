@@ -122,7 +122,7 @@ private:                                                    \
     InitListPlaceholder _placeholder;                       \
                                                             \
 public:                                                     \
-    hstring GenerateName() const;                           \
+    hstring GenerateName(bool) const;                       \
     bool Equals(const IActionArgs& other)                   \
     {                                                       \
         auto otherAsUs = other.try_as<className>();         \
