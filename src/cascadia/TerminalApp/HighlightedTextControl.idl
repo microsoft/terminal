@@ -21,5 +21,8 @@ namespace TerminalApp
 
         Windows.UI.Xaml.Style TextBlockStyle;
         Windows.UI.Xaml.DependencyProperty TextBlockStyleProperty { get; };
+
+        Windows.UI.Xaml.Style HighlightedRunStyle;
+        Windows.UI.Xaml.DependencyProperty HighlightedRunStyleProperty { get; };
     }
 }

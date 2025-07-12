@@ -16,6 +16,7 @@ namespace winrt::TerminalApp::implementation
         DEPENDENCY_PROPERTY(winrt::hstring, Text);
         DEPENDENCY_PROPERTY(winrt::Windows::Foundation::Collections::IVector<winrt::TerminalApp::HighlightedRun>, HighlightedRuns);
         DEPENDENCY_PROPERTY(winrt::Windows::UI::Xaml::Style, TextBlockStyle);
+        DEPENDENCY_PROPERTY(winrt::Windows::UI::Xaml::Style, HighlightedRunStyle);
 
     private:
         static void _InitializeProperties();

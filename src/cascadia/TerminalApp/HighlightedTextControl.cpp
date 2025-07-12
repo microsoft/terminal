@@ -22,9 +22,10 @@ namespace winrt::TerminalApp::implementation
     // Our control exposes a "Text" property to be used with Data Binding
     // To allow this we need to register a Dependency Property Identifier to be used by the property system
     // (https://docs.microsoft.com/en-us/windows/uwp/xaml-platform/custom-dependency-properties)
-    DependencyProperty HighlightedTextControl::_TextBlockStyleProperty{ nullptr };
     DependencyProperty HighlightedTextControl::_TextProperty{ nullptr };
     DependencyProperty HighlightedTextControl::_HighlightedRunsProperty{ nullptr };
+    DependencyProperty HighlightedTextControl::_TextBlockStyleProperty{ nullptr };
+    DependencyProperty HighlightedTextControl::_HighlightedRunStyleProperty{ nullptr };
 
     HighlightedTextControl::HighlightedTextControl()
     {
@@ -40,15 +41,21 @@ namespace winrt::TerminalApp::implementation
                 xaml_typename<winrt::TerminalApp::HighlightedTextControl>(),
                 PropertyMetadata(nullptr, HighlightedTextControl::_onPropertyChanged));
 
+            _HighlightedRunsProperty = DependencyProperty::Register(
+                L"HighlightedRuns",
+                xaml_typename<winrt::Windows::Foundation::Collections::IVector<winrt::TerminalApp::HighlightedRun>>(),
+                xaml_typename<winrt::TerminalApp::HighlightedTextControl>(),
+                PropertyMetadata(nullptr, HighlightedTextControl::_onPropertyChanged));
+
             _TextBlockStyleProperty = DependencyProperty::Register(
                 L"TextBlockStyle",
                 xaml_typename<winrt::Windows::UI::Xaml::Style>(),
                 xaml_typename<winrt::TerminalApp::HighlightedTextControl>(),
                 PropertyMetadata{ nullptr });
 
-            _HighlightedRunsProperty = DependencyProperty::Register(
-                L"HighlightedRuns",
-                xaml_typename<winrt::Windows::Foundation::Collections::IVector<winrt::TerminalApp::HighlightedRun>>(),
+            _HighlightedRunStyleProperty = DependencyProperty::Register(
+                L"HighlightedRunStyle",
+                xaml_typename<winrt::Windows::UI::Xaml::Style>(),
                 xaml_typename<winrt::TerminalApp::HighlightedTextControl>(),
                 PropertyMetadata(nullptr, HighlightedTextControl::_onPropertyChanged));
 
@@ -70,6 +77,36 @@ namespace winrt::TerminalApp::implementation
         _updateTextAndStyle();
     }
 
+    static void _applyStyleToObject(const winrt::Windows::UI::Xaml::Style& style, const winrt::Windows::UI::Xaml::DependencyObject& object)
+    {
+        if (!style)
+        {
+            return;
+        }
+
+        static const auto fontWeightProperty{ winrt::Windows::UI::Xaml::Documents::TextElement::FontWeightProperty() };
+
+        const auto setters{ style.Setters() };
+        for (auto&& setterBase : setters)
+        {
+            auto setter = setterBase.as<winrt::Windows::UI::Xaml::Setter>();
+            auto property = setter.Property();
+            auto value = setter.Value();
+
+            if (property == fontWeightProperty) [[unlikely]]
+            {
+                // BODGY - The XAML compiler emits a boxed int32, but the dependency property
+                // here expects a boxed FontWeight (which also requires a u16. heh.)
+                // FontWeight is one of the few properties that is broken like this, and on Run it's the
+                // only one... so we can trivially check this case.
+                const auto weight{ winrt::unbox_value_or<int32_t>(value, static_cast<int32_t>(400)) };
+                value = winrt::box_value(winrt::Windows::UI::Text::FontWeight{ static_cast<uint16_t>(weight) });
+            }
+
+            object.SetValue(property, value);
+        }
+    }
+
     void HighlightedTextControl::_updateTextAndStyle()
     {
         const auto textBlock = GetTemplateChild(L"TextView").try_as<winrt::Windows::UI::Xaml::Controls::TextBlock>();
@@ -83,7 +120,6 @@ namespace winrt::TerminalApp::implementation
 
         // Replace all the runs on the TextBlock
         // Use the runs to decide if the run should be highlighted.
-        // To do - export the highlighting style into XAML
         const auto inlinesCollection = textBlock.Inlines();
         inlinesCollection.Clear();
 
@@ -92,6 +128,8 @@ namespace winrt::TerminalApp::implementation
             size_t lastPos = 0;
             if (runs && runs.Size())
             {
+                const auto runStyle = HighlightedRunStyle();
+
                 for (const auto& [start, end] : runs)
                 {
                     if (start > lastPos)
@@ -99,14 +137,22 @@ namespace winrt::TerminalApp::implementation
                         hstring nonMatch{ til::safe_slice_abs(text, lastPos, start) };
                         Documents::Run run;
                         run.Text(nonMatch);
-                        run.FontWeight(FontWeights::Normal());
                         inlinesCollection.Append(run);
                     }
 
                     hstring matchSeg{ til::safe_slice_abs(text, start, end + 1) };
                     Documents::Run run;
                     run.Text(matchSeg);
-                    run.FontWeight(FontWeights::Bold());
+
+                    if (runStyle)
+                    {
+                        _applyStyleToObject(runStyle, run);
+                    }
+                    else
+                    {
+                        // Default style: bold
+                        run.FontWeight(FontWeights::Bold());
+                    }
                     inlinesCollection.Append(run);
 
                     lastPos = end + 1;
@@ -120,7 +166,6 @@ namespace winrt::TerminalApp::implementation
                 hstring tail{ lastPos == 0 ? text : hstring{ til::safe_slice_abs(text, lastPos, SIZE_T_MAX) } };
                 Documents::Run run;
                 run.Text(tail);
-                run.FontWeight(FontWeights::Normal());
                 inlinesCollection.Append(run);
             }
         }
