@@ -11,7 +11,7 @@ public:
     winrt::hstring GetLocalizedString(const std::wstring_view resourceName) const;
     bool HasResourceWithName(const std::wstring_view resourceName) const;
 
-    ScopedResourceLoader WithQualifier(const std::wstring_view qualifierName, const std::wstring_view qualifierValue) const;
+    ScopedResourceLoader WithQualifier(const wil::zwstring_view qualifierName, const wil::zwstring_view qualifierValue) const;
 
 private:
     ScopedResourceLoader(winrt::Windows::ApplicationModel::Resources::Core::ResourceMap map, winrt::Windows::ApplicationModel::Resources::Core::ResourceContext context);
