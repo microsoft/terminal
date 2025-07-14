@@ -90,6 +90,7 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_SETTING(Boolean, DisableAnimations);
         INHERITABLE_SETTING(String, StartupActions);
         INHERITABLE_SETTING(Boolean, FocusFollowMouse);
+        INHERITABLE_SETTING(Boolean, DisableMouseZoom);
         INHERITABLE_SETTING(WindowingMode, WindowingBehavior);
         INHERITABLE_SETTING(Boolean, TrimBlockSelection);
         INHERITABLE_SETTING(Boolean, DetectURLs);

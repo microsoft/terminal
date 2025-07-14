@@ -1736,6 +1736,10 @@
     <value>Automatically focus pane on mouse hover</value>
     <comment>Header for a control to toggle the "focus follow mouse" setting. When enabled, hovering over a pane puts it in focus.</comment>
   </data>
+  <data name="Globals_DisableMouseZoom.Header" xml:space="preserve">
+    <value>Disable zooming with Ctrl+mouse wheel</value>
+    <comment>Header for a control to toggle disabling mouse zoom. When enabled, Ctrl+mouse wheel will not change the font size.</comment>
+  </data>
   <data name="Globals_DisableAnimationsReversed.Header" xml:space="preserve">
     <value>Pane animations</value>
     <comment>Header for a control to toggle animations on panes. "Enabled" value enables the animations.</comment>

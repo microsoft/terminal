@@ -519,7 +519,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             _mouseTransparencyHandler(delta);
         }
-        else if (ctrlPressed)
+        else if (ctrlPressed && !_core->Settings().DisableMouseZoom())
         {
             _mouseZoomHandler(delta);
         }
