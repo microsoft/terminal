@@ -225,7 +225,8 @@
                                         x:Uid="Extensions_NavigateToProfileButton"
                                         Click="NavigateToProfile_Click"
                                         Style="{StaticResource SettingContainerResetButtonStyle}"
-                                        Tag="{x:Bind Profile.Guid}">
+                                        Tag="{x:Bind Profile.Guid}"
+                                        Visibility="{x:Bind mtu:Converters.InvertedBooleanToVisibility(Profile.Deleted)}">
                                     <FontIcon Glyph="&#xE8A7;"
                                               Style="{StaticResource SettingContainerFontIconStyle}" />
                                 </Button>
