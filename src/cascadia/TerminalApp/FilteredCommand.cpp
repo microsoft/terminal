@@ -82,7 +82,6 @@ namespace winrt::TerminalApp::implementation
 
     void FilteredCommand::_update()
     {
-        auto itemName = _Item.Name();
         auto [segments, weight] = _matchedSegmentsAndWeight(_pattern, _Item.Name());
 
         if (segments.empty())
