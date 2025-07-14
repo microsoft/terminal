@@ -10,9 +10,11 @@ namespace TerminalApp
     {
         FilteredCommand();
         FilteredCommand(IPaletteItem item);
+        FilteredCommand(IPaletteItem item, Int32 ordinal);
 
         IPaletteItem Item { get; };
         IVector<HighlightedRun> NameHighlights { get; };
         Int32 Weight;
+        Int32 Ordinal { get; };
     }
 }

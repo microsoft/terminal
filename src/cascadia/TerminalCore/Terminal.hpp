@@ -125,6 +125,7 @@ public:
     til::property<bool> AlwaysNotifyOnBufferRotation;
 
     std::wstring CurrentCommand() const;
+    std::wstring CurrentWordPrefix() const;
 
     void SerializeMainBuffer(const wchar_t* destination) const;
 

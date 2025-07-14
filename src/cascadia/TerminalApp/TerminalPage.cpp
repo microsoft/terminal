@@ -4824,7 +4824,7 @@ namespace winrt::TerminalApp::implementation
                 if (const auto& page{ weakThis.get() })
                 {
                     // Open the Suggestions UI with the commands from the control
-                    page->_OpenSuggestions(sender.try_as<TermControl>(), commandsCollection, SuggestionsMode::Menu, L"");
+                    page->_OpenSuggestions(sender.try_as<TermControl>(), commandsCollection, SuggestionsMode::Menu, L"", false);
                 }
             });
         }
@@ -4835,7 +4835,8 @@ namespace winrt::TerminalApp::implementation
         const TermControl& sender,
         IVector<Command> commandsCollection,
         winrt::TerminalApp::SuggestionsMode mode,
-        winrt::hstring filterText)
+        winrt::hstring filterText,
+        bool sortResults)
 
     {
         // ON THE UI THREAD
@@ -4874,7 +4875,8 @@ namespace winrt::TerminalApp::implementation
                    filterText,
                    realCursorPos,
                    windowDimensions,
-                   characterSize.Height);
+                   characterSize.Height,
+                   sortResults);
     }
 
     void TerminalPage::_PopulateContextMenu(const TermControl& control,

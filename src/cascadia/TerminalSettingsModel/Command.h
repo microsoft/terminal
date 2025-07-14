@@ -84,6 +84,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                                                                                            winrt::hstring currentCommandline,
                                                                                            bool directories,
                                                                                            hstring iconPath);
+        static Model::Command ScrollBackSuggestionToCommand(winrt::hstring text, winrt::hstring currentWordPrefix, winrt::hstring rowText);
 
         WINRT_PROPERTY(ExpandCommandType, IterateOn, ExpandCommandType::None);
         WINRT_PROPERTY(Model::ActionAndArgs, ActionAndArgs);

@@ -1252,6 +1252,57 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _updateSelectionUI();
     }
 
+    winrt::hstring ControlCore::_getLineText(int32_t rowNumber) const
+    {
+        auto lock = _terminal->LockForReading();
+        auto& buffer = _terminal->GetTextBuffer();
+        const auto rowCount = buffer.TotalRowCount();
+
+        int32_t firstRow = rowNumber;
+        while (firstRow > 0)
+        {
+            const auto& prev = buffer.GetRowByOffset(firstRow - 1);
+            if (!prev.WasWrapForced())
+            {
+                break;
+            }
+            --firstRow;
+        }
+
+        std::wstring result;
+        for (int32_t r = firstRow; r < rowCount; ++r)
+        {
+            const auto& row = buffer.GetRowByOffset(r);
+            result += row.GetText();
+
+            if (!row.WasWrapForced())
+            {
+                break;
+            }
+        }
+
+        return winrt::hstring{ result };
+    }
+
+    Windows::Foundation::Collections::IVector<SuggestionSearchItem> ControlCore::SuggestionScrollBackSearch(hstring const& needle)
+    {
+        auto _ = _terminal->LockForReading();
+        auto& buffer = _terminal->GetTextBuffer();
+        if (auto searchResults = buffer.SearchText(needle, SearchFlag::RegularExpression, 0, buffer.GetCursor().GetPosition().y))
+        {
+            auto results = std::vector<SuggestionSearchItem>();
+            results.reserve(searchResults->size());
+            for (auto it = searchResults->rbegin(); it != searchResults->rend(); ++it)
+            {
+                SuggestionSearchItem item = { _getLineText(it->start.y), winrt::hstring{ buffer.GetPlainText(it->start, it->end) } };
+                results.emplace_back(item);
+            }
+
+            return winrt::single_threaded_vector<SuggestionSearchItem>(std::move(results));
+        }
+        return winrt::single_threaded_vector<SuggestionSearchItem>();
+    }
+
     static wil::unique_close_clipboard_call _openClipboard(HWND hwnd)
     {
         bool success = false;
@@ -2385,6 +2436,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         auto context = winrt::make_self<CommandHistoryContext>(std::move(commands));
         context->CurrentCommandline(trimmedCurrentCommand);
         context->QuickFixes(_cachedQuickFixes);
+        context->CurrentWordPrefix(trimToHstring(_terminal->CurrentWordPrefix()));
         return *context;
     }
 

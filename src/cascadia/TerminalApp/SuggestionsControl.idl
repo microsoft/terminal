@@ -38,7 +38,8 @@ namespace TerminalApp
         void SetCommands(Windows.Foundation.Collections.IVector<Microsoft.Terminal.Settings.Model.Command> actions);
         void SelectNextItem(Boolean moveDown);
 
-        void Open(SuggestionsMode mode, IVector<Microsoft.Terminal.Settings.Model.Command> commands, String filterText, Windows.Foundation.Point anchor, Windows.Foundation.Size space, Single characterHeight);
+        void Open(SuggestionsMode mode, IVector<Microsoft.Terminal.Settings.Model.Command> commands, String filterText, Windows.Foundation.Point anchor, Windows.Foundation.Size space, Single characterHeight, Boolean
+        sortResults);
 
         event Windows.Foundation.TypedEventHandler<SuggestionsControl, Microsoft.Terminal.Settings.Model.Command> DispatchCommandRequested;
         event Windows.Foundation.TypedEventHandler<Object, Microsoft.Terminal.Settings.Model.Command> PreviewAction;

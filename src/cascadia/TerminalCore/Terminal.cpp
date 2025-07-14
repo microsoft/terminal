@@ -1581,6 +1581,21 @@ std::wstring Terminal::CurrentCommand() const
     return _activeBuffer().CurrentCommand();
 }
 
+std::wstring Terminal::CurrentWordPrefix() const
+{
+    const auto& buffer = _activeBuffer();
+    const auto cursorPos = buffer.GetCursor().GetPosition();
+
+    const auto start = buffer.GetWordStart2({ std::max(0, cursorPos.x - 1), cursorPos.y }, L"", false);
+
+    if (start == cursorPos)
+    {
+        return {};
+    }
+
+    return buffer.GetPlainText(start, cursorPos);
+}
+
 void Terminal::SerializeMainBuffer(const wchar_t* destination) const
 {
     _mainBuffer->SerializeToPath(destination);

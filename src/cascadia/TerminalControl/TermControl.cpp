@@ -1334,6 +1334,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         control->RaiseNotice.raise(*control, std::move(noticeArgs));
     }
 
+    Windows::Foundation::Collections::IVector<SuggestionSearchItem> TermControl::SuggestionScrollBackSearch(hstring const& needle)
+    {
+        return _core.SuggestionScrollBackSearch(needle);
+    }
+
     void TermControl::_AttachDxgiSwapChainToXaml(HANDLE swapChainHandle)
     {
         auto nativePanel = SwapChainPanel().as<ISwapChainPanelNative2>();
