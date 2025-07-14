@@ -89,8 +89,8 @@ namespace winrt::TerminalApp::implementation
         const auto setters{ style.Setters() };
         for (auto&& setterBase : setters)
         {
-            auto setter = setterBase.as<winrt::Windows::UI::Xaml::Setter>();
-            auto property = setter.Property();
+            const auto setter = setterBase.as<winrt::Windows::UI::Xaml::Setter>();
+            const auto property = setter.Property();
             auto value = setter.Value();
 
             if (property == fontWeightProperty) [[unlikely]]
@@ -118,11 +118,13 @@ namespace winrt::TerminalApp::implementation
         const auto text = Text();
         const auto runs = HighlightedRuns();
 
-        // Replace all the runs on the TextBlock
-        // Use the runs to decide if the run should be highlighted.
         const auto inlinesCollection = textBlock.Inlines();
         inlinesCollection.Clear();
 
+        // The code below constructs local hstring instances because hstring is required to be null-terminated
+        // and slicing _does not_ guarantee null termination. Passing a sliced wstring_view directly into run.Text()
+        // (which is a winrt::param::hstring--different thing!--will result in an exception when the sliced portion
+        // is not null-terminated.
         if (!text.empty())
         {
             size_t lastPos = 0;
@@ -134,17 +136,17 @@ namespace winrt::TerminalApp::implementation
                 {
                     if (start > lastPos)
                     {
-                        hstring nonMatch{ til::safe_slice_abs(text, lastPos, start) };
+                        const hstring nonMatch{ til::safe_slice_abs(text, lastPos, static_cast<size_t>(start)) };
                         Documents::Run run;
                         run.Text(nonMatch);
                         inlinesCollection.Append(run);
                     }
 
-                    hstring matchSeg{ til::safe_slice_abs(text, start, end + 1) };
+                    const hstring matchSeg{ til::safe_slice_abs(text, static_cast<size_t>(start), static_cast<size_t>(end + 1)) };
                     Documents::Run run;
                     run.Text(matchSeg);
 
-                    if (runStyle)
+                    if (runStyle) [[unlikely]]
                     {
                         _applyStyleToObject(runStyle, run);
                     }
@@ -155,7 +157,7 @@ namespace winrt::TerminalApp::implementation
                     }
                     inlinesCollection.Append(run);
 
-                    lastPos = end + 1;
+                    lastPos = static_cast<size_t>(end + 1);
                 }
             }
 
@@ -163,7 +165,7 @@ namespace winrt::TerminalApp::implementation
             if (lastPos < text.size())
             {
                 // checking lastPos here prevents a needless deep copy of the whole text in the no-match case
-                hstring tail{ lastPos == 0 ? text : hstring{ til::safe_slice_abs(text, lastPos, SIZE_T_MAX) } };
+                const hstring tail{ lastPos == 0 ? text : hstring{ til::safe_slice_abs(text, lastPos, SIZE_T_MAX) } };
                 Documents::Run run;
                 run.Text(tail);
                 inlinesCollection.Append(run);
