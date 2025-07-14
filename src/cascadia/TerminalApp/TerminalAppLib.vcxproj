@@ -60,7 +60,8 @@
     <Page Include="TabHeaderControl.xaml">
       <SubType>Designer</SubType>
     </Page>
-    <Page Include="HighlightedTextControl.xaml">
+    <Page Include="HighlightedTextControlStyle.xaml">
+      <Type>DefaultStyle</Type>
       <SubType>Designer</SubType>
     </Page>
     <Page Include="ColorPickupFlyout.xaml">
@@ -127,9 +128,8 @@
       <DependentUpon>TabHeaderControl.xaml</DependentUpon>
     </ClInclude>
     <ClInclude Include="HighlightedTextControl.h">
-      <DependentUpon>HighlightedTextControl.xaml</DependentUpon>
+      <DependentUpon>HighlightedTextControl.idl</DependentUpon>
     </ClInclude>
-    <ClInclude Include="HighlightedText.h" />
     <ClInclude Include="ColorPickupFlyout.h">
       <DependentUpon>ColorPickupFlyout.xaml</DependentUpon>
     </ClInclude>
@@ -247,9 +247,8 @@
       <DependentUpon>TabHeaderControl.xaml</DependentUpon>
     </ClCompile>
     <ClCompile Include="HighlightedTextControl.cpp">
-      <DependentUpon>HighlightedTextControl.xaml</DependentUpon>
+      <DependentUpon>HighlightedTextControl.idl</DependentUpon>
     </ClCompile>
-    <ClCompile Include="HighlightedText.cpp" />
     <ClCompile Include="ColorPickupFlyout.cpp">
       <DependentUpon>ColorPickupFlyout.xaml</DependentUpon>
     </ClCompile>
@@ -365,10 +364,8 @@
       <SubType>Code</SubType>
     </Midl>
     <Midl Include="HighlightedTextControl.idl">
-      <DependentUpon>HighlightedTextControl.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>
-    <Midl Include="HighlightedText.idl" />
     <Midl Include="ColorPickupFlyout.idl">
       <DependentUpon>ColorPickupFlyout.xaml</DependentUpon>
       <SubType>Code</SubType>

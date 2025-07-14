@@ -38,9 +38,6 @@
     <ClCompile Include="CommandLinePaletteItem.cpp">
       <Filter>commandPalette</Filter>
     </ClCompile>
-    <ClCompile Include="HighlightedText.cpp">
-      <Filter>highlightedText</Filter>
-    </ClCompile>
     <ClCompile Include="fzf/fzf.cpp">
       <Filter>fzf</Filter>
     </ClCompile>
@@ -77,9 +74,6 @@
     <ClInclude Include="CommandLinePaletteItem.h">
       <Filter>commandPalette</Filter>
     </ClInclude>
-    <ClInclude Include="HighlightedText.h">
-      <Filter>highlightedText</Filter>
-    </ClInclude>
     <ClInclude Include="fzf/fzf.h">
       <Filter>fzf</Filter>
     </ClInclude>
@@ -107,9 +101,6 @@
     </Midl>
     <Midl Include="FilteredCommand.idl">
       <Filter>commandPalette</Filter>
-    </Midl>
-    <Midl Include="HighlightedText.idl">
-      <Filter>highlightedText</Filter>
     </Midl>
     <Midl Include="TerminalTabStatus.idl">
       <Filter>tab</Filter>
@@ -156,7 +147,7 @@
     <Midl Include="CommandLinePaletteItem.idl">
       <Filter>commandPalette</Filter>
     </Midl>
-    <Page Include="HighlightedTextControl.xaml">
+    <Page Include="HighlightedTextControlStyle.xaml">
       <Filter>highlightedText</Filter>
     </Page>
     <Page Include="AboutDialog.xaml" />
