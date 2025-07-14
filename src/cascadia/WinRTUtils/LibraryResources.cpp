@@ -90,15 +90,13 @@ CATCH_FAIL_FAST()
 winrt::hstring GetLibraryResourceString(const std::wstring_view key)
 try
 {
-    static auto loader{ GetLibraryResourceLoader() };
-    return loader.GetLocalizedString(key);
+    return GetLibraryResourceLoader().GetLocalizedString(key);
 }
 CATCH_FAIL_FAST()
 
 bool HasLibraryResourceWithName(const std::wstring_view key)
 try
 {
-    static auto loader{ GetLibraryResourceLoader() };
-    return loader.HasResourceWithName(key);
+    return GetLibraryResourceLoader().HasResourceWithName(key);
 }
 CATCH_FAIL_FAST()
