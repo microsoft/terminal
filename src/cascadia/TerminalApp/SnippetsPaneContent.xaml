@@ -170,8 +170,9 @@
 
                         <local:HighlightedTextControl Grid.Column="1"
                                                       HorizontalAlignment="Left"
+                                                      HighlightedRuns="{x:Bind FilteredCommand.NameHighlights, Mode=OneWay}"
                                                       IsTabStop="False"
-                                                      Text="{x:Bind FilteredCommand.HighlightedName, Mode=OneWay}" />
+                                                      Text="{x:Bind FilteredCommand.Item.Name, Mode=OneWay}" />
 
                         <!--
                             BODGY: I can't choose different templates if this item is nested or not.
