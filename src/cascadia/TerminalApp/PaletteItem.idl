@@ -1,13 +1,28 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
+import "TerminalTabStatus.idl";
+
 namespace TerminalApp
 {
-    unsealed runtimeclass PaletteItem : Windows.UI.Xaml.Data.INotifyPropertyChanged
+    enum PaletteItemType
     {
-        String Name;
-        String KeyChordText;
-        String Icon;
+        Action,
+        CommandLine,
+        Tab,
+    };
+
+    interface IPaletteItem requires Windows.UI.Xaml.Data.INotifyPropertyChanged
+    {
+        PaletteItemType Type { get; };
+        String Name { get; };
+        String KeyChordText { get; };
+        String Icon { get; };
         Windows.UI.Xaml.Controls.IconElement ResolvedIcon { get; };
+    }
+
+    runtimeclass TabPaletteItem : [default] IPaletteItem
+    {
+        TerminalTabStatus TabStatus{ get; };
     }
 }

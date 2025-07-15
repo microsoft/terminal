@@ -19,9 +19,9 @@ using namespace winrt::Microsoft::Terminal::Settings::Model;
 
 namespace winrt::TerminalApp::implementation
 {
-    // This class is a wrapper of PaletteItem, that is used as an item of a filterable list in CommandPalette.
+    // This class is a wrapper of IPaletteItem, that is used as an item of a filterable list in CommandPalette.
     // It manages a highlighted text that is computed by matching search filter characters to item name
-    FilteredCommand::FilteredCommand(const winrt::TerminalApp::PaletteItem& item)
+    FilteredCommand::FilteredCommand(const winrt::TerminalApp::IPaletteItem& item)
     {
         // Actually implement the ctor in _constructFilteredCommand
         _constructFilteredCommand(item);
@@ -32,7 +32,7 @@ namespace winrt::TerminalApp::implementation
     // HOWEVER, for cppwinrt ~ r e a s o n s ~, it doesn't actually derive from
     // FilteredCommand directly, so we can't just use the FilteredCommand ctor
     // directly in the base class.
-    void FilteredCommand::_constructFilteredCommand(const winrt::TerminalApp::PaletteItem& item)
+    void FilteredCommand::_constructFilteredCommand(const winrt::TerminalApp::IPaletteItem& item)
     {
         _Item = item;
         _Weight = 0;

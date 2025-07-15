@@ -2,19 +2,30 @@
 // Licensed under the MIT license.
 
 #pragma once
-#include "PaletteItem.g.h"
 
 namespace winrt::TerminalApp::implementation
 {
-    struct PaletteItem : PaletteItemT<PaletteItem>
+    template<typename T, winrt::TerminalApp::PaletteItemType Ty>
+    struct BasePaletteItem
     {
     public:
-        Windows::UI::Xaml::Controls::IconElement ResolvedIcon();
+        winrt::TerminalApp::PaletteItemType Type() { return Ty; }
+
+        Windows::UI::Xaml::Controls::IconElement ResolvedIcon()
+        {
+            const auto icon = Microsoft::Terminal::UI::IconPathConverter::IconWUX(static_cast<T*>(this)->Icon());
+            icon.Width(16);
+            icon.Height(16);
+            return icon;
+        }
 
         til::property_changed_event PropertyChanged;
 
-        WINRT_OBSERVABLE_PROPERTY(winrt::hstring, Name, PropertyChanged.raise);
-        WINRT_OBSERVABLE_PROPERTY(winrt::hstring, Icon, PropertyChanged.raise);
-        WINRT_OBSERVABLE_PROPERTY(winrt::hstring, KeyChordText, PropertyChanged.raise);
+    protected:
+        template<typename... Ts>
+        void BaseRaisePropertyChanged(Ts&&... args)
+        {
+            PropertyChanged.raise(std::forward<Ts>(args)...);
+        }
     };
 }

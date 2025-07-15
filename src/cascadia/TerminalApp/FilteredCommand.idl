@@ -9,9 +9,9 @@ namespace TerminalApp
     [default_interface] unsealed runtimeclass FilteredCommand : Windows.UI.Xaml.Data.INotifyPropertyChanged
     {
         FilteredCommand();
-        FilteredCommand(PaletteItem item);
+        FilteredCommand(IPaletteItem item);
 
-        PaletteItem Item { get; };
+        IPaletteItem Item { get; };
         IVector<HighlightedRun> NameHighlights { get; };
         Int32 Weight;
     }

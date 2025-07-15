@@ -82,11 +82,10 @@
   </ItemGroup>
   <!-- ========================= Headers ======================== -->
   <ItemGroup>
-    <ClInclude Include="ActionPaletteItem.h" />
     <ClInclude Include="App.base.h" />
     <ClInclude Include="AppCommandlineArgs.h" />
     <ClInclude Include="Commandline.h" />
-    <ClInclude Include="CommandLinePaletteItem.h" />
+    <ClInclude Include="CommandPaletteItems.h" />
     <ClInclude Include="Jumplist.h" />
     <ClInclude Include="LanguageProfileNotifier.h" />
     <ClInclude Include="MinMaxCloseControl.h">
@@ -103,7 +102,6 @@
     <ClInclude Include="TabBase.h">
       <DependentUpon>TabBase.idl</DependentUpon>
     </ClInclude>
-    <ClInclude Include="TabPaletteItem.h" />
     <ClInclude Include="TaskbarState.h">
       <DependentUpon>TaskbarState.idl</DependentUpon>
     </ClInclude>
@@ -192,11 +190,10 @@
   </ItemGroup>
   <!-- ========================= Cpp Files ======================== -->
   <ItemGroup>
-    <ClCompile Include="ActionPaletteItem.cpp" />
-    <ClCompile Include="CommandLinePaletteItem.cpp" />
     <ClCompile Include="init.cpp" />
     <ClCompile Include="AppCommandlineArgs.cpp" />
     <ClCompile Include="Commandline.cpp" />
+    <ClCompile Include="CommandPaletteItems.cpp" />
     <ClCompile Include="Jumplist.cpp" />
     <ClCompile Include="LanguageProfileNotifier.cpp" />
     <ClCompile Include="MinMaxCloseControl.cpp">
@@ -209,12 +206,10 @@
       <DependentUpon>PaletteItemTemplateSelector.idl</DependentUpon>
       <SubType>Code</SubType>
     </ClCompile>
-    <ClCompile Include="PaletteItem.cpp" />
     <ClCompile Include="TabBase.cpp">
       <DependentUpon>TabBase.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="fzf/fzf.cpp" />
-    <ClCompile Include="TabPaletteItem.cpp" />
     <ClCompile Include="TaskbarState.cpp">
       <DependentUpon>TaskbarState.idl</DependentUpon>
     </ClCompile>
@@ -319,8 +314,6 @@
   <ItemGroup>
     <!-- If you add idl files here, make sure to include their implementation's
     header in TerminalApp.vcxproj (as well as in this file) -->
-    <Midl Include="ActionPaletteItem.idl" />
-    <Midl Include="CommandLinePaletteItem.idl" />
     <Midl Include="AboutDialog.idl">
       <DependentUpon>AboutDialog.xaml</DependentUpon>
     </Midl>
@@ -341,7 +334,6 @@
       <SubType>Code</SubType>
     </Midl>
     <Midl Include="TabBase.idl" />
-    <Midl Include="TabPaletteItem.idl" />
     <Midl Include="TaskbarState.idl" />
     <Midl Include="TerminalTab.idl" />
     <Midl Include="TerminalPage.idl">
