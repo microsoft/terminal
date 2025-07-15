@@ -83,7 +83,7 @@
                               Style="{StaticResource ToggleSwitchInExpanderStyle}" />
             </local:SettingContainer>
 
-            <!--  Disable Mouse Zoom  -->
+            <!--  Enable Zooming with Mouse Wheel  -->
             <local:SettingContainer x:Uid="Globals_ScrollToZoom">
                 <ToggleSwitch IsOn="{x:Bind ViewModel.ScrollToZoom, Mode=TwoWay}"
                               Style="{StaticResource ToggleSwitchInExpanderStyle}" />
