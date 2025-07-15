@@ -83,7 +83,7 @@
                               Style="{StaticResource ToggleSwitchInExpanderStyle}" />
             </local:SettingContainer>
 
-            <!--  Enable Zooming with Mouse Wheel  -->
+            <!--  Enable Font Size Changes with Scrolling  -->
             <local:SettingContainer x:Uid="Globals_ScrollToZoom">
                 <ToggleSwitch IsOn="{x:Bind ViewModel.ScrollToZoom, Mode=TwoWay}"
                               Style="{StaticResource ToggleSwitchInExpanderStyle}" />

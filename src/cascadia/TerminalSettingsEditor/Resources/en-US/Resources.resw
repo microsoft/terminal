@@ -1737,8 +1737,8 @@
     <comment>Header for a control to toggle the "focus follow mouse" setting. When enabled, hovering over a pane puts it in focus.</comment>
   </data>
   <data name="Globals_ScrollToZoom.Header" xml:space="preserve">
-    <value>Change font size with ctrl + mouse wheel</value>
-    <comment>Header for a control to toggle font size changes with the mouse wheel. When enabled, holding the Ctrl key and scrolling the mouse wheel will change the font size.</comment>
+    <value>Adjust terminal font size with ctrl + scroll</value>
+    <comment>Header for a control to toggle font size changes with scrolling. When enabled, holding the Ctrl key while scrolling will increase or decrease the terminal font size.</comment>
   </data>
   <data name="Globals_DisableAnimationsReversed.Header" xml:space="preserve">
     <value>Pane animations</value>
