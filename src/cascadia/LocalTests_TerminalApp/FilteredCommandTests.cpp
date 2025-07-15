@@ -15,7 +15,7 @@ using namespace winrt::Microsoft::Terminal::Control;
 
 namespace TerminalAppLocalTests
 {
-    struct StringPaletteItem : winrt::implements<StringPaletteItem, winrt::TerminalApp::IPaletteItem>, winrt::TerminalApp::implementation::BasePaletteItem<StringPaletteItem, winrt::TerminalApp::PaletteItemType::CommandLine>
+    struct StringPaletteItem : winrt::implements<StringPaletteItem, winrt::TerminalApp::IPaletteItem, winrt::Windows::UI::Xaml::Data::INotifyPropertyChanged>, winrt::TerminalApp::implementation::BasePaletteItem<StringPaletteItem, winrt::TerminalApp::PaletteItemType::CommandLine>
     {
         StringPaletteItem(std::wstring_view value) :
             _value{ value } {}
