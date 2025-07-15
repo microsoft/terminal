@@ -15,13 +15,13 @@ namespace winrt::TerminalApp::implementation
         BasePaletteItem<ActionPaletteItem, winrt::TerminalApp::PaletteItemType::Action>
     {
         ActionPaletteItem(const Microsoft::Terminal::Settings::Model::Command& command, const winrt::hstring keyChordText) :
-            _Command{ command }, _keyChordText{ keyChordText }
+            _Command{ command }, _name{ command.Name() }, _keyChordText{ keyChordText }
         {
         }
 
         winrt::hstring Name()
         {
-            return _Command.Name();
+            return _name;
         }
 
         winrt::hstring KeyChordText()
@@ -38,6 +38,7 @@ namespace winrt::TerminalApp::implementation
 
     private:
         Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker _commandChangedRevoker;
+        winrt::hstring _name;
         winrt::hstring _keyChordText;
     };
 
