@@ -22,7 +22,7 @@ namespace Microsoft.Terminal.Settings.Editor
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, TrimPaste);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, SnapToGridOnResize);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, FocusFollowMouse);
-        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, DisableMouseZoom);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, ScrollToZoom);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, DetectURLs);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(String, SearchWebDefaultQueryUrl);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(String, WordDelimiters);

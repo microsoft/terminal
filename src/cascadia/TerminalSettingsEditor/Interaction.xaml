@@ -84,8 +84,8 @@
             </local:SettingContainer>
 
             <!--  Disable Mouse Zoom  -->
-            <local:SettingContainer x:Uid="Globals_DisableMouseZoom">
-                <ToggleSwitch IsOn="{x:Bind ViewModel.DisableMouseZoom, Mode=TwoWay}"
+            <local:SettingContainer x:Uid="Globals_ScrollToZoom">
+                <ToggleSwitch IsOn="{x:Bind ViewModel.ScrollToZoom, Mode=TwoWay}"
                               Style="{StaticResource ToggleSwitchInExpanderStyle}" />
             </local:SettingContainer>
 

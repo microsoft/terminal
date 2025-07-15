@@ -2376,7 +2376,7 @@
           "description": "When set to true, the terminal will focus the pane on mouse hover.",
           "type": "boolean"
         },
-        "disableMouseZoom": {
+        "experimental.scrollToZoom": {
           "default": false,
           "description": "When set to true, the terminal will not zoom in or out when the mouse wheel is scrolled while holding the Ctrl key.",
           "type": "boolean"
