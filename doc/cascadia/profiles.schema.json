@@ -2377,7 +2377,7 @@
           "type": "boolean"
         },
         "experimental.scrollToZoom": {
-          "default": false,
+          "default": true,
           "description": "When set to true, holding the Ctrl key while scrolling will increase or decrease the terminal font size.",
           "type": "boolean"
         },
