@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "PaletteItem.h"
+#include "BasePaletteItem.h"
 #include "TabPaletteItem.g.h"
 
 #include "../inc/cppwinrt_utils.h"

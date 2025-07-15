@@ -98,7 +98,7 @@
       <DependentUpon>PaletteItemTemplateSelector.idl</DependentUpon>
       <SubType>Code</SubType>
     </ClInclude>
-    <ClInclude Include="PaletteItem.h" />
+    <ClInclude Include="BasePaletteItem.h" />
     <ClInclude Include="TabBase.h">
       <DependentUpon>TabBase.idl</DependentUpon>
     </ClInclude>
@@ -324,7 +324,7 @@
     <Midl Include="PaletteItemTemplateSelector.idl">
       <SubType>Designer</SubType>
     </Midl>
-    <Midl Include="PaletteItem.idl" />
+    <Midl Include="IPaletteItem.idl" />
     <Midl Include="ShortcutActionDispatch.idl" />
     <Midl Include="AppKeyBindings.idl" />
     <Midl Include="AppLogic.idl" />
