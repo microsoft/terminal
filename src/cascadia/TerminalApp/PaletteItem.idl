@@ -12,7 +12,7 @@ namespace TerminalApp
         Tab,
     };
 
-    interface IPaletteItem
+    interface IPaletteItem requires Windows.UI.Xaml.Data.INotifyPropertyChanged
     {
         PaletteItemType Type { get; };
         String Name { get; };
