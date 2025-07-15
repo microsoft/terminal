@@ -6,7 +6,7 @@ import "HighlightedTextControl.idl";
 
 namespace TerminalApp
 {
-    [default_interface] unsealed runtimeclass FilteredCommand : Windows.UI.Xaml.Data.INotifyPropertyChanged
+    runtimeclass FilteredCommand : Windows.UI.Xaml.Data.INotifyPropertyChanged
     {
         FilteredCommand();
         FilteredCommand(IPaletteItem item);
