@@ -12,7 +12,7 @@ namespace TerminalApp
         Tab,
     };
 
-    interface IPaletteItem requires Windows.UI.Xaml.Data.INotifyPropertyChanged
+    interface IPaletteItem
     {
         PaletteItemType Type { get; };
         String Name { get; };
@@ -21,7 +21,7 @@ namespace TerminalApp
         Windows.UI.Xaml.Controls.IconElement ResolvedIcon { get; };
     }
 
-    runtimeclass TabPaletteItem : [default] IPaletteItem
+    runtimeclass TabPaletteItem : [default] IPaletteItem, Windows.UI.Xaml.Data.INotifyPropertyChanged
     {
         TerminalTabStatus TabStatus{ get; };
     }

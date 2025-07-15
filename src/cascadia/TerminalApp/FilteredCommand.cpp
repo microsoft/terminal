@@ -40,7 +40,7 @@ namespace winrt::TerminalApp::implementation
         _update();
 
         // Recompute the highlighted name if the item name changes
-        _itemChangedRevoker = _Item.PropertyChanged(winrt::auto_revoke, [weakThis{ get_weak() }](auto& /*sender*/, auto& e) {
+        _itemChangedRevoker = _Item.as<winrt::Windows::UI::Xaml::Data::INotifyPropertyChanged>().PropertyChanged(winrt::auto_revoke, [weakThis{ get_weak() }](auto& /*sender*/, auto& e) {
             auto filteredCommand{ weakThis.get() };
             if (filteredCommand && e.PropertyName() == L"Name")
             {

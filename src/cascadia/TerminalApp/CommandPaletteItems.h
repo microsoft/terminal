@@ -11,7 +11,7 @@
 namespace winrt::TerminalApp::implementation
 {
     struct ActionPaletteItem :
-        public winrt::implements<ActionPaletteItem, IPaletteItem>,
+        public winrt::implements<ActionPaletteItem, IPaletteItem, winrt::Windows::UI::Xaml::Data::INotifyPropertyChanged>,
         BasePaletteItem<ActionPaletteItem, winrt::TerminalApp::PaletteItemType::Action>
     {
         ActionPaletteItem(const Microsoft::Terminal::Settings::Model::Command& command, const winrt::hstring keyChordText) :
@@ -42,7 +42,7 @@ namespace winrt::TerminalApp::implementation
     };
 
     struct CommandLinePaletteItem :
-        public winrt::implements<CommandLinePaletteItem, IPaletteItem>,
+        public winrt::implements<CommandLinePaletteItem, IPaletteItem, winrt::Windows::UI::Xaml::Data::INotifyPropertyChanged>,
         BasePaletteItem<CommandLinePaletteItem, winrt::TerminalApp::PaletteItemType::CommandLine>
     {
         CommandLinePaletteItem(const winrt::hstring& commandLine) :
