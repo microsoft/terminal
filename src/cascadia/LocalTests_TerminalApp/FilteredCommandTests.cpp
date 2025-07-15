@@ -2,8 +2,8 @@
 // Licensed under the MIT license.
 
 #include "pch.h"
-#include "../TerminalApp/CommandLinePaletteItem.h"
 #include "../TerminalApp/CommandPalette.h"
+#include "../TerminalApp/BasePaletteItem.h"
 #include "CppWinrtTailored.h"
 
 using namespace Microsoft::Console;
@@ -15,6 +15,19 @@ using namespace winrt::Microsoft::Terminal::Control;
 
 namespace TerminalAppLocalTests
 {
+    struct StringPaletteItem : winrt::implements<StringPaletteItem, winrt::TerminalApp::IPaletteItem>, winrt::TerminalApp::implementation::BasePaletteItem<StringPaletteItem, winrt::TerminalApp::PaletteItemType::CommandLine>
+    {
+        StringPaletteItem(std::wstring_view value) :
+            _value{ value } {}
+
+        winrt::hstring Name() { return _value; }
+        winrt::hstring KeyChordText() { return {}; }
+        winrt::hstring Icon() { return {}; }
+
+    private:
+        winrt::hstring _value;
+    };
+
     class FilteredCommandTests
     {
         BEGIN_TEST_CLASS(FilteredCommandTests)
@@ -40,7 +53,7 @@ namespace TerminalAppLocalTests
         auto result = RunOnUIThread([]() {
             const WEX::TestExecution::DisableVerifyExceptions disableExceptionsScope;
 
-            const auto paletteItem{ winrt::make<winrt::TerminalApp::implementation::CommandLinePaletteItem>(L"AAAAAABBBBBBCCC") };
+            const auto paletteItem{ winrt::make<StringPaletteItem>(L"AAAAAABBBBBBCCC") };
             const auto filteredCommand = winrt::make_self<winrt::TerminalApp::implementation::FilteredCommand>(paletteItem);
 
             {
@@ -112,7 +125,7 @@ namespace TerminalAppLocalTests
     void FilteredCommandTests::VerifyWeight()
     {
         auto result = RunOnUIThread([]() {
-            const auto paletteItem{ winrt::make<winrt::TerminalApp::implementation::CommandLinePaletteItem>(L"AAAAAABBBBBBCCC") };
+            const auto paletteItem{ winrt::make<StringPaletteItem>(L"AAAAAABBBBBBCCC") };
             const auto filteredCommand = winrt::make_self<winrt::TerminalApp::implementation::FilteredCommand>(paletteItem);
 
             const auto weigh = [&](const wchar_t* str) {
@@ -152,8 +165,8 @@ namespace TerminalAppLocalTests
     void FilteredCommandTests::VerifyCompare()
     {
         auto result = RunOnUIThread([]() {
-            const auto paletteItem{ winrt::make<winrt::TerminalApp::implementation::CommandLinePaletteItem>(L"AAAAAABBBBBBCCC") };
-            const auto paletteItem2{ winrt::make<winrt::TerminalApp::implementation::CommandLinePaletteItem>(L"BBBBBCCC") };
+            const auto paletteItem{ winrt::make<StringPaletteItem>(L"AAAAAABBBBBBCCC") };
+            const auto paletteItem2{ winrt::make<StringPaletteItem>(L"BBBBBCCC") };
             {
                 Log::Comment(L"Testing comparison of commands with no filter");
                 const auto filteredCommand = winrt::make_self<winrt::TerminalApp::implementation::FilteredCommand>(paletteItem);
@@ -192,8 +205,8 @@ namespace TerminalAppLocalTests
     void FilteredCommandTests::VerifyCompareIgnoreCase()
     {
         auto result = RunOnUIThread([]() {
-            const auto paletteItem{ winrt::make<winrt::TerminalApp::implementation::CommandLinePaletteItem>(L"a") };
-            const auto paletteItem2{ winrt::make<winrt::TerminalApp::implementation::CommandLinePaletteItem>(L"B") };
+            const auto paletteItem{ winrt::make<StringPaletteItem>(L"a") };
+            const auto paletteItem2{ winrt::make<StringPaletteItem>(L"B") };
             {
                 const auto filteredCommand = winrt::make_self<winrt::TerminalApp::implementation::FilteredCommand>(paletteItem);
                 const auto filteredCommand2 = winrt::make_self<winrt::TerminalApp::implementation::FilteredCommand>(paletteItem2);
