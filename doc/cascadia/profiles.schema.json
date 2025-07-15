@@ -2378,7 +2378,7 @@
         },
         "experimental.scrollToZoom": {
           "default": false,
-          "description": "When set to true, the terminal will not zoom in or out when the mouse wheel is scrolled while holding the Ctrl key.",
+          "description": "When set to true, the terminal will increase or decrease the font size when the mouse wheel is scrolled while holding the Ctrl key.",
           "type": "boolean"
         },
         "compatibility.allowHeadless": {
