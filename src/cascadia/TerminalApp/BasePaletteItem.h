@@ -13,19 +13,32 @@ namespace winrt::TerminalApp::implementation
 
         Windows::UI::Xaml::Controls::IconElement ResolvedIcon()
         {
-            const auto icon = Microsoft::Terminal::UI::IconPathConverter::IconWUX(static_cast<T*>(this)->Icon());
-            icon.Width(16);
-            icon.Height(16);
-            return icon;
+            const auto icon{ static_cast<T*>(this)->Icon() };
+            if (!_resolvedIcon && !icon.empty())
+            {
+                const auto resolvedIcon{ Microsoft::Terminal::UI::IconPathConverter::IconWUX(icon) };
+                resolvedIcon.Width(16);
+                resolvedIcon.Height(16);
+                _resolvedIcon = resolvedIcon;
+            }
+            return _resolvedIcon;
         }
 
         til::property_changed_event PropertyChanged;
 
     protected:
-        template<typename... Ts>
-        void BaseRaisePropertyChanged(Ts&&... args)
+        void BaseRaisePropertyChanged(wil::zwstring_view property)
         {
-            PropertyChanged.raise(std::forward<Ts>(args)...);
+            PropertyChanged.raise(*static_cast<T*>(this), winrt::Windows::UI::Xaml::Data::PropertyChangedEventArgs{ property });
         }
+
+        void InvalidateResolvedIcon()
+        {
+            _resolvedIcon = nullptr;
+            BaseRaisePropertyChanged(L"ResolvedIcon");
+        }
+
+    private:
+        Windows::UI::Xaml::Controls::IconElement _resolvedIcon{ nullptr };
     };
 }

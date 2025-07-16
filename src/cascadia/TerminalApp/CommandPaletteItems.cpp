@@ -28,11 +28,12 @@ namespace winrt::TerminalApp::implementation
                 auto changedProperty = e.PropertyName();
                 if (changedProperty == L"Title")
                 {
-                    BaseRaisePropertyChanged(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"Name" });
+                    BaseRaisePropertyChanged(L"Name");
                 }
                 else if (changedProperty == L"Icon")
                 {
-                    BaseRaisePropertyChanged(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"Icon" });
+                    BaseRaisePropertyChanged(L"Icon");
+                    InvalidateResolvedIcon();
                 }
             }
         });
@@ -44,7 +45,7 @@ namespace winrt::TerminalApp::implementation
             _tabStatusChangedRevoker = status.PropertyChanged(winrt::auto_revoke, [=](auto& /*sender*/, auto& /*e*/) {
                 // Sometimes nested bindings do not get updated,
                 // thus let's notify property changed on TabStatus when one of its properties changes
-                BaseRaisePropertyChanged(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"TabStatus" });
+                BaseRaisePropertyChanged(L"TabStatus");
             });
         }
     }

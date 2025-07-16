@@ -38,11 +38,11 @@ namespace winrt::TerminalApp::implementation
                 {
                     return NestedItemTemplate();
                 }
-                __fallthrough;
+                break; // Fall back to the general template
             }
             case PaletteItemType::CommandLine:
             default:
-                break; // Exit the bottom of the function
+                break; // Fall back to the general template
             }
         }
 
