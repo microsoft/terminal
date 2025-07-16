@@ -45,7 +45,8 @@ namespace winrt::TerminalApp::implementation
     {
         if (sender)
         {
-            if (auto tab = sender.try_as<TerminalApp::Tab>()) {
+            if (auto tab = sender.try_as<TerminalApp::Tab>())
+            {
                 return _GetTabImpl(tab);
             }
         }
