@@ -73,7 +73,8 @@
 
                     <local:HighlightedTextControl Grid.Column="1"
                                                   HorizontalAlignment="Left"
-                                                  Text="{x:Bind HighlightedName, Mode=OneWay}" />
+                                                  HighlightedRuns="{x:Bind NameHighlights, Mode=OneWay}"
+                                                  Text="{x:Bind Item.Name, Mode=OneWay}" />
 
                     <!--
                         The block for the key chord is only visible
@@ -123,7 +124,8 @@
 
                     <local:HighlightedTextControl Grid.Column="1"
                                                   HorizontalAlignment="Left"
-                                                  Text="{x:Bind HighlightedName, Mode=OneWay}" />
+                                                  HighlightedRuns="{x:Bind NameHighlights, Mode=OneWay}"
+                                                  Text="{x:Bind Item.Name, Mode=OneWay}" />
 
                     <!--
                         The block for the key chord is only visible
@@ -192,7 +194,8 @@
 
                     <local:HighlightedTextControl Grid.Column="1"
                                                   HorizontalAlignment="Left"
-                                                  Text="{x:Bind HighlightedName, Mode=OneWay}" />
+                                                  HighlightedRuns="{x:Bind NameHighlights, Mode=OneWay}"
+                                                  Text="{x:Bind Item.Name, Mode=OneWay}" />
 
                     <StackPanel Grid.Column="2"
                                 HorizontalAlignment="Right"
