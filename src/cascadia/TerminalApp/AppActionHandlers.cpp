@@ -45,7 +45,9 @@ namespace winrt::TerminalApp::implementation
     {
         if (sender)
         {
-            return _GetTerminalTabImpl(tab);
+            if (auto tab = sender.try_as<TerminalApp::Tab>()) {
+                return _GetTabImpl(tab);
+            }
         }
         return _GetFocusedTabImpl();
     }
@@ -190,17 +192,17 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandleCloseOtherPanes(const IInspectable& sender,
                                               const ActionEventArgs& args)
     {
-        if (const auto& terminalTab{ _senderOrFocusedTab(sender) })
+        if (const auto& activeTab{ _senderOrFocusedTab(sender) })
         {
-            const auto activePane = terminalTab->GetActivePane();
-            if (terminalTab->GetRootPane() != activePane)
+            const auto activePane = activeTab->GetActivePane();
+            if (activeTab->GetRootPane() != activePane)
             {
                 _UnZoomIfNeeded();
 
                 // Accumulate list of all unfocused leaf panes, ignore read-only panes
                 std::vector<uint32_t> unfocusedPaneIds;
                 const auto activePaneId = activePane->Id();
-                terminalTab->GetRootPane()->WalkTree([&](auto&& p) {
+                activeTab->GetRootPane()->WalkTree([&](auto&& p) {
                     const auto id = p->Id();
                     if (id.has_value() && id != activePaneId && !p->ContainsReadOnly())
                     {
@@ -212,7 +214,7 @@ namespace winrt::TerminalApp::implementation
                 {
                     // Start by removing the panes that were least recently added
                     sort(begin(unfocusedPaneIds), end(unfocusedPaneIds), std::less<uint32_t>());
-                    _ClosePanes(terminalTab->get_weak(), std::move(unfocusedPaneIds));
+                    _ClosePanes(activeTab->get_weak(), std::move(unfocusedPaneIds));
                     args.Handled(true);
                     return;
                 }
@@ -278,9 +280,9 @@ namespace winrt::TerminalApp::implementation
 
             const auto& duplicateFromTab{ realArgs.SplitMode() == SplitType::Duplicate ? _GetFocusedTab() : nullptr };
 
-            const auto& terminalTab{ _senderOrFocusedTab(sender) };
+            const auto& activeTab{ _senderOrFocusedTab(sender) };
 
-            _SplitPane(terminalTab,
+            _SplitPane(activeTab,
                        realArgs.SplitDirection(),
                        // This is safe, we're already filtering so the value is (0, 1)
                        realArgs.SplitSize(),
@@ -299,14 +301,14 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandleTogglePaneZoom(const IInspectable& sender,
                                              const ActionEventArgs& args)
     {
-        if (const auto terminalTab{ _senderOrFocusedTab(sender) })
+        if (const auto activeTab{ _senderOrFocusedTab(sender) })
         {
             // Don't do anything if there's only one pane. It's already zoomed.
-            if (terminalTab->GetLeafPaneCount() > 1)
+            if (activeTab->GetLeafPaneCount() > 1)
             {
                 // Togging the zoom on the tab will cause the tab to inform us of
                 // the new root Content for this tab.
-                terminalTab->ToggleZoom();
+                activeTab->ToggleZoom();
             }
         }
 

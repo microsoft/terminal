@@ -253,13 +253,6 @@ namespace winrt::TerminalApp::implementation
         WUX::Controls::ToolTipService::SetToolTip(TabViewItem(), toolTip);
     }
 
-    std::optional<winrt::Windows::UI::Color> Tab::GetTabColor()
-    {
-        ASSERT_UI_THREAD();
-
-        return std::nullopt;
-    }
-
     // Method Description:
     // - Returns nullptr if no children of this tab were the last control to be
     //   focused, the active control of the current pane, or the last active child control

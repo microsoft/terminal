@@ -116,6 +116,12 @@ namespace winrt::TerminalApp::implementation
         til::event<winrt::Windows::Foundation::EventHandler<winrt::Windows::Foundation::IInspectable>> CloseRequested;
         til::property_changed_event PropertyChanged;
 
+        til::typed_event<TerminalApp::TerminalPaneContent> RestartTerminalRequested;
+
+        til::typed_event<TerminalApp::Tab, IInspectable> ActivePaneChanged;
+        til::event<winrt::delegate<>> TabRaiseVisualBell;
+        til::typed_event<IInspectable, IInspectable> TaskbarProgressChanged;
+
         // The TabViewIndex is the index this Tab object resides in TerminalPage's _tabs vector.
         WINRT_PROPERTY(uint32_t, TabViewIndex, 0);
         // The TabViewNumTabs is the number of Tab objects in TerminalPage's _tabs vector.
@@ -127,12 +133,6 @@ namespace winrt::TerminalApp::implementation
         WINRT_PROPERTY(winrt::Microsoft::UI::Xaml::Controls::TabViewItem, TabViewItem, nullptr);
 
         WINRT_OBSERVABLE_PROPERTY(winrt::Windows::UI::Xaml::FrameworkElement, Content, PropertyChanged.raise, nullptr);
-        til::typed_event<TerminalApp::TerminalPaneContent> RestartTerminalRequested;
-
-        til::typed_event<TerminalApp::Tab, IInspectable> ActivePaneChanged;
-        til::event<winrt::delegate<>> TabRaiseVisualBell;
-        til::typed_event<IInspectable, IInspectable> TaskbarProgressChanged;
-
     private:
         static constexpr double HeaderRenameBoxWidthDefault{ 165 };
         static constexpr double HeaderRenameBoxWidthTitleLength{ std::numeric_limits<double>::infinity() };
@@ -208,8 +208,6 @@ namespace winrt::TerminalApp::implementation
         SafeDispatcherTimer _bellIndicatorTimer;
         void _BellIndicatorTimerTick(const Windows::Foundation::IInspectable& sender, const Windows::Foundation::IInspectable& e);
 
-        void _MakeTabViewItem();
-
         void _UpdateHeaderControlMaxWidth();
 
         void _CreateContextMenu();
@@ -233,9 +231,6 @@ namespace winrt::TerminalApp::implementation
         void _DuplicateTab();
 
         winrt::Windows::UI::Xaml::Media::Brush _BackgroundBrush();
-
-        void _CreateContextMenu();
-        winrt::hstring _CreateToolTipTitle();
 
         void _MakeTabViewItem();
 

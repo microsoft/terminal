@@ -272,9 +272,9 @@ namespace winrt::TerminalApp::implementation
     // - Duplicates the current focused tab
     void TerminalPage::_DuplicateFocusedTab()
     {
-        if (const auto terminalTab{ _GetFocusedTabImpl() })
+        if (const auto activeTab{ _GetFocusedTabImpl() })
         {
-            _DuplicateTab(*terminalTab);
+            _DuplicateTab(*activeTab);
         }
     }
 
@@ -657,7 +657,7 @@ namespace winrt::TerminalApp::implementation
     {
         if (auto tab{ _GetFocusedTab() })
         {
-            return _GetTerminalTabImpl(tab);
+            return _GetTabImpl(tab);
         }
         return nullptr;
     }
@@ -774,11 +774,11 @@ namespace winrt::TerminalApp::implementation
     //   tab's Closed event.
     safe_void_coroutine TerminalPage::_CloseFocusedPane()
     {
-        if (const auto terminalTab{ _GetFocusedTabImpl() })
+        if (const auto activeTab{ _GetFocusedTabImpl() })
         {
             _UnZoomIfNeeded();
 
-            if (const auto pane{ terminalTab->GetActivePane() })
+            if (const auto pane{ activeTab->GetActivePane() })
             {
                 if (co_await _PaneConfirmCloseReadOnly(pane))
                 {
@@ -1007,10 +1007,10 @@ namespace winrt::TerminalApp::implementation
 
             _updateThemeColors();
 
-            auto tab_impl = _GetTerminalTabImpl(tab);
-            if (tab_impl)
+            auto tabImpl = _GetTabImpl(tab);
+            if (tabImpl)
             {
-                auto profile = tab_impl->GetFocusedProfile();
+                auto profile = tabImpl->GetFocusedProfile();
                 _UpdateBackground(profile);
             }
         }

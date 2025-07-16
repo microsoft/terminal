@@ -221,7 +221,7 @@ namespace winrt::TerminalApp::implementation
 
         Windows::Foundation::Collections::IObservableVector<TerminalApp::Tab> _tabs;
         Windows::Foundation::Collections::IObservableVector<TerminalApp::Tab> _mruTabs;
-        static winrt::com_ptr<Tab> _GetTerminalTabImpl(const TerminalApp::Tab& tab);
+        static winrt::com_ptr<Tab> _GetTabImpl(const TerminalApp::Tab& tab);
 
         void _UpdateTabIndices();
 
@@ -534,7 +534,7 @@ namespace winrt::TerminalApp::implementation
         void _onTabDroppedOutside(winrt::Windows::Foundation::IInspectable sender, winrt::Microsoft::UI::Xaml::Controls::TabViewTabDroppedOutsideEventArgs e);
 
         void _DetachPaneFromWindow(std::shared_ptr<Pane> pane);
-        void _DetachTabFromWindow(const winrt::com_ptr<Tab>& terminalTab);
+        void _DetachTabFromWindow(const winrt::com_ptr<Tab>& tabImpl);
         void _MoveContent(std::vector<winrt::Microsoft::Terminal::Settings::Model::ActionAndArgs>&& actions,
                           const winrt::hstring& windowName,
                           const uint32_t tabIndex,
