@@ -59,8 +59,8 @@ namespace winrt
 namespace winrt::TerminalApp::implementation
 {
     TerminalPage::TerminalPage(TerminalApp::WindowProperties properties, const TerminalApp::ContentManager& manager) :
-        _tabs{ winrt::single_threaded_observable_vector<TerminalApp::TabBase>() },
-        _mruTabs{ winrt::single_threaded_observable_vector<TerminalApp::TabBase>() },
+        _tabs{ winrt::single_threaded_observable_vector<TerminalApp::Tab>() },
+        _mruTabs{ winrt::single_threaded_observable_vector<TerminalApp::Tab>() },
         _manager{ manager },
         _hostingHwnd{},
         _WindowProperties{ std::move(properties) }
@@ -1651,7 +1651,7 @@ namespace winrt::TerminalApp::implementation
     //   TitleChanged event.
     // Arguments:
     // - tab: the Tab to update the title for.
-    void TerminalPage::_UpdateTitle(const TerminalTab& tab)
+    void TerminalPage::_UpdateTitle(const Tab& tab)
     {
         auto newTabTitle = tab.Title();
 
@@ -1729,13 +1729,13 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Connects event handlers to the TerminalTab for events that we want to
+    // - Connects event handlers to the Tab for events that we want to
     //   handle. This includes:
     //    * the TitleChanged event, for changing the text of the tab
     //    * the Color{Selected,Cleared} events to change the color of a tab.
     // Arguments:
     // - hostingTab: The Tab that's hosting this TermControl instance
-    void TerminalPage::_RegisterTabEvents(TerminalTab& hostingTab)
+    void TerminalPage::_RegisterTabEvents(Tab& hostingTab)
     {
         auto weakTab{ hostingTab.get_weak() };
         auto weakThis{ get_weak() };
@@ -1953,7 +1953,7 @@ namespace winrt::TerminalApp::implementation
 
         for (auto tab : _tabs)
         {
-            auto t = winrt::get_self<implementation::TabBase>(tab);
+            auto t = winrt::get_self<implementation::Tab>(tab);
             auto tabActions = t->BuildStartupActions(serializeBuffer ? BuildStartupKind::PersistAll : BuildStartupKind::PersistLayout);
             actions.insert(actions.end(), std::make_move_iterator(tabActions.begin()), std::make_move_iterator(tabActions.end()));
         }
@@ -2184,15 +2184,12 @@ namespace winrt::TerminalApp::implementation
         });
     }
 
-    void TerminalPage::_DetachTabFromWindow(const winrt::com_ptr<TabBase>& tab)
+    void TerminalPage::_DetachTabFromWindow(const winrt::com_ptr<Tab>& tab)
     {
-        if (const auto terminalTab = tab.try_as<TerminalTab>())
+        // Detach the root pane, which will act like the whole tab got detached.
+        if (const auto rootPane = tab->GetRootPane())
         {
-            // Detach the root pane, which will act like the whole tab got detached.
-            if (const auto rootPane = terminalTab->GetRootPane())
-            {
-                _DetachPaneFromWindow(rootPane);
-            }
+            _DetachPaneFromWindow(rootPane);
         }
     }
 
@@ -2220,7 +2217,7 @@ namespace winrt::TerminalApp::implementation
         RequestMoveContent.raise(*this, *request);
     }
 
-    bool TerminalPage::_MoveTab(winrt::com_ptr<TerminalTab> tab, MoveTabArgs args)
+    bool TerminalPage::_MoveTab(winrt::com_ptr<Tab> tab, MoveTabArgs args)
     {
         if (!tab)
         {
@@ -2288,7 +2285,7 @@ namespace winrt::TerminalApp::implementation
     // When the tab's active pane changes, we'll want to lookup a new icon
     // for it. The Title change will be propagated upwards through the tab's
     // PropertyChanged event handler.
-    void TerminalPage::_activePaneChanged(winrt::TerminalApp::TerminalTab sender,
+    void TerminalPage::_activePaneChanged(winrt::TerminalApp::Tab sender,
                                           Windows::Foundation::IInspectable /*args*/)
     {
         if (const auto tab{ _GetTerminalTabImpl(sender) })
@@ -2380,7 +2377,7 @@ namespace winrt::TerminalApp::implementation
     // - splitDirection: one value from the TerminalApp::SplitDirection enum, indicating how the
     //   new pane should be split from its parent.
     // - splitSize: the size of the split
-    void TerminalPage::_SplitPane(const winrt::com_ptr<TerminalTab>& tab,
+    void TerminalPage::_SplitPane(const winrt::com_ptr<Tab>& tab,
                                   const SplitDirection splitDirection,
                                   const float splitSize,
                                   std::shared_ptr<Pane> newPane)
@@ -3239,7 +3236,7 @@ namespace winrt::TerminalApp::implementation
     //   connection, then we'll return nullptr. Otherwise, we'll return a new
     //   Pane for this connection.
     std::shared_ptr<Pane> TerminalPage::_MakeTerminalPane(const NewTerminalArgs& newTerminalArgs,
-                                                          const winrt::TerminalApp::TabBase& sourceTab,
+                                                          const winrt::TerminalApp::Tab& sourceTab,
                                                           TerminalConnection::ITerminalConnection existingConnection)
     {
         // First things first - Check for making a pane from content ID.
@@ -3329,7 +3326,7 @@ namespace winrt::TerminalApp::implementation
             auto debugContent{ winrt::make<TerminalPaneContent>(profile, _terminalSettingsCache, newControl) };
             auto debugPane = std::make_shared<Pane>(debugContent);
 
-            // Since we're doing this split directly on the pane (instead of going through TerminalTab,
+            // Since we're doing this split directly on the pane (instead of going through Tab,
             // we need to handle the panes 'active' states
 
             // Set the pane we're splitting to active (otherwise Split will not do anything)
@@ -3347,7 +3344,7 @@ namespace winrt::TerminalApp::implementation
     // NOTE: callers of _MakePane should be able to accept nullptr as a return
     // value gracefully.
     std::shared_ptr<Pane> TerminalPage::_MakePane(const INewContentArgs& contentArgs,
-                                                  const winrt::TerminalApp::TabBase& sourceTab,
+                                                  const winrt::TerminalApp::Tab& sourceTab,
                                                   TerminalConnection::ITerminalConnection existingConnection)
 
     {
@@ -3383,7 +3380,7 @@ namespace winrt::TerminalApp::implementation
             // Look at the focused tab, and if it already has one, then just focus it.
             if (const auto& focusedTab{ _GetFocusedTab() })
             {
-                const auto rootPane{ focusedTab.try_as<TerminalTab>()->GetRootPane() };
+                const auto rootPane{ focusedTab->GetRootPane() };
                 const bool found = rootPane == nullptr ? false : rootPane->WalkTree([](const auto& p) -> bool {
                     if (const auto& snippets{ p->GetContent().try_as<SnippetsPaneContent>() })
                     {
@@ -3553,7 +3550,7 @@ namespace winrt::TerminalApp::implementation
                 terminalTab->UpdateTitle();
             }
 
-            auto tabImpl{ winrt::get_self<TabBase>(tab) };
+            auto tabImpl{ winrt::get_self<Tab>(tab) };
             tabImpl->SetActionMap(_settings.ActionMap());
         }
 
@@ -3737,7 +3734,7 @@ namespace winrt::TerminalApp::implementation
     // - tab: the tab where the search box should be created
     // Return Value:
     // - <none>
-    void TerminalPage::_Find(const TerminalTab& tab)
+    void TerminalPage::_Find(const Tab& tab)
     {
         if (const auto& control{ tab.GetActiveTerminalControl() })
         {
@@ -3855,7 +3852,7 @@ namespace winrt::TerminalApp::implementation
         _newTabButton.Background(backgroundBrush);
         _newTabButton.Foreground(foregroundBrush);
 
-        // This is just like what we do in TabBase::_RefreshVisualState. We need
+        // This is just like what we do in Tab::_RefreshVisualState. We need
         // to manually toggle the visual state, so the setters in the visual
         // state group will re-apply, and set our currently selected colors in
         // the resources.
@@ -4106,25 +4103,18 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Returns a com_ptr to the implementation type of the given tab if it's a TerminalTab.
+    // - Returns a com_ptr to the implementation type of the given tab if it's a Tab.
     //   If the tab is not a TerminalTab, returns nullptr.
     // Arguments:
     // - tab: the projected type of a Tab
     // Return Value:
     // - If the tab is a TerminalTab, a com_ptr to the implementation type.
     //   If the tab is not a TerminalTab, nullptr
-    winrt::com_ptr<TerminalTab> TerminalPage::_GetTerminalTabImpl(const TerminalApp::TabBase& tab)
+    winrt::com_ptr<Tab> TerminalPage::_GetTerminalTabImpl(const TerminalApp::Tab& tab)
     {
-        if (auto terminalTab = tab.try_as<TerminalApp::TerminalTab>())
-        {
-            winrt::com_ptr<TerminalTab> tabImpl;
-            tabImpl.copy_from(winrt::get_self<TerminalTab>(terminalTab));
-            return tabImpl;
-        }
-        else
-        {
-            return nullptr;
-        }
+        winrt::com_ptr<Tab> tabImpl;
+        tabImpl.copy_from(winrt::get_self<Tab>(terminalTab));
+        return tabImpl;
     }
 
     // Method Description:
@@ -4675,7 +4665,7 @@ namespace winrt::TerminalApp::implementation
         }
 
         // Second: Update the colors of our individual TabViewItems. This
-        // applies tab.background to the tabs via TerminalTab::ThemeColor.
+        // applies tab.background to the tabs via Tab::ThemeColor.
         //
         // Do this second, so that we already know the bgColor of the titlebar.
         {
@@ -4683,8 +4673,8 @@ namespace winrt::TerminalApp::implementation
             const auto tabUnfocusedBackground = theme.Tab() ? theme.Tab().UnfocusedBackground() : nullptr;
             for (const auto& tab : _tabs)
             {
-                winrt::com_ptr<TabBase> tabImpl;
-                tabImpl.copy_from(winrt::get_self<TabBase>(tab));
+                winrt::com_ptr<Tab> tabImpl;
+                tabImpl.copy_from(winrt::get_self<Tab>(tab));
                 tabImpl->ThemeColor(tabBackground, tabUnfocusedBackground, bgColor);
             }
         }
@@ -5153,8 +5143,8 @@ namespace winrt::TerminalApp::implementation
         // Get the tab impl from this event.
         const auto eventTab = e.Tab();
         const auto tabBase = _GetTabByTabViewItem(eventTab);
-        winrt::com_ptr<TabBase> tabImpl;
-        tabImpl.copy_from(winrt::get_self<TabBase>(tabBase));
+        winrt::com_ptr<Tab> tabImpl;
+        tabImpl.copy_from(winrt::get_self<Tab>(tabBase));
         if (tabImpl)
         {
             // First: stash the tab we started dragging.

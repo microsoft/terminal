@@ -4,7 +4,7 @@ import "ShortcutActionDispatch.idl";
 
 namespace TerminalApp
 {
-    unsealed runtimeclass TabBase : Windows.UI.Xaml.Data.INotifyPropertyChanged
+    runtimeclass Tab : Windows.UI.Xaml.Data.INotifyPropertyChanged
     {
         String Title { get; };
         String Icon { get; };
@@ -13,6 +13,9 @@ namespace TerminalApp
 
         Microsoft.UI.Xaml.Controls.TabViewItem TabViewItem { get; };
         Windows.UI.Xaml.FrameworkElement Content { get; };
+
+        // May be Null
+        TerminalTabStatus TabStatus { get; };
 
         UInt32 TabViewIndex;
         UInt32 TabViewNumTabs;

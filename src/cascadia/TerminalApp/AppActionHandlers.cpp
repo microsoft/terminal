@@ -41,14 +41,11 @@ namespace winrt::TerminalApp::implementation
         }
         return _GetActiveControl();
     }
-    winrt::com_ptr<TerminalTab> TerminalPage::_senderOrFocusedTab(const IInspectable& sender)
+    winrt::com_ptr<Tab> TerminalPage::_senderOrFocusedTab(const IInspectable& sender)
     {
         if (sender)
         {
-            if (auto tab{ sender.try_as<TerminalApp::TerminalTab>() })
-            {
-                return _GetTerminalTabImpl(tab);
-            }
+            return _GetTerminalTabImpl(tab);
         }
         return _GetFocusedTabImpl();
     }
@@ -783,7 +780,7 @@ namespace winrt::TerminalApp::implementation
             }
 
             // Since _RemoveTabs is asynchronous, create a snapshot of the  tabs we want to remove
-            std::vector<winrt::TerminalApp::TabBase> tabsToRemove;
+            std::vector<winrt::TerminalApp::Tab> tabsToRemove;
             if (index > 0)
             {
                 std::copy(begin(_tabs), begin(_tabs) + index, std::back_inserter(tabsToRemove));
@@ -822,7 +819,7 @@ namespace winrt::TerminalApp::implementation
             }
 
             // Since _RemoveTabs is asynchronous, create a snapshot of the  tabs we want to remove
-            std::vector<winrt::TerminalApp::TabBase> tabsToRemove;
+            std::vector<winrt::TerminalApp::Tab> tabsToRemove;
             std::copy(begin(_tabs) + index + 1, end(_tabs), std::back_inserter(tabsToRemove));
             _RemoveTabs(tabsToRemove);
 
@@ -1559,7 +1556,8 @@ namespace winrt::TerminalApp::implementation
             activeTab->ToggleBroadcastInput();
             args.Handled(true);
         }
-        // If the focused tab wasn't a TerminalTab, then leave handled=false
+        // TODO(DH)
+        // If the focused tab wasn't a Tab, then leave handled=false
     }
 
     void TerminalPage::_HandleRestartConnection(const IInspectable& sender,
