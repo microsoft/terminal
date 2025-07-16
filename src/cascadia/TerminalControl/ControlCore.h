@@ -24,6 +24,7 @@
 #include "../../buffer/out/search.h"
 #include "../../cascadia/TerminalCore/Terminal.hpp"
 #include "../../renderer/inc/FontInfoDesired.hpp"
+#include "../../terminal/adapter/ITermDispatch.hpp"
 
 namespace Microsoft::Console::Render::Atlas
 {
@@ -40,6 +41,8 @@ namespace ControlUnitTests
     class ControlCoreTests;
     class ControlInteractivityTests;
 };
+
+using Microsoft::Console::VirtualTerminal::ITermDispatch;
 
 #define RUNTIME_SETTING(type, name, setting)                 \
 private:                                                     \
@@ -123,6 +126,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         til::color BackgroundColor() const;
 
         void SendInput(std::wstring_view wstr);
+        void SendOutput(std::wstring_view wstr);
         void PasteText(const winrt::hstring& hstr);
         bool CopySelectionToClipboard(bool singleLine, bool withControlSequences, const Windows::Foundation::IReference<CopyFormat>& formats);
         void SelectAll();
@@ -172,6 +176,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         int ScrollOffset();
         int ViewHeight() const;
+        int ViewWidth() const;
         int BufferHeight() const;
 
         bool HasSelection() const;
@@ -267,6 +272,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         bool ShouldShowSelectOutput();
 
         void PreviewInput(std::wstring_view input);
+        void SetTmuxControlHandlerProducer(ITermDispatch::StringHandlerProducer producer);
 
         RUNTIME_SETTING(float, Opacity, _settings->Opacity());
         RUNTIME_SETTING(float, FocusedOpacity, FocusedAppearance().Opacity());
@@ -452,6 +458,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         friend class ControlUnitTests::ControlInteractivityTests;
         bool _inUnitTests{ false };
     };
+
 }
 
 namespace winrt::Microsoft::Terminal::Control::factory_implementation

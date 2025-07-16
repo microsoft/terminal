@@ -241,6 +241,12 @@ void Terminal::SetOptionalFeatures(winrt::Microsoft::Terminal::Core::ICoreSettin
     engine.Dispatch().SetOptionalFeatures(features);
 }
 
+void Terminal::SetTmuxControlHandlerProducer(ITermDispatch::StringHandlerProducer producer) const noexcept
+{
+    auto& engine = reinterpret_cast<OutputStateMachineEngine&>(_stateMachine->Engine());
+    engine.Dispatch().SetTmuxControlHandlerProducer(producer);
+}
+
 bool Terminal::IsXtermBracketedPasteModeEnabled() const noexcept
 {
     return _systemMode.test(Mode::BracketedPaste);
