@@ -1467,7 +1467,6 @@ namespace winrt::TerminalApp::implementation
         {
             target = SettingsTarget::DefaultsFile;
         }
-        _LaunchSettings(target);
 
         const auto targetAsString = [&target]() {
             switch (target)
@@ -1485,11 +1484,13 @@ namespace winrt::TerminalApp::implementation
             g_hTerminalAppProvider,
             "NewTabMenuItemClicked",
             TraceLoggingDescription("Event emitted when an item from the new tab menu is invoked"),
-            TraceLoggingValue(NumberOfTabs(), "NewTabCount", "The count of tabs currently opened in this window"),
+            TraceLoggingValue(NumberOfTabs(), "TabCount", "The count of tabs currently opened in this window"),
             TraceLoggingValue("Settings", "ItemType", "The type of item that was clicked in the new tab menu"),
             TraceLoggingValue(targetAsString, "SettingsTarget", "The target settings file or UI"),
             TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
             TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
+
+        _LaunchSettings(target);
     }
 
     // Method Description:
