@@ -488,7 +488,7 @@ void CascadiaSettings::_validateAllSchemesExist()
     }
 }
 
-static bool _validateSingleMediaResource(std::wstring_view resource)
+static std::optional<winrt::hstring> _validateAndExpandSingleMediaResource(std::wstring_view basePath, std::wstring_view resource)
 {
     // URI
     try
@@ -496,17 +496,20 @@ static bool _validateSingleMediaResource(std::wstring_view resource)
         winrt::Windows::Foundation::Uri resourceUri{ resource };
         if (!resourceUri)
         {
-            return false;
+            return std::nullopt;
         }
 
         if constexpr (Feature_DisableWebSourceIcons::IsEnabled())
         {
             const auto scheme{ resourceUri.SchemeName() };
             // Only file: URIs and ms-* URIs are permissible. http, https, ftp, gopher, etc. are not.
-            return til::equals_insensitive_ascii(scheme, L"file") || til::starts_with_insensitive_ascii(scheme, L"ms-");
+            if (!til::equals_insensitive_ascii(scheme, L"file") && !til::starts_with_insensitive_ascii(scheme, L"ms-"))
+            {
+                return std::nullopt;
+            }
         }
 
-        return true;
+        return winrt::hstring{ resource };
     }
     catch (...)
     {
@@ -517,13 +520,22 @@ static bool _validateSingleMediaResource(std::wstring_view resource)
     try
     {
         std::filesystem::path resourcePath{ resource };
-        return std::filesystem::exists(resourcePath);
+        if (!basePath.empty())
+        {
+            resourcePath = std::filesystem::path{ basePath } / resourcePath;
+        }
+
+        if (std::filesystem::exists(resourcePath))
+        {
+            return winrt::hstring{ resourcePath.native() };
+        }
+        return std::nullopt;
     }
     catch (...)
     {
         // fall through
     }
-    return false;
+    return std::nullopt;
 }
 
 // Method Description:
@@ -546,7 +558,7 @@ void CascadiaSettings::_validateMediaResources()
     {
         if (const auto path = profile.DefaultAppearance().ExpandedBackgroundImagePath(); !path.empty())
         {
-            if (!_validateSingleMediaResource(path))
+            if (!_validateAndExpandSingleMediaResource({}, path))
             {
                 if (profile.DefaultAppearance().HasBackgroundImagePath())
                 {
@@ -566,7 +578,7 @@ void CascadiaSettings::_validateMediaResources()
         {
             if (const auto path = profile.UnfocusedAppearance().ExpandedBackgroundImagePath(); !path.empty())
             {
-                if (!_validateSingleMediaResource(path))
+                if (!_validateAndExpandSingleMediaResource({}, path))
                 {
                     if (profile.UnfocusedAppearance().HasBackgroundImagePath())
                     {
@@ -592,8 +604,19 @@ void CascadiaSettings::_validateMediaResources()
         static constexpr std::wstring_view HideIconValue{ L"none" };
         if (const auto icon = profile.Icon(); icon.size() > 2 && icon != HideIconValue)
         {
+            auto profileLayerProvidingIconPath{ winrt::get_self<implementation::Profile>(profile) };
+            if (!profile.HasIcon())
+            {
+                // If the profile didn't specify its own icon, go delving to figure out who did
+                if (const auto iconSource{ profile.IconOverrideSource() })
+                {
+                    profileLayerProvidingIconPath = winrt::get_self<implementation::Profile>(iconSource);
+                }
+            }
+            std::wstring_view sourceBasePath{ profileLayerProvidingIconPath->SourceBasePath };
+
             const auto iconPath{ wil::ExpandEnvironmentStringsW<std::wstring>(icon.c_str()) };
-            if (!_validateSingleMediaResource(iconPath))
+            if (const auto expandedResourcePath{ _validateAndExpandSingleMediaResource(sourceBasePath, iconPath) }; !expandedResourcePath)
             {
                 if (profile.HasIcon())
                 {
@@ -604,6 +627,12 @@ void CascadiaSettings::_validateMediaResources()
                 {
                     profile.Icon({});
                 }
+            }
+            else
+            {
+                auto profileImpl{ winrt::get_self<implementation::Profile>(profile) };
+                // We did the work so Profile doesn't have to
+                profileImpl->SetEvaluatedIcon(*expandedResourcePath);
             }
         }
     }

@@ -113,6 +113,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         // As a result, we can't use the INHERITABLE_SETTING macro for Icon,
         //   as we manually have to set/unset _evaluatedIcon when Icon changes.
         winrt::hstring EvaluatedIcon();
+        void SetEvaluatedIcon(const winrt::hstring&);
         hstring Icon() const;
         void Icon(const hstring& value);
         bool HasIcon() const;
@@ -134,6 +135,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         INHERITABLE_SETTING(Model::Profile, bool, Hidden, false);
         INHERITABLE_SETTING(Model::Profile, guid, Guid, _GenerateGuidForProfile(Name(), Source()));
         INHERITABLE_SETTING(Model::Profile, hstring, Padding, DEFAULT_PADDING);
+
+        winrt::hstring SourceBasePath;
 
     public:
 #define PROFILE_SETTINGS_INITIALIZE(type, name, jsonKey, ...) \

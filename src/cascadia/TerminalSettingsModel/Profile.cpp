@@ -113,6 +113,7 @@ winrt::com_ptr<Profile> Profile::CopySettings() const
     profile->_TabColor = _TabColor;
     profile->_Padding = _Padding;
     profile->_Icon = _Icon;
+    profile->_evaluatedIcon = _evaluatedIcon; // If somebody did us the favor of pre-evaluating our icon, don't do it again.
 
     profile->_Origin = _Origin;
     profile->_FontInfo = *fontInfo;
@@ -196,6 +197,7 @@ void Profile::LayerJson(const Json::Value& json)
     _logSettingIfSet(HiddenKey, _Hidden.has_value());
 
     JsonUtils::GetValueForKey(json, IconKey, _Icon);
+    JsonUtils::GetValueForKey(json, "icon2", _Icon);
     _logSettingIfSet(IconKey, _Icon.has_value());
 
     // Padding was never specified as an integer, but it was a common working mistake.
@@ -402,6 +404,10 @@ winrt::hstring Profile::EvaluatedIcon()
         _evaluatedIcon = _evaluateIcon();
     }
     return *_evaluatedIcon;
+}
+
+void Profile::SetEvaluatedIcon(const winrt::hstring& icon) {
+    _evaluatedIcon.emplace(icon);
 }
 
 winrt::hstring Profile::_evaluateIcon() const
