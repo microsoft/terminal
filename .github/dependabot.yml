@@ -1,0 +1,12 @@
+version: 2
+enable-beta-ecosystems: true
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: weekly
+
+  - package-ecosystem: "vcpkg"
+    directory: "/"
+    schedule:
+      interval: weekly
