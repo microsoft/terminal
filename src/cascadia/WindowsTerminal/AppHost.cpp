@@ -295,7 +295,7 @@ void AppHost::Initialize()
             _window->ShowWindowChanged(show);
         });
 
-    _window->UpdateTitle(_windowLogic.Title());
+    _SetDefaultWindowTitle();
 
     // Set up the content of the application. If the app has a custom titlebar,
     // set that content as well.
@@ -388,6 +388,11 @@ void AppHost::_revokeWindowCallbacks()
     _window->DragRegionClicked(_windowCallbacks.DragRegionClicked);
     _window->WindowVisibilityChanged(_windowCallbacks.WindowVisibilityChanged);
     _window->MaximizeChanged(_windowCallbacks.MaximizeChanged);
+}
+
+void AppHost::_SetDefaultWindowTitle()
+{
+    _window->UpdateTitle(_windowLogic.Title());
 }
 
 // Method Description:
@@ -982,6 +987,16 @@ void AppHost::_updateTheme()
     }
 }
 
+void AppHost::_updateWindowTitleIfNeeded()
+{
+    const auto& shouldBeDefaultTitle = !_appLogic.Settings().GlobalSettings().ShowTitleInTitlebar();
+    const auto& windowTitleIsNotDefaultApplicationTitle = [this]() { return _window->GetTitle() != _windowLogic.Title(); };
+    if (shouldBeDefaultTitle && windowTitleIsNotDefaultApplicationTitle())
+    {
+        _SetDefaultWindowTitle();
+    }
+}
+
 void AppHost::_startFrameTimer()
 {
     // Instantiate the frame color timer, if we haven't already. We'll only ever
@@ -1028,6 +1043,7 @@ void AppHost::_HandleSettingsChanged(const winrt::Windows::Foundation::IInspecta
     _window->SetAutoHideWindow(_windowLogic.AutoHideWindow());
     _window->SetShowTabsFullscreen(_windowLogic.ShowTabsFullscreen());
     _updateTheme();
+    _updateWindowTitleIfNeeded();
 }
 
 void AppHost::_IsQuakeWindowChanged(const winrt::Windows::Foundation::IInspectable&,

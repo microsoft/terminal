@@ -177,6 +177,11 @@ public:
         PostMessageW(_window.get(), CM_UPDATE_TITLE, 0, reinterpret_cast<LPARAM>(nullptr));
     }
 
+    std::wstring_view GetTitle() const noexcept
+    {
+        return _title;
+    }
+
     // Method Description:
     // Reset the current dpi of the window. This method is only called after we change the
     // initial launch position. This makes sure the dpi is consistent with the monitor on which
