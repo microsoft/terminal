@@ -1255,7 +1255,7 @@ namespace winrt::TerminalApp::implementation
 
         TraceLoggingWrite(
             g_hTerminalAppProvider,
-            "NewTabMenuOpenedNewTerminalSession",
+            "NewTabMenuCreatedNewTerminalSession",
             TraceLoggingDescription("Event emitted when a new terminal was created via the new tab menu"),
             TraceLoggingValue(NumberOfTabs(), "NewTabCount", "The count of tabs currently opened in this window"),
             TraceLoggingValue(sessionType.c_str(), "SessionType", "The type of session that was created"),
