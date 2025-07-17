@@ -26,16 +26,7 @@
     <ClCompile Include="FilteredCommand.cpp">
       <Filter>commandPalette</Filter>
     </ClCompile>
-    <ClCompile Include="ActionPaletteItem.cpp">
-      <Filter>commandPalette</Filter>
-    </ClCompile>
-    <ClCompile Include="PaletteItem.cpp">
-      <Filter>commandPalette</Filter>
-    </ClCompile>
-    <ClCompile Include="TabPaletteItem.cpp">
-      <Filter>commandPalette</Filter>
-    </ClCompile>
-    <ClCompile Include="CommandLinePaletteItem.cpp">
+    <ClCompile Include="CommandPaletteItems.cpp">
       <Filter>commandPalette</Filter>
     </ClCompile>
     <ClCompile Include="fzf/fzf.cpp">
@@ -62,16 +53,10 @@
     <ClInclude Include="FilteredCommand.h">
       <Filter>commandPalette</Filter>
     </ClInclude>
-    <ClInclude Include="ActionPaletteItem.h">
+    <ClInclude Include="CommandPaletteItems.h">
       <Filter>commandPalette</Filter>
     </ClInclude>
-    <ClInclude Include="PaletteItem.h">
-      <Filter>commandPalette</Filter>
-    </ClInclude>
-    <ClInclude Include="TabPaletteItem.h">
-      <Filter>commandPalette</Filter>
-    </ClInclude>
-    <ClInclude Include="CommandLinePaletteItem.h">
+    <ClInclude Include="BasePaletteItem.h">
       <Filter>commandPalette</Filter>
     </ClInclude>
     <ClInclude Include="fzf/fzf.h">
@@ -135,16 +120,7 @@
     <Page Include="CommandPalette.xaml">
       <Filter>commandPalette</Filter>
     </Page>
-    <Midl Include="PaletteItem.idl">
-      <Filter>commandPalette</Filter>
-    </Midl>
-    <Midl Include="TabPaletteItem.idl">
-      <Filter>commandPalette</Filter>
-    </Midl>
-    <Midl Include="ActionPaletteItem.idl">
-      <Filter>commandPalette</Filter>
-    </Midl>
-    <Midl Include="CommandLinePaletteItem.idl">
+    <Midl Include="IPaletteItem.idl">
       <Filter>commandPalette</Filter>
     </Midl>
     <Page Include="HighlightedTextControlStyle.xaml">

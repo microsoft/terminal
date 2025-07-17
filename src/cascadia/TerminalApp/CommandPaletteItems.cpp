@@ -2,11 +2,11 @@
 // Licensed under the MIT license.
 
 #include "pch.h"
-#include "TabPaletteItem.h"
 #include "TerminalTab.h"
+
 #include <LibraryResources.h>
 
-#include "TabPaletteItem.g.cpp"
+#include "CommandPaletteItems.h"
 
 using namespace winrt;
 using namespace winrt::TerminalApp;
@@ -20,25 +20,20 @@ using namespace winrt::Microsoft::Terminal::Settings::Model;
 namespace winrt::TerminalApp::implementation
 {
     TabPaletteItem::TabPaletteItem(const winrt::TerminalApp::TabBase& tab) :
-        _tab(tab)
+        _tab{ tab }
     {
-        Name(tab.Title());
-        Icon(tab.Icon());
-
-        _tabChangedRevoker = tab.PropertyChanged(winrt::auto_revoke, [weakThis{ get_weak() }](auto& sender, auto& e) {
-            auto item{ weakThis.get() };
-            auto senderTab{ sender.try_as<winrt::TerminalApp::TabBase>() };
-
-            if (item && senderTab)
+        _tabChangedRevoker = tab.PropertyChanged(winrt::auto_revoke, [=](auto& sender, auto& e) {
+            if (auto senderTab{ sender.try_as<winrt::TerminalApp::TabBase>() })
             {
                 auto changedProperty = e.PropertyName();
                 if (changedProperty == L"Title")
                 {
-                    item->Name(senderTab.Title());
+                    BaseRaisePropertyChanged(L"Name");
                 }
                 else if (changedProperty == L"Icon")
                 {
-                    item->Icon(senderTab.Icon());
+                    BaseRaisePropertyChanged(L"Icon");
+                    InvalidateResolvedIcon();
                 }
             }
         });
@@ -46,15 +41,11 @@ namespace winrt::TerminalApp::implementation
         if (const auto terminalTab{ tab.try_as<winrt::TerminalApp::TerminalTab>() })
         {
             const auto status = terminalTab.TabStatus();
-            TabStatus(status);
 
-            _tabStatusChangedRevoker = status.PropertyChanged(winrt::auto_revoke, [weakThis{ get_weak() }](auto& /*sender*/, auto& /*e*/) {
+            _tabStatusChangedRevoker = status.PropertyChanged(winrt::auto_revoke, [=](auto& /*sender*/, auto& /*e*/) {
                 // Sometimes nested bindings do not get updated,
                 // thus let's notify property changed on TabStatus when one of its properties changes
-                if (auto item{ weakThis.get() })
-                {
-                    item->PropertyChanged.raise(*item, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"TabStatus" });
-                }
+                BaseRaisePropertyChanged(L"TabStatus");
             });
         }
     }
