@@ -197,4 +197,15 @@
         <alwaysDisabledReleaseTokens/>
     </feature>
 
+    <feature>
+        <name>Feature_DisableWebSourceIcons</name>
+        <description>Disables icon paths that make web requests</description>
+        <id>19075</id>
+        <stage>AlwaysDisabled</stage>
+        <alwaysEnabledBrandingTokens>
+            <brandingToken>Dev</brandingToken>
+            <brandingToken>Canary</brandingToken>
+        </alwaysEnabledBrandingTokens>
+    </feature>
+
 </featureStaging>

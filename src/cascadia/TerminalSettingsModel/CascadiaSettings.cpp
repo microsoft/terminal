@@ -483,9 +483,14 @@ static bool _validateSingleMediaResource(std::wstring_view resource)
             return false;
         }
 
-        const auto scheme{ resourceUri.SchemeName() };
-        // Only file: URIs and ms-* URIs are permissible. http, https, ftp, gopher, etc. are not.
-        return til::equals_insensitive_ascii(scheme, L"file") || til::starts_with_insensitive_ascii(scheme, L"ms-");
+        if constexpr (Feature_DisableWebSourceIcons::IsEnabled())
+        {
+            const auto scheme{ resourceUri.SchemeName() };
+            // Only file: URIs and ms-* URIs are permissible. http, https, ftp, gopher, etc. are not.
+            return til::equals_insensitive_ascii(scheme, L"file") || til::starts_with_insensitive_ascii(scheme, L"ms-");
+        }
+
+        return true;
     }
     catch (...)
     {
