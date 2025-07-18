@@ -41,6 +41,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         vmImpl->ExtensionPackageIdentifierTemplateSelector(_extensionPackageIdentifierTemplateSelector);
         vmImpl->LazyLoadExtensions();
         vmImpl->MarkAsVisited();
+
+        TraceLoggingWrite(
+            g_hTerminalSettingsEditorProvider,
+            "NavigatedToPage",
+            TraceLoggingDescription("Event emitted when the user navigates to a page in the settings UI"),
+            TraceLoggingValue(ExtensionPageId.data(), "PageId", "The identifier of the page that was navigated to"),
+            TraceLoggingValue(_ViewModel.IsExtensionView(), "IsExtensionView", "If the page is representing a view of an extension. Otherwise, it represents a view of the root, which lists all extensions."),
+            TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+            TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
     }
 
     void Extensions::ExtensionNavigator_Click(const IInspectable& sender, const RoutedEventArgs& /*args*/)

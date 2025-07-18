@@ -25,6 +25,14 @@
 #include <LibraryResources.h>
 #include <dwmapi.h>
 
+// Note: Generate GUID using TlgGuid.exe tool
+TRACELOGGING_DEFINE_PROVIDER(
+    g_hTerminalSettingsEditorProvider,
+    "Microsoft.Windows.Terminal.Settings.Editor",
+    // {1b16317d-b594-51f8-c552-5d50572b5efc}
+    (0x1b16317d, 0xb594, 0x51f8, 0xc5, 0x52, 0x5d, 0x50, 0x57, 0x2b, 0x5e, 0xfc),
+    TraceLoggingOptionMicrosoftTelemetry());
+
 namespace winrt
 {
     namespace MUX = Microsoft::UI::Xaml;
@@ -374,6 +382,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                     const auto altPressed = WI_IsFlagSet(lAltState, CoreVirtualKeyStates::Down) ||
                                             WI_IsFlagSet(rAltState, CoreVirtualKeyStates::Down);
                     const auto target = altPressed ? SettingsTarget::DefaultsFile : SettingsTarget::SettingsFile;
+
+                    TraceLoggingWrite(
+                        g_hTerminalSettingsEditorProvider,
+                        "OpenJson",
+                        TraceLoggingDescription("Event emitted when the user clicks the Open JSON button in the settings UI"),
+                        TraceLoggingValue(target == SettingsTarget::DefaultsFile ? "DefaultsFile" : "SettingsFile", "SettingsTarget", "The target settings file"),
+                        TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+                        TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
+
                     OpenJson.raise(nullptr, target);
                     return;
                 }

@@ -15,6 +15,8 @@ using namespace winrt::Windows::UI::Xaml::Navigation;
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
+    static constexpr std::wstring_view ProfilesBasePageId{ L"page.profile" };
+
     Profiles_Base::Profiles_Base()
     {
         InitializeComponent();
@@ -55,6 +57,18 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 _Profile.FocusDeleteButton(false);
             }
         });
+
+        TraceLoggingWrite(
+            g_hTerminalSettingsEditorProvider,
+            "NavigatedToPage",
+            TraceLoggingDescription("Event emitted when the user navigates to a page in the settings UI"),
+            TraceLoggingValue(ProfilesBasePageId.data(), "PageId", "The identifier of the page that was navigated to"),
+            TraceLoggingValue(_Profile.IsBaseLayer(), "IsProfileDefaults", "If the modified profile is the profile.defaults object"),
+            TraceLoggingValue(to_hstring(_Profile.Guid()).c_str(), "ProfileGuid", "The guid of the profile that was navigated to"),
+            TraceLoggingValue(_Profile.Source().c_str(), "ProfileSource", "The source of the profile that was navigated to"),
+            TraceLoggingValue(false, "Orphaned", "Tracks if the profile was orphaned"),
+            TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+            TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
     }
 
     void Profiles_Base::OnNavigatedFrom(const NavigationEventArgs& /*e*/)
@@ -79,6 +93,16 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void Profiles_Base::DeleteConfirmation_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
     {
+        TraceLoggingWrite(
+            g_hTerminalSettingsEditorProvider,
+            "DeleteProfile",
+            TraceLoggingDescription("Event emitted when the user deletes a profile"),
+            TraceLoggingValue(to_hstring(_Profile.Guid()).c_str(), "ProfileGuid", "The guid of the profile that was navigated to"),
+            TraceLoggingValue(_Profile.Source().c_str(), "ProfileSource", "The source of the profile that was navigated to"),
+            TraceLoggingValue(false, "Orphaned", "Tracks if the profile was orphaned"),
+            TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+            TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
+
         winrt::get_self<ProfileViewModel>(_Profile)->DeleteProfile();
     }
 

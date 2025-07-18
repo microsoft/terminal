@@ -17,6 +17,8 @@ using namespace winrt::Windows::Foundation::Collections;
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
+    static constexpr std::wstring_view GlobalAppearancePageId{ L"page.globalAppearance" };
+
     GlobalAppearance::GlobalAppearance()
     {
         InitializeComponent();
@@ -25,5 +27,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     void GlobalAppearance::OnNavigatedTo(const NavigationEventArgs& e)
     {
         _ViewModel = e.Parameter().as<Editor::GlobalAppearanceViewModel>();
+
+        TraceLoggingWrite(
+            g_hTerminalSettingsEditorProvider,
+            "NavigatedToPage",
+            TraceLoggingDescription("Event emitted when the user navigates to a page in the settings UI"),
+            TraceLoggingValue(GlobalAppearancePageId.data(), "PageId", "The identifier of the page that was navigated to"),
+            TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+            TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
     }
 }

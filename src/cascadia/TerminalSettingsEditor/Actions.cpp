@@ -12,6 +12,8 @@ using namespace winrt::Windows::UI::Xaml::Navigation;
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
+    static constexpr std::wstring_view ActionsPageId{ L"page.actions" };
+
     Actions::Actions()
     {
         InitializeComponent();
@@ -66,6 +68,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 }
             }
         });
+
+        TraceLoggingWrite(
+            g_hTerminalSettingsEditorProvider,
+            "NavigatedToPage",
+            TraceLoggingDescription("Event emitted when the user navigates to a page in the settings UI"),
+            TraceLoggingValue(ActionsPageId.data(), "PageId", "The identifier of the page that was navigated to"),
+            TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+            TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
     }
 
     void Actions::AddNew_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*eventArgs*/)

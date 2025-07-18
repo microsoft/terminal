@@ -18,6 +18,8 @@ using namespace winrt::Microsoft::Terminal::Settings::Model;
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
+    static constexpr std::wstring_view AddProfilePageId{ L"page.addProfile" };
+
     AddProfile::AddProfile()
     {
         InitializeComponent();
@@ -29,11 +31,27 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     void AddProfile::OnNavigatedTo(const NavigationEventArgs& e)
     {
         _State = e.Parameter().as<Editor::AddProfilePageNavigationState>();
+
+        TraceLoggingWrite(
+            g_hTerminalSettingsEditorProvider,
+            "NavigatedToPage",
+            TraceLoggingDescription("Event emitted when the user navigates to a page in the settings UI"),
+            TraceLoggingValue(AddProfilePageId.data(), "PageId", "The identifier of the page that was navigated to"),
+            TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+            TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
     }
 
     void AddProfile::AddNewClick(const IInspectable& /*sender*/,
                                  const Windows::UI::Xaml::RoutedEventArgs& /*eventArgs*/)
     {
+        TraceLoggingWrite(
+            g_hTerminalSettingsEditorProvider,
+            "AddNewProfile",
+            TraceLoggingDescription("Event emitted when the user adds a new profile"),
+            TraceLoggingValue("EmptyProfile", "Type", "The type of the creation method (i.e. empty profile, duplicate)"),
+            TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+            TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
+
         _State.RequestAddNew();
     }
 
@@ -42,7 +60,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         if (const auto selected = Profiles().SelectedItem())
         {
-            _State.RequestDuplicate(selected.try_as<Model::Profile>().Guid());
+            const auto profileGuid = selected.as<Model::Profile>().Guid();
+            TraceLoggingWrite(
+                g_hTerminalSettingsEditorProvider,
+                "AddNewProfile",
+                TraceLoggingDescription("Event emitted when the user adds a new profile"),
+                TraceLoggingValue("Duplicate", "Type", "The type of the creation method (i.e. empty profile, duplicate)"),
+                TraceLoggingValue(to_hstring(profileGuid).c_str(), "SourceGuid", "The guid of the profile that was copied"),
+                TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+                TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
+
+            _State.RequestDuplicate(profileGuid);
         }
     }
 
