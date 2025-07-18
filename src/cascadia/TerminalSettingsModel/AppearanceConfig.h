@@ -20,11 +20,12 @@ Author(s):
 #include "JsonUtils.h"
 #include "IInheritable.h"
 #include "MTSMSettings.h"
+#include "MediaResourceSupport.h"
 #include <DefaultSettings.h>
 
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
-    struct AppearanceConfig : AppearanceConfigT<AppearanceConfig>, IInheritable<AppearanceConfig>
+    struct AppearanceConfig : AppearanceConfigT<AppearanceConfig, IMediaResourceContainer>, IInheritable<AppearanceConfig>
     {
     public:
         AppearanceConfig(winrt::weak_ref<Profile> sourceProfile);

@@ -2,10 +2,9 @@
 // Licensed under the MIT license.
 
 import "IAppearanceConfig.idl";
-import "ISettingsModelObject.idl";
 
 namespace Microsoft.Terminal.Settings.Model
 {
-    runtimeclass AppearanceConfig : [default] IAppearanceConfig, IMediaResourceContainer {
+    runtimeclass AppearanceConfig : [default] IAppearanceConfig {
     }
 }

@@ -50,6 +50,7 @@ Author(s):
 
 #include "JsonUtils.h"
 #include <DefaultSettings.h>
+#include "MediaResourceSupport.h"
 #include "AppearanceConfig.h"
 #include "FontConfig.h"
 
@@ -75,7 +76,7 @@ constexpr GUID RUNTIME_GENERATED_PROFILE_NAMESPACE_GUID = { 0xf65ddb7e, 0x706b, 
 
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
-    struct Profile : ProfileT<Profile>, IInheritable<Profile>
+    struct Profile : ProfileT<Profile, IMediaResourceContainer>, IInheritable<Profile>
     {
     public:
         Profile() noexcept = default;

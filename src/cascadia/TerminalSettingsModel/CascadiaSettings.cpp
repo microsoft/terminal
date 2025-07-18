@@ -554,25 +554,24 @@ void CascadiaSettings::_validateMediaResources()
     auto warnInvalidBackground{ false };
     auto warnInvalidIcon{ false };
 
-        winrt::Microsoft::Terminal::Settings::Model::MediaResourceResolver mediaResourceResolver{
-            [=](auto&& basePath, auto&& resource) {
-                winrt::hstring mediaResourceExpanded{ wil::ExpandEnvironmentStringsW<std::wstring>(resource.Path().data()) };
-                OutputDebugStringW(fmt::format(FMT_COMPILE(L"** RESOLVING MEDIA PATH - Base '{}', Value '{}'\n"), basePath, mediaResourceExpanded).c_str());
-                if (auto newRes = _validateAndExpandSingleMediaResource(basePath, mediaResourceExpanded))
-                {
-                    resource.Set(*newRes);
-                }
-                else
-                {
-                    resource.Reject();
-                }
+    winrt::Microsoft::Terminal::Settings::Model::MediaResourceResolver mediaResourceResolver{
+        [=](auto&& basePath, auto&& resource) {
+            winrt::hstring mediaResourceExpanded{ wil::ExpandEnvironmentStringsW<std::wstring>(resource.Path().data()) };
+            OutputDebugStringW(fmt::format(FMT_COMPILE(L"** RESOLVING MEDIA PATH - Base '{}', Value '{}'\n"), basePath, mediaResourceExpanded).c_str());
+            if (auto newRes = _validateAndExpandSingleMediaResource(basePath, mediaResourceExpanded))
+            {
+                resource.Set(*newRes);
             }
-        };
+            else
+            {
+                resource.Reject();
+            }
+        }
+    };
 
     for (auto profile : _allProfiles)
     {
-        //winrt::Microsoft::Terminal::Settings::Model::MediaResourceResolver mediaResourceResolver{ this, &CascadiaSettings::_resolveSingleMediaResource };
-        profile.ResolveMediaResources(mediaResourceResolver);
+        profile.as<IMediaResourceContainer>()->ResolveMediaResources(mediaResourceResolver);
 
         // Anything longer than 2 wchar_t's _isn't_ an emoji or symbol, so treat
         // it as an invalid path.
@@ -582,7 +581,7 @@ void CascadiaSettings::_validateMediaResources()
         // commandline _isn't an icon_.
         // GH #17943: "none" is a special value interpreted as "remove the icon"
         //static constexpr std::wstring_view HideIconValue{ L"none" };
-        /*TODO DH */// if (const auto icon = profile.Icon(); icon.size() > 2 && icon != HideIconValue)
+        /*TODO DH */ // if (const auto icon = profile.Icon(); icon.size() > 2 && icon != HideIconValue)
     }
 
     _globals->ResolveMediaResources(mediaResourceResolver);

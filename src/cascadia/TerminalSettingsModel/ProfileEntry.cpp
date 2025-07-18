@@ -20,7 +20,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     }
 
     ProfileEntry::ProfileEntry(const winrt::hstring& profile) noexcept :
-        ProfileEntryT<ProfileEntry, NewTabMenuEntry>(NewTabMenuEntryType::Profile),
+        ProfileEntryT<ProfileEntry, NewTabMenuEntry, IPathlessMediaResourceContainer>(NewTabMenuEntryType::Profile),
         _ProfileName{ profile }
     {
     }

@@ -640,33 +640,12 @@ void Profile::_logSettingIfSet(const std::string_view& setting, const bool isSet
     }
 }
 
-struct TestResource : winrt::implements<TestResource, winrt::Microsoft::Terminal::Settings::Model::IMediaResource, winrt::non_agile, winrt::no_weak_ref, winrt::no_module_lock>
-{
-    TestResource(winrt::hstring p) :
-        path{ p }, ok{ false } {};
-
-    winrt::hstring Path() { return path; };
-    void Set(winrt::hstring newPath)
-    {
-        path = newPath;
-        ok = true;
-    }
-    void Reject()
-    {
-        path = {};
-        ok = false;
-    }
-
-    winrt::hstring path;
-    bool ok;
-};
-
 void Profile::ResolveMediaResources(const Model::MediaResourceResolver& resolver)
 {
     if (const auto icon{ _getIconImpl() })
     {
         const auto iconSource{ _getIconOverrideSourceImpl() };
-        auto tr{ winrt::make_self<TestResource>(*icon) };
+        auto tr{ winrt::make_self<ThingResource>(*icon) };
         resolver(iconSource->SourceBasePath, *tr);
         _evaluatedIcon = std::nullopt;
 
@@ -678,12 +657,12 @@ void Profile::ResolveMediaResources(const Model::MediaResourceResolver& resolver
 
     if (const auto container{ _DefaultAppearance.as<IMediaResourceContainer>() })
     {
-        container.ResolveMediaResources(resolver);
+        container->ResolveMediaResources(resolver);
     }
 
     if (const auto container{ UnfocusedAppearance().try_as<IMediaResourceContainer>() })
     {
-        container.ResolveMediaResources(resolver);
+        container->ResolveMediaResources(resolver);
     }
 }
 
