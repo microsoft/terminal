@@ -556,6 +556,7 @@ void CascadiaSettings::_validateMediaResources()
 
     for (auto profile : _allProfiles)
     {
+        #if 0
         if (const auto path = profile.DefaultAppearance().ExpandedBackgroundImagePath(); !path.empty())
         {
             if (!_validateAndExpandSingleMediaResource({}, path))
@@ -593,6 +594,24 @@ void CascadiaSettings::_validateMediaResources()
                 }
             }
         }
+        #endif
+
+        //winrt::Microsoft::Terminal::Settings::Model::MediaResourceResolver mediaResourceResolver{ this, &CascadiaSettings::_resolveSingleMediaResource };
+        winrt::Microsoft::Terminal::Settings::Model::MediaResourceResolver mediaResourceResolver{
+            [=](auto&& basePath, auto&& resource) {
+                winrt::hstring mediaResourceExpanded{ wil::ExpandEnvironmentStringsW<std::wstring>(resource.Path().data()) };
+                OutputDebugStringW(fmt::format(FMT_COMPILE(L"** RESOLVING MEDIA PATH - Base '{}', Value '{}'\n"), basePath, mediaResourceExpanded).c_str());
+                if (auto newRes = _validateAndExpandSingleMediaResource(basePath, mediaResourceExpanded))
+                {
+                    resource.Set(*newRes);
+                }
+                else
+                {
+                    resource.Reject();
+                }
+            }
+        };
+        profile.ResolveMediaResources(mediaResourceResolver);
 
         // Anything longer than 2 wchar_t's _isn't_ an emoji or symbol, so treat
         // it as an invalid path.
@@ -601,40 +620,8 @@ void CascadiaSettings::_validateMediaResources()
         // want to blow up if we fell back to the commandline and the
         // commandline _isn't an icon_.
         // GH #17943: "none" is a special value interpreted as "remove the icon"
-        static constexpr std::wstring_view HideIconValue{ L"none" };
-        if (const auto icon = profile.Icon(); icon.size() > 2 && icon != HideIconValue)
-        {
-            auto profileLayerProvidingIconPath{ winrt::get_self<implementation::Profile>(profile) };
-            if (!profile.HasIcon())
-            {
-                // If the profile didn't specify its own icon, go delving to figure out who did
-                if (const auto iconSource{ profile.IconOverrideSource() })
-                {
-                    profileLayerProvidingIconPath = winrt::get_self<implementation::Profile>(iconSource);
-                }
-            }
-            std::wstring_view sourceBasePath{ profileLayerProvidingIconPath->SourceBasePath };
-
-            const auto iconPath{ wil::ExpandEnvironmentStringsW<std::wstring>(icon.c_str()) };
-            if (const auto expandedResourcePath{ _validateAndExpandSingleMediaResource(sourceBasePath, iconPath) }; !expandedResourcePath)
-            {
-                if (profile.HasIcon())
-                {
-                    warnInvalidIcon = true;
-                    profile.ClearIcon();
-                }
-                else
-                {
-                    profile.Icon({});
-                }
-            }
-            else
-            {
-                auto profileImpl{ winrt::get_self<implementation::Profile>(profile) };
-                // We did the work so Profile doesn't have to
-                profileImpl->SetEvaluatedIcon(*expandedResourcePath);
-            }
-        }
+        //static constexpr std::wstring_view HideIconValue{ L"none" };
+        /*TODO DH */// if (const auto icon = profile.Icon(); icon.size() > 2 && icon != HideIconValue)
     }
 
     if (warnInvalidBackground)

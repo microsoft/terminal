@@ -37,6 +37,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         winrt::hstring ExpandedBackgroundImagePath();
 
+        void ResolveMediaResources(const Model::MediaResourceResolver& resolver);
+
         INHERITABLE_NULLABLE_SETTING(Model::IAppearanceConfig, Microsoft::Terminal::Core::Color, Foreground, nullptr);
         INHERITABLE_NULLABLE_SETTING(Model::IAppearanceConfig, Microsoft::Terminal::Core::Color, Background, nullptr);
         INHERITABLE_NULLABLE_SETTING(Model::IAppearanceConfig, Microsoft::Terminal::Core::Color, SelectionBackground, nullptr);
@@ -57,5 +59,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         void _logSettingSet(const std::string_view& setting);
         void _logSettingIfSet(const std::string_view& setting, const bool isSet);
+
+        winrt::hstring _getSourceProfileBasePath() const;
     };
 }

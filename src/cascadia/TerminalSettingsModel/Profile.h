@@ -120,6 +120,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         Model::Profile IconOverrideSource();
         void ClearIcon();
 
+        void ResolveMediaResources(const Model::MediaResourceResolver& resolver);
+
         WINRT_PROPERTY(bool, Deleted, false);
         WINRT_PROPERTY(bool, Orphaned, false);
         WINRT_PROPERTY(OriginTag, Origin, OriginTag::None);
@@ -158,7 +160,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         winrt::hstring _evaluateIcon() const;
         std::optional<hstring> _getIconImpl() const;
-        Model::Profile _getIconOverrideSourceImpl() const;
+        auto _getIconOverrideSourceImpl() -> winrt::com_ptr<Profile>;
         void _logSettingSet(const std::string_view& setting);
         void _logSettingIfSet(const std::string_view& setting, const bool isSet);
 

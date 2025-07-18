@@ -14,6 +14,8 @@ Author(s):
 --*/
 #pragma once
 
+#include <type_traits>
+
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
     template<typename T>
@@ -97,7 +99,7 @@ public:                                                                     \
         {                                                                   \
             if (auto source{ parent->_get##name##OverrideSourceImpl() })    \
             {                                                               \
-                return source;                                              \
+                return *source;                                             \
             }                                                               \
         }                                                                   \
                                                                             \
@@ -136,12 +138,13 @@ private:                                                                    \
         return std::nullopt;                                                \
     }                                                                       \
                                                                             \
-    projectedType _get##name##OverrideSourceImpl() const                    \
+    auto _get##name##OverrideSourceImpl()                                   \
+        ->winrt::com_ptr<std::remove_cvref<decltype(*this)>::type>          \
     {                                                                       \
         /*we have a value*/                                                 \
         if (_##name)                                                        \
         {                                                                   \
-            return *this;                                                   \
+            return get_strong();                                            \
         }                                                                   \
                                                                             \
         /*user set value was not set*/                                      \

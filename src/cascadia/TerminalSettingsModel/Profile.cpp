@@ -406,7 +406,8 @@ winrt::hstring Profile::EvaluatedIcon()
     return *_evaluatedIcon;
 }
 
-void Profile::SetEvaluatedIcon(const winrt::hstring& icon) {
+void Profile::SetEvaluatedIcon(const winrt::hstring& icon)
+{
     _evaluatedIcon.emplace(icon);
 }
 
@@ -438,7 +439,7 @@ winrt::Microsoft::Terminal::Settings::Model::Profile Profile::IconOverrideSource
     {
         if (auto source{ parent->_getIconOverrideSourceImpl() })
         {
-            return source;
+            return *source;
         }
     }
     return nullptr;
@@ -466,11 +467,11 @@ std::optional<winrt::hstring> Profile::_getIconImpl() const
     return std::nullopt;
 }
 
-winrt::Microsoft::Terminal::Settings::Model::Profile Profile::_getIconOverrideSourceImpl() const
+auto Profile::_getIconOverrideSourceImpl() -> winrt::com_ptr<Profile>
 {
     if (_Icon)
     {
-        return *this;
+        return get_strong();
     }
     for (const auto& parent : _parents)
     {
@@ -636,6 +637,53 @@ void Profile::_logSettingIfSet(const std::string_view& setting, const bool isSet
             // clang-format on
             _logSettingSet(setting);
         }
+    }
+}
+
+struct TestResource : winrt::implements<TestResource, winrt::Microsoft::Terminal::Settings::Model::IMediaResource, winrt::non_agile, winrt::no_weak_ref, winrt::no_module_lock>
+{
+    TestResource(winrt::hstring p) :
+        path{ p }, ok{ false } {};
+
+    winrt::hstring Path() { return path; };
+    void Set(winrt::hstring newPath)
+    {
+        path = newPath;
+        ok = true;
+    }
+    void Reject()
+    {
+        path = {};
+        ok = false;
+    }
+
+    winrt::hstring path;
+    bool ok;
+};
+
+void Profile::ResolveMediaResources(const Model::MediaResourceResolver& resolver)
+{
+    if (const auto icon{ _getIconImpl() })
+    {
+        const auto iconSource{ _getIconOverrideSourceImpl() };
+        auto tr{ winrt::make_self<TestResource>(*icon) };
+        resolver(iconSource->SourceBasePath, *tr);
+        _evaluatedIcon = std::nullopt;
+
+        if (tr->ok)
+        {
+            _evaluatedIcon = tr->path;
+        }
+    }
+
+    if (const auto container{ _DefaultAppearance.as<IMediaResourceContainer>() })
+    {
+        container.ResolveMediaResources(resolver);
+    }
+
+    if (const auto container{ UnfocusedAppearance().try_as<IMediaResourceContainer>() })
+    {
+        container.ResolveMediaResources(resolver);
     }
 }
 
