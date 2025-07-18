@@ -71,4 +71,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         entry->_Icon = _Icon;
         return *entry;
     }
+
+    void ProfileEntry::ResolveMediaResourcesWithBasePath(const winrt::hstring& basePath, const Model::MediaResourceResolver& resolver)
+    {
+        if (!_Icon.empty())
+        {
+            resolver(basePath, winrt::make<ThingResource>(_Icon));
+        }
+    }
 }

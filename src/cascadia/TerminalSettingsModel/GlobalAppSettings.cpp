@@ -9,6 +9,8 @@
 
 #include "GlobalAppSettings.g.cpp"
 
+#include "MediaResourceSupport.h"
+
 #include <LibraryResources.h>
 
 using namespace Microsoft::Terminal::Settings::Model;
@@ -376,6 +378,25 @@ void GlobalAppSettings::ExpandCommands(const winrt::Windows::Foundation::Collect
 bool GlobalAppSettings::ShouldUsePersistedLayout() const
 {
     return FirstWindowPreference() == FirstWindowPreference::PersistedWindowLayout;
+}
+
+void GlobalAppSettings::ResolveMediaResources(const Model::MediaResourceResolver& resolver)
+{
+    _actionMap->ResolveMediaResourcesWithBasePath(SourceBasePath, resolver);
+    if (_NewTabMenu)
+    {
+        for (const auto& entry : *_NewTabMenu)
+        {
+            if (const auto resy{ entry.try_as<IPathlessMediaResourceContainer>() })
+            {
+                resy->ResolveMediaResourcesWithBasePath(SourceBasePath, resolver);
+            }
+        }
+    }
+    for (auto& parent : _parents)
+    {
+        parent->ResolveMediaResources(resolver);
+    }
 }
 
 void GlobalAppSettings::_logSettingSet(const std::string_view& setting)

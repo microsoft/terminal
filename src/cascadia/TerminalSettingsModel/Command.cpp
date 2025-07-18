@@ -615,6 +615,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return newCommands;
     }
 
+    void Command::ResolveMediaResourcesWithBasePath(const winrt::hstring& basePath, const Model::MediaResourceResolver& /*resolver*/)
+    {
+        if (_iconPath && !_iconPath->empty())
+            OutputDebugStringW(fmt::format(FMT_COMPILE(L"would RESOLV command icon whatever {} + {}\n"), basePath, *_iconPath).c_str());
+    }
+
     winrt::Windows::Foundation::Collections::IVector<Model::Command> Command::ParsePowerShellMenuComplete(winrt::hstring json, int32_t replaceLength)
     {
         if (json.empty())

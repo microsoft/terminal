@@ -17,10 +17,11 @@ Author(s):
 #include "pch.h"
 #include "NewTabMenuEntry.h"
 #include "FolderEntry.g.h"
+#include "MediaResourceSupport.h"
 
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
-    struct FolderEntry : FolderEntryT<FolderEntry, NewTabMenuEntry>
+    struct FolderEntry : FolderEntryT<FolderEntry, NewTabMenuEntry, IPathlessMediaResourceContainer>
     {
     public:
         FolderEntry() noexcept;
@@ -36,6 +37,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         // Therefore, we will store the JSON entries list internally, and then expose only the
         // entries to be rendered to WinRT.
         winrt::Windows::Foundation::Collections::IVector<Model::NewTabMenuEntry> Entries() const;
+
+        void ResolveMediaResourcesWithBasePath(const winrt::hstring& basePath, const Model::MediaResourceResolver& resolver) override;
 
         WINRT_PROPERTY(winrt::hstring, Name);
         WINRT_PROPERTY(winrt::hstring, Icon);

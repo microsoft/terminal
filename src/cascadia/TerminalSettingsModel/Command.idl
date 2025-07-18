@@ -32,7 +32,7 @@ namespace Microsoft.Terminal.Settings.Model
         ShortcutAction Action;
     };
 
-    runtimeclass Command : ISettingsModelObject, IMediaResourceContainer
+    runtimeclass Command : ISettingsModelObject
     {
         Command();
 

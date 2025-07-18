@@ -554,49 +554,6 @@ void CascadiaSettings::_validateMediaResources()
     auto warnInvalidBackground{ false };
     auto warnInvalidIcon{ false };
 
-    for (auto profile : _allProfiles)
-    {
-        #if 0
-        if (const auto path = profile.DefaultAppearance().ExpandedBackgroundImagePath(); !path.empty())
-        {
-            if (!_validateAndExpandSingleMediaResource({}, path))
-            {
-                if (profile.DefaultAppearance().HasBackgroundImagePath())
-                {
-                    // Only warn and delete if the user set this at the top level (do not warn for fragments, just clear it)
-                    warnInvalidBackground = true;
-                    profile.DefaultAppearance().ClearBackgroundImagePath();
-                }
-                else
-                {
-                    // reset background image path (set it to blank as an override for any fragment value)
-                    profile.DefaultAppearance().BackgroundImagePath({});
-                }
-            }
-        }
-
-        if (profile.UnfocusedAppearance())
-        {
-            if (const auto path = profile.UnfocusedAppearance().ExpandedBackgroundImagePath(); !path.empty())
-            {
-                if (!_validateAndExpandSingleMediaResource({}, path))
-                {
-                    if (profile.UnfocusedAppearance().HasBackgroundImagePath())
-                    {
-                        warnInvalidBackground = true;
-                        profile.UnfocusedAppearance().ClearBackgroundImagePath();
-                    }
-                    else
-                    {
-                        // reset background image path (set it to blank as an override for any fragment value)
-                        profile.UnfocusedAppearance().BackgroundImagePath({});
-                    }
-                }
-            }
-        }
-        #endif
-
-        //winrt::Microsoft::Terminal::Settings::Model::MediaResourceResolver mediaResourceResolver{ this, &CascadiaSettings::_resolveSingleMediaResource };
         winrt::Microsoft::Terminal::Settings::Model::MediaResourceResolver mediaResourceResolver{
             [=](auto&& basePath, auto&& resource) {
                 winrt::hstring mediaResourceExpanded{ wil::ExpandEnvironmentStringsW<std::wstring>(resource.Path().data()) };
@@ -611,6 +568,10 @@ void CascadiaSettings::_validateMediaResources()
                 }
             }
         };
+
+    for (auto profile : _allProfiles)
+    {
+        //winrt::Microsoft::Terminal::Settings::Model::MediaResourceResolver mediaResourceResolver{ this, &CascadiaSettings::_resolveSingleMediaResource };
         profile.ResolveMediaResources(mediaResourceResolver);
 
         // Anything longer than 2 wchar_t's _isn't_ an emoji or symbol, so treat
@@ -623,6 +584,8 @@ void CascadiaSettings::_validateMediaResources()
         //static constexpr std::wstring_view HideIconValue{ L"none" };
         /*TODO DH */// if (const auto icon = profile.Icon(); icon.size() > 2 && icon != HideIconValue)
     }
+
+    _globals->ResolveMediaResources(mediaResourceResolver);
 
     if (warnInvalidBackground)
     {

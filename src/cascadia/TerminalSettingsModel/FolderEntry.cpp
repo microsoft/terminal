@@ -25,7 +25,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     }
 
     FolderEntry::FolderEntry(const winrt::hstring& name) noexcept :
-        FolderEntryT<FolderEntry, NewTabMenuEntry>(NewTabMenuEntryType::Folder),
+        FolderEntryT<FolderEntry, NewTabMenuEntry, IPathlessMediaResourceContainer>(NewTabMenuEntryType::Folder),
         _Name{ name }
     {
     }
@@ -140,5 +140,24 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             }
         }
         return *entry;
+    }
+
+    void FolderEntry::ResolveMediaResourcesWithBasePath(const winrt::hstring& basePath, const Model::MediaResourceResolver& resolver)
+    {
+        if (!_Icon.empty())
+        {
+            resolver(basePath, winrt::make<ThingResource>(_Icon));
+        }
+
+        if (_RawEntries)
+        {
+            for (const auto& entry : _RawEntries)
+            {
+                if (const auto resy{ entry.try_as<IPathlessMediaResourceContainer>() })
+                {
+                    resy->ResolveMediaResourcesWithBasePath(basePath, resolver);
+                }
+            }
+        }
     }
 }

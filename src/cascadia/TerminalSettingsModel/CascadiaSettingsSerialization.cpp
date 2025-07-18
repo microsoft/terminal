@@ -882,6 +882,7 @@ void SettingsLoader::_parseFragment(const winrt::hstring& source, const winrt::h
             // parsing - fragments shouldn't be allowed to bind actions to keys
             // directly. We may want to revisit circa GH#2205
             settings.globals = winrt::make_self<GlobalAppSettings>();
+            settings.globals->SourceBasePath = sourceBasePath;
             settings.globals->LayerActionsFrom(json.root, OriginTag::Fragment, false);
         }
     }
@@ -1201,6 +1202,7 @@ try
 
     winrt::hstring baseUserSettingsPath{ GetBaseSettingsPath().native() };
     loader.userSettings.baseLayerProfile->SourceBasePath = baseUserSettingsPath;
+    loader.userSettings.globals->SourceBasePath = baseUserSettingsPath;
     for (auto&& userProfile : loader.userSettings.profiles)
     {
         userProfile->SourceBasePath = baseUserSettingsPath;

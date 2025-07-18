@@ -7,6 +7,7 @@
 #include "TerminalSettingsSerializationHelpers.h"
 #include "JsonUtils.h"
 #include "Profile.h"
+#include "MediaResourceSupport.h"
 
 using namespace winrt::Microsoft::Terminal::Control;
 using namespace Microsoft::Terminal::Settings::Model;
@@ -173,30 +174,6 @@ winrt::hstring AppearanceConfig::ExpandedBackgroundImagePath()
     }
 }
 
-namespace
-{
-    struct TestResource : winrt::implements<TestResource, winrt::Microsoft::Terminal::Settings::Model::IMediaResource, winrt::non_agile, winrt::no_weak_ref, winrt::no_module_lock>
-    {
-        TestResource(winrt::hstring p) :
-            path{ p }, ok{ false } {};
-
-        winrt::hstring Path() { return path; };
-        void Set(winrt::hstring newPath)
-        {
-            path = newPath;
-            ok = true;
-        }
-        void Reject()
-        {
-            path = {};
-            ok = false;
-        }
-
-        winrt::hstring path;
-        bool ok;
-    };
-}
-
 winrt::hstring AppearanceConfig::_getSourceProfileBasePath() const
 {
     winrt::hstring sourceBasePath{};
@@ -210,25 +187,22 @@ winrt::hstring AppearanceConfig::_getSourceProfileBasePath() const
 
 void AppearanceConfig::ResolveMediaResources(const Model::MediaResourceResolver& resolver)
 {
-    if (const auto path{ _getBackgroundImagePathImpl() }; path && !path->empty())
+    if (const auto [source, path] = _getBackgroundImagePathOverrideSourceAndValueImpl(); source && path && !path->empty())
     {
-        const auto pathSource{ _getBackgroundImagePathOverrideSourceImpl() };
-        winrt::hstring sourceBasePath{ pathSource->_getSourceProfileBasePath() };
-        auto tr{ winrt::make_self<TestResource>(*path) };
+        winrt::hstring sourceBasePath{ source->_getSourceProfileBasePath() };
+        auto tr{ winrt::make_self<ThingResource>(*path) };
         resolver(sourceBasePath, *tr);
     }
-    if (const auto path{ _getPixelShaderPathImpl() }; path && !path->empty())
+    if (const auto [source, path]{ _getPixelShaderPathOverrideSourceAndValueImpl() }; source && path && !path->empty())
     {
-        const auto pathSource{ _getPixelShaderPathOverrideSourceImpl() };
-        winrt::hstring sourceBasePath{ pathSource->_getSourceProfileBasePath() };
-        auto tr{ winrt::make_self<TestResource>(*path) };
+        winrt::hstring sourceBasePath{ source->_getSourceProfileBasePath() };
+        auto tr{ winrt::make_self<ThingResource>(*path) };
         resolver(sourceBasePath, *tr);
     }
-    if (const auto path{ _getPixelShaderImagePathImpl() }; path && !path->empty())
+    if (const auto [source, path]{ _getPixelShaderImagePathOverrideSourceAndValueImpl() }; source && path && !path->empty())
     {
-        const auto pathSource{ _getPixelShaderImagePathOverrideSourceImpl() };
-        winrt::hstring sourceBasePath{ pathSource->_getSourceProfileBasePath() };
-        auto tr{ winrt::make_self<TestResource>(*path) };
+        winrt::hstring sourceBasePath{ source->_getSourceProfileBasePath() };
+        auto tr{ winrt::make_self<ThingResource>(*path) };
         resolver(sourceBasePath, *tr);
     }
 }
