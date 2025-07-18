@@ -20,7 +20,7 @@ namespace winrt::TerminalApp::implementation
         FilteredCommand() = default;
         FilteredCommand(const winrt::TerminalApp::IPaletteItem& item);
 
-        virtual void UpdateFilter(std::shared_ptr<fzf::matcher::Pattern> pattern);
+        void UpdateFilter(std::shared_ptr<fzf::matcher::Pattern> pattern);
 
         static int Compare(const winrt::TerminalApp::FilteredCommand& first, const winrt::TerminalApp::FilteredCommand& second);
 
@@ -28,9 +28,6 @@ namespace winrt::TerminalApp::implementation
         WINRT_OBSERVABLE_PROPERTY(winrt::TerminalApp::IPaletteItem, Item, PropertyChanged.raise, nullptr);
         WINRT_OBSERVABLE_PROPERTY(winrt::Windows::Foundation::Collections::IVector<winrt::TerminalApp::HighlightedRun>, NameHighlights, PropertyChanged.raise);
         WINRT_OBSERVABLE_PROPERTY(int, Weight, PropertyChanged.raise);
-
-    protected:
-        void _constructFilteredCommand(const winrt::TerminalApp::IPaletteItem& item);
 
     private:
         std::shared_ptr<fzf::matcher::Pattern> _pattern;
