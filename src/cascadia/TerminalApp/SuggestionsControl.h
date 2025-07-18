@@ -44,7 +44,8 @@ namespace winrt::TerminalApp::implementation
                   winrt::hstring filterText,
                   Windows::Foundation::Point anchor,
                   Windows::Foundation::Size space,
-                  float characterHeight);
+                  float characterHeight,
+                  bool sortResults);
 
         til::typed_event<winrt::TerminalApp::SuggestionsControl, Microsoft::Terminal::Settings::Model::Command> DispatchCommandRequested;
         til::typed_event<Windows::Foundation::IInspectable, Microsoft::Terminal::Settings::Model::Command> PreviewAction;
@@ -124,6 +125,8 @@ namespace winrt::TerminalApp::implementation
         Windows::Foundation::Collections::IVector<winrt::TerminalApp::FilteredCommand> _commandsToFilter();
         std::wstring _getTrimmedInput();
         uint32_t _getNumVisibleItems();
+        std::wstring _searchText;
+        bool _sortResults;
         friend class TerminalAppLocalTests::TabTests;
     };
 }

@@ -139,6 +139,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         safe_void_coroutine _RendererWarning(IInspectable sender,
                                              Control::RendererWarningArgs args);
 
+        Windows::Foundation::Collections::IVector<SuggestionSearchItem> SuggestionScrollBackSearch(hstring const& needle);
         void CreateSearchBoxControl();
 
         void SearchMatch(const bool goForward);

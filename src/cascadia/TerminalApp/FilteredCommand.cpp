@@ -19,12 +19,23 @@ using namespace winrt::Microsoft::Terminal::Settings::Model;
 
 namespace winrt::TerminalApp::implementation
 {
-    // This class is a wrapper of IPaletteItem, that is used as an item of a filterable list in CommandPalette.
+    int32_t FilteredCommand::Ordinal()
+    {
+        return _ordinal;
+    }
+
+    FilteredCommand::FilteredCommand(const winrt::TerminalApp::IPaletteItem& item) :
+        FilteredCommand(item, 0)
+    {
+    }
+
+    // This class is a wrapper of PaletteItem, that is used as an item of a filterable list in CommandPalette.
     // It manages a highlighted text that is computed by matching search filter characters to item name
-    FilteredCommand::FilteredCommand(const winrt::TerminalApp::IPaletteItem& item)
+    FilteredCommand::FilteredCommand(const winrt::TerminalApp::IPaletteItem& item, int32_t ordinal)
     {
         // Actually implement the ctor in _constructFilteredCommand
         _constructFilteredCommand(item);
+        _ordinal = ordinal;
     }
 
     // We need to actually implement the ctor in a separate helper. This is
@@ -111,6 +122,10 @@ namespace winrt::TerminalApp::implementation
 
         if (firstWeight == secondWeight)
         {
+            if (first.Ordinal() != second.Ordinal())
+            {
+                return first.Ordinal() < second.Ordinal();
+            }
             const auto firstName = first.Item().Name();
             const auto secondName = second.Item().Name();
             return til::compare_linguistic_insensitive(firstName, secondName) < 0;

@@ -225,7 +225,8 @@ protected:                                                                  \
 ////////////////////////////////////////////////////////////////////////////////
 #define SUGGESTIONS_ARGS(X)                                                 \
     X(SuggestionsSource, Source, "source", false, SuggestionsSource::Tasks) \
-    X(bool, UseCommandline, "useCommandline", false, false)
+    X(bool, UseCommandline, "useCommandline", false, false)                 \
+    X(winrt::hstring, Regex, "regex", false, L"[^\\s]{5,}") //Setting the default here may not be ok since other suggestion sources don't use a regex
 
 ////////////////////////////////////////////////////////////////////////////////
 #define FIND_MATCH_ARGS(X) \
