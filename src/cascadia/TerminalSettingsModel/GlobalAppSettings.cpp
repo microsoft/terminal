@@ -61,6 +61,7 @@ winrt::com_ptr<GlobalAppSettings> GlobalAppSettings::Copy() const
 
     globals->_defaultProfile = _defaultProfile;
     globals->_actionMap = _actionMap->Copy();
+    globals->_actionMap->PropagateCommandIDChanged({ globals.get(), &GlobalAppSettings::_CommandIDChangedHandler });
     globals->_keybindingsWarnings = _keybindingsWarnings;
 
 #define GLOBAL_SETTINGS_COPY(type, name, jsonKey, ...) \
@@ -143,6 +144,7 @@ winrt::com_ptr<GlobalAppSettings> GlobalAppSettings::FromJson(const Json::Value&
 {
     auto result = winrt::make_self<GlobalAppSettings>();
     result->LayerJson(json, origin);
+    result->_actionMap->PropagateCommandIDChanged({ result.get(), &GlobalAppSettings::_CommandIDChangedHandler });
     return result;
 }
 
@@ -435,6 +437,44 @@ void GlobalAppSettings::_logSettingSet(const std::string_view& setting)
     else
     {
         _changeLog.emplace(setting);
+    }
+}
+
+void GlobalAppSettings::_CommandIDChangedHandler(const Model::Command& senderCmd, const winrt::hstring& oldID)
+{
+    if (_NewTabMenu)
+    {
+        const auto newID = senderCmd.ID();
+
+        // Recursive lambda function to look through all the new tab menu entries and update IDs accordingly
+        std::function<void(const Model::NewTabMenuEntry&)> recursiveEntryIdUpdate;
+        recursiveEntryIdUpdate = [&](const Model::NewTabMenuEntry& entry) {
+            if (entry.Type() == NewTabMenuEntryType::Action)
+            {
+                if (const auto actionEntry{ entry.try_as<ActionEntry>() })
+                {
+                    if (actionEntry.ActionId() == oldID)
+                    {
+                        actionEntry.ActionId(newID);
+                    }
+                }
+            }
+            else if (entry.Type() == NewTabMenuEntryType::Folder)
+            {
+                if (const auto folderEntry{ entry.try_as<FolderEntry>() })
+                {
+                    for (const auto& nestedEntry : folderEntry.RawEntries())
+                    {
+                        recursiveEntryIdUpdate(nestedEntry);
+                    }
+                }
+            }
+        };
+
+        for (const auto& entry : *_NewTabMenu)
+        {
+            recursiveEntryIdUpdate(entry);
+        }
     }
 }
 

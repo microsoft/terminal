@@ -45,6 +45,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     struct Command : CommandT<Command>
     {
         Command();
+        static Model::Command NewUserCommand();
+        static Model::Command CopyAsUserCommand(const Model::Command& originalCmd);
         com_ptr<Command> Copy() const;
 
         static winrt::com_ptr<Command> FromJson(const Json::Value& json,
@@ -73,6 +75,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void Name(const hstring& name);
 
         hstring ID() const noexcept;
+        void ID(const hstring& ID) noexcept;
         void GenerateID();
         bool IDWasGenerated();
 
@@ -85,10 +88,13 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                                                                                            bool directories,
                                                                                            hstring iconPath);
 
+        WINRT_PROPERTY(Model::ActionAndArgs, ActionAndArgs, Model::ActionAndArgs{});
         WINRT_PROPERTY(ExpandCommandType, IterateOn, ExpandCommandType::None);
-        WINRT_PROPERTY(Model::ActionAndArgs, ActionAndArgs);
         WINRT_PROPERTY(OriginTag, Origin);
         WINRT_PROPERTY(winrt::hstring, Description, L"");
+
+    public:
+        til::typed_event<Model::Command, winrt::hstring> IDChanged;
 
     private:
         Json::Value _originalJson;
