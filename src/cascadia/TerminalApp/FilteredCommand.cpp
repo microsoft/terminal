@@ -21,25 +21,11 @@ namespace winrt::TerminalApp::implementation
 {
     // This class is a wrapper of IPaletteItem, that is used as an item of a filterable list in CommandPalette.
     // It manages a highlighted text that is computed by matching search filter characters to item name
-    FilteredCommand::FilteredCommand(const winrt::TerminalApp::IPaletteItem& item)
+    FilteredCommand::FilteredCommand(const winrt::TerminalApp::IPaletteItem& item) :
+        _Item{ item }, _Weight{ 0 }
     {
-        // Actually implement the ctor in _constructFilteredCommand
-        _constructFilteredCommand(item);
-    }
-
-    // We need to actually implement the ctor in a separate helper. This is
-    // because we have a FilteredTask class which derives from FilteredCommand.
-    // HOWEVER, for cppwinrt ~ r e a s o n s ~, it doesn't actually derive from
-    // FilteredCommand directly, so we can't just use the FilteredCommand ctor
-    // directly in the base class.
-    void FilteredCommand::_constructFilteredCommand(const winrt::TerminalApp::IPaletteItem& item)
-    {
-        _Item = item;
-        _Weight = 0;
-
-        _update();
-
         // Recompute the highlighted name if the item name changes
+        // Our Item will not change, so we don't need to update the revoker if it does.
         _itemChangedRevoker = _Item.as<winrt::Windows::UI::Xaml::Data::INotifyPropertyChanged>().PropertyChanged(winrt::auto_revoke, [weakThis{ get_weak() }](auto& /*sender*/, auto& e) {
             auto filteredCommand{ weakThis.get() };
             if (filteredCommand && e.PropertyName() == L"Name")
