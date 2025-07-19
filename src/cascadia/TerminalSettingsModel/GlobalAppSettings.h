@@ -26,6 +26,9 @@ Author(s):
 #include "NewTabMenuEntry.h"
 #include "RemainingProfilesEntry.h"
 
+bool UseMicaAlt() const;
+bool _useMicaAlt = false;
+
 // fwdecl unittest classes
 namespace SettingsModelUnitTests
 {
