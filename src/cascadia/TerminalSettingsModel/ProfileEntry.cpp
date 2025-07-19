@@ -20,7 +20,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     }
 
     ProfileEntry::ProfileEntry(const winrt::hstring& profile) noexcept :
-        ProfileEntryT<ProfileEntry, NewTabMenuEntry>(NewTabMenuEntryType::Profile),
+        ProfileEntryT<ProfileEntry, NewTabMenuEntry, IPathlessMediaResourceContainer>(NewTabMenuEntryType::Profile),
         _ProfileName{ profile }
     {
     }
@@ -70,5 +70,13 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         entry->_ProfileName = _ProfileName;
         entry->_Icon = _Icon;
         return *entry;
+    }
+
+    void ProfileEntry::ResolveMediaResourcesWithBasePath(const winrt::hstring& basePath, const Model::MediaResourceResolver& resolver)
+    {
+        if (!_Icon.empty())
+        {
+            resolver(basePath, winrt::make<ThingResource>(_Icon));
+        }
     }
 }

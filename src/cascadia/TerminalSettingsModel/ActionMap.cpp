@@ -809,6 +809,26 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return _ExpandedCommandsCache;
     }
 
+    void ActionMap::ResolveMediaResourcesWithBasePath(const winrt::hstring& basePath, const Model::MediaResourceResolver& resolver)
+    {
+        for (const auto& [_, cmd] : _ActionMap)
+        {
+            winrt::get_self<implementation::Command>(cmd)->ResolveMediaResourcesWithBasePath(basePath, resolver);
+        }
+
+        // Serialize all nested Command objects added in the current layer
+        for (const auto& [_, cmd] : _NestedCommands)
+        {
+            winrt::get_self<implementation::Command>(cmd)->ResolveMediaResourcesWithBasePath(basePath, resolver);
+        }
+
+        // Serialize all iterable Command objects added in the current layer
+        for (const auto& cmd : _IterableCommands)
+        {
+            winrt::get_self<implementation::Command>(cmd)->ResolveMediaResourcesWithBasePath(basePath, resolver);
+        }
+    }
+
 #pragma region Snippets
     std::vector<Model::Command> _filterToSnippets(IMapView<hstring, Model::Command> nameMap,
                                                   winrt::hstring currentCommandline,

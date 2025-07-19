@@ -14,7 +14,7 @@ namespace Microsoft.Terminal.Settings.Model
         Machine
     };
 
-    [default_interface] runtimeclass CascadiaSettings {
+    runtimeclass CascadiaSettings {
         static CascadiaSettings LoadDefaults();
         static CascadiaSettings LoadAll();
 

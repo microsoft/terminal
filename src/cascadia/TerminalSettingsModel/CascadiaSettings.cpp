@@ -488,7 +488,7 @@ void CascadiaSettings::_validateAllSchemesExist()
     }
 }
 
-static bool _validateSingleMediaResource(std::wstring_view resource)
+static std::optional<winrt::hstring> _validateAndExpandSingleMediaResource(std::wstring_view basePath, std::wstring_view resource)
 {
     // URI
     try
@@ -496,17 +496,20 @@ static bool _validateSingleMediaResource(std::wstring_view resource)
         winrt::Windows::Foundation::Uri resourceUri{ resource };
         if (!resourceUri)
         {
-            return false;
+            return std::nullopt;
         }
 
         if constexpr (Feature_DisableWebSourceIcons::IsEnabled())
         {
             const auto scheme{ resourceUri.SchemeName() };
             // Only file: URIs and ms-* URIs are permissible. http, https, ftp, gopher, etc. are not.
-            return til::equals_insensitive_ascii(scheme, L"file") || til::starts_with_insensitive_ascii(scheme, L"ms-");
+            if (!til::equals_insensitive_ascii(scheme, L"file") && !til::starts_with_insensitive_ascii(scheme, L"ms-"))
+            {
+                return std::nullopt;
+            }
         }
 
-        return true;
+        return winrt::hstring{ resource };
     }
     catch (...)
     {
@@ -517,13 +520,22 @@ static bool _validateSingleMediaResource(std::wstring_view resource)
     try
     {
         std::filesystem::path resourcePath{ resource };
-        return std::filesystem::exists(resourcePath);
+        if (!basePath.empty())
+        {
+            resourcePath = std::filesystem::path{ basePath } / resourcePath;
+        }
+
+        if (std::filesystem::exists(resourcePath))
+        {
+            return winrt::hstring{ resourcePath.native() };
+        }
+        return std::nullopt;
     }
     catch (...)
     {
         // fall through
     }
-    return false;
+    return std::nullopt;
 }
 
 // Method Description:
@@ -542,45 +554,24 @@ void CascadiaSettings::_validateMediaResources()
     auto warnInvalidBackground{ false };
     auto warnInvalidIcon{ false };
 
+    winrt::Microsoft::Terminal::Settings::Model::MediaResourceResolver mediaResourceResolver{
+        [=](auto&& basePath, auto&& resource) {
+            winrt::hstring mediaResourceExpanded{ wil::ExpandEnvironmentStringsW<std::wstring>(resource.Path().data()) };
+            OutputDebugStringW(fmt::format(FMT_COMPILE(L"** RESOLVING MEDIA PATH - Base '{}', Value '{}'\n"), basePath, mediaResourceExpanded).c_str());
+            if (auto newRes = _validateAndExpandSingleMediaResource(basePath, mediaResourceExpanded))
+            {
+                resource.Set(*newRes);
+            }
+            else
+            {
+                resource.Reject();
+            }
+        }
+    };
+
     for (auto profile : _allProfiles)
     {
-        if (const auto path = profile.DefaultAppearance().ExpandedBackgroundImagePath(); !path.empty())
-        {
-            if (!_validateSingleMediaResource(path))
-            {
-                if (profile.DefaultAppearance().HasBackgroundImagePath())
-                {
-                    // Only warn and delete if the user set this at the top level (do not warn for fragments, just clear it)
-                    warnInvalidBackground = true;
-                    profile.DefaultAppearance().ClearBackgroundImagePath();
-                }
-                else
-                {
-                    // reset background image path (set it to blank as an override for any fragment value)
-                    profile.DefaultAppearance().BackgroundImagePath({});
-                }
-            }
-        }
-
-        if (profile.UnfocusedAppearance())
-        {
-            if (const auto path = profile.UnfocusedAppearance().ExpandedBackgroundImagePath(); !path.empty())
-            {
-                if (!_validateSingleMediaResource(path))
-                {
-                    if (profile.UnfocusedAppearance().HasBackgroundImagePath())
-                    {
-                        warnInvalidBackground = true;
-                        profile.UnfocusedAppearance().ClearBackgroundImagePath();
-                    }
-                    else
-                    {
-                        // reset background image path (set it to blank as an override for any fragment value)
-                        profile.UnfocusedAppearance().BackgroundImagePath({});
-                    }
-                }
-            }
-        }
+        profile.as<IMediaResourceContainer>()->ResolveMediaResources(mediaResourceResolver);
 
         // Anything longer than 2 wchar_t's _isn't_ an emoji or symbol, so treat
         // it as an invalid path.
@@ -589,24 +580,11 @@ void CascadiaSettings::_validateMediaResources()
         // want to blow up if we fell back to the commandline and the
         // commandline _isn't an icon_.
         // GH #17943: "none" is a special value interpreted as "remove the icon"
-        static constexpr std::wstring_view HideIconValue{ L"none" };
-        if (const auto icon = profile.Icon(); icon.size() > 2 && icon != HideIconValue)
-        {
-            const auto iconPath{ wil::ExpandEnvironmentStringsW<std::wstring>(icon.c_str()) };
-            if (!_validateSingleMediaResource(iconPath))
-            {
-                if (profile.HasIcon())
-                {
-                    warnInvalidIcon = true;
-                    profile.ClearIcon();
-                }
-                else
-                {
-                    profile.Icon({});
-                }
-            }
-        }
+        //static constexpr std::wstring_view HideIconValue{ L"none" };
+        /*TODO DH */ // if (const auto icon = profile.Icon(); icon.size() > 2 && icon != HideIconValue)
     }
+
+    _globals->ResolveMediaResources(mediaResourceResolver);
 
     if (warnInvalidBackground)
     {

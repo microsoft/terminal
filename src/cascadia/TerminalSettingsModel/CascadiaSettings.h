@@ -123,7 +123,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         static const Json::Value& _getJSONValue(const Json::Value& json, const std::string_view& key) noexcept;
         std::span<const winrt::com_ptr<implementation::Profile>> _getNonUserOriginProfiles() const;
         void _parse(const OriginTag origin, const winrt::hstring& source, const std::string_view& content, ParsedSettings& settings);
-        void _parseFragment(const winrt::hstring& source, const std::string_view& content, ParsedSettings& settings, const std::optional<ParseFragmentMetadata>& fragmentMeta);
+        void _parseFragment(const winrt::hstring& source, const winrt::hstring& sourceBasePath, const std::string_view& content, ParsedSettings& settings, const std::optional<ParseFragmentMetadata>& fragmentMeta);
         static JsonSettings _parseJson(const std::string_view& content);
         static winrt::com_ptr<implementation::Profile> _parseProfile(const OriginTag origin, const winrt::hstring& source, const Json::Value& profileJson);
         void _appendProfile(winrt::com_ptr<Profile>&& profile, const winrt::guid& guid, ParsedSettings& settings);

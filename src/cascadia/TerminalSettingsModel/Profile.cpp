@@ -113,6 +113,7 @@ winrt::com_ptr<Profile> Profile::CopySettings() const
     profile->_TabColor = _TabColor;
     profile->_Padding = _Padding;
     profile->_Icon = _Icon;
+    profile->_evaluatedIcon = _evaluatedIcon; // If somebody did us the favor of pre-evaluating our icon, don't do it again.
 
     profile->_Origin = _Origin;
     profile->_FontInfo = *fontInfo;
@@ -196,6 +197,7 @@ void Profile::LayerJson(const Json::Value& json)
     _logSettingIfSet(HiddenKey, _Hidden.has_value());
 
     JsonUtils::GetValueForKey(json, IconKey, _Icon);
+    JsonUtils::GetValueForKey(json, "icon2", _Icon);
     _logSettingIfSet(IconKey, _Icon.has_value());
 
     // Padding was never specified as an integer, but it was a common working mistake.
@@ -404,6 +406,11 @@ winrt::hstring Profile::EvaluatedIcon()
     return *_evaluatedIcon;
 }
 
+void Profile::SetEvaluatedIcon(const winrt::hstring& icon)
+{
+    _evaluatedIcon.emplace(icon);
+}
+
 winrt::hstring Profile::_evaluateIcon() const
 {
     // If the profile has an icon, return it.
@@ -432,7 +439,7 @@ winrt::Microsoft::Terminal::Settings::Model::Profile Profile::IconOverrideSource
     {
         if (auto source{ parent->_getIconOverrideSourceImpl() })
         {
-            return source;
+            return *source;
         }
     }
     return nullptr;
@@ -460,11 +467,11 @@ std::optional<winrt::hstring> Profile::_getIconImpl() const
     return std::nullopt;
 }
 
-winrt::Microsoft::Terminal::Settings::Model::Profile Profile::_getIconOverrideSourceImpl() const
+auto Profile::_getIconOverrideSourceImpl() -> winrt::com_ptr<Profile>
 {
     if (_Icon)
     {
-        return *this;
+        return get_strong();
     }
     for (const auto& parent : _parents)
     {
@@ -630,6 +637,32 @@ void Profile::_logSettingIfSet(const std::string_view& setting, const bool isSet
             // clang-format on
             _logSettingSet(setting);
         }
+    }
+}
+
+void Profile::ResolveMediaResources(const Model::MediaResourceResolver& resolver)
+{
+    if (const auto icon{ _getIconImpl() })
+    {
+        const auto iconSource{ _getIconOverrideSourceImpl() };
+        auto tr{ winrt::make_self<ThingResource>(*icon) };
+        resolver(iconSource->SourceBasePath, *tr);
+        _evaluatedIcon = std::nullopt;
+
+        if (tr->ok)
+        {
+            _evaluatedIcon = tr->path;
+        }
+    }
+
+    if (const auto container{ _DefaultAppearance.as<IMediaResourceContainer>() })
+    {
+        container->ResolveMediaResources(resolver);
+    }
+
+    if (const auto container{ UnfocusedAppearance().try_as<IMediaResourceContainer>() })
+    {
+        container->ResolveMediaResources(resolver);
     }
 }
 

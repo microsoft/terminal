@@ -50,6 +50,7 @@ Author(s):
 
 #include "JsonUtils.h"
 #include <DefaultSettings.h>
+#include "MediaResourceSupport.h"
 #include "AppearanceConfig.h"
 #include "FontConfig.h"
 
@@ -75,7 +76,7 @@ constexpr GUID RUNTIME_GENERATED_PROFILE_NAMESPACE_GUID = { 0xf65ddb7e, 0x706b, 
 
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
-    struct Profile : ProfileT<Profile>, IInheritable<Profile>
+    struct Profile : ProfileT<Profile, IMediaResourceContainer>, IInheritable<Profile>
     {
     public:
         Profile() noexcept = default;
@@ -113,11 +114,14 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         // As a result, we can't use the INHERITABLE_SETTING macro for Icon,
         //   as we manually have to set/unset _evaluatedIcon when Icon changes.
         winrt::hstring EvaluatedIcon();
+        void SetEvaluatedIcon(const winrt::hstring&);
         hstring Icon() const;
         void Icon(const hstring& value);
         bool HasIcon() const;
         Model::Profile IconOverrideSource();
         void ClearIcon();
+
+        void ResolveMediaResources(const Model::MediaResourceResolver& resolver);
 
         WINRT_PROPERTY(bool, Deleted, false);
         WINRT_PROPERTY(bool, Orphaned, false);
@@ -134,6 +138,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         INHERITABLE_SETTING(Model::Profile, bool, Hidden, false);
         INHERITABLE_SETTING(Model::Profile, guid, Guid, _GenerateGuidForProfile(Name(), Source()));
         INHERITABLE_SETTING(Model::Profile, hstring, Padding, DEFAULT_PADDING);
+
+        winrt::hstring SourceBasePath;
 
     public:
 #define PROFILE_SETTINGS_INITIALIZE(type, name, jsonKey, ...) \
@@ -155,7 +161,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         winrt::hstring _evaluateIcon() const;
         std::optional<hstring> _getIconImpl() const;
-        Model::Profile _getIconOverrideSourceImpl() const;
+        auto _getIconOverrideSourceImpl() -> winrt::com_ptr<Profile>;
         void _logSettingSet(const std::string_view& setting);
         void _logSettingIfSet(const std::string_view& setting, const bool isSet);
 

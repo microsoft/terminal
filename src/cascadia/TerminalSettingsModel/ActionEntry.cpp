@@ -16,7 +16,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
 
     ActionEntry::ActionEntry() noexcept :
-        ActionEntryT<ActionEntry, NewTabMenuEntry>(NewTabMenuEntryType::Action)
+        ActionEntryT<ActionEntry, NewTabMenuEntry, IPathlessMediaResourceContainer>(NewTabMenuEntryType::Action)
     {
     }
 
@@ -46,5 +46,13 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         entry->_ActionId = _ActionId;
         entry->_Icon = _Icon;
         return *entry;
+    }
+
+    void ActionEntry::ResolveMediaResourcesWithBasePath(const winrt::hstring& basePath, const Model::MediaResourceResolver& resolver)
+    {
+        if (!_Icon.empty())
+        {
+            resolver(basePath, winrt::make<ThingResource>(_Icon));
+        }
     }
 }
