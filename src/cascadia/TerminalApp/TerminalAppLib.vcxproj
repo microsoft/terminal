@@ -99,14 +99,11 @@
       <SubType>Code</SubType>
     </ClInclude>
     <ClInclude Include="BasePaletteItem.h" />
-    <ClInclude Include="TabBase.h">
-      <DependentUpon>TabBase.idl</DependentUpon>
+    <ClInclude Include="Tab.h">
+      <DependentUpon>Tab.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="TaskbarState.h">
       <DependentUpon>TaskbarState.idl</DependentUpon>
-    </ClInclude>
-    <ClInclude Include="TerminalTab.h">
-      <DependentUpon>TerminalTab.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="TerminalPage.h">
       <DependentUpon>TerminalPage.xaml</DependentUpon>
@@ -206,15 +203,12 @@
       <DependentUpon>PaletteItemTemplateSelector.idl</DependentUpon>
       <SubType>Code</SubType>
     </ClCompile>
-    <ClCompile Include="TabBase.cpp">
-      <DependentUpon>TabBase.idl</DependentUpon>
+    <ClCompile Include="Tab.cpp">
+      <DependentUpon>Tab.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="fzf/fzf.cpp" />
     <ClCompile Include="TaskbarState.cpp">
       <DependentUpon>TaskbarState.idl</DependentUpon>
-    </ClCompile>
-    <ClCompile Include="TerminalTab.cpp">
-      <DependentUpon>TerminalTab.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="TerminalPage.cpp">
       <DependentUpon>TerminalPage.xaml</DependentUpon>
@@ -333,9 +327,8 @@
       <DependentUpon>MinMaxCloseControl.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>
-    <Midl Include="TabBase.idl" />
+    <Midl Include="Tab.idl" />
     <Midl Include="TaskbarState.idl" />
-    <Midl Include="TerminalTab.idl" />
     <Midl Include="TerminalPage.idl">
       <DependentUpon>TerminalPage.xaml</DependentUpon>
       <SubType>Code</SubType>

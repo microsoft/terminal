@@ -81,9 +81,6 @@
     <Midl Include="ShortcutActionDispatch.idl">
       <Filter>settings</Filter>
     </Midl>
-    <Midl Include="TerminalTab.idl">
-      <Filter>tab</Filter>
-    </Midl>
     <Midl Include="FilteredCommand.idl">
       <Filter>commandPalette</Filter>
     </Midl>
@@ -91,7 +88,7 @@
       <Filter>tab</Filter>
     </Midl>
     <Midl Include="PaletteItemTemplateSelector.idl" />
-    <Midl Include="TabBase.idl" />
+    <Midl Include="Tab.idl" />
     <Midl Include="TerminalWindow.idl" />
     <Midl Include="TaskbarState.idl" />
     <Midl Include="IPaneContent.idl" />

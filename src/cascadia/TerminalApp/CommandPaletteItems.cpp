@@ -2,7 +2,7 @@
 // Licensed under the MIT license.
 
 #include "pch.h"
-#include "TerminalTab.h"
+#include "Tab.h"
 
 #include <LibraryResources.h>
 
@@ -19,11 +19,11 @@ using namespace winrt::Microsoft::Terminal::Settings::Model;
 
 namespace winrt::TerminalApp::implementation
 {
-    TabPaletteItem::TabPaletteItem(const winrt::TerminalApp::TabBase& tab) :
+    TabPaletteItem::TabPaletteItem(const winrt::TerminalApp::Tab& tab) :
         _tab{ tab }
     {
         _tabChangedRevoker = tab.PropertyChanged(winrt::auto_revoke, [=](auto& sender, auto& e) {
-            if (auto senderTab{ sender.try_as<winrt::TerminalApp::TabBase>() })
+            if (auto senderTab{ sender.try_as<winrt::TerminalApp::Tab>() })
             {
                 auto changedProperty = e.PropertyName();
                 if (changedProperty == L"Title")
@@ -38,10 +38,8 @@ namespace winrt::TerminalApp::implementation
             }
         });
 
-        if (const auto terminalTab{ tab.try_as<winrt::TerminalApp::TerminalTab>() })
+        if (const auto status = tab.TabStatus())
         {
-            const auto status = terminalTab.TabStatus();
-
             _tabStatusChangedRevoker = status.PropertyChanged(winrt::auto_revoke, [=](auto& /*sender*/, auto& /*e*/) {
                 // Sometimes nested bindings do not get updated,
                 // thus let's notify property changed on TabStatus when one of its properties changes

@@ -4,8 +4,8 @@
 #pragma once
 #include "Pane.h"
 #include "ColorPickupFlyout.h"
-#include "TabBase.h"
-#include "TerminalTab.g.h"
+#include "Tab.h"
+#include "Tab.g.h"
 
 // fwdecl unittest classes
 namespace TerminalAppLocalTests
@@ -15,10 +15,10 @@ namespace TerminalAppLocalTests
 
 namespace winrt::TerminalApp::implementation
 {
-    struct TerminalTab : TerminalTabT<TerminalTab, TabBase>
+    struct Tab : TabT<Tab>
     {
     public:
-        TerminalTab(std::shared_ptr<Pane> rootPane);
+        Tab(std::shared_ptr<Pane> rootPane);
 
         // Called after construction to perform the necessary setup, which relies on weak_ptr
         void Initialize();
@@ -27,7 +27,7 @@ namespace winrt::TerminalApp::implementation
         winrt::Microsoft::Terminal::Settings::Model::Profile GetFocusedProfile() const noexcept;
         winrt::TerminalApp::IPaneContent GetActiveContent() const;
 
-        void Focus(winrt::Windows::UI::Xaml::FocusState focusState) override;
+        void Focus(winrt::Windows::UI::Xaml::FocusState focusState);
 
         void Scroll(const int delta);
 
@@ -61,7 +61,7 @@ namespace winrt::TerminalApp::implementation
         void UpdateSettings(const winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings& settings);
         void UpdateTitle();
 
-        void Shutdown() override;
+        void Shutdown();
         void ClosePane();
 
         void SetTabText(winrt::hstring title);
@@ -69,7 +69,7 @@ namespace winrt::TerminalApp::implementation
         void ResetTabText();
         void ActivateTabRenamer();
 
-        virtual std::optional<winrt::Windows::UI::Color> GetTabColor() override;
+        std::optional<winrt::Windows::UI::Color> GetTabColor();
         void SetRuntimeTabColor(const winrt::Windows::UI::Color& color);
         void ResetRuntimeTabColor();
 
@@ -79,7 +79,7 @@ namespace winrt::TerminalApp::implementation
         void EnterZoom();
         void ExitZoom();
 
-        std::vector<Microsoft::Terminal::Settings::Model::ActionAndArgs> BuildStartupActions(BuildStartupKind kind) const override;
+        std::vector<Microsoft::Terminal::Settings::Model::ActionAndArgs> BuildStartupActions(BuildStartupKind kind) const;
 
         int GetLeafPaneCount() const noexcept;
 
@@ -98,15 +98,61 @@ namespace winrt::TerminalApp::implementation
             return _tabStatus;
         }
 
+        void SetDispatch(const winrt::TerminalApp::ShortcutActionDispatch& dispatch);
+
+        void UpdateTabViewIndex(const uint32_t idx, const uint32_t numTabs);
+        void SetActionMap(const Microsoft::Terminal::Settings::Model::IActionMapView& actionMap);
+
+        void ThemeColor(const winrt::Microsoft::Terminal::Settings::Model::ThemeColor& focused,
+                        const winrt::Microsoft::Terminal::Settings::Model::ThemeColor& unfocused,
+                        const til::color& tabRowColor);
+
+        Microsoft::Terminal::Settings::Model::TabCloseButtonVisibility CloseButtonVisibility();
+        void CloseButtonVisibility(Microsoft::Terminal::Settings::Model::TabCloseButtonVisibility visible);
+
+        til::event<winrt::delegate<void()>> RequestFocusActiveControl;
+
+        til::event<winrt::Windows::Foundation::EventHandler<winrt::Windows::Foundation::IInspectable>> Closed;
+        til::event<winrt::Windows::Foundation::EventHandler<winrt::Windows::Foundation::IInspectable>> CloseRequested;
+        til::property_changed_event PropertyChanged;
+
         til::typed_event<TerminalApp::TerminalPaneContent> RestartTerminalRequested;
 
-        til::typed_event<TerminalApp::TerminalTab, IInspectable> ActivePaneChanged;
+        til::typed_event<TerminalApp::Tab, IInspectable> ActivePaneChanged;
         til::event<winrt::delegate<>> TabRaiseVisualBell;
         til::typed_event<IInspectable, IInspectable> TaskbarProgressChanged;
+
+        // The TabViewIndex is the index this Tab object resides in TerminalPage's _tabs vector.
+        WINRT_PROPERTY(uint32_t, TabViewIndex, 0);
+        // The TabViewNumTabs is the number of Tab objects in TerminalPage's _tabs vector.
+        WINRT_PROPERTY(uint32_t, TabViewNumTabs, 0);
+
+        WINRT_OBSERVABLE_PROPERTY(winrt::hstring, Title, PropertyChanged.raise);
+        WINRT_OBSERVABLE_PROPERTY(winrt::hstring, Icon, PropertyChanged.raise);
+        WINRT_OBSERVABLE_PROPERTY(bool, ReadOnly, PropertyChanged.raise, false);
+        WINRT_PROPERTY(winrt::Microsoft::UI::Xaml::Controls::TabViewItem, TabViewItem, nullptr);
+
+        WINRT_OBSERVABLE_PROPERTY(winrt::Windows::UI::Xaml::FrameworkElement, Content, PropertyChanged.raise, nullptr);
 
     private:
         static constexpr double HeaderRenameBoxWidthDefault{ 165 };
         static constexpr double HeaderRenameBoxWidthTitleLength{ std::numeric_limits<double>::infinity() };
+
+        winrt::Windows::UI::Xaml::FocusState _focusState{ winrt::Windows::UI::Xaml::FocusState::Unfocused };
+        winrt::Windows::UI::Xaml::Controls::MenuFlyoutItem _closeOtherTabsMenuItem{};
+        winrt::Windows::UI::Xaml::Controls::MenuFlyoutItem _closeTabsAfterMenuItem{};
+        winrt::Windows::UI::Xaml::Controls::MenuFlyoutItem _moveToNewWindowMenuItem{};
+        winrt::Windows::UI::Xaml::Controls::MenuFlyoutItem _moveRightMenuItem{};
+        winrt::Windows::UI::Xaml::Controls::MenuFlyoutItem _moveLeftMenuItem{};
+        winrt::TerminalApp::ShortcutActionDispatch _dispatch;
+        Microsoft::Terminal::Settings::Model::IActionMapView _actionMap{ nullptr };
+        winrt::hstring _keyChord{};
+
+        winrt::Microsoft::Terminal::Settings::Model::ThemeColor _themeColor{ nullptr };
+        winrt::Microsoft::Terminal::Settings::Model::ThemeColor _unfocusedThemeColor{ nullptr };
+        til::color _tabRowColor;
+
+        Microsoft::Terminal::Settings::Model::TabCloseButtonVisibility _closeButtonVisibility{ Microsoft::Terminal::Settings::Model::TabCloseButtonVisibility::Always };
 
         std::shared_ptr<Pane> _rootPane{ nullptr };
         std::shared_ptr<Pane> _activePane{ nullptr };
@@ -163,12 +209,10 @@ namespace winrt::TerminalApp::implementation
         SafeDispatcherTimer _bellIndicatorTimer;
         void _BellIndicatorTimerTick(const Windows::Foundation::IInspectable& sender, const Windows::Foundation::IInspectable& e);
 
-        void _MakeTabViewItem() override;
-
         void _UpdateHeaderControlMaxWidth();
 
-        void _CreateContextMenu() override;
-        virtual winrt::hstring _CreateToolTipTitle() override;
+        void _CreateContextMenu();
+        winrt::hstring _CreateToolTipTitle();
 
         void _DetachEventHandlersFromContent(const uint32_t paneId);
         void _AttachEventHandlersToContent(const uint32_t paneId, const winrt::TerminalApp::IPaneContent& content);
@@ -187,7 +231,23 @@ namespace winrt::TerminalApp::implementation
 
         void _DuplicateTab();
 
-        virtual winrt::Windows::UI::Xaml::Media::Brush _BackgroundBrush() override;
+        winrt::Windows::UI::Xaml::Media::Brush _BackgroundBrush();
+
+        void _MakeTabViewItem();
+
+        void _AppendMoveMenuItems(winrt::Windows::UI::Xaml::Controls::MenuFlyout flyout);
+        winrt::Windows::UI::Xaml::Controls::MenuFlyoutSubItem _AppendCloseMenuItems(winrt::Windows::UI::Xaml::Controls::MenuFlyout flyout);
+        void _EnableMenuItems();
+        void _UpdateSwitchToTabKeyChord();
+        void _UpdateToolTip();
+
+        void _RecalculateAndApplyTabColor();
+        void _ApplyTabColorOnUIThread(const winrt::Windows::UI::Color& color);
+        void _ClearTabBackgroundColor();
+        void _RefreshVisualState();
+
+        bool _focused() const noexcept;
+        void _updateIsClosable();
 
         void _addBroadcastHandlers(const winrt::Microsoft::Terminal::Control::TermControl& control, ContentEventTokens& events);
 

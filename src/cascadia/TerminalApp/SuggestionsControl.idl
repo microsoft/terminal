@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import "TabBase.idl";
+import "Tab.idl";
 import "HighlightedTextControl.idl";
 import "FilteredCommand.idl";
 

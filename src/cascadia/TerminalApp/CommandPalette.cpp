@@ -1072,7 +1072,7 @@ namespace winrt::TerminalApp::implementation
     // Return Value:
     // - <none>
     void CommandPalette::_bindTabs(
-        const Windows::Foundation::Collections::IObservableVector<winrt::TerminalApp::TabBase>& source,
+        const Windows::Foundation::Collections::IObservableVector<winrt::TerminalApp::Tab>& source,
         const Windows::Foundation::Collections::IVector<winrt::TerminalApp::FilteredCommand>& target)
     {
         target.Clear();
@@ -1084,7 +1084,7 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    void CommandPalette::SetTabs(const Collections::IObservableVector<TabBase>& tabs, const Collections::IObservableVector<TabBase>& mruTabs)
+    void CommandPalette::SetTabs(const Collections::IObservableVector<Tab>& tabs, const Collections::IObservableVector<Tab>& mruTabs)
     {
         _bindTabs(tabs, _tabActions);
         _bindTabs(mruTabs, _mruTabActions);
