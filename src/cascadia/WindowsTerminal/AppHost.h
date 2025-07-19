@@ -50,6 +50,8 @@ private:
 
     void _revokeWindowCallbacks();
 
+    void _SetDefaultWindowTitle();
+
     void _HandleCommandlineArgs(const winrt::TerminalApp::WindowRequestedArgs& args);
 
     winrt::Microsoft::Terminal::Settings::Model::LaunchPosition _GetWindowLaunchPosition();

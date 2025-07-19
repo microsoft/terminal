@@ -153,6 +153,9 @@ namespace winrt::TerminalApp::implementation
 
         TerminalApp::WindowProperties WindowProperties() const noexcept { return _WindowProperties; };
 
+        static const bool& HasShownTerminalTitleInTitlebar() { return _hasShownTerminalTitleInTitlebar; }
+        static void SetHasShownTerminalTitleInTitlebar(const bool& hasShownTerminalTitleInTitlebar) { _hasShownTerminalTitleInTitlebar = hasShownTerminalTitleInTitlebar; }
+
         bool CanDragDrop() const noexcept;
         bool IsRunningElevated() const noexcept;
 
@@ -202,6 +205,7 @@ namespace winrt::TerminalApp::implementation
         WINRT_OBSERVABLE_PROPERTY(winrt::hstring, SavedActionCommandLine, PropertyChanged.raise, L"");
 
     private:
+        static bool _hasShownTerminalTitleInTitlebar; // Indicates that we have shown the title in the titlebar at least once without a reset to normal terminal title.
         friend struct TerminalPageT<TerminalPage>; // for Xaml to bind events
         std::optional<HWND> _hostingHwnd;
 

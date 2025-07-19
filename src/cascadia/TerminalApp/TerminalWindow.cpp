@@ -295,6 +295,16 @@ namespace winrt::TerminalApp::implementation
         return _settings.GlobalSettings().ShowTitleInTitlebar();
     }
 
+    bool TerminalWindow::GetHasShownTitleInTitlebar()
+    {
+        return TerminalPage::HasShownTerminalTitleInTitlebar();
+    }
+
+    void TerminalWindow::SetHasShownTitleInTitlebar(const bool& hasShownTitleInTitlebar)
+    {
+        TerminalPage::SetHasShownTerminalTitleInTitlebar(hasShownTitleInTitlebar);
+    }
+
     Microsoft::Terminal::Settings::Model::Theme TerminalWindow::Theme()
     {
         return _settings.GlobalSettings().CurrentTheme();

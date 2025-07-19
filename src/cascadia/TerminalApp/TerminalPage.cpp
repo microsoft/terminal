@@ -58,6 +58,8 @@ namespace winrt
 
 namespace winrt::TerminalApp::implementation
 {
+    bool TerminalPage::_hasShownTerminalTitleInTitlebar{ false };
+
     TerminalPage::TerminalPage(TerminalApp::WindowProperties properties, const TerminalApp::ContentManager& manager) :
         _tabs{ winrt::single_threaded_observable_vector<TerminalApp::TabBase>() },
         _mruTabs{ winrt::single_threaded_observable_vector<TerminalApp::TabBase>() },

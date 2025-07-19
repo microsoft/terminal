@@ -295,7 +295,7 @@ void AppHost::Initialize()
             _window->ShowWindowChanged(show);
         });
 
-    _window->UpdateTitle(_windowLogic.Title());
+    _SetDefaultWindowTitle();
 
     // Set up the content of the application. If the app has a custom titlebar,
     // set that content as well.
@@ -388,6 +388,11 @@ void AppHost::_revokeWindowCallbacks()
     _window->DragRegionClicked(_windowCallbacks.DragRegionClicked);
     _window->WindowVisibilityChanged(_windowCallbacks.WindowVisibilityChanged);
     _window->MaximizeChanged(_windowCallbacks.MaximizeChanged);
+}
+
+void AppHost::_SetDefaultWindowTitle()
+{
+    _window->UpdateTitle(_windowLogic.Title());
 }
 
 // Method Description:
@@ -1027,6 +1032,11 @@ void AppHost::_HandleSettingsChanged(const winrt::Windows::Foundation::IInspecta
     _window->SetMinimizeToNotificationAreaBehavior(_windowLogic.GetMinimizeToNotificationArea());
     _window->SetAutoHideWindow(_windowLogic.AutoHideWindow());
     _window->SetShowTabsFullscreen(_windowLogic.ShowTabsFullscreen());
+    if (_windowLogic.GetHasShownTitleInTitlebar())
+    {
+        _SetDefaultWindowTitle();
+        _windowLogic.SetHasShownTitleInTitlebar(false);
+    }
     _updateTheme();
 }
 

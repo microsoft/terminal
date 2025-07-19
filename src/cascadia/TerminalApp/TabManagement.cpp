@@ -1002,6 +1002,7 @@ namespace winrt::TerminalApp::implementation
             // Raise an event that our title changed
             if (_settings.GlobalSettings().ShowTitleInTitlebar())
             {
+                TerminalPage::SetHasShownTerminalTitleInTitlebar(true);
                 TitleChanged.raise(*this, tab.Title());
             }
 
