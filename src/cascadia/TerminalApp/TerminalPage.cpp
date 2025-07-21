@@ -1202,7 +1202,7 @@ namespace winrt::TerminalApp::implementation
 
         const auto dispatchToElevatedWindow = ctrlPressed && !IsRunningElevated();
 
-        std::string sessionType;
+        const char* sessionType;
         if ((shiftPressed || dispatchToElevatedWindow) && !debugTap)
         {
             // Manually fill in the evaluated profile.
@@ -1258,7 +1258,7 @@ namespace winrt::TerminalApp::implementation
             "NewTabMenuCreatedNewTerminalSession",
             TraceLoggingDescription("Event emitted when a new terminal was created via the new tab menu"),
             TraceLoggingValue(NumberOfTabs(), "NewTabCount", "The count of tabs currently opened in this window"),
-            TraceLoggingValue(sessionType.c_str(), "SessionType", "The type of session that was created"),
+            TraceLoggingValue(sessionType, "SessionType", "The type of session that was created"),
             TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
             TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
     }
@@ -1471,12 +1471,13 @@ namespace winrt::TerminalApp::implementation
         const auto targetAsString = [&target]() {
             switch (target)
             {
-            case SettingsTarget::SettingsUI:
-                return "UI";
             case SettingsTarget::SettingsFile:
                 return "SettingsFile";
             case SettingsTarget::DefaultsFile:
                 return "DefaultsFile";
+            case SettingsTarget::SettingsUI:
+            default:
+                return "UI";
             }
         }();
 
