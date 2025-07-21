@@ -1740,6 +1740,10 @@
     <value>Adjust terminal font size by scrolling while holding the Ctrl key</value>
     <comment>Header for a control to toggle font size changes with scrolling. When enabled, holding the Ctrl key while scrolling will increase or decrease the terminal font size.</comment>
   </data>
+  <data name="Globals_ScrollToChangeOpacity.Header" xml:space="preserve">
+    <value>Adjust terminal opacity by scrolling while holding the Ctrl and Shift keys</value>
+    <comment>Header for a control to toggle opacity changes with scrolling. When enabled, holding the Ctrl and Shift keys while scrolling will increase or decrease the window opacity.</comment>
+  </data>
   <data name="Globals_DisableAnimationsReversed.Header" xml:space="preserve">
     <value>Pane animations</value>
     <comment>Header for a control to toggle animations on panes. "Enabled" value enables the animations.</comment>

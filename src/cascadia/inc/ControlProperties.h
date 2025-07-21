@@ -43,6 +43,7 @@
     X(bool, CopyOnSelect, false)                                                                                  \
     X(bool, FocusFollowMouse, false)                                                                              \
     X(bool, ScrollToZoom, true)                                                                                   \
+    X(bool, ScrollToChangeOpacity, true)                                                                          \
     X(winrt::Windows::Foundation::IReference<winrt::Microsoft::Terminal::Core::Color>, TabColor, nullptr)         \
     X(winrt::Windows::Foundation::IReference<winrt::Microsoft::Terminal::Core::Color>, StartingTabColor, nullptr) \
     X(bool, TrimBlockSelection, true)                                                                             \

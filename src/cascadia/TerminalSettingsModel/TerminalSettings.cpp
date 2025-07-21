@@ -368,6 +368,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         _CopyFormatting = globalSettings.CopyFormatting();
         _FocusFollowMouse = globalSettings.FocusFollowMouse();
         _ScrollToZoom = globalSettings.ScrollToZoom();
+        _ScrollToChangeOpacity = globalSettings.ScrollToChangeOpacity();
         _GraphicsAPI = globalSettings.GraphicsAPI();
         _DisablePartialInvalidation = globalSettings.DisablePartialInvalidation();
         _SoftwareRendering = globalSettings.SoftwareRendering();
