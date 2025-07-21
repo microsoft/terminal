@@ -1202,7 +1202,7 @@ namespace winrt::TerminalApp::implementation
 
         const auto dispatchToElevatedWindow = ctrlPressed && !IsRunningElevated();
 
-        const char* sessionType;
+        auto sessionType = "";
         if ((shiftPressed || dispatchToElevatedWindow) && !debugTap)
         {
             // Manually fill in the evaluated profile.
