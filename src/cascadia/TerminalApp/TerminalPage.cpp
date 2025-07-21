@@ -237,6 +237,14 @@ namespace winrt::TerminalApp::implementation
         _newTabButton.Click([weakThis{ get_weak() }](auto&&, auto&&) {
             if (auto page{ weakThis.get() })
             {
+                TraceLoggingWrite(
+                    g_hTerminalAppProvider,
+                    "NewTabMenuDefaultButtonClicked",
+                    TraceLoggingDescription("Event emitted when the default button from the new tab split button is invoked"),
+                    TraceLoggingValue(page->NumberOfTabs(), "TabCount", "The count of tabs currently opened in this window"),
+                    TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+                    TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
+
                 page->_OpenNewTerminalViaDropdown(NewTerminalArgs());
             }
         });
@@ -834,14 +842,36 @@ namespace winrt::TerminalApp::implementation
         // Since the previous focus location might be discarded in the background,
         // e.g., the command palette will be dismissed by the menu,
         // and then closing the fly-out will move the focus to wrong location.
-        newTabFlyout.Opening([this](auto&&, auto&&) {
-            _FocusCurrentTab(true);
+        newTabFlyout.Opening([weakThis{ get_weak() }](auto&&, auto&&) {
+            if (auto page{ weakThis.get() })
+            {
+                page->_FocusCurrentTab(true);
+
+                TraceLoggingWrite(
+                    g_hTerminalAppProvider,
+                    "NewTabMenuOpened",
+                    TraceLoggingDescription("Event emitted when the new tab menu is opened"),
+                    TraceLoggingValue(page->NumberOfTabs(), "TabCount", "The Count of tabs currently opened in this window"),
+                    TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+                    TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
+            }
         });
         // Necessary for fly-out sub items to get focus on a tab before collapsing. Related to #15049
-        newTabFlyout.Closing([this](auto&&, auto&&) {
-            if (!_commandPaletteIs(Visibility::Visible))
+        newTabFlyout.Closing([weakThis{ get_weak() }](auto&&, auto&&) {
+            if (auto page{ weakThis.get() })
             {
-                _FocusCurrentTab(true);
+                if (!page->_commandPaletteIs(Visibility::Visible))
+                {
+                    page->_FocusCurrentTab(true);
+                }
+
+                TraceLoggingWrite(
+                    g_hTerminalAppProvider,
+                    "NewTabMenuClosed",
+                    TraceLoggingDescription("Event emitted when the new tab menu is closed"),
+                    TraceLoggingValue(page->NumberOfTabs(), "TabCount", "The Count of tabs currently opened in this window"),
+                    TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+                    TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
             }
         });
         _newTabButton.Flyout(newTabFlyout);
@@ -1047,6 +1077,15 @@ namespace winrt::TerminalApp::implementation
         profileMenuItem.Click([profileIndex, weakThis{ get_weak() }](auto&&, auto&&) {
             if (auto page{ weakThis.get() })
             {
+                TraceLoggingWrite(
+                    g_hTerminalAppProvider,
+                    "NewTabMenuItemClicked",
+                    TraceLoggingDescription("Event emitted when an item from the new tab menu is invoked"),
+                    TraceLoggingValue(page->NumberOfTabs(), "TabCount", "The count of tabs currently opened in this window"),
+                    TraceLoggingValue("Profile", "ItemType", "The type of item that was clicked in the new tab menu"),
+                    TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+                    TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
+
                 NewTerminalArgs newTerminalArgs{ profileIndex };
                 page->_OpenNewTerminalViaDropdown(newTerminalArgs);
             }
@@ -1093,6 +1132,15 @@ namespace winrt::TerminalApp::implementation
         actionMenuItem.Click([action, weakThis{ get_weak() }](auto&&, auto&&) {
             if (auto page{ weakThis.get() })
             {
+                TraceLoggingWrite(
+                    g_hTerminalAppProvider,
+                    "NewTabMenuItemClicked",
+                    TraceLoggingDescription("Event emitted when an item from the new tab menu is invoked"),
+                    TraceLoggingValue(page->NumberOfTabs(), "TabCount", "The count of tabs currently opened in this window"),
+                    TraceLoggingValue("Action", "ItemType", "The type of item that was clicked in the new tab menu"),
+                    TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+                    TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
+
                 page->_actionDispatch->DoAction(action.ActionAndArgs());
             }
         });
@@ -1154,6 +1202,7 @@ namespace winrt::TerminalApp::implementation
 
         const auto dispatchToElevatedWindow = ctrlPressed && !IsRunningElevated();
 
+        auto sessionType = "";
         if ((shiftPressed || dispatchToElevatedWindow) && !debugTap)
         {
             // Manually fill in the evaluated profile.
@@ -1171,10 +1220,12 @@ namespace winrt::TerminalApp::implementation
             if (dispatchToElevatedWindow)
             {
                 _OpenElevatedWT(newTerminalArgs);
+                sessionType = "ElevatedWindow";
             }
             else
             {
                 _OpenNewWindow(newTerminalArgs);
+                sessionType = "Window";
             }
         }
         else
@@ -1193,12 +1244,23 @@ namespace winrt::TerminalApp::implementation
                                  SplitDirection::Automatic,
                                  0.5f,
                                  newPane);
+                sessionType = "Pane";
             }
             else
             {
                 _CreateNewTabFromPane(newPane);
+                sessionType = "Tab";
             }
         }
+
+        TraceLoggingWrite(
+            g_hTerminalAppProvider,
+            "NewTabMenuCreatedNewTerminalSession",
+            TraceLoggingDescription("Event emitted when a new terminal was created via the new tab menu"),
+            TraceLoggingValue(NumberOfTabs(), "NewTabCount", "The count of tabs currently opened in this window"),
+            TraceLoggingValue(sessionType, "SessionType", "The type of session that was created"),
+            TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+            TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
     }
 
     std::wstring TerminalPage::_evaluatePathForCwd(const std::wstring_view path)
@@ -1405,6 +1467,30 @@ namespace winrt::TerminalApp::implementation
         {
             target = SettingsTarget::DefaultsFile;
         }
+
+        const auto targetAsString = [&target]() {
+            switch (target)
+            {
+            case SettingsTarget::SettingsFile:
+                return "SettingsFile";
+            case SettingsTarget::DefaultsFile:
+                return "DefaultsFile";
+            case SettingsTarget::SettingsUI:
+            default:
+                return "UI";
+            }
+        }();
+
+        TraceLoggingWrite(
+            g_hTerminalAppProvider,
+            "NewTabMenuItemClicked",
+            TraceLoggingDescription("Event emitted when an item from the new tab menu is invoked"),
+            TraceLoggingValue(NumberOfTabs(), "TabCount", "The count of tabs currently opened in this window"),
+            TraceLoggingValue("Settings", "ItemType", "The type of item that was clicked in the new tab menu"),
+            TraceLoggingValue(targetAsString, "SettingsTarget", "The target settings file or UI"),
+            TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+            TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
+
         _LaunchSettings(target);
     }
 
@@ -1416,6 +1502,15 @@ namespace winrt::TerminalApp::implementation
         auto p = LoadCommandPalette();
         p.EnableCommandPaletteMode(CommandPaletteLaunchMode::Action);
         p.Visibility(Visibility::Visible);
+
+        TraceLoggingWrite(
+            g_hTerminalAppProvider,
+            "NewTabMenuItemClicked",
+            TraceLoggingDescription("Event emitted when an item from the new tab menu is invoked"),
+            TraceLoggingValue(NumberOfTabs(), "TabCount", "The count of tabs currently opened in this window"),
+            TraceLoggingValue("CommandPalette", "ItemType", "The type of item that was clicked in the new tab menu"),
+            TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+            TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
     }
 
     // Method Description:
@@ -1428,6 +1523,15 @@ namespace winrt::TerminalApp::implementation
                                            const RoutedEventArgs&)
     {
         _ShowAboutDialog();
+
+        TraceLoggingWrite(
+            g_hTerminalAppProvider,
+            "NewTabMenuItemClicked",
+            TraceLoggingDescription("Event emitted when an item from the new tab menu is invoked"),
+            TraceLoggingValue(NumberOfTabs(), "TabCount", "The count of tabs currently opened in this window"),
+            TraceLoggingValue("About", "ItemType", "The type of item that was clicked in the new tab menu"),
+            TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+            TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
     }
 
     // Method Description:
@@ -5365,6 +5469,14 @@ namespace winrt::TerminalApp::implementation
         runAsAdminItem.Click([profileIndex, weakThis{ get_weak() }](auto&&, auto&&) {
             if (auto page{ weakThis.get() })
             {
+                TraceLoggingWrite(
+                    g_hTerminalAppProvider,
+                    "NewTabMenuItemElevateSubmenuItemClicked",
+                    TraceLoggingDescription("Event emitted when the elevate submenu item from the new tab menu is invoked"),
+                    TraceLoggingValue(page->NumberOfTabs(), "TabCount", "The count of tabs currently opened in this window"),
+                    TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+                    TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
+
                 NewTerminalArgs args{ profileIndex };
                 args.Elevate(true);
                 page->_OpenNewTerminalViaDropdown(args);
