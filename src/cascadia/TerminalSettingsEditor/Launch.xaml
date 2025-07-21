@@ -116,6 +116,7 @@
                                 <TextBlock Grid.Row="0"
                                            Grid.Column="1"
                                            Grid.ColumnSpan="2"
+                                           VerticalAlignment="Center"
                                            AutomationProperties.AccessibilityView="Raw"
                                            Text="{x:Bind Name}" />
 
