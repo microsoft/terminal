@@ -137,43 +137,6 @@ winrt::Microsoft::Terminal::Settings::Model::Profile AppearanceConfig::SourcePro
     return _sourceProfile.get();
 }
 
-// Method Description:
-// - Returns this AppearanceConfig's background image path, if one is set, expanding
-//   any environment variables in the path, if there are any.
-// - Or if "DesktopWallpaper" is set, then gets the path to the desktops wallpaper.
-// - This is the same as Profile::ExpandedBackgroundImagePath, but for AppearanceConfig
-// - NOTE: This is just placeholder for now, eventually the path will no longer be expanded in the settings model
-// Return Value:
-// - This profile's expanded background image path / desktops's wallpaper path /the empty string.
-winrt::hstring AppearanceConfig::ExpandedBackgroundImagePath()
-{
-    const auto path{ BackgroundImagePath() };
-    if (path.empty())
-    {
-        return path;
-    }
-    // checks if the user would like to copy their desktop wallpaper
-    // if so, replaces the path with the desktop wallpaper's path
-    else if (path == L"desktopWallpaper")
-    {
-        WCHAR desktopWallpaper[MAX_PATH];
-
-        // "The returned string will not exceed MAX_PATH characters" as of 2020
-        if (SystemParametersInfo(SPI_GETDESKWALLPAPER, MAX_PATH, desktopWallpaper, SPIF_UPDATEINIFILE))
-        {
-            return winrt::hstring{ (desktopWallpaper) };
-        }
-        else
-        {
-            return {};
-        }
-    }
-    else
-    {
-        return winrt::hstring{ wil::ExpandEnvironmentStringsW<std::wstring>(path.c_str()) };
-    }
-}
-
 winrt::hstring AppearanceConfig::_getSourceProfileBasePath() const
 {
     winrt::hstring sourceBasePath{};

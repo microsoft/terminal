@@ -5,6 +5,8 @@
 #include "TerminalSettings.h"
 #include "../../types/inc/colorTable.hpp"
 
+#include "AppearanceConfig.h"
+
 #include "TerminalSettings.g.cpp"
 #include "TerminalSettingsCreateResult.g.cpp"
 
@@ -250,9 +252,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         {
             _CursorColor = til::color{ appearance.CursorColor().Value() };
         }
-        if (!appearance.BackgroundImagePath().empty())
-        {
-            _BackgroundImage = appearance.ExpandedBackgroundImagePath();
+
+        { // media resources
+            const auto& appearanceImpl{ winrt::get_self<implementation::AppearanceConfig>(appearance) };
+            _BackgroundImage = appearanceImpl->ResolvedBackgroundImagePath();
+            _PixelShaderPath = appearanceImpl->ResolvedPixelShaderPath();
+            _PixelShaderImagePath = appearanceImpl->ResolvedPixelShaderImagePath();
         }
 
         _BackgroundImageOpacity = appearance.BackgroundImageOpacity();
@@ -260,8 +265,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         std::tie(_BackgroundImageHorizontalAlignment, _BackgroundImageVerticalAlignment) = ConvertConvergedAlignment(appearance.BackgroundImageAlignment());
 
         _RetroTerminalEffect = appearance.RetroTerminalEffect();
-        _PixelShaderPath = winrt::hstring{ wil::ExpandEnvironmentStringsW<std::wstring>(appearance.PixelShaderPath().c_str()) };
-        _PixelShaderImagePath = winrt::hstring{ wil::ExpandEnvironmentStringsW<std::wstring>(appearance.PixelShaderImagePath().c_str()) };
 
         _IntenseIsBold = WI_IsFlagSet(appearance.IntenseTextStyle(), Microsoft::Terminal::Settings::Model::IntenseStyle::Bold);
         _IntenseIsBright = WI_IsFlagSet(appearance.IntenseTextStyle(), Microsoft::Terminal::Settings::Model::IntenseStyle::Bright);

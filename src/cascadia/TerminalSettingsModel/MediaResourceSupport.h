@@ -7,35 +7,57 @@ Licensed under the MIT license.
 
 struct
     __declspec(uuid("6068ee1b-1ea0-4804-993a-42ef0c58d867"))
-        IMediaResourceContainer : public IUnknown
+    IMediaResourceContainer : public IUnknown
 {
     virtual void ResolveMediaResources(const winrt::Microsoft::Terminal::Settings::Model::MediaResourceResolver& resolver) = 0;
 };
 
 struct
     __declspec(uuid("9f11361c-7c8f-45c9-8948-36b66d67eca8"))
-        IPathlessMediaResourceContainer : public IUnknown
+    IPathlessMediaResourceContainer : public IUnknown
 {
     virtual void ResolveMediaResourcesWithBasePath(const winrt::hstring& basePath, const winrt::Microsoft::Terminal::Settings::Model::MediaResourceResolver& resolver) = 0;
 };
 
-struct ThingResource : winrt::implements<ThingResource, winrt::Microsoft::Terminal::Settings::Model::IMediaResource, winrt::non_agile, winrt::no_weak_ref, winrt::no_module_lock>
+struct MediaResourcePath
 {
-    ThingResource(winrt::hstring p) :
-        path{ p }, ok{ false } {};
+    winrt::hstring value{};
+    bool ok{ false };
+    bool resolved{ false };
 
-    winrt::hstring Path() { return path; };
+    void reset() { *this = MediaResourcePath{}; }
+    winrt::hstring resolved_or(const winrt::hstring& other) { return resolved ? value : other; }
+};
+
+struct MediaResource : winrt::implements<MediaResource, winrt::Microsoft::Terminal::Settings::Model::IMediaResource, winrt::non_agile, winrt::no_weak_ref, winrt::no_module_lock>
+{
+    MediaResource(const winrt::hstring& p) :
+        path{ p, false, false } {}
+
+    winrt::hstring Path() { return path.value; };
+
     void Set(winrt::hstring newPath)
     {
-        path = newPath;
-        ok = true;
-    }
-    void Reject()
-    {
-        path = {};
-        ok = false;
+        path.value = newPath;
+        path.ok = true;
+        path.resolved = true;
     }
 
-    winrt::hstring path;
-    bool ok;
+    void Reject()
+    {
+        path.value = {};
+        path.ok = false;
+        path.resolved = true;
+    }
+
+    MediaResourcePath path;
 };
+
+using ThingResource = MediaResource; // stopgap to get it to compile
+
+_TIL_INLINEPREFIX void ResolveMediaResourceIntoPath(const winrt::hstring& basePath, const winrt::hstring& unresolvedPath, const winrt::Microsoft::Terminal::Settings::Model::MediaResourceResolver& resolver, MediaResourcePath& resolvedPath)
+{
+    auto mediaResource{ winrt::make_self<MediaResource>(unresolvedPath) };
+    resolver(basePath, *mediaResource); // populates MediaResourcePath
+    resolvedPath = std::move(mediaResource->path);
+}

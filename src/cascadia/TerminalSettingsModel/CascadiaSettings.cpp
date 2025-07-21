@@ -488,8 +488,23 @@ void CascadiaSettings::_validateAllSchemesExist()
     }
 }
 
-static std::optional<winrt::hstring> _validateAndExpandSingleMediaResource(std::wstring_view basePath, std::wstring_view resource)
+static std::optional<winrt::hstring> _validateAndExpandSingleMediaResource(std::wstring_view basePath, winrt::hstring resource)
 {
+    if (resource == L"desktopWallpaper")
+    {
+        WCHAR desktopWallpaper[MAX_PATH];
+
+        // "The returned string will not exceed MAX_PATH characters" as of 2020
+        if (SystemParametersInfoW(SPI_GETDESKWALLPAPER, MAX_PATH, desktopWallpaper, SPIF_UPDATEINIFILE))
+        {
+            return winrt::hstring{ &desktopWallpaper[0] };
+        }
+        else
+        {
+            return std::nullopt;
+        }
+    }
+
     // URI
     try
     {
@@ -499,17 +514,27 @@ static std::optional<winrt::hstring> _validateAndExpandSingleMediaResource(std::
             return std::nullopt;
         }
 
-        if constexpr (Feature_DisableWebSourceIcons::IsEnabled())
+        const auto scheme{ resourceUri.SchemeName() };
+        if (til::starts_with_insensitive_ascii(scheme, L"http") ||
+            (til::equals_insensitive_ascii(scheme, L"ms-appx") && !resourceUri.Domain().empty()))
         {
-            const auto scheme{ resourceUri.SchemeName() };
-            // Only file: URIs and ms-* URIs are permissible. http, https, ftp, gopher, etc. are not.
-            if (!til::equals_insensitive_ascii(scheme, L"file") && !til::starts_with_insensitive_ascii(scheme, L"ms-"))
-            {
-                return std::nullopt;
-            }
+            // http(s) URLs (WSL fragments) and ms-appx://*APPLICATION*/ (Julia) URLs decay to fragment-relative paths
+            std::wstring_view path{ resourceUri.Path() };
+            std::wstring_view file{ path.substr(path.find_last_of(L'/') + 1) };
+            resource = winrt::hstring{ file };
+            // FALL THROUGH TO TRY FILESYSTEM PATHS
         }
-
-        return winrt::hstring{ resource };
+        else if (!til::equals_insensitive_ascii(scheme, L"file") &&
+                 !til::starts_with_insensitive_ascii(scheme, L"ms-"))
+        {
+            // Other non-file and non-ms* URLs are disallowed
+            return std::nullopt;
+        }
+        else
+        {
+            // Other URLs (so, file and ms-*) are permissible.
+            return resource;
+        }
     }
     catch (...)
     {
@@ -519,7 +544,7 @@ static std::optional<winrt::hstring> _validateAndExpandSingleMediaResource(std::
     // Not a URI? Try a path.
     try
     {
-        std::filesystem::path resourcePath{ resource };
+        std::filesystem::path resourcePath{ std::wstring_view{ resource } };
         if (!basePath.empty())
         {
             resourcePath = std::filesystem::path{ basePath } / resourcePath;

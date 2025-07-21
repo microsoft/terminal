@@ -111,15 +111,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         // EvaluatedIcon depends on Icon. It allows us to grab the
         //   icon from an exe path.
-        // As a result, we can't use the INHERITABLE_SETTING macro for Icon,
-        //   as we manually have to set/unset _evaluatedIcon when Icon changes.
+        void IconChanged();
         winrt::hstring EvaluatedIcon();
-        void SetEvaluatedIcon(const winrt::hstring&);
-        hstring Icon() const;
-        void Icon(const hstring& value);
-        bool HasIcon() const;
-        Model::Profile IconOverrideSource();
-        void ClearIcon();
 
         void ResolveMediaResources(const Model::MediaResourceResolver& resolver);
 
@@ -151,8 +144,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         Model::IAppearanceConfig _DefaultAppearance{ winrt::make<AppearanceConfig>(weak_ref<Model::Profile>(*this)) };
         Model::FontConfig _FontInfo{ winrt::make<FontConfig>(weak_ref<Model::Profile>(*this)) };
 
-        std::optional<hstring> _Icon{ std::nullopt };
-        std::optional<winrt::hstring> _evaluatedIcon{ std::nullopt };
+        MediaResourcePath _resolvedIcon;
         std::set<std::string> _changeLog;
 
         static std::wstring EvaluateStartingDirectory(const std::wstring& directory);
@@ -160,8 +152,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         static guid _GenerateGuidForProfile(const std::wstring_view& name, const std::wstring_view& source) noexcept;
 
         winrt::hstring _evaluateIcon() const;
-        std::optional<hstring> _getIconImpl() const;
-        auto _getIconOverrideSourceImpl() -> winrt::com_ptr<Profile>;
         void _logSettingSet(const std::string_view& setting);
         void _logSettingIfSet(const std::string_view& setting, const bool isSet);
 
