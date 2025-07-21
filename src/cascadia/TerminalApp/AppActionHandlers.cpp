@@ -1559,8 +1559,6 @@ namespace winrt::TerminalApp::implementation
             activeTab->ToggleBroadcastInput();
             args.Handled(true);
         }
-        // TODO(DH)
-        // If the focused tab wasn't a Tab, then leave handled=false
     }
 
     void TerminalPage::_HandleRestartConnection(const IInspectable& sender,
