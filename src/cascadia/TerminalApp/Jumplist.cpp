@@ -45,13 +45,12 @@ static constexpr bool _isProbableFilePath(std::wstring_view path)
 //   paths to have the "correct" slash direction.
 static std::wstring _normalizeIconPath(std::wstring_view path)
 {
-    const auto fullPath{ wil::ExpandEnvironmentStringsW<std::wstring>(path.data()) };
-    if (_isProbableFilePath(fullPath))
+    if (_isProbableFilePath(path))
     {
-        std::filesystem::path asPath{ fullPath };
+        std::filesystem::path asPath{ path };
         return asPath.make_preferred().wstring();
     }
-    return std::wstring{ fullPath };
+    return std::wstring{ path };
 }
 
 // Method Description:

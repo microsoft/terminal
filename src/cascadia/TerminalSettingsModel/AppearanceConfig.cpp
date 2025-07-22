@@ -153,20 +153,17 @@ void AppearanceConfig::ResolveMediaResources(const Model::MediaResourceResolver&
     if (const auto [source, path] = _getBackgroundImagePathOverrideSourceAndValueImpl(); source && path && !path->empty())
     {
         winrt::hstring sourceBasePath{ source->_getSourceProfileBasePath() };
-        auto tr{ winrt::make_self<ThingResource>(*path) };
-        resolver(sourceBasePath, *tr);
+        ResolveMediaResourceIntoPath(sourceBasePath, *path, resolver, _backgroundImagePath);
     }
     if (const auto [source, path]{ _getPixelShaderPathOverrideSourceAndValueImpl() }; source && path && !path->empty())
     {
         winrt::hstring sourceBasePath{ source->_getSourceProfileBasePath() };
-        auto tr{ winrt::make_self<ThingResource>(*path) };
-        resolver(sourceBasePath, *tr);
+        ResolveMediaResourceIntoPath(sourceBasePath, *path, resolver, _pixelShaderPath);
     }
     if (const auto [source, path]{ _getPixelShaderImagePathOverrideSourceAndValueImpl() }; source && path && !path->empty())
     {
         winrt::hstring sourceBasePath{ source->_getSourceProfileBasePath() };
-        auto tr{ winrt::make_self<ThingResource>(*path) };
-        resolver(sourceBasePath, *tr);
+        ResolveMediaResourceIntoPath(sourceBasePath, *path, resolver, _pixelShaderImagePath);
     }
 }
 

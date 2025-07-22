@@ -488,7 +488,7 @@ void CascadiaSettings::_validateAllSchemesExist()
     }
 }
 
-static void _resolveSingleMediaResource(std::wstring_view basePath, const Model::IMediaResource& resource)
+void CascadiaSettings::_resolveSingleMediaResource(Model::OriginTag /*origin*/, std::wstring_view basePath, const Model::IMediaResource& resource)
 {
     auto resourcePath{ resource.Path() };
 
@@ -597,9 +597,7 @@ void CascadiaSettings::_validateMediaResources()
     auto warnInvalidBackground{ false };
     auto warnInvalidIcon{ false };
 
-    winrt::Microsoft::Terminal::Settings::Model::MediaResourceResolver mediaResourceResolver{
-        &_resolveSingleMediaResource
-    };
+    MediaResourceResolver mediaResourceResolver{ this, &CascadiaSettings::_resolveSingleMediaResource };
 
     for (const auto& profile : _allProfiles)
     {
