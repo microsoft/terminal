@@ -2429,7 +2429,7 @@ std::optional<uint32_t> Pane::Id() noexcept
 
 // Method Description:
 // - Sets this pane's ID
-// - Panes are given IDs upon creation by TerminalTab
+// - Panes are given IDs upon creation by Tab
 // Arguments:
 // - The number to set this pane's ID to
 void Pane::Id(uint32_t id) noexcept
