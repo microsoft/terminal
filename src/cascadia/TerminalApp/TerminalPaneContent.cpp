@@ -95,7 +95,7 @@ namespace winrt::TerminalApp::implementation
         NewTerminalArgs args{};
         const auto& controlSettings = _control.Settings();
 
-        args.Profile(controlSettings.ProfileName());
+        args.Profile(::Microsoft::Console::Utils::GuidToString(_profile.Guid()));
         // If we know the user's working directory use it instead of the profile.
         if (const auto dir = _control.WorkingDirectory(); !dir.empty())
         {

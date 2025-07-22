@@ -77,6 +77,11 @@ AppHost::AppHost(WindowEmperor* manager, const winrt::TerminalApp::AppLogic& log
     _windowCallbacks.ShouldExitFullscreen = _window->ShouldExitFullscreen({ &_windowLogic, &winrt::TerminalApp::TerminalWindow::RequestExitFullscreen });
 
     _window->MakeWindow();
+
+    // Does window creation mean the window was activated (WM_ACTIVATE)? No.
+    // But it simplifies `WindowEmperor::_mostRecentWindow()`, because now the creation of a
+    // new window marks it as the most recent one immediately, even before it becomes active.
+    QueryPerformanceCounter(&_lastActivatedTime);
 }
 
 bool AppHost::OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, const bool down)
@@ -951,7 +956,7 @@ void AppHost::_updateTheme()
     _window->UseDarkTheme(_isActuallyDarkTheme(theme.RequestedTheme()));
 
     // Update the window frame. If `rainbowFrame:true` is enabled, then that
-    // will be used. Otherwise we'll try to use the `FrameBrush` set in the
+    // will be used. Otherwise, we'll try to use the `FrameBrush` set in the
     // terminal window, as that will have the right color for the ThemeColor for
     // this setting. If that value is null, then revert to the default frame
     // color.

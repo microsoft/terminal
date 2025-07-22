@@ -84,7 +84,7 @@ void ConhostInternalGetSet::SetViewportPosition(const til::point position)
     THROW_IF_FAILED(info.SetViewportOrigin(true, position, true));
     // SetViewportOrigin() only updates the virtual bottom (the bottom coordinate of the area
     // in the text buffer a VT client writes its output into) when it's moving downwards.
-    // But this function is meant to truly move the viewport no matter what. Otherwise `tput reset` breaks.
+    // But this function is meant to truly move the viewport no matter what. Otherwise, `tput reset` breaks.
     info.UpdateBottom();
 }
 
@@ -280,9 +280,9 @@ unsigned int ConhostInternalGetSet::GetInputCodePage() const
 // - content - the text to be copied.
 // Return Value:
 // - <none>
-void ConhostInternalGetSet::CopyToClipboard(const wil::zwstring_view /*content*/)
+void ConhostInternalGetSet::CopyToClipboard(const wil::zwstring_view content)
 {
-    // TODO
+    ServiceLocator::LocateGlobals().getConsoleInformation().CopyTextToClipboard(content);
 }
 
 // Routine Description:

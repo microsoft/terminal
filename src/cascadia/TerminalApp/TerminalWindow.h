@@ -169,6 +169,7 @@ namespace winrt::TerminalApp::implementation
         winrt::com_ptr<TerminalPage> _root{ nullptr };
 
         wil::com_ptr<CommandlineArgs> _appArgs{ nullptr };
+        winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection _startupConnection{ nullptr };
         bool _hasCommandLineArguments{ false };
         bool _gotSettingsStartupActions{ false };
         std::vector<winrt::Microsoft::Terminal::Settings::Model::ActionAndArgs> _settingsStartupArgs{};
@@ -189,7 +190,7 @@ namespace winrt::TerminalApp::implementation
                                    const winrt::hstring& contentKey,
                                    HRESULT settingsLoadedResult,
                                    const winrt::hstring& exceptionText);
-        void _ShowLoadWarningsDialog(const Windows::Foundation::Collections::IVector<Microsoft::Terminal::Settings::Model::SettingsLoadWarnings>& warnings);
+        void _ShowLoadWarningsDialog(const IInspectable& sender, const Windows::Foundation::Collections::IVectorView<Microsoft::Terminal::Settings::Model::SettingsLoadWarnings>& warnings);
 
         bool _IsKeyboardServiceEnabled();
 

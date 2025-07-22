@@ -9,6 +9,7 @@
 #include <ScopedResourceLoader.h>
 #include <WtExeUtils.h>
 #include <til/hash.h>
+#include <wil/token_helpers.h>
 
 #include "AppHost.h"
 #include "resource.h"
@@ -49,7 +50,7 @@ static std::vector<winrt::hstring> commandlineToArgArray(const wchar_t* commandL
 }
 
 // Returns the length of a double-null encoded string *excluding* the trailing double-null character.
-static std::wstring_view stringFromDoubleNullTerminated(const wchar_t* beg)
+static wil::zwstring_view stringFromDoubleNullTerminated(const wchar_t* beg)
 {
     auto end = beg;
 
@@ -57,7 +58,7 @@ static std::wstring_view stringFromDoubleNullTerminated(const wchar_t* beg)
     {
     }
 
-    return { beg, end };
+    return { beg, gsl::narrow_cast<size_t>(end - beg) };
 }
 
 // Appends an uint32_t to a byte vector.
@@ -78,36 +79,39 @@ static const uint8_t* deserializeUint32(const uint8_t* it, const uint8_t* end, u
     return it + sizeof(uint32_t);
 }
 
-// Writes an uint32_t length prefix, followed by the string data, to the output vector.
-static void serializeString(std::vector<uint8_t>& out, std::wstring_view str)
+// Writes a null-terminated string to `out`: A uint32_t length prefix,
+// *including null byte*, followed by the string data, followed by the null-terminator.
+static void serializeString(std::vector<uint8_t>& out, wil::zwstring_view str)
 {
     const auto ptr = reinterpret_cast<const uint8_t*>(str.data());
-    const auto len = gsl::narrow<uint32_t>(str.size());
-    serializeUint32(out, len);
+    const auto len = str.size() + 1;
+    serializeUint32(out, gsl::narrow<uint32_t>(len));
     out.insert(out.end(), ptr, ptr + len * sizeof(wchar_t));
 }
 
-// Parses the next string from the input iterator. Performs bounds-checks.
+// Counter-part to `serializeString`. Performs bounds-checks.
 // Returns an iterator that points past it.
-static const uint8_t* deserializeString(const uint8_t* it, const uint8_t* end, std::wstring_view& str)
+static const uint8_t* deserializeString(const uint8_t* it, const uint8_t* end, wil::zwstring_view& str)
 {
     uint32_t len;
     it = deserializeUint32(it, end, len);
 
-    if (static_cast<size_t>(end - it) < len * sizeof(wchar_t))
+    const auto bytes = static_cast<size_t>(len) * sizeof(wchar_t);
+
+    if (bytes == 0 || static_cast<size_t>(end - it) < bytes)
     {
         throw std::out_of_range("Not enough data for string content");
     }
 
-    str = { reinterpret_cast<const wchar_t*>(it), len };
-    return it + len * sizeof(wchar_t);
+    str = { reinterpret_cast<const wchar_t*>(it), len - 1 };
+    return it + bytes;
 }
 
 struct Handoff
 {
-    std::wstring_view args;
-    std::wstring_view env;
-    std::wstring_view cwd;
+    wil::zwstring_view args;
+    wil::zwstring_view env;
+    wil::zwstring_view cwd;
     uint32_t show;
 };
 
@@ -272,7 +276,7 @@ AppHost* WindowEmperor::_mostRecentWindow() const noexcept
 void WindowEmperor::HandleCommandlineArgs(int nCmdShow)
 {
     std::wstring windowClassName;
-    windowClassName.reserve(47); // "Windows Terminal Preview Admin 0123456789012345"
+    windowClassName.reserve(64); // "Windows Terminal Preview Admin 0123456789012345 0123456789012345"
 #if defined(WT_BRANDING_RELEASE)
     windowClassName.append(L"Windows Terminal");
 #elif defined(WT_BRANDING_PREVIEW)
@@ -290,6 +294,18 @@ void WindowEmperor::HandleCommandlineArgs(int nCmdShow)
     {
         const auto path = wil::GetModuleFileNameW<std::wstring>(nullptr);
         const auto hash = til::hash(path);
+#ifdef _WIN64
+        fmt::format_to(std::back_inserter(windowClassName), FMT_COMPILE(L" {:016x}"), hash);
+#else
+        fmt::format_to(std::back_inserter(windowClassName), FMT_COMPILE(L" {:08x}"), hash);
+#endif
+    }
+
+    {
+        wil::unique_handle processToken{ GetCurrentProcessToken() };
+        const auto userTokenInfo{ wil::get_token_information<TOKEN_USER>(processToken.get()) };
+        const auto sidLength{ GetLengthSid(userTokenInfo->User.Sid) };
+        const auto hash{ til::hash(userTokenInfo->User.Sid, sidLength) };
 #ifdef _WIN64
         fmt::format_to(std::back_inserter(windowClassName), FMT_COMPILE(L" {:016x}"), hash);
 #else
@@ -345,20 +361,31 @@ void WindowEmperor::HandleCommandlineArgs(int nCmdShow)
             for (const auto layout : layouts)
             {
                 hstring args[] = { L"wt", L"-w", L"new", L"-s", winrt::to_hstring(startIdx) };
-                _dispatchCommandline({ args, cwd, showCmd, env });
+                _dispatchCommandlineCommon(args, cwd, env, showCmd);
                 startIdx += 1;
             }
         }
 
-        // Create another window if needed: There aren't any yet, or we got an explicit command line.
         const auto args = commandlineToArgArray(GetCommandLineW());
-        if (_windows.empty() || args.size() != 1)
-        {
-            _dispatchCommandline({ args, cwd, showCmd, env });
-        }
 
-        // If we created no windows, e.g. because the args are "/?" we can just exit now.
-        _postQuitMessageIfNeeded();
+        if (args.size() == 2 && args[1] == L"-Embedding")
+        {
+            // We were launched for ConPTY handoff. We have no windows and also don't want to exit.
+            //
+            // TODO: Here we could start a timer and exit after, say, 5 seconds
+            // if no windows are created. But that's a minor concern.
+        }
+        else
+        {
+            // Create another window if needed: There aren't any yet, OR we got an explicit command line.
+            if (_windows.empty() || args.size() != 1)
+            {
+                _dispatchCommandlineCommon(args, cwd, env, showCmd);
+            }
+
+            // If we created no windows, e.g. because the args are "/?" we can just exit now.
+            _postQuitMessageIfNeeded();
+        }
     }
 
     // ALWAYS change the _real_ CWD of the Terminal to system32,
@@ -384,6 +411,19 @@ void WindowEmperor::HandleCommandlineArgs(int nCmdShow)
                 SetParent(coreHandle, _window.get());
             }
         }
+    }
+
+    {
+        TerminalConnection::ConptyConnection::NewConnection([this](TerminalConnection::ConptyConnection conn) {
+            TerminalApp::CommandlineArgs args;
+            args.ShowWindowCommand(conn.ShowWindow());
+            args.Connection(std::move(conn));
+            _dispatchCommandline(std::move(args));
+            _summonWindow(SummonWindowSelectionArgs{
+                .SummonBehavior = nullptr,
+            });
+        });
+        TerminalConnection::ConptyConnection::StartInboundListener();
     }
 
     // Main message loop. It pumps all windows.
@@ -586,6 +626,16 @@ void WindowEmperor::_dispatchCommandline(winrt::TerminalApp::CommandlineArgs arg
         request.WindowName(std::move(windowName));
         CreateNewWindow(std::move(request));
     }
+}
+
+void WindowEmperor::_dispatchCommandlineCommon(winrt::array_view<const winrt::hstring> args, wil::zwstring_view currentDirectory, wil::zwstring_view envString, uint32_t showWindowCommand)
+{
+    winrt::TerminalApp::CommandlineArgs c;
+    c.Commandline(args);
+    c.CurrentDirectory(currentDirectory);
+    c.CurrentEnvironment(envString);
+    c.ShowWindowCommand(showWindowCommand);
+    _dispatchCommandline(std::move(c));
 }
 
 // This is an implementation-detail of _dispatchCommandline().
@@ -895,11 +945,8 @@ LRESULT WindowEmperor::_messageHandler(HWND window, UINT const message, WPARAM c
             if (const auto cds = reinterpret_cast<COPYDATASTRUCT*>(lParam); cds->dwData == TERMINAL_HANDOFF_MAGIC)
             {
                 const auto handoff = deserializeHandoffPayload(static_cast<const uint8_t*>(cds->lpData), static_cast<const uint8_t*>(cds->lpData) + cds->cbData);
-                const winrt::hstring args{ handoff.args };
-                const winrt::hstring env{ handoff.env };
-                const winrt::hstring cwd{ handoff.cwd };
-                const auto argv = commandlineToArgArray(args.c_str());
-                _dispatchCommandline({ argv, cwd, gsl::narrow_cast<uint32_t>(handoff.show), env });
+                const auto argv = commandlineToArgArray(handoff.args.c_str());
+                _dispatchCommandlineCommon(argv, handoff.cwd, handoff.env, handoff.show);
             }
             return 0;
         case WM_HOTKEY:
@@ -1198,7 +1245,7 @@ void WindowEmperor::_hotkeyPressed(const long hotkeyIndex)
     const wil::unique_environstrings_ptr envMem{ GetEnvironmentStringsW() };
     const auto env = stringFromDoubleNullTerminated(envMem.get());
     const auto cwd = wil::GetCurrentDirectoryW<std::wstring>();
-    _dispatchCommandline({ argv, cwd, SW_SHOWDEFAULT, std::move(env) });
+    _dispatchCommandlineCommon(argv, cwd, env, SW_SHOWDEFAULT);
 }
 
 void WindowEmperor::_registerHotKey(const int index, const winrt::Microsoft::Terminal::Control::KeyChord& hotkey) noexcept

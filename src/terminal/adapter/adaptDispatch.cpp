@@ -1009,7 +1009,7 @@ void AdaptDispatch::_ChangeRectOrStreamAttributes(const til::rect& changeArea, c
     // top line is altered from the left offset up to the end of the line. The
     // bottom line is altered from the start up to the right offset. All the
     // lines in-between have their entire length altered. The right coordinate
-    // must be greater than the left, otherwise the operation is ignored.
+    // must be greater than the left; otherwise, the operation is ignored.
     else if (lineCount > 1 && changeRect.right > changeRect.left)
     {
         const auto pageWidth = page.Width();
@@ -1297,11 +1297,6 @@ void AdaptDispatch::SelectAttributeChangeExtent(const DispatchTypes::ChangeExten
     }
 }
 
-void AdaptDispatch::SetVtChecksumReportSupport(const bool enabled) noexcept
-{
-    _vtChecksumReportEnabled = enabled;
-}
-
 // Routine Description:
 // - DECRQCRA - Computes and reports a checksum of the specified area of
 //   the buffer memory.
@@ -1318,7 +1313,7 @@ void AdaptDispatch::RequestChecksumRectangularArea(const VTInt id, const VTInt p
     // If this feature is not enabled, we'll just report a zero checksum.
     if constexpr (Feature_VtChecksumReport::IsEnabled())
     {
-        if (_vtChecksumReportEnabled)
+        if (_optionalFeatures.test(OptionalFeature::ChecksumReport))
         {
             // If the page number is 0, then we're meant to return a checksum of all
             // of the pages, but we have no need for that, so we'll just return 0.
@@ -1327,7 +1322,7 @@ void AdaptDispatch::RequestChecksumRectangularArea(const VTInt id, const VTInt p
                 // As part of the checksum, we need to include the color indices of each
                 // cell, and in the case of default colors, those indices come from the
                 // color alias table. But if they're not in the bottom 16 range, we just
-                // fallback to using white on black (7 and 0).
+                // fall back to using white on black (7 and 0).
                 auto defaultFgIndex = _renderSettings.GetColorAliasIndex(ColorAlias::DefaultForeground);
                 auto defaultBgIndex = _renderSettings.GetColorAliasIndex(ColorAlias::DefaultBackground);
                 defaultFgIndex = defaultFgIndex < 16 ? defaultFgIndex : 7;
@@ -1483,8 +1478,16 @@ void AdaptDispatch::DeviceAttributes()
     // 28 = Rectangular area operations
     // 32 = Text macros
     // 42 = ISO Latin-2 character set
+    // 52 = Clipboard access
 
-    _ReturnCsiResponse(L"?61;4;6;7;14;21;22;23;24;28;32;42c");
+    if (_optionalFeatures.test(OptionalFeature::ClipboardWrite))
+    {
+        _ReturnCsiResponse(L"?61;4;6;7;14;21;22;23;24;28;32;42;52c");
+    }
+    else
+    {
+        _ReturnCsiResponse(L"?61;4;6;7;14;21;22;23;24;28;32;42c");
+    }
 }
 
 // Routine Description:
@@ -2389,7 +2392,9 @@ void AdaptDispatch::CarriageReturn()
 // Arguments:
 // - page - Target page on which the line feed is executed.
 // - withReturn - Set to true if a carriage return should be performed as well.
-// - wrapForced - Set to true is the line feed was the result of the line wrapping. if the viewport panned down. False if not.
+// - wrapForced - Set to true if the line feed was the result of the line wrapping.
+// Return Value:
+// - true if the viewport panned down; otherwise, false.
 bool AdaptDispatch::_DoLineFeed(const Page& page, const bool withReturn, const bool wrapForced)
 {
     auto& textBuffer = page.Buffer();
@@ -2465,7 +2470,7 @@ bool AdaptDispatch::_DoLineFeed(const Page& page, const bool withReturn, const b
         _api.NotifyBufferRotation(1);
 
         // We trigger a scroll rather than a redraw, since that's more efficient,
-        // but we need to turn the cursor off before doing so, otherwise a ghost
+        // but we need to turn the cursor off before doing so; otherwise, a ghost
         // cursor can be left behind in the previous position.
         cursor.SetIsOn(false);
         textBuffer.TriggerScroll({ 0, -1 });
@@ -2879,7 +2884,7 @@ void AdaptDispatch::AcceptC1Controls(const bool enabled)
 void AdaptDispatch::SendC1Controls(const bool enabled)
 {
     // If this is an attempt to enable C1 controls, the input code page must be
-    // one of the DOCS choices (UTF-8 or ISO-8859-1), otherwise there's a risk
+    // one of the DOCS choices (UTF-8 or ISO-8859-1); otherwise, there's a risk
     // that those controls won't have a valid encoding.
     const auto codepage = _api.GetInputCodePage();
     if (enabled == false || codepage == CP_UTF8 || codepage == 28591)
@@ -3351,7 +3356,7 @@ void AdaptDispatch::SetXtermColorResource(const size_t resource, const DWORD col
 // Method Description:
 // - Reports the value of one Xterm Color Resource, if it is set.
 // Return Value:
-// True if handled successfully. False otherwise.
+// - true if handled successfully; otherwise, false.
 void AdaptDispatch::RequestXtermColorResource(const size_t resource)
 {
     assert(resource >= 10);
@@ -4184,7 +4189,7 @@ ITermDispatch::StringHandler AdaptDispatch::RequestSetting()
         {
             // Although we don't yet support any operations with parameter
             // prefixes, it's important that we still parse the prefix and
-            // include it in the ID. Otherwise we'll mistakenly respond to
+            // include it in the ID. Otherwise, we'll mistakenly respond to
             // prefixed queries that we don't actually recognise.
             const auto isParameterPrefix = ch >= L'<' && ch <= L'?';
             const auto isParameter = ch >= L'0' && ch < L'9';
@@ -4789,4 +4794,9 @@ void AdaptDispatch::PlaySounds(const VTParameters parameters)
         // we set the velocity to 0 (i.e. no volume).
         _api.PlayMidiNote(noteNumber, noteNumber == 71 ? 0 : velocity, duration);
     });
+}
+
+void AdaptDispatch::SetOptionalFeatures(const til::enumset<OptionalFeature> features) noexcept
+{
+    _optionalFeatures = features;
 }

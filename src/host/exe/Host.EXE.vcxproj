@@ -7,6 +7,7 @@
     <ProjectName>Host.EXE</ProjectName>
     <TargetName>OpenConsole</TargetName>
     <ConfigurationType>Application</ConfigurationType>
+    <VersionInfoFileDescription>Console Window and PTY Host (Open Source)</VersionInfoFileDescription>
     <PgoTarget>true</PgoTarget>
   </PropertyGroup>
   <Import Project="$(SolutionDir)common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />

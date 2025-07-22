@@ -313,6 +313,13 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         }
         CATCH_LOG()
 
+        try
+        {
+            auto processImageName{ wil::QueryFullProcessImageNameW<std::wstring>(_piClient.hProcess) };
+            _clientName = std::filesystem::path{ std::move(processImageName) }.filename().wstring();
+        }
+        CATCH_LOG()
+
         _pipe = std::move(pipe.server);
         *in = pipe.client.release();
         *out = pipeClientClone.release();
@@ -556,13 +563,13 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         }
     }
 
-    void ConptyConnection::ClearBuffer()
+    void ConptyConnection::ClearBuffer(bool keepCursorRow)
     {
         // If we haven't connected yet, then we really don't need to do
         // anything. The connection should already start clear!
         if (_isConnected())
         {
-            THROW_IF_FAILED(ConptyClearPseudoConsole(_hPC.get()));
+            THROW_IF_FAILED(ConptyClearPseudoConsole(_hPC.get(), keepCursorRow));
         }
     }
 
