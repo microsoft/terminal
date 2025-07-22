@@ -71,9 +71,9 @@ namespace winrt::TerminalApp::implementation
         public TabPaletteItemT<TabPaletteItem>,
         BasePaletteItem<TabPaletteItem, winrt::TerminalApp::PaletteItemType::Tab>
     {
-        TabPaletteItem(const winrt::TerminalApp::TabBase& tab);
+        TabPaletteItem(const winrt::TerminalApp::Tab& tab);
 
-        winrt::TerminalApp::TabBase Tab() const noexcept
+        winrt::TerminalApp::Tab Tab() const noexcept
         {
             return _tab.get();
         }
@@ -105,16 +105,13 @@ namespace winrt::TerminalApp::implementation
         {
             if (auto tab = _tab.get())
             {
-                if (auto terminalTab = tab.try_as<winrt::TerminalApp::TerminalTab>())
-                {
-                    return terminalTab.TabStatus();
-                }
+                return tab.TabStatus();
             }
             return { nullptr };
         }
 
     private:
-        winrt::weak_ref<winrt::TerminalApp::TabBase> _tab;
+        winrt::weak_ref<winrt::TerminalApp::Tab> _tab;
         Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker _tabChangedRevoker;
         Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker _tabStatusChangedRevoker;
     };
