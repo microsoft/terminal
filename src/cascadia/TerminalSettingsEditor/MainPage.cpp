@@ -25,14 +25,6 @@
 #include <LibraryResources.h>
 #include <dwmapi.h>
 
-// Note: Generate GUID using TlgGuid.exe tool
-TRACELOGGING_DEFINE_PROVIDER(
-    g_hTerminalSettingsEditorProvider,
-    "Microsoft.Windows.Terminal.Settings.Editor",
-    // {1b16317d-b594-51f8-c552-5d50572b5efc}
-    (0x1b16317d, 0xb594, 0x51f8, 0xc5, 0x52, 0x5d, 0x50, 0x57, 0x2b, 0x5e, 0xfc),
-    TraceLoggingOptionMicrosoftTelemetry());
-
 namespace winrt
 {
     namespace MUX = Microsoft::UI::Xaml;

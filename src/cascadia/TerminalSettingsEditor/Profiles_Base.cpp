@@ -99,7 +99,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             TraceLoggingDescription("Event emitted when the user deletes a profile"),
             TraceLoggingValue(to_hstring(_Profile.Guid()).c_str(), "ProfileGuid", "The guid of the profile that was navigated to"),
             TraceLoggingValue(_Profile.Source().c_str(), "ProfileSource", "The source of the profile that was navigated to"),
-            TraceLoggingValue(false, "Orphaned", "Tracks if the profile was orphaned"),
+            TraceLoggingValue(false, "Orphaned", "Tracks if the profile is orphaned"),
+            TraceLoggingValue(_Profile.Hidden(), "Hidden", "Tracks if the profile is hidden"),
             TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
             TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
 
