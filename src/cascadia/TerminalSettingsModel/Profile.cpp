@@ -558,7 +558,7 @@ void Profile::ResolveMediaResources(const Model::MediaResourceResolver& resolver
     if (const auto icon{ _getIconImpl() })
     {
         const auto iconSource{ _getIconOverrideSourceImpl() };
-        ResolveMediaResourceIntoPath(iconSource->SourceBasePath, *icon, resolver, _resolvedIcon);
+        ResolveIconMediaResourceIntoPath(iconSource->SourceBasePath, *icon, resolver, _resolvedIcon);
     }
 
     if (const auto container{ _DefaultAppearance.as<IMediaResourceContainer>() })

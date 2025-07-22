@@ -61,3 +61,18 @@ _TIL_INLINEPREFIX void ResolveMediaResourceIntoPath(const winrt::hstring& basePa
     resolver(basePath, *mediaResource); // populates MediaResourcePath
     resolvedPath = std::move(mediaResource->path);
 }
+
+_TIL_INLINEPREFIX void ResolveIconMediaResourceIntoPath(const winrt::hstring& basePath, const winrt::hstring& unresolvedPath, const winrt::Microsoft::Terminal::Settings::Model::MediaResourceResolver& resolver, MediaResourcePath& resolvedPath)
+{
+    std::wstring_view unresolvedPathAsView{ unresolvedPath };
+    if (unresolvedPath.size() <= 2 || unresolvedPathAsView.find_first_of(L'\u200D') <= 8)
+    {
+        // **HEURISTIC**
+        // If it's 2 code units long or contains a zero-width joiner in the first 8 code units, it is
+        // PROBABLY an Emoji. Just pass it through.
+        resolvedPath = { unresolvedPath, true, true };
+        return;
+    }
+
+    ResolveMediaResourceIntoPath(basePath, unresolvedPath, resolver, resolvedPath);
+}

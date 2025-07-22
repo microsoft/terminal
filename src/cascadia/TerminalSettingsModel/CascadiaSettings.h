@@ -210,7 +210,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         void _validateSettings();
         void _validateAllSchemesExist();
-        void _resolveSingleMediaResource(Model::OriginTag origin, std::wstring_view basePath, const Model::IMediaResource& resource);
+        void _resolveSingleMediaResource(std::wstring_view basePath, const Model::IMediaResource& resource);
         void _validateMediaResources();
         void _validateProfileEnvironmentVariables();
         void _validateKeybindings() const;

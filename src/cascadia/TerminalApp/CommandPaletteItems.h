@@ -31,7 +31,7 @@ namespace winrt::TerminalApp::implementation
 
         winrt::hstring Icon()
         {
-            return _Command.IconPath();
+            return _Command.ResolvedIcon();
         }
 
         WINRT_PROPERTY(Microsoft::Terminal::Settings::Model::Command, Command, nullptr);

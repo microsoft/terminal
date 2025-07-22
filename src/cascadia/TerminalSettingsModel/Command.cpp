@@ -616,7 +616,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         if (_iconPath && !_iconPath->empty())
         {
-            ResolveMediaResourceIntoPath(basePath, hstring{ *_iconPath }, resolver, _resolvedIcon);
+            ResolveIconMediaResourceIntoPath(basePath, hstring{ *_iconPath }, resolver, _resolvedIcon);
         }
     }
 

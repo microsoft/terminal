@@ -488,7 +488,7 @@ void CascadiaSettings::_validateAllSchemesExist()
     }
 }
 
-void CascadiaSettings::_resolveSingleMediaResource(Model::OriginTag /*origin*/, std::wstring_view basePath, const Model::IMediaResource& resource)
+void CascadiaSettings::_resolveSingleMediaResource(std::wstring_view basePath, const Model::IMediaResource& resource)
 {
     auto resourcePath{ resource.Path() };
 
