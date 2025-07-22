@@ -488,52 +488,74 @@ void CascadiaSettings::_validateAllSchemesExist()
     }
 }
 
-static std::optional<winrt::hstring> _validateAndExpandSingleMediaResource(std::wstring_view basePath, winrt::hstring resource)
+static void _resolveSingleMediaResource(std::wstring_view basePath, const Model::IMediaResource& resource)
 {
-    if (resource == L"desktopWallpaper")
+    auto resourcePath{ resource.Path() };
+
+    OutputDebugStringW(fmt::format(FMT_COMPILE(L"** RESOLVING MEDIA PATH - Base '{}', Value '{}'\n"), basePath, resourcePath).c_str());
+
+    if (til::equals_insensitive_ascii(resourcePath, L"desktopWallpaper"))
     {
         WCHAR desktopWallpaper[MAX_PATH];
 
         // "The returned string will not exceed MAX_PATH characters" as of 2020
         if (SystemParametersInfoW(SPI_GETDESKWALLPAPER, MAX_PATH, desktopWallpaper, SPIF_UPDATEINIFILE))
         {
-            return winrt::hstring{ &desktopWallpaper[0] };
+            resource.Set(winrt::hstring{ &desktopWallpaper[0] });
         }
         else
         {
-            return std::nullopt;
+            resource.Reject();
         }
+
+        return;
     }
+    else if (til::equals_insensitive_ascii(resourcePath, L"none"))
+    {
+        resource.Set({});
+        return;
+    }
+    else if (resourcePath.empty())
+    {
+        resource.Set({});
+        return;
+    }
+
+    resourcePath = wil::ExpandEnvironmentStringsW<std::wstring>(resourcePath.data());
 
     // URI
     try
     {
-        winrt::Windows::Foundation::Uri resourceUri{ resource };
+        const winrt::Windows::Foundation::Uri resourceUri{ resourcePath };
         if (!resourceUri)
         {
-            return std::nullopt;
+            resource.Reject();
+            return;
         }
 
         const auto scheme{ resourceUri.SchemeName() };
         if (til::starts_with_insensitive_ascii(scheme, L"http") ||
             (til::equals_insensitive_ascii(scheme, L"ms-appx") && !resourceUri.Domain().empty()))
         {
-            // http(s) URLs (WSL fragments) and ms-appx://*APPLICATION*/ (Julia) URLs decay to fragment-relative paths
+            // http(s) URLs (WSL Distro AppX fragments) and ms-appx://APPLICATION/ (Julia) URLs decay to fragment-relative paths
             std::wstring_view path{ resourceUri.Path() };
             std::wstring_view file{ path.substr(path.find_last_of(L'/') + 1) };
-            resource = winrt::hstring{ file };
+
+            resourcePath = winrt::hstring{ file };
             // FALL THROUGH TO TRY FILESYSTEM PATHS
         }
         else if (!til::equals_insensitive_ascii(scheme, L"file") &&
                  !til::starts_with_insensitive_ascii(scheme, L"ms-"))
         {
             // Other non-file and non-ms* URLs are disallowed
-            return std::nullopt;
+            resource.Reject();
+            return;
         }
         else
         {
             // Other URLs (so, file and ms-*) are permissible.
-            return resource;
+            resource.Set(resourcePath);
+            return;
         }
     }
     catch (...)
@@ -544,69 +566,44 @@ static std::optional<winrt::hstring> _validateAndExpandSingleMediaResource(std::
     // Not a URI? Try a path.
     try
     {
-        std::filesystem::path resourcePath{ std::wstring_view{ resource } };
+        std::filesystem::path resourceAsFilesystemPath{ std::wstring_view{ resourcePath } };
         if (!basePath.empty())
         {
-            resourcePath = std::filesystem::path{ basePath } / resourcePath;
+            resourceAsFilesystemPath = std::filesystem::path{ basePath } / resourceAsFilesystemPath;
         }
 
-        if (std::filesystem::exists(resourcePath))
+        if (!std::filesystem::exists(resourceAsFilesystemPath))
         {
-            return winrt::hstring{ resourcePath.native() };
+            resource.Reject();
+            return;
         }
-        return std::nullopt;
+
+        resource.Set(winrt::hstring{ resourceAsFilesystemPath.native() });
+        return;
     }
     catch (...)
     {
         // fall through
     }
-    return std::nullopt;
+
+    resource.Reject();
+    return;
 }
 
 // Method Description:
-// - Ensures that all specified images resources (icons and background images) are valid URIs.
-//   This does not verify that the icon or background image files are encoded as an image.
-// Arguments:
-// - <none>
-// Return Value:
-// - <none>
-// - Appends a SettingsLoadWarnings::InvalidBackgroundImage to our list of warnings if
-//   we find any invalid background images.
-// - Appends a SettingsLoadWarnings::InvalidIconImage to our list of warnings if
-//   we find any invalid icon images.
+// - Ensures that all specified images resources (icons and background images) are valid.
 void CascadiaSettings::_validateMediaResources()
 {
     auto warnInvalidBackground{ false };
     auto warnInvalidIcon{ false };
 
     winrt::Microsoft::Terminal::Settings::Model::MediaResourceResolver mediaResourceResolver{
-        [=](auto&& basePath, auto&& resource) {
-            winrt::hstring mediaResourceExpanded{ wil::ExpandEnvironmentStringsW<std::wstring>(resource.Path().data()) };
-            OutputDebugStringW(fmt::format(FMT_COMPILE(L"** RESOLVING MEDIA PATH - Base '{}', Value '{}'\n"), basePath, mediaResourceExpanded).c_str());
-            if (auto newRes = _validateAndExpandSingleMediaResource(basePath, mediaResourceExpanded))
-            {
-                resource.Set(*newRes);
-            }
-            else
-            {
-                resource.Reject();
-            }
-        }
+        &_resolveSingleMediaResource
     };
 
-    for (auto profile : _allProfiles)
+    for (const auto& profile : _allProfiles)
     {
         profile.as<IMediaResourceContainer>()->ResolveMediaResources(mediaResourceResolver);
-
-        // Anything longer than 2 wchar_t's _isn't_ an emoji or symbol, so treat
-        // it as an invalid path.
-        //
-        // Explicitly just use the Icon here, not the EvaluatedIcon. We don't
-        // want to blow up if we fell back to the commandline and the
-        // commandline _isn't an icon_.
-        // GH #17943: "none" is a special value interpreted as "remove the icon"
-        //static constexpr std::wstring_view HideIconValue{ L"none" };
-        /*TODO DH */ // if (const auto icon = profile.Icon(); icon.size() > 2 && icon != HideIconValue)
     }
 
     _globals->ResolveMediaResources(mediaResourceResolver);
