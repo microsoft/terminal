@@ -84,6 +84,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         hstring IconPath() const noexcept;
         void IconPath(const hstring& val);
+        hstring ResolvedIcon() const
+        {
+            return _resolvedIcon.resolved_or({});
+        }
 
         void ResolveMediaResourcesWithBasePath(const winrt::hstring& basePath, const Model::MediaResourceResolver& resolver);
 
@@ -105,6 +109,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         std::wstring _ID;
         bool _IDWasGenerated{ false };
         std::optional<std::wstring> _iconPath;
+        MediaResourcePath _resolvedIcon;
         bool _nestedCommand{ false };
 
         static std::vector<Model::Command> _expandCommand(Command* const expandable,

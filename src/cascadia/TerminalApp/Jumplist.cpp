@@ -124,7 +124,7 @@ void Jumplist::_updateProfiles(IObjectCollection* jumplistItems, winrt::Windows:
         auto args = fmt::format(FMT_COMPILE(L"-p {}"), to_hstring(profile.Guid()));
 
         // Create the shell link object for the profile
-        const auto normalizedIconPath{ _normalizeIconPath(profile.Icon()) };
+        const auto normalizedIconPath{ _normalizeIconPath(profile.EvaluatedIcon()) };
         const auto shLink = _createShellLink(profile.Name(), normalizedIconPath, args);
         THROW_IF_FAILED(jumplistItems->AddObject(shLink.get()));
     }

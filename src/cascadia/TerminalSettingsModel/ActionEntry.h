@@ -32,8 +32,27 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         void ResolveMediaResourcesWithBasePath(const winrt::hstring& basePath, const Model::MediaResourceResolver& resolver) override;
 
+        winrt::hstring Icon() const
+        {
+            return _Icon;
+        }
+
+        void Icon(const winrt::hstring& newIcon)
+        {
+            _Icon = newIcon;
+            _resolvedIcon.reset();
+        }
+
+        winrt::hstring ResolvedIcon() const
+        {
+            return _resolvedIcon.resolved_or(_Icon);
+        }
+
         WINRT_PROPERTY(winrt::hstring, ActionId);
-        WINRT_PROPERTY(winrt::hstring, Icon);
+
+    private:
+        winrt::hstring _Icon;
+        MediaResourcePath _resolvedIcon;
     };
 }
 

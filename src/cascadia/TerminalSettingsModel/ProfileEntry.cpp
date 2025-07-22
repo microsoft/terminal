@@ -69,6 +69,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         entry->_ProfileIndex = _ProfileIndex;
         entry->_ProfileName = _ProfileName;
         entry->_Icon = _Icon;
+        entry->_resolvedIcon = _resolvedIcon;
         return *entry;
     }
 

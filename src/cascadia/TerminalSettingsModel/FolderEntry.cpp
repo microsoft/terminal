@@ -130,6 +130,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         entry->_Icon = _Icon;
         entry->_Inlining = _Inlining;
         entry->_AllowEmpty = _AllowEmpty;
+        entry->_resolvedIcon = _resolvedIcon;
 
         if (_RawEntries)
         {
@@ -146,16 +147,16 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         if (!_Icon.empty())
         {
-            resolver(basePath, winrt::make<ThingResource>(_Icon));
+            ResolveMediaResourceIntoPath(basePath, _Icon, resolver, _resolvedIcon);
         }
 
         if (_RawEntries)
         {
             for (const auto& entry : _RawEntries)
             {
-                if (const auto resy{ entry.try_as<IPathlessMediaResourceContainer>() })
+                if (const auto resolvable{ entry.try_as<IPathlessMediaResourceContainer>() })
                 {
-                    resy->ResolveMediaResourcesWithBasePath(basePath, resolver);
+                    resolvable->ResolveMediaResourcesWithBasePath(basePath, resolver);
                 }
             }
         }

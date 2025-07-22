@@ -44,6 +44,7 @@ namespace Microsoft.Terminal.Settings.Model
         ActionAndArgs ActionAndArgs { get; };
 
         String IconPath;
+        String ResolvedIcon { get; };
 
         Boolean HasNestedCommands { get; };
         Windows.Foundation.Collections.IMapView<String, Command> NestedCommands { get; };

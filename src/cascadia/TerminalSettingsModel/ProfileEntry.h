@@ -45,10 +45,28 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         WINRT_PROPERTY(Model::Profile, Profile);
         WINRT_PROPERTY(int, ProfileIndex);
-        WINRT_PROPERTY(winrt::hstring, Icon);
+
+    public:
+        winrt::hstring Icon() const
+        {
+            return _Icon;
+        }
+
+        void Icon(const winrt::hstring& newIcon)
+        {
+            _Icon = newIcon;
+            _resolvedIcon.reset();
+        }
+
+        winrt::hstring ResolvedIcon() const
+        {
+            return _resolvedIcon.resolved_or(_Icon);
+        }
 
     private:
         winrt::hstring _ProfileName;
+        winrt::hstring _Icon;
+        MediaResourcePath _resolvedIcon;
     };
 }
 

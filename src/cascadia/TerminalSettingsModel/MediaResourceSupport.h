@@ -26,7 +26,7 @@ struct MediaResourcePath
     bool resolved{ false };
 
     void reset() { *this = MediaResourcePath{}; }
-    winrt::hstring resolved_or(const winrt::hstring& other) { return resolved ? value : other; }
+    winrt::hstring resolved_or(const winrt::hstring& other) const { return resolved ? value : other; }
 };
 
 struct MediaResource : winrt::implements<MediaResource, winrt::Microsoft::Terminal::Settings::Model::IMediaResource, winrt::non_agile, winrt::no_weak_ref, winrt::no_module_lock>

@@ -937,7 +937,7 @@ namespace winrt::TerminalApp::implementation
                 auto folderItem = WUX::Controls::MenuFlyoutSubItem{};
                 folderItem.Text(folderEntry.Name());
 
-                auto icon = _CreateNewTabFlyoutIcon(folderEntry.Icon());
+                auto icon = _CreateNewTabFlyoutIcon(folderEntry.ResolvedIcon());
                 folderItem.Icon(icon);
 
                 for (const auto& folderEntryItem : folderEntryItems)
@@ -987,7 +987,7 @@ namespace winrt::TerminalApp::implementation
                     break;
                 }
 
-                auto profileItem = _CreateNewTabFlyoutProfile(profileEntry.Profile(), profileEntry.ProfileIndex(), profileEntry.Icon());
+                auto profileItem = _CreateNewTabFlyoutProfile(profileEntry.Profile(), profileEntry.ProfileIndex(), profileEntry.ResolvedIcon());
                 items.push_back(profileItem);
                 break;
             }
@@ -997,7 +997,7 @@ namespace winrt::TerminalApp::implementation
                 const auto actionId = actionEntry.ActionId();
                 if (_settings.ActionMap().GetActionByID(actionId))
                 {
-                    auto actionItem = _CreateNewTabFlyoutAction(actionId, actionEntry.Icon());
+                    auto actionItem = _CreateNewTabFlyoutAction(actionId, actionEntry.ResolvedIcon());
                     items.push_back(actionItem);
                 }
 
@@ -1122,7 +1122,7 @@ namespace winrt::TerminalApp::implementation
         // If a custom icon path has been specified, set it as the icon for
         // this flyout item. Otherwise, if an icon is set for this action, set that icon
         // for this flyout item.
-        const auto& iconPath = iconPathOverride.empty() ? action.IconPath() : iconPathOverride;
+        const auto& iconPath = iconPathOverride.empty() ? action.ResolvedIcon() : iconPathOverride;
         if (!iconPath.empty())
         {
             const auto icon = _CreateNewTabFlyoutIcon(iconPath);
@@ -5069,7 +5069,7 @@ namespace winrt::TerminalApp::implementation
         makeItem(RS_(L"DuplicateTabText"), L"\xF5ED", ActionAndArgs{ ShortcutAction::DuplicateTab, nullptr }, menu);
 
         const auto focusedProfileName = focusedProfile.Name();
-        const auto focusedProfileIcon = focusedProfile.Icon();
+        const auto focusedProfileIcon = focusedProfile.EvaluatedIcon();
         const auto splitPaneDuplicateText = RS_(L"SplitPaneDuplicateText") + L" " + focusedProfileName; // SplitPaneDuplicateText
 
         const auto splitPaneRightText = RS_(L"SplitPaneRightText");
@@ -5095,7 +5095,7 @@ namespace winrt::TerminalApp::implementation
         {
             const auto profile = activeProfiles.GetAt(profileIndex);
             const auto profileName = profile.Name();
-            const auto profileIcon = profile.Icon();
+            const auto profileIcon = profile.EvaluatedIcon();
 
             NewTerminalArgs args{};
             args.Profile(profileName);
@@ -5130,22 +5130,22 @@ namespace winrt::TerminalApp::implementation
 
             if (auto neighbor = rootPane->NavigateDirection(activePane, FocusDirection::Down, mruPanes))
             {
-                makeItem(RS_(L"SwapPaneDownText"), neighbor->GetProfile().Icon(), ActionAndArgs{ ShortcutAction::SwapPane, SwapPaneArgs{ FocusDirection::Down } }, swapPaneMenu);
+                makeItem(RS_(L"SwapPaneDownText"), neighbor->GetProfile().EvaluatedIcon(), ActionAndArgs{ ShortcutAction::SwapPane, SwapPaneArgs{ FocusDirection::Down } }, swapPaneMenu);
             }
 
             if (auto neighbor = rootPane->NavigateDirection(activePane, FocusDirection::Right, mruPanes))
             {
-                makeItem(RS_(L"SwapPaneRightText"), neighbor->GetProfile().Icon(), ActionAndArgs{ ShortcutAction::SwapPane, SwapPaneArgs{ FocusDirection::Right } }, swapPaneMenu);
+                makeItem(RS_(L"SwapPaneRightText"), neighbor->GetProfile().EvaluatedIcon(), ActionAndArgs{ ShortcutAction::SwapPane, SwapPaneArgs{ FocusDirection::Right } }, swapPaneMenu);
             }
 
             if (auto neighbor = rootPane->NavigateDirection(activePane, FocusDirection::Up, mruPanes))
             {
-                makeItem(RS_(L"SwapPaneUpText"), neighbor->GetProfile().Icon(), ActionAndArgs{ ShortcutAction::SwapPane, SwapPaneArgs{ FocusDirection::Up } }, swapPaneMenu);
+                makeItem(RS_(L"SwapPaneUpText"), neighbor->GetProfile().EvaluatedIcon(), ActionAndArgs{ ShortcutAction::SwapPane, SwapPaneArgs{ FocusDirection::Up } }, swapPaneMenu);
             }
 
             if (auto neighbor = rootPane->NavigateDirection(activePane, FocusDirection::Left, mruPanes))
             {
-                makeItem(RS_(L"SwapPaneLeftText"), neighbor->GetProfile().Icon(), ActionAndArgs{ ShortcutAction::SwapPane, SwapPaneArgs{ FocusDirection::Left } }, swapPaneMenu);
+                makeItem(RS_(L"SwapPaneLeftText"), neighbor->GetProfile().EvaluatedIcon(), ActionAndArgs{ ShortcutAction::SwapPane, SwapPaneArgs{ FocusDirection::Left } }, swapPaneMenu);
             }
 
             makeMenuItem(RS_(L"SwapPaneText"), L"\xF1CB", swapPaneMenu, menu);

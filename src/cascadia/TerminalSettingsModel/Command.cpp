@@ -202,18 +202,15 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     hstring Command::IconPath() const noexcept
     {
-        if (_iconPath.has_value())
-        {
-            return hstring{ *_iconPath };
-        }
-        return {};
+        return hstring{ _iconPath.value_or(std::wstring{}) };
     }
 
     void Command::IconPath(const hstring& val)
     {
-        if (!_iconPath.has_value() || _iconPath.value() != val)
+        if (_iconPath != val)
         {
             _iconPath = val;
+            _resolvedIcon.reset();
         }
     }
 
