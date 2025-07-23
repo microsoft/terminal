@@ -35,7 +35,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         auto json = NewTabMenuEntry::ToJson();
 
         JsonUtils::SetValueForKey(json, NameKey, _Name);
-        JsonUtils::SetValueForKey(json, IconKey, _Icon);
+        JsonUtils::SetValueForKey(json, IconKey, _icon);
         JsonUtils::SetValueForKey(json, EntriesKey, _RawEntries);
         JsonUtils::SetValueForKey(json, InliningKey, _Inlining);
         JsonUtils::SetValueForKey(json, AllowEmptyKey, _AllowEmpty);
@@ -48,7 +48,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         auto entry = winrt::make_self<FolderEntry>();
 
         JsonUtils::GetValueForKey(json, NameKey, entry->_Name);
-        JsonUtils::GetValueForKey(json, IconKey, entry->_Icon);
+        JsonUtils::GetValueForKey(json, IconKey, entry->_icon);
         JsonUtils::GetValueForKey(json, EntriesKey, entry->_RawEntries);
         JsonUtils::GetValueForKey(json, InliningKey, entry->_Inlining);
         JsonUtils::GetValueForKey(json, AllowEmptyKey, entry->_AllowEmpty);
@@ -127,10 +127,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         auto entry = winrt::make_self<FolderEntry>();
         entry->_Name = _Name;
-        entry->_Icon = _Icon;
+        entry->_icon = _icon;
         entry->_Inlining = _Inlining;
         entry->_AllowEmpty = _AllowEmpty;
-        entry->_resolvedIcon = _resolvedIcon;
 
         if (_RawEntries)
         {
@@ -145,9 +144,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     void FolderEntry::ResolveMediaResourcesWithBasePath(const winrt::hstring& basePath, const Model::MediaResourceResolver& resolver)
     {
-        if (!_Icon.empty())
+        if (_icon)
         {
-            ResolveIconMediaResourceIntoPath(basePath, _Icon, resolver, _resolvedIcon);
+            ResolveIconMediaResource(basePath, _icon, resolver);
         }
 
         if (_RawEntries)

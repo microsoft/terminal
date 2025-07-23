@@ -99,7 +99,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         // - have a hash that matches a command in the inbox actions
         std::erase_if(_ActionMap, [&](const auto& pair) {
             const auto userCmdImpl{ get_self<Command>(pair.second) };
-            if (userCmdImpl->IDWasGenerated() && !userCmdImpl->HasName() && userCmdImpl->IconPath().empty())
+            if (userCmdImpl->IDWasGenerated() && !userCmdImpl->HasName() && userCmdImpl->Icon().Path().empty())
             {
                 const auto userActionHash = Hash(userCmdImpl->ActionAndArgs());
                 if (const auto inboxCmd = inboxActions.find(userActionHash); inboxCmd != inboxActions.end())
@@ -535,9 +535,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                         {
                             cmdImpl->Name(foundCmdImpl->Name());
                         }
-                        if (!foundCmdImpl->IconPath().empty() && cmdImpl->IconPath().empty())
+                        if (!foundCmdImpl->Icon().Path().empty() && cmdImpl->Icon().Path().empty())
                         {
-                            cmdImpl->IconPath(foundCmdImpl->IconPath());
+                            cmdImpl->Icon(foundCmdImpl->Icon());
                         }
                     }
                 }

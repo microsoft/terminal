@@ -40,20 +40,14 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         void ResolveMediaResourcesWithBasePath(const winrt::hstring& basePath, const Model::MediaResourceResolver& resolver) override;
 
-        winrt::hstring Icon() const
+        IMediaResource Icon() const noexcept
         {
-            return _Icon;
+            return _icon ? _icon : MediaResource::Empty();
         }
 
-        void Icon(const winrt::hstring& newIcon)
+        void Icon(const IMediaResource& val)
         {
-            _Icon = newIcon;
-            _resolvedIcon.reset();
-        }
-
-        winrt::hstring ResolvedIcon() const
-        {
-            return _resolvedIcon.resolved_or(_Icon);
+            _icon = val;
         }
 
         WINRT_PROPERTY(winrt::hstring, Name);
@@ -62,8 +56,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         WINRT_PROPERTY(winrt::Windows::Foundation::Collections::IVector<Model::NewTabMenuEntry>, RawEntries);
 
     private:
-        winrt::hstring _Icon;
-        MediaResourcePath _resolvedIcon;
+        IMediaResource _icon;
     };
 }
 

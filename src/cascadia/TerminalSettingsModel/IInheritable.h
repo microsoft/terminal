@@ -184,17 +184,6 @@ private:                                                                    \
                                                                             \
         /*no value was found*/                                              \
         return { nullptr, std::nullopt };                                   \
-    }                                                                       \
-                                                                            \
-    template<typename U>                                                    \
-        requires requires(U& t) { t.name##Changed(); }                      \
-    static void _##name##ChangedInvoker(U& self)                            \
-    {                                                                       \
-        self.name##Changed();                                               \
-    }                                                                       \
-    template<typename T>                                                    \
-    static void _##name##ChangedInvoker(T&)                                 \
-    {                                                                       \
     }
 
 // Use INHERITABLE_SETTING and INHERITABLE_NULLABLE_SETTING to implement
@@ -222,7 +211,6 @@ public:                                                                      \
     void name(const type& value)                                             \
     {                                                                        \
         _##name = value;                                                     \
-        _##name##ChangedInvoker(*this);                                      \
     }
 
 #define INHERITABLE_SETTING_WITH_LOGGING(projectedType, type, name, jsonKey, ...) \
@@ -244,7 +232,6 @@ public:                                                                         
             _logSettingSet(jsonKey);                                              \
         }                                                                         \
         _##name = value;                                                          \
-        _##name##ChangedInvoker(*this);                                           \
     }
 
 // This macro is similar to the one above, but is reserved for optional settings
@@ -282,5 +269,4 @@ public:                                                                        \
             /* note we're setting the _inner_ value */                         \
             _##name = std::optional<type>{ std::nullopt };                     \
         }                                                                      \
-        _##name##ChangedInvoker(*this);                                        \
     }

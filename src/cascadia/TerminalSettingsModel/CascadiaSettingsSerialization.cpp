@@ -629,7 +629,7 @@ bool SettingsLoader::FixupUserSettings()
         {
             for (auto&& icon : iconsToClearFromVisualStudioProfiles)
             {
-                if (profile->Icon() == icon)
+                if (profile->Icon().Path() == icon)
                 {
                     profile->ClearIcon();
                     fixedUp = true;

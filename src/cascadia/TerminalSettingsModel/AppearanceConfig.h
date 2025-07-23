@@ -36,25 +36,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         Model::Profile SourceProfile();
 
-        winrt::hstring ExpandedBackgroundImagePath() { return ResolvedBackgroundImagePath(); }
-        winrt::hstring ResolvedBackgroundImagePath()
-        {
-            return _backgroundImagePath.resolved_or({});
-        }
-
-        winrt::hstring ResolvedPixelShaderPath()
-        {
-            return _pixelShaderPath.resolved_or({});
-        }
-        winrt::hstring ResolvedPixelShaderImagePath()
-        {
-            return _pixelShaderImagePath.resolved_or({});
-        }
-
-        void BackgroundImagePathChanged() { _backgroundImagePath.reset(); }
-        void PixelShaderPathChanged() { _pixelShaderPath.reset(); }
-        void PixelShaderImagePathChanged() { _pixelShaderImagePath.reset(); }
-
         void ResolveMediaResources(const Model::MediaResourceResolver& resolver);
 
         INHERITABLE_NULLABLE_SETTING(Model::IAppearanceConfig, Microsoft::Terminal::Core::Color, Foreground, nullptr);
@@ -74,10 +55,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     private:
         winrt::weak_ref<Profile> _sourceProfile;
         std::set<std::string> _changeLog;
-
-        MediaResourcePath _backgroundImagePath;
-        MediaResourcePath _pixelShaderPath;
-        MediaResourcePath _pixelShaderImagePath;
 
         void _logSettingSet(const std::string_view& setting);
         void _logSettingIfSet(const std::string_view& setting, const bool isSet);

@@ -150,20 +150,20 @@ winrt::hstring AppearanceConfig::_getSourceProfileBasePath() const
 
 void AppearanceConfig::ResolveMediaResources(const Model::MediaResourceResolver& resolver)
 {
-    if (const auto [source, path] = _getBackgroundImagePathOverrideSourceAndValueImpl(); source && path && !path->empty())
+    if (const auto [source, path] = _getBackgroundImagePathOverrideSourceAndValueImpl(); source && path && *path)
     {
         winrt::hstring sourceBasePath{ source->_getSourceProfileBasePath() };
-        ResolveMediaResourceIntoPath(sourceBasePath, *path, resolver, _backgroundImagePath);
+        ResolveMediaResource(sourceBasePath, *path, resolver);
     }
-    if (const auto [source, path]{ _getPixelShaderPathOverrideSourceAndValueImpl() }; source && path && !path->empty())
+    if (const auto [source, path]{ _getPixelShaderPathOverrideSourceAndValueImpl() }; source && path && *path)
     {
         winrt::hstring sourceBasePath{ source->_getSourceProfileBasePath() };
-        ResolveMediaResourceIntoPath(sourceBasePath, *path, resolver, _pixelShaderPath);
+        ResolveMediaResource(sourceBasePath, *path, resolver);
     }
-    if (const auto [source, path]{ _getPixelShaderImagePathOverrideSourceAndValueImpl() }; source && path && !path->empty())
+    if (const auto [source, path]{ _getPixelShaderImagePathOverrideSourceAndValueImpl() }; source && path && *path)
     {
         winrt::hstring sourceBasePath{ source->_getSourceProfileBasePath() };
-        ResolveMediaResourceIntoPath(sourceBasePath, *path, resolver, _pixelShaderImagePath);
+        ResolveMediaResource(sourceBasePath, *path, resolver);
     }
 }
 

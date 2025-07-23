@@ -253,11 +253,19 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             _CursorColor = til::color{ appearance.CursorColor().Value() };
         }
 
-        { // media resources
-            const auto& appearanceImpl{ winrt::get_self<implementation::AppearanceConfig>(appearance) };
-            _BackgroundImage = appearanceImpl->ResolvedBackgroundImagePath();
-            _PixelShaderPath = appearanceImpl->ResolvedPixelShaderPath();
-            _PixelShaderImagePath = appearanceImpl->ResolvedPixelShaderImagePath();
+        if (const auto backgroundImage{ appearance.BackgroundImagePath() })
+        {
+            _BackgroundImage = backgroundImage.Resolved();
+        }
+
+        if (const auto pixelShader{ appearance.PixelShaderPath() })
+        {
+            _PixelShaderPath = pixelShader.Resolved();
+        }
+
+        if (const auto pixelShaderImage{ appearance.PixelShaderImagePath() })
+        {
+            _PixelShaderImagePath = pixelShaderImage.Resolved();
         }
 
         _BackgroundImageOpacity = appearance.BackgroundImageOpacity();

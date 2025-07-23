@@ -109,12 +109,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         void LogSettingChanges(std::set<std::string>& changes, const std::string_view& context) const;
 
-        // EvaluatedIcon depends on Icon. It allows us to grab the
-        //   icon from an exe path.
-        void IconChanged();
-        winrt::hstring EvaluatedIcon();
-
         void ResolveMediaResources(const Model::MediaResourceResolver& resolver);
+
+        void Icon(const winrt::hstring& path) {
+            // Internal Helper (overload version)
+            Icon(MediaResource::FromString(path));
+        }
 
         WINRT_PROPERTY(bool, Deleted, false);
         WINRT_PROPERTY(bool, Orphaned, false);
@@ -144,14 +144,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         Model::IAppearanceConfig _DefaultAppearance{ winrt::make<AppearanceConfig>(weak_ref<Model::Profile>(*this)) };
         Model::FontConfig _FontInfo{ winrt::make<FontConfig>(weak_ref<Model::Profile>(*this)) };
 
-        MediaResourcePath _resolvedIcon;
         std::set<std::string> _changeLog;
 
         static std::wstring EvaluateStartingDirectory(const std::wstring& directory);
 
         static guid _GenerateGuidForProfile(const std::wstring_view& name, const std::wstring_view& source) noexcept;
 
-        winrt::hstring _evaluateIcon() const;
         void _logSettingSet(const std::string_view& setting);
         void _logSettingIfSet(const std::string_view& setting, const bool isSet);
 

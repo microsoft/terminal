@@ -121,8 +121,6 @@ winrt::com_ptr<Profile> Profile::CopySettings() const
     MTSM_PROFILE_SETTINGS(PROFILE_SETTINGS_COPY)
 #undef PROFILE_SETTINGS_COPY
 
-    profile->_resolvedIcon = _resolvedIcon; // If somebody did us the favor of pre-evaluating our icon, don't do it again.
-
     // BellSound is an IVector<hstring>, so we need to manually copy it over
     if (_BellSound)
     {
@@ -372,30 +370,6 @@ Json::Value Profile::ToJson() const
     return json;
 }
 
-// This is the implementation for and INHERITABLE_SETTING, but with one addition
-// in the setter. We want to make sure to clear out our cached icon, so that we
-// can re-evaluate it as it changes in the SUI.
-void Profile::IconChanged()
-{
-    _resolvedIcon.reset();
-}
-
-winrt::hstring Profile::EvaluatedIcon()
-{
-    if (_resolvedIcon.resolved)
-    {
-        if (!_resolvedIcon.ok)
-        {
-            // failed resolution. fall back to the commandline
-            std::wstring cmdline{ NormalizeCommandLine(Commandline().c_str()) };
-            _resolvedIcon.value = cmdline;
-            _resolvedIcon.ok = true;
-        }
-        return _resolvedIcon.value;
-    }
-    return Icon(); // Nobody resolved it; this could be bad.
-}
-
 // Given a commandLine like the following:
 // * "C:\WINDOWS\System32\cmd.exe"
 // * "pwsh -WorkingDirectory ~"
@@ -555,10 +529,17 @@ void Profile::_logSettingIfSet(const std::string_view& setting, const bool isSet
 
 void Profile::ResolveMediaResources(const Model::MediaResourceResolver& resolver)
 {
-    if (const auto icon{ _getIconImpl() })
+    if (const auto icon{ _getIconImpl() }; icon && *icon)
     {
+        auto& innerIcon{ *icon };
         const auto iconSource{ _getIconOverrideSourceImpl() };
-        ResolveIconMediaResourceIntoPath(iconSource->SourceBasePath, *icon, resolver, _resolvedIcon);
+        ResolveIconMediaResource(iconSource->SourceBasePath, innerIcon, resolver);
+        if (!innerIcon.Ok())
+        {
+            // failed resolution. fall back to the commandline since we do have one.
+            std::wstring cmdline{ NormalizeCommandLine(Commandline().c_str()) };
+            innerIcon.Resolve(cmdline);
+        }
     }
 
     if (const auto container{ _DefaultAppearance.as<IMediaResourceContainer>() })

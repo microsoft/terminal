@@ -43,30 +43,22 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         winrt::hstring ProfileName() const noexcept { return _ProfileName; };
         void ResolveMediaResourcesWithBasePath(const winrt::hstring& basePath, const Model::MediaResourceResolver& resolver) override;
 
+        IMediaResource Icon() const noexcept
+        {
+            return _icon ? _icon : MediaResource::Empty();
+        }
+
+        void Icon(const IMediaResource& val)
+        {
+            _icon = val;
+        }
+
         WINRT_PROPERTY(Model::Profile, Profile);
         WINRT_PROPERTY(int, ProfileIndex);
 
-    public:
-        winrt::hstring Icon() const
-        {
-            return _Icon;
-        }
-
-        void Icon(const winrt::hstring& newIcon)
-        {
-            _Icon = newIcon;
-            _resolvedIcon.reset();
-        }
-
-        winrt::hstring ResolvedIcon() const
-        {
-            return _resolvedIcon.resolved_or(_Icon);
-        }
-
     private:
         winrt::hstring _ProfileName;
-        winrt::hstring _Icon;
-        MediaResourcePath _resolvedIcon;
+        IMediaResource _icon;
     };
 }
 

@@ -25,7 +25,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         auto json = NewTabMenuEntry::ToJson();
 
         JsonUtils::SetValueForKey(json, ActionIdKey, _ActionId);
-        JsonUtils::SetValueForKey(json, IconKey, _Icon);
+        JsonUtils::SetValueForKey(json, IconKey, _icon);
 
         return json;
     }
@@ -35,7 +35,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         auto entry = winrt::make_self<ActionEntry>();
 
         JsonUtils::GetValueForKey(json, ActionIdKey, entry->_ActionId);
-        JsonUtils::GetValueForKey(json, IconKey, entry->_Icon);
+        JsonUtils::GetValueForKey(json, IconKey, entry->_icon);
 
         return entry;
     }
@@ -44,15 +44,15 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         auto entry = winrt::make_self<ActionEntry>();
         entry->_ActionId = _ActionId;
-        entry->_Icon = _Icon;
+        entry->_icon = _icon;
         return *entry;
     }
 
     void ActionEntry::ResolveMediaResourcesWithBasePath(const winrt::hstring& basePath, const Model::MediaResourceResolver& resolver)
     {
-        if (!_Icon.empty())
+        if (_icon)
         {
-            ResolveIconMediaResourceIntoPath(basePath, _Icon, resolver, _resolvedIcon);
+            ResolveIconMediaResource(basePath, _icon, resolver);
         }
     }
 }

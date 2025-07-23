@@ -19,10 +19,12 @@ namespace Microsoft.Terminal.Settings.Model
     }
 
     interface IMediaResource {
-        String Path { get; };
-        void Set(String finalValue);
+        String Path;
+        String Resolved { get; };
+        void Resolve(String finalValue);
         void Reject();
+        Boolean Ok { get; };
     };
 
-    delegate void MediaResourceResolver(String basePath, IMediaResource res);
+    delegate void MediaResourceResolver(String basePath, IMediaResource resource);
 }

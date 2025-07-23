@@ -19,60 +19,68 @@ struct
     virtual void ResolveMediaResourcesWithBasePath(const winrt::hstring& basePath, const winrt::Microsoft::Terminal::Settings::Model::MediaResourceResolver& resolver) = 0;
 };
 
-struct MediaResourcePath
+namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
-    winrt::hstring value{};
-    bool ok{ false };
-    bool resolved{ false };
-
-    void reset() { *this = MediaResourcePath{}; }
-    winrt::hstring resolved_or(const winrt::hstring& other) const { return resolved ? value : other; }
-};
-
-struct MediaResource : winrt::implements<MediaResource, winrt::Microsoft::Terminal::Settings::Model::IMediaResource, winrt::non_agile, winrt::no_weak_ref, winrt::no_module_lock>
-{
-    MediaResource(const winrt::hstring& p) :
-        path{ p, false, false } {}
-
-    winrt::hstring Path() { return path.value; };
-
-    void Set(winrt::hstring newPath)
+    struct MediaResource : winrt::implements<MediaResource, winrt::Microsoft::Terminal::Settings::Model::IMediaResource, winrt::non_agile, winrt::no_weak_ref, winrt::no_module_lock>
     {
-        path.value = newPath;
-        path.ok = true;
-        path.resolved = true;
+        MediaResource() {}
+        MediaResource(const winrt::hstring& p) :
+            value{ p } {}
+
+        winrt::hstring Path() { return value; };
+        void Path(const winrt::hstring& v) { value = v; }
+        winrt::hstring Resolved() { return resolved ? resolvedValue : value; }
+
+        bool Ok() const { return ok; }
+
+        void Resolve(winrt::hstring newPath)
+        {
+            value = newPath;
+            ok = true;
+            resolved = true;
+        }
+
+        void Reject()
+        {
+            value = {};
+            ok = false;
+            resolved = true;
+        }
+
+        winrt::hstring value{};
+        winrt::hstring resolvedValue{};
+        bool ok{ false };
+        bool resolved{ false };
+
+        static IMediaResource Empty()
+        {
+            static IMediaResource emptyResource{ winrt::make<MediaResource>() };
+            return emptyResource;
+        }
+
+        static IMediaResource FromString(const winrt::hstring& string)
+        {
+            return winrt::make<MediaResource>(string);
+        }
+    };
+
+    _TIL_INLINEPREFIX void ResolveMediaResource(const winrt::hstring& basePath, const Model::IMediaResource& resource, const winrt::Microsoft::Terminal::Settings::Model::MediaResourceResolver& resolver)
+    {
+        resolver(basePath, resource);
     }
 
-    void Reject()
+    _TIL_INLINEPREFIX void ResolveIconMediaResource(const winrt::hstring& basePath, const Model::IMediaResource& resource, const winrt::Microsoft::Terminal::Settings::Model::MediaResourceResolver& resolver)
     {
-        path.value = {};
-        path.ok = false;
-        path.resolved = true;
+        std::wstring_view unresolvedPath{ resource.Path() };
+        if (unresolvedPath.size() <= 2 || unresolvedPath.find_first_of(L'\u200D') <= 8)
+        {
+            // **HEURISTIC**
+            // If it's 2 code units long or contains a zero-width joiner in the first 8 code units, it is
+            // PROBABLY an Emoji. Just pass it through.
+            resource.Resolve(unresolvedPath);
+            return;
+        }
+
+        ResolveMediaResource(basePath, resource, resolver);
     }
-
-    MediaResourcePath path;
-};
-
-using ThingResource = MediaResource; // stopgap to get it to compile
-
-_TIL_INLINEPREFIX void ResolveMediaResourceIntoPath(const winrt::hstring& basePath, const winrt::hstring& unresolvedPath, const winrt::Microsoft::Terminal::Settings::Model::MediaResourceResolver& resolver, MediaResourcePath& resolvedPath)
-{
-    auto mediaResource{ winrt::make_self<MediaResource>(unresolvedPath) };
-    resolver(basePath, *mediaResource); // populates MediaResourcePath
-    resolvedPath = std::move(mediaResource->path);
-}
-
-_TIL_INLINEPREFIX void ResolveIconMediaResourceIntoPath(const winrt::hstring& basePath, const winrt::hstring& unresolvedPath, const winrt::Microsoft::Terminal::Settings::Model::MediaResourceResolver& resolver, MediaResourcePath& resolvedPath)
-{
-    std::wstring_view unresolvedPathAsView{ unresolvedPath };
-    if (unresolvedPath.size() <= 2 || unresolvedPathAsView.find_first_of(L'\u200D') <= 8)
-    {
-        // **HEURISTIC**
-        // If it's 2 code units long or contains a zero-width joiner in the first 8 code units, it is
-        // PROBABLY an Emoji. Just pass it through.
-        resolvedPath = { unresolvedPath, true, true };
-        return;
-    }
-
-    ResolveMediaResourceIntoPath(basePath, unresolvedPath, resolver, resolvedPath);
 }

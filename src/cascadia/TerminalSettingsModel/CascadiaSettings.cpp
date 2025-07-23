@@ -501,7 +501,7 @@ void CascadiaSettings::_resolveSingleMediaResource(std::wstring_view basePath, c
         // "The returned string will not exceed MAX_PATH characters" as of 2020
         if (SystemParametersInfoW(SPI_GETDESKWALLPAPER, MAX_PATH, desktopWallpaper, SPIF_UPDATEINIFILE))
         {
-            resource.Set(winrt::hstring{ &desktopWallpaper[0] });
+            resource.Resolve(winrt::hstring{ &desktopWallpaper[0] });
         }
         else
         {
@@ -512,12 +512,12 @@ void CascadiaSettings::_resolveSingleMediaResource(std::wstring_view basePath, c
     }
     else if (til::equals_insensitive_ascii(resourcePath, L"none"))
     {
-        resource.Set({});
+        resource.Resolve({});
         return;
     }
     else if (resourcePath.empty())
     {
-        resource.Set({});
+        resource.Resolve({});
         return;
     }
 
@@ -554,7 +554,7 @@ void CascadiaSettings::_resolveSingleMediaResource(std::wstring_view basePath, c
         else
         {
             // Other URLs (so, file and ms-*) are permissible.
-            resource.Set(resourcePath);
+            resource.Resolve(resourcePath);
             return;
         }
     }
@@ -578,7 +578,7 @@ void CascadiaSettings::_resolveSingleMediaResource(std::wstring_view basePath, c
             return;
         }
 
-        resource.Set(winrt::hstring{ resourceAsFilesystemPath.native() });
+        resource.Resolve(winrt::hstring{ resourceAsFilesystemPath.native() });
         return;
     }
     catch (...)

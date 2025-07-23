@@ -47,7 +47,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         {
             JsonUtils::SetValueForKey(json, ProfileKey, _Profile.Guid());
         }
-        JsonUtils::SetValueForKey(json, IconKey, _Icon);
+        JsonUtils::SetValueForKey(json, IconKey, _icon);
 
         return json;
     }
@@ -57,7 +57,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         auto entry = winrt::make_self<ProfileEntry>();
 
         JsonUtils::GetValueForKey(json, ProfileKey, entry->_ProfileName);
-        JsonUtils::GetValueForKey(json, IconKey, entry->_Icon);
+        JsonUtils::GetValueForKey(json, IconKey, entry->_icon);
 
         return entry;
     }
@@ -68,16 +68,15 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         entry->_Profile = _Profile;
         entry->_ProfileIndex = _ProfileIndex;
         entry->_ProfileName = _ProfileName;
-        entry->_Icon = _Icon;
-        entry->_resolvedIcon = _resolvedIcon;
+        entry->_icon = _icon;
         return *entry;
     }
 
     void ProfileEntry::ResolveMediaResourcesWithBasePath(const winrt::hstring& basePath, const Model::MediaResourceResolver& resolver)
     {
-        if (!_Icon.empty())
+        if (_icon)
         {
-            ResolveIconMediaResourceIntoPath(basePath, _Icon, resolver, _resolvedIcon);
+            ResolveIconMediaResource(basePath, _icon, resolver);
         }
     }
 }
