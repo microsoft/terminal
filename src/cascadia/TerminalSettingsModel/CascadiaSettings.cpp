@@ -544,8 +544,12 @@ void CascadiaSettings::_resolveSingleMediaResource(std::wstring_view basePath, c
             resourcePath = winrt::hstring{ file };
             // FALL THROUGH TO TRY FILESYSTEM PATHS
         }
-        else if (!til::equals_insensitive_ascii(scheme, L"file") &&
-                 !til::starts_with_insensitive_ascii(scheme, L"ms-"))
+        else if (til::equals_insensitive_ascii(scheme, L"file"))
+        {
+            resourcePath = resourceUri.Path().c_str() + 1;
+            // FALL THROUGH TO TRY FILESYSTEM PATHS
+        }
+        else if (!til::starts_with_insensitive_ascii(scheme, L"ms-"))
         {
             // Other non-file and non-ms* URLs are disallowed
             resource.Reject();
@@ -578,7 +582,7 @@ void CascadiaSettings::_resolveSingleMediaResource(std::wstring_view basePath, c
             return;
         }
 
-        resource.Resolve(winrt::hstring{ resourceAsFilesystemPath.native() });
+        resource.Resolve(winrt::hstring{ resourceAsFilesystemPath.lexically_normal().native() });
         return;
     }
     catch (...)
