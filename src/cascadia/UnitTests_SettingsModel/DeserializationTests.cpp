@@ -915,7 +915,7 @@ namespace SettingsModelUnitTests
 
         const auto settings = createSettings(settingsJson);
         VERIFY_ARE_NOT_EQUAL(0u, settings->AllProfiles().Size());
-        VERIFY_ARE_EQUAL(expectedPath, settings->AllProfiles().GetAt(0).DefaultAppearance().ExpandedBackgroundImagePath());
+        VERIFY_ARE_EQUAL(expectedPath, settings->AllProfiles().GetAt(0).DefaultAppearance().BackgroundImagePath().Resolved());
     }
 
     void DeserializationTests::TestProfileBackgroundImageWithDesktopWallpaper()
@@ -933,8 +933,8 @@ namespace SettingsModelUnitTests
         })" };
 
         const auto settings = createSettings(settingsJson);
-        VERIFY_ARE_EQUAL(expectedBackgroundImagePath, settings->AllProfiles().GetAt(0).DefaultAppearance().BackgroundImagePath());
-        VERIFY_ARE_NOT_EQUAL(expectedBackgroundImagePath, settings->AllProfiles().GetAt(0).DefaultAppearance().ExpandedBackgroundImagePath());
+        VERIFY_ARE_EQUAL(expectedBackgroundImagePath, settings->AllProfiles().GetAt(0).DefaultAppearance().BackgroundImagePath().Path());
+        VERIFY_ARE_NOT_EQUAL(expectedBackgroundImagePath, settings->AllProfiles().GetAt(0).DefaultAppearance().BackgroundImagePath().Resolved());
     }
 
     void DeserializationTests::TestCloseOnExitParsing()
