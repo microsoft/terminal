@@ -566,7 +566,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         const auto actionID = _ActionEntry.ActionId();
         if (const auto& action = _Settings.ActionMap().GetActionByID(actionID))
         {
-            return action.ResolvedIcon();
+            return action.Icon().Resolved();
         }
         return {};
     }

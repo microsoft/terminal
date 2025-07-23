@@ -116,6 +116,7 @@ namespace Microsoft.Terminal.Settings.Editor
         Boolean UsingBuiltInIcon { get; };
         Boolean UsingEmojiIcon { get; };
         Boolean UsingImageIcon { get; };
+	String IconPath;
 
         IInspectable CurrentBuiltInIcon;
         Windows.Foundation.Collections.IVector<IInspectable> BuiltInIcons { get; };
@@ -132,7 +133,7 @@ namespace Microsoft.Terminal.Settings.Editor
         OBSERVABLE_PROJECTED_PROFILE_SETTING(String, Source);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(Guid, ConnectionType);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, Hidden);
-        OBSERVABLE_PROJECTED_PROFILE_SETTING(String, Icon);
+        OBSERVABLE_PROJECTED_PROFILE_SETTING(Microsoft.Terminal.Settings.Model.IMediaResource, Icon);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Microsoft.Terminal.Settings.Model.CloseOnExitMode, CloseOnExit);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(String, TabTitle);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Windows.Foundation.IReference<Microsoft.Terminal.Core.Color>, TabColor);

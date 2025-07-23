@@ -908,7 +908,7 @@ namespace SettingsModelUnitTests
             "profiles": [
                 {
                     "name": "profile0",
-                    "backgroundImage": "%WINDIR%\\System32\\x_80.png"
+                    "backgroundImage": "%WINDIR%\\System32\\@VpnToastIcon.png"
                 }
             ]
         })" };

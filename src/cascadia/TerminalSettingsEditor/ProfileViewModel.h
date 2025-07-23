@@ -81,7 +81,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         winrt::hstring EvaluatedIcon() const
         {
-            return _profile.EvaluatedIcon();
+            return _profile.Icon().Resolved();
         }
         Windows::Foundation::IInspectable CurrentIconType() const noexcept
         {
@@ -94,6 +94,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         bool UsingBuiltInIcon() const;
         bool UsingEmojiIcon() const;
         bool UsingImageIcon() const;
+        winrt::hstring IconPath() const { return _profile.Icon().Path(); }
+        void IconPath(const winrt::hstring& path)
+        {
+            // TODO(DH)
+            (void)path;
+            _NotifyChanges(L"Icon");
+        }
 
         // starting directory
         hstring CurrentStartingDirectoryPreview() const;

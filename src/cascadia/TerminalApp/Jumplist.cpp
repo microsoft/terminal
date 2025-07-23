@@ -45,6 +45,7 @@ static constexpr bool _isProbableFilePath(std::wstring_view path)
 //   paths to have the "correct" slash direction.
 static std::wstring _normalizeIconPath(std::wstring_view path)
 {
+    // TODO DH REMOVE THIS AND PROBABLE PATH HANDLER
     if (_isProbableFilePath(path))
     {
         std::filesystem::path asPath{ path };
@@ -123,7 +124,7 @@ void Jumplist::_updateProfiles(IObjectCollection* jumplistItems, winrt::Windows:
         auto args = fmt::format(FMT_COMPILE(L"-p {}"), to_hstring(profile.Guid()));
 
         // Create the shell link object for the profile
-        const auto normalizedIconPath{ _normalizeIconPath(profile.EvaluatedIcon()) };
+        const auto normalizedIconPath{ profile.Icon().Resolved() };
         const auto shLink = _createShellLink(profile.Name(), normalizedIconPath, args);
         THROW_IF_FAILED(jumplistItems->AddObject(shLink.get()));
     }
