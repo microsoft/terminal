@@ -57,13 +57,12 @@
                            TargetType="Border">
                         <Setter Property="BorderThickness" Value="1" />
                         <Setter Property="CornerRadius" Value="{StaticResource ControlCornerRadius}" />
-                        <Setter Property="Background" Value="{ThemeResource SubtleFillColorSecondaryBrush}" />
-                        <Setter Property="BorderBrush" Value="{ThemeResource DividerStrokeColorDefaultBrush}" />
-                        <Setter Property="Padding" Value="4,4,4,4" />
+                        <Setter Property="Background" Value="{ThemeResource SystemAltMediumLowColor}" />
+                        <Setter Property="BorderBrush" Value="{ThemeResource SystemControlForegroundBaseMediumBrush}" />
                     </Style>
                     <Style x:Key="KeyChordTextBlockStyle"
                            TargetType="TextBlock">
-                        <Setter Property="Foreground" Value="{ThemeResource TextFillColorSecondaryBrush}" />
+                        <Setter Property="Foreground" Value="{ThemeResource SystemControlForegroundBaseMediumBrush}" />
                     </Style>
 
                 </ResourceDictionary>
@@ -100,13 +99,12 @@
                         <Setter Property="BorderThickness" Value="1" />
                         <Setter Property="BorderThickness" Value="1" />
                         <Setter Property="CornerRadius" Value="{StaticResource ControlCornerRadius}" />
-                        <Setter Property="Background" Value="{ThemeResource SubtleFillColorSecondaryBrush}" />
-                        <Setter Property="BorderBrush" Value="{ThemeResource DividerStrokeColorDefaultBrush}" />
-                        <Setter Property="Padding" Value="4,4,4,4" />
+                        <Setter Property="Background" Value="{ThemeResource SystemAltMediumLowColor}" />
+                        <Setter Property="BorderBrush" Value="{ThemeResource SystemControlForegroundBaseMediumBrush}" />
                     </Style>
                     <Style x:Key="KeyChordTextBlockStyle"
                            TargetType="TextBlock">
-                        <Setter Property="Foreground" Value="{ThemeResource TextFillColorSecondaryBrush}" />
+                        <Setter Property="Foreground" Value="{ThemeResource SystemControlForegroundBaseMediumBrush}" />
                     </Style>
 
                 </ResourceDictionary>
@@ -209,7 +207,7 @@
 
                         <!--  Key Chord Text  -->
                         <Border Grid.Column="1"
-                                Padding="8,4,8,4"
+                                Padding="2,0,2,0"
                                 HorizontalAlignment="Right"
                                 VerticalAlignment="Center"
                                 Style="{ThemeResource KeyChordBorderStyle}"
