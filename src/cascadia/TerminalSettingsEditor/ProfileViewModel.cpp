@@ -105,7 +105,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                                L"UsingImageIcon",
                                L"LocalizedIcon",
                                L"IconPreview",
-                               L"Icon");
+                               L"EvaluatedIcon");
             }
             else if (viewModelProperty == L"CurrentBuiltInIcon")
             {

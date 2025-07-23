@@ -522,51 +522,55 @@ void CascadiaSettings::_resolveSingleMediaResource(std::wstring_view basePath, c
     }
 
     resourcePath = wil::ExpandEnvironmentStringsW<std::wstring>(resourcePath.data());
+    const auto colon{ std::wstring_view{ resourcePath }.find_first_of(L':') };
 
-    // URI
-    try
+    // URI (contains a :, but only after a reasonable distance for a schema)
+    if (colon != std::wstring_view::npos && colon >= 4)
     {
-        const winrt::Windows::Foundation::Uri resourceUri{ resourcePath };
-        if (!resourceUri)
+        try
         {
-            resource.Reject();
-            return;
-        }
+            const winrt::Windows::Foundation::Uri resourceUri{ resourcePath };
+            if (!resourceUri)
+            {
+                resource.Reject();
+                return;
+            }
 
-        const auto scheme{ resourceUri.SchemeName() };
-        if (til::starts_with_insensitive_ascii(scheme, L"http") ||
-            (til::equals_insensitive_ascii(scheme, L"ms-appx") && !resourceUri.Domain().empty()))
-        {
-            // http(s) URLs (WSL Distro AppX fragments) and ms-appx://APPLICATION/ (Julia) URLs decay to fragment-relative paths
-            const auto path{ resourceUri.Path() };
-            const std::wstring_view pathView{ path };
-            const std::wstring_view file{ pathView.substr(pathView.find_last_of(L'/') + 1) };
+            const auto scheme{ resourceUri.SchemeName() };
+            if (til::starts_with_insensitive_ascii(scheme, L"http") ||
+                (til::equals_insensitive_ascii(scheme, L"ms-appx") && !resourceUri.Domain().empty()))
+            {
+                // http(s) URLs (WSL Distro AppX fragments) and ms-appx://APPLICATION/ (Julia) URLs decay to fragment-relative paths
+                const auto path{ resourceUri.Path() };
+                const std::wstring_view pathView{ path };
+                const std::wstring_view file{ pathView.substr(pathView.find_last_of(L'/') + 1) };
 
-            resourcePath = winrt::hstring{ file };
-            // FALL THROUGH TO TRY FILESYSTEM PATHS
+                resourcePath = winrt::hstring{ file };
+                // FALL THROUGH TO TRY FILESYSTEM PATHS
+            }
+            else if (til::equals_insensitive_ascii(scheme, L"file"))
+            {
+                // this is approximately the worst thing ever (TODO DH)
+                resourcePath = winrt::Windows::Foundation::Uri::UnescapeComponent(resourceUri.Path()).c_str() + 1;
+                // FALL THROUGH TO TRY FILESYSTEM PATHS
+            }
+            else if (!til::starts_with_insensitive_ascii(scheme, L"ms-"))
+            {
+                // Other non-file and non-ms* URLs are disallowed
+                resource.Reject();
+                return;
+            }
+            else
+            {
+                // Other URLs (so, file and ms-*) are permissible.
+                resource.Resolve(resourcePath);
+                return;
+            }
         }
-        else if (til::equals_insensitive_ascii(scheme, L"file"))
+        catch (...)
         {
-            // this is approximately the worst thing ever (TODO DH)
-            resourcePath = resourceUri.Path().c_str() + 1;
-            // FALL THROUGH TO TRY FILESYSTEM PATHS
+            // fall through
         }
-        else if (!til::starts_with_insensitive_ascii(scheme, L"ms-"))
-        {
-            // Other non-file and non-ms* URLs are disallowed
-            resource.Reject();
-            return;
-        }
-        else
-        {
-            // Other URLs (so, file and ms-*) are permissible.
-            resource.Resolve(resourcePath);
-            return;
-        }
-    }
-    catch (...)
-    {
-        // fall through
     }
 
     // Not a URI? Try a path.
