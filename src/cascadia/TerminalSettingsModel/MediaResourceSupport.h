@@ -35,14 +35,14 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         void Resolve(winrt::hstring newPath)
         {
-            value = newPath;
+            resolvedValue = newPath;
             ok = true;
             resolved = true;
         }
 
         void Reject()
         {
-            value = {};
+            resolvedValue = {};
             ok = false;
             resolved = true;
         }

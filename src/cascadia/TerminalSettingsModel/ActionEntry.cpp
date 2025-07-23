@@ -4,6 +4,7 @@
 #include "pch.h"
 #include "ActionEntry.h"
 #include "JsonUtils.h"
+#include "TerminalSettingsSerializationHelpers.h"
 
 #include "ActionEntry.g.cpp"
 

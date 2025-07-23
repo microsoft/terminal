@@ -773,20 +773,28 @@ struct ::Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<::winr
 {
     ::winrt::Microsoft::Terminal::Settings::Model::IMediaResource FromJson(const Json::Value& json)
     {
+        if (json.isNull()) [[unlikely]]
+        {
+            return ::winrt::Microsoft::Terminal::Settings::Model::implementation::MediaResource::Empty();
+        }
+
         winrt::hstring string{ til::u8u16(Detail::GetStringView(json)) };
         return ::winrt::Microsoft::Terminal::Settings::Model::implementation::MediaResource::FromString(string);
     }
 
     bool CanConvert(const Json::Value& json)
     {
-        if (!json.isString())
-        {
-            return false;
-        }
+        return json.isString() || json.isNull();
     }
 
     Json::Value ToJson(const ::winrt::Microsoft::Terminal::Settings::Model::IMediaResource& val)
     {
+        if (!val || val.Path() == winrt::hstring{})
+        {
+            // empty string becomes null (is this correct?)
+            return Json::Value::nullSingleton();
+        }
+
         return til::u16u8(val.Path());
     }
 

@@ -202,7 +202,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     IMediaResource Command::Icon() const noexcept
     {
-        return _icon ? _icon : MediaResource::Empty();
+        return (_icon && *_icon) ? *_icon : MediaResource::Empty();
     }
 
     void Command::Icon(const IMediaResource& val)
@@ -611,9 +611,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     void Command::ResolveMediaResourcesWithBasePath(const winrt::hstring& basePath, const Model::MediaResourceResolver& resolver)
     {
-        if (_icon)
+        if (_icon && *_icon)
         {
-            ResolveIconMediaResource(basePath, _icon, resolver);
+            ResolveIconMediaResource(basePath, *_icon, resolver);
         }
     }
 

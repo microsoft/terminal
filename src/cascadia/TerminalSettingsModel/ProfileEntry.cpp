@@ -4,6 +4,7 @@
 #include "pch.h"
 #include "ProfileEntry.h"
 #include "JsonUtils.h"
+#include "TerminalSettingsSerializationHelpers.h"
 
 #include "ProfileEntry.g.cpp"
 

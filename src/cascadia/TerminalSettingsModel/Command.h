@@ -104,7 +104,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         std::optional<CommandNameOrResource> _name;
         std::wstring _ID;
         bool _IDWasGenerated{ false };
-        IMediaResource _icon;
+        std::optional<IMediaResource> _icon;
         bool _nestedCommand{ false };
 
         static std::vector<Model::Command> _expandCommand(Command* const expandable,
