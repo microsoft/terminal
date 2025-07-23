@@ -538,14 +538,16 @@ void CascadiaSettings::_resolveSingleMediaResource(std::wstring_view basePath, c
             (til::equals_insensitive_ascii(scheme, L"ms-appx") && !resourceUri.Domain().empty()))
         {
             // http(s) URLs (WSL Distro AppX fragments) and ms-appx://APPLICATION/ (Julia) URLs decay to fragment-relative paths
-            std::wstring_view path{ resourceUri.Path() };
-            std::wstring_view file{ path.substr(path.find_last_of(L'/') + 1) };
+            const auto path{ resourceUri.Path() };
+            const std::wstring_view pathView{ path };
+            const std::wstring_view file{ pathView.substr(pathView.find_last_of(L'/') + 1) };
 
             resourcePath = winrt::hstring{ file };
             // FALL THROUGH TO TRY FILESYSTEM PATHS
         }
         else if (til::equals_insensitive_ascii(scheme, L"file"))
         {
+            // this is approximately the worst thing ever (TODO DH)
             resourcePath = resourceUri.Path().c_str() + 1;
             // FALL THROUGH TO TRY FILESYSTEM PATHS
         }
