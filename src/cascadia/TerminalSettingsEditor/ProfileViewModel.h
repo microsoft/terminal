@@ -97,8 +97,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         winrt::hstring IconPath() const { return _profile.Icon().Path(); }
         void IconPath(const winrt::hstring& path)
         {
-            // TODO(DH)
-            (void)path;
+            Icon(Model::MediaResourceHelper::FromString(path));
             _NotifyChanges(L"Icon");
         }
 

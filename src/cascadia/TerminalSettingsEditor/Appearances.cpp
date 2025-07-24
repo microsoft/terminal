@@ -913,7 +913,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void AppearanceViewModel::SetBackgroundImagePath(winrt::hstring path)
     {
-        _appearance.BackgroundImagePath(nullptr); // TODO(DH)
+        _appearance.BackgroundImagePath(Model::MediaResourceHelper::FromString(path));
         _NotifyChanges(L"BackgroundImagePath");
     }
 
