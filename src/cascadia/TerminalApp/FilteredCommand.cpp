@@ -87,7 +87,7 @@ namespace winrt::TerminalApp::implementation
             auto itemSubtitle = _Item.Subtitle();
             int32_t subtitleWeight = 0;
             std::tie(subtitleSegments, subtitleWeight) = _matchedSegmentsAndWeight(_pattern, itemSubtitle);
-            weight += subtitleWeight;
+            weight = std::max(weight, subtitleWeight);
         }
 
         if (segments.empty())
