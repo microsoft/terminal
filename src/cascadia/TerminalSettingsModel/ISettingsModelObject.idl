@@ -19,7 +19,7 @@ namespace Microsoft.Terminal.Settings.Model
     }
 
     interface IMediaResource {
-        String Path;
+        String Path { get; };
         String Resolved { get; };
         void Resolve(String finalValue);
         void Reject();

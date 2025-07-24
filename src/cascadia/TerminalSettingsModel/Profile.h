@@ -111,7 +111,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         void ResolveMediaResources(const Model::MediaResourceResolver& resolver);
 
-        void Icon(const winrt::hstring& path) {
+        void Icon(const winrt::hstring& path)
+        {
             // Internal Helper (overload version)
             Icon(MediaResource::FromString(path));
         }

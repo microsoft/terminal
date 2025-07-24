@@ -9,20 +9,38 @@ Licensed under the MIT license.
 
 struct
     __declspec(uuid("6068ee1b-1ea0-4804-993a-42ef0c58d867"))
-    IMediaResourceContainer : public IUnknown
+        IMediaResourceContainer : public IUnknown
 {
     virtual void ResolveMediaResources(const winrt::Microsoft::Terminal::Settings::Model::MediaResourceResolver& resolver) = 0;
 };
 
 struct
     __declspec(uuid("9f11361c-7c8f-45c9-8948-36b66d67eca8"))
-    IPathlessMediaResourceContainer : public IUnknown
+        IPathlessMediaResourceContainer : public IUnknown
 {
     virtual void ResolveMediaResourcesWithBasePath(const winrt::hstring& basePath, const winrt::Microsoft::Terminal::Settings::Model::MediaResourceResolver& resolver) = 0;
 };
 
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
+    struct EmptyMediaResource : winrt::implements<MediaResource, winrt::Microsoft::Terminal::Settings::Model::IMediaResource, winrt::non_agile, winrt::no_weak_ref, winrt::no_module_lock>
+    {
+        winrt::hstring Path() { return {}; };
+        winrt::hstring Resolved() { return {}; }
+
+        bool Ok() const { return false; }
+
+        void Resolve(const winrt::hstring&)
+        {
+            assert(false); // Somebody tried to resolve the empty media resource
+        }
+
+        void Reject()
+        {
+            assert(false); // Somebody tried to resolve the empty media resource
+        }
+    };
+
     struct MediaResource : winrt::implements<MediaResource, winrt::Microsoft::Terminal::Settings::Model::IMediaResource, winrt::non_agile, winrt::no_weak_ref, winrt::no_module_lock>
     {
         MediaResource() {}
@@ -30,12 +48,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             value{ p } {}
 
         winrt::hstring Path() { return value; };
-        void Path(const winrt::hstring& v) { value = v; }
         winrt::hstring Resolved() { return resolved ? resolvedValue : value; }
 
         bool Ok() const { return ok; }
 
-        void Resolve(winrt::hstring newPath)
+        void Resolve(const winrt::hstring& newPath)
         {
             resolvedValue = newPath;
             ok = true;
@@ -56,7 +73,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         static IMediaResource Empty()
         {
-            static IMediaResource emptyResource{ winrt::make<MediaResource>() };
+            static IMediaResource emptyResource{ winrt::make<EmptyMediaResource>() };
             return emptyResource;
         }
 
