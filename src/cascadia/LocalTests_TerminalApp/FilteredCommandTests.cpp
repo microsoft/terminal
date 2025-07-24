@@ -21,6 +21,7 @@ namespace TerminalAppLocalTests
             _value{ value } {}
 
         winrt::hstring Name() { return _value; }
+        winrt::hstring Subtitle() { return {}; }
         winrt::hstring KeyChordText() { return {}; }
         winrt::hstring Icon() { return {}; }
 
