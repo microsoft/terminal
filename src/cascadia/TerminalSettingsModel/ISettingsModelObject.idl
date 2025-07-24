@@ -27,4 +27,9 @@ namespace Microsoft.Terminal.Settings.Model
     };
 
     delegate void MediaResourceResolver(String basePath, IMediaResource resource);
+
+    static runtimeclass MediaResourceHelper {
+        static IMediaResource FromString(String s);
+        static IMediaResource Empty();
+    };
 }

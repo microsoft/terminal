@@ -5,6 +5,8 @@ Licensed under the MIT license.
 
 #pragma once
 
+#include "MediaResourceHelper.g.h"
+
 struct
     __declspec(uuid("6068ee1b-1ea0-4804-993a-42ef0c58d867"))
     IMediaResourceContainer : public IUnknown
@@ -86,4 +88,24 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             ResolveMediaResource(basePath, resource, resolver);
         }
     }
+
+    // This exists to allow external consumers to call this code via WinRT
+    struct MediaResourceHelper
+    {
+        static winrt::Microsoft::Terminal::Settings::Model::IMediaResource FromString(hstring const& s)
+        {
+            return MediaResource::FromString(s);
+        }
+        static winrt::Microsoft::Terminal::Settings::Model::IMediaResource Empty()
+        {
+            return MediaResource::Empty();
+        }
+    };
+}
+
+namespace winrt::Microsoft::Terminal::Settings::Model::factory_implementation
+{
+    struct MediaResourceHelper : MediaResourceHelperT<MediaResourceHelper, implementation::MediaResourceHelper>
+    {
+    };
 }
