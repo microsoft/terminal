@@ -33,6 +33,17 @@
       A:\;
       E:\;
       $(windir)\**;
+      $(MSBuildBinPath)\**;
+      $(MSBuildToolsPath32)\**;
+    </MSBuildCacheAllowFileAccessAfterProjectFinishFilePatterns>
+
+    <!--
+      Unit tests may write to TEMP, but should not be considered outputs. However, $(Temp) is using the DOS path (C:\Users\CLOUDT~1\AppData\Local\Temp), which
+      isn't accounted for in these globs. So we're building up to TEMP using $(LOCALAPPDATA) instead.
+    -->
+    <MSBuildCacheAllowFileAccessAfterProjectFinishFilePatterns>
+      $(MSBuildCacheAllowFileAccessAfterProjectFinishFilePatterns);
+      $(LOCALAPPDATA)\Temp\**;
     </MSBuildCacheAllowFileAccessAfterProjectFinishFilePatterns>
 
     <!-- 
@@ -45,6 +56,15 @@
       vcpkg is invoked for each and every vcxproj and each invocation uses the same base dir for logging, so allow these duplicate "outputs".
     -->
     <MSBuildCacheIdenticalDuplicateOutputPatterns>$(MSBuildCacheIdenticalDuplicateOutputPatterns);obj\*\vcpkg\**</MSBuildCacheIdenticalDuplicateOutputPatterns>
+
+    <!--
+      Ensure the MSBuildCache ignores collecting outputs under vcpkg's build tree, which is a working directory used to build vcpkg packages and not intended to be consumed by anything else in the build.
+      Note: We cannot use $(VcpkgInstalledDir) directly since it differs between projects, so use a pattern which encompasses all possibilities.
+    -->
+    <MSBuildCacheIgnoredOutputPatterns>
+      $(MSBuildCacheIgnoredOutputPatterns);
+      $(SolutionDir)\obj\*\vcpkg*\vcpkg\blds\**;
+    </MSBuildCacheIgnoredOutputPatterns>
 
     <!-- version of MSBuildCache is not part of the cache key -->
     <PackagesConfigFile>$(MSBuildThisFileDirectory)\dep\nuget\packages.config</PackagesConfigFile>

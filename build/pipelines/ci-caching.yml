@@ -84,7 +84,7 @@ stages:
             buildEverything: true
             keepAllExpensiveBuildOutputs: false
             ${{ if eq(variables['System.PullRequest.IsFork'], 'False') }}:
-              enableCaching: true
+              enableMsBuildCaching: true
 
     - ${{ if eq(parameters.runTests, true) }}:
       - stage: Test_${{ platform }}
