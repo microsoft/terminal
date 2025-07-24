@@ -71,16 +71,19 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     _TIL_INLINEPREFIX void ResolveIconMediaResource(const winrt::hstring& basePath, const Model::IMediaResource& resource, const winrt::Microsoft::Terminal::Settings::Model::MediaResourceResolver& resolver)
     {
-        std::wstring_view unresolvedPath{ resource.Path() };
-        if (unresolvedPath.size() <= 2 || unresolvedPath.find_first_of(L'\u200D') <= 8)
+        if (const winrt::hstring path{ resource.Path() }; !path.empty())
         {
-            // **HEURISTIC**
-            // If it's 2 code units long or contains a zero-width joiner in the first 8 code units, it is
-            // PROBABLY an Emoji. Just pass it through.
-            resource.Resolve(unresolvedPath);
-            return;
-        }
+            std::wstring_view pathView{ path };
+            if (pathView.size() <= 2 || pathView.find_first_of(L'\u200D') <= 8)
+            {
+                // **HEURISTIC**
+                // If it's 2 code units long or contains a zero-width joiner in the first 8 code units, it is
+                // PROBABLY an Emoji. Just pass it through.
+                resource.Resolve(path);
+                return;
+            }
 
-        ResolveMediaResource(basePath, resource, resolver);
+            ResolveMediaResource(basePath, resource, resolver);
+        }
     }
 }

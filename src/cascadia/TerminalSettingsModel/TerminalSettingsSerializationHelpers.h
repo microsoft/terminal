@@ -775,7 +775,8 @@ struct ::Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<::winr
     {
         if (json.isNull()) [[unlikely]]
         {
-            return ::winrt::Microsoft::Terminal::Settings::Model::implementation::MediaResource::Empty();
+            // Do not use Empty here, as Empty is shared across all instances.
+            return ::winrt::Microsoft::Terminal::Settings::Model::implementation::MediaResource::FromString(L"");
         }
 
         winrt::hstring string{ til::u8u16(Detail::GetStringView(json)) };

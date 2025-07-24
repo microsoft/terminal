@@ -529,17 +529,26 @@ void Profile::_logSettingIfSet(const std::string_view& setting, const bool isSet
 
 void Profile::ResolveMediaResources(const Model::MediaResourceResolver& resolver)
 {
-    if (const auto icon{ _getIconImpl() }; icon && *icon)
+    bool fallbackIcon{ false };
+    if (const auto icon{ _getIconImpl() }; icon)
     {
         auto& innerIcon{ *icon };
-        const auto iconSource{ _getIconOverrideSourceImpl() };
-        ResolveIconMediaResource(iconSource->SourceBasePath, innerIcon, resolver);
-        if (!innerIcon.Ok())
+        fallbackIcon = !static_cast<bool>(innerIcon);
+        if (innerIcon)
         {
-            // failed resolution. fall back to the commandline since we do have one.
-            std::wstring cmdline{ NormalizeCommandLine(Commandline().c_str()) };
-            innerIcon.Resolve(cmdline);
+            const auto iconSource{ _getIconOverrideSourceImpl() };
+            ResolveIconMediaResource(iconSource->SourceBasePath, innerIcon, resolver);
+            fallbackIcon = !innerIcon.Ok();
         }
+    }
+
+    if (fallbackIcon)
+    {
+        // failed resolution or explicitly null. fall back to the commandline since we do have one.
+        std::wstring cmdline{ NormalizeCommandLine(Commandline().c_str()) };
+        auto newIcon{ MediaResource::FromString(L"") }; // NOTE: Do not use Empty here, it's shared
+        newIcon.Resolve(cmdline);
+        _Icon.emplace(std::move(newIcon));
     }
 
     if (const auto container{ _DefaultAppearance.as<IMediaResourceContainer>() })

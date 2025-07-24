@@ -512,12 +512,13 @@ void CascadiaSettings::_resolveSingleMediaResource(std::wstring_view basePath, c
     }
     else if (til::equals_insensitive_ascii(resourcePath, L"none"))
     {
+        // Resolve "none" to the OK Empty string.
         resource.Resolve({});
         return;
     }
     else if (resourcePath.empty())
     {
-        resource.Resolve({});
+        // Do nothing.
         return;
     }
 
