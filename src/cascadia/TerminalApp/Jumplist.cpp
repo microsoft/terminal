@@ -19,41 +19,6 @@ DEFINE_PROPERTYKEY(PKEY_AppUserModel_DestListLogoUri, 0x9F4C2855, 0x9F79, 0x4B39
         { 0x9F4C2855, 0x9F79, 0x4B39, 0xA8, 0xD0, 0xE1, 0xD4, 0x2D, 0xE1, 0xD5, 0xF3 }, 29 \
     }
 
-// Function Description:
-// - This function guesses whether a string is a file path.
-static constexpr bool _isProbableFilePath(std::wstring_view path)
-{
-    // "C:X", "C:\X", "\\?", "\\."
-    // _this function rejects \??\ as a path_
-    if (path.size() >= 3)
-    {
-        const auto firstColon{ path.find(L':') };
-        if (firstColon == 1)
-        {
-            return true;
-        }
-
-        const auto prefix{ path.substr(0, 2) };
-        return prefix == LR"(//)" || prefix == LR"(\\)";
-    }
-    return false;
-}
-
-// Function Description:
-// - DestListLogoUri cannot take paths that are separated by / unless they're URLs.
-//   This function uses std::filesystem to normalize strings that appear to be file
-//   paths to have the "correct" slash direction.
-static std::wstring _normalizeIconPath(std::wstring_view path)
-{
-    // TODO DH REMOVE THIS AND PROBABLE PATH HANDLER
-    if (_isProbableFilePath(path))
-    {
-        std::filesystem::path asPath{ path };
-        return asPath.make_preferred().wstring();
-    }
-    return std::wstring{ path };
-}
-
 // Method Description:
 // - Updates the items of the Jumplist based on the given settings.
 // Arguments:

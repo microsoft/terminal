@@ -589,7 +589,7 @@ void CascadiaSettings::_resolveSingleMediaResource(std::wstring_view basePath, c
             return;
         }
 
-        resource.Resolve(winrt::hstring{ resourceAsFilesystemPath.lexically_normal().native() });
+        resource.Resolve(winrt::hstring{ resourceAsFilesystemPath.make_preferred().native() });
         return;
     }
     catch (...)
