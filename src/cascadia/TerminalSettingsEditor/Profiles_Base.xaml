@@ -22,14 +22,13 @@
     </Page.Resources>
 
     <!--  Use a Grid instead of a StackPanel. StackPanel suppresses the inner ScrollViewer.  -->
-    <Grid>
+    <Grid MaxWidth="{StaticResource StandardControlMaxWidth}">
         <Grid.RowDefinitions>
             <RowDefinition Height="auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
         <TextBlock x:Uid="Profile_BaseLayerDisclaimer"
                    Grid.Row="0"
-                   Margin="{StaticResource StandardIndentMargin}"
                    Style="{StaticResource DisclaimerStyle}"
                    Visibility="{x:Bind Profile.IsBaseLayer}" />
         <StackPanel Grid.Row="1"
@@ -64,7 +63,7 @@
                              Style="{StaticResource TextBoxSettingStyle}"
                              Text="{x:Bind Profile.Commandline, Mode=TwoWay}" />
                     <Button x:Uid="Profile_CommandlineBrowse"
-                            Margin="0,10,0,0"
+                            Margin="0,8,0,0"
                             Click="Commandline_Click"
                             Style="{StaticResource BrowseButtonStyle}" />
                 </StackPanel>
@@ -87,13 +86,13 @@
                     <StackPanel Orientation="Horizontal">
                         <Button x:Name="StartingDirectoryBrowse"
                                 x:Uid="Profile_StartingDirectoryBrowse"
-                                Margin="0,10,10,0"
+                                Margin="0,12,12,0"
                                 Click="StartingDirectory_Click"
                                 IsEnabled="{x:Bind mtu:Converters.InvertBoolean(Profile.UseParentProcessDirectory), Mode=OneWay}"
                                 Style="{StaticResource BrowseButtonStyle}" />
                         <CheckBox x:Name="StartingDirectoryUseParentCheckbox"
                                   x:Uid="Profile_StartingDirectoryUseParentCheckbox"
-                                  Margin="0,5,0,0"
+                                  Margin="0,4,0,0"
                                   IsChecked="{x:Bind Profile.UseParentProcessDirectory, Mode=TwoWay}" />
                     </StackPanel>
                 </StackPanel>
@@ -123,7 +122,7 @@
                     </Grid>
                 </local:SettingContainer.CurrentValue>
                 <local:SettingContainer.Content>
-                    <Grid ColumnSpacing="10">
+                    <Grid ColumnSpacing="12">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="auto" />
                             <ColumnDefinition Width="*" />
@@ -150,7 +149,7 @@
                                   Visibility="{x:Bind Profile.UsingBuiltInIcon, Mode=OneWay}">
                             <ComboBox.ItemTemplate>
                                 <DataTemplate x:DataType="local:EnumEntry">
-                                    <Grid ColumnSpacing="10">
+                                    <Grid ColumnSpacing="12">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="16" />
                                             <ColumnDefinition Width="*" />
@@ -226,7 +225,7 @@
             </local:SettingContainer>
 
             <TextBlock x:Uid="Profile_AdditionalSettingsHeader"
-                       Margin="0,48,0,0"
+                       Margin="0,32,0,4"
                        Style="{StaticResource TextBlockSubHeaderStyle}" />
 
             <Button x:Name="AppearanceNavigator"
@@ -249,7 +248,7 @@
                             <FontIcon FontSize="{StaticResource StandardIconSize}"
                                       Glyph="&#xE74D;" />
                             <TextBlock x:Uid="Profile_DeleteButton"
-                                       Margin="10,0,0,0" />
+                                       Margin="8,0,0,0" />
                         </StackPanel>
                     </Button.Content>
                     <Button.Flyout>
