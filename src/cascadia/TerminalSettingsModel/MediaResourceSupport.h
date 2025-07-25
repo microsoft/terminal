@@ -23,7 +23,7 @@ struct
 
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
-    struct EmptyMediaResource : winrt::implements<MediaResource, winrt::Microsoft::Terminal::Settings::Model::IMediaResource, winrt::non_agile, winrt::no_weak_ref, winrt::no_module_lock>
+    struct EmptyMediaResource : winrt::implements<EmptyMediaResource, winrt::Microsoft::Terminal::Settings::Model::IMediaResource, winrt::non_agile, winrt::no_weak_ref, winrt::no_module_lock>
     {
         winrt::hstring Path() { return {}; };
         winrt::hstring Resolved() { return {}; }
