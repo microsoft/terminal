@@ -1736,6 +1736,14 @@
     <value>Áϋτомàţīćąłłý ƒόćŭś рåπę öń мõùšě ђöνëŗ !!! !!! !!! !!!</value>
     <comment>Header for a control to toggle the "focus follow mouse" setting. When enabled, hovering over a pane puts it in focus.</comment>
   </data>
+  <data name="Globals_ScrollToZoom.Header" xml:space="preserve">
+    <value>Аδĵŭŝт ţєŗмιņăℓ ƒøпť ѕįżε вỳ şċѓοℓℓíńğ ẃħïĺє ĥöľδīйģ τђе €ŧřŀ ќëÿ !!! !!! !!! !!! !!! !!! !</value>
+    <comment>Header for a control to toggle font size changes with scrolling. When enabled, holding the Ctrl key while scrolling will increase or decrease the terminal font size.</comment>
+  </data>
+  <data name="Globals_ScrollToChangeOpacity.Header" xml:space="preserve">
+    <value>Ąδĵüšţ ŧęřмìńąĺ ôрǻčĩτў ьγ šćřοļĺįήĝ ẅђϊłę ħōļδîŉğ ťђз Çťгł àиδ Śђĭƒт ķęÿŝ !!! !!! !!! !!! !!! !!! !!! !</value>
+    <comment>Header for a control to toggle opacity changes with scrolling. When enabled, holding the Ctrl and Shift keys while scrolling will increase or decrease the window opacity.</comment>
+  </data>
   <data name="Globals_DisableAnimationsReversed.Header" xml:space="preserve">
     <value>Ρǻйě ǻйϊмäţіőηş !!! !</value>
     <comment>Header for a control to toggle animations on panes. "Enabled" value enables the animations.</comment>
