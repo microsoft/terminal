@@ -1736,6 +1736,14 @@
     <value>マウスをポイントしたときにフォーカス ウィンドウを自動的に表示する</value>
     <comment>Header for a control to toggle the "focus follow mouse" setting. When enabled, hovering over a pane puts it in focus.</comment>
   </data>
+  <data name="Globals_ScrollToZoom.Header" xml:space="preserve">
+    <value>Ctrl キーを押しながらスクロールして、ターミナルのフォント サイズを調整します</value>
+    <comment>Header for a control to toggle font size changes with scrolling. When enabled, holding the Ctrl key while scrolling will increase or decrease the terminal font size.</comment>
+  </data>
+  <data name="Globals_ScrollToChangeOpacity.Header" xml:space="preserve">
+    <value>Ctrl キーと Shift キーを押しながらスクロールして、ターミナルの不透明度を調整します</value>
+    <comment>Header for a control to toggle opacity changes with scrolling. When enabled, holding the Ctrl and Shift keys while scrolling will increase or decrease the window opacity.</comment>
+  </data>
   <data name="Globals_DisableAnimationsReversed.Header" xml:space="preserve">
     <value>ウィンドウのアニメーション</value>
     <comment>Header for a control to toggle animations on panes. "Enabled" value enables the animations.</comment>
