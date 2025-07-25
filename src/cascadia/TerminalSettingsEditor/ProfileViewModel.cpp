@@ -94,6 +94,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 // _DeduceCurrentIconType() ends with a "CurrentIconType" notification
                 //  so we don't need to call _UpdateIconPreview() here
                 _DeduceCurrentIconType();
+                // The icon changed; let's re-evaluate it with its new context.
+                _appSettings.ResolveMediaResources();
             }
             else if (viewModelProperty == L"CurrentIconType")
             {
@@ -282,6 +284,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     }
     Model::TerminalSettings ProfileViewModel::TermSettings() const
     {
+        // This could get quite pricey. Test it out.
+        _appSettings.ResolveMediaResources();
         return Model::TerminalSettings::CreateForPreview(_appSettings, _profile);
     }
 

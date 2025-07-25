@@ -64,6 +64,8 @@ namespace Microsoft.Terminal.Settings.Model
         DefaultTerminal CurrentDefaultTerminal;
 
         void ExpandCommands();
+
+        void ResolveMediaResources();
     }
 
     runtimeclass FragmentProfileEntry

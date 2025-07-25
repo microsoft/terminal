@@ -191,6 +191,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void CurrentDefaultTerminal(const Model::DefaultTerminal& terminal);
 
         void ExpandCommands();
+        void ResolveMediaResources() { _validateMediaResources(); }
 
         void LogSettingChanges(bool isJsonLoad) const;
 

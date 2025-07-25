@@ -85,6 +85,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     _TIL_INLINEPREFIX void ResolveMediaResource(const winrt::hstring& basePath, const Model::IMediaResource& resource, const winrt::Microsoft::Terminal::Settings::Model::MediaResourceResolver& resolver)
     {
+        const auto path{ resource.Path() };
+        if (path.empty() || resource.Ok()) {
+            // Don't resolve empty resources *or* resources which have already been found.
+            return;
+        }
         resolver(basePath, resource);
     }
 
