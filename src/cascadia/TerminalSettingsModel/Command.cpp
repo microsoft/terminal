@@ -24,6 +24,61 @@ static constexpr std::string_view ProfileNameToken{ "${profile.name}" };
 static constexpr std::string_view ProfileIconToken{ "${profile.icon}" };
 static constexpr std::string_view SchemeNameToken{ "${scheme.name}" };
 
+template<>
+struct Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<winrt::Microsoft::Terminal::Settings::Model::implementation::Command::CommandNameOrResource>
+{
+    winrt::Microsoft::Terminal::Settings::Model::implementation::Command::CommandNameOrResource FromJson(const Json::Value& json)
+    {
+        if (json.isObject())
+        {
+            if (const auto resourceKey{ JsonUtils::GetValueForKey<std::optional<std::wstring>>(json, "key") })
+            {
+                if (HasLibraryResourceWithName(*resourceKey))
+                {
+                    return { .resource = *resourceKey };
+                }
+            }
+        }
+        else if (json.isString())
+        {
+            return { .name = JsonUtils::GetValue<std::wstring>(json) };
+        }
+        return {};
+    }
+
+    bool CanConvert(const Json::Value& json)
+    {
+        if (json.isObject())
+        {
+            if (const auto resourceKey{ JsonUtils::GetValueForKey<std::optional<std::wstring>>(json, "key") })
+            {
+                return HasLibraryResourceWithName(*resourceKey);
+            }
+        }
+        return json.isString() || json.isNull();
+    }
+
+    Json::Value ToJson(const winrt::Microsoft::Terminal::Settings::Model::implementation::Command::CommandNameOrResource& val)
+    {
+        if (!val.resource.empty())
+        {
+            Json::Value json{ Json::objectValue };
+            SetValueForKey(json, "key", val.resource);
+            return json;
+        }
+        else if (!val.name.empty())
+        {
+            return til::u16u8(val.name);
+        }
+        return Json::Value::nullSingleton();
+    }
+
+    std::string TypeDescription() const
+    {
+        return "string or valid resource";
+    }
+};
+
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
     Command::Command() = default;
@@ -93,8 +148,14 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         if (_name.has_value())
         {
+            if (!_name->resource.empty())
+            {
+                // Resource key overrides name
+                return GetLibraryResourceString(_name->resource);
+            }
+
             // name was explicitly set, return that value.
-            return hstring{ _name.value() };
+            return hstring{ _name->name };
         }
         else if (_ActionAndArgs)
         {
@@ -133,9 +194,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     void Command::Name(const hstring& value)
     {
-        if (!_name.has_value() || _name.value() != value)
+        if (!_name.has_value() || _name->name != value)
         {
-            _name = value;
+            _name = CommandNameOrResource{ .name = std::wstring{ value } };
         }
     }
 
@@ -154,45 +215,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         {
             _iconPath = val;
         }
-    }
-
-    // Function Description:
-    // - attempt to get the name of this command from the provided json object.
-    //   * If the "name" property is a string, return that value.
-    //   * If the "name" property is an object, attempt to lookup the string
-    //     resource specified by the "key" property, to support localizable
-    //     command names.
-    // Arguments:
-    // - json: The Json::Value representing the command object we should get the name for.
-    // Return Value:
-    // - the empty string if we couldn't find a name; otherwise, the command's name.
-    static std::optional<std::wstring> _nameFromJson(const Json::Value& json)
-    {
-        if (const auto name{ json[JsonKey(NameKey)] })
-        {
-            if (name.isObject())
-            {
-                if (const auto resourceKey{ JsonUtils::GetValueForKey<std::optional<std::wstring>>(name, "key") })
-                {
-                    if (HasLibraryResourceWithName(*resourceKey))
-                    {
-                        return std::wstring{ GetLibraryResourceString(*resourceKey) };
-                    }
-                }
-            }
-            else if (name.isString())
-            {
-                return JsonUtils::GetValue<std::wstring>(name);
-            }
-        }
-        else if (json.isMember(JsonKey(NameKey)))
-        {
-            // { "name": null, "command": "copy" } will land in this case, which
-            // should also be used for unbinding.
-            return std::wstring{};
-        }
-
-        return std::nullopt;
     }
 
     // Method Description:
@@ -276,7 +298,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         // currently have. It'll probably generate something like "New tab,
         // profile: ${profile.name}". This string will only be temporarily
         // used internally, so there's no problem.
-        result->_name = _nameFromJson(json);
+        JsonUtils::GetValueForKey(json, NameKey, result->_name);
 
         // Stash the original json value in this object. If the command is
         // iterable, we'll need to re-parse it later, once we know what all the
@@ -303,7 +325,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         JsonUtils::GetValueForKey(json, IDKey, result->_ID);
         JsonUtils::GetValueForKey(json, DescriptionKey, result->_Description);
         JsonUtils::GetValueForKey(json, IconKey, result->_iconPath);
-        result->_name = _nameFromJson(json);
+        JsonUtils::GetValueForKey(json, NameKey, result->_name);
 
         const auto action{ ShortcutAction::SendInput };
         IActionArgs args{ nullptr };
@@ -341,12 +363,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                     if (result->ActionAndArgs().Action() == ShortcutAction::Invalid && !result->HasNestedCommands())
                     {
                         // If there wasn't a parsed command, then try to get the
-                        // name from the json blob. If that name currently
+                        // name that *was* parsed. If that name currently
                         // exists in our list of commands, we should remove it.
-                        const auto name = _nameFromJson(value);
-                        if (name.has_value() && !name->empty())
+                        const auto name = result->Name();
+                        if (!name.empty())
                         {
-                            commands.Remove(*name);
+                            commands.Remove(name);
                         }
                     }
                     else
@@ -612,9 +634,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         std::vector<Model::Command> result;
 
         const auto parseElement = [&](const auto& element) {
-            winrt::hstring completionText;
-            winrt::hstring listText;
-            winrt::hstring tooltipText;
+            std::wstring completionText;
+            std::wstring listText;
+            std::wstring tooltipText;
             JsonUtils::GetValueForKey(element, "CompletionText", completionText);
             JsonUtils::GetValueForKey(element, "ListItemText", listText);
             JsonUtils::GetValueForKey(element, "ToolTip", tooltipText);
@@ -623,12 +645,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 winrt::hstring{ fmt::format(FMT_COMPILE(L"{:\x7f^{}}{}"),
                                             L"",
                                             replaceLength,
-                                            static_cast<std::wstring_view>(completionText)) });
+                                            completionText) });
 
             Model::ActionAndArgs actionAndArgs{ ShortcutAction::SendInput, *args };
 
             auto c = winrt::make_self<Command>();
-            c->_name = listText;
+            c->_name = CommandNameOrResource{ .name = listText };
             c->_Description = tooltipText;
             c->_ActionAndArgs = actionAndArgs;
             // Try to assign a sensible icon based on the result type. These are
@@ -733,7 +755,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
             auto command = winrt::make_self<Command>();
             command->_ActionAndArgs = actionAndArgs;
-            command->_name = winrt::hstring{ line };
+            command->_name = CommandNameOrResource{ .name = std::wstring{ line } };
             command->_iconPath = iconPath;
             result.push_back(*command);
             foundCommands[line] = true;
