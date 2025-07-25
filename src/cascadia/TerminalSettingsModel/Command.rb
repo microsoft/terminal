@@ -1,35 +1,35 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-#include "pch.h"
-#include "Command.h"
-#include "Command.g.cpp"
+ "pch.h"
+ "Command.h"
+ "Command.g.cpp"
 
-#include <LibraryResources.h>
-#include <til/replace.h>
+ <LibraryResources.h>
+ <til/replace.h>
 
-#include "KeyChordSerialization.h"
+ "KeyChordSerialization.h"
 
-using namespace winrt::Microsoft::Terminal::Settings::Model;
-using namespace winrt::Windows::Foundation::Collections;
-using namespace ::Microsoft::Terminal::Settings::Model;
+                winrt::Microsoft::Terminal::Settings::Model;
+                winrt::Windows::Foundation::Collections;
+               ::Microsoft::Terminal::Settings::Model;
 
-namespace winrt
+          
 {
-    namespace MUX = Microsoft::UI::Xaml;
-    namespace WUX = Windows::UI::Xaml;
+              MUX = Microsoft::UI::Xaml;
+              WUX = Windows::UI::Xaml;
 }
 
-static constexpr std::string_view ProfileNameToken{ "${profile.name}" };
-static constexpr std::string_view ProfileIconToken{ "${profile.icon}" };
-static constexpr std::string_view SchemeNameToken{ "${scheme.name}" };
+                 std::            ProfileNameToken{ "${profile.name}" };
+                 std::            ProfileIconToken{ "${profile.icon}" };
+                 std::            SchemeNameToken{ "${scheme.name}" };
 
-template<>
-struct Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<winrt::Microsoft::Terminal::Settings::Model::implementation::Command::CommandNameOrResource>
+        <>
+        Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<winrt::Microsoft::Terminal::Settings::Model::implementation::Command::CommandNameOrResource>
 {
     winrt::Microsoft::Terminal::Settings::Model::implementation::Command::CommandNameOrResource FromJson(const Json::Value& json)
     {
-        if (json.isObject())
+           (json.isObject())
         {
             if (const auto resourceKey{ JsonUtils::GetValueForKey<std::optional<std::wstring>>(json, "key") })
             {
