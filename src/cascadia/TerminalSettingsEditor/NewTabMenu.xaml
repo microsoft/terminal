@@ -89,7 +89,7 @@
                         <IconSourceElement Width="16"
                                            Height="16"
                                            VerticalAlignment="Center"
-                                           IconSource="{x:Bind mtu:IconPathConverter.IconSourceWUX(ProfileEntry.Profile.EvaluatedIcon), Mode=OneTime}" />
+                                           IconSource="{x:Bind mtu:IconPathConverter.IconSourceWUX(ProfileEntry.Profile.Icon.Resolved), Mode=OneTime}" />
                         <TextBlock VerticalAlignment="Center"
                                    Text="{x:Bind ProfileEntry.Profile.Name, Mode=OneWay}" />
                     </StackPanel>
@@ -379,7 +379,7 @@
                                     <IconSourceElement Grid.Column="0"
                                                        Width="16"
                                                        Height="16"
-                                                       IconSource="{x:Bind mtu:IconPathConverter.IconSourceWUX(EvaluatedIcon), Mode=OneTime}" />
+                                                       IconSource="{x:Bind mtu:IconPathConverter.IconSourceWUX(Icon.Resolved), Mode=OneTime}" />
 
                                     <TextBlock Grid.Column="1"
                                                Text="{x:Bind Name}" />

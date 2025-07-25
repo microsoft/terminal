@@ -90,7 +90,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         command->_Origin = _Origin;
         command->_ID = _ID;
         command->_ActionAndArgs = *get_self<implementation::ActionAndArgs>(_ActionAndArgs)->Copy();
-        command->_iconPath = _iconPath;
+        command->_icon = _icon;
         command->_IterateOn = _IterateOn;
         command->_Description = _Description;
 
@@ -200,21 +200,14 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
     }
 
-    hstring Command::IconPath() const noexcept
+    IMediaResource Command::Icon() const noexcept
     {
-        if (_iconPath.has_value())
-        {
-            return hstring{ *_iconPath };
-        }
-        return {};
+        return (_icon && *_icon) ? *_icon : MediaResource::Empty();
     }
 
-    void Command::IconPath(const hstring& val)
+    void Command::Icon(const IMediaResource& val)
     {
-        if (!_iconPath.has_value() || _iconPath.value() != val)
-        {
-            _iconPath = val;
-        }
+        _icon = val;
     }
 
     // Method Description:
@@ -274,7 +267,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             result->_nestedCommand = true;
         }
 
-        JsonUtils::GetValueForKey(json, IconKey, result->_iconPath);
+        JsonUtils::GetValueForKey(json, IconKey, result->_icon);
 
         // If we're a nested command, we can ignore the current action.
         if (!nested)
@@ -324,7 +317,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         JsonUtils::GetValueForKey(json, IDKey, result->_ID);
         JsonUtils::GetValueForKey(json, DescriptionKey, result->_Description);
-        JsonUtils::GetValueForKey(json, IconKey, result->_iconPath);
+        JsonUtils::GetValueForKey(json, IconKey, result->_icon);
         JsonUtils::GetValueForKey(json, NameKey, result->_name);
 
         const auto action{ ShortcutAction::SendInput };
@@ -403,7 +396,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
         else
         {
-            JsonUtils::SetValueForKey(cmdJson, IconKey, _iconPath);
+            JsonUtils::SetValueForKey(cmdJson, IconKey, _icon);
             JsonUtils::SetValueForKey(cmdJson, NameKey, _name);
             if (!_Description.empty())
             {
@@ -574,7 +567,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
                 // - Escape the profile name for JSON appropriately
                 auto escapedProfileName = _escapeForJson(til::u16u8(p.Name()));
-                auto escapedProfileIcon = _escapeForJson(til::u16u8(p.EvaluatedIcon()));
+                // Use the fully resolved icon here so it doesn't have to go around the resolver again
+                auto escapedProfileIcon = _escapeForJson(til::u16u8(p.Icon().Resolved()));
                 auto newJsonString = til::replace_needle_in_haystack(oldJsonString,
                                                                      ProfileNameToken,
                                                                      escapedProfileName);
@@ -613,6 +607,14 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
 
         return newCommands;
+    }
+
+    void Command::ResolveMediaResourcesWithBasePath(const winrt::hstring& basePath, const Model::MediaResourceResolver& resolver)
+    {
+        if (_icon && *_icon)
+        {
+            ResolveIconMediaResource(basePath, *_icon, resolver);
+        }
     }
 
     winrt::Windows::Foundation::Collections::IVector<Model::Command> Command::ParsePowerShellMenuComplete(winrt::hstring json, int32_t replaceLength)
@@ -663,34 +665,34 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 switch (resultType)
                 {
                 case 1: // History          -> 0xe81c History
-                    c->_iconPath = L"\ue81c";
+                    c->_icon = MediaResource::FromString(L"\ue81c");
                     break;
                 case 2: // Command          -> 0xecaa AppIconDefault
-                    c->_iconPath = L"\uecaa";
+                    c->_icon = MediaResource::FromString(L"\uecaa");
                     break;
                 case 3: // ProviderItem     -> 0xe8e4 AlignLeft
-                    c->_iconPath = L"\ue8e4";
+                    c->_icon = MediaResource::FromString(L"\ue8e4");
                     break;
                 case 4: // ProviderContainer  -> 0xe838 FolderOpen
-                    c->_iconPath = L"\ue838";
+                    c->_icon = MediaResource::FromString(L"\ue838");
                     break;
                 case 5: // Property         -> 0xe7c1 Flag
-                    c->_iconPath = L"\ue7c1";
+                    c->_icon = MediaResource::FromString(L"\ue7c1");
                     break;
                 case 6: // Method           -> 0xecaa AppIconDefault
-                    c->_iconPath = L"\uecaa";
+                    c->_icon = MediaResource::FromString(L"\uecaa");
                     break;
                 case 7: // ParameterName    -> 0xe7c1 Flag
-                    c->_iconPath = L"\ue7c1";
+                    c->_icon = MediaResource::FromString(L"\ue7c1");
                     break;
                 case 8: // ParameterValue   -> 0xf000 KnowledgeArticle
-                    c->_iconPath = L"\uf000";
+                    c->_icon = MediaResource::FromString(L"\uf000");
                     break;
                 case 10: // Namespace       -> 0xe943 Code
-                    c->_iconPath = L"\ue943";
+                    c->_icon = MediaResource::FromString(L"\ue943");
                     break;
                 case 13: // DynamicKeyword  -> 0xe945 LightningBolt
-                    c->_iconPath = L"\ue945";
+                    c->_icon = MediaResource::FromString(L"\ue945");
                     break;
                 }
             }
@@ -756,7 +758,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             auto command = winrt::make_self<Command>();
             command->_ActionAndArgs = actionAndArgs;
             command->_name = CommandNameOrResource{ .name = std::wstring{ line } };
-            command->_iconPath = iconPath;
+            command->_icon = MediaResource::FromString(iconPath);
             result.push_back(*command);
             foundCommands[line] = true;
         }

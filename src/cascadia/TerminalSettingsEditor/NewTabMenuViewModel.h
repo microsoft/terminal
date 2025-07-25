@@ -132,8 +132,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         bool Inlining() const;
         void Inlining(bool value);
+
+        hstring Icon() const { return _FolderEntry.Icon().Path(); }
+        void Icon(const hstring&) {}
+
         GETSET_OBSERVABLE_PROJECTED_SETTING(_FolderEntry, Name);
-        GETSET_OBSERVABLE_PROJECTED_SETTING(_FolderEntry, Icon);
         GETSET_OBSERVABLE_PROJECTED_SETTING(_FolderEntry, AllowEmpty);
 
         VIEW_MODEL_OBSERVABLE_PROPERTY(Windows::Foundation::Collections::IObservableVector<Editor::NewTabMenuEntryViewModel>, Entries);

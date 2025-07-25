@@ -2,6 +2,7 @@
 // Licensed under the MIT license.
 
 import "Profile.idl";
+import "ISettingsModelObject.idl";
 #include "IInheritable.idl.h"
 
 #define INHERITABLE_APPEARANCE_SETTING(Type, Name) \
@@ -42,16 +43,15 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_APPEARANCE_SETTING(Microsoft.Terminal.Core.CursorStyle, CursorShape);
         INHERITABLE_APPEARANCE_SETTING(UInt32, CursorHeight);
 
-        INHERITABLE_APPEARANCE_SETTING(String, BackgroundImagePath);
-        String ExpandedBackgroundImagePath { get; };
+        INHERITABLE_APPEARANCE_SETTING(IMediaResource, BackgroundImagePath);
 
         INHERITABLE_APPEARANCE_SETTING(Single, BackgroundImageOpacity);
         INHERITABLE_APPEARANCE_SETTING(Windows.UI.Xaml.Media.Stretch, BackgroundImageStretchMode);
         INHERITABLE_APPEARANCE_SETTING(ConvergedAlignment, BackgroundImageAlignment);
 
         INHERITABLE_APPEARANCE_SETTING(Boolean, RetroTerminalEffect);
-        INHERITABLE_APPEARANCE_SETTING(String, PixelShaderPath);
-        INHERITABLE_APPEARANCE_SETTING(String, PixelShaderImagePath);
+        INHERITABLE_APPEARANCE_SETTING(IMediaResource, PixelShaderPath);
+        INHERITABLE_APPEARANCE_SETTING(IMediaResource, PixelShaderImagePath);
         INHERITABLE_APPEARANCE_SETTING(IntenseStyle, IntenseTextStyle);
         INHERITABLE_APPEARANCE_SETTING(Microsoft.Terminal.Core.AdjustTextMode, AdjustIndistinguishableColors);
         INHERITABLE_APPEARANCE_SETTING(Single, Opacity);
