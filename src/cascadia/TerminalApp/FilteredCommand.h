@@ -24,9 +24,12 @@ namespace winrt::TerminalApp::implementation
 
         static int Compare(const winrt::TerminalApp::FilteredCommand& first, const winrt::TerminalApp::FilteredCommand& second);
 
+        bool HasSubtitle();
+
         til::property_changed_event PropertyChanged;
         WINRT_OBSERVABLE_PROPERTY(winrt::TerminalApp::IPaletteItem, Item, PropertyChanged.raise, nullptr);
         WINRT_OBSERVABLE_PROPERTY(winrt::Windows::Foundation::Collections::IVector<winrt::TerminalApp::HighlightedRun>, NameHighlights, PropertyChanged.raise);
+        WINRT_OBSERVABLE_PROPERTY(winrt::Windows::Foundation::Collections::IVector<winrt::TerminalApp::HighlightedRun>, SubtitleHighlights, PropertyChanged.raise);
         WINRT_OBSERVABLE_PROPERTY(int, Weight, PropertyChanged.raise);
 
     private:

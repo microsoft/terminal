@@ -16,6 +16,7 @@ namespace TerminalApp
     {
         PaletteItemType Type { get; };
         String Name { get; };
+        String Subtitle { get; };
         String KeyChordText { get; };
         String Icon { get; };
         Windows.UI.Xaml.Controls.IconElement ResolvedIcon { get; };

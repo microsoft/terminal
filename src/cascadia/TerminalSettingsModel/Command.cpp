@@ -7,6 +7,7 @@
 
 #include <LibraryResources.h>
 #include <til/replace.h>
+#include <ScopedResourceLoader.h>
 
 #include "KeyChordSerialization.h"
 
@@ -167,6 +168,28 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             // we have no name
             return {};
         }
+    }
+
+    hstring Command::LanguageNeutralName() const noexcept
+    {
+        if (_name.has_value())
+        {
+            // User-specified names **only matter** if they are resource keys (and therefore have a language-neutral version)
+            if (!_name->resource.empty())
+            {
+                // Resource key overrides name
+                return EnglishOnlyResourceLoader().GetLocalizedString(_name->resource);
+            }
+            // ...if there was no resource, then, return nothing.
+        }
+        else if (_ActionAndArgs)
+        {
+            // generate a name from our action
+            return get_self<implementation::ActionAndArgs>(_ActionAndArgs)->GenerateLanguageNeutralName();
+        }
+
+        // we have no neutral name
+        return {};
     }
 
     hstring Command::ID() const noexcept

@@ -17,11 +17,31 @@ namespace winrt::TerminalApp::implementation
         ActionPaletteItem(const Microsoft::Terminal::Settings::Model::Command& command, const winrt::hstring keyChordText) :
             _Command{ command }, _name{ command.Name() }, _keyChordText{ keyChordText }
         {
+            static bool shouldShowSubtitles = [] {
+                auto ctx = winrt::Windows::ApplicationModel::Resources::Core::ResourceContext::GetForViewIndependentUse();
+                auto qv = ctx.QualifierValues();
+                auto lang = qv.TryLookup(L"language");
+                return lang != L"en-US";
+            }();
+
+            if (shouldShowSubtitles)
+            {
+                const auto subtitle = _Command.LanguageNeutralName();
+                if (subtitle != _name)
+                {
+                    _subtitle = std::move(subtitle);
+                }
+            }
         }
 
         winrt::hstring Name()
         {
             return _name;
+        }
+
+        winrt::hstring Subtitle()
+        {
+            return _subtitle;
         }
 
         winrt::hstring KeyChordText()
@@ -39,6 +59,7 @@ namespace winrt::TerminalApp::implementation
     private:
         Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker _commandChangedRevoker;
         winrt::hstring _name;
+        winrt::hstring _subtitle;
         winrt::hstring _keyChordText;
     };
 
@@ -52,6 +73,11 @@ namespace winrt::TerminalApp::implementation
         winrt::hstring Name()
         {
             return _CommandLine;
+        }
+
+        winrt::hstring Subtitle()
+        {
+            return {};
         }
 
         winrt::hstring KeyChordText()
@@ -84,6 +110,11 @@ namespace winrt::TerminalApp::implementation
             {
                 return tab.Title();
             }
+            return {};
+        }
+
+        winrt::hstring Subtitle()
+        {
             return {};
         }
 
