@@ -56,6 +56,13 @@
 #include <winrt/Microsoft.Terminal.Settings.Model.h>
 #include <winrt/Microsoft.Terminal.UI.h>
 
+// Including TraceLogging essentials for the binary
+#include <TraceLoggingProvider.h>
+#include <winmeta.h>
+TRACELOGGING_DECLARE_PROVIDER(g_hTerminalSettingsEditorProvider);
+#include <telemetry/ProjectTelemetry.h>
+#include <TraceLoggingActivity.h>
+
 #include <shlobj.h>
 #include <shobjidl_core.h>
 #include <dwrite_3.h>
