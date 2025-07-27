@@ -1801,15 +1801,15 @@
     <comment>A description for what the delete unfocused appearance button does.</comment>
   </data>
   <data name="Actions_DeleteConfirmationButton.Content" xml:space="preserve">
-    <value>是，删除密钥绑定</value>
+    <value>是，删除此快捷键</value>
     <comment>Button label that confirms deletion of a key binding entry.</comment>
   </data>
   <data name="Actions_DeleteConfirmationMessage.Text" xml:space="preserve">
-    <value>是否确实要删除此密钥绑定？</value>
+    <value>确定要删除此快捷键吗？</value>
     <comment>Confirmation message displayed when the user attempts to delete a key binding entry.</comment>
   </data>
   <data name="Actions_InvalidKeyChordMessage" xml:space="preserve">
-    <value>键弦无效。请输入有效的密钥弦。</value>
+    <value>组合按键无效。请输入有效的组合按键。</value>
     <comment>Error message displayed when an invalid key chord is input by the user.</comment>
   </data>
   <data name="Actions_RenameConflictConfirmationAcceptButton" xml:space="preserve">
