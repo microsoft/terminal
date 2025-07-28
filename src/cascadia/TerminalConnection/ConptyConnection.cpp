@@ -66,58 +66,39 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
             // WSLENV is a colon-delimited list of environment variables (+flags) that should appear inside WSL
             // https://devblogs.microsoft.com/commandline/share-environment-vars-between-wsl-and-windows/
-            
-            // Get existing WSLENV and split it into individual variables
-            std::wstring existingWslEnv = environment.as_map()[L"WSLENV"];
-            std::set<std::wstring> wslEnvVars;
-            
-            // Parse existing WSLENV to avoid duplicates
-            if (!existingWslEnv.empty())
+
+            // WSLENV.1: Get a handle to the WSLENV environment variable.
+            auto& wslEnv = environment.as_map()[L"WSLENV"];
+            std::wstring additionalWslEnv;
+
+            // WSLENV.2: Figure out what variables are already in WSLENV.
+            std::unordered_set<std::wstring_view> wslEnvVars;
+            for (const auto& part : til::split_iterator{ std::wstring_view{ wslEnv }, L':' })
             {
-                std::wstring current;
-                for (wchar_t c : existingWslEnv)
+                // Each part may contain a variable name and flags (e.g., /p, /l, etc.)
+                // We only care about the variable name for WSLENV.
+                const auto key = til::safe_slice_len(part, 0, part.rfind(L'/'));
+                wslEnvVars.emplace(key);
+            }
+
+            // WSLENV.3: Add our terminal-specific environment variables to WSLENV.
+            static constexpr std::wstring_view builtinWslEnvVars[] = {
+                L"WT_SESSION",
+                L"WT_PROFILE_ID",
+            };
+            for (const auto& key : builtinWslEnvVars)
+            {
+                if (wslEnvVars.emplace(key).second)
                 {
-                    if (c == L':')
-                    {
-                        if (!current.empty())
-                        {
-                            // Extract variable name (before any flags like /p, /l, etc.)
-                            size_t flagPos = current.find(L'/');
-                            std::wstring varName = (flagPos != std::wstring::npos) ? current.substr(0, flagPos) : current;
-                            wslEnvVars.insert(varName);
-                            current.clear();
-                        }
-                    }
-                    else
-                    {
-                        current += c;
-                    }
-                }
-                // Handle the last variable if there's no trailing colon
-                if (!current.empty())
-                {
-                    size_t flagPos = current.find(L'/');
-                    std::wstring varName = (flagPos != std::wstring::npos) ? current.substr(0, flagPos) : current;
-                    wslEnvVars.insert(varName);
+                    additionalWslEnv.append(key);
+                    additionalWslEnv.push_back(L':');
                 }
             }
-            
-            // Build new WSLENV starting with WT_SESSION and WT_PROFILE_ID if not already present
-            std::wstring wslEnv;
-            if (wslEnvVars.find(L"WT_SESSION") == wslEnvVars.end())
-            {
-                wslEnv += L"WT_SESSION:";
-                wslEnvVars.insert(L"WT_SESSION");
-            }
-            if (wslEnvVars.find(L"WT_PROFILE_ID") == wslEnvVars.end())
-            {
-                wslEnv += L"WT_PROFILE_ID:";
-                wslEnvVars.insert(L"WT_PROFILE_ID");
-            }
-            
+
             if (_environment)
             {
                 // Order the environment variable names so that resolution order is consistent
+                // NOTE(lhecker): I'm like 99% sure that this is unnecessary.
                 std::set<std::wstring, til::env_key_sorter> keys{};
                 for (const auto item : _environment)
                 {
@@ -133,24 +114,39 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                         const auto value = winrt::unbox_value<hstring>(_environment.Lookup(key));
 
                         environment.set_user_environment_var(key.c_str(), value.c_str());
-                        // For each environment variable added to the environment, also add it to WSLENV if not already present
-                        if (wslEnvVars.find(key) == wslEnvVars.end())
+
+                        // WSLENV.4: Add custom user environment variables to WSLENV.
+                        if (wslEnvVars.emplace(key).second)
                         {
-                            wslEnv += key + L":";
-                            wslEnvVars.insert(key);
+                            additionalWslEnv.append(key);
+                            additionalWslEnv.push_back(L':');
                         }
                     }
                     CATCH_LOG();
                 }
             }
 
-            // Append the existing WSLENV content, preserving any flags
-            if (!existingWslEnv.empty())
+            // WSLENV.5: In the next step we'll prepend `additionalWslEnv` to `wslEnv`,
+            // so make sure that we have a single colon in between them.
+            if (!additionalWslEnv.empty())
             {
-                wslEnv += existingWslEnv;
+                const auto hasColon = additionalWslEnv.ends_with(L':');
+                const auto needsColon = !wslEnv.starts_with(L':');
+                if (hasColon != needsColon)
+                {
+                    if (hasColon)
+                    {
+                        additionalWslEnv.pop_back();
+                    }
+                    else
+                    {
+                        additionalWslEnv.push_back(L':');
+                    }
+                }
             }
-            
-            environment.as_map().insert_or_assign(L"WSLENV", wslEnv);
+
+            // WSLENV.6: Prepend our additional environment variables to WSLENV.
+            wslEnv.insert(0, additionalWslEnv);
         }
 
         auto newEnvVars = environment.to_string();
