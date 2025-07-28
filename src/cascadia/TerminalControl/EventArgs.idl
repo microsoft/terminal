@@ -32,6 +32,13 @@ namespace Microsoft.Terminal.Control
         AlphanumericHalfWidth,
     };
 
+    enum WarnAboutMultiLinePaste
+    {
+        Automatic,
+        Always,
+        Never,
+    };
+
     runtimeclass FontSizeChangedArgs
     {
         Int32 Width { get; };
@@ -46,6 +53,13 @@ namespace Microsoft.Terminal.Control
     runtimeclass TitleChangedEventArgs
     {
         String Title;
+    }
+
+    runtimeclass WriteToClipboardEventArgs
+    {
+        String Plain { get; }; // UTF-16, as required by CF_UNICODETEXT
+        byte[] Html { get; }; // UTF-8, as required by "HTML Format"
+        byte[] Rtf { get; }; // UTF-8, as required by "Rich Text Format"
     }
 
     runtimeclass PasteFromClipboardEventArgs
@@ -144,12 +158,5 @@ namespace Microsoft.Terminal.Control
     {
         Int32 Width;
         Int32 Height;
-    }
-
-    runtimeclass WriteToClipboardEventArgs
-    {
-        String Plain { get; }; // UTF-16, as required by CF_UNICODETEXT
-        byte[] Html { get; }; // UTF-8, as required by "HTML Format"
-        byte[] Rtf { get; }; // UTF-8, as required by "Rich Text Format"
     }
 }

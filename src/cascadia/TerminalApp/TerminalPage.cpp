@@ -1891,7 +1891,7 @@ namespace winrt::TerminalApp::implementation
     {
         term.RaiseNotice({ this, &TerminalPage::_ControlNoticeRaisedHandler });
 
-        // Add an event handler when the terminal wants to paste data from the Clipboard.
+        term.WriteToClipboard({ get_weak(), &TerminalPage::_copyToClipboard });
         term.PasteFromClipboard({ this, &TerminalPage::_PasteFromClipboardHandler });
 
         term.OpenHyperlink({ this, &TerminalPage::_OpenHyperlinkHandler });
@@ -1915,7 +1915,6 @@ namespace winrt::TerminalApp::implementation
         term.ShowWindowChanged({ get_weak(), &TerminalPage::_ShowWindowChangedHandler });
         term.SearchMissingCommand({ get_weak(), &TerminalPage::_SearchMissingCommandHandler });
         term.WindowSizeChanged({ get_weak(), &TerminalPage::_WindowSizeChanged });
-        term.WriteToClipboard({ get_weak(), &TerminalPage::_copyToClipboard });
 
         // Don't even register for the event if the feature is compiled off.
         if constexpr (Feature_ShellCompletions::IsEnabled())
@@ -2869,29 +2868,14 @@ namespace winrt::TerminalApp::implementation
         co_await winrt::resume_background();
 
         winrt::hstring text;
-        uint32_t clipboardSequenceNumber = 0;
-
         if (const auto clipboard = clipboard::open(nullptr))
         {
             text = clipboard::read();
-            clipboardSequenceNumber = GetClipboardSequenceNumber();
-        }
-        else
-        {
-            co_return;
         }
 
-        if (globalSettings.TrimPaste() &&
-            // If we're using bracketed paste mode, and the clipboard contents originate from us
-            // (= clipboard sequence number matches the last written one), don't trim the paste.
-            // Put inversely: Trim the contents if the sequence number changed OR if we're not using bracketed pastes.
-            (_copyToClipboardSequenceNumber.load(std::memory_order_relaxed) != clipboardSequenceNumber || !bracketedPaste))
+        if (!bracketedPaste && globalSettings.TrimPaste())
         {
-            // NOTE: This has to be done in 2 steps, because technically speaking we
-            // may be the only holder of the hstring instance and assigning to it
-            // will first release the current memory and then assign the new value.
-            winrt::hstring trimmed{ Utils::TrimPaste(text) };
-            text = std::move(trimmed);
+            text = winrt::hstring{ Utils::TrimPaste(text) };
         }
 
         if (text.empty())
@@ -2899,16 +2883,30 @@ namespace winrt::TerminalApp::implementation
             co_return;
         }
 
-        // If the requesting terminal is in bracketed paste mode, then we don't need to warn about a multi-line paste.
-        auto warnMultiLine = globalSettings.WarnAboutMultiLinePaste() && !eventArgs.BracketedPasteEnabled();
-        if (warnMultiLine)
+        bool warnMultiLine = false;
+        switch (globalSettings.WarnAboutMultiLinePaste())
         {
-            const auto isNewLineLambda = [](auto c) { return c == L'\n' || c == L'\r'; };
-            const auto hasNewLine = std::find_if(text.cbegin(), text.cend(), isNewLineLambda) != text.cend();
-            warnMultiLine = hasNewLine;
+        case WarnAboutMultiLinePaste::Automatic:
+            // NOTE that this is unsafe, because a shell that doesn't support bracketed paste
+            // will allow an attacker to enable the mode, not realize that, and then accept
+            // the paste as if it was a series of legitimate commands. See GH#13014.
+            warnMultiLine = !bracketedPaste;
+            break;
+        case WarnAboutMultiLinePaste::Always:
+            warnMultiLine = true;
+            break;
+        default:
+            warnMultiLine = false;
+            break;
         }
 
-        constexpr const std::size_t minimumSizeForWarning = 1024 * 5; // 5 KiB
+        if (warnMultiLine)
+        {
+            const std::wstring_view view{ text };
+            warnMultiLine = view.find_first_of(L"\r\n") != std::wstring_view::npos;
+        }
+
+        constexpr std::size_t minimumSizeForWarning = 1024 * 5; // 5 KiB
         const auto warnLargeText = text.size() > minimumSizeForWarning && globalSettings.WarnAboutLargePaste();
 
         if (warnMultiLine || warnLargeText)
@@ -2918,7 +2916,7 @@ namespace winrt::TerminalApp::implementation
             if (const auto strongThis = weakThis.get())
             {
                 // We have to initialize the dialog here to be able to change the text of the text block within it
-                FindName(L"MultiLinePasteDialog").try_as<WUX::Controls::ContentDialog>();
+                std::ignore = FindName(L"MultiLinePasteDialog");
                 ClipboardText().Text(text);
 
                 // The vertical offset on the scrollbar does not reset automatically, so reset it manually
@@ -3242,23 +3240,18 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    void TerminalPage::_copyToClipboard(const IInspectable, const WriteToClipboardEventArgs args)
+    void TerminalPage::_copyToClipboard(const IInspectable, const WriteToClipboardEventArgs args) const
     {
-        const auto plain = args.Plain();
-        const auto html = args.Html();
-        const auto rtf = args.Rtf();
-
-        if (auto clipboard = clipboard::open(_hostingHwnd.value_or(nullptr)))
+        if (const auto clipboard = clipboard::open(_hostingHwnd.value_or(nullptr)))
         {
+            const auto plain = args.Plain();
+            const auto html = args.Html();
+            const auto rtf = args.Rtf();
+
             clipboard::write(
                 { plain.data(), plain.size() },
                 { reinterpret_cast<const char*>(html.data()), html.size() },
                 { reinterpret_cast<const char*>(rtf.data()), rtf.size() });
-
-            // `CloseClipboard` can still bump the sequence number,
-            // so we need to do this after dropping `clipboard`.
-            clipboard.reset();
-            _copyToClipboardSequenceNumber.store(GetClipboardSequenceNumber(), std::memory_order_relaxed);
         }
     }
 
