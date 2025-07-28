@@ -126,10 +126,10 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                 }
             }
 
-            // WSLENV.5: In the next step we'll prepend `additionalWslEnv` to `wslEnv`,
-            // so make sure that we have a single colon in between them.
             if (!additionalWslEnv.empty())
             {
+                // WSLENV.5: In the next step we'll prepend `additionalWslEnv` to `wslEnv`,
+                // so make sure that we have a single colon in between them.
                 const auto hasColon = additionalWslEnv.ends_with(L':');
                 const auto needsColon = !wslEnv.starts_with(L':');
                 if (hasColon != needsColon)
@@ -143,10 +143,10 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                         additionalWslEnv.push_back(L':');
                     }
                 }
-            }
 
-            // WSLENV.6: Prepend our additional environment variables to WSLENV.
-            wslEnv.insert(0, additionalWslEnv);
+                // WSLENV.6: Prepend our additional environment variables to WSLENV.
+                wslEnv.insert(0, additionalWslEnv);
+            }
         }
 
         auto newEnvVars = environment.to_string();
