@@ -2071,7 +2071,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
         else if (_settings->RepositionCursorWithMouse()) // This is also mode==Char && !shiftEnabled
         {
-            _repositionCursorWithMouse(terminalPosition);
+            // Don't reposition cursor if this is part of a selection operation
+            if (!selectionNeedsToBeCopied)
+            {
+                _repositionCursorWithMouse(terminalPosition);
+            }
         }
         _updateSelectionUI();
     }
