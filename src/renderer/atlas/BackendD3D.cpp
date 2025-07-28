@@ -5,6 +5,7 @@
 #include "BackendD3D.h"
 
 #include <til/unicode.h>
+#include <array>
 
 #include <custom_shader_ps.h>
 #include <custom_shader_vs.h>
@@ -48,6 +49,33 @@ using namespace Microsoft::Console::Render::Atlas;
 
 static constexpr D2D1_MATRIX_3X2_F identityTransform{ .m11 = 1, .m22 = 1 };
 static constexpr D2D1_COLOR_F whiteColor{ 1, 1, 1, 1 };
+
+struct CustomShaderMemberDescriptor
+{
+    const char name[16];
+    uint8_t size;
+};
+
+struct CustomShaderMemberUse
+{
+    uint8_t used;
+    UINT off;
+};
+
+static constexpr CustomShaderMemberDescriptor CustomShaderConstBufferMembers[] = {
+    { "time", sizeof(f32) },
+    { "scale", sizeof(f32) },
+    { "resolution", sizeof(f32x2) },
+    { "background", sizeof(f32x4) },
+};
+
+using shader_member_use_array = std::array<CustomShaderMemberUse, std::extent_v<decltype(CustomShaderConstBufferMembers)>>;
+
+struct CustomShaderUseDescriptor
+{
+    size_t allocation{ 0 };
+    shader_member_use_array uses;
+};
 
 static u64 queryPerfFreq() noexcept
 {
@@ -416,6 +444,8 @@ void BackendD3D::_recreateCustomShader(const RenderingPayload& p)
             /* ppCode      */ blob.addressof(),
             /* ppErrorMsgs */ error.addressof());
 
+        CustomShaderUseDescriptor csud{};
+
         if (SUCCEEDED(hr))
         {
             THROW_IF_FAILED(p.device->CreatePixelShader(blob->GetBufferPointer(), blob->GetBufferSize(), nullptr, _customPixelShader.addressof()));
@@ -430,13 +460,30 @@ void BackendD3D::_recreateCustomShader(const RenderingPayload& p)
                 // next few lines indicates that the cbuffer is entirely unused (--> _requiresContinuousRedraw=false).
                 if (ID3D11ShaderReflectionConstantBuffer* constantBufferReflector = reflector->GetConstantBufferByIndex(0)) // shader buffer
                 {
-                    if (ID3D11ShaderReflectionVariable* variableReflector = constantBufferReflector->GetVariableByIndex(0)) // time
+                    D3D11_SHADER_BUFFER_DESC desc;
+                    constantBufferReflector->GetDesc(&desc);
+                    for (UINT i = 0; i < desc.Variables; ++i)
                     {
-                        D3D11_SHADER_VARIABLE_DESC variableDescriptor;
-                        if (SUCCEEDED(variableReflector->GetDesc(&variableDescriptor)))
+                        if (ID3D11ShaderReflectionVariable* variableReflector = constantBufferReflector->GetVariableByIndex(i))
                         {
-                            // only if time is used
-                            _requiresContinuousRedraw = WI_IsFlagSet(variableDescriptor.uFlags, D3D_SVF_USED);
+                            D3D11_SHADER_VARIABLE_DESC variableDescriptor;
+                            if (SUCCEEDED(variableReflector->GetDesc(&variableDescriptor)))
+                            {
+                                auto knownDescriptor = std::find_if(std::begin(CustomShaderConstBufferMembers), std::end(CustomShaderConstBufferMembers), [&](auto&& mem) {
+                                    return til::equals_insensitive_ascii(variableDescriptor.Name, mem.name);
+                                });
+
+                                if (knownDescriptor == std::end(CustomShaderConstBufferMembers))
+                                {
+                                    continue;
+                                }
+                                const auto idx = std::distance(std::begin(CustomShaderConstBufferMembers), knownDescriptor);
+                                csud.allocation = std::max(csud.allocation, static_cast<size_t>(variableDescriptor.StartOffset + variableDescriptor.Size));
+                                csud.uses[idx].used = 1;
+                                csud.uses[idx].off = variableDescriptor.StartOffset;
+                                // only if time is used
+                                _requiresContinuousRedraw = idx == 0 && WI_IsFlagSet(variableDescriptor.uFlags, D3D_SVF_USED);
+                            }
                         }
                     }
                 }
@@ -446,6 +493,8 @@ void BackendD3D::_recreateCustomShader(const RenderingPayload& p)
                 // Unless we can determine otherwise, assume this shader requires evaluation every frame
                 _requiresContinuousRedraw = true;
             }
+
+            csud.allocation = (csud.allocation + 15) & ~15;
         }
         else
         {
