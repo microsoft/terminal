@@ -2376,6 +2376,16 @@
           "description": "When set to true, the terminal will focus the pane on mouse hover.",
           "type": "boolean"
         },
+        "experimental.scrollToZoom": {
+          "default": true,
+          "description": "When set to true, holding the Ctrl key while scrolling will increase or decrease the terminal font size.",
+          "type": "boolean"
+        },
+        "experimental.scrollToChangeOpacity": {
+          "default": true,
+          "description": "When set to true, holding the Ctrl and Shift keys while scrolling will change the window opacity.",
+          "type": "boolean"
+        },
         "compatibility.allowHeadless": {
           "default": false,
           "description": "When set to true, Windows Terminal will run in the background. This allows globalSummon and quakeMode actions to work even when no windows are open.",

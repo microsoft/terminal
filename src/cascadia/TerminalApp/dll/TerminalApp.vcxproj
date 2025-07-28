@@ -11,6 +11,7 @@
     <!-- sets a bunch of Windows Universal properties -->
     <OpenConsoleUniversalApp>true</OpenConsoleUniversalApp>
     <PgoTarget>true</PgoTarget>
+    <VersionInfoFileDescription>Windows Terminal Main UI Library</VersionInfoFileDescription>
   </PropertyGroup>
   <PropertyGroup Label="NuGet Dependencies">
     <TerminalCppWinrt>true</TerminalCppWinrt>
@@ -35,7 +36,6 @@
     <ClInclude Include="../TitlebarControl.h" />
     <ClInclude Include="../TabRowControl.h" />
     <ClInclude Include="../App.h" />
-    <ClInclude Include="../TerminalTab.h" />
   </ItemGroup>
   <!-- ========================= Cpp Files ======================== -->
   <ItemGroup>

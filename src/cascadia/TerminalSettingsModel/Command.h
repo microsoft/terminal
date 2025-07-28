@@ -44,6 +44,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
     struct Command : CommandT<Command>
     {
+        struct CommandNameOrResource
+        {
+            std::wstring name;
+            std::wstring resource;
+        };
+
         Command();
         com_ptr<Command> Copy() const;
 
@@ -71,6 +77,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         bool HasName() const noexcept;
         hstring Name() const noexcept;
         void Name(const hstring& name);
+        hstring LanguageNeutralName() const noexcept;
 
         hstring ID() const noexcept;
         void GenerateID();
@@ -93,7 +100,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     private:
         Json::Value _originalJson;
         Windows::Foundation::Collections::IMap<winrt::hstring, Model::Command> _subcommands{ nullptr };
-        std::optional<std::wstring> _name;
+        std::optional<CommandNameOrResource> _name;
         std::wstring _ID;
         bool _IDWasGenerated{ false };
         std::optional<std::wstring> _iconPath;

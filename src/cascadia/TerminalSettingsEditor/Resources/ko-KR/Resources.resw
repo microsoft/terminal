@@ -1736,6 +1736,14 @@
     <value>마우스를 위에 가져다 대면 자동으로 포커스 창이 실행됨</value>
     <comment>Header for a control to toggle the "focus follow mouse" setting. When enabled, hovering over a pane puts it in focus.</comment>
   </data>
+  <data name="Globals_ScrollToZoom.Header" xml:space="preserve">
+    <value>Ctrl 키를 누른 상태에서 스크롤하여 터미널 글꼴 크기 조정</value>
+    <comment>Header for a control to toggle font size changes with scrolling. When enabled, holding the Ctrl key while scrolling will increase or decrease the terminal font size.</comment>
+  </data>
+  <data name="Globals_ScrollToChangeOpacity.Header" xml:space="preserve">
+    <value>Ctrl 키와 Shift 키를 누른 상태에서 스크롤하여 터미널 불투명도 조정</value>
+    <comment>Header for a control to toggle opacity changes with scrolling. When enabled, holding the Ctrl and Shift keys while scrolling will increase or decrease the window opacity.</comment>
+  </data>
   <data name="Globals_DisableAnimationsReversed.Header" xml:space="preserve">
     <value>창 애니메이션</value>
     <comment>Header for a control to toggle animations on panes. "Enabled" value enables the animations.</comment>

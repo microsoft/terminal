@@ -13,6 +13,7 @@
     <WindowsStoreApp>true</WindowsStoreApp>
     <WindowsAppContainer>false</WindowsAppContainer>
     <TargetPlatformIdentifier>Windows</TargetPlatformIdentifier>
+    <VersionInfoFileDescription>Windows Terminal Host</VersionInfoFileDescription>
     <PgoTarget>true</PgoTarget>
   </PropertyGroup>
 

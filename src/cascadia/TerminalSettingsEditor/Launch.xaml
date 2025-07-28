@@ -116,6 +116,7 @@
                                 <TextBlock Grid.Row="0"
                                            Grid.Column="1"
                                            Grid.ColumnSpan="2"
+                                           VerticalAlignment="Center"
                                            AutomationProperties.AccessibilityView="Raw"
                                            Text="{x:Bind Name}" />
 
@@ -192,8 +193,8 @@
             <local:SettingContainer x:Uid="Globals_LaunchSize"
                                     CurrentValue="{x:Bind ViewModel.LaunchSizeCurrentValue, Mode=OneWay}"
                                     Style="{StaticResource ExpanderSettingContainerStyle}">
-                <Grid ColumnSpacing="10"
-                      RowSpacing="10">
+                <Grid ColumnSpacing="12"
+                      RowSpacing="8">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
@@ -235,7 +236,7 @@
             <local:SettingContainer x:Uid="Globals_LaunchParameters"
                                     CurrentValue="{x:Bind ViewModel.LaunchParametersCurrentValue, Mode=OneWay}"
                                     Style="{StaticResource ExpanderSettingContainerStyle}">
-                <Grid RowSpacing="10">
+                <Grid RowSpacing="8">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />

@@ -6,7 +6,7 @@
 #include "FilteredTask.g.h"
 #include "BasicPaneEvents.h"
 #include "FilteredCommand.h"
-#include "ActionPaletteItem.h"
+#include "CommandPaletteItems.h"
 #include <LibraryResources.h>
 
 namespace winrt::TerminalApp::implementation
@@ -62,7 +62,7 @@ namespace winrt::TerminalApp::implementation
 
         FilteredTask(const winrt::Microsoft::Terminal::Settings::Model::Command& command)
         {
-            _filteredCommand = winrt::make_self<implementation::FilteredCommand>(winrt::make<winrt::TerminalApp::implementation::ActionPaletteItem>(command, winrt::hstring{}));
+            _filteredCommand = winrt::make_self<implementation::FilteredCommand>(winrt::make<ActionPaletteItem>(command, winrt::hstring{}));
             _command = command;
 
             // The Children() method must always return a non-null vector
@@ -92,14 +92,13 @@ namespace winrt::TerminalApp::implementation
 
         winrt::hstring Input()
         {
-            if (const auto& actionItem{ _filteredCommand->Item().try_as<winrt::TerminalApp::ActionPaletteItem>() })
+            // **SAFETY GUARANTEE** We constructed this filtered command ourselves; we know what's inside it.
+            const auto actionItem{ winrt::get_self<ActionPaletteItem>(_filteredCommand->Item()) };
+            if (const auto& command{ actionItem->Command() })
             {
-                if (const auto& command{ actionItem.Command() })
+                if (const auto& sendInput{ command.ActionAndArgs().Args().try_as<winrt::Microsoft::Terminal::Settings::Model::SendInputArgs>() })
                 {
-                    if (const auto& sendInput{ command.ActionAndArgs().Args().try_as<winrt::Microsoft::Terminal::Settings::Model::SendInputArgs>() })
-                    {
-                        return winrt::hstring{ til::visualize_nonspace_control_codes(std::wstring{ sendInput.Input() }) };
-                    }
+                    return winrt::hstring{ til::visualize_nonspace_control_codes(std::wstring{ sendInput.Input() }) };
                 }
             }
             return winrt::hstring{};

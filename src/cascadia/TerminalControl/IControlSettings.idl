@@ -60,6 +60,8 @@ namespace Microsoft.Terminal.Control
         Boolean CopyOnSelect { get; };
         Microsoft.Terminal.Control.CopyFormat CopyFormatting { get; };
         Boolean FocusFollowMouse { get; };
+        Boolean ScrollToZoom { get; };
+        Boolean ScrollToChangeOpacity { get; };
 
         String Commandline { get; };
         String StartingDirectory { get; };

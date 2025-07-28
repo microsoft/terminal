@@ -2,6 +2,7 @@ aaaaabbb
 aabbcc
 ABANDONFONT
 abbcc
+abcc
 abgr
 ABORTIFHUNG
 ACCESSTOKEN
@@ -78,7 +79,6 @@ autoscrolling
 Autowrap
 AVerify
 awch
-AZCOPY
 azurecr
 AZZ
 backgrounded
@@ -1342,7 +1342,6 @@ PROPTITLE
 propvar
 propvariant
 psa
-PSCRED
 PSECURITY
 pseudoconsole
 psh

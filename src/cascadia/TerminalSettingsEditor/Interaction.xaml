@@ -83,6 +83,18 @@
                               Style="{StaticResource ToggleSwitchInExpanderStyle}" />
             </local:SettingContainer>
 
+            <!--  Enable Font Size Changes with Scrolling  -->
+            <local:SettingContainer x:Uid="Globals_ScrollToZoom">
+                <ToggleSwitch IsOn="{x:Bind ViewModel.ScrollToZoom, Mode=TwoWay}"
+                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+            </local:SettingContainer>
+
+            <!--  Enable Window Opacity Changes with Scrolling  -->
+            <local:SettingContainer x:Uid="Globals_ScrollToChangeOpacity">
+                <ToggleSwitch IsOn="{x:Bind ViewModel.ScrollToChangeOpacity, Mode=TwoWay}"
+                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+            </local:SettingContainer>
+
             <!--  Detect URLs  -->
             <local:SettingContainer x:Uid="Globals_DetectURLs">
                 <ToggleSwitch IsOn="{x:Bind ViewModel.DetectURLs, Mode=TwoWay}"

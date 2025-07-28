@@ -515,11 +515,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const auto ctrlPressed = modifiers.IsCtrlPressed();
         const auto shiftPressed = modifiers.IsShiftPressed();
 
-        if (ctrlPressed && shiftPressed)
+        if (ctrlPressed && shiftPressed && _core->Settings().ScrollToChangeOpacity())
         {
             _mouseTransparencyHandler(delta);
         }
-        else if (ctrlPressed)
+        else if (ctrlPressed && !shiftPressed && _core->Settings().ScrollToZoom())
         {
             _mouseZoomHandler(delta);
         }
