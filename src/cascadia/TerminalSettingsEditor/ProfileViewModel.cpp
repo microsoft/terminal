@@ -7,7 +7,6 @@
 #include "EnumEntry.h"
 #include "Appearances.h"
 
-#include <LibraryResources.h>
 #include "../WinRTUtils/inc/Utils.h"
 #include "../../renderer/base/FontCache.h"
 #include "SegoeFluentIconList.h"

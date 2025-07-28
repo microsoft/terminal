@@ -3,7 +3,6 @@
 
 #include "pch.h"
 #include <UIAutomationCore.h>
-#include <LibraryResources.h>
 #include "InteractivityAutomationPeer.h"
 #include "InteractivityAutomationPeer.g.cpp"
 

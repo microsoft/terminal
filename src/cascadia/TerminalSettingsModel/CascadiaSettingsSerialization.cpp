@@ -4,7 +4,6 @@
 #include "pch.h"
 #include "CascadiaSettings.h"
 
-#include <LibraryResources.h>
 #include <fmt/chrono.h>
 #include <shlobj.h>
 #include <til/latch.h>

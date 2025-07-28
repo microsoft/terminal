@@ -6,8 +6,6 @@
 #include "Utils.h"
 #include "../../types/inc/utils.hpp"
 
-#include <LibraryResources.h>
-
 using namespace winrt;
 using namespace winrt::Windows::Foundation::Collections;
 using namespace winrt::Windows::UI::Xaml;

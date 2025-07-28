@@ -6,7 +6,6 @@
 #include "Profiles_Base_Orphaned.g.cpp"
 #include "ProfileViewModel.h"
 
-#include <LibraryResources.h>
 #include "..\WinRTUtils\inc\Utils.h"
 
 using namespace winrt::Windows::UI::Xaml;

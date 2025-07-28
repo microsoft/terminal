@@ -4,8 +4,6 @@
 #include "pch.h"
 #include "TextMenuFlyout.h"
 
-#include <LibraryResources.h>
-
 #include "TextMenuFlyout.g.cpp"
 
 using namespace ::winrt::Windows::UI::Xaml;

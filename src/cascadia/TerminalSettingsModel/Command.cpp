@@ -5,7 +5,6 @@
 #include "Command.h"
 #include "Command.g.cpp"
 
-#include <LibraryResources.h>
 #include <til/replace.h>
 #include <ScopedResourceLoader.h>
 

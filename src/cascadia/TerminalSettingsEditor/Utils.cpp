@@ -6,8 +6,6 @@
 #include "pch.h"
 #include "Utils.h"
 
-#include <LibraryResources.h>
-
 using namespace winrt;
 using namespace winrt::Windows::System;
 using namespace winrt::Windows::Foundation;

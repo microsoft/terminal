@@ -22,7 +22,6 @@
 #include "..\types\inc\utils.hpp"
 #include <..\WinRTUtils\inc\Utils.h>
 
-#include <LibraryResources.h>
 #include <dwmapi.h>
 
 namespace winrt

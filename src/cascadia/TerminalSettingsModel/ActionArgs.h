@@ -59,7 +59,6 @@
 
 #include "TerminalSettingsSerializationHelpers.h"
 
-#include <LibraryResources.h>
 #include <ScopedResourceLoader.h>
 
 #include "ActionArgsMagic.h"

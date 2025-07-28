@@ -5,7 +5,6 @@
 #include "pch.h"
 #include "TerminalPage.h"
 
-#include <LibraryResources.h>
 #include <TerminalCore/ControlKeyStates.hpp>
 #include <Utils.h>
 

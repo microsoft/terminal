@@ -15,8 +15,6 @@
 #include "../../inc/til/string.h"
 #include <til/io.h>
 
-#include <LibraryResources.h>
-
 #include "TabRowControl.h"
 #include "ColorHelper.h"
 #include "DebugTapConnection.h"
