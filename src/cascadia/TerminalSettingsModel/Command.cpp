@@ -185,7 +185,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         else if (_ActionAndArgs)
         {
             // generate a name from our action
-            return get_self<implementation::ActionAndArgs>(_ActionAndArgs)->GenerateLanguageNeutralName();
+            return get_self<implementation::ActionAndArgs>(_ActionAndArgs)->GenerateName(EnglishOnlyResourceLoader().ResourceContext());
         }
 
         // we have no neutral name

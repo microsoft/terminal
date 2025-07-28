@@ -55,22 +55,26 @@
 #include <WtExeUtils.h>
 #include <ScopedResourceLoader.h>
 
+namespace winrt
+{
+    namespace WARC = ::winrt::Windows::ApplicationModel::Resources::Core;
+}
+
 // Like RS_ and RS_fmt, but they use an ambient boolean named "localized" to
 // determine whether to load the English version of a resource or the localized
 // one.
-#define RS_switchable_(x) RS_switchable_impl(localized, USES_RESOURCE(x))
-#define RS_switchable_fmt(x, ...) RS_switchable_fmt_impl(localized, USES_RESOURCE(x), __VA_ARGS__)
+#define RS_switchable_(x) RS_switchable_impl(context, USES_RESOURCE(x))
+#define RS_switchable_fmt(x, ...) RS_switchable_fmt_impl(context, USES_RESOURCE(x), __VA_ARGS__)
 
-static winrt::hstring RS_switchable_impl(bool localized, std::wstring_view key)
+static winrt::hstring RS_switchable_impl(const winrt::WARC::ResourceContext& context, std::wstring_view key)
 {
-    const auto& loader = localized ? GetLibraryResourceLoader() : winrt::Microsoft::Terminal::Settings::Model::implementation::EnglishOnlyResourceLoader();
-    return loader.GetLocalizedString(key);
+    return GetLibraryResourceLoader().ResourceMap().GetValue(key, context).ValueAsString();
 }
 
 template<typename... Args>
-static std::wstring RS_switchable_fmt_impl(bool localized, std::wstring_view key, Args&&... args)
+static std::wstring RS_switchable_fmt_impl(const winrt::WARC::ResourceContext& context, std::wstring_view key, Args&&... args)
 {
-    const auto format = RS_switchable_impl(localized, key);
+    const auto format = RS_switchable_impl(context, key);
     return fmt::format(fmt::runtime(std::wstring_view{ format }), std::forward<Args>(args)...);
 }
 
@@ -84,7 +88,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return loader;
     }
 
-    winrt::hstring NewTerminalArgs::GenerateName(bool) const
+    winrt::hstring NewTerminalArgs::GenerateName(const winrt::WARC::ResourceContext&) const
     {
         std::wstring str;
 
@@ -220,7 +224,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return winrt::hstring{ str };
     }
 
-    winrt::hstring CopyTextArgs::GenerateName(bool localized) const
+    winrt::hstring CopyTextArgs::GenerateName(const winrt::WARC::ResourceContext& context) const
     {
         std::wstring str;
 
@@ -274,12 +278,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return winrt::hstring{ str };
     }
 
-    winrt::hstring NewTabArgs::GenerateName(bool localized) const
+    winrt::hstring NewTabArgs::GenerateName(const winrt::WARC::ResourceContext& context) const
     {
         winrt::hstring newTerminalArgsStr;
         if (ContentArgs())
         {
-            newTerminalArgsStr = ContentArgs().GenerateName(localized);
+            newTerminalArgsStr = ContentArgs().GenerateName(context);
         }
 
         if (newTerminalArgsStr.empty())
@@ -291,7 +295,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         };
     }
 
-    winrt::hstring MovePaneArgs::GenerateName(bool localized) const
+    winrt::hstring MovePaneArgs::GenerateName(const winrt::WARC::ResourceContext& context) const
     {
         if (!Window().empty())
         {
@@ -311,7 +315,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         };
     }
 
-    winrt::hstring SwitchToTabArgs::GenerateName(bool localized) const
+    winrt::hstring SwitchToTabArgs::GenerateName(const winrt::WARC::ResourceContext& context) const
     {
         if (TabIndex() == UINT32_MAX)
         {
@@ -323,7 +327,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         };
     }
 
-    winrt::hstring ResizePaneArgs::GenerateName(bool localized) const
+    winrt::hstring ResizePaneArgs::GenerateName(const winrt::WARC::ResourceContext& context) const
     {
         winrt::hstring directionString;
         switch (ResizeDirection())
@@ -344,7 +348,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return winrt::hstring{ RS_switchable_fmt(L"ResizePaneWithArgCommandKey", directionString) };
     }
 
-    winrt::hstring MoveFocusArgs::GenerateName(bool localized) const
+    winrt::hstring MoveFocusArgs::GenerateName(const winrt::WARC::ResourceContext& context) const
     {
         winrt::hstring directionString;
         switch (FocusDirection())
@@ -378,7 +382,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return winrt::hstring{ RS_switchable_fmt(L"MoveFocusWithArgCommandKey", directionString) };
     }
 
-    winrt::hstring SwapPaneArgs::GenerateName(bool localized) const
+    winrt::hstring SwapPaneArgs::GenerateName(const winrt::WARC::ResourceContext& context) const
     {
         winrt::hstring directionString;
         switch (Direction())
@@ -408,7 +412,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return winrt::hstring{ RS_switchable_fmt(L"SwapPaneWithArgCommandKey", directionString) };
     }
 
-    winrt::hstring AdjustFontSizeArgs::GenerateName(bool localized) const
+    winrt::hstring AdjustFontSizeArgs::GenerateName(const winrt::WARC::ResourceContext& context) const
     {
         // If the amount is just 1 (or -1), we'll just return "Increase font
         // size" (or "Decrease font size"). If the amount delta has a greater
@@ -424,7 +428,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
     }
 
-    winrt::hstring SendInputArgs::GenerateName(bool localized) const
+    winrt::hstring SendInputArgs::GenerateName(const winrt::WARC::ResourceContext& context) const
     {
         // The string will be similar to the following:
         // * "Send Input: ...input..."
@@ -434,7 +438,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return winrt::hstring{ name };
     }
 
-    winrt::hstring SplitPaneArgs::GenerateName(bool localized) const
+    winrt::hstring SplitPaneArgs::GenerateName(const winrt::WARC::ResourceContext& context) const
     {
         // The string will be similar to the following:
         // * "Duplicate pane[, split: <direction>][, size: <size>%][, new terminal arguments...]"
@@ -482,7 +486,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         winrt::hstring newTerminalArgsStr;
         if (ContentArgs())
         {
-            newTerminalArgsStr = ContentArgs().GenerateName(localized);
+            newTerminalArgsStr = ContentArgs().GenerateName(context);
         }
 
         if (SplitMode() != SplitType::Duplicate && !newTerminalArgsStr.empty())
@@ -496,7 +500,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return winrt::hstring{ str };
     }
 
-    winrt::hstring OpenSettingsArgs::GenerateName(bool localized) const
+    winrt::hstring OpenSettingsArgs::GenerateName(const winrt::WARC::ResourceContext& context) const
     {
         switch (Target())
         {
@@ -514,7 +518,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
     }
 
-    winrt::hstring SetFocusModeArgs::GenerateName(bool localized) const
+    winrt::hstring SetFocusModeArgs::GenerateName(const winrt::WARC::ResourceContext& context) const
     {
         if (IsFocusMode())
         {
@@ -523,7 +527,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return RS_switchable_(L"DisableFocusModeCommandKey");
     }
 
-    winrt::hstring SetFullScreenArgs::GenerateName(bool localized) const
+    winrt::hstring SetFullScreenArgs::GenerateName(const winrt::WARC::ResourceContext& context) const
     {
         if (IsFullScreen())
         {
@@ -532,7 +536,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return RS_switchable_(L"DisableFullScreenCommandKey");
     }
 
-    winrt::hstring SetMaximizedArgs::GenerateName(bool localized) const
+    winrt::hstring SetMaximizedArgs::GenerateName(const winrt::WARC::ResourceContext& context) const
     {
         if (IsMaximized())
         {
@@ -541,7 +545,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return RS_switchable_(L"DisableMaximizedCommandKey");
     }
 
-    winrt::hstring SetColorSchemeArgs::GenerateName(bool localized) const
+    winrt::hstring SetColorSchemeArgs::GenerateName(const winrt::WARC::ResourceContext& context) const
     {
         // "Set color scheme to "{_SchemeName}""
         if (!SchemeName().empty())
@@ -551,7 +555,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return {};
     }
 
-    winrt::hstring SetTabColorArgs::GenerateName(bool localized) const
+    winrt::hstring SetTabColorArgs::GenerateName(const winrt::WARC::ResourceContext& context) const
     {
         // "Set tab color to #RRGGBB"
         // "Reset tab color"
@@ -564,7 +568,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return RS_switchable_(L"ResetTabColorCommandKey");
     }
 
-    winrt::hstring RenameTabArgs::GenerateName(bool localized) const
+    winrt::hstring RenameTabArgs::GenerateName(const winrt::WARC::ResourceContext& context) const
     {
         // "Rename tab to \"{_Title}\""
         // "Reset tab title"
@@ -575,7 +579,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return RS_switchable_(L"ResetTabNameCommandKey");
     }
 
-    winrt::hstring ExecuteCommandlineArgs::GenerateName(bool localized) const
+    winrt::hstring ExecuteCommandlineArgs::GenerateName(const winrt::WARC::ResourceContext& context) const
     {
         // "Run commandline "{_Commandline}" in this window"
         if (!Commandline().empty())
@@ -585,7 +589,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return {};
     }
 
-    winrt::hstring CloseOtherTabsArgs::GenerateName(bool localized) const
+    winrt::hstring CloseOtherTabsArgs::GenerateName(const winrt::WARC::ResourceContext& context) const
     {
         if (Index())
         {
@@ -595,7 +599,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return RS_switchable_(L"CloseOtherTabsDefaultCommandKey");
     }
 
-    winrt::hstring CloseTabsAfterArgs::GenerateName(bool localized) const
+    winrt::hstring CloseTabsAfterArgs::GenerateName(const winrt::WARC::ResourceContext& context) const
     {
         if (Index())
         {
@@ -605,7 +609,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return RS_switchable_(L"CloseTabsAfterDefaultCommandKey");
     }
 
-    winrt::hstring CloseTabArgs::GenerateName(bool localized) const
+    winrt::hstring CloseTabArgs::GenerateName(const winrt::WARC::ResourceContext& context) const
     {
         if (Index())
         {
@@ -615,7 +619,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return RS_switchable_(L"CloseTabCommandKey");
     }
 
-    winrt::hstring ScrollUpArgs::GenerateName(bool localized) const
+    winrt::hstring ScrollUpArgs::GenerateName(const winrt::WARC::ResourceContext& context) const
     {
         if (RowsToScroll())
         {
@@ -624,7 +628,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return RS_switchable_(L"ScrollUpCommandKey");
     }
 
-    winrt::hstring ScrollDownArgs::GenerateName(bool localized) const
+    winrt::hstring ScrollDownArgs::GenerateName(const winrt::WARC::ResourceContext& context) const
     {
         if (RowsToScroll())
         {
@@ -633,7 +637,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return RS_switchable_(L"ScrollDownCommandKey");
     }
 
-    winrt::hstring ScrollToMarkArgs::GenerateName(bool localized) const
+    winrt::hstring ScrollToMarkArgs::GenerateName(const winrt::WARC::ResourceContext& context) const
     {
         switch (Direction())
         {
@@ -650,7 +654,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return winrt::hstring{ RS_switchable_(L"ScrollToPreviousMarkCommandKey") };
     }
 
-    winrt::hstring AddMarkArgs::GenerateName(bool localized) const
+    winrt::hstring AddMarkArgs::GenerateName(const winrt::WARC::ResourceContext& context) const
     {
         if (Color())
         {
@@ -662,7 +666,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
     }
 
-    winrt::hstring MoveTabArgs::GenerateName(bool localized) const
+    winrt::hstring MoveTabArgs::GenerateName(const winrt::WARC::ResourceContext& context) const
     {
         if (!Window().empty())
         {
@@ -686,7 +690,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return winrt::hstring{ RS_switchable_fmt(L"MoveTabCommandKey", directionString) };
     }
 
-    winrt::hstring ToggleCommandPaletteArgs::GenerateName(bool localized) const
+    winrt::hstring ToggleCommandPaletteArgs::GenerateName(const winrt::WARC::ResourceContext& context) const
     {
         if (LaunchMode() == CommandPaletteLaunchMode::CommandLine)
         {
@@ -695,7 +699,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return RS_switchable_(L"ToggleCommandPaletteCommandKey");
     }
 
-    winrt::hstring SuggestionsArgs::GenerateName(bool localized) const
+    winrt::hstring SuggestionsArgs::GenerateName(const winrt::WARC::ResourceContext& context) const
     {
         std::wstring str;
         str.append(RS_switchable_(L"SuggestionsCommandKey"));
@@ -733,7 +737,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return winrt::hstring{ str };
     }
 
-    winrt::hstring FindMatchArgs::GenerateName(bool localized) const
+    winrt::hstring FindMatchArgs::GenerateName(const winrt::WARC::ResourceContext& context) const
     {
         switch (Direction())
         {
@@ -745,12 +749,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return {};
     }
 
-    winrt::hstring NewWindowArgs::GenerateName(bool localized) const
+    winrt::hstring NewWindowArgs::GenerateName(const winrt::WARC::ResourceContext& context) const
     {
         winrt::hstring newTerminalArgsStr;
         if (ContentArgs())
         {
-            newTerminalArgsStr = ContentArgs().GenerateName(localized);
+            newTerminalArgsStr = ContentArgs().GenerateName(context);
         }
 
         if (newTerminalArgsStr.empty())
@@ -760,7 +764,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return winrt::hstring{ fmt::format(FMT_COMPILE(L"{}, {}"), RS_switchable_(L"NewWindowCommandKey"), newTerminalArgsStr) };
     }
 
-    winrt::hstring PrevTabArgs::GenerateName(bool localized) const
+    winrt::hstring PrevTabArgs::GenerateName(const winrt::WARC::ResourceContext& context) const
     {
         if (!SwitcherMode())
         {
@@ -771,7 +775,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return winrt::hstring(fmt::format(FMT_COMPILE(L"{}, {}"), RS_switchable_(L"PrevTabCommandKey"), mode));
     }
 
-    winrt::hstring NextTabArgs::GenerateName(bool localized) const
+    winrt::hstring NextTabArgs::GenerateName(const winrt::WARC::ResourceContext& context) const
     {
         if (!SwitcherMode())
         {
@@ -782,7 +786,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return winrt::hstring(fmt::format(FMT_COMPILE(L"{}, {}"), RS_switchable_(L"NextTabCommandKey"), mode));
     }
 
-    winrt::hstring RenameWindowArgs::GenerateName(bool localized) const
+    winrt::hstring RenameWindowArgs::GenerateName(const winrt::WARC::ResourceContext& context) const
     {
         // "Rename window to \"{_Name}\""
         // "Clear window name"
@@ -793,7 +797,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return RS_switchable_(L"ResetWindowNameCommandKey");
     }
 
-    winrt::hstring SearchForTextArgs::GenerateName(bool localized) const
+    winrt::hstring SearchForTextArgs::GenerateName(const winrt::WARC::ResourceContext& context) const
     {
         if (QueryUrl().empty())
         {
@@ -813,7 +817,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return {};
     }
 
-    winrt::hstring GlobalSummonArgs::GenerateName(bool localized) const
+    winrt::hstring GlobalSummonArgs::GenerateName(const winrt::WARC::ResourceContext& context) const
     {
         // GH#10210 - Is this action literally the same thing as the `quakeMode`
         // action? That has a special name.
@@ -835,13 +839,13 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return winrt::hstring{ str };
     }
 
-    winrt::hstring FocusPaneArgs::GenerateName(bool localized) const
+    winrt::hstring FocusPaneArgs::GenerateName(const winrt::WARC::ResourceContext& context) const
     {
         // "Focus pane {Id}"
         return winrt::hstring{ RS_switchable_fmt(L"FocusPaneCommandKey", Id()) };
     }
 
-    winrt::hstring ExportBufferArgs::GenerateName(bool localized) const
+    winrt::hstring ExportBufferArgs::GenerateName(const winrt::WARC::ResourceContext& context) const
     {
         if (!Path().empty())
         {
@@ -855,7 +859,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
     }
 
-    winrt::hstring ClearBufferArgs::GenerateName(bool localized) const
+    winrt::hstring ClearBufferArgs::GenerateName(const winrt::WARC::ResourceContext& context) const
     {
         // "Clear Buffer"
         // "Clear Viewport"
@@ -874,12 +878,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return {};
     }
 
-    winrt::hstring MultipleActionsArgs::GenerateName(bool) const
+    winrt::hstring MultipleActionsArgs::GenerateName(const winrt::WARC::ResourceContext&) const
     {
         return {};
     }
 
-    winrt::hstring AdjustOpacityArgs::GenerateName(bool localized) const
+    winrt::hstring AdjustOpacityArgs::GenerateName(const winrt::WARC::ResourceContext& context) const
     {
         if (Relative())
         {
@@ -901,7 +905,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
     }
 
-    winrt::hstring SaveSnippetArgs::GenerateName(bool localized) const
+    winrt::hstring SaveSnippetArgs::GenerateName(const winrt::WARC::ResourceContext& context) const
     {
         if (Feature_SaveSnippet::IsEnabled())
         {
@@ -985,7 +989,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return color.with_alpha(0) == til::color{};
     }
 
-    winrt::hstring ColorSelectionArgs::GenerateName(bool localized) const
+    winrt::hstring ColorSelectionArgs::GenerateName(const winrt::WARC::ResourceContext& context) const
     {
         auto matchModeStr = winrt::hstring{};
         if (MatchMode() == Core::MatchMode::All)
@@ -1029,7 +1033,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
     }
 
-    winrt::hstring SelectOutputArgs::GenerateName(bool localized) const
+    winrt::hstring SelectOutputArgs::GenerateName(const winrt::WARC::ResourceContext& context) const
     {
         switch (Direction())
         {
@@ -1040,7 +1044,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
         return {};
     }
-    winrt::hstring SelectCommandArgs::GenerateName(bool localized) const
+    winrt::hstring SelectCommandArgs::GenerateName(const winrt::WARC::ResourceContext& context) const
     {
         switch (Direction())
         {

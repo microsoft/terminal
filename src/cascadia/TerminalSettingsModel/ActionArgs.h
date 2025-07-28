@@ -59,6 +59,9 @@
 
 #include "TerminalSettingsSerializationHelpers.h"
 
+#include <LibraryResources.h>
+#include <ScopedResourceLoader.h>
+
 #include "ActionArgsMagic.h"
 
 #define ACTION_ARG(type, name, ...)                                         \
@@ -336,7 +339,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             copy->_Type = _Type;
             return *copy;
         }
-        winrt::hstring GenerateName(bool) const
+        winrt::hstring GenerateName() const { return GenerateName(GetLibraryResourceLoader().ResourceContext()); }
+        winrt::hstring GenerateName(const winrt::Windows::ApplicationModel::Resources::Core::ResourceContext&) const
         {
             return winrt::hstring{ L"type: " } + Type();
         }
@@ -393,7 +397,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         static constexpr std::string_view ContentKey{ "__content" };
 
     public:
-        hstring GenerateName(bool localized) const;
+        hstring GenerateName() const { return GenerateName(GetLibraryResourceLoader().ResourceContext()); }
+        hstring GenerateName(const winrt::Windows::ApplicationModel::Resources::Core::ResourceContext&) const;
         hstring ToCommandline() const;
 
         bool Equals(const Model::INewContentArgs& other)
@@ -592,7 +597,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         WINRT_PROPERTY(Model::INewContentArgs, ContentArgs, nullptr);
 
     public:
-        hstring GenerateName(bool localized) const;
+        hstring GenerateName() const { return GenerateName(GetLibraryResourceLoader().ResourceContext()); }
+        hstring GenerateName(const winrt::Windows::ApplicationModel::Resources::Core::ResourceContext&) const;
 
         bool Equals(const IActionArgs& other)
         {
@@ -662,7 +668,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         static constexpr std::string_view SplitSizeKey{ "size" };
 
     public:
-        hstring GenerateName(bool localized) const;
+        hstring GenerateName() const { return GenerateName(GetLibraryResourceLoader().ResourceContext()); }
+        hstring GenerateName(const winrt::Windows::ApplicationModel::Resources::Core::ResourceContext&) const;
 
         bool Equals(const IActionArgs& other)
         {
@@ -734,7 +741,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         WINRT_PROPERTY(Model::INewContentArgs, ContentArgs, nullptr);
 
     public:
-        hstring GenerateName(bool localized) const;
+        hstring GenerateName() const { return GenerateName(GetLibraryResourceLoader().ResourceContext()); }
+        hstring GenerateName(const winrt::Windows::ApplicationModel::Resources::Core::ResourceContext&) const;
 
         bool Equals(const IActionArgs& other)
         {
@@ -871,7 +879,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         static constexpr std::string_view ActionsKey{ "actions" };
 
     public:
-        hstring GenerateName(bool localized) const;
+        hstring GenerateName() const { return GenerateName(GetLibraryResourceLoader().ResourceContext()); }
+        hstring GenerateName(const winrt::Windows::ApplicationModel::Resources::Core::ResourceContext&) const;
 
         bool Equals(const IActionArgs& other)
         {
