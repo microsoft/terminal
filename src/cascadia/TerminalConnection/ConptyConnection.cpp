@@ -86,6 +86,8 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                 L"WT_SESSION",
                 L"WT_PROFILE_ID",
             };
+            // Misdiagnosis in MSVC 14.44.35207. No pointer arithmetic in sight.
+#pragma warning(suppress : 26481) // Don't use pointer arithmetic. Use span instead (bounds.1).
             for (const auto& key : builtinWslEnvVars)
             {
                 if (wslEnvVars.emplace(key).second)
