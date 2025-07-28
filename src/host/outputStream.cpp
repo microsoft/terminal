@@ -446,6 +446,11 @@ void ConhostInternalGetSet::NotifyBufferRotation(const int delta)
     }
 }
 
+void ConhostInternalGetSet::NotifyShellIntegrationMark()
+{
+    // Not implemented for conhost - shell integration marks are a Terminal app feature.
+}
+
 void ConhostInternalGetSet::InvokeCompletions(std::wstring_view /*menuJson*/, unsigned int /*replaceLength*/)
 {
     // Not implemented for conhost.
