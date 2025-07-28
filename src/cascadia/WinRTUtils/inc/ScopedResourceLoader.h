@@ -13,6 +13,9 @@ public:
 
     ScopedResourceLoader WithQualifier(const wil::zwstring_view qualifierName, const wil::zwstring_view qualifierValue) const;
 
+    const winrt::Windows::ApplicationModel::Resources::Core::ResourceMap& ResourceMap() const noexcept { return _resourceMap; }
+    const winrt::Windows::ApplicationModel::Resources::Core::ResourceContext& ResourceContext() const noexcept { return _resourceContext; }
+
 private:
     ScopedResourceLoader(winrt::Windows::ApplicationModel::Resources::Core::ResourceMap map, winrt::Windows::ApplicationModel::Resources::Core::ResourceContext context) noexcept;
     winrt::Windows::ApplicationModel::Resources::Core::ResourceMap _resourceMap;

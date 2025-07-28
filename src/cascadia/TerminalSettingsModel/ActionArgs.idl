@@ -9,6 +9,7 @@ namespace Microsoft.Terminal.Settings.Model
     {
         Boolean Equals(IActionArgs other);
         String GenerateName();
+        String GenerateName(Windows.ApplicationModel.Resources.Core.ResourceContext context);
         IActionArgs Copy();
         UInt64 Hash();
     };
@@ -130,6 +131,7 @@ namespace Microsoft.Terminal.Settings.Model
         UInt64 Hash();
         INewContentArgs Copy();
         String GenerateName();
+        String GenerateName(Windows.ApplicationModel.Resources.Core.ResourceContext context);
     };
 
     runtimeclass BaseContentArgs : [default] INewContentArgs {
