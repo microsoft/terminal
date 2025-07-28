@@ -18,10 +18,20 @@ namespace winrt::TerminalApp::implementation
             _Command{ command }, _name{ command.Name() }, _keyChordText{ keyChordText }
         {
             static bool shouldShowSubtitles = [] {
-                auto ctx = winrt::Windows::ApplicationModel::Resources::Core::ResourceContext::GetForViewIndependentUse();
-                auto qv = ctx.QualifierValues();
-                auto lang = qv.TryLookup(L"language");
-                return lang != L"en-US";
+                try
+                {
+                    const auto context{ winrt::Windows::ApplicationModel::Resources::Core::ResourceContext::GetForViewIndependentUse() };
+                    const auto qualifiers{ context.QualifierValues() };
+                    if (const auto language{ qualifiers.TryLookup(L"language") })
+                    {
+                        return !til::starts_with_insensitive_ascii(*language, L"en-");
+                    }
+                }
+                catch (...)
+                {
+                    LOG_CAUGHT_EXCEPTION();
+                }
+                return false;
             }();
 
             if (shouldShowSubtitles)
