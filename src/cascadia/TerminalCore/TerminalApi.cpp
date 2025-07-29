@@ -404,3 +404,9 @@ void Terminal::NotifyBufferRotation(const int delta)
         _NotifyScrollEvent();
     }
 }
+
+void Terminal::NotifyShellIntegrationMark()
+{
+    // Notify the scrollbar that marks have been added so it can refresh the mark indicators
+    _NotifyScrollEvent();
+}
