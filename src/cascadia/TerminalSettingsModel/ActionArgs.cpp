@@ -1057,7 +1057,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return {};
     }
 
-    winrt::hstring HandleUriArgs::GenerateName() const
+    winrt::hstring HandleUriArgs::GenerateName(const winrt::WARC::ResourceContext& context) const
     {
         // This is an internal-use only action, don't generate a name for it
         return winrt::hstring{};
