@@ -2069,13 +2069,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _terminal->MultiClickSelection(terminalPosition, mode);
             selectionNeedsToBeCopied = true;
         }
-        else if (_settings->RepositionCursorWithMouse()) // This is also mode==Char && !shiftEnabled
+        else if (_settings->RepositionCursorWithMouse() && !selectionNeedsToBeCopied) // Don't reposition cursor if this is part of a selection operation
         {
-            // Don't reposition cursor if this is part of a selection operation
-            if (!selectionNeedsToBeCopied)
-            {
-                _repositionCursorWithMouse(terminalPosition);
-            }
+            _repositionCursorWithMouse(terminalPosition);
         }
         _updateSelectionUI();
     }
