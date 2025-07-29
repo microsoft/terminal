@@ -176,6 +176,11 @@ COOKED_READ_DATA::COOKED_READ_DATA(_In_ InputBuffer* const pInputBuffer,
     }
 }
 
+const SCREEN_INFORMATION* COOKED_READ_DATA::GetScreenBuffer() const noexcept
+{
+    return &_screenInfo;
+}
+
 // Routine Description:
 // - This routine is called to complete a cooked read that blocked in ReadInputBuffer.
 // - The context of the read was saved in the CookedReadData structure.

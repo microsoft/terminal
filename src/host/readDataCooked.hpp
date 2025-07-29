@@ -19,6 +19,7 @@ public:
                      _In_ std::wstring_view initialData,
                      _In_ ConsoleProcessHandle* pClientProcess);
 
+    const SCREEN_INFORMATION* GetScreenBuffer() const noexcept override;
     void MigrateUserBuffersOnTransitionToBackgroundWait(const void* oldBuffer, void* newBuffer) noexcept override;
 
     bool Notify(WaitTerminationReason TerminationReason,
