@@ -3600,6 +3600,7 @@ void AdaptDispatch::DoConEmuAction(const std::wstring_view string)
     else if (subParam == 12)
     {
         _pages.ActivePage().Buffer().StartCommand();
+        _api.NotifyShellIntegrationMark();
     }
 }
 
@@ -3630,6 +3631,7 @@ void AdaptDispatch::DoITerm2Action(const std::wstring_view string)
     if (action == L"SetMark")
     {
         _pages.ActivePage().Buffer().StartPrompt();
+        _api.NotifyShellIntegrationMark();
     }
 }
 
