@@ -192,6 +192,9 @@ void SCREEN_INFORMATION::s_InsertScreenBuffer(_In_ SCREEN_INFORMATION* const pSc
 void SCREEN_INFORMATION::s_RemoveScreenBuffer(_In_ SCREEN_INFORMATION* const pScreenInfo)
 {
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+
+    gci.GetActiveInputBuffer()->WaitQueue.CancelWaitersForScreenBuffer(pScreenInfo);
+
     if (pScreenInfo == gci.ScreenBuffers)
     {
         gci.ScreenBuffers = pScreenInfo->Next;
