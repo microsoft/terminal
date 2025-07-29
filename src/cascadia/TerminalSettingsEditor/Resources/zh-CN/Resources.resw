@@ -1736,6 +1736,14 @@
     <value>鼠标悬停时自动聚焦窗格</value>
     <comment>Header for a control to toggle the "focus follow mouse" setting. When enabled, hovering over a pane puts it in focus.</comment>
   </data>
+  <data name="Globals_ScrollToZoom.Header" xml:space="preserve">
+    <value>按住 Ctrl 键时通过滚动调整终端字体大小</value>
+    <comment>Header for a control to toggle font size changes with scrolling. When enabled, holding the Ctrl key while scrolling will increase or decrease the terminal font size.</comment>
+  </data>
+  <data name="Globals_ScrollToChangeOpacity.Header" xml:space="preserve">
+    <value>按住 Ctrl 和 Shift 键的同时滚动来调整终端不透明度</value>
+    <comment>Header for a control to toggle opacity changes with scrolling. When enabled, holding the Ctrl and Shift keys while scrolling will increase or decrease the window opacity.</comment>
+  </data>
   <data name="Globals_DisableAnimationsReversed.Header" xml:space="preserve">
     <value>窗格动画</value>
     <comment>Header for a control to toggle animations on panes. "Enabled" value enables the animations.</comment>

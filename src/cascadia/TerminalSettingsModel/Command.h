@@ -77,6 +77,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         bool HasName() const noexcept;
         hstring Name() const noexcept;
         void Name(const hstring& name);
+        hstring LanguageNeutralName() const noexcept;
 
         hstring ID() const noexcept;
         void GenerateID();

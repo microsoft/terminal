@@ -18,7 +18,6 @@
 #include <LibraryResources.h>
 
 #include "TabRowControl.h"
-#include "ColorHelper.h"
 #include "DebugTapConnection.h"
 #include "..\TerminalSettingsModel\FileUtils.h"
 
