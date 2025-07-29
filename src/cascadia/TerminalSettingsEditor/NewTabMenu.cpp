@@ -18,6 +18,8 @@ using namespace winrt::Microsoft::Terminal::Settings::Model;
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
+    static constexpr std::wstring_view NewTabMenuPageId{ L"page.newTabMenu" };
+
     NewTabMenu::NewTabMenu()
     {
         InitializeComponent();
@@ -44,6 +46,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     void NewTabMenu::OnNavigatedTo(const NavigationEventArgs& e)
     {
         _ViewModel = e.Parameter().as<Editor::NewTabMenuViewModel>();
+
+        TraceLoggingWrite(
+            g_hTerminalSettingsEditorProvider,
+            "NavigatedToPage",
+            TraceLoggingDescription("Event emitted when the user navigates to a page in the settings UI"),
+            TraceLoggingValue(NewTabMenuPageId.data(), "PageId", "The identifier of the page that was navigated to"),
+            TraceLoggingValue(_ViewModel.IsFolderView(), "IsFolderView", "If the page is representing a folder view. Otherwise, it represents a view of the root."),
+            TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+            TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
     }
 
     void NewTabMenu::FolderPickerDialog_Opened(const IInspectable& /*sender*/, const Controls::ContentDialogOpenedEventArgs& /*e*/)

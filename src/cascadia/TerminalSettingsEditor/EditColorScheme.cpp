@@ -25,6 +25,8 @@ namespace winrt
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
+    static constexpr std::wstring_view EditColorSchemePageId{ L"page.editColorScheme" };
+
     EditColorScheme::EditColorScheme()
     {
         InitializeComponent();
@@ -42,7 +44,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         _ViewModel = e.Parameter().as<Editor::ColorSchemeViewModel>();
 
-        NameBox().Text(_ViewModel.Name());
+        const auto schemeName = _ViewModel.Name();
+        NameBox().Text(schemeName);
+
+        TraceLoggingWrite(
+            g_hTerminalSettingsEditorProvider,
+            "NavigatedToPage",
+            TraceLoggingDescription("Event emitted when the user navigates to a page in the settings UI"),
+            TraceLoggingValue(EditColorSchemePageId.data(), "PageId", "The identifier of the page that was navigated to"),
+            TraceLoggingValue(schemeName.data(), "SchemeName", "The name of the color scheme that's being edited"),
+            TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+            TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
     }
 
     void EditColorScheme::ColorPickerChanged(const IInspectable& sender,
