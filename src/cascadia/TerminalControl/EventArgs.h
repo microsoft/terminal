@@ -6,6 +6,7 @@
 #include "FontSizeChangedArgs.g.h"
 #include "TitleChangedEventArgs.g.h"
 #include "ContextMenuRequestedEventArgs.g.h"
+#include "WriteToClipboardEventArgs.g.h"
 #include "PasteFromClipboardEventArgs.g.h"
 #include "OpenHyperlinkEventArgs.g.h"
 #include "NoticeEventArgs.g.h"
@@ -54,6 +55,32 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _Position(pos) {}
 
         WINRT_PROPERTY(winrt::Windows::Foundation::Point, Position);
+    };
+
+    struct WriteToClipboardEventArgs : WriteToClipboardEventArgsT<WriteToClipboardEventArgs>
+    {
+        WriteToClipboardEventArgs(winrt::hstring&& plain, std::string&& html, std::string&& rtf) :
+            _plain(std::move(plain)),
+            _html(std::move(html)),
+            _rtf(std::move(rtf))
+        {
+        }
+
+        winrt::hstring Plain() const noexcept { return _plain; }
+        winrt::com_array<uint8_t> Html() noexcept { return _cast(_html); }
+        winrt::com_array<uint8_t> Rtf() noexcept { return _cast(_rtf); }
+
+    private:
+        static winrt::com_array<uint8_t> _cast(const std::string& str)
+        {
+            const auto beg = reinterpret_cast<const uint8_t*>(str.data());
+            const auto len = str.size();
+            return { beg, beg + len };
+        }
+
+        winrt::hstring _plain;
+        std::string _html;
+        std::string _rtf;
     };
 
     struct PasteFromClipboardEventArgs : public PasteFromClipboardEventArgsT<PasteFromClipboardEventArgs>

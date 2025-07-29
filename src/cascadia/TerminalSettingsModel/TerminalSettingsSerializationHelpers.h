@@ -803,3 +803,29 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Control::PathTranslationStyle)
         pair_type{ "mingw", ValueType::MinGW },
     };
 };
+
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Control::WarnAboutMultiLinePaste)
+{
+    JSON_MAPPINGS(3) = {
+        pair_type{ "automatic", ValueType::Automatic },
+        pair_type{ "always", ValueType::Always },
+        pair_type{ "never", ValueType::Never },
+    };
+
+    // Override mapping parser to add boolean parsing
+    ::winrt::Microsoft::Terminal::Control::WarnAboutMultiLinePaste FromJson(const Json::Value& json)
+    {
+        if (json.isBool())
+        {
+            return json.asBool() ? ValueType::Automatic : ValueType::Never;
+        }
+        return EnumMapper::FromJson(json);
+    }
+
+    bool CanConvert(const Json::Value& json)
+    {
+        return EnumMapper::CanConvert(json) || json.isBool();
+    }
+
+    using EnumMapper::TypeDescription;
+};
