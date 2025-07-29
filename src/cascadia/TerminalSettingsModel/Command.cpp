@@ -636,7 +636,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         if (_icon && *_icon)
         {
-            ResolveIconMediaResource(basePath, *_icon, resolver);
+            ResolveIconMediaResource(_Origin, basePath, *_icon, resolver);
         }
     }
 

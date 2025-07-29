@@ -488,11 +488,9 @@ void CascadiaSettings::_validateAllSchemesExist()
     }
 }
 
-void CascadiaSettings::_resolveSingleMediaResource(std::wstring_view basePath, const Model::IMediaResource& resource)
+static void _resolveSingleMediaResourceInner(Model::OriginTag origin, std::wstring_view basePath, const Model::IMediaResource& resource)
 {
     auto resourcePath{ resource.Path() };
-
-    OutputDebugStringW(fmt::format(FMT_COMPILE(L"** RESOLVING MEDIA PATH - Base '{}', Value '{}'\n"), basePath, resourcePath).c_str());
 
     if (til::equals_insensitive_ascii(resourcePath, L"desktopWallpaper"))
     {
@@ -598,17 +596,24 @@ void CascadiaSettings::_resolveSingleMediaResource(std::wstring_view basePath, c
     }
 
     resource.Reject();
-    return;
+}
+
+void CascadiaSettings::_resolveSingleMediaResource(OriginTag origin, std::wstring_view basePath, const Model::IMediaResource& resource)
+{
+    _resolveSingleMediaResourceInner(origin, basePath, resource);
+    if (!resource.Ok() && (origin == OriginTag::User || origin == OriginTag::ProfilesDefaults))
+    {
+        _foundInvalidUserResources = true;
+    }
 }
 
 // Method Description:
 // - Ensures that all specified images resources (icons and background images) are valid.
 void CascadiaSettings::_validateMediaResources()
 {
-    auto warnInvalidBackground{ false };
-    auto warnInvalidIcon{ false };
+    _foundInvalidUserResources = false;
 
-    MediaResourceResolver mediaResourceResolver{ this, &CascadiaSettings::_resolveSingleMediaResource };
+    const MediaResourceResolver mediaResourceResolver{ this, &CascadiaSettings::_resolveSingleMediaResource };
 
     for (const auto& profile : _allProfiles)
     {
@@ -617,14 +622,9 @@ void CascadiaSettings::_validateMediaResources()
 
     _globals->ResolveMediaResources(mediaResourceResolver);
 
-    if (warnInvalidBackground)
+    if (_foundInvalidUserResources)
     {
-        _warnings.Append(SettingsLoadWarnings::InvalidBackgroundImage);
-    }
-
-    if (warnInvalidIcon)
-    {
-        _warnings.Append(SettingsLoadWarnings::InvalidIcon);
+        _warnings.Append(SettingsLoadWarnings::InvalidMediaResource);
     }
 }
 

@@ -83,17 +83,18 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
     };
 
-    _TIL_INLINEPREFIX void ResolveMediaResource(const winrt::hstring& basePath, const Model::IMediaResource& resource, const winrt::Microsoft::Terminal::Settings::Model::MediaResourceResolver& resolver)
+    _TIL_INLINEPREFIX void ResolveMediaResource(const winrt::Microsoft::Terminal::Settings::Model::OriginTag origin, const winrt::hstring& basePath, const Model::IMediaResource& resource, const winrt::Microsoft::Terminal::Settings::Model::MediaResourceResolver& resolver)
     {
         const auto path{ resource.Path() };
-        if (path.empty() || resource.Ok()) {
+        if (path.empty() || resource.Ok())
+        {
             // Don't resolve empty resources *or* resources which have already been found.
             return;
         }
-        resolver(basePath, resource);
+        resolver(origin, basePath, resource);
     }
 
-    _TIL_INLINEPREFIX void ResolveIconMediaResource(const winrt::hstring& basePath, const Model::IMediaResource& resource, const winrt::Microsoft::Terminal::Settings::Model::MediaResourceResolver& resolver)
+    _TIL_INLINEPREFIX void ResolveIconMediaResource(const winrt::Microsoft::Terminal::Settings::Model::OriginTag origin, const winrt::hstring& basePath, const Model::IMediaResource& resource, const winrt::Microsoft::Terminal::Settings::Model::MediaResourceResolver& resolver)
     {
         if (const winrt::hstring path{ resource.Path() }; !path.empty())
         {
@@ -107,7 +108,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 return;
             }
 
-            ResolveMediaResource(basePath, resource, resolver);
+            ResolveMediaResource(origin, basePath, resource, resolver);
         }
     }
 

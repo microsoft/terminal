@@ -267,14 +267,6 @@
   <data name="DuplicateTabText" xml:space="preserve">
     <value>複製索引標籤</value>
   </data>
-  <data name="InvalidBackgroundImage" xml:space="preserve">
-    <value>找到具有無效 "backgroundImage" 的設定檔。將該設定檔的預設值設為沒有背景影像。請確定設定 "backgroundImage" 時，該值是影像的有效檔案路徑。</value>
-    <comment>{Locked="\"backgroundImage\""}</comment>
-  </data>
-  <data name="InvalidIcon" xml:space="preserve">
-    <value>已發現具有無效 "icon" 的設定檔。將該設定檔預設為無圖示。設定 "icon" 時，請確認值是有效的影像檔案路徑。</value>
-    <comment>{Locked="\"icon\""} The word "icon" in quotes is locked, the word icon OUTSIDE of quotes should be localized.</comment>
-  </data>
   <data name="AtLeastOneKeybindingWarning" xml:space="preserve">
     <value>剖析金鑰繫結時發現警告:</value>
   </data>

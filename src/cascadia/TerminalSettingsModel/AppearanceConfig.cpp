@@ -11,6 +11,7 @@
 
 using namespace winrt::Microsoft::Terminal::Control;
 using namespace Microsoft::Terminal::Settings::Model;
+using namespace winrt::Microsoft::Terminal::Settings;
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Microsoft::Terminal::Settings::Model::implementation;
 
@@ -137,33 +138,35 @@ winrt::Microsoft::Terminal::Settings::Model::Profile AppearanceConfig::SourcePro
     return _sourceProfile.get();
 }
 
-winrt::hstring AppearanceConfig::_getSourceProfileBasePath() const
+std::tuple<winrt::hstring, Model::OriginTag> AppearanceConfig::_getSourceProfileBasePathAndOrigin() const
 {
     winrt::hstring sourceBasePath{};
+    OriginTag origin{ OriginTag::None };
     if (const auto profile{ _sourceProfile.get() })
     {
         const auto profileImpl{ winrt::get_self<implementation::Profile>(profile) };
         sourceBasePath = profileImpl->SourceBasePath;
+        origin = profileImpl->Origin();
     }
-    return sourceBasePath;
+    return { sourceBasePath, origin };
 }
 
 void AppearanceConfig::ResolveMediaResources(const Model::MediaResourceResolver& resolver)
 {
     if (const auto [source, path] = _getBackgroundImagePathOverrideSourceAndValueImpl(); source && path && *path)
     {
-        winrt::hstring sourceBasePath{ source->_getSourceProfileBasePath() };
-        ResolveMediaResource(sourceBasePath, *path, resolver);
+        const auto [sourceBasePath, sourceOrigin]{ source->_getSourceProfileBasePathAndOrigin() };
+        ResolveMediaResource(sourceOrigin, sourceBasePath, *path, resolver);
     }
     if (const auto [source, path]{ _getPixelShaderPathOverrideSourceAndValueImpl() }; source && path && *path)
     {
-        winrt::hstring sourceBasePath{ source->_getSourceProfileBasePath() };
-        ResolveMediaResource(sourceBasePath, *path, resolver);
+        const auto [sourceBasePath, sourceOrigin]{ source->_getSourceProfileBasePathAndOrigin() };
+        ResolveMediaResource(sourceOrigin, sourceBasePath, *path, resolver);
     }
     if (const auto [source, path]{ _getPixelShaderImagePathOverrideSourceAndValueImpl() }; source && path && *path)
     {
-        winrt::hstring sourceBasePath{ source->_getSourceProfileBasePath() };
-        ResolveMediaResource(sourceBasePath, *path, resolver);
+        const auto [sourceBasePath, sourceOrigin]{ source->_getSourceProfileBasePathAndOrigin() };
+        ResolveMediaResource(sourceOrigin, sourceBasePath, *path, resolver);
     }
 }
 

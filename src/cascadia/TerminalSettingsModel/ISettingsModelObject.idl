@@ -26,7 +26,7 @@ namespace Microsoft.Terminal.Settings.Model
         Boolean Ok { get; };
     };
 
-    delegate void MediaResourceResolver(String basePath, IMediaResource resource);
+    delegate void MediaResourceResolver(OriginTag origin, String basePath, IMediaResource resource);
 
     static runtimeclass MediaResourceHelper {
         static IMediaResource FromString(String s);

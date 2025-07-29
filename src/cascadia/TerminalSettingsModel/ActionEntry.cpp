@@ -53,7 +53,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         if (_icon)
         {
-            ResolveIconMediaResource(basePath, _icon, resolver);
+            // TODO GH#19191 (Hardcoded Origin, since that's the only place it could have come from)
+            ResolveIconMediaResource(OriginTag::User, basePath, _icon, resolver);
         }
     }
 }

@@ -211,7 +211,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         void _validateSettings();
         void _validateAllSchemesExist();
-        void _resolveSingleMediaResource(std::wstring_view basePath, const Model::IMediaResource& resource);
+        void _resolveSingleMediaResource(OriginTag origin, std::wstring_view basePath, const Model::IMediaResource& resource);
         void _validateMediaResources();
         void _validateProfileEnvironmentVariables();
         void _validateKeybindings() const;
@@ -235,6 +235,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         winrt::Windows::Foundation::Collections::IVector<Model::SettingsLoadWarnings> _warnings = winrt::single_threaded_vector<Model::SettingsLoadWarnings>();
         winrt::Windows::Foundation::IReference<Model::SettingsLoadErrors> _loadError;
         winrt::hstring _deserializationErrorMessage;
+        bool _foundInvalidUserResources{ false };
 
         // defterm
         winrt::Windows::Foundation::Collections::IObservableVector<Model::DefaultTerminal> _defaultTerminals{ nullptr };

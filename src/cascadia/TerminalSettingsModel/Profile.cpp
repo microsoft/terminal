@@ -529,26 +529,19 @@ void Profile::_logSettingIfSet(const std::string_view& setting, const bool isSet
 
 void Profile::ResolveMediaResources(const Model::MediaResourceResolver& resolver)
 {
-    bool fallbackIcon{ false };
-    if (const auto icon{ _getIconImpl() }; icon)
+    if (const auto icon{ _getIconImpl() }; icon && *icon)
     {
-        auto& innerIcon{ *icon };
-        fallbackIcon = !static_cast<bool>(innerIcon);
-        if (innerIcon)
-        {
-            const auto iconSource{ _getIconOverrideSourceImpl() };
-            ResolveIconMediaResource(iconSource->SourceBasePath, innerIcon, resolver);
-            fallbackIcon = !innerIcon.Ok();
-        }
-    }
+        const auto iconSource{ _getIconOverrideSourceImpl() };
+        ResolveIconMediaResource(iconSource->_Origin, iconSource->SourceBasePath, *icon, resolver);
 
-    if (fallbackIcon)
-    {
-        // failed resolution or explicitly null. fall back to the commandline since we do have one.
-        std::wstring cmdline{ NormalizeCommandLine(Commandline().c_str()) };
-        auto newIcon{ MediaResource::FromString(L"") }; // NOTE: Do not use Empty here, it's shared
-        newIcon.Resolve(cmdline);
-        _Icon.emplace(std::move(newIcon));
+        // If the icon was specified at any layer, but fails resolution *or* contain the empty string,
+        // fall back to the normalized command line.
+        if (!icon->Ok() || icon->Path().empty())
+        {
+            // failed resolution or explicitly null. fall back to the commandline since we do have one.
+            std::wstring cmdline{ NormalizeCommandLine(Commandline().c_str()) };
+            icon->Resolve(cmdline.c_str() /* c_str: give hstring a chance to find the null terminator */);
+        }
     }
 
     if (const auto container{ _DefaultAppearance.as<IMediaResourceContainer>() })
