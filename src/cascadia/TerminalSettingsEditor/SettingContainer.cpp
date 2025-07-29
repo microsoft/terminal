@@ -4,7 +4,6 @@
 #include "pch.h"
 #include "SettingContainer.h"
 #include "SettingContainer.g.cpp"
-#include "LibraryResources.h"
 
 using namespace winrt::Windows::UI::Xaml;
 

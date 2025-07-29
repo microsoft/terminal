@@ -5,7 +5,6 @@
 #include "ColorSchemeViewModel.h"
 #include "ColorSchemeViewModel.g.cpp"
 
-#include <LibraryResources.h>
 #include "..\WinRTUtils\inc\Utils.h"
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation

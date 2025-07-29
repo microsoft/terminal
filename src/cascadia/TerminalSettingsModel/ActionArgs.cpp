@@ -51,7 +51,6 @@
 #include "SelectOutputArgs.g.cpp"
 #include "ColorSelectionArgs.g.cpp"
 
-#include <LibraryResources.h>
 #include <WtExeUtils.h>
 #include <ScopedResourceLoader.h>
 

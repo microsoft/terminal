@@ -9,7 +9,6 @@
 #include "FragmentProfileViewModel.g.cpp"
 #include "ExtensionPackageTemplateSelector.g.cpp"
 
-#include <LibraryResources.h>
 #include "..\WinRTUtils\inc\Utils.h"
 
 using namespace winrt::Windows::Foundation;

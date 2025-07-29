@@ -6,7 +6,6 @@
 #include "LaunchViewModel.g.cpp"
 #include "EnumEntry.h"
 
-#include <LibraryResources.h>
 #include <WtExeUtils.h>
 
 using namespace winrt::Windows::UI::Xaml::Navigation;

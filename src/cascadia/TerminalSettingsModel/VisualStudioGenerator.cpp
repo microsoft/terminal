@@ -6,7 +6,6 @@
 #include "VisualStudioGenerator.h"
 #include "VsDevCmdGenerator.h"
 #include "VsDevShellGenerator.h"
-#include <LibraryResources.h>
 
 using namespace winrt::Microsoft::Terminal::Settings::Model;
 

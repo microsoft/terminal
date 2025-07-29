@@ -4,7 +4,6 @@
 #include "pch.h"
 #include "SearchBoxControl.h"
 #include "SearchBoxControl.g.cpp"
-#include <LibraryResources.h>
 
 using namespace winrt;
 using namespace winrt::Windows::UI::Xaml;

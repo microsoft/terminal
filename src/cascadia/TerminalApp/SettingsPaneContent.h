@@ -3,7 +3,6 @@
 
 #pragma once
 #include "winrt/TerminalApp.h"
-#include <LibraryResources.h>
 #include "BasicPaneEvents.h"
 
 namespace winrt::TerminalApp::implementation

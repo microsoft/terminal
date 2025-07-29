@@ -4,7 +4,6 @@
 #include "pch.h"
 #include "TermControl.h"
 
-#include <LibraryResources.h>
 #include <inputpaneinterop.h>
 
 #include "TermControlAutomationPeer.h"

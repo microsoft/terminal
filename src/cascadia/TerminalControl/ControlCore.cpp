@@ -9,7 +9,6 @@
 #include <dsound.h>
 
 #include <DefaultSettings.h>
-#include <LibraryResources.h>
 #include <unicode.hpp>
 #include <utils.hpp>
 #include <WinUser.h>

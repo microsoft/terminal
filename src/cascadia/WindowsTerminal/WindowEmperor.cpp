@@ -5,7 +5,6 @@
 #include "WindowEmperor.h"
 
 #include <CoreWindow.h>
-#include <LibraryResources.h>
 #include <ScopedResourceLoader.h>
 #include <WtExeUtils.h>
 #include <til/hash.h>

@@ -6,7 +6,6 @@
 #include "AppLogic.g.cpp"
 #include "SettingsLoadEventArgs.h"
 
-#include <LibraryResources.h>
 #include <WtExeUtils.h>
 #include <wil/token_helpers.h>
 

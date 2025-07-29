@@ -3,7 +3,6 @@
 
 #include "pch.h"
 #include "NewTabMenuViewModel.h"
-#include <LibraryResources.h>
 
 #include "NewTabMenuViewModel.g.cpp"
 #include "FolderTreeViewEntry.g.cpp"

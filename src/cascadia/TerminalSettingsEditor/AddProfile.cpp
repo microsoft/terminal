@@ -7,8 +7,6 @@
 #include "AddProfilePageNavigationState.g.cpp"
 #include "EnumEntry.h"
 
-#include <LibraryResources.h>
-
 using namespace winrt::Windows::Foundation;
 using namespace winrt::Windows::System;
 using namespace winrt::Windows::UI::Core;

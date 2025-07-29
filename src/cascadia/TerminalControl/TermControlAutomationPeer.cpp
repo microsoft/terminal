@@ -3,7 +3,6 @@
 
 #include "pch.h"
 #include <UIAutomationCore.h>
-#include <LibraryResources.h>
 #include "TermControlAutomationPeer.h"
 #include "TermControl.h"
 #include "TermControlAutomationPeer.g.cpp"

@@ -5,8 +5,6 @@
 #include "DefaultTerminal.h"
 #include "DefaultTerminal.g.cpp"
 
-#include <LibraryResources.h>
-
 using namespace winrt::Microsoft::Terminal::Settings;
 using namespace winrt::Microsoft::Terminal::Settings::Model::implementation;
 

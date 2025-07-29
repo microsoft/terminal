@@ -6,7 +6,6 @@
 
 #include "AppLogic.h"
 
-#include <LibraryResources.h>
 #include <til/env.h>
 
 #include "TerminalWindow.g.cpp"

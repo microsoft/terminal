@@ -3,7 +3,6 @@
 
 #include "pch.h"
 #include "SuggestionsControl.h"
-#include <LibraryResources.h>
 
 #include "CommandPaletteItems.h"
 

@@ -4,7 +4,6 @@
 #include "pch.h"
 #include "KeyChordListener.h"
 #include "KeyChordListener.g.cpp"
-#include "LibraryResources.h"
 
 using namespace winrt::Windows::UI::Core;
 using namespace winrt::Windows::UI::Xaml;
