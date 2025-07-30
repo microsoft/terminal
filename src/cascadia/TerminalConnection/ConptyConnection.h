@@ -30,6 +30,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         void ShowHide(const bool show);
 
         void ReparentWindow(const uint64_t newParent);
+        uint64_t RootProcessHandle();
 
         winrt::hstring Commandline() const;
         winrt::hstring StartingTitle() const;
