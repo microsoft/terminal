@@ -488,7 +488,7 @@ void CascadiaSettings::_validateAllSchemesExist()
     }
 }
 
-static void _resolveSingleMediaResourceInner(Model::OriginTag origin, std::wstring_view basePath, const Model::IMediaResource& resource)
+static void _resolveSingleMediaResourceInner(std::wstring_view basePath, const Model::IMediaResource& resource)
 {
     auto resourcePath{ resource.Path() };
 
@@ -600,7 +600,7 @@ static void _resolveSingleMediaResourceInner(Model::OriginTag origin, std::wstri
 
 void CascadiaSettings::_resolveSingleMediaResource(OriginTag origin, std::wstring_view basePath, const Model::IMediaResource& resource)
 {
-    _resolveSingleMediaResourceInner(origin, basePath, resource);
+    _resolveSingleMediaResourceInner(basePath, resource);
     if (!resource.Ok() && (origin == OriginTag::User || origin == OriginTag::ProfilesDefaults))
     {
         _foundInvalidUserResources = true;
