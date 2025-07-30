@@ -232,19 +232,20 @@ bool VtIo::IsUsingVt() const
 
 void VtIo::RequestCursorPositionFromTerminal()
 {
-    if (!_lookingForCursorPosition)
-    {
-        _pVtInputThread->GetInputStateMachineEngine().CaptureNextCPR();
-        Writer writer{ this };
-        writer.WriteUTF8("\x1b[6n"); // Cursor Position Report (DSR CPR)
-        writer.Submit();
-    }
-    else
+    if (_lookingForCursorPosition)
     {
         // By delaying sending another DSR CPR until we received a response to the previous one,
         // we debounce our requests to the terminal. We don't want to flood it unnecessarily.
         _scheduleAnotherCPR = true;
+        return;
     }
+
+    _lookingForCursorPosition = true;
+    _pVtInputThread->GetInputStateMachineEngine().CaptureNextCPR();
+
+    Writer writer{ this };
+    writer.WriteUTF8("\x1b[6n"); // Cursor Position Report (DSR CPR)
+    writer.Submit();
 }
 
 void VtIo::_cursorPositionReportReceived()
