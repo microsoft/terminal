@@ -90,7 +90,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void ApplyRuntimeInitialSettings();
         void MergeInboxIntoUserSettings();
         void FindFragmentsAndMergeIntoUserSettings(bool generateExtensionPackages);
-        void MergeFragmentIntoUserSettings(const winrt::hstring& source, const std::string_view& content);
+        void MergeFragmentIntoUserSettings(const winrt::hstring& source, const winrt::hstring& basePath, const std::string_view& content);
         void FinalizeLayering();
         bool DisableDeletedProfiles();
         bool RemapColorSchemeForProfile(const winrt::com_ptr<winrt::Microsoft::Terminal::Settings::Model::implementation::Profile>& profile);

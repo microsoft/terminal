@@ -2131,7 +2131,7 @@ namespace SettingsModelUnitTests
 
         implementation::SettingsLoader loader{ std::string_view{}, implementation::LoadStringResource(IDR_DEFAULTS) };
         loader.MergeInboxIntoUserSettings();
-        loader.MergeFragmentIntoUserSettings(winrt::hstring{ fragmentSource }, fragmentJson);
+        loader.MergeFragmentIntoUserSettings(winrt::hstring{ fragmentSource }, {}, fragmentJson);
         loader.FinalizeLayering();
 
         VERIFY_IS_FALSE(loader.duplicateProfile);
@@ -2155,7 +2155,7 @@ namespace SettingsModelUnitTests
 
         implementation::SettingsLoader loader{ std::string_view{}, implementation::LoadStringResource(IDR_DEFAULTS) };
         loader.MergeInboxIntoUserSettings();
-        loader.MergeFragmentIntoUserSettings(winrt::hstring{ fragmentSource }, fragmentJson);
+        loader.MergeFragmentIntoUserSettings(winrt::hstring{ fragmentSource }, {}, fragmentJson);
         loader.FinalizeLayering();
 
         const auto settings = winrt::make_self<implementation::CascadiaSettings>(std::move(loader));
@@ -2181,7 +2181,7 @@ namespace SettingsModelUnitTests
 
         implementation::SettingsLoader loader{ std::string_view{}, implementation::LoadStringResource(IDR_DEFAULTS) };
         loader.MergeInboxIntoUserSettings();
-        loader.MergeFragmentIntoUserSettings(winrt::hstring{ fragmentSource }, fragmentJson);
+        loader.MergeFragmentIntoUserSettings(winrt::hstring{ fragmentSource }, {}, fragmentJson);
         loader.FinalizeLayering();
 
         const auto settings = winrt::make_self<implementation::CascadiaSettings>(std::move(loader));
@@ -2215,7 +2215,7 @@ namespace SettingsModelUnitTests
 
         implementation::SettingsLoader loader{ std::string_view{}, implementation::LoadStringResource(IDR_DEFAULTS) };
         loader.MergeInboxIntoUserSettings();
-        loader.MergeFragmentIntoUserSettings(winrt::hstring{ fragmentSource }, fragmentJson);
+        loader.MergeFragmentIntoUserSettings(winrt::hstring{ fragmentSource }, {}, fragmentJson);
         loader.FinalizeLayering();
 
         const auto settings = winrt::make_self<implementation::CascadiaSettings>(std::move(loader));
@@ -2250,7 +2250,7 @@ namespace SettingsModelUnitTests
 
         implementation::SettingsLoader loader{ std::string_view{}, implementation::LoadStringResource(IDR_DEFAULTS) };
         loader.MergeInboxIntoUserSettings();
-        loader.MergeFragmentIntoUserSettings(winrt::hstring{ fragmentSource }, fragmentJson);
+        loader.MergeFragmentIntoUserSettings(winrt::hstring{ fragmentSource }, {}, fragmentJson);
         loader.FinalizeLayering();
 
         const auto settings = winrt::make_self<implementation::CascadiaSettings>(std::move(loader));
@@ -2276,7 +2276,7 @@ namespace SettingsModelUnitTests
 
         implementation::SettingsLoader loader{ std::string_view{}, implementation::LoadStringResource(IDR_DEFAULTS) };
         loader.MergeInboxIntoUserSettings();
-        loader.MergeFragmentIntoUserSettings(winrt::hstring{ fragmentSource }, fragmentJson);
+        loader.MergeFragmentIntoUserSettings(winrt::hstring{ fragmentSource }, {}, fragmentJson);
         loader.FinalizeLayering();
 
         const auto settings = winrt::make_self<implementation::CascadiaSettings>(std::move(loader));
@@ -2303,7 +2303,7 @@ namespace SettingsModelUnitTests
 
         implementation::SettingsLoader loader{ std::string_view{}, implementation::LoadStringResource(IDR_DEFAULTS) };
         loader.MergeInboxIntoUserSettings();
-        loader.MergeFragmentIntoUserSettings(winrt::hstring{ fragmentSource }, fragmentJson);
+        loader.MergeFragmentIntoUserSettings(winrt::hstring{ fragmentSource }, {}, fragmentJson);
         loader.FinalizeLayering();
 
         const auto oldSettings = winrt::make_self<implementation::CascadiaSettings>(std::move(loader));

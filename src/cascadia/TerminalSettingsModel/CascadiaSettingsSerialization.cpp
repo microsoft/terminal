@@ -450,10 +450,10 @@ void SettingsLoader::FindFragmentsAndMergeIntoUserSettings(bool generateExtensio
 // See FindFragmentsAndMergeIntoUserSettings.
 // This function does the same, but for a single given JSON blob and source
 // and at the time of writing is used for unit tests only.
-void SettingsLoader::MergeFragmentIntoUserSettings(const winrt::hstring& source, const std::string_view& content)
+void SettingsLoader::MergeFragmentIntoUserSettings(const winrt::hstring& source, const winrt::hstring& basePath, const std::string_view& content)
 {
     ParsedSettings fragmentSettings;
-    _parseFragment(source, {}, content, fragmentSettings, std::nullopt);
+    _parseFragment(source, basePath, content, fragmentSettings, std::nullopt);
 }
 
 // Call this method before passing SettingsLoader to the CascadiaSettings constructor.

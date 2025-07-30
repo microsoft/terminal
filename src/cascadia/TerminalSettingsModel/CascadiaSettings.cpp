@@ -488,8 +488,15 @@ void CascadiaSettings::_validateAllSchemesExist()
     }
 }
 
-static void _resolveSingleMediaResourceInner(std::wstring_view basePath, const Model::IMediaResource& resource)
+extern bool TestHook_CascadiaSettings_ResolveSingleMediaResource(Model::OriginTag origin, std::wstring_view basePath, const Model::IMediaResource& resource);
+
+static void _resolveSingleMediaResourceInner(Model::OriginTag origin, std::wstring_view basePath, const Model::IMediaResource& resource)
 {
+    if (TestHook_CascadiaSettings_ResolveSingleMediaResource(origin, basePath, resource))
+    {
+        return;
+    }
+
     auto resourcePath{ resource.Path() };
 
     if (til::equals_insensitive_ascii(resourcePath, L"desktopWallpaper"))
@@ -600,7 +607,7 @@ static void _resolveSingleMediaResourceInner(std::wstring_view basePath, const M
 
 void CascadiaSettings::_resolveSingleMediaResource(OriginTag origin, std::wstring_view basePath, const Model::IMediaResource& resource)
 {
-    _resolveSingleMediaResourceInner(basePath, resource);
+    _resolveSingleMediaResourceInner(origin, basePath, resource);
     if (!resource.Ok() && (origin == OriginTag::User || origin == OriginTag::ProfilesDefaults))
     {
         _foundInvalidUserResources = true;

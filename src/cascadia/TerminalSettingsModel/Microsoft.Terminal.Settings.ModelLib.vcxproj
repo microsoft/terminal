@@ -213,6 +213,7 @@
     <ClCompile Include="VsSetupConfiguration.cpp" />
     <ClCompile Include="WslDistroGenerator.cpp" />
     <ClCompile Include="SshHostGenerator.cpp" />
+    <ClCompile Include="TestHooks.cpp" />
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
   </ItemGroup>
   <!-- ========================= idl Files ======================== -->
