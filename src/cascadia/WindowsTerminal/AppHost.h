@@ -50,6 +50,8 @@ private:
 
     void _revokeWindowCallbacks();
 
+    void _SetDefaultWindowTitle();
+
     void _HandleCommandlineArgs(const winrt::TerminalApp::WindowRequestedArgs& args);
 
     winrt::Microsoft::Terminal::Settings::Model::LaunchPosition _GetWindowLaunchPosition();
@@ -109,6 +111,8 @@ private:
                             const winrt::Microsoft::Terminal::Control::WindowSizeChangedEventArgs& args);
 
     void _updateTheme();
+
+    void _updateWindowTitleIfNeeded();
 
     void _PropertyChangedHandler(const winrt::Windows::Foundation::IInspectable& sender,
                                  const winrt::Windows::UI::Xaml::Data::PropertyChangedEventArgs& args);
