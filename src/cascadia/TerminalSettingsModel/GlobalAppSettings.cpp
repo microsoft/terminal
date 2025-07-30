@@ -387,9 +387,9 @@ void GlobalAppSettings::ResolveMediaResources(const Model::MediaResourceResolver
     {
         for (const auto& entry : *_NewTabMenu)
         {
-            if (const auto resy{ entry.try_as<IPathlessMediaResourceContainer>() })
+            if (const auto resolvable{ entry.try_as<IPathlessMediaResourceContainer>() })
             {
-                resy->ResolveMediaResourcesWithBasePath(SourceBasePath, resolver);
+                resolvable->ResolveMediaResourcesWithBasePath(SourceBasePath, resolver);
             }
         }
     }

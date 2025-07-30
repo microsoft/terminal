@@ -272,8 +272,8 @@
     <value>Duplicate tab</value>
   </data>
   <data name="InvalidMediaResource" xml:space="preserve">
-    <value>One or more resources (such as icon or backgroundImage) could not be found.</value>
-    <comment>{Locked="icon","backgroundImage"} Indicates that sometehing has gone wrong while reading a user's settings.</comment>
+    <value>One or more resources (such as icon or backgroundImage) specified in your settings could not be found.</value>
+    <comment>{Locked="icon","backgroundImage"} Indicates that something has gone wrong while reading a user's settings.</comment>
   </data>
   <data name="AtLeastOneKeybindingWarning" xml:space="preserve">
     <value>Warnings were found while parsing your keybindings:</value>
