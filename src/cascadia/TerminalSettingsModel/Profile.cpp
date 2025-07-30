@@ -534,12 +534,11 @@ void Profile::ResolveMediaResources(const Model::MediaResourceResolver& resolver
         const auto iconSource{ _getIconOverrideSourceImpl() };
         ResolveIconMediaResource(iconSource->_Origin, iconSource->SourceBasePath, *icon, resolver);
 
-        // If the icon was specified at any layer, but fails resolution *or* contain the empty string,
+        // If the icon was specified at any layer, but fails resolution *or* contains the empty string,
         // fall back to the normalized command line.
-        if (!icon->Ok() || icon->Path().empty())
+        if (!icon->Ok() || icon->Resolved().empty() && !iconSource->Commandline().empty())
         {
-            // failed resolution or explicitly null. fall back to the commandline since we do have one.
-            std::wstring cmdline{ NormalizeCommandLine(Commandline().c_str()) };
+            std::wstring cmdline{ NormalizeCommandLine(iconSource->Commandline().c_str()) };
             icon->Resolve(cmdline.c_str() /* c_str: give hstring a chance to find the null terminator */);
         }
     }
