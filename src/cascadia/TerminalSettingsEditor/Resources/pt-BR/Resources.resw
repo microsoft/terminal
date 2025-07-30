@@ -1736,6 +1736,14 @@
     <value>Focalizar painel automaticamente ao passar o mouse</value>
     <comment>Header for a control to toggle the "focus follow mouse" setting. When enabled, hovering over a pane puts it in focus.</comment>
   </data>
+  <data name="Globals_ScrollToZoom.Header" xml:space="preserve">
+    <value>Ajustar o tamanho da fonte do terminal rolando enquanto mantém a tecla Ctrl pressionada</value>
+    <comment>Header for a control to toggle font size changes with scrolling. When enabled, holding the Ctrl key while scrolling will increase or decrease the terminal font size.</comment>
+  </data>
+  <data name="Globals_ScrollToChangeOpacity.Header" xml:space="preserve">
+    <value>Ajustar a opacidade do terminal ao rolar enquanto mantém as teclas Ctrl e Shift</value>
+    <comment>Header for a control to toggle opacity changes with scrolling. When enabled, holding the Ctrl and Shift keys while scrolling will increase or decrease the window opacity.</comment>
+  </data>
   <data name="Globals_DisableAnimationsReversed.Header" xml:space="preserve">
     <value>Animações do painel</value>
     <comment>Header for a control to toggle animations on panes. "Enabled" value enables the animations.</comment>

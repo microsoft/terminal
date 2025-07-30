@@ -3,7 +3,6 @@
 
 #include "pch.h"
 #include "CommandPalette.h"
-#include "HighlightedText.h"
 #include <LibraryResources.h>
 #include "fzf/fzf.h"
 
@@ -20,32 +19,23 @@ using namespace winrt::Microsoft::Terminal::Settings::Model;
 
 namespace winrt::TerminalApp::implementation
 {
-    // This class is a wrapper of PaletteItem, that is used as an item of a filterable list in CommandPalette.
+    // This class is a wrapper of IPaletteItem, that is used as an item of a filterable list in CommandPalette.
     // It manages a highlighted text that is computed by matching search filter characters to item name
-    FilteredCommand::FilteredCommand(const winrt::TerminalApp::PaletteItem& item)
+    FilteredCommand::FilteredCommand(const winrt::TerminalApp::IPaletteItem& item) :
+        _Item{ item }, _Weight{ 0 }
     {
-        // Actually implement the ctor in _constructFilteredCommand
-        _constructFilteredCommand(item);
-    }
-
-    // We need to actually implement the ctor in a separate helper. This is
-    // because we have a FilteredTask class which derives from FilteredCommand.
-    // HOWEVER, for cppwinrt ~ r e a s o n s ~, it doesn't actually derive from
-    // FilteredCommand directly, so we can't just use the FilteredCommand ctor
-    // directly in the base class.
-    void FilteredCommand::_constructFilteredCommand(const winrt::TerminalApp::PaletteItem& item)
-    {
-        _Item = item;
-        _Weight = 0;
-
-        _update();
-
         // Recompute the highlighted name if the item name changes
-        _itemChangedRevoker = _Item.PropertyChanged(winrt::auto_revoke, [weakThis{ get_weak() }](auto& /*sender*/, auto& e) {
-            auto filteredCommand{ weakThis.get() };
-            if (filteredCommand && e.PropertyName() == L"Name")
+        // Our Item will not change, so we don't need to update the revoker if it does.
+        _itemChangedRevoker = _Item.as<winrt::Windows::UI::Xaml::Data::INotifyPropertyChanged>().PropertyChanged(winrt::auto_revoke, [=](auto& /*sender*/, auto& e) {
+            const auto property{ e.PropertyName() };
+            if (property == L"Name")
             {
-                filteredCommand->_update();
+                _update();
+            }
+            else if (property == L"Subtitle")
+            {
+                _update();
+                PropertyChanged.raise(*this, winrt::Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"HasSubtitle" });
             }
         });
     }
@@ -61,49 +51,63 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    void FilteredCommand::_update()
+    bool FilteredCommand::HasSubtitle()
     {
-        std::vector<winrt::TerminalApp::HighlightedTextSegment> segments;
-        const auto commandName = _Item.Name();
+        return !_Item.Subtitle().empty();
+    }
+
+    static std::tuple<std::vector<winrt::TerminalApp::HighlightedRun>, int32_t> _matchedSegmentsAndWeight(const std::shared_ptr<fzf::matcher::Pattern>& pattern, const winrt::hstring& haystack)
+    {
+        std::vector<winrt::TerminalApp::HighlightedRun> segments;
         int32_t weight = 0;
 
-        if (!_pattern || _pattern->terms.empty())
+        if (pattern && !pattern->terms.empty())
         {
-            segments.emplace_back(winrt::TerminalApp::HighlightedTextSegment(commandName, false));
+            if (auto match = fzf::matcher::Match(haystack, *pattern.get()); match)
+            {
+                auto& matchResult = *match;
+                weight = matchResult.Score;
+                segments.resize(matchResult.Runs.size());
+                std::transform(matchResult.Runs.begin(), matchResult.Runs.end(), segments.begin(), [](auto&& run) -> winrt::TerminalApp::HighlightedRun {
+                    return { run.Start, run.End };
+                });
+            }
         }
-        else if (auto match = fzf::matcher::Match(commandName, *_pattern.get()); !match)
+        return { std::move(segments), weight };
+    }
+
+    void FilteredCommand::_update()
+    {
+        auto itemName = _Item.Name();
+        auto [segments, weight] = _matchedSegmentsAndWeight(_pattern, itemName);
+        decltype(segments) subtitleSegments;
+
+        if (HasSubtitle())
         {
-            segments.emplace_back(winrt::TerminalApp::HighlightedTextSegment(commandName, false));
+            auto itemSubtitle = _Item.Subtitle();
+            int32_t subtitleWeight = 0;
+            std::tie(subtitleSegments, subtitleWeight) = _matchedSegmentsAndWeight(_pattern, itemSubtitle);
+            weight = std::max(weight, subtitleWeight);
+        }
+
+        if (segments.empty())
+        {
+            NameHighlights(nullptr);
         }
         else
         {
-            auto& matchResult = *match;
-            weight = matchResult.Score;
-
-            size_t lastPos = 0;
-            for (const auto& run : matchResult.Runs)
-            {
-                const auto& [start, end] = run;
-                if (start > lastPos)
-                {
-                    hstring nonMatch{ til::safe_slice_abs(commandName, lastPos, start) };
-                    segments.emplace_back(winrt::TerminalApp::HighlightedTextSegment(nonMatch, false));
-                }
-
-                hstring matchSeg{ til::safe_slice_abs(commandName, start, end + 1) };
-                segments.emplace_back(winrt::TerminalApp::HighlightedTextSegment(matchSeg, true));
-
-                lastPos = end + 1;
-            }
-
-            if (lastPos < commandName.size())
-            {
-                hstring tail{ til::safe_slice_abs(commandName, lastPos, SIZE_T_MAX) };
-                segments.emplace_back(winrt::TerminalApp::HighlightedTextSegment(tail, false));
-            }
+            NameHighlights(winrt::single_threaded_vector(std::move(segments)));
         }
 
-        HighlightedName(winrt::make<HighlightedText>(winrt::single_threaded_observable_vector(std::move(segments))));
+        if (subtitleSegments.empty())
+        {
+            SubtitleHighlights(nullptr);
+        }
+        else
+        {
+            SubtitleHighlights(winrt::single_threaded_vector(std::move(subtitleSegments)));
+        }
+
         Weight(weight);
     }
 

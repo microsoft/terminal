@@ -322,7 +322,7 @@ CATCH_RETURN()
             auto misc = _api.s.write()->misc.write();
             misc->selectionColor = newSelectionColor;
             // Select a black or white foreground based on the perceptual lightness of the background.
-            misc->selectionForeground = ColorFix::GetLuminosity(newSelectionColor) < 0.5f ? 0xffffffff : 0xff000000;
+            misc->selectionForeground = ColorFix::GetLightness(newSelectionColor) < 0.5f ? 0xffffffff : 0xff000000;
 
             // We copied the selection colors into _p during StartPaint, which happened just before PrepareRenderInfo
             // This keeps their generations in sync.

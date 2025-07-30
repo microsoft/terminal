@@ -24,6 +24,8 @@ Author(s):
     X(hstring, WordDelimiters, "wordDelimiters", DEFAULT_WORD_DELIMITERS)                                                                                                                             \
     X(bool, CopyOnSelect, "copyOnSelect", false)                                                                                                                                                      \
     X(bool, FocusFollowMouse, "focusFollowMouse", false)                                                                                                                                              \
+    X(bool, ScrollToZoom, "experimental.scrollToZoom", true)                                                                                                                                          \
+    X(bool, ScrollToChangeOpacity, "experimental.scrollToChangeOpacity", true)                                                                                                                        \
     X(winrt::Microsoft::Terminal::Control::GraphicsAPI, GraphicsAPI, "rendering.graphicsAPI")                                                                                                         \
     X(bool, DisablePartialInvalidation, "rendering.disablePartialInvalidation", false)                                                                                                                \
     X(bool, SoftwareRendering, "rendering.software", false)                                                                                                                                           \
