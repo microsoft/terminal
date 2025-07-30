@@ -134,7 +134,6 @@
     <ClInclude Include="FilteredCommand.h" />
     <ClInclude Include="Pane.h" />
     <ClInclude Include="fzf/fzf.h" />
-    <ClInclude Include="ColorHelper.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="ShortcutActionDispatch.h">
       <DependentUpon>ShortcutActionDispatch.idl</DependentUpon>
@@ -247,9 +246,6 @@
     <ClCompile Include="FilteredCommand.cpp" />
     <ClCompile Include="Pane.cpp" />
     <ClCompile Include="Pane.LayoutSizeNode.cpp" />
-    <ClCompile Include="ColorHelper.cpp">
-      <PrecompiledHeader>NotUsing</PrecompiledHeader>
-    </ClCompile>
     <ClCompile Include="DebugTapConnection.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>

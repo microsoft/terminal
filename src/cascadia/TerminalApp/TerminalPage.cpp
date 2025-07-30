@@ -6,26 +6,26 @@
 #include "TerminalPage.h"
 
 #include <LibraryResources.h>
+#include <Utils.h>
 #include <TerminalCore/ControlKeyStates.hpp>
 #include <til/io.h>
-#include <Utils.h>
 #include <shlobj.h>
 
-#include "../../types/inc/utils.hpp"
 #include "App.h"
-#include "ColorHelper.h"
 #include "DebugTapConnection.h"
-#include "SettingsPaneContent.h"
-#include "ScratchpadContent.h"
-#include "SnippetsPaneContent.h"
 #include "MarkdownPaneContent.h"
-#include "TabRowControl.h"
 #include "Remoting.h"
+#include "ScratchpadContent.h"
+#include "SettingsPaneContent.h"
+#include "SnippetsPaneContent.h"
+#include "TabRowControl.h"
+#include "../../types/inc/ColorFix.hpp"
+#include "../../types/inc/utils.hpp"
 
-#include "TerminalPage.g.cpp"
+#include "LaunchPositionRequest.g.cpp"
 #include "RenameWindowRequestedArgs.g.cpp"
 #include "RequestMoveContentArgs.g.cpp"
-#include "LaunchPositionRequest.g.cpp"
+#include "TerminalPage.g.cpp"
 
 using namespace winrt;
 using namespace winrt::Microsoft::Management::Deployment;
@@ -4106,36 +4106,18 @@ namespace winrt::TerminalApp::implementation
     //                and the non-client are behind it
     // Return Value:
     // - <none>
-    void TerminalPage::_SetNewTabButtonColor(const Windows::UI::Color& color, const Windows::UI::Color& accentColor)
+    void TerminalPage::_SetNewTabButtonColor(const til::color color, const til::color accentColor)
     {
+        constexpr auto lightnessThreshold = 0.6f;
         // TODO GH#3327: Look at what to do with the tab button when we have XAML theming
-        auto IsBrightColor = ColorHelper::IsBrightColor(color);
-        auto isLightAccentColor = ColorHelper::IsBrightColor(accentColor);
-        winrt::Windows::UI::Color pressedColor{};
-        winrt::Windows::UI::Color hoverColor{};
-        winrt::Windows::UI::Color foregroundColor{};
-        const auto hoverColorAdjustment = 5.f;
-        const auto pressedColorAdjustment = 7.f;
+        const auto IsBrightColor = ColorFix::GetLightness(color) >= lightnessThreshold;
+        const auto isLightAccentColor = ColorFix::GetLightness(accentColor) >= lightnessThreshold;
+        const auto hoverColorAdjustment = isLightAccentColor ? -0.05f : 0.05f;
+        const auto pressedColorAdjustment = isLightAccentColor ? -0.1f : 0.1f;
 
-        if (IsBrightColor)
-        {
-            foregroundColor = winrt::Windows::UI::Colors::Black();
-        }
-        else
-        {
-            foregroundColor = winrt::Windows::UI::Colors::White();
-        }
-
-        if (isLightAccentColor)
-        {
-            hoverColor = ColorHelper::Darken(accentColor, hoverColorAdjustment);
-            pressedColor = ColorHelper::Darken(accentColor, pressedColorAdjustment);
-        }
-        else
-        {
-            hoverColor = ColorHelper::Lighten(accentColor, hoverColorAdjustment);
-            pressedColor = ColorHelper::Lighten(accentColor, pressedColorAdjustment);
-        }
+        const auto foregroundColor = IsBrightColor ? Colors::Black() : Colors::White();
+        const auto hoverColor = til::color{ ColorFix::AdjustLightness(accentColor, hoverColorAdjustment) };
+        const auto pressedColor = til::color{ ColorFix::AdjustLightness(accentColor, pressedColorAdjustment) };
 
         Media::SolidColorBrush backgroundBrush{ accentColor };
         Media::SolidColorBrush backgroundHoverBrush{ hoverColor };
