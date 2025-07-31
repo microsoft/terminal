@@ -119,6 +119,16 @@ void ParsedSettings::clear()
 SettingsLoader SettingsLoader::Default(const std::string_view& userJSON, const std::string_view& inboxJSON)
 {
     SettingsLoader loader{ userJSON, inboxJSON };
+
+    // This is just for the tests, so hardcode a path that is guaranteed to exist.
+    const winrt::hstring baseUserSettingsPath{ LR"(C:\Windows)" };
+    loader.userSettings.baseLayerProfile->SourceBasePath = baseUserSettingsPath;
+    loader.userSettings.globals->SourceBasePath = baseUserSettingsPath;
+    for (auto&& userProfile : loader.userSettings.profiles)
+    {
+        userProfile->SourceBasePath = baseUserSettingsPath;
+    }
+
     loader.MergeInboxIntoUserSettings();
     loader.FinalizeLayering();
     loader.FixupUserSettings();
