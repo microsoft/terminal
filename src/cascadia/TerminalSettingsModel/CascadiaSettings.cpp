@@ -594,7 +594,7 @@ static void _resolveSingleMediaResourceInner(Model::OriginTag origin, std::wstri
             return;
         }
 
-        resource.Resolve(winrt::hstring{ resourceAsFilesystemPath.make_preferred().native() });
+        resource.Resolve(winrt::hstring{ resourceAsFilesystemPath.lexically_normal().native() });
         return;
     }
     catch (...)

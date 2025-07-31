@@ -535,7 +535,7 @@ void Profile::ResolveMediaResources(const Model::MediaResourceResolver& resolver
         ResolveIconMediaResource(iconSource->_Origin, iconSource->SourceBasePath, *icon, resolver);
 
         // If the icon was specified at any layer, but fails resolution *or* contains the empty string,
-        // fall back to the normalized command line.
+        // fall back to the normalized command line at or above this layer.
         if (!icon->Ok() || icon->Resolved().empty() && !iconSource->Commandline().empty())
         {
             std::wstring cmdline{ NormalizeCommandLine(iconSource->Commandline().c_str()) };
