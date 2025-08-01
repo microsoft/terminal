@@ -9,8 +9,6 @@ using namespace winrt::Windows::UI::Xaml::Navigation;
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
-    static constexpr std::wstring_view RenderingPageId{ L"page.rendering" };
-
     Rendering::Rendering()
     {
         InitializeComponent();
@@ -24,7 +22,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             g_hTerminalSettingsEditorProvider,
             "NavigatedToPage",
             TraceLoggingDescription("Event emitted when the user navigates to a page in the settings UI"),
-            TraceLoggingValue(RenderingPageId.data(), "PageId", "The identifier of the page that was navigated to"),
+            TraceLoggingValue("rendering", "PageId", "The identifier of the page that was navigated to"),
             TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
             TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
     }

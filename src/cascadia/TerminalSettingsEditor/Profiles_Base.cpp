@@ -15,8 +15,6 @@ using namespace winrt::Windows::UI::Xaml::Navigation;
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
-    static constexpr std::wstring_view ProfilesBasePageId{ L"page.profile" };
-
     Profiles_Base::Profiles_Base()
     {
         InitializeComponent();
@@ -62,11 +60,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             g_hTerminalSettingsEditorProvider,
             "NavigatedToPage",
             TraceLoggingDescription("Event emitted when the user navigates to a page in the settings UI"),
-            TraceLoggingValue(ProfilesBasePageId.data(), "PageId", "The identifier of the page that was navigated to"),
+            TraceLoggingValue("profile", "PageId", "The identifier of the page that was navigated to"),
             TraceLoggingValue(_Profile.IsBaseLayer(), "IsProfileDefaults", "If the modified profile is the profile.defaults object"),
-            TraceLoggingValue(to_hstring(_Profile.Guid()).c_str(), "ProfileGuid", "The guid of the profile that was navigated to"),
+            TraceLoggingValue(static_cast<GUID>(_Profile.Guid()), "ProfileGuid", "The guid of the profile that was navigated to. Set to {3ad42e7b-e073-5f3e-ac57-1c259ffa86a8} if the profiles.defaults object is being modified."),
             TraceLoggingValue(_Profile.Source().c_str(), "ProfileSource", "The source of the profile that was navigated to"),
-            TraceLoggingValue(false, "Orphaned", "Tracks if the profile was orphaned"),
             TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
             TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
     }

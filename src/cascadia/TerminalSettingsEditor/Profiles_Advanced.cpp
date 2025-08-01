@@ -17,8 +17,6 @@ using namespace winrt::Windows::UI::Xaml::Navigation;
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
-    static constexpr std::wstring_view ProfilesAdvancedPageId{ L"page.profile.advanced" };
-
     Profiles_Advanced::Profiles_Advanced()
     {
         InitializeComponent();
@@ -36,9 +34,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             g_hTerminalSettingsEditorProvider,
             "NavigatedToPage",
             TraceLoggingDescription("Event emitted when the user navigates to a page in the settings UI"),
-            TraceLoggingValue(ProfilesAdvancedPageId.data(), "PageId", "The identifier of the page that was navigated to"),
+            TraceLoggingValue("profile.advanced", "PageId", "The identifier of the page that was navigated to"),
             TraceLoggingValue(_Profile.IsBaseLayer(), "IsProfileDefaults", "If the modified profile is the profile.defaults object"),
-            TraceLoggingValue(to_hstring(_Profile.Guid()).c_str(), "ProfileGuid", "The guid of the profile that was navigated to"),
+            TraceLoggingValue(static_cast<GUID>(_Profile.Guid()), "ProfileGuid", "The guid of the profile that was navigated to"),
             TraceLoggingValue(_Profile.Source().c_str(), "ProfileSource", "The source of the profile that was navigated to"),
             TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
             TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));

@@ -18,8 +18,6 @@ using namespace winrt::Microsoft::Terminal::Settings::Model;
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
-    static constexpr std::wstring_view AddProfilePageId{ L"page.addProfile" };
-
     AddProfile::AddProfile()
     {
         InitializeComponent();
@@ -36,7 +34,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             g_hTerminalSettingsEditorProvider,
             "NavigatedToPage",
             TraceLoggingDescription("Event emitted when the user navigates to a page in the settings UI"),
-            TraceLoggingValue(AddProfilePageId.data(), "PageId", "The identifier of the page that was navigated to"),
+            TraceLoggingValue("addProfile", "PageId", "The identifier of the page that was navigated to"),
             TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
             TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
     }
@@ -60,17 +58,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         if (const auto selected = Profiles().SelectedItem())
         {
-            const auto profileGuid = selected.as<Model::Profile>().Guid();
+            const auto selectedProfile = selected.as<Model::Profile>();
             TraceLoggingWrite(
                 g_hTerminalSettingsEditorProvider,
                 "AddNewProfile",
                 TraceLoggingDescription("Event emitted when the user adds a new profile"),
                 TraceLoggingValue("Duplicate", "Type", "The type of the creation method (i.e. empty profile, duplicate)"),
-                TraceLoggingValue(to_hstring(profileGuid).c_str(), "SourceGuid", "The guid of the profile that was copied"),
+                TraceLoggingValue(!selectedProfile.Source().empty(), "SourceProfileHasSource", "True, if the source profile has a source (i.e. dynamic profile generator namespace, fragment). False, otherwise, indicating it's based on a custom profile."),
                 TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
                 TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
 
-            _State.RequestDuplicate(profileGuid);
+            _State.RequestDuplicate(selectedProfile.Guid());
         }
     }
 

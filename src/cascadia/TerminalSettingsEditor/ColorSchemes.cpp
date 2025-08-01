@@ -26,8 +26,6 @@ namespace winrt
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
-    static constexpr std::wstring_view ColorSchemesPageId{ L"page.colorSchemes" };
-
     ColorSchemes::ColorSchemes()
     {
         InitializeComponent();
@@ -51,7 +49,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             g_hTerminalSettingsEditorProvider,
             "NavigatedToPage",
             TraceLoggingDescription("Event emitted when the user navigates to a page in the settings UI"),
-            TraceLoggingValue(ColorSchemesPageId.data(), "PageId", "The identifier of the page that was navigated to"),
+            TraceLoggingValue("colorSchemes", "PageId", "The identifier of the page that was navigated to"),
             TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
             TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
     }
