@@ -120,7 +120,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         auto file = co_await OpenImagePicker(parentHwnd);
         if (!file.empty())
         {
-            _Profile.Icon(file);
+            _Profile.IconPath(file);
         }
     }
 

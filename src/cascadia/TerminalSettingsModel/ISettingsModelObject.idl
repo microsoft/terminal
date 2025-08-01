@@ -17,4 +17,19 @@ namespace Microsoft.Terminal.Settings.Model
     interface ISettingsModelObject {
         OriginTag Origin { get; };
     }
+
+    interface IMediaResource {
+        String Path { get; };
+        String Resolved { get; };
+        void Resolve(String finalValue);
+        void Reject();
+        Boolean Ok { get; };
+    };
+
+    delegate void MediaResourceResolver(OriginTag origin, String basePath, IMediaResource resource);
+
+    static runtimeclass MediaResourceHelper {
+        static IMediaResource FromString(String s);
+        static IMediaResource Empty();
+    };
 }

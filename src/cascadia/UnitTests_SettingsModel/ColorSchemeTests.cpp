@@ -869,7 +869,7 @@ namespace SettingsModelUnitTests
 
         SettingsLoader loader{ userSettings, inboxSettings };
         loader.MergeInboxIntoUserSettings();
-        loader.MergeFragmentIntoUserSettings(L"TestFragment", fragment);
+        loader.MergeFragmentIntoUserSettings(L"TestFragment", {}, fragment);
         loader.FinalizeLayering();
         loader.FixupUserSettings();
         const auto settings = winrt::make_self<CascadiaSettings>(std::move(loader));

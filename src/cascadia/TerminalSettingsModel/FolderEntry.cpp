@@ -25,7 +25,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     }
 
     FolderEntry::FolderEntry(const winrt::hstring& name) noexcept :
-        FolderEntryT<FolderEntry, NewTabMenuEntry>(NewTabMenuEntryType::Folder),
+        FolderEntryT<FolderEntry, NewTabMenuEntry, IPathlessMediaResourceContainer>(NewTabMenuEntryType::Folder),
         _Name{ name }
     {
     }
@@ -35,7 +35,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         auto json = NewTabMenuEntry::ToJson();
 
         JsonUtils::SetValueForKey(json, NameKey, _Name);
-        JsonUtils::SetValueForKey(json, IconKey, _Icon);
+        JsonUtils::SetValueForKey(json, IconKey, _icon);
         JsonUtils::SetValueForKey(json, EntriesKey, _RawEntries);
         JsonUtils::SetValueForKey(json, InliningKey, _Inlining);
         JsonUtils::SetValueForKey(json, AllowEmptyKey, _AllowEmpty);
@@ -48,7 +48,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         auto entry = winrt::make_self<FolderEntry>();
 
         JsonUtils::GetValueForKey(json, NameKey, entry->_Name);
-        JsonUtils::GetValueForKey(json, IconKey, entry->_Icon);
+        JsonUtils::GetValueForKey(json, IconKey, entry->_icon);
         JsonUtils::GetValueForKey(json, EntriesKey, entry->_RawEntries);
         JsonUtils::GetValueForKey(json, InliningKey, entry->_Inlining);
         JsonUtils::GetValueForKey(json, AllowEmptyKey, entry->_AllowEmpty);
@@ -127,7 +127,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         auto entry = winrt::make_self<FolderEntry>();
         entry->_Name = _Name;
-        entry->_Icon = _Icon;
+        entry->_icon = _icon;
         entry->_Inlining = _Inlining;
         entry->_AllowEmpty = _AllowEmpty;
 
@@ -140,5 +140,25 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             }
         }
         return *entry;
+    }
+
+    void FolderEntry::ResolveMediaResourcesWithBasePath(const winrt::hstring& basePath, const Model::MediaResourceResolver& resolver)
+    {
+        if (_icon)
+        {
+            // TODO GH#19191 (Hardcoded Origin, since that's the only place it could have come from)
+            ResolveIconMediaResource(OriginTag::User, basePath, _icon, resolver);
+        }
+
+        if (_RawEntries)
+        {
+            for (const auto& entry : _RawEntries)
+            {
+                if (const auto resolvable{ entry.try_as<IPathlessMediaResourceContainer>() })
+                {
+                    resolvable->ResolveMediaResourcesWithBasePath(basePath, resolver);
+                }
+            }
+        }
     }
 }

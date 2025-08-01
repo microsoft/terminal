@@ -268,14 +268,6 @@
   <data name="DuplicateTabText" xml:space="preserve">
     <value>タブを複製する</value>
   </data>
-  <data name="InvalidBackgroundImage" xml:space="preserve">
-    <value>無効な "backgroundImage" を持つプロファイルが見つかりました。既定では、そのプロファイルに背景画像はありません。"backgroundImage" を設定するときに、値が画像への有効なファイル パスとなっていることをご確認ください。</value>
-    <comment>{Locked="\"backgroundImage\""}</comment>
-  </data>
-  <data name="InvalidIcon" xml:space="preserve">
-    <value>無効な "icon" を持つプロファイルが見つかりました。既定では、そのプロファイルにアイコンはありません。"icon" を設定するときに、値が画像への有効なファイル パスとなっていることをご確認ください。</value>
-    <comment>{Locked="\"icon\""} The word "icon" in quotes is locked, the word icon OUTSIDE of quotes should be localized.</comment>
-  </data>
   <data name="AtLeastOneKeybindingWarning" xml:space="preserve">
     <value>キー バインドの解析中に警告が検出されました:</value>
   </data>

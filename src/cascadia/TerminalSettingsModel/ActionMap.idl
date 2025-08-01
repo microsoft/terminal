@@ -2,6 +2,7 @@
 // Licensed under the MIT license.
 
 import "Command.idl";
+import "ISettingsModelObject.idl";
 
 namespace Microsoft.Terminal.Settings.Model
 {
@@ -25,7 +26,7 @@ namespace Microsoft.Terminal.Settings.Model
         Windows.Foundation.IAsyncOperation<IVector<Command> > FilterToSnippets(String CurrentCommandline, String CurrentWorkingDirectory);
     };
 
-    [default_interface] runtimeclass ActionMap : IActionMapView
+    runtimeclass ActionMap : IActionMapView
     {
         void RebindKeys(Microsoft.Terminal.Control.KeyChord oldKeys, Microsoft.Terminal.Control.KeyChord newKeys);
         void DeleteKeyBinding(Microsoft.Terminal.Control.KeyChord keys);

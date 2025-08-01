@@ -14,6 +14,8 @@ Author(s):
 --*/
 #pragma once
 
+#include <type_traits>
+
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
     template<typename T>
@@ -97,7 +99,7 @@ public:                                                                     \
         {                                                                   \
             if (auto source{ parent->_get##name##OverrideSourceImpl() })    \
             {                                                               \
-                return source;                                              \
+                return *source;                                             \
             }                                                               \
         }                                                                   \
                                                                             \
@@ -136,12 +138,13 @@ private:                                                                    \
         return std::nullopt;                                                \
     }                                                                       \
                                                                             \
-    projectedType _get##name##OverrideSourceImpl() const                    \
+    auto _get##name##OverrideSourceImpl()                                   \
+        ->winrt::com_ptr<std::remove_cvref<decltype(*this)>::type>          \
     {                                                                       \
         /*we have a value*/                                                 \
         if (_##name)                                                        \
         {                                                                   \
-            return *this;                                                   \
+            return get_strong();                                            \
         }                                                                   \
                                                                             \
         /*user set value was not set*/                                      \
@@ -156,6 +159,31 @@ private:                                                                    \
                                                                             \
         /*no value was found*/                                              \
         return nullptr;                                                     \
+    }                                                                       \
+                                                                            \
+    auto _get##name##OverrideSourceAndValueImpl()                           \
+        ->std::pair<                                                        \
+            winrt::com_ptr<std::remove_cvref<decltype(*this)>::type>,       \
+            storageType>                                                    \
+    {                                                                       \
+        /*we have a value*/                                                 \
+        if (_##name)                                                        \
+        {                                                                   \
+            return { get_strong(), _##name };                               \
+        }                                                                   \
+                                                                            \
+        /*user set value was not set*/                                      \
+        /*iterate through parents to find one with a value*/                \
+        for (const auto& parent : _parents)                                 \
+        {                                                                   \
+            if (auto source{ parent->_get##name##OverrideSourceImpl() })    \
+            {                                                               \
+                return { source, source->_##name };                         \
+            }                                                               \
+        }                                                                   \
+                                                                            \
+        /*no value was found*/                                              \
+        return { nullptr, std::nullopt };                                   \
     }
 
 // Use INHERITABLE_SETTING and INHERITABLE_NULLABLE_SETTING to implement

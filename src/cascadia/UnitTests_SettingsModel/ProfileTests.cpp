@@ -217,32 +217,32 @@ namespace SettingsModelUnitTests
         const auto profile3Json = VerifyParseSucceeded(profile3String);
 
         auto profile0 = implementation::Profile::FromJson(profile0Json);
-        VERIFY_IS_FALSE(profile0->Icon().empty());
-        VERIFY_ARE_EQUAL(L"not-null.png", profile0->Icon());
+        VERIFY_IS_FALSE(profile0->Icon().Path().empty());
+        VERIFY_ARE_EQUAL(L"not-null.png", profile0->Icon().Path());
 
         Log::Comment(NoThrowString().Format(
             L"Verify that layering an object the key set to null will clear the key"));
         profile0->LayerJson(profile1Json);
-        VERIFY_IS_TRUE(profile0->Icon().empty());
+        VERIFY_IS_TRUE(profile0->Icon().Path().empty());
 
         profile0->LayerJson(profile2Json);
-        VERIFY_IS_TRUE(profile0->Icon().empty());
+        VERIFY_IS_TRUE(profile0->Icon().Path().empty());
 
         profile0->LayerJson(profile3Json);
-        VERIFY_IS_FALSE(profile0->Icon().empty());
-        VERIFY_ARE_EQUAL(L"another-real.png", profile0->Icon());
+        VERIFY_IS_FALSE(profile0->Icon().Path().empty());
+        VERIFY_ARE_EQUAL(L"another-real.png", profile0->Icon().Path());
 
         Log::Comment(NoThrowString().Format(
             L"Verify that layering an object _without_ the key will not clear the key"));
         profile0->LayerJson(profile2Json);
-        VERIFY_IS_FALSE(profile0->Icon().empty());
-        VERIFY_ARE_EQUAL(L"another-real.png", profile0->Icon());
+        VERIFY_IS_FALSE(profile0->Icon().Path().empty());
+        VERIFY_ARE_EQUAL(L"another-real.png", profile0->Icon().Path());
 
         auto profile1 = implementation::Profile::FromJson(profile1Json);
-        VERIFY_IS_TRUE(profile1->Icon().empty());
+        VERIFY_IS_TRUE(profile1->Icon().Path().empty());
         profile1->LayerJson(profile3Json);
-        VERIFY_IS_FALSE(profile1->Icon().empty());
-        VERIFY_ARE_EQUAL(L"another-real.png", profile1->Icon());
+        VERIFY_IS_FALSE(profile1->Icon().Path().empty());
+        VERIFY_ARE_EQUAL(L"another-real.png", profile1->Icon().Path());
     }
 
     void ProfileTests::LayerProfilesOnArray()

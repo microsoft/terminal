@@ -28,6 +28,7 @@ jerrysh
 Kaiyu
 leonardder
 lhecker
+Lovecraft
 masserano
 menger
 migrie

@@ -83,8 +83,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void GenerateID();
         bool IDWasGenerated();
 
-        hstring IconPath() const noexcept;
-        void IconPath(const hstring& val);
+        IMediaResource Icon() const noexcept;
+        void Icon(const IMediaResource& val);
+
+        void ResolveMediaResourcesWithBasePath(const winrt::hstring& basePath, const Model::MediaResourceResolver& resolver);
 
         static Windows::Foundation::Collections::IVector<Model::Command> ParsePowerShellMenuComplete(winrt::hstring json, int32_t replaceLength);
         static Windows::Foundation::Collections::IVector<Model::Command> HistoryToCommands(Windows::Foundation::Collections::IVector<winrt::hstring> history,
@@ -103,7 +105,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         std::optional<CommandNameOrResource> _name;
         std::wstring _ID;
         bool _IDWasGenerated{ false };
-        std::optional<std::wstring> _iconPath;
+        std::optional<IMediaResource> _icon;
         bool _nestedCommand{ false };
 
         static std::vector<Model::Command> _expandCommand(Command* const expandable,

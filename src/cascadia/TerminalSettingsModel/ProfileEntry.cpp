@@ -4,6 +4,7 @@
 #include "pch.h"
 #include "ProfileEntry.h"
 #include "JsonUtils.h"
+#include "TerminalSettingsSerializationHelpers.h"
 
 #include "ProfileEntry.g.cpp"
 
@@ -20,7 +21,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     }
 
     ProfileEntry::ProfileEntry(const winrt::hstring& profile) noexcept :
-        ProfileEntryT<ProfileEntry, NewTabMenuEntry>(NewTabMenuEntryType::Profile),
+        ProfileEntryT<ProfileEntry, NewTabMenuEntry, IPathlessMediaResourceContainer>(NewTabMenuEntryType::Profile),
         _ProfileName{ profile }
     {
     }
@@ -47,7 +48,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         {
             JsonUtils::SetValueForKey(json, ProfileKey, _Profile.Guid());
         }
-        JsonUtils::SetValueForKey(json, IconKey, _Icon);
+        JsonUtils::SetValueForKey(json, IconKey, _icon);
 
         return json;
     }
@@ -57,7 +58,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         auto entry = winrt::make_self<ProfileEntry>();
 
         JsonUtils::GetValueForKey(json, ProfileKey, entry->_ProfileName);
-        JsonUtils::GetValueForKey(json, IconKey, entry->_Icon);
+        JsonUtils::GetValueForKey(json, IconKey, entry->_icon);
 
         return entry;
     }
@@ -68,7 +69,16 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         entry->_Profile = _Profile;
         entry->_ProfileIndex = _ProfileIndex;
         entry->_ProfileName = _ProfileName;
-        entry->_Icon = _Icon;
+        entry->_icon = _icon;
         return *entry;
+    }
+
+    void ProfileEntry::ResolveMediaResourcesWithBasePath(const winrt::hstring& basePath, const Model::MediaResourceResolver& resolver)
+    {
+        if (_icon)
+        {
+            // TODO GH#19191 (Hardcoded Origin, since that's the only place it could have come from)
+            ResolveIconMediaResource(OriginTag::User, basePath, _icon, resolver);
+        }
     }
 }
