@@ -190,6 +190,7 @@ namespace SettingsModelUnitTests
         return true;
     }
 
+#pragma region Basic Operation
     void MediaResourceTests::ValidateResolverCalledForInbox()
     {
         WEX::TestExecution::DisableVerifyExceptions disableVerifyExceptions{};
@@ -371,8 +372,9 @@ namespace SettingsModelUnitTests
         VERIFY_ARE_EQUAL(L"NewIconFromRuntime", icon.Path());
         VERIFY_ARE_EQUAL(L"newResolvedValue", icon.Resolved());
     }
+#pragma endregion
 
-    // FRAGMENT BEHAVIORS
+#pragma region Fragment Behaviors
     void MediaResourceTests::FragmentUpdatesBaseProfile()
     {
         WEX::TestExecution::DisableVerifyExceptions disableVerifyExceptions{};
@@ -440,8 +442,9 @@ namespace SettingsModelUnitTests
         VERIFY_ARE_EQUAL(LR"(iconFromBase)", icon.Path());
         VERIFY_ARE_EQUAL(L"resolved", icon.Resolved());
     }
+#pragma endregion
 
-    // PROFILE BEHAVIORS
+#pragma region Profile Behaviors
     // The invalid resource came from the Defaults profile, which specifies ping as the command line
     void MediaResourceTests::ProfileDefaultsContainsInvalidIcon()
     {
@@ -673,8 +676,9 @@ namespace SettingsModelUnitTests
         VERIFY_IS_TRUE(icon.Ok()); // Profile with commandline always has an icon
         VERIFY_ARE_EQUAL(defaultsCommandline, icon.Resolved());
     }
+#pragma endregion
 
-    // REAL RESOLVER TESTS
+#pragma region Real Resolver Tests
     void MediaResourceTests::RealResolverFilePaths()
     {
         WEX::TestExecution::DisableVerifyExceptions disableVerifyExceptions{};
@@ -920,4 +924,5 @@ namespace SettingsModelUnitTests
             VERIFY_ARE_NOT_EQUAL(image.Resolved(), image.Path());
         }
     }
+#pragma endregion
 }
