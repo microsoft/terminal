@@ -221,7 +221,7 @@ namespace SettingsModelUnitTests
         winrt::com_ptr<implementation::CascadiaSettings> settings;
         {
             // The icon in profiles.defaults erases the icon in the Base Profile and the one on the command; they will not be resolved
-            // TODO GH#YYYYY: This should be called *3* times - overriding the command's icon should delete it before it gets resolved
+            // TODO GH#19201: This should be called *3* times - overriding the command's icon should delete it before it gets resolved
             auto [t, e] = requireCalled(4,
                                         [&](auto&& origin, auto&& basePath, auto&& resource) {
                                             if (origin == OriginTag::User || origin == OriginTag::ProfilesDefaults)
@@ -258,7 +258,7 @@ namespace SettingsModelUnitTests
 })");
         }
 
-        // TODO GH#YYYYY: This should be 1, 1, 1 (because we deleted the InBox command icon)
+        // TODO GH#19201: This should be 1, 1, 1 (because we deleted the InBox command icon)
         VERIFY_ARE_EQUAL(origins[OriginTag::InBox], 2); // Base profile icon not resolved because of profiles.defaults.icon
         VERIFY_ARE_EQUAL(origins[OriginTag::ProfilesDefaults], 1);
         VERIFY_ARE_EQUAL(origins[OriginTag::User], 1);
@@ -380,7 +380,7 @@ namespace SettingsModelUnitTests
             ],
             "icon": "menuItemIcon3",
             "inline": "never",
-            "name": "Lovecraft in Brroklyn",
+            "name": "Lovecraft in Brooklyn",
             "type": "folder"
         }
     ]
