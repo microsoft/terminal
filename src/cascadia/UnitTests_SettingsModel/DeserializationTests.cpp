@@ -36,8 +36,6 @@ namespace SettingsModelUnitTests
         TEST_METHOD(TestHideAllProfiles);
         TEST_METHOD(TestInvalidColorSchemeName);
         TEST_METHOD(TestHelperFunctions);
-        TEST_METHOD(TestProfileBackgroundImageWithEnvVar);
-        TEST_METHOD(TestProfileBackgroundImageWithDesktopWallpaper);
         TEST_METHOD(TestCloseOnExitParsing);
         TEST_METHOD(TestCloseOnExitCompatibilityShim);
         TEST_METHOD(TestLayerUserDefaultsBeforeProfiles);
@@ -897,44 +895,6 @@ namespace SettingsModelUnitTests
         VERIFY_ARE_EQUAL(name1, settings->FindProfile(guid1).Name());
         VERIFY_ARE_EQUAL(name2, settings->FindProfile(guid2).Name());
         VERIFY_IS_NULL(settings->FindProfile(fakeGuid));
-    }
-
-    void DeserializationTests::TestProfileBackgroundImageWithEnvVar()
-    {
-        const auto expectedPath = wil::ExpandEnvironmentStringsW<std::wstring>(L"%WINDIR%\\System32\\x_80.png");
-
-        static constexpr std::string_view settingsJson{ R"(
-        {
-            "profiles": [
-                {
-                    "name": "profile0",
-                    "backgroundImage": "%WINDIR%\\System32\\@VpnToastIcon.png"
-                }
-            ]
-        })" };
-
-        const auto settings = createSettings(settingsJson);
-        VERIFY_ARE_NOT_EQUAL(0u, settings->AllProfiles().Size());
-        VERIFY_ARE_EQUAL(expectedPath, settings->AllProfiles().GetAt(0).DefaultAppearance().BackgroundImagePath().Resolved());
-    }
-
-    void DeserializationTests::TestProfileBackgroundImageWithDesktopWallpaper()
-    {
-        const winrt::hstring expectedBackgroundImagePath{ L"desktopWallpaper" };
-
-        static constexpr std::string_view settingsJson{ R"(
-        {
-            "profiles": [
-                {
-                    "name": "profile0",
-                    "backgroundImage": "desktopWallpaper"
-                }
-            ]
-        })" };
-
-        const auto settings = createSettings(settingsJson);
-        VERIFY_ARE_EQUAL(expectedBackgroundImagePath, settings->AllProfiles().GetAt(0).DefaultAppearance().BackgroundImagePath().Path());
-        VERIFY_ARE_NOT_EQUAL(expectedBackgroundImagePath, settings->AllProfiles().GetAt(0).DefaultAppearance().BackgroundImagePath().Resolved());
     }
 
     void DeserializationTests::TestCloseOnExitParsing()

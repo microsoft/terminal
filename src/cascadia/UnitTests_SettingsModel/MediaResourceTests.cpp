@@ -72,8 +72,11 @@ namespace SettingsModelUnitTests
 
         TEST_METHOD_CLEANUP(ResetMediaHook);
 
+        // BASIC OPERATION
         TEST_METHOD(ValidateResolverCalledForInbox);
         TEST_METHOD(ValidateResolverCalledForInboxAndUser);
+        TEST_METHOD(ValidateResolverCalledForFragments);
+        TEST_METHOD(ValidateResolverCalledIncrementallyOnChange);
 
         // PROFILE BEHAVIORS
         TEST_METHOD(ProfileDefaultsContainsInvalidIcon);
@@ -84,16 +87,23 @@ namespace SettingsModelUnitTests
         TEST_METHOD(ProfileSpecifiesNullIcon);
         TEST_METHOD(ProfileSpecifiesNullIconAndHasNoCommandline);
 
+        // FRAGMENT BEHAVIORS
+        TEST_METHOD(FragmentUpdatesBaseProfile);
+        //TEST_METHOD(FragmentActionResourcesGetResolved);
+        TEST_METHOD(DisabledFragmentNotResolved);
+
         // REAL RESOLVER
         TEST_METHOD(RealResolverFilePaths);
-        //TEST_METHOD(RealResolverSpecialKeywords);
+        TEST_METHOD(RealResolverSpecialKeywords);
         //TEST_METHOD(RealResolverEmoji);
-        //TEST_METHOD(RealResolverUrlCases);
+        TEST_METHOD(RealResolverUrlCases);
+
+        static constexpr std::wstring_view defaultsCommandline{ LR"(C:\Windows\System32\PING.EXE)" }; // Normalized by Profile (this is the casing that Windows stores on disk)
+        static constexpr std::wstring_view overrideCommandline{ LR"(C:\Windows\System32\cscript.exe)" };
+        static constexpr std::wstring_view fragmentBasePath1{ LR"(C:\Windows\Media)" };
 
     private:
-        static winrt::com_ptr<implementation::CascadiaSettings> createSettings(const std::string_view& userJSON)
-        {
-            static constexpr std::string_view inboxJSON{ R"({
+        static constexpr std::string_view staticDefaultSettings{ R"({
     "actions": [
         {
             "command": "closeWindow",
@@ -137,7 +147,40 @@ namespace SettingsModelUnitTests
     ]
 })" };
 
-            return winrt::make_self<implementation::CascadiaSettings>(userJSON, inboxJSON);
+        static winrt::com_ptr<implementation::CascadiaSettings> createSettings(const std::string_view& userJSON)
+        {
+            return winrt::make_self<implementation::CascadiaSettings>(userJSON, staticDefaultSettings);
+        }
+
+        struct Fragment
+        {
+            std::wstring_view source;
+            std::wstring_view basePath;
+            std::string_view content;
+        };
+
+        // This is annoyingly fragile because we do not have a test hook helper to do this in SettingsLoader.
+        static winrt::com_ptr<implementation::CascadiaSettings> createSettingsWithFragments(const std::string_view& userJSON, std::initializer_list<Fragment> fragments)
+        {
+            implementation::SettingsLoader loader{ userJSON, staticDefaultSettings };
+            const winrt::hstring baseUserSettingsPath{ LR"(C:\Windows)" };
+            loader.userSettings.baseLayerProfile->SourceBasePath = baseUserSettingsPath;
+            loader.userSettings.globals->SourceBasePath = baseUserSettingsPath;
+            for (auto&& userProfile : loader.userSettings.profiles)
+            {
+                userProfile->SourceBasePath = baseUserSettingsPath;
+            }
+
+            loader.MergeInboxIntoUserSettings();
+            for (const auto& fragment : fragments)
+            {
+                loader.MergeFragmentIntoUserSettings(winrt::hstring{ fragment.source },
+                                                     winrt::hstring{ fragment.basePath },
+                                                     fragment.content);
+            }
+            loader.FinalizeLayering();
+            loader.FixupUserSettings();
+            return winrt::make_self<implementation::CascadiaSettings>(std::move(loader));
         }
     };
 
@@ -149,6 +192,7 @@ namespace SettingsModelUnitTests
 
     void MediaResourceTests::ValidateResolverCalledForInbox()
     {
+        WEX::TestExecution::DisableVerifyExceptions disableVerifyExceptions{};
         auto [t, e] = requireCalled(3,
                                     [&](auto&& origin, auto&&, auto&& resource) {
                                         VERIFY_ARE_EQUAL(OriginTag::InBox, origin);
@@ -169,12 +213,12 @@ namespace SettingsModelUnitTests
 
     void MediaResourceTests::ValidateResolverCalledForInboxAndUser()
     {
+        WEX::TestExecution::DisableVerifyExceptions disableVerifyExceptions{};
         std::unordered_map<OriginTag, int> origins;
-
-        // The icon in profiles.defaults erases the icon in the Base Profile; that one will NOT be resolved.
 
         winrt::com_ptr<implementation::CascadiaSettings> settings;
         {
+            // The icon in profiles.defaults erases the icon in the Base Profile; that one will NOT be resolved.
             auto [t, e] = requireCalled(4,
                                         [&](auto&& origin, auto&& basePath, auto&& resource) {
                                             if (origin == OriginTag::User || origin == OriginTag::ProfilesDefaults)
@@ -219,10 +263,185 @@ namespace SettingsModelUnitTests
         VERIFY_ARE_EQUAL(L"resolved", icon1.Resolved());
     }
 
-    // PROFILE BEHAVIORS
-    constexpr std::wstring_view defaultsCommandline{ LR"(C:\Windows\System32\PING.EXE)" }; // Normalized by Profile (this is the casing that Windows stores on disk)
-    constexpr std::wstring_view overrideCommandline{ LR"(C:\Windows\System32\cscript.exe)" };
+    void MediaResourceTests::ValidateResolverCalledForFragments()
+    {
+        WEX::TestExecution::DisableVerifyExceptions disableVerifyExceptions{};
+        std::unordered_map<OriginTag, int> origins;
 
+        winrt::com_ptr<implementation::CascadiaSettings> settings;
+        {
+            auto [t, e] = requireCalled(4,
+                                        [&](auto&& origin, auto&& basePath, auto&& resource) {
+                                            if (origin == OriginTag::Fragment)
+                                            {
+                                                VERIFY_ARE_EQUAL(fragmentBasePath1, basePath);
+                                            }
+                                            origins[origin]++;
+                                            resource.Resolve(L"resolved");
+                                        });
+            g_mediaResolverHook = t;
+            settings = createSettingsWithFragments(R"({})", { Fragment{ L"fragment", fragmentBasePath1, R"(
+{
+    "profiles": [
+         {
+            "guid": "{4e7c2b36-642f-4694-83f8-8a5052038a23}",
+            "name": "FragmentProfile",
+            "commandline": "not_a_real_path",
+            "icon": "DoesNotMatterIgnoredByMockResolver"
+        }
+    ]
+}
+)" } });
+        }
+
+        VERIFY_ARE_EQUAL(origins[OriginTag::Fragment], 1);
+
+        auto profile{ settings->GetProfileByName(L"FragmentProfile") };
+        auto icon{ profile.Icon() };
+        VERIFY_IS_TRUE(icon.Ok());
+        VERIFY_ARE_EQUAL(LR"(resolved)", icon.Resolved());
+    }
+
+    void MediaResourceTests::ValidateResolverCalledIncrementallyOnChange()
+    {
+        WEX::TestExecution::DisableVerifyExceptions disableVerifyExceptions{};
+        std::unordered_map<OriginTag, int> origins;
+
+        winrt::com_ptr<implementation::CascadiaSettings> settings;
+        {
+            // The icon in profiles.defaults erases the icon in the Base Profile; that one will NOT be resolved.
+            auto [t, e] = requireCalled(4,
+                                        [&](auto&& origin, auto&& basePath, auto&& resource) {
+                                            if (origin == OriginTag::User || origin == OriginTag::ProfilesDefaults)
+                                            {
+                                                VERIFY_ARE_NOT_EQUAL(L"", basePath);
+                                            }
+                                            origins[origin]++;
+                                            resource.Resolve(L"resolved");
+                                        });
+            g_mediaResolverHook = t;
+            settings = createSettings(R"({
+    "profiles": {
+        "defaults": {
+            "icon": "iconFromDefaults"
+        },
+        "list": [
+            {
+                "guid": "{2cdb0be2-f601-4f70-9a6c-3472b3257883}",
+                "icon": "iconFromUser",
+                "name": "UserProfile1"
+            }
+        ]
+    }
+})");
+        }
+
+        VERIFY_ARE_EQUAL(origins[OriginTag::InBox], 2); // Base profile icon not resolved because of profiles.defaults.icon
+        VERIFY_ARE_EQUAL(origins[OriginTag::ProfilesDefaults], 1);
+        VERIFY_ARE_EQUAL(origins[OriginTag::User], 1);
+
+        auto profile{ settings->GetProfileByName(L"Base") };
+        auto icon{ profile.Icon() };
+        VERIFY_IS_TRUE(icon.Ok());
+        VERIFY_ARE_NOT_EQUAL(L"iconFromBase", icon.Path());
+        VERIFY_ARE_EQUAL(L"iconFromDefaults", icon.Path());
+        VERIFY_ARE_EQUAL(L"resolved", icon.Resolved());
+
+        icon = MediaResourceHelper::FromString(L"NewIconFromRuntime");
+        profile.Icon(icon);
+
+        // Not OK until resolved!
+        VERIFY_IS_FALSE(icon.Ok());
+
+        {
+            origins.clear();
+            // We should be called only once, for the newly changed icon.
+            auto [t, e] = requireCalled(1,
+                                        [&](auto&& origin, auto&&, auto&& resource) {
+                                            origins[origin]++;
+                                            resource.Resolve(L"newResolvedValue");
+                                        });
+            g_mediaResolverHook = t;
+            settings->ResolveMediaResources();
+        }
+
+        VERIFY_ARE_EQUAL(origins[OriginTag::User], 1); // This should be on the User's copy (not Defaults) of the Profile now.
+
+        VERIFY_IS_TRUE(icon.Ok());
+        VERIFY_ARE_EQUAL(L"NewIconFromRuntime", icon.Path());
+        VERIFY_ARE_EQUAL(L"newResolvedValue", icon.Resolved());
+    }
+
+    // FRAGMENT BEHAVIORS
+    void MediaResourceTests::FragmentUpdatesBaseProfile()
+    {
+        WEX::TestExecution::DisableVerifyExceptions disableVerifyExceptions{};
+
+        winrt::com_ptr<implementation::CascadiaSettings> settings;
+        {
+            // This should only be called 3 times, because the fragment deleted the base icon
+            auto [t, e] = requireCalled(3,
+                                        [&](auto&&, auto&& basePath, auto&& resource) {
+                                            resource.Resolve(basePath);
+                                        });
+            g_mediaResolverHook = t;
+            settings = createSettingsWithFragments(R"({})", { Fragment{ L"fragment", fragmentBasePath1, R"(
+{
+    "profiles": [
+         {
+            "updates": "{862d46aa-cc9c-4e6c-b872-9cadaafcdbbe}",
+            "icon": "IconFromFragment"
+        }
+    ]
+}
+)" } });
+        }
+
+        auto profile{ settings->GetProfileByName(L"Base") };
+        auto icon{ profile.Icon() };
+        VERIFY_IS_TRUE(icon.Ok());
+        VERIFY_ARE_EQUAL(LR"(IconFromFragment)", icon.Path());
+        // This was resolved by the mock resolver to the supplied base path; it's a quick way to check the right one got resolved :)
+        VERIFY_ARE_EQUAL(fragmentBasePath1, icon.Resolved());
+    }
+
+    void MediaResourceTests::DisabledFragmentNotResolved()
+    {
+        WEX::TestExecution::DisableVerifyExceptions disableVerifyExceptions{};
+
+        winrt::com_ptr<implementation::CascadiaSettings> settings;
+        {
+            // This should only be called 3 times, because the fragment is disabled.
+            auto [t, e] = requireCalled(3,
+                                        [&](auto&& origin, auto&&, auto&& resource) {
+                                            // If we get a Fragment here, we messed up.
+                                            VERIFY_ARE_NOT_EQUAL(origin, OriginTag::Fragment);
+                                            resource.Resolve(L"resolved");
+                                        });
+            g_mediaResolverHook = t;
+            settings = createSettingsWithFragments(R"({ "disabledProfileSources": [ "fragment" ] })",
+                                                   { Fragment{ L"fragment", fragmentBasePath1, R"(
+{
+    "profiles": [
+         {
+            "guid": "{4e7c2b36-642f-4694-83f8-8a5052038a23}",
+            "name": "FragmentProfile",
+            "commandline": "not_a_real_path",
+            "icon": "DoesNotMatterIgnoredByMockResolver"
+        }
+    ]
+}
+)" } });
+        }
+
+        auto profile{ settings->GetProfileByName(L"Base") };
+        auto icon{ profile.Icon() };
+        VERIFY_IS_TRUE(icon.Ok());
+        VERIFY_ARE_EQUAL(LR"(iconFromBase)", icon.Path());
+        VERIFY_ARE_EQUAL(L"resolved", icon.Resolved());
+    }
+
+    // PROFILE BEHAVIORS
     // The invalid resource came from the Defaults profile, which specifies ping as the command line
     void MediaResourceTests::ProfileDefaultsContainsInvalidIcon()
     {
@@ -531,7 +750,7 @@ namespace SettingsModelUnitTests
             auto image{ profile.DefaultAppearance().BackgroundImagePath() };
             VERIFY_IS_TRUE(image.Ok());
             // The casing is different on this one...
-            VERIFY_ARE_EQUAL(LR"(C:\WINDOWS\system32\cmd.exe)", image.Resolved());
+            VERIFY_IS_TRUE(til::equals_insensitive_ascii(LR"(c:\windows\system32\cmd.exe)", image.Resolved()), WEX::Common::NoThrowString{ image.Resolved().c_str() });
         }
 
         {
@@ -539,6 +758,166 @@ namespace SettingsModelUnitTests
             auto image{ profile.DefaultAppearance().BackgroundImagePath() };
             VERIFY_IS_FALSE(image.Ok());
             VERIFY_ARE_EQUAL(L"", image.Resolved());
+        }
+    }
+
+    static std::optional<winrt::hstring> _getDesktopWallpaper()
+    {
+        WCHAR desktopWallpaper[MAX_PATH];
+
+        // "The returned string will not exceed MAX_PATH characters" as of 2020
+        if (SystemParametersInfoW(SPI_GETDESKWALLPAPER, MAX_PATH, desktopWallpaper, SPIF_UPDATEINIFILE))
+        {
+            return winrt::hstring{ &desktopWallpaper[0] };
+        }
+
+        return std::nullopt;
+    }
+
+    void MediaResourceTests::RealResolverSpecialKeywords()
+    {
+        WEX::TestExecution::DisableVerifyExceptions disableVerifyExceptions{};
+
+        g_mediaResolverHook = nullptr; // Use the real resolver
+
+        // For profile, we test images instead of icon because Icon has a fallback behavior.
+        auto settings = createSettings(R"({
+    "profiles": {
+        "list": [
+            {
+                "backgroundImage": "none",
+                "name": "ProfileNoneImage"
+            },
+            {
+                "backgroundImage": "desktopWallpaper",
+                "name": "ProfileDesktopWallpaperImage"
+            }
+        ]
+    }
+})");
+
+        {
+            auto profile{ settings->GetProfileByName(L"ProfileNoneImage") };
+            auto image{ profile.DefaultAppearance().BackgroundImagePath() };
+            VERIFY_IS_TRUE(image.Ok());
+            VERIFY_ARE_NOT_EQUAL(L"none", image.Resolved());
+            VERIFY_ARE_EQUAL(L"", image.Resolved());
+        }
+
+        {
+            auto profile{ settings->GetProfileByName(L"ProfileDesktopWallpaperImage") };
+            auto image{ profile.DefaultAppearance().BackgroundImagePath() };
+            if (const auto desktopWallpaper{ _getDesktopWallpaper() })
+            {
+                VERIFY_IS_TRUE(image.Ok());
+                VERIFY_ARE_NOT_EQUAL(L"desktopWallpaper", image.Resolved());
+                VERIFY_ARE_EQUAL(*desktopWallpaper, image.Resolved());
+            }
+            else
+            {
+                WEX::Logging::Log::Comment(L"No wallpaper is set; testing failure case instead");
+                VERIFY_IS_FALSE(image.Ok());
+                VERIFY_ARE_EQUAL(L"", image.Resolved());
+            }
+        }
+    }
+
+    void MediaResourceTests::RealResolverUrlCases()
+    {
+        WEX::TestExecution::DisableVerifyExceptions disableVerifyExceptions{};
+
+        g_mediaResolverHook = nullptr; // Use the real resolver
+
+        // For profile, we test images instead of icon because Icon has a fallback behavior.
+        auto settings = createSettings(R"({
+    "profiles": {
+        "list": [
+            {
+                "backgroundImage": "https://contoso.com/explorer.exe",
+                "name": "ProfileWebUri"
+            },
+            {
+                "backgroundImage": "https://contoso.com/it_would_be_a_real_surprise_if_windows_added_a_file_named_this.ico",
+                "name": "ProfileWebUriDoesNotExistLocally"
+            },
+            {
+                "backgroundImage": "file:///C:/Windows/System32/cmd.exe",
+                "name": "ProfileAbsoluteFileUri"
+            },
+            {
+                "backgroundImage": "ms-resource:///ProfileIcons/foo.png",
+                "name": "ProfileAppResourceUri"
+            },
+            {
+                "backgroundImage": "ms-appx:///ProfileIcons/foo.png",
+                "name": "ProfileAppxUriLocal"
+            },
+            {
+                "backgroundImage": "ms-appx://Microsoft.Burrito/Resources/explorer.exe",
+                "name": "ProfileAppxUriOtherApp"
+            },
+            {
+                "backgroundImage": "ftp://0.0.0.0/share/file.png",
+                "name": "ProfileIllegalWebUri"
+            },
+        ]
+    }
+})");
+
+        // All relative paths are relative to the fake testing user settings path of C:\Windows
+        constexpr std::wstring_view expectedCmdPath{ LR"(C:\Windows\System32\cmd.exe)" };
+        constexpr std::wstring_view expectedExplorerPath{ LR"(C:\Windows\explorer.exe)" };
+
+        // http URLs are resolved to the base path (in this case, user settings path of C:\Windows) plus leaf filename.
+        // ms-appx URLs pointing to *any app* (which implies it is not our app) are treated the same.
+
+        {
+            auto profile{ settings->GetProfileByName(L"ProfileWebUri") };
+            auto image{ profile.DefaultAppearance().BackgroundImagePath() };
+            VERIFY_IS_TRUE(image.Ok());
+            VERIFY_ARE_EQUAL(expectedExplorerPath, image.Resolved());
+        }
+
+        {
+            auto profile{ settings->GetProfileByName(L"ProfileWebUriDoesNotExistLocally") };
+            auto image{ profile.DefaultAppearance().BackgroundImagePath() };
+            VERIFY_IS_FALSE(image.Ok());
+            VERIFY_ARE_NOT_EQUAL(image.Resolved(), image.Path());
+        }
+
+        {
+            auto profile{ settings->GetProfileByName(L"ProfileAbsoluteFileUri") };
+            auto image{ profile.DefaultAppearance().BackgroundImagePath() };
+            VERIFY_IS_TRUE(image.Ok());
+            VERIFY_ARE_EQUAL(expectedCmdPath, image.Resolved());
+        }
+
+        {
+            auto profile{ settings->GetProfileByName(L"ProfileAppResourceUri") };
+            auto image{ profile.DefaultAppearance().BackgroundImagePath() };
+            VERIFY_IS_TRUE(image.Ok());
+            VERIFY_ARE_EQUAL(LR"(ms-resource:///ProfileIcons/foo.png)", image.Resolved());
+        }
+
+        {
+            auto profile{ settings->GetProfileByName(L"ProfileAppxUriLocal") };
+            auto image{ profile.DefaultAppearance().BackgroundImagePath() };
+            VERIFY_IS_TRUE(image.Ok());
+            VERIFY_ARE_EQUAL(LR"(ms-appx:///ProfileIcons/foo.png)", image.Resolved());
+        }
+
+        {
+            auto profile{ settings->GetProfileByName(L"ProfileAppxUriOtherApp") };
+            auto image{ profile.DefaultAppearance().BackgroundImagePath() };
+            VERIFY_IS_TRUE(image.Ok());
+            VERIFY_ARE_EQUAL(expectedExplorerPath, image.Resolved());
+        }
+
+        {
+            auto profile{ settings->GetProfileByName(L"ProfileIllegalWebUri") };
+            auto image{ profile.DefaultAppearance().BackgroundImagePath() };
+            VERIFY_IS_FALSE(image.Ok());
+            VERIFY_ARE_NOT_EQUAL(image.Resolved(), image.Path());
         }
     }
 }
