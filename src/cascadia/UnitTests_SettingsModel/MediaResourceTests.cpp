@@ -78,6 +78,7 @@ namespace SettingsModelUnitTests
         TEST_METHOD(ValidateResolverCalledForFragments);
         TEST_METHOD(ValidateResolverCalledForNewTabMenuEntries);
         TEST_METHOD(ValidateResolverCalledIncrementallyOnChange);
+        TEST_METHOD(ValidateResolverNotCalledForEmojiIcons);
 
         // PROFILE BEHAVIORS
         TEST_METHOD(ProfileDefaultsContainsInvalidIcon);
@@ -96,7 +97,6 @@ namespace SettingsModelUnitTests
         // REAL RESOLVER
         TEST_METHOD(RealResolverFilePaths);
         TEST_METHOD(RealResolverSpecialKeywords);
-        //TEST_METHOD(RealResolverEmoji);
         TEST_METHOD(RealResolverUrlCases);
 
         static constexpr std::wstring_view defaultsCommandline{ LR"(C:\Windows\System32\PING.EXE)" }; // Normalized by Profile (this is the casing that Windows stores on disk)
@@ -459,6 +459,80 @@ namespace SettingsModelUnitTests
         VERIFY_IS_TRUE(icon.Ok());
         VERIFY_ARE_EQUAL(L"NewIconFromRuntime", icon.Path());
         VERIFY_ARE_EQUAL(L"newResolvedValue", icon.Resolved());
+    }
+
+    void MediaResourceTests::ValidateResolverNotCalledForEmojiIcons()
+    {
+        WEX::TestExecution::DisableVerifyExceptions disableVerifyExceptions{};
+        std::unordered_map<OriginTag, int> origins;
+
+        winrt::com_ptr<implementation::CascadiaSettings> settings;
+        {
+            auto [t, e] = requireCalled(3, // only called for inbox resources, none of the emoji icon profiles
+                                        [&](auto&& origin, auto&& , auto&& resource) {
+                                            VERIFY_ARE_NOT_EQUAL(OriginTag::User, origin);
+                                            origins[origin]++;
+                                            resource.Reject();
+                                        });
+            g_mediaResolverHook = t;
+            settings = createSettings(R"({
+    "profiles": {
+        "list": [
+            {
+                "icon": "\u2665",
+                "name": "Basic"
+            },
+            {
+                "icon": "\ue720",
+                "name": "MDL2"
+            },
+            {
+                "icon": "👨‍👩‍👧‍👦",
+                "name": "GraphemeCluster"
+            },
+            {
+                "icon": "🕴️",
+                "name": "SurrogatePair"
+            },
+        ]
+    }
+})");
+        }
+
+        VERIFY_ARE_EQUAL(origins[OriginTag::InBox], 3);
+        VERIFY_ARE_EQUAL(origins[OriginTag::User], 0);
+
+        {
+            auto profile{ settings->GetProfileByName(L"Basic") };
+            auto icon{ profile.Icon() };
+            VERIFY_IS_TRUE(icon.Ok());
+            VERIFY_ARE_EQUAL(icon.Resolved(), icon.Path());
+            VERIFY_ARE_EQUAL(L"\u2665", icon.Resolved());
+        }
+
+        {
+            auto profile{ settings->GetProfileByName(L"MDL2") };
+            auto icon{ profile.Icon() };
+            VERIFY_IS_TRUE(icon.Ok());
+            VERIFY_ARE_EQUAL(icon.Resolved(), icon.Path());
+            VERIFY_ARE_EQUAL(L"\ue720", icon.Resolved());
+        }
+
+        {
+            auto profile{ settings->GetProfileByName(L"GraphemeCluster") };
+            auto icon{ profile.Icon() };
+            VERIFY_IS_TRUE(icon.Ok());
+            VERIFY_ARE_EQUAL(icon.Resolved(), icon.Path());
+            VERIFY_ARE_EQUAL(L"\U0001F468\u200d\U0001F469\u200d\U0001F467\u200d\U0001F466", icon.Resolved());
+        }
+
+        {
+            auto profile{ settings->GetProfileByName(L"SurrogatePair") };
+            auto icon{ profile.Icon() };
+            VERIFY_IS_TRUE(icon.Ok());
+            VERIFY_ARE_EQUAL(icon.Resolved(), icon.Path());
+            VERIFY_ARE_EQUAL(L"\U0001F574\uFE0F", icon.Resolved());
+        }
     }
 #pragma endregion
 
