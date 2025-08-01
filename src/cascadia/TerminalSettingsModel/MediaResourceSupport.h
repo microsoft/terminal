@@ -99,11 +99,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         if (const winrt::hstring path{ resource.Path() }; !path.empty())
         {
             std::wstring_view pathView{ path };
-            if (pathView.size() <= 2 || pathView.find_first_of(L'\u200D') <= 8)
+            if (pathView.size() <= 2 || pathView.find_first_of(L'\u200D') <= 8 || (pathView.size() <= 4 && (pathView.back() & 0xFE00) == 0xFE00))
             {
                 // **HEURISTIC**
-                // If it's 2 code units long or contains a zero-width joiner in the first 8 code units, it is
-                // PROBABLY an Emoji. Just pass it through.
+                // If it's 2 code units long, contains a zero-width joiner in the first 8 code units, or is short and ends with an emoji variation selector,
+                // it is PROBABLY an Emoji. Just pass it through.
                 resource.Resolve(path);
                 return;
             }

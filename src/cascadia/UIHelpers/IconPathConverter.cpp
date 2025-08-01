@@ -136,7 +136,8 @@ namespace winrt::Microsoft::Terminal::UI::implementation
             // Anything longer than 2 wchar_t's _isn't_ an emoji or symbol, so
             // don't do this if it's just an invalid path.
             const std::wstring_view iconPathAsView{ iconPath };
-            if (!iconSource && (iconPath.size() <= 2 || iconPathAsView.find_first_of(L'\u200D') <= 8))
+            if (!iconSource &&
+                (iconPathAsView.size() <= 2 || iconPathAsView.find_first_of(L'\u200D') <= 8 || (iconPathAsView.size() <= 4 && (iconPathAsView.back() & 0xFE00) == 0xFE00)))
             {
                 try
                 {
