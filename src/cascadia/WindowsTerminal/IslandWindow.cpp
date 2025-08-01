@@ -1421,6 +1421,11 @@ void IslandWindow::_globalActivateWindow(const uint32_t dropdownDuration,
     // will be the foreground window.
     const auto oldForegroundWindow = GetForegroundWindow();
 
+    if (oldForegroundWindow == _window.get())
+    {
+        return;
+    }
+
     // From: https://stackoverflow.com/a/59659421
     // > The trick is to make windows ‘think’ that our process and the target
     // > window (hwnd) are related by attaching the threads (using
@@ -1452,31 +1457,40 @@ void IslandWindow::_globalActivateWindow(const uint32_t dropdownDuration,
     }
     else
     {
-        // Try first to send a message to the current foreground window. If it's not responding, it may
-        // be waiting on us to finish launching. Passing SMTO_NOTIMEOUTIFNOTHUNG means that we get the same
-        // behavior as before--that is, waiting for the message loop--but we've done an early return if
-        // it turns out that it was hung.
-        // SendMessageTimeoutW returns nonzero if it succeeds.
-        if (0 != SendMessageTimeoutW(oldForegroundWindow, WM_NULL, 0, 0, SMTO_NOTIMEOUTIFNOTHUNG | SMTO_BLOCK | SMTO_ABORTIFHUNG, 1000, nullptr))
+        const auto oldThreadId = GetWindowThreadProcessId(oldForegroundWindow, nullptr);
+        const auto currentThreadId = GetCurrentThreadId();
+
+        if (oldThreadId != currentThreadId)
         {
-            const auto windowThreadProcessId = GetWindowThreadProcessId(oldForegroundWindow, nullptr);
-            const auto currentThreadId = GetCurrentThreadId();
+            // Try first to send a message to the current foreground window. If it's not responding, it may
+            // be waiting on us to finish launching. Passing SMTO_NOTIMEOUTIFNOTHUNG means that we get the same
+            // behavior as before--that is, waiting for the message loop--but we've done an early return if
+            // it turns out that it was hung.
+            // SendMessageTimeoutW returns nonzero if it succeeds.
+            if (0 == SendMessageTimeoutW(oldForegroundWindow, WM_NULL, 0, 0, SMTO_NOTIMEOUTIFNOTHUNG | SMTO_BLOCK | SMTO_ABORTIFHUNG, 1000, nullptr))
+            {
+                return;
+            }
 
-            LOG_IF_WIN32_BOOL_FALSE(AttachThreadInput(windowThreadProcessId, currentThreadId, true));
-            // Just in case, add the thread detach as a scope_exit, to make _sure_ we do it.
-            auto detachThread = wil::scope_exit([windowThreadProcessId, currentThreadId]() {
-                LOG_IF_WIN32_BOOL_FALSE(AttachThreadInput(windowThreadProcessId, currentThreadId, false));
-            });
-            LOG_IF_WIN32_BOOL_FALSE(BringWindowToTop(_window.get()));
-            ShowWindow(_window.get(), SW_SHOW);
-
-            // Activate the window too. This will force us to the virtual desktop this
-            // window is on, if it's on another virtual desktop.
-            LOG_LAST_ERROR_IF_NULL(SetActiveWindow(_window.get()));
-
-            // Throw us on the active monitor.
-            _moveToMonitor(oldForegroundWindow, toMonitor);
+            if (FAILED_WIN32_LOG(AttachThreadInput(oldThreadId, currentThreadId, true)))
+            {
+                return;
+            }
         }
+
+        LOG_IF_WIN32_BOOL_FALSE(BringWindowToTop(_window.get()));
+        ShowWindow(_window.get(), SW_SHOW);
+        // Activate the window too. This will force us to the virtual desktop this
+        // window is on, if it's on another virtual desktop.
+        LOG_LAST_ERROR_IF_NULL(SetActiveWindow(_window.get()));
+
+        if (oldThreadId != currentThreadId)
+        {
+            LOG_IF_WIN32_BOOL_FALSE(AttachThreadInput(oldThreadId, currentThreadId, false));
+        }
+
+        // Throw us on the active monitor.
+        _moveToMonitor(oldForegroundWindow, toMonitor);
     }
 }
 
