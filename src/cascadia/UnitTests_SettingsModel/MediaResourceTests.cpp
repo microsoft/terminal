@@ -76,6 +76,7 @@ namespace SettingsModelUnitTests
         TEST_METHOD(ValidateResolverCalledForInbox);
         TEST_METHOD(ValidateResolverCalledForInboxAndUser);
         TEST_METHOD(ValidateResolverCalledForFragments);
+        TEST_METHOD(ValidateResolverCalledForNewTabMenuEntries);
         TEST_METHOD(ValidateResolverCalledIncrementallyOnChange);
 
         // PROFILE BEHAVIORS
@@ -89,7 +90,7 @@ namespace SettingsModelUnitTests
 
         // FRAGMENT BEHAVIORS
         TEST_METHOD(FragmentUpdatesBaseProfile);
-        //TEST_METHOD(FragmentActionResourcesGetResolved);
+        TEST_METHOD(FragmentActionResourcesGetResolved);
         TEST_METHOD(DisabledFragmentNotResolved);
 
         // REAL RESOLVER
@@ -219,7 +220,8 @@ namespace SettingsModelUnitTests
 
         winrt::com_ptr<implementation::CascadiaSettings> settings;
         {
-            // The icon in profiles.defaults erases the icon in the Base Profile; that one will NOT be resolved.
+            // The icon in profiles.defaults erases the icon in the Base Profile and the one on the command; they will not be resolved
+            // TODO GH#YYYYY: This should be called *3* times - overriding the command's icon should delete it before it gets resolved
             auto [t, e] = requireCalled(4,
                                         [&](auto&& origin, auto&& basePath, auto&& resource) {
                                             if (origin == OriginTag::User || origin == OriginTag::ProfilesDefaults)
@@ -242,10 +244,21 @@ namespace SettingsModelUnitTests
                 "name": "UserProfile1"
             }
         ]
-    }
+    },
+    "actions": [
+        {
+            "command": {
+                "action": "sendInput",
+                "input": "IT CAME FROM BEYOND THE STARS"
+            },
+            "icon": null,
+            "id": "Terminal.CloseWindow"
+        }
+    ],
 })");
         }
 
+        // TODO GH#YYYYY: This should be 1, 1, 1 (because we deleted the InBox command icon)
         VERIFY_ARE_EQUAL(origins[OriginTag::InBox], 2); // Base profile icon not resolved because of profiles.defaults.icon
         VERIFY_ARE_EQUAL(origins[OriginTag::ProfilesDefaults], 1);
         VERIFY_ARE_EQUAL(origins[OriginTag::User], 1);
@@ -271,7 +284,7 @@ namespace SettingsModelUnitTests
 
         winrt::com_ptr<implementation::CascadiaSettings> settings;
         {
-            auto [t, e] = requireCalled(4,
+            auto [t, e] = requireCalled(5,
                                         [&](auto&& origin, auto&& basePath, auto&& resource) {
                                             if (origin == OriginTag::Fragment)
                                             {
@@ -290,17 +303,92 @@ namespace SettingsModelUnitTests
             "commandline": "not_a_real_path",
             "icon": "DoesNotMatterIgnoredByMockResolver"
         }
-    ]
+    ],
+    "actions": [
+        {
+            "command": {
+                "action": "sendInput",
+                "input": "SOME DAY SOMETHING'S COMING"
+            },
+            "icon": "foo.ico",
+            "id": "Dustin.SendInput"
+        }
+    ],
 }
 )" } });
         }
 
-        VERIFY_ARE_EQUAL(origins[OriginTag::Fragment], 1);
+        VERIFY_ARE_EQUAL(origins[OriginTag::Fragment], 2);
 
         auto profile{ settings->GetProfileByName(L"FragmentProfile") };
         auto icon{ profile.Icon() };
         VERIFY_IS_TRUE(icon.Ok());
         VERIFY_ARE_EQUAL(LR"(resolved)", icon.Resolved());
+    }
+
+    void MediaResourceTests::ValidateResolverCalledForNewTabMenuEntries()
+    {
+        WEX::TestExecution::DisableVerifyExceptions disableVerifyExceptions{};
+        std::unordered_map<OriginTag, int> origins;
+
+        winrt::com_ptr<implementation::CascadiaSettings> settings;
+        {
+            auto [t, e] = requireCalled(9,
+                                        [&](auto&& origin, auto&& basePath, auto&& resource) {
+                                            if (origin == OriginTag::User)
+                                            {
+                                                VERIFY_ARE_NOT_EQUAL(L"", basePath);
+                                            }
+                                            origins[origin]++;
+                                            resource.Resolve(L"resolved");
+                                        });
+            g_mediaResolverHook = t;
+            settings = createSettings(R"({
+    "newTabMenu": [ 
+        {
+            "icon": "menuItemIcon1",
+            "id": "Terminal.CloseWindow",
+            "type": "action"
+        },
+        {
+            "icon": "menuItemIcon2",
+            "profile": "{862d46aa-cc9c-4e6c-b872-9cadaafcdbbe}",
+            "type": "profile"
+        },
+        {
+            "allowEmpty": true,
+            "entries": [
+                {
+                    "icon": "menuItemIcon4",
+                    "profile": "{862d46aa-cc9c-4e6c-b872-9cadaafcdbbe}",
+                    "type": "profile"
+                },
+                {
+                    "allowEmpty": true,
+                    "entries": [
+                        {
+                            "icon": "menuItemIcon6",
+                            "profile": "{862d46aa-cc9c-4e6c-b872-9cadaafcdbbe}",
+                            "type": "profile"
+                        },
+                    ],
+                    "icon": "menuItemIcon5",
+                    "inline": "never",
+                    "name": "Or was it...?",
+                    "type": "folder"
+                }
+            ],
+            "icon": "menuItemIcon3",
+            "inline": "never",
+            "name": "Lovecraft in Brroklyn",
+            "type": "folder"
+        }
+    ]
+})");
+        }
+
+        VERIFY_ARE_EQUAL(origins[OriginTag::InBox], 3);
+        VERIFY_ARE_EQUAL(origins[OriginTag::User], 6);
     }
 
     void MediaResourceTests::ValidateResolverCalledIncrementallyOnChange()
@@ -405,6 +493,48 @@ namespace SettingsModelUnitTests
         VERIFY_ARE_EQUAL(LR"(IconFromFragment)", icon.Path());
         // This was resolved by the mock resolver to the supplied base path; it's a quick way to check the right one got resolved :)
         VERIFY_ARE_EQUAL(fragmentBasePath1, icon.Resolved());
+    }
+
+    void MediaResourceTests::FragmentActionResourcesGetResolved()
+    {
+        WEX::TestExecution::DisableVerifyExceptions disableVerifyExceptions{};
+
+        winrt::com_ptr<implementation::CascadiaSettings> settings;
+        {
+            auto [t, e] = requireCalled([&](auto&&, auto&& basePath, auto&& resource) {
+                resource.Resolve(basePath);
+            });
+            g_mediaResolverHook = t;
+            settings = createSettingsWithFragments(R"({})", { Fragment{ L"fragment", fragmentBasePath1, R"(
+{
+    "profiles": [
+         {
+            "updates": "{862d46aa-cc9c-4e6c-b872-9cadaafcdbbe}",
+            "icon": "IconFromFragment"
+        }
+    ],
+    "actions": [
+        {
+            "command": {
+                "action": "sendInput",
+                "input": "FROM WAY OUT BEYOND THE STARS"
+            },
+            "icon": "foo.ico",
+            "id": "Dustin.SendInput"
+        }
+    ],
+}
+)" } });
+        }
+
+        {
+            auto command{ settings->ActionMap().GetActionByID(L"Dustin.SendInput") };
+            auto icon{ command.Icon() };
+            VERIFY_IS_TRUE(icon.Ok());
+            VERIFY_ARE_EQUAL(LR"(foo.ico)", icon.Path());
+            // This was resolved by the mock resolver to the supplied base path; it's a quick way to check the right one got resolved :)
+            VERIFY_ARE_EQUAL(fragmentBasePath1, icon.Resolved());
+        }
     }
 
     void MediaResourceTests::DisabledFragmentNotResolved()
