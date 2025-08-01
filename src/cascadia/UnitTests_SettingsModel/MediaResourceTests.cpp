@@ -469,7 +469,7 @@ namespace SettingsModelUnitTests
         winrt::com_ptr<implementation::CascadiaSettings> settings;
         {
             auto [t, e] = requireCalled(3, // only called for inbox resources, none of the emoji icon profiles
-                                        [&](auto&& origin, auto&& , auto&& resource) {
+                                        [&](auto&& origin, auto&&, auto&& resource) {
                                             VERIFY_ARE_NOT_EQUAL(OriginTag::User, origin);
                                             origins[origin]++;
                                             resource.Reject();
