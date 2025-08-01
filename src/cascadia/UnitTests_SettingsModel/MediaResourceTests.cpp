@@ -70,6 +70,9 @@ namespace SettingsModelUnitTests
     {
         TEST_CLASS(MediaResourceTests);
 
+        TEST_CLASS_SETUP(DisableFSRedirection);
+        TEST_CLASS_CLEANUP(RestoreFSRedirection);
+
         TEST_METHOD_CLEANUP(ResetMediaHook);
 
         // BASIC OPERATION
@@ -104,6 +107,8 @@ namespace SettingsModelUnitTests
         static constexpr std::wstring_view fragmentBasePath1{ LR"(C:\Windows\Media)" };
 
     private:
+        PVOID redirectionFlag{ nullptr };
+
         static constexpr std::string_view staticDefaultSettings{ R"({
     "actions": [
         {
@@ -184,6 +189,23 @@ namespace SettingsModelUnitTests
             return winrt::make_self<implementation::CascadiaSettings>(std::move(loader));
         }
     };
+
+    bool MediaResourceTests::DisableFSRedirection()
+    {
+#if defined(_M_IX86)
+        // Some of our tests use paths under system32. Just don't redirect them.
+        Wow64DisableWow64FsRedirection(&redirectionFlag);
+#endif
+        return true;
+    }
+
+    bool MediaResourceTests::RestoreFSRedirection()
+    {
+#if defined(_M_IX86)
+        Wow64RevertWow64FsRedirection(redirectionFlag);
+#endif
+        return true;
+    }
 
     bool MediaResourceTests::ResetMediaHook()
     {
