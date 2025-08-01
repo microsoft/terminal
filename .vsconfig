@@ -17,7 +17,6 @@
     "Microsoft.VisualStudio.Component.AppInsights.Tools",
     "Microsoft.Net.Component.4.8.TargetingPack",
     "Microsoft.VisualStudio.Component.DiagnosticTools",
-    "Microsoft.NetCore.Component.Runtime.6.0",
     "Microsoft.VisualStudio.Component.ClassDesigner",
     "Microsoft.VisualStudio.Component.GraphDocument",
     "Microsoft.VisualStudio.Component.CodeMap",
