@@ -320,7 +320,7 @@
                                 <Setter Property="HorizontalContentAlignment" Value="Stretch" />
                                 <Setter Property="ContextFlyout">
                                     <Setter.Value>
-                                        <mtu:TextMenuFlyout x:Name="test" />
+                                        <mtu:TextMenuFlyout  />
                                     </Setter.Value>
                                 </Setter>
                             </Style>

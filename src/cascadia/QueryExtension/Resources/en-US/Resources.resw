@@ -197,8 +197,4 @@
     <value>GitHub Copilot</value>
     <comment>The metadata string to display whenever a response is received from the GitHub Copilot service provider</comment>
   </data>
-  <data name="CopyMessage" xml:space="preserve">
-    <value>Copy Message</value>
-    <comment>Copy terminal chat message</comment>
-  </data>
 </root>
