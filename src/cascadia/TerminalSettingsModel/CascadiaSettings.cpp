@@ -494,6 +494,8 @@ static void _resolveSingleMediaResourceInner(Model::OriginTag origin, std::wstri
 {
     if (TestHook_CascadiaSettings_ResolveSingleMediaResource(origin, basePath, resource))
     {
+        // See the implementation in TestHooks.cpp. Link-time Code Generation (LTCG) will delete this entire call
+        // and the test hook function itself.
         return;
     }
 
