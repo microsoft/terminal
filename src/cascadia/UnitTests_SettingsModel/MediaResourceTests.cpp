@@ -124,7 +124,19 @@ namespace SettingsModelUnitTests
                 "guid": "{862d46aa-cc9c-4e6c-b872-9cadaafcdbbe}",
                 "icon": "iconFromBase",
                 "name": "Base"
-            }
+            },
+            {
+                "backgroundImage": "focusedImagePathFromBase",
+                "experimental.pixelShaderPath": "focusedPixelShaderPathFromBase",
+                "experimental.pixelShaderImagePath": "focusedPixelShaderImagePathFromBase",
+                "unfocusedAppearance": {
+                    "backgroundImage": "unfocusedImagePathFromBase",
+                    "experimental.pixelShaderPath": "unfocusedPixelShaderPathFromBase",
+                    "experimental.pixelShaderImagePath": "unfocusedPixelShaderImagePathFromBase",
+                },
+                "guid": "{84f3d5cc-ecd9-49a9-96be-8bced39d4290}",
+                "name": "BaseFullyLoaded"
+            },
         ]
     },
     "schemes": [
@@ -152,6 +164,8 @@ namespace SettingsModelUnitTests
         }
     ]
 })" };
+
+        static constexpr int numberOfMediaResourcesInDefaultSettings{ 9 };
 
         static winrt::com_ptr<implementation::CascadiaSettings> createSettings(const std::string_view& userJSON)
         {
@@ -217,7 +231,7 @@ namespace SettingsModelUnitTests
     void MediaResourceTests::ValidateResolverCalledForInbox()
     {
         WEX::TestExecution::DisableVerifyExceptions disableVerifyExceptions{};
-        auto [t, e] = requireCalled(3,
+        auto [t, e] = requireCalled(numberOfMediaResourcesInDefaultSettings,
                                     [&](auto&& origin, auto&&, auto&& resource) {
                                         VERIFY_ARE_EQUAL(OriginTag::InBox, origin);
                                         resource.Resolve(L"resolved");
@@ -243,8 +257,8 @@ namespace SettingsModelUnitTests
         winrt::com_ptr<implementation::CascadiaSettings> settings;
         {
             // The icon in profiles.defaults erases the icon in the Base Profile and the one on the command; they will not be resolved
-            // TODO GH#19201: This should be called *3* times - overriding the command's icon should delete it before it gets resolved
-            auto [t, e] = requireCalled(4,
+            // TODO GH#19201: This should be called one fewer time because overriding the command's icon should delete it before it gets resolved
+            auto [t, e] = requireCalled(numberOfMediaResourcesInDefaultSettings - 1 /* base icon deleted */ + 2 /* icons specified by user */,
                                         [&](auto&& origin, auto&& basePath, auto&& resource) {
                                             if (origin == OriginTag::User || origin == OriginTag::ProfilesDefaults)
                                             {
@@ -280,8 +294,8 @@ namespace SettingsModelUnitTests
 })");
         }
 
-        // TODO GH#19201: This should be 1, 1, 1 (because we deleted the InBox command icon)
-        VERIFY_ARE_EQUAL(origins[OriginTag::InBox], 2); // Base profile icon not resolved because of profiles.defaults.icon
+        // TODO GH#19201: This should be base-2, 1, 1 (because we deleted the InBox command icon)
+        VERIFY_ARE_EQUAL(origins[OriginTag::InBox], numberOfMediaResourcesInDefaultSettings - 1); // Base profile icon not resolved because of profiles.defaults.icon
         VERIFY_ARE_EQUAL(origins[OriginTag::ProfilesDefaults], 1);
         VERIFY_ARE_EQUAL(origins[OriginTag::User], 1);
 
@@ -306,7 +320,7 @@ namespace SettingsModelUnitTests
 
         winrt::com_ptr<implementation::CascadiaSettings> settings;
         {
-            auto [t, e] = requireCalled(5,
+            auto [t, e] = requireCalled(numberOfMediaResourcesInDefaultSettings + 2 /* fragment resources */,
                                         [&](auto&& origin, auto&& basePath, auto&& resource) {
                                             if (origin == OriginTag::Fragment)
                                             {
@@ -355,7 +369,7 @@ namespace SettingsModelUnitTests
 
         winrt::com_ptr<implementation::CascadiaSettings> settings;
         {
-            auto [t, e] = requireCalled(9,
+            auto [t, e] = requireCalled(numberOfMediaResourcesInDefaultSettings + 6 /* menu entry resources */,
                                         [&](auto&& origin, auto&& basePath, auto&& resource) {
                                             if (origin == OriginTag::User)
                                             {
@@ -409,7 +423,7 @@ namespace SettingsModelUnitTests
 })");
         }
 
-        VERIFY_ARE_EQUAL(origins[OriginTag::InBox], 3);
+        VERIFY_ARE_EQUAL(origins[OriginTag::InBox], numberOfMediaResourcesInDefaultSettings);
         VERIFY_ARE_EQUAL(origins[OriginTag::User], 6);
     }
 
@@ -421,7 +435,7 @@ namespace SettingsModelUnitTests
         winrt::com_ptr<implementation::CascadiaSettings> settings;
         {
             // The icon in profiles.defaults erases the icon in the Base Profile; that one will NOT be resolved.
-            auto [t, e] = requireCalled(4,
+            auto [t, e] = requireCalled(numberOfMediaResourcesInDefaultSettings - 1 /* base deleted */ + 2 /* user profile and defaults */,
                                         [&](auto&& origin, auto&& basePath, auto&& resource) {
                                             if (origin == OriginTag::User || origin == OriginTag::ProfilesDefaults)
                                             {
@@ -447,7 +461,7 @@ namespace SettingsModelUnitTests
 })");
         }
 
-        VERIFY_ARE_EQUAL(origins[OriginTag::InBox], 2); // Base profile icon not resolved because of profiles.defaults.icon
+        VERIFY_ARE_EQUAL(origins[OriginTag::InBox], numberOfMediaResourcesInDefaultSettings - 1); // Base profile icon not resolved because of profiles.defaults.icon
         VERIFY_ARE_EQUAL(origins[OriginTag::ProfilesDefaults], 1);
         VERIFY_ARE_EQUAL(origins[OriginTag::User], 1);
 
@@ -490,7 +504,7 @@ namespace SettingsModelUnitTests
 
         winrt::com_ptr<implementation::CascadiaSettings> settings;
         {
-            auto [t, e] = requireCalled(3, // only called for inbox resources, none of the emoji icon profiles
+            auto [t, e] = requireCalled(numberOfMediaResourcesInDefaultSettings, // only called for inbox resources, none of the emoji icon profiles
                                         [&](auto&& origin, auto&&, auto&& resource) {
                                             VERIFY_ARE_NOT_EQUAL(OriginTag::User, origin);
                                             origins[origin]++;
@@ -521,7 +535,6 @@ namespace SettingsModelUnitTests
 })");
         }
 
-        VERIFY_ARE_EQUAL(origins[OriginTag::InBox], 3);
         VERIFY_ARE_EQUAL(origins[OriginTag::User], 0);
 
         {
@@ -565,8 +578,7 @@ namespace SettingsModelUnitTests
 
         winrt::com_ptr<implementation::CascadiaSettings> settings;
         {
-            // This should only be called 3 times, because the fragment deleted the base icon
-            auto [t, e] = requireCalled(3,
+            auto [t, e] = requireCalled(numberOfMediaResourcesInDefaultSettings - 1 /* base deleted */ + 1 /* icon in fragment */,
                                         [&](auto&&, auto&& basePath, auto&& resource) {
                                             resource.Resolve(basePath);
                                         });
@@ -639,8 +651,8 @@ namespace SettingsModelUnitTests
 
         winrt::com_ptr<implementation::CascadiaSettings> settings;
         {
-            // This should only be called 3 times, because the fragment is disabled.
-            auto [t, e] = requireCalled(3,
+            // This should only be called baseline number of times, because the fragment is disabled.
+            auto [t, e] = requireCalled(numberOfMediaResourcesInDefaultSettings,
                                         [&](auto&& origin, auto&&, auto&& resource) {
                                             // If we get a Fragment here, we messed up.
                                             VERIFY_ARE_NOT_EQUAL(origin, OriginTag::Fragment);
@@ -1090,6 +1102,18 @@ namespace SettingsModelUnitTests
                 "backgroundImage": "ftp://0.0.0.0/share/file.png",
                 "name": "ProfileIllegalWebUri"
             },
+            {
+                "backgroundImage": "x://is_this_a_file_or_a_path",
+                "name": "ProfileIllegalUri1"
+            },
+            {
+                "backgroundImage": "dustin-scheme://foo",
+                "name": "ProfileIllegalUri2"
+            },
+            {
+                "backgroundImage": "http:/e/x",
+                "name": "ProfileIllegalUri3"
+            },
         ]
     }
 })");
@@ -1147,6 +1171,31 @@ namespace SettingsModelUnitTests
             auto profile{ settings->GetProfileByName(L"ProfileIllegalWebUri") };
             auto image{ profile.DefaultAppearance().BackgroundImagePath() };
             VERIFY_IS_FALSE(image.Ok());
+            VERIFY_ARE_EQUAL(L"", image.Resolved());
+            VERIFY_ARE_NOT_EQUAL(image.Resolved(), image.Path());
+        }
+
+        {
+            auto profile{ settings->GetProfileByName(L"ProfileIllegalUri1") };
+            auto image{ profile.DefaultAppearance().BackgroundImagePath() };
+            VERIFY_IS_FALSE(image.Ok());
+            VERIFY_ARE_EQUAL(L"", image.Resolved());
+            VERIFY_ARE_NOT_EQUAL(image.Resolved(), image.Path());
+        }
+
+        {
+            auto profile{ settings->GetProfileByName(L"ProfileIllegalUri2") };
+            auto image{ profile.DefaultAppearance().BackgroundImagePath() };
+            VERIFY_IS_FALSE(image.Ok());
+            VERIFY_ARE_EQUAL(L"", image.Resolved());
+            VERIFY_ARE_NOT_EQUAL(image.Resolved(), image.Path());
+        }
+
+        {
+            auto profile{ settings->GetProfileByName(L"ProfileIllegalUri3") };
+            auto image{ profile.DefaultAppearance().BackgroundImagePath() };
+            VERIFY_IS_FALSE(image.Ok());
+            VERIFY_ARE_EQUAL(L"", image.Resolved());
             VERIFY_ARE_NOT_EQUAL(image.Resolved(), image.Path());
         }
     }
