@@ -97,3 +97,7 @@ void RenderEngineBase::WaitUntilCanRender() noexcept
 void RenderEngineBase::UpdateHyperlinkHoveredId(const uint16_t /*hoveredId*/) noexcept
 {
 }
+
+void RenderEngineBase::SetPadding(float, float, float, float) noexcept
+{
+}
