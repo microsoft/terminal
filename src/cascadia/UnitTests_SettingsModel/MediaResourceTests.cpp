@@ -686,9 +686,6 @@ namespace SettingsModelUnitTests
     // making sure that the fragment appearance doesn't impact and the unfocused appearance's base paths.
     void MediaResourceTests::FragmentAppearanceAndUserAppearanceInteraction()
     {
-        // DH - test layout - set an UFA on a fragment (UFA+bg image), overwrite it on user profile (UFA+shader)
-        // ensure shader path resolves against profile *and* bg image is not resolved.
-        // another one, where there's a bgimage in the fragment base and the user sets a ufa+bgimage
         WEX::TestExecution::DisableVerifyExceptions disableVerifyExceptions{};
 
         winrt::com_ptr<implementation::CascadiaSettings> settings;
@@ -1209,7 +1206,7 @@ namespace SettingsModelUnitTests
                 "name": "ProfileIllegalUri1"
             },
             {
-                "backgroundImage": "dustin-scheme://foo",
+                "backgroundImage": "fake-scheme://foo",
                 "name": "ProfileIllegalUri2"
             },
             {
