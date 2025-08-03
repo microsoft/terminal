@@ -96,6 +96,7 @@ namespace SettingsModelUnitTests
         TEST_METHOD(FragmentUpdatesBaseProfile);
         TEST_METHOD(FragmentActionResourcesGetResolved);
         TEST_METHOD(DisabledFragmentNotResolved);
+        TEST_METHOD(FragmentAppearanceAndUserAppearanceInteraction);
 
         // REAL RESOLVER
         TEST_METHOD(RealResolverFilePaths);
@@ -679,6 +680,107 @@ namespace SettingsModelUnitTests
         VERIFY_IS_TRUE(icon.Ok());
         VERIFY_ARE_EQUAL(LR"(iconFromBase)", icon.Path());
         VERIFY_ARE_EQUAL(L"resolved", icon.Resolved());
+    }
+
+    // This is more of a test of how unfocused appearances are inherited (in whole), but it's worth
+    // making sure that the fragment appearance doesn't impact and the unfocused appearance's base paths.
+    void MediaResourceTests::FragmentAppearanceAndUserAppearanceInteraction()
+    {
+        // DH - test layout - set an UFA on a fragment (UFA+bg image), overwrite it on user profile (UFA+shader)
+        // ensure shader path resolves against profile *and* bg image is not resolved.
+        // another one, where there's a bgimage in the fragment base and the user sets a ufa+bgimage
+        WEX::TestExecution::DisableVerifyExceptions disableVerifyExceptions{};
+
+        winrt::com_ptr<implementation::CascadiaSettings> settings;
+        {
+            auto [t, e] = requireCalled([&](auto&&, auto&& basePath, auto&& resource) {
+                resource.Resolve(fmt::format(FMT_COMPILE(L"{}-{}"), basePath, resource.Path()));
+            });
+            g_mediaResolverHook = t;
+            settings = createSettingsWithFragments(R"(
+{
+    "profiles": [
+         {
+            "guid": "{4e7c2b36-642f-4694-83f8-8a5052038a23}",
+            "unfocusedAppearance": {
+                "experimental.pixelShaderPath": "unfocusedPixelShaderPath1"
+            }
+        },
+        {
+            "guid": "{94df2990-d645-4675-8d9d-f8c89f842e6b}",
+            "unfocusedAppearance": {
+                "backgroundImage": "userSpecifiedUnfocusedBackgroundImage"
+            }
+        }
+    ]
+}
+)",
+                                                   { Fragment{ L"fragment", L"FRAGMENT", R"(
+{
+    "profiles": [
+         {
+            "guid": "{4e7c2b36-642f-4694-83f8-8a5052038a23}",
+            "name": "FragmentProfileWithUnfocusedBackgroundImage",
+            "commandline": "not_a_real_path",
+            "backgroundImage": "focusedBackgroundImage1",
+            "unfocusedAppearance": {
+                "backgroundImage": "unfocusedBackgroundImage1"
+            }
+        },
+        {
+            "guid": "{94df2990-d645-4675-8d9d-f8c89f842e6b}",
+            "name": "FragmentProfileWithNoUnfocusedBackgroundImage",
+            "commandline": "not_a_real_path",
+            "backgroundImage": "focusedBackgroundImage2",
+        }
+    ]
+}
+)" } });
+        }
+
+        // The resolver produces finalized resource paths by taking base paths (c:\windows, or FRAGMENT) and
+        // combining them with the input paths. This lets us more easily track which resource came from where.
+
+        {
+            auto profile{ settings->GetProfileByName(L"FragmentProfileWithUnfocusedBackgroundImage") };
+            auto defaultAppearance{ profile.DefaultAppearance() };
+            auto unfocusedAppearance{ profile.UnfocusedAppearance() };
+
+            VERIFY_IS_NOT_NULL(unfocusedAppearance);
+
+            auto focusedBackground{ defaultAppearance.BackgroundImagePath() };
+            auto unfocusedBackground{ unfocusedAppearance.BackgroundImagePath() };
+            auto unfocusedPixelShader{ unfocusedAppearance.PixelShaderPath() };
+
+            VERIFY_IS_TRUE(focusedBackground.Ok());
+            VERIFY_IS_TRUE(unfocusedBackground.Ok());
+            VERIFY_IS_TRUE(unfocusedPixelShader.Ok());
+
+            VERIFY_ARE_EQUAL(LR"(FRAGMENT-focusedBackgroundImage1)", focusedBackground.Resolved());
+            // The user changing the unfocusedAppearance object caused it to revert back to the focused one in the profile (!)
+            VERIFY_ARE_EQUAL(focusedBackground.Resolved(), unfocusedBackground.Resolved());
+            const void* focusedBackgroundAbi{ winrt::get_abi(focusedBackground) };
+            const void* unfocusedBackgroundAbi{ winrt::get_abi(unfocusedBackground) };
+            VERIFY_ARE_EQUAL(focusedBackgroundAbi, unfocusedBackgroundAbi); // Objects should be identical in this case
+            VERIFY_ARE_EQUAL(LR"(C:\Windows-unfocusedPixelShaderPath1)", unfocusedPixelShader.Resolved()); // This is resolved to the user's base path
+        }
+
+        {
+            auto profile{ settings->GetProfileByName(L"FragmentProfileWithNoUnfocusedBackgroundImage") };
+            auto defaultAppearance{ profile.DefaultAppearance() };
+            auto unfocusedAppearance{ profile.UnfocusedAppearance() };
+
+            VERIFY_IS_NOT_NULL(unfocusedAppearance);
+
+            auto focusedBackground{ defaultAppearance.BackgroundImagePath() };
+            auto unfocusedBackground{ unfocusedAppearance.BackgroundImagePath() };
+
+            VERIFY_IS_TRUE(focusedBackground.Ok());
+            VERIFY_IS_TRUE(unfocusedBackground.Ok());
+
+            VERIFY_ARE_EQUAL(LR"(FRAGMENT-focusedBackgroundImage2)", focusedBackground.Resolved());
+            VERIFY_ARE_EQUAL(LR"(C:\Windows-userSpecifiedUnfocusedBackgroundImage)", unfocusedBackground.Resolved());
+        }
     }
 #pragma endregion
 
