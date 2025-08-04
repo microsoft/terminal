@@ -152,7 +152,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         ~TermControl();
 
         Windows::UI::Xaml::Automation::Peers::AutomationPeer OnCreateAutomationPeer();
-        const Windows::UI::Xaml::Thickness GetPadding();
 
         static Windows::Foundation::Size GetProposedDimensions(const IControlSettings& settings,
                                                                const uint32_t dpi,
@@ -283,6 +282,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         bool _quickFixButtonCollapsible{ false };
         bool _quickFixesAvailable{ false };
         til::CoordType _quickFixBufferPos{};
+        Windows::UI::Xaml::Thickness _contentPadding{ 0.f };
 
         std::shared_ptr<ThrottledFuncLeading> _playWarningBell;
 

@@ -399,6 +399,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 _renderEngineSwapChainChanged(handle);
             });
 
+            const auto padding = StringToXamlThickness(_settings->Padding());
+            _renderEngine->SetPadding(static_cast<float>(padding.Left),
+                                      static_cast<float>(padding.Top),
+                                      static_cast<float>(padding.Right),
+                                      static_cast<float>(padding.Bottom));
             _renderEngine->SetRetroTerminalEffect(_settings->RetroTerminalEffect());
             _renderEngine->SetPixelShaderPath(_settings->PixelShaderPath());
             _renderEngine->SetPixelShaderImagePath(_settings->PixelShaderImagePath());
@@ -899,6 +904,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _renderEngine->SetSoftwareRendering(_settings->SoftwareRendering());
         // Inform the renderer of our opacity
         _renderEngine->EnableTransparentBackground(_isBackgroundTransparent());
+
+        const auto padding = StringToXamlThickness(_settings->Padding());
+        _renderEngine->SetPadding(static_cast<float>(padding.Left),
+                                  static_cast<float>(padding.Top),
+                                  static_cast<float>(padding.Right),
+                                  static_cast<float>(padding.Bottom));
 
         // Trigger a redraw to repaint the window background and tab colors.
         _renderer->TriggerRedrawAll(true, true);

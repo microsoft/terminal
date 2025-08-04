@@ -214,7 +214,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         const auto scaleFactor = static_cast<float>(DisplayInformation::GetForCurrentView().RawPixelsPerViewPixel());
         const auto localOrigin = _termControl->TransformToVisual(nullptr).TransformPoint({});
-        const auto padding = _termControl->GetPadding();
+        const auto& padding = _termControl->_contentPadding;
         const auto cursorPosition = core->CursorPosition();
         const auto fontSize = core->FontSize();
 
@@ -928,9 +928,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // settings might be out-of-proc in the future
         auto settings{ _core.Settings() };
 
-        // Apply padding as swapChainPanel's margin
-        const auto newMargin = StringToXamlThickness(settings.Padding());
-        SwapChainPanel().Margin(newMargin);
+        // Store the padding for UI calculations
+        _contentPadding = StringToXamlThickness(settings.Padding());
 
         // Apply settings for scrollbar
         if (settings.ScrollState() == ScrollbarState::Hidden)
@@ -957,10 +956,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         if (_automationPeer)
         {
             _automationPeer.SetControlPadding(Core::Padding{
-                static_cast<float>(newMargin.Left),
-                static_cast<float>(newMargin.Top),
-                static_cast<float>(newMargin.Right),
-                static_cast<float>(newMargin.Bottom),
+                static_cast<float>(_contentPadding.Left),
+                static_cast<float>(_contentPadding.Top),
+                static_cast<float>(_contentPadding.Right),
+                static_cast<float>(_contentPadding.Bottom),
             });
         }
 
@@ -1234,12 +1233,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // (https://docs.microsoft.com/en-us/windows/uwp/design/accessibility/custom-automation-peers)
             if (const auto& interactivityAutoPeer{ _interactivity.OnCreateAutomationPeer() })
             {
-                const auto margins{ SwapChainPanel().Margin() };
                 const Core::Padding padding{
-                    static_cast<float>(margins.Left),
-                    static_cast<float>(margins.Top),
-                    static_cast<float>(margins.Right),
-                    static_cast<float>(margins.Bottom),
+                    static_cast<float>(_contentPadding.Left),
+                    static_cast<float>(_contentPadding.Top),
+                    static_cast<float>(_contentPadding.Right),
+                    static_cast<float>(_contentPadding.Bottom),
                 };
                 _automationPeer = winrt::make<implementation::TermControlAutomationPeer>(get_strong(), padding, interactivityAutoPeer);
                 return _automationPeer;
@@ -1253,11 +1251,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     winrt::Windows::Foundation::Size TermControl::GetFontSize() const
     {
         return _core.FontSize();
-    }
-
-    const Windows::UI::Xaml::Thickness TermControl::GetPadding()
-    {
-        return SwapChainPanel().Margin();
     }
 
     TerminalConnection::ConnectionState TermControl::ConnectionState() const
@@ -1347,8 +1340,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             return false;
         }
 
-        const auto panelWidth = static_cast<float>(SwapChainPanel().ActualWidth());
-        const auto panelHeight = static_cast<float>(SwapChainPanel().ActualHeight());
+        const auto panelWidth = static_cast<float>(SwapChainPanel().ActualWidth() - (_contentPadding.Left + _contentPadding.Right));
+        const auto panelHeight = static_cast<float>(SwapChainPanel().ActualHeight() - (_contentPadding.Top + _contentPadding.Bottom));
         const auto panelScaleX = SwapChainPanel().CompositionScaleX();
         const auto panelScaleY = SwapChainPanel().CompositionScaleY();
 
@@ -1452,12 +1445,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         if (_automationPeer)
         {
             _automationPeer.UpdateControlBounds();
-            const auto margins{ GetPadding() };
             _automationPeer.SetControlPadding(Core::Padding{
-                static_cast<float>(margins.Left),
-                static_cast<float>(margins.Top),
-                static_cast<float>(margins.Right),
-                static_cast<float>(margins.Bottom),
+                static_cast<float>(_contentPadding.Left),
+                static_cast<float>(_contentPadding.Top),
+                static_cast<float>(_contentPadding.Right),
+                static_cast<float>(_contentPadding.Bottom),
             });
         }
 
@@ -2063,8 +2055,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 // SwapChainPanel, not the entire control. If they drag out of
                 // the bounds of the text, into the padding, we still what that
                 // to auto-scroll
-                const auto cursorBelowBottomDist = cursorPosition.Y - SwapChainPanel().Margin().Top - SwapChainPanel().ActualHeight();
-                const auto cursorAboveTopDist = -1 * cursorPosition.Y + SwapChainPanel().Margin().Top;
+                const auto cursorBelowBottomDist = cursorPosition.Y - _contentPadding.Top - SwapChainPanel().ActualHeight();
+                const auto cursorAboveTopDist = -1 * cursorPosition.Y + _contentPadding.Top;
 
                 constexpr auto MinAutoScrollDist = 2.0; // Arbitrary value
                 auto newAutoScrollVelocity = 0.0;
@@ -2486,7 +2478,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         const auto newSize = e.NewSize();
-        _core.SizeChanged(newSize.Width, newSize.Height);
+        _core.SizeChanged(
+            newSize.Width - static_cast<float>(_contentPadding.Left + _contentPadding.Right),
+            newSize.Height - static_cast<float>(_contentPadding.Top + _contentPadding.Bottom));
 
         if (_automationPeer)
         {
@@ -2964,9 +2958,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             }
 
             // Account for the size of any padding
-            const auto padding = GetPadding();
-            width += static_cast<float>(padding.Left + padding.Right);
-            height += static_cast<float>(padding.Top + padding.Bottom);
+            width += static_cast<float>(_contentPadding.Left + _contentPadding.Right);
+            height += static_cast<float>(_contentPadding.Top + _contentPadding.Bottom);
 
             return { width, height };
         }
@@ -2991,10 +2984,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const auto fontSize = _core.FontSizeInDips();
         const auto fontDimension = widthOrHeight ? fontSize.Width : fontSize.Height;
 
-        const auto padding = GetPadding();
         auto nonTerminalArea = gsl::narrow_cast<float>(widthOrHeight ?
-                                                           padding.Left + padding.Right :
-                                                           padding.Top + padding.Bottom);
+                                                           _contentPadding.Left + _contentPadding.Right :
+                                                           _contentPadding.Top + _contentPadding.Bottom);
 
         if (widthOrHeight && _core.Settings().ScrollState() != ScrollbarState::Hidden)
         {
@@ -3088,12 +3080,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     winrt::Windows::Foundation::Point TermControl::_toControlOrigin(const til::point terminalPos)
     {
         const auto fontSize{ CharacterDimensions() };
-        auto padding{ GetPadding() };
 
         // Convert text buffer cursor position to client coordinate position within the window.
         return {
-            terminalPos.x * fontSize.Width + static_cast<float>(padding.Left),
-            terminalPos.y * fontSize.Height + static_cast<float>(padding.Top),
+            terminalPos.x * fontSize.Width + static_cast<float>(_contentPadding.Left),
+            terminalPos.y * fontSize.Height + static_cast<float>(_contentPadding.Top),
         };
     }
 
@@ -3107,12 +3098,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - the corresponding viewport terminal position (in pixels) for the given Point parameter
     Core::Point TermControl::_toTerminalOrigin(winrt::Windows::Foundation::Point cursorPosition)
     {
-        // cursorPosition is DIPs, relative to SwapChainPanel origin
-        const auto padding = GetPadding();
-
         // This point is the location of the cursor within the actual grid of characters, in DIPs
-        const auto relativeToMarginInDIPsX = cursorPosition.X - static_cast<float>(padding.Left);
-        const auto relativeToMarginInDIPsY = cursorPosition.Y - static_cast<float>(padding.Top);
+        const auto relativeToMarginInDIPsX = cursorPosition.X - static_cast<float>(_contentPadding.Left);
+        const auto relativeToMarginInDIPsY = cursorPosition.Y - static_cast<float>(_contentPadding.Top);
 
         // Convert it to pixels
         const auto scale = SwapChainPanel().CompositionScaleX();
@@ -3668,11 +3656,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     winrt::Windows::Foundation::Point TermControl::_toPosInDips(const Core::Point terminalCellPos)
     {
-        const auto marginsInDips{ GetPadding() };
         const auto fontSize{ _core.FontSizeInDips() };
         return {
-            terminalCellPos.X * fontSize.Width + static_cast<float>(marginsInDips.Left),
-            terminalCellPos.Y * fontSize.Height + static_cast<float>(marginsInDips.Top),
+            terminalCellPos.X * fontSize.Width + static_cast<float>(_contentPadding.Left),
+            terminalCellPos.Y * fontSize.Height + static_cast<float>(_contentPadding.Top),
         };
     }
 
@@ -3950,14 +3937,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // CharacterDimensions returns a font size in pixels.
         const auto fontSize{ CharacterDimensions() };
 
-        // Account for the margins, which are in DIPs
-        auto padding{ GetPadding() };
-
         // Convert text buffer cursor position to client coordinate position
         // within the window. This point is in _pixels_
         return {
-            cursorPos.X * fontSize.Width + static_cast<float>(padding.Left),
-            cursorPos.Y * fontSize.Height + static_cast<float>(padding.Top),
+            cursorPos.X * fontSize.Width + static_cast<float>(_contentPadding.Left),
+            cursorPos.Y * fontSize.Height + static_cast<float>(_contentPadding.Top),
         };
     }
 
@@ -3965,11 +3949,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                           Control::ContextMenuRequestedEventArgs args)
     {
         const auto inverseScale = 1.0f / static_cast<float>(XamlRoot().RasterizationScale());
-        const auto padding = GetPadding();
         const auto pos = args.Position();
         _showContextMenuAt({
-            pos.X * inverseScale + static_cast<float>(padding.Left),
-            pos.Y * inverseScale + static_cast<float>(padding.Top),
+            pos.X * inverseScale + static_cast<float>(_contentPadding.Left),
+            pos.Y * inverseScale + static_cast<float>(_contentPadding.Top),
         });
     }
 
@@ -4012,7 +3995,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     double TermControl::QuickFixButtonWidth()
     {
-        const auto leftPadding = GetPadding().Left;
+        const auto leftPadding = _contentPadding.Left;
         if (_quickFixButtonCollapsible)
         {
             const auto cellWidth = CharacterDimensions().Width;
@@ -4027,7 +4010,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     double TermControl::QuickFixButtonCollapsedWidth()
     {
-        return std::max(CharacterDimensions().Width * 2.0 / 3.0, GetPadding().Left);
+        return std::max(CharacterDimensions().Width * 2.0 / 3.0, _contentPadding.Left);
     }
 
     bool TermControl::OpenQuickFixMenu()
@@ -4064,10 +4047,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         // If the gutter is narrow, display the collapsed version
-        const auto& termPadding = GetPadding();
-
         // Make sure to update _quickFixButtonCollapsible and QuickFix button widths BEFORE updating the VisualState
-        _quickFixButtonCollapsible = termPadding.Left < CharacterDimensions().Width;
+        _quickFixButtonCollapsible = _contentPadding.Left < CharacterDimensions().Width;
         PropertyChanged.raise(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"QuickFixButtonWidth" });
         PropertyChanged.raise(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"QuickFixButtonCollapsedWidth" });
         VisualStateManager::GoToState(*this, !_quickFixButtonCollapsible ? StateNormal : StateCollapsed, false);
@@ -4084,8 +4065,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         // draw the button in the gutter
         const auto& quickFixBtnPosInDips = _toPosInDips({ 0, _quickFixBufferPos });
-        Controls::Canvas::SetLeft(quickFixBtn, -termPadding.Left);
-        Controls::Canvas::SetTop(quickFixBtn, quickFixBtnPosInDips.Y - termPadding.Top);
+        Controls::Canvas::SetLeft(quickFixBtn, -_contentPadding.Left);
+        Controls::Canvas::SetTop(quickFixBtn, quickFixBtnPosInDips.Y - _contentPadding.Top);
         quickFixBtn.Visibility(Visibility::Visible);
 
         if (auto automationPeer{ FrameworkElementAutomationPeer::FromElement(*this) })
