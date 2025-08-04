@@ -104,9 +104,13 @@ namespace winrt::TerminalApp::implementation
             }
         }
 
-        _adjustProcessPriorityThrottled = std::make_shared<ThrottledFuncTrailing<>>(
+        _adjustProcessPriorityThrottled = std::make_shared<ThrottledFunc<>>(
             DispatcherQueue::GetForCurrentThread(),
-            std::chrono::milliseconds{ 100 },
+            til::throttled_func_options{
+                .delay = std::chrono::milliseconds{ 100 },
+                .debounce = true,
+                .trailing = true,
+            },
             [=]() {
                 _adjustProcessPriority();
             });
@@ -5007,8 +5011,6 @@ namespace winrt::TerminalApp::implementation
     safe_void_coroutine TerminalPage::_ControlCompletionsChangedHandler(const IInspectable sender,
                                                                         const CompletionsChangedEventArgs args)
     {
-        // This will come in on a background (not-UI, not output) thread.
-
         // This won't even get hit if the velocity flag is disabled - we gate
         // registering for the event based off of
         // Feature_ShellCompletions::IsEnabled back in _RegisterTerminalEvents

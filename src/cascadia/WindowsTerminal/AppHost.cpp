@@ -288,9 +288,12 @@ void AppHost::Initialize()
     // the PTY requesting a change to the window state and the Terminal
     // realizing it, but should mitigate issues where the Terminal and PTY get
     // de-sync'd.
-    _showHideWindowThrottler = std::make_shared<ThrottledFuncTrailing<bool>>(
+    _showHideWindowThrottler = std::make_shared<ThrottledFunc<bool>>(
         winrt::Windows::System::DispatcherQueue::GetForCurrentThread(),
-        std::chrono::milliseconds(200),
+        til::throttled_func_options{
+            .delay = std::chrono::milliseconds{ 200 },
+            .trailing = true,
+        },
         [this](const bool show) {
             _window->ShowWindowChanged(show);
         });

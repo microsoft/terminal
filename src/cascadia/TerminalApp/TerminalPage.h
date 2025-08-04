@@ -361,7 +361,7 @@ namespace winrt::TerminalApp::implementation
         bool _MovePane(const Microsoft::Terminal::Settings::Model::MovePaneArgs args);
         bool _MoveTab(winrt::com_ptr<TerminalTab> tab, const Microsoft::Terminal::Settings::Model::MoveTabArgs args);
 
-        std::shared_ptr<ThrottledFuncTrailing<>> _adjustProcessPriorityThrottled;
+        std::shared_ptr<ThrottledFunc<>> _adjustProcessPriorityThrottled;
         void _adjustProcessPriority() const;
 
         template<typename F>

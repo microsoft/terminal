@@ -306,9 +306,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     private:
         struct SharedState
         {
-            std::unique_ptr<til::debounced_func_trailing<>> outputIdle;
-            std::unique_ptr<til::debounced_func_trailing<bool>> focusChanged;
-            std::shared_ptr<ThrottledFuncTrailing<Control::ScrollPositionChangedArgs>> updateScrollBar;
+            std::unique_ptr<til::throttled_func<>> outputIdle;
+            std::unique_ptr<til::throttled_func<bool>> focusChanged;
+            std::shared_ptr<ThrottledFunc<Control::ScrollPositionChangedArgs>> updateScrollBar;
         };
 
         void _setupDispatcherAndCallbacks();
@@ -338,7 +338,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void _terminalSearchMissingCommand(std::wstring_view missingCommand, const til::CoordType& bufferRow);
         void _terminalWindowSizeChanged(int32_t width, int32_t height);
 
-        safe_void_coroutine _terminalCompletionsChanged(std::wstring_view menuJson, unsigned int replaceLength);
+        void _terminalCompletionsChanged(std::wstring_view menuJson, unsigned int replaceLength);
 #pragma endregion
 
 #pragma region RendererCallbacks

@@ -96,7 +96,14 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     ApplicationState::ApplicationState(const std::filesystem::path& stateRoot) noexcept :
         _sharedPath{ stateRoot / stateFileName },
         _elevatedPath{ stateRoot / elevatedStateFileName },
-        _throttler{ std::chrono::seconds(1), [this]() { _write(); } }
+        _throttler{
+            til::throttled_func_options{
+                .delay = std::chrono::seconds{ 1 },
+                .debounce = true,
+                .trailing = true,
+            },
+            [this]() { _write(); }
+        }
     {
         _read();
     }
