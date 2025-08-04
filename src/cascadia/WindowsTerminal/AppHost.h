@@ -127,7 +127,7 @@ private:
     void _stopFrameTimer();
     void _updateFrameColor(const winrt::Windows::Foundation::IInspectable&, const winrt::Windows::Foundation::IInspectable&);
 
-    void _AppTitleChanged(const winrt::Windows::Foundation::IInspectable& sender, winrt::hstring newTitle);
+    void _AppTitleChanged(const winrt::Windows::Foundation::IInspectable&, const winrt::Windows::Foundation::IInspectable&);
     void _HandleRequestLaunchPosition(const winrt::Windows::Foundation::IInspectable& sender,
                                       winrt::TerminalApp::LaunchPositionRequest args);
 

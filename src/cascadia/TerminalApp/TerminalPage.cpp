@@ -1757,11 +1757,9 @@ namespace winrt::TerminalApp::implementation
     // - tab: the Tab to update the title for.
     void TerminalPage::_UpdateTitle(const Tab& tab)
     {
-        auto newTabTitle = tab.Title();
-
         if (tab == _GetFocusedTab())
         {
-            TitleChanged.raise(*this, newTabTitle);
+            TitleChanged.raise(*this, nullptr);
         }
     }
 
@@ -3694,6 +3692,9 @@ namespace winrt::TerminalApp::implementation
         _updateThemeColors();
 
         _updateAllTabCloseButtons();
+
+        // The user may have changed the "show title in titlebar" setting.
+        TitleChanged.raise(*this, nullptr);
     }
 
     void TerminalPage::_updateAllTabCloseButtons()
