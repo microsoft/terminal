@@ -361,6 +361,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // and react accordingly.
             _updateFont();
 
+            const auto padding = StringToXamlThickness(_settings->Padding());
+            auto padx = gsl::narrow_cast<til::CoordType>(lrint((padding.Left + padding.Right) * _compositionScale));
+            auto pady = gsl::narrow_cast<til::CoordType>(lrint((padding.Top + padding.Bottom) * _compositionScale));
+
             const til::size windowSize{ til::math::rounding, windowWidth, windowHeight };
 
             // First set up the dx engine with the window size in pixels.
@@ -369,7 +373,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             const auto viewInPixels = Viewport::FromDimensions({ 0, 0 }, windowSize);
             LOG_IF_FAILED(_renderEngine->SetWindowSize({ viewInPixels.Width(), viewInPixels.Height() }));
 
-            const auto vp = _renderEngine->GetViewportInCharacters(viewInPixels);
+            const auto vp = _renderEngine->GetViewportInCharacters(Viewport::FromDimensions({ 0, 0 }, { viewInPixels.Width() - padx, viewInPixels.Height() - pady }));
             const auto width = vp.Width();
             const auto height = vp.Height();
 
@@ -399,7 +403,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 _renderEngineSwapChainChanged(handle);
             });
 
-            const auto padding = StringToXamlThickness(_settings->Padding());
             _renderEngine->SetPadding(static_cast<float>(padding.Left),
                                       static_cast<float>(padding.Top),
                                       static_cast<float>(padding.Right),
