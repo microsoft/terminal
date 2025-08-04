@@ -97,45 +97,45 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         Connection(connection);
 
-        // GH#8969: pre-seed working directory to prevent potential races
-        _terminal->SetWorkingDirectory(_settings->StartingDirectory());
-
         _terminal->SetWriteInputCallback([this](std::wstring_view wstr) {
             _pendingResponses.append(wstr);
         });
-        _terminal->SetCopyToClipboardCallback([this](auto&& PH1) {
-            _terminalCopyToClipboard(std::forward<decltype(PH1)>(PH1));
-        });
-        _terminal->SetWarningBellCallback([this] {
-            _terminalWarningBell();
-        });
-        _terminal->SetTitleChangedCallback([this](auto&& PH1) {
-            _terminalTitleChanged(std::forward<decltype(PH1)>(PH1));
-        });
-        _terminal->SetScrollPositionChangedCallback([this](auto&& PH1, auto&& PH2, auto&& PH3) {
-            _terminalScrollPositionChanged(std::forward<decltype(PH1)>(PH1), std::forward<decltype(PH2)>(PH2), std::forward<decltype(PH3)>(PH3));
-        });
-        _terminal->TaskbarProgressChangedCallback([this] {
-            _terminalTaskbarProgressChanged();
-        });
-        _terminal->SetShowWindowCallback([this](auto&& PH1) {
-            _terminalShowWindowChanged(std::forward<decltype(PH1)>(PH1));
-        });
-        _terminal->SetPlayMidiNoteCallback([this](auto&& PH1, auto&& PH2, auto&& PH3) {
-            _terminalPlayMidiNote(std::forward<decltype(PH1)>(PH1), std::forward<decltype(PH2)>(PH2), std::forward<decltype(PH3)>(PH3));
-        });
-        _terminal->CompletionsChangedCallback([=](auto&& menuJson, auto&& replaceLength) {
-            _terminalCompletionsChanged(menuJson, replaceLength);
-        });
-        _terminal->SetSearchMissingCommandCallback([this](auto&& PH1, auto&& PH2) {
-            _terminalSearchMissingCommand(std::forward<decltype(PH1)>(PH1), std::forward<decltype(PH2)>(PH2));
-        });
-        _terminal->SetClearQuickFixCallback([this] {
-            ClearQuickFix();
-        });
-        _terminal->SetWindowSizeChangedCallback([this](auto&& PH1, auto&& PH2) {
-            _terminalWindowSizeChanged(std::forward<decltype(PH1)>(PH1), std::forward<decltype(PH2)>(PH2));
-        });
+
+        // GH#8969: pre-seed working directory to prevent potential races
+        _terminal->SetWorkingDirectory(_settings->StartingDirectory());
+
+        auto pfnCopyToClipboard = [this](auto&& PH1) { _terminalCopyToClipboard(std::forward<decltype(PH1)>(PH1)); };
+        _terminal->SetCopyToClipboardCallback(pfnCopyToClipboard);
+
+        auto pfnWarningBell = [this] { _terminalWarningBell(); };
+        _terminal->SetWarningBellCallback(pfnWarningBell);
+
+        auto pfnTitleChanged = [this](auto&& PH1) { _terminalTitleChanged(std::forward<decltype(PH1)>(PH1)); };
+        _terminal->SetTitleChangedCallback(pfnTitleChanged);
+
+        auto pfnScrollPositionChanged = [this](auto&& PH1, auto&& PH2, auto&& PH3) { _terminalScrollPositionChanged(std::forward<decltype(PH1)>(PH1), std::forward<decltype(PH2)>(PH2), std::forward<decltype(PH3)>(PH3)); };
+        _terminal->SetScrollPositionChangedCallback(pfnScrollPositionChanged);
+
+        auto pfnTerminalTaskbarProgressChanged = [this] { _terminalTaskbarProgressChanged(); };
+        _terminal->TaskbarProgressChangedCallback(pfnTerminalTaskbarProgressChanged);
+
+        auto pfnShowWindowChanged = [this](auto&& PH1) { _terminalShowWindowChanged(std::forward<decltype(PH1)>(PH1)); };
+        _terminal->SetShowWindowCallback(pfnShowWindowChanged);
+
+        auto pfnPlayMidiNote = [this](auto&& PH1, auto&& PH2, auto&& PH3) { _terminalPlayMidiNote(std::forward<decltype(PH1)>(PH1), std::forward<decltype(PH2)>(PH2), std::forward<decltype(PH3)>(PH3)); };
+        _terminal->SetPlayMidiNoteCallback(pfnPlayMidiNote);
+
+        auto pfnCompletionsChanged = [=](auto&& menuJson, auto&& replaceLength) { _terminalCompletionsChanged(menuJson, replaceLength); };
+        _terminal->CompletionsChangedCallback(pfnCompletionsChanged);
+
+        auto pfnSearchMissingCommand = [this](auto&& PH1, auto&& PH2) { _terminalSearchMissingCommand(std::forward<decltype(PH1)>(PH1), std::forward<decltype(PH2)>(PH2)); };
+        _terminal->SetSearchMissingCommandCallback(pfnSearchMissingCommand);
+
+        auto pfnClearQuickFix = [this] { ClearQuickFix(); };
+        _terminal->SetClearQuickFixCallback(pfnClearQuickFix);
+
+        auto pfnWindowSizeChanged = [this](auto&& PH1, auto&& PH2) { _terminalWindowSizeChanged(std::forward<decltype(PH1)>(PH1), std::forward<decltype(PH2)>(PH2)); };
+        _terminal->SetWindowSizeChangedCallback(pfnWindowSizeChanged);
 
         // MSFT 33353327: Initialize the renderer in the ctor instead of Initialize().
         // We need the renderer to be ready to accept new engines before the SwapChainPanel is ready to go.
@@ -2931,7 +2931,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             {
                 continue;
             }
-
             // If they clicked _anywhere_ in the mark...
             const auto [markStart, markEnd] = m.GetExtent();
             if (markStart <= pos &&

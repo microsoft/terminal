@@ -6,7 +6,6 @@
 #include "ColorPickupFlyout.h"
 #include "Tab.h"
 #include "Tab.g.h"
-#include "ThrottledFunc.h"
 
 // fwdecl unittest classes
 namespace TerminalAppLocalTests
