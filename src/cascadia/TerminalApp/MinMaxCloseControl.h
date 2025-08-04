@@ -32,7 +32,7 @@ namespace winrt::TerminalApp::implementation
         til::typed_event<TerminalApp::MinMaxCloseControl, winrt::Windows::UI::Xaml::RoutedEventArgs> MaximizeClick;
         til::typed_event<TerminalApp::MinMaxCloseControl, winrt::Windows::UI::Xaml::RoutedEventArgs> CloseClick;
 
-        std::shared_ptr<ThrottledFuncTrailing<winrt::Windows::UI::Xaml::Controls::Button>> _displayToolTip{ nullptr };
+        std::shared_ptr<ThrottledFunc<winrt::Windows::UI::Xaml::Controls::Button>> _displayToolTip{ nullptr };
         std::optional<CaptionButton> _lastPressedButton{ std::nullopt };
     };
 }

@@ -39,7 +39,7 @@ private:
     std::unique_ptr<IslandWindow> _window;
     winrt::TerminalApp::AppLogic _appLogic{ nullptr };
     winrt::TerminalApp::TerminalWindow _windowLogic{ nullptr };
-    std::shared_ptr<ThrottledFuncTrailing<bool>> _showHideWindowThrottler;
+    std::shared_ptr<ThrottledFunc<bool>> _showHideWindowThrottler;
     SafeDispatcherTimer _frameTimer;
     LARGE_INTEGER _lastActivatedTime{};
     winrt::guid _virtualDesktopId{};
