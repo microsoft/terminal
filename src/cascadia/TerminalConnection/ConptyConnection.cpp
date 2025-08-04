@@ -42,15 +42,16 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         auto attrList{ std::make_unique<std::byte[]>(size) };
 #pragma warning(suppress : 26490) // We have to use reinterpret_cast because we allocated a byte array as a proxy for the adjustable size list.
         siEx.lpAttributeList = reinterpret_cast<PPROC_THREAD_ATTRIBUTE_LIST>(attrList.get());
-        RETURN_IF_WIN32_BOOL_FALSE(InitializeProcThreadAttributeList(siEx.lpAttributeList, 1, 0, &size));
+        THROW_IF_WIN32_BOOL_FALSE(InitializeProcThreadAttributeList(siEx.lpAttributeList, 1, 0, &size));
 
-        RETURN_IF_WIN32_BOOL_FALSE(UpdateProcThreadAttribute(siEx.lpAttributeList,
-                                                             0,
-                                                             PROC_THREAD_ATTRIBUTE_PSEUDOCONSOLE,
-                                                             _hPC.get(),
-                                                             sizeof(HPCON),
-                                                             nullptr,
-                                                             nullptr));
+        THROW_IF_WIN32_BOOL_FALSE(UpdateProcThreadAttribute(
+            siEx.lpAttributeList,
+            0,
+            PROC_THREAD_ATTRIBUTE_PSEUDOCONSOLE,
+            _hPC.get(),
+            sizeof(HPCON),
+            nullptr,
+            nullptr));
 
         auto cmdline{ wil::ExpandEnvironmentStringsW<std::wstring>(_commandline.c_str()) }; // mutable copy -- required for CreateProcessW
         auto environment = _initialEnv;
@@ -163,7 +164,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         auto [newCommandLine, newStartingDirectory] = Utils::MangleStartingDirectoryForWSL(cmdline, _startingDirectory);
         const auto startingDirectory = newStartingDirectory.size() > 0 ? newStartingDirectory.c_str() : nullptr;
 
-        RETURN_IF_WIN32_BOOL_FALSE(CreateProcessW(
+        THROW_IF_WIN32_BOOL_FALSE(CreateProcessW(
             nullptr,
             newCommandLine.data(),
             nullptr, // lpProcessAttributes
