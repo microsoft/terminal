@@ -2623,17 +2623,9 @@ namespace winrt::TerminalApp::implementation
     {
         if (_settings.GlobalSettings().ShowTitleInTitlebar())
         {
-            auto selectedIndex = _tabView.SelectedIndex();
-            if (selectedIndex >= 0)
+            if (const auto tab{ _GetFocusedTab() })
             {
-                try
-                {
-                    if (auto focusedControl{ _GetActiveControl() })
-                    {
-                        return focusedControl.Title();
-                    }
-                }
-                CATCH_LOG();
+                return tab.Title();
             }
         }
         return { L"Terminal" };
