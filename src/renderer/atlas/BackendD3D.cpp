@@ -2340,10 +2340,16 @@ void BackendD3D::_executeCustomShader(RenderingPayload& p)
         const auto now = queryPerfCount();
         const auto time = static_cast<int>(now % _customShaderPerfTickMod) * _customShaderSecsPerPerfTick;
 
-        f32x2 scale = {
+        const f32x2 scale = {
             1.0f / p.s->targetSize.x,
-            /*-*/1.0f / p.s->targetSize.y,
+            1.0f / p.s->targetSize.y,
         };
+
+        const f32x2 physicalVpSize = {
+            p.s->viewportCellCount.x * p.s->font->cellSize.x,
+            p.s->viewportCellCount.y * p.s->font->cellSize.y,
+        };
+
         const CustomConstBuffer data{
             .time = time,
             .scale = static_cast<f32>(p.s->font->dpi) / static_cast<f32>(USER_DEFAULT_SCREEN_DPI),
@@ -2353,14 +2359,10 @@ void BackendD3D::_executeCustomShader(RenderingPayload& p)
             },
             .background = colorFromU32Premultiply<f32x4>(p.s->misc->backgroundColor),
             .viewport = {
-                static_cast<f32>(p.s->misc->padding.x) * scale.x, //- 1.0f,
-                static_cast<f32>(p.s->misc->padding.y) * scale.y, //+ 1.0f,
-                static_cast<f32>(p.s->targetSize.x - p.s->misc->padding.z) * scale.x, // - 1.0f,
-                static_cast<f32>(p.s->targetSize.y - p.s->misc->padding.w) * scale.y, // + 1.0f,
-                //-1.f + (static_cast<f32>(p.s->misc->padding.x) / static_cast<f32>(p.s->targetSize.x)),
-                //-1.f + (static_cast<f32>(p.s->misc->padding.y) / static_cast<f32>(p.s->targetSize.y)),
-                //-1.f + (static_cast<f32>(p.s->targetSize.x - p.s->misc->padding.z) / static_cast<f32>(p.s->targetSize.x)),
-                //-1.f + (static_cast<f32>(p.s->targetSize.y - p.s->misc->padding.w) / static_cast<f32>(p.s->targetSize.y)),
+                static_cast<f32>(p.s->misc->padding.x) * scale.x,
+                static_cast<f32>(p.s->misc->padding.y) * scale.y,
+                static_cast<f32>(p.s->misc->padding.x + physicalVpSize.x) * scale.x,
+                static_cast<f32>(p.s->misc->padding.y + physicalVpSize.y) * scale.y,
             }
         };
 
