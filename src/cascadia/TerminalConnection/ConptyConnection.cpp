@@ -72,7 +72,11 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             std::wstring additionalWslEnv;
 
             // WSLENV.2: Figure out what variables are already in WSLENV.
-            std::unordered_set<std::wstring_view> wslEnvVars;
+            std::unordered_set<std::wstring> wslEnvVars{
+                // We never want to put a custom Windows PATH variable into WSLENV,
+                // because that would override WSL's computation of the NIX PATH.
+                L"PATH",
+            };
             for (const auto& part : til::split_iterator{ std::wstring_view{ wslEnv }, L':' })
             {
                 // Each part may contain a variable name and flags (e.g., /p, /l, etc.)
@@ -97,25 +101,19 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                 }
             }
 
+            // add additional env vars
             if (_environment)
             {
-                // Order the environment variable names so that resolution order is consistent
-                // NOTE(lhecker): I'm like 99% sure that this is unnecessary.
-                std::set<std::wstring, til::env_key_sorter> keys{};
                 for (const auto item : _environment)
-                {
-                    keys.insert(std::wstring{ item.Key() });
-                }
-                // add additional env vars
-                for (const auto& key : keys)
                 {
                     try
                     {
+                        const auto key = item.Key();
                         // This will throw if the value isn't a string. If that
                         // happens, then just skip this entry.
                         const auto value = winrt::unbox_value<hstring>(_environment.Lookup(key));
 
-                        environment.set_user_environment_var(key.c_str(), value.c_str());
+                        environment.set_user_environment_var(key, value);
 
                         // WSLENV.4: Add custom user environment variables to WSLENV.
                         if (wslEnvVars.emplace(key).second)
