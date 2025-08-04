@@ -66,9 +66,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         if (!_updatePreviewControl)
         {
-            _updatePreviewControl = std::make_shared<ThrottledFuncTrailing<>>(
+            _updatePreviewControl = std::make_shared<ThrottledFunc<>>(
                 winrt::Windows::System::DispatcherQueue::GetForCurrentThread(),
-                std::chrono::milliseconds{ 100 },
+                til::throttled_func_options{
+                    .delay = std::chrono::milliseconds{ 100 },
+                    .debounce = true,
+                    .trailing = true,
+                },
                 [this]() {
                     const auto settings = _Profile.TermSettings();
                     _previewConnection->DisplayPowerlineGlyphs(_Profile.DefaultAppearance().HasPowerlineCharacters());

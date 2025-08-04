@@ -97,45 +97,45 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         Connection(connection);
 
-        _terminal->SetWriteInputCallback([this](std::wstring_view wstr) {
-            _pendingResponses.append(wstr);
-        });
-
         // GH#8969: pre-seed working directory to prevent potential races
         _terminal->SetWorkingDirectory(_settings->StartingDirectory());
 
-        auto pfnCopyToClipboard = [this](auto&& PH1) { _terminalCopyToClipboard(std::forward<decltype(PH1)>(PH1)); };
-        _terminal->SetCopyToClipboardCallback(pfnCopyToClipboard);
-
-        auto pfnWarningBell = [this] { _terminalWarningBell(); };
-        _terminal->SetWarningBellCallback(pfnWarningBell);
-
-        auto pfnTitleChanged = [this](auto&& PH1) { _terminalTitleChanged(std::forward<decltype(PH1)>(PH1)); };
-        _terminal->SetTitleChangedCallback(pfnTitleChanged);
-
-        auto pfnScrollPositionChanged = [this](auto&& PH1, auto&& PH2, auto&& PH3) { _terminalScrollPositionChanged(std::forward<decltype(PH1)>(PH1), std::forward<decltype(PH2)>(PH2), std::forward<decltype(PH3)>(PH3)); };
-        _terminal->SetScrollPositionChangedCallback(pfnScrollPositionChanged);
-
-        auto pfnTerminalTaskbarProgressChanged = [this] { _terminalTaskbarProgressChanged(); };
-        _terminal->TaskbarProgressChangedCallback(pfnTerminalTaskbarProgressChanged);
-
-        auto pfnShowWindowChanged = [this](auto&& PH1) { _terminalShowWindowChanged(std::forward<decltype(PH1)>(PH1)); };
-        _terminal->SetShowWindowCallback(pfnShowWindowChanged);
-
-        auto pfnPlayMidiNote = [this](auto&& PH1, auto&& PH2, auto&& PH3) { _terminalPlayMidiNote(std::forward<decltype(PH1)>(PH1), std::forward<decltype(PH2)>(PH2), std::forward<decltype(PH3)>(PH3)); };
-        _terminal->SetPlayMidiNoteCallback(pfnPlayMidiNote);
-
-        auto pfnCompletionsChanged = [=](auto&& menuJson, auto&& replaceLength) { _terminalCompletionsChanged(menuJson, replaceLength); };
-        _terminal->CompletionsChangedCallback(pfnCompletionsChanged);
-
-        auto pfnSearchMissingCommand = [this](auto&& PH1, auto&& PH2) { _terminalSearchMissingCommand(std::forward<decltype(PH1)>(PH1), std::forward<decltype(PH2)>(PH2)); };
-        _terminal->SetSearchMissingCommandCallback(pfnSearchMissingCommand);
-
-        auto pfnClearQuickFix = [this] { ClearQuickFix(); };
-        _terminal->SetClearQuickFixCallback(pfnClearQuickFix);
-
-        auto pfnWindowSizeChanged = [this](auto&& PH1, auto&& PH2) { _terminalWindowSizeChanged(std::forward<decltype(PH1)>(PH1), std::forward<decltype(PH2)>(PH2)); };
-        _terminal->SetWindowSizeChangedCallback(pfnWindowSizeChanged);
+        _terminal->SetWriteInputCallback([this](std::wstring_view wstr) {
+            _pendingResponses.append(wstr);
+        });
+        _terminal->SetCopyToClipboardCallback([this](auto&& PH1) {
+            _terminalCopyToClipboard(std::forward<decltype(PH1)>(PH1));
+        });
+        _terminal->SetWarningBellCallback([this] {
+            _terminalWarningBell();
+        });
+        _terminal->SetTitleChangedCallback([this](auto&& PH1) {
+            _terminalTitleChanged(std::forward<decltype(PH1)>(PH1));
+        });
+        _terminal->SetScrollPositionChangedCallback([this](auto&& PH1, auto&& PH2, auto&& PH3) {
+            _terminalScrollPositionChanged(std::forward<decltype(PH1)>(PH1), std::forward<decltype(PH2)>(PH2), std::forward<decltype(PH3)>(PH3));
+        });
+        _terminal->TaskbarProgressChangedCallback([this] {
+            _terminalTaskbarProgressChanged();
+        });
+        _terminal->SetShowWindowCallback([this](auto&& PH1) {
+            _terminalShowWindowChanged(std::forward<decltype(PH1)>(PH1));
+        });
+        _terminal->SetPlayMidiNoteCallback([this](auto&& PH1, auto&& PH2, auto&& PH3) {
+            _terminalPlayMidiNote(std::forward<decltype(PH1)>(PH1), std::forward<decltype(PH2)>(PH2), std::forward<decltype(PH3)>(PH3));
+        });
+        _terminal->CompletionsChangedCallback([=](auto&& menuJson, auto&& replaceLength) {
+            _terminalCompletionsChanged(menuJson, replaceLength);
+        });
+        _terminal->SetSearchMissingCommandCallback([this](auto&& PH1, auto&& PH2) {
+            _terminalSearchMissingCommand(std::forward<decltype(PH1)>(PH1), std::forward<decltype(PH2)>(PH2));
+        });
+        _terminal->SetClearQuickFixCallback([this] {
+            ClearQuickFix();
+        });
+        _terminal->SetWindowSizeChangedCallback([this](auto&& PH1, auto&& PH2) {
+            _terminalWindowSizeChanged(std::forward<decltype(PH1)>(PH1), std::forward<decltype(PH2)>(PH2));
+        });
 
         // MSFT 33353327: Initialize the renderer in the ctor instead of Initialize().
         // We need the renderer to be ready to accept new engines before the SwapChainPanel is ready to go.
@@ -174,8 +174,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         //
         // NOTE: Calling UpdatePatternLocations from a background
         // thread is a workaround for us to hit GH#12607 less often.
-        shared->outputIdle = std::make_unique<til::debounced_func_trailing<>>(
-            std::chrono::milliseconds{ 100 },
+        shared->outputIdle = std::make_unique<til::throttled_func<>>(
+            til::throttled_func_options{
+                .delay = std::chrono::milliseconds{ 100 },
+                .debounce = true,
+                .trailing = true,
+            },
             [this, weakThis = get_weak(), dispatcher = _dispatcher]() {
                 dispatcher.TryEnqueue(DispatcherQueuePriority::Normal, [weakThis]() {
                     if (const auto self = weakThis.get(); self && !self->_IsClosing())
@@ -195,8 +199,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         // If you rapidly show/hide Windows Terminal, something about GotFocus()/LostFocus() gets broken.
         // We'll then receive easily 10+ such calls from WinUI the next time the application is shown.
-        shared->focusChanged = std::make_unique<til::debounced_func_trailing<bool>>(
-            std::chrono::milliseconds{ 25 },
+        shared->focusChanged = std::make_unique<til::throttled_func<bool>>(
+            til::throttled_func_options{
+                .delay = std::chrono::milliseconds{ 25 },
+                .debounce = true,
+                .trailing = true,
+            },
             [this](const bool focused) {
                 // Theoretically `debounced_func_trailing` should call `WaitForThreadpoolTimerCallbacks()`
                 // with cancel=true on destruction, which should ensure that our use of `this` here is safe.
@@ -204,9 +212,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             });
 
         // Scrollbar updates are also expensive (XAML), so we'll throttle them as well.
-        shared->updateScrollBar = std::make_shared<ThrottledFuncTrailing<Control::ScrollPositionChangedArgs>>(
+        shared->updateScrollBar = std::make_shared<ThrottledFunc<Control::ScrollPositionChangedArgs>>(
             _dispatcher,
-            std::chrono::milliseconds{ 8 },
+            til::throttled_func_options{
+                .delay = std::chrono::milliseconds{ 8 },
+                .trailing = true,
+            },
             [weakThis = get_weak()](const auto& update) {
                 if (auto core{ weakThis.get() }; core && !core->_IsClosing())
                 {
@@ -2757,15 +2768,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
-    safe_void_coroutine ControlCore::_terminalCompletionsChanged(std::wstring_view menuJson,
-                                                                 unsigned int replaceLength)
+    void ControlCore::_terminalCompletionsChanged(std::wstring_view menuJson, unsigned int replaceLength)
     {
-        auto args = winrt::make_self<CompletionsChangedEventArgs>(winrt::hstring{ menuJson },
-                                                                  replaceLength);
-
-        co_await winrt::resume_background();
-
-        CompletionsChanged.raise(*this, *args);
+        CompletionsChanged.raise(*this, winrt::make<CompletionsChangedEventArgs>(winrt::hstring{ menuJson }, replaceLength));
     }
 
     // Select the region of text between [s.start, s.end), in buffer space
@@ -2926,6 +2931,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             {
                 continue;
             }
+
             // If they clicked _anywhere_ in the mark...
             const auto [markStart, markEnd] = m.GetExtent();
             if (markStart <= pos &&

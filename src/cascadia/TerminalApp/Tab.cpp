@@ -1035,25 +1035,47 @@ namespace winrt::TerminalApp::implementation
     void Tab::_AttachEventHandlersToContent(const uint32_t paneId, const TerminalApp::IPaneContent& content)
     {
         auto weakThis{ get_weak() };
-        auto dispatcher = TabViewItem().Dispatcher();
+        auto dispatcher = DispatcherQueue::GetForCurrentThread();
         ContentEventTokens events{};
+
+        auto throttledTitleChanged = std::make_shared<ThrottledFunc<>>(
+            dispatcher,
+            til::throttled_func_options{
+                .delay = std::chrono::milliseconds{ 200 },
+                .leading = true,
+                .trailing = true,
+            },
+            [weakThis]() {
+                if (const auto tab = weakThis.get())
+                {
+                    tab->UpdateTitle();
+                }
+            });
 
         events.TitleChanged = content.TitleChanged(
             winrt::auto_revoke,
-            [dispatcher, weakThis](auto&&, auto&&) -> safe_void_coroutine {
-                // The lambda lives in the `std::function`-style container owned by `control`. That is, when the
-                // `control` gets destroyed the lambda struct also gets destroyed. In other words, we need to
-                // copy `weakThis` onto the stack, because that's the only thing that gets captured in coroutines.
-                // See: https://devblogs.microsoft.com/oldnewthing/20211103-00/?p=105870
-                const auto weakThisCopy = weakThis;
-                co_await wil::resume_foreground(dispatcher);
-                // Check if Tab's lifetime has expired
-                if (auto tab{ weakThisCopy.get() })
+            [func = std::move(throttledTitleChanged)](auto&&, auto&&) {
+                func->Run();
+            });
+
+        auto throttledTaskbarProgressChanged = std::make_shared<ThrottledFunc<>>(
+            dispatcher,
+            til::throttled_func_options{
+                .delay = std::chrono::milliseconds{ 200 },
+                .leading = true,
+                .trailing = true,
+            },
+            [weakThis]() {
+                if (const auto tab = weakThis.get())
                 {
-                    // The title of the control changed, but not necessarily the title of the tab.
-                    // Set the tab's text to the active panes' text.
-                    tab->UpdateTitle();
+                    tab->_UpdateProgressState();
                 }
+            });
+
+        events.TaskbarProgressChanged = content.TaskbarProgressChanged(
+            winrt::auto_revoke,
+            [func = std::move(throttledTaskbarProgressChanged)](auto&&, auto&&) {
+                func->Run();
             });
 
         events.TabColorChanged = content.TabColorChanged(
@@ -1068,18 +1090,6 @@ namespace winrt::TerminalApp::implementation
                     // current color anyways.
                     tab->_RecalculateAndApplyTabColor();
                     tab->_tabStatus.TabColorIndicator(tab->GetTabColor().value_or(Windows::UI::Colors::Transparent()));
-                }
-            });
-
-        events.TaskbarProgressChanged = content.TaskbarProgressChanged(
-            winrt::auto_revoke,
-            [dispatcher, weakThis](auto&&, auto&&) -> safe_void_coroutine {
-                const auto weakThisCopy = weakThis;
-                co_await wil::resume_foreground(dispatcher);
-                // Check if Tab's lifetime has expired
-                if (auto tab{ weakThisCopy.get() })
-                {
-                    tab->_UpdateProgressState();
                 }
             });
 
