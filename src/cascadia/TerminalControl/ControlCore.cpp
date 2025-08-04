@@ -1126,6 +1126,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         auto cx = gsl::narrow_cast<til::CoordType>(lrint(_panelWidth * _compositionScale));
         auto cy = gsl::narrow_cast<til::CoordType>(lrint(_panelHeight * _compositionScale));
+        const auto padding = StringToXamlThickness(_settings->Padding());
+        auto padx = gsl::narrow_cast<til::CoordType>(lrint((padding.Left + padding.Right) * _compositionScale));
+        auto pady = gsl::narrow_cast<til::CoordType>(lrint((padding.Top + padding.Bottom) * _compositionScale));
+
+        cx -= padx;
+        cy -= pady;
 
         // Don't actually resize so small that a single character wouldn't fit
         // in either dimension. The buffer really doesn't like being size 0.
@@ -1139,7 +1145,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _terminal->ClearSelection();
 
         // Tell the dx engine that our window is now the new size.
-        THROW_IF_FAILED(_renderEngine->SetWindowSize({ cx, cy }));
+        THROW_IF_FAILED(_renderEngine->SetWindowSize({ cx + padx, cy + pady }));
 
         // Invalidate everything
         _renderer->TriggerRedrawAll();

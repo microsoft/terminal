@@ -1340,8 +1340,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             return false;
         }
 
-        const auto panelWidth = static_cast<float>(SwapChainPanel().ActualWidth() - (_contentPadding.Left + _contentPadding.Right));
-        const auto panelHeight = static_cast<float>(SwapChainPanel().ActualHeight() - (_contentPadding.Top + _contentPadding.Bottom));
+        const auto panelWidth = static_cast<float>(SwapChainPanel().ActualWidth());
+        const auto panelHeight = static_cast<float>(SwapChainPanel().ActualHeight());
         const auto panelScaleX = SwapChainPanel().CompositionScaleX();
         const auto panelScaleY = SwapChainPanel().CompositionScaleY();
 
@@ -2478,9 +2478,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         const auto newSize = e.NewSize();
-        _core.SizeChanged(
-            newSize.Width - static_cast<float>(_contentPadding.Left + _contentPadding.Right),
-            newSize.Height - static_cast<float>(_contentPadding.Top + _contentPadding.Bottom));
+        _core.SizeChanged(newSize.Width, newSize.Height);
 
         if (_automationPeer)
         {
