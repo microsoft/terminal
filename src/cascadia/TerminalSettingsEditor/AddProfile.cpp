@@ -64,7 +64,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 "AddNewProfile",
                 TraceLoggingDescription("Event emitted when the user adds a new profile"),
                 TraceLoggingValue("Duplicate", "Type", "The type of the creation method (i.e. empty profile, duplicate)"),
-                TraceLoggingValue(!selectedProfile.Source().empty(), "SourceProfileHasSource", "True, if the source profile has a source (i.e. dynamic profile generator namespace, fragment). False, otherwise, indicating it's based on a custom profile."),
+                TraceLoggingValue(!selectedProfile.Source().empty(), "SourceProfileHasSource", "True, if the source profile has a source (i.e. dynamic profile generator namespace, fragment). Otherwise, False, indicating it's based on a custom profile."),
                 TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
                 TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
 
