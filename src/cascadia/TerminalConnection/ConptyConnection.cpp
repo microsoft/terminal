@@ -30,8 +30,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 {
     // Function Description:
     // - launches the client application attached to the new pseudoconsole
-    HRESULT ConptyConnection::_LaunchAttachedClient() noexcept
-    try
+    void ConptyConnection::_LaunchAttachedClient()
     {
         STARTUPINFOEX siEx{ 0 };
         siEx.StartupInfo.cb = sizeof(STARTUPINFOEX);
@@ -191,10 +190,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             TraceLoggingWideString(_clientName.c_str(), "Client", "The attached client process"),
             TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
             TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
-
-        return S_OK;
     }
-    CATCH_RETURN();
 
     // Who decided that?
 #pragma warning(suppress : 26455) // Default constructor should not throw. Declare it 'noexcept' (f.6).
@@ -416,7 +412,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                 THROW_IF_FAILED(ConptyShowHidePseudoConsole(_hPC.get(), _initialVisibility));
             }
 
-            THROW_IF_FAILED(_LaunchAttachedClient());
+            _LaunchAttachedClient();
         }
         // But if it was an inbound handoff... attempt to synchronize the size of it with what our connection
         // window is expecting it to be on the first layout.
