@@ -566,7 +566,7 @@ static void _resolveSingleMediaResourceInner(Model::OriginTag origin, std::wstri
                 }
                 // Uri mangles file paths to begin with a / (ala /C:/) and escapes special characters such as Space.
                 // Try to un-mangle it.
-                resourcePath = winrt::Windows::Foundation::Uri::UnescapeComponent(uriPath).c_str() + 1;
+                resourcePath = til::safe_slice_abs(winrt::Windows::Foundation::Uri::UnescapeComponent(uriPath), 1, SIZE_T_MAX);
                 // FALL THROUGH TO TRY FILESYSTEM PATHS
             }
             else if (!til::starts_with_insensitive_ascii(scheme, L"ms-"))
