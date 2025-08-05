@@ -26,6 +26,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
     struct EmptyMediaResource : winrt::implements<EmptyMediaResource, winrt::Microsoft::Terminal::Settings::Model::IMediaResource, winrt::non_agile, winrt::no_weak_ref, winrt::no_module_lock>
     {
+        // Micro-optimization: having one empty resource that contains no actual paths saves us a few bytes per object
         winrt::hstring Path() { return {}; };
         winrt::hstring Resolved() { return {}; }
 
@@ -42,6 +43,21 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
     };
 
+    /* MEDIA RESOURCES
+     *
+     * A media resource is a container for two strings: one pre-validation path and one post-validation path.
+     * It is expected that, before they are used, they are passed through a resolver.
+     *
+     * A resolver may Resolve() a media resource to a path or Reject() it.
+     * - If it is Resolved, the new path is accessible via the Resolved() method.
+     * - If it is Rejected, the Resolved() method will return the empty string.
+     *
+     * A media resource is considered `Ok` if it has been Resolved to a real path.
+     *
+     * As a special case, if it has been neither resolved nor rejected, it will return the pre-validation
+     * path--this is intended to aid its use in places where the risk of using an unresolved media path
+     * is fine.
+     */
     struct MediaResource : winrt::implements<MediaResource, winrt::Microsoft::Terminal::Settings::Model::IMediaResource, winrt::non_agile, winrt::no_weak_ref, winrt::no_module_lock>
     {
         MediaResource() {}
@@ -69,8 +85,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         winrt::hstring value{};
         winrt::hstring resolvedValue{};
-        bool ok{ false };
-        bool resolved{ false };
+        bool ok{ false }; // Path() was transformed into a final and valid Resolved path
+        bool resolved{ false }; // This resource has been visited by a resolver, regardless of the outcome.
 
         static IMediaResource Empty()
         {
