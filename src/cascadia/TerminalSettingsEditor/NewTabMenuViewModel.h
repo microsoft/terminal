@@ -134,7 +134,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void Inlining(bool value);
 
         hstring Icon() const { return _FolderEntry.Icon().Path(); }
-        void Icon(const hstring&) {}
 
         GETSET_OBSERVABLE_PROJECTED_SETTING(_FolderEntry, Name);
         GETSET_OBSERVABLE_PROJECTED_SETTING(_FolderEntry, AllowEmpty);
