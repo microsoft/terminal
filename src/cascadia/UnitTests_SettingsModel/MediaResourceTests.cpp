@@ -168,11 +168,6 @@ namespace SettingsModelUnitTests
 
         static constexpr int numberOfMediaResourcesInDefaultSettings{ 9 };
 
-        static winrt::com_ptr<implementation::CascadiaSettings> createSettings(const std::string_view& userJSON)
-        {
-            return winrt::make_self<implementation::CascadiaSettings>(userJSON, staticDefaultSettings);
-        }
-
         struct Fragment
         {
             std::wstring_view source;
@@ -202,6 +197,11 @@ namespace SettingsModelUnitTests
             loader.FinalizeLayering();
             loader.FixupUserSettings();
             return winrt::make_self<implementation::CascadiaSettings>(std::move(loader));
+        }
+
+        static winrt::com_ptr<implementation::CascadiaSettings> createSettings(const std::string_view& userJSON)
+        {
+            return createSettingsWithFragments(userJson, staticDefaultSettings, {});
         }
     };
 
