@@ -143,7 +143,7 @@ namespace Microsoft::Console::Utils
         // - It contains U+200D Zero Width Joiner within the first 8 code units (which suggests that
         //   it is an "Emoji ZWJ Sequence" (https://www.unicode.org/emoji/charts/emoji-zwj-sequences.html)
         return text.size() <= 2 ||
-               (text.size() <= 4 && (text.back() & 0xFE00) == 0xFE00) ||
+               (text.size() <= 4 && (text.back() & 0xFFF0) == 0xFE00) ||
                text.find_first_of(L'\u200D') <= 8;
     }
 }
