@@ -1284,18 +1284,18 @@ bool Utils::IsWindows11() noexcept
 
 bool Utils::IsLikelyToBeEmojiOrSymbolIcon(std::wstring_view text) noexcept
 {
-    if (text.size() >= 2 && til::at(text, 0) <= 0xFF && til::at(text, 1) <= 0xFF)
-    {
-        // ASCII fast path - two characters next to eachother _like most file paths_ aren't a single
-        // grapheme cluster.
-        return false;
-    }
-
     if (text.size() == 1 && !IS_HIGH_SURROGATE(til::at(text, 0)))
     {
         // If it's a single code unit, it's definitely either zero or one grapheme clusters.
         // If it turns out to be illegal Unicode, we don't really care.
         return true;
+    }
+
+    if (text.size() >= 2 && til::at(text, 0) <= 0x7F && til::at(text, 1) <= 0x7F)
+    {
+        // Two adjacent ASCII characters (as seen in most file paths) aren't a single
+        // grapheme cluster.
+        return false;
     }
 
     // Use ICU to determine whether text is composed of a single grapheme cluster.
