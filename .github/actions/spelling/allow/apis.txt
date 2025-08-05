@@ -175,6 +175,7 @@ tokeninfo
 tolower
 toupper
 TRACKMOUSEEVENT
+ubrk
 UChar
 UFIELD
 ULARGE

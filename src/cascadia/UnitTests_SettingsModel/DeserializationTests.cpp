@@ -36,8 +36,6 @@ namespace SettingsModelUnitTests
         TEST_METHOD(TestHideAllProfiles);
         TEST_METHOD(TestInvalidColorSchemeName);
         TEST_METHOD(TestHelperFunctions);
-        TEST_METHOD(TestProfileBackgroundImageWithEnvVar);
-        TEST_METHOD(TestProfileBackgroundImageWithDesktopWallpaper);
         TEST_METHOD(TestCloseOnExitParsing);
         TEST_METHOD(TestCloseOnExitCompatibilityShim);
         TEST_METHOD(TestLayerUserDefaultsBeforeProfiles);
@@ -897,44 +895,6 @@ namespace SettingsModelUnitTests
         VERIFY_ARE_EQUAL(name1, settings->FindProfile(guid1).Name());
         VERIFY_ARE_EQUAL(name2, settings->FindProfile(guid2).Name());
         VERIFY_IS_NULL(settings->FindProfile(fakeGuid));
-    }
-
-    void DeserializationTests::TestProfileBackgroundImageWithEnvVar()
-    {
-        const auto expectedPath = wil::ExpandEnvironmentStringsW<std::wstring>(L"%WINDIR%\\System32\\x_80.png");
-
-        static constexpr std::string_view settingsJson{ R"(
-        {
-            "profiles": [
-                {
-                    "name": "profile0",
-                    "backgroundImage": "%WINDIR%\\System32\\x_80.png"
-                }
-            ]
-        })" };
-
-        const auto settings = createSettings(settingsJson);
-        VERIFY_ARE_NOT_EQUAL(0u, settings->AllProfiles().Size());
-        VERIFY_ARE_EQUAL(expectedPath, settings->AllProfiles().GetAt(0).DefaultAppearance().ExpandedBackgroundImagePath());
-    }
-
-    void DeserializationTests::TestProfileBackgroundImageWithDesktopWallpaper()
-    {
-        const winrt::hstring expectedBackgroundImagePath{ L"desktopWallpaper" };
-
-        static constexpr std::string_view settingsJson{ R"(
-        {
-            "profiles": [
-                {
-                    "name": "profile0",
-                    "backgroundImage": "desktopWallpaper"
-                }
-            ]
-        })" };
-
-        const auto settings = createSettings(settingsJson);
-        VERIFY_ARE_EQUAL(expectedBackgroundImagePath, settings->AllProfiles().GetAt(0).DefaultAppearance().BackgroundImagePath());
-        VERIFY_ARE_NOT_EQUAL(expectedBackgroundImagePath, settings->AllProfiles().GetAt(0).DefaultAppearance().ExpandedBackgroundImagePath());
     }
 
     void DeserializationTests::TestCloseOnExitParsing()
@@ -2131,7 +2091,7 @@ namespace SettingsModelUnitTests
 
         implementation::SettingsLoader loader{ std::string_view{}, implementation::LoadStringResource(IDR_DEFAULTS) };
         loader.MergeInboxIntoUserSettings();
-        loader.MergeFragmentIntoUserSettings(winrt::hstring{ fragmentSource }, fragmentJson);
+        loader.MergeFragmentIntoUserSettings(winrt::hstring{ fragmentSource }, {}, fragmentJson);
         loader.FinalizeLayering();
 
         VERIFY_IS_FALSE(loader.duplicateProfile);
@@ -2155,7 +2115,7 @@ namespace SettingsModelUnitTests
 
         implementation::SettingsLoader loader{ std::string_view{}, implementation::LoadStringResource(IDR_DEFAULTS) };
         loader.MergeInboxIntoUserSettings();
-        loader.MergeFragmentIntoUserSettings(winrt::hstring{ fragmentSource }, fragmentJson);
+        loader.MergeFragmentIntoUserSettings(winrt::hstring{ fragmentSource }, {}, fragmentJson);
         loader.FinalizeLayering();
 
         const auto settings = winrt::make_self<implementation::CascadiaSettings>(std::move(loader));
@@ -2181,7 +2141,7 @@ namespace SettingsModelUnitTests
 
         implementation::SettingsLoader loader{ std::string_view{}, implementation::LoadStringResource(IDR_DEFAULTS) };
         loader.MergeInboxIntoUserSettings();
-        loader.MergeFragmentIntoUserSettings(winrt::hstring{ fragmentSource }, fragmentJson);
+        loader.MergeFragmentIntoUserSettings(winrt::hstring{ fragmentSource }, {}, fragmentJson);
         loader.FinalizeLayering();
 
         const auto settings = winrt::make_self<implementation::CascadiaSettings>(std::move(loader));
@@ -2215,7 +2175,7 @@ namespace SettingsModelUnitTests
 
         implementation::SettingsLoader loader{ std::string_view{}, implementation::LoadStringResource(IDR_DEFAULTS) };
         loader.MergeInboxIntoUserSettings();
-        loader.MergeFragmentIntoUserSettings(winrt::hstring{ fragmentSource }, fragmentJson);
+        loader.MergeFragmentIntoUserSettings(winrt::hstring{ fragmentSource }, {}, fragmentJson);
         loader.FinalizeLayering();
 
         const auto settings = winrt::make_self<implementation::CascadiaSettings>(std::move(loader));
@@ -2250,7 +2210,7 @@ namespace SettingsModelUnitTests
 
         implementation::SettingsLoader loader{ std::string_view{}, implementation::LoadStringResource(IDR_DEFAULTS) };
         loader.MergeInboxIntoUserSettings();
-        loader.MergeFragmentIntoUserSettings(winrt::hstring{ fragmentSource }, fragmentJson);
+        loader.MergeFragmentIntoUserSettings(winrt::hstring{ fragmentSource }, {}, fragmentJson);
         loader.FinalizeLayering();
 
         const auto settings = winrt::make_self<implementation::CascadiaSettings>(std::move(loader));
@@ -2276,7 +2236,7 @@ namespace SettingsModelUnitTests
 
         implementation::SettingsLoader loader{ std::string_view{}, implementation::LoadStringResource(IDR_DEFAULTS) };
         loader.MergeInboxIntoUserSettings();
-        loader.MergeFragmentIntoUserSettings(winrt::hstring{ fragmentSource }, fragmentJson);
+        loader.MergeFragmentIntoUserSettings(winrt::hstring{ fragmentSource }, {}, fragmentJson);
         loader.FinalizeLayering();
 
         const auto settings = winrt::make_self<implementation::CascadiaSettings>(std::move(loader));
@@ -2303,7 +2263,7 @@ namespace SettingsModelUnitTests
 
         implementation::SettingsLoader loader{ std::string_view{}, implementation::LoadStringResource(IDR_DEFAULTS) };
         loader.MergeInboxIntoUserSettings();
-        loader.MergeFragmentIntoUserSettings(winrt::hstring{ fragmentSource }, fragmentJson);
+        loader.MergeFragmentIntoUserSettings(winrt::hstring{ fragmentSource }, {}, fragmentJson);
         loader.FinalizeLayering();
 
         const auto oldSettings = winrt::make_self<implementation::CascadiaSettings>(std::move(loader));

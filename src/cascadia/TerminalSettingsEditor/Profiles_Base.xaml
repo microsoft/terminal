@@ -101,7 +101,7 @@
             <!--  Icon  -->
             <local:SettingContainer x:Uid="Profile_Icon"
                                     ClearSettingValue="{x:Bind Profile.ClearIcon}"
-                                    CurrentValueAccessibleName="{x:Bind Profile.Icon, Mode=OneWay}"
+                                    CurrentValueAccessibleName="{x:Bind Profile.LocalizedIcon, Mode=OneWay}"
                                     HasSettingValue="{x:Bind Profile.HasIcon, Mode=OneWay}"
                                     SettingOverrideSource="{x:Bind Profile.IconOverrideSource, Mode=OneWay}"
                                     Style="{StaticResource ExpanderSettingContainerStyleWithComplexPreview}">
@@ -174,7 +174,7 @@
                                  FontFamily="Segoe UI, Segoe Fluent Icons, Segoe MDL2 Assets"
                                  IsSpellCheckEnabled="False"
                                  Style="{StaticResource TextBoxSettingStyle}"
-                                 Text="{x:Bind Profile.Icon, Mode=TwoWay}"
+                                 Text="{x:Bind Profile.IconPath, Mode=TwoWay}"
                                  Visibility="{x:Bind Profile.UsingImageIcon, Mode=OneWay}" />
                         <Button x:Uid="Profile_IconBrowse"
                                 Grid.Column="2"

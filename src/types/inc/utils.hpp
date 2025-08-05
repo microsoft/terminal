@@ -134,4 +134,5 @@ namespace Microsoft::Console::Utils
 
     bool IsWindows11() noexcept;
 
+    bool IsLikelyToBeEmojiOrSymbolIcon(std::wstring_view text) noexcept;
 }

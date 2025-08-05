@@ -45,6 +45,7 @@
     <ClCompile Include="VsSetupConfiguration.cpp">
       <Filter>profileGeneration</Filter>
     </ClCompile>
+    <ClCompile Include="TestHooks.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />

@@ -267,14 +267,6 @@
   <data name="DuplicateTabText" xml:space="preserve">
     <value>탭 복제</value>
   </data>
-  <data name="InvalidBackgroundImage" xml:space="preserve">
-    <value>잘못된 "backgroundImage" 프로필을 찾았습니다. 해당 프로필을 배경 이미지가 없는 기본값으로 설정합니다. "backgroundImage"를 설정할 때 값이 이미지에 대한 유효한 파일 경로인지 확인합니다.</value>
-    <comment>{Locked="\"backgroundImage\""}</comment>
-  </data>
-  <data name="InvalidIcon" xml:space="preserve">
-    <value>잘못된 "icon"이 있는 프로필을 발견했습니다. 해당 프로필에 아이콘이 없도록 기본값을 설정합니다. "icon" 설정 시 값이 이미지에 대한 올바른 파일 경로인지 확인합니다.</value>
-    <comment>{Locked="\"icon\""} The word "icon" in quotes is locked, the word icon OUTSIDE of quotes should be localized.</comment>
-  </data>
   <data name="AtLeastOneKeybindingWarning" xml:space="preserve">
     <value>키 바인딩 구문을 분석하는 동안 경고를 발견했습니다.</value>
   </data>
