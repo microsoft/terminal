@@ -538,8 +538,16 @@ void Profile::ResolveMediaResources(const Model::MediaResourceResolver& resolver
         // fall back to the normalized command line at or above this layer.
         if (!icon->Ok() || icon->Resolved().empty() && !iconSource->Commandline().empty())
         {
-            std::wstring cmdline{ NormalizeCommandLine(iconSource->Commandline().c_str()) };
-            icon->Resolve(cmdline.c_str() /* c_str: give hstring a chance to find the null terminator */);
+            // We want to resolve the icon to the commandline, but we risk that the icon was already
+            // resolved. We don't want to do that (as MediaResource asserts that it was only resolved
+            // one time). However, we can't just make a new empty resource and resolve it -- that
+            // might replace the value in the user's settings when we serialize it again...
+            // So instead, make a new one derived from the icon we started with, then resolve it
+            // ourselves.
+            auto newIcon{ MediaResource::FromString(icon->Path()) };
+            const std::wstring cmdline{ NormalizeCommandLine(iconSource->Commandline().c_str()) };
+            newIcon.Resolve(cmdline.c_str() /* c_str: give hstring a chance to find the null terminator */);
+            iconSource->_Icon = std::move(newIcon);
         }
     }
 
