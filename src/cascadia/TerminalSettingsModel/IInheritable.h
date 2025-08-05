@@ -14,8 +14,6 @@ Author(s):
 --*/
 #pragma once
 
-#include <type_traits>
-
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
     template<typename T>
@@ -139,7 +137,7 @@ private:                                                                    \
     }                                                                       \
                                                                             \
     auto _get##name##OverrideSourceImpl()                                   \
-        ->winrt::com_ptr<std::remove_cvref<decltype(*this)>::type>          \
+        ->winrt::com_ptr<std::remove_cvref_t<decltype(*this)>>              \
     {                                                                       \
         /*we have a value*/                                                 \
         if (_##name)                                                        \
