@@ -329,6 +329,7 @@ void SettingsLoader::FindFragmentsAndMergeIntoUserSettings(bool generateExtensio
     ParsedSettings fragmentSettings;
 
     const auto parseAndLayerFragmentFiles = [&](const std::filesystem::path& path, const winrt::hstring& source, FragmentScope scope) {
+        const winrt::hstring sourceBasePath{ path.native() };
         for (const auto& fragmentExt : std::filesystem::directory_iterator{ path })
         {
             const auto fragExtPath = fragmentExt.path();
@@ -340,6 +341,7 @@ void SettingsLoader::FindFragmentsAndMergeIntoUserSettings(bool generateExtensio
                     if (!content.empty())
                     {
                         _parseFragment(source,
+                                       sourceBasePath,
                                        content,
                                        fragmentSettings,
                                        generateExtensionPackages ?
@@ -448,10 +450,10 @@ void SettingsLoader::FindFragmentsAndMergeIntoUserSettings(bool generateExtensio
 // See FindFragmentsAndMergeIntoUserSettings.
 // This function does the same, but for a single given JSON blob and source
 // and at the time of writing is used for unit tests only.
-void SettingsLoader::MergeFragmentIntoUserSettings(const winrt::hstring& source, const std::string_view& content)
+void SettingsLoader::MergeFragmentIntoUserSettings(const winrt::hstring& source, const winrt::hstring& basePath, const std::string_view& content)
 {
     ParsedSettings fragmentSettings;
-    _parseFragment(source, content, fragmentSettings, std::nullopt);
+    _parseFragment(source, basePath, content, fragmentSettings, std::nullopt);
 }
 
 // Call this method before passing SettingsLoader to the CascadiaSettings constructor.
@@ -627,7 +629,7 @@ bool SettingsLoader::FixupUserSettings()
         {
             for (auto&& icon : iconsToClearFromVisualStudioProfiles)
             {
-                if (profile->Icon() == icon)
+                if (profile->Icon().Path() == icon)
                 {
                     profile->ClearIcon();
                     fixedUp = true;
@@ -832,7 +834,7 @@ void SettingsLoader::_parse(const OriginTag origin, const winrt::hstring& source
 // schemes and profiles. Additionally this function supports profiles which specify an "updates" key.
 // - fragmentMeta: If set, construct and register FragmentSettings objects. Provides metadata necessary for doing so.
 //                 Otherwise, completely skip over that extra work and apply parsed settings to the user settings, if allowed by disabledProfileSources ("_ignoredNamespaces").
-void SettingsLoader::_parseFragment(const winrt::hstring& source, const std::string_view& content, ParsedSettings& settings, const std::optional<ParseFragmentMetadata>& fragmentMeta)
+void SettingsLoader::_parseFragment(const winrt::hstring& source, const winrt::hstring& sourceBasePath, const std::string_view& content, ParsedSettings& settings, const std::optional<ParseFragmentMetadata>& fragmentMeta)
 {
     auto json = _parseJson(content);
 
@@ -880,6 +882,7 @@ void SettingsLoader::_parseFragment(const winrt::hstring& source, const std::str
             // parsing - fragments shouldn't be allowed to bind actions to keys
             // directly. We may want to revisit circa GH#2205
             settings.globals = winrt::make_self<GlobalAppSettings>();
+            settings.globals->SourceBasePath = sourceBasePath;
             settings.globals->LayerActionsFrom(json.root, OriginTag::Fragment, false);
         }
     }
@@ -908,6 +911,7 @@ void SettingsLoader::_parseFragment(const winrt::hstring& source, const std::str
                 auto destinationSet = profile->HasGuid() ? &newProfiles : &modifiedProfiles;
                 if (guid != winrt::guid{})
                 {
+                    profile->SourceBasePath = sourceBasePath;
                     if (buildFragmentSettings)
                     {
                         destinationSet->emplace_back(winrt::make<FragmentProfileEntry>(guid, hstring{ til::u8u16(Json::writeString(_getJsonStyledWriter(), profileJson)) }));
@@ -1195,6 +1199,14 @@ try
     auto mustWriteToDisk = firstTimeSetup;
 
     SettingsLoader loader{ settingsStringView, LoadStringResource(IDR_DEFAULTS) };
+
+    winrt::hstring baseUserSettingsPath{ GetBaseSettingsPath().native() };
+    loader.userSettings.baseLayerProfile->SourceBasePath = baseUserSettingsPath;
+    loader.userSettings.globals->SourceBasePath = baseUserSettingsPath;
+    for (auto&& userProfile : loader.userSettings.profiles)
+    {
+        userProfile->SourceBasePath = baseUserSettingsPath;
+    }
 
     // Generate dynamic profiles and add them as parents of user profiles.
     // That way the user profiles will get appropriate defaults from the generators (like icons and such).

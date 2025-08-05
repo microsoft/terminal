@@ -9,6 +9,8 @@
 
 #include "inc/colorTable.hpp"
 
+#include <icu.h>
+
 using namespace Microsoft::Console;
 
 // Routine Description:
@@ -1278,4 +1280,38 @@ bool Utils::IsWindows11() noexcept
         return false;
     }();
     return isWindows11;
+}
+
+bool Utils::IsLikelyToBeEmojiOrSymbolIcon(std::wstring_view text) noexcept
+{
+    if (text.size() == 1 && !IS_HIGH_SURROGATE(til::at(text, 0)))
+    {
+        // If it's a single code unit, it's definitely either zero or one grapheme clusters.
+        // If it turns out to be illegal Unicode, we don't really care.
+        return true;
+    }
+
+    if (text.size() >= 2 && til::at(text, 0) <= 0x7F && til::at(text, 1) <= 0x7F)
+    {
+        // Two adjacent ASCII characters (as seen in most file paths) aren't a single
+        // grapheme cluster.
+        return false;
+    }
+
+    // Use ICU to determine whether text is composed of a single grapheme cluster.
+    int32_t off{ 0 };
+    UErrorCode status{ U_ZERO_ERROR };
+
+#pragma warning(disable : 26490) // Don't use reinterpret_cast (type.1).
+    const auto b{ ubrk_open(UBRK_CHARACTER,
+                            nullptr,
+                            reinterpret_cast<const UChar*>(text.data()),
+                            gsl::narrow_cast<int32_t>(text.size()),
+                            &status) };
+    if (status <= U_ZERO_ERROR)
+    {
+        off = ubrk_next(b);
+        ubrk_close(b);
+    }
+    return off == gsl::narrow_cast<int32_t>(text.size());
 }

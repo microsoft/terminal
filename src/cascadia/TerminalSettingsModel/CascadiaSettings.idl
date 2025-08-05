@@ -14,7 +14,7 @@ namespace Microsoft.Terminal.Settings.Model
         Machine
     };
 
-    [default_interface] runtimeclass CascadiaSettings {
+    runtimeclass CascadiaSettings {
         static CascadiaSettings LoadDefaults();
         static CascadiaSettings LoadAll();
 
@@ -64,6 +64,8 @@ namespace Microsoft.Terminal.Settings.Model
         DefaultTerminal CurrentDefaultTerminal;
 
         void ExpandCommands();
+
+        void ResolveMediaResources();
     }
 
     runtimeclass FragmentProfileEntry

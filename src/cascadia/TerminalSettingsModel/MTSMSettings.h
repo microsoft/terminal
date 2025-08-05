@@ -87,6 +87,7 @@ Author(s):
     X(Microsoft::Terminal::Control::ScrollbarState, ScrollState, "scrollbarState", Microsoft::Terminal::Control::ScrollbarState::Visible)                      \
     X(Microsoft::Terminal::Control::TextAntialiasingMode, AntialiasingMode, "antialiasingMode", Microsoft::Terminal::Control::TextAntialiasingMode::Grayscale) \
     X(hstring, StartingDirectory, "startingDirectory")                                                                                                         \
+    X(IMediaResource, Icon, "icon", implementation::MediaResource::FromString(L"\uE756"))                                                                      \
     X(bool, SuppressApplicationTitle, "suppressApplicationTitle", false)                                                                                       \
     X(guid, ConnectionType, "connectionType")                                                                                                                  \
     X(CloseOnExitMode, CloseOnExit, "closeOnExit", CloseOnExitMode::Automatic)                                                                                 \
@@ -133,10 +134,10 @@ Author(s):
     X(float, BackgroundImageOpacity, "backgroundImageOpacity", 1.0f)                                                                                               \
     X(winrt::Windows::UI::Xaml::Media::Stretch, BackgroundImageStretchMode, "backgroundImageStretchMode", winrt::Windows::UI::Xaml::Media::Stretch::UniformToFill) \
     X(bool, RetroTerminalEffect, "experimental.retroTerminalEffect", false)                                                                                        \
-    X(hstring, PixelShaderPath, "experimental.pixelShaderPath")                                                                                                    \
-    X(hstring, PixelShaderImagePath, "experimental.pixelShaderImagePath")                                                                                          \
+    X(IMediaResource, PixelShaderPath, "experimental.pixelShaderPath", implementation::MediaResource::Empty())                                                     \
+    X(IMediaResource, PixelShaderImagePath, "experimental.pixelShaderImagePath", implementation::MediaResource::Empty())                                           \
     X(ConvergedAlignment, BackgroundImageAlignment, "backgroundImageAlignment", ConvergedAlignment::Horizontal_Center | ConvergedAlignment::Vertical_Center)       \
-    X(hstring, BackgroundImagePath, "backgroundImage")                                                                                                             \
+    X(IMediaResource, BackgroundImagePath, "backgroundImage", implementation::MediaResource::Empty())                                                              \
     X(Model::IntenseStyle, IntenseTextStyle, "intenseTextStyle", Model::IntenseStyle::Bright)                                                                      \
     X(Core::AdjustTextMode, AdjustIndistinguishableColors, "adjustIndistinguishableColors", Core::AdjustTextMode::Automatic)                                       \
     X(bool, UseAcrylic, "useAcrylic", false)
