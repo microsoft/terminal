@@ -1301,15 +1301,17 @@ bool Utils::IsLikelyToBeEmojiOrSymbolIcon(std::wstring_view text) noexcept
     // Use ICU to determine whether text is composed of a single grapheme cluster.
     int32_t off{ 0 };
     UErrorCode status{ U_ZERO_ERROR };
+
+#pragma warning(disable : 26490) // Don't use reinterpret_cast (type.1).
     const auto b{ ubrk_open(UBRK_CHARACTER,
                             nullptr,
                             reinterpret_cast<const UChar*>(text.data()),
-                            static_cast<int32_t>(text.size()),
+                            gsl::narrow_cast<int32_t>(text.size()),
                             &status) };
-    if (U_SUCCESS(status))
+    if (status <= U_ZERO_ERROR)
     {
         off = ubrk_next(b);
         ubrk_close(b);
     }
-    return off == static_cast<int32_t>(text.size());
+    return off == gsl::narrow_cast<int32_t>(text.size());
 }
