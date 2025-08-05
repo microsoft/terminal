@@ -153,20 +153,20 @@ std::tuple<winrt::hstring, Model::OriginTag> AppearanceConfig::_getSourceProfile
 
 void AppearanceConfig::ResolveMediaResources(const Model::MediaResourceResolver& resolver)
 {
-    if (const auto [source, path] = _getBackgroundImagePathOverrideSourceAndValueImpl(); source && path && *path)
+    if (const auto [source, resource] = _getBackgroundImagePathOverrideSourceAndValueImpl(); source && resource && *resource)
     {
         const auto [sourceBasePath, sourceOrigin]{ source->_getSourceProfileBasePathAndOrigin() };
-        ResolveMediaResource(sourceOrigin, sourceBasePath, *path, resolver);
+        ResolveMediaResource(sourceOrigin, sourceBasePath, *resource, resolver);
     }
-    if (const auto [source, path]{ _getPixelShaderPathOverrideSourceAndValueImpl() }; source && path && *path)
+    if (const auto [source, resource]{ _getPixelShaderPathOverrideSourceAndValueImpl() }; source && resource && *resource)
     {
         const auto [sourceBasePath, sourceOrigin]{ source->_getSourceProfileBasePathAndOrigin() };
-        ResolveMediaResource(sourceOrigin, sourceBasePath, *path, resolver);
+        ResolveMediaResource(sourceOrigin, sourceBasePath, *resource, resolver);
     }
-    if (const auto [source, path]{ _getPixelShaderImagePathOverrideSourceAndValueImpl() }; source && path && *path)
+    if (const auto [source, resource]{ _getPixelShaderImagePathOverrideSourceAndValueImpl() }; source && resource && *resource)
     {
         const auto [sourceBasePath, sourceOrigin]{ source->_getSourceProfileBasePathAndOrigin() };
-        ResolveMediaResource(sourceOrigin, sourceBasePath, *path, resolver);
+        ResolveMediaResource(sourceOrigin, sourceBasePath, *resource, resolver);
     }
 }
 
