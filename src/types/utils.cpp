@@ -1290,6 +1290,14 @@ bool Utils::IsLikelyToBeEmojiOrSymbolIcon(std::wstring_view text) noexcept
         // grapheme cluster.
         return false;
     }
+
+    if (text.size() == 1 && !IS_HIGH_SURROGATE(til::at(text, 0)))
+    {
+        // If it's a single code unit, it's definitely either zero or one grapheme clusters.
+        // If it turns out to be illegal Unicode, we don't really care.
+        return true;
+    }
+
     // Use ICU to determine whether text is composed of a single grapheme cluster.
     int32_t off{ 0 };
     UErrorCode status{ U_ZERO_ERROR };
