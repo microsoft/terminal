@@ -285,7 +285,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     }
     Model::TerminalSettings ProfileViewModel::TermSettings() const
     {
-        // This could get quite pricey. Test it out.
+        // This may look pricey, but it only resolves resources that have not been visited
+        // and the preview update is debounced.
         _appSettings.ResolveMediaResources();
         return Model::TerminalSettings::CreateForPreview(_appSettings, _profile);
     }
