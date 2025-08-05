@@ -531,6 +531,10 @@ namespace SettingsModelUnitTests
                 "icon": "🕴️",
                 "name": "SurrogatePair"
             },
+            {
+                "icon": "#\ufe0f\u20e3",
+                "name": "VariantWithEnclosingCombiner"
+            },
         ]
     }
 })");
@@ -568,6 +572,14 @@ namespace SettingsModelUnitTests
             VERIFY_IS_TRUE(icon.Ok());
             VERIFY_ARE_EQUAL(icon.Resolved(), icon.Path());
             VERIFY_ARE_EQUAL(L"\U0001F574\uFE0F", icon.Resolved());
+        }
+
+        {
+            auto profile{ settings->GetProfileByName(L"VariantWithEnclosingCombiner") };
+            auto icon{ profile.Icon() };
+            VERIFY_IS_TRUE(icon.Ok());
+            VERIFY_ARE_EQUAL(icon.Resolved(), icon.Path());
+            VERIFY_ARE_EQUAL(L"#\uFE0F\u20E3", icon.Resolved());
         }
     }
 #pragma endregion

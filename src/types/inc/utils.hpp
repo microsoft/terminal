@@ -133,17 +133,5 @@ namespace Microsoft::Console::Utils
 
     bool IsWindows11() noexcept;
 
-    constexpr bool IsLikelyToBeEmojiOrSymbolIcon(std::wstring_view text) noexcept
-    {
-        // We assume a string contains an Emoji or font icon if:
-        // - It's two or fewer code units in length (1-2 Unicode characters, which covers all of MDL2
-        //   and many non-ZWJ emoji)
-        // - It is 1-5 code units long and ends in a Unicode Variation Selector (U+FE00 to U+FE0F)
-        //   (https://www.unicode.org/reports/tr51/#Emoji_Variation_Sequences)
-        // - It contains U+200D Zero Width Joiner within the first 8 code units (which suggests that
-        //   it is an "Emoji ZWJ Sequence" (https://www.unicode.org/emoji/charts/emoji-zwj-sequences.html)
-        return text.size() <= 2 ||
-               (text.size() <= 4 && (text.back() & 0xFFF0) == 0xFE00) ||
-               text.find_first_of(L'\u200D') <= 8;
-    }
+    bool IsLikelyToBeEmojiOrSymbolIcon(std::wstring_view text) noexcept;
 }

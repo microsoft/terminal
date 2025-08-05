@@ -9,6 +9,8 @@
 
 #include "inc/colorTable.hpp"
 
+#include <icu.h>
+
 using namespace Microsoft::Console;
 
 // Routine Description:
@@ -1278,4 +1280,27 @@ bool Utils::IsWindows11() noexcept
         return false;
     }();
     return isWindows11;
+}
+
+bool Utils::IsLikelyToBeEmojiOrSymbolIcon(std::wstring_view text) noexcept
+{
+    if (text.size() >= 2 && til::at(text, 0) <= 0xFF && til::at(text, 1) <= 0xFF)
+    {
+        // ASCII fast path - two characters next to eachother _like most file paths_ aren't a single
+        // grapheme cluster.
+        return false;
+    }
+    int32_t off{ 0 };
+    UErrorCode status{ U_ZERO_ERROR };
+    const auto b{ ubrk_open(UBRK_CHARACTER,
+                            nullptr,
+                            reinterpret_cast<const UChar*>(text.data()),
+                            static_cast<int32_t>(text.size()),
+                            &status) };
+    if (U_SUCCESS(status))
+    {
+        off = ubrk_next(b);
+        ubrk_close(b);
+    }
+    return off == static_cast<int32_t>(text.size());
 }
