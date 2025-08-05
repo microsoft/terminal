@@ -112,7 +112,7 @@ namespace TerminalApp
         event Windows.Foundation.TypedEventHandler<Object, Object> Initialized;
 
         event Windows.Foundation.TypedEventHandler<Object, Windows.UI.Xaml.UIElement> SetTitleBarContent;
-        event Windows.Foundation.TypedEventHandler<Object, String> TitleChanged;
+        event Windows.Foundation.TypedEventHandler<Object, Object> TitleChanged;
         event Windows.Foundation.TypedEventHandler<Object, Object> CloseWindowRequested;
         event Windows.Foundation.TypedEventHandler<Object, Microsoft.Terminal.Settings.Model.Theme> RequestedThemeChanged;
         event Windows.Foundation.TypedEventHandler<Object, Object> FocusModeChanged;
