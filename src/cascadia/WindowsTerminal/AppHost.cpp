@@ -288,9 +288,12 @@ void AppHost::Initialize()
     // the PTY requesting a change to the window state and the Terminal
     // realizing it, but should mitigate issues where the Terminal and PTY get
     // de-sync'd.
-    _showHideWindowThrottler = std::make_shared<ThrottledFuncTrailing<bool>>(
+    _showHideWindowThrottler = std::make_shared<ThrottledFunc<bool>>(
         winrt::Windows::System::DispatcherQueue::GetForCurrentThread(),
-        std::chrono::milliseconds(200),
+        til::throttled_func_options{
+            .delay = std::chrono::milliseconds{ 200 },
+            .trailing = true,
+        },
         [this](const bool show) {
             _window->ShowWindowChanged(show);
         });
@@ -392,19 +395,10 @@ void AppHost::_revokeWindowCallbacks()
 
 // Method Description:
 // - Called every time when the active tab's title changes. We'll also fire off
-//   a window message so we can update the window's title on the main thread,
-//   though we'll only do so if the settings are configured for that.
-// Arguments:
-// - sender: unused
-// - newTitle: the string to use as the new window title
-// Return Value:
-// - <none>
-void AppHost::_AppTitleChanged(const winrt::Windows::Foundation::IInspectable& /*sender*/, winrt::hstring newTitle)
+//   a window message so we can update the window's title on the main thread.
+void AppHost::_AppTitleChanged(const winrt::Windows::Foundation::IInspectable& /*sender*/, const winrt::Windows::Foundation::IInspectable& /*args*/)
 {
-    if (_windowLogic.GetShowTitleInTitlebar())
-    {
-        _window->UpdateTitle(newTitle);
-    }
+    _window->UpdateTitle(_windowLogic.Title());
 }
 
 // The terminal page is responsible for persisting its own state, but it does

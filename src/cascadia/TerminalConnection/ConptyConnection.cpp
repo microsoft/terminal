@@ -30,8 +30,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 {
     // Function Description:
     // - launches the client application attached to the new pseudoconsole
-    HRESULT ConptyConnection::_LaunchAttachedClient() noexcept
-    try
+    void ConptyConnection::_LaunchAttachedClient()
     {
         STARTUPINFOEX siEx{ 0 };
         siEx.StartupInfo.cb = sizeof(STARTUPINFOEX);
@@ -43,15 +42,16 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         auto attrList{ std::make_unique<std::byte[]>(size) };
 #pragma warning(suppress : 26490) // We have to use reinterpret_cast because we allocated a byte array as a proxy for the adjustable size list.
         siEx.lpAttributeList = reinterpret_cast<PPROC_THREAD_ATTRIBUTE_LIST>(attrList.get());
-        RETURN_IF_WIN32_BOOL_FALSE(InitializeProcThreadAttributeList(siEx.lpAttributeList, 1, 0, &size));
+        THROW_IF_WIN32_BOOL_FALSE(InitializeProcThreadAttributeList(siEx.lpAttributeList, 1, 0, &size));
 
-        RETURN_IF_WIN32_BOOL_FALSE(UpdateProcThreadAttribute(siEx.lpAttributeList,
-                                                             0,
-                                                             PROC_THREAD_ATTRIBUTE_PSEUDOCONSOLE,
-                                                             _hPC.get(),
-                                                             sizeof(HPCON),
-                                                             nullptr,
-                                                             nullptr));
+        THROW_IF_WIN32_BOOL_FALSE(UpdateProcThreadAttribute(
+            siEx.lpAttributeList,
+            0,
+            PROC_THREAD_ATTRIBUTE_PSEUDOCONSOLE,
+            _hPC.get(),
+            sizeof(HPCON),
+            nullptr,
+            nullptr));
 
         auto cmdline{ wil::ExpandEnvironmentStringsW<std::wstring>(_commandline.c_str()) }; // mutable copy -- required for CreateProcessW
         auto environment = _initialEnv;
@@ -72,7 +72,11 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             std::wstring additionalWslEnv;
 
             // WSLENV.2: Figure out what variables are already in WSLENV.
-            std::unordered_set<std::wstring_view> wslEnvVars;
+            std::unordered_set<std::wstring> wslEnvVars{
+                // We never want to put a custom Windows PATH variable into WSLENV,
+                // because that would override WSL's computation of the NIX PATH.
+                L"PATH",
+            };
             for (const auto& part : til::split_iterator{ std::wstring_view{ wslEnv }, L':' })
             {
                 // Each part may contain a variable name and flags (e.g., /p, /l, etc.)
@@ -97,25 +101,19 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                 }
             }
 
+            // add additional env vars
             if (_environment)
             {
-                // Order the environment variable names so that resolution order is consistent
-                // NOTE(lhecker): I'm like 99% sure that this is unnecessary.
-                std::set<std::wstring, til::env_key_sorter> keys{};
                 for (const auto item : _environment)
-                {
-                    keys.insert(std::wstring{ item.Key() });
-                }
-                // add additional env vars
-                for (const auto& key : keys)
                 {
                     try
                     {
+                        const auto key = item.Key();
                         // This will throw if the value isn't a string. If that
                         // happens, then just skip this entry.
                         const auto value = winrt::unbox_value<hstring>(_environment.Lookup(key));
 
-                        environment.set_user_environment_var(key.c_str(), value.c_str());
+                        environment.set_user_environment_var(key, value);
 
                         // WSLENV.4: Add custom user environment variables to WSLENV.
                         if (wslEnvVars.emplace(key).second)
@@ -166,7 +164,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         auto [newCommandLine, newStartingDirectory] = Utils::MangleStartingDirectoryForWSL(cmdline, _startingDirectory);
         const auto startingDirectory = newStartingDirectory.size() > 0 ? newStartingDirectory.c_str() : nullptr;
 
-        RETURN_IF_WIN32_BOOL_FALSE(CreateProcessW(
+        THROW_IF_WIN32_BOOL_FALSE(CreateProcessW(
             nullptr,
             newCommandLine.data(),
             nullptr, // lpProcessAttributes
@@ -193,10 +191,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             TraceLoggingWideString(_clientName.c_str(), "Client", "The attached client process"),
             TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
             TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
-
-        return S_OK;
     }
-    CATCH_RETURN();
 
     // Who decided that?
 #pragma warning(suppress : 26455) // Default constructor should not throw. Declare it 'noexcept' (f.6).
@@ -418,7 +413,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                 THROW_IF_FAILED(ConptyShowHidePseudoConsole(_hPC.get(), _initialVisibility));
             }
 
-            THROW_IF_FAILED(_LaunchAttachedClient());
+            _LaunchAttachedClient();
         }
         // But if it was an inbound handoff... attempt to synchronize the size of it with what our connection
         // window is expecting it to be on the first layout.

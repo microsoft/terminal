@@ -39,7 +39,7 @@ private:
     std::unique_ptr<IslandWindow> _window;
     winrt::TerminalApp::AppLogic _appLogic{ nullptr };
     winrt::TerminalApp::TerminalWindow _windowLogic{ nullptr };
-    std::shared_ptr<ThrottledFuncTrailing<bool>> _showHideWindowThrottler;
+    std::shared_ptr<ThrottledFunc<bool>> _showHideWindowThrottler;
     SafeDispatcherTimer _frameTimer;
     LARGE_INTEGER _lastActivatedTime{};
     winrt::guid _virtualDesktopId{};
@@ -127,7 +127,7 @@ private:
     void _stopFrameTimer();
     void _updateFrameColor(const winrt::Windows::Foundation::IInspectable&, const winrt::Windows::Foundation::IInspectable&);
 
-    void _AppTitleChanged(const winrt::Windows::Foundation::IInspectable& sender, winrt::hstring newTitle);
+    void _AppTitleChanged(const winrt::Windows::Foundation::IInspectable&, const winrt::Windows::Foundation::IInspectable&);
     void _HandleRequestLaunchPosition(const winrt::Windows::Foundation::IInspectable& sender,
                                       winrt::TerminalApp::LaunchPositionRequest args);
 

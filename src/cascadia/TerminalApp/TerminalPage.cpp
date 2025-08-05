@@ -1959,11 +1959,9 @@ namespace winrt::TerminalApp::implementation
     // - tab: the Tab to update the title for.
     void TerminalPage::_UpdateTitle(const Tab& tab)
     {
-        auto newTabTitle = tab.Title();
-
         if (tab == _GetFocusedTab())
         {
-            TitleChanged.raise(*this, newTabTitle);
+            TitleChanged.raise(*this, nullptr);
         }
     }
 
@@ -2827,17 +2825,9 @@ namespace winrt::TerminalApp::implementation
     {
         if (_settings.GlobalSettings().ShowTitleInTitlebar())
         {
-            auto selectedIndex = _tabView.SelectedIndex();
-            if (selectedIndex >= 0)
+            if (const auto tab{ _GetFocusedTab() })
             {
-                try
-                {
-                    if (auto focusedControl{ _GetActiveControl() })
-                    {
-                        return focusedControl.Title();
-                    }
-                }
-                CATCH_LOG();
+                return tab.Title();
             }
         }
         return { L"Terminal" };
@@ -3896,6 +3886,9 @@ namespace winrt::TerminalApp::implementation
         _updateThemeColors();
 
         _updateAllTabCloseButtons();
+
+        // The user may have changed the "show title in titlebar" setting.
+        TitleChanged.raise(*this, nullptr);
     }
 
     void TerminalPage::_updateAllTabCloseButtons()
@@ -5115,8 +5108,6 @@ namespace winrt::TerminalApp::implementation
     safe_void_coroutine TerminalPage::_ControlCompletionsChangedHandler(const IInspectable sender,
                                                                         const CompletionsChangedEventArgs args)
     {
-        // This will come in on a background (not-UI, not output) thread.
-
         // This won't even get hit if the velocity flag is disabled - we gate
         // registering for the event based off of
         // Feature_ShellCompletions::IsEnabled back in _RegisterTerminalEvents
