@@ -71,7 +71,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         void Resolve(const winrt::hstring& newPath)
         {
-            assert(!resolved); // Make sure we're only resolved once (in debug only)
             resolvedValue = newPath;
             ok = true;
             resolved = true;
@@ -79,7 +78,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         void Reject()
         {
-            assert(!resolved); // Make sure we're only resolved once (in debug only)
             resolvedValue = {};
             ok = false;
             resolved = true;
