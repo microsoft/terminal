@@ -11,6 +11,7 @@
 #include "../WinRTUtils/inc/Utils.h"
 #include "../../renderer/base/FontCache.h"
 #include "SegoeFluentIconList.h"
+#include "../../types/inc/utils.hpp"
 
 using namespace winrt::Windows::UI::Text;
 using namespace winrt::Windows::UI::Xaml;
@@ -189,12 +190,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             _currentIconType = _IconTypes.GetAt(0);
         }
-        else if (L"\uE700" <= profileIcon && profileIcon <= L"\uF8B3")
+        else if (profileIcon.size() == 1 && (L'\uE700' <= til::at(profileIcon, 0) && til::at(profileIcon, 0) <= L'\uF8B3'))
         {
             _currentIconType = _IconTypes.GetAt(1);
             _DeduceCurrentBuiltInIcon();
         }
-        else if (profileIcon.size() <= 2)
+        else if (::Microsoft::Console::Utils::IsLikelyToBeEmojiOrSymbolIcon(profileIcon))
         {
             // We already did a range check for MDL2 Assets in the previous one,
             // so if we're out of that range but still short, assume we're an emoji
