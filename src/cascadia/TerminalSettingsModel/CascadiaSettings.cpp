@@ -562,6 +562,7 @@ static void _resolveSingleMediaResourceInner(Model::OriginTag origin, std::wstri
                 if (uriPath.size() < 2)
                 {
                     resource.Reject();
+                    return;
                 }
                 // Uri mangles file paths to begin with a / (ala /C:/) and escapes special characters such as Space.
                 // Try to un-mangle it.
