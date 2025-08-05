@@ -1290,6 +1290,7 @@ bool Utils::IsLikelyToBeEmojiOrSymbolIcon(std::wstring_view text) noexcept
         // grapheme cluster.
         return false;
     }
+    // Use ICU to determine whether text is composed of a single grapheme cluster.
     int32_t off{ 0 };
     UErrorCode status{ U_ZERO_ERROR };
     const auto b{ ubrk_open(UBRK_CHARACTER,
