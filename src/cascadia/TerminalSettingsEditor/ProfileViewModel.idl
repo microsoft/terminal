@@ -116,7 +116,7 @@ namespace Microsoft.Terminal.Settings.Editor
         Boolean UsingBuiltInIcon { get; };
         Boolean UsingEmojiIcon { get; };
         Boolean UsingImageIcon { get; };
-	String IconPath;
+        String IconPath;
 
         IInspectable CurrentBuiltInIcon;
         Windows.Foundation.Collections.IVector<IInspectable> BuiltInIcons { get; };
