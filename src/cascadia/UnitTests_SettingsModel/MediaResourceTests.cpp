@@ -201,7 +201,7 @@ namespace SettingsModelUnitTests
 
         static winrt::com_ptr<implementation::CascadiaSettings> createSettings(const std::string_view& userJSON)
         {
-            return createSettingsWithFragments(userJson, staticDefaultSettings, {});
+            return createSettingsWithFragments(userJSON, {});
         }
     };
 
