@@ -98,7 +98,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void IconPath(const winrt::hstring& path)
         {
             Icon(Model::MediaResourceHelper::FromString(path));
-            _NotifyChanges(L"Icon");
+            _NotifyChanges(L"Icon", L"IconPath");
         }
 
         // starting directory
