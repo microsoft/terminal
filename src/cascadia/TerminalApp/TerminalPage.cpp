@@ -545,22 +545,32 @@ namespace winrt::TerminalApp::implementation
             _WindowProperties.VirtualEnvVars(env);
         }
 
+        // The current TerminalWindow & TerminalPage architecture is rather instable
+        // and fails to start up if the first tab isn't created synchronously.
+        //
+        // While that's a fair assumption in on itself, simultaneously WinUI will
+        // not assign tab contents a size if they're not shown at least once,
+        // which we need however in order to initialize ControlCore with a size.
+        //
+        // So, we do two things here:
+        // * DO NOT suspend if this is the first tab.
+        // * DO suspend between the creation of panes (or tabs) in order to allow
+        //   WinUI to layout the new controls and for ControlCore to get a size.
+        //
+        // This same logic is also applied to CreateTabFromConnection.
+        //
+        // See GH#13136.
+        auto suspend = _tabs.Size() > 0;
+
         for (size_t i = 0; i < actions.size(); ++i)
         {
-            if (i != 0)
+            if (suspend)
             {
-                // Each action may rely on the XAML layout of a preceding action.
-                // Most importantly, this is the case for the combination of NewTab + SplitPane,
-                // as the former appears to only have a layout size after at least 1 resume_foreground,
-                // while the latter relies on that information. This is also why it uses Low priority.
-                //
-                // Curiously, this does not seem to be required when using startupActions, but only when
-                // tearing out a tab (this currently creates a new window with injected startup actions).
-                // This indicates that this is really more of an architectural issue and not a fundamental one.
                 co_await wil::resume_foreground(Dispatcher(), CoreDispatcherPriority::Low);
             }
 
             _actionDispatch->DoAction(actions[i]);
+            suspend = true;
         }
 
         // GH#6586: now that we're done processing all startup commands,
@@ -575,8 +585,16 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    void TerminalPage::CreateTabFromConnection(ITerminalConnection connection)
+    safe_void_coroutine TerminalPage::CreateTabFromConnection(ITerminalConnection connection)
     {
+        const auto strong = get_strong();
+
+        // This is the exact same logic as in ProcessStartupActions.
+        if (_tabs.Size() > 0)
+        {
+            co_await wil::resume_foreground(Dispatcher(), CoreDispatcherPriority::Low);
+        }
+
         NewTerminalArgs newTerminalArgs;
 
         if (const auto conpty = connection.try_as<ConptyConnection>())
@@ -591,6 +609,7 @@ namespace winrt::TerminalApp::implementation
         // elevated version of the Terminal with that profile... that's a
         // recipe for disaster. We won't ever open up a tab in this window.
         newTerminalArgs.Elevate(false);
+
         const auto newPane = _MakePane(newTerminalArgs, nullptr, std::move(connection));
         newPane->WalkTree([](const auto& pane) {
             pane->FinalizeConfigurationGivenDefault();
