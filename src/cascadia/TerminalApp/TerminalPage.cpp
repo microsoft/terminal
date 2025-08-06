@@ -5725,9 +5725,13 @@ namespace winrt::TerminalApp::implementation
         _extensionPalette.InputSuggestionRequested({ this, &TerminalPage::_OnInputSuggestionRequested });
         _extensionPalette.ExportChatHistoryRequested({ this, &TerminalPage::_OnExportChatHistoryRequested });
         _extensionPalette.ActiveControlInfoRequested([&](IInspectable const&, IInspectable const&) {
-            if (const auto activeControl = _GetActiveControl())
+            const auto activeTab{ _GetFocusedTabImpl() };
+            if (!activeTab)
             {
-                const auto profileName = activeControl.Settings().ProfileName();
+                return;
+            }
+            if (const auto activeControl = activeTab->GetActiveTerminalControl())
+            {
                 std::wstring fullCommandline = activeControl.Settings().Commandline().c_str();
 
                 // We need to extract the executable to send to the LMProvider for context
@@ -5750,21 +5754,14 @@ namespace winrt::TerminalApp::implementation
                         executablePath = std::filesystem::path{ fullCommandline.substr(0, terminator) };
                     }
 
-                    const auto executableFilename{ executablePath.filename() };
-                    winrt::hstring executableString{ executableFilename.c_str() };
+                    winrt::hstring executableString{ executablePath.filename().native() };
                     _extensionPalette.ActiveCommandline(executableString);
-                    _extensionPalette.ProfileName(profileName);
                 }
 
-                // Unfortunately IControlSettings doesn't contain the icon, we need to search our
-                // settings for the matching profile and get the icon from there
-                for (const auto profile : _settings.AllProfiles())
+                if (const auto profile = activeTab->GetFocusedProfile())
                 {
-                    if (profile.Name() == profileName)
-                    {
-                        _extensionPalette.IconPath(profile.Icon());
-                        break;
-                    }
+                    _extensionPalette.ProfileName(profile.Name());
+                    _extensionPalette.IconPath(profile.Icon().Resolved());
                 }
             }
             else
