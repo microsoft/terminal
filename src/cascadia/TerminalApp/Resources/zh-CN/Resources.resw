@@ -267,6 +267,10 @@
   <data name="DuplicateTabText" xml:space="preserve">
     <value>复制标签页</value>
   </data>
+  <data name="InvalidMediaResource" xml:space="preserve">
+    <value>找不到设置中指定的一个或多个资源 (，如 icon 或 backgroundImage)。</value>
+    <comment>{Locked="icon","backgroundImage"} Indicates that something has gone wrong while reading a user's settings.</comment>
+  </data>
   <data name="AtLeastOneKeybindingWarning" xml:space="preserve">
     <value>分析键绑定时发现警告:</value>
   </data>

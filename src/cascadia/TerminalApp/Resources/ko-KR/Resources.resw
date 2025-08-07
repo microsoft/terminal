@@ -267,6 +267,10 @@
   <data name="DuplicateTabText" xml:space="preserve">
     <value>탭 복제</value>
   </data>
+  <data name="InvalidMediaResource" xml:space="preserve">
+    <value>설정에 지정된 하나 이상의 리소스(예: icon 또는 backgroundImage)를 찾을 수 없습니다.</value>
+    <comment>{Locked="icon","backgroundImage"} Indicates that something has gone wrong while reading a user's settings.</comment>
+  </data>
   <data name="AtLeastOneKeybindingWarning" xml:space="preserve">
     <value>키 바인딩 구문을 분석하는 동안 경고를 발견했습니다.</value>
   </data>

@@ -267,6 +267,10 @@
   <data name="DuplicateTabText" xml:space="preserve">
     <value>Dupliquer l’onglet</value>
   </data>
+  <data name="InvalidMediaResource" xml:space="preserve">
+    <value>Une ou plusieurs ressources (telles que icon ou backgroundImage) spécifiées dans vos paramètres sont introuvables.</value>
+    <comment>{Locked="icon","backgroundImage"} Indicates that something has gone wrong while reading a user's settings.</comment>
+  </data>
   <data name="AtLeastOneKeybindingWarning" xml:space="preserve">
     <value>Des avertissements ont été détectés lors de l’analyse de vos combinaisons de touches :</value>
   </data>
