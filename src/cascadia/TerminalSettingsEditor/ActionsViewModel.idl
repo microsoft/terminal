@@ -33,6 +33,7 @@ namespace Microsoft.Terminal.Settings.Editor
         // View-model specific
         String DisplayName { get; };
         String FirstKeyChordText { get; };
+        String DisplayNameAndKeyChordAutomationPropName { get; };
 
         // UI side (command list page)
         void Edit_Click();
@@ -50,6 +51,7 @@ namespace Microsoft.Terminal.Settings.Editor
         // UI side (edit command page, automation property names)
         String ActionNameTextBoxAutomationPropName { get; };
         String ShortcutActionComboBoxAutomationPropName { get; };
+        String AdditionalArgumentsControlAutomationPropName { get; };
     }
 
     runtimeclass ArgWrapper : Windows.UI.Xaml.Data.INotifyPropertyChanged

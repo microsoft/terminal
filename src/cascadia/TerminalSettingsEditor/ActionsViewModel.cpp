@@ -286,11 +286,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     winrt::hstring CommandViewModel::Name()
     {
-        if (_command.HasName())
-        {
-            return _command.Name();
-        }
-        return L"";
+        return _command.HasName() ? _command.Name() : L"";
     }
 
     void CommandViewModel::Name(const winrt::hstring& newName)
@@ -299,8 +295,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         if (newName.empty())
         {
             // if the name was cleared, refresh the DisplayName
-            _NotifyChanges(L"DisplayName");
+            _NotifyChanges(L"DisplayName", L"DisplayNameAndKeyChordAutomationPropName");
         }
+    }
+
+    winrt::hstring CommandViewModel::DisplayNameAndKeyChordAutomationPropName()
+    {
+        return DisplayName() + L" " + FirstKeyChordText();
     }
 
     winrt::hstring CommandViewModel::FirstKeyChordText()
@@ -348,6 +349,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     winrt::hstring CommandViewModel::ShortcutActionComboBoxAutomationPropName()
     {
         return RS_(L"Actions_ShortcutAction/Text");
+    }
+
+    winrt::hstring CommandViewModel::AdditionalArgumentsControlAutomationPropName()
+    {
+        return RS_(L"Actions_Arguments/Text");
     }
 
     void CommandViewModel::_RegisterKeyChordVMEvents(Editor::KeyChordViewModel kcVM)

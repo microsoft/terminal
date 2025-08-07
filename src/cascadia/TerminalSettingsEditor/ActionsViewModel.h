@@ -93,6 +93,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         winrt::hstring DisplayName();
         winrt::hstring Name();
         void Name(const winrt::hstring& newName);
+        winrt::hstring DisplayNameAndKeyChordAutomationPropName();
 
         winrt::hstring FirstKeyChordText();
 
@@ -110,6 +111,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // UIA text
         winrt::hstring ActionNameTextBoxAutomationPropName();
         winrt::hstring ShortcutActionComboBoxAutomationPropName();
+        winrt::hstring AdditionalArgumentsControlAutomationPropName();
 
         til::typed_event<IInspectable, Editor::ArgWrapper> PropagateColorSchemeRequested;
         til::typed_event<IInspectable, Editor::ArgWrapper> PropagateColorSchemeNamesRequested;

@@ -147,7 +147,7 @@
             <!--  Templates  -->
             <DataTemplate x:Key="CommandTemplate"
                           x:DataType="local:CommandViewModel">
-                <ListViewItem AutomationProperties.Name="{x:Bind DisplayName, Mode=OneWay}"
+                <ListViewItem AutomationProperties.Name="{x:Bind DisplayNameAndKeyChordAutomationPropName, Mode=OneWay}"
                               Style="{StaticResource KeyBindingContainerStyle}">
                     <Grid ColumnSpacing="8">
                         <Grid.ColumnDefinitions>
