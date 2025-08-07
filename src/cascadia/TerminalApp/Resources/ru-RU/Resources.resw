@@ -267,6 +267,10 @@
   <data name="DuplicateTabText" xml:space="preserve">
     <value>Дублировать вкладку</value>
   </data>
+  <data name="InvalidMediaResource" xml:space="preserve">
+    <value>Не удалось найти один или несколько ресурсов (icon или backgroundImage), указанных в параметрах.</value>
+    <comment>{Locked="icon","backgroundImage"} Indicates that something has gone wrong while reading a user's settings.</comment>
+  </data>
   <data name="AtLeastOneKeybindingWarning" xml:space="preserve">
     <value>При анализе настраиваемых сочетаний клавиш найдены предупреждения:</value>
   </data>

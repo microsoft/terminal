@@ -271,6 +271,10 @@
   <data name="DuplicateTabText" xml:space="preserve">
     <value>Ďϋφľіčάтέ τàв !!! </value>
   </data>
+  <data name="InvalidMediaResource" xml:space="preserve">
+    <value>Ωňę бг mθгě яėŝǿüґсėş (šυćн âş icon ōя backgroundImage) ŝрěçìƒįєð ίπ ýőūŕ ŝėтťīлġš ċòŭĺð йöŧ вέ ƒòúпď. !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! </value>
+    <comment>{Locked="icon","backgroundImage"} Indicates that something has gone wrong while reading a user's settings.</comment>
+  </data>
   <data name="AtLeastOneKeybindingWarning" xml:space="preserve">
     <value>Щαѓńΐňģš ώĕřе ƒбŭπδ ώħīļë рăяşìⁿġ ўσυŕ κёỳвĩиðīήġş: !!! !!! !!! !!! !!!</value>
   </data>

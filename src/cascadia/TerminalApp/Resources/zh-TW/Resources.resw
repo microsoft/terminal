@@ -267,6 +267,10 @@
   <data name="DuplicateTabText" xml:space="preserve">
     <value>複製索引標籤</value>
   </data>
+  <data name="InvalidMediaResource" xml:space="preserve">
+    <value>找不到一或多個資源 (，例如在您的設定中指定的 icon 或 backgroundImage)。</value>
+    <comment>{Locked="icon","backgroundImage"} Indicates that something has gone wrong while reading a user's settings.</comment>
+  </data>
   <data name="AtLeastOneKeybindingWarning" xml:space="preserve">
     <value>剖析金鑰繫結時發現警告:</value>
   </data>
