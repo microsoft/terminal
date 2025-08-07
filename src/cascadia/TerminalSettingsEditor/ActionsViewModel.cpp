@@ -301,7 +301,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     winrt::hstring CommandViewModel::DisplayNameAndKeyChordAutomationPropName()
     {
-        return DisplayName() + L" " + FirstKeyChordText();
+        return DisplayName() + L", " + FirstKeyChordText();
     }
 
     winrt::hstring CommandViewModel::FirstKeyChordText()
