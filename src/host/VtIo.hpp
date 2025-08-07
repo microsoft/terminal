@@ -57,9 +57,9 @@ namespace Microsoft::Console::VirtualTerminal
         static wchar_t SanitizeUCS2(wchar_t ch);
 
         [[nodiscard]] HRESULT Initialize(const ConsoleArguments* const pArgs);
-
         bool IsUsingVt() const;
         [[nodiscard]] HRESULT StartIfNeeded();
+        void Shutdown() noexcept;
 
         void RequestCursorPositionFromTerminal();
         void SetDeviceAttributes(til::enumset<DeviceAttribute, uint64_t> attributes) noexcept;
