@@ -126,7 +126,7 @@ namespace SettingsModelUnitTests
                 "warning.confirmCloseAllTabs" : true,
                 "warning.inputService" : true,
                 "warning.largePaste" : true,
-                "warning.multiLinePaste" : true,
+                "warning.multiLinePaste" : "automatic",
 
                 "actions": [],
                 "keybindings": []
@@ -1296,3 +1296,4 @@ namespace SettingsModelUnitTests
         VERIFY_ARE_EQUAL(toString(newResult), toString(oldResult));
     }
 }
+
