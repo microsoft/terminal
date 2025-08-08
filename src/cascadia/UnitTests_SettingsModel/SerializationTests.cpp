@@ -1326,4 +1326,3 @@ namespace SettingsModelUnitTests
         VERIFY_ARE_EQUAL(R"(c:\this_icon_had_better_not_exist.tiff)", newResult["profiles"]["list"][0]["icon"].asString());
     }
 }
-
