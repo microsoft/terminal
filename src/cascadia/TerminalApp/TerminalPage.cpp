@@ -56,6 +56,121 @@ namespace winrt
     using VirtualKeyModifiers = Windows::System::VirtualKeyModifiers;
 }
 
+namespace clipboard
+{
+    wil::unique_close_clipboard_call open(HWND hwnd)
+    {
+        bool success = false;
+
+        // OpenClipboard may fail to acquire the internal lock --> retry.
+        for (DWORD sleep = 10;; sleep *= 2)
+        {
+            if (OpenClipboard(hwnd))
+            {
+                success = true;
+                break;
+            }
+            // 10 iterations
+            if (sleep > 10000)
+            {
+                break;
+            }
+            Sleep(sleep);
+        }
+
+        return wil::unique_close_clipboard_call{ success };
+    }
+
+    void write(wil::zwstring_view text, std::string_view html, std::string_view rtf)
+    {
+        static const auto regular = [](const UINT format, const void* src, const size_t bytes) {
+            wil::unique_hglobal handle{ THROW_LAST_ERROR_IF_NULL(GlobalAlloc(GMEM_MOVEABLE, bytes)) };
+
+            const auto locked = GlobalLock(handle.get());
+            memcpy(locked, src, bytes);
+            GlobalUnlock(handle.get());
+
+            THROW_LAST_ERROR_IF_NULL(SetClipboardData(format, handle.get()));
+            handle.release();
+        };
+        static const auto registered = [](const wchar_t* format, const void* src, size_t bytes) {
+            const auto id = RegisterClipboardFormatW(format);
+            if (!id)
+            {
+                LOG_LAST_ERROR();
+                return;
+            }
+            regular(id, src, bytes);
+        };
+
+        EmptyClipboard();
+
+        if (!text.empty())
+        {
+            // As per: https://learn.microsoft.com/en-us/windows/win32/dataxchg/standard-clipboard-formats
+            //   CF_UNICODETEXT: [...] A null character signals the end of the data.
+            // --> We add +1 to the length. This works because .c_str() is null-terminated.
+            regular(CF_UNICODETEXT, text.c_str(), (text.size() + 1) * sizeof(wchar_t));
+        }
+
+        if (!html.empty())
+        {
+            registered(L"HTML Format", html.data(), html.size());
+        }
+
+        if (!rtf.empty())
+        {
+            registered(L"Rich Text Format", rtf.data(), rtf.size());
+        }
+    }
+
+    winrt::hstring read()
+    {
+        // This handles most cases of pasting text as the OS converts most formats to CF_UNICODETEXT automatically.
+        if (const auto handle = GetClipboardData(CF_UNICODETEXT))
+        {
+            const wil::unique_hglobal_locked lock{ handle };
+            const auto str = static_cast<const wchar_t*>(lock.get());
+            if (!str)
+            {
+                return {};
+            }
+
+            const auto maxLen = GlobalSize(handle) / sizeof(wchar_t);
+            const auto len = wcsnlen(str, maxLen);
+            return winrt::hstring{ str, gsl::narrow_cast<uint32_t>(len) };
+        }
+
+        // We get CF_HDROP when a user copied a file with Ctrl+C in Explorer and pastes that into the terminal (among others).
+        if (const auto handle = GetClipboardData(CF_HDROP))
+        {
+            const wil::unique_hglobal_locked lock{ handle };
+            const auto drop = static_cast<HDROP>(lock.get());
+            if (!drop)
+            {
+                return {};
+            }
+
+            const auto cap = DragQueryFileW(drop, 0, nullptr, 0);
+            if (cap == 0)
+            {
+                return {};
+            }
+
+            auto buffer = winrt::impl::hstring_builder{ cap };
+            const auto len = DragQueryFileW(drop, 0, buffer.data(), cap + 1);
+            if (len == 0)
+            {
+                return {};
+            }
+
+            return buffer.to_hstring();
+        }
+
+        return {};
+    }
+} // namespace clipboard
+
 namespace winrt::TerminalApp::implementation
 {
     TerminalPage::TerminalPage(TerminalApp::WindowProperties properties, const TerminalApp::ContentManager& manager) :
@@ -1793,7 +1908,7 @@ namespace winrt::TerminalApp::implementation
     {
         term.RaiseNotice({ this, &TerminalPage::_ControlNoticeRaisedHandler });
 
-        // Add an event handler when the terminal wants to paste data from the Clipboard.
+        term.WriteToClipboard({ get_weak(), &TerminalPage::_copyToClipboard });
         term.PasteFromClipboard({ this, &TerminalPage::_PasteFromClipboardHandler });
 
         term.OpenHyperlink({ this, &TerminalPage::_OpenHyperlinkHandler });
@@ -1815,9 +1930,7 @@ namespace winrt::TerminalApp::implementation
         });
 
         term.ShowWindowChanged({ get_weak(), &TerminalPage::_ShowWindowChangedHandler });
-
         term.SearchMissingCommand({ get_weak(), &TerminalPage::_SearchMissingCommandHandler });
-
         term.WindowSizeChanged({ get_weak(), &TerminalPage::_WindowSizeChanged });
 
         // Don't even register for the event if the feature is compiled off.
@@ -2739,75 +2852,6 @@ namespace winrt::TerminalApp::implementation
         return dimension;
     }
 
-    static wil::unique_close_clipboard_call _openClipboard(HWND hwnd)
-    {
-        bool success = false;
-
-        // OpenClipboard may fail to acquire the internal lock --> retry.
-        for (DWORD sleep = 10;; sleep *= 2)
-        {
-            if (OpenClipboard(hwnd))
-            {
-                success = true;
-                break;
-            }
-            // 10 iterations
-            if (sleep > 10000)
-            {
-                break;
-            }
-            Sleep(sleep);
-        }
-
-        return wil::unique_close_clipboard_call{ success };
-    }
-
-    static winrt::hstring _extractClipboard()
-    {
-        // This handles most cases of pasting text as the OS converts most formats to CF_UNICODETEXT automatically.
-        if (const auto handle = GetClipboardData(CF_UNICODETEXT))
-        {
-            const wil::unique_hglobal_locked lock{ handle };
-            const auto str = static_cast<const wchar_t*>(lock.get());
-            if (!str)
-            {
-                return {};
-            }
-
-            const auto maxLen = GlobalSize(handle) / sizeof(wchar_t);
-            const auto len = wcsnlen(str, maxLen);
-            return winrt::hstring{ str, gsl::narrow_cast<uint32_t>(len) };
-        }
-
-        // We get CF_HDROP when a user copied a file with Ctrl+C in Explorer and pastes that into the terminal (among others).
-        if (const auto handle = GetClipboardData(CF_HDROP))
-        {
-            const wil::unique_hglobal_locked lock{ handle };
-            const auto drop = static_cast<HDROP>(lock.get());
-            if (!drop)
-            {
-                return {};
-            }
-
-            const auto cap = DragQueryFileW(drop, 0, nullptr, 0);
-            if (cap == 0)
-            {
-                return {};
-            }
-
-            auto buffer = winrt::impl::hstring_builder{ cap };
-            const auto len = DragQueryFileW(drop, 0, buffer.data(), cap + 1);
-            if (len == 0)
-            {
-                return {};
-            }
-
-            return buffer.to_hstring();
-        }
-
-        return {};
-    }
-
     // Function Description:
     // - This function is called when the `TermControl` requests that we send
     //   it the clipboard's content.
@@ -2827,36 +2871,51 @@ namespace winrt::TerminalApp::implementation
         const auto weakThis = get_weak();
         const auto dispatcher = Dispatcher();
         const auto globalSettings = _settings.GlobalSettings();
+        const auto bracketedPaste = eventArgs.BracketedPasteEnabled();
 
         // GetClipboardData might block for up to 30s for delay-rendered contents.
         co_await winrt::resume_background();
 
         winrt::hstring text;
-        if (const auto clipboard = _openClipboard(nullptr))
+        if (const auto clipboard = clipboard::open(nullptr))
         {
-            text = _extractClipboard();
+            text = clipboard::read();
         }
 
-        if (globalSettings.TrimPaste())
+        if (!bracketedPaste && globalSettings.TrimPaste())
         {
-            text = { Utils::TrimPaste(text) };
-            if (text.empty())
-            {
-                // Text is all white space, nothing to paste
-                co_return;
-            }
+            text = winrt::hstring{ Utils::TrimPaste(text) };
         }
 
-        // If the requesting terminal is in bracketed paste mode, then we don't need to warn about a multi-line paste.
-        auto warnMultiLine = globalSettings.WarnAboutMultiLinePaste() && !eventArgs.BracketedPasteEnabled();
+        if (text.empty())
+        {
+            co_return;
+        }
+
+        bool warnMultiLine = false;
+        switch (globalSettings.WarnAboutMultiLinePaste())
+        {
+        case WarnAboutMultiLinePaste::Automatic:
+            // NOTE that this is unsafe, because a shell that doesn't support bracketed paste
+            // will allow an attacker to enable the mode, not realize that, and then accept
+            // the paste as if it was a series of legitimate commands. See GH#13014.
+            warnMultiLine = !bracketedPaste;
+            break;
+        case WarnAboutMultiLinePaste::Always:
+            warnMultiLine = true;
+            break;
+        default:
+            warnMultiLine = false;
+            break;
+        }
+
         if (warnMultiLine)
         {
-            const auto isNewLineLambda = [](auto c) { return c == L'\n' || c == L'\r'; };
-            const auto hasNewLine = std::find_if(text.cbegin(), text.cend(), isNewLineLambda) != text.cend();
-            warnMultiLine = hasNewLine;
+            const std::wstring_view view{ text };
+            warnMultiLine = view.find_first_of(L"\r\n") != std::wstring_view::npos;
         }
 
-        constexpr const std::size_t minimumSizeForWarning = 1024 * 5; // 5 KiB
+        constexpr std::size_t minimumSizeForWarning = 1024 * 5; // 5 KiB
         const auto warnLargeText = text.size() > minimumSizeForWarning && globalSettings.WarnAboutLargePaste();
 
         if (warnMultiLine || warnLargeText)
@@ -2866,7 +2925,7 @@ namespace winrt::TerminalApp::implementation
             if (const auto strongThis = weakThis.get())
             {
                 // We have to initialize the dialog here to be able to change the text of the text block within it
-                FindName(L"MultiLinePasteDialog").try_as<WUX::Controls::ContentDialog>();
+                std::ignore = FindName(L"MultiLinePasteDialog");
                 ClipboardText().Text(text);
 
                 // The vertical offset on the scrollbar does not reset automatically, so reset it manually
@@ -3047,7 +3106,7 @@ namespace winrt::TerminalApp::implementation
     // - formats: dictate which formats need to be copied
     // Return Value:
     // - true iff we we able to copy text (if a selection was active)
-    bool TerminalPage::_CopyText(const bool dismissSelection, const bool singleLine, const bool withControlSequences, const Windows::Foundation::IReference<CopyFormat>& formats)
+    bool TerminalPage::_CopyText(const bool dismissSelection, const bool singleLine, const bool withControlSequences, const CopyFormat formats)
     {
         if (const auto& control{ _GetActiveControl() })
         {
@@ -3187,6 +3246,21 @@ namespace winrt::TerminalApp::implementation
             {
                 conpty.ResetSize();
             }
+        }
+    }
+
+    void TerminalPage::_copyToClipboard(const IInspectable, const WriteToClipboardEventArgs args) const
+    {
+        if (const auto clipboard = clipboard::open(_hostingHwnd.value_or(nullptr)))
+        {
+            const auto plain = args.Plain();
+            const auto html = args.Html();
+            const auto rtf = args.Rtf();
+
+            clipboard::write(
+                { plain.data(), plain.size() },
+                { reinterpret_cast<const char*>(html.data()), html.size() },
+                { reinterpret_cast<const char*>(rtf.data()), rtf.size() });
         }
     }
 
