@@ -25,7 +25,6 @@
 
     // Miscellaneous
     "confirmCloseAllTabs": true,
-    "startOnUserLogin": false,
     "theme": "dark",
     "snapToGridOnResize": true,
     "disableAnimations": false,
@@ -81,6 +80,52 @@
         //   - "foreground"
         //   - "background"
         //   - "cursorColor"
+        {
+            "name": "Dimidium",
+            "background": "#141414",
+            "foreground": "#BAB7B6",
+            "cursorColor": "#37E57B",
+            "selectionBackground": "#FFFFFF",
+            "black": "#000000",
+            "red": "#CF494C",
+            "green": "#60B442",
+            "yellow": "#DB9C11",
+            "blue": "#0575D8",
+            "purple": "#AF5ED2",
+            "cyan": "#1DB6BB",
+            "white": "#BAB7B6",
+            "brightBlack": "#817E7E",
+            "brightRed": "#FF643B",
+            "brightGreen": "#37E57B",
+            "brightYellow": "#FCCD1A",
+            "brightBlue": "#688DFD",
+            "brightPurple": "#ED6FE9",
+            "brightCyan": "#32E0FB",
+            "brightWhite": "#D3D8D9"
+        },
+        {
+            "name": "Ottosson",
+            "background": "#000000",
+            "foreground": "#bebebe",
+            "cursorColor": "#ffffff",
+            "selectionBackground": "#92a4fd",
+            "black": "#000000",
+            "red": "#be2c21",
+            "green": "#3fae3a",
+            "yellow": "#be9a4a",
+            "blue": "#204dbe",
+            "purple": "#bb54be",
+            "cyan": "#00a7b2",
+            "white": "#bebebe",
+            "brightBlack": "#808080",
+            "brightRed": "#ff3e30",
+            "brightGreen": "#58ea51",
+            "brightYellow": "#ffc944",
+            "brightBlue": "#2f6aff",
+            "brightPurple": "#fc74ff",
+            "brightCyan": "#00e1f0",
+            "brightWhite": "#ffffff"
+        },
         {
             "name": "Campbell",
             "foreground": "#CCCCCC",
@@ -431,6 +476,7 @@
         { "command": { "action": "openSettings", "target": "settingsUI" }, "id": "Terminal.OpenSettingsUI" },
         { "command": { "action": "openSettings", "target": "settingsFile" }, "id": "Terminal.OpenSettingsFile" },
         { "command": { "action": "openSettings", "target": "defaultsFile" }, "id": "Terminal.OpenDefaultSettingsFile" },
+        { "command": { "action": "openSettings", "target": "directory" }, "id": "Terminal.OpenSettingsDirectory" },
         { "command": "find", "id": "Terminal.FindText" },
         { "command": { "action": "findMatch", "direction": "next" }, "id": "Terminal.FindNextMatch" },
         { "command": { "action": "findMatch", "direction": "prev" }, "id": "Terminal.FindPrevMatch" },
@@ -449,6 +495,7 @@
         { "command": "experimental.openTasks", "id": "Terminal.OpenTasks" },
         { "command": "quickFix", "id": "Terminal.QuickFix" },
         { "command": { "action": "showSuggestions", "source": "all"}, "id": "Terminal.Suggestions" },
+        { "command": "openCWD", "id": "Terminal.OpenCWD" },
 
         // Tab Management
         // "command": "closeTab" is unbound by default.
@@ -559,9 +606,6 @@
         // Visual Adjustments
         { "command": { "action": "adjustFontSize", "delta": 1 }, "id": "Terminal.IncreaseFontSize" },
         { "command": { "action": "adjustFontSize", "delta": -1 }, "id": "Terminal.DecreaseFontSize" },
-        { "command": { "action": "adjustFontSize", "delta": 1 }, "id": "Terminal.IncreaseFontSize" },
-        { "command": { "action": "adjustFontSize", "delta": -1 }, "id": "Terminal.DecreaseFontSize" },
-        { "command": "resetFontSize", "id": "Terminal.ResetFontSize" },
         { "command": "resetFontSize", "id": "Terminal.ResetFontSize" },
 
         // Other commands
@@ -638,8 +682,8 @@
         { "keys": "ctrl+shift+,", "id": "Terminal.OpenSettingsFile" },
         { "keys": "ctrl+alt+,", "id": "Terminal.OpenDefaultSettingsFile" },
         { "keys": "ctrl+shift+f", "id": "Terminal.FindText" },
-        { "keys":"ctrl+shift+p", "id": "Terminal.ToggleCommandPalette" },
-        { "keys":"win+sc(41)", "id": "Terminal.QuakeMode" },
+        { "keys": "ctrl+shift+p", "id": "Terminal.ToggleCommandPalette" },
+        { "keys": "win+sc(41)", "id": "Terminal.QuakeMode" },
         { "keys": "alt+space", "id": "Terminal.OpenSystemMenu" },
         { "keys": "ctrl+shift+period", "id": "Terminal.Suggestions" },
 
@@ -701,6 +745,7 @@
         { "keys": "ctrl+shift+pgup", "id": "Terminal.ScrollUpPage" },
         { "keys": "ctrl+shift+home", "id": "Terminal.ScrollToTop" },
         { "keys": "ctrl+shift+end", "id": "Terminal.ScrollToBottom" },
+        { "keys": "ctrl+shift+k", "id": "Terminal.ClearBuffer" },
 
         // Visual Adjustments
         { "keys": "ctrl+plus", "id": "Terminal.IncreaseFontSize" },

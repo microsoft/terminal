@@ -21,7 +21,7 @@ namespace Microsoft.Terminal.Settings.Model
         #undef ON_ALL_ACTIONS
     };
 
-    [default_interface] runtimeclass ActionAndArgs {
+    runtimeclass ActionAndArgs {
         ActionAndArgs();
         ActionAndArgs(ShortcutAction action, IActionArgs args);
 
@@ -32,18 +32,19 @@ namespace Microsoft.Terminal.Settings.Model
         ShortcutAction Action;
     };
 
-    [default_interface] runtimeclass Command : ISettingsModelObject
+    runtimeclass Command : ISettingsModelObject
     {
         Command();
 
         String Name { get; };
+        String LanguageNeutralName { get; };
         String ID { get; };
 
         String Description { get; };
 
         ActionAndArgs ActionAndArgs { get; };
 
-        String IconPath;
+        IMediaResource Icon;
 
         Boolean HasNestedCommands { get; };
         Windows.Foundation.Collections.IMapView<String, Command> NestedCommands { get; };

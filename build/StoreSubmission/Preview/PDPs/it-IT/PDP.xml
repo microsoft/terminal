@@ -56,7 +56,11 @@ Si tratta di un progetto open source e la partecipazione della community è molt
   <ReleaseNotes>
     Versione __VERSION_NUMBER__
 
-Per ulteriori dettagli, consulta la nostra pagina delle versioni di GitHub.
+- Sono state aggiunte decine di impostazioni all'interfaccia utente che una volta esisteva solo nel file JSON, inclusa una nuova pagina per personalizzare il layout del menu Nuova scheda.
+- È stata riattivata la gestione delle finestre per migliorare l'affidabilità; inserire eventuali bug riscontrati con l'alias wt.exe
+- I profili ora mostrano un'icona se sono stati nascosti o fanno riferimento ai programmi che sono stati disinstallati.
+
+Per altri dettagli, vedere la pagina delle versioni di GitHub.
   </ReleaseNotes>
   <ScreenshotCaptions>
     <!-- Valid length: 200 character limit, up to 9 elements per platform -->

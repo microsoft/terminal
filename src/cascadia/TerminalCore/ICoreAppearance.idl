@@ -23,7 +23,8 @@ namespace Microsoft.Terminal.Core
     {
         Never,
         Indexed,
-        Always
+        Always,
+        Automatic
     };
 
     // TerminalCore declares its own Color struct to avoid depending
@@ -115,6 +116,7 @@ namespace Microsoft.Terminal.Core
     {
         Microsoft.Terminal.Core.Color DefaultForeground;
         Microsoft.Terminal.Core.Color DefaultBackground;
+        Microsoft.Terminal.Core.Color SelectionBackground;
         Microsoft.Terminal.Core.Color GetColorTableEntry(Int32 index);
         Microsoft.Terminal.Core.Color CursorColor;
         CursorStyle CursorShape;

@@ -15,7 +15,6 @@
     <ClCompile Include="ApiRoutinesTests.cpp" />
     <ClCompile Include="ClipboardTests.cpp" />
     <ClCompile Include="ConsoleArgumentsTests.cpp" />
-    <ClCompile Include="DbcsTests.cpp" />
     <ClCompile Include="HistoryTests.cpp" />
     <ClCompile Include="InitTests.cpp" />
     <ClCompile Include="ObjectTests.cpp" />
@@ -79,7 +78,7 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\inc\CommonState.hpp" />
+    <ClInclude Include="..\..\inc\test\CommonState.hpp" />
     <ClInclude Include="..\precomp.h" />
     <ClInclude Include="UnicodeLiteral.hpp" />
   </ItemGroup>
@@ -88,7 +87,7 @@
       <AdditionalIncludeDirectories>..;$(SolutionDir)src\inc;$(SolutionDir)src\inc\test;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>WinMM.Lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>winmm.lib;imm32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->

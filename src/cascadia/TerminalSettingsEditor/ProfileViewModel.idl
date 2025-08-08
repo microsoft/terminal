@@ -25,11 +25,29 @@ namespace Microsoft.Terminal.Settings.Editor
         Guid ProfileGuid { get; };
     }
 
+    runtimeclass BellSoundViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged
+    {
+        String Path;
+        String DisplayPath { get; };
+        String SubText { get; };
+        Boolean ShowDirectory { get; };
+        Boolean FileExists { get; };
+    }
+
     enum ProfileSubPage
     {
         Base = 0,
         Appearance = 1,
-        Advanced = 2
+        Terminal = 2,
+        Advanced = 3
+    };
+
+    enum IconType
+    {
+        None = 0,
+        FontIcon,
+        Image,
+        Emoji
     };
 
     runtimeclass ProfileViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged
@@ -41,12 +59,17 @@ namespace Microsoft.Terminal.Settings.Editor
         void SetupAppearances(Windows.Foundation.Collections.IObservableVector<ColorSchemeViewModel> schemesList);
 
         void SetAcrylicOpacityPercentageValue(Double value);
-        void SetPadding(Double value);
 
+        String BellStylePreview { get; };
         Boolean IsBellStyleFlagSet(UInt32 flag);
         void SetBellStyleAudible(Windows.Foundation.IReference<Boolean> on);
         void SetBellStyleWindow(Windows.Foundation.IReference<Boolean> on);
         void SetBellStyleTaskbar(Windows.Foundation.IReference<Boolean> on);
+
+        String BellSoundPreview { get; };
+        Windows.Foundation.Collections.IObservableVector<BellSoundViewModel> CurrentBellSounds { get; };
+        void RequestAddBellSound(String path);
+        void RequestDeleteBellSound(BellSoundViewModel vm);
 
         IInspectable CurrentAntiAliasingMode;
         Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> AntiAliasingModeList { get; };
@@ -57,13 +80,21 @@ namespace Microsoft.Terminal.Settings.Editor
         IInspectable CurrentScrollState;
         Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> ScrollStateList { get; };
 
+        Double LeftPadding { get; set; };
+        Double TopPadding { get; set; };
+        Double RightPadding { get; set; };
+        Double BottomPadding { get; set; };
+
+        IInspectable CurrentPathTranslationStyle;
+        Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> PathTranslationStyleList { get; };
+
+        String CurrentStartingDirectoryPreview { get; };
+        Boolean UseParentProcessDirectory;
+
         Boolean CanDeleteProfile { get; };
         Boolean FocusDeleteButton;
         Boolean IsBaseLayer;
         ProfileSubPage CurrentPage;
-        Boolean UseParentProcessDirectory;
-        Boolean UseCustomStartingDirectory { get; };
-        Boolean HideIcon;
         AppearanceViewModel DefaultAppearance { get; };
         Guid OriginalProfileGuid { get; };
         Boolean HasUnfocusedAppearance { get; };
@@ -75,17 +106,34 @@ namespace Microsoft.Terminal.Settings.Editor
         Boolean AutoMarkPromptsAvailable { get; };
         Boolean RepositionCursorWithMouseAvailable { get; };
 
+        Windows.UI.Xaml.Controls.IconElement IconPreview { get; };
         String EvaluatedIcon { get; };
+        String LocalizedIcon { get; };
+        String CurrentEmojiIcon;
+        IInspectable CurrentIconType;
+        Windows.Foundation.Collections.IVector<IInspectable> IconTypes { get; };
+        Boolean UsingNoIcon { get; };
+        Boolean UsingBuiltInIcon { get; };
+        Boolean UsingEmojiIcon { get; };
+        Boolean UsingImageIcon { get; };
+        String IconPath;
+
+        IInspectable CurrentBuiltInIcon;
+        Windows.Foundation.Collections.IVector<IInspectable> BuiltInIcons { get; };
+
+        String TabTitlePreview { get; };
+        String AnswerbackMessagePreview { get; };
 
         void CreateUnfocusedAppearance();
         void DeleteUnfocusedAppearance();
 
+        Boolean Orphaned { get; };
         OBSERVABLE_PROJECTED_PROFILE_SETTING(String, Name);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(Guid, Guid);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(String, Source);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(Guid, ConnectionType);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, Hidden);
-        OBSERVABLE_PROJECTED_PROFILE_SETTING(String, Icon);
+        OBSERVABLE_PROJECTED_PROFILE_SETTING(Microsoft.Terminal.Settings.Model.IMediaResource, Icon);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Microsoft.Terminal.Settings.Model.CloseOnExitMode, CloseOnExit);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(String, TabTitle);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Windows.Foundation.IReference<Microsoft.Terminal.Core.Color>, TabColor);
@@ -97,19 +145,22 @@ namespace Microsoft.Terminal.Settings.Editor
         OBSERVABLE_PROJECTED_PROFILE_SETTING(String, Commandline);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(String, StartingDirectory);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Microsoft.Terminal.Control.TextAntialiasingMode, AntialiasingMode);
-        OBSERVABLE_PROJECTED_PROFILE_SETTING(Windows.Foundation.IReference<Microsoft.Terminal.Core.Color>, Foreground);
-        OBSERVABLE_PROJECTED_PROFILE_SETTING(Windows.Foundation.IReference<Microsoft.Terminal.Core.Color>, Background);
-        OBSERVABLE_PROJECTED_PROFILE_SETTING(Windows.Foundation.IReference<Microsoft.Terminal.Core.Color>, SelectionBackground);
-        OBSERVABLE_PROJECTED_PROFILE_SETTING(Windows.Foundation.IReference<Microsoft.Terminal.Core.Color>, CursorColor);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Int32, HistorySize);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, SnapOnInput);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, AltGrAliasing);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Microsoft.Terminal.Settings.Model.BellStyle, BellStyle);
+        OBSERVABLE_PROJECTED_PROFILE_SETTING(Windows.Foundation.Collections.IVector<String>, BellSound);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, Elevate);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, ReloadEnvironmentVariables);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, RightClickContextMenu);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, ShowMarks);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, AutoMarkPrompts);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, RepositionCursorWithMouse);
+        OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, ForceVTInput);
+        OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, AllowVtChecksumReport);
+        OBSERVABLE_PROJECTED_PROFILE_SETTING(String, AnswerbackMessage);
+        OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, RainbowSuggestions);
+        OBSERVABLE_PROJECTED_PROFILE_SETTING(Microsoft.Terminal.Control.PathTranslationStyle, PathTranslationStyle);
+        OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, AllowVtClipboardWrite);
     }
 }

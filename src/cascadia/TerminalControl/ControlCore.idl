@@ -55,7 +55,7 @@ namespace Microsoft.Terminal.Control
         Boolean GoForward;
         Boolean CaseSensitive;
         Boolean RegularExpression;
-        Boolean Reset;
+        Boolean ResetOnly;
         Int32 ScrollOffset;
     };
 
@@ -102,10 +102,12 @@ namespace Microsoft.Terminal.Control
         IControlAppearance FocusedAppearance { get; };
         IControlAppearance UnfocusedAppearance { get; };
         Boolean HasUnfocusedAppearance();
+        void SetHighContrastMode(Boolean enabled);
 
         UInt64 SwapChainHandle { get; };
 
         Windows.Foundation.Size FontSize { get; };
+        Windows.Foundation.Size FontSizeInDips { get; };
         UInt16 FontWeight { get; };
         Single Opacity { get; };
         Boolean UseAcrylic { get; };
@@ -148,7 +150,6 @@ namespace Microsoft.Terminal.Control
 
         SearchResults Search(SearchRequest request);
         void ClearSearch();
-        Boolean SnapSearchResultToSelection;
 
         Microsoft.Terminal.Core.Color ForegroundColor { get; };
         Microsoft.Terminal.Core.Color BackgroundColor { get; };
@@ -178,6 +179,8 @@ namespace Microsoft.Terminal.Control
         Boolean ShouldShowSelectCommand();
         Boolean ShouldShowSelectOutput();
 
+        void OpenCWD();
+
         void ClearQuickFix();
 
         // These events are called from some background thread
@@ -190,6 +193,7 @@ namespace Microsoft.Terminal.Control
         event Windows.Foundation.TypedEventHandler<Object, ShowWindowArgs> ShowWindowChanged;
         event Windows.Foundation.TypedEventHandler<Object, SearchMissingCommandEventArgs> SearchMissingCommand;
         event Windows.Foundation.TypedEventHandler<Object, Object> RefreshQuickFixUI;
+        event Windows.Foundation.TypedEventHandler<Object, WindowSizeChangedEventArgs> WindowSizeChanged;
 
         // These events are always called from the UI thread (bugs aside)
         event Windows.Foundation.TypedEventHandler<Object, FontSizeChangedArgs> FontSizeChanged;

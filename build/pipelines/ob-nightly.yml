@@ -28,7 +28,7 @@ extends:
     official: true
     branding: Canary
     buildTerminal: true
-    pgoBuildMode: Optimize
+    pgoBuildMode: None # BODGY - OneBranch is on VS 17.10, which is known to be the worst
     codeSign: true
     signingIdentity:
       serviceName: $(SigningServiceName)
@@ -37,6 +37,8 @@ extends:
       akvName: $(SigningAKVName)
       authCertName: $(SigningAuthCertName)
       signCertName: $(SigningSignCertName)
+      useManagedIdentity: $(SigningUseManagedIdentity)
+      clientId: $(SigningOriginalClientId)
     publishSymbolsToPublic: true
     publishVpackToWindows: false
     symbolExpiryTime: 15
@@ -48,6 +50,7 @@ extends:
           parameters:
             pool: { type: windows }
             variables:
+              ob_sdl_prefast_enabled: false # This is a collection of powershell scripts
               ob_git_checkout: false # This job checks itself out
               ob_git_skip_checkout_none: true
               ob_outputDirectory: "$(Build.SourcesDirectory)/_none"

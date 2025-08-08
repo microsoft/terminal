@@ -8,6 +8,7 @@
                xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
                xmlns:local="using:TerminalApp"
                xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+               xmlns:mtu="using:Microsoft.Terminal.UI"
                xmlns:mux="using:Microsoft.UI.Xaml.Controls"
                x:Uid="AboutDialog"
                DefaultButton="Close"
@@ -17,6 +18,9 @@
 
     <StackPanel Orientation="Vertical">
         <TextBlock IsTextSelectionEnabled="True">
+            <TextBlock.ContextFlyout>
+                <mtu:TextMenuFlyout />
+            </TextBlock.ContextFlyout>
             <Run AutomationProperties.HeadingLevel="1"
                  Text="{x:Bind ApplicationDisplayName}" /> <LineBreak />
             <Run x:Uid="AboutDialog_VersionLabel" />
@@ -24,22 +28,22 @@
         </TextBlock>
 
         <StackPanel Orientation="Vertical">
-            <StackPanel Padding="0,4,0,4"
+            <StackPanel Padding="0,16,0,16"
                         VerticalAlignment="Center"
                         Orientation="Horizontal"
+                        Spacing="8"
                         Visibility="{x:Bind CheckingForUpdates, Mode=OneWay}">
                 <mux:ProgressRing Width="16"
                                   Height="16"
                                   IsActive="True"
                                   IsIndeterminate="True" />
-                <TextBlock x:Uid="AboutDialog_CheckingForUpdatesLabel"
-                           Padding="4,0,0,0" />
+                <TextBlock x:Uid="AboutDialog_CheckingForUpdatesLabel" />
             </StackPanel>
-            <StackPanel Padding="0,4,0,4"
+            <StackPanel Padding="0,16,0,16"
                         VerticalAlignment="Center"
                         Orientation="Vertical"
                         Visibility="{x:Bind UpdatesAvailable, Mode=OneWay}">
-                <TextBlock IsTextSelectionEnabled="False">
+                <TextBlock>
                     <Run x:Uid="AboutDialog_UpdateAvailableLabel" />
                 </TextBlock>
                 <!-- <Button x:Uid="AboutDialog_InstallUpdateButton"
@@ -47,16 +51,18 @@
             </StackPanel>
         </StackPanel>
 
-        <HyperlinkButton x:Uid="AboutDialog_SourceCodeLink"
-                         NavigateUri="https://go.microsoft.com/fwlink/?linkid=2203152" />
-        <HyperlinkButton x:Uid="AboutDialog_DocumentationLink"
-                         NavigateUri="https://go.microsoft.com/fwlink/?linkid=2125416" />
-        <HyperlinkButton x:Uid="AboutDialog_ReleaseNotesLink"
-                         NavigateUri="https://go.microsoft.com/fwlink/?linkid=2125417" />
-        <HyperlinkButton x:Uid="AboutDialog_PrivacyPolicyLink"
-                         NavigateUri="https://go.microsoft.com/fwlink/?linkid=2125418" />
-        <HyperlinkButton x:Uid="AboutDialog_ThirdPartyNoticesLink"
-                         Click="_ThirdPartyNoticesOnClick" />
+        <StackPanel Margin="-12,0,0,0"
+                    Orientation="Vertical">
+            <HyperlinkButton x:Uid="AboutDialog_SourceCodeLink"
+                             NavigateUri="https://go.microsoft.com/fwlink/?linkid=2203152" />
+            <HyperlinkButton x:Uid="AboutDialog_DocumentationLink"
+                             NavigateUri="https://go.microsoft.com/fwlink/?linkid=2125416" />
+            <HyperlinkButton x:Uid="AboutDialog_ReleaseNotesLink"
+                             NavigateUri="https://go.microsoft.com/fwlink/?linkid=2125417" />
+            <HyperlinkButton x:Uid="AboutDialog_PrivacyPolicyLink"
+                             NavigateUri="https://go.microsoft.com/fwlink/?linkid=2125418" />
+            <HyperlinkButton x:Uid="AboutDialog_ThirdPartyNoticesLink"
+                             Click="_ThirdPartyNoticesOnClick" />
+        </StackPanel>
     </StackPanel>
 </ContentDialog>
-

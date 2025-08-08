@@ -32,6 +32,8 @@ namespace Microsoft::Console::Render
     {
         std::span<const til::point_span> searchHighlights;
         const til::point_span* searchHighlightFocused;
+        std::span<const til::point_span> selectionSpans;
+        til::color selectionBackground;
     };
 
     enum class GridLines
@@ -66,7 +68,7 @@ namespace Microsoft::Console::Render
         [[nodiscard]] virtual HRESULT Invalidate(const til::rect* psrRegion) noexcept = 0;
         [[nodiscard]] virtual HRESULT InvalidateCursor(const til::rect* psrRegion) noexcept = 0;
         [[nodiscard]] virtual HRESULT InvalidateSystem(const til::rect* prcDirtyClient) noexcept = 0;
-        [[nodiscard]] virtual HRESULT InvalidateSelection(const std::vector<til::rect>& rectangles) noexcept = 0;
+        [[nodiscard]] virtual HRESULT InvalidateSelection(std::span<const til::rect> selections) noexcept = 0;
         [[nodiscard]] virtual HRESULT InvalidateHighlight(std::span<const til::point_span> highlights, const TextBuffer& buffer) noexcept = 0;
         [[nodiscard]] virtual HRESULT InvalidateScroll(const til::point* pcoordDelta) noexcept = 0;
         [[nodiscard]] virtual HRESULT InvalidateAll() noexcept = 0;

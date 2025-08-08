@@ -1,17 +1,17 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <root>
-  <!--
-    Microsoft ResX Schema
-
+  <!-- 
+    Microsoft ResX Schema 
+    
     Version 2.0
-
-    The primary goals of this format is to allow a simple XML format
-    that is mostly human readable. The generation and parsing of the
-    various data types are done through the TypeConverter classes
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
     associated with the data types.
-
+    
     Example:
-
+    
     ... ado.net/XML headers & schema ...
     <resheader name="resmimetype">text/microsoft-resx</resheader>
     <resheader name="version">2.0</resheader>
@@ -26,36 +26,36 @@
         <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
         <comment>This is a comment</comment>
     </data>
-
-    There are any number of "resheader" rows that contain simple
+                
+    There are any number of "resheader" rows that contain simple 
     name/value pairs.
-
-    Each data row contains a name, and value. The row also contains a
-    type or mimetype. Type corresponds to a .NET class that support
-    text/value conversion through the TypeConverter architecture.
-    Classes that don't support this are serialized and stored with the
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
     mimetype set.
-
-    The mimetype is used for serialized objects, and tells the
-    ResXResourceReader how to depersist the object. This is currently not
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
     extensible. For a given mimetype the value must be set accordingly:
-
-    Note - application/x-microsoft.net.object.binary.base64 is the format
-    that the ResXResourceWriter will generate, however the reader can
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
     read any of the formats listed below.
-
+    
     mimetype: application/x-microsoft.net.object.binary.base64
-    value   : The object must be serialized with
+    value   : The object must be serialized with 
             : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
             : and then encoded with base64 encoding.
-
+    
     mimetype: application/x-microsoft.net.object.soap.base64
-    value   : The object must be serialized with
+    value   : The object must be serialized with 
             : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
             : and then encoded with base64 encoding.
 
     mimetype: application/x-microsoft.net.object.bytearray.base64
-    value   : The object must be serialized into a byte array
+    value   : The object must be serialized into a byte array 
             : using a System.ComponentModel.TypeConverter
             : and then encoded with base64 encoding.
     -->
@@ -118,13 +118,13 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="SetColorSchemeParentCommandName" xml:space="preserve">
-    <value>Seleccionar combinación de colores</value>
+    <value>Seleccionar combinación de colores...</value>
   </data>
   <data name="NewTabParentCommandName" xml:space="preserve">
-    <value>Nueva pestaña</value>
+    <value>Nueva pestaña...</value>
   </data>
   <data name="SplitPaneParentCommandName" xml:space="preserve">
-    <value>Dividir panel</value>
+    <value>Dividir panel...</value>
   </data>
   <data name="SnippetsPaneCommandName" xml:space="preserve">
     <value>Apertura del panel de fragmentos</value>
@@ -328,8 +328,11 @@
     <value>Abrir archivo de configuración (JSON)</value>
     <comment>{Locked="JSON"}. "JSON" is the extension of the file that will be opened.</comment>
   </data>
+  <data name="SettingsFileOpenInExplorerCommandKey" xml:space="preserve">
+    <value>Abrir el directorio de archivos de configuración</value>
+  </data>
   <data name="OpenTabColorPickerCommandKey" xml:space="preserve">
-    <value>Establecer el color de la pestaña</value>
+    <value>Establecer color de pestaña...</value>
   </data>
   <data name="PasteTextCommandKey" xml:space="preserve">
     <value>Pegar</value>
@@ -351,7 +354,7 @@
     <value>Restablecer título de la pestaña</value>
   </data>
   <data name="OpenTabRenamerCommandKey" xml:space="preserve">
-    <value>Cambiar título de la pestaña</value>
+    <value>Cambiar el nombre de la pestaña</value>
   </data>
   <data name="ResizePaneCommandKey" xml:space="preserve">
     <value>Cambiar el tamaño del panel</value>
@@ -445,16 +448,13 @@
     <value>Cambiar a la última pestaña</value>
   </data>
   <data name="TabSearchCommandKey" xml:space="preserve">
-    <value>Buscar pestaña</value>
+    <value>Buscar pestañas...</value>
   </data>
   <data name="ToggleAlwaysOnTopCommandKey" xml:space="preserve">
     <value>Alternar siempre en el modo superior</value>
   </data>
   <data name="ToggleCommandPaletteCommandKey" xml:space="preserve">
     <value>Alternar paleta de comandos</value>
-  </data>
-  <data name="SuggestionsCommandHistoryCommandKey" xml:space="preserve">
-    <value>Comandos recientes</value>
   </data>
   <data name="SuggestionsCommandKey" xml:space="preserve">
     <value>Abrir sugerencias</value>
@@ -570,7 +570,7 @@
     <value>Salir del terminal</value>
   </data>
   <data name="SetOpacityParentCommandName" xml:space="preserve">
-    <value>Establecer la opacidad del fondo</value>
+    <value>Establecer la opacidad del fondo...</value>
   </data>
   <data name="IncreaseOpacityCommandKey" xml:space="preserve">
     <value>Aumentar la opacidad del fondo en un {0} %</value>
@@ -736,5 +736,28 @@
   </data>
   <data name="QuickFixCommandKey" xml:space="preserve">
     <value>Abrir menú de corrección rápida</value>
+  </data>
+  <data name="OpenCWDCommandKey" xml:space="preserve">
+    <value>Abrir directorio de trabajo actual</value>
+  </data>
+  <data name="WslDistroGeneratorDisplayName" xml:space="preserve">
+    <value>Generador de perfiles de distribución WSL</value>
+    <comment>The display name of a dynamic profile generator for WSL distros</comment>
+  </data>
+  <data name="PowershellCoreProfileGeneratorDisplayName" xml:space="preserve">
+    <value>Generador de perfiles de PowerShell</value>
+    <comment>The display name of a dynamic profile generator for PowerShell</comment>
+  </data>
+  <data name="AzureCloudShellGeneratorDisplayName" xml:space="preserve">
+    <value>Generador de perfiles de Azure Cloud Shell</value>
+    <comment>The display name of a dynamic profile generator for Azure Cloud Shell</comment>
+  </data>
+  <data name="VisualStudioGeneratorDisplayName" xml:space="preserve">
+    <value>Generador de perfiles de Visual Studio</value>
+    <comment>The display name of a dynamic profile generator for Visual Studio</comment>
+  </data>
+  <data name="SshHostGeneratorDisplayName" xml:space="preserve">
+    <value>Generador de perfiles de host SSH</value>
+    <comment>The display name of a dynamic profile generator for SSH hosts</comment>
   </data>
 </root>

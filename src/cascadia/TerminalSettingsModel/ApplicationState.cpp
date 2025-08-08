@@ -96,7 +96,14 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     ApplicationState::ApplicationState(const std::filesystem::path& stateRoot) noexcept :
         _sharedPath{ stateRoot / stateFileName },
         _elevatedPath{ stateRoot / elevatedStateFileName },
-        _throttler{ std::chrono::seconds(1), [this]() { _write(); } }
+        _throttler{
+            til::throttled_func_options{
+                .delay = std::chrono::seconds{ 1 },
+                .debounce = true,
+                .trailing = true,
+            },
+            [this]() { _write(); }
+        }
     {
         _read();
     }
@@ -307,6 +314,31 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
 
         _throttler();
+    }
+
+    bool ApplicationState::DismissBadge(const hstring& badgeId)
+    {
+        bool inserted{ false };
+        {
+            const auto state = _state.lock();
+            if (!state->DismissedBadges)
+            {
+                state->DismissedBadges = std::unordered_set<hstring>{};
+            }
+            inserted = state->DismissedBadges->insert(badgeId).second;
+        }
+        _throttler();
+        return inserted;
+    }
+
+    bool ApplicationState::BadgeDismissed(const hstring& badgeId) const
+    {
+        const auto state = _state.lock_shared();
+        if (state->DismissedBadges)
+        {
+            return state->DismissedBadges->contains(badgeId);
+        }
+        return false;
     }
 
     // Generate all getter/setters

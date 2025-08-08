@@ -31,7 +31,7 @@ namespace Microsoft::Console::Render::Atlas
         [[nodiscard]] HRESULT Invalidate(const til::rect* psrRegion) noexcept override;
         [[nodiscard]] HRESULT InvalidateCursor(const til::rect* psrRegion) noexcept override;
         [[nodiscard]] HRESULT InvalidateSystem(const til::rect* prcDirtyClient) noexcept override;
-        [[nodiscard]] HRESULT InvalidateSelection(const std::vector<til::rect>& rectangles) noexcept override;
+        [[nodiscard]] HRESULT InvalidateSelection(std::span<const til::rect> selections) noexcept override;
         [[nodiscard]] HRESULT InvalidateHighlight(std::span<const til::point_span> highlights, const TextBuffer& buffer) noexcept override;
         [[nodiscard]] HRESULT InvalidateScroll(const til::point* pcoordDelta) noexcept override;
         [[nodiscard]] HRESULT InvalidateAll() noexcept override;
@@ -71,7 +71,6 @@ namespace Microsoft::Console::Render::Atlas
         void SetPixelShaderPath(std::wstring_view value) noexcept;
         void SetPixelShaderImagePath(std::wstring_view value) noexcept;
         void SetRetroTerminalEffect(bool enable) noexcept;
-        void SetSelectionBackground(COLORREF color, float alpha = 0.5f) noexcept;
         void SetSoftwareRendering(bool enable) noexcept;
         void SetDisablePartialInvalidation(bool enable) noexcept;
         void SetGraphicsAPI(GraphicsAPI graphicsAPI) noexcept;
@@ -98,6 +97,7 @@ namespace Microsoft::Console::Render::Atlas
         [[nodiscard]] HRESULT _updateFont(const FontInfoDesired& fontInfoDesired, FontInfo& fontInfo, const std::unordered_map<std::wstring_view, float>& features, const std::unordered_map<std::wstring_view, float>& axes) noexcept;
         void _resolveFontMetrics(const FontInfoDesired& fontInfoDesired, FontInfo& fontInfo, FontSettings* fontMetrics = nullptr);
         [[nodiscard]] bool _updateWithNearbyFontCollection() noexcept;
+        void _invalidateSpans(std::span<const til::point_span> spans, const TextBuffer& buffer) noexcept;
 
         // AtlasEngine.r.cpp
         ATLAS_ATTR_COLD void _recreateAdapter();
@@ -170,6 +170,7 @@ namespace Microsoft::Console::Render::Atlas
             // These tracks the highlighted regions on the screen that are yet to be painted.
             std::span<const til::point_span> searchHighlights;
             std::span<const til::point_span> searchHighlightFocused;
+            std::span<const til::point_span> selectionSpans;
 
             // dirtyRect is a computed value based on invalidatedRows.
             til::rect dirtyRect;

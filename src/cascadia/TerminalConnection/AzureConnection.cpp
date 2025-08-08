@@ -186,7 +186,12 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     // - handles the different possible inputs in the different states
     // Arguments:
     // the user's input
-    void AzureConnection::WriteInput(const hstring& data)
+    void AzureConnection::WriteInput(const winrt::array_view<const char16_t> buffer)
+    {
+        _writeInput(winrt_array_to_wstring_view(buffer));
+    }
+
+    void AzureConnection::_writeInput(const std::wstring_view data)
     {
         // We read input while connected AND connecting.
         if (!_isStateOneOf(ConnectionState::Connected, ConnectionState::Connecting))
@@ -804,7 +809,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         std::swap(_userInput, queuedUserInput);
         if (queuedUserInput.size() > 0)
         {
-            WriteInput(static_cast<winrt::hstring>(queuedUserInput)); // send the user's queued up input back through
+            _writeInput(queuedUserInput); // send the user's queued up input back through
         }
     }
 

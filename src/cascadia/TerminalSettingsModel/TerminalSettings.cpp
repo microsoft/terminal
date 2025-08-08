@@ -5,6 +5,8 @@
 #include "TerminalSettings.h"
 #include "../../types/inc/colorTable.hpp"
 
+#include "AppearanceConfig.h"
+
 #include "TerminalSettings.g.cpp"
 #include "TerminalSettingsCreateResult.g.cpp"
 
@@ -250,9 +252,20 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         {
             _CursorColor = til::color{ appearance.CursorColor().Value() };
         }
-        if (!appearance.BackgroundImagePath().empty())
+
+        if (const auto backgroundImage{ appearance.BackgroundImagePath() })
         {
-            _BackgroundImage = appearance.ExpandedBackgroundImagePath();
+            _BackgroundImage = backgroundImage.Resolved();
+        }
+
+        if (const auto pixelShader{ appearance.PixelShaderPath() })
+        {
+            _PixelShaderPath = pixelShader.Resolved();
+        }
+
+        if (const auto pixelShaderImage{ appearance.PixelShaderImagePath() })
+        {
+            _PixelShaderImagePath = pixelShaderImage.Resolved();
         }
 
         _BackgroundImageOpacity = appearance.BackgroundImageOpacity();
@@ -260,8 +273,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         std::tie(_BackgroundImageHorizontalAlignment, _BackgroundImageVerticalAlignment) = ConvertConvergedAlignment(appearance.BackgroundImageAlignment());
 
         _RetroTerminalEffect = appearance.RetroTerminalEffect();
-        _PixelShaderPath = winrt::hstring{ wil::ExpandEnvironmentStringsW<std::wstring>(appearance.PixelShaderPath().c_str()) };
-        _PixelShaderImagePath = winrt::hstring{ wil::ExpandEnvironmentStringsW<std::wstring>(appearance.PixelShaderImagePath().c_str()) };
 
         _IntenseIsBold = WI_IsFlagSet(appearance.IntenseTextStyle(), Microsoft::Terminal::Settings::Model::IntenseStyle::Bold);
         _IntenseIsBright = WI_IsFlagSet(appearance.IntenseTextStyle(), Microsoft::Terminal::Settings::Model::IntenseStyle::Bright);
@@ -288,7 +299,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         // Fill in the remaining properties from the profile
         _ProfileName = profile.Name();
-        _ProfileSource = profile.Source();
 
         const auto fontInfo = profile.FontInfo();
         _FontFace = fontInfo.FontFace();
@@ -306,7 +316,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         _StartingDirectory = profile.EvaluatedStartingDirectory();
 
-        // GH#2373: Use the tabTitle as the starting title if it exists, otherwise
+        // GH#2373: Use the tabTitle as the starting title if it exists; otherwise,
         // use the profile name
         _StartingTitle = !profile.TabTitle().empty() ? profile.TabTitle() : profile.Name();
 
@@ -347,6 +357,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         _RepositionCursorWithMouse = profile.RepositionCursorWithMouse();
         _ReloadEnvironmentVariables = profile.ReloadEnvironmentVariables();
         _RainbowSuggestions = profile.RainbowSuggestions();
+        _ForceVTInput = profile.ForceVTInput();
+        _AllowVtChecksumReport = profile.AllowVtChecksumReport();
+        _AllowVtClipboardWrite = profile.AllowVtClipboardWrite();
+        _PathTranslationStyle = profile.PathTranslationStyle();
     }
 
     // Method Description:
@@ -364,12 +378,14 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         _CopyOnSelect = globalSettings.CopyOnSelect();
         _CopyFormatting = globalSettings.CopyFormatting();
         _FocusFollowMouse = globalSettings.FocusFollowMouse();
+        _ScrollToZoom = globalSettings.ScrollToZoom();
+        _ScrollToChangeOpacity = globalSettings.ScrollToChangeOpacity();
         _GraphicsAPI = globalSettings.GraphicsAPI();
         _DisablePartialInvalidation = globalSettings.DisablePartialInvalidation();
         _SoftwareRendering = globalSettings.SoftwareRendering();
         _TextMeasurement = globalSettings.TextMeasurement();
+        _DefaultInputScope = globalSettings.DefaultInputScope();
         _UseBackgroundImageForWindow = globalSettings.UseBackgroundImageForWindow();
-        _ForceVTInput = globalSettings.ForceVTInput();
         _TrimBlockSelection = globalSettings.TrimBlockSelection();
         _DetectURLs = globalSettings.DetectURLs();
         _EnableUnfocusedAcrylic = globalSettings.EnableUnfocusedAcrylic();

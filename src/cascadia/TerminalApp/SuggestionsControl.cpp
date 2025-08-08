@@ -2,10 +2,10 @@
 // Licensed under the MIT license.
 
 #include "pch.h"
-#include "ActionPaletteItem.h"
-#include "CommandLinePaletteItem.h"
 #include "SuggestionsControl.h"
 #include <LibraryResources.h>
+
+#include "CommandPaletteItems.h"
 
 #include "SuggestionsControl.g.cpp"
 #include "../../types/inc/utils.hpp"
@@ -269,6 +269,8 @@ namespace winrt::TerminalApp::implementation
         const auto selectedCommand = _filteredActionsView().SelectedItem();
         const auto filteredCommand{ selectedCommand.try_as<winrt::TerminalApp::FilteredCommand>() };
 
+        _filteredActionsView().ScrollIntoView(selectedCommand);
+
         PropertyChanged.raise(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"SelectedItem" });
 
         // Make sure to not send the preview if we're collapsed. This can
@@ -280,9 +282,11 @@ namespace winrt::TerminalApp::implementation
         if (filteredCommand != nullptr &&
             isVisible)
         {
-            if (const auto actionPaletteItem{ filteredCommand.Item().try_as<winrt::TerminalApp::ActionPaletteItem>() })
+            const auto item{ filteredCommand.Item() };
+            if (item.Type() == PaletteItemType::Action)
             {
-                const auto& cmd = actionPaletteItem.Command();
+                const auto actionPaletteItem{ winrt::get_self<ActionPaletteItem>(item) };
+                const auto& cmd = actionPaletteItem->Command();
                 PreviewAction.raise(*this, cmd);
 
                 const auto description{ cmd.Description() };
@@ -419,7 +423,7 @@ namespace winrt::TerminalApp::implementation
         }
         else if (key == VirtualKey::Escape)
         {
-            // Dismiss the palette if the text is empty, otherwise clear the
+            // Dismiss the palette if the text is empty; otherwise, clear the
             // search string.
             if (_searchBox().Text().empty())
             {
@@ -573,7 +577,7 @@ namespace winrt::TerminalApp::implementation
                 const auto selectedCommand = selectedList.GetAt(0);
                 if (const auto filteredCmd = selectedCommand.try_as<TerminalApp::FilteredCommand>())
                 {
-                    if (const auto paletteItem = filteredCmd.Item().try_as<TerminalApp::PaletteItem>())
+                    if (const auto paletteItem = filteredCmd.Item())
                     {
                         automationPeer.RaiseNotificationEvent(
                             Automation::Peers::AutomationNotificationKind::ItemAdded,
@@ -607,10 +611,14 @@ namespace winrt::TerminalApp::implementation
         if (_nestedActionStack.Size() > 0)
         {
             const auto newPreviousAction{ _nestedActionStack.GetAt(_nestedActionStack.Size() - 1) };
-            const auto actionPaletteItem{ newPreviousAction.Item().try_as<winrt::TerminalApp::ActionPaletteItem>() };
+            const auto item{ newPreviousAction.Item() };
+            if (item.Type() == PaletteItemType::Action)
+            {
+                const auto actionPaletteItem{ winrt::get_self<ActionPaletteItem>(item) };
 
-            ParentCommandName(actionPaletteItem.Command().Name());
-            _updateCurrentNestedCommands(actionPaletteItem.Command());
+                ParentCommandName(actionPaletteItem->Command().Name());
+                _updateCurrentNestedCommands(actionPaletteItem->Command());
+            }
         }
         else
         {
@@ -691,16 +699,19 @@ namespace winrt::TerminalApp::implementation
     {
         if (filteredCommand)
         {
-            if (const auto actionPaletteItem{ filteredCommand.Item().try_as<winrt::TerminalApp::ActionPaletteItem>() })
+            const auto item{ filteredCommand.Item() };
+            if (item.Type() == PaletteItemType::Action)
             {
-                if (actionPaletteItem.Command().HasNestedCommands())
+                const auto actionPaletteItem{ winrt::get_self<ActionPaletteItem>(item) };
+                const auto command{ actionPaletteItem->Command() };
+                if (command.HasNestedCommands())
                 {
                     // If this Command had subcommands, then don't dispatch the
                     // action. Instead, display a new list of commands for the user
                     // to pick from.
                     _nestedActionStack.Append(filteredCommand);
-                    ParentCommandName(actionPaletteItem.Command().Name());
-                    _updateCurrentNestedCommands(actionPaletteItem.Command());
+                    ParentCommandName(command.Name());
+                    _updateCurrentNestedCommands(command);
 
                     _updateUIForStackChange();
                 }
@@ -720,7 +731,21 @@ namespace winrt::TerminalApp::implementation
                     // "ToggleCommandPalette" actions. We may want to do the
                     // same with "Suggestions" actions in the future, should we
                     // ever allow non-sendInput actions.
-                    DispatchCommandRequested.raise(*this, actionPaletteItem.Command());
+                    DispatchCommandRequested.raise(*this, command);
+
+                    if (const auto& sendInputCmd = command.ActionAndArgs().Args().try_as<SendInputArgs>())
+                    {
+                        if (til::starts_with(sendInputCmd.Input(), L"winget"))
+                        {
+                            TraceLoggingWrite(
+                                g_hTerminalAppProvider,
+                                "QuickFixSuggestionUsed",
+                                TraceLoggingDescription("Event emitted when a winget suggestion from is used"),
+                                TraceLoggingValue("SuggestionsUI", "Source"),
+                                TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+                                TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
+                        }
+                    }
 
                     TraceLoggingWrite(
                         g_hTerminalAppProvider, // handle to TerminalApp tracelogging provider
@@ -795,14 +820,46 @@ namespace winrt::TerminalApp::implementation
         // here will ensure that we can check this case appropriately.
         _lastFilterTextWasEmpty = _searchBox().Text().empty();
 
-        const auto lastSelectedIndex = _filteredActionsView().SelectedIndex();
+        const auto lastSelectedIndex = std::max(0, _filteredActionsView().SelectedIndex()); // SelectedIndex will return -1 for "nothing"
 
         _updateFilteredActions();
 
-        // In the command line mode we want the user to explicitly select the command
-        _filteredActionsView().SelectedIndex(std::min<int32_t>(lastSelectedIndex, _filteredActionsView().Items().Size() - 1));
+        if (const auto newSelectedIndex = _filteredActionsView().SelectedIndex();
+            newSelectedIndex == -1)
+        {
+            // Make sure something stays selected
+            _scrollToIndex(lastSelectedIndex);
+        }
+        else
+        {
+            // BODGY: Calling ScrollIntoView on a ListView doesn't always work
+            // immediately after a change to the items. See:
+            // https://stackoverflow.com/questions/16942580/why-doesnt-listview-scrollintoview-ever-work
+            // The SelectionChanged thing we do (in _selectedCommandChanged),
+            // but because we're also not changing the actual selected item when
+            // the size of the list grows (it _stays_ selected, so it never
+            // _changes_), we never get a SelectionChanged.
+            //
+            // To mitigate, only in the case of totally clearing out the filter
+            // (like hitting `esc`), we want to briefly select the 0th item,
+            // then immediately select the one we want to make visible. That
+            // will make sure we get a SelectionChanged when the ListView is
+            // ready, and we can use that to scroll to the right item.
+            //
+            // If we do this on _every_ change, then the preview text flickers
+            // between the 0th item and the correct one.
+            if (_lastFilterTextWasEmpty)
+            {
+                _filteredActionsView().SelectedIndex(0);
+            }
+            _scrollToIndex(newSelectedIndex);
+        }
 
         const auto currentNeedleHasResults{ _filteredActions.Size() > 0 };
+        if (!currentNeedleHasResults)
+        {
+            PreviewAction.raise(*this, nullptr);
+        }
         _noMatchesText().Visibility(currentNeedleHasResults ? Visibility::Collapsed : Visibility::Visible);
         if (auto automationPeer{ Automation::Peers::FrameworkElementAutomationPeer::FromElement(_searchBox()) })
         {
@@ -888,12 +945,15 @@ namespace winrt::TerminalApp::implementation
         auto commandsToFilter = _commandsToFilter();
 
         {
+            auto pattern = std::make_shared<fzf::matcher::Pattern>(fzf::matcher::ParsePattern(searchText));
+
             for (const auto& action : commandsToFilter)
             {
                 // Update filter for all commands
                 // This will modify the highlighting but will also lead to re-computation of weight (and consequently sorting).
                 // Pay attention that it already updates the highlighting in the UI
-                action.UpdateFilter(searchText);
+                auto impl = winrt::get_self<implementation::FilteredCommand>(action);
+                impl->UpdateFilter(pattern);
 
                 // if there is active search we skip commands with 0 weight
                 if (searchText.empty() || action.Weight() > 0)
@@ -1203,7 +1263,7 @@ namespace winrt::TerminalApp::implementation
         if (_direction == TerminalApp::SuggestionsDirection::BottomUp)
         {
             const auto last = _filteredActionsView().Items().Size() - 1;
-            _filteredActionsView().SelectedIndex(last);
+            _scrollToIndex(last);
         }
         // Move the cursor to the very last position, so it starts immediately
         // after the text. This is apparently done by starting a 0-wide

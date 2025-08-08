@@ -150,7 +150,17 @@
       <RemoveUnreferencedCodeData>true</RemoveUnreferencedCodeData>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
-      <AdditionalOptions>%(AdditionalOptions) /utf-8 /Zc:__cplusplus /Zc:__STDC__ /Zc:enumTypes /Zc:externConstexpr /Zc:templateScope /Zc:throwingNew</AdditionalOptions>
+      <!--
+        Conformance options that are off by default at the time of writing:
+          /Zc:__cplusplus    Enable the __cplusplus macro to report the supported standard.
+          /Zc:__STDC__       Enable the __STDC__ macro to report the C standard is supported.
+          /Zc:enumTypes      Enable Standard C++ rules for enum type deduction.
+          /Zc:inline         Remove unreferenced functions or data if they're COMDAT or have internal linkage only.
+          /Zc:templateScope  Enforce Standard C++ template parameter shadowing rules.
+          /Zc:throwingNew    Assume operator new throws on failure.
+        /diagnostics:caret   Places ^^^^^ under the exact location of the issue. The default only shows the line number.
+      -->
+      <AdditionalOptions>%(AdditionalOptions) /utf-8 /Zc:__cplusplus /Zc:__STDC__ /Zc:enumTypes /Zc:inline /Zc:templateScope /Zc:throwingNew /diagnostics:caret</AdditionalOptions>
       <ControlFlowGuard>Guard</ControlFlowGuard>
     </ClCompile>
     <ResourceCompile>
@@ -252,7 +262,7 @@
       <PreprocessorDefinitions>FUZZING_BUILD;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>libsancov.lib;clang_rt.asan-$(OCClangArchitectureName).lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libsancov.lib;clang_rt.asan_dynamic-$(OCClangArchitectureName).lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
 
@@ -265,13 +275,18 @@
     <VcpkgOSTarget>windows</VcpkgOSTarget>
     <VcpkgUseStatic>true</VcpkgUseStatic>
 
+    <!-- BODGY - work around DD#2302065. vcpkg now validates target triplets, and is *case-sensitive* -->
+    <VcpkgPlatformTarget Condition="'$(Platform)'=='ARM64'">arm64</VcpkgPlatformTarget>
+
     <VcpkgAdditionalInstallOptions>--x-feature=terminal</VcpkgAdditionalInstallOptions>
+    <VcpkgAdditionalInstallOptions Condition="'$(Configuration)'=='Fuzzing'">$(VcpkgAdditionalInstallOptions) --overlay-triplets=$(SolutionDir)\dep\vcpkg-overlay-triplets\fuzzing</VcpkgAdditionalInstallOptions>
     <!--
       Since we link everything statically, we don't need to copy anything.
       This saves running a powershell script for every project.
     -->
     <VcpkgApplocalDeps>false</VcpkgApplocalDeps>
     <VcpkgInstalledDir>$(SolutionDir)\obj\$(Platform)\vcpkg</VcpkgInstalledDir>
+    <VcpkgInstalledDir Condition="'$(Configuration)'=='Fuzzing'">$(SolutionDir)\obj\$(Platform)\vcpkg-fuzzing</VcpkgInstalledDir>
     <VcpkgRoot Condition="'$(VcpkgRoot)'==''">$(VCPKG_ROOT)</VcpkgRoot>
     <!-- VsInstallRoot is set by Visual Studio and MSBuild -->
     <VcpkgRoot Condition="'$(VcpkgRoot)'==''">$(VsInstallRoot)\VC\vcpkg</VcpkgRoot>

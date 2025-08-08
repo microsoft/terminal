@@ -82,7 +82,7 @@ namespace winrt::TerminalApp::implementation
 
     winrt::hstring TerminalPaneContent::Icon() const
     {
-        return _profile.EvaluatedIcon();
+        return _profile.Icon().Resolved();
     }
 
     Windows::Foundation::IReference<winrt::Windows::UI::Color> TerminalPaneContent::TabColor() const noexcept
@@ -95,7 +95,7 @@ namespace winrt::TerminalApp::implementation
         NewTerminalArgs args{};
         const auto& controlSettings = _control.Settings();
 
-        args.Profile(controlSettings.ProfileName());
+        args.Profile(::Microsoft::Console::Utils::GuidToString(_profile.Guid()));
         // If we know the user's working directory use it instead of the profile.
         if (const auto dir = _control.WorkingDirectory(); !dir.empty())
         {
@@ -141,7 +141,7 @@ namespace winrt::TerminalApp::implementation
             // "attach existing" rather than a "create"
             args.ContentId(_control.ContentId());
             break;
-        case BuildStartupKind::Persist:
+        case BuildStartupKind::PersistAll:
         {
             const auto connection = _control.Connection();
             const auto id = connection ? connection.SessionId() : winrt::guid{};
@@ -156,6 +156,7 @@ namespace winrt::TerminalApp::implementation
             }
             break;
         }
+        case BuildStartupKind::PersistLayout:
         default:
             break;
         }
@@ -194,8 +195,8 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - <none>
-    winrt::fire_and_forget TerminalPaneContent::_controlConnectionStateChangedHandler(const winrt::Windows::Foundation::IInspectable& sender,
-                                                                                      const winrt::Windows::Foundation::IInspectable& args)
+    safe_void_coroutine TerminalPaneContent::_controlConnectionStateChangedHandler(const winrt::Windows::Foundation::IInspectable& sender,
+                                                                                   const winrt::Windows::Foundation::IInspectable& args)
     {
         ConnectionStateChanged.raise(sender, args);
         auto newConnectionState = ConnectionState::Closed;
@@ -300,7 +301,7 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    winrt::fire_and_forget TerminalPaneContent::_playBellSound(winrt::Windows::Foundation::Uri uri)
+    safe_void_coroutine TerminalPaneContent::_playBellSound(winrt::Windows::Foundation::Uri uri)
     {
         auto weakThis{ get_weak() };
         co_await wil::resume_foreground(_control.Dispatcher());
@@ -339,8 +340,12 @@ namespace winrt::TerminalApp::implementation
         RestartTerminalRequested.raise(*this, nullptr);
     }
 
-    void TerminalPaneContent::UpdateSettings(const CascadiaSettings& /*settings*/)
+    void TerminalPaneContent::UpdateSettings(const CascadiaSettings& settings)
     {
+        // Reload our profile from the settings model to propagate bell mode, icon, and close on exit mode (anything that uses _profile).
+        const auto profile{ settings.FindProfile(_profile.Guid()) };
+        _profile = profile ? profile : settings.ProfileDefaults();
+
         if (const auto& settings{ _cache.TryLookup(_profile) })
         {
             _control.UpdateControlSettings(settings.DefaultSettings(), settings.UnfocusedSettings());

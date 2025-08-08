@@ -33,7 +33,7 @@ namespace Microsoft::Console::VirtualTerminal
 
         bool ActionPrintString(const std::wstring_view string) override;
 
-        bool ActionPassThroughString(const std::wstring_view string, const bool flush) noexcept override;
+        bool ActionPassThroughString(const std::wstring_view string) noexcept override;
 
         bool ActionEscDispatch(const VTID id) override;
 
@@ -42,10 +42,6 @@ namespace Microsoft::Console::VirtualTerminal
         bool ActionCsiDispatch(const VTID id, const VTParameters parameters) override;
 
         StringHandler ActionDcsDispatch(const VTID id, const VTParameters parameters) override;
-
-        bool ActionClear() noexcept override;
-
-        bool ActionIgnore() noexcept override;
 
         bool ActionOscDispatch(const size_t parameter, const std::wstring_view string) override;
 
@@ -81,6 +77,8 @@ namespace Microsoft::Console::VirtualTerminal
             LS2R_LockingShift = VTID("}"),
             LS3R_LockingShift = VTID("|"),
             DECAC1_AcceptC1Controls = VTID(" 7"),
+            S7C1T_Send7bitC1Controls = VTID(" F"),
+            S8C1T_Send8bitC1Controls = VTID(" G"),
             ACS_AnsiLevel1 = VTID(" L"),
             ACS_AnsiLevel2 = VTID(" M"),
             ACS_AnsiLevel3 = VTID(" N"),
@@ -154,6 +152,7 @@ namespace Microsoft::Console::VirtualTerminal
             DECRQM_PrivateRequestMode = VTID("?$p"),
             DECCARA_ChangeAttributesRectangularArea = VTID("$r"),
             DECRARA_ReverseAttributesRectangularArea = VTID("$t"),
+            DECRQTSR_RequestTerminalStateReport = VTID("$u"),
             DECCRA_CopyRectangularArea = VTID("$v"),
             DECRQPSR_RequestPresentationStateReport = VTID("$w"),
             DECFRA_FillRectangularArea = VTID("$x"),
@@ -212,11 +211,14 @@ namespace Microsoft::Console::VirtualTerminal
             SetForegroundColor = 10,
             SetBackgroundColor = 11,
             SetCursorColor = 12,
+            SetHighlightColor = 17,
             DECSWT_SetWindowTitle = 21,
             SetClipboard = 52,
-            ResetForegroundColor = 110, // Not implemented
-            ResetBackgroundColor = 111, // Not implemented
+            ResetColor = 104,
+            ResetForegroundColor = 110,
+            ResetBackgroundColor = 111,
             ResetCursorColor = 112,
+            ResetHighlightColor = 117,
             FinalTermAction = 133,
             VsCodeAction = 633,
             ITerm2Action = 1337,

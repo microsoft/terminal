@@ -18,13 +18,14 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         void Initialize(const Windows::Foundation::Collections::ValueSet& settings);
         void InitializeFromHandoff(HANDLE* in, HANDLE* out, HANDLE signal, HANDLE reference, HANDLE server, HANDLE client, const TERMINAL_STARTUP_INFO* startupInfo);
 
-        static winrt::fire_and_forget final_release(std::unique_ptr<ConptyConnection> connection);
+        static safe_void_coroutine final_release(std::unique_ptr<ConptyConnection> connection);
 
         void Start();
-        void WriteInput(const hstring& data);
+        void WriteInput(const winrt::array_view<const char16_t> buffer);
         void Resize(uint32_t rows, uint32_t columns);
+        void ResetSize();
         void Close() noexcept;
-        void ClearBuffer();
+        void ClearBuffer(bool keepCursorRow);
 
         void ShowHide(const bool show);
 
@@ -35,7 +36,6 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         WORD ShowWindow() const noexcept;
 
         static void StartInboundListener();
-        static void StopInboundListener();
 
         static winrt::event_token NewConnection(const NewConnectionHandler& handler);
         static void NewConnection(const winrt::event_token& token);
@@ -58,7 +58,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         static HRESULT NewHandoff(HANDLE* in, HANDLE* out, HANDLE signal, HANDLE reference, HANDLE server, HANDLE client, const TERMINAL_STARTUP_INFO* startupInfo) noexcept;
         static winrt::hstring _commandlineFromProcess(HANDLE process);
 
-        HRESULT _LaunchAttachedClient() noexcept;
+        void _LaunchAttachedClient();
         void _indicateExitWithStatus(unsigned int status) noexcept;
         static std::wstring _formatStatus(uint32_t status);
         void _LastConPtyClientDisconnected() noexcept;

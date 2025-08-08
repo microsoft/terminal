@@ -26,7 +26,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model
     class VisualStudioGenerator : public IDynamicProfileGenerator
     {
     public:
+        static std::wstring_view Namespace;
         std::wstring_view GetNamespace() const noexcept override;
+        std::wstring_view GetDisplayName() const noexcept override;
+        std::wstring_view GetIcon() const noexcept override;
         void GenerateProfiles(std::vector<winrt::com_ptr<implementation::Profile>>& profiles) const override;
 
         class IVisualStudioProfileGenerator

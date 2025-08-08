@@ -8,7 +8,7 @@
 #include "../TerminalApp/MinMaxCloseControl.h"
 #include "../TerminalApp/TabRowControl.h"
 #include "../TerminalApp/ShortcutActionDispatch.h"
-#include "../TerminalApp/TerminalTab.h"
+#include "../TerminalApp/Tab.h"
 #include "../TerminalApp/CommandPalette.h"
 #include "../TerminalApp/ContentManager.h"
 #include "CppWinrtTailored.h"
@@ -287,7 +287,7 @@ namespace TerminalAppLocalTests
             NewTabArgs args{ newTerminalArgs };
             ActionAndArgs newTabAction{ ShortcutAction::NewTab, args };
             // push the arg onto the front
-            page->_startupActions.Append(newTabAction);
+            page->_startupActions.push_back(std::move(newTabAction));
             Log::Comment(L"Added a single newTab action");
 
             auto app = ::winrt::Windows::UI::Xaml::Application::Current();
@@ -307,7 +307,7 @@ namespace TerminalAppLocalTests
             // reliably in the unit tests.
             Log::Comment(L"Ensure we set the first tab as the selected one.");
             auto tab = page->_tabs.GetAt(0);
-            auto tabImpl = page->_GetTerminalTabImpl(tab);
+            auto tabImpl = page->_GetTabImpl(tab);
             page->_tabView.SelectedItem(tabImpl->TabViewItem());
             page->_UpdatedSelectedTab(tab);
         });
@@ -510,7 +510,7 @@ namespace TerminalAppLocalTests
 
         result = RunOnUIThread([&page]() {
             VERIFY_ARE_EQUAL(1u, page->_tabs.Size());
-            auto tab = page->_GetTerminalTabImpl(page->_tabs.GetAt(0));
+            auto tab = page->_GetTabImpl(page->_tabs.GetAt(0));
             VERIFY_ARE_EQUAL(1, tab->GetLeafPaneCount());
         });
         VERIFY_SUCCEEDED(result);
@@ -520,7 +520,7 @@ namespace TerminalAppLocalTests
             page->_SplitPane(nullptr, SplitDirection::Automatic, 0.5f, page->_MakePane(nullptr, page->_GetFocusedTab(), nullptr));
 
             VERIFY_ARE_EQUAL(1u, page->_tabs.Size());
-            auto tab = page->_GetTerminalTabImpl(page->_tabs.GetAt(0));
+            auto tab = page->_GetTabImpl(page->_tabs.GetAt(0));
             VERIFY_ARE_EQUAL(2, tab->GetLeafPaneCount());
         });
         VERIFY_SUCCEEDED(result);
@@ -538,7 +538,7 @@ namespace TerminalAppLocalTests
             page->_SplitPane(nullptr, SplitDirection::Automatic, 0.5f, page->_MakePane(nullptr, page->_GetFocusedTab(), nullptr));
 
             VERIFY_ARE_EQUAL(1u, page->_tabs.Size());
-            auto tab = page->_GetTerminalTabImpl(page->_tabs.GetAt(0));
+            auto tab = page->_GetTabImpl(page->_tabs.GetAt(0));
             VERIFY_ARE_EQUAL(3,
                              tab->GetLeafPaneCount(),
                              L"We should successfully duplicate a pane hosting a deleted profile.");
@@ -706,7 +706,7 @@ namespace TerminalAppLocalTests
             SplitPaneArgs args{ SplitType::Duplicate };
             ActionEventArgs eventArgs{ args };
             page->_HandleSplitPane(nullptr, eventArgs);
-            auto firstTab = page->_GetTerminalTabImpl(page->_tabs.GetAt(0));
+            auto firstTab = page->_GetTabImpl(page->_tabs.GetAt(0));
 
             VERIFY_ARE_EQUAL(2, firstTab->GetLeafPaneCount());
             VERIFY_IS_FALSE(firstTab->IsZoomed());
@@ -717,7 +717,7 @@ namespace TerminalAppLocalTests
         result = RunOnUIThread([&page]() {
             ActionEventArgs eventArgs{};
             page->_HandleTogglePaneZoom(nullptr, eventArgs);
-            auto firstTab = page->_GetTerminalTabImpl(page->_tabs.GetAt(0));
+            auto firstTab = page->_GetTabImpl(page->_tabs.GetAt(0));
             VERIFY_ARE_EQUAL(2, firstTab->GetLeafPaneCount());
             VERIFY_IS_TRUE(firstTab->IsZoomed());
         });
@@ -727,7 +727,7 @@ namespace TerminalAppLocalTests
         result = RunOnUIThread([&page]() {
             ActionEventArgs eventArgs{};
             page->_HandleTogglePaneZoom(nullptr, eventArgs);
-            auto firstTab = page->_GetTerminalTabImpl(page->_tabs.GetAt(0));
+            auto firstTab = page->_GetTabImpl(page->_tabs.GetAt(0));
             VERIFY_ARE_EQUAL(2, firstTab->GetLeafPaneCount());
             VERIFY_IS_FALSE(firstTab->IsZoomed());
         });
@@ -744,7 +744,7 @@ namespace TerminalAppLocalTests
             SplitPaneArgs args{ SplitType::Duplicate };
             ActionEventArgs eventArgs{ args };
             page->_HandleSplitPane(nullptr, eventArgs);
-            auto firstTab = page->_GetTerminalTabImpl(page->_tabs.GetAt(0));
+            auto firstTab = page->_GetTabImpl(page->_tabs.GetAt(0));
 
             VERIFY_ARE_EQUAL(2, firstTab->GetLeafPaneCount());
             VERIFY_IS_FALSE(firstTab->IsZoomed());
@@ -758,7 +758,7 @@ namespace TerminalAppLocalTests
 
             page->_HandleTogglePaneZoom(nullptr, eventArgs);
 
-            auto firstTab = page->_GetTerminalTabImpl(page->_tabs.GetAt(0));
+            auto firstTab = page->_GetTabImpl(page->_tabs.GetAt(0));
             VERIFY_ARE_EQUAL(2, firstTab->GetLeafPaneCount());
             VERIFY_IS_TRUE(firstTab->IsZoomed());
         });
@@ -772,7 +772,7 @@ namespace TerminalAppLocalTests
 
             page->_HandleMoveFocus(nullptr, eventArgs);
 
-            auto firstTab = page->_GetTerminalTabImpl(page->_tabs.GetAt(0));
+            auto firstTab = page->_GetTabImpl(page->_tabs.GetAt(0));
             VERIFY_ARE_EQUAL(2, firstTab->GetLeafPaneCount());
             VERIFY_IS_TRUE(firstTab->IsZoomed());
         });
@@ -789,7 +789,7 @@ namespace TerminalAppLocalTests
             SplitPaneArgs args{ SplitType::Duplicate };
             ActionEventArgs eventArgs{ args };
             page->_HandleSplitPane(nullptr, eventArgs);
-            auto firstTab = page->_GetTerminalTabImpl(page->_tabs.GetAt(0));
+            auto firstTab = page->_GetTabImpl(page->_tabs.GetAt(0));
 
             VERIFY_ARE_EQUAL(2, firstTab->GetLeafPaneCount());
             VERIFY_IS_FALSE(firstTab->IsZoomed());
@@ -803,7 +803,7 @@ namespace TerminalAppLocalTests
 
             page->_HandleTogglePaneZoom(nullptr, eventArgs);
 
-            auto firstTab = page->_GetTerminalTabImpl(page->_tabs.GetAt(0));
+            auto firstTab = page->_GetTabImpl(page->_tabs.GetAt(0));
             VERIFY_ARE_EQUAL(2, firstTab->GetLeafPaneCount());
             VERIFY_IS_TRUE(firstTab->IsZoomed());
         });
@@ -816,7 +816,7 @@ namespace TerminalAppLocalTests
 
             page->_HandleClosePane(nullptr, eventArgs);
 
-            auto firstTab = page->_GetTerminalTabImpl(page->_tabs.GetAt(0));
+            auto firstTab = page->_GetTabImpl(page->_tabs.GetAt(0));
             VERIFY_IS_FALSE(firstTab->IsZoomed());
         });
         VERIFY_SUCCEEDED(result);
@@ -827,7 +827,7 @@ namespace TerminalAppLocalTests
         Log::Comment(L"Check to ensure there's only one pane left.");
 
         result = RunOnUIThread([&page]() {
-            auto firstTab = page->_GetTerminalTabImpl(page->_tabs.GetAt(0));
+            auto firstTab = page->_GetTabImpl(page->_tabs.GetAt(0));
             VERIFY_ARE_EQUAL(1, firstTab->GetLeafPaneCount());
             VERIFY_IS_FALSE(firstTab->IsZoomed());
         });
@@ -850,7 +850,7 @@ namespace TerminalAppLocalTests
         uint32_t firstId = 0, secondId = 0, thirdId = 0, fourthId = 0;
         TestOnUIThread([&]() {
             VERIFY_ARE_EQUAL(1u, page->_tabs.Size());
-            auto tab = page->_GetTerminalTabImpl(page->_tabs.GetAt(0));
+            auto tab = page->_GetTabImpl(page->_tabs.GetAt(0));
             firstId = tab->_activePane->Id().value();
             // We start with 1 tab, split vertically to get
             // -------------------
@@ -876,7 +876,7 @@ namespace TerminalAppLocalTests
             // |        |        |
             // -------------------
             page->_SplitPane(nullptr, SplitDirection::Down, 0.5f, page->_MakePane(nullptr, page->_GetFocusedTab(), nullptr));
-            auto tab = page->_GetTerminalTabImpl(page->_tabs.GetAt(0));
+            auto tab = page->_GetTabImpl(page->_tabs.GetAt(0));
             // Split again to make the 3rd tab
             thirdId = tab->_activePane->Id().value();
         });
@@ -896,13 +896,13 @@ namespace TerminalAppLocalTests
             // |        |        |
             // -------------------
             page->_SplitPane(nullptr, SplitDirection::Down, 0.5f, page->_MakePane(nullptr, page->_GetFocusedTab(), nullptr));
-            auto tab = page->_GetTerminalTabImpl(page->_tabs.GetAt(0));
+            auto tab = page->_GetTabImpl(page->_tabs.GetAt(0));
             fourthId = tab->_activePane->Id().value();
         });
 
         Sleep(250);
         TestOnUIThread([&]() {
-            auto tab = page->_GetTerminalTabImpl(page->_tabs.GetAt(0));
+            auto tab = page->_GetTabImpl(page->_tabs.GetAt(0));
             VERIFY_ARE_EQUAL(4, tab->GetLeafPaneCount());
             // just to be complete, make sure we actually have 4 different ids
             VERIFY_ARE_NOT_EQUAL(firstId, fourthId);
@@ -936,7 +936,7 @@ namespace TerminalAppLocalTests
         Sleep(250);
 
         TestOnUIThread([&]() {
-            auto tab = page->_GetTerminalTabImpl(page->_tabs.GetAt(0));
+            auto tab = page->_GetTabImpl(page->_tabs.GetAt(0));
             VERIFY_ARE_EQUAL(4, tab->GetLeafPaneCount());
             // Our currently focused pane should be `4`
             VERIFY_ARE_EQUAL(fourthId, tab->_activePane->Id().value());
@@ -967,7 +967,7 @@ namespace TerminalAppLocalTests
         Sleep(250);
 
         TestOnUIThread([&]() {
-            auto tab = page->_GetTerminalTabImpl(page->_tabs.GetAt(0));
+            auto tab = page->_GetTabImpl(page->_tabs.GetAt(0));
             VERIFY_ARE_EQUAL(4, tab->GetLeafPaneCount());
             // Our currently focused pane should be `4`
             VERIFY_ARE_EQUAL(fourthId, tab->_activePane->Id().value());
@@ -998,7 +998,7 @@ namespace TerminalAppLocalTests
         Sleep(250);
 
         TestOnUIThread([&]() {
-            auto tab = page->_GetTerminalTabImpl(page->_tabs.GetAt(0));
+            auto tab = page->_GetTabImpl(page->_tabs.GetAt(0));
             VERIFY_ARE_EQUAL(4, tab->GetLeafPaneCount());
             // Our currently focused pane should be `4`
             VERIFY_ARE_EQUAL(fourthId, tab->_activePane->Id().value());
@@ -1029,7 +1029,7 @@ namespace TerminalAppLocalTests
         Sleep(250);
 
         TestOnUIThread([&]() {
-            auto tab = page->_GetTerminalTabImpl(page->_tabs.GetAt(0));
+            auto tab = page->_GetTabImpl(page->_tabs.GetAt(0));
             VERIFY_ARE_EQUAL(4, tab->GetLeafPaneCount());
             // Our currently focused pane should be `4`
             VERIFY_ARE_EQUAL(fourthId, tab->_activePane->Id().value());
@@ -1174,16 +1174,16 @@ namespace TerminalAppLocalTests
 
         Log::Comment(L"give alphabetical names to all switch tab actions");
         TestOnUIThread([&page]() {
-            page->_GetTerminalTabImpl(page->_tabs.GetAt(0))->Title(L"a");
+            page->_GetTabImpl(page->_tabs.GetAt(0))->Title(L"a");
         });
         TestOnUIThread([&page]() {
-            page->_GetTerminalTabImpl(page->_tabs.GetAt(1))->Title(L"b");
+            page->_GetTabImpl(page->_tabs.GetAt(1))->Title(L"b");
         });
         TestOnUIThread([&page]() {
-            page->_GetTerminalTabImpl(page->_tabs.GetAt(2))->Title(L"c");
+            page->_GetTabImpl(page->_tabs.GetAt(2))->Title(L"c");
         });
         TestOnUIThread([&page]() {
-            page->_GetTerminalTabImpl(page->_tabs.GetAt(3))->Title(L"d");
+            page->_GetTabImpl(page->_tabs.GetAt(3))->Title(L"d");
         });
 
         TestOnUIThread([&page]() {
@@ -1288,12 +1288,6 @@ namespace TerminalAppLocalTests
         END_TEST_METHOD_PROPERTIES()
 
         auto page = _commonSetup();
-        page->RenameWindowRequested([&page](auto&&, auto&&) {
-            // In the real terminal, this would bounce up to the monarch and
-            // come back down. Instead, immediately call back to tell the terminal it failed.
-            page->RenameFailed();
-        });
-
         auto windowNameChanged = false;
 
         page->PropertyChanged([&page, &windowNameChanged](auto&&, const winrt::WUX::Data::PropertyChangedEventArgs& args) mutable {

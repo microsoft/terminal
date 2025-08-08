@@ -213,8 +213,6 @@ public:
     void SetDefaultAttributes(const TextAttribute& attributes,
                               const TextAttribute& popupAttributes);
 
-    [[nodiscard]] HRESULT ClearBuffer();
-
     void UpdateBottom();
 
     FontInfo& GetCurrentFont() noexcept;

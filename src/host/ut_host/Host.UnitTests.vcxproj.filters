@@ -21,9 +21,6 @@
     <ClCompile Include="ConsoleArgumentsTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="DbcsTests.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="ScreenBufferTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -86,7 +83,7 @@
     <ClInclude Include="..\precomp.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\CommonState.hpp">
+    <ClInclude Include="..\..\inc\test\CommonState.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

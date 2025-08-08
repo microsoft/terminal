@@ -11,14 +11,14 @@
     X(til::color, CursorColor, DEFAULT_CURSOR_COLOR)                                                                      \
     X(winrt::Microsoft::Terminal::Core::CursorStyle, CursorShape, winrt::Microsoft::Terminal::Core::CursorStyle::Vintage) \
     X(uint32_t, CursorHeight, DEFAULT_CURSOR_HEIGHT)                                                                      \
+    X(til::color, SelectionBackground, DEFAULT_FOREGROUND)                                                                \
     X(bool, IntenseIsBold)                                                                                                \
     X(bool, IntenseIsBright, true)                                                                                        \
-    X(winrt::Microsoft::Terminal::Core::AdjustTextMode, AdjustIndistinguishableColors, winrt::Microsoft::Terminal::Core::AdjustTextMode::Never)
+    X(winrt::Microsoft::Terminal::Core::AdjustTextMode, AdjustIndistinguishableColors, winrt::Microsoft::Terminal::Core::AdjustTextMode::Automatic)
 
 // --------------------------- Control Appearance ---------------------------
 //  All of these settings are defined in IControlAppearance.
 #define CONTROL_APPEARANCE_SETTINGS(X)                                                                                                          \
-    X(til::color, SelectionBackground, DEFAULT_FOREGROUND)                                                                                      \
     X(float, Opacity, 1.0f)                                                                                                                     \
     X(bool, UseAcrylic, false)                                                                                                                  \
     X(winrt::hstring, BackgroundImage)                                                                                                          \
@@ -42,6 +42,8 @@
     X(winrt::hstring, WordDelimiters, DEFAULT_WORD_DELIMITERS)                                                    \
     X(bool, CopyOnSelect, false)                                                                                  \
     X(bool, FocusFollowMouse, false)                                                                              \
+    X(bool, ScrollToZoom, true)                                                                                   \
+    X(bool, ScrollToChangeOpacity, true)                                                                          \
     X(winrt::Windows::Foundation::IReference<winrt::Microsoft::Terminal::Core::Color>, TabColor, nullptr)         \
     X(winrt::Windows::Foundation::IReference<winrt::Microsoft::Terminal::Core::Color>, StartingTabColor, nullptr) \
     X(bool, TrimBlockSelection, true)                                                                             \
@@ -51,13 +53,14 @@
     X(bool, DetectURLs, true)                                                                                     \
     X(bool, AutoMarkPrompts)                                                                                      \
     X(bool, RepositionCursorWithMouse, false)                                                                     \
-    X(bool, RainbowSuggestions)
+    X(bool, RainbowSuggestions)                                                                                   \
+    X(bool, AllowVtChecksumReport)                                                                                \
+    X(bool, AllowVtClipboardWrite)
 
 // --------------------------- Control Settings ---------------------------
 //  All of these settings are defined in IControlSettings.
 #define CONTROL_SETTINGS(X)                                                                                                                              \
     X(winrt::hstring, ProfileName)                                                                                                                       \
-    X(winrt::hstring, ProfileSource)                                                                                                                     \
     X(winrt::guid, SessionId)                                                                                                                            \
     X(bool, EnableUnfocusedAcrylic, false)                                                                                                               \
     X(winrt::hstring, Padding, DEFAULT_PADDING)                                                                                                          \
@@ -79,7 +82,9 @@
     X(bool, DisablePartialInvalidation, false)                                                                                                           \
     X(bool, SoftwareRendering, false)                                                                                                                    \
     X(winrt::Microsoft::Terminal::Control::TextMeasurement, TextMeasurement)                                                                             \
+    X(winrt::Microsoft::Terminal::Control::DefaultInputScope, DefaultInputScope, winrt::Microsoft::Terminal::Control::DefaultInputScope::Default)        \
     X(bool, UseBackgroundImageForWindow, false)                                                                                                          \
     X(bool, ShowMarks, false)                                                                                                                            \
     X(winrt::Microsoft::Terminal::Control::CopyFormat, CopyFormatting, 0)                                                                                \
-    X(bool, RightClickContextMenu, false)
+    X(bool, RightClickContextMenu, false)                                                                                                                \
+    X(winrt::Microsoft::Terminal::Control::PathTranslationStyle, PathTranslationStyle, winrt::Microsoft::Terminal::Control::PathTranslationStyle::None)

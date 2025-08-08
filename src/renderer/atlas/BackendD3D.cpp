@@ -229,7 +229,6 @@ void BackendD3D::Render(RenderingPayload& p)
     _drawBackground(p);
     _drawCursorBackground(p);
     _drawText(p);
-    _drawSelection(p);
     _debugShowDirty(p);
     _flushQuads(p);
 
@@ -589,7 +588,10 @@ void BackendD3D::_recreateConstBuffer(const RenderingPayload& p) const
         data.underlineWidth = p.s->font->underline.height;
         data.doubleUnderlineWidth = p.s->font->doubleUnderline[0].height;
         data.curlyLineHalfHeight = _curlyLineHalfHeight;
-        data.shadedGlyphDotSize = std::max(1.0f, std::roundf(std::max(p.s->font->cellSize.x / 16.0f, p.s->font->cellSize.y / 32.0f)));
+        // The lightLineWidth used for drawing the built-in glyphs is `cellSize.x / 6.0f`.
+        // So this ends up using a quarter line width for the dotted glyphs.
+        // We use half that for the `cellSize.y`, because usually cells have an aspect ratio of 1:2.
+        data.shadedGlyphDotSize = std::max(1.0f, std::roundf(std::max(p.s->font->cellSize.x / 12.0f, p.s->font->cellSize.y / 24.0f)));
         p.deviceContext->UpdateSubresource(_psConstantBuffer.get(), 0, nullptr, &data, 0, 0);
     }
 }
@@ -2248,45 +2250,6 @@ size_t BackendD3D::_drawCursorForegroundSlowPath(const CursorRect& c, size_t off
     return addedInstances;
 }
 
-void BackendD3D::_drawSelection(const RenderingPayload& p)
-{
-    u16 y = 0;
-    u16 lastFrom = 0;
-    u16 lastTo = 0;
-
-    for (const auto& row : p.rows)
-    {
-        if (row->selectionTo > row->selectionFrom)
-        {
-            // If the current selection line matches the previous one, we can just extend the previous quad downwards.
-            // The way this is implemented isn't very smart, but we also don't have very many rows to iterate through.
-            if (row->selectionFrom == lastFrom && row->selectionTo == lastTo)
-            {
-                _getLastQuad().size.y += p.s->font->cellSize.y;
-            }
-            else
-            {
-                _appendQuad() = {
-                    .shadingType = static_cast<u16>(ShadingType::Selection),
-                    .position = {
-                        static_cast<i16>(p.s->font->cellSize.x * row->selectionFrom),
-                        static_cast<i16>(p.s->font->cellSize.y * y),
-                    },
-                    .size = {
-                        static_cast<u16>(p.s->font->cellSize.x * (row->selectionTo - row->selectionFrom)),
-                        static_cast<u16>(p.s->font->cellSize.y),
-                    },
-                    .color = p.s->misc->selectionColor,
-                };
-                lastFrom = row->selectionFrom;
-                lastTo = row->selectionTo;
-            }
-        }
-
-        y++;
-    }
-}
-
 void BackendD3D::_debugShowDirty(const RenderingPayload& p)
 {
 #if ATLAS_DEBUG_SHOW_DIRTY
@@ -2302,7 +2265,7 @@ void BackendD3D::_debugShowDirty(const RenderingPayload& p)
     {
         const auto& rect = _presentRects[(_presentRectsPos + i) % std::size(_presentRects)];
         _appendQuad() = {
-            .shadingType = static_cast<u16>(ShadingType::Selection),
+            .shadingType = static_cast<u16>(ShadingType::FilledRect),
             .position = {
                 static_cast<i16>(rect.left),
                 static_cast<i16>(rect.top),
@@ -2361,7 +2324,7 @@ void BackendD3D::_executeCustomShader(RenderingPayload& p)
 
     {
         // Before we do anything else we have to unbound _renderTargetView from being
-        // a render target, otherwise we can't use it as a shader resource below.
+        // a render target; otherwise, we can't use it as a shader resource below.
         p.deviceContext->OMSetRenderTargets(1, _renderTargetView.addressof(), nullptr);
 
         // IA: Input Assembler

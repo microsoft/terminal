@@ -4,6 +4,42 @@
 
 # Welcome to the Windows Terminal, Console and Command-Line repo
 
+<details>
+  <summary><strong>Table of Contents</strong></summary>
+
+- [Installing and running Windows Terminal](#installing-and-running-windows-terminal)
+  - [Microsoft Store \[Recommended\]](#microsoft-store-recommended)
+  - [Other install methods](#other-install-methods)
+    - [Via GitHub](#via-github)
+    - [Via Windows Package Manager CLI (aka winget)](#via-windows-package-manager-cli-aka-winget)
+    - [Via Chocolatey (unofficial)](#via-chocolatey-unofficial)
+    - [Via Scoop (unofficial)](#via-scoop-unofficial)
+- [Installing Windows Terminal Canary](#installing-windows-terminal-canary)
+- [Windows Terminal Roadmap](#windows-terminal-roadmap)
+- [Terminal \& Console Overview](#terminal--console-overview)
+  - [Windows Terminal](#windows-terminal)
+  - [The Windows Console Host](#the-windows-console-host)
+  - [Shared Components](#shared-components)
+  - [Creating the new Windows Terminal](#creating-the-new-windows-terminal)
+- [Resources](#resources)
+- [FAQ](#faq)
+  - [I built and ran the new Terminal, but it looks just like the old console](#i-built-and-ran-the-new-terminal-but-it-looks-just-like-the-old-console)
+- [Documentation](#documentation)
+- [Contributing](#contributing)
+- [Communicating with the Team](#communicating-with-the-team)
+- [Developer Guidance](#developer-guidance)
+- [Prerequisites](#prerequisites)
+- [Building the Code](#building-the-code)
+  - [Building in PowerShell](#building-in-powershell)
+  - [Building in Cmd](#building-in-cmd)
+- [Running \& Debugging](#running--debugging)
+  - [Coding Guidance](#coding-guidance)
+- [Code of Conduct](#code-of-conduct)
+
+</details>
+
+<br />
+
 This repository contains the source code for:
 
 * [Windows Terminal](https://aka.ms/terminal)
@@ -304,6 +340,19 @@ If you would like to ask a question that you feel doesn't warrant an issue
 
 ## Prerequisites
 
+You can configure your environment to build Terminal in one of two ways:
+
+### Using WinGet configuration file
+
+After cloning the repository, you can use a [WinGet configuration file](https://learn.microsoft.com/en-us/windows/package-manager/configuration/#use-a-winget-configuration-file-to-configure-your-machine)
+to set up your environment. The [default configuration file](.config/configuration.winget) installs Visual Studio 2022 Community & rest of the required tools. There are two other variants of the configuration file available in the [.config](.config) directory for Enterprise & Professional editions of Visual Studio 2022. To run the default configuration file, you can either double-click the file from explorer or run the following command:
+
+```powershell
+winget configure .config\configuration.winget
+```
+
+### Manual configuration
+
 * You must be running Windows 10 2004 (build >= 10.0.19041.0) or later to run
   Windows Terminal
 * You must [enable Developer Mode in the Windows Settings
@@ -325,15 +374,6 @@ If you would like to ask a question that you feel doesn't warrant an issue
 * You must install the [.NET Framework Targeting Pack](https://docs.microsoft.com/dotnet/framework/install/guide-for-developers#to-install-the-net-framework-developer-pack-or-targeting-pack) to build test projects
 
 ## Building the Code
-
-This repository uses [git
-submodules](https://git-scm.com/book/en/v2/Git-Tools-Submodules) for some of its
-dependencies. To make sure submodules are restored or updated, be sure to run
-the following prior to building:
-
-```shell
-git submodule update --init --recursive
-```
 
 OpenConsole.sln may be built from within Visual Studio or from the command-line
 using a set of convenience scripts & tools in the **/tools** directory:

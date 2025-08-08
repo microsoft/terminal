@@ -265,7 +265,7 @@ namespace Microsoft::Console::Render::Atlas
 
     private:
         // These two functions don't need to use scoped objects or standard allocators,
-        // since this class is in fact an scoped allocator object itself.
+        // since this class is in fact a scoped allocator object itself.
 #pragma warning(push)
 #pragma warning(disable : 26402) // Return a scoped object instead of a heap-allocated if it has a move constructor (r.3).
 #pragma warning(disable : 26409) // Avoid calling new and delete explicitly, use std::make_unique<T> instead (r.11).
@@ -393,7 +393,9 @@ namespace Microsoft::Console::Render::Atlas
     struct MiscellaneousSettings
     {
         u32 backgroundColor = 0;
-        u32 selectionColor = 0x7fffffff;
+        u32 foregroundColor = 0;
+        u32 selectionColor = 0xffffffff;
+        u32 selectionForeground = 0xff000000;
         std::wstring customPixelShaderPath;
         std::wstring customPixelShaderImagePath;
         bool useRetroTerminalEffect = false;
@@ -475,8 +477,6 @@ namespace Microsoft::Console::Render::Atlas
             bitmap.active = false;
             gridLineRanges.clear();
             lineRendition = LineRendition::SingleWidth;
-            selectionFrom = 0;
-            selectionTo = 0;
             dirtyTop = y * cellHeight;
             dirtyBottom = dirtyTop + cellHeight;
         }
@@ -496,8 +496,6 @@ namespace Microsoft::Console::Render::Atlas
         Bitmap bitmap;
         std::vector<GridLineRange> gridLineRanges;
         LineRendition lineRendition = LineRendition::SingleWidth;
-        u16 selectionFrom = 0;
-        u16 selectionTo = 0;
         til::CoordType dirtyTop = 0;
         til::CoordType dirtyBottom = 0;
     };

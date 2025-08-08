@@ -100,6 +100,11 @@
         <description>Enables the dynamic profile generator for OpenSSH config files</description>
         <id>9031</id>
         <stage>AlwaysDisabled</stage>
+        <alwaysEnabledBrandingTokens>
+            <brandingToken>Dev</brandingToken>
+            <brandingToken>Canary</brandingToken>
+            <brandingToken>Preview</brandingToken>
+        </alwaysEnabledBrandingTokens>
     </feature>
 
     <feature>
@@ -146,6 +151,17 @@
     </feature>
 
     <feature>
+        <name>Feature_MarkdownPane</name>
+        <description>Allow the user to create markdown panes. Experimental, to validate markdown parsing.</description>
+        <id>16495</id>
+        <stage>AlwaysDisabled</stage>
+        <alwaysEnabledBrandingTokens>
+            <brandingToken>Dev</brandingToken>
+            <brandingToken>Canary</brandingToken>
+        </alwaysEnabledBrandingTokens>
+    </feature>
+
+    <feature>
         <name>Feature_KeypadModeEnabled</name>
         <description>Enables the DECKPAM, DECKPNM sequences to work as intended </description>
         <id>16654</id>
@@ -163,6 +179,7 @@
         <alwaysEnabledBrandingTokens>
             <brandingToken>Dev</brandingToken>
             <brandingToken>Canary</brandingToken>
+            <brandingToken>Preview</brandingToken>
         </alwaysEnabledBrandingTokens>
     </feature>
 
@@ -170,6 +187,25 @@
         <name>Feature_QuickFix</name>
         <description>Enables the Quick Fix menu</description>
         <id>16599</id>
+        <stage>AlwaysDisabled</stage>
+        <alwaysEnabledBrandingTokens>
+            <brandingToken>Dev</brandingToken>
+            <brandingToken>Canary</brandingToken>
+            <brandingToken>Preview</brandingToken>
+        </alwaysEnabledBrandingTokens>
+    </feature>
+
+    <feature>
+        <name>Feature_DebugModeUI</name>
+        <description>Enables UI access to the debug mode setting</description>
+        <stage>AlwaysEnabled</stage>
+        <alwaysDisabledReleaseTokens/>
+    </feature>
+
+    <feature>
+        <name>Feature_DisableWebSourceIcons</name>
+        <description>Disables icon paths that make web requests</description>
+        <id>19075</id>
         <stage>AlwaysDisabled</stage>
         <alwaysEnabledBrandingTokens>
             <brandingToken>Dev</brandingToken>

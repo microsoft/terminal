@@ -45,6 +45,7 @@ using Microsoft::Console::Interactivity::ServiceLocator;
 // - ppWaiter - If we have to wait (not enough data to fill client
 // buffer), this contains context that will allow the server to
 // restore this call later.
+// - IsWaitAllowed - Whether an async read via CONSOLE_STATUS_WAIT is permitted.
 // Return Value:
 // - STATUS_SUCCESS - If data was found and ready for return to the client.
 // - CONSOLE_STATUS_WAIT - If we didn't have enough data or needed to
@@ -56,12 +57,11 @@ using Microsoft::Console::Interactivity::ServiceLocator;
                                                        INPUT_READ_HANDLE_DATA& readHandleState,
                                                        const bool IsUnicode,
                                                        const bool IsPeek,
-                                                       std::unique_ptr<IWaitRoutine>& waiter) noexcept
+                                                       const bool IsWaitAllowed,
+                                                       CONSOLE_API_MSG* pWaitReplyMessage) noexcept
 {
     try
     {
-        waiter.reset();
-
         if (eventReadCount == 0)
         {
             return STATUS_SUCCESS;
@@ -73,7 +73,7 @@ using Microsoft::Console::Interactivity::ServiceLocator;
         const auto Status = inputBuffer.Read(outEvents,
                                              eventReadCount,
                                              IsPeek,
-                                             true,
+                                             IsWaitAllowed,
                                              IsUnicode,
                                              false);
 
@@ -81,9 +81,7 @@ using Microsoft::Console::Interactivity::ServiceLocator;
         {
             // If we're told to wait until later, move all of our context
             // to the read data object and send it back up to the server.
-            waiter = std::make_unique<DirectReadData>(&inputBuffer,
-                                                      &readHandleState,
-                                                      eventReadCount);
+            std::ignore = ConsoleWaitQueue::s_CreateWait(pWaitReplyMessage, new DirectReadData(&inputBuffer, &readHandleState, eventReadCount));
         }
         return Status;
     }
@@ -413,56 +411,6 @@ CATCH_RETURN();
     CATCH_RETURN();
 }
 
-[[nodiscard]] static std::vector<CHAR_INFO> _ConvertCellsToMungedW(std::span<CHAR_INFO> buffer, const Viewport& rectangle)
-{
-    std::vector<CHAR_INFO> result;
-    result.reserve(buffer.size());
-
-    const auto size = rectangle.Dimensions();
-    auto bufferIter = buffer.begin();
-
-    for (til::CoordType i = 0; i < size.height; i++)
-    {
-        for (til::CoordType j = 0; j < size.width; j++)
-        {
-            // Prepare a candidate charinfo on the output side copying the colors but not the lead/trail information.
-            auto candidate = *bufferIter;
-            WI_ClearAllFlags(candidate.Attributes, COMMON_LVB_SBCSDBCS);
-
-            // If the glyph we're given is full width, it needs to take two cells.
-            if (IsGlyphFullWidth(candidate.Char.UnicodeChar))
-            {
-                // If we're not on the final cell of the row...
-                if (j < size.width - 1)
-                {
-                    // Mark that we're consuming two cells.
-                    j++;
-
-                    // Fill one cell with a copy of the color and character marked leading
-                    WI_SetFlag(candidate.Attributes, COMMON_LVB_LEADING_BYTE);
-                    result.push_back(candidate);
-
-                    // Fill a second cell with a copy of the color marked trailing and a padding character.
-                    WI_ClearFlag(candidate.Attributes, COMMON_LVB_LEADING_BYTE);
-                    WI_SetFlag(candidate.Attributes, COMMON_LVB_TRAILING_BYTE);
-                }
-                else
-                {
-                    // If we're on the final cell, this won't fit. Replace with a space.
-                    candidate.Char.UnicodeChar = UNICODE_SPACE;
-                }
-            }
-
-            // Push our candidate in.
-            result.push_back(candidate);
-
-            // Advance to read the next item.
-            ++bufferIter;
-        }
-    }
-    return result;
-}
-
 [[nodiscard]] HRESULT ReadConsoleOutputWImplHelper(const SCREEN_INFORMATION& context,
                                                    std::span<CHAR_INFO> targetBuffer,
                                                    const Viewport& requestRectangle,
@@ -547,16 +495,7 @@ CATCH_RETURN();
 
     try
     {
-        RETURN_IF_FAILED(ReadConsoleOutputWImplHelper(context, buffer, sourceRectangle, readRectangle));
-
-        if (!context.GetActiveBuffer().GetCurrentFont().IsTrueTypeFont())
-        {
-            // For compatibility reasons, we must maintain the behavior that munges the data if we are writing while a raster font is enabled.
-            // This can be removed when raster font support is removed.
-            UnicodeRasterFontCellMungeOnRead(buffer);
-        }
-
-        return S_OK;
+        return ReadConsoleOutputWImplHelper(context, buffer, sourceRectangle, readRectangle);
     }
     CATCH_RETURN();
 }
@@ -684,17 +623,7 @@ CATCH_RETURN();
             writer.BackupCursor();
         }
 
-        if (!context.GetActiveBuffer().GetCurrentFont().IsTrueTypeFont())
-        {
-            // For compatibility reasons, we must maintain the behavior that munges the data if we are writing while a raster font is enabled.
-            // This can be removed when raster font support is removed.
-            auto translated = _ConvertCellsToMungedW(buffer, requestRectangle);
-            RETURN_IF_FAILED(WriteConsoleOutputWImplHelper(context, translated, requestRectangle.Width(), requestRectangle, writtenRectangle));
-        }
-        else
-        {
-            RETURN_IF_FAILED(WriteConsoleOutputWImplHelper(context, buffer, requestRectangle.Width(), requestRectangle, writtenRectangle));
-        }
+        RETURN_IF_FAILED(WriteConsoleOutputWImplHelper(context, buffer, requestRectangle.Width(), requestRectangle, writtenRectangle));
 
         if (writer)
         {

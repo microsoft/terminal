@@ -56,7 +56,11 @@ Este es un proyecto de fuente abierta y animamos a la comunidad a participar. Pa
   <ReleaseNotes>
     Versión __VERSION_NUMBER__
 
-Para más información, consulte nuestra página de versiones de GitHub.
+- Hemos agregado decenas de configuraciones a la interfaz de usuario que solo existían una vez en el archivo JSON, incluida una página nueva para personalizar el diseño del menú Nueva pestaña.
+- Tenemos administración de ventanas rearchitecdas para mejorar la confiabilidad; envíe los errores que encuentre con el alias de wt.exe.
+- Ahora, los perfiles muestran un icono si se han ocultado o hacen referencia a programas que se han desinstalado.
+
+Consulte nuestra página de versiones de GitHub para obtener más detalles.
   </ReleaseNotes>
   <ScreenshotCaptions>
     <!-- Valid length: 200 character limit, up to 9 elements per platform -->

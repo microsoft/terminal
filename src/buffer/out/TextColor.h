@@ -82,7 +82,8 @@ public:
     static constexpr size_t FRAME_FOREGROUND = 263;
     static constexpr size_t FRAME_BACKGROUND = 264;
     static constexpr size_t CURSOR_COLOR = 265;
-    static constexpr size_t TABLE_SIZE = 266;
+    static constexpr size_t SELECTION_BACKGROUND = 266;
+    static constexpr size_t TABLE_SIZE = 267;
 
     constexpr TextColor() noexcept :
         _meta{ ColorType::IsDefault },

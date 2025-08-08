@@ -381,7 +381,6 @@ HRESULT ConsoleCreateIoThread(_In_ HANDLE Server,
     //      can start, so they're started below, in ConsoleAllocateConsole
     auto& gci = g.getConsoleInformation();
     RETURN_IF_FAILED(gci.GetVtIo()->Initialize(args));
-    RETURN_IF_FAILED(gci.GetVtIo()->CreateAndStartSignalThread());
 
     return S_OK;
 }
@@ -843,16 +842,7 @@ PWSTR TranslateConsoleTitle(_In_ PCWSTR pwszConsoleTitle, const BOOL fUnexpand, 
     {
         if (!gci.IsInVtIoMode())
         {
-            auto renderThread = std::make_unique<RenderThread>();
-            // stash a local pointer to the thread here -
-            // We're going to give ownership of the thread to the Renderer,
-            //      but the thread also need to be told who its renderer is,
-            //      and we can't do that until the renderer is constructed.
-            auto* const localPointerToThread = renderThread.get();
-
-            g.pRender = new Renderer(gci.GetRenderSettings(), &gci.renderData, nullptr, 0, std::move(renderThread));
-
-            THROW_IF_FAILED(localPointerToThread->Initialize(g.pRender));
+            g.pRender = new Renderer(gci.GetRenderSettings(), &gci.renderData);
 
             // Set up the renderer to be used to calculate the width of a glyph,
             //      should we be unable to figure out its width another way.
@@ -945,27 +935,11 @@ PWSTR TranslateConsoleTitle(_In_ PCWSTR pwszConsoleTitle, const BOOL fUnexpand, 
     // We'll need the size of the screen buffer in the vt i/o initialization
     if (SUCCEEDED_NTSTATUS(Status))
     {
-        auto hr = gci.GetVtIo()->CreateIoHandlers();
-        if (hr == S_FALSE)
-        {
-            // We're not in VT I/O mode, this is fine.
-        }
-        else if (SUCCEEDED(hr))
-        {
-            // Actually start the VT I/O threads
-            hr = gci.GetVtIo()->StartIfNeeded();
-            // Don't convert S_FALSE to an NTSTATUS - the equivalent NTSTATUS
-            //      is treated as an error
-            if (hr != S_FALSE)
-            {
-                Status = NTSTATUS_FROM_HRESULT(hr);
-            }
-            else
-            {
-                Status = ERROR_SUCCESS;
-            }
-        }
-        else
+        // Actually start the VT I/O threads
+        auto hr = gci.GetVtIo()->StartIfNeeded();
+        // Don't convert S_FALSE to an NTSTATUS - the equivalent NTSTATUS
+        //      is treated as an error
+        if (FAILED(hr))
         {
             Status = NTSTATUS_FROM_HRESULT(hr);
         }
@@ -1008,7 +982,7 @@ DWORD WINAPI ConsoleIoThread(LPVOID lpParameter)
     {
         if (ReplyMsg != nullptr)
         {
-            LOG_IF_FAILED(ReplyMsg->ReleaseMessageBuffers());
+            ReplyMsg->ReleaseMessageBuffers();
         }
 
         // TODO: 9115192 correct mixed NTSTATUS/HRESULT

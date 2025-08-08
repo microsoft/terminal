@@ -1,17 +1,17 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <root>
-  <!--
-    Microsoft ResX Schema
-
+  <!-- 
+    Microsoft ResX Schema 
+    
     Version 2.0
-
-    The primary goals of this format is to allow a simple XML format
-    that is mostly human readable. The generation and parsing of the
-    various data types are done through the TypeConverter classes
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
     associated with the data types.
-
+    
     Example:
-
+    
     ... ado.net/XML headers & schema ...
     <resheader name="resmimetype">text/microsoft-resx</resheader>
     <resheader name="version">2.0</resheader>
@@ -26,36 +26,36 @@
         <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
         <comment>This is a comment</comment>
     </data>
-
-    There are any number of "resheader" rows that contain simple
+                
+    There are any number of "resheader" rows that contain simple 
     name/value pairs.
-
-    Each data row contains a name, and value. The row also contains a
-    type or mimetype. Type corresponds to a .NET class that support
-    text/value conversion through the TypeConverter architecture.
-    Classes that don't support this are serialized and stored with the
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
     mimetype set.
-
-    The mimetype is used for serialized objects, and tells the
-    ResXResourceReader how to depersist the object. This is currently not
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
     extensible. For a given mimetype the value must be set accordingly:
-
-    Note - application/x-microsoft.net.object.binary.base64 is the format
-    that the ResXResourceWriter will generate, however the reader can
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
     read any of the formats listed below.
-
+    
     mimetype: application/x-microsoft.net.object.binary.base64
-    value   : The object must be serialized with
+    value   : The object must be serialized with 
             : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
             : and then encoded with base64 encoding.
-
+    
     mimetype: application/x-microsoft.net.object.soap.base64
-    value   : The object must be serialized with
+    value   : The object must be serialized with 
             : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
             : and then encoded with base64 encoding.
 
     mimetype: application/x-microsoft.net.object.bytearray.base64
-    value   : The object must be serialized into a byte array
+    value   : The object must be serialized into a byte array 
             : using a System.ComponentModel.TypeConverter
             : and then encoded with base64 encoding.
     -->
@@ -118,13 +118,13 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="SetColorSchemeParentCommandName" xml:space="preserve">
-    <value>选择配色方案</value>
+    <value>选择配色方案...</value>
   </data>
   <data name="NewTabParentCommandName" xml:space="preserve">
-    <value>新建标签页</value>
+    <value>新建选项卡...</value>
   </data>
   <data name="SplitPaneParentCommandName" xml:space="preserve">
-    <value>拆分窗格</value>
+    <value>拆分窗格...</value>
   </data>
   <data name="SnippetsPaneCommandName" xml:space="preserve">
     <value>打开代码片段窗格</value>
@@ -328,8 +328,11 @@
     <value>打开设置文件(JSON)</value>
     <comment>{Locked="JSON"}. "JSON" is the extension of the file that will be opened.</comment>
   </data>
+  <data name="SettingsFileOpenInExplorerCommandKey" xml:space="preserve">
+    <value>打开设置文件目录</value>
+  </data>
   <data name="OpenTabColorPickerCommandKey" xml:space="preserve">
-    <value>设置选项卡颜色</value>
+    <value>设置选项卡颜色...</value>
   </data>
   <data name="PasteTextCommandKey" xml:space="preserve">
     <value>粘贴</value>
@@ -351,7 +354,7 @@
     <value>重置标签页标题</value>
   </data>
   <data name="OpenTabRenamerCommandKey" xml:space="preserve">
-    <value>重命名选项卡标题</value>
+    <value>重命名选项卡</value>
   </data>
   <data name="ResizePaneCommandKey" xml:space="preserve">
     <value>调整窗格大小</value>
@@ -445,16 +448,13 @@
     <value>切换到最后一个选项卡</value>
   </data>
   <data name="TabSearchCommandKey" xml:space="preserve">
-    <value>搜索选项卡</value>
+    <value>搜索选项卡...</value>
   </data>
   <data name="ToggleAlwaysOnTopCommandKey" xml:space="preserve">
     <value>切换“总在最前面”模式</value>
   </data>
   <data name="ToggleCommandPaletteCommandKey" xml:space="preserve">
     <value>切换命令面板</value>
-  </data>
-  <data name="SuggestionsCommandHistoryCommandKey" xml:space="preserve">
-    <value>最近使用的命令</value>
   </data>
   <data name="SuggestionsCommandKey" xml:space="preserve">
     <value>打开建议</value>
@@ -519,7 +519,7 @@
     <value>重置窗口名称</value>
   </data>
   <data name="OpenWindowRenamerCommandKey" xml:space="preserve">
-    <value>重命名窗口</value>
+    <value>重命名窗口...</value>
   </data>
   <data name="DisplayWorkingDirectoryCommandKey" xml:space="preserve">
     <value>显示终端的当前工作目录</value>
@@ -570,7 +570,7 @@
     <value>退出终端</value>
   </data>
   <data name="SetOpacityParentCommandName" xml:space="preserve">
-    <value>设置背景不透明度</value>
+    <value>设置背景不透明度...</value>
   </data>
   <data name="IncreaseOpacityCommandKey" xml:space="preserve">
     <value>将背景不透明度增加 {0}%</value>
@@ -736,5 +736,28 @@
   </data>
   <data name="QuickFixCommandKey" xml:space="preserve">
     <value>打开快速修复菜单</value>
+  </data>
+  <data name="OpenCWDCommandKey" xml:space="preserve">
+    <value>打开当前工作目录</value>
+  </data>
+  <data name="WslDistroGeneratorDisplayName" xml:space="preserve">
+    <value>WSL 发行版配置文件生成器</value>
+    <comment>The display name of a dynamic profile generator for WSL distros</comment>
+  </data>
+  <data name="PowershellCoreProfileGeneratorDisplayName" xml:space="preserve">
+    <value>PowerShell 配置文件生成器</value>
+    <comment>The display name of a dynamic profile generator for PowerShell</comment>
+  </data>
+  <data name="AzureCloudShellGeneratorDisplayName" xml:space="preserve">
+    <value>Azure Cloud Shell 配置文件生成器</value>
+    <comment>The display name of a dynamic profile generator for Azure Cloud Shell</comment>
+  </data>
+  <data name="VisualStudioGeneratorDisplayName" xml:space="preserve">
+    <value>Visual Studio 配置文件生成器</value>
+    <comment>The display name of a dynamic profile generator for Visual Studio</comment>
+  </data>
+  <data name="SshHostGeneratorDisplayName" xml:space="preserve">
+    <value>SSH 主机配置文件生成器</value>
+    <comment>The display name of a dynamic profile generator for SSH hosts</comment>
   </data>
 </root>

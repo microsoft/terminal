@@ -83,38 +83,39 @@ constexpr HRESULT vec2_narrow(U x, U y, vec2<T>& out) noexcept
     return Invalidate(&rect);
 }
 
-[[nodiscard]] HRESULT AtlasEngine::InvalidateSelection(const std::vector<til::rect>& rectangles) noexcept
-{
-    for (const auto& rect : rectangles)
-    {
-        // BeginPaint() protects against invalid out of bounds numbers.
-        // TODO: rect can contain invalid out of bounds coordinates when the selection is being
-        // dragged outside of the viewport (and the window begins scrolling automatically).
-        _api.invalidatedRows.start = gsl::narrow_cast<u16>(std::min<int>(_api.invalidatedRows.start, std::max<int>(0, rect.top)));
-        _api.invalidatedRows.end = gsl::narrow_cast<u16>(std::max<int>(_api.invalidatedRows.end, std::max<int>(0, rect.bottom)));
-    }
-    return S_OK;
-}
-
-[[nodiscard]] HRESULT AtlasEngine::InvalidateHighlight(std::span<const til::point_span> highlights, const TextBuffer& buffer) noexcept
+void AtlasEngine::_invalidateSpans(std::span<const til::point_span> spans, const TextBuffer& buffer) noexcept
 {
     const auto viewportOrigin = til::point{ _api.viewportOffset.x, _api.viewportOffset.y };
     const auto viewport = til::rect{ 0, 0, _api.s->viewportCellCount.x, _api.s->viewportCellCount.y };
-    const auto cellCountX = static_cast<til::CoordType>(_api.s->viewportCellCount.x);
-    for (const auto& hi : highlights)
+    for (auto&& sp : spans)
     {
-        hi.iterate_rows(cellCountX, [&](til::CoordType row, til::CoordType beg, til::CoordType end) {
+        sp.iterate_rows_exclusive(til::CoordTypeMax, [&](til::CoordType row, til::CoordType beg, til::CoordType end) {
             const auto shift = buffer.GetLineRendition(row) != LineRendition::SingleWidth ? 1 : 0;
             beg <<= shift;
             end <<= shift;
-            til::rect rect{ beg, row, end + 1, row + 1 };
+            til::rect rect{ beg, row, end, row + 1 };
             rect = rect.to_origin(viewportOrigin);
             rect &= viewport;
             _api.invalidatedRows.start = gsl::narrow_cast<u16>(std::min<int>(_api.invalidatedRows.start, std::max<int>(0, rect.top)));
             _api.invalidatedRows.end = gsl::narrow_cast<u16>(std::max<int>(_api.invalidatedRows.end, std::max<int>(0, rect.bottom)));
         });
     }
+}
 
+[[nodiscard]] HRESULT AtlasEngine::InvalidateSelection(std::span<const til::rect> selections) noexcept
+{
+    if (!selections.empty())
+    {
+        // INVARIANT: This assumes that `selections` is sorted by increasing Y
+        _api.invalidatedRows.start = gsl::narrow_cast<u16>(std::min<int>(_api.invalidatedRows.start, std::max<int>(0, selections.front().top)));
+        _api.invalidatedRows.end = gsl::narrow_cast<u16>(std::max<int>(_api.invalidatedRows.end, std::max<int>(0, selections.back().bottom)));
+    }
+    return S_OK;
+}
+
+[[nodiscard]] HRESULT AtlasEngine::InvalidateHighlight(std::span<const til::point_span> highlights, const TextBuffer& buffer) noexcept
+{
+    _invalidateSpans(highlights, buffer);
     return S_OK;
 }
 
@@ -420,15 +421,6 @@ void AtlasEngine::SetRetroTerminalEffect(bool enable) noexcept
     {
         _api.s.write()->misc.write()->useRetroTerminalEffect = enable;
         _resolveTransparencySettings();
-    }
-}
-
-void AtlasEngine::SetSelectionBackground(const COLORREF color, const float alpha) noexcept
-{
-    const u32 selectionColor = (color & 0xffffff) | gsl::narrow_cast<u32>(lrintf(alpha * 255.0f)) << 24;
-    if (_api.s->misc->selectionColor != selectionColor)
-    {
-        _api.s.write()->misc.write()->selectionColor = selectionColor;
     }
 }
 

@@ -362,7 +362,7 @@ bool GdiEngine::FontHasWesternScript(HDC hdc)
             polyString.back() &= softFontCharMask;
             polyWidth.push_back(gsl::narrow<int>(cluster.GetColumns()) * coordFontSize.width);
             cchCharWidths += polyWidth.back();
-            polyWidth.append(text.size() - 1, 0);
+            polyWidth.resize(polyWidth.size() + text.size() - 1);
         }
 
         // Detect and convert for raster font...
@@ -574,7 +574,8 @@ try
         }
 
         const auto cpt = gsl::narrow_cast<DWORD>(points.size());
-        return PolyBezier(_hdcMemoryContext, points.data(), cpt);
+        RETURN_HR_IF(E_FAIL, !PolyBezier(_hdcMemoryContext, points.data(), cpt));
+        return S_OK;
     };
 
     if (lines.test(GridLines::Left))
@@ -685,7 +686,7 @@ try
     const auto srcWidth = imageSlice.PixelWidth();
     const auto srcHeight = srcCellSize.height;
     const auto dstWidth = srcWidth * dstCellSize.width / srcCellSize.width;
-    const auto dstHeight = srcHeight * dstCellSize.height / srcCellSize.height;
+    const auto dstHeight = dstCellSize.height;
     const auto x = (imageSlice.ColumnOffset() - viewportLeft) * dstCellSize.width;
     const auto y = targetRow * dstCellSize.height;
 

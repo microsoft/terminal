@@ -47,10 +47,14 @@ void TerminalOutput::RestoreFrom(const TerminalOutput& savedState) noexcept
     _grTranslationEnabled = preserveGrTranslation;
 }
 
-bool TerminalOutput::AssignUserPreferenceCharset(const VTID charset, const bool size96)
+void TerminalOutput::AssignUserPreferenceCharset(const VTID charset, const bool size96)
 {
     const auto translationTable = size96 ? _LookupTranslationTable96(charset) : _LookupTranslationTable94(charset);
-    RETURN_BOOL_IF_FALSE(!translationTable.empty());
+    if (translationTable.empty())
+    {
+        return;
+    }
+
     _upssId = charset;
     _upssTranslationTable = translationTable;
     // Any G-set mapped to UPSS will need its translation table updated.
@@ -64,7 +68,6 @@ bool TerminalOutput::AssignUserPreferenceCharset(const VTID charset, const bool 
     // We also reapply the locking shifts in case they need to be updated.
     LockingShift(_glSetNumber);
     LockingShiftRight(_grSetNumber);
-    return true;
 }
 
 VTID TerminalOutput::GetUserPreferenceCharsetId() const noexcept
@@ -77,20 +80,28 @@ size_t TerminalOutput::GetUserPreferenceCharsetSize() const noexcept
     return _upssTranslationTable.size() == 96 ? 96 : 94;
 }
 
-bool TerminalOutput::Designate94Charset(size_t gsetNumber, const VTID charset)
+void TerminalOutput::Designate94Charset(size_t gsetNumber, const VTID charset)
 {
     const auto translationTable = _LookupTranslationTable94(charset);
-    RETURN_BOOL_IF_FALSE(!translationTable.empty());
+    if (translationTable.empty())
+    {
+        return;
+    }
+
     _gsetIds.at(gsetNumber) = charset;
-    return _SetTranslationTable(gsetNumber, translationTable);
+    _SetTranslationTable(gsetNumber, translationTable);
 }
 
-bool TerminalOutput::Designate96Charset(size_t gsetNumber, const VTID charset)
+void TerminalOutput::Designate96Charset(size_t gsetNumber, const VTID charset)
 {
     const auto translationTable = _LookupTranslationTable96(charset);
-    RETURN_BOOL_IF_FALSE(!translationTable.empty());
+    if (translationTable.empty())
+    {
+        return;
+    }
+
     _gsetIds.at(gsetNumber) = charset;
-    return _SetTranslationTable(gsetNumber, translationTable);
+    _SetTranslationTable(gsetNumber, translationTable);
 }
 
 void TerminalOutput::SetDrcs94Designation(const VTID charset)
@@ -118,7 +129,7 @@ size_t TerminalOutput::GetCharsetSize(const size_t gsetNumber) const
 }
 
 #pragma warning(suppress : 26440) // Suppress spurious "function can be declared noexcept" warning
-bool TerminalOutput::LockingShift(const size_t gsetNumber)
+void TerminalOutput::LockingShift(const size_t gsetNumber)
 {
     _glSetNumber = gsetNumber;
     _glTranslationTable = _gsetTranslationTables.at(_glSetNumber);
@@ -127,11 +138,10 @@ bool TerminalOutput::LockingShift(const size_t gsetNumber)
     {
         _glTranslationTable = {};
     }
-    return true;
 }
 
 #pragma warning(suppress : 26440) // Suppress spurious "function can be declared noexcept" warning
-bool TerminalOutput::LockingShiftRight(const size_t gsetNumber)
+void TerminalOutput::LockingShiftRight(const size_t gsetNumber)
 {
     _grSetNumber = gsetNumber;
     _grTranslationTable = _gsetTranslationTables.at(_grSetNumber);
@@ -140,13 +150,11 @@ bool TerminalOutput::LockingShiftRight(const size_t gsetNumber)
     {
         _grTranslationTable = {};
     }
-    return true;
 }
 
-bool TerminalOutput::SingleShift(const size_t gsetNumber) noexcept
+void TerminalOutput::SingleShift(const size_t gsetNumber) noexcept
 {
     _ssSetNumber = gsetNumber;
-    return true;
 }
 
 size_t TerminalOutput::GetLeftSetNumber() const noexcept
@@ -325,11 +333,12 @@ const std::wstring_view TerminalOutput::_LookupTranslationTable96(const VTID cha
     }
 }
 
-bool TerminalOutput::_SetTranslationTable(const size_t gsetNumber, const std::wstring_view translationTable)
+void TerminalOutput::_SetTranslationTable(const size_t gsetNumber, const std::wstring_view translationTable)
 {
     _gsetTranslationTables.at(gsetNumber) = translationTable;
     // We need to reapply the locking shifts in case the underlying G-sets have changed.
-    return LockingShift(_glSetNumber) && LockingShiftRight(_grSetNumber);
+    LockingShift(_glSetNumber);
+    LockingShiftRight(_grSetNumber);
 }
 
 void TerminalOutput::_ReplaceDrcsTable(const std::wstring_view oldTable, const std::wstring_view newTable)

@@ -51,7 +51,6 @@ void BackendD2D::Render(RenderingPayload& p)
         _drawCursorPart1(p);
         _drawText(p);
         _drawCursorPart2(p);
-        _drawSelection(p);
 #if ATLAS_DEBUG_SHOW_DIRTY
         _debugShowDirty(p);
 #endif
@@ -935,26 +934,6 @@ void BackendD2D::_drawCursor(const RenderingPayload& p, ID2D1RenderTarget* rende
     }
     default:
         break;
-    }
-}
-
-void BackendD2D::_drawSelection(const RenderingPayload& p)
-{
-    u16 y = 0;
-    for (const auto& row : p.rows)
-    {
-        if (row->selectionTo > row->selectionFrom)
-        {
-            const D2D1_RECT_F rect{
-                static_cast<f32>(p.s->font->cellSize.x * row->selectionFrom),
-                static_cast<f32>(p.s->font->cellSize.y * y),
-                static_cast<f32>(p.s->font->cellSize.x * row->selectionTo),
-                static_cast<f32>(p.s->font->cellSize.y * (y + 1)),
-            };
-            _fillRectangle(rect, p.s->misc->selectionColor);
-        }
-
-        y++;
     }
 }
 

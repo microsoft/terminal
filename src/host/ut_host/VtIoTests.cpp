@@ -4,6 +4,7 @@
 #include "precomp.h"
 
 #include "CommonState.hpp"
+#include "../../terminal/parser/InputStateMachineEngine.hpp"
 
 using namespace WEX::Common;
 using namespace WEX::Logging;
@@ -29,6 +30,8 @@ constexpr CHAR_INFO ci_blu(wchar_t ch) noexcept
 }
 
 #define cup(y, x) "\x1b[" #y ";" #x "H" // CUP: Cursor Position
+#define deccra(t, l, b, r, y, x) "\x1b[" #t ";" #l ";" #b ";" #r ";;" #y ";" #x "$v" // DECCRA: Copy Rectangular Area
+#define decfra(ch, t, l, b, r) "\x1b[" #ch ";" #t ";" #l ";" #b ";" #r "$x"
 #define decawm(h) "\x1b[?7" #h // DECAWM: Autowrap Mode
 #define decsc() "\x1b\x37" // DECSC: DEC Save Cursor (+ attributes)
 #define decrc() "\x1b\x38" // DECRC: DEC Restore Cursor (+ attributes)
@@ -46,6 +49,16 @@ static constexpr std::wstring_view s_initialContentVT{
     sgr_red("EF") sgr_blu("ef") sgr_red("GH") sgr_blu("gh") "\r\n"
     sgr_blu("ij") sgr_red("IJ") sgr_blu("kl") sgr_red("KL") "\r\n"
     sgr_blu("mn") sgr_red("MN") sgr_blu("op") sgr_red("OP")
+    // clang-format on
+};
+
+static constexpr std::wstring_view s_initialContentVTWide{
+    // clang-format off
+    L""
+    sgr_red("〇") sgr_blu("一") sgr_red("二") sgr_blu("三") "\r\n"
+    sgr_red("四") sgr_blu("五") sgr_red("六") sgr_blu("七") "\r\n"
+    sgr_blu("八") sgr_red("九") sgr_blu("十") sgr_red("百") "\r\n"
+    sgr_blu("千") sgr_red("万") sgr_blu("億") sgr_red("兆")
     // clang-format on
 };
 
@@ -68,11 +81,11 @@ class ::Microsoft::Console::VirtualTerminal::VtIoTests
         return { &rxBuf[0], read };
     }
 
-    void setupInitialContents() const
+    void setupInitialContents(bool wide) const
     {
         auto& sm = screenInfo->GetStateMachine();
         sm.ProcessString(L"\033c");
-        sm.ProcessString(s_initialContentVT);
+        sm.ProcessString(wide ? s_initialContentVTWide : s_initialContentVT);
         sm.ProcessString(L"\x1b[H" sgr_rst());
     }
 
@@ -236,23 +249,22 @@ class ::Microsoft::Console::VirtualTerminal::VtIoTests
         resetContents();
 
         size_t written;
-        std::unique_ptr<IWaitRoutine> waiter;
         std::string_view expected;
         std::string_view actual;
 
-        THROW_IF_FAILED(routines.WriteConsoleWImpl(*screenInfo, L"", written, waiter));
+        THROW_IF_FAILED(routines.WriteConsoleWImpl(*screenInfo, L"", written, nullptr));
         expected = "";
         actual = readOutput();
         VERIFY_ARE_EQUAL(expected, actual);
 
         // Force-wrap because we write up to the last column.
-        THROW_IF_FAILED(routines.WriteConsoleWImpl(*screenInfo, L"aaaaaaaa", written, waiter));
+        THROW_IF_FAILED(routines.WriteConsoleWImpl(*screenInfo, L"aaaaaaaa", written, nullptr));
         expected = "aaaaaaaa\r\n";
         actual = readOutput();
         VERIFY_ARE_EQUAL(expected, actual);
 
         // Force-wrap because we write up to the last column, but this time with a tab.
-        THROW_IF_FAILED(routines.WriteConsoleWImpl(*screenInfo, L"a\t\r\nb", written, waiter));
+        THROW_IF_FAILED(routines.WriteConsoleWImpl(*screenInfo, L"a\t\r\nb", written, nullptr));
         expected = "a\t\r\n\r\nb";
         actual = readOutput();
         VERIFY_ARE_EQUAL(expected, actual);
@@ -274,7 +286,7 @@ class ::Microsoft::Console::VirtualTerminal::VtIoTests
 
     TEST_METHOD(WriteConsoleOutputAttribute)
     {
-        setupInitialContents();
+        setupInitialContents(false);
 
         static constexpr std::array payload{ red, blu, red, blu };
         static constexpr til::point target{ 6, 1 };
@@ -292,7 +304,7 @@ class ::Microsoft::Console::VirtualTerminal::VtIoTests
 
     TEST_METHOD(WriteConsoleOutputCharacterW)
     {
-        setupInitialContents();
+        setupInitialContents(false);
 
         size_t written = 0;
         std::string_view expected;
@@ -351,7 +363,7 @@ class ::Microsoft::Console::VirtualTerminal::VtIoTests
         actual = readOutput();
         VERIFY_ARE_EQUAL(expected, actual);
 
-        setupInitialContents();
+        setupInitialContents(false);
 
         // Writing at the start of a line.
         THROW_IF_FAILED(routines.FillConsoleOutputAttributeImpl(*screenInfo, red, 3, { 0, 0 }, cellsModified, false));
@@ -385,6 +397,25 @@ class ::Microsoft::Console::VirtualTerminal::VtIoTests
         VERIFY_ARE_EQUAL(expected, actual);
     }
 
+    TEST_METHOD(FillConsoleOutputAttributeWide)
+    {
+        setupInitialContents(true);
+
+        size_t cellsModified = 0;
+        std::string_view expected;
+        std::string_view actual;
+
+        // Writing nothing should produce nothing.
+        THROW_IF_FAILED(routines.FillConsoleOutputAttributeImpl(*screenInfo, red, 4, { 2, 1 }, cellsModified, false));
+        expected =
+            decsc() //
+            cup(2, 3) sgr_red("五六") //
+            decrc();
+        actual = readOutput();
+        VERIFY_ARE_EQUAL(4u, cellsModified);
+        VERIFY_ARE_EQUAL(expected, actual);
+    }
+
     TEST_METHOD(FillConsoleOutputCharacterW)
     {
         size_t cellsModified = 0;
@@ -404,7 +435,7 @@ class ::Microsoft::Console::VirtualTerminal::VtIoTests
         actual = readOutput();
         VERIFY_ARE_EQUAL(expected, actual);
 
-        setupInitialContents();
+        setupInitialContents(false);
 
         // Writing at the start of a line.
         THROW_IF_FAILED(routines.FillConsoleOutputCharacterWImpl(*screenInfo, L'a', 3, { 0, 0 }, cellsModified, false));
@@ -450,7 +481,7 @@ class ::Microsoft::Console::VirtualTerminal::VtIoTests
         std::string_view expected;
         std::string_view actual;
 
-        setupInitialContents();
+        setupInitialContents(false);
 
         // Scrolling from nowhere to somewhere are no-ops and should not emit anything.
         THROW_IF_FAILED(routines.ScrollConsoleScreenBufferWImpl(*screenInfo, { 0, 0, -1, -1 }, {}, std::nullopt, L' ', 0, false));
@@ -484,7 +515,7 @@ class ::Microsoft::Console::VirtualTerminal::VtIoTests
         //
         //   m   n   M   N   o   p   O   P
         //
-        setupInitialContents();
+        setupInitialContents(false);
 
         // Scrolling from somewhere to somewhere.
         //
@@ -554,12 +585,224 @@ class ::Microsoft::Console::VirtualTerminal::VtIoTests
         actual = readOutput();
         VERIFY_ARE_EQUAL(expected, actual);
 
+        // Copying from a partially out-of-bounds source to a partially out-of-bounds target,
+        // while source and target overlap and there's a partially out-of-bounds clip rect.
+        //
+        // Before:
+        //                       clip rect
+        //                +~~~~~~~~~~~~~~~~~~~~~+
+        // +--------------$--------+            $
+        // |     A   Z   Z$  b   C | D   c   Y  $
+        // |              $+-------+------------$--+
+        // |     E   z   z$| f   G | H   g   Y  $  |
+        // |          src $|       |            $  |
+        // |     i   z   z$| J   d | B   E   L  $  |
+        // |              $|       |  dst       $  |
+        // |     m   n   M$| N   h | F   i   P  $  |
+        // +--------------$+-------+            $  |
+        //                +~e~~~~~~~~~~~~~~~~~~~+  |
+        //                 +-----------------------+
+        //
+        // After:
+        //
+        // +-----------------------+
+        // |     A   Z   Z   y   y | D   c   Y
+        // |               +-------+---------------+
+        // |     E   z   z | y   A | Z   Z   b     |
+        // |               |       |               |
+        // |     i   z   z | y   E | z   z   f     |
+        // |               |       |               |
+        // |     m   n   M | y   i | z   z   J     |
+        // +---------------+-------+               |
+        //                 |                       |
+        //                 +-----------------------+
+        THROW_IF_FAILED(routines.ScrollConsoleScreenBufferWImpl(*screenInfo, { -1, 0, 4, 3 }, { 3, 1 }, til::inclusive_rect{ 3, -1, 7, 9 }, L'y', blu, false));
+        expected =
+            decsc() //
+            cup(1, 4) sgr_blu("yy") //
+            cup(2, 4) sgr_blu("yy") //
+            cup(3, 4) sgr_blu("yy") //
+            cup(4, 4) sgr_blu("yy") //
+            cup(2, 4) sgr_blu("y") sgr_red("AZZ") sgr_blu("b") //
+            cup(3, 4) sgr_blu("y") sgr_red("E") sgr_blu("zzf") //
+            cup(4, 4) sgr_blu("yizz") sgr_red("J") //
+            decrc();
+        actual = readOutput();
+        VERIFY_ARE_EQUAL(expected, actual);
+
         static constexpr std::array<CHAR_INFO, 8 * 4> expectedContents{ {
             // clang-format off
-            ci_red('A'), ci_red('Z'), ci_red('Z'), ci_blu('b'), ci_red('C'), ci_red('D'), ci_blu('c'), ci_red('Y'),
-            ci_red('E'), ci_blu('z'), ci_blu('z'), ci_blu('f'), ci_red('G'), ci_red('H'), ci_blu('g'), ci_red('Y'),
-            ci_blu('i'), ci_blu('z'), ci_blu('z'), ci_red('J'), ci_blu('d'), ci_red('B'), ci_red('E'), ci_red('L'),
-            ci_blu('m'), ci_blu('n'), ci_red('M'), ci_red('N'), ci_blu('h'), ci_red('F'), ci_blu('i'), ci_red('P'),
+            ci_red('A'), ci_red('Z'), ci_red('Z'), ci_blu('y'), ci_blu('y'), ci_red('D'), ci_blu('c'), ci_red('Y'),
+            ci_red('E'), ci_blu('z'), ci_blu('z'), ci_blu('y'), ci_red('A'), ci_red('Z'), ci_red('Z'), ci_blu('b'),
+            ci_blu('i'), ci_blu('z'), ci_blu('z'), ci_blu('y'), ci_red('E'), ci_blu('z'), ci_blu('z'), ci_blu('f'),
+            ci_blu('m'), ci_blu('n'), ci_red('M'), ci_blu('y'), ci_blu('i'), ci_blu('z'), ci_blu('z'), ci_red('J'),
+            // clang-format on
+        } };
+        std::array<CHAR_INFO, 8 * 4> actualContents{};
+        Viewport actualContentsRead;
+        THROW_IF_FAILED(routines.ReadConsoleOutputWImpl(*screenInfo, actualContents, Viewport::FromDimensions({}, { 8, 4 }), actualContentsRead));
+        VERIFY_IS_TRUE(memcmp(expectedContents.data(), actualContents.data(), sizeof(actualContents)) == 0);
+    }
+
+    TEST_METHOD(ScrollConsoleScreenBufferW_DECCRA)
+    {
+        ServiceLocator::LocateGlobals().getConsoleInformation().GetVtIo()->SetDeviceAttributes({ DeviceAttribute::RectangularAreaOperations });
+        const auto cleanup = wil::scope_exit([]() {
+            ServiceLocator::LocateGlobals().getConsoleInformation().GetVtIo()->SetDeviceAttributes({});
+        });
+
+        std::string_view expected;
+        std::string_view actual;
+
+        setupInitialContents(false);
+
+        // Scrolling from nowhere to somewhere are no-ops and should not emit anything.
+        THROW_IF_FAILED(routines.ScrollConsoleScreenBufferWImpl(*screenInfo, { 0, 0, -1, -1 }, {}, std::nullopt, L' ', 0, false));
+        THROW_IF_FAILED(routines.ScrollConsoleScreenBufferWImpl(*screenInfo, { -10, -10, -9, -9 }, {}, std::nullopt, L' ', 0, false));
+        expected = "";
+        actual = readOutput();
+        VERIFY_ARE_EQUAL(expected, actual);
+
+        // Scrolling from somewhere to nowhere should clear the area.
+        THROW_IF_FAILED(routines.ScrollConsoleScreenBufferWImpl(*screenInfo, { 0, 0, 1, 1 }, { 10, 10 }, std::nullopt, L' ', red, false));
+        expected =
+            decsc() //
+            sgr_red() //
+            decfra(32, 1, 1, 2, 2) // ' ' = 32
+            decrc();
+        actual = readOutput();
+        VERIFY_ARE_EQUAL(expected, actual);
+
+        // cmd uses ScrollConsoleScreenBuffer to clear the buffer contents and that gets translated to a clear screen sequence.
+        THROW_IF_FAILED(routines.ScrollConsoleScreenBufferWImpl(*screenInfo, { 0, 0, 7, 3 }, { 0, -4 }, std::nullopt, 0, 0, true));
+        expected = "\x1b[H\x1b[2J\x1b[3J";
+        actual = readOutput();
+        VERIFY_ARE_EQUAL(expected, actual);
+
+        //
+        //   A   B   a   b   C   D   c   d
+        //
+        //   E   F   e   f   G   H   g   h
+        //
+        //   i   j   I   J   k   l   K   L
+        //
+        //   m   n   M   N   o   p   O   P
+        //
+        setupInitialContents(false);
+
+        // Scrolling from somewhere to somewhere.
+        //
+        //     +-------+
+        //   A | Z   Z | b   C   D   c   d
+        //     |  src  |
+        //   E | Z   Z | f   G   H   g   h
+        //     +-------+       +-------+
+        //   i   j   I   J   k | B   a | L
+        //                     |  dst  |
+        //   m   n   M   N   o | F   e | P
+        //                     +-------+
+        THROW_IF_FAILED(routines.ScrollConsoleScreenBufferWImpl(*screenInfo, { 1, 0, 2, 1 }, { 5, 2 }, std::nullopt, L'Z', red, false));
+        expected =
+            decsc() //
+            sgr_red() //
+            deccra(1, 2, 2, 3, 3, 6) //
+            decfra(90, 1, 2, 2, 3) // 'Z' = 90
+            decrc();
+        actual = readOutput();
+        VERIFY_ARE_EQUAL(expected, actual);
+
+        // Same, but with a partially out-of-bounds target and clip rect. Clip rects affect both
+        // the source area that gets filled and the target area that gets a copy of the source contents.
+        //
+        //   A   Z   Z   b   C   D   c   d
+        // +---+~~~~~~~~~~~~~~~~~~~~~~~+
+        // | E $ z   z | f   G   H   g $ h
+        // |   $ src   |           +---$-------+
+        // | i $ z   z | J   k   B | E $ L     |
+        // +---$-------+           |   $ dst   |
+        //   m $ n   M   N   o   F | i $ P     |
+        //     +~~~~~~~~~~~~~~~~~~~~~~~+-------+
+        //            clip rect
+        THROW_IF_FAILED(routines.ScrollConsoleScreenBufferWImpl(*screenInfo, { 0, 1, 2, 2 }, { 6, 2 }, til::inclusive_rect{ 1, 1, 6, 3 }, L'z', blu, false));
+        expected =
+            decsc() //
+            sgr_blu() //
+            deccra(2, 1, 3, 1, 3, 7) //
+            decfra(122, 2, 2, 3, 3) // 'z' = 122
+            decrc();
+        actual = readOutput();
+        VERIFY_ARE_EQUAL(expected, actual);
+
+        // Same, but with a partially out-of-bounds source.
+        // The boundaries of the buffer act as a clip rect for reading and so only 2 cells get copied.
+        //
+        //                             +-------+
+        //   A   Z   Z   b   C   D   c | Y     |
+        //                             |  src  |
+        //   E   z   z   f   G   H   g | Y     |
+        //                 +---+       +-------+
+        //   i   z   z   J | d | B   E   L
+        //                 |dst|
+        //   m   n   M   N | h | F   i   P
+        //                 +---+
+        THROW_IF_FAILED(routines.ScrollConsoleScreenBufferWImpl(*screenInfo, { 7, 0, 8, 1 }, { 4, 2 }, std::nullopt, L'Y', red, false));
+        expected =
+            decsc() //
+            sgr_red() //
+            deccra(1, 8, 2, 8, 3, 5) //
+            decfra(89, 1, 8, 2, 8) // 'Y' = 89
+            decrc();
+        actual = readOutput();
+        VERIFY_ARE_EQUAL(expected, actual);
+
+        // Copying from a partially out-of-bounds source to a partially out-of-bounds target,
+        // while source and target overlap and there's a partially out-of-bounds clip rect.
+        //
+        // Before:
+        //                       clip rect
+        //                +~~~~~~~~~~~~~~~~~~~~~+
+        // +--------------$--------+            $
+        // |     A   Z   Z$  b   C | D   c   Y  $
+        // |              $+-------+------------$--+
+        // |     E   z   z$| f   G | H   g   Y  $  |
+        // |          src $|       |            $  |
+        // |     i   z   z$| J   d | B   E   L  $  |
+        // |              $|       |  dst       $  |
+        // |     m   n   M$| N   h | F   i   P  $  |
+        // +--------------$+-------+            $  |
+        //                +~e~~~~~~~~~~~~~~~~~~~+  |
+        //                 +-----------------------+
+        //
+        // After:
+        //
+        // +-----------------------+
+        // |     A   Z   Z   y   y | D   c   Y
+        // |               +-------+---------------+
+        // |     E   z   z | y   A | Z   Z   b     |
+        // |               |       |               |
+        // |     i   z   z | y   E | z   z   f     |
+        // |               |       |               |
+        // |     m   n   M | y   i | z   z   J     |
+        // +---------------+-------+               |
+        //                 |                       |
+        //                 +-----------------------+
+        THROW_IF_FAILED(routines.ScrollConsoleScreenBufferWImpl(*screenInfo, { -1, 0, 4, 3 }, { 3, 1 }, til::inclusive_rect{ 3, -1, 7, 9 }, L'y', blu, false));
+        expected =
+            decsc() //
+            sgr_blu() //
+            deccra(1, 1, 3, 4, 2, 5) //
+            decfra(121, 1, 4, 1, 5) // 'y' = 121
+            decfra(121, 2, 4, 4, 4) //
+            decrc();
+        actual = readOutput();
+        VERIFY_ARE_EQUAL(expected, actual);
+
+        static constexpr std::array<CHAR_INFO, 8 * 4> expectedContents{ {
+            // clang-format off
+            ci_red('A'), ci_red('Z'), ci_red('Z'), ci_blu('y'), ci_blu('y'), ci_red('D'), ci_blu('c'), ci_red('Y'),
+            ci_red('E'), ci_blu('z'), ci_blu('z'), ci_blu('y'), ci_red('A'), ci_red('Z'), ci_red('Z'), ci_blu('b'),
+            ci_blu('i'), ci_blu('z'), ci_blu('z'), ci_blu('y'), ci_red('E'), ci_blu('z'), ci_blu('z'), ci_blu('f'),
+            ci_blu('m'), ci_blu('n'), ci_red('M'), ci_blu('y'), ci_blu('i'), ci_blu('z'), ci_blu('z'), ci_red('J'),
             // clang-format on
         } };
         std::array<CHAR_INFO, 8 * 4> actualContents{};
@@ -582,7 +825,7 @@ class ::Microsoft::Console::VirtualTerminal::VtIoTests
             &screenInfoAlt));
 
         routines.SetConsoleActiveScreenBufferImpl(*screenInfoAlt);
-        setupInitialContents();
+        setupInitialContents(false);
         THROW_IF_FAILED(routines.SetConsoleOutputModeImpl(*screenInfoAlt, ENABLE_PROCESSED_OUTPUT | ENABLE_WRAP_AT_EOL_OUTPUT | ENABLE_VIRTUAL_TERMINAL_PROCESSING));
         readOutput();
 

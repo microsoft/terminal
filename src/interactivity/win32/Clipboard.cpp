@@ -24,6 +24,22 @@ using namespace Microsoft::Console::Types;
 
 #pragma region Public Methods
 
+void Clipboard::CopyText(const std::wstring& text)
+{
+    const auto clipboard = _openClipboard(ServiceLocator::LocateConsoleWindow()->GetWindowHandle());
+    if (!clipboard)
+    {
+        LOG_LAST_ERROR();
+        return;
+    }
+
+    EmptyClipboard();
+    // As per: https://learn.microsoft.com/en-us/windows/win32/dataxchg/standard-clipboard-formats
+    //   CF_UNICODETEXT: [...] A null character signals the end of the data.
+    // --> We add +1 to the length. This works because .c_str() is null-terminated.
+    _copyToClipboard(CF_UNICODETEXT, text.c_str(), (text.size() + 1) * sizeof(wchar_t));
+}
+
 // Arguments:
 // - fAlsoCopyFormatting - Place colored HTML & RTF text onto the clipboard as well as the usual plain text.
 // Return Value:
@@ -325,9 +341,6 @@ void Clipboard::StoreSelectionToClipboard(const bool copyFormatting)
     {
         return;
     }
-
-    // read selection area.
-    const auto selectionRects = selection.GetSelectionRects();
 
     const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     const auto& buffer = gci.GetActiveOutputBuffer().GetTextBuffer();

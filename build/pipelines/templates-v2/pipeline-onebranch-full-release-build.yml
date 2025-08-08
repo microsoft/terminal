@@ -78,7 +78,9 @@ extends:
     template: v2/Microsoft.NonOfficial.yml@templates
   parameters:
     featureFlags:
-      WindowsHostVersion: 1ESWindows2022
+      WindowsHostVersion:
+        Version: 2022
+        Network: R1
     platform:
       name: 'windows_undocked'
       product: 'Windows Terminal'
@@ -86,6 +88,9 @@ extends:
       enabled: false
     globalSdl: # https://aka.ms/obpipelines/sdl
       enableCheckCFlags: false # CheckCFlags is broken and exploding our builds; to remove, :g/BAD-FLAGS/d
+      isNativeCode: true
+      prefast:
+        enabled: true
       asyncSdl:
         enabled: true
         tsaOptionsFile: 'build/config/tsa.json'
@@ -113,6 +118,8 @@ extends:
               variables:
                 ob_sdl_checkcflags_enabled: false # BAD-FLAGS
                 ob_sdl_xfgcheck_enabled: false # BAD-FLAGS
+                ob_sdl_prefast_runDuring: Build
+                ob_sdl_checkCompliantCompilerWarnings: true
                 ob_git_checkout: false # This job checks itself out
                 ob_git_skip_checkout_none: true
                 ob_outputDirectory: $(JobOutputDirectory)
@@ -130,10 +137,7 @@ extends:
               codeSign: ${{ parameters.codeSign }}
               signingIdentity: ${{ parameters.signingIdentity }}
               beforeBuildSteps: # Right before we build, lay down the universal package and localizations
-                - task: PkgESSetupBuild@12
-                  displayName: Package ES - Setup Build
-                  inputs:
-                    disableOutputRedirect: true
+                - template: ./build/pipelines/templates-v2/steps-setup-versioning.yml@self
 
                 - task: UniversalPackages@0
                   displayName: Download terminal-internal Universal Package
@@ -150,6 +154,7 @@ extends:
                 variables:
                   ob_sdl_checkcflags_enabled: false # BAD-FLAGS
                   ob_sdl_xfgcheck_enabled: false # BAD-FLAGS
+                  ob_sdl_prefast_enabled: false # This is a C# build job
                   ob_git_checkout: false # This job checks itself out
                   ob_git_skip_checkout_none: true
                   ob_outputDirectory: $(JobOutputDirectory)
@@ -167,10 +172,7 @@ extends:
                 codeSign: ${{ parameters.codeSign }}
                 signingIdentity: ${{ parameters.signingIdentity }}
                 beforeBuildSteps:
-                  - task: PkgESSetupBuild@12
-                    displayName: Package ES - Setup Build
-                    inputs:
-                      disableOutputRedirect: true
+                  - template: ./build/pipelines/templates-v2/steps-setup-versioning.yml@self
                   # WPF doesn't need the localizations or the universal package, but if it does... put them here.
 
       - stage: Package
@@ -184,6 +186,7 @@ extends:
                 variables:
                   ob_sdl_checkcflags_enabled: false # BAD-FLAGS
                   ob_sdl_xfgcheck_enabled: false # BAD-FLAGS
+                  ob_sdl_prefast_enabled: false # This is a collection of powershell scripts
                   ob_git_checkout: false # This job checks itself out
                   ob_git_skip_checkout_none: true
                   ob_outputDirectory: $(JobOutputDirectory)
@@ -238,6 +241,7 @@ extends:
                 variables:
                   ob_sdl_checkcflags_enabled: false # BAD-FLAGS
                   ob_sdl_xfgcheck_enabled: false # BAD-FLAGS
+                  ob_sdl_prefast_enabled: false # This is a collection of powershell scripts
                   ob_git_checkout: false # This job checks itself out
                   ob_git_skip_checkout_none: true
                   ob_outputDirectory: $(JobOutputDirectory)
@@ -256,6 +260,7 @@ extends:
                 variables:
                   ob_sdl_checkcflags_enabled: false # BAD-FLAGS
                   ob_sdl_xfgcheck_enabled: false # BAD-FLAGS
+                  ob_sdl_prefast_enabled: false # This is a collection of powershell scripts
                   ob_git_checkout: false # This job checks itself out
                   ob_git_skip_checkout_none: true
                   ob_outputDirectory: $(JobOutputDirectory)
@@ -281,6 +286,7 @@ extends:
               variables:
                 ob_sdl_checkcflags_enabled: false # BAD-FLAGS
                 ob_sdl_xfgcheck_enabled: false # BAD-FLAGS
+                ob_sdl_prefast_enabled: false # This is a collection of powershell scripts
                 ob_git_checkout: false # This job checks itself out
                 ob_git_skip_checkout_none: true
                 ob_outputDirectory: $(Build.ArtifactStagingDirectory)

@@ -27,7 +27,7 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] HRESULT SetHwnd(const HWND hwnd) noexcept;
 
-        [[nodiscard]] HRESULT InvalidateSelection(const std::vector<til::rect>& rectangles) noexcept override;
+        [[nodiscard]] HRESULT InvalidateSelection(std::span<const til::rect> selections) noexcept override;
         [[nodiscard]] HRESULT InvalidateScroll(const til::point* const pcoordDelta) noexcept override;
         [[nodiscard]] HRESULT InvalidateSystem(const til::rect* const prcDirtyClient) noexcept override;
         [[nodiscard]] HRESULT Invalidate(const til::rect* const psrRegion) noexcept override;
@@ -165,7 +165,7 @@ namespace Microsoft::Console::Render
         // It's important the pool is first so it can be given to the others on construction.
         std::pmr::unsynchronized_pool_resource _pool;
         std::pmr::vector<std::pmr::wstring> _polyStrings;
-        std::pmr::vector<std::pmr::basic_string<int>> _polyWidths;
+        std::pmr::vector<std::pmr::vector<int>> _polyWidths;
 
         std::vector<DWORD> _imageMask;
 

@@ -1,3 +1,4 @@
+#Requires -Version 7
 
 # The project's root directory.
 $script:OpenConsoleFallbackRoot="$PSScriptRoot\.."
@@ -82,6 +83,7 @@ function Set-MsbuildDevEnvironment
     switch ($env:PROCESSOR_ARCHITECTURE) {
         "amd64" { $arch = "x64" }
         "x86" { $arch = "x86" }
+        "arm64" { $arch = "arm64" }
         default { throw "Unknown architecture: $switch" }
     }
 
@@ -169,7 +171,7 @@ function Invoke-OpenConsoleTests()
         [switch]$FTOnly,
 
         [parameter(Mandatory=$false)]
-        [ValidateSet('host', 'interactivityWin32', 'terminal', 'adapter', 'feature', 'uia', 'textbuffer', 'til', 'types', 'terminalCore', 'terminalApp', 'localTerminalApp', 'unitSettingsModel', 'unitRemoting', 'unitControl')]
+        [ValidateSet('host', 'interactivityWin32', 'terminal', 'adapter', 'feature', 'uia', 'textbuffer', 'til', 'types', 'terminalCore', 'terminalApp', 'localTerminalApp', 'unitSettingsModel', 'unitControl', 'winconpty')]
         [string]$Test,
 
         [parameter(Mandatory=$false)]
@@ -198,7 +200,7 @@ function Invoke-OpenConsoleTests()
         $OpenConsolePlatform = 'Win32'
     }
     $OpenConsolePath = "$root\bin\$OpenConsolePlatform\$Configuration\OpenConsole.exe"
-    $TaefExePath = "$root\packages\Microsoft.Taef.10.60.210621002\build\Binaries\$Platform\te.exe"
+    $TaefExePath = "$root\packages\Microsoft.Taef.10.93.240607003\build\Binaries\$Platform\te.exe"
     $BinDir = "$root\bin\$OpenConsolePlatform\$Configuration"
 
     [xml]$TestConfig = Get-Content "$root\tools\tests.xml"

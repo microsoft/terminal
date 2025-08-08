@@ -35,7 +35,6 @@ namespace Microsoft::Console::VirtualTerminal
             void WriteUTF16TranslateCRLF(std::wstring_view str) const;
             void WriteUTF16StripControlChars(std::wstring_view str) const;
             void WriteUCS2(wchar_t ch) const;
-            void WriteUCS2StripControlChars(wchar_t ch) const;
             void WriteCUP(til::point position) const;
             void WriteDECTCEM(bool enabled) const;
             void WriteSGR1006(bool enabled) const;
@@ -45,6 +44,7 @@ namespace Microsoft::Console::VirtualTerminal
             void WriteWindowTitle(std::wstring_view title) const;
             void WriteAttributes(const TextAttribute& attributes) const;
             void WriteInfos(til::point target, std::span<const CHAR_INFO> infos) const;
+            void WriteScreenInfo(SCREEN_INFORMATION& newContext, til::size oldSize) const;
 
         private:
             VtIo* _io = nullptr;
@@ -54,31 +54,43 @@ namespace Microsoft::Console::VirtualTerminal
 
         static void FormatAttributes(std::string& target, const TextAttribute& attributes);
         static void FormatAttributes(std::wstring& target, const TextAttribute& attributes);
+        static wchar_t SanitizeUCS2(wchar_t ch);
 
         [[nodiscard]] HRESULT Initialize(const ConsoleArguments* const pArgs);
-        [[nodiscard]] HRESULT CreateAndStartSignalThread() noexcept;
-        [[nodiscard]] HRESULT CreateIoHandlers() noexcept;
 
         bool IsUsingVt() const;
         [[nodiscard]] HRESULT StartIfNeeded();
 
+        void RequestCursorPositionFromTerminal();
+        void SetDeviceAttributes(til::enumset<DeviceAttribute, uint64_t> attributes) noexcept;
+        til::enumset<DeviceAttribute, uint64_t> GetDeviceAttributes() const noexcept;
         void SendCloseEvent();
         void CreatePseudoWindow();
 
     private:
-        [[nodiscard]] HRESULT _Initialize(const HANDLE InHandle, const HANDLE OutHandle, _In_opt_ const HANDLE SignalHandle);
+        enum class State : uint8_t
+        {
+            Uninitialized,
+            Initialized,
+            Starting,
+            StartupFailed,
+            Running,
+        };
 
+        [[nodiscard]] HRESULT _Initialize(const HANDLE InHandle, const HANDLE OutHandle, _In_opt_ const HANDLE SignalHandle);
+        void _cursorPositionReportReceived();
         void _uncork();
         void _flushNow();
 
         // After CreateIoHandlers is called, these will be invalid.
         wil::unique_hfile _hInput;
         wil::unique_hfile _hOutput;
-        // After CreateAndStartSignalThread is called, this will be invalid.
+        // After Initialize is called, this will be invalid.
         wil::unique_hfile _hSignal;
 
         std::unique_ptr<Microsoft::Console::VtInputThread> _pVtInputThread;
         std::unique_ptr<Microsoft::Console::PtySignalInputThread> _pPtySignalInputThread;
+        til::enumset<DeviceAttribute, uint64_t> _deviceAttributes;
 
         // We use two buffers: A front and a back buffer. The front buffer is the one we're currently
         // sending to the terminal (it's being "presented" = it's on the "front" & "visible").
@@ -92,8 +104,9 @@ namespace Microsoft::Console::VirtualTerminal
         bool _writerRestoreCursor = false;
         bool _writerTainted = false;
 
-        bool _initialized = false;
+        State _state = State::Uninitialized;
         bool _lookingForCursorPosition = false;
+        bool _scheduleAnotherCPR = false;
         bool _closeEventSent = false;
         int _corked = 0;
 

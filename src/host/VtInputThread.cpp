@@ -21,17 +21,13 @@ using namespace Microsoft::Console::VirtualTerminal;
 // - hPipe - a handle to the file representing the read end of the VT pipe.
 // - inheritCursor - a bool indicating if the state machine should expect a
 //      cursor positioning sequence. See MSFT:15681311.
-VtInputThread::VtInputThread(_In_ wil::unique_hfile hPipe, const bool inheritCursor) :
+VtInputThread::VtInputThread(_In_ wil::unique_hfile hPipe, std::function<void()> capturedCPR) :
     _hFile{ std::move(hPipe) }
 {
     THROW_HR_IF(E_HANDLE, _hFile.get() == INVALID_HANDLE_VALUE);
 
     auto dispatch = std::make_unique<InteractDispatch>();
-    auto engine = std::make_unique<InputStateMachineEngine>(std::move(dispatch), inheritCursor);
-
-    // we need this callback to be able to flush an unknown input sequence to the app
-    engine->SetFlushToInputQueueCallback([this] { return _pInputStateMachine->FlushToTerminal(); });
-
+    auto engine = std::make_unique<InputStateMachineEngine>(std::move(dispatch), std::move(capturedCPR));
     _pInputStateMachine = std::make_unique<StateMachine>(std::move(engine));
 }
 
@@ -189,8 +185,7 @@ void VtInputThread::_InputThread()
     return S_OK;
 }
 
-void VtInputThread::WaitUntilDSR(DWORD timeout) const noexcept
+InputStateMachineEngine& VtInputThread::GetInputStateMachineEngine() const noexcept
 {
-    const auto& engine = static_cast<InputStateMachineEngine&>(_pInputStateMachine->Engine());
-    engine.WaitUntilDSR(timeout);
+    return static_cast<InputStateMachineEngine&>(_pInputStateMachine->Engine());
 }

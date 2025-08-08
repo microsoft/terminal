@@ -24,8 +24,10 @@
 #endif
 
 #include <wil/cppwinrt.h>
+#include <wil/registry.h>
 
 #include <winrt/Windows.ApplicationModel.AppExtensions.h>
+#include <winrt/Windows.ApplicationModel.Resources.Core.h>
 #include <winrt/Windows.ApplicationModel.h>
 #include <winrt/Windows.Foundation.Collections.h>
 #include <winrt/Windows.Foundation.h>

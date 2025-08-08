@@ -53,7 +53,7 @@ void TerminalInput::SetInputMode(const Mode mode, const bool enabled) noexcept
 
     // If we've changed one of the modes that alter the VT input sequences,
     // we'll need to regenerate our keyboard map.
-    static constexpr auto keyMapModes = til::enumset<Mode>{ Mode::LineFeed, Mode::Ansi, Mode::Keypad, Mode::CursorKey, Mode::BackarrowKey };
+    static constexpr auto keyMapModes = til::enumset<Mode>{ Mode::LineFeed, Mode::Ansi, Mode::Keypad, Mode::CursorKey, Mode::BackarrowKey, Mode::SendC1 };
     if (keyMapModes.test(mode))
     {
         _initKeyboardMap();
@@ -171,7 +171,7 @@ TerminalInput::OutputType TerminalInput::HandleKey(const INPUT_RECORD& event)
     if (matchingLastKeyPress && !_inputMode.test(Mode::AutoRepeat))
     {
         // Note that we must return an empty string here to imply that we've handled
-        // the event, otherwise the key press can still end up being submitted.
+        // the event; otherwise, the key press can still end up being submitted.
         return _makeNoOutput();
     }
     _lastVirtualKeyCode = virtualKeyCode;
@@ -352,6 +352,19 @@ try
     };
 
     _keyMap.clear();
+
+    // The CSI and SS3 introducers are C1 control codes, which can either be
+    // sent as a single codepoint, or as a two character escape sequence.
+    if (_inputMode.test(Mode::SendC1))
+    {
+        _csi = L"\x9B";
+        _ss3 = L"\x8F";
+    }
+    else
+    {
+        _csi = L"\x1B[";
+        _ss3 = L"\x1BO";
+    }
 
     // PAUSE doesn't have a VT mapping, but traditionally we've mapped it to ^Z,
     // regardless of modifiers.
