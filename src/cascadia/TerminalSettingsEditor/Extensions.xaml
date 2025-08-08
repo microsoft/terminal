@@ -217,7 +217,7 @@
                                 <IconSourceElement Width="16"
                                                    Height="16"
                                                    Margin="0,0,12,0"
-                                                   IconSource="{x:Bind mtu:IconPathConverter.IconSourceWUX(Profile.EvaluatedIcon), Mode=OneWay}" />
+                                                   IconSource="{x:Bind mtu:IconPathConverter.IconSourceWUX(Profile.Icon.Resolved), Mode=OneWay}" />
 
                                 <TextBlock Text="{x:Bind Profile.Name, Mode=OneWay}" />
 

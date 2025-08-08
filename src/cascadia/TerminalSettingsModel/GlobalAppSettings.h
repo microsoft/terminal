@@ -75,6 +75,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         void LogSettingChanges(std::set<std::string>& changes, const std::string_view& context) const;
 
+        void ResolveMediaResources(const Model::MediaResourceResolver& resolver);
+
+        winrt::hstring SourceBasePath;
+
         INHERITABLE_SETTING(Model::GlobalAppSettings, hstring, UnparsedDefaultProfile, L"");
 
 #define GLOBAL_SETTINGS_INITIALIZE(type, name, jsonKey, ...) \

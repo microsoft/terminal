@@ -82,7 +82,7 @@ namespace winrt::TerminalApp::implementation
 
     winrt::hstring TerminalPaneContent::Icon() const
     {
-        return _profile.EvaluatedIcon();
+        return _profile.Icon().Resolved();
     }
 
     Windows::Foundation::IReference<winrt::Windows::UI::Color> TerminalPaneContent::TabColor() const noexcept
@@ -340,8 +340,12 @@ namespace winrt::TerminalApp::implementation
         RestartTerminalRequested.raise(*this, nullptr);
     }
 
-    void TerminalPaneContent::UpdateSettings(const CascadiaSettings& /*settings*/)
+    void TerminalPaneContent::UpdateSettings(const CascadiaSettings& settings)
     {
+        // Reload our profile from the settings model to propagate bell mode, icon, and close on exit mode (anything that uses _profile).
+        const auto profile{ settings.FindProfile(_profile.Guid()) };
+        _profile = profile ? profile : settings.ProfileDefaults();
+
         if (const auto& settings{ _cache.TryLookup(_profile) })
         {
             _control.UpdateControlSettings(settings.DefaultSettings(), settings.UnfocusedSettings());

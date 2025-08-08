@@ -5,120 +5,49 @@
 
 namespace til
 {
-    namespace details
+    struct throttled_func_options
     {
-        template<typename... Args>
-        class throttled_func_storage
-        {
-        public:
-            template<typename... MakeArgs>
-            bool emplace(MakeArgs&&... args)
-            {
-                std::unique_lock guard{ _lock };
-                const bool hadValue = _pendingRunArgs.has_value();
-                _pendingRunArgs.emplace(std::forward<MakeArgs>(args)...);
-                return hadValue;
-            }
+        using filetime_duration = std::chrono::duration<int64_t, std::ratio<1, 10000000>>;
 
-            template<typename F>
-            void modify_pending(F f)
-            {
-                std::unique_lock guard{ _lock };
-                if (_pendingRunArgs)
-                {
-                    std::apply(f, *_pendingRunArgs);
-                }
-            }
+        filetime_duration delay{};
+        bool debounce = false;
+        bool leading = false;
+        bool trailing = false;
+    };
 
-            void apply(const auto& func)
-            {
-                decltype(_pendingRunArgs) args;
-                {
-                    std::unique_lock guard{ _lock };
-                    args = std::exchange(_pendingRunArgs, std::nullopt);
-                }
-                // Theoretically it should always have a value, because the throttled_func
-                // should not call the callback without there being a reason.
-                // But in practice a failure here was observed at least once.
-                // It's unknown to me what caused it, so the best we can do is avoid a crash.
-                assert(args.has_value());
-                if (args)
-                {
-                    std::apply(func, *args);
-                }
-            }
-
-            explicit operator bool() const
-            {
-                std::shared_lock guard{ _lock };
-                return _pendingRunArgs.has_value();
-            }
-
-        private:
-            // std::mutex uses imperfect Critical Sections on Windows.
-            // --> std::shared_mutex uses SRW locks that are small and fast.
-            mutable std::shared_mutex _lock;
-            std::optional<std::tuple<Args...>> _pendingRunArgs;
-        };
-
-        template<>
-        class throttled_func_storage<>
-        {
-        public:
-            bool emplace()
-            {
-                return _isPending.exchange(true, std::memory_order_relaxed);
-            }
-
-            void apply(const auto& func)
-            {
-                if (_isPending.exchange(false, std::memory_order_relaxed))
-                {
-                    func();
-                }
-            }
-
-            void reset()
-            {
-                _isPending.store(false, std::memory_order_relaxed);
-            }
-
-            explicit operator bool() const
-            {
-                return _isPending.load(std::memory_order_relaxed);
-            }
-
-        private:
-            std::atomic<bool> _isPending;
-        };
-    } // namespace details
-
-    template<bool Debounce, bool Leading, typename... Args>
+    template<typename... Args>
     class throttled_func
     {
     public:
-        using filetime_duration = std::chrono::duration<int64_t, std::ratio<1, 10000000>>;
+        using filetime_duration = throttled_func_options::filetime_duration;
         using function = std::function<void(Args...)>;
 
-        // Throttles invocations to the given `func` to not occur more often than `delay`.
+        // Throttles invocations to the given `func` to not occur more often than specified in options.
         //
-        // If this is a:
-        // * throttled_func_leading: `func` will be invoked immediately and
-        //   further invocations prevented until `delay` time has passed.
-        // * throttled_func_trailing: On the first invocation a timer of `delay` time will
-        //   be started. After the timer has expired `func` will be invoked just once.
+        // Options:
+        // * delay: The minimum time between invocations
+        // * debounce: If true, resets the timer on each call
+        // * leading: If true, `func` will be invoked immediately on first call
+        // * trailing: If true, `func` will be invoked after the delay
         //
-        // After `func` was invoked the state is reset and this cycle is repeated again.
-        throttled_func(filetime_duration delay, function func) :
+        // At least one of leading or trailing must be true.
+        throttled_func(throttled_func_options opts, function func) :
             _func{ std::move(func) },
-            _timer{ _createTimer() }
+            _timer{ _create_timer() },
+            _debounce{ opts.debounce },
+            _leading{ opts.leading },
+            _trailing{ opts.trailing }
         {
-            const auto d = -delay.count();
+            if (!_leading && !_trailing)
+            {
+                throw std::invalid_argument("neither leading nor trailing");
+            }
+
+            const auto d = -opts.delay.count();
             if (d >= 0)
             {
                 throw std::invalid_argument("non-positive delay specified");
             }
-
             memcpy(&_delay, &d, sizeof(d));
         }
 
@@ -139,27 +68,7 @@ namespace til
         template<typename... MakeArgs>
         void operator()(MakeArgs&&... args)
         {
-            const auto hadValue = _storage.emplace(std::forward<MakeArgs>(args)...);
-
-            if constexpr (Debounce)
-            {
-                SetThreadpoolTimerEx(_timer.get(), &_delay, 0, 0);
-            }
-            else
-            {
-                if (!hadValue)
-                {
-                    SetThreadpoolTimerEx(_timer.get(), &_delay, 0, 0);
-                }
-            }
-
-            if constexpr (Leading)
-            {
-                if (!hadValue)
-                {
-                    _func();
-                }
-            }
+            _lead(std::make_tuple(std::forward<MakeArgs>(args)...));
         }
 
         // Modifies the pending arguments for the next function
@@ -170,7 +79,11 @@ namespace til
         template<typename F>
         void modify_pending(F func)
         {
-            _storage.modify_pending(func);
+            const auto guard = _lock.lock_exclusive();
+            if (_pendingRunArgs)
+            {
+                std::apply(func, *_pendingRunArgs);
+            }
         }
 
         // Makes sure that the currently pending timer is executed
@@ -190,36 +103,76 @@ namespace til
         static void __stdcall _timer_callback(PTP_CALLBACK_INSTANCE /*instance*/, PVOID context, PTP_TIMER /*timer*/) noexcept
         try
         {
-            const auto self = static_cast<throttled_func*>(context);
-            if constexpr (Leading)
-            {
-                self->_storage.reset();
-            }
-            else
-            {
-                self->_storage.apply(self->_func);
-            }
+            static_cast<throttled_func*>(context)->_trail();
         }
         CATCH_LOG()
 
-        wil::unique_threadpool_timer _createTimer()
+        wil::unique_threadpool_timer _create_timer()
         {
             wil::unique_threadpool_timer timer{ CreateThreadpoolTimer(&_timer_callback, this, nullptr) };
             THROW_LAST_ERROR_IF(!timer);
             return timer;
         }
 
-        FILETIME _delay;
+        void _lead(std::tuple<Args...> args)
+        {
+            bool timerRunning = false;
+
+            {
+                const auto guard = _lock.lock_exclusive();
+
+                timerRunning = _timerRunning;
+                _timerRunning = true;
+
+                if (!timerRunning && _leading)
+                {
+                    // Call the function immediately on the leading edge.
+                    // See below (out of lock).
+                }
+                else if (_trailing)
+                {
+                    _pendingRunArgs.emplace(std::move(args));
+                }
+            }
+
+            if (!timerRunning && _leading)
+            {
+                std::apply(_func, std::move(args));
+            }
+
+            if (!timerRunning || _debounce)
+            {
+                SetThreadpoolTimerEx(_timer.get(), &_delay, 0, 0);
+            }
+        }
+
+        void _trail()
+        {
+            decltype(_pendingRunArgs) args;
+
+            {
+                const auto guard = _lock.lock_exclusive();
+
+                _timerRunning = false;
+                args = std::exchange(_pendingRunArgs, std::nullopt);
+            }
+
+            if (args)
+            {
+                std::apply(_func, *std::move(args));
+            }
+        }
+
         function _func;
         wil::unique_threadpool_timer _timer;
-        details::throttled_func_storage<Args...> _storage;
+        FILETIME _delay;
+
+        wil::srwlock _lock;
+        std::optional<std::tuple<Args...>> _pendingRunArgs;
+        bool _timerRunning = false;
+
+        bool _debounce;
+        bool _leading;
+        bool _trailing;
     };
-
-    template<typename... Args>
-    using throttled_func_trailing = throttled_func<false, false, Args...>;
-    using throttled_func_leading = throttled_func<false, true>;
-
-    template<typename... Args>
-    using debounced_func_trailing = throttled_func<true, false, Args...>;
-    using debounced_func_leading = throttled_func<true, true>;
 } // namespace til

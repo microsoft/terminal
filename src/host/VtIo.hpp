@@ -57,10 +57,11 @@ namespace Microsoft::Console::VirtualTerminal
         static wchar_t SanitizeUCS2(wchar_t ch);
 
         [[nodiscard]] HRESULT Initialize(const ConsoleArguments* const pArgs);
-
         bool IsUsingVt() const;
         [[nodiscard]] HRESULT StartIfNeeded();
+        void Shutdown() noexcept;
 
+        void RequestCursorPositionFromTerminal();
         void SetDeviceAttributes(til::enumset<DeviceAttribute, uint64_t> attributes) noexcept;
         til::enumset<DeviceAttribute, uint64_t> GetDeviceAttributes() const noexcept;
         void SendCloseEvent();
@@ -77,7 +78,7 @@ namespace Microsoft::Console::VirtualTerminal
         };
 
         [[nodiscard]] HRESULT _Initialize(const HANDLE InHandle, const HANDLE OutHandle, _In_opt_ const HANDLE SignalHandle);
-
+        void _cursorPositionReportReceived();
         void _uncork();
         void _flushNow();
 
@@ -105,6 +106,7 @@ namespace Microsoft::Console::VirtualTerminal
 
         State _state = State::Uninitialized;
         bool _lookingForCursorPosition = false;
+        bool _scheduleAnotherCPR = false;
         bool _closeEventSent = false;
         int _corked = 0;
 

@@ -254,9 +254,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // Cache the original BG image path. If the user clicks "Use desktop
         // wallpaper", then un-checks it, this is the string we'll restore to
         // them.
-        if (BackgroundImagePath() != L"desktopWallpaper")
+        if (BackgroundImagePath().Path() != L"desktopWallpaper")
         {
-            _lastBgImagePath = BackgroundImagePath();
+            _lastBgImagePath = BackgroundImagePath().Path();
         }
     }
 
@@ -913,7 +913,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void AppearanceViewModel::SetBackgroundImagePath(winrt::hstring path)
     {
-        BackgroundImagePath(path);
+        _appearance.BackgroundImagePath(Model::MediaResourceHelper::FromString(path));
+        _NotifyChanges(L"BackgroundImagePath");
     }
 
     hstring AppearanceViewModel::BackgroundImageAlignmentCurrentValue() const
@@ -956,7 +957,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     hstring AppearanceViewModel::CurrentBackgroundImagePath() const
     {
-        const auto bgImagePath = BackgroundImagePath();
+        const auto bgImagePath = BackgroundImagePath().Path();
         if (bgImagePath.empty())
         {
             return RS_(L"Appearance_BackgroundImageNone");
@@ -970,7 +971,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     bool AppearanceViewModel::UseDesktopBGImage() const
     {
-        return BackgroundImagePath() == L"desktopWallpaper";
+        return BackgroundImagePath().Path() == L"desktopWallpaper";
     }
 
     void AppearanceViewModel::UseDesktopBGImage(const bool useDesktop)
@@ -983,23 +984,23 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             //
             // Only stash this value if it's not the special "desktopWallpaper"
             // value.
-            if (BackgroundImagePath() != L"desktopWallpaper")
+            if (BackgroundImagePath().Path() != L"desktopWallpaper")
             {
-                _lastBgImagePath = BackgroundImagePath();
+                _lastBgImagePath = BackgroundImagePath().Path();
             }
-            BackgroundImagePath(L"desktopWallpaper");
+            SetBackgroundImagePath(L"desktopWallpaper");
         }
         else
         {
             // Restore the path we had previously cached. This might be the
             // empty string.
-            BackgroundImagePath(_lastBgImagePath);
+            SetBackgroundImagePath(_lastBgImagePath);
         }
     }
 
     bool AppearanceViewModel::BackgroundImageSettingsVisible() const
     {
-        return !BackgroundImagePath().empty();
+        return !BackgroundImagePath().Path().empty();
     }
 
     void AppearanceViewModel::ClearColorScheme()
@@ -1424,7 +1425,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         auto file = co_await OpenImagePicker(parentHwnd);
         if (!file.empty())
         {
-            Appearance().BackgroundImagePath(file);
+            Appearance().SetBackgroundImagePath(file);
         }
     }
 

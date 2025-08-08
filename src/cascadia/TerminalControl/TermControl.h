@@ -284,7 +284,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         bool _quickFixesAvailable{ false };
         til::CoordType _quickFixBufferPos{};
 
-        std::shared_ptr<ThrottledFuncLeading> _playWarningBell;
+        std::shared_ptr<ThrottledFunc<>> _playWarningBell;
 
         struct ScrollBarUpdate
         {
@@ -294,7 +294,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             double newViewportSize;
         };
 
-        std::shared_ptr<ThrottledFuncTrailing<ScrollBarUpdate>> _updateScrollBar;
+        std::shared_ptr<ThrottledFunc<ScrollBarUpdate>> _updateScrollBar;
 
         bool _isInternalScrollBarUpdate;
 

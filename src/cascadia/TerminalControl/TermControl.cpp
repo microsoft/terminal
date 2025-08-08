@@ -359,9 +359,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // These three throttled functions are triggered by terminal output and interact with the UI.
         // Since Close() is the point after which we are removed from the UI, but before the
         // destructor has run, we MUST check control->_IsClosing() before actually doing anything.
-        _playWarningBell = std::make_shared<ThrottledFuncLeading>(
+        _playWarningBell = std::make_shared<ThrottledFunc<>>(
             dispatcher,
-            TerminalWarningBellInterval,
+            til::throttled_func_options{
+                .delay = TerminalWarningBellInterval,
+                .leading = true,
+            },
             [weakThis = get_weak()]() {
                 if (auto control{ weakThis.get() }; control && !control->_IsClosing())
                 {
@@ -369,9 +372,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 }
             });
 
-        _updateScrollBar = std::make_shared<ThrottledFuncTrailing<ScrollBarUpdate>>(
+        _updateScrollBar = std::make_shared<ThrottledFunc<ScrollBarUpdate>>(
             dispatcher,
-            ScrollBarUpdateInterval,
+            til::throttled_func_options{
+                .delay = ScrollBarUpdateInterval,
+                .trailing = true,
+            },
             [weakThis = get_weak()](const auto& update) {
                 if (auto control{ weakThis.get() }; control && !control->_IsClosing())
                 {

@@ -488,134 +488,159 @@ void CascadiaSettings::_validateAllSchemesExist()
     }
 }
 
-static bool _validateSingleMediaResource(std::wstring_view resource)
+extern bool TestHook_CascadiaSettings_ResolveSingleMediaResource(Model::OriginTag origin, std::wstring_view basePath, const Model::IMediaResource& resource);
+
+static void _resolveSingleMediaResourceInner(Model::OriginTag origin, std::wstring_view basePath, const Model::IMediaResource& resource)
 {
-    // URI
-    try
+    if (TestHook_CascadiaSettings_ResolveSingleMediaResource(origin, basePath, resource))
     {
-        winrt::Windows::Foundation::Uri resourceUri{ resource };
-        if (!resourceUri)
-        {
-            return false;
-        }
-
-        if constexpr (Feature_DisableWebSourceIcons::IsEnabled())
-        {
-            const auto scheme{ resourceUri.SchemeName() };
-            // Only file: URIs and ms-* URIs are permissible. http, https, ftp, gopher, etc. are not.
-            return til::equals_insensitive_ascii(scheme, L"file") || til::starts_with_insensitive_ascii(scheme, L"ms-");
-        }
-
-        return true;
+        // See the implementation in TestHooks.cpp. Link-time Code Generation (LTCG) will delete this entire call
+        // and the test hook function itself.
+        return;
     }
-    catch (...)
+
+    auto resourcePath{ resource.Path() };
+
+    if (til::equals_insensitive_ascii(resourcePath, L"desktopWallpaper"))
     {
-        // fall through
+        WCHAR desktopWallpaper[MAX_PATH];
+
+        // "The returned string will not exceed MAX_PATH characters" as of 2020
+        if (SystemParametersInfoW(SPI_GETDESKWALLPAPER, MAX_PATH, desktopWallpaper, SPIF_UPDATEINIFILE))
+        {
+            resource.Resolve(winrt::hstring{ &desktopWallpaper[0] });
+        }
+        else
+        {
+            resource.Reject();
+        }
+
+        return;
+    }
+    else if (til::equals_insensitive_ascii(resourcePath, L"none"))
+    {
+        // Resolve "none" to the OK Empty string.
+        resource.Resolve({});
+        return;
+    }
+    else if (resourcePath.empty())
+    {
+        // Do nothing.
+        return;
+    }
+
+    resourcePath = wil::ExpandEnvironmentStringsW<std::wstring>(resourcePath.data());
+    const auto colon{ std::wstring_view{ resourcePath }.find_first_of(L':') };
+
+    // URI (contains a :, but only after a reasonable distance for a schema)
+    if (colon != std::wstring_view::npos && colon >= 4)
+    {
+        try
+        {
+            const winrt::Windows::Foundation::Uri resourceUri{ resourcePath };
+            if (!resourceUri)
+            {
+                resource.Reject();
+                return;
+            }
+
+            const auto scheme{ resourceUri.SchemeName() };
+            if (til::starts_with_insensitive_ascii(scheme, L"http") ||
+                (til::equals_insensitive_ascii(scheme, L"ms-appx") && !resourceUri.Domain().empty()))
+            {
+                // http(s) URLs (WSL Distro AppX fragments) and ms-appx://APPLICATION/ (Julia) URLs decay to fragment-relative paths
+                const auto path{ resourceUri.Path() };
+                const std::wstring_view pathView{ path };
+                const std::wstring_view file{ pathView.substr(pathView.find_last_of(L'/') + 1) };
+
+                resourcePath = winrt::hstring{ file };
+                // FALL THROUGH TO TRY FILESYSTEM PATHS
+            }
+            else if (til::equals_insensitive_ascii(scheme, L"file"))
+            {
+                const auto uriPath{ resourceUri.Path() };
+                if (uriPath.size() < 2)
+                {
+                    resource.Reject();
+                    return;
+                }
+                // Uri mangles file paths to begin with a / (ala /C:/) and escapes special characters such as Space.
+                // Try to un-mangle it.
+                resourcePath = til::safe_slice_abs(winrt::Windows::Foundation::Uri::UnescapeComponent(uriPath), 1, SIZE_T_MAX);
+                // FALL THROUGH TO TRY FILESYSTEM PATHS
+            }
+            else if (!til::starts_with_insensitive_ascii(scheme, L"ms-"))
+            {
+                // Other non-file and non-ms* URLs are disallowed
+                resource.Reject();
+                return;
+            }
+            else
+            {
+                // Other URLs (so, file and ms-*) are permissible.
+                resource.Resolve(resourcePath);
+                return;
+            }
+        }
+        catch (...)
+        {
+            // fall through
+        }
     }
 
     // Not a URI? Try a path.
     try
     {
-        std::filesystem::path resourcePath{ resource };
-        return std::filesystem::exists(resourcePath);
+        std::filesystem::path resourceAsFilesystemPath{ std::wstring_view{ resourcePath } };
+        if (!basePath.empty())
+        {
+            resourceAsFilesystemPath = std::filesystem::path{ basePath } / resourceAsFilesystemPath;
+        }
+
+        if (!std::filesystem::exists(resourceAsFilesystemPath))
+        {
+            resource.Reject();
+            return;
+        }
+
+        resource.Resolve(winrt::hstring{ resourceAsFilesystemPath.lexically_normal().native() });
+        return;
     }
     catch (...)
     {
         // fall through
     }
-    return false;
+
+    resource.Reject();
+}
+
+void CascadiaSettings::_resolveSingleMediaResource(OriginTag origin, std::wstring_view basePath, const Model::IMediaResource& resource)
+{
+    _resolveSingleMediaResourceInner(origin, basePath, resource);
+    if (!resource.Ok() && (origin == OriginTag::User || origin == OriginTag::ProfilesDefaults))
+    {
+        _foundInvalidUserResources = true;
+    }
 }
 
 // Method Description:
-// - Ensures that all specified images resources (icons and background images) are valid URIs.
-//   This does not verify that the icon or background image files are encoded as an image.
-// Arguments:
-// - <none>
-// Return Value:
-// - <none>
-// - Appends a SettingsLoadWarnings::InvalidBackgroundImage to our list of warnings if
-//   we find any invalid background images.
-// - Appends a SettingsLoadWarnings::InvalidIconImage to our list of warnings if
-//   we find any invalid icon images.
+// - Ensures that all specified images resources (icons and background images) are valid.
 void CascadiaSettings::_validateMediaResources()
 {
-    auto warnInvalidBackground{ false };
-    auto warnInvalidIcon{ false };
+    _foundInvalidUserResources = false;
 
-    for (auto profile : _allProfiles)
+    const MediaResourceResolver mediaResourceResolver{ this, &CascadiaSettings::_resolveSingleMediaResource };
+
+    for (const auto& profile : _allProfiles)
     {
-        if (const auto path = profile.DefaultAppearance().ExpandedBackgroundImagePath(); !path.empty())
-        {
-            if (!_validateSingleMediaResource(path))
-            {
-                if (profile.DefaultAppearance().HasBackgroundImagePath())
-                {
-                    // Only warn and delete if the user set this at the top level (do not warn for fragments, just clear it)
-                    warnInvalidBackground = true;
-                    profile.DefaultAppearance().ClearBackgroundImagePath();
-                }
-                else
-                {
-                    // reset background image path (set it to blank as an override for any fragment value)
-                    profile.DefaultAppearance().BackgroundImagePath({});
-                }
-            }
-        }
-
-        if (profile.UnfocusedAppearance())
-        {
-            if (const auto path = profile.UnfocusedAppearance().ExpandedBackgroundImagePath(); !path.empty())
-            {
-                if (!_validateSingleMediaResource(path))
-                {
-                    if (profile.UnfocusedAppearance().HasBackgroundImagePath())
-                    {
-                        warnInvalidBackground = true;
-                        profile.UnfocusedAppearance().ClearBackgroundImagePath();
-                    }
-                    else
-                    {
-                        // reset background image path (set it to blank as an override for any fragment value)
-                        profile.UnfocusedAppearance().BackgroundImagePath({});
-                    }
-                }
-            }
-        }
-
-        // Anything longer than 2 wchar_t's _isn't_ an emoji or symbol, so treat
-        // it as an invalid path.
-        //
-        // Explicitly just use the Icon here, not the EvaluatedIcon. We don't
-        // want to blow up if we fell back to the commandline and the
-        // commandline _isn't an icon_.
-        // GH #17943: "none" is a special value interpreted as "remove the icon"
-        static constexpr std::wstring_view HideIconValue{ L"none" };
-        if (const auto icon = profile.Icon(); icon.size() > 2 && icon != HideIconValue)
-        {
-            const auto iconPath{ wil::ExpandEnvironmentStringsW<std::wstring>(icon.c_str()) };
-            if (!_validateSingleMediaResource(iconPath))
-            {
-                if (profile.HasIcon())
-                {
-                    warnInvalidIcon = true;
-                    profile.ClearIcon();
-                }
-                else
-                {
-                    profile.Icon({});
-                }
-            }
-        }
+        profile.as<IMediaResourceContainer>()->ResolveMediaResources(mediaResourceResolver);
     }
 
-    if (warnInvalidBackground)
-    {
-        _warnings.Append(SettingsLoadWarnings::InvalidBackgroundImage);
-    }
+    _globals->ResolveMediaResources(mediaResourceResolver);
 
-    if (warnInvalidIcon)
+    if (_foundInvalidUserResources)
     {
-        _warnings.Append(SettingsLoadWarnings::InvalidIcon);
+        _warnings.Append(SettingsLoadWarnings::InvalidMediaResource);
     }
 }
 

@@ -6,24 +6,24 @@
 #include "TerminalPage.h"
 
 #include <LibraryResources.h>
-#include <TerminalCore/ControlKeyStates.hpp>
 #include <Utils.h>
+#include <TerminalCore/ControlKeyStates.hpp>
 
-#include "../../types/inc/utils.hpp"
 #include "App.h"
-#include "ColorHelper.h"
 #include "DebugTapConnection.h"
-#include "SettingsPaneContent.h"
-#include "ScratchpadContent.h"
-#include "SnippetsPaneContent.h"
 #include "MarkdownPaneContent.h"
-#include "TabRowControl.h"
 #include "Remoting.h"
+#include "ScratchpadContent.h"
+#include "SettingsPaneContent.h"
+#include "SnippetsPaneContent.h"
+#include "TabRowControl.h"
+#include "../../types/inc/ColorFix.hpp"
+#include "../../types/inc/utils.hpp"
 
-#include "TerminalPage.g.cpp"
+#include "LaunchPositionRequest.g.cpp"
 #include "RenameWindowRequestedArgs.g.cpp"
 #include "RequestMoveContentArgs.g.cpp"
-#include "LaunchPositionRequest.g.cpp"
+#include "TerminalPage.g.cpp"
 
 using namespace winrt;
 using namespace winrt::Microsoft::Management::Deployment;
@@ -660,22 +660,32 @@ namespace winrt::TerminalApp::implementation
             _WindowProperties.VirtualEnvVars(env);
         }
 
+        // The current TerminalWindow & TerminalPage architecture is rather instable
+        // and fails to start up if the first tab isn't created synchronously.
+        //
+        // While that's a fair assumption in on itself, simultaneously WinUI will
+        // not assign tab contents a size if they're not shown at least once,
+        // which we need however in order to initialize ControlCore with a size.
+        //
+        // So, we do two things here:
+        // * DO NOT suspend if this is the first tab.
+        // * DO suspend between the creation of panes (or tabs) in order to allow
+        //   WinUI to layout the new controls and for ControlCore to get a size.
+        //
+        // This same logic is also applied to CreateTabFromConnection.
+        //
+        // See GH#13136.
+        auto suspend = _tabs.Size() > 0;
+
         for (size_t i = 0; i < actions.size(); ++i)
         {
-            if (i != 0)
+            if (suspend)
             {
-                // Each action may rely on the XAML layout of a preceding action.
-                // Most importantly, this is the case for the combination of NewTab + SplitPane,
-                // as the former appears to only have a layout size after at least 1 resume_foreground,
-                // while the latter relies on that information. This is also why it uses Low priority.
-                //
-                // Curiously, this does not seem to be required when using startupActions, but only when
-                // tearing out a tab (this currently creates a new window with injected startup actions).
-                // This indicates that this is really more of an architectural issue and not a fundamental one.
                 co_await wil::resume_foreground(Dispatcher(), CoreDispatcherPriority::Low);
             }
 
             _actionDispatch->DoAction(actions[i]);
+            suspend = true;
         }
 
         // GH#6586: now that we're done processing all startup commands,
@@ -690,8 +700,16 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    void TerminalPage::CreateTabFromConnection(ITerminalConnection connection)
+    safe_void_coroutine TerminalPage::CreateTabFromConnection(ITerminalConnection connection)
     {
+        const auto strong = get_strong();
+
+        // This is the exact same logic as in ProcessStartupActions.
+        if (_tabs.Size() > 0)
+        {
+            co_await wil::resume_foreground(Dispatcher(), CoreDispatcherPriority::Low);
+        }
+
         NewTerminalArgs newTerminalArgs;
 
         if (const auto conpty = connection.try_as<ConptyConnection>())
@@ -706,6 +724,7 @@ namespace winrt::TerminalApp::implementation
         // elevated version of the Terminal with that profile... that's a
         // recipe for disaster. We won't ever open up a tab in this window.
         newTerminalArgs.Elevate(false);
+
         const auto newPane = _MakePane(newTerminalArgs, nullptr, std::move(connection));
         newPane->WalkTree([](const auto& pane) {
             pane->FinalizeConfigurationGivenDefault();
@@ -1052,7 +1071,7 @@ namespace winrt::TerminalApp::implementation
                 auto folderItem = WUX::Controls::MenuFlyoutSubItem{};
                 folderItem.Text(folderEntry.Name());
 
-                auto icon = _CreateNewTabFlyoutIcon(folderEntry.Icon());
+                auto icon = _CreateNewTabFlyoutIcon(folderEntry.Icon().Resolved());
                 folderItem.Icon(icon);
 
                 for (const auto& folderEntryItem : folderEntryItems)
@@ -1102,7 +1121,7 @@ namespace winrt::TerminalApp::implementation
                     break;
                 }
 
-                auto profileItem = _CreateNewTabFlyoutProfile(profileEntry.Profile(), profileEntry.ProfileIndex(), profileEntry.Icon());
+                auto profileItem = _CreateNewTabFlyoutProfile(profileEntry.Profile(), profileEntry.ProfileIndex(), profileEntry.Icon().Resolved());
                 items.push_back(profileItem);
                 break;
             }
@@ -1112,7 +1131,7 @@ namespace winrt::TerminalApp::implementation
                 const auto actionId = actionEntry.ActionId();
                 if (_settings.ActionMap().GetActionByID(actionId))
                 {
-                    auto actionItem = _CreateNewTabFlyoutAction(actionId, actionEntry.Icon());
+                    auto actionItem = _CreateNewTabFlyoutAction(actionId, actionEntry.Icon().Resolved());
                     items.push_back(actionItem);
                 }
 
@@ -1151,7 +1170,7 @@ namespace winrt::TerminalApp::implementation
         // If a custom icon path has been specified, set it as the icon for
         // this flyout item. Otherwise, if an icon is set for this profile, set that icon
         // for this flyout item.
-        const auto& iconPath = iconPathOverride.empty() ? profile.EvaluatedIcon() : iconPathOverride;
+        const auto& iconPath = iconPathOverride.empty() ? profile.Icon().Resolved() : iconPathOverride;
         if (!iconPath.empty())
         {
             const auto icon = _CreateNewTabFlyoutIcon(iconPath);
@@ -1237,7 +1256,7 @@ namespace winrt::TerminalApp::implementation
         // If a custom icon path has been specified, set it as the icon for
         // this flyout item. Otherwise, if an icon is set for this action, set that icon
         // for this flyout item.
-        const auto& iconPath = iconPathOverride.empty() ? action.IconPath() : iconPathOverride;
+        const auto& iconPath = iconPathOverride.empty() ? action.Icon().Resolved() : iconPathOverride;
         if (!iconPath.empty())
         {
             const auto icon = _CreateNewTabFlyoutIcon(iconPath);
@@ -1872,11 +1891,9 @@ namespace winrt::TerminalApp::implementation
     // - tab: the Tab to update the title for.
     void TerminalPage::_UpdateTitle(const Tab& tab)
     {
-        auto newTabTitle = tab.Title();
-
         if (tab == _GetFocusedTab())
         {
-            TitleChanged.raise(*this, newTabTitle);
+            TitleChanged.raise(*this, nullptr);
         }
     }
 
@@ -2738,17 +2755,9 @@ namespace winrt::TerminalApp::implementation
     {
         if (_settings.GlobalSettings().ShowTitleInTitlebar())
         {
-            auto selectedIndex = _tabView.SelectedIndex();
-            if (selectedIndex >= 0)
+            if (const auto tab{ _GetFocusedTab() })
             {
-                try
-                {
-                    if (auto focusedControl{ _GetActiveControl() })
-                    {
-                        return focusedControl.Title();
-                    }
-                }
-                CATCH_LOG();
+                return tab.Title();
             }
         }
         return { L"Terminal" };
@@ -3645,7 +3654,7 @@ namespace winrt::TerminalApp::implementation
             return;
         }
 
-        const auto path = newAppearance.ExpandedBackgroundImagePath();
+        const auto path = newAppearance.BackgroundImagePath().Resolved();
         if (path.empty())
         {
             _tabContent.Background(nullptr);
@@ -3768,6 +3777,9 @@ namespace winrt::TerminalApp::implementation
         _updateThemeColors();
 
         _updateAllTabCloseButtons();
+
+        // The user may have changed the "show title in titlebar" setting.
+        TitleChanged.raise(*this, nullptr);
     }
 
     void TerminalPage::_updateAllTabCloseButtons()
@@ -3978,36 +3990,18 @@ namespace winrt::TerminalApp::implementation
     //                and the non-client are behind it
     // Return Value:
     // - <none>
-    void TerminalPage::_SetNewTabButtonColor(const Windows::UI::Color& color, const Windows::UI::Color& accentColor)
+    void TerminalPage::_SetNewTabButtonColor(const til::color color, const til::color accentColor)
     {
+        constexpr auto lightnessThreshold = 0.6f;
         // TODO GH#3327: Look at what to do with the tab button when we have XAML theming
-        auto IsBrightColor = ColorHelper::IsBrightColor(color);
-        auto isLightAccentColor = ColorHelper::IsBrightColor(accentColor);
-        winrt::Windows::UI::Color pressedColor{};
-        winrt::Windows::UI::Color hoverColor{};
-        winrt::Windows::UI::Color foregroundColor{};
-        const auto hoverColorAdjustment = 5.f;
-        const auto pressedColorAdjustment = 7.f;
+        const auto IsBrightColor = ColorFix::GetLightness(color) >= lightnessThreshold;
+        const auto isLightAccentColor = ColorFix::GetLightness(accentColor) >= lightnessThreshold;
+        const auto hoverColorAdjustment = isLightAccentColor ? -0.05f : 0.05f;
+        const auto pressedColorAdjustment = isLightAccentColor ? -0.1f : 0.1f;
 
-        if (IsBrightColor)
-        {
-            foregroundColor = winrt::Windows::UI::Colors::Black();
-        }
-        else
-        {
-            foregroundColor = winrt::Windows::UI::Colors::White();
-        }
-
-        if (isLightAccentColor)
-        {
-            hoverColor = ColorHelper::Darken(accentColor, hoverColorAdjustment);
-            pressedColor = ColorHelper::Darken(accentColor, pressedColorAdjustment);
-        }
-        else
-        {
-            hoverColor = ColorHelper::Lighten(accentColor, hoverColorAdjustment);
-            pressedColor = ColorHelper::Lighten(accentColor, pressedColorAdjustment);
-        }
+        const auto foregroundColor = IsBrightColor ? Colors::Black() : Colors::White();
+        const auto hoverColor = til::color{ ColorFix::AdjustLightness(accentColor, hoverColorAdjustment) };
+        const auto pressedColor = til::color{ ColorFix::AdjustLightness(accentColor, pressedColorAdjustment) };
 
         Media::SolidColorBrush backgroundBrush{ accentColor };
         Media::SolidColorBrush backgroundHoverBrush{ hoverColor };
@@ -4968,8 +4962,6 @@ namespace winrt::TerminalApp::implementation
     safe_void_coroutine TerminalPage::_ControlCompletionsChangedHandler(const IInspectable sender,
                                                                         const CompletionsChangedEventArgs args)
     {
-        // This will come in on a background (not-UI, not output) thread.
-
         // This won't even get hit if the velocity flag is disabled - we gate
         // registering for the event based off of
         // Feature_ShellCompletions::IsEnabled back in _RegisterTerminalEvents
@@ -5143,7 +5135,7 @@ namespace winrt::TerminalApp::implementation
         makeItem(RS_(L"DuplicateTabText"), L"\xF5ED", ActionAndArgs{ ShortcutAction::DuplicateTab, nullptr }, menu);
 
         const auto focusedProfileName = focusedProfile.Name();
-        const auto focusedProfileIcon = focusedProfile.Icon();
+        const auto focusedProfileIcon = focusedProfile.Icon().Resolved();
         const auto splitPaneDuplicateText = RS_(L"SplitPaneDuplicateText") + L" " + focusedProfileName; // SplitPaneDuplicateText
 
         const auto splitPaneRightText = RS_(L"SplitPaneRightText");
@@ -5169,7 +5161,7 @@ namespace winrt::TerminalApp::implementation
         {
             const auto profile = activeProfiles.GetAt(profileIndex);
             const auto profileName = profile.Name();
-            const auto profileIcon = profile.Icon();
+            const auto profileIcon = profile.Icon().Resolved();
 
             NewTerminalArgs args{};
             args.Profile(profileName);
@@ -5204,22 +5196,22 @@ namespace winrt::TerminalApp::implementation
 
             if (auto neighbor = rootPane->NavigateDirection(activePane, FocusDirection::Down, mruPanes))
             {
-                makeItem(RS_(L"SwapPaneDownText"), neighbor->GetProfile().Icon(), ActionAndArgs{ ShortcutAction::SwapPane, SwapPaneArgs{ FocusDirection::Down } }, swapPaneMenu);
+                makeItem(RS_(L"SwapPaneDownText"), neighbor->GetProfile().Icon().Resolved(), ActionAndArgs{ ShortcutAction::SwapPane, SwapPaneArgs{ FocusDirection::Down } }, swapPaneMenu);
             }
 
             if (auto neighbor = rootPane->NavigateDirection(activePane, FocusDirection::Right, mruPanes))
             {
-                makeItem(RS_(L"SwapPaneRightText"), neighbor->GetProfile().Icon(), ActionAndArgs{ ShortcutAction::SwapPane, SwapPaneArgs{ FocusDirection::Right } }, swapPaneMenu);
+                makeItem(RS_(L"SwapPaneRightText"), neighbor->GetProfile().Icon().Resolved(), ActionAndArgs{ ShortcutAction::SwapPane, SwapPaneArgs{ FocusDirection::Right } }, swapPaneMenu);
             }
 
             if (auto neighbor = rootPane->NavigateDirection(activePane, FocusDirection::Up, mruPanes))
             {
-                makeItem(RS_(L"SwapPaneUpText"), neighbor->GetProfile().Icon(), ActionAndArgs{ ShortcutAction::SwapPane, SwapPaneArgs{ FocusDirection::Up } }, swapPaneMenu);
+                makeItem(RS_(L"SwapPaneUpText"), neighbor->GetProfile().Icon().Resolved(), ActionAndArgs{ ShortcutAction::SwapPane, SwapPaneArgs{ FocusDirection::Up } }, swapPaneMenu);
             }
 
             if (auto neighbor = rootPane->NavigateDirection(activePane, FocusDirection::Left, mruPanes))
             {
-                makeItem(RS_(L"SwapPaneLeftText"), neighbor->GetProfile().Icon(), ActionAndArgs{ ShortcutAction::SwapPane, SwapPaneArgs{ FocusDirection::Left } }, swapPaneMenu);
+                makeItem(RS_(L"SwapPaneLeftText"), neighbor->GetProfile().Icon().Resolved(), ActionAndArgs{ ShortcutAction::SwapPane, SwapPaneArgs{ FocusDirection::Left } }, swapPaneMenu);
             }
 
             makeMenuItem(RS_(L"SwapPaneText"), L"\xF1CB", swapPaneMenu, menu);

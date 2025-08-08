@@ -18,7 +18,6 @@
 #include <LibraryResources.h>
 
 #include "TabRowControl.h"
-#include "ColorHelper.h"
 #include "DebugTapConnection.h"
 #include "..\TerminalSettingsModel\FileUtils.h"
 
@@ -1000,10 +999,7 @@ namespace winrt::TerminalApp::implementation
             tab.TabViewItem().StartBringIntoView();
 
             // Raise an event that our title changed
-            if (_settings.GlobalSettings().ShowTitleInTitlebar())
-            {
-                TitleChanged.raise(*this, tab.Title());
-            }
+            TitleChanged.raise(*this, nullptr);
 
             _updateThemeColors();
 

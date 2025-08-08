@@ -103,6 +103,22 @@ bool ConsoleWaitQueue::NotifyWaiters(const bool fNotifyAll,
     return fResult;
 }
 
+void ConsoleWaitQueue::CancelWaitersForScreenBuffer(const SCREEN_INFORMATION* pScreenInfo)
+{
+    for (auto it = _blocks.begin(); it != _blocks.end();)
+    {
+        const auto nextIt = std::next(it); // we have to capture next before it is potentially erased
+        auto* pWaitBlock = *it;
+
+        if (pWaitBlock->GetScreenBuffer() == pScreenInfo)
+        {
+            _NotifyBlock(pWaitBlock, WaitTerminationReason::HandleClosing);
+        }
+
+        it = nextIt;
+    }
+}
+
 // Routine Description:
 // - A helper to delete successfully notified callbacks
 // Arguments:

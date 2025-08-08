@@ -18,6 +18,7 @@ Abstract:
 #include "JsonUtils.h"
 #include "SettingsTypes.h"
 #include "ModelSerializationHelpers.h"
+#include "MediaResourceSupport.h"
 
 JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Core::CursorStyle)
 {
@@ -764,6 +765,43 @@ struct ::Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<::winr
     std::string TypeDescription() const
     {
         return "SelectionColor (#rrggbb, #rgb, #rrggbbaa, iNN)";
+    }
+};
+
+template<>
+struct ::Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<::winrt::Microsoft::Terminal::Settings::Model::IMediaResource>
+{
+    ::winrt::Microsoft::Terminal::Settings::Model::IMediaResource FromJson(const Json::Value& json)
+    {
+        if (json.isNull()) [[unlikely]]
+        {
+            // Do not use Empty here, as Empty is shared across all instances.
+            return ::winrt::Microsoft::Terminal::Settings::Model::implementation::MediaResource::FromString(L"");
+        }
+
+        winrt::hstring string{ til::u8u16(Detail::GetStringView(json)) };
+        return ::winrt::Microsoft::Terminal::Settings::Model::implementation::MediaResource::FromString(string);
+    }
+
+    bool CanConvert(const Json::Value& json)
+    {
+        return json.isString() || json.isNull();
+    }
+
+    Json::Value ToJson(const ::winrt::Microsoft::Terminal::Settings::Model::IMediaResource& val)
+    {
+        if (!val || val.Path() == winrt::hstring{})
+        {
+            // empty string becomes null (is this correct?)
+            return Json::Value::nullSingleton();
+        }
+
+        return til::u16u8(val.Path());
+    }
+
+    std::string TypeDescription() const
+    {
+        return "file path";
     }
 };
 

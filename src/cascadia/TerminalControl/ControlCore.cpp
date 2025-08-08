@@ -175,8 +175,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         //
         // NOTE: Calling UpdatePatternLocations from a background
         // thread is a workaround for us to hit GH#12607 less often.
-        shared->outputIdle = std::make_unique<til::debounced_func_trailing<>>(
-            std::chrono::milliseconds{ 100 },
+        shared->outputIdle = std::make_unique<til::throttled_func<>>(
+            til::throttled_func_options{
+                .delay = std::chrono::milliseconds{ 100 },
+                .debounce = true,
+                .trailing = true,
+            },
             [this, weakThis = get_weak(), dispatcher = _dispatcher]() {
                 dispatcher.TryEnqueue(DispatcherQueuePriority::Normal, [weakThis]() {
                     if (const auto self = weakThis.get(); self && !self->_IsClosing())
@@ -196,8 +200,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         // If you rapidly show/hide Windows Terminal, something about GotFocus()/LostFocus() gets broken.
         // We'll then receive easily 10+ such calls from WinUI the next time the application is shown.
-        shared->focusChanged = std::make_unique<til::debounced_func_trailing<bool>>(
-            std::chrono::milliseconds{ 25 },
+        shared->focusChanged = std::make_unique<til::throttled_func<bool>>(
+            til::throttled_func_options{
+                .delay = std::chrono::milliseconds{ 25 },
+                .debounce = true,
+                .trailing = true,
+            },
             [this](const bool focused) {
                 // Theoretically `debounced_func_trailing` should call `WaitForThreadpoolTimerCallbacks()`
                 // with cancel=true on destruction, which should ensure that our use of `this` here is safe.
@@ -205,9 +213,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             });
 
         // Scrollbar updates are also expensive (XAML), so we'll throttle them as well.
-        shared->updateScrollBar = std::make_shared<ThrottledFuncTrailing<Control::ScrollPositionChangedArgs>>(
+        shared->updateScrollBar = std::make_shared<ThrottledFunc<Control::ScrollPositionChangedArgs>>(
             _dispatcher,
-            std::chrono::milliseconds{ 8 },
+            til::throttled_func_options{
+                .delay = std::chrono::milliseconds{ 8 },
+                .trailing = true,
+            },
             [weakThis = get_weak()](const auto& update) {
                 if (auto core{ weakThis.get() }; core && !core->_IsClosing())
                 {
@@ -1988,7 +1999,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _terminal->MultiClickSelection(terminalPosition, mode);
             selectionNeedsToBeCopied = true;
         }
-        else if (_settings->RepositionCursorWithMouse()) // This is also mode==Char && !shiftEnabled
+        else if (_settings->RepositionCursorWithMouse() && !selectionNeedsToBeCopied) // Don't reposition cursor if this is part of a selection operation
         {
             _repositionCursorWithMouse(terminalPosition);
         }
@@ -2676,15 +2687,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
-    safe_void_coroutine ControlCore::_terminalCompletionsChanged(std::wstring_view menuJson,
-                                                                 unsigned int replaceLength)
+    void ControlCore::_terminalCompletionsChanged(std::wstring_view menuJson, unsigned int replaceLength)
     {
-        auto args = winrt::make_self<CompletionsChangedEventArgs>(winrt::hstring{ menuJson },
-                                                                  replaceLength);
-
-        co_await winrt::resume_background();
-
-        CompletionsChanged.raise(*this, *args);
+        CompletionsChanged.raise(*this, winrt::make<CompletionsChangedEventArgs>(winrt::hstring{ menuJson }, replaceLength));
     }
 
     // Select the region of text between [s.start, s.end), in buffer space

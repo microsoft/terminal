@@ -149,7 +149,7 @@ namespace winrt::TerminalApp::implementation
         safe_void_coroutine ProcessStartupActions(std::vector<Microsoft::Terminal::Settings::Model::ActionAndArgs> actions,
                                                   const winrt::hstring cwd = winrt::hstring{},
                                                   const winrt::hstring env = winrt::hstring{});
-        void CreateTabFromConnection(winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection connection);
+        safe_void_coroutine CreateTabFromConnection(winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection connection);
 
         TerminalApp::WindowProperties WindowProperties() const noexcept { return _WindowProperties; };
 
@@ -169,7 +169,7 @@ namespace winrt::TerminalApp::implementation
         til::property_changed_event PropertyChanged;
 
         // -------------------------------- WinRT Events ---------------------------------
-        til::typed_event<IInspectable, winrt::hstring> TitleChanged;
+        til::typed_event<IInspectable, IInspectable> TitleChanged;
         til::typed_event<IInspectable, IInspectable> CloseWindowRequested;
         til::typed_event<IInspectable, winrt::Windows::UI::Xaml::UIElement> SetTitleBarContent;
         til::typed_event<IInspectable, IInspectable> FocusModeChanged;
@@ -464,7 +464,7 @@ namespace winrt::TerminalApp::implementation
 
         void _RefreshUIForSettingsReload();
 
-        void _SetNewTabButtonColor(const Windows::UI::Color& color, const Windows::UI::Color& accentColor);
+        void _SetNewTabButtonColor(til::color color, til::color accentColor);
         void _ClearNewTabButtonColor();
 
         safe_void_coroutine _CompleteInitialization();

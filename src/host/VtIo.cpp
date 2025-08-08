@@ -11,6 +11,7 @@
 #include "output.h" // CloseConsoleProcessState
 #include "../interactivity/inc/ServiceLocator.hpp"
 #include "../renderer/base/renderer.hpp"
+#include "../terminal/parser/InputStateMachineEngine.hpp"
 #include "../types/inc/CodepointWidthDetector.hpp"
 #include "../types/inc/utils.hpp"
 
@@ -155,7 +156,9 @@ bool VtIo::IsUsingVt() const
     {
         if (IsValidHandle(_hInput.get()))
         {
-            _pVtInputThread = std::make_unique<VtInputThread>(std::move(_hInput), _lookingForCursorPosition);
+            _pVtInputThread = std::make_unique<VtInputThread>(std::move(_hInput), [this]() {
+                _cursorPositionReportReceived();
+            });
         }
     }
     CATCH_RETURN();
@@ -177,6 +180,7 @@ bool VtIo::IsUsingVt() const
             // wait for the DA1 response below and effectively wait for both.
             if (_lookingForCursorPosition)
             {
+                _pVtInputThread->GetInputStateMachineEngine().CaptureNextCPR();
                 writer.WriteUTF8("\x1b[6n"); // Cursor Position Report (DSR CPR)
             }
 
@@ -197,7 +201,7 @@ bool VtIo::IsUsingVt() const
             // Allow the input thread to momentarily gain the console lock.
             auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
             const auto suspension = gci.SuspendLock();
-            _deviceAttributes = _pVtInputThread->WaitUntilDA1(3000);
+            _deviceAttributes = _pVtInputThread->GetInputStateMachineEngine().WaitUntilDA1(3000);
         }
     }
 
@@ -224,6 +228,57 @@ bool VtIo::IsUsingVt() const
 
     _state = State::Running;
     return S_OK;
+}
+
+void VtIo::Shutdown() noexcept
+{
+    if (_state != State::Running)
+    {
+        return;
+    }
+
+    // The reverse of what we did in StartIfNeeded.
+    try
+    {
+        Writer writer{ this };
+
+        writer.WriteUTF8(
+            "\x1b[?1004l" // Focus Event Mode
+            "\x1b[?9001l" // Win32 Input Mode
+        );
+
+        writer.Submit();
+    }
+    CATCH_LOG();
+}
+
+void VtIo::RequestCursorPositionFromTerminal()
+{
+    if (_lookingForCursorPosition)
+    {
+        // By delaying sending another DSR CPR until we received a response to the previous one,
+        // we debounce our requests to the terminal. We don't want to flood it unnecessarily.
+        _scheduleAnotherCPR = true;
+        return;
+    }
+
+    _lookingForCursorPosition = true;
+    _pVtInputThread->GetInputStateMachineEngine().CaptureNextCPR();
+
+    Writer writer{ this };
+    writer.WriteUTF8("\x1b[6n"); // Cursor Position Report (DSR CPR)
+    writer.Submit();
+}
+
+void VtIo::_cursorPositionReportReceived()
+{
+    _lookingForCursorPosition = false;
+
+    if (_scheduleAnotherCPR)
+    {
+        _scheduleAnotherCPR = false;
+        RequestCursorPositionFromTerminal();
+    }
 }
 
 void VtIo::SetDeviceAttributes(const til::enumset<DeviceAttribute, uint64_t> attributes) noexcept
