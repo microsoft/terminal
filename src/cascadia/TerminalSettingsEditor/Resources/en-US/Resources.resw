@@ -1930,7 +1930,7 @@
     <value>Warn when pasting newlines</value>
   </data>
   <data name="Globals_WarnAboutMultiLinePaste.HelpText" xml:space="preserve">
-    <value>If your shell does not support the "bracketed paste" mode, we recommend setting this to "Always" for security reasons.</value>
+    <value>If your shell does not support "bracketed paste" mode, we recommend setting this to "Always" for security reasons.</value>
     <comment>"bracketed paste" is a technical term referring to escape sequences. "Always" is a setting, as in "Always VS Never".</comment>
   </data>
   <data name="Globals_WarnAboutMultiLinePasteAutomatic.Content" xml:space="preserve">
