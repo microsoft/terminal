@@ -270,6 +270,10 @@
   <data name="DuplicateTabText" xml:space="preserve">
     <value>Registerkarte kopieren</value>
   </data>
+  <data name="InvalidMediaResource" xml:space="preserve">
+    <value>Mindestens eine in den Einstellungen angegebene Ressource (z. B. icon oder backgroundImage) wurde nicht gefunden.</value>
+    <comment>{Locked="icon","backgroundImage"} Indicates that something has gone wrong while reading a user's settings.</comment>
+  </data>
   <data name="AtLeastOneKeybindingWarning" xml:space="preserve">
     <value>Beim Analysieren Ihrer Tastenzuordnungen wurden Warnungen gefunden:</value>
   </data>

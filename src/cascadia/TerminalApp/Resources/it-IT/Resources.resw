@@ -267,6 +267,10 @@
   <data name="DuplicateTabText" xml:space="preserve">
     <value>Duplica scheda</value>
   </data>
+  <data name="InvalidMediaResource" xml:space="preserve">
+    <value>Impossibile trovare una o più risorse, ad esempio icon o backgroundImage, specificate nelle impostazioni.</value>
+    <comment>{Locked="icon","backgroundImage"} Indicates that something has gone wrong while reading a user's settings.</comment>
+  </data>
   <data name="AtLeastOneKeybindingWarning" xml:space="preserve">
     <value>Sono stati trovati avvisi durante l'analisi delle associazioni di tasti:</value>
   </data>

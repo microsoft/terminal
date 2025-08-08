@@ -267,6 +267,10 @@
   <data name="DuplicateTabText" xml:space="preserve">
     <value>Duplicar guia</value>
   </data>
+  <data name="InvalidMediaResource" xml:space="preserve">
+    <value>Um ou mais recursos (como icon ou backgroundImage) especificados em suas configurações não foram encontrados.</value>
+    <comment>{Locked="icon","backgroundImage"} Indicates that something has gone wrong while reading a user's settings.</comment>
+  </data>
   <data name="AtLeastOneKeybindingWarning" xml:space="preserve">
     <value>Os avisos foram encontrados durante a análise das suas ligações de teclas:</value>
   </data>
