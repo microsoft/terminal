@@ -340,7 +340,13 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         auto ownedSignal = duplicateHandle(signal);
         auto ownedReference = duplicateHandle(reference);
         auto ownedServer = duplicateHandle(server);
-        auto ownedClient = duplicateHandle(client);
+        wil::unique_hfile ownedClient;
+        LOG_IF_WIN32_BOOL_FALSE(DuplicateHandle(GetCurrentProcess(), client, GetCurrentProcess(), ownedClient.addressof(), PROCESS_QUERY_INFORMATION | PROCESS_VM_READ | PROCESS_SET_INFORMATION | SYNCHRONIZE, FALSE, 0));
+        if (!ownedClient)
+        {
+            // If we couldn't reopen the handle with SET_INFORMATION, which may be required to do things like QoS management, fall back.
+            THROW_IF_WIN32_BOOL_FALSE(DuplicateHandle(GetCurrentProcess(), client, GetCurrentProcess(), ownedClient.addressof(), 0, FALSE, DUPLICATE_SAME_ACCESS));
+        }
 
         THROW_IF_FAILED(ConptyPackPseudoConsole(ownedServer.get(), ownedReference.get(), ownedSignal.get(), &_hPC));
         ownedServer.release();
@@ -533,6 +539,8 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         DWORD exitCode{ 0 };
         GetExitCodeProcess(_piClient.hProcess, &exitCode);
 
+        _piClient.reset();
+
         // Signal the closing or failure of the process.
         // exitCode might be STILL_ACTIVE if a client has called FreeConsole() and
         // thus caused the tab to close, even though the CLI app is still running.
@@ -647,6 +655,11 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         {
             THROW_IF_FAILED(ConptyReparentPseudoConsole(_hPC.get(), reinterpret_cast<HWND>(newParent)));
         }
+    }
+
+    uint64_t ConptyConnection::RootProcessHandle()
+    {
+        return reinterpret_cast<uint64_t>(_piClient.hProcess);
     }
 
     void ConptyConnection::Close() noexcept

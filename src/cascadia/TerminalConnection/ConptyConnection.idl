@@ -21,6 +21,8 @@ namespace Microsoft.Terminal.TerminalConnection
 
         void ReparentWindow(UInt64 newParent);
 
+        UInt64 RootProcessHandle();
+
         static event NewConnectionHandler NewConnection;
         static void StartInboundListener();
 
