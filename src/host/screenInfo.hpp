@@ -73,7 +73,7 @@ public:
     void MakeCurrentCursorVisible();
     void MakeCursorVisible(til::point position);
     void SnapOnInput(WORD vkey);
-    auto SnapOnOutput()
+    auto SnapOnOutput() noexcept
     {
         const auto inBounds = _viewport.IsInBounds(_textBuffer->GetCursor().GetPosition());
         return wil::scope_exit([this, inBounds]() {

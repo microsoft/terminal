@@ -1671,7 +1671,7 @@ void SCREEN_INFORMATION::SetCursorDBMode(const bool DoubleCursor)
     return STATUS_SUCCESS;
 }
 
-static constexpr bool IsInputKey(WORD vkey)
+static constexpr bool IsInputKey(WORD vkey) noexcept
 {
     return vkey != VK_CONTROL &&
            vkey != VK_LCONTROL &&
