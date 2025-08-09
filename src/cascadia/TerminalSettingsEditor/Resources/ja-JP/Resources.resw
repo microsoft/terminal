@@ -1923,12 +1923,6 @@
   <data name="Globals_InputServiceWarning.Header" xml:space="preserve">
     <value>[タッチ キーボードと手書きパネル サービス] が無効になっている場合に警告する</value>
   </data>
-  <data name="Globals_WarnAboutLargePaste.Header" xml:space="preserve">
-    <value>5 KiB を超える文字を貼り付けようとしたときに警告する</value>
-  </data>
-  <data name="Globals_WarnAboutMultiLinePaste.Header" xml:space="preserve">
-    <value>"改行" 文字を貼り付けようとしたときに警告する</value>
-  </data>
   <data name="Settings_PortableModeNote.Text" xml:space="preserve">
     <value>Windows ターミナルはポータブル モードで実行されています。</value>
     <comment>A disclaimer that indicates that Terminal is running in a mode that saves settings to a different folder.</comment>

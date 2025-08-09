@@ -1923,12 +1923,6 @@
   <data name="Globals_InputServiceWarning.Header" xml:space="preserve">
     <value>Advertir cuando el servicio "Panel de escritura a mano y teclado táctil" está deshabilitado</value>
   </data>
-  <data name="Globals_WarnAboutLargePaste.Header" xml:space="preserve">
-    <value>Advertir al intentar pegar más de 5 KiB de caracteres</value>
-  </data>
-  <data name="Globals_WarnAboutMultiLinePaste.Header" xml:space="preserve">
-    <value>Advertir al intentar pegar un carácter de "nueva línea"</value>
-  </data>
   <data name="Settings_PortableModeNote.Text" xml:space="preserve">
     <value>Terminal Windows se ejecuta en modo portátil.</value>
     <comment>A disclaimer that indicates that Terminal is running in a mode that saves settings to a different folder.</comment>

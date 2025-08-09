@@ -1923,12 +1923,6 @@
   <data name="Globals_InputServiceWarning.Header" xml:space="preserve">
     <value>Avertir lorsque le « service clavier tactile et volet d’écriture manuscrite » est désactivé</value>
   </data>
-  <data name="Globals_WarnAboutLargePaste.Header" xml:space="preserve">
-    <value>Avertissement lors de la tentative de collage de plus de 5 Kio de caractères</value>
-  </data>
-  <data name="Globals_WarnAboutMultiLinePaste.Header" xml:space="preserve">
-    <value>Avertir lors de la tentative de collage d’un caractère « nouvelle ligne »</value>
-  </data>
   <data name="Settings_PortableModeNote.Text" xml:space="preserve">
     <value>Terminal Windows s’exécute en mode portable.</value>
     <comment>A disclaimer that indicates that Terminal is running in a mode that saves settings to a different folder.</comment>

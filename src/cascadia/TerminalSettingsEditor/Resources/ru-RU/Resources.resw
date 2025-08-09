@@ -1923,12 +1923,6 @@
   <data name="Globals_InputServiceWarning.Header" xml:space="preserve">
     <value>Предупреждать, если параметр "Служба сенсорной клавиатуры и панели рукописного ввода" отключен</value>
   </data>
-  <data name="Globals_WarnAboutLargePaste.Header" xml:space="preserve">
-    <value>Предупреждать при попытке вставки более 5 КиБ символов</value>
-  </data>
-  <data name="Globals_WarnAboutMultiLinePaste.Header" xml:space="preserve">
-    <value>Предупреждать при попытке вставки символа "новая строка"</value>
-  </data>
   <data name="Settings_PortableModeNote.Text" xml:space="preserve">
     <value>Терминал Windows работает в переносном режиме.</value>
     <comment>A disclaimer that indicates that Terminal is running in a mode that saves settings to a different folder.</comment>
