@@ -1923,12 +1923,6 @@
   <data name="Globals_InputServiceWarning.Header" xml:space="preserve">
     <value>禁用“触摸键盘和手写面板服务”时发出警告</value>
   </data>
-  <data name="Globals_WarnAboutLargePaste.Header" xml:space="preserve">
-    <value>尝试粘贴超过 5 KiB 字符时发出警告</value>
-  </data>
-  <data name="Globals_WarnAboutMultiLinePaste.Header" xml:space="preserve">
-    <value>尝试粘贴“新行”字符时发出警告</value>
-  </data>
   <data name="Settings_PortableModeNote.Text" xml:space="preserve">
     <value>Windows 终端正在便携模式下运行。</value>
     <comment>A disclaimer that indicates that Terminal is running in a mode that saves settings to a different folder.</comment>

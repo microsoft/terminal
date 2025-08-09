@@ -1923,12 +1923,6 @@
   <data name="Globals_InputServiceWarning.Header" xml:space="preserve">
     <value>Avvisa quando il servizio "Tastiera virtuale e pannello per la grafia" è disabilitato</value>
   </data>
-  <data name="Globals_WarnAboutLargePaste.Header" xml:space="preserve">
-    <value>Avvisa quando si tenta di incollare più di 5 KiB di caratteri</value>
-  </data>
-  <data name="Globals_WarnAboutMultiLinePaste.Header" xml:space="preserve">
-    <value>Avvisa quando si prova a incollare un carattere "nuova riga"</value>
-  </data>
   <data name="Settings_PortableModeNote.Text" xml:space="preserve">
     <value>Terminale Windows è in esecuzione in modalità portatile.</value>
     <comment>A disclaimer that indicates that Terminal is running in a mode that saves settings to a different folder.</comment>

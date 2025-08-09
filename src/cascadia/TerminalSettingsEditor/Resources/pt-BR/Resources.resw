@@ -1923,12 +1923,6 @@
   <data name="Globals_InputServiceWarning.Header" xml:space="preserve">
     <value>Avisar quando o "Serviço de Teclado Virtual e Painel de Manuscrito" estiver desabilitado</value>
   </data>
-  <data name="Globals_WarnAboutLargePaste.Header" xml:space="preserve">
-    <value>Avisar ao tentar colar mais de 5 KiB de caracteres</value>
-  </data>
-  <data name="Globals_WarnAboutMultiLinePaste.Header" xml:space="preserve">
-    <value>Avisar ao tentar colar um caractere de "nova linha"</value>
-  </data>
   <data name="Settings_PortableModeNote.Text" xml:space="preserve">
     <value>O terminal do Windows está em execução no modo portátil.</value>
     <comment>A disclaimer that indicates that Terminal is running in a mode that saves settings to a different folder.</comment>
