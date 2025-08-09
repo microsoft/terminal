@@ -128,7 +128,7 @@ namespace SettingsModelUnitTests
                 "warning.confirmCloseAllTabs" : true,
                 "warning.inputService" : true,
                 "warning.largePaste" : true,
-                "warning.multiLinePaste" : true,
+                "warning.multiLinePaste" : "automatic",
 
                 "actions": [],
                 "keybindings": []

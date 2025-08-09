@@ -142,8 +142,11 @@
 
             <!--  Multi Line Paste Warning  -->
             <local:SettingContainer x:Uid="Globals_WarnAboutMultiLinePaste">
-                <ToggleSwitch IsOn="{x:Bind ViewModel.WarnAboutMultiLinePaste, Mode=TwoWay}"
-                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+                <ComboBox AutomationProperties.AccessibilityView="Content"
+                          ItemTemplate="{StaticResource EnumComboBoxTemplate}"
+                          ItemsSource="{x:Bind WarnAboutMultiLinePasteList}"
+                          SelectedItem="{x:Bind CurrentWarnAboutMultiLinePaste, Mode=TwoWay}"
+                          Style="{StaticResource ComboBoxSettingStyle}" />
             </local:SettingContainer>
 
         </StackPanel>
