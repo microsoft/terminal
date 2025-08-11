@@ -5003,18 +5003,20 @@ namespace winrt::TerminalApp::implementation
         }
 
         const auto count{ gsl::narrow_cast<DWORD>(it - processes.begin()) };
-        auto hr = TerminalTrySetWindowAssociatedProcesses(_hostingHwnd.value(), count, count ? processes.data() : nullptr);
+        const auto hr = TerminalTrySetWindowAssociatedProcesses(_hostingHwnd.value(), count, count ? processes.data() : nullptr);
+        if (S_FALSE == hr)
+        {
+            // Don't bother trying again or logging. The wrapper tells us it's unsupported.
+            supported = false;
+            return;
+        }
+
         TraceLoggingWrite(
             g_hTerminalAppProvider,
             "CalledNtUserQoSAPI",
             TraceLoggingValue(reinterpret_cast<uintptr_t>(_hostingHwnd.value()), "hwnd"),
             TraceLoggingValue(count),
             TraceLoggingHResult(hr));
-        if (S_FALSE == hr)
-        {
-            // Don't bother trying again. The wrapper tells us it's unsupported.
-            supported = false;
-        }
 #ifdef _DEBUG
         OutputDebugStringW(fmt::format(FMT_COMPILE(L"Submitted {} processes to TerminalTrySetWindowAssociatedProcesses; return=0x{:08x}\n"), count, hr).c_str());
 #endif
