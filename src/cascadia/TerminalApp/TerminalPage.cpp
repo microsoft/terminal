@@ -4962,11 +4962,11 @@ namespace winrt::TerminalApp::implementation
             }
             if (control)
             {
-                if (auto conn = control.Connection())
+                if (const auto conn{ control.Connection() })
                 {
-                    if (auto pty = conn.try_as<winrt::Microsoft::Terminal::TerminalConnection::ConptyConnection>())
+                    if (const auto pty{ conn.try_as<winrt::Microsoft::Terminal::TerminalConnection::ConptyConnection>() })
                     {
-                        if (uint64_t process = pty.RootProcessHandle())
+                        if (const uint64_t process{ pty.RootProcessHandle() }; process != 0)
                         {
                             *it++ = reinterpret_cast<HANDLE>(process);
                         }
@@ -4981,12 +4981,12 @@ namespace winrt::TerminalApp::implementation
             // under it to the window so they all go into the background at the same time.
             for (auto&& tab : _tabs)
             {
-                if (auto t{ _GetTerminalTabImpl(tab) })
+                if (auto tabImpl{ _GetTabImpl(tab) })
                 {
-                    if (const auto pane = t->GetRootPane())
+                    if (const auto pane{ tabImpl->GetRootPane() })
                     {
-                        pane->WalkTree([&](auto p) {
-                            if (const auto& control{ p->GetTerminalControl() })
+                        pane->WalkTree([&](auto&& child) {
+                            if (const auto& control{ child->GetTerminalControl() })
                             {
                                 appendFromControl(control);
                             }
