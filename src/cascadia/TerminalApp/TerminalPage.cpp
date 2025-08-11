@@ -5013,7 +5013,7 @@ namespace winrt::TerminalApp::implementation
 
         TraceLoggingWrite(
             g_hTerminalAppProvider,
-            "CalledNtUserQoSAPI",
+            "CalledNewQoSAPI",
             TraceLoggingValue(reinterpret_cast<uintptr_t>(_hostingHwnd.value()), "hwnd"),
             TraceLoggingValue(count),
             TraceLoggingHResult(hr));
