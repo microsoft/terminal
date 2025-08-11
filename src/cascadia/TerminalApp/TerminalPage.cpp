@@ -4946,7 +4946,7 @@ namespace winrt::TerminalApp::implementation
     {
         static bool supported{ true };
 
-        if (!supported)
+        if (!supported || !_hostingHwnd.has_value())
         {
             return;
         }
