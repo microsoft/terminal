@@ -2,26 +2,39 @@
 // Licensed under the MIT license.
 
 #include "precomp.h"
+#include "WexTestClass.h"
+#include "../../inc/consoletaeftemplates.hpp"
 
-#include <ascii.hpp>
-#include <consoletaeftemplates.hpp>
-#include <InputStateMachineEngine.hpp>
-#include <stateMachine.hpp>
-#include <unicode.hpp>
+#include "stateMachine.hpp"
+#include "InputStateMachineEngine.hpp"
+#include "ascii.hpp"
+#include "../input/terminalInput.hpp"
+#include "../../inc/unicode.hpp"
+#include "../../interactivity/inc/EventSynthesis.hpp"
 
-#include "../../../interactivity/inc/EventSynthesis.hpp"
+#include <vector>
+#include <functional>
+#include <sstream>
+#include <string>
+#include <algorithm>
+
 #include "../../../interactivity/inc/VtApiRedirection.hpp"
-#include "../../input/terminalInput.hpp"
 
 using namespace WEX::Common;
 using namespace WEX::Logging;
 using namespace WEX::TestExecution;
 
-namespace Microsoft::Console::VirtualTerminal
+namespace Microsoft
 {
-    class InputEngineTest;
-    class TestInteractDispatch;
-}
+    namespace Console
+    {
+        namespace VirtualTerminal
+        {
+            class InputEngineTest;
+            class TestInteractDispatch;
+        };
+    };
+};
 using namespace Microsoft::Console::VirtualTerminal;
 
 bool IsShiftPressed(const DWORD modifierState)
@@ -400,6 +413,7 @@ void InputEngineTest::C0Test()
     auto dispatch = std::make_unique<TestInteractDispatch>(pfn, &testState);
     auto inputEngine = std::make_unique<InputStateMachineEngine>(std::move(dispatch));
     auto _stateMachine = std::make_unique<StateMachine>(std::move(inputEngine));
+    VERIFY_IS_NOT_NULL(_stateMachine);
     testState._stateMachine = _stateMachine.get();
 
     Log::Comment(L"Sending 0x0-0x19 to parser to make sure they're translated correctly back to C-key");
@@ -499,6 +513,7 @@ void InputEngineTest::AlphanumericTest()
     auto dispatch = std::make_unique<TestInteractDispatch>(pfn, &testState);
     auto inputEngine = std::make_unique<InputStateMachineEngine>(std::move(dispatch));
     auto _stateMachine = std::make_unique<StateMachine>(std::move(inputEngine));
+    VERIFY_IS_NOT_NULL(_stateMachine);
     testState._stateMachine = _stateMachine.get();
 
     Log::Comment(L"Sending every printable ASCII character");
@@ -548,6 +563,7 @@ void InputEngineTest::RoundTripTest()
     auto dispatch = std::make_unique<TestInteractDispatch>(pfn, &testState);
     auto inputEngine = std::make_unique<InputStateMachineEngine>(std::move(dispatch));
     auto _stateMachine = std::make_unique<StateMachine>(std::move(inputEngine));
+    VERIFY_IS_NOT_NULL(_stateMachine);
     testState._stateMachine = _stateMachine.get();
 
     // Send Every VKEY through the TerminalInput module, then take the char's
@@ -610,6 +626,7 @@ void InputEngineTest::NonAsciiTest()
     auto dispatch = std::make_unique<TestInteractDispatch>(pfn, &testState);
     auto inputEngine = std::make_unique<InputStateMachineEngine>(std::move(dispatch));
     auto _stateMachine = std::make_unique<StateMachine>(std::move(inputEngine));
+    VERIFY_IS_NOT_NULL(_stateMachine.get());
     testState._stateMachine = _stateMachine.get();
     Log::Comment(L"Sending various non-ascii strings, and seeing what we get out");
 
@@ -662,9 +679,11 @@ void InputEngineTest::CursorPositioningTest()
     auto pfn = std::bind(&TestState::TestInputCallback, &testState, std::placeholders::_1);
 
     auto dispatch = std::make_unique<TestInteractDispatch>(pfn, &testState);
-    auto inputEngine = std::make_unique<InputStateMachineEngine>(std::move(dispatch), []() {});
-    inputEngine->CaptureNextCPR();
+    VERIFY_IS_NOT_NULL(dispatch.get());
+    auto inputEngine = std::make_unique<InputStateMachineEngine>(std::move(dispatch), true);
+    VERIFY_IS_NOT_NULL(inputEngine.get());
     auto _stateMachine = std::make_unique<StateMachine>(std::move(inputEngine));
+    VERIFY_IS_NOT_NULL(_stateMachine);
     testState._stateMachine = _stateMachine.get();
 
     Log::Comment(NoThrowString().Format(
@@ -705,6 +724,7 @@ void InputEngineTest::CSICursorBackTabTest()
     auto dispatch = std::make_unique<TestInteractDispatch>(pfn, &testState);
     auto inputEngine = std::make_unique<InputStateMachineEngine>(std::move(dispatch));
     auto _stateMachine = std::make_unique<StateMachine>(std::move(inputEngine));
+    VERIFY_IS_NOT_NULL(_stateMachine);
     testState._stateMachine = _stateMachine.get();
 
     INPUT_RECORD inputRec;
@@ -732,6 +752,7 @@ void InputEngineTest::EnhancedKeysTest()
     auto dispatch = std::make_unique<TestInteractDispatch>(pfn, &testState);
     auto inputEngine = std::make_unique<InputStateMachineEngine>(std::move(dispatch));
     auto _stateMachine = std::make_unique<StateMachine>(std::move(inputEngine));
+    VERIFY_IS_NOT_NULL(_stateMachine);
     testState._stateMachine = _stateMachine.get();
 
     // The following vkeys should be handled as enhanced keys
@@ -781,6 +802,7 @@ void InputEngineTest::SS3CursorKeyTest()
     auto dispatch = std::make_unique<TestInteractDispatch>(pfn, &testState);
     auto inputEngine = std::make_unique<InputStateMachineEngine>(std::move(dispatch));
     auto _stateMachine = std::make_unique<StateMachine>(std::move(inputEngine));
+    VERIFY_IS_NOT_NULL(_stateMachine);
     testState._stateMachine = _stateMachine.get();
 
     // clang-format off
@@ -824,6 +846,7 @@ void InputEngineTest::AltBackspaceTest()
     auto dispatch = std::make_unique<TestInteractDispatch>(pfn, &testState);
     auto inputEngine = std::make_unique<InputStateMachineEngine>(std::move(dispatch));
     auto _stateMachine = std::make_unique<StateMachine>(std::move(inputEngine));
+    VERIFY_IS_NOT_NULL(_stateMachine);
     testState._stateMachine = _stateMachine.get();
 
     INPUT_RECORD inputRec;
@@ -851,6 +874,7 @@ void InputEngineTest::AltCtrlDTest()
     auto dispatch = std::make_unique<TestInteractDispatch>(pfn, &testState);
     auto inputEngine = std::make_unique<InputStateMachineEngine>(std::move(dispatch));
     auto _stateMachine = std::make_unique<StateMachine>(std::move(inputEngine));
+    VERIFY_IS_NOT_NULL(_stateMachine);
     testState._stateMachine = _stateMachine.get();
 
     INPUT_RECORD inputRec;
@@ -899,6 +923,7 @@ void InputEngineTest::AltIntermediateTest()
     auto dispatch = std::make_unique<TestInteractDispatch>(pfnInputStateMachineCallback, &testState);
     auto inputEngine = std::make_unique<InputStateMachineEngine>(std::move(dispatch));
     auto stateMachine = std::make_unique<StateMachine>(std::move(inputEngine));
+    VERIFY_IS_NOT_NULL(stateMachine);
     testState._stateMachine = stateMachine.get();
 
     // Write a Alt+/, Ctrl+e pair to the input engine, then take its output and
@@ -930,6 +955,7 @@ void InputEngineTest::AltBackspaceEnterTest()
     auto dispatch = std::make_unique<TestInteractDispatch>(pfn, &testState);
     auto inputEngine = std::make_unique<InputStateMachineEngine>(std::move(dispatch));
     auto _stateMachine = std::make_unique<StateMachine>(std::move(inputEngine));
+    VERIFY_IS_NOT_NULL(_stateMachine);
     testState._stateMachine = _stateMachine.get();
 
     INPUT_RECORD inputRec;
@@ -1025,6 +1051,7 @@ void InputEngineTest::VerifySGRMouseData(const std::vector<std::tuple<SGR_PARAMS
     // Let's force it to a high value to make the double click tests pass.
     inputEngine->_doubleClickTime = std::chrono::milliseconds(1000);
     auto _stateMachine = std::make_unique<StateMachine>(std::move(inputEngine));
+    VERIFY_IS_NOT_NULL(_stateMachine);
     testState._stateMachine = _stateMachine.get();
 
     SGR_PARAMS input;
@@ -1255,6 +1282,7 @@ void InputEngineTest::CtrlAltZCtrlAltXTest()
     auto dispatch = std::make_unique<TestInteractDispatch>(pfn, &testState);
     auto inputEngine = std::make_unique<InputStateMachineEngine>(std::move(dispatch));
     auto _stateMachine = std::make_unique<StateMachine>(std::move(inputEngine));
+    VERIFY_IS_NOT_NULL(_stateMachine);
     testState._stateMachine = _stateMachine.get();
 
     // This is a test for GH#4201. See that issue for more details.
