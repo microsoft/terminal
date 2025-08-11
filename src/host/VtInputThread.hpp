@@ -20,17 +20,16 @@ namespace Microsoft::Console
 {
     namespace VirtualTerminal
     {
-        class InputStateMachineEngine;
         enum class DeviceAttribute : uint64_t;
     }
 
     class VtInputThread
     {
     public:
-        VtInputThread(_In_ wil::unique_hfile hPipe, std::function<void()> capturedCPR = nullptr);
+        VtInputThread(_In_ wil::unique_hfile hPipe, const bool inheritCursor);
 
         [[nodiscard]] HRESULT Start();
-        VirtualTerminal::InputStateMachineEngine& GetInputStateMachineEngine() const noexcept;
+        til::enumset<VirtualTerminal::DeviceAttribute, uint64_t> WaitUntilDA1(DWORD timeout) const noexcept;
 
     private:
         static DWORD WINAPI StaticVtInputThreadProc(_In_ LPVOID lpParameter);
