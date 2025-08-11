@@ -5003,7 +5003,7 @@ namespace winrt::TerminalApp::implementation
         }
 
         const auto count{ gsl::narrow_cast<DWORD>(it - processes.begin()) };
-        auto hr = TerminalTrySetWindowForegroundProcesses(_hostingHwnd.value(), count, count ? processes.data() : nullptr);
+        auto hr = TerminalTrySetWindowAssociatedProcesses(_hostingHwnd.value(), count, count ? processes.data() : nullptr);
         TraceLoggingWrite(
             g_hTerminalAppProvider,
             "CalledNtUserQoSAPI",
@@ -5016,7 +5016,7 @@ namespace winrt::TerminalApp::implementation
             supported = false;
         }
 #ifdef _DEBUG
-        OutputDebugStringW(fmt::format(FMT_COMPILE(L"Submitted {} processes to SetAdditionalPowerThrottlingProcess; return=0x{:08x}\n"), count, hr).c_str());
+        OutputDebugStringW(fmt::format(FMT_COMPILE(L"Submitted {} processes to TerminalTrySetWindowAssociatedProcesses; return=0x{:08x}\n"), count, hr).c_str());
 #endif
     }
 
