@@ -2,8 +2,8 @@
 // Licensed under the MIT license.
 
 #include "pch.h"
-#include "../TerminalApp/CommandLinePaletteItem.h"
 #include "../TerminalApp/CommandPalette.h"
+#include "../TerminalApp/BasePaletteItem.h"
 #include "CppWinrtTailored.h"
 
 using namespace Microsoft::Console;
@@ -15,6 +15,20 @@ using namespace winrt::Microsoft::Terminal::Control;
 
 namespace TerminalAppLocalTests
 {
+    struct StringPaletteItem : winrt::implements<StringPaletteItem, winrt::TerminalApp::IPaletteItem, winrt::Windows::UI::Xaml::Data::INotifyPropertyChanged>, winrt::TerminalApp::implementation::BasePaletteItem<StringPaletteItem, winrt::TerminalApp::PaletteItemType::CommandLine>
+    {
+        StringPaletteItem(std::wstring_view value) :
+            _value{ value } {}
+
+        winrt::hstring Name() { return _value; }
+        winrt::hstring Subtitle() { return {}; }
+        winrt::hstring KeyChordText() { return {}; }
+        winrt::hstring Icon() { return {}; }
+
+    private:
+        winrt::hstring _value;
+    };
+
     class FilteredCommandTests
     {
         BEGIN_TEST_CLASS(FilteredCommandTests)
@@ -28,81 +42,81 @@ namespace TerminalAppLocalTests
         TEST_METHOD(VerifyCompareIgnoreCase);
     };
 
+    static void _verifySegment(auto&& segments, uint32_t index, uint64_t start, uint64_t end)
+    {
+        const auto& segment{ segments.GetAt(index) };
+        VERIFY_ARE_EQUAL(segment.Start, start, NoThrowString().Format(L"segment %zu", index));
+        VERIFY_ARE_EQUAL(segment.End, end, NoThrowString().Format(L"segment %zu", index));
+    }
+
     void FilteredCommandTests::VerifyHighlighting()
     {
         auto result = RunOnUIThread([]() {
-            const auto paletteItem{ winrt::make<winrt::TerminalApp::implementation::CommandLinePaletteItem>(L"AAAAAABBBBBBCCC") };
+            const WEX::TestExecution::DisableVerifyExceptions disableExceptionsScope;
+
+            const auto paletteItem{ winrt::make<StringPaletteItem>(L"AAAAAABBBBBBCCC") };
+            const auto filteredCommand = winrt::make_self<winrt::TerminalApp::implementation::FilteredCommand>(paletteItem);
+
             {
                 Log::Comment(L"Testing command name segmentation with no filter");
-                const auto filteredCommand = winrt::make_self<winrt::TerminalApp::implementation::FilteredCommand>(paletteItem);
-                auto segments = filteredCommand->_computeHighlightedName().Segments();
-                VERIFY_ARE_EQUAL(segments.Size(), 1u);
-                VERIFY_ARE_EQUAL(segments.GetAt(0).TextSegment(), L"AAAAAABBBBBBCCC");
-                VERIFY_IS_FALSE(segments.GetAt(0).IsHighlighted());
+                const auto segments = filteredCommand->NameHighlights();
+
+                VERIFY_IS_NULL(segments); // No matches = no segments
             }
             {
                 Log::Comment(L"Testing command name segmentation with empty filter");
-                const auto filteredCommand = winrt::make_self<winrt::TerminalApp::implementation::FilteredCommand>(paletteItem);
-                filteredCommand->_Filter = L"";
-                auto segments = filteredCommand->_computeHighlightedName().Segments();
-                VERIFY_ARE_EQUAL(segments.Size(), 1u);
-                VERIFY_ARE_EQUAL(segments.GetAt(0).TextSegment(), L"AAAAAABBBBBBCCC");
-                VERIFY_IS_FALSE(segments.GetAt(0).IsHighlighted());
+                filteredCommand->UpdateFilter(std::make_shared<fzf::matcher::Pattern>(fzf::matcher::ParsePattern(L"")));
+                const auto segments = filteredCommand->NameHighlights();
+
+                VERIFY_IS_NULL(segments); // No matches = no segments
             }
             {
                 Log::Comment(L"Testing command name segmentation with filter equal to the string");
-                const auto filteredCommand = winrt::make_self<winrt::TerminalApp::implementation::FilteredCommand>(paletteItem);
-                filteredCommand->_Filter = L"AAAAAABBBBBBCCC";
-                auto segments = filteredCommand->_computeHighlightedName().Segments();
+                filteredCommand->UpdateFilter(std::make_shared<fzf::matcher::Pattern>(fzf::matcher::ParsePattern(L"AAAAAABBBBBBCCC")));
+                const auto segments = filteredCommand->NameHighlights();
+
                 VERIFY_ARE_EQUAL(segments.Size(), 1u);
-                VERIFY_ARE_EQUAL(segments.GetAt(0).TextSegment(), L"AAAAAABBBBBBCCC");
-                VERIFY_IS_TRUE(segments.GetAt(0).IsHighlighted());
+                _verifySegment(segments, 0, 0, 14); // one segment for the entire string
             }
             {
                 Log::Comment(L"Testing command name segmentation with filter with first character matching");
-                const auto filteredCommand = winrt::make_self<winrt::TerminalApp::implementation::FilteredCommand>(paletteItem);
-                filteredCommand->_Filter = L"A";
-                auto segments = filteredCommand->_computeHighlightedName().Segments();
-                VERIFY_ARE_EQUAL(segments.Size(), 2u);
-                VERIFY_ARE_EQUAL(segments.GetAt(0).TextSegment(), L"A");
-                VERIFY_IS_TRUE(segments.GetAt(0).IsHighlighted());
-                VERIFY_ARE_EQUAL(segments.GetAt(1).TextSegment(), L"AAAAABBBBBBCCC");
-                VERIFY_IS_FALSE(segments.GetAt(1).IsHighlighted());
+                filteredCommand->UpdateFilter(std::make_shared<fzf::matcher::Pattern>(fzf::matcher::ParsePattern(L"A")));
+                const auto segments = filteredCommand->NameHighlights();
+
+                VERIFY_ARE_EQUAL(segments.Size(), 1u); // only one bold segment
+                _verifySegment(segments, 0, 0, 0); // it only covers the first character
             }
             {
                 Log::Comment(L"Testing command name segmentation with filter with other case");
-                const auto filteredCommand = winrt::make_self<winrt::TerminalApp::implementation::FilteredCommand>(paletteItem);
-                filteredCommand->_Filter = L"a";
-                auto segments = filteredCommand->_computeHighlightedName().Segments();
-                VERIFY_ARE_EQUAL(segments.Size(), 2u);
-                VERIFY_ARE_EQUAL(segments.GetAt(0).TextSegment(), L"A");
-                VERIFY_IS_TRUE(segments.GetAt(0).IsHighlighted());
-                VERIFY_ARE_EQUAL(segments.GetAt(1).TextSegment(), L"AAAAABBBBBBCCC");
-                VERIFY_IS_FALSE(segments.GetAt(1).IsHighlighted());
+                filteredCommand->UpdateFilter(std::make_shared<fzf::matcher::Pattern>(fzf::matcher::ParsePattern(L"a")));
+                const auto segments = filteredCommand->NameHighlights();
+
+                VERIFY_ARE_EQUAL(segments.Size(), 1u); // only one bold segment
+                _verifySegment(segments, 0, 0, 0); // it only covers the first character
             }
             {
                 Log::Comment(L"Testing command name segmentation with filter matching several characters");
-                const auto filteredCommand = winrt::make_self<winrt::TerminalApp::implementation::FilteredCommand>(paletteItem);
-                filteredCommand->_Filter = L"ab";
-                auto segments = filteredCommand->_computeHighlightedName().Segments();
-                VERIFY_ARE_EQUAL(segments.Size(), 4u);
-                VERIFY_ARE_EQUAL(segments.GetAt(0).TextSegment(), L"A");
-                VERIFY_IS_TRUE(segments.GetAt(0).IsHighlighted());
-                VERIFY_ARE_EQUAL(segments.GetAt(1).TextSegment(), L"AAAAA");
-                VERIFY_IS_FALSE(segments.GetAt(1).IsHighlighted());
-                VERIFY_ARE_EQUAL(segments.GetAt(2).TextSegment(), L"B");
-                VERIFY_IS_TRUE(segments.GetAt(2).IsHighlighted());
-                VERIFY_ARE_EQUAL(segments.GetAt(3).TextSegment(), L"BBBBBCCC");
-                VERIFY_IS_FALSE(segments.GetAt(3).IsHighlighted());
+                filteredCommand->UpdateFilter(std::make_shared<fzf::matcher::Pattern>(fzf::matcher::ParsePattern(L"ab")));
+                const auto segments = filteredCommand->NameHighlights();
+
+                VERIFY_ARE_EQUAL(segments.Size(), 1u); // one bold segment
+                _verifySegment(segments, 0, 5, 6); // middle 'ab'
+            }
+            {
+                Log::Comment(L"Testing command name segmentation with filter matching several regions");
+                filteredCommand->UpdateFilter(std::make_shared<fzf::matcher::Pattern>(fzf::matcher::ParsePattern(L"abcc")));
+                const auto segments = filteredCommand->NameHighlights();
+
+                VERIFY_ARE_EQUAL(segments.Size(), 2u); // two bold segments
+                _verifySegment(segments, 0, 5, 6); // middle 'ab'
+                _verifySegment(segments, 1, 12, 13); // start of 'cc'
             }
             {
                 Log::Comment(L"Testing command name segmentation with non matching filter");
-                const auto filteredCommand = winrt::make_self<winrt::TerminalApp::implementation::FilteredCommand>(paletteItem);
-                filteredCommand->_Filter = L"abcd";
-                auto segments = filteredCommand->_computeHighlightedName().Segments();
-                VERIFY_ARE_EQUAL(segments.Size(), 1u);
-                VERIFY_ARE_EQUAL(segments.GetAt(0).TextSegment(), L"AAAAAABBBBBBCCC");
-                VERIFY_IS_FALSE(segments.GetAt(0).IsHighlighted());
+                filteredCommand->UpdateFilter(std::make_shared<fzf::matcher::Pattern>(fzf::matcher::ParsePattern(L"abcd")));
+                const auto segments = filteredCommand->NameHighlights();
+
+                VERIFY_IS_NULL(segments); // No matches = no segments
             }
         });
 
@@ -112,54 +126,38 @@ namespace TerminalAppLocalTests
     void FilteredCommandTests::VerifyWeight()
     {
         auto result = RunOnUIThread([]() {
-            const auto paletteItem{ winrt::make<winrt::TerminalApp::implementation::CommandLinePaletteItem>(L"AAAAAABBBBBBCCC") };
-            {
-                Log::Comment(L"Testing weight of command with no filter");
-                const auto filteredCommand = winrt::make_self<winrt::TerminalApp::implementation::FilteredCommand>(paletteItem);
-                filteredCommand->_HighlightedName = filteredCommand->_computeHighlightedName();
-                auto weight = filteredCommand->_computeWeight();
-                VERIFY_ARE_EQUAL(weight, 0);
-            }
-            {
-                Log::Comment(L"Testing weight of command with empty filter");
-                const auto filteredCommand = winrt::make_self<winrt::TerminalApp::implementation::FilteredCommand>(paletteItem);
-                filteredCommand->_Filter = L"";
-                filteredCommand->_HighlightedName = filteredCommand->_computeHighlightedName();
-                auto weight = filteredCommand->_computeWeight();
-                VERIFY_ARE_EQUAL(weight, 0);
-            }
-            {
-                Log::Comment(L"Testing weight of command with filter equal to the string");
-                const auto filteredCommand = winrt::make_self<winrt::TerminalApp::implementation::FilteredCommand>(paletteItem);
-                filteredCommand->_Filter = L"AAAAAABBBBBBCCC";
-                filteredCommand->_HighlightedName = filteredCommand->_computeHighlightedName();
-                auto weight = filteredCommand->_computeWeight();
-                VERIFY_ARE_EQUAL(weight, 30); // 1 point for the first char and 2 points for the 14 consequent ones + 1 point for the beginning of the word
-            }
-            {
-                Log::Comment(L"Testing weight of command with filter with first character matching");
-                const auto filteredCommand = winrt::make_self<winrt::TerminalApp::implementation::FilteredCommand>(paletteItem);
-                filteredCommand->_Filter = L"A";
-                filteredCommand->_HighlightedName = filteredCommand->_computeHighlightedName();
-                auto weight = filteredCommand->_computeWeight();
-                VERIFY_ARE_EQUAL(weight, 2); // 1 point for the first char match + 1 point for the beginning of the word
-            }
-            {
-                Log::Comment(L"Testing weight of command with filter with other case");
-                const auto filteredCommand = winrt::make_self<winrt::TerminalApp::implementation::FilteredCommand>(paletteItem);
-                filteredCommand->_Filter = L"a";
-                filteredCommand->_HighlightedName = filteredCommand->_computeHighlightedName();
-                auto weight = filteredCommand->_computeWeight();
-                VERIFY_ARE_EQUAL(weight, 2); // 1 point for the first char match + 1 point for the beginning of the word
-            }
-            {
-                Log::Comment(L"Testing weight of command with filter matching several characters");
-                const auto filteredCommand = winrt::make_self<winrt::TerminalApp::implementation::FilteredCommand>(paletteItem);
-                filteredCommand->_Filter = L"ab";
-                filteredCommand->_HighlightedName = filteredCommand->_computeHighlightedName();
-                auto weight = filteredCommand->_computeWeight();
-                VERIFY_ARE_EQUAL(weight, 3); // 1 point for the first char match + 1 point for the beginning of the word + 1 point for the match of "b"
-            }
+            const auto paletteItem{ winrt::make<StringPaletteItem>(L"AAAAAABBBBBBCCC") };
+            const auto filteredCommand = winrt::make_self<winrt::TerminalApp::implementation::FilteredCommand>(paletteItem);
+
+            const auto weigh = [&](const wchar_t* str) {
+                std::shared_ptr<fzf::matcher::Pattern> pattern;
+                if (str)
+                {
+                    pattern = std::make_shared<fzf::matcher::Pattern>(fzf::matcher::ParsePattern(str));
+                }
+                filteredCommand->UpdateFilter(std::move(pattern));
+                return filteredCommand->Weight();
+            };
+
+            const auto null = weigh(nullptr);
+            const auto empty = weigh(L"");
+            const auto full = weigh(L"AAAAAABBBBBBCCC");
+            const auto firstChar = weigh(L"A");
+            const auto otherCase = weigh(L"a");
+            const auto severalChars = weigh(L"ab");
+
+            VERIFY_ARE_EQUAL(null, 0);
+            VERIFY_ARE_EQUAL(empty, 0);
+            VERIFY_IS_GREATER_THAN(full, 100);
+
+            VERIFY_IS_GREATER_THAN(firstChar, 0);
+            VERIFY_IS_LESS_THAN(firstChar, full);
+
+            VERIFY_IS_GREATER_THAN(otherCase, 0);
+            VERIFY_IS_LESS_THAN(otherCase, full);
+
+            VERIFY_IS_GREATER_THAN(severalChars, otherCase);
+            VERIFY_IS_LESS_THAN(severalChars, full);
         });
 
         VERIFY_SUCCEEDED(result);
@@ -168,8 +166,8 @@ namespace TerminalAppLocalTests
     void FilteredCommandTests::VerifyCompare()
     {
         auto result = RunOnUIThread([]() {
-            const auto paletteItem{ winrt::make<winrt::TerminalApp::implementation::CommandLinePaletteItem>(L"AAAAAABBBBBBCCC") };
-            const auto paletteItem2{ winrt::make<winrt::TerminalApp::implementation::CommandLinePaletteItem>(L"BBBBBCCC") };
+            const auto paletteItem{ winrt::make<StringPaletteItem>(L"AAAAAABBBBBBCCC") };
+            const auto paletteItem2{ winrt::make<StringPaletteItem>(L"BBBBBCCC") };
             {
                 Log::Comment(L"Testing comparison of commands with no filter");
                 const auto filteredCommand = winrt::make_self<winrt::TerminalApp::implementation::FilteredCommand>(paletteItem);
@@ -181,14 +179,10 @@ namespace TerminalAppLocalTests
             {
                 Log::Comment(L"Testing comparison of commands with empty filter");
                 const auto filteredCommand = winrt::make_self<winrt::TerminalApp::implementation::FilteredCommand>(paletteItem);
-                filteredCommand->_Filter = L"";
-                filteredCommand->_HighlightedName = filteredCommand->_computeHighlightedName();
-                filteredCommand->_Weight = filteredCommand->_computeWeight();
+                filteredCommand->UpdateFilter(std::make_shared<fzf::matcher::Pattern>(fzf::matcher::ParsePattern(L"")));
 
                 const auto filteredCommand2 = winrt::make_self<winrt::TerminalApp::implementation::FilteredCommand>(paletteItem2);
-                filteredCommand2->_Filter = L"";
-                filteredCommand2->_HighlightedName = filteredCommand2->_computeHighlightedName();
-                filteredCommand2->_Weight = filteredCommand2->_computeWeight();
+                filteredCommand2->UpdateFilter(std::make_shared<fzf::matcher::Pattern>(fzf::matcher::ParsePattern(L"")));
 
                 VERIFY_ARE_EQUAL(filteredCommand->Weight(), filteredCommand2->Weight());
                 VERIFY_IS_TRUE(winrt::TerminalApp::implementation::FilteredCommand::Compare(*filteredCommand, *filteredCommand2));
@@ -196,16 +190,12 @@ namespace TerminalAppLocalTests
             {
                 Log::Comment(L"Testing comparison of commands with different weights");
                 const auto filteredCommand = winrt::make_self<winrt::TerminalApp::implementation::FilteredCommand>(paletteItem);
-                filteredCommand->_Filter = L"B";
-                filteredCommand->_HighlightedName = filteredCommand->_computeHighlightedName();
-                filteredCommand->_Weight = filteredCommand->_computeWeight();
+                filteredCommand->UpdateFilter(std::make_shared<fzf::matcher::Pattern>(fzf::matcher::ParsePattern(L"B")));
 
                 const auto filteredCommand2 = winrt::make_self<winrt::TerminalApp::implementation::FilteredCommand>(paletteItem2);
-                filteredCommand2->_Filter = L"B";
-                filteredCommand2->_HighlightedName = filteredCommand2->_computeHighlightedName();
-                filteredCommand2->_Weight = filteredCommand2->_computeWeight();
+                filteredCommand2->UpdateFilter(std::make_shared<fzf::matcher::Pattern>(fzf::matcher::ParsePattern(L"B")));
 
-                VERIFY_IS_TRUE(filteredCommand->Weight() < filteredCommand2->Weight()); // Second command gets more points due to the beginning of the word
+                VERIFY_IS_LESS_THAN(filteredCommand->Weight(), filteredCommand2->Weight()); // Second command gets more points due to the beginning of the word
                 VERIFY_IS_FALSE(winrt::TerminalApp::implementation::FilteredCommand::Compare(*filteredCommand, *filteredCommand2));
             }
         });
@@ -216,8 +206,8 @@ namespace TerminalAppLocalTests
     void FilteredCommandTests::VerifyCompareIgnoreCase()
     {
         auto result = RunOnUIThread([]() {
-            const auto paletteItem{ winrt::make<winrt::TerminalApp::implementation::CommandLinePaletteItem>(L"a") };
-            const auto paletteItem2{ winrt::make<winrt::TerminalApp::implementation::CommandLinePaletteItem>(L"B") };
+            const auto paletteItem{ winrt::make<StringPaletteItem>(L"a") };
+            const auto paletteItem2{ winrt::make<StringPaletteItem>(L"B") };
             {
                 const auto filteredCommand = winrt::make_self<winrt::TerminalApp::implementation::FilteredCommand>(paletteItem);
                 const auto filteredCommand2 = winrt::make_self<winrt::TerminalApp::implementation::FilteredCommand>(paletteItem2);

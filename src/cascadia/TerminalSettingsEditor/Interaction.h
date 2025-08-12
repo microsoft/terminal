@@ -16,6 +16,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         til::property_changed_event PropertyChanged;
         WINRT_OBSERVABLE_PROPERTY(Editor::InteractionViewModel, ViewModel, PropertyChanged.raise, nullptr);
+        GETSET_BINDABLE_ENUM_SETTING(WarnAboutMultiLinePaste, winrt::Microsoft::Terminal::Control::WarnAboutMultiLinePaste, ViewModel().WarnAboutMultiLinePaste);
     };
 }
 

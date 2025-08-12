@@ -176,6 +176,11 @@ COOKED_READ_DATA::COOKED_READ_DATA(_In_ InputBuffer* const pInputBuffer,
     }
 }
 
+const SCREEN_INFORMATION* COOKED_READ_DATA::GetScreenBuffer() const noexcept
+{
+    return &_screenInfo;
+}
+
 // Routine Description:
 // - This routine is called to complete a cooked read that blocked in ReadInputBuffer.
 // - The context of the read was saved in the CookedReadData structure.
@@ -184,7 +189,7 @@ COOKED_READ_DATA::COOKED_READ_DATA(_In_ InputBuffer* const pInputBuffer,
 // - It may be called more than once.
 // Arguments:
 // - TerminationReason - if this routine is called because a ctrl-c or ctrl-break was seen, this argument
-//                      contains CtrlC or CtrlBreak. If the owning thread is exiting, it will have ThreadDying. Otherwise 0.
+//                      contains CtrlC or CtrlBreak. If the owning thread is exiting, it will have ThreadDying. Otherwise, 0.
 // - fIsUnicode - Whether to convert the final data to A (using Console Input CP) at the end or treat everything as Unicode (UCS-2)
 // - pReplyStatus - The status code to return to the client application that originally called the API (before it was queued to wait)
 // - pNumBytes - The number of bytes of data that the server/driver will need to transmit back to the client process

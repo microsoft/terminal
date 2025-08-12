@@ -2,9 +2,10 @@
 // Licensed under the MIT license.
 
 #include "pch.h"
-#include "TabPaletteItem.h"
 #include "PaletteItemTemplateSelector.h"
 #include "PaletteItemTemplateSelector.g.cpp"
+
+#include "CommandPaletteItems.h"
 
 namespace winrt::TerminalApp::implementation
 {
@@ -26,16 +27,22 @@ namespace winrt::TerminalApp::implementation
     {
         if (const auto filteredCommand{ item.try_as<winrt::TerminalApp::FilteredCommand>() })
         {
-            if (filteredCommand.Item().try_as<winrt::TerminalApp::TabPaletteItem>())
+            switch (filteredCommand.Item().Type())
             {
+            case PaletteItemType::Tab:
                 return TabItemTemplate();
-            }
-            else if (const auto actionPaletteItem{ filteredCommand.Item().try_as<winrt::TerminalApp::ActionPaletteItem>() })
+            case PaletteItemType::Action:
             {
-                if (actionPaletteItem.Command().HasNestedCommands())
+                const auto actionPaletteItem{ winrt::get_self<ActionPaletteItem>(filteredCommand.Item()) };
+                if (actionPaletteItem->Command().HasNestedCommands())
                 {
                     return NestedItemTemplate();
                 }
+                break; // Fall back to the general template
+            }
+            case PaletteItemType::CommandLine:
+            default:
+                break; // Fall back to the general template
             }
         }
 

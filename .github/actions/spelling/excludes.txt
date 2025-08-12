@@ -97,7 +97,7 @@ Resources/(?!en)
 ^doc/reference/UTF8-torture-test\.txt$
 ^doc/reference/windows-terminal-logo\.ans$
 ^NOTICE.md
-^oss/
+^oss/.*?/
 ^samples/PixelShaders/Screenshots/
 ^src/cascadia/TerminalSettingsEditor/SegoeFluentIconList.h$
 ^src/interactivity/onecore/BgfxEngine\.
@@ -121,8 +121,8 @@ Resources/(?!en)
 ^tools/ReleaseEngineering/ServicingPipeline\.ps1$
 ^XamlStyler\.json$
 ^\.github/actions/spelling/
+^\.github/workflows/spelling\d*\.yml$
 ^\.vsconfig$
-^\Q.github/workflows/spelling.yml\E$
 ^\Qbuild/config/release.gdnbaselines\E$
 ^\Qdep/WinAppDriver/EULA.rtf\E$
 ^\Qdoc/reference/windows-terminal-logo.ans\E$
@@ -133,3 +133,4 @@ Resources/(?!en)
 ^\Qsrc/terminal/parser/ft_fuzzwrapper/run.bat\E$
 ^\Qsrc/tools/lnkd/lnkd.bat\E$
 ^\Qsrc/tools/pixels/pixels.bat\E$
+^\Qsrc/cascadia/ut_app/FzfTests.cpp\E$

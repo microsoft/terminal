@@ -42,6 +42,7 @@
 
             <local:ExtensionPackageTemplateSelector x:Key="ExtensionPackageIdentifierTemplateSelector"
                                                     ComplexTemplate="{StaticResource ComplexExtensionIdentifierTemplate}"
+                                                    ComplexTemplateWithFontIcon="{StaticResource ComplexExtensionIdentifierTemplateWithFontIcon}"
                                                     DefaultTemplate="{StaticResource DefaultExtensionIdentifierTemplate}" />
 
             <DataTemplate x:Key="DefaultExtensionIdentifierTemplate"
@@ -91,8 +92,37 @@
                 </Grid>
             </DataTemplate>
 
+            <DataTemplate x:Key="ComplexExtensionIdentifierTemplateWithFontIcon"
+                          x:DataType="local:ExtensionPackageViewModel">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <FontIcon Grid.Row="0"
+                              Grid.RowSpan="2"
+                              Grid.Column="0"
+                              Margin="0,0,8,0"
+                              FontSize="32"
+                              Glyph="{x:Bind Package.Icon}" />
+                    <TextBlock Grid.Row="0"
+                               Grid.Column="1"
+                               Text="{x:Bind Package.DisplayName}" />
+                    <TextBlock Grid.Row="1"
+                               Grid.Column="1"
+                               Style="{StaticResource SettingsPageItemDescriptionStyle}"
+                               Text="{x:Bind Package.Source}" />
+                </Grid>
+            </DataTemplate>
+
             <local:ExtensionPackageTemplateSelector x:Key="ExtensionPackageNavigatorTemplateSelector"
                                                     ComplexTemplate="{StaticResource ComplexExtensionNavigatorTemplate}"
+                                                    ComplexTemplateWithFontIcon="{StaticResource ComplexExtensionNavigatorTemplateWithFontIcon}"
                                                     DefaultTemplate="{StaticResource DefaultExtensionNavigatorTemplate}" />
 
             <DataTemplate x:Key="DefaultExtensionNavigatorTemplate"
@@ -146,6 +176,31 @@
                 </Button>
             </DataTemplate>
 
+            <DataTemplate x:Key="ComplexExtensionNavigatorTemplateWithFontIcon"
+                          x:DataType="local:ExtensionPackageViewModel">
+                <Button AutomationProperties.Name="{x:Bind AccessibleName}"
+                        Click="ExtensionNavigator_Click"
+                        Style="{StaticResource NavigatorButtonStyle}"
+                        Tag="{x:Bind}">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <ContentPresenter Content="{x:Bind}"
+                                          ContentTemplate="{StaticResource ComplexExtensionIdentifierTemplateWithFontIcon}" />
+
+                        <ToggleSwitch Grid.Column="1"
+                                      HorizontalAlignment="Right"
+                                      VerticalAlignment="Center"
+                                      AutomationProperties.Name="{x:Bind AccessibleName}"
+                                      IsOn="{x:Bind Enabled, Mode=TwoWay}"
+                                      Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+                    </Grid>
+                </Button>
+            </DataTemplate>
+
             <DataTemplate x:Key="FragmentProfileViewModelTemplate"
                           x:DataType="local:FragmentProfileViewModel">
                 <muxc:Expander AutomationProperties.Name="{x:Bind AccessibleName}"
@@ -161,8 +216,8 @@
                                         Orientation="Horizontal">
                                 <IconSourceElement Width="16"
                                                    Height="16"
-                                                   Margin="0,0,8,0"
-                                                   IconSource="{x:Bind mtu:IconPathConverter.IconSourceWUX(Profile.EvaluatedIcon), Mode=OneWay}" />
+                                                   Margin="0,0,12,0"
+                                                   IconSource="{x:Bind mtu:IconPathConverter.IconSourceWUX(Profile.Icon.Resolved), Mode=OneWay}" />
 
                                 <TextBlock Text="{x:Bind Profile.Name, Mode=OneWay}" />
 
@@ -193,7 +248,6 @@
             <!--  This styling matches that of ExpanderSettingContainerStyle for consistency  -->
             <Style x:Key="ExpanderStyle"
                    TargetType="muxc:Expander">
-                <Setter Property="MaxWidth" Value="1000" />
                 <Setter Property="MinHeight" Value="64" />
                 <Setter Property="Margin" Value="0,4,0,0" />
                 <Setter Property="HorizontalAlignment" Value="Stretch" />
@@ -234,8 +288,8 @@
                           Padding="8"
                           VerticalAlignment="Center"
                           Background="{x:Bind mtu:Converters.ColorToBrush(BackgroundColor.Color), Mode=OneWay}"
-                          ColumnSpacing="1"
-                          CornerRadius="2"
+                          ColumnSpacing="2"
+                          CornerRadius="{StaticResource ControlCornerRadius}"
                           RowSpacing="1">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto" />
@@ -396,10 +450,12 @@
 
             <!--  Learn more about fragment extensions  -->
             <HyperlinkButton x:Uid="Extensions_DisclaimerHyperlink"
-                             NavigateUri="https://learn.microsoft.com/en-us/windows/terminal/json-fragment-extensions" />
+                             Margin="-12,0,0,0"
+                             NavigateUri="https://go.microsoft.com/fwlink/?linkid=2321753" />
 
             <!--  Grouping: Active Extensions  -->
             <TextBlock x:Uid="Extensions_ActiveExtensionsHeader"
+                       Margin="0,12,0,8"
                        Style="{StaticResource TextBlockSubHeaderStyle}" />
             <ItemsControl x:Name="ActiveExtensionsList"
                           IsTabStop="False"
@@ -458,9 +514,11 @@
         </StackPanel>
 
         <!--  Grouping: Modified Profiles  -->
-        <StackPanel Margin="{x:Bind CalculateMargin(ViewModel.NoProfilesModified), Mode=OneWay}"
+        <StackPanel MaxWidth="{StaticResource StandardControlMaxWidth}"
+                    Margin="{x:Bind CalculateMargin(ViewModel.NoProfilesModified), Mode=OneWay}"
                     Visibility="{x:Bind mtu:Converters.InvertedBooleanToVisibility(ViewModel.NoProfilesModified), Mode=OneWay}">
             <TextBlock x:Uid="Extensions_ModifiedProfilesHeader"
+                       Margin="0,0,0,8"
                        Style="{StaticResource TextBlockSubHeaderStyle}" />
             <ItemsControl x:Name="ModifiedProfilesList"
                           IsTabStop="False"
@@ -470,9 +528,11 @@
         </StackPanel>
 
         <!--  Grouping: Added Profiles  -->
-        <StackPanel Margin="{x:Bind CalculateMargin(ViewModel.NoProfilesAdded), Mode=OneWay}"
+        <StackPanel MaxWidth="{StaticResource StandardControlMaxWidth}"
+                    Margin="{x:Bind CalculateMargin(ViewModel.NoProfilesAdded), Mode=OneWay}"
                     Visibility="{x:Bind mtu:Converters.InvertedBooleanToVisibility(ViewModel.NoProfilesAdded), Mode=OneWay}">
             <TextBlock x:Uid="Extensions_AddedProfilesHeader"
+                       Margin="0,0,0,8"
                        Style="{StaticResource TextBlockSubHeaderStyle}" />
             <ItemsControl x:Name="AddedProfilesList"
                           IsTabStop="False"
@@ -482,9 +542,11 @@
         </StackPanel>
 
         <!--  Grouping: Added Color Schemes  -->
-        <StackPanel Margin="{x:Bind CalculateMargin(ViewModel.NoProfilesAdded), Mode=OneWay}"
+        <StackPanel MaxWidth="{StaticResource StandardControlMaxWidth}"
+                    Margin="{x:Bind CalculateMargin(ViewModel.NoProfilesAdded), Mode=OneWay}"
                     Visibility="{x:Bind mtu:Converters.InvertedBooleanToVisibility(ViewModel.NoSchemesAdded), Mode=OneWay}">
             <TextBlock x:Uid="Extensions_AddedColorSchemesHeader"
+                       Margin="0,0,0,8"
                        Style="{StaticResource TextBlockSubHeaderStyle}" />
             <ItemsControl x:Name="AddedColorSchemesList"
                           IsTabStop="False"

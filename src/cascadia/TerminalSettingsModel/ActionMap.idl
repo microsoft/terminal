@@ -2,12 +2,14 @@
 // Licensed under the MIT license.
 
 import "Command.idl";
+import "ISettingsModelObject.idl";
 
 namespace Microsoft.Terminal.Settings.Model
 {
     static runtimeclass ActionArgFactory
     {
         static String GetNameForAction(Microsoft.Terminal.Settings.Model.ShortcutAction action);
+        static String GetNameForAction(Microsoft.Terminal.Settings.Model.ShortcutAction action, Windows.ApplicationModel.Resources.Core.ResourceContext context);
         static Windows.Foundation.Collections.IMap<Microsoft.Terminal.Settings.Model.ShortcutAction, String> AvailableShortcutActionsAndNames { get; };
         static IActionArgs GetEmptyArgsForAction(Microsoft.Terminal.Settings.Model.ShortcutAction shortcutAction);
     }
@@ -36,7 +38,7 @@ namespace Microsoft.Terminal.Settings.Model
         event Windows.Foundation.TypedEventHandler<Command, String> PropagateCommandIDChanged;
     };
 
-    [default_interface] runtimeclass ActionMap : IActionMapView
+    runtimeclass ActionMap : IActionMapView
     {
         void AddAction(Command cmd, Microsoft.Terminal.Control.KeyChord keys);
         void RebindKeys(Microsoft.Terminal.Control.KeyChord oldKeys, Microsoft.Terminal.Control.KeyChord newKeys);

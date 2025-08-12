@@ -135,12 +135,19 @@ namespace winrt::TerminalApp::implementation
         _isElevated = ::Microsoft::Console::Utils::IsRunningElevated();
         _canDragDrop = ::Microsoft::Console::Utils::CanUwpDragDrop();
 
-        _reloadSettings = std::make_shared<ThrottledFuncTrailing<>>(winrt::Windows::System::DispatcherQueue::GetForCurrentThread(), std::chrono::milliseconds(100), [weakSelf = get_weak()]() {
-            if (auto self{ weakSelf.get() })
-            {
-                self->ReloadSettings();
-            }
-        });
+        _reloadSettings = std::make_shared<ThrottledFunc<>>(
+            DispatcherQueue::GetForCurrentThread(),
+            til::throttled_func_options{
+                .delay = std::chrono::milliseconds{ 100 },
+                .debounce = true,
+                .trailing = true,
+            },
+            [weakSelf = get_weak()]() {
+                if (auto self{ weakSelf.get() })
+                {
+                    self->ReloadSettings();
+                }
+            });
 
         _languageProfileNotifier = winrt::make_self<LanguageProfileNotifier>([this]() {
             _reloadSettings->Run();
@@ -194,7 +201,7 @@ namespace winrt::TerminalApp::implementation
     // Method Description:
     // - Attempt to load the settings. If we fail for any reason, returns an error.
     // Return Value:
-    // - S_OK if we successfully parsed the settings, otherwise an appropriate HRESULT.
+    // - S_OK if we successfully parsed the settings; otherwise, an appropriate HRESULT.
     [[nodiscard]] HRESULT AppLogic::_TryLoadSettings() noexcept
     {
         auto hr = E_FAIL;
@@ -392,7 +399,7 @@ namespace winrt::TerminalApp::implementation
                 auto ev = winrt::make_self<SettingsLoadEventArgs>(true,
                                                                   static_cast<uint64_t>(_settingsLoadedResult),
                                                                   _settingsLoadExceptionText,
-                                                                  warnings,
+                                                                  warnings.GetView(),
                                                                   _settings);
                 SettingsChanged.raise(*this, *ev);
                 return;
@@ -424,7 +431,7 @@ namespace winrt::TerminalApp::implementation
         auto ev = winrt::make_self<SettingsLoadEventArgs>(!initialLoad,
                                                           _settingsLoadedResult,
                                                           _settingsLoadExceptionText,
-                                                          warnings,
+                                                          warnings.GetView(),
                                                           _settings);
         SettingsChanged.raise(*this, *ev);
     }
@@ -491,7 +498,7 @@ namespace winrt::TerminalApp::implementation
         auto ev = winrt::make_self<SettingsLoadEventArgs>(false,
                                                           _settingsLoadedResult,
                                                           _settingsLoadExceptionText,
-                                                          warnings,
+                                                          warnings.GetView(),
                                                           _settings);
 
         auto window = winrt::make_self<implementation::TerminalWindow>(*ev, _contentManager);

@@ -32,13 +32,21 @@
       ]
     },
     "DynamicProfileSource": {
-      "enum": [
-        "Windows.Terminal.Wsl",
-        "Windows.Terminal.Azure",
-        "Windows.Terminal.PowershellCore",
-        "Windows.Terminal.VisualStudio"
-      ],
-      "type": "string"
+      "type": "string",
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "enum": [
+            "Microsoft.WSL",
+            "Windows.Terminal.Wsl",
+            "Windows.Terminal.Azure",
+            "Windows.Terminal.PowershellCore",
+            "Windows.Terminal.VisualStudio"
+          ]
+        }
+      ]
     },
     "BellStyle": {
       "oneOf": [
@@ -2366,6 +2374,16 @@
         "focusFollowMouse": {
           "default": false,
           "description": "When set to true, the terminal will focus the pane on mouse hover.",
+          "type": "boolean"
+        },
+        "experimental.scrollToZoom": {
+          "default": true,
+          "description": "When set to true, holding the Ctrl key while scrolling will increase or decrease the terminal font size.",
+          "type": "boolean"
+        },
+        "experimental.scrollToChangeOpacity": {
+          "default": true,
+          "description": "When set to true, holding the Ctrl and Shift keys while scrolling will change the window opacity.",
           "type": "boolean"
         },
         "compatibility.allowHeadless": {

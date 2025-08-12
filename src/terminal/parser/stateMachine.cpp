@@ -1511,7 +1511,7 @@ void StateMachine::_EventOscString(const wchar_t wch)
 // - Handle the two-character termination of a OSC sequence.
 //   Events in this state will:
 //   1. Trigger the OSC action associated with the param on an OscTerminator
-//   2. Otherwise treat this as a normal escape character event.
+//   2. Otherwise, treat this as a normal escape character event.
 // Arguments:
 // - wch - Character that triggered the event
 // Return Value:

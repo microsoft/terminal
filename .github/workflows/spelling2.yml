@@ -93,7 +93,7 @@ jobs:
     steps:
       - name: check-spelling
         id: spelling
-        uses: check-spelling/check-spelling@v0.0.24
+        uses: check-spelling/check-spelling@v0.0.25
         with:
           suppress_push_for_open_pull_request: ${{ github.actor != 'dependabot[bot]' && 1 }}
           checkout: true
@@ -104,7 +104,7 @@ jobs:
           report-timing: 1
           warnings: bad-regex,binary-file,deprecated-feature,ignored-expect-variant,large-file,limited-references,no-newline-at-eof,noisy-file,non-alpha-in-dictionary,token-is-substring,unexpected-line-ending,whitespace-in-dictionary,minified-file,unsupported-configuration,no-files-to-check,unclosed-block-ignore-begin,unclosed-block-ignore-end
           experimental_apply_changes_via_bot: ${{ github.repository_owner != 'microsoft' && 1 }}
-          use_sarif: ${{ (!github.event.pull_request || (github.event.pull_request.head.repo.full_name == github.repository)) && 1 }}
+          use_sarif: 1
           check_extra_dictionaries: ""
           dictionary_source_prefixes: >
             {
@@ -114,34 +114,33 @@ jobs:
             cspell:software-terms/softwareTerms.txt
             cspell:cpp/stdlib-cpp.txt
             cspell:cpp/stdlib-c.txt
-            cspell:lorem-ipsum/dictionary.txt
+            cspell:python/python/python-lib.txt
             cspell:php/php.txt
+            cspell:node/node.txt
+            cspell:dart/dart.txt
             cspell:filetypes/filetypes.txt
             cspell:java/java.txt
-            cspell:node/node.txt
-            cspell:golang/go.txt
-            cspell:java/java-terms.txt
-            cspell:mnemonics/mnemonics.txt
+            cspell:css/css.txt
+            cspell:dotnet/dotnet.txt
             cspell:npm/npm.txt
             cspell:fullstack/fullstack.txt
-            cspell:python/python/python-lib.txt
-            cspell:dotnet/dotnet.txt
-            cspell:dart/dart.txt
-            cspell:aws/aws.txt
-            cspell:python/common/extra.txt
-            cspell:css/css.txt
+            cspell:java/java-terms.txt
+            cspell:r/r.txt
+            cspell:golang/go.txt
             cspell:cpp/stdlib-cmath.txt
             cspell:typescript/typescript.txt
+            cspell:html/html.txt
             cspell:cpp/compiler-msvc.txt
             cspell:django/django.txt
-            cspell:html/html.txt
-            cspell:cpp/lang-keywords.txt
+            cspell:aws/aws.txt
+            cspell:python/common/extra.txt
             cspell:cpp/ecosystem.txt
-            cspell:r/r.txt
-            cspell:cpp/compiler-clang-attributes.txt
-            cspell:powershell/powershell.txt
+            cspell:cpp/lang-keywords.txt
             cspell:csharp/csharp.txt
+            cspell:cpp/compiler-clang-attributes.txt
             cspell:python/python/python.txt
+            cspell:mnemonics/mnemonics.txt
+            cspell:powershell/powershell.txt
 
   comment-push:
     name: Report (Push)
@@ -154,7 +153,7 @@ jobs:
     if: (success() || failure()) && needs.spelling.outputs.followup && github.event_name == 'push'
     steps:
       - name: comment
-        uses: check-spelling/check-spelling@v0.0.24
+        uses: check-spelling/check-spelling@v0.0.25
         with:
           checkout: true
           spell_check_this: microsoft/terminal@main
@@ -172,7 +171,7 @@ jobs:
     if: (success() || failure()) && needs.spelling.outputs.followup && contains(github.event_name, 'pull_request')
     steps:
       - name: comment
-        uses: check-spelling/check-spelling@v0.0.24
+        uses: check-spelling/check-spelling@v0.0.25
         with:
           checkout: true
           spell_check_this: microsoft/terminal@main
@@ -198,7 +197,7 @@ jobs:
       cancel-in-progress: false
     steps:
       - name: apply spelling updates
-        uses: check-spelling/check-spelling@v0.0.24
+        uses: check-spelling/check-spelling@v0.0.25
         with:
           experimental_apply_changes_via_bot: ${{ github.repository_owner != 'microsoft' && 1 }}
           checkout: true

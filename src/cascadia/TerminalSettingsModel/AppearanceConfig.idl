@@ -5,6 +5,6 @@ import "IAppearanceConfig.idl";
 
 namespace Microsoft.Terminal.Settings.Model
 {
-    [default_interface] runtimeclass AppearanceConfig : IAppearanceConfig {
+    runtimeclass AppearanceConfig : [default] IAppearanceConfig {
     }
 }

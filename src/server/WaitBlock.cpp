@@ -75,6 +75,11 @@ ConsoleWaitBlock::~ConsoleWaitBlock()
     delete _pWaiter;
 }
 
+const SCREEN_INFORMATION* ConsoleWaitBlock::GetScreenBuffer() const noexcept
+{
+    return _pWaiter->GetScreenBuffer();
+}
+
 // Routine Description:
 // - Creates and enqueues a new wait for later callback when a routine cannot be serviced at this time.
 // - Will extract the process ID and the target object, enqueuing in both to know when to callback

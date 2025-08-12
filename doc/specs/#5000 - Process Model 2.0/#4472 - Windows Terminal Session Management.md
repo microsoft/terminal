@@ -94,7 +94,7 @@ configurations:
 
 - `"useExisting"`: always glom to the most recent window, regardless of desktop.
 - `"useExistingOnSameDesktop"`: Only glom if there's an existing window on this
-  virtual desktop, otherwise create a new window. This will be the new default
+  virtual desktop; otherwise, create a new window. This will be the new default
   value.
 - `"useNew"`: Never glom, always create a new window. This is technically the
   current behavior of the Terminal.

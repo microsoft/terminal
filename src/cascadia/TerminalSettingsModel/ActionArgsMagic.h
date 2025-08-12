@@ -148,77 +148,83 @@ struct InitListPlaceholder
 //   * NewTerminalArgs has a ToCommandline method it needs to additionally declare.
 //   * GlobalSummonArgs has the QuakeModeFromJson helper
 
-#define ACTION_ARG_BODY(className, argsMacro)                 \
-    className(){ argsMacro(APPEND_ARG_DESCRIPTION) };         \
-    className(                                                \
-        argsMacro(CTOR_PARAMS) InitListPlaceholder = {}) :    \
-        argsMacro(CTOR_INIT) _placeholder{} {                 \
-            argsMacro(APPEND_ARG_DESCRIPTION)                 \
-        };                                                    \
-    argsMacro(DECLARE_ARGS);                                  \
-                                                              \
-private:                                                      \
-    InitListPlaceholder _placeholder;                         \
-    std::vector<ArgDescriptor> _argDescriptors;               \
-                                                              \
-public:                                                       \
-    hstring GenerateName() const;                             \
-    bool Equals(const IActionArgs& other)                     \
-    {                                                         \
-        auto otherAsUs = other.try_as<className>();           \
-        if (otherAsUs)                                        \
-        {                                                     \
-            return true argsMacro(EQUALS_ARGS);               \
-        }                                                     \
-        return false;                                         \
-    };                                                        \
-    static FromJsonResult FromJson(const Json::Value& json)   \
-    {                                                         \
-        auto args = winrt::make_self<className>();            \
-        argsMacro(FROM_JSON_ARGS);                            \
-        return { *args, {} };                                 \
-    }                                                         \
-    static Json::Value ToJson(const IActionArgs& val)         \
-    {                                                         \
-        if (!val)                                             \
-        {                                                     \
-            return {};                                        \
-        }                                                     \
-        Json::Value json{ Json::ValueType::objectValue };     \
-        const auto args{ get_self<className>(val) };          \
-        argsMacro(TO_JSON_ARGS);                              \
-        return json;                                          \
-    }                                                         \
-    IActionArgs Copy() const                                  \
-    {                                                         \
-        auto copy{ winrt::make_self<className>() };           \
-        argsMacro(COPY_ARGS);                                 \
-        copy->_argDescriptors = _argDescriptors;              \
-        return *copy;                                         \
-    }                                                         \
-    size_t Hash() const                                       \
-    {                                                         \
-        til::hasher h;                                        \
-        argsMacro(HASH_ARGS);                                 \
-        return h.finalize();                                  \
-    }                                                         \
-    uint32_t GetArgCount() const                              \
-    {                                                         \
-        return gsl::narrow<uint32_t>(_argDescriptors.size()); \
-    }                                                         \
-    ArgDescriptor GetArgDescriptorAt(uint32_t index) const    \
-    {                                                         \
-        return _argDescriptors.at(index);                     \
-    }                                                         \
-    IInspectable GetArgAt(uint32_t index) const               \
-    {                                                         \
-        uint32_t curIndex{ 0 };                               \
-        argsMacro(GET_ARG_BY_INDEX) return nullptr;           \
-    }                                                         \
-    void SetArgAt(uint32_t index, IInspectable value)         \
-    {                                                         \
-        uint32_t curIndex{ 0 };                               \
-        argsMacro(SET_ARG_BY_INDEX)                           \
+#define ACTION_ARG_BODY(className, argsMacro)                                                     \
+    className(){ argsMacro(APPEND_ARG_DESCRIPTION) };                                             \
+    className(                                                                                    \
+        argsMacro(CTOR_PARAMS) InitListPlaceholder = {}) :                                        \
+        argsMacro(CTOR_INIT) _placeholder{} {                                                     \
+            argsMacro(APPEND_ARG_DESCRIPTION)                                                     \
+        };                                                                                        \
+    argsMacro(DECLARE_ARGS);                                                                      \
+                                                                                                  \
+private:                                                                                          \
+    InitListPlaceholder _placeholder;                                                             \
+    std::vector<ArgDescriptor> _argDescriptors;                                                   \
+                                                                                                  \
+public:                                                                                           \
+    hstring GenerateName() const                                                                  \
+    {                                                                                             \
+        return GenerateName(                                                                      \
+            GetLibraryResourceLoader().ResourceContext());                                        \
+    }                                                                                             \
+    hstring GenerateName(                                                                         \
+        const winrt::Windows::ApplicationModel::Resources::Core::ResourceContext& context) const; \
+    bool Equals(const IActionArgs& other)                                                         \
+    {                                                                                             \
+        auto otherAsUs = other.try_as<className>();                                               \
+        if (otherAsUs)                                                                            \
+        {                                                                                         \
+            return true argsMacro(EQUALS_ARGS);                                                   \
+        }                                                                                         \
+        return false;                                                                             \
+    };                                                                                            \
+    static FromJsonResult FromJson(const Json::Value& json)                                       \
+    {                                                                                             \
+        auto args = winrt::make_self<className>();                                                \
+        argsMacro(FROM_JSON_ARGS);                                                                \
+        return { *args, {} };                                                                     \
+    }                                                                                             \
+    static Json::Value ToJson(const IActionArgs& val)                                             \
+    {                                                                                             \
+        if (!val)                                                                                 \
+        {                                                                                         \
+            return {};                                                                            \
+        }                                                                                         \
+        Json::Value json{ Json::ValueType::objectValue };                                         \
+        const auto args{ get_self<className>(val) };                                              \
+        argsMacro(TO_JSON_ARGS);                                                                  \
+        return json;                                                                              \
+    }                                                                                             \
+    IActionArgs Copy() const                                                                      \
+    {                                                                                             \
+        auto copy{ winrt::make_self<className>() };                                               \
+        argsMacro(COPY_ARGS);                                                                     \
+        copy->_argDescriptors = _argDescriptors;                                                  \
+        return *copy;                                                                             \
+    }                                                                                             \
+    size_t Hash() const                                                                           \
+    {                                                                                             \
+        til::hasher h;                                                                            \
+        argsMacro(HASH_ARGS);                                                                     \
+        return h.finalize();                                                                      \
+    }                                                                                             \
+    uint32_t GetArgCount() const                                                                  \
+    {                                                                                             \
+        return gsl::narrow<uint32_t>(_argDescriptors.size());                                     \
+    }                                                                                             \
+    ArgDescriptor GetArgDescriptorAt(uint32_t index) const                                        \
+    {                                                                                             \
+        return _argDescriptors.at(index);                                                         \
+    }                                                                                             \
+    IInspectable GetArgAt(uint32_t index) const                                                   \
+    {                                                                                             \
+        uint32_t curIndex{ 0 };                                                                   \
+        argsMacro(GET_ARG_BY_INDEX) return nullptr;                                               \
+    }                                                                                             \
+    void SetArgAt(uint32_t index, IInspectable value)                                             \
+    {                                                                                             \
+        uint32_t curIndex{ 0 };                                                                   \
+        argsMacro(SET_ARG_BY_INDEX)                                                               \
     }
 
 #define PARTIAL_ACTION_ARG_BODY(className, argsMacro)         \

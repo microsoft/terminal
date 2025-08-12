@@ -9,5 +9,8 @@ namespace Microsoft.Terminal.Settings.Editor
     {
         Interaction();
         InteractionViewModel ViewModel { get; };
+
+        IInspectable CurrentWarnAboutMultiLinePaste;
+        Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> WarnAboutMultiLinePasteList { get; };
     }
 }

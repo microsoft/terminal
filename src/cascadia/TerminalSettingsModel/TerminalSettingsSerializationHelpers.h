@@ -18,6 +18,7 @@ Abstract:
 #include "JsonUtils.h"
 #include "SettingsTypes.h"
 #include "ModelSerializationHelpers.h"
+#include "MediaResourceSupport.h"
 
 JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Core::CursorStyle)
 {
@@ -35,10 +36,11 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Core::CursorStyle)
 // - Helper for converting a user-specified adjustTextMode value to its corresponding enum
 JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Core::AdjustTextMode)
 {
-    JSON_MAPPINGS(3) = {
+    JSON_MAPPINGS(4) = {
         pair_type{ "never", ValueType::Never },
         pair_type{ "indexed", ValueType::Indexed },
         pair_type{ "always", ValueType::Always },
+        pair_type{ "automatic", ValueType::Automatic },
     };
 
     // Override mapping parser to add boolean parsing
@@ -766,6 +768,43 @@ struct ::Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<::winr
     }
 };
 
+template<>
+struct ::Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<::winrt::Microsoft::Terminal::Settings::Model::IMediaResource>
+{
+    ::winrt::Microsoft::Terminal::Settings::Model::IMediaResource FromJson(const Json::Value& json)
+    {
+        if (json.isNull()) [[unlikely]]
+        {
+            // Do not use Empty here, as Empty is shared across all instances.
+            return ::winrt::Microsoft::Terminal::Settings::Model::implementation::MediaResource::FromString(L"");
+        }
+
+        winrt::hstring string{ til::u8u16(Detail::GetStringView(json)) };
+        return ::winrt::Microsoft::Terminal::Settings::Model::implementation::MediaResource::FromString(string);
+    }
+
+    bool CanConvert(const Json::Value& json)
+    {
+        return json.isString() || json.isNull();
+    }
+
+    Json::Value ToJson(const ::winrt::Microsoft::Terminal::Settings::Model::IMediaResource& val)
+    {
+        if (!val || val.Path() == winrt::hstring{})
+        {
+            // empty string becomes null (is this correct?)
+            return Json::Value::nullSingleton();
+        }
+
+        return til::u16u8(val.Path());
+    }
+
+    std::string TypeDescription() const
+    {
+        return "file path";
+    }
+};
+
 JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Control::GraphicsAPI)
 {
     JSON_MAPPINGS(3) = {
@@ -801,4 +840,30 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Control::PathTranslationStyle)
         pair_type{ "msys2", ValueType::MSYS2 },
         pair_type{ "mingw", ValueType::MinGW },
     };
+};
+
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Control::WarnAboutMultiLinePaste)
+{
+    JSON_MAPPINGS(3) = {
+        pair_type{ "automatic", ValueType::Automatic },
+        pair_type{ "always", ValueType::Always },
+        pair_type{ "never", ValueType::Never },
+    };
+
+    // Override mapping parser to add boolean parsing
+    ::winrt::Microsoft::Terminal::Control::WarnAboutMultiLinePaste FromJson(const Json::Value& json)
+    {
+        if (json.isBool())
+        {
+            return json.asBool() ? ValueType::Automatic : ValueType::Never;
+        }
+        return EnumMapper::FromJson(json);
+    }
+
+    bool CanConvert(const Json::Value& json)
+    {
+        return EnumMapper::CanConvert(json) || json.isBool();
+    }
+
+    using EnumMapper::TypeDescription;
 };

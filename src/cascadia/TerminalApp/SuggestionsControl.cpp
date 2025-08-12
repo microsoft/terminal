@@ -2,10 +2,10 @@
 // Licensed under the MIT license.
 
 #include "pch.h"
-#include "ActionPaletteItem.h"
-#include "CommandLinePaletteItem.h"
 #include "SuggestionsControl.h"
 #include <LibraryResources.h>
+
+#include "CommandPaletteItems.h"
 
 #include "SuggestionsControl.g.cpp"
 #include "../../types/inc/utils.hpp"
@@ -282,9 +282,11 @@ namespace winrt::TerminalApp::implementation
         if (filteredCommand != nullptr &&
             isVisible)
         {
-            if (const auto actionPaletteItem{ filteredCommand.Item().try_as<winrt::TerminalApp::ActionPaletteItem>() })
+            const auto item{ filteredCommand.Item() };
+            if (item.Type() == PaletteItemType::Action)
             {
-                const auto& cmd = actionPaletteItem.Command();
+                const auto actionPaletteItem{ winrt::get_self<ActionPaletteItem>(item) };
+                const auto& cmd = actionPaletteItem->Command();
                 PreviewAction.raise(*this, cmd);
 
                 const auto description{ cmd.Description() };
@@ -421,7 +423,7 @@ namespace winrt::TerminalApp::implementation
         }
         else if (key == VirtualKey::Escape)
         {
-            // Dismiss the palette if the text is empty, otherwise clear the
+            // Dismiss the palette if the text is empty; otherwise, clear the
             // search string.
             if (_searchBox().Text().empty())
             {
@@ -575,7 +577,7 @@ namespace winrt::TerminalApp::implementation
                 const auto selectedCommand = selectedList.GetAt(0);
                 if (const auto filteredCmd = selectedCommand.try_as<TerminalApp::FilteredCommand>())
                 {
-                    if (const auto paletteItem = filteredCmd.Item().try_as<TerminalApp::PaletteItem>())
+                    if (const auto paletteItem = filteredCmd.Item())
                     {
                         automationPeer.RaiseNotificationEvent(
                             Automation::Peers::AutomationNotificationKind::ItemAdded,
@@ -609,10 +611,14 @@ namespace winrt::TerminalApp::implementation
         if (_nestedActionStack.Size() > 0)
         {
             const auto newPreviousAction{ _nestedActionStack.GetAt(_nestedActionStack.Size() - 1) };
-            const auto actionPaletteItem{ newPreviousAction.Item().try_as<winrt::TerminalApp::ActionPaletteItem>() };
+            const auto item{ newPreviousAction.Item() };
+            if (item.Type() == PaletteItemType::Action)
+            {
+                const auto actionPaletteItem{ winrt::get_self<ActionPaletteItem>(item) };
 
-            ParentCommandName(actionPaletteItem.Command().Name());
-            _updateCurrentNestedCommands(actionPaletteItem.Command());
+                ParentCommandName(actionPaletteItem->Command().Name());
+                _updateCurrentNestedCommands(actionPaletteItem->Command());
+            }
         }
         else
         {
@@ -693,16 +699,19 @@ namespace winrt::TerminalApp::implementation
     {
         if (filteredCommand)
         {
-            if (const auto actionPaletteItem{ filteredCommand.Item().try_as<winrt::TerminalApp::ActionPaletteItem>() })
+            const auto item{ filteredCommand.Item() };
+            if (item.Type() == PaletteItemType::Action)
             {
-                if (actionPaletteItem.Command().HasNestedCommands())
+                const auto actionPaletteItem{ winrt::get_self<ActionPaletteItem>(item) };
+                const auto command{ actionPaletteItem->Command() };
+                if (command.HasNestedCommands())
                 {
                     // If this Command had subcommands, then don't dispatch the
                     // action. Instead, display a new list of commands for the user
                     // to pick from.
                     _nestedActionStack.Append(filteredCommand);
-                    ParentCommandName(actionPaletteItem.Command().Name());
-                    _updateCurrentNestedCommands(actionPaletteItem.Command());
+                    ParentCommandName(command.Name());
+                    _updateCurrentNestedCommands(command);
 
                     _updateUIForStackChange();
                 }
@@ -722,9 +731,9 @@ namespace winrt::TerminalApp::implementation
                     // "ToggleCommandPalette" actions. We may want to do the
                     // same with "Suggestions" actions in the future, should we
                     // ever allow non-sendInput actions.
-                    DispatchCommandRequested.raise(*this, actionPaletteItem.Command());
+                    DispatchCommandRequested.raise(*this, command);
 
-                    if (const auto& sendInputCmd = actionPaletteItem.Command().ActionAndArgs().Args().try_as<SendInputArgs>())
+                    if (const auto& sendInputCmd = command.ActionAndArgs().Args().try_as<SendInputArgs>())
                     {
                         if (til::starts_with(sendInputCmd.Input(), L"winget"))
                         {
@@ -936,12 +945,15 @@ namespace winrt::TerminalApp::implementation
         auto commandsToFilter = _commandsToFilter();
 
         {
+            auto pattern = std::make_shared<fzf::matcher::Pattern>(fzf::matcher::ParsePattern(searchText));
+
             for (const auto& action : commandsToFilter)
             {
                 // Update filter for all commands
                 // This will modify the highlighting but will also lead to re-computation of weight (and consequently sorting).
                 // Pay attention that it already updates the highlighting in the UI
-                action.UpdateFilter(searchText);
+                auto impl = winrt::get_self<implementation::FilteredCommand>(action);
+                impl->UpdateFilter(pattern);
 
                 // if there is active search we skip commands with 0 weight
                 if (searchText.empty() || action.Weight() > 0)

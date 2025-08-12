@@ -6,7 +6,7 @@
 #include "FilteredTask.g.h"
 #include "BasicPaneEvents.h"
 #include "FilteredCommand.h"
-#include "ActionPaletteItem.h"
+#include "CommandPaletteItems.h"
 #include <LibraryResources.h>
 
 namespace winrt::TerminalApp::implementation
@@ -62,7 +62,7 @@ namespace winrt::TerminalApp::implementation
 
         FilteredTask(const winrt::Microsoft::Terminal::Settings::Model::Command& command)
         {
-            _filteredCommand = winrt::make_self<implementation::FilteredCommand>(winrt::make<winrt::TerminalApp::implementation::ActionPaletteItem>(command, winrt::hstring{}));
+            _filteredCommand = winrt::make_self<implementation::FilteredCommand>(winrt::make<ActionPaletteItem>(command, winrt::hstring{}));
             _command = command;
 
             // The Children() method must always return a non-null vector
@@ -77,13 +77,14 @@ namespace winrt::TerminalApp::implementation
             }
         }
 
-        void UpdateFilter(const winrt::hstring& filter)
+        void UpdateFilter(std::shared_ptr<fzf::matcher::Pattern> pattern)
         {
-            _filteredCommand->UpdateFilter(filter);
+            _pattern = std::move(pattern);
+            _filteredCommand->UpdateFilter(_pattern);
             for (const auto& c : _children)
             {
                 auto impl = winrt::get_self<implementation::FilteredTask>(c);
-                impl->UpdateFilter(filter);
+                impl->UpdateFilter(_pattern);
             }
 
             PropertyChanged.raise(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"Visibility" });
@@ -91,14 +92,13 @@ namespace winrt::TerminalApp::implementation
 
         winrt::hstring Input()
         {
-            if (const auto& actionItem{ _filteredCommand->Item().try_as<winrt::TerminalApp::ActionPaletteItem>() })
+            // **SAFETY GUARANTEE** We constructed this filtered command ourselves; we know what's inside it.
+            const auto actionItem{ winrt::get_self<ActionPaletteItem>(_filteredCommand->Item()) };
+            if (const auto& command{ actionItem->Command() })
             {
-                if (const auto& command{ actionItem.Command() })
+                if (const auto& sendInput{ command.ActionAndArgs().Args().try_as<winrt::Microsoft::Terminal::Settings::Model::SendInputArgs>() })
                 {
-                    if (const auto& sendInput{ command.ActionAndArgs().Args().try_as<winrt::Microsoft::Terminal::Settings::Model::SendInputArgs>() })
-                    {
-                        return winrt::hstring{ til::visualize_nonspace_control_codes(std::wstring{ sendInput.Input() }) };
-                    }
+                    return winrt::hstring{ til::visualize_nonspace_control_codes(std::wstring{ sendInput.Input() }) };
                 }
             }
             return winrt::hstring{};
@@ -108,6 +108,7 @@ namespace winrt::TerminalApp::implementation
         bool HasChildren() { return _children.Size() > 0; }
         winrt::Microsoft::Terminal::Settings::Model::Command Command() { return _command; }
         winrt::TerminalApp::FilteredCommand FilteredCommand() { return *_filteredCommand; }
+        std::shared_ptr<fzf::matcher::Pattern> _pattern;
 
         int32_t Row() { return HasChildren() ? 2 : 1; } // See the BODGY comment in the .XAML for explanation
 
@@ -117,7 +118,7 @@ namespace winrt::TerminalApp::implementation
         winrt::Windows::UI::Xaml::Visibility Visibility()
         {
             // Is there no filter, or do we match it?
-            if (_filteredCommand->Filter().empty() || _filteredCommand->Weight() > 0)
+            if ((!_pattern || _pattern->terms.empty() || _filteredCommand->Weight() > 0))
             {
                 return winrt::Windows::UI::Xaml::Visibility::Visible;
             }

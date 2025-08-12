@@ -11,6 +11,7 @@
 #include "../WinRTUtils/inc/Utils.h"
 #include "../../renderer/base/FontCache.h"
 #include "SegoeFluentIconList.h"
+#include "../../types/inc/utils.hpp"
 
 using namespace winrt::Windows::UI::Text;
 using namespace winrt::Windows::UI::Xaml;
@@ -94,6 +95,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 // _DeduceCurrentIconType() ends with a "CurrentIconType" notification
                 //  so we don't need to call _UpdateIconPreview() here
                 _DeduceCurrentIconType();
+                // The icon changed; let's re-evaluate it with its new context.
+                _appSettings.ResolveMediaResources();
             }
             else if (viewModelProperty == L"CurrentIconType")
             {
@@ -105,15 +108,16 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                                L"UsingImageIcon",
                                L"LocalizedIcon",
                                L"IconPreview",
+                               L"IconPath",
                                L"EvaluatedIcon");
             }
             else if (viewModelProperty == L"CurrentBuiltInIcon")
             {
-                Icon(unbox_value<hstring>(_CurrentBuiltInIcon.as<Editor::EnumEntry>().EnumValue()));
+                IconPath(unbox_value<hstring>(_CurrentBuiltInIcon.as<Editor::EnumEntry>().EnumValue()));
             }
             else if (viewModelProperty == L"CurrentEmojiIcon")
             {
-                Icon(CurrentEmojiIcon());
+                IconPath(CurrentEmojiIcon());
             }
             else if (viewModelProperty == L"CurrentBellSounds")
             {
@@ -182,17 +186,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void ProfileViewModel::_DeduceCurrentIconType()
     {
-        const auto& profileIcon = _profile.Icon();
+        const auto profileIcon = IconPath();
         if (profileIcon == HideIconValue)
         {
             _currentIconType = _IconTypes.GetAt(0);
         }
-        else if (L"\uE700" <= profileIcon && profileIcon <= L"\uF8B3")
+        else if (profileIcon.size() == 1 && (L'\uE700' <= til::at(profileIcon, 0) && til::at(profileIcon, 0) <= L'\uF8B3'))
         {
             _currentIconType = _IconTypes.GetAt(1);
             _DeduceCurrentBuiltInIcon();
         }
-        else if (profileIcon.size() <= 2)
+        else if (::Microsoft::Console::Utils::IsLikelyToBeEmojiOrSymbolIcon(profileIcon))
         {
             // We already did a range check for MDL2 Assets in the previous one,
             // so if we're out of that range but still short, assume we're an emoji
@@ -211,7 +215,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             _UpdateBuiltInIcons();
         }
-        const auto& profileIcon = Icon();
+        const auto profileIcon = IconPath();
         for (uint32_t i = 0; i < _BuiltInIcons.Size(); i++)
         {
             const auto& builtIn = _BuiltInIcons.GetAt(i);
@@ -282,6 +286,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     }
     Model::TerminalSettings ProfileViewModel::TermSettings() const
     {
+        // This may look pricey, but it only resolves resources that have not been visited
+        // and the preview update is debounced.
+        _appSettings.ResolveMediaResources();
         return Model::TerminalSettings::CreateForPreview(_appSettings, _profile);
     }
 
@@ -539,7 +546,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             return RS_(L"Profile_IconTypeNone");
         }
-        return Icon();
+        return IconPath(); // For display as a string
     }
 
     Windows::UI::Xaml::Controls::IconElement ProfileViewModel::IconPreview() const
@@ -561,7 +568,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 // Stash the current value of Icon. If the user
                 // switches out of then back to IconType::Image, we want
                 // the path that we display in the text box to remain unchanged.
-                _lastIconPath = Icon();
+                _lastIconPath = IconPath();
             }
 
             // Set the member here instead of after setting Icon() below!
@@ -576,7 +583,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             {
             case IconType::None:
             {
-                _profile.Icon(HideIconValue);
+                IconPath(winrt::hstring{ HideIconValue });
                 break;
             }
             case IconType::Image:
@@ -585,7 +592,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 {
                     // Conversely, if we switch to Image,
                     // retrieve that saved value and apply it
-                    _profile.Icon(_lastIconPath);
+                    IconPath(_lastIconPath);
                 }
                 break;
             }
@@ -593,7 +600,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             {
                 if (_CurrentBuiltInIcon)
                 {
-                    _profile.Icon(unbox_value<hstring>(_CurrentBuiltInIcon.as<Editor::EnumEntry>().EnumValue()));
+                    IconPath(unbox_value<hstring>(_CurrentBuiltInIcon.as<Editor::EnumEntry>().EnumValue()));
                 }
                 break;
             }

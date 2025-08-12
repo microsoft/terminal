@@ -267,13 +267,9 @@
   <data name="DuplicateTabText" xml:space="preserve">
     <value>Duplicar guia</value>
   </data>
-  <data name="InvalidBackgroundImage" xml:space="preserve">
-    <value>Foi encontrado um perfil com um "backgroundImage" inválido. O perfil deve ser o padrão para que não haja nenhuma imagem de tela de fundo. Certifique-se de que, ao definir um "backgroundImage", o valor é um caminho de arquivo válido para uma imagem.</value>
-    <comment>{Locked="\"backgroundImage\""}</comment>
-  </data>
-  <data name="InvalidIcon" xml:space="preserve">
-    <value>Foi encontrado um perfil com um "icon" inválido. Padronize esse perfil para ele não ter ícone. Certifique-se de que, ao definir um "icon", o valor seja um caminho de arquivo válido para uma imagem.</value>
-    <comment>{Locked="\"icon\""} The word "icon" in quotes is locked, the word icon OUTSIDE of quotes should be localized.</comment>
+  <data name="InvalidMediaResource" xml:space="preserve">
+    <value>Um ou mais recursos (como icon ou backgroundImage) especificados em suas configurações não foram encontrados.</value>
+    <comment>{Locked="icon","backgroundImage"} Indicates that something has gone wrong while reading a user's settings.</comment>
   </data>
   <data name="AtLeastOneKeybindingWarning" xml:space="preserve">
     <value>Os avisos foram encontrados durante a análise das suas ligações de teclas:</value>

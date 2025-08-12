@@ -53,6 +53,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         ActionArgFactory() = default;
 
         static winrt::hstring GetNameForAction(ShortcutAction action);
+        static winrt::hstring GetNameForAction(ShortcutAction action, Windows::ApplicationModel::Resources::Core::ResourceContext context);
         static Windows::Foundation::Collections::IMap<Model::ShortcutAction, winrt::hstring> AvailableShortcutActionsAndNames();
         static Model::IActionArgs GetEmptyArgsForAction(Model::ShortcutAction shortcutAction);
     };
@@ -100,6 +101,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                             const Windows::Foundation::Collections::IMapView<winrt::hstring, Model::ColorScheme>& schemes);
 
         winrt::Windows::Foundation::IAsyncOperation<winrt::Windows::Foundation::Collections::IVector<Model::Command>> FilterToSnippets(winrt::hstring currentCommandline, winrt::hstring currentWorkingDirectory);
+
+        void ResolveMediaResourcesWithBasePath(const winrt::hstring& basePath, const Model::MediaResourceResolver& resolver);
 
         til::typed_event<Model::Command, winrt::hstring> PropagateCommandIDChanged;
 

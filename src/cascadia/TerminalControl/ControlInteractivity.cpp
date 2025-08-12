@@ -199,7 +199,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     //             if we should defer which formats are copied to the global setting
     bool ControlInteractivity::CopySelectionToClipboard(bool singleLine,
                                                         bool withControlSequences,
-                                                        const Windows::Foundation::IReference<CopyFormat>& formats)
+                                                        const CopyFormat formats)
     {
         if (_core)
         {
@@ -316,7 +316,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             else
             {
                 // Try to copy the text and clear the selection
-                const auto successfulCopy = CopySelectionToClipboard(shiftEnabled, false, nullptr);
+                const auto successfulCopy = CopySelectionToClipboard(shiftEnabled, false, _core->Settings().CopyFormatting());
                 _core->ClearSelection();
                 if (_core->CopyOnSelect() || !successfulCopy)
                 {
@@ -461,7 +461,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // IMPORTANT!
             // DO NOT clear the selection here!
             // Otherwise, the selection will be cleared immediately after you make it.
-            CopySelectionToClipboard(false, false, nullptr);
+            CopySelectionToClipboard(false, false, _core->Settings().CopyFormatting());
         }
 
         _singleClickTouchdownPos = std::nullopt;
@@ -515,11 +515,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const auto ctrlPressed = modifiers.IsCtrlPressed();
         const auto shiftPressed = modifiers.IsShiftPressed();
 
-        if (ctrlPressed && shiftPressed)
+        if (ctrlPressed && shiftPressed && _core->Settings().ScrollToChangeOpacity())
         {
             _mouseTransparencyHandler(delta);
         }
-        else if (ctrlPressed)
+        else if (ctrlPressed && !shiftPressed && _core->Settings().ScrollToZoom())
         {
             _mouseZoomHandler(delta);
         }

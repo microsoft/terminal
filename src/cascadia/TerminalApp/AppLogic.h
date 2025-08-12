@@ -64,7 +64,7 @@ namespace winrt::TerminalApp::implementation
         bool _hasSettingsStartupActions{ false };
         ::TerminalApp::AppCommandlineArgs _settingsAppArgs;
 
-        std::shared_ptr<ThrottledFuncTrailing<>> _reloadSettings;
+        std::shared_ptr<ThrottledFunc<>> _reloadSettings;
 
         std::vector<Microsoft::Terminal::Settings::Model::SettingsLoadWarnings> _warnings{};
 

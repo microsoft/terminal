@@ -46,3 +46,14 @@ bool ScopedResourceLoader::HasResourceWithName(const std::wstring_view resourceN
 {
     return _resourceMap.HasKey(resourceName);
 }
+
+ScopedResourceLoader::ScopedResourceLoader(winrt::Windows::ApplicationModel::Resources::Core::ResourceMap map, winrt::Windows::ApplicationModel::Resources::Core::ResourceContext context) noexcept :
+    _resourceMap{ std::move(map) }, _resourceContext{ std::move(context) } {}
+
+ScopedResourceLoader ScopedResourceLoader::WithQualifier(const wil::zwstring_view qualifierName, const wil::zwstring_view qualifierValue) const
+{
+    auto newContext = _resourceContext.Clone();
+    auto qualifierValues = newContext.QualifierValues();
+    qualifierValues.Insert(qualifierName, qualifierValue); // mutable!
+    return ScopedResourceLoader{ _resourceMap, std::move(newContext) };
+}

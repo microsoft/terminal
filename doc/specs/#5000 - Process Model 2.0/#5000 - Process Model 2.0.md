@@ -362,7 +362,7 @@ Essentially, the probabilistic elective monarchy will work in the following way:
     register.
 3. After registering as a server for `Monarch`s, attempt to create a `Monarch`
    using `winrt::create_instance`.
-4. Using that `Monarch`, ask it for it's PID.
+4. Using that `Monarch`, ask it for its PID.
    - If that PID is the same as the PID of the current process, then the window
      process knows that it is the monarch.
    - If that PID is some other process, then we know that we're not currently
@@ -1102,7 +1102,7 @@ launch to use seems like an obvious next step. See also [#961].
     - `true` or `"always"`: always glom to the most recent window, regardless of
       desktop
     - `"sameDesktop"`: Only glom if there's an existing window on this virtual
-      desktop, otherwise create a new window
+      desktop; otherwise, create a new window
     - `false` or `"never"`: Never glom, always create a new window.
 
 
