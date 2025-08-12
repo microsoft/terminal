@@ -4987,6 +4987,18 @@ namespace winrt::TerminalApp::implementation
             }
         };
 
+        auto&& appendFromTab = [](auto&& tabImpl) {
+            if (const auto pane{ tabImpl->GetRootPane() })
+            {
+                pane->WalkTree([&](auto&& child) {
+                    if (const auto& control{ child->GetTerminalControl() })
+                    {
+                        appendFromControl(control);
+                    }
+                });
+            }
+        };
+
         if (!_activated)
         {
             // When a window is out of focus, we want to attach all of the processes
@@ -4995,23 +5007,18 @@ namespace winrt::TerminalApp::implementation
             {
                 if (auto tabImpl{ _GetTabImpl(tab) })
                 {
-                    if (const auto pane{ tabImpl->GetRootPane() })
-                    {
-                        pane->WalkTree([&](auto&& child) {
-                            if (const auto& control{ child->GetTerminalControl() })
-                            {
-                                appendFromControl(control);
-                            }
-                        });
-                    }
+                    appendFromTab(tabImpl);
                 }
             }
         }
         else
         {
             // When a window is in focus, propagate our foreground boost (if we have one)
-            // to current active pane (or panes, in case multiple are selected.)
-            _ApplyToActiveControls(appendFromControl);
+            // to current all panes in the current tab.
+            if (auto tabImpl{ _GetFocusedTabImpl() })
+            {
+                appendFromTab(tabImpl);
+            }
         }
 
         const auto count{ gsl::narrow_cast<DWORD>(it - processes.begin()) };
