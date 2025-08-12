@@ -14,7 +14,8 @@
       mc:Ignorable="d">
 
     <Grid x:Name="Root"
-          Background="Transparent">
+          Background="Transparent"
+          PreviewKeyDown="_PreviewKeyDown">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
@@ -170,7 +171,6 @@
         <ContentPresenter x:Name="ExtensionPresenter"
                           Grid.Row="2"
                           VerticalAlignment="Stretch"
-                          PreviewKeyDown="_KeyDownHandler"
                           Visibility="Collapsed" />
 
         <local:SuggestionsControl x:Name="SuggestionsElement"

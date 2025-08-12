@@ -326,6 +326,7 @@ namespace winrt::TerminalApp::implementation
         void _AboutButtonOnClick(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
 
         void _KeyDownHandler(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::Input::KeyRoutedEventArgs& e);
+        void _PreviewKeyDown(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::Input::KeyRoutedEventArgs& e);
         static ::Microsoft::Terminal::Core::ControlKeyStates _GetPressedModifierKeys() noexcept;
         static void _ClearKeyboardState(const WORD vkey, const WORD scanCode) noexcept;
         void _HookupKeyBindings(const Microsoft::Terminal::Settings::Model::IActionMapView& actionMap) noexcept;
@@ -383,6 +384,7 @@ namespace winrt::TerminalApp::implementation
         }
 
         winrt::Microsoft::Terminal::Control::TermControl _GetActiveControl();
+        winrt::Microsoft::Terminal::Control::TermControl _GetFocusedElementIfControl();
         std::optional<uint32_t> _GetFocusedTabIndex() const noexcept;
         std::optional<uint32_t> _GetTabIndex(const TerminalApp::TabBase& tab) const noexcept;
         TerminalApp::TabBase _GetFocusedTab() const noexcept;
@@ -396,7 +398,7 @@ namespace winrt::TerminalApp::implementation
         winrt::Windows::Foundation::IAsyncOperation<bool> _PaneConfirmCloseReadOnly(std::shared_ptr<Pane> pane);
         void _AddPreviouslyClosedPaneOrTab(std::vector<Microsoft::Terminal::Settings::Model::ActionAndArgs>&& args);
 
-        void _Scroll(ScrollDirection scrollDirection, const Windows::Foundation::IReference<uint32_t>& rowsToScroll);
+        void _Scroll(ScrollDirection scrollDirection, const Windows::Foundation::IReference<uint32_t>& rowsToScroll, winrt::Microsoft::Terminal::Control::TermControl focusedControl);
 
         void _SplitPane(const winrt::com_ptr<TerminalTab>& tab,
                         const Microsoft::Terminal::Settings::Model::SplitDirection splitType,
@@ -405,8 +407,8 @@ namespace winrt::TerminalApp::implementation
         void _ResizePane(const Microsoft::Terminal::Settings::Model::ResizeDirection& direction);
         void _ToggleSplitOrientation();
 
-        void _ScrollPage(ScrollDirection scrollDirection);
-        void _ScrollToBufferEdge(ScrollDirection scrollDirection);
+        void _ScrollPage(ScrollDirection scrollDirection, winrt::Microsoft::Terminal::Control::TermControl focusedControl);
+        void _ScrollToBufferEdge(ScrollDirection scrollDirection, winrt::Microsoft::Terminal::Control::TermControl focusedControl);
         void _SetAcceleratorForMenuItem(Windows::UI::Xaml::Controls::MenuFlyoutItem& menuItem, const winrt::Microsoft::Terminal::Control::KeyChord& keyChord);
 
         safe_void_coroutine _PasteFromClipboardHandler(const IInspectable sender,
@@ -553,6 +555,7 @@ namespace winrt::TerminalApp::implementation
         winrt::Windows::UI::Xaml::Controls::MenuFlyout _CreateRunAsAdminFlyout(int profileIndex);
 
         winrt::Microsoft::Terminal::Control::TermControl _senderOrActiveControl(const winrt::Windows::Foundation::IInspectable& sender);
+        winrt::Microsoft::Terminal::Control::TermControl _senderOrFocusedElementIfControl(const winrt::Windows::Foundation::IInspectable& sender);
         winrt::com_ptr<TerminalTab> _senderOrFocusedTab(const IInspectable& sender);
 
         void _loadQueryExtension();

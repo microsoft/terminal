@@ -1722,6 +1722,72 @@ namespace winrt::TerminalApp::implementation
         e.Handled(true);
     }
 
+    void TerminalPage::_PreviewKeyDown(const Windows::Foundation::IInspectable& /*sender*/, const Windows::UI::Xaml::Input::KeyRoutedEventArgs& e)
+    {
+        const auto keyStatus = e.KeyStatus();
+        const auto vkey = gsl::narrow_cast<WORD>(e.OriginalKey());
+        const auto scanCode = gsl::narrow_cast<WORD>(keyStatus.ScanCode);
+        const auto modifiers = _GetPressedModifierKeys();
+
+        // GH#11076:
+        // For some weird reason we sometimes receive a WM_KEYDOWN
+        // message without vkey or scanCode if a user drags a tab.
+        // The KeyChord constructor has a debug assertion ensuring that all KeyChord
+        // either have a valid vkey/scanCode. This is important, because this prevents
+        // accidental insertion of invalid KeyChords into classes like ActionMap.
+        if (!vkey && !scanCode)
+        {
+            return;
+        }
+
+        // Alt-Numpad# input will send us a character once the user releases
+        // Alt, so we should be ignoring the individual keydowns. The character
+        // will be sent through the TSFInputControl. See GH#1401 for more
+        // details
+        if (modifiers.IsAltPressed() && (vkey >= VK_NUMPAD0 && vkey <= VK_NUMPAD9))
+        {
+            return;
+        }
+
+        // GH#2235: Terminal::Settings hasn't been modified to differentiate
+        // between AltGr and Ctrl+Alt yet.
+        // -> Don't check for key bindings if this is an AltGr key combination.
+        if (modifiers.IsAltGrPressed())
+        {
+            return;
+        }
+
+        const auto actionMap = _settings.ActionMap();
+        if (!actionMap)
+        {
+            return;
+        }
+
+        const auto cmd = actionMap.GetActionByKeyChord({
+            modifiers.IsCtrlPressed(),
+            modifiers.IsAltPressed(),
+            modifiers.IsShiftPressed(),
+            modifiers.IsWinPressed(),
+            vkey,
+            scanCode,
+        });
+        if (!cmd)
+        {
+            return;
+        }
+
+        if (!_actionDispatch->DoAction(cmd.ActionAndArgs()))
+        {
+            return;
+        }
+
+        // Let's assume the user has bound the dead key "^" to a sendInput command that sends "b".
+        // If the user presses the two keys "^a" it'll produce "bâ", despite us marking the key event as handled.
+        // The following is used to manually "consume" such dead keys and clear them from the keyboard state.
+        _ClearKeyboardState(vkey, scanCode);
+        e.Handled(true);
+    }
+
     bool TerminalPage::OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, const bool down)
     {
         const auto modifiers = _GetPressedModifierKeys();
@@ -2053,6 +2119,16 @@ namespace winrt::TerminalApp::implementation
         return nullptr;
     }
 
+    TermControl TerminalPage::_GetFocusedElementIfControl()
+    {
+        const auto focusedElement = Windows::UI::Xaml::Input::FocusManager::GetFocusedElement(this->XamlRoot());
+        if (const auto termControl = focusedElement.try_as<TermControl>())
+        {
+            return termControl;
+        }
+        return nullptr;
+    }
+
     CommandPalette TerminalPage::LoadCommandPalette()
     {
         if (const auto p = CommandPaletteElement())
@@ -2248,16 +2324,16 @@ namespace winrt::TerminalApp::implementation
     // Arguments:
     // - scrollDirection: ScrollUp will move the viewport up, ScrollDown will move the viewport down
     // - rowsToScroll: a number of lines to move the viewport. If not provided we will use a system default.
-    void TerminalPage::_Scroll(ScrollDirection scrollDirection, const Windows::Foundation::IReference<uint32_t>& rowsToScroll)
+    void TerminalPage::_Scroll(ScrollDirection scrollDirection, const Windows::Foundation::IReference<uint32_t>& rowsToScroll, winrt::Microsoft::Terminal::Control::TermControl focusedControl)
     {
-        if (const auto terminalTab{ _GetFocusedTabImpl() })
+        if (focusedControl)
         {
             uint32_t realRowsToScroll;
             if (rowsToScroll == nullptr)
             {
                 // The magic value of WHEEL_PAGESCROLL indicates that we need to scroll the entire page
                 realRowsToScroll = _systemRowsToScroll == WHEEL_PAGESCROLL ?
-                                       terminalTab->GetActiveTerminalControl().ViewHeight() :
+                                       focusedControl.ViewHeight() :
                                        _systemRowsToScroll;
             }
             else
@@ -2266,7 +2342,8 @@ namespace winrt::TerminalApp::implementation
                 realRowsToScroll = rowsToScroll.Value();
             }
             auto scrollDelta = _ComputeScrollDelta(scrollDirection, realRowsToScroll);
-            terminalTab->Scroll(scrollDelta);
+            const auto currentOffset = focusedControl.ScrollOffset();
+            focusedControl.ScrollViewport(::base::ClampAdd(currentOffset, scrollDelta));
         }
     }
 
@@ -2692,26 +2769,25 @@ namespace winrt::TerminalApp::implementation
     //      down a page. The page length will be dependent on the terminal view height.
     // Arguments:
     // - scrollDirection: ScrollUp will move the viewport up, ScrollDown will move the viewport down
-    void TerminalPage::_ScrollPage(ScrollDirection scrollDirection)
+    void TerminalPage::_ScrollPage(ScrollDirection scrollDirection, winrt::Microsoft::Terminal::Control::TermControl focusedControl)
     {
         // Do nothing if for some reason, there's no terminal tab in focus. We don't want to crash.
-        if (const auto terminalTab{ _GetFocusedTabImpl() })
+        if (focusedControl)
         {
-            if (const auto& control{ _GetActiveControl() })
-            {
-                const auto termHeight = control.ViewHeight();
-                auto scrollDelta = _ComputeScrollDelta(scrollDirection, termHeight);
-                terminalTab->Scroll(scrollDelta);
-            }
+            const auto termHeight = focusedControl.ViewHeight();
+            auto scrollDelta = _ComputeScrollDelta(scrollDirection, termHeight);
+            const auto currentOffset = focusedControl.ScrollOffset();
+            focusedControl.ScrollViewport(::base::ClampAdd(currentOffset, scrollDelta));
         }
     }
 
-    void TerminalPage::_ScrollToBufferEdge(ScrollDirection scrollDirection)
+    void TerminalPage::_ScrollToBufferEdge(ScrollDirection scrollDirection, winrt::Microsoft::Terminal::Control::TermControl focusedControl)
     {
-        if (const auto terminalTab{ _GetFocusedTabImpl() })
+        if (focusedControl)
         {
             auto scrollDelta = _ComputeScrollDelta(scrollDirection, INT_MAX);
-            terminalTab->Scroll(scrollDelta);
+            const auto currentOffset = focusedControl.ScrollOffset();
+            focusedControl.ScrollViewport(::base::ClampAdd(currentOffset, scrollDelta));
         }
     }
 

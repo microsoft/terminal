@@ -1798,22 +1798,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _altNumpadState = {};
         }
 
-        // GH#2235: Terminal::Settings hasn't been modified to differentiate
-        // between AltGr and Ctrl+Alt yet.
-        // -> Don't check for key bindings if this is an AltGr key combination.
-        //
-        // GH#4999: Only process keybindings on the keydown. If we don't check
-        // this at all, we'll process the keybinding twice. If we only process
-        // keybindings on the keyUp, then we'll still send the keydown to the
-        // connected terminal application, and something like ctrl+shift+T will
-        // emit a ^T to the pipe.
-        if (!modifiers.IsAltGrPressed() &&
-            keyDown &&
-            _TryHandleKeyBinding(vkey, scanCode, modifiers))
-        {
-            return true;
-        }
-
         if (_TrySendKeyEvent(vkey, scanCode, modifiers, keyDown))
         {
             return true;

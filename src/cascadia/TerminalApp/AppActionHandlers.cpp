@@ -42,6 +42,17 @@ namespace winrt::TerminalApp::implementation
         }
         return _GetActiveControl();
     }
+    TermControl TerminalPage::_senderOrFocusedElementIfControl(const IInspectable& sender)
+    {
+        if (sender)
+        {
+            if (auto arg{ sender.try_as<TermControl>() })
+            {
+                return arg;
+            }
+        }
+        return _GetFocusedElementIfControl();
+    }
     winrt::com_ptr<TerminalTab> TerminalPage::_senderOrFocusedTab(const IInspectable& sender)
     {
         if (sender)
@@ -134,10 +145,13 @@ namespace winrt::TerminalApp::implementation
                                        const ActionEventArgs& args)
     {
         const auto& realArgs = args.ActionArgs().try_as<ScrollUpArgs>();
-        if (realArgs)
+        if (const auto termControl = _GetFocusedElementIfControl())
         {
-            _Scroll(ScrollUp, realArgs.RowsToScroll());
-            args.Handled(true);
+            if (realArgs)
+            {
+                _Scroll(ScrollUp, realArgs.RowsToScroll(), termControl);
+                args.Handled(true);
+            }
         }
     }
 
@@ -145,10 +159,13 @@ namespace winrt::TerminalApp::implementation
                                          const ActionEventArgs& args)
     {
         const auto& realArgs = args.ActionArgs().try_as<ScrollDownArgs>();
-        if (realArgs)
+        if (const auto termControl = _GetFocusedElementIfControl())
         {
-            _Scroll(ScrollDown, realArgs.RowsToScroll());
-            args.Handled(true);
+            if (realArgs)
+            {
+                _Scroll(ScrollDown, realArgs.RowsToScroll(), termControl);
+                args.Handled(true);
+            }
         }
     }
 
@@ -174,7 +191,7 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    void TerminalPage::_HandleSendInput(const IInspectable& sender,
+    void TerminalPage::_HandleSendInput(const IInspectable& /*sender*/,
                                         const ActionEventArgs& args)
     {
         if (args == nullptr)
@@ -183,7 +200,7 @@ namespace winrt::TerminalApp::implementation
         }
         else if (const auto& realArgs = args.ActionArgs().try_as<SendInputArgs>())
         {
-            if (const auto termControl{ _senderOrActiveControl(sender) })
+            if (const auto termControl = _GetFocusedElementIfControl())
             {
                 termControl.SendInput(realArgs.Input());
                 args.Handled(true);
@@ -353,29 +370,41 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandleScrollUpPage(const IInspectable& /*sender*/,
                                            const ActionEventArgs& args)
     {
-        _ScrollPage(ScrollUp);
-        args.Handled(true);
+        if (const auto termControl = _GetFocusedElementIfControl())
+        {
+            _ScrollPage(ScrollUp, termControl);
+            args.Handled(true);
+        }
     }
 
     void TerminalPage::_HandleScrollDownPage(const IInspectable& /*sender*/,
                                              const ActionEventArgs& args)
     {
-        _ScrollPage(ScrollDown);
-        args.Handled(true);
+        if (const auto termControl = _GetFocusedElementIfControl())
+        {
+            _ScrollPage(ScrollDown, termControl);
+            args.Handled(true);
+        }
     }
 
     void TerminalPage::_HandleScrollToTop(const IInspectable& /*sender*/,
                                           const ActionEventArgs& args)
     {
-        _ScrollToBufferEdge(ScrollUp);
-        args.Handled(true);
+        if (const auto termControl = _GetFocusedElementIfControl())
+        {
+            _ScrollToBufferEdge(ScrollUp, termControl);
+            args.Handled(true);
+        }
     }
 
     void TerminalPage::_HandleScrollToBottom(const IInspectable& /*sender*/,
                                              const ActionEventArgs& args)
     {
-        _ScrollToBufferEdge(ScrollDown);
-        args.Handled(true);
+        if (const auto termControl = _GetFocusedElementIfControl())
+        {
+            _ScrollToBufferEdge(ScrollDown, termControl);
+            args.Handled(true);
+        }
     }
 
     void TerminalPage::_HandleScrollToMark(const IInspectable& /*sender*/,
@@ -430,11 +459,11 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandleFindMatch(const IInspectable& /*sender*/,
                                         const ActionEventArgs& args)
     {
-        if (const auto& realArgs = args.ActionArgs().try_as<FindMatchArgs>())
+        if (const auto termControl = _GetFocusedElementIfControl())
         {
-            if (const auto& control{ _GetActiveControl() })
+            if (const auto& realArgs = args.ActionArgs().try_as<FindMatchArgs>())
             {
-                control.SearchMatch(realArgs.Direction() == FindMatchDirection::Next);
+                termControl.SearchMatch(realArgs.Direction() == FindMatchDirection::Next);
                 args.Handled(true);
             }
         }
@@ -452,8 +481,11 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandlePasteText(const IInspectable& /*sender*/,
                                         const ActionEventArgs& args)
     {
-        _PasteText();
-        args.Handled(true);
+        if (_GetFocusedElementIfControl())
+        {
+            _PasteText();
+            args.Handled(true);
+        }
     }
 
     void TerminalPage::_HandleNewTab(const IInspectable& /*sender*/,
@@ -547,10 +579,13 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandleCopyText(const IInspectable& /*sender*/,
                                        const ActionEventArgs& args)
     {
-        if (const auto& realArgs = args.ActionArgs().try_as<CopyTextArgs>())
+        if (const auto termControl = _GetFocusedElementIfControl())
         {
-            const auto handled = _CopyText(realArgs.DismissSelection(), realArgs.SingleLine(), realArgs.WithControlSequences(), realArgs.CopyFormatting());
-            args.Handled(handled);
+            if (const auto& realArgs = args.ActionArgs().try_as<CopyTextArgs>())
+            {
+                const auto handled = termControl.CopySelectionToClipboard(realArgs.DismissSelection(), realArgs.SingleLine(), realArgs.WithControlSequences(), realArgs.CopyFormatting());
+                args.Handled(handled);
+            }
         }
     }
 
@@ -1112,7 +1147,7 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandleSearchForText(const IInspectable& /*sender*/,
                                             const ActionEventArgs& args)
     {
-        if (const auto termControl{ _GetActiveControl() })
+        if (const auto termControl = _GetFocusedElementIfControl())
         {
             if (termControl.HasSelection())
             {
@@ -1152,7 +1187,7 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandleOpenCWD(const IInspectable& /*sender*/,
                                       const ActionEventArgs& args)
     {
-        if (const auto& control{ _GetActiveControl() })
+        if (const auto control = _GetFocusedElementIfControl())
         {
             control.OpenCWD();
             args.Handled(true);
@@ -1286,7 +1321,7 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandleSelectAll(const IInspectable& sender,
                                         const ActionEventArgs& args)
     {
-        if (const auto& control{ _senderOrActiveControl(sender) })
+        if (const auto control = _senderOrFocusedElementIfControl(sender))
         {
             control.SelectAll();
             args.Handled(true);
@@ -1308,7 +1343,7 @@ namespace winrt::TerminalApp::implementation
                 auto commandLine = realArgs.Commandline();
                 if (commandLine.empty())
                 {
-                    if (const auto termControl{ _GetActiveControl() })
+                    if (const auto termControl = _GetFocusedElementIfControl())
                     {
                         if (termControl.HasSelection())
                         {
@@ -1432,7 +1467,7 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandleMarkMode(const IInspectable& sender,
                                        const ActionEventArgs& args)
     {
-        if (const auto& control{ _senderOrActiveControl(sender) })
+        if (const auto control = _senderOrFocusedElementIfControl(sender))
         {
             control.ToggleMarkMode();
             args.Handled(true);
@@ -1442,7 +1477,7 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandleToggleBlockSelection(const IInspectable& sender,
                                                    const ActionEventArgs& args)
     {
-        if (const auto& control{ _senderOrActiveControl(sender) })
+        if (const auto control = _senderOrFocusedElementIfControl(sender))
         {
             const auto handled = control.ToggleBlockSelection();
             args.Handled(handled);
@@ -1452,7 +1487,7 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandleSwitchSelectionEndpoint(const IInspectable& sender,
                                                       const ActionEventArgs& args)
     {
-        if (const auto& control{ _senderOrActiveControl(sender) })
+        if (const auto control = _senderOrFocusedElementIfControl(sender))
         {
             const auto handled = control.SwitchSelectionEndpoint();
             args.Handled(handled);
@@ -1486,7 +1521,7 @@ namespace winrt::TerminalApp::implementation
         // then get that here.
         const bool shouldGetContext = realArgs.UseCommandline() ||
                                       WI_IsAnyFlagSet(source, SuggestionsSource::CommandHistory | SuggestionsSource::QuickFixes);
-        if (const auto& control{ _GetActiveControl() })
+        if (const auto control = _GetFocusedElementIfControl())
         {
             currentWorkingDirectory = control.CurrentWorkingDirectory();
 
@@ -1543,7 +1578,7 @@ namespace winrt::TerminalApp::implementation
         co_await wil::resume_foreground(Dispatcher());
 
         // Open the palette with all these commands in it.
-        _OpenSuggestions(_GetActiveControl(),
+        _OpenSuggestions(_GetFocusedElementIfControl(),
                          winrt::single_threaded_vector<Command>(std::move(commandsCollection)),
                          SuggestionsMode::Palette,
                          currentCommandline);
@@ -1567,7 +1602,7 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandleExpandSelectionToWord(const IInspectable& /*sender*/,
                                                     const ActionEventArgs& args)
     {
-        if (const auto& control{ _GetActiveControl() })
+        if (const auto control = _GetFocusedElementIfControl())
         {
             const auto handled = control.ExpandSelectionToWord();
             args.Handled(handled);
@@ -1601,7 +1636,7 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandleShowContextMenu(const IInspectable& /*sender*/,
                                               const ActionEventArgs& args)
     {
-        if (const auto& control{ _GetActiveControl() })
+        if (const auto control = _GetFocusedElementIfControl())
         {
             control.ShowContextMenu();
         }
