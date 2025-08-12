@@ -218,6 +218,17 @@ namespace winrt::TerminalApp::implementation
                 // before restoring previous tabs in that scenario.
             }
         }
+
+        _adjustProcessPriorityThrottled = std::make_shared<ThrottledFunc<>>(
+            DispatcherQueue::GetForCurrentThread(),
+            til::throttled_func_options{
+                .delay = std::chrono::milliseconds{ 100 },
+                .debounce = true,
+                .trailing = true,
+            },
+            [=]() {
+                _adjustProcessPriority();
+            });
         _hostingHwnd = hwnd;
         return S_OK;
     }
@@ -2539,7 +2550,7 @@ namespace winrt::TerminalApp::implementation
             _UpdateBackground(profile);
         }
 
-        _adjustProcessPriorityGivenFocusState(_activated);
+        _adjustProcessPriorityThrottled->Run();
     }
 
     uint32_t TerminalPage::NumberOfTabs() const
@@ -4674,7 +4685,7 @@ namespace winrt::TerminalApp::implementation
             const auto newConnectionState = coreState.ConnectionState();
             co_await wil::resume_foreground(Dispatcher());
 
-            _adjustProcessPriorityGivenFocusState(_activated);
+            _adjustProcessPriorityThrottled->Run();
 
             if (newConnectionState == ConnectionState::Failed && !_IsMessageDismissed(InfoBarMessage::CloseOnExitInfo))
             {
@@ -4942,8 +4953,9 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    void TerminalPage::_adjustProcessPriorityGivenFocusState(const bool focused) const
+    void TerminalPage::_adjustProcessPriority() const
     {
+        // Windowing is single-threaded, so this will not cause a race condition.
         static bool supported{ true };
 
         if (!supported || !_hostingHwnd.has_value())
@@ -4975,7 +4987,7 @@ namespace winrt::TerminalApp::implementation
             }
         };
 
-        if (!focused)
+        if (!_activated)
         {
             // When a window is out of focus, we want to attach all of the processes
             // under it to the window so they all go into the background at the same time.
@@ -4998,8 +5010,8 @@ namespace winrt::TerminalApp::implementation
         else
         {
             // When a window is in focus, propagate our foreground boost (if we have one)
-            // to current active pane.
-            appendFromControl(_GetActiveControl());
+            // to current active pane (or panes, in case multiple are selected.)
+            _ApplyToActiveControls(appendFromControl);
         }
 
         const auto count{ gsl::narrow_cast<DWORD>(it - processes.begin()) };
@@ -5029,7 +5041,7 @@ namespace winrt::TerminalApp::implementation
         _activated = activated;
         _updateThemeColors();
 
-        _adjustProcessPriorityGivenFocusState(activated);
+        _adjustProcessPriorityThrottled->Run();
 
         if (const auto& tab{ _GetFocusedTabImpl() })
         {

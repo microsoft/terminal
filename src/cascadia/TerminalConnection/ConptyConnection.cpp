@@ -345,7 +345,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         if (!ownedClient)
         {
             // If we couldn't reopen the handle with SET_INFORMATION, which may be required to do things like QoS management, fall back.
-            THROW_IF_WIN32_BOOL_FALSE(DuplicateHandle(GetCurrentProcess(), client, GetCurrentProcess(), ownedClient.addressof(), 0, FALSE, DUPLICATE_SAME_ACCESS));
+            ownedClient = duplicateHandle(client);
         }
 
         THROW_IF_FAILED(ConptyPackPseudoConsole(ownedServer.get(), ownedReference.get(), ownedSignal.get(), &_hPC));

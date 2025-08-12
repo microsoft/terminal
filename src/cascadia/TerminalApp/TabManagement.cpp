@@ -1010,7 +1010,7 @@ namespace winrt::TerminalApp::implementation
                 _UpdateBackground(profile);
             }
 
-            _adjustProcessPriorityGivenFocusState(_activated);
+            _adjustProcessPriorityThrottled->Run();
         }
         CATCH_LOG();
     }
