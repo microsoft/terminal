@@ -1924,10 +1924,26 @@
     <value>禁用“触摸键盘和手写面板服务”时发出警告</value>
   </data>
   <data name="Globals_WarnAboutLargePaste.Header" xml:space="preserve">
-    <value>尝试粘贴超过 5 KiB 字符时发出警告</value>
+    <value>粘贴超过 5 KiB 时发出警告</value>
   </data>
   <data name="Globals_WarnAboutMultiLinePaste.Header" xml:space="preserve">
-    <value>尝试粘贴“新行”字符时发出警告</value>
+    <value>粘贴新行时发出警告</value>
+  </data>
+  <data name="Globals_WarnAboutMultiLinePaste.HelpText" xml:space="preserve">
+    <value>如果 shell 不支持“括号粘贴”模式，出于安全原因，建议将其设置为“始终”。</value>
+    <comment>"bracketed paste" is a technical term referring to escape sequences. "Always" is a setting, as in "Always VS Never".</comment>
+  </data>
+  <data name="Globals_WarnAboutMultiLinePasteAutomatic.Content" xml:space="preserve">
+    <value>仅当禁用“括号粘贴”时</value>
+    <comment>"bracketed paste" is a technical term referring to terminal escape sequences.</comment>
+  </data>
+  <data name="Globals_WarnAboutMultiLinePasteAlways.Content" xml:space="preserve">
+    <value>始终</value>
+    <comment>As in: Always VS Never</comment>
+  </data>
+  <data name="Globals_WarnAboutMultiLinePasteNever.Content" xml:space="preserve">
+    <value>从不</value>
+    <comment>As in: Always VS Never</comment>
   </data>
   <data name="Settings_PortableModeNote.Text" xml:space="preserve">
     <value>Windows 终端正在便携模式下运行。</value>

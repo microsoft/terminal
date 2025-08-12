@@ -1924,10 +1924,26 @@
     <value>Avvisa quando il servizio "Tastiera virtuale e pannello per la grafia" è disabilitato</value>
   </data>
   <data name="Globals_WarnAboutLargePaste.Header" xml:space="preserve">
-    <value>Avvisa quando si tenta di incollare più di 5 KiB di caratteri</value>
+    <value>Avvisa quando si incolla più di 5 KiB</value>
   </data>
   <data name="Globals_WarnAboutMultiLinePaste.Header" xml:space="preserve">
-    <value>Avvisa quando si prova a incollare un carattere "nuova riga"</value>
+    <value>Avvisa quando si incollano le nuove righe</value>
+  </data>
+  <data name="Globals_WarnAboutMultiLinePaste.HelpText" xml:space="preserve">
+    <value>Se la shell non supporta la modalità "incolla tra parentesi quadre", è consigliabile impostarla su "Sempre" per motivi di sicurezza.</value>
+    <comment>"bracketed paste" is a technical term referring to escape sequences. "Always" is a setting, as in "Always VS Never".</comment>
+  </data>
+  <data name="Globals_WarnAboutMultiLinePasteAutomatic.Content" xml:space="preserve">
+    <value>Solo se "incolla tra parentesi quadre" è disabilitato</value>
+    <comment>"bracketed paste" is a technical term referring to terminal escape sequences.</comment>
+  </data>
+  <data name="Globals_WarnAboutMultiLinePasteAlways.Content" xml:space="preserve">
+    <value>Sempre</value>
+    <comment>As in: Always VS Never</comment>
+  </data>
+  <data name="Globals_WarnAboutMultiLinePasteNever.Content" xml:space="preserve">
+    <value>Mai</value>
+    <comment>As in: Always VS Never</comment>
   </data>
   <data name="Settings_PortableModeNote.Text" xml:space="preserve">
     <value>Terminale Windows è in esecuzione in modalità portatile.</value>
