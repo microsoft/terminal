@@ -19,41 +19,6 @@ DEFINE_PROPERTYKEY(PKEY_AppUserModel_DestListLogoUri, 0x9F4C2855, 0x9F79, 0x4B39
         { 0x9F4C2855, 0x9F79, 0x4B39, 0xA8, 0xD0, 0xE1, 0xD4, 0x2D, 0xE1, 0xD5, 0xF3 }, 29 \
     }
 
-// Function Description:
-// - This function guesses whether a string is a file path.
-static constexpr bool _isProbableFilePath(std::wstring_view path)
-{
-    // "C:X", "C:\X", "\\?", "\\."
-    // _this function rejects \??\ as a path_
-    if (path.size() >= 3)
-    {
-        const auto firstColon{ path.find(L':') };
-        if (firstColon == 1)
-        {
-            return true;
-        }
-
-        const auto prefix{ path.substr(0, 2) };
-        return prefix == LR"(//)" || prefix == LR"(\\)";
-    }
-    return false;
-}
-
-// Function Description:
-// - DestListLogoUri cannot take paths that are separated by / unless they're URLs.
-//   This function uses std::filesystem to normalize strings that appear to be file
-//   paths to have the "correct" slash direction.
-static std::wstring _normalizeIconPath(std::wstring_view path)
-{
-    const auto fullPath{ wil::ExpandEnvironmentStringsW<std::wstring>(path.data()) };
-    if (_isProbableFilePath(fullPath))
-    {
-        std::filesystem::path asPath{ fullPath };
-        return asPath.make_preferred().wstring();
-    }
-    return std::wstring{ fullPath };
-}
-
 // Method Description:
 // - Updates the items of the Jumplist based on the given settings.
 // Arguments:
@@ -124,7 +89,7 @@ void Jumplist::_updateProfiles(IObjectCollection* jumplistItems, winrt::Windows:
         auto args = fmt::format(FMT_COMPILE(L"-p {}"), to_hstring(profile.Guid()));
 
         // Create the shell link object for the profile
-        const auto normalizedIconPath{ _normalizeIconPath(profile.Icon()) };
+        const auto normalizedIconPath{ profile.Icon().Resolved() };
         const auto shLink = _createShellLink(profile.Name(), normalizedIconPath, args);
         THROW_IF_FAILED(jumplistItems->AddObject(shLink.get()));
     }

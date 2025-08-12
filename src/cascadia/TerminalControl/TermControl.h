@@ -60,7 +60,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         hstring GetProfileName() const;
 
-        bool CopySelectionToClipboard(bool dismissSelection, bool singleLine, bool withControlSequences, const Windows::Foundation::IReference<CopyFormat>& formats);
+        bool CopySelectionToClipboard(bool dismissSelection, bool singleLine, bool withControlSequences, const CopyFormat formats);
         void PasteTextFromClipboard();
         void SelectAll();
         bool ToggleBlockSelection();
@@ -227,8 +227,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         BUBBLED_FORWARDED_TYPED_EVENT(CloseTerminalRequested,   IInspectable, IInspectable);
         BUBBLED_FORWARDED_TYPED_EVENT(CompletionsChanged,       IInspectable, Control::CompletionsChangedEventArgs);
         BUBBLED_FORWARDED_TYPED_EVENT(RestartTerminalRequested, IInspectable, IInspectable);
-
-        BUBBLED_FORWARDED_TYPED_EVENT(PasteFromClipboard, IInspectable, Control::PasteFromClipboardEventArgs);
+        BUBBLED_FORWARDED_TYPED_EVENT(WriteToClipboard,         IInspectable, Control::WriteToClipboardEventArgs);
+        BUBBLED_FORWARDED_TYPED_EVENT(PasteFromClipboard,       IInspectable, Control::PasteFromClipboardEventArgs);
 
         // clang-format on
 
@@ -242,7 +242,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         //
         // ControlCore::AttachUiaEngine receives a IRenderEngine as a raw pointer, which we own.
         // We must ensure that we first destroy the ControlCore before the UiaEngine instance
-        // in order to safely resolve this unsafe pointer dependency. Otherwise a deallocated
+        // in order to safely resolve this unsafe pointer dependency. Otherwise, a deallocated
         // IRenderEngine is accessed when ControlCore calls Renderer::TriggerTeardown.
         // (C++ class members are destroyed in reverse order.)
         // Further, the TermControlAutomationPeer must be destructed after _uiaEngine!
@@ -284,7 +284,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         bool _quickFixesAvailable{ false };
         til::CoordType _quickFixBufferPos{};
 
-        std::shared_ptr<ThrottledFuncLeading> _playWarningBell;
+        std::shared_ptr<ThrottledFunc<>> _playWarningBell;
 
         struct ScrollBarUpdate
         {
@@ -294,7 +294,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             double newViewportSize;
         };
 
-        std::shared_ptr<ThrottledFuncTrailing<ScrollBarUpdate>> _updateScrollBar;
+        std::shared_ptr<ThrottledFunc<ScrollBarUpdate>> _updateScrollBar;
 
         bool _isInternalScrollBarUpdate;
 
@@ -362,7 +362,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         };
         bool _InitializeTerminal(const InitializeReason reason);
         safe_void_coroutine _restoreInBackground();
-        void _SetFontSize(int fontSize);
         void _TappedHandler(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::Input::TappedRoutedEventArgs& e);
         void _KeyDownHandler(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::Input::KeyRoutedEventArgs& e);
         void _KeyUpHandler(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::Input::KeyRoutedEventArgs& e);
@@ -393,8 +392,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         void _SwapChainSizeChanged(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::SizeChangedEventArgs& e);
         void _SwapChainScaleChanged(const Windows::UI::Xaml::Controls::SwapChainPanel& sender, const Windows::Foundation::IInspectable& args);
-
-        void _TerminalTabColorChanged(const std::optional<til::color> color);
 
         void _ScrollPositionChanged(const IInspectable& sender, const Control::ScrollPositionChangedArgs& args);
 
@@ -466,6 +463,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             Control::ControlCore::UpdateSelectionMarkers_revoker UpdateSelectionMarkers;
             Control::ControlCore::OpenHyperlink_revoker coreOpenHyperlink;
             Control::ControlCore::TitleChanged_revoker TitleChanged;
+            Control::ControlCore::WriteToClipboard_revoker WriteToClipboard;
             Control::ControlCore::TabColorChanged_revoker TabColorChanged;
             Control::ControlCore::TaskbarProgressChanged_revoker TaskbarProgressChanged;
             Control::ControlCore::ConnectionStateChanged_revoker ConnectionStateChanged;
@@ -480,6 +478,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // These are set up in _InitializeTerminal
             Control::ControlCore::RendererWarning_revoker RendererWarning;
             Control::ControlCore::SwapChainChanged_revoker SwapChainChanged;
+            Windows::UI::ViewManagement::AccessibilitySettings::HighContrastChanged_revoker HighContrastChanged;
 
             Control::ControlInteractivity::OpenHyperlink_revoker interactivityOpenHyperlink;
             Control::ControlInteractivity::ScrollPositionChanged_revoker interactivityScrollPositionChanged;

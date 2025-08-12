@@ -278,15 +278,16 @@ HRESULT _ResizePseudoConsole(_In_ const PseudoConsole* const pPty, _In_ const CO
 // Return Value:
 // - S_OK if the call succeeded, else an appropriate HRESULT for failing to
 //      write the clear message to the pty.
-HRESULT _ClearPseudoConsole(_In_ const PseudoConsole* const pPty)
+static HRESULT _ClearPseudoConsole(_In_ const PseudoConsole* const pPty, BOOL keepCursorRow) noexcept
 {
     if (pPty == nullptr)
     {
         return E_INVALIDARG;
     }
 
-    unsigned short signalPacket[1];
+    unsigned short signalPacket[2];
     signalPacket[0] = PTY_SIGNAL_CLEAR_WINDOW;
+    signalPacket[1] = keepCursorRow ? 1 : 0;
 
     const auto fSuccess = WriteFile(pPty->hSignal, signalPacket, sizeof(signalPacket), nullptr, nullptr);
     return fSuccess ? S_OK : HRESULT_FROM_WIN32(GetLastError());
@@ -417,7 +418,7 @@ static void _ClosePseudoConsole(_In_ PseudoConsole* pPty) noexcept
 //  INHERIT_CURSOR: This will cause the created conpty to attempt to inherit the
 //      cursor position of the parent terminal application. This can be useful
 //      for applications like `ssh`, where ssh (currently running in a terminal)
-//      might want to create a pseudoterminal session for an child application
+//      might want to create a pseudoterminal session for a child application
 //      and the child inherit the cursor position of ssh.
 //      The created conpty will immediately emit a "Device Status Request" VT
 //      sequence to hOutput, that should be replied to on hInput in the format
@@ -492,13 +493,13 @@ extern "C" HRESULT WINAPI ConptyResizePseudoConsole(_In_ HPCON hPC, _In_ COORD s
 // - This is used exclusively by ConPTY to support GH#1193, GH#1882. This allows
 //   a terminal to clear the contents of the ConPTY buffer, which is important
 //   if the user would like to be able to clear the terminal-side buffer.
-extern "C" HRESULT WINAPI ConptyClearPseudoConsole(_In_ HPCON hPC)
+extern "C" HRESULT WINAPI ConptyClearPseudoConsole(_In_ HPCON hPC, BOOL keepCursorRow)
 {
     const PseudoConsole* const pPty = (PseudoConsole*)hPC;
     auto hr = pPty == nullptr ? E_INVALIDARG : S_OK;
     if (SUCCEEDED(hr))
     {
-        hr = _ClearPseudoConsole(pPty);
+        hr = _ClearPseudoConsole(pPty, keepCursorRow);
     }
     return hr;
 }

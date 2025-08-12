@@ -100,6 +100,11 @@
         <description>Enables the dynamic profile generator for OpenSSH config files</description>
         <id>9031</id>
         <stage>AlwaysDisabled</stage>
+        <alwaysEnabledBrandingTokens>
+            <brandingToken>Dev</brandingToken>
+            <brandingToken>Canary</brandingToken>
+            <brandingToken>Preview</brandingToken>
+        </alwaysEnabledBrandingTokens>
     </feature>
 
     <feature>
@@ -195,6 +200,17 @@
         <description>Enables UI access to the debug mode setting</description>
         <stage>AlwaysEnabled</stage>
         <alwaysDisabledReleaseTokens/>
+    </feature>
+
+    <feature>
+        <name>Feature_DisableWebSourceIcons</name>
+        <description>Disables icon paths that make web requests</description>
+        <id>19075</id>
+        <stage>AlwaysDisabled</stage>
+        <alwaysEnabledBrandingTokens>
+            <brandingToken>Dev</brandingToken>
+            <brandingToken>Canary</brandingToken>
+        </alwaysEnabledBrandingTokens>
     </feature>
 
 </featureStaging>

@@ -63,106 +63,115 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     winrt::hstring ActionArgFactory::GetNameForAction(Model::ShortcutAction action)
     {
+        return GetNameForAction(action, GetLibraryResourceLoader().ResourceContext());
+    }
+
+    winrt::hstring ActionArgFactory::GetNameForAction(Model::ShortcutAction action, Windows::ApplicationModel::Resources::Core::ResourceContext context)
+    {
         // Use a magic static to initialize this map, because we won't be able
         // to load the resources at _init_, only at runtime.
         static auto actionNames = []() {
-            return std::unordered_map<ShortcutAction, winrt::hstring>{
-                { ShortcutAction::AddMark, RS_(L"AddMarkCommandKey") },
-                { ShortcutAction::AdjustFontSize, RS_(L"AdjustFontSizeCommandKey") },
-                { ShortcutAction::AdjustOpacity, RS_(L"AdjustOpacity") },
-                { ShortcutAction::BreakIntoDebugger, RS_(L"BreakIntoDebuggerCommandKey") },
-                { ShortcutAction::ClearAllMarks, RS_(L"ClearAllMarksCommandKey") },
-                { ShortcutAction::ClearBuffer, RS_(L"ClearBuffer") },
-                { ShortcutAction::ClearMark, RS_(L"ClearMarkCommandKey") },
-                { ShortcutAction::CloseOtherPanes, RS_(L"CloseOtherPanesCommandKey") },
-                { ShortcutAction::CloseOtherTabs, RS_(L"CloseOtherTabs") },
-                { ShortcutAction::ClosePane, RS_(L"ClosePaneCommandKey") },
-                { ShortcutAction::CloseTab, RS_(L"CloseTab") },
-                { ShortcutAction::CloseTabsAfter, RS_(L"CloseTabsAfter") },
-                { ShortcutAction::CloseWindow, RS_(L"CloseWindowCommandKey") },
-                { ShortcutAction::ColorSelection, RS_(L"ColorSelection") },
-                { ShortcutAction::CopyText, RS_(L"CopyTextCommandKey") },
-                { ShortcutAction::DisplayWorkingDirectory, RS_(L"DisplayWorkingDirectoryCommandKey") },
-                { ShortcutAction::DisablePaneReadOnly, RS_(L"DisablePaneReadOnlyCommandKey") },
-                { ShortcutAction::DuplicateTab, RS_(L"DuplicateTabCommandKey") },
-                { ShortcutAction::EnablePaneReadOnly, RS_(L"EnablePaneReadOnlyCommandKey") },
-                { ShortcutAction::ExecuteCommandline, RS_(L"ExecuteCommandlineCommandKey") },
-                { ShortcutAction::ExportBuffer, RS_(L"ExportBuffer") },
-                { ShortcutAction::ExpandSelectionToWord, RS_(L"ExpandSelectionToWordCommandKey") },
-                { ShortcutAction::Find, RS_(L"FindCommandKey") },
-                { ShortcutAction::FindMatch, RS_(L"FindMatch") },
-                { ShortcutAction::FocusPane, RS_(L"FocusPane") },
-                { ShortcutAction::GlobalSummon, RS_(L"GlobalSummonCommandKey") },
-                { ShortcutAction::IdentifyWindow, RS_(L"IdentifyWindowCommandKey") },
-                { ShortcutAction::IdentifyWindows, RS_(L"IdentifyWindowsCommandKey") },
-                { ShortcutAction::MarkMode, RS_(L"MarkModeCommandKey") },
-                { ShortcutAction::MoveFocus, RS_(L"MoveFocusCommandKey") },
-                { ShortcutAction::MovePane, RS_(L"MovePaneCommandKey") },
-                { ShortcutAction::MoveTab, RS_(L"MoveTab") },
-                { ShortcutAction::MultipleActions, RS_(L"MultipleActions") },
-                { ShortcutAction::NewTab, RS_(L"NewTabCommandKey") },
-                { ShortcutAction::NewWindow, RS_(L"NewWindowCommandKey") },
-                { ShortcutAction::NextTab, RS_(L"NextTabCommandKey") },
-                { ShortcutAction::OpenAbout, RS_(L"OpenAboutCommandKey") },
-                { ShortcutAction::OpenCWD, RS_(L"OpenCWDCommandKey") },
-                { ShortcutAction::OpenNewTabDropdown, RS_(L"OpenNewTabDropdownCommandKey") },
-                { ShortcutAction::OpenScratchpad, RS_(L"OpenScratchpadKey") },
-                { ShortcutAction::OpenSettings, RS_(L"OpenSettingsUICommandKey") },
-                { ShortcutAction::OpenSystemMenu, RS_(L"OpenSystemMenuCommandKey") },
-                { ShortcutAction::OpenTabColorPicker, RS_(L"OpenTabColorPickerCommandKey") },
-                { ShortcutAction::OpenTabRenamer, RS_(L"OpenTabRenamerCommandKey") },
-                { ShortcutAction::OpenWindowRenamer, RS_(L"OpenWindowRenamerCommandKey") },
-                { ShortcutAction::PasteText, RS_(L"PasteTextCommandKey") },
-                { ShortcutAction::PrevTab, RS_(L"PrevTabCommandKey") },
-                { ShortcutAction::QuickFix, RS_(L"QuickFixCommandKey") },
-                { ShortcutAction::QuakeMode, RS_(L"QuakeModeCommandKey") },
-                { ShortcutAction::Quit, RS_(L"QuitCommandKey") },
-                { ShortcutAction::RenameTab, RS_(L"ResetTabNameCommandKey") },
-                { ShortcutAction::RenameWindow, RS_(L"ResetWindowNameCommandKey") },
-                { ShortcutAction::ResetFontSize, RS_(L"ResetFontSizeCommandKey") },
-                { ShortcutAction::RestartConnection, RS_(L"RestartConnectionKey") },
-                { ShortcutAction::ResizePane, RS_(L"ResizePaneCommandKey") },
-                { ShortcutAction::RestoreLastClosed, RS_(L"RestoreLastClosedCommandKey") },
-                { ShortcutAction::SaveSnippet, RS_(L"SaveSnippetNamePrefix") },
-                { ShortcutAction::ScrollDown, RS_(L"ScrollDownCommandKey") },
-                { ShortcutAction::ScrollDownPage, RS_(L"ScrollDownPageCommandKey") },
-                { ShortcutAction::ScrollToBottom, RS_(L"ScrollToBottomCommandKey") },
-                { ShortcutAction::ScrollToMark, RS_(L"ScrollToPreviousMarkCommandKey") },
-                { ShortcutAction::ScrollToTop, RS_(L"ScrollToTopCommandKey") },
-                { ShortcutAction::ScrollUp, RS_(L"ScrollUpCommandKey") },
-                { ShortcutAction::ScrollUpPage, RS_(L"ScrollUpPageCommandKey") },
-                { ShortcutAction::SearchForText, RS_(L"SearchForText") },
-                { ShortcutAction::SelectAll, RS_(L"SelectAllCommandKey") },
-                { ShortcutAction::SelectCommand, RS_(L"SelectCommand") },
-                { ShortcutAction::SelectOutput, RS_(L"SelectOutput") },
-                { ShortcutAction::SendInput, RS_(L"SendInput") },
-                { ShortcutAction::SetColorScheme, RS_(L"SetColorScheme") },
-                { ShortcutAction::SetFocusMode, RS_(L"SetFocusMode") },
-                { ShortcutAction::SetFullScreen, RS_(L"SetFullScreen") },
-                { ShortcutAction::SetMaximized, RS_(L"SetMaximized") },
-                { ShortcutAction::SetTabColor, RS_(L"ResetTabColorCommandKey") },
-                { ShortcutAction::ShowContextMenu, RS_(L"ShowContextMenuCommandKey") },
-                { ShortcutAction::SplitPane, RS_(L"SplitPaneCommandKey") },
-                { ShortcutAction::Suggestions, RS_(L"Suggestions") },
-                { ShortcutAction::SwapPane, RS_(L"SwapPaneCommandKey") },
-                { ShortcutAction::SwitchSelectionEndpoint, RS_(L"SwitchSelectionEndpointCommandKey") },
-                { ShortcutAction::SwitchToTab, RS_(L"SwitchToTabCommandKey") },
-                { ShortcutAction::TabSearch, RS_(L"TabSearchCommandKey") },
-                { ShortcutAction::ToggleAlwaysOnTop, RS_(L"ToggleAlwaysOnTopCommandKey") },
-                { ShortcutAction::ToggleBlockSelection, RS_(L"ToggleBlockSelectionCommandKey") },
-                { ShortcutAction::ToggleBroadcastInput, RS_(L"ToggleBroadcastInputCommandKey") },
-                { ShortcutAction::ToggleCommandPalette, RS_(L"ToggleCommandPaletteCommandKey") },
-                { ShortcutAction::ToggleFocusMode, RS_(L"ToggleFocusModeCommandKey") },
-                { ShortcutAction::ToggleFullscreen, RS_(L"ToggleFullscreenCommandKey") },
-                { ShortcutAction::TogglePaneReadOnly, RS_(L"TogglePaneReadOnlyCommandKey") },
-                { ShortcutAction::TogglePaneZoom, RS_(L"TogglePaneZoomCommandKey") },
-                { ShortcutAction::ToggleShaderEffects, RS_(L"ToggleShaderEffectsCommandKey") },
-                { ShortcutAction::ToggleSplitOrientation, RS_(L"ToggleSplitOrientationCommandKey") },
+            return std::unordered_map<ShortcutAction, wil::zwstring_view>{
+                { ShortcutAction::AddMark, USES_RESOURCE(L"AddMarkCommandKey") },
+                { ShortcutAction::AdjustFontSize, USES_RESOURCE(L"AdjustFontSizeCommandKey") },
+                { ShortcutAction::AdjustOpacity, USES_RESOURCE(L"AdjustOpacity") },
+                { ShortcutAction::BreakIntoDebugger, USES_RESOURCE(L"BreakIntoDebuggerCommandKey") },
+                { ShortcutAction::ClearAllMarks, USES_RESOURCE(L"ClearAllMarksCommandKey") },
+                { ShortcutAction::ClearBuffer, USES_RESOURCE(L"ClearBuffer") },
+                { ShortcutAction::ClearMark, USES_RESOURCE(L"ClearMarkCommandKey") },
+                { ShortcutAction::CloseOtherPanes, USES_RESOURCE(L"CloseOtherPanesCommandKey") },
+                { ShortcutAction::CloseOtherTabs, USES_RESOURCE(L"CloseOtherTabs") },
+                { ShortcutAction::ClosePane, USES_RESOURCE(L"ClosePaneCommandKey") },
+                { ShortcutAction::CloseTab, USES_RESOURCE(L"CloseTab") },
+                { ShortcutAction::CloseTabsAfter, USES_RESOURCE(L"CloseTabsAfter") },
+                { ShortcutAction::CloseWindow, USES_RESOURCE(L"CloseWindowCommandKey") },
+                { ShortcutAction::ColorSelection, USES_RESOURCE(L"ColorSelection") },
+                { ShortcutAction::CopyText, USES_RESOURCE(L"CopyTextCommandKey") },
+                { ShortcutAction::DisplayWorkingDirectory, USES_RESOURCE(L"DisplayWorkingDirectoryCommandKey") },
+                { ShortcutAction::DisablePaneReadOnly, USES_RESOURCE(L"DisablePaneReadOnlyCommandKey") },
+                { ShortcutAction::DuplicateTab, USES_RESOURCE(L"DuplicateTabCommandKey") },
+                { ShortcutAction::EnablePaneReadOnly, USES_RESOURCE(L"EnablePaneReadOnlyCommandKey") },
+                { ShortcutAction::ExecuteCommandline, USES_RESOURCE(L"ExecuteCommandlineCommandKey") },
+                { ShortcutAction::ExportBuffer, USES_RESOURCE(L"ExportBuffer") },
+                { ShortcutAction::ExpandSelectionToWord, USES_RESOURCE(L"ExpandSelectionToWordCommandKey") },
+                { ShortcutAction::Find, USES_RESOURCE(L"FindCommandKey") },
+                { ShortcutAction::FindMatch, USES_RESOURCE(L"FindMatch") },
+                { ShortcutAction::FocusPane, USES_RESOURCE(L"FocusPane") },
+                { ShortcutAction::GlobalSummon, USES_RESOURCE(L"GlobalSummonCommandKey") },
+                { ShortcutAction::IdentifyWindow, USES_RESOURCE(L"IdentifyWindowCommandKey") },
+                { ShortcutAction::IdentifyWindows, USES_RESOURCE(L"IdentifyWindowsCommandKey") },
+                { ShortcutAction::MarkMode, USES_RESOURCE(L"MarkModeCommandKey") },
+                { ShortcutAction::MoveFocus, USES_RESOURCE(L"MoveFocusCommandKey") },
+                { ShortcutAction::MovePane, USES_RESOURCE(L"MovePaneCommandKey") },
+                { ShortcutAction::MoveTab, USES_RESOURCE(L"MoveTab") },
+                { ShortcutAction::MultipleActions, USES_RESOURCE(L"MultipleActions") },
+                { ShortcutAction::NewTab, USES_RESOURCE(L"NewTabCommandKey") },
+                { ShortcutAction::NewWindow, USES_RESOURCE(L"NewWindowCommandKey") },
+                { ShortcutAction::NextTab, USES_RESOURCE(L"NextTabCommandKey") },
+                { ShortcutAction::OpenAbout, USES_RESOURCE(L"OpenAboutCommandKey") },
+                { ShortcutAction::OpenCWD, USES_RESOURCE(L"OpenCWDCommandKey") },
+                { ShortcutAction::OpenNewTabDropdown, USES_RESOURCE(L"OpenNewTabDropdownCommandKey") },
+                { ShortcutAction::OpenScratchpad, USES_RESOURCE(L"OpenScratchpadKey") },
+                { ShortcutAction::OpenSettings, USES_RESOURCE(L"OpenSettingsUICommandKey") },
+                { ShortcutAction::OpenSystemMenu, USES_RESOURCE(L"OpenSystemMenuCommandKey") },
+                { ShortcutAction::OpenTabColorPicker, USES_RESOURCE(L"OpenTabColorPickerCommandKey") },
+                { ShortcutAction::OpenTabRenamer, USES_RESOURCE(L"OpenTabRenamerCommandKey") },
+                { ShortcutAction::OpenWindowRenamer, USES_RESOURCE(L"OpenWindowRenamerCommandKey") },
+                { ShortcutAction::PasteText, USES_RESOURCE(L"PasteTextCommandKey") },
+                { ShortcutAction::PrevTab, USES_RESOURCE(L"PrevTabCommandKey") },
+                { ShortcutAction::QuickFix, USES_RESOURCE(L"QuickFixCommandKey") },
+                { ShortcutAction::QuakeMode, USES_RESOURCE(L"QuakeModeCommandKey") },
+                { ShortcutAction::Quit, USES_RESOURCE(L"QuitCommandKey") },
+                { ShortcutAction::RenameTab, USES_RESOURCE(L"ResetTabNameCommandKey") },
+                { ShortcutAction::RenameWindow, USES_RESOURCE(L"ResetWindowNameCommandKey") },
+                { ShortcutAction::ResetFontSize, USES_RESOURCE(L"ResetFontSizeCommandKey") },
+                { ShortcutAction::RestartConnection, USES_RESOURCE(L"RestartConnectionKey") },
+                { ShortcutAction::ResizePane, USES_RESOURCE(L"ResizePaneCommandKey") },
+                { ShortcutAction::RestoreLastClosed, USES_RESOURCE(L"RestoreLastClosedCommandKey") },
+                { ShortcutAction::SaveSnippet, USES_RESOURCE(L"SaveSnippetNamePrefix") },
+                { ShortcutAction::ScrollDown, USES_RESOURCE(L"ScrollDownCommandKey") },
+                { ShortcutAction::ScrollDownPage, USES_RESOURCE(L"ScrollDownPageCommandKey") },
+                { ShortcutAction::ScrollToBottom, USES_RESOURCE(L"ScrollToBottomCommandKey") },
+                { ShortcutAction::ScrollToMark, USES_RESOURCE(L"ScrollToPreviousMarkCommandKey") },
+                { ShortcutAction::ScrollToTop, USES_RESOURCE(L"ScrollToTopCommandKey") },
+                { ShortcutAction::ScrollUp, USES_RESOURCE(L"ScrollUpCommandKey") },
+                { ShortcutAction::ScrollUpPage, USES_RESOURCE(L"ScrollUpPageCommandKey") },
+                { ShortcutAction::SearchForText, USES_RESOURCE(L"SearchForText") },
+                { ShortcutAction::SelectAll, USES_RESOURCE(L"SelectAllCommandKey") },
+                { ShortcutAction::SelectCommand, USES_RESOURCE(L"SelectCommand") },
+                { ShortcutAction::SelectOutput, USES_RESOURCE(L"SelectOutput") },
+                { ShortcutAction::SendInput, USES_RESOURCE(L"SendInput") },
+                { ShortcutAction::SetColorScheme, USES_RESOURCE(L"SetColorScheme") },
+                { ShortcutAction::SetFocusMode, USES_RESOURCE(L"SetFocusMode") },
+                { ShortcutAction::SetFullScreen, USES_RESOURCE(L"SetFullScreen") },
+                { ShortcutAction::SetMaximized, USES_RESOURCE(L"SetMaximized") },
+                { ShortcutAction::SetTabColor, USES_RESOURCE(L"ResetTabColorCommandKey") },
+                { ShortcutAction::ShowContextMenu, USES_RESOURCE(L"ShowContextMenuCommandKey") },
+                { ShortcutAction::SplitPane, USES_RESOURCE(L"SplitPaneCommandKey") },
+                { ShortcutAction::Suggestions, USES_RESOURCE(L"Suggestions") },
+                { ShortcutAction::SwapPane, USES_RESOURCE(L"SwapPaneCommandKey") },
+                { ShortcutAction::SwitchSelectionEndpoint, USES_RESOURCE(L"SwitchSelectionEndpointCommandKey") },
+                { ShortcutAction::SwitchToTab, USES_RESOURCE(L"SwitchToTabCommandKey") },
+                { ShortcutAction::TabSearch, USES_RESOURCE(L"TabSearchCommandKey") },
+                { ShortcutAction::ToggleAlwaysOnTop, USES_RESOURCE(L"ToggleAlwaysOnTopCommandKey") },
+                { ShortcutAction::ToggleBlockSelection, USES_RESOURCE(L"ToggleBlockSelectionCommandKey") },
+                { ShortcutAction::ToggleBroadcastInput, USES_RESOURCE(L"ToggleBroadcastInputCommandKey") },
+                { ShortcutAction::ToggleCommandPalette, USES_RESOURCE(L"ToggleCommandPaletteCommandKey") },
+                { ShortcutAction::ToggleFocusMode, USES_RESOURCE(L"ToggleFocusModeCommandKey") },
+                { ShortcutAction::ToggleFullscreen, USES_RESOURCE(L"ToggleFullscreenCommandKey") },
+                { ShortcutAction::TogglePaneReadOnly, USES_RESOURCE(L"TogglePaneReadOnlyCommandKey") },
+                { ShortcutAction::TogglePaneZoom, USES_RESOURCE(L"TogglePaneZoomCommandKey") },
+                { ShortcutAction::ToggleShaderEffects, USES_RESOURCE(L"ToggleShaderEffectsCommandKey") },
+                { ShortcutAction::ToggleSplitOrientation, USES_RESOURCE(L"ToggleSplitOrientationCommandKey") },
             };
         }();
 
         const auto found = actionNames.find(action);
-        return found != actionNames.end() ? found->second : winrt::hstring{};
+        if (found != actionNames.end() && !found->second.empty())
+        {
+            return GetLibraryResourceLoader().ResourceMap().GetValue(found->second, context).ValueAsString();
+        }
+        return winrt::hstring{};
     }
 
     winrt::Windows::Foundation::Collections::IMap<Model::ShortcutAction, winrt::hstring> ActionArgFactory::AvailableShortcutActionsAndNames()
@@ -231,7 +240,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         // - have a hash that matches a command in the inbox actions
         std::erase_if(_ActionMap, [&](const auto& pair) {
             const auto userCmdImpl{ get_self<Command>(pair.second) };
-            if (userCmdImpl->IDWasGenerated() && !userCmdImpl->HasName() && userCmdImpl->IconPath().empty())
+            if (userCmdImpl->IDWasGenerated() && !userCmdImpl->HasName() && userCmdImpl->Icon().Path().empty())
             {
                 const auto userActionHash = Hash(userCmdImpl->ActionAndArgs());
                 if (const auto inboxCmd = inboxActions.find(userActionHash); inboxCmd != inboxActions.end())
@@ -269,7 +278,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // Arguments:
     // - actionID: the internal ID associated with a Command
     // Return Value:
-    // - The command if it exists in this layer, otherwise nullptr
+    // - The command if it exists in this layer; otherwise, nullptr
     Model::Command ActionMap::_GetActionByID(const winrt::hstring& actionID) const
     {
         // Check current layer
@@ -685,9 +694,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                         {
                             cmdImpl->Name(foundCmdImpl->Name());
                         }
-                        if (!foundCmdImpl->IconPath().empty() && cmdImpl->IconPath().empty())
+                        if (!foundCmdImpl->Icon().Path().empty() && cmdImpl->Icon().Path().empty())
                         {
-                            cmdImpl->IconPath(foundCmdImpl->IconPath());
+                            cmdImpl->Icon(foundCmdImpl->Icon());
                         }
                     }
                 }
@@ -900,7 +909,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // - oldKeys: the key binding that we are rebinding
     // - newKeys: the new key chord that is being used to replace oldKeys
     // Return Value:
-    // - true, if successful. False, otherwise.
+    // - true, if successful; otherwise, false.
     bool ActionMap::RebindKeys(const Control::KeyChord& oldKeys, const Control::KeyChord& newKeys)
     {
         const auto cmd{ GetActionByKeyChord(oldKeys) };
@@ -1028,6 +1037,26 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     IVector<Model::Command> ActionMap::ExpandedCommands()
     {
         return _ExpandedCommandsCache;
+    }
+
+    void ActionMap::ResolveMediaResourcesWithBasePath(const winrt::hstring& basePath, const Model::MediaResourceResolver& resolver)
+    {
+        for (const auto& [_, cmd] : _ActionMap)
+        {
+            winrt::get_self<implementation::Command>(cmd)->ResolveMediaResourcesWithBasePath(basePath, resolver);
+        }
+
+        // Serialize all nested Command objects added in the current layer
+        for (const auto& [_, cmd] : _NestedCommands)
+        {
+            winrt::get_self<implementation::Command>(cmd)->ResolveMediaResourcesWithBasePath(basePath, resolver);
+        }
+
+        // Serialize all iterable Command objects added in the current layer
+        for (const auto& cmd : _IterableCommands)
+        {
+            winrt::get_self<implementation::Command>(cmd)->ResolveMediaResourcesWithBasePath(basePath, resolver);
+        }
     }
 
 #pragma region Snippets

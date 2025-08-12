@@ -140,7 +140,7 @@
                 <Setter Property="VerticalAlignment" Value="Center" />
             </Style>
             <x:Int32 x:Key="EditButtonSize">32</x:Int32>
-            <x:Double x:Key="EditButtonIconSize">15</x:Double>
+            <x:Double x:Key="EditButtonIconSize">14</x:Double>
             <Style x:Key="EditButtonStyle"
                    BasedOn="{StaticResource DefaultButtonStyle}"
                    TargetType="Button">
@@ -152,7 +152,7 @@
             <Style x:Key="AccentEditButtonStyle"
                    BasedOn="{StaticResource AccentButtonStyle}"
                    TargetType="Button">
-                <Setter Property="Padding" Value="3" />
+                <Setter Property="Padding" Value="4" />
                 <Setter Property="VerticalAlignment" Value="Center" />
                 <Setter Property="Height" Value="{StaticResource EditButtonSize}" />
                 <Setter Property="Width" Value="{StaticResource EditButtonSize}" />

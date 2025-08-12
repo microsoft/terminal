@@ -104,8 +104,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // GH#8969: pre-seed working directory to prevent potential races
         _terminal->SetWorkingDirectory(_settings->StartingDirectory());
 
-        auto pfnCopyToClipboard = [this](auto&& PH1) { _terminalCopyToClipboard(std::forward<decltype(PH1)>(PH1)); };
-        _terminal->SetCopyToClipboardCallback(pfnCopyToClipboard);
+        _terminal->SetCopyToClipboardCallback([this](wil::zwstring_view wstr) {
+            WriteToClipboard.raise(*this, winrt::make<WriteToClipboardEventArgs>(winrt::hstring{ std::wstring_view{ wstr } }, std::string{}, std::string{}));
+        });
 
         auto pfnWarningBell = [this] { _terminalWarningBell(); };
         _terminal->SetWarningBellCallback(pfnWarningBell);
@@ -174,8 +175,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         //
         // NOTE: Calling UpdatePatternLocations from a background
         // thread is a workaround for us to hit GH#12607 less often.
-        shared->outputIdle = std::make_unique<til::debounced_func_trailing<>>(
-            std::chrono::milliseconds{ 100 },
+        shared->outputIdle = std::make_unique<til::throttled_func<>>(
+            til::throttled_func_options{
+                .delay = std::chrono::milliseconds{ 100 },
+                .debounce = true,
+                .trailing = true,
+            },
             [this, weakThis = get_weak(), dispatcher = _dispatcher]() {
                 dispatcher.TryEnqueue(DispatcherQueuePriority::Normal, [weakThis]() {
                     if (const auto self = weakThis.get(); self && !self->_IsClosing())
@@ -195,8 +200,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         // If you rapidly show/hide Windows Terminal, something about GotFocus()/LostFocus() gets broken.
         // We'll then receive easily 10+ such calls from WinUI the next time the application is shown.
-        shared->focusChanged = std::make_unique<til::debounced_func_trailing<bool>>(
-            std::chrono::milliseconds{ 25 },
+        shared->focusChanged = std::make_unique<til::throttled_func<bool>>(
+            til::throttled_func_options{
+                .delay = std::chrono::milliseconds{ 25 },
+                .debounce = true,
+                .trailing = true,
+            },
             [this](const bool focused) {
                 // Theoretically `debounced_func_trailing` should call `WaitForThreadpoolTimerCallbacks()`
                 // with cancel=true on destruction, which should ensure that our use of `this` here is safe.
@@ -204,9 +213,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             });
 
         // Scrollbar updates are also expensive (XAML), so we'll throttle them as well.
-        shared->updateScrollBar = std::make_shared<ThrottledFuncTrailing<Control::ScrollPositionChangedArgs>>(
+        shared->updateScrollBar = std::make_shared<ThrottledFunc<Control::ScrollPositionChangedArgs>>(
             _dispatcher,
-            std::chrono::milliseconds{ 8 },
+            til::throttled_func_options{
+                .delay = std::chrono::milliseconds{ 8 },
+                .trailing = true,
+            },
             [weakThis = get_weak()](const auto& update) {
                 if (auto core{ weakThis.get() }; core && !core->_IsClosing())
                 {
@@ -588,7 +600,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             else if (vkey == VK_RETURN && !mods.IsCtrlPressed() && !mods.IsAltPressed())
             {
                 // [Shift +] Enter --> copy text
-                CopySelectionToClipboard(mods.IsShiftPressed(), false, nullptr);
+                CopySelectionToClipboard(mods.IsShiftPressed(), false, _settings->CopyFormatting());
                 _terminal->ClearSelection();
                 _updateSelectionUI();
                 return true;
@@ -619,7 +631,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - vkey: The vkey of the key pressed.
     // - scanCode: The scan code of the key pressed.
     // - modifiers: The Microsoft::Terminal::Core::ControlKeyStates representing the modifier key states.
-    // - keyDown: If true, the key was pressed, otherwise the key was released.
+    // - keyDown: If true, the key was pressed; otherwise, the key was released.
     bool ControlCore::TrySendKeyEvent(const WORD vkey,
                                       const WORD scanCode,
                                       const ControlKeyStates modifiers,
@@ -955,6 +967,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
+    void ControlCore::SetHighContrastMode(const bool enabled)
+    {
+        _terminal->SetHighContrastMode(enabled);
+    }
+
     Control::IControlSettings ControlCore::Settings()
     {
         return *_settings;
@@ -1247,89 +1264,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _updateSelectionUI();
     }
 
-    static wil::unique_close_clipboard_call _openClipboard(HWND hwnd)
-    {
-        bool success = false;
-
-        // OpenClipboard may fail to acquire the internal lock --> retry.
-        for (DWORD sleep = 10;; sleep *= 2)
-        {
-            if (OpenClipboard(hwnd))
-            {
-                success = true;
-                break;
-            }
-            // 10 iterations
-            if (sleep > 10000)
-            {
-                break;
-            }
-            Sleep(sleep);
-        }
-
-        return wil::unique_close_clipboard_call{ success };
-    }
-
-    static void _copyToClipboard(const UINT format, const void* src, const size_t bytes)
-    {
-        wil::unique_hglobal handle{ THROW_LAST_ERROR_IF_NULL(GlobalAlloc(GMEM_MOVEABLE, bytes)) };
-
-        const auto locked = GlobalLock(handle.get());
-        memcpy(locked, src, bytes);
-        GlobalUnlock(handle.get());
-
-        THROW_LAST_ERROR_IF_NULL(SetClipboardData(format, handle.get()));
-        handle.release();
-    }
-
-    static void _copyToClipboardRegisteredFormat(const wchar_t* format, const void* src, size_t bytes)
-    {
-        const auto id = RegisterClipboardFormatW(format);
-        if (!id)
-        {
-            LOG_LAST_ERROR();
-            return;
-        }
-        _copyToClipboard(id, src, bytes);
-    }
-
-    static void copyToClipboard(wil::zwstring_view text, std::string_view html, std::string_view rtf)
-    {
-        const auto clipboard = _openClipboard(nullptr);
-        if (!clipboard)
-        {
-            LOG_LAST_ERROR();
-            return;
-        }
-
-        EmptyClipboard();
-
-        if (!text.empty())
-        {
-            // As per: https://learn.microsoft.com/en-us/windows/win32/dataxchg/standard-clipboard-formats
-            //   CF_UNICODETEXT: [...] A null character signals the end of the data.
-            // --> We add +1 to the length. This works because .c_str() is null-terminated.
-            _copyToClipboard(CF_UNICODETEXT, text.c_str(), (text.size() + 1) * sizeof(wchar_t));
-        }
-
-        if (!html.empty())
-        {
-            _copyToClipboardRegisteredFormat(L"HTML Format", html.data(), html.size());
-        }
-
-        if (!rtf.empty())
-        {
-            _copyToClipboardRegisteredFormat(L"Rich Text Format", rtf.data(), rtf.size());
-        }
-    }
-
-    // Called when the Terminal wants to set something to the clipboard, i.e.
-    // when an OSC 52 is emitted.
-    void ControlCore::_terminalCopyToClipboard(wil::zwstring_view wstr)
-    {
-        copyToClipboard(wstr, {}, {});
-    }
-
     // Method Description:
     // - Given a copy-able selection, get the selected text from the buffer and send it to the
     //     Windows Clipboard (CascadiaWin32:main.cpp).
@@ -1340,7 +1274,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     //             if we should defer which formats are copied to the global setting
     bool ControlCore::CopySelectionToClipboard(bool singleLine,
                                                bool withControlSequences,
-                                               const Windows::Foundation::IReference<CopyFormat>& formats)
+                                               const CopyFormat formats)
     {
         ::Microsoft::Terminal::Core::Terminal::TextCopyData payload;
         {
@@ -1352,19 +1286,20 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 return false;
             }
 
-            // use action's copyFormatting if it's present, else fallback to globally
-            // set copyFormatting.
-            const auto copyFormats = formats != nullptr ? formats.Value() : _settings->CopyFormatting();
-
-            const auto copyHtml = WI_IsFlagSet(copyFormats, CopyFormat::HTML);
-            const auto copyRtf = WI_IsFlagSet(copyFormats, CopyFormat::RTF);
+            const auto copyHtml = WI_IsFlagSet(formats, CopyFormat::HTML);
+            const auto copyRtf = WI_IsFlagSet(formats, CopyFormat::RTF);
 
             // extract text from buffer
             // RetrieveSelectedTextFromBuffer will lock while it's reading
             payload = _terminal->RetrieveSelectedTextFromBuffer(singleLine, withControlSequences, copyHtml, copyRtf);
         }
 
-        copyToClipboard(payload.plainText, payload.html, payload.rtf);
+        WriteToClipboard.raise(
+            *this,
+            winrt::make<WriteToClipboardEventArgs>(
+                winrt::hstring{ payload.plainText },
+                std::move(payload.html),
+                std::move(payload.rtf)));
         return true;
     }
 
@@ -2064,7 +1999,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _terminal->MultiClickSelection(terminalPosition, mode);
             selectionNeedsToBeCopied = true;
         }
-        else if (_settings->RepositionCursorWithMouse()) // This is also mode==Char && !shiftEnabled
+        else if (_settings->RepositionCursorWithMouse() && !selectionNeedsToBeCopied) // Don't reposition cursor if this is part of a selection operation
         {
             _repositionCursorWithMouse(terminalPosition);
         }
@@ -2259,23 +2194,42 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - <none>
     void ControlCore::ClearBuffer(Control::ClearBufferType clearType)
     {
-        std::wstring_view command;
-        switch (clearType)
-        {
-        case ClearBufferType::Screen:
-            command = L"\x1b[H\x1b[2J";
-            break;
-        case ClearBufferType::Scrollback:
-            command = L"\x1b[3J";
-            break;
-        case ClearBufferType::All:
-            command = L"\x1b[H\x1b[2J\x1b[3J";
-            break;
-        }
-
         {
             const auto lock = _terminal->LockForWriting();
-            _terminal->Write(command);
+            // In absolute buffer coordinates, including the scrollback (= Y is offset by the scrollback height).
+            const auto viewport = _terminal->GetViewport();
+            // The absolute cursor coordinate.
+            const auto cursor = _terminal->GetViewportRelativeCursorPosition();
+
+            // GH#18732: Users want the row the cursor is on to be preserved across clears.
+            std::wstring sequence;
+
+            if (clearType == ClearBufferType::Scrollback || clearType == ClearBufferType::All)
+            {
+                sequence.append(L"\x1b[3J");
+            }
+
+            if (clearType == ClearBufferType::Screen || clearType == ClearBufferType::All)
+            {
+                // Erase any viewport contents below (but not including) the cursor row.
+                if (viewport.Height() - cursor.y > 1)
+                {
+                    fmt::format_to(std::back_inserter(sequence), FMT_COMPILE(L"\x1b[{};1H\x1b[J"), cursor.y + 2);
+                }
+
+                // Erase any viewport contents above (but not including) the cursor row.
+                if (cursor.y > 0)
+                {
+                    // An SU sequence would be simpler than this DL sequence,
+                    // but SU isn't well standardized between terminals.
+                    // Generally speaking, it's best avoiding it.
+                    fmt::format_to(std::back_inserter(sequence), FMT_COMPILE(L"\x1b[H\x1b[{}M"), cursor.y);
+                }
+
+                fmt::format_to(std::back_inserter(sequence), FMT_COMPILE(L"\x1b[1;{}H"), cursor.x + 1);
+            }
+
+            _terminal->Write(sequence);
         }
 
         if (clearType == Control::ClearBufferType::Screen || clearType == Control::ClearBufferType::All)
@@ -2284,8 +2238,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             {
                 // Since the clearing of ConPTY occurs asynchronously, this call can result weird issues,
                 // where a console application still sees contents that we've already deleted, etc.
-                // The correct way would be for ConPTY to emit the appropriate CSI n J sequences.
-                conpty.ClearBuffer();
+                conpty.ClearBuffer(true);
             }
         }
     }
@@ -2734,15 +2687,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
-    safe_void_coroutine ControlCore::_terminalCompletionsChanged(std::wstring_view menuJson,
-                                                                 unsigned int replaceLength)
+    void ControlCore::_terminalCompletionsChanged(std::wstring_view menuJson, unsigned int replaceLength)
     {
-        auto args = winrt::make_self<CompletionsChangedEventArgs>(winrt::hstring{ menuJson },
-                                                                  replaceLength);
-
-        co_await winrt::resume_background();
-
-        CompletionsChanged.raise(*this, *args);
+        CompletionsChanged.raise(*this, winrt::make<CompletionsChangedEventArgs>(winrt::hstring{ menuJson }, replaceLength));
     }
 
     // Select the region of text between [s.start, s.end), in buffer space

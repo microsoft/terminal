@@ -56,7 +56,7 @@
                     <Style x:Key="KeyChordBorderStyle"
                            TargetType="Border">
                         <Setter Property="BorderThickness" Value="1" />
-                        <Setter Property="CornerRadius" Value="1" />
+                        <Setter Property="CornerRadius" Value="{StaticResource ControlCornerRadius}" />
                         <Setter Property="Background" Value="{ThemeResource SystemAltMediumLowColor}" />
                         <Setter Property="BorderBrush" Value="{ThemeResource SystemControlForegroundBaseMediumBrush}" />
                     </Style>
@@ -97,7 +97,8 @@
                     <Style x:Key="KeyChordBorderStyle"
                            TargetType="Border">
                         <Setter Property="BorderThickness" Value="1" />
-                        <Setter Property="CornerRadius" Value="1" />
+                        <Setter Property="BorderThickness" Value="1" />
+                        <Setter Property="CornerRadius" Value="{StaticResource ControlCornerRadius}" />
                         <Setter Property="Background" Value="{ThemeResource SystemAltMediumLowColor}" />
                         <Setter Property="BorderBrush" Value="{ThemeResource SystemControlForegroundBaseMediumBrush}" />
                     </Style>
@@ -159,11 +160,12 @@
 
                         <!--  Command Name  -->
                         <TextBlock Grid.Column="0"
+                                   FontWeight="Normal"
                                    Style="{StaticResource KeyBindingNameTextBlockStyle}"
                                    Text="{x:Bind DisplayName, Mode=OneWay}" />
                         <!--  Key Chord Text  -->
                         <Border Grid.Column="1"
-                                Padding="2,0,2,0"
+                                Padding="8,4,8,4"
                                 HorizontalAlignment="Right"
                                 VerticalAlignment="Center"
                                 Style="{ThemeResource KeyChordBorderStyle}"
@@ -190,6 +192,7 @@
                              NavigateUri="https://learn.microsoft.com/en-us/windows/terminal/customize-settings/actions" />
             <!--  Add New Button  -->
             <Button x:Name="AddNewButton"
+                    Margin="0,12,0,0"
                     Click="AddNew_Click">
                 <Button.Content>
                     <StackPanel Orientation="Horizontal">

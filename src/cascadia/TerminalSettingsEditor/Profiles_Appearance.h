@@ -33,7 +33,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         winrt::com_ptr<PreviewConnection> _previewConnection{ nullptr };
         Microsoft::Terminal::Control::TermControl _previewControl{ nullptr };
-        std::shared_ptr<ThrottledFuncTrailing<>> _updatePreviewControl;
+        std::shared_ptr<ThrottledFunc<>> _updatePreviewControl;
         Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker _ViewModelChangedRevoker;
         Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker _AppearanceViewModelChangedRevoker;
         Editor::IHostedInWindow _windowRoot;

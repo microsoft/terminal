@@ -9,6 +9,7 @@
 
 #include <LibraryResources.h>
 #include <til/static_map.h>
+#include <ScopedResourceLoader.h>
 
 static constexpr std::string_view AdjustFontSizeKey{ "adjustFontSize" };
 static constexpr std::string_view CloseOtherPanesKey{ "closeOtherPanes" };
@@ -339,18 +340,23 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return copy;
     }
 
-    winrt::hstring ActionAndArgs::GenerateName() const
+    winrt::hstring ActionAndArgs::GenerateName(const winrt::Windows::ApplicationModel::Resources::Core::ResourceContext& context) const
     {
         if (_Args)
         {
-            auto nameFromArgs = _Args.GenerateName();
+            auto nameFromArgs = _Args.GenerateName(context);
             if (!nameFromArgs.empty())
             {
                 return nameFromArgs;
             }
         }
 
-        return ActionArgFactory::GetNameForAction(_Action);
+        return ActionArgFactory::GetNameForAction(_Action, context);
+    }
+
+    winrt::hstring ActionAndArgs::GenerateName() const
+    {
+        return GenerateName(GetLibraryResourceLoader().ResourceContext());
     }
 
     // Function Description:

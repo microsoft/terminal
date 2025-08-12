@@ -277,7 +277,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             }
         }
 
-        // Couldn't find the selected item, fallback to first menu item
+        // Couldn't find the selected item, fall back to first menu item
         // This happens when the selected item was a profile which doesn't exist in the new configuration
         // We can use menuItemsSTL here because the only things they miss are profile entries.
         const auto& firstItem{ _menuItemSource.GetAt(0).as<MUX::Controls::NavigationViewItem>() };
@@ -704,7 +704,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     void MainPage::SaveButton_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*args*/)
     {
         _settingsClone.LogSettingChanges(false);
-        _settingsClone.WriteSettingsToDisk();
+        if (!_settingsClone.WriteSettingsToDisk())
+        {
+            ShowLoadWarningsDialog.raise(*this, _settingsClone.Warnings());
+        }
     }
 
     void MainPage::ResetButton_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*args*/)
@@ -861,7 +864,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             if (auto menuItem{ weakMenuItem.get() })
             {
                 const auto& tag{ menuItem.Tag().as<Editor::ProfileViewModel>() };
-                if (args.PropertyName() == L"Icon" || args.PropertyName() == L"EvaluatedIcon")
+                if (args.PropertyName() == L"Icon")
                 {
                     menuItem.Icon(UI::IconPathConverter::IconWUX(tag.EvaluatedIcon()));
                 }

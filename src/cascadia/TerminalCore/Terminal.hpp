@@ -92,9 +92,10 @@ public:
 
     void UpdateSettings(winrt::Microsoft::Terminal::Core::ICoreSettings settings);
     void UpdateAppearance(const winrt::Microsoft::Terminal::Core::ICoreAppearance& appearance);
+    void SetHighContrastMode(bool hc) noexcept;
     void SetFontInfo(const FontInfo& fontInfo);
     void SetCursorStyle(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::CursorStyle cursorStyle);
-    void SetVtChecksumReportSupport(const bool enabled);
+    void SetOptionalFeatures(winrt::Microsoft::Terminal::Core::ICoreSettings settings);
     bool IsXtermBracketedPasteModeEnabled() const noexcept;
     std::wstring_view GetWorkingDirectory() noexcept;
 
@@ -155,6 +156,7 @@ public:
     bool IsVtInputEnabled() const noexcept override;
     void NotifyAccessibilityChange(const til::rect& changedRect) noexcept override;
     void NotifyBufferRotation(const int delta) override;
+    void NotifyShellIntegrationMark() override;
 
     void InvokeCompletions(std::wstring_view menuJson, unsigned int replaceLength) override;
 
@@ -382,6 +384,7 @@ private:
 
     std::wstring _answerbackMessage;
     std::wstring _workingDirectory;
+    bool _highContrastMode = false;
 
     // This default fake font value is only used to check if the font is a raster font.
     // Otherwise, the font is changed to a real value with the renderer via TriggerFontChange.

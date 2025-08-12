@@ -47,6 +47,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Editor::ActionsViewModel ActionsVM() const noexcept { return _actionsVM; }
 
         til::typed_event<Windows::Foundation::IInspectable, Model::SettingsTarget> OpenJson;
+        til::typed_event<Windows::Foundation::IInspectable, Windows::Foundation::Collections::IVectorView<Model::SettingsLoadWarnings>> ShowLoadWarningsDialog;
 
     private:
         Windows::Foundation::Collections::IObservableVector<IInspectable> _breadcrumbs;

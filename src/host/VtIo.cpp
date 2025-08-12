@@ -73,7 +73,7 @@ using namespace Microsoft::Console::Interactivity;
 //  SignalHandle: an optional file handle that will be used to send signals into the console.
 //      This represents the ability to send signals to a *nix tty/pty.
 // Return Value:
-//  S_OK if we initialized successfully, otherwise an appropriate HRESULT
+//  S_OK if we initialized successfully; otherwise, an appropriate HRESULT
 //      indicating failure.
 [[nodiscard]] HRESULT VtIo::_Initialize(const HANDLE InHandle,
                                         const HANDLE OutHandle,
@@ -136,7 +136,7 @@ bool VtIo::IsUsingVt() const
 // Arguments:
 //  <none>
 // Return Value:
-//  S_OK if we started successfully or had nothing to start, otherwise an
+//  S_OK if we started successfully or had nothing to start; otherwise, an
 //      appropriate HRESULT indicating failure.
 [[nodiscard]] HRESULT VtIo::StartIfNeeded()
 {
@@ -224,6 +224,28 @@ bool VtIo::IsUsingVt() const
 
     _state = State::Running;
     return S_OK;
+}
+
+void VtIo::Shutdown() noexcept
+{
+    if (_state != State::Running)
+    {
+        return;
+    }
+
+    // The reverse of what we did in StartIfNeeded.
+    try
+    {
+        Writer writer{ this };
+
+        writer.WriteUTF8(
+            "\x1b[?1004l" // Focus Event Mode
+            "\x1b[?9001l" // Win32 Input Mode
+        );
+
+        writer.Submit();
+    }
+    CATCH_LOG();
 }
 
 void VtIo::SetDeviceAttributes(const til::enumset<DeviceAttribute, uint64_t> attributes) noexcept
@@ -361,7 +383,7 @@ void VtIo::FormatAttributes(std::wstring& target, const TextAttribute& attribute
 wchar_t VtIo::SanitizeUCS2(wchar_t ch)
 {
     // If any of the values in the buffer are C0 or C1 controls, we need to
-    // convert them to printable codepoints, otherwise they'll end up being
+    // convert them to printable codepoints; otherwise, they'll end up being
     // evaluated as control characters by the receiving terminal. We use the
     // DOS 437 code page for the C0 controls and DEL, and just a `?` for the
     // C1 controls, since that's what you would most likely have seen in the
