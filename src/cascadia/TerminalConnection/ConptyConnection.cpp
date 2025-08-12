@@ -657,8 +657,9 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         }
     }
 
-    uint64_t ConptyConnection::RootProcessHandle()
+    uint64_t ConptyConnection::RootProcessHandle() noexcept
     {
+#pragma warning(disable : 26490) // Don't use reinterpret_cast (type.1).
         return reinterpret_cast<uint64_t>(_piClient.hProcess);
     }
 
