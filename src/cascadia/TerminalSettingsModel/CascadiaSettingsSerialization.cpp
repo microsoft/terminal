@@ -536,6 +536,43 @@ bool SettingsLoader::DisableDeletedProfiles()
     return newGeneratedProfiles;
 }
 
+// Returns true if something got changed and
+// the settings need to be saved to disk.
+bool SettingsLoader::AddDynamicProfileFolders()
+{
+    // Keep track of generated folders to avoid regenerating them
+    const auto& state = get_self<ApplicationState>(ApplicationState::SharedInstance());
+    auto generatedFolders = state->GeneratedFolders();
+    auto newGeneratedFolders = false;
+
+    // If the SSH generator is enabled, try to create an "SSH" folder with all the generated profiles
+    uint32_t ignored;
+    SshHostGenerator sshGenerator;
+    const hstring sshGeneratorNamespace{ sshGenerator.GetNamespace() };
+    const hstring sshFolderName{ L"SSH" };
+    const auto& disabledProfileSources = userSettings.globals->DisabledProfileSources();
+    if (!(disabledProfileSources && disabledProfileSources.IndexOf(sshGeneratorNamespace, ignored)) && generatedFolders.emplace(sshFolderName).second)
+    {
+        auto matchProfilesEntry = make_self<implementation::MatchProfilesEntry>();
+        matchProfilesEntry->Source(sshGeneratorNamespace);
+
+        auto folderEntry = make_self<implementation::FolderEntry>();
+        folderEntry->Name(sshFolderName);
+        folderEntry->Icon(MediaResource::FromString(hstring{ sshGenerator.GetIcon() }));
+        folderEntry->Inlining(FolderEntryInlining::Auto);
+        folderEntry->RawEntries(winrt::single_threaded_vector<Model::NewTabMenuEntry>({ *matchProfilesEntry }));
+
+        userSettings.globals->NewTabMenu().Append(folderEntry.as<Model::NewTabMenuEntry>());
+        newGeneratedFolders = true;
+    }
+
+    if (newGeneratedFolders)
+    {
+        state->GeneratedFolders(generatedFolders);
+    }
+    return newGeneratedFolders;
+}
+
 bool winrt::Microsoft::Terminal::Settings::Model::implementation::SettingsLoader::RemapColorSchemeForProfile(const winrt::com_ptr<winrt::Microsoft::Terminal::Settings::Model::implementation::Profile>& profile)
 {
     bool modified{ false };
@@ -1229,6 +1266,7 @@ try
     // DisableDeletedProfiles returns true whenever we encountered any new generated/dynamic profiles.
     // Similarly FixupUserSettings returns true, when it encountered settings that were patched up.
     mustWriteToDisk |= loader.DisableDeletedProfiles();
+    mustWriteToDisk |= loader.AddDynamicProfileFolders();
     mustWriteToDisk |= loader.FixupUserSettings();
 
     // If this throws, the app will catch it and use the default settings.

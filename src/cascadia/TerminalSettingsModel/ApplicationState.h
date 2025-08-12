@@ -37,6 +37,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 #define MTSM_APPLICATION_STATE_FIELDS(X)                                                                                                                                  \
     X(FileSource::Shared, winrt::hstring, SettingsHash, "settingsHash")                                                                                                   \
     X(FileSource::Shared, std::unordered_set<winrt::guid>, GeneratedProfiles, "generatedProfiles")                                                                        \
+    X(FileSource::Shared, std::unordered_set<winrt::hstring>, GeneratedFolders, "generatedFolders")                                                                              \
     X(FileSource::Local, Windows::Foundation::Collections::IVector<Model::WindowLayout>, PersistedWindowLayouts, "persistedWindowLayouts")                                \
     X(FileSource::Shared, Windows::Foundation::Collections::IVector<hstring>, RecentCommands, "recentCommands")                                                           \
     X(FileSource::Shared, Windows::Foundation::Collections::IVector<winrt::Microsoft::Terminal::Settings::Model::InfoBarMessage>, DismissedMessages, "dismissedMessages") \
