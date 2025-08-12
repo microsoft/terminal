@@ -24,6 +24,7 @@
   <PropertyGroup Label="NuGet Dependencies">
     <!-- TerminalCppWinrt is intentionally not set -->
     <TerminalMUX>true</TerminalMUX>
+    <TerminalThemeHelpers>true</TerminalThemeHelpers>
   </PropertyGroup>
 
   <Import Project="$(SolutionDir)\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
