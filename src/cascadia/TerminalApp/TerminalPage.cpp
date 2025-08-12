@@ -4987,7 +4987,7 @@ namespace winrt::TerminalApp::implementation
             }
         };
 
-        auto&& appendFromTab = [](auto&& tabImpl) {
+        auto&& appendFromTab = [&](auto&& tabImpl) {
             if (const auto pane{ tabImpl->GetRootPane() })
             {
                 pane->WalkTree([&](auto&& child) {
