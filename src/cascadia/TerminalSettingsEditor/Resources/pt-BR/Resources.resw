@@ -1924,10 +1924,26 @@
     <value>Avisar quando o "Serviço de Teclado Virtual e Painel de Manuscrito" estiver desabilitado</value>
   </data>
   <data name="Globals_WarnAboutLargePaste.Header" xml:space="preserve">
-    <value>Avisar ao tentar colar mais de 5 KiB de caracteres</value>
+    <value>Avisar ao colar mais de 5 KiB</value>
   </data>
   <data name="Globals_WarnAboutMultiLinePaste.Header" xml:space="preserve">
-    <value>Avisar ao tentar colar um caractere de "nova linha"</value>
+    <value>Avisar ao colar novas linhas</value>
+  </data>
+  <data name="Globals_WarnAboutMultiLinePaste.HelpText" xml:space="preserve">
+    <value>Se o shell não for compatível com o modo "colar entre colchetes", recomendamos defini-lo como "Sempre" por motivos de segurança.</value>
+    <comment>"bracketed paste" is a technical term referring to escape sequences. "Always" is a setting, as in "Always VS Never".</comment>
+  </data>
+  <data name="Globals_WarnAboutMultiLinePasteAutomatic.Content" xml:space="preserve">
+    <value>Somente se "colar entre colchetes" estiver desabilitado</value>
+    <comment>"bracketed paste" is a technical term referring to terminal escape sequences.</comment>
+  </data>
+  <data name="Globals_WarnAboutMultiLinePasteAlways.Content" xml:space="preserve">
+    <value>Sempre</value>
+    <comment>As in: Always VS Never</comment>
+  </data>
+  <data name="Globals_WarnAboutMultiLinePasteNever.Content" xml:space="preserve">
+    <value>Nunca</value>
+    <comment>As in: Always VS Never</comment>
   </data>
   <data name="Settings_PortableModeNote.Text" xml:space="preserve">
     <value>O terminal do Windows está em execução no modo portátil.</value>

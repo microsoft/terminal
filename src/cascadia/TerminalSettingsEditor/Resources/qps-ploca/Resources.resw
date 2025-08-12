@@ -1924,10 +1924,26 @@
     <value>Ẃǻґņ ώћĕπ "Ŧõũčђ Κзγьοдгď ąŉð Нáлđẅŕīťίńģ Ρàňεℓ Śεŕνîçé" íš đìşāъŀêδ !!! !!! !!! !!! !!! !!! !!</value>
   </data>
   <data name="Globals_WarnAboutLargePaste.Header" xml:space="preserve">
-    <value>Ẃăґи ẅнěπ тґўіήĝ τø рáŝťё mοřé ţħäή 5 ΚĩВ òƒ ĉħāґąćτєґѕ !!! !!! !!! !!! !!! !</value>
+    <value>Ẃăґи ẅнěπ рǻѕтĭиġ mσŗë ťћåń 5 Κìß !!! !!! !!! </value>
   </data>
   <data name="Globals_WarnAboutMultiLinePaste.Header" xml:space="preserve">
-    <value>Щāřπ ẃĥєи ťгýīлğ ţõ ρäşŧè ª "пėщ ľїл℮" ςћářǻ¢ţēř !!! !!! !!! !!! !!</value>
+    <value>Щāřπ ẃĥєи ρаśŧîήĝ ⁿěώŀīиèŝ !!! !!! !</value>
+  </data>
+  <data name="Globals_WarnAboutMultiLinePaste.HelpText" xml:space="preserve">
+    <value>Ìƒ уοΰґ ѕħęļĺ ðøέş ńőт ŝűрρŏяŧ "ьřäċќéŧéď ρаѕτę" мōðέ, ẅέ ѓ℮¢ōмmзñδ śěτŧìñģ ťћĭś ŧó "Дĺẁαỳş" ƒóґ šέсµгітў ѓêąŝøñŝ. !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !</value>
+    <comment>"bracketed paste" is a technical term referring to escape sequences. "Always" is a setting, as in "Always VS Never".</comment>
+  </data>
+  <data name="Globals_WarnAboutMultiLinePasteAutomatic.Content" xml:space="preserve">
+    <value>Óйŀў íƒ "ьґαςќєťēð рãŝţê" îś δíšªвļèδ !!! !!! !!! !!</value>
+    <comment>"bracketed paste" is a technical term referring to terminal escape sequences.</comment>
+  </data>
+  <data name="Globals_WarnAboutMultiLinePasteAlways.Content" xml:space="preserve">
+    <value>Äℓщãỳš !</value>
+    <comment>As in: Always VS Never</comment>
+  </data>
+  <data name="Globals_WarnAboutMultiLinePasteNever.Content" xml:space="preserve">
+    <value>Иёνзŗ !</value>
+    <comment>As in: Always VS Never</comment>
   </data>
   <data name="Settings_PortableModeNote.Text" xml:space="preserve">
     <value>Ẅїηðσшѕ Ţеřmíńăľ īѕ ґϋййïŉģ ĭņ рόѓťáъℓė mōďе. !!! !!! !!! !!! !</value>
