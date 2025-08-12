@@ -4998,7 +4998,7 @@ namespace winrt::TerminalApp::implementation
         else
         {
             // When a window is in focus, propagate our foreground boost (if we have one)
-            // to the active tab and all panes inside it.
+            // to current active pane.
             appendFromControl(_GetActiveControl());
         }
 
