@@ -101,6 +101,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         ParsedSettings userSettings;
         std::unordered_map<hstring, winrt::com_ptr<implementation::ExtensionPackage>> extensionPackageMap;
         bool duplicateProfile = false;
+        bool sshProfilesGenerated = false;
 
     private:
         struct JsonSettings

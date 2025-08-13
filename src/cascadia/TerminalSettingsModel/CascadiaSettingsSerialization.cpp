@@ -213,8 +213,11 @@ void SettingsLoader::GenerateProfiles()
     auto generateProfiles = [&](const IDynamicProfileGenerator& generator) {
         if (!_ignoredNamespaces.contains(generator.GetNamespace()))
         {
+            const auto oldProfileCount = inboxSettings.profiles.size();
             _executeGenerator(generator, inboxSettings.profiles);
+            return oldProfileCount != inboxSettings.profiles.size();
         }
+        return false;
     };
 
     // Generate profiles for each generator and add them to the inbox settings.
@@ -224,7 +227,7 @@ void SettingsLoader::GenerateProfiles()
     generateProfiles(AzureCloudShellGenerator{});
     generateProfiles(VisualStudioGenerator{});
 #if TIL_FEATURE_DYNAMICSSHPROFILES_ENABLED
-    generateProfiles(SshHostGenerator{});
+    sshProfilesGenerated = generateProfiles(SshHostGenerator{});
 #endif
 }
 
@@ -541,36 +544,26 @@ bool SettingsLoader::DisableDeletedProfiles()
 bool SettingsLoader::AddDynamicProfileFolders()
 {
     // Keep track of generated folders to avoid regenerating them
-    const auto& state = get_self<ApplicationState>(ApplicationState::SharedInstance());
-    auto generatedFolders = state->GeneratedFolders();
-    auto newGeneratedFolders = false;
+    const auto state = get_self<ApplicationState>(ApplicationState::SharedInstance());
 
     // If the SSH generator is enabled, try to create an "SSH" folder with all the generated profiles
-    uint32_t ignored;
-    SshHostGenerator sshGenerator;
-    const hstring sshGeneratorNamespace{ sshGenerator.GetNamespace() };
-    const hstring sshFolderName{ L"SSH" };
-    const auto& disabledProfileSources = userSettings.globals->DisabledProfileSources();
-    if (!(disabledProfileSources && disabledProfileSources.IndexOf(sshGeneratorNamespace, ignored)) && generatedFolders.emplace(sshFolderName).second)
+    if (sshProfilesGenerated && !state->SSHFolderGenerated())
     {
+        SshHostGenerator sshGenerator;
         auto matchProfilesEntry = make_self<implementation::MatchProfilesEntry>();
-        matchProfilesEntry->Source(sshGeneratorNamespace);
+        matchProfilesEntry->Source(hstring{ sshGenerator.GetNamespace() });
 
         auto folderEntry = make_self<implementation::FolderEntry>();
-        folderEntry->Name(sshFolderName);
+        folderEntry->Name(L"SSH");
         folderEntry->Icon(MediaResource::FromString(hstring{ sshGenerator.GetIcon() }));
         folderEntry->Inlining(FolderEntryInlining::Auto);
         folderEntry->RawEntries(winrt::single_threaded_vector<Model::NewTabMenuEntry>({ *matchProfilesEntry }));
 
         userSettings.globals->NewTabMenu().Append(folderEntry.as<Model::NewTabMenuEntry>());
-        newGeneratedFolders = true;
+        state->SSHFolderGenerated(true);
+        return true;
     }
-
-    if (newGeneratedFolders)
-    {
-        state->GeneratedFolders(generatedFolders);
-    }
-    return newGeneratedFolders;
+    return false;
 }
 
 bool winrt::Microsoft::Terminal::Settings::Model::implementation::SettingsLoader::RemapColorSchemeForProfile(const winrt::com_ptr<winrt::Microsoft::Terminal::Settings::Model::implementation::Profile>& profile)
