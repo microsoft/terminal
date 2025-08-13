@@ -14,6 +14,9 @@
 class ROW;
 class TextBuffer;
 
+// Because MarkKind::Output gets set only on the actually written text,
+// most rows will end up having at least 2 runs: The start of the line
+// with MarkKind::Output and the rest of the line with MarkKind::None.
 using RowAttributes = til::small_rle<TextAttribute, uint16_t, 2>;
 
 enum class DelimiterClass
