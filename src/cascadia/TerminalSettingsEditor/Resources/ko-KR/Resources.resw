@@ -1924,10 +1924,26 @@
     <value>"터치 키보드 및 필기 패널 서비스"를 사용할 수 없는 경우 경고</value>
   </data>
   <data name="Globals_WarnAboutLargePaste.Header" xml:space="preserve">
-    <value>5KiB가 넘는 문자를 붙여넣으려고 할 때 경고</value>
+    <value>붙여넣기가 5KiB를 초과하는 경우 경고</value>
   </data>
   <data name="Globals_WarnAboutMultiLinePaste.Header" xml:space="preserve">
-    <value>"줄 바꾸기" 문자를 붙여넣을 때 경고</value>
+    <value>붙여넣기에 줄 바꿈이 포함된 경우 경고</value>
+  </data>
+  <data name="Globals_WarnAboutMultiLinePaste.HelpText" xml:space="preserve">
+    <value>셸이 "대괄호로 묶은 붙여넣기" 모드를 지원하지 않는 경우, 보안상의 이유로 이 설정을 "항상"으로 변경하는 것이 좋습니다.</value>
+    <comment>"bracketed paste" is a technical term referring to escape sequences. "Always" is a setting, as in "Always VS Never".</comment>
+  </data>
+  <data name="Globals_WarnAboutMultiLinePasteAutomatic.Content" xml:space="preserve">
+    <value>"대괄호로 묶은 붙여넣기"를 사용할 수 없는 경우에만</value>
+    <comment>"bracketed paste" is a technical term referring to terminal escape sequences.</comment>
+  </data>
+  <data name="Globals_WarnAboutMultiLinePasteAlways.Content" xml:space="preserve">
+    <value>항상</value>
+    <comment>As in: Always VS Never</comment>
+  </data>
+  <data name="Globals_WarnAboutMultiLinePasteNever.Content" xml:space="preserve">
+    <value>사용 안 함</value>
+    <comment>As in: Always VS Never</comment>
   </data>
   <data name="Settings_PortableModeNote.Text" xml:space="preserve">
     <value>Windows 터미널이 이식 가능 모드에서 실행되고 있습니다.</value>
