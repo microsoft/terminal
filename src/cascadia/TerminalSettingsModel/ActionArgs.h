@@ -394,10 +394,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     public:
         NewTerminalArgs(int32_t& profileIndex) :
-            _ProfileIndex{ profileIndex }
-        {
-            NEW_TERMINAL_ARGS(APPEND_ARG_DESCRIPTION);
-        };
+            _ProfileIndex{ profileIndex },
+            _argDescriptors(INIT_ARG_DESCRIPTORS(NEW_TERMINAL_ARGS)) {};
         hstring GenerateName() const { return GenerateName(GetLibraryResourceLoader().ResourceContext()); }
         hstring GenerateName(const winrt::Windows::ApplicationModel::Resources::Core::ResourceContext&) const;
         hstring ToCommandline() const;
@@ -477,7 +475,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             copy->_Elevate = _Elevate;
             copy->_ReloadEnvironmentVariables = _ReloadEnvironmentVariables;
             copy->_ContentId = _ContentId;
-            copy->_argDescriptors = _argDescriptors;
             return *copy;
         }
         size_t Hash() const
@@ -667,31 +664,26 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     struct SplitPaneArgs : public SplitPaneArgsT<SplitPaneArgs>
     {
-        SplitPaneArgs(){
-            SPLIT_PANE_ARGS(APPEND_ARG_DESCRIPTION)
-        };
+        SplitPaneArgs() :
+            _argDescriptors(INIT_ARG_DESCRIPTORS(SPLIT_PANE_ARGS)) {};
         SplitPaneArgs(SplitType splitMode, SplitDirection direction, float size, const Model::INewContentArgs& terminalArgs) :
             _SplitMode{ splitMode },
             _SplitDirection{ direction },
             _SplitSize{ size },
-            _ContentArgs{ terminalArgs } {
-                SPLIT_PANE_ARGS(APPEND_ARG_DESCRIPTION)
-            };
+            _ContentArgs{ terminalArgs },
+            _argDescriptors(INIT_ARG_DESCRIPTORS(SPLIT_PANE_ARGS)) {};
         SplitPaneArgs(SplitDirection direction, float size, const Model::INewContentArgs& terminalArgs) :
             _SplitDirection{ direction },
             _SplitSize{ size },
-            _ContentArgs{ terminalArgs } {
-                SPLIT_PANE_ARGS(APPEND_ARG_DESCRIPTION)
-            };
+            _ContentArgs{ terminalArgs },
+            _argDescriptors(INIT_ARG_DESCRIPTORS(SPLIT_PANE_ARGS)) {};
         SplitPaneArgs(SplitDirection direction, const Model::INewContentArgs& terminalArgs) :
             _SplitDirection{ direction },
-            _ContentArgs{ terminalArgs } {
-                SPLIT_PANE_ARGS(APPEND_ARG_DESCRIPTION)
-            };
+            _ContentArgs{ terminalArgs },
+            _argDescriptors(INIT_ARG_DESCRIPTORS(SPLIT_PANE_ARGS)) {};
         SplitPaneArgs(SplitType splitMode) :
-            _SplitMode{ splitMode } {
-                SPLIT_PANE_ARGS(APPEND_ARG_DESCRIPTION)
-            };
+            _SplitMode{ splitMode },
+            _argDescriptors(INIT_ARG_DESCRIPTORS(SPLIT_PANE_ARGS)) {};
 
         SPLIT_PANE_ARGS(DECLARE_ARGS);
         WINRT_PROPERTY(Model::INewContentArgs, ContentArgs, Model::NewTerminalArgs{});
@@ -749,7 +741,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             copy->_ContentArgs = _ContentArgs.Copy();
             copy->_SplitMode = _SplitMode;
             copy->_SplitSize = _SplitSize;
-            copy->_argDescriptors = _argDescriptors;
             return *copy;
         }
         size_t Hash() const
@@ -813,7 +804,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
 
     private:
-        std::vector<ArgDescriptor> _argDescriptors;
+        const std::vector<ArgDescriptor> _argDescriptors;
     };
 
     struct NewWindowArgs : public NewWindowArgsT<NewWindowArgs>
