@@ -26,6 +26,7 @@
     <TerminalCppWinrt>true</TerminalCppWinrt>
     <TerminalMUX>true</TerminalMUX>
     <TerminalWinGetInterop>true</TerminalWinGetInterop>
+    <TerminalThemeHelpers>true</TerminalThemeHelpers>
   </PropertyGroup>
   <Import Project="..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
   <Import Project="$(OpenConsoleDir)src\common.nugetversions.props" />

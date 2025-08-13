@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <ThrottledFunc.h>
+
 #include "TerminalPage.g.h"
 #include "TerminalTab.h"
 #include "AppKeyBindings.h"
@@ -359,8 +361,11 @@ namespace winrt::TerminalApp::implementation
         bool _MovePane(const Microsoft::Terminal::Settings::Model::MovePaneArgs args);
         bool _MoveTab(winrt::com_ptr<TerminalTab> tab, const Microsoft::Terminal::Settings::Model::MoveTabArgs args);
 
+        std::shared_ptr<ThrottledFuncTrailing<>> _adjustProcessPriorityThrottled;
+        void _adjustProcessPriority() const;
+
         template<typename F>
-        bool _ApplyToActiveControls(F f)
+        bool _ApplyToActiveControls(F f) const
         {
             if (const auto tab{ _GetFocusedTabImpl() })
             {
@@ -379,7 +384,7 @@ namespace winrt::TerminalApp::implementation
             return false;
         }
 
-        winrt::Microsoft::Terminal::Control::TermControl _GetActiveControl();
+        winrt::Microsoft::Terminal::Control::TermControl _GetActiveControl() const;
         std::optional<uint32_t> _GetFocusedTabIndex() const noexcept;
         std::optional<uint32_t> _GetTabIndex(const TerminalApp::TabBase& tab) const noexcept;
         TerminalApp::TabBase _GetFocusedTab() const noexcept;

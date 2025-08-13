@@ -6,6 +6,7 @@
 #include "TerminalPage.h"
 
 #include <LibraryResources.h>
+#include <TerminalThemeHelpers.h>
 #include <TerminalCore/ControlKeyStates.hpp>
 #include <Utils.h>
 
@@ -102,6 +103,13 @@ namespace winrt::TerminalApp::implementation
                 // before restoring previous tabs in that scenario.
             }
         }
+
+        _adjustProcessPriorityThrottled = std::make_shared<ThrottledFuncTrailing<>>(
+            DispatcherQueue::GetForCurrentThread(),
+            std::chrono::milliseconds{ 100 },
+            [=]() {
+                _adjustProcessPriority();
+            });
         _hostingHwnd = hwnd;
         return S_OK;
     }
@@ -1946,7 +1954,7 @@ namespace winrt::TerminalApp::implementation
         return false;
     }
 
-    TermControl TerminalPage::_GetActiveControl()
+    TermControl TerminalPage::_GetActiveControl() const
     {
         if (const auto terminalTab{ _GetFocusedTabImpl() })
         {
@@ -2410,6 +2418,8 @@ namespace winrt::TerminalApp::implementation
             auto profile = tab->GetFocusedProfile();
             _UpdateBackground(profile);
         }
+
+        _adjustProcessPriorityThrottled->Run();
     }
 
     uint32_t TerminalPage::NumberOfTabs() const
@@ -4611,9 +4621,12 @@ namespace winrt::TerminalApp::implementation
         if (const auto coreState{ sender.try_as<winrt::Microsoft::Terminal::Control::ICoreState>() })
         {
             const auto newConnectionState = coreState.ConnectionState();
+            co_await wil::resume_foreground(Dispatcher());
+
+            _adjustProcessPriorityThrottled->Run();
+
             if (newConnectionState == ConnectionState::Failed && !_IsMessageDismissed(InfoBarMessage::CloseOnExitInfo))
             {
-                co_await wil::resume_foreground(Dispatcher());
                 if (const auto infoBar = FindName(L"CloseOnExitInfoBar").try_as<MUX::Controls::InfoBar>())
                 {
                     infoBar.IsOpen(true);
@@ -4878,12 +4891,102 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    void TerminalPage::_adjustProcessPriority() const
+    {
+        // Windowing is single-threaded, so this will not cause a race condition.
+        static bool supported{ true };
+
+        if (!supported || !_hostingHwnd.has_value())
+        {
+            return;
+        }
+
+        std::array<HANDLE, 32> processes;
+        auto it = processes.begin();
+        const auto end = processes.end();
+
+        auto&& appendFromControl = [&](auto&& control) {
+            if (it == end)
+            {
+                return;
+            }
+            if (control)
+            {
+                if (const auto conn{ control.Connection() })
+                {
+                    if (const auto pty{ conn.try_as<winrt::Microsoft::Terminal::TerminalConnection::ConptyConnection>() })
+                    {
+                        if (const uint64_t process{ pty.RootProcessHandle() }; process != 0)
+                        {
+                            *it++ = reinterpret_cast<HANDLE>(process);
+                        }
+                    }
+                }
+            }
+        };
+
+        auto&& appendFromTab = [&](auto&& tabImpl) {
+            if (const auto pane{ tabImpl->GetRootPane() })
+            {
+                pane->WalkTree([&](auto&& child) {
+                    if (const auto& control{ child->GetTerminalControl() })
+                    {
+                        appendFromControl(control);
+                    }
+                });
+            }
+        };
+
+        if (!_activated)
+        {
+            // When a window is out of focus, we want to attach all of the processes
+            // under it to the window so they all go into the background at the same time.
+            for (auto&& tab : _tabs)
+            {
+                if (auto tabImpl{ _GetTerminalTabImpl(tab) })
+                {
+                    appendFromTab(tabImpl);
+                }
+            }
+        }
+        else
+        {
+            // When a window is in focus, propagate our foreground boost (if we have one)
+            // to current all panes in the current tab.
+            if (auto tabImpl{ _GetFocusedTabImpl() })
+            {
+                appendFromTab(tabImpl);
+            }
+        }
+
+        const auto count{ gsl::narrow_cast<DWORD>(it - processes.begin()) };
+        const auto hr = TerminalTrySetWindowAssociatedProcesses(_hostingHwnd.value(), count, count ? processes.data() : nullptr);
+        if (S_FALSE == hr)
+        {
+            // Don't bother trying again or logging. The wrapper tells us it's unsupported.
+            supported = false;
+            return;
+        }
+
+        TraceLoggingWrite(
+            g_hTerminalAppProvider,
+            "CalledNewQoSAPI",
+            TraceLoggingValue(reinterpret_cast<uintptr_t>(_hostingHwnd.value()), "hwnd"),
+            TraceLoggingValue(count),
+            TraceLoggingHResult(hr));
+#ifdef _DEBUG
+        OutputDebugStringW(fmt::format(FMT_COMPILE(L"Submitted {} processes to TerminalTrySetWindowAssociatedProcesses; return=0x{:08x}\n"), count, hr).c_str());
+#endif
+    }
+
     void TerminalPage::WindowActivated(const bool activated)
     {
         // Stash if we're activated. Use that when we reload
         // the settings, change active panes, etc.
         _activated = activated;
         _updateThemeColors();
+
+        _adjustProcessPriorityThrottled->Run();
 
         if (const auto& tab{ _GetFocusedTabImpl() })
         {

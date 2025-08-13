@@ -1013,6 +1013,8 @@ namespace winrt::TerminalApp::implementation
                 auto profile = tab_impl->GetFocusedProfile();
                 _UpdateBackground(profile);
             }
+
+            _adjustProcessPriorityThrottled->Run();
         }
         CATCH_LOG();
     }
