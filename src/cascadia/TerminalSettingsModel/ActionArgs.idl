@@ -18,7 +18,7 @@ namespace Microsoft.Terminal.Settings.Model
         String Name;
         String Type;
         Boolean Required;
-        ArgTypeHint Tag;
+        ArgTypeHint TypeHint;
     };
 
     interface IActionArgsDescriptorAccess
