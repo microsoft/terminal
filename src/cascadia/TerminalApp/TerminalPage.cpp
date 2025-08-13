@@ -1258,7 +1258,7 @@ namespace winrt::TerminalApp::implementation
                 auto folderEntryItems = _CreateNewTabFlyoutItems(folderEntries);
 
                 // If the folder should auto-inline and there is only one item, do so.
-                if (folderEntry.Inlining() == FolderEntryInlining::Auto && folderEntries.Size() == 1)
+                if (folderEntry.Inlining() == FolderEntryInlining::Auto && folderEntryItems.size() == 1)
                 {
                     for (auto const& folderEntryItem : folderEntryItems)
                     {

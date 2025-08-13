@@ -213,8 +213,11 @@ void SettingsLoader::GenerateProfiles()
     auto generateProfiles = [&](const IDynamicProfileGenerator& generator) {
         if (!_ignoredNamespaces.contains(generator.GetNamespace()))
         {
+            const auto oldProfileCount = inboxSettings.profiles.size();
             _executeGenerator(generator, inboxSettings.profiles);
+            return oldProfileCount != inboxSettings.profiles.size();
         }
+        return false;
     };
 
     // Generate profiles for each generator and add them to the inbox settings.
@@ -224,7 +227,7 @@ void SettingsLoader::GenerateProfiles()
     generateProfiles(AzureCloudShellGenerator{});
     generateProfiles(VisualStudioGenerator{});
 #if TIL_FEATURE_DYNAMICSSHPROFILES_ENABLED
-    generateProfiles(SshHostGenerator{});
+    sshProfilesGenerated = generateProfiles(SshHostGenerator{});
 #endif
 }
 
@@ -534,6 +537,33 @@ bool SettingsLoader::DisableDeletedProfiles()
     }
 
     return newGeneratedProfiles;
+}
+
+// Returns true if something got changed and
+// the settings need to be saved to disk.
+bool SettingsLoader::AddDynamicProfileFolders()
+{
+    // Keep track of generated folders to avoid regenerating them
+    const auto state = get_self<ApplicationState>(ApplicationState::SharedInstance());
+
+    // If the SSH generator is enabled, try to create an "SSH" folder with all the generated profiles
+    if (sshProfilesGenerated && !state->SSHFolderGenerated())
+    {
+        SshHostGenerator sshGenerator;
+        auto matchProfilesEntry = make_self<implementation::MatchProfilesEntry>();
+        matchProfilesEntry->Source(hstring{ sshGenerator.GetNamespace() });
+
+        auto folderEntry = make_self<implementation::FolderEntry>();
+        folderEntry->Name(L"SSH");
+        folderEntry->Icon(MediaResource::FromString(hstring{ sshGenerator.GetIcon() }));
+        folderEntry->Inlining(FolderEntryInlining::Auto);
+        folderEntry->RawEntries(winrt::single_threaded_vector<Model::NewTabMenuEntry>({ *matchProfilesEntry }));
+
+        userSettings.globals->NewTabMenu().Append(folderEntry.as<Model::NewTabMenuEntry>());
+        state->SSHFolderGenerated(true);
+        return true;
+    }
+    return false;
 }
 
 bool winrt::Microsoft::Terminal::Settings::Model::implementation::SettingsLoader::RemapColorSchemeForProfile(const winrt::com_ptr<winrt::Microsoft::Terminal::Settings::Model::implementation::Profile>& profile)
@@ -1229,6 +1259,7 @@ try
     // DisableDeletedProfiles returns true whenever we encountered any new generated/dynamic profiles.
     // Similarly FixupUserSettings returns true, when it encountered settings that were patched up.
     mustWriteToDisk |= loader.DisableDeletedProfiles();
+    mustWriteToDisk |= loader.AddDynamicProfileFolders();
     mustWriteToDisk |= loader.FixupUserSettings();
 
     // If this throws, the app will catch it and use the default settings.
