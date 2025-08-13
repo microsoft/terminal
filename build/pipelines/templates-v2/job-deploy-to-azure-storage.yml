@@ -86,7 +86,7 @@ jobs:
         $MachineToken = $env:SYSTEM_ACCESSTOKEN | ConvertTo-SecureString -AsPlainText -Force
         $Credential = [PSCredential]::new("ONEBRANCH_TOKEN", $MachineToken)
         $MachineToken = $null
-        $Feed = "https://pkgs.dev.azure.com/shine-oss/terminal/_packaging/TerminalDependencies/nuget/v3/index.json"
+        $Feed = "https://pkgs.dev.azure.com/shine-oss/terminal/_packaging/TerminalDependencies%40Local/nuget/v3/index.json"
         Register-PSResourceRepository -Name "PSGalleryUpstream" -Uri $Feed -Trusted
         Get-PSResourceRepository
 
