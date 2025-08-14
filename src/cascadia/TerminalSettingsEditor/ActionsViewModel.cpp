@@ -901,9 +901,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 const auto argDescription = shortcutArgs.GetArgDescriptorAt(i);
                 const auto argName = argDescription.Name;
                 const auto argType = argDescription.Type;
-                const auto argTag = argDescription.Tag;
+                const auto argTypeHint = argDescription.TypeHint;
                 const auto argRequired = argDescription.Required;
-                const auto item = make_self<ArgWrapper>(argName, argType, argRequired, argTag, argAtIndex);
+                const auto item = make_self<ArgWrapper>(argName, argType, argRequired, argTypeHint, argAtIndex);
                 item->PropertyChanged([weakThis = get_weak(), i](const IInspectable& sender, const PropertyChangedEventArgs& args) {
                     if (auto weak = weakThis.get())
                     {
