@@ -298,13 +298,11 @@ void BackendD3D::_updateFontDependents(const RenderingPayload& p)
     {
         const int cellHeight = font.cellSize.y;
         const int duTop = font.doubleUnderline[0].position;
-        const int duBottom = font.doubleUnderline[1].position;
-        const int duHeight = font.doubleUnderline[0].height;
 
-        // This gives it the same position and height as our double-underline. There's no particular reason for that, apart from
-        // it being simple to implement and robust against more peculiar fonts with unusually large/small descenders, etc.
-        // We still need to ensure though that it doesn't clip out of the cellHeight at the bottom, which is why `position` has a min().
-        const auto height = std::max(3, duBottom + duHeight - duTop);
+        // We want 1 period per cell. Calculating the corresponding height is simple.
+        // The height must be rounded to give the extrema a crisp look. We still need to ensure though
+        // that it doesn't clip out of the cellHeight at the bottom, which is why `position` has a min().
+        const auto height = std::max(3, static_cast<int>(lroundf(font.cellSize.x / 3.14159265359f)));
         const auto position = std::min(duTop, cellHeight - height);
 
         _curlyLineHalfHeight = height * 0.5f;
@@ -586,7 +584,6 @@ void BackendD3D::_recreateConstBuffer(const RenderingPayload& p) const
         DWrite_GetGammaRatios(_gamma, data.gammaRatios);
         data.enhancedContrast = p.s->font->antialiasingMode == AntialiasingMode::ClearType ? _cleartypeEnhancedContrast : _grayscaleEnhancedContrast;
         data.underlineWidth = p.s->font->underline.height;
-        data.doubleUnderlineWidth = p.s->font->doubleUnderline[0].height;
         data.curlyLineHalfHeight = _curlyLineHalfHeight;
         // The lightLineWidth used for drawing the built-in glyphs is `cellSize.x / 6.0f`.
         // So this ends up using a quarter line width for the dotted glyphs.
