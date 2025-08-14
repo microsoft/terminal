@@ -89,23 +89,23 @@ struct InitListPlaceholder
     &&(otherAsUs->_##name == _##name)
 
 #define X_MACRO_INDEX_BASE() \
-constexpr auto X_MACRO_INDEXED_BASE__ = __COUNTER__ - 1
+    constexpr auto X_MACRO_INDEXED_BASE__ = __COUNTER__ - 1
 
 #define X_MACRO_INDEX() \
-(__COUNTER__ - X_MACRO_INDEXED_BASE__)
+    (__COUNTER__ - X_MACRO_INDEXED_BASE__)
 
 // getter and setter for each property by index
-#define GET_ARG_BY_INDEX(type, name, jsonKey, required, typeHint, ...)    \
-    if (index == X_MACRO_INDEX())                                         \
-    {                                                                     \
-        if (_##name.has_value())                                          \
-        {                                                                 \
-            return winrt::box_value(_##name.value());                     \
-        }                                                                 \
-        else                                                              \
-        {                                                                 \
-            return winrt::box_value(static_cast<type>(__VA_ARGS__));      \
-        }                                                                 \
+#define GET_ARG_BY_INDEX(type, name, jsonKey, required, typeHint, ...) \
+    if (index == X_MACRO_INDEX())                                      \
+    {                                                                  \
+        if (_##name.has_value())                                       \
+        {                                                              \
+            return winrt::box_value(_##name.value());                  \
+        }                                                              \
+        else                                                           \
+        {                                                              \
+            return winrt::box_value(static_cast<type>(__VA_ARGS__));   \
+        }                                                              \
     }
 
 #define SET_ARG_BY_INDEX(type, name, jsonKey, required, typeHint, ...) \
@@ -219,12 +219,12 @@ public:                                                                         
     }                                                                                             \
     uint32_t GetArgCount()                                                                        \
     {                                                                                             \
-        return gsl::narrow<uint32_t>(GetArgDescriptors().Size());                                     \
+        return gsl::narrow<uint32_t>(GetArgDescriptors().Size());                                 \
     }                                                                                             \
-    winrt::Windows::Foundation::Collections::IVectorView<ArgDescriptor> GetArgDescriptors()  \
+    winrt::Windows::Foundation::Collections::IVectorView<ArgDescriptor> GetArgDescriptors()       \
     {                                                                                             \
-        static const auto descriptors = INIT_ARG_DESCRIPTORS(argsMacro);               \
-        return descriptors;                                                         \
+        static const auto descriptors = INIT_ARG_DESCRIPTORS(argsMacro);                          \
+        return descriptors;                                                                       \
     }                                                                                             \
     IInspectable GetArgAt(uint32_t index) const                                                   \
     {                                                                                             \
@@ -237,34 +237,34 @@ public:                                                                         
         argsMacro(SET_ARG_BY_INDEX)                                                               \
     }
 
-#define PARTIAL_ACTION_ARG_BODY(className, argsMacro)         \
-    className() = default;                                    \
-    className(                                                \
-        argsMacro(CTOR_PARAMS) InitListPlaceholder = {}) :    \
-        argsMacro(CTOR_INIT)                                  \
-            _placeholder{} {};                                \
-    argsMacro(DECLARE_ARGS);                                  \
-                                                              \
-private:                                                      \
-    InitListPlaceholder _placeholder;                         \
-                                                              \
-public:                                                       \
-    uint32_t GetArgCount()                                    \
-    {                                                         \
-        return gsl::narrow<uint32_t>(GetArgDescriptors().Size()); \
-    }                                                         \
-    winrt::Windows::Foundation::Collections::IVectorView<ArgDescriptor> GetArgDescriptors()  \
-    {                                                                                               \
-        static const auto descriptors = INIT_ARG_DESCRIPTORS(argsMacro);                            \
-        return descriptors;                                                                         \
-    }                                                                                               \
-    IInspectable GetArgAt(uint32_t index) const               \
-    {                                                         \
-        X_MACRO_INDEX_BASE();                                 \
-        argsMacro(GET_ARG_BY_INDEX) return nullptr;           \
-    }                                                         \
-    void SetArgAt(uint32_t index, IInspectable value)         \
-    {                                                         \
-        X_MACRO_INDEX_BASE();                                 \
-        argsMacro(SET_ARG_BY_INDEX)                           \
+#define PARTIAL_ACTION_ARG_BODY(className, argsMacro)                                       \
+    className() = default;                                                                  \
+    className(                                                                              \
+        argsMacro(CTOR_PARAMS) InitListPlaceholder = {}) :                                  \
+        argsMacro(CTOR_INIT)                                                                \
+            _placeholder{} {};                                                              \
+    argsMacro(DECLARE_ARGS);                                                                \
+                                                                                            \
+private:                                                                                    \
+    InitListPlaceholder _placeholder;                                                       \
+                                                                                            \
+public:                                                                                     \
+    uint32_t GetArgCount()                                                                  \
+    {                                                                                       \
+        return gsl::narrow<uint32_t>(GetArgDescriptors().Size());                           \
+    }                                                                                       \
+    winrt::Windows::Foundation::Collections::IVectorView<ArgDescriptor> GetArgDescriptors() \
+    {                                                                                       \
+        static const auto descriptors = INIT_ARG_DESCRIPTORS(argsMacro);                    \
+        return descriptors;                                                                 \
+    }                                                                                       \
+    IInspectable GetArgAt(uint32_t index) const                                             \
+    {                                                                                       \
+        X_MACRO_INDEX_BASE();                                                               \
+        argsMacro(GET_ARG_BY_INDEX) return nullptr;                                         \
+    }                                                                                       \
+    void SetArgAt(uint32_t index, IInspectable value)                                       \
+    {                                                                                       \
+        X_MACRO_INDEX_BASE();                                                               \
+        argsMacro(SET_ARG_BY_INDEX)                                                         \
     }
