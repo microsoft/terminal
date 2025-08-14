@@ -394,8 +394,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     public:
         NewTerminalArgs(int32_t& profileIndex) :
-            _ProfileIndex{ profileIndex },
-            _argDescriptors(INIT_ARG_DESCRIPTORS(NEW_TERMINAL_ARGS)) {};
+            _ProfileIndex{ profileIndex } {};
         hstring GenerateName() const { return GenerateName(GetLibraryResourceLoader().ResourceContext()); }
         hstring GenerateName(const winrt::Windows::ApplicationModel::Resources::Core::ResourceContext&) const;
         hstring ToCommandline() const;
@@ -637,7 +636,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             h.write(ContentArgs());
             return h.finalize();
         }
-        uint32_t GetArgCount() const
+        uint32_t GetArgCount()
         {
             if (_ContentArgs)
             {
@@ -648,42 +647,57 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             }
             return 0;
         }
-        Model::ArgDescriptor GetArgDescriptorAt(uint32_t index) const
+        winrt::Windows::Foundation::Collections::IVectorView<ArgDescriptor> GetArgDescriptors()
         {
-            return _ContentArgs.as<NewTerminalArgs>()->GetArgDescriptorAt(index);
+            if (_ContentArgs)
+            {
+                if (const auto newTermArgs = _ContentArgs.try_as<NewTerminalArgs>())
+                {
+                    return newTermArgs->GetArgDescriptors();
+                }
+            }
+            return {};
         }
         IInspectable GetArgAt(uint32_t index) const
         {
-            return _ContentArgs.as<NewTerminalArgs>()->GetArgAt(index);
+            if (_ContentArgs)
+            {
+                if (const auto newTermArgs = _ContentArgs.try_as<NewTerminalArgs>())
+                {
+                    return newTermArgs->GetArgAt(index);
+                }
+            }
+            return nullptr;
         }
         void SetArgAt(uint32_t index, IInspectable value)
         {
-            _ContentArgs.as<NewTerminalArgs>()->SetArgAt(index, value);
+            if (_ContentArgs)
+            {
+                if (const auto newTermArgs = _ContentArgs.try_as<NewTerminalArgs>())
+                {
+                    newTermArgs->SetArgAt(index, value);
+                }
+            }
         }
     };
 
     struct SplitPaneArgs : public SplitPaneArgsT<SplitPaneArgs>
     {
-        SplitPaneArgs() :
-            _argDescriptors(INIT_ARG_DESCRIPTORS(SPLIT_PANE_ARGS)) {};
+        SplitPaneArgs() = default;
         SplitPaneArgs(SplitType splitMode, SplitDirection direction, float size, const Model::INewContentArgs& terminalArgs) :
             _SplitMode{ splitMode },
             _SplitDirection{ direction },
             _SplitSize{ size },
-            _ContentArgs{ terminalArgs },
-            _argDescriptors(INIT_ARG_DESCRIPTORS(SPLIT_PANE_ARGS)) {};
+            _ContentArgs{ terminalArgs } {};
         SplitPaneArgs(SplitDirection direction, float size, const Model::INewContentArgs& terminalArgs) :
             _SplitDirection{ direction },
             _SplitSize{ size },
-            _ContentArgs{ terminalArgs },
-            _argDescriptors(INIT_ARG_DESCRIPTORS(SPLIT_PANE_ARGS)) {};
+            _ContentArgs{ terminalArgs } {};
         SplitPaneArgs(SplitDirection direction, const Model::INewContentArgs& terminalArgs) :
             _SplitDirection{ direction },
-            _ContentArgs{ terminalArgs },
-            _argDescriptors(INIT_ARG_DESCRIPTORS(SPLIT_PANE_ARGS)) {};
+            _ContentArgs{ terminalArgs } {};
         SplitPaneArgs(SplitType splitMode) :
-            _SplitMode{ splitMode },
-            _argDescriptors(INIT_ARG_DESCRIPTORS(SPLIT_PANE_ARGS)) {};
+            _SplitMode{ splitMode } {};
 
         SPLIT_PANE_ARGS(DECLARE_ARGS);
         WINRT_PROPERTY(Model::INewContentArgs, ContentArgs, Model::NewTerminalArgs{});
@@ -752,35 +766,43 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             h.write(SplitSize());
             return h.finalize();
         }
-        uint32_t GetArgCount() const
+        uint32_t GetArgCount()
         {
             if (_ContentArgs)
             {
                 if (const auto newTermArgs = _ContentArgs.try_as<NewTerminalArgs>())
                 {
-                    return newTermArgs->GetArgCount() + gsl::narrow<uint32_t>(_argDescriptors.size());
+                    return newTermArgs->GetArgCount() + gsl::narrow<uint32_t>(GetArgDescriptors().Size());
                 }
             }
-            return gsl::narrow<uint32_t>(_argDescriptors.size());
+            return gsl::narrow<uint32_t>(GetArgDescriptors().Size());
         }
-        Model::ArgDescriptor GetArgDescriptorAt(uint32_t index) const
+        winrt::Windows::Foundation::Collections::IVectorView<Model::ArgDescriptor> GetArgDescriptors()
         {
-            const auto additionalArgCount = gsl::narrow<uint32_t>(_argDescriptors.size());
+            static const auto thisArgs = INIT_ARG_DESCRIPTORS(SPLIT_PANE_ARGS);
+            auto contentArgs = _ContentArgs.as<NewTerminalArgs>()->GetArgDescriptors();
+
+            // Merge into a new vector
+            std::vector<Model::ArgDescriptor> merged;
+            merged.reserve(thisArgs.Size() + contentArgs.Size());
+
+            for (const auto desc : thisArgs)
+            {
+                merged.push_back(desc);
+            }
+            for (const auto desc : contentArgs)
+            {
+                merged.push_back(desc);
+            }
+
+            return winrt::single_threaded_vector(std::move(merged)).GetView();
+        }
+        IInspectable GetArgAt(uint32_t index)
+        {
+            const auto additionalArgCount = gsl::narrow<uint32_t>(GetArgDescriptors().Size());
             if (index < additionalArgCount)
             {
-                return _argDescriptors.at(index);
-            }
-            else
-            {
-                return _ContentArgs.as<NewTerminalArgs>()->GetArgDescriptorAt(index - additionalArgCount);
-            }
-        }
-        IInspectable GetArgAt(uint32_t index) const
-        {
-            const auto additionalArgCount = gsl::narrow<uint32_t>(_argDescriptors.size());
-            if (index < additionalArgCount)
-            {
-                uint32_t curIndex{ 0 };
+                X_MACRO_INDEX_BASE();
                 SPLIT_PANE_ARGS(GET_ARG_BY_INDEX);
             }
             else
@@ -791,10 +813,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
         void SetArgAt(uint32_t index, IInspectable value)
         {
-            const auto additionalArgCount = gsl::narrow<uint32_t>(_argDescriptors.size());
+            const auto additionalArgCount = gsl::narrow<uint32_t>(GetArgDescriptors().Size());
             if (index < additionalArgCount)
             {
-                uint32_t curIndex{ 0 };
+                X_MACRO_INDEX_BASE();
                 SPLIT_PANE_ARGS(SET_ARG_BY_INDEX);
             }
             else
@@ -802,9 +824,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 _ContentArgs.as<NewTerminalArgs>()->SetArgAt(index - additionalArgCount, value);
             }
         }
-
-    private:
-        const std::vector<ArgDescriptor> _argDescriptors;
     };
 
     struct NewWindowArgs : public NewWindowArgsT<NewWindowArgs>
@@ -856,7 +875,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             h.write(ContentArgs());
             return h.finalize();
         }
-        uint32_t GetArgCount() const
+        uint32_t GetArgCount()
         {
             if (_ContentArgs)
             {
@@ -867,9 +886,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             }
             return 0;
         }
-        Model::ArgDescriptor GetArgDescriptorAt(uint32_t index) const
+        winrt::Windows::Foundation::Collections::IVectorView<Model::ArgDescriptor> GetArgDescriptors()
         {
-            return _ContentArgs.as<NewTerminalArgs>()->GetArgDescriptorAt(index);
+            return _ContentArgs.as<NewTerminalArgs>()->GetArgDescriptors();
         }
         IInspectable GetArgAt(uint32_t index) const
         {
@@ -1019,11 +1038,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             h.write(winrt::get_abi(_Actions));
             return h.finalize();
         }
-        uint32_t GetArgCount() const
+        uint32_t GetArgCount()
         {
             return _Actions.Size();
         }
-        Model::ArgDescriptor GetArgDescriptorAt(uint32_t /*index*/) const
+        winrt::Windows::Foundation::Collections::IVectorView<Model::ArgDescriptor> GetArgDescriptors()
         {
             return {};
         }

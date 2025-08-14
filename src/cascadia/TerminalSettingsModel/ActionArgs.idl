@@ -24,7 +24,7 @@ namespace Microsoft.Terminal.Settings.Model
     interface IActionArgsDescriptorAccess
     {
         UInt32 GetArgCount();
-        ArgDescriptor GetArgDescriptorAt(UInt32 index);
+        Windows.Foundation.Collections.IVectorView<ArgDescriptor> GetArgDescriptors();
         IInspectable GetArgAt(UInt32 index);
         void SetArgAt(UInt32 index, Object value);
     };
