@@ -3382,9 +3382,7 @@ namespace winrt::TerminalApp::implementation
     {
         // Do any initialization that needs to apply to _every_ TermControl we
         // create here.
-        // TermControl will copy the settings out of the settings passed to it.
-
-        const auto content = _manager.CreateCore(*settings.DefaultSettings(), *settings.UnfocusedSettings(), connection);
+        const auto content = _manager.CreateCore(*settings.DefaultSettings(), settings.UnfocusedSettings().try_as<IControlAppearance>(), connection);
         const TermControl control{ content };
         return _SetupControl(control);
     }
