@@ -768,38 +768,37 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
         uint32_t GetArgCount()
         {
-            if (_ContentArgs)
-            {
-                if (const auto newTermArgs = _ContentArgs.try_as<NewTerminalArgs>())
-                {
-                    return newTermArgs->GetArgCount() + gsl::narrow<uint32_t>(GetArgDescriptors().Size());
-                }
-            }
             return gsl::narrow<uint32_t>(GetArgDescriptors().Size());
         }
         winrt::Windows::Foundation::Collections::IVectorView<Model::ArgDescriptor> GetArgDescriptors()
         {
             static const auto thisArgs = INIT_ARG_DESCRIPTORS(SPLIT_PANE_ARGS);
-            auto contentArgs = _ContentArgs.as<NewTerminalArgs>()->GetArgDescriptors();
 
             // Merge into a new vector
             std::vector<Model::ArgDescriptor> merged;
-            merged.reserve(thisArgs.Size() + contentArgs.Size());
 
             for (const auto desc : thisArgs)
             {
                 merged.push_back(desc);
             }
-            for (const auto desc : contentArgs)
+
+            if (_ContentArgs)
             {
-                merged.push_back(desc);
+                if (const auto newTermArgs = _ContentArgs.try_as<NewTerminalArgs>())
+                {
+                    auto contentArgs = newTermArgs->GetArgDescriptors();
+                    for (const auto desc : contentArgs)
+                    {
+                        merged.push_back(desc);
+                    }
+                }
             }
 
             return winrt::single_threaded_vector(std::move(merged)).GetView();
         }
         IInspectable GetArgAt(uint32_t index)
         {
-            const auto additionalArgCount = gsl::narrow<uint32_t>(GetArgDescriptors().Size());
+            const auto additionalArgCount = INIT_ARG_DESCRIPTORS(SPLIT_PANE_ARGS).Size();
             if (index < additionalArgCount)
             {
                 X_MACRO_INDEX_BASE();
@@ -813,7 +812,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
         void SetArgAt(uint32_t index, IInspectable value)
         {
-            const auto additionalArgCount = gsl::narrow<uint32_t>(GetArgDescriptors().Size());
+            const auto additionalArgCount = INIT_ARG_DESCRIPTORS(SPLIT_PANE_ARGS).Size();
             if (index < additionalArgCount)
             {
                 X_MACRO_INDEX_BASE();

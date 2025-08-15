@@ -89,10 +89,10 @@ struct InitListPlaceholder
     &&(otherAsUs->_##name == _##name)
 
 #define X_MACRO_INDEX_BASE() \
-    constexpr auto X_MACRO_INDEXED_BASE__ = __COUNTER__ - 1
+    constexpr auto X_MACRO_INDEXED_BASE__ = __COUNTER__
 
 #define X_MACRO_INDEX() \
-    (__COUNTER__ - X_MACRO_INDEXED_BASE__)
+    (__COUNTER__ - X_MACRO_INDEXED_BASE__ - 1)
 
 // getter and setter for each property by index
 #define GET_ARG_BY_INDEX(type, name, jsonKey, required, typeHint, ...) \
