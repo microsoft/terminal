@@ -217,10 +217,6 @@ public:                                                                         
         argsMacro(HASH_ARGS);                                                                     \
         return h.finalize();                                                                      \
     }                                                                                             \
-    uint32_t GetArgCount()                                                                        \
-    {                                                                                             \
-        return gsl::narrow<uint32_t>(GetArgDescriptors().Size());                                 \
-    }                                                                                             \
     winrt::Windows::Foundation::Collections::IVectorView<ArgDescriptor> GetArgDescriptors()       \
     {                                                                                             \
         static const auto descriptors = INIT_ARG_DESCRIPTORS(argsMacro);                          \
@@ -249,10 +245,6 @@ private:                                                                        
     InitListPlaceholder _placeholder;                                                       \
                                                                                             \
 public:                                                                                     \
-    uint32_t GetArgCount()                                                                  \
-    {                                                                                       \
-        return gsl::narrow<uint32_t>(GetArgDescriptors().Size());                           \
-    }                                                                                       \
     winrt::Windows::Foundation::Collections::IVectorView<ArgDescriptor> GetArgDescriptors() \
     {                                                                                       \
         static const auto descriptors = INIT_ARG_DESCRIPTORS(argsMacro);                    \
