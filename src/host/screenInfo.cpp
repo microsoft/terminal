@@ -1720,7 +1720,7 @@ void SCREEN_INFORMATION::SnapOnInput(const WORD vkey)
 
 void SCREEN_INFORMATION::_makeCursorVisible()
 {
-    if (_textBuffer->GetCursor().IsOn())
+    if (_textBuffer->GetCursor().IsVisible())
     {
         MakeCursorVisible(_textBuffer->GetCursor().GetPosition());
     }
