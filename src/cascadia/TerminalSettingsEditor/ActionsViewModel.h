@@ -125,6 +125,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         WINRT_PROPERTY(bool, IsNewCommand, false);
 
     private:
+        winrt::hstring _cachedDisplayName;
         winrt::Microsoft::Terminal::Settings::Model::Command _command;
         std::vector<Control::KeyChord> _keyChordList;
         weak_ref<Editor::ActionsViewModel> _actionsPageVM{ nullptr };

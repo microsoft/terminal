@@ -281,7 +281,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     winrt::hstring CommandViewModel::DisplayName()
     {
-        return _command.Name();
+        if (_cachedDisplayName.empty())
+        {
+            _cachedDisplayName = _command.Name();
+        }
+        return _cachedDisplayName;
     }
 
     winrt::hstring CommandViewModel::Name()
@@ -297,6 +301,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             // if the name was cleared, refresh the DisplayName
             _NotifyChanges(L"DisplayName", L"DisplayNameAndKeyChordAutomationPropName");
         }
+        _cachedDisplayName.clear();
     }
 
     winrt::hstring CommandViewModel::DisplayNameAndKeyChordAutomationPropName()
