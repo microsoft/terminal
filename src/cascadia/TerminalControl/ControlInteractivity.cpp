@@ -485,6 +485,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - modifiers: The modifiers pressed during this event, in the form of a VirtualKeyModifiers
     // - delta: the mouse wheel delta that triggered this event.
     bool ControlInteractivity::MouseWheel(const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
+                                          const bool horizontal,
                                           const int32_t delta,
                                           const Core::Point pixelPosition,
                                           const Control::MouseButtonState buttonState)
@@ -506,7 +507,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // PointerPoint to work with. So, we're just going to do a
             // mousewheel event manually
             return _sendMouseEventHelper(terminalPosition,
-                                         WM_MOUSEWHEEL,
+                                         horizontal ? WM_MOUSEHWHEEL : WM_MOUSEWHEEL,
                                          modifiers,
                                          ::base::saturated_cast<short>(delta),
                                          buttonState);
@@ -667,7 +668,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             return false;
         }
-        return _core->ShouldSendAlternateScroll(WM_MOUSEWHEEL, delta);
+        return _core->ShouldSendAlternateScroll(WM_MOUSEWHEEL, delta) || _core->ShouldSendAlternateScroll(WM_MOUSEHWHEEL, delta);
     }
 
     // Method Description:

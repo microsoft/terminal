@@ -111,7 +111,7 @@ namespace Microsoft::Console::VirtualTerminal
         [[nodiscard]] OutputType _GenerateUtf8Sequence(til::point position, unsigned int button, bool isHover, short modifierKeyState, short delta);
         [[nodiscard]] OutputType _GenerateSGRSequence(til::point position, unsigned int button, bool isRelease, bool isHover, short modifierKeyState, short delta);
 
-        [[nodiscard]] OutputType _makeAlternateScrollOutput(short delta) const;
+        [[nodiscard]] OutputType _makeAlternateScrollOutput(unsigned int button, short delta) const;
 
         static constexpr unsigned int s_GetPressedButton(const MouseButtonState state) noexcept;
 #pragma endregion
