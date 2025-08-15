@@ -127,9 +127,12 @@ public:
             wch = L'!';
             break;
         case WM_MOUSEWHEEL:
-        case WM_MOUSEHWHEEL:
             Log::Comment(NoThrowString().Format(L"MOUSEWHEEL"));
             wch = L'`' + (sScrollDelta > 0 ? 0 : 1);
+            break;
+        case WM_MOUSEHWHEEL:
+            Log::Comment(NoThrowString().Format(L"MOUSEHWHEEL"));
+            wch = L'b' + (sScrollDelta > 0 ? 0 : 1);
             break;
         case WM_MOUSEMOVE:
         default:
@@ -168,8 +171,10 @@ public:
             result = 3 + 0x20; // we add 0x20 to hover events, which are all encoded as WM_MOUSEMOVE events
             break;
         case WM_MOUSEWHEEL:
-        case WM_MOUSEHWHEEL:
             result = (sScrollDelta > 0 ? 64 : 65);
+            break;
+        case WM_MOUSEHWHEEL:
+            result = (sScrollDelta > 0 ? 66 : 67);
             break;
         default:
             result = 0;

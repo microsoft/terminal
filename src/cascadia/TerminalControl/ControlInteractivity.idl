@@ -60,6 +60,7 @@ namespace Microsoft.Terminal.Control
         void TouchReleased();
 
         Boolean MouseWheel(Microsoft.Terminal.Core.ControlKeyStates modifiers,
+                           Boolean horizontal,
                            Int32 delta,
                            Microsoft.Terminal.Core.Point pixelPosition,
                            MouseButtonState state);

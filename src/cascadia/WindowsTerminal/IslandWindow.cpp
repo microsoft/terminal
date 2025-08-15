@@ -595,6 +595,7 @@ void IslandWindow::_OnGetMinMaxInfo(const WPARAM /*wParam*/, const LPARAM lParam
         WindowCloseButtonClicked.raise();
         return 0;
     }
+    case WM_MOUSEHWHEEL:
     case WM_MOUSEWHEEL:
         try
         {
@@ -626,7 +627,7 @@ void IslandWindow::_OnGetMinMaxInfo(const WPARAM /*wParam*/, const LPARAM lParam
             const auto wheelDelta = static_cast<short>(HIWORD(wparam));
 
             // Raise an event, so any listeners can handle the mouse wheel event manually.
-            MouseScrolled.raise(real, wheelDelta);
+            MouseScrolled.raise(real, wheelDelta, message == WM_MOUSEHWHEEL);
             return 0;
         }
         CATCH_LOG();
