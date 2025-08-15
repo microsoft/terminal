@@ -567,7 +567,7 @@ BOOL HandleMouseEvent(const SCREEN_INFORMATION& ScreenInfo,
     if (!fShiftPressed && !pSelection->IsInSelectingState())
     {
         short sDelta = 0;
-        if (Message == WM_MOUSEWHEEL)
+        if (Message == WM_MOUSEWHEEL || Message == WM_MOUSEHWHEEL)
         {
             sDelta = GET_WHEEL_DELTA_WPARAM(wParam);
         }
