@@ -1,0 +1,20 @@
+name: "Feature Request/Idea 🚀"
+description: Suggest a new feature or improvement (this does not mean you have to implement it)
+labels: [Issue-Feature]
+type: Feature
+body:
+- type: textarea
+  attributes:
+    label: Description of the new feature
+    description: A clear and concise description of what the problem is that the new feature would solve.
+    placeholder: |
+      ... and guess what? I have four Terminals. And I have a hover car, and a hover house. And my computer's a runner, and it shows.
+  validations:
+    required: true
+
+- type: textarea
+  attributes:
+    label: Proposed technical implementation details
+    description: This field is optional. If you have any ideas, let us know!
+  validations:
+    required: false

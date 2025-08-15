@@ -41,6 +41,7 @@ namespace winrt::TerminalApp::implementation
     public:
         TerminalSettingsCache(const Microsoft::Terminal::Settings::Model::CascadiaSettings& settings, const TerminalApp::AppKeyBindings& bindings);
         TerminalApp::TerminalSettingsPair TryLookup(const Microsoft::Terminal::Settings::Model::Profile& profile);
+        void Reset(const Microsoft::Terminal::Settings::Model::CascadiaSettings& settings, const TerminalApp::AppKeyBindings& bindings);
 
     private:
         Microsoft::Terminal::Settings::Model::CascadiaSettings _settings{ nullptr };

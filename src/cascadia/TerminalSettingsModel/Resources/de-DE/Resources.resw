@@ -126,6 +126,10 @@
   <data name="SplitPaneParentCommandName" xml:space="preserve">
     <value>Bereich teilen...</value>
   </data>
+  <data name="SnippetsPaneCommandName" xml:space="preserve">
+    <value>Bereich "Codeausschnitte" öffnen</value>
+    <comment>This will open a pane with a list of the users's saved commands ("snippets") in it</comment>
+  </data>
   <data name="ApplicationDisplayNamePortable" xml:space="preserve">
     <value>Terminal (portierbar)</value>
     <comment>This display name is used when the Terminal application is running in a "portable" mode, where settings are not stored in a shared location.</comment>
@@ -324,8 +328,11 @@
     <value>Einstellungsdatei öffnen (JSON)</value>
     <comment>{Locked="JSON"}. "JSON" is the extension of the file that will be opened.</comment>
   </data>
+  <data name="SettingsFileOpenInExplorerCommandKey" xml:space="preserve">
+    <value>Öffnen des Einstellungsdateiverzeichnisses</value>
+  </data>
   <data name="OpenTabColorPickerCommandKey" xml:space="preserve">
-    <value>Die Farbe der Registerkarte festlegen...</value>
+    <value>Registerkartenfarbe festlegen...</value>
   </data>
   <data name="PasteTextCommandKey" xml:space="preserve">
     <value>Einfügen</value>
@@ -347,7 +354,7 @@
     <value>Den Titel der Registerkarte zurücksetzen</value>
   </data>
   <data name="OpenTabRenamerCommandKey" xml:space="preserve">
-    <value>Registerkartentitel umbenennen...</value>
+    <value>Registerkarte umbenennen</value>
   </data>
   <data name="ResizePaneCommandKey" xml:space="preserve">
     <value>Bereich skalieren</value>
@@ -449,11 +456,8 @@
   <data name="ToggleCommandPaletteCommandKey" xml:space="preserve">
     <value>Befehlspalette ein/aus</value>
   </data>
-  <data name="SuggestionsCommandHistoryCommandKey" xml:space="preserve">
-    <value>Zuletzt verwendete Befehle...</value>
-  </data>
   <data name="SuggestionsCommandKey" xml:space="preserve">
-    <value>Vorschläge öffnen...</value>
+    <value>Vorschläge öffnen</value>
   </data>
   <data name="ToggleCommandPaletteCommandLineModeCommandKey" xml:space="preserve">
     <value>Befehlspalette im Befehlszeilenmodus ein/aus</value>
@@ -505,7 +509,7 @@
     <value>Debugger unterbrechen</value>
   </data>
   <data name="OpenSettingsUICommandKey" xml:space="preserve">
-    <value>Einstellungen öffnen...</value>
+    <value>Einstellungen öffnen</value>
   </data>
   <data name="RenameWindowCommandKey" xml:space="preserve">
     <value>Fenster in „{0}“ umbenennen</value>
@@ -726,5 +730,34 @@
   <data name="OpenAboutCommandKey" xml:space="preserve">
     <value>Dialogfeld „Info“ öffnen</value>
     <comment>This will open the "about" dialog, to display version info and other documentation</comment>
+  </data>
+  <data name="SaveSnippetNamePrefix" xml:space="preserve">
+    <value>Codeschnipsel speichern</value>
+  </data>
+  <data name="QuickFixCommandKey" xml:space="preserve">
+    <value>Menü zur schnellen Problembehebung öffnen</value>
+  </data>
+  <data name="OpenCWDCommandKey" xml:space="preserve">
+    <value>Aktuelles Arbeitsverzeichnis öffnen</value>
+  </data>
+  <data name="WslDistroGeneratorDisplayName" xml:space="preserve">
+    <value>WSL-Verteilungsprofilgenerator</value>
+    <comment>The display name of a dynamic profile generator for WSL distros</comment>
+  </data>
+  <data name="PowershellCoreProfileGeneratorDisplayName" xml:space="preserve">
+    <value>PowerShell-Profilgenerator</value>
+    <comment>The display name of a dynamic profile generator for PowerShell</comment>
+  </data>
+  <data name="AzureCloudShellGeneratorDisplayName" xml:space="preserve">
+    <value>Azure Cloud Shell-Profilgenerator</value>
+    <comment>The display name of a dynamic profile generator for Azure Cloud Shell</comment>
+  </data>
+  <data name="VisualStudioGeneratorDisplayName" xml:space="preserve">
+    <value>Visual Studio-Profilgenerator</value>
+    <comment>The display name of a dynamic profile generator for Visual Studio</comment>
+  </data>
+  <data name="SshHostGeneratorDisplayName" xml:space="preserve">
+    <value>SSH-Hostprofilgenerator</value>
+    <comment>The display name of a dynamic profile generator for SSH hosts</comment>
   </data>
 </root>

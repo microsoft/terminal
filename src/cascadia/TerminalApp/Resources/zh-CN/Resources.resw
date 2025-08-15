@@ -187,7 +187,10 @@
     <value>多个窗格</value>
   </data>
   <data name="TabCloseSubMenu" xml:space="preserve">
-    <value>关闭…</value>
+    <value>关闭</value>
+  </data>
+  <data name="TabMoveSubMenu" xml:space="preserve">
+    <value>移动选项卡</value>
   </data>
   <data name="TabCloseAfter" xml:space="preserve">
     <value>关闭右侧标签页</value>
@@ -207,14 +210,53 @@
   <data name="SplitPaneText" xml:space="preserve">
     <value>拆分窗格</value>
   </data>
+  <data name="SplitPaneToolTipText" xml:space="preserve">
+    <value>右键单击以查看拆分方向 - 右/下/上/左</value>
+  </data>
+  <data name="SplitPaneDownText" xml:space="preserve">
+    <value>向下拆分窗格</value>
+  </data>
+  <data name="SplitPaneRightText" xml:space="preserve">
+    <value>向右拆分窗格</value>
+  </data>
+  <data name="SplitPaneUpText" xml:space="preserve">
+    <value>向上拆分窗格</value>
+  </data>
+  <data name="SplitPaneLeftText" xml:space="preserve">
+    <value>向左拆分窗格</value>
+  </data>
+  <data name="SplitPaneDuplicateText" xml:space="preserve">
+    <value>复制</value>
+  </data>
+  <data name="SwapPaneText" xml:space="preserve">
+    <value>交换窗格</value>
+  </data>
+  <data name="SwapPaneDownText" xml:space="preserve">
+    <value>向下交换窗格</value>
+  </data>
+  <data name="SwapPaneRightText" xml:space="preserve">
+    <value>向右交换窗格</value>
+  </data>
+  <data name="SwapPaneUpText" xml:space="preserve">
+    <value>向上交换窗格</value>
+  </data>
+  <data name="SwapPaneLeftText" xml:space="preserve">
+    <value>向左交换窗格</value>
+  </data>
+  <data name="TogglePaneZoomText" xml:space="preserve">
+    <value>切换窗格缩放</value>
+  </data>
+  <data name="CloseOtherPanesText" xml:space="preserve">
+    <value>关闭其他窗格</value>
+  </data>
   <data name="SearchWebText" xml:space="preserve">
-    <value>Web 搜索</value>
+    <value>网络搜索</value>
   </data>
   <data name="TabColorChoose" xml:space="preserve">
-    <value>颜色...</value>
+    <value>更改选项卡颜色</value>
   </data>
   <data name="TabColorCustomButton.Content" xml:space="preserve">
-    <value>自定义...</value>
+    <value>自定义</value>
   </data>
   <data name="TabColorClearButton.Content" xml:space="preserve">
     <value>重置</value>
@@ -223,15 +265,11 @@
     <value>重命名选项卡</value>
   </data>
   <data name="DuplicateTabText" xml:space="preserve">
-    <value>复制选项卡</value>
+    <value>复制标签页</value>
   </data>
-  <data name="InvalidBackgroundImage" xml:space="preserve">
-    <value>找到一个具有无效 "backgroundImage" 的配置文件。将该配置文件设置为默认设置为不包含背景图像。请确保在设置 "backgroundImage" 时，该值是指向图像的有效文件路径。</value>
-    <comment>{Locked="\"backgroundImage\""}</comment>
-  </data>
-  <data name="InvalidIcon" xml:space="preserve">
-    <value>找到一个带有无效 "icon" 的配置文件。将该配置文件默认为无图标。确保设置 "icon" 时，该值是图像的有效文件路径。</value>
-    <comment>{Locked="\"icon\""} The word "icon" in quotes is locked, the word icon OUTSIDE of quotes should be localized.</comment>
+  <data name="InvalidMediaResource" xml:space="preserve">
+    <value>找不到设置中指定的一个或多个资源 (，如 icon 或 backgroundImage)。</value>
+    <comment>{Locked="icon","backgroundImage"} Indicates that something has gone wrong while reading a user's settings.</comment>
   </data>
   <data name="AtLeastOneKeybindingWarning" xml:space="preserve">
     <value>分析键绑定时发现警告:</value>
@@ -279,6 +317,15 @@
   </data>
   <data name="CmdCommandArgDesc" xml:space="preserve">
     <value>要在新选项卡或窗格中生成的可选命令(带参数)</value>
+  </data>
+  <data name="SaveSnippetDesc" xml:space="preserve">
+    <value>将命令行另存为输入操作</value>
+  </data>
+  <data name="SaveSnippetArgDesc" xml:space="preserve">
+    <value>可选参数</value>
+  </data>
+  <data name="KeyChordArgDesc" xml:space="preserve">
+    <value>可选参数</value>
   </data>
   <data name="CmdFocusTabDesc" xml:space="preserve">
     <value>将焦点移至另一个选项卡</value>
@@ -480,7 +527,7 @@
     <comment>A hyperlink name for the Terminal's release notes</comment>
   </data>
   <data name="AboutDialog_PrivacyPolicyLink.Content" xml:space="preserve">
-    <value>隐私策略</value>
+    <value>隐私政策</value>
     <comment>A hyperlink name for the Terminal's privacy policy</comment>
   </data>
   <data name="AboutDialog_ThirdPartyNoticesLink.Content" xml:space="preserve">
@@ -713,12 +760,6 @@
   <data name="WindowRenamer.CloseButtonContent" xml:space="preserve">
     <value>取消</value>
   </data>
-  <data name="RenameFailedToast.Title" xml:space="preserve">
-    <value>未能重命名窗口</value>
-  </data>
-  <data name="RenameFailedToast.Subtitle" xml:space="preserve">
-    <value>已存在另一个具有该名称的窗口</value>
-  </data>
   <data name="WindowMaximizeButtonToolTip" xml:space="preserve">
     <value>最大化</value>
   </data>
@@ -827,7 +868,7 @@
     <value>关闭此选项卡</value>
   </data>
   <data name="NewTabMenuFolderEmpty" xml:space="preserve">
-    <value>空白...</value>
+    <value>空</value>
   </data>
   <data name="ClosePaneText" xml:space="preserve">
     <value>关闭窗格</value>
@@ -889,5 +930,48 @@
   </data>
   <data name="RestartConnectionToolTip" xml:space="preserve">
     <value>重新启动活动窗格连接</value>
+  </data>
+  <data name="SnippetPaneTitle.Text" xml:space="preserve">
+    <value>片段</value>
+    <comment>Header for a page that includes small "snippets" of text for the user to enter</comment>
+  </data>
+  <data name="SnippetsFilterBox.PlaceholderText" xml:space="preserve">
+    <value>筛选代码片段...</value>
+    <comment>Placeholder text for a text box to filter snippets (on the same page as the 'SnippetPaneTitle')</comment>
+  </data>
+  <data name="SnippetPlayButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>输入此命令</value>
+  </data>
+  <data name="SnippetPlayButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>输入此命令</value>
+  </data>
+  <data name="SnippetsPaneNoneFoundHeader.Text" xml:space="preserve">
+    <value>在设置中找不到代码片段。</value>
+    <comment>Text shown to user when no snippets are found in their settings</comment>
+  </data>
+  <data name="SnippetsPaneNoneFoundDetails.Text" xml:space="preserve">
+    <value>在设置中添加一些“发送输入”操作，使其显示在此处。</value>
+    <comment>Additional information presented to the user to let them know they can add a "Send input" action in their setting to populate the snippets pane</comment>
+  </data>
+  <data name="ActionSavedToast.Title" xml:space="preserve">
+    <value>已保存操作</value>
+  </data>
+  <data name="ActionSaveFailedToast.Title" xml:space="preserve">
+    <value>操作保存失败</value>
+  </data>
+  <data name="CloseSnippetsPaneButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>关闭窗格</value>
+  </data>
+  <data name="CloseSnippetsPaneButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>关闭窗格</value>
+  </data>
+  <data name="TabMoveLeft" xml:space="preserve">
+    <value>左移</value>
+  </data>
+  <data name="TabMoveRight" xml:space="preserve">
+    <value>右移</value>
+  </data>
+  <data name="InvalidRegex" xml:space="preserve">
+    <value>发现无效的正则表达式。</value>
   </data>
 </root>

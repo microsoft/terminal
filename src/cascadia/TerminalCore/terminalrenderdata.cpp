@@ -22,7 +22,7 @@ til::point Terminal::GetTextBufferEndPosition() const noexcept
     return { _GetMutableViewport().Width() - 1, ViewEndIndex() };
 }
 
-const TextBuffer& Terminal::GetTextBuffer() const noexcept
+TextBuffer& Terminal::GetTextBuffer() const noexcept
 {
     return _activeBuffer();
 }
@@ -48,7 +48,7 @@ til::point Terminal::GetCursorPosition() const noexcept
 bool Terminal::IsCursorVisible() const noexcept
 {
     const auto& cursor = _activeBuffer().GetCursor();
-    return cursor.IsVisible() && !cursor.IsPopupShown();
+    return cursor.IsVisible();
 }
 
 bool Terminal::IsCursorOn() const noexcept
@@ -77,11 +77,6 @@ bool Terminal::IsCursorDoubleWidth() const
     const auto& buffer = _activeBuffer();
     const auto position = buffer.GetCursor().GetPosition();
     return buffer.GetRowByOffset(position.y).DbcsAttrAt(position.x) != DbcsAttribute::Single;
-}
-
-const std::vector<RenderOverlay> Terminal::GetOverlays() const noexcept
-{
-    return {};
 }
 
 const bool Terminal::IsGridLineDrawingAllowed() noexcept
@@ -132,17 +127,16 @@ std::pair<COLORREF, COLORREF> Terminal::GetAttributeColors(const TextAttribute& 
     return GetRenderSettings().GetAttributeColors(attr);
 }
 
-std::vector<Microsoft::Console::Types::Viewport> Terminal::GetSelectionRects() noexcept
+std::span<const til::point_span> Terminal::GetSelectionSpans() const noexcept
 try
 {
-    std::vector<Viewport> result;
-
-    for (const auto& lineRect : _GetSelectionRects())
+    if (_selection.generation() != _lastSelectionGeneration)
     {
-        result.emplace_back(Viewport::FromInclusive(lineRect));
+        _lastSelectionSpans = _GetSelectionSpans();
+        _lastSelectionGeneration = _selection.generation();
     }
 
-    return result;
+    return _lastSelectionSpans;
 }
 catch (...)
 {
@@ -150,32 +144,37 @@ catch (...)
     return {};
 }
 
-std::vector<Microsoft::Console::Types::Viewport> Terminal::GetSearchSelectionRects() noexcept
-try
+// Method Description:
+// - Helper to determine the search highlights in the buffer. Used for rendering.
+// Return Value:
+// - A vector of rectangles representing the regions to select, line by line. They are absolute coordinates relative to the buffer origin.
+std::span<const til::point_span> Terminal::GetSearchHighlights() const noexcept
 {
-    std::vector<Viewport> result;
+    _assertLocked();
+    return _searchHighlights;
+}
 
-    for (const auto& lineRect : _GetSearchSelectionRects(_GetVisibleViewport()))
+const til::point_span* Terminal::GetSearchHighlightFocused() const noexcept
+{
+    _assertLocked();
+    if (_searchHighlightFocused < _searchHighlights.size())
     {
-        result.emplace_back(Viewport::FromInclusive(lineRect));
+        return &til::at(_searchHighlights, _searchHighlightFocused);
     }
-
-    return result;
-}
-catch (...)
-{
-    LOG_CAUGHT_EXCEPTION();
-    return {};
+    return nullptr;
 }
 
-void Terminal::SelectNewRegion(const til::point coordStart, const til::point coordEnd)
+// Method Description:
+// - If necessary, scrolls the viewport such that the start point is in the
+//   viewport, and if that's already the case, also brings the end point inside
+//   the viewport
+// Arguments:
+// - coordStart - The start point
+// - coordEnd - The end point
+// Return Value:
+// - The updated scroll offset
+til::CoordType Terminal::_ScrollToPoints(const til::point coordStart, const til::point coordEnd)
 {
-#pragma warning(push)
-#pragma warning(disable : 26496) // cpp core checks wants these const, but they're decremented below.
-    auto realCoordStart = coordStart;
-    auto realCoordEnd = coordEnd;
-#pragma warning(pop)
-
     auto notifyScrollChange = false;
     if (coordStart.y < _VisibleStartIndex())
     {
@@ -199,28 +198,24 @@ void Terminal::SelectNewRegion(const til::point coordStart, const til::point coo
         _NotifyScrollEvent();
     }
 
-    realCoordStart.y -= _VisibleStartIndex();
-    realCoordEnd.y -= _VisibleStartIndex();
-
-    SetSelectionAnchor(realCoordStart);
-    SetSelectionEnd(realCoordEnd, SelectionExpansion::Char);
+    return _VisibleStartIndex();
 }
 
-void Terminal::SelectSearchRegions(std::vector<til::inclusive_rect> rects)
+// Method Description:
+// - selects the region from coordStart to coordEnd
+// Arguments:
+// - coordStart - The start point (inclusive)
+// - coordEnd - The end point (inclusive)
+void Terminal::SelectNewRegion(const til::point coordStart, const til::point coordEnd)
 {
-    _searchSelections.clear();
-    for (auto& rect : rects)
-    {
-        rect.top -= _VisibleStartIndex();
-        rect.bottom -= _VisibleStartIndex();
+    const auto newScrollOffset = _ScrollToPoints(coordStart, coordEnd);
 
-        const auto realStart = _ConvertToBufferCell(til::point{ rect.left, rect.top });
-        const auto realEnd = _ConvertToBufferCell(til::point{ rect.right, rect.bottom });
-
-        auto rr = til::inclusive_rect{ realStart.x, realStart.y, realEnd.x, realEnd.y };
-
-        _searchSelections.emplace_back(rr);
-    }
+    // update the selection coordinates so they're relative to the new scroll-offset
+    const auto newCoordStart = til::point{ coordStart.x, coordStart.y - newScrollOffset };
+    const auto newCoordEnd = til::point{ coordEnd.x, coordEnd.y - newScrollOffset };
+    SetSelectionAnchor(newCoordStart);
+    SetSelectionEnd(newCoordEnd, SelectionExpansion::Char);
+    _activeBuffer().TriggerSelection();
 }
 
 const std::wstring_view Terminal::GetConsoleTitle() const noexcept

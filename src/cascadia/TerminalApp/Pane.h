@@ -31,7 +31,7 @@ namespace TerminalAppLocalTests
 
 namespace winrt::TerminalApp::implementation
 {
-    struct TerminalTab;
+    struct Tab;
 }
 
 enum class Borders : int
@@ -62,7 +62,7 @@ struct PaneResources
 class Pane : public std::enable_shared_from_this<Pane>
 {
 public:
-    Pane(const winrt::TerminalApp::IPaneContent& content,
+    Pane(winrt::TerminalApp::IPaneContent content,
          const bool lastFocused = false);
 
     Pane(std::shared_ptr<Pane> first,
@@ -106,9 +106,9 @@ public:
         uint32_t panesCreated;
     };
     BuildStartupState BuildStartupActions(uint32_t currentId, uint32_t nextId, winrt::TerminalApp::BuildStartupKind kind);
-    winrt::Microsoft::Terminal::Settings::Model::NewTerminalArgs GetTerminalArgsForPane(winrt::TerminalApp::BuildStartupKind kind) const;
+    winrt::Microsoft::Terminal::Settings::Model::INewContentArgs GetTerminalArgsForPane(winrt::TerminalApp::BuildStartupKind kind) const;
 
-    void UpdateSettings(const winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings& settings, const winrt::TerminalApp::TerminalSettingsCache& cache);
+    void UpdateSettings(const winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings& settings);
     bool ResizePane(const winrt::Microsoft::Terminal::Settings::Model::ResizeDirection& direction);
     std::shared_ptr<Pane> NavigateDirection(const std::shared_ptr<Pane> sourcePane,
                                             const winrt::Microsoft::Terminal::Settings::Model::FocusDirection& direction,
@@ -248,13 +248,13 @@ private:
 
     std::optional<uint32_t> _id;
     std::weak_ptr<Pane> _parentChildPath{};
-
     bool _lastActive{ false };
     winrt::event_token _firstClosedToken{ 0 };
     winrt::event_token _secondClosedToken{ 0 };
 
     winrt::Windows::UI::Xaml::UIElement::GotFocus_revoker _gotFocusRevoker;
     winrt::Windows::UI::Xaml::UIElement::LostFocus_revoker _lostFocusRevoker;
+    winrt::TerminalApp::IPaneContent::CloseRequested_revoker _closeRequestedRevoker;
 
     Borders _borders{ Borders::None };
 
@@ -264,11 +264,10 @@ private:
     bool _IsLeaf() const noexcept;
     bool _HasFocusedChild() const noexcept;
     void _SetupChildCloseHandlers();
+    winrt::TerminalApp::IPaneContent _takePaneContent();
+    void _setPaneContent(winrt::TerminalApp::IPaneContent content);
     bool _HasChild(const std::shared_ptr<Pane> child);
-    winrt::TerminalApp::TerminalPaneContent _getTerminalContent() const
-    {
-        return _IsLeaf() ? _content.try_as<winrt::TerminalApp::TerminalPaneContent>() : nullptr;
-    }
+    winrt::TerminalApp::TerminalPaneContent _getTerminalContent() const;
 
     std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> _Split(winrt::Microsoft::Terminal::Settings::Model::SplitDirection splitType,
                                                                    const float splitSize,
@@ -313,6 +312,8 @@ private:
     float _ClampSplitPosition(const bool widthOrHeight, const float requestedValue, const float totalSize) const;
 
     SplitState _convertAutomaticOrDirectionalSplitState(const winrt::Microsoft::Terminal::Settings::Model::SplitDirection& splitType) const;
+
+    void _borderTappedHandler(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::Input::TappedRoutedEventArgs& e);
 
     // Function Description:
     // - Returns true if the given direction can be used with the given split
@@ -397,6 +398,6 @@ private:
         LayoutSizeNode& operator=(const LayoutSizeNode& other);
     };
 
-    friend struct winrt::TerminalApp::implementation::TerminalTab;
+    friend struct winrt::TerminalApp::implementation::Tab;
     friend class ::TerminalAppLocalTests::TabTests;
 };

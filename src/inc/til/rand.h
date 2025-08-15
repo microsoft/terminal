@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-#include <pcg_random.hpp>
+#pragma once
 
 namespace til
 {
@@ -23,12 +23,13 @@ namespace til
                 //   cryptbase, instead it was using LoadLibrary()/GetProcAddress() on every call.
                 // * advapi32.dll doesn't exist on MinWin, cryptbase.dll however does.
                 module{ LoadLibraryExW(L"cryptbase.dll", nullptr, LOAD_LIBRARY_SEARCH_SYSTEM32) },
+#pragma warning(suppress : 26490) // Don't use reinterpret_cast (type.1).
                 proc{ reinterpret_cast<decltype(proc)>(GetProcAddress(module.get(), "SystemFunction036")) }
             {
                 FAIL_FAST_LAST_ERROR_IF(!proc);
             }
 
-            inline void operator()(PVOID RandomBuffer, ULONG RandomBufferLength)
+            void operator()(PVOID RandomBuffer, ULONG RandomBufferLength) const noexcept
             {
                 proc(RandomBuffer, RandomBufferLength);
             }
@@ -39,14 +40,14 @@ namespace til
         };
     }
 
-    inline void gen_random(void* data, uint32_t length)
+    inline void gen_random(void* data, uint32_t length) noexcept
     {
         static details::RtlGenRandomLoader loader;
         loader(data, length);
     }
 
     template<typename T, typename = std::enable_if_t<std::is_standard_layout_v<T>>>
-    T gen_random()
+    T gen_random() noexcept
     {
         T value;
         gen_random(&value, sizeof(T));

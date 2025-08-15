@@ -187,34 +187,76 @@
     <value>Vários painéis</value>
   </data>
   <data name="TabCloseSubMenu" xml:space="preserve">
-    <value>Fechar...</value>
+    <value>Fechar</value>
+  </data>
+  <data name="TabMoveSubMenu" xml:space="preserve">
+    <value>Mover guia</value>
   </data>
   <data name="TabCloseAfter" xml:space="preserve">
-    <value>Fechar Guias à Direita</value>
+    <value>Fechar guias à direita</value>
   </data>
   <data name="TabCloseOther" xml:space="preserve">
-    <value>Fechar Outras Guias</value>
+    <value>Fechar outras guias</value>
   </data>
   <data name="TabClose" xml:space="preserve">
     <value>Fechar guia</value>
   </data>
   <data name="PaneClose" xml:space="preserve">
-    <value>Fechar Painel</value>
+    <value>Fechar o painel</value>
   </data>
   <data name="SplitTabText" xml:space="preserve">
-    <value>Dividir Guia</value>
+    <value>Guia Dividir</value>
   </data>
   <data name="SplitPaneText" xml:space="preserve">
-    <value>Painel dividido</value>
+    <value>Dividir painel</value>
+  </data>
+  <data name="SplitPaneToolTipText" xml:space="preserve">
+    <value>Clique com o botão direito para obter direções de divisão - direita/para baixo/para cima/esquerda</value>
+  </data>
+  <data name="SplitPaneDownText" xml:space="preserve">
+    <value>Dividir painel para baixo</value>
+  </data>
+  <data name="SplitPaneRightText" xml:space="preserve">
+    <value>Dividir painel à direita</value>
+  </data>
+  <data name="SplitPaneUpText" xml:space="preserve">
+    <value>Dividir painel para cima</value>
+  </data>
+  <data name="SplitPaneLeftText" xml:space="preserve">
+    <value>Dividir painel à esquerda</value>
+  </data>
+  <data name="SplitPaneDuplicateText" xml:space="preserve">
+    <value>Duplicar</value>
+  </data>
+  <data name="SwapPaneText" xml:space="preserve">
+    <value>Painel de troca</value>
+  </data>
+  <data name="SwapPaneDownText" xml:space="preserve">
+    <value>Alternar painel para baixo</value>
+  </data>
+  <data name="SwapPaneRightText" xml:space="preserve">
+    <value>Alternar painel à direita</value>
+  </data>
+  <data name="SwapPaneUpText" xml:space="preserve">
+    <value>Alternar painel para cima</value>
+  </data>
+  <data name="SwapPaneLeftText" xml:space="preserve">
+    <value>Alternar painel para a esquerda</value>
+  </data>
+  <data name="TogglePaneZoomText" xml:space="preserve">
+    <value>Alternar o zoom do painel</value>
+  </data>
+  <data name="CloseOtherPanesText" xml:space="preserve">
+    <value>Fechar outros painéis</value>
   </data>
   <data name="SearchWebText" xml:space="preserve">
-    <value>Pesquisa na web</value>
+    <value>Pesquisa na Web</value>
   </data>
   <data name="TabColorChoose" xml:space="preserve">
-    <value>Cor...</value>
+    <value>Alterar cor da guia</value>
   </data>
   <data name="TabColorCustomButton.Content" xml:space="preserve">
-    <value>Personalizados...</value>
+    <value>Personalizado</value>
   </data>
   <data name="TabColorClearButton.Content" xml:space="preserve">
     <value>Restaurar</value>
@@ -223,15 +265,11 @@
     <value>Renomear guia</value>
   </data>
   <data name="DuplicateTabText" xml:space="preserve">
-    <value>Duplicar Guia</value>
+    <value>Duplicar guia</value>
   </data>
-  <data name="InvalidBackgroundImage" xml:space="preserve">
-    <value>Foi encontrado um perfil com um "backgroundImage" inválido. O perfil deve ser o padrão para que não haja nenhuma imagem de tela de fundo. Certifique-se de que, ao definir um "backgroundImage", o valor é um caminho de arquivo válido para uma imagem.</value>
-    <comment>{Locked="\"backgroundImage\""}</comment>
-  </data>
-  <data name="InvalidIcon" xml:space="preserve">
-    <value>Foi encontrado um perfil com um "icon" inválido. Padronize esse perfil para ele não ter ícone. Certifique-se de que, ao definir um "icon", o valor seja um caminho de arquivo válido para uma imagem.</value>
-    <comment>{Locked="\"icon\""} The word "icon" in quotes is locked, the word icon OUTSIDE of quotes should be localized.</comment>
+  <data name="InvalidMediaResource" xml:space="preserve">
+    <value>Um ou mais recursos (como icon ou backgroundImage) especificados em suas configurações não foram encontrados.</value>
+    <comment>{Locked="icon","backgroundImage"} Indicates that something has gone wrong while reading a user's settings.</comment>
   </data>
   <data name="AtLeastOneKeybindingWarning" xml:space="preserve">
     <value>Os avisos foram encontrados durante a análise das suas ligações de teclas:</value>
@@ -279,6 +317,15 @@
   </data>
   <data name="CmdCommandArgDesc" xml:space="preserve">
     <value>Um comando opcional, com argumentos, a ser gerado na guia ou no painel novo</value>
+  </data>
+  <data name="SaveSnippetDesc" xml:space="preserve">
+    <value>Salvar linha de comando como uma ação de entrada de dados</value>
+  </data>
+  <data name="SaveSnippetArgDesc" xml:space="preserve">
+    <value>Um argumento opcional</value>
+  </data>
+  <data name="KeyChordArgDesc" xml:space="preserve">
+    <value>Um argumento opcional</value>
   </data>
   <data name="CmdFocusTabDesc" xml:space="preserve">
     <value>Mover o foco para outra guia</value>
@@ -454,7 +501,7 @@
     <value>Sobre</value>
   </data>
   <data name="AboutDialog.PrimaryButtonText" xml:space="preserve">
-    <value>Enviar Comentários</value>
+    <value>Enviar comentários</value>
   </data>
   <data name="AboutDialog.CloseButtonText" xml:space="preserve">
     <value>OK</value>
@@ -464,7 +511,7 @@
     <comment>This is the heading for a version number label</comment>
   </data>
   <data name="AboutDialog_GettingStartedLink.Content" xml:space="preserve">
-    <value>Ponto de Partida</value>
+    <value>Introdução</value>
     <comment>A hyperlink name for a guide on how to get started using Terminal</comment>
   </data>
   <data name="AboutDialog_SourceCodeLink.Content" xml:space="preserve">
@@ -484,7 +531,7 @@
     <comment>A hyperlink name for the Terminal's privacy policy</comment>
   </data>
   <data name="AboutDialog_ThirdPartyNoticesLink.Content" xml:space="preserve">
-    <value>Avisos de terceiros</value>
+    <value>Avisos de Terceiros</value>
     <comment>A hyperlink name for the Terminal's third-party notices</comment>
   </data>
   <data name="QuitDialog.CloseButtonText" xml:space="preserve">
@@ -571,10 +618,10 @@
     <value>Falha ao analisar a linha de comando:</value>
   </data>
   <data name="CommandPaletteControlName" xml:space="preserve">
-    <value>Paleta de Comandos</value>
+    <value>Paleta de comandos</value>
   </data>
   <data name="TabSwitcherControlName" xml:space="preserve">
-    <value>Seletor de guias</value>
+    <value>Alternador de guias</value>
   </data>
   <data name="TabSwitcher_SearchBoxText" xml:space="preserve">
     <value>Digite o nome da guia...</value>
@@ -713,12 +760,6 @@
   <data name="WindowRenamer.CloseButtonContent" xml:space="preserve">
     <value>Cancelar</value>
   </data>
-  <data name="RenameFailedToast.Title" xml:space="preserve">
-    <value>Falha ao renomear janela</value>
-  </data>
-  <data name="RenameFailedToast.Subtitle" xml:space="preserve">
-    <value>Já existe outra janela com esse nome</value>
-  </data>
   <data name="WindowMaximizeButtonToolTip" xml:space="preserve">
     <value>Maximizar</value>
   </data>
@@ -726,7 +767,7 @@
     <value>Restaurar Tamanho Original</value>
   </data>
   <data name="CommandPaletteMenuItem" xml:space="preserve">
-    <value>Paleta de Comandos</value>
+    <value>Paleta de comandos</value>
   </data>
   <data name="NotificationIconFocusTerminal" xml:space="preserve">
     <value>Terminal de foco</value>
@@ -746,7 +787,7 @@
     <value>Dividir a janela e iniciar em determinado diretório</value>
   </data>
   <data name="ExportTabText" xml:space="preserve">
-    <value>Exportar Texto</value>
+    <value>Exportar texto</value>
   </data>
   <data name="ExportFailure" xml:space="preserve">
     <value>Falha ao exportar o conteúdo do terminal</value>
@@ -758,7 +799,7 @@
     <value>Localizar</value>
   </data>
   <data name="PlainText" xml:space="preserve">
-    <value>Texto Simples</value>
+    <value>Texto sem formatação</value>
   </data>
   <data name="CloseOnExitInfoBar.Message" xml:space="preserve">
     <value>O comportamento de término pode ser configurado nas configurações avançadas do perfil.</value>
@@ -767,7 +808,7 @@
     <value>Não mostra de novo</value>
   </data>
   <data name="ElevationShield.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>Esta janela do Terminal está funcionando como Administrador</value>
+    <value>Esta janela do Terminal está sendo executada como administrador</value>
   </data>
   <data name="CommandPalette_MatchesAvailable" xml:space="preserve">
     <value>Sugestões encontradas: {0}</value>
@@ -827,10 +868,10 @@
     <value>Fechar esta guia</value>
   </data>
   <data name="NewTabMenuFolderEmpty" xml:space="preserve">
-    <value>Vazio...</value>
+    <value>Vazio</value>
   </data>
   <data name="ClosePaneText" xml:space="preserve">
-    <value>Fechar Painel</value>
+    <value>Fechar o painel</value>
   </data>
   <data name="ClosePaneToolTip" xml:space="preserve">
     <value>Feche o painel ativo se vários painéis estiverem presentes</value>
@@ -840,13 +881,13 @@
     <comment>Text used to identify the reset button</comment>
   </data>
   <data name="MoveTabToNewWindowText" xml:space="preserve">
-    <value>Mover Guia para Nova Janela</value>
+    <value>Mover guia para nova janela</value>
   </data>
   <data name="MoveTabToNewWindowToolTip" xml:space="preserve">
     <value>Move a guia para uma nova janela</value>
   </data>
   <data name="RunAsAdminFlyout.Text" xml:space="preserve">
-    <value>Executar como Administrador</value>
+    <value>Executar como administrador</value>
     <comment>This text is displayed on context menu for profile entries in add new tab button.</comment>
   </data>
   <data name="TerminalPage_PaneMovedAnnouncement_ExistingTab" xml:space="preserve">
@@ -885,9 +926,52 @@
     <value>Se definido, o comando será acrescentado ao comando padrão do perfil em vez de substituí-lo.</value>
   </data>
   <data name="RestartConnectionText" xml:space="preserve">
-    <value>Reiniciar Conexão</value>
+    <value>Reiniciar conexão</value>
   </data>
   <data name="RestartConnectionToolTip" xml:space="preserve">
     <value>Reiniciar a conexão do painel ativo</value>
+  </data>
+  <data name="SnippetPaneTitle.Text" xml:space="preserve">
+    <value>Trechos</value>
+    <comment>Header for a page that includes small "snippets" of text for the user to enter</comment>
+  </data>
+  <data name="SnippetsFilterBox.PlaceholderText" xml:space="preserve">
+    <value>Filtrar snippets de código...</value>
+    <comment>Placeholder text for a text box to filter snippets (on the same page as the 'SnippetPaneTitle')</comment>
+  </data>
+  <data name="SnippetPlayButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Inserir este comando</value>
+  </data>
+  <data name="SnippetPlayButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Inserir este comando</value>
+  </data>
+  <data name="SnippetsPaneNoneFoundHeader.Text" xml:space="preserve">
+    <value>Nenhum snippet de código encontrado em suas configurações.</value>
+    <comment>Text shown to user when no snippets are found in their settings</comment>
+  </data>
+  <data name="SnippetsPaneNoneFoundDetails.Text" xml:space="preserve">
+    <value>Adicione algumas ações de "Enviar entrada" em suas configurações para que elas sejam mostradas aqui.</value>
+    <comment>Additional information presented to the user to let them know they can add a "Send input" action in their setting to populate the snippets pane</comment>
+  </data>
+  <data name="ActionSavedToast.Title" xml:space="preserve">
+    <value>Ação salva</value>
+  </data>
+  <data name="ActionSaveFailedToast.Title" xml:space="preserve">
+    <value>Falha ao salvar ação</value>
+  </data>
+  <data name="CloseSnippetsPaneButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Fechar o painel</value>
+  </data>
+  <data name="CloseSnippetsPaneButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Fechar o painel</value>
+  </data>
+  <data name="TabMoveLeft" xml:space="preserve">
+    <value>Mover para a esquerda</value>
+  </data>
+  <data name="TabMoveRight" xml:space="preserve">
+    <value>Mover para a direita</value>
+  </data>
+  <data name="InvalidRegex" xml:space="preserve">
+    <value>Foi encontrada uma expressão regular inválida.</value>
   </data>
 </root>

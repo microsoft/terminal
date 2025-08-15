@@ -334,8 +334,6 @@ void Window::_UpdateSystemMetrics() const
 
                 if (SUCCEEDED_NTSTATUS(status))
                 {
-                    gci.ConsoleIme.RefreshAreaAttributes();
-
                     // Do WM_GETICON workaround. Must call WM_SETICON once or apps calling WM_GETICON will get null.
                     LOG_IF_FAILED(Icon::Instance().ApplyWindowMessageWorkaround(hWnd));
 
@@ -454,8 +452,6 @@ void Window::ChangeViewport(const til::inclusive_rect& NewWindow)
         ScreenInfo.SetViewport(Viewport::FromInclusive(NewWindow), false);
         Tracing::s_TraceWindowViewport(ScreenInfo.GetViewport());
     }
-
-    LOG_IF_FAILED(ConsoleImeResizeCompStrView());
 
     ScreenInfo.UpdateScrollBars();
 }
@@ -685,8 +681,6 @@ void Window::_UpdateWindowSize(const til::size sizeNew)
 
         _resizingWindow--;
     }
-
-    LOG_IF_FAILED(ConsoleImeResizeCompStrView());
 
     return STATUS_SUCCESS;
 }
@@ -968,6 +962,30 @@ void Window::s_CalculateWindowRect(const til::size coordWindowInChars,
     // We do this at the end so we can preserve the positioning of the window and just change the size.
     prectWindow->right = prectWindow->left + rectProposed.width();
     prectWindow->bottom = prectWindow->top + rectProposed.height();
+}
+
+// Expands a rect by the size of the non-client area (caption bar, resize borders,
+// scroll bars, etc), which depends on the window styles and DPI
+void Window::s_ExpandRectByNonClientSize(HWND const hWnd,
+                                         UINT dpi,
+                                         _Inout_ til::rect* const prectWindow)
+{
+    DWORD dwStyle = GetWindowStyle(hWnd);
+    DWORD dwExStyle = GetWindowExStyle(hWnd);
+    BOOL fMenu = FALSE;
+
+    ServiceLocator::LocateWindowMetrics<WindowMetrics>()->AdjustWindowRectEx(
+        prectWindow, dwStyle, fMenu, dwExStyle, dpi);
+
+    // Note: AdjustWindowRectEx does not account for scroll bars :(.
+    if (WI_IsFlagSet(dwStyle, WS_HSCROLL))
+    {
+        prectWindow->bottom += ServiceLocator::LocateHighDpiApi<WindowDpiApi>()->GetSystemMetricsForDpi(SM_CYHSCROLL, dpi);
+    }
+    if (WI_IsFlagSet(dwStyle, WS_VSCROLL))
+    {
+        prectWindow->right += ServiceLocator::LocateHighDpiApi<WindowDpiApi>()->GetSystemMetricsForDpi(SM_CXVSCROLL, dpi);
+    }
 }
 
 til::rect Window::GetWindowRect() const noexcept

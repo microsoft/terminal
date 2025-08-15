@@ -29,7 +29,6 @@
 #include <filesystem>
 #include <fstream>
 #include <functional>
-#include <iomanip>
 #include <iterator>
 #include <list>
 #include <map>
@@ -44,7 +43,6 @@
 #include <set>
 #include <shared_mutex>
 #include <span>
-#include <sstream>
 #include <stdexcept>
 #include <string_view>
 #include <string>
@@ -67,7 +65,6 @@
 // GSL
 // Block GSL Multi Span include because it both has C++17 deprecated iterators
 // and uses the C-namespaced "max" which conflicts with Windows definitions.
-#include <gsl/gsl>
 #include <gsl/gsl_util>
 #include <gsl/pointers>
 
@@ -84,19 +81,12 @@
 #define ENABLE_INTSAFE_SIGNED_FUNCTIONS
 #include <intsafe.h>
 
-// LibPopCnt - Fast C/C++ bit population count library (on bits in an array)
-#include <libpopcnt.h>
-
-// Dynamic Bitset (optional dependency on LibPopCnt for perf at bit counting)
-// Variable-size compressed-storage header-only bit flag storage library.
-#pragma warning(push)
-#pragma warning(disable:4702) // unreachable code
-#include <dynamic_bitset.hpp>
-#pragma warning(pop)
-
 // {fmt}, a C++20-compatible formatting library
-#include <fmt/format.h>
+#pragma warning(push)
+#pragma warning(disable: 4702) // unreachable code
 #include <fmt/compile.h>
+#include <fmt/xchar.h>
+#pragma warning(pop)
 
 #define USE_INTERVAL_TREE_NAMESPACE
 #include <IntervalTree.h>

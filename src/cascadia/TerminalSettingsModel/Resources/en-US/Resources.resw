@@ -121,10 +121,14 @@
     <value>Select color scheme...</value>
   </data>
   <data name="NewTabParentCommandName" xml:space="preserve">
-    <value>New Tab...</value>
+    <value>New tab...</value>
   </data>
   <data name="SplitPaneParentCommandName" xml:space="preserve">
-    <value>Split Pane...</value>
+    <value>Split pane...</value>
+  </data>
+  <data name="SnippetsPaneCommandName" xml:space="preserve">
+    <value>Open snippets pane</value>
+    <comment>This will open a pane with a list of the users's saved commands ("snippets") in it</comment>
   </data>
   <data name="ApplicationDisplayNamePortable" xml:space="preserve">
     <value>Terminal (Portable)</value>
@@ -324,8 +328,11 @@
     <value>Open settings file (JSON)</value>
     <comment>{Locked="JSON"}. "JSON" is the extension of the file that will be opened.</comment>
   </data>
+  <data name="SettingsFileOpenInExplorerCommandKey" xml:space="preserve">
+    <value>Open the settings file directory</value>
+  </data>
   <data name="OpenTabColorPickerCommandKey" xml:space="preserve">
-    <value>Set the tab color...</value>
+    <value>Set tab color...</value>
   </data>
   <data name="PasteTextCommandKey" xml:space="preserve">
     <value>Paste</value>
@@ -347,7 +354,7 @@
     <value>Reset tab title</value>
   </data>
   <data name="OpenTabRenamerCommandKey" xml:space="preserve">
-    <value>Rename tab title...</value>
+    <value>Rename tab</value>
   </data>
   <data name="ResizePaneCommandKey" xml:space="preserve">
     <value>Resize pane</value>
@@ -449,11 +456,8 @@
   <data name="ToggleCommandPaletteCommandKey" xml:space="preserve">
     <value>Toggle command palette</value>
   </data>
-  <data name="SuggestionsCommandHistoryCommandKey" xml:space="preserve">
-    <value>Recent commands...</value>
-  </data>
   <data name="SuggestionsCommandKey" xml:space="preserve">
-    <value>Open suggestions...</value>
+    <value>Open suggestions</value>
   </data>
   <data name="ToggleCommandPaletteCommandLineModeCommandKey" xml:space="preserve">
     <value>Toggle command palette in command line mode</value>
@@ -505,7 +509,7 @@
     <value>Break into the debugger</value>
   </data>
   <data name="OpenSettingsUICommandKey" xml:space="preserve">
-    <value>Open settings...</value>
+    <value>Open settings</value>
   </data>
   <data name="RenameWindowCommandKey" xml:space="preserve">
     <value>Rename window to "{0}"</value>
@@ -726,5 +730,34 @@
   <data name="OpenAboutCommandKey" xml:space="preserve">
     <value>Open about dialog</value>
     <comment>This will open the "about" dialog, to display version info and other documentation</comment>
+  </data>
+  <data name="SaveSnippetNamePrefix" xml:space="preserve">
+    <value>Save Snippet</value>
+  </data>
+  <data name="QuickFixCommandKey" xml:space="preserve">
+    <value>Open quick fix menu</value>
+  </data>
+  <data name="OpenCWDCommandKey" xml:space="preserve">
+    <value>Open current working directory</value>
+  </data>
+  <data name="WslDistroGeneratorDisplayName" xml:space="preserve">
+    <value>WSL Distribution Profile Generator</value>
+    <comment>The display name of a dynamic profile generator for WSL distros</comment>
+  </data>
+  <data name="PowershellCoreProfileGeneratorDisplayName" xml:space="preserve">
+    <value>PowerShell Profile Generator</value>
+    <comment>The display name of a dynamic profile generator for PowerShell</comment>
+  </data>
+  <data name="AzureCloudShellGeneratorDisplayName" xml:space="preserve">
+    <value>Azure Cloud Shell Profile Generator</value>
+    <comment>The display name of a dynamic profile generator for Azure Cloud Shell</comment>
+  </data>
+  <data name="VisualStudioGeneratorDisplayName" xml:space="preserve">
+    <value>Visual Studio Profile Generator</value>
+    <comment>The display name of a dynamic profile generator for Visual Studio</comment>
+  </data>
+  <data name="SshHostGeneratorDisplayName" xml:space="preserve">
+    <value>SSH Host Profile Generator</value>
+    <comment>The display name of a dynamic profile generator for SSH hosts</comment>
   </data>
 </root>

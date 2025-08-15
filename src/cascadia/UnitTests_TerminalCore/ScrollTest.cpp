@@ -34,12 +34,10 @@ namespace
         HRESULT StartPaint() noexcept { return S_OK; }
         HRESULT EndPaint() noexcept { return S_OK; }
         HRESULT Present() noexcept { return S_OK; }
-        HRESULT PrepareForTeardown(_Out_ bool* /*pForcePaint*/) noexcept { return S_OK; }
         HRESULT ScrollFrame() noexcept { return S_OK; }
         HRESULT Invalidate(const til::rect* /*psrRegion*/) noexcept { return S_OK; }
         HRESULT InvalidateCursor(const til::rect* /*psrRegion*/) noexcept { return S_OK; }
         HRESULT InvalidateSystem(const til::rect* /*prcDirtyClient*/) noexcept { return S_OK; }
-        HRESULT InvalidateSelection(const std::vector<til::rect>& /*rectangles*/) noexcept { return S_OK; }
         HRESULT InvalidateScroll(const til::point* pcoordDelta) noexcept
         {
             _triggerScrollDelta = *pcoordDelta;
@@ -51,7 +49,6 @@ namespace
         HRESULT PaintBufferLine(std::span<const Cluster> /*clusters*/, til::point /*coord*/, bool /*fTrimLeft*/, bool /*lineWrapped*/) noexcept { return S_OK; }
         HRESULT PaintBufferGridLines(GridLineSet /*lines*/, COLORREF /*gridlineColor*/, COLORREF /*underlineColor*/, size_t /*cchLine*/, til::point /*coordTarget*/) noexcept { return S_OK; }
         HRESULT PaintSelection(const til::rect& /*rect*/) noexcept { return S_OK; }
-        HRESULT PaintSelections(const std::vector<til::rect>& /*rects*/) noexcept { return S_OK; }
         HRESULT PaintCursor(const CursorOptions& /*options*/) noexcept { return S_OK; }
         HRESULT UpdateDrawingBrushes(const TextAttribute& /*textAttributes*/, const RenderSettings& /*renderSettings*/, gsl::not_null<IRenderData*> /*pData*/, bool /*usingSoftFont*/, bool /*isSettingDefaultBrushes*/) noexcept { return S_OK; }
         HRESULT UpdateFont(const FontInfoDesired& /*FontInfoDesired*/, _Out_ FontInfo& /*FontInfo*/) noexcept { return S_OK; }

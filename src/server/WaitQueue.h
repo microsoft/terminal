@@ -37,10 +37,11 @@ public:
     bool NotifyWaiters(const bool fNotifyAll,
                        const WaitTerminationReason TerminationReason);
 
+    void CancelWaitersForScreenBuffer(const SCREEN_INFORMATION* pScreenInfo);
+
     [[nodiscard]] static HRESULT s_CreateWait(_Inout_ CONSOLE_API_MSG* const pWaitReplyMessage,
                                               _In_ IWaitRoutine* const pWaiter);
 
-private:
     bool _NotifyBlock(_In_ ConsoleWaitBlock* pWaitBlock,
                       const WaitTerminationReason TerminationReason);
 

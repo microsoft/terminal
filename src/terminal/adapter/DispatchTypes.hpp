@@ -28,7 +28,7 @@ namespace Microsoft::Console::VirtualTerminal
             return _value;
         }
 
-        constexpr const std::string_view ToString() const
+        constexpr const char* ToString() const
         {
             return &_string[0];
         }
@@ -280,7 +280,7 @@ namespace Microsoft::Console::VirtualTerminal
         }
 
         template<typename T>
-        bool for_each(const T&& predicate) const
+        void for_each(const T&& predicate) const
         {
             auto params = _params;
 
@@ -291,12 +291,10 @@ namespace Microsoft::Console::VirtualTerminal
                 params = defaultParameters;
             }
 
-            auto success = true;
             for (const auto& v : params)
             {
-                success = predicate(v) && success;
+                predicate(v);
             }
-            return success;
         }
 
     private:
@@ -531,9 +529,11 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         ATT610_StartCursorBlink = DECPrivateMode(12),
         DECTCEM_TextCursorEnableMode = DECPrivateMode(25),
         XTERM_EnableDECCOLMSupport = DECPrivateMode(40),
+        DECPCCM_PageCursorCouplingMode = DECPrivateMode(64),
         DECNKM_NumericKeypadMode = DECPrivateMode(66),
         DECBKM_BackarrowKeyMode = DECPrivateMode(67),
         DECLRMM_LeftRightMarginMode = DECPrivateMode(69),
+        DECSDM_SixelDisplayMode = DECPrivateMode(80),
         DECECM_EraseColorMode = DECPrivateMode(117),
         VT200_MOUSE_MODE = DECPrivateMode(1000),
         BUTTON_EVENT_MOUSE_MODE = DECPrivateMode(1002),
@@ -544,7 +544,18 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         ALTERNATE_SCROLL = DECPrivateMode(1007),
         ASB_AlternateScreenBuffer = DECPrivateMode(1049),
         XTERM_BracketedPasteMode = DECPrivateMode(2004),
+        SO_SynchronizedOutput = DECPrivateMode(2026),
+        GCM_GraphemeClusterMode = DECPrivateMode(2027),
         W32IM_Win32InputMode = DECPrivateMode(9001),
+    };
+
+    enum ModeResponses : VTInt
+    {
+        DECRPM_Unsupported = 0,
+        DECRPM_Enabled = 1,
+        DECRPM_Disabled = 2,
+        DECRPM_PermanentlyEnabled = 3,
+        DECRPM_PermanentlyDisabled = 4,
     };
 
     enum CharacterSets : uint64_t
@@ -577,6 +588,8 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         IconifyWindow = 2,
         RefreshWindow = 7,
         ResizeWindowInCharacters = 8,
+        ReportTextSizeInPixels = 14,
+        ReportCharacterCellSize = 16,
         ReportTextSizeInCharacters = 18
     };
 
@@ -602,6 +615,13 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         WithReturn,
         WithoutReturn,
         DependsOnMode
+    };
+
+    enum class SixelBackground : VTInt
+    {
+        Default = 0,
+        Transparent = 1,
+        Opaque = 2
     };
 
     enum class DrcsEraseControl : VTInt
@@ -672,3 +692,31 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
     constexpr VTInt s_sDECCOLMResetColumns = 80;
 
 }
+
+#pragma warning(push)
+#pragma warning(disable : 26429) // Symbol 'in' is never tested for nullness, it can be marked as not_null (f.23).
+#pragma warning(disable : 26481) // Don't use pointer arithmetic. Use span instead (bounds.1).
+
+template<typename Char>
+struct fmt::formatter<Microsoft::Console::VirtualTerminal::VTID, Char>
+{
+    constexpr auto parse(auto& ctx)
+    {
+        return ctx.begin();
+    }
+
+    constexpr auto format(const Microsoft::Console::VirtualTerminal::VTID& p, auto& ctx) const
+    {
+        auto in = p.ToString();
+        auto out = ctx.out();
+
+        for (; *in; ++in, ++out)
+        {
+            *out = *in;
+        }
+
+        return out;
+    }
+};
+
+#pragma warning(pop)

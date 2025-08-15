@@ -5,6 +5,7 @@
 #include "AtlasEngine.h"
 
 #include "Backend.h"
+#include "../../buffer/out/textBuffer.hpp"
 #include "../base/FontCache.h"
 
 // #### NOTE ####
@@ -82,16 +83,39 @@ constexpr HRESULT vec2_narrow(U x, U y, vec2<T>& out) noexcept
     return Invalidate(&rect);
 }
 
-[[nodiscard]] HRESULT AtlasEngine::InvalidateSelection(const std::vector<til::rect>& rectangles) noexcept
+void AtlasEngine::_invalidateSpans(std::span<const til::point_span> spans, const TextBuffer& buffer) noexcept
 {
-    for (const auto& rect : rectangles)
+    const auto viewportOrigin = til::point{ _api.viewportOffset.x, _api.viewportOffset.y };
+    const auto viewport = til::rect{ 0, 0, _api.s->viewportCellCount.x, _api.s->viewportCellCount.y };
+    for (auto&& sp : spans)
     {
-        // BeginPaint() protects against invalid out of bounds numbers.
-        // TODO: rect can contain invalid out of bounds coordinates when the selection is being
-        // dragged outside of the viewport (and the window begins scrolling automatically).
-        _api.invalidatedRows.start = gsl::narrow_cast<u16>(std::min<int>(_api.invalidatedRows.start, std::max<int>(0, rect.top)));
-        _api.invalidatedRows.end = gsl::narrow_cast<u16>(std::max<int>(_api.invalidatedRows.end, std::max<int>(0, rect.bottom)));
+        sp.iterate_rows_exclusive(til::CoordTypeMax, [&](til::CoordType row, til::CoordType beg, til::CoordType end) {
+            const auto shift = buffer.GetLineRendition(row) != LineRendition::SingleWidth ? 1 : 0;
+            beg <<= shift;
+            end <<= shift;
+            til::rect rect{ beg, row, end, row + 1 };
+            rect = rect.to_origin(viewportOrigin);
+            rect &= viewport;
+            _api.invalidatedRows.start = gsl::narrow_cast<u16>(std::min<int>(_api.invalidatedRows.start, std::max<int>(0, rect.top)));
+            _api.invalidatedRows.end = gsl::narrow_cast<u16>(std::max<int>(_api.invalidatedRows.end, std::max<int>(0, rect.bottom)));
+        });
     }
+}
+
+[[nodiscard]] HRESULT AtlasEngine::InvalidateSelection(std::span<const til::rect> selections) noexcept
+{
+    if (!selections.empty())
+    {
+        // INVARIANT: This assumes that `selections` is sorted by increasing Y
+        _api.invalidatedRows.start = gsl::narrow_cast<u16>(std::min<int>(_api.invalidatedRows.start, std::max<int>(0, selections.front().top)));
+        _api.invalidatedRows.end = gsl::narrow_cast<u16>(std::max<int>(_api.invalidatedRows.end, std::max<int>(0, selections.back().bottom)));
+    }
+    return S_OK;
+}
+
+[[nodiscard]] HRESULT AtlasEngine::InvalidateHighlight(std::span<const til::point_span> highlights, const TextBuffer& buffer) noexcept
+{
+    _invalidateSpans(highlights, buffer);
     return S_OK;
 }
 
@@ -134,13 +158,6 @@ constexpr HRESULT vec2_narrow(U x, U y, vec2<T>& out) noexcept
 [[nodiscard]] HRESULT AtlasEngine::InvalidateAll() noexcept
 {
     _api.invalidatedRows = invalidatedRowsAll;
-    return S_OK;
-}
-
-[[nodiscard]] HRESULT AtlasEngine::InvalidateFlush(_In_ const bool /*circled*/, _Out_ bool* const pForcePaint) noexcept
-{
-    RETURN_HR_IF_NULL(E_INVALIDARG, pForcePaint);
-    *pForcePaint = false;
     return S_OK;
 }
 
@@ -198,10 +215,7 @@ try
     {
         _api.s.write()->viewportCellCount = viewportCellCount;
     }
-    if (_api.s->viewportOffset != viewportOffset)
-    {
-        _api.s.write()->viewportOffset = viewportOffset;
-    }
+    _api.viewportOffset = viewportOffset;
 
     return S_OK;
 }
@@ -410,15 +424,6 @@ void AtlasEngine::SetRetroTerminalEffect(bool enable) noexcept
     }
 }
 
-void AtlasEngine::SetSelectionBackground(const COLORREF color, const float alpha) noexcept
-{
-    const u32 selectionColor = (color & 0xffffff) | gsl::narrow_cast<u32>(lrintf(alpha * 255.0f)) << 24;
-    if (_api.s->misc->selectionColor != selectionColor)
-    {
-        _api.s.write()->misc.write()->selectionColor = selectionColor;
-    }
-}
-
 void AtlasEngine::SetSoftwareRendering(bool enable) noexcept
 {
     if (_api.s->target->useWARP != enable)
@@ -470,7 +475,7 @@ void AtlasEngine::SetWarningCallback(std::function<void(HRESULT, wil::zwstring_v
     return S_OK;
 }
 
-[[nodiscard]] HRESULT AtlasEngine::UpdateFont(const FontInfoDesired& fontInfoDesired, FontInfo& fontInfo, const std::unordered_map<std::wstring_view, uint32_t>& features, const std::unordered_map<std::wstring_view, float>& axes) noexcept
+[[nodiscard]] HRESULT AtlasEngine::UpdateFont(const FontInfoDesired& fontInfoDesired, FontInfo& fontInfo, const std::unordered_map<std::wstring_view, float>& features, const std::unordered_map<std::wstring_view, float>& axes) noexcept
 {
     // We're currently faced with a font caching bug that we're unable to reproduce locally. See GH#9375.
     // But it occurs often enough and has no proper workarounds, so we're forced to fix it.
@@ -521,7 +526,7 @@ void AtlasEngine::_resolveTransparencySettings() noexcept
     }
 }
 
-[[nodiscard]] HRESULT AtlasEngine::_updateFont(const FontInfoDesired& fontInfoDesired, FontInfo& fontInfo, const std::unordered_map<std::wstring_view, uint32_t>& features, const std::unordered_map<std::wstring_view, float>& axes) noexcept
+[[nodiscard]] HRESULT AtlasEngine::_updateFont(const FontInfoDesired& fontInfoDesired, FontInfo& fontInfo, const std::unordered_map<std::wstring_view, float>& features, const std::unordered_map<std::wstring_view, float>& axes) noexcept
 try
 {
     std::vector<DWRITE_FONT_FEATURE> fontFeatures;
@@ -544,19 +549,20 @@ try
             if (p.first.size() == 4)
             {
                 const auto s = p.first.data();
+                const auto v = static_cast<UINT32>(std::max(0l, lrintf(p.second)));
                 switch (const auto tag = DWRITE_MAKE_FONT_FEATURE_TAG(s[0], s[1], s[2], s[3]))
                 {
                 case DWRITE_FONT_FEATURE_TAG_STANDARD_LIGATURES:
-                    fontFeatures[0].parameter = p.second;
+                    fontFeatures[0].parameter = v;
                     break;
                 case DWRITE_FONT_FEATURE_TAG_CONTEXTUAL_LIGATURES:
-                    fontFeatures[1].parameter = p.second;
+                    fontFeatures[1].parameter = v;
                     break;
                 case DWRITE_FONT_FEATURE_TAG_CONTEXTUAL_ALTERNATES:
-                    fontFeatures[2].parameter = p.second;
+                    fontFeatures[2].parameter = v;
                     break;
                 default:
-                    fontFeatures.emplace_back(tag, p.second);
+                    fontFeatures.emplace_back(tag, v);
                     break;
                 }
             }
@@ -612,7 +618,7 @@ void AtlasEngine::_resolveFontMetrics(const FontInfoDesired& fontInfoDesired, Fo
     const auto& faceName = fontInfoDesired.GetFaceName();
     const auto requestedFamily = fontInfoDesired.GetFamily();
     auto requestedWeight = fontInfoDesired.GetWeight();
-    auto fontSize = fontInfoDesired.GetFontSize();
+    auto fontSize = std::clamp(fontInfoDesired.GetFontSize(), 1.0f, 100.0f);
     auto requestedSize = fontInfoDesired.GetEngineSize();
 
     if (!requestedSize.height)

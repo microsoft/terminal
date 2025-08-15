@@ -61,6 +61,7 @@ void SystemConfigurationProvider::GetSettingsFromLink(
     // Hence, we make it seem like the console is in fact configured to use a
     // TrueType font by the user.
 
+#pragma warning(suppress : 26485) // This isn't even really _supposed to be_ an array-to-pointer decay: it's passed as a string view.
     pLinkSettings->SetFaceName(DEFAULT_TT_FONT_FACENAME);
     pLinkSettings->SetFontFamily(TMPF_TRUETYPE);
 

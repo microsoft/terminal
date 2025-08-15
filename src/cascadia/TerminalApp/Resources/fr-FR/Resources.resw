@@ -187,13 +187,16 @@
     <value>Volets multiples</value>
   </data>
   <data name="TabCloseSubMenu" xml:space="preserve">
-    <value>Fermez...</value>
+    <value>Fermer</value>
+  </data>
+  <data name="TabMoveSubMenu" xml:space="preserve">
+    <value>Déplacer l’onglet</value>
   </data>
   <data name="TabCloseAfter" xml:space="preserve">
-    <value>Fermer les Onglets à Droite</value>
+    <value>Fermer les onglets à droite</value>
   </data>
   <data name="TabCloseOther" xml:space="preserve">
-    <value>Fermez les Autres onglets</value>
+    <value>Fermer les autres onglets</value>
   </data>
   <data name="TabClose" xml:space="preserve">
     <value>Fermer l’onglet</value>
@@ -205,16 +208,55 @@
     <value>Fractionner l’onglet</value>
   </data>
   <data name="SplitPaneText" xml:space="preserve">
-    <value>Fractionner le volet...</value>
+    <value>Fractionner le volet</value>
+  </data>
+  <data name="SplitPaneToolTipText" xml:space="preserve">
+    <value>Cliquez avec le bouton droit pour afficher les directions de séparation – droite/bas/haut/gauche</value>
+  </data>
+  <data name="SplitPaneDownText" xml:space="preserve">
+    <value>Fractionner le volet vers le bas</value>
+  </data>
+  <data name="SplitPaneRightText" xml:space="preserve">
+    <value>Fractionner le volet à droite</value>
+  </data>
+  <data name="SplitPaneUpText" xml:space="preserve">
+    <value>Fractionner le volet vers le haut</value>
+  </data>
+  <data name="SplitPaneLeftText" xml:space="preserve">
+    <value>Fractionner le volet à gauche</value>
+  </data>
+  <data name="SplitPaneDuplicateText" xml:space="preserve">
+    <value>Dupliquer</value>
+  </data>
+  <data name="SwapPaneText" xml:space="preserve">
+    <value>Permuter le volet</value>
+  </data>
+  <data name="SwapPaneDownText" xml:space="preserve">
+    <value>Permuter le volet vers le bas</value>
+  </data>
+  <data name="SwapPaneRightText" xml:space="preserve">
+    <value>Permuter le volet à droite</value>
+  </data>
+  <data name="SwapPaneUpText" xml:space="preserve">
+    <value>Permuter le volet vers le haut</value>
+  </data>
+  <data name="SwapPaneLeftText" xml:space="preserve">
+    <value>Permuter le volet à gauche</value>
+  </data>
+  <data name="TogglePaneZoomText" xml:space="preserve">
+    <value>Basculer le zoom du volet</value>
+  </data>
+  <data name="CloseOtherPanesText" xml:space="preserve">
+    <value>Fermer les autres volets</value>
   </data>
   <data name="SearchWebText" xml:space="preserve">
     <value>Recherche web</value>
   </data>
   <data name="TabColorChoose" xml:space="preserve">
-    <value>Couleur...</value>
+    <value>Modifier la couleur de l’onglet</value>
   </data>
   <data name="TabColorCustomButton.Content" xml:space="preserve">
-    <value>Personnalisée...</value>
+    <value>Personnalisé</value>
   </data>
   <data name="TabColorClearButton.Content" xml:space="preserve">
     <value>Réinitialiser</value>
@@ -225,13 +267,9 @@
   <data name="DuplicateTabText" xml:space="preserve">
     <value>Dupliquer l’onglet</value>
   </data>
-  <data name="InvalidBackgroundImage" xml:space="preserve">
-    <value>Profil détecté avec une "backgroundImage" non valide. Par défaut, ce profil ne possède pas d’image d’arrière-plan. Assurez-vous que lorsque vous définissez une "backgroundImage", la valeur est un chemin d’accès de fichier valide vers une image.</value>
-    <comment>{Locked="\"backgroundImage\""}</comment>
-  </data>
-  <data name="InvalidIcon" xml:space="preserve">
-    <value>Profil détecté avec une "icon" non valide. Par défaut, ce profil ne possède pas d’icône. Assurez-vous que lorsque vous définissez une "icon", la valeur est un chemin d’accès de fichier valide vers une image.</value>
-    <comment>{Locked="\"icon\""} The word "icon" in quotes is locked, the word icon OUTSIDE of quotes should be localized.</comment>
+  <data name="InvalidMediaResource" xml:space="preserve">
+    <value>Une ou plusieurs ressources (telles que icon ou backgroundImage) spécifiées dans vos paramètres sont introuvables.</value>
+    <comment>{Locked="icon","backgroundImage"} Indicates that something has gone wrong while reading a user's settings.</comment>
   </data>
   <data name="AtLeastOneKeybindingWarning" xml:space="preserve">
     <value>Des avertissements ont été détectés lors de l’analyse de vos combinaisons de touches :</value>
@@ -279,6 +317,15 @@
   </data>
   <data name="CmdCommandArgDesc" xml:space="preserve">
     <value>Commande facultative avec des arguments à générer dans le nouvel onglet ou le nouveau volet</value>
+  </data>
+  <data name="SaveSnippetDesc" xml:space="preserve">
+    <value>Enregistrer la ligne de commande en tant qu’action d’entrée</value>
+  </data>
+  <data name="SaveSnippetArgDesc" xml:space="preserve">
+    <value>Argument facultatif</value>
+  </data>
+  <data name="KeyChordArgDesc" xml:space="preserve">
+    <value>Argument facultatif</value>
   </data>
   <data name="CmdFocusTabDesc" xml:space="preserve">
     <value>Placer le focus sur un autre onglet</value>
@@ -464,7 +511,7 @@
     <comment>This is the heading for a version number label</comment>
   </data>
   <data name="AboutDialog_GettingStartedLink.Content" xml:space="preserve">
-    <value>Prise en main</value>
+    <value>Bien démarrer</value>
     <comment>A hyperlink name for a guide on how to get started using Terminal</comment>
   </data>
   <data name="AboutDialog_SourceCodeLink.Content" xml:space="preserve">
@@ -480,11 +527,11 @@
     <comment>A hyperlink name for the Terminal's release notes</comment>
   </data>
   <data name="AboutDialog_PrivacyPolicyLink.Content" xml:space="preserve">
-    <value>Politique de confidentialité</value>
+    <value>Charte de confidentialité</value>
     <comment>A hyperlink name for the Terminal's privacy policy</comment>
   </data>
   <data name="AboutDialog_ThirdPartyNoticesLink.Content" xml:space="preserve">
-    <value>Avis de tiers</value>
+    <value>Mentions tierces</value>
     <comment>A hyperlink name for the Terminal's third-party notices</comment>
   </data>
   <data name="QuitDialog.CloseButtonText" xml:space="preserve">
@@ -713,17 +760,11 @@
   <data name="WindowRenamer.CloseButtonContent" xml:space="preserve">
     <value>Annuler</value>
   </data>
-  <data name="RenameFailedToast.Title" xml:space="preserve">
-    <value>Échec du renommage de la fenêtre</value>
-  </data>
-  <data name="RenameFailedToast.Subtitle" xml:space="preserve">
-    <value>Une autre fenêtre portant ce nom existe déjà</value>
-  </data>
   <data name="WindowMaximizeButtonToolTip" xml:space="preserve">
     <value>Agrandir</value>
   </data>
   <data name="WindowRestoreDownButtonToolTip" xml:space="preserve">
-    <value>Niveau inférieur</value>
+    <value>Restaurer</value>
   </data>
   <data name="CommandPaletteMenuItem" xml:space="preserve">
     <value>Palette de commandes</value>
@@ -767,7 +808,7 @@
     <value>Ne plus afficher</value>
   </data>
   <data name="ElevationShield.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>Cette fenêtre de terminal s’exécute en tant qu’Administrateur</value>
+    <value>Cette fenêtre de terminal s’exécute en tant qu’administrateur</value>
   </data>
   <data name="CommandPalette_MatchesAvailable" xml:space="preserve">
     <value>{0} suggestions trouvées</value>
@@ -827,7 +868,7 @@
     <value>Fermer cet onglet</value>
   </data>
   <data name="NewTabMenuFolderEmpty" xml:space="preserve">
-    <value>Vide...</value>
+    <value>Vide</value>
   </data>
   <data name="ClosePaneText" xml:space="preserve">
     <value>Fermer le volet</value>
@@ -846,7 +887,7 @@
     <value>Déplacer l'onglet vers une nouvelle fenêtre </value>
   </data>
   <data name="RunAsAdminFlyout.Text" xml:space="preserve">
-    <value>Exécuter en tant qu'administrateur</value>
+    <value>Exécuter en temps qu'administrateur (restreint)</value>
     <comment>This text is displayed on context menu for profile entries in add new tab button.</comment>
   </data>
   <data name="TerminalPage_PaneMovedAnnouncement_ExistingTab" xml:space="preserve">
@@ -889,5 +930,48 @@
   </data>
   <data name="RestartConnectionToolTip" xml:space="preserve">
     <value>Redémarrer la connexion du volet actif</value>
+  </data>
+  <data name="SnippetPaneTitle.Text" xml:space="preserve">
+    <value>Extraits</value>
+    <comment>Header for a page that includes small "snippets" of text for the user to enter</comment>
+  </data>
+  <data name="SnippetsFilterBox.PlaceholderText" xml:space="preserve">
+    <value>Filtrer les extraits de code...</value>
+    <comment>Placeholder text for a text box to filter snippets (on the same page as the 'SnippetPaneTitle')</comment>
+  </data>
+  <data name="SnippetPlayButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Entrer cette commande</value>
+  </data>
+  <data name="SnippetPlayButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Entrer cette commande</value>
+  </data>
+  <data name="SnippetsPaneNoneFoundHeader.Text" xml:space="preserve">
+    <value>Aucun extrait n'a été trouvé dans vos paramètres.</value>
+    <comment>Text shown to user when no snippets are found in their settings</comment>
+  </data>
+  <data name="SnippetsPaneNoneFoundDetails.Text" xml:space="preserve">
+    <value>Ajoutez des actions « Envoyer une entrée » dans vos paramètres pour les afficher ici.</value>
+    <comment>Additional information presented to the user to let them know they can add a "Send input" action in their setting to populate the snippets pane</comment>
+  </data>
+  <data name="ActionSavedToast.Title" xml:space="preserve">
+    <value>Action enregistrée</value>
+  </data>
+  <data name="ActionSaveFailedToast.Title" xml:space="preserve">
+    <value>Échec de l’enregistrement de l’action</value>
+  </data>
+  <data name="CloseSnippetsPaneButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Fermer le volet</value>
+  </data>
+  <data name="CloseSnippetsPaneButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Fermer le volet</value>
+  </data>
+  <data name="TabMoveLeft" xml:space="preserve">
+    <value>Déplacer vers la gauche</value>
+  </data>
+  <data name="TabMoveRight" xml:space="preserve">
+    <value>Déplacer vers la droite</value>
+  </data>
+  <data name="InvalidRegex" xml:space="preserve">
+    <value>Une expression régulière non valide a été trouvée.</value>
   </data>
 </root>

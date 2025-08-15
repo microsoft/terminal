@@ -12,6 +12,7 @@
 #include "../../buffer/out/UTextAdapter.h"
 
 #include <til/hash.h>
+#include <til/regex.h>
 #include <winrt/Microsoft.Terminal.Core.h>
 
 using namespace winrt::Microsoft::Terminal::Core;
@@ -47,19 +48,11 @@ void Terminal::Create(til::size viewportSize, til::CoordType scrollbackLines, Re
                                 Utils::ClampToShortMax(viewportSize.height + scrollbackLines, 1) };
     const TextAttribute attr{};
     const UINT cursorSize = 12;
-    _mainBuffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, true, renderer);
+    _mainBuffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, true, &renderer);
 
-    auto dispatch = std::make_unique<AdaptDispatch>(*this, renderer, _renderSettings, _terminalInput);
+    auto dispatch = std::make_unique<AdaptDispatch>(*this, &renderer, _renderSettings, _terminalInput);
     auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
     _stateMachine = std::make_unique<StateMachine>(std::move(engine));
-
-    // Until we have a true pass-through mode (GH#1173), the decision as to
-    // whether C1 controls are interpreted or not is made at the conhost level.
-    // If they are being filtered out, then we will simply never receive them.
-    // But if they are being accepted by conhost, there's a chance they may get
-    // passed through in some situations, so it's important that our state
-    // machine is always prepared to accept them.
-    _stateMachine->SetParserMode(StateMachine::Mode::AlwaysAcceptC1, true);
 }
 
 // Method Description:
@@ -90,11 +83,19 @@ void Terminal::UpdateSettings(ICoreSettings settings)
 
     _snapOnInput = settings.SnapOnInput();
     _altGrAliasing = settings.AltGrAliasing();
+    _answerbackMessage = settings.AnswerbackMessage();
     _wordDelimiters = settings.WordDelimiters();
     _suppressApplicationTitle = settings.SuppressApplicationTitle();
     _startingTitle = settings.StartingTitle();
     _trimBlockSelection = settings.TrimBlockSelection();
     _autoMarkPrompts = settings.AutoMarkPrompts();
+    _rainbowSuggestions = settings.RainbowSuggestions();
+    _clipboardOperationsAllowed = settings.AllowVtClipboardWrite();
+
+    if (_stateMachine)
+    {
+        SetOptionalFeatures(settings);
+    }
 
     _getTerminalInput().ForceDisableWin32InputMode(settings.ForceVTInput());
 
@@ -106,6 +107,9 @@ void Terminal::UpdateSettings(ICoreSettings settings)
     {
         GetRenderSettings().SetColorTableEntry(TextColor::FRAME_BACKGROUND, til::color{ settings.TabColor().Value() });
     }
+
+    // Save the changes made above and in UpdateAppearance as the new default render settings.
+    GetRenderSettings().SaveDefaultSettings();
 
     if (!_startingTabColor && settings.StartingTabColor())
     {
@@ -139,7 +143,15 @@ void Terminal::UpdateAppearance(const ICoreAppearance& appearance)
     renderSettings.SetRenderMode(RenderSettings::Mode::IntenseIsBold, appearance.IntenseIsBold());
     renderSettings.SetRenderMode(RenderSettings::Mode::IntenseIsBright, appearance.IntenseIsBright());
 
-    switch (appearance.AdjustIndistinguishableColors())
+    // If AIC is set to Automatic,
+    // update the value based on if high contrast mode is enabled.
+    AdjustTextMode deducedAIC = appearance.AdjustIndistinguishableColors();
+    if (deducedAIC == AdjustTextMode::Automatic)
+    {
+        deducedAIC = _highContrastMode ? AdjustTextMode::Indexed : AdjustTextMode::Never;
+    }
+
+    switch (deducedAIC)
     {
     case AdjustTextMode::Always:
         renderSettings.SetRenderMode(RenderSettings::Mode::IndexedDistinguishableColors, false);
@@ -161,6 +173,8 @@ void Terminal::UpdateAppearance(const ICoreAppearance& appearance)
     renderSettings.SetColorAlias(ColorAlias::DefaultForeground, TextColor::DEFAULT_FOREGROUND, newForegroundColor);
     const til::color newCursorColor{ appearance.CursorColor() };
     renderSettings.SetColorTableEntry(TextColor::CURSOR_COLOR, newCursorColor);
+    const til::color newSelectionColor{ appearance.SelectionBackground() };
+    renderSettings.SetColorTableEntry(TextColor::SELECTION_BACKGROUND, newSelectionColor);
 
     for (auto i = 0; i < 16; i++)
     {
@@ -207,16 +221,24 @@ void Terminal::UpdateAppearance(const ICoreAppearance& appearance)
     _NotifyScrollEvent();
 }
 
+void Terminal::SetHighContrastMode(bool hc) noexcept
+{
+    _highContrastMode = hc;
+}
+
 void Terminal::SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle)
 {
     auto& engine = reinterpret_cast<OutputStateMachineEngine&>(_stateMachine->Engine());
     engine.Dispatch().SetCursorStyle(cursorStyle);
 }
 
-void Terminal::EraseScrollback()
+void Terminal::SetOptionalFeatures(winrt::Microsoft::Terminal::Core::ICoreSettings settings)
 {
     auto& engine = reinterpret_cast<OutputStateMachineEngine&>(_stateMachine->Engine());
-    engine.Dispatch().EraseInDisplay(DispatchTypes::EraseType::Scrollback);
+    auto features = til::enumset<ITermDispatch::OptionalFeature>{};
+    features.set(ITermDispatch::OptionalFeature::ChecksumReport, settings.AllowVtChecksumReport());
+    features.set(ITermDispatch::OptionalFeature::ClipboardWrite, settings.AllowVtClipboardWrite());
+    engine.Dispatch().SetOptionalFeatures(features);
 }
 
 bool Terminal::IsXtermBracketedPasteModeEnabled() const noexcept
@@ -397,6 +419,9 @@ try
         proposedTop = ::base::ClampSub(proposedTop, ::base::ClampSub(proposedBottom, bufferSize.height));
     }
 
+    // Keep the cursor in the mutable viewport
+    proposedTop = std::min(proposedTop, newCursorPos.y);
+
     _mutableViewport = Viewport::FromDimensions({ 0, proposedTop }, viewportSize);
 
     _mainBuffer.swap(newTextBuffer);
@@ -419,19 +444,7 @@ CATCH_RETURN()
 
 void Terminal::Write(std::wstring_view stringView)
 {
-    const auto& cursor = _activeBuffer().GetCursor();
-    const til::point cursorPosBefore{ cursor.GetPosition() };
-
     _stateMachine->ProcessString(stringView);
-
-    const til::point cursorPosAfter{ cursor.GetPosition() };
-
-    // Firing the CursorPositionChanged event is very expensive so we try not to
-    // do that when the cursor does not need to be redrawn.
-    if (cursorPosBefore != cursorPosAfter)
-    {
-        _NotifyTerminalCursorPositionChanged();
-    }
 }
 
 // Method Description:
@@ -456,7 +469,7 @@ void Terminal::TrySnapOnInput()
 // Parameters:
 // - <none>
 // Return value:
-// - true, if we are tracking mouse input. False, otherwise
+// - true, if we are tracking mouse input; otherwise, false.
 bool Terminal::IsTrackingMouseInput() const noexcept
 {
     return _getTerminalInput().IsTrackingMouseInput();
@@ -469,7 +482,7 @@ bool Terminal::IsTrackingMouseInput() const noexcept
 // Parameters:
 // - <none>
 // Return value:
-// - true, if we are tracking mouse input. False, otherwise
+// - true, if we are tracking mouse input; otherwise, false.
 bool Terminal::ShouldSendAlternateScroll(const unsigned int uiButton,
                                          const int32_t delta) const noexcept
 {
@@ -482,7 +495,7 @@ bool Terminal::ShouldSendAlternateScroll(const unsigned int uiButton,
 // - The position relative to the viewport
 std::wstring Terminal::GetHyperlinkAtViewportPosition(const til::point viewportPos)
 {
-    return GetHyperlinkAtBufferPosition(_ConvertToBufferCell(viewportPos));
+    return GetHyperlinkAtBufferPosition(_ConvertToBufferCell(viewportPos, false));
 }
 
 std::wstring Terminal::GetHyperlinkAtBufferPosition(const til::point bufferPos)
@@ -506,8 +519,8 @@ std::wstring Terminal::GetHyperlinkAtBufferPosition(const til::point bufferPos)
         result = GetHyperlinkIntervalFromViewportPosition(viewportPos);
         if (result.has_value())
         {
-            result->start = _ConvertToBufferCell(result->start);
-            result->stop = _ConvertToBufferCell(result->stop);
+            result->start = _ConvertToBufferCell(result->start, false);
+            result->stop = _ConvertToBufferCell(result->stop, true);
         }
     }
     else
@@ -531,14 +544,7 @@ std::wstring Terminal::GetHyperlinkAtBufferPosition(const til::point bufferPos)
     // Case 2 - Step 2: get the auto-detected hyperlink
     if (result.has_value() && result->value == _hyperlinkPatternId)
     {
-        std::wstring uri;
-        const auto startIter = _activeBuffer().GetCellDataAt(result->start);
-        const auto endIter = _activeBuffer().GetCellDataAt(result->stop);
-        for (auto iter = startIter; iter != endIter; ++iter)
-        {
-            uri += iter->Chars();
-        }
-        return uri;
+        return _activeBuffer().GetPlainText(result->start, result->stop);
     }
     return {};
 }
@@ -551,7 +557,7 @@ std::wstring Terminal::GetHyperlinkAtBufferPosition(const til::point bufferPos)
 // - The hyperlink ID
 uint16_t Terminal::GetHyperlinkIdAtViewportPosition(const til::point viewportPos)
 {
-    return _activeBuffer().GetCellDataAt(_ConvertToBufferCell(viewportPos))->TextAttr().GetHyperlinkId();
+    return _activeBuffer().GetCellDataAt(_ConvertToBufferCell(viewportPos, false))->TextAttr().GetHyperlinkId();
 }
 
 // Method description:
@@ -593,7 +599,7 @@ std::optional<PointTree::interval> Terminal::GetHyperlinkIntervalFromViewportPos
 // - vkey: The vkey of the last pressed key.
 // - scanCode: The scan code of the last pressed key.
 // - states: The Microsoft::Terminal::Core::ControlKeyStates representing the modifier key states.
-// - keyDown: If true, the key was pressed, otherwise the key was released.
+// - keyDown: If true, the key was pressed; otherwise, the key was released.
 // Return Value:
 // - true if we translated the key event, and it should not be processed any further.
 // - false if we did not translate the key, and it should be processed into a character.
@@ -711,29 +717,45 @@ TerminalInput::OutputType Terminal::SendCharEvent(const wchar_t ch, const WORD s
         vkey = _VirtualKeyFromCharacter(ch);
     }
 
-    // GH#1527: When the user has auto mark prompts enabled, we're going to try
-    // and heuristically detect if this was the line the prompt was on.
-    // * If the key was an Enter keypress (Terminal.app also marks ^C keypresses
-    //   as prompts. That's omitted for now.)
-    // * AND we're not in the alt buffer
-    //
-    // Then treat this line like it's a prompt mark.
-    if (_autoMarkPrompts && vkey == VK_RETURN && !_inAltBuffer())
+    if (vkey == VK_RETURN && !_inAltBuffer())
     {
-        // * If we have a current prompt:
-        //   - Then we did know that the prompt started, (we may have also
-        //     already gotten a MarkCommandStart sequence). The user has pressed
-        //     enter, and we're treating that like the prompt has now ended.
-        //     - Perform a FTCS_COMMAND_EXECUTED, so that we start marking this
-        //       as output.
-        //     - This enables CMD to have full FTCS support, even though there's
-        //       no point in CMD to insert a "pre exec" hook
-        // * Else: We don't have a prompt. We don't know anything else, but we
-        //   can set the whole line as the prompt, no command, and start the
-        //   command_executed now.
+        // Treat VK_RETURN as a new prompt,
+        // so we should clear the quick fix UI if it's visible.
+        if (_pfnClearQuickFix)
+        {
+            _pfnClearQuickFix();
+        }
+
+        // GH#1527: When the user has auto mark prompts enabled, we're going to try
+        // and heuristically detect if this was the line the prompt was on.
+        // * If the key was an Enter keypress (Terminal.app also marks ^C keypresses
+        //   as prompts. That's omitted for now.)
+        // * AND we're not in the alt buffer
         //
-        // Fortunately, MarkOutputStart will do all this logic for us!
-        MarkOutputStart();
+        // Then treat this line like it's a prompt mark.
+        if (_autoMarkPrompts && _mainBuffer && !_inAltBuffer())
+        {
+            // We need to be a little tricky here, to try and support folks that are
+            // auto-marking prompts, but don't necessarily have the rest of shell
+            // integration enabled.
+            //
+            // We'll set the current attributes to Output, so that the output after
+            // here is marked as the command output. But we also need to make sure
+            // that a mark was started.
+            // We can't just check if the current row has a mark - there could be a
+            // multiline prompt.
+            //
+            // (TextBuffer::_createPromptMarkIfNeeded does that work for us)
+
+            const bool createdMark = _mainBuffer->StartOutput();
+            if (createdMark)
+            {
+                _mainBuffer->ManuallyMarkRowAsPrompt(_mainBuffer->GetCursor().GetPosition().y);
+
+                // This changed the scrollbar marks - raise a notification to update them
+                _NotifyScrollEvent();
+            }
+        }
     }
 
     const auto keyDown = SynthesizeKeyEvent(true, 1, vkey, scanCode, ch, states.Value());
@@ -899,7 +921,7 @@ void Terminal::_StoreKeyEvent(const WORD vkey, const WORD scanCode) noexcept
 // Arguments:
 // - scanCode: The scan code.
 // Return Value:
-// - The key code matching the given scan code. Otherwise 0.
+// - The key code matching the given scan code. Otherwise, 0.
 WORD Terminal::_TakeVirtualKeyFromLastKeyEvent(const WORD scanCode) noexcept
 {
     const auto codes = _lastKeyEventCodes.value_or(KeyEventCodes{});
@@ -967,7 +989,7 @@ Viewport Terminal::_GetMutableViewport() const noexcept
     // GH#3493: if we're in the alt buffer, then it's possible that the mutable
     // viewport's size hasn't been updated yet. In that case, use the
     // temporarily stashed _altBufferSize instead.
-    return _inAltBuffer() ? Viewport::FromDimensions(_altBufferSize) :
+    return _inAltBuffer() ? Viewport::FromDimensions({}, _altBufferSize) :
                             _mutableViewport;
 }
 
@@ -1090,18 +1112,6 @@ void Terminal::_NotifyScrollEvent()
     }
 }
 
-void Terminal::_NotifyTerminalCursorPositionChanged() noexcept
-{
-    if (_pfnCursorPositionChanged)
-    {
-        try
-        {
-            _pfnCursorPositionChanged();
-        }
-        CATCH_LOG();
-    }
-}
-
 void Terminal::SetWriteInputCallback(std::function<void(std::wstring_view)> pfn) noexcept
 {
     _pfnWriteInput.swap(pfn);
@@ -1117,7 +1127,7 @@ void Terminal::SetTitleChangedCallback(std::function<void(std::wstring_view)> pf
     _pfnTitleChanged.swap(pfn);
 }
 
-void Terminal::SetCopyToClipboardCallback(std::function<void(std::wstring_view)> pfn) noexcept
+void Terminal::SetCopyToClipboardCallback(std::function<void(wil::zwstring_view)> pfn) noexcept
 {
     _pfnCopyToClipboard.swap(pfn);
 }
@@ -1125,11 +1135,6 @@ void Terminal::SetCopyToClipboardCallback(std::function<void(std::wstring_view)>
 void Terminal::SetScrollPositionChangedCallback(std::function<void(const int, const int, const int)> pfn) noexcept
 {
     _pfnScrollPositionChanged.swap(pfn);
-}
-
-void Terminal::SetCursorPositionChangedCallback(std::function<void()> pfn) noexcept
-{
-    _pfnCursorPositionChanged.swap(pfn);
 }
 
 // Method Description:
@@ -1149,6 +1154,11 @@ void Microsoft::Terminal::Core::Terminal::TaskbarProgressChangedCallback(std::fu
 void Terminal::SetShowWindowCallback(std::function<void(bool)> pfn) noexcept
 {
     _pfnShowWindowChanged.swap(pfn);
+}
+
+void Terminal::SetWindowSizeChangedCallback(std::function<void(int32_t, int32_t)> pfn) noexcept
+{
+    _pfnWindowSizeChanged.swap(pfn);
 }
 
 // Method Description:
@@ -1250,6 +1260,44 @@ void Microsoft::Terminal::Core::Terminal::CompletionsChangedCallback(std::functi
     _pfnCompletionsChanged.swap(pfn);
 }
 
+void Microsoft::Terminal::Core::Terminal::SetSearchMissingCommandCallback(std::function<void(std::wstring_view, const til::CoordType)> pfn) noexcept
+{
+    _pfnSearchMissingCommand.swap(pfn);
+}
+
+void Microsoft::Terminal::Core::Terminal::SetClearQuickFixCallback(std::function<void()> pfn) noexcept
+{
+    _pfnClearQuickFix.swap(pfn);
+}
+
+// Method Description:
+// - Stores the search highlighted regions in the terminal
+void Terminal::SetSearchHighlights(const std::vector<til::point_span>& highlights) noexcept
+{
+    _assertLocked();
+    _searchHighlights = highlights;
+}
+
+// Method Description:
+// - Stores the focused search highlighted region in the terminal
+// - If the region isn't empty, it will be brought into view
+void Terminal::SetSearchHighlightFocused(const size_t focusedIdx) noexcept
+{
+    _assertLocked();
+    _searchHighlightFocused = focusedIdx;
+}
+
+void Terminal::ScrollToSearchHighlight(til::CoordType searchScrollOffset)
+{
+    if (_searchHighlightFocused < _searchHighlights.size())
+    {
+        const auto focused = til::at(_searchHighlights, _searchHighlightFocused);
+        const auto adjustedStart = til::point{ focused.start.x, std::max(0, focused.start.y - searchScrollOffset) };
+        const auto adjustedEnd = til::point{ focused.end.x, std::max(0, focused.end.y - searchScrollOffset) };
+        _ScrollToPoints(adjustedStart, adjustedEnd);
+    }
+}
+
 bool Terminal::_inAltBuffer() const noexcept
 {
     _assertLocked();
@@ -1281,7 +1329,7 @@ struct URegularExpressionInterner
     //
     // An alternative approach would be to not make this method thread-safe and give each
     // Terminal instance its own cache. I'm not sure which approach would have been better.
-    ICU::unique_uregex Intern(const std::wstring_view& pattern)
+    til::ICU::unique_uregex Intern(const std::wstring_view& pattern)
     {
         UErrorCode status = U_ZERO_ERROR;
 
@@ -1289,14 +1337,14 @@ struct URegularExpressionInterner
             const auto guard = _lock.lock_shared();
             if (const auto it = _cache.find(pattern); it != _cache.end())
             {
-                return ICU::unique_uregex{ uregex_clone(it->second.re.get(), &status) };
+                return til::ICU::unique_uregex{ uregex_clone(it->second.re.get(), &status) };
             }
         }
 
         // Even if the URegularExpression creation failed, we'll insert it into the cache, because there's no point in retrying.
         // (Apart from OOM but in that case this application will crash anyways in 3.. 2.. 1..)
-        auto re = ICU::CreateRegex(pattern, 0, &status);
-        ICU::unique_uregex clone{ uregex_clone(re.get(), &status) };
+        auto re = til::ICU::CreateRegex(pattern, 0, &status);
+        til::ICU::unique_uregex clone{ uregex_clone(re.get(), &status) };
         std::wstring key{ pattern };
 
         const auto guard = _lock.lock_exclusive();
@@ -1318,7 +1366,7 @@ struct URegularExpressionInterner
 private:
     struct CacheValue
     {
-        ICU::unique_uregex re;
+        til::ICU::unique_uregex re;
         size_t generation = 0;
     };
 
@@ -1346,6 +1394,11 @@ PointTree Terminal::_getPatterns(til::CoordType beg, til::CoordType end) const
         LR"(\b(?:https?|ftp|file)://[-A-Za-z0-9+&@#/%?=~_|$!:,.;]*[A-Za-z0-9+&@#/%=~_|$])",
     };
 
+    if (!_detectURLs)
+    {
+        return {};
+    }
+
     auto text = ICU::UTextFromTextBuffer(_activeBuffer(), beg, end + 1);
     UErrorCode status = U_ZERO_ERROR;
     PointTree::interval_vector intervals;
@@ -1363,7 +1416,6 @@ PointTree Terminal::_getPatterns(til::CoordType beg, til::CoordType end) const
                 // PointTree uses half-open ranges and viewport-relative coordinates.
                 range.start.y -= beg;
                 range.end.y -= beg;
-                range.end.x++;
                 intervals.push_back(PointTree::interval(range.start, range.end, 0));
             } while (uregex_findNext(re.get(), &status));
         }
@@ -1373,36 +1425,19 @@ PointTree Terminal::_getPatterns(til::CoordType beg, til::CoordType end) const
 }
 
 // NOTE: This is the version of AddMark that comes from the UI. The VT api call into this too.
-void Terminal::AddMark(const ScrollMark& mark,
-                       const til::point& start,
-                       const til::point& end,
-                       const bool fromUi)
+void Terminal::AddMarkFromUI(ScrollbarData mark,
+                             til::CoordType y)
 {
     if (_inAltBuffer())
     {
         return;
     }
 
-    ScrollMark m = mark;
-    m.start = start;
-    m.end = end;
-
-    // If the mark came from the user adding a mark via the UI, don't make it the active prompt mark.
-    if (fromUi)
-    {
-        _activeBuffer().AddMark(m);
-    }
-    else
-    {
-        _activeBuffer().StartPromptMark(m);
-    }
+    _activeBuffer().SetScrollbarData(mark, y);
 
     // Tell the control that the scrollbar has somehow changed. Used as a
     // workaround to force the control to redraw any scrollbar marks
     _NotifyScrollEvent();
-
-    // DON'T set _currentPrompt. The VT impl will do that for you. We don't want
-    // UI-driven marks to set that.
 }
 
 void Terminal::ClearMark()
@@ -1433,30 +1468,30 @@ void Terminal::ClearAllMarks()
     _NotifyScrollEvent();
 }
 
-const std::vector<ScrollMark>& Terminal::GetScrollMarks() const noexcept
+std::vector<ScrollMark> Terminal::GetMarkRows() const
 {
-    // TODO: GH#11000 - when the marks are stored per-buffer, get rid of this.
     // We want to return _no_ marks when we're in the alt buffer, to effectively
-    // hide them. We need to return a reference, so we can't just ctor an empty
-    // list here just for when we're in the alt buffer.
-    return _activeBuffer().GetMarks();
+    // hide them.
+    return _inAltBuffer() ? std::vector<ScrollMark>{} : _activeBuffer().GetMarkRows();
+}
+std::vector<MarkExtents> Terminal::GetMarkExtents() const
+{
+    // We want to return _no_ marks when we're in the alt buffer, to effectively
+    // hide them.
+    return _inAltBuffer() ? std::vector<MarkExtents>{} : _activeBuffer().GetMarkExtents();
 }
 
-til::color Terminal::GetColorForMark(const ScrollMark& mark) const
+til::color Terminal::GetColorForMark(const ScrollbarData& markData) const
 {
-    if (mark.color.has_value())
+    if (markData.color.has_value())
     {
-        return *mark.color;
+        return *markData.color;
     }
 
     const auto& renderSettings = GetRenderSettings();
 
-    switch (mark.category)
+    switch (markData.category)
     {
-    case MarkCategory::Prompt:
-    {
-        return renderSettings.GetColorAlias(ColorAlias::DefaultForeground);
-    }
     case MarkCategory::Error:
     {
         return renderSettings.GetColorTableEntry(TextColor::BRIGHT_RED);
@@ -1469,35 +1504,31 @@ til::color Terminal::GetColorForMark(const ScrollMark& mark) const
     {
         return renderSettings.GetColorTableEntry(TextColor::BRIGHT_GREEN);
     }
+    case MarkCategory::Prompt:
+    case MarkCategory::Default:
     default:
-    case MarkCategory::Info:
     {
         return renderSettings.GetColorAlias(ColorAlias::DefaultForeground);
     }
     }
 }
 
-std::wstring_view Terminal::CurrentCommand() const
+std::wstring Terminal::CurrentCommand() const
 {
-    if (_currentPromptState != PromptState::Command)
-    {
-        return L"";
-    }
-
     return _activeBuffer().CurrentCommand();
 }
 
 void Terminal::SerializeMainBuffer(const wchar_t* destination) const
 {
-    _mainBuffer->Serialize(destination);
+    _mainBuffer->SerializeToPath(destination);
 }
 
 void Terminal::ColorSelection(const TextAttribute& attr, winrt::Microsoft::Terminal::Core::MatchMode matchMode)
 {
-    const auto colorSelection = [this](const til::point coordStart, const til::point coordEnd, const TextAttribute& attr) {
+    const auto colorSelection = [this](const til::point coordStartInclusive, const til::point coordEndExclusive, const TextAttribute& attr) {
         auto& textBuffer = _activeBuffer();
-        const auto spanLength = textBuffer.SpanLength(coordStart, coordEnd);
-        textBuffer.Write(OutputCellIterator(attr, spanLength), coordStart);
+        const auto spanLength = textBuffer.GetSize().CompareInBounds(coordEndExclusive, coordStartInclusive, true);
+        textBuffer.Write(OutputCellIterator(attr, spanLength), coordStartInclusive);
     };
 
     for (const auto [start, end] : _GetSelectionSpans())
@@ -1521,7 +1552,7 @@ void Terminal::ColorSelection(const TextAttribute& attr, winrt::Microsoft::Termi
 
                 if (!textView.empty())
                 {
-                    const auto hits = textBuffer.SearchText(textView, true);
+                    const auto hits = textBuffer.SearchText(textView, SearchFlag::CaseInsensitive).value_or(std::vector<til::point_span>{});
                     for (const auto& s : hits)
                     {
                         colorSelection(s.start, s.end, attr);
@@ -1534,12 +1565,102 @@ void Terminal::ColorSelection(const TextAttribute& attr, winrt::Microsoft::Termi
 }
 
 // Method Description:
-// - Returns the position of the cursor relative to the active viewport
+// - Returns the position of the cursor relative to the visible viewport
 til::point Terminal::GetViewportRelativeCursorPosition() const noexcept
 {
     const auto absoluteCursorPosition{ GetCursorPosition() };
-    const auto viewport{ _GetMutableViewport() };
-    return absoluteCursorPosition - viewport.Origin();
+    const auto mutableViewport{ _GetMutableViewport() };
+    const auto relativeCursorPos = absoluteCursorPosition - mutableViewport.Origin();
+    return { relativeCursorPos.x, relativeCursorPos.y + _scrollOffset };
+}
+
+void Terminal::PreviewText(std::wstring_view input)
+{
+    // Our default suggestion text is default-on-default, in italics.
+    static constexpr TextAttribute previewAttrs{ CharacterAttributes::Italics, TextColor{}, TextColor{}, 0u, TextColor{} };
+
+    auto lock = LockForWriting();
+
+    if (_mainBuffer == nullptr)
+    {
+        return;
+    }
+
+    if (input.empty())
+    {
+        snippetPreview.text = L"";
+        snippetPreview.cursorPos = 0;
+        snippetPreview.attributes.clear();
+        _activeBuffer().NotifyPaintFrame();
+        return;
+    }
+
+    // When we're previewing suggestions, they might be preceded with DEL
+    // characters to backspace off the old command.
+    //
+    // But also, in the case of something like pwsh, there might be MORE "ghost"
+    // text in the buffer _after_ the commandline.
+    //
+    // We need to trim off the leading DELs, then pad out the rest of the line
+    // to cover any other ghost text.
+    // Where do the DELs end?
+    const auto strBegin = input.find_first_not_of(L"\x7f");
+    if (strBegin != std::wstring::npos)
+    {
+        // Trim them off.
+        input = input.substr(strBegin);
+    }
+    // How many spaces do we need, so that the preview exactly covers the entire
+    // prompt, all the way to the end of the viewport?
+    const auto bufferWidth = _GetMutableViewport().Width();
+    const auto cursorX = _activeBuffer().GetCursor().GetPosition().x;
+    const auto expectedLenTillEnd = strBegin + (static_cast<size_t>(bufferWidth) - static_cast<size_t>(cursorX));
+    std::wstring preview{ input };
+    const auto originalSize{ preview.size() };
+    if (expectedLenTillEnd > originalSize)
+    {
+        // pad it out
+        preview.insert(originalSize, expectedLenTillEnd - originalSize, L' ');
+    }
+
+    // Build our composition data
+    // The text is just the trimmed command, with the spaces at the end.
+    snippetPreview.text = til::visualize_nonspace_control_codes(preview);
+
+    // The attributes depend on the $profile:experimental.rainbowSuggestions setting:.
+    const auto len = snippetPreview.text.size();
+    snippetPreview.attributes.clear();
+
+    if (_rainbowSuggestions)
+    {
+        // Let's do something fun.
+
+        // Use the actual text length for the number of steps, not including the
+        // trailing spaces.
+        const float increment = 1.0f / originalSize;
+        for (auto i = 0u; i < originalSize; i++)
+        {
+            const auto color = til::color::from_hue(increment * i);
+            TextAttribute curr = previewAttrs;
+            curr.SetForeground(color);
+            snippetPreview.attributes.emplace_back(1, curr);
+        }
+
+        if (originalSize < len)
+        {
+            TextAttribute curr;
+            snippetPreview.attributes.emplace_back(len - originalSize, curr);
+        }
+    }
+    else
+    {
+        // Default:
+        // Use the default attribute we defined above.
+        snippetPreview.attributes.emplace_back(len, previewAttrs);
+    }
+
+    snippetPreview.cursorPos = len;
+    _activeBuffer().NotifyPaintFrame();
 }
 
 // These functions are used by TerminalInput, which must build in conhost

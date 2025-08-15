@@ -5,8 +5,11 @@
 ********************************************************/
 #include "pch.h"
 #include "NonClientIslandWindow.h"
+
+#include <dwmapi.h>
+#include <uxtheme.h>
+
 #include "../types/inc/utils.hpp"
-#include "TerminalThemeHelpers.h"
 
 using namespace winrt::Windows::UI;
 using namespace winrt::Windows::UI::Composition;
@@ -14,7 +17,6 @@ using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Xaml::Hosting;
 using namespace winrt::Windows::Foundation::Numerics;
 using namespace ::Microsoft::Console;
-using namespace ::Microsoft::Console::Types;
 
 static constexpr int AutohideTaskbarSize = 2;
 
@@ -346,17 +348,9 @@ void NonClientIslandWindow::OnAppInitialized()
     IslandWindow::OnAppInitialized();
 }
 
-void NonClientIslandWindow::Refrigerate() noexcept
+void NonClientIslandWindow::Initialize()
 {
-    IslandWindow::Refrigerate();
-
-    // Revoke all our XAML callbacks.
-    _callbacks = {};
-}
-
-bool NonClientIslandWindow::Initialize()
-{
-    const bool coldInit = IslandWindow::Initialize();
+    IslandWindow::Initialize();
 
     _UpdateFrameMargins();
 
@@ -393,8 +387,6 @@ bool NonClientIslandWindow::Initialize()
     // (i.e. re-using an existing window), we need to manually update the
     // island's position to fill the new window bounds.
     _ResizeDragBarWindow();
-
-    return coldInit;
 }
 
 // Method Description:
@@ -405,8 +397,6 @@ bool NonClientIslandWindow::Initialize()
 // - <none>
 void NonClientIslandWindow::SetContent(winrt::Windows::UI::Xaml::UIElement content)
 {
-    _clientContent = content;
-
     _rootGrid.Children().Append(content);
 
     // SetRow only works on FrameworkElement's, so cast it to a FWE before
@@ -702,7 +692,7 @@ int NonClientIslandWindow::_GetResizeHandleHeight() const noexcept
             // If there's a taskbar on any side of the monitor, reduce our size
             // a little bit on that edge.
             //
-            // Note to future code archeologists:
+            // Note to future code archaeologists:
             // This doesn't seem to work for fullscreen on the primary display.
             // However, testing a bunch of other apps with fullscreen modes
             // and an auto-hiding taskbar has shown that _none_ of them
@@ -873,14 +863,15 @@ til::rect NonClientIslandWindow::GetNonClientFrame(UINT dpi) const noexcept
 til::size NonClientIslandWindow::GetTotalNonClientExclusiveSize(UINT dpi) const noexcept
 {
     const auto islandFrame{ GetNonClientFrame(dpi) };
+    const auto scale = GetCurrentDpiScale();
 
     // If we have a titlebar, this is being called after we've initialized, and
     // we can just ask that titlebar how big it wants to be.
-    const auto titleBarHeight = _titlebar ? static_cast<LONG>(_titlebar.ActualHeight()) : 0;
+    const auto titleBarHeight = _titlebar ? static_cast<LONG>(_titlebar.ActualHeight()) * scale : 0;
 
     return {
         islandFrame.right - islandFrame.left,
-        islandFrame.bottom - islandFrame.top + titleBarHeight
+        islandFrame.bottom - islandFrame.top + static_cast<til::CoordType>(titleBarHeight)
     };
 }
 
@@ -1138,7 +1129,7 @@ void NonClientIslandWindow::_SetIsBorderless(const bool borderlessEnabled)
 
 // Method Description:
 // - Enable or disable fullscreen mode. When entering fullscreen mode, we'll
-//   need to manually hide the entire titlebar.
+//   need to check whether to hide the titlebar.
 // - See also IslandWindow::_SetIsFullscreen, which does additional work.
 // Arguments:
 // - fullscreenEnabled: If true, we're entering fullscreen mode. If false, we're leaving.
@@ -1147,10 +1138,7 @@ void NonClientIslandWindow::_SetIsBorderless(const bool borderlessEnabled)
 void NonClientIslandWindow::_SetIsFullscreen(const bool fullscreenEnabled)
 {
     IslandWindow::_SetIsFullscreen(fullscreenEnabled);
-    if (_titlebar)
-    {
-        _titlebar.Visibility(_IsTitlebarVisible() ? Visibility::Visible : Visibility::Collapsed);
-    }
+    _UpdateTitlebarVisibility();
     // GH#4224 - When the auto-hide taskbar setting is enabled, then we don't
     // always get another window message to trigger us to remove the drag bar.
     // So, make sure to update the size of the drag region here, so that it
@@ -1158,16 +1146,42 @@ void NonClientIslandWindow::_SetIsFullscreen(const bool fullscreenEnabled)
     _ResizeDragBarWindow();
 }
 
+void NonClientIslandWindow::SetShowTabsFullscreen(const bool newShowTabsFullscreen)
+{
+    IslandWindow::SetShowTabsFullscreen(newShowTabsFullscreen);
+
+    // don't waste time recalculating UI elements if we're not
+    // in fullscreen state - this setting doesn't affect other
+    // window states
+    if (_fullscreen)
+    {
+        _UpdateTitlebarVisibility();
+    }
+}
+
+void NonClientIslandWindow::_UpdateTitlebarVisibility()
+{
+    if (!_titlebar)
+    {
+        return;
+    }
+
+    const auto showTitlebar = _IsTitlebarVisible();
+    _titlebar.Visibility(showTitlebar ? Visibility::Visible : Visibility::Collapsed);
+    _titlebar.FullscreenChanged(_fullscreen);
+}
+
 // Method Description:
-// - Returns true if the titlebar is visible. For things like fullscreen mode,
-//   borderless mode (aka "focus mode"), this will return false.
+// - Returns true if the titlebar is visible. For borderless mode (aka "focus mode"),
+//   this will return false. For fullscreen, this will return false unless the user
+//   has enabled fullscreen tabs.
 // Arguments:
 // - <none>
 // Return Value:
 // - true iff the titlebar is visible
 bool NonClientIslandWindow::_IsTitlebarVisible() const
 {
-    return !(_fullscreen || _borderless);
+    return !_borderless && (!_fullscreen || _showTabsFullscreen);
 }
 
 void NonClientIslandWindow::SetTitlebarBackground(winrt::Windows::UI::Xaml::Media::Brush brush)

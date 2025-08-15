@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -209,7 +209,7 @@
   </data>
   <data name="CtrlDToClose" xml:space="preserve">
     <value>Ỳóŭ ćǻή иòω сĺøѕè ťнįş тёѓмîήªŀ ωīťђ Çťѓℓ+Ď, όг ргéšѕ Σñтèř το ґèšтªят. !!! !!! !!! !!! !!! !!! !!!</value>
-	  <comment>"Ctrl+D" and "Enter" represent keys the user will press (control+D and Enter).</comment>
+    <comment>"Ctrl+D" and "Enter" represent keys the user will press (control+D and Enter).</comment>
   </data>
   <data name="ProcessFailedToLaunch" xml:space="preserve">
     <value>[℮ѓѓŏŕ {0} ωĥєй łåύñćђίηğ `{1}'] !!! !!! !!! </value>
@@ -219,5 +219,11 @@
   <data name="BadPathText" xml:space="preserve">
     <value>Ċőŭľđ йōť ª¢čеѕş şτāŗťΐиğ ðιѓεςтоŗγ "{0}" !!! !!! !!! !!!</value>
     <comment>The first argument {0} is a path to a directory on the filesystem, as provided by the user.</comment>
+  </data>
+  <data name="ElevationRequired" xml:space="preserve">
+    <value>Ţнė ŗēqμĕѕŧєđ ôφ℮ґάтĩöй ŕєqΰїŗęś ėĺęνáτîøŋ. !!! !!! !!! !!! </value>
+  </data>
+  <data name="FileNotFound" xml:space="preserve">
+    <value>Ŧнё şγśţêм ςâлηόť ƒїлď ŧнэ ƒΐĺë śрéćιƒієð. !!! !!! !!! !!! </value>
   </data>
 </root>

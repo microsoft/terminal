@@ -67,5 +67,17 @@ namespace Microsoft::Console::Utils
     __pragma(warning(suppress : 26485));       \
     __declspec(selectany) extern const wchar_t* g_WinRTUtilsLibraryResourceScope{ (x) };
 
+class ScopedResourceLoader;
+
+const ScopedResourceLoader& GetLibraryResourceLoader();
 winrt::hstring GetLibraryResourceString(const std::wstring_view key);
 bool HasLibraryResourceWithName(const std::wstring_view key);
+
+#define RS_fmt(x, ...) RS_fmt_impl(USES_RESOURCE(x), __VA_ARGS__)
+
+template<typename... Args>
+std::wstring RS_fmt_impl(std::wstring_view key, Args&&... args)
+{
+    const auto format = GetLibraryResourceString(key);
+    return fmt::format(fmt::runtime(std::wstring_view{ format }), std::forward<Args>(args)...);
+}

@@ -7,7 +7,6 @@
 #include <shellapi.h>
 using namespace Microsoft::Console::Utils;
 
-const std::wstring_view ConsoleArguments::VT_MODE_ARG = L"--vtmode";
 const std::wstring_view ConsoleArguments::HEADLESS_ARG = L"--headless";
 const std::wstring_view ConsoleArguments::SERVER_HANDLE_ARG = L"--server";
 const std::wstring_view ConsoleArguments::SIGNAL_HANDLE_ARG = L"--signal";
@@ -19,10 +18,10 @@ const std::wstring_view ConsoleArguments::FILEPATH_LEADER_PREFIX = L"\\??\\";
 const std::wstring_view ConsoleArguments::WIDTH_ARG = L"--width";
 const std::wstring_view ConsoleArguments::HEIGHT_ARG = L"--height";
 const std::wstring_view ConsoleArguments::INHERIT_CURSOR_ARG = L"--inheritcursor";
-const std::wstring_view ConsoleArguments::RESIZE_QUIRK = L"--resizeQuirk";
 const std::wstring_view ConsoleArguments::FEATURE_ARG = L"--feature";
 const std::wstring_view ConsoleArguments::FEATURE_PTY_ARG = L"pty";
 const std::wstring_view ConsoleArguments::COM_SERVER_ARG = L"-Embedding";
+static constexpr std::wstring_view GLYPH_WIDTH{ L"--textMeasurement" };
 // NOTE: Thinking about adding more commandline args that control conpty, for
 // the Terminal? Make sure you add them to the commandline in
 // ConsoleEstablishHandoff. We use that to initialize the ConsoleArguments for a
@@ -111,7 +110,6 @@ ConsoleArguments::ConsoleArguments(const std::wstring& commandline,
     _vtOutHandle(hStdOut)
 {
     _clientCommandline = L"";
-    _vtMode = L"";
     _headless = false;
     _runAsComServer = false;
     _createServerHandle = true;
@@ -137,7 +135,6 @@ ConsoleArguments& ConsoleArguments::operator=(const ConsoleArguments& other)
         _clientCommandline = other._clientCommandline;
         _vtInHandle = other._vtInHandle;
         _vtOutHandle = other._vtOutHandle;
-        _vtMode = other._vtMode;
         _headless = other._headless;
         _createServerHandle = other._createServerHandle;
         _serverHandle = other._serverHandle;
@@ -185,7 +182,7 @@ void ConsoleArguments::s_ConsumeArg(_Inout_ std::vector<std::wstring>& args, _In
 //      should be at (index+1). index will be decremented by one on success.
 //  pSetting: receives the string at index+1
 // Return Value:
-//  S_OK if we parsed the string successfully, otherwise E_INVALIDARG indicating
+//  S_OK if we parsed the string successfully; otherwise, E_INVALIDARG indicating
 //      failure.
 [[nodiscard]] HRESULT ConsoleArguments::s_GetArgumentValue(_Inout_ std::vector<std::wstring>& args,
                                                            _Inout_ size_t& index,
@@ -216,7 +213,7 @@ void ConsoleArguments::s_ConsumeArg(_Inout_ std::vector<std::wstring>& args, _In
 //      should be at (index+1). index will be decremented by one on success.
 //  pSetting: receives the string at index+1
 // Return Value:
-//  S_OK if we parsed the string successfully, otherwise E_INVALIDARG indicating
+//  S_OK if we parsed the string successfully; otherwise, E_INVALIDARG indicating
 //      failure.
 [[nodiscard]] HRESULT ConsoleArguments::s_HandleFeatureValue(_Inout_ std::vector<std::wstring>& args, _Inout_ size_t& index)
 {
@@ -246,7 +243,7 @@ void ConsoleArguments::s_ConsumeArg(_Inout_ std::vector<std::wstring>& args, _In
 //      should be at (index+1). index will be decremented by one on success.
 //  pSetting: receives the short at index+1
 // Return Value:
-//  S_OK if we parsed the short successfully, otherwise E_INVALIDARG indicating
+//  S_OK if we parsed the short successfully; otherwise, E_INVALIDARG indicating
 //      failure. This could be the case for non-numeric arguments, or for >SHORT_MAX args.
 [[nodiscard]] HRESULT ConsoleArguments::s_GetArgumentValue(_Inout_ std::vector<std::wstring>& args,
                                                            _Inout_ size_t& index,
@@ -335,7 +332,7 @@ void ConsoleArguments::s_ConsumeArg(_Inout_ std::vector<std::wstring>& args, _In
 //  index: the index of the argument of which to start the commandline from.
 //  skipFirst: if true, omit the arg at index (which should be "--")
 // Return Value:
-//  S_OK if we parsed the string successfully, otherwise E_INVALIDARG indicating
+//  S_OK if we parsed the string successfully; otherwise, E_INVALIDARG indicating
 //       failure.
 [[nodiscard]] HRESULT ConsoleArguments::_GetClientCommandline(_Inout_ std::vector<std::wstring>& args, const size_t index, const bool skipFirst)
 {
@@ -372,7 +369,7 @@ void ConsoleArguments::s_ConsumeArg(_Inout_ std::vector<std::wstring>& args, _In
 // Arguments:
 //  <none>
 // Return Value:
-//  S_OK if we parsed our _commandline successfully, otherwise E_INVALIDARG
+//  S_OK if we parsed our _commandline successfully; otherwise, E_INVALIDARG
 //      indicating failure.
 [[nodiscard]] HRESULT ConsoleArguments::ParseCommandline()
 {
@@ -473,10 +470,6 @@ void ConsoleArguments::s_ConsumeArg(_Inout_ std::vector<std::wstring>& args, _In
             s_ConsumeArg(args, i);
             hr = S_OK;
         }
-        else if (arg == VT_MODE_ARG)
-        {
-            hr = s_GetArgumentValue(args, i, &_vtMode);
-        }
         else if (arg == WIDTH_ARG)
         {
             hr = s_GetArgumentValue(args, i, &_width);
@@ -501,11 +494,9 @@ void ConsoleArguments::s_ConsumeArg(_Inout_ std::vector<std::wstring>& args, _In
             s_ConsumeArg(args, i);
             hr = S_OK;
         }
-        else if (arg == RESIZE_QUIRK)
+        else if (arg == GLYPH_WIDTH)
         {
-            _resizeQuirk = true;
-            s_ConsumeArg(args, i);
-            hr = S_OK;
+            hr = s_GetArgumentValue(args, i, &_textMeasurement);
         }
         else if (arg == CLIENT_COMMANDLINE_ARG)
         {
@@ -625,9 +616,9 @@ std::wstring ConsoleArguments::GetClientCommandline() const
     return _clientCommandline;
 }
 
-std::wstring ConsoleArguments::GetVtMode() const
+const std::wstring& ConsoleArguments::GetTextMeasurement() const
 {
-    return _vtMode;
+    return _textMeasurement;
 }
 
 bool ConsoleArguments::GetForceV1() const
@@ -653,10 +644,6 @@ short ConsoleArguments::GetHeight() const
 bool ConsoleArguments::GetInheritCursor() const
 {
     return _inheritCursor;
-}
-bool ConsoleArguments::IsResizeQuirkEnabled() const
-{
-    return _resizeQuirk;
 }
 
 #ifdef UNIT_TESTING

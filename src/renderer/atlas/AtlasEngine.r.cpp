@@ -55,7 +55,7 @@ catch (const wil::ResultException& exception)
 {
     const auto hr = exception.GetErrorCode();
 
-    if (hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET)
+    if (hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET || hr == D2DERR_RECREATE_TARGET)
     {
         _p.dxgi = {};
         return E_PENDING;
@@ -77,7 +77,7 @@ CATCH_RETURN()
 
 [[nodiscard]] bool AtlasEngine::RequiresContinuousRedraw() noexcept
 {
-    return ATLAS_DEBUG_CONTINUOUS_REDRAW || (_b && _b->RequiresContinuousRedraw()) || _hackTriggerRedrawAll;
+    return ATLAS_DEBUG_CONTINUOUS_REDRAW || (_b && _b->RequiresContinuousRedraw());
 }
 
 void AtlasEngine::WaitUntilCanRender() noexcept
@@ -282,21 +282,15 @@ void AtlasEngine::_recreateBackend()
     {
     case GraphicsAPI::Direct2D:
         _b = std::make_unique<BackendD2D>();
-        _hackIsBackendD2D = true;
         break;
     default:
         _b = std::make_unique<BackendD3D>(_p);
-        _hackIsBackendD2D = false;
         break;
     }
 
     // This ensures that the backends redraw their entire viewports whenever a new swap chain is created,
     // EVEN IF we got called when no actual settings changed (i.e. rendering failure, etc.).
     _p.MarkAllAsDirty();
-
-    const auto hackWantsBuiltinGlyphs = _p.s->font->builtinGlyphs && !_hackIsBackendD2D;
-    _hackTriggerRedrawAll = _hackWantsBuiltinGlyphs != hackWantsBuiltinGlyphs;
-    _hackWantsBuiltinGlyphs = hackWantsBuiltinGlyphs;
 }
 
 void AtlasEngine::_handleSwapChainUpdate()
@@ -471,14 +465,15 @@ void AtlasEngine::_present()
         return;
     }
 
+#pragma warning(suppress : 4127) // conditional expression is constant
     if (!ATLAS_DEBUG_SHOW_DIRTY && !_p.s->target->disablePresent1 && memcmp(&dirtyRect, &fullRect, sizeof(RECT)) != 0)
     {
         params.DirtyRectsCount = 1;
         params.pDirtyRects = &dirtyRect;
 
-        if (_p.scrollOffset)
+        if (_p.scrollDeltaY)
         {
-            const auto offsetInPx = _p.scrollOffset * _p.s->font->cellSize.y;
+            const auto offsetInPx = _p.scrollDeltaY * _p.s->font->cellSize.y;
             const auto width = _p.s->targetSize.x;
             // We don't use targetSize.y here, because "height" refers to the bottom coordinate of the last text row
             // in the buffer. We then add the "offsetInPx" (which is negative when scrolling text upwards) and thus

@@ -65,9 +65,6 @@
 	* `clipboard.cpp`
 * Handles the command prompt line as you see in CMD.exe (known as the processed input line… most other shells handle this themselves with raw input and don’t use ours. This is a legacy of bad architectural design, putting stuff in conhost not in CMD)
 	* `cmdline.cpp`
-* Handles shunting IME data back and forth to the TSF library and to and from the various buffers
-	* `Conimeinfo.cpp`
-	* `Convarea.cpp`
 * Contains the global state for the entire console application
 	* `consoleInformation.cpp`
 * Stuff related to the low-level server communication over our protocol with the driver

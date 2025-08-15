@@ -362,7 +362,7 @@ bool GdiEngine::FontHasWesternScript(HDC hdc)
             polyString.back() &= softFontCharMask;
             polyWidth.push_back(gsl::narrow<int>(cluster.GetColumns()) * coordFontSize.width);
             cchCharWidths += polyWidth.back();
-            polyWidth.append(text.size() - 1, 0);
+            polyWidth.resize(polyWidth.size() + text.size() - 1);
         }
 
         // Detect and convert for raster font...
@@ -574,7 +574,8 @@ try
         }
 
         const auto cpt = gsl::narrow_cast<DWORD>(points.size());
-        return PolyBezier(_hdcMemoryContext, points.data(), cpt);
+        RETURN_HR_IF(E_FAIL, !PolyBezier(_hdcMemoryContext, points.data(), cpt));
+        return S_OK;
     };
 
     if (lines.test(GridLines::Left))
@@ -660,6 +661,64 @@ try
     else if (lines.test(GridLines::DashedUnderline))
     {
         return DrawStrokedLine(ptTarget.x, ptTarget.y + _lineMetrics.underlineCenter, widthOfAllCells);
+    }
+
+    return S_OK;
+}
+CATCH_RETURN();
+
+[[nodiscard]] HRESULT GdiEngine::PaintImageSlice(const ImageSlice& imageSlice,
+                                                 const til::CoordType targetRow,
+                                                 const til::CoordType viewportLeft) noexcept
+try
+{
+    LOG_IF_FAILED(_FlushBufferLines());
+    LOG_IF_FAILED(ResetLineTransform());
+
+    const auto& imagePixels = imageSlice.Pixels();
+    if (_imageMask.size() < imagePixels.size())
+    {
+        _imageMask.resize(imagePixels.size());
+    }
+
+    const auto srcCellSize = imageSlice.CellSize();
+    const auto dstCellSize = _GetFontSize();
+    const auto srcWidth = imageSlice.PixelWidth();
+    const auto srcHeight = srcCellSize.height;
+    const auto dstWidth = srcWidth * dstCellSize.width / srcCellSize.width;
+    const auto dstHeight = dstCellSize.height;
+    const auto x = (imageSlice.ColumnOffset() - viewportLeft) * dstCellSize.width;
+    const auto y = targetRow * dstCellSize.height;
+
+    auto bitmapInfo = BITMAPINFO{
+        .bmiHeader = {
+            .biSize = sizeof(BITMAPINFOHEADER),
+            .biWidth = srcWidth,
+            .biHeight = -srcHeight,
+            .biPlanes = 1,
+            .biBitCount = 32,
+            .biCompression = BI_RGB,
+        }
+    };
+
+    auto allOpaque = true;
+    auto allTransparent = true;
+    for (size_t i = 0; i < imagePixels.size(); i++)
+    {
+        const auto opaque = til::at(imagePixels, i).rgbReserved != 0;
+        allOpaque &= opaque;
+        allTransparent &= !opaque;
+        til::at(_imageMask, i) = (opaque ? 0 : 0xFFFFFF);
+    }
+
+    if (allOpaque)
+    {
+        StretchDIBits(_hdcMemoryContext, x, y, dstWidth, dstHeight, 0, 0, srcWidth, srcHeight, imagePixels.data(), &bitmapInfo, DIB_RGB_COLORS, SRCCOPY);
+    }
+    else if (!allTransparent)
+    {
+        StretchDIBits(_hdcMemoryContext, x, y, dstWidth, dstHeight, 0, 0, srcWidth, srcHeight, _imageMask.data(), &bitmapInfo, DIB_RGB_COLORS, SRCAND);
+        StretchDIBits(_hdcMemoryContext, x, y, dstWidth, dstHeight, 0, 0, srcWidth, srcHeight, imagePixels.data(), &bitmapInfo, DIB_RGB_COLORS, SRCPAINT);
     }
 
     return S_OK;
@@ -830,13 +889,6 @@ CATCH_RETURN();
     const auto pixelRect = rect.scale_up(_GetFontSize()).to_win32_rect();
 
     RETURN_HR_IF(E_FAIL, !InvertRect(_hdcMemoryContext, &pixelRect));
-
-    return S_OK;
-}
-
-[[nodiscard]] HRESULT GdiEngine::PaintSelections(const std::vector<til::rect>& rects) noexcept
-{
-    UNREFERENCED_PARAMETER(rects);
 
     return S_OK;
 }

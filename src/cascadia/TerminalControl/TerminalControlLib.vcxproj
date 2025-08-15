@@ -9,7 +9,6 @@
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <SubSystem>Console</SubSystem>
     <OpenConsoleUniversalApp>true</OpenConsoleUniversalApp>
-
     <!-- C++/WinRT sets the depth to 1 if there is a XAML file in the project
          Unfortunately for us, we need it to be 3. When the namespace merging
          depth is 1, Microsoft.Terminal.Control becomes "Microsoft",
@@ -20,18 +19,14 @@
     -->
     <CppWinRTNamespaceMergeDepth>3</CppWinRTNamespaceMergeDepth>
     <XamlComponentResourceLocation>nested</XamlComponentResourceLocation>
-
   </PropertyGroup>
-
   <PropertyGroup Label="NuGet Dependencies">
     <TerminalCppWinrt>true</TerminalCppWinrt>
     <TerminalMUX>true</TerminalMUX>
   </PropertyGroup>
-
   <Import Project="..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
   <Import Project="$(OpenConsoleDir)src\common.nugetversions.props" />
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.pre.props" />
-
   <!-- ========================= Headers ======================== -->
   <ItemGroup>
     <ClInclude Include="pch.h" />
@@ -64,9 +59,6 @@
     </ClInclude>
     <ClInclude Include="InteractivityAutomationPeer.h">
       <DependentUpon>InteractivityAutomationPeer.idl</DependentUpon>
-    </ClInclude>
-    <ClInclude Include="TSFInputControl.h">
-      <DependentUpon>TSFInputControl.xaml</DependentUpon>
     </ClInclude>
     <ClInclude Include="XamlUiaTextRange.h" />
     <ClInclude Include="HwndTerminal.hpp" />
@@ -102,9 +94,6 @@
     <ClCompile Include="TermControl.cpp">
       <DependentUpon>TermControl.xaml</DependentUpon>
     </ClCompile>
-    <ClCompile Include="TSFInputControl.cpp">
-      <DependentUpon>TSFInputControl.xaml</DependentUpon>
-    </ClCompile>
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
     <ClCompile Include="TermControlAutomationPeer.cpp">
       <DependentUpon>TermControlAutomationPeer.idl</DependentUpon>
@@ -137,9 +126,6 @@
     <Midl Include="TermControlAutomationPeer.idl" />
     <Midl Include="InteractivityAutomationPeer.idl" />
     <Midl Include="IMouseWheelListener.idl" />
-    <Midl Include="TSFInputControl.idl">
-      <DependentUpon>TSFInputControl.xaml</DependentUpon>
-    </Midl>
   </ItemGroup>
   <!-- ========================= XAML Files ======================== -->
   <ItemGroup>
@@ -149,26 +135,26 @@
     <Page Include="TermControl.xaml">
       <SubType>Designer</SubType>
     </Page>
-    <Page Include="TSFInputControl.xaml">
-      <SubType>Designer</SubType>
-    </Page>
   </ItemGroup>
   <!-- ========================= Misc Files ======================== -->
   <ItemGroup>
-    <PRIResource Include="Resources\en-US\Resources.resw" />
+    <PRIResource Include="Resources\en-US\Resources.resw">
+      <SubType>Designer</SubType>
+    </PRIResource>
     <OCResourceDirectory Include="Resources" />
   </ItemGroup>
   <!-- ========================= Project References ======================== -->
   <ItemGroup>
-    <ProjectReference Include="..\..\types\lib\types.vcxproj" />
-    <ProjectReference Include="..\..\audio\midi\lib\midi.vcxproj" />
-    <ProjectReference Include="..\..\buffer\out\lib\bufferout.vcxproj" />
-    <ProjectReference Include="$(OpenConsoleDir)src\renderer\base\lib\base.vcxproj" />
-    <ProjectReference Include="..\..\renderer\atlas\atlas.vcxproj" />
-    <ProjectReference Include="..\..\renderer\uia\lib\uia.vcxproj" />
-    <ProjectReference Include="..\..\terminal\parser\lib\parser.vcxproj" />
-    <ProjectReference Include="$(OpenConsoleDir)src\terminal\input\lib\terminalinput.vcxproj" />
+    <ProjectReference Include="$(OpenConsoleDir)src\audio\midi\lib\midi.vcxproj" />
+    <ProjectReference Include="$(OpenConsoleDir)src\buffer\out\lib\bufferout.vcxproj" />
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalCore\lib\TerminalCore-lib.vcxproj" />
+    <ProjectReference Include="$(OpenConsoleDir)src\renderer\atlas\atlas.vcxproj" />
+    <ProjectReference Include="$(OpenConsoleDir)src\renderer\base\lib\base.vcxproj" />
+    <ProjectReference Include="$(OpenConsoleDir)src\renderer\uia\lib\uia.vcxproj" />
+    <ProjectReference Include="$(OpenConsoleDir)src\terminal\input\lib\terminalinput.vcxproj" />
+    <ProjectReference Include="$(OpenConsoleDir)src\terminal\parser\lib\parser.vcxproj" />
+    <ProjectReference Include="$(OpenConsoleDir)src\tsf\tsf.vcxproj" />
+    <ProjectReference Include="$(OpenConsoleDir)src\types\lib\types.vcxproj" />
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalConnection\TerminalConnection.vcxproj">
       <Private>false</Private>
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
@@ -194,9 +180,7 @@
   </ItemDefinitionGroup>
   <!-- ========================= Globals ======================== -->
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" />
-
   <!-- This -must- go after cppwinrt.build.post.props because that includes many VS-provided props including appcontainer.common.props, which stomps on what cppwinrt.targets did. -->
   <Import Project="$(OpenConsoleDir)src\common.nugetversions.targets" />
-
   <Import Project="$(SolutionDir)build\rules\CollectWildcardResources.targets" />
 </Project>

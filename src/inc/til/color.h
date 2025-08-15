@@ -78,7 +78,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 #endif
 
         // Method Description:
-        // - Converting constructor for any other color structure type containing integral R, G, B, A (case sensitive.)
+        // - Converting constructor for any other color structure type containing integral R, G, B, A (case-sensitive.)
         // Notes:
         // - This and all below conversions make use of std::enable_if and a default parameter to disambiguate themselves.
         //   enable_if will result in an <error-type> if the constraint within it is not met, which will make this
@@ -93,7 +93,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         }
 
         // Method Description:
-        // - Converting constructor for any other color structure type containing integral r, g, b, a (case sensitive.)
+        // - Converting constructor for any other color structure type containing integral r, g, b, a (case-sensitive.)
         template<typename TOther>
         constexpr color(const TOther& other, std::enable_if_t<std::is_integral_v<decltype(std::declval<TOther>().r)> && std::is_integral_v<decltype(std::declval<TOther>().a)>, int> /*sentinel*/ = 0) :
             r{ static_cast<uint8_t>(other.r) },
@@ -104,7 +104,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         }
 
         // Method Description:
-        // - Converting constructor for any other color structure type containing floating-point R, G, B, A (case sensitive.)
+        // - Converting constructor for any other color structure type containing floating-point R, G, B, A (case-sensitive.)
         template<typename TOther>
         constexpr color(const TOther& other, std::enable_if_t<std::is_floating_point_v<decltype(std::declval<TOther>().R)> && std::is_floating_point_v<decltype(std::declval<TOther>().A)>, float> /*sentinel*/ = 1.0f) :
             r{ static_cast<uint8_t>(other.R * 255.0f) },
@@ -115,7 +115,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         }
 
         // Method Description:
-        // - Converting constructor for any other color structure type containing floating-point r, g, b, a (case sensitive.)
+        // - Converting constructor for any other color structure type containing floating-point r, g, b, a (case-sensitive.)
         template<typename TOther>
         constexpr color(const TOther& other, std::enable_if_t<std::is_floating_point_v<decltype(std::declval<TOther>().r)> && std::is_floating_point_v<decltype(std::declval<TOther>().a)>, float> /*sentinel*/ = 1.0f) :
             r{ static_cast<uint8_t>(other.r * 255.0f) },
@@ -186,6 +186,20 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         }
 #endif
 
+        // Helper for converting a hue [0, 1) to an RGB value.
+        // Credit to https://www.chilliant.com/rgb2hsv.html
+        static til::color from_hue(float hue)
+        {
+            const float R = abs(hue * 6 - 3) - 1;
+            const float G = 2 - abs(hue * 6 - 2);
+            const float B = 2 - abs(hue * 6 - 4);
+            return color{
+                base::saturated_cast<uint8_t>(255.f * std::clamp(R, 0.f, 1.f)),
+                base::saturated_cast<uint8_t>(255.f * std::clamp(G, 0.f, 1.f)),
+                base::saturated_cast<uint8_t>(255.f * std::clamp(B, 0.f, 1.f))
+            };
+        }
+
         constexpr bool operator==(const til::color& other) const
         {
             return abgr == other.abgr;
@@ -198,24 +212,17 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
         std::wstring to_string() const
         {
-            std::wstringstream wss;
-            wss << L"Color " << ToHexString(false);
-            return wss.str();
+            return ToHexString(false);
         }
+
         std::wstring ToHexString(const bool omitAlpha = false) const
         {
-            std::wstringstream wss;
-            wss << L"#" << std::uppercase << std::setfill(L'0') << std::hex;
-            // Force the compiler to promote from byte to int. Without it, the
-            // stringstream will try to write the components as chars
-            wss << std::setw(2) << static_cast<int>(r);
-            wss << std::setw(2) << static_cast<int>(g);
-            wss << std::setw(2) << static_cast<int>(b);
-            if (!omitAlpha)
+            auto str = fmt::format(FMT_COMPILE(L"#{:02X}{:02X}{:02X}{:02X}"), r, g, b, a);
+            if (omitAlpha)
             {
-                wss << std::setw(2) << static_cast<int>(a);
+                str.resize(7);
             }
-            return wss.str();
+            return str;
         }
     };
 #pragma warning(pop)

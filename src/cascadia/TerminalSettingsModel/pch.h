@@ -24,8 +24,10 @@
 #endif
 
 #include <wil/cppwinrt.h>
+#include <wil/registry.h>
 
 #include <winrt/Windows.ApplicationModel.AppExtensions.h>
+#include <winrt/Windows.ApplicationModel.Resources.Core.h>
 #include <winrt/Windows.ApplicationModel.h>
 #include <winrt/Windows.Foundation.Collections.h>
 #include <winrt/Windows.Foundation.h>
@@ -51,7 +53,7 @@ TRACELOGGING_DECLARE_PROVIDER(g_hSettingsModelProvider);
 #include <TraceLoggingActivity.h>
 
 // JsonCpp
-#include <json.h>
+#include <json/json.h>
 
 // Manually include til after we include Windows.Foundation to give it winrt superpowers
 #include "til.h"

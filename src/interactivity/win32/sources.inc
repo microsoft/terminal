@@ -50,7 +50,6 @@ SOURCES = \
     ..\UiaTextRange.cpp \
     ..\window.cpp \
     ..\windowdpiapi.cpp \
-    ..\windowime.cpp \
     ..\windowio.cpp \
     ..\WindowMetrics.cpp \
     ..\windowproc.cpp \
@@ -61,4 +60,5 @@ INCLUDES = \
     ..; \
 
 TARGETLIBS = \
+    $(TARGETLIBS) \
     $(ONECORE_EXTERNAL_SDK_LIB_VPATH_L)\onecore.lib  \

@@ -2,22 +2,16 @@
 // Licensed under the MIT license.
 
 #include "precomp.h"
-
 #include "windowio.hpp"
 
-#include "ConsoleControl.hpp"
-#include "find.h"
 #include "clipboard.hpp"
+#include "ConsoleControl.hpp"
 #include "consoleKeyInfo.hpp"
+#include "find.h"
 #include "window.hpp"
-
-#include "../../host/ApiRoutines.h"
-#include "../../host/init.hpp"
-#include "../../host/input.h"
 #include "../../host/handle.h"
+#include "../../host/init.hpp"
 #include "../../host/scrolling.hpp"
-#include "../../host/output.h"
-
 #include "../inc/ServiceLocator.hpp"
 
 #pragma hdrstop
@@ -125,7 +119,8 @@ void HandleKeyEvent(const HWND hWnd,
                     const LPARAM lParam,
                     _Inout_opt_ PBOOL pfUnlockConsole)
 {
-    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& g = ServiceLocator::LocateGlobals();
+    auto& gci = g.getConsoleInformation();
 
     // BOGUS for WM_CHAR/WM_DEADCHAR, in which LOWORD(wParam) is a character
     auto VirtualKeyCode = LOWORD(wParam);
@@ -153,7 +148,7 @@ void HandleKeyEvent(const HWND hWnd,
         RetrieveKeyInfo(hWnd,
                         &VirtualKeyCode,
                         &VirtualScanCode,
-                        !gci.pInputBuffer->fInComposition);
+                        !g.tsf.HasActiveComposition());
 
         // --- END LOAD BEARING CODE ---
     }
@@ -363,7 +358,7 @@ void HandleKeyEvent(const HWND hWnd,
         return;
     }
 
-    if (gci.pInputBuffer->fInComposition)
+    if (g.tsf.HasActiveComposition())
     {
         return;
     }
@@ -940,7 +935,11 @@ DWORD WINAPI ConsoleInputThreadProcWin32(LPVOID /*lpParameter*/)
         // VtIo's CreatePseudoWindow, which will make sure that the window is
         // successfully created with the owner configured when the window is
         // first created. See GH#13066 for details.
-        ServiceLocator::LocateGlobals().getConsoleInformation().GetVtIo()->CreatePseudoWindow();
+        auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        if (gci.IsInVtIoMode())
+        {
+            gci.GetVtIo()->CreatePseudoWindow();
+        }
 
         // Register the pseudoconsole window as being owned by the root process.
         const auto pseudoWindow = ServiceLocator::LocatePseudoWindow();
@@ -1002,9 +1001,6 @@ DWORD WINAPI ConsoleInputThreadProcWin32(LPVOID /*lpParameter*/)
         }
         // -- END LOAD BEARING CODE
     }
-
-    // Free all resources used by this thread
-    DeactivateTextServices();
 
     if (nullptr != hhook)
     {

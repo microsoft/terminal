@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ProductDescription language="en-us" xmlns="http://schemas.microsoft.com/appx/2012/ProductDescription" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xml:lang="en-us" Release="">
+  <AppStoreName _locID="App_AppStoreName">
+    <!-- This is optional.  AppStoreName is typically extracted from your package's AppxManifest DisplayName property. -->
+    <!-- Uncomment (and localize) this Store name if your application package does not contain a localization for the DisplayName in this language. -->
+    <!-- Leaving this uncommented for a language that your application package DOES contain a DisplayName for will result in a submission failure with the API. -->
+    <!-- _locComment_text="{MaxLength=200} App AppStoreName" -->
+    <!-- Windows Terminal -->
+  </AppStoreName>
+  <Keywords>
+    <!-- Valid length: 30 character limit, up to 7 elements -->
+    <Keyword _locID="App_keyword1">
+      <!-- _locComment_text="{MaxLength=30} App keyword 1" -->Terminal</Keyword>
+    <Keyword _locID="App_keyword2">
+      <!-- _locComment_text="{MaxLength=30} App keyword 2" -->Console</Keyword>
+    <Keyword _locID="App_keyword3">
+      <!-- _locComment_text="{MaxLength=30} App keyword 3" -->
+    </Keyword>
+    <Keyword _locID="App_keyword4">
+      <!-- _locComment_text="{MaxLength=30} App keyword 4" -->
+    </Keyword>
+    <Keyword _locID="App_keyword5">
+      <!-- _locComment_text="{MaxLength=30} App keyword 5" -->
+    </Keyword>
+    <Keyword _locID="App_keyword6">
+      <!-- _locComment_text="{MaxLength=30} App keyword 6" -->
+    </Keyword>
+    <Keyword _locID="App_keyword7">
+      <!-- _locComment_text="{MaxLength=30} App keyword 7" -->
+    </Keyword>
+  </Keywords>
+  <Description _locID="App_Description">
+    <!-- _locComment_text="{MaxLength=10000} App Description" -->This is the preview build of the Windows Terminal, which contains the latest features as they are developed. The Windows Terminal is a modern, fast, efficient, powerful, and productive terminal application for users of command-line tools and shells like Command Prompt, PowerShell, and WSL. Its main features include multiple tabs, panes, Unicode and UTF-8 character support, a GPU accelerated text rendering engine, and custom themes, styles, and configurations.
+
+This is an open source project and we welcome community participation. To participate please visit https://github.com/microsoft/terminal </Description>
+  <ShortDescription _locID="App_ShortDescription">
+    <!-- Only used for games. This description appears in the Information section of the Game Hub on Xbox One, and helps customers understand more about your game. -->
+    <!-- _locComment_text="{MaxLength=500} App ShortDescription" -->
+  </ShortDescription>
+  <ShortTitle _locID="App_ShortTitle">
+    <!-- A shorter version of your product's name. If provided, this shorter name may appear in various places on Xbox One (during installation, in Achievements, etc.) in place of the full title of your product. -->
+    <!-- _locComment_text="{MaxLength=50} App ShortTitle" -->
+  </ShortTitle>
+  <SortTitle _locID="App_SortTitle">
+    <!-- If your product could be alphabetized in different ways, you can enter another version here. This may help customers find the product more quickly when searching. -->
+    <!-- _locComment_text="{MaxLength=255} App SortTitle" -->
+  </SortTitle>
+  <VoiceTitle _locID="App_VoiceTitle">
+    <!-- An alternate name for your product that, if provided, may be used in the audio experience on Xbox One when using Kinect or a headset. -->
+    <!-- _locComment_text="{MaxLength=255} App VoiceTitle" -->
+  </VoiceTitle>
+  <DevStudio _locID="App_DevStudio">
+    <!-- Specify this value if you want to include a "Developed by" field in the listing. (The "Published by" field will list the publisher display name associated with your account, whether or not you provide a devStudio value.) -->
+    <!-- _locComment_text="{MaxLength=255} App DevStudio" -->
+  </DevStudio>
+  <ReleaseNotes _locID="App_ReleaseNotes">
+    <!-- _locComment_text="{MaxLength=1500} {Locked=__VERSION_NUMBER__}{Locked=wt.exe} App Release Note" -->Version __VERSION_NUMBER__
+
+- We've added dozens of settings to the UI that once only existed in the JSON file, including a new page for customizing the layout of your New Tab menu!
+- We have rearchitected window management to improve reliability; please file any bugs you encounter with the wt.exe alias
+- Profiles now show an icon if they've been hidden or refer to programs which were uninstalled.
+
+Please see our GitHub releases page for additional details.
+  </ReleaseNotes>
+  <ScreenshotCaptions>
+    <!-- Valid length: 200 character limit, up to 9 elements per platform -->
+    <!-- Valid attributes: any of DesktopImage, MobileImage, XboxImage, SurfaceHubImage, and HoloLensImage -->
+    <Caption DesktopImage="acrylic-emoji.png" _locID="App_caption1">
+      <!-- _locComment_text="{MaxLength=200} Screenshot caption 1" -->
+    </Caption>
+    <Caption DesktopImage="panes.png" _locID="App_caption2">
+      <!-- _locComment_text="{MaxLength=200} Screenshot caption 2" -->
+    </Caption>
+    <Caption DesktopImage="htop.png" _locID="App_caption3">
+      <!-- _locComment_text="{MaxLength=200} Screenshot caption 3" -->
+    </Caption>
+  </ScreenshotCaptions>
+  <AdditionalAssets>
+    <!-- Valid elements:-->
+    <!--   HeroImage414x180, HeroImage846x468, HeroImage558x756, HeroImage414x468, HeroImage558x558, HeroImage2400x1200,-->
+    <!--   ScreenshotWXGA, ScreenshotHD720, ScreenshotWVGA, Doublewide, Panoramic, Square,-->
+    <!--   SmallMobileTile, SmallXboxLiveTile, LargeMobileTile, LargeXboxLiveTile, Tile,-->
+    <!--   DesktopIcon, Icon (use this value for the 1:1 300x300 pixels logo), AchievementIcon,-->
+    <!--   ChallengePromoIcon, RewardDisplayIcon, Icon150X150, Icon71X71,-->
+    <!--   BoxArt, BrandedKeyArt, PosterArt, FeaturedPromotionalArt, PromotionalArt16x9, TitledHeroArt-->
+    <!-- There is no content for any of these elements, just a single attribute called FileName. -->
+    <PosterArt FileName="Store Poster Art.png" />
+    <BoxArt FileName="Store Box Art.png" />
+    <PromotionalArt16x9 FileName="Store Thumbnail.png" />
+  </AdditionalAssets>
+  <Trailers>
+    <!-- Maximum number of trailers permitted: 15 -->
+    <Trailer FileName="CC0605_CommandLine_Teaser_WEB_MASTER_H264_1080p_23.976_-16LKFS_-3dbTP_ST.mp4">
+      <Title _locID="App_trailerTitle1">
+        <!-- _locComment_text="{MaxLength=255} Trailer title 1" -->The new Windows Terminal</Title>
+      <Images>
+        <!-- Current maximum of 1 image per trailer permitted. -->
+        <Image FileName="Store Thumbnail.png">
+          <!-- _locComment_text="{Locked} Trailer screenshot 1 description" -->
+        </Image>
+      </Images>
+    </Trailer>
+  </Trailers>
+  <AppFeatures>
+    <!-- Valid length: 200 character limit, up to 20 elements -->
+    <AppFeature _locID="App_feature1">
+      <!-- _locComment_text="{MaxLength=200} App Feature 1" -->Multiple tabs</AppFeature>
+    <AppFeature _locID="App_feature2">
+      <!-- _locComment_text="{MaxLength=200} App Feature 2" -->Full Unicode support</AppFeature>
+    <AppFeature _locID="App_feature3">
+      <!-- _locComment_text="{MaxLength=200} App Feature 3" -->GPU-accelerated text rendering</AppFeature>
+    <AppFeature _locID="App_feature4">
+      <!-- _locComment_text="{MaxLength=200} App Feature 4" -->Full customizability</AppFeature>
+    <AppFeature _locID="App_feature5">
+      <!-- _locComment_text="{MaxLength=200} App Feature 5" -->Split panes</AppFeature>
+    <AppFeature _locID="App_feature6">
+      <!-- _locComment_text="{MaxLength=200} App Feature 6" -->
+    </AppFeature>
+    <AppFeature _locID="App_feature7">
+      <!-- _locComment_text="{MaxLength=200} App Feature 7" -->
+    </AppFeature>
+    <AppFeature _locID="App_feature8">
+      <!-- _locComment_text="{MaxLength=200} App Feature 8" -->
+    </AppFeature>
+    <AppFeature _locID="App_feature9">
+      <!-- _locComment_text="{MaxLength=200} App Feature 9" -->
+    </AppFeature>
+    <AppFeature _locID="App_feature10">
+      <!-- _locComment_text="{MaxLength=200} App Feature 10" -->
+    </AppFeature>
+    <AppFeature _locID="App_feature11">
+      <!-- _locComment_text="{MaxLength=200} App Feature 11" -->
+    </AppFeature>
+    <AppFeature _locID="App_feature12">
+      <!-- _locComment_text="{MaxLength=200} App Feature 12" -->
+    </AppFeature>
+    <AppFeature _locID="App_feature13">
+      <!-- _locComment_text="{MaxLength=200} App Feature 13" -->
+    </AppFeature>
+    <AppFeature _locID="App_feature14">
+      <!-- _locComment_text="{MaxLength=200} App Feature 14" -->
+    </AppFeature>
+    <AppFeature _locID="App_feature15">
+      <!-- _locComment_text="{MaxLength=200} App Feature 15" -->
+    </AppFeature>
+    <AppFeature _locID="App_feature16">
+      <!-- _locComment_text="{MaxLength=200} App Feature 16" -->
+    </AppFeature>
+    <AppFeature _locID="App_feature17">
+      <!-- _locComment_text="{MaxLength=200} App Feature 17" -->
+    </AppFeature>
+    <AppFeature _locID="App_feature18">
+      <!-- _locComment_text="{MaxLength=200} App Feature 18" -->
+    </AppFeature>
+    <AppFeature _locID="App_feature19">
+      <!-- _locComment_text="{MaxLength=200} App Feature 19" -->
+    </AppFeature>
+    <AppFeature _locID="App_feature20">
+      <!-- _locComment_text="{MaxLength=200} App Feature 20" -->
+    </AppFeature>
+  </AppFeatures>
+  <RecommendedHardware>
+    <!-- Valid length: 200 character limit, up to 11 elements -->
+    <Recommendation _locID="App_RecommendedHW1">
+      <!-- _locComment_text="{MaxLength=200} App Recommended Hardware 1" -->Keyboard</Recommendation>
+  </RecommendedHardware>
+  <MinimumHardware>
+    <!-- Valid length: 200 character limit, up to 11 elements -->
+  </MinimumHardware>
+  <CopyrightAndTrademark _locID="App_CopyrightandTrademark">
+    <!-- _locComment_text="{MaxLength=200} Copyright and Trademark" -->Copyright (c) Microsoft Corporation</CopyrightAndTrademark>
+  <AdditionalLicenseTerms _locID="App_AdditionalLicenseTerms">
+    <!-- _locComment_text="{MaxLength=10000} Additional License Terms" -->
+  </AdditionalLicenseTerms>
+  <WebsiteURL _locID="App_WebsiteURL">
+    <!-- _locComment_text="{MaxLength=2048} WebsiteURL" -->https://github.com/microsoft/terminal</WebsiteURL>
+  <SupportContactInfo _locID="App_SupportContactInfo">
+    <!-- _locComment_text="{MaxLength=2048} Support Contact Info" -->https://github.com/microsoft/terminal/issues/new</SupportContactInfo>
+  <PrivacyPolicyURL _locID="App_PrivacyURL">
+    <!-- _locComment_text="{MaxLength=2048} Privacy Policy URL" -->https://go.microsoft.com/fwlink/?LinkID=521839</PrivacyPolicyURL>
+</ProductDescription>

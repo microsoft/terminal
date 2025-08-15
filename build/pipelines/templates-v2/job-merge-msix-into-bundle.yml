@@ -32,6 +32,9 @@ parameters:
   - name: afterBuildSteps
     type: stepList
     default: []
+  - name: signingIdentity
+    type: object
+    default: {}
 
 jobs:
 - job: ${{ parameters.jobName }}
@@ -66,10 +69,9 @@ jobs:
     fetchTags: false # Tags still result in depth > 1 fetch; we don't need them here
     submodules: true
     persistCredentials: True
-  - task: PkgESSetupBuild@12
-    displayName: Package ES - Setup Build
-    inputs:
-      disableOutputRedirect: true
+
+  - template: steps-setup-versioning.yml
+
   - template: steps-download-bin-dir-artifact.yml
     parameters:
       buildPlatforms: ${{ parameters.buildPlatforms }}
@@ -94,40 +96,41 @@ jobs:
     displayName: Create msixbundle
 
   - ${{ if eq(parameters.codeSign, true) }}:
-    - task: EsrpCodeSigning@3
-      displayName: Submit *.msixbundle to ESRP for code signing
-      inputs:
-        ConnectedServiceName: 9d6d2960-0793-4d59-943e-78dcb434840a
-        FolderPath: $(System.ArtifactsDirectory)\bundle
-        Pattern: $(BundleStemName)*.msixbundle
-        UseMinimatch: true
-        signConfigType: inlineSignParams
-        inlineOperation: >-
-          [
-              {
-                  "KeyCode": "Dynamic",
-                  "CertTemplateName": "WINMSAPP1ST",
-                  "CertSubjectName": "CN=Microsoft Corporation, O=Microsoft Corporation, L=Redmond, S=Washington, C=US",
-                  "OperationCode": "SigntoolSign",
-                  "Parameters": {
-                      "OpusName": "Microsoft",
-                      "OpusInfo": "http://www.microsoft.com",
-                      "FileDigest": "/fd \"SHA256\"",
-                      "TimeStamp": "/tr \"http://rfc3161.gtm.corp.microsoft.com/TSS/HttpTspServer\" /td sha256"
-                  },
-                  "ToolName": "sign",
-                  "ToolVersion": "1.0"
-              },
-              {
-                  "KeyCode": "Dynamic",
-                  "CertTemplateName": "WINMSAPP1ST",
-                  "CertSubjectName": "CN=Microsoft Corporation, O=Microsoft Corporation, L=Redmond, S=Washington, C=US",
-                  "OperationCode": "SigntoolVerify",
-                  "Parameters": {},
-                  "ToolName": "sign",
-                  "ToolVersion": "1.0"
-              }
-          ]
+    - template: steps-esrp-signing.yml
+      parameters:
+        displayName: Submit *.msixbundle to ESRP for code signing
+        signingIdentity: ${{ parameters.signingIdentity }}
+        inputs:
+          FolderPath: $(System.ArtifactsDirectory)\bundle
+          Pattern: $(BundleStemName)*.msixbundle
+          UseMinimatch: true
+          signConfigType: inlineSignParams
+          inlineOperation: >-
+            [
+                {
+                    "KeyCode": "Dynamic",
+                    "CertTemplateName": "WINMSAPP1ST",
+                    "CertSubjectName": "CN=Microsoft Corporation, O=Microsoft Corporation, L=Redmond, S=Washington, C=US",
+                    "OperationCode": "SigntoolSign",
+                    "Parameters": {
+                        "OpusName": "Microsoft",
+                        "OpusInfo": "http://www.microsoft.com",
+                        "FileDigest": "/fd \"SHA256\"",
+                        "TimeStamp": "/tr \"http://rfc3161.gtm.corp.microsoft.com/TSS/HttpTspServer\" /td sha256"
+                    },
+                    "ToolName": "sign",
+                    "ToolVersion": "1.0"
+                },
+                {
+                    "KeyCode": "Dynamic",
+                    "CertTemplateName": "WINMSAPP1ST",
+                    "CertSubjectName": "CN=Microsoft Corporation, O=Microsoft Corporation, L=Redmond, S=Washington, C=US",
+                    "OperationCode": "SigntoolVerify",
+                    "Parameters": {},
+                    "ToolName": "sign",
+                    "ToolVersion": "1.0"
+                }
+            ]
 
   - ${{ if eq(parameters.generateSbom, true) }}:
     - task: AzureArtifacts.manifest-generator-task.manifest-generator-task.ManifestGeneratorTask@0
@@ -143,6 +146,10 @@ jobs:
         OutputPath: 'output.json'
         ValidateSignature: true
         Verbosity: 'Verbose'
+
+  - pwsh: |-
+      tar -c -v --format=zip -f "$(JobOutputDirectory)/GroupPolicyTemplates_$(XES_APPXMANIFESTVERSION).zip" -C "$(Build.SourcesDirectory)/policies" *
+    displayName: Package GPO Templates
 
   - ${{ parameters.afterBuildSteps }}
 

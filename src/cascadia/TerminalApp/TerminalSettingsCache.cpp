@@ -14,25 +14,9 @@ namespace winrt
 
 namespace winrt::TerminalApp::implementation
 {
-    TerminalSettingsCache::TerminalSettingsCache(const MTSM::CascadiaSettings& settings, const TerminalApp::AppKeyBindings& bindings) :
-        _settings{ settings },
-        _bindings{ bindings }
+    TerminalSettingsCache::TerminalSettingsCache(const MTSM::CascadiaSettings& settings, const TerminalApp::AppKeyBindings& bindings)
     {
-        // Mapping by GUID isn't _excellent_ because the defaults profile doesn't have a stable GUID; however,
-        // when we stabilize its guid this will become fully safe.
-        const auto profileDefaults{ _settings.ProfileDefaults() };
-        const auto allProfiles{ _settings.AllProfiles() };
-
-        profileGuidSettingsMap.reserve(allProfiles.Size() + 1);
-
-        // Include the Defaults profile for consideration
-        profileGuidSettingsMap.insert_or_assign(profileDefaults.Guid(), std::pair{ profileDefaults, std::nullopt });
-        for (const auto& newProfile : allProfiles)
-        {
-            // Avoid creating a TerminalSettings right now. They're not totally cheap, and we suspect that users with many
-            // panes may not be using all of their profiles at the same time. Lazy evaluation is king!
-            profileGuidSettingsMap.insert_or_assign(newProfile.Guid(), std::pair{ newProfile, std::nullopt });
-        }
+        Reset(settings, bindings);
     }
 
     TerminalApp::TerminalSettingsPair TerminalSettingsCache::TryLookup(const MTSM::Profile& profile)
@@ -53,5 +37,27 @@ namespace winrt::TerminalApp::implementation
         }
 
         return nullptr;
+    }
+
+    void TerminalSettingsCache::Reset(const MTSM::CascadiaSettings& settings, const TerminalApp::AppKeyBindings& bindings)
+    {
+        _settings = settings;
+        _bindings = bindings;
+
+        // Mapping by GUID isn't _excellent_ because the defaults profile doesn't have a stable GUID; however,
+        // when we stabilize its guid this will become fully safe.
+        const auto profileDefaults{ _settings.ProfileDefaults() };
+        const auto allProfiles{ _settings.AllProfiles() };
+        profileGuidSettingsMap.clear();
+        profileGuidSettingsMap.reserve(allProfiles.Size() + 1);
+
+        // Include the Defaults profile for consideration
+        profileGuidSettingsMap.insert_or_assign(profileDefaults.Guid(), std::pair{ profileDefaults, std::nullopt });
+        for (const auto& newProfile : allProfiles)
+        {
+            // Avoid creating a TerminalSettings right now. They're not totally cheap, and we suspect that users with many
+            // panes may not be using all of their profiles at the same time. Lazy evaluation is king!
+            profileGuidSettingsMap.insert_or_assign(newProfile.Guid(), std::pair{ newProfile, std::nullopt });
+        }
     }
 }

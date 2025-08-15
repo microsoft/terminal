@@ -5,21 +5,22 @@
 
 #include "FontSizeChangedArgs.g.h"
 #include "TitleChangedEventArgs.g.h"
-#include "CopyToClipboardEventArgs.g.h"
 #include "ContextMenuRequestedEventArgs.g.h"
+#include "WriteToClipboardEventArgs.g.h"
 #include "PasteFromClipboardEventArgs.g.h"
 #include "OpenHyperlinkEventArgs.g.h"
 #include "NoticeEventArgs.g.h"
 #include "ScrollPositionChangedArgs.g.h"
 #include "RendererWarningArgs.g.h"
 #include "TransparencyChangedEventArgs.g.h"
-#include "FoundResultsArgs.g.h"
 #include "ShowWindowArgs.g.h"
 #include "UpdateSelectionMarkersEventArgs.g.h"
 #include "CompletionsChangedEventArgs.g.h"
 #include "KeySentEventArgs.g.h"
 #include "CharSentEventArgs.g.h"
 #include "StringSentEventArgs.g.h"
+#include "SearchMissingCommandEventArgs.g.h"
+#include "WindowSizeChangedEventArgs.g.h"
 
 namespace winrt::Microsoft::Terminal::Control::implementation
 {
@@ -47,33 +48,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         WINRT_PROPERTY(hstring, Title);
     };
 
-    struct CopyToClipboardEventArgs : public CopyToClipboardEventArgsT<CopyToClipboardEventArgs>
-    {
-    public:
-        CopyToClipboardEventArgs(hstring text) :
-            _text(text),
-            _html(),
-            _rtf(),
-            _formats(static_cast<CopyFormat>(0)) {}
-
-        CopyToClipboardEventArgs(hstring text, hstring html, hstring rtf, Windows::Foundation::IReference<CopyFormat> formats) :
-            _text(text),
-            _html(html),
-            _rtf(rtf),
-            _formats(formats) {}
-
-        hstring Text() { return _text; };
-        hstring Html() { return _html; };
-        hstring Rtf() { return _rtf; };
-        Windows::Foundation::IReference<CopyFormat> Formats() { return _formats; };
-
-    private:
-        hstring _text;
-        hstring _html;
-        hstring _rtf;
-        Windows::Foundation::IReference<CopyFormat> _formats;
-    };
-
     struct ContextMenuRequestedEventArgs : public ContextMenuRequestedEventArgsT<ContextMenuRequestedEventArgs>
     {
     public:
@@ -81,6 +55,32 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _Position(pos) {}
 
         WINRT_PROPERTY(winrt::Windows::Foundation::Point, Position);
+    };
+
+    struct WriteToClipboardEventArgs : WriteToClipboardEventArgsT<WriteToClipboardEventArgs>
+    {
+        WriteToClipboardEventArgs(winrt::hstring&& plain, std::string&& html, std::string&& rtf) :
+            _plain(std::move(plain)),
+            _html(std::move(html)),
+            _rtf(std::move(rtf))
+        {
+        }
+
+        winrt::hstring Plain() const noexcept { return _plain; }
+        winrt::com_array<uint8_t> Html() noexcept { return _cast(_html); }
+        winrt::com_array<uint8_t> Rtf() noexcept { return _cast(_rtf); }
+
+    private:
+        static winrt::com_array<uint8_t> _cast(const std::string& str)
+        {
+            const auto beg = reinterpret_cast<const uint8_t*>(str.data());
+            const auto len = str.size();
+            return { beg, beg + len };
+        }
+
+        winrt::hstring _plain;
+        std::string _html;
+        std::string _rtf;
     };
 
     struct PasteFromClipboardEventArgs : public PasteFromClipboardEventArgsT<PasteFromClipboardEventArgs>
@@ -161,25 +161,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     struct TransparencyChangedEventArgs : public TransparencyChangedEventArgsT<TransparencyChangedEventArgs>
     {
     public:
-        TransparencyChangedEventArgs(const double opacity) :
+        TransparencyChangedEventArgs(const float opacity) :
             _Opacity(opacity)
         {
         }
 
-        WINRT_PROPERTY(double, Opacity);
-    };
-
-    struct FoundResultsArgs : public FoundResultsArgsT<FoundResultsArgs>
-    {
-    public:
-        FoundResultsArgs(const bool foundMatch) :
-            _FoundMatch(foundMatch)
-        {
-        }
-
-        WINRT_PROPERTY(bool, FoundMatch);
-        WINRT_PROPERTY(int32_t, TotalMatches);
-        WINRT_PROPERTY(int32_t, CurrentMatch);
+        WINRT_PROPERTY(float, Opacity);
     };
 
     struct ShowWindowArgs : public ShowWindowArgsT<ShowWindowArgs>
@@ -252,6 +239,31 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _Text(text) {}
 
         WINRT_PROPERTY(winrt::hstring, Text);
+    };
+
+    struct SearchMissingCommandEventArgs : public SearchMissingCommandEventArgsT<SearchMissingCommandEventArgs>
+    {
+    public:
+        SearchMissingCommandEventArgs(const winrt::hstring& missingCommand, const til::CoordType& bufferRow) :
+            MissingCommand(missingCommand),
+            BufferRow(bufferRow) {}
+
+        til::property<winrt::hstring> MissingCommand;
+        til::property<til::CoordType> BufferRow;
+    };
+
+    struct WindowSizeChangedEventArgs : public WindowSizeChangedEventArgsT<WindowSizeChangedEventArgs>
+    {
+    public:
+        WindowSizeChangedEventArgs(int32_t width,
+                                   int32_t height) :
+            _Width(width),
+            _Height(height)
+        {
+        }
+
+        WINRT_PROPERTY(int32_t, Width);
+        WINRT_PROPERTY(int32_t, Height);
     };
 }
 

@@ -39,7 +39,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
     }
 
-    void PreviewConnection::WriteInput(const hstring& /*data*/)
+    void PreviewConnection::WriteInput(const winrt::array_view<const char16_t> /*data*/)
     {
     }
 

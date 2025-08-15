@@ -181,11 +181,6 @@ CATCH_RETURN()
     return S_OK;
 }
 
-[[nodiscard]] HRESULT WddmConEngine::InvalidateSelection(const std::vector<til::rect>& /*rectangles*/) noexcept
-{
-    return S_OK;
-}
-
 [[nodiscard]] HRESULT WddmConEngine::InvalidateScroll(const til::point* const /*pcoordDelta*/) noexcept
 {
     return S_OK;
@@ -194,12 +189,6 @@ CATCH_RETURN()
 [[nodiscard]] HRESULT WddmConEngine::InvalidateAll() noexcept
 {
     return S_OK;
-}
-
-[[nodiscard]] HRESULT WddmConEngine::PrepareForTeardown(_Out_ bool* const pForcePaint) noexcept
-{
-    *pForcePaint = false;
-    return S_FALSE;
 }
 
 [[nodiscard]] HRESULT WddmConEngine::StartPaint() noexcept
@@ -294,11 +283,6 @@ CATCH_RETURN()
 }
 
 [[nodiscard]] HRESULT WddmConEngine::PaintSelection(const til::rect& /*rect*/) noexcept
-{
-    return S_OK;
-}
-
-[[nodiscard]] HRESULT WddmConEngine::PaintSelections(const std::vector<til::rect>& /*rects*/) noexcept
 {
     return S_OK;
 }

@@ -56,15 +56,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                             const uint64_t timestamp,
                             const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
                             const Core::Point pixelPosition);
-        void TouchPressed(const Core::Point contactPoint);
+        void TouchPressed(const winrt::Windows::Foundation::Point contactPoint);
 
-        void PointerMoved(Control::MouseButtonState buttonState,
+        bool PointerMoved(Control::MouseButtonState buttonState,
                           const unsigned int pointerUpdateKind,
                           const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
                           const bool focused,
                           const Core::Point pixelPosition,
                           const bool pointerPressedInBounds);
-        void TouchMoved(const Core::Point newTouchPoint,
+        void TouchMoved(const winrt::Windows::Foundation::Point newTouchPoint,
                         const bool focused);
 
         void PointerReleased(Control::MouseButtonState buttonState,
@@ -78,15 +78,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                         const Core::Point pixelPosition,
                         const Control::MouseButtonState state);
 
-        void UpdateScrollbar(const double newValue);
+        void UpdateScrollbar(const float newValue);
 
 #pragma endregion
 
         bool CopySelectionToClipboard(bool singleLine,
-                                      const Windows::Foundation::IReference<CopyFormat>& formats);
+                                      bool withControlSequences,
+                                      const CopyFormat formats);
         void RequestPasteTextFromClipboard();
         void SetEndSelectionPoint(const Core::Point pixelPosition);
-        bool ManglePathsForWsl();
 
         uint64_t Id();
         void AttachToNewControl();
@@ -104,18 +104,18 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         //
         // ControlCore::AttachUiaEngine receives a IRenderEngine as a raw pointer, which we own.
         // We must ensure that we first destroy the ControlCore before the UiaEngine instance
-        // in order to safely resolve this unsafe pointer dependency. Otherwise a deallocated
+        // in order to safely resolve this unsafe pointer dependency. Otherwise, a deallocated
         // IRenderEngine is accessed when ControlCore calls Renderer::TriggerTeardown.
         // (C++ class members are destroyed in reverse order.)
         std::unique_ptr<::Microsoft::Console::Render::UiaEngine> _uiaEngine;
 
         winrt::com_ptr<ControlCore> _core{ nullptr };
-        unsigned int _rowsToScroll;
-        double _internalScrollbarPosition{ 0.0 };
+        UINT _rowsToScroll = 3;
+        float _internalScrollbarPosition = 0;
 
         // If this is set, then we assume we are in the middle of panning the
         //      viewport via touch input.
-        std::optional<Core::Point> _touchAnchor;
+        std::optional<winrt::Windows::Foundation::Point> _touchAnchor;
 
         using Timestamp = uint64_t;
 
@@ -155,7 +155,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         bool _canSendVTMouseInput(const ::Microsoft::Terminal::Core::ControlKeyStates modifiers);
         bool _shouldSendAlternateScroll(const ::Microsoft::Terminal::Core::ControlKeyStates modifiers, const int32_t delta);
 
-        til::point _getTerminalPosition(const til::point pixelPosition);
+        til::point _getTerminalPosition(const til::point pixelPosition, bool roundToNearestCell);
 
         bool _sendMouseEventHelper(const til::point terminalPosition,
                                    const unsigned int pointerUpdateKind,

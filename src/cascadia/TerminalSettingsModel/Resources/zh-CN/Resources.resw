@@ -121,10 +121,14 @@
     <value>选择配色方案...</value>
   </data>
   <data name="NewTabParentCommandName" xml:space="preserve">
-    <value>新选项卡...</value>
+    <value>新建选项卡...</value>
   </data>
   <data name="SplitPaneParentCommandName" xml:space="preserve">
     <value>拆分窗格...</value>
+  </data>
+  <data name="SnippetsPaneCommandName" xml:space="preserve">
+    <value>打开代码片段窗格</value>
+    <comment>This will open a pane with a list of the users's saved commands ("snippets") in it</comment>
   </data>
   <data name="ApplicationDisplayNamePortable" xml:space="preserve">
     <value>终端 (便携)</value>
@@ -324,6 +328,9 @@
     <value>打开设置文件(JSON)</value>
     <comment>{Locked="JSON"}. "JSON" is the extension of the file that will be opened.</comment>
   </data>
+  <data name="SettingsFileOpenInExplorerCommandKey" xml:space="preserve">
+    <value>打开设置文件目录</value>
+  </data>
   <data name="OpenTabColorPickerCommandKey" xml:space="preserve">
     <value>设置选项卡颜色...</value>
   </data>
@@ -347,7 +354,7 @@
     <value>重置标签页标题</value>
   </data>
   <data name="OpenTabRenamerCommandKey" xml:space="preserve">
-    <value>正在重命名选项卡标题...</value>
+    <value>重命名选项卡</value>
   </data>
   <data name="ResizePaneCommandKey" xml:space="preserve">
     <value>调整窗格大小</value>
@@ -449,11 +456,8 @@
   <data name="ToggleCommandPaletteCommandKey" xml:space="preserve">
     <value>切换命令面板</value>
   </data>
-  <data name="SuggestionsCommandHistoryCommandKey" xml:space="preserve">
-    <value>最近使用的命令...</value>
-  </data>
   <data name="SuggestionsCommandKey" xml:space="preserve">
-    <value>打开建议...</value>
+    <value>打开建议</value>
   </data>
   <data name="ToggleCommandPaletteCommandLineModeCommandKey" xml:space="preserve">
     <value>在命令行模式里切换命令面板</value>
@@ -505,7 +509,7 @@
     <value>强行进入调试程序</value>
   </data>
   <data name="OpenSettingsUICommandKey" xml:space="preserve">
-    <value>打开设置...</value>
+    <value>打开设置</value>
   </data>
   <data name="RenameWindowCommandKey" xml:space="preserve">
     <value>重命名窗口到 “{0}”</value>
@@ -726,5 +730,34 @@
   <data name="OpenAboutCommandKey" xml:space="preserve">
     <value>打开“关于”对话框</value>
     <comment>This will open the "about" dialog, to display version info and other documentation</comment>
+  </data>
+  <data name="SaveSnippetNamePrefix" xml:space="preserve">
+    <value>保存代码段</value>
+  </data>
+  <data name="QuickFixCommandKey" xml:space="preserve">
+    <value>打开快速修复菜单</value>
+  </data>
+  <data name="OpenCWDCommandKey" xml:space="preserve">
+    <value>打开当前工作目录</value>
+  </data>
+  <data name="WslDistroGeneratorDisplayName" xml:space="preserve">
+    <value>WSL 发行版配置文件生成器</value>
+    <comment>The display name of a dynamic profile generator for WSL distros</comment>
+  </data>
+  <data name="PowershellCoreProfileGeneratorDisplayName" xml:space="preserve">
+    <value>PowerShell 配置文件生成器</value>
+    <comment>The display name of a dynamic profile generator for PowerShell</comment>
+  </data>
+  <data name="AzureCloudShellGeneratorDisplayName" xml:space="preserve">
+    <value>Azure Cloud Shell 配置文件生成器</value>
+    <comment>The display name of a dynamic profile generator for Azure Cloud Shell</comment>
+  </data>
+  <data name="VisualStudioGeneratorDisplayName" xml:space="preserve">
+    <value>Visual Studio 配置文件生成器</value>
+    <comment>The display name of a dynamic profile generator for Visual Studio</comment>
+  </data>
+  <data name="SshHostGeneratorDisplayName" xml:space="preserve">
+    <value>SSH 主机配置文件生成器</value>
+    <comment>The display name of a dynamic profile generator for SSH hosts</comment>
   </data>
 </root>

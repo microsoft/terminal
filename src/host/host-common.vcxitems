@@ -6,10 +6,7 @@
     <ClCompile Include="..\ConsoleArguments.cpp" />
     <ClCompile Include="..\CursorBlinker.cpp" />
     <ClCompile Include="..\readDataCooked.cpp" />
-    <ClCompile Include="..\conareainfo.cpp" />
-    <ClCompile Include="..\conimeinfo.cpp" />
     <ClCompile Include="..\consoleInformation.cpp" />
-    <ClCompile Include="..\convarea.cpp" />
     <ClCompile Include="..\dbcs.cpp" />
     <ClCompile Include="..\directio.cpp" />
     <ClCompile Include="..\getset.cpp" />
@@ -58,11 +55,8 @@
     <ClInclude Include="..\cmdline.h" />
     <ClInclude Include="..\conapi.h" />
     <ClInclude Include="..\conddkrefs.h" />
-    <ClInclude Include="..\conareainfo.h" />
-    <ClInclude Include="..\conimeinfo.h" />
     <ClInclude Include="..\ConsoleArguments.hpp" />
     <ClInclude Include="..\conserv.h" />
-    <ClInclude Include="..\conv.h" />
     <ClInclude Include="..\conwinuserrefs.h" />
     <ClInclude Include="..\CursorBlinker.hpp" />
     <ClInclude Include="..\dbcs.h" />

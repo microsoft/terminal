@@ -30,26 +30,6 @@ Viewport Viewport::FromExclusive(const til::rect& sr) noexcept
 // - Creates a new Viewport at the given origin, with the given dimensions.
 // Arguments:
 // - origin: The origin of the new Viewport. Becomes the Viewport's Left, Top
-// - width: The width of the new viewport
-// - height: The height of the new viewport
-// Return Value:
-// - a new Viewport at the given origin, with the given dimensions.
-Viewport Viewport::FromDimensions(const til::point origin,
-                                  const til::CoordType width,
-                                  const til::CoordType height) noexcept
-{
-    return Viewport(til::inclusive_rect{
-        origin.x,
-        origin.y,
-        origin.x + width - 1,
-        origin.y + height - 1,
-    });
-}
-
-// Function Description:
-// - Creates a new Viewport at the given origin, with the given dimensions.
-// Arguments:
-// - origin: The origin of the new Viewport. Becomes the Viewport's Left, Top
 // - dimensions: A coordinate containing the width and height of the new viewport
 //      in the x and y coordinates respectively.
 // Return Value:
@@ -63,29 +43,6 @@ Viewport Viewport::FromDimensions(const til::point origin,
         origin.x + dimensions.width - 1,
         origin.y + dimensions.height - 1,
     });
-}
-
-// Function Description:
-// - Creates a new Viewport at the origin, with the given dimensions.
-// Arguments:
-// - dimensions: A coordinate containing the width and height of the new viewport
-//      in the x and y coordinates respectively.
-// Return Value:
-// - a new Viewport at the origin, with the given dimensions.
-Viewport Viewport::FromDimensions(const til::size dimensions) noexcept
-{
-    return FromDimensions({}, dimensions);
-}
-
-// Method Description:
-// - Creates a Viewport equivalent to a 1x1 rectangle at the given coordinate.
-// Arguments:
-// - origin: origin of the rectangle to create.
-// Return Value:
-// - a 1x1 Viewport at the given coordinate
-Viewport Viewport::FromCoord(const til::point origin) noexcept
-{
-    return FromInclusive(til::inclusive_rect{ origin.x, origin.y, origin.x, origin.y });
 }
 
 til::CoordType Viewport::Left() const noexcept
@@ -159,6 +116,11 @@ til::point Viewport::BottomRightInclusive() const noexcept
 til::point Viewport::BottomRightExclusive() const noexcept
 {
     return { RightExclusive(), BottomExclusive() };
+}
+
+til::point Viewport::BottomInclusiveRightExclusive() const noexcept
+{
+    return { RightExclusive(), BottomInclusive() };
 }
 
 // Method Description:
@@ -241,59 +203,7 @@ void Viewport::Clamp(til::point& pos) const
 // - Clamped viewport
 Viewport Viewport::Clamp(const Viewport& other) const noexcept
 {
-    auto clampMe = other.ToInclusive();
-
-    clampMe.left = std::clamp(clampMe.left, Left(), RightInclusive());
-    clampMe.right = std::clamp(clampMe.right, Left(), RightInclusive());
-    clampMe.top = std::clamp(clampMe.top, Top(), BottomInclusive());
-    clampMe.bottom = std::clamp(clampMe.bottom, Top(), BottomInclusive());
-
-    return Viewport::FromInclusive(clampMe);
-}
-
-// Method Description:
-// - Moves the coordinate given by the number of positions and
-//   in the direction given (repeated increment or decrement)
-// Arguments:
-// - move - Magnitude and direction of the move
-// - pos - The coordinate position to adjust
-// Return Value:
-// - True if we successfully moved the requested distance. False if we had to stop early.
-// - If False, we will restore the original position to the given coordinate.
-bool Viewport::MoveInBounds(const til::CoordType move, til::point& pos) const noexcept
-{
-    const auto backup = pos;
-    auto success = true; // If nothing happens, we're still successful (e.g. add = 0)
-
-    for (til::CoordType i = 0; i < move; i++)
-    {
-        success = IncrementInBounds(pos);
-
-        // If an operation fails, break.
-        if (!success)
-        {
-            break;
-        }
-    }
-
-    for (til::CoordType i = 0; i > move; i--)
-    {
-        success = DecrementInBounds(pos);
-
-        // If an operation fails, break.
-        if (!success)
-        {
-            break;
-        }
-    }
-
-    // If any operation failed, revert to backed up state.
-    if (!success)
-    {
-        pos = backup;
-    }
-
-    return success;
+    return Viewport::FromExclusive(ToExclusive() & other.ToExclusive());
 }
 
 // Method Description:
@@ -307,20 +217,7 @@ bool Viewport::MoveInBounds(const til::CoordType move, til::point& pos) const no
 // - True if it could be incremented. False if it would move outside.
 bool Viewport::IncrementInBounds(til::point& pos, bool allowEndExclusive) const noexcept
 {
-    return WalkInBounds(pos, { XWalk::LeftToRight, YWalk::TopToBottom }, allowEndExclusive);
-}
-
-// Method Description:
-// - Increments the given coordinate within the bounds of this viewport
-//   rotating around to the top when reaching the bottom right corner.
-// Arguments:
-// - pos - Coordinate position that will be incremented.
-// Return Value:
-// - True if it could be incremented inside the viewport.
-// - False if it rolled over from the bottom right corner back to the top.
-bool Viewport::IncrementInBoundsCircular(til::point& pos) const noexcept
-{
-    return WalkInBoundsCircular(pos, { XWalk::LeftToRight, YWalk::TopToBottom });
+    return WalkInBounds(pos, 1, allowEndExclusive);
 }
 
 // Method Description:
@@ -334,20 +231,7 @@ bool Viewport::IncrementInBoundsCircular(til::point& pos) const noexcept
 // - True if it could be incremented. False if it would move outside.
 bool Viewport::DecrementInBounds(til::point& pos, bool allowEndExclusive) const noexcept
 {
-    return WalkInBounds(pos, { XWalk::RightToLeft, YWalk::BottomToTop }, allowEndExclusive);
-}
-
-// Method Description:
-// - Decrements the given coordinate within the bounds of this viewport
-//   rotating around to the bottom right when reaching the top left corner.
-// Arguments:
-// - pos - Coordinate position that will be decremented.
-// Return Value:
-// - True if it could be decremented inside the viewport.
-// - False if it rolled over from the top left corner back to the bottom right.
-bool Viewport::DecrementInBoundsCircular(til::point& pos) const noexcept
-{
-    return WalkInBoundsCircular(pos, { XWalk::RightToLeft, YWalk::BottomToTop });
+    return WalkInBounds(pos, -1, allowEndExclusive);
 }
 
 // Routine Description:
@@ -402,110 +286,73 @@ int Viewport::CompareInBounds(const til::point first, const til::point second, b
 //                        includes the last til::point in a given viewport.
 // Return Value:
 // - True if it could be adjusted as specified and remain in bounds. False if it would move outside.
-bool Viewport::WalkInBounds(til::point& pos, const WalkDir dir, bool allowEndExclusive) const noexcept
+bool Viewport::WalkInBounds(til::point& pos, const til::CoordType delta, bool allowEndExclusive) const noexcept
 {
-    auto copy = pos;
-    if (WalkInBoundsCircular(copy, dir, allowEndExclusive))
-    {
-        pos = copy;
-        return true;
-    }
-    else
-    {
-        return false;
-    }
+    const auto l = static_cast<ptrdiff_t>(_sr.left);
+    const auto t = static_cast<ptrdiff_t>(_sr.top);
+    const auto w = static_cast<ptrdiff_t>(std::max(0, _sr.right - _sr.left + 1));
+    const auto h = static_cast<ptrdiff_t>(std::max(0, _sr.bottom - _sr.top + 1));
+    const auto max = w * h - !allowEndExclusive;
+    const auto off = w * (pos.y - t) + (pos.x - l) + delta;
+    const auto offClamped = std::clamp(off, ptrdiff_t{ 0 }, max);
+    pos.x = gsl::narrow_cast<til::CoordType>(offClamped % w + l);
+    pos.y = gsl::narrow_cast<til::CoordType>(offClamped / w + t);
+    return off == offClamped;
 }
 
-// Method Description:
-// - Walks the given coordinate within the bounds of this viewport
-//   rotating around to the opposite corner when reaching the final corner
-//   in the specified direction.
-// Arguments:
-// - pos - Coordinate position that will be adjusted.
-// - dir - Walking direction specifying which direction to go when reaching the end of a row/column
-// - allowEndExclusive - if true, allow the EndExclusive til::point as a valid position.
-//                        Used in accessibility to signify that the exclusive end
-//                        includes the last til::point in a given viewport.
-// Return Value:
-// - True if it could be adjusted inside the viewport.
-// - False if it rolled over from the final corner back to the initial corner
-//   for the specified walk direction.
-bool Viewport::WalkInBoundsCircular(til::point& pos, const WalkDir dir, bool allowEndExclusive) const noexcept
+bool Viewport::IncrementInExclusiveBounds(til::point& pos) const noexcept
 {
-    // Assert that the position given fits inside this viewport.
-    assert(IsInBounds(pos, allowEndExclusive));
+    return WalkInExclusiveBounds(pos, 1);
+}
 
-    if (dir.x == XWalk::LeftToRight)
-    {
-        if (allowEndExclusive && pos.x == Left() && pos.y == BottomExclusive())
-        {
-            pos.y = Top();
-            return false;
-        }
-        else if (pos.x == RightInclusive())
-        {
-            pos.x = Left();
+bool Viewport::DecrementInExclusiveBounds(til::point& pos) const noexcept
+{
+    return WalkInExclusiveBounds(pos, -1);
+}
 
-            if (dir.y == YWalk::TopToBottom)
-            {
-                pos.y++;
-                if (allowEndExclusive && pos.y == BottomExclusive())
-                {
-                    return true;
-                }
-                else if (pos.y > BottomInclusive())
-                {
-                    pos.y = Top();
-                    return false;
-                }
-            }
-            else
-            {
-                pos.y--;
-                if (pos.y < Top())
-                {
-                    pos.y = BottomInclusive();
-                    return false;
-                }
-            }
-        }
-        else
-        {
-            pos.x++;
-        }
-    }
-    else
-    {
-        if (pos.x == Left())
-        {
-            pos.x = RightInclusive();
+bool Viewport::IsInExclusiveBounds(const til::point pos) const noexcept
+{
+    return pos.x >= Left() && pos.x <= RightExclusive() &&
+           pos.y >= Top() && pos.y <= BottomInclusive();
+}
 
-            if (dir.y == YWalk::TopToBottom)
-            {
-                pos.y++;
-                if (pos.y > BottomInclusive())
-                {
-                    pos.y = Top();
-                    return false;
-                }
-            }
-            else
-            {
-                pos.y--;
-                if (pos.y < Top())
-                {
-                    pos.y = BottomInclusive();
-                    return false;
-                }
-            }
-        }
-        else
-        {
-            pos.x--;
-        }
-    }
+int Viewport::CompareInExclusiveBounds(const til::point first, const til::point second) const noexcept
+{
+    // Assert that our coordinates are within the expected boundaries
+    assert(IsInExclusiveBounds(first));
+    assert(IsInExclusiveBounds(second));
 
-    return true;
+    // First set the distance vertically
+    //   If first is on row 4 and second is on row 6, first will be -2 rows behind second * an 80 character row would be -160.
+    //   For the same row, it'll be 0 rows * 80 character width = 0 difference.
+    auto retVal = (first.y - second.y) * Width();
+
+    // Now adjust for horizontal differences
+    //   If first is in position 15 and second is in position 30, first is -15 left in relation to 30.
+    retVal += (first.x - second.x);
+
+    // Further notes:
+    //   If we already moved behind one row, this will help correct for when first is right of second.
+    //     For example, with row 4, col 79 and row 5, col 0 as first and second respectively, the distance is -1.
+    //     Assume the row width is 80.
+    //     Step one will set the retVal as -80 as first is one row behind the second.
+    //     Step two will then see that first is 79 - 0 = +79 right of second and add 79
+    //     The total is -80 + 79 = -1.
+    return retVal;
+}
+
+bool Viewport::WalkInExclusiveBounds(til::point& pos, const til::CoordType delta) const noexcept
+{
+    const auto l = static_cast<ptrdiff_t>(_sr.left);
+    const auto t = static_cast<ptrdiff_t>(_sr.top);
+    const auto w = static_cast<ptrdiff_t>(std::max(0, _sr.right - _sr.left + 2));
+    const auto h = static_cast<ptrdiff_t>(std::max(0, _sr.bottom - _sr.top + 1));
+    const auto max = w * h;
+    const auto off = w * (pos.y - t) + (pos.x - l) + delta;
+    const auto offClamped = std::clamp(off, ptrdiff_t{ 0 }, max);
+    pos.x = gsl::narrow_cast<til::CoordType>(offClamped % w + l);
+    pos.y = gsl::narrow_cast<til::CoordType>(offClamped / w + t);
+    return off == offClamped;
 }
 
 // Routine Description:
@@ -518,172 +365,24 @@ bool Viewport::WalkInBoundsCircular(til::point& pos, const WalkDir dir, bool all
 // Return Value:
 // - The origin for the walk to reach every position without circling
 //   if using this same viewport with the `WalkInBounds` methods.
-til::point Viewport::GetWalkOrigin(const WalkDir dir) const noexcept
+til::point Viewport::GetWalkOrigin(const til::CoordType delta) const noexcept
 {
     til::point origin;
-    origin.x = dir.x == XWalk::LeftToRight ? Left() : RightInclusive();
-    origin.y = dir.y == YWalk::TopToBottom ? Top() : BottomInclusive();
+    origin.x = delta >= 0 ? Left() : RightInclusive();
+    origin.y = delta >= 0 ? Top() : BottomInclusive();
     return origin;
 }
 
-// Routine Description:
-// - Given two viewports that will be used for copying data from one to the other (source, target),
-//   determine which direction you will have to walk through them to ensure that an overlapped copy
-//   won't erase data in the source that hasn't yet been read and copied into the target at the same
-//   coordinate offset position from their respective origins.
-// - Note: See elaborate ASCII-art comment inside the body of this function for more details on how/why this works.
-// Arguments:
-// - source - The viewport representing the region that will be copied from
-// - target - The viewport representing the region that will be copied to
-// Return Value:
-// - The direction to walk through both viewports from the walk origins to touch every cell and not
-//   accidentally overwrite something that hasn't been read yet. (use with GetWalkOrigin and WalkInBounds)
-Viewport::WalkDir Viewport::DetermineWalkDirection(const Viewport& source, const Viewport& target) noexcept
+// A text buffer is basically a list (std::vector) of characters and we just tell it where the line breaks are.
+// This means that copying between overlapping ranges requires the same care as when using std::copy VS std::copy_backward:
+//   std::copy (aka forward copying) can only be used within an overlapping source/target range if target is before source.
+//   std::copy_backward, as the name implies, is to be used for the reverse situation: if target is after source.
+// This method returns 1 for the former and -1 for the latter. It's the delta you can pass to GetWalkOrigin and WalkInBounds.
+til::CoordType Viewport::DetermineWalkDirection(const Viewport& source, const Viewport& target) noexcept
 {
-    // We can determine which direction we need to walk based on solely the origins of the two rectangles.
-    // I'll use a few examples to prove the situation.
-    //
-    // For the cardinal directions, let's start with this sample:
-    //
-    // source        target
-    // origin 0,0    origin 4,0
-    // |             |
-    // v             V
-    // +--source-----+--target---------                  +--source-----+--target---------
-    // |  A  B  C  D | E | 1  2  3  4 |     becomes      |  A  B  C  D | A | B  C  D  E |
-    // |  F  G  H  I | J | 5  6  7  8 |    =========>    |  F  G  H  I | F | G  H  I  J |
-    // |  K  L  M  N | O | 9  $  %  @ |                  |  K  L  M  N | K | L  M  N  O |
-    // --------------------------------                  --------------------------------
-    //
-    // The source and target overlap in the 5th column (X=4).
-    // To ensure that we don't accidentally write over the source
-    // data before we copy it into the target, we want to start by
-    // reading that column (a.k.a. writing to the farthest away column
-    // of the target).
-    //
-    // This means we want to copy from right to left.
-    // Top to bottom and bottom to top don't really matter for this since it's
-    // a cardinal direction shift.
-    //
-    // If we do the right most column first as so...
-    //
-    // +--source-----+--target---------                  +--source-----+--target---------
-    // |  A  B  C  D | E | 1  2  3  4 |     step 1       |  A  B  C  D | E | 1  2  3  E |
-    // |  F  G  H  I | J | 5  6  7  8 |    =========>    |  F  G  H  I | J | 5  6  7  J |
-    // |  K  L  M  N | O | 9  $  %  @ |                  |  K  L  M  N | O | 9  $  %  O |
-    // --------------------------------                  --------------------------------
-    //
-    // ... then we can see that the EJO column is safely copied first out of the way and
-    // can be overwritten on subsequent steps without losing anything.
-    // The rest of the columns aren't overlapping, so they'll be fine.
-    //
-    // But we extrapolate this logic to follow for rectangles that overlap more columns, up
-    // to and including only leaving one column not overlapped...
-    //
-    // source   target
-    // origin   origin
-    // 0,0    / 1,0
-    // |     /
-    // v    v
-    // +----+------target-                  +----+------target-
-    // | A | B  C  D | E |     becomes      | A | A  B  C | D |
-    // | F | G  H  I | J |    =========>    | F | F  G  H | I |
-    // | K | L  M  N | O |                  | K | K  L  M | N |
-    // ---source----------                  ---source----------
-    //
-    // ... will still be OK following the same Right-To-Left rule as the first move.
-    //
-    // +----+------target-                  +----+------target-
-    // | A | B  C  D | E |     step 1       | A | B  C  D | D |
-    // | F | G  H  I | J |    =========>    | F | G  H  I | I |
-    // | K | L  M  N | O |                  | K | L  M  N | N |
-    // ---source----------                  ---source----------
-    //
-    // The DIN column from the source was moved to the target as the right most column
-    // of both rectangles. Now it is safe to iterate to the second column from the right
-    // and proceed with moving CHM on top of the source DIN as it was already moved.
-    //
-    // +----+------target-                  +----+------target-
-    // | A | B  C  D | E |     step 2       | A | B  C  C | D |
-    // | F | G  H  I | J |    =========>    | F | G  H  H | I |
-    // | K | L  M  N | O |                  | K | L  M  M | N |
-    // ---source----------                  ---source----------
-    //
-    // Continue walking right to left (an exercise left to the reader,) and we never lose
-    // any source data before it reaches the target with the Right To Left pattern.
-    //
-    // We notice that the target origin was Right of the source origin in this circumstance,
-    // (target origin X is > source origin X)
-    // so it is asserted that targets right of sources means that we should "walk" right to left.
-    //
-    // Reviewing the above, it doesn't appear to matter if we go Top to Bottom or Bottom to Top,
-    // so the conclusion is drawn that it doesn't matter as long as the source and target origin
-    // Y values are the same.
-    //
-    // Also, extrapolating this cardinal direction move to the other 3 cardinal directions,
-    // it should follow that they would follow the same rules.
-    // That is, a target left of a source, or a Westbound move, opposite of the above Eastbound move,
-    // should be "walked" left to right.
-    // (target origin X is < source origin X)
-    //
-    // We haven't given the sample yet that Northbound and Southbound moves are the same, but we
-    // could reason that the same logic applies and the conclusion would be a Northbound move
-    // would walk from the target toward the source again... a.k.a. Top to Bottom.
-    // (target origin Y is < source origin Y)
-    // Then the Southbound move would be the opposite, Bottom to Top.
-    // (target origin Y is > source origin Y)
-    //
-    // To confirm, let's try one more example but moving both at once in an ordinal direction Northeast.
-    //
-    //                 target
-    //                 origin 1, 0
-    //                 |
-    //                 v
-    //                 +----target--                         +----target--
-    //  source      A  |  B     C  |                      A  |  D     E  |
-    //  origin-->+------------     |     becomes       +------------     |
-    //   0, 1    |  D  |  E  |  F  |    =========>     |  D  |  G  |  H  |
-    //           |     -------------                   |     -------------
-    //           |  G     H  |  I                      |  G     H  |  I
-    //           --source-----                         --source-----
-    //
-    // Following our supposed rules from above, we have...
-    // Source Origin X = 0, Y = 1
-    // Target Origin X = 1, Y = 0
-    //
-    // Source Origin X < Target Origin X which means Right to Left
-    // Source Origin Y > Target Origin Y which means Top to Bottom
-    //
-    // So the first thing we should copy is the Top and Right most
-    // value from source to target.
-    //
-    //        +----target--                         +----target--
-    //     A  |  B     C  |                      A  |  B     E  |
-    //  +------------     |     step 1        +------------     |
-    //  |  D  |  E  |  F  |    =========>     |  D  |  E  |  F  |
-    //  |     -------------                   |     -------------
-    //  |  G     H  |  I                      |  G     H  |  I
-    //  --source-----                         --source-----
-    //
-    // And look. The E which was in the overlapping part of the source
-    // is the first thing copied out of the way and we're safe to copy the rest.
-    //
-    // We assume that this pattern then applies to all ordinal directions as well
-    // and it appears our rules hold.
-    //
-    // We've covered all cardinal and ordinal directions... all that is left is two
-    // rectangles of the same size and origin... and in that case, it doesn't matter
-    // as nothing is moving and therefore can't be covered up or lost.
-    //
-    // Therefore, we will codify our inequalities below as determining the walk direction
-    // for a given source and target viewport and use the helper `GetWalkOrigin`
-    // to return the place that we should start walking from when the copy commences.
-
     const auto sourceOrigin = source.Origin();
     const auto targetOrigin = target.Origin();
-
-    return Viewport::WalkDir{ targetOrigin.x < sourceOrigin.x ? Viewport::XWalk::LeftToRight : Viewport::XWalk::RightToLeft,
-                              targetOrigin.y < sourceOrigin.y ? Viewport::YWalk::TopToBottom : Viewport::YWalk::BottomToTop };
+    return targetOrigin < sourceOrigin ? 1 : -1;
 }
 
 // Method Description:
@@ -827,7 +526,7 @@ Viewport Viewport::ToOrigin() const noexcept
 // Arguments:
 // - other: the viewport to convert to this coordinate space
 // Return Value:
-// - the input viewport in a the coordinate space with origin at (this.top, this.left)
+// - the input viewport in the coordinate space with origin at (this.top, this.left)
 [[nodiscard]] Viewport Viewport::ConvertToOrigin(const Viewport& other) const noexcept
 {
     auto returnVal = other;
@@ -844,7 +543,7 @@ Viewport Viewport::ToOrigin() const noexcept
 // Arguments:
 // - other: the viewport to convert out of this coordinate space
 // Return Value:
-// - the input viewport in a the coordinate space with origin at (0, 0)
+// - the input viewport in the coordinate space with origin at (0, 0)
 [[nodiscard]] Viewport Viewport::ConvertFromOrigin(const Viewport& other) const noexcept
 {
     auto returnVal = other;
@@ -964,7 +663,11 @@ try
     const auto intersection = Viewport::Intersect(original, removeMe);
 
     // If there's no intersection, there's nothing to remove.
-    if (!intersection.IsValid())
+    if (!original.IsValid())
+    {
+        // Nothing to do here.
+    }
+    else if (!intersection.IsValid())
     {
         // Just put the original rectangle into the results and return early.
         result.push_back(original);

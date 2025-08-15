@@ -34,6 +34,8 @@ SOURCES= \
     ..\FontBuffer.cpp \
     ..\InteractDispatch.cpp \
     ..\MacroBuffer.cpp \
+    ..\PageManager.cpp \
+    ..\SixelParser.cpp \
     ..\adaptDispatchGraphics.cpp \
     ..\terminalOutput.cpp \
 

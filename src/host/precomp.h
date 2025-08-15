@@ -48,8 +48,6 @@ Abstract:
 #include <dde.h>
 #include "conserv.h"
 
-#include "conv.h"
-
 #pragma prefast(push)
 #pragma prefast(disable : 26071, "Range violation in Intsafe. Not ours.")
 #define ENABLE_INTSAFE_SIGNED_FUNCTIONS // Only unsigned intsafe math/casts available without this def
@@ -84,7 +82,6 @@ TRACELOGGING_DECLARE_PROVIDER(g_hConhostV2EventTraceProvider);
 #define CON_DPIAPI_INDIRECT
 #endif
 
-#include "../inc/contsf.h"
 #include "../inc/conattrs.hpp"
 
 // TODO: MSFT 9355094 Find a better way of doing this. http://osgvsowi/9355094

@@ -36,8 +36,6 @@ namespace SettingsModelUnitTests
         TEST_METHOD(TestHideAllProfiles);
         TEST_METHOD(TestInvalidColorSchemeName);
         TEST_METHOD(TestHelperFunctions);
-        TEST_METHOD(TestProfileBackgroundImageWithEnvVar);
-        TEST_METHOD(TestProfileBackgroundImageWithDesktopWallpaper);
         TEST_METHOD(TestCloseOnExitParsing);
         TEST_METHOD(TestCloseOnExitCompatibilityShim);
         TEST_METHOD(TestLayerUserDefaultsBeforeProfiles);
@@ -58,6 +56,7 @@ namespace SettingsModelUnitTests
         TEST_METHOD(TestCloneInheritanceTree);
         TEST_METHOD(TestValidDefaults);
         TEST_METHOD(TestInheritedCommand);
+        TEST_METHOD(TestOverwriteParentCommandAndKeybinding);
         TEST_METHOD(LoadFragmentsWithMultipleUpdates);
 
         TEST_METHOD(FragmentActionSimple);
@@ -898,44 +897,6 @@ namespace SettingsModelUnitTests
         VERIFY_IS_NULL(settings->FindProfile(fakeGuid));
     }
 
-    void DeserializationTests::TestProfileBackgroundImageWithEnvVar()
-    {
-        const auto expectedPath = wil::ExpandEnvironmentStringsW<std::wstring>(L"%WINDIR%\\System32\\x_80.png");
-
-        static constexpr std::string_view settingsJson{ R"(
-        {
-            "profiles": [
-                {
-                    "name": "profile0",
-                    "backgroundImage": "%WINDIR%\\System32\\x_80.png"
-                }
-            ]
-        })" };
-
-        const auto settings = createSettings(settingsJson);
-        VERIFY_ARE_NOT_EQUAL(0u, settings->AllProfiles().Size());
-        VERIFY_ARE_EQUAL(expectedPath, settings->AllProfiles().GetAt(0).DefaultAppearance().ExpandedBackgroundImagePath());
-    }
-
-    void DeserializationTests::TestProfileBackgroundImageWithDesktopWallpaper()
-    {
-        const winrt::hstring expectedBackgroundImagePath{ L"desktopWallpaper" };
-
-        static constexpr std::string_view settingsJson{ R"(
-        {
-            "profiles": [
-                {
-                    "name": "profile0",
-                    "backgroundImage": "desktopWallpaper"
-                }
-            ]
-        })" };
-
-        const auto settings = createSettings(settingsJson);
-        VERIFY_ARE_EQUAL(expectedBackgroundImagePath, settings->AllProfiles().GetAt(0).DefaultAppearance().BackgroundImagePath());
-        VERIFY_ARE_NOT_EQUAL(expectedBackgroundImagePath, settings->AllProfiles().GetAt(0).DefaultAppearance().ExpandedBackgroundImagePath());
-    }
-
     void DeserializationTests::TestCloseOnExitParsing()
     {
         static constexpr std::string_view settingsJson{ R"(
@@ -1235,11 +1196,11 @@ namespace SettingsModelUnitTests
         const auto settings = createSettings(badSettings);
 
         // KeyMap: ctrl+a/b are mapped to "invalid"
-        // ActionMap: "splitPane" and "invalid" are the only deserialized actions
+        // ActionMap: "splitPane" is the only deserialized action
         // NameMap: "splitPane" has no key binding, but it is still added to the name map
         const auto actionMap = winrt::get_self<implementation::ActionMap>(settings->GlobalSettings().ActionMap());
         VERIFY_ARE_EQUAL(2u, actionMap->_KeyMap.size());
-        VERIFY_ARE_EQUAL(2u, actionMap->_ActionMap.size());
+        VERIFY_ARE_EQUAL(1u, actionMap->_ActionMap.size());
         VERIFY_ARE_EQUAL(1u, actionMap->NameMap().Size());
         VERIFY_ARE_EQUAL(5u, settings->Warnings().Size());
 
@@ -1390,11 +1351,13 @@ namespace SettingsModelUnitTests
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
             VERIFY_ARE_EQUAL(SplitDirection::Right, realArgs.SplitDirection());
-            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().Profile().empty());
+            VERIFY_IS_NOT_NULL(realArgs.ContentArgs());
+            const auto terminalArgs{ realArgs.ContentArgs().try_as<NewTerminalArgs>() };
+            VERIFY_IS_NOT_NULL(terminalArgs);
+            VERIFY_IS_TRUE(terminalArgs.Commandline().empty());
+            VERIFY_IS_TRUE(terminalArgs.StartingDirectory().empty());
+            VERIFY_IS_TRUE(terminalArgs.TabTitle().empty());
+            VERIFY_IS_TRUE(terminalArgs.Profile().empty());
         }
 
         Log::Comment(L"Note that we're skipping ctrl+B, since that doesn't have `keys` set.");
@@ -1407,11 +1370,13 @@ namespace SettingsModelUnitTests
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
             VERIFY_ARE_EQUAL(SplitDirection::Right, realArgs.SplitDirection());
-            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().Profile().empty());
+            VERIFY_IS_NOT_NULL(realArgs.ContentArgs());
+            const auto terminalArgs{ realArgs.ContentArgs().try_as<NewTerminalArgs>() };
+            VERIFY_IS_NOT_NULL(terminalArgs);
+            VERIFY_IS_TRUE(terminalArgs.Commandline().empty());
+            VERIFY_IS_TRUE(terminalArgs.StartingDirectory().empty());
+            VERIFY_IS_TRUE(terminalArgs.TabTitle().empty());
+            VERIFY_IS_TRUE(terminalArgs.Profile().empty());
         }
         {
             const KeyChord kc{ true, false, false, false, static_cast<int32_t>('D'), 0 };
@@ -1421,11 +1386,13 @@ namespace SettingsModelUnitTests
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
             VERIFY_ARE_EQUAL(SplitDirection::Right, realArgs.SplitDirection());
-            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().Profile().empty());
+            VERIFY_IS_NOT_NULL(realArgs.ContentArgs());
+            const auto terminalArgs{ realArgs.ContentArgs().try_as<NewTerminalArgs>() };
+            VERIFY_IS_NOT_NULL(terminalArgs);
+            VERIFY_IS_TRUE(terminalArgs.Commandline().empty());
+            VERIFY_IS_TRUE(terminalArgs.StartingDirectory().empty());
+            VERIFY_IS_TRUE(terminalArgs.TabTitle().empty());
+            VERIFY_IS_TRUE(terminalArgs.Profile().empty());
         }
         {
             const KeyChord kc{ true, false, false, false, static_cast<int32_t>('E'), 0 };
@@ -1435,11 +1402,13 @@ namespace SettingsModelUnitTests
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
             VERIFY_ARE_EQUAL(SplitDirection::Down, realArgs.SplitDirection());
-            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().Profile().empty());
+            VERIFY_IS_NOT_NULL(realArgs.ContentArgs());
+            const auto terminalArgs{ realArgs.ContentArgs().try_as<NewTerminalArgs>() };
+            VERIFY_IS_NOT_NULL(terminalArgs);
+            VERIFY_IS_TRUE(terminalArgs.Commandline().empty());
+            VERIFY_IS_TRUE(terminalArgs.StartingDirectory().empty());
+            VERIFY_IS_TRUE(terminalArgs.TabTitle().empty());
+            VERIFY_IS_TRUE(terminalArgs.Profile().empty());
         }
         {
             const KeyChord kc{ true, false, false, false, static_cast<int32_t>('F'), 0 };
@@ -1449,11 +1418,13 @@ namespace SettingsModelUnitTests
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
             VERIFY_ARE_EQUAL(SplitDirection::Down, realArgs.SplitDirection());
-            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().Profile().empty());
+            VERIFY_IS_NOT_NULL(realArgs.ContentArgs());
+            const auto terminalArgs{ realArgs.ContentArgs().try_as<NewTerminalArgs>() };
+            VERIFY_IS_NOT_NULL(terminalArgs);
+            VERIFY_IS_TRUE(terminalArgs.Commandline().empty());
+            VERIFY_IS_TRUE(terminalArgs.StartingDirectory().empty());
+            VERIFY_IS_TRUE(terminalArgs.TabTitle().empty());
+            VERIFY_IS_TRUE(terminalArgs.Profile().empty());
         }
 
         Log::Comment(L"Now verify the commands");
@@ -1478,11 +1449,13 @@ namespace SettingsModelUnitTests
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
             VERIFY_ARE_EQUAL(SplitDirection::Right, realArgs.SplitDirection());
-            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().Profile().empty());
+            VERIFY_IS_NOT_NULL(realArgs.ContentArgs());
+            const auto terminalArgs{ realArgs.ContentArgs().try_as<NewTerminalArgs>() };
+            VERIFY_IS_NOT_NULL(terminalArgs);
+            VERIFY_IS_TRUE(terminalArgs.Commandline().empty());
+            VERIFY_IS_TRUE(terminalArgs.StartingDirectory().empty());
+            VERIFY_IS_TRUE(terminalArgs.TabTitle().empty());
+            VERIFY_IS_TRUE(terminalArgs.Profile().empty());
         }
         {
             // This was renamed to null (aka removed from the name map) in F. So this does not exist.
@@ -1969,7 +1942,8 @@ namespace SettingsModelUnitTests
                 },
                 {
                     "name": "bar",
-                    "command": "closePane"
+                    "command": "closePane",
+                    "id": "Test.ClosePane"
                 },
             ],
         })" };
@@ -1983,7 +1957,6 @@ namespace SettingsModelUnitTests
             // Verify NameMap returns correct value
             const auto& cmd{ nameMap.TryLookup(L"bar") };
             VERIFY_IS_NOT_NULL(cmd);
-            VERIFY_IS_NULL(cmd.Keys());
             VERIFY_ARE_EQUAL(L"bar", cmd.Name());
         }
         {
@@ -1993,8 +1966,105 @@ namespace SettingsModelUnitTests
         }
         {
             // Verify ActionMap::GetKeyBindingForAction API
-            const auto& actualKeyChord{ settings->ActionMap().GetKeyBindingForAction(ShortcutAction::ClosePane) };
+            const auto& actualKeyChord{ settings->ActionMap().GetKeyBindingForAction(L"Test.ClosePane") };
             VERIFY_IS_NULL(actualKeyChord);
+        }
+    }
+
+    void DeserializationTests::TestOverwriteParentCommandAndKeybinding()
+    {
+        // Tests:
+        // - Redefine an action whose ID was originally defined in another layer
+        // - Redefine a keychord that exists in another layer
+        // - Define a keychord that points to an action in another layer
+
+        static constexpr std::string_view settings1Json{ R"(
+        {
+            "defaultProfile": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+            "profiles": [
+                {
+                    "name": "profile0",
+                    "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+                    "historySize": 1,
+                    "commandline": "cmd.exe"
+                }
+            ],
+            "actions": [
+                {
+                    "command": "closePane",
+                    "id": "Parent.ClosePane"
+                },
+                {
+                    "command": "closePane",
+                    "id": "Parent.ClosePane2"
+                }
+            ],
+            "keybindings": [
+                {
+                    "keys": "ctrl+shift+w",
+                    "id": "Parent.ClosePane"
+                },
+                {
+                    "keys": "ctrl+shift+x",
+                    "id": "Parent.ClosePane2"
+                }
+            ]
+        })" };
+
+        // this child actions and keybindings list
+        // - redefines Parent.ClosePane to perform a newTab action instead of a closePane action
+        // - redefines ctrl+shift+x to point to Child.ClosePane instead of Parent.ClosePane2
+        // - defines ctrl+shift+y to point to Parent.ClosePane2 (an action that does not exist in this child layer)
+        static constexpr std::string_view settings2Json{ R"(
+        {
+            "defaultProfile": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+            "actions": [
+                {
+                    "command": "newTab",
+                    "id": "Parent.ClosePane"
+                },
+                {
+                    "command": "closePane",
+                    "id": "Child.ClosePane"
+                }
+            ],
+            "keybindings": [
+                {
+                    "id": "Child.ClosePane",
+                    "keys": "ctrl+shift+x"
+                },
+                {
+                    "id": "Parent.ClosePane2",
+                    "keys": "ctrl+shift+y"
+                }
+            ]
+        })" };
+
+        const auto settings = winrt::make_self<implementation::CascadiaSettings>(settings2Json, settings1Json);
+        const KeyChord ctrlShiftW{ true, false, true, false, static_cast<int>('W'), 0 };
+        const KeyChord ctrlShiftX{ true, false, true, false, static_cast<int>('X'), 0 };
+        const KeyChord ctrlShiftY{ true, false, true, false, static_cast<int>('Y'), 0 };
+
+        {
+            // ctrl+shift+w should point to Parent.ClosePane, however Parent.ClosePane should be a newTab action
+            const auto& cmd{ settings->ActionMap().GetActionByKeyChord(ctrlShiftW) };
+            VERIFY_IS_NOT_NULL(cmd);
+            VERIFY_ARE_EQUAL(cmd.ID(), L"Parent.ClosePane");
+            VERIFY_ARE_EQUAL(cmd.ActionAndArgs().Action(), ShortcutAction::NewTab);
+        }
+        {
+            // ctrl+shift+x should point to Child.ClosePane
+            const auto& cmd{ settings->ActionMap().GetActionByKeyChord(ctrlShiftX) };
+            VERIFY_IS_NOT_NULL(cmd);
+            VERIFY_ARE_EQUAL(cmd.ID(), L"Child.ClosePane");
+            VERIFY_ARE_EQUAL(cmd.ActionAndArgs().Action(), ShortcutAction::ClosePane);
+        }
+        {
+            // ctrl+shift+y should point to Parent.ClosePane2
+            const auto& cmd{ settings->ActionMap().GetActionByKeyChord(ctrlShiftY) };
+            VERIFY_IS_NOT_NULL(cmd);
+            VERIFY_ARE_EQUAL(cmd.ID(), L"Parent.ClosePane2");
+            VERIFY_ARE_EQUAL(cmd.ActionAndArgs().Action(), ShortcutAction::ClosePane);
         }
     }
 
@@ -2021,7 +2091,7 @@ namespace SettingsModelUnitTests
 
         implementation::SettingsLoader loader{ std::string_view{}, implementation::LoadStringResource(IDR_DEFAULTS) };
         loader.MergeInboxIntoUserSettings();
-        loader.MergeFragmentIntoUserSettings(winrt::hstring{ fragmentSource }, fragmentJson);
+        loader.MergeFragmentIntoUserSettings(winrt::hstring{ fragmentSource }, {}, fragmentJson);
         loader.FinalizeLayering();
 
         VERIFY_IS_FALSE(loader.duplicateProfile);
@@ -2037,14 +2107,15 @@ namespace SettingsModelUnitTests
             "actions": [
                 {
                     "command": { "action": "addMark" },
-                    "name": "Test Action"
+                    "name": "Test Action",
+                    "id": "Test.FragmentAction"
                 },
             ]
         })" };
 
         implementation::SettingsLoader loader{ std::string_view{}, implementation::LoadStringResource(IDR_DEFAULTS) };
         loader.MergeInboxIntoUserSettings();
-        loader.MergeFragmentIntoUserSettings(winrt::hstring{ fragmentSource }, fragmentJson);
+        loader.MergeFragmentIntoUserSettings(winrt::hstring{ fragmentSource }, {}, fragmentJson);
         loader.FinalizeLayering();
 
         const auto settings = winrt::make_self<implementation::CascadiaSettings>(std::move(loader));
@@ -2062,6 +2133,7 @@ namespace SettingsModelUnitTests
                 {
                     "command": { "action": "addMark" },
                     "keys": "ctrl+f",
+                    "id": "Test.FragmentAction",
                     "name": "Test Action"
                 },
             ]
@@ -2069,7 +2141,7 @@ namespace SettingsModelUnitTests
 
         implementation::SettingsLoader loader{ std::string_view{}, implementation::LoadStringResource(IDR_DEFAULTS) };
         loader.MergeInboxIntoUserSettings();
-        loader.MergeFragmentIntoUserSettings(winrt::hstring{ fragmentSource }, fragmentJson);
+        loader.MergeFragmentIntoUserSettings(winrt::hstring{ fragmentSource }, {}, fragmentJson);
         loader.FinalizeLayering();
 
         const auto settings = winrt::make_self<implementation::CascadiaSettings>(std::move(loader));
@@ -2103,7 +2175,7 @@ namespace SettingsModelUnitTests
 
         implementation::SettingsLoader loader{ std::string_view{}, implementation::LoadStringResource(IDR_DEFAULTS) };
         loader.MergeInboxIntoUserSettings();
-        loader.MergeFragmentIntoUserSettings(winrt::hstring{ fragmentSource }, fragmentJson);
+        loader.MergeFragmentIntoUserSettings(winrt::hstring{ fragmentSource }, {}, fragmentJson);
         loader.FinalizeLayering();
 
         const auto settings = winrt::make_self<implementation::CascadiaSettings>(std::move(loader));
@@ -2138,7 +2210,7 @@ namespace SettingsModelUnitTests
 
         implementation::SettingsLoader loader{ std::string_view{}, implementation::LoadStringResource(IDR_DEFAULTS) };
         loader.MergeInboxIntoUserSettings();
-        loader.MergeFragmentIntoUserSettings(winrt::hstring{ fragmentSource }, fragmentJson);
+        loader.MergeFragmentIntoUserSettings(winrt::hstring{ fragmentSource }, {}, fragmentJson);
         loader.FinalizeLayering();
 
         const auto settings = winrt::make_self<implementation::CascadiaSettings>(std::move(loader));
@@ -2164,7 +2236,7 @@ namespace SettingsModelUnitTests
 
         implementation::SettingsLoader loader{ std::string_view{}, implementation::LoadStringResource(IDR_DEFAULTS) };
         loader.MergeInboxIntoUserSettings();
-        loader.MergeFragmentIntoUserSettings(winrt::hstring{ fragmentSource }, fragmentJson);
+        loader.MergeFragmentIntoUserSettings(winrt::hstring{ fragmentSource }, {}, fragmentJson);
         loader.FinalizeLayering();
 
         const auto settings = winrt::make_self<implementation::CascadiaSettings>(std::move(loader));
@@ -2183,14 +2255,15 @@ namespace SettingsModelUnitTests
             "actions": [
                 {
                     "command": { "action": "addMark" },
-                    "name": "Test Action"
+                    "name": "Test Action",
+                    "id": "Test.FragmentAction"
                 },
             ]
         })" };
 
         implementation::SettingsLoader loader{ std::string_view{}, implementation::LoadStringResource(IDR_DEFAULTS) };
         loader.MergeInboxIntoUserSettings();
-        loader.MergeFragmentIntoUserSettings(winrt::hstring{ fragmentSource }, fragmentJson);
+        loader.MergeFragmentIntoUserSettings(winrt::hstring{ fragmentSource }, {}, fragmentJson);
         loader.FinalizeLayering();
 
         const auto oldSettings = winrt::make_self<implementation::CascadiaSettings>(std::move(loader));

@@ -188,7 +188,10 @@
     <value>複数ウィンドウ</value>
   </data>
   <data name="TabCloseSubMenu" xml:space="preserve">
-    <value>閉じる...</value>
+    <value>閉じる</value>
+  </data>
+  <data name="TabMoveSubMenu" xml:space="preserve">
+    <value>タブの移動</value>
   </data>
   <data name="TabCloseAfter" xml:space="preserve">
     <value>タブを右側に閉じる</value>
@@ -203,19 +206,58 @@
     <value>ウィンドウを閉じる</value>
   </data>
   <data name="SplitTabText" xml:space="preserve">
-    <value>分割タブ</value>
+    <value>タブを分割</value>
   </data>
   <data name="SplitPaneText" xml:space="preserve">
-    <value>分割ウィンドウ</value>
+    <value>ウィンドウを分割する</value>
+  </data>
+  <data name="SplitPaneToolTipText" xml:space="preserve">
+    <value>分割する方向を右クリック - 右/下/上/左</value>
+  </data>
+  <data name="SplitPaneDownText" xml:space="preserve">
+    <value>下にペインを分割</value>
+  </data>
+  <data name="SplitPaneRightText" xml:space="preserve">
+    <value>右にペインを分割</value>
+  </data>
+  <data name="SplitPaneUpText" xml:space="preserve">
+    <value>上にペインを分割</value>
+  </data>
+  <data name="SplitPaneLeftText" xml:space="preserve">
+    <value>左にペインを分割</value>
+  </data>
+  <data name="SplitPaneDuplicateText" xml:space="preserve">
+    <value>複製</value>
+  </data>
+  <data name="SwapPaneText" xml:space="preserve">
+    <value>ウィンドウを入れ替える</value>
+  </data>
+  <data name="SwapPaneDownText" xml:space="preserve">
+    <value>下とペインを入れ替え</value>
+  </data>
+  <data name="SwapPaneRightText" xml:space="preserve">
+    <value>右とペインを入れ替え</value>
+  </data>
+  <data name="SwapPaneUpText" xml:space="preserve">
+    <value>上とペインを入れ替え</value>
+  </data>
+  <data name="SwapPaneLeftText" xml:space="preserve">
+    <value>左とペインを入れ替え</value>
+  </data>
+  <data name="TogglePaneZoomText" xml:space="preserve">
+    <value>ウィンドウのズームの切り替え</value>
+  </data>
+  <data name="CloseOtherPanesText" xml:space="preserve">
+    <value>他のウィンドウを閉じる</value>
   </data>
   <data name="SearchWebText" xml:space="preserve">
     <value>Web 検索</value>
   </data>
   <data name="TabColorChoose" xml:space="preserve">
-    <value>色...</value>
+    <value>タブの色の変更</value>
   </data>
   <data name="TabColorCustomButton.Content" xml:space="preserve">
-    <value>カスタム...</value>
+    <value>カスタム</value>
   </data>
   <data name="TabColorClearButton.Content" xml:space="preserve">
     <value>リセット</value>
@@ -224,15 +266,11 @@
     <value>タブ名を変更</value>
   </data>
   <data name="DuplicateTabText" xml:space="preserve">
-    <value>タブの複製</value>
+    <value>タブを複製する</value>
   </data>
-  <data name="InvalidBackgroundImage" xml:space="preserve">
-    <value>無効な "backgroundImage" を持つプロファイルが見つかりました。既定では、そのプロファイルに背景画像はありません。"backgroundImage" を設定するときに、値が画像への有効なファイル パスとなっていることをご確認ください。</value>
-    <comment>{Locked="\"backgroundImage\""}</comment>
-  </data>
-  <data name="InvalidIcon" xml:space="preserve">
-    <value>無効な "icon" を持つプロファイルが見つかりました。既定では、そのプロファイルにアイコンはありません。"icon" を設定するときに、値が画像への有効なファイル パスとなっていることをご確認ください。</value>
-    <comment>{Locked="\"icon\""} The word "icon" in quotes is locked, the word icon OUTSIDE of quotes should be localized.</comment>
+  <data name="InvalidMediaResource" xml:space="preserve">
+    <value>設定で指定された 1 つ以上のリソース (icon や backgroundImage など) が見つかりませんでした。</value>
+    <comment>{Locked="icon","backgroundImage"} Indicates that something has gone wrong while reading a user's settings.</comment>
   </data>
   <data name="AtLeastOneKeybindingWarning" xml:space="preserve">
     <value>キー バインドの解析中に警告が検出されました:</value>
@@ -280,6 +318,15 @@
   </data>
   <data name="CmdCommandArgDesc" xml:space="preserve">
     <value>新しいタブまたはウィンドウで生成されるオプションのコマンドと引数</value>
+  </data>
+  <data name="SaveSnippetDesc" xml:space="preserve">
+    <value>コマンド ラインを入力アクションとして保存する</value>
+  </data>
+  <data name="SaveSnippetArgDesc" xml:space="preserve">
+    <value>省略可能な引数</value>
+  </data>
+  <data name="KeyChordArgDesc" xml:space="preserve">
+    <value>省略可能な引数</value>
   </data>
   <data name="CmdFocusTabDesc" xml:space="preserve">
     <value>別のタブにフォーカスを移動する</value>
@@ -485,7 +532,7 @@
     <comment>A hyperlink name for the Terminal's privacy policy</comment>
   </data>
   <data name="AboutDialog_ThirdPartyNoticesLink.Content" xml:space="preserve">
-    <value>サードパーティに関する通知</value>
+    <value>サード パーティ通知</value>
     <comment>A hyperlink name for the Terminal's third-party notices</comment>
   </data>
   <data name="QuitDialog.CloseButtonText" xml:space="preserve">
@@ -714,17 +761,11 @@
   <data name="WindowRenamer.CloseButtonContent" xml:space="preserve">
     <value>キャンセル</value>
   </data>
-  <data name="RenameFailedToast.Title" xml:space="preserve">
-    <value>ウィンドウの名前を変更できませんでした</value>
-  </data>
-  <data name="RenameFailedToast.Subtitle" xml:space="preserve">
-    <value>その名前の別のウィンドウがすでに存在します</value>
-  </data>
   <data name="WindowMaximizeButtonToolTip" xml:space="preserve">
     <value>最大化</value>
   </data>
   <data name="WindowRestoreDownButtonToolTip" xml:space="preserve">
-    <value>元に戻す</value>
+    <value>元に戻す (縮小)</value>
   </data>
   <data name="CommandPaletteMenuItem" xml:space="preserve">
     <value>コマンド パレット</value>
@@ -759,7 +800,7 @@
     <value>検索する</value>
   </data>
   <data name="PlainText" xml:space="preserve">
-    <value>プレーンテキスト</value>
+    <value>テキスト</value>
   </data>
   <data name="CloseOnExitInfoBar.Message" xml:space="preserve">
     <value>終了動作は、プロファイルの詳細設定で構成できます。</value>
@@ -828,7 +869,7 @@
     <value>このタブを閉じます</value>
   </data>
   <data name="NewTabMenuFolderEmpty" xml:space="preserve">
-    <value>空っぽ...</value>
+    <value>なし</value>
   </data>
   <data name="ClosePaneText" xml:space="preserve">
     <value>ウィンドウを閉じる</value>
@@ -847,7 +888,7 @@
     <value>タブを新しいウィンドウに移動 </value>
   </data>
   <data name="RunAsAdminFlyout.Text" xml:space="preserve">
-    <value>管理者として実行する</value>
+    <value>管理者として実行</value>
     <comment>This text is displayed on context menu for profile entries in add new tab button.</comment>
   </data>
   <data name="TerminalPage_PaneMovedAnnouncement_ExistingTab" xml:space="preserve">
@@ -890,5 +931,48 @@
   </data>
   <data name="RestartConnectionToolTip" xml:space="preserve">
     <value>アクティブウィンドウ接続を再起動します</value>
+  </data>
+  <data name="SnippetPaneTitle.Text" xml:space="preserve">
+    <value>抜粋</value>
+    <comment>Header for a page that includes small "snippets" of text for the user to enter</comment>
+  </data>
+  <data name="SnippetsFilterBox.PlaceholderText" xml:space="preserve">
+    <value>スニペットをフィルター処理...</value>
+    <comment>Placeholder text for a text box to filter snippets (on the same page as the 'SnippetPaneTitle')</comment>
+  </data>
+  <data name="SnippetPlayButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>このコマンドを入力する</value>
+  </data>
+  <data name="SnippetPlayButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>このコマンドを入力する</value>
+  </data>
+  <data name="SnippetsPaneNoneFoundHeader.Text" xml:space="preserve">
+    <value>設定にスニペットが見つかりません。</value>
+    <comment>Text shown to user when no snippets are found in their settings</comment>
+  </data>
+  <data name="SnippetsPaneNoneFoundDetails.Text" xml:space="preserve">
+    <value>設定に "入力の送信" アクションをいくつか追加して、ここに表示します。</value>
+    <comment>Additional information presented to the user to let them know they can add a "Send input" action in their setting to populate the snippets pane</comment>
+  </data>
+  <data name="ActionSavedToast.Title" xml:space="preserve">
+    <value>アクションが保存されました</value>
+  </data>
+  <data name="ActionSaveFailedToast.Title" xml:space="preserve">
+    <value>操作の保存に失敗しました</value>
+  </data>
+  <data name="CloseSnippetsPaneButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>ウィンドウを閉じる</value>
+  </data>
+  <data name="CloseSnippetsPaneButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>ウィンドウを閉じる</value>
+  </data>
+  <data name="TabMoveLeft" xml:space="preserve">
+    <value>左へ移動</value>
+  </data>
+  <data name="TabMoveRight" xml:space="preserve">
+    <value>右へ移動</value>
+  </data>
+  <data name="InvalidRegex" xml:space="preserve">
+    <value>無効な正規表現が見つかりました。</value>
   </data>
 </root>

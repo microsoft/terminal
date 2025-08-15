@@ -126,6 +126,10 @@
   <data name="SplitPaneParentCommandName" xml:space="preserve">
     <value>Suddividi riquadro...</value>
   </data>
+  <data name="SnippetsPaneCommandName" xml:space="preserve">
+    <value>Apri riquadro frammenti di codice</value>
+    <comment>This will open a pane with a list of the users's saved commands ("snippets") in it</comment>
+  </data>
   <data name="ApplicationDisplayNamePortable" xml:space="preserve">
     <value>Terminale (portatile)</value>
     <comment>This display name is used when the Terminal application is running in a "portable" mode, where settings are not stored in a shared location.</comment>
@@ -324,6 +328,9 @@
     <value>Apri file delle impostazioni (JSON)</value>
     <comment>{Locked="JSON"}. "JSON" is the extension of the file that will be opened.</comment>
   </data>
+  <data name="SettingsFileOpenInExplorerCommandKey" xml:space="preserve">
+    <value>Apri directory del file di impostazioni</value>
+  </data>
   <data name="OpenTabColorPickerCommandKey" xml:space="preserve">
     <value>Imposta il colore della scheda...</value>
   </data>
@@ -347,7 +354,7 @@
     <value>Reimposta il titolo della scheda</value>
   </data>
   <data name="OpenTabRenamerCommandKey" xml:space="preserve">
-    <value>Rinomina il titolo della scheda ...</value>
+    <value>Rinomina scheda</value>
   </data>
   <data name="ResizePaneCommandKey" xml:space="preserve">
     <value>Ridimensiona riquadro</value>
@@ -449,11 +456,8 @@
   <data name="ToggleCommandPaletteCommandKey" xml:space="preserve">
     <value>Attiva/disattiva riquadro dei comandi</value>
   </data>
-  <data name="SuggestionsCommandHistoryCommandKey" xml:space="preserve">
-    <value>Comandi recenti...</value>
-  </data>
   <data name="SuggestionsCommandKey" xml:space="preserve">
-    <value>Apri suggerimenti...</value>
+    <value>Apri i suggerimenti</value>
   </data>
   <data name="ToggleCommandPaletteCommandLineModeCommandKey" xml:space="preserve">
     <value>Attiva/disattiva il pannello dei comandi in modalità riga di comando</value>
@@ -505,7 +509,7 @@
     <value>Interrompi il debugger</value>
   </data>
   <data name="OpenSettingsUICommandKey" xml:space="preserve">
-    <value>Apri impostazioni...</value>
+    <value>Apri impostazioni</value>
   </data>
   <data name="RenameWindowCommandKey" xml:space="preserve">
     <value>Rinomina finestra in "{0}"</value>
@@ -726,5 +730,34 @@
   <data name="OpenAboutCommandKey" xml:space="preserve">
     <value>Apri finestra di dialogo Informazioni su</value>
     <comment>This will open the "about" dialog, to display version info and other documentation</comment>
+  </data>
+  <data name="SaveSnippetNamePrefix" xml:space="preserve">
+    <value>Salva frammento</value>
+  </data>
+  <data name="QuickFixCommandKey" xml:space="preserve">
+    <value>Apri menu di correzione rapida</value>
+  </data>
+  <data name="OpenCWDCommandKey" xml:space="preserve">
+    <value>Apri directory di lavoro corrente</value>
+  </data>
+  <data name="WslDistroGeneratorDisplayName" xml:space="preserve">
+    <value>Generatore di profili di distribuzione WSL</value>
+    <comment>The display name of a dynamic profile generator for WSL distros</comment>
+  </data>
+  <data name="PowershellCoreProfileGeneratorDisplayName" xml:space="preserve">
+    <value>Generatore di profili PowerShell</value>
+    <comment>The display name of a dynamic profile generator for PowerShell</comment>
+  </data>
+  <data name="AzureCloudShellGeneratorDisplayName" xml:space="preserve">
+    <value>Generatore di profili di Azure Cloud Shell</value>
+    <comment>The display name of a dynamic profile generator for Azure Cloud Shell</comment>
+  </data>
+  <data name="VisualStudioGeneratorDisplayName" xml:space="preserve">
+    <value>Generatore di profili Visual Studio</value>
+    <comment>The display name of a dynamic profile generator for Visual Studio</comment>
+  </data>
+  <data name="SshHostGeneratorDisplayName" xml:space="preserve">
+    <value>Generatore di profili host SSH</value>
+    <comment>The display name of a dynamic profile generator for SSH hosts</comment>
   </data>
 </root>

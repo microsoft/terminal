@@ -6,9 +6,12 @@
 #include "AppearanceConfig.g.cpp"
 #include "TerminalSettingsSerializationHelpers.h"
 #include "JsonUtils.h"
+#include "Profile.h"
+#include "MediaResourceSupport.h"
 
 using namespace winrt::Microsoft::Terminal::Control;
 using namespace Microsoft::Terminal::Settings::Model;
+using namespace winrt::Microsoft::Terminal::Settings;
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Microsoft::Terminal::Settings::Model::implementation;
 
@@ -20,12 +23,12 @@ static constexpr std::string_view LegacyAcrylicTransparencyKey{ "acrylicOpacity"
 static constexpr std::string_view OpacityKey{ "opacity" };
 static constexpr std::string_view ColorSchemeKey{ "colorScheme" };
 
-AppearanceConfig::AppearanceConfig(winrt::weak_ref<Profile> sourceProfile) :
+AppearanceConfig::AppearanceConfig(winrt::weak_ref<Model::Profile> sourceProfile) :
     _sourceProfile(std::move(sourceProfile))
 {
 }
 
-winrt::com_ptr<AppearanceConfig> AppearanceConfig::CopyAppearance(const AppearanceConfig* source, winrt::weak_ref<Profile> sourceProfile)
+winrt::com_ptr<AppearanceConfig> AppearanceConfig::CopyAppearance(const AppearanceConfig* source, winrt::weak_ref<Model::Profile> sourceProfile)
 {
     auto appearance{ winrt::make_self<AppearanceConfig>(std::move(sourceProfile)) };
     appearance->_Foreground = source->_Foreground;
@@ -53,7 +56,7 @@ Json::Value AppearanceConfig::ToJson() const
     JsonUtils::SetValueForKey(json, BackgroundKey, _Background);
     JsonUtils::SetValueForKey(json, SelectionBackgroundKey, _SelectionBackground);
     JsonUtils::SetValueForKey(json, CursorColorKey, _CursorColor);
-    JsonUtils::SetValueForKey(json, OpacityKey, _Opacity, JsonUtils::OptionalConverter<double, IntAsFloatPercentConversionTrait>{});
+    JsonUtils::SetValueForKey(json, OpacityKey, _Opacity, JsonUtils::OptionalConverter<float, IntAsFloatPercentConversionTrait>{});
     if (HasDarkColorSchemeName() || HasLightColorSchemeName())
     {
         // check if the setting is coming from the UI, if so grab the ColorSchemeName until the settings UI is fixed.
@@ -90,27 +93,42 @@ Json::Value AppearanceConfig::ToJson() const
 void AppearanceConfig::LayerJson(const Json::Value& json)
 {
     JsonUtils::GetValueForKey(json, ForegroundKey, _Foreground);
+    _logSettingIfSet(ForegroundKey, _Foreground.has_value());
+
     JsonUtils::GetValueForKey(json, BackgroundKey, _Background);
+    _logSettingIfSet(BackgroundKey, _Background.has_value());
+
     JsonUtils::GetValueForKey(json, SelectionBackgroundKey, _SelectionBackground);
+    _logSettingIfSet(SelectionBackgroundKey, _SelectionBackground.has_value());
+
     JsonUtils::GetValueForKey(json, CursorColorKey, _CursorColor);
+    _logSettingIfSet(CursorColorKey, _CursorColor.has_value());
 
     JsonUtils::GetValueForKey(json, LegacyAcrylicTransparencyKey, _Opacity);
-    JsonUtils::GetValueForKey(json, OpacityKey, _Opacity, JsonUtils::OptionalConverter<double, IntAsFloatPercentConversionTrait>{});
+    JsonUtils::GetValueForKey(json, OpacityKey, _Opacity, JsonUtils::OptionalConverter<float, IntAsFloatPercentConversionTrait>{});
+    _logSettingIfSet(OpacityKey, _Opacity.has_value());
+
     if (json["colorScheme"].isString())
     {
         // to make the UI happy, set ColorSchemeName.
         JsonUtils::GetValueForKey(json, ColorSchemeKey, _DarkColorSchemeName);
         _LightColorSchemeName = _DarkColorSchemeName;
+        _logSettingSet(ColorSchemeKey);
     }
     else if (json["colorScheme"].isObject())
     {
         // to make the UI happy, set ColorSchemeName to whatever the dark value is.
         JsonUtils::GetValueForKey(json["colorScheme"], "dark", _DarkColorSchemeName);
         JsonUtils::GetValueForKey(json["colorScheme"], "light", _LightColorSchemeName);
+
+        _logSettingSet("colorScheme.dark");
+        _logSettingSet("colorScheme.light");
     }
 
 #define APPEARANCE_SETTINGS_LAYER_JSON(type, name, jsonKey, ...) \
-    JsonUtils::GetValueForKey(json, jsonKey, _##name);
+    JsonUtils::GetValueForKey(json, jsonKey, _##name);           \
+    _logSettingIfSet(jsonKey, _##name.has_value());
+
     MTSM_APPEARANCE_SETTINGS(APPEARANCE_SETTINGS_LAYER_JSON)
 #undef APPEARANCE_SETTINGS_LAYER_JSON
 }
@@ -120,39 +138,55 @@ winrt::Microsoft::Terminal::Settings::Model::Profile AppearanceConfig::SourcePro
     return _sourceProfile.get();
 }
 
-// Method Description:
-// - Returns this AppearanceConfig's background image path, if one is set, expanding
-//   any environment variables in the path, if there are any.
-// - Or if "DesktopWallpaper" is set, then gets the path to the desktops wallpaper.
-// - This is the same as Profile::ExpandedBackgroundImagePath, but for AppearanceConfig
-// - NOTE: This is just placeholder for now, eventually the path will no longer be expanded in the settings model
-// Return Value:
-// - This profile's expanded background image path / desktops's wallpaper path /the empty string.
-winrt::hstring AppearanceConfig::ExpandedBackgroundImagePath()
+std::tuple<winrt::hstring, Model::OriginTag> AppearanceConfig::_getSourceProfileBasePathAndOrigin() const
 {
-    const auto path{ BackgroundImagePath() };
-    if (path.empty())
+    winrt::hstring sourceBasePath{};
+    OriginTag origin{ OriginTag::None };
+    if (const auto profile{ _sourceProfile.get() })
     {
-        return path;
+        const auto profileImpl{ winrt::get_self<implementation::Profile>(profile) };
+        sourceBasePath = profileImpl->SourceBasePath;
+        origin = profileImpl->Origin();
     }
-    // checks if the user would like to copy their desktop wallpaper
-    // if so, replaces the path with the desktop wallpaper's path
-    else if (path == L"desktopWallpaper")
-    {
-        WCHAR desktopWallpaper[MAX_PATH];
+    return { sourceBasePath, origin };
+}
 
-        // "The returned string will not exceed MAX_PATH characters" as of 2020
-        if (SystemParametersInfo(SPI_GETDESKWALLPAPER, MAX_PATH, desktopWallpaper, SPIF_UPDATEINIFILE))
-        {
-            return winrt::hstring{ (desktopWallpaper) };
-        }
-        else
-        {
-            return winrt::hstring{ L"" };
-        }
-    }
-    else
+void AppearanceConfig::ResolveMediaResources(const Model::MediaResourceResolver& resolver)
+{
+    if (const auto [source, resource] = _getBackgroundImagePathOverrideSourceAndValueImpl(); source && resource && *resource)
     {
-        return winrt::hstring{ wil::ExpandEnvironmentStringsW<std::wstring>(path.c_str()) };
+        const auto [sourceBasePath, sourceOrigin]{ source->_getSourceProfileBasePathAndOrigin() };
+        ResolveMediaResource(sourceOrigin, sourceBasePath, *resource, resolver);
+    }
+    if (const auto [source, resource]{ _getPixelShaderPathOverrideSourceAndValueImpl() }; source && resource && *resource)
+    {
+        const auto [sourceBasePath, sourceOrigin]{ source->_getSourceProfileBasePathAndOrigin() };
+        ResolveMediaResource(sourceOrigin, sourceBasePath, *resource, resolver);
+    }
+    if (const auto [source, resource]{ _getPixelShaderImagePathOverrideSourceAndValueImpl() }; source && resource && *resource)
+    {
+        const auto [sourceBasePath, sourceOrigin]{ source->_getSourceProfileBasePathAndOrigin() };
+        ResolveMediaResource(sourceOrigin, sourceBasePath, *resource, resolver);
+    }
+}
+
+void AppearanceConfig::_logSettingSet(const std::string_view& setting)
+{
+    _changeLog.emplace(setting);
+}
+
+void AppearanceConfig::_logSettingIfSet(const std::string_view& setting, const bool isSet)
+{
+    if (isSet)
+    {
+        _logSettingSet(setting);
+    }
+}
+
+void AppearanceConfig::LogSettingChanges(std::set<std::string>& changes, const std::string_view& context) const
+{
+    for (const auto& setting : _changeLog)
+    {
+        changes.emplace(fmt::format(FMT_COMPILE("{}.{}"), context, setting));
     }
 }

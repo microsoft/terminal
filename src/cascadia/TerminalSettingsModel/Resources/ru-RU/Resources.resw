@@ -126,6 +126,10 @@
   <data name="SplitPaneParentCommandName" xml:space="preserve">
     <value>Разделить область...</value>
   </data>
+  <data name="SnippetsPaneCommandName" xml:space="preserve">
+    <value>Открыть панель фрагментов</value>
+    <comment>This will open a pane with a list of the users's saved commands ("snippets") in it</comment>
+  </data>
   <data name="ApplicationDisplayNamePortable" xml:space="preserve">
     <value>Терминал (переносной)</value>
     <comment>This display name is used when the Terminal application is running in a "portable" mode, where settings are not stored in a shared location.</comment>
@@ -324,8 +328,11 @@
     <value>Открыть файл параметров (JSON)</value>
     <comment>{Locked="JSON"}. "JSON" is the extension of the file that will be opened.</comment>
   </data>
+  <data name="SettingsFileOpenInExplorerCommandKey" xml:space="preserve">
+    <value>Открыть каталог файлов параметров</value>
+  </data>
   <data name="OpenTabColorPickerCommandKey" xml:space="preserve">
-    <value>Задать цвет вкладки…</value>
+    <value>Установить цвет вкладки...</value>
   </data>
   <data name="PasteTextCommandKey" xml:space="preserve">
     <value>Вставить</value>
@@ -347,7 +354,7 @@
     <value>Сбросить заголовок вкладки</value>
   </data>
   <data name="OpenTabRenamerCommandKey" xml:space="preserve">
-    <value>Переименовать заголовок вкладки...</value>
+    <value>Переименовать вкладку</value>
   </data>
   <data name="ResizePaneCommandKey" xml:space="preserve">
     <value>Изменить размер области</value>
@@ -449,11 +456,8 @@
   <data name="ToggleCommandPaletteCommandKey" xml:space="preserve">
     <value>Показать или скрыть палитру команд</value>
   </data>
-  <data name="SuggestionsCommandHistoryCommandKey" xml:space="preserve">
-    <value>Недавние команды...</value>
-  </data>
   <data name="SuggestionsCommandKey" xml:space="preserve">
-    <value>Открыть предложения...</value>
+    <value>Открыть предложения</value>
   </data>
   <data name="ToggleCommandPaletteCommandLineModeCommandKey" xml:space="preserve">
     <value>Включить или отключить палитру команд в режиме командной строки</value>
@@ -505,7 +509,7 @@
     <value>Перейти в отладчик</value>
   </data>
   <data name="OpenSettingsUICommandKey" xml:space="preserve">
-    <value>Открыть настройки...</value>
+    <value>Открыть параметры</value>
   </data>
   <data name="RenameWindowCommandKey" xml:space="preserve">
     <value>Переименовать окно в "{0}"</value>
@@ -726,5 +730,34 @@
   <data name="OpenAboutCommandKey" xml:space="preserve">
     <value>Открыть диалоговое окно "О программе"</value>
     <comment>This will open the "about" dialog, to display version info and other documentation</comment>
+  </data>
+  <data name="SaveSnippetNamePrefix" xml:space="preserve">
+    <value>Сохранить фрагмент</value>
+  </data>
+  <data name="QuickFixCommandKey" xml:space="preserve">
+    <value>Открыть меню быстрого исправления</value>
+  </data>
+  <data name="OpenCWDCommandKey" xml:space="preserve">
+    <value>Открыть текущую рабочую папку</value>
+  </data>
+  <data name="WslDistroGeneratorDisplayName" xml:space="preserve">
+    <value>Генератор профилей дистрибутивов WSL</value>
+    <comment>The display name of a dynamic profile generator for WSL distros</comment>
+  </data>
+  <data name="PowershellCoreProfileGeneratorDisplayName" xml:space="preserve">
+    <value>Генератор профилей PowerShell</value>
+    <comment>The display name of a dynamic profile generator for PowerShell</comment>
+  </data>
+  <data name="AzureCloudShellGeneratorDisplayName" xml:space="preserve">
+    <value>Генератор профилей Azure Cloud Shell</value>
+    <comment>The display name of a dynamic profile generator for Azure Cloud Shell</comment>
+  </data>
+  <data name="VisualStudioGeneratorDisplayName" xml:space="preserve">
+    <value>Генератор профилей Visual Studio</value>
+    <comment>The display name of a dynamic profile generator for Visual Studio</comment>
+  </data>
+  <data name="SshHostGeneratorDisplayName" xml:space="preserve">
+    <value>Генератор профилей узлов SSH</value>
+    <comment>The display name of a dynamic profile generator for SSH hosts</comment>
   </data>
 </root>

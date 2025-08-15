@@ -233,7 +233,7 @@ void TestGetConsoleAliasHelper(TCH* ptszSourceGiven,
 
     if (0 == dwExpectedLastError)
     {
-        // If it was successful, it should have been filled. Otherwise it will be zeroed as when it started.
+        // If it was successful, it should have been filled. Otherwise, it will be zeroed as when it started.
         StringCbCopyT(ptchExpectedTarget, cbTargetBuffer, ptszExpectedTargetGiven);
     }
 

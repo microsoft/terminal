@@ -11,7 +11,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
     struct ActionAndArgs : public ActionAndArgsT<ActionAndArgs>
     {
-        static const std::map<std::string_view, ShortcutAction, std::less<>> ActionKeyNamesMap;
         static winrt::com_ptr<ActionAndArgs> FromJson(const Json::Value& json,
                                                       std::vector<SettingsLoadWarnings>& warnings);
         static Json::Value ToJson(const Model::ActionAndArgs& val);
@@ -26,7 +25,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             _Args{ args } {};
         com_ptr<ActionAndArgs> Copy() const;
 
+        hstring GenerateName(const winrt::Windows::ApplicationModel::Resources::Core::ResourceContext& context) const;
         hstring GenerateName() const;
+        hstring GenerateID() const;
 
         WINRT_PROPERTY(ShortcutAction, Action, ShortcutAction::Invalid);
         WINRT_PROPERTY(IActionArgs, Args, nullptr);

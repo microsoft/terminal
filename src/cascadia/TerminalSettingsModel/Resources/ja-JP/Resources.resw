@@ -118,13 +118,17 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="SetColorSchemeParentCommandName" xml:space="preserve">
-    <value>配色パターンの選択...</value>
+    <value>配色を選択...</value>
   </data>
   <data name="NewTabParentCommandName" xml:space="preserve">
     <value>新しいタブ...</value>
   </data>
   <data name="SplitPaneParentCommandName" xml:space="preserve">
-    <value>ウィンドウを分割します...</value>
+    <value>ウィンドウの分割...</value>
+  </data>
+  <data name="SnippetsPaneCommandName" xml:space="preserve">
+    <value>スニペット ウィンドウを開く</value>
+    <comment>This will open a pane with a list of the users's saved commands ("snippets") in it</comment>
   </data>
   <data name="ApplicationDisplayNamePortable" xml:space="preserve">
     <value>ターミナル (ポータブル)</value>
@@ -324,8 +328,11 @@
     <value>設定ファイル (JSON) を開く</value>
     <comment>{Locked="JSON"}. "JSON" is the extension of the file that will be opened.</comment>
   </data>
+  <data name="SettingsFileOpenInExplorerCommandKey" xml:space="preserve">
+    <value>設定ファイルのディレクトリを開く</value>
+  </data>
   <data name="OpenTabColorPickerCommandKey" xml:space="preserve">
-    <value>タブの色を設定する...</value>
+    <value>タブの色を設定...</value>
   </data>
   <data name="PasteTextCommandKey" xml:space="preserve">
     <value>貼り付け</value>
@@ -347,7 +354,7 @@
     <value>タブのタイトルをリセット</value>
   </data>
   <data name="OpenTabRenamerCommandKey" xml:space="preserve">
-    <value>タブ名を変更する</value>
+    <value>タブ名を変更</value>
   </data>
   <data name="ResizePaneCommandKey" xml:space="preserve">
     <value>ウィンドウのサイズの変更する</value>
@@ -441,7 +448,7 @@
     <value>最後のタブに切り替える</value>
   </data>
   <data name="TabSearchCommandKey" xml:space="preserve">
-    <value>タブを検索します...</value>
+    <value>タブを検索...</value>
   </data>
   <data name="ToggleAlwaysOnTopCommandKey" xml:space="preserve">
     <value>常に手前に表示するモードに切り替える</value>
@@ -449,11 +456,8 @@
   <data name="ToggleCommandPaletteCommandKey" xml:space="preserve">
     <value>コマンド パレットに切り替える</value>
   </data>
-  <data name="SuggestionsCommandHistoryCommandKey" xml:space="preserve">
-    <value>最近使ったコマンド...</value>
-  </data>
   <data name="SuggestionsCommandKey" xml:space="preserve">
-    <value>おすすめを開く...</value>
+    <value>候補を開く</value>
   </data>
   <data name="ToggleCommandPaletteCommandLineModeCommandKey" xml:space="preserve">
     <value>コマンド ライン モードでコマンド パレットを切り替えます</value>
@@ -505,7 +509,7 @@
     <value>デバッガーに挿入します</value>
   </data>
   <data name="OpenSettingsUICommandKey" xml:space="preserve">
-    <value>設定を開く...</value>
+    <value>設定を開く</value>
   </data>
   <data name="RenameWindowCommandKey" xml:space="preserve">
     <value>ウィンドウの名前を "{0}" に変更する</value>
@@ -726,5 +730,34 @@
   <data name="OpenAboutCommandKey" xml:space="preserve">
     <value>バージョン情報ダイアログを開く</value>
     <comment>This will open the "about" dialog, to display version info and other documentation</comment>
+  </data>
+  <data name="SaveSnippetNamePrefix" xml:space="preserve">
+    <value>スニペットの保存</value>
+  </data>
+  <data name="QuickFixCommandKey" xml:space="preserve">
+    <value>クイック修正メニューを開く</value>
+  </data>
+  <data name="OpenCWDCommandKey" xml:space="preserve">
+    <value>現在の作業ディレクトリを開く</value>
+  </data>
+  <data name="WslDistroGeneratorDisplayName" xml:space="preserve">
+    <value>WSL ディストリビューション プロファイル ジェネレーター</value>
+    <comment>The display name of a dynamic profile generator for WSL distros</comment>
+  </data>
+  <data name="PowershellCoreProfileGeneratorDisplayName" xml:space="preserve">
+    <value>PowerShell プロファイル ジェネレーター</value>
+    <comment>The display name of a dynamic profile generator for PowerShell</comment>
+  </data>
+  <data name="AzureCloudShellGeneratorDisplayName" xml:space="preserve">
+    <value>Azure Cloud Shell プロファイル ジェネレーター</value>
+    <comment>The display name of a dynamic profile generator for Azure Cloud Shell</comment>
+  </data>
+  <data name="VisualStudioGeneratorDisplayName" xml:space="preserve">
+    <value>Visual Studio プロファイル ジェネレーター</value>
+    <comment>The display name of a dynamic profile generator for Visual Studio</comment>
+  </data>
+  <data name="SshHostGeneratorDisplayName" xml:space="preserve">
+    <value>SSH ホスト プロファイル ジェネレーター</value>
+    <comment>The display name of a dynamic profile generator for SSH hosts</comment>
   </data>
 </root>

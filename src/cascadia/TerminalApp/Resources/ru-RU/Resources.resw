@@ -189,11 +189,14 @@
   <data name="TabCloseSubMenu" xml:space="preserve">
     <value>Закрыть</value>
   </data>
+  <data name="TabMoveSubMenu" xml:space="preserve">
+    <value>Переместить вкладку</value>
+  </data>
   <data name="TabCloseAfter" xml:space="preserve">
     <value>Закрыть вкладки справа</value>
   </data>
   <data name="TabCloseOther" xml:space="preserve">
-    <value>Закрыть другие вкладки</value>
+    <value>Закрыть остальные вкладки</value>
   </data>
   <data name="TabClose" xml:space="preserve">
     <value>Закрыть вкладку</value>
@@ -207,14 +210,53 @@
   <data name="SplitPaneText" xml:space="preserve">
     <value>Разделить область</value>
   </data>
+  <data name="SplitPaneToolTipText" xml:space="preserve">
+    <value>Щелкните правой кнопкой мыши для направлений разделения — вправо, вниз, вверх, влево</value>
+  </data>
+  <data name="SplitPaneDownText" xml:space="preserve">
+    <value>Разделить панель вниз</value>
+  </data>
+  <data name="SplitPaneRightText" xml:space="preserve">
+    <value>Разделить панель вправо</value>
+  </data>
+  <data name="SplitPaneUpText" xml:space="preserve">
+    <value>Разделить панель вверх</value>
+  </data>
+  <data name="SplitPaneLeftText" xml:space="preserve">
+    <value>Разделить панель влево</value>
+  </data>
+  <data name="SplitPaneDuplicateText" xml:space="preserve">
+    <value>Дублировать</value>
+  </data>
+  <data name="SwapPaneText" xml:space="preserve">
+    <value>Переключить панель</value>
+  </data>
+  <data name="SwapPaneDownText" xml:space="preserve">
+    <value>Переключить панель вниз</value>
+  </data>
+  <data name="SwapPaneRightText" xml:space="preserve">
+    <value>Переключить панель вправо</value>
+  </data>
+  <data name="SwapPaneUpText" xml:space="preserve">
+    <value>Переключить панель вверх</value>
+  </data>
+  <data name="SwapPaneLeftText" xml:space="preserve">
+    <value>Переключить панель влево</value>
+  </data>
+  <data name="TogglePaneZoomText" xml:space="preserve">
+    <value>Переключить масштаб области</value>
+  </data>
+  <data name="CloseOtherPanesText" xml:space="preserve">
+    <value>Закрыть другие панели</value>
+  </data>
   <data name="SearchWebText" xml:space="preserve">
     <value>Поиск в Интернете</value>
   </data>
   <data name="TabColorChoose" xml:space="preserve">
-    <value>Цвет...</value>
+    <value>Изменить цвет вкладки</value>
   </data>
   <data name="TabColorCustomButton.Content" xml:space="preserve">
-    <value>Настраиваемый...</value>
+    <value>Настраиваемый</value>
   </data>
   <data name="TabColorClearButton.Content" xml:space="preserve">
     <value>Сбросить</value>
@@ -225,13 +267,9 @@
   <data name="DuplicateTabText" xml:space="preserve">
     <value>Дублировать вкладку</value>
   </data>
-  <data name="InvalidBackgroundImage" xml:space="preserve">
-    <value>Найден профиль с недопустимым объектом "backgroundImage". По умолчанию для этого профиля не используется фоновое изображение. Убедитесь, что значение, заданное для "backgroundImage", является допустимым путем файла к изображению.</value>
-    <comment>{Locked="\"backgroundImage\""}</comment>
-  </data>
-  <data name="InvalidIcon" xml:space="preserve">
-    <value>Найден профиль с недопустимым объектом "icon". По умолчанию для этого профиля не используется значок. Убедитесь, что значение, заданное для "icon", является допустимым путем файла к изображению.</value>
-    <comment>{Locked="\"icon\""} The word "icon" in quotes is locked, the word icon OUTSIDE of quotes should be localized.</comment>
+  <data name="InvalidMediaResource" xml:space="preserve">
+    <value>Не удалось найти один или несколько ресурсов (icon или backgroundImage), указанных в параметрах.</value>
+    <comment>{Locked="icon","backgroundImage"} Indicates that something has gone wrong while reading a user's settings.</comment>
   </data>
   <data name="AtLeastOneKeybindingWarning" xml:space="preserve">
     <value>При анализе настраиваемых сочетаний клавиш найдены предупреждения:</value>
@@ -279,6 +317,15 @@
   </data>
   <data name="CmdCommandArgDesc" xml:space="preserve">
     <value>Необязательная команда, с аргументами, которая создается на новой вкладке или области</value>
+  </data>
+  <data name="SaveSnippetDesc" xml:space="preserve">
+    <value>Сохранение командной строки в качестве действия ввода</value>
+  </data>
+  <data name="SaveSnippetArgDesc" xml:space="preserve">
+    <value>Необязательный аргумент</value>
+  </data>
+  <data name="KeyChordArgDesc" xml:space="preserve">
+    <value>Необязательный аргумент</value>
   </data>
   <data name="CmdFocusTabDesc" xml:space="preserve">
     <value>Переместить фокус на другую вкладку</value>
@@ -464,7 +511,7 @@
     <comment>This is the heading for a version number label</comment>
   </data>
   <data name="AboutDialog_GettingStartedLink.Content" xml:space="preserve">
-    <value>Начало работы</value>
+    <value>Приступая к работе</value>
     <comment>A hyperlink name for a guide on how to get started using Terminal</comment>
   </data>
   <data name="AboutDialog_SourceCodeLink.Content" xml:space="preserve">
@@ -484,7 +531,7 @@
     <comment>A hyperlink name for the Terminal's privacy policy</comment>
   </data>
   <data name="AboutDialog_ThirdPartyNoticesLink.Content" xml:space="preserve">
-    <value>Уведомления сторонних производителей</value>
+    <value>Уведомления третьих лиц</value>
     <comment>A hyperlink name for the Terminal's third-party notices</comment>
   </data>
   <data name="QuitDialog.CloseButtonText" xml:space="preserve">
@@ -713,17 +760,11 @@
   <data name="WindowRenamer.CloseButtonContent" xml:space="preserve">
     <value>Отмена</value>
   </data>
-  <data name="RenameFailedToast.Title" xml:space="preserve">
-    <value>Не удалось переименовать окно</value>
-  </data>
-  <data name="RenameFailedToast.Subtitle" xml:space="preserve">
-    <value>Окно с таким именем уже существует</value>
-  </data>
   <data name="WindowMaximizeButtonToolTip" xml:space="preserve">
     <value>Развернуть</value>
   </data>
   <data name="WindowRestoreDownButtonToolTip" xml:space="preserve">
-    <value>Восстановить размер</value>
+    <value>Кнопка "Свернуть в окно"</value>
   </data>
   <data name="CommandPaletteMenuItem" xml:space="preserve">
     <value>Палитра команд</value>
@@ -827,7 +868,7 @@
     <value>Закрыть эту вкладку</value>
   </data>
   <data name="NewTabMenuFolderEmpty" xml:space="preserve">
-    <value>Пусто...</value>
+    <value>Очистить</value>
   </data>
   <data name="ClosePaneText" xml:space="preserve">
     <value>Закрыть панель</value>
@@ -889,5 +930,48 @@
   </data>
   <data name="RestartConnectionToolTip" xml:space="preserve">
     <value>Перезапустить соединение с активной панелью.</value>
+  </data>
+  <data name="SnippetPaneTitle.Text" xml:space="preserve">
+    <value>Фрагменты</value>
+    <comment>Header for a page that includes small "snippets" of text for the user to enter</comment>
+  </data>
+  <data name="SnippetsFilterBox.PlaceholderText" xml:space="preserve">
+    <value>Фильтровать фрагменты...</value>
+    <comment>Placeholder text for a text box to filter snippets (on the same page as the 'SnippetPaneTitle')</comment>
+  </data>
+  <data name="SnippetPlayButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Ввести эту команду</value>
+  </data>
+  <data name="SnippetPlayButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Ввести эту команду</value>
+  </data>
+  <data name="SnippetsPaneNoneFoundHeader.Text" xml:space="preserve">
+    <value>Фрагменты не найдены в ваших параметрах.</value>
+    <comment>Text shown to user when no snippets are found in their settings</comment>
+  </data>
+  <data name="SnippetsPaneNoneFoundDetails.Text" xml:space="preserve">
+    <value>Добавьте в параметры некоторые действия "Отправить входные данные", чтобы они отображались здесь.</value>
+    <comment>Additional information presented to the user to let them know they can add a "Send input" action in their setting to populate the snippets pane</comment>
+  </data>
+  <data name="ActionSavedToast.Title" xml:space="preserve">
+    <value>Действие сохранено</value>
+  </data>
+  <data name="ActionSaveFailedToast.Title" xml:space="preserve">
+    <value>Не удалось сохранить действие</value>
+  </data>
+  <data name="CloseSnippetsPaneButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Закрыть панель</value>
+  </data>
+  <data name="CloseSnippetsPaneButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Закрыть панель</value>
+  </data>
+  <data name="TabMoveLeft" xml:space="preserve">
+    <value>Влево</value>
+  </data>
+  <data name="TabMoveRight" xml:space="preserve">
+    <value>Вправо</value>
+  </data>
+  <data name="InvalidRegex" xml:space="preserve">
+    <value>Обнаружено недопустимое регулярное выражение.</value>
   </data>
 </root>

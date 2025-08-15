@@ -12,7 +12,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         EchoConnection() noexcept;
 
         void Start() noexcept;
-        void WriteInput(const hstring& data);
+        void WriteInput(const winrt::array_view<const char16_t> buffer);
         void Resize(uint32_t rows, uint32_t columns) noexcept;
         void Close() noexcept;
 

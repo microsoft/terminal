@@ -27,6 +27,9 @@ parameters:
   - name: publishArtifacts
     type: boolean
     default: true
+  - name: signingIdentity
+    type: object
+    default: {}
 
 jobs:
 - job: ${{ parameters.jobName }}
@@ -54,10 +57,7 @@ jobs:
     submodules: true
     persistCredentials: True
 
-  - task: PkgESSetupBuild@12
-    displayName: Package ES - Setup Build
-    inputs:
-      disableOutputRedirect: true
+  - template: steps-setup-versioning.yml
 
   - template: steps-download-bin-dir-artifact.yml
     parameters:
@@ -82,31 +82,32 @@ jobs:
       versionEnvVar: XES_PACKAGEVERSIONNUMBER
 
   - ${{ if eq(parameters.codeSign, true) }}:
-    - task: EsrpCodeSigning@3
-      displayName: Submit *.nupkg to ESRP for code signing
-      inputs:
-        ConnectedServiceName: 9d6d2960-0793-4d59-943e-78dcb434840a
-        FolderPath: $(Build.ArtifactStagingDirectory)/nupkg
-        Pattern: '*.nupkg'
-        UseMinimatch: true
-        signConfigType: inlineSignParams
-        inlineOperation: >-
-          [
-              {
-                  "KeyCode": "CP-401405",
-                  "OperationCode": "NuGetSign",
-                  "Parameters": {},
-                  "ToolName": "sign",
-                  "ToolVersion": "1.0"
-              },
-              {
-                  "KeyCode": "CP-401405",
-                  "OperationCode": "NuGetVerify",
-                  "Parameters": {},
-                  "ToolName": "sign",
-                  "ToolVersion": "1.0"
-              }
-          ]
+    - template: steps-esrp-signing.yml
+      parameters:
+        displayName: Submit *.nupkg to ESRP for code signing
+        signingIdentity: ${{ parameters.signingIdentity }}
+        inputs:
+          FolderPath: $(Build.ArtifactStagingDirectory)/nupkg
+          Pattern: '*.nupkg'
+          UseMinimatch: true
+          signConfigType: inlineSignParams
+          inlineOperation: >-
+            [
+                {
+                    "KeyCode": "CP-401405",
+                    "OperationCode": "NuGetSign",
+                    "Parameters": {},
+                    "ToolName": "sign",
+                    "ToolVersion": "1.0"
+                },
+                {
+                    "KeyCode": "CP-401405",
+                    "OperationCode": "NuGetVerify",
+                    "Parameters": {},
+                    "ToolName": "sign",
+                    "ToolVersion": "1.0"
+                }
+            ]
 
   - ${{ if eq(parameters.generateSbom, true) }}:
     - task: AzureArtifacts.manifest-generator-task.manifest-generator-task.ManifestGeneratorTask@0

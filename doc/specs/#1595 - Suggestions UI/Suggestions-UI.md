@@ -240,7 +240,7 @@ Not listed above is [shell-driven autocompletion]. These aren't something that
 the Terminal can invoke all on its own - these are something the shell would
 need to invoke themselves.
 
-#### Pre-populate the current commandline context
+#### Prepopulate the current commandline context
 
 Consider the following scenario. A user has typed `git c` in their shell, and
 has [shell integration] enabled for their shell. They want to open the
@@ -248,7 +248,7 @@ Suggestions UI filtered to their recent history, but starting with what they've
 already typed. To support this scenario, we'll add an additional property:
 
 * `"useCommandline"`: `bool` (**default**: `true`)
-  * `true`: the current commandline the user has typed will pre-populate the
+  * `true`: the current commandline the user has typed will prepopulate the
     filter of the Suggestions UI. This requires that the user has enabled shell
     integration in their shell's config.
   * `false`: the filter will start empty, regardless of what the user has typed.
@@ -388,7 +388,7 @@ spec's review.
 * [ ] Enable the `SuggestionsControl` to open with or without a search box
 * [ ] Plumb support for shell-driven completions through the core up to the app
 * [ ] Expose the _current_ commandline from the `TermControl`
-* [ ] Add a `useCommandline` property to `suggestions`, to pre-populate the search with the current commandline.
+* [ ] Add a `useCommandline` property to `suggestions`, to prepopulate the search with the current commandline.
 * [ ] Persist recent commands / directories accordingly
 
 ### 🏃‍♂️ Run
@@ -436,7 +436,7 @@ Here's a sample json schema for the settings discussed here.
         },
         "useCommandline": {
           "default": false,
-          "description": "When set to `true`, the current commandline the user has typed will pre-populate the filter of the Suggestions UI. This requires that the user has enabled shell integration in their shell's config. When set to false, the filter will start empty."
+          "description": "When set to `true`, the current commandline the user has typed will prepopulate the filter of the Suggestions UI. This requires that the user has enabled shell integration in their shell's config. When set to false, the filter will start empty."
         },
         "nesting": {
           "default": true,
@@ -591,7 +591,7 @@ We'll probably want a way for recent commands to be saved across sessions. That 
   * If they're saved per-profile, maybe a profile can opt-in to loading all the commands?
   * How does defterm play with this? Do we "layer" by concatenating per-profile commands with `profiles.defaults` ones?
 * A button in the Settings UI for clearing these commands
-* Should fragments be able to pre-populate "recent commands"?
+* Should fragments be able to prepopulate "recent commands"?
   * I'm just gonna say _no_. That would be a better idea for Tasks (aka just a `sendInput` Action that we load from the fragment normally as a Task), or a specific suggestion source for the fragment extension.
 
 #### Inline mode

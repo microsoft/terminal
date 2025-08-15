@@ -201,6 +201,20 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return __builtin_memcmp(this, &rhs, sizeof(rhs)) != 0;
         }
 
+        constexpr rect to_origin(const rect& other) const
+        {
+            return to_origin(other.origin());
+        }
+
+        constexpr rect to_origin(const point& origin) const
+        {
+            const auto l = details::extract(::base::CheckSub(left, origin.x));
+            const auto t = details::extract(::base::CheckSub(top, origin.y));
+            const auto r = details::extract(::base::CheckSub(right, origin.x));
+            const auto b = details::extract(::base::CheckSub(bottom, origin.y));
+            return { l, t, r, b };
+        }
+
         explicit constexpr operator bool() const noexcept
         {
             return left >= 0 && top >= 0 && right > left && bottom > top;
@@ -750,6 +764,17 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return S_OK;
         }
         RETURN_WIN32(ERROR_UNHANDLED_EXCEPTION);
+    }
+
+    // Given an ordered span of til::point_span, returns the sub-span of all point spans that
+    // cover the given rectangle. This function **DOES NOT** change any of the point_spans.
+    // It is therefore possible that you will get a point_span whose start and/or end are
+    // outside the rectangle.
+    constexpr std::span<const til::point_span> point_span_subspan_within_rect(const std::span<const til::point_span>& pointSpan, const til::rect rect)
+    {
+        const auto beg = std::lower_bound(pointSpan.begin(), pointSpan.end(), rect.top, [](const auto& ps, const auto& drTop) { return ps.end.y < drTop; });
+        const auto end = std::upper_bound(beg, pointSpan.end(), rect.bottom, [](const auto& drBottom, const auto& ps) { return drBottom < ps.start.y; });
+        return { beg, end };
     }
 }
 

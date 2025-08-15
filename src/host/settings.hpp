@@ -24,6 +24,13 @@ constexpr unsigned short MIN_WINDOW_OPACITY = 0x4D; // 0x4D is approximately 30%
 #include "ConsoleArguments.hpp"
 #include "../renderer/inc/RenderSettings.hpp"
 
+enum class SettingsTextMeasurementMode : DWORD
+{
+    Graphemes,
+    Wcswidth,
+    Console,
+};
+
 class Settings
 {
     using RenderSettings = Microsoft::Console::Render::RenderSettings;
@@ -165,12 +172,17 @@ public:
     void SetInterceptCopyPaste(const bool interceptCopyPaste) noexcept;
 
     void CalculateDefaultColorIndices() noexcept;
+    void SaveDefaultRenderSettings() noexcept;
 
     bool IsTerminalScrolling() const noexcept;
     void SetTerminalScrolling(const bool terminalScrollingEnabled) noexcept;
 
+    std::wstring_view GetAnswerbackMessage() const noexcept;
+
     bool GetUseDx() const noexcept;
     bool GetCopyColor() const noexcept;
+    SettingsTextMeasurementMode GetTextMeasurementMode() const noexcept;
+    void SetTextMeasurementMode(SettingsTextMeasurementMode mode) noexcept;
     bool GetEnableBuiltinGlyphs() const noexcept;
 
 private:
@@ -213,6 +225,7 @@ private:
     std::wstring _LaunchFaceName;
     bool _fAllowAltF4Close;
     DWORD _dwVirtTermLevel;
+    SettingsTextMeasurementMode _textMeasurement = SettingsTextMeasurementMode::Graphemes;
     bool _fUseDx;
     bool _fCopyColor;
     bool _fEnableBuiltinGlyphs = true;
@@ -226,5 +239,6 @@ private:
     bool _fInterceptCopyPaste;
 
     bool _TerminalScrolling;
+    WCHAR _answerbackMessage[32] = {};
     friend class RegistrySerialization;
 };

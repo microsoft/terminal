@@ -124,7 +124,11 @@
     <value>Nueva pestaña...</value>
   </data>
   <data name="SplitPaneParentCommandName" xml:space="preserve">
-    <value>Panel dividido...</value>
+    <value>Dividir panel...</value>
+  </data>
+  <data name="SnippetsPaneCommandName" xml:space="preserve">
+    <value>Apertura del panel de fragmentos</value>
+    <comment>This will open a pane with a list of the users's saved commands ("snippets") in it</comment>
   </data>
   <data name="ApplicationDisplayNamePortable" xml:space="preserve">
     <value>Terminal (portátil)</value>
@@ -187,7 +191,7 @@
     <value>Cerrar todas las pestañas después de la pestaña actual</value>
   </data>
   <data name="CloseWindowCommandKey" xml:space="preserve">
-    <value>Cierre la ventana</value>
+    <value>Cerrar ventana</value>
   </data>
   <data name="OpenSystemMenuCommandKey" xml:space="preserve">
     <value>Abrir menú del sistema</value>
@@ -276,10 +280,10 @@
     <value>Mover el foco al panel menor</value>
   </data>
   <data name="SwapPaneCommandKey" xml:space="preserve">
-    <value>Panel de intercambio</value>
+    <value>Intercambiar panel</value>
   </data>
   <data name="SwapPaneWithArgCommandKey" xml:space="preserve">
-    <value>{0} panel de intercambio</value>
+    <value>Intercambiar panel hacia {0}</value>
     <comment>{0} will be replaced with one of the four directions "DirectionLeft", "DirectionRight", "DirectionUp", "DirectionDown"</comment>
   </data>
   <data name="SwapPaneToLastUsedPane" xml:space="preserve">
@@ -307,7 +311,7 @@
     <value>Identificar ventanas</value>
   </data>
   <data name="NextTabCommandKey" xml:space="preserve">
-    <value>Siguiente pestaña</value>
+    <value>Pestaña siguiente</value>
   </data>
   <data name="OpenBothSettingsFilesCommandKey" xml:space="preserve">
     <value>Abrir archivos de configuración y configuración predeterminada (JSON)</value>
@@ -324,8 +328,11 @@
     <value>Abrir archivo de configuración (JSON)</value>
     <comment>{Locked="JSON"}. "JSON" is the extension of the file that will be opened.</comment>
   </data>
+  <data name="SettingsFileOpenInExplorerCommandKey" xml:space="preserve">
+    <value>Abrir el directorio de archivos de configuración</value>
+  </data>
   <data name="OpenTabColorPickerCommandKey" xml:space="preserve">
-    <value>Establecer el color de la pestaña...</value>
+    <value>Establecer color de pestaña...</value>
   </data>
   <data name="PasteTextCommandKey" xml:space="preserve">
     <value>Pegar</value>
@@ -347,7 +354,7 @@
     <value>Restablecer título de la pestaña</value>
   </data>
   <data name="OpenTabRenamerCommandKey" xml:space="preserve">
-    <value>Cambiar nombre de título de la pestaña...</value>
+    <value>Cambiar el nombre de la pestaña</value>
   </data>
   <data name="ResizePaneCommandKey" xml:space="preserve">
     <value>Cambiar el tamaño del panel</value>
@@ -357,24 +364,24 @@
     <comment>{0} will be replaced with one of the four directions "DirectionLeft", "DirectionRight", "DirectionUp", or "DirectionDown"</comment>
   </data>
   <data name="ScrollDownCommandKey" xml:space="preserve">
-    <value>Desplazar hacia abajo</value>
+    <value>Desplazarse hacia abajo</value>
   </data>
   <data name="ScrollDownSeveralRowsCommandKey" xml:space="preserve">
-    <value>Desplazar hacia abajo {0} línea(s)</value>
+    <value>Desplazarse hacia abajo {0} línea(s)</value>
     <comment>{0} will be replaced with the number of lines to scroll"</comment>
   </data>
   <data name="ScrollDownPageCommandKey" xml:space="preserve">
-    <value>Desplácese hacia abajo una página</value>
+    <value>Desplazarse hacia abajo una página</value>
   </data>
   <data name="ScrollUpCommandKey" xml:space="preserve">
-    <value>Desplazar hacia arriba</value>
+    <value>Desplazarse hacia arriba</value>
   </data>
   <data name="ScrollUpSeveralRowsCommandKey" xml:space="preserve">
-    <value>Desplazar hacia arriba {0} línea(s)</value>
+    <value>Desplazarse hacia arriba {0} línea(s)</value>
     <comment>{0} will be replaced with the number of lines to scroll"</comment>
   </data>
   <data name="ScrollUpPageCommandKey" xml:space="preserve">
-    <value>Desplácese hacia arriba una página</value>
+    <value>Desplazarse hacia arriba una página</value>
   </data>
   <data name="ScrollToTopCommandKey" xml:space="preserve">
     <value>Desplazarse a la parte superior del historial</value>
@@ -429,7 +436,7 @@
     <value>Mover el panel a una nueva ventana</value>
   </data>
   <data name="SplitPaneCommandKey" xml:space="preserve">
-    <value>Panel dividido</value>
+    <value>Dividir panel</value>
   </data>
   <data name="SplitVerticalCommandKey" xml:space="preserve">
     <value>Dividir el panel verticalmente</value>
@@ -449,11 +456,8 @@
   <data name="ToggleCommandPaletteCommandKey" xml:space="preserve">
     <value>Alternar paleta de comandos</value>
   </data>
-  <data name="SuggestionsCommandHistoryCommandKey" xml:space="preserve">
-    <value>Comandos recientes...</value>
-  </data>
   <data name="SuggestionsCommandKey" xml:space="preserve">
-    <value>Abrir sugerencias...</value>
+    <value>Abrir sugerencias</value>
   </data>
   <data name="ToggleCommandPaletteCommandLineModeCommandKey" xml:space="preserve">
     <value>Alternar paleta de comandos en modo de línea de comandos</value>
@@ -487,7 +491,7 @@
     <value>Alternar la orientación de la división del panel</value>
   </data>
   <data name="TogglePaneZoomCommandKey" xml:space="preserve">
-    <value>Zoom de panel de alternancia</value>
+    <value>Alternar zoom del panel</value>
   </data>
   <data name="TogglePaneReadOnlyCommandKey" xml:space="preserve">
     <value>Activar o desactivar el modo de solo lectura del panel</value>
@@ -505,7 +509,7 @@
     <value>Interrumpir en el depurador</value>
   </data>
   <data name="OpenSettingsUICommandKey" xml:space="preserve">
-    <value>Abrir configuración...</value>
+    <value>Abrir configuración</value>
   </data>
   <data name="RenameWindowCommandKey" xml:space="preserve">
     <value>Cambiar el nombre de la ventana por "{0}"</value>
@@ -524,7 +528,7 @@
     <value>Mostrar u ocultar la ventana de terminal</value>
   </data>
   <data name="QuakeModeCommandKey" xml:space="preserve">
-    <value>Mostrar u ocultar ventana Desastre</value>
+    <value>Mostrar u ocultar ventana Quake</value>
     <comment>Quake is a well-known computer game and isn't related to earthquakes, etc. See https://en.wikipedia.org/wiki/Quake_(video_game)</comment>
   </data>
   <data name="FocusPaneCommandKey" xml:space="preserve">
@@ -726,5 +730,34 @@
   <data name="OpenAboutCommandKey" xml:space="preserve">
     <value>Abrir el cuadro de diálogo Acerca de</value>
     <comment>This will open the "about" dialog, to display version info and other documentation</comment>
+  </data>
+  <data name="SaveSnippetNamePrefix" xml:space="preserve">
+    <value>Guardar fragmento de código</value>
+  </data>
+  <data name="QuickFixCommandKey" xml:space="preserve">
+    <value>Abrir menú de corrección rápida</value>
+  </data>
+  <data name="OpenCWDCommandKey" xml:space="preserve">
+    <value>Abrir directorio de trabajo actual</value>
+  </data>
+  <data name="WslDistroGeneratorDisplayName" xml:space="preserve">
+    <value>Generador de perfiles de distribución WSL</value>
+    <comment>The display name of a dynamic profile generator for WSL distros</comment>
+  </data>
+  <data name="PowershellCoreProfileGeneratorDisplayName" xml:space="preserve">
+    <value>Generador de perfiles de PowerShell</value>
+    <comment>The display name of a dynamic profile generator for PowerShell</comment>
+  </data>
+  <data name="AzureCloudShellGeneratorDisplayName" xml:space="preserve">
+    <value>Generador de perfiles de Azure Cloud Shell</value>
+    <comment>The display name of a dynamic profile generator for Azure Cloud Shell</comment>
+  </data>
+  <data name="VisualStudioGeneratorDisplayName" xml:space="preserve">
+    <value>Generador de perfiles de Visual Studio</value>
+    <comment>The display name of a dynamic profile generator for Visual Studio</comment>
+  </data>
+  <data name="SshHostGeneratorDisplayName" xml:space="preserve">
+    <value>Generador de perfiles de host SSH</value>
+    <comment>The display name of a dynamic profile generator for SSH hosts</comment>
   </data>
 </root>

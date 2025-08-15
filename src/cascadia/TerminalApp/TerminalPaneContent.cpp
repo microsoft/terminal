@@ -20,8 +20,10 @@ using namespace winrt::Microsoft::Terminal::TerminalConnection;
 namespace winrt::TerminalApp::implementation
 {
     TerminalPaneContent::TerminalPaneContent(const winrt::Microsoft::Terminal::Settings::Model::Profile& profile,
+                                             const TerminalApp::TerminalSettingsCache& cache,
                                              const winrt::Microsoft::Terminal::Control::TermControl& control) :
         _control{ control },
+        _cache{ cache },
         _profile{ profile }
     {
         _setupControlEvents();
@@ -76,13 +78,11 @@ namespace winrt::TerminalApp::implementation
             _bellPlayer = nullptr;
             _bellPlayerCreated = false;
         }
-
-        CloseRequested.raise(*this, nullptr);
     }
 
     winrt::hstring TerminalPaneContent::Icon() const
     {
-        return _profile.EvaluatedIcon();
+        return _profile.Icon().Resolved();
     }
 
     Windows::Foundation::IReference<winrt::Windows::UI::Color> TerminalPaneContent::TabColor() const noexcept
@@ -90,12 +90,12 @@ namespace winrt::TerminalApp::implementation
         return _control.TabColor();
     }
 
-    NewTerminalArgs TerminalPaneContent::GetNewTerminalArgs(const BuildStartupKind kind) const
+    INewContentArgs TerminalPaneContent::GetNewTerminalArgs(const BuildStartupKind kind) const
     {
         NewTerminalArgs args{};
         const auto& controlSettings = _control.Settings();
 
-        args.Profile(controlSettings.ProfileName());
+        args.Profile(::Microsoft::Console::Utils::GuidToString(_profile.Guid()));
         // If we know the user's working directory use it instead of the profile.
         if (const auto dir = _control.WorkingDirectory(); !dir.empty())
         {
@@ -141,7 +141,7 @@ namespace winrt::TerminalApp::implementation
             // "attach existing" rather than a "create"
             args.ContentId(_control.ContentId());
             break;
-        case BuildStartupKind::Persist:
+        case BuildStartupKind::PersistAll:
         {
             const auto connection = _control.Connection();
             const auto id = connection ? connection.SessionId() : winrt::guid{};
@@ -156,6 +156,7 @@ namespace winrt::TerminalApp::implementation
             }
             break;
         }
+        case BuildStartupKind::PersistLayout:
         default:
             break;
         }
@@ -194,8 +195,8 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - <none>
-    winrt::fire_and_forget TerminalPaneContent::_controlConnectionStateChangedHandler(const winrt::Windows::Foundation::IInspectable& sender,
-                                                                                      const winrt::Windows::Foundation::IInspectable& args)
+    safe_void_coroutine TerminalPaneContent::_controlConnectionStateChangedHandler(const winrt::Windows::Foundation::IInspectable& sender,
+                                                                                   const winrt::Windows::Foundation::IInspectable& args)
     {
         ConnectionStateChanged.raise(sender, args);
         auto newConnectionState = ConnectionState::Closed;
@@ -237,19 +238,20 @@ namespace winrt::TerminalApp::implementation
 
         if (_profile)
         {
-            if (_isDefTermSession && _profile.CloseOnExit() == CloseOnExitMode::Automatic)
-            {
-                // For 'automatic', we only care about the connection state if we were launched by Terminal
-                // Since we were launched via defterm, ignore the connection state (i.e. we treat the
-                // close on exit mode as 'always', see GH #13325 for discussion)
-                Close();
-            }
-
             const auto mode = _profile.CloseOnExit();
-            if ((mode == CloseOnExitMode::Always) ||
-                ((mode == CloseOnExitMode::Graceful || mode == CloseOnExitMode::Automatic) && newConnectionState == ConnectionState::Closed))
+
+            if (
+                // This one is obvious: If the user asked for "always" we do just that.
+                (mode == CloseOnExitMode::Always) ||
+                // Otherwise, and unless the user asked for the opposite of "always",
+                // close the pane when the connection closed gracefully (not failed).
+                (mode != CloseOnExitMode::Never && newConnectionState == ConnectionState::Closed) ||
+                // However, defterm handoff can result in Windows Terminal randomly opening which may be annoying,
+                // so by default we should at least always close the pane, even if the command failed.
+                // See GH #13325 for discussion.
+                (mode == CloseOnExitMode::Automatic && _isDefTermSession))
             {
-                Close();
+                CloseRequested.raise(nullptr, nullptr);
             }
         }
     }
@@ -299,7 +301,7 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    winrt::fire_and_forget TerminalPaneContent::_playBellSound(winrt::Windows::Foundation::Uri uri)
+    safe_void_coroutine TerminalPaneContent::_playBellSound(winrt::Windows::Foundation::Uri uri)
     {
         auto weakThis{ get_weak() };
         co_await wil::resume_foreground(_control.Dispatcher());
@@ -329,7 +331,7 @@ namespace winrt::TerminalApp::implementation
     void TerminalPaneContent::_closeTerminalRequestedHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/,
                                                              const winrt::Windows::Foundation::IInspectable& /*args*/)
     {
-        Close();
+        CloseRequested.raise(nullptr, nullptr);
     }
 
     void TerminalPaneContent::_restartTerminalRequestedHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/,
@@ -338,17 +340,13 @@ namespace winrt::TerminalApp::implementation
         RestartTerminalRequested.raise(*this, nullptr);
     }
 
-    void TerminalPaneContent::UpdateSettings(const CascadiaSettings& /*settings*/)
+    void TerminalPaneContent::UpdateSettings(const CascadiaSettings& settings)
     {
-        // Do nothing. We'll later be updated manually by
-        // UpdateTerminalSettings, which we need for profile and
-        // focused/unfocused settings.
-        assert(false); // If you hit this, you done goofed.
-    }
+        // Reload our profile from the settings model to propagate bell mode, icon, and close on exit mode (anything that uses _profile).
+        const auto profile{ settings.FindProfile(_profile.Guid()) };
+        _profile = profile ? profile : settings.ProfileDefaults();
 
-    void TerminalPaneContent::UpdateTerminalSettings(const TerminalApp::TerminalSettingsCache& cache)
-    {
-        if (const auto& settings{ cache.TryLookup(_profile) })
+        if (const auto& settings{ _cache.TryLookup(_profile) })
         {
             _control.UpdateControlSettings(settings.DefaultSettings(), settings.UnfocusedSettings());
         }

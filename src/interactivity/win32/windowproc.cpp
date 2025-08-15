@@ -2,40 +2,115 @@
 // Licensed under the MIT license.
 
 #include "precomp.h"
+#include "window.hpp"
 
-#include "Clipboard.hpp"
-#include "ConsoleControl.hpp"
+#include "clipboard.hpp"
 #include "find.h"
 #include "menu.hpp"
-#include "window.hpp"
 #include "windowdpiapi.hpp"
-#include "windowime.hpp"
 #include "windowio.hpp"
 #include "windowmetrics.hpp"
-
-#include "../../host/_output.h"
-#include "../../host/output.h"
-#include "../../host/dbcs.h"
 #include "../../host/handle.h"
-#include "../../host/input.h"
-#include "../../host/misc.h"
 #include "../../host/registry.hpp"
 #include "../../host/scrolling.hpp"
-#include "../../host/srvinit.h"
-
-#include "../inc/ServiceLocator.hpp"
-
 #include "../../inc/conint.h"
-
+#include "../inc/ServiceLocator.hpp"
 #include "../interactivity/win32/CustomWindowMessages.h"
-
 #include "../interactivity/win32/windowUiaProvider.hpp"
-
-#include <iomanip>
-#include <sstream>
 
 using namespace Microsoft::Console::Interactivity::Win32;
 using namespace Microsoft::Console::Types;
+
+// NOTE: We put this struct into a `static constexpr` (= ".rodata", read-only data segment), which means it
+// cannot have any mutable members right now. If you need any, you have to make it a non-const `static`.
+struct TsfDataProvider : Microsoft::Console::TSF::IDataProvider
+{
+    virtual ~TsfDataProvider() = default;
+
+    STDMETHODIMP TsfDataProvider::QueryInterface(REFIID, void**) noexcept override
+    {
+        return E_NOTIMPL;
+    }
+
+    ULONG STDMETHODCALLTYPE TsfDataProvider::AddRef() noexcept override
+    {
+        return 1;
+    }
+
+    ULONG STDMETHODCALLTYPE TsfDataProvider::Release() noexcept override
+    {
+        return 1;
+    }
+
+    HWND GetHwnd() override
+    {
+        return Microsoft::Console::Interactivity::ServiceLocator::LocateConsoleWindow()->GetWindowHandle();
+    }
+
+    RECT GetViewport() override
+    {
+        const auto hwnd = GetHwnd();
+
+        RECT rc;
+        GetClientRect(hwnd, &rc);
+
+        // https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-getclientrect
+        // > The left and top members are zero. The right and bottom members contain the width and height of the window.
+        // --> We can turn the client rect into a screen-relative rect by adding the left/top position.
+        ClientToScreen(hwnd, reinterpret_cast<POINT*>(&rc));
+        rc.right += rc.left;
+        rc.bottom += rc.top;
+
+        return rc;
+    }
+
+    RECT GetCursorPosition() override
+    {
+        const auto& gci = Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals().getConsoleInformation();
+        const auto& screenBuffer = gci.GetActiveOutputBuffer();
+
+        // Map the absolute cursor position to a viewport-relative one.
+        const auto viewport = screenBuffer.GetViewport().ToExclusive();
+        auto coordCursor = screenBuffer.GetTextBuffer().GetCursor().GetPosition();
+        coordCursor.x -= viewport.left;
+        coordCursor.y -= viewport.top;
+
+        coordCursor.x = std::clamp(coordCursor.x, 0, viewport.width() - 1);
+        coordCursor.y = std::clamp(coordCursor.y, 0, viewport.height() - 1);
+
+        // Convert from columns/rows to pixels.
+        const auto coordFont = screenBuffer.GetCurrentFont().GetSize();
+        POINT ptSuggestion{
+            .x = coordCursor.x * coordFont.width,
+            .y = coordCursor.y * coordFont.height,
+        };
+
+        ClientToScreen(GetHwnd(), &ptSuggestion);
+
+        return {
+            .left = ptSuggestion.x,
+            .top = ptSuggestion.y,
+            .right = ptSuggestion.x + coordFont.width,
+            .bottom = ptSuggestion.y + coordFont.height,
+        };
+    }
+
+    void HandleOutput(std::wstring_view text) override
+    {
+        auto& gci = Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals().getConsoleInformation();
+        gci.LockConsole();
+        const auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
+        gci.GetActiveInputBuffer()->WriteString(text);
+    }
+
+    Microsoft::Console::Render::Renderer* GetRenderer() override
+    {
+        auto& g = Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals();
+        return g.pRender;
+    }
+};
+
+static constexpr TsfDataProvider s_tsfDataProvider;
 
 // The static and specific window procedures for this class are contained here
 #pragma region Window Procedure
@@ -169,47 +244,10 @@ using namespace Microsoft::Console::Types;
 
     case WM_GETDPISCALEDSIZE:
     {
-        // This message will send us the DPI we're about to be changed to.
-        // Our goal is to use it to try to figure out the Window Rect that we'll need at that DPI to maintain
-        // the same client rendering that we have now.
-
-        // First retrieve the new DPI and the current DPI.
-        const auto dpiProposed = (WORD)wParam;
-
-        // Now we need to get what the font size *would be* if we had this new DPI. We need to ask the renderer about that.
-        const auto& fiCurrent = ScreenInfo.GetCurrentFont();
-        FontInfoDesired fiDesired(fiCurrent);
-        FontInfo fiProposed(L"", 0, 0, { 0, 0 }, 0);
-
-        const auto hr = g.pRender->GetProposedFont(dpiProposed, fiDesired, fiProposed);
-        // fiProposal will be updated by the renderer for this new font.
-        // GetProposedFont can fail if there's no render engine yet.
-        // This can happen if we're headless.
-        // Just assume that the font is 1x1 in that case.
-        const auto coordFontProposed = SUCCEEDED(hr) ? fiProposed.GetSize() : til::size{ 1, 1 };
-
-        // Then from that font size, we need to calculate the client area.
-        // Then from the client area we need to calculate the window area (using the proposed DPI scalar here as well.)
-
-        // Retrieve the additional parameters we need for the math call based on the current window & buffer properties.
-        const auto viewport = ScreenInfo.GetViewport();
-        auto coordWindowInChars = viewport.Dimensions();
-
-        const auto coordBufferSize = ScreenInfo.GetTextBuffer().GetSize().Dimensions();
-
-        // Now call the math calculation for our proposed size.
-        til::rect rectProposed;
-        s_CalculateWindowRect(coordWindowInChars, dpiProposed, coordFontProposed, coordBufferSize, hWnd, &rectProposed);
-
-        // Prepare where we're going to keep our final suggestion.
-        const auto pSuggestionSize = (SIZE*)lParam;
-
-        pSuggestionSize->cx = rectProposed.width();
-        pSuggestionSize->cy = rectProposed.height();
-
-        // Format our final suggestion for consumption.
+        const auto result = _HandleGetDpiScaledSize(
+            static_cast<WORD>(wParam), reinterpret_cast<SIZE*>(lParam));
         UnlockConsole();
-        return TRUE;
+        return result;
     }
 
     case WM_DPICHANGED:
@@ -256,8 +294,11 @@ using namespace Microsoft::Console::Types;
 
         HandleFocusEvent(TRUE);
 
-        // ActivateTextServices does nothing if already active so this is OK to be called every focus.
-        ActivateTextServices(ServiceLocator::LocateConsoleWindow()->GetWindowHandle(), GetImeSuggestionWindowPos, GetTextBoxArea);
+        if (!g.tsf)
+        {
+            g.tsf = TSF::Handle::Create();
+            g.tsf.AssociateFocus(const_cast<TsfDataProvider*>(&s_tsfDataProvider));
+        }
 
         // set the text area to have focus for accessibility consumers
         if (_pUiaProvider)
@@ -721,9 +762,7 @@ using namespace Microsoft::Console::Types;
     {
         try
         {
-            std::wstringstream wss;
-            wss << std::setfill(L'0') << std::setw(8) << wParam;
-            auto wstr = wss.str();
+            const auto wstr = fmt::format(FMT_COMPILE(L"{:08d}"), wParam);
             LoadKeyboardLayout(wstr.c_str(), KLF_ACTIVATE);
         }
         catch (...)
@@ -733,6 +772,15 @@ using namespace Microsoft::Console::Types;
         break;
     }
 #endif // DBG
+
+    case CM_UPDATE_CLIPBOARD:
+    {
+        if (const auto clipboardText = gci.UsePendingClipboardText())
+        {
+            Clipboard::Instance().CopyText(clipboardText.value());
+        }
+        break;
+    }
 
     case EVENT_CONSOLE_CARET:
     case EVENT_CONSOLE_UPDATE_REGION:
@@ -808,6 +856,64 @@ void Window::_HandleWindowPosChanged(const LPARAM lParam)
     }
 }
 
+// WM_GETDPISCALEDSIZE is sent prior to the window changing DPI, allowing us to
+// choose the size at the new DPI (overriding the default, linearly scaled).
+//
+// This is used to keep the rows and columns from changing when the DPI changes.
+LRESULT Window::_HandleGetDpiScaledSize(UINT dpiNew, _Inout_ SIZE* pSizeNew) const
+{
+    // Get the current DPI and font size.
+    HWND hwnd = GetWindowHandle();
+    UINT dpiCurrent = ServiceLocator::LocateHighDpiApi<WindowDpiApi>()->GetDpiForWindow(hwnd);
+    const auto& fontInfoCurrent = GetScreenInfo().GetCurrentFont();
+    til::size fontSizeCurrent = fontInfoCurrent.GetSize();
+
+    // Scale the current font to the new DPI and get the new font size.
+    FontInfoDesired fontInfoDesired(fontInfoCurrent);
+    FontInfo fontInfoNew(L"", 0, 0, { 0, 0 }, 0);
+    if (!SUCCEEDED(ServiceLocator::LocateGlobals().pRender->GetProposedFont(
+            dpiNew, fontInfoDesired, fontInfoNew)))
+    {
+        // On failure, return FALSE, which scales the window linearly for DPI.
+        return FALSE;
+    }
+    til::size fontSizeNew = fontInfoNew.GetSize();
+
+    // The provided size is the window rect, which includes non-client area
+    // (caption bars, resize borders, scroll bars, etc). We want to scale the
+    // client area separately from the non-client area. The client area will be
+    // scaled using the new/old font sizes, so that the size of the grid (rows/
+    // columns) does not change.
+
+    // Subtract the size of the window's current non-client area from the
+    // provided size. This gives us the new client area size at the previous DPI.
+    til::rect rc;
+    s_ExpandRectByNonClientSize(hwnd, dpiCurrent, &rc);
+    pSizeNew->cx -= rc.width();
+    pSizeNew->cy -= rc.height();
+
+    // Scale the size of the client rect by the new/old font sizes.
+    pSizeNew->cx = MulDiv(pSizeNew->cx, fontSizeNew.width, fontSizeCurrent.width);
+    pSizeNew->cy = MulDiv(pSizeNew->cy, fontSizeNew.height, fontSizeCurrent.height);
+
+    // Add the size of the non-client area at the new DPI to the final size,
+    // getting the new window rect (the output of this function).
+    rc = { 0, 0, pSizeNew->cx, pSizeNew->cy };
+    s_ExpandRectByNonClientSize(hwnd, dpiNew, &rc);
+
+    // Write the final size to the out parameter.
+    // If not Maximized/Arranged (snapped), this will determine the size of the
+    // rect in the WM_DPICHANGED message. Otherwise, the provided size is the
+    // normal position (restored, last non-Maximized/Arranged).
+    pSizeNew->cx = rc.width();
+    pSizeNew->cy = rc.height();
+
+    // Return true. The next WM_DPICHANGED (if at this DPI) should contain a
+    // rect with the size we picked here. (If we change to another DPI than this
+    // one we'll get another WM_GETDPISCALEDSIZE before changing DPI).
+    return TRUE;
+}
+
 // Routine Description:
 // - This helper method for the window procedure will handle the WM_PAINT message
 // - It will retrieve the invalid rectangle and dispatch that information to the attached renderer
@@ -857,7 +963,9 @@ void Window::_HandleWindowPosChanged(const LPARAM lParam)
 // - <none>
 void Window::_HandleDrop(const WPARAM wParam) const
 {
-    Clipboard::Instance().PasteDrop((HDROP)wParam);
+    const auto drop = reinterpret_cast<HDROP>(wParam);
+    Clipboard::Instance().PasteDrop(drop);
+    DragFinish(drop);
 }
 
 [[nodiscard]] LRESULT Window::_HandleGetObject(const HWND hwnd, const WPARAM wParam, const LPARAM lParam)
@@ -888,11 +996,6 @@ BOOL Window::PostUpdateWindowSize() const
 {
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     const auto& ScreenInfo = GetScreenInfo();
-
-    if (ScreenInfo.ConvScreenInfo != nullptr)
-    {
-        return FALSE;
-    }
 
     if (gci.Flags & CONSOLE_SETTING_WINDOW_SIZE)
     {

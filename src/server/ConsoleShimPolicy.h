@@ -24,10 +24,8 @@ public:
     ConsoleShimPolicy(const HANDLE hProcess);
     bool IsCmdExe() const noexcept;
     bool IsPowershellExe() const noexcept;
-    bool IsVtColorQuirkRequired() const noexcept;
 
 private:
     bool _isCmd{ false };
     bool _isPowershell{ false };
-    bool _requiresVtColorQuirk{ false };
 };

@@ -53,6 +53,8 @@ namespace Microsoft::Console::Render::Atlas
     // My best effort of replicating __attribute__((cold)) from gcc/clang.
 #define ATLAS_ATTR_COLD __declspec(noinline)
 
+#define ATLAS_ENGINE_ERROR_MAC_TYPE MAKE_HRESULT(SEVERITY_SUCCESS, FACILITY_ITF, 'MT')
+
     template<typename T>
     struct vec2
     {
@@ -145,6 +147,8 @@ namespace Microsoft::Console::Render::Atlas
     using i32x2 = vec2<i32>;
     using i32x4 = vec4<i32>;
     using i32r = rect<i32>;
+
+    using u64 = uint64_t;
 
     using f32 = float;
     using f32x2 = vec2<f32>;
@@ -261,7 +265,7 @@ namespace Microsoft::Console::Render::Atlas
 
     private:
         // These two functions don't need to use scoped objects or standard allocators,
-        // since this class is in fact an scoped allocator object itself.
+        // since this class is in fact a scoped allocator object itself.
 #pragma warning(push)
 #pragma warning(disable : 26402) // Return a scoped object instead of a heap-allocated if it has a move constructor (r.3).
 #pragma warning(disable : 26409) // Avoid calling new and delete explicitly, use std::make_unique<T> instead (r.11).
@@ -389,7 +393,9 @@ namespace Microsoft::Console::Render::Atlas
     struct MiscellaneousSettings
     {
         u32 backgroundColor = 0;
-        u32 selectionColor = 0x7fffffff;
+        u32 foregroundColor = 0;
+        u32 selectionColor = 0xffffffff;
+        u32 selectionForeground = 0xff000000;
         std::wstring customPixelShaderPath;
         std::wstring customPixelShaderImagePath;
         bool useRetroTerminalEffect = false;
@@ -402,11 +408,9 @@ namespace Microsoft::Console::Render::Atlas
         til::generational<CursorSettings> cursor;
         til::generational<MiscellaneousSettings> misc;
         // Size of the viewport / swap chain in pixel.
-        u16x2 targetSize{ 1, 1 };
+        u16x2 targetSize{ 0, 0 };
         // Size of the portion of the text buffer that we're drawing on the screen.
-        u16x2 viewportCellCount{ 1, 1 };
-        // The position of the viewport inside the text buffer (in cells).
-        u16x2 viewportOffset{ 0, 0 };
+        u16x2 viewportCellCount{ 0, 0 };
     };
 
     using GenerationalSettings = til::generational<Settings>;
@@ -446,6 +450,21 @@ namespace Microsoft::Console::Render::Atlas
         u16 to = 0;
     };
 
+    struct Bitmap
+    {
+        // Matches ImageSlice::Revision(). A revision of 0 means the bitmap is empty.
+        u64 revision = 0;
+        // The source RGBA data. Its size matches sourceSize exactly.
+        Buffer<u32, 32> source;
+        i32x2 sourceSize{};
+        // Horizontal offset and width of the bitmap after scaling it (in columns).
+        // The height is always the cell height.
+        i32 targetOffset = 0;
+        i32 targetWidth = 0;
+        // This is used to track unused bitmaps, so that we can free them up.
+        bool active = false;
+    };
+
     struct ShapedRow
     {
         void Clear(u16 y, u16 cellHeight) noexcept
@@ -455,10 +474,9 @@ namespace Microsoft::Console::Render::Atlas
             glyphAdvances.clear();
             glyphOffsets.clear();
             colors.clear();
+            bitmap.active = false;
             gridLineRanges.clear();
             lineRendition = LineRendition::SingleWidth;
-            selectionFrom = 0;
-            selectionTo = 0;
             dirtyTop = y * cellHeight;
             dirtyBottom = dirtyTop + cellHeight;
         }
@@ -475,10 +493,9 @@ namespace Microsoft::Console::Render::Atlas
         // Same size as glyphIndices.
         std::vector<u32> colors;
 
+        Bitmap bitmap;
         std::vector<GridLineRange> gridLineRanges;
         LineRendition lineRendition = LineRendition::SingleWidth;
-        u16 selectionFrom = 0;
-        u16 selectionTo = 0;
         til::CoordType dirtyTop = 0;
         til::CoordType dirtyBottom = 0;
     };
@@ -563,14 +580,16 @@ namespace Microsoft::Console::Render::Atlas
         i32r dirtyRectInPx{};
         // In rows.
         range<u16> invalidatedRows{};
+        // In columns.
+        i32 scrollOffsetX = 0;
         // In pixel.
-        i16 scrollOffset = 0;
+        i16 scrollDeltaY = 0;
 
         void MarkAllAsDirty() noexcept
         {
             dirtyRectInPx = { 0, 0, s->targetSize.x, s->targetSize.y };
             invalidatedRows = { 0, s->viewportCellCount.y };
-            scrollOffset = 0;
+            scrollDeltaY = 0;
         }
     };
 

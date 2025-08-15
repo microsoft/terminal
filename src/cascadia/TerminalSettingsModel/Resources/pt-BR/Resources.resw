@@ -121,10 +121,14 @@
     <value>Selecionar esquema de cores...</value>
   </data>
   <data name="NewTabParentCommandName" xml:space="preserve">
-    <value>Nova Guia...</value>
+    <value>Nova guia...</value>
   </data>
   <data name="SplitPaneParentCommandName" xml:space="preserve">
     <value>Dividir painel...</value>
+  </data>
+  <data name="SnippetsPaneCommandName" xml:space="preserve">
+    <value>Abrir painel de snippets</value>
+    <comment>This will open a pane with a list of the users's saved commands ("snippets") in it</comment>
   </data>
   <data name="ApplicationDisplayNamePortable" xml:space="preserve">
     <value>Terminal (Portátil)</value>
@@ -324,8 +328,11 @@
     <value>Abrir o arquivo de configurações (JSON)</value>
     <comment>{Locked="JSON"}. "JSON" is the extension of the file that will be opened.</comment>
   </data>
+  <data name="SettingsFileOpenInExplorerCommandKey" xml:space="preserve">
+    <value>Abrir o diretório de arquivo de configurações</value>
+  </data>
   <data name="OpenTabColorPickerCommandKey" xml:space="preserve">
-    <value>Definir a cor da guia...</value>
+    <value>Definir cor da guia...</value>
   </data>
   <data name="PasteTextCommandKey" xml:space="preserve">
     <value>Colar</value>
@@ -347,7 +354,7 @@
     <value>Redefinir título da guia</value>
   </data>
   <data name="OpenTabRenamerCommandKey" xml:space="preserve">
-    <value>Renomear o título da guia...</value>
+    <value>Renomear guia</value>
   </data>
   <data name="ResizePaneCommandKey" xml:space="preserve">
     <value>Redimensionar painel</value>
@@ -441,16 +448,13 @@
     <value>Alternar para a última guia</value>
   </data>
   <data name="TabSearchCommandKey" xml:space="preserve">
-    <value>Buscar guia</value>
+    <value>Buscar guia...</value>
   </data>
   <data name="ToggleAlwaysOnTopCommandKey" xml:space="preserve">
     <value>Alternar sempre no modo superior</value>
   </data>
   <data name="ToggleCommandPaletteCommandKey" xml:space="preserve">
     <value>Ativar/desativar paleta de comandos</value>
-  </data>
-  <data name="SuggestionsCommandHistoryCommandKey" xml:space="preserve">
-    <value>Comandos recentes...</value>
   </data>
   <data name="SuggestionsCommandKey" xml:space="preserve">
     <value>Abrir sugestões</value>
@@ -505,7 +509,7 @@
     <value>Invadir o depurador</value>
   </data>
   <data name="OpenSettingsUICommandKey" xml:space="preserve">
-    <value>Abrir as configurações...</value>
+    <value>Abrir configurações</value>
   </data>
   <data name="RenameWindowCommandKey" xml:space="preserve">
     <value>Renomear a janela para "{0}"</value>
@@ -515,7 +519,7 @@
     <value>Definir nome da janela</value>
   </data>
   <data name="OpenWindowRenamerCommandKey" xml:space="preserve">
-    <value>Renomear janela</value>
+    <value>Renomear janela...</value>
   </data>
   <data name="DisplayWorkingDirectoryCommandKey" xml:space="preserve">
     <value>Exibir o diretório de trabalho atual do Terminal</value>
@@ -566,7 +570,7 @@
     <value>Saia do Terminal</value>
   </data>
   <data name="SetOpacityParentCommandName" xml:space="preserve">
-    <value>Definir a opacidade da tela de fundo</value>
+    <value>Definir a opacidade da tela de fundo...</value>
   </data>
   <data name="IncreaseOpacityCommandKey" xml:space="preserve">
     <value>Aumentar a opacidade da tela de fundo em {0}%</value>
@@ -726,5 +730,34 @@
   <data name="OpenAboutCommandKey" xml:space="preserve">
     <value>Abrir a caixa de diálogo sobre</value>
     <comment>This will open the "about" dialog, to display version info and other documentation</comment>
+  </data>
+  <data name="SaveSnippetNamePrefix" xml:space="preserve">
+    <value>Salvar Snippet</value>
+  </data>
+  <data name="QuickFixCommandKey" xml:space="preserve">
+    <value>Abrir o menu de correção rápida</value>
+  </data>
+  <data name="OpenCWDCommandKey" xml:space="preserve">
+    <value>Abrir o diretório de trabalho atual</value>
+  </data>
+  <data name="WslDistroGeneratorDisplayName" xml:space="preserve">
+    <value>Gerador de Perfil de Distribuição WSL</value>
+    <comment>The display name of a dynamic profile generator for WSL distros</comment>
+  </data>
+  <data name="PowershellCoreProfileGeneratorDisplayName" xml:space="preserve">
+    <value>Gerador de Perfil do PowerShell</value>
+    <comment>The display name of a dynamic profile generator for PowerShell</comment>
+  </data>
+  <data name="AzureCloudShellGeneratorDisplayName" xml:space="preserve">
+    <value>Gerador de Perfil do Azure Cloud Shell</value>
+    <comment>The display name of a dynamic profile generator for Azure Cloud Shell</comment>
+  </data>
+  <data name="VisualStudioGeneratorDisplayName" xml:space="preserve">
+    <value>Gerador de Perfil do Visual Studio</value>
+    <comment>The display name of a dynamic profile generator for Visual Studio</comment>
+  </data>
+  <data name="SshHostGeneratorDisplayName" xml:space="preserve">
+    <value>Gerador de Perfil de Host SSH</value>
+    <comment>The display name of a dynamic profile generator for SSH hosts</comment>
   </data>
 </root>

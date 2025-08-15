@@ -126,6 +126,10 @@
   <data name="SplitPaneParentCommandName" xml:space="preserve">
     <value>Fractionner le volet...</value>
   </data>
+  <data name="SnippetsPaneCommandName" xml:space="preserve">
+    <value>Ouvrir le volet des extraits de code</value>
+    <comment>This will open a pane with a list of the users's saved commands ("snippets") in it</comment>
+  </data>
   <data name="ApplicationDisplayNamePortable" xml:space="preserve">
     <value>Terminal (portable)</value>
     <comment>This display name is used when the Terminal application is running in a "portable" mode, where settings are not stored in a shared location.</comment>
@@ -324,6 +328,9 @@
     <value>Ouvrir le fichier des paramètres (JSON)</value>
     <comment>{Locked="JSON"}. "JSON" is the extension of the file that will be opened.</comment>
   </data>
+  <data name="SettingsFileOpenInExplorerCommandKey" xml:space="preserve">
+    <value>Ouvrir le répertoire du fichier de paramètres</value>
+  </data>
   <data name="OpenTabColorPickerCommandKey" xml:space="preserve">
     <value>Définir la couleur de l’onglet...</value>
   </data>
@@ -347,7 +354,7 @@
     <value>Rétablir le titre de l’onglet</value>
   </data>
   <data name="OpenTabRenamerCommandKey" xml:space="preserve">
-    <value>Renommer le titre de l'onglet...</value>
+    <value>Renommer l'onglet</value>
   </data>
   <data name="ResizePaneCommandKey" xml:space="preserve">
     <value>Redimensionner le volet</value>
@@ -441,7 +448,7 @@
     <value>Basculer vers le dernier onglet</value>
   </data>
   <data name="TabSearchCommandKey" xml:space="preserve">
-    <value>Recherche de l’onglet...</value>
+    <value>Rechercher l’onglet...</value>
   </data>
   <data name="ToggleAlwaysOnTopCommandKey" xml:space="preserve">
     <value>Activer le mode Toujours visible</value>
@@ -449,11 +456,8 @@
   <data name="ToggleCommandPaletteCommandKey" xml:space="preserve">
     <value>Activer/désactiver la palette de commandes</value>
   </data>
-  <data name="SuggestionsCommandHistoryCommandKey" xml:space="preserve">
-    <value>Commandes récentes...</value>
-  </data>
   <data name="SuggestionsCommandKey" xml:space="preserve">
-    <value>Suggestions ouvertes...</value>
+    <value>Ouvrir les suggestions</value>
   </data>
   <data name="ToggleCommandPaletteCommandLineModeCommandKey" xml:space="preserve">
     <value>Basculer la palette de commandes en mode ligne de commande</value>
@@ -505,7 +509,7 @@
     <value>Accès dans le débogueur</value>
   </data>
   <data name="OpenSettingsUICommandKey" xml:space="preserve">
-    <value>Ouvrir les paramètres...</value>
+    <value>Ouvrir les paramètres</value>
   </data>
   <data name="RenameWindowCommandKey" xml:space="preserve">
     <value>Renommer la fenêtre en « {0} »</value>
@@ -726,5 +730,34 @@
   <data name="OpenAboutCommandKey" xml:space="preserve">
     <value>Ouvrir la boîte de dialogue à propos de</value>
     <comment>This will open the "about" dialog, to display version info and other documentation</comment>
+  </data>
+  <data name="SaveSnippetNamePrefix" xml:space="preserve">
+    <value>Enregistrer l’extrait de code</value>
+  </data>
+  <data name="QuickFixCommandKey" xml:space="preserve">
+    <value>Ouvrir le menu de correction rapide</value>
+  </data>
+  <data name="OpenCWDCommandKey" xml:space="preserve">
+    <value>Ouvrir le répertoire de travail actif</value>
+  </data>
+  <data name="WslDistroGeneratorDisplayName" xml:space="preserve">
+    <value>Générateur de profil de distribution WSL</value>
+    <comment>The display name of a dynamic profile generator for WSL distros</comment>
+  </data>
+  <data name="PowershellCoreProfileGeneratorDisplayName" xml:space="preserve">
+    <value>Générateur de profil PowerShell</value>
+    <comment>The display name of a dynamic profile generator for PowerShell</comment>
+  </data>
+  <data name="AzureCloudShellGeneratorDisplayName" xml:space="preserve">
+    <value>Générateur de profil Azure Cloud Shell</value>
+    <comment>The display name of a dynamic profile generator for Azure Cloud Shell</comment>
+  </data>
+  <data name="VisualStudioGeneratorDisplayName" xml:space="preserve">
+    <value>Générateur de profil Visual Studio</value>
+    <comment>The display name of a dynamic profile generator for Visual Studio</comment>
+  </data>
+  <data name="SshHostGeneratorDisplayName" xml:space="preserve">
+    <value>Générateur de profil d’hôte SSH</value>
+    <comment>The display name of a dynamic profile generator for SSH hosts</comment>
   </data>
 </root>

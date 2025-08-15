@@ -44,7 +44,6 @@ public:
     bool IsBlinkingAllowed() const noexcept;
     bool IsDouble() const noexcept;
     bool IsConversionArea() const noexcept;
-    bool IsPopupShown() const noexcept;
     bool GetDelay() const noexcept;
     ULONG GetSize() const noexcept;
     til::point GetPosition() const noexcept;
@@ -61,7 +60,6 @@ public:
     void SetBlinkingAllowed(const bool fIsOn) noexcept;
     void SetIsDouble(const bool fIsDouble) noexcept;
     void SetIsConversionArea(const bool fIsConversionArea) noexcept;
-    void SetIsPopupShown(const bool fIsPopupShown) noexcept;
     void SetDelay(const bool fDelay) noexcept;
     void SetSize(const ULONG ulSize) noexcept;
     void SetStyle(const ULONG ulSize, const CursorType type) noexcept;
@@ -99,7 +97,6 @@ private:
     bool _fBlinkingAllowed; //Whether or not the cursor is allowed to blink at all. only set through VT (^[[?12h/l)
     bool _fDelay; // don't blink scursor on next timer message
     bool _fIsConversionArea; // is attached to a conversion area so it doesn't actually need to display the cursor.
-    bool _fIsPopupShown; // if a popup is being shown, turn off, stop blinking.
 
     bool _fDelayedEolWrap; // don't wrap at EOL till the next char comes in.
     til::point _coordDelayedAt; // coordinate the EOL wrap was delayed at.

@@ -86,7 +86,6 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                 inline constexpr wil::zwstring_view system_env_var_root{ LR"(SYSTEM\CurrentControlSet\Control\Session Manager\Environment)" };
                 inline constexpr wil::zwstring_view user_env_var_root{ LR"(Environment)" };
                 inline constexpr wil::zwstring_view user_volatile_env_var_root{ LR"(Volatile Environment)" };
-                inline constexpr wil::zwstring_view user_volatile_session_env_var_root_pattern{ LR"(Volatile Environment\{0:d})" };
             };
         };
 
@@ -472,7 +471,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             // not processing autoexec.bat
             get_vars_from_registry(HKEY_CURRENT_USER, til::details::vars::reg::user_env_var_root);
             get_vars_from_registry(HKEY_CURRENT_USER, til::details::vars::reg::user_volatile_env_var_root);
-            get_vars_from_registry(HKEY_CURRENT_USER, fmt::format(til::details::vars::reg::user_volatile_session_env_var_root_pattern, NtCurrentTeb()->ProcessEnvironmentBlock->SessionId));
+            get_vars_from_registry(HKEY_CURRENT_USER, fmt::format(FMT_COMPILE(LR"(Volatile Environment\{})"), NtCurrentTeb()->ProcessEnvironmentBlock->SessionId));
         }
 
         std::wstring to_string() const

@@ -3,6 +3,7 @@
 
 #include "pch.h"
 #include "ShortcutActionDispatch.h"
+#include "WtExeUtils.h"
 
 #include "ShortcutActionDispatch.g.cpp"
 
@@ -26,7 +27,7 @@ namespace winrt::TerminalApp::implementation
     // Arguments:
     // - actionAndArgs: the ShortcutAction and associated args to raise an event for.
     // Return Value:
-    // - true if we handled the event was handled, else false.
+    // - true if the event was handled, else false.
     bool ShortcutActionDispatch::DoAction(const winrt::Windows::Foundation::IInspectable& sender,
                                           const ActionAndArgs& actionAndArgs)
     {
@@ -44,11 +45,36 @@ namespace winrt::TerminalApp::implementation
         {
 #define ON_ALL_ACTIONS(id) ACTION_CASE(id);
             ALL_SHORTCUT_ACTIONS
+            INTERNAL_SHORTCUT_ACTIONS
 #undef ON_ALL_ACTIONS
         default:
             return false;
         }
-        return eventArgs.Handled();
+        const auto handled = eventArgs.Handled();
+
+        if (handled)
+        {
+#if defined(WT_BRANDING_RELEASE)
+            constexpr uint8_t branding = 3;
+#elif defined(WT_BRANDING_PREVIEW)
+            constexpr uint8_t branding = 2;
+#elif defined(WT_BRANDING_CANARY)
+            constexpr uint8_t branding = 1;
+#else
+            constexpr uint8_t branding = 0;
+#endif
+
+            TraceLoggingWrite(
+                g_hTerminalAppProvider,
+                "ActionDispatched",
+                TraceLoggingDescription("Event emitted when an action was successfully performed"),
+                TraceLoggingValue(static_cast<int>(actionAndArgs.Action()), "Action"),
+                TraceLoggingValue(branding, "Branding"),
+                TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+                TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
+        }
+
+        return handled;
     }
 
     bool ShortcutActionDispatch::DoAction(const ActionAndArgs& actionAndArgs)

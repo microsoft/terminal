@@ -349,6 +349,8 @@ void Settings::Validate()
     TextAttribute::SetLegacyDefaultAttributes(_wFillAttribute);
     // And calculate the position of the default colors in the color table.
     CalculateDefaultColorIndices();
+    // We can also then save these values as the default render settings.
+    SaveDefaultRenderSettings();
 
     FAIL_FAST_IF(!(_dwWindowSize.X > 0));
     FAIL_FAST_IF(!(_dwWindowSize.Y > 0));
@@ -755,6 +757,11 @@ void Settings::CalculateDefaultColorIndices() noexcept
     _renderSettings.SetColorAliasIndex(ColorAlias::DefaultBackground, backgroundAlias);
 }
 
+void Settings::SaveDefaultRenderSettings() noexcept
+{
+    _renderSettings.SaveDefaultSettings();
+}
+
 bool Settings::IsTerminalScrolling() const noexcept
 {
     return _TerminalScrolling;
@@ -763,6 +770,11 @@ bool Settings::IsTerminalScrolling() const noexcept
 void Settings::SetTerminalScrolling(const bool terminalScrollingEnabled) noexcept
 {
     _TerminalScrolling = terminalScrollingEnabled;
+}
+
+std::wstring_view Settings::GetAnswerbackMessage() const noexcept
+{
+    return _answerbackMessage;
 }
 
 // Determines whether our primary renderer should be DirectX or GDI.
@@ -775,6 +787,16 @@ bool Settings::GetUseDx() const noexcept
 bool Settings::GetCopyColor() const noexcept
 {
     return _fCopyColor;
+}
+
+SettingsTextMeasurementMode Settings::GetTextMeasurementMode() const noexcept
+{
+    return _textMeasurement;
+}
+
+void Settings::SetTextMeasurementMode(const SettingsTextMeasurementMode mode) noexcept
+{
+    _textMeasurement = mode;
 }
 
 bool Settings::GetEnableBuiltinGlyphs() const noexcept

@@ -16,6 +16,20 @@ using namespace WEX::Common;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
 using namespace winrt::Microsoft::Terminal::Control;
 
+// Different architectures will hash the same SendInput command to a different ID
+// Check for the correct ID based on the architecture
+#if defined(_M_IX86)
+#define SEND_INPUT_ARCH_SPECIFIC_ACTION_HASH "56911147"
+#else
+#define SEND_INPUT_ARCH_SPECIFIC_ACTION_HASH "A020D2"
+#endif
+
+#if defined(_M_IX86)
+#define SEND_INPUT2_ARCH_SPECIFIC_ACTION_HASH "35488AA6"
+#else
+#define SEND_INPUT2_ARCH_SPECIFIC_ACTION_HASH "58D1971"
+#endif
+
 namespace SettingsModelUnitTests
 {
     class SerializationTests : public JsonTestClass
@@ -35,6 +49,16 @@ namespace SettingsModelUnitTests
         TEST_METHOD(RoundtripUserModifiedColorSchemeCollision);
         TEST_METHOD(RoundtripUserModifiedColorSchemeCollisionUnusedByProfiles);
         TEST_METHOD(RoundtripUserDeletedColorSchemeCollision);
+
+        TEST_METHOD(RoundtripGenerateActionID);
+        TEST_METHOD(NoGeneratedIDsForIterableAndNestedCommands);
+        TEST_METHOD(GeneratedActionIDsEqualForIdenticalCommands);
+        TEST_METHOD(RoundtripLegacyToModernActions);
+        TEST_METHOD(RoundtripUserActionsSameAsInBoxAreRemoved);
+        TEST_METHOD(RoundtripActionsSameNameDifferentCommandsAreRetained);
+        TEST_METHOD(MultipleActionsAreCollapsed);
+
+        TEST_METHOD(ProfileWithInvalidIcon);
 
     private:
         // Method Description:
@@ -85,7 +109,6 @@ namespace SettingsModelUnitTests
                 "initialPosition": ",",
                 "launchMode": "default",
                 "alwaysOnTop": false,
-                "inputServiceWarning": true,
                 "copyOnSelect": false,
                 "copyFormatting": "all",
                 "wordDelimiters": " /\\()\"'-.,:;<>~!@#$%^&*|+=[]{}~?\u2502",
@@ -96,25 +119,26 @@ namespace SettingsModelUnitTests
                 "tabWidthMode": "equal",
                 "tabSwitcherMode": "mru",
 
-                "startOnUserLogin": false,
                 "theme": "system",
                 "snapToGridOnResize": true,
                 "disableAnimations": false,
 
-                "confirmCloseAllTabs": true,
-                "largePasteWarning": true,
-                "multiLinePasteWarning": true,
                 "trimPaste": true,
 
-                "experimental.input.forceVT": false,
+                "warning.confirmCloseAllTabs" : true,
+                "warning.inputService" : true,
+                "warning.largePaste" : true,
+                "warning.multiLinePaste" : "automatic",
 
-                "actions": []
+                "actions": [],
+                "keybindings": []
             })" };
 
         static constexpr std::string_view smallGlobalsString{ R"(
             {
                 "defaultProfile": "{61c54bbd-c2c6-5271-96e7-009a87ff44bf}",
-                "actions": []
+                "actions": [],
+                "keybindings": []
             })" };
 
         RoundtripTest<implementation::GlobalAppSettings>(globalsString);
@@ -139,7 +163,7 @@ namespace SettingsModelUnitTests
 
                 "font": {
                     "face": "Cascadia Mono",
-                    "size": 12.0,
+                    "size": 12,
                     "weight": "normal"
                 },
                 "padding": "8, 8, 8, 8",
@@ -163,7 +187,7 @@ namespace SettingsModelUnitTests
                 "backgroundImage": "made_you_look.jpeg",
                 "backgroundImageStretchMode": "uniformToFill",
                 "backgroundImageAlignment": "center",
-                "backgroundImageOpacity": 1.0,
+                "backgroundImageOpacity": 1,
 
                 "scrollbarState": "visible",
                 "snapOnInput": true,
@@ -263,47 +287,50 @@ namespace SettingsModelUnitTests
     {
         // simple command
         static constexpr std::string_view actionsString1{ R"([
-                                                { "command": "paste" }
+                                                { "command": "paste", "id": "Test.Paste" }
                                             ])" };
 
         // complex command
         static constexpr std::string_view actionsString2A{ R"([
-                                                { "command": { "action": "setTabColor" } }
+                                                { "command": { "action": "setTabColor" }, "id": "Test.SetTabColor" }
                                             ])" };
         static constexpr std::string_view actionsString2B{ R"([
-                                                { "command": { "action": "setTabColor", "color": "#112233" } }
+                                                { "command": { "action": "setTabColor", "color": "#112233" }, "id": "Test.SetTabColor112233" }
                                             ])" };
         static constexpr std::string_view actionsString2C{ R"([
-                                                { "command": { "action": "copy" } },
-                                                { "command": { "action": "copy", "singleLine": true, "copyFormatting": "html" } }
+                                                { "command": { "action": "copy" }, "id": "Test.Copy" },
+                                                { "command": { "action": "copy", "singleLine": true, "copyFormatting": "html" }, "id": "Test.CopyWithArgs" }
                                             ])" };
 
         // simple command with key chords
-        static constexpr std::string_view actionsString3{ R"([
-                                                { "command": "toggleAlwaysOnTop", "keys": "ctrl+a" },
-                                                { "command": "toggleAlwaysOnTop", "keys": "ctrl+b" }
-                                            ])" };
+        static constexpr std::string_view actionsString3{ R"({ "actions": [
+                                                { "command": "toggleAlwaysOnTop", "id": "Test.ToggleAlwaysOnTop" } ],
+                                            "keybindings": [
+                                                { "keys": "ctrl+a", "id": "Test.ToggleAlwaysOnTop" },
+                                                { "keys": "ctrl+b", "id": "Test.ToggleAlwaysOnTop" } ]})" };
 
         // complex command with key chords
-        static constexpr std::string_view actionsString4A{ R"([
-                                                { "command": { "action": "adjustFontSize", "delta": 1.0 }, "keys": "ctrl+c" },
-                                                { "command": { "action": "adjustFontSize", "delta": 1.0 }, "keys": "ctrl+d" }
-                                            ])" };
+        static constexpr std::string_view actionsString4A{ R"({ "actions":[
+                                                { "command": { "action": "adjustFontSize", "delta": 1 }, "id": "Test.EnlargeFont" } ],
+                                            "keybindings": [
+                                                { "keys": "ctrl+c", "id": "Test.EnlargeFont" },
+                                                { "keys": "ctrl+d", "id": "Test.EnlargeFont" } ]})" };
 
         // command with name and icon and multiple key chords
-        static constexpr std::string_view actionsString5{ R"([
-                                                { "icon": "image.png", "name": "Scroll To Top Name", "command": "scrollToTop", "keys": "ctrl+e" },
-                                                { "command": "scrollToTop", "keys": "ctrl+f" }
-                                            ])" };
+        static constexpr std::string_view actionsString5{ R"({ "actions":[
+                                                { "icon": "image.png", "name": "Scroll To Top Name", "command": "scrollToTop", "id": "Test.ScrollToTop" } ],
+                                            "keybindings": [
+                                                { "id": "Test.ScrollToTop", "keys": "ctrl+f" },
+                                                { "id": "Test.ScrollToTop", "keys": "ctrl+e" } ]})" };
 
         // complex command with new terminal args
         static constexpr std::string_view actionsString6{ R"([
-                                                { "command": { "action": "newTab", "index": 0 }, "keys": "ctrl+g" },
+                                                { "command": { "action": "newTab", "index": 0 }, "id": "Test.NewTerminal" },
                                             ])" };
 
         // complex command with meaningful null arg
         static constexpr std::string_view actionsString7{ R"([
-                                                { "command": { "action": "renameWindow", "name": null }, "keys": "ctrl+h" }
+                                                { "command": { "action": "renameWindow", "name": null }, "id": "Test.MeaningfulNull" }
                                             ])" };
 
         // nested command
@@ -311,8 +338,8 @@ namespace SettingsModelUnitTests
                                                 {
                                                     "name": "Change font size...",
                                                     "commands": [
-                                                        { "command": { "action": "adjustFontSize", "delta": 1.0 } },
-                                                        { "command": { "action": "adjustFontSize", "delta": -1.0 } },
+                                                        { "command": { "action": "adjustFontSize", "delta": 1 } },
+                                                        { "command": { "action": "adjustFontSize", "delta": -1 } },
                                                         { "command": "resetFontSize" },
                                                     ]
                                                 }
@@ -385,9 +412,9 @@ namespace SettingsModelUnitTests
                                             ])"" };
 
         // unbound command
-        static constexpr std::string_view actionsString10{ R"([
-                                                { "command": "unbound", "keys": "ctrl+c" }
-                                            ])" };
+        static constexpr std::string_view actionsString10{ R"({ "actions": [],
+                                            "keybindings": [
+                                                { "id": null, "keys": "ctrl+c" } ]})" };
 
         Log::Comment(L"simple command");
         RoundtripTest<implementation::ActionMap>(actionsString1);
@@ -397,14 +424,16 @@ namespace SettingsModelUnitTests
         RoundtripTest<implementation::ActionMap>(actionsString2B);
         RoundtripTest<implementation::ActionMap>(actionsString2C);
 
+        // ActionMap has effectively 2 "to json" calls we need to make, one for the actions and one for the keybindings
+        // So we cannot use RoundtripTest<ActionMap> for actions + keychords, just use RoundTripTest<GlobalAppSettings>
         Log::Comment(L"simple command with key chords");
-        RoundtripTest<implementation::ActionMap>(actionsString3);
+        RoundtripTest<implementation::GlobalAppSettings>(actionsString3);
 
         Log::Comment(L"complex commands with key chords");
-        RoundtripTest<implementation::ActionMap>(actionsString4A);
+        RoundtripTest<implementation::GlobalAppSettings>(actionsString4A);
 
         Log::Comment(L"command with name and icon and multiple key chords");
-        RoundtripTest<implementation::ActionMap>(actionsString5);
+        RoundtripTest<implementation::GlobalAppSettings>(actionsString5);
 
         Log::Comment(L"complex command with new terminal args");
         RoundtripTest<implementation::ActionMap>(actionsString6);
@@ -422,7 +451,7 @@ namespace SettingsModelUnitTests
         RoundtripTest<implementation::ActionMap>(actionsString9D);
 
         Log::Comment(L"unbound command");
-        RoundtripTest<implementation::ActionMap>(actionsString10);
+        RoundtripTest<implementation::GlobalAppSettings>(actionsString10);
     }
 
     void SerializationTests::CascadiaSettings()
@@ -491,7 +520,10 @@ namespace SettingsModelUnitTests
                 }
             ],
             "actions": [
-                { "command": { "action": "sendInput", "input": "VT Griese Mode" }, "keys": "ctrl+k" }
+                { "command": { "action": "sendInput", "input": "VT Griese Mode" }, "id": "Test.SendInput" }
+            ],
+            "keybindings": [
+                { "id": "Test.SendInput", "keys": "ctrl+k" }
             ],
             "theme": "system",
             "themes": []
@@ -511,7 +543,7 @@ namespace SettingsModelUnitTests
                 "name": "Profile with legacy font settings",
 
                 "fontFace": "Cascadia Mono",
-                "fontSize": 12.0,
+                "fontSize": 12,
                 "fontWeight": "normal"
             })" };
 
@@ -521,7 +553,7 @@ namespace SettingsModelUnitTests
 
                 "font": {
                     "face": "Cascadia Mono",
-                    "size": 12.0,
+                    "size": 12,
                     "weight": "normal"
                 }
             })" };
@@ -945,5 +977,352 @@ namespace SettingsModelUnitTests
         const auto newResult{ newSettings->ToJson() };
 
         VERIFY_ARE_EQUAL(toString(newResult), toString(oldResult));
+    }
+
+    void SerializationTests::RoundtripGenerateActionID()
+    {
+        static constexpr std::string_view oldSettingsJson{ R"(
+        {
+            "actions": [
+                {
+                    "name": "foo",
+                    "command": { "action": "sendInput", "input": "just some input" },
+                    "keys": "ctrl+shift+w"
+                }
+            ]
+        })" };
+
+        implementation::SettingsLoader loader{ oldSettingsJson, implementation::LoadStringResource(IDR_DEFAULTS) };
+        loader.MergeInboxIntoUserSettings();
+        loader.FinalizeLayering();
+        loader.FixupUserSettings();
+        const auto settings = winrt::make_self<implementation::CascadiaSettings>(std::move(loader));
+        const auto oldResult{ settings->ToJson() };
+        const auto sendInputCmd = settings->ActionMap().GetActionByKeyChord(KeyChord{ true, false, true, false, 87, 0 });
+
+        std::string_view expectedID{ R"(User.sendInput.)" SEND_INPUT_ARCH_SPECIFIC_ACTION_HASH };
+
+        VERIFY_ARE_EQUAL(sendInputCmd.ID(), winrt::to_hstring(expectedID));
+    }
+
+    void SerializationTests::NoGeneratedIDsForIterableAndNestedCommands()
+    {
+        // for iterable commands, nested commands, and user-defined actions that already have
+        // an ID, we do not need to generate an ID
+        static constexpr std::string_view oldSettingsJson{ R"(
+        {
+            "actions": [
+                {
+                    "name": "foo",
+                    "command": "closePane",
+                    "id": "thisIsMyClosePane"
+                },
+                {
+                    "iterateOn": "profiles",
+                    "icon": "${profile.icon}",
+                    "name": "${profile.name}",
+                    "command": { "action": "newTab", "profile": "${profile.name}" }
+                },
+                {
+                    "name": "Change font size...",
+                    "commands": [
+                        { "command": { "action": "adjustFontSize", "delta": 1 } },
+                        { "command": { "action": "adjustFontSize", "delta": -1 } },
+                        { "command": "resetFontSize" },
+                    ]
+                }
+            ]
+        })" };
+
+        implementation::SettingsLoader oldLoader{ oldSettingsJson, implementation::LoadStringResource(IDR_DEFAULTS) };
+        oldLoader.MergeInboxIntoUserSettings();
+        oldLoader.FinalizeLayering();
+        VERIFY_IS_FALSE(oldLoader.FixupUserSettings(), L"Validate that there is no need to write back to disk");
+    }
+
+    void SerializationTests::GeneratedActionIDsEqualForIdenticalCommands()
+    {
+        static constexpr std::string_view settingsJson1{ R"(
+        {
+            "actions": [
+                {
+                    "name": "foo",
+                    "command": { "action": "sendInput", "input": "this is some other input string" },
+                    "keys": "ctrl+shift+w"
+                }
+            ]
+        })" };
+
+        // Both settings files define the same action, so the generated ID should be the same for both
+        static constexpr std::string_view settingsJson2{ R"(
+        {
+            "actions": [
+                {
+                    "name": "foo",
+                    "command": { "action": "sendInput", "input": "this is some other input string" },
+                    "keys": "ctrl+shift+w"
+                }
+            ]
+        })" };
+
+        implementation::SettingsLoader loader1{ settingsJson1, implementation::LoadStringResource(IDR_DEFAULTS) };
+        loader1.MergeInboxIntoUserSettings();
+        loader1.FinalizeLayering();
+        loader1.FixupUserSettings();
+        const auto settings1 = winrt::make_self<implementation::CascadiaSettings>(std::move(loader1));
+        const auto result1{ settings1->ToJson() };
+
+        implementation::SettingsLoader loader2{ settingsJson2, implementation::LoadStringResource(IDR_DEFAULTS) };
+        loader2.MergeInboxIntoUserSettings();
+        loader2.FinalizeLayering();
+        loader2.FixupUserSettings();
+        const auto settings2 = winrt::make_self<implementation::CascadiaSettings>(std::move(loader2));
+        const auto result2{ settings2->ToJson() };
+
+        const auto sendInputCmd1 = settings1->ActionMap().GetActionByKeyChord(KeyChord{ true, false, true, false, 87, 0 });
+        const auto sendInputCmd2 = settings2->ActionMap().GetActionByKeyChord(KeyChord{ true, false, true, false, 87, 0 });
+
+        VERIFY_ARE_EQUAL(sendInputCmd1.ID(), sendInputCmd1.ID());
+    }
+
+    void SerializationTests::RoundtripLegacyToModernActions()
+    {
+        static constexpr std::string_view oldSettingsJson{ R"(
+        {
+            "actions": [
+                {
+                    "name": "foo",
+                    "id": "Test.SendInput",
+                    "command": { "action": "sendInput", "input": "just some input" },
+                    "keys": "ctrl+shift+w"
+                },
+                {
+                    "command": "unbound",
+                    "keys": "ctrl+shift+x"
+                }
+            ]
+        })" };
+
+        // modern style:
+        // - no "unbound" actions, these are just keybindings that have no id
+        // - no keys in actions, these are keybindings with an id
+        static constexpr std::string_view newSettingsJson{ R"(
+        {
+            "actions": [
+                {
+                    "name": "foo",
+                    "command": { "action": "sendInput", "input": "just some input" },
+                    "id": "Test.SendInput"
+                }
+            ],
+            "keybindings": [
+                {
+                    "id": "Test.SendInput",
+                    "keys": "ctrl+shift+w"
+                },
+                {
+                    "id": null,
+                    "keys": "ctrl+shift+x"
+                }
+            ]
+        })" };
+
+        implementation::SettingsLoader loader{ oldSettingsJson, implementation::LoadStringResource(IDR_DEFAULTS) };
+        loader.MergeInboxIntoUserSettings();
+        loader.FinalizeLayering();
+        VERIFY_IS_TRUE(loader.FixupUserSettings(), L"Validate that this will indicate we need to write them back to disk");
+        const auto settings = winrt::make_self<implementation::CascadiaSettings>(std::move(loader));
+        const auto oldResult{ settings->ToJson() };
+
+        implementation::SettingsLoader newLoader{ newSettingsJson, implementation::LoadStringResource(IDR_DEFAULTS) };
+        newLoader.MergeInboxIntoUserSettings();
+        newLoader.FinalizeLayering();
+        VERIFY_IS_FALSE(newLoader.FixupUserSettings(), L"Validate that there is no need to write back to disk");
+        const auto newSettings = winrt::make_self<implementation::CascadiaSettings>(std::move(newLoader));
+        const auto newResult{ newSettings->ToJson() };
+
+        VERIFY_ARE_EQUAL(toString(newResult), toString(oldResult));
+    }
+
+    void SerializationTests::RoundtripUserActionsSameAsInBoxAreRemoved()
+    {
+        static constexpr std::string_view oldSettingsJson{ R"(
+        {
+            "actions": [
+                {
+                    "command": "paste",
+                    "keys": "ctrl+shift+x"
+                }
+            ]
+        })" };
+
+        // this action is the same as in inbox one,
+        // so we will delete this action from the user's file but retain the keybinding
+        static constexpr std::string_view newSettingsJson{ R"(
+        {
+            "actions": [
+            ],
+            "keybindings": [
+                {
+                    "id": "Terminal.PasteFromClipboard",
+                    "keys": "ctrl+shift+x"
+                }
+            ]
+        })" };
+
+        implementation::SettingsLoader loader{ oldSettingsJson, implementation::LoadStringResource(IDR_DEFAULTS) };
+        loader.MergeInboxIntoUserSettings();
+        loader.FinalizeLayering();
+        VERIFY_IS_TRUE(loader.FixupUserSettings(), L"Validate that this will indicate we need to write them back to disk");
+        const auto settings = winrt::make_self<implementation::CascadiaSettings>(std::move(loader));
+        const auto oldResult{ settings->ToJson() };
+
+        implementation::SettingsLoader newLoader{ newSettingsJson, implementation::LoadStringResource(IDR_DEFAULTS) };
+        newLoader.MergeInboxIntoUserSettings();
+        newLoader.FinalizeLayering();
+        VERIFY_IS_FALSE(newLoader.FixupUserSettings(), L"Validate that there is no need to write back to disk");
+        const auto newSettings = winrt::make_self<implementation::CascadiaSettings>(std::move(newLoader));
+        const auto newResult{ newSettings->ToJson() };
+
+        VERIFY_ARE_EQUAL(toString(newResult), toString(oldResult));
+    }
+
+    void SerializationTests::RoundtripActionsSameNameDifferentCommandsAreRetained()
+    {
+        static constexpr std::string_view oldSettingsJson{ R"(
+        {
+            "actions": [
+                {
+                    "command": { "action": "sendInput", "input": "just some input" },
+                    "name": "mySendInput"
+                },
+                {
+                    "command": { "action": "sendInput", "input": "just some input 2" },
+                    "name": "mySendInput"
+                }
+            ]
+        })" };
+
+        // There are two different actions with the same name,
+        // ensure that both are kept but have different IDs generated for them
+        static constexpr std::string_view newSettingsJson{ R"(
+        {
+            "actions": [
+                {
+                    "name": "mySendInput",
+                    "command": { "action": "sendInput", "input": "just some input" },
+                    "id": "User.sendInput.)" SEND_INPUT_ARCH_SPECIFIC_ACTION_HASH R"("
+                },
+                {
+                    "name": "mySendInput",
+                    "command": { "action": "sendInput", "input": "just some input 2" },
+                    "id": "User.sendInput.)" SEND_INPUT2_ARCH_SPECIFIC_ACTION_HASH R"("
+                }
+            ]
+        })" };
+
+        implementation::SettingsLoader loader{ oldSettingsJson, implementation::LoadStringResource(IDR_DEFAULTS) };
+        loader.MergeInboxIntoUserSettings();
+        loader.FinalizeLayering();
+        VERIFY_IS_TRUE(loader.FixupUserSettings(), L"Validate that this will indicate we need to write them back to disk");
+        const auto settings = winrt::make_self<implementation::CascadiaSettings>(std::move(loader));
+        const auto oldResult{ settings->ToJson() };
+
+        implementation::SettingsLoader newLoader{ newSettingsJson, implementation::LoadStringResource(IDR_DEFAULTS) };
+        newLoader.MergeInboxIntoUserSettings();
+        newLoader.FinalizeLayering();
+        VERIFY_IS_FALSE(newLoader.FixupUserSettings(), L"Validate that there is no need to write back to disk");
+        const auto newSettings = winrt::make_self<implementation::CascadiaSettings>(std::move(newLoader));
+        const auto newResult{ newSettings->ToJson() };
+
+        VERIFY_ARE_EQUAL(toString(newResult), toString(oldResult));
+    }
+
+    void SerializationTests::MultipleActionsAreCollapsed()
+    {
+        static constexpr std::string_view oldSettingsJson{ R"(
+        {
+            "actions": [
+                {
+                    "name": "foo",
+                    "icon": "myCoolIconPath.png",
+                    "command": { "action": "sendInput", "input": "just some input" },
+                    "keys": "ctrl+shift+w"
+                },
+                {
+                    "command": { "action": "sendInput", "input": "just some input" },
+                    "keys": "ctrl+shift+x"
+                }
+            ]
+        })" };
+
+        // modern style:
+        // - multiple action blocks whose purpose is simply to define more keybindings for the same action
+        //   get collapsed into one action block, with the name and icon path preserved and have multiple keybindings instead
+        static constexpr std::string_view newSettingsJson{ R"(
+        {
+            "actions": [
+                {
+                    "name": "foo",
+                    "icon": "myCoolIconPath.png",
+                    "command": { "action": "sendInput", "input": "just some input" },
+                    "id": "User.sendInput.)" SEND_INPUT_ARCH_SPECIFIC_ACTION_HASH R"("
+                }
+            ],
+            "keybindings": [
+                {
+                    "keys": "ctrl+shift+w",
+                    "id": "User.sendInput.)" SEND_INPUT_ARCH_SPECIFIC_ACTION_HASH R"("
+                },
+                {
+                    "keys": "ctrl+shift+x",
+                    "id": "User.sendInput.)" SEND_INPUT_ARCH_SPECIFIC_ACTION_HASH R"("
+                }
+            ]
+        })" };
+
+        implementation::SettingsLoader loader{ oldSettingsJson, implementation::LoadStringResource(IDR_DEFAULTS) };
+        loader.MergeInboxIntoUserSettings();
+        loader.FinalizeLayering();
+        VERIFY_IS_TRUE(loader.FixupUserSettings(), L"Validate that this will indicate we need to write them back to disk");
+        const auto settings = winrt::make_self<implementation::CascadiaSettings>(std::move(loader));
+        const auto oldResult{ settings->ToJson() };
+
+        implementation::SettingsLoader newLoader{ newSettingsJson, implementation::LoadStringResource(IDR_DEFAULTS) };
+        newLoader.MergeInboxIntoUserSettings();
+        newLoader.FinalizeLayering();
+        VERIFY_IS_FALSE(newLoader.FixupUserSettings(), L"Validate that there is no need to write back to disk");
+        const auto newSettings = winrt::make_self<implementation::CascadiaSettings>(std::move(newLoader));
+        const auto newResult{ newSettings->ToJson() };
+
+        VERIFY_ARE_EQUAL(toString(newResult), toString(oldResult));
+    }
+
+    void SerializationTests::ProfileWithInvalidIcon()
+    {
+        static constexpr std::string_view settingsJson{ R"(
+        {
+            "defaultProfile": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+            "profiles": [
+                {
+                    "name": "profile0",
+                    "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+                    "historySize": 1,
+                    "commandline": "cmd.exe",
+                    "icon": "c:\\this_icon_had_better_not_exist.tiff"
+                }
+            ]
+        })" };
+
+        implementation::SettingsLoader loader{ settingsJson, implementation::LoadStringResource(IDR_DEFAULTS) };
+        loader.MergeInboxIntoUserSettings();
+        loader.FinalizeLayering();
+        const auto settings = winrt::make_self<implementation::CascadiaSettings>(std::move(loader));
+        const auto newResult{ settings->ToJson() };
+
+        // A profile that specifies an invalid icon will fall back to the commandline on load, but that should
+        // not be reflected back in settings.json as null *or* as the commandline. The value should be exactly
+        // what was written in the settings file.
+        VERIFY_ARE_EQUAL(R"(c:\this_icon_had_better_not_exist.tiff)", newResult["profiles"]["list"][0]["icon"].asString());
     }
 }

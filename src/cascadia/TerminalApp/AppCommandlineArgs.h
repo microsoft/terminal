@@ -28,15 +28,14 @@ public:
     ~AppCommandlineArgs() = default;
 
     int ParseCommand(const Commandline& command);
-    int ParseArgs(winrt::array_view<const winrt::hstring>& args);
+    int ParseArgs(winrt::array_view<const winrt::hstring> args);
 
     static std::vector<Commandline> BuildCommands(const std::vector<const wchar_t*>& args);
-    static std::vector<Commandline> BuildCommands(winrt::array_view<const winrt::hstring>& args);
+    static std::vector<Commandline> BuildCommands(winrt::array_view<const winrt::hstring> args);
 
     void ValidateStartupCommands();
     std::vector<winrt::Microsoft::Terminal::Settings::Model::ActionAndArgs>& GetStartupActions();
-    bool IsHandoffListener() const noexcept;
-    const std::string& GetExitMessage();
+    const std::string& GetExitMessage() const noexcept;
     bool ShouldExitEarly() const noexcept;
 
     std::optional<uint32_t> GetPersistedLayoutIdx() const noexcept;
@@ -93,6 +92,7 @@ private:
     CLI::App* _swapPaneCommand;
     CLI::App* _focusPaneCommand;
     CLI::App* _focusPaneShort;
+    CLI::App* _saveCommand;
 
     // Are you adding a new sub-command? Make sure to update _noCommandsProvided!
 
@@ -123,13 +123,14 @@ private:
     bool _focusPrevTab{ false };
 
     int _focusPaneTarget{ -1 };
+    std::string _saveInputName;
+    std::string _keyChordOption;
     // Are you adding more args here? Make sure to reset them in _resetStateToDefault
 
     const Commandline* _currentCommandline{ nullptr };
     std::optional<winrt::Microsoft::Terminal::Settings::Model::LaunchMode> _launchMode{ std::nullopt };
     std::optional<winrt::Microsoft::Terminal::Settings::Model::LaunchPosition> _position{ std::nullopt };
     std::optional<til::size> _size{ std::nullopt };
-    bool _isHandoffListener{ false };
     std::vector<winrt::Microsoft::Terminal::Settings::Model::ActionAndArgs> _startupActions;
     std::string _exitMessage;
     bool _shouldExitEarly{ false };
@@ -141,6 +142,7 @@ private:
     winrt::Microsoft::Terminal::Settings::Model::NewTerminalArgs _getNewTerminalArgs(NewTerminalSubcommand& subcommand);
     void _addNewTerminalArgs(NewTerminalSubcommand& subcommand);
     void _buildParser();
+    void _buildSaveSnippetParser();
     void _buildNewTabParser();
     void _buildSplitPaneParser();
     void _buildFocusTabParser();

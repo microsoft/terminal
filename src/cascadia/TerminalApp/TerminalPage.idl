@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 import "TaskbarState.idl";
+import "Remoting.idl";
 
 namespace TerminalApp
 {
@@ -25,13 +26,6 @@ namespace TerminalApp
         UInt32 TabIndex { get; };
         Windows.Foundation.IReference<Windows.Foundation.Point> WindowPosition { get; };
     };
-    [default_interface] runtimeclass RequestReceiveContentArgs {
-        RequestReceiveContentArgs(UInt64 src, UInt64 tgt, UInt32 tabIndex);
-
-        UInt64 SourceWindow { get; };
-        UInt64 TargetWindow { get; };
-        UInt32 TabIndex { get; };
-    };
 
     interface IDialogPresenter
     {
@@ -51,6 +45,11 @@ namespace TerminalApp
         Boolean IsQuakeWindow();
     };
 
+    runtimeclass LaunchPositionRequest
+    {
+        Microsoft.Terminal.Settings.Model.LaunchPosition Position;
+    }
+
     [default_interface] runtimeclass TerminalPage : Windows.UI.Xaml.Controls.Page, Windows.UI.Xaml.Data.INotifyPropertyChanged, Microsoft.Terminal.UI.IDirectKeyListener
     {
         TerminalPage(WindowProperties properties, ContentManager manager);
@@ -65,7 +64,10 @@ namespace TerminalApp
 
         WindowProperties WindowProperties { get; };
         void IdentifyWindow();
-        void RenameFailed();
+
+        String SavedActionName { get; };
+        String SavedActionKeyChord { get; };
+        String SavedActionCommandLine { get; };
 
         // We cannot use the default XAML APIs because we want to make sure
         // that there's only one application-global dialog visible at a time,
@@ -80,7 +82,7 @@ namespace TerminalApp
         void WindowActivated(Boolean activated);
         void SendContentToOther(RequestReceiveContentArgs args);
 
-        event Windows.Foundation.TypedEventHandler<Object, String> TitleChanged;
+        event Windows.Foundation.TypedEventHandler<Object, Object> TitleChanged;
         event Windows.Foundation.TypedEventHandler<Object, Object> CloseWindowRequested;
         event Windows.Foundation.TypedEventHandler<Object, Windows.UI.Xaml.UIElement> SetTitleBarContent;
         event Windows.Foundation.TypedEventHandler<Object, Object> FocusModeChanged;
@@ -91,12 +93,15 @@ namespace TerminalApp
         event Windows.Foundation.TypedEventHandler<Object, Object> IdentifyWindowsRequested;
         event Windows.Foundation.TypedEventHandler<Object, RenameWindowRequestedArgs> RenameWindowRequested;
         event Windows.Foundation.TypedEventHandler<Object, Object> SummonWindowRequested;
+        event Windows.Foundation.TypedEventHandler<Object, Microsoft.Terminal.Control.WindowSizeChangedEventArgs> WindowSizeChanged;
 
-        event Windows.Foundation.TypedEventHandler<Object, Object> CloseRequested;
         event Windows.Foundation.TypedEventHandler<Object, Object> OpenSystemMenu;
         event Windows.Foundation.TypedEventHandler<Object, Microsoft.Terminal.Control.ShowWindowArgs> ShowWindowChanged;
+        event Windows.Foundation.TypedEventHandler<Object, Windows.Foundation.Collections.IVectorView<Microsoft.Terminal.Settings.Model.SettingsLoadWarnings> > ShowLoadWarningsDialog;
 
         event Windows.Foundation.TypedEventHandler<Object, RequestMoveContentArgs> RequestMoveContent;
         event Windows.Foundation.TypedEventHandler<Object, RequestReceiveContentArgs> RequestReceiveContent;
+
+        event Windows.Foundation.TypedEventHandler<Object, LaunchPositionRequest> RequestLaunchPosition;
     }
 }

@@ -20,11 +20,35 @@ RenderSettings::RenderSettings() noexcept
     SetColorTableEntry(TextColor::FRAME_FOREGROUND, INVALID_COLOR);
     SetColorTableEntry(TextColor::FRAME_BACKGROUND, INVALID_COLOR);
     SetColorTableEntry(TextColor::CURSOR_COLOR, INVALID_COLOR);
+    SetColorTableEntry(TextColor::SELECTION_BACKGROUND, INVALID_COLOR);
 
     SetColorAliasIndex(ColorAlias::DefaultForeground, TextColor::DARK_WHITE);
     SetColorAliasIndex(ColorAlias::DefaultBackground, TextColor::DARK_BLACK);
     SetColorAliasIndex(ColorAlias::FrameForeground, TextColor::FRAME_FOREGROUND);
     SetColorAliasIndex(ColorAlias::FrameBackground, TextColor::FRAME_BACKGROUND);
+
+    SaveDefaultSettings();
+}
+
+// Routine Description:
+// - Saves the current color table and color aliases as the default values, so
+//   we can later restore them when a hard reset (RIS) is requested.
+void RenderSettings::SaveDefaultSettings() noexcept
+{
+    _defaultColorTable = _colorTable;
+    _defaultColorAliasIndices = _colorAliasIndices;
+}
+
+// Routine Description:
+// - Resets the render settings to their default values. which is typically
+//   what they were set to at startup.
+void RenderSettings::RestoreDefaultSettings() noexcept
+{
+    _colorTable = _defaultColorTable;
+    _colorAliasIndices = _defaultColorAliasIndices;
+    // DECSCNM and Synchronized Output are the only render mode we need to reset.
+    // The others are all user preferences that can't be changed programmatically.
+    _renderMode.reset(Mode::ScreenReversed, Mode::SynchronizedOutput);
 }
 
 // Routine Description:
@@ -89,6 +113,20 @@ COLORREF RenderSettings::GetColorTableEntry(const size_t tableIndex) const
 }
 
 // Routine Description:
+// - Restores all of the xterm-addressable colors to the ones saved in SaveDefaultSettings.
+void RenderSettings::RestoreDefaultIndexed256ColorTable()
+{
+    std::copy_n(_defaultColorTable.begin(), 256, _colorTable.begin());
+}
+
+// Routine Description:
+// - Restores a color table entry to the value saved in SaveDefaultSettings.
+void RenderSettings::RestoreDefaultColorTableEntry(const size_t tableIndex)
+{
+    _colorTable.at(tableIndex) = _defaultColorTable.at(tableIndex);
+}
+
+// Routine Description:
 // - Sets the position in the color table for the given color alias and updates the color.
 // Arguments:
 // - alias - The color alias to update.
@@ -133,6 +171,11 @@ void RenderSettings::SetColorAliasIndex(const ColorAlias alias, const size_t tab
 size_t RenderSettings::GetColorAliasIndex(const ColorAlias alias) const noexcept
 {
     return gsl::at(_colorAliasIndices, static_cast<size_t>(alias));
+}
+
+void RenderSettings::RestoreDefaultColorAliasIndex(const ColorAlias alias) noexcept
+{
+    gsl::at(_colorAliasIndices, static_cast<size_t>(alias)) = gsl::at(_defaultColorAliasIndices, static_cast<size_t>(alias));
 }
 
 // Routine Description:
@@ -259,7 +302,7 @@ COLORREF RenderSettings::GetAttributeUnderlineColor(const TextAttribute& attr) c
 //   renderer if there are blinking cells currently in view.
 // Arguments:
 // - renderer: the renderer that will be redrawn.
-void RenderSettings::ToggleBlinkRendition(Renderer& renderer) noexcept
+void RenderSettings::ToggleBlinkRendition(Renderer* renderer) noexcept
 try
 {
     if (GetRenderMode(Mode::BlinkAllowed))
@@ -277,7 +320,10 @@ try
             // We reset the _blinkIsInUse flag before redrawing, so we can
             // get a fresh assessment of the current blink attribute usage.
             _blinkIsInUse = false;
-            renderer.TriggerRedrawAll();
+            if (renderer)
+            {
+                renderer->TriggerRedrawAll();
+            }
         }
     }
 }

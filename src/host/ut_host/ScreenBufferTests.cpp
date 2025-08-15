@@ -16,8 +16,8 @@
 
 #include "../interactivity/inc/ServiceLocator.hpp"
 #include "../../inc/conattrs.hpp"
+#include "../../types/inc/colorTable.hpp"
 #include "../../types/inc/Viewport.hpp"
-#include "../../renderer/vt/Xterm256Engine.hpp"
 
 #include "../../inc/TestUtils.h"
 
@@ -44,7 +44,6 @@ class ScreenBufferTests
 
         m_state->InitEvents();
         m_state->PrepareGlobalFont({ 1, 1 });
-        m_state->PrepareGlobalRenderer();
         m_state->PrepareGlobalInputBuffer();
         m_state->PrepareGlobalScreenBuffer();
 
@@ -54,8 +53,6 @@ class ScreenBufferTests
     TEST_CLASS_CLEANUP(ClassCleanup)
     {
         m_state->CleanupGlobalScreenBuffer();
-        m_state->CleanupGlobalRenderer();
-        m_state->CleanupGlobalFont();
         m_state->CleanupGlobalInputBuffer();
 
         delete m_state;
@@ -79,7 +76,7 @@ class ScreenBufferTests
         VERIFY_SUCCEEDED(currentBuffer.SetViewportOrigin(true, { 0, 0 }, true));
         // Make sure the viewport always starts off at the default size.
         auto defaultSize = til::size{ CommonState::s_csWindowWidth, CommonState::s_csWindowHeight };
-        currentBuffer.SetViewport(Viewport::FromDimensions(defaultSize), true);
+        currentBuffer.SetViewport(Viewport::FromDimensions({}, defaultSize), true);
         VERIFY_ARE_EQUAL(til::point(0, 0), currentBuffer.GetTextBuffer().GetCursor().GetPosition());
         // Make sure the virtual bottom is correctly positioned.
         currentBuffer.UpdateBottom();
@@ -250,8 +247,6 @@ class ScreenBufferTests
     TEST_METHOD(DontChangeVirtualBottomWithMakeCursorVisible);
     TEST_METHOD(RetainHorizontalOffsetWhenMovingToBottom);
 
-    TEST_METHOD(TestWriteConsoleVTQuirkMode);
-
     TEST_METHOD(TestReflowEndOfLineColor);
     TEST_METHOD(TestReflowSmallerLongLineWithColor);
     TEST_METHOD(TestReflowBiggerLongLineWithColor);
@@ -262,8 +257,13 @@ class ScreenBufferTests
     TEST_METHOD(CopyDoubleWidthRectangularArea);
 
     TEST_METHOD(DelayedWrapReset);
+    TEST_METHOD(MultilineWrap);
 
     TEST_METHOD(EraseColorMode);
+
+    TEST_METHOD(SimpleMarkCommand);
+    TEST_METHOD(SimpleWrappedCommand);
+    TEST_METHOD(SimplePromptRegions);
 };
 
 void ScreenBufferTests::SingleAlternateBufferCreationTest()
@@ -579,8 +579,6 @@ void ScreenBufferTests::TestResetClearTabStops()
     // Reset the screen buffer to test the defaults.
     m_state->CleanupNewTextBufferInfo();
     m_state->CleanupGlobalScreenBuffer();
-    m_state->CleanupGlobalRenderer();
-    m_state->PrepareGlobalRenderer();
     m_state->PrepareGlobalScreenBuffer();
     m_state->PrepareNewTextBufferInfo();
 
@@ -1104,7 +1102,7 @@ void ScreenBufferTests::VtResize()
     auto initialViewWidth = si.GetViewport().Width();
 
     Log::Comment(NoThrowString().Format(
-        L"Write '\x1b[8;30;80t'"
+        L"Write '\\x1b[8;30;80t'"
         L" The Screen buffer height should remain unchanged, but the width should be 80 columns"
         L" The viewport should be w,h=80,30"));
 
@@ -1126,7 +1124,7 @@ void ScreenBufferTests::VtResize()
     initialViewWidth = newViewWidth;
 
     Log::Comment(NoThrowString().Format(
-        L"Write '\x1b[8;40;80t'"
+        L"Write '\\x1b[8;40;80t'"
         L" The Screen buffer height should remain unchanged, but the width should be 80 columns"
         L" The viewport should be w,h=80,40"));
 
@@ -1148,7 +1146,7 @@ void ScreenBufferTests::VtResize()
     initialViewWidth = newViewWidth;
 
     Log::Comment(NoThrowString().Format(
-        L"Write '\x1b[8;40;90t'"
+        L"Write '\\x1b[8;40;90t'"
         L" The Screen buffer height should remain unchanged, but the width should be 90 columns"
         L" The viewport should be w,h=90,40"));
 
@@ -1170,7 +1168,7 @@ void ScreenBufferTests::VtResize()
     initialViewWidth = newViewWidth;
 
     Log::Comment(NoThrowString().Format(
-        L"Write '\x1b[8;12;12t'"
+        L"Write '\\x1b[8;12;12t'"
         L" The Screen buffer height should remain unchanged, but the width should be 12 columns"
         L" The viewport should be w,h=12,12"));
 
@@ -2069,6 +2067,15 @@ void ScreenBufferTests::VtRestoreColorTableReport()
     // Blue component is clamped at 100%, so 150% interpreted as 100%
     stateMachine.ProcessString(L"\033P2$p14;2;0;0;150\033\\");
     VERIFY_ARE_EQUAL(RGB(0, 0, 255), gci.GetColorTableEntry(14));
+
+    Log::Comment(L"RIS restores initial Campbell color scheme");
+
+    stateMachine.ProcessString(L"\033c");
+    for (auto i = 0; i < 16; i++)
+    {
+        const COLORREF expectedColor = Microsoft::Console::Utils::CampbellColorTable()[i];
+        VERIFY_ARE_EQUAL(expectedColor, gci.GetColorTableEntry(i));
+    }
 }
 
 void ScreenBufferTests::ResizeTraditionalDoesNotDoubleFreeAttrRows()
@@ -2542,11 +2549,7 @@ void ScreenBufferTests::TestAltBufferVtDispatching()
         // We're going to write some data to either the main buffer or the alt
         //  buffer, as if we were using the API.
 
-        std::unique_ptr<WriteData> waiter;
-        std::wstring seq = L"\x1b[5;6H";
-        auto seqCb = 2 * seq.size();
-        VERIFY_SUCCEEDED(DoWriteConsole(&seq[0], &seqCb, mainBuffer, false, waiter));
-
+        VERIFY_SUCCEEDED(DoWriteConsole(mainBuffer, L"\x1b[5;6H"));
         VERIFY_ARE_EQUAL(til::point(0, 0), mainCursor.GetPosition());
         // recall: vt coordinates are (row, column), 1-indexed
         VERIFY_ARE_EQUAL(til::point(5, 4), altCursor.GetPosition());
@@ -2558,17 +2561,11 @@ void ScreenBufferTests::TestAltBufferVtDispatching()
         VERIFY_ARE_EQUAL(expectedDefaults, mainBuffer.GetAttributes());
         VERIFY_ARE_EQUAL(expectedDefaults, alternate.GetAttributes());
 
-        seq = L"\x1b[48;2;255;0;255m";
-        seqCb = 2 * seq.size();
-        VERIFY_SUCCEEDED(DoWriteConsole(&seq[0], &seqCb, mainBuffer, false, waiter));
-
+        VERIFY_SUCCEEDED(DoWriteConsole(mainBuffer, L"\x1b[48;2;255;0;255m"));
         VERIFY_ARE_EQUAL(expectedDefaults, mainBuffer.GetAttributes());
         VERIFY_ARE_EQUAL(expectedRgb, alternate.GetAttributes());
 
-        seq = L"X";
-        seqCb = 2 * seq.size();
-        VERIFY_SUCCEEDED(DoWriteConsole(&seq[0], &seqCb, mainBuffer, false, waiter));
-
+        VERIFY_SUCCEEDED(DoWriteConsole(mainBuffer, L"X"));
         VERIFY_ARE_EQUAL(til::point(0, 0), mainCursor.GetPosition());
         VERIFY_ARE_EQUAL(til::point(6, 4), altCursor.GetPosition());
 
@@ -3351,6 +3348,13 @@ void ScreenBufferTests::AssignColorAliases()
     stateMachine.ProcessString(L"\033[2;34;56,|");
     VERIFY_ARE_EQUAL(34u, renderSettings.GetColorAliasIndex(ColorAlias::FrameForeground));
     VERIFY_ARE_EQUAL(56u, renderSettings.GetColorAliasIndex(ColorAlias::FrameBackground));
+
+    Log::Comment(L"Test RIS restores initial color assignments");
+    stateMachine.ProcessString(L"\033c");
+    VERIFY_ARE_EQUAL(defaultFg, renderSettings.GetColorAliasIndex(ColorAlias::DefaultForeground));
+    VERIFY_ARE_EQUAL(defaultBg, renderSettings.GetColorAliasIndex(ColorAlias::DefaultBackground));
+    VERIFY_ARE_EQUAL(frameFg, renderSettings.GetColorAliasIndex(ColorAlias::FrameForeground));
+    VERIFY_ARE_EQUAL(frameBg, renderSettings.GetColorAliasIndex(ColorAlias::FrameBackground));
 }
 
 void ScreenBufferTests::DeleteCharsNearEndOfLine()
@@ -5978,7 +5982,7 @@ void ScreenBufferTests::ClearAlternateBuffer()
 
         auto useMain = wil::scope_exit([&] { altBuffer.UseMainScreenBuffer(); });
 
-        // Set the position to home, otherwise it's inherited from the main buffer.
+        // Set the position to home; otherwise, it's inherited from the main buffer.
         VERIFY_SUCCEEDED(altBuffer.SetCursorPosition({ 0, 0 }, true));
 
         WriteText(altBuffer.GetTextBuffer());
@@ -7562,127 +7566,6 @@ void ScreenBufferTests::RetainHorizontalOffsetWhenMovingToBottom()
     VERIFY_ARE_EQUAL(initialOrigin.x, si.GetViewport().Left());
 }
 
-void ScreenBufferTests::TestWriteConsoleVTQuirkMode()
-{
-    BEGIN_TEST_METHOD_PROPERTIES()
-        TEST_METHOD_PROPERTY(L"Data:useQuirk", L"{false, true}")
-    END_TEST_METHOD_PROPERTIES()
-
-    bool useQuirk;
-    VERIFY_SUCCEEDED(TestData::TryGetValue(L"useQuirk", useQuirk), L"whether to enable the quirk");
-
-    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    gci.LockConsole(); // Lock must be taken to manipulate buffer.
-    auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
-
-    auto& mainBuffer = gci.GetActiveOutputBuffer();
-    auto& cursor = mainBuffer.GetTextBuffer().GetCursor();
-    // Make sure we're in VT mode
-    WI_SetFlag(mainBuffer.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
-
-    const TextAttribute defaultAttribute{};
-    // Make sure we're using the default attributes at the start of the test,
-    // Otherwise they could be polluted from a previous test.
-    mainBuffer.SetAttributes(defaultAttribute);
-
-    const auto verifyLastAttribute = [&](const TextAttribute& expected) {
-        const auto& row = mainBuffer.GetTextBuffer().GetRowByOffset(cursor.GetPosition().y);
-        auto iter{ row.AttrBegin() };
-        iter += cursor.GetPosition().x - 1;
-        VERIFY_ARE_EQUAL(expected, *iter);
-    };
-
-    std::unique_ptr<WriteData> waiter;
-
-    std::wstring seq{};
-    size_t seqCb{ 0 };
-
-    /* Write red on blue, verify that it comes through */
-    {
-        TextAttribute vtRedOnBlueAttribute{};
-        vtRedOnBlueAttribute.SetForeground(TextColor{ TextColor::DARK_RED, false });
-        vtRedOnBlueAttribute.SetBackground(TextColor{ TextColor::DARK_BLUE, false });
-
-        seq = L"\x1b[31;44m";
-        seqCb = 2 * seq.size();
-        VERIFY_SUCCEEDED(DoWriteConsole(&seq[0], &seqCb, mainBuffer, useQuirk, waiter));
-
-        VERIFY_ARE_EQUAL(vtRedOnBlueAttribute, mainBuffer.GetAttributes());
-
-        seq = L"X";
-        seqCb = 2 * seq.size();
-        VERIFY_SUCCEEDED(DoWriteConsole(&seq[0], &seqCb, mainBuffer, useQuirk, waiter));
-
-        verifyLastAttribute(vtRedOnBlueAttribute);
-    }
-
-    /* Write white on black, verify that it acts as expected for the quirk mode */
-    {
-        TextAttribute vtWhiteOnBlackAttribute{};
-        vtWhiteOnBlackAttribute.SetForeground(TextColor{ TextColor::DARK_WHITE, false });
-        vtWhiteOnBlackAttribute.SetBackground(TextColor{ TextColor::DARK_BLACK, false });
-
-        const auto quirkExpectedAttribute{ useQuirk ? defaultAttribute : vtWhiteOnBlackAttribute };
-
-        seq = L"\x1b[37;40m"; // the quirk should suppress this, turning it into "defaults"
-        seqCb = 2 * seq.size();
-        VERIFY_SUCCEEDED(DoWriteConsole(&seq[0], &seqCb, mainBuffer, useQuirk, waiter));
-
-        VERIFY_ARE_EQUAL(quirkExpectedAttribute, mainBuffer.GetAttributes());
-
-        seq = L"X";
-        seqCb = 2 * seq.size();
-        VERIFY_SUCCEEDED(DoWriteConsole(&seq[0], &seqCb, mainBuffer, useQuirk, waiter));
-
-        verifyLastAttribute(quirkExpectedAttribute);
-    }
-
-    /* Write bright white on black, verify that it acts as expected for the quirk mode */
-    {
-        TextAttribute vtBrightWhiteOnBlackAttribute{};
-        vtBrightWhiteOnBlackAttribute.SetForeground(TextColor{ TextColor::DARK_WHITE, false });
-        vtBrightWhiteOnBlackAttribute.SetBackground(TextColor{ TextColor::DARK_BLACK, false });
-        vtBrightWhiteOnBlackAttribute.SetIntense(true);
-
-        auto vtBrightWhiteOnDefaultAttribute{ vtBrightWhiteOnBlackAttribute }; // copy the above attribute
-        vtBrightWhiteOnDefaultAttribute.SetDefaultBackground();
-
-        const auto quirkExpectedAttribute{ useQuirk ? vtBrightWhiteOnDefaultAttribute : vtBrightWhiteOnBlackAttribute };
-
-        seq = L"\x1b[1;37;40m"; // the quirk should suppress black only, turning it into "default background"
-        seqCb = 2 * seq.size();
-        VERIFY_SUCCEEDED(DoWriteConsole(&seq[0], &seqCb, mainBuffer, useQuirk, waiter));
-
-        VERIFY_ARE_EQUAL(quirkExpectedAttribute, mainBuffer.GetAttributes());
-
-        seq = L"X";
-        seqCb = 2 * seq.size();
-        VERIFY_SUCCEEDED(DoWriteConsole(&seq[0], &seqCb, mainBuffer, useQuirk, waiter));
-
-        verifyLastAttribute(quirkExpectedAttribute);
-    }
-
-    /* Write a 256-color white on a 256-color black, make sure the quirk does not suppress it */
-    {
-        TextAttribute vtWhiteOnBlack256Attribute{};
-        vtWhiteOnBlack256Attribute.SetForeground(TextColor{ TextColor::DARK_WHITE, true });
-        vtWhiteOnBlack256Attribute.SetBackground(TextColor{ TextColor::DARK_BLACK, true });
-
-        // reset (disable intense from the last test) before setting both colors
-        seq = L"\x1b[m\x1b[38;5;7;48;5;0m"; // the quirk should *not* suppress this (!)
-        seqCb = 2 * seq.size();
-        VERIFY_SUCCEEDED(DoWriteConsole(&seq[0], &seqCb, mainBuffer, useQuirk, waiter));
-
-        VERIFY_ARE_EQUAL(vtWhiteOnBlack256Attribute, mainBuffer.GetAttributes());
-
-        seq = L"X";
-        seqCb = 2 * seq.size();
-        VERIFY_SUCCEEDED(DoWriteConsole(&seq[0], &seqCb, mainBuffer, useQuirk, waiter));
-
-        verifyLastAttribute(vtWhiteOnBlack256Attribute);
-    }
-}
-
 void ScreenBufferTests::TestReflowEndOfLineColor()
 {
     BEGIN_TEST_METHOD_PROPERTIES()
@@ -7927,11 +7810,9 @@ void ScreenBufferTests::TestReflowBiggerLongLineWithColor()
 void ScreenBufferTests::TestDeferredMainBufferResize()
 {
     BEGIN_TEST_METHOD_PROPERTIES()
-        TEST_METHOD_PROPERTY(L"Data:inConpty", L"{false, true}")
         TEST_METHOD_PROPERTY(L"Data:reEnterAltBuffer", L"{false, true}")
     END_TEST_METHOD_PROPERTIES();
 
-    INIT_TEST_PROPERTY(bool, inConpty, L"Should we pretend to be in conpty mode?");
     INIT_TEST_PROPERTY(bool, reEnterAltBuffer, L"Should we re-enter the alt buffer when we're already in it?");
 
     // A test for https://github.com/microsoft/terminal/pull/12719#discussion_r834860330
@@ -7941,31 +7822,6 @@ void ScreenBufferTests::TestDeferredMainBufferResize()
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     gci.LockConsole(); // Lock must be taken to manipulate buffer.
     auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
-
-    // HUGELY cribbed from ConptyRoundtripTests::MethodSetup. This fakes the
-    // console into thinking that it's in ConPTY mode. Yes, we need all this
-    // just to get gci.IsInVtIoMode() to return true. The screen buffer gates
-    // all sorts of internal checks on that.
-    //
-    // This could theoretically be a helper if other tests need it.
-    if (inConpty)
-    {
-        Log::Comment(L"Set up ConPTY");
-
-        auto& currentBuffer = gci.GetActiveOutputBuffer();
-        // Set up an xterm-256 renderer for conpty
-        wil::unique_hfile hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
-        auto initialViewport = currentBuffer.GetViewport();
-        auto vtRenderEngine = std::make_unique<Microsoft::Console::Render::Xterm256Engine>(std::move(hFile),
-                                                                                           initialViewport);
-        // We don't care about the output, so let it just drain to the void.
-        vtRenderEngine->SetTestCallback([](auto&&, auto&&) -> bool { return true; });
-        gci.GetActiveOutputBuffer().SetTerminalConnection(vtRenderEngine.get());
-        // Manually set the console into conpty mode. We're not actually going
-        // to set up the pipes for conpty, but we want the console to behave
-        // like it would in conpty mode.
-        ServiceLocator::LocateGlobals().EnableConptyModeForTests(std::move(vtRenderEngine));
-    }
 
     auto* siMain = &gci.GetActiveOutputBuffer();
     auto& stateMachine = siMain->GetStateMachine();
@@ -8319,6 +8175,39 @@ void ScreenBufferTests::DelayedWrapReset()
     }
 }
 
+void ScreenBufferTests::MultilineWrap()
+{
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
+    auto& stateMachine = si.GetStateMachine();
+    const auto bufferAttr = si.GetTextBuffer().GetCurrentAttributes();
+    const auto width = si.GetTextBuffer().GetSize().Width();
+    const auto bottomRow = si.GetViewport().BottomInclusive();
+
+    // Starting on the bottom row.
+    si.GetTextBuffer().GetCursor().SetPosition({ 0, bottomRow });
+
+    // Write out enough text to wrap over four lines.
+    auto fourLines = std::wstring{};
+    fourLines += L"1";
+    fourLines += std::wstring(width - 1, L' ');
+    fourLines += L"2";
+    fourLines += std::wstring(width - 1, L' ');
+    fourLines += L"3";
+    fourLines += std::wstring(width - 1, L' ');
+    fourLines += L"4";
+    stateMachine.ProcessString(fourLines);
+
+    Log::Comment(L"Cursor should have moved down three rows");
+    VERIFY_ARE_EQUAL(bottomRow + 3, si.GetTextBuffer().GetCursor().GetPosition().y);
+
+    Log::Comment(L"Bottom four rows should have the content 1, 2, 3, and 4");
+    VERIFY_IS_TRUE(_ValidateLineContains(bottomRow + 0, L"1", bufferAttr));
+    VERIFY_IS_TRUE(_ValidateLineContains(bottomRow + 1, L"2", bufferAttr));
+    VERIFY_IS_TRUE(_ValidateLineContains(bottomRow + 2, L"3", bufferAttr));
+    VERIFY_IS_TRUE(_ValidateLineContains(bottomRow + 3, L"4", bufferAttr));
+}
+
 void ScreenBufferTests::EraseColorMode()
 {
     BEGIN_TEST_METHOD_PROPERTIES()
@@ -8403,4 +8292,180 @@ void ScreenBufferTests::EraseColorMode()
     const auto cellData = si.GetCellDataAt(op.erasePos);
     VERIFY_ARE_EQUAL(expectedEraseAttr, cellData->TextAttr());
     VERIFY_ARE_EQUAL(L" ", cellData->Chars());
+}
+
+#define FTCS_A L"\x1b]133;A\x1b\\"
+#define FTCS_B L"\x1b]133;B\x1b\\"
+#define FTCS_C L"\x1b]133;C\x1b\\"
+#define FTCS_D L"\x1b]133;D\x1b\\"
+
+void ScreenBufferTests::SimpleMarkCommand()
+{
+    auto& g = ServiceLocator::LocateGlobals();
+    auto& gci = g.getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& tbi = si.GetTextBuffer();
+    auto& stateMachine = si.GetStateMachine();
+
+    stateMachine.ProcessString(L"Zero\n");
+
+    {
+        const auto currentRowOffset = tbi.GetCursor().GetPosition().y;
+        auto& currentRow = tbi.GetRowByOffset(currentRowOffset);
+
+        stateMachine.ProcessString(FTCS_A L"A Prompt" FTCS_B L"my_command" FTCS_C L"\n");
+
+        VERIFY_IS_TRUE(currentRow.GetScrollbarData().has_value());
+    }
+
+    stateMachine.ProcessString(L"Two\n");
+    VERIFY_ARE_EQUAL(L"my_command", tbi.CurrentCommand());
+
+    stateMachine.ProcessString(FTCS_D FTCS_A L"B Prompt" FTCS_B);
+
+    VERIFY_ARE_EQUAL(tbi.CurrentCommand(), L"");
+
+    stateMachine.ProcessString(L"some of a command");
+    VERIFY_ARE_EQUAL(tbi.CurrentCommand(), L"some of a command");
+    // Now add some color in the middle of the command:
+    stateMachine.ProcessString(L"\x1b[31m");
+    stateMachine.ProcessString(L" & more of a command");
+
+    VERIFY_ARE_EQUAL(L"some of a command & more of a command", tbi.CurrentCommand());
+
+    std::vector<std::wstring> expectedCommands{ L"my_command",
+                                                L"some of a command & more of a command" };
+    VERIFY_ARE_EQUAL(expectedCommands, tbi.Commands());
+}
+
+void ScreenBufferTests::SimpleWrappedCommand()
+{
+    BEGIN_TEST_METHOD_PROPERTIES()
+        TEST_METHOD_PROPERTY(L"IsolationLevel", L"Method")
+    END_TEST_METHOD_PROPERTIES()
+
+    auto& g = ServiceLocator::LocateGlobals();
+    auto& gci = g.getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& tbi = si.GetTextBuffer();
+    auto& stateMachine = si.GetStateMachine();
+
+    stateMachine.ProcessString(L"Zero\n");
+
+    const auto oneHundredZeros = std::wstring(100, L'0');
+    {
+        const auto originalRowOffset = tbi.GetCursor().GetPosition().y;
+        auto& originalRow = tbi.GetRowByOffset(originalRowOffset);
+        stateMachine.ProcessString(FTCS_A L"A Prompt" FTCS_B);
+
+        // This command is literally 100 '0' characters, so that we _know_ we wrapped.
+        stateMachine.ProcessString(oneHundredZeros);
+
+        const auto secondRowOffset = tbi.GetCursor().GetPosition().y;
+        VERIFY_ARE_NOT_EQUAL(originalRowOffset, secondRowOffset);
+        auto& secondRow = tbi.GetRowByOffset(secondRowOffset);
+
+        VERIFY_IS_TRUE(originalRow.GetScrollbarData().has_value());
+        VERIFY_IS_FALSE(secondRow.GetScrollbarData().has_value());
+
+        stateMachine.ProcessString(FTCS_C L"\n");
+
+        VERIFY_IS_TRUE(originalRow.GetScrollbarData().has_value());
+        VERIFY_IS_FALSE(secondRow.GetScrollbarData().has_value());
+    }
+
+    stateMachine.ProcessString(L"Two\n");
+    VERIFY_ARE_EQUAL(oneHundredZeros, tbi.CurrentCommand());
+
+    stateMachine.ProcessString(FTCS_D FTCS_A L"B Prompt" FTCS_B);
+
+    VERIFY_ARE_EQUAL(tbi.CurrentCommand(), L"");
+
+    stateMachine.ProcessString(L"some of a command");
+    VERIFY_ARE_EQUAL(tbi.CurrentCommand(), L"some of a command");
+    // Now add some color in the middle of the command:
+    stateMachine.ProcessString(L"\x1b[31m");
+    stateMachine.ProcessString(L" & more of a command");
+
+    VERIFY_ARE_EQUAL(L"some of a command & more of a command", tbi.CurrentCommand());
+
+    std::vector<std::wstring> expectedCommands{ oneHundredZeros,
+                                                L"some of a command & more of a command" };
+    VERIFY_ARE_EQUAL(expectedCommands, tbi.Commands());
+}
+
+static void _writePrompt(StateMachine& stateMachine, const auto& path)
+{
+    stateMachine.ProcessString(FTCS_D);
+    stateMachine.ProcessString(FTCS_A);
+    stateMachine.ProcessString(L"\x1b]9;9;");
+    stateMachine.ProcessString(path);
+    stateMachine.ProcessString(L"\x7");
+    stateMachine.ProcessString(L"PWSH ");
+    stateMachine.ProcessString(path);
+    stateMachine.ProcessString(L"> ");
+    stateMachine.ProcessString(FTCS_B);
+}
+
+void ScreenBufferTests::SimplePromptRegions()
+{
+    auto& g = ServiceLocator::LocateGlobals();
+    auto& gci = g.getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& tbi = si.GetTextBuffer();
+    auto& stateMachine = si.GetStateMachine();
+
+    // A prompt looks like:
+    // `PWSH C:\Windows> `
+    //
+    // which is 17 characters for C:\Windows
+
+    _writePrompt(stateMachine, L"C:\\Windows");
+    stateMachine.ProcessString(L"Foo-bar");
+    stateMachine.ProcessString(FTCS_C);
+    stateMachine.ProcessString(L"\r\n");
+    stateMachine.ProcessString(L"This is some text     \r\n"); // y=1
+    stateMachine.ProcessString(L"with varying amounts  \r\n"); // y=2
+    stateMachine.ProcessString(L"of whitespace         \r\n"); // y=3
+
+    _writePrompt(stateMachine, L"C:\\Windows"); // y=4
+
+    Log::Comment(L"Check the buffer contents");
+    const auto& cursor = tbi.GetCursor();
+
+    {
+        const til::point expectedCursor{ 17, 4 };
+        VERIFY_ARE_EQUAL(expectedCursor, cursor.GetPosition());
+    }
+    const WEX::TestExecution::DisableVerifyExceptions disableExceptionsScope;
+
+    const auto& row0 = tbi.GetRowByOffset(0);
+    const auto& row4 = tbi.GetRowByOffset(4);
+    VERIFY_IS_TRUE(row0.GetScrollbarData().has_value());
+    VERIFY_IS_TRUE(row4.GetScrollbarData().has_value());
+
+    const auto marks = tbi.GetMarkExtents();
+    VERIFY_ARE_EQUAL(2u, marks.size());
+
+    {
+        auto& mark = marks[0];
+        const til::point expectedStart{ 0, 0 };
+        const til::point expectedEnd{ 17, 0 };
+        const til::point expectedOutputStart{ 24, 0 }; // `Foo-Bar` is 7 characters
+        const til::point expectedOutputEnd{ 22, 3 };
+        VERIFY_ARE_EQUAL(expectedStart, mark.start);
+        VERIFY_ARE_EQUAL(expectedEnd, mark.end);
+
+        VERIFY_ARE_EQUAL(expectedOutputStart, *mark.commandEnd);
+        VERIFY_ARE_EQUAL(expectedOutputEnd, *mark.outputEnd);
+    }
+    {
+        auto& mark = marks[1];
+        const til::point expectedStart{ 0, 4 };
+        const til::point expectedEnd{ 17, 4 };
+        VERIFY_ARE_EQUAL(expectedStart, mark.start);
+        VERIFY_ARE_EQUAL(expectedEnd, mark.end);
+        VERIFY_IS_FALSE(mark.commandEnd.has_value());
+        VERIFY_IS_FALSE(mark.outputEnd.has_value());
+    }
 }

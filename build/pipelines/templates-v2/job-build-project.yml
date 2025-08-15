@@ -65,6 +65,12 @@ parameters:
   - name: removeAllNonSignedFiles
     type: boolean
     default: false
+  - name: signingIdentity
+    type: object
+    default: {}
+  - name: enableCaching
+    type: boolean
+    default: false
 
 jobs:
 - job: ${{ parameters.jobName }}
@@ -92,6 +98,7 @@ jobs:
     # Yup.
     BuildTargetParameter: ' '
     SelectedSigningFragments: ' '
+    MSBuildCacheParameters: ' '
     # When building the unpackaged distribution, build it in portable mode if it's Canary-branded
     ${{ if eq(parameters.branding, 'Canary') }}:
       UnpackagedBuildArguments: -PortableMode
@@ -108,6 +115,7 @@ jobs:
     clean: true
     submodules: true
     persistCredentials: True
+
   # This generates either nothing for BuildTargetParameter, or /t:X;Y;Z, to control targets later.
   - pwsh: |-
       If (-Not [bool]::Parse("${{ parameters.buildEverything }}")) {
@@ -136,11 +144,28 @@ jobs:
       }
     displayName: Prepare Build and Sign Targets
 
+  - ${{ if eq(parameters.enableCaching, true) }}:
+    - pwsh: |-
+        $MSBuildCacheParameters = ""
+        $MSBuildCacheParameters += " -graph"
+        $MSBuildCacheParameters += " -reportfileaccesses"
+        $MSBuildCacheParameters += " -p:MSBuildCacheEnabled=true"
+        $MSBuildCacheParameters += " -p:MSBuildCacheLogDirectory=$(Build.SourcesDirectory)\MSBuildCacheLogs"
+        Write-Host "MSBuildCacheParameters: $MSBuildCacheParameters"
+        Write-Host "##vso[task.setvariable variable=MSBuildCacheParameters]$MSBuildCacheParameters"
+      displayName: Prepare MSBuildCache variables
+
   - pwsh: |-
       .\build\scripts\Generate-ThirdPartyNotices.ps1 -MarkdownNoticePath .\NOTICE.md -OutputPath .\src\cascadia\CascadiaPackage\NOTICE.html
     displayName: Generate NOTICE.html from NOTICE.md
 
+  - template: .\steps-install-vcpkg.yml
+
   - template: .\steps-restore-nuget.yml
+
+  - pwsh: |-
+      .\build\scripts\Set-LatestVCToolsVersion.ps1
+    displayName: Work around DD-1541167 (VCToolsVersion)
 
   - ${{ parameters.beforeBuildSteps }}
 
@@ -153,21 +178,37 @@ jobs:
         ${{ parameters.additionalBuildOptions }}
         /bl:$(Build.SourcesDirectory)\msbuild.binlog
         $(BuildTargetParameter)
+        $(MSBuildCacheParameters)
       platform: $(BuildPlatform)
       configuration: $(BuildConfiguration)
+      msbuildArchitecture: x64
       maximumCpuCount: true
+    ${{ if eq(parameters.enableCaching, true) }}:
+      env:
+        SYSTEM_ACCESSTOKEN: $(System.AccessToken)
 
   - ${{ if eq(parameters.publishArtifacts, true) }}:
     - publish: $(Build.SourcesDirectory)/msbuild.binlog
       artifact: logs-$(BuildPlatform)-$(BuildConfiguration)${{ parameters.artifactStem }}
       condition: always()
       displayName: Publish Build Log
+    - ${{ if eq(parameters.enableCaching, true) }}:
+      - publish: $(Build.SourcesDirectory)\MSBuildCacheLogs
+        artifact: logs-msbuildcache-$(BuildPlatform)-$(BuildConfiguration)${{ parameters.artifactStem }}
+        condition: always()
+        displayName: Publish MSBuildCache Logs
   - ${{ else }}:
     - task: CopyFiles@2
       displayName: Copy Build Log
       inputs:
         contents: $(Build.SourcesDirectory)/msbuild.binlog
         TargetFolder: $(Terminal.BinDir)
+    - ${{ if eq(parameters.enableCaching, true) }}:
+      - task: CopyFiles@2
+        displayName: Copy MSBuildCache Logs
+        inputs:
+          contents: $(Build.SourcesDirectory)/MSBuildCacheLogs/**
+          TargetFolder: $(Terminal.BinDir)/MSBuildCacheLogs
 
   # This saves ~2GiB per architecture. We won't need these later.
   # Removes:
@@ -235,13 +276,14 @@ jobs:
 
     # Code-sign everything we just put together.
     # We run the signing in Terminal.BinDir, because all of the signing batches are relative to the final architecture/configuration output folder.
-    - task: EsrpCodeSigning@3
-      displayName: Submit Signing Request
-      inputs:
-        ConnectedServiceName: 9d6d2960-0793-4d59-943e-78dcb434840a
-        FolderPath: '$(Terminal.BinDir)'
-        signType: batchSigning
-        batchSignPolicyFile: '$(Build.SourcesDirectory)/ESRPSigningConfig.json'
+    - template: steps-esrp-signing.yml
+      parameters:
+        displayName: Submit Signing Request
+        signingIdentity: ${{ parameters.signingIdentity }}
+        inputs:
+          FolderPath: '$(Terminal.BinDir)'
+          signType: batchSigning
+          batchSignPolicyFile: '$(Build.SourcesDirectory)/ESRPSigningConfig.json'
 
     # We only need to re-pack the MSIX if we actually signed, so this can stay in the codeSign conditional
     - ${{ if or(parameters.buildTerminal, parameters.buildEverything) }}:

@@ -124,7 +124,7 @@
     </Type>
 
     <Type Name="til::linear_flat_set&lt;*,*&gt;">
-        <DisplayString>{{ size={_load / $T2} }}</DisplayString>
+        <DisplayString>{{ size={_load / $T3} }}</DisplayString>
         <Expand>
             <ArrayItems>
                 <Size>_capacity</Size>
@@ -161,22 +161,18 @@
     </Type>
 
     <Type Name="Microsoft::Console::Render::Atlas::BackendD3D::AtlasGlyphEntry">
-        <DisplayString Condition="!_occupied">(empty)</DisplayString>
-        <DisplayString Condition="_occupied">{glyphIndex}</DisplayString>
-    </Type>
-
-    <Type Name="Microsoft::Console::Render::Atlas::BackendD3D::AtlasFontFaceEntryInner">
-        <DisplayString>{(void*)fontFace.m_ptr}, {lineRendition}</DisplayString>
-        <Expand>
-            <ExpandedItem>glyphs</ExpandedItem>
-        </Expand>
+        <DisplayString Condition="occupied == 0">(empty)</DisplayString>
+        <DisplayString Condition="occupied != 0">{glyphIndex}</DisplayString>
     </Type>
 
     <Type Name="Microsoft::Console::Render::Atlas::BackendD3D::AtlasFontFaceEntry">
-        <DisplayString Condition="!inner._Mypair._Myval2">(empty)</DisplayString>
-        <DisplayString Condition="inner._Mypair._Myval2">{*inner._Mypair._Myval2}</DisplayString>
+        <DisplayString Condition="!fontFace.m_ptr">(empty)</DisplayString>
+        <DisplayString Condition="fontFace.m_ptr">{*fontFace.m_ptr}</DisplayString>
         <Expand>
-            <ExpandedItem>*inner._Mypair._Myval2</ExpandedItem>
+            <Item Name="Single Width" ExcludeView="simple">glyphs[0]</Item>
+            <Item Name="Double Width" ExcludeView="simple">glyphs[1]</Item>
+            <Item Name="Double Height Top" ExcludeView="simple">glyphs[2]</Item>
+            <Item Name="Double Height Bottom" ExcludeView="simple">glyphs[3]</Item>
         </Expand>
     </Type>
 </AutoVisualizer>

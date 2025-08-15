@@ -60,6 +60,7 @@ namespace mem
         void* _push_uninitialized(size_t bytes, size_t alignment = __STDCPP_DEFAULT_NEW_ALIGNMENT__);
 
         uint8_t* m_alloc = nullptr;
+        size_t m_commit = 0;
         size_t m_pos = 0;
     };
 
@@ -96,16 +97,32 @@ namespace mem
     }
 
     template<typename T>
-    std::basic_string_view<T> repeat_string(Arena& arena, std::basic_string_view<T> in, size_t count)
+    auto repeat(Arena& arena, const T& in, size_t count) -> decltype(auto)
     {
-        const auto len = count * in.size();
-        const auto buf = arena.push_uninitialized<T>(len);
-
-        for (size_t i = 0; i < count; ++i)
+        if constexpr (is_std_view<T>::value)
         {
-            mem::copy(buf + i * in.size(), in.data(), in.size());
-        }
+            const auto data = in.data();
+            const auto size = in.size();
+            const auto len = count * size;
+            const auto buf = arena.push_uninitialized<typename T::value_type>(len);
 
-        return { buf, len };
+            for (size_t i = 0; i < count; ++i)
+            {
+                mem::copy(buf + i * size, data, size);
+            }
+
+            return T{ buf, len };
+        }
+        else
+        {
+            const auto buf = arena.push_uninitialized<T>(count);
+
+            for (size_t i = 0; i < count; ++i)
+            {
+                memcpy(buf + i, &in, sizeof(T));
+            }
+
+            return std::span{ buf, count };
+        }
     }
 }

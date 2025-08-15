@@ -27,7 +27,7 @@ til::CoordType CalcWindowSizeY(const til::inclusive_rect& rect) noexcept;
 til::CoordType CalcCursorYOffsetInPixels(const til::CoordType sFontSizeY, const ULONG ulSize) noexcept;
 WORD ConvertStringToDec(_In_ PCWSTR pwchToConvert, _Out_opt_ PCWSTR* const ppwchEnd) noexcept;
 
-std::wstring _LoadString(const UINT id);
+void _LoadString(const UINT id, std::wstring& out);
 static UINT s_LoadStringEx(_In_ HINSTANCE hModule,
                            _In_ UINT wID,
                            _Out_writes_(cchBufferMax) LPWSTR lpBuffer,

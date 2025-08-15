@@ -24,6 +24,22 @@ using namespace Microsoft::Console::Types;
 
 #pragma region Public Methods
 
+void Clipboard::CopyText(const std::wstring& text)
+{
+    const auto clipboard = _openClipboard(ServiceLocator::LocateConsoleWindow()->GetWindowHandle());
+    if (!clipboard)
+    {
+        LOG_LAST_ERROR();
+        return;
+    }
+
+    EmptyClipboard();
+    // As per: https://learn.microsoft.com/en-us/windows/win32/dataxchg/standard-clipboard-formats
+    //   CF_UNICODETEXT: [...] A null character signals the end of the data.
+    // --> We add +1 to the length. This works because .c_str() is null-terminated.
+    _copyToClipboard(CF_UNICODETEXT, text.c_str(), (text.size() + 1) * sizeof(wchar_t));
+}
+
 // Arguments:
 // - fAlsoCopyFormatting - Place colored HTML & RTF text onto the clipboard as well as the usual plain text.
 // Return Value:
@@ -75,6 +91,7 @@ void Clipboard::Paste()
         // NOTE: Some applications don't add a trailing null character. This includes past conhost versions.
         const auto maxLen = GlobalSize(handle) / sizeof(wchar_t);
         StringPaste(str, wcsnlen(str, maxLen));
+        return;
     }
 
     // We get CF_HDROP when a user copied a file with Ctrl+C in Explorer and pastes that into the terminal (among others).
@@ -161,6 +178,11 @@ void Clipboard::StringPaste(_In_reads_(cchData) const wchar_t* const pData,
         const auto bracketedPasteMode = gci.GetBracketedPasteMode();
         auto inEvents = TextToKeyEvents(pData, cchData, vtInputMode && bracketedPasteMode);
         gci.pInputBuffer->Write(inEvents);
+
+        if (gci.HasActiveOutputBuffer())
+        {
+            gci.GetActiveOutputBuffer().SnapOnInput(0);
+        }
     }
     catch (...)
     {
@@ -319,9 +341,6 @@ void Clipboard::StoreSelectionToClipboard(const bool copyFormatting)
     {
         return;
     }
-
-    // read selection area.
-    const auto selectionRects = selection.GetSelectionRects();
 
     const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     const auto& buffer = gci.GetActiveOutputBuffer().GetTextBuffer();

@@ -23,22 +23,14 @@ class SearchTests
     TEST_CLASS_SETUP(ClassSetup)
     {
         m_state = new CommonState();
-
-        m_state->PrepareGlobalFont();
-        m_state->PrepareGlobalRenderer();
         m_state->PrepareGlobalScreenBuffer();
-
         return true;
     }
 
     TEST_CLASS_CLEANUP(ClassCleanup)
     {
         m_state->CleanupGlobalScreenBuffer();
-        m_state->CleanupGlobalRenderer();
-        m_state->CleanupGlobalFont();
-
         delete m_state;
-
         return true;
     }
 
@@ -57,12 +49,12 @@ class SearchTests
         return true;
     }
 
-    static void DoFoundChecks(Search& s, til::point coordStartExpected, til::CoordType lineDelta)
+    static void DoFoundChecks(Search& s, til::point coordStartExpected, til::CoordType lineDelta, bool reverse)
     {
         const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
         auto coordEndExpected = coordStartExpected;
-        coordEndExpected.x += 1;
+        coordEndExpected.x += 2;
 
         VERIFY_IS_TRUE(s.SelectCurrent());
         VERIFY_ARE_EQUAL(coordStartExpected, gci.renderData.GetSelectionAnchor());
@@ -70,7 +62,7 @@ class SearchTests
 
         coordStartExpected.y += lineDelta;
         coordEndExpected.y += lineDelta;
-        s.FindNext();
+        s.FindNext(reverse);
 
         VERIFY_IS_TRUE(s.SelectCurrent());
         VERIFY_ARE_EQUAL(coordStartExpected, gci.renderData.GetSelectionAnchor());
@@ -78,7 +70,7 @@ class SearchTests
 
         coordStartExpected.y += lineDelta;
         coordEndExpected.y += lineDelta;
-        s.FindNext();
+        s.FindNext(reverse);
 
         VERIFY_IS_TRUE(s.SelectCurrent());
         VERIFY_ARE_EQUAL(coordStartExpected, gci.renderData.GetSelectionAnchor());
@@ -86,7 +78,7 @@ class SearchTests
 
         coordStartExpected.y += lineDelta;
         coordEndExpected.y += lineDelta;
-        s.FindNext();
+        s.FindNext(reverse);
 
         VERIFY_IS_TRUE(s.SelectCurrent());
         VERIFY_ARE_EQUAL(coordStartExpected, gci.renderData.GetSelectionAnchor());
@@ -98,16 +90,16 @@ class SearchTests
         auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
         Search s;
-        s.ResetIfStale(gci.renderData, L"AB", false, false);
-        DoFoundChecks(s, {}, 1);
+        s.Reset(gci.renderData, L"AB", SearchFlag::None, false);
+        DoFoundChecks(s, {}, 1, false);
     }
 
     TEST_METHOD(ForwardCaseSensitiveJapanese)
     {
         auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         Search s;
-        s.ResetIfStale(gci.renderData, L"\x304b", false, false);
-        DoFoundChecks(s, { 2, 0 }, 1);
+        s.Reset(gci.renderData, L"\x304b", SearchFlag::None, false);
+        DoFoundChecks(s, { 2, 0 }, 1, false);
     }
 
     TEST_METHOD(ForwardCaseInsensitive)
@@ -115,47 +107,92 @@ class SearchTests
         auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
         Search s;
-        s.ResetIfStale(gci.renderData, L"ab", false, true);
-        DoFoundChecks(s, {}, 1);
+        s.Reset(gci.renderData, L"ab", SearchFlag::CaseInsensitive, false);
+        DoFoundChecks(s, {}, 1, false);
     }
 
     TEST_METHOD(ForwardCaseInsensitiveJapanese)
     {
         auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         Search s;
-        s.ResetIfStale(gci.renderData, L"\x304b", false, true);
-        DoFoundChecks(s, { 2, 0 }, 1);
+        s.Reset(gci.renderData, L"\x304b", SearchFlag::CaseInsensitive, false);
+        DoFoundChecks(s, { 2, 0 }, 1, false);
     }
 
     TEST_METHOD(BackwardCaseSensitive)
     {
         auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         Search s;
-        s.ResetIfStale(gci.renderData, L"AB", true, false);
-        DoFoundChecks(s, { 0, 3 }, -1);
+        s.Reset(gci.renderData, L"AB", SearchFlag::None, true);
+        DoFoundChecks(s, { 0, 3 }, -1, true);
     }
 
     TEST_METHOD(BackwardCaseSensitiveJapanese)
     {
         auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         Search s;
-        s.ResetIfStale(gci.renderData, L"\x304b", true, false);
-        DoFoundChecks(s, { 2, 3 }, -1);
+        s.Reset(gci.renderData, L"\x304b", SearchFlag::None, true);
+        DoFoundChecks(s, { 2, 3 }, -1, true);
     }
 
     TEST_METHOD(BackwardCaseInsensitive)
     {
         auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         Search s;
-        s.ResetIfStale(gci.renderData, L"ab", true, true);
-        DoFoundChecks(s, { 0, 3 }, -1);
+        s.Reset(gci.renderData, L"ab", SearchFlag::CaseInsensitive, true);
+        DoFoundChecks(s, { 0, 3 }, -1, true);
     }
 
     TEST_METHOD(BackwardCaseInsensitiveJapanese)
     {
         auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         Search s;
-        s.ResetIfStale(gci.renderData, L"\x304b", true, true);
-        DoFoundChecks(s, { 2, 3 }, -1);
+        s.Reset(gci.renderData, L"\x304b", SearchFlag::CaseInsensitive, true);
+        DoFoundChecks(s, { 2, 3 }, -1, true);
+    }
+
+    TEST_METHOD(ForwardCaseSensitiveRegex)
+    {
+        auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+
+        Search s;
+        s.Reset(gci.renderData, L"[BA]{2}", SearchFlag::RegularExpression, false);
+        DoFoundChecks(s, {}, 1, false);
+    }
+
+    TEST_METHOD(ForwardCaseSensitiveRegexJapanese)
+    {
+        auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        Search s;
+        // N.B. this is not a literal U+30xx, but a regex escape sequence \x{30xx}
+        s.Reset(gci.renderData, LR"-([\x{3041}-\x{304c}])-", SearchFlag::RegularExpression, false);
+        DoFoundChecks(s, { 2, 0 }, 1, false);
+    }
+
+    TEST_METHOD(ForwardCaseInsensitiveRegex)
+    {
+        auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+
+        Search s;
+        s.Reset(gci.renderData, L"ab", SearchFlag::CaseInsensitive | SearchFlag::RegularExpression, false);
+        DoFoundChecks(s, {}, 1, false);
+    }
+
+    TEST_METHOD(ForwardCaseInsensitiveRegexJapanese)
+    {
+        auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        Search s;
+        // N.B. this is not a literal U+30xx, but a regex escape sequence \x{30xx}
+        s.Reset(gci.renderData, LR"-([\x{3041}-\x{304c}])-", SearchFlag::CaseInsensitive | SearchFlag::RegularExpression, false);
+        DoFoundChecks(s, { 2, 0 }, 1, false);
+    }
+
+    TEST_METHOD(ForwardCaseSensitiveRegexWithCaseInsensitiveFlag)
+    {
+        auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+
+        Search s;
+        s.Reset(gci.renderData, L"(?i)ab", SearchFlag::RegularExpression, false);
+        DoFoundChecks(s, {}, 1, false);
     }
 };

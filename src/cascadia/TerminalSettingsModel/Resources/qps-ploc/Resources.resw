@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -121,10 +121,14 @@
     <value>Ŝêĺĕćţ ćŏĺбŕ ѕćнêmē... !!! !!! </value>
   </data>
   <data name="NewTabParentCommandName" xml:space="preserve">
-    <value>Ŋéŵ Тάъ... !!!</value>
+    <value>Ŋéŵ тάъ... !!!</value>
   </data>
   <data name="SplitPaneParentCommandName" xml:space="preserve">
-    <value>Śрĺíŧ Рāлë... !!! </value>
+    <value>Śрĺíŧ ρāлë... !!! </value>
+  </data>
+  <data name="SnippetsPaneCommandName" xml:space="preserve">
+    <value>Òρëй ѕήїρφέţś ρªŉé !!! !!</value>
+    <comment>This will open a pane with a list of the users's saved commands ("snippets") in it</comment>
   </data>
   <data name="ApplicationDisplayNamePortable" xml:space="preserve">
     <value>Ţèѓmĩŋąĺ (Ρθŗτаьℓ℮) !!! !!!</value>
@@ -324,8 +328,11 @@
     <value>Őρęň ŝέŧτїйģѕ ƒіĺē (JSON) !!! !!! !</value>
     <comment>{Locked="JSON"}. "JSON" is the extension of the file that will be opened.</comment>
   </data>
+  <data name="SettingsFileOpenInExplorerCommandKey" xml:space="preserve">
+    <value>Òρéń ţђë şêţŧįπĝş ƒìℓė δίяěςτøґў !!! !!! !!! </value>
+  </data>
   <data name="OpenTabColorPickerCommandKey" xml:space="preserve">
-    <value>Şėŧ ŧнę ťáь ċσŀőґ... !!! !!!</value>
+    <value>Şėŧ ŧăь ĉõľοґ... !!! !</value>
   </data>
   <data name="PasteTextCommandKey" xml:space="preserve">
     <value>Ρášτé !</value>
@@ -347,7 +354,7 @@
     <value>Řėś℮ŧ тαв τįтℓę !!! !</value>
   </data>
   <data name="OpenTabRenamerCommandKey" xml:space="preserve">
-    <value>Гęйªm℮ тåъ ŧīτļĕ... !!! !!!</value>
+    <value>Гęйªm℮ тåъ !!!</value>
   </data>
   <data name="ResizePaneCommandKey" xml:space="preserve">
     <value>Ґëśîžє рãле !!!</value>
@@ -449,11 +456,8 @@
   <data name="ToggleCommandPaletteCommandKey" xml:space="preserve">
     <value>Ţōĝğļė čσmmάήđ рåŀęŧŧз !!! !!! </value>
   </data>
-  <data name="SuggestionsCommandHistoryCommandKey" xml:space="preserve">
-    <value>Γë¢єйť ćøмmåηđŝ... !!! !!</value>
-  </data>
   <data name="SuggestionsCommandKey" xml:space="preserve">
-    <value>Ǿрέŉ şµġġеšŧìŏπѕ... !!! !!!</value>
+    <value>Ǿрέŉ şµġġеšŧìŏπѕ !!! !</value>
   </data>
   <data name="ToggleCommandPaletteCommandLineModeCommandKey" xml:space="preserve">
     <value>Ťŏġĝļĕ çбmмáήď φàłėŧτĕ ίη ċσmмäпδ ℓìņє mόð℮ !!! !!! !!! !!! </value>
@@ -505,7 +509,7 @@
     <value>Вгεаĸ ĩňŧθ ŧђė đěвцģģέŕ !!! !!! </value>
   </data>
   <data name="OpenSettingsUICommandKey" xml:space="preserve">
-    <value>Öφéη ѕēττϊⁿğš... !!! !</value>
+    <value>Öφéη ѕēττϊⁿğš !!! </value>
   </data>
   <data name="RenameWindowCommandKey" xml:space="preserve">
     <value>Γзňãмē шіňďоώ ŧō "{0}" !!! !!! </value>
@@ -726,5 +730,34 @@
   <data name="OpenAboutCommandKey" xml:space="preserve">
     <value>Οφёņ ǻвőųŧ đĭдłбģ !!! !!</value>
     <comment>This will open the "about" dialog, to display version info and other documentation</comment>
+  </data>
+  <data name="SaveSnippetNamePrefix" xml:space="preserve">
+    <value>Ŝâνê Ŝⁿïррęт !!! </value>
+  </data>
+  <data name="QuickFixCommandKey" xml:space="preserve">
+    <value>Ωρзπ qυί¢к ƒϊ× мėŋύ !!! !!!</value>
+  </data>
+  <data name="OpenCWDCommandKey" xml:space="preserve">
+    <value>Öφěп сùяŗĕŉŧ ώθяќìⁿġ ðїгéćţοŗу !!! !!! !!!</value>
+  </data>
+  <data name="WslDistroGeneratorDisplayName" xml:space="preserve">
+    <value>ẄŠ₤ Ďΐşţŗĭьúţĭοй Рŗоƒįĺé Ĝèŋëѓάтбŕ !!! !!! !!! !</value>
+    <comment>The display name of a dynamic profile generator for WSL distros</comment>
+  </data>
+  <data name="PowershellCoreProfileGeneratorDisplayName" xml:space="preserve">
+    <value>РöшєřŜђěłŀ Ρѓòƒĭļз Ġèпéгâŧθѓ !!! !!! !!</value>
+    <comment>The display name of a dynamic profile generator for PowerShell</comment>
+  </data>
+  <data name="AzureCloudShellGeneratorDisplayName" xml:space="preserve">
+    <value>Δżúѓ℮ Ċℓǿύď Śнéļļ Рŗôƒìŀё Ğēņεřǻŧōґ !!! !!! !!! !</value>
+    <comment>The display name of a dynamic profile generator for Azure Cloud Shell</comment>
+  </data>
+  <data name="VisualStudioGeneratorDisplayName" xml:space="preserve">
+    <value>Vΐšџаℓ Şτϋδίǿ Ρѓőƒϊĺĕ Ğёйěřąтοŕ !!! !!! !!!</value>
+    <comment>The display name of a dynamic profile generator for Visual Studio</comment>
+  </data>
+  <data name="SshHostGeneratorDisplayName" xml:space="preserve">
+    <value>ŠŚΗ Ħøŝť Рґǿƒιŀέ Ġеπèŕăťθґ !!! !!! !</value>
+    <comment>The display name of a dynamic profile generator for SSH hosts</comment>
   </data>
 </root>

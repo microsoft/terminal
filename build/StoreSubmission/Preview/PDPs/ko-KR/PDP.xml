@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ProductDescription language="en-us" xmlns="http://schemas.microsoft.com/appx/2012/ProductDescription" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xml:lang="en-us" Release="">
+  <AppStoreName>
+    <!-- This is optional.  AppStoreName is typically extracted from your package's AppxManifest DisplayName property. -->
+    <!-- Uncomment (and localize) this Store name if your application package does not contain a localization for the DisplayName in this language. -->
+    <!-- Leaving this uncommented for a language that your application package DOES contain a DisplayName for will result in a submission failure with the API. -->
+    
+    <!-- Windows Terminal -->
+  </AppStoreName>
+  <Keywords>
+    <!-- Valid length: 30 character limit, up to 7 elements -->
+    <Keyword>
+      터미널</Keyword>
+    <Keyword>
+      콘솔</Keyword>
+    <Keyword>
+      
+    </Keyword>
+    <Keyword>
+      
+    </Keyword>
+    <Keyword>
+      
+    </Keyword>
+    <Keyword>
+      
+    </Keyword>
+    <Keyword>
+      
+    </Keyword>
+  </Keywords>
+  <Description>
+    이것은 Windows 터미널에 대한 미리보기 빌드이며 이 터미널에는 개발된 최신 기능들이 포함되어 있습니다. Windows 터미널은 명령 프롬프트, PowerShell 및 WSL과 같은 명령 줄 도구 및 셸 사용자를 위한 최신의 빠르고 효율적이며 강력한 생산성의 터미널 응용 프로그램입니다. 주요 기능으로는 여러 탭, 창, 유니 코드 및 UTF-8 문자 지원, GPU 가속 텍스트 렌더링 엔진 및 사용자 정의 테마, 스타일 및 구성이 있습니다.
+
+이것은 오픈 소스 프로젝트이며 커뮤니티 참여를 환영합니다. 참여하려면 https://github.com/microsoft/terminal을 방문하십시오 </Description>
+  <ShortDescription>
+    <!-- Only used for games. This description appears in the Information section of the Game Hub on Xbox One, and helps customers understand more about your game. -->
+    
+  </ShortDescription>
+  <ShortTitle>
+    <!-- A shorter version of your product's name. If provided, this shorter name may appear in various places on Xbox One (during installation, in Achievements, etc.) in place of the full title of your product. -->
+    
+  </ShortTitle>
+  <SortTitle>
+    <!-- If your product could be alphabetized in different ways, you can enter another version here. This may help customers find the product more quickly when searching. -->
+    
+  </SortTitle>
+  <VoiceTitle>
+    <!-- An alternate name for your product that, if provided, may be used in the audio experience on Xbox One when using Kinect or a headset. -->
+    
+  </VoiceTitle>
+  <DevStudio>
+    <!-- Specify this value if you want to include a "Developed by" field in the listing. (The "Published by" field will list the publisher display name associated with your account, whether or not you provide a devStudio value.) -->
+    
+  </DevStudio>
+  <ReleaseNotes>
+    버전 __VERSION_NUMBER__
+
+- 새 탭 메뉴의 레이아웃을 사용자 지정하기 위한 새 페이지를 포함하여 JSON 파일에 한 번만 존재했던 UI에 수천 개의 설정을 추가했습니다.
+- 안정성을 개선하기 위해 창 관리를 다시 보관했습니다. wt.exe 별칭에 발생한 버그를 제출하세요.
+- 프로필이 숨겨졌거나 제거된 프로그램을 참조하는 경우 이제 프로필에 아이콘이 표시됩니다.
+
+자세한 내용은 GitHub 릴리스 페이지를 참조하세요.
+  </ReleaseNotes>
+  <ScreenshotCaptions>
+    <!-- Valid length: 200 character limit, up to 9 elements per platform -->
+    <!-- Valid attributes: any of DesktopImage, MobileImage, XboxImage, SurfaceHubImage, and HoloLensImage -->
+    <Caption DesktopImage="acrylic-emoji.png">
+      
+    </Caption>
+    <Caption DesktopImage="panes.png">
+      
+    </Caption>
+    <Caption DesktopImage="htop.png">
+      
+    </Caption>
+  </ScreenshotCaptions>
+  <AdditionalAssets>
+    <!-- Valid elements:-->
+    <!--   HeroImage414x180, HeroImage846x468, HeroImage558x756, HeroImage414x468, HeroImage558x558, HeroImage2400x1200,-->
+    <!--   ScreenshotWXGA, ScreenshotHD720, ScreenshotWVGA, Doublewide, Panoramic, Square,-->
+    <!--   SmallMobileTile, SmallXboxLiveTile, LargeMobileTile, LargeXboxLiveTile, Tile,-->
+    <!--   DesktopIcon, Icon (use this value for the 1:1 300x300 pixels logo), AchievementIcon,-->
+    <!--   ChallengePromoIcon, RewardDisplayIcon, Icon150X150, Icon71X71,-->
+    <!--   BoxArt, BrandedKeyArt, PosterArt, FeaturedPromotionalArt, PromotionalArt16x9, TitledHeroArt-->
+    <!-- There is no content for any of these elements, just a single attribute called FileName. -->
+    <PosterArt FileName="Store Poster Art.png"/>
+    <BoxArt FileName="Store Box Art.png"/>
+    <PromotionalArt16x9 FileName="Store Thumbnail.png"/>
+  </AdditionalAssets>
+  <Trailers>
+    <!-- Maximum number of trailers permitted: 15 -->
+    <Trailer FileName="CC0605_CommandLine_Teaser_WEB_MASTER_H264_1080p_23.976_-16LKFS_-3dbTP_ST.mp4">
+      <Title>
+        새 Windows 터미널</Title>
+      <Images>
+        <!-- Current maximum of 1 image per trailer permitted. -->
+        <Image FileName="Store Thumbnail.png">
+          
+        </Image>
+      </Images>
+    </Trailer>
+  </Trailers>
+  <AppFeatures>
+    <!-- Valid length: 200 character limit, up to 20 elements -->
+    <AppFeature>
+      복수 탭</AppFeature>
+    <AppFeature>
+      모든 유니코드 지원</AppFeature>
+    <AppFeature>
+      GPU 가속 텍스트 렌더링</AppFeature>
+    <AppFeature>
+      완전한 사용자 지정 가능성</AppFeature>
+    <AppFeature>
+      분할 창</AppFeature>
+    <AppFeature>
+      
+    </AppFeature>
+    <AppFeature>
+      
+    </AppFeature>
+    <AppFeature>
+      
+    </AppFeature>
+    <AppFeature>
+      
+    </AppFeature>
+    <AppFeature>
+      
+    </AppFeature>
+    <AppFeature>
+      
+    </AppFeature>
+    <AppFeature>
+      
+    </AppFeature>
+    <AppFeature>
+      
+    </AppFeature>
+    <AppFeature>
+      
+    </AppFeature>
+    <AppFeature>
+      
+    </AppFeature>
+    <AppFeature>
+      
+    </AppFeature>
+    <AppFeature>
+      
+    </AppFeature>
+    <AppFeature>
+      
+    </AppFeature>
+    <AppFeature>
+      
+    </AppFeature>
+    <AppFeature>
+      
+    </AppFeature>
+  </AppFeatures>
+  <RecommendedHardware>
+    <!-- Valid length: 200 character limit, up to 11 elements -->
+    <Recommendation>
+      키보드</Recommendation>
+  </RecommendedHardware>
+  <MinimumHardware>
+    <!-- Valid length: 200 character limit, up to 11 elements -->
+  </MinimumHardware>
+  <CopyrightAndTrademark>
+    Copyright Microsoft Corporation</CopyrightAndTrademark>
+  <AdditionalLicenseTerms>
+    
+  </AdditionalLicenseTerms>
+  <WebsiteURL>
+    https://github.com/microsoft/terminal</WebsiteURL>
+  <SupportContactInfo>
+    https://github.com/microsoft/terminal/issues/new</SupportContactInfo>
+  <PrivacyPolicyURL>
+    https://go.microsoft.com/fwlink/?LinkID=521839</PrivacyPolicyURL>
+</ProductDescription>

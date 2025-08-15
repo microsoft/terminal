@@ -35,17 +35,23 @@ namespace winrt::TerminalApp::implementation
         // (which should be the default, see:
         // https://docs.microsoft.com/en-us/windows/win32/api/winuser/ns-winuser-trackmouseevent#remarks)
         unsigned int hoverTimeoutMillis{ 400 };
-        LOG_IF_WIN32_BOOL_FALSE(SystemParametersInfoW(SPI_GETMOUSEHOVERTIME, 0, &hoverTimeoutMillis, 0));
-        const auto toolTipInterval = std::chrono::milliseconds(hoverTimeoutMillis);
+        if (FAILED(SystemParametersInfoW(SPI_GETMOUSEHOVERTIME, 0, &hoverTimeoutMillis, 0)))
+        {
+            hoverTimeoutMillis = 400;
+        }
 
         // Create a ThrottledFunc for opening the tooltip after the hover
         // timeout. If we hover another button, we should make sure to call
         // Run() with the new button. Calling `_displayToolTip.Run(nullptr)`,
         // which will cause us to not display a tooltip, which is used when we
         // leave the control entirely.
-        _displayToolTip = std::make_shared<ThrottledFuncTrailing<Controls::Button>>(
+        _displayToolTip = std::make_shared<ThrottledFunc<Controls::Button>>(
             dispatcher,
-            toolTipInterval,
+            til::throttled_func_options{
+                .delay = std::chrono::milliseconds{ hoverTimeoutMillis },
+                .debounce = true,
+                .trailing = true,
+            },
             [weakThis = get_weak()](Controls::Button button) {
                 // If we provide a button, then open the tooltip on that button.
                 // We can "dismiss" this throttled func by calling it with null,
@@ -116,6 +122,9 @@ namespace winrt::TerminalApp::implementation
 
         switch (visualState)
         {
+        case WindowVisualState::WindowVisualStateIconified:
+            // Iconified (aka minimized) state should preserve the active window styling
+            break;
         case WindowVisualState::WindowVisualStateMaximized:
             VisualStateManager::GoToState(MaximizeButton(), L"WindowStateMaximized", false);
 
@@ -124,9 +133,7 @@ namespace winrt::TerminalApp::implementation
             CloseButton().Height(maximizedHeight);
             MaximizeToolTip().Text(RS_(L"WindowRestoreDownButtonToolTip"));
             break;
-
         case WindowVisualState::WindowVisualStateNormal:
-        case WindowVisualState::WindowVisualStateIconified:
         default:
             VisualStateManager::GoToState(MaximizeButton(), L"WindowStateNormal", false);
 
