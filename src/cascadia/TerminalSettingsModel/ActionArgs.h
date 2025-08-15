@@ -636,17 +636,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             h.write(ContentArgs());
             return h.finalize();
         }
-        uint32_t GetArgCount()
-        {
-            if (_ContentArgs)
-            {
-                if (const auto newTermArgs = _ContentArgs.try_as<NewTerminalArgs>())
-                {
-                    return newTermArgs->GetArgCount();
-                }
-            }
-            return 0;
-        }
         winrt::Windows::Foundation::Collections::IVectorView<ArgDescriptor> GetArgDescriptors()
         {
             if (_ContentArgs)
@@ -766,10 +755,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             h.write(SplitSize());
             return h.finalize();
         }
-        uint32_t GetArgCount()
-        {
-            return gsl::narrow<uint32_t>(GetArgDescriptors().Size());
-        }
         winrt::Windows::Foundation::Collections::IVectorView<Model::ArgDescriptor> GetArgDescriptors()
         {
             static const auto thisArgs = INIT_ARG_DESCRIPTORS(SPLIT_PANE_ARGS);
@@ -873,17 +858,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             til::hasher h;
             h.write(ContentArgs());
             return h.finalize();
-        }
-        uint32_t GetArgCount()
-        {
-            if (_ContentArgs)
-            {
-                if (const auto newTermArgs = _ContentArgs.try_as<NewTerminalArgs>())
-                {
-                    return newTermArgs->GetArgCount();
-                }
-            }
-            return 0;
         }
         winrt::Windows::Foundation::Collections::IVectorView<Model::ArgDescriptor> GetArgDescriptors()
         {
@@ -1036,10 +1010,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             til::hasher h;
             h.write(winrt::get_abi(_Actions));
             return h.finalize();
-        }
-        uint32_t GetArgCount()
-        {
-            return _Actions.Size();
         }
         winrt::Windows::Foundation::Collections::IVectorView<Model::ArgDescriptor> GetArgDescriptors()
         {
