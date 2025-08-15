@@ -3485,7 +3485,7 @@ namespace winrt::TerminalApp::implementation
             return nullptr;
         }
 
-        const auto sessionId = controlSettings.DefaultSettings().SessionId();
+        const auto sessionId = controlSettings.DefaultSettings()->SessionId();
         const auto hasSessionId = sessionId != winrt::guid{};
 
         auto connection = existingConnection ? existingConnection : _CreateConnectionFromSettings(profile, *controlSettings.DefaultSettings(), false);
