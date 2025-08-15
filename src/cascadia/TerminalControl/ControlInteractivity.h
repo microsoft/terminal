@@ -74,6 +74,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void TouchReleased();
 
         bool MouseWheel(const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
+                        const bool horizontal,
                         const int32_t delta,
                         const Core::Point pixelPosition,
                         const Control::MouseButtonState state);
