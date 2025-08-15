@@ -89,7 +89,7 @@ struct InitListPlaceholder
     &&(otherAsUs->_##name == _##name)
 
 #define X_MACRO_INDEX_BASE() \
-    constexpr auto X_MACRO_INDEXED_BASE__ = __COUNTER__ - 1
+    constexpr auto X_MACRO_INDEXED_BASE__ = __COUNTER__ + 1
 
 #define X_MACRO_INDEX() \
     (__COUNTER__ - X_MACRO_INDEXED_BASE__)
