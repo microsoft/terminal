@@ -941,7 +941,7 @@ void AppHost::_updateTheme()
     const auto colorOpacity = b ? color.A / 255.0 : 0.0;
     const auto brushOpacity = _opacityFromBrush(b);
     const auto opacity = std::min(colorOpacity, brushOpacity);
-    _window->UseMica(windowTheme ? windowTheme.UseMica() : false, opacity);
+    _window->UseMica(windowTheme ? windowTheme.UseMica() : winrt::Microsoft::Terminal::Settings::Model::MicaKind::None, opacity);
 
     // This is a hack to make the window borders dark instead of light.
     // It must be done before WM_NCPAINT so that the borders are rendered with

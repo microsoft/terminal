@@ -669,6 +669,32 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::IconStyle)
     };
 };
 
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::MicaKind)
+{
+    JSON_MAPPINGS(3) = {
+        pair_type{ "none", ValueType::None },
+        pair_type{ "mica", ValueType::Mica },
+        pair_type{ "micaAlt", ValueType::MicaAlt },
+    };
+
+    // Override mapping parser to add boolean parsing for backward compatibility
+    ::winrt::Microsoft::Terminal::Settings::Model::MicaKind FromJson(const Json::Value& json)
+    {
+        if (json.isBool())
+        {
+            return json.asBool() ? ValueType::Mica : ValueType::None;
+        }
+        return EnumMapper::FromJson(json);
+    }
+
+    bool CanConvert(const Json::Value& json)
+    {
+        return EnumMapper::CanConvert(json) || json.isBool();
+    }
+
+    using EnumMapper::TypeDescription;
+};
+
 // Possible ScrollToMarkDirection values
 JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Control::ScrollToMarkDirection)
 {
