@@ -2,6 +2,7 @@
 // Licensed under the MIT license.
 
 import "Profile.idl";
+import "Types.idl";
 #include "IInheritable.idl.h"
 
 #define INHERITABLE_APPEARANCE_SETTING(Type, Name) \
@@ -35,11 +36,11 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_APPEARANCE_SETTING(String, DarkColorSchemeName);
         INHERITABLE_APPEARANCE_SETTING(String, LightColorSchemeName);
 
-        INHERITABLE_APPEARANCE_SETTING(Windows.Foundation.IReference<Microsoft.Terminal.Core.Color>, Foreground);
-        INHERITABLE_APPEARANCE_SETTING(Windows.Foundation.IReference<Microsoft.Terminal.Core.Color>, Background);
-        INHERITABLE_APPEARANCE_SETTING(Windows.Foundation.IReference<Microsoft.Terminal.Core.Color>, SelectionBackground);
-        INHERITABLE_APPEARANCE_SETTING(Windows.Foundation.IReference<Microsoft.Terminal.Core.Color>, CursorColor);
-        INHERITABLE_APPEARANCE_SETTING(Microsoft.Terminal.Core.CursorStyle, CursorShape);
+        INHERITABLE_APPEARANCE_SETTING(Windows.Foundation.IReference<Microsoft.Terminal.Settings.Model.Color>, Foreground);
+        INHERITABLE_APPEARANCE_SETTING(Windows.Foundation.IReference<Microsoft.Terminal.Settings.Model.Color>, Background);
+        INHERITABLE_APPEARANCE_SETTING(Windows.Foundation.IReference<Microsoft.Terminal.Settings.Model.Color>, SelectionBackground);
+        INHERITABLE_APPEARANCE_SETTING(Windows.Foundation.IReference<Microsoft.Terminal.Settings.Model.Color>, CursorColor);
+        INHERITABLE_APPEARANCE_SETTING(Microsoft.Terminal.Settings.Model.CursorStyle, CursorShape);
         INHERITABLE_APPEARANCE_SETTING(UInt32, CursorHeight);
 
         INHERITABLE_APPEARANCE_SETTING(String, BackgroundImagePath);
@@ -53,7 +54,7 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_APPEARANCE_SETTING(String, PixelShaderPath);
         INHERITABLE_APPEARANCE_SETTING(String, PixelShaderImagePath);
         INHERITABLE_APPEARANCE_SETTING(IntenseStyle, IntenseTextStyle);
-        INHERITABLE_APPEARANCE_SETTING(Microsoft.Terminal.Core.AdjustTextMode, AdjustIndistinguishableColors);
+        INHERITABLE_APPEARANCE_SETTING(Microsoft.Terminal.Settings.Model.AdjustTextMode, AdjustIndistinguishableColors);
         INHERITABLE_APPEARANCE_SETTING(Double, Opacity);
         INHERITABLE_APPEARANCE_SETTING(Boolean, UseAcrylic);
     };

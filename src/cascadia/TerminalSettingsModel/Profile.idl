@@ -4,6 +4,7 @@
 import "IAppearanceConfig.idl";
 import "ISettingsModelObject.idl";
 import "FontConfig.idl";
+import "Types.idl";
 #include "IInheritable.idl.h"
 
 #define INHERITABLE_PROFILE_SETTING(Type, Name) \
@@ -54,9 +55,9 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_PROFILE_SETTING(String, Icon);
         INHERITABLE_PROFILE_SETTING(CloseOnExitMode, CloseOnExit);
         INHERITABLE_PROFILE_SETTING(String, TabTitle);
-        INHERITABLE_PROFILE_SETTING(Windows.Foundation.IReference<Microsoft.Terminal.Core.Color>, TabColor);
+        INHERITABLE_PROFILE_SETTING(Windows.Foundation.IReference<Microsoft.Terminal.Settings.Model.Color>, TabColor);
         INHERITABLE_PROFILE_SETTING(Boolean, SuppressApplicationTitle);
-        INHERITABLE_PROFILE_SETTING(Microsoft.Terminal.Control.ScrollbarState, ScrollState);
+        INHERITABLE_PROFILE_SETTING(Microsoft.Terminal.Settings.Model.ScrollbarState, ScrollState);
         INHERITABLE_PROFILE_SETTING(String, Padding);
         INHERITABLE_PROFILE_SETTING(String, Commandline);
 
@@ -68,7 +69,7 @@ namespace Microsoft.Terminal.Settings.Model
         IAppearanceConfig DefaultAppearance { get; };
         INHERITABLE_PROFILE_SETTING(IAppearanceConfig, UnfocusedAppearance);
 
-        INHERITABLE_PROFILE_SETTING(Microsoft.Terminal.Control.TextAntialiasingMode, AntialiasingMode);
+        INHERITABLE_PROFILE_SETTING(Microsoft.Terminal.Settings.Model.TextAntialiasingMode, AntialiasingMode);
 
         INHERITABLE_PROFILE_SETTING(Int32, HistorySize);
         INHERITABLE_PROFILE_SETTING(Boolean, SnapOnInput);

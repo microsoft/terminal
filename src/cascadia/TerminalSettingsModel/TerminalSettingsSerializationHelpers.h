@@ -19,7 +19,7 @@ Abstract:
 #include "SettingsTypes.h"
 #include "ModelSerializationHelpers.h"
 
-JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Core::CursorStyle)
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::CursorStyle)
 {
     static constexpr std::array<pair_type, 6> mappings = {
         pair_type{ "bar", ValueType::Bar },
@@ -33,7 +33,7 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Core::CursorStyle)
 
 // Type Description:
 // - Helper for converting a user-specified adjustTextMode value to its corresponding enum
-JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Core::AdjustTextMode)
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::AdjustTextMode)
 {
     JSON_MAPPINGS(3) = {
         pair_type{ "never", ValueType::Never },
@@ -42,7 +42,7 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Core::AdjustTextMode)
     };
 
     // Override mapping parser to add boolean parsing
-    ::winrt::Microsoft::Terminal::Core::AdjustTextMode FromJson(const Json::Value& json)
+    ::winrt::Microsoft::Terminal::Settings::Model::AdjustTextMode FromJson(const Json::Value& json)
     {
         if (json.isBool())
         {
@@ -69,7 +69,7 @@ JSON_ENUM_MAPPER(::winrt::Windows::UI::Xaml::Media::Stretch)
     };
 };
 
-JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Control::ScrollbarState)
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::ScrollbarState)
 {
     static constexpr std::array<pair_type, 3> mappings = {
         pair_type{ "visible", ValueType::Visible },
@@ -78,7 +78,7 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Control::ScrollbarState)
     };
 };
 
-JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Core::MatchMode)
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::MatchMode)
 {
     static constexpr std::array<pair_type, 2> mappings = {
         pair_type{ "none", ValueType::None },
@@ -133,7 +133,7 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::ConvergedAlignme
     };
 };
 
-JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Control::TextAntialiasingMode)
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::TextAntialiasingMode)
 {
     static constexpr std::array<pair_type, 3> mappings = {
         pair_type{ "grayscale", ValueType::Grayscale },
@@ -295,7 +295,7 @@ JSON_ENUM_MAPPER(winrt::Microsoft::Terminal::Settings::Model::ExpandCommandType)
     };
 };
 
-JSON_FLAG_MAPPER(::winrt::Microsoft::Terminal::Control::CopyFormat)
+JSON_FLAG_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::CopyFormat)
 {
     JSON_MAPPINGS(4) = {
         pair_type{ "none", AllClear },
@@ -537,7 +537,7 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::MonitorBehavior)
     };
 };
 
-JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Control::ClearBufferType)
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::ClearBufferType)
 {
     JSON_MAPPINGS(3) = {
         pair_type{ "all", ValueType::All },
@@ -665,7 +665,7 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::IconStyle)
 };
 
 // Possible ScrollToMarkDirection values
-JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Control::ScrollToMarkDirection)
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::ScrollToMarkDirection)
 {
     JSON_MAPPINGS(4) = {
         pair_type{ "previous", ValueType::Previous },
@@ -704,10 +704,11 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::SelectOutputDire
     };
 };
 
+#if 0
 template<>
-struct ::Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<::winrt::Microsoft::Terminal::Control::SelectionColor>
+struct ::Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<::winrt::Microsoft::Terminal::Settings::Model::SelectionColor>
 {
-    ::winrt::Microsoft::Terminal::Control::SelectionColor FromJson(const Json::Value& json)
+    ::winrt::Microsoft::Terminal::Settings::Model::SelectionColor FromJson(const Json::Value& json)
     {
         const auto string = Detail::GetStringView(json);
         const auto isIndexed16 = string.size() == 3 && string.front() == 'i';
@@ -724,7 +725,7 @@ struct ::Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<::winr
             color = ::Microsoft::Console::Utils::ColorFromHexString(string);
         }
 
-        winrt::Microsoft::Terminal::Control::SelectionColor selection;
+        winrt::Microsoft::Terminal::Settings::Model::SelectionColor selection;
         selection.Color(color);
         selection.IsIndex16(isIndexed16);
         return selection;
@@ -743,7 +744,7 @@ struct ::Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<::winr
         return isColorSpec || isIndexedColor;
     }
 
-    Json::Value ToJson(const ::winrt::Microsoft::Terminal::Control::SelectionColor& val)
+    Json::Value ToJson(const ::winrt::Microsoft::Terminal::Settings::Model::SelectionColor& val)
     {
         const auto color = val.Color();
         if (val.IsIndex16())
@@ -761,8 +762,9 @@ struct ::Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<::winr
         return "SelectionColor (#rrggbb, #rgb, #rrggbbaa, iNN)";
     }
 };
+#endif
 
-JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Control::GraphicsAPI)
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::GraphicsAPI)
 {
     JSON_MAPPINGS(3) = {
         pair_type{ "automatic", ValueType::Automatic },

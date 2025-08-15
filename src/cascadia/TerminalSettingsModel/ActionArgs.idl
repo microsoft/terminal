@@ -2,6 +2,7 @@
 // Licensed under the MIT license.
 
 import "Command.idl";
+import "Types.idl";
 
 namespace Microsoft.Terminal.Settings.Model
 {
@@ -170,7 +171,7 @@ namespace Microsoft.Terminal.Settings.Model
         CopyTextArgs();
         Boolean DismissSelection { get; };
         Boolean SingleLine { get; };
-        Windows.Foundation.IReference<Microsoft.Terminal.Control.CopyFormat> CopyFormatting { get; };
+        Windows.Foundation.IReference<Microsoft.Terminal.Settings.Model.CopyFormat> CopyFormatting { get; };
     };
 
     [default_interface] runtimeclass NewTabArgs : IActionArgs
@@ -318,12 +319,12 @@ namespace Microsoft.Terminal.Settings.Model
 
     [default_interface] runtimeclass ScrollToMarkArgs : IActionArgs
     {
-        Microsoft.Terminal.Control.ScrollToMarkDirection Direction { get; };
+        Microsoft.Terminal.Settings.Model.ScrollToMarkDirection Direction { get; };
     };
 
     [default_interface] runtimeclass AddMarkArgs : IActionArgs
     {
-        Windows.Foundation.IReference<Microsoft.Terminal.Core.Color> Color { get; };
+        Windows.Foundation.IReference<Microsoft.Terminal.Settings.Model.Color> Color { get; };
     };
 
     [default_interface] runtimeclass ToggleCommandPaletteArgs : IActionArgs
@@ -399,8 +400,8 @@ namespace Microsoft.Terminal.Settings.Model
 
     [default_interface] runtimeclass ClearBufferArgs : IActionArgs
     {
-        ClearBufferArgs(Microsoft.Terminal.Control.ClearBufferType clear);
-        Microsoft.Terminal.Control.ClearBufferType Clear { get; };
+        ClearBufferArgs(Microsoft.Terminal.Settings.Model.ClearBufferType clear);
+        Microsoft.Terminal.Settings.Model.ClearBufferType Clear { get; };
     };
 
     [default_interface] runtimeclass MultipleActionsArgs : IActionArgs
@@ -418,9 +419,9 @@ namespace Microsoft.Terminal.Settings.Model
 
     [default_interface] runtimeclass ColorSelectionArgs : IActionArgs
     {
-        Microsoft.Terminal.Control.SelectionColor Foreground;
-        Microsoft.Terminal.Control.SelectionColor Background;
-        Microsoft.Terminal.Core.MatchMode MatchMode { get; };
+        //Microsoft.Terminal.Settings.Model.SelectionColor Foreground;
+        //Microsoft.Terminal.Settings.Model.SelectionColor Background;
+        Microsoft.Terminal.Settings.Model.MatchMode MatchMode { get; };
     };
 
     [default_interface] runtimeclass SelectCommandArgs : IActionArgs

@@ -46,22 +46,22 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         static com_ptr<ColorScheme> FromJson(const Json::Value& json);
         Json::Value ToJson() const;
 
-        com_array<Core::Color> Table() const noexcept;
-        void SetColorTableEntry(uint8_t index, const Core::Color& value) noexcept;
+        com_array<Model::Color> Table() const noexcept;
+        void SetColorTableEntry(uint8_t index, const Model::Color& value) noexcept;
 
         bool IsEquivalentForSettingsMergePurposes(const winrt::com_ptr<ColorScheme>& other) noexcept;
 
         WINRT_PROPERTY(winrt::hstring, Name);
         WINRT_PROPERTY(OriginTag, Origin, OriginTag::None);
-        WINRT_PROPERTY(Core::Color, Foreground, static_cast<Core::Color>(DEFAULT_FOREGROUND));
-        WINRT_PROPERTY(Core::Color, Background, static_cast<Core::Color>(DEFAULT_BACKGROUND));
-        WINRT_PROPERTY(Core::Color, SelectionBackground, static_cast<Core::Color>(DEFAULT_FOREGROUND));
-        WINRT_PROPERTY(Core::Color, CursorColor, static_cast<Core::Color>(DEFAULT_CURSOR_COLOR));
+        WINRT_PROPERTY(Model::Color, Foreground, static_cast<Model::Color>(DEFAULT_FOREGROUND));
+        WINRT_PROPERTY(Model::Color, Background, static_cast<Model::Color>(DEFAULT_BACKGROUND));
+        WINRT_PROPERTY(Model::Color, SelectionBackground, static_cast<Model::Color>(DEFAULT_FOREGROUND));
+        WINRT_PROPERTY(Model::Color, CursorColor, static_cast<Model::Color>(DEFAULT_CURSOR_COLOR));
 
     private:
         bool _layerJson(const Json::Value& json);
 
-        std::array<Core::Color, COLOR_TABLE_SIZE> _table;
+        std::array<Model::Color, COLOR_TABLE_SIZE> _table;
     };
 }
 

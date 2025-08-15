@@ -1,0 +1,84 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+namespace Microsoft.Terminal.Settings.Model
+{
+    enum MatchMode
+    {
+        None,
+        All
+    };
+
+    enum CursorStyle
+    {
+        Vintage,
+        Bar,
+        Underscore,
+        DoubleUnderscore,
+        FilledBox,
+        EmptyBox
+    };
+
+    enum AdjustTextMode
+    {
+        Never,
+        Indexed,
+        Always
+    };
+
+    // TerminalCore declares its own Color struct to avoid depending
+    // on Windows.UI.Color and to avoid passing around unclothed uint32s.
+    // It is supported by til::color for conversions in and out of WinRT land.
+    struct Color
+    {
+        UInt8 R;
+        UInt8 G;
+        UInt8 B;
+        UInt8 A;
+    };
+
+    [flags]
+    enum CopyFormat
+    {
+        HTML = 0x1,
+        RTF = 0x2,
+        All = 0xffffffff
+    };
+
+    enum GraphicsAPI
+    {
+        Automatic,
+        Direct2D,
+        Direct3D11,
+    };
+
+    enum ClearBufferType
+    {
+        Screen,
+        Scrollback,
+        All
+    };
+
+    enum ScrollToMarkDirection
+    {
+        Previous,
+        Next,
+        First,
+        Last
+    };
+
+    enum ScrollbarState
+    {
+        Visible = 0,
+        Hidden,
+        Always
+    };
+
+    enum TextAntialiasingMode
+    {
+        Grayscale = 0,
+        Cleartype,
+        Aliased
+    };
+
+}

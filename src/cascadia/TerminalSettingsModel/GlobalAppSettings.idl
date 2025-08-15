@@ -7,6 +7,7 @@ import "Theme.idl";
 import "ColorScheme.idl";
 import "ActionMap.idl";
 import "NewTabMenuEntry.idl";
+import "Types.idl";
 
 namespace Microsoft.Terminal.Settings.Model
 {
@@ -67,7 +68,7 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_SETTING(String, WordDelimiters);
         INHERITABLE_SETTING(Boolean, CopyOnSelect);
         INHERITABLE_SETTING(Boolean, InputServiceWarning);
-        INHERITABLE_SETTING(Microsoft.Terminal.Control.CopyFormat, CopyFormatting);
+        INHERITABLE_SETTING(Microsoft.Terminal.Settings.Model.CopyFormat, CopyFormatting);
         INHERITABLE_SETTING(Boolean, WarnAboutLargePaste);
         INHERITABLE_SETTING(Boolean, WarnAboutMultiLinePaste);
         INHERITABLE_SETTING(Boolean, TrimPaste);
@@ -76,7 +77,7 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_SETTING(FirstWindowPreference, FirstWindowPreference);
         INHERITABLE_SETTING(LaunchMode, LaunchMode);
         INHERITABLE_SETTING(Boolean, SnapToGridOnResize);
-        INHERITABLE_SETTING(Microsoft.Terminal.Control.GraphicsAPI, GraphicsAPI);
+        INHERITABLE_SETTING(Microsoft.Terminal.Settings.Model.GraphicsAPI, GraphicsAPI);
         INHERITABLE_SETTING(Boolean, DisablePartialInvalidation);
         INHERITABLE_SETTING(Boolean, SoftwareRendering);
         INHERITABLE_SETTING(Boolean, UseBackgroundImageForWindow);

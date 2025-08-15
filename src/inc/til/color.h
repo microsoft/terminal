@@ -186,6 +186,18 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         }
 #endif
 
+#ifdef WINRT_Microsoft_Terminal_Settings_Model_H
+        constexpr color(const winrt::Microsoft::Terminal::Settings::Model::Color& coreColor) :
+            color(coreColor.R, coreColor.G, coreColor.B, coreColor.A)
+        {
+        }
+
+        constexpr operator winrt::Microsoft::Terminal::Settings::Model::Color() const noexcept
+        {
+            return { r, g, b, a };
+        }
+#endif
+
         constexpr bool operator==(const til::color& other) const
         {
             return abgr == other.abgr;

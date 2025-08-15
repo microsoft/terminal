@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
+import "Types.idl";
+
 namespace Microsoft.Terminal.Settings.Model
 {
 
@@ -39,14 +41,14 @@ namespace Microsoft.Terminal.Settings.Model
     runtimeclass ThemeColor
     {
         ThemeColor();
-        static ThemeColor FromColor(Microsoft.Terminal.Core.Color color);
+        static ThemeColor FromColor(Microsoft.Terminal.Settings.Model.Color color);
         static ThemeColor FromAccent();
         static ThemeColor FromTerminalBackground();
 
-        Microsoft.Terminal.Core.Color Color { get; };
+        Microsoft.Terminal.Settings.Model.Color Color { get; };
         ThemeColorType ColorType;
 
-        static Microsoft.Terminal.Core.Color ColorFromBrush(Windows.UI.Xaml.Media.Brush brush);
+        static Microsoft.Terminal.Settings.Model.Color ColorFromBrush(Windows.UI.Xaml.Media.Brush brush);
         Windows.UI.Xaml.Media.Brush Evaluate(Windows.UI.Xaml.ResourceDictionary res,
                                              Windows.UI.Xaml.Media.Brush terminalBackground,
                                              Boolean forTitlebar);

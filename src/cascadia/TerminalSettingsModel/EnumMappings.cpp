@@ -36,19 +36,19 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     DEFINE_ENUM_MAP(Model::FirstWindowPreference, FirstWindowPreference);
     DEFINE_ENUM_MAP(Model::LaunchMode, LaunchMode);
     DEFINE_ENUM_MAP(Model::TabSwitcherMode, TabSwitcherMode);
-    DEFINE_ENUM_MAP(Microsoft::Terminal::Control::CopyFormat, CopyFormat);
+    DEFINE_ENUM_MAP(Model::CopyFormat, CopyFormat);
     DEFINE_ENUM_MAP(Model::WindowingMode, WindowingMode);
-    DEFINE_ENUM_MAP(Microsoft::Terminal::Core::MatchMode, MatchMode);
-    DEFINE_ENUM_MAP(Microsoft::Terminal::Control::GraphicsAPI, GraphicsAPI);
+    DEFINE_ENUM_MAP(Model::MatchMode, MatchMode);
+    DEFINE_ENUM_MAP(Model::GraphicsAPI, GraphicsAPI);
 
     // Profile Settings
     DEFINE_ENUM_MAP(Model::CloseOnExitMode, CloseOnExitMode);
-    DEFINE_ENUM_MAP(Microsoft::Terminal::Control::ScrollbarState, ScrollbarState);
+    DEFINE_ENUM_MAP(Model::ScrollbarState, ScrollbarState);
     DEFINE_ENUM_MAP(Windows::UI::Xaml::Media::Stretch, BackgroundImageStretchMode);
-    DEFINE_ENUM_MAP(Microsoft::Terminal::Control::TextAntialiasingMode, TextAntialiasingMode);
-    DEFINE_ENUM_MAP(Microsoft::Terminal::Core::CursorStyle, CursorStyle);
-    DEFINE_ENUM_MAP(Microsoft::Terminal::Settings::Model::IntenseStyle, IntenseTextStyle);
-    DEFINE_ENUM_MAP(Microsoft::Terminal::Core::AdjustTextMode, AdjustIndistinguishableColors);
+    DEFINE_ENUM_MAP(Model::TextAntialiasingMode, TextAntialiasingMode);
+    DEFINE_ENUM_MAP(Model::CursorStyle, CursorStyle);
+    DEFINE_ENUM_MAP(Model::IntenseStyle, IntenseTextStyle);
+    DEFINE_ENUM_MAP(Model::AdjustTextMode, AdjustIndistinguishableColors);
 
     // FontWeight is special because the JsonUtils::ConversionTrait for it
     // creates a FontWeight object, but we need to use the uint16_t value.

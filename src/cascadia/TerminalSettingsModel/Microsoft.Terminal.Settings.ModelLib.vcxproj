@@ -226,6 +226,7 @@
     <Midl Include="IAppearanceConfig.idl" />
     <Midl Include="ISettingsModelObject.idl" />
     <Midl Include="FontConfig.idl" />
+    <Midl Include="Types.idl" />
   </ItemGroup>
   <!-- ========================= Misc Files ======================== -->
   <ItemGroup>

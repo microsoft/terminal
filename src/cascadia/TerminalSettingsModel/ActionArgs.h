@@ -204,11 +204,11 @@ private:                                                                    \
 
 ////////////////////////////////////////////////////////////////////////////////
 #define SCROLL_TO_MARK_ARGS(X) \
-    X(Microsoft::Terminal::Control::ScrollToMarkDirection, Direction, "direction", false, Microsoft::Terminal::Control::ScrollToMarkDirection::Previous)
+    X(Microsoft::Terminal::Settings::Model::ScrollToMarkDirection, Direction, "direction", false, Microsoft::Terminal::Settings::Model::ScrollToMarkDirection::Previous)
 
 ////////////////////////////////////////////////////////////////////////////////
 #define ADD_MARK_ARGS(X) \
-    X(Windows::Foundation::IReference<Microsoft::Terminal::Core::Color>, Color, "color", false, nullptr)
+    X(Windows::Foundation::IReference<Microsoft::Terminal::Settings::Model::Color>, Color, "color", false, nullptr)
 
 ////////////////////////////////////////////////////////////////////////////////
 #define TOGGLE_COMMAND_PALETTE_ARGS(X) \
@@ -257,7 +257,7 @@ private:                                                                    \
 
 ////////////////////////////////////////////////////////////////////////////////
 #define CLEAR_BUFFER_ARGS(X) \
-    X(winrt::Microsoft::Terminal::Control::ClearBufferType, Clear, "clear", false, winrt::Microsoft::Terminal::Control::ClearBufferType::All)
+    X(winrt::Microsoft::Terminal::Settings::Model::ClearBufferType, Clear, "clear", false, winrt::Microsoft::Terminal::Settings::Model::ClearBufferType::All)
 
 ////////////////////////////////////////////////////////////////////////////////
 #define ADJUST_OPACITY_ARGS(X)               \
@@ -273,10 +273,10 @@ private:                                                                    \
     X(SelectOutputDirection, Direction, "direction", false, SelectOutputDirection::Previous)
 
 ////////////////////////////////////////////////////////////////////////////////
-#define COLOR_SELECTION_ARGS(X)                                                                      \
-    X(winrt::Microsoft::Terminal::Control::SelectionColor, Foreground, "foreground", false, nullptr) \
-    X(winrt::Microsoft::Terminal::Control::SelectionColor, Background, "background", false, nullptr) \
-    X(winrt::Microsoft::Terminal::Core::MatchMode, MatchMode, "matchMode", false, winrt::Microsoft::Terminal::Core::MatchMode::None)
+#define COLOR_SELECTION_ARGS(X)                                                                              \
+    X(winrt::Microsoft::Terminal::Settings::Model::SelectionColor, Foreground, "foreground", false, nullptr) \
+    X(winrt::Microsoft::Terminal::Settings::Model::SelectionColor, Background, "background", false, nullptr) \
+    X(winrt::Microsoft::Terminal::Settings::Model::MatchMode, MatchMode, "matchMode", false, winrt::Microsoft::Terminal::Settings::Model::MatchMode::None)
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -449,10 +449,11 @@ struct til::hash_trait<winrt::Microsoft::Terminal::Settings::Model::NewTerminalA
         }
     }
 };
+#if 0
 template<>
-struct til::hash_trait<winrt::Microsoft::Terminal::Control::SelectionColor>
+struct til::hash_trait<winrt::Microsoft::Terminal::Settings::Model::SelectionColor>
 {
-    using M = winrt::Microsoft::Terminal::Control::SelectionColor;
+    using M = winrt::Microsoft::Terminal::Settings::Model::SelectionColor;
 
     void operator()(hasher& h, const M& value) const noexcept
     {
@@ -463,6 +464,7 @@ struct til::hash_trait<winrt::Microsoft::Terminal::Control::SelectionColor>
         }
     }
 };
+#endif
 
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {

@@ -36,10 +36,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         winrt::hstring ExpandedBackgroundImagePath();
 
-        INHERITABLE_NULLABLE_SETTING(Model::IAppearanceConfig, Microsoft::Terminal::Core::Color, Foreground, nullptr);
-        INHERITABLE_NULLABLE_SETTING(Model::IAppearanceConfig, Microsoft::Terminal::Core::Color, Background, nullptr);
-        INHERITABLE_NULLABLE_SETTING(Model::IAppearanceConfig, Microsoft::Terminal::Core::Color, SelectionBackground, nullptr);
-        INHERITABLE_NULLABLE_SETTING(Model::IAppearanceConfig, Microsoft::Terminal::Core::Color, CursorColor, nullptr);
+        INHERITABLE_NULLABLE_SETTING(Model::IAppearanceConfig, Microsoft::Terminal::Settings::Model::Color, Foreground, nullptr);
+        INHERITABLE_NULLABLE_SETTING(Model::IAppearanceConfig, Microsoft::Terminal::Settings::Model::Color, Background, nullptr);
+        INHERITABLE_NULLABLE_SETTING(Model::IAppearanceConfig, Microsoft::Terminal::Settings::Model::Color, SelectionBackground, nullptr);
+        INHERITABLE_NULLABLE_SETTING(Model::IAppearanceConfig, Microsoft::Terminal::Settings::Model::Color, CursorColor, nullptr);
         INHERITABLE_SETTING(Model::IAppearanceConfig, double, Opacity, 1.0);
 
         INHERITABLE_SETTING(Model::IAppearanceConfig, hstring, DarkColorSchemeName, L"Campbell");

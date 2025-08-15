@@ -63,7 +63,7 @@ THEME_OBJECT(TabTheme, MTSM_THEME_TAB_SETTINGS);
 #undef THEME_SETTINGS_TO_JSON
 #undef THEME_OBJECT
 
-winrt::Microsoft::Terminal::Settings::Model::ThemeColor ThemeColor::FromColor(const winrt::Microsoft::Terminal::Core::Color& coreColor) noexcept
+winrt::Microsoft::Terminal::Settings::Model::ThemeColor ThemeColor::FromColor(const winrt::Microsoft::Terminal::Settings::Model::Color& coreColor) noexcept
 {
     auto result = winrt::make_self<implementation::ThemeColor>();
     result->_Color = coreColor;

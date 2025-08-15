@@ -24,7 +24,7 @@ Author(s):
     X(hstring, WordDelimiters, "wordDelimiters", DEFAULT_WORD_DELIMITERS)                                                                                                                             \
     X(bool, CopyOnSelect, "copyOnSelect", false)                                                                                                                                                      \
     X(bool, FocusFollowMouse, "focusFollowMouse", false)                                                                                                                                              \
-    X(winrt::Microsoft::Terminal::Control::GraphicsAPI, GraphicsAPI, "rendering.graphicsAPI")                                                                                                         \
+    X(winrt::Microsoft::Terminal::Settings::Model::GraphicsAPI, GraphicsAPI, "rendering.graphicsAPI")                                                                                                 \
     X(bool, DisablePartialInvalidation, "rendering.disablePartialInvalidation", false)                                                                                                                \
     X(bool, SoftwareRendering, "rendering.software", false)                                                                                                                                           \
     X(bool, UseBackgroundImageForWindow, "experimental.useBackgroundImageForWindow", false)                                                                                                           \
@@ -41,7 +41,7 @@ Author(s):
     X(bool, UseAcrylicInTabRow, "useAcrylicInTabRow", false)                                                                                                                                          \
     X(bool, ShowTabsInTitlebar, "showTabsInTitlebar", true)                                                                                                                                           \
     X(bool, InputServiceWarning, "inputServiceWarning", true)                                                                                                                                         \
-    X(winrt::Microsoft::Terminal::Control::CopyFormat, CopyFormatting, "copyFormatting", 0)                                                                                                           \
+    X(winrt::Microsoft::Terminal::Settings::Model::CopyFormat, CopyFormatting, "copyFormatting", 0)                                                                                                   \
     X(bool, WarnAboutLargePaste, "largePasteWarning", true)                                                                                                                                           \
     X(bool, WarnAboutMultiLinePaste, "multiLinePasteWarning", true)                                                                                                                                   \
     X(Model::LaunchPosition, InitialPosition, "initialPosition", nullptr, nullptr)                                                                                                                    \
@@ -76,26 +76,26 @@ Author(s):
 // * TerminalSettings.cpp: TerminalSettings::_ApplyProfileSettings
 // * IControlSettings.idl or ICoreSettings.idl
 // * ControlProperties.h
-#define MTSM_PROFILE_SETTINGS(X)                                                                                                                               \
-    X(int32_t, HistorySize, "historySize", DEFAULT_HISTORY_SIZE)                                                                                               \
-    X(bool, SnapOnInput, "snapOnInput", true)                                                                                                                  \
-    X(bool, AltGrAliasing, "altGrAliasing", true)                                                                                                              \
-    X(hstring, Commandline, "commandline", L"%SystemRoot%\\System32\\cmd.exe")                                                                                 \
-    X(Microsoft::Terminal::Control::ScrollbarState, ScrollState, "scrollbarState", Microsoft::Terminal::Control::ScrollbarState::Visible)                      \
-    X(Microsoft::Terminal::Control::TextAntialiasingMode, AntialiasingMode, "antialiasingMode", Microsoft::Terminal::Control::TextAntialiasingMode::Grayscale) \
-    X(hstring, StartingDirectory, "startingDirectory")                                                                                                         \
-    X(bool, SuppressApplicationTitle, "suppressApplicationTitle", false)                                                                                       \
-    X(guid, ConnectionType, "connectionType")                                                                                                                  \
-    X(CloseOnExitMode, CloseOnExit, "closeOnExit", CloseOnExitMode::Automatic)                                                                                 \
-    X(hstring, TabTitle, "tabTitle")                                                                                                                           \
-    X(Model::BellStyle, BellStyle, "bellStyle", BellStyle::Audible)                                                                                            \
-    X(IEnvironmentVariableMap, EnvironmentVariables, "environment", nullptr)                                                                                   \
-    X(bool, RightClickContextMenu, "experimental.rightClickContextMenu", false)                                                                                \
-    X(Windows::Foundation::Collections::IVector<winrt::hstring>, BellSound, "bellSound", nullptr)                                                              \
-    X(bool, Elevate, "elevate", false)                                                                                                                         \
-    X(bool, AutoMarkPrompts, "experimental.autoMarkPrompts", false)                                                                                            \
-    X(bool, ShowMarks, "experimental.showMarksOnScrollbar", false)                                                                                             \
-    X(bool, RepositionCursorWithMouse, "experimental.repositionCursorWithMouse", false)                                                                        \
+#define MTSM_PROFILE_SETTINGS(X)                                                                                                                                               \
+    X(int32_t, HistorySize, "historySize", DEFAULT_HISTORY_SIZE)                                                                                                               \
+    X(bool, SnapOnInput, "snapOnInput", true)                                                                                                                                  \
+    X(bool, AltGrAliasing, "altGrAliasing", true)                                                                                                                              \
+    X(hstring, Commandline, "commandline", L"%SystemRoot%\\System32\\cmd.exe")                                                                                                 \
+    X(Microsoft::Terminal::Settings::Model::ScrollbarState, ScrollState, "scrollbarState", Microsoft::Terminal::Settings::Model::ScrollbarState::Visible)                      \
+    X(Microsoft::Terminal::Settings::Model::TextAntialiasingMode, AntialiasingMode, "antialiasingMode", Microsoft::Terminal::Settings::Model::TextAntialiasingMode::Grayscale) \
+    X(hstring, StartingDirectory, "startingDirectory")                                                                                                                         \
+    X(bool, SuppressApplicationTitle, "suppressApplicationTitle", false)                                                                                                       \
+    X(guid, ConnectionType, "connectionType")                                                                                                                                  \
+    X(CloseOnExitMode, CloseOnExit, "closeOnExit", CloseOnExitMode::Automatic)                                                                                                 \
+    X(hstring, TabTitle, "tabTitle")                                                                                                                                           \
+    X(Model::BellStyle, BellStyle, "bellStyle", BellStyle::Audible)                                                                                                            \
+    X(IEnvironmentVariableMap, EnvironmentVariables, "environment", nullptr)                                                                                                   \
+    X(bool, RightClickContextMenu, "experimental.rightClickContextMenu", false)                                                                                                \
+    X(Windows::Foundation::Collections::IVector<winrt::hstring>, BellSound, "bellSound", nullptr)                                                                              \
+    X(bool, Elevate, "elevate", false)                                                                                                                                         \
+    X(bool, AutoMarkPrompts, "experimental.autoMarkPrompts", false)                                                                                                            \
+    X(bool, ShowMarks, "experimental.showMarksOnScrollbar", false)                                                                                                             \
+    X(bool, RepositionCursorWithMouse, "experimental.repositionCursorWithMouse", false)                                                                                        \
     X(bool, ReloadEnvironmentVariables, "compatibility.reloadEnvironmentVariables", true)
 
 // Intentionally omitted Profile settings:
