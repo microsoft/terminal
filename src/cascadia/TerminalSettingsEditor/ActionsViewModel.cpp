@@ -893,12 +893,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         const auto shortcutArgs = _actionAndArgs.Args().as<Model::IActionArgsDescriptorAccess>();
         if (shortcutArgs)
         {
-            const auto shortcutArgsNumItems = shortcutArgs.GetArgCount();
+            const auto shortcutArgsDescriptors = shortcutArgs.GetArgDescriptors();
             std::vector<Editor::ArgWrapper> argValues;
-            for (uint32_t i = 0; i < shortcutArgsNumItems; i++)
+            uint32_t i = 0;
+            for (const auto argDescription : shortcutArgsDescriptors)
             {
                 const auto argAtIndex = shortcutArgs.GetArgAt(i);
-                const auto argDescription = shortcutArgs.GetArgDescriptorAt(i);
                 const auto argName = argDescription.Name;
                 const auto argType = argDescription.Type;
                 const auto argTypeHint = argDescription.TypeHint;
@@ -946,6 +946,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 });
                 item->Initialize();
                 argValues.push_back(*item);
+                i++;
             }
 
             _ArgValues = single_threaded_observable_vector(std::move(argValues));
