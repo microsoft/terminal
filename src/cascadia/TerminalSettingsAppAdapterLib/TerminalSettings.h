@@ -62,7 +62,7 @@ public:                                                                     \
 namespace winrt::Microsoft::Terminal::Settings
 {
     using IFontAxesMap = winrt::Windows::Foundation::Collections::IMap<winrt::hstring, float>;
-    using IFontFeatureMap = winrt::Windows::Foundation::Collections::IMap<winrt::hstring, uint32_t>;
+    using IFontFeatureMap = winrt::Windows::Foundation::Collections::IMap<winrt::hstring, float>;
     using IEnvironmentVariableMap = winrt::Windows::Foundation::Collections::IMap<winrt::hstring, winrt::hstring>;
 
     struct TerminalSettingsCreateResult;
@@ -103,6 +103,7 @@ namespace winrt::Microsoft::Terminal::Settings
 
         XXXSETTING(TerminalSettings, bool, SnapOnInput, true);
         XXXSETTING(TerminalSettings, bool, AltGrAliasing, true);
+        XXXSETTING(Model::TerminalSettings, hstring, AnswerbackMessage);
         XXXSETTING(TerminalSettings, til::color, CursorColor, DEFAULT_CURSOR_COLOR);
         XXXSETTING(TerminalSettings, Microsoft::Terminal::Core::CursorStyle, CursorShape, Core::CursorStyle::Vintage);
         XXXSETTING(TerminalSettings, uint32_t, CursorHeight, DEFAULT_CURSOR_HEIGHT);
@@ -110,8 +111,12 @@ namespace winrt::Microsoft::Terminal::Settings
         XXXSETTING(TerminalSettings, bool, CopyOnSelect, false);
         XXXSETTING(TerminalSettings, Microsoft::Terminal::Control::CopyFormat, CopyFormatting, 0);
         XXXSETTING(TerminalSettings, bool, FocusFollowMouse, false);
+        XXXSETTING(Model::TerminalSettings, bool, ScrollToZoom, true);
+        XXXSETTING(Model::TerminalSettings, bool, ScrollToChangeOpacity, true);
+        XXXSETTING(Model::TerminalSettings, bool, AllowVtChecksumReport, false);
         XXXSETTING(TerminalSettings, bool, TrimBlockSelection, true);
         XXXSETTING(TerminalSettings, bool, DetectURLs, true);
+        XXXSETTING(Model::TerminalSettings, bool, AllowVtClipboardWrite, true);
 
         XXXSETTING(TerminalSettings, Windows::Foundation::IReference<Microsoft::Terminal::Core::Color>, TabColor, nullptr);
 
@@ -129,16 +134,16 @@ namespace winrt::Microsoft::Terminal::Settings
         XXXSETTING(TerminalSettings, bool, IntenseIsBright);
 
         XXXSETTING(TerminalSettings, Microsoft::Terminal::Core::AdjustTextMode, AdjustIndistinguishableColors, Core::AdjustTextMode::Never);
+        XXXSETTING(Model::TerminalSettings, bool, RainbowSuggestions, false);
 
         // ------------------------ End of Core Settings -----------------------
 
         XXXSETTING(TerminalSettings, hstring, ProfileName);
-        XXXSETTING(TerminalSettings, hstring, ProfileSource);
 
         XXXSETTING(TerminalSettings, guid, SessionId);
         XXXSETTING(TerminalSettings, bool, EnableUnfocusedAcrylic, false);
         XXXSETTING(TerminalSettings, bool, UseAcrylic, false);
-        XXXSETTING(TerminalSettings, double, Opacity, UseAcrylic() ? 0.5 : 1.0);
+        XXXSETTING(TerminalSettings, float, Opacity, UseAcrylic() ? 0.5f : 1.0f);
         XXXSETTING(TerminalSettings, hstring, Padding, DEFAULT_PADDING);
         XXXSETTING(TerminalSettings, hstring, FontFace, DEFAULT_FONT_FACE);
         XXXSETTING(TerminalSettings, float, FontSize, DEFAULT_FONT_SIZE);
@@ -152,7 +157,7 @@ namespace winrt::Microsoft::Terminal::Settings
         XXXSETTING(TerminalSettings, hstring, CellHeight);
 
         XXXSETTING(TerminalSettings, hstring, BackgroundImage);
-        XXXSETTING(TerminalSettings, double, BackgroundImageOpacity, 1.0);
+        XXXSETTING(TerminalSettings, float, BackgroundImageOpacity, 1.0f);
 
         XXXSETTING(TerminalSettings, winrt::Windows::UI::Xaml::Media::Stretch, BackgroundImageStretchMode, winrt::Windows::UI::Xaml::Media::Stretch::UniformToFill);
         XXXSETTING(TerminalSettings, winrt::Windows::UI::Xaml::HorizontalAlignment, BackgroundImageHorizontalAlignment, winrt::Windows::UI::Xaml::HorizontalAlignment::Center);
@@ -174,6 +179,8 @@ namespace winrt::Microsoft::Terminal::Settings
         XXXSETTING(TerminalSettings, Microsoft::Terminal::Control::GraphicsAPI, GraphicsAPI);
         XXXSETTING(TerminalSettings, bool, DisablePartialInvalidation, false);
         XXXSETTING(TerminalSettings, bool, SoftwareRendering, false);
+        XXXSETTING(Model::TerminalSettings, Microsoft::Terminal::Control::TextMeasurement, TextMeasurement);
+        XXXSETTING(Model::TerminalSettings, Microsoft::Terminal::Control::DefaultInputScope, DefaultInputScope);
         XXXSETTING(TerminalSettings, bool, UseBackgroundImageForWindow, false);
         XXXSETTING(TerminalSettings, bool, ForceVTInput, false);
 
@@ -188,6 +195,8 @@ namespace winrt::Microsoft::Terminal::Settings
         XXXSETTING(TerminalSettings, bool, RepositionCursorWithMouse, false);
 
         XXXSETTING(TerminalSettings, bool, ReloadEnvironmentVariables, true);
+
+        XXXSETTING(Model::TerminalSettings, Microsoft::Terminal::Control::PathTranslationStyle, PathTranslationStyle, Microsoft::Terminal::Control::PathTranslationStyle::None);
 
     private:
         std::optional<std::array<Microsoft::Terminal::Core::Color, COLOR_TABLE_SIZE>> _ColorTable;

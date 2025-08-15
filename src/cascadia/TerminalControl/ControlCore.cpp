@@ -1027,7 +1027,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         if (_renderEngine)
         {
-            static constexpr auto cloneMap = [](const IFontFeatureMap& map) {
+            static constexpr auto cloneMap = [](const auto& map) {
                 std::unordered_map<std::wstring_view, float> clone;
                 if (map)
                 {

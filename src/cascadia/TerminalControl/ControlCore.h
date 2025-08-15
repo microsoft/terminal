@@ -404,7 +404,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         // Other stuff.
         winrt::Windows::System::DispatcherQueue _dispatcher{ nullptr };
-        winrt::com_ptr<ControlSettings> _settings{ nullptr };
+        IControlSettings _settings{ nullptr };
+        bool _hasUnfocusedAppearance{ false };
+        IControlAppearance _unfocusedAppearance{ nullptr };
         til::point _contextMenuBufferPosition{ 0, 0 };
         Windows::Foundation::Collections::IVector<hstring> _cachedQuickFixes{ nullptr };
         ::Search _searcher;
@@ -415,11 +417,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         std::atomic<bool> _initializedTerminal{ false };
         bool _isReadOnly{ false };
         bool _closing{ false };
-
-        IControlSettings _settings{ nullptr };
-        bool _hasUnfocusedAppearance{ false };
-        IControlAppearance _unfocusedAppearance{ nullptr };
-
 
         // ----------------------------------------------------------------------------------------
         // These are ordered last to ensure they're destroyed first.
