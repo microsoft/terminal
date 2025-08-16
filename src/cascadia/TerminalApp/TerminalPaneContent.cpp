@@ -126,11 +126,9 @@ namespace winrt::TerminalApp::implementation
 
         // TODO:GH#9800 - we used to be able to persist the color scheme that a
         // TermControl was initialized with, by name. With the change to having the
-        // control own its own copy of its settings, this isn't possible anymore.
-        //
-        // We may be able to get around this by storing the Name in the Core::Scheme
-        // object. That would work for schemes set by the Terminal, but not ones set
-        // by VT, but that seems good enough.
+        // control own its own copy of its settings, this wasn't possible anymore.
+        // It probably is once again possible, but Dustin doesn't know how to undo
+        // the damage done in the ControlSettings migration.
 
         switch (kind)
         {

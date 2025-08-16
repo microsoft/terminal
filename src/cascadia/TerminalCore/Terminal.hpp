@@ -28,7 +28,6 @@ namespace winrt::Microsoft::Terminal::Core
 {
     struct ICoreSettings;
     struct ICoreAppearance;
-    struct Scheme;
     enum class MatchMode;
 }
 
