@@ -3,7 +3,6 @@
 
 #include "pch.h"
 #include "TerminalSettingsCache.h"
-#include "TerminalSettingsCache.g.cpp"
 
 namespace winrt
 {
