@@ -30,6 +30,7 @@ namespace SettingsModelUnitTests
         TEST_METHOD(DuplicateProfileTest);
         TEST_METHOD(TestGenGuidsForProfiles);
         TEST_METHOD(TestCorrectOldDefaultShellPaths);
+        TEST_METHOD(ProfileDefaultsProhibitedSettings);
     };
 
     void ProfileTests::ProfileGeneratesGuid()
@@ -469,5 +470,66 @@ namespace SettingsModelUnitTests
         VERIFY_ARE_EQUAL(L"powershell.exe", allProfiles.GetAt(1).Commandline());
         VERIFY_ARE_EQUAL(L"%SystemRoot%\\System32\\cmd.exe", allProfiles.GetAt(2).Commandline());
         VERIFY_ARE_EQUAL(L"cmd.exe", allProfiles.GetAt(3).Commandline());
+    }
+
+    void ProfileTests::ProfileDefaultsProhibitedSettings()
+    {
+        static constexpr std::string_view userProfiles{ R"({
+            "profiles": {
+                "defaults":
+                {
+                    "guid": "{00000000-0000-0000-0000-000000000000}",
+                    "name": "Default Profile Name",
+                    "source": "Default Profile Source",
+                    "commandline": "foo.exe"
+                },
+                "list":
+                [
+                    {
+                        "name" : "PowerShell",
+                        "commandline": "powershell.exe",
+                        "guid" : "{61c54bbd-c2c6-5271-96e7-009a87ff44bf}"
+                    },
+                    {
+                        "name": "Profile with just a name"
+                    },
+                    {
+                        "guid": "{a0776706-1fa6-4439-b46c-287a65c084d5}",
+                    }
+                ]
+            }
+        })" };
+
+        const auto settings = winrt::make_self<implementation::CascadiaSettings>(userProfiles);
+
+        // Profile Defaults should not have a GUID, name, source, or commandline.
+        const auto profileDefaults = settings->ProfileDefaults();
+        VERIFY_IS_FALSE(profileDefaults.HasGuid());
+        VERIFY_IS_FALSE(profileDefaults.HasName());
+        VERIFY_IS_FALSE(profileDefaults.HasSource());
+        VERIFY_IS_FALSE(profileDefaults.HasCommandline());
+
+        const auto allProfiles = settings->AllProfiles();
+        VERIFY_ARE_EQUAL(3u, allProfiles.Size());
+
+        // Profile settings should be set to the ones set at that layer
+        VERIFY_ARE_EQUAL(L"PowerShell", allProfiles.GetAt(0).Name());
+        VERIFY_ARE_EQUAL(L"%SystemRoot%\\System32\\WindowsPowerShell\\v1.0\\powershell.exe", allProfiles.GetAt(0).Commandline());
+        VERIFY_ARE_EQUAL(Utils::GuidFromString(L"{61c54bbd-c2c6-5271-96e7-009a87ff44bf}"), static_cast<GUID>(allProfiles.GetAt(0).Guid()));
+        VERIFY_IS_FALSE(allProfiles.GetAt(0).HasSource());
+
+        // Profile should not inherit the values attempted to be set on the Profiles Defaults layer
+        // This profile only has a name set
+        VERIFY_ARE_EQUAL(L"Profile with just a name", allProfiles.GetAt(1).Name());
+        VERIFY_ARE_NOT_EQUAL(Utils::GuidFromString(L"{00000000-0000-0000-0000-000000000000}"), static_cast<GUID>(allProfiles.GetAt(1).Guid()));
+        VERIFY_ARE_NOT_EQUAL(L"Default Profile Source", allProfiles.GetAt(1).Source());
+        VERIFY_ARE_NOT_EQUAL(L"foo.exe", allProfiles.GetAt(1).Commandline());
+
+        // Profile should not inherit the values attempted to be set on the Profiles Defaults layer
+        // This profile only has a guid set
+        VERIFY_ARE_NOT_EQUAL(L"Default Profile Name", allProfiles.GetAt(2).Name());
+        VERIFY_ARE_NOT_EQUAL(Utils::GuidFromString(L"{00000000-0000-0000-0000-000000000000}"), static_cast<GUID>(allProfiles.GetAt(2).Guid()));
+        VERIFY_ARE_NOT_EQUAL(L"Default Profile Source", allProfiles.GetAt(2).Source());
+        VERIFY_ARE_NOT_EQUAL(L"foo.exe", allProfiles.GetAt(2).Commandline());
     }
 }
