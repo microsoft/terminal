@@ -25,6 +25,8 @@ namespace Microsoft.Terminal.Settings.Editor
         ColorTableEntry CursorColor;
         ColorTableEntry SelectionBackgroundColor;
 
+	Windows.UI.Xaml.Media.Brush MaybeContrastingColor(Windows.UI.Color color);
+
         void DeleteConfirmation_Click(IInspectable sender, Windows.UI.Xaml.RoutedEventArgs args);
         void SetAsDefault_Click(IInspectable sender, Windows.UI.Xaml.RoutedEventArgs args);
         void Duplicate_Click(IInspectable sender, Windows.UI.Xaml.RoutedEventArgs args);

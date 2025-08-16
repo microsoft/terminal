@@ -40,6 +40,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         // DON'T YOU DARE ADD A `WINRT_CALLBACK(PropertyChanged` TO A CLASS DERIVED FROM ViewModelHelper. Do this instead:
         using ViewModelHelper<ColorSchemeViewModel>::PropertyChanged;
+        winrt::Windows::UI::Xaml::Media::Brush MaybeContrastingColor(winrt::Windows::UI::Color color);
 
         WINRT_PROPERTY(Windows::Foundation::Collections::IVector<Editor::ColorTableEntry>, NonBrightColorTable, nullptr);
         WINRT_PROPERTY(Windows::Foundation::Collections::IVector<Editor::ColorTableEntry>, BrightColorTable, nullptr);

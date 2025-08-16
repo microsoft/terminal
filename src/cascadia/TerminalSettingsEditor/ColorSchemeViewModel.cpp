@@ -167,6 +167,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
+    winrt::Windows::UI::Xaml::Media::Brush ColorSchemeViewModel::MaybeContrastingColor(winrt::Windows::UI::Color color)
+    {
+        winrt::Windows::UI::Xaml::Media::SolidColorBrush scb{};
+        scb.Color(color);
+        if (color == BackgroundColor().Color())
+        {
+            scb.Color(ForegroundColor().Color());
+        }
+        return scb;
+    }
+
     ColorTableEntry::ColorTableEntry(uint8_t index, Windows::UI::Color color)
     {
         static const std::array<hstring, 16> TableColorNames = {
