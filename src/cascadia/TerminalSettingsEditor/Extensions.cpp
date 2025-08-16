@@ -20,8 +20,6 @@ using namespace winrt::Windows::UI::Xaml::Navigation;
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
-    static constexpr std::wstring_view ExtensionPageId{ L"page.extensions" };
-
     Extensions::Extensions()
     {
         InitializeComponent();
@@ -41,6 +39,36 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         vmImpl->ExtensionPackageIdentifierTemplateSelector(_extensionPackageIdentifierTemplateSelector);
         vmImpl->LazyLoadExtensions();
         vmImpl->MarkAsVisited();
+
+        if (vmImpl->IsExtensionView())
+        {
+            const auto currentPkgVM = vmImpl->CurrentExtensionPackage();
+            const auto currentPkg = currentPkgVM.Package();
+            TraceLoggingWrite(
+                g_hTerminalSettingsEditorProvider,
+                "NavigatedToPage",
+                TraceLoggingDescription("Event emitted when the user navigates to a page in the settings UI"),
+                TraceLoggingValue("extensions.extensionView", "PageId", "The identifier of the page that was navigated to"),
+                TraceLoggingValue(currentPkg.Source().c_str(), "FragmentSource", "The source of the fragment included in this extension package"),
+                TraceLoggingValue(currentPkgVM.FragmentExtensions().Size(), "FragmentCount", "The number of fragments included in this extension package"),
+                TraceLoggingValue(currentPkgVM.Enabled(), "Enabled", "The enabled status of the extension"),
+                TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+                TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
+        }
+        else
+        {
+            TraceLoggingWrite(
+                g_hTerminalSettingsEditorProvider,
+                "NavigatedToPage",
+                TraceLoggingDescription("Event emitted when the user navigates to a page in the settings UI"),
+                TraceLoggingValue("extensions", "PageId", "The identifier of the page that was navigated to"),
+                TraceLoggingValue(vmImpl->ExtensionPackages().Size(), "ExtensionPackageCount", "The number of extension packages displayed"),
+                TraceLoggingValue(vmImpl->ProfilesModified().Size(), "ProfilesModifiedCount", "The number of profiles modified by enabled extensions"),
+                TraceLoggingValue(vmImpl->ProfilesAdded().Size(), "ProfilesAddedCount", "The number of profiles added by enabled extensions"),
+                TraceLoggingValue(vmImpl->ColorSchemesAdded().Size(), "ColorSchemesAddedCount", "The number of color schemes added by enabled extensions"),
+                TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+                TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
+        }
     }
 
     void Extensions::ExtensionNavigator_Click(const IInspectable& sender, const RoutedEventArgs& /*args*/)
@@ -338,7 +366,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     bool ExtensionsViewModel::DisplayBadge() const noexcept
     {
-        return !Model::ApplicationState::SharedInstance().BadgeDismissed(ExtensionPageId);
+        return !Model::ApplicationState::SharedInstance().BadgeDismissed(L"page.extensions");
     }
 
     // Returns true if the extension is enabled, false otherwise
@@ -411,7 +439,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void ExtensionsViewModel::MarkAsVisited()
     {
-        Model::ApplicationState::SharedInstance().DismissBadge(ExtensionPageId);
+        Model::ApplicationState::SharedInstance().DismissBadge(L"page.extensions");
         _NotifyChanges(L"DisplayBadge");
     }
 

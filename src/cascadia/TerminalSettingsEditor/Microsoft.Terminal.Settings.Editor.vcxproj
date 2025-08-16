@@ -234,6 +234,7 @@
   </ItemGroup>
   <!-- ========================= Cpp Files ======================== -->
   <ItemGroup>
+    <ClCompile Include="init.cpp" />
     <ClCompile Include="Actions.cpp">
       <DependentUpon>Actions.xaml</DependentUpon>
     </ClCompile>
