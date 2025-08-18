@@ -66,6 +66,12 @@ struct InitListPlaceholder
 #define CTOR_INIT(type, name, jsonKey, required, typeHint, ...) \
     _##name{ name##Param },
 
+// Expands to `+1` for every arg in the list
+#define COUNT_ONE(type, name, jsonKey, required, typeHint, ...) +1
+
+// Arg count macro
+#define ARG_COUNT(argsMacro) (0 argsMacro(COUNT_ONE))
+
 #define ARG_DESC_STRINGIFY2(x) #x
 #define ARG_DESC_STRINGIFY(x) ARG_DESC_STRINGIFY2(x)
 #define ARG_DESC_WIDEN2(x) L##x

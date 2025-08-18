@@ -789,7 +789,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
         IInspectable GetArgAt(uint32_t index)
         {
-            const auto additionalArgCount = INIT_ARG_DESCRIPTORS(SPLIT_PANE_ARGS).Size();
+            const auto additionalArgCount = ARG_COUNT(SPLIT_PANE_ARGS);
             if (index < additionalArgCount)
             {
                 X_MACRO_INDEX_BASE();
@@ -803,7 +803,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
         void SetArgAt(uint32_t index, IInspectable value)
         {
-            const auto additionalArgCount = INIT_ARG_DESCRIPTORS(SPLIT_PANE_ARGS).Size();
+            const auto additionalArgCount = ARG_COUNT(SPLIT_PANE_ARGS);
             if (index < additionalArgCount)
             {
                 X_MACRO_INDEX_BASE();
