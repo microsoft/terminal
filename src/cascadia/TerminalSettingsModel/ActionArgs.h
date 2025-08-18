@@ -757,29 +757,35 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
         winrt::Windows::Foundation::Collections::IVectorView<Model::ArgDescriptor> GetArgDescriptors()
         {
-            static const auto thisArgs = INIT_ARG_DESCRIPTORS(SPLIT_PANE_ARGS);
+            // Base args for SplitPane
+            static const auto baseArgs = INIT_ARG_DESCRIPTORS(SPLIT_PANE_ARGS);
 
-            // Merge into a new vector
-            std::vector<Model::ArgDescriptor> merged;
+            // Cached merged variant: SplitPane + NewTerminalArgs
+            static const auto mergedArgs = [] {
+                std::vector<Model::ArgDescriptor> temp;
 
-            for (const auto desc : thisArgs)
-            {
-                merged.push_back(desc);
-            }
-
-            if (_ContentArgs)
-            {
-                if (const auto newTermArgs = _ContentArgs.try_as<NewTerminalArgs>())
+                // copy baseArgs
+                for (const auto& desc : baseArgs)
                 {
-                    auto contentArgs = newTermArgs->GetArgDescriptors();
-                    for (const auto desc : contentArgs)
-                    {
-                        merged.push_back(desc);
-                    }
+                    temp.push_back(desc);
                 }
-            }
 
-            return winrt::single_threaded_vector(std::move(merged)).GetView();
+                // append NewTerminalArgs args
+                const auto newTerminalArgsDesc{ Model::NewTerminalArgs{}.GetArgDescriptors() };
+                for (const auto& desc : newTerminalArgsDesc)
+                {
+                    temp.push_back(desc);
+                }
+
+                return winrt::single_threaded_vector(std::move(temp)).GetView();
+            }();
+
+            // Pick which cached vector to return
+            if (_ContentArgs && _ContentArgs.try_as<NewTerminalArgs>())
+            {
+                return mergedArgs;
+            }
+            return baseArgs;
         }
         IInspectable GetArgAt(uint32_t index)
         {
