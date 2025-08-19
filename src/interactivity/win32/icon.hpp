@@ -23,33 +23,21 @@ namespace Microsoft::Console::Interactivity::Win32
         static Icon& Instance();
 
         [[nodiscard]] HRESULT GetIcons(_Out_opt_ HICON* const phIcon, _Out_opt_ HICON* const phSmIcon);
-        [[nodiscard]] HRESULT SetIcons(const HICON hIcon, const HICON hSmIcon);
-
         [[nodiscard]] HRESULT LoadIconsFromPath(_In_ PCWSTR pwszIconLocation, const int nIconIndex);
-
         [[nodiscard]] HRESULT ApplyWindowMessageWorkaround(const HWND hwnd);
 
     protected:
         Icon();
-        ~Icon();
+        ~Icon() = default;
         Icon(const Icon&) = delete;
         void operator=(const Icon&) = delete;
 
     private:
-        [[nodiscard]] HRESULT _Initialize();
+        // We are not using unique_hicon for these, as they are loaded from our mapped executable image.
+        HICON _hDefaultIcon{ nullptr };
+        HICON _hDefaultSmIcon{ nullptr };
 
-        void _DestroyNonDefaultIcons();
-
-        // Helper methods
-        [[nodiscard]] HRESULT _GetAvailableIconFromReference(_In_ HICON& hIconRef, _In_ HICON& hDefaultIconRef, _Out_ HICON* const phIcon);
-        [[nodiscard]] HRESULT _GetDefaultIconFromReference(_In_ HICON& hIconRef, _Out_ HICON* const phIcon);
-        [[nodiscard]] HRESULT _SetIconFromReference(_In_ HICON& hIconRef, const HICON hNewIcon);
-        void _FreeIconFromReference(_In_ HICON& hIconRef);
-
-        bool _fInitialized;
-        HICON _hDefaultIcon;
-        HICON _hDefaultSmIcon;
-        HICON _hIcon;
-        HICON _hSmIcon;
+        wil::unique_hicon _hIcon;
+        wil::unique_hicon _hSmIcon;
     };
 }
