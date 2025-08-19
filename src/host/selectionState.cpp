@@ -220,6 +220,23 @@ std::pair<til::point, til::point> Selection::GetSelectionAnchors() const noexcep
     endSelectionAnchor.x = (_d->coordSelectionAnchor.x == _d->srSelectionRect.left) ? _d->srSelectionRect.right : _d->srSelectionRect.left;
     endSelectionAnchor.y = (_d->coordSelectionAnchor.y == _d->srSelectionRect.top) ? _d->srSelectionRect.bottom : _d->srSelectionRect.top;
 
+    // GH #18106: Conhost and Terminal share most of the selection code.
+    //    Both now store the selection data as a half-open range [start, end),
+    //     where "end" is the bottom-right-most point.
+    // Conhost operates as an inclusive range, so we need to adjust the "end" endpoint by incrementing it by one.
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const auto& bufferSize = gci.GetActiveOutputBuffer().GetTextBuffer().GetSize();
+    if (IsLineSelection())
+    {
+        // General comparison for line selection.
+        bufferSize.IncrementInExclusiveBounds(startSelectionAnchor <= endSelectionAnchor ? endSelectionAnchor : startSelectionAnchor);
+    }
+    else
+    {
+        // Compare x-values when we're in block selection!
+        bufferSize.IncrementInExclusiveBounds(startSelectionAnchor.x <= endSelectionAnchor.x ? endSelectionAnchor : startSelectionAnchor);
+    }
+
     if (startSelectionAnchor > endSelectionAnchor)
     {
         return { endSelectionAnchor, startSelectionAnchor };
