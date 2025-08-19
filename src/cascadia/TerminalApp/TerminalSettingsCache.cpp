@@ -7,8 +7,6 @@
 
 namespace winrt
 {
-    namespace MUX = Microsoft::UI::Xaml;
-    namespace WUX = Windows::UI::Xaml;
     namespace MTSM = Microsoft::Terminal::Settings::Model;
 }
 
