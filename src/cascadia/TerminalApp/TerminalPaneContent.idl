@@ -2,7 +2,6 @@
 // Licensed under the MIT license.
 
 import "IPaneContent.idl";
-import "TerminalSettingsCache.idl";
 import "FilteredCommand.idl";
 
 namespace TerminalApp
