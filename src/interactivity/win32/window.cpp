@@ -138,7 +138,7 @@ Window::~Window()
         wc.lpszClassName = CONSOLE_WINDOW_CLASS;
 
         // Load icons
-        status = Icon::Instance().GetIcons(&wc.hIcon, &wc.hIconSm);
+        status = Icon::Instance().GetIcons(96, &wc.hIcon, &wc.hIconSm);
 
         if (SUCCEEDED_NTSTATUS(status))
         {
@@ -335,7 +335,7 @@ void Window::_UpdateSystemMetrics() const
                 if (SUCCEEDED_NTSTATUS(status))
                 {
                     // Do WM_GETICON workaround. Must call WM_SETICON once or apps calling WM_GETICON will get null.
-                    LOG_IF_FAILED(Icon::Instance().ApplyWindowMessageWorkaround(hWnd));
+                    LOG_IF_FAILED(Icon::Instance().ApplyIconsToWindow(hWnd));
 
                     // Set up the hot key for this window.
                     if (gci.GetHotKey() != 0)

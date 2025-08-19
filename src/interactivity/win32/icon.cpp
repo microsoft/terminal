@@ -8,6 +8,7 @@
 #include "window.hpp"
 
 #include "../inc/ServiceLocator.hpp"
+#include "windowdpiapi.hpp"
 
 using namespace Microsoft::Console::Interactivity::Win32;
 
@@ -21,7 +22,7 @@ static constexpr uint32_t LR_EXACTSIZEONLY{ 0x10000 };
 // larger than 256 returns the input value, which would result in the 256px icon being used.
 static int SnapIconSize(int cx)
 {
-    static constexpr int rgSizes[] = { 16, 32, 48, 256 };
+    static constexpr int rgSizes[] = { 16, 24, 32, 48, 64, 256 };
     for (auto sz : rgSizes)
     {
         if (cx <= sz)
@@ -240,14 +241,14 @@ static UINT ConExtractIcons(PCWSTR szFileName, int nIconIndex, int cxIcon, int c
     return result;
 }
 
-static UINT ConExtractIconInBothSizesW(PCWSTR szFileName, int nIconIndex, HICON* phiconLarge, HICON* phiconSmall)
+static UINT ConExtractIconInBothSizesW(int dpi, PCWSTR szFileName, int nIconIndex, HICON* phiconLarge, HICON* phiconSmall)
 {
     HICON ahicon[2] = { nullptr, nullptr };
     auto result = ConExtractIcons(
         szFileName,
         nIconIndex,
-        MAKELONG(GetSystemMetrics(SM_CXICON), GetSystemMetrics(SM_CXSMICON)),
-        MAKELONG(GetSystemMetrics(SM_CYICON), GetSystemMetrics(SM_CYSMICON)),
+        MAKELONG(GetSystemMetricsForDpi(dpi, SM_CXICON), GetSystemMetricsForDpi(dpi, SM_CXSMICON)),
+        MAKELONG(GetSystemMetricsForDpi(dpi, SM_CYICON), GetSystemMetricsForDpi(dpi, SM_CYSMICON)),
         ahicon,
         2,
         0);
@@ -292,11 +293,21 @@ Icon& Icon::Instance()
 // - phSmIcon - The small icon representation.
 // Return Value:
 // - S_OK or HRESULT failure code.
-[[nodiscard]] HRESULT Icon::GetIcons(_Out_opt_ HICON* const phIcon, _Out_opt_ HICON* const phSmIcon)
+[[nodiscard]] HRESULT Icon::GetIcons(int dpi, _Out_opt_ HICON* const phIcon, _Out_opt_ HICON* const phSmIcon)
 {
+    auto found{ _iconHandlesPerDpi.find(dpi) };
+    if (found == _iconHandlesPerDpi.end())
+    {
+        std::ignore = LoadIconsForDpi(dpi);
+        found = _iconHandlesPerDpi.find(dpi);
+    }
+
     if (phIcon)
     {
-        *phIcon = _hIcon.get();
+        if (found != _iconHandlesPerDpi.end())
+        {
+            *phIcon = found->second.first.get();
+        }
         if (!*phIcon)
         {
             *phIcon = _hDefaultIcon;
@@ -309,12 +320,15 @@ Icon& Icon::Instance()
 
     if (phSmIcon)
     {
-        *phSmIcon = _hSmIcon.get();
+        if (found != _iconHandlesPerDpi.end())
+        {
+            *phSmIcon = found->second.second.get();
+        }
         if (!*phSmIcon)
         {
             *phSmIcon = _hDefaultSmIcon;
         }
-        if (!*phIcon)
+        if (!*phSmIcon)
         {
             return E_FAIL;
         }
@@ -333,20 +347,22 @@ Icon& Icon::Instance()
 // - S_OK or HRESULT failure code.
 [[nodiscard]] HRESULT Icon::LoadIconsFromPath(_In_ PCWSTR pwszIconLocation, const int nIconIndex)
 {
-    auto hr = S_OK;
+    _iconPathAndIndex = { std::wstring{ pwszIconLocation }, nIconIndex };
+    _iconHandlesPerDpi.clear();
+    return LoadIconsForDpi(96);
+}
 
-    // Return value is count of icons extracted, which is redundant with filling the pointers.
-    // http://msdn.microsoft.com/en-us/library/windows/desktop/ms648069(v=vs.85).aspx
-    ConExtractIconInBothSizesW(pwszIconLocation, nIconIndex, &_hIcon, &_hSmIcon);
-
-    // If the large icon failed, clear the other one as well.
-    if (!_hIcon)
+[[nodiscard]] HRESULT Icon::LoadIconsForDpi(int dpi)
+{
+    wil::unique_hicon icon, smIcon;
+    ConExtractIconInBothSizesW(dpi, _iconPathAndIndex.first.c_str(), _iconPathAndIndex.second, &icon, &smIcon);
+    if (!icon)
     {
-        _hSmIcon.reset();
-        hr = E_FAIL;
+        return E_FAIL;
     }
 
-    return hr;
+    _iconHandlesPerDpi.try_emplace(dpi, std::pair<wil::unique_hicon, wil::unique_hicon>{ std::move(icon), std::move(smIcon) });
+    return S_OK;
 }
 
 // Routine Description:
@@ -358,11 +374,12 @@ Icon& Icon::Instance()
 // - hwnd - Handle to apply message workaround to.
 // Return Value:
 // - S_OK or HRESULT failure code.
-[[nodiscard]] HRESULT Icon::ApplyWindowMessageWorkaround(const HWND hwnd)
+[[nodiscard]] HRESULT Icon::ApplyIconsToWindow(const HWND hwnd)
 {
     HICON hIcon, hSmIcon;
 
-    RETURN_IF_FAILED(GetIcons(&hIcon, &hSmIcon));
+    const auto dpi = ServiceLocator::LocateHighDpiApi<WindowDpiApi>()->GetDpiForWindow(hwnd);
+    RETURN_IF_FAILED(GetIcons(dpi, &hIcon, &hSmIcon));
 
     SendMessageW(hwnd, WM_SETICON, ICON_BIG, (LPARAM)hIcon);
     SendMessageW(hwnd, WM_SETICON, ICON_SMALL, (LPARAM)hSmIcon);

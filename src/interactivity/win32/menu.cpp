@@ -316,7 +316,7 @@ void Menu::s_ShowPropertiesDialog(HWND const hwnd, BOOL const Defaults)
     pStateInfo->CursorType = static_cast<unsigned int>(cursor.GetType());
 
     // Retrieve small icon for use in displaying the dialog
-    LOG_IF_FAILED(Icon::Instance().GetIcons(nullptr, &pStateInfo->hIcon));
+    LOG_IF_FAILED(Icon::Instance().GetIcons(96, nullptr, &pStateInfo->hIcon));
 
     pStateInfo->QuickEdit = !!(gci.Flags & CONSOLE_QUICK_EDIT_MODE);
     pStateInfo->AutoPosition = !!(gci.Flags & CONSOLE_AUTO_POSITION);

@@ -7,6 +7,7 @@
 #include "clipboard.hpp"
 #include "find.h"
 #include "menu.hpp"
+#include "icon.hpp"
 #include "windowdpiapi.hpp"
 #include "windowio.hpp"
 #include "windowmetrics.hpp"
@@ -266,6 +267,8 @@ static constexpr TsfDataProvider s_tsfDataProvider;
                      RECT_WIDTH(prcNewScale),
                      RECT_HEIGHT(prcNewScale),
                      SWP_NOZORDER | SWP_NOACTIVATE);
+
+        LOG_IF_FAILED(Icon::Instance().ApplyIconsToWindow(hWnd));
 
         _fInDPIChange = false;
 

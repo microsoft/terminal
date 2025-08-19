@@ -22,9 +22,9 @@ namespace Microsoft::Console::Interactivity::Win32
     public:
         static Icon& Instance();
 
-        [[nodiscard]] HRESULT GetIcons(_Out_opt_ HICON* const phIcon, _Out_opt_ HICON* const phSmIcon);
+        [[nodiscard]] HRESULT GetIcons(int dpi, _Out_opt_ HICON* const phIcon, _Out_opt_ HICON* const phSmIcon);
         [[nodiscard]] HRESULT LoadIconsFromPath(_In_ PCWSTR pwszIconLocation, const int nIconIndex);
-        [[nodiscard]] HRESULT ApplyWindowMessageWorkaround(const HWND hwnd);
+        [[nodiscard]] HRESULT ApplyIconsToWindow(const HWND hwnd);
 
     protected:
         Icon();
@@ -33,11 +33,12 @@ namespace Microsoft::Console::Interactivity::Win32
         void operator=(const Icon&) = delete;
 
     private:
+        [[nodiscard]] HRESULT LoadIconsForDpi(int dpi);
         // We are not using unique_hicon for these, as they are loaded from our mapped executable image.
         HICON _hDefaultIcon{ nullptr };
         HICON _hDefaultSmIcon{ nullptr };
 
-        wil::unique_hicon _hIcon;
-        wil::unique_hicon _hSmIcon;
+        std::unordered_map<int, std::pair<wil::unique_hicon, wil::unique_hicon>> _iconHandlesPerDpi;
+        std::pair<std::wstring, int> _iconPathAndIndex;
     };
 }
