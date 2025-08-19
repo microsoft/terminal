@@ -3,7 +3,7 @@
 
 #include "pch.h"
 #include "TerminalSettingsCache.h"
-#include "TerminalSettingsCache.g.cpp"
+#include "../TerminalSettingsAppAdapterLib/TerminalSettings.h"
 
 namespace winrt
 {
@@ -14,12 +14,18 @@ namespace winrt
 
 namespace winrt::TerminalApp::implementation
 {
+    TerminalSettingsPair::TerminalSettingsPair(const winrt::Microsoft::Terminal::Settings::TerminalSettingsCreateResult& result)
+    {
+        result.DefaultSettings().try_as(_defaultSettings);
+        result.UnfocusedSettings().try_as(_unfocusedSettings);
+    }
+
     TerminalSettingsCache::TerminalSettingsCache(const MTSM::CascadiaSettings& settings, const TerminalApp::AppKeyBindings& bindings)
     {
         Reset(settings, bindings);
     }
 
-    TerminalApp::TerminalSettingsPair TerminalSettingsCache::TryLookup(const MTSM::Profile& profile)
+    std::optional<TerminalSettingsPair> TerminalSettingsCache::TryLookup(const MTSM::Profile& profile)
     {
         const auto found{ profileGuidSettingsMap.find(profile.Guid()) };
         // GH#2455: If there are any panes with controls that had been
@@ -33,10 +39,10 @@ namespace winrt::TerminalApp::implementation
             {
                 pair.second = std::move(winrt::Microsoft::Terminal::Settings::TerminalSettings::CreateWithProfile(_settings, pair.first, _bindings));
             }
-            return winrt::make<TerminalSettingsPair>(*pair.second);
+            return std::optional{ TerminalSettingsPair{ *pair.second } };
         }
 
-        return nullptr;
+        return std::nullopt;
     }
 
     void TerminalSettingsCache::Reset(const MTSM::CascadiaSettings& settings, const TerminalApp::AppKeyBindings& bindings)

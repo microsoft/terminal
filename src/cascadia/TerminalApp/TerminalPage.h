@@ -36,6 +36,8 @@ namespace winrt::Microsoft::Terminal::Settings
 
 namespace winrt::TerminalApp::implementation
 {
+    struct TerminalSettingsCache;
+
     inline constexpr uint32_t DefaultRowsToScroll{ 3 };
     inline constexpr std::wstring_view TabletInputServiceKey{ L"TabletInputService" };
 
@@ -280,7 +282,7 @@ namespace winrt::TerminalApp::implementation
 
         TerminalApp::ContentManager _manager{ nullptr };
 
-        TerminalApp::TerminalSettingsCache _terminalSettingsCache{ nullptr };
+        std::shared_ptr<TerminalSettingsCache> _terminalSettingsCache{};
 
         struct StashedDragData
         {

@@ -1324,9 +1324,9 @@ void CascadiaSettings::_researchOnLoad()
             g_hSettingsModelProvider,
             "ThemesInUse",
             TraceLoggingDescription("Data about the themes in use"),
-            TraceLoggingBool(themeChoice, "Identifier for the theme chosen. 0 is system, 1 is light, 2 is dark, and 3 indicates any custom theme."),
-            TraceLoggingBool(changedTheme, "True if the user actually changed the theme from the default theme"),
-            TraceLoggingInt32(numThemes, "Number of themes in the user's settings"),
+            TraceLoggingInt32(themeChoice, "ThemeClass", "Identifier for the theme chosen. 0 is system (legacySystem = 6), 1 is light (legacyLight = 5), 2 is dark (legacyDark = 4), and 3 indicates any custom theme."),
+            TraceLoggingBool(changedTheme, "ChangedTheme", "True if the user actually changed the theme from the default theme"),
+            TraceLoggingInt32(numThemes, "NumberOfThemes", "Number of themes in the user's settings"),
             TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
             TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
 
@@ -1348,7 +1348,7 @@ void CascadiaSettings::_researchOnLoad()
             g_hSettingsModelProvider,
             "SendInputUsage",
             TraceLoggingDescription("Event emitted upon settings load, containing the number of sendInput actions a user has"),
-            TraceLoggingInt32(collectSendInput(), "Number of sendInput actions in the user's settings"),
+            TraceLoggingInt32(collectSendInput(), "NumberOfSendInputActions", "Number of sendInput actions in the user's settings"),
             TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
             TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
 
@@ -1365,8 +1365,8 @@ void CascadiaSettings::_researchOnLoad()
             g_hSettingsModelProvider,
             "MarksProfilesUsage",
             TraceLoggingDescription("Event emitted upon settings load, containing the number of profiles opted-in to scrollbar marks"),
-            TraceLoggingInt32(totalAutoMark, "Number of profiles for which AutoMarkPrompts is enabled"),
-            TraceLoggingInt32(totalShowMarks, "Number of profiles for which ShowMarks is enabled"),
+            TraceLoggingInt32(totalAutoMark, "NumberOfAutoMarkPromptsProfiles", "Number of profiles for which AutoMarkPrompts is enabled"),
+            TraceLoggingInt32(totalShowMarks, "NumberOfShowMarksProfiles", "Number of profiles for which ShowMarks is enabled"),
             TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
             TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
     }

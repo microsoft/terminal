@@ -90,7 +90,6 @@
     <Midl Include="TerminalWindow.idl" />
     <Midl Include="TaskbarState.idl" />
     <Midl Include="IPaneContent.idl" />
-    <Midl Include="TerminalSettingsCache.idl" />
     <Midl Include="Monarch.idl" />
   </ItemGroup>
   <ItemGroup>
