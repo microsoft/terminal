@@ -83,13 +83,15 @@ namespace Microsoft.Terminal.Core
 
     interface ICoreScheme
     {
+        // Table is callee-allocated
+        void GetColorTable(out Microsoft.Terminal.Core.Color[] table);
+
         Microsoft.Terminal.Core.Color DefaultForeground { get; };
         Microsoft.Terminal.Core.Color DefaultBackground { get; };
         Microsoft.Terminal.Core.Color SelectionBackground { get; };
         Microsoft.Terminal.Core.Color CursorColor { get; };
 
-        // Table is callee-allocated
-        void GetColorTable(out Microsoft.Terminal.Core.Color[] table);
+        // NOTE! When adding something here, make sure to update ControlProperties.h too!
     };
 
     interface ICoreAppearance requires ICoreScheme
