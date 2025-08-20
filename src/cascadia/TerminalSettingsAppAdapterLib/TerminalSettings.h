@@ -93,6 +93,11 @@ namespace winrt::Microsoft::Terminal::Settings
         SIMPLE_OVERRIDABLE_SETTING(IEnvironmentVariableMap, EnvironmentVariables);
         SIMPLE_OVERRIDABLE_SETTING(bool, ReloadEnvironmentVariables, true);
 
+    public:
+        // TerminalApp overrides these when duplicating a session
+        void StartingDirectory(const hstring& startingDirectory) { _StartingDirectory = startingDirectory; }
+        void Commandline(const hstring& commandline) { _Commandline = commandline; }
+
     private:
         std::optional<std::array<Microsoft::Terminal::Core::Color, COLOR_TABLE_SIZE>> _ColorTable;
         std::span<Microsoft::Terminal::Core::Color> _getColorTableImpl();
