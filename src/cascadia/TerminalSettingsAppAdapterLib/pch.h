@@ -29,16 +29,11 @@
 
 #include <hstring.h>
 
-#include <winrt/Windows.ApplicationModel.Resources.Core.h>
 #include <winrt/Windows.Foundation.h>
 #include <winrt/Windows.Foundation.Collections.h>
-#include <winrt/Windows.System.h>
 #include <winrt/Microsoft.Terminal.Settings.Model.h>
 #include <winrt/Microsoft.Terminal.Core.h>
 #include <winrt/Microsoft.Terminal.Control.h>
-
-#include <shlobj.h>
-#include <shobjidl_core.h>
 
 #include <cppwinrt_utils.h>
 
