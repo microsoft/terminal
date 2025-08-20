@@ -1161,10 +1161,12 @@ void Pane::SetActive()
 //   focused, else the profile of the last control to be focused
 Profile Pane::GetFocusedProfile()
 {
-    auto lastFocused = GetActivePane();
-    if (const auto& terminalPane{ lastFocused->_getTerminalContent() })
+    if (auto lastFocused{ GetActivePane() })
     {
-        return terminalPane.GetProfile();
+        if (const auto& terminalPane{ lastFocused->_getTerminalContent() })
+        {
+            return terminalPane.GetProfile();
+        }
     }
     return nullptr;
 }

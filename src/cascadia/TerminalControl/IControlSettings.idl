@@ -38,8 +38,6 @@ namespace Microsoft.Terminal.Control
     interface IControlSettings requires Microsoft.Terminal.Core.ICoreSettings,
                                Microsoft.Terminal.Control.IControlAppearance
     {
-        String ProfileName;
-
         Boolean EnableUnfocusedAcrylic { get; };
         Guid SessionId { get; };
         ScrollbarState ScrollState { get; };
