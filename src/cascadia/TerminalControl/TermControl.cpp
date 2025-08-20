@@ -2613,9 +2613,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return _core.Title();
     }
 
-    hstring TermControl::GetProfileName() const
+    hstring TermControl::GetStartingTitle() const
     {
-        return _core.Settings().ProfileName();
+        return _core.Settings().StartingTitle();
     }
 
     hstring TermControl::WorkingDirectory() const
