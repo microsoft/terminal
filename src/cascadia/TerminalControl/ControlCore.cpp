@@ -19,10 +19,12 @@
 #include "../../renderer/base/renderer.hpp"
 #include "../../renderer/uia/UiaRenderer.hpp"
 #include "../../types/inc/CodepointWidthDetector.hpp"
+#include "../../types/inc/utils.hpp"
 
 #include "ControlCore.g.cpp"
 #include "SelectionColor.g.cpp"
 
+using namespace ::Microsoft::Console;
 using namespace ::Microsoft::Console::Types;
 using namespace ::Microsoft::Console::VirtualTerminal;
 using namespace ::Microsoft::Terminal::Core;
@@ -400,10 +402,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             }
 
             // Override the default width and height to match the size of the swapChainPanel
-            //TODO(DH)_settings.InitialCols(width);
-            //TODO(DH)_settings.InitialRows(height);
+            const til::size viewportSize{ Utils::ClampToShortMax(width, 1),
+                                          Utils::ClampToShortMax(height, 1) };
 
-            _terminal->CreateFromSettings(_settings, *_renderer);
+            // TODO:MSFT:20642297 - Support infinite scrollback here, if HistorySize is -1
+            _terminal->Create(viewportSize, Utils::ClampToShortMax(_settings.HistorySize(), 0), *_renderer);
+            _terminal->UpdateSettings(_settings);
 
             // Tell the render engine to notify us when the swap chain changes.
             // We do this after we initially set the swapchain so as to avoid
