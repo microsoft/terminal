@@ -64,7 +64,7 @@ namespace winrt::Microsoft::Terminal::Settings
     winrt::com_ptr<TerminalSettings> TerminalSettings::CreateForPreview(const Model::CascadiaSettings& appSettings, const Model::Profile& profile)
     {
         const auto settings = _CreateWithProfileCommon(appSettings, profile);
-        settings->UseBackgroundImageForWindow(false);
+        settings->_UseBackgroundImageForWindow = false;
         return settings;
     }
 
@@ -126,7 +126,7 @@ namespace winrt::Microsoft::Terminal::Settings
         {
             if (const auto id = newTerminalArgs.SessionId(); id != winrt::guid{})
             {
-                defaultSettings->SessionId(id);
+                defaultSettings->_SessionId = id;
             }
 
             // Override commandline, starting directory if they exist in newTerminalArgs
@@ -134,20 +134,20 @@ namespace winrt::Microsoft::Terminal::Settings
             {
                 if (!newTerminalArgs.AppendCommandLine())
                 {
-                    defaultSettings->Commandline(newTerminalArgs.Commandline());
+                    defaultSettings->_Commandline = newTerminalArgs.Commandline();
                 }
                 else
                 {
-                    defaultSettings->Commandline(defaultSettings->Commandline() + L" " + newTerminalArgs.Commandline());
+                    defaultSettings->_Commandline = defaultSettings->Commandline() + L" " + newTerminalArgs.Commandline();
                 }
             }
             if (!newTerminalArgs.StartingDirectory().empty())
             {
-                defaultSettings->StartingDirectory(newTerminalArgs.StartingDirectory());
+                defaultSettings->_StartingDirectory = newTerminalArgs.StartingDirectory();
             }
             if (!newTerminalArgs.TabTitle().empty())
             {
-                defaultSettings->StartingTitle(newTerminalArgs.TabTitle());
+                defaultSettings->_StartingTitle = newTerminalArgs.TabTitle();
             }
             else
             {
@@ -161,16 +161,16 @@ namespace winrt::Microsoft::Terminal::Settings
                     const auto terminator{ commandLine.find_first_of(start ? L'"' : L' ', start) }; // look past the first character if it starts with "
                     // We have to take a copy here; winrt::param::hstring requires a null-terminated string
                     const std::wstring firstComponent{ commandLine.substr(start, terminator - start) };
-                    defaultSettings->StartingTitle(winrt::hstring{ firstComponent });
+                    defaultSettings->_StartingTitle = winrt::hstring{ firstComponent };
                 }
             }
             if (newTerminalArgs.TabColor())
             {
-                defaultSettings->StartingTabColor(winrt::Windows::Foundation::IReference<winrt::Microsoft::Terminal::Core::Color>{ static_cast<winrt::Microsoft::Terminal::Core::Color>(til::color{ newTerminalArgs.TabColor().Value() }) });
+                defaultSettings->_StartingTabColor = winrt::Windows::Foundation::IReference<winrt::Microsoft::Terminal::Core::Color>{ static_cast<winrt::Microsoft::Terminal::Core::Color>(til::color{ newTerminalArgs.TabColor().Value() }) };
             }
             if (newTerminalArgs.SuppressApplicationTitle())
             {
-                defaultSettings->SuppressApplicationTitle(newTerminalArgs.SuppressApplicationTitle().Value());
+                defaultSettings->_SuppressApplicationTitle = newTerminalArgs.SuppressApplicationTitle().Value();
             }
             if (!newTerminalArgs.ColorScheme().empty())
             {
@@ -186,12 +186,12 @@ namespace winrt::Microsoft::Terminal::Settings
             // profile will still be launched elevated.
             if (newTerminalArgs.Elevate())
             {
-                defaultSettings->Elevate(newTerminalArgs.Elevate().Value());
+                defaultSettings->_Elevate = newTerminalArgs.Elevate().Value();
             }
 
             if (newTerminalArgs.ReloadEnvironmentVariables())
             {
-                defaultSettings->ReloadEnvironmentVariables(newTerminalArgs.ReloadEnvironmentVariables().Value());
+                defaultSettings->_ReloadEnvironmentVariables = newTerminalArgs.ReloadEnvironmentVariables().Value();
             }
         }
 

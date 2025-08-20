@@ -19,7 +19,7 @@ Author(s):
 #include <DefaultSettings.h>
 #include <conattrs.hpp>
 
-#define SIMPLE_INHERITABLE_SETTING(type, name, ...)   \
+#define SIMPLE_OVERRIDABLE_SETTING(type, name, ...)   \
 private:                                              \
     std::optional<type> _##name{ std::nullopt };      \
                                                       \
@@ -39,12 +39,6 @@ public:                                               \
             }                                         \
         }                                             \
         return type{ __VA_ARGS__ };                   \
-    }                                                 \
-                                                      \
-    /* Overwrite the user set value */                \
-    void name(const type& value)                      \
-    {                                                 \
-        _##name = value;                              \
     }
 
 namespace winrt::Microsoft::Terminal::Settings
@@ -85,19 +79,19 @@ namespace winrt::Microsoft::Terminal::Settings
         // we should consider moving this property to a separate interface,
         // passed to the terminal only upon creation.
 
-        CORE_APPEARANCE_SETTINGS(SIMPLE_INHERITABLE_SETTING);
-        CONTROL_APPEARANCE_SETTINGS(SIMPLE_INHERITABLE_SETTING);
-        CORE_SETTINGS(SIMPLE_INHERITABLE_SETTING);
-        CONTROL_SETTINGS(SIMPLE_INHERITABLE_SETTING);
+        CORE_APPEARANCE_SETTINGS(SIMPLE_OVERRIDABLE_SETTING);
+        CONTROL_APPEARANCE_SETTINGS(SIMPLE_OVERRIDABLE_SETTING);
+        CORE_SETTINGS(SIMPLE_OVERRIDABLE_SETTING);
+        CONTROL_SETTINGS(SIMPLE_OVERRIDABLE_SETTING);
 #if 0
-        SIMPLE_INHERITABLE_SETTING(float, Opacity, UseAcrylic() ? 0.5f : 1.0f);
-        SIMPLE_INHERITABLE_SETTING(hstring, FontFace, DEFAULT_FONT_FACE);
+        SIMPLE_OVERRIDABLE_SETTING(float, Opacity, UseAcrylic() ? 0.5f : 1.0f);
+        SIMPLE_OVERRIDABLE_SETTING(hstring, FontFace, DEFAULT_FONT_FACE);
 #endif
 
         // Settings which do not pertain to the control (why are they here?)
-        SIMPLE_INHERITABLE_SETTING(bool, Elevate, false);
-        SIMPLE_INHERITABLE_SETTING(IEnvironmentVariableMap, EnvironmentVariables);
-        SIMPLE_INHERITABLE_SETTING(bool, ReloadEnvironmentVariables, true);
+        SIMPLE_OVERRIDABLE_SETTING(bool, Elevate, false);
+        SIMPLE_OVERRIDABLE_SETTING(IEnvironmentVariableMap, EnvironmentVariables);
+        SIMPLE_OVERRIDABLE_SETTING(bool, ReloadEnvironmentVariables, true);
 
     private:
         std::optional<std::array<Microsoft::Terminal::Core::Color, COLOR_TABLE_SIZE>> _ColorTable;
