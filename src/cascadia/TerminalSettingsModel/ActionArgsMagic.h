@@ -76,7 +76,7 @@ struct InitListPlaceholder
 #define ARG_DESC_STRINGIFY(x) ARG_DESC_STRINGIFY2(x)
 #define ARG_DESC_WIDEN2(x) L##x
 #define ARG_DESC_WIDEN(x) ARG_DESC_WIDEN2(x)
-#define LOCALIZED_NAME(name) ARG_DESC_WIDEN(ARG_DESC_STRINGIFY(name##Localized))
+#define LOCALIZED_NAME(name) ARG_DESC_WIDEN(ARG_DESC_STRINGIFY(name##ActionArgumentLocalized))
 
 // append this argument's description to the internal vector
 #define APPEND_ARG_DESCRIPTION(type, name, jsonKey, required, typeHint, ...) \
@@ -167,15 +167,7 @@ struct InitListPlaceholder
 //   * GlobalSummonArgs has the QuakeModeFromJson helper
 
 #define ACTION_ARG_BODY(className, argsMacro)                                                     \
-    className() = default;                                                                        \
-    className(                                                                                    \
-        argsMacro(CTOR_PARAMS) InitListPlaceholder = {}) :                                        \
-        argsMacro(CTOR_INIT)                                                                      \
-            _placeholder{} {};                                                                    \
-    argsMacro(DECLARE_ARGS);                                                                      \
-                                                                                                  \
-private:                                                                                          \
-    InitListPlaceholder _placeholder;                                                             \
+    PARTIAL_ACTION_ARG_BODY(className, argsMacro)                                                 \
                                                                                                   \
 public:                                                                                           \
     hstring GenerateName() const                                                                  \
@@ -222,21 +214,6 @@ public:                                                                         
         til::hasher h;                                                                            \
         argsMacro(HASH_ARGS);                                                                     \
         return h.finalize();                                                                      \
-    }                                                                                             \
-    winrt::Windows::Foundation::Collections::IVectorView<ArgDescriptor> GetArgDescriptors()       \
-    {                                                                                             \
-        static const auto descriptors = INIT_ARG_DESCRIPTORS(argsMacro);                          \
-        return descriptors;                                                                       \
-    }                                                                                             \
-    IInspectable GetArgAt(uint32_t index) const                                                   \
-    {                                                                                             \
-        X_MACRO_INDEX_BASE();                                                                     \
-        argsMacro(GET_ARG_BY_INDEX) return nullptr;                                               \
-    }                                                                                             \
-    void SetArgAt(uint32_t index, IInspectable value)                                             \
-    {                                                                                             \
-        X_MACRO_INDEX_BASE();                                                                     \
-        argsMacro(SET_ARG_BY_INDEX)                                                               \
     }
 
 #define PARTIAL_ACTION_ARG_BODY(className, argsMacro)                                       \
