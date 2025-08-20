@@ -293,9 +293,6 @@ namespace winrt::Microsoft::Terminal::Settings
         _AltGrAliasing = profile.AltGrAliasing();
         _AnswerbackMessage = profile.AnswerbackMessage();
 
-        // Fill in the remaining properties from the profile
-        _ProfileName = profile.Name();
-
         const auto fontInfo = profile.FontInfo();
         _FontFace = fontInfo.FontFace();
         _FontSize = fontInfo.FontSize();
