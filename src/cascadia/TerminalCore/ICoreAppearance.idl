@@ -83,16 +83,16 @@ namespace Microsoft.Terminal.Core
 
     interface ICoreAppearance
     {
-        Microsoft.Terminal.Core.Color DefaultForeground;
-        Microsoft.Terminal.Core.Color DefaultBackground;
-        Microsoft.Terminal.Core.Color SelectionBackground;
+        Microsoft.Terminal.Core.Color DefaultForeground { get; };
+        Microsoft.Terminal.Core.Color DefaultBackground { get; };
+        Microsoft.Terminal.Core.Color SelectionBackground { get; };
         Microsoft.Terminal.Core.Color GetColorTableEntry(Int32 index);
-        Microsoft.Terminal.Core.Color CursorColor;
-        CursorStyle CursorShape;
-        UInt32 CursorHeight;
-        Boolean IntenseIsBold;
-        Boolean IntenseIsBright;
-        AdjustTextMode AdjustIndistinguishableColors;
+        Microsoft.Terminal.Core.Color CursorColor { get; };
+        CursorStyle CursorShape { get; };
+        UInt32 CursorHeight { get; };
+        Boolean IntenseIsBold { get; };
+        Boolean IntenseIsBright { get; };
+        AdjustTextMode AdjustIndistinguishableColors { get; };
 
         // NOTE! When adding something here, make sure to update ControlProperties.h too!
     };

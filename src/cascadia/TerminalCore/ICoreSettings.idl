@@ -8,29 +8,29 @@ namespace Microsoft.Terminal.Core
     interface ICoreSettings requires ICoreAppearance
     {
         // TODO:MSFT:20642297 - define a sentinel for Infinite Scrollback
-        Int32 HistorySize;
-        Int32 InitialRows;
-        Int32 InitialCols;
+        Int32 HistorySize { get; };
+        Int32 InitialRows { get; };
+        Int32 InitialCols { get; };
 
-        Boolean SnapOnInput;
-        Boolean AltGrAliasing;
-        String AnswerbackMessage;
+        Boolean SnapOnInput { get; };
+        Boolean AltGrAliasing { get; };
+        String AnswerbackMessage { get; };
 
-        String StartingTitle;
-        Boolean SuppressApplicationTitle;
-        String WordDelimiters;
+        String StartingTitle { get; };
+        Boolean SuppressApplicationTitle { get; };
+        String WordDelimiters { get; };
 
-        Boolean ForceVTInput;
-        Boolean AllowVtChecksumReport;
-        Boolean AllowVtClipboardWrite;
-        Boolean TrimBlockSelection;
-        Boolean DetectURLs;
+        Boolean ForceVTInput { get; };
+        Boolean AllowVtChecksumReport { get; };
+        Boolean AllowVtClipboardWrite { get; };
+        Boolean TrimBlockSelection { get; };
+        Boolean DetectURLs { get; };
 
-        Windows.Foundation.IReference<Microsoft.Terminal.Core.Color> TabColor;
-        Windows.Foundation.IReference<Microsoft.Terminal.Core.Color> StartingTabColor;
+        Windows.Foundation.IReference<Microsoft.Terminal.Core.Color> TabColor { get; };
+        Windows.Foundation.IReference<Microsoft.Terminal.Core.Color> StartingTabColor { get; };
 
-        Boolean AutoMarkPrompts;
-        Boolean RainbowSuggestions;
+        Boolean AutoMarkPrompts { get; };
+        Boolean RainbowSuggestions { get; };
 
         // NOTE! When adding something here, make sure to update ControlProperties.h too!
     };
